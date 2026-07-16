@@ -27,5 +27,7 @@ config:
     prompt: Private review repository
     optional: true
   - type: copilot-auth
+  - type: commit-and-push
+    message: Add Central Agentic Ops
   - type: handoff
     message: Keep the first runs in preview before moving to review or live mode.
