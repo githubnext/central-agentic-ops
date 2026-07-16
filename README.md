@@ -1,5 +1,8 @@
 # Central Agentic Ops
 
+> [!DANGER]
+> Do not use this repository or setup, it is still experimental and not intended for use.
+
 An organization-wide control-plane catalog for [GitHub Agentic Workflows](https://github.github.com/gh-aw/).
 
 ## Quick Start
