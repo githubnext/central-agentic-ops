@@ -32,19 +32,13 @@ on:
 
 checkout:
   - repository: ${{ inputs.safe_output_repo }}
-    github-app:
-      client-id: ${{ vars.GH_AW_GITHUB_APP_ID }}
-      private-key: ${{ secrets.GH_AW_GITHUB_APP_PRIVATE_KEY }}
-      repositories: ["*"]
+    github-token: ${{ secrets.GH_AW_GITHUB_TOKEN }}
     fetch-depth: 0
     fetch: ["*"]
     current: true
   - repository: ${{ inputs.target_repo }}
     path: target
-    github-app:
-      client-id: ${{ vars.GH_AW_GITHUB_APP_ID }}
-      private-key: ${{ secrets.GH_AW_GITHUB_APP_PRIVATE_KEY }}
-      repositories: ["*"]
+    github-token: ${{ secrets.GH_AW_GITHUB_TOKEN }}
 
 imports:
   - uses: shared/control.md
@@ -85,10 +79,7 @@ tools:
 
 safe-outputs:
   staged: ${{ inputs.preview_only == 'true' }}
-  github-app:
-    client-id: ${{ vars.GH_AW_GITHUB_APP_ID }}
-    private-key: ${{ secrets.GH_AW_GITHUB_APP_PRIVATE_KEY }}
-    repositories: ["*"]
+  github-token: ${{ secrets.GH_AW_GITHUB_TOKEN }}
   create-issue:
     expires: 3d
     title-prefix: "[optimization:ai-credit-auditor] "
@@ -110,15 +101,6 @@ safe-outputs:
 timeout-minutes: 25
 
 steps:
-  - name: Mint GitHub App token for workflow log reads
-    id: github_app_token
-    uses: actions/create-github-app-token@v3.2.0
-    with:
-      client-id: ${{ vars.GH_AW_GITHUB_APP_ID }}
-      private-key: ${{ secrets.GH_AW_GITHUB_APP_PRIVATE_KEY }}
-      owner: ${{ github.repository_owner }}
-      permission-actions: read
-      permission-contents: read
   - name: Setup Python
     uses: actions/setup-python@v6.3.0
     with:
@@ -131,7 +113,7 @@ steps:
       python3 -m pip install --quiet --target /tmp/gh-aw/token-audit/site-packages pandas matplotlib seaborn
   - name: Download agentic workflow logs
     env:
-      GH_TOKEN: ${{ steps.github_app_token.outputs.token }}
+      GH_TOKEN: ${{ secrets.GH_AW_GITHUB_TOKEN }}
       GH_REPO: ${{ inputs.target_repo }}
     run: |
       set -euo pipefail

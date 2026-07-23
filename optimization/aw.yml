@@ -1,5 +1,0 @@
-name: Optimization
-description: Organization-wide workflow for auditing and optimizing GitHub Agentic Workflow AI credit usage.
-min-version: v0.82.10
-includes:
-  - .github/workflows/optimization.md

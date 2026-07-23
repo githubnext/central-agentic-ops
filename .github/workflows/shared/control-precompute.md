@@ -29,25 +29,13 @@ import-schema:
 tools:
   github:
     mode: remote
-    github-app:
-      client-id: ${{ vars.GH_AW_GITHUB_APP_ID }}
-      private-key: ${{ secrets.GH_AW_GITHUB_APP_PRIVATE_KEY }}
-      repositories: ["*"]
+    github-token: ${{ secrets.GH_AW_GITHUB_TOKEN }}
     toolsets: [repos, actions]
 
 steps:
-  - name: Mint GitHub App token for control-plane reads
-    id: github_app_token
-    uses: actions/create-github-app-token@v3.2.0
-    with:
-      client-id: ${{ vars.GH_AW_GITHUB_APP_ID }}
-      private-key: ${{ secrets.GH_AW_GITHUB_APP_PRIVATE_KEY }}
-      owner: ${{ github.aw.import-inputs.organization }}
-      permission-actions: read
-      permission-contents: read
   - name: Precompute control facts
     env:
-      GH_TOKEN: ${{ steps.github_app_token.outputs.token }}
+      GH_TOKEN: ${{ secrets.GH_AW_GITHUB_TOKEN }}
       ROLE: ${{ github.aw.import-inputs.role }}
       TARGET_REPO: ${{ github.aw.import-inputs.target_repo }}
       ORGANIZATION: ${{ github.aw.import-inputs.organization }}

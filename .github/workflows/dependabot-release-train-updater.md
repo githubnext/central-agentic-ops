@@ -40,19 +40,12 @@ on:
 
 checkout:
   - repository: ${{ inputs.safe_output_repo }}
-    github-app:
-      client-id: ${{ vars.GH_AW_GITHUB_APP_ID }}
-      private-key: ${{ secrets.GH_AW_GITHUB_APP_PRIVATE_KEY }}
-      repositories: ["*"]
+    github-token: ${{ secrets.GH_AW_GITHUB_TOKEN }}
     fetch-depth: 0
     fetch: ["*"]
     current: true
   - repository: ${{ inputs.target_repo }}
     path: target
-    github-app:
-      client-id: ${{ vars.GH_AW_GITHUB_APP_ID }}
-      private-key: ${{ secrets.GH_AW_GITHUB_APP_PRIVATE_KEY }}
-      repositories: ["*"]
 
 imports:
   - uses: shared/control.md
@@ -119,10 +112,7 @@ tools:
 
 safe-outputs:
   staged: ${{ inputs.preview_only == 'true' }}
-  github-app:
-    client-id: ${{ vars.GH_AW_GITHUB_APP_ID }}
-    private-key: ${{ secrets.GH_AW_GITHUB_APP_PRIVATE_KEY }}
-    repositories: ["*"]
+  github-token: ${{ secrets.GH_AW_GITHUB_TOKEN }}
   create-pull-request:
     staged: ${{ inputs.safe_output_mode == 'review' }}
     target-repo: ${{ github.event.inputs.safe_output_repo }}
@@ -133,10 +123,9 @@ safe-outputs:
     allowed-branches: ["dependabot-agent/*", "smart-dependabot/*"]
     preserve-branch-name: true
     recreate-ref: true
-    allow-workflows: true
     max-patch-files: 500
     max-patch-size: 10240
-    github-token-for-extra-empty-commit: ${{ secrets.GH_AW_CI_TOKEN }}
+    github-token-for-extra-empty-commit: ${{ secrets.GH_AW_GITHUB_TOKEN }}
     allowed-files:
       - ".github/dependabot.yml"
       - ".github/workflows/*.yml"
@@ -246,8 +235,7 @@ safe-outputs:
     required-title-prefix: "[dependabot-agent] "
     max: 1
     if-no-changes: ignore
-    allow-workflows: true
-    github-token-for-extra-empty-commit: ${{ secrets.GH_AW_CI_TOKEN }}
+    github-token-for-extra-empty-commit: ${{ secrets.GH_AW_GITHUB_TOKEN }}
     allowed-files:
       - ".github/central-agentic-ops/private/**"
       - ".github/dependabot.yml"

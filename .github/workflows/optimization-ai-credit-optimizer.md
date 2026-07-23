@@ -74,10 +74,7 @@ tools:
 
 safe-outputs:
   staged: ${{ inputs.preview_only == 'true' }}
-  github-app:
-    client-id: ${{ vars.GH_AW_GITHUB_APP_ID }}
-    private-key: ${{ secrets.GH_AW_GITHUB_APP_PRIVATE_KEY }}
-    repositories: ["*"]
+  github-token: ${{ secrets.GH_AW_GITHUB_TOKEN }}
   create-issue:
     expires: 7d
     title-prefix: "[optimization:ai-credit-optimizer] "
@@ -89,18 +86,9 @@ safe-outputs:
 timeout-minutes: 30
 
 steps:
-  - name: Mint GitHub App token for workflow log reads
-    id: github_app_token
-    uses: actions/create-github-app-token@v3.2.0
-    with:
-      client-id: ${{ vars.GH_AW_GITHUB_APP_ID }}
-      private-key: ${{ secrets.GH_AW_GITHUB_APP_PRIVATE_KEY }}
-      owner: ${{ github.repository_owner }}
-      permission-actions: read
-      permission-contents: read
   - name: Download recent agentic workflow logs
     env:
-      GH_TOKEN: ${{ steps.github_app_token.outputs.token }}
+      GH_TOKEN: ${{ secrets.GH_AW_GITHUB_TOKEN }}
     run: |
       set -euo pipefail
       mkdir -p /tmp/gh-aw/token-audit
