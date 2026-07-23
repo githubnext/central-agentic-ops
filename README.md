@@ -11,7 +11,7 @@ An organization-wide control-plane catalog for [GitHub Agentic Workflows](https:
 
    ```bash
    gh auth login
-   gh extension install github/gh-aw --force --pin v0.82.10
+   gh extension install github/gh-aw
    gh aw version
    ```
 
