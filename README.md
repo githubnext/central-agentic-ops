@@ -25,7 +25,7 @@ An organization-wide control-plane catalog for [GitHub Agentic Workflows](https:
    git add -A
    git commit -m "Initialize GitHub Agentic Workflows"
    ```
-
+<!--
 3. To install all Central Agentic Ops packages, run the following command. Replace `<catalog-release>` with an exact release tag:
 
    ```bash
@@ -35,3 +35,4 @@ An organization-wide control-plane catalog for [GitHub Agentic Workflows](https:
    To install capabilities individually, use a package-specific reference. Current packages are `githubnext/central-agentic-ops/dependabot@<catalog-release>` and `githubnext/central-agentic-ops/optimization@<catalog-release>`.
 
    The guided installer compiles the workflows, configures the GitHub App and credentials, and starts in `preview` mode.
+   -->
