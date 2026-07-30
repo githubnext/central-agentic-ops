@@ -29,13 +29,12 @@ import-schema:
 tools:
   github:
     mode: remote
-    github-token: ${{ secrets.GH_AW_GITHUB_TOKEN }}
     toolsets: [repos, actions]
 
 steps:
   - name: Precompute control facts
     env:
-      GH_TOKEN: ${{ secrets.GH_AW_GITHUB_TOKEN }}
+      GH_TOKEN: ${{ steps.github-mcp-app-token.outputs.token || secrets.GH_AW_GITHUB_TOKEN || secrets.GITHUB_TOKEN }}
       ROLE: ${{ github.aw.import-inputs.role }}
       TARGET_REPO: ${{ github.aw.import-inputs.target_repo }}
       ORGANIZATION: ${{ github.aw.import-inputs.organization }}

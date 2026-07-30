@@ -32,13 +32,11 @@ on:
 
 checkout:
   - repository: ${{ inputs.safe_output_repo }}
-    github-token: ${{ secrets.GH_AW_GITHUB_TOKEN }}
     fetch-depth: 0
     fetch: ["*"]
     current: true
   - repository: ${{ inputs.target_repo }}
     path: target
-    github-token: ${{ secrets.GH_AW_GITHUB_TOKEN }}
 
 imports:
   - uses: shared/control.md
@@ -79,7 +77,6 @@ tools:
 
 safe-outputs:
   staged: ${{ inputs.preview_only == 'true' }}
-  github-token: ${{ secrets.GH_AW_GITHUB_TOKEN }}
   create-issue:
     expires: 3d
     title-prefix: "[optimization:ai-credit-auditor] "
@@ -113,7 +110,7 @@ steps:
       python3 -m pip install --quiet --target /tmp/gh-aw/token-audit/site-packages pandas matplotlib seaborn
   - name: Download agentic workflow logs
     env:
-      GH_TOKEN: ${{ secrets.GH_AW_GITHUB_TOKEN }}
+      GH_TOKEN: ${{ steps.github-mcp-app-token.outputs.token || secrets.GH_AW_GITHUB_TOKEN || secrets.GITHUB_TOKEN }}
       GH_REPO: ${{ inputs.target_repo }}
     run: |
       set -euo pipefail

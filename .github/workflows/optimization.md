@@ -28,6 +28,8 @@ imports:
   - uses: shared/control.md
     with:
       role: orchestrator
+      rollout_mode: ${{ vars.CENTRAL_AGENTIC_OPS_OPTIMIZATION_MODE || 'preview' }}
+      review_repo: ${{ vars.CENTRAL_AGENTIC_OPS_OPTIMIZATION_REVIEW_REPO || '' }}
 
 permissions:
   contents: read

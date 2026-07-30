@@ -74,7 +74,6 @@ tools:
 
 safe-outputs:
   staged: ${{ inputs.preview_only == 'true' }}
-  github-token: ${{ secrets.GH_AW_GITHUB_TOKEN }}
   create-issue:
     expires: 7d
     title-prefix: "[optimization:ai-credit-optimizer] "
@@ -88,7 +87,7 @@ timeout-minutes: 30
 steps:
   - name: Download recent agentic workflow logs
     env:
-      GH_TOKEN: ${{ secrets.GH_AW_GITHUB_TOKEN }}
+      GH_TOKEN: ${{ steps.github-mcp-app-token.outputs.token || secrets.GH_AW_GITHUB_TOKEN || secrets.GITHUB_TOKEN }}
     run: |
       set -euo pipefail
       mkdir -p /tmp/gh-aw/token-audit

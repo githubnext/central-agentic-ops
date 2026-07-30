@@ -4,13 +4,25 @@ import-schema:
     type: choice
     options: [orchestrator, worker]
     required: true
+  rollout_mode:
+    type: string
+    default: "preview"
+  review_repo:
+    type: string
+    default: ""
 
 env:
-  CENTRAL_AGENTIC_OPS_MODE: ${{ vars.CENTRAL_AGENTIC_OPS_MODE || '' }}
-  GH_AW_SAFE_OUTPUT_MODE: ${{ github.event.inputs.safe_output_mode || vars.CENTRAL_AGENTIC_OPS_MODE || 'preview' }}
+  CENTRAL_AGENTIC_OPS_MODE: ${{ github.aw.import-inputs.rollout_mode }}
+  GH_AW_SAFE_OUTPUT_MODE: ${{ github.event.inputs.safe_output_mode || github.aw.import-inputs.rollout_mode || 'preview' }}
   TARGET_REPO: ${{ github.event.inputs.target_repo || '' }}
-  REVIEW_OUTPUT_REPO: ${{ github.event.inputs.safe_output_repo || vars.CENTRAL_AGENTIC_OPS_REVIEW_REPO || '' }}
-  SAFE_OUTPUT_REPO: ${{ (github.event.inputs.safe_output_mode || vars.CENTRAL_AGENTIC_OPS_MODE || 'preview') == 'review' && env.REVIEW_OUTPUT_REPO || '' }}
+  REVIEW_OUTPUT_REPO: ${{ github.event.inputs.safe_output_repo || github.aw.import-inputs.review_repo || '' }}
+  SAFE_OUTPUT_REPO: ${{ (github.event.inputs.safe_output_mode || github.aw.import-inputs.rollout_mode || 'preview') == 'review' && env.REVIEW_OUTPUT_REPO || '' }}
+
+github-app:
+  client-id: ${{ vars.GH_AW_GITHUB_APP_ID }}
+  private-key: ${{ secrets.GH_AW_GITHUB_APP_PRIVATE_KEY }}
+  ignore-if-missing: true
+  repositories: ["*"]
 
 imports:
   - uses: sentry.md
@@ -32,7 +44,7 @@ Read `/tmp/gh-aw/agent/control-precompute.json` before making control decisions.
 
 If `control_role` is `worker`, this workflow is a dispatched worker. Do not select repositories and do not dispatch workflows. Use the importing workflow's mission instructions, and treat `target_repo`, `safe_output_mode`, `safe_output_repo`, `preview_only`, `correlation_id`, `central_repo`, and `control_plane_run_url` as the standard control-plane envelope. When `correlation_id` is present, include a short `### Control Plane` section in safe-output issues, pull requests, or comments with the correlation ID, central repository, and control plane run URL. Safe outputs are created in `SAFE_OUTPUT_REPO`.
 
-If `safe_output_mode` is `review` and `safe_output_repo` is empty, do not create safe outputs and do not dispatch workers. Call `report_incomplete` explaining that `review` mode requires an explicit private review destination via the `safe_output_repo` input or the `CENTRAL_AGENTIC_OPS_REVIEW_REPO` repository variable.
+If `safe_output_mode` is `review` and `safe_output_repo` is empty, do not create safe outputs and do not dispatch workers. Call `report_incomplete` explaining that `review` mode requires an explicit private review destination via the `safe_output_repo` input or the bundle's review-repository variable.
 
 When `target_repo` is present, prefer a dedicated `target/` checkout when the importing workflow provides one. Treat that checkout as the authoritative target-repository snapshot for analysis, and treat the workspace root as the repository where safe outputs land. In `review` mode, do not treat `SAFE_OUTPUT_REPO` as a live substitute for the target repository. Instead, prefer an artifact-backed review bundle in `SAFE_OUTPUT_REPO` for target-bound outputs that would otherwise mutate target git state. Use the same safe-output primitive only when gh-aw natively supports that primitive against the review repository; otherwise publish a clearly labeled review bundle that identifies the target repository, intended safe-output primitive, base branch when known, and the key evidence needed for human review.
 
@@ -42,7 +54,7 @@ Use the `enabled`, `max_repos`, `safe_output_mode`, `safe_output_repo`, and `pre
 
 For orchestrators, use the importing package's `Discovery` and `Workers` sections only for ranking, prioritization, and deciding whether a precomputed candidate is useful for this package.
 
-- If `enabled` is not `true`, do not select repositories or dispatch workers. Call `report_incomplete` explaining that Central Agentic Ops is installed but not enabled; set `CENTRAL_AGENTIC_OPS_MODE` to `preview`, `review`, or `live` after configuration and manual testing.
+- If `enabled` is not `true`, do not select repositories or dispatch workers. Call `report_incomplete` explaining that the bundle is installed but not enabled; set its rollout-mode variable to `preview`, `review`, or `live` after configuration and manual testing.
 
 Continue with the repository targeting and workflow dispatch steps below.
 

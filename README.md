@@ -1,9 +1,73 @@
 # Central Agentic Ops
 
 > [!CAUTION]
-> Do not use this repository or setup, it is still experimental and not intended for use.
+> This project is experimental and not ready for use.
 
-An organization-wide control-plane catalog for [GitHub Agentic Workflows](https://github.github.com/gh-aw/).
+Run [GitHub Agentic Workflows](https://github.github.com/gh-aw/) across an enterprise from private central control planes. An enterprise control repository runs enterprise-shared AWs against configured repositories across organizations. Organization control repositories can run additional organization-shared AWs against their own downstream repositories, while repositories can still run workflows specific to themselves.
+
+<br>
+<p align="center">
+   <img src="docs/assets/aw-enterprise.png" alt="Enterprise and organization control planes dispatch work to target repositories">
+</p>
+<br>
+
+## What You Get
+
+- **One control point:** shared authentication and safety policy for every installed bundle.
+- **Gradual rollout:** every bundle starts in `preview`, can move through private `review`, and reaches `live` independently.
+- **Controlled writes:** GitHub tools are read-only; workers can write only through declared safe outputs.
+- **Bounded execution:** orchestrators choose repositories, while each worker receives one target and cannot promote its own mode.
+- **Traceable runs:** worker outputs link back to the originating control-plane run.
+
+## Enterprise Deployment
+
+Each workflow runs from the central repository that owns its policy and rollout:
+
+<table>
+   <thead>
+      <tr>
+         <th width="30%">Workflow scope</th>
+         <th>How it runs</th>
+      </tr>
+   </thead>
+   <tbody>
+      <tr>
+         <td><strong>Enterprise-shared AW</strong></td>
+         <td>Runs in an enterprise-operated central control repository and dispatches per-repository workers against configured targets across organizations.</td>
+      </tr>
+      <tr>
+         <td><strong>Organization-shared AW</strong></td>
+         <td>Runs in an organization-operated central control repository and dispatches per-repository workers against configured targets in that organization.</td>
+      </tr>
+      <tr>
+         <td><strong>Repository-local AW</strong></td>
+         <td>Runs in the repository that owns it and is outside this control plane unless explicitly enrolled.</td>
+      </tr>
+   </tbody>
+</table>
+
+The orchestrator and worker definitions stay in their central control repository. A worker checks out one target repository and sends declared safe outputs, such as an issue or pull request, to the configured destination. Target repositories do not receive installed copies of the enterprise-shared or organization-shared workflows.
+
+An enterprise control repository and an organization control repository may both target the same downstream repository. Each source keeps its own credentials, rollout mode, review destination, correlation data, and safe-output limits.
+
+## Control Boundary
+
+Central Agentic Ops governs workflows run through its central control repositories. It does not prevent people, repositories, or other automation from creating or running workflows outside the catalog, and it does not make the control plane the only path for GitHub Actions execution.
+
+Enterprises that require mandatory enforcement must pair it with GitHub-native controls such as Actions policies, repository rulesets, protected environments, required reviews for workflow changes, least-privilege App installations, and restricted administration. See [What This Does Not Do](docs/architecture.md#what-this-does-not-do).
+
+## How It Works
+
+1. **Install** the full catalog or one bundle into a private control-plane repository.
+2. **Authenticate** with a GitHub App (preferred), a fine-grained PAT, or both.
+3. **Validate** against one repository in `preview`, then route proposals to a private repository in `review`.
+4. **Promote** only the proven bundle to `live`; other bundles keep their own modes.
+
+| Mode | Effect |
+| --- | --- |
+| `preview` | Stage outputs without mutating the target |
+| `review` | Route proposals to an explicit private review repository |
+| `live` | Allow declared worker safe outputs to update the selected target |
 
 ## Quick Start
 
@@ -12,27 +76,32 @@ An organization-wide control-plane catalog for [GitHub Agentic Workflows](https:
    ```bash
    gh auth login
    gh extension install github/gh-aw
-   gh aw version
    ```
 
-2. Create and clone a private control-plane repository. Replace `<organization>` and `central-agentic-ops-control-plane` to match your naming convention:
+2. Create a new private repository for the control plane, clone it, and run `gh aw init` in the clone. For enterprise scope, create it in the designated organization that hosts the enterprise control repository.
 
-   ```bash
-   CONTROL_PLANE_REPO="<organization>/central-agentic-ops-control-plane"
-   gh repo create "$CONTROL_PLANE_REPO" --private --clone
-   cd "${CONTROL_PLANE_REPO##*/}"
-   gh aw init
-   git add -A
-   git commit -m "Initialize GitHub Agentic Workflows"
-   ```
-<!-- Future path will involve apps
-3. To install all Central Agentic Ops packages, run the following command. Replace `<catalog-release>` with an exact release tag:
+3. Install the full catalog. Replace `<catalog-release>` with an exact release tag:
 
    ```bash
    gh aw add-wizard githubnext/central-agentic-ops@<catalog-release>
    ```
 
-   To install capabilities individually, use a package-specific reference. Current packages are `githubnext/central-agentic-ops/dependabot@<catalog-release>` and `githubnext/central-agentic-ops/optimization@<catalog-release>`.
+   Install a single capability as follows:
 
-   The guided installer compiles the workflows, configures the GitHub App and credentials, and starts in `preview` mode.
-   -->
+   ```bash
+   gh aw add-wizard githubnext/central-agentic-ops/dependabot@<catalog-release>
+   gh aw add-wizard githubnext/central-agentic-ops/optimization@<catalog-release>
+   ```
+
+The installer prompts for authentication and leaves every bundle in `preview`. Use a GitHub App through `GH_AW_GITHUB_APP_ID` and `GH_AW_GITHUB_APP_PRIVATE_KEY` (preferred), or a fine-grained PAT through `GH_AW_GITHUB_TOKEN`. When both are configured, App tokens take precedence.
+
+## Control Plan
+
+Start with the [control plan](docs/README.md), or go directly to:
+
+- [Install and operate](docs/operations.md)
+- [Configure variables, secrets, and run inputs](docs/configuration.md)
+- [Configure authentication](docs/authentication.md)
+- [Promote or roll back a bundle](docs/rollout-and-routing.md)
+- [Understand the architecture](docs/architecture.md)
+- [Add an orchestrator or worker](docs/orchestrators-and-workers.md)
