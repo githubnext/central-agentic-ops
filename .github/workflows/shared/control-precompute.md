@@ -147,6 +147,10 @@ steps:
         workflows_json=$(gh api "repos/${GITHUB_REPOSITORY}/actions/workflows" --paginate --jq '.workflows[] | {id, name, path, state}' | jq -s '.')
         load_candidate_repositories
 
+        printf '%s\n' "$workers_json" > /tmp/gh-aw/agent/workers.json
+        printf '%s\n' "$workflows_json" > /tmp/gh-aw/agent/workflows.json
+        printf '%s\n' "$candidates_json" > /tmp/gh-aw/agent/candidates.json
+
         jq -n \
           --arg enabled "$ENABLED" \
           --arg target_repo "$TARGET_REPO" \
@@ -157,11 +161,11 @@ steps:
           --arg preview_only "$PREVIEW_ONLY" \
           --arg repo_source "$repo_source" \
           --arg repo_error "$repo_error" \
-          --argjson workers "$workers_json" \
-          --argjson workflows "$workflows_json" \
-          --argjson candidates "$candidates_json" '
+          --slurpfile workers /tmp/gh-aw/agent/workers.json \
+          --slurpfile workflows /tmp/gh-aw/agent/workflows.json \
+          --slurpfile candidates /tmp/gh-aw/agent/candidates.json '
             def worker_match($worker):
-              $workflows
+              $workflows[0]
               | map(select(
                   .path == (".github/workflows/" + $worker + ".lock.yml")
                   or .name == $worker
@@ -180,9 +184,9 @@ steps:
               preview_only: $preview_only,
               repo_source: $repo_source,
               repo_error: $repo_error,
-              candidate_repositories: $candidates,
+              candidate_repositories: $candidates[0],
               worker_workflows: [
-                $workers[] as $worker
+                $workers[0][] as $worker
                 | (worker_match($worker)) as $match
                 | {
                     configured: $worker,
