@@ -107,5 +107,3 @@ Use age, exploitability evidence, dependency directness, runtime use, deployment
 ## Completion
 
 Summarize candidate count, selected repositories, skipped repositories and reasons, priority rationale, dispatched workers, and deferred work. When no repository warrants action, report a no-op with a brief explanation.
-
-{{#runtime-import .github/dependabot.md}}
