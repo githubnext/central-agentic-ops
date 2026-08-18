@@ -1,9 +1,14 @@
 # Central Agentic Ops
 
 > [!WARNING]
-> This project is experimental and not ready for use.
+> This project is still experimental. Do not use until it is marked as ready and this notice is removed.
 
-Run [GitHub Agentic Workflows](https://github.github.com/gh-aw/) across an enterprise from private central control planes. An enterprise control repository runs enterprise-shared AWs against configured repositories across organizations. Organization control repositories can run additional organization-shared AWs against their own downstream repositories, while repositories can still run workflows specific to themselves.
+This repository contains the source for the Central Agentic Ops catalog, which is an opinioned set of GitHub Agentic Workflow bundles prescribed by GitHub. The catalog is designed to be installed in a private repository and run against configured target repositories across an enterprise.
+
+This enables you to run [GitHub Agentic Workflows](https://github.github.com/gh-aw/) across an enterprise from private central control planes: Enterprise- and Organization-wide. Each control plane can run its own workflows against the same downstream repositories, while each target repository can still run its own workflows independently. The only difference is scope of target repositories they can reach:
+- **Enterprise control** repository sits at a pre-defined enterprise level and can reach any configured repository across organizations.
+- **Enterprise control** repository runs enterprise-shared AWs against configured repositories across organizations.
+- **Organization control** repository can run additional organization-shared AWs against their own downstream repositories, while repositories can still run workflows specific to themselves.
 
 <br>
 <p align="center">
