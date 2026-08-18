@@ -7,10 +7,6 @@ The Dependabot bundle runs manifest-aware dependency maintenance from a private 
 
 The workflow definitions remain in the control repository. Target repositories receive only declared safe outputs; they do not receive installed copies of these workflows.
 
-<p align="center">
-	<img src="../docs/assets/dependabot-bundle-flow.svg" alt="Dependabot bundle flow from control-plane trigger through repository-scoped safe outputs">
-</p>
-
 ## What It Does
 
 - Prioritizes repositories with dependency alerts, stale or conflicted update pull requests, lockfile drift, and actionable Dependabot configuration failures.
