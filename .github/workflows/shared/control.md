@@ -88,4 +88,35 @@ Continue with the repository targeting and workflow dispatch steps below.
   - `control_plane_run_url`: `${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}`
   - `batch_label`: omitted unless a worker requires it
 
-6. Summarize candidate count, selected target repositories, skipped repositories and reasons, `safe_output_repo`, whether review safe outputs are active, whether `preview_only` is active, configured worker workflows, skipped worker workflows and reasons, enabled worker workflows, and dispatches.
+6. Finish with the exact report structure below. Keep every heading and field, using `0`, `none`, or `not applicable` rather than omitting empty fields. Use the exact `total_repositories_scanned` value from precompute; compute eligible candidates after applying repository exclusions and before ranking or `max_repos`.
+
+  ```markdown
+  ## Orchestrator Report
+
+  ### Scope
+  - Total repositories scanned: <total_repositories_scanned>
+  - Eligible candidates: <count after exclusions>
+  - Selected targets: <count>
+  - Safe output mode: <safe_output_mode>
+  - Safe output repository: <safe_output_repo or not applicable>
+  - Preview only: <true or false>
+
+  ### Repository Decisions
+  - Selected: <repository list with priority rationale, or none>
+  - Skipped: <repository list with reason for each, or none>
+  - Deferred: <repository list with reason for each, or none>
+
+  ### Workers
+  - Configured: <workflow list or none>
+  - Enabled: <workflow list or none>
+  - Skipped: <workflow list with reason for each, or none>
+
+  ### Dispatches
+  - Dispatched: <count>
+  - Details: <target-to-worker dispatch list, or none>
+
+  ### Outcome
+  <concise result, no-op explanation, or incomplete reason>
+  ```
+
+  Package-specific completion instructions may add details to this report but must not rename or omit its standard fields.

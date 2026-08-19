@@ -186,6 +186,7 @@ steps:
               preview_only: $preview_only,
               repo_source: $repo_source,
               repo_error: $repo_error,
+              total_repositories_scanned: ($candidates[0] | length),
               candidate_repositories: $candidates[0],
               worker_workflows: [
                 $workers[0][] as $worker
