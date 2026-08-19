@@ -23,6 +23,7 @@ This enables you to run [GitHub Agentic Workflows](https://github.github.com/gh-
 - **Controlled writes:** GitHub tools are read-only; workers can write only through declared safe outputs.
 - **Bounded execution:** orchestrators choose repositories, while each worker receives one target and cannot promote its own mode.
 - **Traceable runs:** worker outputs link back to the originating control-plane run.
+- **Operations report:** a conventional Pages workflow presents durable safe outputs, review bundles, and successful no-op outcomes by installed bundle.
 
 ## Enterprise Deployment
 
@@ -99,6 +100,8 @@ Enterprises that require mandatory enforcement must pair it with GitHub-native c
    ```
 
 The installer prompts for authentication and leaves every bundle in `preview`. Use a GitHub App through `GH_AW_GITHUB_APP_ID` and `GH_AW_GITHUB_APP_PRIVATE_KEY` (preferred), or a fine-grained PAT through `GH_AW_GITHUB_TOKEN`. When both are configured, App tokens take precedence.
+
+The full control-plane package also installs **Operations Pages** and its trusted renderer. Enable GitHub Pages with **GitHub Actions** as the source in the control repository. Keep Pages private and access-controlled when the report contains review outputs.
 
 ## Control Plan
 
