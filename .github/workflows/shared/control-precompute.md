@@ -118,23 +118,26 @@ steps:
 
         if [ -n "$TARGET_REPO" ]; then
           repo_source="target_repo"
-          if ! candidates_json=$(gh api "repos/$TARGET_REPO" --jq '[{full_name, archived, disabled, private, pushed_at, default_branch}]' 2>/tmp/gh-aw/agent/repo-error.txt); then
+          if ! gh api "repos/$TARGET_REPO" --jq '[{full_name, archived, disabled, private, pushed_at, default_branch}]' \
+            > /tmp/gh-aw/agent/candidates.json 2>/tmp/gh-aw/agent/repo-error.txt; then
             repo_error=$(cat /tmp/gh-aw/agent/repo-error.txt)
-            candidates_json='[]'
+            printf '[]\n' > /tmp/gh-aw/agent/candidates.json
           fi
           return
         fi
 
-        if ! candidates_json=$(gh api "orgs/$ORGANIZATION/repos?per_page=100&type=all" --paginate --jq '.[] | {full_name, archived, disabled, private, pushed_at, default_branch}' | jq -s '.' 2>/tmp/gh-aw/agent/repo-error.txt); then
-          if ! candidates_json=$(gh api "users/$ORGANIZATION/repos?per_page=100&type=owner" --paginate --jq '.[] | {full_name, archived, disabled, private, pushed_at, default_branch}' | jq -s '.' 2>/tmp/gh-aw/agent/repo-error.txt); then
+        if ! { gh api "orgs/$ORGANIZATION/repos?per_page=100&type=all" --paginate --jq '.[] | {full_name, archived, disabled, private, pushed_at, default_branch}' \
+          | jq -s '.' > /tmp/gh-aw/agent/candidates.json; } 2>/tmp/gh-aw/agent/repo-error.txt; then
+          if ! { gh api "users/$ORGANIZATION/repos?per_page=100&type=owner" --paginate --jq '.[] | {full_name, archived, disabled, private, pushed_at, default_branch}' \
+            | jq -s '.' > /tmp/gh-aw/agent/candidates.json; } 2>/tmp/gh-aw/agent/repo-error.txt; then
             repo_error=$(cat /tmp/gh-aw/agent/repo-error.txt)
-            candidates_json='[]'
+            printf '[]\n' > /tmp/gh-aw/agent/candidates.json
           fi
         fi
       }
 
       write_orchestrator_precompute() {
-        local workers_json workflows_json
+        local workers_json
 
         load_control_source
         workers_json=$(extract_dispatch_workers)
@@ -144,12 +147,11 @@ steps:
           exit 1
         fi
 
-        workflows_json=$(gh api "repos/${GITHUB_REPOSITORY}/actions/workflows" --paginate --jq '.workflows[] | {id, name, path, state}' | jq -s '.')
+        gh api "repos/${GITHUB_REPOSITORY}/actions/workflows" --paginate --jq '.workflows[] | {id, name, path, state}' \
+          | jq -s '.' > /tmp/gh-aw/agent/workflows.json
         load_candidate_repositories
 
         printf '%s\n' "$workers_json" > /tmp/gh-aw/agent/workers.json
-        printf '%s\n' "$workflows_json" > /tmp/gh-aw/agent/workflows.json
-        printf '%s\n' "$candidates_json" > /tmp/gh-aw/agent/candidates.json
 
         jq -n \
           --arg enabled "$ENABLED" \
