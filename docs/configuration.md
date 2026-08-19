@@ -23,6 +23,12 @@ Every installed bundle has an independent mode. Installation defaults each mode 
 
 An empty or unrecognized bundle mode disables scheduled selection and dispatch. It does not block a manual workflow dispatch. Review mode without its review-repository variable also dispatches no workers. For an all-stop procedure, see [Emergency Stop](operations.md#emergency-stop).
 
+### Pages Report Destinations
+
+When a workflow produces a Pages report, its existing review repository is also the review Pages destination. The repository must be private, Pages-enabled, and configured so the site is accessible only to the intended reviewers. Review publication fails closed when those conditions are not met. `safe_output_repo` keeps its standard control-plane meaning; no additional report-repository input or variable is required for review.
+
+Production Pages configuration is fixed in the conventional publishing workflow and its protected environment. Agents and manual agentic-workflow inputs must not select the production repository, deployment environment, build command, or source paths. Review and production publishers use distinct repositories or environments, URLs, and concurrency groups.
+
 ## Repository Secrets
 
 | Name | Scope | Required | Purpose |

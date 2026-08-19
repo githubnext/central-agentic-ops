@@ -79,6 +79,8 @@ The orchestrator is the rollout authority. Workers are enforcement points: they 
 6. The worker imports shared control as `role: worker`, analyzes only `target_repo`, and emits only its declared safe outputs.
 7. Outputs are staged, routed to the review repository, or written to the target repository according to the effective mode.
 
+Pages report routing participates in the control plane. Preview stages report source outputs without deployment. Review routes them to the private `safe_output_repo` and publishes an access-controlled review Pages site owned by that repository. Live routes durable source outputs to their normal destination and publishes the production Pages site. Conventional deterministic workflows perform both deployments and own `pages: write` and `id-token: write`; agent jobs do not.
+
 ## Standard Control Envelope
 
 Every worker dispatch carries:
@@ -104,6 +106,8 @@ Credentials are not part of this envelope. Each run resolves authentication thro
 - Disabled or unavailable worker workflows are skipped with a reason.
 - A worker handles one dispatched target and does not perform organization-wide discovery.
 - GitHub tools are read-only; writes occur only through declared safe-output primitives.
+- Agents do not receive Pages deployment permission or mode-promotion authority. Pages report mode and destination come from the control envelope; persistent publication is performed only by conventional deterministic workflows from trusted durable inputs.
+- Review Pages must be access-controlled for the intended reviewers and isolated from production Pages. If that boundary is unavailable, review publication fails closed.
 - A manual dispatch may narrow or redirect one run but does not change another bundle's configured mode.
 - Control-plane correlation is included in worker-created issues, pull requests, or comments when available.
 
@@ -116,6 +120,7 @@ The system should stop or reduce scope when it cannot establish a required fact:
 - unreadable target or unresolved default branch: skip that target;
 - invalid control precomputation: fail the run rather than infer policy;
 - output not representable safely in review mode: publish an explicit review bundle or produce no output;
+- Pages report in review mode without an access-controlled Pages-capable `safe_output_repo`: do not deploy the report;
 - missing required authentication: fail before repository mutation.
 
 ## Current and Planned Controls
