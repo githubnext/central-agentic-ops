@@ -1,9 +1,13 @@
 name: Central Agentic Ops
 description: Central agentic workflow control plane for reusable packages at the organization level
-min-version: v0.83.1
+min-version: v0.87.1
 includes:
   - .github/workflows/dependabot.md
   - .github/workflows/optimization.md
+  - source: payload/workflows/ops-pages.yml
+    destination: .github/workflows/ops-pages.yml
+    kind: action-workflow
+  - .github/skills/github-pages-report
 config:
   - type: require-owner-type
     value: org

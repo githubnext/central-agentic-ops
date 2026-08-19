@@ -8,7 +8,8 @@ Install the full catalog or an individual bundle into a private central control 
 - optional fine-grained PAT authentication;
 - independent bundle modes, defaulting to preview;
 - independent private review repositories;
-- Copilot authentication and generated workflows.
+- Copilot authentication and generated workflows;
+- the conventional Operations Pages publisher and its trusted static renderer.
 
 At least one usable GitHub authentication method must be configured before operational runs. Keep the control-plane repository private and restrict administration of Actions secrets, variables, environments, and workflow files.
 
@@ -18,7 +19,7 @@ For each installed bundle:
 
 1. Confirm App or PAT repository coverage and least-privilege permissions.
 2. Confirm the generated orchestrator and worker workflows are present and enabled.
-3. Configure a private review repository before using review mode. For a Pages report, also enable access-controlled Pages in that repository and keep its deployment isolated from production Pages.
+3. Configure a private review repository before using review mode. For the control-plane Operations Pages report, enable Pages with GitHub Actions as the source in the control repository and require access-controlled Pages.
 4. Run a manual preview against one representative `target_repo` with `max_repos: 1`.
 5. Inspect the orchestrator's candidate selection and worker eligibility summary.
 6. Inspect worker prompts, staged outputs, correlation data, and AI credit use.
