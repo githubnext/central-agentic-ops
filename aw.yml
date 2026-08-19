@@ -4,7 +4,7 @@ min-version: v0.87.1
 includes:
   - .github/workflows/dependabot.md
   - .github/workflows/optimization.md
-  - source: payload/workflows/ops-pages.yml
+  - source: payload/ops-pages.yml
     destination: .github/workflows/ops-pages.yml
     kind: action-workflow
   - .github/skills/github-pages-report
