@@ -18,7 +18,7 @@ For each installed bundle:
 
 1. Confirm App or PAT repository coverage and least-privilege permissions.
 2. Confirm the generated orchestrator and worker workflows are present and enabled.
-3. Configure a private review repository before using review mode.
+3. Configure a private review repository before using review mode. For a Pages report, also enable access-controlled Pages in that repository and keep its deployment isolated from production Pages.
 4. Run a manual preview against one representative `target_repo` with `max_repos: 1`.
 5. Inspect the orchestrator's candidate selection and worker eligibility summary.
 6. Inspect worker prompts, staged outputs, correlation data, and AI credit use.
@@ -40,6 +40,28 @@ Review the following for scheduled runs:
 | Cost | AI credits and run volume remain within workflow limits and expectations |
 
 Observability imports for Sentry, Grafana, and Datadog are shared control-plane context. They do not replace GitHub Actions run history and correlation metadata as the primary execution audit trail.
+
+## Publishing Pages Reports
+
+Pages report destinations are selected by the control-plane mode, while conventional GitHub Actions workflows perform the builds and deployments:
+
+| Mode | Published result |
+| --- | --- |
+| `preview` | No Pages deployment. |
+| `review` | Access-controlled review Pages in the private `safe_output_repo`. |
+| `live` | Production Pages. |
+
+To operate a report publisher:
+
+1. Confirm the required source records are durable, approved for publication to the selected review or production audience, and free of data that audience must not receive.
+2. Confirm the effective mode and that review routes only to `safe_output_repo` while live routes only to the production destination.
+3. Confirm the build used fixed trusted source locations and the expected source revisions. Trigger inputs must not select arbitrary repositories, paths, commands, or generated site bundles.
+4. Review the build and deploy jobs, including accessibility and link checks, the protected environment approval when configured, and the resulting deployment URL.
+5. Verify report freshness, provenance, project-path assets, representative desktop and mobile views, and a visible review or production identity.
+
+Review Pages must be private and access-controlled for the intended reviewers. If the repository plan or policy cannot provide that boundary, review publication fails closed. Never publish review content to a public fallback site. Agents must not receive `pages: write`, `id-token: write`, or authority to promote review content to production.
+
+Changing a bundle to `preview` prevents new Pages deployments but does not remove an already deployed site. Changing from `live` to `review` redirects future publication to review Pages but does not unpublish production. To stop or roll back either site, disable its conventional Pages workflow, use its protected environment to block deployment, or redeploy a known-good source revision through normal repository procedures. Handle sensitive-data exposure as a Pages incident in addition to stopping the affected agentic bundle.
 
 ## Emergency Stop
 
