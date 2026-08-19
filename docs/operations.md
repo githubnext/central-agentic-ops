@@ -44,6 +44,25 @@ Observability imports for Sentry, Grafana, and Datadog are shared control-plane 
 
 ## Publishing Pages Reports
 
+### Activating Operations Pages
+
+The full catalog package installs the following report components in the control-plane repository:
+
+- `.github/workflows/ops-pages.yml`, the conventional build and deployment workflow;
+- `.github/skills/github-pages-report/SKILL.md`, the report authoring and review guidance;
+- `.github/skills/github-pages-report/report.mjs`, the trusted static renderer.
+
+After running `gh aw add-wizard githubnext/central-agentic-ops@<catalog-release>`:
+
+1. Commit and push the installed files.
+2. In **Settings > Pages**, select **GitHub Actions** as the source and apply the required access controls.
+3. Run **Operations Pages** from the repository's **Actions** page, or wait for its scheduled or repository-event trigger.
+4. Verify the deployment URL and confirm that the report shows data only from the intended control-plane repository.
+
+The workflow runs `report.mjs` against durable issues, pull requests, comments, and available review artifacts in the control-plane repository. Workflow completions trigger report rebuilds but are not published as report records themselves. The renderer writes the static site to `_site`; the workflow uploads that directory as a Pages artifact and deploys it. Generated HTML is not committed to the repository.
+
+Report implementation changes are released through this catalog. Install the newer catalog release in the control-plane repository to refresh the packaged workflow and renderer, then review, commit, and push the resulting changes. Use `gh aw update` for installed agentic workflows that retain source tracking.
+
 Pages report destinations are selected by the control-plane mode, while conventional GitHub Actions workflows perform the builds and deployments:
 
 | Mode | Published result |
