@@ -121,14 +121,16 @@ safe-outputs:
     allowed-branches: ["dependabot-agent/*", "smart-dependabot/*"]
     preserve-branch-name: true
     recreate-ref: true
-    allow-workflows: true
+    # Disabled while this workflow uses PAT-only authentication.
+    # allow-workflows: true
     max-patch-files: 500
     max-patch-size: 10240
     github-token-for-extra-empty-commit: ${{ secrets.GH_AW_CI_TOKEN }}
     allowed-files:
       - ".github/dependabot.yml"
-      - ".github/workflows/*.yml"
-      - ".github/workflows/*.yaml"
+      # Workflow writes require GitHub App authentication.
+      # - ".github/workflows/*.yml"
+      # - ".github/workflows/*.yaml"
       - "**/.tool-versions"
       - "**/.node-version"
       - "**/.nvmrc"
@@ -234,13 +236,15 @@ safe-outputs:
     required-title-prefix: "[dependabot-agent] "
     max: 1
     if-no-changes: ignore
-    allow-workflows: true
+    # Disabled while this workflow uses PAT-only authentication.
+    # allow-workflows: true
     github-token-for-extra-empty-commit: ${{ secrets.GH_AW_CI_TOKEN }}
     allowed-files:
       - ".github/central-agentic-ops/private/**"
       - ".github/dependabot.yml"
-      - ".github/workflows/*.yml"
-      - ".github/workflows/*.yaml"
+      # Workflow writes require GitHub App authentication.
+      # - ".github/workflows/*.yml"
+      # - ".github/workflows/*.yaml"
       - "**/.tool-versions"
       - "**/.node-version"
       - "**/.nvmrc"

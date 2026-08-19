@@ -18,11 +18,12 @@ env:
   REVIEW_OUTPUT_REPO: ${{ github.event.inputs.safe_output_repo || github.aw.import-inputs.review_repo || '' }}
   SAFE_OUTPUT_REPO: ${{ (github.event.inputs.safe_output_mode || github.aw.import-inputs.rollout_mode || 'preview') == 'review' && env.REVIEW_OUTPUT_REPO || '' }}
 
-github-app:
-  client-id: ${{ vars.GH_AW_GITHUB_APP_ID }}
-  private-key: ${{ secrets.GH_AW_GITHUB_APP_PRIVATE_KEY }}
-  ignore-if-missing: true
-  repositories: ["*"]
+# Disabled until checkout safe outputs correctly fall back to PAT authentication.
+# github-app:
+#   client-id: ${{ vars.GH_AW_GITHUB_APP_ID }}
+#   private-key: ${{ secrets.GH_AW_GITHUB_APP_PRIVATE_KEY }}
+#   ignore-if-missing: true
+#   repositories: ["*"]
 
 imports:
   #- uses: sentry.md
