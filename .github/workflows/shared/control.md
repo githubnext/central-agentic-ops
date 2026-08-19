@@ -25,9 +25,9 @@ github-app:
   repositories: ["*"]
 
 imports:
-  - uses: sentry.md
-  - uses: grafana.md
-  - uses: datadog.md
+  #- uses: sentry.md
+  #- uses: grafana.md
+  #- uses: datadog.md
   - uses: control-precompute.md
     with:
       role: ${{ github.aw.import-inputs.role }}
