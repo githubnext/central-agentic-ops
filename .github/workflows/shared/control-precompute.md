@@ -31,6 +31,46 @@ tools:
     mode: remote
     toolsets: [repos, actions]
 
+safe-outputs:
+  threat-detection:
+    steps:
+      - name: Bootstrap ripgrep
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          if command -v rg >/dev/null 2>&1; then
+            rg --version
+            exit 0
+          fi
+
+          version="14.1.1"
+          case "$(uname -m)" in
+            x86_64) target="x86_64-unknown-linux-musl" ;;
+            aarch64|arm64) target="aarch64-unknown-linux-gnu" ;;
+            *) echo "Unsupported runner architecture: $(uname -m)" >&2; exit 1 ;;
+          esac
+
+          asset="ripgrep-${version}-${target}.tar.gz"
+          download_url="https://github.com/BurntSushi/ripgrep/releases/download/${version}"
+          work_dir=$(mktemp -d "${RUNNER_TEMP}/ripgrep.XXXXXX")
+          trap 'rm -rf "$work_dir"' EXIT
+
+          curl --fail --location --silent --show-error \
+            --connect-timeout 10 --max-time 120 --retry 3 --retry-all-errors \
+            --output "${work_dir}/${asset}" "${download_url}/${asset}"
+          curl --fail --location --silent --show-error \
+            --connect-timeout 10 --max-time 120 --retry 3 --retry-all-errors \
+            --output "${work_dir}/${asset}.sha256" "${download_url}/${asset}.sha256"
+          (cd "$work_dir" && sha256sum --check "${asset}.sha256")
+
+          tar --extract --gzip --file "${work_dir}/${asset}" --directory "$work_dir"
+          bin_dir="${RUNNER_TEMP}/gh-aw/bin"
+          mkdir -p "$bin_dir"
+          install -m 0755 "${work_dir}/ripgrep-${version}-${target}/rg" "${bin_dir}/rg"
+          echo "$bin_dir" >> "$GITHUB_PATH"
+          "${bin_dir}/rg" --version
+
 steps:
   - name: Precompute control facts
     env:
