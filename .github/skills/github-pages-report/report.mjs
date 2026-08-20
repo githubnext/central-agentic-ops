@@ -242,7 +242,7 @@ function layout({ title, description, content, nested = false, navigation = "" }
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="color-scheme" content="light dark">
   <title>${escapeHtml(title)}</title>
-  <style>${stylesheet()}</style>
+  <link rel="stylesheet" href="${root}styles.css">
 </head>
 <body>
   ${octiconSprite()}
@@ -357,6 +357,7 @@ ${inventoryWarnings.length ? `<section aria-labelledby="inventory-heading"><h2 i
 <section aria-labelledby="recent-heading"><h2 id="recent-heading">Recent outcomes</h2><div class="records">${records.slice(0, 12).map(itemMarkup).join("\n") || '<p class="empty">No safe outputs have been recorded yet.</p>'}</div></section>
 <section aria-labelledby="method-heading" class="method"><h2 id="method-heading">Method and limitations</h2><p>The inventory is derived from repository <code>aw.yml</code> manifests, workflow source frontmatter, orchestrator dispatch lists, and matching <code>.lock.yml</code> files. The report reads durable issues, pull requests, generated safe-output comments, and unexpired <code>review-*</code> artifacts. Organization-wide remote discovery requires credentials with access to each repository and is not attempted with the repository-scoped Pages token.</p></section>`;
 
+await writeFile(path.join(outputDirectory, "styles.css"), stylesheet());
 await writeFile(path.join(outputDirectory, "index.html"), layout({
   title: "Control",
   description: "Operate installed bundles and review safe outputs, no-op outcomes, and recent control-plane activity.",
