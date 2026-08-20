@@ -40,6 +40,7 @@ jobs:
       actions: read
       contents: read
       issues: read
+      pages: write
       pull-requests: read
     steps:
       - name: Checkout trusted report source

@@ -81,7 +81,7 @@ Meet WCAG 2.2 AA for the report's supported states:
 - Use hashed assets or another cache-busting strategy for generated releases. Do not cache mutable report data indefinitely.
 - Include a custom `404.html` only when the site has meaningful navigation recovery. Do not use SPA routing for a static report without a concrete need.
 - Publish with conventional GitHub Actions workflows that deterministically rebuild from trusted, durable source data. The control plane selects the review or production destination; the publishing workflow does not infer or promote modes.
-- Minimize permissions and prefer GitHub's supported Pages artifact/deploy actions with separate build and deploy jobs. The build job needs `contents: read`; the deploy job needs `pages: write` and `id-token: write` and should use the protected `github-pages` environment.
+- Minimize permissions and prefer GitHub's supported Pages artifact/deploy actions with separate build and deploy jobs. The build job needs `contents: read` and `pages: write` for `actions/configure-pages`; the deploy job independently needs `pages: write` and `id-token: write` and should use the protected `github-pages` environment.
 - Do not pass generated HTML, shell commands, arbitrary paths, repository names, or deployment configuration through dispatch inputs. Dispatch selects a trusted build; it does not supply the site implementation.
 - Treat workflow summaries and deployment URLs as supporting outputs, not substitutes for the report.
 - Preserve issue-based reporting unless Pages materially improves navigation, history, visualization, or scale. When converting a built-in report from an issue to Pages, preserve its decision content, provenance, access expectations, and discoverability from the workflow run.
