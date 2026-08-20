@@ -50,6 +50,7 @@ The full catalog package installs the following report components in the control
 
 - `.github/workflows/ops-pages.yml`, the conventional build and deployment workflow;
 - `.github/skills/github-pages-report/SKILL.md`, the report authoring and review guidance;
+- `.github/skills/github-pages-report/inventory.mjs`, the dependency-free control-plane inventory extractor;
 - `.github/skills/github-pages-report/report.mjs`, the trusted static renderer.
 
 After running `gh aw add-wizard githubnext/central-agentic-ops@<catalog-release>`:
@@ -59,7 +60,7 @@ After running `gh aw add-wizard githubnext/central-agentic-ops@<catalog-release>
 3. Run **Operations Pages** from the repository's **Actions** page, or wait for its scheduled or repository-event trigger.
 4. Verify the deployment URL and confirm that the report shows data only from the intended control-plane repository.
 
-The workflow runs `report.mjs` against durable issues, pull requests, comments, and available review artifacts in the control-plane repository. Workflow completions trigger report rebuilds but are not published as report records themselves. The renderer writes the static site to `_site`; the workflow uploads that directory as a Pages artifact and deploys it. Generated HTML is not committed to the repository.
+The workflow first runs `inventory.mjs` against the checked-out control-plane repository. It discovers manifests, bundle relationships, standalone workflows, and source/lock status, then writes normalized schema-versioned JSON to the runner's temporary directory. `report.mjs` consumes that prepared inventory and combines it with durable issues, pull requests, comments, and available review artifacts. It does not reinterpret repository workflow files. Workflow completions trigger report rebuilds but are not published as report records themselves. The renderer writes the static site and a copy of the inventory to `_site`; the workflow uploads that directory as a Pages artifact and deploys it. Generated HTML and inventory are not committed to the repository.
 
 Report implementation changes are released through this catalog. Install the newer catalog release in the control-plane repository to refresh the packaged workflow and renderer, then review, commit, and push the resulting changes. Use `gh aw update` for installed agentic workflows that retain source tracking.
 

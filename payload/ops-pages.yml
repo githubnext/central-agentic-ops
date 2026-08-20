@@ -4,7 +4,11 @@ on:
   workflow_dispatch:
   push:
     paths:
+      - "**/aw.yml"
+      - .github/skills/github-pages-report/inventory.mjs
       - .github/skills/github-pages-report/report.mjs
+      - .github/workflows/*.md
+      - .github/workflows/*.lock.yml
       - .github/workflows/ops-pages.yml
   schedule:
     - cron: "23 5 * * *"
@@ -47,9 +51,15 @@ jobs:
       - name: Configure Pages
         uses: actions/configure-pages@983d7736d9b0ae728b81ab479565c72886d7745b # v5
 
+      - name: Extract control-plane inventory
+        env:
+          REPORT_INVENTORY: ${{ runner.temp }}/control-plane-inventory.json
+        run: node .github/skills/github-pages-report/inventory.mjs
+
       - name: Build bundle report
         env:
           GITHUB_TOKEN: ${{ github.token }}
+          REPORT_INVENTORY: ${{ runner.temp }}/control-plane-inventory.json
           REPORT_OUTPUT: _site
         run: node .github/skills/github-pages-report/report.mjs
 
