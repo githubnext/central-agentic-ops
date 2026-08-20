@@ -29,6 +29,7 @@ Every report must include:
 - explicit empty, loading, partial-data, stale-data, and error states when those states can occur
 - stable deep links for major sections and visible focus when a heading anchor is targeted
 - a provenance note linking to the generating workflow run or source revision when available
+- explicit `review` or `live` provenance for every published outcome; never infer production identity from status, repository location, or visual treatment
 
 Prefer this page order:
 
@@ -117,6 +118,7 @@ Control-plane reports must derive their navigation and workflow inventory from t
 7. Derive display names, descriptions, icons or emoji hints, source paths, compile state, and bundle relationships from parsed metadata. Use generic visual fallbacks when optional metadata is absent.
 8. Associate durable outputs using discovered workflow IDs, tracker IDs, and display names. Do not hardcode workflow-specific issue prefixes, marker namespaces, or bundle-name regular expressions.
 9. Emit the discovered inventory in a machine-readable report asset so the rendered navigation and supporting data can be audited together. Fail the render when the prepared inventory is absent or has an unsupported schema version.
+10. Present review proposals separately from live production outcomes. Show the bundle's configured mode independently from the selected history view. Derive each record's mode from its attributed workflow run or trusted source route; do not add hidden mode markers to report content. Keep records whose provenance is unavailable in an explicit unknown state.
 
 Repository-local discovery is the required baseline and must work with the Pages job's `contents: read` permission. Organization-wide discovery across other repositories is optional and must be explicitly configured with a bounded repository inventory and credentials authorized to read those repositories. Clearly label partial or inaccessible organization results; never imply that a repository-scoped token scanned the full organization.
 

@@ -28,13 +28,22 @@ const reportDefinitions = [
 async function github(pathname) {
   const response = await fetch(`${apiRoot}${pathname}`, {
     headers: {
-      Accept: "application/vnd.github+json",
+      Accept: "application/vnd.github.full+json",
       Authorization: `Bearer ${token}`,
       "X-GitHub-Api-Version": "2022-11-28",
     },
   });
   if (!response.ok) throw new Error(`GitHub API ${response.status} for ${pathname}`);
   return response.json();
+}
+
+async function githubOptional(pathname, fallback) {
+  try {
+    return await github(pathname);
+  } catch (error) {
+    console.warn(`${error.message}; continuing without optional repository metadata`);
+    return fallback;
+  }
 }
 
 async function githubPages(pathname, maxPages = 10) {
@@ -127,6 +136,7 @@ function recordFromIssue(issue) {
     kind: issue.pull_request ? "pull-request" : "issue",
     title: issue.title,
     summary: summarize(issue.body),
+    bodyHtml: issue.body_html || "",
     state: issue.state.toLowerCase(),
     url: safeUrl(issue.html_url),
     createdAt: issue.created_at,
@@ -152,6 +162,7 @@ function recordFromComment(comment, issueByUrl) {
     kind: noop ? "noop" : "comment",
     title: noop ? `${workflow} completed with no action` : `Comment on ${issue?.title || "safe output"}`,
     summary: summarize(body),
+    bodyHtml: comment.body_html || "",
     state: noop ? "complete" : issue?.state?.toLowerCase() || "published",
     url: safeUrl(comment.html_url),
     createdAt: comment.created_at,
@@ -174,6 +185,7 @@ async function recordFromArtifact(artifact) {
     id: `artifact-${artifact.id}`,
     bundle: bundle.id,
     kind: "review-bundle",
+    mode: "review",
     title: artifact.name,
     summary: `Artifact-backed proposal from ${run.display_title || run.name}.`,
     state: "available",
@@ -195,16 +207,46 @@ function statusClass(record) {
 
 function itemMarkup(record) {
   const runUrl = safeUrl(record.runUrl);
-  const metadata = [record.workflow, formatDate(record.updatedAt)].filter(Boolean).join(" | ");
-  return `<article class="record" id="${escapeHtml(record.id)}">
-    <div class="record-heading">
-      <span class="kind">${escapeHtml(record.kind.replaceAll("-", " "))}</span>
-      <span class="status ${statusClass(record)}">${escapeHtml(record.state)}</span>
+  return `<article class="discussion-row" id="${escapeHtml(record.id)}">
+    <div class="discussion-vote" aria-hidden="true">${octicon("issue")}<span>0</span></div>
+    <div class="discussion-category">${octicon(record.kind === "noop" ? "gear" : "issue")}</div>
+    <div class="discussion-main">
+      <h3><a href="../outcomes/${escapeHtml(record.id)}.html">${escapeHtml(record.title)}</a></h3>
+      <p>${escapeHtml(record.summary || "No summary was provided.")}</p>
+      <div class="discussion-meta"><span class="mode-badge mode-${escapeHtml(record.mode)}">${escapeHtml(record.mode)}</span><span class="kind">${escapeHtml(record.kind.replaceAll("-", " "))}</span><span class="status ${statusClass(record)}">${escapeHtml(record.state)}</span><span>${escapeHtml(record.workflow)}</span><span>updated ${escapeHtml(formatDate(record.updatedAt))}</span>${runUrl ? `<a href="${escapeHtml(runUrl)}">workflow run</a>` : ""}</div>
     </div>
-    <h3><a href="${escapeHtml(record.url)}">${escapeHtml(record.title)}</a></h3>
-    <p>${escapeHtml(record.summary || "No summary was provided.")}</p>
-    <p class="metadata">${escapeHtml(metadata)}${runUrl ? ` | <a href="${escapeHtml(runUrl)}">workflow run</a>` : ""}</p>
   </article>`;
+}
+
+function outcomeListing(recordsForPage) {
+  const actionable = recordsForPage.filter((record) => record.kind !== "noop").length;
+  return `<div class="discussion-layout">
+    <aside class="discussion-sidebar" aria-label="Outcome categories">
+      <h2>Categories</h2>
+      <div class="category-current">${octicon("issue")}<span>All outcomes</span><strong>${recordsForPage.length}</strong></div>
+      <div>${octicon("play")}<span>Actionable</span><strong>${actionable}</strong></div>
+      <div>${octicon("gear")}<span>No action</span><strong>${recordsForPage.length - actionable}</strong></div>
+    </aside>
+    <section class="discussion-list" aria-labelledby="outcomes-heading">
+      <div class="discussion-toolbar"><h2 id="outcomes-heading">Outcomes</h2><span>Latest activity</span></div>
+      <div class="records">${recordsForPage.map(itemMarkup).join("\n") || '<p class="empty">No outcomes have been recorded yet.</p>'}</div>
+    </section>
+  </div>`;
+}
+
+function modeSummary(recordsForBundle, mode) {
+  const modeRecords = recordsForBundle.filter((record) => record.mode === mode);
+  const latest = modeRecords[0];
+  return `${modeRecords.length}${latest ? ` · ${formatDate(latest.updatedAt)}` : ""}`;
+}
+
+function modeTabs(bundle, selectedMode, unknownCount) {
+  const tabs = [
+    ["review", "Review", "Proposals"],
+    ["live", "Live", "Production"],
+    ...(unknownCount ? [["unknown", "Unknown", "Unavailable provenance"]] : []),
+  ];
+  return `<nav class="mode-tabs" aria-label="Output mode">${tabs.map(([mode, label, detail]) => `<a href="${bundle.id}-${mode}.html"${selectedMode === mode ? ' aria-current="page"' : ""}><span>${label}</span><small>${detail}</small></a>`).join("")}</nav>`;
 }
 
 function octicon(name, className = "") {
@@ -294,17 +336,37 @@ function layout({ title, description, content, nested = false, navigation = "" }
 </html>`;
 }
 
-const [issues, comments, artifactResponse] = await Promise.all([
+const [issues, comments, artifactResponse, variableResponse] = await Promise.all([
   githubPages(`/repos/${owner}/${repo}/issues?state=all&sort=updated&direction=desc`),
   githubPages(`/repos/${owner}/${repo}/issues/comments?sort=updated&direction=desc`),
   github(`/repos/${owner}/${repo}/actions/artifacts?per_page=100`),
+  githubOptional(`/repos/${owner}/${repo}/actions/variables?per_page=100`, { variables: [] }),
 ]);
+const repositoryVariables = new Map((variableResponse.variables || []).map((variable) => [variable.name, variable.value]));
 const issueByUrl = new Map(issues.map((issue) => [issue.url, issue]));
-const records = [
+const runCache = new Map();
+async function modeFromRunUrl(runUrl) {
+  const match = runUrl.match(/^https:\/\/github\.com\/([^/]+)\/([^/]+)\/actions\/runs\/(\d+)/);
+  if (!match) return "unknown";
+  const [, runOwner, runRepository, runId] = match;
+  const cacheKey = `${runOwner}/${runRepository}/${runId}`;
+  if (!runCache.has(cacheKey)) {
+    runCache.set(cacheKey, githubOptional(`/repos/${runOwner}/${runRepository}/actions/runs/${runId}`, null));
+  }
+  const run = await runCache.get(cacheKey);
+  const mode = run?.display_title?.match(/(?:^|\s[·|:-]\s)(preview|review|live)$/i)?.[1]?.toLowerCase();
+  return mode === "review" || mode === "live" ? mode : "unknown";
+}
+
+const discoveredRecords = [
   ...issues.map(recordFromIssue).filter(Boolean),
   ...comments.map((comment) => recordFromComment(comment, issueByUrl)).filter(Boolean),
   ...(await Promise.all((artifactResponse.artifacts || []).map(recordFromArtifact))).filter(Boolean),
-].sort((left, right) => new Date(right.updatedAt) - new Date(left.updatedAt));
+];
+const records = (await Promise.all(discoveredRecords.map(async (record) => ({
+  ...record,
+  mode: record.mode || await modeFromRunUrl(record.runUrl),
+})))).sort((left, right) => new Date(right.updatedAt) - new Date(left.updatedAt));
 
 await mkdir(outputDirectory, { recursive: true });
 await writeFile(path.join(outputDirectory, "inventory.json"), `${JSON.stringify(inventory, null, 2)}\n`);
@@ -329,7 +391,8 @@ const bundleRows = bundleDefinitions.map((bundle) => {
   const bundleRecords = records.filter((record) => record.bundle === bundle.id);
   const latest = bundleRecords[0];
   const health = [bundle.compiled ? "compiled" : "source only", bundle.missingWorkers.length ? `${bundle.missingWorkers.length} missing worker(s)` : `${bundle.workers.length} worker(s)`].join(" · ");
-  return `<tr><th scope="row"><a href="bundles/${bundle.id}.html">${escapeHtml(bundle.name)}</a></th><td>${bundleRecords.length}</td><td>${escapeHtml(health)}</td><td>${escapeHtml(latest ? formatDate(latest.updatedAt) : "No outputs yet")}</td></tr>`;
+  const configuredMode = repositoryVariables.get(bundle.rolloutModeVariable) || "preview";
+  return `<tr><th scope="row"><a href="bundles/${bundle.id}.html">${escapeHtml(bundle.name)}</a></th><td><span class="mode-badge mode-${escapeHtml(configuredMode)}">${escapeHtml(configuredMode)}</span></td><td>${escapeHtml(modeSummary(bundleRecords, "review"))}</td><td>${escapeHtml(modeSummary(bundleRecords, "live"))}</td><td>${escapeHtml(health)}</td><td>${escapeHtml(latest ? formatDate(latest.updatedAt) : "No outputs yet")}</td></tr>`;
 }).join("\n");
 const standaloneRows = standaloneDefinitions.map((workflow) => {
   const workflowRecords = records.filter((record) => record.bundle === workflow.id);
@@ -345,7 +408,7 @@ const indexContent = `${metrics}
 <section aria-labelledby="bundles-heading">
   <h2 id="bundles-heading">Bundles</h2>
   <div class="table-region" role="region" aria-labelledby="bundles-heading" tabindex="0">
-    <table><caption>Discovered orchestrator and worker bundles</caption><thead><tr><th scope="col">Bundle</th><th scope="col">Outputs</th><th scope="col">Inventory</th><th scope="col">Latest activity</th></tr></thead><tbody>${bundleRows || '<tr><td colspan="4">No bundles discovered.</td></tr>'}</tbody></table>
+    <table><caption>Discovered orchestrator and worker bundles</caption><thead><tr><th scope="col">Bundle</th><th scope="col">Mode</th><th scope="col">Review</th><th scope="col">Live</th><th scope="col">Inventory</th><th scope="col">Latest activity</th></tr></thead><tbody>${bundleRows || '<tr><td colspan="6">No bundles discovered.</td></tr>'}</tbody></table>
   </div>
 </section>
 ${standaloneDefinitions.length ? `<section aria-labelledby="standalone-heading">
@@ -355,7 +418,6 @@ ${standaloneDefinitions.length ? `<section aria-labelledby="standalone-heading">
   </div>
 </section>` : ""}
 ${inventoryWarnings.length ? `<section aria-labelledby="inventory-heading"><h2 id="inventory-heading">Inventory warnings</h2><ul>${inventoryWarnings.map((warning) => `<li>${escapeHtml(warning)}</li>`).join("")}</ul></section>` : ""}
-<section aria-labelledby="recent-heading"><h2 id="recent-heading">Recent outcomes</h2><div class="records">${records.slice(0, 12).map(itemMarkup).join("\n") || '<p class="empty">No safe outputs have been recorded yet.</p>'}</div></section>
 <section aria-labelledby="method-heading" class="method"><h2 id="method-heading">Method and limitations</h2><p>The inventory is derived from repository <code>aw.yml</code> manifests, workflow source frontmatter, orchestrator dispatch lists, and matching <code>.lock.yml</code> files. The report reads durable issues, pull requests, generated safe-output comments, and unexpired <code>review-*</code> artifacts. Organization-wide remote discovery requires credentials with access to each repository and is not attempted with the repository-scoped Pages token.</p></section>`;
 
 await writeFile(path.join(outputDirectory, "styles.css"), stylesheet());
@@ -370,24 +432,60 @@ for (const bundle of bundleDefinitions) {
   const bundleRecords = records.filter((record) => record.bundle === bundle.id);
   const navigation = `<nav aria-label="Report navigation"><div class="shell"><a href="../">All bundles</a><span aria-current="page">${escapeHtml(bundle.name)}</span></div></nav>`;
   const workerItems = bundle.workers.map((worker) => `<li><strong>${escapeHtml(worker.name)}</strong> · ${worker.compiled ? "compiled" : "source only"}${worker.description ? ` · ${escapeHtml(worker.description)}` : ""}</li>`).join("");
-  const content = `<section aria-labelledby="workers-heading"><h2 id="workers-heading">Workers</h2><ul>${workerItems || "<li>No workers discovered.</li>"}</ul></section><section aria-labelledby="outcomes-heading"><h2 id="outcomes-heading">Outcomes</h2><p>${bundleRecords.length} recorded output${bundleRecords.length === 1 ? "" : "s"}; ${bundleRecords.filter((record) => record.kind === "noop").length} completed with no action required.</p><div class="records">${bundleRecords.map(itemMarkup).join("\n") || '<p class="empty">No outputs have been recorded for this bundle.</p>'}</div></section>`;
-  await writeFile(path.join(outputDirectory, "bundles", `${bundle.id}.html`), layout({
-    title: `${bundle.name} outputs`,
-    description: `Safe-output history for the ${bundle.name} control-plane bundle.`,
-    content,
-    nested: true,
-    navigation,
-  }));
+  const configuredMode = repositoryVariables.get(bundle.rolloutModeVariable) || "preview";
+  const unknownCount = bundleRecords.filter((record) => record.mode === "unknown").length;
+  const defaultMode = bundleRecords.some((record) => record.mode === "review") ? "review" : "live";
+  for (const selectedMode of ["review", "live", ...(unknownCount ? ["unknown"] : [])]) {
+    const modeRecords = bundleRecords.filter((record) => record.mode === selectedMode);
+    const modeIdentity = selectedMode === "review" ? "Viewing proposals routed for human review" : selectedMode === "live" ? "Viewing production outputs from live operation" : "Viewing outputs whose attributed workflow run is unavailable";
+    const content = `<section class="bundle-state" aria-labelledby="bundle-state-heading"><div><h2 id="bundle-state-heading">Configured mode</h2><span class="mode-badge mode-${escapeHtml(configuredMode)}">${escapeHtml(configuredMode)}</span></div><p>${escapeHtml(modeIdentity)}.</p></section><section aria-labelledby="workers-heading"><h2 id="workers-heading">Workers</h2><ul>${workerItems || "<li>No workers discovered.</li>"}</ul></section>${modeTabs(bundle, selectedMode, unknownCount)}${outcomeListing(modeRecords)}`;
+    const page = layout({
+      title: `${bundle.name} outputs`,
+      description: `Safe-output history for the ${bundle.name} control-plane bundle.`,
+      content,
+      nested: true,
+      navigation,
+    });
+    await writeFile(path.join(outputDirectory, "bundles", `${bundle.id}-${selectedMode}.html`), page);
+    if (selectedMode === defaultMode) await writeFile(path.join(outputDirectory, "bundles", `${bundle.id}.html`), page);
+  }
 }
 
 await mkdir(path.join(outputDirectory, "workflows"), { recursive: true });
 for (const workflow of standaloneDefinitions) {
   const workflowRecords = records.filter((record) => record.bundle === workflow.id);
   const navigation = `<nav aria-label="Report navigation"><div class="shell"><a href="../">All workflows</a><span aria-current="page">${escapeHtml(workflow.name)}</span></div></nav>`;
-  const content = `<section aria-labelledby="inventory-heading"><h2 id="inventory-heading">Workflow inventory</h2><p>${workflow.compiled ? "Source and compiled lock file are present." : "Source is present without a matching compiled lock file."}</p><p><code>${escapeHtml(workflow.sourcePath)}</code></p></section><section aria-labelledby="outcomes-heading"><h2 id="outcomes-heading">Outcomes</h2><div class="records">${workflowRecords.map(itemMarkup).join("\n") || '<p class="empty">No outputs have been recorded for this workflow.</p>'}</div></section>`;
+  const content = `<section aria-labelledby="inventory-heading"><h2 id="inventory-heading">Workflow inventory</h2><p>${workflow.compiled ? "Source and compiled lock file are present." : "Source is present without a matching compiled lock file."}</p><p><code>${escapeHtml(workflow.sourcePath)}</code></p></section>${outcomeListing(workflowRecords)}`;
   await writeFile(path.join(outputDirectory, "workflows", `${workflow.id}.html`), layout({
     title: workflow.name,
     description: workflow.description || "Standalone agentic workflow.",
+    content,
+    nested: true,
+    navigation,
+  }));
+}
+
+await mkdir(path.join(outputDirectory, "outcomes"), { recursive: true });
+for (const record of records) {
+  const runUrl = safeUrl(record.runUrl);
+  const navigation = `<nav aria-label="Report navigation"><div class="shell"><a href="../">All workflows</a><span aria-current="page">Outcome</span></div></nav>`;
+  const reportBody = record.bodyHtml || `<p>${escapeHtml(record.summary || "No report content was provided.")}</p>`;
+  const content = `<div class="outcome-view">
+    <article class="discussion-post">
+      <header><div class="post-avatar">${octicon("mark-github")}</div><div><strong>github-actions[bot]</strong><p>published ${escapeHtml(formatDate(record.createdAt))} · updated ${escapeHtml(formatDate(record.updatedAt))}</p></div></header>
+      <div class="markdown-body">${reportBody}</div>
+    </article>
+    <aside class="outcome-meta" aria-label="Outcome metadata">
+      <section><h2>Status</h2><span class="status ${statusClass(record)}">${escapeHtml(record.state)}</span></section>
+      <section><h2>Mode</h2><span class="mode-badge mode-${escapeHtml(record.mode)}">${escapeHtml(record.mode)}</span></section>
+      <section><h2>Category</h2><p>${escapeHtml(record.kind.replaceAll("-", " "))}</p></section>
+      <section><h2>Workflow</h2><p>${escapeHtml(record.workflow)}</p></section>
+      <section><h2>Provenance</h2><p><a href="${escapeHtml(record.url)}">View source${octicon("external-link")}</a>${runUrl ? `<br><a href="${escapeHtml(runUrl)}">View workflow run${octicon("external-link")}</a>` : ""}</p></section>
+    </aside>
+  </div>`;
+  await writeFile(path.join(outputDirectory, "outcomes", `${record.id}.html`), layout({
+    title: record.title,
+    description: `${record.workflow} · ${record.kind.replaceAll("-", " ")} · ${record.state}`,
     content,
     nested: true,
     navigation,
@@ -501,22 +599,74 @@ th, td { padding: 10px 14px; border-bottom: 1px solid var(--border-muted); text-
 thead th { background: var(--canvas-subtle); color: var(--muted); font-size: 12px; font-weight: 600; }
 tbody tr:last-child > * { border-bottom: 0; }
 tbody tr:hover { background: var(--canvas-subtle); }
-.records { overflow: hidden; border: 1px solid var(--border); border-radius: 6px; }
-.record { padding: 14px 16px; border-bottom: 1px solid var(--border-muted); }
-.record:last-child { border-bottom: 0; }
-.record:hover { background: var(--canvas-subtle); }
-.record-heading { display: flex; align-items: center; gap: 8px; }
-.kind, .status { display: inline-flex; align-items: center; min-height: 20px; padding: 0 7px; border: 1px solid var(--border); border-radius: 2em; color: var(--muted); font-size: 11px; font-weight: 600; text-transform: capitalize; }
+.discussion-layout { display: grid; grid-template-columns: 220px minmax(0, 1fr); gap: 24px; margin-top: 20px; }
+.discussion-sidebar h2 { margin: 0 8px 10px; }
+.discussion-sidebar > div { min-height: 38px; display: grid; grid-template-columns: 16px minmax(0, 1fr) auto; align-items: center; gap: 8px; padding: 8px; border-radius: 6px; color: var(--muted); }
+.discussion-sidebar .category-current { background: var(--neutral-muted); color: var(--fg); font-weight: 600; }
+.discussion-sidebar strong { min-width: 20px; padding: 0 6px; border-radius: 2em; background: var(--neutral-muted); color: var(--muted); font-size: 11px; text-align: center; }
+.discussion-list { min-width: 0; }
+.discussion-toolbar { min-height: 44px; display: flex; align-items: center; justify-content: space-between; padding: 8px 12px; border: 1px solid var(--border); border-bottom: 0; border-radius: 6px 6px 0 0; background: var(--canvas-subtle); }
+.discussion-toolbar h2 { margin: 0; }
+.discussion-toolbar > span { color: var(--muted); font-size: 12px; font-weight: 600; }
+.records { overflow: hidden; border: 1px solid var(--border); border-radius: 0 0 6px 6px; }
+.discussion-row { min-height: 94px; display: grid; grid-template-columns: 34px 42px minmax(0, 1fr); align-items: start; gap: 10px; padding: 14px 16px; border-bottom: 1px solid var(--border-muted); }
+.discussion-row:last-child { border-bottom: 0; }
+.discussion-row:hover { background: var(--canvas-subtle); }
+.discussion-vote { display: flex; flex-direction: column; align-items: center; gap: 3px; padding-top: 4px; color: var(--muted); font-size: 11px; }
+.discussion-category { width: 40px; height: 40px; display: grid; place-items: center; border: 1px solid var(--border); border-radius: 6px; background: var(--canvas-subtle); color: var(--muted); }
+.discussion-main { min-width: 0; }
+.discussion-main h3 { margin: 0; font-size: 15px; line-height: 1.35; overflow-wrap: anywhere; }
+.discussion-main > p { display: -webkit-box; margin: 5px 0 8px; overflow: hidden; color: var(--muted); -webkit-box-orient: vertical; -webkit-line-clamp: 2; }
+.discussion-meta { display: flex; align-items: center; flex-wrap: wrap; gap: 6px 10px; color: var(--muted); font-size: 12px; }
+.kind, .status, .mode-badge { display: inline-flex; align-items: center; min-height: 20px; padding: 0 7px; border: 1px solid var(--border); border-radius: 2em; color: var(--muted); font-size: 11px; font-weight: 600; text-transform: capitalize; white-space: nowrap; }
 .status-success { border-color: color-mix(in srgb, var(--success) 45%, var(--border)); background: var(--success-muted); color: var(--success); }
 .status-attention { border-color: color-mix(in srgb, var(--attention) 45%, var(--border)); background: var(--attention-muted); color: var(--attention); }
 .status-muted { background: var(--neutral-muted); }
-.record p { max-width: 900px; margin: 4px 0; color: var(--muted); }
-.record .metadata { margin-top: 8px; font-size: 12px; }
+.mode-live { border-color: color-mix(in srgb, var(--success) 45%, var(--border)); background: var(--success-muted); color: var(--success); }
+.mode-review { border-color: color-mix(in srgb, var(--attention) 45%, var(--border)); background: var(--attention-muted); color: var(--attention); }
+.mode-preview, .mode-unknown { background: var(--neutral-muted); }
+.bundle-state { display: flex; align-items: center; justify-content: space-between; gap: 20px; }
+.bundle-state > div { display: flex; align-items: center; gap: 10px; }
+.bundle-state h2, .bundle-state p { margin: 0; }
+.bundle-state p { color: var(--muted); text-align: right; }
+.mode-tabs { display: flex; margin: 20px 0 0; border-bottom: 1px solid var(--border); }
+.mode-tabs a { min-width: 130px; display: flex; flex-direction: column; gap: 1px; position: relative; padding: 10px 16px; color: var(--muted); text-decoration: none; }
+.mode-tabs a:hover { color: var(--fg); }
+.mode-tabs a[aria-current="page"] { color: var(--fg); font-weight: 600; }
+.mode-tabs a[aria-current="page"]::after { content: ""; height: 2px; position: absolute; right: 12px; bottom: -1px; left: 12px; border-radius: 2px 2px 0 0; background: #f78166; }
+.mode-tabs small { font-size: 11px; font-weight: 400; }
+.mode-tabs + .discussion-layout { margin-top: 16px; }
+.outcome-view { display: grid; grid-template-columns: minmax(0, 1fr) 250px; align-items: start; gap: 24px; }
+.discussion-post { min-width: 0; overflow: hidden; border: 1px solid var(--border); border-radius: 6px; }
+.discussion-post > header { min-height: 56px; display: flex; align-items: center; gap: 10px; padding: 10px 16px; border-bottom: 1px solid var(--border); background: var(--canvas-subtle); }
+.discussion-post > header p { margin: 1px 0 0; color: var(--muted); font-size: 12px; }
+.post-avatar { width: 32px; height: 32px; display: grid; flex: 0 0 32px; place-items: center; border-radius: 50%; background: var(--fg); color: var(--canvas); }
+.markdown-body { padding: 24px 28px 32px; overflow-wrap: anywhere; font-size: 15px; }
+.markdown-body > :first-child { margin-top: 0; }
+.markdown-body > :last-child { margin-bottom: 0; }
+.markdown-body h1, .markdown-body h2 { margin: 24px 0 16px; padding-bottom: 8px; border-bottom: 1px solid var(--border-muted); line-height: 1.25; }
+.markdown-body h1 { font-size: 24px; }
+.markdown-body h2 { font-size: 20px; }
+.markdown-body h3 { margin: 20px 0 10px; font-size: 17px; }
+.markdown-body p, .markdown-body ul, .markdown-body ol, .markdown-body blockquote, .markdown-body pre, .markdown-body table { margin-block: 0 16px; }
+.markdown-body li + li { margin-top: 4px; }
+.markdown-body blockquote { margin-inline: 0; padding: 0 16px; border-left: 4px solid var(--border); color: var(--muted); }
+.markdown-body pre { max-width: 100%; overflow: auto; padding: 14px 16px; border-radius: 6px; background: var(--canvas-inset); }
+.markdown-body pre code { padding: 0; background: transparent; }
+.markdown-body img { max-width: 100%; height: auto; }
+.markdown-body table { display: block; max-width: 100%; overflow-x: auto; }
+.markdown-body table th, .markdown-body table td { border: 1px solid var(--border); }
+.markdown-body .task-list-item { list-style: none; }
+.outcome-meta section { padding: 14px 0; border-bottom: 1px solid var(--border); }
+.outcome-meta section:first-child { padding-top: 0; }
+.outcome-meta h2 { margin-bottom: 8px; color: var(--muted); font-size: 12px; }
+.outcome-meta p { margin: 0; overflow-wrap: anywhere; text-transform: capitalize; }
+.outcome-meta a { display: inline-flex; align-items: center; gap: 5px; text-transform: none; }
 .empty { margin: 0; padding: 28px 16px; color: var(--muted); text-align: center; }
 .method p { max-width: 880px; margin-bottom: 0; color: var(--muted); }
 code { padding: 2px 4px; border-radius: 4px; background: var(--neutral-muted); font: 12px ui-monospace, SFMono-Regular, Consolas, monospace; }
 footer { padding: 20px 24px; border-top: 1px solid var(--border); color: var(--muted); font-size: 12px; }
-@media (max-width: 760px) {
+@media (max-width: 960px) {
   .site-header { height: 56px; }
   .header-inner { padding: 0 16px; }
   .github-link { padding: 5px 8px; }
@@ -537,6 +687,16 @@ footer { padding: 20px 24px; border-top: 1px solid var(--border); color: var(--m
   .metrics { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .metrics div:nth-child(2) { border-right: 0; }
   .metrics div:nth-child(-n + 2) { border-bottom: 1px solid var(--border); }
+  .discussion-layout { grid-template-columns: 1fr; gap: 12px; }
+  .discussion-sidebar { display: flex; gap: 4px; overflow-x: auto; }
+  .discussion-sidebar h2 { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
+  .discussion-sidebar > div { min-width: max-content; display: flex; }
+  .bundle-state { align-items: flex-start; flex-direction: column; gap: 8px; }
+  .bundle-state p { text-align: left; }
+  .mode-tabs { overflow-x: auto; overflow-y: hidden; }
+  .mode-tabs a { min-width: 120px; padding-inline: 12px; }
+  .outcome-view { grid-template-columns: 1fr; }
+  .outcome-meta { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0 20px; }
   .control-content > nav .shell { padding-inline: 16px; }
   footer { padding-inline: 16px; }
 }
@@ -547,6 +707,12 @@ footer { padding: 20px 24px; border-top: 1px solid var(--border); color: var(--m
   .metrics { grid-template-columns: 1fr; }
   .metrics div, .metrics div:nth-child(2) { border-right: 0; border-bottom: 1px solid var(--border); }
   .metrics div:last-child { border-bottom: 0; }
+  .discussion-row { grid-template-columns: 34px minmax(0, 1fr); padding-inline: 12px; }
+  .discussion-vote { display: none; }
+  .discussion-category { width: 32px; height: 32px; }
+  .discussion-main > p { -webkit-line-clamp: 3; }
+  .markdown-body { padding: 20px 16px 24px; }
+  .outcome-meta { grid-template-columns: 1fr; }
 }
 @media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
 @media print {
@@ -554,7 +720,7 @@ footer { padding: 20px 24px; border-top: 1px solid var(--border); color: var(--m
   .control-layout { display: block; }
   main { width: 100%; padding: 0; }
   a { color: inherit; text-decoration: underline; }
-  .record { break-inside: avoid; }
+  .discussion-row, .discussion-post { break-inside: avoid; }
 }`;
 }
 

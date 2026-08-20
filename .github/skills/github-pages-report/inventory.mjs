@@ -23,6 +23,10 @@ function inlineList(source, key) {
   return value.split(",").map((item) => unquote(item)).filter(Boolean);
 }
 
+function rolloutModeVariable(source) {
+  return source.match(/rollout_mode:\s*\$\{\{\s*vars\.([A-Z0-9_]+)/)?.[1] || "";
+}
+
 function manifestIncludes(source) {
   const includes = [];
   const block = source.match(/^includes:\s*\n((?:^[ \t]+.*\n?)*)/m)?.[1] || "";
@@ -81,6 +85,7 @@ function discoverInventory() {
         emoji: scalar(source, "emoji"),
         trackerId: scalar(source, "tracker-id"),
         role,
+        rolloutModeVariable: role === "orchestrator" ? rolloutModeVariable(source) : "",
         sourcePath,
         lockPath: `.github/workflows/${stem}.lock.yml`,
         compiled: existsSync(path.join(workflowDirectory, `${stem}.lock.yml`)),
@@ -95,6 +100,7 @@ function discoverInventory() {
     name: orchestrator.package?.name || orchestrator.name,
     description: orchestrator.package?.description || orchestrator.description,
     workflow: orchestrator.sourcePath,
+    rolloutModeVariable: orchestrator.rolloutModeVariable,
     compiled: orchestrator.compiled,
     workers: orchestrator.workers.map((workerId) => workflowById.get(workerId)).filter(Boolean),
     missingWorkers: orchestrator.workers.filter((workerId) => !workflowById.has(workerId)),
