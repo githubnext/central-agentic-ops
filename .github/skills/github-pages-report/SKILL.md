@@ -104,6 +104,22 @@ Keep review and production deployments isolated with distinct repositories or en
 
 If an agent needs a new kind of durable source record, represent that write with a declared safe output before allowing the Pages workflow to consume it. Do not use `post-steps`, shell commands, or workflow dispatch as a substitute for a safe output. If immediate autonomous agent publication becomes a requirement, design and review a dedicated safe-output boundary separately rather than expanding the deterministic publisher.
 
+## Control-Plane Inventory Discovery
+
+Control-plane reports must derive their navigation and workflow inventory from the installed repository rather than a hardcoded bundle catalog. Perform repository discovery in a deterministic build step before rendering. That step emits normalized, schema-versioned inventory JSON; the static renderer consumes the prepared inventory and must not rediscover or reinterpret repository files.
+
+1. Recursively discover `aw.yml` manifests. Use their `name`, `description`, and workflow `includes` as package metadata, preferring the most specific nested manifest when a root catalog and a bundle manifest include the same workflow.
+2. Discover agentic workflow sources from `.github/workflows/*.md`, excluding reusable files under `.github/workflows/shared/` and conventional non-agentic `.yml` workflows.
+3. Match each source `<name>.md` with its generated `<name>.lock.yml`. Report source-only and lock-only entries as inventory warnings; never treat generated lock files as editable source.
+4. Identify bundle orchestrators from the `shared/control.md` import with `role: orchestrator`. Treat `safe-outputs.dispatch-workflow.workflows` as the authoritative worker membership list.
+5. Validate workers against discovered source files, their `role: worker` import, and stable `tracker-id` when present. Report dispatched workers that are missing or not compiled.
+6. Treat remaining discovered source/lock workflow pairs as standalone workflows. Show them independently rather than dropping records that do not belong to a bundle.
+7. Derive display names, descriptions, icons or emoji hints, source paths, compile state, and bundle relationships from parsed metadata. Use generic visual fallbacks when optional metadata is absent.
+8. Associate durable outputs using discovered workflow IDs, tracker IDs, and display names. Do not hardcode workflow-specific issue prefixes, marker namespaces, or bundle-name regular expressions.
+9. Emit the discovered inventory in a machine-readable report asset so the rendered navigation and supporting data can be audited together. Fail the render when the prepared inventory is absent or has an unsupported schema version.
+
+Repository-local discovery is the required baseline and must work with the Pages job's `contents: read` permission. Organization-wide discovery across other repositories is optional and must be explicitly configured with a bounded repository inventory and credentials authorized to read those repositories. Clearly label partial or inaccessible organization results; never imply that a repository-scoped token scanned the full organization.
+
 ## Validation
 
 Before finishing:
