@@ -6,7 +6,9 @@ on:
     paths:
       - "**/aw.yml"
       - .github/skills/github-pages-report/inventory.mjs
+      - .github/skills/github-pages-report/deployed-workflows.mjs
       - .github/skills/github-pages-report/report.mjs
+      - .github/value/**
       - .github/workflows/*.md
       - .github/workflows/*.lock.yml
       - .github/workflows/ops-pages.yml
@@ -57,11 +59,19 @@ jobs:
           REPORT_INVENTORY: ${{ runner.temp }}/control-plane-inventory.json
         run: node .github/skills/github-pages-report/inventory.mjs
 
+      - name: Discover deployed agentic workflows
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          REPORT_DEPLOYED_WORKFLOWS: ${{ runner.temp }}/deployed-workflows.json
+        run: node .github/skills/github-pages-report/deployed-workflows.mjs
+
       - name: Build bundle report
         env:
           GITHUB_TOKEN: ${{ github.token }}
           REPORT_INVENTORY: ${{ runner.temp }}/control-plane-inventory.json
+          REPORT_DEPLOYED_WORKFLOWS: ${{ runner.temp }}/deployed-workflows.json
           REPORT_OUTPUT: _site
+          REPORT_VALUE_ROOT: .github/value
         run: node .github/skills/github-pages-report/report.mjs
 
       - name: Upload Pages artifact
