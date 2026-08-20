@@ -22,6 +22,7 @@ Turn an operational idea into a complete bundle of GitHub Agentic Workflows. A b
 4. Ask only for decisions that cannot be inferred safely. If the strategy is broad, split it into workers by independently dispatchable responsibility, not by implementation step.
 5. Create the orchestrator and every worker under `.github/workflows/` in the same change.
 6. Compile and validate all new source workflows. Repair failures before finishing.
+7. When an adopted worker already has a frozen value function, include it in both the root and bundle-specific package manifests. Value-function authoring remains a separate post-adoption maintenance task.
 
 ## Bundle Contract
 
@@ -75,6 +76,17 @@ Create at least one `.github/workflows/<bundle>-<worker>.md`. Every worker must 
 
 Use a dedicated `target/` checkout when the worker must inspect a target repository while safe outputs land elsewhere. Add package-specific inputs only after the standard envelope.
 
+### Worker Value
+
+Measure operational value per worker because workers have independently dispatchable responsibilities and outcomes. Packages ship frozen value functions but do not currently ship the experimental authoring skill.
+
+- Design from the worker's adoption-time intent and pre-adoption evidence. Never derive a measure from the orchestrator's dispatch activity or from post-adoption results.
+- Keep the canonical function at `.github/value-functions/<worker-stem>.sh`.
+- Include each frozen function in both the root `aw.yml` and its bundle-specific `aw.yml` so full-catalog and individual-bundle installs receive the same contract.
+- Treat function creation and report generation as post-adoption work; never create placeholder commits, evidence, scores, or reports while authoring an unadopted bundle.
+- If the bundle is new in the current change, finish workflow validation and report the pending per-worker value follow-up explicitly.
+- A worker may be baseline-comparable, attainment-only, or not measurable. Preserve that independently determined classification rather than forcing every worker into the same bundle-level model.
+
 ## Shared Components
 
 - Always import `shared/control.md` with the correct role.
@@ -105,7 +117,8 @@ Before finishing:
 6. Confirm the orchestrator has a `Completion` section that preserves the exact standard report contract from `shared/control.md`; bundle-specific reporting must be additive.
 7. Confirm worker concurrency is keyed by `github.workflow` and `inputs.target_repo` with stale runs cancelled.
 8. Check permissions, tools, network hosts, safe-output limits, credits, timeouts, and dispatch maximums against actual need.
-9. Run `gh aw compile <workflow.md>` for every new orchestrator and worker. Then run the repository's narrowest relevant tests or validation command if one exists.
-10. Review the generated diff for accidental lockfile churn, secret exposure, unsafe live defaults, and deviations from the nearest bundle that are not justified by the strategy.
+9. Confirm every existing frozen value function is included by both package manifests, or explicitly identify each new worker whose value design is pending adoption.
+10. Run `gh aw compile <workflow.md>` for every new orchestrator and worker. Then run the repository's narrowest relevant tests or validation command if one exists.
+11. Review the generated diff for accidental lockfile churn, secret exposure, unsafe live defaults, fabricated value evidence, and deviations from the nearest bundle that are not justified by the strategy.
 
-Report the created bundle, worker responsibilities, shared imports, rollout variables, and validation results.
+Report the created bundle, worker responsibilities, shared imports, rollout variables, per-worker value-function status, and validation results.
