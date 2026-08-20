@@ -8,6 +8,7 @@ const outputPath = path.resolve(process.env.REPORT_DEPLOYED_WORKFLOWS || "_inven
 const includePrivate = process.env.REPORT_INCLUDE_PRIVATE === "true";
 const runWindowHours = Number(process.env.REPORT_RUN_WINDOW_HOURS || 24);
 const auditMaxPages = Number(process.env.REPORT_AUDIT_MAX_PAGES || 100);
+const maxRetryDelayMs = Number(process.env.REPORT_MAX_RETRY_SECONDS || 30) * 1000;
 
 if (!organization || !token) throw new Error("GITHUB_REPOSITORY (or REPORT_ORGANIZATION) and GITHUB_TOKEN are required");
 
@@ -27,6 +28,9 @@ async function github(url, attempt = 0) {
     const delay = Number.isFinite(retryAfter) && retryAfter > 0
       ? retryAfter * 1000
       : Math.max(1000, resetAt - Date.now() + 1000);
+    if (!Number.isFinite(delay) || delay > maxRetryDelayMs) {
+      throw new Error(`GitHub API ${response.status} for ${url}; requested retry delay ${Math.ceil(delay / 1000)} seconds exceeds limit`);
+    }
     console.warn(`GitHub API ${response.status}; retrying ${url} in ${Math.ceil(delay / 1000)} seconds`);
     await new Promise((resolve) => setTimeout(resolve, delay));
     return github(url, attempt + 1);
@@ -183,10 +187,22 @@ async function collectBillingSpend() {
   }
 }
 
-const [matches, manifestMatches] = await Promise.all([
-  searchPartition(0, 499999),
-  searchCode(`org:${organization} filename:aw.yml`),
-]);
+let matches = [];
+let manifestMatches = [];
+let workflowSearchAvailable = true;
+let manifestSearchAvailable = true;
+try {
+  matches = await searchPartition(0, 499999);
+} catch (error) {
+  workflowSearchAvailable = false;
+  console.warn(`${error.message}; organization workflow search will be unavailable`);
+}
+try {
+  manifestMatches = await searchCode(`org:${organization} filename:aw.yml`);
+} catch (error) {
+  manifestSearchAvailable = false;
+  console.warn(`${error.message}; organization bundle search will be unavailable`);
+}
 const discovered = new Map();
 for (const item of matches) {
   if (!item.path.startsWith(".github/workflows/") || !item.path.endsWith(".lock.yml")) continue;
@@ -276,6 +292,11 @@ const inventory = {
   organization,
   includePrivate,
   repositoryCount: repositoryNames.length,
+  discovery: {
+    workflowSearchAvailable,
+    manifestSearchAvailable,
+    complete: workflowSearchAvailable && manifestSearchAvailable,
+  },
   runHealth: {
     available: runHealth.available,
     complete: runHealth.complete,
