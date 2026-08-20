@@ -1,0 +1,301 @@
+{
+  "repository": "githubnext/central-agentic-ops",
+  "workflowName": "Optimization / AI Credit Optimizer",
+  "adoptionAt": "2026-08-18T17:54:55Z",
+  "evaluationMode": "attainment-only",
+  "window": {
+    "startAt": "2026-08-18T17:54:55Z",
+    "endAt": "2026-08-20T18:33:18Z"
+  },
+  "evidenceCoverage": {
+    "completeFromAdoption": true,
+    "hasPreAdoptionBaseline": false,
+    "baselineDescription": "No comparable pre-adoption baseline is available; observations begin at adoption.",
+    "reason": "Comparable historical outcome evidence cannot be reconstructed."
+  },
+  "runs": [],
+  "caveat": "The evidence measures post-adoption attainment only; without a comparable pre-adoption baseline it cannot establish improvement or causation.",
+  "schemaVersion": 2,
+  "definitionSchemaVersion": 3,
+  "generatedAt": "2026-08-20T18:33:25Z",
+  "workflowSlug": "optimization-ai-credit-optimizer",
+  "sourcePath": ".github/workflows/optimization-ai-credit-optimizer.md",
+  "valueFunction": {
+    "path": ".github/value-functions/optimization-ai-credit-optimizer.sh",
+    "sha256": "31fd953cba856c7a825c5cfec3bdac30b9c6d16b4fc3d1dd42abd7cb52fc949d",
+    "definition": {
+      "schemaVersion": 3,
+      "slug": "optimization-ai-credit-optimizer",
+      "sourcePath": ".github/workflows/optimization-ai-credit-optimizer.md",
+      "repository": "githubnext/central-agentic-ops",
+      "workflowName": "Optimization / AI Credit Optimizer",
+      "adoption": {
+        "commit": "35c7c3cbd319632f85784cce196e57c0f61db9a0",
+        "adoptedAt": "2026-08-18T17:54:55Z",
+        "baselineCommit": "ed9921bfd3aa8f95f9cc8dd30f87d0dbca97a42b",
+        "baselineAt": "2026-08-18T12:20:21Z"
+      },
+      "evaluation": {
+        "mode": "attainment-only"
+      },
+      "evidence": {
+        "key": "same-workflow-half-window-aic-and-reliability",
+        "repositories": [
+          "githubnext/central-agentic-ops"
+        ],
+        "opportunity": "A dispatched repository target in a seven-day window for which the completed first-half runs identify a highest-total-AIC workflow and that same workflow has completed and successful-run evidence in both halves.",
+        "filters": [
+          "Targets are parsed from immutable display_title values of completed Optimization / AI Credit Optimizer Actions runs in the central repository.",
+          "The target workflow is the workflow with highest total AIC among completed first-half runs, with workflow name ascending as the stable tie-break.",
+          "The selected workflow must have at least one completed run and at least one successful run in each half.",
+          "AIC medians use successful runs only; failure rates use all completed runs and classify every conclusion other than success as non-successful.",
+          "Second-half median AIC must be strictly lower and second-half failure rate must be no greater than first-half failure rate."
+        ],
+        "collection": "Batch central Actions runs for all windows, deduplicate dispatched targets, invoke gh aw logs once per target for the total requested span, and derive each midpoint comparison locally from immutable target run IDs.",
+        "window": {
+          "durationDays": 7,
+          "cadenceDays": 7,
+          "maturationDays": 7
+        }
+      },
+      "model": {
+        "architecture": "One eligible opportunity per dispatched target-window, scored on two independently reported attainment dimensions.",
+        "recommendation": "Use efficient-and-reliable opportunity share as primary; retain lower-AIC share and reliability-preserved share as diagnostics. Reject recommendation and issue counts because they measure workflow output rather than repository outcome.",
+        "presentation": {
+          "label": "Efficient and reliable opportunities",
+          "betterLabel": "Higher is better"
+        }
+      },
+      "summary": {
+        "nativeLabel": "Share of comparable target-windows with lower median successful-run AIC and preserved failure rate"
+      },
+      "metrics": [
+        {
+          "id": "efficient-reliable-share",
+          "name": "Efficient-and-reliable opportunity share",
+          "role": "primary",
+          "formula": "efficientReliableOpportunities / comparableOpportunities",
+          "direction": "increase",
+          "presentation": {
+            "name": "Efficient and reliable",
+            "legendLabel": "Efficient + reliable",
+            "transform": "identity"
+          }
+        },
+        {
+          "id": "lower-aic-share",
+          "name": "Lower-AIC opportunity share",
+          "role": "diagnostic",
+          "formula": "lowerAicOpportunities / comparableOpportunities",
+          "direction": "increase",
+          "presentation": {
+            "name": "Lower median AIC",
+            "legendLabel": "Lower AIC",
+            "transform": "identity"
+          }
+        },
+        {
+          "id": "reliability-preserved-share",
+          "name": "Reliability-preserved opportunity share",
+          "role": "diagnostic",
+          "formula": "reliabilityPreservedOpportunities / comparableOpportunities",
+          "direction": "increase",
+          "presentation": {
+            "name": "Reliability preserved",
+            "legendLabel": "Reliability preserved",
+            "transform": "identity"
+          }
+        }
+      ],
+      "validationExamples": {
+        "targetAttained": {
+          "status": "complete",
+          "comparableOpportunities": 1,
+          "efficientReliableOpportunities": 1,
+          "lowerAicOpportunities": 1,
+          "reliabilityPreservedOpportunities": 1
+        },
+        "targetMissed": {
+          "status": "complete",
+          "comparableOpportunities": 1,
+          "efficientReliableOpportunities": 0,
+          "lowerAicOpportunities": 0,
+          "reliabilityPreservedOpportunities": 0
+        },
+        "missing": {
+          "status": "missing",
+          "comparableOpportunities": 0,
+          "efficientReliableOpportunities": null,
+          "lowerAicOpportunities": null,
+          "reliabilityPreservedOpportunities": null
+        },
+        "malformed": {
+          "status": "complete",
+          "comparableOpportunities": "one"
+        }
+      }
+    }
+  },
+  "metricReview": {
+    "architecture": "One eligible opportunity per dispatched target-window, scored on two independently reported attainment dimensions.",
+    "recommendation": "Use efficient-and-reliable opportunity share as primary; retain lower-AIC share and reliability-preserved share as diagnostics. Reject recommendation and issue counts because they measure workflow output rather than repository outcome.",
+    "presentation": {
+      "label": "Efficient and reliable opportunities",
+      "betterLabel": "Higher is better"
+    },
+    "metrics": [
+      {
+        "id": "efficient-reliable-share",
+        "name": "Efficient-and-reliable opportunity share",
+        "role": "primary",
+        "formula": "efficientReliableOpportunities / comparableOpportunities",
+        "direction": "increase",
+        "presentation": {
+          "name": "Efficient and reliable",
+          "legendLabel": "Efficient + reliable",
+          "transform": "identity"
+        },
+        "status": "unevaluated",
+        "beforeValue": null,
+        "afterValue": null,
+        "attainmentValue": null,
+        "improvement": null
+      },
+      {
+        "id": "lower-aic-share",
+        "name": "Lower-AIC opportunity share",
+        "role": "diagnostic",
+        "formula": "lowerAicOpportunities / comparableOpportunities",
+        "direction": "increase",
+        "presentation": {
+          "name": "Lower median AIC",
+          "legendLabel": "Lower AIC",
+          "transform": "identity"
+        },
+        "status": "unevaluated",
+        "beforeValue": null,
+        "afterValue": null,
+        "attainmentValue": null,
+        "improvement": null
+      },
+      {
+        "id": "reliability-preserved-share",
+        "name": "Reliability-preserved opportunity share",
+        "role": "diagnostic",
+        "formula": "reliabilityPreservedOpportunities / comparableOpportunities",
+        "direction": "increase",
+        "presentation": {
+          "name": "Reliability preserved",
+          "legendLabel": "Reliability preserved",
+          "transform": "identity"
+        },
+        "status": "unevaluated",
+        "beforeValue": null,
+        "afterValue": null,
+        "attainmentValue": null,
+        "improvement": null
+      }
+    ]
+  },
+  "summary": {
+    "nativeLabel": "Share of comparable target-windows with lower median successful-run AIC and preserved failure rate"
+  },
+  "snapshots": [
+    {
+      "observedAt": "2026-08-18T17:54:55Z",
+      "window": {
+        "startAt": "2026-08-04T17:54:55Z",
+        "endAt": "2026-08-11T17:54:55Z"
+      },
+      "evidence": {
+        "key": "same-workflow-half-window-aic-and-reliability",
+        "repositories": [
+          "githubnext/central-agentic-ops"
+        ],
+        "opportunity": "Dispatched target-window with a comparable highest-first-half-AIC workflow",
+        "filters": [
+          "completed runs",
+          "successful-run AIC medians",
+          "same workflow in both halves"
+        ],
+        "collection": "Central immutable dispatch runs and one gh aw logs JSON download per target over the batch span",
+        "window": {
+          "durationDays": 7,
+          "cadenceDays": 7,
+          "maturationDays": 7,
+          "windowStart": "2026-08-04T17:54:55Z",
+          "windowEnd": "2026-08-11T17:54:55Z",
+          "observedAt": "2026-08-18T17:54:55Z"
+        },
+        "status": "missing",
+        "comparableOpportunities": 0,
+        "efficientReliableOpportunities": null,
+        "lowerAicOpportunities": null,
+        "reliabilityPreservedOpportunities": null,
+        "targets": [],
+        "targetResults": [],
+        "reason": "no-dispatched-target"
+      },
+      "provenance": [
+        {
+          "repository": "githubnext/central-agentic-ops",
+          "kind": "commit",
+          "ref": "35c7c3cbd319632f85784cce196e57c0f61db9a0"
+        }
+      ],
+      "metrics": {
+        "efficient-reliable-share": null,
+        "lower-aic-share": null,
+        "reliability-preserved-share": null
+      }
+    },
+    {
+      "observedAt": "2026-08-20T18:33:18Z",
+      "window": {
+        "startAt": "2026-08-06T18:33:18Z",
+        "endAt": "2026-08-13T18:33:18Z"
+      },
+      "evidence": {
+        "key": "same-workflow-half-window-aic-and-reliability",
+        "repositories": [
+          "githubnext/central-agentic-ops"
+        ],
+        "opportunity": "Dispatched target-window with a comparable highest-first-half-AIC workflow",
+        "filters": [
+          "completed runs",
+          "successful-run AIC medians",
+          "same workflow in both halves"
+        ],
+        "collection": "Central immutable dispatch runs and one gh aw logs JSON download per target over the batch span",
+        "window": {
+          "durationDays": 7,
+          "cadenceDays": 7,
+          "maturationDays": 7,
+          "windowStart": "2026-08-06T18:33:18Z",
+          "windowEnd": "2026-08-13T18:33:18Z",
+          "observedAt": "2026-08-20T18:33:18Z"
+        },
+        "status": "missing",
+        "comparableOpportunities": 0,
+        "efficientReliableOpportunities": null,
+        "lowerAicOpportunities": null,
+        "reliabilityPreservedOpportunities": null,
+        "targets": [],
+        "targetResults": [],
+        "reason": "no-dispatched-target"
+      },
+      "provenance": [
+        {
+          "repository": "githubnext/central-agentic-ops",
+          "kind": "commit",
+          "ref": "35c7c3cbd319632f85784cce196e57c0f61db9a0"
+        }
+      ],
+      "metrics": {
+        "efficient-reliable-share": null,
+        "lower-aic-share": null,
+        "reliability-preserved-share": null
+      }
+    }
+  ]
+}

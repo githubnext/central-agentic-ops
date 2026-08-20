@@ -1,0 +1,284 @@
+{
+  "repository": "githubnext/central-agentic-ops",
+  "workflowName": "Dependabot / Release Train Updater",
+  "adoptionAt": "2026-08-18T17:54:55Z",
+  "evaluationMode": "attainment-only",
+  "window": {
+    "startAt": "2026-08-18T17:54:55Z",
+    "endAt": "2026-08-20T18:33:18Z"
+  },
+  "evidenceCoverage": {
+    "completeFromAdoption": true,
+    "hasPreAdoptionBaseline": false,
+    "baselineDescription": "No comparable pre-adoption baseline is available; observations begin at adoption.",
+    "reason": "Comparable historical outcome evidence cannot be reconstructed."
+  },
+  "runs": [],
+  "caveat": "The evidence measures post-adoption attainment only; without a comparable pre-adoption baseline it cannot establish improvement or causation.",
+  "schemaVersion": 2,
+  "definitionSchemaVersion": 3,
+  "generatedAt": "2026-08-20T18:33:20Z",
+  "workflowSlug": "dependabot-release-train-updater",
+  "sourcePath": ".github/workflows/dependabot-release-train-updater.md",
+  "valueFunction": {
+    "path": ".github/value-functions/dependabot-release-train-updater.sh",
+    "sha256": "3ae460a857f942ecda114ccaa697da705096c235d8dc43c30fe5b0f218ff6519",
+    "definition": {
+      "schemaVersion": 3,
+      "slug": "dependabot-release-train-updater",
+      "sourcePath": ".github/workflows/dependabot-release-train-updater.md",
+      "repository": "githubnext/central-agentic-ops",
+      "workflowName": "Dependabot / Release Train Updater",
+      "adoption": {
+        "commit": "35c7c3cbd319632f85784cce196e57c0f61db9a0",
+        "adoptedAt": "2026-08-18T17:54:55Z",
+        "baselineCommit": "ed9921bfd3aa8f95f9cc8dd30f87d0dbca97a42b",
+        "baselineAt": "2026-08-18T12:20:21Z"
+      },
+      "evaluation": {
+        "mode": "attainment-only"
+      },
+      "evidence": {
+        "key": "dependabot-release-train-validated-resolutions-v1",
+        "repositories": [
+          "githubnext/central-agentic-ops"
+        ],
+        "opportunity": "Matured dependency pull requests or security-alert opportunities in repositories named by immutable central workflow run display titles.",
+        "filters": [
+          "Dispatch targets are owner/repository names parsed from Dependabot / Release Train Updater Actions run display titles.",
+          "Opportunities are pull requests created in the window, matured for 14 days by observedAt, and classified from title, author, labels, and changed files.",
+          "Dependency opportunities are Dependabot-authored pull requests or pull requests changing dependency manifests or lockfiles.",
+          "Security opportunities have security labels, security title indicators, or Dependabot security indicators.",
+          "Validated resolutions are merged by windowEnd, change dependency manifests or lockfiles, and have successful evidence for every configured required check at the merge commit.",
+          "Unavailable required-check configuration or merge-commit check evidence cannot establish a validated resolution."
+        ],
+        "collection": "Batch central Actions runs over the complete requested span, fetch each target pull-request population once for that span, classify locally, and fetch merge-commit check evidence only for eligible merged dependency candidates.",
+        "window": {
+          "durationDays": 30,
+          "cadenceDays": 30,
+          "maturationDays": 14
+        }
+      },
+      "model": {
+        "architecture": "Deterministic opportunity-normalized attainment shares",
+        "recommendation": "Use the validated dependency resolution share as primary and the security-opportunity resolution share as a diagnostic; report missing when no eligible opportunity evidence exists.",
+        "presentation": {
+          "label": "Validated dependency resolution attainment",
+          "betterLabel": "Higher validated resolution share"
+        }
+      },
+      "summary": {
+        "nativeLabel": "Validated dependency resolution share"
+      },
+      "metrics": [
+        {
+          "id": "validated-resolution-share",
+          "name": "Validated dependency resolution share",
+          "role": "primary",
+          "formula": "validatedResolutions / eligibleOpportunities",
+          "direction": "increase",
+          "presentation": {
+            "name": "Validated dependency resolution share",
+            "legendLabel": "Validated resolution",
+            "transform": "identity"
+          }
+        },
+        {
+          "id": "security-resolution-share",
+          "name": "Security-opportunity resolution share",
+          "role": "diagnostic",
+          "formula": "securityValidatedResolutions / securityEligibleOpportunities",
+          "direction": "increase",
+          "presentation": {
+            "name": "Security-opportunity resolution share",
+            "legendLabel": "Security resolution",
+            "transform": "identity"
+          }
+        }
+      ],
+      "validationExamples": {
+        "targetAttained": {
+          "status": "observed",
+          "eligibleOpportunities": 4,
+          "validatedResolutions": 4,
+          "securityEligibleOpportunities": 2,
+          "securityValidatedResolutions": 2
+        },
+        "targetMissed": {
+          "status": "observed",
+          "eligibleOpportunities": 4,
+          "validatedResolutions": 0,
+          "securityEligibleOpportunities": 2,
+          "securityValidatedResolutions": 0
+        },
+        "missing": {
+          "status": "missing",
+          "eligibleOpportunities": null,
+          "validatedResolutions": null,
+          "securityEligibleOpportunities": null,
+          "securityValidatedResolutions": null
+        },
+        "malformed": {
+          "status": "observed",
+          "eligibleOpportunities": 1,
+          "validatedResolutions": 2,
+          "securityEligibleOpportunities": "unknown",
+          "securityValidatedResolutions": 0
+        }
+      }
+    }
+  },
+  "metricReview": {
+    "architecture": "Deterministic opportunity-normalized attainment shares",
+    "recommendation": "Use the validated dependency resolution share as primary and the security-opportunity resolution share as a diagnostic; report missing when no eligible opportunity evidence exists.",
+    "presentation": {
+      "label": "Validated dependency resolution attainment",
+      "betterLabel": "Higher validated resolution share"
+    },
+    "metrics": [
+      {
+        "id": "validated-resolution-share",
+        "name": "Validated dependency resolution share",
+        "role": "primary",
+        "formula": "validatedResolutions / eligibleOpportunities",
+        "direction": "increase",
+        "presentation": {
+          "name": "Validated dependency resolution share",
+          "legendLabel": "Validated resolution",
+          "transform": "identity"
+        },
+        "status": "unevaluated",
+        "beforeValue": null,
+        "afterValue": null,
+        "attainmentValue": null,
+        "improvement": null
+      },
+      {
+        "id": "security-resolution-share",
+        "name": "Security-opportunity resolution share",
+        "role": "diagnostic",
+        "formula": "securityValidatedResolutions / securityEligibleOpportunities",
+        "direction": "increase",
+        "presentation": {
+          "name": "Security-opportunity resolution share",
+          "legendLabel": "Security resolution",
+          "transform": "identity"
+        },
+        "status": "unevaluated",
+        "beforeValue": null,
+        "afterValue": null,
+        "attainmentValue": null,
+        "improvement": null
+      }
+    ]
+  },
+  "summary": {
+    "nativeLabel": "Validated dependency resolution share"
+  },
+  "snapshots": [
+    {
+      "observedAt": "2026-08-18T17:54:55Z",
+      "window": {
+        "startAt": "2026-07-05T17:54:55Z",
+        "endAt": "2026-08-04T17:54:55Z"
+      },
+      "evidence": {
+        "key": "dependabot-release-train-validated-resolutions-v1",
+        "repositories": [
+          "githubnext/central-agentic-ops"
+        ],
+        "opportunity": "Matured dependency pull requests or security-alert opportunities in dispatched targets",
+        "filters": [
+          "created in window",
+          "matured 14 days",
+          "Dependabot author or dependency file change",
+          "validated merge with dependency file changes and successful configured required checks"
+        ],
+        "collection": "Batched central Actions run discovery and one pull-request corpus per dispatched target over the complete requested span",
+        "window": {
+          "durationDays": 30,
+          "cadenceDays": 30,
+          "maturationDays": 14,
+          "windowStart": "2026-07-05T17:54:55Z",
+          "windowEnd": "2026-08-04T17:54:55Z",
+          "observedAt": "2026-08-18T17:54:55Z"
+        },
+        "status": "missing",
+        "eligibleOpportunities": null,
+        "validatedResolutions": null,
+        "securityEligibleOpportunities": null,
+        "securityValidatedResolutions": null,
+        "targets": [],
+        "opportunities": []
+      },
+      "provenance": [
+        {
+          "repository": "githubnext/central-agentic-ops",
+          "kind": "actions-run",
+          "ref": "run:30544560426"
+        },
+        {
+          "repository": "githubnext/central-agentic-ops",
+          "kind": "frozen-contract",
+          "ref": "35c7c3cbd319632f85784cce196e57c0f61db9a0"
+        }
+      ],
+      "metrics": {
+        "validated-resolution-share": null,
+        "security-resolution-share": null
+      }
+    },
+    {
+      "observedAt": "2026-08-20T18:33:18Z",
+      "window": {
+        "startAt": "2026-07-07T18:33:18Z",
+        "endAt": "2026-08-06T18:33:18Z"
+      },
+      "evidence": {
+        "key": "dependabot-release-train-validated-resolutions-v1",
+        "repositories": [
+          "githubnext/central-agentic-ops"
+        ],
+        "opportunity": "Matured dependency pull requests or security-alert opportunities in dispatched targets",
+        "filters": [
+          "created in window",
+          "matured 14 days",
+          "Dependabot author or dependency file change",
+          "validated merge with dependency file changes and successful configured required checks"
+        ],
+        "collection": "Batched central Actions run discovery and one pull-request corpus per dispatched target over the complete requested span",
+        "window": {
+          "durationDays": 30,
+          "cadenceDays": 30,
+          "maturationDays": 14,
+          "windowStart": "2026-07-07T18:33:18Z",
+          "windowEnd": "2026-08-06T18:33:18Z",
+          "observedAt": "2026-08-20T18:33:18Z"
+        },
+        "status": "missing",
+        "eligibleOpportunities": null,
+        "validatedResolutions": null,
+        "securityEligibleOpportunities": null,
+        "securityValidatedResolutions": null,
+        "targets": [],
+        "opportunities": []
+      },
+      "provenance": [
+        {
+          "repository": "githubnext/central-agentic-ops",
+          "kind": "actions-run",
+          "ref": "run:30544560426"
+        },
+        {
+          "repository": "githubnext/central-agentic-ops",
+          "kind": "frozen-contract",
+          "ref": "35c7c3cbd319632f85784cce196e57c0f61db9a0"
+        }
+      ],
+      "metrics": {
+        "validated-resolution-share": null,
+        "security-resolution-share": null
+      }
+    }
+  ]
+}

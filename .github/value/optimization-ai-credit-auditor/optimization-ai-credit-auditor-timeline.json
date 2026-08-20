@@ -1,0 +1,382 @@
+{
+  "repository": "githubnext/central-agentic-ops",
+  "workflowName": "Optimization / AI Credit Auditor",
+  "adoptionAt": "2026-08-18T17:54:55Z",
+  "evaluationMode": "attainment-only",
+  "window": {
+    "startAt": "2026-08-18T17:54:55Z",
+    "endAt": "2026-08-20T18:33:18Z"
+  },
+  "evidenceCoverage": {
+    "completeFromAdoption": true,
+    "hasPreAdoptionBaseline": false,
+    "baselineDescription": "No comparable pre-adoption baseline is available; observations begin at adoption.",
+    "reason": "Comparable historical outcome evidence cannot be reconstructed."
+  },
+  "runs": [],
+  "caveat": "The evidence measures post-adoption attainment only; without a comparable pre-adoption baseline it cannot establish improvement or causation.",
+  "schemaVersion": 2,
+  "definitionSchemaVersion": 3,
+  "generatedAt": "2026-08-20T18:33:22Z",
+  "workflowSlug": "optimization-ai-credit-auditor",
+  "sourcePath": ".github/workflows/optimization-ai-credit-auditor.md",
+  "valueFunction": {
+    "path": ".github/value-functions/optimization-ai-credit-auditor.sh",
+    "sha256": "87e7dcc0ed2e8d64e93a5023f40f3476f3677314b1711d140113a488d930a5b1",
+    "definition": {
+      "schemaVersion": 3,
+      "slug": "optimization-ai-credit-auditor",
+      "sourcePath": ".github/workflows/optimization-ai-credit-auditor.md",
+      "repository": "githubnext/central-agentic-ops",
+      "workflowName": "Optimization / AI Credit Auditor",
+      "adoption": {
+        "commit": "35c7c3cbd319632f85784cce196e57c0f61db9a0",
+        "adoptedAt": "2026-08-18T17:54:55Z",
+        "baselineCommit": "ed9921bfd3aa8f95f9cc8dd30f87d0dbca97a42b",
+        "baselineAt": "2026-08-18T12:20:21Z"
+      },
+      "evaluation": {
+        "mode": "attainment-only"
+      },
+      "evidence": {
+        "key": "target-day-audit-aggregate-reproduction",
+        "repositories": [
+          "githubnext/central-agentic-ops"
+        ],
+        "opportunity": "A target repository and UTC day containing at least one completed agentic workflow run, among targets immutably named by dispatched Optimization / AI Credit Auditor runs.",
+        "filters": [
+          "Discover targets only from central Actions run display_title values matching Token audit · owner/repo · mode.",
+          "Include only retained target runs with status completed and created_at within the target-day window.",
+          "Empty completed-run windows are ineligible.",
+          "A day is accurate only when the durable daily snapshot reproduces overall and per-workflow completed-run aggregates.",
+          "Absent or inaccessible retained logs and snapshots remain explicitly missing; numeric zero is accepted only from retained evidence."
+        ],
+        "collection": "Batch central Actions discovery over the full request, fetch gh aw logs once per discovered target for the total date span, and read daily snapshots from immutable central repo-memory commits at or before observedAt.",
+        "window": {
+          "durationDays": 1,
+          "cadenceDays": 1,
+          "maturationDays": 1
+        }
+      },
+      "model": {
+        "architecture": "Deterministic exact aggregate reproduction over paired retained run logs and durable daily snapshots",
+        "recommendation": "Use the accurate audit-day share as primary; report completed-run and durable-history coverage separately so missing evidence is never averaged into accuracy.",
+        "presentation": {
+          "label": "Accurate audit days",
+          "betterLabel": "Higher is better"
+        }
+      },
+      "summary": {
+        "nativeLabel": "Accurate audit-day share"
+      },
+      "metrics": [
+        {
+          "id": "accurate-audit-day-share",
+          "name": "Accurate audit-day share",
+          "role": "primary",
+          "formula": "matched eligible target-days / eligible target-days with both retained completed-run logs and a readable durable snapshot",
+          "direction": "increase",
+          "presentation": {
+            "name": "Accurate audit-day share",
+            "legendLabel": "Accurate days",
+            "transform": "identity"
+          }
+        },
+        {
+          "id": "completed-run-coverage",
+          "name": "Completed-run coverage",
+          "role": "diagnostic",
+          "formula": "sum min(snapshot overall.total_runs, retained completed runs) / sum retained completed runs across paired eligible target-days",
+          "direction": "increase",
+          "presentation": {
+            "name": "Completed-run coverage",
+            "legendLabel": "Run coverage",
+            "transform": "identity"
+          }
+        },
+        {
+          "id": "durable-history-coverage",
+          "name": "Durable-history coverage",
+          "role": "diagnostic",
+          "formula": "eligible target-days with a readable durable snapshot / eligible target-days established from retained completed-run logs",
+          "direction": "increase",
+          "presentation": {
+            "name": "Durable-history coverage",
+            "legendLabel": "History coverage",
+            "transform": "identity"
+          }
+        }
+      ],
+      "validationExamples": {
+        "targetAttained": {
+          "status": "complete",
+          "days": [
+            {
+              "eligible": true,
+              "logsStatus": "available",
+              "snapshotStatus": "available",
+              "comparison": "matched",
+              "completedRuns": 4,
+              "snapshotRuns": 4
+            }
+          ]
+        },
+        "targetMissed": {
+          "status": "complete",
+          "days": [
+            {
+              "eligible": true,
+              "logsStatus": "available",
+              "snapshotStatus": "available",
+              "comparison": "mismatched",
+              "completedRuns": 4,
+              "snapshotRuns": 2
+            },
+            {
+              "eligible": true,
+              "logsStatus": "available",
+              "snapshotStatus": "missing",
+              "comparison": "missing",
+              "completedRuns": 3,
+              "snapshotRuns": null
+            }
+          ]
+        },
+        "missing": {
+          "status": "missing",
+          "days": []
+        },
+        "malformed": {
+          "status": "complete",
+          "days": [
+            {
+              "eligible": "yes"
+            }
+          ]
+        }
+      }
+    }
+  },
+  "metricReview": {
+    "architecture": "Deterministic exact aggregate reproduction over paired retained run logs and durable daily snapshots",
+    "recommendation": "Use the accurate audit-day share as primary; report completed-run and durable-history coverage separately so missing evidence is never averaged into accuracy.",
+    "presentation": {
+      "label": "Accurate audit days",
+      "betterLabel": "Higher is better"
+    },
+    "metrics": [
+      {
+        "id": "accurate-audit-day-share",
+        "name": "Accurate audit-day share",
+        "role": "primary",
+        "formula": "matched eligible target-days / eligible target-days with both retained completed-run logs and a readable durable snapshot",
+        "direction": "increase",
+        "presentation": {
+          "name": "Accurate audit-day share",
+          "legendLabel": "Accurate days",
+          "transform": "identity"
+        },
+        "status": "unevaluated",
+        "beforeValue": null,
+        "afterValue": null,
+        "attainmentValue": null,
+        "improvement": null
+      },
+      {
+        "id": "completed-run-coverage",
+        "name": "Completed-run coverage",
+        "role": "diagnostic",
+        "formula": "sum min(snapshot overall.total_runs, retained completed runs) / sum retained completed runs across paired eligible target-days",
+        "direction": "increase",
+        "presentation": {
+          "name": "Completed-run coverage",
+          "legendLabel": "Run coverage",
+          "transform": "identity"
+        },
+        "status": "unevaluated",
+        "beforeValue": null,
+        "afterValue": null,
+        "attainmentValue": null,
+        "improvement": null
+      },
+      {
+        "id": "durable-history-coverage",
+        "name": "Durable-history coverage",
+        "role": "diagnostic",
+        "formula": "eligible target-days with a readable durable snapshot / eligible target-days established from retained completed-run logs",
+        "direction": "increase",
+        "presentation": {
+          "name": "Durable-history coverage",
+          "legendLabel": "History coverage",
+          "transform": "identity"
+        },
+        "status": "unevaluated",
+        "beforeValue": null,
+        "afterValue": null,
+        "attainmentValue": null,
+        "improvement": null
+      }
+    ]
+  },
+  "summary": {
+    "nativeLabel": "Accurate audit-day share"
+  },
+  "snapshots": [
+    {
+      "observedAt": "2026-08-18T17:54:55Z",
+      "window": {
+        "startAt": "2026-08-16T17:54:55Z",
+        "endAt": "2026-08-17T17:54:55Z"
+      },
+      "evidence": {
+        "key": "target-day-audit-aggregate-reproduction",
+        "repositories": [
+          "githubnext/central-agentic-ops"
+        ],
+        "opportunity": "Target-days containing completed agentic workflow runs for immutably dispatched auditor targets",
+        "filters": [
+          "completed target runs",
+          "exact durable aggregate reproduction",
+          "empty run windows ineligible"
+        ],
+        "collection": "Batched central Actions discovery, one gh aw logs fetch per target, immutable repo-memory snapshot lookup",
+        "window": {
+          "durationDays": 1,
+          "cadenceDays": 1,
+          "maturationDays": 1
+        },
+        "status": "complete",
+        "days": []
+      },
+      "provenance": [
+        {
+          "repository": "githubnext/central-agentic-ops",
+          "kind": "actions-workflow-query",
+          "ref": "35c7c3cbd319632f85784cce196e57c0f61db9a0:.github/workflows/optimization-ai-credit-auditor.lock.yml"
+        }
+      ],
+      "metrics": {
+        "accurate-audit-day-share": null,
+        "completed-run-coverage": null,
+        "durable-history-coverage": null
+      }
+    },
+    {
+      "observedAt": "2026-08-19T17:54:55Z",
+      "window": {
+        "startAt": "2026-08-17T17:54:55Z",
+        "endAt": "2026-08-18T17:54:55Z"
+      },
+      "evidence": {
+        "key": "target-day-audit-aggregate-reproduction",
+        "repositories": [
+          "githubnext/central-agentic-ops"
+        ],
+        "opportunity": "Target-days containing completed agentic workflow runs for immutably dispatched auditor targets",
+        "filters": [
+          "completed target runs",
+          "exact durable aggregate reproduction",
+          "empty run windows ineligible"
+        ],
+        "collection": "Batched central Actions discovery, one gh aw logs fetch per target, immutable repo-memory snapshot lookup",
+        "window": {
+          "durationDays": 1,
+          "cadenceDays": 1,
+          "maturationDays": 1
+        },
+        "status": "complete",
+        "days": []
+      },
+      "provenance": [
+        {
+          "repository": "githubnext/central-agentic-ops",
+          "kind": "actions-workflow-query",
+          "ref": "35c7c3cbd319632f85784cce196e57c0f61db9a0:.github/workflows/optimization-ai-credit-auditor.lock.yml"
+        }
+      ],
+      "metrics": {
+        "accurate-audit-day-share": null,
+        "completed-run-coverage": null,
+        "durable-history-coverage": null
+      }
+    },
+    {
+      "observedAt": "2026-08-20T17:54:55Z",
+      "window": {
+        "startAt": "2026-08-18T17:54:55Z",
+        "endAt": "2026-08-19T17:54:55Z"
+      },
+      "evidence": {
+        "key": "target-day-audit-aggregate-reproduction",
+        "repositories": [
+          "githubnext/central-agentic-ops"
+        ],
+        "opportunity": "Target-days containing completed agentic workflow runs for immutably dispatched auditor targets",
+        "filters": [
+          "completed target runs",
+          "exact durable aggregate reproduction",
+          "empty run windows ineligible"
+        ],
+        "collection": "Batched central Actions discovery, one gh aw logs fetch per target, immutable repo-memory snapshot lookup",
+        "window": {
+          "durationDays": 1,
+          "cadenceDays": 1,
+          "maturationDays": 1
+        },
+        "status": "complete",
+        "days": []
+      },
+      "provenance": [
+        {
+          "repository": "githubnext/central-agentic-ops",
+          "kind": "actions-workflow-query",
+          "ref": "35c7c3cbd319632f85784cce196e57c0f61db9a0:.github/workflows/optimization-ai-credit-auditor.lock.yml"
+        }
+      ],
+      "metrics": {
+        "accurate-audit-day-share": null,
+        "completed-run-coverage": null,
+        "durable-history-coverage": null
+      }
+    },
+    {
+      "observedAt": "2026-08-20T18:33:18Z",
+      "window": {
+        "startAt": "2026-08-18T18:33:18Z",
+        "endAt": "2026-08-19T18:33:18Z"
+      },
+      "evidence": {
+        "key": "target-day-audit-aggregate-reproduction",
+        "repositories": [
+          "githubnext/central-agentic-ops"
+        ],
+        "opportunity": "Target-days containing completed agentic workflow runs for immutably dispatched auditor targets",
+        "filters": [
+          "completed target runs",
+          "exact durable aggregate reproduction",
+          "empty run windows ineligible"
+        ],
+        "collection": "Batched central Actions discovery, one gh aw logs fetch per target, immutable repo-memory snapshot lookup",
+        "window": {
+          "durationDays": 1,
+          "cadenceDays": 1,
+          "maturationDays": 1
+        },
+        "status": "complete",
+        "days": []
+      },
+      "provenance": [
+        {
+          "repository": "githubnext/central-agentic-ops",
+          "kind": "actions-workflow-query",
+          "ref": "35c7c3cbd319632f85784cce196e57c0f61db9a0:.github/workflows/optimization-ai-credit-auditor.lock.yml"
+        }
+      ],
+      "metrics": {
+        "accurate-audit-day-share": null,
+        "completed-run-coverage": null,
+        "durable-history-coverage": null
+      }
+    }
+  ]
+}
