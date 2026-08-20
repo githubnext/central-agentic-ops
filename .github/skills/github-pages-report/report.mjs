@@ -226,6 +226,7 @@ function octiconSprite() {
 
 function layout({ title, description, content, nested = false, navigation = "" }) {
   const root = nested ? "../" : "./";
+  const stylesheetLink = `<${"link"} rel="stylesheet" href="${root}styles.css">`;
   const overviewCurrent = nested ? "" : ' aria-current="page"';
   const bundleLinks = bundleDefinitions.map((bundle) => {
     const current = title.startsWith(bundle.name) ? ' aria-current="page"' : "";
@@ -242,7 +243,7 @@ function layout({ title, description, content, nested = false, navigation = "" }
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="color-scheme" content="light dark">
   <title>${escapeHtml(title)}</title>
-  <link rel="stylesheet" href="${root}styles.css">
+  ${stylesheetLink}
 </head>
 <body>
   ${octiconSprite()}
