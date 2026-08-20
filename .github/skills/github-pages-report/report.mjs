@@ -209,7 +209,7 @@ function itemMarkup(record) {
   const runUrl = safeUrl(record.runUrl);
   return `<article class="discussion-row" id="${escapeHtml(record.id)}">
     <div class="discussion-vote" aria-hidden="true">${octicon("issue")}<span>0</span></div>
-    <div class="discussion-category">${octicon(record.kind === "noop" ? "gear" : "issue")}</div>
+    <div class="discussion-category">${octicon(record.kind === "noop" ? "check-circle" : "issue")}</div>
     <div class="discussion-main">
       <h3><a href="../outcomes/${escapeHtml(record.id)}.html">${escapeHtml(record.title)}</a></h3>
       <p>${escapeHtml(record.summary || "No summary was provided.")}</p>
@@ -225,7 +225,7 @@ function outcomeListing(recordsForPage) {
       <h2>Categories</h2>
       <div class="category-current">${octicon("issue")}<span>All outcomes</span><strong>${recordsForPage.length}</strong></div>
       <div>${octicon("play")}<span>Actionable</span><strong>${actionable}</strong></div>
-      <div>${octicon("gear")}<span>No action</span><strong>${recordsForPage.length - actionable}</strong></div>
+      <div>${octicon("check-circle")}<span>No action</span><strong>${recordsForPage.length - actionable}</strong></div>
     </aside>
     <section class="discussion-list" aria-labelledby="outcomes-heading">
       <div class="discussion-toolbar"><h2 id="outcomes-heading">Outcomes</h2><span>Latest activity</span></div>
@@ -240,13 +240,23 @@ function modeSummary(recordsForBundle, mode) {
   return `${modeRecords.length}${latest ? ` · ${formatDate(latest.updatedAt)}` : ""}`;
 }
 
-function modeTabs(bundle, selectedMode, unknownCount) {
+function modeTabs(bundle, selectedMode) {
   const tabs = [
     ["review", "Review", "Proposals"],
     ["live", "Live", "Production"],
-    ...(unknownCount ? [["unknown", "Unknown", "Unavailable provenance"]] : []),
   ];
   return `<nav class="mode-tabs" aria-label="Output mode">${tabs.map(([mode, label, detail]) => `<a href="${bundle.id}-${mode}.html"${selectedMode === mode ? ' aria-current="page"' : ""}><span>${label}</span><small>${detail}</small></a>`).join("")}</nav>`;
+}
+
+function configuredModeFor(bundle) {
+  const mode = repositoryVariables.get(bundle.rolloutModeVariable) || "preview";
+  return ["preview", "review", "live"].includes(mode) ? mode : "preview";
+}
+
+function modeIndicator(mode) {
+  const icons = { preview: "eye", review: "beaker", live: "rocket" };
+  const label = `${mode[0].toUpperCase()}${mode.slice(1)}`;
+  return `<span class="mode-indicator mode-${mode}" title="Configured mode: ${label}">${octicon(icons[mode])}<span>${label}</span></span>`;
 }
 
 function octicon(name, className = "") {
@@ -260,19 +270,24 @@ function octiconSprite() {
     <symbol id="octicon-issue" viewBox="0 0 16 16"><path d="M8 1a7 7 0 1 0 0 14A7 7 0 0 0 8 1Zm0 12.5a5.5 5.5 0 1 1 0-11 5.5 5.5 0 0 1 0 11Zm-.75-9.25a.75.75 0 0 1 1.5 0v3a.75.75 0 0 1-1.5 0ZM8 9.5a1 1 0 1 1 0 2 1 1 0 0 1 0-2Z"></path></symbol>
     <symbol id="octicon-pull-request" viewBox="0 0 16 16"><path d="M3.25 1.75a1.75 1.75 0 1 0 0 3.5 1.75 1.75 0 0 0 0-3.5ZM2.5 6.75v5.19a1.75 1.75 0 1 0 1.5 0V6.75a.75.75 0 0 0-1.5 0Zm10.25 4a1.75 1.75 0 1 0 0 3.5 1.75 1.75 0 0 0 0-3.5ZM8.5 2.5a.75.75 0 0 0 0 1.5h1.75A1.75 1.75 0 0 1 12 5.75v3a.75.75 0 0 0 1.5 0v-3a3.25 3.25 0 0 0-3.25-3.25Z"></path></symbol>
     <symbol id="octicon-play" viewBox="0 0 16 16"><path d="M8 1.5a6.5 6.5 0 1 0 0 13 6.5 6.5 0 0 0 0-13ZM0 8a8 8 0 1 1 16 0A8 8 0 0 1 0 8Zm6.25-2.11a.75.75 0 0 1 1.14-.64l3 1.86a.75.75 0 0 1 0 1.28l-3 1.86a.75.75 0 0 1-1.14-.64Z"></path></symbol>
+    <symbol id="octicon-eye" viewBox="0 0 16 16"><path d="M8 2c3.7 0 6.5 3.2 7.5 5.3a1.6 1.6 0 0 1 0 1.4C14.5 10.8 11.7 14 8 14S1.5 10.8.5 8.7a1.6 1.6 0 0 1 0-1.4C1.5 5.2 4.3 2 8 2Zm0 1.5c-2.9 0-5.3 2.6-6.1 4.4a.2.2 0 0 0 0 .2c.8 1.8 3.2 4.4 6.1 4.4s5.3-2.6 6.1-4.4a.2.2 0 0 0 0-.2C13.3 6.1 10.9 3.5 8 3.5Zm0 1.75a2.75 2.75 0 1 1 0 5.5 2.75 2.75 0 0 1 0-5.5Zm0 1.5a1.25 1.25 0 1 0 0 2.5 1.25 1.25 0 0 0 0-2.5Z"></path></symbol>
+    <symbol id="octicon-beaker" viewBox="0 0 16 16"><path d="M5 1.75A.75.75 0 0 1 5.75 1h4.5a.75.75 0 0 1 0 1.5H10v3.05l3.64 6.38A2.05 2.05 0 0 1 11.86 15H4.14a2.05 2.05 0 0 1-1.78-3.07L6 5.55V2.5h-.25A.75.75 0 0 1 5 1.75ZM7.5 5.95l-1.17 2.04h3.34L8.5 5.95V2.5h-1v3.45Zm-3.84 6.72a.55.55 0 0 0 .48.83h7.72a.55.55 0 0 0 .48-.83L10.53 9.5H5.47l-1.81 3.17Z"></path></symbol>
+    <symbol id="octicon-rocket" viewBox="0 0 16 16"><path d="M14.85.15a.5.5 0 0 0-.47-.13C10.42.78 7.36 2.5 5.29 5.17L2.7 5.4a1.5 1.5 0 0 0-1.15.65L.1 8.08a.75.75 0 0 0 .31 1.12l2.48 1.03 2.88 2.88 1.03 2.48a.75.75 0 0 0 1.12.31l2.03-1.45a1.5 1.5 0 0 0 .65-1.15l.23-2.59c2.67-2.07 4.39-5.13 5.15-9.09a.5.5 0 0 0-.13-.47ZM9.37 9.59l-.26.19-.31 3.38-1.02.73-.72-1.73-3.22-3.22-1.73-.72.73-1.02 3.38-.31.19-.26C8.23 4.16 10.91 2.5 14.33 1.7c-.8 3.42-2.46 6.1-4.96 7.89ZM10.5 4a1.5 1.5 0 1 0 0 3 1.5 1.5 0 0 0 0-3ZM1.25 14.75a.75.75 0 0 1 0-1.06l2-2a.75.75 0 1 1 1.06 1.06l-2 2a.75.75 0 0 1-1.06 0Z"></path></symbol>
     <symbol id="octicon-gear" viewBox="0 0 16 16"><path d="M8 3.75a2.75 2.75 0 1 0 0 5.5 2.75 2.75 0 0 0 0-5.5Zm0 4a1.25 1.25 0 1 1 0-2.5 1.25 1.25 0 0 1 0 2.5Zm5.66.28-.28-.38a1.75 1.75 0 0 1 0-2.1l.28-.38a1.75 1.75 0 0 0-1.58-2.74l-.47.07a1.75 1.75 0 0 1-1.83-1l-.2-.43a1.75 1.75 0 0 0-3.16 0l-.2.43a1.75 1.75 0 0 1-1.83 1l-.47-.07a1.75 1.75 0 0 0-1.58 2.74l.28.38a1.75 1.75 0 0 1 0 2.1l-.28.38a1.75 1.75 0 0 0 1.58 2.74l.47-.07a1.75 1.75 0 0 1 1.83 1l.2.43a1.75 1.75 0 0 0 3.16 0l.2-.43a1.75 1.75 0 0 1 1.83-1l.47.07a1.75 1.75 0 0 0 1.58-2.74Z"></path></symbol>
+    <symbol id="octicon-settings" viewBox="0 0 16 16"><path d="M1.75 3.25h5.5a.75.75 0 0 1 0 1.5h-5.5a.75.75 0 0 1 0-1.5Zm9 0h3.5a.75.75 0 0 1 0 1.5h-3.5a.75.75 0 0 1 0-1.5ZM9 2a2 2 0 1 1 0 4 2 2 0 0 1 0-4Zm0 1.5a.5.5 0 1 0 0 1 .5.5 0 0 0 0-1ZM1.75 7.25h1.5a.75.75 0 0 1 0 1.5h-1.5a.75.75 0 0 1 0-1.5Zm5 0h7.5a.75.75 0 0 1 0 1.5h-7.5a.75.75 0 0 1 0-1.5ZM5 6a2 2 0 1 1 0 4 2 2 0 0 1 0-4Zm0 1.5a.5.5 0 1 0 0 1 .5.5 0 0 0 0-1Zm-3.25 3.75h6.5a.75.75 0 0 1 0 1.5h-6.5a.75.75 0 0 1 0-1.5Zm10 0h2.5a.75.75 0 0 1 0 1.5h-2.5a.75.75 0 0 1 0-1.5ZM10 10a2 2 0 1 1 0 4 2 2 0 0 1 0-4Zm0 1.5a.5.5 0 1 0 0 1 .5.5 0 0 0 0-1Z"></path></symbol>
+    <symbol id="octicon-check-circle" viewBox="0 0 16 16"><path d="M8 1a7 7 0 1 0 0 14A7 7 0 0 0 8 1Zm0 1.5a5.5 5.5 0 1 1 0 11 5.5 5.5 0 0 1 0-11Zm3.03 2.97a.75.75 0 0 1 0 1.06l-3.5 3.5a.75.75 0 0 1-1.06 0l-1.5-1.5a.75.75 0 0 1 1.06-1.06L7 8.44l2.97-2.97a.75.75 0 0 1 1.06 0Z"></path></symbol>
     <symbol id="octicon-package" viewBox="0 0 16 16"><path d="m8.88.49 5.75 2.88c.23.11.37.34.37.59v8.08c0 .25-.14.48-.37.59l-5.75 2.88a1.97 1.97 0 0 1-1.76 0l-5.75-2.88A.66.66 0 0 1 1 12.04V3.96c0-.25.14-.48.37-.59L7.12.49a1.97 1.97 0 0 1 1.76 0ZM8 1.83 3.02 4.32 8 6.81l4.98-2.49L8 1.83Zm-5.5 3.7v6.11l4.75 2.38V7.91L2.5 5.53Zm6.25 8.49 4.75-2.38V5.53L8.75 7.91v6.11Z"></path></symbol>
     <symbol id="octicon-external-link" viewBox="0 0 16 16"><path d="M3.75 2h3a.75.75 0 0 1 0 1.5h-3a.25.25 0 0 0-.25.25v8.5c0 .14.11.25.25.25h8.5a.25.25 0 0 0 .25-.25v-3a.75.75 0 0 1 1.5 0v3A1.75 1.75 0 0 1 12.25 14h-8.5A1.75 1.75 0 0 1 2 12.25v-8.5C2 2.78 2.78 2 3.75 2Zm5.5-.75A.75.75 0 0 1 10 0h5.25c.41 0 .75.34.75.75V6a.75.75 0 0 1-1.5 0V2.56L8.78 8.28a.75.75 0 0 1-1.06-1.06l5.72-5.72H10a.75.75 0 0 1-.75-.75Z"></path></symbol>
   </svg>`;
 }
 
-function layout({ title, description, content, nested = false, navigation = "" }) {
+function layout({ title, description, content, nested = false, navigation = "", configuredMode = "" }) {
   const root = nested ? "../" : "./";
   const stylesheetLink = `<${"link"} rel="stylesheet" href="${root}styles.css">`;
   const overviewCurrent = nested ? "" : ' aria-current="page"';
   const bundleLinks = bundleDefinitions.map((bundle) => {
     const current = title.startsWith(bundle.name) ? ' aria-current="page"' : "";
-    return `<a href="${root}bundles/${bundle.id}.html"${current}>${octicon("package", "nav-icon")}${escapeHtml(bundle.name)}</a>`;
+    return `<a href="${root}bundles/${bundle.id}.html"${current}>${octicon("package", "nav-icon")}<span class="nav-name">${escapeHtml(bundle.name)}</span>${modeIndicator(configuredModeFor(bundle))}</a>`;
   }).join("\n");
   const standaloneLinks = standaloneDefinitions.map((workflow) => {
     const current = title.startsWith(workflow.name) ? ' aria-current="page"' : "";
@@ -292,14 +307,13 @@ function layout({ title, description, content, nested = false, navigation = "" }
   <a class="skip-link" href="#main">Skip to content</a>
   <header class="site-header"><div class="header-inner">
     <a class="brand" href="${root}" aria-label="Central Agentic Ops home">${octicon("mark-github", "github-mark")}<span>${escapeHtml(repository)}</span></a>
-    <a class="github-link" href="https://github.com/${escapeHtml(repository)}/actions">Open in GitHub${octicon("external-link")}</a>
   </div></header>
   <nav class="repo-nav" aria-label="Repository navigation"><div>
     <a href="https://github.com/${escapeHtml(repository)}">${octicon("code")}Code</a>
     <a href="https://github.com/${escapeHtml(repository)}/issues">${octicon("issue")}Issues</a>
     <a href="https://github.com/${escapeHtml(repository)}/pulls">${octicon("pull-request")}Pull requests</a>
     <a href="${root}" aria-current="page">${octicon("play")}Actions</a>
-    <a href="https://github.com/${escapeHtml(repository)}/settings">${octicon("gear")}Settings</a>
+    <a href="https://github.com/${escapeHtml(repository)}/settings">${octicon("settings")}Settings</a>
   </div></nav>
   <div class="control-layout">
     <aside class="control-sidebar" aria-label="Control navigation">
@@ -319,7 +333,7 @@ function layout({ title, description, content, nested = false, navigation = "" }
         <section class="intro page-header" aria-labelledby="page-title">
           <div class="page-header-content">
             <p class="eyebrow">Control plane</p>
-            <div class="title-area">${octicon("play", "leading-visual")}<h1 id="page-title">${escapeHtml(title)}</h1></div>
+            <div class="title-area">${octicon("play", "leading-visual")}<h1 id="page-title">${escapeHtml(title)}</h1>${configuredMode ? modeIndicator(configuredMode) : ""}</div>
             <p class="lede">${escapeHtml(description)}</p>
           </div>
           <div class="page-header-actions">
@@ -367,15 +381,16 @@ const records = (await Promise.all(discoveredRecords.map(async (record) => ({
   ...record,
   mode: record.mode || await modeFromRunUrl(record.runUrl),
 })))).sort((left, right) => new Date(right.updatedAt) - new Date(left.updatedAt));
+const reportRecords = records.filter((record) => record.mode === "review" || record.mode === "live");
 
 await mkdir(outputDirectory, { recursive: true });
 await writeFile(path.join(outputDirectory, "inventory.json"), `${JSON.stringify(inventory, null, 2)}\n`);
 await writeFile(path.join(outputDirectory, "records.json"), `${JSON.stringify({ generatedAt, repository, inventory, records }, null, 2)}\n`);
 
 const totals = {
-  outputs: records.length,
-  actionable: records.filter((record) => record.kind !== "noop").length,
-  noops: records.filter((record) => record.kind === "noop").length,
+  outputs: reportRecords.length,
+  actionable: reportRecords.filter((record) => record.kind !== "noop").length,
+  noops: reportRecords.filter((record) => record.kind === "noop").length,
   workflows: inventory.workflows.length,
 };
 const metrics = `<section aria-labelledby="summary-heading">
@@ -388,14 +403,14 @@ const metrics = `<section aria-labelledby="summary-heading">
   </dl>
 </section>`;
 const bundleRows = bundleDefinitions.map((bundle) => {
-  const bundleRecords = records.filter((record) => record.bundle === bundle.id);
+  const bundleRecords = reportRecords.filter((record) => record.bundle === bundle.id);
   const latest = bundleRecords[0];
   const health = [bundle.compiled ? "compiled" : "source only", bundle.missingWorkers.length ? `${bundle.missingWorkers.length} missing worker(s)` : `${bundle.workers.length} worker(s)`].join(" · ");
-  const configuredMode = repositoryVariables.get(bundle.rolloutModeVariable) || "preview";
+  const configuredMode = configuredModeFor(bundle);
   return `<tr><th scope="row"><a href="bundles/${bundle.id}.html">${escapeHtml(bundle.name)}</a></th><td><span class="mode-badge mode-${escapeHtml(configuredMode)}">${escapeHtml(configuredMode)}</span></td><td>${escapeHtml(modeSummary(bundleRecords, "review"))}</td><td>${escapeHtml(modeSummary(bundleRecords, "live"))}</td><td>${escapeHtml(health)}</td><td>${escapeHtml(latest ? formatDate(latest.updatedAt) : "No outputs yet")}</td></tr>`;
 }).join("\n");
 const standaloneRows = standaloneDefinitions.map((workflow) => {
-  const workflowRecords = records.filter((record) => record.bundle === workflow.id);
+  const workflowRecords = reportRecords.filter((record) => record.bundle === workflow.id);
   const latest = workflowRecords[0];
   return `<tr><th scope="row"><a href="workflows/${workflow.id}.html">${escapeHtml(workflow.name)}</a></th><td>${workflowRecords.length}</td><td>${workflow.compiled ? "compiled" : "source only"}</td><td>${escapeHtml(latest ? formatDate(latest.updatedAt) : "No outputs yet")}</td></tr>`;
 }).join("\n");
@@ -429,22 +444,22 @@ await writeFile(path.join(outputDirectory, "index.html"), layout({
 
 await mkdir(path.join(outputDirectory, "bundles"), { recursive: true });
 for (const bundle of bundleDefinitions) {
-  const bundleRecords = records.filter((record) => record.bundle === bundle.id);
+  const bundleRecords = reportRecords.filter((record) => record.bundle === bundle.id);
   const navigation = `<nav aria-label="Report navigation"><div class="shell"><a href="../">All bundles</a><span aria-current="page">${escapeHtml(bundle.name)}</span></div></nav>`;
   const workerItems = bundle.workers.map((worker) => `<li><strong>${escapeHtml(worker.name)}</strong> · ${worker.compiled ? "compiled" : "source only"}${worker.description ? ` · ${escapeHtml(worker.description)}` : ""}</li>`).join("");
   const configuredMode = repositoryVariables.get(bundle.rolloutModeVariable) || "preview";
-  const unknownCount = bundleRecords.filter((record) => record.mode === "unknown").length;
   const defaultMode = bundleRecords.some((record) => record.mode === "review") ? "review" : "live";
-  for (const selectedMode of ["review", "live", ...(unknownCount ? ["unknown"] : [])]) {
+  for (const selectedMode of ["review", "live"]) {
     const modeRecords = bundleRecords.filter((record) => record.mode === selectedMode);
-    const modeIdentity = selectedMode === "review" ? "Viewing proposals routed for human review" : selectedMode === "live" ? "Viewing production outputs from live operation" : "Viewing outputs whose attributed workflow run is unavailable";
-    const content = `<section class="bundle-state" aria-labelledby="bundle-state-heading"><div><h2 id="bundle-state-heading">Configured mode</h2><span class="mode-badge mode-${escapeHtml(configuredMode)}">${escapeHtml(configuredMode)}</span></div><p>${escapeHtml(modeIdentity)}.</p></section><section aria-labelledby="workers-heading"><h2 id="workers-heading">Workers</h2><ul>${workerItems || "<li>No workers discovered.</li>"}</ul></section>${modeTabs(bundle, selectedMode, unknownCount)}${outcomeListing(modeRecords)}`;
+    const modeIdentity = selectedMode === "review" ? "Viewing proposals routed for human review" : "Viewing production outputs from live operation";
+    const content = `<p class="mode-view-note">${escapeHtml(modeIdentity)}.</p><section aria-labelledby="workers-heading"><h2 id="workers-heading">Workers</h2><ul>${workerItems || "<li>No workers discovered.</li>"}</ul></section>${modeTabs(bundle, selectedMode)}${outcomeListing(modeRecords)}`;
     const page = layout({
       title: `${bundle.name} outputs`,
       description: `Safe-output history for the ${bundle.name} control-plane bundle.`,
       content,
       nested: true,
       navigation,
+      configuredMode,
     });
     await writeFile(path.join(outputDirectory, "bundles", `${bundle.id}-${selectedMode}.html`), page);
     if (selectedMode === defaultMode) await writeFile(path.join(outputDirectory, "bundles", `${bundle.id}.html`), page);
@@ -453,7 +468,7 @@ for (const bundle of bundleDefinitions) {
 
 await mkdir(path.join(outputDirectory, "workflows"), { recursive: true });
 for (const workflow of standaloneDefinitions) {
-  const workflowRecords = records.filter((record) => record.bundle === workflow.id);
+  const workflowRecords = reportRecords.filter((record) => record.bundle === workflow.id);
   const navigation = `<nav aria-label="Report navigation"><div class="shell"><a href="../">All workflows</a><span aria-current="page">${escapeHtml(workflow.name)}</span></div></nav>`;
   const content = `<section aria-labelledby="inventory-heading"><h2 id="inventory-heading">Workflow inventory</h2><p>${workflow.compiled ? "Source and compiled lock file are present." : "Source is present without a matching compiled lock file."}</p><p><code>${escapeHtml(workflow.sourcePath)}</code></p></section>${outcomeListing(workflowRecords)}`;
   await writeFile(path.join(outputDirectory, "workflows", `${workflow.id}.html`), layout({
@@ -466,7 +481,7 @@ for (const workflow of standaloneDefinitions) {
 }
 
 await mkdir(path.join(outputDirectory, "outcomes"), { recursive: true });
-for (const record of records) {
+for (const record of reportRecords) {
   const runUrl = safeUrl(record.runUrl);
   const navigation = `<nav aria-label="Report navigation"><div class="shell"><a href="../">All workflows</a><span aria-current="page">Outcome</span></div></nav>`;
   const reportBody = record.bodyHtml || `<p>${escapeHtml(record.summary || "No report content was provided.")}</p>`;
@@ -546,8 +561,6 @@ a:focus-visible, [tabindex]:focus-visible { outline: 2px solid var(--focus); out
 .brand { min-width: 0; display: flex; align-items: center; gap: 10px; color: var(--fg); font-weight: 600; text-decoration: none; }
 .brand > span:last-child { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .github-mark { width: 32px; height: 32px; flex-basis: 32px; }
-.github-link { flex: none; display: inline-flex; align-items: center; gap: 6px; padding: 5px 12px; border: 1px solid var(--border); border-radius: 6px; color: var(--fg); background: var(--canvas-subtle); font-size: 12px; font-weight: 600; text-decoration: none; }
-.github-link:hover { background: var(--neutral-muted); }
 .repo-nav { height: 48px; overflow-x: auto; border-bottom: 1px solid var(--border); background: var(--header); }
 .repo-nav > div { min-width: max-content; height: 100%; display: flex; align-items: flex-end; gap: 4px; padding: 0 16px; }
 .repo-nav a { height: 40px; display: flex; align-items: center; gap: 7px; padding: 0 12px; border-bottom: 2px solid transparent; color: var(--fg); text-decoration: none; }
@@ -561,6 +574,7 @@ a:focus-visible, [tabindex]:focus-visible { outline: 2px solid var(--focus); out
 .sidebar-nav a:hover { background: var(--neutral-muted); }
 .sidebar-nav a[aria-current="page"] { background: var(--neutral-muted); font-weight: 600; }
 .sidebar-nav a[aria-current="page"]::before { content: ""; width: 3px; height: 24px; position: absolute; left: -8px; border-radius: 0 6px 6px 0; background: var(--accent); }
+.sidebar-nav .nav-name { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .nav-label { margin: 18px 10px 5px; padding-top: 14px; border-top: 1px solid var(--border); color: var(--muted); font-size: 12px; font-weight: 600; text-transform: uppercase; }
 .nav-icon { width: 22px; height: 22px; flex: 0 0 22px; padding: 4px; border: 1px solid var(--border); border-radius: 50%; background: var(--canvas); color: var(--muted); }
 .sidebar-footer { margin-top: auto; padding: 16px 18px; border-top: 1px solid var(--border); font-size: 12px; }
@@ -624,11 +638,11 @@ tbody tr:hover { background: var(--canvas-subtle); }
 .status-muted { background: var(--neutral-muted); }
 .mode-live { border-color: color-mix(in srgb, var(--success) 45%, var(--border)); background: var(--success-muted); color: var(--success); }
 .mode-review { border-color: color-mix(in srgb, var(--attention) 45%, var(--border)); background: var(--attention-muted); color: var(--attention); }
-.mode-preview, .mode-unknown { background: var(--neutral-muted); }
-.bundle-state { display: flex; align-items: center; justify-content: space-between; gap: 20px; }
-.bundle-state > div { display: flex; align-items: center; gap: 10px; }
-.bundle-state h2, .bundle-state p { margin: 0; }
-.bundle-state p { color: var(--muted); text-align: right; }
+.mode-preview { background: var(--neutral-muted); }
+.mode-indicator { min-height: 22px; display: inline-flex; flex: none; align-items: center; gap: 5px; padding: 1px 7px; border: 1px solid var(--border); border-radius: 2em; font-size: 11px; font-weight: 600; text-transform: none; white-space: nowrap; }
+.mode-indicator .octicon { width: 13px; height: 13px; flex-basis: 13px; }
+.sidebar-nav .mode-indicator { margin-left: auto; }
+.mode-view-note { margin: 0 0 14px; color: var(--muted); }
 .mode-tabs { display: flex; margin: 20px 0 0; border-bottom: 1px solid var(--border); }
 .mode-tabs a { min-width: 130px; display: flex; flex-direction: column; gap: 1px; position: relative; padding: 10px 16px; color: var(--muted); text-decoration: none; }
 .mode-tabs a:hover { color: var(--fg); }
@@ -669,7 +683,6 @@ footer { padding: 20px 24px; border-top: 1px solid var(--border); color: var(--m
 @media (max-width: 960px) {
   .site-header { height: 56px; }
   .header-inner { padding: 0 16px; }
-  .github-link { padding: 5px 8px; }
   .repo-nav { height: 44px; }
   .repo-nav > div { padding-inline: 8px; }
   .repo-nav a { height: 36px; padding-inline: 10px; }
@@ -691,8 +704,6 @@ footer { padding: 20px 24px; border-top: 1px solid var(--border); color: var(--m
   .discussion-sidebar { display: flex; gap: 4px; overflow-x: auto; }
   .discussion-sidebar h2 { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
   .discussion-sidebar > div { min-width: max-content; display: flex; }
-  .bundle-state { align-items: flex-start; flex-direction: column; gap: 8px; }
-  .bundle-state p { text-align: left; }
   .mode-tabs { overflow-x: auto; overflow-y: hidden; }
   .mode-tabs a { min-width: 120px; padding-inline: 12px; }
   .outcome-view { grid-template-columns: 1fr; }
