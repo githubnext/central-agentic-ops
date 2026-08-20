@@ -3,35 +3,36 @@ description: Immutable workflow for manifest-aware, risk-ranked dependency relea
 min-version: v0.83.1
 includes:
   - .github/workflows/dependabot.md
-config:
-  - type: require-owner-type
-    value: org
-  - type: repo-variable
-    name: GH_AW_GITHUB_APP_ID
-    prompt: GitHub App client ID (preferred authentication)
-    description: Leave empty when using a PAT instead.
-    optional: true
-  - type: repo-secret
-    name: GH_AW_GITHUB_APP_PRIVATE_KEY
-    prompt: GitHub App private key (preferred authentication)
-    description: Leave empty when using a PAT instead.
-    optional: true
-  - type: repo-secret
-    name: GH_AW_GITHUB_TOKEN
-    prompt: Fine-grained PAT fallback for control-plane GitHub access
-    description: Optional when both GitHub App settings are configured.
-    optional: true
-  - type: repo-variable
-    name: CENTRAL_AGENTIC_OPS_DEPENDABOT_MODE
-    prompt: Dependabot rollout mode
-    default: preview
-    enum: [preview, review, live]
-  - type: repo-variable
-    name: CENTRAL_AGENTIC_OPS_DEPENDABOT_REVIEW_REPO
-    prompt: Dependabot private review repository
-    optional: true
-  - type: copilot-auth
-  - type: commit-and-push
-    message: Add the Dependabot control-plane bundle
-  - type: handoff
-    message: Configure either the GitHub App pair (preferred) or GH_AW_GITHUB_TOKEN, then promote Dependabot independently from preview to review or live.
+# config:
+#   - type: require-owner-type
+#    value: org
+#  - type: repo-variable
+#  - type: repo-variable
+#    name: GH_AW_GITHUB_APP_ID
+#    prompt: GitHub App client ID (preferred authentication)
+#    description: Leave empty when using a PAT instead.
+#    optional: true
+#  - type: repo-secret
+#    name: GH_AW_GITHUB_APP_PRIVATE_KEY
+#    prompt: GitHub App private key (preferred authentication)
+#    description: Leave empty when using a PAT instead.
+#    optional: true
+#  - type: repo-secret
+#    name: GH_AW_GITHUB_TOKEN
+#    prompt: Fine-grained PAT fallback for control-plane GitHub access
+#    description: Optional when both GitHub App settings are configured.
+#    optional: true
+#  - type: repo-variable
+#    name: CENTRAL_AGENTIC_OPS_DEPENDABOT_MODE
+#    prompt: Dependabot rollout mode
+#    default: preview
+#    enum: [preview, review, live]
+#  - type: repo-variable
+#    name: CENTRAL_AGENTIC_OPS_DEPENDABOT_REVIEW_REPO
+#    prompt: Dependabot private review repository
+#    optional: true
+#  - type: copilot-auth
+#  - type: commit-and-push
+#    message: Add the Dependabot control-plane bundle
+#  - type: handoff
+#    message: Configure either the GitHub App pair (preferred) or GH_AW_GITHUB_TOKEN, then promote Dependabot independently from preview to review or live.
