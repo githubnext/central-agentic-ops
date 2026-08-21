@@ -28,7 +28,7 @@ Changing one bundle does not change another. For example, Dependabot may be live
 
 Absolute caps default to `1`, so missing configuration cannot create broad fan-out. Rollout percentages accept integers from `1` through `100` and default to `100`. The control plane rounds the percentage-derived repository count up for a non-empty candidate set, then applies the smallest of that count, `max_repos`, and the target count supported by the declared dispatch budget and eligible worker count. For example, a `10` percent rollout over 25 discovered repositories permits at most 3 selections before stricter caps are applied. Invalid values fail closed.
 
-Automatic discovery scans at most `CENTRAL_AGENTIC_OPS_MAX_SCAN_REPOS` repositories, defaulting to `1000` with a hard maximum of `10000`. Manual target and review repositories must belong to `CENTRAL_AGENTIC_OPS_ALLOWED_OWNERS`, which defaults to the control repository owner.
+Automatic discovery scans at most `CENTRAL_AGENTIC_OPS_MAX_SCAN_REPOS` repositories, defaulting to `1000` with a hard maximum of `100000`. Shared cell count/index and batch size/index controls deterministically select one bounded inventory slice before ranking. They do not auto-advance or retry batches. Manual target and review repositories must belong to `CENTRAL_AGENTIC_OPS_ALLOWED_OWNERS`, which defaults to the control repository owner.
 
 ## Modes
 

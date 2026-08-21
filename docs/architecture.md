@@ -43,9 +43,9 @@ The models are complementary rather than alternatives. An organization may recei
 
 Each central control repository fans out enabled bundles to selected targets, subject to repository allowlists and dispatch limits. Orchestrator and worker workflows run from that central repository. Each worker workflow checks out one target repository, inspects only that target, and creates only declared safe outputs in the configured downstream destination. A target repository may therefore receive safe outputs from both enterprise and organization control repositories without storing either source's Agentic Workflow definitions.
 
-The standard `central_repo`, `control_plane_run_url`, and `correlation_id` fields identify the originating central runtime and run. Because `central_repo` differs between enterprise and organization control repositories, downstream safe outputs retain their runtime source. Deployments should also preserve catalog and Agentic Workflow identity in workflow metadata and user-visible safe outputs; a dedicated workflow-source field remains a useful future provenance enhancement.
+The standard `central_repo`, `control_plane_run_url`, and `correlation_id` fields identify the originating central runtime and run. Because `central_repo` differs between enterprise and organization control repositories, downstream safe outputs retain their runtime source.
 
-Cross-organization reach is explicit, allowlisted, and credential-scoped. Fully qualified `target_repo` values can address repositories outside the control repository's owning organization only when the owner appears in `CENTRAL_AGENTIC_OPS_ALLOWED_OWNERS` and the configured GitHub App or PAT can perform the operation. The safe default permits only the control repository's owner. The current bounded discovery path enumerates only that owner; automatic enterprise-wide discovery requires an explicit multi-organization target inventory or a future discovery extension. This discovery limitation does not require copying workflows into organization or target repositories.
+Cross-organization reach is explicit, allowlisted, and credential-scoped. Fully qualified `target_repo` values can address repositories outside the control repository's owning organization only when the owner appears in `CENTRAL_AGENTIC_OPS_ALLOWED_OWNERS` and the configured GitHub App or PAT can perform the operation. The safe default permits only the control repository's owner. The current bounded discovery path enumerates only that owner; automatic enterprise-wide discovery is not provided. This discovery limitation does not require copying workflows into organization or target repositories.
 
 Repository-local workflow names cannot shadow central workers. Shared control resolves an orchestrator's declared worker slug only by its exact `.github/workflows/<slug>.lock.yml` path in the owning control repository. Target analytics use `workflow_path`, not display name, as identity so same-named target workflows remain separate. Target workflow definitions and logs are untrusted evidence, never policy. Persistent optimization history branches include `central_repo`, keeping enterprise and organization control-plane state separate when both target the same repository.
 
@@ -108,7 +108,8 @@ Credentials are not part of this envelope. Each run resolves authentication thro
 ## Invariants
 
 - staged mode is the default mode.
-- Automatic discovery scans at most `1000` repositories by default and never more than `10000`.
+- Automatic discovery scans at most `1000` repositories by default and never more than `100000`.
+- Orchestrator precompute versions each inventory and deterministically selects one bounded cell and batch before agent ranking begins.
 - Repository selection defaults to one target and is bounded by absolute, percentage, and dispatch-derived caps.
 - Manual targets and review destinations are restricted to trusted repository owners; the default is the control repository owner.
 - Review mode defaults to the current control-plane repository when no destination override is provided.
@@ -137,6 +138,6 @@ The system should stop or reduce scope when it cannot establish a required fact:
 
 ## Current Controls
 
-Implemented controls include shared authentication, bundle-level modes and review destinations, target and dispatch limits, worker workflow eligibility checks, standard dispatch envelopes, read-only GitHub tools, and worker workflow safe outputs.
+Implemented controls include shared authentication, bundle-level modes and review destinations, target and dispatch limits, versioned inventory batches, worker workflow eligibility checks, standard dispatch envelopes, read-only GitHub tools, and worker workflow safe outputs. Batch selection is deterministic; runs do not auto-advance or retry batches.
 
 Worker-level `enabled` and `max_mode` controls provide ceilings beneath bundle policy for workers with independent risk or maturity. They are not separate control planes. See [Orchestrators and Workers](orchestrators-and-workers.md).

@@ -12,7 +12,7 @@ The automated suite checks source `.md` contracts, ops-value interfaces, smoke-w
 | --- | --- | --- | --- |
 | Unit | `tests/unit/` | `npm run test:unit` | Policy matrices, workflow contracts, safety limits, generated settings, and package manifest structure. |
 | Integration | `tests/integration/` | `npm run test:integration` | Clean-room `gh aw add`/`update` behavior and fail-closed execution of the actual control precompute shell. |
-| Load | `tests/load/` | `npm run test:load` | Actual pagination and admission logic over 10,000 synthetic repositories, including bounded API failure. |
+| Load | `tests/load/` | `npm run test:load` | Actual pagination, deterministic batching, and admission logic over 100,000 synthetic repositories, including bounded API failure. |
 | Compilation | Source workflows | `npm run compile` | All five agentic workflows compile without emitting repository artifacts. |
 | Runtime staged | `.github/workflows/staged-smoke.yml` | Manual Actions dispatch | One bounded target and its workers complete; target refs and issues remain unchanged. |
 | Runtime modes | `.github/workflows/enterprise-canary.yml` | Manual protected Actions dispatch | Repository-local staged/review/live routing against dedicated repositories with mode-specific write assertions. |
@@ -32,7 +32,8 @@ The integration suite creates disposable consumer repositories under the system 
 | Test result | Scenario | Checked behavior |
 | --- | --- | --- |
 | 🟢 Pass | Invalid scope, mode, correlation, caps, and budgets | The actual control precompute shell rejects 12 malformed or unauthorized inputs before execution. |
-| 🟢 Pass | 10,000-repository inventory | Pagination stops at 100 pages, retains exactly 10,000 candidates, and applies the 10%/1,000 target cap within 30 seconds. |
+| 🟢 Pass | 100,000-repository inventory | Pagination stops at 1,000 pages, retains exactly 100,000 candidates, and applies the 10%/1,000 target cap within 120 seconds. |
+| 🟢 Pass | Deterministic cell and batch selection | Stable repository IDs assign every selected candidate to one cell; bounded batches share an inventory version and have distinct batch IDs. |
 | 🟢 Pass | Inventory API rate limit | Organization and user lookup each run once, then produce zero candidates, zero target capacity, and a durable error instead of retrying. |
 | Manual | Staged canary | Orchestrator and correlated workers complete while target issue/ref snapshots remain identical. |
 | Manual, approved | Review canary | Target remains unchanged; optional `require_output` asserts a durable proposal in the private review repository. |
@@ -116,7 +117,8 @@ Invalid caps, out-of-scope owners, and incomplete control facts stop before work
 | 🟢 Pass | Fractional percentage | Rejected. |
 | 🟢 Pass | Non-numeric percentage | Rejected. |
 | 🟢 Pass | `max_repos` below `1`, fractional, or above `1000` | Rejected. |
-| 🟢 Pass | `max_scan_repos` below `1` or above `10000` | Rejected. |
+| 🟢 Pass | `max_scan_repos` below `1` or above `100000` | Rejected. |
+| 🟢 Pass | Invalid cell count/index or batch size/index | Rejected. |
 | 🟢 Pass | Target or review repository outside `CENTRAL_AGENTIC_OPS_ALLOWED_OWNERS` | Rejected. |
 | 🟢 Pass | Unknown scheduled mode | Scheduled bundle disabled. |
 | 🟢 Pass | Legacy `preview` mode | Normalized to staged mode; safe outputs perform no GitHub API writes. |

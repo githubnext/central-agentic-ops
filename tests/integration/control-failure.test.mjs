@@ -16,6 +16,10 @@ const failures = [
   ["mismatched control run URL", { CONTROL_PLANE_RUN_URL: "https://github.com/acme/control/actions/runs/999" }, "control_plane_run_url must match correlation_id and central_repo"],
   ["oversized repository cap", { ROLE: "orchestrator", TARGET_REPO: "", MAX_REPOS: "1001" }, "max_repos must be an integer from 1 through 1000"],
   ["oversized scan cap", { ROLE: "orchestrator", TARGET_REPO: "", MAX_SCAN_REPOS: "100001" }, "max_scan_repos must be an integer from 1 through 100000"],
+  ["invalid cell count", { ROLE: "orchestrator", TARGET_REPO: "", CELL_COUNT: "0" }, "cell_count must be an integer from 1 through 1000"],
+  ["invalid cell index", { ROLE: "orchestrator", TARGET_REPO: "", CELL_COUNT: "4", CELL_INDEX: "4" }, "cell_index must be an integer from 0 through cell_count minus 1"],
+  ["oversized batch", { ROLE: "orchestrator", TARGET_REPO: "", BATCH_SIZE: "100001" }, "batch_size must be an integer from 1 through 100000"],
+  ["invalid batch index", { ROLE: "orchestrator", TARGET_REPO: "", BATCH_INDEX: "-1" }, "batch_index must be a non-negative integer"],
   ["invalid rollout percentage", { ROLE: "orchestrator", TARGET_REPO: "", ROLLOUT_PERCENT: "0" }, "rollout_percent must be an integer from 1 through 100"],
   ["invalid credit budget", { ROLE: "orchestrator", TARGET_REPO: "", AGGREGATE_CREDIT_LIMIT: "0" }, "AI Credit admission values must be integers"],
 ];

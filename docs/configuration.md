@@ -24,7 +24,11 @@ Every installed bundle has an independent mode. Installation defaults each mode 
 | --- | --- | --- | --- | --- |
 | `GH_AW_GITHUB_APP_ID` | Shared | With App authentication | None | GitHub App client ID used to mint short-lived installation tokens. |
 | `CENTRAL_AGENTIC_OPS_ALLOWED_OWNERS` | Shared | No | Control repository owner | Comma-separated owners permitted for manual targets and review destinations. Wildcards are not supported. |
-| `CENTRAL_AGENTIC_OPS_MAX_SCAN_REPOS` | Shared | No | `1000` | Maximum repositories examined by bounded automatic discovery. Accepts `1` through `10000`. |
+| `CENTRAL_AGENTIC_OPS_MAX_SCAN_REPOS` | Shared | No | `1000` | Maximum repositories examined by bounded automatic discovery. Accepts `1` through `100000`. |
+| `CENTRAL_AGENTIC_OPS_CELL_COUNT` | Shared | No | `1` | Number of deterministic inventory cells. Accepts `1` through `1000`. |
+| `CENTRAL_AGENTIC_OPS_CELL_INDEX` | Shared | No | `0` | Zero-based cell selected for a scheduled run. Must be smaller than `CENTRAL_AGENTIC_OPS_CELL_COUNT`. |
+| `CENTRAL_AGENTIC_OPS_BATCH_SIZE` | Shared | No | `100000` | Maximum repositories exposed to an orchestrator from its selected cell. Accepts `1` through `100000`. |
+| `CENTRAL_AGENTIC_OPS_BATCH_INDEX` | Shared | No | `0` | Zero-based batch selected for a scheduled run. |
 | `CENTRAL_AGENTIC_OPS_MAX_AI_CREDITS_PER_RUN` | Shared | No | `1100` | Maximum declared orchestrator-plus-worker AI Credits admitted for one orchestration. |
 | `CENTRAL_AGENTIC_OPS_DEPENDABOT_MODE` | Dependabot | Yes when installed | `staged` | Sets the bundle mode to `staged`, `review`, or `live`. |
 | `CENTRAL_AGENTIC_OPS_DEPENDABOT_MAX_REPOS` | Dependabot | No | `1` | Scheduled repository-selection cap. Accepts `1` through `1000`; dispatch limits may reduce it further. |
@@ -67,9 +71,13 @@ Both bundle orchestrator workflows expose the same inputs under **Run workflow**
 | `safe_output_repo` | String | Current control-plane repository | Overrides the review safe output destination with an allowlisted repository for this manual run. |
 | `max_repos` | Number | `1` | Caps repositories selected by this run. It cannot exceed the orchestrator workflow's declared dispatch limit. |
 | `rollout_percent` | Number | `100` | Overrides the bundle rollout percentage for this run. Accepts integers from `1` through `100`. |
+| `cell_count` | Number | `1` | Partitions automatic discovery by immutable GitHub repository ID. |
+| `cell_index` | Number | `0` | Selects one zero-based inventory cell. |
+| `batch_size` | Number | `100000` | Bounds the repositories supplied to the orchestrator from that cell. |
+| `batch_index` | Number | `0` | Selects one zero-based batch from that cell. |
 | `safe_output_mode` | Choice | `staged` | Selects staged mode, review routing, or live safe output processing for this `workflow_dispatch` run. |
 
-`workflow_dispatch` inputs affect only the dispatched run. They do not update repository variables or another bundle's policy. The percentage cap is rounded up so a non-empty candidate set can select at least one repository. `max_repos`, the percentage cap, and the target count permitted by the orchestrator workflow's remaining dispatch budget are cumulative; the smallest cap wins. Invalid or out-of-range caps fail precomputation. During validation, specify one `target_repo`, keep `max_repos` at `1`, and begin in staged mode.
+`workflow_dispatch` inputs affect only the dispatched run. They do not update repository variables or another bundle's policy. Precompute emits a content-addressed `inventory_version` and deterministic `batch_id`; the same inventory and scheduling inputs produce the same batch. These controls do not auto-advance batches, retry work, or provide durable completion tracking. The percentage cap is rounded up so a non-empty candidate set can select at least one repository. `max_repos`, the percentage cap, and the target count permitted by the orchestrator workflow's remaining dispatch budget are cumulative; the smallest cap wins. Invalid or out-of-range caps fail precomputation. During validation, specify one `target_repo`, keep `max_repos` at `1`, and begin in staged mode.
 
 ## Optional Observability Secrets
 
@@ -97,7 +105,8 @@ Control values resolve in this order:
 | Review destination | `safe_output_repo` workflow input for a manual run, otherwise `github.repository`. |
 | Allowed repository owners | `CENTRAL_AGENTIC_OPS_ALLOWED_OWNERS`, otherwise `github.repository_owner`. Applies to orchestrated and directly dispatched workers. |
 | Absolute repository cap | `max_repos` workflow input, then the bundle max-repositories variable, then `1`. |
-| Discovery scan cap | `CENTRAL_AGENTIC_OPS_MAX_SCAN_REPOS`, then `1000`; hard maximum `10000`. |
+| Discovery scan cap | `CENTRAL_AGENTIC_OPS_MAX_SCAN_REPOS`, then `1000`; hard maximum `100000`. |
+| Scheduled inventory slice | Cell count/index and batch size/index variables; defaults select the complete discovered inventory. Manual inputs override these values for one run. |
 | Aggregate AI Credit cap | `CENTRAL_AGENTIC_OPS_MAX_AI_CREDITS_PER_RUN`, then `1100`; selection is reduced to fit the declared orchestrator and worker maxima. |
 | Rollout percentage | `rollout_percent` workflow input, then the bundle rollout-percentage variable, then `100`. |
 | Target selection | `target_repo` workflow input, otherwise control-plane discovery. |

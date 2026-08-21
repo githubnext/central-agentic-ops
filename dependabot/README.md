@@ -44,7 +44,9 @@ Configure a GitHub App, a fine-grained PAT, or both in the control repository fo
 | `GH_AW_GITHUB_APP_PRIVATE_KEY` | Repository secret | With App authentication | GitHub App private key. |
 | `GH_AW_GITHUB_TOKEN` | Repository secret | For cross-repository access without a complete App configuration | Fine-grained PAT fallback; not required for public staged scans. |
 | `CENTRAL_AGENTIC_OPS_ALLOWED_OWNERS` | Repository variable | No | Comma-separated permitted owners; defaults to the control repository owner. |
-| `CENTRAL_AGENTIC_OPS_MAX_SCAN_REPOS` | Repository variable | No | Bounded discovery size; defaults to `1000` and cannot exceed `10000`. |
+| `CENTRAL_AGENTIC_OPS_MAX_SCAN_REPOS` | Repository variable | No | Bounded discovery size; defaults to `1000` and cannot exceed `100000`. |
+| `CENTRAL_AGENTIC_OPS_CELL_COUNT` / `CENTRAL_AGENTIC_OPS_CELL_INDEX` | Repository variables | No | Deterministically select one inventory cell; defaults to cell `0` of `1`. |
+| `CENTRAL_AGENTIC_OPS_BATCH_SIZE` / `CENTRAL_AGENTIC_OPS_BATCH_INDEX` | Repository variables | No | Select one bounded batch within the cell; defaults to batch `0` with size `100000`. |
 | `CENTRAL_AGENTIC_OPS_DEPENDABOT_MODE` | Repository variable | Yes | Bundle mode: `staged`, `review`, or `live`. Defaults to `staged`. |
 | `CENTRAL_AGENTIC_OPS_DEPENDABOT_MAX_REPOS` | Repository variable | No | Scheduled selection cap; defaults to `1`. |
 | `CENTRAL_AGENTIC_OPS_DEPENDABOT_ROLLOUT_PERCENT` | Repository variable | No | Percentage of discovered repositories eligible for selection. Accepts `1` through `100` and defaults to `100`. |
@@ -87,7 +89,7 @@ Promote in order: one-repository staged, private review, limited live, then sche
 
 ## Targeting
 
-A manual `target_repo` can address a fully qualified repository only when its owner is allowlisted and the configured credential can access it. Without an explicit target, bounded automatic discovery enumerates repositories in the organization that owns the control repository. Enterprise-wide automatic discovery across multiple organizations requires an explicit inventory or a future discovery extension.
+A manual `target_repo` can address a fully qualified repository only when its owner is allowlisted and the configured credential can access it. Without an explicit target, bounded automatic discovery enumerates repositories in the organization that owns the control repository. Enterprise-wide automatic discovery across multiple organizations is not provided.
 
 The orchestrator favors:
 

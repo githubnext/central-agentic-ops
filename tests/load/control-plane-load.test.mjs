@@ -32,7 +32,7 @@ elif [[ "$arguments" == *"/repos?"* ]]; then
   page=$(printf '%s' "$arguments" | sed -n 's/.*[?&]page=\\([0-9][0-9]*\\).*/\\1/p')
   for item in $(seq 1 100); do
     index=$(( (page - 1) * 100 + item ))
-    printf '{"full_name":"acme/repo-%s","archived":false,"disabled":false,"private":true,"pushed_at":"2026-01-01T00:00:00Z","default_branch":"main"}\\n' "$index"
+    printf '{"id":%s,"full_name":"acme/repo-%s","archived":false,"disabled":false,"private":true,"pushed_at":"2026-01-01T00:00:00Z","default_branch":"main"}\n' "$index" "$index"
   done
 else
   printf 'unexpected gh invocation: %s\\n' "$arguments" >&2
@@ -76,12 +76,52 @@ test("control precompute bounds a 100,000-repository inventory", { timeout: 120_
     const output = JSON.parse(readFileSync("/tmp/gh-aw/agent/control-precompute.json", "utf8"));
     const inventoryCalls = readFileSync(run.logPath, "utf8").trim().split("\n");
     assert.equal(output.total_repositories_scanned, 100000);
+    assert.match(output.inventory_version, /^sha256:[0-9a-f]{64}$/);
+    assert.equal(output.batch_count, 1);
     assert.equal(output.candidate_repositories.length, 100000);
     assert.equal(output.effective_max_repos, 1000);
     assert.equal(inventoryCalls.length, 1000);
     assert.ok(performance.now() - started < 120_000, "bounded inventory exceeded 120 seconds");
   } finally {
     rmSync(run.temporaryDirectory, { recursive: true, force: true });
+  }
+});
+
+test("control precompute assigns stable cells and bounded batches", () => {
+  const overrides = {
+    MAX_SCAN_REPOS: "1000",
+    CELL_COUNT: "4",
+    CELL_INDEX: "1",
+    BATCH_SIZE: "100",
+    BATCH_INDEX: "1",
+  };
+  const first = runPrecompute(overrides);
+
+  try {
+    assert.equal(first.result.status, 0, first.result.stderr);
+    const firstOutput = JSON.parse(readFileSync("/tmp/gh-aw/agent/control-precompute.json", "utf8"));
+    assert.equal(firstOutput.inventory_repository_count, 1000);
+    assert.equal(firstOutput.cell_repository_count, 250);
+    assert.equal(firstOutput.batch_count, 3);
+    assert.equal(firstOutput.candidate_repositories.length, 100);
+    assert.equal(firstOutput.candidate_repositories[0].id, 401);
+    assert.equal(firstOutput.candidate_repositories.at(-1).id, 797);
+    assert.ok(firstOutput.candidate_repositories.every(({ id }) => id % 4 === 1));
+
+    const second = runPrecompute({ ...overrides, BATCH_INDEX: "2" });
+    try {
+      assert.equal(second.result.status, 0, second.result.stderr);
+      const secondOutput = JSON.parse(readFileSync("/tmp/gh-aw/agent/control-precompute.json", "utf8"));
+      assert.equal(secondOutput.inventory_version, firstOutput.inventory_version);
+      assert.equal(secondOutput.candidate_repositories.length, 50);
+      assert.equal(secondOutput.candidate_repositories[0].id, 801);
+      assert.equal(secondOutput.candidate_repositories.at(-1).id, 997);
+      assert.notEqual(secondOutput.batch_id, firstOutput.batch_id);
+    } finally {
+      rmSync(second.temporaryDirectory, { recursive: true, force: true });
+    }
+  } finally {
+    rmSync(first.temporaryDirectory, { recursive: true, force: true });
   }
 });
 

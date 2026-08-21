@@ -37,7 +37,7 @@ The repository-only `Enterprise canary` Actions workflow automates all three mod
 
 The canary snapshots issues, pull requests (through the issues API), and branch refs before dispatch. Staged and review must leave the target snapshot unchanged. Review may change only its private review destination; live may change only the dedicated target. Repository snapshots are a routing guard, not semantic approval of generated content, so operators must still inspect the output and correlation metadata.
 
-The repository-only `Enterprise staged stress` workflow sends only `2`, `3`, or `5` same-scope staged runs and requires `STRESS OWNER/REPO RUNS` confirmation plus approval through the `central-agentic-ops-stress` environment. It verifies that concurrency supersedes all but the newest run and that the target snapshot remains unchanged. Real stress remains manual because every run consumes AI Credits; `npm run test:load` supplies the CI-scale test with 10,000 synthetic repositories and no model calls.
+The repository-only `Enterprise staged stress` workflow sends only `2`, `3`, or `5` same-scope staged runs and requires `STRESS OWNER/REPO RUNS` confirmation plus approval through the `central-agentic-ops-stress` environment. It verifies that concurrency supersedes all but the newest run and that the target snapshot remains unchanged. Real stress remains manual because every run consumes AI Credits; `npm run test:load` supplies the CI-scale test with 100,000 synthetic repositories and no model calls.
 
 ## Routine Monitoring
 
@@ -68,7 +68,7 @@ API and budget failures are fail-closed:
 - a worker that reaches an API limit, workflow AI Credit cap, or broader budget limit after startup stops additional work and reports incomplete without self-dispatch or a wait loop; if budget enforcement rejects startup, the failed Actions run is the audit record;
 - work resumes only through a later scheduled run or an authorized manual run, which is a new bounded attempt.
 
-This favors bounded failure over eventual delivery. Operations that require guaranteed eventual processing need a separately governed durable queue with deduplication, attempt limits, not-before timestamps, dead-letter handling, and budget/rate-limit admission checks; those capabilities are not provided by the current workflows.
+This favors bounded failure over eventual delivery. Guaranteed eventual processing is not provided by the current workflows.
 
 Observability imports for Sentry, Grafana, and Datadog are shared control-plane context. They do not replace GitHub Actions run history and correlation metadata as the primary execution audit trail.
 

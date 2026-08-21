@@ -248,7 +248,10 @@ test("enterprise defaults, budgets, timeouts, and concurrency are finite", () =>
   assert.match(control, /max_scan_repos:.*github\.aw\.import-inputs\.max_scan_repos \|\| '1000'/);
   assert.match(control, /CENTRAL_AGENTIC_OPS_ALLOWED_OWNERS \|\| github\.repository_owner/);
   assert.match(precompute, /max_repos must be an integer from 1 through 1000/);
-  assert.match(precompute, /max_scan_repos must be an integer from 1 through 10000/);
+  assert.match(precompute, /max_scan_repos must be an integer from 1 through 100000/);
+  assert.match(precompute, /inventory_version/);
+  assert.match(precompute, /batch_id/);
+  assert.match(precompute, /\.id % \$cell_count/);
   assert.match(precompute, /dispatch_max must be an integer from 1 through 1000/);
   assert.match(precompute, /\(\$dispatch_max \| tonumber\) \/ \$eligible_workers \| floor/);
   assert.match(precompute, /\(\$aggregate_credit_limit \| tonumber\) - \(\$orchestrator_credits \| tonumber\)/);
@@ -424,7 +427,7 @@ test("public read-only operation uses the built-in token without widening access
   const precompute = workflow("shared/control-precompute.md");
 
   assert.match(precompute, /GH_TOKEN:.*GH_AW_GITHUB_TOKEN.*secrets\.GITHUB_TOKEN/);
-  assert.match(precompute, /\{full_name, archived, disabled, private, pushed_at, default_branch\}/);
+  assert.match(precompute, /\{id, full_name, archived, disabled, private, pushed_at, default_branch\}/);
   assert.match(authentication, /App or PAT is not required for a bounded `staged` scan when every target repository is public/);
   assert.match(authentication, /use `review` only when safe outputs remain in the current control repository/);
   assert.match(authentication, /configure an App or PAT for private or internal targets, an alternate review repository, or any `live` cross-repository write/);
@@ -458,6 +461,10 @@ test("orchestrators expose scheduled variables and independent manual inputs", (
     assert.doesNotMatch(source, new RegExp(`CENTRAL_AGENTIC_OPS_${packageName}_REVIEW_REPO`));
     assert.match(source, new RegExp(`CENTRAL_AGENTIC_OPS_${packageName}_ROLLOUT_PERCENT \\|\\| '100'`));
     assert.match(source, /CENTRAL_AGENTIC_OPS_MAX_SCAN_REPOS \|\| '1000'/);
+    assert.match(source, /CENTRAL_AGENTIC_OPS_CELL_COUNT \|\| '1'/);
+    assert.match(source, /CENTRAL_AGENTIC_OPS_CELL_INDEX \|\| '0'/);
+    assert.match(source, /CENTRAL_AGENTIC_OPS_BATCH_SIZE \|\| '100000'/);
+    assert.match(source, /CENTRAL_AGENTIC_OPS_BATCH_INDEX \|\| '0'/);
     assert.match(source, /CENTRAL_AGENTIC_OPS_ALLOWED_OWNERS \|\| github\.repository_owner/);
     assert.match(source, /CENTRAL_AGENTIC_OPS_MAX_AI_CREDITS_PER_RUN \|\| '1100'/);
   }
@@ -578,7 +585,9 @@ test("clean-room compilation emits the expected GitHub Actions settings", { time
       assert.match(generated, /effective_max_repos/);
       assert.match(generated, /rollout_percent must be an integer from 1 through 100/);
       assert.match(generated, /max_repos must be an integer from 1 through 1000/);
-      assert.match(generated, /max_scan_repos must be an integer from 1 through 10000/);
+      assert.match(generated, /max_scan_repos must be an integer from 1 through 100000/);
+      assert.match(generated, /inventory_version/);
+      assert.match(generated, /batch_id/);
       assert.match(generated, /outside CENTRAL_AGENTIC_OPS_ALLOWED_OWNERS/);
       assert.doesNotMatch(generated, /safe_output_mode == 'private'/);
     }

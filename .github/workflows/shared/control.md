@@ -16,6 +16,18 @@ import-schema:
   max_scan_repos:
     type: string
     default: "1000"
+  cell_count:
+    type: string
+    default: "1"
+  cell_index:
+    type: string
+    default: "0"
+  batch_size:
+    type: string
+    default: "100000"
+  batch_index:
+    type: string
+    default: "0"
   allowed_owners:
     type: string
     default: ""
@@ -61,6 +73,10 @@ imports:
       organization: ${{ github.repository_owner }}
       max_repos: ${{ github.event.inputs.max_repos || github.aw.import-inputs.max_repos || '1' }}
       max_scan_repos: ${{ github.aw.import-inputs.max_scan_repos || '1000' }}
+      cell_count: ${{ github.event.inputs.cell_count || github.aw.import-inputs.cell_count || '1' }}
+      cell_index: ${{ github.event.inputs.cell_index || github.aw.import-inputs.cell_index || '0' }}
+      batch_size: ${{ github.event.inputs.batch_size || github.aw.import-inputs.batch_size || '100000' }}
+      batch_index: ${{ github.event.inputs.batch_index || github.aw.import-inputs.batch_index || '0' }}
       allowed_owners: ${{ github.aw.import-inputs.allowed_owners || vars.CENTRAL_AGENTIC_OPS_ALLOWED_OWNERS || github.repository_owner }}
       dispatch_max: ${{ github.aw.import-inputs.dispatch_max || '1' }}
       rollout_percent: ${{ github.event.inputs.rollout_percent || github.aw.import-inputs.rollout_percent || '100' }}
@@ -94,7 +110,7 @@ In `review` mode, built-in safe outputs operate against `SAFE_OUTPUT_REPO`. Neve
 
 If `control_role` is `orchestrator`, filter and prioritize target repositories, then dispatch the configured worker workflows.
 
-Use the `enabled`, `max_repos`, `rollout_percent`, `effective_max_repos`, `safe_output_mode`, `safe_output_repo`, and `preview_only` fields from `/tmp/gh-aw/agent/control-precompute.json`; do not infer those values from workflow inputs.
+Use the `enabled`, `inventory_version`, `batch_id`, `max_repos`, `rollout_percent`, `effective_max_repos`, `safe_output_mode`, `safe_output_repo`, and `preview_only` fields from `/tmp/gh-aw/agent/control-precompute.json`; do not infer those values from workflow inputs.
 
 For orchestrators, use the importing package's `Discovery` and `Workers` sections only for ranking, prioritization, and deciding whether a precomputed candidate is useful for this package.
 
@@ -105,6 +121,7 @@ Continue with the repository targeting and workflow dispatch steps below.
 
 1. Select target repositories:
   - use `candidate_repositories` from `/tmp/gh-aw/agent/control-precompute.json`
+  - treat that list as the complete current batch; do not discover repositories from another cell or batch
   - skip archived or disabled repositories and repositories where required data could not be precomputed
   - use the importing package's `Discovery` section to rank candidates
   - select no more than `effective_max_repos` repositories; it is the stricter cap derived from `max_repos` and `rollout_percent`

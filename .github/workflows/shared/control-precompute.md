@@ -16,6 +16,18 @@ import-schema:
   max_scan_repos:
     type: string
     default: "1000"
+  cell_count:
+    type: string
+    default: "1"
+  cell_index:
+    type: string
+    default: "0"
+  batch_size:
+    type: string
+    default: "100000"
+  batch_index:
+    type: string
+    default: "0"
   allowed_owners:
     type: string
     default: ""
@@ -76,6 +88,10 @@ steps:
       ORGANIZATION: ${{ github.aw.import-inputs.organization }}
       MAX_REPOS: ${{ github.aw.import-inputs.max_repos }}
       MAX_SCAN_REPOS: ${{ github.aw.import-inputs.max_scan_repos }}
+      CELL_COUNT: ${{ github.aw.import-inputs.cell_count }}
+      CELL_INDEX: ${{ github.aw.import-inputs.cell_index }}
+      BATCH_SIZE: ${{ github.aw.import-inputs.batch_size }}
+      BATCH_INDEX: ${{ github.aw.import-inputs.batch_index }}
       ALLOWED_OWNERS: ${{ github.aw.import-inputs.allowed_owners }}
       DISPATCH_MAX: ${{ github.aw.import-inputs.dispatch_max }}
       ROLLOUT_PERCENT: ${{ github.aw.import-inputs.rollout_percent }}
@@ -263,7 +279,7 @@ steps:
 
         if [ -n "$TARGET_REPO" ]; then
           repo_source="target_repo"
-          if ! gh api "repos/$TARGET_REPO" --jq '[{full_name, archived, disabled, private, pushed_at, default_branch}]' \
+          if ! gh api "repos/$TARGET_REPO" --jq '[{id, full_name, archived, disabled, private, pushed_at, default_branch}]' \
             > /tmp/gh-aw/agent/candidates.json 2>/tmp/gh-aw/agent/repo-error.txt; then
             repo_error=$(cat /tmp/gh-aw/agent/repo-error.txt)
             printf '[]\n' > /tmp/gh-aw/agent/candidates.json
@@ -289,7 +305,7 @@ steps:
         : > /tmp/gh-aw/agent/candidate-pages.jsonl
         while [ "$page" -le "$pages" ]; do
           if ! gh api "$endpoint?per_page=100&type=$repository_type&page=$page" \
-            --jq '.[] | {full_name, archived, disabled, private, pushed_at, default_branch}' \
+            --jq '.[] | {id, full_name, archived, disabled, private, pushed_at, default_branch}' \
             > /tmp/gh-aw/agent/candidate-page.jsonl 2>/tmp/gh-aw/agent/repo-error.txt; then
             return 1
           fi
@@ -303,6 +319,68 @@ steps:
           > /tmp/gh-aw/agent/candidates.json
       }
 
+      prepare_inventory_batch() {
+        local inventory_digest
+        local inventory_count
+        local cell_repository_count
+        local batch_count
+        local batch_offset
+
+        if ! jq -e 'all(.[]; (.id | type) == "number" and (.full_name | type) == "string")' \
+          /tmp/gh-aw/agent/candidates.json >/dev/null; then
+          echo "repository inventory entries require numeric id and full_name" >&2
+          exit 1
+        fi
+
+        inventory_digest=$(jq -cS 'sort_by([.id, .full_name])[]' /tmp/gh-aw/agent/candidates.json \
+          | openssl dgst -sha256 | awk '{print $NF}')
+        inventory_version="sha256:$inventory_digest"
+        inventory_count=$(jq 'length' /tmp/gh-aw/agent/candidates.json)
+
+        if [ -n "$TARGET_REPO" ]; then
+          jq 'sort_by([.id, .full_name])' /tmp/gh-aw/agent/candidates.json \
+            > /tmp/gh-aw/agent/cell-candidates.json
+        else
+          jq --argjson cell_count "$CELL_COUNT" --argjson cell_index "$CELL_INDEX" \
+            '[.[] | select((.id % $cell_count) == $cell_index)] | sort_by([.id, .full_name])' \
+            /tmp/gh-aw/agent/candidates.json > /tmp/gh-aw/agent/cell-candidates.json
+        fi
+
+        cell_repository_count=$(jq 'length' /tmp/gh-aw/agent/cell-candidates.json)
+        batch_count=$(( (cell_repository_count + BATCH_SIZE - 1) / BATCH_SIZE ))
+        if [ "$batch_count" -gt 0 ] && [ "$BATCH_INDEX" -ge "$batch_count" ]; then
+          echo "batch_index must be smaller than the selected cell batch count ($batch_count)" >&2
+          exit 1
+        fi
+
+        batch_offset=$(( BATCH_INDEX * BATCH_SIZE ))
+        jq ".[${batch_offset}:$((batch_offset + BATCH_SIZE))]" \
+          /tmp/gh-aw/agent/cell-candidates.json > /tmp/gh-aw/agent/current-batch.json
+        batch_id="${inventory_version}:cell-${CELL_INDEX}-of-${CELL_COUNT}:batch-${BATCH_INDEX}-of-${batch_count}"
+
+        jq -n \
+          --arg inventory_version "$inventory_version" \
+          --arg batch_id "$batch_id" \
+          --argjson inventory_repository_count "$inventory_count" \
+          --argjson cell_count "$CELL_COUNT" \
+          --argjson cell_index "$CELL_INDEX" \
+          --argjson cell_repository_count "$cell_repository_count" \
+          --argjson batch_size "$BATCH_SIZE" \
+          --argjson batch_index "$BATCH_INDEX" \
+          --argjson batch_count "$batch_count" \
+          '{
+            inventory_version: $inventory_version,
+            inventory_repository_count: $inventory_repository_count,
+            cell_count: $cell_count,
+            cell_index: $cell_index,
+            cell_repository_count: $cell_repository_count,
+            batch_size: $batch_size,
+            batch_index: $batch_index,
+            batch_count: $batch_count,
+            batch_id: $batch_id
+          }' > /tmp/gh-aw/agent/inventory-metadata.json
+      }
+
       write_orchestrator_precompute() {
         local workers_json
 
@@ -312,6 +390,22 @@ steps:
         fi
         if ! [[ "$MAX_SCAN_REPOS" =~ ^[1-9][0-9]*$ ]] || [ "$MAX_SCAN_REPOS" -gt 100000 ]; then
           echo "max_scan_repos must be an integer from 1 through 100000" >&2
+          exit 1
+        fi
+        if ! [[ "$CELL_COUNT" =~ ^[1-9][0-9]*$ ]] || [ "$CELL_COUNT" -gt 1000 ]; then
+          echo "cell_count must be an integer from 1 through 1000" >&2
+          exit 1
+        fi
+        if ! [[ "$CELL_INDEX" =~ ^[0-9]+$ ]] || [ "$CELL_INDEX" -ge "$CELL_COUNT" ]; then
+          echo "cell_index must be an integer from 0 through cell_count minus 1" >&2
+          exit 1
+        fi
+        if ! [[ "$BATCH_SIZE" =~ ^[1-9][0-9]*$ ]] || [ "$BATCH_SIZE" -gt 100000 ]; then
+          echo "batch_size must be an integer from 1 through 100000" >&2
+          exit 1
+        fi
+        if ! [[ "$BATCH_INDEX" =~ ^[0-9]+$ ]]; then
+          echo "batch_index must be a non-negative integer" >&2
           exit 1
         fi
         if ! [[ "$DISPATCH_MAX" =~ ^[1-9][0-9]*$ ]] || [ "$DISPATCH_MAX" -gt 1000 ]; then
@@ -340,6 +434,7 @@ steps:
         gh api "repos/${GITHUB_REPOSITORY}/actions/workflows?per_page=100" --jq '.workflows[] | {id, name, path, state}' \
           | jq -s '.' > /tmp/gh-aw/agent/workflows.json
         load_candidate_repositories
+        prepare_inventory_batch
 
         printf '%s\n' "$workers_json" > /tmp/gh-aw/agent/workers.json
 
@@ -359,9 +454,10 @@ steps:
           --arg aggregate_credit_limit "$AGGREGATE_CREDIT_LIMIT" \
           --arg repo_source "$repo_source" \
           --arg repo_error "$repo_error" \
+          --slurpfile inventory_metadata /tmp/gh-aw/agent/inventory-metadata.json \
           --slurpfile workers /tmp/gh-aw/agent/workers.json \
           --slurpfile workflows /tmp/gh-aw/agent/workflows.json \
-          --slurpfile candidates /tmp/gh-aw/agent/candidates.json '
+          --slurpfile candidates /tmp/gh-aw/agent/current-batch.json '
             def worker_match($worker):
               $workflows[0]
               | map(select(.path == (".github/workflows/" + $worker + ".lock.yml")))
@@ -394,7 +490,16 @@ steps:
               preview_only: $preview_only,
               repo_source: $repo_source,
               repo_error: $repo_error,
-              total_repositories_scanned: ($candidates[0] | length),
+              inventory_version: $inventory_metadata[0].inventory_version,
+              inventory_repository_count: $inventory_metadata[0].inventory_repository_count,
+              cell_count: $inventory_metadata[0].cell_count,
+              cell_index: $inventory_metadata[0].cell_index,
+              cell_repository_count: $inventory_metadata[0].cell_repository_count,
+              batch_size: $inventory_metadata[0].batch_size,
+              batch_index: $inventory_metadata[0].batch_index,
+              batch_count: $inventory_metadata[0].batch_count,
+              batch_id: $inventory_metadata[0].batch_id,
+              total_repositories_scanned: $inventory_metadata[0].inventory_repository_count,
               candidate_repositories: $candidates[0],
               worker_workflows: [
                 $workers[0][] as $worker

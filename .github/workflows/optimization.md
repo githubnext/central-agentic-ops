@@ -24,6 +24,18 @@ on:
       rollout_percent:
         default: 100
         type: number
+      cell_count:
+        default: 1
+        type: number
+      cell_index:
+        default: 0
+        type: number
+      batch_size:
+        default: 100000
+        type: number
+      batch_index:
+        default: 0
+        type: number
       safe_output_mode:
         default: "staged"
         type: choice
@@ -40,6 +52,10 @@ imports:
       rollout_percent: ${{ vars.CENTRAL_AGENTIC_OPS_OPTIMIZATION_ROLLOUT_PERCENT || '100' }}
       max_repos: ${{ vars.CENTRAL_AGENTIC_OPS_OPTIMIZATION_MAX_REPOS || '1' }}
       max_scan_repos: ${{ vars.CENTRAL_AGENTIC_OPS_MAX_SCAN_REPOS || '1000' }}
+      cell_count: ${{ vars.CENTRAL_AGENTIC_OPS_CELL_COUNT || '1' }}
+      cell_index: ${{ vars.CENTRAL_AGENTIC_OPS_CELL_INDEX || '0' }}
+      batch_size: ${{ vars.CENTRAL_AGENTIC_OPS_BATCH_SIZE || '100000' }}
+      batch_index: ${{ vars.CENTRAL_AGENTIC_OPS_BATCH_INDEX || '0' }}
       allowed_owners: ${{ vars.CENTRAL_AGENTIC_OPS_ALLOWED_OWNERS || github.repository_owner }}
       dispatch_max: "20"
       orchestrator_credits: "250"
