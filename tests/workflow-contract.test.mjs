@@ -26,12 +26,20 @@ function resolvePolicy({
   totalRepositories,
   dispatchMax = 1000,
   eligibleWorkers = 1,
+  orchestratorCredits = 0,
+  workerCreditsPerTarget = 0,
+  aggregateCreditLimit = 1100,
 }) {
   if (!Number.isInteger(maxRepos) || maxRepos < 1 || maxRepos > 1000) {
     throw new RangeError("maxRepos must be an integer from 1 through 1000");
   }
   if (!Number.isInteger(rolloutPercent) || rolloutPercent < 1 || rolloutPercent > 100) {
     throw new RangeError("rolloutPercent must be an integer from 1 through 100");
+  }
+  if (!Number.isInteger(orchestratorCredits) || orchestratorCredits < 0
+    || !Number.isInteger(workerCreditsPerTarget) || workerCreditsPerTarget < 0
+    || !Number.isInteger(aggregateCreditLimit) || aggregateCreditLimit < 1) {
+    throw new RangeError("AI Credit admission values must be bounded integers");
   }
 
   const requestedMode = eventName === "workflow_dispatch"
@@ -43,7 +51,10 @@ function resolvePolicy({
     ? 0
     : Math.max(1, Math.ceil(totalRepositories * rolloutPercent / 100));
   const dispatchCap = eligibleWorkers === 0 ? 0 : Math.floor(dispatchMax / eligibleWorkers);
-  const effectiveMaxRepos = Math.min(maxRepos, percentCap, dispatchCap);
+  const creditCap = workerCreditsPerTarget === 0
+    ? maxRepos
+    : Math.max(0, Math.floor((aggregateCreditLimit - orchestratorCredits) / workerCreditsPerTarget));
+  const effectiveMaxRepos = Math.min(maxRepos, percentCap, dispatchCap, creditCap);
 
   return {
     enabled: eventName === "workflow_dispatch" || modes.includes(configuredMode),
@@ -240,8 +251,60 @@ test("enterprise defaults, budgets, timeouts, and concurrency are finite", () =>
   assert.match(precompute, /max_scan_repos must be an integer from 1 through 10000/);
   assert.match(precompute, /dispatch_max must be an integer from 1 through 1000/);
   assert.match(precompute, /\(\$dispatch_max \| tonumber\) \/ \$eligible_workers \| floor/);
+  assert.match(precompute, /\(\$aggregate_credit_limit \| tonumber\) - \(\$orchestrator_credits \| tonumber\)/);
+  assert.match(precompute, /\[\(\$max_repos \| tonumber\), \$percent_cap, \$credit_cap\] \| min/);
   assert.doesNotMatch(precompute, /--paginate/);
   assert.doesNotMatch(control, /repositories: \["\*"\]/);
+});
+
+test("aggregate AI Credit admission reduces target fan-out", () => {
+  const base = {
+    eventName: "schedule",
+    configuredMode: "live",
+    maxRepos: 50,
+    rolloutPercent: 100,
+    totalRepositories: 100,
+    dispatchMax: 50,
+  };
+
+  assert.equal(resolvePolicy({
+    ...base,
+    orchestratorCredits: 250,
+    workerCreditsPerTarget: 600,
+    aggregateCreditLimit: 1100,
+  }).effectiveMaxRepos, 1);
+  assert.equal(resolvePolicy({
+    ...base,
+    orchestratorCredits: 250,
+    workerCreditsPerTarget: 600,
+    aggregateCreditLimit: 2050,
+  }).effectiveMaxRepos, 3);
+  assert.equal(resolvePolicy({
+    ...base,
+    orchestratorCredits: 250,
+    workerCreditsPerTarget: 850,
+    aggregateCreditLimit: 250,
+  }).effectiveMaxRepos, 0);
+});
+
+test("deterministic workflows pin third-party actions by commit SHA", () => {
+  for (const relativePath of [
+    join(".github", "workflows", "workflow-contracts.yml"),
+    join(".github", "workflows", "copilot-setup-steps.yml"),
+    join("pages", "pages.yml"),
+  ]) {
+    const source = readFileSync(join(root, relativePath), "utf8");
+    for (const action of source.matchAll(/^\s*uses:\s+([^./\s][^@\s]+)@([^\s#]+)/gm)) {
+      assert.match(action[2], /^[0-9a-f]{40}$/, `${relativePath}: ${action[1]} is mutable`);
+    }
+  }
+});
+
+test("package manifests exclude experimental ops values", () => {
+  for (const relativePath of ["aw.yml", join("dependabot", "aw.yml"), join("optimization", "aw.yml")]) {
+    const manifest = readFileSync(join(root, relativePath), "utf8");
+    assert.doesNotMatch(manifest, /ops-values|\.sh\s*$/m, relativePath);
+  }
 });
 
 test("ownership, provenance, and workflow identity fail closed", () => {
@@ -288,6 +351,17 @@ test("public read-only operation uses the built-in token without widening access
   assert.match(control, /do not silently reduce the requested analysis to the subset the token can read/);
 });
 
+test("authentication prefers an optional GitHub App and retains bounded fallbacks", () => {
+  const control = workflow("shared/control.md");
+  const precompute = workflow("shared/control-precompute.md");
+
+  assert.match(control, /github-app:\n\s+client-id: \$\{\{ vars\.GH_AW_GITHUB_APP_ID \}\}/);
+  assert.match(control, /private-key: \$\{\{ secrets\.GH_AW_GITHUB_APP_PRIVATE_KEY \}\}/);
+  assert.match(control, /ignore-if-missing: true/);
+  assert.doesNotMatch(control, /repositories: \["\*"\]/);
+  assert.match(precompute, /steps\.github-mcp-app-token\.outputs\.token \|\| secrets\.GH_AW_GITHUB_TOKEN \|\| secrets\.GITHUB_TOKEN/);
+});
+
 test("orchestrators expose scheduled variables and independent manual inputs", () => {
   for (const [name, packageName] of [
     ["dependabot.md", "DEPENDABOT"],
@@ -302,7 +376,17 @@ test("orchestrators expose scheduled variables and independent manual inputs", (
     assert.match(source, new RegExp(`CENTRAL_AGENTIC_OPS_${packageName}_ROLLOUT_PERCENT \\|\\| '100'`));
     assert.match(source, /CENTRAL_AGENTIC_OPS_MAX_SCAN_REPOS \|\| '1000'/);
     assert.match(source, /CENTRAL_AGENTIC_OPS_ALLOWED_OWNERS \|\| github\.repository_owner/);
+    assert.match(source, /CENTRAL_AGENTIC_OPS_MAX_AI_CREDITS_PER_RUN \|\| '1100'/);
   }
+});
+
+test("review destinations must be accessible and private", () => {
+  const precompute = workflow("shared/control-precompute.md");
+
+  assert.match(precompute, /validate_review_destination/);
+  assert.match(precompute, /gh api "repos\/\$SAFE_OUTPUT_REPO" --jq '\.private'/);
+  assert.match(precompute, /review safe_output_repo must be accessible/);
+  assert.match(precompute, /review safe_output_repo must be private/);
 });
 
 test("shared control keeps manual and scheduled routing event-scoped", () => {
@@ -348,11 +432,29 @@ test("every worker uses the standard dispatch envelope and safe mode vocabulary"
 
     assert.match(source, /safe-outputs:\n\s+staged: \$\{\{ inputs\.preview_only == 'true' \}\}/);
     assert.doesNotMatch(source, /safe_output_mode == 'private'/);
+    assert.match(source, /worker_enabled:.*\|\| 'true'/);
+    assert.match(source, /worker_max_mode:.*\|\| 'staged'/);
 
     for (const line of source.match(/^\s+target-repo:.*$/gm) || []) {
       assert.match(line, /github\.event\.inputs\.safe_output_repo/);
     }
   }
+});
+
+test("workers reject disabled, malformed, or over-ceiling dispatches before execution", () => {
+  const control = workflow("shared/control.md");
+  const precompute = workflow("shared/control-precompute.md");
+
+  for (const input of ["worker_enabled", "worker_max_mode", "correlation_id", "central_repo", "control_plane_run_url"]) {
+    assert.match(control, new RegExp(`${input}:`));
+    assert.match(precompute, new RegExp(`${input}:`));
+  }
+  assert.match(precompute, /validate_worker_dispatch\n\s+write_worker_precompute/);
+  assert.match(precompute, /worker is disabled by its control-plane policy/);
+  assert.match(precompute, /safe_output_mode exceeds the worker_max_mode ceiling/);
+  assert.match(precompute, /preview_only is inconsistent with safe_output_mode/);
+  assert.match(precompute, /central_repo must identify the current control repository/);
+  assert.match(precompute, /control_plane_run_url must match correlation_id and central_repo/);
 });
 
 test("clean-room compilation emits the expected GitHub Actions settings", { timeout: 120_000 }, () => {

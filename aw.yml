@@ -4,6 +4,3 @@ min-version: v0.87.1
 includes:
   - .github/workflows/dependabot.md
   - .github/workflows/optimization.md
-  - .github/value-functions/dependabot-release-train-updater.sh
-  - .github/value-functions/optimization-ai-credit-auditor.sh
-  - .github/value-functions/optimization-ai-credit-optimizer.sh

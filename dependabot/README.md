@@ -48,6 +48,9 @@ Configure a GitHub App, a fine-grained PAT, or both in the control repository fo
 | `CENTRAL_AGENTIC_OPS_DEPENDABOT_MODE` | Repository variable | Yes | Bundle mode: `staged`, `review`, or `live`. Defaults to `staged`. |
 | `CENTRAL_AGENTIC_OPS_DEPENDABOT_MAX_REPOS` | Repository variable | No | Scheduled selection cap; defaults to `1`. |
 | `CENTRAL_AGENTIC_OPS_DEPENDABOT_ROLLOUT_PERCENT` | Repository variable | No | Percentage of discovered repositories eligible for selection. Accepts `1` through `100` and defaults to `100`. |
+| `CENTRAL_AGENTIC_OPS_DEPENDABOT_UPDATER_ENABLED` | Repository variable | No | Worker kill switch; defaults to `true`. |
+| `CENTRAL_AGENTIC_OPS_DEPENDABOT_UPDATER_MAX_MODE` | Repository variable | No | Worker mode ceiling; defaults to `staged`. |
+| `CENTRAL_AGENTIC_OPS_MAX_AI_CREDITS_PER_RUN` | Repository variable | No | Aggregate orchestration ceiling; defaults to `1100`. |
 | `GH_AW_CI_TOKEN` | Repository secret | Optional | Supports the updater path that requires an additional empty commit. |
 
 The App installation or PAT must cover every private or internal target, alternate review repository, and live target the bundle needs to read or update. Public staged scans may use `GITHUB_TOKEN`, but unavailable target Actions, security, or Dependabot data makes the run incomplete rather than broadening access or guessing. See the [authentication guide](../docs/authentication.md) for the permission model and credential precedence.

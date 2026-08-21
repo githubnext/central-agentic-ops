@@ -42,6 +42,8 @@ imports:
   - uses: shared/control.md
     with:
       role: worker
+      worker_enabled: ${{ vars.CENTRAL_AGENTIC_OPS_OPTIMIZATION_AUDITOR_ENABLED || 'true' }}
+      worker_max_mode: ${{ vars.CENTRAL_AGENTIC_OPS_OPTIMIZATION_AUDITOR_MAX_MODE || 'staged' }}
 
 permissions:
   contents: read

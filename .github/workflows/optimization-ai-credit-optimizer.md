@@ -35,6 +35,8 @@ imports:
   - uses: shared/control.md
     with:
       role: worker
+      worker_enabled: ${{ vars.CENTRAL_AGENTIC_OPS_OPTIMIZATION_OPTIMIZER_ENABLED || 'true' }}
+      worker_max_mode: ${{ vars.CENTRAL_AGENTIC_OPS_OPTIMIZATION_OPTIMIZER_MAX_MODE || 'staged' }}
   - uses: shared/target-checkout-read-org-token.md
 
 permissions:

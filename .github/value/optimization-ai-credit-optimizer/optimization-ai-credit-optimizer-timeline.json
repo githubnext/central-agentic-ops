@@ -21,7 +21,7 @@
   "workflowSlug": "optimization-ai-credit-optimizer",
   "sourcePath": ".github/workflows/optimization-ai-credit-optimizer.md",
   "valueFunction": {
-    "path": ".github/value-functions/optimization-ai-credit-optimizer.sh",
+    "path": ".github/ops-values/optimization-ai-credit-optimizer.sh",
     "sha256": "31fd953cba856c7a825c5cfec3bdac30b9c6d16b4fc3d1dd42abd7cb52fc949d",
     "definition": {
       "schemaVersion": 3,

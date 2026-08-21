@@ -20,12 +20,19 @@ Every installed bundle has an independent mode. Installation defaults each mode 
 | `GH_AW_GITHUB_APP_ID` | Shared | With App authentication | None | GitHub App client ID used to mint short-lived installation tokens. |
 | `CENTRAL_AGENTIC_OPS_ALLOWED_OWNERS` | Shared | No | Control repository owner | Comma-separated owners permitted for manual targets and review destinations. Wildcards are not supported. |
 | `CENTRAL_AGENTIC_OPS_MAX_SCAN_REPOS` | Shared | No | `1000` | Maximum repositories examined by bounded automatic discovery. Accepts `1` through `10000`. |
+| `CENTRAL_AGENTIC_OPS_MAX_AI_CREDITS_PER_RUN` | Shared | No | `1100` | Maximum declared orchestrator-plus-worker AI Credits admitted for one orchestration. |
 | `CENTRAL_AGENTIC_OPS_DEPENDABOT_MODE` | Dependabot | Yes when installed | `staged` | Sets the bundle mode to `staged`, `review`, or `live`. |
 | `CENTRAL_AGENTIC_OPS_DEPENDABOT_MAX_REPOS` | Dependabot | No | `1` | Scheduled repository-selection cap. Accepts `1` through `1000`; dispatch limits may reduce it further. |
 | `CENTRAL_AGENTIC_OPS_DEPENDABOT_ROLLOUT_PERCENT` | Dependabot | No | `100` | Limits selection to this percentage of discovered repositories. Accepts integers from `1` through `100`. |
+| `CENTRAL_AGENTIC_OPS_DEPENDABOT_UPDATER_ENABLED` | Dependabot worker | No | `true` | Worker kill switch. Set to `false` to reject updater runs. |
+| `CENTRAL_AGENTIC_OPS_DEPENDABOT_UPDATER_MAX_MODE` | Dependabot worker | No | `staged` | Maximum updater mode: `staged`, `review`, or `live`. |
 | `CENTRAL_AGENTIC_OPS_OPTIMIZATION_MODE` | Optimization | Yes when installed | `staged` | Sets the bundle mode to `staged`, `review`, or `live`. |
 | `CENTRAL_AGENTIC_OPS_OPTIMIZATION_MAX_REPOS` | Optimization | No | `1` | Scheduled repository-selection cap. Accepts `1` through `1000`; dispatch limits may reduce it further. |
 | `CENTRAL_AGENTIC_OPS_OPTIMIZATION_ROLLOUT_PERCENT` | Optimization | No | `100` | Limits selection to this percentage of discovered repositories. Accepts integers from `1` through `100`. |
+| `CENTRAL_AGENTIC_OPS_OPTIMIZATION_AUDITOR_ENABLED` | Optimization worker | No | `true` | Worker kill switch for the auditor. |
+| `CENTRAL_AGENTIC_OPS_OPTIMIZATION_AUDITOR_MAX_MODE` | Optimization worker | No | `staged` | Maximum auditor mode. |
+| `CENTRAL_AGENTIC_OPS_OPTIMIZATION_OPTIMIZER_ENABLED` | Optimization worker | No | `true` | Worker kill switch for the optimizer. |
+| `CENTRAL_AGENTIC_OPS_OPTIMIZATION_OPTIMIZER_MAX_MODE` | Optimization worker | No | `staged` | Maximum optimizer mode. |
 
 An empty or unrecognized bundle mode disables scheduled selection and worker workflow dispatch. It does not block a `workflow_dispatch` run. Scheduled review mode routes safe outputs to the current control-plane repository. For an all-stop procedure, see [Emergency Stop](operations.md#emergency-stop).
 
@@ -86,6 +93,7 @@ Control values resolve in this order:
 | Allowed repository owners | `CENTRAL_AGENTIC_OPS_ALLOWED_OWNERS`, otherwise `github.repository_owner`. Applies to orchestrated and directly dispatched workers. |
 | Absolute repository cap | `max_repos` workflow input, then the bundle max-repositories variable, then `1`. |
 | Discovery scan cap | `CENTRAL_AGENTIC_OPS_MAX_SCAN_REPOS`, then `1000`; hard maximum `10000`. |
+| Aggregate AI Credit cap | `CENTRAL_AGENTIC_OPS_MAX_AI_CREDITS_PER_RUN`, then `1100`; selection is reduced to fit the declared orchestrator and worker maxima. |
 | Rollout percentage | `rollout_percent` workflow input, then the bundle rollout-percentage variable, then `100`. |
 | Target selection | `target_repo` workflow input, otherwise control-plane discovery. |
 

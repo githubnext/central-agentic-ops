@@ -43,7 +43,7 @@ This documentation follows the [GitHub Agentic Workflows glossary](https://githu
 
 Implemented today: shared App-or-PAT authentication, bundle modes and review destinations, target and dispatch limits, worker workflow eligibility checks, read-only GitHub tools, constrained safe outputs, and correlated runs.
 
-Planned, not yet enforced: worker-specific `enabled` and `max_mode` settings. These settings can only reduce the mode authorized by the bundle orchestrator. See [Orchestrators and Workers](orchestrators-and-workers.md).
+Worker-specific `enabled` and `max_mode` settings can only reduce the mode authorized by the bundle orchestrator. See [Orchestrators and Workers](orchestrators-and-workers.md).
 
 ## Sources of Truth
 

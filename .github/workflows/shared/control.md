@@ -22,6 +22,21 @@ import-schema:
   dispatch_max:
     type: string
     default: "1"
+  worker_enabled:
+    type: string
+    default: "true"
+  worker_max_mode:
+    type: string
+    default: "staged"
+  orchestrator_credits:
+    type: string
+    default: "0"
+  worker_credits_per_target:
+    type: string
+    default: "0"
+  aggregate_credit_limit:
+    type: string
+    default: "1100"
 
 env:
   CENTRAL_AGENTIC_OPS_MODE: ${{ github.aw.import-inputs.rollout_mode == 'preview' && 'staged' || github.aw.import-inputs.rollout_mode }}
@@ -30,12 +45,10 @@ env:
   REVIEW_OUTPUT_REPO: ${{ github.event.inputs.safe_output_repo || github.repository }}
   SAFE_OUTPUT_REPO: ${{ (github.event.inputs.safe_output_mode || github.aw.import-inputs.rollout_mode || 'staged') == 'review' && env.REVIEW_OUTPUT_REPO || '' }}
 
-# Disabled until checkout safe outputs correctly fall back to PAT authentication.
-# github-app:
-#   client-id: ${{ vars.GH_AW_GITHUB_APP_ID }}
-#   private-key: ${{ secrets.GH_AW_GITHUB_APP_PRIVATE_KEY }}
-#   ignore-if-missing: true
-#   repositories: ["explicitly-approved-repository"]
+github-app:
+  client-id: ${{ vars.GH_AW_GITHUB_APP_ID }}
+  private-key: ${{ secrets.GH_AW_GITHUB_APP_PRIVATE_KEY }}
+  ignore-if-missing: true
 
 imports:
   #- uses: sentry.md
@@ -55,6 +68,14 @@ imports:
       safe_output_repo: ${{ env.SAFE_OUTPUT_REPO }}
       preview_only: ${{ (env.GH_AW_SAFE_OUTPUT_MODE == 'live' || env.GH_AW_SAFE_OUTPUT_MODE == 'review') && 'false' || 'true' }}
       enabled: ${{ github.event_name == 'workflow_dispatch' || env.CENTRAL_AGENTIC_OPS_MODE == 'staged' || env.CENTRAL_AGENTIC_OPS_MODE == 'review' || env.CENTRAL_AGENTIC_OPS_MODE == 'live' }}
+      worker_enabled: ${{ github.aw.import-inputs.worker_enabled || 'true' }}
+      worker_max_mode: ${{ github.aw.import-inputs.worker_max_mode || 'staged' }}
+      correlation_id: ${{ github.event.inputs.correlation_id || '' }}
+      central_repo: ${{ github.event.inputs.central_repo || '' }}
+      control_plane_run_url: ${{ github.event.inputs.control_plane_run_url || '' }}
+      orchestrator_credits: ${{ github.aw.import-inputs.orchestrator_credits || '0' }}
+      worker_credits_per_target: ${{ github.aw.import-inputs.worker_credits_per_target || '0' }}
+      aggregate_credit_limit: ${{ github.aw.import-inputs.aggregate_credit_limit || '1100' }}
 ---
 
 Read `/tmp/gh-aw/agent/control-precompute.json` before making control decisions. Treat it as authoritative for `control_role`, enablement state, target repository inputs, safe-output routing, and worker workflow availability.

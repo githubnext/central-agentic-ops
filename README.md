@@ -23,7 +23,7 @@ This enables you to run [GitHub Agentic Workflows](https://github.github.com/gh-
 - **Controlled writes:** GitHub tools are read-only; worker workflows can write only through declared safe outputs.
 - **Bounded execution:** orchestrator workflows choose repositories, while each worker workflow receives one target and cannot promote its own mode.
 - **Traceable runs:** worker workflow safe outputs link back to the originating orchestrator workflow run.
-- **Measured value:** packages include frozen per-worker outcome contracts under `.github/value-functions/` without installing the experimental authoring skill.
+- **Measured value:** the catalog keeps frozen per-worker outcome contracts under `.github/ops-values/` without packaging the experimental evaluation system.
 - **Operations report:** a conventional Pages workflow presents durable safe outputs, review bundles, and successful `noop` outcomes by installed bundle.
 
 ## Enterprise Deployment

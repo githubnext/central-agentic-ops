@@ -42,6 +42,9 @@ imports:
       max_scan_repos: ${{ vars.CENTRAL_AGENTIC_OPS_MAX_SCAN_REPOS || '1000' }}
       allowed_owners: ${{ vars.CENTRAL_AGENTIC_OPS_ALLOWED_OWNERS || github.repository_owner }}
       dispatch_max: "50"
+      orchestrator_credits: "250"
+      worker_credits_per_target: "600"
+      aggregate_credit_limit: ${{ vars.CENTRAL_AGENTIC_OPS_MAX_AI_CREDITS_PER_RUN || '1100' }}
 
 permissions:
   contents: read

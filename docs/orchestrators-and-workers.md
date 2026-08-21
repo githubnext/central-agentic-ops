@@ -32,7 +32,7 @@ The worker may apply stricter behavior than requested, such as returning no outp
 
 Operational value is measured per worker, not per orchestrator or bundle. Dispatch counts, generated outputs, and model assessments do not prove that a worker attained its intended repository outcome.
 
-Packages include frozen contracts under `.github/value-functions/<worker-stem>.sh`. The experimental `aw-value` authoring and report-generation skill is not installed yet. Each bundle manifest includes only its own worker functions, while the root catalog includes every function.
+The catalog repository keeps frozen contracts under `.github/ops-values/<worker-stem>.sh`. Package manifests remain workflow-only while value evaluation is experimental, so neither these contracts nor the `aw-value` authoring and report-generation skill are installed into consumer repositories.
 
 A frozen function exposes its contract with `--definition`, scores evidence with `--metric`, and collects batched evidence with `--collect-batch`. Authoring new functions and generating reports remain catalog-maintenance tasks until the skill is ready to ship.
 
@@ -50,14 +50,14 @@ Shared precomputation reads each orchestrator's `safe-outputs.dispatch-workflow.
 
 This provides an immediate worker kill switch: disable the generated worker workflow in GitHub Actions. Bundle mode and review routing remain bundle-level controls.
 
-## Planned Worker Ceilings
+## Worker Ceilings
 
-Add worker-specific configuration only when a worker has a materially different blast radius, permission set, maturity timeline, or operational owner. The planned controls are:
+Add worker-specific configuration only when a worker has a materially different blast radius, permission set, maturity timeline, or operational owner. The controls are:
 
 | Control | Purpose | Default |
 | --- | --- | --- |
 | `enabled` | Explicitly includes or excludes a worker workflow from dispatch | `true` for installed worker workflows |
-| `max_mode` | Caps the most permissive mode a worker workflow can execute | Inherit bundle mode initially; use `staged` for new high-risk worker workflows |
+| `max_mode` | Caps the most permissive mode a worker workflow can execute | `staged` |
 | worker workflow limit | Caps worker workflow-specific volume or resource use | Existing Agentic Workflow limit |
 
 Mode ordering is:
@@ -84,15 +84,4 @@ Keep control at the bundle level when workers share ownership, permissions, outp
 
 Create a separate bundle, rather than many worker flags, when workers need different authentication, review repositories, schedules, target populations, or operational ownership.
 
-## Implementation Requirements for Worker Ceilings
-
-Before worker ceilings are considered active:
-
-1. Add installer variables for the affected worker controls.
-2. Pass worker policy into shared precomputation.
-3. Compute and persist `effective_mode` before target selection and dispatch.
-4. Exclude disabled workers before dispatch.
-5. Pass only the effective mode to workers.
-6. Make workers independently reject an input above their configured ceiling where technically possible.
-7. Add compile validation and staged/review/live behavior tests.
-8. Update this document from planned to implemented.
+Workers independently reject disabled runs, malformed control envelopes, and modes above their configured ceiling before agent execution. Promote a worker by changing its `MAX_MODE` variable only after its bundle has passed the corresponding rollout gate.

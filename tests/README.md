@@ -97,6 +97,9 @@ Invalid caps, out-of-scope owners, and incomplete control facts stop before work
 | 🟢 Pass | Duplicate workflow display names | Workers resolve only by exact generated path; analytics group by workflow path. |
 | 🟢 Pass | Enterprise and organization planes target the same repository | Independent provenance, policy, credentials, and kill switches are preserved. |
 | 🟢 Pass | Direct worker dispatch | Target and safe-output owners still pass the trusted allowlist. |
+| 🟢 Pass | Worker ceiling omitted | Worker remains enabled but staged-only. |
+| 🟢 Pass | Review destination is public or inaccessible | Rejected before agent execution. |
+| 🟢 Pass | Aggregate AI Credit request exceeds `1100` default | Repository selection is reduced to fit the shared cap. |
 | 🟢 Pass | Public targets without an App or PAT | Built-in `GITHUB_TOKEN` supports bounded staged scans; private access, alternate review repositories, and live target writes remain prohibited. |
 | 🟢 Pass | Runaway prevention | Every workflow has finite AI credits and timeout; overlapping same-scope runs cancel. |
 | 🟢 Pass | API rate limit or budget exhaustion | No internal retry/wait loop or self-dispatch; unresolved work is incomplete and requires a new bounded run. |
@@ -117,6 +120,7 @@ Compilation checks prove the source policy reaches the generated GitHub Actions 
 | 🟢 Pass | All worker workflow safe outputs | staged mode and review/live routing vocabulary checked. |
 | 🟢 Pass | All five generated workflows | Emitted GitHub Actions settings checked in a clean-room compile. |
 | 🟢 Pass | Core catalog package | Installs no Pages workflow, renderer, or Pages permission surface. |
+| 🟢 Pass | Experimental ops values | Remain catalog-local under `.github/ops-values/` and are excluded from package manifests. |
 | 🟢 Pass | Pages add-on | Explicit nested package contains only the conventional publisher and report skill. |
 
 Exhaustive coverage: 18 scheduled plus 108 manual cases, for 126 unique policy configurations.

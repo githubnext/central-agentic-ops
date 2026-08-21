@@ -130,8 +130,8 @@ The system should stop or reduce scope when it cannot establish a required fact:
 - Pages report in review mode without an access-controlled Pages-capable `safe_output_repo`: do not deploy the report;
 - missing required authentication: fail before repository mutation.
 
-## Current and Planned Controls
+## Current Controls
 
 Implemented controls include shared authentication, bundle-level modes and review destinations, target and dispatch limits, worker workflow eligibility checks, standard dispatch envelopes, read-only GitHub tools, and worker workflow safe outputs.
 
-The next planned increment is optional worker-level `enabled` and `max_mode` controls for workers with independent risk or maturity. These are ceilings beneath bundle policy, not separate control planes. See [Orchestrators and Workers](orchestrators-and-workers.md).
+Worker-level `enabled` and `max_mode` controls provide ceilings beneath bundle policy for workers with independent risk or maturity. They are not separate control planes. See [Orchestrators and Workers](orchestrators-and-workers.md).

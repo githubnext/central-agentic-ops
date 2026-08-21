@@ -25,6 +25,16 @@ For each installed bundle:
 6. Inspect worker workflow prompts, staged safe outputs, correlation data, and AI Credit use.
 7. Continue through the promotion plan in [Rollout and safe output Routing](rollout-and-routing.md).
 
+### Production Canary
+
+Before scheduled live operation, run one target through three manual checks:
+
+1. `staged`: verify selection, worker completion, staged outputs, and correlation.
+2. `review`: set the worker `MAX_MODE` to `review`; verify the private review destination and no target writes.
+3. `live`: set the worker `MAX_MODE` to `live`; use one low-risk target and verify the declared output and downstream CI.
+
+Record the three run URLs and restore the intended worker ceiling after the canary. A failed check returns the worker and bundle to `staged`.
+
 ## Routine Monitoring
 
 Review the following for scheduled runs:

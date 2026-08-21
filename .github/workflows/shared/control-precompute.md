@@ -37,6 +37,30 @@ import-schema:
   enabled:
     type: string
     default: "true"
+  worker_enabled:
+    type: string
+    default: "true"
+  worker_max_mode:
+    type: string
+    default: "staged"
+  correlation_id:
+    type: string
+    default: ""
+  central_repo:
+    type: string
+    default: ""
+  control_plane_run_url:
+    type: string
+    default: ""
+  orchestrator_credits:
+    type: string
+    default: "0"
+  worker_credits_per_target:
+    type: string
+    default: "0"
+  aggregate_credit_limit:
+    type: string
+    default: "1100"
 
 tools:
   github:
@@ -59,6 +83,14 @@ steps:
       SAFE_OUTPUT_REPO: ${{ github.aw.import-inputs.safe_output_repo }}
       PREVIEW_ONLY: ${{ github.aw.import-inputs.preview_only }}
       ENABLED: ${{ github.aw.import-inputs.enabled }}
+      WORKER_ENABLED: ${{ github.aw.import-inputs.worker_enabled }}
+      WORKER_MAX_MODE: ${{ github.aw.import-inputs.worker_max_mode }}
+      CORRELATION_ID: ${{ github.aw.import-inputs.correlation_id }}
+      CENTRAL_REPO: ${{ github.aw.import-inputs.central_repo }}
+      CONTROL_PLANE_RUN_URL: ${{ github.aw.import-inputs.control_plane_run_url }}
+      ORCHESTRATOR_CREDITS: ${{ github.aw.import-inputs.orchestrator_credits }}
+      WORKER_CREDITS_PER_TARGET: ${{ github.aw.import-inputs.worker_credits_per_target }}
+      AGGREGATE_CREDIT_LIMIT: ${{ github.aw.import-inputs.aggregate_credit_limit }}
     run: |
       set -euo pipefail
       mkdir -p /tmp/gh-aw/agent
@@ -70,21 +102,92 @@ steps:
       write_worker_precompute() {
         jq -n \
           --arg enabled "$ENABLED" \
+          --arg worker_enabled "$WORKER_ENABLED" \
+          --arg worker_max_mode "$WORKER_MAX_MODE" \
           --arg target_repo "$TARGET_REPO" \
           --arg safe_output_mode "$SAFE_OUTPUT_MODE" \
           --arg safe_output_repo "$SAFE_OUTPUT_REPO" \
           --arg preview_only "$PREVIEW_ONLY" \
+          --arg correlation_id "$CORRELATION_ID" \
+          --arg central_repo "$CENTRAL_REPO" \
+          --arg control_plane_run_url "$CONTROL_PLANE_RUN_URL" \
           '{
             control_role: "worker",
             enabled: $enabled,
+            worker_enabled: $worker_enabled,
+            worker_max_mode: $worker_max_mode,
             target_repo: $target_repo,
             safe_output_mode: $safe_output_mode,
             safe_output_repo: $safe_output_repo,
             preview_only: $preview_only,
+            correlation_id: $correlation_id,
+            central_repo: $central_repo,
+            control_plane_run_url: $control_plane_run_url,
             candidate_repositories: [],
             worker_workflows: []
           }' > /tmp/gh-aw/agent/control-precompute.json
         write_precompute
+      }
+
+      mode_rank() {
+        case "$1" in
+          staged) printf '0\n' ;;
+          review) printf '1\n' ;;
+          live) printf '2\n' ;;
+          *) echo "$2 must be staged, review, or live" >&2; exit 1 ;;
+        esac
+      }
+
+      validate_worker_dispatch() {
+        local requested_rank
+        local maximum_rank
+        local control_run_id
+
+        case "$WORKER_ENABLED" in
+          true) ;;
+          false) echo "worker is disabled by its control-plane policy" >&2; exit 1 ;;
+          *) echo "worker_enabled must be true or false" >&2; exit 1 ;;
+        esac
+
+        requested_rank=$(mode_rank "$SAFE_OUTPUT_MODE" "safe_output_mode")
+        maximum_rank=$(mode_rank "$WORKER_MAX_MODE" "worker_max_mode")
+        if [ "$requested_rank" -gt "$maximum_rank" ]; then
+          echo "safe_output_mode exceeds the worker_max_mode ceiling" >&2
+          exit 1
+        fi
+
+        if { [ "$SAFE_OUTPUT_MODE" = "staged" ] && [ "$PREVIEW_ONLY" != "true" ]; } || \
+           { [ "$SAFE_OUTPUT_MODE" != "staged" ] && [ "$PREVIEW_ONLY" != "false" ]; }; then
+          echo "preview_only is inconsistent with safe_output_mode" >&2
+          exit 1
+        fi
+        if [ "$CENTRAL_REPO" != "$GITHUB_REPOSITORY" ]; then
+          echo "central_repo must identify the current control repository" >&2
+          exit 1
+        fi
+        if ! [[ "$CORRELATION_ID" =~ ^[0-9]+-[0-9]+$ ]]; then
+          echo "correlation_id must identify an orchestrator run and attempt" >&2
+          exit 1
+        fi
+        control_run_id="${CORRELATION_ID%%-*}"
+        if [ "$CONTROL_PLANE_RUN_URL" != "${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${control_run_id}" ]; then
+          echo "control_plane_run_url must match correlation_id and central_repo" >&2
+          exit 1
+        fi
+      }
+
+      validate_review_destination() {
+        local is_private
+
+        [ "$SAFE_OUTPUT_MODE" != "review" ] && return
+        if ! is_private=$(gh api "repos/$SAFE_OUTPUT_REPO" --jq '.private'); then
+          echo "review safe_output_repo must be accessible" >&2
+          exit 1
+        fi
+        if [ "$is_private" != "true" ]; then
+          echo "review safe_output_repo must be private" >&2
+          exit 1
+        fi
       }
 
       validate_repository_owner() {
@@ -218,6 +321,12 @@ steps:
           echo "rollout_percent must be an integer from 1 through 100" >&2
           exit 1
         fi
+        if ! [[ "$ORCHESTRATOR_CREDITS" =~ ^[0-9]+$ ]] || \
+           ! [[ "$WORKER_CREDITS_PER_TARGET" =~ ^[0-9]+$ ]] || \
+           ! [[ "$AGGREGATE_CREDIT_LIMIT" =~ ^[1-9][0-9]*$ ]]; then
+          echo "AI Credit admission values must be integers and aggregate_credit_limit must be positive" >&2
+          exit 1
+        fi
 
         load_control_source
         workers_json=$(extract_dispatch_workers)
@@ -244,6 +353,9 @@ steps:
           --arg safe_output_mode "$SAFE_OUTPUT_MODE" \
           --arg safe_output_repo "$SAFE_OUTPUT_REPO" \
           --arg preview_only "$PREVIEW_ONLY" \
+          --arg orchestrator_credits "$ORCHESTRATOR_CREDITS" \
+          --arg worker_credits_per_target "$WORKER_CREDITS_PER_TARGET" \
+          --arg aggregate_credit_limit "$AGGREGATE_CREDIT_LIMIT" \
           --arg repo_source "$repo_source" \
           --arg repo_error "$repo_error" \
           --slurpfile workers /tmp/gh-aw/agent/workers.json \
@@ -267,8 +379,15 @@ steps:
                 (if ($candidates[0] | length) == 0 then 0
                  else [1, (($candidates[0] | length) * ($rollout_percent | tonumber) / 100 | ceil)] | max
                  end) as $percent_cap
-                | [($max_repos | tonumber), $percent_cap] | min
+                | (if ($worker_credits_per_target | tonumber) == 0 then ($max_repos | tonumber)
+                   elif ($aggregate_credit_limit | tonumber) <= ($orchestrator_credits | tonumber) then 0
+                   else ((($aggregate_credit_limit | tonumber) - ($orchestrator_credits | tonumber)) / ($worker_credits_per_target | tonumber) | floor)
+                   end) as $credit_cap
+                | [($max_repos | tonumber), $percent_cap, $credit_cap] | min
               ),
+              orchestrator_credits: ($orchestrator_credits | tonumber),
+              worker_credits_per_target: ($worker_credits_per_target | tonumber),
+              aggregate_credit_limit: ($aggregate_credit_limit | tonumber),
               safe_output_mode: $safe_output_mode,
               safe_output_repo: $safe_output_repo,
               preview_only: $preview_only,
@@ -310,8 +429,10 @@ steps:
 
       validate_repository_owner "target_repo" "$TARGET_REPO"
       validate_repository_owner "safe_output_repo" "$SAFE_OUTPUT_REPO"
+      validate_review_destination
 
       if [ "$ROLE" = "worker" ]; then
+        validate_worker_dispatch
         write_worker_precompute
         exit 0
       fi

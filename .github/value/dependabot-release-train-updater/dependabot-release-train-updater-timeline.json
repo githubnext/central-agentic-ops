@@ -21,7 +21,7 @@
   "workflowSlug": "dependabot-release-train-updater",
   "sourcePath": ".github/workflows/dependabot-release-train-updater.md",
   "valueFunction": {
-    "path": ".github/value-functions/dependabot-release-train-updater.sh",
+    "path": ".github/ops-values/dependabot-release-train-updater.sh",
     "sha256": "3ae460a857f942ecda114ccaa697da705096c235d8dc43c30fe5b0f218ff6519",
     "definition": {
       "schemaVersion": 3,
