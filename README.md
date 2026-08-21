@@ -13,4 +13,4 @@ Central Agentic Ops packages reusable orchestrators and focused workers so platf
 
 ## Documentation
 
-Ready to explore? [See the docs](docs/README.md).
+Ready to explore? [See the docs](https://githubnext.github.io/central-agentic-ops/).
