@@ -452,7 +452,7 @@ function normalizeMode(mode) {
 
 async function metadataFromRunUrl(runUrl) {
   const match = runUrl.match(/^https:\/\/github\.com\/([^/]+)\/([^/]+)\/actions\/runs\/(\d+)/);
-  if (!match) return { mode: "unknown", conclusion: "unknown" };
+  if (!match) return { mode: "unknown", conclusion: "unknown", repository: "" };
   const [, runOwner, runRepository, runId] = match;
   const cacheKey = `${runOwner}/${runRepository}/${runId}`;
   if (!runCache.has(cacheKey)) {
@@ -460,9 +460,11 @@ async function metadataFromRunUrl(runUrl) {
   }
   const run = await runCache.get(cacheKey);
   const mode = run?.display_title?.match(/(?:^|\s[·|:-]\s)(preview|staged|review|live)$/i)?.[1]?.toLowerCase();
+  const targetRepository = run?.display_title?.match(/\b([a-z0-9][a-z0-9-]*\/[a-z0-9._-]+)\b/i)?.[1];
   return {
     mode: normalizeMode(mode),
     conclusion: run?.conclusion || "unknown",
+    repository: targetRepository || `${runOwner}/${runRepository}`,
   };
 }
 
@@ -480,6 +482,7 @@ const records = (await Promise.all(discoveredRecords.map(async (record) => {
     ...record,
     mode: normalizeMode(record.mode) !== "unknown" ? normalizeMode(record.mode) : (metadata.mode !== "unknown" ? metadata.mode : configuredModeFor(bundle)),
     conclusion: record.conclusion || metadata.conclusion,
+    repository: record.repository || metadata.repository || "",
   };
 }))).sort((left, right) => new Date(right.updatedAt) - new Date(left.updatedAt));
 const reportRecords = records.filter((record) => ["staged", "review", "live"].includes(record.mode));
@@ -558,7 +561,7 @@ function collectRuns(recordsForMode) {
   const runs = new Map();
   for (const record of recordsForMode) {
     if (!record.runUrl) continue;
-    const run = runs.get(record.runUrl) || { conclusion: "unknown", failed: false, warning: false, aic: null, createdAt: record.createdAt };
+    const run = runs.get(record.runUrl) || { conclusion: "unknown", failed: false, warning: false, aic: null, createdAt: record.createdAt, repository: record.repository };
     if (record.conclusion !== "unknown") run.conclusion = record.conclusion;
     run.failed ||= isFailureRecord(record);
     run.warning ||= record.warning;
@@ -701,7 +704,7 @@ function deployedWorkflowContent() {
   const healthLabel = deployedInventory.runHealth?.available
     ? `${deployedInventory.runHealth.complete ? "Complete" : "Partial"} ${deployedInventory.runHealth.windowHours || 24}-hour audit-log window`
     : "Organization audit log unavailable";
-  const spend = deployedSpendFor(workflows.map((workflow) => workflow.repository));
+  const spend = contributionSpendFor();
   const repositoriesWithWorkflows = new Set(workflows.map((workflow) => workflow.repository));
   const bundleRows = discoveredBundles.sort((left, right) => left.repository.localeCompare(right.repository) || left.name.localeCompare(right.name)).map((bundle) => {
     const activeMembers = bundle.workflows.filter((workflow) => workflow.state === "active").length;
@@ -729,7 +732,7 @@ function deployedWorkflowContent() {
       <div><dt>Disabled workflows</dt><dd>${disabled}</dd><p>Registered but currently disabled</p></div>
       <div><dt>Runs</dt><dd>${deployedInventory.runHealth?.available ? health.runs : "—"}</dd><p>${escapeHtml(healthLabel)}</p></div>
       <div><dt>Failures</dt><dd>${deployedInventory.runHealth?.available ? health.failed : "—"}</dd><p>${escapeHtml(healthLabel)}</p></div>
-      <div><dt>AI Credits</dt><dd>${deployedInventory.billing?.available ? formatAic(spend.total) : "—"}</dd><p>${escapeHtml(deployedInventory.billing?.period || "Current month")} month to date</p></div>
+      <div><dt>AI Credits</dt><dd>${spend.available ? formatAic(spend.total) : "—"}</dd><p>Across ${spend.reportedRuns} reported contribution run${spend.reportedRuns === 1 ? "" : "s"}</p></div>
     </dl>
   </section>
   ${biggestSpendersContent(spend)}
@@ -758,19 +761,23 @@ function summarizeWorkflowHealth(workflows) {
   }, { runs: 0, successful: 0, failed: 0, cancelled: 0, other: 0 });
 }
 
-function deployedSpendFor(repositoryNames) {
-  const included = new Set(repositoryNames);
-  const repositories = Object.entries(deployedInventory.billing?.repositories || {})
-    .filter(([repositoryName]) => included.has(repositoryName))
-    .map(([repositoryName, values]) => ({ repository: repositoryName, aiCredits: Number(values.aiCredits) || 0 }))
+function contributionSpendFor(repositoryNames) {
+  const included = repositoryNames ? new Set(repositoryNames) : null;
+  const reportedRuns = collectRuns(reportRecords).filter((run) => run.aic !== null && run.repository && (!included || included.has(run.repository)));
+  const totals = new Map();
+  for (const run of reportedRuns) totals.set(run.repository, (totals.get(run.repository) || 0) + run.aic);
+  const repositories = [...totals].map(([repositoryName, aiCredits]) => ({ repository: repositoryName, aiCredits }))
     .filter((entry) => entry.aiCredits > 0)
     .sort((left, right) => right.aiCredits - left.aiCredits);
-  return { repositories, total: repositories.reduce((total, entry) => total + entry.aiCredits, 0) };
+  return { available: reportedRuns.length > 0, reportedRuns: reportedRuns.length, repositories, total: reportedRuns.reduce((total, run) => total + run.aic, 0) };
 }
 
 function biggestSpendersContent(spend) {
-  if (!deployedInventory.billing?.available || spend.total <= 0) {
-    return `<section class="spend-panel" aria-labelledby="spend-heading"><h2 id="spend-heading">Biggest spenders</h2><p class="empty">Organization billing usage is unavailable for this report.</p></section>`;
+  if (!spend.available) {
+    return `<section class="spend-panel" aria-labelledby="spend-heading"><h2 id="spend-heading">Biggest spenders</h2><p class="empty">No AI Credit usage was reported by agentic workflow contributions.</p></section>`;
+  }
+  if (spend.total <= 0) {
+    return `<section class="spend-panel" aria-labelledby="spend-heading"><h2 id="spend-heading">Biggest spenders</h2><p class="empty">Reported agentic workflow contributions consumed 0 AIC.</p></section>`;
   }
   const colors = ["#4493f8", "#3fb950", "#d29922", "#f85149", "#a371f7", "#8c959f"];
   const leading = spend.repositories.slice(0, 5);
@@ -784,7 +791,7 @@ function biggestSpendersContent(spend) {
   }).join(", ");
   const chartLabel = segments.map((entry) => `${entry.repository}: ${formatAic(entry.aiCredits)} AI Credits`).join(", ");
   const legend = segments.map((entry, index) => `<li><i style="background:${colors[index]}"></i><span>${entry.repository === "Other" ? "Other" : `<a href="repositories/${escapeHtml(repositoryPageName(entry.repository))}.html">${escapeHtml(entry.repository)}</a>`}</span><strong>${formatAic(entry.aiCredits)}</strong><small>${new Intl.NumberFormat("en", { style: "percent", maximumFractionDigits: 1 }).format(entry.aiCredits / spend.total)}</small></li>`).join("\n");
-  return `<section class="spend-panel" aria-labelledby="spend-heading"><div><h2 id="spend-heading">Biggest spenders</h2><p>Copilot AI Credits for repositories with installed agentic workflows, ${escapeHtml(deployedInventory.billing.period)} month to date.</p></div><div class="spend-chart"><div class="spend-donut" role="img" aria-label="${escapeHtml(chartLabel)}" style="background:conic-gradient(${stops})"><span><strong>${formatAic(spend.total)}</strong><small>Total AIC</small></span></div><ol>${legend}</ol></div></section>`;
+  return `<section class="spend-panel" aria-labelledby="spend-heading"><div><h2 id="spend-heading">Biggest spenders</h2><p>AI Credits reported by agentic workflow contributions, deduplicated by workflow run.</p></div><div class="spend-chart"><div class="spend-donut" role="img" aria-label="${escapeHtml(chartLabel)}" style="background:conic-gradient(${stops})"><span><strong>${formatAic(spend.total)}</strong><small>Total AIC</small></span></div><ol>${legend}</ol></div></section>`;
 }
 
 function repositoryWorkflowContent(repositoryName, workflows) {
@@ -793,7 +800,7 @@ function repositoryWorkflowContent(repositoryName, workflows) {
   const latest = workflows.map((workflow) => workflow.updatedAt).filter(Boolean).sort().at(-1);
   const health = summarizeWorkflowHealth(workflows);
   const healthAvailable = deployedInventory.runHealth?.available;
-  const repositorySpend = deployedSpendFor([repositoryName]).total;
+  const repositorySpend = contributionSpendFor([repositoryName]);
   const rows = workflows.map((workflow) => `<tr>
     <th scope="row"><a href="${escapeHtml(workflow.htmlUrl)}">${escapeHtml(workflow.name)}</a><code>${escapeHtml(workflow.path)}</code></th>
     <td><span class="status ${workflow.state === "active" ? "status-success" : workflow.state.startsWith("disabled") ? "status-attention" : "status-muted"}">${escapeHtml(workflow.state.replaceAll("_", " "))}</span></td>
@@ -807,7 +814,7 @@ function repositoryWorkflowContent(repositoryName, workflows) {
       <div><dt>Active workflows</dt><dd>${active}</dd><p>Registered and enabled in GitHub Actions</p></div>
       <div><dt>Runs</dt><dd>${healthAvailable ? health.runs : "—"}</dd><p>Agentic runs in the last ${deployedInventory.runHealth?.windowHours || 24} hours</p></div>
       <div><dt>Failures</dt><dd>${healthAvailable ? health.failed : "—"}</dd><p>${deployedInventory.runHealth?.complete ? "Complete audit-log window" : "Partial or unavailable audit-log window"}</p></div>
-      <div><dt>AI Credits</dt><dd>${deployedInventory.billing?.available ? formatAic(repositorySpend) : "—"}</dd><p>${escapeHtml(deployedInventory.billing?.period || "Current month")} month to date</p></div>
+      <div><dt>AI Credits</dt><dd>${repositorySpend.available ? formatAic(repositorySpend.total) : "—"}</dd><p>Across ${repositorySpend.reportedRuns} reported contribution run${repositorySpend.reportedRuns === 1 ? "" : "s"}</p></div>
     </dl>
   </section>
   <section class="repository-workflows" aria-labelledby="repository-workflows-heading">

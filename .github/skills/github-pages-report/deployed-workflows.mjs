@@ -165,28 +165,6 @@ async function collectRunHealth(workflowIds) {
   return { available: true, complete, windowStart: windowStart.toISOString(), pages: page, totals };
 }
 
-async function collectBillingSpend() {
-  const now = new Date();
-  const period = `${now.getUTCFullYear()}-${String(now.getUTCMonth() + 1).padStart(2, "0")}`;
-  try {
-    const response = await github(`/organizations/${organization}/settings/billing/usage?year=${now.getUTCFullYear()}&month=${now.getUTCMonth() + 1}`);
-    const repositories = new Map();
-    for (const item of response.body.usageItems || []) {
-      if (item.product !== "copilot" || item.sku !== "Copilot AI Credits" || !item.repositoryName) continue;
-      const repositoryName = `${organization}/${item.repositoryName}`;
-      const current = repositories.get(repositoryName) || { aiCredits: 0, grossAmount: 0, netAmount: 0 };
-      current.aiCredits += Number(item.quantity) || 0;
-      current.grossAmount += Number(item.grossAmount) || 0;
-      current.netAmount += Number(item.netAmount) || 0;
-      repositories.set(repositoryName, current);
-    }
-    return { available: true, period, repositories };
-  } catch (error) {
-    console.warn(`${error.message}; billing spend will be unavailable`);
-    return { available: false, period, repositories: new Map() };
-  }
-}
-
 let matches = [];
 let manifestMatches = [];
 let workflowSearchAvailable = true;
@@ -267,10 +245,7 @@ const bundles = (await mapWithConcurrency(manifestFiles, 8, async (item) => {
 })).filter(Boolean).sort((left, right) => left.repository.localeCompare(right.repository) || left.name.localeCompare(right.name));
 
 const registeredWorkflowIds = new Set([...registryByRepository.values()].flatMap((registry) => [...registry.values()].map((workflow) => workflow.id)));
-const [runHealth, billingSpend] = await Promise.all([
-  collectRunHealth(registeredWorkflowIds),
-  collectBillingSpend(),
-]);
+const runHealth = await collectRunHealth(registeredWorkflowIds);
 
 const workflows = [...discovered.values()].map((item) => {
   const registered = registryByRepository.get(item.repository)?.get(item.path);
@@ -304,15 +279,10 @@ const inventory = {
     windowHours: runWindowHours,
     pages: runHealth.pages,
   },
-  billing: {
-    available: billingSpend.available,
-    period: billingSpend.period,
-    repositories: Object.fromEntries([...billingSpend.repositories].sort(([left], [right]) => left.localeCompare(right))),
-  },
   bundles,
   workflows,
 };
 
 await mkdir(path.dirname(outputPath), { recursive: true });
 await writeFile(outputPath, `${JSON.stringify(inventory, null, 2)}\n`);
-console.log(`Discovered ${bundles.length} bundles and ${workflows.length} compiled agentic workflows across ${repositoryNames.length} repositories; run health ${runHealth.available ? runHealth.complete ? "complete" : "partial" : "unavailable"}; billing ${billingSpend.available ? "available" : "unavailable"}`);
+console.log(`Discovered ${bundles.length} bundles and ${workflows.length} compiled agentic workflows across ${repositoryNames.length} repositories; run health ${runHealth.available ? runHealth.complete ? "complete" : "partial" : "unavailable"}`);
