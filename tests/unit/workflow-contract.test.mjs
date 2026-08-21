@@ -615,7 +615,8 @@ test("Pages is an explicit least-privilege add-on", () => {
   const pagesWorkflow = readFileSync(join(root, "pages", "pages.yml"), "utf8");
 
   assert.doesNotMatch(rootManifest, /pages\/pages|github-pages-report/);
-  assert.match(pagesManifest, /source: pages\/pages\.yml/);
+  assert.match(pagesManifest, /source: pages\.yml/);
+  assert.doesNotMatch(pagesManifest, /source: pages\/pages\.yml/);
   assert.match(pagesManifest, /destination: \.github\/workflows\/pages\.yml/);
   assert.match(pagesManifest, /\.github\/skills\/github-pages-report/);
   assert.match(pagesWorkflow, /pages: write/);
