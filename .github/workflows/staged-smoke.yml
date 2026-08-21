@@ -1,0 +1,40 @@
+name: Staged smoke
+
+on:
+  workflow_dispatch:
+    inputs:
+      bundle:
+        description: Bundle orchestrator to exercise
+        required: true
+        type: choice
+        options:
+          - dependabot
+          - optimization
+      target_repo:
+        description: Explicit OWNER/REPO canary target
+        required: true
+        type: string
+
+permissions:
+  actions: write
+  contents: read
+
+concurrency:
+  group: staged-smoke-${{ inputs.bundle }}-${{ inputs.target_repo }}
+  cancel-in-progress: false
+
+jobs:
+  smoke:
+    runs-on: ubuntu-latest
+    timeout-minutes: 75
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+      - name: Dispatch, monitor, and verify staged canary
+        env:
+          GH_TOKEN: ${{ github.token }}
+          BUNDLE: ${{ inputs.bundle }}
+          CONTROL_REF: ${{ github.ref_name }}
+          SAFE_OUTPUT_MODE: staged
+          TARGET_REPO: ${{ inputs.target_repo }}
+        run: |
+          bash tests/e2e/run-canary.sh

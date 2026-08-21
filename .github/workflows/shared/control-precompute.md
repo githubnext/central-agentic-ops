@@ -203,10 +203,11 @@ steps:
         fi
 
         repository_owner="${repository%%/*}"
+        repository_owner=$(printf '%s' "$repository_owner" | tr '[:upper:]' '[:lower:]')
         IFS=',' read -ra configured_owners <<< "$ALLOWED_OWNERS"
         for allowed_owner in "${configured_owners[@]}"; do
-          allowed_owner=$(printf '%s' "$allowed_owner" | tr -d '[:space:]')
-          if [ -n "$allowed_owner" ] && [ "${repository_owner,,}" = "${allowed_owner,,}" ]; then
+          allowed_owner=$(printf '%s' "$allowed_owner" | tr -d '[:space:]' | tr '[:upper:]' '[:lower:]')
+          if [ -n "$allowed_owner" ] && [ "$repository_owner" = "$allowed_owner" ]; then
             return
           fi
         done

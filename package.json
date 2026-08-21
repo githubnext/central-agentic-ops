@@ -2,6 +2,11 @@
   "name": "central-agentic-ops",
   "private": true,
   "scripts": {
-    "test": "node --test"
+    "test": "npm run test:unit && npm run test:integration",
+    "test:unit": "node --test tests/unit/*.test.mjs",
+    "test:integration": "node --test --test-concurrency=1 tests/integration/*.test.mjs",
+    "test:load": "node --test tests/load/*.test.mjs",
+    "compile": "gh aw compile --no-emit --no-check-update --schedule-seed githubnext/central-agentic-ops",
+    "check": "npm test && npm run test:load && npm run compile"
   }
 }

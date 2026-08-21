@@ -1,0 +1,50 @@
+name: Enterprise staged stress
+
+on:
+  workflow_dispatch:
+    inputs:
+      bundle:
+        description: Bundle orchestrator to exercise
+        required: true
+        type: choice
+        options: [dependabot, optimization]
+      target_repo:
+        description: Dedicated OWNER/REPO canary target
+        required: true
+        type: string
+      runs:
+        description: Concurrent staged runs
+        required: true
+        default: "3"
+        type: choice
+        options: [2, 3, 5]
+      confirmation:
+        description: STRESS OWNER/REPO RUNS
+        required: true
+        type: string
+
+permissions:
+  actions: write
+  contents: read
+
+concurrency:
+  group: enterprise-stress-${{ inputs.bundle }}-${{ inputs.target_repo }}
+  cancel-in-progress: false
+
+jobs:
+  stress:
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    environment: central-agentic-ops-${{ 'stress' }}
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+      - name: Run bounded staged stress canary
+        env:
+          BUNDLE: ${{ inputs.bundle }}
+          CONFIRMATION: ${{ inputs.confirmation }}
+          CONTROL_REF: ${{ github.ref_name }}
+          GH_TOKEN: ${{ secrets.GH_AW_E2E_TOKEN || github.token }}
+          RUNS: ${{ inputs.runs }}
+          TARGET_REPO: ${{ inputs.target_repo }}
+        run: |
+          bash tests/e2e/run-stress.sh

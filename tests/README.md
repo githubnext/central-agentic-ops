@@ -1,8 +1,43 @@
 # Workflow Configuration Test Matrix
 
-Use this as a lookup from configuration to verified behavior. Examples assume 25 discovered repositories. `-` means unset or not applicable. Every check is executed by `npm test`, including scale properties through 1,000,000 repositories. Statuses are `🟢 Pass` and `🔴 Fail`.
+Use this as a lookup from configuration to verified behavior. Examples assume 25 discovered repositories. `-` means unset or not applicable. Statuses are `🟢 Pass` and `🔴 Fail`.
 
-Run tests with `node --test` or `npm test`. The suite checks source `.md` contracts and clean-room generated workflows. It does not execute workflows on GitHub Actions.
+Run dependency-free contract tests with `npm run test:unit`. Run the networked clean-room package and failure-injection tests with `npm run test:integration`; package tests require gh-aw and public GitHub access. Run synthetic enterprise scale tests with `npm run test:load`. `npm test` runs unit and integration tests, while `npm run check` adds load tests and compilation. CI sets `CENTRAL_AGENTIC_OPS_PACKAGE_SOURCE` to the exact commit under test so package installation validates pull-request contents rather than only the default branch.
+
+The automated suite checks source `.md` contracts, ops-value interfaces, smoke-workflow safety, generated workflows, and `gh aw add`/`gh aw update` package behavior. It does not execute agentic workflows or spend AI Credits; the manual `Staged smoke` Actions workflow performs that opt-in runtime check.
+
+## Test Suite
+
+| Layer | Location | Command | Coverage |
+| --- | --- | --- | --- |
+| Unit | `tests/unit/` | `npm run test:unit` | Policy matrices, workflow contracts, safety limits, generated settings, and package manifest structure. |
+| Integration | `tests/integration/` | `npm run test:integration` | Clean-room `gh aw add`/`update` behavior and fail-closed execution of the actual control precompute shell. |
+| Load | `tests/load/` | `npm run test:load` | Actual pagination and admission logic over 10,000 synthetic repositories, including bounded API failure. |
+| Compilation | Source workflows | `npm run compile` | All five agentic workflows compile without emitting repository artifacts. |
+| Runtime staged | `.github/workflows/staged-smoke.yml` | Manual Actions dispatch | One bounded target and its workers complete; target refs and issues remain unchanged. |
+| Runtime modes | `.github/workflows/enterprise-canary.yml` | Manual protected Actions dispatch | Repository-local staged/review/live routing against dedicated repositories with mode-specific write assertions. |
+| Runtime stress | `.github/workflows/enterprise-stress.yml` | Manual protected Actions dispatch | Repository-local two, three, or five same-scope staged runs verify cancellation and no target mutation. |
+
+## Package Lifecycle Integration
+
+The integration suite creates disposable consumer repositories under the system temporary directory and removes them after each test.
+
+| Test result | Command | Checked behavior |
+| --- | --- | --- |
+| 🟢 Pass | `gh aw add` | Installs the two core orchestrators, three workers, shared imports, packaged skills and agent, and package manifest; excludes optional Pages, repository-only test/smoke assets, and experimental ops values. |
+| 🟢 Pass | `gh aw update --force` | Replaces a locally modified package workflow and restores deleted workflow dependencies, skills, and agent files for a branch-tracked package. |
+
+## Enterprise Integration and Load
+
+| Test result | Scenario | Checked behavior |
+| --- | --- | --- |
+| 🟢 Pass | Invalid scope, mode, correlation, caps, and budgets | The actual control precompute shell rejects 12 malformed or unauthorized inputs before execution. |
+| 🟢 Pass | 10,000-repository inventory | Pagination stops at 100 pages, retains exactly 10,000 candidates, and applies the 10%/1,000 target cap within 30 seconds. |
+| 🟢 Pass | Inventory API rate limit | Organization and user lookup each run once, then produce zero candidates, zero target capacity, and a durable error instead of retrying. |
+| Manual | Staged canary | Orchestrator and correlated workers complete while target issue/ref snapshots remain identical. |
+| Manual, approved | Review canary | Target remains unchanged; optional `require_output` asserts a durable proposal in the private review repository. |
+| Manual, approved | Live canary | Optional `require_output` asserts a durable issue, pull request, branch, or comment change in the dedicated target. |
+| Manual, approved | Staged stress | Bounded same-scope runs are superseded by concurrency controls and do not mutate the target. |
 
 ## Modes
 

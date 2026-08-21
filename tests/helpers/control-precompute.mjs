@@ -1,0 +1,60 @@
+import assert from "node:assert/strict";
+import { readFileSync } from "node:fs";
+import { dirname, join, resolve } from "node:path";
+import { fileURLToPath } from "node:url";
+
+export const root = resolve(dirname(fileURLToPath(import.meta.url)), "../..");
+
+export function controlPrecomputeScript() {
+  const source = readFileSync(
+    join(root, ".github", "workflows", "shared", "control-precompute.md"),
+    "utf8",
+  );
+  const marker = "    run: |\n";
+  const markerIndex = source.indexOf(marker);
+  assert.notEqual(markerIndex, -1, "control precompute run block is missing");
+
+  const lines = source.slice(markerIndex + marker.length).split("\n");
+  const script = [];
+  for (const line of lines) {
+    if (line === "---") break;
+    if (line.startsWith("      ")) {
+      script.push(line.slice(6));
+    } else if (line.length === 0) {
+      script.push("");
+    } else {
+      break;
+    }
+  }
+  return script.join("\n");
+}
+
+export function controlEnvironment(overrides = {}) {
+  return {
+    ...process.env,
+    ROLE: "worker",
+    TARGET_REPO: "acme/target",
+    ORGANIZATION: "acme",
+    MAX_REPOS: "1",
+    MAX_SCAN_REPOS: "1000",
+    ALLOWED_OWNERS: "acme",
+    DISPATCH_MAX: "1",
+    ROLLOUT_PERCENT: "100",
+    SAFE_OUTPUT_MODE: "staged",
+    SAFE_OUTPUT_REPO: "",
+    PREVIEW_ONLY: "true",
+    ENABLED: "true",
+    WORKER_ENABLED: "true",
+    WORKER_MAX_MODE: "staged",
+    CORRELATION_ID: "123-1",
+    CENTRAL_REPO: "acme/control",
+    CONTROL_PLANE_RUN_URL: "https://github.com/acme/control/actions/runs/123",
+    ORCHESTRATOR_CREDITS: "250",
+    WORKER_CREDITS_PER_TARGET: "600",
+    AGGREGATE_CREDIT_LIMIT: "1100",
+    GITHUB_REPOSITORY: "acme/control",
+    GITHUB_SERVER_URL: "https://github.com",
+    GITHUB_WORKFLOW_REF: "acme/control/.github/workflows/dependabot.lock.yml@main",
+    ...overrides,
+  };
+}

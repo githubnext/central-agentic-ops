@@ -1,0 +1,60 @@
+name: Enterprise canary
+
+on:
+  workflow_dispatch:
+    inputs:
+      bundle:
+        description: Bundle orchestrator to exercise
+        required: true
+        type: choice
+        options: [dependabot, optimization]
+      safe_output_mode:
+        description: Canary mode
+        required: true
+        type: choice
+        options: [staged, review, live]
+      target_repo:
+        description: Dedicated OWNER/REPO canary target
+        required: true
+        type: string
+      safe_output_repo:
+        description: Dedicated private review repository; review mode only
+        required: false
+        type: string
+      require_output:
+        description: Require the expected destination repository to change
+        required: true
+        default: false
+        type: boolean
+      confirmation:
+        description: REVIEW OWNER/REPO or LIVE OWNER/REPO; empty for staged
+        required: false
+        type: string
+
+permissions:
+  actions: write
+  contents: read
+
+concurrency:
+  group: enterprise-canary-${{ inputs.safe_output_mode }}-${{ inputs.bundle }}-${{ inputs.target_repo }}
+  cancel-in-progress: false
+
+jobs:
+  canary:
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    environment: central-agentic-ops-${{ inputs.safe_output_mode }}
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+      - name: Run enterprise canary
+        env:
+          BUNDLE: ${{ inputs.bundle }}
+          CONFIRMATION: ${{ inputs.confirmation }}
+          CONTROL_REF: ${{ github.ref_name }}
+          GH_TOKEN: ${{ secrets.GH_AW_E2E_TOKEN || github.token }}
+          REQUIRE_OUTPUT: ${{ inputs.require_output }}
+          SAFE_OUTPUT_MODE: ${{ inputs.safe_output_mode }}
+          SAFE_OUTPUT_REPO: ${{ inputs.safe_output_repo }}
+          TARGET_REPO: ${{ inputs.target_repo }}
+        run: |
+          bash tests/e2e/run-canary.sh

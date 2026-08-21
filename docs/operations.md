@@ -35,6 +35,20 @@ Before scheduled live operation, run one target through three manual checks:
 
 Record the three run URLs and restore the intended worker ceiling after the canary. A failed check returns the worker and bundle to `staged`.
 
+The catalog source repository's `Staged smoke` Actions workflow automates the first check for catalog maintainers. It is repository-only test tooling and is not installed by `aw.yml`. Run it manually, select one bundle, and provide one explicit `OWNER/REPO` target. It dispatches that orchestrator with `max_repos: 1`, `rollout_percent: 100`, and `safe_output_mode: staged`, waits for the orchestrator and correlated workers, and verifies that target issue and branch snapshots remain unchanged. It has no schedule and cannot request review or live processing.
+
+The repository-only `Enterprise canary` Actions workflow automates all three modes for catalog maintainers while keeping review and live deliberate:
+
+1. Create repository environments named `central-agentic-ops-staged`, `central-agentic-ops-review`, and `central-agentic-ops-live`. Require reviewers for review and live; restricting deployment branches to the default branch is recommended.
+2. Add `GH_AW_E2E_TOKEN` to the environments when the built-in token cannot read the target/review repository or inspect cross-repository refs and issues. Scope it only to the dedicated canary repositories and required metadata, issues, pull requests, contents, and Actions access.
+3. Use dedicated disposable target and private review repositories under an allowed owner. Never point review or live canaries at production repositories.
+4. For review, enter `REVIEW OWNER/REPO` in `confirmation`; for live, enter `LIVE OWNER/REPO`. Staged requires no confirmation.
+5. Leave `require_output` false when a legitimate no-op is acceptable. Set it true only after preparing repository evidence that should deterministically produce a durable output. Review then requires a review-repository change; live requires a target-repository change.
+
+The canary snapshots issues, pull requests (through the issues API), and branch refs before dispatch. Staged and review must leave the target snapshot unchanged. Review may change only its private review destination; live may change only the dedicated target. Repository snapshots are a routing guard, not semantic approval of generated content, so operators must still inspect the output and correlation metadata.
+
+The repository-only `Enterprise staged stress` workflow sends only `2`, `3`, or `5` same-scope staged runs and requires `STRESS OWNER/REPO RUNS` confirmation plus approval through the `central-agentic-ops-stress` environment. It verifies that concurrency supersedes all but the newest run and that the target snapshot remains unchanged. Real stress remains manual because every run consumes AI Credits; `npm run test:load` supplies the CI-scale test with 10,000 synthetic repositories and no model calls.
+
 ## Routine Monitoring
 
 Review the following for scheduled runs:

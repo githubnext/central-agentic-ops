@@ -72,7 +72,8 @@ The first rollback action is to move the affected bundle to `staged`. For a narr
 1. stop new dispatches;
 2. inspect the orchestrator run and correlated worker runs;
 3. close, revert, or supersede unintended safe outputs using normal repository procedures;
-4. correct policy or worker behavior;
-5. restart in staged mode and repeat promotion gates.
+4. if a workflow or package release caused the incident, restore its last known-good Git revision, compile every affected workflow, and deploy that revision through the normal reviewed change process;
+5. otherwise, correct the affected policy or worker behavior and compile every affected workflow;
+6. restart in staged mode and repeat promotion gates.
 
 Do not reduce another bundle's mode unless the incident involves shared authentication or shared control behavior.

@@ -7,7 +7,7 @@ import test from "node:test";
 import { fileURLToPath } from "node:url";
 import { policyCases, userFacingScenarios } from "./workflow-contract.matrix.mjs";
 
-const root = resolve(dirname(fileURLToPath(import.meta.url)), "..");
+const root = resolve(dirname(fileURLToPath(import.meta.url)), "../..");
 const workflowsDirectory = join(root, ".github", "workflows");
 const modes = ["staged", "review", "live"];
 
@@ -291,6 +291,9 @@ test("deterministic workflows pin third-party actions by commit SHA", () => {
   for (const relativePath of [
     join(".github", "workflows", "workflow-contracts.yml"),
     join(".github", "workflows", "copilot-setup-steps.yml"),
+    join(".github", "workflows", "enterprise-canary.yml"),
+    join(".github", "workflows", "enterprise-stress.yml"),
+    join(".github", "workflows", "staged-smoke.yml"),
     join("pages", "pages.yml"),
   ]) {
     const source = readFileSync(join(root, relativePath), "utf8");
@@ -300,11 +303,91 @@ test("deterministic workflows pin third-party actions by commit SHA", () => {
   }
 });
 
-test("package manifests exclude experimental ops values", () => {
+test("package manifests exclude repository-only tests and experimental ops values", () => {
   for (const relativePath of ["aw.yml", join("dependabot", "aw.yml"), join("optimization", "aw.yml")]) {
     const manifest = readFileSync(join(root, relativePath), "utf8");
-    assert.doesNotMatch(manifest, /ops-values|\.sh\s*$/m, relativePath);
+    assert.doesNotMatch(manifest, /(?:\.github\/)?ops-values/, relativePath);
+    assert.doesNotMatch(manifest, /(?:staged-smoke|enterprise-canary|enterprise-stress|tests\/e2e|\.github\/aw\/e2e)/, relativePath);
   }
+});
+
+test("ops-value contracts expose deterministic validation examples", () => {
+  const opsValuesDirectory = join(root, ".github", "ops-values");
+  const opsValues = readdirSync(opsValuesDirectory).filter((name) => name.endsWith(".sh")).sort();
+  assert.deepEqual(opsValues, [
+    "dependabot-release-train-updater.sh",
+    "optimization-ai-credit-auditor.sh",
+    "optimization-ai-credit-optimizer.sh",
+  ]);
+
+  for (const name of opsValues) {
+    const executable = join(opsValuesDirectory, name);
+    const definition = JSON.parse(execFileSync(executable, ["--definition"], { encoding: "utf8" }));
+    assert.equal(definition.schemaVersion, 3, name);
+    assert.equal(definition.metrics.filter(({ role }) => role === "primary").length, 1, name);
+
+    for (const metric of definition.metrics) {
+      const score = (example) => JSON.parse(execFileSync(executable, ["--metric", metric.id], {
+        encoding: "utf8",
+        input: JSON.stringify(definition.validationExamples[example]),
+      }));
+      assert.ok(score("targetAttained") > score("targetMissed"), `${name}: ${metric.id}`);
+      if (metric.role === "primary") {
+        assert.equal(score("missing"), null, `${name}: ${metric.id} missing`);
+        assert.equal(score("malformed"), null, `${name}: ${metric.id} malformed`);
+      }
+    }
+  }
+});
+
+test("staged smoke is manual, bounded, and cannot request writes", () => {
+  const smoke = workflow("staged-smoke.yml");
+  const harness = readFileSync(join(root, "tests", "e2e", "run-canary.sh"), "utf8");
+  assert.match(smoke, /workflow_dispatch:/);
+  assert.doesNotMatch(smoke, /^\s+schedule:/m);
+  assert.match(smoke, /actions: write/);
+  assert.match(smoke, /timeout-minutes: 75/);
+  assert.match(smoke, /SAFE_OUTPUT_MODE: staged/);
+  assert.match(smoke, /bash tests\/e2e\/run-canary\.sh/);
+  assert.match(smoke, /group: staged-smoke-/);
+  assert.match(harness, /max_repos=1/);
+  assert.match(harness, /snapshot_repository/);
+  assert.match(harness, /staged canary mutated target repository state/);
+  assert.match(harness, /No correlated worker run was found/);
+});
+
+test("enterprise canaries are manual, protected, confirmed, and bounded", () => {
+  const canary = workflow("enterprise-canary.yml");
+  const stress = workflow("enterprise-stress.yml");
+  const canaryHarness = readFileSync(join(root, "tests", "e2e", "run-canary.sh"), "utf8");
+  const stressHarness = readFileSync(join(root, "tests", "e2e", "run-stress.sh"), "utf8");
+
+  for (const source of [canary, stress]) {
+    assert.match(source, /workflow_dispatch:/);
+    assert.doesNotMatch(source, /^\s+schedule:/m);
+    assert.match(source, /actions: write/);
+    assert.match(source, /timeout-minutes: 120/);
+    assert.match(source, /GH_AW_E2E_TOKEN/);
+  }
+
+  assert.match(canary, /bash tests\/e2e\/run-canary\.sh/);
+  assert.match(stress, /bash tests\/e2e\/run-stress\.sh/);
+
+  assert.match(canary, /options: \[staged, review, live\]/);
+  assert.match(canary, /environment: central-agentic-ops-\$\{\{ inputs\.safe_output_mode \}\}/);
+  assert.match(canary, /require_output:/);
+  assert.match(canaryHarness, /confirmation must be REVIEW/);
+  assert.match(canaryHarness, /confirmation must be LIVE/);
+  assert.match(canaryHarness, /review canary mutated target repository state/);
+  assert.match(canaryHarness, /live canary required an output/);
+
+  assert.match(stress, /environment: central-agentic-ops-\$\{\{ 'stress' \}\}/);
+  assert.match(stress, /options: \[2, 3, 5\]/);
+  assert.match(stressHarness, /target_repo must use OWNER\/REPO form/);
+  assert.match(stressHarness, /STRESS \$TARGET_REPO \$RUNS/);
+  assert.match(stressHarness, /RUNS - 1/);
+  assert.match(stressHarness, /safe_output_mode=staged/);
+  assert.match(stressHarness, /staged stress run mutated target repository state/);
 });
 
 test("ownership, provenance, and workflow identity fail closed", () => {
