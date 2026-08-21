@@ -1,0 +1,25 @@
+<aside class="experimental-banner" aria-label="Experimental project warning">
+  <strong>Experimental:</strong> Do not use until this notice is removed.
+</aside>
+
+<style>
+  .experimental-banner {
+    padding: 0.45rem var(--sl-content-pad-x);
+    border-block: 1px solid var(--sl-color-red-high);
+    background: var(--sl-color-red-low);
+    color: var(--sl-color-text);
+    font-size: var(--sl-text-sm);
+    line-height: 1.35;
+    text-align: center;
+  }
+
+  .experimental-banner strong {
+    color: var(--sl-color-red-high);
+  }
+
+  @media (forced-colors: active) {
+    .experimental-banner {
+      border-color: CanvasText;
+    }
+  }
+</style>

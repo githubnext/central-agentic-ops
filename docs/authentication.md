@@ -1,4 +1,15 @@
-# Authentication
+---
+title: Choose Credentials
+description: Choose and configure least-privilege GitHub App, fine-grained PAT, or built-in workflow-token access.
+---
+
+Choose credentials based on the repositories and operations a bundle needs. Prefer a GitHub App for private or cross-repository use; use a fine-grained PAT when an App is not practical; use the built-in workflow token only for the bounded cases described below.
+
+| Your use case | Credential |
+| --- | --- |
+| Private or internal targets, alternate review repositories, or live writes | GitHub App preferred; fine-grained PAT supported |
+| Public targets in `staged` mode | Built-in `GITHUB_TOKEN` |
+| Review outputs kept in the control repository | Built-in token only when its repository permissions authorize the output |
 
 ## Policy
 

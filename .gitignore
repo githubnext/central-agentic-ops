@@ -4,3 +4,8 @@
 
 # Experimental value generation
 .github/skills/aw-value
+
+# Astro documentation site
+.astro/
+dist/
+node_modules/

@@ -1,6 +1,11 @@
-# Configuration Reference
+---
+title: Configuration Reference
+description: Repository variables, secrets, and manual inputs for Central Agentic Ops.
+---
 
 Control-plane configuration is stored as GitHub repository variables and secrets in the private central control repository. Scheduled runs use that configuration. Manual workflow inputs define a separate run without changing scheduled configuration. Values computed inside a workflow are runtime state and must not be configured directly.
+
+For a first installation, follow [Install and run safely](getting-started.md) and return here only for exact setting names and defaults. Keep every bundle in `staged` and `max_repos` at `1` until its promotion checks pass.
 
 ## Required Baseline
 

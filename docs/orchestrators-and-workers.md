@@ -1,4 +1,9 @@
-# Orchestrators and Workers
+---
+title: Orchestrators and Workers
+description: Design and govern bundle orchestrators and their bounded worker workflows.
+---
+
+Use this page when reviewing a bundle or deciding where new behavior belongs. Orchestrators select and dispatch work; workers perform one bounded repository task and can only narrow the policy they receive.
 
 ## Orchestrator Authority
 

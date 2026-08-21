@@ -53,7 +53,7 @@ function runPrecompute(overrides = {}) {
       ROLE: "orchestrator",
       TARGET_REPO: "",
       MAX_REPOS: "1000",
-      MAX_SCAN_REPOS: "10000",
+      MAX_SCAN_REPOS: "100000",
       DISPATCH_MAX: "1000",
       ROLLOUT_PERCENT: "10",
       WORKER_CREDITS_PER_TARGET: "0",
@@ -67,7 +67,7 @@ function runPrecompute(overrides = {}) {
   return { temporaryDirectory, logPath, result };
 }
 
-test("control precompute bounds a 10,000-repository inventory", { timeout: 30_000 }, () => {
+test("control precompute bounds a 100,000-repository inventory", { timeout: 120_000 }, () => {
   const started = performance.now();
   const run = runPrecompute();
 
@@ -75,11 +75,11 @@ test("control precompute bounds a 10,000-repository inventory", { timeout: 30_00
     assert.equal(run.result.status, 0, run.result.stderr);
     const output = JSON.parse(readFileSync("/tmp/gh-aw/agent/control-precompute.json", "utf8"));
     const inventoryCalls = readFileSync(run.logPath, "utf8").trim().split("\n");
-    assert.equal(output.total_repositories_scanned, 10000);
-    assert.equal(output.candidate_repositories.length, 10000);
+    assert.equal(output.total_repositories_scanned, 100000);
+    assert.equal(output.candidate_repositories.length, 100000);
     assert.equal(output.effective_max_repos, 1000);
-    assert.equal(inventoryCalls.length, 100);
-    assert.ok(performance.now() - started < 30_000, "bounded inventory exceeded 30 seconds");
+    assert.equal(inventoryCalls.length, 1000);
+    assert.ok(performance.now() - started < 120_000, "bounded inventory exceeded 120 seconds");
   } finally {
     rmSync(run.temporaryDirectory, { recursive: true, force: true });
   }

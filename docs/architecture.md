@@ -1,4 +1,9 @@
-# Control Architecture
+---
+title: How the Control Plane Works
+description: Understand the security boundaries, enterprise topology, execution flow, and fail-closed controls.
+---
+
+Read this page when planning ownership, reviewing security boundaries, or deciding whether the control plane fits an enterprise rollout. For installation steps, begin with [Install and run safely](getting-started.md).
 
 ## Objectives
 

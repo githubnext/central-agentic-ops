@@ -15,7 +15,7 @@ const failures = [
   ["mismatched control repository", { CENTRAL_REPO: "acme/other" }, "central_repo must identify the current control repository"],
   ["mismatched control run URL", { CONTROL_PLANE_RUN_URL: "https://github.com/acme/control/actions/runs/999" }, "control_plane_run_url must match correlation_id and central_repo"],
   ["oversized repository cap", { ROLE: "orchestrator", TARGET_REPO: "", MAX_REPOS: "1001" }, "max_repos must be an integer from 1 through 1000"],
-  ["oversized scan cap", { ROLE: "orchestrator", TARGET_REPO: "", MAX_SCAN_REPOS: "10001" }, "max_scan_repos must be an integer from 1 through 10000"],
+  ["oversized scan cap", { ROLE: "orchestrator", TARGET_REPO: "", MAX_SCAN_REPOS: "100001" }, "max_scan_repos must be an integer from 1 through 100000"],
   ["invalid rollout percentage", { ROLE: "orchestrator", TARGET_REPO: "", ROLLOUT_PERCENT: "0" }, "rollout_percent must be an integer from 1 through 100"],
   ["invalid credit budget", { ROLE: "orchestrator", TARGET_REPO: "", AGGREGATE_CREDIT_LIMIT: "0" }, "AI Credit admission values must be integers"],
 ];

@@ -310,8 +310,8 @@ steps:
           echo "max_repos must be an integer from 1 through 1000" >&2
           exit 1
         fi
-        if ! [[ "$MAX_SCAN_REPOS" =~ ^[1-9][0-9]*$ ]] || [ "$MAX_SCAN_REPOS" -gt 10000 ]; then
-          echo "max_scan_repos must be an integer from 1 through 10000" >&2
+        if ! [[ "$MAX_SCAN_REPOS" =~ ^[1-9][0-9]*$ ]] || [ "$MAX_SCAN_REPOS" -gt 100000 ]; then
+          echo "max_scan_repos must be an integer from 1 through 100000" >&2
           exit 1
         fi
         if ! [[ "$DISPATCH_MAX" =~ ^[1-9][0-9]*$ ]] || [ "$DISPATCH_MAX" -gt 1000 ]; then

@@ -1,31 +1,21 @@
-# Control Operations
+---
+title: Monitor, Recover, and Maintain
+description: Monitor control-plane runs, stop unsafe activity, recover from incidents, and maintain installed bundles.
+---
 
-## Installation
+Use this page after installation to answer the urgent operator questions: Is the control plane healthy? How do I stop it? What evidence should I collect? How do I recover safely?
 
-Install the full catalog or an individual bundle into a private central control repository. Use an enterprise-operated repository hosted in a designated organization for cross-organization scope, or an organization-operated repository for organization scope. The installer configures:
+| Need | Start here |
+| --- | --- |
+| Check scheduled runs | [Routine monitoring](#routine-monitoring) |
+| Investigate cancelled or incomplete work | [Queuing and resource exhaustion](#queuing-and-resource-exhaustion) |
+| Stop one worker, one bundle, or everything | [Emergency stop](#emergency-stop) |
+| Respond to an unsafe output or exposed credential | [Incident response](#incident-response) |
+| Add or update catalog workflows | [Maintain the catalog](#adding-a-bundle) |
 
-- optional GitHub App credentials;
-- optional fine-grained PAT authentication;
-- independent bundle modes, defaulting to staged;
-- independent private review repositories;
-- Copilot authentication and generated workflows;
-- no Pages publisher by default; Pages is an explicit add-on.
+For installation and the first write-free run, begin with [Install and run safely](getting-started.md).
 
-GitHub Actions always provides the control repository's `GITHUB_TOKEN`. That token is sufficient for bounded staged scans of public repositories, so an App or PAT is optional for that profile. Configure an App or PAT before reading private or internal targets, using an alternate review repository, or enabling live target writes. Keep the control-plane repository private and restrict administration of Actions secrets, variables, environments, and workflow files.
-
-## Initial Activation
-
-For each installed bundle:
-
-1. Confirm App or PAT repository coverage and least-privilege permissions, or explicitly choose the public read-only profile and verify every target is public.
-2. Confirm the generated orchestrator and worker workflows are present and enabled.
-3. Confirm the private control-plane repository is suitable for review safe outputs. For a manual review run that needs another private destination, supply `safe_output_repo`. Do not install Pages unless the repository and Pages site are access-controlled.
-4. Trigger a staged mode `workflow_dispatch` run against one representative `target_repo` with `max_repos: 1`.
-5. Inspect the orchestrator workflow's candidate selection and worker workflow eligibility summary.
-6. Inspect worker workflow prompts, staged safe outputs, correlation data, and AI Credit use.
-7. Continue through the promotion plan in [Rollout and safe output Routing](rollout-and-routing.md).
-
-### Production Canary
+## Validate Before Scheduled Live Runs
 
 Before scheduled live operation, run one target through three manual checks:
 

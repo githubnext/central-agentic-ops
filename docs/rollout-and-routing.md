@@ -1,4 +1,19 @@
-# Rollout and safe output Routing
+---
+title: Roll Out a Bundle Safely
+description: Promote one bundle through staged, review, limited live, and scheduled live operation.
+---
+
+Roll out each bundle independently. Begin with one explicit target in `staged`, inspect the proposed output in `review`, and allow target writes only after the same bounded scenario succeeds in both modes.
+
+## Promotion at a Glance
+
+1. Keep the installed bundle in `staged` and validate one target.
+2. Route the same scenario to a private review destination.
+3. Run one low-risk target in `live` and verify the resulting output and downstream checks.
+4. Enable scheduled live operation with `max_repos` kept small.
+5. Increase limits only from observed evidence.
+
+Move the bundle back to `staged` whenever authentication, routing, output quality, cost, or provenance is uncertain.
 
 ## Bundle-Level Control
 
