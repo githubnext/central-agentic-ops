@@ -19,11 +19,11 @@ Enterprise deployment uses two independent central runtimes: an enterprise contr
 
 | Source | Published by | Execution and reach |
 | --- | --- | --- |
-| **Enterprise-shared AW** | Enterprise platform, security, or automation governance | Runs in the enterprise central control repository and dispatches per-repository workers against configured targets across organizations. |
-| **Organization-shared AW** | Organization platform or repository operations team | Runs in an organization central control repository and dispatches per-repository workers against configured targets in that organization. |
+| **Enterprise-shared AW** | Enterprise platform, security, or automation governance | Runs in the enterprise central control repository and dispatches per-repository worker workflows against configured targets across organizations. |
+| **Organization-shared AW** | Organization platform or repository operations team | Runs in an organization central control repository and dispatches per-repository worker workflows against configured targets in that organization. |
 | **Repository-local AW** | Repository maintainers | Runs in its own repository and remains outside this control plane unless explicitly enrolled. |
 
-"Enterprise-shared" and "organization-shared" identify both governance scope and runtime ownership. They do not mean that workflow definitions are installed into downstream target repositories. In the CentralRepoOps pattern, orchestrator and worker definitions stay together in their owning central repository; each worker checks out one target and sends declared cross-repository safe outputs to the configured destination.
+"Enterprise-shared" and "organization-shared" identify both governance scope and runtime ownership. They do not mean that Agentic Workflow definitions are installed into downstream target repositories. In the CentralRepoOps pattern, Orchestrator and worker workflow definitions stay together in their owning central repository; each worker workflow checks out one target and sends declared cross-repository safe outputs to the configured destination.
 
 ### Operating Ownership
 
@@ -32,15 +32,17 @@ Enterprise deployment uses two independent central runtimes: an enterprise contr
 | **Enterprise control** | Enterprise platform or automation team | Operates the enterprise central repository, its cross-organization credentials and target inventory, enterprise bundle rollout, monitoring, and incident response. |
 | **Organization control** | Organization platform or repository operations team | Operates an organization central repository, local credentials and targets, organization bundle rollout, monitoring, and incident response. |
 
-The models are complementary rather than alternatives. An organization may receive enterprise-shared work from the enterprise control repository while also running organization-shared work from its own control repository. The two sources keep independent policy and provenance even when they target the same repository.
+The models are complementary rather than alternatives. An organization may receive enterprise-shared work from the enterprise control repository while also running organization-shared work from its own control repository. The two sources keep independent policy, credentials, budgets, kill switches, and provenance even when they target the same repository. Their runs may overlap, so downstream rulesets, protected environments, branch protection, and CODEOWNERS remain the final ownership boundary.
 
 ### Downstream Fan-Out and Provenance
 
-Each central control repository fans out enabled bundles to selected targets, subject to repository allowlists and dispatch limits. Orchestrators and workers run from that central repository. Each worker checks out one target repository, inspects only that target, and creates only declared safe outputs in the configured downstream destination. A target repository may therefore receive outputs from both enterprise and organization control repositories without storing either source's workflow definitions.
+Each central control repository fans out enabled bundles to selected targets, subject to repository allowlists and dispatch limits. Orchestrator and worker workflows run from that central repository. Each worker workflow checks out one target repository, inspects only that target, and creates only declared safe outputs in the configured downstream destination. A target repository may therefore receive safe outputs from both enterprise and organization control repositories without storing either source's Agentic Workflow definitions.
 
-The standard `central_repo`, `control_plane_run_url`, and `correlation_id` fields identify the originating central runtime and run. Because `central_repo` differs between enterprise and organization control repositories, downstream outputs retain their runtime source. Deployments should also preserve catalog and workflow identity in workflow metadata and user-visible outputs; a dedicated workflow-source field remains a useful future provenance enhancement.
+The standard `central_repo`, `control_plane_run_url`, and `correlation_id` fields identify the originating central runtime and run. Because `central_repo` differs between enterprise and organization control repositories, downstream safe outputs retain their runtime source. Deployments should also preserve catalog and Agentic Workflow identity in workflow metadata and user-visible safe outputs; a dedicated workflow-source field remains a useful future provenance enhancement.
 
-Cross-organization reach is explicit and credential-scoped. Fully qualified `target_repo` values can address repositories outside the control repository's owning organization when the configured GitHub App or PAT can read the target and perform the required safe outputs. The current default discovery path enumerates only the organization that owns the control repository; automatic enterprise-wide discovery therefore requires an explicit multi-organization target inventory or a future discovery extension. This discovery limitation does not require copying the workflows into organization or target repositories.
+Cross-organization reach is explicit, allowlisted, and credential-scoped. Fully qualified `target_repo` values can address repositories outside the control repository's owning organization only when the owner appears in `CENTRAL_AGENTIC_OPS_ALLOWED_OWNERS` and the configured GitHub App or PAT can perform the operation. The safe default permits only the control repository's owner. The current bounded discovery path enumerates only that owner; automatic enterprise-wide discovery requires an explicit multi-organization target inventory or a future discovery extension. This discovery limitation does not require copying workflows into organization or target repositories.
+
+Repository-local workflow names cannot shadow central workers. Shared control resolves an orchestrator's declared worker slug only by its exact `.github/workflows/<slug>.lock.yml` path in the owning control repository. Target analytics use `workflow_path`, not display name, as identity so same-named target workflows remain separate. Target workflow definitions and logs are untrusted evidence, never policy. Persistent optimization history branches include `central_repo`, keeping enterprise and organization control-plane state separate when both target the same repository.
 
 ## What This Does Not Do
 
@@ -63,35 +65,35 @@ These controls are complementary: Central Agentic Ops supplies orchestration and
 
 | Layer | Owns | Must not own |
 | --- | --- | --- |
-| Shared control | Authentication, common environment, mode interpretation, review requirements, precomputation, control envelope | Bundle ranking or worker-specific mutation policy |
-| Bundle orchestrator | Bundle mode, review destination, target selection, ranking, dispatch limits, eligible worker list | Direct target mutation or credential duplication |
-| Worker | Repository analysis, declared safe outputs, worker permissions, execution limits | Repository discovery, downstream dispatch, or mode escalation |
+| Shared control | Authentication, common environment, mode interpretation, review requirements, precomputation, control envelope | Bundle ranking or worker workflow-specific mutation policy |
+| orchestrator workflow | Bundle mode, review destination, target selection, ranking, dispatch limits, eligible worker workflow list | Direct target mutation or credential duplication |
+| worker workflow | Repository analysis, declared safe outputs, permissions, and execution limits | Repository discovery, downstream dispatch, or mode escalation |
 
-The orchestrator is the rollout authority. Workers are enforcement points: they consume the dispatched control envelope and must stay within it.
+The orchestrator workflow is the rollout authority. worker workflows are enforcement points: they consume the dispatched control envelope and must stay within it.
 
 ## Execution Flow
 
-1. A schedule or manual dispatch starts a bundle orchestrator.
-2. The orchestrator imports shared control with its bundle mode and review repository.
+1. A schedule trigger or `workflow_dispatch` starts a bundle orchestrator workflow.
+2. The orchestrator workflow imports shared control with its bundle mode and review repository.
 3. Shared precomputation resolves enablement, routing, candidate repositories, and worker workflow availability into `/tmp/gh-aw/agent/control-precompute.json`.
-4. The orchestrator ranks eligible repositories using bundle-specific discovery rules and applies `max_repos` and dispatch limits.
-5. The orchestrator dispatches each eligible worker with the standard control envelope.
-6. The worker imports shared control as `role: worker`, analyzes only `target_repo`, and emits only its declared safe outputs.
-7. Outputs are staged, routed to the review repository, or written to the target repository according to the effective mode.
+4. The orchestrator workflow ranks eligible repositories using bundle-specific discovery rules and applies `max_repos` and dispatch limits.
+5. The orchestrator workflow dispatches each eligible worker workflow with the standard control envelope.
+6. The worker workflow imports shared control as `role: worker`, analyzes only `target_repo`, and emits only its declared safe outputs.
+7. safe outputs are simulated in staged mode, routed to the review repository, or processed against the target repository according to the effective mode.
 
-Pages report routing participates in the control plane. Preview stages report source outputs without deployment. Review routes them to the private `safe_output_repo` and publishes an access-controlled review Pages site owned by that repository. Live routes durable source outputs to their normal destination and publishes the production Pages site. Conventional deterministic workflows perform both deployments and own `pages: write` and `id-token: write`; agent jobs do not.
+Pages report routing participates in the control plane. staged mode stages report source data without deployment. Review routes report source data to the private `safe_output_repo` and publishes an access-controlled review Pages site owned by that repository. Live routes durable report source data to its normal destination and publishes the production Pages site. Conventional deterministic workflows perform both deployments and own `pages: write` and `id-token: write`; AI agent jobs do not.
 
 ## Standard Control Envelope
 
-Every worker dispatch carries:
+Every worker workflow dispatch carries:
 
 | Field | Purpose |
 | --- | --- |
-| `target_repo` | The only target repository the worker may analyze or update |
-| `safe_output_mode` | `preview`, `review`, or `live` |
-| `safe_output_repo` | Destination for outputs; in review mode this is the private review repository |
-| `preview_only` | Forces staged outputs when `true` |
-| `correlation_id` | Joins worker outputs to the orchestrator run |
+| `target_repo` | The only target repository the worker workflow may analyze or update |
+| `safe_output_mode` | `staged`, `review`, or `live` |
+| `safe_output_repo` | safe output destination; review mode defaults this to the current control-plane repository |
+| `preview_only` | Enables staged mode for safe outputs when `true` |
+| `correlation_id` | Joins worker workflow safe outputs to the orchestrator workflow run |
 | `central_repo` | Identifies the control-plane repository |
 | `control_plane_run_url` | Provides the originating run for audit and diagnosis |
 | `batch_label` | Optional worker-specific grouping value |
@@ -100,31 +102,36 @@ Credentials are not part of this envelope. Each run resolves authentication thro
 
 ## Invariants
 
-- Preview is the default mode.
-- Review mode without a review repository dispatches no workers and creates no safe outputs.
-- An orchestrator dispatches only workers declared in its `safe-outputs.dispatch-workflow.workflows` list.
+- staged mode is the default mode.
+- Automatic discovery scans at most `1000` repositories by default and never more than `10000`.
+- Repository selection defaults to one target and is bounded by absolute, percentage, and dispatch-derived caps.
+- Manual targets and review destinations are restricted to trusted repository owners; the default is the control repository owner.
+- Review mode defaults to the current control-plane repository when no destination override is provided.
+- An orchestrator workflow dispatches only worker workflows declared in its `safe-outputs.dispatch-workflow.workflows` list and resolved by exact generated-workflow path.
 - Disabled or unavailable worker workflows are skipped with a reason.
-- A worker handles one dispatched target and does not perform organization-wide discovery.
+- A worker workflow handles one dispatched target and does not perform organization-wide discovery.
 - GitHub tools are read-only; writes occur only through declared safe-output primitives.
 - Agents do not receive Pages deployment permission or mode-promotion authority. Pages report mode and destination come from the control envelope; persistent publication is performed only by conventional deterministic workflows from trusted durable inputs.
 - Review Pages must be access-controlled for the intended reviewers and isolated from production Pages. If that boundary is unavailable, review publication fails closed.
-- A manual dispatch may narrow or redirect one run but does not change another bundle's configured mode.
-- Control-plane correlation is included in worker-created issues, pull requests, or comments when available.
+- A `workflow_dispatch` run may narrow or redirect one run but does not change another bundle's configured mode.
+- Control-plane correlation is included in worker workflow-created issue, pull request, or comment safe outputs when available.
 
 ## Failure Posture
 
 The system should stop or reduce scope when it cannot establish a required fact:
 
-- missing review repository in review mode: no dispatch;
+- inaccessible review destination in review mode: emit `report_incomplete` rather than writing elsewhere;
 - unavailable or disabled worker: skip that worker;
 - unreadable target or unresolved default branch: skip that target;
 - invalid control precomputation: fail the run rather than infer policy;
-- output not representable safely in review mode: publish an explicit review bundle or produce no output;
+- out-of-range repository, discovery, rollout, or dispatch caps: fail precomputation rather than widen scope;
+- target or review repository outside the trusted owner allowlist: fail before repository access or dispatch;
+- safe output not representable safely in review mode: publish an explicit review bundle or emit `report_incomplete`;
 - Pages report in review mode without an access-controlled Pages-capable `safe_output_repo`: do not deploy the report;
 - missing required authentication: fail before repository mutation.
 
 ## Current and Planned Controls
 
-Implemented controls include shared authentication, bundle-level modes and review destinations, target and dispatch limits, worker workflow eligibility checks, standard dispatch envelopes, read-only GitHub tools, and worker safe outputs.
+Implemented controls include shared authentication, bundle-level modes and review destinations, target and dispatch limits, worker workflow eligibility checks, standard dispatch envelopes, read-only GitHub tools, and worker workflow safe outputs.
 
 The next planned increment is optional worker-level `enabled` and `max_mode` controls for workers with independent risk or maturity. These are ceilings beneath bundle policy, not separate control planes. See [Orchestrators and Workers](orchestrators-and-workers.md).

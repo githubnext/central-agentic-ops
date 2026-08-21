@@ -94,7 +94,7 @@ network:
     - opentelemetry.io
     - "*.opentelemetry.io"
 
-run-name: "Dependabot release train · ${{ inputs.target_repo }} · ${{ inputs.safe_output_mode || (inputs.preview_only == 'true' && 'preview' || 'live') }}"
+run-name: "Dependabot release train · ${{ inputs.target_repo }} · ${{ inputs.safe_output_mode || (inputs.preview_only == 'true' && 'staged' || 'live') }}"
 
 concurrency:
   group: "${{ github.workflow }}-${{ inputs.target_repo }}"
@@ -344,7 +344,7 @@ safe-outputs:
       - "**/tests/**"
       - "**/__tests__/**"
   update-pull-request:
-    staged: ${{ inputs.safe_output_mode == 'private' }}
+    staged: ${{ inputs.safe_output_mode == 'review' }}
     target: "*"
     target-repo: ${{ github.event.inputs.safe_output_repo }}
     required-title-prefix: "[dependabot-agent] "

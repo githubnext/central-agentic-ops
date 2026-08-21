@@ -1,4 +1,4 @@
-name: Operations Pages
+name: Pages
 
 on:
   workflow_dispatch:
@@ -11,7 +11,7 @@ on:
       - .github/value/**
       - .github/workflows/*.md
       - .github/workflows/*.lock.yml
-      - .github/workflows/ops-pages.yml
+      - .github/workflows/pages.yml
   schedule:
     - cron: "23 5 * * *"
   issues:
@@ -31,7 +31,7 @@ permissions:
   contents: read
 
 concurrency:
-  group: operations-pages
+  group: pages
   cancel-in-progress: true
 
 jobs:

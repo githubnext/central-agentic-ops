@@ -1,27 +1,33 @@
 # Configuration Reference
 
-Control-plane configuration is stored as GitHub repository variables and secrets in the private central control repository. Manual workflow inputs can override selected settings for one run. Values computed inside a workflow are runtime state and must not be configured directly.
+Control-plane configuration is stored as GitHub repository variables and secrets in the private central control repository. Scheduled runs use that configuration. Manual workflow inputs define a separate run without changing scheduled configuration. Values computed inside a workflow are runtime state and must not be configured directly.
 
 ## Required Baseline
 
-Configure at least one authentication method before operational runs:
+For private or internal targets, alternate review repositories, or live target writes, configure at least one authentication method before operational runs:
 
 1. A GitHub App using `GH_AW_GITHUB_APP_ID` and `GH_AW_GITHUB_APP_PRIVATE_KEY` is preferred.
 2. A fine-grained PAT can be supplied through `GH_AW_GITHUB_TOKEN` as a fallback or as the only authentication method.
 
-Every installed bundle has an independent mode. Installation defaults each mode to `preview`.
+For public targets only, bounded staged scans can instead use the automatically provided `GITHUB_TOKEN`; no App or PAT secret is required. Review is supported without an App or PAT only when outputs stay in the current control repository and its workflow-token permissions authorize them. See [Public Read-Only Profile](authentication.md#public-read-only-profile).
+
+Every installed bundle has an independent mode. Installation defaults each mode to `staged`.
 
 ## Repository Variables
 
 | Name | Scope | Required | Default | Purpose |
 | --- | --- | --- | --- | --- |
 | `GH_AW_GITHUB_APP_ID` | Shared | With App authentication | None | GitHub App client ID used to mint short-lived installation tokens. |
-| `CENTRAL_AGENTIC_OPS_DEPENDABOT_MODE` | Dependabot | Yes when installed | `preview` | Sets the bundle mode to `preview`, `review`, or `live`. |
-| `CENTRAL_AGENTIC_OPS_DEPENDABOT_REVIEW_REPO` | Dependabot | In `review` mode | None | Private review destination in `owner/repository` form. |
-| `CENTRAL_AGENTIC_OPS_OPTIMIZATION_MODE` | Optimization | Yes when installed | `preview` | Sets the bundle mode to `preview`, `review`, or `live`. |
-| `CENTRAL_AGENTIC_OPS_OPTIMIZATION_REVIEW_REPO` | Optimization | In `review` mode | None | Private review destination in `owner/repository` form. |
+| `CENTRAL_AGENTIC_OPS_ALLOWED_OWNERS` | Shared | No | Control repository owner | Comma-separated owners permitted for manual targets and review destinations. Wildcards are not supported. |
+| `CENTRAL_AGENTIC_OPS_MAX_SCAN_REPOS` | Shared | No | `1000` | Maximum repositories examined by bounded automatic discovery. Accepts `1` through `10000`. |
+| `CENTRAL_AGENTIC_OPS_DEPENDABOT_MODE` | Dependabot | Yes when installed | `staged` | Sets the bundle mode to `staged`, `review`, or `live`. |
+| `CENTRAL_AGENTIC_OPS_DEPENDABOT_MAX_REPOS` | Dependabot | No | `1` | Scheduled repository-selection cap. Accepts `1` through `1000`; dispatch limits may reduce it further. |
+| `CENTRAL_AGENTIC_OPS_DEPENDABOT_ROLLOUT_PERCENT` | Dependabot | No | `100` | Limits selection to this percentage of discovered repositories. Accepts integers from `1` through `100`. |
+| `CENTRAL_AGENTIC_OPS_OPTIMIZATION_MODE` | Optimization | Yes when installed | `staged` | Sets the bundle mode to `staged`, `review`, or `live`. |
+| `CENTRAL_AGENTIC_OPS_OPTIMIZATION_MAX_REPOS` | Optimization | No | `1` | Scheduled repository-selection cap. Accepts `1` through `1000`; dispatch limits may reduce it further. |
+| `CENTRAL_AGENTIC_OPS_OPTIMIZATION_ROLLOUT_PERCENT` | Optimization | No | `100` | Limits selection to this percentage of discovered repositories. Accepts integers from `1` through `100`. |
 
-An empty or unrecognized bundle mode disables scheduled selection and dispatch. It does not block a manual workflow dispatch. Review mode without its review-repository variable also dispatches no workers. For an all-stop procedure, see [Emergency Stop](operations.md#emergency-stop).
+An empty or unrecognized bundle mode disables scheduled selection and worker workflow dispatch. It does not block a `workflow_dispatch` run. Scheduled review mode routes safe outputs to the current control-plane repository. For an all-stop procedure, see [Emergency Stop](operations.md#emergency-stop).
 
 ### Pages Report Destinations
 
@@ -34,23 +40,24 @@ Production Pages configuration is fixed in the conventional publishing workflow 
 | Name | Scope | Required | Purpose |
 | --- | --- | --- | --- |
 | `GH_AW_GITHUB_APP_PRIVATE_KEY` | Shared | With App authentication | Private key paired with `GH_AW_GITHUB_APP_ID`. |
-| `GH_AW_GITHUB_TOKEN` | Shared | Without a complete App configuration | Fine-grained PAT fallback for control-plane GitHub access. |
-| `GH_AW_CI_TOKEN` | Dependabot | Optional | Token used by the Dependabot safe-output path when an additional empty commit is required. |
+| `GH_AW_GITHUB_TOKEN` | Shared | For cross-repository access without a complete App configuration | Fine-grained PAT fallback for control-plane GitHub access. Not required for the public read-only profile. |
+| `GH_AW_CI_TOKEN` | Dependabot | Optional | Token used by the Dependabot safe output path when an additional empty commit is required. |
 
 Keep secrets in the control repository. Do not place credentials in variables, workflow inputs, dispatch envelopes, or target repositories. See [Authentication](authentication.md) for permissions, precedence, rotation, and revocation.
 
-## Manual Run Inputs
+## workflow_dispatch Inputs
 
-Both bundle orchestrators expose the same inputs under **Run workflow**:
+Both bundle orchestrator workflows expose the same inputs under **Run workflow**:
 
 | Input | Type | Default | Effect |
 | --- | --- | --- | --- |
-| `target_repo` | String | Automatic discovery | Restricts the run to one fully qualified `owner/repository` target. |
-| `safe_output_repo` | String | Bundle review repository | Overrides the output destination for this run; required with `review` when no bundle review repository is configured. |
-| `max_repos` | Number | `1` | Caps repositories selected by this run. It cannot exceed the orchestrator's declared dispatch limit. |
-| `safe_output_mode` | Choice | `preview` | Sets this run to `preview`, `review`, or `live`. |
+| `target_repo` | String | Automatic discovery | Restricts the run to one fully qualified `owner/repository` target whose owner is allowlisted. |
+| `safe_output_repo` | String | Current control-plane repository | Overrides the review safe output destination with an allowlisted repository for this manual run. |
+| `max_repos` | Number | `1` | Caps repositories selected by this run. It cannot exceed the orchestrator workflow's declared dispatch limit. |
+| `rollout_percent` | Number | `100` | Overrides the bundle rollout percentage for this run. Accepts integers from `1` through `100`. |
+| `safe_output_mode` | Choice | `staged` | Selects staged mode, review routing, or live safe output processing for this `workflow_dispatch` run. |
 
-Manual inputs affect only the dispatched run. They do not update repository variables or another bundle's policy. During validation, specify one `target_repo`, keep `max_repos` at `1`, and begin in `preview`.
+`workflow_dispatch` inputs affect only the dispatched run. They do not update repository variables or another bundle's policy. The percentage cap is rounded up so a non-empty candidate set can select at least one repository. `max_repos`, the percentage cap, and the target count permitted by the orchestrator workflow's remaining dispatch budget are cumulative; the smallest cap wins. Invalid or out-of-range caps fail precomputation. During validation, specify one `target_repo`, keep `max_repos` at `1`, and begin in staged mode.
 
 ## Optional Observability Secrets
 
@@ -67,18 +74,22 @@ Observability is disabled when the corresponding settings are absent. These valu
 | `DD_API_KEY` | Datadog | Fallback when `GH_AW_OTEL_DATADOG_API_KEY` is absent. |
 | `DD_SITE` | Datadog | Defaults to `datadoghq.com`. |
 
-## Precedence
+## Runtime Resolution
 
 Control values resolve in this order:
 
-| Decision | Precedence |
+| Decision | Resolution |
 | --- | --- |
 | Authentication | GitHub App, then `GH_AW_GITHUB_TOKEN`, then the run's `GITHUB_TOKEN` where that token can authorize the operation. |
-| Mode | Manual `safe_output_mode`, then the bundle mode variable, then `preview`. |
-| Review destination | Manual `safe_output_repo`, then the bundle review-repository variable. |
-| Target selection | Manual `target_repo`, otherwise control-plane discovery. |
+| Mode | Schedule-triggered runs use the bundle mode variable. `workflow_dispatch` runs use the `safe_output_mode` workflow input and do not change or depend on the scheduled mode. Missing values default to `staged`; legacy `preview` values normalize to `staged`. |
+| Review destination | `safe_output_repo` workflow input for a manual run, otherwise `github.repository`. |
+| Allowed repository owners | `CENTRAL_AGENTIC_OPS_ALLOWED_OWNERS`, otherwise `github.repository_owner`. Applies to orchestrated and directly dispatched workers. |
+| Absolute repository cap | `max_repos` workflow input, then the bundle max-repositories variable, then `1`. |
+| Discovery scan cap | `CENTRAL_AGENTIC_OPS_MAX_SCAN_REPOS`, then `1000`; hard maximum `10000`. |
+| Rollout percentage | `rollout_percent` workflow input, then the bundle rollout-percentage variable, then `100`. |
+| Target selection | `target_repo` workflow input, otherwise control-plane discovery. |
 
-The GitHub App installation or PAT must include every repository that an enabled bundle may inspect or update. A value having higher precedence does not grant broader repository access or safe-output permissions.
+Outside the public read-only profile, the GitHub App installation or PAT must include every repository that an enabled bundle may inspect or update. Credential reach and `CENTRAL_AGENTIC_OPS_ALLOWED_OWNERS` are cumulative boundaries: satisfying one never bypasses the other. A value having higher precedence does not grant broader repository access or safe-output permissions.
 
 ## Internal Runtime Values
 
@@ -87,11 +98,11 @@ The following names appear in workflow execution but are derived by shared contr
 | Name | Derived from |
 | --- | --- |
 | `CENTRAL_AGENTIC_OPS_MODE` | The importing bundle's mode variable. |
-| `GH_AW_SAFE_OUTPUT_MODE` | The manual mode input or bundle mode. |
-| `TARGET_REPO` | The manual target input or the worker dispatch envelope. |
-| `REVIEW_OUTPUT_REPO` | The manual output destination or bundle review repository. |
+| `GH_AW_SAFE_OUTPUT_MODE` | The `safe_output_mode` workflow input for a `workflow_dispatch` run; the bundle mode for a schedule-triggered run. |
+| `TARGET_REPO` | The `target_repo` workflow input or the worker workflow dispatch envelope. |
+| `REVIEW_OUTPUT_REPO` | The `safe_output_repo` workflow input or current `github.repository`. |
 | `SAFE_OUTPUT_REPO` | The effective destination computed for the selected mode. |
-| `preview_only` | Whether the effective mode requires staged output. |
+| `preview_only` | Whether the effective mode requires staged mode for safe outputs. |
 | `GH_TOKEN` | The credential selected for explicit GitHub CLI steps. |
 | `GITHUB_TOKEN` | A token supplied by GitHub Actions for the current run. |
 

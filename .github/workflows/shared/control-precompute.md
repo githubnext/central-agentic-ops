@@ -13,9 +13,21 @@ import-schema:
   max_repos:
     type: string
     default: ""
+  max_scan_repos:
+    type: string
+    default: "1000"
+  allowed_owners:
+    type: string
+    default: ""
+  dispatch_max:
+    type: string
+    default: "1"
+  rollout_percent:
+    type: string
+    default: "100"
   safe_output_mode:
     type: string
-    default: "preview"
+    default: "staged"
   safe_output_repo:
     type: string
     default: ""
@@ -39,6 +51,10 @@ steps:
       TARGET_REPO: ${{ github.aw.import-inputs.target_repo }}
       ORGANIZATION: ${{ github.aw.import-inputs.organization }}
       MAX_REPOS: ${{ github.aw.import-inputs.max_repos }}
+      MAX_SCAN_REPOS: ${{ github.aw.import-inputs.max_scan_repos }}
+      ALLOWED_OWNERS: ${{ github.aw.import-inputs.allowed_owners }}
+      DISPATCH_MAX: ${{ github.aw.import-inputs.dispatch_max }}
+      ROLLOUT_PERCENT: ${{ github.aw.import-inputs.rollout_percent }}
       SAFE_OUTPUT_MODE: ${{ github.aw.import-inputs.safe_output_mode }}
       SAFE_OUTPUT_REPO: ${{ github.aw.import-inputs.safe_output_repo }}
       PREVIEW_ONLY: ${{ github.aw.import-inputs.preview_only }}
@@ -69,6 +85,31 @@ steps:
             worker_workflows: []
           }' > /tmp/gh-aw/agent/control-precompute.json
         write_precompute
+      }
+
+      validate_repository_owner() {
+        local label="$1"
+        local repository="$2"
+        local repository_owner
+        local allowed_owner
+
+        [ -z "$repository" ] && return
+        if ! [[ "$repository" =~ ^[A-Za-z0-9][A-Za-z0-9-]*/[A-Za-z0-9._-]+$ ]]; then
+          echo "$label must use owner/repository form" >&2
+          exit 1
+        fi
+
+        repository_owner="${repository%%/*}"
+        IFS=',' read -ra configured_owners <<< "$ALLOWED_OWNERS"
+        for allowed_owner in "${configured_owners[@]}"; do
+          allowed_owner=$(printf '%s' "$allowed_owner" | tr -d '[:space:]')
+          if [ -n "$allowed_owner" ] && [ "${repository_owner,,}" = "${allowed_owner,,}" ]; then
+            return
+          fi
+        done
+
+        echo "$label owner is outside CENTRAL_AGENTIC_OPS_ALLOWED_OWNERS" >&2
+        exit 1
       }
 
       derive_control_source_path() {
@@ -126,18 +167,57 @@ steps:
           return
         fi
 
-        if ! { gh api "orgs/$ORGANIZATION/repos?per_page=100&type=all" --paginate --jq '.[] | {full_name, archived, disabled, private, pushed_at, default_branch}' \
-          | jq -s '.' > /tmp/gh-aw/agent/candidates.json; } 2>/tmp/gh-aw/agent/repo-error.txt; then
-          if ! { gh api "users/$ORGANIZATION/repos?per_page=100&type=owner" --paginate --jq '.[] | {full_name, archived, disabled, private, pushed_at, default_branch}' \
-            | jq -s '.' > /tmp/gh-aw/agent/candidates.json; } 2>/tmp/gh-aw/agent/repo-error.txt; then
+        if ! load_bounded_inventory "orgs/$ORGANIZATION/repos" "all"; then
+          if ! load_bounded_inventory "users/$ORGANIZATION/repos" "owner"; then
             repo_error=$(cat /tmp/gh-aw/agent/repo-error.txt)
             printf '[]\n' > /tmp/gh-aw/agent/candidates.json
           fi
         fi
       }
 
+      load_bounded_inventory() {
+        local endpoint="$1"
+        local repository_type="$2"
+        local page=1
+        local pages=$(( (MAX_SCAN_REPOS + 99) / 100 ))
+        local page_count
+
+        : > /tmp/gh-aw/agent/candidate-pages.jsonl
+        while [ "$page" -le "$pages" ]; do
+          if ! gh api "$endpoint?per_page=100&type=$repository_type&page=$page" \
+            --jq '.[] | {full_name, archived, disabled, private, pushed_at, default_branch}' \
+            > /tmp/gh-aw/agent/candidate-page.jsonl 2>/tmp/gh-aw/agent/repo-error.txt; then
+            return 1
+          fi
+          page_count=$(jq -s 'length' /tmp/gh-aw/agent/candidate-page.jsonl)
+          cat /tmp/gh-aw/agent/candidate-page.jsonl >> /tmp/gh-aw/agent/candidate-pages.jsonl
+          [ "$page_count" -lt 100 ] && break
+          page=$((page + 1))
+        done
+
+        jq -s ".[0:$MAX_SCAN_REPOS]" /tmp/gh-aw/agent/candidate-pages.jsonl \
+          > /tmp/gh-aw/agent/candidates.json
+      }
+
       write_orchestrator_precompute() {
         local workers_json
+
+        if ! [[ "$MAX_REPOS" =~ ^[1-9][0-9]*$ ]] || [ "$MAX_REPOS" -gt 1000 ]; then
+          echo "max_repos must be an integer from 1 through 1000" >&2
+          exit 1
+        fi
+        if ! [[ "$MAX_SCAN_REPOS" =~ ^[1-9][0-9]*$ ]] || [ "$MAX_SCAN_REPOS" -gt 10000 ]; then
+          echo "max_scan_repos must be an integer from 1 through 10000" >&2
+          exit 1
+        fi
+        if ! [[ "$DISPATCH_MAX" =~ ^[1-9][0-9]*$ ]] || [ "$DISPATCH_MAX" -gt 1000 ]; then
+          echo "dispatch_max must be an integer from 1 through 1000" >&2
+          exit 1
+        fi
+        if ! [[ "$ROLLOUT_PERCENT" =~ ^([1-9][0-9]?|100)$ ]]; then
+          echo "rollout_percent must be an integer from 1 through 100" >&2
+          exit 1
+        fi
 
         load_control_source
         workers_json=$(extract_dispatch_workers)
@@ -147,7 +227,7 @@ steps:
           exit 1
         fi
 
-        gh api "repos/${GITHUB_REPOSITORY}/actions/workflows" --paginate --jq '.workflows[] | {id, name, path, state}' \
+        gh api "repos/${GITHUB_REPOSITORY}/actions/workflows?per_page=100" --jq '.workflows[] | {id, name, path, state}' \
           | jq -s '.' > /tmp/gh-aw/agent/workflows.json
         load_candidate_repositories
 
@@ -158,6 +238,9 @@ steps:
           --arg target_repo "$TARGET_REPO" \
           --arg organization "$ORGANIZATION" \
           --arg max_repos "$MAX_REPOS" \
+          --arg max_scan_repos "$MAX_SCAN_REPOS" \
+          --arg dispatch_max "$DISPATCH_MAX" \
+          --arg rollout_percent "$ROLLOUT_PERCENT" \
           --arg safe_output_mode "$SAFE_OUTPUT_MODE" \
           --arg safe_output_repo "$SAFE_OUTPUT_REPO" \
           --arg preview_only "$PREVIEW_ONLY" \
@@ -168,11 +251,7 @@ steps:
           --slurpfile candidates /tmp/gh-aw/agent/candidates.json '
             def worker_match($worker):
               $workflows[0]
-              | map(select(
-                  .path == (".github/workflows/" + $worker + ".lock.yml")
-                  or .name == $worker
-                  or .name == ($worker | gsub("-"; " "))
-                ))
+              | map(select(.path == (".github/workflows/" + $worker + ".lock.yml")))
               | .[0];
 
             {
@@ -181,6 +260,15 @@ steps:
               target_repo: $target_repo,
               organization: $organization,
               max_repos: $max_repos,
+              max_scan_repos: $max_scan_repos,
+              dispatch_max: $dispatch_max,
+              rollout_percent: $rollout_percent,
+              effective_max_repos: (
+                (if ($candidates[0] | length) == 0 then 0
+                 else [1, (($candidates[0] | length) * ($rollout_percent | tonumber) / 100 | ceil)] | max
+                 end) as $percent_cap
+                | [($max_repos | tonumber), $percent_cap] | min
+              ),
               safe_output_mode: $safe_output_mode,
               safe_output_repo: $safe_output_repo,
               preview_only: $preview_only,
@@ -208,9 +296,20 @@ steps:
                   }
               ]
             }
+            | . as $result
+            | ($result.worker_workflows | map(select(.eligible)) | length) as $eligible_workers
+            | $result
+            | .effective_max_repos = (
+                if $eligible_workers == 0 then 0
+                else [.effective_max_repos, (($dispatch_max | tonumber) / $eligible_workers | floor)] | min
+                end
+              )
           ' > /tmp/gh-aw/agent/control-precompute.json
         write_precompute
       }
+
+      validate_repository_owner "target_repo" "$TARGET_REPO"
+      validate_repository_owner "safe_output_repo" "$SAFE_OUTPUT_REPO"
 
       if [ "$ROLE" = "worker" ]; then
         write_worker_precompute

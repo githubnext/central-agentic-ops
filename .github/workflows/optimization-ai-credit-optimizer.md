@@ -51,7 +51,7 @@ network:
     - defaults
     - github
 
-run-name: "AI Credit Optimizer · ${{ inputs.target_repo }} · ${{ inputs.safe_output_mode || (inputs.preview_only == 'true' && 'preview' || 'live') }}"
+run-name: "AI Credit Optimizer · ${{ inputs.target_repo }} · ${{ inputs.safe_output_mode || (inputs.preview_only == 'true' && 'staged' || 'live') }}"
 
 concurrency:
   group: "${{ github.workflow }}-${{ inputs.target_repo }}"
@@ -66,7 +66,7 @@ tools:
   bash:
     - "*"
   repo-memory:
-    branch-name: "memory/token-audit-${{ inputs.target_repo }}"
+    branch-name: "memory/token-audit-${{ inputs.central_repo }}-${{ inputs.target_repo }}"
     description: "Historical daily workflow AI credit snapshots (shared with optimization-ai-credit-auditor)"
     file-glob: ["*.json", "*.jsonl", "*.csv", "*.md"]
     max-file-size: 102400
@@ -197,15 +197,17 @@ steps:
               | select((.aic // 0) > 0)
             | {
                 workflow_name: .workflow_name,
+              workflow_path: (.workflow_path // .workflow_name),
                 ai_credits: (.aic // 0),
                 tokens: (.token_usage // 0),
                 turns: (.turns // 0),
                 action_minutes: (.action_minutes // 0)
               }
           ]
-          | group_by(.workflow_name)
+            | group_by(.workflow_path)
           | map({
               workflow_name: .[0].workflow_name,
+              workflow_path: .[0].workflow_path,
               run_count: length,
               total_ai_credits: (map(.ai_credits) | add),
               avg_ai_credits: ((map(.ai_credits) | add) / length),

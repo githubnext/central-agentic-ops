@@ -19,12 +19,12 @@ This enables you to run [GitHub Agentic Workflows](https://github.github.com/gh-
 ## What You Get
 
 - **One control point:** shared authentication and safety policy for every installed bundle.
-- **Gradual rollout:** every bundle starts in `preview`, can move through private `review`, and reaches `live` independently.
-- **Controlled writes:** GitHub tools are read-only; workers can write only through declared safe outputs.
-- **Bounded execution:** orchestrators choose repositories, while each worker receives one target and cannot promote its own mode.
-- **Traceable runs:** worker outputs link back to the originating control-plane run.
+- **Gradual rollout:** every bundle starts in `staged`, can move through private `review`, and reaches `live` independently.
+- **Controlled writes:** GitHub tools are read-only; worker workflows can write only through declared safe outputs.
+- **Bounded execution:** orchestrator workflows choose repositories, while each worker workflow receives one target and cannot promote its own mode.
+- **Traceable runs:** worker workflow safe outputs link back to the originating orchestrator workflow run.
 - **Measured value:** packages include frozen per-worker outcome contracts under `.github/value-functions/` without installing the experimental authoring skill.
-- **Operations report:** a conventional Pages workflow presents durable safe outputs, review bundles, and successful no-op outcomes by installed bundle.
+- **Operations report:** a conventional Pages workflow presents durable safe outputs, review bundles, and successful `noop` outcomes by installed bundle.
 
 ## Enterprise Deployment
 
@@ -53,7 +53,7 @@ Each workflow runs from the central repository that owns its policy and rollout:
    </tbody>
 </table>
 
-The orchestrator and worker definitions stay in their central control repository. A worker checks out one target repository and sends declared safe outputs, such as an issue or pull request, to the configured destination. Target repositories do not receive installed copies of the enterprise-shared or organization-shared workflows.
+The Orchestrator and worker workflow definitions stay in their central control repository. A worker workflow checks out one target repository and sends declared safe outputs, such as an issue or pull request, to the configured destination. Target repositories do not receive installed copies of the enterprise-shared or organization-shared workflows.
 
 An enterprise control repository and an organization control repository may both target the same downstream repository. Each source keeps its own credentials, rollout mode, review destination, correlation data, and safe-output limits.
 
@@ -66,15 +66,15 @@ Enterprises that require mandatory enforcement must pair it with GitHub-native c
 ## How It Works
 
 1. **Install** the full catalog or one bundle into a private control-plane repository.
-2. **Authenticate** with a GitHub App (preferred), a fine-grained PAT, or both.
-3. **Validate** against one repository in `preview`, then route proposals to a private repository in `review`.
+2. **Authenticate** with a GitHub App (preferred) or fine-grained PAT for private or write access; public staged scans can use the built-in workflow token.
+3. **Validate** against one repository in `staged`, then route proposals to a private repository in `review`.
 4. **Promote** only the proven bundle to `live`; other bundles keep their own modes.
 
 | Mode | Effect |
 | --- | --- |
-| `preview` | Stage outputs without mutating the target |
-| `review` | Route proposals to an explicit private review repository |
-| `live` | Allow declared worker safe outputs to update the selected target |
+| `staged` | Run in staged mode: generate safe outputs without GitHub API writes |
+| `review` | Route safe outputs to the control-plane repository by default, or to an explicit private review repository |
+| `live` | Allow declared worker workflow safe outputs to update the selected target |
 
 ## Quick Start
 
@@ -100,9 +100,15 @@ Enterprises that require mandatory enforcement must pair it with GitHub-native c
    gh aw add-wizard githubnext/central-agentic-ops/optimization@<catalog-release>
    ```
 
-The installer prompts for authentication and leaves every bundle in `preview`. Use a GitHub App through `GH_AW_GITHUB_APP_ID` and `GH_AW_GITHUB_APP_PRIVATE_KEY` (preferred), or a fine-grained PAT through `GH_AW_GITHUB_TOKEN`. When both are configured, App tokens take precedence.
+   The core catalog installs no Pages workflow or `pages: write` capability. Add the optional Pages view only to a private, access-controlled control repository:
 
-The full control-plane package also installs **Operations Pages** and its trusted renderer. Enable GitHub Pages with **GitHub Actions** as the source in the control repository. Keep Pages private and access-controlled when the report contains review outputs.
+   ```bash
+   gh aw add-wizard githubnext/central-agentic-ops/pages@<catalog-release>
+   ```
+
+The installer prompts for authentication and leaves every bundle in `staged`. Use a GitHub App through `GH_AW_GITHUB_APP_ID` and `GH_AW_GITHUB_APP_PRIVATE_KEY` (preferred), or a fine-grained PAT through `GH_AW_GITHUB_TOKEN`. When both are configured, App tokens take precedence. For public repositories only, staged scans can omit both and use the automatically provided `GITHUB_TOKEN`; private targets and cross-repository writes still require an App or PAT.
+
+The optional **Pages** add-on installs the conventional publisher and trusted renderer. Before adding it, enable GitHub Pages with **GitHub Actions** as the source and verify that the control repository and its Pages site are private and access-controlled. The core catalog does not install or grant Pages publication capability.
 
 ## Control Plan
 

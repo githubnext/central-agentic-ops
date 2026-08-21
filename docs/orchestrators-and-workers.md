@@ -26,7 +26,7 @@ A worker receives one target and performs one bounded mission. It must:
 - avoid organization-wide discovery and downstream workflow dispatch;
 - fail closed when routing or required evidence is incomplete.
 
-The worker may apply stricter behavior than requested, such as returning no output when evidence is insufficient. It may never promote itself from preview to review or live.
+The worker may apply stricter behavior than requested, such as returning no output when evidence is insufficient. It may never promote itself from staged to review or live.
 
 ## Worker Value
 
@@ -56,19 +56,19 @@ Add worker-specific configuration only when a worker has a materially different 
 
 | Control | Purpose | Default |
 | --- | --- | --- |
-| `enabled` | Explicitly includes or excludes a worker from dispatch | `true` for installed workers |
-| `max_mode` | Caps the most permissive mode a worker can execute | Inherit bundle mode initially; use `preview` for new high-risk workers |
-| Worker limit | Caps worker-specific volume or resource use | Existing workflow limit |
+| `enabled` | Explicitly includes or excludes a worker workflow from dispatch | `true` for installed worker workflows |
+| `max_mode` | Caps the most permissive mode a worker workflow can execute | Inherit bundle mode initially; use `staged` for new high-risk worker workflows |
+| worker workflow limit | Caps worker workflow-specific volume or resource use | Existing Agentic Workflow limit |
 
 Mode ordering is:
 
-`preview < review < live`
+`staged < review < live`
 
 The effective worker mode is the less permissive of the requested bundle mode and the worker ceiling:
 
 `effective_mode = min(bundle_mode, worker_max_mode)`
 
-A manual dispatch may narrow the mode but must not exceed the worker ceiling. A worker ceiling does not get a separate review repository by default; it uses the bundle review destination. Add a separate destination only for a documented compliance or ownership boundary.
+A manual dispatch may narrow the mode but must not exceed the worker ceiling. Review safe outputs use the manual `safe_output_repo` override when provided and otherwise use the current control-plane repository.
 
 Example: Optimization can be live while `optimization-ai-credit-optimizer` remains capped at review. The auditor can run live under the same orchestrator if its own ceiling permits it.
 
@@ -94,5 +94,5 @@ Before worker ceilings are considered active:
 4. Exclude disabled workers before dispatch.
 5. Pass only the effective mode to workers.
 6. Make workers independently reject an input above their configured ceiling where technically possible.
-7. Add compile validation and preview/review/live behavior tests.
+7. Add compile validation and staged/review/live behavior tests.
 8. Update this document from planned to implemented.

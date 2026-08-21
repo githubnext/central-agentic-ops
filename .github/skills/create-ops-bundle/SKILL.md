@@ -32,9 +32,9 @@ Create `.github/workflows/<bundle>.md` with:
 
 - `name` set to the exact bundle display name, with no `/` suffix, and a run name that includes target and safe-output mode
 - a schedule when the operation is periodic, plus `workflow_dispatch`
-- the standard dispatch inputs: `target_repo`, `safe_output_repo`, `max_repos`, and `safe_output_mode` with `preview`, `review`, and `live` choices
+- the standard dispatch inputs: `target_repo`, `safe_output_repo`, `max_repos`, and `safe_output_mode` with `staged`, `review`, and `live` choices
 - `shared/control.md` imported with `role: orchestrator`
-- package-scoped rollout variables named `CENTRAL_AGENTIC_OPS_<PACKAGE>_MODE` and `CENTRAL_AGENTIC_OPS_<PACKAGE>_REVIEW_REPO`, defaulting to `preview` and an empty repository
+- package-scoped rollout variables named `CENTRAL_AGENTIC_OPS_<PACKAGE>_MODE` and `CENTRAL_AGENTIC_OPS_<PACKAGE>_ROLLOUT_PERCENT`, defaulting to `staged` and `100`; shared control routes review safe outputs to a manual `safe_output_repo` override or `github.repository`
 - least-privilege permissions, explicit tools/network configuration, `strict: true`, and a bounded `max-ai-credits`
 - `safe-outputs.dispatch-workflow.workflows` listing every worker slug and a `max` consistent with `max_repos` and worker count
 - a prompt headed with the bundle display name and containing `Discovery`, `Workers`, and `Completion` sections
@@ -113,7 +113,7 @@ Before finishing:
 2. Confirm the orchestrator `name` is exactly `<Bundle Name>` and every worker `name` is exactly `<Bundle Name> / <Worker Name>`.
 3. Confirm the orchestrator dispatch list exactly matches the new worker stems.
 4. Confirm each worker accepts the complete standard envelope and imports `shared/control.md` as `worker`.
-5. Confirm the orchestrator imports `shared/control.md` as `orchestrator`, uses package-scoped rollout variables, and defaults safely to preview.
+5. Confirm the orchestrator imports `shared/control.md` as `orchestrator`, uses package-scoped rollout variables, and defaults safely to staged mode.
 6. Confirm the orchestrator has a `Completion` section that preserves the exact standard report contract from `shared/control.md`; bundle-specific reporting must be additive.
 7. Confirm worker concurrency is keyed by `github.workflow` and `inputs.target_repo` with stale runs cancelled.
 8. Check permissions, tools, network hosts, safe-output limits, credits, timeouts, and dispatch maximums against actual need.

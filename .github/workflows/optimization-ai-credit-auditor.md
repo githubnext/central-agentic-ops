@@ -57,7 +57,11 @@ network:
     - defaults
     - python
 
-run-name: "Token audit · ${{ inputs.target_repo }} · ${{ inputs.safe_output_mode || (inputs.preview_only == 'true' && 'preview' || 'live') }}"
+run-name: "Token audit · ${{ inputs.target_repo }} · ${{ inputs.safe_output_mode || (inputs.preview_only == 'true' && 'staged' || 'live') }}"
+
+concurrency:
+  group: "${{ github.workflow }}-${{ inputs.target_repo }}"
+  cancel-in-progress: true
 
 tracker-id: optimization-ai-credit-auditor
 
@@ -69,7 +73,7 @@ tools:
   bash:
     - "*"
   repo-memory:
-    branch-name: "memory/token-audit-${{ inputs.target_repo }}"
+    branch-name: "memory/token-audit-${{ inputs.central_repo }}-${{ inputs.target_repo }}"
     description: "Historical daily workflow AI credit snapshots (shared with optimization-ai-credit-optimizer)"
     file-glob: ["*.json", "*.jsonl", "*.csv", "*.md"]
     max-file-size: 102400
@@ -99,7 +103,7 @@ timeout-minutes: 25
 
 steps:
   - name: Setup Python
-    uses: actions/setup-python@v6.3.0
+    uses: actions/setup-python@v7.0.0
     with:
       python-version: "3.12"
   - name: Setup local chart workspace
@@ -183,7 +187,7 @@ Read target-repository evidence from `target/`. Treat the workspace root as the 
 
 In `live`, the workspace root may be the target repository itself. In `review`, the workspace root is the control-plane repository.
 
-Recreate safe outputs there without pretending the control-plane repo is the target repo: keep issues as issues, prefer `upload_artifact` for charts and other audit evidence, and use `upload_asset` only when you need a persistent URL outside preview mode.
+Recreate safe outputs there without pretending the control-plane repo is the target repo: keep issues as issues, prefer `upload_artifact` for charts and other audit evidence, and use `upload_asset` only when you need a persistent URL outside staged mode.
 
 ## Mission
 
@@ -238,7 +242,7 @@ Write a Python script to `/tmp/gh-aw/token-audit/process_audit.py` and run it. T
 
 1. Load `/tmp/gh-aw/token-audit/workflow-logs.json` and extract `.runs`.
 2. Filter to `status == "completed"` runs only.
-3. Group by `workflow_name` and compute per-workflow aggregates:
+3. Group by `workflow_path` (falling back to `workflow_name` only when the path is absent) and compute per-workflow aggregates. Preserve both fields so distinct workflows with the same display name never merge:
    - `run_count`, `total_ai_credits`, `avg_ai_credits`, `total_tokens`, `avg_tokens`, `total_turns`, `avg_turns`, `total_action_minutes`, `error_count`, `warning_count`
 4. Compute an overall summary: total runs, total AI credits, total tokens, total action minutes.
 5. Sort workflows descending by `total_ai_credits`.
@@ -257,6 +261,7 @@ Write a Python script to `/tmp/gh-aw/token-audit/process_audit.py` and run it. T
   "workflows": [
     {
       "workflow_name": "...",
+      "workflow_path": ".github/workflows/example.lock.yml",
       "run_count": N,
       "total_ai_credits": F,
       "avg_ai_credits": F,

@@ -4,6 +4,11 @@ name: "Optimization"
 run-name: "Optimization · ${{ inputs.target_repo || 'auto' }} · ${{ inputs.safe_output_mode || 'mode' }}"
 
 max-ai-credits: 250
+timeout-minutes: 15
+
+concurrency:
+  group: "${{ github.workflow }}"
+  cancel-in-progress: true
 
 on:
   schedule: "weekly on monday"
@@ -16,11 +21,14 @@ on:
       max_repos:
         default: 1
         type: number
+      rollout_percent:
+        default: 100
+        type: number
       safe_output_mode:
-        default: "preview"
+        default: "staged"
         type: choice
         options:
-          - preview
+          - staged
           - review
           - live
 
@@ -28,8 +36,12 @@ imports:
   - uses: shared/control.md
     with:
       role: orchestrator
-      rollout_mode: ${{ vars.CENTRAL_AGENTIC_OPS_OPTIMIZATION_MODE || 'preview' }}
-      review_repo: ${{ vars.CENTRAL_AGENTIC_OPS_OPTIMIZATION_REVIEW_REPO || '' }}
+      rollout_mode: ${{ vars.CENTRAL_AGENTIC_OPS_OPTIMIZATION_MODE || 'staged' }}
+      rollout_percent: ${{ vars.CENTRAL_AGENTIC_OPS_OPTIMIZATION_ROLLOUT_PERCENT || '100' }}
+      max_repos: ${{ vars.CENTRAL_AGENTIC_OPS_OPTIMIZATION_MAX_REPOS || '1' }}
+      max_scan_repos: ${{ vars.CENTRAL_AGENTIC_OPS_MAX_SCAN_REPOS || '1000' }}
+      allowed_owners: ${{ vars.CENTRAL_AGENTIC_OPS_ALLOWED_OWNERS || github.repository_owner }}
+      dispatch_max: "20"
 
 permissions:
   contents: read

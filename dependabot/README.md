@@ -5,24 +5,24 @@
 
 The Dependabot bundle runs manifest-aware dependency maintenance from a private Central Agentic Ops control repository. It prioritizes security and repair work, selects target repositories, and dispatches one bounded updater per repository.
 
-The workflow definitions remain in the control repository. Target repositories receive only declared safe outputs; they do not receive installed copies of these workflows.
+The Agentic Workflow definitions remain in the control repository. Target repositories receive only declared safe outputs; they do not receive installed copies of these workflows.
 
 ## What It Does
 
 - Prioritizes repositories with dependency alerts, stale or conflicted update pull requests, lockfile drift, and actionable Dependabot configuration failures.
 - Understands relationships among manifests, lockfiles, workspaces, solutions, source code, tests, and CI instead of grouping updates only by package name.
 - Builds the smallest independently testable dependency bundle supported by repository evidence.
-- Produces at most one primary dependency-maintenance outcome per worker run.
+- Produces at most one primary dependency-maintenance outcome per worker workflow run.
 - Never auto-merges a pull request.
 
 ## Bundle Contents
 
 | Workflow | Role |
 | --- | --- |
-| [`dependabot`](../.github/workflows/dependabot.md) | Daily orchestrator that discovers, ranks, and selects repositories. |
-| [`dependabot-release-train-updater`](../.github/workflows/dependabot-release-train-updater.md) | Repository-scoped worker that proposes or repairs one reviewable dependency bundle. |
+| [`dependabot`](../.github/workflows/dependabot.md) | Daily orchestrator workflow that discovers, ranks, and selects repositories. |
+| [`dependabot-release-train-updater`](../.github/workflows/dependabot-release-train-updater.md) | Repository-scoped worker workflow that proposes or repairs one reviewable dependency bundle. |
 
-The orchestrator can dispatch no more than 50 workers in one run. Each worker handles one target repository and uses only its declared pull request, comment, issue, or no-op safe outputs.
+The orchestrator workflow can dispatch no more than 50 worker workflows in one run. Each worker workflow handles one target repository and uses only its declared pull request, comment, issue, or `noop` safe outputs.
 
 ## Install
 
@@ -32,38 +32,41 @@ Install the bundle into a new private control repository owned by an organizatio
 gh aw add-wizard githubnext/central-agentic-ops/dependabot@<catalog-release>
 ```
 
-The installer configures authentication and creates the bundle controls. It leaves the bundle in `preview` mode.
+The installer configures authentication and creates the bundle controls. It leaves the bundle in `staged` mode.
 
 ## Configure
 
-Configure a GitHub App, a fine-grained PAT, or both in the control repository. App authentication is preferred.
+Configure a GitHub App, a fine-grained PAT, or both in the control repository for private targets or live operation. App authentication is preferred. A bounded staged scan of public repositories can use the automatically provided `GITHUB_TOKEN` without either configured credential.
 
 | Setting | Type | Required | Purpose |
 | --- | --- | --- | --- |
 | `GH_AW_GITHUB_APP_ID` | Repository variable | With App authentication | GitHub App client ID. |
 | `GH_AW_GITHUB_APP_PRIVATE_KEY` | Repository secret | With App authentication | GitHub App private key. |
-| `GH_AW_GITHUB_TOKEN` | Repository secret | Without a complete App configuration | Fine-grained PAT fallback. |
-| `CENTRAL_AGENTIC_OPS_DEPENDABOT_MODE` | Repository variable | Yes | Bundle mode: `preview`, `review`, or `live`. Defaults to `preview`. |
-| `CENTRAL_AGENTIC_OPS_DEPENDABOT_REVIEW_REPO` | Repository variable | In `review` mode | Private review destination in `owner/repository` form. |
+| `GH_AW_GITHUB_TOKEN` | Repository secret | For cross-repository access without a complete App configuration | Fine-grained PAT fallback; not required for public staged scans. |
+| `CENTRAL_AGENTIC_OPS_ALLOWED_OWNERS` | Repository variable | No | Comma-separated permitted owners; defaults to the control repository owner. |
+| `CENTRAL_AGENTIC_OPS_MAX_SCAN_REPOS` | Repository variable | No | Bounded discovery size; defaults to `1000` and cannot exceed `10000`. |
+| `CENTRAL_AGENTIC_OPS_DEPENDABOT_MODE` | Repository variable | Yes | Bundle mode: `staged`, `review`, or `live`. Defaults to `staged`. |
+| `CENTRAL_AGENTIC_OPS_DEPENDABOT_MAX_REPOS` | Repository variable | No | Scheduled selection cap; defaults to `1`. |
+| `CENTRAL_AGENTIC_OPS_DEPENDABOT_ROLLOUT_PERCENT` | Repository variable | No | Percentage of discovered repositories eligible for selection. Accepts `1` through `100` and defaults to `100`. |
 | `GH_AW_CI_TOKEN` | Repository secret | Optional | Supports the updater path that requires an additional empty commit. |
 
-The App installation or PAT must cover every target and review repository the bundle needs to read or update. See the [authentication guide](../docs/authentication.md) for the permission model and credential precedence.
+The App installation or PAT must cover every private or internal target, alternate review repository, and live target the bundle needs to read or update. Public staged scans may use `GITHUB_TOKEN`, but unavailable target Actions, security, or Dependabot data makes the run incomplete rather than broadening access or guessing. See the [authentication guide](../docs/authentication.md) for the permission model and credential precedence.
 
-## Validate in Preview
+## Validate in staged mode
 
 Start with one representative repository:
 
 1. Open the generated **Dependabot** workflow in the control repository's **Actions** tab.
 2. Select **Run workflow**.
 3. Set `target_repo` to one fully qualified `owner/repository` name.
-4. Keep `max_repos` at `1` and `safe_output_mode` at `preview`.
-5. Run the workflow and inspect repository selection, the dispatched updater, staged safe outputs, and control-plane correlation data.
+4. Keep `max_repos` at `1` and `safe_output_mode` at `staged`.
+5. Trigger a `workflow_dispatch` run and inspect repository selection, the dispatched worker workflow, staged safe outputs, and control-plane correlation data.
 
-To keep scheduled runs in preview, set the bundle variable explicitly:
+To keep scheduled runs staged, set the bundle variable explicitly:
 
 ```bash
 gh variable set CENTRAL_AGENTIC_OPS_DEPENDABOT_MODE \
-	--body preview \
+	--body staged \
 	--repo OWNER/CONTROL_REPOSITORY
 ```
 
@@ -73,15 +76,15 @@ Changing the variable affects future runs. Cancel active runs separately when ch
 
 | Mode | Behavior |
 | --- | --- |
-| `preview` | Stages safe outputs without mutating the target repository. |
-| `review` | Routes proposals to the configured private review repository. Missing review configuration prevents dispatch. |
+| `staged` | Uses staged mode: safe outputs are generated without GitHub API writes. |
+| `review` | Routes safe outputs to the control-plane repository; manual runs may override it with `safe_output_repo`. |
 | `live` | Allows declared safe outputs to update the selected target repository. Pull requests remain unmerged. |
 
-Promote in order: one-repository preview, private review, limited live, then scheduled live. Change only this bundle's mode variable; other Central Agentic Ops bundles keep their own rollout state.
+Promote in order: one-repository staged, private review, limited live, then scheduled live. Change only this bundle's mode variable; other Central Agentic Ops bundles keep their own rollout state.
 
 ## Targeting
 
-A manual `target_repo` can address any fully qualified repository that the configured credential can access. Without an explicit target, current automatic discovery enumerates repositories in the organization that owns the control repository. Enterprise-wide automatic discovery across multiple organizations requires an explicit inventory or a future discovery extension.
+A manual `target_repo` can address a fully qualified repository only when its owner is allowlisted and the configured credential can access it. Without an explicit target, bounded automatic discovery enumerates repositories in the organization that owns the control repository. Enterprise-wide automatic discovery across multiple organizations requires an explicit inventory or a future discovery extension.
 
 The orchestrator favors:
 
@@ -96,21 +99,21 @@ Repositories without a recognized dependency ecosystem, readable manifests, or e
 ## Safety Boundaries
 
 - GitHub tools are read-only; mutations occur only through declared safe outputs.
-- The orchestrator selects repositories but does not mutate them directly.
-- A worker receives one target and cannot discover more repositories, dispatch another workflow, or promote its mode.
-- Pull requests are draft, branch- and file-constrained, and limited to one per worker run.
-- The worker can update an eligible dependency pull request, add bounded comments, create bounded follow-up issues, or return a no-op.
+- The orchestrator workflow selects repositories but does not mutate them directly.
+- A worker workflow receives one target and cannot discover more repositories, dispatch another workflow, or promote its mode.
+- Pull request safe outputs are draft, branch- and file-constrained, and limited to one per worker workflow run.
+- The worker workflow can update an eligible dependency pull request, add bounded comments, create bounded follow-up issues, or emit `noop`.
 - Credentials remain in the private control repository and are never included in dispatch inputs.
 
 ## Pause or Stop
 
-Set `CENTRAL_AGENTIC_OPS_DEPENDABOT_MODE` to `preview` to stage future scheduled outputs. Clearing the mode or using an unrecognized value stops scheduled selection and dispatch, but it does not prevent an authorized manual run.
+Set `CENTRAL_AGENTIC_OPS_DEPENDABOT_MODE` to `staged` to put future scheduled runs in staged mode. Clearing the mode or using an unrecognized value stops scheduled selection and worker workflow dispatch, but it does not prevent an authorized `workflow_dispatch` run. Legacy `preview` values are normalized to `staged` during migration.
 
 For a Dependabot-only stop, disable the generated Dependabot orchestrator or updater workflow in GitHub Actions and cancel active runs. For a control-plane-wide stop, follow the [emergency-stop procedure](../docs/operations.md#emergency-stop).
 
 ## More Information
 
 - [Configuration reference](../docs/configuration.md)
-- [Rollout and output routing](../docs/rollout-and-routing.md)
+- [Rollout and safe output routing](../docs/rollout-and-routing.md)
 - [Control architecture](../docs/architecture.md)
 - [Operations and incident response](../docs/operations.md)

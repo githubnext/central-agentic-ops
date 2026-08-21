@@ -15,7 +15,7 @@ if (!organization || !token) throw new Error("GITHUB_REPOSITORY (or REPORT_ORGAN
 const headers = {
   Accept: "application/vnd.github+json",
   Authorization: `Bearer ${token}`,
-  "User-Agent": "central-agentic-ops-pages",
+  "User-Agent": "central-agentic-pages",
   "X-GitHub-Api-Version": "2022-11-28",
 };
 

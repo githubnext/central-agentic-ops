@@ -319,7 +319,7 @@ function modeSummary(recordsForBundle, mode) {
 
 function modeTabs(bundle, selectedMode) {
   const tabs = [
-    ["preview", "Preview", "Dry runs"],
+    ["staged", "Staged", "No writes"],
     ["review", "Review", "Proposals"],
     ["live", "Live", "Production"],
   ];
@@ -327,12 +327,12 @@ function modeTabs(bundle, selectedMode) {
 }
 
 function configuredModeFor(bundle) {
-  const mode = repositoryVariables.get(bundle.rolloutModeVariable) || "preview";
-  return ["preview", "review", "live"].includes(mode) ? mode : "preview";
+  const mode = repositoryVariables.get(bundle.rolloutModeVariable) || "staged";
+  return normalizeMode(mode) === "unknown" ? "staged" : normalizeMode(mode);
 }
 
 function modeIndicator(mode) {
-  const icons = { preview: "eye", review: "beaker", live: "rocket" };
+  const icons = { staged: "eye", review: "beaker", live: "rocket" };
   const label = `${mode[0].toUpperCase()}${mode.slice(1)}`;
   return `<span class="mode-indicator mode-${mode}" title="Configured mode: ${label}">${octicon(icons[mode])}<span>${label}</span></span>`;
 }
@@ -422,7 +422,7 @@ function layout({ title, description, content, nested = false, navigation = "", 
           ${nested ? `<p class="freshness">Last updated ${escapeHtml(formatDate(generatedAt))}</p>` : ""}
         </header>
         ${campaignType || activeSection === "workflows" ? "" : `<div class="toolbar" aria-label="Report controls">
-          <div class="filter-control"><span class="scope-label">${octicon("issue")}<strong>Filter</strong><span class="count-badge">3</span></span><code>mode:preview mode:review mode:live</code><span class="search-control" aria-hidden="true">${octicon("eye")}</span></div>
+          <div class="filter-control"><span class="scope-label">${octicon("issue")}<strong>Filter</strong><span class="count-badge">3</span></span><code>mode:staged mode:review mode:live</code><span class="search-control" aria-hidden="true">${octicon("eye")}</span></div>
           <span class="scope-period">${overviewMode ? "Last 30 days" : "All recorded"}</span>
           <a class="export-control" href="${root}records.json">Export JSON</a>
         </div>`}
@@ -445,6 +445,11 @@ const [issues, comments, artifactResponse, variableResponse] = await Promise.all
 const repositoryVariables = new Map((variableResponse.variables || []).map((variable) => [variable.name, variable.value]));
 const issueByUrl = new Map(issues.map((issue) => [issue.url, issue]));
 const runCache = new Map();
+function normalizeMode(mode) {
+  if (mode === "preview") return "staged";
+  return ["staged", "review", "live"].includes(mode) ? mode : "unknown";
+}
+
 async function metadataFromRunUrl(runUrl) {
   const match = runUrl.match(/^https:\/\/github\.com\/([^/]+)\/([^/]+)\/actions\/runs\/(\d+)/);
   if (!match) return { mode: "unknown", conclusion: "unknown" };
@@ -454,9 +459,9 @@ async function metadataFromRunUrl(runUrl) {
     runCache.set(cacheKey, githubOptional(`/repos/${runOwner}/${runRepository}/actions/runs/${runId}`, null));
   }
   const run = await runCache.get(cacheKey);
-  const mode = run?.display_title?.match(/(?:^|\s[·|:-]\s)(preview|review|live)$/i)?.[1]?.toLowerCase();
+  const mode = run?.display_title?.match(/(?:^|\s[·|:-]\s)(preview|staged|review|live)$/i)?.[1]?.toLowerCase();
   return {
-    mode: ["preview", "review", "live"].includes(mode) ? mode : "unknown",
+    mode: normalizeMode(mode),
     conclusion: run?.conclusion || "unknown",
   };
 }
@@ -473,11 +478,11 @@ const records = (await Promise.all(discoveredRecords.map(async (record) => {
   const bundle = bundleDefinitions.find((definition) => definition.id === record.bundle);
   return {
     ...record,
-    mode: record.mode || (metadata.mode !== "unknown" ? metadata.mode : configuredModeFor(bundle)),
+    mode: normalizeMode(record.mode) !== "unknown" ? normalizeMode(record.mode) : (metadata.mode !== "unknown" ? metadata.mode : configuredModeFor(bundle)),
     conclusion: record.conclusion || metadata.conclusion,
   };
 }))).sort((left, right) => new Date(right.updatedAt) - new Date(left.updatedAt));
-const reportRecords = records.filter((record) => ["preview", "review", "live"].includes(record.mode));
+const reportRecords = records.filter((record) => ["staged", "review", "live"].includes(record.mode));
 
 await mkdir(outputDirectory, { recursive: true });
 await writeFile(path.join(outputDirectory, "inventory.json"), `${JSON.stringify(inventory, null, 2)}\n`);
@@ -494,7 +499,7 @@ const trendCounts = (recordsForMode) => trendDays.map((date) => {
   return recordsForMode.filter((record) => new Date(record.createdAt) < endOfDay).length;
 });
 const trendPoints = (values, maximum) => values.map((value, index) => `${58 + (index * 714 / 29)},${200 - (value * 150 / maximum)}`).join(" ");
-const modeLabels = { live: "Live", review: "Review", preview: "Preview" };
+const modeLabels = { live: "Live", review: "Review", staged: "Staged" };
 
 function chartPoints(series, maximum) {
   return trendDays.map((day, index) => {
@@ -625,13 +630,13 @@ function overviewContent(mode) {
   const tabs = `<nav class="report-tabs" aria-label="Bundle output mode">
     <a href="./"${mode === "live" ? ' aria-current="page"' : ""}>Live</a>
     <a href="overview-review.html"${mode === "review" ? ' aria-current="page"' : ""}>Review</a>
-    <a href="overview-preview.html"${mode === "preview" ? ' aria-current="page"' : ""}>Preview</a>
+    <a href="overview-staged.html"${mode === "staged" ? ' aria-current="page"' : ""}>Staged</a>
   </nav>`;
   return `${deployedWorkflowContent()}<div class="overview-section-heading"><h2>Bundle activity</h2><p>Control-plane bundle runs and durable outputs, grouped by rollout mode.</p></div>${tabs}${overviewTrend(mode, modeRecords)}${overviewMetrics(mode, modeRecords)}${overviewTable(mode, modeRecords)}`;
 }
 
 await writeFile(path.join(outputDirectory, "styles.css"), stylesheet());
-for (const [mode, filename] of [["live", "index.html"], ["review", "overview-review.html"], ["preview", "overview-preview.html"]]) {
+for (const [mode, filename] of [["live", "index.html"], ["review", "overview-review.html"], ["staged", "overview-staged.html"]]) {
   await writeFile(path.join(outputDirectory, filename), layout({
     title: "Overview",
     description: `${modeLabels[mode]} workflow trends and operational health across your organization.`,
@@ -907,11 +912,11 @@ for (const bundle of bundleDefinitions) {
   const configuredMode = configuredModeFor(bundle);
   const defaultMode = configuredMode;
   const modeIdentities = {
-    preview: "Viewing dry-run output before proposals or production changes",
+    staged: "Viewing staged output without repository writes",
     review: "Viewing proposals routed for human review",
     live: "Viewing production outputs from live operation",
   };
-  for (const selectedMode of ["preview", "review", "live"]) {
+  for (const selectedMode of ["staged", "review", "live"]) {
     const modeRecords = bundleRecords.filter((record) => record.mode === selectedMode);
     const content = `<p class="mode-view-note">${escapeHtml(modeIdentities[selectedMode])}.</p>${modeTabs(bundle, selectedMode)}${findingsListing(modeRecords)}`;
     const page = layout({
@@ -1122,7 +1127,7 @@ tbody tr:hover { background: var(--canvas-subtle); }
 .status-muted { background: var(--neutral-muted); }
 .mode-live { border-color: color-mix(in srgb, var(--success) 45%, var(--border)); background: var(--success-muted); color: var(--success); }
 .mode-review { border-color: color-mix(in srgb, var(--attention) 45%, var(--border)); background: var(--attention-muted); color: var(--attention); }
-.mode-preview { background: var(--neutral-muted); }
+.mode-staged { background: var(--neutral-muted); }
 .mode-indicator { min-height: 22px; display: inline-flex; flex: none; align-items: center; gap: 5px; padding: 1px 7px; border: 1px solid var(--border); border-radius: 2em; font-size: .6875rem; font-weight: 600; text-transform: none; white-space: nowrap; }
 .mode-indicator .octicon { width: 13px; height: 13px; flex-basis: 13px; }
 .sidebar-nav .mode-indicator { margin-left: auto; }

@@ -99,9 +99,9 @@ The control-plane modes govern agent-created source records, not the Pages deplo
 
 | Mode | Source-data behavior |
 | --- | --- |
-| `preview` | Stage proposed source outputs only. They are not durable inputs to the published report. |
-| `review` | Route proposed source outputs to the private `safe_output_repo`, then publish them through that repository's access-controlled review Pages site. Never update production Pages. |
-| `live` | Write the worker's declared source outputs to their normal live destination, then publish the production Pages site through its protected deterministic workflow. |
+| `staged` | Stage proposed report source data only. It is not durable input to the published report. |
+| `review` | Route proposed report source data to the private `safe_output_repo`, then publish it through that repository's access-controlled review Pages site. Never update production Pages. |
+| `live` | Write the worker workflow's declared report source data to its normal live destination, then publish the production Pages site through its protected deterministic workflow. |
 
 For Pages reports, `safe_output_repo` remains the review safe-output destination and also owns the review Pages site. Require it to be private and Pages access-controlled for the intended reviewers. If access-controlled Pages is unavailable, fail review publication closed; do not expose the report publicly or silently substitute an artifact. The production Pages repository and all source locations remain fixed in trusted control-plane configuration, not selected by an agent or arbitrary dispatch input.
 
@@ -150,7 +150,7 @@ Before finishing:
 5. Capture desktop and mobile views. Check the first viewport, 200% zoom, long labels, empty and error states, table overflow, and overlap.
 6. Verify with reduced motion, JavaScript disabled when enhancement is optional, and print preview.
 7. Open the deployed or locally emulated `/<repository>/` URL and confirm canonical navigation, asset paths, provenance links, and the reported generation time.
-8. Confirm preview does not deploy, review deploys only to access-controlled review Pages, and live deploys only to production Pages.
+8. Confirm staged mode does not deploy, review deploys only to access-controlled review Pages, and live deploys only to production Pages.
 9. Confirm the Pages workflows are conventional Actions automation, accept no untrusted build or deployment inputs, isolate review and production environments, and grant no Pages permissions to an agent job.
 
 Report the generated files, publishing path, data and sanitization approach, accessibility checks, responsive viewports, and any known limitations.
