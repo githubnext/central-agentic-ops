@@ -47,6 +47,7 @@ on:
 imports:
   - uses: shared/control.md
     with:
+      bundle: optimization
       role: orchestrator
       rollout_mode: ${{ vars.CENTRAL_AGENTIC_OPS_OPTIMIZATION_MODE || 'staged' }}
       rollout_percent: ${{ vars.CENTRAL_AGENTIC_OPS_OPTIMIZATION_ROLLOUT_PERCENT || '100' }}

@@ -8,9 +8,6 @@ next: false
 hero:
   title: Agentic operations. At scale. One control plane.
   tagline: Coordinate trusted workflows across organizations and thousands of repositories, with bounded execution, staged promotion, and traceable outcomes built in.
-  image:
-    file: ./assets/control-plane-scale.svg
-    alt: One control plane promotes bounded workflows through staged, review, and live gates across organizations and up to ten thousand repositories.
   actions:
     - text: Get started
       link: /central-agentic-ops/getting-started/

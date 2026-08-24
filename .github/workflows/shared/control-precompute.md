@@ -1,5 +1,8 @@
 ---
 import-schema:
+  bundle:
+    type: string
+    required: true
   role:
     type: choice
     options: [orchestrator, worker]
@@ -83,6 +86,7 @@ steps:
   - name: Precompute control facts
     env:
       GH_TOKEN: ${{ steps.github-mcp-app-token.outputs.token || secrets.GH_AW_GITHUB_TOKEN || secrets.GITHUB_TOKEN }}
+      BUNDLE: ${{ github.aw.import-inputs.bundle }}
       ROLE: ${{ github.aw.import-inputs.role }}
       TARGET_REPO: ${{ github.aw.import-inputs.target_repo }}
       ORGANIZATION: ${{ github.aw.import-inputs.organization }}
@@ -118,6 +122,7 @@ steps:
       write_worker_precompute() {
         jq -n \
           --arg enabled "$ENABLED" \
+          --arg bundle "$BUNDLE" \
           --arg worker_enabled "$WORKER_ENABLED" \
           --arg worker_max_mode "$WORKER_MAX_MODE" \
           --arg target_repo "$TARGET_REPO" \
@@ -129,6 +134,7 @@ steps:
           --arg control_plane_run_url "$CONTROL_PLANE_RUN_URL" \
           '{
             control_role: "worker",
+            bundle: $bundle,
             enabled: $enabled,
             worker_enabled: $worker_enabled,
             worker_max_mode: $worker_max_mode,
@@ -188,6 +194,48 @@ steps:
         control_run_id="${CORRELATION_ID%%-*}"
         if [ "$CONTROL_PLANE_RUN_URL" != "${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${control_run_id}" ]; then
           echo "control_plane_run_url must match correlation_id and central_repo" >&2
+          exit 1
+        fi
+      }
+
+      validate_live_authority() {
+        local authority
+        local default_branch
+
+        [ "$SAFE_OUTPUT_MODE" != "live" ] && return
+        if ! [[ "$BUNDLE" =~ ^[a-z0-9][a-z0-9-]*$ ]]; then
+          echo "bundle must use a lowercase slug for live authority validation" >&2
+          exit 1
+        fi
+        if ! default_branch=$(gh api "repos/$TARGET_REPO" --jq '.default_branch'); then
+          echo "live authority validation could not read the target default branch" >&2
+          exit 1
+        fi
+        if ! gh api --method GET "repos/$TARGET_REPO/contents/.github/central-agentic-ops.yml" \
+          -f ref="$default_branch" --jq '.content' | base64 -d \
+          > /tmp/gh-aw/agent/target-authority.yml; then
+          echo "live mode requires .github/central-agentic-ops.yml on the target default branch" >&2
+          exit 1
+        fi
+        if ! authority=$(ruby -ryaml -e '
+          document = YAML.safe_load(File.read(ARGV[0]), permitted_classes: [], permitted_symbols: [], aliases: false)
+          abort unless document.is_a?(Hash) && document["version"] == 1
+          bundles = document["bundles"]
+          abort unless bundles.is_a?(Hash) && bundles[ARGV[1]].is_a?(Hash)
+          authority = bundles[ARGV[1]]["authority"]
+          abort unless authority.is_a?(String)
+          puts authority
+        ' /tmp/gh-aw/agent/target-authority.yml "$BUNDLE" 2>/dev/null); then
+          echo "target authority file must declare version 1 and bundles.$BUNDLE.authority" >&2
+          exit 1
+        fi
+        if ! [[ "$authority" =~ ^[A-Za-z0-9][A-Za-z0-9-]*/[A-Za-z0-9._-]+$ ]]; then
+          echo "bundles.$BUNDLE.authority must use owner/repository form" >&2
+          exit 1
+        fi
+        if [ "$(printf '%s' "$authority" | tr '[:upper:]' '[:lower:]')" != \
+          "$(printf '%s' "$CENTRAL_REPO" | tr '[:upper:]' '[:lower:]')" ]; then
+          echo "target assigns live authority for $BUNDLE to a different control repository" >&2
           exit 1
         fi
       }
@@ -539,6 +587,7 @@ steps:
 
       if [ "$ROLE" = "worker" ]; then
         validate_worker_dispatch
+        validate_live_authority
         write_worker_precompute
         exit 0
       fi

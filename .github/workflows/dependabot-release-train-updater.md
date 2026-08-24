@@ -49,6 +49,7 @@ checkout:
 imports:
   - uses: shared/control.md
     with:
+      bundle: dependabot
       role: worker
       worker_enabled: ${{ vars.CENTRAL_AGENTIC_OPS_DEPENDABOT_UPDATER_ENABLED || 'true' }}
       worker_max_mode: ${{ vars.CENTRAL_AGENTIC_OPS_DEPENDABOT_UPDATER_MAX_MODE || 'staged' }}

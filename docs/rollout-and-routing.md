@@ -30,6 +30,14 @@ Absolute caps default to `1`, so missing configuration cannot create broad fan-o
 
 Automatic discovery scans at most `CENTRAL_AGENTIC_OPS_MAX_SCAN_REPOS` repositories, defaulting to `1000` with a hard maximum of `100000`. Shared cell count/index and batch size/index controls deterministically select one bounded inventory slice before ranking. They do not auto-advance or retry batches. Manual target and review repositories must belong to `CENTRAL_AGENTIC_OPS_ALLOWED_OWNERS`, which defaults to the control repository owner.
 
+### Live Authority Check
+
+Discovery, an allowed owner, and credential access do not prove target enrollment. Before promoting a bundle to `live`, add the bundle and assigned control repository to `.github/central-agentic-ops.yml` on the target's default branch. Protect that file with target-owner review. Also verify the approved inventory records the target, bundle, approving repository owner, review date, and revocation path.
+
+Every live worker reads the target-owned file before agent execution. It fails closed when the file is missing or malformed, the bundle is absent, or `authority` does not match the dispatched `central_repo`. Staged and review runs do not require the file. This prevents a second runtime from beginning a new live run for the same bundle, but it does not cancel an already-running workflow in another control repository.
+
+If an enterprise and organization runtime both select the same pair, keep both in `staged` or `review` until operators assign one live authority. Do not rely on run timing, workflow concurrency, or repository protections to resolve the conflict. Separate control repositories have independent queues and kill switches.
+
 ## Modes
 
 | Mode | Target behavior | Intended use |
@@ -73,10 +81,11 @@ A `workflow_dispatch` run can set the `target_repo`, `max_repos`, `rollout_perce
 Promote each bundle independently:
 
 1. **Installed but inactive**: credentials and repository access are configured; schedules must not produce writes.
-2. **Staged**: run against one representative repository and inspect selection, prompts, staged safe outputs, permissions, and correlation data.
-3. **Review**: route one representative repository to a private review destination; verify that no target mutation occurs and the proposal is actionable. For a Pages report, also verify that the access-controlled review site updates and production Pages does not.
-4. **Limited live**: manually target one low-risk repository; verify the resulting safe output and downstream CI. For a Pages report, verify the production site update independently of the review site.
-5. **Scheduled live**: enable scheduled operation with `max_repos` kept small, then increase limits only from observed evidence.
+2. **Enrolled**: record target-owner approval and commit the assigned control repository to the target's protected `.github/central-agentic-ops.yml`.
+3. **Staged**: run against one representative repository and inspect selection, prompts, staged safe outputs, permissions, and correlation data.
+4. **Review**: route one representative repository to a private review destination; verify that no target mutation occurs and the proposal is actionable. For a Pages report, also verify that the access-controlled review site updates and production Pages does not.
+5. **Limited live**: confirm no other control repository has live authority for the same bundle, then manually target one low-risk repository and verify the resulting safe output and downstream CI. For a Pages report, verify the production site update independently of the review site.
+6. **Scheduled live**: enable scheduled operation with `max_repos` kept small, then increase limits only from observed evidence.
 
 Promotion evidence should cover successful authentication, correct target selection, safe output routing, no unexpected writes, worker workflow completion, useful safe output quality, and acceptable AI Credit consumption.
 
@@ -92,3 +101,5 @@ The first rollback action is to move the affected bundle to `staged`. For a narr
 6. restart in staged mode and repeat promotion gates.
 
 Do not reduce another bundle's mode unless the incident involves shared authentication or shared control behavior.
+
+If two runtimes were found mutating the same `(target repository, bundle)` pair, move that bundle to `staged` in every conflicting control repository, cancel active runs, and assign one live authority before resuming. Stopping only one runtime is insufficient until its queued and in-progress runs are also canceled.

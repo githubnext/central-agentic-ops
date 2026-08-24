@@ -448,6 +448,28 @@ test("authentication prefers an optional GitHub App and retains bounded fallback
   assert.match(precompute, /steps\.github-mcp-app-token\.outputs\.token \|\| secrets\.GH_AW_GITHUB_TOKEN \|\| secrets\.GITHUB_TOKEN/);
 });
 
+test("live workers require target-owned bundle authority before agent execution", () => {
+  const control = workflow("shared/control.md");
+  const precompute = workflow("shared/control-precompute.md");
+
+  assert.match(control, /bundle:\n\s+type: string\n\s+required: true/);
+  assert.match(precompute, /validate_live_authority/);
+  assert.match(precompute, /contents\/\.github\/central-agentic-ops\.yml/);
+  assert.match(precompute, /YAML\.safe_load/);
+  assert.match(precompute, /target assigns live authority for \$BUNDLE to a different control repository/);
+  assert.match(precompute, /validate_worker_dispatch\n\s+validate_live_authority\n\s+write_worker_precompute/);
+
+  for (const [name, bundle] of [
+    ["dependabot.md", "dependabot"],
+    ["dependabot-release-train-updater.md", "dependabot"],
+    ["optimization.md", "optimization"],
+    ["optimization-ai-credit-auditor.md", "optimization"],
+    ["optimization-ai-credit-optimizer.md", "optimization"],
+  ]) {
+    assert.match(workflow(name), new RegExp(`bundle: ${bundle}`));
+  }
+});
+
 test("orchestrators expose scheduled variables and independent manual inputs", () => {
   for (const [name, packageName] of [
     ["dependabot.md", "DEPENDABOT"],
@@ -539,7 +561,7 @@ test("workers reject disabled, malformed, or over-ceiling dispatches before exec
     assert.match(control, new RegExp(`${input}:`));
     assert.match(precompute, new RegExp(`${input}:`));
   }
-  assert.match(precompute, /validate_worker_dispatch\n\s+write_worker_precompute/);
+  assert.match(precompute, /validate_worker_dispatch\n\s+validate_live_authority\n\s+write_worker_precompute/);
   assert.match(precompute, /worker is disabled by its control-plane policy/);
   assert.match(precompute, /safe_output_mode exceeds the worker_max_mode ceiling/);
   assert.match(precompute, /preview_only is inconsistent with safe_output_mode/);

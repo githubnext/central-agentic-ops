@@ -32,6 +32,7 @@ export function controlPrecomputeScript() {
 export function controlEnvironment(overrides = {}) {
   return {
     ...process.env,
+    BUNDLE: "dependabot",
     ROLE: "worker",
     TARGET_REPO: "acme/target",
     ORGANIZATION: "acme",

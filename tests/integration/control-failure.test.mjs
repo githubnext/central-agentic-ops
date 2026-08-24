@@ -1,5 +1,8 @@
 import assert from "node:assert/strict";
 import { spawnSync } from "node:child_process";
+import { chmodSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 import test from "node:test";
 import { controlEnvironment, controlPrecomputeScript } from "../helpers/control-precompute.mjs";
 
@@ -35,3 +38,64 @@ for (const [name, overrides, expectedError] of failures) {
     assert.match(result.stderr, new RegExp(expectedError));
   });
 }
+
+function runLiveAuthority(authorityContent, overrides = {}) {
+  const directory = mkdtempSync(join(tmpdir(), "central-ops-authority-"));
+  const gh = join(directory, "gh");
+  writeFileSync(gh, `#!/bin/sh
+case "$*" in
+  *contents/.github/central-agentic-ops.yml*)
+    [ "$AUTHORITY_MODE" = "missing" ] && exit 1
+    printf '%s' "$AUTHORITY_CONTENT" | base64
+    ;;
+  *) printf 'main\\n' ;;
+esac
+`);
+  chmodSync(gh, 0o755);
+
+  try {
+    return spawnSync("bash", ["-c", script], {
+      encoding: "utf8",
+      env: controlEnvironment({
+        PATH: `${directory}:${process.env.PATH}`,
+        SAFE_OUTPUT_MODE: "live",
+        PREVIEW_ONLY: "false",
+        WORKER_MAX_MODE: "live",
+        AUTHORITY_CONTENT: authorityContent,
+        ...overrides,
+      }),
+    });
+  } finally {
+    rmSync(directory, { recursive: true, force: true });
+  }
+}
+
+test("control precompute accepts matching target-owned live authority", () => {
+  const result = runLiveAuthority(`version: 1
+bundles:
+  dependabot:
+    authority: acme/control
+`);
+
+  assert.equal(result.status, 0, result.stderr);
+  const precompute = JSON.parse(readFileSync("/tmp/gh-aw/agent/control-precompute.json", "utf8"));
+  assert.equal(precompute.bundle, "dependabot");
+});
+
+test("control precompute rejects a different live authority", () => {
+  const result = runLiveAuthority(`version: 1
+bundles:
+  dependabot:
+    authority: acme/other-control
+`);
+
+  assert.notEqual(result.status, 0);
+  assert.match(result.stderr, /target assigns live authority for dependabot to a different control repository/);
+});
+
+test("control precompute rejects missing target-owned live authority", () => {
+  const result = runLiveAuthority("", { AUTHORITY_MODE: "missing" });
+
+  assert.notEqual(result.status, 0);
+  assert.match(result.stderr, /live mode requires \.github\/central-agentic-ops\.yml on the target default branch/);
+});

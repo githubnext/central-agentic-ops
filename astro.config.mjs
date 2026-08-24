@@ -20,6 +20,7 @@ export default defineConfig({
       plugins: [starlightThemeGalaxy()],
       components: {
         Banner: "./docs/components/ExperimentalBanner.astro",
+        Hero: "./docs/components/Hero.astro",
       },
       editLink: {
         baseUrl: "https://github.com/githubnext/central-agentic-ops/edit/main/",

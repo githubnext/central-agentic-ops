@@ -134,6 +134,8 @@ This is intentionally a GitHub-native administrative control rather than a workf
 
 The stop applies to one central control repository. In a deployment with an enterprise control repository and additional organization control repositories, an enterprise incident commander must identify and stop every participating control repository that falls within the incident scope.
 
+There is no global workflow-level kill switch across independent control repositories. Keep the approved control-repository inventory available outside any one runtime so incident commanders can enumerate affected installations even when a repository is unavailable. For each affected runtime, disable Actions, cancel active runs, and revoke its credential independently.
+
 Use narrower controls when a full stop is unnecessary:
 
 | Scope | Control | Limitation |
@@ -167,6 +169,20 @@ For unexpected writes, unsafe routing, excessive dispatch, or credential concern
 
 If shared authentication or shared control caused the incident, perform the control-plane-wide emergency stop. Otherwise, preserve unaffected bundle operation.
 
+### Catalog Release Revocation
+
+A catalog maintainer cannot remotely disable workflows already installed in independent control repositories. When a package release is unsafe:
+
+1. publish the affected release or commit and a known-good replacement;
+2. identify installations through package manifests and the approved control-repository inventory;
+3. move affected bundles to `staged` and cancel active runs in every installation;
+4. revoke credentials when repository access must stop immediately;
+5. pin or restore the known-good package revision, compile affected workflows, and validate one staged target;
+6. update projected catalog versions and lifecycle status after validation;
+7. resume each runtime through review and limited-live promotion.
+
+Removing or retagging the catalog source does not revoke installed files. Revocation is complete only after every affected runtime is stopped, repaired, or has its repository access removed.
+
 ## Adding a Bundle
 
 A new bundle should:
@@ -174,17 +190,18 @@ A new bundle should:
 1. Define an orchestrator with a schedule and manual inputs.
 2. Add an independent mode installer variable; review safe outputs default to the control-plane repository.
 3. Import `shared/control.md` as `role: orchestrator` with those variables.
-4. Keep GitHub tools read-only.
-5. Declare only worker workflow dispatches as orchestrator workflow safe outputs.
-6. Document discovery, ranking, dispatch, completion, and no-op behavior.
-7. Start in staged mode and complete all promotion gates independently.
+4. Pass a stable lowercase bundle slug to shared control and document the matching target authority entry.
+5. Keep GitHub tools read-only.
+6. Declare only worker workflow dispatches as orchestrator workflow safe outputs.
+7. Document discovery, ranking, dispatch, completion, and no-op behavior.
+8. Start in staged mode and complete all promotion gates independently.
 
 ## Adding a Worker
 
 A new worker should:
 
 1. Require the standard control envelope inputs.
-2. Import `shared/control.md` as `role: worker`.
+2. Import `shared/control.md` as `role: worker` with the same stable bundle slug as its orchestrator.
 3. Use a target checkout separate from the safe-output repository when needed.
 4. Request minimum permissions, tools, network access, and AI credits.
 5. Declare narrow safe outputs with explicit count, file, branch, and destination limits.

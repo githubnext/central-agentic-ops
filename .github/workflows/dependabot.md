@@ -47,6 +47,7 @@ on:
 imports:
   - uses: shared/control.md
     with:
+      bundle: dependabot
       role: orchestrator
       rollout_mode: ${{ vars.CENTRAL_AGENTIC_OPS_DEPENDABOT_MODE || 'staged' }}
       rollout_percent: ${{ vars.CENTRAL_AGENTIC_OPS_DEPENDABOT_ROLLOUT_PERCENT || '100' }}

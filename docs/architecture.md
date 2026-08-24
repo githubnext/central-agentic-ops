@@ -16,9 +16,23 @@ The control plane is designed to:
 - make every dispatched action attributable to a control-plane run;
 - fail closed when routing, credentials, or worker eligibility are incomplete.
 
-## Enterprise Topology
+## Deployment Topologies
 
-Enterprise deployment uses two independent central runtimes: an enterprise control repository for enterprise-shared AWs and optional organization control repositories for organization-shared AWs. A GitHub enterprise account does not directly own repositories, so the enterprise control repository is hosted in a designated organization and operated for enterprise scope.
+Central Agentic Ops does not require a GitHub enterprise account. An organization or OSS maintainer can run one private organization-owned control repository for repositories in that organization. Enterprise deployment adds an enterprise-operated control repository for cross-organization AWs and may also use independent organization control repositories for organization-shared AWs. Because a GitHub enterprise account does not directly own repositories, its control repository is still hosted in a designated organization.
+
+The execution topology is the same in every profile. A pinned package is installed into a scoped control repository, which dispatches directly to enrolled targets. The profile changes who governs each runtime and which repositories its credentials and inventory can reach.
+
+![One execution topology shared by organization, multi-organization, and enterprise deployment profiles.](assets/control-plane-flow.svg)
+
+| Deployment profile | Runtime ownership | Default reach | GitHub Enterprise required |
+| --- | --- | --- | --- |
+| **Organization or OSS** | One private control repository owned by the organization | Automatically discovered repositories in that organization | No |
+| **Several organizations, one operator** | One independent control repository per organization, all installing the same pinned package | Each runtime discovers and operates within its own organization | No |
+| **Enterprise** | One enterprise-operated control repository in a designated host organization, with optional organization runtimes | Explicit credential-scoped reach across organizations; organization runtimes retain local reach | Yes |
+
+For several organizations without GitHub Enterprise, keep credentials, target inventory, rollout, and kill switches organization-local. No relay or enterprise-level coordinator is required. Assign exactly one runtime as live mutation authority for each target and bundle.
+
+A single control repository can address an explicitly named repository in another organization only when that owner is allowlisted and a credential authorized by that organization can perform the operation. The current runtime does not automatically discover across owners or mint and reconcile credentials across multiple organization installations, so do not treat ownership of several organizations or an enterprise account as an implicit cross-organization credential or inventory.
 
 ### Workflow Sources
 
@@ -32,16 +46,64 @@ Enterprise deployment uses two independent central runtimes: an enterprise contr
 
 ### Operating Ownership
 
-| Operating model | Owner | Responsibility |
-| --- | --- | --- |
-| **Enterprise control** | Enterprise platform or automation team | Operates the enterprise central repository, its cross-organization credentials and target inventory, enterprise bundle rollout, monitoring, and incident response. |
-| **Organization control** | Organization platform or repository operations team | Operates an organization central repository, local credentials and targets, organization bundle rollout, monitoring, and incident response. |
+| Level | Owner | Controls | Does not control |
+| --- | --- | --- | --- |
+| **Catalog package** | Catalog maintainers; enterprise governance for an enterprise-owned catalog | Package source, `aw.yml`, workflow definitions, release approval, and compatibility policy | Installation credentials, organization-local extensions, or target repository acceptance |
+| **Enterprise runtime** | Enterprise platform or automation team | Enterprise control repository, cross-organization credentials, enrolled target inventory, rollout, budgets, kill switch, monitoring, and incidents | Organization runtime configuration or repository protection policy |
+| **Organization runtime** | Organization platform or repository operations team | Organization control repository, pinned packages, organization-local workflows, enrolled targets, local credentials, rollout, budgets, kill switch, monitoring, and incidents | Enterprise runtime configuration or the upstream enterprise package |
+| **Target repository** | Repository maintainers | Enrollment approval, code, branch protection, rulesets, CODEOWNERS, environments, merge acceptance, and repository-local automation | Central runtime credentials or catalog releases |
+| **GitHub governance** | Organization administrators, plus enterprise administrators when present | Actions policy, App and PAT access, available custom-property definitions, rulesets, and administrative revocation | Bundle-specific reasoning or repository maintenance decisions |
 
-The models are complementary rather than alternatives. An organization may receive enterprise-shared work from the enterprise control repository while also running organization-shared work from its own control repository. The two sources keep independent policy, credentials, budgets, kill switches, and provenance even when they target the same repository. Their runs may overlap, so downstream rulesets, protected environments, branch protection, and CODEOWNERS remain the final ownership boundary.
+These levels are complementary, but they have no implicit precedence. Catalog ownership grants publication authority, not execution authority. Installing a package grants a runtime the ability to execute only within its credential scope and approved target inventory; it does not transfer ownership of target repositories.
+
+Before a bundle enters `live`, assign exactly one live mutation authority for each `(target repository, bundle)` pair. Enterprise and organization runtimes may both perform staged analysis or produce review output, but they must not concurrently mutate the same target for the same bundle. A live worker reads the target-owned authority file from the target's default branch and fails before agent execution unless that bundle names the worker's control repository. Separate GitHub Actions repositories still do not provide shared cancellation or a cross-repository concurrency group for runs already in progress.
+
+### Catalog Ownership and Discovery
+
+Use one authoritative catalog for a shared package rather than duplicating its ownership across installations. The catalog repository's root `aw.yml` is the canonical package descriptor: it names the package, sets its minimum gh-aw version, and declares the workflows included in the full package. It is not a runtime authority or target-enrollment descriptor. Catalog maintainers publish pinned releases. An organization may install those releases directly or publish separately named local packages and repository-local workflows, but it must not silently fork the identity of a shared package. Each control repository retains ownership of its local extensions, credentials, targets, rollout, and incident response. In an enterprise deployment, enterprise-owned operations dispatch directly from the enterprise control repository to allowlisted repositories; the catalog does not dispatch through organization control repositories.
+
+When gh-aw installs the package, it writes a generated manifest under `.github/aw/packages/` in the control repository. That manifest records the installed package and file inventory used by the package lifecycle. Together, the source `aw.yml` and generated installation manifest provide package and installation provenance. They do not establish runtime authority, target consent, live status, or credential health; those remain operating records. Do not add a mutation workflow merely to register them.
+
+GitHub repository custom properties may project selected fields from those records so enterprise operators can search installations, target rulesets, and audit adoption. They are an optional index, not the source of truth. Deployment-specific values such as operating role, owner, and lifecycle status remain local control-repository metadata.
+
+| Custom property | Example | Purpose |
+| --- | --- | --- |
+| `central-ops-role` | `enterprise`, `organization`, or `independent` | Identifies the runtime's governance scope. |
+| `central-ops-catalog` | `githubnext/central-agentic-ops` | Projects the authoritative catalog source. |
+| `central-ops-version` | Release tag or commit SHA | Projects the catalog revision installed by the control repository. |
+| `central-ops-owner` | `organization/platform-team` | Identifies the team responsible for operation and incidents. |
+| `central-ops-status` | `staged`, `active`, or `suspended` | Records the installation lifecycle state. |
+
+The `central-agentic-ops-control-plane` repository topic is an optional lightweight discovery aid. Where custom properties are available, they provide the structured searchable projection. If neither mechanism covers an installation, an enterprise may maintain a small derived registry containing only organization, control repository, catalog revision, owner, and status. Rebuild that registry from repository-owned records where practical; it must not become a dispatcher or contain credentials, policy overrides, runtime health, or dispatch state.
+
+### Target Enrollment
+
+An allowed owner and a reachable credential are security boundaries, not evidence that a repository agreed to central operation. Before `live` operation, the target repository owner and runtime operator must record:
+
+- the target repository and approved bundles;
+- the control repository assigned as live mutation authority for each bundle;
+- the approving repository owner or team;
+- the approval and review date;
+- the revocation path.
+
+Store this evidence in an enterprise- or organization-approved inventory, such as governed custom properties or a reviewed registry. The current workflows do not query or reconcile that inventory automatically. Until they do, scope the GitHub App installation or fine-grained PAT to enrolled repositories and treat broad owner discovery as staged or review-only. Owner allowlists remain mandatory but are not sufficient for live enrollment.
+
+The target repository enforces its live mutation authority in `.github/central-agentic-ops.yml`:
+
+```yaml
+version: 1
+bundles:
+	dependabot:
+		authority: acme/central-ops
+	optimization:
+		authority: acme/central-ops
+```
+
+Protect this file on the default branch with a ruleset and CODEOWNERS approval from the target repository owner. Missing, malformed, or mismatched authority fails closed in `live` before the agent starts. The file records consent and authority only; keep credentials, rollout modes, schedules, and runtime state in the control repository. Staged and review runs do not require it because they cannot mutate the target.
 
 ### Downstream Fan-Out and Provenance
 
-Each central control repository fans out enabled bundles to selected targets, subject to repository allowlists and dispatch limits. Orchestrator and worker workflows run from that central repository. Each worker workflow checks out one target repository, inspects only that target, and creates only declared safe outputs in the configured downstream destination. A target repository may therefore receive safe outputs from both enterprise and organization control repositories without storing either source's Agentic Workflow definitions.
+Each central control repository fans out enabled bundles to selected targets, subject to repository allowlists, credential scope, enrollment, live mutation ownership, and dispatch limits. Orchestrator and worker workflows run from that central repository. Each worker workflow checks out one target repository, inspects only that target, and creates only declared safe outputs in the configured downstream destination. A target repository may receive staged or review output from both enterprise and organization control repositories without storing either source's Agentic Workflow definitions, but only its assigned runtime may perform live mutation for a given bundle.
 
 The standard `central_repo`, `control_plane_run_url`, and `correlation_id` fields identify the originating central runtime and run. Because `central_repo` differs between enterprise and organization control repositories, downstream safe outputs retain their runtime source.
 
@@ -59,6 +121,8 @@ The control plane does not:
 - prevent an authorized user from manually running workflows outside the control plane;
 - guarantee that a catalog worker cannot be directly dispatched by a user who already has sufficient Actions access;
 - block another GitHub App, PAT, integration, or administrator from changing a repository;
+- coordinate locks or cancellation across independent control repositories after live runs have started;
+- reconcile custom properties, external approval records, or credential scope with the target-owned authority file;
 - replace repository rulesets, branch protection, protected environments, CODEOWNERS, Actions policies, or enterprise audit controls;
 - make compliance claims for workflows and repositories that are not enrolled in its operating process.
 
@@ -112,6 +176,7 @@ Credentials are not part of this envelope. Each run resolves authentication thro
 - Orchestrator precompute versions each inventory and deterministically selects one bounded cell and batch before agent ranking begins.
 - Repository selection defaults to one target and is bounded by absolute, percentage, and dispatch-derived caps.
 - Manual targets and review destinations are restricted to trusted repository owners; the default is the control repository owner.
+- Each live `(target repository, bundle)` pair has one assigned mutation authority; this operating invariant is not automatically reconciled across control repositories.
 - Review mode defaults to the current control-plane repository when no destination override is provided.
 - An orchestrator workflow dispatches only worker workflows declared in its `safe-outputs.dispatch-workflow.workflows` list and resolved by exact generated-workflow path.
 - Disabled or unavailable worker workflows are skipped with a reason.

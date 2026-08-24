@@ -113,6 +113,8 @@ Control values resolve in this order:
 
 Outside the public read-only profile, the GitHub App installation or PAT must include every repository that an enabled bundle may inspect or update. Credential reach and `CENTRAL_AGENTIC_OPS_ALLOWED_OWNERS` are cumulative boundaries: satisfying one never bypasses the other. A value having higher precedence does not grant broader repository access or safe-output permissions.
 
+Neither boundary records target consent or resolves authority between enterprise and organization runtimes. For `live` operation, scope credentials to repositories in the approved enrollment inventory and assign each `(target repository, bundle)` pair to one control repository in the target's `.github/central-agentic-ops.yml`. A live worker reads that file from the target default branch and fails before agent execution unless its `central_repo` matches the bundle authority. The runtime does not reconcile this file with custom properties, external approval records, or credential scope.
+
 ## Internal Runtime Values
 
 The following names appear in workflow execution but are derived by shared control. Operators must not create repository variables or secrets for them.

@@ -1,5 +1,8 @@
 ---
 import-schema:
+  bundle:
+    type: string
+    required: true
   role:
     type: choice
     options: [orchestrator, worker]
@@ -68,6 +71,7 @@ imports:
   #- uses: datadog.md
   - uses: control-precompute.md
     with:
+      bundle: ${{ github.aw.import-inputs.bundle }}
       role: ${{ github.aw.import-inputs.role }}
       target_repo: ${{ github.event.inputs.target_repo || '' }}
       organization: ${{ github.repository_owner }}

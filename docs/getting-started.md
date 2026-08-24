@@ -18,7 +18,11 @@ For public repositories, you can complete a bounded `staged` run with the built-
 
 ## 1. Choose Your Scope
 
-Use an enterprise-operated repository in a designated organization when workflows must reach repositories across organizations. Use an organization-operated repository when all targets belong to one organization.
+No GitHub enterprise account is required. An OSS maintainer or organization team can use one private organization-owned control repository when all targets belong to that organization. Use an enterprise-operated repository in a designated organization only when centrally governed workflows must reach repositories across multiple organizations.
+
+If you own multiple organizations without a GitHub enterprise account, create one control repository in each organization and install the same pinned catalog release in each. Keep credentials, enrollment, rollout, and emergency stops organization-local; no relay or coordinating runtime is required.
+
+Automatic discovery enumerates repositories owned by the control repository's organization. Cross-organization targets require explicit fully qualified repository names, an owner allowlist, and a GitHub App or fine-grained PAT with access; automatic enterprise-wide discovery is not provided.
 
 The control plane coordinates installed workflows; it does not replace GitHub rulesets, protected environments, Actions policies, or repository administration. Review [scope and enforcement limits](architecture.md#what-this-does-not-do) before broader adoption.
 
