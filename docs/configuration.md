@@ -5,7 +5,7 @@ description: Repository variables, secrets, and manual inputs for Central Agenti
 
 Control-plane configuration is stored as GitHub repository variables and secrets in the private central control repository. Scheduled runs use that configuration. Manual workflow inputs define a separate run without changing scheduled configuration. Values computed inside a workflow are runtime state and must not be configured directly.
 
-For a first installation, follow [Install and run safely](getting-started.md) and return here only for exact setting names and defaults. Keep every bundle in `staged` and `max_repos` at `1` until its promotion checks pass.
+For a first installation, follow [Install and run safely](getting-started.md) and return here only for exact setting names and defaults. Keep every operation in `staged` and `max_repos` at `1` until its promotion checks pass.
 
 ## Required Baseline
 
@@ -16,7 +16,7 @@ For private or internal targets, alternate review repositories, or live target w
 
 For public targets only, bounded staged scans can instead use the automatically provided `GITHUB_TOKEN`; no App or PAT secret is required. Review is supported without an App or PAT only when outputs stay in the current control repository and its workflow-token permissions authorize them. See [Public Read-Only Profile](authentication.md#public-read-only-profile).
 
-Every installed bundle has an independent mode. Installation defaults each mode to `staged`.
+Every installed operation has an independent mode. Installation defaults each mode to `staged`.
 
 :::tip[Variables describe policy; secrets prove identity]
 Put modes, limits, and owner names in repository variables. Put private keys and tokens in repository secrets. Never pass credentials through `workflow_dispatch` inputs.
@@ -49,12 +49,12 @@ Add an App or PAT when the target is private or internal. Keep the mode at `stag
 | `CENTRAL_AGENTIC_OPS_BATCH_SIZE` | Shared | No | `100000` | Maximum repositories exposed to an orchestrator from its selected cell. Accepts `1` through `100000`. |
 | `CENTRAL_AGENTIC_OPS_BATCH_INDEX` | Shared | No | `0` | Zero-based batch selected for a scheduled run. |
 | `CENTRAL_AGENTIC_OPS_MAX_AI_CREDITS_PER_RUN` | Shared | No | `1100` | Maximum declared orchestrator-plus-worker AI Credits admitted for one orchestration. |
-| `CENTRAL_AGENTIC_OPS_DEPENDABOT_MODE` | Dependabot | Yes when installed | `staged` | Sets the bundle mode to `staged`, `review`, or `live`. |
+| `CENTRAL_AGENTIC_OPS_DEPENDABOT_MODE` | Dependabot | Yes when installed | `staged` | Sets the operation mode to `staged`, `review`, or `live`. |
 | `CENTRAL_AGENTIC_OPS_DEPENDABOT_MAX_REPOS` | Dependabot | No | `1` | Scheduled repository-selection cap. Accepts `1` through `1000`; dispatch limits may reduce it further. |
 | `CENTRAL_AGENTIC_OPS_DEPENDABOT_ROLLOUT_PERCENT` | Dependabot | No | `100` | Limits selection to this percentage of discovered repositories. Accepts integers from `1` through `100`. |
 | `CENTRAL_AGENTIC_OPS_DEPENDABOT_UPDATER_ENABLED` | Dependabot worker | No | `true` | Worker kill switch. Set to `false` to reject updater runs. |
 | `CENTRAL_AGENTIC_OPS_DEPENDABOT_UPDATER_MAX_MODE` | Dependabot worker | No | `staged` | Maximum updater mode: `staged`, `review`, or `live`. |
-| `CENTRAL_AGENTIC_OPS_OPTIMIZATION_MODE` | Optimization | Yes when installed | `staged` | Sets the bundle mode to `staged`, `review`, or `live`. |
+| `CENTRAL_AGENTIC_OPS_OPTIMIZATION_MODE` | Optimization | Yes when installed | `staged` | Sets the operation mode to `staged`, `review`, or `live`. |
 | `CENTRAL_AGENTIC_OPS_OPTIMIZATION_MAX_REPOS` | Optimization | No | `1` | Scheduled repository-selection cap. Accepts `1` through `1000`; dispatch limits may reduce it further. |
 | `CENTRAL_AGENTIC_OPS_OPTIMIZATION_ROLLOUT_PERCENT` | Optimization | No | `100` | Limits selection to this percentage of discovered repositories. Accepts integers from `1` through `100`. |
 | `CENTRAL_AGENTIC_OPS_OPTIMIZATION_AUDITOR_ENABLED` | Optimization worker | No | `true` | Worker kill switch for the auditor. |
@@ -62,7 +62,7 @@ Add an App or PAT when the target is private or internal. Keep the mode at `stag
 | `CENTRAL_AGENTIC_OPS_OPTIMIZATION_OPTIMIZER_ENABLED` | Optimization worker | No | `true` | Worker kill switch for the optimizer. |
 | `CENTRAL_AGENTIC_OPS_OPTIMIZATION_OPTIMIZER_MAX_MODE` | Optimization worker | No | `staged` | Maximum optimizer mode. |
 
-An empty or unrecognized bundle mode disables scheduled selection and worker workflow dispatch. It does not block a `workflow_dispatch` run. Scheduled review mode routes safe outputs to the current control-plane repository. For an all-stop procedure, see [Emergency Stop](operations.md#emergency-stop).
+An empty or unrecognized operation mode disables scheduled selection and worker workflow dispatch. It does not block a `workflow_dispatch` run. Scheduled review mode routes safe outputs to the current control-plane repository. For an all-stop procedure, see [Emergency Stop](operations.md#emergency-stop).
 
 ### Pages Report Destinations
 
@@ -82,21 +82,21 @@ Keep secrets in the control repository. Do not place credentials in variables, w
 
 ## workflow_dispatch Inputs
 
-Both bundle orchestrator workflows expose the same inputs under **Run workflow**:
+Both operation orchestrators expose the same inputs under **Run workflow**:
 
 | Input | Type | Default | Effect |
 | --- | --- | --- | --- |
 | `target_repo` | String | Automatic discovery | Restricts the run to one fully qualified `owner/repository` target whose owner is allowlisted. |
 | `safe_output_repo` | String | Current control-plane repository | Overrides the review safe output destination with an allowlisted repository for this manual run. |
 | `max_repos` | Number | `1` | Caps repositories selected by this run. It cannot exceed the orchestrator workflow's declared dispatch limit. |
-| `rollout_percent` | Number | `100` | Overrides the bundle rollout percentage for this run. Accepts integers from `1` through `100`. |
+| `rollout_percent` | Number | `100` | Overrides the operation rollout percentage for this run. Accepts integers from `1` through `100`. |
 | `cell_count` | Number | `1` | Partitions automatic discovery by immutable GitHub repository ID. |
 | `cell_index` | Number | `0` | Selects one zero-based inventory cell. |
 | `batch_size` | Number | `100000` | Bounds the repositories supplied to the orchestrator from that cell. |
 | `batch_index` | Number | `0` | Selects one zero-based batch from that cell. |
 | `safe_output_mode` | Choice | `staged` | Selects staged mode, review routing, or live safe output processing for this `workflow_dispatch` run. |
 
-`workflow_dispatch` inputs affect only the dispatched run. They do not update repository variables or another bundle's policy. Precompute emits a content-addressed `inventory_version` and deterministic `batch_id`; the same inventory and scheduling inputs produce the same batch. These controls do not auto-advance batches, retry work, or provide durable completion tracking. The percentage cap is rounded up so a non-empty candidate set can select at least one repository. `max_repos`, the percentage cap, and the target count permitted by the orchestrator workflow's remaining dispatch budget are cumulative; the smallest cap wins. Invalid or out-of-range caps fail precomputation. During validation, specify one `target_repo`, keep `max_repos` at `1`, and begin in staged mode.
+`workflow_dispatch` inputs affect only the dispatched run. They do not update repository variables or another operation's policy. Precompute emits a content-addressed `inventory_version` and deterministic `batch_id`; the same inventory and scheduling inputs produce the same batch. These controls do not auto-advance batches, retry work, or provide durable completion tracking. The percentage cap is rounded up so a non-empty candidate set can select at least one repository. `max_repos`, the percentage cap, and the target count permitted by the orchestrator workflow's remaining dispatch budget are cumulative; the smallest cap wins. Invalid or out-of-range caps fail precomputation. During validation, specify one `target_repo`, keep `max_repos` at `1`, and begin in staged mode.
 
 Example cap calculation:
 
@@ -109,7 +109,7 @@ selected repositories                      = min(3, 5, 4) = 3
 ```
 
 :::note[Manual runs do not reconfigure schedules]
-A manual `live` request affects only that run. It does not promote the scheduled bundle, but it must still satisfy worker ceilings, owner allowlists, credential scope, and target authority.
+A manual `live` request affects only that run. It does not promote the scheduled operation, but it must still satisfy worker ceilings, owner allowlists, credential scope, and target authority.
 :::
 
 ## Optional Observability Secrets
@@ -134,19 +134,19 @@ Control values resolve in this order:
 | Decision | Resolution |
 | --- | --- |
 | Authentication | GitHub App, then `GH_AW_GITHUB_TOKEN`, then the run's `GITHUB_TOKEN` where that token can authorize the operation. |
-| Mode | Schedule-triggered runs use the bundle mode variable. `workflow_dispatch` runs use the `safe_output_mode` workflow input and do not change or depend on the scheduled mode. Missing values default to `staged`; legacy `preview` values normalize to `staged`. |
+| Mode | Schedule-triggered runs use the operation mode variable. `workflow_dispatch` runs use the `safe_output_mode` workflow input and do not change or depend on the scheduled mode. Missing values default to `staged`; legacy `preview` values normalize to `staged`. |
 | Review destination | `safe_output_repo` workflow input for a manual run, otherwise `github.repository`. |
 | Allowed repository owners | `CENTRAL_AGENTIC_OPS_ALLOWED_OWNERS`, otherwise `github.repository_owner`. Applies to orchestrated and directly dispatched workers. |
-| Absolute repository cap | `max_repos` workflow input, then the bundle max-repositories variable, then `1`. |
+| Absolute repository cap | `max_repos` workflow input, then the operation max-repositories variable, then `1`. |
 | Discovery scan cap | `CENTRAL_AGENTIC_OPS_MAX_SCAN_REPOS`, then `1000`; hard maximum `100000`. |
 | Scheduled inventory slice | Cell count/index and batch size/index variables; defaults select the complete discovered inventory. Manual inputs override these values for one run. |
 | Aggregate AI Credit cap | `CENTRAL_AGENTIC_OPS_MAX_AI_CREDITS_PER_RUN`, then `1100`; selection is reduced to fit the declared orchestrator and worker maxima. |
-| Rollout percentage | `rollout_percent` workflow input, then the bundle rollout-percentage variable, then `100`. |
+| Rollout percentage | `rollout_percent` workflow input, then the operation rollout-percentage variable, then `100`. |
 | Target selection | `target_repo` workflow input, otherwise control-plane discovery. |
 
-Outside the public read-only profile, the GitHub App installation or PAT must include every repository that an enabled bundle may inspect or update. Credential reach and `CENTRAL_AGENTIC_OPS_ALLOWED_OWNERS` are cumulative boundaries: satisfying one never bypasses the other. A value having higher precedence does not grant broader repository access or safe-output permissions.
+Outside the public read-only profile, the GitHub App installation or PAT must include every repository that an enabled operation may inspect or update. Credential reach and `CENTRAL_AGENTIC_OPS_ALLOWED_OWNERS` are cumulative boundaries: satisfying one never bypasses the other. A value having higher precedence does not grant broader repository access or safe-output permissions.
 
-Neither boundary records target consent or resolves authority between enterprise and organization runtimes. For `live` operation, scope credentials to repositories in the approved enrollment inventory and assign each `(target repository, bundle)` pair to one control repository in the target's `.github/central-agentic-ops.yml`. A live worker reads that file from the target default branch and fails before agent execution unless its `central_repo` matches the bundle authority. The runtime does not reconcile this file with custom properties, external approval records, or credential scope.
+Neither boundary records target consent or resolves authority between enterprise and organization runtimes. For `live` operation, scope credentials to repositories in the approved enrollment inventory and assign each `(target repository, operation)` pair to one control repository in the target's `.github/central-agentic-ops.yml`. A live worker reads that file from the target default branch and fails before agent execution unless its `central_repo` matches the operation authority. The runtime does not reconcile this file with custom properties, external approval records, or credential scope.
 
 ```yaml
 version: 1
@@ -161,8 +161,8 @@ The following names appear in workflow execution but are derived by shared contr
 
 | Name | Derived from |
 | --- | --- |
-| `CENTRAL_AGENTIC_OPS_MODE` | The importing bundle's mode variable. |
-| `GH_AW_SAFE_OUTPUT_MODE` | The `safe_output_mode` workflow input for a `workflow_dispatch` run; the bundle mode for a schedule-triggered run. |
+| `CENTRAL_AGENTIC_OPS_MODE` | The importing operation's mode variable. |
+| `GH_AW_SAFE_OUTPUT_MODE` | The `safe_output_mode` workflow input for a `workflow_dispatch` run; the operation mode for a schedule-triggered run. |
 | `TARGET_REPO` | The `target_repo` workflow input or the worker workflow dispatch envelope. |
 | `REVIEW_OUTPUT_REPO` | The `safe_output_repo` workflow input or current `github.repository`. |
 | `SAFE_OUTPUT_REPO` | The effective destination computed for the selected mode. |

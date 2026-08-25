@@ -1,9 +1,9 @@
 ---
-title: Choose Credentials
+title: Configure Authentication
 description: Choose and configure least-privilege GitHub App, fine-grained PAT, or built-in workflow-token access.
 ---
 
-Choose credentials based on the repositories and operations a bundle needs. Prefer a GitHub App for private or cross-repository use; use a fine-grained PAT when an App is not practical; use the built-in workflow token only for the bounded cases described below.
+Configure authentication for the repositories each operation needs to access. Prefer a GitHub App for private or cross-repository use; use a fine-grained PAT when an App is not practical; use the built-in workflow token only for the bounded cases described below.
 
 | Your use case | Credential |
 | --- | --- |
@@ -79,11 +79,11 @@ The workflow token is scoped to the repository containing the workflow. Public c
 - worker workflows receive repository names and routing policy, never credentials.
 - Each Orchestrator and worker workflow run resolves its own token through imported shared control.
 - Tokens must not appear in prompts, logs, safe outputs, Repo Memory, review bundles, or correlation metadata.
-- For operations outside the public read-only profile, the App installation or PAT repository selection must cover every repository the enabled bundles may read or update.
+- For operations outside the public read-only profile, the App installation or PAT repository selection must cover every repository the enabled operations may read or update.
 
 ## Permissions
 
-Grant only permissions required by installed bundles. The current full catalog may require:
+Grant only permissions required by installed operations. The current full catalog may require:
 
 | Permission | Access | Reason |
 | --- | --- | --- |
@@ -111,7 +111,7 @@ The GitHub CLI prompts for the token without echoing it. Do not include the toke
 For a GitHub App:
 
 1. Add the replacement private key to the existing repository secret.
-2. Validate staged runs for each installed bundle.
+2. Validate staged runs for each installed operation.
 3. Revoke the old private key.
 4. Recheck App installation repository access and permissions.
 
@@ -122,10 +122,10 @@ For a PAT:
 3. Validate staged runs.
 4. Revoke the previous PAT.
 
-For suspected credential exposure, disable scheduled Agentic Workflows or set bundles to an unrecognized/empty mode, revoke the credential, inspect GitHub Actions logs and safe outputs, rotate credentials, and resume from staged mode.
+For suspected credential exposure, disable scheduled Agentic Workflows or set operations to an unrecognized/empty mode, revoke the credential, inspect GitHub Actions logs and safe outputs, rotate credentials, and resume from staged mode.
 
 :::danger[Suspected exposure]
-Stopping a bundle does not revoke its credential. Disable affected runs and revoke the App installation or PAT before investigating further.
+Stopping an operation does not revoke its credential. Disable affected runs and revoke the App installation or PAT before investigating further.
 :::
 
 ## Validation

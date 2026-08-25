@@ -1,119 +1,164 @@
 ---
-title: Install and Run Safely
-description: Install Central Agentic Ops and validate one bundle against one repository without making changes.
+title: Quickstart
+description: Create a private control plane, install one operation, and run it safely against one repository.
 ---
 
-Use this guide to reach a safe first result: one installed bundle, one target repository, and one `staged` run that cannot write to GitHub. Keep the control-plane repository private throughout setup.
+Central Agentic Ops lets you run governed agentic operations across many repositories from one private GitHub repository, which we call the central control plane. Operation packages, credentials, rollout policy, and workflow runs stay in the control plane; target repositories do not receive copies of the workflows.
 
-:::caution[Keep the control plane private]
-The control repository holds credentials, rollout policy, and cross-repository operating records. Do not install Central Agentic Ops in a public repository.
-:::
+By the end of this guide, you will have created a control plane, installed the Dependabot operation, and completed one `staged` run against a public target repository. You will verify that the operation selected the expected target and proposed work without changing it.
 
-## Before You Start
+## Run a Staged Dependabot Operation
 
-You need:
+Estimated time: 15 minutes
 
-- a private repository to host the control plane;
-- one low-risk target repository for validation;
-- permission to configure Actions variables and secrets in the control-plane repository;
-- a GitHub App or fine-grained PAT if the target is private or internal.
+This quickstart uses one public repository owned by the same organization as the control repository. That path requires no GitHub App or personal access token.
 
-For public repositories, you can complete a bounded `staged` run with the built-in `GITHUB_TOKEN`. See [Choose credentials](authentication.md) before using private targets, a separate review repository, or `live` mode.
+## Prerequisites
 
-## 1. Choose Your Scope
+Before you begin, make sure you have:
 
-No GitHub enterprise account is required. An OSS maintainer or organization team can use one private organization-owned control repository when all targets belong to that organization. Use an enterprise-operated repository in a designated organization only when centrally governed workflows must reach repositories across multiple organizations.
+- a GitHub organization where you can create a private repository;
+- one low-risk public repository in that organization to use as the target;
+- GitHub Actions enabled for both repositories;
+- [GitHub CLI](https://cli.github.com/) installed and authenticated;
+- access to GitHub Copilot through organization billing for Agentic Workflow runs.
 
-If you own multiple organizations without a GitHub enterprise account, create one control repository in each organization and install the same pinned catalog release in each. Keep credentials, enrollment, rollout, and emergency stops organization-local; no relay or coordinating runtime is required.
-
-Automatic discovery enumerates repositories owned by the control repository's organization. Cross-organization targets require explicit fully qualified repository names, an owner allowlist, and a GitHub App or fine-grained PAT with access; automatic enterprise-wide discovery is not provided.
-
-The control plane coordinates installed workflows; it does not replace GitHub rulesets, protected environments, Actions policies, or repository administration. Review [scope and enforcement limits](architecture.md#what-this-does-not-do) before broader adoption.
-
-## 2. Install a Bundle
-
-Install the full catalog or one bundle into the private control-plane repository. The installation provides:
-
-- an orchestrator that selects repositories and dispatches work;
-- focused worker workflows;
-- shared authentication and fail-closed policy;
-- independent rollout settings that default to `staged`.
-
-For example, install the full catalog from a pinned release:
+Check your GitHub CLI authentication:
 
 ```bash
-gh aw add-wizard githubnext/central-agentic-ops@<catalog-release>
+gh auth status
 ```
 
-To start with a smaller surface, replace the package name with a bundle such as `githubnext/central-agentic-ops/dependabot@<catalog-release>`.
+If needed, sign in with repository and workflow access:
 
-After installation, confirm that the generated orchestrator and worker workflows are present and enabled. Pages reporting is optional and is not installed by default.
+```bash
+gh auth login --scopes repo,workflow
+```
 
-## 3. Configure the Minimum
-
-1. Add a GitHub App or PAT when the built-in token cannot access the target. Follow [Choose credentials](authentication.md).
-2. Confirm the target owner is allowed by `CENTRAL_AGENTIC_OPS_ALLOWED_OWNERS`.
-3. Leave the bundle mode at `staged`.
-4. Keep `max_repos` at `1` for the first run.
-
-Use the [configuration reference](configuration.md) only when you need the exact variable, secret, or input name.
-
-:::tip[Use a deliberately boring first target]
-Choose a low-traffic repository with representative settings and no urgent maintenance work. A quiet target makes unexpected selection or output obvious.
+:::note[Using a private or cross-organization target?]
+Complete [Configure Authentication](authentication.md) before running the operation. The credential must cover the target repository, and its owner must be allowlisted.
 :::
 
-Example first-run profile:
+### Step 1 - Create the control repository
 
-```yaml
-control_repository: acme/central-agentic-ops
-target_repo: acme/example-service
-allowed_owners: acme
-max_repos: 1
-rollout_percent: 100
-safe_output_mode: staged
+Choose names for the private control repository and public target repository. Replace the examples below with repositories you own:
+
+```bash
+CONTROL_REPO="acme/central-agentic-ops"
+TARGET_REPO="acme/example-service"
+
+gh repo create "$CONTROL_REPO" --private --clone
+cd "${CONTROL_REPO##*/}"
 ```
 
-## 4. Run One Staged Check
+The new private repository is the central control plane. Agentic Workflow definitions and credentials stay here; they are not installed in the target repository.
 
-Open the installed orchestrator in GitHub Actions and select **Run workflow**. Set:
-
-| Input | First-run value |
-| --- | --- |
-| `target_repo` | The explicit `OWNER/REPO` validation target |
-| `max_repos` | `1` |
-| `rollout_percent` | `100` |
-| `safe_output_mode` | `staged` |
-| `safe_output_repo` | Leave empty |
-
-The run should select only the named target, dispatch eligible workers, and stage proposed safe outputs without GitHub API writes.
-
-```text
-manual dispatch
-	|
-	v
-select 1 repository --> dispatch eligible workers --> stage proposed outputs
-													  (no GitHub writes)
-```
-
-## 5. Verify the Result
-
-Before moving beyond `staged`, confirm:
-
-- authentication succeeded without exposing credential data;
-- exactly the expected target and workers were selected;
-- staged output is useful and contains a link to the orchestrator run;
-- no issue, pull request, branch, or file was written to the target;
-- AI Credit use and runtime are within the workflow limits.
-
-If any check fails, keep the bundle in `staged` and use [Monitor and recover](operations.md) to diagnose it.
-
-:::note[What success looks like]
-The first run is successful when it proves the boundary, even if the worker produces no recommendation. Correct target selection and zero writes matter more than finding work on this run.
+:::caution[Keep the control plane private]
+The control repository holds credentials, rollout policy, and cross-repository operating records. Do not make it public.
 :::
 
-## Next Steps
+### Step 2 - Install the `gh-aw` extension
 
-- Understand [staged, review, and live rollout](rollout-and-routing.md) before promotion.
-- Use [Configuration](configuration.md) to tune repository limits and schedules.
-- Read [How the control plane works](architecture.md) before enterprise-wide adoption.
-- Review [orchestrator and worker responsibilities](orchestrators-and-workers.md) before extending a bundle.
+Install GitHub Agentic Workflows:
+
+```bash
+gh extension install github/gh-aw
+```
+
+If the extension is already installed, verify that it is available:
+
+```bash
+gh aw --help
+```
+
+### Step 3 - Add the Dependabot operation
+
+From the control repository, install the Dependabot operation package from a pinned catalog release. Replace `<catalog-release>` with a release tag or full commit SHA:
+
+```bash
+gh aw add-wizard githubnext/central-agentic-ops/dependabot@<catalog-release>
+```
+
+The package installs:
+
+1. the **Dependabot** orchestrator, which selects repositories;
+2. the **Dependabot / Release Train Updater** worker, which analyzes one selected repository;
+3. shared authentication, routing, and fail-closed controls;
+4. generated `.lock.yml` workflows that GitHub Actions executes.
+
+Keep the operation in `staged` mode when the wizard asks for its rollout settings. Then commit and push the installed files:
+
+```bash
+git add .github
+git commit -m "Install Dependabot operation"
+git push --set-upstream origin HEAD
+```
+
+Do not edit generated `.lock.yml` files directly. Update their Markdown sources and regenerate them with `gh aw compile`.
+
+### Step 4 - Set the first-run boundary
+
+Configure the target owner, keep the scheduled operation staged, and cap scheduled selection at one repository:
+
+```bash
+TARGET_OWNER="${TARGET_REPO%%/*}"
+
+gh variable set CENTRAL_AGENTIC_OPS_ALLOWED_OWNERS --body "$TARGET_OWNER"
+gh variable set CENTRAL_AGENTIC_OPS_DEPENDABOT_MODE --body "staged"
+gh variable set CENTRAL_AGENTIC_OPS_DEPENDABOT_MAX_REPOS --body "1"
+```
+
+These variables configure future scheduled runs. The manual run in the next step also names one explicit target and requests `staged` mode.
+
+### Step 5 - Trigger one staged run
+
+Run the installed orchestrator against the target repository:
+
+```bash
+gh workflow run dependabot.lock.yml \
+	--raw-field target_repo="$TARGET_REPO" \
+	--raw-field max_repos="1" \
+	--raw-field rollout_percent="100" \
+	--raw-field safe_output_mode="staged"
+```
+
+You can also open the control repository's **Actions** tab, select **Dependabot**, and choose **Run workflow** with the same values.
+
+The orchestrator should select only the named repository and dispatch at most one updater. In `staged` mode, proposed safe outputs are recorded without creating or changing issues, pull requests, branches, or files.
+
+### Step 6 - Wait for the operation to complete
+
+List the latest Dependabot runs:
+
+```bash
+gh run list --workflow dependabot.lock.yml --event workflow_dispatch --limit 5
+```
+
+Copy the run ID from the first row, then watch it until completion:
+
+```bash
+gh run watch <run-id> --exit-status
+```
+
+The orchestrator may dispatch a separate updater run. Open the orchestrator run in the **Actions** tab to follow its correlated worker and inspect the staged output.
+
+## Verify the Result
+
+A successful first run proves the boundary:
+
+- the orchestrator selected exactly `TARGET_REPO`;
+- no more than one updater was dispatched;
+- the worker remained in `staged` mode;
+- the staged output links back to the control-plane run;
+- no issue, pull request, branch, or file was written to the target repository.
+
+The worker may report that no dependency work is needed. That is still a successful first run when target selection, routing, and zero-write behavior are correct.
+
+Having trouble? Check [Configure Authentication](authentication.md) for repository access, [Configuration](configuration.md) for owner and mode settings, or [Monitor and Recover](operations.md) for failed runs.
+
+## What's Next?
+
+- Learn how to promote the operation through [staged, review, and live](rollout-and-routing.md).
+- Read [How the Control Plane Works](architecture.md) before adding organizations or broader repository discovery.
+- Use the [Configuration Reference](configuration.md) to tune schedules, repository limits, and worker ceilings.
+- Review [Orchestrators and Workers](orchestrators-and-workers.md) before creating another operation.

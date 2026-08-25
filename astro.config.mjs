@@ -77,14 +77,14 @@ export default defineConfig({
         {
           label: "Get started",
           items: [
-            { label: "Install and first run", link: "/getting-started/" },
-            { label: "Choose credentials", link: "/authentication/" },
+            { label: "Quickstart", link: "/getting-started/" },
+            { label: "Configure authentication", link: "/authentication/" },
           ],
         },
         {
           label: "Run safely",
           items: [
-            { label: "Roll out a bundle", link: "/rollout-and-routing/" },
+            { label: "Roll out an operation", link: "/rollout-and-routing/" },
             { label: "Monitor and recover", link: "/operations/" },
             { label: "Emergency stop", link: "/operations/#emergency-stop" },
           ],

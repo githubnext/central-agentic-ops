@@ -1,9 +1,9 @@
 ---
 title: Orchestrators and Workers
-description: Design and govern bundle orchestrators and their bounded worker workflows.
+description: Design and govern operation orchestrators and their bounded worker workflows.
 ---
 
-Use this page when reviewing a bundle or deciding where new behavior belongs. Orchestrators select and dispatch work; workers perform one bounded repository task and can only narrow the policy they receive.
+Use this page when reviewing an operation or deciding where new behavior belongs. Orchestrators select and dispatch work; workers perform one bounded repository task and can only narrow the policy they receive.
 
 ```text
 orchestrator                              worker
@@ -20,9 +20,9 @@ If behavior chooses *which repositories run*, it belongs in the orchestrator. If
 
 ## Orchestrator Authority
 
-The bundle orchestrator is the policy authority for a run. It:
+The operation orchestrator is the policy authority for a run. It:
 
-- imports the bundle's configured mode and review repository;
+- imports the operation's configured mode and review repository;
 - discovers and ranks candidate repositories;
 - enforces `max_repos` and its declared dispatch maximum;
 - resolves configured worker availability;
@@ -62,7 +62,7 @@ It does not receive a token, discovery query, or permission to dispatch another 
 
 ## Worker Value
 
-Operational value is measured per worker, not per orchestrator or bundle. Dispatch counts, generated outputs, and model assessments do not prove that a worker attained its intended repository outcome.
+Operational value is measured per worker, not per orchestrator or operation. Dispatch counts, generated outputs, and model assessments do not prove that a worker attained its intended repository outcome.
 
 The catalog repository keeps frozen contracts under `.github/ops-values/<worker-stem>.sh`. Package manifests remain workflow-only while value evaluation is experimental, so neither these contracts nor the `aw-value` authoring and report-generation skill are installed into consumer repositories.
 
@@ -80,19 +80,19 @@ VALUE_FUNCTION=".github/ops-values/<worker-stem>.sh"
 Count an outcome only when accepted evidence satisfies the worker's frozen contract. A successful dispatch or generated suggestion is activity, not attained value.
 :::
 
-Apply the process independently to every worker in a bundle. Workers may receive different classifications because their outcomes and available history differ:
+Apply the process independently to every worker in an operation. Workers may receive different classifications because their outcomes and available history differ:
 
 - `baseline-comparable` applies the same outcome measure before and after adoption;
 - `attainment-only` measures post-adoption attainment when comparable history cannot be reconstructed;
 - `not measurable` records that no deterministic opportunity, outcome, or accepted-evidence rule can currently be defined.
 
-Do not create placeholder functions or reports while a new worker is unadopted. A frozen function requires its real adoption commit, and evaluation requires matured outcome evidence. The bundle creation skill records this as a post-adoption follow-up for each new worker.
+Do not create placeholder functions or reports while a new worker is unadopted. A frozen function requires its real adoption commit, and evaluation requires matured outcome evidence. The operation creation skill records this as a post-adoption follow-up for each new worker.
 
 ## Current Worker Eligibility
 
 Shared precomputation reads each orchestrator's `safe-outputs.dispatch-workflow.workflows` list and matches it against workflows installed in the control-plane repository. A worker is eligible only when it exists and is not disabled. Missing and disabled workers are skipped with explicit reasons.
 
-This provides an immediate worker kill switch: disable the generated worker workflow in GitHub Actions. Bundle mode and review routing remain bundle-level controls.
+This provides an immediate worker kill switch: disable the generated worker workflow in GitHub Actions. Operation mode and review routing remain operation-level controls.
 
 ## Worker Ceilings
 
@@ -108,14 +108,14 @@ Mode ordering is:
 
 `staged < review < live`
 
-The effective worker mode is the less permissive of the requested bundle mode and the worker ceiling:
+The effective worker mode is the less permissive of the requested operation mode and the worker ceiling:
 
-`effective_mode = min(bundle_mode, worker_max_mode)`
+`effective_mode = min(operation_mode, worker_max_mode)`
 
 For example:
 
 ```text
-bundle mode       = live
+operation mode    = live
 worker max_mode   = review
 effective mode    = review
 ```
@@ -131,12 +131,12 @@ gh variable set CENTRAL_AGENTIC_OPS_OPTIMIZATION_OPTIMIZER_MAX_MODE \
 ```
 
 :::caution[Ceilings only narrow]
-Raising a worker ceiling does not promote the bundle. Lowering it takes effect as an additional guard beneath scheduled and manual mode requests.
+Raising a worker ceiling does not promote the operation. Lowering it takes effect as an additional guard beneath scheduled and manual mode requests.
 :::
 
 ## When to Split Control
 
-Keep control at the bundle level when workers share ownership, permissions, output destination, and promotion evidence. Add a worker ceiling when any of these differ significantly:
+Keep control at the operation level when workers share ownership, permissions, output destination, and promotion evidence. Add a worker ceiling when any of these differ significantly:
 
 - the worker can modify source or workflow files while peers only create issues;
 - the worker has broader network or repository permissions;
@@ -144,6 +144,6 @@ Keep control at the bundle level when workers share ownership, permissions, outp
 - the worker has a history of noisy or high-volume outputs;
 - a separate team approves its production use.
 
-Create a separate bundle, rather than many worker flags, when workers need different authentication, review repositories, schedules, target populations, or operational ownership.
+Create a separate operation, rather than many worker flags, when workers need different authentication, review repositories, schedules, target populations, or operational ownership.
 
-Workers independently reject disabled runs, malformed control envelopes, and modes above their configured ceiling before agent execution. Promote a worker by changing its `MAX_MODE` variable only after its bundle has passed the corresponding rollout gate.
+Workers independently reject disabled runs, malformed control envelopes, and modes above their configured ceiling before agent execution. Promote a worker by changing its `MAX_MODE` variable only after its operation has passed the corresponding rollout gate.

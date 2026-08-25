@@ -1,19 +1,19 @@
 ---
-title: Roll Out a Bundle Safely
-description: Promote one bundle through staged, review, limited live, and scheduled live operation.
+title: Roll Out an Operation Safely
+description: Promote one operation through staged, review, limited live, and scheduled live operation.
 ---
 
-Roll out each bundle independently. Begin with one explicit target in `staged`, inspect the proposed output in `review`, and allow target writes only after the same bounded scenario succeeds in both modes.
+Roll out each operation independently. Begin with one explicit target in `staged`, inspect the proposed output in `review`, and allow target writes only after the same bounded scenario succeeds in both modes.
 
 ## Promotion at a Glance
 
-1. Keep the installed bundle in `staged` and validate one target.
+1. Keep the installed operation in `staged` and validate one target.
 2. Route the same scenario to a private review destination.
 3. Run one low-risk target in `live` and verify the resulting output and downstream checks.
 4. Enable scheduled live operation with `max_repos` kept small.
 5. Increase limits only from observed evidence.
 
-Move the bundle back to `staged` whenever authentication, routing, output quality, cost, or provenance is uncertain.
+Move the operation back to `staged` whenever authentication, routing, output quality, cost, or provenance is uncertain.
 
 ![A control plane promotes bounded operations from staged through review to live across organization repositories.](assets/control-plane-scale.svg)
 
@@ -24,16 +24,16 @@ staged --inspect--> review --approve--> limited live --observe--> scheduled live
 								 uncertainty or failed evidence
 ```
 
-## Bundle-Level Control
+## Operation-Level Control
 
-Each bundle has its own mode. Review safe outputs route to the current control-plane repository unless a manual run supplies `safe_output_repo`. This is the primary unit of gradual rollout.
+Each operation has its own mode. Review safe outputs route to the current control-plane repository unless a manual run supplies `safe_output_repo`. This is the primary unit of gradual rollout.
 
-| Bundle | Mode variable | Scheduled absolute cap | Rollout percentage variable |
+| Operation | Mode variable | Scheduled absolute cap | Rollout percentage variable |
 | --- | --- | --- | --- |
 | Dependabot | `CENTRAL_AGENTIC_OPS_DEPENDABOT_MODE` | `CENTRAL_AGENTIC_OPS_DEPENDABOT_MAX_REPOS` | `CENTRAL_AGENTIC_OPS_DEPENDABOT_ROLLOUT_PERCENT` |
 | Optimization | `CENTRAL_AGENTIC_OPS_OPTIMIZATION_MODE` | `CENTRAL_AGENTIC_OPS_OPTIMIZATION_MAX_REPOS` | `CENTRAL_AGENTIC_OPS_OPTIMIZATION_ROLLOUT_PERCENT` |
 
-Changing one bundle does not change another. For example, Dependabot may be live while Optimization remains in review.
+Changing one operation does not change another. For example, Dependabot may be live while Optimization remains in review.
 
 Absolute caps default to `1`, so missing configuration cannot create broad fan-out. Rollout percentages accept integers from `1` through `100` and default to `100`. The control plane rounds the percentage-derived repository count up for a non-empty candidate set, then applies the smallest of that count, `max_repos`, and the target count supported by the declared dispatch budget and eligible worker count. For example, a `10` percent rollout over 25 discovered repositories permits at most 3 selections before stricter caps are applied. Invalid values fail closed.
 
@@ -45,9 +45,9 @@ Automatic discovery scans at most `CENTRAL_AGENTIC_OPS_MAX_SCAN_REPOS` repositor
 
 ### Live Authority Check
 
-Discovery, an allowed owner, and credential access do not prove target enrollment. Before promoting a bundle to `live`, add the bundle and assigned control repository to `.github/central-agentic-ops.yml` on the target's default branch. Protect that file with target-owner review. Also verify the approved inventory records the target, bundle, approving repository owner, review date, and revocation path.
+Discovery, an allowed owner, and credential access do not prove target enrollment. Before promoting an operation to `live`, add the operation and assigned control repository to `.github/central-agentic-ops.yml` on the target's default branch. Protect that file with target-owner review. Also verify the approved inventory records the target, operation, approving repository owner, review date, and revocation path.
 
-Every live worker reads the target-owned file before agent execution. It fails closed when the file is missing or malformed, the bundle is absent, or `authority` does not match the dispatched `central_repo`. Staged and review runs do not require the file. This prevents a second runtime from beginning a new live run for the same bundle, but it does not cancel an already-running workflow in another control repository.
+Every live worker reads the target-owned file before agent execution. It fails closed when the file is missing or malformed, the operation is absent, or `authority` does not match the dispatched `central_repo`. Staged and review runs do not require the file. This prevents a second runtime from beginning a new live run for the same operation, but it does not cancel an already-running workflow in another control repository.
 
 ```yaml
 # .github/central-agentic-ops.yml in the target repository
@@ -93,7 +93,7 @@ For Pages reports, `safe_output_repo` retains its standard meaning as the safe-o
 
 ## `workflow_dispatch` Runs
 
-A `workflow_dispatch` run can set the `target_repo`, `max_repos`, `rollout_percent`, `safe_output_mode`, and `safe_output_repo` workflow inputs. These DispatchOps runs are useful for a controlled canary or incident diagnosis. They do not update repository variables or another bundle's policy, and their requested mode does not depend on the configured scheduled mode.
+A `workflow_dispatch` run can set the `target_repo`, `max_repos`, `rollout_percent`, `safe_output_mode`, and `safe_output_repo` workflow inputs. These DispatchOps runs are useful for a controlled canary or incident diagnosis. They do not update repository variables or another operation's policy, and their requested mode does not depend on the configured scheduled mode.
 
 `workflow_dispatch` runs should narrow scope during validation:
 
@@ -115,24 +115,24 @@ safe_output_repo: ""
 
 ## Promotion Plan
 
-Promote each bundle independently:
+Promote each operation independently:
 
 1. **Installed but inactive**: credentials and repository access are configured; schedules must not produce writes.
 2. **Enrolled**: record target-owner approval and commit the assigned control repository to the target's protected `.github/central-agentic-ops.yml`.
 3. **Staged**: run against one representative repository and inspect selection, prompts, staged safe outputs, permissions, and correlation data.
 4. **Review**: route one representative repository to a private review destination; verify that no target mutation occurs and the proposal is actionable. For a Pages report, also verify that the access-controlled review site updates and production Pages does not.
-5. **Limited live**: confirm no other control repository has live authority for the same bundle, then manually target one low-risk repository and verify the resulting safe output and downstream CI. For a Pages report, verify the production site update independently of the review site.
+5. **Limited live**: confirm no other control repository has live authority for the same operation, then manually target one low-risk repository and verify the resulting safe output and downstream CI. For a Pages report, verify the production site update independently of the review site.
 6. **Scheduled live**: enable scheduled operation with `max_repos` kept small, then increase limits only from observed evidence.
 
 Promotion evidence should cover successful authentication, correct target selection, safe output routing, no unexpected writes, worker workflow completion, useful safe output quality, and acceptable AI Credit consumption.
 
 :::tip[Promote evidence, not elapsed time]
-A bundle does not become safer because it remained in a mode for several days. Promote only after a representative run satisfies that mode's checks.
+An operation does not become safer because it remained in a mode for several days. Promote only after a representative run satisfies that mode's checks.
 :::
 
 ## Rollback
 
-The first rollback action is to move the affected bundle to `staged`. For a narrower incident, disable the affected worker workflow so precomputation marks it ineligible. Then:
+The first rollback action is to move the affected operation to `staged`. For a narrower incident, disable the affected worker workflow so precomputation marks it ineligible. Then:
 
 1. stop new dispatches;
 2. inspect the orchestrator run and correlated worker runs;
@@ -141,6 +141,6 @@ The first rollback action is to move the affected bundle to `staged`. For a narr
 5. otherwise, correct the affected policy or worker behavior and compile every affected workflow;
 6. restart in staged mode and repeat promotion gates.
 
-Do not reduce another bundle's mode unless the incident involves shared authentication or shared control behavior.
+Do not reduce another operation's mode unless the incident involves shared authentication or shared control behavior.
 
-If two runtimes were found mutating the same `(target repository, bundle)` pair, move that bundle to `staged` in every conflicting control repository, cancel active runs, and assign one live authority before resuming. Stopping only one runtime is insufficient until its queued and in-progress runs are also canceled.
+If two runtimes were found mutating the same `(target repository, operation)` pair, move that operation to `staged` in every conflicting control repository, cancel active runs, and assign one live authority before resuming. Stopping only one runtime is insufficient until its queued and in-progress runs are also canceled.
