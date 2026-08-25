@@ -11,6 +11,18 @@ Choose credentials based on the repositories and operations a bundle needs. Pref
 | Public targets in `staged` mode | Built-in `GITHUB_TOKEN` |
 | Review outputs kept in the control repository | Built-in token only when its repository permissions authorize the output |
 
+```text
+Does the run need a private target, cross-repository data, or live writes?
+	|
+	+-- yes --> GitHub App (preferred) or fine-grained PAT
+	|
+	+-- no ---> Public target in staged mode --> built-in GITHUB_TOKEN
+```
+
+:::tip[Default to a GitHub App]
+Choose a GitHub App unless you are deliberately validating the public read-only profile. Its short-lived tokens and installation-scoped repository access make review and revocation easier.
+:::
+
 ## Policy
 
 Authentication is defined once in `.github/workflows/shared/control.md` and inherited by Orchestrator and worker workflows. Workflow-local GitHub App blocks should not be added unless a future Agentic Workflow has a documented isolation requirement that shared control cannot satisfy.
@@ -25,11 +37,31 @@ The supported control-plane credentials are:
 
 The GitHub App is preferred because it provides short-lived installation tokens, repository-scoped installation access, and centrally reviewable permissions. `ignore-if-missing: true` makes App configuration optional, allowing PAT-only installations.
 
+Configure the App ID as a repository variable and its private key as a repository secret:
+
+```bash
+CONTROL_REPO="acme/central-agentic-ops"
+
+gh variable set GH_AW_GITHUB_APP_ID \
+	--repo "$CONTROL_REPO" \
+	--body "<github-app-id>"
+
+gh secret set GH_AW_GITHUB_APP_PRIVATE_KEY \
+	--repo "$CONTROL_REPO" \
+	< github-app-private-key.pem
+```
+
+The private key command reads the key from a local file without placing it in shell history.
+
 When manual workflow steps need `GH_TOKEN`, they select the imported App token first, then `GH_AW_GITHUB_TOKEN`, then `GITHUB_TOKEN`. Missing, incomplete, or invalid credentials must not be copied into dispatch inputs or persisted in artifacts.
 
 ## Public Read-Only Profile
 
 An App or PAT is not required for a bounded `staged` scan when every target repository is public. GitHub Actions automatically provides `GITHUB_TOKEN`; the workflows use it for control-repository workflow discovery and can check out other public repositories. This is built-in-token operation, not anonymous or credential-free operation.
+
+:::caution[Public does not mean fully readable]
+The built-in token may check out public code, but it does not automatically gain access to another repository's Actions logs, security data, issues, pull requests, or write APIs.
+:::
 
 Keep this profile within these boundaries:
 
@@ -66,6 +98,14 @@ Grant only permissions required by installed bundles. The current full catalog m
 
 A package-only installation should narrow these permissions to that package's workflows. Fine-grained PATs should be limited to the same repositories and permissions.
 
+Example PAT fallback configuration:
+
+```bash
+gh secret set GH_AW_GITHUB_TOKEN --repo "acme/central-agentic-ops"
+```
+
+The GitHub CLI prompts for the token without echoing it. Do not include the token directly in the command.
+
 ## Rotation and Revocation
 
 For a GitHub App:
@@ -83,6 +123,10 @@ For a PAT:
 4. Revoke the previous PAT.
 
 For suspected credential exposure, disable scheduled Agentic Workflows or set bundles to an unrecognized/empty mode, revoke the credential, inspect GitHub Actions logs and safe outputs, rotate credentials, and resume from staged mode.
+
+:::danger[Suspected exposure]
+Stopping a bundle does not revoke its credential. Disable affected runs and revoke the App installation or PAT before investigating further.
+:::
 
 ## Validation
 

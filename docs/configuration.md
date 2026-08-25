@@ -18,6 +18,25 @@ For public targets only, bounded staged scans can instead use the automatically 
 
 Every installed bundle has an independent mode. Installation defaults each mode to `staged`.
 
+:::tip[Variables describe policy; secrets prove identity]
+Put modes, limits, and owner names in repository variables. Put private keys and tokens in repository secrets. Never pass credentials through `workflow_dispatch` inputs.
+:::
+
+For a one-repository staged Dependabot rollout, set this baseline:
+
+```bash
+CONTROL_REPO="acme/central-agentic-ops"
+
+gh variable set CENTRAL_AGENTIC_OPS_ALLOWED_OWNERS \
+	--repo "$CONTROL_REPO" --body "acme"
+gh variable set CENTRAL_AGENTIC_OPS_DEPENDABOT_MODE \
+	--repo "$CONTROL_REPO" --body "staged"
+gh variable set CENTRAL_AGENTIC_OPS_DEPENDABOT_MAX_REPOS \
+	--repo "$CONTROL_REPO" --body "1"
+```
+
+Add an App or PAT when the target is private or internal. Keep the mode at `staged` until the promotion checks pass.
+
 ## Repository Variables
 
 | Name | Scope | Required | Default | Purpose |
@@ -79,6 +98,20 @@ Both bundle orchestrator workflows expose the same inputs under **Run workflow**
 
 `workflow_dispatch` inputs affect only the dispatched run. They do not update repository variables or another bundle's policy. Precompute emits a content-addressed `inventory_version` and deterministic `batch_id`; the same inventory and scheduling inputs produce the same batch. These controls do not auto-advance batches, retry work, or provide durable completion tracking. The percentage cap is rounded up so a non-empty candidate set can select at least one repository. `max_repos`, the percentage cap, and the target count permitted by the orchestrator workflow's remaining dispatch budget are cumulative; the smallest cap wins. Invalid or out-of-range caps fail precomputation. During validation, specify one `target_repo`, keep `max_repos` at `1`, and begin in staged mode.
 
+Example cap calculation:
+
+```text
+25 discovered repositories x 10% rollout = 3 after rounding up
+max_repos                                  = 5
+dispatch budget                            = 4
+---------------------------------------------------------------
+selected repositories                      = min(3, 5, 4) = 3
+```
+
+:::note[Manual runs do not reconfigure schedules]
+A manual `live` request affects only that run. It does not promote the scheduled bundle, but it must still satisfy worker ceilings, owner allowlists, credential scope, and target authority.
+:::
+
 ## Optional Observability Secrets
 
 Observability is disabled when the corresponding settings are absent. These values are consumed as repository secrets.
@@ -114,6 +147,13 @@ Control values resolve in this order:
 Outside the public read-only profile, the GitHub App installation or PAT must include every repository that an enabled bundle may inspect or update. Credential reach and `CENTRAL_AGENTIC_OPS_ALLOWED_OWNERS` are cumulative boundaries: satisfying one never bypasses the other. A value having higher precedence does not grant broader repository access or safe-output permissions.
 
 Neither boundary records target consent or resolves authority between enterprise and organization runtimes. For `live` operation, scope credentials to repositories in the approved enrollment inventory and assign each `(target repository, bundle)` pair to one control repository in the target's `.github/central-agentic-ops.yml`. A live worker reads that file from the target default branch and fails before agent execution unless its `central_repo` matches the bundle authority. The runtime does not reconcile this file with custom properties, external approval records, or credential scope.
+
+```yaml
+version: 1
+bundles:
+	dependabot:
+		authority: acme/central-agentic-ops
+```
 
 ## Internal Runtime Values
 

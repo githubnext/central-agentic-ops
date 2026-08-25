@@ -15,6 +15,15 @@ Roll out each bundle independently. Begin with one explicit target in `staged`, 
 
 Move the bundle back to `staged` whenever authentication, routing, output quality, cost, or provenance is uncertain.
 
+![A control plane promotes bounded operations from staged through review to live across organization repositories.](assets/control-plane-scale.svg)
+
+```text
+staged --inspect--> review --approve--> limited live --observe--> scheduled live
+	^                    |                    |                         |
+	+--------------------+--------------------+-------------------------+
+								 uncertainty or failed evidence
+```
+
 ## Bundle-Level Control
 
 Each bundle has its own mode. Review safe outputs route to the current control-plane repository unless a manual run supplies `safe_output_repo`. This is the primary unit of gradual rollout.
@@ -28,6 +37,10 @@ Changing one bundle does not change another. For example, Dependabot may be live
 
 Absolute caps default to `1`, so missing configuration cannot create broad fan-out. Rollout percentages accept integers from `1` through `100` and default to `100`. The control plane rounds the percentage-derived repository count up for a non-empty candidate set, then applies the smallest of that count, `max_repos`, and the target count supported by the declared dispatch budget and eligible worker count. For example, a `10` percent rollout over 25 discovered repositories permits at most 3 selections before stricter caps are applied. Invalid values fail closed.
 
+:::note[The smallest cap always wins]
+For 25 discovered repositories at 10 percent, the percentage cap is 3. If `max_repos` is `1`, only one repository can be selected.
+:::
+
 Automatic discovery scans at most `CENTRAL_AGENTIC_OPS_MAX_SCAN_REPOS` repositories, defaulting to `1000` with a hard maximum of `100000`. Shared cell count/index and batch size/index controls deterministically select one bounded inventory slice before ranking. They do not auto-advance or retry batches. Manual target and review repositories must belong to `CENTRAL_AGENTIC_OPS_ALLOWED_OWNERS`, which defaults to the control repository owner.
 
 ### Live Authority Check
@@ -35,6 +48,20 @@ Automatic discovery scans at most `CENTRAL_AGENTIC_OPS_MAX_SCAN_REPOS` repositor
 Discovery, an allowed owner, and credential access do not prove target enrollment. Before promoting a bundle to `live`, add the bundle and assigned control repository to `.github/central-agentic-ops.yml` on the target's default branch. Protect that file with target-owner review. Also verify the approved inventory records the target, bundle, approving repository owner, review date, and revocation path.
 
 Every live worker reads the target-owned file before agent execution. It fails closed when the file is missing or malformed, the bundle is absent, or `authority` does not match the dispatched `central_repo`. Staged and review runs do not require the file. This prevents a second runtime from beginning a new live run for the same bundle, but it does not cancel an already-running workflow in another control repository.
+
+```yaml
+# .github/central-agentic-ops.yml in the target repository
+version: 1
+bundles:
+	dependabot:
+		authority: acme/central-agentic-ops
+	optimization:
+		authority: acme/central-agentic-ops
+```
+
+:::caution[Protect the authority file]
+Require target-owner review for changes to `.github/central-agentic-ops.yml`. Credential access and an allowed owner are not substitutes for target consent.
+:::
 
 If an enterprise and organization runtime both select the same pair, keep both in `staged` or `review` until operators assign one live authority. Do not rely on run timing, workflow concurrency, or repository protections to resolve the conflict. Separate control repositories have independent queues and kill switches.
 
@@ -76,6 +103,16 @@ A `workflow_dispatch` run can set the `target_repo`, `max_repos`, `rollout_perce
 - use the control-plane repository for scheduled review runs, and use `safe_output_repo` only when a manual run needs a private override;
 - do not use a manual live run to bypass failed promotion gates.
 
+Example canary inputs:
+
+```yaml
+target_repo: acme/example-service
+max_repos: 1
+rollout_percent: 100
+safe_output_mode: staged
+safe_output_repo: ""
+```
+
 ## Promotion Plan
 
 Promote each bundle independently:
@@ -88,6 +125,10 @@ Promote each bundle independently:
 6. **Scheduled live**: enable scheduled operation with `max_repos` kept small, then increase limits only from observed evidence.
 
 Promotion evidence should cover successful authentication, correct target selection, safe output routing, no unexpected writes, worker workflow completion, useful safe output quality, and acceptable AI Credit consumption.
+
+:::tip[Promote evidence, not elapsed time]
+A bundle does not become safer because it remained in a mode for several days. Promote only after a representative run satisfies that mode's checks.
+:::
 
 ## Rollback
 

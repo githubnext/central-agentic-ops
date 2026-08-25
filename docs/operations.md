@@ -15,6 +15,18 @@ Use this page after installation to answer the urgent operator questions: Is the
 
 For installation and the first write-free run, begin with [Install and run safely](getting-started.md).
 
+```text
+Is unsafe activity active or broadly possible?
+	|
+	+-- yes --> disable Actions, cancel runs, revoke credentials if needed
+	|
+	+-- no ---> isolate one bundle or worker, collect evidence, return to staged
+```
+
+:::danger[Stop first when scope is unclear]
+If shared control, authentication, or multiple bundles may be affected, use the control-plane-wide emergency stop before investigating.
+:::
+
 ## Validate Before Scheduled Live Runs
 
 Before scheduled live operation, run one target through three manual checks:
@@ -24,6 +36,22 @@ Before scheduled live operation, run one target through three manual checks:
 3. `live`: set the worker `MAX_MODE` to `live`; use one low-risk target and verify the declared output and downstream CI.
 
 Record the three run URLs and restore the intended worker ceiling after the canary. A failed check returns the worker and bundle to `staged`.
+
+Use the same bounded profile in every gate:
+
+```yaml
+target_repo: acme/disposable-canary
+max_repos: 1
+rollout_percent: 100
+expected_target_writes:
+	staged: 0
+	review: 0
+	live: declared outputs only
+```
+
+:::tip[Change one dimension at a time]
+Keep the target and repository limits fixed while changing the mode. That makes routing differences attributable to the promotion gate rather than a different repository sample.
+:::
 
 The catalog source repository's `Staged smoke` Actions workflow automates the first check for catalog maintainers. It is repository-only test tooling and is not installed by `aw.yml`. Run it manually, select one bundle, and provide one explicit `OWNER/REPO` target. It dispatches that orchestrator with `max_repos: 1`, `rollout_percent: 100`, and `safe_output_mode: staged`, waits for the orchestrator and correlated workers, and verifies that target issue and branch snapshots remain unchanged. It has no schedule and cannot request review or live processing.
 
@@ -53,6 +81,17 @@ Review the following for scheduled runs:
 | safe outputs | Type, count, branch, files, and destination stay within declarations |
 | Quality | safe outputs are actionable, non-duplicative, and supported by evidence |
 | Cost | AI Credits and run volume remain within workflow limits and expectations |
+
+List recent runs from the command line when correlating orchestrators and workers:
+
+```bash
+CONTROL_REPO="acme/central-agentic-ops"
+
+gh run list \
+	--repo "$CONTROL_REPO" \
+	--limit 20 \
+	--json databaseId,displayTitle,event,status,conclusion,url
+```
 
 With default repository caps, one Dependabot orchestration is bounded by 850 AI Credits (250 for the orchestrator plus one 600-credit worker), and one Optimization orchestration is bounded by 1,100 AI Credits (250 plus one 350-credit auditor and one 500-credit optimizer). Declared dispatch ceilings keep deliberately expanded runs finite: at most 30,250 AI Credits for Dependabot and 10,250 for Optimization if only its highest-credit worker remains eligible. These are hard worst-case envelopes, not expected consumption. Every workflow also has a timeout and same-scope concurrency cancellation.
 
@@ -124,6 +163,10 @@ Changing a bundle to `staged` prevents new Pages deployments but does not remove
 
 Disabling GitHub Actions for the private control repository is the control-plane-wide stop. It prevents new orchestrator and worker runs from starting, including manual dispatches. A repository administrator, or an organization or enterprise administrator with authority over Actions policy, should:
 
+:::caution[Mode changes are not an all-stop]
+Changing a bundle variable cannot stop a run that has already started and does not prevent authorized manual dispatches. Disable Actions and cancel active runs when a complete stop is required.
+:::
+
 1. Open the control repository's **Settings > Actions > General** and disable Actions for the repository. An organization or enterprise administrator may instead apply an Actions policy that disables the repository.
 2. Cancel every queued or running orchestrator and worker run from the repository's **Actions** page. Disabling future execution does not replace canceling work that has already started.
 3. Revoke the GitHub App installation or PAT when credentials may be exposed or when repository access must be removed independently of Actions execution.
@@ -166,6 +209,23 @@ For unexpected writes, unsafe routing, excessive dispatch, or credential concern
 7. Revert or close safe outputs through normal repository procedures.
 8. Fix and compile the affected workflows.
 9. Resume with a one-repository staged run, then review, before returning to live.
+
+Capture enough evidence to reconstruct the boundary and the outcome:
+
+```yaml
+stopped_at: 2026-08-25T14:30:00Z
+central_repo: acme/central-agentic-ops
+bundle: optimization
+correlation_ids:
+	- optimization-2026-08-25-001
+affected_targets:
+	- acme/example-service
+safe_outputs:
+	- https://github.com/acme/example-service/issues/123
+credential_action: app-installation-revoked
+```
+
+Do not include tokens, private keys, or secret values in the incident record.
 
 If shared authentication or shared control caused the incident, perform the control-plane-wide emergency stop. Otherwise, preserve unaffected bundle operation.
 
@@ -213,6 +273,14 @@ A new worker should:
 ## Change Validation
 
 Control changes should be validated with the pinned minimum `gh-aw` version. Compile every executable workflow affected by shared imports, not only the directly edited file. Then check:
+
+```bash
+npm test
+npm run test:load
+npm run compile
+npm run docs:build
+git diff --check
+```
 
 - zero compile errors and warnings;
 - no duplicated workflow-local authentication blocks;

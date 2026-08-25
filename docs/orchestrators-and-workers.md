@@ -5,6 +5,19 @@ description: Design and govern bundle orchestrators and their bounded worker wor
 
 Use this page when reviewing a bundle or deciding where new behavior belongs. Orchestrators select and dispatch work; workers perform one bounded repository task and can only narrow the policy they receive.
 
+```text
+orchestrator                              worker
+------------                              ------
+discover candidates                       receive one target
+rank and cap selection   --dispatch-->     validate the control envelope
+resolve eligible workers                  analyze only that target
+summarize outcomes       <--result----     emit declared safe outputs
+```
+
+:::note[The ownership test]
+If behavior chooses *which repositories run*, it belongs in the orchestrator. If it decides *what to do in one selected repository*, it belongs in the worker.
+:::
+
 ## Orchestrator Authority
 
 The bundle orchestrator is the policy authority for a run. It:
@@ -33,6 +46,20 @@ A worker receives one target and performs one bounded mission. It must:
 
 The worker may apply stricter behavior than requested, such as returning no output when evidence is insufficient. It may never promote itself from staged to review or live.
 
+A worker receives control data shaped like:
+
+```yaml
+target_repo: acme/example-service
+safe_output_mode: review
+safe_output_repo: acme/central-agentic-ops-review
+preview_only: false
+correlation_id: dependabot-2026-08-25-001
+central_repo: acme/central-agentic-ops
+control_plane_run_url: https://github.com/acme/central-agentic-ops/actions/runs/123456
+```
+
+It does not receive a token, discovery query, or permission to dispatch another workflow.
+
 ## Worker Value
 
 Operational value is measured per worker, not per orchestrator or bundle. Dispatch counts, generated outputs, and model assessments do not prove that a worker attained its intended repository outcome.
@@ -40,6 +67,18 @@ Operational value is measured per worker, not per orchestrator or bundle. Dispat
 The catalog repository keeps frozen contracts under `.github/ops-values/<worker-stem>.sh`. Package manifests remain workflow-only while value evaluation is experimental, so neither these contracts nor the `aw-value` authoring and report-generation skill are installed into consumer repositories.
 
 A frozen function exposes its contract with `--definition`, scores evidence with `--metric`, and collects batched evidence with `--collect-batch`. Authoring new functions and generating reports remain catalog-maintenance tasks until the skill is ready to ship.
+
+```bash
+VALUE_FUNCTION=".github/ops-values/<worker-stem>.sh"
+
+"$VALUE_FUNCTION" --definition
+"$VALUE_FUNCTION" --metric < evidence.json
+"$VALUE_FUNCTION" --collect-batch < repositories.json
+```
+
+:::tip[Measure repository outcomes]
+Count an outcome only when accepted evidence satisfies the worker's frozen contract. A successful dispatch or generated suggestion is activity, not attained value.
+:::
 
 Apply the process independently to every worker in a bundle. Workers may receive different classifications because their outcomes and available history differ:
 
@@ -73,9 +112,27 @@ The effective worker mode is the less permissive of the requested bundle mode an
 
 `effective_mode = min(bundle_mode, worker_max_mode)`
 
+For example:
+
+```text
+bundle mode       = live
+worker max_mode   = review
+effective mode    = review
+```
+
 A manual dispatch may narrow the mode but must not exceed the worker ceiling. Review safe outputs use the manual `safe_output_repo` override when provided and otherwise use the current control-plane repository.
 
 Example: Optimization can be live while `optimization-ai-credit-optimizer` remains capped at review. The auditor can run live under the same orchestrator if its own ceiling permits it.
+
+```bash
+gh variable set CENTRAL_AGENTIC_OPS_OPTIMIZATION_OPTIMIZER_MAX_MODE \
+	--repo "acme/central-agentic-ops" \
+	--body "review"
+```
+
+:::caution[Ceilings only narrow]
+Raising a worker ceiling does not promote the bundle. Lowering it takes effect as an additional guard beneath scheduled and manual mode requests.
+:::
 
 ## When to Split Control
 

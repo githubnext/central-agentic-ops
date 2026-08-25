@@ -5,6 +5,10 @@ description: Install Central Agentic Ops and validate one bundle against one rep
 
 Use this guide to reach a safe first result: one installed bundle, one target repository, and one `staged` run that cannot write to GitHub. Keep the control-plane repository private throughout setup.
 
+:::caution[Keep the control plane private]
+The control repository holds credentials, rollout policy, and cross-repository operating records. Do not install Central Agentic Ops in a public repository.
+:::
+
 ## Before You Start
 
 You need:
@@ -35,6 +39,14 @@ Install the full catalog or one bundle into the private control-plane repository
 - shared authentication and fail-closed policy;
 - independent rollout settings that default to `staged`.
 
+For example, install the full catalog from a pinned release:
+
+```bash
+gh aw add-wizard githubnext/central-agentic-ops@<catalog-release>
+```
+
+To start with a smaller surface, replace the package name with a bundle such as `githubnext/central-agentic-ops/dependabot@<catalog-release>`.
+
 After installation, confirm that the generated orchestrator and worker workflows are present and enabled. Pages reporting is optional and is not installed by default.
 
 ## 3. Configure the Minimum
@@ -45,6 +57,21 @@ After installation, confirm that the generated orchestrator and worker workflows
 4. Keep `max_repos` at `1` for the first run.
 
 Use the [configuration reference](configuration.md) only when you need the exact variable, secret, or input name.
+
+:::tip[Use a deliberately boring first target]
+Choose a low-traffic repository with representative settings and no urgent maintenance work. A quiet target makes unexpected selection or output obvious.
+:::
+
+Example first-run profile:
+
+```yaml
+control_repository: acme/central-agentic-ops
+target_repo: acme/example-service
+allowed_owners: acme
+max_repos: 1
+rollout_percent: 100
+safe_output_mode: staged
+```
 
 ## 4. Run One Staged Check
 
@@ -60,6 +87,14 @@ Open the installed orchestrator in GitHub Actions and select **Run workflow**. S
 
 The run should select only the named target, dispatch eligible workers, and stage proposed safe outputs without GitHub API writes.
 
+```text
+manual dispatch
+	|
+	v
+select 1 repository --> dispatch eligible workers --> stage proposed outputs
+													  (no GitHub writes)
+```
+
 ## 5. Verify the Result
 
 Before moving beyond `staged`, confirm:
@@ -71,6 +106,10 @@ Before moving beyond `staged`, confirm:
 - AI Credit use and runtime are within the workflow limits.
 
 If any check fails, keep the bundle in `staged` and use [Monitor and recover](operations.md) to diagnose it.
+
+:::note[What success looks like]
+The first run is successful when it proves the boundary, even if the worker produces no recommendation. Correct target selection and zero writes matter more than finding work on this run.
+:::
 
 ## Next Steps
 

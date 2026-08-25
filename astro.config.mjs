@@ -17,6 +17,9 @@ export default defineConfig({
     starlight({
       title: "Central Agentic Ops",
       description: "Enterprise control planes for GitHub Agentic Workflows.",
+      markdown: {
+        processedDirs: ["."],
+      },
       plugins: [starlightThemeGalaxy()],
       components: {
         Banner: "./docs/components/ExperimentalBanner.astro",

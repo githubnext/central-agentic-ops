@@ -16,6 +16,26 @@ The control plane is designed to:
 - make every dispatched action attributable to a control-plane run;
 - fail closed when routing, credentials, or worker eligibility are incomplete.
 
+## Mental Model
+
+```text
+catalog release
+	|
+	v
+private control repository
+	|
+	+-- orchestrator: select, rank, limit, dispatch
+	|
+	+-- worker: inspect one target and emit declared safe outputs
+							   |
+							   v
+					 staged | review | live
+```
+
+:::note[Three records, three jobs]
+The catalog release proves what was installed. The control repository owns operating policy and credentials. The target authority file records consent for live mutation. None of these records replaces the others.
+:::
+
 ## Deployment Topologies
 
 Central Agentic Ops does not require a GitHub enterprise account. An organization or OSS maintainer can run one private organization-owned control repository for repositories in that organization. Enterprise deployment adds an enterprise-operated control repository for cross-organization AWs and may also use independent organization control repositories for organization-shared AWs. Because a GitHub enterprise account does not directly own repositories, its control repository is still hosted in a designated organization.
@@ -31,6 +51,10 @@ The execution topology is the same in every profile. A pinned package is install
 | **Enterprise** | One enterprise-operated control repository in a designated host organization, with optional organization runtimes | Explicit credential-scoped reach across organizations; organization runtimes retain local reach | Yes |
 
 For several organizations without GitHub Enterprise, keep credentials, target inventory, rollout, and kill switches organization-local. No relay or enterprise-level coordinator is required. Assign exactly one runtime as live mutation authority for each target and bundle.
+
+:::tip[Start with the smallest topology]
+If every target belongs to one organization, use one organization-owned control repository. Add an enterprise runtime only when governance and credential reach genuinely cross organization boundaries.
+:::
 
 A single control repository can address an explicitly named repository in another organization only when that owner is allowlisted and a credential authorized by that organization can perform the operation. The current runtime does not automatically discover across owners or mint and reconcile credentials across multiple organization installations, so do not treat ownership of several organizations or an enterprise account as an implicit cross-organization credential or inventory.
 
@@ -93,10 +117,10 @@ The target repository enforces its live mutation authority in `.github/central-a
 ```yaml
 version: 1
 bundles:
-	dependabot:
-		authority: acme/central-ops
-	optimization:
-		authority: acme/central-ops
+  dependabot:
+    authority: acme/central-ops
+  optimization:
+    authority: acme/central-ops
 ```
 
 Protect this file on the default branch with a ruleset and CODEOWNERS approval from the target repository owner. Missing, malformed, or mismatched authority fails closed in `live` before the agent starts. The file records consent and authority only; keep credentials, rollout modes, schedules, and runtime state in the control repository. Staged and review runs do not require it because they cannot mutate the target.
@@ -114,6 +138,10 @@ Repository-local workflow names cannot shadow central workers. Shared control re
 ## What This Does Not Do
 
 Central Agentic Ops controls the catalog workflows that participate in it. It defines their authentication, rollout, repository selection, dispatch, routing, and safe-output behavior. It is not a general enforcement boundary for all automation in an enterprise.
+
+:::caution[The control plane is not a universal policy boundary]
+Use GitHub rulesets, Actions policy, protected environments, CODEOWNERS, and credential scoping to govern automation outside participating catalog workflows.
+:::
 
 The control plane does not:
 
@@ -142,6 +170,8 @@ The orchestrator workflow is the rollout authority. worker workflows are enforce
 
 ## Execution Flow
 
+![A bounded control-plane batch fans out through bundle workers and repository routes, then consolidates run outcomes.](assets/control-plane-dispatch-fallback.svg)
+
 1. A schedule trigger or `workflow_dispatch` starts a bundle orchestrator workflow.
 2. The orchestrator workflow imports shared control with its bundle mode and review repository.
 3. Shared precomputation resolves enablement, routing, candidate repositories, and worker workflow availability into `/tmp/gh-aw/agent/control-precompute.json`.
@@ -169,6 +199,23 @@ Every worker workflow dispatch carries:
 
 Credentials are not part of this envelope. Each run resolves authentication through shared control.
 
+An effective dispatch envelope resembles:
+
+```yaml
+target_repo: acme/example-service
+safe_output_mode: review
+safe_output_repo: acme/central-agentic-ops-review
+preview_only: false
+correlation_id: optimization-2026-08-25-001
+central_repo: acme/central-agentic-ops
+control_plane_run_url: https://github.com/acme/central-agentic-ops/actions/runs/123456
+batch_label: optimization-cell-0-batch-0
+```
+
+:::danger[No credentials in dispatch]
+Never add an App key, PAT, installation token, or other secret to this envelope. Workers resolve authentication independently through shared control.
+:::
+
 ## Invariants
 
 - staged mode is the default mode.
@@ -190,6 +237,14 @@ Credentials are not part of this envelope. Each run resolves authentication thro
 ## Failure Posture
 
 The system should stop or reduce scope when it cannot establish a required fact:
+
+```text
+required fact available? -- yes --> continue within declared limits
+		  |
+		  no
+		  v
+fail, skip, or report incomplete -- never infer broader authority
+```
 
 - inaccessible review destination in review mode: emit `report_incomplete` rather than writing elsewhere;
 - unavailable or disabled worker: skip that worker;
