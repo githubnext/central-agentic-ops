@@ -1,0 +1,87 @@
+---
+import { Icon } from "@astrojs/starlight/components";
+import EditLink from "virtual:starlight/components/EditLink";
+import LastUpdated from "virtual:starlight/components/LastUpdated";
+import Pagination from "virtual:starlight/components/Pagination";
+---
+
+<footer class="site-footer sl-flex">
+  <div class="footer-meta sl-flex">
+    <EditLink />
+    <LastUpdated />
+  </div>
+  <Pagination />
+  <p class="attribution sl-flex">
+    Made with
+    <span class="sr-only">love</span>
+    <Icon name="heart" size="0.875rem" />
+    by
+    <a href="https://github.com/mnkiefer" rel="me">@mnkiefer</a>
+    <span aria-hidden="true">&middot;</span>
+    <span>2026</span>
+  </p>
+</footer>
+
+<style>
+  @layer starlight.components {
+    .site-footer {
+      flex-direction: column;
+      gap: 0.625rem;
+      margin-top: 0;
+      border-top: 1px solid color-mix(in srgb, var(--sl-color-gray-5) 52%, transparent);
+      padding-block: 0.5rem 0.375rem;
+      color: var(--sl-color-gray-3);
+      font-size: var(--sl-text-xs);
+    }
+
+    .footer-meta {
+      flex-wrap: wrap;
+      justify-content: space-between;
+      gap: 0.5rem 2rem;
+      margin: 0;
+    }
+
+    .footer-meta:not(:has(*)),
+    .site-footer :global(.pagination-links:not(:has(a))) {
+      display: none !important;
+    }
+
+    .site-footer :global(.pagination-links) {
+      gap: 0.75rem;
+      margin: 0 !important;
+    }
+
+    .site-footer :global(.pagination-links a) {
+      padding: 0.625rem !important;
+      box-shadow: none;
+    }
+
+    .site-footer :global(.pagination-links .link-title) {
+      font-size: var(--sl-text-base) !important;
+    }
+
+    .attribution {
+      align-items: center;
+      align-self: center;
+      gap: 0.35rem;
+      margin: 0;
+      line-height: 1.4;
+    }
+
+    .attribution :global(svg) {
+      color: #c06eff;
+    }
+
+    .attribution a {
+      color: #58a6ff;
+      font-weight: 600;
+      text-decoration: none;
+    }
+
+    .attribution a:hover {
+      color: #79c0ff;
+      text-decoration: underline;
+      text-underline-offset: 0.2em;
+    }
+  }
+</style>

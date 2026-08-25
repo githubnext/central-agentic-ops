@@ -1,0 +1,5 @@
+.site-title {
+  background: none !important;
+  color: var(--sl-color-white) !important;
+  -webkit-text-fill-color: var(--sl-color-white) !important;
+}

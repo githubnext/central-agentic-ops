@@ -7,7 +7,7 @@ Run trusted agentic operations across your repository fleet from one private con
 
 Central Agentic Ops packages reusable orchestrators and focused workers so platform teams can automate repository operations without copying workflows into every repository.
 
-- **Reach more repositories:** deterministically discover and batch inventories of up to 100,000 repositories while keeping each run bounded.
+- **Reach more repositories:** deterministically discover and batch inventories of 100,000+ repositories while keeping each run bounded.
 - **Roll out with confidence:** start in `staged`, review proposed outcomes, and promote each bundle independently.
 - **Keep work accountable:** every worker stays scoped to one repository and links its outcome to the originating control-plane run.
 

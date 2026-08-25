@@ -6,8 +6,8 @@ editUrl: false
 prev: false
 next: false
 hero:
-  title: Agentic operations. At scale. One control plane.
-  tagline: Coordinate trusted workflows across organizations and thousands of repositories, with bounded execution, staged promotion, and traceable outcomes built in.
+  title: Human Agentic operations. At scale. Centrally managed.
+  tagline: Run reusable operations in one private control plane. Central agents inspect your target repositories and deliver outputs safely where they need to be.
   actions:
     - text: Get started
       link: /central-agentic-ops/getting-started/

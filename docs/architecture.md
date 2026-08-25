@@ -168,9 +168,13 @@ These controls are complementary: Central Agentic Ops supplies orchestration and
 
 The orchestrator workflow is the rollout authority. worker workflows are enforcement points: they consume the dispatched control envelope and must stay within it.
 
-## Execution Flow
+## How It Works
 
-![A bounded control-plane batch fans out through bundle workers and repository routes, then consolidates run outcomes.](assets/control-plane-dispatch-fallback.svg)
+The execution boundary is the key architectural fact: orchestrators and workers run from the private central control repository. A worker checks out and analyzes one remote target at a time. Target repositories receive only declared safe outputs; they do not receive or run the control-plane workflow definitions.
+
+![The control plane contains rollout policy and operation packages. Central orchestrators and workers inspect remote targets, emit declared safe outputs across the repository boundary, and correlate results with the originating central run.](assets/central-execution-how-it-works.svg)
+
+### Execution Flow
 
 1. A schedule trigger or `workflow_dispatch` starts a bundle orchestrator workflow.
 2. The orchestrator workflow imports shared control with its bundle mode and review repository.

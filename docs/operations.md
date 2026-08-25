@@ -121,6 +121,18 @@ Pages is not part of the core catalog. After verifying that the control reposito
 gh aw add-wizard githubnext/central-agentic-ops/pages@<catalog-release>
 ```
 
+:::note[Do not create `REPORT_PAGES_TOKEN`]
+The Pages bundle does not use a `REPORT_PAGES_TOKEN` secret. Its build job reads report data with the automatic `github.token` and explicit job-scoped permissions. Its deploy job uses GitHub Pages OIDC with `pages: write` and `id-token: write`. If an installed workflow requests `REPORT_PAGES_TOKEN`, it did not come from the current catalog release and should be reviewed or updated rather than supplied with a PAT.
+:::
+
+:::caution[The report can contain private repository data]
+The generated site includes data from its private control-plane repository, including repository identity, issue and pull request content, comments, artifact-derived summaries, workflow names and states, and run links. A private source repository does not by itself make its Pages site private. Configure Pages access control for the intended audience before the first deployment, and do not use this bundle when that boundary is unavailable.
+
+Organization discovery excludes unrelated private repositories by default. `REPORT_INCLUDE_PRIVATE` is a boolean flag, not a credential, and there is no `REPORT_INCLUDE_TOKEN`. The current catalog workflow does not set the flag or accept a cross-repository credential, so it cannot discover unrelated private repositories out of the box.
+
+A deliberate custom extension should mint a short-lived GitHub App token installed only on the selected repositories and grant `Metadata: read`, `Contents: read`, and `Actions: read`. The optional organization audit-log health query requires a compatible user token or fine-grained PAT with organization `Administration: read`; discovery continues without that health data when access is unavailable. Do not use a broad classic PAT.
+:::
+
 The add-on installs the following report components in the control-plane repository:
 
 - `.github/workflows/pages.yml`, the conventional build and deployment workflow;

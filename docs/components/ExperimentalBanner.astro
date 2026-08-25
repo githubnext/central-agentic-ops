@@ -4,17 +4,30 @@
 
 <style>
   .experimental-banner {
+    position: relative;
+    z-index: 10;
+    margin-block-start: 0.75rem;
     padding: 0.45rem var(--sl-content-pad-x);
-    border-block: 1px solid var(--sl-color-red-high);
-    background: var(--sl-color-red-low);
-    color: var(--sl-color-text);
+    border-block: 1px solid #80506a;
+    background: #321f2a;
+    color: #f7dbe8;
     font-size: var(--sl-text-sm);
     line-height: 1.35;
     text-align: center;
   }
 
   .experimental-banner strong {
-    color: var(--sl-color-red-high);
+    color: #ffafd3;
+  }
+
+  :global(:root[data-theme="light"]) .experimental-banner {
+    border-color: #d986ac;
+    background: #f7dbe8;
+    color: #4b1830;
+  }
+
+  :global(:root[data-theme="light"]) .experimental-banner strong {
+    color: #861f51;
   }
 
   @media (forced-colors: active) {
