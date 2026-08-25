@@ -7,7 +7,7 @@ prev: false
 next: false
 hero:
   title: Human Agentic operations. At scale. Centrally managed.
-  tagline: Run reusable operations in one private control plane. Central agents inspect your target repositories and deliver outputs safely where they need to be.
+  tagline: Coordinate trusted operations across organizations, with bounded execution, staged promotion, and traceable outcomes built in.
   actions:
     - text: Get started
       link: /central-agentic-ops/getting-started/

@@ -3,3 +3,15 @@
   color: var(--sl-color-white) !important;
   -webkit-text-fill-color: var(--sl-color-white) !important;
 }
+
+@media (max-width: 22rem) {
+  .site-title {
+    gap: 0.5rem;
+    font-size: 0.875rem;
+  }
+
+  .site-title img {
+    width: 2rem;
+    height: 2rem;
+  }
+}
