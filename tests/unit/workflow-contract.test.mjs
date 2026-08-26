@@ -671,6 +671,10 @@ test("Pages is an explicit least-privilege add-on", () => {
   assert.ok(!existsSync(join(root, "pages", "aw.yml")), "Pages must not masquerade as an Agentic Workflow package");
   assert.match(pagesWorkflow, /pages: write/);
   assert.match(pagesWorkflow, /id-token: write/);
+  assert.match(pagesWorkflow, /cache: false/);
+  assert.match(pagesWorkflow, /go clean -cache -modcache/);
+  assert.doesNotMatch(pagesWorkflow, /pages-aic|REPORT_AIC_CACHE/);
+  assert.doesNotMatch(pagesWorkflow, /workflow_run|github\.ref_name/);
   assert.match(pagesWorkflow, /REPORT_VALUE_CACHE: \.cache\/pages-operational-values\/observations\.json/);
   assert.match(pagesWorkflow, /Save operational-value observation cache/);
   assert.match(deployedWorkflows, /const capabilities = await workflowCapabilities\(item\.repository, item\.path\)/);

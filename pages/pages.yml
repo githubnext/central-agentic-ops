@@ -14,7 +14,6 @@ concurrency:
 
 jobs:
   build:
-    if: (github.event_name != 'workflow_run' || github.event.workflow_run.head_branch == github.event.repository.default_branch) && (github.event_name != 'push' || github.ref_name == github.event.repository.default_branch)
     runs-on: ubuntu-latest
     permissions:
       actions: read
@@ -61,7 +60,7 @@ jobs:
         uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
         with:
           go-version-file: .cache/gh-aw-operational-value-source/go.mod
-          cache-dependency-path: .cache/gh-aw-operational-value-source/go.sum
+          cache: false
 
       - name: Build operational-value replay runtime
         working-directory: .cache/gh-aw-operational-value-source
@@ -69,14 +68,7 @@ jobs:
           mkdir -p "$RUNNER_TEMP/gh-aw-operational-value"
           go build -ldflags "-s -w -X main.version=v0.87.6" \
             -o "$RUNNER_TEMP/gh-aw-operational-value/gh-aw" ./cmd/gh-aw
-
-      - name: Restore AI Credit usage cache
-        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
-        with:
-          path: .cache/pages-aic
-          key: ${{ runner.os }}-pages-aic-${{ github.repository }}-${{ github.run_id }}
-          restore-keys: |
-            ${{ runner.os }}-pages-aic-${{ github.repository }}-
+          go clean -cache -modcache
 
       - name: Restore operational-value observation cache
         uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
@@ -89,7 +81,6 @@ jobs:
       - name: Collect AI Credit usage
         env:
           GH_TOKEN: ${{ github.token }}
-          REPORT_AIC_CACHE: .cache/pages-aic
           REPORT_AIC_CONCURRENCY: "3"
           REPORT_AIC_USAGE: ${{ runner.temp }}/aic-usage.json
           REPORT_DEPLOYED_WORKFLOWS: ${{ runner.temp }}/deployed-workflows.json
@@ -104,13 +95,6 @@ jobs:
           REPORT_VALUE_CACHE: .cache/pages-operational-values/observations.json
           REPORT_VALUE_CONCURRENCY: "3"
         run: node .github/scripts/pages-report/operational-values.mjs
-
-      - name: Save AI Credit usage cache
-        if: always()
-        uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
-        with:
-          path: .cache/pages-aic
-          key: ${{ runner.os }}-pages-aic-${{ github.repository }}-${{ github.run_id }}
 
       - name: Save operational-value observation cache
         if: always()
@@ -137,7 +121,6 @@ jobs:
           path: _site
 
   deploy:
-    if: (github.event_name != 'workflow_run' || github.event.workflow_run.head_branch == github.event.repository.default_branch) && (github.event_name != 'push' || github.ref_name == github.event.repository.default_branch)
     needs: build
     runs-on: ubuntu-latest
     permissions:
