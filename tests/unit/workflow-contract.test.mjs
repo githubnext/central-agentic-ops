@@ -675,3 +675,27 @@ test("Pages is an explicit least-privilege add-on", () => {
     assert.match(pagesWorkflow, new RegExp(`\\.github/scripts/pages-report/${assetName.replace(".", "\\.")}`));
   }
 });
+
+test("Pages report SVGs use theme colors in light and dark modes", () => {
+  const report = readFileSync(join(root, ".github", "scripts", "pages-report", "report.mjs"), "utf8");
+  const darkTheme = report.match(/:root \{([\s\S]*?)\n\}/)?.[1];
+  const lightTheme = report.match(/@media \(prefers-color-scheme: light\) \{\s*:root \{([\s\S]*?)\n  \}/)?.[1];
+
+  assert.ok(darkTheme, "missing default dark theme");
+  assert.ok(lightTheme, "missing light theme");
+
+  for (const [name, svgClass] of [
+    ["success", "chart-successful"],
+    ["danger", "chart-failed"],
+    ["cancelled", "chart-cancelled"],
+  ]) {
+    const variable = new RegExp(`--${name}: #[0-9a-f]{6};`, "i");
+    assert.match(darkTheme, variable);
+    assert.match(lightTheme, variable);
+    assert.match(report, new RegExp(`\\.${svgClass} \\{ stroke: var\\(--${name}\\);`));
+  }
+
+  assert.match(report, /<svg class="sidebar-brand-mark"[\s\S]*?fill="currentColor"/);
+  assert.match(darkTheme, /--fg: #[0-9a-f]{6};/i);
+  assert.match(lightTheme, /--fg: #[0-9a-f]{6};/i);
+});
