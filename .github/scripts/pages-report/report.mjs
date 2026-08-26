@@ -442,23 +442,26 @@ function modeSummary(recordsForBundle, mode) {
 
 function modeTabs(bundle, selectedMode) {
   const tabs = [
-    ["review", "Review", "Proposals"],
-    ["live", "Live", "Production"],
+    ["all", "All", `${bundle.id}-reports.html`],
+    ["review", "Review", `${bundle.id}-reports-review.html`],
+    ["live", "Live", `${bundle.id}-reports-live.html`],
   ];
-  return `<nav class="mode-tabs" aria-label="Output mode">${tabs.map(([mode, label, detail]) => `<a href="${bundle.id}-${mode}.html"${selectedMode === mode ? ' aria-current="page"' : ""}><span>${label}</span><small>${detail}</small></a>`).join("")}</nav>`;
+  return `<nav class="mode-tabs" aria-label="Filter reports by mode">${tabs.map(([mode, label, href]) => `<a href="${href}"${selectedMode === mode ? ' aria-current="page"' : ""}>${label}</a>`).join("")}</nav>`;
 }
 
 function overviewModeTabs(selectedMode) {
   const tabs = [
-    ["review", "Review", "Proposals", "review.html"],
-    ["live", "Live", "Production", "live.html"],
+    ["all", "All", "index.html"],
+    ["review", "Review", "review.html"],
+    ["live", "Live", "live.html"],
   ];
-  return `<nav class="mode-tabs" aria-label="Output mode">${tabs.map(([mode, label, detail, href]) => `<a href="${href}"${selectedMode === mode ? ' aria-current="page"' : ""}><span>${label}</span><small>${detail}</small></a>`).join("")}</nav>`;
+  return `<nav class="mode-tabs" aria-label="Filter activity by mode">${tabs.map(([mode, label, href]) => `<a href="${href}"${selectedMode === mode ? ' aria-current="page"' : ""}>${label}</a>`).join("")}</nav>`;
 }
 
 function bundleTabs(bundle, selectedView) {
   const tabs = [
-    ["reports", "Reports", "issue", `../operations/${bundle.id}.html`],
+    ["workflows", "Workflows", "workflow", `../operations/${bundle.id}.html`],
+    ["reports", "Reports", "issue", `../operations/${bundle.id}-reports.html`],
     ["insights", "Insights", "graph", `../insights/${bundle.id}.html`],
   ];
   return `<nav class="bundle-tabs" aria-label="${escapeHtml(bundle.name)} views">${tabs.map(([view, label, icon, href]) => `<a href="${href}"${selectedView === view ? ' aria-current="page"' : ""}>${octicon(icon)}<span>${label}</span></a>`).join("")}</nav>`;
@@ -467,7 +470,8 @@ function bundleTabs(bundle, selectedView) {
 function repositoryTabs(repositoryName, selectedView) {
   const pageName = repositoryPageName(repositoryName);
   const tabs = [
-    ["reports", "Reports", "issue", `${pageName}.html`],
+    ["workflows", "Workflows", "workflow", `${pageName}.html`],
+    ["reports", "Reports", "issue", `${pageName}-reports.html`],
     ["insights", "Insights", "graph", `${pageName}-insights.html`],
   ];
   return `<nav class="bundle-tabs" aria-label="${escapeHtml(repositoryName)} views">${tabs.map(([view, label, icon, href]) => `<a href="${href}"${selectedView === view ? ' aria-current="page"' : ""}>${octicon(icon)}<span>${label}</span></a>`).join("")}</nav>`;
@@ -550,13 +554,7 @@ function layout({ title, description, content, nested = false, navigation = "", 
   const operationsHref = `${root}operations/index.html`;
   const overviewCurrent = activeSection === "overview" ? ' aria-current="page"' : "";
   const repositoriesCurrent = activeSection === "repositories" ? ' aria-current="page"' : "";
-  const operationsCurrent = activeSection === "operations" ? ' aria-current="page"' : "";
-  const workflowsCurrent = activeSection === "workflows" ? ' aria-current="page"' : "";
-  const bundleLinks = bundleDefinitions.map((bundle) => {
-    const current = activeBundle === bundle.id ? ' aria-current="page"' : "";
-    const icon = bundle.id.includes("dependabot") ? "dependabot" : "meter";
-    return `<a href="${root}operations/${bundle.id}.html"${current}>${octicon(icon)}<span>${escapeHtml(bundle.name)}</span></a>`;
-  }).join("\n");
+  const operationsCurrent = activeSection === "operations" || activeBundle ? ' aria-current="page"' : "";
   const freshness = `<time class="freshness" datetime="${escapeHtml(generatedAt)}">Last updated ${escapeHtml(formatDate(generatedAt))}</time>`;
   const repositoryLink = `<a class="repository-link" href="https://github.com/${escapeHtml(repository)}" aria-label="View ${escapeHtml(repository)} on GitHub" title="View ${escapeHtml(repository)} on GitHub">${octicon("mark-github")}</a>`;
   const reportActions = `<div class="report-actions">${freshness}${repositoryLink}</div>`;
@@ -579,13 +577,9 @@ function layout({ title, description, content, nested = false, navigation = "", 
     <aside class="org-sidebar" aria-label="Central Agentic Ops navigation">
       <a class="sidebar-brand" href="${root}">${agenticWorkflowMark()}<span>Central Agentic Ops</span></a>
       <nav class="primary-nav" aria-label="Primary">
-        <a href="${root}"${overviewCurrent}>${octicon("server")}<span>Control plane</span></a>
+        <a href="${root}"${overviewCurrent}>${octicon("server")}<span>Overview</span></a>
         <a href="${root}repositories/"${repositoriesCurrent}>${octicon("repo")}<span>Repositories</span></a>
-        <div class="nav-family">
-          <a class="nav-parent" href="${operationsHref}"${operationsCurrent}>${octicon("package")}<span>Operations</span></a>
-          <div class="nav-children">${bundleLinks}</div>
-        </div>
-        <a href="${root}workflows/"${workflowsCurrent}>${octicon("workflow")}<span>Workflows</span></a>
+        <a href="${operationsHref}"${operationsCurrent}>${octicon("package")}<span>Operations</span></a>
       </nav>
     </aside>
     <div class="app-main">
@@ -597,12 +591,12 @@ function layout({ title, description, content, nested = false, navigation = "", 
             <p class="lede">${escapeHtml(description)}</p>
           </div>
         </header>
-        ${activeBundle || ["overview", "workflows", "repositories"].includes(activeSection) ? "" : `<div class="toolbar${overviewMode ? " overview-toolbar" : ""}" aria-label="Report controls">
+        ${activeBundle || overviewMode || ["overview", "workflows", "repositories"].includes(activeSection) ? "" : `<div class="toolbar" aria-label="Report controls">
           ${overviewMode ? "" : `<div class="filter-control"><span class="scope-label">${octicon("issue")}<strong>Filter</strong><span class="count-badge">2</span></span><code>mode:review mode:live</code><span class="search-control" aria-hidden="true">${octicon("eye")}</span></div>`}
           ${overviewMode ? "" : '<span class="scope-period">All recorded</span>'}
           <a class="export-control" href="${root}records.json">Export JSON</a>
         </div>`}
-        ${overviewMode ? `<p class="scope-note">Managed operations from ${escapeHtml(repository)}.</p>` : nested || ["overview", "workflows", "repositories"].includes(activeSection) ? "" : '<p class="scope-note">Results are based on the workflows and durable outputs available in this repository.</p>'}
+        ${overviewMode || nested || ["overview", "workflows", "repositories"].includes(activeSection) ? "" : '<p class="scope-note">Results are based on the workflows and durable outputs available in this repository.</p>'}
         <div class="report-body">${content}</div>
       </main>
       <footer>Generated deterministically from GitHub repository data.</footer>
@@ -742,7 +736,7 @@ function summarizeRuns(recordsForMode) {
   };
 }
 
-const modeLabels = { review: "Review", live: "Live" };
+const modeLabels = { all: "All", review: "Review", live: "Live" };
 const trendDays = Array.from({ length: 30 }, (_, index) => {
   const date = new Date(generatedAt);
   date.setUTCHours(0, 0, 0, 0);
@@ -846,7 +840,7 @@ function bundleUtilization(mode, bundle) {
     completeAttemptAllowance: workflows.reduce((total, workflow) => total + workflow.maxAiCredits, 0),
   };
   for (const run of aicUsage.runs || []) {
-    if (run.repository !== repository || run.mode !== mode) continue;
+    if (run.repository !== repository || (mode !== "all" && run.mode !== mode)) continue;
     const workflow = byPath.get(run.workflowPath) || byName.get(String(run.workflowName || "").toLowerCase());
     if (!workflow) continue;
     utilization.used += Number(run.aic) || 0;
@@ -878,7 +872,7 @@ function bundleUtilizationPanel(mode) {
       ? `${bundle.name}: no utilization available`
       : `${bundle.name}: ${formatAic(utilization.used)} of ${formatAic(utilization.allowed)} AI Credits used, ${formatAic(ratioPercent)} percent`;
     return `<article class="bundle-utilization-item utilization-${status}">
-      <header><a href="${bundle.id}-${mode}.html">${escapeHtml(bundle.name)}</a><strong>${escapeHtml(value)}</strong></header>
+      <header><a href="${bundle.id}.html">${escapeHtml(bundle.name)}</a><strong>${escapeHtml(value)}</strong></header>
       <div class="utilization-track" role="img" aria-label="${escapeHtml(aria)}"><span style="width:${meterPercent.toFixed(2)}%"></span></div>
       <p>${escapeHtml(detail)}${escapeHtml(coverageNote)}</p>
       <small>${formatAic(utilization.completeAttemptAllowance)} AIC allowance per complete bundle attempt</small>
@@ -896,7 +890,7 @@ function overviewTable(mode, modeRecords) {
     const latest = bundleRecords[0];
     const runs = summarizeRuns(bundleRecords);
     const inventoryWarnings = (bundle.compiled ? 0 : 1) + bundle.missingWorkers.length;
-    return `<tr><th scope="row"><a href="${bundle.id}-${mode}.html">${escapeHtml(bundle.name)}</a></th><td>${runs.total}</td><td>${runs.successful}</td><td>${runs.failed}</td><td>${runs.warnings}</td><td>${inventoryWarnings}</td><td>${formatAic(runs.aic)}</td><td>${escapeHtml(latest ? formatDate(latest.updatedAt) : "No outputs yet")}</td></tr>`;
+    return `<tr><th scope="row"><a href="${bundle.id}.html">${escapeHtml(bundle.name)}</a></th><td>${runs.total}</td><td>${runs.successful}</td><td>${runs.failed}</td><td>${runs.warnings}</td><td>${inventoryWarnings}</td><td>${formatAic(runs.aic)}</td><td>${escapeHtml(latest ? formatDate(latest.updatedAt) : "No outputs yet")}</td></tr>`;
   }).join("\n");
   return `<section class="impact-analysis" aria-labelledby="operations-heading">
   <h2 id="operations-heading">${modeLabels[mode]} output by operation</h2>
@@ -909,8 +903,8 @@ function overviewTable(mode, modeRecords) {
 
 function operationsOverviewContent(mode) {
   const windowStart = trendDays[0].getTime();
-  const modeRecords = reportRecords.filter((record) => record.mode === mode && new Date(record.createdAt).getTime() >= windowStart);
-  return `${overviewModeTabs(mode)}<div class="overview-section-heading"><h2>Control-plane activity</h2><p>Runs and durable outputs from operations managed by this repository.</p></div>${overviewMetrics(mode, modeRecords)}${overviewTable(mode, modeRecords)}${overviewTrend(mode, modeRecords)}${bundleUtilizationPanel(mode)}`;
+  const modeRecords = reportRecords.filter((record) => (mode === "all" || record.mode === mode) && new Date(record.createdAt).getTime() >= windowStart);
+  return `${overviewModeTabs(mode)}${bundleUtilizationPanel(mode)}${overviewTrend(mode, modeRecords)}${overviewMetrics(mode, modeRecords)}${overviewTable(mode, modeRecords)}`;
 }
 
 function formatAic(value) {
@@ -1052,7 +1046,7 @@ await Promise.all([
   mkdir(path.join(outputDirectory, "workflows"), { recursive: true }),
 ]);
 await writeFile(path.join(outputDirectory, "index.html"), layout({
-  title: "Control plane",
+  title: "Overview",
   description: "Managed operations, execution health, and items requiring attention.",
   content: deployedWorkflowContent("overview"),
   activeSection: "overview",
@@ -1069,7 +1063,8 @@ await writeFile(path.join(outputDirectory, "workflows", "index.html"), layout({
   description: `Search and inspect repository-owned GitHub Agentic Workflows across ${dashboardScope.description}.`,
   content: deployedWorkflowContent("workflows"),
   nested: true,
-  activeSection: "workflows",
+  navigation: '<nav aria-label="Report navigation"><div class="shell"><a href="../repositories/">Repositories</a><span aria-current="page">All workflows</span></div></nav>',
+  activeSection: "repositories",
 }));
 
 function deployedWorkflowContent(view) {
@@ -1109,8 +1104,10 @@ function deployedWorkflowContent(view) {
     ${attentionContent(workflows, repositories, health, spend)}
     ${operationPortfolioContent()}
   </div>`;
-  const repositoryView = `${repositoryHealthContent(repositories, deployedInventory.runHealth?.available, repositoryLinkPrefix)}
-  ${contributionSpendContent(spend, repositoryLinkPrefix)}`;
+  const workflowCatalogHref = view === "repositories" ? "../workflows/" : "workflows/";
+  const repositoryView = `${scope}
+  ${contributionSpendContent(spend, repositoryLinkPrefix)}
+  ${repositoryHealthContent(repositories, deployedInventory.runHealth?.available, repositoryLinkPrefix, workflowCatalogHref)}`;
   const workflowCatalog = `<section class="deployed-workflows" id="workflow-catalog" aria-labelledby="deployed-workflows-heading">
     <div class="section-heading"><div><span class="scope-kicker">Inventory</span><h2 id="deployed-workflows-heading">Agentic workflows</h2><p>Search all repository-owned authored workflows. Managed-operation membership is shown as workflow metadata.</p></div><strong>${formatCount(workflows.length)} workflows</strong></div>
     <details class="catalog-disclosure" open>
@@ -1162,7 +1159,7 @@ function deployedWorkflowContent(view) {
     apply();
   })();
   </script>`;
-  if (view === "repositories") return `${repositoryView}${scope}`;
+  if (view === "repositories") return repositoryView;
   if (view === "workflows") return workflowCatalog;
   return `${controlPlane}${priorities}`;
 }
@@ -1186,7 +1183,6 @@ function controlPlaneStatusContent(workflows, coverage, repositories, health, he
   const managedWorkflows = bundleDefinitions.reduce((total, bundle) => total + bundleCapacityWorkflows(bundle).length, 0);
   const inventoryWarnings = bundleDefinitions.reduce((total, bundle) => total + (bundle.compiled ? 0 : 1) + bundle.missingWorkers.length, 0);
   const coverageGap = !deployedInventory.includePrivate || !runHealthAvailable || !deployedInventory.runHealth.complete || !spend.available || !spend.complete;
-  const attentionSignals = Number(health.failed > 0) + Number(disabled > 0) + Number(health.pending > 0) + Number(coverageGap);
   const failureRate = health.runs > 0 ? health.failed / health.runs : 0;
   const otherRuns = Math.max(0, health.runs - health.successful - health.failed - health.pending);
   const percent = (value) => health.runs > 0 ? `${(value / health.runs * 100).toFixed(2)}%` : "0%";
@@ -1214,7 +1210,6 @@ function controlPlaneStatusContent(workflows, coverage, repositories, health, he
         <span class="control-plane-state-icon">${octicon(state.icon)}</span>
         <div><span class="scope-kicker">Control plane · ${escapeHtml(dashboardScope.label)}</span><h2 id="control-plane-heading">${state.label}</h2><p>${escapeHtml(summary)}</p></div>
       </div>
-      <a class="attention-link" href="#attention-heading"><strong>${formatCount(attentionSignals)}</strong><span>attention signal${attentionSignals === 1 ? "" : "s"}</span></a>
     </header>
     <dl class="control-plane-vitals">
       <div><dt>Managed operations</dt><dd>${formatCount(bundleDefinitions.length)}</dd><p>${formatCount(managedWorkflows)} worker workflow${managedWorkflows === 1 ? "" : "s"}</p></div>
@@ -1271,9 +1266,9 @@ function attentionContent(workflows, repositories, health, spend) {
   if (!spend.available) dataGaps.push("AIC telemetry is unavailable");
   else if (!spend.complete) dataGaps.push("AIC telemetry is partial");
   const items = [];
-  if (health.failed > 0) items.push(`<li class="attention-critical">${octicon("issue")}<div><strong>${formatCount(health.failed)} failed runs</strong><span>Across ${formatCount(failureRepositories.length)} repositor${failureRepositories.length === 1 ? "y" : "ies"} in the current window</span></div><a href="repositories/">Review</a></li>`);
-  if (disabled.length > 0) items.push(`<li>${octicon("eye")}<div><strong>${formatCount(disabled.length)} disabled workflows</strong><span>Repository-owned workflows not currently active</span></div><a href="workflows/">Inspect</a></li>`);
-  if (health.pending > 0) items.push(`<li>${octicon("play")}<div><strong>${formatCount(health.pending)} runs in progress</strong><span>Pending completion in the current run window</span></div><a href="repositories/">Track</a></li>`);
+  if (health.failed > 0) items.push(`<li class="attention-action attention-critical"><a class="attention-item-link" href="repositories/">${octicon("issue")}<div><strong>${formatCount(health.failed)} failed runs</strong><span>Across ${formatCount(failureRepositories.length)} repositor${failureRepositories.length === 1 ? "y" : "ies"} in the current window</span></div></a></li>`);
+  if (disabled.length > 0) items.push(`<li class="attention-action"><a class="attention-item-link" href="workflows/">${octicon("eye")}<div><strong>${formatCount(disabled.length)} disabled workflows</strong><span>Repository-owned workflows not currently active</span></div></a></li>`);
+  if (health.pending > 0) items.push(`<li class="attention-action"><a class="attention-item-link" href="repositories/">${octicon("play")}<div><strong>${formatCount(health.pending)} runs in progress</strong><span>Pending completion in the current run window</span></div></a></li>`);
   if (dataGaps.length > 0) items.push(`<li>${octicon("codescan")}<div><strong>Coverage needs context</strong><span>${escapeHtml(dataGaps.join("; "))}</span></div></li>`);
   if (items.length === 0) items.push(`<li>${octicon("check-circle")}<div><strong>No immediate attention items</strong><span>No failures, disabled workflows, pending runs, or coverage gaps observed</span></div></li>`);
   return `<section class="attention-panel" aria-labelledby="attention-heading"><header><div><span class="scope-kicker">Act now</span><h2 id="attention-heading">Needs attention</h2></div><strong>${formatCount(items.length)}</strong></header><ul>${items.join("")}</ul></section>`;
@@ -1287,13 +1282,12 @@ function operationPortfolioContent() {
     return `<article class="operation-card">
       <header><div>${octicon(bundle.id.includes("dependabot") ? "dependabot" : "meter")}<a href="operations/${escapeHtml(bundle.id)}.html">${escapeHtml(bundle.name)}</a></div>${modeIndicator(mode)}</header>
       <dl><div><dt>Workers</dt><dd>${formatCount(bundle.workers.length)}</dd></div><div><dt>AIC allowance</dt><dd>${formatAic(capacity)}</dd></div><div><dt>Inventory</dt><dd class="${warnings ? "text-attention" : "text-success"}">${warnings ? `${warnings} warning${warnings === 1 ? "" : "s"}` : "Ready"}</dd></div></dl>
-      <footer><a href="operations/${escapeHtml(bundle.id)}.html">Reports</a><a href="insights/${escapeHtml(bundle.id)}.html">Insights</a></footer>
     </article>`;
   }).join("");
-  return `<section class="operation-portfolio" aria-labelledby="operation-portfolio-heading"><header><div><span class="scope-kicker">Control plane</span><h2 id="operation-portfolio-heading">Managed operations</h2></div><a href="operations/index.html">View activity</a></header><div class="operation-card-list">${cards || '<p class="empty">No managed operations discovered.</p>'}</div></section>`;
+  return `<section class="operation-portfolio" aria-labelledby="operation-portfolio-heading"><header><div><span class="scope-kicker">Control plane</span><h2 id="operation-portfolio-heading">Managed operations</h2></div></header><div class="operation-card-list">${cards || '<p class="empty">No managed operations discovered.</p>'}</div></section>`;
 }
 
-function repositoryHealthContent(repositories, available, repositoryLinkPrefix = "repositories/") {
+function repositoryHealthContent(repositories, available, repositoryLinkPrefix = "repositories/", workflowCatalogHref = "workflows/") {
   const rows = repositories.map((entry) => {
     const failureRate = entry.health.runs > 0 ? entry.health.failed / entry.health.runs : null;
     const status = entry.health.failed > 0
@@ -1310,7 +1304,7 @@ function repositoryHealthContent(repositories, available, repositoryLinkPrefix =
     return `<tr><th scope="row"><a href="${repositoryLinkPrefix}${escapeHtml(repositoryPageName(entry.repository))}.html">${escapeHtml(entry.repository)}</a></th><td>${formatCount(entry.workflows)}</td><td>${formatCount(entry.reports)}</td><td>${formatCount(entry.evaluatedWorkflows)}</td><td>${available ? formatCount(entry.health.runs) : "—"}</td><td><div class="failure-rate"><strong>${available && failureRate !== null ? new Intl.NumberFormat("en", { style: "percent", maximumFractionDigits: 1 }).format(failureRate) : "—"}</strong><span>${available ? `${formatCount(entry.health.failed)} failed` : "Unavailable"}</span></div></td><td>${formatAic(entry.aiCredits)}</td><td>${status}</td></tr>`;
   }).join("");
   return `<section class="repository-health" id="repository-health" aria-labelledby="repository-health-heading">
-    <div class="section-heading"><div><span class="scope-kicker">Repository view</span><h2 id="repository-health-heading">Activity by repository</h2><p>Repository-local execution health and all attributed operation or local-workflow outcomes.</p></div><span>${formatCount(repositories.length)} repositories</span></div>
+    <div class="section-heading"><div><span class="scope-kicker">Repository view</span><h2 id="repository-health-heading">Activity by repository</h2><p>Repository-local execution health and all attributed operation or local-workflow outcomes.</p></div><span>${formatCount(repositories.length)} repositories · <a href="${workflowCatalogHref}">Search all workflows</a></span></div>
     <div class="table-region" role="region" aria-labelledby="repository-health-heading" tabindex="0"><table><thead><tr><th scope="col">Repository</th><th scope="col">Local AWs</th><th scope="col">Reports</th><th scope="col">Evaluated AWs</th><th scope="col">Local runs</th><th scope="col">Failure rate</th><th scope="col">Local AIC</th><th scope="col">Status</th></tr></thead><tbody>${rows || '<tr><td colspan="8">No repositories discovered.</td></tr>'}</tbody></table></div>
   </section>`;
 }
@@ -1432,33 +1426,37 @@ function contributionSpendContent(spend, repositoryLinkPrefix = "repositories/")
 function repositoryWorkflowContent(repositoryName, workflows) {
   const disabled = workflows.filter((workflow) => workflow.state.startsWith("disabled")).length;
   const latest = workflows.map((workflow) => workflow.updatedAt).filter(Boolean).sort().at(-1);
-  const health = summarizeWorkflowHealth(workflows);
-  const healthAvailable = deployedInventory.runHealth?.available;
-  const healthLabel = healthAvailable
-    ? `${deployedInventory.runHealth.complete ? "Complete" : "Partial"} ${deployedInventory.runHealth.windowHours || 24}-hour Actions run window`
-    : "Actions run data unavailable";
-  const repositorySpend = contributionSpendFor([repositoryName]);
   const rows = workflows.map((workflow) => `<tr>
     <th scope="row"><a href="${escapeHtml(repositoryWorkflowPageName(repositoryName, workflow.path))}.html">${escapeHtml(workflow.name)}</a><a class="workflow-source" href="${escapeHtml(safeUrl(workflow.htmlUrl))}"><code>${escapeHtml(authoredWorkflowPath(workflow.path))}</code></a><span class="workflow-badges">${workflowBadges(workflow)}</span></th>
     <td><span class="status ${workflow.state === "active" ? "status-success" : workflow.state.startsWith("disabled") ? "status-attention" : "status-muted"}">${escapeHtml(workflow.state.replaceAll("_", " "))}</span></td>
-    <td>${workflow.runHealth?.runs ?? "—"}</td>
-    <td>${workflow.runHealth?.failed ?? "—"}</td>
     <td><time datetime="${escapeHtml(workflow.updatedAt || "")}">${escapeHtml(formatDay(workflow.updatedAt))}</time></td>
   </tr>`).join("\n");
   return `<section class="repository-workflow-summary" aria-label="Repository GitHub Agentic Workflows summary">
     <dl class="metrics">
       <div><dt>Authored AW workflows</dt><dd>${workflows.length}</dd><p>One canonical identity per <code>.md</code> source</p></div>
       ${workflowStatusMetric(workflows)}
-      ${workflowHealthMetric(health, healthAvailable, healthLabel)}
-      <div><dt>AI Credits</dt><dd>${repositorySpend.available ? formatAic(repositorySpend.total) : "—"}</dd><p>Across ${repositorySpend.reportedRuns} retained usage artifact${repositorySpend.reportedRuns === 1 ? "" : "s"}${repositorySpend.complete ? "" : "; partial coverage"}</p></div>
     </dl>
   </section>
   <section class="repository-workflows" aria-labelledby="repository-workflows-heading">
     <div class="section-heading"><div><h2 id="repository-workflows-heading">Agentic workflows</h2><p>Authored <code>.github/workflows/*.md</code> workflows with managed-operation membership shown as metadata. Latest registration update: ${escapeHtml(formatDay(latest))}. ${disabled} disabled.</p></div><a href="https://github.com/${escapeHtml(repositoryName)}/actions">View Actions${octicon("external-link")}</a></div>
     <div class="table-region" role="region" aria-labelledby="repository-workflows-heading" tabindex="0">
-      <table><thead><tr><th scope="col">Workflow</th><th scope="col">State</th><th scope="col">Runs</th><th scope="col">Failed</th><th scope="col">Updated</th></tr></thead><tbody>${rows}</tbody></table>
+      <table><thead><tr><th scope="col">Workflow</th><th scope="col">State</th><th scope="col">Updated</th></tr></thead><tbody>${rows}</tbody></table>
     </div>
   </section>`;
+}
+
+function repositoryInsightsContent(repositoryName, workflows) {
+  const health = summarizeWorkflowHealth(workflows);
+  const healthAvailable = deployedInventory.runHealth?.available;
+  const healthLabel = healthAvailable
+    ? `${deployedInventory.runHealth.complete ? "Complete" : "Partial"} ${deployedInventory.runHealth.windowHours || 24}-hour Actions run window`
+    : "Actions run data unavailable";
+  const repositorySpend = contributionSpendFor([repositoryName]);
+  return `<section class="repository-workflow-summary" aria-label="Repository execution insights"><dl class="metrics">
+    ${workflowHealthMetric(health, healthAvailable, healthLabel)}
+    <div><dt>Failed runs</dt><dd>${healthAvailable ? formatCount(health.failed) : "—"}</dd><p>${escapeHtml(healthLabel)}</p></div>
+    <div><dt>AI Credits</dt><dd>${repositorySpend.available ? formatAic(repositorySpend.total) : "—"}</dd><p>Across ${repositorySpend.reportedRuns} retained run${repositorySpend.reportedRuns === 1 ? "" : "s"}${repositorySpend.complete ? "" : "; partial coverage"}</p></div>
+  </dl></section>`;
 }
 
 function workflowAicSummary(workflow) {
@@ -1549,33 +1547,41 @@ for (const repositoryName of [...repositoryNames].filter(Boolean).sort()) {
   }).join("\n");
   const pageName = repositoryPageName(repositoryName);
   const repositoryRecords = reportRecords.filter((record) => record.repository.toLowerCase() === repositoryName.toLowerCase());
-  const navigation = (view) => `<nav aria-label="Report navigation"><div class="shell"><a href="index.html">Repositories</a><a href="${pageName}.html">${escapeHtml(repositoryName)}</a><span aria-current="page">${view}</span></div></nav>`;
+  const navigation = `<nav aria-label="Report navigation"><div class="shell"><a href="index.html">Repositories</a><span aria-current="page">${escapeHtml(repositoryName)}</span></div></nav>`;
   await writeFile(path.join(outputDirectory, "repositories", `${pageName}.html`), layout({
+    title: repositoryName,
+    description: "Authored GitHub Agentic Workflows owned by this repository.",
+    content: `${repositoryTabs(repositoryName, "workflows")}${repositoryWorkflowContent(repositoryName, workflows)}`,
+    nested: true,
+    navigation,
+    activeSection: "repositories",
+  }));
+  await writeFile(path.join(outputDirectory, "repositories", `${pageName}-reports.html`), layout({
     title: repositoryName,
     description: "Durable reports produced for this repository by centrally managed operations.",
     content: `${repositoryTabs(repositoryName, "reports")}${findingsListing(repositoryRecords, { showMode: true, emptyMessage: "No reports have been recorded for this repository." })}`,
     nested: true,
-    navigation: navigation("Reports"),
+    navigation,
     activeSection: "repositories",
   }));
   await writeFile(path.join(outputDirectory, "repositories", `${pageName}-insights.html`), layout({
     title: repositoryName,
-    description: "Workflow health, registration state, AI Credit usage, and operational value for this repository.",
-    content: `${repositoryTabs(repositoryName, "insights")}${repositoryWorkflowContent(repositoryName, workflows)}${repositoryValueSections}`,
+    description: "Workflow health, AI Credit usage, and operational value for this repository.",
+    content: `${repositoryTabs(repositoryName, "insights")}${repositoryInsightsContent(repositoryName, workflows)}${repositoryValueSections}`,
     nested: true,
-    navigation: navigation("Insights"),
+    navigation,
     activeSection: "repositories",
   }));
   for (const workflow of workflows) {
     const workflowPageName = repositoryWorkflowPageName(repositoryName, workflow.path);
     const workflowRecords = reportRecords.filter((record) => recordProducedByWorkflow(record, workflow));
-    const workflowNavigation = (view) => `<nav aria-label="Report navigation"><div class="shell"><a href="index.html">Repositories</a><a href="${pageName}.html">${escapeHtml(repositoryName)}</a><a href="${workflowPageName}.html">${escapeHtml(workflow.name)}</a><span aria-current="page">${view}</span></div></nav>`;
+    const workflowNavigation = `<nav aria-label="Report navigation"><div class="shell"><a href="index.html">Repositories</a><a href="${pageName}.html">${escapeHtml(repositoryName)}</a><span aria-current="page">${escapeHtml(workflow.name)}</span></div></nav>`;
     await writeFile(path.join(outputDirectory, "repositories", `${workflowPageName}.html`), layout({
       title: workflow.name,
       description: `Durable reports produced by ${authoredWorkflowPath(workflow.path)} in ${repositoryName}.`,
       content: `${repositoryWorkflowTabs(repositoryName, workflow, "reports")}${workflowIdentityContent(workflow)}${findingsListing(workflowRecords, { showMode: true, emptyMessage: "No reports have been attributed to this workflow." })}`,
       nested: true,
-      navigation: workflowNavigation("Reports"),
+      navigation: workflowNavigation,
       activeSection: "repositories",
     }));
     await writeFile(path.join(outputDirectory, "repositories", `${workflowPageName}-insights.html`), layout({
@@ -1583,7 +1589,7 @@ for (const repositoryName of [...repositoryNames].filter(Boolean).sort()) {
       description: `Run health, AI Credit usage, and operational value for ${authoredWorkflowPath(workflow.path)} in ${repositoryName}.`,
       content: `${repositoryWorkflowTabs(repositoryName, workflow, "insights")}${workflowInsightsContent(workflow)}`,
       nested: true,
-      navigation: workflowNavigation("Insights"),
+      navigation: workflowNavigation,
       activeSection: "repositories",
     }));
   }
@@ -1657,7 +1663,7 @@ function valueReportContent(worker, observations) {
 
 await mkdir(path.join(outputDirectory, "insights", "assets"), { recursive: true });
 for (const bundle of bundleDefinitions) {
-  const navigation = `<nav aria-label="Report navigation"><div class="shell"><a href="../operations/${bundle.id}.html">Operations</a><a href="../operations/${bundle.id}.html">${escapeHtml(bundle.name)}</a><span aria-current="page">Insights</span></div></nav>`;
+  const navigation = `<nav aria-label="Report navigation"><div class="shell"><a href="../operations/">Operations</a><span aria-current="page">${escapeHtml(bundle.name)}</span></div></nav>`;
   const sections = [];
   for (const worker of bundle.workers) {
     const workflowPath = worker.lockPath || `.github/workflows/${worker.id}.lock.yml`;
@@ -1669,41 +1675,51 @@ for (const bundle of bundleDefinitions) {
   await writeFile(path.join(outputDirectory, "insights", `${bundle.id}.html`), layout({
     title: bundle.name,
     description: `Worker operational-value observations from actual ${bundle.name} workflow runs.`,
-    content: `${bundleTabs(bundle, "insights")}${operationWorkflowHierarchy(bundle)}${sections.join("\n")}`,
+    content: `${bundleTabs(bundle, "insights")}${sections.join("\n")}`,
     nested: true,
     navigation,
+    configuredMode: configuredModeFor(bundle),
     activeSection: "insights",
     activeBundle: bundle.id,
   }));
 }
 
 await mkdir(path.join(outputDirectory, "operations"), { recursive: true });
-const defaultOperationsMode = bundleDefinitions.some((bundle) => configuredModeFor(bundle) === "live") ? "live" : "review";
-for (const mode of ["review", "live"]) {
+for (const mode of ["all", "review", "live"]) {
   const page = layout({
     title: "Operations",
-    description: `${modeLabels[mode]} activity from centrally managed operations.`,
+    description: mode === "all" ? "Activity from centrally managed operations." : `${modeLabels[mode]} activity from centrally managed operations.`,
     content: operationsOverviewContent(mode),
     nested: true,
     overviewMode: mode,
     activeSection: "operations",
   });
-  await writeFile(path.join(outputDirectory, "operations", `${mode}.html`), page);
-  if (mode === defaultOperationsMode) await writeFile(path.join(outputDirectory, "operations", "index.html"), page);
+  await writeFile(path.join(outputDirectory, "operations", mode === "all" ? "index.html" : `${mode}.html`), page);
 }
 for (const bundle of bundleDefinitions) {
   const bundleRecords = reportRecords.filter((record) => record.bundle === bundle.id);
-  const navigation = `<nav aria-label="Report navigation"><div class="shell"><a href="index.html">Operations</a><span>${escapeHtml(bundle.name)}</span><span aria-current="page">Reports</span></div></nav>`;
+  const navigation = `<nav aria-label="Report navigation"><div class="shell"><a href="index.html">Operations</a><span aria-current="page">${escapeHtml(bundle.name)}</span></div></nav>`;
   const configuredMode = configuredModeFor(bundle);
-  const defaultMode = configuredMode === "live" ? "live" : "review";
-  for (const selectedMode of ["review", "live"]) {
-    const modeRecords = bundleRecords.filter((record) => record.mode === selectedMode);
-    const selectedModeLabel = selectedMode === "review" ? "Review proposals" : "Live production outputs";
+  await writeFile(path.join(outputDirectory, "operations", `${bundle.id}.html`), layout({
+    title: bundle.name,
+    description: `Orchestrator and worker workflows in the ${bundle.name} operation.`,
+    content: `${bundleTabs(bundle, "workflows")}${operationWorkflowHierarchy(bundle)}`,
+    nested: true,
+    navigation,
+    configuredMode,
+    activeSection: "operations",
+    activeBundle: bundle.id,
+  }));
+  for (const selectedMode of ["all", "review", "live"]) {
+    const modeRecords = selectedMode === "all" ? bundleRecords : bundleRecords.filter((record) => record.mode === selectedMode);
+    const selectedModeLabel = selectedMode === "all" ? "All durable outputs" : selectedMode === "review" ? "Review proposals" : "Live production outputs";
     const configuredModeLabel = `${configuredMode[0].toUpperCase()}${configuredMode.slice(1)}`;
-    const modeIdentity = selectedMode === configuredMode
+    const modeIdentity = selectedMode === "all"
+      ? `${selectedModeLabel} across review and live modes; the operation is currently configured for ${configuredModeLabel}.`
+      : selectedMode === configuredMode
       ? `${selectedModeLabel}; this is the operation's configured mode.`
       : `${selectedModeLabel}; the operation is currently configured for ${configuredModeLabel}.`;
-    const content = `${bundleTabs(bundle, "reports")}${operationWorkflowHierarchy(bundle)}${modeTabs(bundle, selectedMode)}<p class="mode-view-note">${escapeHtml(modeIdentity)}</p>${findingsListing(modeRecords)}`;
+    const content = `${bundleTabs(bundle, "reports")}${modeTabs(bundle, selectedMode)}<p class="mode-view-note">${escapeHtml(modeIdentity)}</p>${findingsListing(modeRecords, { showMode: selectedMode === "all" })}`;
     const page = layout({
       title: bundle.name,
       description: `Durable reports produced by the ${bundle.name} operation.`,
@@ -1714,8 +1730,8 @@ for (const bundle of bundleDefinitions) {
       activeSection: "operations",
       activeBundle: bundle.id,
     });
-    await writeFile(path.join(outputDirectory, "operations", `${bundle.id}-${selectedMode}.html`), page);
-    if (selectedMode === defaultMode) await writeFile(path.join(outputDirectory, "operations", `${bundle.id}.html`), page);
+    await writeFile(path.join(outputDirectory, "operations", selectedMode === "all" ? `${bundle.id}-reports.html` : `${bundle.id}-reports-${selectedMode}.html`), page);
+    if (selectedMode !== "all") await writeFile(path.join(outputDirectory, "operations", `${bundle.id}-${selectedMode}.html`), page);
   }
 }
 
@@ -1729,7 +1745,7 @@ for (const workflow of standaloneDefinitions) {
     content,
     nested: true,
     navigation,
-    activeSection: "workflows",
+    activeSection: "repositories",
   }));
 }
 
@@ -1900,10 +1916,10 @@ tbody tr:hover { background: var(--canvas-subtle); }
 .findings-header h2 { margin: 0; }
 .findings-header > div { color: var(--muted); font-size: .75rem; }
 .findings-header > div span { margin-left: 14px; }
-.finding-columns { display: grid; grid-template-columns: minmax(298px, 1fr) 70px 60px 150px; gap: 12px; padding: 7px 14px 7px 64px; border-top: 1px solid var(--border); color: var(--muted); font-size: .6875rem; font-weight: 600; }
-.finding-row { min-height: 58px; display: grid; grid-template-columns: 38px minmax(248px, 1fr) 70px 60px 150px; align-items: center; gap: 12px; padding: 8px 14px; border-top: 1px solid var(--border-muted); }
-.findings-with-mode .finding-columns { grid-template-columns: minmax(248px, 1fr) 70px 70px 60px 150px; }
-.findings-with-mode .finding-row { grid-template-columns: 38px minmax(198px, 1fr) 70px 70px 60px 150px; }
+.finding-columns { display: grid; grid-template-columns: minmax(198px, 1fr) 82px 112px 150px; gap: 12px; padding: 7px 14px 7px 64px; border-top: 1px solid var(--border); color: var(--muted); font-size: .6875rem; font-weight: 600; }
+.finding-row { min-height: 58px; display: grid; grid-template-columns: 38px minmax(198px, 1fr) 82px 112px 150px; align-items: center; gap: 12px; padding: 8px 14px; border-top: 1px solid var(--border-muted); }
+.findings-with-mode .finding-columns { grid-template-columns: minmax(150px, 1fr) 82px 68px 112px 150px; }
+.findings-with-mode .finding-row { grid-template-columns: 38px minmax(150px, 1fr) 82px 68px 112px 150px; }
 .finding-row:hover { background: var(--canvas-subtle); }
 .finding-icon { width: 32px; height: 32px; display: grid; place-items: center; border: 1px solid var(--border); border-radius: 6px; color: var(--muted); }
 .finding-report { min-width: 0; }
@@ -1927,12 +1943,10 @@ tbody tr:hover { background: var(--canvas-subtle); }
 .mode-indicator .octicon { width: 13px; height: 13px; flex-basis: 13px; }
 .sidebar-nav .mode-indicator { margin-left: auto; }
 .mode-view-note { margin: 12px 0 14px; color: var(--muted); }
-.mode-tabs { display: flex; margin: 20px 0 0; border-bottom: 1px solid var(--border); }
-.mode-tabs a { min-width: 130px; display: flex; flex-direction: column; gap: 1px; position: relative; padding: 10px 16px; color: var(--muted); text-decoration: none; }
+.mode-tabs { width: max-content; display: inline-flex; margin: 20px 0 0; padding: 2px; border: 1px solid var(--border); border-radius: 6px; background: var(--canvas-subtle); }
+.mode-tabs a { min-width: 72px; display: grid; min-height: 30px; place-items: center; padding: 5px 12px; border-radius: 4px; color: var(--muted); font-size: .75rem; font-weight: 600; text-decoration: none; }
 .mode-tabs a:hover { color: var(--fg); }
-.mode-tabs a[aria-current="page"] { color: var(--fg); font-weight: 600; }
-.mode-tabs a[aria-current="page"]::after { content: ""; height: 2px; position: absolute; right: 12px; bottom: -1px; left: 12px; border-radius: 2px 2px 0 0; background: #f78166; }
-.mode-tabs small { font-size: .6875rem; font-weight: 400; }
+.mode-tabs a[aria-current="page"] { background: var(--canvas); box-shadow: 0 0 0 1px var(--border), 0 1px 2px color-mix(in srgb, var(--fg) 10%, transparent); color: var(--fg); }
 .mode-tabs + .discussion-layout { margin-top: 16px; }
 .outcome-view { display: grid; grid-template-columns: minmax(0, 1fr) 250px; align-items: start; gap: 24px; }
 .discussion-post { min-width: 0; overflow: hidden; border: 1px solid var(--border); border-radius: 6px; }
@@ -1976,10 +1990,6 @@ footer a { min-height: 24px; display: inline-flex; align-items: center; }
 .primary-nav a:hover { background: var(--neutral-muted); }
 .primary-nav a[aria-current="page"] { background: var(--neutral-muted); font-weight: 600; }
 .primary-nav a[aria-current="page"]::before { content: ""; width: 3px; position: absolute; top: 5px; bottom: 5px; left: -16px; border-radius: 0 4px 4px 0; background: var(--accent); }
-.nav-family { margin-top: 2px; }
-.nav-parent { font-weight: 600; }
-.nav-children { display: flex; flex-direction: column; gap: 2px; margin-left: 18px; padding-left: 7px; border-left: 1px solid var(--border); }
-.nav-children a[aria-current="page"]::before { left: -8px; }
 .app-main { min-width: 0; display: flex; flex-direction: column; }
 .app-main > nav { border-bottom: 1px solid var(--border); }
 .app-main > nav .shell { display: flex; align-items: center; gap: 8px; max-width: 1280px; margin: auto; padding: 10px 24px; }
@@ -2094,10 +2104,6 @@ footer a { min-height: 24px; display: inline-flex; align-items: center; }
 .control-plane-healthy .control-plane-state-icon { color: var(--success); }
 .control-plane-heading h2 { margin: 1px 0 2px; font-size: 1.25rem; }
 .control-plane-heading p { max-width: 720px; margin: 0; color: var(--muted); font-size: .8125rem; }
-.attention-link { min-width: 116px; flex: none; display: grid; grid-template-columns: auto 1fr; align-items: center; gap: 0 7px; padding: 8px 10px; border: 1px solid var(--border); border-radius: 6px; background: var(--canvas); color: var(--fg); text-decoration: none; transition: background-color 120ms ease, border-color 120ms ease; }
-.attention-link:hover { border-color: var(--muted); }
-.attention-link strong { grid-row: span 2; color: var(--danger); font-size: 1.5rem; font-variant-numeric: tabular-nums; }
-.attention-link span { color: var(--muted); font-size: .75rem; line-height: 1.2; }
 .control-plane-vitals { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 1px; margin: 0; padding: 0 1px 1px; overflow: hidden; border-right: 1px solid var(--border); border-left: 1px solid var(--border); background: var(--border); }
 .control-plane-vitals > div { min-width: 0; padding: 10px 13px; background: var(--canvas); }
 .control-plane-vitals dt { color: var(--muted); font-size: .75rem; font-weight: 600; text-transform: uppercase; }
@@ -2123,23 +2129,27 @@ footer a { min-height: 24px; display: inline-flex; align-items: center; }
 .legend-running { background: var(--attention); }
 .legend-other { background: var(--muted); }
 .overview-priority-grid { display: grid; grid-template-columns: minmax(0, 1.15fr) minmax(320px, .85fr); align-items: stretch; gap: 16px; margin-bottom: 24px; }
-.attention-panel, .operation-portfolio { min-width: 0; height: 100%; overflow: hidden; border: 1px solid var(--border); border-radius: 6px; background: var(--canvas); }
-.attention-panel > header, .operation-portfolio > header { min-height: 64px; display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 12px 14px; border-bottom: 1px solid var(--border); background: var(--canvas-subtle); }
+.attention-panel { min-width: 0; height: 100%; overflow: hidden; border: 1px solid var(--border); border-radius: 6px; background: var(--canvas); }
+.operation-portfolio { min-width: 0; height: 100%; }
+.attention-panel > header { min-height: 64px; display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 12px 14px; border-bottom: 1px solid var(--border); background: var(--canvas-subtle); }
+.operation-portfolio > header { min-height: 64px; display: flex; align-items: center; padding: 0 0 10px; }
 .attention-panel h2, .operation-portfolio h2 { margin: 1px 0 0; font-size: 1rem; }
 .attention-panel > header > strong { min-width: 24px; padding: 1px 7px; border-radius: 2em; background: var(--neutral-muted); font-size: .75rem; text-align: center; }
 .attention-panel ul { margin: 0; padding: 0; list-style: none; }
 .attention-panel li { min-height: 62px; display: grid; grid-template-columns: 18px minmax(0, 1fr) auto; align-items: center; gap: 10px; padding: 10px 14px; border-bottom: 1px solid var(--border-muted); }
 .attention-panel li:last-child { border-bottom: 0; }
-.attention-panel li > .octicon { color: var(--attention); }
-.attention-panel li.attention-critical > .octicon { color: var(--danger); }
+.attention-panel li.attention-action { display: block; padding: 0; }
+.attention-item-link { min-height: 61px; display: grid; grid-template-columns: 18px minmax(0, 1fr); align-items: center; gap: 10px; padding: 10px 14px; color: var(--fg); text-decoration: none; }
+.attention-item-link:hover { background: var(--canvas-subtle); text-decoration: none; }
+.attention-item-link:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
+.attention-panel li > .octicon, .attention-item-link > .octicon { color: var(--attention); }
+.attention-panel li.attention-critical > .octicon, .attention-critical .attention-item-link > .octicon { color: var(--danger); }
 .attention-panel li div { min-width: 0; }
 .attention-panel li strong, .attention-panel li span { display: block; }
 .attention-panel li span { margin-top: 1px; color: var(--muted); font-size: .75rem; }
-.attention-panel li > a { font-size: .75rem; font-weight: 600; }
 .operation-portfolio > header > a { font-size: .75rem; }
-.operation-card-list { padding: 0 14px; }
-.operation-card { padding: 13px 0; border-bottom: 1px solid var(--border-muted); }
-.operation-card:last-child { border-bottom: 0; }
+.operation-card-list { display: grid; gap: 10px; }
+.operation-card { padding: 13px 14px; border: 1px solid var(--border); border-radius: 6px; background: var(--canvas); }
 .operation-card > header { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
 .operation-card > header > div { min-width: 0; display: flex; align-items: center; gap: 8px; }
 .operation-card > header a { overflow: hidden; color: var(--fg); font-weight: 600; text-decoration: none; text-overflow: ellipsis; white-space: nowrap; }
@@ -2148,7 +2158,6 @@ footer a { min-height: 24px; display: inline-flex; align-items: center; }
 .operation-card dl div { min-width: 0; padding-right: 10px; }
 .operation-card dt { color: var(--muted); font-size: .75rem; }
 .operation-card dd { margin: 2px 0 0; overflow: hidden; font-size: .75rem; font-weight: 600; text-overflow: ellipsis; white-space: nowrap; }
-.operation-card footer { display: flex; gap: 14px; padding: 0; border: 0; font-size: .75rem; }
 .text-attention { color: var(--attention); }
 .text-success { color: var(--success); }
 .status-danger { border-color: color-mix(in srgb, var(--danger) 45%, var(--border)); background: color-mix(in srgb, var(--danger) 12%, var(--canvas)); color: var(--danger); }
@@ -2243,7 +2252,7 @@ footer a { min-height: 24px; display: inline-flex; align-items: center; }
 .trend-group { display: inline-flex; align-items: center; gap: 6px; }
 .trend-group b { margin-left: 8px; color: var(--muted); font-size: 1rem; letter-spacing: 1px; }
 .trend-chart { overflow-x: auto; padding: 6px 18px 0; }
-.trend-chart svg { width: 100%; min-width: 760px; height: 240px; overflow: visible; }
+.trend-chart svg { width: 100%; min-width: 760px; height: auto; overflow: visible; }
 .trend-chart line { stroke: var(--border-muted); stroke-width: 1; vector-effect: non-scaling-stroke; }
 .trend-chart .vertical-grid { stroke-dasharray: 2 2; }
 .trend-chart text { fill: var(--muted); font-size: .6875rem; }
@@ -2335,7 +2344,6 @@ footer a { min-height: 24px; display: inline-flex; align-items: center; }
   .sidebar-brand { margin-bottom: 8px; font-size: 1rem; }
   .primary-nav { width: 100%; flex-direction: row; overflow-x: auto; }
   .primary-nav a { min-height: 44px; flex: none; }
-  .nav-family, .nav-children { display: contents; }
   .overview-header { min-height: 0; padding: 24px 0 20px; }
   .toolbar { align-items: stretch; flex-wrap: wrap; }
   .filter-control { flex-basis: 100%; }
@@ -2352,8 +2360,6 @@ footer a { min-height: 24px; display: inline-flex; align-items: center; }
   .control-plane-heading { align-items: flex-start; }
   .control-plane-heading .scope-kicker { display: none; }
   .control-plane-heading p { font-size: .75rem; }
-  .attention-link { width: auto; min-width: 0; align-self: flex-start; display: flex; padding: 4px 8px; }
-  .attention-link strong { margin-right: 2px; font-size: 1.125rem; }
   .control-plane-vitals { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .control-plane-vitals > div { padding: 8px 10px; }
   .control-plane-vitals > div:last-child { grid-column: span 2; }
@@ -2400,7 +2406,7 @@ footer a { min-height: 24px; display: inline-flex; align-items: center; }
   .discussion-sidebar { display: flex; gap: 4px; overflow-x: auto; }
   .discussion-sidebar h2 { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
   .discussion-sidebar > div { min-width: max-content; display: flex; }
-  .mode-tabs { overflow: hidden; }
+  .mode-tabs { width: 100%; overflow: hidden; }
   .mode-tabs a { min-width: 0; flex: 1 1 0; padding-inline: 10px; }
   .outcome-view { grid-template-columns: 1fr; }
   .outcome-meta { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0 20px; }
@@ -2413,7 +2419,6 @@ footer a { min-height: 24px; display: inline-flex; align-items: center; }
   .control-plane-state-icon { width: 32px; height: 32px; }
   .metrics { grid-template-columns: 1fr; }
   .metrics div, .metrics div:nth-child(2) { border: 1px solid var(--border); }
-  .trend-chart svg { height: 170px; }
   .github-mark { display: none; }
   .repo-nav a:nth-child(2), .repo-nav a:nth-child(3), .repo-nav a:nth-child(5) { display: none; }
   .page-header-actions { align-items: flex-start; flex-direction: column; gap: 10px; }
