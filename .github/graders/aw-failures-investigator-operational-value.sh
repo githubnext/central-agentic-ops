@@ -3,8 +3,6 @@
 set -euo pipefail
 export LC_ALL=C
 
-REPOSITORY=githubnext/central-agentic-ops
-WORKFLOW_NAME="AW Failures / Investigator"
 MATURATION_SECONDS=1209600
 ASSIGNMENT_WINDOW_SECONDS=86400
 MAX_DISCOVERY_PAGES=5
