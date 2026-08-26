@@ -93,7 +93,7 @@ gh run list \
 	--json databaseId,displayTitle,event,status,conclusion,url
 ```
 
-With default repository caps, one Dependabot orchestration is bounded by 850 AI Credits (250 for the orchestrator plus one 600-credit worker), and one Optimization orchestration is bounded by 1,100 AI Credits (250 plus one 350-credit auditor and one 500-credit optimizer). Declared dispatch ceilings keep deliberately expanded runs finite: at most 30,250 AI Credits for Dependabot and 10,250 for Optimization if only its highest-credit worker remains eligible. These are hard worst-case envelopes, not expected consumption. Every workflow also has a timeout and same-scope concurrency cancellation.
+With default repository caps, one Dependabot orchestration is bounded by 850 AI Credits (250 for the orchestrator plus one 600-credit worker), one Optimization orchestration is bounded by 1,100 AI Credits (250 plus one 350-credit auditor and one 500-credit optimizer), and one AW Failures orchestration is bounded by 750 AI Credits (250 for the orchestrator plus one 500-credit investigator). Declared dispatch ceilings keep deliberately expanded runs finite: at most 30,250 AI Credits for Dependabot, 10,250 for Optimization if only its highest-credit worker remains eligible, and 25,250 for AW Failures. These are hard worst-case envelopes, not expected consumption. Every workflow also has a timeout and same-scope concurrency cancellation.
 
 ### Queuing and Resource Exhaustion
 
