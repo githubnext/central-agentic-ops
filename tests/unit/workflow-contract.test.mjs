@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { execFileSync } from "node:child_process";
-import { cpSync, mkdtempSync, readFileSync, readdirSync, rmSync } from "node:fs";
+import { cpSync, existsSync, mkdtempSync, readFileSync, readdirSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join, resolve } from "node:path";
 import test from "node:test";
@@ -244,11 +244,14 @@ test("enterprise defaults, budgets, timeouts, and concurrency are finite", () =>
 
   const control = workflow("shared/control.md");
   const precompute = workflow("shared/control-precompute.md");
-  assert.match(control, /max_repos:.*github\.aw\.import-inputs\.max_repos \|\| '1'/);
-  assert.match(control, /max_scan_repos:.*github\.aw\.import-inputs\.max_scan_repos \|\| '1000'/);
-  assert.match(control, /CENTRAL_AGENTIC_OPS_ALLOWED_OWNERS \|\| github\.repository_owner/);
+  assert.match(control, /max_repos: "\$\{\{ github\.aw\.import-inputs\.max_repos \}\}"/);
+  assert.match(control, /max_scan_repos: "\$\{\{ github\.aw\.import-inputs\.max_scan_repos \}\}"/);
+  assert.match(control, /allowed_owners: "\$\{\{ github\.aw\.import-inputs\.allowed_owners \}\}"/);
+  assert.match(control, /allowed_repos: "\$\{\{ github\.aw\.import-inputs\.allowed_repos \}\}"/);
   assert.match(precompute, /max_repos must be an integer from 1 through 1000/);
   assert.match(precompute, /max_scan_repos must be an integer from 1 through 100000/);
+  assert.match(precompute, /CENTRAL_AGENTIC_OPS_ALLOWED_REPOS is invalid/);
+  assert.match(precompute, /repo_source="allowed_repos"/);
   assert.match(precompute, /inventory_version/);
   assert.match(precompute, /batch_id/);
   assert.match(precompute, /\.id % \$cell_count/);
@@ -505,12 +508,16 @@ test("shared control keeps manual and scheduled routing event-scoped", () => {
   const control = workflow("shared/control.md");
   const precompute = workflow("shared/control-precompute.md");
 
-  assert.match(control, /github\.aw\.import-inputs\.rollout_mode == 'preview' && 'staged'/);
-  assert.match(control, /github\.event\.inputs\.safe_output_mode \|\| github\.aw\.import-inputs\.rollout_mode \|\| 'staged'/);
-  assert.match(control, /github\.event\.inputs\.safe_output_repo \|\| github\.repository/);
+  for (const name of ["dependabot.md", "optimization.md"]) {
+    const orchestrator = workflow(name);
+    assert.match(orchestrator, /GH_AW_SAFE_OUTPUT_MODE:.*== 'preview' && 'staged'/);
+    assert.match(orchestrator, /REVIEW_OUTPUT_REPO:.*inputs\.safe_output_repo \|\| github\.repository/);
+    assert.match(orchestrator, /SAFE_OUTPUT_REPO:.*== 'review'/);
+  }
+  assert.match(control, /safe_output_mode: \$\{\{ env\.GH_AW_SAFE_OUTPUT_MODE \}\}/);
+  assert.match(control, /safe_output_repo: \$\{\{ env\.SAFE_OUTPUT_REPO \}\}/);
   assert.doesNotMatch(control, /review_repo/);
-  assert.match(control, /rollout_percent: \$\{\{ github\.event\.inputs\.rollout_percent \|\| github\.aw\.import-inputs\.rollout_percent \|\| '100' \}\}/);
-  assert.match(control, /== 'review' && env\.REVIEW_OUTPUT_REPO/);
+  assert.match(control, /rollout_percent: "\$\{\{ github\.aw\.import-inputs\.rollout_percent \}\}"/);
   assert.match(control, /GH_AW_SAFE_OUTPUT_MODE == 'live'.*GH_AW_SAFE_OUTPUT_MODE == 'review'.*'false' \|\| 'true'/);
   assert.match(control, /select no more than `effective_max_repos` repositories/);
 
@@ -544,8 +551,9 @@ test("every worker uses the standard dispatch envelope and safe mode vocabulary"
 
     assert.match(source, /safe-outputs:\n\s+staged: \$\{\{ inputs\.preview_only == 'true' \}\}/);
     assert.doesNotMatch(source, /safe_output_mode == 'private'/);
-    assert.match(source, /worker_enabled:.*\|\| 'true'/);
-    assert.match(source, /worker_max_mode:.*\|\| 'staged'/);
+    assert.match(source, /CENTRAL_AGENTIC_OPS_WORKER_ENABLED:.*\|\| 'true'/);
+    assert.match(source, /CENTRAL_AGENTIC_OPS_WORKER_MAX_MODE:.*\|\| 'staged'/);
+    assert.match(source, /GH_AW_SAFE_OUTPUT_MODE: \$\{\{ inputs\.safe_output_mode \|\| 'staged' \}\}/);
 
     for (const line of source.match(/^\s+target-repo:.*$/gm) || []) {
       assert.match(line, /github\.event\.inputs\.safe_output_repo/);
@@ -602,8 +610,6 @@ test("clean-room compilation emits the expected GitHub Actions settings", { time
     for (const name of lockNames) {
       const generated = workflow(name, generatedDirectory);
 
-      assert.match(generated, /GH_AW_SAFE_OUTPUT_MODE:.*== 'preview' && 'staged'/);
-      assert.match(generated, /ROLLOUT_PERCENT: \$\{\{ github\.event\.inputs\.rollout_percent \|\| github\.aw\.import-inputs\.rollout_percent \|\| '100' \}\}/);
       assert.match(generated, /effective_max_repos/);
       assert.match(generated, /rollout_percent must be an integer from 1 through 100/);
       assert.match(generated, /max_repos must be an integer from 1 through 1000/);
@@ -616,6 +622,8 @@ test("clean-room compilation emits the expected GitHub Actions settings", { time
 
     for (const name of ["dependabot.lock.yml", "optimization.lock.yml"]) {
       const generated = workflow(name, generatedDirectory);
+      assert.match(generated, /GH_AW_SAFE_OUTPUT_MODE:.*== 'preview' && 'staged'/);
+      assert.match(generated, /ROLLOUT_PERCENT: \$\{\{ inputs\.rollout_percent \|\| vars\.CENTRAL_AGENTIC_OPS_.+_ROLLOUT_PERCENT \|\| '100' \}\}/);
       assert.match(generated, /rollout_percent:\n\s+default: 100\n\s+type: number/);
       assert.match(generated, /timeout-minutes: 15/);
       assert.match(generated, /cancel-in-progress: true/);
@@ -623,6 +631,8 @@ test("clean-room compilation emits the expected GitHub Actions settings", { time
 
     for (const name of expectedLockNames.filter((name) => !["dependabot.lock.yml", "optimization.lock.yml"].includes(name))) {
       const generated = workflow(name, generatedDirectory);
+      assert.match(generated, /GH_AW_SAFE_OUTPUT_MODE: \$\{\{ inputs\.safe_output_mode \|\| 'staged' \}\}/);
+      assert.match(generated, /ROLLOUT_PERCENT: "100"/);
       assert.match(generated, /GH_AW_SAFE_OUTPUTS_CONFIG:/);
       assert.match(generated, /PREVIEW_ONLY: \$\{\{ \(env\.GH_AW_SAFE_OUTPUT_MODE == 'live' \|\| env\.GH_AW_SAFE_OUTPUT_MODE == 'review'\) && 'false' \|\| 'true' \}\}/);
     }
@@ -633,14 +643,15 @@ test("clean-room compilation emits the expected GitHub Actions settings", { time
 
 test("Pages is an explicit least-privilege add-on", () => {
   const rootManifest = readFileSync(join(root, "aw.yml"), "utf8");
-  const pagesManifest = readFileSync(join(root, "pages", "aw.yml"), "utf8");
   const pagesWorkflow = readFileSync(join(root, "pages", "pages.yml"), "utf8");
+  const reportAssets = ["aic-usage.mjs", "deployed-workflows.mjs", "inventory.mjs", "report.mjs"];
 
-  assert.doesNotMatch(rootManifest, /pages\/pages|github-pages-report/);
-  assert.match(pagesManifest, /source: pages\.yml/);
-  assert.doesNotMatch(pagesManifest, /source: pages\/pages\.yml/);
-  assert.match(pagesManifest, /destination: \.github\/workflows\/pages\.yml/);
-  assert.match(pagesManifest, /\.github\/skills\/github-pages-report/);
+  assert.doesNotMatch(rootManifest, /pages\/pages|pages-report/);
+  assert.ok(!existsSync(join(root, "pages", "aw.yml")), "Pages must not masquerade as an Agentic Workflow package");
   assert.match(pagesWorkflow, /pages: write/);
   assert.match(pagesWorkflow, /id-token: write/);
+  for (const assetName of reportAssets) {
+    assert.ok(existsSync(join(root, ".github", "scripts", "pages-report", assetName)), `missing report script ${assetName}`);
+    assert.match(pagesWorkflow, new RegExp(`\\.github/scripts/pages-report/${assetName.replace(".", "\\.")}`));
+  }
 });

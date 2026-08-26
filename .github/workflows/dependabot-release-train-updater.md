@@ -40,19 +40,28 @@ on:
 
 checkout:
   - repository: ${{ inputs.safe_output_repo }}
+    github-token: ${{ secrets.GH_AW_GITHUB_TOKEN || secrets.GITHUB_TOKEN }}
     fetch-depth: 0
     fetch: ["*"]
     current: true
   - repository: ${{ inputs.target_repo }}
+    github-token: ${{ secrets.GH_AW_GITHUB_TOKEN || secrets.GITHUB_TOKEN }}
     path: target
+
+env:
+  CENTRAL_AGENTIC_OPS_WORKER_ENABLED: ${{ vars.CENTRAL_AGENTIC_OPS_DEPENDABOT_UPDATER_ENABLED || 'true' }}
+  CENTRAL_AGENTIC_OPS_WORKER_MAX_MODE: ${{ vars.CENTRAL_AGENTIC_OPS_DEPENDABOT_UPDATER_MAX_MODE || 'staged' }}
+  GH_AW_SAFE_OUTPUT_MODE: ${{ inputs.safe_output_mode || 'staged' }}
+  REVIEW_OUTPUT_REPO: ${{ inputs.safe_output_repo || github.repository }}
+  SAFE_OUTPUT_REPO: ${{ inputs.safe_output_mode == 'review' && (inputs.safe_output_repo || github.repository) || '' }}
+  TARGET_REPO: ${{ inputs.target_repo || '' }}
 
 imports:
   - uses: shared/control.md
     with:
       bundle: dependabot
       role: worker
-      worker_enabled: ${{ vars.CENTRAL_AGENTIC_OPS_DEPENDABOT_UPDATER_ENABLED || 'true' }}
-      worker_max_mode: ${{ vars.CENTRAL_AGENTIC_OPS_DEPENDABOT_UPDATER_MAX_MODE || 'staged' }}
+      allowed_owners: ${{ vars.CENTRAL_AGENTIC_OPS_ALLOWED_OWNERS || github.repository_owner }}
   - uses: shared/review-bundle.md
 
 permissions:
@@ -368,6 +377,7 @@ safe-outputs:
 
 timeout-minutes: 60
 
+source: githubnext/central-agentic-ops/.github/workflows/dependabot-release-train-updater.md@main
 ---
 
 You are a dependency reliability and supply-chain maintenance agent for the checked-out safe-output repository.
@@ -400,7 +410,7 @@ Follow these rules:
 
 Read repository evidence from `target/`. Make all PR changes in the repository checked out at the workspace root, which is the safe-output repository. In `live` mode that root may be the target repository itself; in `review` mode it is the control-plane repository. Do not edit `target/` directly.
 
-In `review` mode, do not try to make the control-plane repository look like the target repository. Treat review mode as artifact-backed review, not as a control-plane pull request. If the live outcome would be `create-pull-request`, `push-to-pull-request-branch`, or `update-pull-request`, prepare a bundle directory under `/tmp/gh-aw/review-bundles/dependabot-release-train-updater/<bundle-or-lane>/` with `summary.md`, `changed-files.txt`, `validation.txt`, and any patch or bundle files you can produce safely, then call `publish_review_bundle` with that directory and create an issue or comment in `SAFE_OUTPUT_REPO` linking the intended target repository and review guidance.
+In `review` mode, do not try to make the control-plane repository look like the target repository. Treat review mode as artifact-backed review, not as a control-plane pull request. If the live outcome would be `create-pull-request`, `push-to-pull-request-branch`, or `update-pull-request`, prepare a bundle directory under `/tmp/gh-aw/agent/review-bundles/dependabot-release-train-updater/<bundle-or-lane>/` with `summary.md`, `changed-files.txt`, `validation.txt`, and any patch or bundle files you can produce safely, then call `publish_review_bundle` with that directory and create an issue or comment in `SAFE_OUTPUT_REPO` linking the intended target repository and review guidance. Files outside `/tmp/gh-aw/agent/` are not persisted to the publisher job.
 
 Treat `target_repo`, `safe_output_mode`, `safe_output_repo`, `preview_only`, `correlation_id`, `central_repo`, and `control_plane_run_url` as the live control-plane envelope.
 

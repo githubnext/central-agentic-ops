@@ -43,6 +43,7 @@ export function controlEnvironment(overrides = {}) {
     BATCH_SIZE: "100000",
     BATCH_INDEX: "0",
     ALLOWED_OWNERS: "acme",
+    ALLOWED_REPOS: "",
     DISPATCH_MAX: "1",
     ROLLOUT_PERCENT: "100",
     SAFE_OUTPUT_MODE: "staged",

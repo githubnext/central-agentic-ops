@@ -34,6 +34,9 @@ import-schema:
   allowed_owners:
     type: string
     default: ""
+  allowed_repos:
+    type: string
+    default: ""
   dispatch_max:
     type: string
     default: "1"
@@ -97,6 +100,7 @@ steps:
       BATCH_SIZE: ${{ github.aw.import-inputs.batch_size }}
       BATCH_INDEX: ${{ github.aw.import-inputs.batch_index }}
       ALLOWED_OWNERS: ${{ github.aw.import-inputs.allowed_owners }}
+      ALLOWED_REPOS: ${{ github.aw.import-inputs.allowed_repos }}
       DISPATCH_MAX: ${{ github.aw.import-inputs.dispatch_max }}
       ROLLOUT_PERCENT: ${{ github.aw.import-inputs.rollout_percent }}
       SAFE_OUTPUT_MODE: ${{ github.aw.import-inputs.safe_output_mode }}
@@ -280,6 +284,31 @@ steps:
         exit 1
       }
 
+      prepare_allowlist() {
+        local allowed_repo
+
+        : > /tmp/gh-aw/agent/allowed-repos
+        [ -z "$ALLOWED_REPOS" ] && return
+
+        if ! printf '%s' "$ALLOWED_REPOS" | jq -Rr \
+          'split(",") | map(gsub("\\s"; "") | ascii_downcase) | unique[]' \
+          > /tmp/gh-aw/agent/allowed-repos || grep -qx '' /tmp/gh-aw/agent/allowed-repos; then
+          echo "CENTRAL_AGENTIC_OPS_ALLOWED_REPOS is invalid" >&2
+          exit 1
+        fi
+        while read -r allowed_repo; do
+          validate_repository_owner "allowed repository" "$allowed_repo"
+        done < /tmp/gh-aw/agent/allowed-repos
+        if [ "$(wc -l < /tmp/gh-aw/agent/allowed-repos)" -gt "$MAX_SCAN_REPOS" ]; then
+          echo "allowed repos exceed max_scan_repos" >&2
+          exit 1
+        fi
+        if [ -n "$TARGET_REPO" ] && ! grep -Fqix "$TARGET_REPO" /tmp/gh-aw/agent/allowed-repos; then
+          echo "target_repo is not allowed" >&2
+          exit 1
+        fi
+      }
+
       derive_control_source_path() {
         workflow_ref_path="${GITHUB_WORKFLOW_REF#${GITHUB_REPOSITORY}/}"
         workflow_path="${workflow_ref_path%@*}"
@@ -335,12 +364,37 @@ steps:
           return
         fi
 
+        if [ -n "$ALLOWED_REPOS" ]; then
+          repo_source="allowed_repos"
+          load_allowed_inventory
+          return
+        fi
+
         if ! load_bounded_inventory "orgs/$ORGANIZATION/repos" "all"; then
           if ! load_bounded_inventory "users/$ORGANIZATION/repos" "owner"; then
             repo_error=$(cat /tmp/gh-aw/agent/repo-error.txt)
             printf '[]\n' > /tmp/gh-aw/agent/candidates.json
           fi
         fi
+      }
+
+      load_allowed_inventory() {
+        local allowed_repo
+
+        printf '[]\n' > /tmp/gh-aw/agent/candidates.json
+        : > /tmp/gh-aw/agent/candidate-pages.jsonl
+        while read -r allowed_repo; do
+          if ! gh api "repos/$allowed_repo" \
+            --jq '{id, full_name, archived, disabled, private, pushed_at, default_branch}' \
+            >> /tmp/gh-aw/agent/candidate-pages.jsonl 2>/tmp/gh-aw/agent/repo-error.txt; then
+            repo_error="cannot read allowed repository $allowed_repo"
+            printf '[]\n' > /tmp/gh-aw/agent/candidates.json
+            return
+          fi
+        done < /tmp/gh-aw/agent/allowed-repos
+
+        jq -s '.' /tmp/gh-aw/agent/candidate-pages.jsonl \
+          > /tmp/gh-aw/agent/candidates.json
       }
 
       load_bounded_inventory() {
@@ -592,6 +646,7 @@ steps:
         exit 0
       fi
 
+      prepare_allowlist
       write_orchestrator_precompute
 ---
 
