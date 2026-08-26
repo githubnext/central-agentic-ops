@@ -2,30 +2,8 @@ name: Pages
 
 on:
   workflow_dispatch:
-  push:
-    paths:
-      - "**/aw.yml"
-      - .github/skills/github-pages-report/inventory.mjs
-      - .github/skills/github-pages-report/deployed-workflows.mjs
-      - .github/skills/github-pages-report/report.mjs
-      - .github/value/**
-      - .github/workflows/*.md
-      - .github/workflows/*.lock.yml
-      - .github/workflows/pages.yml
   schedule:
     - cron: "23 5 * * *"
-  issues:
-    types: [opened, edited, closed, reopened, deleted]
-  issue_comment:
-    types: [created, edited, deleted]
-  pull_request:
-    types: [opened, edited, closed, reopened, synchronize, converted_to_draft, ready_for_review]
-  workflow_run:
-    workflows:
-      - Dependabot / Release Train Updater
-      - Optimization / AI Credit Auditor
-      - Optimization / AI Credit Optimizer
-    types: [completed]
 
 permissions:
   contents: read
@@ -57,22 +35,55 @@ jobs:
       - name: Extract control-plane inventory
         env:
           REPORT_INVENTORY: ${{ runner.temp }}/control-plane-inventory.json
-        run: node .github/skills/github-pages-report/inventory.mjs
+        run: node .github/scripts/pages-report/inventory.mjs
 
       - name: Discover deployed agentic workflows
         env:
           GITHUB_TOKEN: ${{ github.token }}
+          REPORT_ALLOWED_REPOS: ${{ vars.CENTRAL_AGENTIC_OPS_ALLOWED_REPOS }}
           REPORT_DEPLOYED_WORKFLOWS: ${{ runner.temp }}/deployed-workflows.json
-        run: node .github/skills/github-pages-report/deployed-workflows.mjs
+        run: node .github/scripts/pages-report/deployed-workflows.mjs
 
-      - name: Build bundle report
+      - name: Install gh-aw CLI
+        uses: github/gh-aw-actions/setup-cli@b304200a0ef4b3998673bfc7945acb08ab8c88b7 # v0.87.2
+        with:
+          version: v0.87.2
+
+      - name: Restore AI Credit usage cache
+        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: .cache/pages-aic
+          key: ${{ runner.os }}-pages-aic-${{ github.repository }}-${{ github.run_id }}
+          restore-keys: |
+            ${{ runner.os }}-pages-aic-${{ github.repository }}-
+
+      - name: Collect AI Credit usage
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPORT_AIC_CACHE: .cache/pages-aic
+          REPORT_AIC_CONCURRENCY: "3"
+          REPORT_AIC_USAGE: ${{ runner.temp }}/aic-usage.json
+          REPORT_DEPLOYED_WORKFLOWS: ${{ runner.temp }}/deployed-workflows.json
+        run: node .github/scripts/pages-report/aic-usage.mjs
+
+      - name: Save AI Credit usage cache
+        if: always()
+        uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: .cache/pages-aic
+          key: ${{ runner.os }}-pages-aic-${{ github.repository }}-${{ github.run_id }}
+
+      - name: Build operations report
         env:
           GITHUB_TOKEN: ${{ github.token }}
+          REPORT_ALLOWED_REPOS: ${{ vars.CENTRAL_AGENTIC_OPS_ALLOWED_REPOS }}
+          REPORT_REPOSITORY_VARIABLES: ${{ toJSON(vars) }}
+          REPORT_AIC_USAGE: ${{ runner.temp }}/aic-usage.json
           REPORT_INVENTORY: ${{ runner.temp }}/control-plane-inventory.json
           REPORT_DEPLOYED_WORKFLOWS: ${{ runner.temp }}/deployed-workflows.json
           REPORT_OUTPUT: _site
           REPORT_VALUE_ROOT: .github/value
-        run: node .github/skills/github-pages-report/report.mjs
+        run: node .github/scripts/pages-report/report.mjs
 
       - name: Upload Pages artifact
         uses: actions/upload-pages-artifact@7b1f4a764d45c48632c6b24a0339c27f5614fb0b # v4

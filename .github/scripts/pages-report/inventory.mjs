@@ -2,6 +2,8 @@ import { mkdir, writeFile } from "node:fs/promises";
 import { existsSync, readFileSync, readdirSync } from "node:fs";
 import path from "node:path";
 
+(async () => {
+
 const root = path.resolve(process.env.REPORT_ROOT || ".");
 const outputPath = path.resolve(process.env.REPORT_INVENTORY || "_inventory/control-plane.json");
 const workflowDirectory = path.join(root, ".github/workflows");
@@ -24,7 +26,7 @@ function inlineList(source, key) {
 }
 
 function rolloutModeVariable(source) {
-  return source.match(/rollout_mode:\s*\$\{\{\s*vars\.([A-Z0-9_]+)/)?.[1] || "";
+  return source.match(/(?:rollout_mode|CENTRAL_AGENTIC_OPS_MODE):\s*\$\{\{\s*vars\.([A-Z0-9_]+)/)?.[1] || "";
 }
 
 function manifestIncludes(source) {
@@ -78,6 +80,7 @@ function discoverInventory() {
       const source = readFileSync(path.join(workflowDirectory, entry.name), "utf8");
       const stem = entry.name.slice(0, -3);
       const role = source.match(/uses:\s+shared\/control\.md[\s\S]*?role:\s+(orchestrator|worker)/)?.[1] || "standalone";
+      const maxAiCredits = Number(scalar(source, "max-ai-credits"));
       return {
         id: stem,
         name: scalar(source, "name") || stem,
@@ -85,6 +88,7 @@ function discoverInventory() {
         emoji: scalar(source, "emoji"),
         trackerId: scalar(source, "tracker-id"),
         role,
+        maxAiCredits: Number.isFinite(maxAiCredits) && maxAiCredits > 0 ? maxAiCredits : null,
         rolloutModeVariable: role === "orchestrator" ? rolloutModeVariable(source) : "",
         sourcePath,
         lockPath: `.github/workflows/${stem}.lock.yml`,
@@ -100,6 +104,7 @@ function discoverInventory() {
     name: orchestrator.package?.name || orchestrator.name,
     description: orchestrator.package?.description || orchestrator.description,
     workflow: orchestrator.sourcePath,
+    maxAiCredits: orchestrator.maxAiCredits,
     rolloutModeVariable: orchestrator.rolloutModeVariable,
     compiled: orchestrator.compiled,
     workers: orchestrator.workers.map((workerId) => workflowById.get(workerId)).filter(Boolean),
@@ -116,4 +121,8 @@ function discoverInventory() {
 const inventory = discoverInventory();
 await mkdir(path.dirname(outputPath), { recursive: true });
 await writeFile(outputPath, `${JSON.stringify(inventory, null, 2)}\n`);
-console.log(`Discovered ${inventory.bundles.length} bundles and ${inventory.standalone.length} standalone workflows in ${outputPath}`);
+console.log(`Discovered ${inventory.bundles.length} operations and ${inventory.standalone.length} standalone workflows in ${outputPath}`);
+})().catch((error) => {
+  console.error(error);
+  process.exitCode = 1;
+});

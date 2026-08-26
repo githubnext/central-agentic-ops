@@ -32,19 +32,28 @@ on:
 
 checkout:
   - repository: ${{ inputs.safe_output_repo }}
+    github-token: ${{ secrets.GH_AW_GITHUB_TOKEN || secrets.GITHUB_TOKEN }}
     fetch-depth: 0
     fetch: ["*"]
     current: true
   - repository: ${{ inputs.target_repo }}
+    github-token: ${{ secrets.GH_AW_GITHUB_TOKEN || secrets.GITHUB_TOKEN }}
     path: target
+
+env:
+  CENTRAL_AGENTIC_OPS_WORKER_ENABLED: ${{ vars.CENTRAL_AGENTIC_OPS_OPTIMIZATION_AUDITOR_ENABLED || 'true' }}
+  CENTRAL_AGENTIC_OPS_WORKER_MAX_MODE: ${{ vars.CENTRAL_AGENTIC_OPS_OPTIMIZATION_AUDITOR_MAX_MODE || 'staged' }}
+  GH_AW_SAFE_OUTPUT_MODE: ${{ inputs.safe_output_mode || 'staged' }}
+  REVIEW_OUTPUT_REPO: ${{ inputs.safe_output_repo || github.repository }}
+  SAFE_OUTPUT_REPO: ${{ inputs.safe_output_mode == 'review' && (inputs.safe_output_repo || github.repository) || '' }}
+  TARGET_REPO: ${{ inputs.target_repo || '' }}
 
 imports:
   - uses: shared/control.md
     with:
       bundle: optimization
       role: worker
-      worker_enabled: ${{ vars.CENTRAL_AGENTIC_OPS_OPTIMIZATION_AUDITOR_ENABLED || 'true' }}
-      worker_max_mode: ${{ vars.CENTRAL_AGENTIC_OPS_OPTIMIZATION_AUDITOR_MAX_MODE || 'staged' }}
+      allowed_owners: ${{ vars.CENTRAL_AGENTIC_OPS_ALLOWED_OWNERS || github.repository_owner }}
 
 permissions:
   contents: read
@@ -180,6 +189,7 @@ steps:
         echo '{"runs":[],"summary":{}}' > /tmp/gh-aw/token-audit/workflow-logs.json
       fi
 
+source: githubnext/central-agentic-ops/.github/workflows/optimization-ai-credit-auditor.md@main
 ---
 
 You are the Agentic Workflow Auditor — a workflow that tracks daily AI Credit (AIC) spend and token consumption across all agentic workflows in the target repository and maintains a historical record for trend analysis.

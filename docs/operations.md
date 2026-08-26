@@ -115,14 +115,17 @@ Observability imports for Sentry, Grafana, and Datadog are shared control-plane 
 
 ### Activating Pages
 
-Pages is not part of the core catalog. After verifying that the control repository is private and its Pages site is access-controlled, install the view explicitly:
+Pages is not part of the Agentic Workflow package catalog. After verifying that the control repository is private and its Pages site is access-controlled, copy the conventional workflow and report scripts from a checkout pinned to the desired catalog release or commit:
 
 ```bash
-gh aw add-wizard githubnext/central-agentic-ops/pages@<catalog-release>
+control_repository=/path/to/control-repository
+mkdir -p "$control_repository/.github/workflows" "$control_repository/.github/scripts/pages-report"
+cp pages/pages.yml "$control_repository/.github/workflows/pages.yml"
+cp .github/scripts/pages-report/*.mjs "$control_repository/.github/scripts/pages-report/"
 ```
 
 :::note[Do not create `REPORT_PAGES_TOKEN`]
-The Pages bundle does not use a `REPORT_PAGES_TOKEN` secret. Its build job reads report data with the automatic `github.token` and explicit job-scoped permissions. Its deploy job uses GitHub Pages OIDC with `pages: write` and `id-token: write`. If an installed workflow requests `REPORT_PAGES_TOKEN`, it did not come from the current catalog release and should be reviewed or updated rather than supplied with a PAT.
+The Pages publisher does not use a `REPORT_PAGES_TOKEN` secret. Its build job reads report data with the automatic `github.token` and explicit job-scoped permissions. Its deploy job uses GitHub Pages OIDC with `pages: write` and `id-token: write`. If a copied workflow requests `REPORT_PAGES_TOKEN`, it did not come from the current catalog release and should be reviewed or updated rather than supplied with a PAT.
 :::
 
 :::caution[The report can contain private repository data]
@@ -136,11 +139,12 @@ A deliberate custom extension should mint a short-lived GitHub App token install
 The add-on installs the following report components in the control-plane repository:
 
 - `.github/workflows/pages.yml`, the conventional build and deployment workflow;
-- `.github/skills/github-pages-report/SKILL.md`, the report authoring and review guidance;
-- `.github/skills/github-pages-report/inventory.mjs`, the dependency-free control-plane inventory extractor;
-- `.github/skills/github-pages-report/report.mjs`, the trusted static renderer.
+- `.github/scripts/pages-report/aic-usage.mjs`, the bounded AI Credit usage collector;
+- `.github/scripts/pages-report/deployed-workflows.mjs`, the deployed workflow and run-health collector;
+- `.github/scripts/pages-report/inventory.mjs`, the dependency-free control-plane inventory extractor;
+- `.github/scripts/pages-report/report.mjs`, the trusted static renderer.
 
-After running `gh aw add-wizard githubnext/central-agentic-ops@<catalog-release>`:
+After copying the report files from the pinned catalog checkout:
 
 1. Commit and push the installed files.
 2. In **Settings > Pages**, select **GitHub Actions** as the source and apply the required access controls.

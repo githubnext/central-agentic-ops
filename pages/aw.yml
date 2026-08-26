@@ -1,8 +1,0 @@
-name: Pages
-description: Optional access-controlled GitHub Pages view for Central Agentic Ops reports.
-min-version: v0.87.2
-includes:
-  - source: pages.yml
-    destination: .github/workflows/pages.yml
-    kind: action-workflow
-  - .github/skills/github-pages-report

@@ -34,6 +34,9 @@ import-schema:
   allowed_owners:
     type: string
     default: ""
+  allowed_repos:
+    type: string
+    default: ""
   dispatch_max:
     type: string
     default: "1"
@@ -53,13 +56,6 @@ import-schema:
     type: string
     default: "1100"
 
-env:
-  CENTRAL_AGENTIC_OPS_MODE: ${{ github.aw.import-inputs.rollout_mode == 'preview' && 'staged' || github.aw.import-inputs.rollout_mode }}
-  GH_AW_SAFE_OUTPUT_MODE: ${{ (github.event.inputs.safe_output_mode || github.aw.import-inputs.rollout_mode || 'staged') == 'preview' && 'staged' || (github.event.inputs.safe_output_mode || github.aw.import-inputs.rollout_mode || 'staged') }}
-  TARGET_REPO: ${{ github.event.inputs.target_repo || '' }}
-  REVIEW_OUTPUT_REPO: ${{ github.event.inputs.safe_output_repo || github.repository }}
-  SAFE_OUTPUT_REPO: ${{ (github.event.inputs.safe_output_mode || github.aw.import-inputs.rollout_mode || 'staged') == 'review' && env.REVIEW_OUTPUT_REPO || '' }}
-
 github-app:
   client-id: ${{ vars.GH_AW_GITHUB_APP_ID }}
   private-key: ${{ secrets.GH_AW_GITHUB_APP_PRIVATE_KEY }}
@@ -75,27 +71,28 @@ imports:
       role: ${{ github.aw.import-inputs.role }}
       target_repo: ${{ github.event.inputs.target_repo || '' }}
       organization: ${{ github.repository_owner }}
-      max_repos: ${{ github.event.inputs.max_repos || github.aw.import-inputs.max_repos || '1' }}
-      max_scan_repos: ${{ github.aw.import-inputs.max_scan_repos || '1000' }}
-      cell_count: ${{ github.event.inputs.cell_count || github.aw.import-inputs.cell_count || '1' }}
-      cell_index: ${{ github.event.inputs.cell_index || github.aw.import-inputs.cell_index || '0' }}
-      batch_size: ${{ github.event.inputs.batch_size || github.aw.import-inputs.batch_size || '100000' }}
-      batch_index: ${{ github.event.inputs.batch_index || github.aw.import-inputs.batch_index || '0' }}
-      allowed_owners: ${{ github.aw.import-inputs.allowed_owners || vars.CENTRAL_AGENTIC_OPS_ALLOWED_OWNERS || github.repository_owner }}
-      dispatch_max: ${{ github.aw.import-inputs.dispatch_max || '1' }}
-      rollout_percent: ${{ github.event.inputs.rollout_percent || github.aw.import-inputs.rollout_percent || '100' }}
+      max_repos: "${{ github.aw.import-inputs.max_repos }}"
+      max_scan_repos: "${{ github.aw.import-inputs.max_scan_repos }}"
+      cell_count: "${{ github.aw.import-inputs.cell_count }}"
+      cell_index: "${{ github.aw.import-inputs.cell_index }}"
+      batch_size: "${{ github.aw.import-inputs.batch_size }}"
+      batch_index: "${{ github.aw.import-inputs.batch_index }}"
+      allowed_owners: "${{ github.aw.import-inputs.allowed_owners }}"
+      allowed_repos: "${{ github.aw.import-inputs.allowed_repos }}"
+      dispatch_max: "${{ github.aw.import-inputs.dispatch_max }}"
+      rollout_percent: "${{ github.aw.import-inputs.rollout_percent }}"
       safe_output_mode: ${{ env.GH_AW_SAFE_OUTPUT_MODE }}
       safe_output_repo: ${{ env.SAFE_OUTPUT_REPO }}
       preview_only: ${{ (env.GH_AW_SAFE_OUTPUT_MODE == 'live' || env.GH_AW_SAFE_OUTPUT_MODE == 'review') && 'false' || 'true' }}
       enabled: ${{ github.event_name == 'workflow_dispatch' || env.CENTRAL_AGENTIC_OPS_MODE == 'staged' || env.CENTRAL_AGENTIC_OPS_MODE == 'review' || env.CENTRAL_AGENTIC_OPS_MODE == 'live' }}
-      worker_enabled: ${{ github.aw.import-inputs.worker_enabled || 'true' }}
-      worker_max_mode: ${{ github.aw.import-inputs.worker_max_mode || 'staged' }}
+      worker_enabled: ${{ env.CENTRAL_AGENTIC_OPS_WORKER_ENABLED || 'true' }}
+      worker_max_mode: ${{ env.CENTRAL_AGENTIC_OPS_WORKER_MAX_MODE || 'staged' }}
       correlation_id: ${{ github.event.inputs.correlation_id || '' }}
       central_repo: ${{ github.event.inputs.central_repo || '' }}
       control_plane_run_url: ${{ github.event.inputs.control_plane_run_url || '' }}
-      orchestrator_credits: ${{ github.aw.import-inputs.orchestrator_credits || '0' }}
-      worker_credits_per_target: ${{ github.aw.import-inputs.worker_credits_per_target || '0' }}
-      aggregate_credit_limit: ${{ github.aw.import-inputs.aggregate_credit_limit || '1100' }}
+      orchestrator_credits: "${{ github.aw.import-inputs.orchestrator_credits }}"
+      worker_credits_per_target: "${{ github.aw.import-inputs.worker_credits_per_target }}"
+      aggregate_credit_limit: "${{ github.aw.import-inputs.aggregate_credit_limit }}"
 ---
 
 Read `/tmp/gh-aw/agent/control-precompute.json` before making control decisions. Treat it as authoritative for `control_role`, enablement state, target repository inputs, safe-output routing, and worker workflow availability.

@@ -44,20 +44,27 @@ on:
           - review
           - live
 
+env:
+  CENTRAL_AGENTIC_OPS_MODE: ${{ vars.CENTRAL_AGENTIC_OPS_DEPENDABOT_MODE || 'staged' }}
+  GH_AW_SAFE_OUTPUT_MODE: ${{ (inputs.safe_output_mode || vars.CENTRAL_AGENTIC_OPS_DEPENDABOT_MODE || 'staged') == 'preview' && 'staged' || (inputs.safe_output_mode || vars.CENTRAL_AGENTIC_OPS_DEPENDABOT_MODE || 'staged') }}
+  REVIEW_OUTPUT_REPO: ${{ inputs.safe_output_repo || github.repository }}
+  SAFE_OUTPUT_REPO: ${{ (inputs.safe_output_mode || vars.CENTRAL_AGENTIC_OPS_DEPENDABOT_MODE || 'staged') == 'review' && (inputs.safe_output_repo || github.repository) || '' }}
+  TARGET_REPO: ${{ inputs.target_repo || '' }}
+
 imports:
   - uses: shared/control.md
     with:
       bundle: dependabot
       role: orchestrator
-      rollout_mode: ${{ vars.CENTRAL_AGENTIC_OPS_DEPENDABOT_MODE || 'staged' }}
-      rollout_percent: ${{ vars.CENTRAL_AGENTIC_OPS_DEPENDABOT_ROLLOUT_PERCENT || '100' }}
-      max_repos: ${{ vars.CENTRAL_AGENTIC_OPS_DEPENDABOT_MAX_REPOS || '1' }}
+      rollout_percent: ${{ inputs.rollout_percent || vars.CENTRAL_AGENTIC_OPS_DEPENDABOT_ROLLOUT_PERCENT || '100' }}
+      max_repos: ${{ inputs.max_repos || vars.CENTRAL_AGENTIC_OPS_DEPENDABOT_MAX_REPOS || '1' }}
       max_scan_repos: ${{ vars.CENTRAL_AGENTIC_OPS_MAX_SCAN_REPOS || '1000' }}
-      cell_count: ${{ vars.CENTRAL_AGENTIC_OPS_CELL_COUNT || '1' }}
-      cell_index: ${{ vars.CENTRAL_AGENTIC_OPS_CELL_INDEX || '0' }}
-      batch_size: ${{ vars.CENTRAL_AGENTIC_OPS_BATCH_SIZE || '100000' }}
-      batch_index: ${{ vars.CENTRAL_AGENTIC_OPS_BATCH_INDEX || '0' }}
+      cell_count: ${{ inputs.cell_count || vars.CENTRAL_AGENTIC_OPS_CELL_COUNT || '1' }}
+      cell_index: ${{ inputs.cell_index || vars.CENTRAL_AGENTIC_OPS_CELL_INDEX || '0' }}
+      batch_size: ${{ inputs.batch_size || vars.CENTRAL_AGENTIC_OPS_BATCH_SIZE || '100000' }}
+      batch_index: ${{ inputs.batch_index || vars.CENTRAL_AGENTIC_OPS_BATCH_INDEX || '0' }}
       allowed_owners: ${{ vars.CENTRAL_AGENTIC_OPS_ALLOWED_OWNERS || github.repository_owner }}
+      allowed_repos: ${{ vars.CENTRAL_AGENTIC_OPS_ALLOWED_REPOS || '' }}
       dispatch_max: "50"
       orchestrator_credits: "250"
       worker_credits_per_target: "600"
@@ -89,6 +96,7 @@ safe-outputs:
     workflows: [dependabot-release-train-updater]
     max: 50
 
+source: githubnext/central-agentic-ops@2de9130ff1709fccdacbe5261fd5da71995e6721
 ---
 
 # Dependabot

@@ -66,20 +66,23 @@ safe-outputs:
               exit 1
             fi
 
-            if [[ "$SOURCE_DIR_RAW" = /* ]]; then
-              SOURCE_DIR=$(realpath -m "$SOURCE_DIR_RAW")
-            else
-              SOURCE_DIR=$(realpath -m "$GITHUB_WORKSPACE/$SOURCE_DIR_RAW")
+            PERSISTED_ROOT="/tmp/gh-aw/agent/review-bundles"
+            if [[ "$SOURCE_DIR_RAW" != "$PERSISTED_ROOT"/* ]]; then
+              echo "source_dir must be under $PERSISTED_ROOT: $SOURCE_DIR_RAW" >&2
+              exit 1
             fi
 
-            WORKSPACE_ROOT=$(realpath -m "$GITHUB_WORKSPACE")
-            if [[ "$SOURCE_DIR" != "$WORKSPACE_ROOT"/* && "$SOURCE_DIR" != /tmp/* ]]; then
-              echo "source_dir must be under the workspace or /tmp: $SOURCE_DIR" >&2
+            ARTIFACT_ROOT=$(realpath -m "$(dirname "$GH_AW_AGENT_OUTPUT")")
+            SOURCE_SUFFIX=${SOURCE_DIR_RAW#"/tmp/gh-aw/agent/"}
+            SOURCE_DIR=$(realpath -m "$ARTIFACT_ROOT/agent/$SOURCE_SUFFIX")
+            RESTORED_ROOT=$(realpath -m "$ARTIFACT_ROOT/agent/review-bundles")
+            if [[ "$SOURCE_DIR" != "$RESTORED_ROOT"/* ]]; then
+              echo "source_dir escapes the restored review bundle root: $SOURCE_DIR_RAW" >&2
               exit 1
             fi
 
             if [ ! -d "$SOURCE_DIR" ]; then
-              echo "source_dir does not exist: $SOURCE_DIR" >&2
+              echo "review bundle was not persisted in the agent artifact: $SOURCE_DIR_RAW" >&2
               exit 1
             fi
 

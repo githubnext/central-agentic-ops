@@ -54,6 +54,7 @@ function runPrecompute(overrides = {}) {
       TARGET_REPO: "",
       MAX_REPOS: "1000",
       MAX_SCAN_REPOS: "100000",
+      ALLOWED_REPOS: "",
       DISPATCH_MAX: "1000",
       ROLLOUT_PERCENT: "10",
       WORKER_CREDITS_PER_TARGET: "0",

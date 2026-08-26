@@ -30,14 +30,20 @@ on:
       batch_label:
         type: string
 
+env:
+  CENTRAL_AGENTIC_OPS_WORKER_ENABLED: ${{ vars.CENTRAL_AGENTIC_OPS_OPTIMIZATION_OPTIMIZER_ENABLED || 'true' }}
+  CENTRAL_AGENTIC_OPS_WORKER_MAX_MODE: ${{ vars.CENTRAL_AGENTIC_OPS_OPTIMIZATION_OPTIMIZER_MAX_MODE || 'staged' }}
+  GH_AW_SAFE_OUTPUT_MODE: ${{ inputs.safe_output_mode || 'staged' }}
+  REVIEW_OUTPUT_REPO: ${{ inputs.safe_output_repo || github.repository }}
+  SAFE_OUTPUT_REPO: ${{ inputs.safe_output_mode == 'review' && (inputs.safe_output_repo || github.repository) || '' }}
+  TARGET_REPO: ${{ inputs.target_repo || '' }}
 
 imports:
   - uses: shared/control.md
     with:
       bundle: optimization
       role: worker
-      worker_enabled: ${{ vars.CENTRAL_AGENTIC_OPS_OPTIMIZATION_OPTIMIZER_ENABLED || 'true' }}
-      worker_max_mode: ${{ vars.CENTRAL_AGENTIC_OPS_OPTIMIZATION_OPTIMIZER_MAX_MODE || 'staged' }}
+      allowed_owners: ${{ vars.CENTRAL_AGENTIC_OPS_ALLOWED_OWNERS || github.repository_owner }}
   - uses: shared/target-checkout-read-org-token.md
 
 permissions:
@@ -240,6 +246,7 @@ steps:
         echo "ℹ️ No previous optimization history found."
       fi
 
+source: githubnext/central-agentic-ops/.github/workflows/optimization-ai-credit-optimizer.md@main
 ---
 
 You are the Agentic Workflow Optimizer. Pick one high AI credit workflow, audit recent runs, and create a conservative optimization issue with measurable improvements. Your recommendations may include prompt, tool, reliability, setup-prefix, and inline sub-agent improvements when the evidence supports them.
