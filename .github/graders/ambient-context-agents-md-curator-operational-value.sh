@@ -112,7 +112,7 @@ collect_logs() {
 comparison() {
     logs_file=$1; window_start=$2; merged_at=$3; cutoff=$4
     jq -c --arg start "$window_start" --arg merged "$merged_at" --arg cutoff "$cutoff" '
-      def completed: (.status=="completed" or (.conclusion|type)=="string");
+      def completed: (.conclusion|type)=="string";
       def median: sort as $v|($v|length) as $n|if $n==0 then null elif ($n%2)==1 then $v[($n/2|floor)] else (($v[$n/2-1]+$v[$n/2])/2) end;
       [.runs[]|select(completed and .created_at >= $start and .created_at < $cutoff)] as $all
       | [$all[]|select(.created_at < $merged)] as $before
