@@ -692,7 +692,7 @@ test("Pages report SVGs use theme colors in light and dark modes", () => {
     const variable = new RegExp(`--${name}: #[0-9a-f]{6};`, "i");
     assert.match(darkTheme, variable);
     assert.match(lightTheme, variable);
-    assert.match(report, new RegExp(`\\.${svgClass} \\{ stroke: var\\(--${name}\\);`));
+    assert.match(report, new RegExp(`\\.${svgClass}\\s*\\{\\s*stroke:\\s*var\\(--${name}\\)`));
   }
 
   assert.match(report, /<svg class="sidebar-brand-mark"[\s\S]*?fill="currentColor"/);
