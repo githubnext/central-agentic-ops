@@ -66,6 +66,10 @@ concurrency:
   group: "${{ github.workflow }}-${{ inputs.target_repo }}"
   cancel-in-progress: true
 
+graders:
+  operational-value:
+    run: .github/graders/optimization-ai-credit-optimizer-operational-value.sh
+
 tracker-id: optimization-ai-credit-optimizer
 
 tools:
@@ -97,6 +101,7 @@ steps:
   - name: Download recent agentic workflow logs
     env:
       GH_TOKEN: ${{ steps.github-mcp-app-token.outputs.token || secrets.GH_AW_GITHUB_TOKEN || secrets.GITHUB_TOKEN }}
+      GH_REPO: ${{ inputs.target_repo }}
     run: |
       set -euo pipefail
       mkdir -p /tmp/gh-aw/token-audit
@@ -106,7 +111,7 @@ steps:
       echo "📥 Downloading agentic workflow logs (last 7 days)..."
 
       FOUND_WORKFLOW=0
-      for workflow in .github/workflows/*.md; do
+      for workflow in target/.github/workflows/*.md; do
         [ -f "$workflow" ] || continue
 
         WORKFLOW_ID=$(sed -n 's/^tracker-id:[[:space:]]*//p' "$workflow" | head -n 1 | tr -d '\r' | sed 's/[[:space:]]*$//')
@@ -115,7 +120,7 @@ steps:
         # Skip the AI credit monitoring family in downstream repositories.
         # In the source repo (githubnext/central-agentic-ops) they remain valid targets;
         # in any other repo, optimization suggestions for them belong upstream.
-          if [[ "$GITHUB_REPOSITORY" != "githubnext/central-agentic-ops" && \
+          if [[ "$TARGET_REPO" != "githubnext/central-agentic-ops" && \
             ("$WORKFLOW_ID" == "optimization-ai-credit-optimizer" || "$WORKFLOW_ID" == "optimization-ai-credit-auditor") ]]; then
           echo "⏭️ Skipping $WORKFLOW_ID (AI credit monitoring family — optimize in githubnext/central-agentic-ops, not here)"
           continue
@@ -168,7 +173,7 @@ steps:
       fi
 
       BEFORE_COUNT=$(jq '(.runs // []) | length' /tmp/gh-aw/token-audit/all-runs.json)
-      if [[ "$GITHUB_REPOSITORY" != "githubnext/central-agentic-ops" ]]; then
+      if [[ "$TARGET_REPO" != "githubnext/central-agentic-ops" ]]; then
         jq '
             (.runs // [])
             | map(select(
@@ -238,7 +243,8 @@ steps:
     run: |
       set -euo pipefail
 
-      OPT_LOG="/tmp/gh-aw/repo-memory/default/optimization-log.json"
+      TARGET_PREFIX=$(printf '%s' "$TARGET_REPO" | sed 's|/|__|')
+      OPT_LOG="/tmp/gh-aw/repo-memory/default/${TARGET_PREFIX}__optimization-log.json"
       if [ -f "$OPT_LOG" ]; then
         echo "✅ Previous optimizations:"
         jq -r '.[] | "\(.date): \(.workflow_name)"' "$OPT_LOG"
@@ -385,11 +391,11 @@ Create one issue with:
 
 ## Phase 6 — Update Optimization Log
 
-Append one entry to `/tmp/gh-aw/repo-memory/default/optimization-log.json`:
+Append one entry to the target-specific optimization log at `/tmp/gh-aw/repo-memory/default/<owner>__<repo>__optimization-log.json`. Derive `<owner>__<repo>` from `${{ inputs.target_repo }}`; do not write the unprefixed log for a dispatched target.
 
-`{"date":"YYYY-MM-DD","workflow_name":"...","total_ai_credits_analyzed":F,"total_tokens_analyzed":N,"runs_audited":N,"recommendations_count":N,"subagent_candidates":N,"estimated_aic_savings_per_run":F}`
+`{"date":"YYYY-MM-DD","target_repo":"${{ inputs.target_repo }}","workflow_name":"...","workflow_path":".github/workflows/....lock.yml","optimizer_run_id":"${{ github.run_id }}","total_ai_credits_analyzed":F,"total_tokens_analyzed":N,"runs_audited":N,"recommendations_count":N,"subagent_candidates":N,"estimated_aic_savings_per_run":F}`
 
-Use `subagent_candidates` for the count of inline sub-agent candidates you actually recommend in the issue body.
+Use the selected candidate's exact `workflow_path`; do not substitute its display name. Use `subagent_candidates` for the count of inline sub-agent candidates you actually recommend in the issue body.
 
 Load the existing array if present, append, keep only the last 30 entries, and save.
 

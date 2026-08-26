@@ -64,20 +64,24 @@ It does not receive a token, discovery query, or permission to dispatch another 
 
 Operational value is measured per worker, not per orchestrator or operation. Dispatch counts, generated outputs, and model assessments do not prove that a worker attained its intended repository outcome.
 
-The catalog repository keeps frozen contracts under `.github/ops-values/<worker-stem>.sh`. Package manifests remain workflow-only while value evaluation is experimental, so neither these contracts nor the `aw-value` authoring and report-generation skill are installed into consumer repositories.
+Each adopted worker registers a frozen schema-version 4 evaluator under `.github/graders/<worker-stem>-operational-value.sh`. gh-aw executes that evaluator for the workflow run, records its assigned opportunity and evidence provenance, and publishes the result in the unified `agent` artifact's `grader_results.json`.
 
-A frozen function exposes its contract with `--definition`, scores evidence with `--metric`, and collects batched evidence with `--collect-batch`. Authoring new functions and generating reports remain catalog-maintenance tasks until the skill is ready to ship.
+An evaluator exposes its contract with `--definition`, scores evidence with `--metric`, and observes one run with `--grade-run`. Pages reads these actual workflow artifacts; it does not recollect repository history or render committed synthetic timelines. It retains run observations through their maturity horizon, regrades due runs from a trusted checkout with the frozen evaluator, and aggregates only the latest evaluator digest. Repeated runs assigned to one opportunity are collapsed before aggregation.
 
 ```bash
-VALUE_FUNCTION=".github/ops-values/<worker-stem>.sh"
+EVALUATOR=".github/graders/<worker-stem>-operational-value.sh"
 
-"$VALUE_FUNCTION" --definition
-"$VALUE_FUNCTION" --metric < evidence.json
-"$VALUE_FUNCTION" --collect-batch < repositories.json
+"$EVALUATOR" --definition
+"$EVALUATOR" --metric < evidence.json
+gh aw graders operational-value RUN_ID --evidence-at TIMESTAMP --json
 ```
 
 :::tip[Measure repository outcomes]
 Count an outcome only when accepted evidence satisfies the worker's frozen contract. A successful dispatch or generated suggestion is activity, not attained value.
+:::
+
+:::caution[Verify package transport]
+A packaged worker is grader-enabled only when a clean `gh aw add` consumer receives both its Markdown workflow and referenced `.github/graders/*.sh` evaluator. The gh-aw operational-value merge commit validates and freezes evaluators but its package installer does not yet transport that directory, so publishing these grader-enabled bundles remains blocked on installer support. Direct checkouts of this repository compile and run the graders.
 :::
 
 Apply the process independently to every worker in an operation. Workers may receive different classifications because their outcomes and available history differ:
@@ -86,7 +90,7 @@ Apply the process independently to every worker in an operation. Workers may rec
 - `attainment-only` measures post-adoption attainment when comparable history cannot be reconstructed;
 - `not measurable` records that no deterministic opportunity, outcome, or accepted-evidence rule can currently be defined.
 
-Do not create placeholder functions or reports while a new worker is unadopted. A frozen function requires its real adoption commit, and evaluation requires matured outcome evidence. The operation creation skill records this as a post-adoption follow-up for each new worker.
+Do not create placeholder evaluators while a new worker is unadopted. A frozen evaluator requires its real adoption commit and a stable run-to-opportunity assignment. The operation creation skill records this as a post-adoption follow-up for each new worker.
 
 ## Current Worker Eligibility
 

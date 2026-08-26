@@ -157,7 +157,8 @@ Compilation checks prove the source policy reaches the generated GitHub Actions 
 | 🟢 Pass | All worker workflow safe outputs | staged mode and review/live routing vocabulary checked. |
 | 🟢 Pass | All five generated workflows | Emitted GitHub Actions settings checked in a clean-room compile. |
 | 🟢 Pass | Core catalog package | Installs no Pages workflow, renderer, or Pages permission surface. |
-| 🟢 Pass | Experimental ops values | Remain catalog-local under `.github/ops-values/` and are excluded from package manifests. |
-| 🟢 Pass | Pages add-on | Explicit nested package contains only the conventional publisher and report skill. |
+| 🟢 Pass | Operational value | Schema-v4 evaluators are registered by workers and Pages consumes actual `grader_results.json` observations. |
+| 🟢 Pass | Pages add-on | Conventional publisher remains outside the reusable Agentic Workflow packages. |
+| 🟡 Upstream blocked | Grader package transport | The gh-aw operational-value merge commit does not install referenced `.github/graders/*.sh` files into a clean package consumer. |
 
 Exhaustive coverage: 18 scheduled plus 108 manual cases, for 126 unique policy configurations.

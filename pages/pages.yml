@@ -49,6 +49,27 @@ jobs:
         with:
           version: v0.87.2
 
+      - name: Checkout operational-value replay runtime
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          repository: github/gh-aw
+          ref: 5cd744cc263a9d1ec5660fbf5604eaceb6f83430
+          path: .cache/gh-aw-operational-value-source
+          persist-credentials: false
+
+      - name: Setup Go for operational-value replay
+        uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
+        with:
+          go-version-file: .cache/gh-aw-operational-value-source/go.mod
+          cache-dependency-path: .cache/gh-aw-operational-value-source/go.sum
+
+      - name: Build operational-value replay runtime
+        working-directory: .cache/gh-aw-operational-value-source
+        run: |
+          mkdir -p "$RUNNER_TEMP/gh-aw-operational-value"
+          go build -ldflags "-s -w -X main.version=v0.87.6" \
+            -o "$RUNNER_TEMP/gh-aw-operational-value/gh-aw" ./cmd/gh-aw
+
       - name: Restore AI Credit usage cache
         uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
@@ -56,6 +77,14 @@ jobs:
           key: ${{ runner.os }}-pages-aic-${{ github.repository }}-${{ github.run_id }}
           restore-keys: |
             ${{ runner.os }}-pages-aic-${{ github.repository }}-
+
+      - name: Restore operational-value observation cache
+        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: .cache/pages-operational-values
+          key: ${{ runner.os }}-pages-operational-values-${{ github.repository }}-${{ github.run_id }}
+          restore-keys: |
+            ${{ runner.os }}-pages-operational-values-${{ github.repository }}-
 
       - name: Collect AI Credit usage
         env:
@@ -66,12 +95,29 @@ jobs:
           REPORT_DEPLOYED_WORKFLOWS: ${{ runner.temp }}/deployed-workflows.json
         run: node .github/scripts/pages-report/aic-usage.mjs
 
+      - name: Collect operational-value observations
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPORT_DEPLOYED_WORKFLOWS: ${{ runner.temp }}/deployed-workflows.json
+          REPORT_GH_AW_BIN: ${{ runner.temp }}/gh-aw-operational-value/gh-aw
+          REPORT_OPERATIONAL_VALUES: ${{ runner.temp }}/operational-values.json
+          REPORT_VALUE_CACHE: .cache/pages-operational-values/observations.json
+          REPORT_VALUE_CONCURRENCY: "3"
+        run: node .github/scripts/pages-report/operational-values.mjs
+
       - name: Save AI Credit usage cache
         if: always()
         uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: .cache/pages-aic
           key: ${{ runner.os }}-pages-aic-${{ github.repository }}-${{ github.run_id }}
+
+      - name: Save operational-value observation cache
+        if: always()
+        uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: .cache/pages-operational-values
+          key: ${{ runner.os }}-pages-operational-values-${{ github.repository }}-${{ github.run_id }}
 
       - name: Build operations report
         env:
@@ -81,8 +127,8 @@ jobs:
           REPORT_AIC_USAGE: ${{ runner.temp }}/aic-usage.json
           REPORT_INVENTORY: ${{ runner.temp }}/control-plane-inventory.json
           REPORT_DEPLOYED_WORKFLOWS: ${{ runner.temp }}/deployed-workflows.json
+          REPORT_OPERATIONAL_VALUES: ${{ runner.temp }}/operational-values.json
           REPORT_OUTPUT: _site
-          REPORT_VALUE_ROOT: .github/value
         run: node .github/scripts/pages-report/report.mjs
 
       - name: Upload Pages artifact

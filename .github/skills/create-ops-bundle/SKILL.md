@@ -22,7 +22,7 @@ Turn an operational idea into a complete bundle of GitHub Agentic Workflows. A b
 4. Ask only for decisions that cannot be inferred safely. If the strategy is broad, split it into workers by independently dispatchable responsibility, not by implementation step.
 5. Create the orchestrator and every worker under `.github/workflows/` in the same change.
 6. Compile and validate all new source workflows. Repair failures before finishing.
-7. When an adopted worker already has a frozen ops-value function, preserve it under `.github/ops-values/`. Ops-value authoring remains a separate post-adoption maintenance task.
+7. When an adopted worker already has an operational-value evaluator, preserve it under `.github/graders/` and keep its `graders.operational-value` registration. Evaluator design remains a separate post-adoption maintenance task.
 
 ## Bundle Contract
 
@@ -78,12 +78,11 @@ Use a dedicated `target/` checkout when the worker must inspect a target reposit
 
 ### Worker Value
 
-Measure operational value per worker because workers have independently dispatchable responsibilities and outcomes. The catalog keeps frozen ops-value functions locally but does not currently package them or the experimental authoring skill.
+Measure operational value per worker because workers have independently dispatchable responsibilities and outcomes. gh-aw freezes each registered evaluator into the compiled workflow and publishes its observation with the workflow run artifacts.
 
 - Design from the worker's adoption-time intent and pre-adoption evidence. Never derive a measure from the orchestrator's dispatch activity or from post-adoption results.
-- Keep the canonical function at `.github/ops-values/<worker-stem>.sh`.
-- Keep package manifests workflow-only while ops-value distribution is experimental.
-- Treat function creation and report generation as post-adoption work; never create placeholder commits, evidence, scores, or reports while authoring an unadopted bundle.
+- Keep the canonical evaluator at `.github/graders/<worker-stem>-operational-value.sh` and register it under `graders.operational-value.run`.
+- Treat evaluator creation as post-adoption work; never create placeholder commits, evidence, scores, or reports while authoring an unadopted bundle.
 - If the bundle is new in the current change, finish workflow validation and report the pending per-worker value follow-up explicitly.
 - A worker may be baseline-comparable, attainment-only, or not measurable. Preserve that independently determined classification rather than forcing every worker into the same bundle-level model.
 
@@ -117,7 +116,7 @@ Before finishing:
 6. Confirm the orchestrator has a `Completion` section that preserves the exact standard report contract from `shared/control.md`; bundle-specific reporting must be additive.
 7. Confirm worker concurrency is keyed by `github.workflow` and `inputs.target_repo` with stale runs cancelled.
 8. Check permissions, tools, network hosts, safe-output limits, credits, timeouts, and dispatch maximums against actual need.
-9. Confirm every existing frozen ops-value function remains under `.github/ops-values/`, or explicitly identify each new worker whose value design is pending adoption.
+9. Confirm every existing operational-value evaluator remains under `.github/graders/` and registered by its worker, or explicitly identify each new worker whose value design is pending adoption.
 10. Run `gh aw compile <workflow.md>` for every new orchestrator and worker. Then run the repository's narrowest relevant tests or validation command if one exists.
 11. Review the generated diff for accidental lockfile churn, secret exposure, unsafe live defaults, fabricated value evidence, and deviations from the nearest bundle that are not justified by the strategy.
 

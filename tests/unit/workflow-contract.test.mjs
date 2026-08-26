@@ -309,41 +309,59 @@ test("deterministic workflows pin third-party actions by commit SHA", () => {
   }
 });
 
-test("package manifests exclude repository-only tests and experimental ops values", () => {
+test("package manifests exclude repository-only tests", () => {
   for (const relativePath of ["aw.yml", join("dependabot", "aw.yml"), join("optimization", "aw.yml")]) {
     const manifest = readFileSync(join(root, relativePath), "utf8");
-    assert.doesNotMatch(manifest, /(?:\.github\/)?ops-values/, relativePath);
     assert.doesNotMatch(manifest, /(?:staged-smoke|enterprise-canary|enterprise-stress|tests\/e2e|\.github\/aw\/e2e)/, relativePath);
   }
 });
 
-test("ops-value contracts expose deterministic validation examples", () => {
-  const opsValuesDirectory = join(root, ".github", "ops-values");
-  const opsValues = readdirSync(opsValuesDirectory).filter((name) => name.endsWith(".sh")).sort();
-  assert.deepEqual(opsValues, [
-    "dependabot-release-train-updater.sh",
-    "optimization-ai-credit-auditor.sh",
-    "optimization-ai-credit-optimizer.sh",
+test("operational-value graders expose deterministic run-scoped contracts", () => {
+  const gradersDirectory = join(root, ".github", "graders");
+  const graders = readdirSync(gradersDirectory).filter((name) => name.endsWith("-operational-value.sh")).sort();
+  assert.deepEqual(graders, [
+    "dependabot-release-train-updater-operational-value.sh",
+    "optimization-ai-credit-auditor-operational-value.sh",
+    "optimization-ai-credit-optimizer-operational-value.sh",
   ]);
 
-  for (const name of opsValues) {
-    const executable = join(opsValuesDirectory, name);
+  for (const name of graders) {
+    const executable = join(gradersDirectory, name);
+    const workflowName = name.replace(/-operational-value\.sh$/, ".md");
+    assert.match(
+      workflow(workflowName),
+      new RegExp(`graders:\\s+operational-value:\\s+run: \\.github/graders/${name.replace(".", "\\.")}`),
+      `${name}: workflow must execute the frozen operational-value evaluator`,
+    );
     const definition = JSON.parse(execFileSync(executable, ["--definition"], { encoding: "utf8" }));
-    assert.equal(definition.schemaVersion, 3, name);
-    assert.equal(definition.metrics.filter(({ role }) => role === "primary").length, 1, name);
-
-    for (const metric of definition.metrics) {
-      const score = (example) => JSON.parse(execFileSync(executable, ["--metric", metric.id], {
-        encoding: "utf8",
-        input: JSON.stringify(definition.validationExamples[example]),
-      }));
-      assert.ok(score("targetAttained") > score("targetMissed"), `${name}: ${metric.id}`);
-      if (metric.role === "primary") {
-        assert.equal(score("missing"), null, `${name}: ${metric.id} missing`);
-        assert.equal(score("malformed"), null, `${name}: ${metric.id} malformed`);
-      }
-    }
+    assert.equal(definition.schemaVersion, 4, name);
+    assert.equal(definition.grader, "operational-value", name);
+    const score = (example) => JSON.parse(execFileSync(executable, ["--metric"], {
+      encoding: "utf8",
+      input: JSON.stringify(definition.validationExamples[example]),
+    }));
+    assert.ok(score("targetAttained") > score("targetMissed"), name);
+    assert.equal(score("missing"), null, `${name}: missing`);
+    assert.equal(score("malformed"), null, `${name}: malformed`);
   }
+
+  const dependabotWorker = workflow("dependabot-release-train-updater.md");
+  const auditorWorker = workflow("optimization-ai-credit-auditor.md");
+  const auditorEvaluator = readFileSync(join(gradersDirectory, "optimization-ai-credit-auditor-operational-value.sh"), "utf8");
+  const optimizerWorker = workflow("optimization-ai-credit-optimizer.md");
+  const optimizerEvaluator = readFileSync(join(gradersDirectory, "optimization-ai-credit-optimizer-operational-value.sh"), "utf8");
+  assert.match(dependabotWorker, /checks: read/);
+  assert.match(dependabotWorker, /statuses: read/);
+  assert.match(auditorWorker, /window_start: \$windowStart/);
+  assert.match(auditorWorker, /window_end: \$windowEnd/);
+  assert.match(auditorEvaluator, /workflow_path \/\/ \.workflow_name/);
+  assert.match(auditorEvaluator, /evidenceRepo: \.run\.repository/);
+  assert.match(optimizerWorker, /GH_REPO: \$\{\{ inputs\.target_repo \}\}/);
+  assert.match(optimizerWorker, /for workflow in target\/\.github\/workflows\/\*\.md/);
+  assert.match(optimizerWorker, /\$\{TARGET_PREFIX\}__optimization-log\.json/);
+  assert.match(optimizerWorker, /"optimizer_run_id":"\$\{\{ github\.run_id \}\}"/);
+  assert.match(optimizerEvaluator, /\.optimizer_run_id \| tostring/);
+  assert.match(optimizerEvaluator, /target-workflow:\$\{target_repo\}:\$\{workflow\}:\$\{optimizer_run_id\}/);
 });
 
 test("staged smoke is manual, bounded, and cannot request writes", () => {
@@ -644,12 +662,14 @@ test("clean-room compilation emits the expected GitHub Actions settings", { time
 test("Pages is an explicit least-privilege add-on", () => {
   const rootManifest = readFileSync(join(root, "aw.yml"), "utf8");
   const pagesWorkflow = readFileSync(join(root, "pages", "pages.yml"), "utf8");
-  const reportAssets = ["aic-usage.mjs", "deployed-workflows.mjs", "inventory.mjs", "report.mjs"];
+  const reportAssets = ["aic-usage.mjs", "deployed-workflows.mjs", "inventory.mjs", "operational-values.mjs", "report.mjs"];
 
   assert.doesNotMatch(rootManifest, /pages\/pages|pages-report/);
   assert.ok(!existsSync(join(root, "pages", "aw.yml")), "Pages must not masquerade as an Agentic Workflow package");
   assert.match(pagesWorkflow, /pages: write/);
   assert.match(pagesWorkflow, /id-token: write/);
+  assert.match(pagesWorkflow, /REPORT_VALUE_CACHE: \.cache\/pages-operational-values\/observations\.json/);
+  assert.match(pagesWorkflow, /Save operational-value observation cache/);
   for (const assetName of reportAssets) {
     assert.ok(existsSync(join(root, ".github", "scripts", "pages-report", assetName)), `missing report script ${assetName}`);
     assert.match(pagesWorkflow, new RegExp(`\\.github/scripts/pages-report/${assetName.replace(".", "\\.")}`));

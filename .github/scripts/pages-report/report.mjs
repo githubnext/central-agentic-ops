@@ -1,4 +1,4 @@
-import { copyFile, mkdir, readdir, writeFile } from "node:fs/promises";
+import { mkdir, writeFile } from "node:fs/promises";
 import { existsSync, readFileSync } from "node:fs";
 import path from "node:path";
 
@@ -9,9 +9,9 @@ const token = process.env.GITHUB_TOKEN;
 const pagesToken = process.env.REPORT_PAGES_TOKEN || token;
 const outputDirectory = process.env.REPORT_OUTPUT || "_site";
 const inventoryPath = process.env.REPORT_INVENTORY;
-const valueReportRoot = process.env.REPORT_VALUE_ROOT || ".github/value";
 const deployedWorkflowsPath = process.env.REPORT_DEPLOYED_WORKFLOWS || "_inventory/deployed-workflows.json";
 const aicUsagePath = process.env.REPORT_AIC_USAGE || "_inventory/aic-usage.json";
+const operationalValuesPath = process.env.REPORT_OPERATIONAL_VALUES || "_inventory/operational-values.json";
 
 if (!repository || !token || !inventoryPath) {
   throw new Error("GITHUB_REPOSITORY, GITHUB_TOKEN, and REPORT_INVENTORY are required");
@@ -27,6 +27,9 @@ const deployedInventory = existsSync(deployedWorkflowsPath)
 const aicUsage = existsSync(aicUsagePath)
   ? JSON.parse(readFileSync(aicUsagePath, "utf8"))
   : { schemaVersion: 1, available: false, complete: false, repositories: [], runs: [] };
+const operationalValues = existsSync(operationalValuesPath)
+  ? JSON.parse(readFileSync(operationalValuesPath, "utf8"))
+  : { schemaVersion: 1, selectedRuns: 0, observedRuns: 0, records: [] };
 const allowedRepositories = new Set((process.env.REPORT_ALLOWED_REPOS || "").split(",")
   .map((value) => value.trim().toLowerCase()).filter(Boolean));
 if (inventory.schemaVersion !== 1 || !Array.isArray(inventory.workflows) || !Array.isArray(inventory.bundles)) {
@@ -37,30 +40,37 @@ const standaloneDefinitions = inventory.standalone;
 const workflowDefinitionById = new Map(inventory.workflows.map((workflow) => [workflow.id, workflow]));
 const workerDefinitions = bundleDefinitions.flatMap((bundle) => bundle.workers.map((worker) => ({ ...worker, bundleId: bundle.id, bundleName: bundle.name })));
 const workerIds = new Set(workerDefinitions.map((worker) => worker.id));
-
-async function loadValueTimelines() {
-  const timelines = new Map();
-  let paths = [];
-  try {
-    paths = await readdir(valueReportRoot, { recursive: true });
-  } catch (error) {
-    if (error.code !== "ENOENT") throw error;
-  }
-  for (const relativePath of paths.filter((candidate) => candidate.endsWith("-timeline.json"))) {
-    const timelinePath = path.join(valueReportRoot, relativePath);
-    const timeline = JSON.parse(readFileSync(timelinePath, "utf8"));
-    if (timeline.schemaVersion !== 2 || !workerIds.has(timeline.workflowSlug) || !Array.isArray(timeline.snapshots) || timeline.snapshots.length < 2) continue;
-    timelines.set(timeline.workflowSlug, {
-      timeline,
-      timelinePath,
-      svgPath: timelinePath.replace(/-timeline\.json$/, "-timeline.svg"),
-      definitionsPath: timelinePath.replace(/-timeline\.json$/, "-definitions.md"),
-    });
-  }
-  return timelines;
+if (operationalValues.schemaVersion !== 1 || !Array.isArray(operationalValues.records)) {
+  throw new Error(`Unsupported or invalid operational-value observations: ${operationalValuesPath}`);
 }
-
-const valueTimelines = await loadValueTimelines();
+function comparableValueObservations(records) {
+  const valid = records
+    .filter((record) => record.observation
+      && record.status === "pass"
+      && Number.isFinite(record.value)
+      && typeof record.evaluatorDigest === "string"
+      && record.evaluatorDigest.length > 0
+      && typeof record.observation.opportunityKey === "string"
+      && record.observation.opportunityKey.length > 0);
+  const latestEvaluator = valid.reduce((latest, record) => {
+    const assignedAt = Date.parse(record.observation.subject?.createdAt || record.originalEvidenceAt || record.observation.evidenceAt || "");
+    return !latest || assignedAt > latest.assignedAt ? { digest: record.evaluatorDigest, assignedAt } : latest;
+  }, null);
+  if (!latestEvaluator) return [];
+  const opportunities = new Map();
+  for (const record of valid.filter((candidate) => candidate.evaluatorDigest === latestEvaluator.digest)) {
+    const key = `${record.repository}:${record.observation.opportunityKey}`;
+    const existing = opportunities.get(key);
+    const observedAt = Date.parse(record.observation.evidenceAt || "");
+    const existingAt = Date.parse(existing?.observation?.evidenceAt || "");
+    if (!existing || observedAt >= existingAt) opportunities.set(key, record);
+  }
+  return [...opportunities.values()]
+    .sort((left, right) => String(left.observation.evidenceAt).localeCompare(String(right.observation.evidenceAt)));
+}
+const valueObservations = new Map([...workerIds].map((workerId) => [workerId,
+  comparableValueObservations(operationalValues.records.filter((record) => record.workflowId === workerId)),
+]));
 const reportDefinitions = [
   ...bundleDefinitions,
   ...standaloneDefinitions.map((workflow) => ({ ...workflow, workers: [], missingWorkers: [] })),
@@ -1268,42 +1278,33 @@ for (const [repositoryName, workflows] of deployedByRepository) {
   }));
 }
 
-function presentedMetric(value, transform) {
-  if (!Number.isFinite(value)) return null;
-  return transform === "complement" ? 1 - value : value;
-}
-
 function formatGoalMeasure(value) {
   return value === null ? "Not observed" : new Intl.NumberFormat("en", { style: "percent", maximumFractionDigits: 1 }).format(value);
 }
 
-function valueReportContent(worker, artifact, assetName) {
-  if (!artifact) {
+function valueReportContent(worker, observations) {
+  if (!observations?.length) {
     return `<section class="value-report value-report-empty" aria-labelledby="${escapeHtml(worker.id)}-heading">
       <header><div><h2 id="${escapeHtml(worker.id)}-heading">${escapeHtml(worker.name)}</h2><p>${escapeHtml(worker.id)}</p></div><span class="status status-muted">Not evaluated</span></header>
-      <div class="value-empty">${octicon("graph")}<h3>No evaluation observations yet</h3><p>Publish the canonical <code>.github/value/${escapeHtml(worker.id)}/${escapeHtml(worker.id)}-timeline.json</code> and sibling SVG artifacts to show this worker's value trend.</p></div>
-      <div class="value-details-unavailable">Metric details unavailable</div>
+      <div class="value-empty">${octicon("graph")}<h3>No workflow observations yet</h3><p>Operational value will appear after this worker publishes a valid <code>grader_results.json</code>.</p></div>
+      <div class="value-details-unavailable">Run evidence unavailable</div>
     </section>`;
   }
-  const timeline = artifact.timeline;
-  const metrics = timeline.metricReview.metrics;
-  const primaryMetric = metrics.find((metric) => metric.role === "primary");
-  const latestSnapshot = timeline.snapshots.at(-1);
-  const latestPrimary = primaryMetric ? presentedMetric(latestSnapshot.metrics[primaryMetric.id], primaryMetric.presentation?.transform) : null;
-  const mode = timeline.evaluationMode || "baseline-comparable";
-  const metricRows = metrics.map((metric) => {
-    const latestValue = presentedMetric(latestSnapshot.metrics[metric.id], metric.presentation?.transform);
-    return `<tr><th scope="row">${escapeHtml(metric.presentation?.name || metric.name)}</th><td>${escapeHtml(metric.role)}</td><td>${escapeHtml(formatGoalMeasure(latestValue))}</td></tr>`;
+  const latest = observations.at(-1);
+  const mature = observations.filter((record) => record.observation.mature);
+  const matureAverage = mature.length ? mature.reduce((sum, record) => sum + record.value, 0) / mature.length : null;
+  const observationRows = [...observations].reverse().map((record) => {
+    const observation = record.observation;
+    const target = observation.case?.targetRepo || observation.subject?.repository || record.repository;
+    return `<tr><th scope="row"><a href="${escapeHtml(record.runUrl)}"><time datetime="${escapeHtml(observation.evidenceAt)}">${escapeHtml(formatDate(observation.evidenceAt))}</time></a></th><td>${escapeHtml(target)}</td><td>${escapeHtml(observation.opportunityKey)}</td><td>${escapeHtml(formatGoalMeasure(record.value))}</td><td><span class="status ${observation.mature ? "status-success" : "status-muted"}">${observation.mature ? "Mature" : "As of run"}</span></td></tr>`;
   }).join("\n");
-  const observationRows = [...timeline.snapshots].reverse().map((snapshot) => `<tr><th scope="row"><time datetime="${escapeHtml(snapshot.observedAt)}">${escapeHtml(formatDate(snapshot.observedAt))}</time></th>${metrics.map((metric) => `<td>${escapeHtml(formatGoalMeasure(presentedMetric(snapshot.metrics[metric.id], metric.presentation?.transform)))}</td>`).join("")}</tr>`).join("\n");
   return `<section class="value-report" aria-labelledby="${escapeHtml(worker.id)}-heading">
-    <header><div><h2 id="${escapeHtml(worker.id)}-heading">${escapeHtml(timeline.workflowName || worker.name)}</h2><p>${escapeHtml(timeline.summary?.nativeLabel || primaryMetric?.name || "Operational value attainment")}</p></div><div class="value-score"><strong>${escapeHtml(formatGoalMeasure(latestPrimary))}</strong><span>${mode === "attainment-only" ? "Latest attainment" : "Latest goal measure"}</span></div></header>
-    <div class="value-chart"><img src="assets/${escapeHtml(assetName)}" alt="${escapeHtml(timeline.workflowName || worker.name)} value-function metrics over time"></div>
+    <header><div><h2 id="${escapeHtml(worker.id)}-heading">${escapeHtml(worker.name)}</h2><p>Run-scoped attainment from the workflow's frozen operational-value evaluator.</p></div><div class="value-score"><strong>${escapeHtml(formatGoalMeasure(latest.value))}</strong><span>Latest observation</span></div></header>
+    <div class="value-chart" role="group" aria-label="Operational-value summary"><dl><div><dt>Latest</dt><dd>${escapeHtml(formatGoalMeasure(latest.value))}</dd></div><div><dt>Mature average</dt><dd>${escapeHtml(formatGoalMeasure(matureAverage))}</dd></div><div><dt>Opportunities</dt><dd>${observations.length}</dd></div><div><dt>Evaluator</dt><dd><code>${escapeHtml(latest.evaluatorDigest?.slice(0, 12) || "Unavailable")}</code></dd></div></dl></div>
     <details class="value-details-disclosure">
-      <summary>View metric details</summary>
+      <summary>View run evidence</summary>
       <div class="value-details">
-        <section aria-labelledby="${escapeHtml(worker.id)}-metrics-heading"><h3 id="${escapeHtml(worker.id)}-metrics-heading">Latest measures</h3><p>${mode === "attainment-only" ? "Post-adoption attainment; no comparable pre-adoption baseline is available." : "Baseline-comparable measures before and after adoption."}</p><div class="table-region"><table><thead><tr><th scope="col">Measure</th><th scope="col">Role</th><th scope="col">Latest value</th></tr></thead><tbody>${metricRows}</tbody></table></div></section>
-        <section aria-labelledby="${escapeHtml(worker.id)}-observations-heading"><h3 id="${escapeHtml(worker.id)}-observations-heading">Dated observations</h3><div class="table-region" role="region" tabindex="0"><table><thead><tr><th scope="col">Observed</th>${metrics.map((metric) => `<th scope="col">${escapeHtml(metric.presentation?.name || metric.name)}</th>`).join("")}</tr></thead><tbody>${observationRows}</tbody></table></div></section>
+        <section aria-labelledby="${escapeHtml(worker.id)}-observations-heading"><h3 id="${escapeHtml(worker.id)}-observations-heading">Workflow observations</h3><p>Only the latest evaluator version is aggregated. Repeated runs for one opportunity are collapsed; missing, failed, and null grader results are excluded rather than scored as zero.</p><div class="table-region" role="region" tabindex="0"><table><thead><tr><th scope="col">Observed</th><th scope="col">Target</th><th scope="col">Opportunity</th><th scope="col">Value</th><th scope="col">Evidence</th></tr></thead><tbody>${observationRows}</tbody></table></div></section>
       </div>
     </details>
   </section>`;
@@ -1314,21 +1315,11 @@ for (const bundle of bundleDefinitions) {
   const navigation = `<nav aria-label="Report navigation"><div class="shell"><a href="../operations/${bundle.id}.html">Operations</a><a href="../operations/${bundle.id}.html">${escapeHtml(bundle.name)}</a><span aria-current="page">Insights</span></div></nav>`;
   const sections = [];
   for (const worker of bundle.workers) {
-    const artifact = valueTimelines.get(worker.id);
-    const assetName = `${worker.id}-timeline.svg`;
-    if (artifact) {
-      try {
-        await copyFile(artifact.svgPath, path.join(outputDirectory, "insights", "assets", assetName));
-      } catch (error) {
-        if (error.code !== "ENOENT") throw error;
-        valueTimelines.delete(worker.id);
-      }
-    }
-    sections.push(valueReportContent(worker, valueTimelines.get(worker.id), assetName));
+    sections.push(valueReportContent(worker, valueObservations.get(worker.id)));
   }
   await writeFile(path.join(outputDirectory, "insights", `${bundle.id}.html`), layout({
     title: bundle.name,
-    description: `Worker operational-value measurements from the ${bundle.name} value functions.`,
+    description: `Worker operational-value observations from actual ${bundle.name} workflow runs.`,
     content: `${bundleTabs(bundle, "insights")}${sections.join("\n")}`,
     nested: true,
     navigation,
@@ -1678,14 +1669,18 @@ footer a { min-height: 24px; display: inline-flex; align-items: center; }
 .value-score strong, .value-score span { display: block; }
 .value-score strong { font-size: 1.5rem; font-variant-numeric: tabular-nums; }
 .value-score span { color: var(--muted); font-size: .6875rem; }
-.value-chart { height: 400px; padding: 12px 16px; overflow: hidden; border-bottom: 1px solid var(--border); background: var(--canvas-subtle); }
-.value-chart img { width: 100%; height: 100%; display: block; object-fit: contain; object-position: center; }
+.value-chart { min-height: 180px; display: grid; align-items: center; padding: 24px 16px; overflow: hidden; border-bottom: 1px solid var(--border); background: var(--canvas-subtle); }
+.value-chart dl { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 1px; margin: 0; overflow: hidden; border: 1px solid var(--border); border-radius: 6px; background: var(--border); }
+.value-chart dl > div { min-width: 0; padding: 18px; background: var(--canvas); }
+.value-chart dt { color: var(--muted); font-size: .75rem; font-weight: 600; text-transform: uppercase; }
+.value-chart dd { margin: 4px 0 0; overflow: hidden; font-size: 1.375rem; font-weight: 600; text-overflow: ellipsis; white-space: nowrap; }
+.value-chart dd code { font-size: .875rem; }
 .value-details-disclosure > summary, .value-details-unavailable { min-height: 44px; display: flex; align-items: center; padding: 10px 16px; color: var(--fg); font-size: .75rem; font-weight: 600; }
 .value-details-disclosure > summary { cursor: pointer; }
 .value-details-disclosure > summary:hover { background: var(--canvas-subtle); }
 .value-details-disclosure[open] > summary { border-bottom: 1px solid var(--border); }
 .value-details-unavailable { color: var(--muted); }
-.value-details { display: grid; grid-template-columns: minmax(260px, .75fr) minmax(0, 1.25fr); gap: 0; }
+.value-details { display: grid; grid-template-columns: minmax(0, 1fr); gap: 0; }
 .value-details > section { min-width: 0; padding: 16px; }
 .value-details > section + section { border-left: 1px solid var(--border); }
 .value-details h3 { margin: 0 0 4px; font-size: .875rem; }
