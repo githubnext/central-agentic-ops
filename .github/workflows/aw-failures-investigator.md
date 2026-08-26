@@ -266,12 +266,16 @@ steps:
               "truncated_error_logs": truncated_error_logs,
           })
 
-      existing_tracking_issues = run_json([
-          "gh", "issue", "list", "--repo", REPO, "--state", "open",
-          "--search", f'"{TITLE_PREFIX}" in:title',
-          "--limit", "50",
-          "--json", "number,title,state,url,labels,createdAt,updatedAt",
-      ]) or []
+      # GitHub search drops bracket punctuation, so match the prefix locally.
+      existing_tracking_issues = [
+          issue for issue in run_json([
+              "gh", "issue", "list", "--repo", REPO, "--state", "open",
+              "--search", f"{TITLE_PREFIX.strip('[]')} in:title",
+              "--limit", "50",
+              "--json", "number,title,state,url,labels,createdAt,updatedAt",
+          ]) or []
+          if (issue.get("title") or "").startswith(TITLE_PREFIX)
+      ]
 
       payload = {
           "generated_at": isoformat_z(datetime.now(timezone.utc)),
