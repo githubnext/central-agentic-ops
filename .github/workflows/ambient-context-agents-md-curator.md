@@ -57,7 +57,6 @@ imports:
 permissions:
   contents: read
   actions: read
-  issues: read
   pull-requests: read
   copilot-requests: write
 
@@ -79,7 +78,7 @@ tracker-id: ambient-context-agents-md-curator
 tools:
   github:
     mode: remote
-    toolsets: [issues, pull_requests]
+    toolsets: [pull_requests]
   bash:
     - "git"
     - "jq"
@@ -128,6 +127,8 @@ steps:
         const MAX_REVIEW_COMMENTS = 60;
         const MAX_COMMENT_CHARS = 400;
         const MAX_LIST_ITEMS = 25;
+        const MAX_OPEN_PULL_REQUESTS = 10;
+        const MAX_OPEN_INSTRUCTION_PULLS = 5;
         const CONTEXT_FILES = [
           'AGENTS.md',
           'CLAUDE.md',
@@ -376,9 +377,10 @@ steps:
             state: 'open',
             sort: 'updated',
             direction: 'desc',
-            per_page: MAX_PULL_REQUESTS,
+            per_page: MAX_OPEN_PULL_REQUESTS,
           });
           for (const pull of data) {
+            if (openInstructionPulls.length >= MAX_OPEN_INSTRUCTION_PULLS) break;
             const { data: files } = await github.rest.pulls.listFiles({
               owner,
               repo,
@@ -387,7 +389,8 @@ steps:
             });
             const touched = files
               .map((file) => file.filename)
-              .filter((filename) => instructionFiles.includes(filename) || filename.endsWith('/SKILL.md'));
+              .filter((filename) => instructionFiles.includes(filename) || filename.endsWith('/SKILL.md'))
+              .slice(0, MAX_LIST_ITEMS);
             if (touched.length) {
               openInstructionPulls.push({ number: pull.number, title: pull.title, files: touched });
             }

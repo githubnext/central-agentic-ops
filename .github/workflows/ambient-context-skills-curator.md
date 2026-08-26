@@ -57,7 +57,6 @@ imports:
 permissions:
   contents: read
   actions: read
-  issues: read
   pull-requests: read
   copilot-requests: write
 
@@ -79,7 +78,7 @@ tracker-id: ambient-context-skills-curator
 tools:
   github:
     mode: remote
-    toolsets: [issues, pull_requests]
+    toolsets: [pull_requests]
   bash:
     - "git"
     - "jq"
@@ -126,6 +125,8 @@ steps:
         const AGENT_GLOBS = ['.github/agents/*.md', '.claude/agents/*.md'];
         const REFERENCE_WINDOW_DAYS = 180;
         const MAX_LIST_ITEMS = 40;
+        const MAX_OPEN_PULL_REQUESTS = 10;
+        const MAX_OPEN_INSTRUCTION_PULLS = 5;
 
         fs.mkdirSync(OUT_DIR, { recursive: true });
 
@@ -225,10 +226,48 @@ steps:
           if (/skill/i.test(line)) current.mentions_skill = true;
         }
 
+        // Loop prevention: an open pull request already editing ambient context means a previous
+        // proposal is still in flight, so a new proposal would race it.
+        const [owner, repo] = REPO.split('/');
+        const openInstructionPulls = [];
+        let openPullError = '';
+        try {
+          const { data } = await github.rest.pulls.list({
+            owner,
+            repo,
+            state: 'open',
+            sort: 'updated',
+            direction: 'desc',
+            per_page: MAX_OPEN_PULL_REQUESTS,
+          });
+          for (const pull of data) {
+            if (openInstructionPulls.length >= MAX_OPEN_INSTRUCTION_PULLS) break;
+            const { data: files } = await github.rest.pulls.listFiles({
+              owner,
+              repo,
+              pull_number: pull.number,
+              per_page: 100,
+            });
+            const touched = files
+              .map((file) => file.filename)
+              .filter((filename) => filename === 'AGENTS.md' || filename.endsWith('/AGENTS.md') || filename.endsWith('/SKILL.md'))
+              .slice(0, MAX_LIST_ITEMS);
+            if (touched.length) {
+              openInstructionPulls.push({ number: pull.number, title: pull.title, files: touched });
+            }
+          }
+        } catch (error) {
+          openPullError = error && error.message ? error.message : String(error);
+        }
+
         write({
           target_repo: REPO,
           generated_at: new Date().toISOString(),
           agents_md_present: true,
+          in_flight: {
+            open_instruction_pull_requests: openInstructionPulls,
+            error: openPullError,
+          },
           agents_md: {
             bytes: Buffer.byteLength(agentsMarkdown, 'utf8'),
             lines: bodyLines.length,
@@ -260,7 +299,7 @@ If `agents_md_present` is `false`, stop immediately. Emit a `noop` explaining th
 
 If `agents_md_present` is `true` and `skill_count` is `0`, continue: the only work available is recommending extraction of procedure-shaped `AGENTS.md` sections into new skills, and only when a section clearly qualifies.
 
-Before analyzing, make one bounded check for open pull requests in the target repository that modify `AGENTS.md` or any `SKILL.md`. If one exists, a previous proposal is still being applied; emit a `noop` naming those pull requests instead of proposing a competing change set.
+If `in_flight.open_instruction_pull_requests` is non-empty, a previous proposal is still being applied; emit a `noop` naming those pull requests instead of proposing a competing change set.
 
 ## Step 2 — Classify the layering
 
@@ -335,3 +374,4 @@ When `correlation_id` is present, add the correlation ID, central repository, an
 - Read-only GitHub tools; the issue is the only mutation.
 - Never open a pull request, never modify the target checkout, and never dispatch another workflow.
 - Do not duplicate the `ambient-context-agents-md-curator` mission: correctness and staleness of `AGENTS.md` prose belong to that worker. Confine this issue to layering between `AGENTS.md` and skills, and to the skills themselves.
+- If the pre-fetch recorded an `in_flight.error`, the loop-prevention check did not run. Say so in the issue so a reviewer can confirm no competing pull request is open before applying the prompt.
