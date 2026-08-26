@@ -191,13 +191,38 @@ function declaresOperationalValue(source) {
   return /^\s+operational-value:\s*(?:$|#)/m.test(graders);
 }
 
-async function operationalValueCapability(repositoryName, lockPath) {
+function workflowRole(source) {
+  return source.match(/uses:\s+shared\/control\.md[\s\S]*?role:\s+(orchestrator|worker)/)?.[1] || "standalone";
+}
+
+function workflowWorkerIds(source) {
+  const inline = source.match(/^[ \t]+workflows:[ \t]*\[([^\]]*)\]/m)?.[1];
+  if (inline !== undefined) return inline.split(",").map((item) => item.trim().replace(/^['"]|['"]$/g, "")).filter(Boolean);
+  const block = source.match(/^[ \t]+workflows:[ \t]*\n((?:^[ \t]+-[ \t]+.*\n?)*)/m)?.[1] || "";
+  return block.split("\n")
+    .map((line) => line.match(/^\s*-\s+([^#]+)$/)?.[1]?.trim().replace(/^['"]|['"]$/g, ""))
+    .filter(Boolean);
+}
+
+async function workflowCapabilities(repositoryName, lockPath) {
   const sourcePath = lockPath.replace(/\.lock\.yml$/, ".md");
   try {
-    return declaresOperationalValue(await fileContent(repositoryName, sourcePath));
+    const source = await fileContent(repositoryName, sourcePath);
+    const role = workflowRole(source);
+    return {
+      operationalValue: declaresOperationalValue(source),
+      role,
+      workers: role === "orchestrator" ? workflowWorkerIds(source) : [],
+      sourceAvailable: true,
+    };
   } catch (error) {
-    console.warn(`${error.message}; operational-value capability is unknown for ${repositoryName}/${sourcePath}`);
-    return null;
+    console.warn(`${error.message}; workflow capabilities are unknown for ${repositoryName}/${sourcePath}`);
+    return {
+      operationalValue: null,
+      role: "unknown",
+      workers: [],
+      sourceAvailable: !/GitHub API 404\b/.test(error.message) ? null : false,
+    };
   }
 }
 
@@ -347,8 +372,9 @@ const [runHealth, organizationRepositories] = await Promise.all([
   organizationRepositorySummary(),
 ]);
 
-const workflows = (await mapWithConcurrency([...discovered.values()], 8, async (item) => {
+const discoveredWorkflows = await mapWithConcurrency([...discovered.values()], 8, async (item) => {
   const registered = registryByRepository.get(item.repository)?.get(item.path);
+  const capabilities = await workflowCapabilities(item.repository, item.path);
   return {
     ...item,
     id: registered?.id || null,
@@ -358,9 +384,32 @@ const workflows = (await mapWithConcurrency([...discovered.values()], 8, async (
     createdAt: registered?.created_at || null,
     updatedAt: registered?.updated_at || null,
     runHealth: registered ? runHealth.totals.get(registered.id) || { runs: 0, successful: 0, failed: 0, cancelled: 0, skipped: 0, pending: 0, other: 0, runIds: [], runRecords: [] } : null,
-    operationalValue: await operationalValueCapability(item.repository, item.path),
+    ...capabilities,
   };
-})).sort((left, right) => left.repository.localeCompare(right.repository) || left.name.localeCompare(right.name));
+});
+const missingSourceCount = discoveredWorkflows.filter((workflow) => workflow.sourceAvailable === false).length;
+const workflows = discoveredWorkflows
+  .filter((workflow) => workflow.sourceAvailable !== false)
+  .sort((left, right) => left.repository.localeCompare(right.repository) || left.name.localeCompare(right.name));
+const workflowByKey = new Map(workflows.map((workflow) => [`${workflow.repository}:${workflow.path}`, workflow]));
+for (const bundle of bundles) {
+  const expanded = new Map(bundle.workflows.map((workflow) => [workflow.lockPath, workflow]));
+  for (const included of bundle.workflows) {
+    const orchestrator = workflowByKey.get(`${bundle.repository}:${included.lockPath}`);
+    for (const workerId of orchestrator?.workers || []) {
+      const lockPath = `.github/workflows/${workerId}.lock.yml`;
+      const worker = workflowByKey.get(`${bundle.repository}:${lockPath}`);
+      if (worker) expanded.set(lockPath, {
+        sourcePath: lockPath.replace(/\.lock\.yml$/, ".md"),
+        lockPath,
+        id: worker.id,
+        name: worker.name,
+        state: worker.state,
+      });
+    }
+  }
+  bundle.workflows = [...expanded.values()];
+}
 const operationWorkflowKeys = new Set(bundles.flatMap((bundle) => bundle.workflows.map((workflow) => `${bundle.repository}:${workflow.lockPath}`)));
 const standaloneWorkflows = workflows.filter((workflow) => !operationWorkflowKeys.has(`${workflow.repository}:${workflow.path}`));
 
@@ -395,7 +444,7 @@ const inventory = {
 
 await mkdir(path.dirname(outputPath), { recursive: true });
 await writeFile(outputPath, `${JSON.stringify(inventory, null, 2)}\n`);
-console.log(`Discovered ${bundles.length} operations and ${standaloneWorkflows.length} standalone workflows across ${repositoryNames.length} repositories; run health ${runHealth.available ? runHealth.complete ? "complete" : "partial" : "unavailable"}`);
+console.log(`Discovered ${bundles.length} operations and ${standaloneWorkflows.length} standalone workflows across ${repositoryNames.length} repositories; excluded ${missingSourceCount} workflows without authored sources; run health ${runHealth.available ? runHealth.complete ? "complete" : "partial" : "unavailable"}`);
 })().catch((error) => {
   console.error(error);
   process.exitCode = 1;

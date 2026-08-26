@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { execFileSync } from "node:child_process";
-import { cpSync, existsSync, mkdtempSync, readFileSync, readdirSync, rmSync } from "node:fs";
+import { cpSync, existsSync, mkdtempSync, readFileSync, readdirSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join, resolve } from "node:path";
 import test from "node:test";
@@ -673,7 +673,9 @@ test("Pages is an explicit least-privilege add-on", () => {
   assert.match(pagesWorkflow, /id-token: write/);
   assert.match(pagesWorkflow, /REPORT_VALUE_CACHE: \.cache\/pages-operational-values\/observations\.json/);
   assert.match(pagesWorkflow, /Save operational-value observation cache/);
-  assert.match(deployedWorkflows, /operationalValue: await operationalValueCapability\(item\.repository, item\.path\)/);
+  assert.match(deployedWorkflows, /const capabilities = await workflowCapabilities\(item\.repository, item\.path\)/);
+  assert.match(deployedWorkflows, /const role = workflowRole\(source\)/);
+  assert.match(deployedWorkflows, /sourceAvailable: !\/GitHub API 404/);
   assert.match(operationalValues, /workflow\.operationalValue !== true/);
   assert.doesNotMatch(operationalValues, /const workerIds = new Set/);
   assert.match(report, /function valueObservationRepository\(record\)/);
@@ -733,4 +735,116 @@ test("Pages report SVGs use theme colors in light and dark modes", () => {
   assert.match(report, /<svg class="sidebar-brand-mark"[\s\S]*?fill="currentColor"/);
   assert.match(darkTheme, /--fg: #[0-9a-f]{6};/i);
   assert.match(lightTheme, /--fg: #[0-9a-f]{6};/i);
+});
+
+test("Pages renders one canonical authored workflow detail across repository and operation views", () => {
+  const temporaryRoot = mkdtempSync(join(tmpdir(), "central-agentic-ops-workflow-pages-"));
+  const outputPath = join(temporaryRoot, "site");
+  const inventoryPath = join(temporaryRoot, "inventory.json");
+  const deployedPath = join(temporaryRoot, "deployed.json");
+  const aicPath = join(temporaryRoot, "aic.json");
+  const valuesPath = join(temporaryRoot, "values.json");
+  const mockFetchPath = join(temporaryRoot, "mock-fetch.mjs");
+  const orchestratorPath = ".github/workflows/operation.lock.yml";
+  const workerPath = ".github/workflows/worker.lock.yml";
+  const standalonePath = ".github/workflows/local-audit.lock.yml";
+  const json = (filePath, value) => writeFileSync(filePath, `${JSON.stringify(value, null, 2)}\n`);
+  try {
+    json(inventoryPath, {
+      schemaVersion: 1,
+      workflows: [
+        { id: "operation", name: "Optimization", description: "", role: "orchestrator", sourcePath: ".github/workflows/operation.md", lockPath: orchestratorPath, compiled: true, maxAiCredits: 10 },
+        { id: "worker", name: "Credit optimizer", description: "", role: "worker", sourcePath: ".github/workflows/worker.md", lockPath: workerPath, compiled: true, maxAiCredits: 20 },
+      ],
+      bundles: [{ id: "operation", name: "Optimization", description: "", workflow: ".github/workflows/operation.md", maxAiCredits: 10, rolloutModeVariable: "OPERATION_MODE", compiled: true, workers: [{ id: "worker", name: "Credit optimizer", lockPath: workerPath, maxAiCredits: 20 }], missingWorkers: [] }],
+      standalone: [],
+    });
+    json(deployedPath, {
+      schemaVersion: 1,
+      organization: "acme",
+      includePrivate: false,
+      allowedRepositories: ["acme/service"],
+      runHealth: { available: true, complete: true, windowHours: 24 },
+      organizationRepositories: {},
+      bundles: [{ repository: "acme/control", name: "Optimization", workflows: [{ lockPath: orchestratorPath }] }],
+      workflows: [
+        { repository: "acme/control", visibility: "public", path: orchestratorPath, name: "Optimization", state: "active", htmlUrl: "https://github.com/acme/control/blob/main/.github/workflows/operation.md?plain=1", updatedAt: "2026-08-26T10:00:00Z", role: "orchestrator", runHealth: { runs: 1, successful: 1, failed: 0, cancelled: 0, skipped: 0, pending: 0, other: 0 } },
+        { repository: "acme/control", visibility: "public", path: workerPath, name: "Credit optimizer", state: "active", htmlUrl: "https://github.com/acme/control/blob/main/.github/workflows/worker.md?plain=1", updatedAt: "2026-08-26T10:00:00Z", role: "worker", runHealth: { runs: 1, successful: 1, failed: 0, cancelled: 0, skipped: 0, pending: 0, other: 0 } },
+        { repository: "acme/service", visibility: "public", path: standalonePath, name: "Local audit", state: "active", htmlUrl: "https://github.com/acme/service/blob/main/.github/workflows/local-audit.md?plain=1", updatedAt: "2026-08-26T10:00:00Z", role: "standalone", runHealth: { runs: 0, successful: 0, failed: 0, cancelled: 0, skipped: 0, pending: 0, other: 0 } },
+      ],
+    });
+    json(aicPath, {
+      schemaVersion: 1,
+      repositories: [{ repository: "acme/control", available: true, complete: true }, { repository: "acme/service", available: true, complete: true }],
+      runs: [{ repository: "acme/control", runId: 1, workflowPath: workerPath, aic: 12.5 }],
+    });
+    json(valuesPath, {
+      schemaVersion: 1,
+      records: [{
+        repository: "acme/control",
+        workflowId: "worker",
+        workflowPath: workerPath,
+        status: "pass",
+        value: 0.8,
+        baselineValue: 0.4,
+        evaluatorDigest: "0123456789abcdef",
+        runUrl: "https://github.com/acme/control/actions/runs/1",
+        observation: { evidenceAt: "2026-08-26T10:00:00Z", opportunityKey: "acme/service#1", mature: true, subject: { repository: "acme/service", createdAt: "2026-08-26T09:00:00Z" }, case: { targetRepo: "acme/service" } },
+      }],
+    });
+    writeFileSync(mockFetchPath, `
+const issue = (number, title, workflow, runId) => ({
+  number, title, body: \`### \${workflow}\\n\\ntarget repository: \\\`acme/service\\\`\\n\\nGenerated from [\${workflow}](https://github.com/acme/control/actions/runs/\${runId})\`,
+  body_html: \`<p>\${title}</p>\`, state: "open", html_url: \`https://github.com/acme/control/issues/\${number}\`,
+  url: \`https://api.github.com/repos/acme/control/issues/\${number}\`, created_at: "2026-08-26T10:00:00Z", updated_at: "2026-08-26T10:00:00Z",
+});
+globalThis.fetch = async (input) => {
+  const pathname = new URL(input).pathname;
+  let body;
+  if (pathname === "/repos/acme/control/issues") body = [issue(1, "Worker report", "Credit optimizer", 1), issue(2, "Orchestrator report", "Optimization", 2)];
+  else if (pathname.endsWith("/issues")) body = [];
+  else if (pathname.endsWith("/issues/comments")) body = [];
+  else if (pathname.endsWith("/actions/artifacts")) body = { artifacts: [] };
+  else if (pathname.endsWith("/actions/runs/1")) body = { path: "${workerPath}", name: "Credit optimizer", display_title: "Credit optimizer · live", conclusion: "success" };
+  else if (pathname.endsWith("/actions/runs/2")) body = { path: "${orchestratorPath}", name: "Optimization", display_title: "Optimization · live", conclusion: "success" };
+  else body = [];
+  return new Response(JSON.stringify(body), { status: 200, headers: { "content-type": "application/json" } });
+};
+`);
+    execFileSync(process.execPath, ["--import", mockFetchPath, join(root, ".github", "scripts", "pages-report", "report.mjs")], {
+      env: {
+        ...process.env,
+        GITHUB_REPOSITORY: "acme/control",
+        GITHUB_TOKEN: "test-token",
+        REPORT_ALLOWED_REPOS: "acme/service",
+        REPORT_REPOSITORY_VARIABLES: '{"OPERATION_MODE":"live"}',
+        REPORT_INVENTORY: inventoryPath,
+        REPORT_DEPLOYED_WORKFLOWS: deployedPath,
+        REPORT_AIC_USAGE: aicPath,
+        REPORT_OPERATIONAL_VALUES: valuesPath,
+        REPORT_OUTPUT: outputPath,
+      },
+    });
+
+    const catalog = readFileSync(join(outputPath, "workflows", "index.html"), "utf8");
+    const repositoryPage = readFileSync(join(outputPath, "repositories", "acme-control-insights.html"), "utf8");
+    const workerReport = readFileSync(join(outputPath, "repositories", "acme-control--workflow--worker.html"), "utf8");
+    const workerInsights = readFileSync(join(outputPath, "repositories", "acme-control--workflow--worker-insights.html"), "utf8");
+    const operationPage = readFileSync(join(outputPath, "operations", "operation.html"), "utf8");
+    assert.match(catalog, /\.github\/workflows\/worker\.md/);
+    assert.match(catalog, /\.github\/workflows\/local-audit\.md/);
+    assert.doesNotMatch(catalog, /\.lock\.yml/);
+    assert.match(repositoryPage, /workflow-badge-worker/);
+    assert.match(repositoryPage, /operation · Optimization/);
+    assert.match(workerReport, /Worker report/);
+    assert.doesNotMatch(workerReport, /Orchestrator report/);
+    assert.match(workerInsights, /class="value-plot-line"/);
+    assert.match(workerInsights, /12\.5/);
+    assert.doesNotMatch(workerInsights, /\.lock\.yml/);
+    assert.match(operationPage, /Orchestrator and workers/);
+    assert.match(operationPage, /\.\.\/repositories\/acme-control--workflow--worker\.html/);
+    assert.doesNotMatch(operationPage, /\.lock\.yml/);
+  } finally {
+    rmSync(temporaryRoot, { recursive: true, force: true });
+  }
 });

@@ -473,6 +473,15 @@ function repositoryTabs(repositoryName, selectedView) {
   return `<nav class="bundle-tabs" aria-label="${escapeHtml(repositoryName)} views">${tabs.map(([view, label, icon, href]) => `<a href="${href}"${selectedView === view ? ' aria-current="page"' : ""}>${octicon(icon)}<span>${label}</span></a>`).join("")}</nav>`;
 }
 
+function repositoryWorkflowTabs(repositoryName, workflow, selectedView) {
+  const pageName = repositoryWorkflowPageName(repositoryName, workflow.path);
+  const tabs = [
+    ["reports", "Reports", "issue", `${pageName}.html`],
+    ["insights", "Insights", "graph", `${pageName}-insights.html`],
+  ];
+  return `<nav class="bundle-tabs" aria-label="${escapeHtml(workflow.name)} views">${tabs.map(([view, label, icon, href]) => `<a href="${href}"${selectedView === view ? ' aria-current="page"' : ""}>${octicon(icon)}<span>${label}</span></a>`).join("")}</nav>`;
+}
+
 function configuredModeFor(bundle) {
   const mode = repositoryVariables.get(bundle.rolloutModeVariable) || "staged";
   return normalizeMode(mode) === "unknown" ? "staged" : normalizeMode(mode);
@@ -912,14 +921,84 @@ function formatCount(value) {
   return Number.isFinite(value) ? new Intl.NumberFormat("en").format(value) : "—";
 }
 
-function deployedStandaloneWorkflows() {
-  return (deployedInventory.standaloneWorkflows || deployedInventory.workflows || [])
-    .filter((workflow) => workflow.repository !== repository);
+function authoredWorkflowPath(workflowPath = "") {
+  return workflowPath.replace(/\.lock\.yml$/, ".md");
+}
+
+function repositoryWorkflowPageName(repositoryName, workflowPath) {
+  const workflowName = authoredWorkflowPath(workflowPath).split("/").at(-1)?.replace(/\.md$/, "") || "workflow";
+  const workflowSlug = workflowName.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
+  return `${repositoryPageName(repositoryName)}--workflow--${workflowSlug}`;
+}
+
+function deployedWorkflows() {
+  const workflowsByKey = new Map((deployedInventory.workflows || deployedInventory.standaloneWorkflows || []).map((workflow) => [
+    valueWorkflowKey(workflow.repository, workflow.path),
+    workflow,
+  ]));
+  for (const definition of inventory.workflows) {
+    const key = valueWorkflowKey(repository, definition.lockPath);
+    const deployed = workflowsByKey.get(key);
+    workflowsByKey.set(key, {
+      repository,
+      visibility: "unknown",
+      path: definition.lockPath,
+      name: definition.name,
+      state: "unknown",
+      htmlUrl: `https://github.com/${repository}/blob/HEAD/${definition.sourcePath}?plain=1`,
+      createdAt: null,
+      updatedAt: null,
+      runHealth: null,
+      operationalValue: null,
+      ...deployed,
+      role: deployed?.role && deployed.role !== "unknown" ? deployed.role : definition.role,
+    });
+  }
+  return [...workflowsByKey.values()]
+    .sort((left, right) => left.repository.localeCompare(right.repository) || left.name.localeCompare(right.name));
+}
+
+const canonicalWorkflows = deployedWorkflows();
+const canonicalWorkflowByKey = new Map(canonicalWorkflows.map((workflow) => [
+  valueWorkflowKey(workflow.repository, workflow.path),
+  workflow,
+]));
+
+function workflowOperationMemberships(workflow) {
+  const memberships = new Map();
+  for (const bundle of deployedInventory.bundles || []) {
+    if (bundle.repository.toLowerCase() !== workflow.repository.toLowerCase()) continue;
+    if ((bundle.workflows || []).some((candidate) => candidate.lockPath === workflow.path)) {
+      memberships.set(bundle.name, bundle.name);
+    }
+  }
+  if (workflow.repository.toLowerCase() === repository.toLowerCase()) {
+    for (const bundle of bundleDefinitions) {
+      const orchestratorPath = bundle.workflow.replace(/\.md$/, ".lock.yml");
+      if (orchestratorPath === workflow.path || bundle.workers.some((worker) => worker.lockPath === workflow.path)) {
+        memberships.set(bundle.name, bundle.name);
+      }
+    }
+  }
+  return [...memberships.values()].sort();
+}
+
+function workflowRole(workflow) {
+  if (["orchestrator", "worker", "standalone"].includes(workflow.role)) return workflow.role;
+  return workflowOperationMemberships(workflow).length > 0 ? "operation" : "standalone";
+}
+
+function workflowBadges(workflow) {
+  const operations = workflowOperationMemberships(workflow)
+    .map((name) => `<span class="workflow-badge workflow-badge-operation">operation · ${escapeHtml(name)}</span>`)
+    .join("");
+  const role = workflowRole(workflow);
+  return `<span class="workflow-badge workflow-badge-${escapeHtml(role)}">${escapeHtml(role)}</span>${operations}`;
 }
 
 function repositoryCoverage() {
   const repositories = new Map();
-  for (const workflow of deployedStandaloneWorkflows()) {
+  for (const workflow of canonicalWorkflows) {
     repositories.set(workflow.repository, workflow.visibility);
   }
   for (const record of reportRecords) {
@@ -994,7 +1073,7 @@ await writeFile(path.join(outputDirectory, "workflows", "index.html"), layout({
 }));
 
 function deployedWorkflowContent(view) {
-  const workflows = deployedStandaloneWorkflows();
+  const workflows = canonicalWorkflows;
   const repositoryNames = new Set([
     ...workflows.map((workflow) => workflow.repository),
     ...reportRecords.map((record) => record.repository),
@@ -1012,10 +1091,11 @@ function deployedWorkflowContent(view) {
   const rows = workflows.map((workflow) => {
     const state = workflow.state === "active" ? "active" : workflow.state.startsWith("disabled") ? "disabled" : "other";
     const runState = (workflow.runHealth?.failed || 0) > 0 ? "failed" : (workflow.runHealth?.runs || 0) > 0 ? "active" : "quiet";
-    const searchText = `${workflow.repository} ${workflow.name} ${workflow.path}`.toLowerCase();
+    const sourcePath = authoredWorkflowPath(workflow.path);
+    const searchText = `${workflow.repository} ${workflow.name} ${sourcePath}`.toLowerCase();
     return `<tr data-workflow-row data-repository="${escapeHtml(workflow.repository)}" data-state="${state}" data-run-state="${runState}" data-search="${escapeHtml(searchText)}">
     <th scope="row"><a href="${repositoryLinkPrefix}${escapeHtml(repositoryPageName(workflow.repository))}.html">${escapeHtml(workflow.repository)}</a></th>
-    <td><a href="${escapeHtml(workflow.htmlUrl)}">${escapeHtml(workflow.name)}</a><code>${escapeHtml(workflow.path)}</code></td>
+    <td><a href="${repositoryLinkPrefix}${escapeHtml(repositoryWorkflowPageName(workflow.repository, workflow.path))}.html">${escapeHtml(workflow.name)}</a><code>${escapeHtml(sourcePath)}</code><span class="workflow-badges">${workflowBadges(workflow)}</span></td>
     <td><span class="status ${workflow.state === "active" ? "status-success" : workflow.state.startsWith("disabled") ? "status-attention" : "status-muted"}">${escapeHtml(workflow.state.replaceAll("_", " "))}</span></td>
     <td>${workflow.runHealth?.runs ?? "—"}</td>
     <td>${workflow.runHealth?.failed ?? "—"}</td>
@@ -1032,7 +1112,7 @@ function deployedWorkflowContent(view) {
   const repositoryView = `${repositoryHealthContent(repositories, deployedInventory.runHealth?.available, repositoryLinkPrefix)}
   ${contributionSpendContent(spend, repositoryLinkPrefix)}`;
   const workflowCatalog = `<section class="deployed-workflows" id="workflow-catalog" aria-labelledby="deployed-workflows-heading">
-    <div class="section-heading"><div><span class="scope-kicker">Inventory</span><h2 id="deployed-workflows-heading">Standalone AW workflows</h2><p>Search repository-owned compiled workflows outside managed operation manifests.</p></div><strong>${formatCount(workflows.length)} workflows</strong></div>
+    <div class="section-heading"><div><span class="scope-kicker">Inventory</span><h2 id="deployed-workflows-heading">Agentic workflows</h2><p>Search all repository-owned authored workflows. Managed-operation membership is shown as workflow metadata.</p></div><strong>${formatCount(workflows.length)} workflows</strong></div>
     <details class="catalog-disclosure" open>
       <summary>Browse workflow catalog</summary>
       <div class="catalog-toolbar" aria-label="Workflow filters">
@@ -1043,7 +1123,7 @@ function deployedWorkflowContent(view) {
       </div>
       <p class="catalog-result" id="workflow-result" aria-live="polite"></p>
       <div class="table-region" role="region" aria-labelledby="deployed-workflows-heading" tabindex="0">
-        <table class="deployed-workflows-table"><thead><tr><th scope="col">Repository</th><th scope="col">Workflow</th><th scope="col">State</th><th scope="col">Runs</th><th scope="col">Failed</th><th scope="col">Visibility</th><th scope="col">Updated</th></tr></thead><tbody>${rows || '<tr><td colspan="7">No compiled AW workflows were discovered.</td></tr>'}</tbody></table>
+        <table class="deployed-workflows-table"><thead><tr><th scope="col">Repository</th><th scope="col">Workflow</th><th scope="col">State</th><th scope="col">Runs</th><th scope="col">Failed</th><th scope="col">Visibility</th><th scope="col">Updated</th></tr></thead><tbody>${rows || '<tr><td colspan="7">No authored AW workflows were discovered.</td></tr>'}</tbody></table>
       </div>
       <button class="catalog-more" id="workflow-more" type="button">Show 25 more</button>
     </details>
@@ -1359,7 +1439,7 @@ function repositoryWorkflowContent(repositoryName, workflows) {
     : "Actions run data unavailable";
   const repositorySpend = contributionSpendFor([repositoryName]);
   const rows = workflows.map((workflow) => `<tr>
-    <th scope="row"><a href="${escapeHtml(workflow.htmlUrl)}">${escapeHtml(workflow.name)}</a><code>${escapeHtml(workflow.path)}</code></th>
+    <th scope="row"><a href="${escapeHtml(repositoryWorkflowPageName(repositoryName, workflow.path))}.html">${escapeHtml(workflow.name)}</a><a class="workflow-source" href="${escapeHtml(safeUrl(workflow.htmlUrl))}"><code>${escapeHtml(authoredWorkflowPath(workflow.path))}</code></a><span class="workflow-badges">${workflowBadges(workflow)}</span></th>
     <td><span class="status ${workflow.state === "active" ? "status-success" : workflow.state.startsWith("disabled") ? "status-attention" : "status-muted"}">${escapeHtml(workflow.state.replaceAll("_", " "))}</span></td>
     <td>${workflow.runHealth?.runs ?? "—"}</td>
     <td>${workflow.runHealth?.failed ?? "—"}</td>
@@ -1367,22 +1447,88 @@ function repositoryWorkflowContent(repositoryName, workflows) {
   </tr>`).join("\n");
   return `<section class="repository-workflow-summary" aria-label="Repository GitHub Agentic Workflows summary">
     <dl class="metrics">
-      <div><dt>Standalone AW workflows</dt><dd>${workflows.length}</dd><p>Compiled workflows outside managed operations</p></div>
+      <div><dt>Authored AW workflows</dt><dd>${workflows.length}</dd><p>One canonical identity per <code>.md</code> source</p></div>
       ${workflowStatusMetric(workflows)}
       ${workflowHealthMetric(health, healthAvailable, healthLabel)}
       <div><dt>AI Credits</dt><dd>${repositorySpend.available ? formatAic(repositorySpend.total) : "—"}</dd><p>Across ${repositorySpend.reportedRuns} retained usage artifact${repositorySpend.reportedRuns === 1 ? "" : "s"}${repositorySpend.complete ? "" : "; partial coverage"}</p></div>
     </dl>
   </section>
   <section class="repository-workflows" aria-labelledby="repository-workflows-heading">
-    <div class="section-heading"><div><h2 id="repository-workflows-heading">Standalone AW workflows</h2><p>Compiled workflows under <code>.github/workflows/</code> outside managed operation manifests. Latest registration update: ${escapeHtml(formatDay(latest))}. ${disabled} disabled.</p></div><a href="https://github.com/${escapeHtml(repositoryName)}/actions">View Actions${octicon("external-link")}</a></div>
+    <div class="section-heading"><div><h2 id="repository-workflows-heading">Agentic workflows</h2><p>Authored <code>.github/workflows/*.md</code> workflows with managed-operation membership shown as metadata. Latest registration update: ${escapeHtml(formatDay(latest))}. ${disabled} disabled.</p></div><a href="https://github.com/${escapeHtml(repositoryName)}/actions">View Actions${octicon("external-link")}</a></div>
     <div class="table-region" role="region" aria-labelledby="repository-workflows-heading" tabindex="0">
       <table><thead><tr><th scope="col">Workflow</th><th scope="col">State</th><th scope="col">Runs</th><th scope="col">Failed</th><th scope="col">Updated</th></tr></thead><tbody>${rows}</tbody></table>
     </div>
   </section>`;
 }
 
+function workflowAicSummary(workflow) {
+  const repositoryCoverage = (aicUsage.repositories || [])
+    .find((entry) => entry.repository.toLowerCase() === workflow.repository.toLowerCase());
+  const runs = (aicUsage.runs || []).filter((run) => run.repository.toLowerCase() === workflow.repository.toLowerCase()
+    && run.workflowPath === workflow.path);
+  return {
+    available: repositoryCoverage?.available === true,
+    complete: repositoryCoverage?.complete === true,
+    runs: runs.length,
+    total: runs.reduce((total, run) => total + run.aic, 0),
+  };
+}
+
+function recordProducedByWorkflow(record, workflow) {
+  return record.runtimeRepository.toLowerCase() === workflow.repository.toLowerCase()
+    && record.workflowPath === workflow.path;
+}
+
+function workflowIdentityContent(workflow) {
+  const sourceUrl = safeUrl(workflow.htmlUrl);
+  return `<section class="workflow-identity" aria-label="Workflow identity">
+    <div><span class="workflow-badges">${workflowBadges(workflow)}</span><p><code>${escapeHtml(authoredWorkflowPath(workflow.path))}</code></p></div>
+    ${sourceUrl ? `<a href="${escapeHtml(sourceUrl)}">View authored workflow${octicon("external-link")}</a>` : ""}
+  </section>`;
+}
+
+function workflowInsightsContent(workflow) {
+  const health = summarizeWorkflowHealth([workflow]);
+  const healthAvailable = deployedInventory.runHealth?.available && workflow.runHealth !== null;
+  const healthLabel = healthAvailable
+    ? `${deployedInventory.runHealth.complete ? "Complete" : "Partial"} ${deployedInventory.runHealth.windowHours || 24}-hour Actions run window`
+    : "Actions run data unavailable";
+  const usage = workflowAicSummary(workflow);
+  const observations = valueObservations.get(valueWorkflowKey(workflow.repository, workflow.path));
+  const valueDefinition = {
+    id: `workflow-${repositoryWorkflowPageName(workflow.repository, workflow.path)}`,
+    name: workflow.name,
+    runtimeRepository: workflow.repository,
+    lockPath: workflow.path,
+  };
+  return `${workflowIdentityContent(workflow)}<section class="repository-workflow-summary" aria-label="Workflow execution summary"><dl class="metrics">
+    ${workflowHealthMetric(health, healthAvailable, healthLabel)}
+    <div><dt>Registration</dt><dd>${escapeHtml(workflow.state.replaceAll("_", " "))}</dd><p>Current GitHub Actions state</p></div>
+    <div><dt>AI Credits</dt><dd>${usage.available ? formatAic(usage.total) : "—"}</dd><p>${usage.runs} retained run${usage.runs === 1 ? "" : "s"}${usage.complete ? "" : "; partial coverage"}</p></div>
+  </dl></section>${valueReportContent(valueDefinition, observations)}`;
+}
+
+function operationWorkflowHierarchy(bundle) {
+  const definitions = [
+    { name: bundle.name, path: bundle.workflow.replace(/\.md$/, ".lock.yml"), role: "orchestrator" },
+    ...bundle.workers.map((worker) => ({ name: worker.name, path: worker.lockPath, role: "worker" })),
+  ];
+  const workflows = definitions.map((definition) => canonicalWorkflowByKey.get(valueWorkflowKey(repository, definition.path)) || {
+    repository,
+    path: definition.path,
+    name: definition.name,
+    role: definition.role,
+  });
+  const node = (workflow) => `<a href="../repositories/${escapeHtml(repositoryWorkflowPageName(workflow.repository, workflow.path))}.html"><strong>${escapeHtml(workflow.name)}</strong><code>${escapeHtml(authoredWorkflowPath(workflow.path))}</code></a>`;
+  return `<section class="operation-workflow-map" aria-labelledby="${escapeHtml(bundle.id)}-workflow-map-heading">
+    <div class="section-heading"><div><span class="scope-kicker">Workflow topology</span><h2 id="${escapeHtml(bundle.id)}-workflow-map-heading">Orchestrator and workers</h2></div></div>
+    <div class="operation-orchestrator"><span class="workflow-badge workflow-badge-orchestrator">orchestrator</span>${node(workflows[0])}</div>
+    <ul>${workflows.slice(1).map((workflow) => `<li><span class="workflow-badge workflow-badge-worker">worker</span>${node(workflow)}</li>`).join("") || '<li class="empty">No worker workflows configured.</li>'}</ul>
+  </section>`;
+}
+
 const deployedByRepository = new Map();
-for (const workflow of deployedStandaloneWorkflows()) {
+for (const workflow of canonicalWorkflows) {
   const workflows = deployedByRepository.get(workflow.repository) || [];
   workflows.push(workflow);
   deployedByRepository.set(workflow.repository, workflows);
@@ -1420,6 +1566,27 @@ for (const repositoryName of [...repositoryNames].filter(Boolean).sort()) {
     navigation: navigation("Insights"),
     activeSection: "repositories",
   }));
+  for (const workflow of workflows) {
+    const workflowPageName = repositoryWorkflowPageName(repositoryName, workflow.path);
+    const workflowRecords = reportRecords.filter((record) => recordProducedByWorkflow(record, workflow));
+    const workflowNavigation = (view) => `<nav aria-label="Report navigation"><div class="shell"><a href="index.html">Repositories</a><a href="${pageName}.html">${escapeHtml(repositoryName)}</a><a href="${workflowPageName}.html">${escapeHtml(workflow.name)}</a><span aria-current="page">${view}</span></div></nav>`;
+    await writeFile(path.join(outputDirectory, "repositories", `${workflowPageName}.html`), layout({
+      title: workflow.name,
+      description: `Durable reports produced by ${authoredWorkflowPath(workflow.path)} in ${repositoryName}.`,
+      content: `${repositoryWorkflowTabs(repositoryName, workflow, "reports")}${workflowIdentityContent(workflow)}${findingsListing(workflowRecords, { showMode: true, emptyMessage: "No reports have been attributed to this workflow." })}`,
+      nested: true,
+      navigation: workflowNavigation("Reports"),
+      activeSection: "repositories",
+    }));
+    await writeFile(path.join(outputDirectory, "repositories", `${workflowPageName}-insights.html`), layout({
+      title: workflow.name,
+      description: `Run health, AI Credit usage, and operational value for ${authoredWorkflowPath(workflow.path)} in ${repositoryName}.`,
+      content: `${repositoryWorkflowTabs(repositoryName, workflow, "insights")}${workflowInsightsContent(workflow)}`,
+      nested: true,
+      navigation: workflowNavigation("Insights"),
+      activeSection: "repositories",
+    }));
+  }
 }
 
 function formatGoalMeasure(value) {
@@ -1459,12 +1626,12 @@ function valueObservationPlot(worker, observations) {
 
 function valueReportContent(worker, observations) {
   const provenance = worker.runtimeRepository
-    ? `${worker.runtimeRepository} - ${worker.lockPath}`
+    ? `${worker.runtimeRepository} - ${authoredWorkflowPath(worker.lockPath)}`
     : worker.id;
   if (!observations?.length) {
     return `<section class="value-report value-report-empty" aria-labelledby="${escapeHtml(worker.id)}-heading">
       <header><div><h2 id="${escapeHtml(worker.id)}-heading">${escapeHtml(worker.name)}</h2><p>${escapeHtml(provenance)}</p></div><span class="status status-muted">Not evaluated</span></header>
-      <div class="value-empty">${octicon("graph")}<h3>No workflow observations yet</h3><p>Operational value will appear after this worker publishes a valid <code>grader_results.json</code>.</p></div>
+      <div class="value-empty">${octicon("graph")}<h3>No workflow observations yet</h3><p>Operational value will appear after this workflow publishes a valid <code>grader_results.json</code>.</p></div>
       <div class="value-details-unavailable">Run evidence unavailable</div>
     </section>`;
   }
@@ -1502,7 +1669,7 @@ for (const bundle of bundleDefinitions) {
   await writeFile(path.join(outputDirectory, "insights", `${bundle.id}.html`), layout({
     title: bundle.name,
     description: `Worker operational-value observations from actual ${bundle.name} workflow runs.`,
-    content: `${bundleTabs(bundle, "insights")}${sections.join("\n")}`,
+    content: `${bundleTabs(bundle, "insights")}${operationWorkflowHierarchy(bundle)}${sections.join("\n")}`,
     nested: true,
     navigation,
     activeSection: "insights",
@@ -1536,7 +1703,7 @@ for (const bundle of bundleDefinitions) {
     const modeIdentity = selectedMode === configuredMode
       ? `${selectedModeLabel}; this is the operation's configured mode.`
       : `${selectedModeLabel}; the operation is currently configured for ${configuredModeLabel}.`;
-    const content = `${bundleTabs(bundle, "reports")}${modeTabs(bundle, selectedMode)}<p class="mode-view-note">${escapeHtml(modeIdentity)}</p>${findingsListing(modeRecords)}`;
+    const content = `${bundleTabs(bundle, "reports")}${operationWorkflowHierarchy(bundle)}${modeTabs(bundle, selectedMode)}<p class="mode-view-note">${escapeHtml(modeIdentity)}</p>${findingsListing(modeRecords)}`;
     const page = layout({
       title: bundle.name,
       description: `Durable reports produced by the ${bundle.name} operation.`,
@@ -1571,6 +1738,10 @@ for (const record of reportRecords) {
   const runUrl = safeUrl(record.runUrl);
   const navigation = `<nav aria-label="Report navigation"><div class="shell"><a href="../">All workflows</a><span aria-current="page">Outcome</span></div></nav>`;
   const reportBody = record.bodyHtml || `<p>${escapeHtml(record.summary || "No report content was provided.")}</p>`;
+  const producerWorkflow = canonicalWorkflowByKey.get(valueWorkflowKey(record.runtimeRepository, record.workflowPath));
+  const producerLink = producerWorkflow
+    ? `../repositories/${repositoryWorkflowPageName(producerWorkflow.repository, producerWorkflow.path)}.html`
+    : "";
   const content = `<div class="outcome-view">
     <article class="discussion-post">
       <header><div class="post-avatar">${octicon("mark-github")}</div><div><strong>github-actions[bot]</strong><p>published ${escapeHtml(formatDate(record.createdAt))} · updated ${escapeHtml(formatDate(record.updatedAt))}</p></div></header>
@@ -1580,7 +1751,7 @@ for (const record of reportRecords) {
       <section><h2>Status</h2><span class="status ${statusClass(record)}">${escapeHtml(record.state)}</span></section>
       <section><h2>Mode</h2><span class="mode-badge mode-${escapeHtml(record.mode)}">${escapeHtml(record.mode)}</span></section>
       <section><h2>Category</h2><p>${escapeHtml(record.kind.replaceAll("-", " "))}</p></section>
-      <section><h2>Workflow</h2><p>${escapeHtml(record.workflow)}</p></section>
+      <section><h2>Workflow</h2><p>${producerLink ? `<a href="${escapeHtml(producerLink)}">${escapeHtml(record.workflow)}</a>` : escapeHtml(record.workflow)}</p></section>
       <section><h2>Provenance</h2><p><a href="${escapeHtml(record.url)}">View source${octicon("external-link")}</a>${runUrl ? `<br><a href="${escapeHtml(runUrl)}">View workflow run${octicon("external-link")}</a>` : ""}</p></section>
     </aside>
   </div>`;
@@ -1742,6 +1913,10 @@ tbody tr:hover { background: var(--canvas-subtle); }
 .finding-row time { overflow: hidden; color: var(--muted); font-size: .75rem; text-overflow: ellipsis; white-space: nowrap; }
 .kind, .status, .mode-badge { display: inline-flex; align-items: center; min-height: 20px; padding: 0 7px; border: 1px solid var(--border); border-radius: 2em; color: var(--muted); font-size: .6875rem; font-weight: 600; text-transform: capitalize; white-space: nowrap; }
 .finding-row > .kind, .finding-row > .status, .finding-row > .mode-badge { justify-self: start; }
+.workflow-badges { display: flex; align-items: center; flex-wrap: wrap; gap: 5px; margin-top: 5px; }
+.workflow-badge { display: inline-flex; align-items: center; min-height: 20px; padding: 0 7px; border: 1px solid var(--border); border-radius: 2em; background: var(--canvas-subtle); color: var(--muted); font-size: .6875rem; font-weight: 600; text-transform: capitalize; white-space: nowrap; }
+.workflow-badge-operation, .workflow-badge-orchestrator { border-color: var(--accent); background: var(--accent-muted); color: var(--accent); }
+.workflow-badge-worker { border-color: var(--success); background: var(--success-muted); color: var(--success); }
 .status-success { border-color: color-mix(in srgb, var(--success) 45%, var(--border)); background: var(--success-muted); color: var(--success); }
 .status-attention { border-color: color-mix(in srgb, var(--attention) 45%, var(--border)); background: var(--attention-muted); color: var(--attention); }
 .status-muted { background: var(--neutral-muted); }
@@ -2044,7 +2219,21 @@ footer a { min-height: 24px; display: inline-flex; align-items: center; }
 .section-heading > a { display: inline-flex; align-items: center; gap: 5px; flex: none; }
 .repository-workflows tbody th a, .repository-workflows tbody th code { display: block; }
 .repository-workflows tbody th code { width: fit-content; max-width: 640px; margin-top: 3px; overflow: hidden; color: var(--muted); text-overflow: ellipsis; white-space: nowrap; }
+.repository-workflows tbody th .workflow-source { width: fit-content; text-decoration: none; }
 .repository-workflows td { white-space: nowrap; }
+.workflow-identity { display: flex; align-items: center; justify-content: space-between; gap: 18px; margin: 0 0 16px; padding: 12px 14px; border: 1px solid var(--border); border-radius: 6px; background: var(--canvas-subtle); }
+.workflow-identity p { margin: 5px 0 0; color: var(--muted); }
+.workflow-identity > a { display: inline-flex; align-items: center; gap: 5px; white-space: nowrap; }
+.operation-workflow-map { margin-bottom: 20px; }
+.operation-workflow-map .section-heading { margin-bottom: 10px; }
+.operation-orchestrator, .operation-workflow-map li { min-width: 0; display: grid; grid-template-columns: max-content minmax(0, 1fr); align-items: center; gap: 10px; padding: 10px 12px; border: 1px solid var(--border); background: var(--canvas-subtle); }
+.operation-orchestrator { border-radius: 6px 6px 0 0; }
+.operation-workflow-map ul { margin: 0 0 0 28px; padding: 0; list-style: none; }
+.operation-workflow-map li { border-top: 0; }
+.operation-workflow-map li:last-child { border-radius: 0 0 6px 6px; }
+.operation-workflow-map a { min-width: 0; display: grid; grid-template-columns: minmax(0, 1fr) minmax(180px, .8fr); gap: 12px; align-items: center; text-decoration: none; }
+.operation-workflow-map a:hover strong { text-decoration: underline; }
+.operation-workflow-map code { overflow: hidden; color: var(--muted); font-size: .75rem; text-overflow: ellipsis; white-space: nowrap; }
 .trend-panel { overflow: hidden !important; border: 1px solid var(--border) !important; border-radius: 6px !important; background: var(--canvas) !important; }
 .trend-panel > header { min-height: 72px; display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; padding: 14px 16px; border-bottom: 1px solid var(--border); }
 .trend-panel > header h2 { margin: 0; }
@@ -2205,6 +2394,9 @@ footer a { min-height: 24px; display: inline-flex; align-items: center; }
   .value-chart dl { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .value-details { grid-template-columns: 1fr; }
   .value-details > section + section { border-top: 1px solid var(--border); border-left: 0; }
+  .workflow-identity { align-items: flex-start; flex-direction: column; }
+  .operation-workflow-map ul { margin-left: 12px; }
+  .operation-workflow-map a { grid-template-columns: 1fr; gap: 2px; }
   .discussion-sidebar { display: flex; gap: 4px; overflow-x: auto; }
   .discussion-sidebar h2 { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
   .discussion-sidebar > div { min-width: max-content; display: flex; }
