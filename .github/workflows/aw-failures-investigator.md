@@ -96,207 +96,248 @@ timeout-minutes: 30
 
 steps:
   - name: Deterministic pre-fetch of agentic workflow failures
+    uses: actions/github-script@v9.0.0
     env:
       GH_TOKEN: ${{ steps.github-mcp-app-token.outputs.token || secrets.GH_AW_GITHUB_TOKEN || secrets.GITHUB_TOKEN }}
       TARGET_REPOSITORY: ${{ inputs.target_repo }}
-    run: |
-      set -euo pipefail
-      mkdir -p /tmp/gh-aw/agent/failure-investigator
-      python3 - <<'PY'
-      import json
-      import os
-      import re
-      import subprocess
-      from datetime import datetime, timedelta, timezone
-      from pathlib import Path
-      from urllib.parse import urlencode
+    with:
+      github-token: ${{ steps.github-mcp-app-token.outputs.token || secrets.GH_AW_GITHUB_TOKEN || secrets.GITHUB_TOKEN }}
+      script: |
+        const fs = require('fs');
+        const path = require('path');
+        const { execFileSync } = require('child_process');
 
-      REPO = os.environ["TARGET_REPOSITORY"]
-      OUT = "/tmp/gh-aw/agent/failure-investigator/prefetch.json"
-      TITLE_PREFIX = "[aw-failures]"
-      LOOKBACK_HOURS = 24
-      FAILURE_CONCLUSIONS = {"failure", "timed_out", "startup_failure"}
-      MAX_DISCOVERY_PAGES = 5
-      MAX_LOG_TAIL_LINES = 50
-      MAX_FAILURES_TO_DETAIL = 5
-      FAULT_MARKER = re.compile(
-          r"\b(?:error|panic|exception|traceback|fatal|abort|segfault|coredump)\b|"
-          r"(?:process|command).*(?:failed|exit code)|(?:exit code|non-zero exit)",
-          re.IGNORECASE,
-      )
-      AGENTIC_WORKFLOW_PATHS = {
-          f".github/workflows/{path.name}"
-          for path in Path("target/.github/workflows").glob("*.lock.yml")
-      }
+        const REPO = process.env.TARGET_REPOSITORY;
+        const OUT = '/tmp/gh-aw/agent/failure-investigator/prefetch.json';
+        const TITLE_PREFIX = '[aw-failures]';
+        const LOOKBACK_HOURS = 24;
+        const FAILURE_CONCLUSIONS = new Set(['failure', 'timed_out', 'startup_failure']);
+        const MAX_DISCOVERY_PAGES = 5;
+        const MAX_LOG_TAIL_LINES = 50;
+        const MAX_FAILURES_TO_DETAIL = 5;
+        const FAULT_MARKER = /\b(?:error|panic|exception|traceback|fatal|abort|segfault|coredump)\b|(?:process|command).*(?:failed|exit code)|(?:exit code|non-zero exit)/i;
+        const workflowsDirectory = 'target/.github/workflows';
+        const AGENTIC_WORKFLOW_PATHS = fs.existsSync(workflowsDirectory)
+          ? new Set(
+              fs
+                .readdirSync(workflowsDirectory)
+                .filter((name) => name.endsWith('.lock.yml'))
+                .map((name) => `.github/workflows/${name}`),
+            )
+          : new Set();
 
-      def run_json(args):
-          try:
-              return json.loads(subprocess.check_output(args, text=True, stderr=subprocess.STDOUT))
-          except subprocess.CalledProcessError as error:
-              print(f"Warning: command failed: {' '.join(args)}")
-              print(error.output)
-              return None
-          except (json.JSONDecodeError, OSError) as error:
-              print(f"Warning: unusable output from command: {' '.join(args)} ({error})")
-              return None
+        function cmdDisplay(args) {
+          return ['gh', ...args].join(' ');
+        }
 
-      def run_text(args):
-          try:
-              return subprocess.check_output(args, text=True, stderr=subprocess.STDOUT)
-          except (subprocess.CalledProcessError, OSError) as error:
-              print(f"Warning: command failed: {' '.join(args)} ({error})")
-              return ""
+        function commandOutput(error) {
+          const stdout = Buffer.isBuffer(error?.stdout) ? error.stdout.toString('utf8') : error?.stdout || '';
+          const stderr = Buffer.isBuffer(error?.stderr) ? error.stderr.toString('utf8') : error?.stderr || '';
+          return `${stdout}${stderr}`.trim();
+        }
 
-      def is_failure_conclusion(conclusion):
-          return (conclusion or "").lower() in FAILURE_CONCLUSIONS
+        function runText(args) {
+          try {
+            return execFileSync('gh', args, { encoding: 'utf8' });
+          } catch (error) {
+            core.warning(`Command failed: ${cmdDisplay(args)}`);
+            const output = commandOutput(error);
+            if (output) core.warning(output);
+            return '';
+          }
+        }
 
-      def normalize_workflow_path(path):
-          return (path or "").split("@", 1)[0]
+        function runJson(args) {
+          const out = runText(args);
+          if (!out) return null;
+          try {
+            return JSON.parse(out);
+          } catch (error) {
+            core.warning(`Non-JSON output from command: ${cmdDisplay(args)} (${error.message})`);
+            return null;
+          }
+        }
 
-      def is_agentic_workflow_path(path):
-          workflow_path = normalize_workflow_path(path)
-          if AGENTIC_WORKFLOW_PATHS:
-              return workflow_path in AGENTIC_WORKFLOW_PATHS
-          return workflow_path.endswith(".lock.yml")
+        function runApiJson(endpoint, params) {
+          const query = new URLSearchParams(params).toString();
+          return runJson(['api', `${endpoint}?${query}`]);
+        }
 
-      def capture_error_window(log_text):
-          lines = log_text.splitlines()
-          marker_index = next(
-              (index for index in range(len(lines) - 1, -1, -1) if FAULT_MARKER.search(lines[index])),
-              None,
-          )
-          if marker_index is None:
-              captured = lines[-MAX_LOG_TAIL_LINES:]
-          else:
-              start = max(0, min(marker_index - MAX_LOG_TAIL_LINES // 2, len(lines) - MAX_LOG_TAIL_LINES))
-              captured = lines[start:start + MAX_LOG_TAIL_LINES]
-          return captured, any(FAULT_MARKER.search(line) for line in captured)
+        function isFailureConclusion(conclusion) {
+          return FAILURE_CONCLUSIONS.has(String(conclusion || '').toLowerCase());
+        }
 
-      def isoformat_z(value):
-          return value.astimezone(timezone.utc).replace(microsecond=0).isoformat().replace("+00:00", "Z")
+        function normalizeWorkflowPath(workflowPath) {
+          return String(workflowPath || '').split('@', 1)[0];
+        }
 
-      window_start = isoformat_z(datetime.now(timezone.utc) - timedelta(hours=LOOKBACK_HOURS))
-      failed_runs = []
-      page = 1
-      while page <= MAX_DISCOVERY_PAGES:
-          query = urlencode({
-              "exclude_pull_requests": "true",
-              "status": "completed",
-              "created": f">={window_start}",
-              "per_page": "100",
-              "page": str(page),
-          })
-          response = run_json(["gh", "api", f"repos/{REPO}/actions/runs?{query}"]) or {}
-          workflow_runs = response.get("workflow_runs") or []
-          if not workflow_runs:
-              break
-          for run in workflow_runs:
-              workflow_path = normalize_workflow_path(run.get("path"))
-              if not is_agentic_workflow_path(workflow_path):
-                  continue
-              if not is_failure_conclusion(run.get("conclusion")):
-                  continue
-              failed_runs.append({
-                  "run_id": run.get("id"),
-                  "workflow_name": run.get("name"),
-                  "workflow_path": workflow_path,
-                  "created_at": run.get("created_at"),
-                  "conclusion": run.get("conclusion"),
-                  "url": run.get("html_url"),
-              })
-          if len(workflow_runs) < 100:
-              break
-          page += 1
+        function isAgenticWorkflowPath(workflowPath) {
+          const normalizedPath = normalizeWorkflowPath(workflowPath);
+          if (AGENTIC_WORKFLOW_PATHS.size > 0) {
+            return AGENTIC_WORKFLOW_PATHS.has(normalizedPath);
+          }
+          return normalizedPath.endsWith('.lock.yml');
+        }
 
-      failed_runs.sort(key=lambda run: run.get("created_at") or "", reverse=True)
+        function captureErrorWindow(logText) {
+          const lines = logText.split(/\r?\n/);
+          let markerIndex = null;
+          for (let index = lines.length - 1; index >= 0; index -= 1) {
+            if (FAULT_MARKER.test(lines[index])) {
+              markerIndex = index;
+              break;
+            }
+          }
 
-      failure_details = []
-      for run in failed_runs[:MAX_FAILURES_TO_DETAIL]:
-          run_id = run.get("run_id")
-          if not run_id:
-              continue
-          run_view = run_json([
-              "gh", "run", "view", str(run_id), "--repo", REPO,
-              "--json", "databaseId,url,name,workflowName,createdAt,conclusion,status,jobs",
-          ])
-          if not run_view:
-              continue
+          let capturedLines;
+          if (markerIndex === null) {
+            capturedLines = lines.slice(-MAX_LOG_TAIL_LINES);
+          } else {
+            const start = Math.max(0, Math.min(markerIndex - Math.floor(MAX_LOG_TAIL_LINES / 2), lines.length - MAX_LOG_TAIL_LINES));
+            capturedLines = lines.slice(start, start + MAX_LOG_TAIL_LINES);
+          }
 
-          failed_job_names = []
-          failed_steps = []
-          truncated_error_logs = []
-          for job in run_view.get("jobs", []):
-              if not is_failure_conclusion(job.get("conclusion")):
-                  continue
-              job_name = job.get("name")
-              if job_name:
-                  failed_job_names.append(job_name)
-              for step in job.get("steps", []):
-                  if is_failure_conclusion(step.get("conclusion")):
-                      failed_steps.append({
-                          "job_name": job_name,
-                          "step_name": step.get("name"),
-                      })
-              job_id = job.get("databaseId")
-              if not job_id:
-                  continue
-              log_text = run_text([
-                  "gh", "run", "view", str(run_id), "--repo", REPO, "--job", str(job_id), "--log",
-              ])
-              if not log_text:
-                  continue
-              tail_lines, has_fault_marker = capture_error_window(log_text)
-              truncated_error_logs.append({
-                  "job_id": job_id,
-                  "job_name": job_name,
-                  "line_count": len(tail_lines),
-                  "tail_lines": "\n".join(tail_lines),
-                  "capture_likely_missed_fault": not has_fault_marker,
-              })
+          return { capturedLines, hasFaultMarker: capturedLines.some((line) => FAULT_MARKER.test(line)) };
+        }
 
-          failure_details.append({
-              "run_id": run_id,
-              "workflow_name": run_view.get("workflowName") or run_view.get("name"),
-              "workflow_path": run.get("workflow_path"),
-              "url": run_view.get("url"),
-              "created_at": run_view.get("createdAt"),
-              "conclusion": run_view.get("conclusion"),
-              "failed_job_names": sorted(set(failed_job_names)),
-              "failed_steps": failed_steps,
-              "truncated_error_logs": truncated_error_logs,
-          })
+        function isoformatZ(date) {
+          return `${date.toISOString().split('.')[0]}Z`;
+        }
 
-      # GitHub search drops bracket punctuation, so match the prefix locally.
-      existing_tracking_issues = [
-          issue for issue in run_json([
-              "gh", "issue", "list", "--repo", REPO, "--state", "open",
-              "--search", f"{TITLE_PREFIX.strip('[]')} in:title",
-              "--limit", "50",
-              "--json", "number,title,state,url,labels,createdAt,updatedAt",
-          ]) or []
-          if (issue.get("title") or "").startswith(TITLE_PREFIX)
-      ]
+        function listFailedAgenticRuns(createdSince) {
+          const failedRuns = [];
+          for (let page = 1; page <= MAX_DISCOVERY_PAGES; page += 1) {
+            const response =
+              runApiJson(`repos/${REPO}/actions/runs`, {
+                exclude_pull_requests: 'true',
+                status: 'completed',
+                created: `>=${createdSince}`,
+                per_page: '100',
+                page: String(page),
+              }) || {};
+            const workflowRuns = response.workflow_runs || [];
+            if (workflowRuns.length === 0) break;
 
-      payload = {
-          "generated_at": isoformat_z(datetime.now(timezone.utc)),
-          "repository": REPO,
-          "lookback_window": f"{LOOKBACK_HOURS}h",
-          "window_start": window_start,
-          "agentic_workflow_count": len(AGENTIC_WORKFLOW_PATHS),
-          "failed_run_ids": [run["run_id"] for run in failed_runs if run.get("run_id")],
-          "failures": failure_details,
-          "existing_tracking_issues": existing_tracking_issues,
-      }
+            for (const run of workflowRuns) {
+              const workflowPath = normalizeWorkflowPath(run.path);
+              if (!isAgenticWorkflowPath(workflowPath)) continue;
+              if (!isFailureConclusion(run.conclusion)) continue;
 
-      with open(OUT, "w", encoding="utf-8") as handle:
-          json.dump(payload, handle, indent=2)
-          handle.write("\n")
+              failedRuns.push({
+                run_id: run.id,
+                workflow_name: run.name,
+                workflow_path: workflowPath,
+                created_at: run.created_at,
+                conclusion: run.conclusion,
+                url: run.html_url,
+              });
+            }
 
-      print(f"Wrote prefetch payload to {OUT}")
-      print(f"Agentic workflows found in target checkout: {payload['agentic_workflow_count']}")
-      print(f"Failed agentic runs in window: {len(payload['failed_run_ids'])}")
-      print(f"Existing tracking issues: {len(existing_tracking_issues)}")
-      PY
+            if (workflowRuns.length < 100) break;
+          }
+
+          failedRuns.sort((left, right) => String(right.created_at || '').localeCompare(String(left.created_at || '')));
+          return failedRuns;
+        }
+
+        const windowStart = isoformatZ(new Date(Date.now() - LOOKBACK_HOURS * 60 * 60 * 1000));
+        const failedRuns = listFailedAgenticRuns(windowStart);
+
+        const failureDetails = [];
+        for (const run of failedRuns.slice(0, MAX_FAILURES_TO_DETAIL)) {
+          const runId = run.run_id;
+          if (!runId) continue;
+
+          const runView = runJson([
+            'run',
+            'view',
+            String(runId),
+            '--repo',
+            REPO,
+            '--json',
+            'databaseId,url,name,workflowName,createdAt,conclusion,status,jobs',
+          ]);
+          if (!runView) continue;
+
+          const failedJobNames = [];
+          const failedSteps = [];
+          const truncatedErrorLogs = [];
+
+          for (const job of runView.jobs || []) {
+            if (!isFailureConclusion(job.conclusion)) continue;
+            const jobName = job.name;
+            if (jobName) failedJobNames.push(jobName);
+
+            for (const step of job.steps || []) {
+              if (isFailureConclusion(step.conclusion)) {
+                failedSteps.push({ job_name: jobName, step_name: step.name });
+              }
+            }
+
+            const jobId = job.databaseId;
+            if (!jobId) continue;
+            const logText = runText(['run', 'view', String(runId), '--repo', REPO, '--job', String(jobId), '--log']);
+            if (!logText) continue;
+
+            const { capturedLines, hasFaultMarker } = captureErrorWindow(logText);
+            truncatedErrorLogs.push({
+              job_id: jobId,
+              job_name: jobName,
+              line_count: capturedLines.length,
+              tail_lines: capturedLines.join('\n'),
+              capture_likely_missed_fault: !hasFaultMarker,
+            });
+          }
+
+          failureDetails.push({
+            run_id: runId,
+            workflow_name: runView.workflowName || runView.name,
+            workflow_path: run.workflow_path,
+            url: runView.url,
+            created_at: runView.createdAt,
+            conclusion: runView.conclusion,
+            failed_job_names: [...new Set(failedJobNames)].sort(),
+            failed_steps: failedSteps,
+            truncated_error_logs: truncatedErrorLogs,
+          });
+        }
+
+        // GitHub search drops bracket punctuation, so match the prefix locally.
+        const existingTrackingIssues = (
+          runJson([
+            'issue',
+            'list',
+            '--repo',
+            REPO,
+            '--state',
+            'open',
+            '--search',
+            `${TITLE_PREFIX.replace(/[[\]]/g, '')} in:title`,
+            '--limit',
+            '50',
+            '--json',
+            'number,title,state,url,labels,createdAt,updatedAt',
+          ]) || []
+        ).filter((issue) => String(issue.title || '').startsWith(TITLE_PREFIX));
+
+        const payload = {
+          generated_at: isoformatZ(new Date()),
+          repository: REPO,
+          lookback_window: `${LOOKBACK_HOURS}h`,
+          window_start: windowStart,
+          agentic_workflow_count: AGENTIC_WORKFLOW_PATHS.size,
+          failed_run_ids: failedRuns.map((run) => run.run_id).filter(Boolean),
+          failures: failureDetails,
+          existing_tracking_issues: existingTrackingIssues,
+        };
+
+        fs.mkdirSync(path.dirname(OUT), { recursive: true });
+        fs.writeFileSync(OUT, `${JSON.stringify(payload, null, 2)}\n`, 'utf8');
+
+        core.info(`Wrote prefetch payload to ${OUT}`);
+        core.info(`Agentic workflows found in target checkout: ${payload.agentic_workflow_count}`);
+        core.info(`Failed agentic runs in window: ${payload.failed_run_ids.length}`);
+        core.info(`Existing tracking issues: ${existingTrackingIssues.length}`);
 ---
 
 You are the AW Failure Investigator — a worker that analyzes recent GitHub Agentic Workflow failures in one target repository, buckets them into failure clusters, and files focused fix issues for the buckets that are not already tracked.
