@@ -678,6 +678,9 @@ test("Pages is an explicit least-privilege add-on", () => {
   assert.doesNotMatch(operationalValues, /const workerIds = new Set/);
   assert.match(report, /function valueObservationRepository\(record\)/);
   assert.match(report, /function valueWorkflowKey\(runtimeRepository, workflowPath/);
+  assert.match(report, /function valueObservationPlot\(worker, observations\)/);
+  assert.match(report, /\$\{valueObservationPlot\(worker, observations\)\}/);
+  assert.match(report, /value-plot-baseline/);
   assert.match(report, /outputRepository/);
   assert.match(report, /const reportRepositoryNames =/);
   for (const assetName of reportAssets) {
@@ -685,6 +688,26 @@ test("Pages is an explicit least-privilege add-on", () => {
     assert.ok(existsSync(assetPath), `missing report script ${assetName}`);
     assert.match(pagesWorkflow, new RegExp(`\\.github/scripts/pages-report/${assetName.replace(".", "\\.")}`));
     execFileSync(process.execPath, ["--check", assetPath]);
+  }
+});
+
+test("Pages inventory links multiline orchestrator worker lists", () => {
+  const temporaryRoot = mkdtempSync(join(tmpdir(), "central-agentic-ops-inventory-"));
+  const outputPath = join(temporaryRoot, "control-plane.json");
+  try {
+    execFileSync(process.execPath, [join(root, ".github", "scripts", "pages-report", "inventory.mjs")], {
+      env: { ...process.env, REPORT_ROOT: root, REPORT_INVENTORY: outputPath },
+    });
+    const inventory = JSON.parse(readFileSync(outputPath, "utf8"));
+    assert.deepEqual(inventory.bundles.map((bundle) => ({
+      id: bundle.id,
+      workers: bundle.workers.map((worker) => worker.id),
+    })), [
+      { id: "dependabot", workers: ["dependabot-release-train-updater"] },
+      { id: "optimization", workers: ["optimization-ai-credit-auditor", "optimization-ai-credit-optimizer"] },
+    ]);
+  } finally {
+    rmSync(temporaryRoot, { recursive: true, force: true });
   }
 });
 

@@ -21,8 +21,13 @@ function scalar(source, key) {
 }
 
 function inlineList(source, key) {
-  const value = source.match(new RegExp(`^[ \\t]+${key}:[ \\t]*\\[([^\\]]*)\\]`, "m"))?.[1] || "";
-  return value.split(",").map((item) => unquote(item)).filter(Boolean);
+  const inline = source.match(new RegExp(`^[ \\t]+${key}:[ \\t]*\\[([^\\]]*)\\]`, "m"))?.[1];
+  if (inline !== undefined) return inline.split(",").map((item) => unquote(item)).filter(Boolean);
+  const block = source.match(new RegExp(`^[ \\t]+${key}:[ \\t]*\\n((?:^[ \\t]+-[ \\t]+.*\\n?)*)`, "m"))?.[1] || "";
+  return block.split("\n")
+    .map((line) => line.match(/^\s*-\s+([^#]+)$/)?.[1]?.trim())
+    .filter(Boolean)
+    .map((item) => unquote(item));
 }
 
 function rolloutModeVariable(source) {

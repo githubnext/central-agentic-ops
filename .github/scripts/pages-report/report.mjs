@@ -378,11 +378,12 @@ function statusClass(record) {
 
 function itemMarkup(record) {
   const runUrl = safeUrl(record.runUrl);
-  return `<article class="discussion-row" id="${escapeHtml(record.id)}">
+  const pageName = outcomePageName(record.id);
+  return `<article class="discussion-row" id="${escapeHtml(pageName)}">
     <div class="discussion-vote" aria-hidden="true">${octicon("issue")}<span>0</span></div>
     <div class="discussion-category">${octicon(record.kind === "noop" ? "check-circle" : "issue")}</div>
     <div class="discussion-main">
-      <h3><a href="../outcomes/${escapeHtml(record.id)}.html">${escapeHtml(record.title)}</a></h3>
+      <h3><a href="../outcomes/${escapeHtml(pageName)}.html">${escapeHtml(record.title)}</a></h3>
       <p>${escapeHtml(record.summary || "No summary was provided.")}</p>
       <div class="discussion-meta"><span class="mode-badge mode-${escapeHtml(record.mode)}">${escapeHtml(record.mode)}</span><span class="kind">${escapeHtml(record.kind.replaceAll("-", " "))}</span><span class="status ${statusClass(record)}">${escapeHtml(record.state)}</span><span>${escapeHtml(record.workflow)}</span><span>updated ${escapeHtml(formatDate(record.updatedAt))}</span>${runUrl ? `<a href="${escapeHtml(runUrl)}">workflow run</a>` : ""}</div>
     </div>
@@ -408,17 +409,20 @@ function outcomeListing(recordsForPage) {
 function findingsListing(recordsForPage, { showMode = false, emptyMessage = "No reports have been recorded for this mode." } = {}) {
   const open = recordsForPage.filter((record) => ["open", "available", "published"].includes(record.state)).length;
   const resolved = recordsForPage.length - open;
-  const rows = recordsForPage.map((record) => `<article class="finding-row" id="${escapeHtml(record.id)}">
+  const rows = recordsForPage.map((record) => {
+    const pageName = outcomePageName(record.id);
+    return `<article class="finding-row" id="${escapeHtml(pageName)}">
     <div class="finding-icon">${octicon(record.kind === "noop" ? "check-circle" : "issue")}</div>
     <div class="finding-report">
-      <h3><a href="../outcomes/${escapeHtml(record.id)}.html" title="${escapeHtml(record.title)}">${escapeHtml(record.title)}</a></h3>
+      <h3><a href="../outcomes/${escapeHtml(pageName)}.html" title="${escapeHtml(record.title)}">${escapeHtml(record.title)}</a></h3>
       <p title="${escapeHtml(record.summary || "No report summary was provided.")}">${escapeHtml(record.summary || "No report summary was provided.")}</p>
     </div>
     <span class="status ${statusClass(record)}">${escapeHtml(record.state)}</span>
     ${showMode ? `<span class="mode-badge mode-${escapeHtml(record.mode)}">${escapeHtml(record.mode)}</span>` : ""}
     <span class="kind">${escapeHtml(record.kind.replaceAll("-", " "))}</span>
     <time datetime="${escapeHtml(record.updatedAt)}">${escapeHtml(formatDate(record.updatedAt))}</time>
-  </article>`).join("\n");
+  </article>`;
+  }).join("\n");
   return `<section class="findings-index${showMode ? " findings-with-mode" : ""}" aria-labelledby="findings-heading">
     <div class="findings-search" aria-hidden="true">${octicon("issue")}<span>Filter reports</span></div>
     <div class="findings-header">
@@ -1235,6 +1239,10 @@ function repositoryPageName(repositoryName) {
   return repositoryName.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
 }
 
+function outcomePageName(recordId) {
+  return String(recordId).replaceAll("/", "--").replace(/[^a-z0-9._-]+/gi, "-").replace(/^-|-$/g, "");
+}
+
 function summarizeWorkflowHealth(workflows) {
   return workflows.reduce((summary, workflow) => {
     for (const key of ["runs", "successful", "failed", "cancelled", "skipped", "pending", "other"]) summary[key] += workflow.runHealth?.[key] || 0;
@@ -1418,6 +1426,37 @@ function formatGoalMeasure(value) {
   return value === null ? "Not observed" : new Intl.NumberFormat("en", { style: "percent", maximumFractionDigits: 1 }).format(value);
 }
 
+function valueObservationPlot(worker, observations) {
+  const plotId = `${worker.id.replace(/[^a-z0-9_-]+/gi, "-")}-value-plot`;
+  const x = (index) => observations.length === 1 ? 415 : 58 + (index * 714 / (observations.length - 1));
+  const y = (value) => 200 - (value * 150);
+  const points = observations.map((record, index) => `${x(index)},${y(record.value)}`).join(" ");
+  const markers = observations.map((record, index) => {
+    const observation = record.observation;
+    const label = `${formatDate(observation.evidenceAt)}: ${formatGoalMeasure(record.value)} operational value, ${observation.mature ? "mature evidence" : "as-of-run evidence"}`;
+    return `<circle class="value-plot-point ${observation.mature ? "value-plot-point-mature" : "value-plot-point-interim"}" cx="${x(index)}" cy="${y(record.value)}" r="5" tabindex="0" role="img" aria-label="${escapeHtml(label)}"><title>${escapeHtml(label)}</title></circle>`;
+  }).join("\n");
+  const baselineValue = observations.find((record) => Number.isFinite(record.baselineValue))?.baselineValue;
+  const baseline = Number.isFinite(baselineValue)
+    ? `<line class="value-plot-baseline" x1="58" y1="${y(baselineValue)}" x2="772" y2="${y(baselineValue)}"></line>`
+    : "";
+  const firstObservedAt = observations[0].observation.evidenceAt;
+  const lastObservedAt = observations.at(-1).observation.evidenceAt;
+  return `<div class="value-plot">
+    <div class="value-plot-legend"><span><i class="legend-value"></i>Operational value</span>${Number.isFinite(baselineValue) ? `<span><i class="legend-baseline"></i>Frozen baseline (${escapeHtml(formatGoalMeasure(baselineValue))})</span>` : ""}</div>
+    <svg role="group" focusable="false" aria-labelledby="${escapeHtml(plotId)}-title ${escapeHtml(plotId)}-description" viewBox="0 0 800 240" preserveAspectRatio="xMinYMin meet">
+      <title id="${escapeHtml(plotId)}-title">Operational value by observation for ${escapeHtml(worker.name)}</title>
+      <desc id="${escapeHtml(plotId)}-description">Operational attainment from zero to one hundred percent, ordered by evidence time. Points distinguish mature and as-of-run evidence.</desc>
+      <line x1="58" y1="50" x2="772" y2="50"></line><line x1="58" y1="125" x2="772" y2="125"></line><line x1="58" y1="200" x2="772" y2="200"></line>
+      <text x="8" y="54">100%</text><text x="18" y="129">50%</text><text x="28" y="204">0%</text>
+      ${baseline}
+      <polyline class="value-plot-line" points="${points}"></polyline>
+      ${markers}
+    </svg>
+    <div class="value-plot-axis"><span>${escapeHtml(formatDate(firstObservedAt))}</span><span>${escapeHtml(formatDate(lastObservedAt))}</span></div>
+  </div>`;
+}
+
 function valueReportContent(worker, observations) {
   const provenance = worker.runtimeRepository
     ? `${worker.runtimeRepository} - ${worker.lockPath}`
@@ -1439,7 +1478,7 @@ function valueReportContent(worker, observations) {
   }).join("\n");
   return `<section class="value-report" aria-labelledby="${escapeHtml(worker.id)}-heading">
     <header><div><h2 id="${escapeHtml(worker.id)}-heading">${escapeHtml(worker.name)}</h2><p>${escapeHtml(provenance)}</p><p>Run-scoped attainment from the workflow's frozen operational-value evaluator.</p></div><div class="value-score"><strong>${escapeHtml(formatGoalMeasure(latest.value))}</strong><span>Latest observation</span></div></header>
-    <div class="value-chart" role="group" aria-label="Operational-value summary"><dl><div><dt>Latest</dt><dd>${escapeHtml(formatGoalMeasure(latest.value))}</dd></div><div><dt>Mature average</dt><dd>${escapeHtml(formatGoalMeasure(matureAverage))}</dd></div><div><dt>Opportunities</dt><dd>${observations.length}</dd></div><div><dt>Evaluator</dt><dd><code>${escapeHtml(latest.evaluatorDigest?.slice(0, 12) || "Unavailable")}</code></dd></div></dl></div>
+    <div class="value-chart" role="group" aria-label="Operational-value summary">${valueObservationPlot(worker, observations)}<dl><div><dt>Latest</dt><dd>${escapeHtml(formatGoalMeasure(latest.value))}</dd></div><div><dt>Mature average</dt><dd>${escapeHtml(formatGoalMeasure(matureAverage))}</dd></div><div><dt>Opportunities</dt><dd>${observations.length}</dd></div><div><dt>Evaluator</dt><dd><code>${escapeHtml(latest.evaluatorDigest?.slice(0, 12) || "Unavailable")}</code></dd></div></dl></div>
     <details class="value-details-disclosure">
       <summary>View run evidence</summary>
       <div class="value-details">
@@ -1545,7 +1584,7 @@ for (const record of reportRecords) {
       <section><h2>Provenance</h2><p><a href="${escapeHtml(record.url)}">View source${octicon("external-link")}</a>${runUrl ? `<br><a href="${escapeHtml(runUrl)}">View workflow run${octicon("external-link")}</a>` : ""}</p></section>
     </aside>
   </div>`;
-  await writeFile(path.join(outputDirectory, "outcomes", `${record.id}.html`), layout({
+  await writeFile(path.join(outputDirectory, "outcomes", `${outcomePageName(record.id)}.html`), layout({
     title: record.title,
     description: `${record.workflow} · ${record.kind.replaceAll("-", " ")} · ${record.state}`,
     content,
@@ -1812,7 +1851,23 @@ footer a { min-height: 24px; display: inline-flex; align-items: center; }
 .value-score strong, .value-score span { display: block; }
 .value-score strong { font-size: 1.5rem; font-variant-numeric: tabular-nums; }
 .value-score span { color: var(--muted); font-size: .6875rem; }
-.value-chart { min-height: 180px; display: grid; align-items: center; padding: 24px 16px; overflow: hidden; border-bottom: 1px solid var(--border); background: var(--canvas-subtle); }
+.value-chart { min-height: 180px; padding: 18px 16px 24px; overflow: hidden; border-bottom: 1px solid var(--border); background: var(--canvas-subtle); }
+.value-plot { min-width: 0; margin-bottom: 16px; overflow-x: auto; }
+.value-plot svg { width: 100%; min-width: 620px; height: 220px; overflow: visible; }
+.value-plot svg > line { stroke: var(--border-muted); stroke-width: 1; vector-effect: non-scaling-stroke; }
+.value-plot text { fill: var(--muted); font-size: .6875rem; }
+.value-plot-line { fill: none; stroke: var(--accent); stroke-width: 2; vector-effect: non-scaling-stroke; }
+.value-plot svg > .value-plot-baseline { stroke: var(--muted); stroke-width: 2; stroke-dasharray: 7 5; }
+.value-plot-point { stroke: var(--canvas); stroke-width: 2; vector-effect: non-scaling-stroke; }
+.value-plot-point-mature { fill: var(--success); }
+.value-plot-point-interim { fill: var(--attention); }
+.value-plot-point:focus-visible { outline: none; stroke: var(--focus); stroke-width: 4; }
+.value-plot-axis, .value-plot-legend { display: flex; justify-content: space-between; color: var(--muted); font-size: .6875rem; }
+.value-plot-axis { padding: 0 28px; }
+.value-plot-legend { justify-content: flex-start; gap: 20px; padding: 0 4px 8px; }
+.value-plot-legend span { display: inline-flex; align-items: center; gap: 6px; }
+.value-plot-legend i { width: 18px; height: 0; border-top: 2px solid var(--accent); }
+.value-plot-legend .legend-baseline { border-top-color: var(--muted); border-top-style: dashed; }
 .value-chart dl { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 1px; margin: 0; overflow: hidden; border: 1px solid var(--border); border-radius: 6px; background: var(--border); }
 .value-chart dl > div { min-width: 0; padding: 18px; background: var(--canvas); }
 .value-chart dt { color: var(--muted); font-size: .75rem; font-weight: 600; text-transform: uppercase; }
@@ -2147,6 +2202,7 @@ footer a { min-height: 24px; display: inline-flex; align-items: center; }
   .finding-row > .mode-badge, .finding-row > .kind, .finding-row > time { display: none; }
   .value-report > header { flex-direction: column; gap: 8px; }
   .value-score { text-align: left; }
+  .value-chart dl { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .value-details { grid-template-columns: 1fr; }
   .value-details > section + section { border-top: 1px solid var(--border); border-left: 0; }
   .discussion-sidebar { display: flex; gap: 4px; overflow-x: auto; }
