@@ -39,7 +39,6 @@ const bundleDefinitions = inventory.bundles;
 const standaloneDefinitions = inventory.standalone;
 const workflowDefinitionById = new Map(inventory.workflows.map((workflow) => [workflow.id, workflow]));
 const workerDefinitions = bundleDefinitions.flatMap((bundle) => bundle.workers.map((worker) => ({ ...worker, bundleId: bundle.id, bundleName: bundle.name })));
-const workerIds = new Set(workerDefinitions.map((worker) => worker.id));
 if (operationalValues.schemaVersion !== 1 || !Array.isArray(operationalValues.records)) {
   throw new Error(`Unsupported or invalid operational-value observations: ${operationalValuesPath}`);
 }
@@ -59,7 +58,7 @@ function comparableValueObservations(records) {
   if (!latestEvaluator) return [];
   const opportunities = new Map();
   for (const record of valid.filter((candidate) => candidate.evaluatorDigest === latestEvaluator.digest)) {
-    const key = `${record.repository}:${record.observation.opportunityKey}`;
+    const key = `${valueObservationRepository(record)}:${record.observation.opportunityKey}`;
     const existing = opportunities.get(key);
     const observedAt = Date.parse(record.observation.evidenceAt || "");
     const existingAt = Date.parse(existing?.observation?.evidenceAt || "");
@@ -68,9 +67,42 @@ function comparableValueObservations(records) {
   return [...opportunities.values()]
     .sort((left, right) => String(left.observation.evidenceAt).localeCompare(String(right.observation.evidenceAt)));
 }
-const valueObservations = new Map([...workerIds].map((workerId) => [workerId,
-  comparableValueObservations(operationalValues.records.filter((record) => record.workflowId === workerId)),
+function valueObservationRepository(record) {
+  return record.observation?.case?.targetRepo
+    || record.observation?.subject?.repository
+    || record.repository;
+}
+function valueWorkflowKey(runtimeRepository, workflowPath, workflowId = "") {
+  const normalizedPath = workflowPath || (workflowId ? `.github/workflows/${workflowId}.lock.yml` : "");
+  return `${String(runtimeRepository).toLowerCase()}:${normalizedPath}`;
+}
+const valueRecordsByWorkflow = new Map();
+for (const record of operationalValues.records) {
+  if (!record.repository || !record.workflowId) continue;
+  const key = valueWorkflowKey(record.repository, record.workflowPath, record.workflowId);
+  const records = valueRecordsByWorkflow.get(key) || [];
+  records.push(record);
+  valueRecordsByWorkflow.set(key, records);
+}
+const valueObservations = new Map([...valueRecordsByWorkflow].map(([key, records]) => [key, comparableValueObservations(records)]));
+const deployedValueWorkflowByKey = new Map((deployedInventory.workflows || []).map((workflow) => [
+  valueWorkflowKey(workflow.repository, workflow.path),
+  workflow,
 ]));
+
+function valueWorkflowDefinition(record) {
+  const key = valueWorkflowKey(record.repository, record.workflowPath, record.workflowId);
+  const deployed = deployedValueWorkflowByKey.get(key);
+  const centralWorker = record.repository.toLowerCase() === repository.toLowerCase()
+    ? workerDefinitions.find((worker) => worker.id === record.workflowId)
+    : null;
+  return {
+    id: `value-${key.replace(/[^a-z0-9]+/gi, "-")}`,
+    name: centralWorker?.name || deployed?.name || record.workflowId,
+    runtimeRepository: record.repository,
+    lockPath: record.workflowPath || deployed?.path || `.github/workflows/${record.workflowId}.lock.yml`,
+  };
+}
 const reportDefinitions = [
   ...bundleDefinitions,
   ...standaloneDefinitions.map((workflow) => ({ ...workflow, workers: [], missingWorkers: [] })),
@@ -122,6 +154,39 @@ async function githubPages(pathname, maxPages = 10) {
   return items;
 }
 
+async function mapWithConcurrency(values, concurrency, mapper) {
+  const results = new Array(values.length);
+  let nextIndex = 0;
+  async function worker() {
+    while (nextIndex < values.length) {
+      const index = nextIndex;
+      nextIndex += 1;
+      results[index] = await mapper(values[index]);
+    }
+  }
+  await Promise.all(Array.from({ length: Math.min(concurrency, values.length) }, worker));
+  return results;
+}
+
+async function repositoryReportSources(repositoryName) {
+  const required = repositoryName.toLowerCase() === repository.toLowerCase();
+  const optional = async (loader, fallback) => {
+    try {
+      return await loader();
+    } catch (error) {
+      if (required) throw error;
+      console.warn(`${error.message}; durable reports will be incomplete for ${repositoryName}`);
+      return fallback;
+    }
+  };
+  const [issues, comments, artifacts] = await Promise.all([
+    optional(() => githubPages(`/repos/${repositoryName}/issues?state=all&sort=updated&direction=desc`), []),
+    optional(() => githubPages(`/repos/${repositoryName}/issues/comments?sort=updated&direction=desc`), []),
+    optional(() => github(`/repos/${repositoryName}/actions/artifacts?per_page=100`), { artifacts: [] }),
+  ]);
+  return { repository: repositoryName, issues, comments, artifacts: artifacts.artifacts || [] };
+}
+
 function bundleFor(...values) {
   const text = values.filter(Boolean).join(" ").toLowerCase();
   return reportDefinitions.find((definition) => {
@@ -142,6 +207,14 @@ function runUrlFrom(body = "") {
 
 function repositoryFrom(body = "") {
   return body.match(/(?:target repository|target repo):\s*`?([a-z0-9][a-z0-9-]*\/[a-z0-9._-]+)/i)?.[1] || "";
+}
+
+function targetRepositoryFromRun(run, fallback = "") {
+  const candidates = [...(run?.display_title || "").matchAll(/\b([a-z0-9][a-z0-9-]*\/[a-z0-9._-]+)\b/gi)]
+    .map((candidate) => candidate[1]);
+  return candidates.find((candidate) => allowedRepositories.size === 0
+    ? candidate.split("/")[0].toLowerCase() === owner.toLowerCase()
+    : allowedRepositories.has(candidate.toLowerCase())) || fallback;
 }
 
 function markerFrom(body = "", marker) {
@@ -205,17 +278,17 @@ function formatDay(value) {
   return new Intl.DateTimeFormat("en", { dateStyle: "medium", timeZone: "UTC" }).format(new Date(value));
 }
 
-function recordFromIssue(issue) {
+function recordFromIssue(issue, outputRepository = repository) {
   const body = issue.body || "";
   const workflow = workflowFrom(body);
   const generatedSafeOutput = /Generated (?:from|with) \[[^\]]+\]\([^)]*\/actions\/runs\/\d+\)/.test(body);
   const bundle = bundleFor(issue.title, workflow, body);
   const generatedSafeOutputTitle = /^\[[^\]]+\]\s/.test(issue.title) && bundle;
   if (!generatedSafeOutputTitle && !generatedSafeOutput) return null;
-  if (!bundle || issue.title === "[aw] No-Op Runs") return null;
+  if (issue.title === "[aw] No-Op Runs") return null;
   return {
-    id: `${issue.pull_request ? "pr" : "issue"}-${issue.number}`,
-    bundle: bundle.id,
+    id: `${outputRepository}-${issue.pull_request ? "pr" : "issue"}-${issue.number}`,
+    bundle: bundle?.id || "",
     kind: issue.pull_request ? "pull-request" : "issue",
     title: issue.title,
     summary: summarize(issue.body),
@@ -226,7 +299,8 @@ function recordFromIssue(issue) {
     updatedAt: issue.updated_at,
     workflow,
     runUrl: runUrlFrom(body),
-    repository: repositoryFrom(body),
+    repository: repositoryFrom(body) || outputRepository,
+    outputRepository,
     bundleId: markerFrom(body, "bundle"),
     correlationId: markerFrom(body, "correlation"),
     aic: aicFrom(body),
@@ -234,17 +308,17 @@ function recordFromIssue(issue) {
   };
 }
 
-function recordFromComment(comment, issueByUrl) {
+function recordFromComment(comment, issueByUrl, outputRepository = repository) {
   const issue = issueByUrl.get(comment.issue_url);
   const body = comment.body || "";
   const workflow = workflowFrom(body);
   const bundle = bundleFor(workflow, issue?.title, body);
   const generatedSafeOutput = /Generated from \[[^\]]+\]\([^)]*\/actions\/runs\/\d+\)/.test(body);
-  if (!bundle || !generatedSafeOutput) return null;
+  if (!generatedSafeOutput) return null;
   const noop = issue?.title === "[aw] No-Op Runs";
   return {
-    id: `comment-${comment.id}`,
-    bundle: bundle.id,
+    id: `${outputRepository}-comment-${comment.id}`,
+    bundle: bundle?.id || "",
     kind: noop ? "noop" : "comment",
     title: noop ? `${workflow} completed with no action` : `Comment on ${issue?.title || "safe output"}`,
     summary: summarize(body),
@@ -255,6 +329,8 @@ function recordFromComment(comment, issueByUrl) {
     updatedAt: comment.updated_at,
     workflow,
     runUrl: runUrlFrom(body),
+    repository: repositoryFrom(body) || outputRepository,
+    outputRepository,
     bundleId: markerFrom(body, "bundle"),
     correlationId: markerFrom(body, "correlation"),
     aic: aicFrom(body),
@@ -262,16 +338,15 @@ function recordFromComment(comment, issueByUrl) {
   };
 }
 
-async function recordFromArtifact(artifact) {
+async function recordFromArtifact(artifact, outputRepository = repository) {
   if (artifact.expired || !artifact.name.startsWith("review-")) return null;
   const runId = artifact.workflow_run?.id;
   if (!runId) return null;
-  const run = await github(`/repos/${owner}/${repo}/actions/runs/${runId}`);
+  const run = await github(`/repos/${outputRepository}/actions/runs/${runId}`);
   const bundle = bundleFor(run.name, run.display_title, artifact.name);
-  if (!bundle) return null;
   return {
-    id: `artifact-${artifact.id}`,
-    bundle: bundle.id,
+    id: `${outputRepository}-artifact-${artifact.id}`,
+    bundle: bundle?.id || "",
     kind: "review-bundle",
     mode: "review",
     title: artifact.name,
@@ -282,6 +357,11 @@ async function recordFromArtifact(artifact) {
     updatedAt: artifact.updated_at,
     workflow: run.name,
     runUrl: safeUrl(run.html_url),
+    repository: targetRepositoryFromRun(run, outputRepository),
+    outputRepository,
+    runtimeRepository: outputRepository,
+    workflowPath: run.path || "",
+    workflowId: run.path?.split("/").at(-1)?.replace(/\.lock\.yml$/, "") || "",
     bundleId: "",
     correlationId: String(runId),
     conclusion: run.conclusion || "unknown",
@@ -519,10 +599,14 @@ function layout({ title, description, content, nested = false, navigation = "", 
 </html>`;
 }
 
-const [issues, comments, artifactResponse, variableResponse] = await Promise.all([
-  githubPages(`/repos/${owner}/${repo}/issues?state=all&sort=updated&direction=desc`),
-  githubPages(`/repos/${owner}/${repo}/issues/comments?sort=updated&direction=desc`),
-  github(`/repos/${owner}/${repo}/actions/artifacts?per_page=100`),
+const reportRepositoryNames = [...new Set([
+  repository,
+  ...(deployedInventory.workflows || []).map((workflow) => workflow.repository),
+  ...(deployedInventory.allowedRepositories || []),
+  ...allowedRepositories,
+].filter(Boolean))].sort();
+const [reportSources, variableResponse] = await Promise.all([
+  mapWithConcurrency(reportRepositoryNames, 4, repositoryReportSources),
   process.env.REPORT_REPOSITORY_VARIABLES
     ? Promise.resolve({ variables: [] })
     : githubOptional(`/repos/${owner}/${repo}/actions/variables?per_page=100`, { variables: [] }),
@@ -531,7 +615,7 @@ const repositoryVariables = new Map([
   ...(variableResponse.variables || []).map((variable) => [variable.name, variable.value]),
   ...repositoryVariablesFromEnvironment(),
 ]);
-const issueByUrl = new Map(issues.map((issue) => [issue.url, issue]));
+const issueByUrl = new Map(reportSources.flatMap((source) => source.issues.map((issue) => [issue.url, issue])));
 const runCache = new Map();
 function normalizeMode(mode) {
   if (mode === "preview") return "staged";
@@ -540,7 +624,7 @@ function normalizeMode(mode) {
 
 async function metadataFromRunUrl(runUrl) {
   const match = runUrl.match(/^https:\/\/github\.com\/([^/]+)\/([^/]+)\/actions\/runs\/(\d+)/);
-  if (!match) return { mode: "unknown", conclusion: "unknown", repository: "" };
+  if (!match) return { mode: "unknown", conclusion: "unknown", repository: "", runtimeRepository: "", workflowPath: "", workflowId: "", workflowName: "" };
   const [, runOwner, runRepository, runId] = match;
   const cacheKey = `${runOwner}/${runRepository}/${runId}`;
   if (!runCache.has(cacheKey)) {
@@ -548,32 +632,51 @@ async function metadataFromRunUrl(runUrl) {
   }
   const run = await runCache.get(cacheKey);
   const mode = run?.display_title?.match(/(?:^|\s[·|:-]\s)(preview|staged|review|live)$/i)?.[1]?.toLowerCase();
-  const repositoryCandidates = [...(run?.display_title || "").matchAll(/\b([a-z0-9][a-z0-9-]*\/[a-z0-9._-]+)\b/gi)].map((candidate) => candidate[1]);
-  const targetRepository = repositoryCandidates.find((candidate) => allowedRepositories.size === 0
-    ? candidate.split("/")[0].toLowerCase() === owner.toLowerCase()
-    : allowedRepositories.has(candidate.toLowerCase()));
+  const workflowPath = run?.path || "";
   return {
     mode: normalizeMode(mode),
     conclusion: run?.conclusion || "unknown",
-    repository: targetRepository || `${runOwner}/${runRepository}`,
+    repository: targetRepositoryFromRun(run, `${runOwner}/${runRepository}`),
+    runtimeRepository: `${runOwner}/${runRepository}`,
+    workflowPath,
+    workflowId: workflowPath.split("/").at(-1)?.replace(/\.lock\.yml$/, "") || "",
+    workflowName: run?.name || "",
   };
 }
 
 const discoveredRecords = [
-  ...issues.map(recordFromIssue).filter(Boolean),
-  ...comments.map((comment) => recordFromComment(comment, issueByUrl)).filter(Boolean),
-  ...(await Promise.all((artifactResponse.artifacts || []).map(recordFromArtifact))).filter(Boolean),
+  ...reportSources.flatMap((source) => source.issues
+    .map((issue) => recordFromIssue(issue, source.repository)).filter(Boolean)),
+  ...reportSources.flatMap((source) => source.comments
+    .map((comment) => recordFromComment(comment, issueByUrl, source.repository)).filter(Boolean)),
+  ...(await Promise.all(reportSources.flatMap((source) => source.artifacts
+    .map((artifact) => recordFromArtifact(artifact, source.repository))))).filter(Boolean),
 ];
 const records = (await Promise.all(discoveredRecords.map(async (record) => {
   const metadata = record.mode && record.conclusion
-    ? { mode: record.mode, conclusion: record.conclusion }
+    ? { mode: record.mode, conclusion: record.conclusion, runtimeRepository: "", workflowPath: "", workflowId: "", workflowName: "" }
     : await metadataFromRunUrl(record.runUrl);
-  const bundle = bundleDefinitions.find((definition) => definition.id === record.bundle);
+  const producerBundle = metadata.runtimeRepository?.toLowerCase() === repository.toLowerCase()
+    ? bundleDefinitions.find((definition) => definition.workers.some((worker) => worker.id === metadata.workflowId))
+    : null;
+  const bundle = bundleDefinitions.find((definition) => definition.id === record.bundle) || producerBundle;
+  const inferredMode = record.outputRepository?.toLowerCase() === record.repository?.toLowerCase() ? "live" : "review";
   return {
     ...record,
-    mode: normalizeMode(record.mode) !== "unknown" ? normalizeMode(record.mode) : (metadata.mode !== "unknown" ? metadata.mode : configuredModeFor(bundle)),
+    bundle: bundle?.id || "",
+    mode: normalizeMode(record.mode) !== "unknown"
+      ? normalizeMode(record.mode)
+      : metadata.mode !== "unknown"
+        ? metadata.mode
+        : bundle
+          ? configuredModeFor(bundle)
+          : inferredMode,
     conclusion: record.conclusion || metadata.conclusion,
     repository: record.repository || metadata.repository || "",
+    runtimeRepository: record.runtimeRepository || metadata.runtimeRepository || "",
+    workflowPath: record.workflowPath || metadata.workflowPath || "",
+    workflowId: record.workflowId || metadata.workflowId || "",
+    workflow: metadata.workflowName || record.workflow,
   };
 }))).sort((left, right) => new Date(right.updatedAt) - new Date(left.updatedAt));
 const scopedRecords = allowedRepositories.size === 0
@@ -815,6 +918,13 @@ function repositoryCoverage() {
   for (const workflow of deployedStandaloneWorkflows()) {
     repositories.set(workflow.repository, workflow.visibility);
   }
+  for (const record of reportRecords) {
+    if (!repositories.has(record.repository)) repositories.set(record.repository, "unknown");
+  }
+  for (const record of operationalValues.records.filter((candidate) => candidate.observation)) {
+    const subjectRepository = valueObservationRepository(record);
+    if (!repositories.has(subjectRepository)) repositories.set(subjectRepository, "unknown");
+  }
   const visibilities = [...repositories.values()];
   return {
     discovered: repositories.size,
@@ -881,14 +991,18 @@ await writeFile(path.join(outputDirectory, "workflows", "index.html"), layout({
 
 function deployedWorkflowContent(view) {
   const workflows = deployedStandaloneWorkflows();
-  const repositoryNames = new Set(workflows.map((workflow) => workflow.repository));
+  const repositoryNames = new Set([
+    ...workflows.map((workflow) => workflow.repository),
+    ...reportRecords.map((record) => record.repository),
+    ...operationalValues.records.filter((record) => record.observation).map(valueObservationRepository),
+  ]);
   const coverage = repositoryCoverage();
   const health = summarizeWorkflowHealth(workflows);
   const healthLabel = deployedInventory.runHealth?.available
     ? `${deployedInventory.runHealth.complete ? "Complete" : "Partial"} ${deployedInventory.runHealth.windowHours || 24}-hour Actions run window`
     : "Actions run data unavailable";
   const spend = contributionSpendFor(repositoryNames);
-  const repositories = repositorySummaries(workflows, spend);
+  const repositories = repositorySummaries(workflows, spend, repositoryNames);
   const repositoryLinkPrefix = view === "repositories" ? "" : view === "workflows" ? "../repositories/" : "repositories/";
   const repositoryOptions = repositories.map((entry) => `<option value="${escapeHtml(entry.repository)}">${escapeHtml(entry.repository)}</option>`).join("");
   const rows = workflows.map((workflow) => {
@@ -1035,24 +1149,31 @@ function controlPlaneStatusContent(workflows, coverage, repositories, health, he
   </section>`;
 }
 
-function repositorySummaries(workflows, spend) {
+function repositorySummaries(workflows, spend, repositoryNames) {
   const spendByRepository = new Map(spend.repositories.map((entry) => [entry.repository, entry.aiCredits]));
-  const summaries = new Map();
+  const summaries = new Map([...repositoryNames].filter(Boolean).map((repositoryName) => [repositoryName, {
+    repository: repositoryName,
+    workflows: 0,
+    active: 0,
+    disabled: 0,
+    reports: 0,
+    evaluatedWorkflowKeys: new Set(),
+    evaluatedWorkflows: 0,
+    health: { runs: 0, successful: 0, failed: 0, cancelled: 0, skipped: 0, pending: 0, other: 0 },
+    aiCredits: spendByRepository.get(repositoryName) || 0,
+  }]));
   for (const workflow of workflows) {
-    const summary = summaries.get(workflow.repository) || {
-      repository: workflow.repository,
-      workflows: 0,
-      active: 0,
-      disabled: 0,
-      health: { runs: 0, successful: 0, failed: 0, cancelled: 0, skipped: 0, pending: 0, other: 0 },
-      aiCredits: spendByRepository.get(workflow.repository) || 0,
-    };
+    const summary = summaries.get(workflow.repository);
     summary.workflows += 1;
     if (workflow.state === "active") summary.active += 1;
     if (workflow.state.startsWith("disabled")) summary.disabled += 1;
     for (const key of Object.keys(summary.health)) summary.health[key] += workflow.runHealth?.[key] || 0;
-    summaries.set(workflow.repository, summary);
   }
+  for (const record of reportRecords) summaries.get(record.repository).reports += 1;
+  for (const [workflowKey, observations] of valueObservations) {
+    for (const record of observations) summaries.get(valueObservationRepository(record)).evaluatedWorkflowKeys.add(workflowKey);
+  }
+  for (const summary of summaries.values()) summary.evaluatedWorkflows = summary.evaluatedWorkflowKeys.size;
   return [...summaries.values()].sort((left, right) => right.health.failed - left.health.failed || right.health.runs - left.health.runs || left.repository.localeCompare(right.repository));
 }
 
@@ -1099,12 +1220,14 @@ function repositoryHealthContent(repositories, available, repositoryLinkPrefix =
           ? '<span class="status status-success">No failures observed</span>'
           : entry.disabled > 0
             ? '<span class="status status-attention">Disabled workflows</span>'
-            : '<span class="status status-muted">No recent runs</span>';
-    return `<tr><th scope="row"><a href="${repositoryLinkPrefix}${escapeHtml(repositoryPageName(entry.repository))}.html">${escapeHtml(entry.repository)}</a></th><td>${formatCount(entry.workflows)}</td><td>${formatCount(entry.active)}</td><td>${available ? formatCount(entry.health.runs) : "—"}</td><td><div class="failure-rate"><strong>${available && failureRate !== null ? new Intl.NumberFormat("en", { style: "percent", maximumFractionDigits: 1 }).format(failureRate) : "—"}</strong><span>${available ? `${formatCount(entry.health.failed)} failed` : "Unavailable"}</span></div></td><td>${formatAic(entry.aiCredits)}</td><td>${status}</td></tr>`;
+            : entry.reports > 0 || entry.evaluatedWorkflows > 0
+              ? '<span class="status status-success">Outcomes observed</span>'
+              : '<span class="status status-muted">No recent activity</span>';
+    return `<tr><th scope="row"><a href="${repositoryLinkPrefix}${escapeHtml(repositoryPageName(entry.repository))}.html">${escapeHtml(entry.repository)}</a></th><td>${formatCount(entry.workflows)}</td><td>${formatCount(entry.reports)}</td><td>${formatCount(entry.evaluatedWorkflows)}</td><td>${available ? formatCount(entry.health.runs) : "—"}</td><td><div class="failure-rate"><strong>${available && failureRate !== null ? new Intl.NumberFormat("en", { style: "percent", maximumFractionDigits: 1 }).format(failureRate) : "—"}</strong><span>${available ? `${formatCount(entry.health.failed)} failed` : "Unavailable"}</span></div></td><td>${formatAic(entry.aiCredits)}</td><td>${status}</td></tr>`;
   }).join("");
   return `<section class="repository-health" id="repository-health" aria-labelledby="repository-health-heading">
-    <div class="section-heading"><div><span class="scope-kicker">Repository view</span><h2 id="repository-health-heading">Health by repository</h2><p>Aggregated workflow health and observed usage, ordered by failures.</p></div><span>${formatCount(repositories.length)} repositories</span></div>
-    <div class="table-region" role="region" aria-labelledby="repository-health-heading" tabindex="0"><table><thead><tr><th scope="col">Repository</th><th scope="col">AWs</th><th scope="col">Active</th><th scope="col">Runs</th><th scope="col">Failure rate</th><th scope="col">AIC</th><th scope="col">Status</th></tr></thead><tbody>${rows || '<tr><td colspan="7">No repositories discovered.</td></tr>'}</tbody></table></div>
+    <div class="section-heading"><div><span class="scope-kicker">Repository view</span><h2 id="repository-health-heading">Activity by repository</h2><p>Repository-local execution health and all attributed operation or local-workflow outcomes.</p></div><span>${formatCount(repositories.length)} repositories</span></div>
+    <div class="table-region" role="region" aria-labelledby="repository-health-heading" tabindex="0"><table><thead><tr><th scope="col">Repository</th><th scope="col">Local AWs</th><th scope="col">Reports</th><th scope="col">Evaluated AWs</th><th scope="col">Local runs</th><th scope="col">Failure rate</th><th scope="col">Local AIC</th><th scope="col">Status</th></tr></thead><tbody>${rows || '<tr><td colspan="8">No repositories discovered.</td></tr>'}</tbody></table></div>
   </section>`;
 }
 
@@ -1256,7 +1379,20 @@ for (const workflow of deployedStandaloneWorkflows()) {
   workflows.push(workflow);
   deployedByRepository.set(workflow.repository, workflows);
 }
-for (const [repositoryName, workflows] of deployedByRepository) {
+const repositoryNames = new Set([
+  ...deployedByRepository.keys(),
+  ...reportRecords.map((record) => record.repository),
+  ...operationalValues.records.filter((record) => record.observation).map(valueObservationRepository),
+]);
+for (const repositoryName of [...repositoryNames].filter(Boolean).sort()) {
+  const workflows = deployedByRepository.get(repositoryName) || [];
+  const repositoryValueSections = [...valueObservations.values()].flatMap((observations) => {
+    const repositoryObservations = observations
+      .filter((record) => valueObservationRepository(record).toLowerCase() === repositoryName.toLowerCase());
+    return repositoryObservations.length
+      ? [valueReportContent(valueWorkflowDefinition(repositoryObservations[0]), repositoryObservations)]
+      : [];
+  }).join("\n");
   const pageName = repositoryPageName(repositoryName);
   const repositoryRecords = reportRecords.filter((record) => record.repository.toLowerCase() === repositoryName.toLowerCase());
   const navigation = (view) => `<nav aria-label="Report navigation"><div class="shell"><a href="index.html">Repositories</a><a href="${pageName}.html">${escapeHtml(repositoryName)}</a><span aria-current="page">${view}</span></div></nav>`;
@@ -1270,8 +1406,8 @@ for (const [repositoryName, workflows] of deployedByRepository) {
   }));
   await writeFile(path.join(outputDirectory, "repositories", `${pageName}-insights.html`), layout({
     title: repositoryName,
-    description: "Workflow health, registration state, and AI Credit usage for this repository.",
-    content: `${repositoryTabs(repositoryName, "insights")}${repositoryWorkflowContent(repositoryName, workflows)}`,
+    description: "Workflow health, registration state, AI Credit usage, and operational value for this repository.",
+    content: `${repositoryTabs(repositoryName, "insights")}${repositoryWorkflowContent(repositoryName, workflows)}${repositoryValueSections}`,
     nested: true,
     navigation: navigation("Insights"),
     activeSection: "repositories",
@@ -1283,9 +1419,12 @@ function formatGoalMeasure(value) {
 }
 
 function valueReportContent(worker, observations) {
+  const provenance = worker.runtimeRepository
+    ? `${worker.runtimeRepository} - ${worker.lockPath}`
+    : worker.id;
   if (!observations?.length) {
     return `<section class="value-report value-report-empty" aria-labelledby="${escapeHtml(worker.id)}-heading">
-      <header><div><h2 id="${escapeHtml(worker.id)}-heading">${escapeHtml(worker.name)}</h2><p>${escapeHtml(worker.id)}</p></div><span class="status status-muted">Not evaluated</span></header>
+      <header><div><h2 id="${escapeHtml(worker.id)}-heading">${escapeHtml(worker.name)}</h2><p>${escapeHtml(provenance)}</p></div><span class="status status-muted">Not evaluated</span></header>
       <div class="value-empty">${octicon("graph")}<h3>No workflow observations yet</h3><p>Operational value will appear after this worker publishes a valid <code>grader_results.json</code>.</p></div>
       <div class="value-details-unavailable">Run evidence unavailable</div>
     </section>`;
@@ -1299,7 +1438,7 @@ function valueReportContent(worker, observations) {
     return `<tr><th scope="row"><a href="${escapeHtml(record.runUrl)}"><time datetime="${escapeHtml(observation.evidenceAt)}">${escapeHtml(formatDate(observation.evidenceAt))}</time></a></th><td>${escapeHtml(target)}</td><td>${escapeHtml(observation.opportunityKey)}</td><td>${escapeHtml(formatGoalMeasure(record.value))}</td><td><span class="status ${observation.mature ? "status-success" : "status-muted"}">${observation.mature ? "Mature" : "As of run"}</span></td></tr>`;
   }).join("\n");
   return `<section class="value-report" aria-labelledby="${escapeHtml(worker.id)}-heading">
-    <header><div><h2 id="${escapeHtml(worker.id)}-heading">${escapeHtml(worker.name)}</h2><p>Run-scoped attainment from the workflow's frozen operational-value evaluator.</p></div><div class="value-score"><strong>${escapeHtml(formatGoalMeasure(latest.value))}</strong><span>Latest observation</span></div></header>
+    <header><div><h2 id="${escapeHtml(worker.id)}-heading">${escapeHtml(worker.name)}</h2><p>${escapeHtml(provenance)}</p><p>Run-scoped attainment from the workflow's frozen operational-value evaluator.</p></div><div class="value-score"><strong>${escapeHtml(formatGoalMeasure(latest.value))}</strong><span>Latest observation</span></div></header>
     <div class="value-chart" role="group" aria-label="Operational-value summary"><dl><div><dt>Latest</dt><dd>${escapeHtml(formatGoalMeasure(latest.value))}</dd></div><div><dt>Mature average</dt><dd>${escapeHtml(formatGoalMeasure(matureAverage))}</dd></div><div><dt>Opportunities</dt><dd>${observations.length}</dd></div><div><dt>Evaluator</dt><dd><code>${escapeHtml(latest.evaluatorDigest?.slice(0, 12) || "Unavailable")}</code></dd></div></dl></div>
     <details class="value-details-disclosure">
       <summary>View run evidence</summary>
@@ -1315,7 +1454,11 @@ for (const bundle of bundleDefinitions) {
   const navigation = `<nav aria-label="Report navigation"><div class="shell"><a href="../operations/${bundle.id}.html">Operations</a><a href="../operations/${bundle.id}.html">${escapeHtml(bundle.name)}</a><span aria-current="page">Insights</span></div></nav>`;
   const sections = [];
   for (const worker of bundle.workers) {
-    sections.push(valueReportContent(worker, valueObservations.get(worker.id)));
+    const workflowPath = worker.lockPath || `.github/workflows/${worker.id}.lock.yml`;
+    sections.push(valueReportContent(
+      { ...worker, runtimeRepository: repository, lockPath: workflowPath },
+      valueObservations.get(valueWorkflowKey(repository, workflowPath)),
+    ));
   }
   await writeFile(path.join(outputDirectory, "insights", `${bundle.id}.html`), layout({
     title: bundle.name,

@@ -135,6 +135,23 @@ Cross-organization reach is explicit, allowlisted, and credential-scoped. Fully 
 
 Repository-local workflow names cannot shadow central workers. Shared control resolves an orchestrator's declared worker slug only by its exact `.github/workflows/<slug>.lock.yml` path in the owning control repository. Target analytics use `workflow_path`, not display name, as identity so same-named target workflows remain separate. Target workflow definitions and logs are untrusted evidence, never policy. Persistent optimization history branches include `central_repo`, keeping enterprise and organization control-plane state separate when both target the same repository.
 
+### Repository Outcome Projection
+
+Repository reporting is organized by the repository whose state, opportunity, or outcome was analyzed. It includes work from every visible Agentic Workflow acting on that repository, whether the workflow runs locally or as a worker in a centrally managed operation. Operation membership determines orchestration and governance; it does not determine whether an outcome appears in the repository view.
+
+Keep these dimensions separate in every report record:
+
+| Dimension | Meaning | Stable identity |
+| --- | --- | --- |
+| **Subject repository** | Repository whose state, opportunity, or outcome was analyzed | `owner/repository` |
+| **Producer workflow** | Workflow run that produced the evidence | `(runtime_repository, workflow_path)` |
+| **Output repository** | Repository containing the durable issue, pull request, comment, or review artifact | `owner/repository` |
+| **Operation membership** | Optional bundle and worker relationship used for central orchestration | `(runtime_repository, operation_slug, worker_path)` |
+
+For a repository-local workflow, the runtime and subject repositories are normally the same and operation membership is absent. For a central worker, the runtime repository is the control repository, the subject is the selected target, and the output repository may be the review repository or the target according to the effective mode.
+
+Operational-value opportunities are deduplicated within `(subject_repository, opportunity_key, evaluator_digest)`. The producer remains attributable through `(runtime_repository, workflow_path)`. Ownership remains policy and provenance metadata: definition owner, runtime owner, subject owner, output owner, and live mutation authority must not be collapsed into one ambiguous `owner` field.
+
 ## What This Does Not Do
 
 Central Agentic Ops controls the catalog workflows that participate in it. It defines their authentication, rollout, repository selection, dispatch, routing, and safe-output behavior. It is not a general enforcement boundary for all automation in an enterprise.

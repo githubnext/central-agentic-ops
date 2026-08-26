@@ -3,12 +3,6 @@ import { mkdir, mkdtemp, readFile, readdir, rm, writeFile } from "node:fs/promis
 import os from "node:os";
 import path from "node:path";
 
-const workerIds = new Set([
-  "dependabot-release-train-updater",
-  "optimization-ai-credit-auditor",
-  "optimization-ai-credit-optimizer",
-]);
-
 function downloadAgentArtifact(repository, runId, destination) {
   return runCommand("gh", ["run", "download", String(runId), "--repo", repository, "--name", "agent", "--dir", destination]);
 }
@@ -62,6 +56,7 @@ function normalizeResult(selected, result, source = "run") {
     schemaVersion: 1,
     repository: selected.repository,
     workflowId: selected.workflowId,
+    workflowPath: selected.workflowPath || null,
     runId: selected.runId,
     runUrl: `https://github.com/${selected.repository}/actions/runs/${selected.runId}`,
     status: result.status || "unavailable",
@@ -174,8 +169,9 @@ async function regradeRecord(record, evidenceAt, checkout) {
   const selectedRuns = [];
   const seen = new Set();
   for (const workflow of inventory.workflows || []) {
+    if (workflow.operationalValue !== true) continue;
     const workflowId = workflow.path?.split("/").at(-1)?.replace(/\.lock\.yml$/, "");
-    if (!workerIds.has(workflowId)) continue;
+    if (!workflowId) continue;
     const runRecords = new Map((workflow.runHealth?.runRecords || []).map((run) => [Number(run.runId), run]));
     for (const runId of workflow.runHealth?.runIds || []) {
       const key = `${workflow.repository}:${runId}`;
@@ -185,6 +181,7 @@ async function regradeRecord(record, evidenceAt, checkout) {
         repository: workflow.repository,
         runId: Number(runId),
         workflowId,
+        workflowPath: workflow.path,
         run: runRecords.get(Number(runId)) || null,
       });
     }

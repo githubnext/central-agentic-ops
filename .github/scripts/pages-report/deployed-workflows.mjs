@@ -186,6 +186,21 @@ function manifestWorkflowSources(source) {
   });
 }
 
+function declaresOperationalValue(source) {
+  const graders = source.match(/^graders:\s*\n((?:^[ \t]+.*\n?)*)/m)?.[1] || "";
+  return /^\s+operational-value:\s*(?:$|#)/m.test(graders);
+}
+
+async function operationalValueCapability(repositoryName, lockPath) {
+  const sourcePath = lockPath.replace(/\.lock\.yml$/, ".md");
+  try {
+    return declaresOperationalValue(await fileContent(repositoryName, sourcePath));
+  } catch (error) {
+    console.warn(`${error.message}; operational-value capability is unknown for ${repositoryName}/${sourcePath}`);
+    return null;
+  }
+}
+
 function nextPagePath(headers) {
   return headers.get("link")?.match(/<https:\/\/api\.github\.com([^>]+)>; rel="next"/)?.[1] || "";
 }
@@ -332,7 +347,7 @@ const [runHealth, organizationRepositories] = await Promise.all([
   organizationRepositorySummary(),
 ]);
 
-const workflows = [...discovered.values()].map((item) => {
+const workflows = (await mapWithConcurrency([...discovered.values()], 8, async (item) => {
   const registered = registryByRepository.get(item.repository)?.get(item.path);
   return {
     ...item,
@@ -343,8 +358,9 @@ const workflows = [...discovered.values()].map((item) => {
     createdAt: registered?.created_at || null,
     updatedAt: registered?.updated_at || null,
     runHealth: registered ? runHealth.totals.get(registered.id) || { runs: 0, successful: 0, failed: 0, cancelled: 0, skipped: 0, pending: 0, other: 0, runIds: [], runRecords: [] } : null,
+    operationalValue: await operationalValueCapability(item.repository, item.path),
   };
-}).sort((left, right) => left.repository.localeCompare(right.repository) || left.name.localeCompare(right.name));
+})).sort((left, right) => left.repository.localeCompare(right.repository) || left.name.localeCompare(right.name));
 const operationWorkflowKeys = new Set(bundles.flatMap((bundle) => bundle.workflows.map((workflow) => `${bundle.repository}:${workflow.lockPath}`)));
 const standaloneWorkflows = workflows.filter((workflow) => !operationWorkflowKeys.has(`${workflow.repository}:${workflow.path}`));
 
@@ -360,7 +376,10 @@ const inventory = {
   discovery: {
     workflowSearchAvailable,
     manifestSearchAvailable,
-    complete: workflowSearchAvailable && manifestSearchAvailable,
+    operationalValueComplete: workflows.every((workflow) => workflow.operationalValue !== null),
+    complete: workflowSearchAvailable
+      && manifestSearchAvailable
+      && workflows.every((workflow) => workflow.operationalValue !== null),
   },
   runHealth: {
     available: runHealth.available,

@@ -662,6 +662,9 @@ test("clean-room compilation emits the expected GitHub Actions settings", { time
 test("Pages is an explicit least-privilege add-on", () => {
   const rootManifest = readFileSync(join(root, "aw.yml"), "utf8");
   const pagesWorkflow = readFileSync(join(root, "pages", "pages.yml"), "utf8");
+  const deployedWorkflows = readFileSync(join(root, ".github", "scripts", "pages-report", "deployed-workflows.mjs"), "utf8");
+  const operationalValues = readFileSync(join(root, ".github", "scripts", "pages-report", "operational-values.mjs"), "utf8");
+  const report = readFileSync(join(root, ".github", "scripts", "pages-report", "report.mjs"), "utf8");
   const reportAssets = ["aic-usage.mjs", "deployed-workflows.mjs", "inventory.mjs", "operational-values.mjs", "report.mjs"];
 
   assert.doesNotMatch(rootManifest, /pages\/pages|pages-report/);
@@ -670,8 +673,17 @@ test("Pages is an explicit least-privilege add-on", () => {
   assert.match(pagesWorkflow, /id-token: write/);
   assert.match(pagesWorkflow, /REPORT_VALUE_CACHE: \.cache\/pages-operational-values\/observations\.json/);
   assert.match(pagesWorkflow, /Save operational-value observation cache/);
+  assert.match(deployedWorkflows, /operationalValue: await operationalValueCapability\(item\.repository, item\.path\)/);
+  assert.match(operationalValues, /workflow\.operationalValue !== true/);
+  assert.doesNotMatch(operationalValues, /const workerIds = new Set/);
+  assert.match(report, /function valueObservationRepository\(record\)/);
+  assert.match(report, /function valueWorkflowKey\(runtimeRepository, workflowPath/);
+  assert.match(report, /outputRepository/);
+  assert.match(report, /const reportRepositoryNames =/);
   for (const assetName of reportAssets) {
-    assert.ok(existsSync(join(root, ".github", "scripts", "pages-report", assetName)), `missing report script ${assetName}`);
+    const assetPath = join(root, ".github", "scripts", "pages-report", assetName);
+    assert.ok(existsSync(assetPath), `missing report script ${assetName}`);
     assert.match(pagesWorkflow, new RegExp(`\\.github/scripts/pages-report/${assetName.replace(".", "\\.")}`));
+    execFileSync(process.execPath, ["--check", assetPath]);
   }
 });
