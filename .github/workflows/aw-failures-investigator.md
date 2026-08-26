@@ -84,6 +84,10 @@ tools:
   bash:
     - "*"
 
+graders:
+  operational-value:
+    run: .github/graders/aw-failures-investigator-operational-value.sh
+
 safe-outputs:
   staged: ${{ inputs.preview_only == 'true' }}
   create-issue:
