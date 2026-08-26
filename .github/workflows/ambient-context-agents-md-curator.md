@@ -57,6 +57,7 @@ imports:
 permissions:
   contents: read
   actions: read
+  issues: read
   pull-requests: read
   copilot-requests: write
 
@@ -72,6 +73,10 @@ run-name: "Ambient context AGENTS.md · ${{ inputs.target_repo }} · ${{ inputs.
 concurrency:
   group: "${{ github.workflow }}-${{ inputs.target_repo }}"
   cancel-in-progress: true
+
+graders:
+  operational-value:
+    run: .github/graders/ambient-context-agents-md-curator-operational-value.sh
 
 tracker-id: ambient-context-agents-md-curator
 

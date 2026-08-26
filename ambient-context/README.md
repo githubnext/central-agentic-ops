@@ -92,6 +92,31 @@ Promote in order: one-repository staged, private review, limited live, then sche
 
 The orchestrator is scheduled weekly. Ambient context should not be rewritten more often than the repository changes, and a weekly-or-slower pass matched with a per-repository issue that expires after 30 days keeps proposals fresh without creating maintenance noise. Slow the schedule further by lowering `CENTRAL_AGENTIC_OPS_AMBIENT_CONTEXT_ROLLOUT_PERCENT` or `CENTRAL_AGENTIC_OPS_AMBIENT_CONTEXT_MAX_REPOS`.
 
+## Operational Value
+
+The `AGENTS.md` curator registers a frozen schema-version 4 operational-value evaluator at [`.github/graders/ambient-context-agents-md-curator-operational-value.sh`](../.github/graders/ambient-context-agents-md-curator-operational-value.sh).
+
+The bundle exists to make agents cheaper to run for the same delivered outcome, so the evaluator measures exactly that rather than counting issues. A run attains value (`1`) only when its proposal was applied and the target got cheaper without getting worse:
+
+| Observation | Value |
+| --- | --- |
+| A merged pull request changed the target's root `AGENTS.md`, and afterwards the median successful-run token usage fell with no increase in the completed-run failure rate | `1` |
+| The change merged but token usage did not fall, or the failure rate rose | `0` |
+| No merged `AGENTS.md` change within thirty days — the proposal was filed and ignored | `0` |
+| The run correctly found no drift and filed no proposal, or the run logs cannot be compared | `null` |
+
+Token usage per successful run measures cost; the completed-run failure rate holds delivered quality fixed, so a cheaper repository only counts when reliability does not regress. Filing an issue is activity, not value, which is why an ignored proposal scores `0`. A correct no-op is not penalized because the run was never assigned an opportunity.
+
+Observations mature thirty days after the run, matching the proposal issue's expiry, and may be recomputed until then:
+
+```bash
+gh aw graders operational-value RUN_ID --evidence-at TIMESTAMP --json
+```
+
+Co-occurrence inside the assigned window is the accepted evidence. As with every operational-value grader, it does not establish that the workflow caused the outcome.
+
+The skills curator has no evaluator. It would have to claim the same merged pull requests and the same token evidence as the `AGENTS.md` curator, and overlapping opportunity ownership makes both observations uninterpretable.
+
 ## Safety Boundaries
 
 - GitHub tools are read-only; the only mutation is one issue per worker run.

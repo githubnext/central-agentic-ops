@@ -325,6 +325,7 @@ test("operational-value graders expose deterministic run-scoped contracts", () =
   const gradersDirectory = join(root, ".github", "graders");
   const graders = readdirSync(gradersDirectory).filter((name) => name.endsWith("-operational-value.sh")).sort();
   assert.deepEqual(graders, [
+    "ambient-context-agents-md-curator-operational-value.sh",
     "dependabot-release-train-updater-operational-value.sh",
     "optimization-ai-credit-auditor-operational-value.sh",
     "optimization-ai-credit-optimizer-operational-value.sh",
