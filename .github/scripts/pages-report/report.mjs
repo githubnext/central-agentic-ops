@@ -1043,7 +1043,9 @@ const dashboardScope = configuredDashboardScope();
 
 await writeFile(path.join(outputDirectory, "styles.css"), stylesheet());
 await Promise.all([
+  mkdir(path.join(outputDirectory, "coverage"), { recursive: true }),
   mkdir(path.join(outputDirectory, "repositories"), { recursive: true }),
+  mkdir(path.join(outputDirectory, "runs"), { recursive: true }),
   mkdir(path.join(outputDirectory, "workflows"), { recursive: true }),
 ]);
 await writeFile(path.join(outputDirectory, "index.html"), layout({
@@ -1066,6 +1068,26 @@ await writeFile(path.join(outputDirectory, "workflows", "index.html"), layout({
   nested: true,
   navigation: '<nav aria-label="Report navigation"><div class="shell"><a href="../repositories/">Repositories</a><span aria-current="page">All workflows</span></div></nav>',
   activeSection: "repositories",
+}));
+await Promise.all([
+  ["all", "index.html", "Runs"],
+  ["failed", "failed.html", "Failed runs"],
+  ["in-progress", "in-progress.html", "Runs in progress"],
+].map(async ([filter, fileName, title]) => writeFile(path.join(outputDirectory, "runs", fileName), layout({
+  title,
+  description: `${title} retained from ${dashboardScope.description}.`,
+  content: runCatalogContent(canonicalWorkflows, filter),
+  nested: true,
+  navigation: `<nav aria-label="Report navigation"><div class="shell"><a href="../">Overview</a><span aria-current="page">${title}</span></div></nav>`,
+  activeSection: "overview",
+}))));
+await writeFile(path.join(outputDirectory, "coverage", "index.html"), layout({
+  title: "Coverage diagnostics",
+  description: `Reporting coverage gaps for ${dashboardScope.description}.`,
+  content: deployedWorkflowContent("coverage"),
+  nested: true,
+  navigation: '<nav aria-label="Report navigation"><div class="shell"><a href="../">Overview</a><span aria-current="page">Coverage diagnostics</span></div></nav>',
+  activeSection: "overview",
 }));
 
 function deployedWorkflowContent(view) {
@@ -1136,6 +1158,15 @@ function deployedWorkflowContent(view) {
     const result = document.querySelector("#workflow-result");
     const more = document.querySelector("#workflow-more");
     if (!search || !repository || !state || !runState || !result || !more) return;
+    const params = new URLSearchParams(window.location.search);
+    const setInitialValue = (control, name) => {
+      const value = params.get(name) || "";
+      if ([...control.options].some((option) => option.value === value)) control.value = value;
+    };
+    search.value = params.get("q") || "";
+    setInitialValue(repository, "repository");
+    setInitialValue(state, "state");
+    setInitialValue(runState, "health");
     let limit = 25;
     const apply = (reset = false) => {
       if (reset) limit = 25;
@@ -1162,6 +1193,7 @@ function deployedWorkflowContent(view) {
   </script>`;
   if (view === "repositories") return repositoryView;
   if (view === "workflows") return workflowCatalog;
+  if (view === "coverage") return coverageDiagnosticsContent(spend);
   return `${controlPlane}${priorities}`;
 }
 
@@ -1257,20 +1289,40 @@ function repositorySummaries(workflows, spend, repositoryNames) {
   return [...summaries.values()].sort((left, right) => right.health.failed - left.health.failed || right.health.runs - left.health.runs || left.repository.localeCompare(right.repository));
 }
 
+function coverageDiagnostics(spend) {
+  const diagnostics = [];
+  if (!deployedInventory.includePrivate) diagnostics.push({
+    title: "Private repository discovery is off",
+    effect: "Private repositories are excluded from workflow inventory and run-health totals.",
+  });
+  if (!deployedInventory.runHealth?.available) diagnostics.push({
+    title: "Run telemetry is unavailable",
+    effect: "Run status, failures, and in-progress counts cannot be determined.",
+  });
+  else if (!deployedInventory.runHealth.complete) diagnostics.push({
+    title: "Run telemetry is partial",
+    effect: "Run status totals cover only the Actions data returned within the configured audit limit.",
+  });
+  if (!spend.available) diagnostics.push({
+    title: "AIC telemetry is unavailable",
+    effect: "AI Credit totals cannot be calculated from the retained usage artifacts.",
+  });
+  else if (!spend.complete) diagnostics.push({
+    title: "AIC telemetry is partial",
+    effect: "AI Credit totals exclude runs whose usage artifacts could not be collected.",
+  });
+  return diagnostics;
+}
+
 function attentionContent(workflows, repositories, health, spend) {
   const disabled = workflows.filter((workflow) => workflow.state.startsWith("disabled"));
   const failureRepositories = repositories.filter((entry) => entry.health.failed > 0);
-  const dataGaps = [];
-  if (!deployedInventory.includePrivate) dataGaps.push("private repository discovery is off");
-  if (!deployedInventory.runHealth?.available) dataGaps.push("run telemetry is unavailable");
-  else if (!deployedInventory.runHealth.complete) dataGaps.push("run telemetry is partial");
-  if (!spend.available) dataGaps.push("AIC telemetry is unavailable");
-  else if (!spend.complete) dataGaps.push("AIC telemetry is partial");
+  const dataGaps = coverageDiagnostics(spend);
   const items = [];
-  if (health.failed > 0) items.push(`<li class="attention-action attention-critical"><a class="attention-item-link" href="repositories/">${octicon("issue")}<div><strong>${formatCount(health.failed)} failed runs</strong><span>Across ${formatCount(failureRepositories.length)} repositor${failureRepositories.length === 1 ? "y" : "ies"} in the current window</span></div></a></li>`);
-  if (disabled.length > 0) items.push(`<li class="attention-action"><a class="attention-item-link" href="workflows/">${octicon("eye")}<div><strong>${formatCount(disabled.length)} disabled workflows</strong><span>Repository-owned workflows not currently active</span></div></a></li>`);
-  if (health.pending > 0) items.push(`<li class="attention-action"><a class="attention-item-link" href="repositories/">${octicon("play")}<div><strong>${formatCount(health.pending)} runs in progress</strong><span>Pending completion in the current run window</span></div></a></li>`);
-  if (dataGaps.length > 0) items.push(`<li>${octicon("codescan")}<div><strong>Coverage needs context</strong><span>${escapeHtml(dataGaps.join("; "))}</span></div></li>`);
+  if (health.failed > 0) items.push(`<li class="attention-action attention-critical"><a class="attention-item-link" href="runs/failed.html">${octicon("issue")}<div><strong>${formatCount(health.failed)} failed runs</strong><span>Across ${formatCount(failureRepositories.length)} repositor${failureRepositories.length === 1 ? "y" : "ies"} in the current window</span></div></a></li>`);
+  if (disabled.length > 0) items.push(`<li class="attention-action"><a class="attention-item-link" href="workflows/?state=disabled">${octicon("eye")}<div><strong>${formatCount(disabled.length)} disabled workflows</strong><span>Repository-owned workflows not currently active</span></div></a></li>`);
+  if (health.pending > 0) items.push(`<li class="attention-action"><a class="attention-item-link" href="runs/in-progress.html">${octicon("play")}<div><strong>${formatCount(health.pending)} runs in progress</strong><span>Pending completion in the current run window</span></div></a></li>`);
+  if (dataGaps.length > 0) items.push(`<li class="attention-action"><a class="attention-item-link" href="coverage/">${octicon("codescan")}<div><strong>Coverage needs context</strong><span>${escapeHtml(dataGaps.map((gap) => gap.title.toLowerCase()).join("; "))}</span></div></a></li>`);
   if (items.length === 0) items.push(`<li>${octicon("check-circle")}<div><strong>No immediate attention items</strong><span>No failures, disabled workflows, pending runs, or coverage gaps observed</span></div></li>`);
   return `<section class="attention-panel" aria-labelledby="attention-heading"><header><div><span class="scope-kicker">Act now</span><h2 id="attention-heading">Needs attention</h2></div><strong>${formatCount(items.length)}</strong></header><ul>${items.join("")}</ul></section>`;
 }
@@ -1307,6 +1359,40 @@ function repositoryHealthContent(repositories, available, repositoryLinkPrefix =
   return `<section class="repository-health" id="repository-health" aria-labelledby="repository-health-heading">
     <div class="section-heading"><div><span class="scope-kicker">Repository view</span><h2 id="repository-health-heading">Activity by repository</h2><p>Repository-local execution health and all attributed package or local-workflow outcomes.</p></div><span>${formatCount(repositories.length)} repositories · <a href="${workflowCatalogHref}">Search all workflows</a></span></div>
     <div class="table-region" role="region" aria-labelledby="repository-health-heading" tabindex="0"><table><thead><tr><th scope="col">Repository</th><th scope="col">Local AWs</th><th scope="col">Reports</th><th scope="col">Evaluated AWs</th><th scope="col">Local runs</th><th scope="col">Failure rate</th><th scope="col">Local AIC</th><th scope="col">Status</th></tr></thead><tbody>${rows || '<tr><td colspan="8">No repositories discovered.</td></tr>'}</tbody></table></div>
+  </section>`;
+}
+
+function runCatalogContent(workflows, selectedFilter) {
+  const failureConclusions = new Set(["action_required", "failure", "startup_failure", "timed_out"]);
+  const runs = workflows.flatMap((workflow) => (workflow.runHealth?.runRecords || []).map((run) => ({
+    ...run,
+    repository: workflow.repository,
+    workflowName: workflow.name,
+    workflowPath: workflow.path,
+    category: failureConclusions.has(run.conclusion) ? "failed" : run.conclusion === null ? "in-progress" : "other",
+  }))).filter((run) => selectedFilter === "all" || run.category === selectedFilter)
+    .sort((left, right) => Date.parse(right.createdAt || "") - Date.parse(left.createdAt || ""));
+  const rows = runs.map((run) => {
+    const statusLabel = run.category === "in-progress" ? run.status || "in progress" : run.conclusion || "unknown";
+    const statusClass = run.category === "failed" ? "status-danger" : run.category === "in-progress" ? "status-attention" : run.conclusion === "success" ? "status-success" : "status-muted";
+    return `<tr><th scope="row"><a href="https://github.com/${escapeHtml(run.repository)}/actions/runs/${escapeHtml(run.runId)}">${escapeHtml(run.displayTitle || `Run ${run.runId}`)}${octicon("external-link")}</a></th><td><a href="../repositories/${escapeHtml(repositoryWorkflowPageName(run.repository, run.workflowPath))}.html">${escapeHtml(run.workflowName)}</a></td><td><a href="../repositories/${escapeHtml(repositoryPageName(run.repository))}.html">${escapeHtml(run.repository)}</a></td><td><span class="status ${statusClass}">${escapeHtml(statusLabel.replaceAll("_", " "))}</span></td><td><time datetime="${escapeHtml(run.createdAt || "")}">${escapeHtml(formatDate(run.createdAt))}</time></td></tr>`;
+  }).join("\n");
+  const labels = { all: "All", failed: "Failed", "in-progress": "In progress" };
+  const tabs = [["all", "index.html"], ["failed", "failed.html"], ["in-progress", "in-progress.html"]]
+    .map(([filter, href]) => `<a href="${href}"${selectedFilter === filter ? ' aria-current="page"' : ""}>${labels[filter]}</a>`).join("");
+  return `<nav class="mode-tabs" aria-label="Filter runs by status">${tabs}</nav>
+  <section class="run-catalog" aria-labelledby="run-catalog-heading">
+    <div class="section-heading"><div><span class="scope-kicker">Current run window</span><h2 id="run-catalog-heading">${labels[selectedFilter]} runs</h2><p>GitHub Actions runs retained by the control-plane inventory.</p></div><strong>${formatCount(runs.length)} runs</strong></div>
+    <div class="table-region" role="region" aria-labelledby="run-catalog-heading" tabindex="0"><table><thead><tr><th scope="col">Run</th><th scope="col">Workflow</th><th scope="col">Repository</th><th scope="col">Status</th><th scope="col">Started</th></tr></thead><tbody>${rows || `<tr><td colspan="5">No ${labels[selectedFilter].toLowerCase()} runs in the current window.</td></tr>`}</tbody></table></div>
+  </section>`;
+}
+
+function coverageDiagnosticsContent(spend) {
+  const diagnostics = coverageDiagnostics(spend);
+  const rows = diagnostics.map((diagnostic) => `<tr><th scope="row">${escapeHtml(diagnostic.title)}</th><td>${escapeHtml(diagnostic.effect)}</td></tr>`).join("\n");
+  return `<section class="coverage-diagnostics" aria-labelledby="coverage-diagnostics-heading">
+    <div class="section-heading"><div><span class="scope-kicker">Data quality</span><h2 id="coverage-diagnostics-heading">Coverage diagnostics</h2><p>Signals that limit what this dashboard can claim about the configured scope.</p></div><strong>${formatCount(diagnostics.length)} gaps</strong></div>
+    <div class="table-region" role="region" aria-labelledby="coverage-diagnostics-heading" tabindex="0"><table><thead><tr><th scope="col">Signal</th><th scope="col">Effect</th></tr></thead><tbody>${rows || '<tr><td colspan="2">No reporting coverage gaps detected.</td></tr>'}</tbody></table></div>
   </section>`;
 }
 

@@ -773,8 +773,12 @@ test("Pages renders one canonical authored workflow detail across repository and
       bundles: [{ repository: "acme/control", name: "Optimization", workflows: [{ lockPath: orchestratorPath }] }],
       workflows: [
         { repository: "acme/control", visibility: "public", path: orchestratorPath, name: "Optimization", state: "active", htmlUrl: "https://github.com/acme/control/blob/main/.github/workflows/operation.md?plain=1", updatedAt: "2026-08-26T10:00:00Z", role: "orchestrator", runHealth: { runs: 1, successful: 1, failed: 0, cancelled: 0, skipped: 0, pending: 0, other: 0 } },
-        { repository: "acme/control", visibility: "public", path: workerPath, name: "Credit optimizer", state: "active", htmlUrl: "https://github.com/acme/control/blob/main/.github/workflows/worker.md?plain=1", updatedAt: "2026-08-26T10:00:00Z", role: "worker", runHealth: { runs: 1, successful: 1, failed: 0, cancelled: 0, skipped: 0, pending: 0, other: 0 } },
-        { repository: "acme/service", visibility: "public", path: standalonePath, name: "Local audit", state: "active", htmlUrl: "https://github.com/acme/service/blob/main/.github/workflows/local-audit.md?plain=1", updatedAt: "2026-08-26T10:00:00Z", role: "standalone", runHealth: { runs: 0, successful: 0, failed: 0, cancelled: 0, skipped: 0, pending: 0, other: 0 } },
+        { repository: "acme/control", visibility: "public", path: workerPath, name: "Credit optimizer", state: "active", htmlUrl: "https://github.com/acme/control/blob/main/.github/workflows/worker.md?plain=1", updatedAt: "2026-08-26T10:00:00Z", role: "worker", runHealth: { runs: 3, successful: 1, failed: 1, cancelled: 0, skipped: 0, pending: 1, other: 0, runRecords: [
+          { runId: 1, conclusion: "success", status: "completed", createdAt: "2026-08-26T08:00:00Z", displayTitle: "Credit optimizer success" },
+          { runId: 2, conclusion: "failure", status: "completed", createdAt: "2026-08-26T09:00:00Z", displayTitle: "Credit optimizer failure" },
+          { runId: 3, conclusion: null, status: "in_progress", createdAt: "2026-08-26T10:00:00Z", displayTitle: "Credit optimizer running" },
+        ] } },
+        { repository: "acme/service", visibility: "public", path: standalonePath, name: "Local audit", state: "disabled_manually", htmlUrl: "https://github.com/acme/service/blob/main/.github/workflows/local-audit.md?plain=1", updatedAt: "2026-08-26T10:00:00Z", role: "standalone", runHealth: { runs: 0, successful: 0, failed: 0, cancelled: 0, skipped: 0, pending: 0, other: 0, runRecords: [] } },
       ],
     });
     json(aicPath, {
@@ -841,15 +845,24 @@ globalThis.fetch = async (input) => {
     const packageWorkflows = readFileSync(join(outputPath, "packages", "operation.html"), "utf8");
     const packageReports = readFileSync(join(outputPath, "packages", "operation-reports.html"), "utf8");
     const packagesOverview = readFileSync(join(outputPath, "packages", "index.html"), "utf8");
+    const failedRuns = readFileSync(join(outputPath, "runs", "failed.html"), "utf8");
+    const inProgressRuns = readFileSync(join(outputPath, "runs", "in-progress.html"), "utf8");
+    const coverageDiagnostics = readFileSync(join(outputPath, "coverage", "index.html"), "utf8");
     assert.match(overview, /<title>Overview<\/title>/);
     assert.match(overview, /<span>Overview<\/span>[\s\S]*?<span>Repositories<\/span>[\s\S]*?<span>Packages<\/span>/);
     assert.doesNotMatch(overview, /class="nav-children"/);
     assert.doesNotMatch(overview, /class="attention-link"/);
     assert.match(overview, /class="attention-panel"/);
+    assert.match(overview, /href="runs\/failed\.html"[\s\S]*?1 failed runs/);
+    assert.match(overview, /href="workflows\/\?state=disabled"[\s\S]*?1 disabled workflows/);
+    assert.match(overview, /href="runs\/in-progress\.html"[\s\S]*?1 runs in progress/);
+    assert.match(overview, /href="coverage\/"[\s\S]*?Coverage needs context/);
     assert.doesNotMatch(overview, />View activity<\/a>/);
     assert.match(overview, /class="operation-card-list"/);
     assert.match(catalog, /\.github\/workflows\/worker\.md/);
     assert.match(catalog, /\.github\/workflows\/local-audit\.md/);
+    assert.match(catalog, /new URLSearchParams\(window\.location\.search\)/);
+    assert.match(catalog, /setInitialValue\(state, "state"\)/);
     assert.doesNotMatch(catalog, /\.lock\.yml/);
     assert.doesNotMatch(catalog, /<nav class="primary-nav"[\s\S]*?<span>Workflows<\/span>/);
     assert.match(repositories, /href="\.\.\/workflows\/">Search all workflows<\/a>/);
@@ -873,6 +886,14 @@ globalThis.fetch = async (input) => {
     assert.match(packageReports, /Worker report/);
     assert.doesNotMatch(packageReports, /Orchestrator and workers/);
     assert.doesNotMatch(packageReports, /<span aria-current="page">Reports<\/span>/);
+    assert.match(failedRuns, /Credit optimizer failure/);
+    assert.doesNotMatch(failedRuns, /Credit optimizer running|Credit optimizer success/);
+    assert.match(failedRuns, /github\.com\/acme\/control\/actions\/runs\/2/);
+    assert.match(inProgressRuns, /Credit optimizer running/);
+    assert.doesNotMatch(inProgressRuns, /Credit optimizer failure|Credit optimizer success/);
+    assert.match(inProgressRuns, /github\.com\/acme\/control\/actions\/runs\/3/);
+    assert.match(coverageDiagnostics, /Private repository discovery is off/);
+    assert.match(coverageDiagnostics, /Private repositories are excluded from workflow inventory and run-health totals/);
     assert.ok(packagesOverview.indexOf('class="bundle-utilization"') < packagesOverview.indexOf('class="trend-panel"'));
     assert.ok(packagesOverview.indexOf('class="trend-panel"') < packagesOverview.indexOf('class="metric-section"'));
     assert.ok(packagesOverview.indexOf('class="metric-section"') < packagesOverview.indexOf('class="impact-analysis"'));
