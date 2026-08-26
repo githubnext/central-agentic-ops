@@ -1078,7 +1078,7 @@ await Promise.all([
   description: `${title} retained from ${dashboardScope.description}.`,
   content: runCatalogContent(canonicalWorkflows, filter),
   nested: true,
-  navigation: `<nav aria-label="Report navigation"><div class="shell"><a href="../">Overview</a><span aria-current="page">${title}</span></div></nav>`,
+  navigation: `<nav aria-label="Report navigation"><div class="shell"><a href="../">Overview</a>${filter === "all" ? "" : '<a href="index.html">Runs</a>'}<span aria-current="page">${title}</span></div></nav>`,
   activeSection: "overview",
 }))));
 await writeFile(path.join(outputDirectory, "coverage", "index.html"), layout({
@@ -1167,6 +1167,14 @@ function deployedWorkflowContent(view) {
     setInitialValue(repository, "repository");
     setInitialValue(state, "state");
     setInitialValue(runState, "health");
+    const syncUrl = () => {
+      for (const [name, value] of [["q", search.value.trim()], ["repository", repository.value], ["state", state.value], ["health", runState.value]]) {
+        if (value) params.set(name, value);
+        else params.delete(name);
+      }
+      const query = params.toString();
+      window.history.replaceState(null, "", window.location.pathname + (query ? "?" + query : "") + window.location.hash);
+    };
     let limit = 25;
     const apply = (reset = false) => {
       if (reset) limit = 25;
@@ -1186,7 +1194,7 @@ function deployedWorkflowContent(view) {
       result.textContent = \`Showing \${shown.toLocaleString()} of \${matched.toLocaleString()} matching workflows\`;
       more.hidden = shown >= matched;
     };
-    for (const control of [search, repository, state, runState]) control.addEventListener("input", () => apply(true));
+    for (const control of [search, repository, state, runState]) control.addEventListener("input", () => { syncUrl(); apply(true); });
     more.addEventListener("click", () => { limit += 25; apply(); });
     apply();
   })();
@@ -1252,7 +1260,7 @@ function controlPlaneStatusContent(workflows, coverage, repositories, health, he
       <div class="vital-running"><dt>Running now</dt><dd>${runHealthAvailable ? formatCount(health.pending) : "—"}</dd><p>Queued or in progress</p></div>
     </dl>
     <div class="execution-health">
-      <div class="execution-health-heading"><strong>24-hour execution health</strong><span>${escapeHtml(aicCoverage)}</span></div>
+      <div class="execution-health-heading"><strong>24-hour execution health</strong><span>${escapeHtml(aicCoverage)} · <a href="runs/">View all runs</a></span></div>
       <div class="execution-track" role="img" aria-label="${formatCount(health.successful)} successful, ${formatCount(health.failed)} failed, ${formatCount(health.pending)} running, and ${formatCount(otherRuns)} other runs">
         <span class="execution-success" style="width:${percent(health.successful)}"></span><span class="execution-failed" style="width:${percent(health.failed)}"></span><span class="execution-running" style="width:${percent(health.pending)}"></span><span class="execution-other" style="width:${percent(otherRuns)}"></span>
       </div>
@@ -1344,13 +1352,13 @@ function repositoryHealthContent(repositories, available, repositoryLinkPrefix =
   const rows = repositories.map((entry) => {
     const failureRate = entry.health.runs > 0 ? entry.health.failed / entry.health.runs : null;
     const status = entry.health.failed > 0
-      ? '<span class="status status-danger">Needs attention</span>'
+      ? `<a class="status status-danger" href="../runs/failed.html?repository=${encodeURIComponent(entry.repository)}">Needs attention</a>`
       : entry.health.pending > 0
-        ? '<span class="status status-attention">In progress</span>'
+        ? `<a class="status status-attention" href="../runs/in-progress.html?repository=${encodeURIComponent(entry.repository)}">In progress</a>`
         : entry.health.runs > 0
           ? '<span class="status status-success">No failures observed</span>'
           : entry.disabled > 0
-            ? '<span class="status status-attention">Disabled workflows</span>'
+            ? `<a class="status status-attention" href="../workflows/?repository=${encodeURIComponent(entry.repository)}&amp;state=disabled">Disabled workflows</a>`
             : entry.reports > 0 || entry.evaluatedWorkflows > 0
               ? '<span class="status status-success">Outcomes observed</span>'
               : '<span class="status status-muted">No recent activity</span>';
@@ -1364,27 +1372,76 @@ function repositoryHealthContent(repositories, available, repositoryLinkPrefix =
 
 function runCatalogContent(workflows, selectedFilter) {
   const failureConclusions = new Set(["action_required", "failure", "startup_failure", "timed_out"]);
-  const runs = workflows.flatMap((workflow) => (workflow.runHealth?.runRecords || []).map((run) => ({
+  const allRuns = workflows.flatMap((workflow) => (workflow.runHealth?.runRecords || []).map((run) => ({
     ...run,
     repository: workflow.repository,
     workflowName: workflow.name,
     workflowPath: workflow.path,
     category: failureConclusions.has(run.conclusion) ? "failed" : run.conclusion === null ? "in-progress" : "other",
-  }))).filter((run) => selectedFilter === "all" || run.category === selectedFilter)
+  })));
+  const runs = allRuns.filter((run) => selectedFilter === "all" || run.category === selectedFilter)
     .sort((left, right) => Date.parse(right.createdAt || "") - Date.parse(left.createdAt || ""));
+  const repositoryOptions = [...new Set(allRuns.map((run) => run.repository))].sort()
+    .map((repositoryName) => `<option value="${escapeHtml(repositoryName)}">${escapeHtml(repositoryName)}</option>`).join("");
   const rows = runs.map((run) => {
     const statusLabel = run.category === "in-progress" ? run.status || "in progress" : run.conclusion || "unknown";
     const statusClass = run.category === "failed" ? "status-danger" : run.category === "in-progress" ? "status-attention" : run.conclusion === "success" ? "status-success" : "status-muted";
-    return `<tr><th scope="row"><a href="https://github.com/${escapeHtml(run.repository)}/actions/runs/${escapeHtml(run.runId)}">${escapeHtml(run.displayTitle || `Run ${run.runId}`)}${octicon("external-link")}</a></th><td><a href="../repositories/${escapeHtml(repositoryWorkflowPageName(run.repository, run.workflowPath))}.html">${escapeHtml(run.workflowName)}</a></td><td><a href="../repositories/${escapeHtml(repositoryPageName(run.repository))}.html">${escapeHtml(run.repository)}</a></td><td><span class="status ${statusClass}">${escapeHtml(statusLabel.replaceAll("_", " "))}</span></td><td><time datetime="${escapeHtml(run.createdAt || "")}">${escapeHtml(formatDate(run.createdAt))}</time></td></tr>`;
+    const searchText = `${run.displayTitle || `Run ${run.runId}`} ${run.workflowName} ${run.repository} ${statusLabel}`.toLowerCase();
+    return `<tr data-run-row data-repository="${escapeHtml(run.repository)}" data-search="${escapeHtml(searchText)}"><th scope="row"><a href="https://github.com/${escapeHtml(run.repository)}/actions/runs/${escapeHtml(run.runId)}">${escapeHtml(run.displayTitle || `Run ${run.runId}`)}${octicon("external-link")}</a></th><td><a href="../repositories/${escapeHtml(repositoryWorkflowPageName(run.repository, run.workflowPath))}.html">${escapeHtml(run.workflowName)}</a></td><td><a href="../repositories/${escapeHtml(repositoryPageName(run.repository))}.html">${escapeHtml(run.repository)}</a></td><td><span class="status ${statusClass}">${escapeHtml(statusLabel.replaceAll("_", " "))}</span></td><td><time datetime="${escapeHtml(run.createdAt || "")}">${escapeHtml(formatDate(run.createdAt))}</time></td></tr>`;
   }).join("\n");
   const labels = { all: "All", failed: "Failed", "in-progress": "In progress" };
   const tabs = [["all", "index.html"], ["failed", "failed.html"], ["in-progress", "in-progress.html"]]
-    .map(([filter, href]) => `<a href="${href}"${selectedFilter === filter ? ' aria-current="page"' : ""}>${labels[filter]}</a>`).join("");
+    .map(([filter, href]) => `<a href="${href}" data-run-filter-href="${href}"${selectedFilter === filter ? ' aria-current="page"' : ""}>${labels[filter]}</a>`).join("");
   return `<nav class="mode-tabs" aria-label="Filter runs by status">${tabs}</nav>
   <section class="run-catalog" aria-labelledby="run-catalog-heading">
     <div class="section-heading"><div><span class="scope-kicker">Current run window</span><h2 id="run-catalog-heading">${labels[selectedFilter]} runs</h2><p>GitHub Actions runs retained by the control-plane inventory.</p></div><strong>${formatCount(runs.length)} runs</strong></div>
+    <div class="catalog-toolbar run-toolbar" aria-label="Run filters">
+      <label class="catalog-search"><span>Search runs</span><input id="run-search" type="search" placeholder="Run, workflow, status, or repository" autocomplete="off"></label>
+      <label><span>Repository</span><select id="run-repository"><option value="">All repositories</option>${repositoryOptions}</select></label>
+    </div>
+    <p class="catalog-result run-result" id="run-result" aria-live="polite"></p>
     <div class="table-region" role="region" aria-labelledby="run-catalog-heading" tabindex="0"><table><thead><tr><th scope="col">Run</th><th scope="col">Workflow</th><th scope="col">Repository</th><th scope="col">Status</th><th scope="col">Started</th></tr></thead><tbody>${rows || `<tr><td colspan="5">No ${labels[selectedFilter].toLowerCase()} runs in the current window.</td></tr>`}</tbody></table></div>
-  </section>`;
+  </section>
+  <script>
+  (() => {
+    const rows = [...document.querySelectorAll("[data-run-row]")];
+    const search = document.querySelector("#run-search");
+    const repository = document.querySelector("#run-repository");
+    const result = document.querySelector("#run-result");
+    if (!search || !repository || !result) return;
+    const params = new URLSearchParams(window.location.search);
+    search.value = params.get("q") || "";
+    const repositoryValue = params.get("repository") || "";
+    if ([...repository.options].some((option) => option.value === repositoryValue)) repository.value = repositoryValue;
+    const syncLinks = () => {
+      const query = params.toString();
+      for (const link of document.querySelectorAll("[data-run-filter-href]")) link.href = link.dataset.runFilterHref + (query ? "?" + query : "");
+    };
+    const syncUrl = () => {
+      for (const [name, value] of [["q", search.value.trim()], ["repository", repository.value]]) {
+        if (value) params.set(name, value);
+        else params.delete(name);
+      }
+      const query = params.toString();
+      window.history.replaceState(null, "", window.location.pathname + (query ? "?" + query : "") + window.location.hash);
+      syncLinks();
+    };
+    const apply = () => {
+      const query = search.value.trim().toLowerCase();
+      let matched = 0;
+      for (const row of rows) {
+        const matches = (!query || row.dataset.search.includes(query))
+          && (!repository.value || row.dataset.repository === repository.value);
+        row.hidden = !matches;
+        if (matches) matched += 1;
+      }
+      result.textContent = \`Showing \${matched.toLocaleString()} of \${rows.length.toLocaleString()} runs\`;
+    };
+    for (const control of [search, repository]) control.addEventListener("input", () => { syncUrl(); apply(); });
+    syncLinks();
+    apply();
+  })();
+  </script>`;
 }
 
 function coverageDiagnosticsContent(spend) {
@@ -2264,6 +2321,8 @@ footer a { min-height: 24px; display: inline-flex; align-items: center; }
 .catalog-toolbar :is(input, select) { width: 100%; min-height: 34px; padding: 5px 9px; border: 1px solid var(--border); border-radius: 6px; background: var(--canvas); color: var(--fg); font: inherit; }
 .catalog-toolbar :is(input, select):focus-visible { outline: 2px solid var(--focus); outline-offset: -1px; }
 .catalog-result { margin: 0; padding: 0 14px 10px; color: var(--muted); font-size: .75rem; }
+.run-toolbar { grid-template-columns: minmax(240px, 1.5fr) minmax(180px, 1fr); padding: 0 0 10px; }
+.run-result { padding: 0 0 10px; }
 .catalog-disclosure .table-region { border-right: 0; border-left: 0; border-radius: 0; }
 .catalog-more { min-height: 34px; margin: 12px 14px; padding: 5px 12px; border: 1px solid var(--border); border-radius: 6px; background: var(--canvas-subtle); color: var(--fg); font: inherit; font-size: .75rem; font-weight: 600; cursor: pointer; }
 .catalog-more:hover { background: var(--neutral-muted); }
