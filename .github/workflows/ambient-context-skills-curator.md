@@ -260,19 +260,26 @@ If `agents_md_present` is `false`, stop immediately. Emit a `noop` explaining th
 
 If `agents_md_present` is `true` and `skill_count` is `0`, continue: the only work available is recommending extraction of procedure-shaped `AGENTS.md` sections into new skills, and only when a section clearly qualifies.
 
+Before analyzing, make one bounded check for open pull requests in the target repository that modify `AGENTS.md` or any `SKILL.md`. If one exists, a previous proposal is still being applied; emit a `noop` naming those pull requests instead of proposing a competing change set.
+
 ## Step 2 — Classify the layering
 
 Only a skill's `name` and `description` are loaded up front; the body loads when the skill is selected. That makes the split between always-loaded facts and on-demand procedures the central design decision.
 
 - **Belongs in `AGENTS.md`**: facts every session needs — exact commands, layout, hard constraints.
 - **Belongs in a skill**: a named procedure needed only sometimes — a multi-step playbook, checklist, or task recipe.
+- **Belongs in a nested `AGENTS.md` or path-scoped instructions file**: a rule that applies only to one directory, so it loads only when that area is touched.
+- **Belongs in config or CI**: an absolute rule that a linter, formatter, or required check can enforce deterministically, at no context cost.
 - **Belongs nowhere**: content already enforced by a linter, config, or CI check, or already stated in `README.md`.
+
+Prefer the cheapest destination that still guarantees the instruction is present when it matters. Moving a rule out of the always-loaded file is only a win if it still loads for the tasks that need it.
 
 ## Step 3 — Find the evidence-backed changes
 
 | Finding | Evidence | Recommendation |
 | --- | --- | --- |
 | Extraction candidate | an `AGENTS.md` section with several `numbered_steps` and a large `char_count` | move the procedure into a skill and leave a one-line pointer |
+| Directory-scoped rule | a section whose guidance names one directory that appears in `agent_definitions` or the repository tree | move it to a nested `AGENTS.md` or path-scoped instructions file for that directory |
 | Weak description | short, vague, or generic `description`; no trigger conditions | rewrite the description to state exactly when to invoke it and what it does |
 | Probably unused | old `days_since_last_change`, `commits_touching` of 1, and `referenced_in_tracked_files` of 0 | propose retirement, and say explicitly that invocation counts are not observable from repository data |
 | Redundant skill | skill body substantially repeats `AGENTS.md` content | keep one source and point the other at it |
@@ -280,12 +287,15 @@ Only a skill's `name` and `description` are loaded up front; the body loads when
 
 Never claim a skill is unused on staleness alone. Repository data cannot prove invocation; state the uncertainty and let the maintainer decide.
 
+A description is the whole selection signal: it is loaded up front and the body is not. Judge it by whether it answers both "when exactly should this be invoked?" and "what concrete actions does it take?". `Helps with deployments` fails; a description naming the trigger, the target, and the actions succeeds.
+
 ## Step 4 — Decide the smallest useful change set
 
 - Propose at most 5 changes, ordered by the context cost they remove.
 - Every change must cite prefetch evidence.
 - Prefer sharpening one description over authoring a new skill.
 - Never propose a skill whose procedure is not already written down somewhere in the repository.
+- When a procedure moves out of `AGENTS.md`, the pointer left behind must keep the facts a session needs even without opening the skill, so routine tasks do not pay an extra file read.
 - If nothing qualifies, emit a `noop` with the skill count, size numbers, and the reason no change is warranted. A clean no-op is a successful run.
 
 ## Step 5 — Publish one issue

@@ -107,18 +107,18 @@ Package orchestrator for the ambient context that agents read before they do any
 
 ## Discovery
 
-A repository is only a candidate for this package when it already has ambient context to maintain. **A repository with no `AGENTS.md` at its root is out of scope: skip it and record it as skipped. Never propose creating an `AGENTS.md` for a repository that does not have one.**
+A repository is only a candidate for this package when it already has ambient context to maintain. **A repository with no `AGENTS.md` at its root is out of scope: skip it and record it as skipped. Never propose creating an `AGENTS.md` for a repository that does not have one.** Confirm presence by reading the repository contents for the default branch before selecting it; do not infer it from repository metadata, and do not spend a worker dispatch to discover that the file is missing.
 
 Among repositories that do have an `AGENTS.md`, prefer those with the strongest evidence of drift:
 
 1. `AGENTS.md` untouched for a long time while the repository kept changing: many merged pull requests, moved or deleted directories, or changed build, test, and lint entry points since its last edit.
-2. Oversized or duplicated ambient context: a long `AGENTS.md`, content copied from `README.md`, or overlapping `AGENTS.md`, `CLAUDE.md`, and `.github/copilot-instructions.md` files that agents must read together.
+2. Oversized or duplicated ambient context: a long `AGENTS.md`, content copied from `README.md`, or overlapping `AGENTS.md`, `CLAUDE.md`, and `.github/copilot-instructions.md` files that agents must read together. Multiple instruction files are also where contradictions appear, and a contradiction is worse than an omission because either branch may be followed.
 3. Verifiable staleness: references to paths, files, commands, or workflows that no longer exist in the default branch.
 4. Repeated human correction of agents: review comments on agent-authored pull requests that keep repeating the same instruction, or issues describing agents doing the wrong thing.
 5. Active agent usage: recent agent sessions, agent-authored pull requests, or installed agentic workflows, which make better ambient context immediately valuable.
 6. Skills that exist but are never invoked, have vague descriptions, or duplicate `AGENTS.md` content.
 
-Deprioritize repositories without an `AGENTS.md`, archived or inactive repositories, repositories whose default branch cannot be read, repositories with almost no history to reason about, and repositories where an ambient-context issue from this bundle is already open and unaddressed.
+Deprioritize repositories without an `AGENTS.md`, archived or inactive repositories, repositories whose default branch cannot be read, repositories with almost no history to reason about, repositories with an open pull request already modifying an instruction file, and repositories where an ambient-context issue from this bundle is already open and unaddressed.
 
 ## Workers
 

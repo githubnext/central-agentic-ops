@@ -15,9 +15,13 @@ Ambient context decays quietly. Directories move, commands change, reviewers rep
 
 - Selects repositories where `AGENTS.md` has drifted from repository reality.
 - Verifies the instruction file against the default branch: referenced paths that no longer exist, documented commands that are no longer defined, directories deleted since the file last changed, and build or test tooling that changed afterwards.
+- Detects contradictions between instruction files — for example `AGENTS.md` documenting one package manager while `CLAUDE.md` or the committed lockfile says another. A contradiction is worse than an omission, because an agent may follow either branch.
+- Flags residue that needs no interpretation: unresolved `TODO`/`FIXME` markers, year references that contradict current reality, and prose version claims that disagree with the manifests.
 - Reads merged pull request and review-comment history, weighting corrections repeated on agent-authored pull requests, because a repeated correction is direct evidence of a missing or ignored rule.
 - Keeps the file small. Ambient context is loaded into every session, so the bundle prefers deleting, compressing, and de-duplicating over adding, and targets under 200 lines and under 10 KB.
+- Routes content it removes to the cheapest destination that still guarantees it loads when needed: a nested `AGENTS.md` or path-scoped instructions file for directory-specific rules, a skill for procedures, and config or CI for rules a check can enforce deterministically.
 - Recommends moving multi-step procedures out of `AGENTS.md` into skills, sharpening skill descriptions so agents can select them correctly, and flagging skills that look abandoned.
+- Defers when an open pull request is already modifying an instruction file, so proposals never race an in-flight change.
 - Produces at most one issue per worker run, each containing an agentic prompt with an explicit file allowlist, per-edit evidence, a size budget, and an instruction to skip any edit whose evidence no longer holds.
 
 Both workers are read-only. They never edit a repository, never open a pull request, and never merge anything. A human or a coding agent decides whether to run the prompt.
