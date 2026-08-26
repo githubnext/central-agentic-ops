@@ -622,7 +622,7 @@ test("clean-room compilation emits the expected GitHub Actions settings", { time
     const lockNames = readdirSync(generatedDirectory)
       .filter((name) => name.endsWith(".lock.yml"))
       .sort();
-    const expectedLockNames = [
+    const packageLockNames = [
       "aw-failures-investigator.lock.yml",
       "aw-failures.lock.yml",
       "dependabot-release-train-updater.lock.yml",
@@ -631,9 +631,10 @@ test("clean-room compilation emits the expected GitHub Actions settings", { time
       "optimization-ai-credit-optimizer.lock.yml",
       "optimization.lock.yml",
     ];
+    const expectedLockNames = [...packageLockNames, "pr-reviewer.lock.yml"];
 
     assert.deepEqual(lockNames, expectedLockNames);
-    for (const name of lockNames) {
+    for (const name of packageLockNames) {
       const generated = workflow(name, generatedDirectory);
 
       assert.match(generated, /effective_max_repos/);
@@ -655,13 +656,19 @@ test("clean-room compilation emits the expected GitHub Actions settings", { time
       assert.match(generated, /cancel-in-progress: true/);
     }
 
-    for (const name of expectedLockNames.filter((name) => !["aw-failures.lock.yml", "dependabot.lock.yml", "optimization.lock.yml"].includes(name))) {
+    for (const name of packageLockNames.filter((name) => !["aw-failures.lock.yml", "dependabot.lock.yml", "optimization.lock.yml"].includes(name))) {
       const generated = workflow(name, generatedDirectory);
       assert.match(generated, /GH_AW_SAFE_OUTPUT_MODE: \$\{\{ inputs\.safe_output_mode \|\| 'staged' \}\}/);
       assert.match(generated, /ROLLOUT_PERCENT: "100"/);
       assert.match(generated, /GH_AW_SAFE_OUTPUTS_CONFIG:/);
       assert.match(generated, /PREVIEW_ONLY: \$\{\{ \(env\.GH_AW_SAFE_OUTPUT_MODE == 'live' \|\| env\.GH_AW_SAFE_OUTPUT_MODE == 'review'\) && 'false' \|\| 'true' \}\}/);
     }
+
+    const prReviewer = workflow("pr-reviewer.lock.yml", generatedDirectory);
+    assert.match(prReviewer, /name: "PR Reviewer \/ Agentic Workflow Validation"/);
+    assert.match(prReviewer, /submit_pull_request_review/);
+    assert.match(prReviewer, /REQUEST_CHANGES/);
+    assert.match(prReviewer, /gh aw compile --validate --no-emit --no-check-update --schedule-seed githubnext\/central-agentic-ops/);
   } finally {
     rmSync(temporaryRoot, { recursive: true, force: true });
   }
