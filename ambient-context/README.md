@@ -3,7 +3,9 @@
 > [!WARNING]
 > This project is experimental and not ready for use.
 
-The Ambient Context bundle is an **optional** Central Agentic Ops package. It is not part of the core installation; install it separately when you want the control plane to maintain the ambient context that agents read before every task: the repository's `AGENTS.md` and its agent skills.
+The Ambient Context bundle maintains the ambient context that agents read before every task: a repository's `AGENTS.md` and its agent skills. It ships in the core Central Agentic Ops package and can also be installed on its own.
+
+The Agentic Workflow definitions remain in the control repository. Target repositories receive only declared safe outputs; they do not receive installed copies of these workflows.
 
 Ambient context decays quietly. Directories move, commands change, reviewers repeat the same correction, and the always-loaded instruction file keeps growing until it costs more than it helps. This bundle runs on a weekly-or-slower cadence, finds the repositories whose instructions have drifted the most, and files one issue per repository containing the evidence and a ready-to-run agentic prompt that applies a small, verifiable change.
 
@@ -38,7 +40,13 @@ The orchestrator workflow can dispatch no more than 20 worker workflows in one r
 
 ## Install
 
-Install the bundle into an existing private control repository:
+The bundle is part of the core package, so installing Central Agentic Ops installs it:
+
+```bash
+gh aw add-wizard githubnext/central-agentic-ops@<catalog-release>
+```
+
+To install only this bundle into an existing private control repository:
 
 ```bash
 gh aw add githubnext/central-agentic-ops/ambient-context@<catalog-release>

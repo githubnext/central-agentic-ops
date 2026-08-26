@@ -21,6 +21,9 @@ const expectedFiles = [
   ".github/agents/agentic-workflows.md",
   ".github/skills/agentic-workflows/SKILL.md",
   ".github/skills/create-ops-bundle/SKILL.md",
+  ".github/workflows/ambient-context-agents-md-curator.md",
+  ".github/workflows/ambient-context-skills-curator.md",
+  ".github/workflows/ambient-context.md",
   ".github/workflows/aw-failures-investigator.md",
   ".github/workflows/aw-failures.md",
   ".github/workflows/dependabot-release-train-updater.md",
@@ -84,6 +87,7 @@ function assertCorePackage(consumer) {
   assert.deepEqual(
     installedManifest.files.map(({ destination }) => destination).sort(),
     [
+      ".github/workflows/ambient-context.md",
       ".github/workflows/aw-failures.md",
       ".github/workflows/dependabot.md",
       ".github/workflows/optimization.md",
