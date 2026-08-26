@@ -741,7 +741,7 @@ test("Pages report SVGs use theme colors in light and dark modes", () => {
   assert.match(lightTheme, /--fg: #[0-9a-f]{6};/i);
 });
 
-test("Pages renders one canonical authored workflow detail across repository and operation views", () => {
+test("Pages renders one canonical authored workflow detail across repository and package views", () => {
   const temporaryRoot = mkdtempSync(join(tmpdir(), "central-agentic-ops-workflow-pages-"));
   const outputPath = join(temporaryRoot, "site");
   const inventoryPath = join(temporaryRoot, "inventory.json");
@@ -838,11 +838,11 @@ globalThis.fetch = async (input) => {
     const repositoryInsights = readFileSync(join(outputPath, "repositories", "acme-control-insights.html"), "utf8");
     const workerReport = readFileSync(join(outputPath, "repositories", "acme-control--workflow--worker.html"), "utf8");
     const workerInsights = readFileSync(join(outputPath, "repositories", "acme-control--workflow--worker-insights.html"), "utf8");
-    const operationWorkflows = readFileSync(join(outputPath, "operations", "operation.html"), "utf8");
-    const operationReports = readFileSync(join(outputPath, "operations", "operation-reports.html"), "utf8");
-    const operationsOverview = readFileSync(join(outputPath, "operations", "index.html"), "utf8");
+    const packageWorkflows = readFileSync(join(outputPath, "packages", "operation.html"), "utf8");
+    const packageReports = readFileSync(join(outputPath, "packages", "operation-reports.html"), "utf8");
+    const packagesOverview = readFileSync(join(outputPath, "packages", "index.html"), "utf8");
     assert.match(overview, /<title>Overview<\/title>/);
-    assert.match(overview, /<span>Overview<\/span>[\s\S]*?<span>Repositories<\/span>[\s\S]*?<span>Operations<\/span>/);
+    assert.match(overview, /<span>Overview<\/span>[\s\S]*?<span>Repositories<\/span>[\s\S]*?<span>Packages<\/span>/);
     assert.doesNotMatch(overview, /class="nav-children"/);
     assert.doesNotMatch(overview, /class="attention-link"/);
     assert.match(overview, /class="attention-panel"/);
@@ -856,7 +856,7 @@ globalThis.fetch = async (input) => {
     assert.ok(repositories.indexOf('class="scope-context"') < repositories.indexOf('class="spend-panel"'));
     assert.ok(repositories.indexOf('class="spend-panel"') < repositories.indexOf('class="repository-health"'));
     assert.match(repositoryWorkflows, /workflow-badge-worker/);
-    assert.match(repositoryWorkflows, /operation · Optimization/);
+    assert.match(repositoryWorkflows, /package · Optimization/);
     assert.match(repositoryWorkflows, /aria-current="page"[^>]*>[\s\S]*?<span>Workflows<\/span>/);
     assert.doesNotMatch(repositoryReports, /repository-workflows-heading/);
     assert.match(repositoryInsights, /Repository execution insights/);
@@ -865,18 +865,18 @@ globalThis.fetch = async (input) => {
     assert.match(workerInsights, /class="value-plot-line"/);
     assert.match(workerInsights, /12\.5/);
     assert.doesNotMatch(workerInsights, /\.lock\.yml/);
-    assert.match(operationWorkflows, /Orchestrator and workers/);
-    assert.match(operationWorkflows, /\.\.\/repositories\/acme-control--workflow--worker\.html/);
-    assert.doesNotMatch(operationWorkflows, /\.lock\.yml/);
-    assert.match(operationReports, /aria-label="Filter reports by mode"/);
-    assert.match(operationReports, />All<\/a>/);
-    assert.match(operationReports, /Worker report/);
-    assert.doesNotMatch(operationReports, /Orchestrator and workers/);
-    assert.doesNotMatch(operationReports, /<span aria-current="page">Reports<\/span>/);
-    assert.ok(operationsOverview.indexOf('class="bundle-utilization"') < operationsOverview.indexOf('class="trend-panel"'));
-    assert.ok(operationsOverview.indexOf('class="trend-panel"') < operationsOverview.indexOf('class="metric-section"'));
-    assert.ok(operationsOverview.indexOf('class="metric-section"') < operationsOverview.indexOf('class="impact-analysis"'));
-    assert.doesNotMatch(operationsOverview, /Export JSON|Control-plane activity|Managed operations from/);
+    assert.match(packageWorkflows, /Orchestrator and workers/);
+    assert.match(packageWorkflows, /\.\.\/repositories\/acme-control--workflow--worker\.html/);
+    assert.doesNotMatch(packageWorkflows, /\.lock\.yml/);
+    assert.match(packageReports, /aria-label="Filter reports by mode"/);
+    assert.match(packageReports, />All<\/a>/);
+    assert.match(packageReports, /Worker report/);
+    assert.doesNotMatch(packageReports, /Orchestrator and workers/);
+    assert.doesNotMatch(packageReports, /<span aria-current="page">Reports<\/span>/);
+    assert.ok(packagesOverview.indexOf('class="bundle-utilization"') < packagesOverview.indexOf('class="trend-panel"'));
+    assert.ok(packagesOverview.indexOf('class="trend-panel"') < packagesOverview.indexOf('class="metric-section"'));
+    assert.ok(packagesOverview.indexOf('class="metric-section"') < packagesOverview.indexOf('class="impact-analysis"'));
+    assert.doesNotMatch(packagesOverview, /Export JSON|Control-plane activity|Managed packages from/);
   } finally {
     rmSync(temporaryRoot, { recursive: true, force: true });
   }

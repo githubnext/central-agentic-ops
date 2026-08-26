@@ -460,8 +460,8 @@ function overviewModeTabs(selectedMode) {
 
 function bundleTabs(bundle, selectedView) {
   const tabs = [
-    ["workflows", "Workflows", "workflow", `../operations/${bundle.id}.html`],
-    ["reports", "Reports", "issue", `../operations/${bundle.id}-reports.html`],
+    ["workflows", "Workflows", "workflow", `../packages/${bundle.id}.html`],
+    ["reports", "Reports", "issue", `../packages/${bundle.id}-reports.html`],
     ["insights", "Insights", "graph", `../insights/${bundle.id}.html`],
   ];
   return `<nav class="bundle-tabs" aria-label="${escapeHtml(bundle.name)} views">${tabs.map(([view, label, icon, href]) => `<a href="${href}"${selectedView === view ? ' aria-current="page"' : ""}>${octicon(icon)}<span>${label}</span></a>`).join("")}</nav>`;
@@ -551,10 +551,10 @@ function octiconSprite() {
 function layout({ title, description, content, nested = false, navigation = "", configuredMode = "", overviewMode = "", activeSection = "", activeBundle = "" }) {
   const root = nested ? "../" : "./";
   const stylesheetLink = `<${"link"} rel="stylesheet" href="${root}styles.css">`;
-  const operationsHref = `${root}operations/index.html`;
+  const packagesHref = `${root}packages/index.html`;
   const overviewCurrent = activeSection === "overview" ? ' aria-current="page"' : "";
   const repositoriesCurrent = activeSection === "repositories" ? ' aria-current="page"' : "";
-  const operationsCurrent = activeSection === "operations" || activeBundle ? ' aria-current="page"' : "";
+  const packagesCurrent = activeSection === "packages" || activeBundle ? ' aria-current="page"' : "";
   const freshness = `<time class="freshness" datetime="${escapeHtml(generatedAt)}">Last updated ${escapeHtml(formatDate(generatedAt))}</time>`;
   const repositoryLink = `<a class="repository-link" href="https://github.com/${escapeHtml(repository)}" aria-label="View ${escapeHtml(repository)} on GitHub" title="View ${escapeHtml(repository)} on GitHub">${octicon("mark-github")}</a>`;
   const reportActions = `<div class="report-actions">${freshness}${repositoryLink}</div>`;
@@ -579,7 +579,7 @@ function layout({ title, description, content, nested = false, navigation = "", 
       <nav class="primary-nav" aria-label="Primary">
         <a href="${root}"${overviewCurrent}>${octicon("server")}<span>Overview</span></a>
         <a href="${root}repositories/"${repositoriesCurrent}>${octicon("repo")}<span>Repositories</span></a>
-        <a href="${operationsHref}"${operationsCurrent}>${octicon("package")}<span>Operations</span></a>
+        <a href="${packagesHref}"${packagesCurrent}>${octicon("package")}<span>Packages</span></a>
       </nav>
     </aside>
     <div class="app-main">
@@ -879,7 +879,7 @@ function bundleUtilizationPanel(mode) {
     </article>`;
   }).join("\n");
   return `<section class="bundle-utilization" aria-labelledby="bundle-utilization-heading">
-    <div class="bundle-utilization-heading"><h2 id="bundle-utilization-heading">Bundle AIC utilization</h2><p>Actual AI Credits against summed per-run limits for ${escapeHtml(modeLabels[mode].toLowerCase())} operation runs retained from ${escapeHtml(windowLabel)}.</p></div>
+    <div class="bundle-utilization-heading"><h2 id="bundle-utilization-heading">Package AIC utilization</h2><p>Actual AI Credits against summed per-run limits for ${escapeHtml(modeLabels[mode].toLowerCase())} package runs retained from ${escapeHtml(windowLabel)}.</p></div>
     <div class="bundle-utilization-grid">${cards}</div>
   </section>`;
 }
@@ -892,11 +892,11 @@ function overviewTable(mode, modeRecords) {
     const inventoryWarnings = (bundle.compiled ? 0 : 1) + bundle.missingWorkers.length;
     return `<tr><th scope="row"><a href="${bundle.id}.html">${escapeHtml(bundle.name)}</a></th><td>${runs.total}</td><td>${runs.successful}</td><td>${runs.failed}</td><td>${runs.warnings}</td><td>${inventoryWarnings}</td><td>${formatAic(runs.aic)}</td><td>${escapeHtml(latest ? formatDate(latest.updatedAt) : "No outputs yet")}</td></tr>`;
   }).join("\n");
-  return `<section class="impact-analysis" aria-labelledby="operations-heading">
-  <h2 id="operations-heading">${modeLabels[mode]} output by operation</h2>
-  <p>Durable outputs and inventory health for each control-plane operation.</p>
-  <div class="table-region" role="region" aria-labelledby="operations-heading" tabindex="0">
-    <table><caption>${modeLabels[mode]} operational summary</caption><thead><tr><th scope="col">Operation</th><th scope="col">Runs</th><th scope="col">Successful</th><th scope="col">Failed</th><th scope="col">Run warnings</th><th scope="col">Inventory warnings</th><th scope="col">AIC</th><th scope="col">Latest activity</th></tr></thead><tbody>${rows || '<tr><td colspan="8">No operations discovered.</td></tr>'}</tbody></table>
+  return `<section class="impact-analysis" aria-labelledby="packages-heading">
+  <h2 id="packages-heading">${modeLabels[mode]} output by package</h2>
+  <p>Durable outputs and inventory health for each control-plane package.</p>
+  <div class="table-region" role="region" aria-labelledby="packages-heading" tabindex="0">
+    <table><caption>${modeLabels[mode]} package summary</caption><thead><tr><th scope="col">Package</th><th scope="col">Runs</th><th scope="col">Successful</th><th scope="col">Failed</th><th scope="col">Run warnings</th><th scope="col">Inventory warnings</th><th scope="col">AIC</th><th scope="col">Latest activity</th></tr></thead><tbody>${rows || '<tr><td colspan="8">No packages discovered.</td></tr>'}</tbody></table>
   </div>
 </section>`;
 }
@@ -983,11 +983,12 @@ function workflowRole(workflow) {
 }
 
 function workflowBadges(workflow) {
-  const operations = workflowOperationMemberships(workflow)
-    .map((name) => `<span class="workflow-badge workflow-badge-operation">operation · ${escapeHtml(name)}</span>`)
+  const packages = workflowOperationMemberships(workflow)
+    .map((name) => `<span class="workflow-badge workflow-badge-operation">package · ${escapeHtml(name)}</span>`)
     .join("");
   const role = workflowRole(workflow);
-  return `<span class="workflow-badge workflow-badge-${escapeHtml(role)}">${escapeHtml(role)}</span>${operations}`;
+  const roleLabel = role === "operation" ? "package" : role;
+  return `<span class="workflow-badge workflow-badge-${escapeHtml(role)}">${escapeHtml(roleLabel)}</span>${packages}`;
 }
 
 function repositoryCoverage() {
@@ -1047,7 +1048,7 @@ await Promise.all([
 ]);
 await writeFile(path.join(outputDirectory, "index.html"), layout({
   title: "Overview",
-  description: "Managed operations, execution health, and items requiring attention.",
+  description: "Managed packages, execution health, and items requiring attention.",
   content: deployedWorkflowContent("overview"),
   activeSection: "overview",
 }));
@@ -1109,7 +1110,7 @@ function deployedWorkflowContent(view) {
   ${contributionSpendContent(spend, repositoryLinkPrefix)}
   ${repositoryHealthContent(repositories, deployedInventory.runHealth?.available, repositoryLinkPrefix, workflowCatalogHref)}`;
   const workflowCatalog = `<section class="deployed-workflows" id="workflow-catalog" aria-labelledby="deployed-workflows-heading">
-    <div class="section-heading"><div><span class="scope-kicker">Inventory</span><h2 id="deployed-workflows-heading">Agentic workflows</h2><p>Search all repository-owned authored workflows. Managed-operation membership is shown as workflow metadata.</p></div><strong>${formatCount(workflows.length)} workflows</strong></div>
+    <div class="section-heading"><div><span class="scope-kicker">Inventory</span><h2 id="deployed-workflows-heading">Agentic workflows</h2><p>Search all repository-owned authored workflows. Managed-package membership is shown as workflow metadata.</p></div><strong>${formatCount(workflows.length)} workflows</strong></div>
     <details class="catalog-disclosure" open>
       <summary>Browse workflow catalog</summary>
       <div class="catalog-toolbar" aria-label="Workflow filters">
@@ -1212,7 +1213,7 @@ function controlPlaneStatusContent(workflows, coverage, repositories, health, he
       </div>
     </header>
     <dl class="control-plane-vitals">
-      <div><dt>Managed operations</dt><dd>${formatCount(bundleDefinitions.length)}</dd><p>${formatCount(managedWorkflows)} worker workflow${managedWorkflows === 1 ? "" : "s"}</p></div>
+      <div><dt>Managed packages</dt><dd>${formatCount(bundleDefinitions.length)}</dd><p>${formatCount(managedWorkflows)} worker workflow${managedWorkflows === 1 ? "" : "s"}</p></div>
       <div><dt>Active workflows</dt><dd>${formatCount(active)}</dd><p>${formatCount(disabled)} disabled · ${formatCount(coverage.discovered)} repositories</p></div>
       <div><dt>Runs · 24h</dt><dd>${runHealthAvailable ? formatCount(health.runs) : "—"}</dd><p>${escapeHtml(healthLabel)}</p></div>
       <div class="vital-failures"><dt>Failure rate</dt><dd>${failureRateLabel}</dd><p>${runHealthAvailable ? `${formatCount(health.failed)} failed runs` : "Telemetry unavailable"}</p></div>
@@ -1280,11 +1281,11 @@ function operationPortfolioContent() {
     const capacity = bundleCapacityWorkflows(bundle).reduce((total, workflow) => total + workflow.maxAiCredits, 0);
     const warnings = (bundle.compiled ? 0 : 1) + bundle.missingWorkers.length;
     return `<article class="operation-card">
-      <header><div>${octicon(bundle.id.includes("dependabot") ? "dependabot" : "meter")}<a href="operations/${escapeHtml(bundle.id)}.html">${escapeHtml(bundle.name)}</a></div>${modeIndicator(mode)}</header>
+      <header><div>${octicon(bundle.id.includes("dependabot") ? "dependabot" : "meter")}<a href="packages/${escapeHtml(bundle.id)}.html">${escapeHtml(bundle.name)}</a></div>${modeIndicator(mode)}</header>
       <dl><div><dt>Workers</dt><dd>${formatCount(bundle.workers.length)}</dd></div><div><dt>AIC allowance</dt><dd>${formatAic(capacity)}</dd></div><div><dt>Inventory</dt><dd class="${warnings ? "text-attention" : "text-success"}">${warnings ? `${warnings} warning${warnings === 1 ? "" : "s"}` : "Ready"}</dd></div></dl>
     </article>`;
   }).join("");
-  return `<section class="operation-portfolio" aria-labelledby="operation-portfolio-heading"><header><div><span class="scope-kicker">Control plane</span><h2 id="operation-portfolio-heading">Managed operations</h2></div></header><div class="operation-card-list">${cards || '<p class="empty">No managed operations discovered.</p>'}</div></section>`;
+  return `<section class="operation-portfolio" aria-labelledby="operation-portfolio-heading"><header><div><span class="scope-kicker">Control plane</span><h2 id="operation-portfolio-heading">Managed packages</h2></div></header><div class="operation-card-list">${cards || '<p class="empty">No managed packages discovered.</p>'}</div></section>`;
 }
 
 function repositoryHealthContent(repositories, available, repositoryLinkPrefix = "repositories/", workflowCatalogHref = "workflows/") {
@@ -1304,7 +1305,7 @@ function repositoryHealthContent(repositories, available, repositoryLinkPrefix =
     return `<tr><th scope="row"><a href="${repositoryLinkPrefix}${escapeHtml(repositoryPageName(entry.repository))}.html">${escapeHtml(entry.repository)}</a></th><td>${formatCount(entry.workflows)}</td><td>${formatCount(entry.reports)}</td><td>${formatCount(entry.evaluatedWorkflows)}</td><td>${available ? formatCount(entry.health.runs) : "—"}</td><td><div class="failure-rate"><strong>${available && failureRate !== null ? new Intl.NumberFormat("en", { style: "percent", maximumFractionDigits: 1 }).format(failureRate) : "—"}</strong><span>${available ? `${formatCount(entry.health.failed)} failed` : "Unavailable"}</span></div></td><td>${formatAic(entry.aiCredits)}</td><td>${status}</td></tr>`;
   }).join("");
   return `<section class="repository-health" id="repository-health" aria-labelledby="repository-health-heading">
-    <div class="section-heading"><div><span class="scope-kicker">Repository view</span><h2 id="repository-health-heading">Activity by repository</h2><p>Repository-local execution health and all attributed operation or local-workflow outcomes.</p></div><span>${formatCount(repositories.length)} repositories · <a href="${workflowCatalogHref}">Search all workflows</a></span></div>
+    <div class="section-heading"><div><span class="scope-kicker">Repository view</span><h2 id="repository-health-heading">Activity by repository</h2><p>Repository-local execution health and all attributed package or local-workflow outcomes.</p></div><span>${formatCount(repositories.length)} repositories · <a href="${workflowCatalogHref}">Search all workflows</a></span></div>
     <div class="table-region" role="region" aria-labelledby="repository-health-heading" tabindex="0"><table><thead><tr><th scope="col">Repository</th><th scope="col">Local AWs</th><th scope="col">Reports</th><th scope="col">Evaluated AWs</th><th scope="col">Local runs</th><th scope="col">Failure rate</th><th scope="col">Local AIC</th><th scope="col">Status</th></tr></thead><tbody>${rows || '<tr><td colspan="8">No repositories discovered.</td></tr>'}</tbody></table></div>
   </section>`;
 }
@@ -1328,7 +1329,7 @@ function workflowSourceMetric(standaloneWorkflows) {
   const operationWorkflows = bundleDefinitions.length + workerDefinitions.length;
   const total = operationWorkflows + standaloneWorkflows.length;
   const segments = [
-    ["Operation AWs", operationWorkflows, "var(--accent)"],
+    ["Package AWs", operationWorkflows, "var(--accent)"],
     ["Standalone AWs", standaloneWorkflows.length, "var(--muted)"],
   ];
   let offset = 0;
@@ -1337,9 +1338,9 @@ function workflowSourceMetric(standaloneWorkflows) {
     offset += value / total * 100;
     return `${color} ${start.toFixed(3)}% ${offset.toFixed(3)}%`;
   }).join(", ") : "var(--neutral-muted) 0 100%";
-  const chartLabel = `AW composition: ${operationWorkflows} operation workflows, ${standaloneWorkflows.length} standalone workflows`;
+  const chartLabel = `AW composition: ${operationWorkflows} package workflows, ${standaloneWorkflows.length} standalone workflows`;
   const legend = segments.map(([label, value, color]) => `<li><i style="background:${color}"></i><span>${label}</span><strong>${value}</strong></li>`).join("");
-  return `<div class="workflow-source-metric"><dt>AW composition</dt><dd><span class="source-pie" role="img" aria-label="${escapeHtml(chartLabel)}" style="background:conic-gradient(${stops})"></span><span class="source-total"><strong>${total}</strong><small>workflows</small></span></dd><ul aria-hidden="true">${legend}</ul><p>Managed operation workflows versus repository-owned workflows</p></div>`;
+  return `<div class="workflow-source-metric"><dt>AW composition</dt><dd><span class="source-pie" role="img" aria-label="${escapeHtml(chartLabel)}" style="background:conic-gradient(${stops})"></span><span class="source-total"><strong>${total}</strong><small>workflows</small></span></dd><ul aria-hidden="true">${legend}</ul><p>Managed package workflows versus repository-owned workflows</p></div>`;
 }
 
 function workflowStatusMetric(workflows) {
@@ -1438,7 +1439,7 @@ function repositoryWorkflowContent(repositoryName, workflows) {
     </dl>
   </section>
   <section class="repository-workflows" aria-labelledby="repository-workflows-heading">
-    <div class="section-heading"><div><h2 id="repository-workflows-heading">Agentic workflows</h2><p>Authored <code>.github/workflows/*.md</code> workflows with managed-operation membership shown as metadata. Latest registration update: ${escapeHtml(formatDay(latest))}. ${disabled} disabled.</p></div><a href="https://github.com/${escapeHtml(repositoryName)}/actions">View Actions${octicon("external-link")}</a></div>
+    <div class="section-heading"><div><h2 id="repository-workflows-heading">Agentic workflows</h2><p>Authored <code>.github/workflows/*.md</code> workflows with managed-package membership shown as metadata. Latest registration update: ${escapeHtml(formatDay(latest))}. ${disabled} disabled.</p></div><a href="https://github.com/${escapeHtml(repositoryName)}/actions">View Actions${octicon("external-link")}</a></div>
     <div class="table-region" role="region" aria-labelledby="repository-workflows-heading" tabindex="0">
       <table><thead><tr><th scope="col">Workflow</th><th scope="col">State</th><th scope="col">Updated</th></tr></thead><tbody>${rows}</tbody></table>
     </div>
@@ -1558,7 +1559,7 @@ for (const repositoryName of [...repositoryNames].filter(Boolean).sort()) {
   }));
   await writeFile(path.join(outputDirectory, "repositories", `${pageName}-reports.html`), layout({
     title: repositoryName,
-    description: "Durable reports produced for this repository by centrally managed operations.",
+    description: "Durable reports produced for this repository by centrally managed packages.",
     content: `${repositoryTabs(repositoryName, "reports")}${findingsListing(repositoryRecords, { showMode: true, emptyMessage: "No reports have been recorded for this repository." })}`,
     nested: true,
     navigation,
@@ -1663,7 +1664,7 @@ function valueReportContent(worker, observations) {
 
 await mkdir(path.join(outputDirectory, "insights", "assets"), { recursive: true });
 for (const bundle of bundleDefinitions) {
-  const navigation = `<nav aria-label="Report navigation"><div class="shell"><a href="../operations/">Operations</a><span aria-current="page">${escapeHtml(bundle.name)}</span></div></nav>`;
+  const navigation = `<nav aria-label="Report navigation"><div class="shell"><a href="../packages/">Packages</a><span aria-current="page">${escapeHtml(bundle.name)}</span></div></nav>`;
   const sections = [];
   for (const worker of bundle.workers) {
     const workflowPath = worker.lockPath || `.github/workflows/${worker.id}.lock.yml`;
@@ -1684,30 +1685,30 @@ for (const bundle of bundleDefinitions) {
   }));
 }
 
-await mkdir(path.join(outputDirectory, "operations"), { recursive: true });
+await mkdir(path.join(outputDirectory, "packages"), { recursive: true });
 for (const mode of ["all", "review", "live"]) {
   const page = layout({
-    title: "Operations",
-    description: mode === "all" ? "Activity from centrally managed operations." : `${modeLabels[mode]} activity from centrally managed operations.`,
+    title: "Packages",
+    description: mode === "all" ? "Activity from centrally managed packages." : `${modeLabels[mode]} activity from centrally managed packages.`,
     content: operationsOverviewContent(mode),
     nested: true,
     overviewMode: mode,
-    activeSection: "operations",
+    activeSection: "packages",
   });
-  await writeFile(path.join(outputDirectory, "operations", mode === "all" ? "index.html" : `${mode}.html`), page);
+  await writeFile(path.join(outputDirectory, "packages", mode === "all" ? "index.html" : `${mode}.html`), page);
 }
 for (const bundle of bundleDefinitions) {
   const bundleRecords = reportRecords.filter((record) => record.bundle === bundle.id);
-  const navigation = `<nav aria-label="Report navigation"><div class="shell"><a href="index.html">Operations</a><span aria-current="page">${escapeHtml(bundle.name)}</span></div></nav>`;
+  const navigation = `<nav aria-label="Report navigation"><div class="shell"><a href="index.html">Packages</a><span aria-current="page">${escapeHtml(bundle.name)}</span></div></nav>`;
   const configuredMode = configuredModeFor(bundle);
-  await writeFile(path.join(outputDirectory, "operations", `${bundle.id}.html`), layout({
+  await writeFile(path.join(outputDirectory, "packages", `${bundle.id}.html`), layout({
     title: bundle.name,
-    description: `Orchestrator and worker workflows in the ${bundle.name} operation.`,
+    description: `Orchestrator and worker workflows in the ${bundle.name} package.`,
     content: `${bundleTabs(bundle, "workflows")}${operationWorkflowHierarchy(bundle)}`,
     nested: true,
     navigation,
     configuredMode,
-    activeSection: "operations",
+    activeSection: "packages",
     activeBundle: bundle.id,
   }));
   for (const selectedMode of ["all", "review", "live"]) {
@@ -1715,23 +1716,23 @@ for (const bundle of bundleDefinitions) {
     const selectedModeLabel = selectedMode === "all" ? "All durable outputs" : selectedMode === "review" ? "Review proposals" : "Live production outputs";
     const configuredModeLabel = `${configuredMode[0].toUpperCase()}${configuredMode.slice(1)}`;
     const modeIdentity = selectedMode === "all"
-      ? `${selectedModeLabel} across review and live modes; the operation is currently configured for ${configuredModeLabel}.`
+      ? `${selectedModeLabel} across review and live modes; the package is currently configured for ${configuredModeLabel}.`
       : selectedMode === configuredMode
-      ? `${selectedModeLabel}; this is the operation's configured mode.`
-      : `${selectedModeLabel}; the operation is currently configured for ${configuredModeLabel}.`;
+      ? `${selectedModeLabel}; this is the package's configured mode.`
+      : `${selectedModeLabel}; the package is currently configured for ${configuredModeLabel}.`;
     const content = `${bundleTabs(bundle, "reports")}${modeTabs(bundle, selectedMode)}<p class="mode-view-note">${escapeHtml(modeIdentity)}</p>${findingsListing(modeRecords, { showMode: selectedMode === "all" })}`;
     const page = layout({
       title: bundle.name,
-      description: `Durable reports produced by the ${bundle.name} operation.`,
+      description: `Durable reports produced by the ${bundle.name} package.`,
       content,
       nested: true,
       navigation,
       configuredMode,
-      activeSection: "operations",
+      activeSection: "packages",
       activeBundle: bundle.id,
     });
-    await writeFile(path.join(outputDirectory, "operations", selectedMode === "all" ? `${bundle.id}-reports.html` : `${bundle.id}-reports-${selectedMode}.html`), page);
-    if (selectedMode !== "all") await writeFile(path.join(outputDirectory, "operations", `${bundle.id}-${selectedMode}.html`), page);
+    await writeFile(path.join(outputDirectory, "packages", selectedMode === "all" ? `${bundle.id}-reports.html` : `${bundle.id}-reports-${selectedMode}.html`), page);
+    if (selectedMode !== "all") await writeFile(path.join(outputDirectory, "packages", `${bundle.id}-${selectedMode}.html`), page);
   }
 }
 
@@ -2480,7 +2481,7 @@ function legacyStylesheet() {
 @media print{.skip-link,nav{display:none}a{color:inherit;text-decoration:underline}.shell{width:100%}.record{break-inside:avoid}}`;
 }
 
-console.log(`Built ${records.length} safe-output records across ${bundleDefinitions.length} operations in ${outputDirectory}`);
+console.log(`Built ${records.length} safe-output records across ${bundleDefinitions.length} packages in ${outputDirectory}`);
 })().catch((error) => {
   console.error(error);
   process.exitCode = 1;
