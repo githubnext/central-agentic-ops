@@ -67,7 +67,9 @@ imports:
 permissions:
   contents: read
   actions: read
+  checks: read
   security-events: read
+  statuses: read
   vulnerability-alerts: read
   pull-requests: read
   issues: read
@@ -120,6 +122,10 @@ tools:
     toolsets: [default, repos, issues, pull_requests, actions, dependabot, code_security, security_advisories]
   web-fetch:
   cache-memory: true
+
+graders:
+  operational-value:
+    run: .github/graders/dependabot-release-train-updater-operational-value.sh
 
 safe-outputs:
   staged: ${{ inputs.preview_only == 'true' }}

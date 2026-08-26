@@ -2,9 +2,6 @@
 # This repo is the source only, compile happens at the repo where gh aw add is run
 .github/workflows/*.lock.yml
 
-# Experimental value generation
-.github/skills/aw-value
-
 # Astro documentation site
 .astro/
 dist/

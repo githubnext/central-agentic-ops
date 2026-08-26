@@ -75,6 +75,10 @@ concurrency:
   group: "${{ github.workflow }}-${{ inputs.target_repo }}"
   cancel-in-progress: true
 
+graders:
+  operational-value:
+    run: .github/graders/optimization-ai-credit-auditor-operational-value.sh
+
 tracker-id: optimization-ai-credit-auditor
 
 tools:
@@ -133,6 +137,8 @@ steps:
       mkdir -p /tmp/gh-aw/token-audit
       PARTS_DIR=/tmp/gh-aw/token-audit/log-parts
       mkdir -p "$PARTS_DIR"
+      WINDOW_END=$(gh api "repos/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID" --jq .created_at)
+      WINDOW_START=$(date -u -d "$WINDOW_END - 24 hours" +%Y-%m-%dT%H:%M:%SZ)
 
       # Fetch logs per workflow to avoid repo-wide pagination truncation in
       # high-CI-volume repositories.
@@ -148,7 +154,7 @@ steps:
         PART_FILE="$PARTS_DIR/$SAFE_WORKFLOW_ID.json"
         PART_EXIT=0
         gh aw logs "$WORKFLOW_ID" \
-          --start-date -1d \
+          --start-date -2d \
           --json \
           -c 100 \
           > "$PART_FILE" || PART_EXIT=$?
@@ -169,9 +175,12 @@ steps:
       done
 
       if [ "$FOUND_WORKFLOW" -eq 1 ] && ls "$PARTS_DIR"/*.json >/dev/null 2>&1; then
-        jq -s '
-          (map(.runs // []) | add // [] | unique_by(.run_id)) as $runs |
+        jq -s --arg windowStart "$WINDOW_START" --arg windowEnd "$WINDOW_END" '
+          (map(.runs // []) | add // [] | unique_by(.run_id)
+            | map(select(.created_at >= $windowStart and .created_at < $windowEnd))) as $runs |
           {
+            window_start: $windowStart,
+            window_end: $windowEnd,
             summary: {
               total_runs: ($runs | length),
               total_tokens: ($runs | map(.token_usage // 0) | add // 0),
@@ -186,7 +195,9 @@ steps:
         if [ "$FOUND_WORKFLOW" -eq 0 ]; then
           echo "⚠️ No agentic workflow sources found under target/.github/workflows"
         fi
-        echo '{"runs":[],"summary":{}}' > /tmp/gh-aw/token-audit/workflow-logs.json
+        jq -cn --arg windowStart "$WINDOW_START" --arg windowEnd "$WINDOW_END" \
+          '{window_start:$windowStart,window_end:$windowEnd,runs:[],summary:{}}' \
+          > /tmp/gh-aw/token-audit/workflow-logs.json
       fi
 
 source: githubnext/central-agentic-ops/.github/workflows/optimization-ai-credit-auditor.md@main
@@ -253,7 +264,7 @@ Previous snapshots live at `/tmp/gh-aw/repo-memory/default/`. For local runs, ea
 
 Write a Python script to `/tmp/gh-aw/token-audit/process_audit.py` and run it. The script must:
 
-1. Load `/tmp/gh-aw/token-audit/workflow-logs.json` and extract `.runs`.
+1. Load `/tmp/gh-aw/token-audit/workflow-logs.json`; preserve its `window_start` and `window_end`, and extract `.runs`.
 2. Filter to `status == "completed"` runs only.
 3. Group by `workflow_path` (falling back to `workflow_name` only when the path is absent) and compute per-workflow aggregates. Preserve both fields so distinct workflows with the same display name never merge:
    - `run_count`, `total_ai_credits`, `avg_ai_credits`, `total_tokens`, `avg_tokens`, `total_turns`, `avg_turns`, `total_action_minutes`, `error_count`, `warning_count`
@@ -264,7 +275,9 @@ Write a Python script to `/tmp/gh-aw/token-audit/process_audit.py` and run it. T
 ```json
 {
   "date": "YYYY-MM-DD",
-  "period_days": 30,
+  "period_days": 1,
+  "window_start": "ISO-8601",
+  "window_end": "ISO-8601",
   "overall": {
     "total_runs": N,
     "total_ai_credits": F,
