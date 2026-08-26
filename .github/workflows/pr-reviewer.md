@@ -58,6 +58,8 @@ steps:
       cache-dependency-path: .cache/gh-aw/go.sum
   - name: Run all validator commands
     shell: bash
+    env:
+      GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
     run: |
       set -euo pipefail
       cd .cache/gh-aw
