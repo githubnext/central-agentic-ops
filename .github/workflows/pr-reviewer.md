@@ -100,6 +100,8 @@ steps:
       ' "$SUMMARY" > "${SUMMARY}.tmp"
       mv "${SUMMARY}.tmp" "$SUMMARY"
 safe-outputs:
+  create-pull-request-review-comment:
+    max: 20
   submit-pull-request-review:
     max: 1
     allowed-events: [COMMENT, REQUEST_CHANGES]
@@ -114,7 +116,8 @@ Review this pull request as a workflow-validator reviewer.
 1. Read `/tmp/gh-aw/agent/pr-reviewer/validator-summary.json`.
 2. Confirm every listed validator command ran.
 3. For each failed command, read the paired log file and extract concrete failing checks or stack traces.
-4. Submit exactly one pull request review:
+4. Parse `/tmp/gh-aw/agent/pr-reviewer/compile_validate.log` for compiler warnings or errors and add line-level pull-request review comments when the log includes a path and line that can be mapped to files in this pull request.
+5. Submit exactly one pull request review:
    - Use `REQUEST_CHANGES` if any validator failed.
    - Use `COMMENT` if all validators passed.
 
@@ -133,5 +136,7 @@ Treat these commands as the full validator contract for this repository:
 - Keep the review concise and factual.
 - Report each validator status (`pass`/`fail`) in a checklist.
 - For failures, include only actionable details from logs.
+- Use `create-pull-request-review-comment` for compiler warnings/errors from `compile_validate.log` when a concrete file and line are available.
+- Do not create duplicate review comments for the same finding.
 - Do not approve the pull request.
 - Do not use emoji in error text.

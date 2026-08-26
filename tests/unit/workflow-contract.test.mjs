@@ -665,6 +665,7 @@ test("clean-room compilation emits the expected GitHub Actions settings", { time
     }
 
     const prReviewer = workflow("pr-reviewer.lock.yml", generatedDirectory);
+    assert.match(prReviewer, /create_pull_request_review_comment/);
     assert.match(prReviewer, /name: "PR Reviewer \/ Agentic Workflow Validation"/);
     assert.match(prReviewer, /submit_pull_request_review/);
     assert.match(prReviewer, /REQUEST_CHANGES/);
