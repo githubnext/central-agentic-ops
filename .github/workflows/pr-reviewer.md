@@ -37,6 +37,8 @@ network:
 steps:
   - name: Checkout repository
     uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+    with:
+      persist-credentials: false
   - name: Setup Node.js
     uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
     with:
