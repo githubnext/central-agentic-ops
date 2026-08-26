@@ -1,0 +1,5 @@
+name: AW Failures
+description: Organization-wide workflow for bucketizing GitHub Agentic Workflow failures and filing focused fix issues.
+min-version: v0.87.6
+includes:
+  - .github/workflows/aw-failures.md

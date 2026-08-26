@@ -49,6 +49,11 @@ Add an App or PAT when the target is private or internal. Keep the mode at `stag
 | `CENTRAL_AGENTIC_OPS_BATCH_SIZE` | Shared | No | `100000` | Maximum repositories exposed to an orchestrator from its selected cell. Accepts `1` through `100000`. |
 | `CENTRAL_AGENTIC_OPS_BATCH_INDEX` | Shared | No | `0` | Zero-based batch selected for a scheduled run. |
 | `CENTRAL_AGENTIC_OPS_MAX_AI_CREDITS_PER_RUN` | Shared | No | `1100` | Maximum declared orchestrator-plus-worker AI Credits admitted for one orchestration. |
+| `CENTRAL_AGENTIC_OPS_AW_FAILURES_MODE` | AW Failures | Yes when installed | `staged` | Sets the operation mode to `staged`, `review`, or `live`. |
+| `CENTRAL_AGENTIC_OPS_AW_FAILURES_MAX_REPOS` | AW Failures | No | `1` | Scheduled repository-selection cap. Accepts `1` through `1000`; dispatch limits may reduce it further. |
+| `CENTRAL_AGENTIC_OPS_AW_FAILURES_ROLLOUT_PERCENT` | AW Failures | No | `100` | Limits selection to this percentage of discovered repositories. Accepts integers from `1` through `100`. |
+| `CENTRAL_AGENTIC_OPS_AW_FAILURES_INVESTIGATOR_ENABLED` | AW Failures worker | No | `true` | Worker kill switch for the investigator. |
+| `CENTRAL_AGENTIC_OPS_AW_FAILURES_INVESTIGATOR_MAX_MODE` | AW Failures worker | No | `staged` | Maximum investigator mode: `staged`, `review`, or `live`. |
 | `CENTRAL_AGENTIC_OPS_DEPENDABOT_MODE` | Dependabot | Yes when installed | `staged` | Sets the operation mode to `staged`, `review`, or `live`. |
 | `CENTRAL_AGENTIC_OPS_DEPENDABOT_MAX_REPOS` | Dependabot | No | `1` | Scheduled repository-selection cap. Accepts `1` through `1000`; dispatch limits may reduce it further. |
 | `CENTRAL_AGENTIC_OPS_DEPENDABOT_ROLLOUT_PERCENT` | Dependabot | No | `100` | Limits selection to this percentage of discovered repositories. Accepts integers from `1` through `100`. |
@@ -174,9 +179,9 @@ Other `GH_AW_*` values, including safe-output files and staging flags, are manag
 
 ## Sources of Truth
 
-- Installer-exposed variables and secrets: `aw.yml`, `dependabot/aw.yml`, and `optimization/aw.yml`
+- Installer-exposed variables and secrets: `aw.yml`, `aw-failures/aw.yml`, `dependabot/aw.yml`, and `optimization/aw.yml`
 - Shared resolution and precedence: `.github/workflows/shared/control.md`
-- Manual inputs: `.github/workflows/dependabot.md` and `.github/workflows/optimization.md`
+- Manual inputs: `.github/workflows/aw-failures.md`, `.github/workflows/dependabot.md`, and `.github/workflows/optimization.md`
 - Optional observability: `.github/workflows/shared/sentry.md`, `.github/workflows/shared/grafana.md`, and `.github/workflows/shared/datadog.md`
 
 When adding or renaming a setting, update the installer manifest, consuming workflow, and this reference in the same change.
