@@ -90,6 +90,10 @@ tools:
     toolsets: [repos, issues, pull_requests, actions]
   web-fetch:
 
+graders:
+  operational-value:
+    run: .github/graders/eu-cra-compliance-scope-classifier-operational-value.sh
+
 safe-outputs:
   staged: ${{ inputs.preview_only == 'true' }}
   create-issue:
@@ -164,6 +168,12 @@ Create one issue containing:
 5. gaps and prioritized evidence requests;
 6. explicit human-review decisions and responsible reviewer;
 7. an overall status of `EVIDENCE_SUFFICIENT`, `GAP_FOUND`, `HUMAN_REVIEW_REQUIRED`, `NOT_ASSESSED`, or `INCOMPLETE`.
+
+Immediately after the issue heading, include exactly one marker in this form, replacing the target and SHA with the analyzed repository and `git -C target rev-parse HEAD` result:
+
+`<!-- operational-value: domain=scope-classification target=OWNER/REPO target-sha=40_HEX_SHA -->`
+
+Add a `### Human Acceptance` section telling a non-bot reviewer to add a thumbs-up reaction only after reviewing the complete scope, role, FOSS-treatment, distribution, classification, provenance, gap, and human-decision record. Never add that reaction or claim human acceptance yourself.
 
 Never output `CRA COMPLIANT`, `LEGALLY COMPLIANT`, `CERTIFIED`, or `CE APPROVED`. Do not approve a release. Never submit any regulatory notification.
 

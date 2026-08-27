@@ -92,6 +92,10 @@ tools:
     toolsets: [repos, issues, pull_requests, actions, dependabot, code_security, security_advisories]
   web-fetch:
 
+graders:
+  operational-value:
+    run: .github/graders/eu-cra-compliance-conformity-release-evidence-operational-value.sh
+
 safe-outputs:
   staged: ${{ inputs.preview_only == 'true' }}
   create-issue:
@@ -145,6 +149,12 @@ Material conclusions about CRA scope exclusion, economic-operator role, commerci
 ## Output
 
 Create one issue with the assessed release/version, verified regulatory sources, technical-documentation matrix, conformity evidence register, release-gate matrix, gaps, inaccessible evidence, and named human-review decisions. Use only `EVIDENCE_SUFFICIENT`, `GAP_FOUND`, `HUMAN_REVIEW_REQUIRED`, `NOT_ASSESSED`, or `INCOMPLETE`.
+
+Immediately after the issue heading, include exactly one marker in this form, replacing the target and SHA with the analyzed repository and `git -C target rev-parse HEAD` result:
+
+`<!-- operational-value: domain=conformity-release target=OWNER/REPO target-sha=40_HEX_SHA -->`
+
+Add a `### Human Acceptance` section telling a non-bot reviewer to add a thumbs-up reaction only after reviewing the complete release-version traceability, documentation matrix, conformity register, release-gate evidence, gaps, and named decisions. Never add that reaction or claim human acceptance yourself.
 
 Never output `CRA COMPLIANT`, `LEGALLY COMPLIANT`, `CERTIFIED`, or `CE APPROVED`. Never approve or merge a release and never submit a regulatory notification.
 
