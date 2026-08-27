@@ -49,7 +49,7 @@ A single control repository can address an explicitly named repository in anothe
 
 These levels are complementary, but they have no implicit precedence. Catalog ownership grants publication authority, not execution authority. Installing a package grants a runtime the ability to execute only within its credential scope and approved target inventory; it does not transfer ownership of target repositories.
 
-Before a package enters `live`, assign exactly one live mutation authority for each `(target repository, package)` pair. Enterprise and organization runtimes may both perform staged analysis or produce review output, but they must not concurrently mutate the same target for the same package. A live worker reads the target-owned authority file from the target's default branch and fails before agent execution unless that package names the worker's control repository. Separate GitHub Actions repositories still do not provide shared cancellation or a cross-repository concurrency group for runs already in progress.
+Before a package enters `live`, assign exactly one live mutation authority for each `(target repository, package)` pair. Enterprise and organization runtimes may both produce review output, but they must not concurrently mutate the same target for the same package. A live worker reads the target-owned authority file from the target's default branch and fails before agent execution unless that package names the worker's control repository. Separate GitHub Actions repositories still do not provide shared cancellation or a cross-repository concurrency group for runs already in progress.
 
 ## Catalog Ownership and Discovery
 
@@ -65,7 +65,7 @@ GitHub repository custom properties may project selected fields from those recor
 | `central-ops-catalog` | `githubnext/central-agentic-ops` | Projects the authoritative catalog source. |
 | `central-ops-version` | Release tag or commit SHA | Projects the catalog revision installed by the control repository. |
 | `central-ops-owner` | `organization/platform-team` | Identifies the team responsible for operation and incidents. |
-| `central-ops-status` | `staged`, `active`, or `suspended` | Records the installation lifecycle state. |
+| `central-ops-status` | `review`, `active`, or `suspended` | Records the installation lifecycle state. |
 
 The `central-agentic-ops-control-plane` repository topic is an optional lightweight discovery aid. Where custom properties are available, they provide the structured searchable projection. If neither mechanism covers an installation, an enterprise may maintain a small derived registry containing only organization, control repository, catalog revision, owner, and status. Rebuild that registry from repository-owned records where practical; it must not become a dispatcher or contain credentials, policy overrides, runtime health, or dispatch state.
 
@@ -79,7 +79,7 @@ An allowed owner and a reachable credential are security boundaries, not evidenc
 - the approval and review date;
 - the revocation path.
 
-Store this evidence in an enterprise- or organization-approved inventory, such as governed custom properties or a reviewed registry. The current workflows do not query or reconcile that inventory automatically. Until they do, scope the GitHub App installation or fine-grained PAT to enrolled repositories and treat broad owner discovery as staged or review-only. Owner allowlists remain mandatory but are not sufficient for live enrollment.
+Store this evidence in an enterprise- or organization-approved inventory, such as governed custom properties or a reviewed registry. The current workflows do not query or reconcile that inventory automatically. Until they do, scope the GitHub App installation or fine-grained PAT to enrolled repositories and treat broad owner discovery as review-only. Owner allowlists remain mandatory but are not sufficient for live enrollment.
 
 The target repository enforces its live mutation authority in `.github/central-agentic-ops.yml`:
 
@@ -92,11 +92,11 @@ bundles:
     authority: acme/central-ops
 ```
 
-Protect this file on the default branch with a ruleset and CODEOWNERS approval from the target repository owner. Missing, malformed, or mismatched authority fails closed in `live` before the agent starts. The file records consent and authority only; keep credentials, rollout modes, schedules, and runtime state in the control repository. Staged and review runs do not require it because they cannot mutate the target.
+Protect this file on the default branch with a ruleset and CODEOWNERS approval from the target repository owner. Missing, malformed, or mismatched authority fails closed in `live` before the agent starts. The file records consent and authority only; keep credentials, rollout modes, schedules, and runtime state in the control repository. Review runs do not require it because they cannot mutate the target.
 
 ## Downstream Fan-Out and Provenance
 
-Each central control repository fans out enabled packages to selected targets, subject to repository allowlists, credential scope, enrollment, live mutation ownership, and dispatch limits. Orchestrator and worker workflows run from that central repository. Each worker workflow checks out one target repository, inspects only that target, and creates only declared safe outputs in the configured downstream destination. A target repository may receive staged or review output from both enterprise and organization control repositories without storing either source's Agentic Workflow definitions, but only its assigned runtime may perform live mutation for a given package.
+Each central control repository fans out enabled packages to selected targets, subject to repository allowlists, credential scope, enrollment, live mutation ownership, and dispatch limits. Orchestrator and worker workflows run from that central repository. Each worker workflow checks out one target repository, inspects only that target, and creates only declared safe outputs in the configured downstream destination. A target repository may receive review output from both enterprise and organization control repositories without storing either source's Agentic Workflow definitions, but only its assigned runtime may perform live mutation for a given package.
 
 The standard `central_repo`, `control_plane_run_url`, and `correlation_id` fields identify the originating central runtime and run. Because `central_repo` differs between enterprise and organization control repositories, downstream safe outputs retain their runtime source.
 

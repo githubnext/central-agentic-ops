@@ -5,9 +5,9 @@ description: Create a private control plane, install one operation, and run it s
 
 Central Agentic Ops lets you run governed agentic operations across many repositories from one private GitHub repository, which we call the central control plane. Operation packages, credentials, rollout policy, and workflow runs stay in the control plane; target repositories do not receive copies of the workflows.
 
-By the end of this guide, you will have created a control plane, installed the Dependabot operation, and completed one `staged` run against a public target repository. You will verify that the operation selected the expected target and proposed work without changing it.
+By the end of this guide, you will have created a control plane, installed the Dependabot operation, and completed one `review` run against a public target repository. You will verify that the operation selected the expected target, saved any proposal in the private control repository, and did not change the target.
 
-## Run a Staged Dependabot Operation
+## Run a Reviewed Dependabot Operation
 
 Estimated time: 15 minutes
 
@@ -86,7 +86,7 @@ The package installs:
 3. shared authentication, routing, and fail-closed controls;
 4. generated `.lock.yml` workflows that GitHub Actions executes.
 
-Keep the operation in `staged` mode when the wizard asks for its rollout settings. Then commit and push the installed files:
+The installed operation defaults to `review` and is immediately runnable. Commit and push the installed files:
 
 ```bash
 git add .github
@@ -98,19 +98,19 @@ Do not edit generated `.lock.yml` files directly. Update their Markdown sources 
 
 ### Step 4 - Set the first-run boundary
 
-Configure the target owner, keep the scheduled operation staged, and cap scheduled selection at one repository:
+Configure the target owner, keep the scheduled operation in review, and cap scheduled selection at one repository:
 
 ```bash
 TARGET_OWNER="${TARGET_REPO%%/*}"
 
 gh variable set CENTRAL_AGENTIC_OPS_ALLOWED_OWNERS --body "$TARGET_OWNER"
-gh variable set CENTRAL_AGENTIC_OPS_DEPENDABOT_MODE --body "staged"
+gh variable set CENTRAL_AGENTIC_OPS_DEPENDABOT_MODE --body "review"
 gh variable set CENTRAL_AGENTIC_OPS_DEPENDABOT_MAX_REPOS --body "1"
 ```
 
-These variables configure future scheduled runs. The manual run in the next step also names one explicit target and requests `staged` mode.
+These variables configure future scheduled runs. The manual run in the next step also names one explicit target and requests `review` mode.
 
-### Step 5 - Trigger one staged run
+### Step 5 - Trigger one review run
 
 Run the installed orchestrator against the target repository:
 
@@ -119,12 +119,12 @@ gh workflow run dependabot.lock.yml \
 	--raw-field target_repo="$TARGET_REPO" \
 	--raw-field max_repos="1" \
 	--raw-field rollout_percent="100" \
-	--raw-field safe_output_mode="staged"
+	--raw-field safe_output_mode="review"
 ```
 
 You can also open the control repository's **Actions** tab, select **Dependabot**, and choose **Run workflow** with the same values.
 
-The orchestrator should select only the named repository and dispatch at most one updater. In `staged` mode, proposed safe outputs are recorded without creating or changing issues, pull requests, branches, or files.
+The orchestrator should select only the named repository and dispatch at most one updater. In `review` mode, proposed safe outputs are saved in the private control repository without creating or changing issues, pull requests, branches, or files in the target.
 
 ### Step 6 - Wait for the operation to complete
 
@@ -140,7 +140,7 @@ Copy the run ID from the first row, then watch it until completion:
 gh run watch <run-id> --exit-status
 ```
 
-The orchestrator may dispatch a separate updater run. Open the orchestrator run in the **Actions** tab to follow its correlated worker and inspect the staged output.
+The orchestrator may dispatch a separate updater run. Open the orchestrator run in the **Actions** tab to follow its correlated worker and inspect the review output.
 
 ## Verify the Result
 
@@ -148,8 +148,8 @@ A successful first run proves the boundary:
 
 - the orchestrator selected exactly `TARGET_REPO`;
 - no more than one updater was dispatched;
-- the worker remained in `staged` mode;
-- the staged output links back to the control-plane run;
+- the worker remained in `review` mode;
+- the review output in the control repository links back to the control-plane run;
 - no issue, pull request, branch, or file was written to the target repository.
 
 The worker may report that no dependency work is needed. That is still a successful first run when target selection, routing, and zero-write behavior are correct.
@@ -158,7 +158,7 @@ Having trouble? Check [Configure Authentication](authentication.md) for reposito
 
 ## What's Next?
 
-- Learn how to promote the operation through [staged, review, and live](rollout-and-routing.md).
+- Learn how to promote the operation from [review to live](rollout-and-routing.md).
 - Read [How the Control Plane Works](architecture.md) before adding organizations or broader repository discovery.
 - Use the [Configuration Reference](configuration.md) to tune schedules, repository limits, and worker ceilings.
 - Review [Orchestrators and Workers](orchestrators-and-workers.md) before creating another operation.

@@ -18,9 +18,6 @@ on:
         type: string
       safe_output_mode:
         type: string
-      preview_only:
-        default: "true"
-        type: string
       correlation_id:
         type: string
       central_repo:
@@ -31,9 +28,10 @@ on:
         type: string
 
 env:
+  CENTRAL_AGENTIC_OPS_PACKAGE_ENABLED: ${{ vars.CENTRAL_AGENTIC_OPS_OPTIMIZATION_ENABLED || 'true' }}
   CENTRAL_AGENTIC_OPS_WORKER_ENABLED: ${{ vars.CENTRAL_AGENTIC_OPS_OPTIMIZATION_OPTIMIZER_ENABLED || 'true' }}
-  CENTRAL_AGENTIC_OPS_WORKER_MAX_MODE: ${{ vars.CENTRAL_AGENTIC_OPS_OPTIMIZATION_OPTIMIZER_MAX_MODE || 'staged' }}
-  GH_AW_SAFE_OUTPUT_MODE: ${{ inputs.safe_output_mode || 'staged' }}
+  CENTRAL_AGENTIC_OPS_WORKER_MAX_MODE: ${{ vars.CENTRAL_AGENTIC_OPS_OPTIMIZATION_OPTIMIZER_MAX_MODE || 'review' }}
+  GH_AW_SAFE_OUTPUT_MODE: ${{ inputs.safe_output_mode || 'review' }}
   REVIEW_OUTPUT_REPO: ${{ inputs.safe_output_repo || github.repository }}
   SAFE_OUTPUT_REPO: ${{ inputs.safe_output_mode == 'review' && (inputs.safe_output_repo || github.repository) || '' }}
   TARGET_REPO: ${{ inputs.target_repo || '' }}
@@ -60,7 +58,7 @@ network:
     - defaults
     - github
 
-run-name: "AI Credit Optimizer · ${{ inputs.target_repo }} · ${{ inputs.safe_output_mode || (inputs.preview_only == 'true' && 'staged' || 'live') }}"
+run-name: "AI Credit Optimizer · ${{ inputs.target_repo }} · ${{ inputs.safe_output_mode || 'review' }}"
 
 concurrency:
   group: "${{ github.workflow }}-${{ inputs.target_repo }}"
@@ -86,7 +84,6 @@ tools:
     max-patch-size: 51200
 
 safe-outputs:
-  staged: ${{ inputs.preview_only == 'true' }}
   create-issue:
     expires: 7d
     title-prefix: "[optimization:ai-credit-optimizer] "

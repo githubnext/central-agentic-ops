@@ -18,9 +18,6 @@ on:
         type: string
       safe_output_mode:
         type: string
-      preview_only:
-        default: "true"
-        type: string
       correlation_id:
         type: string
       central_repo:
@@ -41,9 +38,10 @@ checkout:
     path: target
 
 env:
+  CENTRAL_AGENTIC_OPS_PACKAGE_ENABLED: ${{ vars.CENTRAL_AGENTIC_OPS_OPTIMIZATION_ENABLED || 'true' }}
   CENTRAL_AGENTIC_OPS_WORKER_ENABLED: ${{ vars.CENTRAL_AGENTIC_OPS_OPTIMIZATION_AUDITOR_ENABLED || 'true' }}
-  CENTRAL_AGENTIC_OPS_WORKER_MAX_MODE: ${{ vars.CENTRAL_AGENTIC_OPS_OPTIMIZATION_AUDITOR_MAX_MODE || 'staged' }}
-  GH_AW_SAFE_OUTPUT_MODE: ${{ inputs.safe_output_mode || 'staged' }}
+  CENTRAL_AGENTIC_OPS_WORKER_MAX_MODE: ${{ vars.CENTRAL_AGENTIC_OPS_OPTIMIZATION_AUDITOR_MAX_MODE || 'review' }}
+  GH_AW_SAFE_OUTPUT_MODE: ${{ inputs.safe_output_mode || 'review' }}
   REVIEW_OUTPUT_REPO: ${{ inputs.safe_output_repo || github.repository }}
   SAFE_OUTPUT_REPO: ${{ inputs.safe_output_mode == 'review' && (inputs.safe_output_repo || github.repository) || '' }}
   TARGET_REPO: ${{ inputs.target_repo || '' }}
@@ -69,7 +67,7 @@ network:
     - defaults
     - python
 
-run-name: "Token audit · ${{ inputs.target_repo }} · ${{ inputs.safe_output_mode || (inputs.preview_only == 'true' && 'staged' || 'live') }}"
+run-name: "Token audit · ${{ inputs.target_repo }} · ${{ inputs.safe_output_mode || 'review' }}"
 
 concurrency:
   group: "${{ github.workflow }}-${{ inputs.target_repo }}"
@@ -96,7 +94,6 @@ tools:
     max-patch-size: 51200
 
 safe-outputs:
-  staged: ${{ inputs.preview_only == 'true' }}
   create-issue:
     expires: 3d
     title-prefix: "[optimization:ai-credit-auditor] "
@@ -110,7 +107,6 @@ safe-outputs:
     allowed-paths:
       - "/tmp/gh-aw/token-audit/charts/**"
   upload-asset:
-    staged: ${{ inputs.safe_output_mode == 'review' }}
     #target-repo: ${{ env.SAFE_OUTPUT_REPO }} Does not compile with this, this is a bug
     allowed-exts: [.png, .jpg, .jpeg, .svg]
     max: 5
@@ -211,7 +207,7 @@ Read target-repository evidence from `target/`. Treat the workspace root as the 
 
 In `live`, the workspace root may be the target repository itself. In `review`, the workspace root is the control-plane repository.
 
-Recreate safe outputs there without pretending the control-plane repo is the target repo: keep issues as issues, prefer `upload_artifact` for charts and other audit evidence, and use `upload_asset` only when you need a persistent URL outside staged mode.
+Recreate safe outputs there without pretending the control-plane repo is the target repo: keep issues as issues, prefer `upload_artifact` for charts and other audit evidence, and use `upload_asset` only when you need a persistent URL.
 
 ## Mission
 

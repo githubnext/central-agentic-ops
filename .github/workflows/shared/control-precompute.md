@@ -45,13 +45,10 @@ import-schema:
     default: "100"
   safe_output_mode:
     type: string
-    default: "staged"
+    default: "review"
   safe_output_repo:
     type: string
     default: ""
-  preview_only:
-    type: string
-    default: "true"
   enabled:
     type: string
     default: "true"
@@ -60,7 +57,7 @@ import-schema:
     default: "true"
   worker_max_mode:
     type: string
-    default: "staged"
+    default: "review"
   correlation_id:
     type: string
     default: ""
@@ -105,7 +102,6 @@ steps:
       ROLLOUT_PERCENT: ${{ github.aw.import-inputs.rollout_percent }}
       SAFE_OUTPUT_MODE: ${{ github.aw.import-inputs.safe_output_mode }}
       SAFE_OUTPUT_REPO: ${{ github.aw.import-inputs.safe_output_repo }}
-      PREVIEW_ONLY: ${{ github.aw.import-inputs.preview_only }}
       ENABLED: ${{ github.aw.import-inputs.enabled }}
       WORKER_ENABLED: ${{ github.aw.import-inputs.worker_enabled }}
       WORKER_MAX_MODE: ${{ github.aw.import-inputs.worker_max_mode }}
@@ -118,9 +114,19 @@ steps:
     run: |
       set -euo pipefail
       mkdir -p /tmp/gh-aw/agent
+      OUT=/tmp/gh-aw/agent/control-precompute.json
 
       write_precompute() {
-        cp /tmp/gh-aw/agent/control-precompute.json /tmp/gh-aw/agent/dispatch-precompute.json
+        cp "$OUT" /tmp/gh-aw/agent/dispatch-precompute.json
+      }
+
+      write_disabled_precompute() {
+        jq -n \
+          --arg r "$ROLE" --arg b "$BUNDLE" \
+          '{control_role: $r, bundle: $b, enabled: "false", effective_max_repos: 0,
+            repo_error: "package disabled by its control-plane kill switch", candidate_repositories: [], worker_workflows: []}' \
+          > "$OUT"
+        write_precompute
       }
 
       write_worker_precompute() {
@@ -132,7 +138,6 @@ steps:
           --arg target_repo "$TARGET_REPO" \
           --arg safe_output_mode "$SAFE_OUTPUT_MODE" \
           --arg safe_output_repo "$SAFE_OUTPUT_REPO" \
-          --arg preview_only "$PREVIEW_ONLY" \
           --arg correlation_id "$CORRELATION_ID" \
           --arg central_repo "$CENTRAL_REPO" \
           --arg control_plane_run_url "$CONTROL_PLANE_RUN_URL" \
@@ -145,22 +150,20 @@ steps:
             target_repo: $target_repo,
             safe_output_mode: $safe_output_mode,
             safe_output_repo: $safe_output_repo,
-            preview_only: $preview_only,
             correlation_id: $correlation_id,
             central_repo: $central_repo,
             control_plane_run_url: $control_plane_run_url,
             candidate_repositories: [],
             worker_workflows: []
-          }' > /tmp/gh-aw/agent/control-precompute.json
+          }' > "$OUT"
         write_precompute
       }
 
       mode_rank() {
         case "$1" in
-          staged) printf '0\n' ;;
-          review) printf '1\n' ;;
-          live) printf '2\n' ;;
-          *) echo "$2 must be staged, review, or live" >&2; exit 1 ;;
+          review) printf '0\n' ;;
+          live) printf '1\n' ;;
+          *) echo "$2 must be review or live" >&2; exit 1 ;;
         esac
       }
 
@@ -182,11 +185,6 @@ steps:
           exit 1
         fi
 
-        if { [ "$SAFE_OUTPUT_MODE" = "staged" ] && [ "$PREVIEW_ONLY" != "true" ]; } || \
-           { [ "$SAFE_OUTPUT_MODE" != "staged" ] && [ "$PREVIEW_ONLY" != "false" ]; }; then
-          echo "preview_only is inconsistent with safe_output_mode" >&2
-          exit 1
-        fi
         if [ "$CENTRAL_REPO" != "$GITHUB_REPOSITORY" ]; then
           echo "central_repo must identify the current control repository" >&2
           exit 1
@@ -550,7 +548,6 @@ steps:
           --arg rollout_percent "$ROLLOUT_PERCENT" \
           --arg safe_output_mode "$SAFE_OUTPUT_MODE" \
           --arg safe_output_repo "$SAFE_OUTPUT_REPO" \
-          --arg preview_only "$PREVIEW_ONLY" \
           --arg orchestrator_credits "$ORCHESTRATOR_CREDITS" \
           --arg worker_credits_per_target "$WORKER_CREDITS_PER_TARGET" \
           --arg aggregate_credit_limit "$AGGREGATE_CREDIT_LIMIT" \
@@ -589,7 +586,6 @@ steps:
               aggregate_credit_limit: ($aggregate_credit_limit | tonumber),
               safe_output_mode: $safe_output_mode,
               safe_output_repo: $safe_output_repo,
-              preview_only: $preview_only,
               repo_source: $repo_source,
               repo_error: $repo_error,
               inventory_version: $inventory_metadata[0].inventory_version,
@@ -631,10 +627,17 @@ steps:
                 else [.effective_max_repos, (($dispatch_max | tonumber) / $eligible_workers | floor)] | min
                 end
               )
-          ' > /tmp/gh-aw/agent/control-precompute.json
+          ' > "$OUT"
         write_precompute
       }
 
+      case "$ENABLED" in
+        true) ;;
+        false) write_disabled_precompute; exit 0 ;;
+        *) echo "enabled must be true or false" >&2; exit 1 ;;
+      esac
+
+      mode_rank "$SAFE_OUTPUT_MODE" "safe_output_mode" >/dev/null
       validate_repository_owner "target_repo" "$TARGET_REPO"
       validate_repository_owner "safe_output_repo" "$SAFE_OUTPUT_REPO"
       validate_review_destination

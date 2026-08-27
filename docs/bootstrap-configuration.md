@@ -17,7 +17,7 @@ The current Central Agentic Ops manifests do not declare `config:`. Keep bootstr
 gh-aw currently reports `config:` as experimental. The `--no-config` flag disables inferred GitHub App permissions and events; it does not skip declared setup actions. A whole profile is optional only when the package omits `config:`. Within a profile, `optional: true` is supported for `repo-variable` and `repo-secret`, but not for `github-app`.
 :::
 
-Preserving the default manual path also keeps all three supported authentication choices available: built-in token for bounded public staged runs, GitHub App, and fine-grained PAT. Use the patterns below only when that tradeoff is appropriate for a specific package.
+Preserving the default manual path also keeps all three supported authentication choices available: built-in token for bounded public review runs, GitHub App, and fine-grained PAT. Use the patterns below only when that tradeoff is appropriate for a specific package.
 
 ## Prefer a GitHub App Profile
 
@@ -42,14 +42,14 @@ config:
   - type: repo-variable
     name: CENTRAL_AGENTIC_OPS_DEPENDABOT_MODE
     prompt: Dependabot rollout mode
-    default: staged
-    enum: [staged, review, live]
+    default: review
+    enum: [review, live]
   - type: repo-variable
     name: CENTRAL_AGENTIC_OPS_DEPENDABOT_MAX_REPOS
     prompt: Maximum repositories per scheduled run
     default: "1"
   - type: handoff
-    message: Run one staged operation against one repository before promotion.
+    message: Run one reviewed operation against one repository before promotion.
 ```
 
 Do not copy a broad `permissions:` list into the App action. gh-aw `v0.87.2` and later infer the minimum App permissions and webhook events from only the workflows resolved for that package, including their safe outputs. The wizard merges explicitly declared requirements with inferred requirements and shows the resulting App manifest before opening GitHub's creation flow. Current Central Agentic Ops packages require `v0.87.6` or later.
@@ -83,13 +83,13 @@ config:
     name: CENTRAL_AGENTIC_OPS_ALLOWED_OWNERS
     prompt: Comma-separated target repository owners
   - type: handoff
-    message: Run one staged operation against one repository before promotion.
+    message: Run one reviewed operation against one repository before promotion.
 ```
 
 Create the PAT before running the wizard. Select only the control and target repositories needed by the package, then grant only the permissions listed in [Configure Authentication](authentication.md#permissions). Do not use a classic PAT or an organization-wide token as a shortcut.
 
 :::caution[The wizard cannot verify PAT scope]
-`repo-secret` securely stores the supplied value, but it does not mint a PAT or inspect its repository selection and permissions. Least privilege remains an operator decision. Validate access with a staged run before enabling review or live mode.
+`repo-secret` securely stores the supplied value, but it does not mint a PAT or inspect its repository selection and permissions. Least privilege remains an operator decision. Validate access with a review run before enabling live mode.
 :::
 
 Central Agentic Ops workflows already declare `copilot-requests: write` and use organization billing for inference. Do not add a `copilot-auth` action or create a separate Copilot PAT for these packages.
@@ -129,6 +129,6 @@ Before publishing a package with `config:`:
 2. Install the package by pinned release or commit into a disposable private control repository.
 3. Confirm existing variables and secrets are detected and left unchanged when the wizard is rerun.
 4. Review the App's permissions and selected repositories, or review the fine-grained PAT's repository selection and permissions.
-5. Run one explicit target with `max_repos` set to `1` and `safe_output_mode` set to `staged`.
+5. Run one explicit target with `max_repos` set to `1` and `safe_output_mode` set to `review`.
 
-`repo-variable` and `repo-secret` actions are idempotent by name: the wizard skips an existing value rather than overwriting it. A `github-app` action is skipped only when both its client ID variable and private key secret exist; a partial pair is not treated as configured. A successful setup still requires the staged validation in [Quickstart](getting-started.md#step-5---trigger-one-staged-run).
+`repo-variable` and `repo-secret` actions are idempotent by name: the wizard skips an existing value rather than overwriting it. A `github-app` action is skipped only when both its client ID variable and private key secret exist; a partial pair is not treated as configured. A successful setup still requires the review validation in [Quickstart](getting-started.md#step-5---trigger-one-review-run).

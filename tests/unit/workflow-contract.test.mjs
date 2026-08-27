@@ -9,7 +9,7 @@ import { policyCases, userFacingScenarios } from "./workflow-contract.matrix.mjs
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), "../..");
 const workflowsDirectory = join(root, ".github", "workflows");
-const modes = ["staged", "review", "live"];
+const modes = ["review", "live"];
 
 function workflow(name, directory = workflowsDirectory) {
   return readFileSync(join(directory, name), "utf8");
@@ -29,6 +29,7 @@ function resolvePolicy({
   orchestratorCredits = 0,
   workerCreditsPerTarget = 0,
   aggregateCreditLimit = 1100,
+  packageEnabled = true,
 }) {
   if (!Number.isInteger(maxRepos) || maxRepos < 1 || maxRepos > 1000) {
     throw new RangeError("maxRepos must be an integer from 1 through 1000");
@@ -43,9 +44,12 @@ function resolvePolicy({
   }
 
   const requestedMode = eventName === "workflow_dispatch"
-    ? manualMode || "staged"
-    : configuredMode || "staged";
-  const safeOutputMode = requestedMode === "preview" ? "staged" : requestedMode;
+    ? manualMode || "review"
+    : configuredMode || "review";
+  if (!modes.includes(requestedMode)) {
+    throw new RangeError("safeOutputMode must be review or live");
+  }
+  const safeOutputMode = requestedMode;
   const reviewOutputRepo = manualReviewRepo || controlRepository;
   const percentCap = totalRepositories === 0
     ? 0
@@ -57,10 +61,9 @@ function resolvePolicy({
   const effectiveMaxRepos = Math.min(maxRepos, percentCap, dispatchCap, creditCap);
 
   return {
-    enabled: eventName === "workflow_dispatch" || modes.includes(configuredMode),
+    enabled: packageEnabled,
     safeOutputMode,
     safeOutputRepo: safeOutputMode === "review" ? reviewOutputRepo : "",
-    previewOnly: !["review", "live"].includes(safeOutputMode),
     effectiveMaxRepos,
     dispatchAllowed: true,
   };
@@ -70,9 +73,9 @@ test("all scheduled configurations and manual selections route safely", () => {
   const cases = policyCases();
   const uniqueInputs = new Set(cases.map(({ id, ...values }) => JSON.stringify(values)));
 
-  assert.equal(cases.length, 126);
-  assert.equal(cases.filter(({ eventName }) => eventName === "schedule").length, 18);
-  assert.equal(cases.filter(({ eventName }) => eventName === "workflow_dispatch").length, 108);
+  assert.equal(cases.length, 60);
+  assert.equal(cases.filter(({ eventName }) => eventName === "schedule").length, 12);
+  assert.equal(cases.filter(({ eventName }) => eventName === "workflow_dispatch").length, 48);
   assert.equal(uniqueInputs.size, cases.length, "matrix contains duplicate policy inputs");
 
   for (const scenario of cases) {
@@ -84,7 +87,6 @@ test("all scheduled configurations and manual selections route safely", () => {
     const percentageCap = scenario.rolloutPercent === 10 ? 3 : 25;
 
     assert.equal(policy.safeOutputMode, expectedMode, scenario.id);
-    assert.equal(policy.previewOnly, expectedMode === "staged", scenario.id);
     assert.equal(
       policy.safeOutputRepo,
       expectedMode === "review" ? expectedReviewRepo : "",
@@ -107,11 +109,11 @@ test("every checked user-facing scenario is backed by the exhaustive matrix", ()
   const cases = policyCases();
   const groupCounts = Object.groupBy(userFacingScenarios, ({ group }) => group);
 
-  assert.equal(userFacingScenarios.length, 24);
-  assert.equal(new Set(userFacingScenarios.map(({ name }) => name)).size, 24);
-  assert.equal(groupCounts["Scheduled modes"].length, 8);
-  assert.equal(groupCounts["Manual runs"].length, 4);
-  assert.equal(groupCounts["Review routing"].length, 5);
+  assert.equal(userFacingScenarios.length, 18);
+  assert.equal(new Set(userFacingScenarios.map(({ name }) => name)).size, 18);
+  assert.equal(groupCounts["Scheduled modes"].length, 4);
+  assert.equal(groupCounts["Manual runs"].length, 3);
+  assert.equal(groupCounts["Review routing"].length, 4);
   assert.equal(groupCounts["Rollout limits"].length, 7);
 
   for (const scenario of userFacingScenarios) {
@@ -140,27 +142,30 @@ test("percentage rollout rejects invalid settings and handles an empty organizat
   }
 
   assert.equal(resolvePolicy({ maxRepos: 1, rolloutPercent: 10, totalRepositories: 0 }).effectiveMaxRepos, 0);
+  for (const configuredMode of ["unknown", "preview", "staged"]) {
+    assert.throws(() => resolvePolicy({
+      eventName: "schedule",
+      configuredMode,
+      maxRepos: 1,
+      rolloutPercent: 100,
+      totalRepositories: 25,
+    }), RangeError);
+  }
   assert.equal(resolvePolicy({
     eventName: "schedule",
-    configuredMode: "unknown",
+    configuredMode: "review",
+    packageEnabled: false,
     maxRepos: 1,
     rolloutPercent: 100,
     totalRepositories: 25,
   }).enabled, false);
-  assert.equal(resolvePolicy({
-    eventName: "schedule",
-    configuredMode: "preview",
-    maxRepos: 1,
-    rolloutPercent: 100,
-    totalRepositories: 25,
-  }).safeOutputMode, "staged");
 });
 
 test("manual requests run independently of scheduled configuration", () => {
   for (const manualMode of modes) {
     const policy = resolvePolicy({
       eventName: "workflow_dispatch",
-      configuredMode: "disabled",
+      configuredMode: manualMode === "review" ? "live" : "review",
       manualMode,
       manualReviewRepo: manualMode === "review" ? "acme/manual-review" : "",
       maxRepos: 1,
@@ -306,7 +311,7 @@ test("deterministic workflows pin third-party actions by commit SHA", () => {
     join(".github", "workflows", "copilot-setup-steps.yml"),
     join(".github", "workflows", "enterprise-canary.yml"),
     join(".github", "workflows", "enterprise-stress.yml"),
-    join(".github", "workflows", "staged-smoke.yml"),
+    join(".github", "workflows", "review-smoke.yml"),
     join("pages", "pages.yml"),
   ]) {
     const source = readFileSync(join(root, relativePath), "utf8");
@@ -319,7 +324,7 @@ test("deterministic workflows pin third-party actions by commit SHA", () => {
 test("package manifests exclude repository-only tests", () => {
   for (const relativePath of ["aw.yml", join("ambient-context", "aw.yml"), join("aw-failures", "aw.yml"), join("aw-maintenance", "aw.yml"), join("dependabot", "aw.yml"), join("optimization", "aw.yml")]) {
     const manifest = readFileSync(join(root, relativePath), "utf8");
-    assert.doesNotMatch(manifest, /(?:staged-smoke|enterprise-canary|enterprise-stress|tests\/e2e|\.github\/aw\/e2e)/, relativePath);
+    assert.doesNotMatch(manifest, /(?:review-smoke|enterprise-canary|enterprise-stress|tests\/e2e|\.github\/aw\/e2e)/, relativePath);
   }
 });
 
@@ -373,19 +378,21 @@ test("operational-value graders expose deterministic run-scoped contracts", () =
   assert.match(optimizerEvaluator, /target-workflow:\$\{target_repo\}:\$\{workflow\}:\$\{optimizer_run_id\}/);
 });
 
-test("staged smoke is manual, bounded, and cannot request writes", () => {
-  const smoke = workflow("staged-smoke.yml");
+test("review smoke is manual, protected, bounded, and cannot change the target", () => {
+  const smoke = workflow("review-smoke.yml");
   const harness = readFileSync(join(root, "tests", "e2e", "run-canary.sh"), "utf8");
   assert.match(smoke, /workflow_dispatch:/);
   assert.doesNotMatch(smoke, /^\s+schedule:/m);
   assert.match(smoke, /actions: write/);
   assert.match(smoke, /timeout-minutes: 75/);
-  assert.match(smoke, /SAFE_OUTPUT_MODE: staged/);
+  assert.match(smoke, /environment: central-agentic-ops-review/);
+  assert.match(smoke, /SAFE_OUTPUT_MODE: review/);
+  assert.match(smoke, /SAFE_OUTPUT_REPO: \$\{\{ inputs\.safe_output_repo \}\}/);
   assert.match(smoke, /bash tests\/e2e\/run-canary\.sh/);
-  assert.match(smoke, /group: staged-smoke-/);
+  assert.match(smoke, /group: review-smoke-/);
   assert.match(harness, /max_repos=1/);
   assert.match(harness, /snapshot_repository/);
-  assert.match(harness, /staged canary mutated target repository state/);
+  assert.match(harness, /review canary mutated target repository state/);
   assert.match(harness, /No correlated worker run was found/);
 });
 
@@ -406,7 +413,7 @@ test("enterprise canaries are manual, protected, confirmed, and bounded", () => 
   assert.match(canary, /bash tests\/e2e\/run-canary\.sh/);
   assert.match(stress, /bash tests\/e2e\/run-stress\.sh/);
 
-  assert.match(canary, /options: \[staged, review, live\]/);
+  assert.match(canary, /options: \[review, live\]/);
   assert.match(canary, /environment: central-agentic-ops-\$\{\{ inputs\.safe_output_mode \}\}/);
   assert.match(canary, /require_output:/);
   assert.match(canaryHarness, /confirmation must be REVIEW/);
@@ -417,10 +424,10 @@ test("enterprise canaries are manual, protected, confirmed, and bounded", () => 
   assert.match(stress, /environment: central-agentic-ops-\$\{\{ 'stress' \}\}/);
   assert.match(stress, /options: \[2, 3, 5\]/);
   assert.match(stressHarness, /target_repo must use OWNER\/REPO form/);
-  assert.match(stressHarness, /STRESS \$TARGET_REPO \$RUNS/);
+  assert.match(stressHarness, /STRESS \$TARGET_REPO REVIEW \$SAFE_OUTPUT_REPO \$RUNS/);
   assert.match(stressHarness, /RUNS - 1/);
-  assert.match(stressHarness, /safe_output_mode=staged/);
-  assert.match(stressHarness, /staged stress run mutated target repository state/);
+  assert.match(stressHarness, /safe_output_mode=review/);
+  assert.match(stressHarness, /review stress run mutated target repository state/);
 });
 
 test("ownership, provenance, and workflow identity fail closed", () => {
@@ -458,8 +465,8 @@ test("public read-only operation uses the built-in token without widening access
 
   assert.match(precompute, /GH_TOKEN:.*GH_AW_GITHUB_TOKEN.*secrets\.GITHUB_TOKEN/);
   assert.match(precompute, /\{id, full_name, archived, disabled, private, pushed_at, default_branch\}/);
-  assert.match(authentication, /App or PAT is not required for a bounded `staged` scan when every target repository is public/);
-  assert.match(authentication, /use `review` only when safe outputs remain in the current control repository/);
+  assert.match(authentication, /App or PAT is not required for a bounded `review` run when every target repository is public/);
+  assert.match(authentication, /use `review` mode and keep safe outputs in the current control repository/);
   assert.match(authentication, /configure an App or PAT for private or internal targets, an alternate review repository, or any `live` cross-repository write/);
   assert.match(authentication, /report incomplete and produce no speculative result/);
   assert.match(configuration, /no App or PAT secret is required/);
@@ -518,7 +525,8 @@ test("orchestrators expose scheduled variables and independent manual inputs", (
     const source = workflow(name);
 
     assert.match(source, /rollout_percent:\n\s+default: 100\n\s+type: number/);
-    assert.match(source, new RegExp(`CENTRAL_AGENTIC_OPS_${packageName}_MODE \\|\\| 'staged'`));
+    assert.match(source, new RegExp(`CENTRAL_AGENTIC_OPS_${packageName}_ENABLED \\|\\| 'true'`));
+    assert.match(source, new RegExp(`CENTRAL_AGENTIC_OPS_${packageName}_MODE \\|\\| 'review'`));
     assert.match(source, new RegExp(`CENTRAL_AGENTIC_OPS_${packageName}_MAX_REPOS \\|\\| '1'`));
     assert.doesNotMatch(source, new RegExp(`CENTRAL_AGENTIC_OPS_${packageName}_REVIEW_REPO`));
     assert.match(source, new RegExp(`CENTRAL_AGENTIC_OPS_${packageName}_ROLLOUT_PERCENT \\|\\| '100'`));
@@ -541,13 +549,23 @@ test("review destinations must be accessible and private", () => {
   assert.match(precompute, /review safe_output_repo must be private/);
 });
 
+test("safe-output modes are review and live with a separate package kill switch", () => {
+  const control = workflow("shared/control.md");
+  const precompute = workflow("shared/control-precompute.md");
+
+  assert.match(control, /rollout_mode:[\s\S]*?options: \[review, live\][\s\S]*?default: "review"/);
+  assert.match(control, /package_enabled:[\s\S]*?default: "true"/);
+  assert.doesNotMatch(`${control}\n${precompute}`, /preview_only|\bstaged\b/);
+});
+
 test("shared control keeps manual and scheduled routing event-scoped", () => {
   const control = workflow("shared/control.md");
   const precompute = workflow("shared/control-precompute.md");
 
   for (const name of ["ambient-context.md", "aw-failures.md", "aw-maintenance.md", "dependabot.md", "optimization.md"]) {
     const orchestrator = workflow(name);
-    assert.match(orchestrator, /GH_AW_SAFE_OUTPUT_MODE:.*== 'preview' && 'staged'/);
+    assert.match(orchestrator, /GH_AW_SAFE_OUTPUT_MODE:.*inputs\.safe_output_mode.*\|\| 'review'/);
+    assert.match(orchestrator, /CENTRAL_AGENTIC_OPS_PACKAGE_ENABLED:.*_ENABLED \|\| 'true'/);
     assert.match(orchestrator, /REVIEW_OUTPUT_REPO:.*inputs\.safe_output_repo \|\| github\.repository/);
     assert.match(orchestrator, /SAFE_OUTPUT_REPO:.*== 'review'/);
   }
@@ -555,7 +573,7 @@ test("shared control keeps manual and scheduled routing event-scoped", () => {
   assert.match(control, /safe_output_repo: \$\{\{ env\.SAFE_OUTPUT_REPO \}\}/);
   assert.doesNotMatch(control, /review_repo/);
   assert.match(control, /rollout_percent: "\$\{\{ github\.aw\.import-inputs\.rollout_percent \}\}"/);
-  assert.match(control, /GH_AW_SAFE_OUTPUT_MODE == 'live'.*GH_AW_SAFE_OUTPUT_MODE == 'review'.*'false' \|\| 'true'/);
+  assert.match(control, /enabled: \$\{\{ env\.CENTRAL_AGENTIC_OPS_PACKAGE_ENABLED \|\| github\.aw\.import-inputs\.package_enabled \}\}/);
   assert.match(control, /select no more than `effective_max_repos` repositories/);
 
   assert.match(precompute, /rollout_percent must be an integer from 1 through 100/);
@@ -582,7 +600,6 @@ test("every worker uses the standard dispatch envelope and safe mode vocabulary"
       "target_repo",
       "safe_output_repo",
       "safe_output_mode",
-      "preview_only",
       "correlation_id",
       "central_repo",
       "control_plane_run_url",
@@ -590,11 +607,13 @@ test("every worker uses the standard dispatch envelope and safe mode vocabulary"
       assert.match(source, new RegExp(`^      ${input}:`, "m"), `${name} is missing ${input}`);
     }
 
-    assert.match(source, /safe-outputs:\n\s+staged: \$\{\{ inputs\.preview_only == 'true' \}\}/);
+    assert.doesNotMatch(source, /^      preview_only:/m);
+    assert.doesNotMatch(source, /^\s+staged:/m);
     assert.doesNotMatch(source, /safe_output_mode == 'private'/);
+    assert.match(source, /CENTRAL_AGENTIC_OPS_PACKAGE_ENABLED:.*_ENABLED \|\| 'true'/);
     assert.match(source, /CENTRAL_AGENTIC_OPS_WORKER_ENABLED:.*\|\| 'true'/);
-    assert.match(source, /CENTRAL_AGENTIC_OPS_WORKER_MAX_MODE:.*\|\| 'staged'/);
-    assert.match(source, /GH_AW_SAFE_OUTPUT_MODE: \$\{\{ inputs\.safe_output_mode \|\| 'staged' \}\}/);
+    assert.match(source, /CENTRAL_AGENTIC_OPS_WORKER_MAX_MODE:.*\|\| 'review'/);
+    assert.match(source, /GH_AW_SAFE_OUTPUT_MODE: \$\{\{ inputs\.safe_output_mode \|\| 'review' \}\}/);
 
     for (const line of source.match(/^\s+target-repo:.*$/gm) || []) {
       assert.match(line, /github\.event\.inputs\.safe_output_repo/);
@@ -613,7 +632,9 @@ test("workers reject disabled, malformed, or over-ceiling dispatches before exec
   assert.match(precompute, /validate_worker_dispatch\n\s+validate_live_authority\n\s+write_worker_precompute/);
   assert.match(precompute, /worker is disabled by its control-plane policy/);
   assert.match(precompute, /safe_output_mode exceeds the worker_max_mode ceiling/);
-  assert.match(precompute, /preview_only is inconsistent with safe_output_mode/);
+  assert.match(precompute, /must be review or live/);
+  assert.match(precompute, /enabled must be true or false/);
+  assert.match(precompute, /package disabled by its control-plane kill switch/);
   assert.match(precompute, /central_repo must identify the current control repository/);
   assert.match(precompute, /control_plane_run_url must match correlation_id and central_repo/);
 });
@@ -704,7 +725,8 @@ test("clean-room compilation emits the expected GitHub Actions settings", { time
 
     for (const name of ["ambient-context.lock.yml", "aw-failures.lock.yml", "aw-maintenance.lock.yml", "dependabot.lock.yml", "optimization.lock.yml"]) {
       const generated = workflow(name, generatedDirectory);
-      assert.match(generated, /GH_AW_SAFE_OUTPUT_MODE:.*== 'preview' && 'staged'/);
+      assert.match(generated, /GH_AW_SAFE_OUTPUT_MODE:.*inputs\.safe_output_mode.*\|\| 'review'/);
+      assert.match(generated, /CENTRAL_AGENTIC_OPS_PACKAGE_ENABLED:.*_ENABLED \|\| 'true'/);
       assert.match(generated, /ROLLOUT_PERCENT: \$\{\{ inputs\.rollout_percent \|\| vars\.CENTRAL_AGENTIC_OPS_.+_ROLLOUT_PERCENT \|\| '100' \}\}/);
       assert.match(generated, /rollout_percent:\n\s+default: 100\n\s+type: number/);
       assert.match(generated, /timeout-minutes: 15/);
@@ -713,10 +735,10 @@ test("clean-room compilation emits the expected GitHub Actions settings", { time
 
     for (const name of packageLockNames.filter((name) => !["ambient-context.lock.yml", "aw-failures.lock.yml", "aw-maintenance.lock.yml", "dependabot.lock.yml", "optimization.lock.yml"].includes(name))) {
       const generated = workflow(name, generatedDirectory);
-      assert.match(generated, /GH_AW_SAFE_OUTPUT_MODE: \$\{\{ inputs\.safe_output_mode \|\| 'staged' \}\}/);
+      assert.match(generated, /GH_AW_SAFE_OUTPUT_MODE: \$\{\{ inputs\.safe_output_mode \|\| 'review' \}\}/);
       assert.match(generated, /ROLLOUT_PERCENT: "100"/);
       assert.match(generated, /GH_AW_SAFE_OUTPUTS_CONFIG:/);
-      assert.match(generated, /PREVIEW_ONLY: \$\{\{ \(env\.GH_AW_SAFE_OUTPUT_MODE == 'live' \|\| env\.GH_AW_SAFE_OUTPUT_MODE == 'review'\) && 'false' \|\| 'true' \}\}/);
+      assert.doesNotMatch(generated, /PREVIEW_ONLY|preview_only/);
     }
 
     const prReviewer = workflow("pr-reviewer.lock.yml", generatedDirectory);

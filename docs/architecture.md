@@ -21,7 +21,7 @@ The control plane is designed to:
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="/central-agentic-ops/assets/control-plane-mental-model-dark.svg">
   <source media="(prefers-color-scheme: light)" srcset="/central-agentic-ops/assets/control-plane-mental-model-light.svg">
-  <img alt="A catalog release enters a private control repository, where an orchestrator selects and dispatches work to a worker that emits declared safe outputs in staged, review, or live mode." src="/central-agentic-ops/assets/control-plane-mental-model-light.svg">
+  <img alt="A catalog release enters a private control repository, where an orchestrator selects and dispatches work to a worker that emits declared safe outputs in review or live mode." src="/central-agentic-ops/assets/control-plane-mental-model-light.svg">
 </picture>
 
 :::note[Three records, three jobs]
@@ -36,13 +36,13 @@ The execution boundary is the key architectural fact: orchestrators and workers 
 2. Shared control resolves mode, routing, candidate repositories, limits, and eligible workers.
 3. The orchestrator ranks candidates and dispatches one worker run per selected target.
 4. Each worker analyzes only its dispatched target and emits only declared safe outputs.
-5. Outputs are simulated in staged mode, sent to a review repository in review mode, or processed against the target in live mode.
+5. Outputs are sent to a review repository in review mode or processed against the target in live mode.
 
 The orchestrator owns rollout and selection. Workers enforce the dispatched control envelope without escalating mode, discovering additional repositories, or duplicating credentials.
 
 ## Core Safety Properties
 
-- staged mode is the default;
+- review mode is the default;
 - target selection and dispatch are bounded;
 - owners, targets, and review destinations must pass explicit trust checks;
 - every live `(target repository, package)` pair has one target-approved mutation authority;
@@ -62,4 +62,4 @@ Central Agentic Ops governs participating catalog workflows. Use GitHub rulesets
 | [Deployment and Governance](deployment-and-governance.md) | Organization and enterprise topologies, ownership, target enrollment, provenance, reporting identity, and the broader governance boundary |
 | [Execution and Safety](execution-and-safety.md) | Layer responsibilities, the full execution flow, dispatch fields, invariants, failure behavior, and implemented controls |
 | [Orchestrators and Workers](orchestrators-and-workers.md) | Package-specific authority, worker enforcement, eligibility, and worker ceilings |
-| [Rollout and Routing](rollout-and-routing.md) | Staged, review, and live promotion; review destinations; authority checks; and rollback |
+| [Rollout and Routing](rollout-and-routing.md) | Review-to-live promotion; review destinations; authority checks; and rollback |

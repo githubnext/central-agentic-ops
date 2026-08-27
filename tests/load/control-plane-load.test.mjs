@@ -19,7 +19,9 @@ function mockGh(directory) {
   writeFileSync(executable, `#!/bin/bash
 set -euo pipefail
 arguments="$*"
-if [[ "$arguments" == *"contents/.github/workflows/dependabot.md"* ]]; then
+if [[ "$arguments" == "api repos/acme/control --jq .private" ]]; then
+  printf 'true\n'
+elif [[ "$arguments" == *"contents/.github/workflows/dependabot.md"* ]]; then
   printf '%s\\n' "$CONTROL_SOURCE_B64"
 elif [[ "$arguments" == *"actions/workflows?per_page=100"* ]]; then
   printf '%s\\n' '{"id":1,"name":"worker","path":".github/workflows/worker.lock.yml","state":"active"}'

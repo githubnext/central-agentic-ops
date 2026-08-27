@@ -487,8 +487,8 @@ function repositoryWorkflowTabs(repositoryName, workflow, selectedView) {
 }
 
 function configuredModeFor(bundle) {
-  const mode = repositoryVariables.get(bundle.rolloutModeVariable) || "staged";
-  return normalizeMode(mode) === "unknown" ? "staged" : normalizeMode(mode);
+  const mode = repositoryVariables.get(bundle.rolloutModeVariable) || "review";
+  return normalizeMode(mode) === "unknown" ? "review" : normalizeMode(mode);
 }
 
 function repositoryVariablesFromEnvironment() {
@@ -506,7 +506,7 @@ function repositoryVariablesFromEnvironment() {
 }
 
 function modeIndicator(mode) {
-  const icons = { staged: "eye", review: "beaker", live: "rocket" };
+  const icons = { review: "beaker", live: "rocket" };
   const label = `${mode[0].toUpperCase()}${mode.slice(1)}`;
   return `<span class="mode-indicator mode-${mode}" title="Configured mode: ${label}">${octicon(icons[mode])}<span>${label}</span></span>`;
 }
@@ -625,8 +625,7 @@ const repositoryVariables = new Map([
 const issueByUrl = new Map(reportSources.flatMap((source) => source.issues.map((issue) => [issue.url, issue])));
 const runCache = new Map();
 function normalizeMode(mode) {
-  if (mode === "preview") return "staged";
-  return ["staged", "review", "live"].includes(mode) ? mode : "unknown";
+  return ["review", "live"].includes(mode) ? mode : "unknown";
 }
 
 async function metadataFromRunUrl(runUrl) {
@@ -638,7 +637,7 @@ async function metadataFromRunUrl(runUrl) {
     runCache.set(cacheKey, githubOptional(`/repos/${runOwner}/${runRepository}/actions/runs/${runId}`, null));
   }
   const run = await runCache.get(cacheKey);
-  const mode = run?.display_title?.match(/(?:^|\s[·|:-]\s)(preview|staged|review|live)$/i)?.[1]?.toLowerCase();
+  const mode = run?.display_title?.match(/(?:^|\s[·|:-]\s)(review|live)$/i)?.[1]?.toLowerCase();
   const workflowPath = run?.path || "";
   return {
     mode: normalizeMode(mode),
@@ -689,7 +688,7 @@ const records = (await Promise.all(discoveredRecords.map(async (record) => {
 const scopedRecords = allowedRepositories.size === 0
   ? records
   : records.filter((record) => allowedRepositories.has(record.repository.toLowerCase()));
-const reportRecords = scopedRecords.filter((record) => ["staged", "review", "live"].includes(record.mode));
+const reportRecords = scopedRecords.filter((record) => ["review", "live"].includes(record.mode));
 
 await mkdir(outputDirectory, { recursive: true });
 await writeFile(path.join(outputDirectory, "inventory.json"), `${JSON.stringify(inventory, null, 2)}\n`);
@@ -2093,7 +2092,6 @@ tbody tr:hover { background: var(--canvas-subtle); }
 .status-muted { background: var(--neutral-muted); }
 .mode-live { border-color: color-mix(in srgb, var(--success) 45%, var(--border)); background: var(--success-muted); color: var(--success); }
 .mode-review { border-color: color-mix(in srgb, var(--attention) 45%, var(--border)); background: var(--attention-muted); color: var(--attention); }
-.mode-staged { background: var(--neutral-muted); }
 .mode-indicator { min-height: 22px; display: inline-flex; flex: none; align-items: center; gap: 5px; padding: 1px 7px; border: 1px solid var(--border); border-radius: 2em; font-size: .6875rem; font-weight: 600; text-transform: none; white-space: nowrap; }
 .mode-indicator .octicon { width: 13px; height: 13px; flex-basis: 13px; }
 .sidebar-nav .mode-indicator { margin-left: auto; }

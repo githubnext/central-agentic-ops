@@ -27,9 +27,9 @@ The execution boundary is the key architectural fact: orchestrators and workers 
 4. The orchestrator workflow ranks eligible repositories using package-specific discovery rules and applies `max_repos` and dispatch limits.
 5. The orchestrator workflow dispatches each eligible worker workflow with the standard control envelope.
 6. The worker workflow imports shared control as `role: worker`, analyzes only `target_repo`, and emits only its declared safe outputs.
-7. safe outputs are simulated in staged mode, routed to the review repository, or processed against the target repository according to the effective mode.
+7. safe outputs are routed to the review repository or processed against the target repository according to the effective mode.
 
-Pages report routing participates in the control plane. staged mode stages report source data without deployment. Review routes report source data to the private `safe_output_repo` and publishes an access-controlled review Pages site owned by that repository. Live routes durable report source data to its normal destination and publishes the production Pages site. Conventional deterministic workflows perform both deployments and own `pages: write` and `id-token: write`; AI agent jobs do not.
+Pages report routing participates in the control plane. Review routes report source data to the private `safe_output_repo` and publishes an access-controlled review Pages site owned by that repository. Live routes durable report source data to its normal destination and publishes the production Pages site. Conventional deterministic workflows perform both deployments and own `pages: write` and `id-token: write`; AI agent jobs do not.
 
 ## Standard Control Envelope
 
@@ -38,9 +38,8 @@ Every worker workflow dispatch carries:
 | Field | Purpose |
 | --- | --- |
 | `target_repo` | The only target repository the worker workflow may analyze or update |
-| `safe_output_mode` | `staged`, `review`, or `live` |
+| `safe_output_mode` | `review` or `live` |
 | `safe_output_repo` | safe output destination; review mode defaults this to the current control-plane repository |
-| `preview_only` | Enables staged mode for safe outputs when `true` |
 | `correlation_id` | Joins worker workflow safe outputs to the orchestrator workflow run |
 | `central_repo` | Identifies the control-plane repository |
 | `control_plane_run_url` | Provides the originating run for audit and diagnosis |
@@ -54,7 +53,6 @@ An effective dispatch envelope resembles:
 target_repo: acme/example-service
 safe_output_mode: review
 safe_output_repo: acme/central-agentic-ops-review
-preview_only: false
 correlation_id: optimization-2026-08-25-001
 central_repo: acme/central-agentic-ops
 control_plane_run_url: https://github.com/acme/central-agentic-ops/actions/runs/123456
@@ -67,7 +65,7 @@ Never add an App key, PAT, installation token, or other secret to this envelope.
 
 ## Invariants
 
-- staged mode is the default mode.
+- review mode is the default mode.
 - Automatic discovery scans at most `1000` repositories by default and never more than `100000`.
 - Orchestrator precompute versions each inventory and deterministically selects one bounded cell and batch before agent ranking begins.
 - Repository selection defaults to one target and is bounded by absolute, percentage, and dispatch-derived caps.

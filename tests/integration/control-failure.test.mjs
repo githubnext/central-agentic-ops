@@ -12,8 +12,9 @@ const failures = [
   ["malformed target repository", { TARGET_REPO: "not-a-repository" }, "target_repo must use owner/repository form"],
   ["disallowed target owner", { TARGET_REPO: "outside/target" }, "target_repo owner is outside CENTRAL_AGENTIC_OPS_ALLOWED_OWNERS"],
   ["disabled worker", { WORKER_ENABLED: "false" }, "worker is disabled by its control-plane policy"],
-  ["worker mode ceiling", { SAFE_OUTPUT_MODE: "live", PREVIEW_ONLY: "false" }, "safe_output_mode exceeds the worker_max_mode ceiling"],
-  ["inconsistent staged flag", { PREVIEW_ONLY: "false" }, "preview_only is inconsistent with safe_output_mode"],
+  ["worker mode ceiling", { SAFE_OUTPUT_MODE: "live" }, "safe_output_mode exceeds the worker_max_mode ceiling"],
+  ["invalid safe-output mode", { SAFE_OUTPUT_MODE: "staged" }, "safe_output_mode must be review or live"],
+  ["invalid package kill switch", { ENABLED: "invalid" }, "enabled must be true or false"],
   ["invalid correlation ID", { CORRELATION_ID: "invalid" }, "correlation_id must identify an orchestrator run and attempt"],
   ["mismatched control repository", { CENTRAL_REPO: "acme/other" }, "central_repo must identify the current control repository"],
   ["mismatched control run URL", { CONTROL_PLANE_RUN_URL: "https://github.com/acme/control/actions/runs/999" }, "control_plane_run_url must match correlation_id and central_repo"],
@@ -27,17 +28,48 @@ const failures = [
   ["invalid credit budget", { ROLE: "orchestrator", TARGET_REPO: "", AGGREGATE_CREDIT_LIMIT: "0" }, "AI Credit admission values must be integers"],
 ];
 
+function runPrecompute(overrides = {}, ghScript = "printf 'true\\n'") {
+  const directory = mkdtempSync(join(tmpdir(), "central-ops-precompute-"));
+  const gh = join(directory, "gh");
+  writeFileSync(gh, `#!/bin/sh
+${ghScript}
+`);
+  chmodSync(gh, 0o755);
+
+  try {
+    return spawnSync("bash", ["-c", script], {
+      encoding: "utf8",
+      env: controlEnvironment({
+        PATH: `${directory}:${process.env.PATH}`,
+        ...overrides,
+      }),
+    });
+  } finally {
+    rmSync(directory, { recursive: true, force: true });
+  }
+}
+
 for (const [name, overrides, expectedError] of failures) {
   test(`control precompute rejects ${name}`, () => {
-    const result = spawnSync("bash", ["-c", script], {
-      encoding: "utf8",
-      env: controlEnvironment(overrides),
-    });
+    const result = runPrecompute(overrides);
 
     assert.notEqual(result.status, 0, `${name} unexpectedly succeeded`);
     assert.match(result.stderr, new RegExp(expectedError));
   });
 }
+
+test("control precompute disables a package before repository access", () => {
+  const result = runPrecompute(
+    { ENABLED: "false", TARGET_REPO: "not-a-repository" },
+    "echo 'GitHub must not be called for a disabled package' >&2; exit 99",
+  );
+
+  assert.equal(result.status, 0, result.stderr);
+  const precompute = JSON.parse(readFileSync("/tmp/gh-aw/agent/control-precompute.json", "utf8"));
+  assert.equal(precompute.enabled, "false");
+  assert.equal(precompute.effective_max_repos, 0);
+  assert.deepEqual(precompute.candidate_repositories, []);
+});
 
 function runLiveAuthority(authorityContent, overrides = {}) {
   const directory = mkdtempSync(join(tmpdir(), "central-ops-authority-"));
@@ -59,7 +91,6 @@ esac
       env: controlEnvironment({
         PATH: `${directory}:${process.env.PATH}`,
         SAFE_OUTPUT_MODE: "live",
-        PREVIEW_ONLY: "false",
         WORKER_MAX_MODE: "live",
         AUTHORITY_CONTENT: authorityContent,
         ...overrides,

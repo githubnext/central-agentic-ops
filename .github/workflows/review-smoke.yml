@@ -1,4 +1,4 @@
-name: Staged smoke
+name: Review smoke
 
 on:
   workflow_dispatch:
@@ -14,27 +14,38 @@ on:
         description: Explicit OWNER/REPO canary target
         required: true
         type: string
+      safe_output_repo:
+        description: Dedicated private review repository
+        required: true
+        type: string
+      confirmation:
+        description: REVIEW OWNER/REPO
+        required: true
+        type: string
 
 permissions:
   actions: write
   contents: read
 
 concurrency:
-  group: staged-smoke-${{ inputs.bundle }}-${{ inputs.target_repo }}
+  group: review-smoke-${{ inputs.bundle }}-${{ inputs.target_repo }}
   cancel-in-progress: false
 
 jobs:
   smoke:
     runs-on: ubuntu-latest
     timeout-minutes: 75
+    environment: central-agentic-ops-review
     steps:
       - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
-      - name: Dispatch, monitor, and verify staged canary
+      - name: Dispatch, monitor, and verify review canary
         env:
-          GH_TOKEN: ${{ github.token }}
           BUNDLE: ${{ inputs.bundle }}
+          CONFIRMATION: ${{ inputs.confirmation }}
           CONTROL_REF: ${{ github.ref_name }}
-          SAFE_OUTPUT_MODE: staged
+          GH_TOKEN: ${{ secrets.GH_AW_E2E_TOKEN || github.token }}
+          SAFE_OUTPUT_MODE: review
+          SAFE_OUTPUT_REPO: ${{ inputs.safe_output_repo }}
           TARGET_REPO: ${{ inputs.target_repo }}
         run: |
           bash tests/e2e/run-canary.sh

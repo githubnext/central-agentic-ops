@@ -12,7 +12,7 @@ on:
         description: Canary mode
         required: true
         type: choice
-        options: [staged, review, live]
+        options: [review, live]
       target_repo:
         description: Dedicated OWNER/REPO canary target
         required: true
@@ -27,8 +27,8 @@ on:
         default: false
         type: boolean
       confirmation:
-        description: REVIEW OWNER/REPO or LIVE OWNER/REPO; empty for staged
-        required: false
+        description: REVIEW OWNER/REPO or LIVE OWNER/REPO
+        required: true
         type: string
 
 permissions:

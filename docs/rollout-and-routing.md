@@ -1,39 +1,39 @@
 ---
 title: Roll Out an Operation Safely
-description: Promote one operation through staged, review, limited live, and scheduled live operation.
+description: Promote one operation from review through limited and scheduled live operation.
 ---
 
-Roll out each operation independently. Begin with one explicit target in `staged`, inspect the proposed output in `review`, and allow target writes only after the same bounded scenario succeeds in both modes.
+Roll out each operation independently. Begin with one explicit target in `review`, inspect the proposal in the private review repository, and allow target writes only after that bounded scenario succeeds.
 
 ## Promotion at a Glance
 
-1. Keep the installed operation in `staged` and validate one target.
-2. Route the same scenario to a private review destination.
+1. Run the installed operation in `review` against one target.
+2. Verify the private review destination changed and the target did not.
 3. Run one low-risk target in `live` and verify the resulting output and downstream checks.
 4. Enable scheduled live operation with `max_repos` kept small.
 5. Increase limits only from observed evidence.
 
-Move the operation back to `staged` whenever authentication, routing, output quality, cost, or provenance is uncertain.
+Set the package kill switch to `false` whenever authentication, routing, output quality, cost, or provenance is uncertain. Resume in `review` after correcting the issue.
 
-![A control plane promotes bounded operations from staged through review to live across organization repositories.](assets/control-plane-scale.svg)
+![A control plane promotes bounded operations from review to live across organization repositories.](assets/control-plane-scale.svg)
 
 ```text
-staged --inspect--> review --approve--> limited live --observe--> scheduled live
-	^                    |                    |                         |
-	+--------------------+--------------------+-------------------------+
-								 uncertainty or failed evidence
+review --approve--> limited live --observe--> scheduled live
+  ^                       |                         |
+  +-----------------------+-------------------------+
+                  uncertainty: disable, then review
 ```
 
 ## Operation-Level Control
 
 Each operation has its own mode. Review safe outputs route to the current control-plane repository unless a manual run supplies `safe_output_repo`. This is the primary unit of gradual rollout.
 
-| Operation | Mode variable | Scheduled absolute cap | Rollout percentage variable |
-| --- | --- | --- | --- |
-| Ambient Context | `CENTRAL_AGENTIC_OPS_AMBIENT_CONTEXT_MODE` | `CENTRAL_AGENTIC_OPS_AMBIENT_CONTEXT_MAX_REPOS` | `CENTRAL_AGENTIC_OPS_AMBIENT_CONTEXT_ROLLOUT_PERCENT` |
-| AW Failures | `CENTRAL_AGENTIC_OPS_AW_FAILURES_MODE` | `CENTRAL_AGENTIC_OPS_AW_FAILURES_MAX_REPOS` | `CENTRAL_AGENTIC_OPS_AW_FAILURES_ROLLOUT_PERCENT` |
-| Dependabot | `CENTRAL_AGENTIC_OPS_DEPENDABOT_MODE` | `CENTRAL_AGENTIC_OPS_DEPENDABOT_MAX_REPOS` | `CENTRAL_AGENTIC_OPS_DEPENDABOT_ROLLOUT_PERCENT` |
-| Optimization | `CENTRAL_AGENTIC_OPS_OPTIMIZATION_MODE` | `CENTRAL_AGENTIC_OPS_OPTIMIZATION_MAX_REPOS` | `CENTRAL_AGENTIC_OPS_OPTIMIZATION_ROLLOUT_PERCENT` |
+| Operation | Kill switch | Mode variable | Scheduled absolute cap | Rollout percentage variable |
+| --- | --- | --- | --- | --- |
+| Ambient Context | `CENTRAL_AGENTIC_OPS_AMBIENT_CONTEXT_ENABLED` | `CENTRAL_AGENTIC_OPS_AMBIENT_CONTEXT_MODE` | `CENTRAL_AGENTIC_OPS_AMBIENT_CONTEXT_MAX_REPOS` | `CENTRAL_AGENTIC_OPS_AMBIENT_CONTEXT_ROLLOUT_PERCENT` |
+| AW Failures | `CENTRAL_AGENTIC_OPS_AW_FAILURES_ENABLED` | `CENTRAL_AGENTIC_OPS_AW_FAILURES_MODE` | `CENTRAL_AGENTIC_OPS_AW_FAILURES_MAX_REPOS` | `CENTRAL_AGENTIC_OPS_AW_FAILURES_ROLLOUT_PERCENT` |
+| Dependabot | `CENTRAL_AGENTIC_OPS_DEPENDABOT_ENABLED` | `CENTRAL_AGENTIC_OPS_DEPENDABOT_MODE` | `CENTRAL_AGENTIC_OPS_DEPENDABOT_MAX_REPOS` | `CENTRAL_AGENTIC_OPS_DEPENDABOT_ROLLOUT_PERCENT` |
+| Optimization | `CENTRAL_AGENTIC_OPS_OPTIMIZATION_ENABLED` | `CENTRAL_AGENTIC_OPS_OPTIMIZATION_MODE` | `CENTRAL_AGENTIC_OPS_OPTIMIZATION_MAX_REPOS` | `CENTRAL_AGENTIC_OPS_OPTIMIZATION_ROLLOUT_PERCENT` |
 
 Changing one operation does not change another. For example, Dependabot may be live while Optimization remains in review.
 
@@ -49,7 +49,7 @@ Automatic discovery scans at most `CENTRAL_AGENTIC_OPS_MAX_SCAN_REPOS` repositor
 
 Discovery, an allowed owner, and credential access do not prove target enrollment. Before promoting an operation to `live`, add the operation and assigned control repository to `.github/central-agentic-ops.yml` on the target's default branch. Protect that file with target-owner review. Also verify the approved inventory records the target, operation, approving repository owner, review date, and revocation path.
 
-Every live worker reads the target-owned file before agent execution. It fails closed when the file is missing or malformed, the operation is absent, or `authority` does not match the dispatched `central_repo`. Staged and review runs do not require the file. This prevents a second runtime from beginning a new live run for the same operation, but it does not cancel an already-running workflow in another control repository.
+Every live worker reads the target-owned file before agent execution. It fails closed when the file is missing or malformed, the operation is absent, or `authority` does not match the dispatched `central_repo`. Review runs do not require the file because they cannot mutate the target. This prevents a second runtime from beginning a new live run for the same operation, but it does not cancel an already-running workflow in another control repository.
 
 ```yaml
 # .github/central-agentic-ops.yml in the target repository
@@ -65,27 +65,25 @@ bundles:
 Require target-owner review for changes to `.github/central-agentic-ops.yml`. Credential access and an allowed owner are not substitutes for target consent.
 :::
 
-If an enterprise and organization runtime both select the same pair, keep both in `staged` or `review` until operators assign one live authority. Do not rely on run timing, workflow concurrency, or repository protections to resolve the conflict. Separate control repositories have independent queues and kill switches.
+If an enterprise and organization runtime both select the same pair, keep both in `review` until operators assign one live authority. Do not rely on run timing, workflow concurrency, or repository protections to resolve the conflict. Separate control repositories have independent queues and kill switches.
 
 ## Modes
 
 | Mode | Target behavior | Intended use |
 | --- | --- | --- |
-| `staged` | staged mode generates safe outputs without GitHub API writes | Initial validation, prompt inspection, and policy testing |
 | `review` | safe outputs route to the current control-plane repository, with an optional manual `safe_output_repo` override | Human review of proposed effects before target mutation |
 | `live` | Declared worker workflow safe outputs may write to the selected target | Production operation after promotion gates pass |
 
-staged mode is the installation default. Review mode resolves its destination from the manual `safe_output_repo` workflow input, then `github.repository`. Legacy `preview` configuration is normalized to `staged` during migration.
+Review mode is the installation default. It resolves its destination from the manual `safe_output_repo` workflow input, then `github.repository`.
 
 In review mode, the review repository is not treated as a clone of the target. When a target-bound mutation cannot be represented natively against the review repository, the worker should publish an artifact-backed review bundle describing the target, intended output primitive, base branch, and supporting evidence.
 
 ## Pages Report Routing
 
-Pages report routing follows the control-plane modes. Deployment is still conventional deterministic GitHub Actions automation, but the effective mode selects whether there is no site update, an access-controlled review site update, or a production site update.
+Pages report routing follows the control-plane modes. Deployment is still conventional deterministic GitHub Actions automation, but the effective mode selects an access-controlled review site update or a production site update.
 
 | Mode | Report source behavior |
 | --- | --- |
-| `staged` | Proposed report source data is staged and is not input to the published site. |
 | `review` | Proposed report source data is routed to the private `safe_output_repo` and published to its access-controlled review Pages site. Production Pages is unchanged. |
 | `live` | Declared report source data is written to its normal durable destination and published to the production Pages site. |
 
@@ -101,7 +99,7 @@ A `workflow_dispatch` run can set the `target_repo`, `max_repos`, `rollout_perce
 
 - specify one `target_repo`;
 - keep `max_repos` at `1`;
-- use `staged` first;
+- use `review` first;
 - use the control-plane repository for scheduled review runs, and use `safe_output_repo` only when a manual run needs a private override;
 - do not use a manual live run to bypass failed promotion gates.
 
@@ -111,7 +109,7 @@ Example canary inputs:
 target_repo: acme/example-service
 max_repos: 1
 rollout_percent: 100
-safe_output_mode: staged
+safe_output_mode: review
 safe_output_repo: ""
 ```
 
@@ -119,12 +117,11 @@ safe_output_repo: ""
 
 Promote each operation independently:
 
-1. **Installed but inactive**: credentials and repository access are configured; schedules must not produce writes.
-2. **Enrolled**: record target-owner approval and commit the assigned control repository to the target's protected `.github/central-agentic-ops.yml`.
-3. **Staged**: run against one representative repository and inspect selection, prompts, staged safe outputs, permissions, and correlation data.
-4. **Review**: route one representative repository to a private review destination; verify that no target mutation occurs and the proposal is actionable. For a Pages report, also verify that the access-controlled review site updates and production Pages does not.
-5. **Limited live**: confirm no other control repository has live authority for the same operation, then manually target one low-risk repository and verify the resulting safe output and downstream CI. For a Pages report, verify the production site update independently of the review site.
-6. **Scheduled live**: enable scheduled operation with `max_repos` kept small, then increase limits only from observed evidence.
+1. **Installed in review**: credentials and repository access are configured; proposals route to the private review destination without target writes.
+2. **Review verified**: run against one representative repository; inspect selection, prompts, permissions, correlation data, and the actionable proposal. For a Pages report, also verify that the access-controlled review site updates and production Pages does not.
+3. **Enrolled**: record target-owner approval and commit the assigned control repository to the target's protected `.github/central-agentic-ops.yml`.
+4. **Limited live**: confirm no other control repository has live authority for the same operation, then manually target one low-risk repository and verify the resulting safe output and downstream CI. For a Pages report, verify the production site update independently of the review site.
+5. **Scheduled live**: enable scheduled operation with `max_repos` kept small, then increase limits only from observed evidence.
 
 Promotion evidence should cover successful authentication, correct target selection, safe output routing, no unexpected writes, worker workflow completion, useful safe output quality, and acceptable AI Credit consumption.
 
@@ -134,15 +131,15 @@ An operation does not become safer because it remained in a mode for several day
 
 ## Rollback
 
-The first rollback action is to move the affected operation to `staged`. For a narrower incident, disable the affected worker workflow so precomputation marks it ineligible. Then:
+The first rollback action is to set the affected package's `ENABLED` variable to `false`. For a narrower incident, disable the affected worker workflow so precomputation marks it ineligible. Then:
 
 1. stop new dispatches;
 2. inspect the orchestrator run and correlated worker runs;
 3. close, revert, or supersede unintended safe outputs using normal repository procedures;
 4. if a workflow or package release caused the incident, restore its last known-good Git revision, compile every affected workflow, and deploy that revision through the normal reviewed change process;
 5. otherwise, correct the affected policy or worker behavior and compile every affected workflow;
-6. restart in staged mode and repeat promotion gates.
+6. re-enable the package in review mode and repeat promotion gates.
 
 Do not reduce another operation's mode unless the incident involves shared authentication or shared control behavior.
 
-If two runtimes were found mutating the same `(target repository, operation)` pair, move that operation to `staged` in every conflicting control repository, cancel active runs, and assign one live authority before resuming. Stopping only one runtime is insufficient until its queued and in-progress runs are also canceled.
+If two runtimes were found mutating the same `(target repository, operation)` pair, disable that operation in every conflicting control repository, cancel active runs, and assign one live authority before resuming in review. Stopping only one runtime is insufficient until its queued and in-progress runs are also canceled.

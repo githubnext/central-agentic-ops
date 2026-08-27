@@ -18,9 +18,6 @@ on:
         type: string
       safe_output_mode:
         type: string
-      preview_only:
-        default: "true"
-        type: string
       correlation_id:
         type: string
       central_repo:
@@ -41,9 +38,10 @@ checkout:
     path: target
 
 env:
+  CENTRAL_AGENTIC_OPS_PACKAGE_ENABLED: ${{ vars.CENTRAL_AGENTIC_OPS_AW_MAINTENANCE_ENABLED || 'true' }}
   CENTRAL_AGENTIC_OPS_WORKER_ENABLED: ${{ vars.CENTRAL_AGENTIC_OPS_AW_MAINTENANCE_UPGRADE_ENABLED || 'true' }}
-  CENTRAL_AGENTIC_OPS_WORKER_MAX_MODE: ${{ vars.CENTRAL_AGENTIC_OPS_AW_MAINTENANCE_UPGRADE_MAX_MODE || 'staged' }}
-  GH_AW_SAFE_OUTPUT_MODE: ${{ inputs.safe_output_mode || 'staged' }}
+  CENTRAL_AGENTIC_OPS_WORKER_MAX_MODE: ${{ vars.CENTRAL_AGENTIC_OPS_AW_MAINTENANCE_UPGRADE_MAX_MODE || 'review' }}
+  GH_AW_SAFE_OUTPUT_MODE: ${{ inputs.safe_output_mode || 'review' }}
   REVIEW_OUTPUT_REPO: ${{ inputs.safe_output_repo || github.repository }}
   SAFE_OUTPUT_REPO: ${{ inputs.safe_output_mode == 'review' && (inputs.safe_output_repo || github.repository) || '' }}
   TARGET_REPO: ${{ inputs.target_repo || '' }}
@@ -76,7 +74,7 @@ network:
     - defaults
     - github
 
-run-name: "AW Maintenance upgrade · ${{ inputs.target_repo }} · ${{ inputs.safe_output_mode || (inputs.preview_only == 'true' && 'staged' || 'live') }}"
+run-name: "AW Maintenance upgrade · ${{ inputs.target_repo }} · ${{ inputs.safe_output_mode || 'review' }}"
 
 concurrency:
   group: "${{ github.workflow }}-${{ inputs.target_repo }}"
@@ -85,7 +83,6 @@ concurrency:
 tracker-id: aw-maintenance-upgrade
 
 safe-outputs:
-  staged: ${{ inputs.preview_only == 'true' }}
   create-issue:
     expires: 30d
     title-prefix: "[aw-maintenance] "
