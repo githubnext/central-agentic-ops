@@ -624,7 +624,7 @@ test("every worker uses the standard dispatch envelope and safe mode vocabulary"
   }
 });
 
-test("EU CRA workflows preserve regulatory and human-review boundaries", () => {
+test("EU CRA Advisor workflows preserve advisory and human-review boundaries", () => {
   const orchestrator = workflow("eu-cra-compliance.md");
   const maintainer = workflow("eu-cra-compliance-package-maintainer.md");
   const workers = [
@@ -636,7 +636,9 @@ test("EU CRA workflows preserve regulatory and human-review boundaries", () => {
     ["eu-cra-compliance-conformity-release-evidence.md", "Conformity Release Evidence"],
   ];
 
-  assert.match(orchestrator, /^name: "EU CRA Compliance"$/m);
+  assert.match(orchestrator, /^name: "EU CRA Advisor"$/m);
+  assert.match(orchestrator, /advisory and non-binding/i);
+  assert.match(orchestrator, /no guarantee of completeness, correctness, accuracy, or alignment with the EU Cyber Resilience Act/i);
   assert.match(orchestrator, /must not analyze a target repository for CRA compliance/i);
   assert.match(orchestrator, /Use bounded two-stage discovery/);
   assert.match(orchestrator, /plus at most two alternates per available slot/);
@@ -646,7 +648,7 @@ test("EU CRA workflows preserve regulatory and human-review boundaries", () => {
   for (const [name, displayName] of [["eu-cra-compliance.md", null], ...workers, ["eu-cra-compliance-package-maintainer.md", "Package Maintainer"]]) {
     const source = workflow(name);
     if (displayName) {
-      assert.match(source, new RegExp(`^name: "EU CRA Compliance / ${displayName}"$`, "m"));
+      assert.match(source, new RegExp(`^name: "EU CRA Advisor / ${displayName}"$`, "m"));
     }
     assert.match(source, /engine:\n\s+id: pi\n\s+model: copilot\/gpt-5\.4/);
     assert.match(source, /copilot-requests: write/);

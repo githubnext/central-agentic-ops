@@ -1,7 +1,7 @@
 ---
 emoji: ":shield:"
 description: "Audits CRA product cybersecurity requirements and records implementation evidence and gaps."
-name: "EU CRA Compliance / Security Requirements Auditor"
+name: "EU CRA Advisor / Security Requirements Auditor"
 max-ai-credits: 150
 
 on:
@@ -105,7 +105,7 @@ safe-outputs:
 timeout-minutes: 30
 ---
 
-# EU CRA Compliance / Security Requirements Auditor
+# EU CRA Advisor / Security Requirements Auditor
 
 Audit repository evidence for applicable CRA product cybersecurity requirements. This is implementation assistance and evidence gathering, not a legal conformity decision.
 

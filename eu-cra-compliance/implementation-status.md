@@ -1,4 +1,4 @@
-# EU CRA Compliance Implementation Status
+# EU CRA Advisor Implementation Status
 
 This ledger records how the **operation workflow fleet** represents Regulation (EU) 2024/2847 requirements. `IMPLEMENTED` means a workflow capability exists; it is not a finding that any product, organization, or package is legally compliant.
 

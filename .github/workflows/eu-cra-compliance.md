@@ -1,7 +1,7 @@
 ---
-name: "EU CRA Compliance"
+name: "EU CRA Advisor"
 
-run-name: "EU CRA Compliance · ${{ inputs.target_repo || 'auto' }} · ${{ inputs.safe_output_mode || vars.CENTRAL_AGENTIC_OPS_EU_CRA_COMPLIANCE_MODE || 'staged' }}"
+run-name: "EU CRA Advisor · ${{ inputs.target_repo || 'auto' }} · ${{ inputs.safe_output_mode || vars.CENTRAL_AGENTIC_OPS_EU_CRA_COMPLIANCE_MODE || 'staged' }}"
 
 max-ai-credits: 200
 timeout-minutes: 15
@@ -108,9 +108,11 @@ safe-outputs:
     max: 48
 ---
 
-# EU CRA Compliance
+<!-- EU CRA Advisor is advisory and non-binding. This workflow provides no guarantee of completeness, correctness, accuracy, or alignment with the EU Cyber Resilience Act. -->
 
-Package orchestrator for evidence-led implementation of Regulation (EU) 2024/2847 across organization repositories. Select and rank repositories only. The orchestrator must not analyze a target repository for CRA compliance, make legal determinations, or create target findings; workers own those responsibilities.
+# EU CRA Advisor
+
+Advisory package orchestrator for evidence-led review against Regulation (EU) 2024/2847 across organization repositories. Its output is non-binding and is not legal advice, certification, or a compliance determination. Select and rank repositories only. The orchestrator must not analyze a target repository for CRA compliance, make legal determinations, or create target findings; workers own those responsibilities.
 
 ## Discovery
 

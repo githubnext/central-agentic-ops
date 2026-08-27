@@ -66,21 +66,21 @@ Add an App or PAT when the target is private or internal. Keep the mode at `stag
 | `CENTRAL_AGENTIC_OPS_DEPENDABOT_ROLLOUT_PERCENT` | Dependabot | No | `100` | Limits selection to this percentage of discovered repositories. Accepts integers from `1` through `100`. |
 | `CENTRAL_AGENTIC_OPS_DEPENDABOT_UPDATER_ENABLED` | Dependabot worker | No | `true` | Worker kill switch. Set to `false` to reject updater runs. |
 | `CENTRAL_AGENTIC_OPS_DEPENDABOT_UPDATER_MAX_MODE` | Dependabot worker | No | `staged` | Maximum updater mode: `staged`, `review`, or `live`. |
-| `CENTRAL_AGENTIC_OPS_EU_CRA_COMPLIANCE_MODE` | EU CRA Compliance | Yes when installed | `staged` | Sets the operation mode to `staged`, `review`, or `live`. |
-| `CENTRAL_AGENTIC_OPS_EU_CRA_COMPLIANCE_MAX_REPOS` | EU CRA Compliance | No | `1` | Scheduled repository-selection cap. Accepts `1` through `1000`; dispatch and credit limits may reduce it further. |
-| `CENTRAL_AGENTIC_OPS_EU_CRA_COMPLIANCE_ROLLOUT_PERCENT` | EU CRA Compliance | No | `100` | Limits selection to this percentage of discovered repositories. Accepts integers from `1` through `100`. |
-| `CENTRAL_AGENTIC_OPS_EU_CRA_COMPLIANCE_SCOPE_CLASSIFIER_ENABLED` | EU CRA Compliance worker | No | `true` | Scope classifier kill switch. |
-| `CENTRAL_AGENTIC_OPS_EU_CRA_COMPLIANCE_SCOPE_CLASSIFIER_MAX_MODE` | EU CRA Compliance worker | No | `staged` | Scope classifier mode ceiling. |
-| `CENTRAL_AGENTIC_OPS_EU_CRA_COMPLIANCE_SECURITY_REQUIREMENTS_AUDITOR_ENABLED` | EU CRA Compliance worker | No | `true` | Security requirements auditor kill switch. |
-| `CENTRAL_AGENTIC_OPS_EU_CRA_COMPLIANCE_SECURITY_REQUIREMENTS_AUDITOR_MAX_MODE` | EU CRA Compliance worker | No | `staged` | Security requirements auditor mode ceiling. |
-| `CENTRAL_AGENTIC_OPS_EU_CRA_COMPLIANCE_SUPPLY_CHAIN_SBOM_AUDITOR_ENABLED` | EU CRA Compliance worker | No | `true` | Supply-chain/SBOM auditor kill switch. |
-| `CENTRAL_AGENTIC_OPS_EU_CRA_COMPLIANCE_SUPPLY_CHAIN_SBOM_AUDITOR_MAX_MODE` | EU CRA Compliance worker | No | `staged` | Supply-chain/SBOM auditor mode ceiling. |
-| `CENTRAL_AGENTIC_OPS_EU_CRA_COMPLIANCE_VULNERABILITY_HANDLING_AUDITOR_ENABLED` | EU CRA Compliance worker | No | `true` | Vulnerability-handling auditor kill switch. |
-| `CENTRAL_AGENTIC_OPS_EU_CRA_COMPLIANCE_VULNERABILITY_HANDLING_AUDITOR_MAX_MODE` | EU CRA Compliance worker | No | `staged` | Vulnerability-handling auditor mode ceiling. |
-| `CENTRAL_AGENTIC_OPS_EU_CRA_COMPLIANCE_ARTICLE_14_REPORTING_READINESS_ENABLED` | EU CRA Compliance worker | No | `true` | Article 14 reporting-readiness kill switch. |
-| `CENTRAL_AGENTIC_OPS_EU_CRA_COMPLIANCE_ARTICLE_14_REPORTING_READINESS_MAX_MODE` | EU CRA Compliance worker | No | `staged` | Article 14 reporting-readiness mode ceiling. |
-| `CENTRAL_AGENTIC_OPS_EU_CRA_COMPLIANCE_CONFORMITY_RELEASE_EVIDENCE_ENABLED` | EU CRA Compliance worker | No | `true` | Conformity/release-evidence kill switch. |
-| `CENTRAL_AGENTIC_OPS_EU_CRA_COMPLIANCE_CONFORMITY_RELEASE_EVIDENCE_MAX_MODE` | EU CRA Compliance worker | No | `staged` | Conformity/release-evidence mode ceiling. |
+| `CENTRAL_AGENTIC_OPS_EU_CRA_COMPLIANCE_MODE` | EU CRA Advisor | Yes when installed | `staged` | Sets the operation mode to `staged`, `review`, or `live`. |
+| `CENTRAL_AGENTIC_OPS_EU_CRA_COMPLIANCE_MAX_REPOS` | EU CRA Advisor | No | `1` | Scheduled repository-selection cap. Accepts `1` through `1000`; dispatch and credit limits may reduce it further. |
+| `CENTRAL_AGENTIC_OPS_EU_CRA_COMPLIANCE_ROLLOUT_PERCENT` | EU CRA Advisor | No | `100` | Limits selection to this percentage of discovered repositories. Accepts integers from `1` through `100`. |
+| `CENTRAL_AGENTIC_OPS_EU_CRA_COMPLIANCE_SCOPE_CLASSIFIER_ENABLED` | EU CRA Advisor worker | No | `true` | Scope classifier kill switch. |
+| `CENTRAL_AGENTIC_OPS_EU_CRA_COMPLIANCE_SCOPE_CLASSIFIER_MAX_MODE` | EU CRA Advisor worker | No | `staged` | Scope classifier mode ceiling. |
+| `CENTRAL_AGENTIC_OPS_EU_CRA_COMPLIANCE_SECURITY_REQUIREMENTS_AUDITOR_ENABLED` | EU CRA Advisor worker | No | `true` | Security requirements auditor kill switch. |
+| `CENTRAL_AGENTIC_OPS_EU_CRA_COMPLIANCE_SECURITY_REQUIREMENTS_AUDITOR_MAX_MODE` | EU CRA Advisor worker | No | `staged` | Security requirements auditor mode ceiling. |
+| `CENTRAL_AGENTIC_OPS_EU_CRA_COMPLIANCE_SUPPLY_CHAIN_SBOM_AUDITOR_ENABLED` | EU CRA Advisor worker | No | `true` | Supply-chain/SBOM auditor kill switch. |
+| `CENTRAL_AGENTIC_OPS_EU_CRA_COMPLIANCE_SUPPLY_CHAIN_SBOM_AUDITOR_MAX_MODE` | EU CRA Advisor worker | No | `staged` | Supply-chain/SBOM auditor mode ceiling. |
+| `CENTRAL_AGENTIC_OPS_EU_CRA_COMPLIANCE_VULNERABILITY_HANDLING_AUDITOR_ENABLED` | EU CRA Advisor worker | No | `true` | Vulnerability-handling auditor kill switch. |
+| `CENTRAL_AGENTIC_OPS_EU_CRA_COMPLIANCE_VULNERABILITY_HANDLING_AUDITOR_MAX_MODE` | EU CRA Advisor worker | No | `staged` | Vulnerability-handling auditor mode ceiling. |
+| `CENTRAL_AGENTIC_OPS_EU_CRA_COMPLIANCE_ARTICLE_14_REPORTING_READINESS_ENABLED` | EU CRA Advisor worker | No | `true` | Article 14 reporting-readiness kill switch. |
+| `CENTRAL_AGENTIC_OPS_EU_CRA_COMPLIANCE_ARTICLE_14_REPORTING_READINESS_MAX_MODE` | EU CRA Advisor worker | No | `staged` | Article 14 reporting-readiness mode ceiling. |
+| `CENTRAL_AGENTIC_OPS_EU_CRA_COMPLIANCE_CONFORMITY_RELEASE_EVIDENCE_ENABLED` | EU CRA Advisor worker | No | `true` | Conformity/release-evidence kill switch. |
+| `CENTRAL_AGENTIC_OPS_EU_CRA_COMPLIANCE_CONFORMITY_RELEASE_EVIDENCE_MAX_MODE` | EU CRA Advisor worker | No | `staged` | Conformity/release-evidence mode ceiling. |
 | `CENTRAL_AGENTIC_OPS_OPTIMIZATION_MODE` | Optimization | Yes when installed | `staged` | Sets the operation mode to `staged`, `review`, or `live`. |
 | `CENTRAL_AGENTIC_OPS_OPTIMIZATION_MAX_REPOS` | Optimization | No | `1` | Scheduled repository-selection cap. Accepts `1` through `1000`; dispatch limits may reduce it further. |
 | `CENTRAL_AGENTIC_OPS_OPTIMIZATION_ROLLOUT_PERCENT` | Optimization | No | `100` | Limits selection to this percentage of discovered repositories. Accepts integers from `1` through `100`. |

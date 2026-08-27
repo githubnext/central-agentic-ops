@@ -1,9 +1,11 @@
-# EU CRA Compliance Package
+<!-- EU CRA Advisor is advisory and non-binding. This workflow provides no guarantee of completeness, correctness, accuracy, or alignment with the EU Cyber Resilience Act. -->
+
+# EU CRA Advisor
 
 > [!WARNING]
-> This project is experimental and provides implementation assistance, not legal advice or certification.
+> EU CRA Advisor is advisory and non-binding. It provides no legal advice or certification and no guarantee of completeness, correctness, accuracy, or alignment with the EU Cyber Resilience Act. Human review against current authoritative sources is required.
 
-The EU CRA Compliance package helps a private Central Agentic Ops control repository identify relevant product repositories and gather evidence for Regulation (EU) 2024/2847. It never makes final legal, conformity, notification, or market-release decisions.
+The EU CRA Advisor package helps a private Central Agentic Ops control repository identify relevant product repositories and gather evidence for Regulation (EU) 2024/2847. It never makes final legal, conformity, notification, or market-release decisions.
 
 ## Package Contents
 
