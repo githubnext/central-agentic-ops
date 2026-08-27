@@ -223,10 +223,12 @@ test("enterprise-scale limits remain bounded across inventory sizes", () => {
 
 test("enterprise defaults, budgets, timeouts, and concurrency are finite", () => {
   const expected = {
+    "actions-maintenance.md": { credits: 250, timeout: 15, dispatchMax: 50, workers: 1 },
     "ambient-context.md": { credits: 250, timeout: 15, dispatchMax: 20, workers: 2 },
     "aw-failures.md": { credits: 250, timeout: 15, dispatchMax: 50, workers: 1 },
     "dependabot.md": { credits: 250, timeout: 15, dispatchMax: 50, workers: 1 },
     "optimization.md": { credits: 250, timeout: 15, dispatchMax: 20, workers: 2 },
+    "actions-maintenance-agentic-upgrade.md": { credits: 500, timeout: 30 },
     "ambient-context-agents-md-curator.md": { credits: 400, timeout: 25 },
     "ambient-context-skills-curator.md": { credits: 400, timeout: 20 },
     "aw-failures-investigator.md": { credits: 500, timeout: 30 },
@@ -315,7 +317,7 @@ test("deterministic workflows pin third-party actions by commit SHA", () => {
 });
 
 test("package manifests exclude repository-only tests", () => {
-  for (const relativePath of ["aw.yml", join("ambient-context", "aw.yml"), join("aw-failures", "aw.yml"), join("dependabot", "aw.yml"), join("optimization", "aw.yml")]) {
+  for (const relativePath of ["aw.yml", join("actions-maintenance", "aw.yml"), join("ambient-context", "aw.yml"), join("aw-failures", "aw.yml"), join("dependabot", "aw.yml"), join("optimization", "aw.yml")]) {
     const manifest = readFileSync(join(root, relativePath), "utf8");
     assert.doesNotMatch(manifest, /(?:staged-smoke|enterprise-canary|enterprise-stress|tests\/e2e|\.github\/aw\/e2e)/, relativePath);
   }
@@ -488,6 +490,8 @@ test("live workers require target-owned bundle authority before agent execution"
   assert.match(precompute, /validate_worker_dispatch\n\s+validate_live_authority\n\s+write_worker_precompute/);
 
   for (const [name, bundle] of [
+    ["actions-maintenance.md", "actions-maintenance"],
+    ["actions-maintenance-agentic-upgrade.md", "actions-maintenance"],
     ["ambient-context.md", "ambient-context"],
     ["ambient-context-agents-md-curator.md", "ambient-context"],
     ["ambient-context-skills-curator.md", "ambient-context"],
@@ -505,6 +509,7 @@ test("live workers require target-owned bundle authority before agent execution"
 
 test("orchestrators expose scheduled variables and independent manual inputs", () => {
   for (const [name, packageName] of [
+    ["actions-maintenance.md", "ACTIONS_MAINTENANCE"],
     ["ambient-context.md", "AMBIENT_CONTEXT"],
     ["aw-failures.md", "AW_FAILURES"],
     ["dependabot.md", "DEPENDABOT"],
@@ -540,7 +545,7 @@ test("shared control keeps manual and scheduled routing event-scoped", () => {
   const control = workflow("shared/control.md");
   const precompute = workflow("shared/control-precompute.md");
 
-  for (const name of ["ambient-context.md", "aw-failures.md", "dependabot.md", "optimization.md"]) {
+  for (const name of ["actions-maintenance.md", "ambient-context.md", "aw-failures.md", "dependabot.md", "optimization.md"]) {
     const orchestrator = workflow(name);
     assert.match(orchestrator, /GH_AW_SAFE_OUTPUT_MODE:.*== 'preview' && 'staged'/);
     assert.match(orchestrator, /REVIEW_OUTPUT_REPO:.*inputs\.safe_output_repo \|\| github\.repository/);
@@ -561,6 +566,7 @@ test("shared control keeps manual and scheduled routing event-scoped", () => {
 
 test("every worker uses the standard dispatch envelope and safe mode vocabulary", () => {
   const workerNames = [
+    "actions-maintenance-agentic-upgrade.md",
     "ambient-context-agents-md-curator.md",
     "ambient-context-skills-curator.md",
     "aw-failures-investigator.md",
@@ -634,6 +640,8 @@ test("clean-room compilation emits the expected GitHub Actions settings", { time
       .filter((name) => name.endsWith(".lock.yml"))
       .sort();
     const packageLockNames = [
+      "actions-maintenance-agentic-upgrade.lock.yml",
+      "actions-maintenance.lock.yml",
       "ambient-context-agents-md-curator.lock.yml",
       "ambient-context-skills-curator.lock.yml",
       "ambient-context.lock.yml",
@@ -661,7 +669,7 @@ test("clean-room compilation emits the expected GitHub Actions settings", { time
       assert.doesNotMatch(generated, /safe_output_mode == 'private'/);
     }
 
-    for (const name of ["ambient-context.lock.yml", "aw-failures.lock.yml", "dependabot.lock.yml", "optimization.lock.yml"]) {
+    for (const name of ["actions-maintenance.lock.yml", "ambient-context.lock.yml", "aw-failures.lock.yml", "dependabot.lock.yml", "optimization.lock.yml"]) {
       const generated = workflow(name, generatedDirectory);
       assert.match(generated, /GH_AW_SAFE_OUTPUT_MODE:.*== 'preview' && 'staged'/);
       assert.match(generated, /ROLLOUT_PERCENT: \$\{\{ inputs\.rollout_percent \|\| vars\.CENTRAL_AGENTIC_OPS_.+_ROLLOUT_PERCENT \|\| '100' \}\}/);
@@ -670,7 +678,7 @@ test("clean-room compilation emits the expected GitHub Actions settings", { time
       assert.match(generated, /cancel-in-progress: true/);
     }
 
-    for (const name of packageLockNames.filter((name) => !["ambient-context.lock.yml", "aw-failures.lock.yml", "dependabot.lock.yml", "optimization.lock.yml"].includes(name))) {
+    for (const name of packageLockNames.filter((name) => !["actions-maintenance.lock.yml", "ambient-context.lock.yml", "aw-failures.lock.yml", "dependabot.lock.yml", "optimization.lock.yml"].includes(name))) {
       const generated = workflow(name, generatedDirectory);
       assert.match(generated, /GH_AW_SAFE_OUTPUT_MODE: \$\{\{ inputs\.safe_output_mode \|\| 'staged' \}\}/);
       assert.match(generated, /ROLLOUT_PERCENT: "100"/);
@@ -739,6 +747,7 @@ test("Pages inventory links multiline orchestrator worker lists", () => {
       id: bundle.id,
       workers: bundle.workers.map((worker) => worker.id),
     })), [
+      { id: "actions-maintenance", workers: ["actions-maintenance-agentic-upgrade"] },
       { id: "ambient-context", workers: ["ambient-context-agents-md-curator", "ambient-context-skills-curator"] },
       { id: "aw-failures", workers: ["aw-failures-investigator"] },
       { id: "dependabot", workers: ["dependabot-release-train-updater"] },
