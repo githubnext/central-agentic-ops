@@ -94,7 +94,9 @@ export default defineConfig({
           label: "Reference",
           items: [
             { label: "Configuration", link: "/configuration/" },
-            { label: "How the control plane works", link: "/architecture/" },
+            { label: "Control plane overview", link: "/architecture/" },
+            { label: "Deployment and governance", link: "/deployment-and-governance/" },
+            { label: "Execution and safety", link: "/execution-and-safety/" },
             { label: "Orchestrators and workers", link: "/orchestrators-and-workers/" },
           ],
         },
