@@ -13,10 +13,6 @@ permissions:
 engine:
   id: pi
   model: copilot/gpt-5.4
-sandbox:
-  agent:
-    id: awf
-    runtime: docker-sbx
 safe-outputs:
   create-issue:
     title-prefix: "[dashboard-language-spec] "
