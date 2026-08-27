@@ -192,7 +192,7 @@ Other `GH_AW_*` values, including safe-output files and staging flags, are manag
 
 ## Sources of Truth
 
-- Installer-exposed variables and secrets: `aw.yml`, `ambient-context/aw.yml`, `aw-failures/aw.yml`, `dependabot/aw.yml`, and `optimization/aw.yml`
+- Package inventory and minimum gh-aw versions: `aw.yml`, `ambient-context/aw.yml`, `aw-failures/aw.yml`, `aw-maintenance/aw.yml`, `dependabot/aw.yml`, and `optimization/aw.yml`
 - Shared resolution and precedence: `.github/workflows/shared/control.md`
 - Manual inputs: `.github/workflows/ambient-context.md`, `.github/workflows/aw-failures.md`, `.github/workflows/dependabot.md`, and `.github/workflows/optimization.md`
 - Optional observability: `.github/workflows/shared/sentry.md`, `.github/workflows/shared/grafana.md`, and `.github/workflows/shared/datadog.md`
