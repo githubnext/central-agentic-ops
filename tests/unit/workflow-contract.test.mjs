@@ -632,6 +632,20 @@ test("SVG visual audit covers every tracked SVG in both color schemes", () => {
   assert.match(source, /Never claim success if any manifest entry was skipped/);
 });
 
+test("docs diagram generator creates one validated theme-aware SVG pair", () => {
+  const source = workflow("docs-explanatory-diagrams.md");
+
+  assert.match(source, /schedule: weekly/);
+  assert.match(source, /public\/assets\/\*-light\.svg/);
+  assert.match(source, /public\/assets\/\*-dark\.svg/);
+  assert.match(source, /data-visual-kind=\"diagram\"/);
+  assert.match(source, /check-svg-visual-language\.mjs/);
+  assert.match(source, /colorScheme: \"light\"/);
+  assert.match(source, /colorScheme: \"dark\"/);
+  assert.match(source, /create-pull-request:/);
+  assert.match(source, /Call `noop`/);
+});
+
 test("clean-room compilation emits the expected GitHub Actions settings", { timeout: 120_000 }, () => {
   const temporaryRoot = mkdtempSync(join(tmpdir(), "central-agentic-ops-test-"));
 
@@ -667,7 +681,12 @@ test("clean-room compilation emits the expected GitHub Actions settings", { time
       "optimization-ai-credit-optimizer.lock.yml",
       "optimization.lock.yml",
     ];
-    const expectedLockNames = [...packageLockNames, "pr-reviewer.lock.yml", "svg-visual-audit.lock.yml"];
+    const expectedLockNames = [
+      ...packageLockNames,
+      "docs-explanatory-diagrams.lock.yml",
+      "pr-reviewer.lock.yml",
+      "svg-visual-audit.lock.yml",
+    ].sort();
 
     assert.deepEqual(lockNames, expectedLockNames);
     for (const name of packageLockNames) {
@@ -720,6 +739,10 @@ test("clean-room compilation emits the expected GitHub Actions settings", { time
     assert.match(svgVisualAudit, /create_check_run/);
     assert.match(svgVisualAudit, /upload_artifact/);
     assert.match(svgVisualAudit, /http\.server 4321/);
+
+    const docsDiagramGenerator = workflow("docs-explanatory-diagrams.lock.yml", generatedDirectory);
+    assert.match(docsDiagramGenerator, /name: "Docs Explanatory Diagram Generator"/);
+    assert.match(docsDiagramGenerator, /create_pull_request/);
   } finally {
     rmSync(temporaryRoot, { recursive: true, force: true });
   }
