@@ -778,6 +778,14 @@ test("docs diagram generator creates one validated theme-aware SVG pair", () => 
   assert.match(source, /Call `noop`/);
 });
 
+test("daily dashboard review uses the GitHub Copilot Pi engine", () => {
+  const source = workflow("daily-dashboard-language-spec-review.md");
+
+  assert.match(source, /permissions:\n\s+contents: read\n\s+copilot-requests: write\n\s+issues: read/);
+  assert.match(source, /engine:\n\s+id: pi\n\s+model: copilot\/gpt-5\.4/);
+  assert.doesNotMatch(source, /engine: codex/);
+});
+
 test("clean-room compilation emits the expected GitHub Actions settings", { timeout: 120_000 }, () => {
   const temporaryRoot = mkdtempSync(join(tmpdir(), "central-agentic-ops-test-"));
 
