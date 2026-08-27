@@ -114,13 +114,13 @@ Read `/tmp/gh-aw/agent/control-precompute.json` first and use its candidates and
 
 Rank repositories by observed evidence that an operational-resilience advisory would be useful:
 
-1. UK public-sector ownership, procurement, delivery, or service documentation combined with AI, machine-learning, model, inference, or AI-assisted functionality.
-2. Published or open-source code that supports a public-sector AI system or service.
-3. Security-sensitive commits, vulnerability alerts, exposed-secret alerts, dependency updates, or material runtime and deployment changes in the last seven days.
-4. Evidence of ownership, secure development, dependency management, secret handling, observability, incident response, rollback, patching, and recovery practices.
+1. UK public-sector ownership, procurement, delivery, or service documentation for published or publicly accessible code and systems.
+2. Public repositories, documented public source locations, and code intended for reuse, transparency, external scrutiny, or avoidance of supplier lock-in.
+3. Security-sensitive commits, vulnerability alerts, exposed-secret alerts, dependency updates, material runtime and deployment changes, or AI-assisted attack surfaces that may shorten the discovery-to-exploit window.
+4. Missing or weak evidence of ownership, secure-by-design development, automated dependency and vulnerability hygiene, patch SLAs, inbound vulnerability reporting, observability, incident response, rollback, and recovery. For public repositories, prolonged inactivity without credible ownership or automated hygiene is a priority signal, not a reason to skip.
 5. Existing `[advisory:uk-ai-resilience]` reports whose evidence is stale after material repository changes.
 
-Exclude archived or disabled repositories and repositories that the configured credential cannot read. Deprioritize repositories with no observed AI or UK public-sector relevance, no recent changes or open security signals, or an equivalent current advisory with no material change. Missing metadata is not evidence that a repository is in or out of scope.
+Exclude archived or disabled repositories and repositories that the configured credential cannot read. Deprioritize repositories with no observed UK public-sector or published-code relevance, or an equivalent current advisory with no material change. AI is a threat accelerator, not an eligibility requirement. Missing metadata is not evidence that a repository is in or out of scope.
 
 Use bounded two-stage discovery. Rank the complete precomputed batch using trusted metadata, then inspect only the strongest candidates needed to fill `effective_max_repos`, plus at most two alternates per available slot. Prefer cheap repository-tree, topic, release, package, workflow, security-policy, and existing-report checks. Stop once selected targets and defensible alternates are established.
 
