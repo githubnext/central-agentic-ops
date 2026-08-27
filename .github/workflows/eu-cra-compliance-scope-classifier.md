@@ -117,6 +117,8 @@ Verify material legal requirements and dates against current authoritative sourc
 7. ENISA implementation or reporting material.
 8. Supporting technical standards and frameworks.
 
+Begin source discovery from the current EUR-Lex regulation at `https://eur-lex.europa.eu/eli/reg/2024/2847/oj`, the Commission CRA policy entry point at `https://digital-strategy.ec.europa.eu/en/policies/cyber-resilience-act`, and ENISA at `https://www.enisa.europa.eu/`. Follow only official links from those sources for delegated or implementing acts, Official Journal references, guidance, and reporting material.
+
 Label guidance as non-binding. Never invent a harmonised standard or infer presumption of conformity from relevance. Technical frameworks may identify evidence but never replace the CRA. For each material regulatory finding include:
 
 ```yaml
@@ -142,7 +144,9 @@ Collect evidence for:
 
 Separate observed evidence, missing evidence, regulatory interpretation, and questions for humans. A lack of repository evidence does not establish exclusion.
 
-The following material conclusions always require explicit human review: scope exclusion, economic-operator role, commercial versus non-commercial FOSS treatment, substantial modification, important Class I or II classification, and critical-product classification.
+For every claimed harmonised standard, verify the current Official Journal citation for Regulation (EU) 2024/2847 and the cited scope before assessing any presumption of conformity. If no applicable reference is found, record an evidence gap; never convert relevance, draft status, or ongoing standardisation work into a published reference.
+
+Material conclusions about CRA scope exclusion, economic-operator role, commercial versus non-commercial FOSS treatment, substantial modification, important Class I or Class II classification, critical-product classification, conformity-assessment route, applicability of a harmonised standard, presumption of conformity, active exploitation, the severe-incident threshold, reportability, EU Declaration of Conformity readiness, or final market-release eligibility require explicit human review.
 
 ## Output
 
@@ -157,5 +161,7 @@ Create one issue containing:
 7. an overall status of `EVIDENCE_SUFFICIENT`, `GAP_FOUND`, `HUMAN_REVIEW_REQUIRED`, `NOT_ASSESSED`, or `INCOMPLETE`.
 
 Never output `CRA COMPLIANT`, `LEGALLY COMPLIANT`, `CERTIFIED`, or `CE APPROVED`. Do not approve a release. Never submit any regulatory notification.
+
+Do not put secrets, personal data, exploit details, private advisory or incident content, or confidential regulatory evidence in a safe output. Summarize the gap and identify the access-controlled evidence location instead.
 
 If `correlation_id` is present, include a `### Control Plane` section with the correlation ID, central repository, and control-plane run URL. Use `noop` only when a current equivalent report exists and no material evidence or baseline changed; otherwise preserve findings in the issue.

@@ -119,6 +119,8 @@ Rank repositories by evidence that they plausibly represent products with digita
 
 Exclude archived or disabled repositories, repositories inaccessible to the credential, obvious documentation-only repositories with no distributed digital product or component, and generated mirrors where meaningful product ownership cannot be established. Discovery decides only whether assessment is useful. Never declare a repository out of CRA scope.
 
+Use bounded two-stage discovery. First rank the complete precomputed batch using only its trusted metadata. Then inspect repository contents and GitHub metadata only for the strongest candidates needed to fill `effective_max_repos`, plus at most two alternates per available slot. Prefer cheap repository-tree, release, package, workflow, security-policy, and existing CRA-report checks before deeper issue, advisory, alert, or run queries. Do not claim a positive or negative signal that was not actually observed, do not exhaustively inspect every candidate, and stop discovery once the selected targets and defensible alternates are established.
+
 ## Workers
 
 Choose useful workers from repository signals and existing CRA evidence. One dispatch represents one repository-level responsibility; never fan out by vulnerability, dependency, requirement, pull request, regulatory source, or source file.
@@ -132,7 +134,7 @@ Choose useful workers from repository signals and existing CRA evidence. One dis
 
 For a new or unassessed product repository, prefer the scope, security-requirements, supply-chain/SBOM, vulnerability-handling, and conformity/release workers. Add Article 14 readiness when the repository represents a shipped or supported product, owns vulnerability-management responsibilities, has advisories or incidents, or otherwise plausibly has manufacturer reporting obligations.
 
-Before dispatching, calculate the proposed dispatch count. Select and dispatch only when `selected repositories × enabled workers <= 48`; reduce repository selection or worker selection until the cap is met. Never dispatch a worker merely to fill the cap.
+Resolve enabled workers from precompute before calculating fan-out. Before dispatching, calculate the proposed dispatch count as the sum of enabled, useful workers across selected repositories. Keep that total at or below 48, reduce repository selection or worker selection until the cap is met, and never dispatch a worker merely to fill the cap. Record why each configured worker was dispatched or skipped for each selected repository.
 
 ## Completion
 

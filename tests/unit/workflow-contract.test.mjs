@@ -636,23 +636,35 @@ test("EU CRA workflows preserve regulatory and human-review boundaries", () => {
 
   assert.match(orchestrator, /^name: "EU CRA Compliance"$/m);
   assert.match(orchestrator, /must not analyze a target repository for CRA compliance/i);
-  assert.match(orchestrator, /selected repositories × enabled workers <= 48/);
+  assert.match(orchestrator, /Use bounded two-stage discovery/);
+  assert.match(orchestrator, /plus at most two alternates per available slot/);
+  assert.match(orchestrator, /sum of enabled, useful workers across selected repositories/);
+  assert.match(orchestrator, /Keep that total at or below 48/);
 
   for (const [name, displayName] of workers) {
     const source = workflow(name);
     assert.match(source, new RegExp(`^name: "EU CRA Compliance / ${displayName}"$`, "m"));
     assert.match(source, /Regulation \(EU\) 2024\/2847/);
+    assert.match(source, /https:\/\/eur-lex\.europa\.eu\/eli\/reg\/2024\/2847\/oj/);
+    assert.match(source, /https:\/\/digital-strategy\.ec\.europa\.eu\/en\/policies\/cyber-resilience-act/);
+    assert.match(source, /source:\n\s+instrument: "Regulation \(EU\) 2024\/2847"\n\s+provision: ".+"\n\s+authority: "binding"/);
     assert.match(source, /HUMAN_REVIEW_REQUIRED/);
+    assert.match(source, /commercial versus non-commercial FOSS treatment/);
+    assert.match(source, /important Class I or Class II classification/);
+    assert.match(source, /active exploitation, the severe-incident threshold, reportability/);
     assert.match(source, /Never output `CRA COMPLIANT`, `LEGALLY COMPLIANT`, `CERTIFIED`, or `CE APPROVED`/);
     assert.match(source, /Never (?:submit|notify)/i);
+    assert.match(source, /Do not put secrets, personal data, exploit details/);
     assert.doesNotMatch(source, /^graders:/m);
   }
 
   const article14 = workflow("eu-cra-compliance-article-14-reporting-readiness.md");
-  assert.match(article14, /no later than 24 hours/);
-  assert.match(article14, /no later than 72 hours/);
+  assert.match(article14, /without undue delay and, in any event, no later than 24 hours/);
+  assert.match(article14, /without undue delay and, in any event, no later than 72 hours/);
   assert.match(article14, /no later than 14 days after a corrective or mitigating measure becomes available/);
-  assert.match(article14, /no later than one month after the incident notification/);
+  assert.match(article14, /no later than one month after submission of the incident notification/);
+  assert.match(article14, /intermediate status report when requested by the CSIRT coordinator/);
+  assert.match(article14, /affected-user notification path without undue delay after the Article 14\(3\) notification/);
   assert.match(article14, /Do not start or calculate an SLA clock from a guessed timestamp/);
   assert.match(article14, /manufacturer-awareness evidence cannot be determined, report a critical evidence gap/);
 });
