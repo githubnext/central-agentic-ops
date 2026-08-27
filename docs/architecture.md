@@ -18,19 +18,11 @@ The control plane is designed to:
 
 ## Mental Model
 
-```text
-catalog release
-	|
-	v
-private control repository
-	|
-	+-- orchestrator: select, rank, limit, dispatch
-	|
-	+-- worker: inspect one target and emit declared safe outputs
-							   |
-							   v
-					 staged | review | live
-```
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="/central-agentic-ops/assets/control-plane-mental-model-dark.svg">
+  <source media="(prefers-color-scheme: light)" srcset="/central-agentic-ops/assets/control-plane-mental-model-light.svg">
+  <img alt="A catalog release enters a private control repository, where an orchestrator selects and dispatches work to a worker that emits declared safe outputs in staged, review, or live mode." src="/central-agentic-ops/assets/control-plane-mental-model-light.svg">
+</picture>
 
 :::note[Three records, three jobs]
 The catalog release proves what was installed. The control repository owns operating policy and credentials. The target authority file records consent for live mutation. None of these records replaces the others.
