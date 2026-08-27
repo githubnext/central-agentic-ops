@@ -16,6 +16,24 @@ const packageSource = process.env.CENTRAL_AGENTIC_OPS_PACKAGE_SOURCE
   || "githubnext/central-agentic-ops@main";
 const updateSource = process.env.CENTRAL_AGENTIC_OPS_UPDATE_SOURCE
   || "githubnext/central-agentic-ops@main";
+const craPackageSource = (() => {
+  const separator = packageSource.lastIndexOf("@");
+  assert.notEqual(separator, -1, "package source must include a ref");
+  return `${packageSource.slice(0, separator)}/eu-cra-compliance${packageSource.slice(separator)}`;
+})();
+const craExpectedFiles = [
+  ".github/workflows/eu-cra-compliance-article-14-reporting-readiness.md",
+  ".github/workflows/eu-cra-compliance-conformity-release-evidence.md",
+  ".github/workflows/eu-cra-compliance-package-maintainer.md",
+  ".github/workflows/eu-cra-compliance-scope-classifier.md",
+  ".github/workflows/eu-cra-compliance-security-requirements-auditor.md",
+  ".github/workflows/eu-cra-compliance-supply-chain-sbom-auditor.md",
+  ".github/workflows/eu-cra-compliance-vulnerability-handling-auditor.md",
+  ".github/workflows/eu-cra-compliance.md",
+  ".github/workflows/shared/control-precompute.md",
+  ".github/workflows/shared/control.md",
+  ".github/aw/eu-cra-compliance/implementation-status.md",
+];
 
 const expectedFiles = [
   ".github/agents/agentic-workflows.md",
@@ -103,6 +121,8 @@ function assertCorePackage(consumer) {
   }
   assert.ok(!existsSync(join(consumer, ".github", "workflows", "ops-pages.yml")));
   assert.ok(!existsSync(join(consumer, ".github", "ops-values")));
+  assert.ok(!existsSync(join(consumer, ".github", "workflows", "eu-cra-compliance.md")));
+  assert.ok(!existsSync(join(consumer, ".github", "aw", "eu-cra-compliance", "implementation-status.md")));
 }
 
 test("gh aw add installs the core package file contract", { timeout: 180_000 }, () => {
@@ -110,6 +130,38 @@ test("gh aw add installs the core package file contract", { timeout: 180_000 }, 
 
   try {
     assertCorePackage(consumer);
+  } finally {
+    rmSync(consumer, { recursive: true, force: true });
+  }
+});
+
+test("gh aw add installs the focused EU CRA package contract", { timeout: 180_000 }, () => {
+  const consumer = installPackage(craPackageSource);
+
+  try {
+    for (const relativePath of craExpectedFiles) {
+      assert.ok(existsSync(join(consumer, relativePath)), `focused CRA package omitted ${relativePath}`);
+    }
+    assert.ok(
+      !existsSync(join(consumer, ".github", "workflows", "dependabot.md")),
+      "focused CRA package installed an unrelated orchestrator",
+    );
+
+    const packageManifests = readdirSync(join(consumer, ".github", "aw", "packages"));
+    assert.equal(packageManifests.length, 1, "expected one focused CRA package manifest");
+    const installedManifest = JSON.parse(readFileSync(
+      join(consumer, ".github", "aw", "packages", packageManifests[0]),
+      "utf8",
+    ));
+    assert.deepEqual(
+      installedManifest.files.map(({ destination }) => destination).sort(),
+      [
+        ".github/aw/eu-cra-compliance/implementation-status.md",
+        ".github/workflows/eu-cra-compliance-package-maintainer.md",
+        ".github/workflows/eu-cra-compliance.md",
+      ],
+      "focused CRA package manifest must own its entry workflows and ledger",
+    );
   } finally {
     rmSync(consumer, { recursive: true, force: true });
   }

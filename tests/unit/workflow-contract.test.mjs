@@ -227,12 +227,20 @@ test("enterprise defaults, budgets, timeouts, and concurrency are finite", () =>
     "aw-failures.md": { credits: 250, timeout: 15, dispatchMax: 50, workers: 1 },
     "aw-maintenance.md": { credits: 250, timeout: 15, dispatchMax: 50, workers: 1 },
     "dependabot.md": { credits: 250, timeout: 15, dispatchMax: 50, workers: 1 },
+    "eu-cra-compliance.md": { credits: 200, timeout: 15, dispatchMax: 48, workers: 6 },
+    "eu-cra-compliance-package-maintainer.md": { credits: 200, timeout: 20 },
     "optimization.md": { credits: 250, timeout: 15, dispatchMax: 20, workers: 2 },
     "ambient-context-agents-md-curator.md": { credits: 400, timeout: 25 },
     "ambient-context-skills-curator.md": { credits: 400, timeout: 20 },
     "aw-failures-investigator.md": { credits: 500, timeout: 30 },
     "aw-maintenance-upgrade.md": { credits: 500, timeout: 30 },
     "dependabot-release-train-updater.md": { credits: 600, timeout: 60 },
+    "eu-cra-compliance-article-14-reporting-readiness.md": { credits: 150, timeout: 30 },
+    "eu-cra-compliance-conformity-release-evidence.md": { credits: 150, timeout: 30 },
+    "eu-cra-compliance-scope-classifier.md": { credits: 150, timeout: 25 },
+    "eu-cra-compliance-security-requirements-auditor.md": { credits: 150, timeout: 30 },
+    "eu-cra-compliance-supply-chain-sbom-auditor.md": { credits: 150, timeout: 30 },
+    "eu-cra-compliance-vulnerability-handling-auditor.md": { credits: 150, timeout: 30 },
     "optimization-ai-credit-auditor.md": { credits: 350, timeout: 25 },
     "optimization-ai-credit-optimizer.md": { credits: 500, timeout: 30 },
   };
@@ -317,7 +325,7 @@ test("deterministic workflows pin third-party actions by commit SHA", () => {
 });
 
 test("package manifests exclude repository-only tests", () => {
-  for (const relativePath of ["aw.yml", join("ambient-context", "aw.yml"), join("aw-failures", "aw.yml"), join("aw-maintenance", "aw.yml"), join("dependabot", "aw.yml"), join("optimization", "aw.yml")]) {
+  for (const relativePath of ["aw.yml", join("ambient-context", "aw.yml"), join("aw-failures", "aw.yml"), join("aw-maintenance", "aw.yml"), join("dependabot", "aw.yml"), join("eu-cra-compliance", "aw.yml"), join("optimization", "aw.yml")]) {
     const manifest = readFileSync(join(root, relativePath), "utf8");
     assert.doesNotMatch(manifest, /(?:staged-smoke|enterprise-canary|enterprise-stress|tests\/e2e|\.github\/aw\/e2e)/, relativePath);
   }
@@ -499,6 +507,13 @@ test("live workers require target-owned package authority before agent execution
     ["aw-maintenance-upgrade.md", "aw-maintenance"],
     ["dependabot.md", "dependabot"],
     ["dependabot-release-train-updater.md", "dependabot"],
+    ["eu-cra-compliance.md", "eu-cra-compliance"],
+    ["eu-cra-compliance-article-14-reporting-readiness.md", "eu-cra-compliance"],
+    ["eu-cra-compliance-conformity-release-evidence.md", "eu-cra-compliance"],
+    ["eu-cra-compliance-scope-classifier.md", "eu-cra-compliance"],
+    ["eu-cra-compliance-security-requirements-auditor.md", "eu-cra-compliance"],
+    ["eu-cra-compliance-supply-chain-sbom-auditor.md", "eu-cra-compliance"],
+    ["eu-cra-compliance-vulnerability-handling-auditor.md", "eu-cra-compliance"],
     ["optimization.md", "optimization"],
     ["optimization-ai-credit-auditor.md", "optimization"],
     ["optimization-ai-credit-optimizer.md", "optimization"],
@@ -513,6 +528,7 @@ test("orchestrators expose scheduled variables and independent manual inputs", (
     ["aw-failures.md", "AW_FAILURES"],
     ["aw-maintenance.md", "AW_MAINTENANCE"],
     ["dependabot.md", "DEPENDABOT"],
+    ["eu-cra-compliance.md", "EU_CRA_COMPLIANCE"],
     ["optimization.md", "OPTIMIZATION"],
   ]) {
     const source = workflow(name);
@@ -545,7 +561,7 @@ test("shared control keeps manual and scheduled routing event-scoped", () => {
   const control = workflow("shared/control.md");
   const precompute = workflow("shared/control-precompute.md");
 
-  for (const name of ["ambient-context.md", "aw-failures.md", "aw-maintenance.md", "dependabot.md", "optimization.md"]) {
+  for (const name of ["ambient-context.md", "aw-failures.md", "aw-maintenance.md", "dependabot.md", "eu-cra-compliance.md", "optimization.md"]) {
     const orchestrator = workflow(name);
     assert.match(orchestrator, /GH_AW_SAFE_OUTPUT_MODE:.*== 'preview' && 'staged'/);
     assert.match(orchestrator, /REVIEW_OUTPUT_REPO:.*inputs\.safe_output_repo \|\| github\.repository/);
@@ -571,6 +587,12 @@ test("every worker uses the standard dispatch envelope and safe mode vocabulary"
     "aw-failures-investigator.md",
     "aw-maintenance-upgrade.md",
     "dependabot-release-train-updater.md",
+    "eu-cra-compliance-article-14-reporting-readiness.md",
+    "eu-cra-compliance-conformity-release-evidence.md",
+    "eu-cra-compliance-scope-classifier.md",
+    "eu-cra-compliance-security-requirements-auditor.md",
+    "eu-cra-compliance-supply-chain-sbom-auditor.md",
+    "eu-cra-compliance-vulnerability-handling-auditor.md",
     "optimization-ai-credit-auditor.md",
     "optimization-ai-credit-optimizer.md",
   ];
@@ -600,6 +622,103 @@ test("every worker uses the standard dispatch envelope and safe mode vocabulary"
       assert.match(line, /github\.event\.inputs\.safe_output_repo/);
     }
   }
+});
+
+test("EU CRA workflows preserve regulatory and human-review boundaries", () => {
+  const orchestrator = workflow("eu-cra-compliance.md");
+  const maintainer = workflow("eu-cra-compliance-package-maintainer.md");
+  const workers = [
+    ["eu-cra-compliance-scope-classifier.md", "Scope Classifier"],
+    ["eu-cra-compliance-security-requirements-auditor.md", "Security Requirements Auditor"],
+    ["eu-cra-compliance-supply-chain-sbom-auditor.md", "Supply Chain SBOM Auditor"],
+    ["eu-cra-compliance-vulnerability-handling-auditor.md", "Vulnerability Handling Auditor"],
+    ["eu-cra-compliance-article-14-reporting-readiness.md", "Article 14 Reporting Readiness"],
+    ["eu-cra-compliance-conformity-release-evidence.md", "Conformity Release Evidence"],
+  ];
+
+  assert.match(orchestrator, /^name: "EU CRA Compliance"$/m);
+  assert.match(orchestrator, /must not analyze a target repository for CRA compliance/i);
+  assert.match(orchestrator, /Use bounded two-stage discovery/);
+  assert.match(orchestrator, /plus at most two alternates per available slot/);
+  assert.match(orchestrator, /sum of enabled, useful workers across selected repositories/);
+  assert.match(orchestrator, /Keep that total at or below 48/);
+
+  for (const [name, displayName] of [["eu-cra-compliance.md", null], ...workers, ["eu-cra-compliance-package-maintainer.md", "Package Maintainer"]]) {
+    const source = workflow(name);
+    if (displayName) {
+      assert.match(source, new RegExp(`^name: "EU CRA Compliance / ${displayName}"$`, "m"));
+    }
+    assert.match(source, /engine:\n\s+id: pi\n\s+model: copilot\/gpt-5\.4/);
+    assert.match(source, /copilot-requests: write/);
+    assert.match(source, /tools:\n\s+cli-proxy: true\n\s+github:\n\s+mode: gh-proxy/);
+  }
+
+  for (const [name, displayName] of workers) {
+    const source = workflow(name);
+    assert.match(source, /Regulation \(EU\) 2024\/2847/);
+    assert.match(source, /https:\/\/eur-lex\.europa\.eu\/eli\/reg\/2024\/2847\/oj/);
+    assert.match(source, /https:\/\/digital-strategy\.ec\.europa\.eu\/en\/policies\/cyber-resilience-act/);
+    assert.match(source, /source:\n\s+instrument: "Regulation \(EU\) 2024\/2847"\n\s+provision: ".+"\n\s+authority: "binding"/);
+    assert.match(source, /HUMAN_REVIEW_REQUIRED/);
+    assert.match(source, /commercial versus non-commercial FOSS treatment/);
+    assert.match(source, /important Class I or Class II classification/);
+    assert.match(source, /active exploitation, the severe-incident threshold, reportability/);
+    assert.match(source, /Never output `CRA COMPLIANT`, `LEGALLY COMPLIANT`, `CERTIFIED`, or `CE APPROVED`/);
+    assert.match(source, /Never (?:submit|notify)/i);
+    assert.match(source, /Do not put secrets, personal data, exploit details/);
+    assert.doesNotMatch(source, /^graders:/m);
+  }
+
+  assert.match(maintainer, /schedule: daily/);
+  assert.match(maintainer, /safe_output_mode:\n\s+default: staged/);
+  assert.match(maintainer, /staged: \$\{\{ github\.event_name == 'workflow_dispatch' && inputs\.safe_output_mode != 'live' \}\}/);
+  assert.match(maintainer, /Systematically account for the complete Act: Articles 1–71, Annexes I–VIII/);
+  assert.match(maintainer, /update only the applicable ledger path/i);
+  assert.match(maintainer, /allowed-files:\n\s+- "eu-cra-compliance\/implementation-status\.md"\n\s+- "\.github\/aw\/eu-cra-compliance\/implementation-status\.md"/);
+  assert.match(maintainer, /draft: true/);
+  assert.match(maintainer, /create-issue:[\s\S]*?max: 1/);
+  assert.match(maintainer, /deduplicate-by-title: true/);
+  assert.doesNotMatch(maintainer, /shared\/control\.md/);
+
+  const ledger = readFileSync(join(root, "eu-cra-compliance", "implementation-status.md"), "utf8");
+  assert.match(ledger, /Articles 1–12/);
+  assert.match(ledger, /CRA-ART-001/);
+  assert.match(ledger, /Articles 60–71/);
+  assert.match(ledger, /Annexes II–VIII/);
+  assert.match(ledger, /CRA-ACTS-001/);
+  assert.match(ledger, /`IMPLEMENTED` means a workflow capability exists/);
+
+  const article14 = workflow("eu-cra-compliance-article-14-reporting-readiness.md");
+  assert.match(article14, /without undue delay and, in any event, no later than 24 hours/);
+  assert.match(article14, /without undue delay and, in any event, no later than 72 hours/);
+  assert.match(article14, /no later than 14 days after a corrective or mitigating measure becomes available/);
+  assert.match(article14, /no later than one month after submission of the incident notification/);
+  assert.match(article14, /vulnerability description, severity and impact, available malicious-actor information/);
+  assert.match(article14, /detailed incident description, severity and impact, likely threat type or root cause/);
+  assert.match(article14, /never expose sensitive details in the issue/);
+  assert.match(article14, /intermediate status report when requested by the CSIRT coordinator/);
+  assert.match(article14, /awareness of either an actively exploited vulnerability or a severe incident having an impact on product security/);
+  assert.match(article14, /affected users and, where appropriate, all users without undue delay/);
+  assert.match(article14, /Do not incorrectly make user communication contingent on completion of a regulatory notification/);
+  assert.match(article14, /Do not start or calculate an SLA clock from a guessed timestamp/);
+  assert.match(article14, /manufacturer-awareness evidence cannot be determined, report a critical evidence gap/);
+
+  const security = workflow("eu-cra-compliance-security-requirements-auditor.md");
+  assert.match(security, /absence of known exploitable vulnerabilities at market placement/);
+  assert.doesNotMatch(security, /absence or reduction of known exploitable vulnerabilities/);
+  assert.match(security, /leave operational distribution and remediation-process evidence to the vulnerability-handling auditor/);
+
+  const supplyChain = workflow("eu-cra-compliance-supply-chain-sbom-auditor.md");
+  assert.match(supplyChain, /machine-readable SBOM covering at least top-level dependencies/);
+  assert.match(supplyChain, /Annex I, Part II, point \(1\)/);
+  assert.match(supplyChain, /implementation evidence beyond that express minimum/);
+
+  const conformity = workflow("eu-cra-compliance-conformity-release-evidence.md");
+  assert.match(conformity, /at least 10 years after market placement or for the support period, whichever is longer/);
+
+  assert.match(ledger, /CRA-ART-014.*reportability requires human review \| IMPLEMENTED \|/);
+  assert.match(ledger, /CRA-ART-028-031.*final release require human review \| IMPLEMENTED \|/);
+  assert.match(ledger, /CRA-ANNEX-VIII.*Route selection requires human review \| IMPLEMENTED \|/);
 });
 
 test("workers reject disabled, malformed, or over-ceiling dispatches before execution", () => {
@@ -677,12 +796,20 @@ test("clean-room compilation emits the expected GitHub Actions settings", { time
       "aw-maintenance.lock.yml",
       "dependabot-release-train-updater.lock.yml",
       "dependabot.lock.yml",
+      "eu-cra-compliance-article-14-reporting-readiness.lock.yml",
+      "eu-cra-compliance-conformity-release-evidence.lock.yml",
+      "eu-cra-compliance-scope-classifier.lock.yml",
+      "eu-cra-compliance-security-requirements-auditor.lock.yml",
+      "eu-cra-compliance-supply-chain-sbom-auditor.lock.yml",
+      "eu-cra-compliance-vulnerability-handling-auditor.lock.yml",
+      "eu-cra-compliance.lock.yml",
       "optimization-ai-credit-auditor.lock.yml",
       "optimization-ai-credit-optimizer.lock.yml",
       "optimization.lock.yml",
     ];
     const expectedLockNames = [
       ...packageLockNames,
+      "eu-cra-compliance-package-maintainer.lock.yml",
       "docs-explanatory-diagrams.lock.yml",
       "pr-reviewer.lock.yml",
       "svg-visual-audit.lock.yml",
@@ -702,7 +829,7 @@ test("clean-room compilation emits the expected GitHub Actions settings", { time
       assert.doesNotMatch(generated, /safe_output_mode == 'private'/);
     }
 
-    for (const name of ["ambient-context.lock.yml", "aw-failures.lock.yml", "aw-maintenance.lock.yml", "dependabot.lock.yml", "optimization.lock.yml"]) {
+    for (const name of ["ambient-context.lock.yml", "aw-failures.lock.yml", "aw-maintenance.lock.yml", "dependabot.lock.yml", "eu-cra-compliance.lock.yml", "optimization.lock.yml"]) {
       const generated = workflow(name, generatedDirectory);
       assert.match(generated, /GH_AW_SAFE_OUTPUT_MODE:.*== 'preview' && 'staged'/);
       assert.match(generated, /ROLLOUT_PERCENT: \$\{\{ inputs\.rollout_percent \|\| vars\.CENTRAL_AGENTIC_OPS_.+_ROLLOUT_PERCENT \|\| '100' \}\}/);
@@ -711,13 +838,18 @@ test("clean-room compilation emits the expected GitHub Actions settings", { time
       assert.match(generated, /cancel-in-progress: true/);
     }
 
-    for (const name of packageLockNames.filter((name) => !["ambient-context.lock.yml", "aw-failures.lock.yml", "aw-maintenance.lock.yml", "dependabot.lock.yml", "optimization.lock.yml"].includes(name))) {
+    for (const name of packageLockNames.filter((name) => !["ambient-context.lock.yml", "aw-failures.lock.yml", "aw-maintenance.lock.yml", "dependabot.lock.yml", "eu-cra-compliance.lock.yml", "optimization.lock.yml"].includes(name))) {
       const generated = workflow(name, generatedDirectory);
       assert.match(generated, /GH_AW_SAFE_OUTPUT_MODE: \$\{\{ inputs\.safe_output_mode \|\| 'staged' \}\}/);
       assert.match(generated, /ROLLOUT_PERCENT: "100"/);
       assert.match(generated, /GH_AW_SAFE_OUTPUTS_CONFIG:/);
       assert.match(generated, /PREVIEW_ONLY: \$\{\{ \(env\.GH_AW_SAFE_OUTPUT_MODE == 'live' \|\| env\.GH_AW_SAFE_OUTPUT_MODE == 'review'\) && 'false' \|\| 'true' \}\}/);
     }
+
+    const craMaintainer = workflow("eu-cra-compliance-package-maintainer.lock.yml", generatedDirectory);
+    assert.match(craMaintainer, /schedule:/);
+    assert.match(craMaintainer, /eu-cra-compliance\/implementation-status\.md/);
+    assert.match(craMaintainer, /copilot\/gpt-5\.4/);
 
     const prReviewer = workflow("pr-reviewer.lock.yml", generatedDirectory);
     assert.match(prReviewer, /create_pull_request_review_comment/);
@@ -804,6 +936,17 @@ test("Pages inventory links multiline orchestrator worker lists", () => {
       { id: "aw-failures", workers: ["aw-failures-investigator"] },
       { id: "aw-maintenance", workers: ["aw-maintenance-upgrade"] },
       { id: "dependabot", workers: ["dependabot-release-train-updater"] },
+      {
+        id: "eu-cra-compliance",
+        workers: [
+          "eu-cra-compliance-scope-classifier",
+          "eu-cra-compliance-security-requirements-auditor",
+          "eu-cra-compliance-supply-chain-sbom-auditor",
+          "eu-cra-compliance-vulnerability-handling-auditor",
+          "eu-cra-compliance-article-14-reporting-readiness",
+          "eu-cra-compliance-conformity-release-evidence",
+        ],
+      },
       { id: "optimization", workers: ["optimization-ai-credit-auditor", "optimization-ai-credit-optimizer"] },
     ]);
   } finally {

@@ -9,6 +9,7 @@ set -euo pipefail
 
 case "$BUNDLE" in
   dependabot) workflow_file=dependabot.lock.yml ;;
+  eu-cra-compliance) workflow_file=eu-cra-compliance.lock.yml ;;
   optimization) workflow_file=optimization.lock.yml ;;
   *) printf 'Unsupported package: %s\n' "$BUNDLE" >&2; exit 1 ;;
 esac
