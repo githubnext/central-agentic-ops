@@ -292,6 +292,11 @@ const agents = [
         }
       }
 
+      function resetCopyState() {
+        if (copyLabel) copyLabel.textContent = "Copy prompt";
+        copyButton?.classList.remove("is-copied");
+      }
+
       function render() {
         const operation = selected(form, "operation");
         const agent = selected(form, "agent");
@@ -319,16 +324,17 @@ const agents = [
           if (copyLabel) copyLabel.textContent = "Copied";
           copyButton.classList.add("is-copied");
           openCopyDialog();
-          resetCopyLabel = setTimeout(() => {
-            if (copyLabel) copyLabel.textContent = "Copy prompt";
-            copyButton.classList.remove("is-copied");
-          }, 2400);
+          resetCopyLabel = setTimeout(resetCopyState, 2400);
         } catch {
           if (status) status.textContent = "Copy failed. Select the prompt text and copy it manually.";
         }
       });
 
       copyDialogClose?.addEventListener("click", () => copyDialog?.close());
+      copyDialog?.addEventListener("close", () => {
+        clearTimeout(resetCopyLabel);
+        resetCopyState();
+      });
       copyDialog?.addEventListener("click", (event) => {
         if (event.target === copyDialog) copyDialog.close();
       });
