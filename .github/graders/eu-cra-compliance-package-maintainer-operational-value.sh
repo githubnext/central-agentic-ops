@@ -20,8 +20,8 @@ definition() {
   "workflowName": "EU CRA Advisor / Package Maintainer",
   "sourcePath": ".github/workflows/eu-cra-compliance-package-maintainer.md",
   "adoption": {
-    "commit": "5f0ffc90af7a3b335756de23548d711a20093acb",
-    "adoptedAt": "2026-08-27T17:54:13Z"
+    "commit": "d7bea37d9ae5ea5af2282be06d19f72ab416493b",
+    "adoptedAt": "2026-08-27T18:02:44Z"
   },
   "operationalValue": "Resolve the frozen EU CRA package-capability gaps through human-reviewed ledger changes.",
   "evidence": {
@@ -213,7 +213,8 @@ grade_run() {
       || { emit_missing "$key" "$case_json" "$cutoff" "$matures_at" latest-ledger-unavailable; return; }
     remaining_ids=$(gap_ids "$tmp_dir/latest-ledger.md")
     remaining=$(jq -n --argjson assigned "$(printf '%s\n' "$case_json" | jq .gapIds)" \
-      --argjson current "$remaining_ids" '$assigned - ($assigned - $current) | length')
+      --argjson current "$remaining_ids" '
+        [$assigned[] as $id | select($current | index($id)) | $id] | length')
     resolved=$((eligible - remaining))
     human_reviewed=false
     pull_number=""

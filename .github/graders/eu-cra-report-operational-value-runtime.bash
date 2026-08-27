@@ -24,8 +24,8 @@ definition() {
         workflowName: $workflowName,
         sourcePath: $sourcePath,
         adoption: {
-          commit: "5f0ffc90af7a3b335756de23548d711a20093acb",
-          adoptedAt: "2026-08-27T17:54:13Z"
+          commit: "d7bea37d9ae5ea5af2282be06d19f72ab416493b",
+          adoptedAt: "2026-08-27T18:02:44Z"
         },
         operationalValue: $operationalValue,
         evidence: {
@@ -165,7 +165,6 @@ grade_run() {
       else {assignmentMissing: true}
       end
     ' "$request_file")
-    key="run:${run_id}"
     if [[ $(printf '%s\n' "$case_json" | jq -r '.assignmentMissing // false') == true ]]; then
         emit_missing "run:${run_id}" "$case_json" "$cutoff" "$matures_at" assignment-unavailable
         return
@@ -174,6 +173,7 @@ grade_run() {
     target_repo=$(printf '%s\n' "$case_json" | jq -r .targetRepo)
     evidence_repo=$(printf '%s\n' "$case_json" | jq -r .evidenceRepo)
     assigned_at=$(normalize_timestamp "$(printf '%s\n' "$case_json" | jq -r .assignedAt)") || assigned_at=$created_at
+    key="run:${run_id}"
     if ! [[ $target_repo =~ ^[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+$ && $evidence_repo =~ ^[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+$ ]]; then
         emit_missing "$key" "$case_json" "$cutoff" "$matures_at" invalid-assignment
         return
