@@ -113,7 +113,7 @@ Verify requirements and dates using: Regulation (EU) 2024/2847; applicable deleg
 ```yaml
 source:
   instrument: "Regulation (EU) 2024/2847"
-  provision: "Article 14(2)(a)"
+  provision: "<specific provision>"
   authority: "binding"
 ```
 

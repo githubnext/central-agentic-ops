@@ -158,7 +158,7 @@ test("gh aw add installs the focused EU CRA package contract", { timeout: 180_00
       "utf8",
     ));
     assert.deepEqual(
-      installedManifest.files.map(({ destination }) => destination).sort(),
+      installedManifest.files.map(({ destination }) => destination),
       [".github/workflows/eu-cra-compliance.md"],
       "focused CRA package manifest must own only its orchestrator",
     );
