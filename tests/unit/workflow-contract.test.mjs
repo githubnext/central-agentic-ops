@@ -670,15 +670,19 @@ test("EU CRA workflows preserve regulatory and human-review boundaries", () => {
   }
 
   assert.match(maintainer, /schedule: daily/);
+  assert.match(maintainer, /safe_output_mode:\n\s+default: staged/);
+  assert.match(maintainer, /staged: \$\{\{ github\.event_name == 'workflow_dispatch' && inputs\.safe_output_mode != 'live' \}\}/);
   assert.match(maintainer, /Systematically account for the complete Act: Articles 1–71, Annexes I–VIII/);
   assert.match(maintainer, /update only the applicable ledger path/i);
   assert.match(maintainer, /allowed-files:\n\s+- "eu-cra-compliance\/implementation-status\.md"\n\s+- "\.github\/aw\/eu-cra-compliance\/implementation-status\.md"/);
   assert.match(maintainer, /draft: true/);
   assert.match(maintainer, /create-issue:[\s\S]*?max: 1/);
+  assert.match(maintainer, /deduplicate-by-title: true/);
   assert.doesNotMatch(maintainer, /shared\/control\.md/);
 
   const ledger = readFileSync(join(root, "eu-cra-compliance", "implementation-status.md"), "utf8");
   assert.match(ledger, /Articles 1–12/);
+  assert.match(ledger, /CRA-ART-001/);
   assert.match(ledger, /Articles 60–71/);
   assert.match(ledger, /Annexes II–VIII/);
   assert.match(ledger, /CRA-ACTS-001/);

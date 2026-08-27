@@ -8,6 +8,13 @@ timeout-minutes: 20
 on:
   schedule: daily
   workflow_dispatch:
+    inputs:
+      safe_output_mode:
+        default: staged
+        type: choice
+        options:
+          - staged
+          - live
 
 checkout:
   - repository: ${{ github.repository }}
@@ -37,7 +44,7 @@ network:
     - single-market-economy.ec.europa.eu
     - enisa.europa.eu
 
-run-name: "CRA package implementation-status maintenance"
+run-name: "CRA package implementation-status maintenance · ${{ inputs.safe_output_mode || 'live' }}"
 
 concurrency:
   group: "${{ github.workflow }}"
@@ -53,6 +60,7 @@ tools:
   web-fetch:
 
 safe-outputs:
+  staged: ${{ github.event_name == 'workflow_dispatch' && inputs.safe_output_mode != 'live' }}
   create-pull-request:
     title-prefix: "[eu-cra:implementation-status] "
     draft: true
@@ -67,6 +75,7 @@ safe-outputs:
     expires: 30d
     title-prefix: "[eu-cra:package-improvement] "
     close-older-issues: false
+    deduplicate-by-title: true
     max: 1
   noop:
 ---

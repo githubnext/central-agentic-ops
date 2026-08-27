@@ -8,7 +8,7 @@ Allowed statuses: `IMPLEMENTED`, `PARTIAL`, `MISSING`, `NOT_APPLICABLE`, `HUMAN_
 
 | Instrument segment | Fleet disposition | Requirement IDs |
 | --- | --- | --- |
-| Articles 1–12 — general provisions, scope, product categories, and interactions | Operational requirements tracked; institutional provisions retained as not applicable | CRA-ART-002 through CRA-ART-012 |
+| Articles 1–12 — general provisions, scope, product categories, and interactions | Operational requirements tracked; institutional provisions retained as not applicable | CRA-ART-001 through CRA-ART-012 |
 | Articles 13–26 — economic operators, reporting, and open-source software | Operational requirements tracked; platform administration and voluntary reporting distinguished | CRA-ART-013 through CRA-ART-026 |
 | Articles 27–34 — conformity | Operational evidence and human-review gates tracked | CRA-ART-027 through CRA-ART-034 |
 | Articles 35–49 — conformity-assessment-body notification | No product-repository operation requirement identified; route and body evidence still tracked | CRA-ART-035-049 |
@@ -25,6 +25,7 @@ All sources below are binding unless explicitly labelled otherwise. Official reg
 
 | Requirement ID | Requirement summary | Applicability | Package status | Workflow evidence | Missing capability | Recommended change | Authoritative source | Last verified |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| CRA-ART-001 | Subject matter | Establishes the instrument's subject; no independent repository operation | NOT_APPLICABLE | Fleet mission is bounded to CRA implementation evidence | None for fleet mission | Retain as a completeness anchor | Regulation (EU) 2024/2847, Art. 1, binding, EUR-Lex link above | 2026-08-27 |
 | CRA-ART-002 | Scope and exclusions | Material exclusion decisions require human review | HUMAN_REVIEW_REQUIRED | `scope-classifier` — scope evidence matrix | None known | Preserve explicit review gates and current-source checks | Regulation (EU) 2024/2847, Art. 2, binding, EUR-Lex link above | 2026-08-27 |
 | CRA-ART-003 | Defined terms used by assessments | All assessments | PARTIAL | All workers — regulatory method | No shared term-by-term definition inventory | Add verified definition references where findings depend on defined terms | Regulation (EU) 2024/2847, Art. 3, binding, EUR-Lex link above | 2026-08-27 |
 | CRA-ART-004-006 | Free movement, procurement/use, and baseline product requirements | Products with digital elements | PARTIAL | `scope-classifier`; `security-requirements-auditor` | Procurement/use evidence is not independently audited | Add procurement/use signals if operational evidence warrants it | Regulation (EU) 2024/2847, Arts. 4–6, binding, EUR-Lex link above | 2026-08-27 |
