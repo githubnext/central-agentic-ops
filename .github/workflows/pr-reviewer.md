@@ -3,7 +3,7 @@ description: "Reviews pull requests that change workflow contracts by compiling 
 name: "PR Reviewer / Agentic Workflow Validation"
 on:
   pull_request:
-    types: [opened, reopened, synchronize, ready_for_review]
+    types: [ready_for_review]
     paths:
       - ".github/workflows/**/*.md"
       - ".github/workflows/workflow-contracts.yml"
@@ -21,6 +21,7 @@ concurrency:
 permissions:
   contents: read
   pull-requests: read
+  actions: read
   copilot-requests: write
 strict: true
 tools:
@@ -28,12 +29,13 @@ tools:
     mode: remote
     min-integrity: approved
     toolsets: [pull_requests, repos]
+  agentic-workflows: true
+  cli-proxy: true
 network:
   allowed:
     - defaults
     - github
     - node
-    - go
 steps:
   - name: Checkout repository
     uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
@@ -46,30 +48,10 @@ steps:
       cache: npm
   - name: Install dependencies
     run: npm ci
-  - name: Checkout validator-capable gh-aw
-    uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-    with:
-      repository: github/gh-aw
-      ref: 5cd744cc263a9d1ec5660fbf5604eaceb6f83430
-      path: .cache/gh-aw
-      persist-credentials: false
-  - name: Setup Go
-    uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
-    with:
-      go-version-file: .cache/gh-aw/go.mod
-      cache-dependency-path: .cache/gh-aw/go.sum
   - name: Run all validator commands
     shell: bash
-    env:
-      GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
     run: |
       set -euo pipefail
-      cd .cache/gh-aw
-      go build -ldflags "-s -w -X main.version=v0.87.6" -o gh-aw ./cmd/gh-aw
-      gh extension remove aw || true
-      gh extension install .
-      cd "$GITHUB_WORKSPACE"
-
       mkdir -p /tmp/gh-aw/agent/pr-reviewer
       SUMMARY=/tmp/gh-aw/agent/pr-reviewer/validator-summary.json
 
@@ -91,7 +73,6 @@ steps:
       run_cmd test_unit npm run test:unit
       run_cmd test_integration npm run test:integration
       run_cmd test_load npm run test:load
-      run_cmd compile_validate gh aw compile --validate --no-emit --no-check-update --schedule-seed githubnext/central-agentic-ops
       run_cmd docs_build npm run docs:build
 
       jq '
@@ -116,8 +97,9 @@ Review this pull request as a workflow-validator reviewer.
 1. Read `/tmp/gh-aw/agent/pr-reviewer/validator-summary.json`.
 2. Confirm every listed validator command ran.
 3. For each failed command, read the paired log file and extract concrete failing checks or stack traces.
-4. Parse `/tmp/gh-aw/agent/pr-reviewer/compile_validate.log` for compiler warnings or errors and add line-level pull-request review comments when the log includes a path and line that can be mapped to files in this pull request.
-5. Submit exactly one pull request review:
+4. Run the `compile` tool (via the `agentic-workflows` CLI proxy, e.g. `agentic-workflows compile`) to validate that all agentic workflows still compile; treat a non-zero result as a failed `compile_validate` check and capture its output for review comments.
+5. Parse the `compile` output for compiler warnings or errors and add line-level pull-request review comments when the output includes a path and line that can be mapped to files in this pull request.
+6. Submit exactly one pull request review:
    - Use `REQUEST_CHANGES` if any validator failed.
    - Use `COMMENT` if all validators passed.
 
@@ -128,7 +110,7 @@ Treat these commands as the full validator contract for this repository:
 - `npm run test:unit`
 - `npm run test:integration`
 - `npm run test:load`
-- `gh aw compile --validate --no-emit --no-check-update --schedule-seed githubnext/central-agentic-ops`
+- `agentic-workflows compile` (CLI-proxy equivalent of `gh aw compile`)
 - `npm run docs:build`
 
 ## Review output rules
@@ -136,7 +118,7 @@ Treat these commands as the full validator contract for this repository:
 - Keep the review concise and factual.
 - Report each validator status (`pass`/`fail`) in a checklist.
 - For failures, include only actionable details from logs.
-- Use `create-pull-request-review-comment` for compiler warnings/errors from `compile_validate.log` when a concrete file and line are available.
+- Use `create-pull-request-review-comment` for compiler warnings/errors from the `compile` output when a concrete file and line are available.
 - Do not create duplicate review comments for the same finding.
 - Do not approve the pull request.
 - Do not use emoji in error text.
