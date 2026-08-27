@@ -24,7 +24,7 @@ The integration suite creates disposable consumer repositories under the system 
 
 | Test result | Command | Checked behavior |
 | --- | --- | --- |
-| 🟢 Pass | `gh aw add` | Installs the two core orchestrators, three workers, shared imports, packaged skills and agent, and package manifest; excludes optional Pages, repository-only test/smoke assets, and experimental ops values. |
+| 🟢 Pass | `gh aw add` | Installs the four core orchestrators, six workers, shared imports, packaged skills and agent, and package manifest; excludes optional Pages, repository-only test/smoke assets, and experimental ops values. |
 | 🟢 Pass | `gh aw update --force` | Replaces a locally modified package workflow and restores deleted workflow dependencies, skills, and agent files for a branch-tracked package. |
 
 ## Enterprise Integration and Load
