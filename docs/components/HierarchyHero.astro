@@ -3,6 +3,7 @@ import { Image } from "astro:assets";
 import type { HTMLAttributes } from "astro/types";
 import dispatchFallback from "../assets/control-plane-dispatch-fallback.svg";
 import mobileDispatchFallback from "../assets/control-plane-dispatch-mobile.svg";
+import OpsWizard from "./OpsWizard.astro";
 
 const PAGE_TITLE_ID = "_top";
 
@@ -66,6 +67,8 @@ const { title = data.title, tagline, actions = [] } = data.hero || {};
       <div class="dispatch-motion mobile-dispatch-motion" data-layout="mobile"></div>
     </div>
   </figure>
+
+  <OpsWizard />
 </div>
 
 <script>

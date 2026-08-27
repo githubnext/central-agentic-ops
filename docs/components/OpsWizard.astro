@@ -1,0 +1,521 @@
+---
+import { readFileSync, readdirSync } from "node:fs";
+import { fileURLToPath } from "node:url";
+
+type Operation = {
+  slug: string;
+  name: string;
+  description: string;
+};
+
+const repoRoot = fileURLToPath(new URL("../../", import.meta.url));
+
+function readManifestField(manifest: string, field: string): string {
+  const match = manifest.match(new RegExp(`^${field}:[ \\t]*(.+)$`, "m"));
+  return match ? match[1].trim().replace(/^["']|["']$/g, "") : "";
+}
+
+function readOperations(): Operation[] {
+  return readdirSync(repoRoot, { withFileTypes: true })
+    .filter((entry) => entry.isDirectory() && !entry.name.startsWith("."))
+    .flatMap((entry) => {
+      let manifest: string;
+      try {
+        manifest = readFileSync(`${repoRoot}${entry.name}/aw.yml`, "utf8");
+      } catch {
+        return [];
+      }
+      const name = readManifestField(manifest, "name");
+      if (!name) return [];
+      return [{ slug: entry.name, name, description: readManifestField(manifest, "description") }];
+    })
+    .sort((a, b) => a.name.localeCompare(b.name));
+}
+
+const operations = readOperations();
+const agents = [
+  {
+    id: "copilot",
+    name: "GitHub Copilot CLI",
+    command: "copilot",
+    install: "npm install -g @github/copilot",
+  },
+  {
+    id: "claude",
+    name: "Claude Code",
+    command: "claude",
+    install: "npm install -g @anthropic-ai/claude-code",
+  },
+  {
+    id: "codex",
+    name: "OpenAI Codex CLI",
+    command: "codex",
+    install: "npm install -g @openai/codex",
+  },
+];
+---
+
+<section class="ops-wizard" aria-labelledby="ops-wizard-title">
+  <div class="wizard-intro">
+    <h2 id="ops-wizard-title">Start an operation in three steps</h2>
+    <p>
+      Pick the operation you want to run and the coding agent you use, then copy the generated prompt. The agent creates
+      your private control plane repository, installs the operation, and runs it once in <code>staged</code> mode.
+    </p>
+  </div>
+
+  <form class="wizard-form" data-ops-wizard>
+    <fieldset class="wizard-step">
+      <legend><span class="step-number">1</span> Choose the operation to run</legend>
+      <div class="card-grid">
+        {
+          operations.map((operation, index) => (
+            <label class="option-card">
+              <input
+                type="radio"
+                name="operation"
+                value={operation.slug}
+                data-operation-name={operation.name}
+                checked={index === 0}
+              />
+              <span class="option-body">
+                <span class="option-name">{operation.name}</span>
+                <span class="option-description">{operation.description}</span>
+              </span>
+            </label>
+          ))
+        }
+        <label class="option-card">
+          <input type="radio" name="operation" value="custom" data-operation-name="Custom operation" />
+          <span class="option-body">
+            <span class="option-name">Custom operation</span>
+            <span class="option-description">
+              Describe your own operation. The prompt uses the packaged <code>create-ops-package</code> skill to design the
+              orchestrator and workers for you.
+            </span>
+          </span>
+        </label>
+      </div>
+      <div class="custom-idea" data-custom-idea hidden>
+        <label for="ops-wizard-idea">Describe the operation you want</label>
+        <textarea
+          id="ops-wizard-idea"
+          name="idea"
+          rows="3"
+          placeholder="Example: review stale GitHub Actions permissions across our service repositories and open one issue per repository with a least-privilege proposal."
+        ></textarea>
+      </div>
+    </fieldset>
+
+    <fieldset class="wizard-step">
+      <legend><span class="step-number">2</span> Choose your coding agent</legend>
+      <div class="card-grid agents">
+        {
+          agents.map((agent, index) => (
+            <label class="option-card">
+              <input
+                type="radio"
+                name="agent"
+                value={agent.id}
+                data-agent-name={agent.name}
+                data-agent-command={agent.command}
+                data-agent-install={agent.install}
+                checked={index === 0}
+              />
+              <span class="option-body">
+                <span class="option-name">{agent.name}</span>
+                <span class="option-description">
+                  Run <code>{agent.command}</code> in an empty working directory, then paste the prompt.
+                </span>
+              </span>
+            </label>
+          ))
+        }
+      </div>
+      <div class="scope-fields">
+        <div>
+          <label for="ops-wizard-owner">GitHub organization or user</label>
+          <input id="ops-wizard-owner" name="owner" type="text" placeholder="acme" autocomplete="off" />
+        </div>
+        <div>
+          <label for="ops-wizard-repo">Control repository name</label>
+          <input id="ops-wizard-repo" name="repo" type="text" placeholder="central-agentic-ops" autocomplete="off" />
+        </div>
+      </div>
+    </fieldset>
+
+    <fieldset class="wizard-step">
+      <legend><span class="step-number">3</span> Copy the prompt and run it</legend>
+      <p class="run-hint">
+        Install the agent with <code data-agent-install-hint>npm install -g @github/copilot</code>, start it with
+        <code data-agent-command-hint>copilot</code>, and paste the prompt below.
+      </p>
+      <noscript>
+        <p class="run-hint">
+          This wizard needs JavaScript. Follow the <a href="/central-agentic-ops/getting-started/">Quickstart</a> to install
+          an operation manually.
+        </p>
+      </noscript>
+      <div class="prompt-panel">
+        <button type="button" class="copy-button" data-copy-prompt>Copy prompt</button>
+        <pre data-prompt-output></pre>
+      </div>
+      <p class="copy-status" role="status" aria-live="polite" data-copy-status></p>
+    </fieldset>
+  </form>
+</section>
+
+<script>
+  const CATALOG = "githubnext/central-agentic-ops";
+  const CATALOG_REF = "main";
+
+  function selected(form: HTMLFormElement, name: string): HTMLInputElement | null {
+    return form.querySelector<HTMLInputElement>(`input[name="${name}"]:checked`);
+  }
+
+  function variablePrefix(slug: string): string {
+    return `CENTRAL_AGENTIC_OPS_${slug.replace(/-/g, "_").toUpperCase()}`;
+  }
+
+  function buildPrompt(form: HTMLFormElement): string {
+    const operation = selected(form, "operation");
+    const agent = selected(form, "agent");
+    if (!operation || !agent) return "";
+
+    const owner = (form.querySelector<HTMLInputElement>('input[name="owner"]')?.value || "").trim() || "<owner>";
+    const repo =
+      (form.querySelector<HTMLInputElement>('input[name="repo"]')?.value || "").trim() || "central-agentic-ops";
+    const controlRepo = `${owner}/${repo}`;
+    const isCustom = operation.value === "custom";
+    const idea =
+      (form.querySelector<HTMLTextAreaElement>('textarea[name="idea"]')?.value || "").trim() ||
+      "<describe the operation you want to run>";
+    const operationName = operation.dataset.operationName || operation.value;
+    const engine = agent.value;
+
+    const setup = [
+      "## Setup",
+      "",
+      "1. Confirm the GitHub CLI is authenticated with `repo` and `workflow` scopes: `gh auth status`.",
+      "2. Install the Agentic Workflows extension: `gh extension install github/gh-aw` (skip if `gh aw --help` already works).",
+      `3. Create the private control repository and work inside it: \`gh repo create ${controlRepo} --private --clone\`.`,
+    ];
+
+    const body = isCustom
+      ? [
+          `4. Install the catalog packages and packaged skills: \`gh aw add ${CATALOG}@${CATALOG_REF}\`.`,
+          "5. Read `.github/skills/create-ops-package/SKILL.md` and follow it to design a new operation package for:",
+          "",
+          `   > ${idea}`,
+          "",
+          "6. Create the orchestrator and every worker under `.github/workflows/`, then compile them with `gh aw compile`.",
+          `7. Set \`engine: ${engine}\` in each new workflow's frontmatter.`,
+          "8. Commit and push the generated files, including the `.lock.yml` outputs.",
+        ]
+      : [
+          `4. Install the operation package: \`gh aw add ${CATALOG}/${operation.value}@${CATALOG_REF}\`.`,
+          `5. Set \`engine: ${engine}\` in the installed workflow frontmatter, then recompile with \`gh aw compile\`.`,
+          "6. Commit and push the installed files, including the `.lock.yml` outputs.",
+        ];
+
+    const rollout = isCustom
+      ? [
+          "## First run",
+          "",
+          "- Set `CENTRAL_AGENTIC_OPS_ALLOWED_OWNERS` to the owner of the repositories the operation may touch.",
+          "- Keep the package rollout variables at `staged` mode and cap scheduled selection at one repository.",
+          "- Trigger one manual run of the orchestrator against a single low-risk target repository with `safe_output_mode=staged`.",
+          "- Watch the run with `gh run watch` and summarize the orchestrator report.",
+        ]
+      : [
+          "## First run",
+          "",
+          `- \`gh variable set CENTRAL_AGENTIC_OPS_ALLOWED_OWNERS --body "${owner}"\``,
+          `- \`gh variable set ${variablePrefix(operation.value)}_MODE --body "staged"\``,
+          `- \`gh variable set ${variablePrefix(operation.value)}_MAX_REPOS --body "1"\``,
+          `- Trigger one manual run: \`gh workflow run ${operation.value}.lock.yml --raw-field target_repo="${owner}/<target-repo>" --raw-field max_repos="1" --raw-field safe_output_mode="staged"\`.`,
+          "- Watch the run with `gh run watch` and summarize the orchestrator report.",
+        ];
+
+    return [
+      `# Set up Central Agentic Ops: ${operationName}`,
+      "",
+      `Act as my operations engineer. Set up a private GitHub control plane repository at \`${controlRepo}\` that runs the ${isCustom ? "custom operation described below" : `"${operationName}" operation`} from the Central Agentic Ops catalog (https://github.com/${CATALOG}). The control plane holds the workflows and credentials; target repositories never receive copies of them.`,
+      "",
+      ...setup,
+      ...body,
+      "",
+      ...rollout,
+      "",
+      "## Rules",
+      "",
+      "- Keep the control repository private.",
+      "- Keep the operation in `staged` mode for the first run; never switch it to `live` without asking me.",
+      "- Never edit generated `.lock.yml` files by hand; change the Markdown source and recompile.",
+      "- Stop and ask me before adding secrets, widening permissions, or targeting additional repositories.",
+      "",
+      "Report the control repository URL, the installed workflows, the variables you set, and the run URL when you are done.",
+    ].join("\n");
+  }
+
+  function initOpsWizard() {
+    document.querySelectorAll<HTMLFormElement>("[data-ops-wizard]").forEach((form) => {
+      if (form.dataset.wizardReady === "true") return;
+      form.dataset.wizardReady = "true";
+
+      const output = form.querySelector<HTMLPreElement>("[data-prompt-output]");
+      const status = form.querySelector<HTMLParagraphElement>("[data-copy-status]");
+      const customIdea = form.querySelector<HTMLElement>("[data-custom-idea]");
+      const commandHint = form.querySelector<HTMLElement>("[data-agent-command-hint]");
+      const installHint = form.querySelector<HTMLElement>("[data-agent-install-hint]");
+      const copyButton = form.querySelector<HTMLButtonElement>("[data-copy-prompt]");
+
+      function render() {
+        const operation = selected(form, "operation");
+        const agent = selected(form, "agent");
+        if (customIdea) customIdea.hidden = operation?.value !== "custom";
+        if (commandHint && agent) commandHint.textContent = agent.dataset.agentCommand || "";
+        if (installHint && agent) installHint.textContent = agent.dataset.agentInstall || "";
+        if (output) output.textContent = buildPrompt(form);
+        if (status) status.textContent = "";
+      }
+
+      form.addEventListener("input", render);
+      form.addEventListener("submit", (event) => event.preventDefault());
+
+      copyButton?.addEventListener("click", async () => {
+        const prompt = output?.textContent || "";
+        if (!prompt) return;
+        try {
+          await navigator.clipboard.writeText(prompt);
+          if (status) status.textContent = "Prompt copied to your clipboard.";
+        } catch {
+          if (status) status.textContent = "Copy failed. Select the prompt text and copy it manually.";
+        }
+      });
+
+      render();
+    });
+  }
+
+  initOpsWizard();
+  document.addEventListener("astro:page-load", initOpsWizard);
+</script>
+
+<style>
+  @layer starlight.core {
+    .ops-wizard {
+      display: flex;
+      width: min(58rem, 100%);
+      flex-direction: column;
+      gap: 1.5rem;
+      margin-inline: auto;
+      border: 1px solid color-mix(in srgb, var(--sl-color-gray-5) 60%, transparent);
+      border-radius: 0.75rem;
+      background: color-mix(in srgb, var(--sl-color-black) 25%, transparent);
+      padding: clamp(1.25rem, 2vw, 2rem);
+    }
+
+    .wizard-intro {
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+      text-align: center;
+    }
+
+    .wizard-intro h2 {
+      margin: 0;
+      color: var(--sl-color-white);
+      font-size: clamp(1.375rem, 2.5vw, 1.75rem);
+      line-height: 1.2;
+    }
+
+    .wizard-intro p {
+      margin: 0 auto;
+      max-width: 60ch;
+      color: var(--sl-color-gray-2);
+      font-size: var(--sl-text-sm);
+      line-height: 1.6;
+    }
+
+    .wizard-form {
+      display: flex;
+      flex-direction: column;
+      gap: 1.5rem;
+    }
+
+    .wizard-step {
+      display: flex;
+      flex-direction: column;
+      gap: 0.75rem;
+      border: 0;
+      margin: 0;
+      padding: 0;
+    }
+
+    .wizard-step legend {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0;
+      color: var(--sl-color-white);
+      font-size: var(--sl-text-base);
+      font-weight: 600;
+    }
+
+    .step-number {
+      display: inline-flex;
+      width: 1.5rem;
+      height: 1.5rem;
+      align-items: center;
+      justify-content: center;
+      border-radius: 50%;
+      background: var(--sl-color-text-accent);
+      color: var(--sl-color-black);
+      font-size: var(--sl-text-xs);
+    }
+
+    .card-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(15rem, 1fr));
+      gap: 0.75rem;
+    }
+
+    .option-card {
+      display: flex;
+      align-items: flex-start;
+      gap: 0.625rem;
+      border: 1px solid color-mix(in srgb, var(--sl-color-gray-5) 70%, transparent);
+      border-radius: 0.5rem;
+      padding: 0.75rem;
+      cursor: pointer;
+      transition: border-color 160ms ease, background-color 160ms ease;
+    }
+
+    .option-card:hover,
+    .option-card:focus-within {
+      border-color: var(--sl-color-text-accent);
+      background: color-mix(in srgb, var(--sl-color-text-accent) 8%, transparent);
+    }
+
+    .option-card:has(input:checked) {
+      border-color: var(--sl-color-text-accent);
+      background: color-mix(in srgb, var(--sl-color-text-accent) 12%, transparent);
+    }
+
+    .option-card input {
+      margin-top: 0.25rem;
+      accent-color: var(--sl-color-text-accent);
+    }
+
+    .option-body {
+      display: flex;
+      flex-direction: column;
+      gap: 0.25rem;
+      text-align: start;
+    }
+
+    .option-name {
+      color: var(--sl-color-white);
+      font-size: var(--sl-text-sm);
+      font-weight: 600;
+    }
+
+    .option-description {
+      color: var(--sl-color-gray-2);
+      font-size: var(--sl-text-xs);
+      line-height: 1.5;
+    }
+
+    .custom-idea,
+    .scope-fields > div {
+      display: flex;
+      flex-direction: column;
+      gap: 0.375rem;
+    }
+
+    .scope-fields {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(14rem, 1fr));
+      gap: 0.75rem;
+    }
+
+    label[for],
+    .custom-idea label {
+      color: var(--sl-color-gray-2);
+      font-size: var(--sl-text-xs);
+    }
+
+    .ops-wizard input[type="text"],
+    .ops-wizard textarea {
+      width: 100%;
+      border: 1px solid color-mix(in srgb, var(--sl-color-gray-5) 70%, transparent);
+      border-radius: 0.375rem;
+      background: color-mix(in srgb, var(--sl-color-black) 35%, transparent);
+      padding: 0.5rem 0.625rem;
+      color: var(--sl-color-white);
+      font-size: var(--sl-text-sm);
+      font-family: inherit;
+    }
+
+    .ops-wizard input[type="text"]:focus-visible,
+    .ops-wizard textarea:focus-visible {
+      border-color: var(--sl-color-text-accent);
+      outline: none;
+    }
+
+    .run-hint,
+    .copy-status {
+      margin: 0;
+      color: var(--sl-color-gray-2);
+      font-size: var(--sl-text-xs);
+      line-height: 1.6;
+    }
+
+    .prompt-panel {
+      position: relative;
+      border: 1px solid color-mix(in srgb, var(--sl-color-gray-5) 70%, transparent);
+      border-radius: 0.5rem;
+      background: color-mix(in srgb, var(--sl-color-black) 45%, transparent);
+    }
+
+    .prompt-panel pre {
+      max-height: 22rem;
+      overflow: auto;
+      margin: 0;
+      padding: 2.75rem 1rem 1rem;
+      color: var(--sl-color-gray-1);
+      font-size: var(--sl-text-xs);
+      line-height: 1.6;
+      text-align: start;
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
+
+    .copy-button {
+      position: absolute;
+      top: 0.5rem;
+      right: 0.5rem;
+      z-index: 1;
+      border: 1px solid var(--sl-color-text-accent);
+      border-radius: 0.375rem;
+      background: var(--sl-color-text-accent);
+      padding: 0.3rem 0.75rem;
+      color: var(--sl-color-black);
+      font-size: var(--sl-text-xs);
+      font-weight: 600;
+      cursor: pointer;
+    }
+
+    .copy-button:hover,
+    .copy-button:focus-visible {
+      background: color-mix(in srgb, var(--sl-color-text-accent) 85%, var(--sl-color-white));
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      .option-card {
+        transition: none;
+      }
+    }
+  }
+</style>
