@@ -82,6 +82,12 @@ When a workflow produces a Pages report, its existing review repository is also 
 
 Production Pages configuration is fixed in the conventional publishing workflow and its protected environment. Agents and manual agentic-workflow inputs must not select the production repository, deployment environment, build command, or source paths. Review and production publishers use distinct repositories or environments, URLs, and concurrency groups.
 
+### Ops Publish Add-on
+
+The optional conventional Ops Publish add-on uses `CENTRAL_AGENTIC_OPS_PUBLISH_REVIEWERS` as a required comma-separated allowlist of GitHub user logins permitted to apply publication approval. `CENTRAL_AGENTIC_OPS_PUBLISH_CONTROL_REPOS` lists the exact control repositories whose generated review issues may be published and defaults to the repository containing the add-on. The target owner and repository must also satisfy `CENTRAL_AGENTIC_OPS_ALLOWED_OWNERS` and `CENTRAL_AGENTIC_OPS_ALLOWED_REPOS`.
+
+Ops Publish prefers the existing GitHub App configuration. PAT fallback uses separate fine-grained `CENTRAL_AGENTIC_OPS_PUBLISH_CONTROL_TOKEN` and `CENTRAL_AGENTIC_OPS_PUBLISH_TARGET_TOKEN` secrets so control-run reads and target writes do not share a broad credential. The control token requires Actions read access only to listed control repositories; the target token requires Contents read plus Issues write access only to allowed targets. See [Ops Publish](operations.md#publishing-reviewed-operation-issues).
+
 ## Repository Secrets
 
 | Name | Scope | Required | Purpose |

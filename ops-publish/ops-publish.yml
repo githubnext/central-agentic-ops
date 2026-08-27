@@ -1,0 +1,95 @@
+name: Ops Publish
+
+on:
+  issues:
+    types: [labeled]
+
+permissions: {}
+
+concurrency:
+  group: ops-publish-${{ github.event.issue.number }}
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    if: github.event.label.name == 'ops:publish-to-target'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      actions: read
+      contents: read
+      issues: write
+    steps:
+      - name: Checkout trusted publisher
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.event.repository.default_branch }}
+          persist-credentials: false
+
+      - name: Inspect publication request
+        id: inspect
+        env:
+          PUBLISH_CONTROL_REPOS: ${{ vars.CENTRAL_AGENTIC_OPS_PUBLISH_CONTROL_REPOS || github.repository }}
+          PUBLISH_REVIEWERS: ${{ vars.CENTRAL_AGENTIC_OPS_PUBLISH_REVIEWERS }}
+        run: node .github/scripts/ops-publish/ops-publish.mjs inspect
+
+      - name: Generate control-repository token
+        id: control-app-token
+        env:
+          APP_PRIVATE_KEY: ${{ secrets.GH_AW_GITHUB_APP_PRIVATE_KEY }}
+        if: vars.GH_AW_GITHUB_APP_ID != '' && env.APP_PRIVATE_KEY != ''
+        uses: actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1 # v3.2.0
+        with:
+          client-id: ${{ vars.GH_AW_GITHUB_APP_ID }}
+          private-key: ${{ secrets.GH_AW_GITHUB_APP_PRIVATE_KEY }}
+          owner: ${{ steps.inspect.outputs.control_owner }}
+          repositories: ${{ steps.inspect.outputs.control_name }}
+          github-api-url: ${{ github.api_url }}
+          permission-actions: read
+
+      - name: Validate originating worker run
+        id: validate
+        env:
+          ALLOWED_OWNERS: ${{ vars.CENTRAL_AGENTIC_OPS_ALLOWED_OWNERS || github.repository_owner }}
+          ALLOWED_REPOS: ${{ vars.CENTRAL_AGENTIC_OPS_ALLOWED_REPOS }}
+          CONTROL_REPOSITORY: ${{ steps.inspect.outputs.control_repository }}
+          CONTROL_TOKEN: ${{ steps.control-app-token.outputs.token || secrets.CENTRAL_AGENTIC_OPS_PUBLISH_CONTROL_TOKEN || github.token }}
+          SOURCE_RUN_ID: ${{ steps.inspect.outputs.run_id }}
+          SOURCE_RUN_URL: ${{ steps.inspect.outputs.run_url }}
+          SOURCE_ISSUE_CREATED_AT: ${{ steps.inspect.outputs.source_created_at }}
+        run: node .github/scripts/ops-publish/ops-publish.mjs validate-run
+
+      - name: Generate target-repository token
+        id: target-app-token
+        env:
+          APP_PRIVATE_KEY: ${{ secrets.GH_AW_GITHUB_APP_PRIVATE_KEY }}
+        if: vars.GH_AW_GITHUB_APP_ID != '' && env.APP_PRIVATE_KEY != ''
+        uses: actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1 # v3.2.0
+        with:
+          client-id: ${{ vars.GH_AW_GITHUB_APP_ID }}
+          private-key: ${{ secrets.GH_AW_GITHUB_APP_PRIVATE_KEY }}
+          owner: ${{ steps.validate.outputs.target_owner }}
+          repositories: ${{ steps.validate.outputs.target_name }}
+          github-api-url: ${{ github.api_url }}
+          permission-contents: read
+          permission-issues: write
+
+      - name: Publish approved issue
+        id: publish
+        env:
+          CONTROL_REPOSITORY: ${{ steps.inspect.outputs.control_repository }}
+          PACKAGE: ${{ steps.validate.outputs.package }}
+          REVIEWER: ${{ steps.inspect.outputs.reviewer }}
+          SOURCE_CONTENT_DIGEST: ${{ steps.inspect.outputs.source_content_digest }}
+          SOURCE_ISSUE: ${{ steps.inspect.outputs.source_issue }}
+          SOURCE_RUN_URL: ${{ steps.inspect.outputs.run_url }}
+          SOURCE_TOKEN: ${{ github.token }}
+          TARGET_REPOSITORY: ${{ steps.validate.outputs.target_repository }}
+          TARGET_TOKEN: ${{ steps.target-app-token.outputs.token || secrets.CENTRAL_AGENTIC_OPS_PUBLISH_TARGET_TOKEN }}
+        run: node .github/scripts/ops-publish/ops-publish.mjs publish
+
+      - name: Summarize publication
+        env:
+          TARGET_ISSUE_URL: ${{ steps.publish.outputs.target_issue_url }}
+        run: |
+          printf 'Published issue: %s\n' "$TARGET_ISSUE_URL" >> "$GITHUB_STEP_SUMMARY"

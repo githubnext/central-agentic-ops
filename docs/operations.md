@@ -111,6 +111,14 @@ This favors bounded failure over eventual delivery. Guaranteed eventual processi
 
 Observability imports for Sentry, Grafana, and Datadog are shared control-plane context. They do not replace GitHub Actions run history and correlation metadata as the primary execution audit trail.
 
+## Publishing Reviewed Operation Issues
+
+The optional Ops Publish add-on turns an explicit human label into a deterministic issue publication without rerunning AI. It remains outside the Agentic Workflow package catalog: copy `ops-publish/ops-publish.yml` and `.github/scripts/ops-publish/ops-publish.mjs` from a pinned catalog revision into the private repository that receives review issues.
+
+Configure `CENTRAL_AGENTIC_OPS_PUBLISH_REVIEWERS`, create the `ops:publish-to-target` label, and configure `CENTRAL_AGENTIC_OPS_PUBLISH_CONTROL_REPOS` when the review repository differs from the control repository. Applying the label to an eligible bot-authored review issue validates the originating worker run, derives its target and package from trusted run metadata, enforces repository allowlists and target-owned package authority, creates the target issue with provenance, and closes the review issue.
+
+This path supports issue outputs only. It does not transfer issues, publish pull requests or comments, or apply artifact-backed review bundles. GitHub issue transfer is not used because it is limited to repositories under one owner and cannot transfer a private issue to a public repository. See the add-on's `README.md` for installation, credentials, and failure behavior.
+
 ## Publishing Pages Reports
 
 ### Activating Pages

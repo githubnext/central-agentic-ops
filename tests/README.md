@@ -17,6 +17,7 @@ The automated suite checks source `.md` contracts, ops-value interfaces, smoke-w
 | Runtime staged | `.github/workflows/staged-smoke.yml` | Manual Actions dispatch | One bounded target and its workers complete; target refs and issues remain unchanged. |
 | Runtime modes | `.github/workflows/enterprise-canary.yml` | Manual protected Actions dispatch | Repository-local staged/review/live routing against dedicated repositories with mode-specific write assertions. |
 | Runtime stress | `.github/workflows/enterprise-stress.yml` | Manual protected Actions dispatch | Repository-local two, three, or five same-scope staged runs verify cancellation and no target mutation. |
+| Ops Publish | `tests/unit/ops-publish*.test.mjs` | `node --test tests/unit/ops-publish*.test.mjs` | Reviewer, provenance, routing, authority, least-privilege, API failure, retry, pagination, and publication contracts. |
 
 ## Package Lifecycle Integration
 
