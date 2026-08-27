@@ -118,6 +118,7 @@ steps:
 
         const outputDirectory = '/tmp/gh-aw/agent/advisory-uk-ai-operational-resilience';
         const outputPath = path.join(outputDirectory, 'prefetch.json');
+        const targetDirectory = 'target';
         const lookbackDays = 7;
         const since = new Date(Date.now() - lookbackDays * 24 * 60 * 60 * 1000).toISOString();
         const ageDays = (createdAt) => {
@@ -132,7 +133,7 @@ steps:
             const response = await github.request(route, { owner, repo, ...parameters });
             return { accessible: true, status: response.status, data: response.data };
           } catch (error) {
-            core.warning(`Repository evidence could not be read (status ${error.status || 'unknown'}).`);
+            core.warning(`${route} could not be read (status ${error.status || 'unknown'}).`);
             return { accessible: false, status: error.status || null, data: null };
           }
         }
@@ -154,7 +155,7 @@ steps:
             }
             return { accessible: true, status: 200, items };
           } catch (error) {
-            core.warning(`Required repository evidence could not be read (status ${error.status || 'unknown'}).`);
+            core.warning(`${route} could not be read (status ${error.status || 'unknown'}).`);
             return { accessible: false, status: error.status || null, items: [] };
           }
         }
@@ -186,17 +187,17 @@ steps:
         const repositoryData = repository.data || {};
         const securityAndAnalysis = repositoryData.security_and_analysis || {};
         const securityPolicyPaths = [
-          'target/SECURITY.md',
-          'target/.github/SECURITY.md',
-          'target/docs/SECURITY.md',
+          `${targetDirectory}/SECURITY.md`,
+          `${targetDirectory}/.github/SECURITY.md`,
+          `${targetDirectory}/docs/SECURITY.md`,
         ];
         const dependencyAutomationPaths = [
-          'target/.github/dependabot.yml',
-          'target/.github/dependabot.yaml',
-          'target/renovate.json',
-          'target/renovate.json5',
-          'target/.renovaterc',
-          'target/.renovaterc.json',
+          `${targetDirectory}/.github/dependabot.yml`,
+          `${targetDirectory}/.github/dependabot.yaml`,
+          `${targetDirectory}/renovate.json`,
+          `${targetDirectory}/renovate.json5`,
+          `${targetDirectory}/.renovaterc`,
+          `${targetDirectory}/.renovaterc.json`,
         ];
         const payload = {
           generated_at: new Date().toISOString(),
