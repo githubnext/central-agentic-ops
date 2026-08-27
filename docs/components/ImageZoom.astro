@@ -1,0 +1,207 @@
+---
+import { Icon } from "@astrojs/starlight/components";
+---
+
+<dialog class="image-zoom" data-image-zoom-dialog aria-label="Expanded image">
+  <div class="image-zoom-toolbar">
+    <p data-image-zoom-caption></p>
+    <button type="button" data-image-zoom-close aria-label="Close image preview" autofocus>
+      <Icon name="close" size="1.25rem" />
+    </button>
+  </div>
+  <div class="image-zoom-viewport">
+    <img data-image-zoom-preview alt="" />
+  </div>
+</dialog>
+
+<script>
+  const setupImageZoom = () => {
+    const dialog = document.querySelector<HTMLDialogElement>("[data-image-zoom-dialog]");
+    const preview = dialog?.querySelector<HTMLImageElement>("[data-image-zoom-preview]");
+    const caption = dialog?.querySelector<HTMLElement>("[data-image-zoom-caption]");
+    const closeButton = dialog?.querySelector<HTMLButtonElement>("[data-image-zoom-close]");
+    const viewport = dialog?.querySelector<HTMLElement>(".image-zoom-viewport");
+
+    if (!dialog || !preview || !caption || !closeButton || !viewport) return;
+
+    let triggerToRestore: HTMLImageElement | null = null;
+
+    const openDialog = (source: HTMLImageElement) => {
+      const description = source.alt.trim();
+      const declaredWidth = Number.parseFloat(source.getAttribute("width") || "0");
+      const zoomWidth = Math.max(declaredWidth, source.naturalWidth, source.clientWidth);
+      triggerToRestore = source;
+      preview.src = source.currentSrc || source.src;
+      preview.alt = description;
+      preview.style.width = `${zoomWidth}px`;
+      caption.textContent = description;
+      caption.hidden = description.length === 0;
+      viewport.scrollTo(0, 0);
+      dialog.showModal();
+    };
+
+    document.querySelectorAll<HTMLImageElement>(".sl-markdown-content img").forEach((source) => {
+      if (source.dataset.imageZoomReady !== undefined || source.closest("a, button")) return;
+
+      source.dataset.imageZoomReady = "";
+      source.dataset.imageZoomTrigger = "";
+      source.tabIndex = 0;
+      source.setAttribute("role", "button");
+      source.setAttribute("aria-haspopup", "dialog");
+      source.setAttribute("aria-label", `Expand image: ${source.alt || "Documentation image"}`);
+
+      source.addEventListener("click", () => openDialog(source));
+      source.addEventListener("keydown", (event) => {
+        if (event.key !== "Enter" && event.key !== " ") return;
+        event.preventDefault();
+        openDialog(source);
+      });
+    });
+
+    if (dialog.dataset.imageZoomReady !== undefined) return;
+    dialog.dataset.imageZoomReady = "";
+    closeButton.addEventListener("click", () => dialog.close());
+    dialog.addEventListener("keydown", (event) => {
+      if (event.key !== "Escape") return;
+      event.preventDefault();
+      dialog.close();
+    });
+    dialog.addEventListener("click", (event) => {
+      if (event.target === dialog) dialog.close();
+    });
+    dialog.addEventListener("close", () => {
+      preview.removeAttribute("src");
+      preview.style.removeProperty("width");
+      triggerToRestore?.focus();
+      triggerToRestore = null;
+    });
+  };
+
+  setupImageZoom();
+  document.addEventListener("astro:page-load", setupImageZoom);
+</script>
+
+<style>
+  :global(.sl-markdown-content img[data-image-zoom-trigger]) {
+    cursor: zoom-in;
+  }
+
+  :global(.sl-markdown-content img[data-image-zoom-trigger]:focus-visible) {
+    outline: 3px solid var(--sl-color-accent-high);
+    outline-offset: 0.25rem;
+  }
+
+  .image-zoom {
+    width: min(96vw, 100rem);
+    height: 94dvh;
+    max-width: none;
+    max-height: none;
+    margin: auto;
+    border: 1px solid var(--sl-color-gray-5);
+    border-radius: 0.5rem;
+    padding: 0;
+    overflow: hidden;
+    background: var(--sl-color-bg);
+    color: var(--sl-color-white);
+    box-shadow: var(--sl-shadow-lg);
+  }
+
+  .image-zoom[open] {
+    display: grid;
+    grid-template-rows: auto minmax(0, 1fr);
+  }
+
+  .image-zoom::backdrop {
+    background: rgb(0 0 0 / 0.78);
+    backdrop-filter: blur(3px);
+  }
+
+  .image-zoom-toolbar {
+    position: relative;
+    z-index: 1;
+    display: flex;
+    min-width: 0;
+    min-height: 3rem;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    border-bottom: 1px solid var(--sl-color-gray-5);
+    padding: 0.375rem 0.5rem 0.375rem 1rem;
+    background: var(--sl-color-bg-nav);
+  }
+
+  .image-zoom-toolbar p {
+    min-width: 0;
+    margin: 0;
+    overflow: hidden;
+    color: var(--sl-color-gray-2);
+    font-size: var(--sl-text-sm);
+    line-height: 1.35;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .image-zoom-toolbar button {
+    display: grid;
+    flex: 0 0 2.25rem;
+    width: 2.25rem;
+    height: 2.25rem;
+    place-items: center;
+    border: 0;
+    border-radius: 0.375rem;
+    background: transparent;
+    color: var(--sl-color-gray-2);
+    cursor: pointer;
+  }
+
+  .image-zoom-toolbar button:hover {
+    background: var(--sl-color-gray-6);
+    color: var(--sl-color-white);
+  }
+
+  .image-zoom-toolbar button:focus-visible {
+    outline: 2px solid var(--sl-color-accent-high);
+    outline-offset: 1px;
+  }
+
+  .image-zoom-viewport {
+    min-width: 0;
+    overflow: auto;
+    overscroll-behavior: contain;
+    background-color: var(--sl-color-bg);
+    background-image: linear-gradient(45deg, var(--sl-color-gray-6) 25%, transparent 25%),
+      linear-gradient(-45deg, var(--sl-color-gray-6) 25%, transparent 25%),
+      linear-gradient(45deg, transparent 75%, var(--sl-color-gray-6) 75%),
+      linear-gradient(-45deg, transparent 75%, var(--sl-color-gray-6) 75%);
+    background-position: 0 0, 0 0.75rem, 0.75rem -0.75rem, -0.75rem 0;
+    background-size: 1.5rem 1.5rem;
+  }
+
+  .image-zoom-viewport img {
+    display: block;
+    width: auto;
+    max-width: none;
+    height: auto;
+    margin: 0 auto;
+    background: var(--sl-color-bg);
+  }
+
+  @media (max-width: 30rem) {
+    .image-zoom {
+      width: 100vw;
+      height: 100dvh;
+      border: 0;
+      border-radius: 0;
+    }
+
+    .image-zoom-toolbar {
+      padding-left: 0.75rem;
+    }
+  }
+
+  @media print {
+    .image-zoom {
+      display: none;
+    }
+  }
+</style>
