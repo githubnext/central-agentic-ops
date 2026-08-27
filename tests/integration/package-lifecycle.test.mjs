@@ -24,6 +24,7 @@ const craPackageSource = (() => {
 const craExpectedFiles = [
   ".github/workflows/eu-cra-compliance-article-14-reporting-readiness.md",
   ".github/workflows/eu-cra-compliance-conformity-release-evidence.md",
+  ".github/workflows/eu-cra-compliance-package-maintainer.md",
   ".github/workflows/eu-cra-compliance-scope-classifier.md",
   ".github/workflows/eu-cra-compliance-security-requirements-auditor.md",
   ".github/workflows/eu-cra-compliance-supply-chain-sbom-auditor.md",
@@ -31,6 +32,7 @@ const craExpectedFiles = [
   ".github/workflows/eu-cra-compliance.md",
   ".github/workflows/shared/control-precompute.md",
   ".github/workflows/shared/control.md",
+  ".github/aw/eu-cra-compliance/implementation-status.md",
 ];
 
 const expectedFiles = [
@@ -48,6 +50,7 @@ const expectedFiles = [
   ".github/workflows/dependabot.md",
   ".github/workflows/eu-cra-compliance-article-14-reporting-readiness.md",
   ".github/workflows/eu-cra-compliance-conformity-release-evidence.md",
+  ".github/workflows/eu-cra-compliance-package-maintainer.md",
   ".github/workflows/eu-cra-compliance-scope-classifier.md",
   ".github/workflows/eu-cra-compliance-security-requirements-auditor.md",
   ".github/workflows/eu-cra-compliance-supply-chain-sbom-auditor.md",
@@ -60,6 +63,7 @@ const expectedFiles = [
   ".github/workflows/shared/control.md",
   ".github/workflows/shared/review-bundle.md",
   ".github/workflows/shared/target-checkout-read-org-token.md",
+  ".github/aw/eu-cra-compliance/implementation-status.md",
 ];
 const repositoryOnlyFiles = [
   ".github/aw/e2e/run-canary.sh",
@@ -112,10 +116,12 @@ function assertCorePackage(consumer) {
   assert.deepEqual(
     installedManifest.files.map(({ destination }) => destination).sort(),
     [
+      ".github/aw/eu-cra-compliance/implementation-status.md",
       ".github/workflows/ambient-context.md",
       ".github/workflows/aw-failures.md",
       ".github/workflows/aw-maintenance.md",
       ".github/workflows/dependabot.md",
+      ".github/workflows/eu-cra-compliance-package-maintainer.md",
       ".github/workflows/eu-cra-compliance.md",
       ".github/workflows/optimization.md",
     ],
@@ -158,9 +164,13 @@ test("gh aw add installs the focused EU CRA package contract", { timeout: 180_00
       "utf8",
     ));
     assert.deepEqual(
-      installedManifest.files.map(({ destination }) => destination),
-      [".github/workflows/eu-cra-compliance.md"],
-      "focused CRA package manifest must own only its orchestrator",
+      installedManifest.files.map(({ destination }) => destination).sort(),
+      [
+        ".github/aw/eu-cra-compliance/implementation-status.md",
+        ".github/workflows/eu-cra-compliance-package-maintainer.md",
+        ".github/workflows/eu-cra-compliance.md",
+      ],
+      "focused CRA package manifest must own its entry workflows and ledger",
     );
   } finally {
     rmSync(consumer, { recursive: true, force: true });

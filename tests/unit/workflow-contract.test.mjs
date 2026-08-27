@@ -228,6 +228,7 @@ test("enterprise defaults, budgets, timeouts, and concurrency are finite", () =>
     "aw-maintenance.md": { credits: 250, timeout: 15, dispatchMax: 50, workers: 1 },
     "dependabot.md": { credits: 250, timeout: 15, dispatchMax: 50, workers: 1 },
     "eu-cra-compliance.md": { credits: 200, timeout: 15, dispatchMax: 48, workers: 6 },
+    "eu-cra-compliance-package-maintainer.md": { credits: 200, timeout: 20 },
     "optimization.md": { credits: 250, timeout: 15, dispatchMax: 20, workers: 2 },
     "ambient-context-agents-md-curator.md": { credits: 400, timeout: 25 },
     "ambient-context-skills-curator.md": { credits: 400, timeout: 20 },
@@ -625,6 +626,7 @@ test("every worker uses the standard dispatch envelope and safe mode vocabulary"
 
 test("EU CRA workflows preserve regulatory and human-review boundaries", () => {
   const orchestrator = workflow("eu-cra-compliance.md");
+  const maintainer = workflow("eu-cra-compliance-package-maintainer.md");
   const workers = [
     ["eu-cra-compliance-scope-classifier.md", "Scope Classifier"],
     ["eu-cra-compliance-security-requirements-auditor.md", "Security Requirements Auditor"],
@@ -641,9 +643,18 @@ test("EU CRA workflows preserve regulatory and human-review boundaries", () => {
   assert.match(orchestrator, /sum of enabled, useful workers across selected repositories/);
   assert.match(orchestrator, /Keep that total at or below 48/);
 
+  for (const [name, displayName] of [["eu-cra-compliance.md", null], ...workers, ["eu-cra-compliance-package-maintainer.md", "Package Maintainer"]]) {
+    const source = workflow(name);
+    if (displayName) {
+      assert.match(source, new RegExp(`^name: "EU CRA Compliance / ${displayName}"$`, "m"));
+    }
+    assert.match(source, /engine:\n\s+id: pi\n\s+model: copilot\/gpt-5\.4/);
+    assert.match(source, /copilot-requests: write/);
+    assert.match(source, /tools:\n\s+cli-proxy: true\n\s+github:\n\s+mode: gh-proxy/);
+  }
+
   for (const [name, displayName] of workers) {
     const source = workflow(name);
-    assert.match(source, new RegExp(`^name: "EU CRA Compliance / ${displayName}"$`, "m"));
     assert.match(source, /Regulation \(EU\) 2024\/2847/);
     assert.match(source, /https:\/\/eur-lex\.europa\.eu\/eli\/reg\/2024\/2847\/oj/);
     assert.match(source, /https:\/\/digital-strategy\.ec\.europa\.eu\/en\/policies\/cyber-resilience-act/);
@@ -657,6 +668,21 @@ test("EU CRA workflows preserve regulatory and human-review boundaries", () => {
     assert.match(source, /Do not put secrets, personal data, exploit details/);
     assert.doesNotMatch(source, /^graders:/m);
   }
+
+  assert.match(maintainer, /schedule: daily/);
+  assert.match(maintainer, /Systematically account for the complete Act: Articles 1–71, Annexes I–VIII/);
+  assert.match(maintainer, /update only the applicable ledger path/i);
+  assert.match(maintainer, /allowed-files:\n\s+- "eu-cra-compliance\/implementation-status\.md"\n\s+- "\.github\/aw\/eu-cra-compliance\/implementation-status\.md"/);
+  assert.match(maintainer, /draft: true/);
+  assert.match(maintainer, /create-issue:[\s\S]*?max: 1/);
+  assert.doesNotMatch(maintainer, /shared\/control\.md/);
+
+  const ledger = readFileSync(join(root, "eu-cra-compliance", "implementation-status.md"), "utf8");
+  assert.match(ledger, /Articles 1–12/);
+  assert.match(ledger, /Articles 60–71/);
+  assert.match(ledger, /Annexes II–VIII/);
+  assert.match(ledger, /CRA-ACTS-001/);
+  assert.match(ledger, /`IMPLEMENTED` means a workflow capability exists/);
 
   const article14 = workflow("eu-cra-compliance-article-14-reporting-readiness.md");
   assert.match(article14, /without undue delay and, in any event, no later than 24 hours/);
@@ -727,7 +753,11 @@ test("clean-room compilation emits the expected GitHub Actions settings", { time
       "optimization-ai-credit-optimizer.lock.yml",
       "optimization.lock.yml",
     ];
-    const expectedLockNames = [...packageLockNames, "pr-reviewer.lock.yml"];
+    const expectedLockNames = [
+      ...packageLockNames,
+      "eu-cra-compliance-package-maintainer.lock.yml",
+      "pr-reviewer.lock.yml",
+    ].sort();
 
     assert.deepEqual(lockNames, expectedLockNames);
     for (const name of packageLockNames) {
@@ -759,6 +789,11 @@ test("clean-room compilation emits the expected GitHub Actions settings", { time
       assert.match(generated, /GH_AW_SAFE_OUTPUTS_CONFIG:/);
       assert.match(generated, /PREVIEW_ONLY: \$\{\{ \(env\.GH_AW_SAFE_OUTPUT_MODE == 'live' \|\| env\.GH_AW_SAFE_OUTPUT_MODE == 'review'\) && 'false' \|\| 'true' \}\}/);
     }
+
+    const craMaintainer = workflow("eu-cra-compliance-package-maintainer.lock.yml", generatedDirectory);
+    assert.match(craMaintainer, /schedule:/);
+    assert.match(craMaintainer, /eu-cra-compliance\/implementation-status\.md/);
+    assert.match(craMaintainer, /copilot\/gpt-5\.4/);
 
     const prReviewer = workflow("pr-reviewer.lock.yml", generatedDirectory);
     assert.match(prReviewer, /create_pull_request_review_comment/);

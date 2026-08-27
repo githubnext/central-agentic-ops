@@ -59,6 +59,10 @@ permissions:
   issues: read
   pull-requests: read
 
+engine:
+  id: pi
+  model: copilot/gpt-5.4
+
 strict: true
 
 network:
@@ -80,8 +84,9 @@ concurrency:
 tracker-id: eu-cra-compliance-scope-classifier
 
 tools:
+  cli-proxy: true
   github:
-    mode: remote
+    mode: gh-proxy
     toolsets: [repos, issues, pull_requests, actions]
   web-fetch:
 

@@ -16,8 +16,11 @@ The EU CRA Compliance package helps a private Central Agentic Ops control reposi
 | [`eu-cra-compliance-vulnerability-handling-auditor`](../.github/workflows/eu-cra-compliance-vulnerability-handling-auditor.md) | Audits vulnerability intake, remediation, disclosure, updates, and support evidence. |
 | [`eu-cra-compliance-article-14-reporting-readiness`](../.github/workflows/eu-cra-compliance-article-14-reporting-readiness.md) | Audits Article 14 awareness, escalation, timeline, and notification-evidence readiness. |
 | [`eu-cra-compliance-conformity-release-evidence`](../.github/workflows/eu-cra-compliance-conformity-release-evidence.md) | Audits technical documentation, conformity, declaration, and release-gate evidence. |
+| [`eu-cra-compliance-package-maintainer`](../.github/workflows/eu-cra-compliance-package-maintainer.md) | Daily audits fleet coverage against the current Act and maintains the implementation ledger. |
 
 The orchestrator dispatches at most 48 repository-level workers per run. Each worker creates at most one evidence issue, uses the shared control plane, and defaults to staged output.
+
+The package maintainer runs independently of repository dispatch. It updates the [implementation-status ledger](implementation-status.md) only through a draft pull request and may open at most one deduplicated issue for the highest-priority concrete fleet gap. Installed packages keep the ledger at `.github/aw/eu-cra-compliance/implementation-status.md`.
 
 ## Install and Configure
 
@@ -41,5 +44,6 @@ Each worker has an independent `<WORKER>_ENABLED` kill switch and `<WORKER>_MAX_
 - Material scope, classification, role, conformity, reporting, declaration, and release decisions require explicit human review.
 - Findings use bounded evidence statuses, never compliance, certification, or CE approval claims.
 - Regulatory dates and interpretations are verified against current authoritative sources; non-binding guidance is labeled.
+- All package agents use Pi with the GitHub Copilot backend through the CLI and GitHub proxies.
 
-Operational-value evaluators for all six workers are intentionally pending post-adoption evidence and are not included as placeholders.
+Operational-value evaluators for all six repository workers and the package maintainer are intentionally pending post-adoption evidence and are not included as placeholders.

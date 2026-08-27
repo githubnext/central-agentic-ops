@@ -62,6 +62,10 @@ permissions:
   security-events: read
   vulnerability-alerts: read
 
+engine:
+  id: pi
+  model: copilot/gpt-5.4
+
 strict: true
 
 network:
@@ -83,8 +87,9 @@ concurrency:
 tracker-id: eu-cra-compliance-supply-chain-sbom-auditor
 
 tools:
+  cli-proxy: true
   github:
-    mode: remote
+    mode: gh-proxy
     toolsets: [repos, issues, pull_requests, actions, dependabot, code_security, security_advisories]
   web-fetch:
 

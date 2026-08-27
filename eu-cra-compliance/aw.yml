@@ -3,3 +3,7 @@ description: Organization-wide evidence gathering and operational readiness work
 min-version: v0.87.6
 includes:
   - .github/workflows/eu-cra-compliance.md
+  - .github/workflows/eu-cra-compliance-package-maintainer.md
+resources:
+  - source: implementation-status.md
+    destination: .github/aw/eu-cra-compliance/implementation-status.md
