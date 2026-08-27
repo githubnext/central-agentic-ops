@@ -716,9 +716,9 @@ test("EU CRA workflows preserve regulatory and human-review boundaries", () => {
   const conformity = workflow("eu-cra-compliance-conformity-release-evidence.md");
   assert.match(conformity, /at least 10 years after market placement or for the support period, whichever is longer/);
 
-  assert.match(ledger, /CRA-ART-014.*reportability requires human review/);
-  assert.match(ledger, /CRA-ART-028-031.*final release require human review/);
-  assert.match(ledger, /CRA-ANNEX-VIII.*Route selection requires human review/);
+  assert.match(ledger, /CRA-ART-014.*reportability requires human review \| IMPLEMENTED \|/);
+  assert.match(ledger, /CRA-ART-028-031.*final release require human review \| IMPLEMENTED \|/);
+  assert.match(ledger, /CRA-ANNEX-VIII.*Route selection requires human review \| IMPLEMENTED \|/);
 });
 
 test("workers reject disabled, malformed, or over-ceiling dispatches before execution", () => {
