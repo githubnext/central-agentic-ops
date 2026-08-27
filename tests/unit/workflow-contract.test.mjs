@@ -862,6 +862,15 @@ test("daily dashboard review uses the GitHub Copilot Pi engine", () => {
   assert.match(source, /permissions:\n\s+contents: read\n\s+copilot-requests: write\n\s+issues: read/);
   assert.match(source, /engine:\n\s+id: pi\n\s+model: copilot\/gpt-5\.4/);
   assert.doesNotMatch(source, /engine: codex/);
+  assert.doesNotMatch(source, /runtime:\s+docker-sbx/);
+});
+
+test("daily dashboard review lock file does not require docker-sbx secrets", () => {
+  const lock = workflow("daily-dashboard-language-spec-review.lock.yml");
+
+  assert.doesNotMatch(lock, /docker-sbx/);
+  assert.doesNotMatch(lock, /DOCKER_PAT/);
+  assert.doesNotMatch(lock, /DOCKER_USERNAME/);
 });
 
 test("clean-room compilation emits the expected GitHub Actions settings", { timeout: 120_000 }, () => {
