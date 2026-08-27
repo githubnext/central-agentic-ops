@@ -8,9 +8,11 @@ on:
   workflow_dispatch:
 permissions:
   contents: read
+  copilot-requests: write
   issues: read
-engine: codex
-model: copilot/gpt-5.4
+engine:
+  id: pi
+  model: copilot/gpt-5.4
 sandbox:
   agent:
     id: awf
