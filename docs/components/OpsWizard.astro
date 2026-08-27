@@ -161,6 +161,16 @@ const agents = [
         <pre data-prompt-output></pre>
       </div>
       <p class="copy-status" role="status" aria-live="polite" data-copy-status></p>
+      <dialog class="copy-dialog" data-copy-dialog aria-labelledby="ops-wizard-copy-dialog-title">
+        <div class="copy-dialog-card">
+          <p class="copy-dialog-title" id="ops-wizard-copy-dialog-title">Prompt copied</p>
+          <p>
+            Create a repository, then paste the copied prompt into the starter text box to start setting up your control
+            plane.
+          </p>
+          <button type="button" class="copy-dialog-close" data-copy-dialog-close>Got it</button>
+        </div>
+      </dialog>
     </fieldset>
   </form>
 </section>
@@ -271,7 +281,21 @@ const agents = [
       const installHint = form.querySelector<HTMLElement>("[data-agent-install-hint]");
       const copyButton = form.querySelector<HTMLButtonElement>("[data-copy-prompt]");
       const copyLabel = copyButton?.querySelector<HTMLElement>(".copy-label");
+      const copyDialog = form.querySelector<HTMLDialogElement>("[data-copy-dialog]");
+      const copyDialogClose = form.querySelector<HTMLButtonElement>("[data-copy-dialog-close]");
       let resetCopyLabel: ReturnType<typeof setTimeout> | undefined;
+
+      function openCopyDialog() {
+        if (!copyDialog) return;
+        if (typeof copyDialog.showModal === "function") {
+          if (!copyDialog.open) copyDialog.showModal();
+        }
+      }
+
+      function resetCopyState() {
+        if (copyLabel) copyLabel.textContent = "Copy prompt";
+        copyButton?.classList.remove("is-copied");
+      }
 
       function render() {
         const operation = selected(form, "operation");
@@ -296,16 +320,23 @@ const agents = [
         clearTimeout(resetCopyLabel);
         try {
           await navigator.clipboard.writeText(prompt);
-          if (status) status.textContent = "Prompt copied. Paste it into your agent and it takes over from there.";
+          if (status) status.textContent = "Prompt copied. Create a repository, then paste it into the starter text box.";
           if (copyLabel) copyLabel.textContent = "Copied";
           copyButton.classList.add("is-copied");
-          resetCopyLabel = setTimeout(() => {
-            if (copyLabel) copyLabel.textContent = "Copy prompt";
-            copyButton.classList.remove("is-copied");
-          }, 2400);
+          openCopyDialog();
+          resetCopyLabel = setTimeout(resetCopyState, 2400);
         } catch {
           if (status) status.textContent = "Copy failed. Select the prompt text and copy it manually.";
         }
+      });
+
+      copyDialogClose?.addEventListener("click", () => copyDialog?.close());
+      copyDialog?.addEventListener("close", () => {
+        clearTimeout(resetCopyLabel);
+        resetCopyState();
+      });
+      copyDialog?.addEventListener("click", (event) => {
+        if (event.target === copyDialog) copyDialog.close();
       });
 
       render();
@@ -601,6 +632,53 @@ const agents = [
     .copy-button.is-copied {
       border-color: var(--sl-color-green);
       background: var(--sl-color-green);
+    }
+
+    .copy-dialog {
+      max-width: min(26rem, calc(100% - 2rem));
+      border: 1px solid color-mix(in srgb, var(--sl-color-text-accent) 50%, transparent);
+      border-radius: 0.875rem;
+      background: var(--sl-color-bg);
+      padding: 0;
+      color: var(--sl-color-white);
+      box-shadow: 0 1.5rem 4rem color-mix(in srgb, var(--sl-color-black) 55%, transparent);
+    }
+
+    .copy-dialog::backdrop {
+      background: color-mix(in srgb, var(--sl-color-black) 65%, transparent);
+    }
+
+    .copy-dialog-card {
+      display: flex;
+      flex-direction: column;
+      gap: 0.875rem;
+      padding: 1.25rem;
+    }
+
+    .copy-dialog-card p {
+      margin: 0;
+      color: var(--sl-color-gray-2);
+      font-size: var(--sl-text-sm);
+      line-height: 1.6;
+    }
+
+    .copy-dialog-card .copy-dialog-title {
+      color: var(--sl-color-white);
+      font-size: var(--sl-text-lg);
+      font-weight: 700;
+      line-height: 1.2;
+    }
+
+    .copy-dialog-close {
+      align-self: flex-start;
+      border: 1px solid var(--sl-color-text-accent);
+      border-radius: 0.375rem;
+      background: var(--sl-color-text-accent);
+      padding: 0.35rem 0.9rem;
+      color: var(--sl-color-black);
+      font-size: var(--sl-text-xs);
+      font-weight: 600;
+      cursor: pointer;
     }
 
     @media (prefers-reduced-motion: reduce) {
