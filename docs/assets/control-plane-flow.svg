@@ -1,6 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 470" role="img" aria-labelledby="title description">
   <title id="title">Central Agentic Ops execution topology</title>
-  <desc id="description">A canonical aw.yml package is installed into one or more scoped control repositories. Each installation records package provenance and dispatches directly to enrolled target repositories within its allowlist and credential scope. Deployment profiles change runtime ownership and reach, not this execution path. Each live target and bundle pair has one assigned control repository.</desc>
+  <desc id="description">A canonical aw.yml package is installed into one or more scoped control repositories. Each installation records package provenance and dispatches directly to enrolled target repositories within its allowlist and credential scope. Deployment profiles change runtime ownership and reach, not this execution path. Each live target and package pair has one assigned control repository.</desc>
 
   <defs>
     <pattern id="grid" width="24" height="24" patternUnits="userSpaceOnUse">

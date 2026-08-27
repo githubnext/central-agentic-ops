@@ -1,6 +1,6 @@
 ---
 title: Monitor, Recover, and Maintain
-description: Monitor control-plane runs, stop unsafe activity, recover from incidents, and maintain installed bundles.
+description: Monitor control-plane runs, stop unsafe activity, recover from incidents, and maintain installed packages.
 ---
 
 Use this page after installation to answer the urgent operator questions: Is the control plane healthy? How do I stop it? What evidence should I collect? How do I recover safely?
@@ -9,9 +9,9 @@ Use this page after installation to answer the urgent operator questions: Is the
 | --- | --- |
 | Check scheduled runs | [Routine monitoring](#routine-monitoring) |
 | Investigate cancelled or incomplete work | [Queuing and resource exhaustion](#queuing-and-resource-exhaustion) |
-| Stop one worker, one bundle, or everything | [Emergency stop](#emergency-stop) |
+| Stop one worker, one package, or everything | [Emergency stop](#emergency-stop) |
 | Respond to an unsafe output or exposed credential | [Incident response](#incident-response) |
-| Add or update catalog workflows | [Maintain the catalog](#adding-a-bundle) |
+| Add or update catalog workflows | [Maintain the catalog](#adding-a-package) |
 
 For installation and the first write-free run, begin with [Install and run safely](getting-started.md).
 
@@ -20,11 +20,11 @@ Is unsafe activity active or broadly possible?
 	|
 	+-- yes --> disable Actions, cancel runs, revoke credentials if needed
 	|
-	+-- no ---> isolate one bundle or worker, collect evidence, return to staged
+	+-- no ---> isolate one package or worker, collect evidence, return to staged
 ```
 
 :::danger[Stop first when scope is unclear]
-If shared control, authentication, or multiple bundles may be affected, use the control-plane-wide emergency stop before investigating.
+If shared control, authentication, or multiple packages may be affected, use the control-plane-wide emergency stop before investigating.
 :::
 
 ## Validate Before Scheduled Live Runs
@@ -35,7 +35,7 @@ Before scheduled live operation, run one target through three manual checks:
 2. `review`: set the worker `MAX_MODE` to `review`; verify the private review destination and no target writes.
 3. `live`: set the worker `MAX_MODE` to `live`; use one low-risk target and verify the declared output and downstream CI.
 
-Record the three run URLs and restore the intended worker ceiling after the canary. A failed check returns the worker and bundle to `staged`.
+Record the three run URLs and restore the intended worker ceiling after the canary. A failed check returns the worker and package to `staged`.
 
 Use the same bounded profile in every gate:
 
@@ -53,7 +53,7 @@ expected_target_writes:
 Keep the target and repository limits fixed while changing the mode. That makes routing differences attributable to the promotion gate rather than a different repository sample.
 :::
 
-The catalog source repository's `Staged smoke` Actions workflow automates the first check for catalog maintainers. It is repository-only test tooling and is not installed by `aw.yml`. Run it manually, select one bundle, and provide one explicit `OWNER/REPO` target. It dispatches that orchestrator with `max_repos: 1`, `rollout_percent: 100`, and `safe_output_mode: staged`, waits for the orchestrator and correlated workers, and verifies that target issue and branch snapshots remain unchanged. It has no schedule and cannot request review or live processing.
+The catalog source repository's `Staged smoke` Actions workflow automates the first check for catalog maintainers. It is repository-only test tooling and is not installed by `aw.yml`. Run it manually, select one package, and provide one explicit `OWNER/REPO` target. It dispatches that orchestrator with `max_repos: 1`, `rollout_percent: 100`, and `safe_output_mode: staged`, waits for the orchestrator and correlated workers, and verifies that target issue and branch snapshots remain unchanged. It has no schedule and cannot request review or live processing.
 
 The repository-only `Enterprise canary` Actions workflow automates all three modes for catalog maintainers while keeping review and live deliberate:
 
@@ -74,7 +74,7 @@ Review the following for scheduled runs:
 | Signal | Expected condition |
 | --- | --- |
 | Authentication | App token or PAT resolves without exposing credential data |
-| Candidate selection | Targets match bundle discovery rules and configured limits |
+| Candidate selection | Targets match package discovery rules and configured limits |
 | worker workflow eligibility | Installed worker workflows match and disabled worker workflows are skipped |
 | safe output routing | staged mode performs no GitHub API writes, review routes privately, and live targets the selected repository |
 | Correlation | worker workflow safe outputs identify the orchestrator workflow run |
@@ -129,7 +129,7 @@ The Pages publisher does not use a `REPORT_PAGES_TOKEN` secret. Its build job re
 :::
 
 :::caution[The report can contain private repository data]
-The generated site includes data from its private control-plane repository, including repository identity, issue and pull request content, comments, artifact-derived summaries, workflow names and states, and run links. A private source repository does not by itself make its Pages site private. Configure Pages access control for the intended audience before the first deployment, and do not use this bundle when that boundary is unavailable.
+The generated site includes data from its private control-plane repository, including repository identity, issue and pull request content, comments, artifact-derived summaries, workflow names and states, and run links. A private source repository does not by itself make its Pages site private. Configure Pages access control for the intended audience before the first deployment, and do not use this add-on when that boundary is unavailable.
 
 Organization discovery excludes unrelated private repositories by default. `REPORT_INCLUDE_PRIVATE` is a boolean flag, not a credential, and there is no `REPORT_INCLUDE_TOKEN`. The current catalog workflow does not set the flag or accept a cross-repository credential, so it cannot discover unrelated private repositories out of the box.
 
@@ -151,7 +151,7 @@ After copying the report files from the pinned catalog checkout:
 3. Run **Pages** from the repository's **Actions** page, or wait for its scheduled or repository-event trigger.
 4. Verify the deployment URL and confirm that the report shows data only from the intended control-plane repository.
 
-The workflow first runs `inventory.mjs` against the checked-out control-plane repository. It discovers manifests, bundle relationships, standalone workflows, and source/lock status, then writes normalized schema-versioned JSON to the runner's temporary directory. `deployed-workflows.mjs` discovers compiled workflows in the configured repository scope and records which workflows declare an operational-value evaluator. `report.mjs` combines that inventory with accessible durable issues, pull requests, comments, review artifacts, and grader observations. Workflow completions trigger report rebuilds but are not published as report records themselves. The renderer writes the static site and a copy of the inventory to `_site`; the workflow uploads that directory as a Pages artifact and deploys it. Generated HTML and inventory are not committed to the repository.
+The workflow first runs `inventory.mjs` against the checked-out control-plane repository. It discovers manifests, package relationships, standalone workflows, and source/lock status, then writes normalized schema-versioned JSON to the runner's temporary directory. `deployed-workflows.mjs` discovers compiled workflows in the configured repository scope and records which workflows declare an operational-value evaluator. `report.mjs` combines that inventory with accessible durable issues, pull requests, comments, review artifacts, and grader observations. Workflow completions trigger report rebuilds but are not published as report records themselves. The renderer writes the static site and a copy of the inventory to `_site`; the workflow uploads that directory as a Pages artifact and deploys it. Generated HTML and inventory are not committed to the repository.
 
 Repository pages are outcome projections, not package projections. Reports and operational-value insights are grouped by their subject repository whether they were produced by a repository-local workflow or by a centrally executed worker. The report retains the producer identity `(runtime_repository, workflow_path)`, the durable output repository, and optional operation membership as separate provenance. Local Actions health and AI Credit usage remain labeled as local execution data; a central worker run is not counted as a target repository run.
 
@@ -177,14 +177,14 @@ To operate a report publisher:
 
 Review Pages must be private and access-controlled for the intended reviewers. If the repository plan or policy cannot provide that boundary, review publication fails closed. Never publish review content to a public fallback site. Agents must not receive `pages: write`, `id-token: write`, or authority to promote review content to production.
 
-Changing a bundle to `staged` prevents new Pages deployments but does not remove an already deployed site. Changing from `live` to `review` redirects future publication to review Pages but does not unpublish production. To stop or roll back either site, disable its conventional Pages workflow, use its protected environment to block deployment, or redeploy a known-good source revision through normal repository procedures. Handle sensitive-data exposure as a Pages incident in addition to stopping the affected agentic bundle.
+Changing a package to `staged` prevents new Pages deployments but does not remove an already deployed site. Changing from `live` to `review` redirects future publication to review Pages but does not unpublish production. To stop or roll back either site, disable its conventional Pages workflow, use its protected environment to block deployment, or redeploy a known-good source revision through normal repository procedures. Handle sensitive-data exposure as a Pages incident in addition to stopping the affected agentic package.
 
 ## Emergency Stop
 
 Disabling GitHub Actions for the private control repository is the control-plane-wide stop. It prevents new orchestrator and worker runs from starting, including manual dispatches. A repository administrator, or an organization or enterprise administrator with authority over Actions policy, should:
 
 :::caution[Mode changes are not an all-stop]
-Changing a bundle variable cannot stop a run that has already started and does not prevent authorized manual dispatches. Disable Actions and cancel active runs when a complete stop is required.
+Changing a package variable cannot stop a run that has already started and does not prevent authorized manual dispatches. Disable Actions and cancel active runs when a complete stop is required.
 :::
 
 1. Open the control repository's **Settings > Actions > General** and disable Actions for the repository. An organization or enterprise administrator may instead apply an Actions policy that disables the repository.
@@ -203,7 +203,7 @@ Use narrower controls when a full stop is unnecessary:
 
 | Scope | Control | Limitation |
 | --- | --- | --- |
-| One scheduled bundle | Clear its recognized mode or set it to an unrecognized value | Stops scheduled selection and worker workflow dispatch, but `workflow_dispatch` runs remain possible. |
+| One scheduled package | Clear its recognized mode or set it to an unrecognized value | Stops scheduled selection and worker workflow dispatch, but `workflow_dispatch` runs remain possible. |
 | One Orchestrator or worker workflow | Disable that workflow in GitHub Actions | Other enabled workflows can continue. |
 | Repository credentials | Revoke the App installation or PAT | Does not itself prevent runs that can use another available credential. |
 | Entire control plane | Disable Actions for the control repository and cancel active runs | Also stops unrelated Actions workflows in that repository. |
@@ -211,17 +211,17 @@ Use narrower controls when a full stop is unnecessary:
 To resume after an all-stop:
 
 1. Resolve the incident and rotate or narrow credentials when needed.
-2. Set every installed bundle to `staged`.
+2. Set every installed package to `staged`.
 3. Re-enable Actions for the control repository.
 4. Run one `workflow_dispatch` target with `max_repos: 1` and verify routing, permissions, and safe outputs.
-5. Promote each bundle independently through the normal review gates.
+5. Promote each package independently through the normal review gates.
 
 ## Incident Response
 
 For unexpected writes, unsafe routing, excessive dispatch, or credential concerns:
 
-1. Use the [emergency stop](#emergency-stop) when the incident affects shared control, authentication, or multiple bundles.
-2. Otherwise, move the affected bundle to staged mode or clear its recognized mode and disable a specific worker workflow when the incident is worker-local.
+1. Use the [emergency stop](#emergency-stop) when the incident affects shared control, authentication, or multiple packages.
+2. Otherwise, move the affected package to staged mode or clear its recognized mode and disable a specific worker workflow when the incident is worker-local.
 3. Cancel active orchestrator and worker runs; mode changes do not alter runs already in progress.
 4. Revoke or rotate credentials when exposure is possible.
 5. Trace `correlation_id`, `central_repo`, and `control_plane_run_url` across safe outputs.
@@ -247,7 +247,7 @@ credential_action: app-installation-revoked
 
 Do not include tokens, private keys, or secret values in the incident record.
 
-If shared authentication or shared control caused the incident, perform the control-plane-wide emergency stop. Otherwise, preserve unaffected bundle operation.
+If shared authentication or shared control caused the incident, perform the control-plane-wide emergency stop. Otherwise, preserve unaffected package operation.
 
 ### Catalog Release Revocation
 
@@ -255,7 +255,7 @@ A catalog maintainer cannot remotely disable workflows already installed in inde
 
 1. publish the affected release or commit and a known-good replacement;
 2. identify installations through package manifests and the approved control-repository inventory;
-3. move affected bundles to `staged` and cancel active runs in every installation;
+3. move affected packages to `staged` and cancel active runs in every installation;
 4. revoke credentials when repository access must stop immediately;
 5. pin or restore the known-good package revision, compile affected workflows, and validate one staged target;
 6. update projected catalog versions and lifecycle status after validation;
@@ -263,14 +263,14 @@ A catalog maintainer cannot remotely disable workflows already installed in inde
 
 Removing or retagging the catalog source does not revoke installed files. Revocation is complete only after every affected runtime is stopped, repaired, or has its repository access removed.
 
-## Adding a Bundle
+## Adding a Package
 
-A new bundle should:
+A new package should:
 
 1. Define an orchestrator with a schedule and manual inputs.
 2. Add an independent mode installer variable; review safe outputs default to the control-plane repository.
 3. Import `shared/control.md` as `role: orchestrator` with those variables.
-4. Pass a stable lowercase bundle slug to shared control and document the matching target authority entry.
+4. Pass a stable lowercase package slug through shared control's `bundle` input and document the matching target authority entry.
 5. Keep GitHub tools read-only.
 6. Declare only worker workflow dispatches as orchestrator workflow safe outputs.
 7. Document discovery, ranking, dispatch, completion, and no-op behavior.
@@ -281,14 +281,14 @@ A new bundle should:
 A new worker should:
 
 1. Require the standard control envelope inputs.
-2. Import `shared/control.md` as `role: worker` with the same stable bundle slug as its orchestrator.
+2. Import `shared/control.md` as `role: worker` with the same stable package slug as its orchestrator.
 3. Use a target checkout separate from the safe-output repository when needed.
 4. Request minimum permissions, tools, network access, and AI credits.
 5. Declare narrow safe outputs with explicit count, file, branch, and destination limits.
 6. Avoid repository discovery and downstream dispatch.
 7. Support staged and review modes before live operation.
 8. Be added to exactly the orchestrators that are allowed to dispatch it.
-9. Receive a worker ceiling when its risk or maturity differs from its bundle peers.
+9. Receive a worker ceiling when its risk or maturity differs from its package peers.
 
 ## Change Validation
 

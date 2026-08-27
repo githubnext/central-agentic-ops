@@ -115,7 +115,7 @@ Use the `enabled`, `inventory_version`, `batch_id`, `max_repos`, `rollout_percen
 
 For orchestrators, use the importing package's `Discovery` and `Workers` sections only for ranking, prioritization, and deciding whether a precomputed candidate is useful for this package.
 
-- If `enabled` is not `true`, do not select repositories or dispatch workers. Call `report_incomplete` explaining that the bundle is installed but not enabled; set its rollout-mode variable to `staged`, `review`, or `live` after configuration and manual testing.
+- If `enabled` is not `true`, do not select repositories or dispatch workers. Call `report_incomplete` explaining that the package is installed but not enabled; set its rollout-mode variable to `staged`, `review`, or `live` after configuration and manual testing.
 - If `repo_error` is non-empty, select no repositories and dispatch no workers. Call `report_incomplete` with the precomputed error; do not retry discovery, fall back to inferred inventory, or wait for an API rate limit to reset.
 
 Continue with the repository targeting and workflow dispatch steps below.

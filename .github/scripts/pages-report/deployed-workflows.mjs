@@ -290,7 +290,7 @@ if (!repositoryScopeEnabled) {
     manifestMatches = await searchCode(`org:${organization} filename:aw.yml`);
   } catch (error) {
     manifestSearchAvailable = false;
-    console.warn(`${error.message}; organization bundle search will be unavailable`);
+    console.warn(`${error.message}; organization package search will be unavailable`);
   }
 } else {
   manifestMatches = (await mapWithConcurrency([repository, ...allowedRepositories], 8, async (repositoryName) => {
@@ -298,7 +298,7 @@ if (!repositoryScopeEnabled) {
       return await repositoryManifestFiles(repositoryName);
     } catch (error) {
       manifestSearchAvailable = false;
-      console.warn(`${error.message}; operation manifest discovery will be unavailable for ${repositoryName}`);
+      console.warn(`${error.message}; package manifest discovery will be unavailable for ${repositoryName}`);
       return [];
     }
   })).flat();
@@ -362,7 +362,7 @@ const bundles = (await mapWithConcurrency(manifestFiles, 8, async (item) => {
       workflows: includedWorkflows,
     };
   } catch (error) {
-    console.warn(`${error.message}; skipping bundle manifest ${item.repository.full_name}/${item.path}`);
+    console.warn(`${error.message}; skipping package manifest ${item.repository.full_name}/${item.path}`);
     return null;
   }
 })).filter(Boolean).sort((left, right) => left.repository.localeCompare(right.repository) || left.name.localeCompare(right.name));
@@ -444,7 +444,7 @@ const inventory = {
 
 await mkdir(path.dirname(outputPath), { recursive: true });
 await writeFile(outputPath, `${JSON.stringify(inventory, null, 2)}\n`);
-console.log(`Discovered ${bundles.length} operations and ${standaloneWorkflows.length} standalone workflows across ${repositoryNames.length} repositories; excluded ${missingSourceCount} workflows without authored sources; run health ${runHealth.available ? runHealth.complete ? "complete" : "partial" : "unavailable"}`);
+console.log(`Discovered ${bundles.length} packages and ${standaloneWorkflows.length} standalone workflows across ${repositoryNames.length} repositories; excluded ${missingSourceCount} workflows without authored sources; run health ${runHealth.available ? runHealth.complete ? "complete" : "partial" : "unavailable"}`);
 })().catch((error) => {
   console.error(error);
   process.exitCode = 1;

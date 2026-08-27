@@ -97,7 +97,7 @@ safe-outputs:
 
 # Ambient Context
 
-Package orchestrator for the ambient context that agents read before they do anything else: `AGENTS.md` and the repository's agent skills. Ambient context decays silently, so this bundle runs on a weekly-or-slower cadence, selects repositories whose instructions have drifted the most from repository reality, and dispatches curators that propose evidence-backed pruning and refresh work.
+Package orchestrator for the ambient context that agents read before they do anything else: `AGENTS.md` and the repository's agent skills. Ambient context decays silently, so this package runs on a weekly-or-slower cadence, selects repositories whose instructions have drifted the most from repository reality, and dispatches curators that propose evidence-backed pruning and refresh work.
 
 ## Inputs and scope
 
@@ -118,7 +118,7 @@ Among repositories that do have an `AGENTS.md`, prefer those with the strongest 
 5. Active agent usage: agent-authored pull requests or installed agentic workflows, which make better ambient context immediately valuable.
 6. Skills that exist but are never invoked, have vague descriptions, or duplicate `AGENTS.md` content.
 
-Deprioritize repositories without an `AGENTS.md`, archived or inactive repositories, repositories whose default branch cannot be read, repositories with almost no history to reason about, repositories with an open pull request already modifying an instruction file, and repositories where an ambient-context issue from this bundle is already open and unaddressed.
+Deprioritize repositories without an `AGENTS.md`, archived or inactive repositories, repositories whose default branch cannot be read, repositories with almost no history to reason about, repositories with an open pull request already modifying an instruction file, and repositories where an ambient-context issue from this package is already open and unaddressed.
 
 ## Workers
 
@@ -133,7 +133,7 @@ Both workers apply a gain gate before publishing: a change set whose estimated r
 
 Finish with the standard `## Orchestrator Report` inherited from `shared/control.md`. Preserve every standard heading and field — `Scope`, `Repository Decisions`, `Workers`, `Dispatches`, and `Outcome` — and use `0`, `none`, or `not applicable` for empty fields. Use the exact precomputed repository totals and distinguish eligible, selected, skipped, and deferred repositories.
 
-Add these bundle-specific details after the standard fields:
+Add these package-specific details after the standard fields:
 
 - Repositories skipped because they have no `AGENTS.md`, counted separately from other skip reasons.
 - The drift signal that justified each selected repository.

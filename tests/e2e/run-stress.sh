@@ -10,7 +10,7 @@ set -euo pipefail
 case "$BUNDLE" in
   dependabot) workflow_file=dependabot.lock.yml ;;
   optimization) workflow_file=optimization.lock.yml ;;
-  *) printf 'Unsupported bundle: %s\n' "$BUNDLE" >&2; exit 1 ;;
+  *) printf 'Unsupported package: %s\n' "$BUNDLE" >&2; exit 1 ;;
 esac
 case "$RUNS" in
   2|3|5) ;;
@@ -77,7 +77,7 @@ done < "$run_ids_file"
 
 {
   printf '## Enterprise stress canary\n'
-  printf -- '- Bundle: `%s`\n' "$BUNDLE"
+  printf -- '- Package: `%s`\n' "$BUNDLE"
   printf -- '- Target: `%s`\n' "$TARGET_REPO"
   printf -- '- Requested runs: `%s`\n' "$RUNS"
   printf -- '- Superseded runs: `%s`\n' "$cancelled"

@@ -126,7 +126,7 @@ function discoverInventory() {
 const inventory = discoverInventory();
 await mkdir(path.dirname(outputPath), { recursive: true });
 await writeFile(outputPath, `${JSON.stringify(inventory, null, 2)}\n`);
-console.log(`Discovered ${inventory.bundles.length} operations and ${inventory.standalone.length} standalone workflows in ${outputPath}`);
+console.log(`Discovered ${inventory.bundles.length} packages and ${inventory.standalone.length} standalone workflows in ${outputPath}`);
 })().catch((error) => {
   console.error(error);
   process.exitCode = 1;

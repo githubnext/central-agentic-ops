@@ -1,19 +1,19 @@
 ---
-name: create-ops-bundle
-description: "Create a new Central Agentic Ops bundle from an agentic strategy or operational idea. Use when adding a new op, ops package, orchestrator/worker workflow family, or organization-wide agentic automation; creates the orchestrator and workers together using shared/control.md and current repository conventions."
+name: create-ops-package
+description: "Create a new Central Agentic Ops package from an agentic strategy or operational idea. Use when adding an ops package, orchestrator/worker workflow family, or organization-wide agentic automation; creates the orchestrator and workers together using shared/control.md and current repository conventions."
 argument-hint: "Describe the agentic strategy, target repositories, and desired outcomes"
 ---
 
-# Create a Central Agentic Ops Bundle
+# Create a Central Agentic Ops Package
 
-Turn an operational idea into a complete bundle of GitHub Agentic Workflows. A bundle always contains one bundle orchestrator and at least one worker. Never finish with a standalone workflow.
+Turn an operational idea into a complete package of GitHub Agentic Workflows. A package always contains one orchestrator and at least one worker. Never finish with a standalone workflow.
 
 ## Procedure
 
 1. Load `.github/skills/agentic-workflows/SKILL.md` and follow its creation guidance alongside this repository-specific contract.
-2. Inspect `.github/workflows/shared/control.md` and the source `.md` files for the nearest existing bundle. Prefer a recently maintained bundle with behavior similar to the request. Do not copy generated `.lock.yml` files.
-3. Establish the bundle contract from the user's idea:
-  - bundle slug and display name
+2. Inspect `.github/workflows/shared/control.md` and the source `.md` files for the nearest existing package. Prefer a recently maintained package with behavior similar to the request. Do not copy generated `.lock.yml` files.
+3. Establish the package contract from the user's idea:
+  - package slug and display name
    - repository discovery and ranking signals
    - worker responsibilities and boundaries
    - triggers and rollout expectations
@@ -24,26 +24,26 @@ Turn an operational idea into a complete bundle of GitHub Agentic Workflows. A b
 6. Compile and validate all new source workflows. Repair failures before finishing.
 7. When an adopted worker already has an operational-value evaluator, preserve it under `.github/graders/` and keep its `graders.operational-value` registration. Evaluator design remains a separate post-adoption maintenance task.
 
-## Bundle Contract
+## Package Contract
 
 ### Orchestrator
 
-Create `.github/workflows/<bundle>.md` with:
+Create `.github/workflows/<package>.md` with:
 
-- `name` set to the exact bundle display name, with no `/` suffix, and a run name that includes target and safe-output mode
+- `name` set to the exact package display name, with no `/` suffix, and a run name that includes target and safe-output mode
 - a schedule when the operation is periodic, plus `workflow_dispatch`
 - the standard dispatch inputs: `target_repo`, `safe_output_repo`, `max_repos`, and `safe_output_mode` with `staged`, `review`, and `live` choices
 - `shared/control.md` imported with `role: orchestrator`
 - package-scoped rollout variables named `CENTRAL_AGENTIC_OPS_<PACKAGE>_MODE` and `CENTRAL_AGENTIC_OPS_<PACKAGE>_ROLLOUT_PERCENT`, defaulting to `staged` and `100`; shared control routes review safe outputs to a manual `safe_output_repo` override or `github.repository`
 - least-privilege permissions, explicit tools/network configuration, `strict: true`, and a bounded `max-ai-credits`
 - `safe-outputs.dispatch-workflow.workflows` listing every worker slug and a `max` consistent with `max_repos` and worker count
-- a prompt headed with the bundle display name and containing `Discovery`, `Workers`, and `Completion` sections
+- a prompt headed with the package display name and containing `Discovery`, `Workers`, and `Completion` sections
 
 The orchestrator selects and ranks repositories only. It must not perform target-repository work or fan out work more finely than one dispatch per selected repository and eligible worker.
 
 ### Standard Orchestrator Report
 
-`shared/control.md` owns the exact `## Orchestrator Report` format used by every bundle. Inspect its current report contract when creating the orchestrator; do not copy the template into the bundle because duplicated formats drift.
+`shared/control.md` owns the exact `## Orchestrator Report` format used by every package. Inspect its current report contract when creating the orchestrator; do not copy the template into the package because duplicated formats drift.
 
 The orchestrator's `Completion` section must:
 
@@ -51,13 +51,13 @@ The orchestrator's `Completion` section must:
 - preserve every standard heading and field: `Scope`, `Repository Decisions`, `Workers`, `Dispatches`, and `Outcome`
 - require `0`, `none`, or `not applicable` for empty standard fields rather than omitting them
 - use the exact precomputed repository totals and distinguish eligible, selected, skipped, and deferred repositories
-- add bundle-specific findings only after or alongside the standard fields; never rename, replace, or omit them
+- add package-specific findings only after or alongside the standard fields; never rename, replace, or omit them
 
 ### Workers
 
-Create at least one `.github/workflows/<bundle>-<worker>.md`. Every worker must include:
+Create at least one `.github/workflows/<package>-<worker>.md`. Every worker must include:
 
-- `name` set to the exact `<Bundle Name> / <Worker Name>` hierarchy, where `<Bundle Name>` exactly matches the orchestrator's `name`
+- `name` set to the exact `<Package Name> / <Worker Name>` hierarchy, where `<Package Name>` exactly matches the orchestrator's `name`
 - `workflow_dispatch` with the full control-plane envelope: `target_repo`, `safe_output_repo`, `safe_output_mode`, `preview_only`, `correlation_id`, `central_repo`, `control_plane_run_url`, and `batch_label`
 - required `target_repo` and `safe_output_repo` string inputs
 - `shared/control.md` imported with `role: worker`
@@ -82,25 +82,25 @@ Measure operational value per worker because workers have independently dispatch
 
 - Design from the worker's adoption-time intent and pre-adoption evidence. Never derive a measure from the orchestrator's dispatch activity or from post-adoption results.
 - Keep the canonical evaluator at `.github/graders/<worker-stem>-operational-value.sh` and register it under `graders.operational-value.run`.
-- Treat evaluator creation as post-adoption work; never create placeholder commits, evidence, scores, or reports while authoring an unadopted bundle.
-- If the bundle is new in the current change, finish workflow validation and report the pending per-worker value follow-up explicitly.
-- A worker may be baseline-comparable, attainment-only, or not measurable. Preserve that independently determined classification rather than forcing every worker into the same bundle-level model.
+- Treat evaluator creation as post-adoption work; never create placeholder commits, evidence, scores, or reports while authoring an unadopted package.
+- If the package is new in the current change, finish workflow validation and report the pending per-worker value follow-up explicitly.
+- A worker may be baseline-comparable, attainment-only, or not measurable. Preserve that independently determined classification rather than forcing every worker into the same package-level model.
 
 ## Shared Components
 
 - Always import `shared/control.md` with the correct role.
 - Import `shared/review-bundle.md` when review mode must represent target-bound changes that cannot be emitted natively against the review repository.
 - Reuse other files under `.github/workflows/shared/` only when their capability is required. Inspect their import schemas before use.
-- Extend a shared component only for behavior genuinely common to multiple bundles; do not hide package policy in shared workflow files.
+- Extend a shared component only for behavior genuinely common to multiple packages; do not hide package policy in shared workflow files.
 
 ## Naming and Structure
 
-- Use lowercase kebab-case for bundle, worker, and tracker slugs.
-- Name the orchestrator file `<bundle-slug>.md` and set its `name` to `<Bundle Name>`.
-- Name each worker file `<bundle-slug>-<worker-slug>.md` and set its `name` to `<Bundle Name> / <Worker Name>`.
-- Prefix every worker slug with the bundle slug. The display-name prefix before ` / ` must exactly equal the orchestrator display name.
+- Use lowercase kebab-case for package, worker, and tracker slugs.
+- Name the orchestrator file `<package-slug>.md` and set its `name` to `<Package Name>`.
+- Name each worker file `<package-slug>-<worker-slug>.md` and set its `name` to `<Package Name> / <Worker Name>`.
+- Prefix every worker slug with the package slug. The display-name prefix before ` / ` must exactly equal the orchestrator display name.
 - Do not add a role suffix to the orchestrator name or give a worker an independent top-level name.
-- Keep frontmatter ordered like the nearest current bundle; do not normalize unrelated files.
+- Keep frontmatter ordered like the nearest current package; do not normalize unrelated files.
 - Keep package selection policy in the orchestrator and execution policy in workers.
 - Edit `.md` source files only. Generated `.lock.yml` files are compiler output.
 
@@ -109,15 +109,15 @@ Measure operational value per worker because workers have independently dispatch
 Before finishing:
 
 1. Confirm there is exactly one new orchestrator and at least one worker.
-2. Confirm the orchestrator `name` is exactly `<Bundle Name>` and every worker `name` is exactly `<Bundle Name> / <Worker Name>`.
+2. Confirm the orchestrator `name` is exactly `<Package Name>` and every worker `name` is exactly `<Package Name> / <Worker Name>`.
 3. Confirm the orchestrator dispatch list exactly matches the new worker stems.
 4. Confirm each worker accepts the complete standard envelope and imports `shared/control.md` as `worker`.
 5. Confirm the orchestrator imports `shared/control.md` as `orchestrator`, uses package-scoped rollout variables, and defaults safely to staged mode.
-6. Confirm the orchestrator has a `Completion` section that preserves the exact standard report contract from `shared/control.md`; bundle-specific reporting must be additive.
+6. Confirm the orchestrator has a `Completion` section that preserves the exact standard report contract from `shared/control.md`; package-specific reporting must be additive.
 7. Confirm worker concurrency is keyed by `github.workflow` and `inputs.target_repo` with stale runs cancelled.
 8. Check permissions, tools, network hosts, safe-output limits, credits, timeouts, and dispatch maximums against actual need.
 9. Confirm every existing operational-value evaluator remains under `.github/graders/` and registered by its worker, or explicitly identify each new worker whose value design is pending adoption.
 10. Run `gh aw compile <workflow.md>` for every new orchestrator and worker. Then run the repository's narrowest relevant tests or validation command if one exists.
-11. Review the generated diff for accidental lockfile churn, secret exposure, unsafe live defaults, fabricated value evidence, and deviations from the nearest bundle that are not justified by the strategy.
+11. Review the generated diff for accidental lockfile churn, secret exposure, unsafe live defaults, fabricated value evidence, and deviations from the nearest package that are not justified by the strategy.
 
-Report the created bundle, worker responsibilities, shared imports, rollout variables, per-worker ops-value status, and validation results.
+Report the created package, worker responsibilities, shared imports, rollout variables, per-worker ops-value status, and validation results.

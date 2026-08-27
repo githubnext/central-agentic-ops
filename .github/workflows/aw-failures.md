@@ -134,7 +134,7 @@ Dispatch stays repository-scoped: one investigator run per selected repository. 
 
 Finish with the standard `## Orchestrator Report` inherited from `shared/control.md`. Keep every standard heading and field — `Scope`, `Repository Decisions`, `Workers`, `Dispatches`, and `Outcome` — and use `0`, `none`, or `not applicable` for empty standard fields instead of omitting them. Use the exact `total_repositories_scanned` value from precompute and distinguish eligible, selected, skipped, and deferred repositories.
 
-Add these bundle-specific details alongside the standard fields, never in place of them:
+Add these package-specific details alongside the standard fields, never in place of them:
 
 - the failure evidence that justified each selected repository's priority
 - the repositories skipped because they run no agentic workflows or had no failures in the lookback window

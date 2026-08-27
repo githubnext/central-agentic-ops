@@ -208,7 +208,7 @@ steps:
 
         [ "$SAFE_OUTPUT_MODE" != "live" ] && return
         if ! [[ "$BUNDLE" =~ ^[a-z0-9][a-z0-9-]*$ ]]; then
-          echo "bundle must use a lowercase slug for live authority validation" >&2
+          echo "package slug must use lowercase characters for live authority validation" >&2
           exit 1
         fi
         if ! default_branch=$(gh api "repos/$TARGET_REPO" --jq '.default_branch'); then

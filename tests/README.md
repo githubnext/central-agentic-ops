@@ -46,7 +46,7 @@ Mode controls how declared [safe outputs](https://github.github.com/gh-aw/refere
 
 ### Trigger: Schedule (`on.schedule`)
 
-Schedule-triggered runs use the configured bundle mode.
+Schedule-triggered runs use the configured package mode.
 
 | Test result | Configured mode | Checked scheduled behavior |
 | --- | --- | --- |
@@ -120,7 +120,7 @@ Invalid caps, out-of-scope owners, and incomplete control facts stop before work
 | 🟢 Pass | `max_scan_repos` below `1` or above `100000` | Rejected. |
 | 🟢 Pass | Invalid cell count/index or batch size/index | Rejected. |
 | 🟢 Pass | Target or review repository outside `CENTRAL_AGENTIC_OPS_ALLOWED_OWNERS` | Rejected. |
-| 🟢 Pass | Unknown scheduled mode | Scheduled bundle disabled. |
+| 🟢 Pass | Unknown scheduled mode | Scheduled package disabled. |
 | 🟢 Pass | Legacy `preview` mode | Normalized to staged mode; safe outputs perform no GitHub API writes. |
 
 ## Enterprise Safety

@@ -10,7 +10,7 @@ Read this page when planning ownership, reviewing security boundaries, or decidi
 The control plane is designed to:
 
 - operate enterprise-wide and organization-wide workflows from private central repositories;
-- promote bundles independently without coupling their release schedules;
+- promote packages independently without coupling their release schedules;
 - keep credentials and common policy centralized;
 - separate repository selection from repository mutation;
 - make every dispatched action attributable to a control-plane run;
@@ -50,7 +50,7 @@ The execution topology is the same in every profile. A pinned package is install
 | **Several organizations, one operator** | One independent control repository per organization, all installing the same pinned package | Each runtime discovers and operates within its own organization | No |
 | **Enterprise** | One enterprise-operated control repository in a designated host organization, with optional organization runtimes | Explicit credential-scoped reach across organizations; organization runtimes retain local reach | Yes |
 
-For several organizations without GitHub Enterprise, keep credentials, target inventory, rollout, and kill switches organization-local. No relay or enterprise-level coordinator is required. Assign exactly one runtime as live mutation authority for each target and bundle.
+For several organizations without GitHub Enterprise, keep credentials, target inventory, rollout, and kill switches organization-local. No relay or enterprise-level coordinator is required. Assign exactly one runtime as live mutation authority for each target and package.
 
 :::tip[Start with the smallest topology]
 If every target belongs to one organization, use one organization-owned control repository. Add an enterprise runtime only when governance and credential reach genuinely cross organization boundaries.
@@ -76,11 +76,11 @@ A single control repository can address an explicitly named repository in anothe
 | **Enterprise runtime** | Enterprise platform or automation team | Enterprise control repository, cross-organization credentials, enrolled target inventory, rollout, budgets, kill switch, monitoring, and incidents | Organization runtime configuration or repository protection policy |
 | **Organization runtime** | Organization platform or repository operations team | Organization control repository, pinned packages, organization-local workflows, enrolled targets, local credentials, rollout, budgets, kill switch, monitoring, and incidents | Enterprise runtime configuration or the upstream enterprise package |
 | **Target repository** | Repository maintainers | Enrollment approval, code, branch protection, rulesets, CODEOWNERS, environments, merge acceptance, and repository-local automation | Central runtime credentials or catalog releases |
-| **GitHub governance** | Organization administrators, plus enterprise administrators when present | Actions policy, App and PAT access, available custom-property definitions, rulesets, and administrative revocation | Bundle-specific reasoning or repository maintenance decisions |
+| **GitHub governance** | Organization administrators, plus enterprise administrators when present | Actions policy, App and PAT access, available custom-property definitions, rulesets, and administrative revocation | Package-specific reasoning or repository maintenance decisions |
 
 These levels are complementary, but they have no implicit precedence. Catalog ownership grants publication authority, not execution authority. Installing a package grants a runtime the ability to execute only within its credential scope and approved target inventory; it does not transfer ownership of target repositories.
 
-Before a bundle enters `live`, assign exactly one live mutation authority for each `(target repository, bundle)` pair. Enterprise and organization runtimes may both perform staged analysis or produce review output, but they must not concurrently mutate the same target for the same bundle. A live worker reads the target-owned authority file from the target's default branch and fails before agent execution unless that bundle names the worker's control repository. Separate GitHub Actions repositories still do not provide shared cancellation or a cross-repository concurrency group for runs already in progress.
+Before a package enters `live`, assign exactly one live mutation authority for each `(target repository, package)` pair. Enterprise and organization runtimes may both perform staged analysis or produce review output, but they must not concurrently mutate the same target for the same package. A live worker reads the target-owned authority file from the target's default branch and fails before agent execution unless that package names the worker's control repository. Separate GitHub Actions repositories still do not provide shared cancellation or a cross-repository concurrency group for runs already in progress.
 
 ### Catalog Ownership and Discovery
 
@@ -104,8 +104,8 @@ The `central-agentic-ops-control-plane` repository topic is an optional lightwei
 
 An allowed owner and a reachable credential are security boundaries, not evidence that a repository agreed to central operation. Before `live` operation, the target repository owner and runtime operator must record:
 
-- the target repository and approved bundles;
-- the control repository assigned as live mutation authority for each bundle;
+- the target repository and approved packages;
+- the control repository assigned as live mutation authority for each package;
 - the approving repository owner or team;
 - the approval and review date;
 - the revocation path.
@@ -127,7 +127,7 @@ Protect this file on the default branch with a ruleset and CODEOWNERS approval f
 
 ### Downstream Fan-Out and Provenance
 
-Each central control repository fans out enabled bundles to selected targets, subject to repository allowlists, credential scope, enrollment, live mutation ownership, and dispatch limits. Orchestrator and worker workflows run from that central repository. Each worker workflow checks out one target repository, inspects only that target, and creates only declared safe outputs in the configured downstream destination. A target repository may receive staged or review output from both enterprise and organization control repositories without storing either source's Agentic Workflow definitions, but only its assigned runtime may perform live mutation for a given bundle.
+Each central control repository fans out enabled packages to selected targets, subject to repository allowlists, credential scope, enrollment, live mutation ownership, and dispatch limits. Orchestrator and worker workflows run from that central repository. Each worker workflow checks out one target repository, inspects only that target, and creates only declared safe outputs in the configured downstream destination. A target repository may receive staged or review output from both enterprise and organization control repositories without storing either source's Agentic Workflow definitions, but only its assigned runtime may perform live mutation for a given package.
 
 The standard `central_repo`, `control_plane_run_url`, and `correlation_id` fields identify the originating central runtime and run. Because `central_repo` differs between enterprise and organization control repositories, downstream safe outputs retain their runtime source.
 
@@ -146,7 +146,7 @@ Keep these dimensions separate in every report record:
 | **Subject repository** | Repository whose state, opportunity, or outcome was analyzed | `owner/repository` |
 | **Producer workflow** | Workflow run that produced the evidence | `(runtime_repository, workflow_path)` |
 | **Output repository** | Repository containing the durable issue, pull request, comment, or review artifact | `owner/repository` |
-| **Operation membership** | Optional bundle and worker relationship used for central orchestration | `(runtime_repository, operation_slug, worker_path)` |
+| **Package membership** | Optional package and worker relationship used for central orchestration | `(runtime_repository, operation_slug, worker_path)` |
 
 For a repository-local workflow, the runtime and subject repositories are normally the same and operation membership is absent. For a central worker, the runtime repository is the control repository, the subject is the selected target, and the output repository may be the review repository or the target according to the effective mode.
 
@@ -179,8 +179,8 @@ These controls are complementary: Central Agentic Ops supplies orchestration and
 
 | Layer | Owns | Must not own |
 | --- | --- | --- |
-| Shared control | Authentication, common environment, mode interpretation, review requirements, precomputation, control envelope | Bundle ranking or worker workflow-specific mutation policy |
-| orchestrator workflow | Bundle mode, review destination, target selection, ranking, dispatch limits, eligible worker workflow list | Direct target mutation or credential duplication |
+| Shared control | Authentication, common environment, mode interpretation, review requirements, precomputation, control envelope | Package ranking or worker workflow-specific mutation policy |
+| orchestrator workflow | Package mode, review destination, target selection, ranking, dispatch limits, eligible worker workflow list | Direct target mutation or credential duplication |
 | worker workflow | Repository analysis, declared safe outputs, permissions, and execution limits | Repository discovery, downstream dispatch, or mode escalation |
 
 The orchestrator workflow is the rollout authority. worker workflows are enforcement points: they consume the dispatched control envelope and must stay within it.
@@ -193,10 +193,10 @@ The execution boundary is the key architectural fact: orchestrators and workers 
 
 ### Execution Flow
 
-1. A schedule trigger or `workflow_dispatch` starts a bundle orchestrator workflow.
-2. The orchestrator workflow imports shared control with its bundle mode and review repository.
+1. A schedule trigger or `workflow_dispatch` starts a package orchestrator workflow.
+2. The orchestrator workflow imports shared control with its package mode and review repository.
 3. Shared precomputation resolves enablement, routing, candidate repositories, and worker workflow availability into `/tmp/gh-aw/agent/control-precompute.json`.
-4. The orchestrator workflow ranks eligible repositories using bundle-specific discovery rules and applies `max_repos` and dispatch limits.
+4. The orchestrator workflow ranks eligible repositories using package-specific discovery rules and applies `max_repos` and dispatch limits.
 5. The orchestrator workflow dispatches each eligible worker workflow with the standard control envelope.
 6. The worker workflow imports shared control as `role: worker`, analyzes only `target_repo`, and emits only its declared safe outputs.
 7. safe outputs are simulated in staged mode, routed to the review repository, or processed against the target repository according to the effective mode.
@@ -244,7 +244,7 @@ Never add an App key, PAT, installation token, or other secret to this envelope.
 - Orchestrator precompute versions each inventory and deterministically selects one bounded cell and batch before agent ranking begins.
 - Repository selection defaults to one target and is bounded by absolute, percentage, and dispatch-derived caps.
 - Manual targets and review destinations are restricted to trusted repository owners; the default is the control repository owner.
-- Each live `(target repository, bundle)` pair has one assigned mutation authority; this operating invariant is not automatically reconciled across control repositories.
+- Each live `(target repository, package)` pair has one assigned mutation authority; this operating invariant is not automatically reconciled across control repositories.
 - Review mode defaults to the current control-plane repository when no destination override is provided.
 - An orchestrator workflow dispatches only worker workflows declared in its `safe-outputs.dispatch-workflow.workflows` list and resolved by exact generated-workflow path.
 - Disabled or unavailable worker workflows are skipped with a reason.
@@ -252,7 +252,7 @@ Never add an App key, PAT, installation token, or other secret to this envelope.
 - GitHub tools are read-only; writes occur only through declared safe-output primitives.
 - Agents do not receive Pages deployment permission or mode-promotion authority. Pages report mode and destination come from the control envelope; persistent publication is performed only by conventional deterministic workflows from trusted durable inputs.
 - Review Pages must be access-controlled for the intended reviewers and isolated from production Pages. If that boundary is unavailable, review publication fails closed.
-- A `workflow_dispatch` run may narrow or redirect one run but does not change another bundle's configured mode.
+- A `workflow_dispatch` run may narrow or redirect one run but does not change another package's configured mode.
 - Control-plane correlation is included in worker workflow-created issue, pull request, or comment safe outputs when available.
 
 ## Failure Posture
@@ -279,6 +279,6 @@ fail, skip, or report incomplete -- never infer broader authority
 
 ## Current Controls
 
-Implemented controls include shared authentication, bundle-level modes and review destinations, target and dispatch limits, versioned inventory batches, worker workflow eligibility checks, standard dispatch envelopes, read-only GitHub tools, and worker workflow safe outputs. Batch selection is deterministic; runs do not auto-advance or retry batches.
+Implemented controls include shared authentication, package-level modes and review destinations, target and dispatch limits, versioned inventory batches, worker workflow eligibility checks, standard dispatch envelopes, read-only GitHub tools, and worker workflow safe outputs. Batch selection is deterministic; runs do not auto-advance or retry batches.
 
-Worker-level `enabled` and `max_mode` controls provide ceilings beneath bundle policy for workers with independent risk or maturity. They are not separate control planes. See [Orchestrators and Workers](orchestrators-and-workers.md).
+Worker-level `enabled` and `max_mode` controls provide ceilings beneath package policy for workers with independent risk or maturity. They are not separate control planes. See [Orchestrators and Workers](orchestrators-and-workers.md).

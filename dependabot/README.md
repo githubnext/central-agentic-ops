@@ -1,9 +1,9 @@
-# Dependabot Bundle
+# Dependabot Package
 
 > [!WARNING]
 > This project is experimental and not ready for use.
 
-The Dependabot bundle runs manifest-aware dependency maintenance from a private Central Agentic Ops control repository. It prioritizes security and repair work, selects target repositories, and dispatches one bounded updater per repository.
+The Dependabot package runs manifest-aware dependency maintenance from a private Central Agentic Ops control repository. It prioritizes security and repair work, selects target repositories, and dispatches one bounded updater per repository.
 
 The Agentic Workflow definitions remain in the control repository. Target repositories receive only declared safe outputs; they do not receive installed copies of these workflows.
 
@@ -15,7 +15,7 @@ The Agentic Workflow definitions remain in the control repository. Target reposi
 - Produces at most one primary dependency-maintenance outcome per worker workflow run.
 - Never auto-merges a pull request.
 
-## Bundle Contents
+## Package Contents
 
 | Workflow | Role |
 | --- | --- |
@@ -26,13 +26,13 @@ The orchestrator workflow can dispatch no more than 50 worker workflows in one r
 
 ## Install
 
-Install the bundle into a new private control repository owned by an organization:
+Install the package into a new private control repository owned by an organization:
 
 ```bash
 gh aw add-wizard githubnext/central-agentic-ops/dependabot@<catalog-release>
 ```
 
-The installer configures authentication and creates the bundle controls. It leaves the bundle in `staged` mode.
+The installer configures authentication and creates the package controls. It leaves the package in `staged` mode.
 
 ## Configure
 
@@ -47,7 +47,7 @@ Configure a GitHub App, a fine-grained PAT, or both in the control repository fo
 | `CENTRAL_AGENTIC_OPS_MAX_SCAN_REPOS` | Repository variable | No | Bounded discovery size; defaults to `1000` and cannot exceed `100000`. |
 | `CENTRAL_AGENTIC_OPS_CELL_COUNT` / `CENTRAL_AGENTIC_OPS_CELL_INDEX` | Repository variables | No | Deterministically select one inventory cell; defaults to cell `0` of `1`. |
 | `CENTRAL_AGENTIC_OPS_BATCH_SIZE` / `CENTRAL_AGENTIC_OPS_BATCH_INDEX` | Repository variables | No | Select one bounded batch within the cell; defaults to batch `0` with size `100000`. |
-| `CENTRAL_AGENTIC_OPS_DEPENDABOT_MODE` | Repository variable | Yes | Bundle mode: `staged`, `review`, or `live`. Defaults to `staged`. |
+| `CENTRAL_AGENTIC_OPS_DEPENDABOT_MODE` | Repository variable | Yes | Package mode: `staged`, `review`, or `live`. Defaults to `staged`. |
 | `CENTRAL_AGENTIC_OPS_DEPENDABOT_MAX_REPOS` | Repository variable | No | Scheduled selection cap; defaults to `1`. |
 | `CENTRAL_AGENTIC_OPS_DEPENDABOT_ROLLOUT_PERCENT` | Repository variable | No | Percentage of discovered repositories eligible for selection. Accepts `1` through `100` and defaults to `100`. |
 | `CENTRAL_AGENTIC_OPS_DEPENDABOT_UPDATER_ENABLED` | Repository variable | No | Worker kill switch; defaults to `true`. |
@@ -55,7 +55,7 @@ Configure a GitHub App, a fine-grained PAT, or both in the control repository fo
 | `CENTRAL_AGENTIC_OPS_MAX_AI_CREDITS_PER_RUN` | Repository variable | No | Aggregate orchestration ceiling; defaults to `1100`. |
 | `GH_AW_CI_TOKEN` | Repository secret | Optional | Supports the updater path that requires an additional empty commit. |
 
-The App installation or PAT must cover every private or internal target, alternate review repository, and live target the bundle needs to read or update. Public staged scans may use `GITHUB_TOKEN`, but unavailable target Actions, security, or Dependabot data makes the run incomplete rather than broadening access or guessing. See the [authentication guide](../docs/authentication.md) for the permission model and credential precedence.
+The App installation or PAT must cover every private or internal target, alternate review repository, and live target the package needs to read or update. Public staged scans may use `GITHUB_TOKEN`, but unavailable target Actions, security, or Dependabot data makes the run incomplete rather than broadening access or guessing. See the [authentication guide](../docs/authentication.md) for the permission model and credential precedence.
 
 ## Validate in staged mode
 
@@ -67,7 +67,7 @@ Start with one representative repository:
 4. Keep `max_repos` at `1` and `safe_output_mode` at `staged`.
 5. Trigger a `workflow_dispatch` run and inspect repository selection, the dispatched worker workflow, staged safe outputs, and control-plane correlation data.
 
-To keep scheduled runs staged, set the bundle variable explicitly:
+To keep scheduled runs staged, set the package variable explicitly:
 
 ```bash
 gh variable set CENTRAL_AGENTIC_OPS_DEPENDABOT_MODE \
@@ -77,7 +77,7 @@ gh variable set CENTRAL_AGENTIC_OPS_DEPENDABOT_MODE \
 
 Changing the variable affects future runs. Cancel active runs separately when changing mode during incident response.
 
-## Promote the Bundle
+## Promote the Package
 
 | Mode | Behavior |
 | --- | --- |
@@ -85,7 +85,7 @@ Changing the variable affects future runs. Cancel active runs separately when ch
 | `review` | Routes safe outputs to the control-plane repository; manual runs may override it with `safe_output_repo`. |
 | `live` | Allows declared safe outputs to update the selected target repository. Pull requests remain unmerged. |
 
-Promote in order: one-repository staged, private review, limited live, then scheduled live. Change only this bundle's mode variable; other Central Agentic Ops bundles keep their own rollout state.
+Promote in order: one-repository staged, private review, limited live, then scheduled live. Change only this package's mode variable; other Central Agentic Ops packages keep their own rollout state.
 
 ## Targeting
 

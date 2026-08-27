@@ -875,7 +875,7 @@ function bundleUtilizationPanel(mode) {
       <header><a href="${bundle.id}.html">${escapeHtml(bundle.name)}</a><strong>${escapeHtml(value)}</strong></header>
       <div class="utilization-track" role="img" aria-label="${escapeHtml(aria)}"><span style="width:${meterPercent.toFixed(2)}%"></span></div>
       <p>${escapeHtml(detail)}${escapeHtml(coverageNote)}</p>
-      <small>${formatAic(utilization.completeAttemptAllowance)} AIC allowance per complete bundle attempt</small>
+      <small>${formatAic(utilization.completeAttemptAllowance)} AIC allowance per complete package attempt</small>
     </article>`;
   }).join("\n");
   return `<section class="bundle-utilization" aria-labelledby="bundle-utilization-heading">

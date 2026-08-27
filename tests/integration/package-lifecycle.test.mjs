@@ -20,7 +20,7 @@ const updateSource = process.env.CENTRAL_AGENTIC_OPS_UPDATE_SOURCE
 const expectedFiles = [
   ".github/agents/agentic-workflows.md",
   ".github/skills/agentic-workflows/SKILL.md",
-  ".github/skills/create-ops-bundle/SKILL.md",
+  ".github/skills/create-ops-package/SKILL.md",
   ".github/workflows/ambient-context-agents-md-curator.md",
   ".github/workflows/ambient-context-skills-curator.md",
   ".github/workflows/ambient-context.md",
@@ -92,7 +92,7 @@ function assertCorePackage(consumer) {
       ".github/workflows/dependabot.md",
       ".github/workflows/optimization.md",
     ],
-    "installed package manifest does not match the core bundle",
+    "installed package manifest does not match the core package",
   );
 
   for (const relativePath of repositoryOnlyFiles) {
@@ -122,7 +122,7 @@ test("gh aw update replaces workflows and restores package-owned assets", { time
 
     const removedFiles = [
       ".github/agents/agentic-workflows.md",
-      ".github/skills/create-ops-bundle/SKILL.md",
+      ".github/skills/create-ops-package/SKILL.md",
       ".github/workflows/shared/control-precompute.md",
     ];
     for (const relativePath of removedFiles) {

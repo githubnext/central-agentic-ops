@@ -476,7 +476,7 @@ test("authentication prefers an optional GitHub App and retains bounded fallback
   assert.match(precompute, /steps\.github-mcp-app-token\.outputs\.token \|\| secrets\.GH_AW_GITHUB_TOKEN \|\| secrets\.GITHUB_TOKEN/);
 });
 
-test("live workers require target-owned bundle authority before agent execution", () => {
+test("live workers require target-owned package authority before agent execution", () => {
   const control = workflow("shared/control.md");
   const precompute = workflow("shared/control-precompute.md");
 

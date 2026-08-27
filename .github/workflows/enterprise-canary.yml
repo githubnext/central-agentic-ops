@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
     inputs:
       bundle:
-        description: Bundle orchestrator to exercise
+        description: Package orchestrator to exercise
         required: true
         type: choice
         options: [dependabot, optimization]

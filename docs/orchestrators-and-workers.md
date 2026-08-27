@@ -81,7 +81,7 @@ Count an outcome only when accepted evidence satisfies the worker's frozen contr
 :::
 
 :::caution[Verify package transport]
-A packaged worker is grader-enabled only when a clean `gh aw add` consumer receives both its Markdown workflow and referenced `.github/graders/*.sh` evaluator. The gh-aw operational-value merge commit validates and freezes evaluators but its package installer does not yet transport that directory, so publishing these grader-enabled bundles remains blocked on installer support. Direct checkouts of this repository compile and run the graders.
+A packaged worker is grader-enabled only when a clean `gh aw add` consumer receives both its Markdown workflow and referenced `.github/graders/*.sh` evaluator. The gh-aw operational-value merge commit validates and freezes evaluators but its package installer does not yet transport that directory, so publishing these grader-enabled packages remains blocked on installer support. Direct checkouts of this repository compile and run the graders.
 :::
 
 Apply the process independently to every worker in an operation. Workers may receive different classifications because their outcomes and available history differ:
