@@ -13,6 +13,10 @@ REQUIRE_OUTPUT=${REQUIRE_OUTPUT:-false}
 CONFIRMATION=${CONFIRMATION:-}
 
 case "$BUNDLE" in
+  advisory)
+    workflow_file=advisory.lock.yml
+    worker_files=(advisory-uk-ai-operational-resilience.lock.yml)
+    ;;
   dependabot)
     workflow_file=dependabot.lock.yml
     worker_files=(dependabot-release-train-updater.lock.yml)

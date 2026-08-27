@@ -223,6 +223,8 @@ test("enterprise-scale limits remain bounded across inventory sizes", () => {
 
 test("enterprise defaults, budgets, timeouts, and concurrency are finite", () => {
   const expected = {
+    "advisory.md": { credits: 250, timeout: 15, dispatchMax: 50, workers: 1 },
+    "advisory-uk-ai-operational-resilience.md": { credits: 600, timeout: 30 },
     "ambient-context.md": { credits: 250, timeout: 15, dispatchMax: 20, workers: 2 },
     "aw-failures.md": { credits: 250, timeout: 15, dispatchMax: 50, workers: 1 },
     "aw-maintenance.md": { credits: 250, timeout: 15, dispatchMax: 50, workers: 1 },
@@ -325,7 +327,7 @@ test("deterministic workflows pin third-party actions by commit SHA", () => {
 });
 
 test("package manifests exclude repository-only tests", () => {
-  for (const relativePath of ["aw.yml", join("ambient-context", "aw.yml"), join("aw-failures", "aw.yml"), join("aw-maintenance", "aw.yml"), join("dependabot", "aw.yml"), join("eu-cra-compliance", "aw.yml"), join("optimization", "aw.yml")]) {
+  for (const relativePath of ["aw.yml", join("advisory", "aw.yml"), join("ambient-context", "aw.yml"), join("aw-failures", "aw.yml"), join("aw-maintenance", "aw.yml"), join("dependabot", "aw.yml"), join("eu-cra-compliance", "aw.yml"), join("optimization", "aw.yml")]) {
     const manifest = readFileSync(join(root, relativePath), "utf8");
     assert.doesNotMatch(manifest, /(?:staged-smoke|enterprise-canary|enterprise-stress|tests\/e2e|\.github\/aw\/e2e)/, relativePath);
   }
@@ -498,6 +500,8 @@ test("live workers require target-owned package authority before agent execution
   assert.match(precompute, /validate_worker_dispatch\n\s+validate_live_authority\n\s+write_worker_precompute/);
 
   for (const [name, bundle] of [
+    ["advisory.md", "advisory"],
+    ["advisory-uk-ai-operational-resilience.md", "advisory"],
     ["ambient-context.md", "ambient-context"],
     ["ambient-context-agents-md-curator.md", "ambient-context"],
     ["ambient-context-skills-curator.md", "ambient-context"],
@@ -524,6 +528,7 @@ test("live workers require target-owned package authority before agent execution
 
 test("orchestrators expose scheduled variables and independent manual inputs", () => {
   for (const [name, packageName] of [
+    ["advisory.md", "ADVISORY"],
     ["ambient-context.md", "AMBIENT_CONTEXT"],
     ["aw-failures.md", "AW_FAILURES"],
     ["aw-maintenance.md", "AW_MAINTENANCE"],
@@ -561,7 +566,7 @@ test("shared control keeps manual and scheduled routing event-scoped", () => {
   const control = workflow("shared/control.md");
   const precompute = workflow("shared/control-precompute.md");
 
-  for (const name of ["ambient-context.md", "aw-failures.md", "aw-maintenance.md", "dependabot.md", "eu-cra-compliance.md", "optimization.md"]) {
+  for (const name of ["advisory.md", "ambient-context.md", "aw-failures.md", "aw-maintenance.md", "dependabot.md", "eu-cra-compliance.md", "optimization.md"]) {
     const orchestrator = workflow(name);
     assert.match(orchestrator, /GH_AW_SAFE_OUTPUT_MODE:.*== 'preview' && 'staged'/);
     assert.match(orchestrator, /REVIEW_OUTPUT_REPO:.*inputs\.safe_output_repo \|\| github\.repository/);
@@ -582,6 +587,7 @@ test("shared control keeps manual and scheduled routing event-scoped", () => {
 
 test("every worker uses the standard dispatch envelope and safe mode vocabulary", () => {
   const workerNames = [
+    "advisory-uk-ai-operational-resilience.md",
     "ambient-context-agents-md-curator.md",
     "ambient-context-skills-curator.md",
     "aw-failures-investigator.md",
@@ -622,6 +628,37 @@ test("every worker uses the standard dispatch envelope and safe mode vocabulary"
       assert.match(line, /github\.event\.inputs\.safe_output_repo/);
     }
   }
+});
+
+test("Advisory preserves UK AI guidance and human-review boundaries", () => {
+  const orchestrator = workflow("advisory.md");
+  const worker = workflow("advisory-uk-ai-operational-resilience.md");
+  const readme = readFileSync(join(root, "advisory", "README.md"), "utf8");
+
+  assert.match(orchestrator, /^name: "Advisory"$/m);
+  assert.match(worker, /^name: "Advisory \/ UK AI Operational Resilience"$/m);
+  for (const source of [orchestrator, worker, readme]) {
+    assert.match(source, /advisory and non-binding/i);
+    assert.match(source, /no guarantee of completeness, correctness, accuracy/i);
+    assert.match(source, /human review/i);
+  }
+
+  assert.match(orchestrator, /schedule: "daily on weekdays"/);
+  assert.match(orchestrator, /workflows: \[advisory-uk-ai-operational-resilience\]/);
+  assert.match(orchestrator, /Use bounded two-stage discovery/);
+  assert.match(worker, /https:\/\/www\.gov\.uk\/guidance\/ai-open-code-and-vulnerability-risk-in-the-public-sector/);
+  assert.match(worker, /incomplete by design/i);
+  assert.match(worker, /do not authorize opening, restricting, hiding, or decommissioning code/i);
+  assert.match(worker, /If the guidance or any required prefetch source is inaccessible, stop analysis, call `report_incomplete`/);
+  assert.match(worker, /source_access/);
+  assert.match(worker, /secret_type_display_name/);
+  assert.doesNotMatch(worker, /alert\.secret\b/);
+  assert.match(worker, /max: 1/);
+  assert.match(worker, /close-older-issues: true/);
+  assert.match(worker, /## agent: `asset-tier-classifier`/);
+  assert.match(worker, /## agent: `control-verifier`/);
+  assert.match(worker, /## agent: `ai-risk-scorer`/);
+  assert.doesNotMatch(worker, /^graders:/m);
 });
 
 test("EU CRA Advisor workflows preserve advisory and human-review boundaries", () => {
@@ -789,6 +826,8 @@ test("clean-room compilation emits the expected GitHub Actions settings", { time
       .filter((name) => name.endsWith(".lock.yml"))
       .sort();
     const packageLockNames = [
+      "advisory-uk-ai-operational-resilience.lock.yml",
+      "advisory.lock.yml",
       "ambient-context-agents-md-curator.lock.yml",
       "ambient-context-skills-curator.lock.yml",
       "ambient-context.lock.yml",
@@ -831,7 +870,7 @@ test("clean-room compilation emits the expected GitHub Actions settings", { time
       assert.doesNotMatch(generated, /safe_output_mode == 'private'/);
     }
 
-    for (const name of ["ambient-context.lock.yml", "aw-failures.lock.yml", "aw-maintenance.lock.yml", "dependabot.lock.yml", "eu-cra-compliance.lock.yml", "optimization.lock.yml"]) {
+    for (const name of ["advisory.lock.yml", "ambient-context.lock.yml", "aw-failures.lock.yml", "aw-maintenance.lock.yml", "dependabot.lock.yml", "eu-cra-compliance.lock.yml", "optimization.lock.yml"]) {
       const generated = workflow(name, generatedDirectory);
       assert.match(generated, /GH_AW_SAFE_OUTPUT_MODE:.*== 'preview' && 'staged'/);
       assert.match(generated, /ROLLOUT_PERCENT: \$\{\{ inputs\.rollout_percent \|\| vars\.CENTRAL_AGENTIC_OPS_.+_ROLLOUT_PERCENT \|\| '100' \}\}/);
@@ -840,7 +879,7 @@ test("clean-room compilation emits the expected GitHub Actions settings", { time
       assert.match(generated, /cancel-in-progress: true/);
     }
 
-    for (const name of packageLockNames.filter((name) => !["ambient-context.lock.yml", "aw-failures.lock.yml", "aw-maintenance.lock.yml", "dependabot.lock.yml", "eu-cra-compliance.lock.yml", "optimization.lock.yml"].includes(name))) {
+    for (const name of packageLockNames.filter((name) => !["advisory.lock.yml", "ambient-context.lock.yml", "aw-failures.lock.yml", "aw-maintenance.lock.yml", "dependabot.lock.yml", "eu-cra-compliance.lock.yml", "optimization.lock.yml"].includes(name))) {
       const generated = workflow(name, generatedDirectory);
       assert.match(generated, /GH_AW_SAFE_OUTPUT_MODE: \$\{\{ inputs\.safe_output_mode \|\| 'staged' \}\}/);
       assert.match(generated, /ROLLOUT_PERCENT: "100"/);
@@ -934,6 +973,7 @@ test("Pages inventory links multiline orchestrator worker lists", () => {
       id: bundle.id,
       workers: bundle.workers.map((worker) => worker.id),
     })), [
+      { id: "advisory", workers: ["advisory-uk-ai-operational-resilience"] },
       { id: "ambient-context", workers: ["ambient-context-agents-md-curator", "ambient-context-skills-curator"] },
       { id: "aw-failures", workers: ["aw-failures-investigator"] },
       { id: "aw-maintenance", workers: ["aw-maintenance-upgrade"] },

@@ -49,6 +49,11 @@ Add an App or PAT when the target is private or internal. Keep the mode at `stag
 | `CENTRAL_AGENTIC_OPS_BATCH_SIZE` | Shared | No | `100000` | Maximum repositories exposed to an orchestrator from its selected cell. Accepts `1` through `100000`. |
 | `CENTRAL_AGENTIC_OPS_BATCH_INDEX` | Shared | No | `0` | Zero-based batch selected for a scheduled run. |
 | `CENTRAL_AGENTIC_OPS_MAX_AI_CREDITS_PER_RUN` | Shared | No | `1100` | Maximum declared orchestrator-plus-worker AI Credits admitted for one orchestration. |
+| `CENTRAL_AGENTIC_OPS_ADVISORY_MODE` | Advisory | Yes when installed | `staged` | Sets the operation mode to `staged`, `review`, or `live`. |
+| `CENTRAL_AGENTIC_OPS_ADVISORY_MAX_REPOS` | Advisory | No | `1` | Scheduled repository-selection cap. Accepts `1` through `1000`; dispatch and credit limits may reduce it further. |
+| `CENTRAL_AGENTIC_OPS_ADVISORY_ROLLOUT_PERCENT` | Advisory | No | `100` | Limits selection to this percentage of discovered repositories. Accepts integers from `1` through `100`. |
+| `CENTRAL_AGENTIC_OPS_ADVISORY_UK_AI_OPERATIONAL_RESILIENCE_ENABLED` | Advisory worker | No | `true` | UK AI operational resilience worker kill switch. |
+| `CENTRAL_AGENTIC_OPS_ADVISORY_UK_AI_OPERATIONAL_RESILIENCE_MAX_MODE` | Advisory worker | No | `staged` | UK AI operational resilience worker mode ceiling. |
 | `CENTRAL_AGENTIC_OPS_AMBIENT_CONTEXT_MODE` | Ambient Context | Yes when installed | `staged` | Sets the operation mode to `staged`, `review`, or `live`. |
 | `CENTRAL_AGENTIC_OPS_AMBIENT_CONTEXT_MAX_REPOS` | Ambient Context | No | `1` | Scheduled repository-selection cap. Accepts `1` through `1000`; dispatch limits may reduce it further. |
 | `CENTRAL_AGENTIC_OPS_AMBIENT_CONTEXT_ROLLOUT_PERCENT` | Ambient Context | No | `100` | Limits selection to this percentage of discovered repositories. Accepts integers from `1` through `100`. |
@@ -207,9 +212,9 @@ Other `GH_AW_*` values, including safe-output files and staging flags, are manag
 
 ## Sources of Truth
 
-- Package inventory and minimum gh-aw versions: `aw.yml`, `ambient-context/aw.yml`, `aw-failures/aw.yml`, `aw-maintenance/aw.yml`, `dependabot/aw.yml`, `eu-cra-compliance/aw.yml`, and `optimization/aw.yml`
+- Package inventory and minimum gh-aw versions: `aw.yml`, `advisory/aw.yml`, `ambient-context/aw.yml`, `aw-failures/aw.yml`, `aw-maintenance/aw.yml`, `dependabot/aw.yml`, `eu-cra-compliance/aw.yml`, and `optimization/aw.yml`
 - Shared resolution and precedence: `.github/workflows/shared/control.md`
-- Manual inputs: `.github/workflows/ambient-context.md`, `.github/workflows/aw-failures.md`, `.github/workflows/dependabot.md`, `.github/workflows/eu-cra-compliance.md`, and `.github/workflows/optimization.md`
+- Manual inputs: `.github/workflows/advisory.md`, `.github/workflows/ambient-context.md`, `.github/workflows/aw-failures.md`, `.github/workflows/dependabot.md`, `.github/workflows/eu-cra-compliance.md`, and `.github/workflows/optimization.md`
 - Optional observability: `.github/workflows/shared/sentry.md`, `.github/workflows/shared/grafana.md`, and `.github/workflows/shared/datadog.md`
 
 When adding or renaming a setting, update the installer manifest, consuming workflow, and this reference in the same change.
