@@ -3,6 +3,9 @@ import { Icon } from "@astrojs/starlight/components";
 import EditLink from "virtual:starlight/components/EditLink";
 import LastUpdated from "virtual:starlight/components/LastUpdated";
 import Pagination from "virtual:starlight/components/Pagination";
+import ImageZoom from "./ImageZoom.astro";
+
+const year = new Date().getFullYear();
 ---
 
 <footer class="site-footer sl-flex">
@@ -19,10 +22,18 @@ import Pagination from "virtual:starlight/components/Pagination";
     <a href="https://github.com/mnkiefer" rel="me">@mnkiefer</a>
     <span aria-hidden="true">&middot;</span>
     <span>GitHub Next</span>
-    <span aria-hidden="true">&middot;</span>
-    <span>2026</span>
   </p>
+  <div class="legal sl-flex">
+    <span>&copy; {year} GitHub, Inc.</span>
+    <nav aria-label="Legal and corporate links" class="legal-links sl-flex">
+      <a href="https://docs.github.com/site-policy/github-terms/github-terms-of-service">Terms</a>
+      <a href="https://docs.github.com/site-policy/privacy-policies/github-general-privacy-statement">Privacy</a>
+      <a href="https://docs.github.com/site-policy">Legal</a>
+      <a href="https://github.com/logos">Brand</a>
+    </nav>
+  </div>
 </footer>
+<ImageZoom />
 
 <style>
   @layer starlight.components {
@@ -91,6 +102,33 @@ import Pagination from "virtual:starlight/components/Pagination";
       text-underline-offset: 0.2em;
     }
 
+    .legal {
+      align-items: center;
+      align-self: center;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 0.3rem 0.75rem;
+      margin-top: 0.125rem;
+      line-height: 1.4;
+    }
+
+    .legal-links {
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 0.75rem;
+    }
+
+    .legal a {
+      color: inherit;
+      text-decoration: none;
+    }
+
+    .legal a:hover {
+      color: var(--sl-color-white);
+      text-decoration: underline;
+      text-underline-offset: 0.2em;
+    }
+
     :global(:root[data-theme="light"]) .attribution :global(svg) {
       color: #8250df;
     }
@@ -101,6 +139,10 @@ import Pagination from "virtual:starlight/components/Pagination";
 
     :global(:root[data-theme="light"]) .attribution a:hover {
       color: #0550ae;
+    }
+
+    :global(:root[data-theme="light"]) .legal a:hover {
+      color: var(--sl-color-black);
     }
 
     @media (max-width: 30rem) {
