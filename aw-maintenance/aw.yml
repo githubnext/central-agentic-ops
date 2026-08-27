@@ -1,0 +1,5 @@
+name: AW Maintenance
+description: Organization-wide workflow for keeping installed GitHub Agentic Workflows (gh-aw) current and filing upgrade issues assignable to Copilot. Traditional GitHub Actions YAML maintenance is out of scope; that is managed by Dependabot.
+min-version: v0.87.6
+includes:
+  - .github/workflows/aw-maintenance.md

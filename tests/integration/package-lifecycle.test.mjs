@@ -26,6 +26,8 @@ const expectedFiles = [
   ".github/workflows/ambient-context.md",
   ".github/workflows/aw-failures-investigator.md",
   ".github/workflows/aw-failures.md",
+  ".github/workflows/aw-maintenance-upgrade.md",
+  ".github/workflows/aw-maintenance.md",
   ".github/workflows/dependabot-release-train-updater.md",
   ".github/workflows/dependabot.md",
   ".github/workflows/optimization-ai-credit-auditor.md",
@@ -89,6 +91,7 @@ function assertCorePackage(consumer) {
     [
       ".github/workflows/ambient-context.md",
       ".github/workflows/aw-failures.md",
+      ".github/workflows/aw-maintenance.md",
       ".github/workflows/dependabot.md",
       ".github/workflows/optimization.md",
     ],
