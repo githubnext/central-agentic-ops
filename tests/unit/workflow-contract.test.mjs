@@ -695,6 +695,7 @@ test("EU CRA workflows preserve regulatory and human-review boundaries", () => {
   assert.match(article14, /no later than one month after submission of the incident notification/);
   assert.match(article14, /vulnerability description, severity and impact, available malicious-actor information/);
   assert.match(article14, /detailed incident description, severity and impact, likely threat type or root cause/);
+  assert.match(article14, /never expose sensitive details in the issue/);
   assert.match(article14, /intermediate status report when requested by the CSIRT coordinator/);
   assert.match(article14, /awareness of either an actively exploited vulnerability or a severe incident having an impact on product security/);
   assert.match(article14, /affected users and, where appropriate, all users without undue delay/);
@@ -709,10 +710,15 @@ test("EU CRA workflows preserve regulatory and human-review boundaries", () => {
 
   const supplyChain = workflow("eu-cra-compliance-supply-chain-sbom-auditor.md");
   assert.match(supplyChain, /machine-readable SBOM covering at least top-level dependencies/);
+  assert.match(supplyChain, /Annex I, Part II, point \(1\)/);
   assert.match(supplyChain, /implementation evidence beyond that express minimum/);
 
   const conformity = workflow("eu-cra-compliance-conformity-release-evidence.md");
   assert.match(conformity, /at least 10 years after market placement or for the support period, whichever is longer/);
+
+  assert.match(ledger, /CRA-ART-014.*reportability requires human review/);
+  assert.match(ledger, /CRA-ART-028-031.*final release require human review/);
+  assert.match(ledger, /CRA-ANNEX-VIII.*Route selection requires human review/);
 });
 
 test("workers reject disabled, malformed, or over-ceiling dispatches before execution", () => {
