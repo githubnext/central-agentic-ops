@@ -127,6 +127,8 @@ Deprioritize repositories without an `AGENTS.md`, archived or inactive repositor
 
 Dispatch stays repository-scoped: one dispatch per selected repository and eligible worker. Do not perform curation work in the orchestrator and do not fan out per file.
 
+Both workers apply a gain gate before publishing: a change set whose estimated reduction of always-loaded context is below 10 percent is deferred as a `noop` instead of becoming an issue. Expect dispatches to end without an issue, and do not treat that as a failure or re-dispatch the repository. Selecting the repositories with the strongest drift evidence is what keeps dispatches above the threshold, so prefer fewer, better-evidenced selections over filling `effective_max_repos`.
+
 ## Completion
 
 Finish with the standard `## Orchestrator Report` inherited from `shared/control.md`. Preserve every standard heading and field — `Scope`, `Repository Decisions`, `Workers`, `Dispatches`, and `Outcome` — and use `0`, `none`, or `not applicable` for empty fields. Use the exact precomputed repository totals and distinguish eligible, selected, skipped, and deferred repositories.

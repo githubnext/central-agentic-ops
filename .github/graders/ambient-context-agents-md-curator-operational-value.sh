@@ -5,6 +5,7 @@ export LC_ALL=C
 
 WORKFLOW_NAME="Ambient Context / AGENTS.md Curator"
 MATURATION_SECONDS=2592000
+MIN_TOKEN_REDUCTION=0.10
 PROPOSAL_WINDOW_SECONDS=21600
 COMPARISON_WINDOW_SECONDS=2592000
 MAX_INSPECTED_PULLS=50
@@ -19,24 +20,24 @@ definition() {
   "repository": "githubnext/central-agentic-ops", "workflowName": "Ambient Context / AGENTS.md Curator",
   "sourcePath": ".github/workflows/ambient-context-agents-md-curator.md",
   "adoption": {"commit": "ae39923baa7cb8bfa57dfcc158534adc24c2b793", "adoptedAt": "2026-08-26T23:22:08Z"},
-  "operationalValue": "Make the dispatched target's agents cheaper to run for the same delivered outcome quality by leaning out its always-loaded AGENTS.md.",
+  "operationalValue": "Make the dispatched target's agents at least ten percent cheaper to run for the same delivered outcome quality by leaning out its always-loaded AGENTS.md.",
   "evidence": {
     "opportunity": "The dispatched target repository's root AGENTS.md at the time of the run, provided the run filed an ambient-context proposal issue for it.",
     "assignment": "Bind targetRepo from workflow_dispatch inputs and freeze the proposal issue this run created in the safe-output repository; key agents-md:<targetRepo>:<runId>.",
-    "accepted": "Within thirty days of the proposal, a merged pull request changes the target's root AGENTS.md, and the target's completed agentic-workflow runs after that merge show a lower median successful-run token usage with no higher completed-run failure rate.",
+    "accepted": "Within thirty days of the proposal, a merged pull request changes the target's root AGENTS.md, and the target's completed agentic-workflow runs after that merge show a median successful-run token usage at least ten percent below the pre-merge median with no higher completed-run failure rate. Ten percent matches the minimum gain the curator is required to estimate before it is allowed to file a proposal at all.",
     "repositories": ["githubnext/central-agentic-ops"],
     "collection": "Read the frozen proposal issue from the safe-output repository, merged pull requests touching AGENTS.md in the target, and retained gh aw run logs for the target from thirty days before the merge through the capped evidence cutoff.",
     "maturation": "Thirty days after the curator run starts, matching the frozen thirty-day expiry of the proposal issue.",
-    "zeroRule": "Complete comparable evidence with no merged AGENTS.md change, no token reduction, or a higher failure rate scores 0.",
+    "zeroRule": "Complete comparable evidence with no merged AGENTS.md change, a token reduction below ten percent, or a higher failure rate scores 0.",
     "missingRule": "Missing assignment, no proposal issue, inaccessible logs, or no successful completed runs on either side of the merge scores null."
   },
-  "primaryMetric": {"id": "leaner-context-same-quality", "formula": "1 when the proposed AGENTS.md change merged and median successful-run token usage decreases with no increase in the completed-run failure rate; otherwise 0", "direction": "higher_is_better"},
+  "primaryMetric": {"id": "leaner-context-same-quality", "formula": "1 when the proposed AGENTS.md change merged and median successful-run token usage falls by at least ten percent with no increase in the completed-run failure rate; otherwise 0", "direction": "higher_is_better"},
   "baseline": {"mode": "attainment-only", "value": null, "evidenceCutoff": null, "provenance": []},
   "validationExamples": {
-    "targetAttained": {"valid":true,"contextApplied":true,"fewerTokens":true,"qualityPreserved":true},
-    "targetMissed": {"valid":true,"contextApplied":true,"fewerTokens":false,"qualityPreserved":true},
-    "missing": {"valid":false,"contextApplied":null,"fewerTokens":null,"qualityPreserved":null},
-    "malformed": {"valid":"yes","contextApplied":true,"fewerTokens":true,"qualityPreserved":true}
+    "targetAttained": {"valid":true,"contextApplied":true,"tokenGainMet":true,"qualityPreserved":true},
+    "targetMissed": {"valid":true,"contextApplied":true,"tokenGainMet":false,"qualityPreserved":true},
+    "missing": {"valid":false,"contextApplied":null,"tokenGainMet":null,"qualityPreserved":null},
+    "malformed": {"valid":"yes","contextApplied":true,"tokenGainMet":true,"qualityPreserved":true}
   }
 }
 JSON
@@ -46,8 +47,8 @@ metric() {
     jq '
       if .valid != true or (.contextApplied | type) != "boolean" then null
       elif (.contextApplied | not) then 0
-      elif (.fewerTokens | type) != "boolean" or (.qualityPreserved | type) != "boolean" then null
-      elif .fewerTokens and .qualityPreserved then 1
+      elif (.tokenGainMet | type) != "boolean" or (.qualityPreserved | type) != "boolean" then null
+      elif .tokenGainMet and .qualityPreserved then 1
       else 0
       end
     '
@@ -109,9 +110,11 @@ collect_logs() {
 
 # Token usage per successful run measures cost; the completed-run failure rate holds
 # delivered quality fixed, so a cheaper run only counts when reliability does not regress.
+# The ten percent floor is the same minimum gain the curator must estimate before it may
+# file a proposal, so the evaluator scores the promise the worker actually made.
 comparison() {
     logs_file=$1; window_start=$2; merged_at=$3; cutoff=$4
-    jq -c --arg start "$window_start" --arg merged "$merged_at" --arg cutoff "$cutoff" '
+    jq -c --arg start "$window_start" --arg merged "$merged_at" --arg cutoff "$cutoff" --argjson floor "$MIN_TOKEN_REDUCTION" '
       def completed: (.conclusion|type)=="string";
       def median: sort as $v|($v|length) as $n|if $n==0 then null elif ($n%2)==1 then $v[($n/2|floor)] else (($v[$n/2-1]+$v[$n/2])/2) end;
       [.runs[]|select(completed and .created_at >= $start and .created_at < $cutoff)] as $all
@@ -123,8 +126,9 @@ comparison() {
         else ($beforeTokens|median) as $beforeMedian|($afterTokens|median) as $afterMedian
         | (($before|map(select(.conclusion!="success"))|length)/($before|length)) as $beforeFailure
         | (($after|map(select(.conclusion!="success"))|length)/($after|length)) as $afterFailure
-        | {valid:true,fewerTokens:($afterMedian<$beforeMedian),qualityPreserved:($afterFailure<=$beforeFailure),
-           beforeMedianTokens:$beforeMedian,afterMedianTokens:$afterMedian,
+        | (if $beforeMedian>0 then ($beforeMedian-$afterMedian)/$beforeMedian else null end) as $reduction
+        | {valid:true,tokenGainMet:($reduction!=null and $reduction>=$floor),qualityPreserved:($afterFailure<=$beforeFailure),
+           beforeMedianTokens:$beforeMedian,afterMedianTokens:$afterMedian,tokenReduction:$reduction,requiredTokenReduction:$floor,
            beforeFailureRate:$beforeFailure,afterFailureRate:$afterFailure,
            runIds:(($before+$after)|map(.run_id|tostring)|unique)} end
     ' "$logs_file"
@@ -193,7 +197,7 @@ grade_run() {
       [{repository:$evidence,kind:"proposal-issue",ref:($issue|tostring)},
        {repository:$target,kind:"agents-md-pull-request",ref:($pull|tostring)}]
       + [.runIds[]|{repository:$target,kind:"actions-run",ref:.}]')
-    diagnostics=$(printf '%s\n' "$evidence"|jq 'del(.valid,.runIds,.fewerTokens,.qualityPreserved)')
+    diagnostics=$(printf '%s\n' "$evidence"|jq 'del(.valid,.runIds,.tokenGainMet,.qualityPreserved)')
     jq -cn --argjson value "$value" --arg key "$key" --argjson case "$case_json" --arg cutoff "$cutoff" \
       --arg matures "$matures_at" --argjson provenance "$provenance" --argjson diagnostics "$diagnostics" '
       {value:$value,opportunityKey:$key,case:$case,evidenceCutoff:$cutoff,maturesAt:$matures,

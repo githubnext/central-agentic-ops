@@ -511,13 +511,31 @@ Order the change set by context cost removed, then by correctness risk: conflict
 
 If the evidence supports no edit, emit a `noop` stating that the ambient context is healthy, with the size, freshness, and verification numbers that justify it. A clean no-op is a successful run.
 
-## Step 4 — Publish one issue
+## Step 4 — Gain gate
+
+This bundle exists to make every future agent session on the target repository cheaper for the same delivered outcome. A change set that does not move that number is not worth a maintainer's review. Estimate the gain before you write anything.
+
+1. For each proposed edit, count the characters it removes from `AGENTS.md` and the characters it adds. Content moved to a nested `AGENTS.md`, a path-scoped instructions file, or a skill counts as removed, because it no longer loads on every session; the pointer left behind counts as added. A correction that replaces text with shorter text counts the difference.
+2. Convert characters to tokens with the same approximation the prefetch uses: tokens are characters divided by 4.
+3. Estimated gain is the net tokens removed divided by `agents_md.estimated_tokens`, as a percentage.
+
+**If the estimated gain is below 10 percent, emit a `noop` and do nothing else.** Do not create an issue, do not publish the change set anyway, and do not adjust the threshold. Record in the `noop` the change set you considered, the per-edit token deltas, and the resulting percentage, so the finding is not lost and the next run can propose it once more evidence has accumulated. Deferring a sub-threshold pass is a successful run.
+
+Correctness findings are not exempt. A broken path, a wrong command, or a cross-file conflict that does not reach the threshold on its own still waits and is reported in the `noop`; the same defect will still be there next week, alongside whatever else has accumulated.
+
+When the estimate reaches 10 percent, continue to Step 5 and carry the arithmetic into the issue.
+
+## Step 5 — Publish one issue
 
 Create exactly one issue in the safe-output repository with this structure.
 
 ### Ambient context health
 
 A compact table with lines, bytes, estimated tokens, days since last change, commits since last change, broken path count, broken command count, and cross-file conflict count. State plainly whether the file is within the size and freshness targets.
+
+### Estimated gain
+
+The Step 4 arithmetic: tokens removed, tokens added, net tokens, and the net as a percentage of the current estimated tokens. State the projected post-change token count. This issue exists only because that percentage is at least 10.
 
 ### Proposed edits
 
@@ -536,14 +554,14 @@ A fenced block containing a complete, self-contained prompt that an agent can ru
 1. Name every file it may edit or create, and forbid touching anything else. Only include a file beyond `AGENTS.md` when an edit moves content to it.
 2. List the edits as explicit, individually verifiable instructions, in the order decided in Step 3.
 3. Require the agent to verify each claim against the repository before applying it, and to skip any instruction that no longer holds.
-4. Require the result to stay under 200 lines and under 10 KB, and to be smaller than or equal to the current file unless an addition is explicitly justified.
+4. Require the result to stay under 200 lines and under 10 KB, and to be at least 10 percent smaller in estimated tokens than the current file. If verification forced the agent to skip enough edits that the reduction falls short, require it to say so explicitly rather than padding the diff to hit the number.
 5. Require any replacement of duplicated content to keep the operative command, threshold, or rule inline rather than degrading to a bare link.
 6. Forbid rewriting untouched sections, reformatting the document, and creating a new root instruction file.
 7. Require a pull request whose description lists each applied edit with its evidence, and require the agent to report any instruction it skipped.
 
 ### Verification
 
-State how a reviewer can check the result: referenced paths resolve, documented commands exist in the manifest or task runner, the instruction files agree on one package manager and command set, size is within target, and no content duplicates `README.md`.
+State how a reviewer can check the result: the merged file is at least 10 percent smaller in estimated tokens than before, referenced paths resolve, documented commands exist in the manifest or task runner, the instruction files agree on one package manager and command set, size is within target, and no content duplicates `README.md`.
 
 ### Control Plane
 
@@ -551,6 +569,7 @@ When `correlation_id` is present, add the correlation ID, central repository, an
 
 ## Guardrails
 
+- Never publish an issue whose Step 4 estimated gain is below 10 percent; emit a `noop` carrying the evidence instead.
 - Read-only GitHub tools; the issue is the only mutation.
 - Never open a pull request, never modify the target checkout, and never dispatch another workflow.
 - Do not re-fetch pull request data that the pre-fetch step already collected.

@@ -24,6 +24,7 @@ Ambient context decays quietly. Directories move, commands change, reviewers rep
 - Routes content it removes to the cheapest destination that still guarantees it loads when needed: a nested `AGENTS.md` or path-scoped instructions file for directory-specific rules, a skill for procedures, and config or CI for rules a check can enforce deterministically.
 - Recommends moving multi-step procedures out of `AGENTS.md` into skills, sharpening skill descriptions so agents can select them correctly, and flagging skills that look abandoned.
 - Defers when an open pull request is already modifying an instruction file, so proposals never race an in-flight change.
+- Requires an estimated gain of at least 10 percent before it will publish anything. Each worker estimates the tokens its change set removes from the always-loaded context, and emits a `noop` carrying the evidence when the estimate falls short. Correctness findings are not exempt; a sub-threshold defect waits for the next run rather than costing a review now.
 - Produces at most one issue per worker run, each containing an agentic prompt with an explicit file allowlist, per-edit evidence, a size budget, and an instruction to skip any edit whose evidence no longer holds.
 
 Both workers are read-only. They never edit a repository, never open a pull request, and never merge anything. A human or a coding agent decides whether to run the prompt.
@@ -100,12 +101,12 @@ The bundle exists to make agents cheaper to run for the same delivered outcome, 
 
 | Observation | Value |
 | --- | --- |
-| A merged pull request changed the target's root `AGENTS.md`, and afterwards the median successful-run token usage fell with no increase in the completed-run failure rate | `1` |
-| The change merged but token usage did not fall, or the failure rate rose | `0` |
+| A merged pull request changed the target's root `AGENTS.md`, and afterwards the median successful-run token usage fell by at least 10 percent with no increase in the completed-run failure rate | `1` |
+| The change merged but token usage fell by less than 10 percent, or the failure rate rose | `0` |
 | No merged `AGENTS.md` change within thirty days — the proposal was filed and ignored | `0` |
 | The run correctly found no drift and filed no proposal, or the run logs cannot be compared | `null` |
 
-Token usage per successful run measures cost; the completed-run failure rate holds delivered quality fixed, so a cheaper repository only counts when reliability does not regress. Filing an issue is activity, not value, which is why an ignored proposal scores `0`. A correct no-op is not penalized because the run was never assigned an opportunity.
+Token usage per successful run measures cost; the completed-run failure rate holds delivered quality fixed, so a cheaper repository only counts when reliability does not regress. The 10 percent floor is the same minimum gain a worker must estimate before it is allowed to file a proposal, so the evaluator scores the promise the worker actually made rather than any reduction at all. Filing an issue is activity, not value, which is why an ignored proposal scores `0`. A correct no-op is not penalized because the run was never assigned an opportunity.
 
 Observations mature thirty days after the run, matching the proposal issue's expiry, and may be recomputed until then:
 

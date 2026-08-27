@@ -337,6 +337,10 @@ A description is the whole selection signal: it is loaded up front and the body 
 - When a procedure moves out of `AGENTS.md`, the pointer left behind must keep the facts a session needs even without opening the skill, so routine tasks do not pay an extra file read.
 - If nothing qualifies, emit a `noop` with the skill count, size numbers, and the reason no change is warranted. A clean no-op is a successful run.
 
+Then apply the gain gate. Always-loaded context here is `agents_md.estimated_tokens` plus the tokens in every skill's `name` and `description`, since those load up front while skill bodies do not. For each proposed change, count the characters removed from that always-loaded total and the characters added back, including the pointer left behind by an extraction and any rewritten description. Convert with tokens as characters divided by 4, and divide the net by the always-loaded total.
+
+**If the estimated gain is below 10 percent, emit a `noop` and do nothing else.** Record the change set you considered, the per-change token deltas, and the resulting percentage so the next run can pick it up. Sharpening a description usually adds tokens rather than removing them, so it rides along in a change set that already clears the gate and is never the sole basis for publishing an issue; when that is the only finding, defer it in the `noop`.
+
 ## Step 5 — Publish one issue
 
 Create exactly one issue in the safe-output repository with this structure.
@@ -344,6 +348,10 @@ Create exactly one issue in the safe-output repository with this structure.
 ### Skill inventory
 
 A compact table of skills with description length, size, days since last change, and reference count, plus the `AGENTS.md` size and the sections that look procedure-shaped.
+
+### Estimated gain
+
+The Step 4 arithmetic: always-loaded tokens today, tokens removed, tokens added, net, and the net as a percentage. This issue exists only because that percentage is at least 10.
 
 ### Proposed changes
 
@@ -356,14 +364,14 @@ A fenced block containing a complete, self-contained prompt an agent can run in 
 1. Name every file it may create or edit, and forbid touching anything else.
 2. State each change as an individually verifiable instruction.
 3. Require the agent to verify the evidence before applying a change and to skip instructions that no longer hold.
-4. Require any extracted procedure to be replaced in `AGENTS.md` by a single pointer line, so the always-loaded file gets smaller.
+4. Require any extracted procedure to be replaced in `AGENTS.md` by a single pointer line, and require the always-loaded context to end up at least 10 percent smaller in estimated tokens. If verification forced the agent to skip enough changes that the reduction falls short, require it to say so rather than padding the diff.
 5. Require each new or edited skill description to state its trigger conditions and concrete actions.
 6. Forbid deleting a skill without maintainer confirmation; retirement proposals must be raised for review, not executed.
 7. Require a pull request whose description lists each applied change with its evidence and each skipped instruction.
 
 ### Verification
 
-State how a reviewer confirms the result: `AGENTS.md` is smaller, each moved procedure exists in exactly one place, and every skill description names when to invoke it.
+State how a reviewer confirms the result: the always-loaded context is at least 10 percent smaller in estimated tokens, each moved procedure exists in exactly one place, and every skill description names when to invoke it.
 
 ### Control Plane
 
@@ -371,6 +379,7 @@ When `correlation_id` is present, add the correlation ID, central repository, an
 
 ## Guardrails
 
+- Never publish an issue whose Step 4 estimated gain is below 10 percent; emit a `noop` carrying the evidence instead.
 - Read-only GitHub tools; the issue is the only mutation.
 - Never open a pull request, never modify the target checkout, and never dispatch another workflow.
 - Do not duplicate the `ambient-context-agents-md-curator` mission: correctness and staleness of `AGENTS.md` prose belong to that worker. Confine this issue to layering between `AGENTS.md` and skills, and to the skills themselves.
