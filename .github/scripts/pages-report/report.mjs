@@ -567,7 +567,7 @@ function layout({ title, description, content, nested = false, navigation = "", 
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="color-scheme" content="light dark">
-  <title>${escapeHtml(title)}</title>
+  <title>${escapeHtml(title)} | ${escapeHtml(repo)}</title>
   ${stylesheetLink}
 </head>
 <body>
@@ -575,7 +575,7 @@ function layout({ title, description, content, nested = false, navigation = "", 
   <a class="skip-link" href="#main">Skip to content</a>
   <div class="app-shell">
     <aside class="org-sidebar" aria-label="Central Agentic Ops navigation">
-      <a class="sidebar-brand" href="${root}">${agenticWorkflowMark()}<span>Central Agentic Ops</span></a>
+      <a class="sidebar-brand" href="${root}">${agenticWorkflowMark()}<span>${escapeHtml(repo)}</span></a>
       <nav class="primary-nav" aria-label="Primary">
         <a href="${root}"${overviewCurrent}>${octicon("server")}<span>Overview</span></a>
         <a href="${root}repositories/"${repositoriesCurrent}>${octicon("repo")}<span>Repositories</span></a>
