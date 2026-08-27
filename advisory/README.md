@@ -13,8 +13,11 @@ The Advisory package applies the UK government [AI open-code and vulnerability-r
 | --- | --- |
 | [`advisory`](../.github/workflows/advisory.md) | Discovers, ranks, selects, and dispatches repository-level work. |
 | [`advisory-uk-ai-operational-resilience`](../.github/workflows/advisory-uk-ai-operational-resilience.md) | Produces one evidence-backed, non-binding operational resilience advisory for a selected repository. |
+| [`advisory-package-maintainer`](../.github/workflows/advisory-package-maintainer.md) | Weekly audits package coverage against the original specification and current GOV.UK guidance. |
 
 The orchestrator dispatches at most 50 workers per run. Each worker uses a fixed seven-day lookback, treats proposed A/B/C/D tiers as human-review priorities rather than authorization, and creates at most one consolidated issue through declared safe outputs.
+
+The package maintainer runs independently of repository dispatch. It updates the [implementation-status ledger](implementation-status.md) only through a draft pull request and may open at most one deduplicated issue for the highest-priority concrete fleet gap. Installed packages keep the ledger at `.github/aw/advisory/implementation-status.md`. It does not inspect target repositories or edit operation workflows.
 
 ## Install and Configure
 
@@ -42,3 +45,9 @@ Run the **Advisory** workflow manually with an explicit `target_repo`, `max_repo
 - Findings do not authorize opening, restricting, hiding, or decommissioning code.
 - Review mode routes the issue to a private review repository; live mode creates it in the selected target.
 - Operational-value evaluation is pending post-adoption evidence and is not represented by a placeholder grader.
+
+## Weekly Alignment Audit
+
+The **Advisory / Package Maintainer** runs weekly and fetches the authoritative GOV.UK guidance on every run. It reconciles the stable original requirement IDs, current guidance, and observed package workflows. It emits `noop` when coverage is materially current, proposes a one-file ledger update through a draft pull request when coverage changes, or creates one deduplicated improvement issue for the highest-priority untracked fleet gap.
+
+An inaccessible source or package file produces an incomplete run rather than a speculative alignment claim. Verification dates change only with material source or coverage changes, so the weekly audit does not create date-only pull requests.

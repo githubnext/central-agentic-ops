@@ -3,3 +3,7 @@ description: Advisory, non-binding UK AI open-code operational resilience review
 min-version: v0.87.6
 includes:
   - .github/workflows/advisory.md
+  - .github/workflows/advisory-package-maintainer.md
+resources:
+  - source: implementation-status.md
+    destination: .github/aw/advisory/implementation-status.md

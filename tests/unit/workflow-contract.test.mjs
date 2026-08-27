@@ -224,6 +224,7 @@ test("enterprise-scale limits remain bounded across inventory sizes", () => {
 test("enterprise defaults, budgets, timeouts, and concurrency are finite", () => {
   const expected = {
     "advisory.md": { credits: 250, timeout: 15, dispatchMax: 50, workers: 1 },
+    "advisory-package-maintainer.md": { credits: 200, timeout: 20 },
     "advisory-uk-ai-operational-resilience.md": { credits: 600, timeout: 30 },
     "ambient-context.md": { credits: 250, timeout: 15, dispatchMax: 20, workers: 2 },
     "aw-failures.md": { credits: 250, timeout: 15, dispatchMax: 50, workers: 1 },
@@ -632,6 +633,7 @@ test("every worker uses the standard dispatch envelope and safe mode vocabulary"
 
 test("Advisory preserves UK AI guidance and human-review boundaries", () => {
   const orchestrator = workflow("advisory.md");
+  const maintainer = workflow("advisory-package-maintainer.md");
   const worker = workflow("advisory-uk-ai-operational-resilience.md");
   const readme = readFileSync(join(root, "advisory", "README.md"), "utf8");
 
@@ -676,6 +678,28 @@ test("Advisory preserves UK AI guidance and human-review boundaries", () => {
   assert.match(worker, /## agent: `control-verifier`/);
   assert.match(worker, /## agent: `ai-risk-scorer`/);
   assert.doesNotMatch(worker, /^graders:/m);
+
+  assert.match(maintainer, /^name: "Advisory \/ Package Maintainer"$/m);
+  assert.match(maintainer, /schedule: weekly/);
+  assert.match(maintainer, /safe_output_mode:\n\s+default: staged/);
+  assert.match(maintainer, /staged: \$\{\{ github\.event_name == 'workflow_dispatch' && inputs\.safe_output_mode != 'live' \}\}/);
+  assert.match(maintainer, /original specification and current authoritative GOV\.UK guidance/);
+  assert.match(maintainer, /https:\/\/www\.gov\.uk\/guidance\/ai-open-code-and-vulnerability-risk-in-the-public-sector/);
+  assert.match(maintainer, /update only the applicable ledger path/i);
+  assert.match(maintainer, /allowed-files:\n\s+- "advisory\/implementation-status\.md"\n\s+- "\.github\/aw\/advisory\/implementation-status\.md"/);
+  assert.match(maintainer, /draft: true/);
+  assert.match(maintainer, /create-issue:[\s\S]*?deduplicate-by-title: true[\s\S]*?max: 1/);
+  assert.match(maintainer, /If the authoritative source or a trusted package file cannot be accessed or reconciled, call `report_incomplete`/);
+  assert.match(maintainer, /Emit `noop` only after the authoritative source and every trusted file were evaluated successfully/);
+  assert.doesNotMatch(maintainer, /shared\/control\.md/);
+  assert.doesNotMatch(maintainer, /^graders:/m);
+
+  const ledger = readFileSync(join(root, "advisory", "implementation-status.md"), "utf8");
+  assert.match(ledger, /UK-AI-001/);
+  assert.match(ledger, /UK-AI-015/);
+  assert.match(ledger, /AI is a threat accelerator, not an eligibility requirement/);
+  assert.match(ledger, /credible attacker, what publication adds to risk, and the realistic path to harm/);
+  assert.match(ledger, /It does not prove that the package, an installed fleet, a repository, or an organization is secure/);
 });
 
 test("EU CRA Advisor workflows preserve advisory and human-review boundaries", () => {
@@ -867,6 +891,7 @@ test("clean-room compilation emits the expected GitHub Actions settings", { time
     ];
     const expectedLockNames = [
       ...packageLockNames,
+      "advisory-package-maintainer.lock.yml",
       "eu-cra-compliance-package-maintainer.lock.yml",
       "docs-explanatory-diagrams.lock.yml",
       "pr-reviewer.lock.yml",
@@ -903,6 +928,11 @@ test("clean-room compilation emits the expected GitHub Actions settings", { time
       assert.match(generated, /GH_AW_SAFE_OUTPUTS_CONFIG:/);
       assert.match(generated, /PREVIEW_ONLY: \$\{\{ \(env\.GH_AW_SAFE_OUTPUT_MODE == 'live' \|\| env\.GH_AW_SAFE_OUTPUT_MODE == 'review'\) && 'false' \|\| 'true' \}\}/);
     }
+
+    const advisoryMaintainer = workflow("advisory-package-maintainer.lock.yml", generatedDirectory);
+    assert.match(advisoryMaintainer, /schedule:/);
+    assert.match(advisoryMaintainer, /advisory\/implementation-status\.md/);
+    assert.match(advisoryMaintainer, /copilot\/gpt-5\.4/);
 
     const craMaintainer = workflow("eu-cra-compliance-package-maintainer.lock.yml", generatedDirectory);
     assert.match(craMaintainer, /schedule:/);
