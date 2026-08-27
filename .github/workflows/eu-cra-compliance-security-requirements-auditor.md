@@ -92,6 +92,10 @@ tools:
     toolsets: [repos, issues, pull_requests, actions, dependabot, code_security, security_advisories]
   web-fetch:
 
+graders:
+  operational-value:
+    run: .github/graders/eu-cra-compliance-security-requirements-auditor-operational-value.sh
+
 safe-outputs:
   staged: ${{ inputs.preview_only == 'true' }}
   create-issue:
@@ -144,6 +148,12 @@ For each requirement record `EVIDENCE_SUFFICIENT`, `GAP_FOUND`, `HUMAN_REVIEW_RE
 ## Output
 
 Create one issue with the verified baseline, assessed product assumptions, requirement matrix, cross-cutting gaps, prioritized remediation backlog, inaccessible evidence, and explicit human-review questions.
+
+Immediately after the issue heading, include exactly one marker in this form, replacing the target and SHA with the analyzed repository and `git -C target rev-parse HEAD` result:
+
+`<!-- operational-value: domain=security-requirements target=OWNER/REPO target-sha=40_HEX_SHA -->`
+
+Add a `### Human Acceptance` section telling a non-bot reviewer to add a thumbs-up reaction only after reviewing the complete requirement-to-evidence matrix, regulatory provenance, cross-cutting gaps, remediation backlog, and human-review questions. Never add that reaction or claim human acceptance yourself.
 
 Material conclusions about CRA scope exclusion, economic-operator role, commercial versus non-commercial FOSS treatment, substantial modification, important Class I or Class II classification, critical-product classification, conformity-assessment route, applicability of a harmonised standard, presumption of conformity, active exploitation, the severe-incident threshold, reportability, EU Declaration of Conformity readiness, or final market-release eligibility require explicit human review.
 

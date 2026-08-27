@@ -93,6 +93,10 @@ tools:
     toolsets: [repos, issues, pull_requests, actions, dependabot, code_security, security_advisories]
   web-fetch:
 
+graders:
+  operational-value:
+    run: .github/graders/eu-cra-compliance-supply-chain-sbom-auditor-operational-value.sh
+
 safe-outputs:
   staged: ${{ inputs.preview_only == 'true' }}
   create-issue:
@@ -147,6 +151,12 @@ Do not expose vulnerability details or confidential SBOM data in the output. Sum
 ## Output
 
 Create one issue with a component-surface summary, SBOM evidence matrix, release-to-component traceability findings, vulnerability-management integration, provenance findings, prioritized gaps, and human-review questions. Rate each item only as `EVIDENCE_SUFFICIENT`, `GAP_FOUND`, `HUMAN_REVIEW_REQUIRED`, `NOT_ASSESSED`, or `INCOMPLETE`.
+
+Immediately after the issue heading, include exactly one marker in this form, replacing the target and SHA with the analyzed repository and `git -C target rev-parse HEAD` result:
+
+`<!-- operational-value: domain=supply-chain-sbom target=OWNER/REPO target-sha=40_HEX_SHA -->`
+
+Add a `### Human Acceptance` section telling a non-bot reviewer to add a thumbs-up reaction only after reviewing the complete component surface, SBOM matrix, release traceability, vulnerability-management, provenance, gap, and human-review record. Never add that reaction or claim human acceptance yourself.
 
 Material conclusions about CRA scope exclusion, economic-operator role, commercial versus non-commercial FOSS treatment, substantial modification, important Class I or Class II classification, critical-product classification, conformity-assessment route, applicability of a harmonised standard, presumption of conformity, active exploitation, the severe-incident threshold, reportability, EU Declaration of Conformity readiness, or final market-release eligibility require explicit human review.
 

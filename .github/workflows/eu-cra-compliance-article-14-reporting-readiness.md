@@ -92,6 +92,10 @@ tools:
     toolsets: [repos, issues, pull_requests, actions, dependabot, code_security, security_advisories]
   web-fetch:
 
+graders:
+  operational-value:
+    run: .github/graders/eu-cra-compliance-article-14-reporting-readiness-operational-value.sh
+
 safe-outputs:
   staged: ${{ inputs.preview_only == 'true' }}
   create-issue:
@@ -166,6 +170,12 @@ Create one issue with:
 - timestamp provenance and clock-start controls;
 - critical gaps, rehearsal recommendations, and human decisions;
 - status limited to `EVIDENCE_SUFFICIENT`, `GAP_FOUND`, `HUMAN_REVIEW_REQUIRED`, `NOT_ASSESSED`, or `INCOMPLETE`.
+
+Immediately after the issue heading, include exactly one marker in this form, replacing the target and SHA with the analyzed repository and `git -C target rev-parse HEAD` result:
+
+`<!-- operational-value: domain=article-14-readiness target=OWNER/REPO target-sha=40_HEX_SHA -->`
+
+Add a `### Human Acceptance` section telling a non-bot reviewer to add a thumbs-up reaction only after reviewing the complete awareness, escalation, separate event timelines, timestamp controls, evidence preservation, critical gaps, and human reportability decisions. Never add that reaction or claim human acceptance yourself.
 
 Never output `CRA COMPLIANT`, `LEGALLY COMPLIANT`, `CERTIFIED`, or `CE APPROVED`. Never submit, draft as if submitted, or attest submission of a notification to ENISA, a CSIRT, a market-surveillance authority, or another regulator.
 

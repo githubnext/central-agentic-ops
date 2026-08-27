@@ -341,6 +341,13 @@ test("operational-value graders expose deterministic run-scoped contracts", () =
     "ambient-context-agents-md-curator-operational-value.sh",
     "aw-failures-investigator-operational-value.sh",
     "dependabot-release-train-updater-operational-value.sh",
+    "eu-cra-compliance-article-14-reporting-readiness-operational-value.sh",
+    "eu-cra-compliance-conformity-release-evidence-operational-value.sh",
+    "eu-cra-compliance-package-maintainer-operational-value.sh",
+    "eu-cra-compliance-scope-classifier-operational-value.sh",
+    "eu-cra-compliance-security-requirements-auditor-operational-value.sh",
+    "eu-cra-compliance-supply-chain-sbom-auditor-operational-value.sh",
+    "eu-cra-compliance-vulnerability-handling-auditor-operational-value.sh",
     "optimization-ai-credit-auditor-operational-value.sh",
     "optimization-ai-credit-optimizer-operational-value.sh",
   ]);
@@ -361,6 +368,7 @@ test("operational-value graders expose deterministic run-scoped contracts", () =
       input: JSON.stringify(definition.validationExamples[example]),
     }));
     assert.ok(score("targetAttained") > score("targetMissed"), name);
+    assert.equal(score("targetMissed"), 0, `${name}: complete missed opportunity`);
     assert.equal(score("missing"), null, `${name}: missing`);
     assert.equal(score("malformed"), null, `${name}: malformed`);
   }
@@ -746,7 +754,9 @@ test("EU CRA Advisor workflows preserve advisory and human-review boundaries", (
     assert.match(source, /Never output `CRA COMPLIANT`, `LEGALLY COMPLIANT`, `CERTIFIED`, or `CE APPROVED`/);
     assert.match(source, /Never (?:submit|notify)/i);
     assert.match(source, /Do not put secrets, personal data, exploit details/);
-    assert.doesNotMatch(source, /^graders:/m);
+    assert.match(source, /^graders:\n\s+operational-value:\n\s+run: \.github\/graders\/eu-cra-compliance-.+-operational-value\.sh$/m);
+    assert.match(source, /<!-- operational-value: domain=[a-z0-9-]+ target=OWNER\/REPO target-sha=40_HEX_SHA -->/);
+    assert.match(source, /### Human Acceptance/);
   }
 
   assert.match(maintainer, /schedule: daily/);
@@ -758,6 +768,7 @@ test("EU CRA Advisor workflows preserve advisory and human-review boundaries", (
   assert.match(maintainer, /draft: true/);
   assert.match(maintainer, /create-issue:[\s\S]*?max: 1/);
   assert.match(maintainer, /deduplicate-by-title: true/);
+  assert.match(maintainer, /graders:\n\s+operational-value:\n\s+run: \.github\/graders\/eu-cra-compliance-package-maintainer-operational-value\.sh/);
   assert.doesNotMatch(maintainer, /shared\/control\.md/);
 
   const ledger = readFileSync(join(root, "eu-cra-compliance", "implementation-status.md"), "utf8");
@@ -892,6 +903,7 @@ test("clean-room compilation emits the expected GitHub Actions settings", { time
     const expectedLockNames = [
       ...packageLockNames,
       "advisory-package-maintainer.lock.yml",
+      "daily-dashboard-language-spec-review.lock.yml",
       "eu-cra-compliance-package-maintainer.lock.yml",
       "docs-explanatory-diagrams.lock.yml",
       "pr-reviewer.lock.yml",

@@ -59,6 +59,10 @@ tools:
     toolsets: [repos, issues, pull_requests]
   web-fetch:
 
+graders:
+  operational-value:
+    run: .github/graders/eu-cra-compliance-package-maintainer-operational-value.sh
+
 safe-outputs:
   staged: ${{ github.event_name == 'workflow_dispatch' && inputs.safe_output_mode != 'live' }}
   create-pull-request:
