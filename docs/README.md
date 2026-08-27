@@ -16,4 +16,11 @@ hero:
       link: /central-agentic-ops/architecture/
       variant: secondary
       icon: right-arrow
+    - text: View our dashboard
+      link: https://githubnext.github.io/gh-aw-central-agentic-ops/
+      variant: secondary
+      icon: right-arrow
+      attrs:
+        class: dashboard-action
+        title: Updated daily or on demand
 ---

@@ -225,6 +225,30 @@ const { title = data.title, tagline, actions = [] } = data.hero || {};
       color: var(--sl-color-white);
     }
 
+    .hero-action.dashboard-action {
+      position: relative;
+      border-color: color-mix(in srgb, var(--sl-color-text-accent) 65%, var(--sl-color-gray-2));
+      background: color-mix(in srgb, var(--sl-color-text-accent) 10%, transparent);
+      transition: background-color 160ms ease, border-color 160ms ease, box-shadow 160ms ease;
+    }
+
+    .hero-action.dashboard-action:hover,
+    .hero-action.dashboard-action:focus-visible {
+      border-color: var(--sl-color-text-accent);
+      background: color-mix(in srgb, var(--sl-color-text-accent) 16%, transparent);
+      box-shadow: 0 4px 14px color-mix(in srgb, var(--sl-color-black) 20%, transparent);
+    }
+
+    .hero-action.dashboard-action > span {
+      transform: rotate(-45deg);
+      transition: transform 160ms ease;
+    }
+
+    .hero-action.dashboard-action:hover > span,
+    .hero-action.dashboard-action:focus-visible > span {
+      transform: translate(0.1rem, -0.1rem) rotate(-45deg);
+    }
+
     .visually-hidden {
       position: absolute;
       width: 1px;
@@ -333,6 +357,11 @@ const { title = data.title, tagline, actions = [] } = data.hero || {};
 
       .dispatch-motion {
         display: none;
+      }
+
+      .hero-action.dashboard-action,
+      .hero-action.dashboard-action > span {
+        transition: none;
       }
     }
 
