@@ -156,4 +156,3 @@ Create one issue with:
 Never output `CRA COMPLIANT`, `LEGALLY COMPLIANT`, `CERTIFIED`, or `CE APPROVED`. Never submit, draft as if submitted, or attest submission of a notification to ENISA, a CSIRT, a market-surveillance authority, or another regulator.
 
 If `correlation_id` is present, include `### Control Plane` with correlation ID, central repository, and control-plane run URL. Use `noop` only for an equivalent current readiness record with no changed evidence or authoritative requirement.
-

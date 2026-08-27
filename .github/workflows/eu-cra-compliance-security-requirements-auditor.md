@@ -136,4 +136,3 @@ Create one issue with the verified baseline, assessed product assumptions, requi
 Never output `CRA COMPLIANT`, `LEGALLY COMPLIANT`, `CERTIFIED`, or `CE APPROVED`. Never submit a regulatory notification.
 
 If `correlation_id` is present, include `### Control Plane` with the correlation ID, central repository, and control-plane run URL. Use `noop` only when an equivalent current audit exists and neither relevant evidence nor authoritative requirements changed.
-
