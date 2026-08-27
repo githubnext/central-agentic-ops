@@ -5,7 +5,7 @@ on:
   pull_request:
     types: [ready_for_review]
     paths:
-      - ".github/workflows/**/*.md"
+      - ".github/workflows/*.md"
   workflow_dispatch:
 max-ai-credits: 350
 timeout-minutes: 45
