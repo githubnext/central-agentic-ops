@@ -1,7 +1,7 @@
 ---
-name: "Actions Maintenance"
+name: "AW Maintenance"
 
-run-name: "Actions Maintenance · ${{ inputs.target_repo || 'auto' }} · ${{ inputs.safe_output_mode || 'mode' }}"
+run-name: "AW Maintenance · ${{ inputs.target_repo || 'auto' }} · ${{ inputs.safe_output_mode || 'mode' }}"
 
 max-ai-credits: 250
 timeout-minutes: 15
@@ -45,19 +45,19 @@ on:
           - live
 
 env:
-  CENTRAL_AGENTIC_OPS_MODE: ${{ vars.CENTRAL_AGENTIC_OPS_ACTIONS_MAINTENANCE_MODE || 'staged' }}
-  GH_AW_SAFE_OUTPUT_MODE: ${{ (inputs.safe_output_mode || vars.CENTRAL_AGENTIC_OPS_ACTIONS_MAINTENANCE_MODE || 'staged') == 'preview' && 'staged' || (inputs.safe_output_mode || vars.CENTRAL_AGENTIC_OPS_ACTIONS_MAINTENANCE_MODE || 'staged') }}
+  CENTRAL_AGENTIC_OPS_MODE: ${{ vars.CENTRAL_AGENTIC_OPS_AW_MAINTENANCE_MODE || 'staged' }}
+  GH_AW_SAFE_OUTPUT_MODE: ${{ (inputs.safe_output_mode || vars.CENTRAL_AGENTIC_OPS_AW_MAINTENANCE_MODE || 'staged') == 'preview' && 'staged' || (inputs.safe_output_mode || vars.CENTRAL_AGENTIC_OPS_AW_MAINTENANCE_MODE || 'staged') }}
   REVIEW_OUTPUT_REPO: ${{ inputs.safe_output_repo || github.repository }}
-  SAFE_OUTPUT_REPO: ${{ (inputs.safe_output_mode || vars.CENTRAL_AGENTIC_OPS_ACTIONS_MAINTENANCE_MODE || 'staged') == 'review' && (inputs.safe_output_repo || github.repository) || '' }}
+  SAFE_OUTPUT_REPO: ${{ (inputs.safe_output_mode || vars.CENTRAL_AGENTIC_OPS_AW_MAINTENANCE_MODE || 'staged') == 'review' && (inputs.safe_output_repo || github.repository) || '' }}
   TARGET_REPO: ${{ inputs.target_repo || '' }}
 
 imports:
   - uses: shared/control.md
     with:
-      bundle: actions-maintenance
+      bundle: aw-maintenance
       role: orchestrator
-      rollout_percent: ${{ inputs.rollout_percent || vars.CENTRAL_AGENTIC_OPS_ACTIONS_MAINTENANCE_ROLLOUT_PERCENT || '100' }}
-      max_repos: ${{ inputs.max_repos || vars.CENTRAL_AGENTIC_OPS_ACTIONS_MAINTENANCE_MAX_REPOS || '1' }}
+      rollout_percent: ${{ inputs.rollout_percent || vars.CENTRAL_AGENTIC_OPS_AW_MAINTENANCE_ROLLOUT_PERCENT || '100' }}
+      max_repos: ${{ inputs.max_repos || vars.CENTRAL_AGENTIC_OPS_AW_MAINTENANCE_MAX_REPOS || '1' }}
       max_scan_repos: ${{ vars.CENTRAL_AGENTIC_OPS_MAX_SCAN_REPOS || '1000' }}
       cell_count: ${{ inputs.cell_count || vars.CENTRAL_AGENTIC_OPS_CELL_COUNT || '1' }}
       cell_index: ${{ inputs.cell_index || vars.CENTRAL_AGENTIC_OPS_CELL_INDEX || '0' }}
@@ -90,15 +90,15 @@ network:
 
 safe-outputs:
   dispatch-workflow:
-    workflows: [actions-maintenance-agentic-upgrade]
+    workflows: [aw-maintenance-upgrade]
     max: 50
 ---
 
-# Actions Maintenance
+# AW Maintenance
 
-Package orchestrator for organization-wide GitHub Actions maintenance. Use the shared control plane to select repositories that install their own GitHub Agentic Workflows, then dispatch `actions-maintenance-agentic-upgrade` once per selected repository. The orchestrator only selects and ranks repositories; the worker owns release detection, the `gh aw upgrade` run, and issue filing inside each target repository.
+Package orchestrator for organization-wide GitHub Agentic Workflows (gh-aw) maintenance. Use the shared control plane to select repositories that install their own GitHub Agentic Workflows, then dispatch `aw-maintenance-upgrade` once per selected repository. The orchestrator only selects and ranks repositories; the worker owns release detection, the `gh aw upgrade` run, and issue filing inside each target repository.
 
-For now this package covers only agentic workflow maintenance and upgrades (the gh-aw compiler, dispatcher template, codemods, and pinned action versions used by `.github/workflows/*.md`). Traditional, hand-written GitHub Actions YAML maintenance is intentionally out of scope until a dedicated tool and workflow are chosen for it.
+This package covers exclusively agentic workflow maintenance and upgrades (the gh-aw compiler, dispatcher template, codemods, and pinned action versions used by `.github/workflows/*.md`). Traditional, hand-written GitHub Actions YAML maintenance is out of scope — that is already managed by Dependabot.
 
 ## Inputs and scope
 
@@ -113,14 +113,14 @@ Prefer repositories with clear evidence of installed, maintainable agentic workf
 
 1. An `aw.yml` package manifest or `.github/workflows/*.md` agentic workflow source files, which show the repository has adopted gh-aw and can be safely upgraded.
 2. A `min-version` in `aw.yml` or a compiled `.lock.yml` header that is older than the latest known gh-aw release, which is the strongest signal that maintenance work is due.
-3. No open `[actions-maintenance]` tracking issue for the currently available release, so repeat dispatches do not pile up duplicate work.
+3. No open `[aw-maintenance]` tracking issue for the currently available release, so repeat dispatches do not pile up duplicate work.
 4. Recent commits under `.github/workflows/` or `.github/skills/`, showing the repository actively maintains its agentic workflows and a maintainer is likely to act on a filed issue.
 
-Deprioritize repositories with no `.github/workflows/*.md` files, no `aw.yml` manifest, archived or disabled repositories, and repositories that already have an open, unresolved `[actions-maintenance]` issue for the current release.
+Deprioritize repositories with no `.github/workflows/*.md` files, no `aw.yml` manifest, archived or disabled repositories, and repositories that already have an open, unresolved `[aw-maintenance]` issue for the current release.
 
 ## Workers
 
-- `actions-maintenance-agentic-upgrade`: reads and caches the latest gh-aw release information, compares it against the target repository's currently pinned gh-aw version, and — only when a newer release is available and not already tracked — runs `gh aw upgrade` locally to compute the upgrade diff and files one issue that a maintainer can assign to Copilot to open the upgrade pull request.
+- `aw-maintenance-upgrade`: reads and caches the latest gh-aw release information, compares it against the target repository's currently pinned gh-aw version, and — only when a newer release is available and not already tracked — runs `gh aw upgrade` locally to compute the upgrade diff and files one issue that a maintainer can assign to Copilot to open the upgrade pull request.
 
 Dispatch stays repository-scoped: one worker run per selected repository. Do not fan out one dispatch per gh-aw release or per workflow file.
 

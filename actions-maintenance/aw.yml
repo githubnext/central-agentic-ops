@@ -1,5 +1,0 @@
-name: Actions Maintenance
-description: Organization-wide workflow for keeping installed GitHub Agentic Workflows (gh-aw) current and filing upgrade issues assignable to Copilot.
-min-version: v0.87.6
-includes:
-  - .github/workflows/actions-maintenance.md
