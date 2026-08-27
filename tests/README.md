@@ -13,7 +13,7 @@ The automated suite checks source `.md` contracts, ops-value interfaces, smoke-w
 | Unit | `tests/unit/` | `npm run test:unit` | Policy matrices, workflow contracts, safety limits, generated settings, and package manifest structure. |
 | Integration | `tests/integration/` | `npm run test:integration` | Clean-room `gh aw add`/`update` behavior and fail-closed execution of the actual control precompute shell. |
 | Load | `tests/load/` | `npm run test:load` | Actual pagination, deterministic batching, and admission logic over 100,000 synthetic repositories, including bounded API failure. |
-| Compilation | Source workflows | `npm run compile` | All five agentic workflows compile without emitting repository artifacts. |
+| Compilation | Source workflows | `npm run compile` | All agentic workflow sources compile without emitting repository artifacts. |
 | Runtime staged | `.github/workflows/staged-smoke.yml` | Manual Actions dispatch | One bounded target and its workers complete; target refs and issues remain unchanged. |
 | Runtime modes | `.github/workflows/enterprise-canary.yml` | Manual protected Actions dispatch | Repository-local staged/review/live routing against dedicated repositories with mode-specific write assertions. |
 | Runtime stress | `.github/workflows/enterprise-stress.yml` | Manual protected Actions dispatch | Repository-local two, three, or five same-scope staged runs verify cancellation and no target mutation. |
@@ -25,7 +25,7 @@ The integration suite creates disposable consumer repositories under the system 
 
 | Test result | Command | Checked behavior |
 | --- | --- | --- |
-| 🟢 Pass | `gh aw add` | Installs the four core orchestrators, six workers, shared imports, packaged skills and agent, and package manifest; excludes optional Pages, repository-only test/smoke assets, and experimental ops values. |
+| 🟢 Pass | `gh aw add` | Installs the core orchestrators and workers, shared imports, packaged skills and agent, and package manifest; focused Advisory and EU CRA packages are validated separately. |
 | 🟢 Pass | `gh aw update --force` | Replaces a locally modified package workflow and restores deleted workflow dependencies, skills, and agent files for a branch-tracked package. |
 
 ## Enterprise Integration and Load
@@ -156,7 +156,7 @@ Compilation checks prove the source policy reaches the generated GitHub Actions 
 | 🟢 Pass | AI Credit Auditor | Standard dispatch envelope and safe output settings compile. |
 | 🟢 Pass | AI Credit Optimizer | Standard dispatch envelope and safe output settings compile. |
 | 🟢 Pass | All worker workflow safe outputs | staged mode and review/live routing vocabulary checked. |
-| 🟢 Pass | All five generated workflows | Emitted GitHub Actions settings checked in a clean-room compile. |
+| 🟢 Pass | All generated workflows | Emitted GitHub Actions settings checked in a clean-room compile. |
 | 🟢 Pass | Core catalog package | Installs no Pages workflow, renderer, or Pages permission surface. |
 | 🟢 Pass | Operational value | Schema-v4 evaluators are registered by workers and Pages consumes actual `grader_results.json` observations. |
 | 🟢 Pass | Pages add-on | Conventional publisher remains outside the reusable Agentic Workflow packages. |

@@ -1,0 +1,38 @@
+# Advisory Specification Implementation Status
+
+This ledger records how the **Advisory operation workflow fleet** represents the UK government guidance on AI, open code, and vulnerability risk in the public sector. The authoritative source is the current [GOV.UK guidance](https://www.gov.uk/guidance/ai-open-code-and-vulnerability-risk-in-the-public-sector), not this ledger.
+
+`IMPLEMENTED` means a workflow capability represents a requirement. It does not prove that the package, an installed fleet, a repository, or an organization is secure, complete, correct, or aligned with the guidance.
+
+Allowed package-capability statuses: `IMPLEMENTED`, `PARTIAL`, `MISSING`, `HUMAN_REVIEW_REQUIRED`, `INCOMPLETE`.
+
+## Completeness index
+
+| Specification segment | Fleet disposition | Requirement IDs |
+| --- | --- | --- |
+| Scope, open-code default, and threat model | Original baseline preserved and represented | UK-AI-001 through UK-AI-004 |
+| Minimum operational standard | Ownership, design, hygiene, remediation, disclosure, observability, and recovery represented | UK-AI-005 through UK-AI-011 |
+| Closure exception governance | Threat-model triad, narrow scope, expiry, and re-approval represented | UK-AI-012 through UK-AI-013 |
+| Advisory decision boundaries | Non-authoritative tiers, incomplete outputs, and human review represented | UK-AI-014 through UK-AI-015 |
+
+## Requirement ledger
+
+The source below is non-binding GOV.UK policy guidance. Stable requirement IDs preserve the original package baseline; source changes must be recorded rather than silently renumbering or deleting rows.
+
+| Requirement ID | Requirement summary | Package-capability status | Workflow evidence | Missing capability | Recommended change | Authoritative source | Last materially verified |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| UK-AI-001 | Apply the guidance to published or publicly accessible UK public-sector code; AI is a threat accelerator, not an eligibility requirement | IMPLEMENTED | `advisory` — Discovery scope and ranking | None known | Preserve public-sector and published-code scope independently of AI functionality | GOV.UK AI open-code and vulnerability-risk guidance, non-binding, link above | 2026-08-27 |
+| UK-AI-002 | Keep public-sector code open and reusable by default for transparency, scrutiny, reuse, and reduced supplier lock-in | IMPLEMENTED | Worker — Open by default method | None known | Preserve open-by-default burden of proof | GOV.UK guidance, non-binding, link above | 2026-08-27 |
+| UK-AI-003 | Treat system weaknesses and remediation capability, rather than visibility alone, as the primary risk drivers | IMPLEMENTED | Worker — resilience, control verification, and closure rules | None known | Continue to prohibit privacy as a substitute control | GOV.UK guidance, non-binding, link above | 2026-08-27 |
+| UK-AI-004 | Account for AI-shortened vulnerability discovery and discovery-to-exploit windows | IMPLEMENTED | Orchestrator ranking; worker risk scoring | None known | Preserve AI as an exposure accelerator rather than a scope gate | GOV.UK guidance, non-binding, link above | 2026-08-27 |
+| UK-AI-005 | Establish clear ownership for public code and remediation | IMPLEMENTED | `control-verifier` — `ownership_controls`; output ownership coverage | None known | Preserve named owner or owner-gap evidence | GOV.UK guidance, non-binding, link above | 2026-08-27 |
+| UK-AI-006 | Use secure-by-design development practices | IMPLEMENTED | Worker minimum-standard verification; `sdlc_controls` | None known | Continue evidence-backed design-control checks | GOV.UK guidance, non-binding, link above | 2026-08-27 |
+| UK-AI-007 | Automate dependency and vulnerability hygiene | IMPLEMENTED | Prefetch dependency configuration and alerts; `dependency_controls` | None known | Preserve feature-disabled versus inaccessible distinctions | GOV.UK guidance, non-binding, link above | 2026-08-27 |
+| UK-AI-008 | Define patch SLAs and maintain credible remediation capability | IMPLEMENTED | Alert age evidence; `patch_sla_controls`; remediation queue | None known | Compare observed alert age only with an evidenced SLA | GOV.UK guidance, non-binding, link above | 2026-08-27 |
+| UK-AI-009 | Respond rapidly to inbound vulnerability reports | IMPLEMENTED | Security policy and private-reporting evidence; `disclosure_controls` | Repository evidence cannot prove response effectiveness | Retain explicit out-of-repository evidence gaps and human review | GOV.UK guidance, non-binding, link above | 2026-08-27 |
+| UK-AI-010 | Maintain operational observability and detection | IMPLEMENTED | `runtime_controls`; detectability score; metrics baseline | None known | Preserve evidence separation and avoid inferred passes | GOV.UK guidance, non-binding, link above | 2026-08-27 |
+| UK-AI-011 | Maintain recovery, rollback, and incident-response capability | IMPLEMENTED | `recovery_controls`; exposure-without-recovery metric | Repository evidence may be incomplete | Require human review of operational evidence outside the repository | GOV.UK guidance, non-binding, link above | 2026-08-27 |
+| UK-AI-012 | A closure exception must identify the credible attacker, what publication adds to risk, and the realistic path to harm | IMPLEMENTED | Worker — Open-Code Exception Register and scorer C/D gate | None known | Never recommend closure when any threat-model field lacks evidence | GOV.UK guidance, non-binding, link above | 2026-08-27 |
+| UK-AI-013 | Keep closure exceptions narrow, time-bound, mitigated, owned, and periodically re-approved | IMPLEMENTED | Worker exception record requires bounded scope, compensating controls, expiry, owner, and cadence | None known | Preserve remediation alternatives and re-approval evidence | GOV.UK guidance, non-binding, link above | 2026-08-27 |
+| UK-AI-014 | Treat A/B/C/D results as workflow prioritization labels, not authoritative guidance decisions | IMPLEMENTED | Worker tier disclaimer and human-review gate | None known | Preserve the B cap when closure evidence is incomplete | GOV.UK guidance plus package-specific safety boundary, non-binding, link above | 2026-08-27 |
+| UK-AI-015 | Make limitations explicit and require human review without exposing sensitive evidence | IMPLEMENTED | Package disclaimers, incomplete handling, output restrictions, and human-review section | None known | Preserve advisory-only language and confidential evidence controls | GOV.UK guidance plus package-specific safety boundary, non-binding, link above | 2026-08-27 |
