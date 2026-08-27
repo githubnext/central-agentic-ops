@@ -60,7 +60,7 @@ export default defineConfig({
       components: {
         Banner: "./docs/components/ExperimentalBanner.astro",
         Footer: "./docs/components/SiteFooter.astro",
-        Hero: "./docs/components/LifecycleHero.astro",
+        Hero: "./docs/components/HierarchyHero.astro",
       },
       editLink: {
         baseUrl: "https://github.com/githubnext/central-agentic-ops/edit/main/",
