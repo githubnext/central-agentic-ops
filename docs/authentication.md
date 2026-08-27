@@ -5,6 +5,8 @@ description: Choose and configure least-privilege GitHub App, fine-grained PAT, 
 
 Configure authentication for the repositories each operation needs to access. Prefer a GitHub App for private or cross-repository use; use a fine-grained PAT when an App is not practical; use the built-in workflow token only for the bounded cases described below.
 
+Package maintainers can optionally turn these settings into a guided `gh aw add-wizard` flow with [`aw.yml` bootstrap configuration](bootstrap-configuration.md).
+
 | Your use case | Credential |
 | --- | --- |
 | Private or internal targets, alternate review repositories, or live writes | GitHub App preferred; fine-grained PAT supported |

@@ -79,6 +79,7 @@ export default defineConfig({
           items: [
             { label: "Quickstart", link: "/getting-started/" },
             { label: "Configure authentication", link: "/authentication/" },
+            { label: "Optional bootstrap setup", link: "/bootstrap-configuration/" },
           ],
         },
         {
