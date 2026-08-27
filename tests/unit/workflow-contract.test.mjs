@@ -691,7 +691,15 @@ test("clean-room compilation emits the expected GitHub Actions settings", { time
     assert.match(prReviewer, /name: "PR Reviewer \/ Agentic Workflow Validation"/);
     assert.match(prReviewer, /submit_pull_request_review/);
     assert.match(prReviewer, /REQUEST_CHANGES/);
-    assert.match(prReviewer, /gh aw compile --validate --no-emit --no-check-update --schedule-seed githubnext\/central-agentic-ops/);
+    assert.match(prReviewer, /agenticworkflows/);
+    assert.match(prReviewer, /Mount MCP servers as CLIs/);
+    assert.doesNotMatch(prReviewer, /go build .*cmd\/gh-aw/);
+
+    const prReviewerSource = workflow("pr-reviewer.md");
+    assert.match(prReviewerSource, /types: \[ready_for_review\]/);
+    assert.match(prReviewerSource, /agentic-workflows: true/);
+    assert.match(prReviewerSource, /cli-proxy: true/);
+    assert.match(prReviewerSource, /agentic-workflows compile/);
   } finally {
     rmSync(temporaryRoot, { recursive: true, force: true });
   }
