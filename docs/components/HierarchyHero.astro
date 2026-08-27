@@ -1,0 +1,351 @@
+---
+import { Image } from "astro:assets";
+import type { HTMLAttributes } from "astro/types";
+import dispatchFallback from "../assets/control-plane-dispatch-fallback.svg";
+import mobileDispatchFallback from "../assets/control-plane-dispatch-mobile.svg";
+
+const PAGE_TITLE_ID = "_top";
+
+type HeroAction = {
+  attrs?: Omit<HTMLAttributes<"a">, "href">;
+  icon?: { name?: string; html?: string };
+  link: string;
+  text: string;
+  variant?: "primary" | "secondary" | "minimal";
+};
+type HeroData = {
+  title: string;
+  draft?: boolean;
+  hero?: {
+    title?: string;
+    tagline?: string;
+    actions?: HeroAction[];
+  };
+};
+
+const { data } = (Astro.locals as unknown as { starlightRoute: { entry: { data: HeroData } } }).starlightRoute.entry;
+const { title = data.title, tagline, actions = [] } = data.hero || {};
+---
+
+<div class="hierarchy-hero">
+  <div class="sl-flex stack">
+    <div class="sl-flex copy">
+      <h1 id={PAGE_TITLE_ID} data-page-title set:html={title} />
+      {data.draft && <aside class="draft-notice">This page is a draft and may contain incomplete content.</aside>}
+      {tagline && <div class="tagline" set:html={tagline} />}
+    </div>
+    {
+      actions.length > 0 && (
+        <div class="sl-flex actions">
+          {actions.map(
+            ({ attrs: { class: className, ...attrs } = {}, icon, link: href, text, variant }) => (
+              <a href={href} class:list={["hero-action", variant || "primary", className]} {...attrs}>
+                {text}
+                {icon?.html ? <Fragment set:html={icon.html} /> : icon?.name === "right-arrow" && <span aria-hidden="true">→</span>}
+              </a>
+            ),
+          )}
+        </div>
+      )
+    }
+  </div>
+
+  <figure class="hierarchy" aria-labelledby="hierarchy-title" aria-describedby="hierarchy-description">
+    <figcaption class="visually-hidden">
+      <span id="hierarchy-title">Central Agentic Ops execution hierarchy</span>
+      <span id="hierarchy-description">A private control plane runs operation packages such as Dependabot and Optimization, routes every package through every authorized organization to every repo, and correlates every outcome into an operational report excerpt.</span>
+    </figcaption>
+
+    <div class="desktop-scene">
+      <Image src={dispatchFallback} alt="" loading="eager" decoding="async" class="pipeline-image" />
+      <div class="dispatch-motion" aria-hidden="true"></div>
+    </div>
+
+    <div class="mobile-scene" aria-hidden="true">
+      <Image src={mobileDispatchFallback} alt="" loading="eager" decoding="async" class="mobile-pipeline-image" />
+      <div class="dispatch-motion mobile-dispatch-motion" data-layout="mobile"></div>
+    </div>
+  </figure>
+</div>
+
+<script>
+  import lottie from "lottie-web/build/player/lottie_light";
+  import createAnimationData, { createMobileAnimationData } from "../assets/control-plane-dispatch.animation.mjs";
+
+  const animations = new WeakMap<Element, ReturnType<typeof lottie.loadAnimation>>();
+  const observers = new WeakMap<Element, IntersectionObserver>();
+
+  function initializeHierarchyAnimations() {
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+
+    document.querySelectorAll(".dispatch-motion").forEach((container) => {
+      if (animations.has(container)) return;
+
+      const animation = lottie.loadAnimation({
+        container,
+        renderer: "svg",
+        loop: true,
+        autoplay: false,
+        animationData: container instanceof HTMLElement && container.dataset.layout === "mobile" ? createMobileAnimationData() : createAnimationData(),
+        rendererSettings: {
+          preserveAspectRatio: "xMidYMid meet",
+          progressiveLoad: true,
+        },
+      });
+      const observer = new IntersectionObserver(
+        ([entry]) => (entry?.isIntersecting ? animation.play() : animation.pause()),
+        { threshold: 0.15 },
+      );
+
+      animation.addEventListener("DOMLoaded", () => container.classList.add("is-ready"));
+      observer.observe(container);
+      animations.set(container, animation);
+      observers.set(container, observer);
+    });
+  }
+
+  function destroyHierarchyAnimations() {
+    document.querySelectorAll(".dispatch-motion").forEach((container) => {
+      observers.get(container)?.disconnect();
+      animations.get(container)?.destroy();
+      observers.delete(container);
+      animations.delete(container);
+    });
+  }
+
+  initializeHierarchyAnimations();
+  document.addEventListener("astro:page-load", initializeHierarchyAnimations);
+  document.addEventListener("astro:before-swap", destroyHierarchyAnimations);
+</script>
+
+<style>
+  @layer starlight.core {
+    .hierarchy-hero {
+      position: relative;
+      isolation: isolate;
+      display: grid;
+      overflow: clip;
+      grid-template-columns: minmax(0, 1fr);
+      align-items: center;
+      gap: 2rem;
+      padding-block: 2rem 3rem;
+    }
+
+    .stack,
+    .hierarchy {
+      animation: hero-enter 700ms cubic-bezier(0.22, 1, 0.36, 1) both;
+    }
+
+    .stack {
+      flex-direction: column;
+      gap: clamp(1.5rem, calc(1.5rem + 1vw), 2rem);
+      text-align: center;
+    }
+
+    .copy {
+      flex-direction: column;
+      gap: 1rem;
+      align-items: center;
+    }
+
+    .copy > * {
+      max-width: 54ch;
+    }
+
+    .hierarchy-hero h1 {
+      max-width: 14ch;
+      background: var(--galaxy-title-gradient);
+      background-clip: text;
+      color: transparent;
+      font-size: clamp(2.25rem, 5vw, 3.25rem) !important;
+      font-weight: 700 !important;
+      line-height: 1.1 !important;
+      letter-spacing: 0;
+      animation: none !important;
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      hyphens: none !important;
+      overflow-wrap: normal !important;
+      word-break: normal !important;
+    }
+
+    .hierarchy-hero .tagline {
+      color: var(--sl-color-gray-2);
+      font-size: clamp(1rem, 1.4vw, 1.125rem) !important;
+      line-height: 1.55 !important;
+    }
+
+    .draft-notice {
+      border-inline-start: 0.25rem solid var(--sl-color-orange);
+      padding-inline-start: 1rem;
+      color: var(--sl-color-gray-2);
+    }
+
+    .actions {
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 1rem 2rem;
+    }
+
+    .hero-action {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5em;
+      border: 1px solid transparent;
+      border-radius: 6px;
+      padding: 0.5rem 1rem;
+      font-size: var(--sl-text-sm);
+      font-weight: 600;
+      line-height: 1.1875;
+      text-decoration: none;
+      outline-offset: 0.25rem;
+    }
+
+    .hero-action :global(svg),
+    .hero-action > span {
+      width: 1rem;
+      height: 1rem;
+      flex: 0 0 auto;
+      font-size: 1rem;
+      line-height: 1;
+    }
+
+    .hero-action.primary {
+      border-color: var(--sl-color-text-accent);
+      background: var(--sl-color-text-accent);
+      color: var(--sl-color-black);
+    }
+
+    .hero-action.secondary {
+      border-color: currentColor;
+      color: var(--sl-color-white);
+    }
+
+    .hero-action.minimal {
+      color: var(--sl-color-white);
+    }
+
+    .visually-hidden {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      overflow: hidden;
+      clip: rect(0 0 0 0);
+      clip-path: inset(50%);
+      white-space: nowrap;
+    }
+
+    .hierarchy {
+      --scene-width: min(58rem, calc(100vw - 3rem));
+      width: var(--scene-width);
+      margin-inline: auto;
+    }
+
+    .desktop-scene {
+      position: relative;
+      overflow: hidden;
+      width: 100%;
+      aspect-ratio: 31 / 14;
+      isolation: isolate;
+    }
+
+    .pipeline-image,
+    .dispatch-motion {
+      position: absolute;
+      top: -26.053%;
+      left: -44.706%;
+      width: 145.882% !important;
+      height: 145.882% !important;
+    }
+
+    .pipeline-image {
+      object-fit: contain;
+    }
+
+    .dispatch-motion {
+      z-index: 2;
+      opacity: 0;
+      transition: opacity 180ms ease-out;
+      pointer-events: none;
+    }
+
+    .dispatch-motion.is-ready {
+      opacity: 1;
+    }
+
+    .mobile-scene {
+      display: none;
+    }
+
+    @keyframes hero-enter {
+      from { opacity: 0; transform: translateY(0.75rem); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    @media (max-width: 42rem) {
+      .hierarchy-hero {
+        width: calc(100% + 2rem);
+        margin-inline: -1rem;
+        gap: 2rem;
+        padding-inline: 1rem !important;
+      }
+
+      .hierarchy-hero h1 {
+        font-size: 2.125rem !important;
+      }
+
+      .hierarchy {
+        width: 100vw;
+        margin-inline: calc(50% - 50vw);
+      }
+
+      .desktop-scene {
+        display: none;
+      }
+
+      .mobile-scene {
+        position: relative;
+        display: block;
+        width: min(100%, 24.375rem);
+        aspect-ratio: 390 / 886;
+        margin-inline: auto;
+        isolation: isolate;
+      }
+
+      .mobile-pipeline-image,
+      .mobile-dispatch-motion {
+        position: absolute;
+        inset: 0;
+        width: 100% !important;
+        height: 100% !important;
+      }
+
+      .mobile-pipeline-image {
+        object-fit: contain;
+      }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      .stack,
+      .hierarchy {
+        animation: none;
+      }
+
+      .dispatch-motion {
+        display: none;
+      }
+    }
+
+    @media (min-width: 64rem) {
+      .hierarchy-hero {
+        min-height: auto;
+        padding-block: 3rem 4rem;
+      }
+
+      .stack {
+        max-width: 54rem;
+        margin-inline: auto;
+      }
+    }
+  }
+</style>
