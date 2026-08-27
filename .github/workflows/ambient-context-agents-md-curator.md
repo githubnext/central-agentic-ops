@@ -28,7 +28,7 @@ on:
         type: string
 
 checkout:
-  - repository: ${{ inputs.safe_output_repo }}
+  - repository: ${{ (inputs.safe_output_mode || 'review') == 'review' && (inputs.safe_output_repo || github.repository) || inputs.target_repo }}
     github-token: ${{ secrets.GH_AW_GITHUB_TOKEN || secrets.GITHUB_TOKEN }}
     current: true
   - repository: ${{ inputs.target_repo }}
@@ -42,8 +42,12 @@ env:
   CENTRAL_AGENTIC_OPS_WORKER_MAX_MODE: ${{ vars.CENTRAL_AGENTIC_OPS_AMBIENT_CONTEXT_AGENTS_MD_MAX_MODE || 'review' }}
   GH_AW_SAFE_OUTPUT_MODE: ${{ inputs.safe_output_mode || 'review' }}
   REVIEW_OUTPUT_REPO: ${{ inputs.safe_output_repo || github.repository }}
-  SAFE_OUTPUT_REPO: ${{ inputs.safe_output_mode == 'review' && (inputs.safe_output_repo || github.repository) || '' }}
+  SAFE_OUTPUT_REPO: ${{ (inputs.safe_output_mode || 'review') == 'review' && (inputs.safe_output_repo || github.repository) || inputs.target_repo }}
   TARGET_REPO: ${{ inputs.target_repo || '' }}
+
+if: >-
+  (vars.CENTRAL_AGENTIC_OPS_AMBIENT_CONTEXT_ENABLED || 'true') == 'true' &&
+  (vars.CENTRAL_AGENTIC_OPS_AMBIENT_CONTEXT_AGENTS_MD_ENABLED || 'true') == 'true'
 
 imports:
   - uses: shared/control.md
@@ -103,7 +107,7 @@ safe-outputs:
     title-prefix: "[ambient-context:agents-md] "
     close-older-issues: true
     max: 1
-    target-repo: ${{ github.event.inputs.safe_output_repo }}
+    target-repo: ${{ (inputs.safe_output_mode || 'review') == 'review' && (inputs.safe_output_repo || github.repository) || inputs.target_repo }}
 
 timeout-minutes: 25
 

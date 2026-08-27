@@ -32,7 +32,7 @@ The integration suite creates disposable consumer repositories under the system 
 
 | Test result | Scenario | Checked behavior |
 | --- | --- | --- |
-| 🟢 Pass | Invalid scope, mode, correlation, caps, and budgets | The actual control precompute shell rejects 17 malformed or unauthorized inputs before execution. |
+| 🟢 Pass | Control validation and authorization | The actual control precompute shell passes 54 success, failure, disablement, review-isolation, live-authorization, and output-binding cases. |
 | 🟢 Pass | 100,000-repository inventory | Pagination stops at 1,000 pages, retains exactly 100,000 candidates, and applies the 10%/1,000 target cap within 120 seconds. |
 | 🟢 Pass | Deterministic cell and batch selection | Stable repository IDs assign every selected candidate to one cell; bounded batches share an inventory version and have distinct batch IDs. |
 | 🟢 Pass | Inventory API rate limit | Organization and user lookup each run once, then produce zero candidates, zero target capacity, and a durable error instead of retrying. |
@@ -118,6 +118,7 @@ Invalid caps, out-of-scope owners, and incomplete control facts stop before work
 | 🟢 Pass | Unknown or removed mode | Rejected before agent execution. |
 | 🟢 Pass | Invalid package kill-switch value | Rejected before agent execution. |
 | 🟢 Pass | Package kill switch set to `false` | Produces zero capacity and dispatches without repository inspection. |
+| 🟢 Pass | Missing worker target or non-positive correlation ID | Rejected before target or review repository access. |
 
 ## Enterprise Safety
 
@@ -151,10 +152,10 @@ Compilation checks prove the source policy reaches the generated GitHub Actions 
 | 🟢 Pass | AI Credit Auditor | Standard dispatch envelope and safe output settings compile. |
 | 🟢 Pass | AI Credit Optimizer | Standard dispatch envelope and safe output settings compile. |
 | 🟢 Pass | All worker workflow safe outputs | Review/live routing vocabulary checked. |
-| 🟢 Pass | All generated workflows | Emitted GitHub Actions settings checked in a clean-room compile. |
+| 🟢 Pass | All generated package workflows | Emitted activation gates, transitive job dependencies, review isolation, live authority, output binding, and removed-mode settings checked in a clean-room compile. |
 | 🟢 Pass | Core catalog package | Installs no Pages workflow, renderer, or Pages permission surface. |
 | 🟢 Pass | Operational value | Schema-v4 evaluators are registered by workers and Pages consumes actual `grader_results.json` observations. |
 | 🟢 Pass | Pages add-on | Conventional publisher remains outside the reusable Agentic Workflow packages. |
 | 🟡 Upstream blocked | Grader package transport | The gh-aw operational-value merge commit does not install referenced `.github/graders/*.sh` files into a clean package consumer. |
 
-Exhaustive coverage: 12 scheduled plus 48 manual cases, for 60 unique policy configurations and 18 user-facing scenarios.
+Exhaustive coverage: 24 scheduled plus 96 manual cases, for 120 unique policy configurations and 22 user-facing scenarios. The custom review-bundle job retains gh-aw's internal `GH_AW_SAFE_OUTPUTS_STAGED` dry-run signal; it is compiler plumbing, not a public package mode.

@@ -51,6 +51,8 @@ env:
   SAFE_OUTPUT_REPO: ${{ (inputs.safe_output_mode || vars.CENTRAL_AGENTIC_OPS_OPTIMIZATION_MODE || 'review') == 'review' && (inputs.safe_output_repo || github.repository) || '' }}
   TARGET_REPO: ${{ inputs.target_repo || '' }}
 
+if: (vars.CENTRAL_AGENTIC_OPS_OPTIMIZATION_ENABLED || 'true') == 'true'
+
 imports:
   - uses: shared/control.md
     with:

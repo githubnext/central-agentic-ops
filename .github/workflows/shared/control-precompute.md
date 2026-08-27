@@ -123,8 +123,8 @@ steps:
       write_disabled_precompute() {
         jq -n \
           --arg r "$ROLE" --arg b "$BUNDLE" \
-          '{control_role: $r, bundle: $b, enabled: "false", effective_max_repos: 0,
-            repo_error: "package disabled by its control-plane kill switch", candidate_repositories: [], worker_workflows: []}' \
+          '{control_role:$r,bundle:$b,enabled:"false",effective_max_repos:0,
+            repo_error:"package disabled by its control-plane kill switch",candidate_repositories:[],worker_workflows:[]}' \
           > "$OUT"
         write_precompute
       }
@@ -141,21 +141,10 @@ steps:
           --arg correlation_id "$CORRELATION_ID" \
           --arg central_repo "$CENTRAL_REPO" \
           --arg control_plane_run_url "$CONTROL_PLANE_RUN_URL" \
-          '{
-            control_role: "worker",
-            bundle: $bundle,
-            enabled: $enabled,
-            worker_enabled: $worker_enabled,
-            worker_max_mode: $worker_max_mode,
-            target_repo: $target_repo,
-            safe_output_mode: $safe_output_mode,
-            safe_output_repo: $safe_output_repo,
-            correlation_id: $correlation_id,
-            central_repo: $central_repo,
-            control_plane_run_url: $control_plane_run_url,
-            candidate_repositories: [],
-            worker_workflows: []
-          }' > "$OUT"
+          '{control_role:"worker",$bundle,$enabled,$worker_enabled,$worker_max_mode,
+            $target_repo,$safe_output_mode,$safe_output_repo,
+            $correlation_id,$central_repo,$control_plane_run_url,
+            candidate_repositories:[],worker_workflows:[]}' > "$OUT"
         write_precompute
       }
 
@@ -167,11 +156,19 @@ steps:
         esac
       }
 
+      repository_equal() {
+        awk 'BEGIN { exit(tolower(ARGV[1]) != tolower(ARGV[2])) }' "$1" "$2"
+      }
+
       validate_worker_dispatch() {
         local requested_rank
         local maximum_rank
         local control_run_id
 
+          if [ -z "$TARGET_REPO" ]; then
+            echo "worker target_repo is required" >&2
+            exit 1
+          fi
         case "$WORKER_ENABLED" in
           true) ;;
           false) echo "worker is disabled by its control-plane policy" >&2; exit 1 ;;
@@ -189,7 +186,7 @@ steps:
           echo "central_repo must identify the current control repository" >&2
           exit 1
         fi
-        if ! [[ "$CORRELATION_ID" =~ ^[0-9]+-[0-9]+$ ]]; then
+        if ! [[ "$CORRELATION_ID" =~ ^[1-9][0-9]*-[1-9][0-9]*$ ]]; then
           echo "correlation_id must identify an orchestrator run and attempt" >&2
           exit 1
         fi
@@ -235,17 +232,24 @@ steps:
           echo "bundles.$BUNDLE.authority must use owner/repository form" >&2
           exit 1
         fi
-        if [ "$(printf '%s' "$authority" | tr '[:upper:]' '[:lower:]')" != \
-          "$(printf '%s' "$CENTRAL_REPO" | tr '[:upper:]' '[:lower:]')" ]; then
+        if ! repository_equal "$authority" "$CENTRAL_REPO"; then
           echo "target assigns live authority for $BUNDLE to a different control repository" >&2
           exit 1
         fi
       }
 
-      validate_review_destination() {
+      validate_output_destination() {
         local is_private
 
-        [ "$SAFE_OUTPUT_MODE" != "review" ] && return
+        if [ "$SAFE_OUTPUT_MODE" = "live" ]; then
+          [ "$ROLE" != "worker" ] || repository_equal "$SAFE_OUTPUT_REPO" "$TARGET_REPO" || {
+            echo "live worker safe_output_repo must equal target_repo" >&2; exit 1;
+          }
+          return
+        fi
+        ! repository_equal "$SAFE_OUTPUT_REPO" "$TARGET_REPO" || {
+          echo "review safe_output_repo must differ from target_repo" >&2; exit 1;
+        }
         if ! is_private=$(gh api "repos/$SAFE_OUTPUT_REPO" --jq '.private'); then
           echo "review safe_output_repo must be accessible" >&2
           exit 1
@@ -558,22 +562,15 @@ steps:
           --slurpfile workflows /tmp/gh-aw/agent/workflows.json \
           --slurpfile candidates /tmp/gh-aw/agent/current-batch.json '
             def worker_match($worker):
-              $workflows[0]
-              | map(select(.path == (".github/workflows/" + $worker + ".lock.yml")))
-              | .[0];
+              $workflows[0] | map(select(.path == (".github/workflows/" + $worker + ".lock.yml"))) | .[0];
 
+            $inventory_metadata[0] as $m | $candidates[0] as $c |
             {
-              control_role: "orchestrator",
-              enabled: $enabled,
-              target_repo: $target_repo,
-              organization: $organization,
-              max_repos: $max_repos,
-              max_scan_repos: $max_scan_repos,
-              dispatch_max: $dispatch_max,
-              rollout_percent: $rollout_percent,
+              control_role:"orchestrator", $enabled, $target_repo, $organization,
+              $max_repos, $max_scan_repos, $dispatch_max, $rollout_percent,
               effective_max_repos: (
-                (if ($candidates[0] | length) == 0 then 0
-                 else [1, (($candidates[0] | length) * ($rollout_percent | tonumber) / 100 | ceil)] | max
+                (if ($c | length) == 0 then 0
+                 else [1, (($c | length) * ($rollout_percent | tonumber) / 100 | ceil)] | max
                  end) as $percent_cap
                 | (if ($worker_credits_per_target | tonumber) == 0 then ($max_repos | tonumber)
                    elif ($aggregate_credit_limit | tonumber) <= ($orchestrator_credits | tonumber) then 0
@@ -581,35 +578,25 @@ steps:
                    end) as $credit_cap
                 | [($max_repos | tonumber), $percent_cap, $credit_cap] | min
               ),
-              orchestrator_credits: ($orchestrator_credits | tonumber),
-              worker_credits_per_target: ($worker_credits_per_target | tonumber),
-              aggregate_credit_limit: ($aggregate_credit_limit | tonumber),
-              safe_output_mode: $safe_output_mode,
-              safe_output_repo: $safe_output_repo,
-              repo_source: $repo_source,
-              repo_error: $repo_error,
-              inventory_version: $inventory_metadata[0].inventory_version,
-              inventory_repository_count: $inventory_metadata[0].inventory_repository_count,
-              cell_count: $inventory_metadata[0].cell_count,
-              cell_index: $inventory_metadata[0].cell_index,
-              cell_repository_count: $inventory_metadata[0].cell_repository_count,
-              batch_size: $inventory_metadata[0].batch_size,
-              batch_index: $inventory_metadata[0].batch_index,
-              batch_count: $inventory_metadata[0].batch_count,
-              batch_id: $inventory_metadata[0].batch_id,
-              total_repositories_scanned: $inventory_metadata[0].inventory_repository_count,
-              candidate_repositories: $candidates[0],
+              orchestrator_credits:($orchestrator_credits | tonumber),
+              worker_credits_per_target:($worker_credits_per_target | tonumber),
+              aggregate_credit_limit:($aggregate_credit_limit | tonumber),
+              $safe_output_mode, $safe_output_repo, $repo_source, $repo_error,
+              inventory_version:$m.inventory_version,
+              inventory_repository_count:$m.inventory_repository_count,
+              cell_count:$m.cell_count, cell_index:$m.cell_index,
+              cell_repository_count:$m.cell_repository_count,
+              batch_size:$m.batch_size, batch_index:$m.batch_index,
+              batch_count:$m.batch_count, batch_id:$m.batch_id,
+              total_repositories_scanned:$m.inventory_repository_count,
+              candidate_repositories:$c,
               worker_workflows: [
                 $workers[0][] as $worker
                 | (worker_match($worker)) as $match
                 | {
-                    configured: $worker,
-                    matched: ($match != null),
-                    id: $match.id,
-                    name: $match.name,
-                    path: $match.path,
-                    state: ($match.state // ""),
-                    eligible: (($match != null) and (($match.state // "") | startswith("disabled") | not)),
+                    configured:$worker, matched:($match != null),
+                    id:$match.id, name:$match.name, path:$match.path, state:($match.state // ""),
+                    eligible:(($match != null) and (($match.state // "") | startswith("disabled") | not)),
                     skip_reason: (
                       if $match == null then "worker workflow unavailable"
                       elif (($match.state // "") | startswith("disabled")) then "worker workflow disabled"
@@ -623,8 +610,8 @@ steps:
             | ($result.worker_workflows | map(select(.eligible)) | length) as $eligible_workers
             | $result
             | .effective_max_repos = (
-                if $eligible_workers == 0 then 0
-                else [.effective_max_repos, (($dispatch_max | tonumber) / $eligible_workers | floor)] | min
+                if $eligible_workers == 0 then 0 else
+                  [.effective_max_repos, (($dispatch_max | tonumber) / $eligible_workers | floor)] | min
                 end
               )
           ' > "$OUT"
@@ -640,15 +627,16 @@ steps:
       mode_rank "$SAFE_OUTPUT_MODE" "safe_output_mode" >/dev/null
       validate_repository_owner "target_repo" "$TARGET_REPO"
       validate_repository_owner "safe_output_repo" "$SAFE_OUTPUT_REPO"
-      validate_review_destination
 
       if [ "$ROLE" = "worker" ]; then
         validate_worker_dispatch
+        validate_output_destination
         validate_live_authority
         write_worker_precompute
         exit 0
       fi
 
+      validate_output_destination
       prepare_allowlist
       write_orchestrator_precompute
 ---

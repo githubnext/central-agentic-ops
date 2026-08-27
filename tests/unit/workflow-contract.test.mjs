@@ -15,6 +15,32 @@ function workflow(name, directory = workflowsDirectory) {
   return readFileSync(join(directory, name), "utf8");
 }
 
+function generatedJobs(source) {
+  const jobsStart = source.indexOf("\njobs:\n");
+  assert.notEqual(jobsStart, -1, "generated workflow has no jobs section");
+  const jobsSource = source.slice(jobsStart + 7);
+  const matches = [...jobsSource.matchAll(/^  ([A-Za-z0-9_-]+):\n/gm)];
+
+  return new Map(matches.map((match, index) => {
+    const block = jobsSource.slice(match.index, matches[index + 1]?.index ?? jobsSource.length);
+    const inlineNeeds = /^    needs: ([A-Za-z0-9_-]+)$/m.exec(block);
+    const listNeeds = /^    needs:\n((?:      - [A-Za-z0-9_-]+\n)+)/m.exec(block);
+    const needs = inlineNeeds
+      ? [inlineNeeds[1]]
+      : [...(listNeeds?.[1].matchAll(/^      - ([A-Za-z0-9_-]+)$/gm) ?? [])].map((item) => item[1]);
+
+    return [match[1], { block, needs }];
+  }));
+}
+
+function transitivelyNeeds(jobs, jobName, dependency, visited = new Set()) {
+  if (visited.has(jobName)) return false;
+  visited.add(jobName);
+  const needs = jobs.get(jobName)?.needs ?? [];
+  return needs.includes(dependency)
+    || needs.some((name) => transitivelyNeeds(jobs, name, dependency, visited));
+}
+
 function resolvePolicy({
   eventName,
   configuredMode,
@@ -31,6 +57,18 @@ function resolvePolicy({
   aggregateCreditLimit = 1100,
   packageEnabled = true,
 }) {
+  if (packageEnabled === false) {
+    return {
+      enabled: false,
+      safeOutputMode: null,
+      safeOutputRepo: "",
+      effectiveMaxRepos: 0,
+      dispatchAllowed: false,
+    };
+  }
+  if (packageEnabled !== true) {
+    throw new TypeError("packageEnabled must be true or false");
+  }
   if (!Number.isInteger(maxRepos) || maxRepos < 1 || maxRepos > 1000) {
     throw new RangeError("maxRepos must be an integer from 1 through 1000");
   }
@@ -73,9 +111,9 @@ test("all scheduled configurations and manual selections route safely", () => {
   const cases = policyCases();
   const uniqueInputs = new Set(cases.map(({ id, ...values }) => JSON.stringify(values)));
 
-  assert.equal(cases.length, 60);
-  assert.equal(cases.filter(({ eventName }) => eventName === "schedule").length, 12);
-  assert.equal(cases.filter(({ eventName }) => eventName === "workflow_dispatch").length, 48);
+  assert.equal(cases.length, 120);
+  assert.equal(cases.filter(({ eventName }) => eventName === "schedule").length, 24);
+  assert.equal(cases.filter(({ eventName }) => eventName === "workflow_dispatch").length, 96);
   assert.equal(uniqueInputs.size, cases.length, "matrix contains duplicate policy inputs");
 
   for (const scenario of cases) {
@@ -86,20 +124,23 @@ test("all scheduled configurations and manual selections route safely", () => {
     const expectedReviewRepo = scenario.manualReviewRepo || "acme/control-plane";
     const percentageCap = scenario.rolloutPercent === 10 ? 3 : 25;
 
-    assert.equal(policy.safeOutputMode, expectedMode, scenario.id);
+    assert.equal(policy.enabled, scenario.packageEnabled, scenario.id);
+    assert.equal(policy.safeOutputMode, scenario.packageEnabled ? expectedMode : null, scenario.id);
     assert.equal(
       policy.safeOutputRepo,
-      expectedMode === "review" ? expectedReviewRepo : "",
+      scenario.packageEnabled && expectedMode === "review" ? expectedReviewRepo : "",
       scenario.id,
     );
     assert.equal(
       policy.dispatchAllowed,
-      true,
+      scenario.packageEnabled,
       scenario.id,
     );
     assert.equal(
       policy.effectiveMaxRepos,
-      scenario.maxRepos ? Math.min(scenario.maxRepos, percentageCap) : percentageCap,
+      scenario.packageEnabled
+        ? (scenario.maxRepos ? Math.min(scenario.maxRepos, percentageCap) : percentageCap)
+        : 0,
       scenario.id,
     );
   }
@@ -109,19 +150,23 @@ test("every checked user-facing scenario is backed by the exhaustive matrix", ()
   const cases = policyCases();
   const groupCounts = Object.groupBy(userFacingScenarios, ({ group }) => group);
 
-  assert.equal(userFacingScenarios.length, 18);
-  assert.equal(new Set(userFacingScenarios.map(({ name }) => name)).size, 18);
+  assert.equal(userFacingScenarios.length, 22);
+  assert.equal(new Set(userFacingScenarios.map(({ name }) => name)).size, 22);
   assert.equal(groupCounts["Scheduled modes"].length, 4);
   assert.equal(groupCounts["Manual runs"].length, 3);
   assert.equal(groupCounts["Review routing"].length, 4);
   assert.equal(groupCounts["Rollout limits"].length, 7);
+  assert.equal(groupCounts["Kill switch"].length, 4);
 
   for (const scenario of userFacingScenarios) {
     const matrixCase = cases.find(({ id, totalRepositories, ...inputs }) =>
-      Object.entries(scenario.inputs).every(([name, value]) => inputs[name] === value));
+      Object.entries(scenario.inputs).every(([name, value]) => inputs[name] === value)
+      && inputs.packageEnabled === (scenario.inputs.packageEnabled ?? true));
 
     assert.ok(matrixCase, `${scenario.name} is missing from the exhaustive matrix`);
-    const { enabled, ...actual } = resolvePolicy(matrixCase);
+    const policy = resolvePolicy(matrixCase);
+    assert.equal(policy.enabled, scenario.inputs.packageEnabled ?? true, scenario.name);
+    const { enabled, ...actual } = policy;
     assert.deepEqual(actual, scenario.expected, scenario.name);
   }
 });
@@ -142,7 +187,7 @@ test("percentage rollout rejects invalid settings and handles an empty organizat
   }
 
   assert.equal(resolvePolicy({ maxRepos: 1, rolloutPercent: 10, totalRepositories: 0 }).effectiveMaxRepos, 0);
-  for (const configuredMode of ["unknown", "preview", "staged"]) {
+  for (const configuredMode of ["unknown", "preview", "preview_only", "staged", "Review", "LIVE", "review "]) {
     assert.throws(() => resolvePolicy({
       eventName: "schedule",
       configuredMode,
@@ -151,14 +196,34 @@ test("percentage rollout rejects invalid settings and handles an empty organizat
       totalRepositories: 25,
     }), RangeError);
   }
+  assert.deepEqual(resolvePolicy({
+    eventName: "schedule",
+    configuredMode: "invalid-but-disabled",
+    packageEnabled: false,
+    maxRepos: 0,
+    rolloutPercent: 0,
+    totalRepositories: 25,
+  }), {
+    enabled: false,
+    safeOutputMode: null,
+    safeOutputRepo: "",
+    effectiveMaxRepos: 0,
+    dispatchAllowed: false,
+  });
   assert.equal(resolvePolicy({
     eventName: "schedule",
-    configuredMode: "review",
-    packageEnabled: false,
+    configuredMode: "",
     maxRepos: 1,
     rolloutPercent: 100,
     totalRepositories: 25,
-  }).enabled, false);
+  }).safeOutputMode, "review");
+  assert.equal(resolvePolicy({
+    eventName: "workflow_dispatch",
+    manualMode: "",
+    maxRepos: 1,
+    rolloutPercent: 100,
+    totalRepositories: 25,
+  }).safeOutputMode, "review");
 });
 
 test("manual requests run independently of scheduled configuration", () => {
@@ -494,7 +559,7 @@ test("live workers require target-owned package authority before agent execution
   assert.match(precompute, /contents\/\.github\/central-agentic-ops\.yml/);
   assert.match(precompute, /YAML\.safe_load/);
   assert.match(precompute, /target assigns live authority for \$BUNDLE to a different control repository/);
-  assert.match(precompute, /validate_worker_dispatch\n\s+validate_live_authority\n\s+write_worker_precompute/);
+  assert.match(precompute, /validate_worker_dispatch\n\s+validate_output_destination\n\s+validate_live_authority\n\s+write_worker_precompute/);
 
   for (const [name, bundle] of [
     ["ambient-context.md", "ambient-context"],
@@ -524,6 +589,7 @@ test("orchestrators expose scheduled variables and independent manual inputs", (
   ]) {
     const source = workflow(name);
 
+    assert.match(source, new RegExp(`^if: \\(vars\\.CENTRAL_AGENTIC_OPS_${packageName}_ENABLED \\|\\| 'true'\\) == 'true'$`, "m"));
     assert.match(source, /rollout_percent:\n\s+default: 100\n\s+type: number/);
     assert.match(source, new RegExp(`CENTRAL_AGENTIC_OPS_${packageName}_ENABLED \\|\\| 'true'`));
     assert.match(source, new RegExp(`CENTRAL_AGENTIC_OPS_${packageName}_MODE \\|\\| 'review'`));
@@ -540,10 +606,12 @@ test("orchestrators expose scheduled variables and independent manual inputs", (
   }
 });
 
-test("review destinations must be accessible and private", () => {
+test("review destinations must be isolated, accessible, and private", () => {
   const precompute = workflow("shared/control-precompute.md");
 
-  assert.match(precompute, /validate_review_destination/);
+  assert.match(precompute, /validate_output_destination/);
+  assert.match(precompute, /review safe_output_repo must differ from target_repo/);
+  assert.match(precompute, /live worker safe_output_repo must equal target_repo/);
   assert.match(precompute, /gh api "repos\/\$SAFE_OUTPUT_REPO" --jq '\.private'/);
   assert.match(precompute, /review safe_output_repo must be accessible/);
   assert.match(precompute, /review safe_output_repo must be private/);
@@ -584,18 +652,22 @@ test("shared control keeps manual and scheduled routing event-scoped", () => {
 
 test("every worker uses the standard dispatch envelope and safe mode vocabulary", () => {
   const workerNames = [
-    "ambient-context-agents-md-curator.md",
-    "ambient-context-skills-curator.md",
-    "aw-failures-investigator.md",
-    "aw-maintenance-upgrade.md",
-    "dependabot-release-train-updater.md",
-    "optimization-ai-credit-auditor.md",
-    "optimization-ai-credit-optimizer.md",
+    ["ambient-context-agents-md-curator.md", "AMBIENT_CONTEXT", "AMBIENT_CONTEXT_AGENTS_MD"],
+    ["ambient-context-skills-curator.md", "AMBIENT_CONTEXT", "AMBIENT_CONTEXT_SKILLS"],
+    ["aw-failures-investigator.md", "AW_FAILURES", "AW_FAILURES_INVESTIGATOR"],
+    ["aw-maintenance-upgrade.md", "AW_MAINTENANCE", "AW_MAINTENANCE_UPGRADE"],
+    ["dependabot-release-train-updater.md", "DEPENDABOT", "DEPENDABOT_UPDATER"],
+    ["optimization-ai-credit-auditor.md", "OPTIMIZATION", "OPTIMIZATION_AUDITOR"],
+    ["optimization-ai-credit-optimizer.md", "OPTIMIZATION", "OPTIMIZATION_OPTIMIZER"],
   ];
 
-  for (const name of workerNames) {
+  for (const [name, packageName, workerName] of workerNames) {
     const source = workflow(name);
 
+    assert.match(
+      source,
+      new RegExp(`^if: >-\\n  \\(vars\\.CENTRAL_AGENTIC_OPS_${packageName}_ENABLED \\|\\| 'true'\\) == 'true' &&\\n  \\(vars\\.CENTRAL_AGENTIC_OPS_${workerName}_ENABLED \\|\\| 'true'\\) == 'true'$`, "m"),
+    );
     for (const input of [
       "target_repo",
       "safe_output_repo",
@@ -614,9 +686,13 @@ test("every worker uses the standard dispatch envelope and safe mode vocabulary"
     assert.match(source, /CENTRAL_AGENTIC_OPS_WORKER_ENABLED:.*\|\| 'true'/);
     assert.match(source, /CENTRAL_AGENTIC_OPS_WORKER_MAX_MODE:.*\|\| 'review'/);
     assert.match(source, /GH_AW_SAFE_OUTPUT_MODE: \$\{\{ inputs\.safe_output_mode \|\| 'review' \}\}/);
+    assert.match(source, /SAFE_OUTPUT_REPO:.*safe_output_mode.*'review'.*safe_output_repo.*github\.repository.*target_repo/);
 
     for (const line of source.match(/^\s+target-repo:.*$/gm) || []) {
-      assert.match(line, /github\.event\.inputs\.safe_output_repo/);
+      assert.match(line, /safe_output_mode.*'review'.*safe_output_repo.*github\.repository.*target_repo/);
+    }
+    for (const line of source.match(/^\s+- repository:.*inputs\.safe_output_repo.*$/gm) || []) {
+      assert.match(line, /safe_output_mode.*'review'.*safe_output_repo.*github\.repository.*target_repo/);
     }
   }
 });
@@ -629,7 +705,7 @@ test("workers reject disabled, malformed, or over-ceiling dispatches before exec
     assert.match(control, new RegExp(`${input}:`));
     assert.match(precompute, new RegExp(`${input}:`));
   }
-  assert.match(precompute, /validate_worker_dispatch\n\s+validate_live_authority\n\s+write_worker_precompute/);
+  assert.match(precompute, /validate_worker_dispatch\n\s+validate_output_destination\n\s+validate_live_authority\n\s+write_worker_precompute/);
   assert.match(precompute, /worker is disabled by its control-plane policy/);
   assert.match(precompute, /safe_output_mode exceeds the worker_max_mode ceiling/);
   assert.match(precompute, /must be review or live/);
@@ -720,11 +796,35 @@ test("clean-room compilation emits the expected GitHub Actions settings", { time
       assert.match(generated, /inventory_version/);
       assert.match(generated, /batch_id/);
       assert.match(generated, /outside CENTRAL_AGENTIC_OPS_ALLOWED_OWNERS/);
+      assert.match(generated, /review safe_output_repo must differ from target_repo/);
+      assert.match(generated, /review safe_output_repo must be accessible/);
+      assert.match(generated, /review safe_output_repo must be private/);
+      assert.match(generated, /live worker safe_output_repo must equal target_repo/);
+      assert.match(generated, /target assigns live authority for .+ to a different control repository/);
+      assert.doesNotMatch(generated, /PREVIEW_ONLY|preview_only/);
+      assert.doesNotMatch(generated, /== 'preview'/);
       assert.doesNotMatch(generated, /safe_output_mode == 'private'/);
     }
 
-    for (const name of ["ambient-context.lock.yml", "aw-failures.lock.yml", "aw-maintenance.lock.yml", "dependabot.lock.yml", "optimization.lock.yml"]) {
+    const orchestratorGates = new Map([
+      ["ambient-context.lock.yml", "AMBIENT_CONTEXT"],
+      ["aw-failures.lock.yml", "AW_FAILURES"],
+      ["aw-maintenance.lock.yml", "AW_MAINTENANCE"],
+      ["dependabot.lock.yml", "DEPENDABOT"],
+      ["optimization.lock.yml", "OPTIMIZATION"],
+    ]);
+    for (const [name, packageName] of orchestratorGates) {
       const generated = workflow(name, generatedDirectory);
+      const jobs = generatedJobs(generated);
+      assert.match(
+        jobs.get("activation").block,
+        new RegExp(`^    if: \\(vars\\.CENTRAL_AGENTIC_OPS_${packageName}_ENABLED \\|\\| 'true'\\) == 'true'$`, "m"),
+      );
+      for (const jobName of jobs.keys()) {
+        if (jobName !== "activation") {
+          assert.ok(transitivelyNeeds(jobs, jobName, "activation"), `${name} job ${jobName} bypasses activation`);
+        }
+      }
       assert.match(generated, /GH_AW_SAFE_OUTPUT_MODE:.*inputs\.safe_output_mode.*\|\| 'review'/);
       assert.match(generated, /CENTRAL_AGENTIC_OPS_PACKAGE_ENABLED:.*_ENABLED \|\| 'true'/);
       assert.match(generated, /ROLLOUT_PERCENT: \$\{\{ inputs\.rollout_percent \|\| vars\.CENTRAL_AGENTIC_OPS_.+_ROLLOUT_PERCENT \|\| '100' \}\}/);
@@ -733,13 +833,36 @@ test("clean-room compilation emits the expected GitHub Actions settings", { time
       assert.match(generated, /cancel-in-progress: true/);
     }
 
-    for (const name of packageLockNames.filter((name) => !["ambient-context.lock.yml", "aw-failures.lock.yml", "aw-maintenance.lock.yml", "dependabot.lock.yml", "optimization.lock.yml"].includes(name))) {
+    const workerGates = new Map([
+      ["ambient-context-agents-md-curator.lock.yml", ["AMBIENT_CONTEXT", "AMBIENT_CONTEXT_AGENTS_MD"]],
+      ["ambient-context-skills-curator.lock.yml", ["AMBIENT_CONTEXT", "AMBIENT_CONTEXT_SKILLS"]],
+      ["aw-failures-investigator.lock.yml", ["AW_FAILURES", "AW_FAILURES_INVESTIGATOR"]],
+      ["aw-maintenance-upgrade.lock.yml", ["AW_MAINTENANCE", "AW_MAINTENANCE_UPGRADE"]],
+      ["dependabot-release-train-updater.lock.yml", ["DEPENDABOT", "DEPENDABOT_UPDATER"]],
+      ["optimization-ai-credit-auditor.lock.yml", ["OPTIMIZATION", "OPTIMIZATION_AUDITOR"]],
+      ["optimization-ai-credit-optimizer.lock.yml", ["OPTIMIZATION", "OPTIMIZATION_OPTIMIZER"]],
+    ]);
+    for (const [name, [packageName, workerName]] of workerGates) {
       const generated = workflow(name, generatedDirectory);
+      const jobs = generatedJobs(generated);
+      const activation = jobs.get("activation").block;
+      const normalizedActivation = activation.replace(/\s+/g, " ");
+      assert.match(normalizedActivation, new RegExp(`vars\\.CENTRAL_AGENTIC_OPS_${packageName}_ENABLED \\|\\| 'true'`));
+      assert.match(normalizedActivation, new RegExp(`vars\\.CENTRAL_AGENTIC_OPS_${workerName}_ENABLED \\|\\| 'true'`));
+      for (const jobName of jobs.keys()) {
+        if (jobName !== "activation") {
+          assert.ok(transitivelyNeeds(jobs, jobName, "activation"), `${name} job ${jobName} bypasses activation`);
+        }
+      }
       assert.match(generated, /GH_AW_SAFE_OUTPUT_MODE: \$\{\{ inputs\.safe_output_mode \|\| 'review' \}\}/);
+      assert.match(generated, /SAFE_OUTPUT_REPO:.*safe_output_mode.*'review'.*safe_output_repo.*github\.repository.*inputs\.target_repo/);
       assert.match(generated, /ROLLOUT_PERCENT: "100"/);
       assert.match(generated, /GH_AW_SAFE_OUTPUTS_CONFIG:/);
-      assert.doesNotMatch(generated, /PREVIEW_ONLY|preview_only/);
     }
+
+    const generatedReviewBundle = workflow("dependabot-release-train-updater.lock.yml", generatedDirectory);
+    assert.match(generatedReviewBundle, /GH_AW_SAFE_OUTPUTS_STAGED/);
+    assert.doesNotMatch(generatedReviewBundle, /GH_AW_SAFE_OUTPUTS_STAGED:.*preview_only/);
 
     const prReviewer = workflow("pr-reviewer.lock.yml", generatedDirectory);
     assert.match(prReviewer, /create_pull_request_review_comment/);

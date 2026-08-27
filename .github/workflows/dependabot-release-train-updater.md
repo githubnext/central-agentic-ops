@@ -36,7 +36,7 @@ on:
         type: string
 
 checkout:
-  - repository: ${{ inputs.safe_output_repo }}
+  - repository: ${{ (inputs.safe_output_mode || 'review') == 'review' && (inputs.safe_output_repo || github.repository) || inputs.target_repo }}
     github-token: ${{ secrets.GH_AW_GITHUB_TOKEN || secrets.GITHUB_TOKEN }}
     fetch-depth: 0
     fetch: ["*"]
@@ -51,8 +51,12 @@ env:
   CENTRAL_AGENTIC_OPS_WORKER_MAX_MODE: ${{ vars.CENTRAL_AGENTIC_OPS_DEPENDABOT_UPDATER_MAX_MODE || 'review' }}
   GH_AW_SAFE_OUTPUT_MODE: ${{ inputs.safe_output_mode || 'review' }}
   REVIEW_OUTPUT_REPO: ${{ inputs.safe_output_repo || github.repository }}
-  SAFE_OUTPUT_REPO: ${{ inputs.safe_output_mode == 'review' && (inputs.safe_output_repo || github.repository) || '' }}
+  SAFE_OUTPUT_REPO: ${{ (inputs.safe_output_mode || 'review') == 'review' && (inputs.safe_output_repo || github.repository) || inputs.target_repo }}
   TARGET_REPO: ${{ inputs.target_repo || '' }}
+
+if: >-
+  (vars.CENTRAL_AGENTIC_OPS_DEPENDABOT_ENABLED || 'true') == 'true' &&
+  (vars.CENTRAL_AGENTIC_OPS_DEPENDABOT_UPDATER_ENABLED || 'true') == 'true'
 
 imports:
   - uses: shared/control.md
@@ -127,7 +131,7 @@ graders:
 
 safe-outputs:
   create-pull-request:
-    target-repo: ${{ github.event.inputs.safe_output_repo }}
+    target-repo: ${{ (inputs.safe_output_mode || 'review') == 'review' && (inputs.safe_output_repo || github.repository) || inputs.target_repo }}
     title-prefix: "[dependabot-agent] "
     draft: true
     max: 1
@@ -245,7 +249,7 @@ safe-outputs:
       - "**/__tests__/**"
   push-to-pull-request-branch:
     target: "*"
-    target-repo: ${{ github.event.inputs.safe_output_repo }}
+    target-repo: ${{ (inputs.safe_output_mode || 'review') == 'review' && (inputs.safe_output_repo || github.repository) || inputs.target_repo }}
     required-title-prefix: "[dependabot-agent] "
     max: 1
     if-no-changes: ignore
@@ -358,7 +362,7 @@ safe-outputs:
       - "**/__tests__/**"
   update-pull-request:
     target: "*"
-    target-repo: ${{ github.event.inputs.safe_output_repo }}
+    target-repo: ${{ (inputs.safe_output_mode || 'review') == 'review' && (inputs.safe_output_repo || github.repository) || inputs.target_repo }}
     required-title-prefix: "[dependabot-agent] "
     title: true
     body: true
@@ -366,10 +370,10 @@ safe-outputs:
     update-branch: true
     max: 1
   add-comment:
-    target-repo: ${{ github.event.inputs.safe_output_repo }}
+    target-repo: ${{ (inputs.safe_output_mode || 'review') == 'review' && (inputs.safe_output_repo || github.repository) || inputs.target_repo }}
     max: 3
   create-issue:
-    target-repo: ${{ github.event.inputs.safe_output_repo }}
+    target-repo: ${{ (inputs.safe_output_mode || 'review') == 'review' && (inputs.safe_output_repo || github.repository) || inputs.target_repo }}
     title-prefix: "[dependabot-agent] "
     expires: 14d
     max: 2

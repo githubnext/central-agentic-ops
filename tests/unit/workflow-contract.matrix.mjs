@@ -4,6 +4,7 @@ export const policyMatrix = Object.freeze({
   manualReviewRepos: ["", "acme/manual-review"],
   rolloutPercents: [10, 100],
   maxReposValues: [1, 10, 1000],
+  packageEnabledValues: [true, false],
   totalRepositories: 25,
 });
 
@@ -116,6 +117,30 @@ export const userFacingScenarios = Object.freeze([
     inputs: { eventName: "workflow_dispatch", configuredMode: "live", manualMode: "review", manualReviewRepo: "", rolloutPercent: 100, maxRepos: 10 },
     expected: { safeOutputMode: "review", safeOutputRepo: "acme/control-plane", effectiveMaxRepos: 10, dispatchAllowed: true },
   },
+  {
+    group: "Kill switch",
+    name: "Disabled scheduled review has no capacity",
+    inputs: { eventName: "schedule", configuredMode: "review", manualMode: "", manualReviewRepo: "", rolloutPercent: 100, maxRepos: 10, packageEnabled: false },
+    expected: { safeOutputMode: null, safeOutputRepo: "", effectiveMaxRepos: 0, dispatchAllowed: false },
+  },
+  {
+    group: "Kill switch",
+    name: "Disabled scheduled live has no capacity",
+    inputs: { eventName: "schedule", configuredMode: "live", manualMode: "", manualReviewRepo: "", rolloutPercent: 100, maxRepos: 10, packageEnabled: false },
+    expected: { safeOutputMode: null, safeOutputRepo: "", effectiveMaxRepos: 0, dispatchAllowed: false },
+  },
+  {
+    group: "Kill switch",
+    name: "Disabled manual review has no capacity",
+    inputs: { eventName: "workflow_dispatch", configuredMode: "live", manualMode: "review", manualReviewRepo: "acme/manual-review", rolloutPercent: 100, maxRepos: 10, packageEnabled: false },
+    expected: { safeOutputMode: null, safeOutputRepo: "", effectiveMaxRepos: 0, dispatchAllowed: false },
+  },
+  {
+    group: "Kill switch",
+    name: "Disabled manual live has no capacity",
+    inputs: { eventName: "workflow_dispatch", configuredMode: "review", manualMode: "live", manualReviewRepo: "", rolloutPercent: 100, maxRepos: 10, packageEnabled: false },
+    expected: { safeOutputMode: null, safeOutputRepo: "", effectiveMaxRepos: 0, dispatchAllowed: false },
+  },
 ]);
 
 function combinations(dimensions) {
@@ -130,6 +155,7 @@ export function policyCases() {
     ["configuredMode", policyMatrix.configuredModes],
     ["rolloutPercent", policyMatrix.rolloutPercents],
     ["maxRepos", policyMatrix.maxReposValues],
+    ["packageEnabled", policyMatrix.packageEnabledValues],
   ];
   const scheduled = combinations(sharedDimensions).map((values) => ({
     eventName: "schedule",
