@@ -1,7 +1,7 @@
 ---
 emoji: ":mag:"
 description: "Builds an evidence-backed CRA scope and product-classification record for explicit human review."
-name: "EU CRA Compliance / Scope Classifier"
+name: "EU CRA Advisor / Scope Classifier"
 max-ai-credits: 150
 
 on:
@@ -103,7 +103,7 @@ safe-outputs:
 timeout-minutes: 25
 ---
 
-# EU CRA Compliance / Scope Classifier
+# EU CRA Advisor / Scope Classifier
 
 Build a repository-level CRA scope evidence record. Assist human decision-makers; do not issue a legal conclusion.
 

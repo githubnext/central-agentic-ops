@@ -1,7 +1,7 @@
 ---
 emoji: ":clipboard:"
 description: "Daily review of CRA operation-workflow coverage against current authoritative requirements."
-name: "EU CRA Compliance / Package Maintainer"
+name: "EU CRA Advisor / Package Maintainer"
 max-ai-credits: 200
 timeout-minutes: 20
 
@@ -80,7 +80,7 @@ safe-outputs:
   noop:
 ---
 
-# EU CRA Compliance / Package Maintainer
+# EU CRA Advisor / Package Maintainer
 
 Audit the operation workflows in this package against the current requirements of Regulation (EU) 2024/2847. Maintain a durable implementation ledger and, when useful, propose the single highest-priority concrete fleet improvement. This workflow audits package capabilities only; it does not assess a product repository or establish legal compliance.
 
