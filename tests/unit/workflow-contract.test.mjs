@@ -893,7 +893,8 @@ globalThis.fetch = async (input) => {
     const actionRequiredRuns = readFileSync(join(outputPath, "runs", "action-required.html"), "utf8");
     const inProgressRuns = readFileSync(join(outputPath, "runs", "in-progress.html"), "utf8");
     const coverageDiagnostics = readFileSync(join(outputPath, "coverage", "index.html"), "utf8");
-    assert.match(overview, /<title>Overview<\/title>/);
+    assert.match(overview, /<title>Overview \| control<\/title>/);
+    assert.match(overview, /class="sidebar-brand"[^>]*>[\s\S]*?<span>control<\/span>/);
     assert.match(overview, /<span>Overview<\/span>[\s\S]*?<span>Repositories<\/span>[\s\S]*?<span>Packages<\/span>/);
     assert.doesNotMatch(overview, /class="nav-children"/);
     assert.doesNotMatch(overview, /class="attention-link"/);
