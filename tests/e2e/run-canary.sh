@@ -17,6 +17,17 @@ case "$BUNDLE" in
     workflow_file=dependabot.lock.yml
     worker_files=(dependabot-release-train-updater.lock.yml)
     ;;
+  eu-cra-compliance)
+    workflow_file=eu-cra-compliance.lock.yml
+    worker_files=(
+      eu-cra-compliance-scope-classifier.lock.yml
+      eu-cra-compliance-security-requirements-auditor.lock.yml
+      eu-cra-compliance-supply-chain-sbom-auditor.lock.yml
+      eu-cra-compliance-vulnerability-handling-auditor.lock.yml
+      eu-cra-compliance-article-14-reporting-readiness.lock.yml
+      eu-cra-compliance-conformity-release-evidence.lock.yml
+    )
+    ;;
   optimization)
     workflow_file=optimization.lock.yml
     worker_files=(optimization-ai-credit-auditor.lock.yml optimization-ai-credit-optimizer.lock.yml)

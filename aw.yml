@@ -6,4 +6,5 @@ includes:
   - .github/workflows/aw-failures.md
   - .github/workflows/aw-maintenance.md
   - .github/workflows/dependabot.md
+  - .github/workflows/eu-cra-compliance.md
   - .github/workflows/optimization.md
