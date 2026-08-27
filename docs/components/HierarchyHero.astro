@@ -1,8 +1,9 @@
 ---
-import { Image } from "astro:assets";
 import type { HTMLAttributes } from "astro/types";
 import dispatchFallback from "../assets/control-plane-dispatch-fallback.svg";
+import dispatchFallbackDark from "../assets/control-plane-dispatch-fallback-dark.svg";
 import mobileDispatchFallback from "../assets/control-plane-dispatch-mobile.svg";
+import mobileDispatchFallbackDark from "../assets/control-plane-dispatch-mobile-dark.svg";
 import OpsWizard from "./OpsWizard.astro";
 
 const PAGE_TITLE_ID = "_top";
@@ -58,12 +59,34 @@ const { title = data.title, tagline, actions = [] } = data.hero || {};
     </figcaption>
 
     <div class="desktop-scene">
-      <Image src={dispatchFallback} alt="" loading="eager" decoding="async" class="pipeline-image" />
+      <picture>
+        <source media="(prefers-color-scheme: dark)" srcset={dispatchFallbackDark.src} />
+        <img
+          src={dispatchFallback.src}
+          width={dispatchFallback.width}
+          height={dispatchFallback.height}
+          alt=""
+          loading="eager"
+          decoding="async"
+          class="pipeline-image"
+        />
+      </picture>
       <div class="dispatch-motion" aria-hidden="true"></div>
     </div>
 
     <div class="mobile-scene" aria-hidden="true">
-      <Image src={mobileDispatchFallback} alt="" loading="eager" decoding="async" class="mobile-pipeline-image" />
+      <picture>
+        <source media="(prefers-color-scheme: dark)" srcset={mobileDispatchFallbackDark.src} />
+        <img
+          src={mobileDispatchFallback.src}
+          width={mobileDispatchFallback.width}
+          height={mobileDispatchFallback.height}
+          alt=""
+          loading="eager"
+          decoding="async"
+          class="mobile-pipeline-image"
+        />
+      </picture>
       <div class="dispatch-motion mobile-dispatch-motion" data-layout="mobile"></div>
     </div>
   </figure>
@@ -78,18 +101,24 @@ const { title = data.title, tagline, actions = [] } = data.hero || {};
   const animations = new WeakMap<Element, ReturnType<typeof lottie.loadAnimation>>();
   const observers = new WeakMap<Element, IntersectionObserver>();
 
+  // Safari does not evaluate `prefers-color-scheme` inside SVGs referenced from a data URI, so
+  // the animation's embedded icon colors are resolved here (in the host document) instead:
+  // https://bugs.webkit.org/show_bug.cgi?id=199134
+  const darkSchemeQuery = window.matchMedia("(prefers-color-scheme: dark)");
+
   function initializeHierarchyAnimations() {
     if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
 
     document.querySelectorAll(".dispatch-motion").forEach((container) => {
       if (animations.has(container)) return;
 
+      const isMobile = container instanceof HTMLElement && container.dataset.layout === "mobile";
       const animation = lottie.loadAnimation({
         container,
         renderer: "svg",
         loop: true,
         autoplay: false,
-        animationData: container instanceof HTMLElement && container.dataset.layout === "mobile" ? createMobileAnimationData() : createAnimationData(),
+        animationData: isMobile ? createMobileAnimationData(darkSchemeQuery.matches) : createAnimationData(darkSchemeQuery.matches),
         rendererSettings: {
           preserveAspectRatio: "xMidYMid meet",
           progressiveLoad: true,
@@ -119,6 +148,10 @@ const { title = data.title, tagline, actions = [] } = data.hero || {};
   initializeHierarchyAnimations();
   document.addEventListener("astro:page-load", initializeHierarchyAnimations);
   document.addEventListener("astro:before-swap", destroyHierarchyAnimations);
+  darkSchemeQuery.addEventListener("change", () => {
+    destroyHierarchyAnimations();
+    initializeHierarchyAnimations();
+  });
 </script>
 
 <style>
