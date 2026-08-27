@@ -1,38 +1,29 @@
 ---
-import { readFileSync, readdirSync } from "node:fs";
-import { fileURLToPath } from "node:url";
-
 type Operation = {
   slug: string;
   name: string;
   description: string;
 };
 
-const repoRoot = fileURLToPath(new URL("../../", import.meta.url));
+const manifests = import.meta.glob<string>("../../*/aw.yml", { query: "?raw", import: "default", eager: true });
 
 function readManifestField(manifest: string, field: string): string {
   const match = manifest.match(new RegExp(`^${field}:[ \\t]*(.+)$`, "m"));
   return match ? match[1].trim().replace(/^["']|["']$/g, "") : "";
 }
 
-function readOperations(): Operation[] {
-  return readdirSync(repoRoot, { withFileTypes: true })
-    .filter((entry) => entry.isDirectory() && !entry.name.startsWith("."))
-    .flatMap((entry) => {
-      let manifest: string;
-      try {
-        manifest = readFileSync(`${repoRoot}${entry.name}/aw.yml`, "utf8");
-      } catch {
-        return [];
-      }
-      const name = readManifestField(manifest, "name");
-      if (!name) return [];
-      return [{ slug: entry.name, name, description: readManifestField(manifest, "description") }];
-    })
-    .sort((a, b) => a.name.localeCompare(b.name));
-}
+const operations: Operation[] = Object.entries(manifests)
+  .flatMap(([path, manifest]) => {
+    const slug = path.split("/").at(-2) ?? "";
+    const name = readManifestField(manifest, "name");
+    if (!slug || !name) return [];
+    return [{ slug, name, description: readManifestField(manifest, "description") }];
+  })
+  .sort((a, b) => a.name.localeCompare(b.name));
 
-const operations = readOperations();
+// The quickstart walks through Dependabot, so preselect it when the catalog ships it.
+const defaultOperation = operations.find((operation) => operation.slug === "dependabot")?.slug ?? operations[0]?.slug;
+
 const agents = [
   {
     id: "copilot",
@@ -57,8 +48,9 @@ const agents = [
 
 <section class="ops-wizard" aria-labelledby="ops-wizard-title">
   <div class="wizard-intro">
+    <p class="wizard-eyebrow">Setup wizard</p>
     <h2 id="ops-wizard-title">Start an operation in three steps</h2>
-    <p>
+    <p class="wizard-lede">
       Pick the operation you want to run and the coding agent you use, then copy the generated prompt. The agent creates
       your private control plane repository, installs the operation, and runs it once in <code>staged</code> mode.
     </p>
@@ -69,19 +61,20 @@ const agents = [
       <legend><span class="step-number">1</span> Choose the operation to run</legend>
       <div class="card-grid">
         {
-          operations.map((operation, index) => (
+          operations.map((operation) => (
             <label class="option-card">
               <input
                 type="radio"
                 name="operation"
                 value={operation.slug}
                 data-operation-name={operation.name}
-                checked={index === 0}
+                checked={operation.slug === defaultOperation}
               />
               <span class="option-body">
                 <span class="option-name">{operation.name}</span>
                 <span class="option-description">{operation.description}</span>
               </span>
+              <span class="option-check" aria-hidden="true" />
             </label>
           ))
         }
@@ -94,6 +87,7 @@ const agents = [
               orchestrator and workers for you.
             </span>
           </span>
+          <span class="option-check" aria-hidden="true"></span>
         </label>
       </div>
       <div class="custom-idea" data-custom-idea hidden>
@@ -128,6 +122,7 @@ const agents = [
                   Run <code>{agent.command}</code> in an empty working directory, then paste the prompt.
                 </span>
               </span>
+              <span class="option-check" aria-hidden="true" />
             </label>
           ))
         }
@@ -157,7 +152,12 @@ const agents = [
         </p>
       </noscript>
       <div class="prompt-panel">
-        <button type="button" class="copy-button" data-copy-prompt>Copy prompt</button>
+        <div class="prompt-toolbar">
+          <span class="prompt-summary" data-prompt-summary></span>
+          <button type="button" class="copy-button" data-copy-prompt>
+            <span class="copy-label">Copy prompt</span>
+          </button>
+        </div>
         <pre data-prompt-output></pre>
       </div>
       <p class="copy-status" role="status" aria-live="polite" data-copy-status></p>
@@ -265,10 +265,13 @@ const agents = [
 
       const output = form.querySelector<HTMLPreElement>("[data-prompt-output]");
       const status = form.querySelector<HTMLParagraphElement>("[data-copy-status]");
+      const summary = form.querySelector<HTMLElement>("[data-prompt-summary]");
       const customIdea = form.querySelector<HTMLElement>("[data-custom-idea]");
       const commandHint = form.querySelector<HTMLElement>("[data-agent-command-hint]");
       const installHint = form.querySelector<HTMLElement>("[data-agent-install-hint]");
       const copyButton = form.querySelector<HTMLButtonElement>("[data-copy-prompt]");
+      const copyLabel = copyButton?.querySelector<HTMLElement>(".copy-label");
+      let resetCopyLabel: ReturnType<typeof setTimeout> | undefined;
 
       function render() {
         const operation = selected(form, "operation");
@@ -276,6 +279,10 @@ const agents = [
         if (customIdea) customIdea.hidden = operation?.value !== "custom";
         if (commandHint && agent) commandHint.textContent = agent.dataset.agentCommand || "";
         if (installHint && agent) installHint.textContent = agent.dataset.agentInstall || "";
+        if (summary) {
+          summary.textContent =
+            operation && agent ? `${operation.dataset.operationName} with ${agent.dataset.agentName}` : "";
+        }
         if (output) output.textContent = buildPrompt(form);
         if (status) status.textContent = "";
       }
@@ -286,9 +293,16 @@ const agents = [
       copyButton?.addEventListener("click", async () => {
         const prompt = output?.textContent || "";
         if (!prompt) return;
+        clearTimeout(resetCopyLabel);
         try {
           await navigator.clipboard.writeText(prompt);
-          if (status) status.textContent = "Prompt copied to your clipboard.";
+          if (status) status.textContent = "Prompt copied. Paste it into your agent and it takes over from there.";
+          if (copyLabel) copyLabel.textContent = "Copied";
+          copyButton.classList.add("is-copied");
+          resetCopyLabel = setTimeout(() => {
+            if (copyLabel) copyLabel.textContent = "Copy prompt";
+            copyButton.classList.remove("is-copied");
+          }, 2400);
         } catch {
           if (status) status.textContent = "Copy failed. Select the prompt text and copy it manually.";
         }
@@ -305,15 +319,29 @@ const agents = [
 <style>
   @layer starlight.core {
     .ops-wizard {
+      position: relative;
       display: flex;
       width: min(58rem, 100%);
       flex-direction: column;
-      gap: 1.5rem;
+      gap: 1.75rem;
       margin-inline: auto;
+      overflow: hidden;
       border: 1px solid color-mix(in srgb, var(--sl-color-gray-5) 60%, transparent);
-      border-radius: 0.75rem;
-      background: color-mix(in srgb, var(--sl-color-black) 25%, transparent);
-      padding: clamp(1.25rem, 2vw, 2rem);
+      border-radius: 1rem;
+      background:
+        radial-gradient(120% 90% at 50% -10%, color-mix(in srgb, var(--sl-color-text-accent) 14%, transparent), transparent 60%),
+        color-mix(in srgb, var(--sl-color-black) 30%, transparent);
+      padding: clamp(1.25rem, 2.5vw, 2.25rem);
+      box-shadow: 0 1.5rem 3rem color-mix(in srgb, var(--sl-color-black) 35%, transparent);
+    }
+
+    .wizard-eyebrow {
+      margin: 0;
+      color: var(--sl-color-text-accent);
+      font-size: var(--sl-text-xs);
+      font-weight: 600;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
     }
 
     .wizard-intro {
@@ -330,7 +358,7 @@ const agents = [
       line-height: 1.2;
     }
 
-    .wizard-intro p {
+    .wizard-lede {
       margin: 0 auto;
       max-width: 60ch;
       color: var(--sl-color-gray-2);
@@ -382,25 +410,65 @@ const agents = [
     }
 
     .option-card {
+      position: relative;
       display: flex;
       align-items: flex-start;
       gap: 0.625rem;
       border: 1px solid color-mix(in srgb, var(--sl-color-gray-5) 70%, transparent);
-      border-radius: 0.5rem;
-      padding: 0.75rem;
+      border-radius: 0.625rem;
+      background: color-mix(in srgb, var(--sl-color-black) 20%, transparent);
+      padding: 0.875rem 2.25rem 0.875rem 0.875rem;
       cursor: pointer;
-      transition: border-color 160ms ease, background-color 160ms ease;
+      transition: border-color 160ms ease, background-color 160ms ease, transform 160ms ease, box-shadow 160ms ease;
     }
 
-    .option-card:hover,
+    .option-card:hover {
+      transform: translateY(-2px);
+      border-color: color-mix(in srgb, var(--sl-color-text-accent) 70%, transparent);
+      background: color-mix(in srgb, var(--sl-color-text-accent) 8%, transparent);
+      box-shadow: 0 0.5rem 1.25rem color-mix(in srgb, var(--sl-color-black) 30%, transparent);
+    }
+
     .option-card:focus-within {
       border-color: var(--sl-color-text-accent);
-      background: color-mix(in srgb, var(--sl-color-text-accent) 8%, transparent);
+      outline: 2px solid var(--sl-color-text-accent);
+      outline-offset: 2px;
     }
 
     .option-card:has(input:checked) {
       border-color: var(--sl-color-text-accent);
       background: color-mix(in srgb, var(--sl-color-text-accent) 12%, transparent);
+    }
+
+    .option-check {
+      position: absolute;
+      top: 0.875rem;
+      right: 0.75rem;
+      display: flex;
+      width: 1.125rem;
+      height: 1.125rem;
+      align-items: center;
+      justify-content: center;
+      border-radius: 50%;
+      background: var(--sl-color-text-accent);
+      opacity: 0;
+      transform: scale(0.6);
+      transition: opacity 160ms ease, transform 160ms ease;
+    }
+
+    .option-check::after {
+      width: 0.55rem;
+      height: 0.3rem;
+      border: 2px solid var(--sl-color-black);
+      border-top: 0;
+      border-right: 0;
+      content: "";
+      transform: translateY(-1px) rotate(-45deg);
+    }
+
+    .option-card:has(input:checked) .option-check {
+      opacity: 1;
+      transform: scale(1);
     }
 
     .option-card input {
@@ -474,17 +542,34 @@ const agents = [
     }
 
     .prompt-panel {
-      position: relative;
+      overflow: hidden;
       border: 1px solid color-mix(in srgb, var(--sl-color-gray-5) 70%, transparent);
-      border-radius: 0.5rem;
+      border-radius: 0.625rem;
       background: color-mix(in srgb, var(--sl-color-black) 45%, transparent);
+    }
+
+    .prompt-toolbar {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 0.5rem;
+      border-bottom: 1px solid color-mix(in srgb, var(--sl-color-gray-5) 60%, transparent);
+      background: color-mix(in srgb, var(--sl-color-black) 30%, transparent);
+      padding: 0.5rem 0.625rem 0.5rem 0.875rem;
+    }
+
+    .prompt-summary {
+      color: var(--sl-color-gray-2);
+      font-size: var(--sl-text-xs);
+      font-weight: 600;
     }
 
     .prompt-panel pre {
       max-height: 22rem;
       overflow: auto;
       margin: 0;
-      padding: 2.75rem 1rem 1rem;
+      padding: 1rem;
       color: var(--sl-color-gray-1);
       font-size: var(--sl-text-xs);
       line-height: 1.6;
@@ -494,28 +579,40 @@ const agents = [
     }
 
     .copy-button {
-      position: absolute;
-      top: 0.5rem;
-      right: 0.5rem;
-      z-index: 1;
+      display: inline-flex;
+      align-items: center;
       border: 1px solid var(--sl-color-text-accent);
       border-radius: 0.375rem;
       background: var(--sl-color-text-accent);
-      padding: 0.3rem 0.75rem;
+      padding: 0.3rem 0.85rem;
       color: var(--sl-color-black);
       font-size: var(--sl-text-xs);
       font-weight: 600;
       cursor: pointer;
+      transition: background-color 160ms ease, transform 160ms ease;
     }
 
     .copy-button:hover,
     .copy-button:focus-visible {
+      transform: translateY(-1px);
       background: color-mix(in srgb, var(--sl-color-text-accent) 85%, var(--sl-color-white));
     }
 
+    .copy-button.is-copied {
+      border-color: var(--sl-color-green);
+      background: var(--sl-color-green);
+    }
+
     @media (prefers-reduced-motion: reduce) {
-      .option-card {
+      .option-card,
+      .option-check,
+      .copy-button {
         transition: none;
+      }
+
+      .option-card:hover,
+      .copy-button:hover {
+        transform: none;
       }
     }
   }
