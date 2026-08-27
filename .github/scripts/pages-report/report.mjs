@@ -695,7 +695,7 @@ await mkdir(outputDirectory, { recursive: true });
 await writeFile(path.join(outputDirectory, "inventory.json"), `${JSON.stringify(inventory, null, 2)}\n`);
 await writeFile(path.join(outputDirectory, "records.json"), `${JSON.stringify({ generatedAt, repository, inventory, records: scopedRecords }, null, 2)}\n`);
 
-const failedConclusions = new Set(["action_required", "failure", "stale", "startup_failure", "timed_out"]);
+const failedConclusions = new Set(["failure", "stale", "startup_failure", "timed_out"]);
 
 function isFailureRecord(record) {
   return failedConclusions.has(record.conclusion) || /\b(?:failed jobs?|workflow failure|workflow .+ failed)\b/i.test(`${record.title} ${record.summary}`);
@@ -718,6 +718,7 @@ function collectRuns(recordsForMode) {
 
 function runStatus(run) {
   if (run.conclusion === "cancelled") return "cancelled";
+  if (run.conclusion === "action_required") return "action-required";
   if (run.failed) return "failed";
   if (run.conclusion === "success") return "successful";
   return "other";
@@ -729,6 +730,7 @@ function summarizeRuns(recordsForMode) {
     total: values.length,
     successful: values.filter((run) => run.conclusion === "success" && !run.failed).length,
     failed: values.filter((run) => run.failed).length,
+    actionRequired: values.filter((run) => run.conclusion === "action_required").length,
     warnings: values.filter((run) => run.warning).length,
     other: values.filter((run) => run.conclusion !== "success" && !run.failed).length,
     aic: values.reduce((total, run) => total + (run.aic || 0), 0),
@@ -1072,6 +1074,7 @@ await writeFile(path.join(outputDirectory, "workflows", "index.html"), layout({
 await Promise.all([
   ["all", "index.html", "Runs"],
   ["failed", "failed.html", "Failed runs"],
+  ["action-required", "action-required.html", "Approval required"],
   ["in-progress", "in-progress.html", "Runs in progress"],
 ].map(async ([filter, fileName, title]) => writeFile(path.join(outputDirectory, "runs", fileName), layout({
   title,
@@ -1108,7 +1111,7 @@ function deployedWorkflowContent(view) {
   const repositoryOptions = repositories.map((entry) => `<option value="${escapeHtml(entry.repository)}">${escapeHtml(entry.repository)}</option>`).join("");
   const rows = workflows.map((workflow) => {
     const state = workflow.state === "active" ? "active" : workflow.state.startsWith("disabled") ? "disabled" : "other";
-    const runState = (workflow.runHealth?.failed || 0) > 0 ? "failed" : (workflow.runHealth?.runs || 0) > 0 ? "active" : "quiet";
+    const runState = (workflow.runHealth?.failed || 0) > 0 ? "failed" : (workflow.runHealth?.actionRequired || 0) > 0 ? "action-required" : (workflow.runHealth?.runs || 0) > 0 ? "active" : "quiet";
     const sourcePath = authoredWorkflowPath(workflow.path);
     const searchText = `${workflow.repository} ${workflow.name} ${sourcePath}`.toLowerCase();
     return `<tr data-workflow-row data-repository="${escapeHtml(workflow.repository)}" data-state="${state}" data-run-state="${runState}" data-search="${escapeHtml(searchText)}">
@@ -1139,7 +1142,7 @@ function deployedWorkflowContent(view) {
         <label class="catalog-search"><span>Search workflows</span><input id="workflow-search" type="search" placeholder="Workflow, path, or repository" autocomplete="off"></label>
         <label><span>Repository</span><select id="workflow-repository"><option value="">All repositories</option>${repositoryOptions}</select></label>
         <label><span>State</span><select id="workflow-state"><option value="">Any state</option><option value="active">Active</option><option value="disabled">Disabled</option><option value="other">Other</option></select></label>
-        <label><span>Run health</span><select id="workflow-run-state"><option value="">Any activity</option><option value="failed">Has failures</option><option value="active">Ran without failures</option><option value="quiet">No runs</option></select></label>
+        <label><span>Run health</span><select id="workflow-run-state"><option value="">Any activity</option><option value="failed">Has failures</option><option value="action-required">Awaiting approval</option><option value="active">Ran without failures</option><option value="quiet">No runs</option></select></label>
       </div>
       <p class="catalog-result" id="workflow-result" aria-live="polite"></p>
       <div class="table-region" role="region" aria-labelledby="deployed-workflows-heading" tabindex="0">
@@ -1225,16 +1228,20 @@ function controlPlaneStatusContent(workflows, coverage, repositories, health, he
   const inventoryWarnings = bundleDefinitions.reduce((total, bundle) => total + (bundle.compiled ? 0 : 1) + bundle.missingWorkers.length, 0);
   const coverageGap = !deployedInventory.includePrivate || !runHealthAvailable || !deployedInventory.runHealth.complete || !spend.available || !spend.complete;
   const failureRate = health.runs > 0 ? health.failed / health.runs : 0;
-  const otherRuns = Math.max(0, health.runs - health.successful - health.failed - health.pending);
+  const otherRuns = Math.max(0, health.runs - health.successful - health.failed - health.actionRequired - health.pending);
   const percent = (value) => health.runs > 0 ? `${(value / health.runs * 100).toFixed(2)}%` : "0%";
   const state = health.failed > 0 || inventoryWarnings > 0
     ? { className: "control-plane-critical", icon: "issue", label: "Attention required" }
-    : health.pending > 0 || coverageGap
+    : health.actionRequired > 0
+      ? { className: "control-plane-monitoring", icon: "issue", label: "Approval required" }
+      : health.pending > 0 || coverageGap
       ? { className: "control-plane-monitoring", icon: "play", label: "Monitoring" }
       : { className: "control-plane-healthy", icon: "check-circle", label: "Healthy" };
   const summary = health.failed > 0
     ? `${formatCount(health.failed)} of ${formatCount(health.runs)} runs failed across ${formatCount(failureRepositories)} of ${formatCount(repositories.length)} repositories in the current window.`
-    : !runHealthAvailable
+    : health.actionRequired > 0
+      ? `${formatCount(health.actionRequired)} run${health.actionRequired === 1 ? " is" : "s are"} waiting for a maintainer to approve execution.`
+      : !runHealthAvailable
       ? "Run telemetry is unavailable, so execution health cannot be determined."
       : health.pending > 0
         ? `${formatCount(health.pending)} runs are in progress; no failures are currently observed.`
@@ -1261,10 +1268,10 @@ function controlPlaneStatusContent(workflows, coverage, repositories, health, he
     </dl>
     <div class="execution-health">
       <div class="execution-health-heading"><strong>24-hour execution health</strong><span>${escapeHtml(aicCoverage)} · <a href="runs/">View all runs</a></span></div>
-      <div class="execution-track" role="img" aria-label="${formatCount(health.successful)} successful, ${formatCount(health.failed)} failed, ${formatCount(health.pending)} running, and ${formatCount(otherRuns)} other runs">
-        <span class="execution-success" style="width:${percent(health.successful)}"></span><span class="execution-failed" style="width:${percent(health.failed)}"></span><span class="execution-running" style="width:${percent(health.pending)}"></span><span class="execution-other" style="width:${percent(otherRuns)}"></span>
+      <div class="execution-track" role="img" aria-label="${formatCount(health.successful)} successful, ${formatCount(health.failed)} failed, ${formatCount(health.actionRequired)} awaiting approval, ${formatCount(health.pending)} running, and ${formatCount(otherRuns)} other runs">
+        <span class="execution-success" style="width:${percent(health.successful)}"></span><span class="execution-failed" style="width:${percent(health.failed)}"></span><span class="execution-approval" style="width:${percent(health.actionRequired)}"></span><span class="execution-running" style="width:${percent(health.pending)}"></span><span class="execution-other" style="width:${percent(otherRuns)}"></span>
       </div>
-      <ul class="execution-legend"><li><span class="legend-success"></span>Successful <strong>${formatCount(health.successful)}</strong></li><li><span class="legend-failed"></span>Failed <strong>${formatCount(health.failed)}</strong></li><li><span class="legend-running"></span>Running <strong>${formatCount(health.pending)}</strong></li><li><span class="legend-other"></span>Other <strong>${formatCount(otherRuns)}</strong></li></ul>
+      <ul class="execution-legend"><li><span class="legend-success"></span>Successful <strong>${formatCount(health.successful)}</strong></li><li><span class="legend-failed"></span>Failed <strong>${formatCount(health.failed)}</strong></li><li><span class="legend-approval"></span>Approval required <strong>${formatCount(health.actionRequired)}</strong></li><li><span class="legend-running"></span>Running <strong>${formatCount(health.pending)}</strong></li><li><span class="legend-other"></span>Other <strong>${formatCount(otherRuns)}</strong></li></ul>
     </div>
   </section>`;
 }
@@ -1279,7 +1286,7 @@ function repositorySummaries(workflows, spend, repositoryNames) {
     reports: 0,
     evaluatedWorkflowKeys: new Set(),
     evaluatedWorkflows: 0,
-    health: { runs: 0, successful: 0, failed: 0, cancelled: 0, skipped: 0, pending: 0, other: 0 },
+    health: { runs: 0, successful: 0, failed: 0, actionRequired: 0, cancelled: 0, skipped: 0, pending: 0, other: 0 },
     aiCredits: spendByRepository.get(repositoryName) || 0,
   }]));
   for (const workflow of workflows) {
@@ -1328,10 +1335,11 @@ function attentionContent(workflows, repositories, health, spend) {
   const dataGaps = coverageDiagnostics(spend);
   const items = [];
   if (health.failed > 0) items.push(`<li class="attention-action attention-critical"><a class="attention-item-link" href="runs/failed.html">${octicon("issue")}<div><strong>${formatCount(health.failed)} failed runs</strong><span>Across ${formatCount(failureRepositories.length)} repositor${failureRepositories.length === 1 ? "y" : "ies"} in the current window</span></div></a></li>`);
+  if (health.actionRequired > 0) items.push(`<li class="attention-action"><a class="attention-item-link" href="runs/action-required.html">${octicon("shield")}<div><strong>${formatCount(health.actionRequired)} run${health.actionRequired === 1 ? "" : "s"} awaiting approval</strong><span>A maintainer must approve execution in GitHub Actions</span></div></a></li>`);
   if (disabled.length > 0) items.push(`<li class="attention-action"><a class="attention-item-link" href="workflows/?state=disabled">${octicon("eye")}<div><strong>${formatCount(disabled.length)} disabled workflows</strong><span>Repository-owned workflows not currently active</span></div></a></li>`);
   if (health.pending > 0) items.push(`<li class="attention-action"><a class="attention-item-link" href="runs/in-progress.html">${octicon("play")}<div><strong>${formatCount(health.pending)} runs in progress</strong><span>Pending completion in the current run window</span></div></a></li>`);
   if (dataGaps.length > 0) items.push(`<li class="attention-action"><a class="attention-item-link" href="coverage/">${octicon("codescan")}<div><strong>Coverage needs context</strong><span>${escapeHtml(dataGaps.map((gap) => gap.title.toLowerCase()).join("; "))}</span></div></a></li>`);
-  if (items.length === 0) items.push(`<li>${octicon("check-circle")}<div><strong>No immediate attention items</strong><span>No failures, disabled workflows, pending runs, or coverage gaps observed</span></div></li>`);
+  if (items.length === 0) items.push(`<li>${octicon("check-circle")}<div><strong>No immediate attention items</strong><span>No failures, approval-gated runs, disabled workflows, pending runs, or coverage gaps observed</span></div></li>`);
   return `<section class="attention-panel" aria-labelledby="attention-heading"><header><div><span class="scope-kicker">Act now</span><h2 id="attention-heading">Needs attention</h2></div><strong>${formatCount(items.length)}</strong></header><ul>${items.join("")}</ul></section>`;
 }
 
@@ -1353,7 +1361,9 @@ function repositoryHealthContent(repositories, available, repositoryLinkPrefix =
     const failureRate = entry.health.runs > 0 ? entry.health.failed / entry.health.runs : null;
     const status = entry.health.failed > 0
       ? `<a class="status status-danger" href="../runs/failed.html?repository=${encodeURIComponent(entry.repository)}">Needs attention</a>`
-      : entry.health.pending > 0
+      : entry.health.actionRequired > 0
+        ? `<a class="status status-attention" href="../runs/action-required.html?repository=${encodeURIComponent(entry.repository)}">Approval required</a>`
+        : entry.health.pending > 0
         ? `<a class="status status-attention" href="../runs/in-progress.html?repository=${encodeURIComponent(entry.repository)}">In progress</a>`
         : entry.health.runs > 0
           ? '<span class="status status-success">No failures observed</span>'
@@ -1371,26 +1381,26 @@ function repositoryHealthContent(repositories, available, repositoryLinkPrefix =
 }
 
 function runCatalogContent(workflows, selectedFilter) {
-  const failureConclusions = new Set(["action_required", "failure", "startup_failure", "timed_out"]);
+  const failureConclusions = new Set(["failure", "startup_failure", "timed_out"]);
   const allRuns = workflows.flatMap((workflow) => (workflow.runHealth?.runRecords || []).map((run) => ({
     ...run,
     repository: workflow.repository,
     workflowName: workflow.name,
     workflowPath: workflow.path,
-    category: failureConclusions.has(run.conclusion) ? "failed" : run.conclusion === null ? "in-progress" : "other",
+    category: failureConclusions.has(run.conclusion) ? "failed" : run.conclusion === "action_required" ? "action-required" : run.conclusion === null ? "in-progress" : "other",
   })));
   const runs = allRuns.filter((run) => selectedFilter === "all" || run.category === selectedFilter)
     .sort((left, right) => Date.parse(right.createdAt || "") - Date.parse(left.createdAt || ""));
   const repositoryOptions = [...new Set(allRuns.map((run) => run.repository))].sort()
     .map((repositoryName) => `<option value="${escapeHtml(repositoryName)}">${escapeHtml(repositoryName)}</option>`).join("");
   const rows = runs.map((run) => {
-    const statusLabel = run.category === "in-progress" ? run.status || "in progress" : run.conclusion || "unknown";
-    const statusClass = run.category === "failed" ? "status-danger" : run.category === "in-progress" ? "status-attention" : run.conclusion === "success" ? "status-success" : "status-muted";
+    const statusLabel = run.category === "action-required" ? "Approval required" : run.category === "in-progress" ? run.status || "in progress" : run.conclusion || "unknown";
+    const statusClass = run.category === "failed" ? "status-danger" : ["action-required", "in-progress"].includes(run.category) ? "status-attention" : run.conclusion === "success" ? "status-success" : "status-muted";
     const searchText = `${run.displayTitle || `Run ${run.runId}`} ${run.workflowName} ${run.repository} ${statusLabel}`.toLowerCase();
     return `<tr data-run-row data-repository="${escapeHtml(run.repository)}" data-search="${escapeHtml(searchText)}"><th scope="row"><a href="https://github.com/${escapeHtml(run.repository)}/actions/runs/${escapeHtml(run.runId)}">${escapeHtml(run.displayTitle || `Run ${run.runId}`)}${octicon("external-link")}</a></th><td><a href="../repositories/${escapeHtml(repositoryWorkflowPageName(run.repository, run.workflowPath))}.html">${escapeHtml(run.workflowName)}</a></td><td><a href="../repositories/${escapeHtml(repositoryPageName(run.repository))}.html">${escapeHtml(run.repository)}</a></td><td><span class="status ${statusClass}">${escapeHtml(statusLabel.replaceAll("_", " "))}</span></td><td><time datetime="${escapeHtml(run.createdAt || "")}">${escapeHtml(formatDate(run.createdAt))}</time></td></tr>`;
   }).join("\n");
-  const labels = { all: "All", failed: "Failed", "in-progress": "In progress" };
-  const tabs = [["all", "index.html"], ["failed", "failed.html"], ["in-progress", "in-progress.html"]]
+  const labels = { all: "All", failed: "Failed", "action-required": "Approval required", "in-progress": "In progress" };
+  const tabs = [["all", "index.html"], ["failed", "failed.html"], ["action-required", "action-required.html"], ["in-progress", "in-progress.html"]]
     .map(([filter, href]) => `<a href="${href}" data-run-filter-href="${href}"${selectedFilter === filter ? ' aria-current="page"' : ""}>${labels[filter]}</a>`).join("");
   return `<nav class="mode-tabs" aria-label="Filter runs by status">${tabs}</nav>
   <section class="run-catalog" aria-labelledby="run-catalog-heading">
@@ -1463,9 +1473,9 @@ function outcomePageName(recordId) {
 
 function summarizeWorkflowHealth(workflows) {
   return workflows.reduce((summary, workflow) => {
-    for (const key of ["runs", "successful", "failed", "cancelled", "skipped", "pending", "other"]) summary[key] += workflow.runHealth?.[key] || 0;
+    for (const key of ["runs", "successful", "failed", "actionRequired", "cancelled", "skipped", "pending", "other"]) summary[key] += workflow.runHealth?.[key] || 0;
     return summary;
-  }, { runs: 0, successful: 0, failed: 0, cancelled: 0, skipped: 0, pending: 0, other: 0 });
+  }, { runs: 0, successful: 0, failed: 0, actionRequired: 0, cancelled: 0, skipped: 0, pending: 0, other: 0 });
 }
 
 function workflowSourceMetric(standaloneWorkflows) {
@@ -1511,7 +1521,8 @@ function workflowHealthMetric(health, available, coverageLabel) {
   const segments = [
     ["Successful", health.successful, "var(--success)"],
     ["Failed", health.failed, "var(--danger)"],
-    ["Pending", health.pending, "var(--attention)"],
+    ["Approval required", health.actionRequired, "var(--attention)"],
+    ["Pending", health.pending, "var(--accent)"],
     ["Skipped / neutral / stale / cancelled", inactive, "var(--cancelled)"],
   ];
   let offset = 0;
@@ -1521,7 +1532,7 @@ function workflowHealthMetric(health, available, coverageLabel) {
     return `${color} ${start.toFixed(3)}% ${offset.toFixed(3)}%`;
   }).join(", ") : "var(--neutral-muted) 0 100%";
   const chartLabel = available
-    ? `Run health: ${health.successful} successful, ${health.failed} failed, ${health.pending} pending, ${inactive} skipped, neutral, stale, or cancelled`
+    ? `Run health: ${health.successful} successful, ${health.failed} failed, ${health.actionRequired} approval required, ${health.pending} pending, ${inactive} skipped, neutral, stale, or cancelled`
     : "Run health unavailable";
   const legend = segments.map(([label, value, color]) => `<li><i style="background:${color}"></i><span>${label}</span><strong>${available ? value : "—"}</strong></li>`).join("");
   return `<div class="health-metric"><dt>Run health</dt><dd><span class="health-pie" role="img" aria-label="${escapeHtml(chartLabel)}" style="background:conic-gradient(${stops})"></span><span class="health-total"><strong>${available ? health.runs : "—"}</strong><small>runs</small></span></dd><ul aria-hidden="true">${legend}</ul><p>${escapeHtml(coverageLabel)}</p></div>`;
@@ -2262,7 +2273,8 @@ footer a { min-height: 24px; display: inline-flex; align-items: center; }
 .execution-track span { height: 100%; display: block; }
 .execution-success { background: var(--success); }
 .execution-failed { background: var(--danger); }
-.execution-running { min-width: 2px; background: var(--attention); }
+.execution-approval { min-width: 2px; background: var(--attention); }
+.execution-running { min-width: 2px; background: var(--accent); }
 .execution-other { background: var(--muted); }
 .execution-legend { display: flex; flex-wrap: wrap; gap: 5px 16px; margin: 7px 0 0; padding: 0; color: var(--muted); font-size: .75rem; list-style: none; }
 .execution-legend li { display: flex; align-items: center; gap: 5px; }
@@ -2270,7 +2282,8 @@ footer a { min-height: 24px; display: inline-flex; align-items: center; }
 .execution-legend strong { color: var(--fg); font-variant-numeric: tabular-nums; }
 .legend-success { background: var(--success); }
 .legend-failed { background: var(--danger); }
-.legend-running { background: var(--attention); }
+.legend-approval { background: var(--attention); }
+.legend-running { background: var(--accent); }
 .legend-other { background: var(--muted); }
 .overview-priority-grid { display: grid; grid-template-columns: minmax(0, 1.15fr) minmax(320px, .85fr); align-items: stretch; gap: 16px; margin-bottom: 24px; }
 .attention-panel { min-width: 0; height: 100%; overflow: hidden; border: 1px solid var(--border); border-radius: 6px; background: var(--canvas); }
