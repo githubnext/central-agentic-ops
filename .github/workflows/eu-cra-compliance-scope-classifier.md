@@ -156,7 +156,6 @@ Create one issue containing:
 6. explicit human-review decisions and responsible reviewer;
 7. an overall status of `EVIDENCE_SUFFICIENT`, `GAP_FOUND`, `HUMAN_REVIEW_REQUIRED`, `NOT_ASSESSED`, or `INCOMPLETE`.
 
-Never output `CRA COMPLIANT`, `LEGALLY COMPLIANT`, `CERTIFIED`, or `CE APPROVED`. Do not approve a release or submit any regulatory notification.
+Never output `CRA COMPLIANT`, `LEGALLY COMPLIANT`, `CERTIFIED`, or `CE APPROVED`. Do not approve a release. Never submit any regulatory notification.
 
 If `correlation_id` is present, include a `### Control Plane` section with the correlation ID, central repository, and control-plane run URL. Use `noop` only when a current equivalent report exists and no material evidence or baseline changed; otherwise preserve findings in the issue.
-

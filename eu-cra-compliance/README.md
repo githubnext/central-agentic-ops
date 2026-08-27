@@ -17,7 +17,7 @@ The EU CRA Compliance package helps a private Central Agentic Ops control reposi
 | [`eu-cra-compliance-article-14-reporting-readiness`](../.github/workflows/eu-cra-compliance-article-14-reporting-readiness.md) | Audits Article 14 awareness, escalation, timeline, and notification-evidence readiness. |
 | [`eu-cra-compliance-conformity-release-evidence`](../.github/workflows/eu-cra-compliance-conformity-release-evidence.md) | Audits technical documentation, conformity, declaration, and release-gate evidence. |
 
-The orchestrator dispatches at most 60 repository-level workers per run. Each worker creates at most one evidence issue, uses the shared control plane, and defaults to staged output.
+The orchestrator dispatches at most 48 repository-level workers per run. Each worker creates at most one evidence issue, uses the shared control plane, and defaults to staged output.
 
 ## Install and Configure
 

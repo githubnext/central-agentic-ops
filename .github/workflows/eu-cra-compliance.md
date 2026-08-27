@@ -65,7 +65,7 @@ imports:
       batch_index: ${{ inputs.batch_index || vars.CENTRAL_AGENTIC_OPS_BATCH_INDEX || '0' }}
       allowed_owners: ${{ vars.CENTRAL_AGENTIC_OPS_ALLOWED_OWNERS || github.repository_owner }}
       allowed_repos: ${{ vars.CENTRAL_AGENTIC_OPS_ALLOWED_REPOS || '' }}
-      dispatch_max: "60"
+      dispatch_max: "48"
       orchestrator_credits: "200"
       worker_credits_per_target: "900"
       aggregate_credit_limit: ${{ vars.CENTRAL_AGENTIC_OPS_MAX_AI_CREDITS_PER_RUN || '1100' }}
@@ -100,12 +100,12 @@ safe-outputs:
       - eu-cra-compliance-vulnerability-handling-auditor
       - eu-cra-compliance-article-14-reporting-readiness
       - eu-cra-compliance-conformity-release-evidence
-    max: 60
+    max: 48
 ---
 
 # EU CRA Compliance
 
-Package orchestrator for evidence-led implementation of Regulation (EU) 2024/2847 across organization repositories. Select and rank repositories only. Do not analyze a target repository for CRA compliance, make legal determinations, or create target findings; workers own those responsibilities.
+Package orchestrator for evidence-led implementation of Regulation (EU) 2024/2847 across organization repositories. Select and rank repositories only. The orchestrator must not analyze a target repository for CRA compliance, make legal determinations, or create target findings; workers own those responsibilities.
 
 ## Discovery
 
@@ -132,7 +132,7 @@ Choose useful workers from repository signals and existing CRA evidence. One dis
 
 For a new or unassessed product repository, prefer the scope, security-requirements, supply-chain/SBOM, vulnerability-handling, and conformity/release workers. Add Article 14 readiness when the repository represents a shipped or supported product, owns vulnerability-management responsibilities, has advisories or incidents, or otherwise plausibly has manufacturer reporting obligations.
 
-Before dispatching, calculate the proposed dispatch count. Select and dispatch only when `selected repositories × enabled workers <= 60`; reduce repository selection or worker selection until the cap is met. Never dispatch a worker merely to fill the cap.
+Before dispatching, calculate the proposed dispatch count. Select and dispatch only when `selected repositories × enabled workers <= 48`; reduce repository selection or worker selection until the cap is met. Never dispatch a worker merely to fill the cap.
 
 ## Completion
 

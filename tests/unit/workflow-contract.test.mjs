@@ -227,7 +227,7 @@ test("enterprise defaults, budgets, timeouts, and concurrency are finite", () =>
     "aw-failures.md": { credits: 250, timeout: 15, dispatchMax: 50, workers: 1 },
     "aw-maintenance.md": { credits: 250, timeout: 15, dispatchMax: 50, workers: 1 },
     "dependabot.md": { credits: 250, timeout: 15, dispatchMax: 50, workers: 1 },
-    "eu-cra-compliance.md": { credits: 200, timeout: 15, dispatchMax: 60, workers: 6 },
+    "eu-cra-compliance.md": { credits: 200, timeout: 15, dispatchMax: 48, workers: 6 },
     "optimization.md": { credits: 250, timeout: 15, dispatchMax: 20, workers: 2 },
     "ambient-context-agents-md-curator.md": { credits: 400, timeout: 25 },
     "ambient-context-skills-curator.md": { credits: 400, timeout: 20 },
@@ -621,6 +621,40 @@ test("every worker uses the standard dispatch envelope and safe mode vocabulary"
       assert.match(line, /github\.event\.inputs\.safe_output_repo/);
     }
   }
+});
+
+test("EU CRA workflows preserve regulatory and human-review boundaries", () => {
+  const orchestrator = workflow("eu-cra-compliance.md");
+  const workers = [
+    ["eu-cra-compliance-scope-classifier.md", "Scope Classifier"],
+    ["eu-cra-compliance-security-requirements-auditor.md", "Security Requirements Auditor"],
+    ["eu-cra-compliance-supply-chain-sbom-auditor.md", "Supply Chain SBOM Auditor"],
+    ["eu-cra-compliance-vulnerability-handling-auditor.md", "Vulnerability Handling Auditor"],
+    ["eu-cra-compliance-article-14-reporting-readiness.md", "Article 14 Reporting Readiness"],
+    ["eu-cra-compliance-conformity-release-evidence.md", "Conformity Release Evidence"],
+  ];
+
+  assert.match(orchestrator, /^name: "EU CRA Compliance"$/m);
+  assert.match(orchestrator, /must not analyze a target repository for CRA compliance/i);
+  assert.match(orchestrator, /selected repositories × enabled workers <= 48/);
+
+  for (const [name, displayName] of workers) {
+    const source = workflow(name);
+    assert.match(source, new RegExp(`^name: "EU CRA Compliance / ${displayName}"$`, "m"));
+    assert.match(source, /Regulation \(EU\) 2024\/2847/);
+    assert.match(source, /HUMAN_REVIEW_REQUIRED/);
+    assert.match(source, /Never output `CRA COMPLIANT`, `LEGALLY COMPLIANT`, `CERTIFIED`, or `CE APPROVED`/);
+    assert.match(source, /Never (?:submit|notify)/i);
+    assert.doesNotMatch(source, /^graders:/m);
+  }
+
+  const article14 = workflow("eu-cra-compliance-article-14-reporting-readiness.md");
+  assert.match(article14, /no later than 24 hours/);
+  assert.match(article14, /no later than 72 hours/);
+  assert.match(article14, /no later than 14 days after a corrective or mitigating measure becomes available/);
+  assert.match(article14, /no later than one month after the incident notification/);
+  assert.match(article14, /Do not start or calculate an SLA clock from a guessed timestamp/);
+  assert.match(article14, /manufacturer-awareness evidence cannot be determined, report a critical evidence gap/);
 });
 
 test("workers reject disabled, malformed, or over-ceiling dispatches before execution", () => {
