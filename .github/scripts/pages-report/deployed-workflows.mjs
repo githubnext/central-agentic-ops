@@ -245,7 +245,7 @@ async function collectRunHealth(registryByRepository) {
         page += 1;
         for (const run of runs) {
           if (!workflowIds.has(run.workflow_id)) continue;
-          const current = totals.get(run.workflow_id) || { runs: 0, successful: 0, failed: 0, cancelled: 0, skipped: 0, pending: 0, other: 0, runIds: [], runRecords: [] };
+          const current = totals.get(run.workflow_id) || { runs: 0, successful: 0, failed: 0, actionRequired: 0, cancelled: 0, skipped: 0, pending: 0, other: 0, runIds: [], runRecords: [] };
           current.runIds.push(run.id);
           current.runRecords.push({
             runId: run.id,
@@ -256,7 +256,8 @@ async function collectRunHealth(registryByRepository) {
           });
           current.runs += 1;
           if (run.conclusion === "success") current.successful += 1;
-          else if (["failure", "timed_out", "startup_failure", "action_required"].includes(run.conclusion)) current.failed += 1;
+          else if (run.conclusion === "action_required") current.actionRequired += 1;
+          else if (["failure", "timed_out", "startup_failure"].includes(run.conclusion)) current.failed += 1;
           else if (run.conclusion === "cancelled") current.cancelled += 1;
           else if (run.conclusion === "skipped") current.skipped += 1;
           else if (run.conclusion === null) current.pending += 1;
@@ -383,7 +384,7 @@ const discoveredWorkflows = await mapWithConcurrency([...discovered.values()], 8
     htmlUrl: markdownSourceUrl(registered?.html_url || item.sourceUrl) || `https://github.com/${item.repository}/actions`,
     createdAt: registered?.created_at || null,
     updatedAt: registered?.updated_at || null,
-    runHealth: registered ? runHealth.totals.get(registered.id) || { runs: 0, successful: 0, failed: 0, cancelled: 0, skipped: 0, pending: 0, other: 0, runIds: [], runRecords: [] } : null,
+    runHealth: registered ? runHealth.totals.get(registered.id) || { runs: 0, successful: 0, failed: 0, actionRequired: 0, cancelled: 0, skipped: 0, pending: 0, other: 0, runIds: [], runRecords: [] } : null,
     ...capabilities,
   };
 });
