@@ -20,8 +20,8 @@ definition() {
   "workflowName": "EU CRA Advisor / Package Maintainer",
   "sourcePath": ".github/workflows/eu-cra-compliance-package-maintainer.md",
   "adoption": {
-    "commit": "28843572442b86520c56469428f0a01f8dcf27bf",
-    "adoptedAt": "2026-08-27T15:11:31Z"
+    "commit": "5f0ffc90af7a3b335756de23548d711a20093acb",
+    "adoptedAt": "2026-08-27T17:54:13Z"
   },
   "operationalValue": "Resolve the frozen EU CRA package-capability gaps through human-reviewed ledger changes.",
   "evidence": {
@@ -153,7 +153,7 @@ human_reviewed_pull() {
     ' "$tmp_dir/ledger-pulls.json")
     [[ $pull_number =~ ^[0-9]+$ ]] || return 1
     gh api --paginate "repos/$repository/pulls/$pull_number/reviews?per_page=100" \
-      | jq -se --arg cutoff "$cutoff" '
+      | jq -s --arg cutoff "$cutoff" '
           add // []
           | any(.[];
               .state == "APPROVED"

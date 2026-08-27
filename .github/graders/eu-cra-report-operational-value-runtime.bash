@@ -24,8 +24,8 @@ definition() {
         workflowName: $workflowName,
         sourcePath: $sourcePath,
         adoption: {
-          commit: "28843572442b86520c56469428f0a01f8dcf27bf",
-          adoptedAt: "2026-08-27T15:11:31Z"
+          commit: "5f0ffc90af7a3b335756de23548d711a20093acb",
+          adoptedAt: "2026-08-27T17:54:13Z"
         },
         operationalValue: $operationalValue,
         evidence: {
@@ -126,7 +126,7 @@ human_accepted() {
     cutoff=$3
     gh api --paginate "repos/$evidence_repo/issues/$issue_number/reactions?per_page=100" \
           -H "Accept: application/vnd.github+json" \
-          | jq -se --arg cutoff "$cutoff" '
+          | jq -s --arg cutoff "$cutoff" '
               add // []
               | any(.[];
                   .content == "+1"

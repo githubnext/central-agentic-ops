@@ -365,6 +365,7 @@ test("operational-value graders expose deterministic run-scoped contracts", () =
       input: JSON.stringify(definition.validationExamples[example]),
     }));
     assert.ok(score("targetAttained") > score("targetMissed"), name);
+    assert.equal(score("targetMissed"), 0, `${name}: complete missed opportunity`);
     assert.equal(score("missing"), null, `${name}: missing`);
     assert.equal(score("malformed"), null, `${name}: malformed`);
   }
