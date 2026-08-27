@@ -6,9 +6,4 @@ includes:
   - .github/workflows/aw-failures.md
   - .github/workflows/aw-maintenance.md
   - .github/workflows/dependabot.md
-  - .github/workflows/eu-cra-compliance.md
-  - .github/workflows/eu-cra-compliance-package-maintainer.md
   - .github/workflows/optimization.md
-resources:
-  - source: eu-cra-compliance/implementation-status.md
-    destination: .github/aw/eu-cra-compliance/implementation-status.md

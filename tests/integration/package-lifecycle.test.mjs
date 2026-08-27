@@ -48,14 +48,6 @@ const expectedFiles = [
   ".github/workflows/aw-maintenance.md",
   ".github/workflows/dependabot-release-train-updater.md",
   ".github/workflows/dependabot.md",
-  ".github/workflows/eu-cra-compliance-article-14-reporting-readiness.md",
-  ".github/workflows/eu-cra-compliance-conformity-release-evidence.md",
-  ".github/workflows/eu-cra-compliance-package-maintainer.md",
-  ".github/workflows/eu-cra-compliance-scope-classifier.md",
-  ".github/workflows/eu-cra-compliance-security-requirements-auditor.md",
-  ".github/workflows/eu-cra-compliance-supply-chain-sbom-auditor.md",
-  ".github/workflows/eu-cra-compliance-vulnerability-handling-auditor.md",
-  ".github/workflows/eu-cra-compliance.md",
   ".github/workflows/optimization-ai-credit-auditor.md",
   ".github/workflows/optimization-ai-credit-optimizer.md",
   ".github/workflows/optimization.md",
@@ -63,7 +55,6 @@ const expectedFiles = [
   ".github/workflows/shared/control.md",
   ".github/workflows/shared/review-bundle.md",
   ".github/workflows/shared/target-checkout-read-org-token.md",
-  ".github/aw/eu-cra-compliance/implementation-status.md",
 ];
 const repositoryOnlyFiles = [
   ".github/aw/e2e/run-canary.sh",
@@ -116,13 +107,10 @@ function assertCorePackage(consumer) {
   assert.deepEqual(
     installedManifest.files.map(({ destination }) => destination).sort(),
     [
-      ".github/aw/eu-cra-compliance/implementation-status.md",
       ".github/workflows/ambient-context.md",
       ".github/workflows/aw-failures.md",
       ".github/workflows/aw-maintenance.md",
       ".github/workflows/dependabot.md",
-      ".github/workflows/eu-cra-compliance-package-maintainer.md",
-      ".github/workflows/eu-cra-compliance.md",
       ".github/workflows/optimization.md",
     ],
     "installed package manifest does not match the core package",
@@ -133,6 +121,8 @@ function assertCorePackage(consumer) {
   }
   assert.ok(!existsSync(join(consumer, ".github", "workflows", "ops-pages.yml")));
   assert.ok(!existsSync(join(consumer, ".github", "ops-values")));
+  assert.ok(!existsSync(join(consumer, ".github", "workflows", "eu-cra-compliance.md")));
+  assert.ok(!existsSync(join(consumer, ".github", "aw", "eu-cra-compliance", "implementation-status.md")));
 }
 
 test("gh aw add installs the core package file contract", { timeout: 180_000 }, () => {
