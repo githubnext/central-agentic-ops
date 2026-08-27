@@ -6,11 +6,6 @@ on:
     types: [ready_for_review]
     paths:
       - ".github/workflows/**/*.md"
-      - ".github/workflows/workflow-contracts.yml"
-      - "aw.yml"
-      - "package.json"
-      - "package-lock.json"
-      - "tests/**/*.mjs"
   workflow_dispatch:
 max-ai-credits: 350
 timeout-minutes: 45
