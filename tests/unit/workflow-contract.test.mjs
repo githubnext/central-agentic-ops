@@ -693,10 +693,26 @@ test("EU CRA workflows preserve regulatory and human-review boundaries", () => {
   assert.match(article14, /without undue delay and, in any event, no later than 72 hours/);
   assert.match(article14, /no later than 14 days after a corrective or mitigating measure becomes available/);
   assert.match(article14, /no later than one month after submission of the incident notification/);
+  assert.match(article14, /vulnerability description, severity and impact, available malicious-actor information/);
+  assert.match(article14, /detailed incident description, severity and impact, likely threat type or root cause/);
   assert.match(article14, /intermediate status report when requested by the CSIRT coordinator/);
-  assert.match(article14, /affected-user notification path without undue delay after the Article 14\(3\) notification/);
+  assert.match(article14, /awareness of either an actively exploited vulnerability or a severe incident having an impact on product security/);
+  assert.match(article14, /affected users and, where appropriate, all users without undue delay/);
+  assert.match(article14, /Do not incorrectly make user communication contingent on completion of a regulatory notification/);
   assert.match(article14, /Do not start or calculate an SLA clock from a guessed timestamp/);
   assert.match(article14, /manufacturer-awareness evidence cannot be determined, report a critical evidence gap/);
+
+  const security = workflow("eu-cra-compliance-security-requirements-auditor.md");
+  assert.match(security, /absence of known exploitable vulnerabilities at market placement/);
+  assert.doesNotMatch(security, /absence or reduction of known exploitable vulnerabilities/);
+  assert.match(security, /leave operational distribution and remediation-process evidence to the vulnerability-handling auditor/);
+
+  const supplyChain = workflow("eu-cra-compliance-supply-chain-sbom-auditor.md");
+  assert.match(supplyChain, /machine-readable SBOM covering at least top-level dependencies/);
+  assert.match(supplyChain, /implementation evidence beyond that express minimum/);
+
+  const conformity = workflow("eu-cra-compliance-conformity-release-evidence.md");
+  assert.match(conformity, /at least 10 years after market placement or for the support period, whichever is longer/);
 });
 
 test("workers reject disabled, malformed, or over-ceiling dispatches before execution", () => {

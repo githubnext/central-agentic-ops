@@ -132,7 +132,7 @@ Verify the initial dates: 10 December 2024 entry into force; 11 June 2026 confor
 Assess:
 
 - direct, transitive, bundled, vendored, generated, firmware, container, build, and runtime components;
-- machine-readable SBOM generation, supported format and version, completeness, dependency relationships, identifiers, versions, hashes, licenses, suppliers, and reproducibility;
+- a commonly used, machine-readable SBOM covering at least top-level dependencies, as required by Annex I, Part II, point (1), and clearly separate any deeper component, license, hash, supplier, or reproducibility checks as implementation evidence beyond that express minimum;
 - correspondence between SBOMs, manifests, lockfiles, built artifacts, releases, images, and supported versions;
 - component vulnerability identification, triage ownership, advisory intake, dependency update automation, and remediation tracking;
 - provenance, signatures, attestations, protected build and release workflows, artifact integrity, and verification instructions;

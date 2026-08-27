@@ -130,7 +130,7 @@ Build release-version traceability for:
 
 - product identity, intended purpose, versions, models, variants, dependencies, remote data-processing functions, and economic-operator contact evidence;
 - cybersecurity risk assessment, architecture, design, development, production, vulnerability handling, tests, and residual-risk decisions;
-- technical documentation required for the product and evidence retention;
+- technical documentation and EU Declaration of Conformity retention for at least 10 years after market placement or for the support period, whichever is longer;
 - user information, secure configuration, update behavior, support period, end-of-support date, and vulnerability-reporting contact;
 - product classification assumptions and the candidate conformity-assessment route;
 - harmonised-standard or certification claims with proof of applicable scope and Official Journal publication where relevant;

@@ -132,15 +132,15 @@ Verify procedures and evidence for these initial Article 14 baselines:
 
 - early warning: without undue delay and, in any event, no later than 24 hours;
 - vulnerability notification: without undue delay and, in any event, no later than 72 hours;
-- final report: no later than 14 days after a corrective or mitigating measure becomes available.
+- final report: no later than 14 days after a corrective or mitigating measure becomes available, unless the relevant information was already provided. Verify access-controlled evidence for the vulnerability description, severity and impact, available malicious-actor information, and the security update or other corrective measure required by Article 14(2)(c); never expose sensitive details in the issue.
 
 **Severe incident affecting product security**:
 
-- early warning: without undue delay and, in any event, no later than 24 hours from established manufacturer awareness;
-- incident notification: without undue delay and, in any event, no later than 72 hours from established manufacturer awareness;
-- final report: no later than one month after submission of the incident notification.
+- early warning: without undue delay and, in any event, no later than 24 hours from established manufacturer awareness of the severe incident under Article 14(4)(a);
+- incident notification: without undue delay and, in any event, no later than 72 hours from established manufacturer awareness of the severe incident under Article 14(4)(b);
+- final report: no later than one month after submission of the incident notification under Article 14(4)(c). Verify access-controlled evidence for the detailed incident description, severity and impact, likely threat type or root cause, and applied and ongoing mitigation measures; never expose sensitive details in the issue.
 
-Also verify readiness to provide an intermediate status report when requested by the CSIRT coordinator; do not invent a deadline when the applicable source sets none. For a severe incident, verify a clear and comprehensible affected-user notification path without undue delay after the Article 14(3) notification, including necessary mitigation information.
+Also verify readiness to provide an intermediate status report when requested by the CSIRT coordinator; do not invent a deadline when the applicable source sets none. After awareness of either an actively exploited vulnerability or a severe incident having an impact on product security, verify a clear and comprehensible path to inform affected users and, where appropriate, all users without undue delay, including mitigation or corrective measures users can take. Do not incorrectly make user communication contingent on completion of a regulatory notification.
 
 Do not start or calculate an SLA clock from a guessed timestamp. Keep these lifecycle facts distinct:
 

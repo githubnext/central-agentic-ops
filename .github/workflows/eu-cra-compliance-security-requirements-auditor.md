@@ -129,14 +129,14 @@ Give every material finding provenance with instrument, specific provision, and 
 Build a requirement-to-evidence matrix for applicable essential cybersecurity requirements, including:
 
 - security-by-design and security-by-default controls tied to the product risk assessment;
-- absence or reduction of known exploitable vulnerabilities at market placement;
+- absence of known exploitable vulnerabilities at market placement;
 - secure default configuration and reset-to-original-state capabilities where applicable;
 - protection from unauthorized access, authentication, identity, and access management;
 - confidentiality and integrity of stored, transmitted, or processed data;
 - data minimization, availability, resilience, and restoration following incidents;
 - limiting attack surfaces, impact, and propagation;
 - security logging, monitoring, and user visibility where applicable;
-- secure automatic or user-controlled security updates and clear update deferral;
+- product-design support for security updates, including automatic installation within an appropriate timeframe where applicable, enabled by default with clear opt-out, update notification, and temporary postponement; leave operational distribution and remediation-process evidence to the vulnerability-handling auditor;
 - security architecture, threat models, abuse cases, tests, code scanning, release checks, and remediation evidence.
 
 For each requirement record `EVIDENCE_SUFFICIENT`, `GAP_FOUND`, `HUMAN_REVIEW_REQUIRED`, `NOT_ASSESSED`, or `INCOMPLETE`, plus repository evidence, missing evidence, limitations, source provenance, and a prioritized remediation recommendation. Do not treat a passing tool result as proof of conformity.

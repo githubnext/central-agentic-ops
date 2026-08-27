@@ -86,7 +86,7 @@ Audit the operation workflows in this package against the current requirements o
 
 ## Trusted scope
 
-Read only these package sources and the applicable ledger path:
+Read only these repository package sources and the applicable ledger path; authoritative web sources required by the regulatory method remain in scope:
 
 - `.github/workflows/eu-cra-compliance.md`
 - `.github/workflows/eu-cra-compliance-scope-classifier.md`
@@ -113,14 +113,14 @@ For each operational requirement, maintain:
 
 - stable requirement ID and concise summary
 - applicability or human-review condition
-- package status: `IMPLEMENTED`, `PARTIAL`, `MISSING`, `NOT_APPLICABLE`, `HUMAN_REVIEW_REQUIRED`, or `INCOMPLETE`
+- package-capability status: `IMPLEMENTED`, `PARTIAL`, `MISSING`, `NOT_APPLICABLE`, `HUMAN_REVIEW_REQUIRED`, or `INCOMPLETE`
 - exact workflow and section evidence, or `none`
 - concrete missing capability and recommended change
 - authoritative provenance and last verified date
 
-`IMPLEMENTED` means only that an operation-workflow feature represents the requirement. It never means that this package or any product is legally compliant. Use `NOT_APPLICABLE` only for provisions that impose no product or economic-operator operational requirement on this fleet, and preserve them in the completeness index so omissions remain visible.
+`IMPLEMENTED` means only that an operation-workflow feature represents the requirement. It never means that this package or any product is legally compliant. Keep capability coverage separate from the legal decision: when a workflow correctly gathers evidence and requires human review, record the capability as `IMPLEMENTED` or `PARTIAL` and put the review condition in applicability. Use `HUMAN_REVIEW_REQUIRED` as package status only when the maintainer cannot determine whether a fleet capability is required. Use `NOT_APPLICABLE` only for provisions that impose no product or economic-operator operational requirement on this fleet, and preserve them in the completeness index so omissions remain visible.
 
-Keep material determinations about scope exclusion, economic-operator role, commercial versus non-commercial FOSS treatment, substantial modification, product classification, conformity route, harmonised standards, presumption of conformity, active exploitation, severe incidents, reportability, declarations, or market release as `HUMAN_REVIEW_REQUIRED`. Never output `CRA COMPLIANT`, `LEGALLY COMPLIANT`, `CERTIFIED`, or `CE APPROVED`. Never submit a regulatory notification.
+For material determinations about scope exclusion, economic-operator role, commercial versus non-commercial FOSS treatment, substantial modification, product classification, conformity route, harmonised standards, presumption of conformity, active exploitation, severe incidents, reportability, declarations, or market release, require human review in the applicability or decision-control field. Never output `CRA COMPLIANT`, `LEGALLY COMPLIANT`, `CERTIFIED`, or `CE APPROVED`. Never submit a regulatory notification.
 
 ## Outputs
 
