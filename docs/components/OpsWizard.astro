@@ -288,7 +288,6 @@ const agents = [
         if (!copyDialog) return;
         if (typeof copyDialog.showModal === "function") {
           if (!copyDialog.open) copyDialog.showModal();
-          copyDialogClose?.focus();
         }
       }
 
