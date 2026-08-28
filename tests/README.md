@@ -2,7 +2,7 @@
 
 Use this as a lookup from configuration to verified behavior. Examples assume 25 discovered repositories. `-` means unset or not applicable. Statuses are `🟢 Pass` and `🔴 Fail`.
 
-Run dependency-free contract tests with `npm run test:unit`. Run the networked clean-room package and failure-injection tests with `npm run test:integration`; package tests require gh-aw and public GitHub access. Run synthetic enterprise scale tests with `npm run test:load`. `npm test` runs unit and integration tests, while `npm run check` adds load tests and compilation. CI sets `CENTRAL_AGENTIC_OPS_PACKAGE_SOURCE` to the exact commit under test so package installation validates pull-request contents rather than only the default branch.
+Run dependency-free contract tests with `npm run test:unit`. Run the networked clean-room package and failure-injection tests with `npm run test:integration`; package tests require gh-aw and public GitHub access. Run synthetic enterprise scale tests with `npm run test:load`. `npm test` runs unit and integration tests, while `npm run check` adds load tests and compilation. Use `npm run compile:locks` when updating tracked lock files; it temporarily repairs gh-aw HTML-escaped expression operators until the upstream compiler fix is available. CI sets `CENTRAL_AGENTIC_OPS_PACKAGE_SOURCE` to the exact commit under test so package installation validates pull-request contents rather than only the default branch.
 
 The automated suite checks source `.md` contracts, ops-value interfaces, smoke-workflow safety, generated workflows, and `gh aw add`/`gh aw update` package behavior. It does not execute agentic workflows or spend AI Credits; the manual `Review smoke` Actions workflow performs that opt-in runtime check.
 
@@ -13,7 +13,7 @@ The automated suite checks source `.md` contracts, ops-value interfaces, smoke-w
 | Unit | `tests/unit/` | `npm run test:unit` | Policy matrices, workflow contracts, safety limits, generated settings, and package manifest structure. |
 | Integration | `tests/integration/` | `npm run test:integration` | Clean-room `gh aw add`/`update` behavior and fail-closed execution of the actual control precompute shell. |
 | Load | `tests/load/` | `npm run test:load` | Actual pagination, deterministic batching, and admission logic over 100,000 synthetic repositories, including bounded API failure. |
-| Compilation | Source workflows | `npm run compile` | All agentic workflow sources compile without emitting repository artifacts. |
+| Compilation | Source workflows | `npm run compile` | All agentic workflow sources compile without emitting repository artifacts; `npm run check:locks` rejects malformed tracked expressions. |
 | Runtime review | `.github/workflows/review-smoke.yml` | Manual Actions dispatch | One bounded target and its workers complete; outputs route to a private review repository and target refs and issues remain unchanged. |
 | Runtime modes | `.github/workflows/enterprise-canary.yml` | Manual protected Actions dispatch | Repository-local review/live routing against dedicated repositories with mode-specific write assertions. |
 | Runtime stress | `.github/workflows/enterprise-stress.yml` | Manual protected Actions dispatch | Repository-local two, three, or five same-scope review runs verify cancellation and no target mutation. |

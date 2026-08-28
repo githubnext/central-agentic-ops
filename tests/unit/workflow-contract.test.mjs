@@ -459,6 +459,21 @@ test("compiled workflow locks are not ignored", () => {
   }
 });
 
+test("compiled workflow expressions do not contain HTML-escaped operators", () => {
+  const lockNames = readdirSync(workflowsDirectory).filter((name) => name.endsWith(".lock.yml"));
+
+  for (const lockName of lockNames) {
+    const expressions = workflow(lockName).match(/\$\{\{[\s\S]*?\}\}/g) ?? [];
+    for (const expression of expressions) {
+      assert.doesNotMatch(
+        expression,
+        /\\+u(?:0026|003c|003e)/i,
+        `${lockName} contains an HTML-escaped operator in ${expression}`,
+      );
+    }
+  }
+});
+
 test("operational-value graders expose deterministic run-scoped contracts", () => {
   const gradersDirectory = join(root, ".github", "graders");
   const packageGradersDirectory = join(root, ".github", "workflows", "graders");
