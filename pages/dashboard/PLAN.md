@@ -12,6 +12,7 @@
 - [x] **Links and findings** — Section 9 link objects and the `href` channel semantics.
 - [x] **Custom pages** — Section 11 metric, table, and chart views with the temporal line and bar defaults.
 - [ ] **Built-in pages** — Section 10, one page per increment, each expressed as declarative page definitions built from the custom-view primitives.
+  - [x] Slice: `DLS-PAGE-001` built-in page title default validation.
 - [ ] **Security, privacy, accessibility** — Section 13 including escaping, redaction, and keyboard and screen-reader behavior verified with Playwright.
 - [ ] **Compliance suite** — Section 14 test suite, the compliance checklist, Appendix A as a passing fixture, and Appendix C as failing fixtures.
 - [ ] **Parity** — inventory the features of the existing dashboard in `.github/scripts/pages-report/report.mjs`, record them in `PLAN.md` as a parity checklist, then express each one as YAML configuration plus data fixtures, closing the checklist incrementally.
@@ -27,6 +28,15 @@
 - 2026-08-28: `npm run test:e2e` is currently blocked because the browser runtime used by the workflow environment does not expose a launchable Chromium binary (`browserType.launch: Executable doesn't exist`). Unit, typecheck, and lint gates pass; browser tests are present but cannot launch until the browser dependency is provisioned. The workflow now prefers the built-in Playwright MCP browser tools instead of the incompatible `playwright-cli` wrapper.
 
 ## Run log
+
+### 2026-08-28 (built-in pages title-default slice)
+
+- Started the Built-in pages milestone with a narrow Section 10 validation increment for `DLS-PAGE-001`.
+- Updated `src/validator.js` so built-in pages continue to require canonical `page` names and may omit `title` only when that page name is canonical, matching the specification's title-default precondition without inventing presenter behavior.
+- Added unit coverage in `test/unit/validator.test.js` for accepted omitted-title built-in pages and rejected omitted-title cases with non-canonical built-in page names.
+- Verified `npm install`, `npm run typecheck`, `npm run lint`, and `npm test`; `npm run test:e2e` remains blocked in this environment because the Playwright Chromium executable is not provisioned (`browserType.launch: Executable doesn't exist`).
+- Next milestone: Built-in pages, next slice for declarative built-in page definitions.
+
 
 ### 2026-08-28 (custom pages slice)
 

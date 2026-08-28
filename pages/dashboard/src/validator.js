@@ -309,6 +309,14 @@ function validateBuiltInPage(page, path, errors) {
       `${path}.page`
     ));
   }
+
+  if (page.title === undefined && typeof page.page === 'string' && !BUILT_IN_PAGE_VALUES.includes(page.page)) {
+    errors.push(createError(
+      ERROR_CODES.nonCanonicalVocabularyOrIdentifier,
+      'built-in page title default requires a canonical page name.',
+      `${path}.page`
+    ));
+  }
 }
 
 /**
