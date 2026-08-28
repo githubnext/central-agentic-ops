@@ -155,7 +155,6 @@ const agents = [
       <p class="copy-status" role="status" aria-live="polite" data-copy-status></p>
       <dialog class="copy-dialog" data-copy-dialog aria-labelledby="ops-wizard-copy-dialog-title">
         <div class="copy-dialog-card">
-          <div class="copy-dialog-burst" aria-hidden="true"></div>
           <span class="copy-dialog-kicker">Next steps</span>
           <h3 class="copy-dialog-title" id="ops-wizard-copy-dialog-title">
             Prompt copied — launch it from a fresh control repository
@@ -783,12 +782,13 @@ const agents = [
       padding: 1.4rem;
     }
 
-    .copy-dialog-burst {
+    .copy-dialog-card::before {
       width: 3rem;
       height: 0.35rem;
       border-radius: 999px;
       background: linear-gradient(90deg, var(--wizard-blue), var(--wizard-violet), var(--wizard-pink));
       box-shadow: 0 0.5rem 1.5rem color-mix(in srgb, var(--wizard-violet) 50%, transparent);
+      content: "";
     }
 
     .copy-dialog-card p {
