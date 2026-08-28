@@ -1,7 +1,7 @@
 # Ambient Context Package
 
-> [!WARNING]
-> This project is experimental and not ready for use.
+> [!NOTE]
+> **Research prototype:** Features and interfaces may change as the project evolves.
 
 The Ambient Context package maintains the ambient context that agents read before every task: a repository's `AGENTS.md` and its agent skills. It ships in the core Central Agentic Ops package and can also be installed on its own.
 

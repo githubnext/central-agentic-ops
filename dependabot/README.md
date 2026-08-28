@@ -1,7 +1,7 @@
 # Dependabot Package
 
-> [!WARNING]
-> This project is experimental and not ready for use.
+> [!NOTE]
+> **Research prototype:** Features and interfaces may change as the project evolves.
 
 The Dependabot package runs manifest-aware dependency maintenance from a private Central Agentic Ops control repository. It prioritizes security and repair work, selects target repositories, and dispatches one bounded updater per repository.
 

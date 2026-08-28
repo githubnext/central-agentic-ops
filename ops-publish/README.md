@@ -1,7 +1,7 @@
 # Ops Publish Add-on
 
-> [!WARNING]
-> This project is experimental and not ready for use.
+> [!NOTE]
+> **Research prototype:** Features and interfaces may change as the project evolves.
 
 The Ops Publish add-on turns an explicit human review action into one deterministic target write. Applying `ops:publish-to-target` to an eligible review issue recreates that issue in its target repository, records publication provenance, and closes the review issue. It does not invoke an AI model or rerun the originating Agentic Workflow.
 

@@ -1,7 +1,7 @@
 # Central Agentic Ops
 
-> [!WARNING]
-> This project is still experimental. Do not use until it is marked as ready and this notice is removed.
+> [!NOTE]
+> **Research prototype:** Features and interfaces may change as the project evolves.
 
 Run trusted agentic operations across your repository fleet from one private control plane.
 

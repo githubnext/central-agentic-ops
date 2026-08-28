@@ -1,7 +1,7 @@
 # Pages Add-on
 
-> [!WARNING]
-> This project is experimental and not ready for use.
+> [!NOTE]
+> **Research prototype:** Features and interfaces may change as the project evolves.
 
 The Pages add-on publishes an access-controlled static view of Central Agentic Ops reports from a private control-plane repository.
 
