@@ -1,8 +1,9 @@
 ---
-import { Image } from "astro:assets";
 import type { HTMLAttributes } from "astro/types";
 import dispatchFallback from "../assets/control-plane-dispatch-fallback.svg";
+import dispatchFallbackDark from "../assets/control-plane-dispatch-fallback-dark-mode.svg";
 import mobileDispatchFallback from "../assets/control-plane-dispatch-mobile.svg";
+import mobileDispatchFallbackDark from "../assets/control-plane-dispatch-mobile-dark-mode.svg";
 import OpsWizard from "./OpsWizard.astro";
 
 const PAGE_TITLE_ID = "_top";
@@ -58,12 +59,34 @@ const { title = data.title, tagline, actions = [] } = data.hero || {};
     </figcaption>
 
     <div class="desktop-scene">
-      <Image src={dispatchFallback} alt="" loading="eager" decoding="async" class="pipeline-image" />
+      <picture>
+        <source media="(prefers-color-scheme: dark)" srcset={dispatchFallbackDark.src} />
+        <img
+          src={dispatchFallback.src}
+          width={dispatchFallback.width}
+          height={dispatchFallback.height}
+          alt=""
+          loading="eager"
+          decoding="async"
+          class="pipeline-image"
+        />
+      </picture>
       <div class="dispatch-motion" aria-hidden="true"></div>
     </div>
 
     <div class="mobile-scene" aria-hidden="true">
-      <Image src={mobileDispatchFallback} alt="" loading="eager" decoding="async" class="mobile-pipeline-image" />
+      <picture>
+        <source media="(prefers-color-scheme: dark)" srcset={mobileDispatchFallbackDark.src} />
+        <img
+          src={mobileDispatchFallback.src}
+          width={mobileDispatchFallback.width}
+          height={mobileDispatchFallback.height}
+          alt=""
+          loading="eager"
+          decoding="async"
+          class="mobile-pipeline-image"
+        />
+      </picture>
       <div class="dispatch-motion mobile-dispatch-motion" data-layout="mobile"></div>
     </div>
   </figure>
@@ -77,6 +100,7 @@ const { title = data.title, tagline, actions = [] } = data.hero || {};
 
   const animations = new WeakMap<Element, ReturnType<typeof lottie.loadAnimation>>();
   const observers = new WeakMap<Element, IntersectionObserver>();
+  const colorScheme = window.matchMedia("(prefers-color-scheme: dark)");
 
   function initializeHierarchyAnimations() {
     if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
@@ -89,7 +113,7 @@ const { title = data.title, tagline, actions = [] } = data.hero || {};
         renderer: "svg",
         loop: true,
         autoplay: false,
-        animationData: container instanceof HTMLElement && container.dataset.layout === "mobile" ? createMobileAnimationData() : createAnimationData(),
+        animationData: container instanceof HTMLElement && container.dataset.layout === "mobile" ? createMobileAnimationData(colorScheme.matches) : createAnimationData(colorScheme.matches),
         rendererSettings: {
           preserveAspectRatio: "xMidYMid meet",
           progressiveLoad: true,
@@ -111,12 +135,20 @@ const { title = data.title, tagline, actions = [] } = data.hero || {};
     document.querySelectorAll(".dispatch-motion").forEach((container) => {
       observers.get(container)?.disconnect();
       animations.get(container)?.destroy();
+      container.classList.remove("is-ready");
       observers.delete(container);
       animations.delete(container);
     });
   }
 
+  function handleColorSchemeChange() {
+    destroyHierarchyAnimations();
+    initializeHierarchyAnimations();
+  }
+
   initializeHierarchyAnimations();
+  if ("addEventListener" in colorScheme) colorScheme.addEventListener("change", handleColorSchemeChange);
+  else (colorScheme as MediaQueryList & { addListener(listener: () => void): void }).addListener(handleColorSchemeChange);
   document.addEventListener("astro:page-load", initializeHierarchyAnimations);
   document.addEventListener("astro:before-swap", destroyHierarchyAnimations);
 </script>

@@ -3,7 +3,7 @@
   <desc id="description">A central control plane dispatches Supply chain, Compliance, Security, and Governance operation packages through every organization to every repo, then correlates the outcomes into an operational report excerpt.</desc>
   <defs>
     <style>
-      :root { --surface:#fff; --foreground:#1f2328; --muted:#656d76; --border:#d0d7de; --connector:#afb8c1; --success:#1f883d; --danger:#cf222e; --attention:#bf8700; --accent:#8250df; --info:#0969da; --shadow:#1f2328; }
+      :root { --surface:#161b22; --foreground:#f0f6fc; --muted:#8b949e; --border:#30363d; --connector:#484f58; --success:#3fb950; --danger:#f85149; --attention:#d29922; --accent:#a371f7; --info:#58a6ff; --shadow:#010409; }
       [fill="#ffffff"]{fill:var(--surface)} [fill="#1f2328"]{fill:var(--foreground)} [fill="#656d76"]{fill:var(--muted)}
       [fill="#1f883d"]{fill:var(--success)} [fill="#cf222e"]{fill:var(--danger)} [fill="#bf8700"]{fill:var(--attention)} [fill="#8250df"]{fill:var(--accent)} [fill="#0969da"]{fill:var(--info)}
       [stroke="#ffffff"]{stroke:var(--surface)} [stroke="#d0d7de"]{stroke:var(--border)} [stroke="#afb8c1"]{stroke:var(--connector)} [stroke="#8250df"]{stroke:var(--accent)}
