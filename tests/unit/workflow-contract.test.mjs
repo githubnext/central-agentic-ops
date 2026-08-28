@@ -1110,19 +1110,19 @@ test("daily dashboard review uses the GitHub Copilot Pi engine", () => {
   assert.doesNotMatch(source, /runtime:\s+docker-sbx/);
 });
 
-test("control-plane dashboard reviewer checks successful documentation deployments", () => {
-  const source = workflow("control-plane-dashboard-review.md");
+test("CAO dashboard reviewer checks successful documentation deployments", () => {
+  const source = workflow("cao-dashboard-review.md");
 
   assert.match(source, /workflow_run:\n\s+workflows: \["Documentation Pages"\]\n\s+types: \[completed\]\n\s+branches: \[main\]/);
   assert.match(source, /github\.event\.workflow_run\.conclusion == 'success'/);
-  assert.match(source, /REPORT_INVENTORY=\/tmp\/gh-aw\/agent\/control-plane-dashboard-review\/expected-inventory\.json/);
+  assert.match(source, /REPORT_INVENTORY=\/tmp\/gh-aw\/agent\/cao-dashboard-review\/expected-inventory\.json/);
   assert.match(source, /githubnext\.github\.io\/central-agentic-ops\/cao\//);
   assert.match(source, /playwright:\n\s+mode: cli/);
   assert.match(source, /toolsets: \[repos, issues, actions\]/);
   assert.match(source, /githubnext\.github\.io/);
   assert.match(source, /at most the latest 100 runs from the last 24 hours/);
-  assert.match(source, /title-prefix: "\[control-plane-dashboard\] "/);
-  assert.match(source, /close-older-key: control-plane-dashboard-review/);
+  assert.match(source, /title-prefix: "\[cao-dashboard\] "/);
+  assert.match(source, /close-older-key: cao-dashboard-review/);
   assert.match(source, /If an open issue already describes the same fingerprint, call `noop`/);
   assert.doesNotMatch(source, /^\s+(create-pull-request|add-comment|create-discussion|push-to-pull-request-branch):/m);
 });
@@ -1211,7 +1211,7 @@ test("clean-room compilation emits the expected GitHub Actions settings", { time
       ...packageLockNames,
       "accessibility-expert.lock.yml",
       "advisory-package-maintainer.lock.yml",
-      "control-plane-dashboard-review.lock.yml",
+      "cao-dashboard-review.lock.yml",
       "daily-dashboard-language-renderer.lock.yml",
       "daily-dashboard-language-spec-review.lock.yml",
       "multi-device-docs-tester.lock.yml",
