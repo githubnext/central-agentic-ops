@@ -73,13 +73,13 @@ Keep steering instructions within the operation's existing permissions, safety p
 | `CENTRAL_AGENTIC_OPS_AMBIENT_CONTEXT_AGENTS_MD_MAX_MODE` | Ambient Context worker | No | `review` | Maximum `AGENTS.md` curator mode. |
 | `CENTRAL_AGENTIC_OPS_AMBIENT_CONTEXT_SKILLS_ENABLED` | Ambient Context worker | No | `true` | Worker kill switch for the skills curator. |
 | `CENTRAL_AGENTIC_OPS_AMBIENT_CONTEXT_SKILLS_MAX_MODE` | Ambient Context worker | No | `review` | Maximum skills curator mode. |
-| `CENTRAL_AGENTIC_OPS_AW_MAINTENANCE_FAILURES_ENABLED` | AW Maintenance failure worker | No | `true` | Worker kill switch for the investigator. |
-| `CENTRAL_AGENTIC_OPS_AW_MAINTENANCE_FAILURES_MAX_MODE` | AW Maintenance failure worker | No | `review` | Maximum investigator mode: `review` or `live`. |
 | `CENTRAL_AGENTIC_OPS_AW_MAINTENANCE_ENABLED` | AW Maintenance | No | `true` | Package kill switch. Set to `false` to stop orchestrator and worker dispatches. |
 | `CENTRAL_AGENTIC_OPS_AW_MAINTENANCE_MODE` | AW Maintenance | No | `review` | Sets the output mode to `review` or `live`. |
 | `CENTRAL_AGENTIC_OPS_AW_MAINTENANCE_MAX_REPOS` | AW Maintenance | No | `1` | Scheduled repository-selection cap. Accepts `1` through `1000`; dispatch limits may reduce it further. |
 | `CENTRAL_AGENTIC_OPS_AW_MAINTENANCE_ROLLOUT_PERCENT` | AW Maintenance | No | `100` | Limits selection to this percentage of discovered repositories. Accepts integers from `1` through `100`. |
 | `CENTRAL_AGENTIC_OPS_AW_MAINTENANCE_MONTHLY_AI_CREDIT_BUDGET` | AW Maintenance | No | `0` | Monthly package budget in AI Credits. `0` disables monthly budget tuning. |
+| `CENTRAL_AGENTIC_OPS_AW_MAINTENANCE_FAILURES_ENABLED` | AW Maintenance failure worker | No | `true` | Worker kill switch for the investigator. |
+| `CENTRAL_AGENTIC_OPS_AW_MAINTENANCE_FAILURES_MAX_MODE` | AW Maintenance failure worker | No | `review` | Maximum investigator mode: `review` or `live`. |
 | `CENTRAL_AGENTIC_OPS_AW_MAINTENANCE_UPGRADE_ENABLED` | AW Maintenance worker | No | `true` | Worker kill switch for the upgrade worker. |
 | `CENTRAL_AGENTIC_OPS_AW_MAINTENANCE_UPGRADE_MAX_MODE` | AW Maintenance worker | No | `review` | Maximum upgrade worker mode: `review` or `live`. |
 | `CENTRAL_AGENTIC_OPS_DEPENDABOT_ENABLED` | Dependabot | No | `true` | Package kill switch. Set to `false` to stop orchestrator and worker dispatches. |
