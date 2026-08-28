@@ -27,8 +27,6 @@ const agents = [
 ---
 
 <section class="ops-wizard" aria-labelledby="ops-wizard-title">
-  <div class="wizard-glow wizard-glow-primary" aria-hidden="true"></div>
-  <div class="wizard-glow wizard-glow-secondary" aria-hidden="true"></div>
   <div class="wizard-intro">
     <p class="wizard-eyebrow">Setup wizard</p>
     <h2 id="ops-wizard-title">Start an operation in three steps</h2>
@@ -36,11 +34,11 @@ const agents = [
       Pick the operation you want to run and the coding agent you use, then copy the generated prompt. The agent creates
       your private control plane repository, installs the operation, and runs it once in <code>review</code> mode.
     </p>
-    <div class="wizard-badges" aria-label="Wizard benefits">
-      <span>Private control plane</span>
-      <span>Review-mode first run</span>
-      <span>Agent-ready prompt</span>
-    </div>
+    <ul class="wizard-badges" aria-label="Wizard benefits">
+      <li>Private control plane</li>
+      <li>Review-mode first run</li>
+      <li>Agent-ready prompt</li>
+    </ul>
   </div>
 
   <form class="wizard-form" data-ops-wizard>
@@ -377,24 +375,26 @@ const agents = [
       isolation: isolate;
     }
 
-    .wizard-glow {
+    .ops-wizard::before,
+    .ops-wizard::after {
       position: absolute;
       z-index: 0;
       width: 16rem;
       height: 16rem;
       border-radius: 999px;
+      content: "";
       filter: blur(2rem);
       opacity: var(--wizard-glow-opacity);
       pointer-events: none;
     }
 
-    .wizard-glow-primary {
+    .ops-wizard::before {
       top: -6rem;
       right: -4rem;
       background: var(--wizard-pink);
     }
 
-    .wizard-glow-secondary {
+    .ops-wizard::after {
       bottom: -7rem;
       left: -5rem;
       background: var(--wizard-blue);
@@ -445,9 +445,12 @@ const agents = [
       justify-content: center;
       gap: 0.5rem;
       margin-top: 0.25rem;
+      margin-bottom: 0;
+      padding: 0;
+      list-style: none;
     }
 
-    .wizard-badges span {
+    .wizard-badges li {
       border: 1px solid color-mix(in srgb, var(--sl-color-white) 18%, transparent);
       border-radius: 999px;
       background: color-mix(in srgb, var(--sl-color-white) 8%, transparent);
