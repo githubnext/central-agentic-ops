@@ -628,6 +628,9 @@ steps:
       esac
 
       mode_rank "$SAFE_OUTPUT_MODE" "safe_output_mode" >/dev/null
+      if [ "$ROLE" = "orchestrator" ]; then
+        CENTRAL_REPO="$GITHUB_REPOSITORY"
+      fi
       validate_repository_owner "target_repo" "$TARGET_REPO"
       validate_repository_owner "safe_output_repo" "$SAFE_OUTPUT_REPO"
 

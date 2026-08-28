@@ -148,6 +148,22 @@ test("control precompute accepts a public central review destination", () => {
   assert.equal(result.status, 0, result.stderr);
 });
 
+test("orchestrator derives its public central review destination without a dispatch envelope", () => {
+  const result = runPrecompute(
+    {
+      ROLE: "orchestrator",
+      TARGET_REPO: "",
+      CENTRAL_REPO: "",
+      MAX_REPOS: "1001",
+    },
+    "printf 'false\\n'",
+  );
+
+  assert.notEqual(result.status, 0);
+  assert.match(result.stderr, /max_repos must be an integer from 1 through 1000/);
+  assert.doesNotMatch(result.stderr, /non-central review safe_output_repo must be private/);
+});
+
 test("control precompute rejects a public non-central review destination", () => {
   const result = runPrecompute(
     { SAFE_OUTPUT_REPO: "acme/review" },
