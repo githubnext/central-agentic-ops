@@ -2,15 +2,28 @@
 private: true
 emoji: "📝"
 name: Multi-Device Docs Tester
-description: Tests documentation site functionality and responsive design across multiple device form factors
+description: Tests documentation responsiveness and rendering across device sizes, browser engines, and color schemes
 on:
   schedule: daily
+  pull_request:
+    types: [opened, synchronize, reopened, ready_for_review]
+    paths:
+      - "docs/**"
+      - "public/**"
+      - "astro.config.mjs"
+      - "package.json"
+      - "package-lock.json"
+      - ".github/workflows/multi-device-docs-tester.md"
   workflow_dispatch:
     inputs:
       devices:
         description: 'Device types to test (comma-separated: mobile,tablet,desktop)'
         required: false
         default: 'mobile,tablet,desktop'
+concurrency:
+  group: "${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}"
+  cancel-in-progress: true
+  job-discriminator: "${{ github.run_id }}"
 permissions:
   contents: read
   copilot-requests: write
@@ -30,6 +43,7 @@ tools:
   timeout: 120  # Multi-device runs include preview startup and Playwright tests
   playwright:
     mode: cli
+    version: "0.1.18"
   bash:
     - "*"
 safe-outputs:
@@ -37,8 +51,12 @@ safe-outputs:
     max-uploads: 3
     retention-days: 30
     skip-archive: true
+    allowed-paths:
+      - "/tmp/gh-aw/agent/multi-device-docs/screenshots/**"
     defaults:
       if-no-files: ignore
+  create-check-run:
+    name: "Multi-Device Docs Test Result"
   create-issue:
     title-prefix: "[multi-device-docs] "
     close-older-issues: true
@@ -58,6 +76,17 @@ pre-agent-steps:
     run: timeout 10m npm ci --ignore-scripts
   - name: Build documentation
     run: timeout 10m npm run docs:build
+  - name: Install WebKit browser
+    run: |
+      mkdir -p "${{ github.workspace }}/.playwright"
+      set +e
+      timeout 10m npx --yes playwright@1.63.0-alpha-2026-08-05 install webkit \
+        > "${{ github.workspace }}/.playwright/webkit-install.log" 2>&1
+      WEBKIT_INSTALL_STATUS=$?
+      set -e
+      if [ $WEBKIT_INSTALL_STATUS -ne 0 ]; then
+        echo "WebKit installation failed; agent will report the infrastructure blocker."
+      fi
   - name: Configure Playwright CLI launch options
     env:
       EXPR_GITHUB_WORKSPACE: ${{ github.workspace }}
@@ -73,20 +102,35 @@ pre-agent-steps:
         }
       }
       EOF
+        cat > "$EXPR_GITHUB_WORKSPACE/.playwright/webkit.config.json" <<'EOF'
+        {}
+        EOF
   - name: Playwright browser launch preflight
     id: playwright-preflight
     env:
       EXPR_GITHUB_WORKSPACE: ${{ github.workspace }}
     run: |
-      PREFLIGHT_LOG="$EXPR_GITHUB_WORKSPACE/.playwright/preflight.log"
+      UNAVAILABLE_BROWSERS=""
       set +e
-      playwright-cli open --config "$EXPR_GITHUB_WORKSPACE/.playwright/cli.config.json" about:blank > "$PREFLIGHT_LOG" 2>&1
-      PREFLIGHT_STATUS=$?
-      playwright-cli close >> "$PREFLIGHT_LOG" 2>&1 || true
-      if [ $PREFLIGHT_STATUS -ne 0 ]; then
+      for BROWSER in chrome webkit; do
+        PREFLIGHT_LOG="$EXPR_GITHUB_WORKSPACE/.playwright/preflight-$BROWSER.log"
+        if [ "$BROWSER" = "webkit" ]; then
+          CONFIG="$EXPR_GITHUB_WORKSPACE/.playwright/webkit.config.json"
+        else
+          CONFIG="$EXPR_GITHUB_WORKSPACE/.playwright/cli.config.json"
+        fi
+        playwright-cli -s="preflight-$BROWSER" open about:blank --browser="$BROWSER" --config="$CONFIG" > "$PREFLIGHT_LOG" 2>&1
+        PREFLIGHT_STATUS=$?
+        playwright-cli -s="preflight-$BROWSER" close >> "$PREFLIGHT_LOG" 2>&1 || true
+        if [ $PREFLIGHT_STATUS -ne 0 ]; then
+          UNAVAILABLE_BROWSERS="$UNAVAILABLE_BROWSERS,$BROWSER"
+        fi
+      done
+      set -e
+      if [ -n "$UNAVAILABLE_BROWSERS" ]; then
         echo "preflight_failed=1" >> "$GITHUB_OUTPUT"
-        echo "preflight_log=$PREFLIGHT_LOG" >> "$GITHUB_OUTPUT"
-        echo "Playwright preflight failed; agent will report infrastructure blocker separately."
+        echo "unavailable_browsers=${UNAVAILABLE_BROWSERS#,}" >> "$GITHUB_OUTPUT"
+        echo "Playwright preflight failed for ${UNAVAILABLE_BROWSERS#,}; agent will report infrastructure blocker separately."
       else
         echo "preflight_failed=0" >> "$GITHUB_OUTPUT"
       fi
@@ -95,8 +139,10 @@ features:
 evals:
   - id: device_tests_completed
     question: Did the agent test the documentation site across the requested device form factors?
+  - id: compatibility_matrix_completed
+    question: Did the agent test both Chrome and WebKit in light and dark color schemes?
   - id: results_reported
-    question: Did the agent report the multi-device test results and any responsive design or functionality findings?
+    question: Did the agent report results by device, browser engine, and color scheme with reproducible evidence?
 ---
 
 {{#runtime-import? .github/shared-instructions.md}}
@@ -110,15 +156,17 @@ You are a documentation testing specialist. Your task is to comprehensively test
 - Repository: ${{ github.repository }}
 - Triggered by: @${{ github.actor }}
 - Devices to test: ${{ inputs.devices || 'mobile,tablet,desktop' }}
+- Browser engines to test: Chrome and WebKit
+- Color schemes to test: light and dark
 - Working directory: ${{ github.workspace }}
 
-You must call either `noop` or `create-issue` before exiting. Call `noop` if all tests pass or testing is blocked, and `create-issue` if documentation problems are found. Do this as your last action.
+For pull requests, call `create_check_run` as your last action: use `success` when every matrix entry passes, `failure` for reproducible documentation defects, and `action_required` when any required entry is blocked or incomplete. For scheduled and manual runs, call `noop` if all tests pass or testing is blocked, and `create_issue` if documentation problems are found. If screenshots were captured, call `upload_artifact` before the final result output.
 
-Playwright is available through `playwright-cli`. Use `${{ github.workspace }}/.playwright/cli.config.json` for every browser command. If `.playwright/preflight.log` contains a Chromium startup error, report an infrastructure blocker rather than a documentation regression.
+Playwright is available through `playwright-cli`. Use `${{ github.workspace }}/.playwright/cli.config.json` for Chrome and `${{ github.workspace }}/.playwright/webkit.config.json` for WebKit. Inspect `.playwright/preflight-chrome.log`, `.playwright/preflight-webkit.log`, and `.playwright/webkit-install.log` before testing. Report installation or browser startup errors as infrastructure blockers rather than documentation regressions.
 
 ## Your Mission
 
-Discover how this repository builds and previews its documentation, start the preview server, and test layout responsiveness, accessibility, interactive elements, and visual rendering across the requested device classes. Use one browser instance for the run.
+Discover how this repository builds and previews its documentation, start the preview server, and test layout responsiveness, accessibility, interactive elements, and visual rendering across the requested device classes, browser engines, and color schemes. Use one named browser session per engine and reuse it for that engine's complete matrix.
 
 ## Step 1: Discover and Start the Documentation Site
 
@@ -133,7 +181,7 @@ The workflow has already installed dependencies reproducibly from the lockfile a
 
 If the repository does not define enough information to build and preview its documentation, call `noop` with the missing prerequisite and stop.
 
-## Step 2: Device Configuration
+## Step 2: Compatibility Matrix
 
 Test these device types based on input `${{ inputs.devices }}`:
 
@@ -141,51 +189,60 @@ Test these device types based on input `${{ inputs.devices }}`:
 **Tablet:** iPad (768x1024), iPad Pro 11 (834x1194), iPad Pro 12.9 (1024x1366)
 **Desktop:** HD (1366x768), FHD (1920x1080), 4K (2560x1440)
 
+Test every requested viewport in both Chrome and WebKit, first with `colorScheme: "light"` and then with `colorScheme: "dark"`. WebKit is a Safari compatibility signal, not proof of behavior on physical iOS hardware; describe it accurately in reports.
+
 ## Step 3: Run Browser Tests
 
-Use `playwright-cli <command>` in bash. Do not use Playwright MCP tool names or create standalone scripts. Open the derived local site URL once with the supplied config, then use `playwright-cli run-code` for viewport-specific checks.
+Use `playwright-cli <command>` in bash. Do not use Playwright MCP tool names or create standalone scripts. For each engine, open the derived local site URL once in a named session with `--browser` and the matching config, then use `playwright-cli -s=<session> run-code` for color-scheme and viewport-specific checks. Use `page.emulateMedia({ colorScheme })` before navigation and verify the requested scheme with `matchMedia`.
 
 Before device testing, inspect the browser preflight:
 
 ```bash
-PREFLIGHT_LOG="${{ github.workspace }}/.playwright/preflight.log"
-if [ -f "$PREFLIGHT_LOG" ] && grep -qi "error\|failed\|operation not permitted" "$PREFLIGHT_LOG"; then
-  echo "Playwright preflight failed before docs checks. See $PREFLIGHT_LOG"
-  cat "$PREFLIGHT_LOG"
-fi
+for PREFLIGHT_LOG in "${{ github.workspace }}"/.playwright/preflight-*.log; do
+  if grep -qi "error\|failed\|operation not permitted" "$PREFLIGHT_LOG"; then
+    echo "Playwright preflight failed before docs checks. See $PREFLIGHT_LOG"
+    cat "$PREFLIGHT_LOG"
+  fi
+done
 ```
 
-For each requested viewport:
+For each browser, color scheme, and requested viewport:
 
 - navigate with `waitUntil: 'domcontentloaded'` and a 30-second timeout;
 - verify the page has a title, one visible main-content region, and no horizontal document overflow;
 - check for text or controls clipped outside the viewport;
+- inspect every visible diagram, illustration, `<picture>`, `<img>`, SVG `<image>`, CSS background image, and data-URI image for a palette that conflicts with the rendered page color scheme;
+- use rendered pixels and browser state such as `currentSrc`, `matchMedia`, and computed styles as evidence; do not infer appearance from source markup alone;
 - inspect semantic headings, landmark regions, accessible names, focus visibility, and color-contrast problems that can be established from browser evidence;
 - exercise visible same-origin navigation and interactive controls, including a menu or search control when present;
 - verify internal navigation reaches the expected same-origin destination;
-- capture a full-page screenshot and record console errors, failed requests, and broken images.
+- capture a full-page screenshot under `/tmp/gh-aw/agent/multi-device-docs/screenshots/` using a filesystem-safe `{browser}-{scheme}-{device}.png` name, and record console errors, failed requests, and broken images.
 
 Discover controls by role, accessible name, and visibility. Do not assume framework-specific classes, routes, or DOM structure. A feature that is absent is not a failure unless the repository's documentation or visible interface claims it exists.
 
 ## Step 4: Analyze Results
 
-Organize findings as critical, warning, or passed. Report only reproducible documentation defects; keep infrastructure and test-harness failures separate.
+Organize findings as critical, warning, or passed. Report only reproducible documentation defects; keep infrastructure and test-harness failures separate. A browser/color-scheme combination that was not tested makes the run incomplete, never passed.
 
 ## Step 5: Report Results
 
-### If NO Issues Found
+### Pull Request Runs
+
+Call `create_check_run` with a concise matrix table grouped by browser and color scheme. Include screenshots in an artifact first. Use `failure` for confirmed defects, `success` only when all required combinations pass, and `action_required` for incomplete coverage or infrastructure blockers.
+
+### Scheduled or Manual Runs With NO Issues Found
 
 Call `noop` to log completion:
 
 ```json
 {
   "noop": {
-    "message": "Multi-device documentation testing complete. All {device_count} devices tested successfully with no issues found."
+    "message": "Multi-device documentation testing complete. All {matrix_count} browser, color-scheme, and device combinations passed."
   }
 }
 ```
 
-### If Issues ARE Found
+### Scheduled or Manual Runs With Issues Found
 
 Create one issue titled "Multi-Device Docs Testing Report - [Date]" with:
 
@@ -194,6 +251,8 @@ Create one issue titled "Multi-Device Docs Testing Report - [Date]" with:
 - Triggered by: @${{ github.actor }}
 - Workflow run: [§${{ github.run_id }}](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }})
 - Devices tested: {count}
+- Browser engines tested: {count}
+- Color schemes tested: {count}
 - Test date: [Date]
 
 ### Results Overview
@@ -212,16 +271,9 @@ Create one issue titled "Multi-Device Docs Testing Report - [Date]" with:
 </details>
 
 <details>
-<summary>View Detailed Test Results by Device</summary>
+<summary>View Detailed Compatibility Matrix</summary>
 
-#### Mobile Devices
-[Test results, screenshots, findings]
-
-#### Tablet Devices
-[Test results, screenshots, findings]
-
-#### Desktop Devices
-[Test results, screenshots, findings]
+[Test results and findings grouped by browser, color scheme, and device]
 
 </details>
 
@@ -238,7 +290,7 @@ No manual server cleanup is required. The server process will be cleaned up auto
 
 ## Summary
 
-Always finish with exactly one safe output: create one issue for reproducible defects, or call `noop` with the tested devices and pass or blocker status.
+Always finish with exactly one result safe output: `create_check_run` for pull requests, or one `create_issue`/`noop` for scheduled and manual runs. An `upload_artifact` request containing captured screenshots may precede that final result output.
 
 ### Output Format
 

@@ -952,6 +952,20 @@ test("SVG visual audit covers every tracked SVG in both color schemes", () => {
   assert.match(source, /Never claim success if any manifest entry was skipped/);
 });
 
+test("multi-device docs tester covers PR browser and appearance compatibility", () => {
+  const source = workflow("multi-device-docs-tester.md");
+
+  assert.match(source, /pull_request:/);
+  assert.match(source, /- "docs\/\*\*"/);
+  assert.match(source, /for BROWSER in chrome webkit/);
+  assert.match(source, /colorScheme: "light"/);
+  assert.match(source, /colorScheme: "dark"/);
+  assert.match(source, /currentSrc/);
+  assert.match(source, /create-check-run:/);
+  assert.match(source, /action_required/);
+  assert.match(source, /multi-device-docs\/screenshots/);
+});
+
 test("docs diagram generator creates one validated theme-aware SVG pair", () => {
   const source = workflow("docs-explanatory-diagrams.md");
 
