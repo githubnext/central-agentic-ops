@@ -21,24 +21,10 @@ jobs:
           cache: npm
       - name: Install dependencies
         run: npm ci
-      - name: Checkout grader-capable gh-aw
-        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: Install gh-aw
+        uses: github/gh-aw-actions/setup-cli@1aa033c7bf25ac9428fe521065b90c30a7070c4e # v0.87.8
         with:
-          repository: github/gh-aw
-          ref: 5cd744cc263a9d1ec5660fbf5604eaceb6f83430
-          path: .cache/gh-aw
-          persist-credentials: false
-      - name: Setup Go
-        uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
-        with:
-          go-version-file: .cache/gh-aw/go.mod
-          cache-dependency-path: .cache/gh-aw/go.sum
-      - name: Install grader-capable gh-aw
-        working-directory: .cache/gh-aw
-        run: |
-          go build -ldflags "-s -w -X main.version=v0.87.6" -o gh-aw ./cmd/gh-aw
-          gh extension remove aw || true
-          gh extension install .
+          version: v0.87.8
       - name: Run release gate
         env:
           CENTRAL_AGENTIC_OPS_PACKAGE_SOURCE: ${{ github.repository }}@${{ github.sha }}
