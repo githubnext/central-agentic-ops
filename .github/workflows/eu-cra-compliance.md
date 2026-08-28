@@ -111,7 +111,7 @@ safe-outputs:
     max: 48
 ---
 
-{{#runtime-import? .github/aw/eu-cra-compliance.md}}
+{{#runtime-import? .github/cao/eu-cra-compliance.md}}
 
 <!-- EU CRA Advisor is advisory and non-binding. This workflow provides no guarantee of completeness, correctness, accuracy, or alignment with the EU Cyber Resilience Act. -->
 

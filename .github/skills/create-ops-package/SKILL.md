@@ -31,7 +31,7 @@ Turn an operational idea into a complete package of GitHub Agentic Workflows. A 
 Every orchestrator and worker prompt must include this operation-level runtime import immediately after its closing frontmatter:
 
 ```aw
-{{#runtime-import? .github/aw/<package-slug>.md}}
+{{#runtime-import? .github/cao/<package-slug>.md}}
 ```
 
 Use the same package slug and steering file for the orchestrator and all of its workers. Keep the `?` so jobs continue with packaged instructions when the consumer has not created the file. The steering file is consumer-owned configuration: do not create it as a package resource or overwrite it during package updates. Steering may refine selection, prioritization, and execution only within the workflow's existing permissions, tools, safety policy, and dispatch limits.
@@ -132,6 +132,6 @@ Before finishing:
 10. Confirm every existing operational-value evaluator remains under `.github/graders/` and registered by its worker, or explicitly identify each new worker whose value design is pending adoption.
 11. Run `gh aw compile <workflow.md>` for every new orchestrator and worker. Then run the repository's narrowest relevant tests or validation command if one exists.
 12. Review the generated diff for accidental lockfile churn, secret exposure, unsafe live defaults, fabricated value evidence, and deviations from the nearest package that are not justified by the strategy.
-13. Confirm every orchestrator and worker uses the same optional `.github/aw/<package-slug>.md` runtime import and that no package-owned steering file was added.
+13. Confirm every orchestrator and worker uses the same optional `.github/cao/<package-slug>.md` runtime import and that no package-owned steering file was added.
 
 Report the created package, worker responsibilities, shared imports, rollout variables, per-worker ops-value status, and validation results.

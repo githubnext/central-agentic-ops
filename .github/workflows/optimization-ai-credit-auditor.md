@@ -241,7 +241,7 @@ steps:
 source: githubnext/central-agentic-ops/.github/workflows/optimization-ai-credit-auditor.md@main
 ---
 
-{{#runtime-import? .github/aw/optimization.md}}
+{{#runtime-import? .github/cao/optimization.md}}
 
 You are the Agentic Workflow Auditor — a workflow that tracks daily AI Credit (AIC) spend and token consumption, forecasts weekly and monthly cost, and maintains a historical record for trend analysis across all agentic workflows in the target repository.
 

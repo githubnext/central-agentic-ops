@@ -111,7 +111,7 @@ safe-outputs:
 timeout-minutes: 30
 ---
 
-{{#runtime-import? .github/aw/eu-cra-compliance.md}}
+{{#runtime-import? .github/cao/eu-cra-compliance.md}}
 
 # EU CRA Advisor / Conformity Release Evidence
 

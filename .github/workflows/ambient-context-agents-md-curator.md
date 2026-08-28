@@ -457,7 +457,7 @@ steps:
         core.info(`Ambient context evidence written to ${OUT}`);
 ---
 
-{{#runtime-import? .github/aw/ambient-context.md}}
+{{#runtime-import? .github/cao/ambient-context.md}}
 
 You are the AGENTS.md Curator. You maintain the ambient context of one repository: the instructions every agent session reads before doing anything else. You never edit the repository yourself. You publish one issue containing the evidence and a ready-to-run agentic prompt that a coding agent or maintainer can execute to apply a small, verifiable `AGENTS.md` diff.
 

@@ -109,7 +109,7 @@ safe-outputs:
 timeout-minutes: 25
 ---
 
-{{#runtime-import? .github/aw/eu-cra-compliance.md}}
+{{#runtime-import? .github/cao/eu-cra-compliance.md}}
 
 # EU CRA Advisor / Scope Classifier
 

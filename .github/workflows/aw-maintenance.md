@@ -97,7 +97,7 @@ safe-outputs:
     max: 50
 ---
 
-{{#runtime-import? .github/aw/aw-maintenance.md}}
+{{#runtime-import? .github/cao/aw-maintenance.md}}
 
 # AW Maintenance
 

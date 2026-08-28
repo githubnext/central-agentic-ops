@@ -718,7 +718,7 @@ test("operation workflows optionally load per-operation markdown steering", () =
   const packageSkill = readFileSync(join(root, ".github", "skills", "create-ops-package", "SKILL.md"), "utf8");
 
   assert.match(packageSkill, /Every orchestrator and worker prompt must include/);
-  assert.match(packageSkill, /\{\{#runtime-import\? \.github\/aw\/<package-slug>\.md\}\}/);
+  assert.match(packageSkill, /\{\{#runtime-import\? \.github\/cao\/<package-slug>\.md\}\}/);
 
   for (const [name, operation] of [
     ["advisory.md", "advisory"],
@@ -745,7 +745,7 @@ test("operation workflows optionally load per-operation markdown steering", () =
   ]) {
     assert.match(
       workflow(name),
-      new RegExp(`^\\{\\{#runtime-import\\? \\.github/aw/${operation}\\.md\\}\\}$`, "m"),
+      new RegExp(`^\\{\\{#runtime-import\\? \\.github/cao/${operation}\\.md\\}\\}$`, "m"),
     );
   }
 });

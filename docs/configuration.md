@@ -39,7 +39,7 @@ Add an App or PAT when the target is private or internal. Keep the mode at `revi
 
 ## Markdown Steering
 
-Each workflow in an operation can load repository-specific instructions from `.github/aw/<operation>.md` in the control repository. For example, `.github/aw/dependabot.md` can describe organization-specific dependency priorities, repositories to prefer or avoid, or additional evidence to consider. The same file steers both orchestrator selection and worker execution.
+Each workflow in an operation can load repository-specific instructions from `.github/cao/<operation>.md` in the control repository. For example, `.github/cao/dependabot.md` can describe organization-specific dependency priorities, repositories to prefer or avoid, or additional evidence to consider. The same file steers both orchestrator selection and worker execution.
 
 The supported operation names are `advisory`, `ambient-context`, `aw-failures`, `aw-maintenance`, `dependabot`, `eu-cra-compliance`, and `optimization`. These files are optional runtime imports: operation jobs continue with their packaged instructions when the steering file does not exist. Because steering files are separate from package-owned workflow sources, `gh aw update` does not overwrite them.
 

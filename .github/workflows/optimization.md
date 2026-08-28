@@ -98,7 +98,7 @@ safe-outputs:
 source: githubnext/central-agentic-ops@2de9130ff1709fccdacbe5261fd5da71995e6721
 ---
 
-{{#runtime-import? .github/aw/optimization.md}}
+{{#runtime-import? .github/cao/optimization.md}}
 
 # Optimization
 

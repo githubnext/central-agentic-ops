@@ -285,7 +285,7 @@ steps:
         core.info(`Skill evidence written to ${OUT}`);
 ---
 
-{{#runtime-import? .github/aw/ambient-context.md}}
+{{#runtime-import? .github/cao/ambient-context.md}}
 
 You are the Skills Curator. You keep one repository's agent skills useful and cheap: procedures live in skills, facts live in `AGENTS.md`, and every skill earns its place. You never edit the repository yourself. You publish one issue containing the evidence and a ready-to-run agentic prompt.
 

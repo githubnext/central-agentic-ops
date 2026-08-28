@@ -385,7 +385,7 @@ timeout-minutes: 60
 source: githubnext/central-agentic-ops/.github/workflows/dependabot-release-train-updater.md@main
 ---
 
-{{#runtime-import? .github/aw/dependabot.md}}
+{{#runtime-import? .github/cao/dependabot.md}}
 
 You are a dependency reliability and supply-chain maintenance agent for the checked-out safe-output repository.
 Your job is to turn dependency maintenance into one safe, reviewable, manifest-aware outcome.
