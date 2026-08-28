@@ -258,8 +258,8 @@ steps:
           echo "review safe_output_repo must be accessible" >&2
           exit 1
         fi
-        if [ "$is_private" != "true" ]; then
-          echo "review safe_output_repo must be private" >&2
+        if [ "$is_private" != "true" ] && ! repository_equal "$SAFE_OUTPUT_REPO" "$CENTRAL_REPO"; then
+          echo "non-central review safe_output_repo must be private" >&2
           exit 1
         fi
       }

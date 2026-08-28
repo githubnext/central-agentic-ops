@@ -7,6 +7,11 @@ set -euo pipefail
 : "${CONTROL_REF:?CONTROL_REF is required}"
 : "${RUNS:?RUNS is required}"
 : "${CONFIRMATION:?CONFIRMATION is required}"
+: "${GITHUB_REPOSITORY:?GITHUB_REPOSITORY is required}"
+
+repository_equal() {
+  [[ "$(printf '%s' "$1" | tr '[:upper:]' '[:lower:]')" == "$(printf '%s' "$2" | tr '[:upper:]' '[:lower:]')" ]]
+}
 
 case "$BUNDLE" in
   advisory) workflow_file=advisory.lock.yml ;;
@@ -27,8 +32,9 @@ esac
   || { printf 'review and target repositories must differ\n' >&2; exit 1; }
 [[ "$CONFIRMATION" == "STRESS $TARGET_REPO REVIEW $SAFE_OUTPUT_REPO $RUNS" ]] \
   || { printf 'confirmation must be STRESS %s REVIEW %s %s\n' "$TARGET_REPO" "$SAFE_OUTPUT_REPO" "$RUNS" >&2; exit 1; }
-[[ $(gh api "repos/$SAFE_OUTPUT_REPO" --jq '.private') == true ]] \
-  || { printf 'review repository must be private\n' >&2; exit 1; }
+is_private=$(gh api "repos/$SAFE_OUTPUT_REPO" --jq '.private')
+[[ "$is_private" == true ]] || repository_equal "$SAFE_OUTPUT_REPO" "$GITHUB_REPOSITORY" \
+  || { printf 'non-central review repository must be private\n' >&2; exit 1; }
 
 snapshot_repository() {
   local repository=$1
