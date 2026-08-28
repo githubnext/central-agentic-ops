@@ -1,6 +1,6 @@
 ---
 emoji: ":clipboard:"
-description: "Weekly audit of Advisory workflow coverage against current UK government AI open-code and vulnerability-risk guidance."
+description: "Weekly audit of UK AI Advisory workflow coverage against current UK government AI open-code and vulnerability-risk guidance."
 name: "UK AI Advisory / Package Maintainer"
 max-ai-credits: 200
 timeout-minutes: 20
@@ -75,11 +75,11 @@ safe-outputs:
   noop:
 ---
 
-<!-- Advisory outputs are advisory and non-binding. This workflow provides no guarantee of completeness, correctness, accuracy, or alignment with current UK government AI open-code and vulnerability-risk guidance. -->
+<!-- UK AI Advisory outputs are advisory and non-binding. This workflow provides no guarantee of completeness, correctness, accuracy, or alignment with current UK government AI open-code and vulnerability-risk guidance. -->
 
 # UK AI Advisory / Package Maintainer
 
-Audit the operation workflows in this package against the original specification and current authoritative GOV.UK guidance at `https://www.gov.uk/guidance/ai-open-code-and-vulnerability-risk-in-the-public-sector`. Maintain a durable capability ledger and, when useful, propose the single highest-priority concrete fleet improvement. This workflow audits the Advisory package only; it does not assess target repositories, establish security, or authorize an open-code or closure decision.
+Audit the operation workflows in this package against the original specification and current authoritative GOV.UK guidance at `https://www.gov.uk/guidance/ai-open-code-and-vulnerability-risk-in-the-public-sector`. Maintain a durable capability ledger and, when useful, propose the single highest-priority concrete fleet improvement. This workflow audits the UK AI Advisory package only; it does not assess target repositories, establish security, or authorize an open-code or closure decision.
 
 ## Trusted scope
 

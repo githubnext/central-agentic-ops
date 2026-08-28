@@ -111,7 +111,7 @@ safe-outputs:
 
 # UK AI Advisory
 
-Advisory, non-binding package orchestrator for applying UK public-sector AI open-code and vulnerability-risk guidance across organization repositories. It provides no security assessment, accreditation, authorization, or guarantee of completeness. Select and rank repositories only; the worker owns repository analysis and every finding requires human review against current authoritative guidance.
+UK AI Advisory, a non-binding package orchestrator for applying UK public-sector AI open-code and vulnerability-risk guidance across organization repositories. It provides no security assessment, accreditation, authorization, or guarantee of completeness. Select and rank repositories only; the worker owns repository analysis and every finding requires human review against current authoritative guidance.
 
 ## Discovery
 
