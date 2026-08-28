@@ -432,8 +432,11 @@ test("package manifests exclude repository-only tests", () => {
 
 test("operational-value graders expose deterministic run-scoped contracts", () => {
   const gradersDirectory = join(root, ".github", "graders");
-  const graders = readdirSync(gradersDirectory).filter((name) => name.endsWith("-operational-value.sh")).sort();
-  assert.deepEqual(graders, [
+  const packageGradersDirectory = join(root, ".github", "workflows", "graders");
+  const packageMaintainerGrader = "eu-cra-compliance-package-maintainer-operational-value.sh";
+  const graders = readdirSync(gradersDirectory).filter((name) => name.endsWith("-operational-value.sh"));
+  const packageGraders = readdirSync(packageGradersDirectory).filter((name) => name.endsWith("-operational-value.sh"));
+  assert.deepEqual([...graders, ...packageGraders].sort(), [
     "ambient-context-agents-md-curator-operational-value.sh",
     "aw-failures-investigator-operational-value.sh",
     "dependabot-release-train-updater-operational-value.sh",
@@ -447,13 +450,16 @@ test("operational-value graders expose deterministic run-scoped contracts", () =
     "optimization-ai-credit-auditor-operational-value.sh",
     "optimization-ai-credit-optimizer-operational-value.sh",
   ]);
+  assert.deepEqual(packageGraders, [packageMaintainerGrader]);
 
-  for (const name of graders) {
-    const executable = join(gradersDirectory, name);
+  for (const name of [...graders, ...packageGraders]) {
+    const isPackageMaintainer = name === packageMaintainerGrader;
+    const executable = join(isPackageMaintainer ? packageGradersDirectory : gradersDirectory, name);
     const workflowName = name.replace(/-operational-value\.sh$/, ".md");
+    const runPath = isPackageMaintainer ? `./graders/${name}` : `.github/graders/${name}`;
     assert.match(
       workflow(workflowName),
-      new RegExp(`graders:\\s+operational-value:\\s+run: \\.github/graders/${name.replace(".", "\\.")}`),
+      new RegExp(`graders:\\s+operational-value:\\s+run: ${runPath.replaceAll(".", "\\.")}`),
       `${name}: workflow must execute the frozen operational-value evaluator`,
     );
     const definition = JSON.parse(execFileSync(executable, ["--definition"], { encoding: "utf8" }));
@@ -889,7 +895,7 @@ test("EU CRA Advisor workflows preserve advisory and human-review boundaries", (
   assert.match(maintainer, /draft: true/);
   assert.match(maintainer, /create-issue:[\s\S]*?max: 1/);
   assert.match(maintainer, /deduplicate-by-title: true/);
-  assert.match(maintainer, /graders:\n\s+operational-value:\n\s+run: \.github\/graders\/eu-cra-compliance-package-maintainer-operational-value\.sh/);
+  assert.match(maintainer, /graders:\n\s+operational-value:\n\s+run: \.\/graders\/eu-cra-compliance-package-maintainer-operational-value\.sh/);
   assert.doesNotMatch(maintainer, /shared\/control\.md/);
 
   const ledger = readFileSync(join(root, "eu-cra-compliance", "implementation-status.md"), "utf8");

@@ -49,4 +49,4 @@ Each worker has an independent `<WORKER>_ENABLED` kill switch and `<WORKER>_MAX_
 - Regulatory dates and interpretations are verified against current authoritative sources; non-binding guidance is labeled.
 - All package agents use Pi with the GitHub Copilot backend through the CLI and GitHub proxies.
 
-Direct checkouts include frozen operational-value evaluators for all six repository workers and the package maintainer. Grader transport through `gh aw add` remains pending upstream installer support, so package consumers do not yet receive the referenced evaluator files.
+Direct checkouts include frozen operational-value evaluators for all six repository workers and the package maintainer. `gh aw add` transports the focused package's workflow-local package-maintainer evaluator with the installed workflow.
