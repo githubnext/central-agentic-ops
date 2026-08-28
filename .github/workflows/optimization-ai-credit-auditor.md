@@ -1,7 +1,7 @@
 ---
 emoji: ":mag:"
 
-description: "Daily audit of AI Credit (AIC) usage across all agentic workflows with historical trend tracking"
+description: "Daily audit and forecast of AI Credit (AIC) usage across all agentic workflows with historical trend tracking"
 
 name: "Optimization / AI Credit Auditor"
 
@@ -116,7 +116,7 @@ safe-outputs:
     allowed-exts: [.png, .jpg, .jpeg, .svg]
     max: 5
 
-timeout-minutes: 25
+timeout-minutes: 35
 
 steps:
   - name: Setup Python
@@ -200,11 +200,48 @@ steps:
           '{window_start:$windowStart,window_end:$windowEnd,runs:[],summary:{}}' \
           > /tmp/gh-aw/token-audit/workflow-logs.json
       fi
+  - name: Forecast AI Credit spend
+    env:
+      GH_TOKEN: ${{ steps.github-mcp-app-token.outputs.token || secrets.GH_AW_GITHUB_TOKEN || secrets.GITHUB_TOKEN }}
+      TARGET_REPOSITORY: ${{ inputs.target_repo }}
+    run: |
+      set -uo pipefail
+      FORECAST_DIR=/tmp/gh-aw/token-audit
+      FORECAST_JSON="$FORECAST_DIR/forecast.json"
+      FORECAST_METADATA="$FORECAST_DIR/forecast-metadata.txt"
+      mkdir -p "$FORECAST_DIR"
+
+      FORECAST_EXIT_CODE=0
+      gh aw forecast \
+        --repo "$TARGET_REPOSITORY" \
+        --days 30 \
+        --period month \
+        --sample 100 \
+        --concurrency 8 \
+        --timeout 10 \
+        --verbose \
+        --json \
+        > "$FORECAST_JSON" || FORECAST_EXIT_CODE=$?
+
+      FORECAST_JSON_VALID=false
+      if jq -e '(.period | type == "string") and (.workflows | type == "array")' "$FORECAST_JSON" >/dev/null 2>&1; then
+        FORECAST_JSON_VALID=true
+      fi
+
+      {
+        printf 'exit_code=%s\n' "$FORECAST_EXIT_CODE"
+        printf 'json_valid=%s\n' "$FORECAST_JSON_VALID"
+        printf 'repository=%s\n' "$TARGET_REPOSITORY"
+        printf 'generated_at=%s\n' "$(date -u +'%Y-%m-%dT%H:%M:%SZ')"
+      } > "$FORECAST_METADATA"
+
+      echo "Forecast exit code: $FORECAST_EXIT_CODE"
+      echo "Forecast JSON valid: $FORECAST_JSON_VALID"
 
 source: githubnext/central-agentic-ops/.github/workflows/optimization-ai-credit-auditor.md@main
 ---
 
-You are the Agentic Workflow Auditor — a workflow that tracks daily AI Credit (AIC) spend and token consumption across all agentic workflows in the target repository and maintains a historical record for trend analysis.
+You are the Agentic Workflow Auditor — a workflow that tracks daily AI Credit (AIC) spend and token consumption, forecasts weekly and monthly cost, and maintains a historical record for trend analysis across all agentic workflows in the target repository.
 
 ## Workspace Layout
 
@@ -217,8 +254,9 @@ Recreate safe outputs there without pretending the control-plane repo is the tar
 ## Mission
 
 1. Parse the pre-downloaded agentic workflow logs and compute per-workflow AI credit spend and token usage metrics.
-2. Persist today's snapshot to repo-memory so the optimizer (and future runs of this audit) can read historical data.
-3. Publish a concise audit issue summarizing today's AI credit spend and trend highlights.
+2. Validate the precomputed `gh aw forecast` output and calculate weekly and monthly AIC and estimated USD scenarios.
+3. Persist today's snapshot to repo-memory so the optimizer (and future runs of this audit) can read historical data.
+4. Publish a concise audit issue summarizing today's AI credit spend, projected cost, data quality, and trend highlights.
 
 ## Data Sources
 
@@ -256,6 +294,27 @@ Each element of `.runs` is a `RunData` object with (among others):
 | `error_count` | int | Errors encountered |
 | `warning_count` | int | Warnings encountered |
 | `token_usage_summary` | object or null | Firewall-level breakdown by model |
+
+### Precomputed forecast
+
+The 30-day forecast is at `/tmp/gh-aw/token-audit/forecast.json`, and command status is at `/tmp/gh-aw/token-audit/forecast-metadata.txt`. Read both files before reporting a forecast. The JSON is the direct output of:
+
+```bash
+gh aw forecast --repo "$TARGET_REPO" --days 30 --period month --sample 100 --concurrency 8 --timeout 10 --verbose --json
+```
+
+Use these current forecast fields:
+
+| Field | Meaning |
+|---|---|
+| `workflows[].sampled_runs` | Runs used by the projection |
+| `workflows[].p50_aic_per_run`, `p95_aic_per_run` | Per-run AIC percentiles |
+| `workflows[].weekly_monte_carlo` | Weekly `p10_projected_aic`, `p50_projected_aic`, `p90_projected_aic`, and `is_reliable` |
+| `workflows[].monthly_monte_carlo` | Monthly `p10_projected_aic`, `p50_projected_aic`, `p90_projected_aic`, and `is_reliable` |
+| `workflows[].weekly_projected_aic`, `monthly_projected_aic` | Point-estimate fallbacks when a Monte Carlo object is absent |
+| `workflows[].run_samples` | Historical run IDs, dates, URLs, and AIC used by the projection |
+
+AI Credits are the gh-aw cost metric. Use `1 AIC = $0.01 USD` for estimated cost conversion. Label every USD amount as an estimate and state that billing dashboards remain authoritative.
 
 ### Repo-memory (historical snapshots)
 
@@ -307,7 +366,24 @@ Write a Python script to `/tmp/gh-aw/token-audit/process_audit.py` and run it. T
 
 Handle null/missing `aic` and `token_usage` by treating them as 0.
 
-## Phase 2 — Persist Snapshot to Repo-Memory
+## Phase 2 — Validate and Summarize the Forecast
+
+1. Read `forecast-metadata.txt`. Treat the forecast as complete only when `exit_code=0` and `json_valid=true`. A valid partial JSON document from a nonzero or timeout exit is incomplete evidence, not a complete repository forecast.
+2. Parse `forecast.json` without changing it. Never invent a missing workflow, sample, projection, or percentile.
+3. For each workflow, use `weekly_monte_carlo` and `monthly_monte_carlo` for P10/P50/P90. If a Monte Carlo object is absent but the corresponding point estimate is positive, use that estimate for all three scenarios and label the row as a point estimate without a confidence interval.
+4. Sum the same percentile across workflows to produce repository weekly and monthly scenarios. Label these totals as sums of per-workflow projections, not an independently simulated portfolio confidence interval.
+5. Convert forecast AIC to estimated USD by multiplying by `0.01`. Keep enough decimal places that a positive cost never renders as `$0.00`.
+6. Flag data quality limitations, including zero sampled runs, zero AIC despite sampled runs, `is_reliable=false`, stale samples, missing workflows, a nonzero command exit, invalid JSON, and intervals whose P90 is more than twice P50.
+
+Use these percentile definitions consistently:
+
+- **P10**: optimistic scenario; 10% of simulated outcomes fall below this value.
+- **P50**: median scenario; half of simulated outcomes fall below this value.
+- **P90**: conservative budget scenario; 90% of simulated outcomes fall below this value.
+
+If the forecast is unavailable or incomplete, still publish the observed-spend audit. Mark forecasts unavailable or partial, include the command status and specific data gap, and do not substitute a trend extrapolation.
+
+## Phase 3 — Persist Snapshot to Repo-Memory
 
 1. Read the snapshot from `/tmp/gh-aw/token-audit/audit_snapshot.json`.
 2. Copy it to the snapshot file for today's UTC date. Use `/tmp/gh-aw/repo-memory/default/YYYY-MM-DD.json` for local runs, or `/tmp/gh-aw/repo-memory/default/<owner>__<repo>__YYYY-MM-DD.json` when `target_repo` is present.
@@ -322,7 +398,7 @@ Do not append a synthetic zero-valued entry to `rolling-summary.json` when eithe
 
 Report those two cases differently in the issue as described below so the empty-window diagnosis stays precise while the historical trend remains unchanged.
 
-## Phase 3 — Generate Charts
+## Phase 4 — Generate Charts
 
 Create up to two chart images in `/tmp/gh-aw/token-audit/charts/` using Python, `matplotlib`, and `seaborn` with `whitegrid` styling:
 
@@ -343,7 +419,7 @@ Chart requirements:
 - In the issue template below, replace `UPLOAD_URL_TREND_PLACEHOLDER` with the URL returned for `ai_credits_trend.png`.
 - If a chart is skipped, omit that image markdown line entirely instead of leaving a placeholder behind.
 
-## Phase 4 — Publish Audit Issue
+## Phase 5 — Publish Audit Issue
 
 Create an issue with these sections:
 
@@ -362,15 +438,33 @@ Create an issue with these sections:
 - **Period**: last 24 hours (YYYY-MM-DD to YYYY-MM-DD)
 - **Total runs**: N
 - **Total AI credits**: N.NN AIC
+- **Estimated observed cost**: $N.NNNN USD (`total AI credits * $0.01`; billing estimate)
 - **Total tokens**: N (formatted with commas)
 - **Total Actions minutes**: X.X min
 - **Active workflows**: N
+- **Next 7 days**: P10 N AIC / $N, P50 N AIC / $N, P90 N AIC / $N
+- **Next 30 days**: P10 N AIC / $N, P50 N AIC / $N, P90 N AIC / $N
 
 ### 🏆 Top 5 Workflows by AI Credit Spend
 
 | Workflow | Runs | Total AI Credits | Avg AI Credits |
 |---|---|---|---|
 | ... | ... | ... | ... |
+
+### Cost Forecast
+
+Forecasts are estimates derived from historical samples. Billing dashboards are authoritative.
+
+| Horizon | P10 optimistic | P50 median | P90 conservative |
+|---|---:|---:|---:|
+| Next 7 days | N AIC / $N USD | N AIC / $N USD | N AIC / $N USD |
+| Next 30 days | N AIC / $N USD | N AIC / $N USD | N AIC / $N USD |
+
+State that repository totals are sums of per-workflow projections. Then include a concise table of the top workflows by monthly P50 with sampled runs, weekly P50, monthly P10/P50/P90, and estimated monthly P50 USD. Put the complete per-workflow forecast table in a `<details>` block.
+
+### Forecast Confidence and Data Quality
+
+State whether the forecast command completed, identify unreliable or missing workflow projections, and explain material interval width or sampling limitations. Use `none` when no limitation was detected; never omit this section.
 
 ### 📈 Trends
 
