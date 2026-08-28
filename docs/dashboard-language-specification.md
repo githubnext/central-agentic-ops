@@ -196,7 +196,7 @@ Language keys and enumerated values use canonical kebab-case. Human-readable tit
 | Custom page | `id`, `kind`, `title`, `description`, `views` |
 | View | `id`, `title`, `description`, `data`, `mark`, `encoding` |
 | View `data` | `source`, `scope`, `time`, `filters`, `limit`, `order-by` |
-| Field definition | `field`, `type`, `aggregate`, `time-unit`, `title` |
+| Field definition | `field`, `type`, `aggregate`, `time-unit`, `title`, `as` (only when `aggregate` is not `none`) |
 
 ### 4.3 Normative Document Requirements
 
@@ -316,6 +316,8 @@ Allowed `time-unit` values are `hour`, `day`, `week`, and `month`. Buckets are h
 
 Unaggregated dimensions in an encoding form the grouping key. Aggregated fields are computed once per resulting group. A metric with no unaggregated dimension computes one value over its effective context.
 
+A field definition may also include an optional `as` property to name the aggregate output for subsequent references. This allows a view to refer to a derived metric by a stable identifier instead of inferring an implementation-specific name. When `as` is omitted, the canonical identifier is `<aggregate>-<field>`. See **DLS-AGG-009** and **DLS-AGG-010** for the normative validation rules.
+
 ### 7.4 Normative Aggregation Requirements
 
 - **DLS-AGG-001:** An implementation **MUST** group only by dimensions and **MUST** aggregate only measures or entity identifiers compatible with the selected aggregate.
@@ -325,7 +327,9 @@ Unaggregated dimensions in an encoding form the grouping key. Aggregated fields 
 - **DLS-AGG-005:** Grader `value` and `operational-value` **MUST** use `none`, `mean`, `min`, or `max`, and aggregation **MUST** retain grader identity or operational-value definition, respectively.
 - **DLS-AGG-006:** `count` and `distinct-count` **MUST** ignore absent values and **MUST NOT** substitute zero.
 - **DLS-AGG-007:** A time unit **MUST** be applied before grouping and **MUST** use the UTC boundaries in Section 7.3.
-- **DLS-AGG-008:** Rankings **MUST** disclose the ranked measure, direction, filters, time range, scope, and tie behavior; ties **MUST** then be ordered by canonical entity ID ascending.
+- **DLS-AGG-008:** Rankings **MUST** disclose the ranked measure, direction, filters, time range, scope, and tie behavior; the ranking key **MUST** be resolved against the post-aggregation output identifier before applying `limit`, and ties **MUST** then be ordered by canonical entity ID ascending.
+- **DLS-AGG-009:** A field definition with `aggregate` other than `none` **MAY** include `as`; if omitted, the validator **MUST** derive a canonical output identifier as `<aggregate>-<field>`. A field definition with `aggregate: none` **MUST NOT** include `as`.
+- **DLS-AGG-010:** A view **MUST** reject duplicate aggregate-output identifiers within the same view and **MUST** reject ambiguous or invalid `data.order-by.field` references that do not resolve to exactly one source field at the output grain or one aggregate-output identifier; such failures **MUST** use `DLS-E010`.
 
 ---
 
@@ -453,6 +457,13 @@ View `data` contains `source` and may also contain:
 
 An omitted `data` inherits dashboard defaults. Omitted `limit` means no language-level limit. Omitted `order-by` orders entity-grain rows by canonical entity ID ascending and leaves aggregate groups ordered by their encoded dimensions ascending.
 
+`data.order-by.field` resolves against the post-aggregation output grain. It **MUST** reference either:
+
+1. a source field still valid at the output grain without aggregation; or
+2. an aggregate-output identifier produced by an encoding field definition, using the explicit `as` value or the canonical `<aggregate>-<field>` output name when `as` is omitted.
+
+If `order-by.field` matches more than one possible output, or matches a source field that is not present at the post-aggregation output grain, the validator **MUST** reject the document with `DLS-E010`. A presenter **MUST** apply the ranking using the resolved output identifier before `limit`, then apply the tie rule in **DLS-AGG-008**.
+
 ### 11.3 Normative Custom-View Requirements
 
 - **DLS-VIEW-001:** A custom page **MUST** contain `id`, `kind: custom`, and a non-empty `views` sequence; an omitted title **MUST** default from its page ID.
@@ -461,12 +472,12 @@ An omitted `data` inherits dashboard defaults. Omitted `limit` means no language
 - **DLS-VIEW-004:** `table` **MUST** encode non-empty `columns` and **MAY** encode `href`; it **MUST NOT** encode `value`, `x`, `y`, or `color`.
 - **DLS-VIEW-005:** `chart` **MUST** encode `x` and quantitative `y`, **MAY** encode `color` and `href`, and **MUST NOT** encode `value` or `columns`.
 - **DLS-VIEW-006:** A `chart` with temporal `x` **MUST** use the line time-series default; any other valid `chart` **MUST** use the bar default.
-- **DLS-VIEW-007:** An encoding field **MUST** exist in the selected source and its declared type **MUST** be compatible with its intrinsic type or aggregate output type; an `href` field **MUST** have intrinsic type link.
-- **DLS-VIEW-008:** A field definition **MUST** contain `field` and **MAY** contain only `type`, `aggregate`, `time-unit`, and `title` in addition.
+- **DLS-VIEW-007:** An encoding field **MUST** exist in the selected source and its declared type **MUST** be compatible with its intrinsic type or aggregate output type; when the field is aggregated, the effective output identifier **MUST** be the explicit `as` value or the canonical `<aggregate>-<field>` name, and duplicate identifiers within a view **MUST** be rejected. An `href` field **MUST** have intrinsic type link.
+- **DLS-VIEW-008:** A field definition **MUST** contain `field` and **MAY** contain only `type`, `aggregate`, `time-unit`, `title`, and `as` in addition; `as` is valid only when `aggregate` is not `none`.
 - **DLS-VIEW-009:** `time-unit` **MUST** be used only with a temporal field and **MUST** use an allowed value from Section 7.3.
-- **DLS-VIEW-010:** `data.limit` **MUST** be a positive integer, and `data.order-by` fields **MUST** exist in the selected source or be encoded aggregate outputs.
+- **DLS-VIEW-010:** `data.limit` **MUST** be a positive integer, and `data.order-by.field` **MUST** reference either a source field valid at the post-aggregation output grain or one unique aggregate-output identifier. Ambiguous or invalid order references **MUST** be rejected with `DLS-E010`.
 - **DLS-VIEW-011:** A custom view **MUST NOT** contain scripts, joins, formulas, expressions, templates, plugins, or undeclared transforms.
-- **DLS-VIEW-012:** A custom view **MUST** apply defaults, filtering, aggregation, ordering, and limiting in the order defined by Sections 6, 7, and 11.2.
+- **DLS-VIEW-012:** A custom view **MUST** apply defaults, filtering, aggregation, ordering, and limiting in the order defined by Sections 6, 7, and 11.2, and ordering **MUST** use the resolved output identifier before applying `limit` and then the canonical entity ID ascending tie-break from **DLS-AGG-008**.
 - **DLS-VIEW-013:** A custom view **MUST** expose its source provenance, freshness, completeness, effective scope, effective time range, and effective filters.
 - **DLS-VIEW-014:** A presenter rendering `href` **MUST** use the referenced link object's `href` as the navigation target and **MUST** expose the link object's `label` as the accessible link label. If the referenced link field is absent for a datum, the datum **MUST** remain valid and **MUST** render without a link.
 
@@ -478,7 +489,7 @@ Validation proceeds conceptually through YAML syntax, document count, structural
 
 - **DLS-VAL-001:** A validator **MUST** report every detected error with an error code, a human-readable message, and a location identifying the nearest YAML path.
 - **DLS-VAL-002:** A validator **MUST** reject a document when any Level 1 structural requirement fails.
-- **DLS-VAL-003:** A Level 2 or Level 3 validator **MUST** reject incompatible source fields, filters, aggregates, encodings, links, or data relationships. A validator **MUST** reject an `href` reference to a non-link field or an ambiguous multi-link field with link-specific error code `DLS-E009`.
+- **DLS-VAL-003:** A Level 2 or Level 3 validator **MUST** reject incompatible source fields, filters, aggregates, encodings, links, or data relationships. A validator **MUST** reject an `href` reference to a non-link field or an ambiguous multi-link field with link-specific error code `DLS-E009`, and **MUST** reject ambiguous or invalid aggregate-order references with `DLS-E010`.
 - **DLS-VAL-004:** Error reporting **MUST NOT** expose credentials, secret values, or sensitive source payloads.
 
 Error codes are listed in Appendix B.
@@ -706,7 +717,7 @@ dashboard:
             source: usage
             limit: 10
             order-by:
-              - field: aic
+              - field: sum-aic
                 direction: desc
           mark: table
           encoding:
@@ -716,6 +727,7 @@ dashboard:
               - field: aic
                 type: quantitative
                 aggregate: sum
+                as: sum-aic
 ```
 
 ### Appendix B: Error Codes (Normative)
@@ -731,7 +743,7 @@ dashboard:
 | `DLS-E007` | Incompatible mark, channel, type, or time unit |
 | `DLS-E008` | Forbidden executable or transformation feature |
 | `DLS-E009` | Unsafe, invalid, ambiguous, or incompatible link or `href` reference |
-| `DLS-E010` | Invalid scope, filter, time range, or aggregation |
+| `DLS-E010` | Invalid scope, filter, time range, aggregation, or aggregate-order reference |
 | `DLS-E011` | Invalid entity relationship or source grain |
 | `DLS-E012` | Missing required provenance or data-state metadata |
 
