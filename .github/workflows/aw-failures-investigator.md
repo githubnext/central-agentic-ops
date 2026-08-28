@@ -39,9 +39,9 @@ checkout:
     path: target
 
 env:
-  CENTRAL_AGENTIC_OPS_PACKAGE_ENABLED: ${{ vars.CENTRAL_AGENTIC_OPS_AW_FAILURES_ENABLED || 'true' }}
-  CENTRAL_AGENTIC_OPS_WORKER_ENABLED: ${{ vars.CENTRAL_AGENTIC_OPS_AW_FAILURES_INVESTIGATOR_ENABLED || 'true' }}
-  CENTRAL_AGENTIC_OPS_WORKER_MAX_MODE: ${{ vars.CENTRAL_AGENTIC_OPS_AW_FAILURES_INVESTIGATOR_MAX_MODE || 'review' }}
+  CENTRAL_AGENTIC_OPS_PACKAGE_ENABLED: ${{ vars.CENTRAL_AGENTIC_OPS_AW_MAINTENANCE_ENABLED || 'true' }}
+  CENTRAL_AGENTIC_OPS_WORKER_ENABLED: ${{ vars.CENTRAL_AGENTIC_OPS_AW_MAINTENANCE_FAILURES_ENABLED || 'true' }}
+  CENTRAL_AGENTIC_OPS_WORKER_MAX_MODE: ${{ vars.CENTRAL_AGENTIC_OPS_AW_MAINTENANCE_FAILURES_MAX_MODE || 'review' }}
   GH_AW_SAFE_OUTPUT_MODE: ${{ inputs.safe_output_mode || 'review' }}
   REVIEW_OUTPUT_REPO: ${{ inputs.safe_output_repo || github.repository }}
   SAFE_OUTPUT_REPO: ${{ (inputs.safe_output_mode || 'review') == 'review' && (inputs.safe_output_repo || github.repository) || inputs.target_repo }}
@@ -54,7 +54,7 @@ if: >-
 imports:
   - uses: shared/control.md
     with:
-      bundle: aw-failures
+      bundle: aw-maintenance
       role: worker
       allowed_owners: ${{ vars.CENTRAL_AGENTIC_OPS_ALLOWED_OWNERS || github.repository_owner }}
 
