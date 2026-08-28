@@ -1037,6 +1037,8 @@ test("daily dashboard renderer builds incrementally inside its own directory", (
   assert.match(source, /create-pull-request:[\s\S]*?allowed-files:\n\s+- "pages\/dashboard\/\*\*"/);
   assert.match(source, /push-to-pull-request-branch:[\s\S]*?allowed-files:\n\s+- "pages\/dashboard\/\*\*"/);
   assert.match(source, /pages\/dashboard\/PLAN\.md/);
+  assert.match(source, /If one exists, call `noop`/);
+  assert.doesNotMatch(source, /fetch and check out its branch/);
   assert.doesNotMatch(source, /allowed-files:\n(?:\s+- .*\n)*\s+- "(?!pages\/dashboard\/)/);
   assert.match(source, /Never modify[^.]*\.github\/scripts\/pages-report\//);
 });

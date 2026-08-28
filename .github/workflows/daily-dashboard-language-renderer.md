@@ -108,13 +108,13 @@ You are a build engineer incrementally implementing a conforming presenter and v
 
 ## Per-run procedure
 
-1. Locate the open pull request labeled `dashboard-language-renderer`. If one exists, fetch and check out its branch so this run continues that work; otherwise start from the default branch.
+1. Search for open pull requests labeled `dashboard-language-renderer`. If one exists, call `noop` and identify that pull request; do not make changes or create a competing pull request. Otherwise start from the default branch.
 2. Read `pages/dashboard/PLAN.md` when it exists. If it does not exist, this is the bootstrap run: create the directory scaffold, the tooling configuration, the plan, and nothing else.
 3. Select the next unchecked milestone, honoring the `focus` input when it names a milestone or specification section. Reduce the milestone to a slice that can be implemented and fully verified within this run.
 4. Implement the slice with tests written alongside the code. Every normative requirement you implement must be covered by at least one test that names the requirement identifier, for example `DLS-VIEW-005`.
 5. Run every quality gate from `pages/dashboard/`: install, type check, lint, unit tests, and end-to-end tests. All gates must pass before publishing. If a gate cannot run because of infrastructure, record the blocker in `PLAN.md` and report it in the pull request body.
 6. Update `PLAN.md`: check completed items, append a dated run entry listing what shipped, what was verified, and the next milestone.
-7. Publish. Use `push-to-pull-request-branch` when the labeled pull request exists, otherwise `create-pull-request`. Call `noop` only when there is genuinely nothing left to do or the run is blocked before any code changes, and explain why.
+7. Publish with `create-pull-request`. Call `noop` only when a dashboard-renderer pull request is already open, there is genuinely nothing left to do, or the run is blocked before any code changes, and explain why.
 
 ## Initial plan
 
