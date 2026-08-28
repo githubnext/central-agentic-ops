@@ -3,6 +3,7 @@
 .github/workflows/*.lock.yml
 
 # Certain workflows run directly from this repository, so track their compiled locks.
+!.github/workflows/accessibility-expert.lock.yml
 !.github/workflows/daily-dashboard-language-renderer.lock.yml
 !.github/workflows/multi-device-docs-tester.lock.yml
 
