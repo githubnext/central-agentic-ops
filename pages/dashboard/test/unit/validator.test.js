@@ -682,6 +682,225 @@ dashboard:
     }
   });
 
+  it('DLS-AGG-002 DLS-AGG-005 DLS-VIEW-008 DLS-VIEW-009 accept canonical aggregates aliases and temporal bucketing', () => {
+    const result = validateDashboardDocument(`language-version: "0.1.0"
+dashboard:
+  id: aggregation-valid
+  title: Aggregation Valid
+  pages:
+    - id: summary
+      kind: custom
+      views:
+        - id: aic-metric
+          data:
+            source: usage
+            order-by:
+              - field: total-aic
+                direction: desc
+          mark: metric
+          encoding:
+            value:
+              field: aic
+              aggregate: sum
+              as: total-aic
+        - id: value-chart
+          data:
+            source: operational-values
+            order-by:
+              - field: mean-operational-value
+                direction: desc
+          mark: chart
+          encoding:
+            x:
+              field: observed-at
+              type: temporal
+              time-unit: day
+            y:
+              field: operational-value
+              aggregate: mean
+              type: quantitative
+            color:
+              field: operational-value-definition
+`);
+
+    expect(result.ok).toBe(true);
+  });
+
+  it('DLS-VIEW-002 DLS-VIEW-003 DLS-VIEW-004 DLS-VIEW-005 reject unknown marks and invalid mark-channel combinations', () => {
+    const result = validateDashboardDocument(`language-version: "0.1.0"
+dashboard:
+  id: invalid-marks
+  title: Invalid Marks
+  pages:
+    - id: summary
+      kind: custom
+      views:
+        - id: unknown-mark
+          data:
+            source: runs
+          mark: sparkline
+          encoding:
+            value:
+              field: run
+              aggregate: count
+        - id: bad-metric
+          data:
+            source: runs
+          mark: metric
+          encoding:
+            value:
+              field: run
+              aggregate: count
+            x:
+              field: started-at
+        - id: bad-table
+          data:
+            source: findings
+          mark: table
+          encoding:
+            columns:
+              - field: finding-summary
+            value:
+              field: finding
+              aggregate: count
+        - id: bad-chart
+          data:
+            source: usage
+          mark: chart
+          encoding:
+            x:
+              field: observed-at
+              type: temporal
+            y:
+              field: aic
+              aggregate: sum
+              type: nominal
+            columns:
+              - field: repository
+`);
+
+    expect(result.ok).toBe(false);
+    if (!result.ok) {
+      expect(result.errors).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({ code: 'DLS-E005', path: '$.dashboard.pages[0].views[0].mark' }),
+          expect.objectContaining({ code: 'DLS-E003', path: '$.dashboard.pages[0].views[1].encoding.x' }),
+          expect.objectContaining({ code: 'DLS-E003', path: '$.dashboard.pages[0].views[2].encoding.value' }),
+          expect.objectContaining({ code: 'DLS-E003', path: '$.dashboard.pages[0].views[3].encoding.columns' }),
+          expect.objectContaining({ code: 'DLS-E010', path: '$.dashboard.pages[0].views[3].encoding.y.type' })
+        ])
+      );
+    }
+  });
+
+  it('DLS-AGG-002 DLS-AGG-005 DLS-VIEW-007 DLS-VIEW-008 DLS-VIEW-009 reject invalid field definitions and aggregate compatibility with DLS-E010', () => {
+    const result = validateDashboardDocument(`language-version: "0.1.0"
+dashboard:
+  id: invalid-aggregation
+  title: Invalid Aggregation
+  pages:
+    - id: summary
+      kind: custom
+      views:
+        - id: bad-fields
+          data:
+            source: usage
+          mark: chart
+          encoding:
+            x:
+              field: repository
+              time-unit: quarter
+            y:
+              field: repository
+              aggregate: sum
+              as: grouped-repository
+            color:
+              field: missing-field
+            href:
+              field: run-link
+              as: not-allowed
+`);
+
+    expect(result.ok).toBe(false);
+    if (!result.ok) {
+      expect(result.errors).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({ code: 'DLS-E005', path: '$.dashboard.pages[0].views[0].encoding.x.time-unit' }),
+          expect.objectContaining({ code: 'DLS-E010', path: '$.dashboard.pages[0].views[0].encoding.x.time-unit' }),
+          expect.objectContaining({ code: 'DLS-E010', path: '$.dashboard.pages[0].views[0].encoding.y.aggregate' }),
+          expect.objectContaining({ code: 'DLS-E010', path: '$.dashboard.pages[0].views[0].encoding.color.field' }),
+          expect.objectContaining({ code: 'DLS-E010', path: '$.dashboard.pages[0].views[0].encoding.href.as' })
+        ])
+      );
+    }
+  });
+
+  it('DLS-AGG-009 DLS-AGG-010 rejects ambiguous aggregate output identifiers and invalid order-by references with DLS-E010', () => {
+    const ambiguousOutput = validateDashboardDocument(`language-version: "0.1.0"
+dashboard:
+  id: ambiguous-output-id
+  title: Ambiguous Output Id
+  pages:
+    - id: summary
+      kind: custom
+      views:
+        - id: ambiguous-aggregate
+          data:
+            source: runs
+          mark: table
+          encoding:
+            columns:
+              - field: run
+                aggregate: count
+                as: total
+              - field: repository
+                aggregate: distinct-count
+                as: total
+`);
+
+    expect(ambiguousOutput.ok).toBe(false);
+    if (!ambiguousOutput.ok) {
+      expect(ambiguousOutput.errors).toEqual([
+        expect.objectContaining({ code: 'DLS-E010', path: '$.dashboard.pages[0].views[0].encoding.columns[1]' })
+      ]);
+    }
+
+    const invalidOrderBy = validateDashboardDocument(`language-version: "0.1.0"
+dashboard:
+  id: invalid-order-by
+  title: Invalid Order By
+  pages:
+    - id: summary
+      kind: custom
+      views:
+        - id: ordered-aggregate
+          data:
+            source: runs
+            order-by:
+              - field: repository
+                direction: asc
+              - field: missing-output
+                direction: desc
+          mark: table
+          encoding:
+            columns:
+              - field: run
+                aggregate: count
+              - field: repository
+              - field: workflow
+`);
+
+    expect(invalidOrderBy.ok).toBe(false);
+    if (!invalidOrderBy.ok) {
+      expect(invalidOrderBy.errors).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({ code: 'DLS-E010', path: '$.dashboard.pages[0].views[0].data.order-by[0].field' }),
+          expect.objectContaining({ code: 'DLS-E010', path: '$.dashboard.pages[0].views[0].data.order-by[1].field' })
+        ])
+      );
+    }
+  });
+
   it('DLS-VAL-001 reports code message and YAML path for each detected error', () => {
     const result = validateDashboardDocument(`language-version: "0.1"
 dashboard:
