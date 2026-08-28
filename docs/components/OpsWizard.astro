@@ -159,7 +159,9 @@ const agents = [
         <div class="copy-dialog-card">
           <div class="copy-dialog-burst" aria-hidden="true"></div>
           <span class="copy-dialog-kicker">Prompt copied</span>
-          <p class="copy-dialog-title" id="ops-wizard-copy-dialog-title">Launch it from a fresh control repository</p>
+          <p class="copy-dialog-title" id="ops-wizard-copy-dialog-title" tabindex="-1">
+            Prompt copied — launch it from a fresh control repository
+          </p>
           <ol class="copy-dialog-steps">
             <li>Create a new private repository for your Central Agentic Ops control plane.</li>
             <li>Open the repository in your preferred coding agent.</li>
@@ -279,6 +281,7 @@ const agents = [
       const copyButton = form.querySelector<HTMLButtonElement>("[data-copy-prompt]");
       const copyLabel = copyButton?.querySelector<HTMLElement>(".copy-label");
       const copyDialog = form.querySelector<HTMLDialogElement>("[data-copy-dialog]");
+      const copyDialogTitle = form.querySelector<HTMLElement>("#ops-wizard-copy-dialog-title");
       const copyDialogClose = form.querySelector<HTMLButtonElement>("[data-copy-dialog-close]");
       let resetCopyLabel: ReturnType<typeof setTimeout> | undefined;
 
@@ -286,7 +289,7 @@ const agents = [
         if (!copyDialog) return;
         if (typeof copyDialog.showModal === "function") {
           if (!copyDialog.open) copyDialog.showModal();
-          copyDialogClose?.focus();
+          copyDialogTitle?.focus();
         }
       }
 
