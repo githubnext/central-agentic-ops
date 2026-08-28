@@ -10,10 +10,10 @@ dashboard:
     time: {}
     filters: {}
   pages:
-    - id: overview
+    - id: usage
       kind: built-in
-      page: overview
-      title: Overview
+      page: usage
+      title: Usage
     - id: custom-summary
       kind: custom
       title: Custom Summary
@@ -69,9 +69,9 @@ dashboard:
   id: agentic-operations
   title: Agentic Operations
   pages:
-    - id: overview
+    - id: usage
       kind: built-in
-      page: overview
+      page: usage
 dashboard:
   id: duplicate-dashboard
   title: Duplicate
@@ -181,9 +181,9 @@ dashboard:
     scope: {}
     timezone: UTC
   pages:
-    - id: overview
+    - id: usage
       kind: built-in
-      page: overview
+      page: usage
 `);
 
     expect(result.ok).toBe(false);
@@ -288,6 +288,59 @@ dashboard:
           expect.objectContaining({ code: 'DLS-E005', path: '$.dashboard.pages[0].title' })
         ])
       );
+    }
+  });
+
+  it('DLS-PAGE-002 rejects an overview built-in page without declarative built-in source definitions with DLS-E003', () => {
+    const result = validateDashboardDocument(`language-version: "0.1.0"
+dashboard:
+  id: overview-page
+  title: Overview Page
+  pages:
+    - id: overview
+      kind: built-in
+      page: overview
+`);
+
+    expect(result.ok).toBe(false);
+    if (!result.ok) {
+      expect(result.errors).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({ code: 'DLS-E003', path: '$.dashboard.pages[0].page' })
+        ])
+      );
+      expect(result.errors.map((error) => error.message)).toEqual(
+        expect.arrayContaining([
+          'built-in page "overview" requires declarative definitions for source "workflows".',
+          'built-in page "overview" requires declarative definitions for source "runs".',
+          'built-in page "overview" requires declarative definitions for source "usage".',
+          'built-in page "overview" requires declarative definitions for source "findings".',
+          'built-in page "overview" requires declarative definitions for source "operational-values".'
+        ])
+      );
+    }
+  });
+
+  it('DLS-PAGE-006 rejects a runs built-in page without declarative built-in source definitions with DLS-E003', () => {
+    const result = validateDashboardDocument(`language-version: "0.1.0"
+dashboard:
+  id: runs-page
+  title: Runs Page
+  pages:
+    - id: runs
+      kind: built-in
+      page: runs
+`);
+
+    expect(result.ok).toBe(false);
+    if (!result.ok) {
+      expect(result.errors).toEqual([
+        expect.objectContaining({
+          code: 'DLS-E003',
+          path: '$.dashboard.pages[0].page',
+          message: 'built-in page "runs" requires declarative definitions for source "runs".'
+        })
+      ]);
     }
   });
 

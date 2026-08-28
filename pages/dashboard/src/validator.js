@@ -39,6 +39,7 @@ import {
   SOURCE_VALUES,
   TEMPORAL_FIELD_NAMES,
   TIME_KEYS,
+  BUILT_IN_PAGE_REQUIRED_SOURCES,
   TIME_UNIT_VALUES,
   VIEW_DATA_KEYS,
   VIEW_ENCODING_KEYS,
@@ -308,25 +309,46 @@ function validateBuiltInPage(page, path, errors) {
       'page must use one of the canonical built-in page names.',
       `${path}.page`
     ));
+    return;
   }
 
-  if (page.title === undefined && typeof page.page === 'string' && !BUILT_IN_PAGE_VALUES.includes(page.page)) {
+  if (typeof page.page !== 'string') {
+    return;
+  }
+
+  const expectedTitle = defaultBuiltInPageTitle(page.page);
+  if (page.title !== undefined && page.title !== expectedTitle) {
     errors.push(createError(
       ERROR_CODES.nonCanonicalVocabularyOrIdentifier,
-      'built-in page title default requires a canonical page name.',
-      `${path}.page`
+      `built-in page title must match the canonical title default "${expectedTitle}".`,
+      `${path}.title`
     ));
   }
 
-  if (page.title !== undefined && typeof page.page === 'string' && BUILT_IN_PAGE_VALUES.includes(page.page)) {
-    const expectedTitle = defaultBuiltInPageTitle(page.page);
-    if (page.title !== expectedTitle) {
-      errors.push(createError(
-        ERROR_CODES.nonCanonicalVocabularyOrIdentifier,
-        `built-in page title must match the canonical title default "${expectedTitle}".`,
-        `${path}.title`
-      ));
-    }
+  if (errors.some((error) => error.path.startsWith(path))) {
+    return;
+  }
+
+  validateBuiltInPageContent(/** @type {keyof typeof BUILT_IN_PAGE_REQUIRED_SOURCES} */ (page.page), path, errors);
+}
+
+/**
+ * @param {keyof typeof BUILT_IN_PAGE_REQUIRED_SOURCES} pageName
+ * @param {string} path
+ * @param {ValidationError[]} errors
+ */
+function validateBuiltInPageContent(pageName, path, errors) {
+  if (pageName !== 'overview' && pageName !== 'runs') {
+    return;
+  }
+
+  const requiredSources = BUILT_IN_PAGE_REQUIRED_SOURCES[pageName];
+  for (const sourceName of requiredSources) {
+    errors.push(createError(
+      ERROR_CODES.missingOrInvalidRequiredField,
+      `built-in page "${pageName}" requires declarative definitions for source "${sourceName}".`,
+      `${path}.page`
+    ));
   }
 }
 
