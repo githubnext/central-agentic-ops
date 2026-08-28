@@ -19,6 +19,7 @@
 ## Specification questions
 
 - 2026-08-28: Section 4.3 requires `language-version` to be the quoted string `"0.1.0"`, but YAML parsing does not preserve whether a scalar was quoted. The current validator enforces string type and exact canonical value, which is the most conservative check available without relying on parser-specific CST details.
+- 2026-08-28: Section 8 defines required logical-source metadata outside the dashboard YAML, while Section 4.2 omits any YAML vocabulary for carrying that metadata inside a dashboard document. Until the presenter-level data contract is introduced, the validator conservatively keeps rejecting `source-metadata` as an unknown `data` key and records the gap here instead of inventing a document extension.
 - 2026-08-28: Section 11.2 says `data.order-by.field` resolves against the post-aggregation output grain, but the specification does not fully define how to derive that grain from arbitrary encodings before the presenter exists. The current validator uses the most conservative reading available in this slice: it accepts aggregate output identifiers and bare source fields only when they are canonical entity identifier fields for the selected source, and rejects other unresolved references with `DLS-E010`.
 
 ## Infrastructure blockers
@@ -26,6 +27,14 @@
 - 2026-08-28: `npm run test:e2e` is currently blocked because the browser runtime used by the workflow environment does not expose a launchable Chromium binary (`browserType.launch: Executable doesn't exist`). Unit, typecheck, and lint gates pass; browser tests are present but cannot launch until the browser dependency is provisioned. The workflow now prefers the built-in Playwright MCP browser tools instead of the incompatible `playwright-cli` wrapper.
 
 ## Run log
+
+### 2026-08-28 (provenance, freshness, data states slice)
+
+- Audited Section 8 against the current document model and confirmed a specification gap: required logical-source metadata is defined outside the dashboard YAML, but Section 4.2 does not admit any `data` key for embedding that metadata in a document.
+- Added Section 8 constants and `DLS-E012` definitions in `src/specification.js` and recorded the ambiguity in `PLAN.md`, but kept the validator on the conservative reading that rejects undeclared `source-metadata` keys instead of inventing new YAML semantics.
+- Added unit coverage in `test/unit/validator.test.js` documenting the current behavior for attempted `source-metadata` payloads, so the gap is explicit and regression-tested until the presenter-side data contract is implemented.
+- Verified `npm install`, `npm run typecheck`, `npm run lint`, and `npm test`; `npm run test:e2e` remains blocked in this environment because the Playwright Chromium executable is not provisioned.
+- Next milestone: Links and findings.
 
 ### 2026-08-28 (dimensions, measures, aggregation slice)
 
