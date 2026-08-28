@@ -778,10 +778,11 @@ test("operation workflows optionally load per-operation markdown steering", () =
   }
 });
 
-test("review destinations must be isolated and accessible, with non-central destinations private", () => {
+test("review destinations allow control self-review and isolate other targets", () => {
   const precompute = workflow("shared/control-precompute.md");
 
   assert.match(precompute, /validate_output_destination/);
+  assert.match(precompute, /repository_equal "\$SAFE_OUTPUT_REPO" "\$TARGET_REPO" && \\\n+          ! repository_equal "\$SAFE_OUTPUT_REPO" "\$CENTRAL_REPO"/);
   assert.match(precompute, /review safe_output_repo must differ from target_repo/);
   assert.match(precompute, /live worker safe_output_repo must equal target_repo/);
   assert.match(precompute, /gh api "repos\/\$SAFE_OUTPUT_REPO" --jq '\.private'/);

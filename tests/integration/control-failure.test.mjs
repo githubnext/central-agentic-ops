@@ -227,6 +227,14 @@ bundles:
   assert.equal(result.status, 0, result.stderr);
 });
 
+for (const targetRepo of ["acme/control", "ACME/CONTROL"]) {
+  test(`control precompute accepts control repository self-review for ${targetRepo}`, () => {
+    const result = runPrecompute({ TARGET_REPO: targetRepo });
+
+    assert.equal(result.status, 0, result.stderr);
+  });
+}
+
 for (const safeOutputRepo of ["acme/target", "ACME/TARGET"]) {
   test(`control precompute rejects review destination ${safeOutputRepo} when it is the target`, () => {
     const result = runPrecompute({ SAFE_OUTPUT_REPO: safeOutputRepo });
