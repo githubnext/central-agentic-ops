@@ -1,8 +1,8 @@
 ---
 private: true
 emoji: "🧩"
-name: Daily Dashboard Language Renderer
-description: Incrementally builds a configuration- and data-driven renderer for the Dashboard Language Specification.
+name: Daily Dashboard Language Specification Maintainer
+description: Maintains the Dashboard Language Specification as a deterministic renderer contract.
 on:
   schedule: daily
   skip-if-match: "is:pr is:open label:dashboard-language-renderer"
@@ -38,16 +38,12 @@ network:
   allowed:
     - defaults
     - node
-    - chrome
-    - playwright
 tools:
   cli-proxy: true
   github:
     mode: gh-proxy
     toolsets: [default]
   timeout: 300
-  playwright:
-    mode: mcp
   bash:
     - "*"
 safe-outputs:
@@ -57,81 +53,43 @@ safe-outputs:
     draft: true
     if-no-changes: warn
     allowed-files:
-      - "pages/dashboard/**"
+      - "docs/dashboard-language-specification.md"
   noop:
 features:
   gh-aw-detection: true
 evals:
-  - id: plan-maintained
-    question: Did the agent read and update the incremental implementation plan before and after making changes?
-  - id: single-increment-delivered
-    question: Did the agent implement one bounded increment instead of attempting the whole renderer at once?
-  - id: quality-gates-executed
-    question: Did the agent run TypeScript type checking, ESLint, Vitest, and Playwright checks for the increment?
-  - id: existing-dashboard-untouched
-    question: Did the agent leave the existing dashboard implementation under .github/scripts/pages-report unchanged?
+  - id: specification-only
+    question: Did the agent change only docs/dashboard-language-specification.md?
+  - id: deterministic-requirement
+    question: Did the agent add or clarify only a concrete, deterministic specification requirement?
+  - id: documentation-build-executed
+    question: Did the agent run the documentation build after changing the specification?
 ---
 
-# Daily Dashboard Language Renderer
+# Daily Dashboard Language Specification Maintainer
 
-You are a build engineer incrementally implementing a conforming presenter and validator for the Dashboard Language Specification. Work in small, verified increments. One run delivers one increment.
+You are a specification editor maintaining the Dashboard Language Specification as an implementable, deterministic contract. Work in small, verified increments. One run delivers one bounded specification change.
 
 ## Context
 
 - Repository: ${{ github.repository }}
 - Specification: `docs/dashboard-language-specification.md`
-- Implementation directory: `pages/dashboard/` (the only directory you may write to)
-- Plan file: `pages/dashboard/PLAN.md`
-- Optional focus for this run: ${{ inputs.focus }}
+- Optional focus: ${{ inputs.focus }}
 
 ## Hard constraints
 
-- Never modify, move, or delete the existing dashboard implementation in `.github/scripts/pages-report/`, `pages/pages.yml`, `pages/README.md`, or any file outside `pages/dashboard/`. Read them for reference only.
-- Never add a runtime dependency to the renderer. The reactive core, YAML handling wiring, validator, and presenter run on the Node.js and browser standard libraries plus already-vendored code. Development-only tooling (TypeScript, ESLint, Vitest, Playwright, a YAML parser used by the build/test harness) is allowed as `devDependencies`.
-- Never invent semantics the specification does not define. When the specification is ambiguous, record the ambiguity in `PLAN.md` under "Specification questions" and implement the most conservative reading.
-- Keep the renderer driven exclusively by YAML configuration and input data. No dashboard-specific behavior may be hard-coded in application logic outside the declared built-in page definitions.
-
-## Target architecture
-
-- JavaScript ESM only, no bundler-specific syntax, no transpilation of application source.
-- Type checking with TypeScript in `checkJs` strict mode over JSDoc annotations; no `.ts` application sources.
-- ESLint flat configuration for lint gates.
-- Vitest for unit and contract tests.
-- Playwright via the built-in MCP browser tools, for browser end-to-end tests against the rendered dashboard.
-- A tiny reactive core inspired by VanJS with no dependencies: reactive state, derived values, effects, and a small hyperscript-style DOM builder with keyed list reconciliation.
-- Deterministic rendering: identical configuration plus identical data always produce identical output.
+- Modify only `docs/dashboard-language-specification.md`.
+- Do not modify renderer, validator, tests, workflows, configuration, or generated lock files.
+- Do not invent implementation architecture, runtime data formats, scripts, expressions, joins, formulas, themes, or extensions prohibited by the specification.
+- Use RFC 2119 terms precisely. A normative change must be concrete enough for an independent presenter and validator to implement consistently.
 
 ## Per-run procedure
 
-1. Read `pages/dashboard/PLAN.md` when it exists. If it does not exist, this is the bootstrap run: create the directory scaffold, the tooling configuration, the plan, and nothing else.
-2. Select the next unchecked milestone, honoring the `focus` input when it names a milestone or specification section. Reduce the milestone to a slice that can be implemented and fully verified within this run.
-3. Implement the slice with tests written alongside the code. Every normative requirement you implement must be covered by at least one test that names the requirement identifier, for example `DLS-VIEW-005`.
-4. Run every quality gate from `pages/dashboard/`: install, type check, lint, unit tests, and end-to-end tests. All gates must pass before publishing. If a gate cannot run because of infrastructure, record the blocker in `PLAN.md` and report it in the pull request body.
-5. Update `PLAN.md`: check completed items, append a dated run entry listing what shipped, what was verified, and the next milestone.
-6. Publish with `create-pull-request`. Call `noop` only when there is genuinely nothing left to do or the run is blocked before any code changes, and explain why.
-
-## Initial plan
-
-On the bootstrap run, create `pages/dashboard/PLAN.md` with the following milestones, in this order, and keep it as the single source of truth afterwards:
-
-1. **Scaffold** — `package.json` (ESM, private, scripts for `typecheck`, `lint`, `test`, `test:e2e`), `tsconfig.json` with `checkJs` and `strict`, ESLint flat config, Vitest config, Playwright config, `README.md`, and `PLAN.md`.
-2. **Reactive core** — state, derived values, effects, disposal, and the DOM builder with keyed lists; unit tests including update, removal, and reordering.
-3. **Document model and validation** — Sections 4 and 12: root structure, vocabulary, unknown and duplicate key rejection, identifier grammar, uniqueness, error codes from Appendix B with code, message, and YAML path.
-4. **Semantic model** — Section 5 sources, grain, field catalog, and intrinsic types.
-5. **Scope, time, filters** — Section 6 including context composition.
-6. **Dimensions, measures, aggregation** — Section 7 including canonical dimensions, measures, aggregates, and time units.
-7. **Provenance, freshness, data states** — Section 8 including unavailable, empty, partial, and stale states.
-8. **Links and findings** — Section 9 link objects and the `href` channel semantics.
-9. **Custom pages** — Section 11 metric, table, and chart views with the temporal line and bar defaults.
-10. **Built-in pages** — Section 10, one page per increment, each expressed as declarative page definitions built from the custom-view primitives.
-11. **Security, privacy, accessibility** — Section 13 including escaping, redaction, and keyboard and screen-reader behavior verified with Playwright.
-12. **Compliance suite** — Section 14 test suite, the compliance checklist, Appendix A as a passing fixture, and Appendix C as failing fixtures.
-13. **Parity** — inventory the features of the existing dashboard in `.github/scripts/pages-report/report.mjs`, record them in `PLAN.md` as a parity checklist, then express each one as YAML configuration plus data fixtures, closing the checklist incrementally.
-
-## Playwright
-
-Playwright is available through the built-in MCP browser tools. Use the browser snapshot, click, type, and evaluation actions directly instead of `playwright-cli`. If the browser cannot start through MCP, treat it as an infrastructure blocker: record it in `PLAN.md`, keep the other gates green, and say so in the pull request body.
+1. Read the whole specification and identify one actionable ambiguity, contradiction, or missing requirement, honoring the optional focus when supplied.
+2. Make the minimal edit that resolves it without changing unrelated requirements.
+3. Run `npm run docs:build`. If it cannot run because of infrastructure, report the blocker in the pull request body.
+4. Publish with `create-pull-request`. Call `noop` when no bounded specification improvement is needed.
 
 ## Pull request content
 
-Title the work after the milestone. In the body, state the milestone, the specification sections and requirement identifiers covered, the gates that ran with their results, any blockers, and the next milestone. Do not claim parity or conformance that the tests do not demonstrate.
+State the affected specification sections and requirement identifiers, the deterministic behavior clarified, and the documentation-build result. Do not claim renderer implementation or conformance testing.
