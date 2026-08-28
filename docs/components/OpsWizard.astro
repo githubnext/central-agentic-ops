@@ -90,7 +90,7 @@ const agents = [
           <span class="option-check" aria-hidden="true"></span>
         </label>
       </div>
-      <div class="custom-idea" data-custom-idea hidden>
+      <div class="custom-idea" data-custom-idea>
         <label for="ops-wizard-idea">Describe the operation you want</label>
         <textarea
           id="ops-wizard-idea"
@@ -293,6 +293,8 @@ const agents = [
       const status = form.querySelector<HTMLParagraphElement>("[data-copy-status]");
       const summary = form.querySelector<HTMLElement>("[data-prompt-summary]");
       const customIdea = form.querySelector<HTMLElement>("[data-custom-idea]");
+      const ideaField = form.querySelector<HTMLTextAreaElement>('textarea[name="idea"]');
+      const customOperation = form.querySelector<HTMLInputElement>('input[name="operation"][value="custom"]');
       const commandHint = form.querySelector<HTMLElement>("[data-agent-command-hint]");
       const installHint = form.querySelector<HTMLElement>("[data-agent-install-hint]");
       const copyButton = form.querySelector<HTMLButtonElement>("[data-copy-prompt]");
@@ -316,7 +318,7 @@ const agents = [
       function render() {
         const operation = selected(form, "operation");
         const agent = selected(form, "agent");
-        if (customIdea) customIdea.hidden = operation?.value !== "custom";
+        if (customIdea) customIdea.classList.toggle("is-active", operation?.value === "custom");
         if (commandHint && agent) commandHint.textContent = agent.dataset.agentCommand || "";
         if (installHint && agent) installHint.textContent = agent.dataset.agentInstall || "";
         if (summary) {
@@ -326,6 +328,13 @@ const agents = [
         if (output) output.textContent = buildPrompt(form);
         if (status) status.textContent = "";
       }
+
+      ideaField?.addEventListener("input", () => {
+        if (customOperation && !customOperation.checked && ideaField.value.trim().length > 0) {
+          customOperation.checked = true;
+          render();
+        }
+      });
 
       form.addEventListener("input", render);
       form.addEventListener("submit", (event) => event.preventDefault());
@@ -703,6 +712,10 @@ const agents = [
       display: flex;
       flex-direction: column;
       gap: 0.375rem;
+    }
+
+    .custom-idea.is-active label {
+      color: var(--sl-color-text-accent);
     }
 
     .scope-fields {
