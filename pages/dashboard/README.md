@@ -17,3 +17,5 @@ This directory now includes the initial reactive core: state, derived values, ef
 The current increment adds the first validator slice for Sections 4 and 12: YAML document parsing, root and dashboard structure checks, canonical identifiers, key vocabulary validation, page kind checks, and coded error reporting with YAML paths.
 
 The latest semantic-model slice adds canonical Section 5.1 source-name validation for custom views plus conservative canonical-enumeration checks for intrinsic semantic literals such as rollout mode, workflow active state, run status, run conclusion, grader status, eval result, and outcome state when they appear in filters.
+
+The current scope/time/filter slice adds structural validation for Section 6 context objects: canonical `scope`, `time`, and `filters` keys; RFC 3339 absolute time bounds; `time.range` syntax and exclusivity rules; non-empty scope/filter sequences; positive `limit`; and `order-by` clause shape with canonical `asc`/`desc` directions.
