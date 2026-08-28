@@ -446,6 +446,19 @@ test("package manifests exclude repository-only tests", () => {
   }
 });
 
+test("compiled workflow locks are not ignored", () => {
+  const gitignore = readFileSync(join(root, ".gitignore"), "utf8");
+  assert.doesNotMatch(gitignore, /\.lock\.yml/, "compiled workflow locks must not be ignored");
+
+  const workflowIds = readdirSync(workflowsDirectory)
+    .filter((name) => name.endsWith(".md"))
+    .map((name) => name.replace(/\.md$/, ""));
+  for (const workflowId of workflowIds) {
+    const lockPath = `.github/workflows/${workflowId}.lock.yml`;
+    assert.ok(existsSync(join(root, lockPath)), `${lockPath} must be compiled`);
+  }
+});
+
 test("operational-value graders expose deterministic run-scoped contracts", () => {
   const gradersDirectory = join(root, ".github", "graders");
   const packageGradersDirectory = join(root, ".github", "workflows", "graders");
