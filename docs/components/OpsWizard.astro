@@ -158,10 +158,10 @@ const agents = [
       <dialog class="copy-dialog" data-copy-dialog aria-labelledby="ops-wizard-copy-dialog-title">
         <div class="copy-dialog-card">
           <div class="copy-dialog-burst" aria-hidden="true"></div>
-          <span class="copy-dialog-kicker">Prompt copied</span>
-          <p class="copy-dialog-title" id="ops-wizard-copy-dialog-title" tabindex="-1">
+          <span class="copy-dialog-kicker">Next steps</span>
+          <h3 class="copy-dialog-title" id="ops-wizard-copy-dialog-title" tabindex="-1">
             Prompt copied — launch it from a fresh control repository
-          </p>
+          </h3>
           <ol class="copy-dialog-steps">
             <li>Create a new private repository for your Central Agentic Ops control plane.</li>
             <li>Open the repository in your preferred coding agent.</li>
@@ -355,6 +355,7 @@ const agents = [
       --wizard-indigo: #5b5cff;
       --wizard-pink: #ff4ecd;
       --wizard-violet: #9b5cff;
+      --wizard-glow-opacity: 0.48;
 
       position: relative;
       display: flex;
@@ -385,7 +386,7 @@ const agents = [
       height: 16rem;
       border-radius: 999px;
       filter: blur(2rem);
-      opacity: 0.48;
+      opacity: var(--wizard-glow-opacity);
       pointer-events: none;
     }
 
@@ -801,6 +802,7 @@ const agents = [
     }
 
     .copy-dialog-card .copy-dialog-title {
+      margin: 0;
       color: var(--sl-color-white);
       font-size: var(--sl-text-xl);
       font-weight: 700;
