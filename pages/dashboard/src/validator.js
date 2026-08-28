@@ -317,6 +317,17 @@ function validateBuiltInPage(page, path, errors) {
       `${path}.page`
     ));
   }
+
+  if (page.title !== undefined && typeof page.page === 'string' && BUILT_IN_PAGE_VALUES.includes(page.page)) {
+    const expectedTitle = defaultBuiltInPageTitle(page.page);
+    if (page.title !== expectedTitle) {
+      errors.push(createError(
+        ERROR_CODES.nonCanonicalVocabularyOrIdentifier,
+        `built-in page title must match the canonical title default "${expectedTitle}".`,
+        `${path}.title`
+      ));
+    }
+  }
 }
 
 /**
@@ -1449,6 +1460,17 @@ function validateOptionalStringField(value, path, errors) {
       path
     ));
   }
+}
+
+/**
+ * @param {string} pageName
+ * @returns {string}
+ */
+function defaultBuiltInPageTitle(pageName) {
+  return pageName
+    .split('-')
+    .map((segment) => segment.charAt(0).toUpperCase() + segment.slice(1))
+    .join(' ');
 }
 
 /**
