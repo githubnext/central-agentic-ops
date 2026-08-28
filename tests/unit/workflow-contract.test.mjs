@@ -589,6 +589,36 @@ test("ownership, provenance, and workflow identity fail closed", () => {
   assert.match(operations, /identify and stop every participating control repository/);
 });
 
+test("orchestrators emit dedicated bounded dispatcher telemetry", () => {
+  const control = workflow("shared/control.md");
+  const configuration = readFileSync(join(root, "docs", "configuration.md"), "utf8");
+  const operations = readFileSync(join(root, "docs", "operations.md"), "utf8");
+  const packageSkill = readFileSync(join(root, ".github", "skills", "create-ops-package", "SKILL.md"), "utf8");
+
+  assert.match(control, /post-steps:[\s\S]*?Emit control-plane dispatcher telemetry/);
+  assert.match(control, /github\.aw\.import-inputs\.role == 'orchestrator'/);
+  assert.match(control, /otlp\.logSpan\('central-agentic-ops\.dispatcher'/);
+  assert.match(control, /central_agentic_ops\.dispatcher\.dispatch_requested_count/);
+  assert.match(control, /central_agentic_ops\.dispatcher\.target_count/);
+  assert.match(control, /central_agentic_ops\.dispatcher\.workflow_count/);
+  assert.match(control, /central_agentic_ops\.dispatcher\.incomplete_count/);
+  assert.match(control, /isError: incompleteCount > 0/);
+  assert.doesNotMatch(control, /central_agentic_ops\.dispatcher\.(target_repo|workflow_name|control_plane_run_url)/);
+  assert.match(configuration, /`GH_AW_DEFAULT_OTLP_ENDPOINT` Actions variable/);
+  assert.match(configuration, /configure exporters only; they do not create the dispatcher span/);
+  assert.match(configuration, /gh variable set GH_AW_DEFAULT_OTLP_ENDPOINT/);
+  assert.match(configuration, /gh secret set GH_AW_DEFAULT_OTLP_HEADERS/);
+  assert.match(configuration, /Authorization=Bearer <token>/);
+  assert.match(configuration, /`Authorization: <GH_AW_OTEL_SENTRY_AUTHORIZATION>`/);
+  assert.match(configuration, /`Authorization: <GH_AW_OTEL_GRAFANA_AUTHORIZATION>`/);
+  assert.match(configuration, /`DD-API-KEY: <GH_AW_OTEL_DATADOG_API_KEY or DD_API_KEY>`/);
+  assert.match(configuration, /Installed Central Agentic Ops packages do not include these optional provider files by default/);
+  assert.match(operations, /`central-agentic-ops\.dispatcher\.run` span/);
+  assert.match(operations, /`requested` status records dispatch intent before safe-output handlers call the GitHub API/);
+  assert.match(packageSkill, /inherits the dedicated `central-agentic-ops\.dispatcher\.run` OTEL span from `shared\/control\.md`/);
+  assert.match(packageSkill, /configure OTLP exporters only/);
+});
+
 test("public read-only operation uses the built-in token without widening access", () => {
   const authentication = readFileSync(join(root, "docs", "authentication.md"), "utf8");
   const configuration = readFileSync(join(root, "docs", "configuration.md"), "utf8");
@@ -1153,6 +1183,12 @@ test("clean-room compilation emits the expected GitHub Actions settings", { time
       assert.match(generated, /rollout_percent:\n\s+default: 100\n\s+type: number/);
       assert.match(generated, /timeout-minutes: 15/);
       assert.match(generated, /cancel-in-progress: true/);
+      const outputPlaceholder = generated.indexOf("- name: Write agent output placeholder if missing");
+      const dispatcherTelemetry = generated.indexOf("name: Emit control-plane dispatcher telemetry");
+      const agentArtifact = generated.indexOf("- name: Upload agent artifacts");
+      assert.ok(outputPlaceholder < dispatcherTelemetry, `${name} emits dispatcher telemetry before output normalization`);
+      assert.ok(dispatcherTelemetry < agentArtifact, `${name} uploads the agent artifact before dispatcher telemetry`);
+      assert.match(generated, /otlp\.logSpan\('central-agentic-ops\.dispatcher'/);
     }
 
     const workerGates = new Map([

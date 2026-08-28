@@ -89,6 +89,8 @@ Measure operational value per worker because workers have independently dispatch
 ## Shared Components
 
 - Always import `shared/control.md` with the correct role.
+- Every orchestrator inherits the dedicated `central-agentic-ops.dispatcher.run` OTEL span from `shared/control.md`; do not duplicate dispatcher telemetry in package workflows.
+- `shared/sentry.md`, `shared/grafana.md`, and `shared/datadog.md` configure OTLP exporters only. Import them only when a package explicitly requires provider-specific routing; otherwise use the gh-aw organization defaults `GH_AW_DEFAULT_OTLP_ENDPOINT` and `GH_AW_DEFAULT_OTLP_HEADERS`.
 - Import `shared/review-bundle.md` when review mode must represent target-bound changes that cannot be emitted natively against the review repository.
 - Reuse other files under `.github/workflows/shared/` only when their capability is required. Inspect their import schemas before use.
 - Extend a shared component only for behavior genuinely common to multiple packages; do not hide package policy in shared workflow files.
@@ -116,8 +118,9 @@ Before finishing:
 6. Confirm the orchestrator has a `Completion` section that preserves the exact standard report contract from `shared/control.md`; package-specific reporting must be additive.
 7. Confirm worker concurrency is keyed by `github.workflow` and `inputs.target_repo` with stale runs cancelled.
 8. Check permissions, tools, network hosts, safe-output limits, credits, timeouts, and dispatch maximums against actual need.
-9. Confirm every existing operational-value evaluator remains under `.github/graders/` and registered by its worker, or explicitly identify each new worker whose value design is pending adoption.
-10. Run `gh aw compile <workflow.md>` for every new orchestrator and worker. Then run the repository's narrowest relevant tests or validation command if one exists.
-11. Review the generated diff for accidental lockfile churn, secret exposure, unsafe live defaults, fabricated value evidence, and deviations from the nearest package that are not justified by the strategy.
+9. Confirm dispatcher telemetry is inherited only through `shared/control.md`; require an explicit backend-routing need before adding a provider-specific observability import.
+10. Confirm every existing operational-value evaluator remains under `.github/graders/` and registered by its worker, or explicitly identify each new worker whose value design is pending adoption.
+11. Run `gh aw compile <workflow.md>` for every new orchestrator and worker. Then run the repository's narrowest relevant tests or validation command if one exists.
+12. Review the generated diff for accidental lockfile churn, secret exposure, unsafe live defaults, fabricated value evidence, and deviations from the nearest package that are not justified by the strategy.
 
 Report the created package, worker responsibilities, shared imports, rollout variables, per-worker ops-value status, and validation results.

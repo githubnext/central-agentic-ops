@@ -182,9 +182,69 @@ selected repositories                      = min(3, 5, 4) = 3
 A manual `live` request affects only that run. It does not promote the scheduled operation, but it must still satisfy worker ceilings, owner allowlists, credential scope, and target authority.
 :::
 
-## Optional Observability Secrets
+## Optional Observability Configuration
 
-Observability is disabled when the corresponding settings are absent. These values are consumed as repository secrets.
+The dispatcher span is built into `shared/control.md`; exporter configuration determines where gh-aw sends it. For centralized configuration, set the `GH_AW_DEFAULT_OTLP_ENDPOINT` Actions variable and the `GH_AW_DEFAULT_OTLP_HEADERS` Actions secret at repository, organization, or enterprise scope. Every compiled workflow uses those defaults when it has no explicit `observability.otlp` configuration. Export is disabled when the endpoint or its matching headers are absent.
+
+| Name | Kind | Purpose |
+| --- | --- | --- |
+| `GH_AW_DEFAULT_OTLP_ENDPOINT` | Variable | Default OTLP endpoint for every workflow without an explicit exporter import. |
+| `GH_AW_DEFAULT_OTLP_HEADERS` | Secret | Comma-separated `key=value` headers paired with the default endpoint. |
+
+Configure one default OTLP/HTTP traces endpoint for a control repository with:
+
+```bash
+CONTROL_REPO="acme/central-agentic-ops"
+gh variable set GH_AW_DEFAULT_OTLP_ENDPOINT \
+	--repo "$CONTROL_REPO" \
+	--body "https://collector.example.com/v1/traces"
+gh secret set GH_AW_DEFAULT_OTLP_HEADERS --repo "$CONTROL_REPO"
+```
+
+At the secret prompt, enter the complete comma-separated exporter header string, such as `Authorization=Bearer <token>` or `Authorization=Basic <credentials>,X-Scope-OrgID=<tenant>`. Use the exact OTLP/HTTP traces URL and headers issued by the backend. Run the same commands with `--org <organization>` instead of `--repo` to configure organization defaults. Enterprise administrators can define the same Actions variable and secret through enterprise policy.
+
+The source repository also contains optional `shared/sentry.md`, `shared/grafana.md`, and `shared/datadog.md` imports for explicit provider routing and fan-out. They configure exporters only; they do not create the dispatcher span, are not imported by packages by default, and override the organization defaults when used.
+
+| Provider | Endpoint | Header emitted by the shared import |
+| --- | --- | --- |
+| Sentry | `GH_AW_OTEL_SENTRY_ENDPOINT`: complete OTLP/HTTP traces endpoint issued by Sentry; no default. | `Authorization: <GH_AW_OTEL_SENTRY_AUTHORIZATION>` |
+| Grafana Cloud | `GH_AW_OTEL_GRAFANA_ENDPOINT`: complete OTLP/HTTP traces endpoint from the Grafana Cloud OpenTelemetry configuration; no default. | `Authorization: <GH_AW_OTEL_GRAFANA_AUTHORIZATION>` |
+| Datadog | `GH_AW_OTEL_DATADOG_ENDPOINT`, or `https://otlp-intake.<DD_SITE>/v1/traces` when omitted. | `DD-API-KEY: <GH_AW_OTEL_DATADOG_API_KEY or DD_API_KEY>` |
+
+Set only the secrets for the selected providers. `gh secret set` prompts for each value so credentials do not need to appear in shell history:
+
+```bash
+CONTROL_REPO="acme/central-agentic-ops"
+
+# Sentry
+gh secret set GH_AW_OTEL_SENTRY_ENDPOINT --repo "$CONTROL_REPO"
+gh secret set GH_AW_OTEL_SENTRY_AUTHORIZATION --repo "$CONTROL_REPO"
+
+# Grafana Cloud
+gh secret set GH_AW_OTEL_GRAFANA_ENDPOINT --repo "$CONTROL_REPO"
+gh secret set GH_AW_OTEL_GRAFANA_AUTHORIZATION --repo "$CONTROL_REPO"
+
+# Datadog
+gh secret set GH_AW_OTEL_DATADOG_API_KEY --repo "$CONTROL_REPO"
+gh secret set DD_SITE --repo "$CONTROL_REPO"
+# Optional endpoint override:
+gh secret set GH_AW_OTEL_DATADOG_ENDPOINT --repo "$CONTROL_REPO"
+```
+
+In this source checkout, enable one or more explicit exporters by uncommenting their imports in `.github/workflows/shared/control.md`:
+
+```yaml
+imports:
+	- uses: sentry.md
+	- uses: grafana.md
+	- uses: datadog.md
+	- uses: control-precompute.md
+		# Existing control-precompute inputs remain unchanged.
+```
+
+Keep only the providers being configured, then run `gh aw compile` and commit the changed workflow sources and any tracked generated files required by the consuming repository. Installed Central Agentic Ops packages do not include these optional provider files by default; use `GH_AW_DEFAULT_OTLP_ENDPOINT` and `GH_AW_DEFAULT_OTLP_HEADERS` unless the package is deliberately customized to carry the selected shared imports.
+
+The complete provider-specific setting reference is:
 
 | Name | Provider | Default or relationship |
 | --- | --- | --- |

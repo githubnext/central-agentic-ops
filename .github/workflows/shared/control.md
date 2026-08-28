@@ -100,6 +100,61 @@ imports:
       worker_credits_per_target: "${{ github.aw.import-inputs.worker_credits_per_target }}"
       aggregate_credit_limit: "${{ github.aw.import-inputs.aggregate_credit_limit }}"
       monthly_credit_budget: "${{ github.aw.import-inputs.monthly_credit_budget }}"
+
+post-steps:
+  - name: Emit control-plane dispatcher telemetry
+    if: ${{ always() && github.aw.import-inputs.role == 'orchestrator' }}
+    continue-on-error: true
+    uses: actions/github-script@v9
+    with:
+      script: |
+        const fs = require('fs');
+        const otlp = require('/tmp/gh-aw/actions/otlp.cjs');
+
+        function readJson(file, fallback) {
+          try {
+            return JSON.parse(fs.readFileSync(file, 'utf8'));
+          } catch {
+            return fallback;
+          }
+        }
+
+        function count(value) {
+          const parsed = Number(value);
+          return Number.isSafeInteger(parsed) && parsed >= 0 ? parsed : 0;
+        }
+
+        const precompute = readJson('/tmp/gh-aw/agent/control-precompute.json', {});
+        const output = readJson('/tmp/gh-aw/agent_output.json', { items: [] });
+        const items = Array.isArray(output.items) ? output.items : [];
+        const dispatches = items.filter(item => item?.type === 'dispatch_workflow');
+        const incompleteCount = items.filter(item => item?.type === 'report_incomplete').length;
+        const noopCount = items.filter(item => item?.type === 'noop').length;
+        const targetCount = new Set(dispatches.map(item => item?.inputs?.target_repo).filter(Boolean)).size;
+        const workflowCount = new Set(dispatches.map(item => item?.workflow_name).filter(Boolean)).size;
+        const status = incompleteCount > 0
+          ? 'incomplete'
+          : dispatches.length > 0
+            ? 'requested'
+            : noopCount > 0
+              ? 'noop'
+              : 'empty';
+
+        await otlp.logSpan('central-agentic-ops.dispatcher', {
+          'central_agentic_ops.dispatcher.package': String(precompute.bundle || 'unknown'),
+          'central_agentic_ops.dispatcher.status': status,
+          'central_agentic_ops.dispatcher.enabled': precompute.enabled === 'true',
+          'central_agentic_ops.dispatcher.safe_output_mode': String(precompute.safe_output_mode || 'unknown'),
+          'central_agentic_ops.dispatcher.candidate_count': Array.isArray(precompute.candidate_repositories) ? precompute.candidate_repositories.length : 0,
+          'central_agentic_ops.dispatcher.target_limit': count(precompute.effective_max_repos),
+          'central_agentic_ops.dispatcher.dispatch_requested_count': dispatches.length,
+          'central_agentic_ops.dispatcher.target_count': targetCount,
+          'central_agentic_ops.dispatcher.workflow_count': workflowCount,
+          'central_agentic_ops.dispatcher.incomplete_count': incompleteCount,
+        }, {
+          isError: incompleteCount > 0,
+          errorMessage: incompleteCount > 0 ? 'dispatcher reported incomplete' : undefined,
+        });
 ---
 
 Read `/tmp/gh-aw/agent/control-precompute.json` before making control decisions. Treat it as authoritative for `control_role`, package enablement state, target repository inputs, safe-output routing, and worker workflow availability.
