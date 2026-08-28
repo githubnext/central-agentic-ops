@@ -157,32 +157,35 @@ const agents = [
           <span data-prompt-summary></span>
           <span class="prompt-preview-label">Prompt preview</span>
         </span>
-          <button type="button" class="copy-button" data-copy-prompt>
-            <span class="copy-icon" aria-hidden="true">
-              <svg viewBox="0 0 20 20" focusable="false">
-                <path
-                  d="M6.5 5.5V3.75A1.75 1.75 0 0 1 8.25 2h6A1.75 1.75 0 0 1 16 3.75v8.5A1.75 1.75 0 0 1 14.25 14H12.5v1.75A1.75 1.75 0 0 1 10.75 17h-5A1.75 1.75 0 0 1 4 15.25v-8A1.75 1.75 0 0 1 5.75 5.5h.75Zm1.5 0h2.75a1.75 1.75 0 0 1 1.75 1.75v5.25h1.75a.25.25 0 0 0 .25-.25v-8.5a.25.25 0 0 0-.25-.25h-6a.25.25 0 0 0-.25.25V5.5Zm-2.25 1.5a.25.25 0 0 0-.25.25v8a.25.25 0 0 0 .25.25h5a.25.25 0 0 0 .25-.25v-8a.25.25 0 0 0-.25-.25h-5Z"
-                ></path>
-              </svg>
-            </span>
-            <span class="copy-label">Copy prompt</span>
-          </button>
         </div>
         <pre data-prompt-output></pre>
       </div>
+      <button type="button" class="copy-button" data-copy-prompt>
+        <span class="copy-icon" aria-hidden="true">
+          <svg viewBox="0 0 20 20" focusable="false">
+            <path
+              d="M6.5 5.5V3.75A1.75 1.75 0 0 1 8.25 2h6A1.75 1.75 0 0 1 16 3.75v8.5A1.75 1.75 0 0 1 14.25 14H12.5v1.75A1.75 1.75 0 0 1 10.75 17h-5A1.75 1.75 0 0 1 4 15.25v-8A1.75 1.75 0 0 1 5.75 5.5h.75Zm1.5 0h2.75a1.75 1.75 0 0 1 1.75 1.75v5.25h1.75a.25.25 0 0 0 .25-.25v-8.5a.25.25 0 0 0-.25-.25h-6a.25.25 0 0 0-.25.25V5.5Zm-2.25 1.5a.25.25 0 0 0-.25.25v8a.25.25 0 0 0 .25.25h5a.25.25 0 0 0 .25-.25v-8a.25.25 0 0 0-.25-.25h-5Z"
+            ></path>
+          </svg>
+        </span>
+        <span class="copy-label">Copy prompt</span>
+      </button>
       <p class="copy-status" role="status" aria-live="polite" data-copy-status></p>
       <dialog class="copy-dialog" data-copy-dialog aria-labelledby="ops-wizard-copy-dialog-title">
         <div class="copy-dialog-card">
-          <span class="copy-dialog-kicker">Next steps</span>
+          <span class="copy-dialog-kicker">Prompt copied</span>
           <h3 class="copy-dialog-title" id="ops-wizard-copy-dialog-title">
-            Prompt copied — launch it from a fresh control repository
+            Run this prompt in your central agentic ops repo
           </h3>
+          <p class="copy-dialog-reinforce">
+            Your prompt is on the clipboard. Head over to your Central Agentic Ops control repository and run it there.
+          </p>
           <ol class="copy-dialog-steps">
-            <li>Create a new private repository for your Central Agentic Ops control plane.</li>
+            <li>Create or open a private repository for your Central Agentic Ops control plane.</li>
             <li>Open the repository in your preferred coding agent.</li>
             <li>Paste the copied prompt into the starter text box and let the agent prepare the repo.</li>
           </ol>
-          <button type="button" class="copy-dialog-close" data-copy-dialog-close>Start setup</button>
+          <button type="button" class="copy-dialog-close" data-copy-dialog-close>Got it, take me back</button>
         </div>
       </dialog>
     </fieldset>
@@ -825,15 +828,18 @@ const agents = [
     }
 
     .copy-button {
-      display: inline-flex;
+      display: flex;
+      width: 100%;
       align-items: center;
-      gap: 0.35rem;
+      justify-content: center;
+      gap: 0.6rem;
+      margin: 0.75rem 0 0;
       border: 1px solid color-mix(in srgb, var(--wizard-blue) 70%, transparent);
-      border-radius: 999px;
+      border-radius: 0.9rem;
       background: linear-gradient(135deg, var(--wizard-blue), var(--wizard-violet) 52%, var(--wizard-pink));
-      padding: 0.38rem 0.9rem;
+      padding: 0.9rem 1.5rem;
       color: var(--sl-color-white);
-      font-size: var(--sl-text-xs);
+      font-size: var(--sl-text-lg);
       font-weight: 800;
       cursor: pointer;
       box-shadow: 0 0.75rem 1.5rem color-mix(in srgb, var(--wizard-violet) 30%, transparent);
@@ -842,8 +848,8 @@ const agents = [
 
     .copy-icon {
       display: inline-flex;
-      width: 1rem;
-      height: 1rem;
+      width: 1.35rem;
+      height: 1.35rem;
     }
 
     .copy-icon svg {
@@ -870,9 +876,14 @@ const agents = [
     }
 
     .copy-dialog {
-      max-width: min(26rem, calc(100% - 2rem));
-      border: 1px solid color-mix(in srgb, var(--wizard-blue) 55%, transparent);
-      border-radius: 1rem;
+      inset: 0;
+      max-width: 100vw;
+      max-height: 100vh;
+      width: 100%;
+      height: 100%;
+      margin: 0;
+      border: none;
+      border-radius: 0;
       background:
         radial-gradient(circle at 20% 0%, color-mix(in srgb, var(--wizard-blue) 25%, transparent), transparent 38%),
         radial-gradient(circle at 100% 12%, color-mix(in srgb, var(--wizard-pink) 22%, transparent), transparent 34%),
@@ -892,14 +903,21 @@ const agents = [
       position: relative;
       display: flex;
       flex-direction: column;
-      gap: 0.875rem;
-      overflow: hidden;
-      padding: 1.4rem;
+      align-items: center;
+      justify-content: center;
+      gap: 1.1rem;
+      overflow: auto;
+      width: 100%;
+      height: 100%;
+      max-width: 34rem;
+      margin: 0 auto;
+      padding: 2rem;
+      text-align: center;
     }
 
     .copy-dialog-card::before {
-      width: 3rem;
-      height: 0.35rem;
+      width: 3.5rem;
+      height: 0.4rem;
       border-radius: 999px;
       background: linear-gradient(90deg, var(--wizard-blue), var(--wizard-violet), var(--wizard-pink));
       box-shadow: 0 0.5rem 1.5rem color-mix(in srgb, var(--wizard-violet) 50%, transparent);
@@ -913,6 +931,11 @@ const agents = [
       line-height: 1.6;
     }
 
+    .copy-dialog-card .copy-dialog-reinforce {
+      max-width: 30rem;
+      font-size: var(--sl-text-base);
+    }
+
     .copy-dialog-kicker {
       color: color-mix(in srgb, var(--wizard-blue) 78%, var(--sl-color-white));
       font-size: var(--sl-text-xs);
@@ -924,8 +947,8 @@ const agents = [
     .copy-dialog-card .copy-dialog-title {
       margin: 0;
       color: var(--sl-color-white);
-      font-size: var(--sl-text-xl);
-      font-weight: 700;
+      font-size: var(--sl-text-3xl);
+      font-weight: 800;
       line-height: 1.2;
     }
 
@@ -933,10 +956,12 @@ const agents = [
       display: grid;
       gap: 0.55rem;
       margin: 0;
+      max-width: 26rem;
       padding-inline-start: 1.25rem;
       color: var(--sl-color-gray-2);
       font-size: var(--sl-text-sm);
       line-height: 1.55;
+      text-align: start;
     }
 
     .copy-dialog-steps li::marker {
@@ -945,13 +970,14 @@ const agents = [
     }
 
     .copy-dialog-close {
-      align-self: flex-start;
+      align-self: center;
+      margin-top: 0.5rem;
       border: 1px solid color-mix(in srgb, var(--wizard-blue) 70%, transparent);
       border-radius: 999px;
       background: linear-gradient(135deg, var(--wizard-blue), var(--wizard-violet) 55%, var(--wizard-pink));
-      padding: 0.45rem 1rem;
+      padding: 0.6rem 1.5rem;
       color: var(--sl-color-white);
-      font-size: var(--sl-text-xs);
+      font-size: var(--sl-text-sm);
       font-weight: 800;
       cursor: pointer;
     }
