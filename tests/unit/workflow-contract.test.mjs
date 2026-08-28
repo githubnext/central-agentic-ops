@@ -763,7 +763,7 @@ test("operation workflows optionally load per-operation markdown steering", () =
   }
 });
 
-test("review destinations must be isolated, accessible, and private", () => {
+test("review destinations must be isolated and accessible, with non-central destinations private", () => {
   const precompute = workflow("shared/control-precompute.md");
 
   assert.match(precompute, /validate_output_destination/);
@@ -771,7 +771,8 @@ test("review destinations must be isolated, accessible, and private", () => {
   assert.match(precompute, /live worker safe_output_repo must equal target_repo/);
   assert.match(precompute, /gh api "repos\/\$SAFE_OUTPUT_REPO" --jq '\.private'/);
   assert.match(precompute, /review safe_output_repo must be accessible/);
-  assert.match(precompute, /review safe_output_repo must be private/);
+  assert.match(precompute, /! repository_equal "\$SAFE_OUTPUT_REPO" "\$CENTRAL_REPO"/);
+  assert.match(precompute, /non-central review safe_output_repo must be private/);
 });
 
 test("safe-output modes are review and live with a separate package kill switch", () => {
@@ -1248,7 +1249,7 @@ test("clean-room compilation emits the expected GitHub Actions settings", { time
       assert.match(generated, /outside CENTRAL_AGENTIC_OPS_ALLOWED_OWNERS/);
       assert.match(generated, /review safe_output_repo must differ from target_repo/);
       assert.match(generated, /review safe_output_repo must be accessible/);
-      assert.match(generated, /review safe_output_repo must be private/);
+      assert.match(generated, /non-central review safe_output_repo must be private/);
       assert.match(generated, /live worker safe_output_repo must equal target_repo/);
       assert.match(generated, /target assigns live authority for .+ to a different control repository/);
       assert.doesNotMatch(generated, /PREVIEW_ONLY|preview_only/);

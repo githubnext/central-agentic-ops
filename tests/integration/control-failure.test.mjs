@@ -142,11 +142,20 @@ test("control precompute rejects an inaccessible review destination", () => {
   assert.match(result.stderr, /review safe_output_repo must be accessible/);
 });
 
-test("control precompute rejects a public review destination", () => {
+test("control precompute accepts a public central review destination", () => {
   const result = runPrecompute({}, "printf 'false\\n'");
 
+  assert.equal(result.status, 0, result.stderr);
+});
+
+test("control precompute rejects a public non-central review destination", () => {
+  const result = runPrecompute(
+    { SAFE_OUTPUT_REPO: "acme/review" },
+    "printf 'false\\n'",
+  );
+
   assert.notEqual(result.status, 0);
-  assert.match(result.stderr, /review safe_output_repo must be private/);
+  assert.match(result.stderr, /non-central review safe_output_repo must be private/);
 });
 
 function runLiveAuthority(authorityContent, overrides = {}) {

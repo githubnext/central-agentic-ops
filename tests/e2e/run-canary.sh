@@ -12,6 +12,10 @@ SAFE_OUTPUT_REPO=${SAFE_OUTPUT_REPO:-}
 REQUIRE_OUTPUT=${REQUIRE_OUTPUT:-false}
 CONFIRMATION=${CONFIRMATION:-}
 
+repository_equal() {
+  [[ "$(printf '%s' "$1" | tr '[:upper:]' '[:lower:]')" == "$(printf '%s' "$2" | tr '[:upper:]' '[:lower:]')" ]]
+}
+
 case "$BUNDLE" in
   advisory)
     workflow_file=advisory.lock.yml
@@ -50,8 +54,9 @@ case "$SAFE_OUTPUT_MODE" in
       || { printf 'review and target repositories must differ\n' >&2; exit 1; }
     [[ "$CONFIRMATION" == "REVIEW $SAFE_OUTPUT_REPO" ]] \
       || { printf 'confirmation must be REVIEW %s\n' "$SAFE_OUTPUT_REPO" >&2; exit 1; }
-    [[ $(gh api "repos/$SAFE_OUTPUT_REPO" --jq '.private') == true ]] \
-      || { printf 'review repository must be private\n' >&2; exit 1; }
+    is_private=$(gh api "repos/$SAFE_OUTPUT_REPO" --jq '.private')
+    [[ "$is_private" == true ]] || repository_equal "$SAFE_OUTPUT_REPO" "$GITHUB_REPOSITORY" \
+      || { printf 'non-central review repository must be private\n' >&2; exit 1; }
     ;;
   live)
     [[ -z "$SAFE_OUTPUT_REPO" ]] || { printf 'live mode derives its output repository from target_repo\n' >&2; exit 1; }
