@@ -98,6 +98,21 @@ export const BUILT_IN_PAGE_VALUES = [
   'findings'
 ];
 
+export const BUILT_IN_PAGE_REQUIRED_SOURCES = {
+  overview: ['workflows', 'runs', 'usage', 'findings', 'operational-values'],
+  organizations: ['organizations', 'repositories', 'workflows', 'runs', 'usage'],
+  repositories: ['repositories', 'runs', 'usage', 'operational-values'],
+  workflows: ['workflows', 'runs', 'outcomes', 'usage', 'findings', 'operational-values'],
+  runs: ['runs'],
+  experiments: ['experiments', 'experiment-assignments', 'grader-observations', 'eval-observations', 'outcomes', 'usage', 'operational-values'],
+  graders: ['graders', 'grader-observations'],
+  evals: ['evals', 'eval-observations'],
+  usage: ['usage'],
+  'engines-models': ['runs', 'outcomes', 'usage'],
+  'operational-value': ['operational-values'],
+  findings: ['findings']
+};
+
 export const SOURCE_VALUES = [
   'organizations',
   'repositories',
