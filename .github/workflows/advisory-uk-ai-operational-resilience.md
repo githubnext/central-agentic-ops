@@ -286,7 +286,7 @@ steps:
         core.info(`Wrote bounded advisory evidence for ${payload.repository}.`);
 ---
 
-      {{#runtime-import? .github/aw/advisory.md}}
+{{#runtime-import? .github/aw/advisory.md}}
 
 <!-- Advisory outputs are advisory and non-binding. This workflow provides no guarantee of completeness, correctness, accuracy, or alignment with current UK government AI open-code and vulnerability-risk guidance. -->
 
