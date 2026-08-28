@@ -2,7 +2,11 @@
 # This repo is the source only, compile happens at the repo where gh aw add is run
 .github/workflows/*.lock.yml
 
+# Certain workflows run directly from this repository, so track their compiled locks.
+!.github/workflows/daily-multi-device-docs-tester.lock.yml
+
 # Astro documentation site
 .astro/
 dist/
 node_modules/
+
