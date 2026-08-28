@@ -47,7 +47,7 @@ tools:
     toolsets: [default]
   timeout: 300
   playwright:
-    mode: cli
+    mode: mcp
   bash:
     - "*"
 safe-outputs:
@@ -97,7 +97,7 @@ You are a build engineer incrementally implementing a conforming presenter and v
 - Type checking with TypeScript in `checkJs` strict mode over JSDoc annotations; no `.ts` application sources.
 - ESLint flat configuration for lint gates.
 - Vitest for unit and contract tests.
-- Playwright, driven through `playwright-cli`, for browser end-to-end tests against the rendered dashboard.
+- Playwright via the built-in MCP browser tools, for browser end-to-end tests against the rendered dashboard.
 - A tiny reactive core inspired by VanJS with no dependencies: reactive state, derived values, effects, and a small hyperscript-style DOM builder with keyed list reconciliation.
 - Deterministic rendering: identical configuration plus identical data always produce identical output.
 
@@ -130,7 +130,7 @@ On the bootstrap run, create `pages/dashboard/PLAN.md` with the following milest
 
 ## Playwright
 
-Playwright is available through `playwright-cli`. Configure browser launch with `--no-sandbox` when Chromium fails to start. If the browser cannot start at all, treat it as an infrastructure blocker: record it in `PLAN.md`, keep the other gates green, and say so in the pull request body.
+Playwright is available through the built-in MCP browser tools. Use the browser snapshot, click, type, and evaluation actions directly instead of `playwright-cli`. If the browser cannot start through MCP, treat it as an infrastructure blocker: record it in `PLAN.md`, keep the other gates green, and say so in the pull request body.
 
 ## Pull request content
 
