@@ -3,6 +3,7 @@ emoji: ":mag:"
 description: "Builds an evidence-backed CRA scope and product-classification record for explicit human review."
 name: "EU CRA Advisor / Scope Classifier"
 max-ai-credits: 150
+max-daily-ai-credits: -1
 
 on:
   workflow_dispatch:

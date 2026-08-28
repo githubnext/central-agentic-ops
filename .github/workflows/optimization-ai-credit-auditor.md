@@ -6,6 +6,7 @@ description: "Daily audit of AI Credit (AIC) usage across all agentic workflows 
 name: "Optimization / AI Credit Auditor"
 
 max-ai-credits: 350
+max-daily-ai-credits: -1
 
 on:
   workflow_dispatch:

@@ -6,6 +6,7 @@ description: "Daily optimization that identifies the highest AI Credit (AIC) age
 name: "Optimization / AI Credit Optimizer"
 
 max-ai-credits: 500
+max-daily-ai-credits: -1
 
 on:
   workflow_dispatch:

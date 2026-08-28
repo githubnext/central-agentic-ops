@@ -3,6 +3,7 @@ emoji: ":package:"
 description: "Audits CRA supply-chain, component inventory, SBOM, dependency, and provenance evidence."
 name: "EU CRA Advisor / Supply Chain SBOM Auditor"
 max-ai-credits: 150
+max-daily-ai-credits: -1
 
 on:
   workflow_dispatch:

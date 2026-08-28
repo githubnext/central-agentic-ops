@@ -3,6 +3,7 @@ emoji: ":clipboard:"
 description: "Audits CRA technical documentation, conformity-assessment, declaration, and release-gate evidence."
 name: "EU CRA Advisor / Conformity Release Evidence"
 max-ai-credits: 150
+max-daily-ai-credits: -1
 
 on:
   workflow_dispatch:

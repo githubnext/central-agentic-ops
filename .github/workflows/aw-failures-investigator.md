@@ -6,6 +6,7 @@ description: "Buckets recent agentic workflow failures in one target repository 
 name: "AW Failures / Investigator"
 
 max-ai-credits: 500
+max-daily-ai-credits: -1
 
 on:
   workflow_dispatch:

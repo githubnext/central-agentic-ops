@@ -6,6 +6,7 @@ description: "Detects available gh-aw releases, runs `gh aw upgrade` in one targ
 name: "AW Maintenance / Upgrade"
 
 max-ai-credits: 500
+max-daily-ai-credits: -1
 
 on:
   workflow_dispatch:
