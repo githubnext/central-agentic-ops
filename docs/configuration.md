@@ -41,7 +41,7 @@ Add an App or PAT when the target is private or internal. Keep the mode at `revi
 
 Each workflow in an operation can load repository-specific instructions from `.github/cao/<operation>.md` in the control repository. For example, `.github/cao/dependabot.md` can describe organization-specific dependency priorities, repositories to prefer or avoid, or additional evidence to consider. The same file steers both orchestrator selection and worker execution.
 
-The supported operation names are `advisory`, `ambient-context`, `aw-failures`, `aw-maintenance`, `dependabot`, `eu-cra-compliance`, and `optimization`. These files are optional runtime imports: operation jobs continue with their packaged instructions when the steering file does not exist. Because steering files are separate from package-owned workflow sources, `gh aw update` does not overwrite them.
+The supported operation names are `advisory`, `ambient-context`, `aw-maintenance`, `dependabot`, `eu-cra-compliance`, and `optimization`. These files are optional runtime imports: operation jobs continue with their packaged instructions when the steering file does not exist. Because steering files are separate from package-owned workflow sources, `gh aw update` does not overwrite them.
 
 Keep steering instructions within the operation's existing permissions, safety policy, and dispatch limits. Steering can refine selection and prioritization, but it cannot grant tools, credentials, permissions, or safe-output capabilities.
 
@@ -73,18 +73,13 @@ Keep steering instructions within the operation's existing permissions, safety p
 | `CENTRAL_AGENTIC_OPS_AMBIENT_CONTEXT_AGENTS_MD_MAX_MODE` | Ambient Context worker | No | `review` | Maximum `AGENTS.md` curator mode. |
 | `CENTRAL_AGENTIC_OPS_AMBIENT_CONTEXT_SKILLS_ENABLED` | Ambient Context worker | No | `true` | Worker kill switch for the skills curator. |
 | `CENTRAL_AGENTIC_OPS_AMBIENT_CONTEXT_SKILLS_MAX_MODE` | Ambient Context worker | No | `review` | Maximum skills curator mode. |
-| `CENTRAL_AGENTIC_OPS_AW_FAILURES_ENABLED` | AW Failures | No | `true` | Package kill switch. Set to `false` to stop orchestrator and worker dispatches. |
-| `CENTRAL_AGENTIC_OPS_AW_FAILURES_MODE` | AW Failures | No | `review` | Sets the output mode to `review` or `live`. |
-| `CENTRAL_AGENTIC_OPS_AW_FAILURES_MAX_REPOS` | AW Failures | No | `1` | Scheduled repository-selection cap. Accepts `1` through `1000`; dispatch limits may reduce it further. |
-| `CENTRAL_AGENTIC_OPS_AW_FAILURES_ROLLOUT_PERCENT` | AW Failures | No | `100` | Limits selection to this percentage of discovered repositories. Accepts integers from `1` through `100`. |
-| `CENTRAL_AGENTIC_OPS_AW_FAILURES_MONTHLY_AI_CREDIT_BUDGET` | AW Failures | No | `0` | Monthly package budget in AI Credits. `0` disables monthly budget tuning. |
-| `CENTRAL_AGENTIC_OPS_AW_FAILURES_INVESTIGATOR_ENABLED` | AW Failures worker | No | `true` | Worker kill switch for the investigator. |
-| `CENTRAL_AGENTIC_OPS_AW_FAILURES_INVESTIGATOR_MAX_MODE` | AW Failures worker | No | `review` | Maximum investigator mode: `review` or `live`. |
 | `CENTRAL_AGENTIC_OPS_AW_MAINTENANCE_ENABLED` | AW Maintenance | No | `true` | Package kill switch. Set to `false` to stop orchestrator and worker dispatches. |
 | `CENTRAL_AGENTIC_OPS_AW_MAINTENANCE_MODE` | AW Maintenance | No | `review` | Sets the output mode to `review` or `live`. |
 | `CENTRAL_AGENTIC_OPS_AW_MAINTENANCE_MAX_REPOS` | AW Maintenance | No | `1` | Scheduled repository-selection cap. Accepts `1` through `1000`; dispatch limits may reduce it further. |
 | `CENTRAL_AGENTIC_OPS_AW_MAINTENANCE_ROLLOUT_PERCENT` | AW Maintenance | No | `100` | Limits selection to this percentage of discovered repositories. Accepts integers from `1` through `100`. |
 | `CENTRAL_AGENTIC_OPS_AW_MAINTENANCE_MONTHLY_AI_CREDIT_BUDGET` | AW Maintenance | No | `0` | Monthly package budget in AI Credits. `0` disables monthly budget tuning. |
+| `CENTRAL_AGENTIC_OPS_AW_MAINTENANCE_FAILURES_ENABLED` | AW Maintenance failure worker | No | `true` | Worker kill switch for the investigator. |
+| `CENTRAL_AGENTIC_OPS_AW_MAINTENANCE_FAILURES_MAX_MODE` | AW Maintenance failure worker | No | `review` | Maximum investigator mode: `review` or `live`. |
 | `CENTRAL_AGENTIC_OPS_AW_MAINTENANCE_UPGRADE_ENABLED` | AW Maintenance worker | No | `true` | Worker kill switch for the upgrade worker. |
 | `CENTRAL_AGENTIC_OPS_AW_MAINTENANCE_UPGRADE_MAX_MODE` | AW Maintenance worker | No | `review` | Maximum upgrade worker mode: `review` or `live`. |
 | `CENTRAL_AGENTIC_OPS_DEPENDABOT_ENABLED` | Dependabot | No | `true` | Package kill switch. Set to `false` to stop orchestrator and worker dispatches. |
@@ -313,9 +308,9 @@ Other `GH_AW_*` values, including safe-output files, are managed by the gh-aw ru
 
 ## Sources of Truth
 
-- Package inventory and minimum gh-aw versions: `aw.yml`, `advisory/aw.yml`, `ambient-context/aw.yml`, `aw-failures/aw.yml`, `aw-maintenance/aw.yml`, `dependabot/aw.yml`, `eu-cra-compliance/aw.yml`, and `optimization/aw.yml`
+- Package inventory and minimum gh-aw versions: `aw.yml`, `advisory/aw.yml`, `ambient-context/aw.yml`, `aw-maintenance/aw.yml`, `dependabot/aw.yml`, `eu-cra-compliance/aw.yml`, and `optimization/aw.yml`
 - Shared resolution and precedence: `.github/workflows/shared/control.md`
-- Manual inputs: `.github/workflows/uk-ai-advisory.md`, `.github/workflows/ambient-context.md`, `.github/workflows/aw-failures.md`, `.github/workflows/dependabot.md`, `.github/workflows/eu-cra-compliance.md`, and `.github/workflows/optimization.md`
+- Manual inputs: `.github/workflows/uk-ai-advisory.md`, `.github/workflows/ambient-context.md`, `.github/workflows/aw-maintenance.md`, `.github/workflows/dependabot.md`, `.github/workflows/eu-cra-compliance.md`, and `.github/workflows/optimization.md`
 - Optional observability: `.github/workflows/shared/sentry.md`, `.github/workflows/shared/grafana.md`, and `.github/workflows/shared/datadog.md`
 
 When adding or renaming a setting, update the installer manifest, consuming workflow, and this reference in the same change.

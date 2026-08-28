@@ -54,7 +54,6 @@ const expectedFiles = [
   ".github/workflows/ambient-context-skills-curator.md",
   ".github/workflows/ambient-context.md",
   ".github/workflows/aw-failures-investigator.md",
-  ".github/workflows/aw-failures.md",
   ".github/workflows/aw-maintenance-upgrade.md",
   ".github/workflows/aw-maintenance.md",
   ".github/workflows/dependabot-release-train-updater.md",
@@ -124,7 +123,7 @@ function assertCorePackage(consumer) {
     installedManifest.files.map(({ destination }) => destination).sort(),
     [
       ".github/workflows/ambient-context.md",
-      ".github/workflows/aw-failures.md",
+      ".github/workflows/aw-failures-investigator.md",
       ".github/workflows/aw-maintenance.md",
       ".github/workflows/dependabot.md",
       ".github/workflows/optimization.md",
