@@ -107,7 +107,9 @@ API and budget failures are fail-closed:
 
 This favors bounded failure over eventual delivery. Guaranteed eventual processing is not provided by the current workflows.
 
-Observability imports for Sentry, Grafana, and Datadog are shared control-plane context. They do not replace GitHub Actions run history and correlation metadata as the primary execution audit trail.
+Optional observability imports for Sentry, Grafana, and Datadog configure exporter destinations; they do not emit the dispatcher span or replace GitHub Actions run history and correlation metadata as the primary execution audit trail.
+
+Every orchestrator emits a `central-agentic-ops.dispatcher.run` span after normalized agent output is available. Its attributes contain only the package, policy state, limits, and aggregate candidate, requested dispatch, target, workflow, and incomplete counts; target names, workflow inputs, run URLs, and error payloads are excluded. A `requested` status records dispatch intent before safe-output handlers call the GitHub API. Use gh-aw outcome spans and GitHub Actions run history to determine dispatch success or failure.
 
 ## Publishing Reviewed Operation Issues
 
