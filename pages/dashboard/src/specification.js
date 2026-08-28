@@ -13,7 +13,7 @@ export const BUILT_IN_PAGE_KEYS = ['id', 'kind', 'page', 'title', 'description']
 export const CUSTOM_PAGE_KEYS = ['id', 'kind', 'title', 'description', 'views'];
 
 export const VIEW_KEYS = ['id', 'title', 'description', 'data', 'mark', 'encoding'];
-export const VIEW_DATA_KEYS = ['source', 'scope', 'time', 'filters', 'limit', 'order-by'];
+export const VIEW_DATA_KEYS = ['source', 'scope', 'time', 'filters', 'limit', 'order-by', 'source-metadata'];
 export const VIEW_MARK_VALUES = ['metric', 'table', 'chart'];
 export const VIEW_ENCODING_KEYS = ['value', 'columns', 'x', 'y', 'color', 'href'];
 export const FIELD_DEFINITION_KEYS = ['field', 'type', 'aggregate', 'time-unit', 'title', 'as'];
@@ -48,7 +48,8 @@ export const DATASET_METADATA_KEYS = [
   'coverage-end',
   'completeness',
   'freshness',
-  'provenance-link'
+  'provenance-link',
+  'availability'
 ];
 export const DATASET_COMPLETENESS_VALUES = ['complete', 'partial', 'unknown'];
 export const DATASET_FRESHNESS_VALUES = ['fresh', 'stale', 'unknown'];
