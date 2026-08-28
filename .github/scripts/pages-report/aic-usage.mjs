@@ -7,7 +7,8 @@ function runGhAw(repository, runIds, outputDirectory) {
   return new Promise((resolve, reject) => {
     const child = spawn("gh", [
       "aw", "logs", "--repo", repository, "--stdin", "--json",
-      "--output", outputDirectory, "--summary-file", "", "--cache-before", "-2d",
+      "--output", outputDirectory, "--summary-file", "",
+      "--start-date", "-2d", "--cache-before", "-2d",
     ], { env: process.env, stdio: ["pipe", "pipe", "pipe"] });
     const stdout = [];
     const stderr = [];
