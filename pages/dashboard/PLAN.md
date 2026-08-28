@@ -6,7 +6,7 @@
 - [x] **Reactive core** — state, derived values, effects, disposal, and the DOM builder with keyed lists; unit tests including update, removal, and reordering.
 - [x] **Document model and validation** — Sections 4 and 12: root structure, vocabulary, unknown and duplicate key rejection, identifier grammar, uniqueness, error codes from Appendix B with code, message, and YAML path.
 - [x] **Semantic model** — Section 5 sources, grain, field catalog, and intrinsic types.
-- [ ] **Scope, time, filters** — Section 6 including context composition.
+- [x] **Scope, time, filters** — Section 6 including context composition.
 - [ ] **Dimensions, measures, aggregation** — Section 7 including canonical dimensions, measures, aggregates, and time units.
 - [ ] **Provenance, freshness, data states** — Section 8 including unavailable, empty, partial, and stale states.
 - [ ] **Links and findings** — Section 9 link objects and the `href` channel semantics.
@@ -25,6 +25,16 @@
 - 2026-08-28: `npm run test:e2e` is currently blocked because the browser runtime used by the workflow environment does not expose a launchable Chromium binary (`browserType.launch: Executable doesn't exist`). Unit, typecheck, and lint gates pass; browser tests are present but cannot launch until the browser dependency is provisioned. The workflow now prefers the built-in Playwright MCP browser tools instead of the incompatible `playwright-cli` wrapper.
 
 ## Run log
+
+### 2026-08-28 (scope, time, filters slice)
+
+- Shipped the first Section 6 validation slice in `src/specification.js` and `src/validator.js`, adding canonical context-key validation for `scope`, `time`, `filters`, `limit`, and `order-by`, plus `DLS-E010` reporting for invalid context shapes.
+- Implemented conservative checks for `DLS-CTX-002`, `DLS-CTX-004`, and `DLS-CTX-009`: RFC 3339 `start` and `end`, strictly increasing absolute bounds, `time.range` pattern enforcement, forbidding `range` alongside `start` or `end`, non-empty scope/filter sequences, positive integer limits, and `order-by.direction` restricted to `asc` and `desc`.
+- Extended semantic filter literal validation to findings enumerations used by Section 9 fields when they appear inside Section 6 filters.
+- Added unit coverage in `test/unit/validator.test.js` for `DLS-CTX-002`, `DLS-CTX-004`, `DLS-CTX-006`, and `DLS-CTX-009`.
+- Verified `npm install`; direct local binaries pass `eslint` and `vitest`, while `npm run typecheck` is currently blocked by an upstream TypeScript parse failure in `node_modules/globals/index.d.ts` under the workflow's Node/TypeScript toolchain and `npm run test:e2e` remains blocked because the Playwright test runner resolves to an incompatible executable path in this environment.
+- Next milestone: Dimensions, measures, aggregation.
+
 
 ### 2026-08-28 (semantic model slice)
 

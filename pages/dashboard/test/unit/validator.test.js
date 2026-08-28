@@ -428,6 +428,219 @@ dashboard:
     }
   });
 
+  it('DLS-CTX-009 DLS-CTX-002 accepts valid scope and time context shapes', () => {
+    const result = validateDashboardDocument(`language-version: "0.1.0"
+dashboard:
+  id: context-shapes
+  title: Context Shapes
+  defaults:
+    scope:
+      organizations:
+        - octo-org
+      repositories:
+        - octo-org/central-agentic-ops
+    time:
+      start: "2026-08-01T00:00:00Z"
+      end: "2026-08-31T00:00:00Z"
+    filters:
+      rollout-mode:
+        - review
+        - live
+  pages:
+    - id: custom-page
+      kind: custom
+      views:
+        - id: usage-view
+          data:
+            source: usage
+            scope:
+              workflows:
+                - .github/workflows/dashboard.yml
+            time:
+              range: 7d
+            filters:
+              repository: octo-org/central-agentic-ops
+          mark: metric
+          encoding:
+            value:
+              field: aic
+              aggregate: sum
+`);
+
+    expect(result.ok).toBe(true);
+  });
+
+  it('DLS-CTX-009 rejects invalid time.range forms and mixing range with start/end using DLS-E010', () => {
+    const result = validateDashboardDocument(`language-version: "0.1.0"
+dashboard:
+  id: invalid-range
+  title: Invalid Range
+  pages:
+    - id: custom-page
+      kind: custom
+      views:
+        - id: bad-range
+          data:
+            source: runs
+            time:
+              range: 0d
+              start: "2026-08-01T00:00:00Z"
+          mark: metric
+          encoding:
+            value:
+              field: run
+              aggregate: count
+`);
+
+    expect(result.ok).toBe(false);
+    if (!result.ok) {
+      expect(result.errors).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({ code: 'DLS-E010', path: '$.dashboard.pages[0].views[0].data.time.range' }),
+          expect.objectContaining({ code: 'DLS-E010', path: '$.dashboard.pages[0].views[0].data.time' })
+        ])
+      );
+    }
+  });
+
+  it('DLS-CTX-002 rejects non-RFC-3339 timestamps with DLS-E010', () => {
+    const result = validateDashboardDocument(`language-version: "0.1.0"
+dashboard:
+  id: invalid-time-format
+  title: Invalid Time Format
+  pages:
+    - id: custom-page
+      kind: custom
+      views:
+        - id: bad-time
+          data:
+            source: runs
+            time:
+              start: 2026-08-01
+              end: "2026-08-02T00:00:00Z"
+          mark: metric
+          encoding:
+            value:
+              field: run
+              aggregate: count
+`);
+
+    expect(result.ok).toBe(false);
+    if (!result.ok) {
+      expect(result.errors).toEqual([
+        expect.objectContaining({ code: 'DLS-E010', path: '$.dashboard.pages[0].views[0].data.time.start' })
+      ]);
+    }
+  });
+
+  it('DLS-CTX-002 rejects non-increasing start/end bounds with DLS-E010', () => {
+    const result = validateDashboardDocument(`language-version: "0.1.0"
+dashboard:
+  id: invalid-time-order
+  title: Invalid Time Order
+  pages:
+    - id: custom-page
+      kind: custom
+      views:
+        - id: bad-time-order
+          data:
+            source: runs
+            time:
+              start: "2026-08-02T00:00:00Z"
+              end: "2026-08-01T00:00:00Z"
+          mark: metric
+          encoding:
+            value:
+              field: run
+              aggregate: count
+`);
+
+    expect(result.ok).toBe(false);
+    if (!result.ok) {
+      expect(result.errors).toEqual([
+        expect.objectContaining({ code: 'DLS-E010', path: '$.dashboard.pages[0].views[0].data.time' })
+      ]);
+    }
+  });
+
+  it('DLS-CTX-004 rejects invalid scope, filter, limit, and order-by shapes using DLS-E010', () => {
+    const result = validateDashboardDocument(`language-version: "0.1.0"
+dashboard:
+  id: invalid-context
+  title: Invalid Context
+  defaults:
+    scope:
+      organizations: []
+    filters:
+      rollout-mode: []
+  pages:
+    - id: custom-page
+      kind: custom
+      views:
+        - id: bad-context
+          data:
+            source: usage
+            scope:
+              invalid-scope:
+                - octo-org
+            filters:
+              repository:
+                - octo-org/central-agentic-ops
+                - ""
+            limit: 0
+            order-by:
+              - field: repository
+                direction: descending
+          mark: metric
+          encoding:
+            value:
+              field: aic
+              aggregate: sum
+`);
+
+    expect(result.ok).toBe(false);
+    if (!result.ok) {
+      expect(result.errors).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({ code: 'DLS-E010', path: '$.dashboard.defaults.scope.organizations' }),
+          expect.objectContaining({ code: 'DLS-E010', path: '$.dashboard.defaults.filters.rollout-mode' }),
+          expect.objectContaining({ code: 'DLS-E004', path: '$.dashboard.pages[0].views[0].data.scope.invalid-scope' }),
+          expect.objectContaining({ code: 'DLS-E010', path: '$.dashboard.pages[0].views[0].data.filters.repository[1]' }),
+          expect.objectContaining({ code: 'DLS-E010', path: '$.dashboard.pages[0].views[0].data.limit' }),
+          expect.objectContaining({ code: 'DLS-E010', path: '$.dashboard.pages[0].views[0].data.order-by[0].direction' })
+        ])
+      );
+    }
+  });
+
+  it('DLS-CTX-004 DLS-CTX-006 accepts canonical filter dimensions for scalar and sequence values', () => {
+    const result = validateDashboardDocument(`language-version: "0.1.0"
+dashboard:
+  id: valid-filters
+  title: Valid Filters
+  pages:
+    - id: custom-page
+      kind: custom
+      views:
+        - id: findings-view
+          data:
+            source: findings
+            filters:
+              finding-status:
+                - open
+                - unknown
+              finding-severity: critical
+              rollout-mode: review
+          mark: metric
+          encoding:
+            value:
+              field: finding
+              aggregate: count
+`);
+
+    expect(result.ok).toBe(true);
+  });
+
   it('DLS-SEM-004 DLS-SEM-005 DLS-SEM-006 DLS-SEM-008 DLS-SEM-009 DLS-SEM-015 reject non-canonical intrinsic enumerations in filters', () => {
     const result = validateDashboardDocument(`language-version: "0.1.0"
 dashboard:

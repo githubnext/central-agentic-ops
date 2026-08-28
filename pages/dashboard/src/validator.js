@@ -7,16 +7,23 @@ import {
   DEFAULTS_KEYS,
   ERROR_CODES,
   EVAL_RESULT_VALUES,
+  FILTER_DIMENSION_VALUES,
+  FINDING_SEVERITY_VALUES,
+  FINDING_STATUS_VALUES,
   GRADER_STATUS_VALUES,
   IDENTIFIER_PATTERN,
   LANGUAGE_VERSION,
+  ORDER_BY_KEYS,
+  ORDER_DIRECTION_VALUES,
   OUTCOME_STATE_VALUES,
   PAGE_KIND_VALUES,
   ROOT_KEYS,
   ROLLOUT_MODE_VALUES,
   RUN_CONCLUSION_VALUES,
   RUN_STATUS_VALUES,
+  SCOPE_KEYS,
   SOURCE_VALUES,
+  TIME_KEYS,
   VIEW_DATA_KEYS,
   VIEW_KEYS,
   WORKFLOW_ACTIVE_VALUES
@@ -191,12 +198,14 @@ function validateDashboard(dashboard, dashboardNode, errors) {
         '$.dashboard.defaults'
       ));
     } else {
+      const defaultsNode = getValueNodeByKey(dashboardNode, 'defaults');
       validateObjectKeys(
-        getValueNodeByKey(dashboardNode, 'defaults'),
+        defaultsNode,
         DEFAULTS_KEYS,
         '$.dashboard.defaults',
         errors
       );
+      validateContext(defaultsNode, dashboard.defaults, '$.dashboard.defaults', errors);
     }
   }
 
@@ -354,8 +363,10 @@ function validateView(view, viewNode, path, viewIds, errors) {
       `${path}.data`
     ));
   } else {
-    validateObjectKeys(getValueNodeByKey(viewNode, 'data'), VIEW_DATA_KEYS, `${path}.data`, errors);
+    const dataNode = getValueNodeByKey(viewNode, 'data');
+    validateObjectKeys(dataNode, VIEW_DATA_KEYS, `${path}.data`, errors);
     validateSource(view.data.source, `${path}.data.source`, errors);
+    validateContext(dataNode, view.data, `${path}.data`, errors);
   }
 
   validateSemanticFieldLiterals(view.data, `${path}.data`, errors);
@@ -388,6 +399,248 @@ function validateSemanticFieldLiterals(data, path, errors) {
   }
 
   validateFilterLiteralSet(data.filters, `${path}.filters`, errors);
+}
+
+/**
+ * @param {unknown} contextNode
+ * @param {Record<string, unknown>} context
+ * @param {string} path
+ * @param {ValidationError[]} errors
+ */
+function validateContext(contextNode, context, path, errors) {
+  validateScope(getValueNodeByKey(contextNode, 'scope'), context.scope, `${path}.scope`, errors);
+  validateTime(getValueNodeByKey(contextNode, 'time'), context.time, `${path}.time`, errors);
+  validateFilters(getValueNodeByKey(contextNode, 'filters'), context.filters, `${path}.filters`, errors);
+  validateLimit(context.limit, `${path}.limit`, errors);
+  validateOrderBy(getValueNodeByKey(contextNode, 'order-by'), context['order-by'], `${path}.order-by`, errors);
+}
+
+/**
+ * @param {unknown} scopeNode
+ * @param {unknown} scope
+ * @param {string} path
+ * @param {ValidationError[]} errors
+ */
+function validateScope(scopeNode, scope, path, errors) {
+  if (scope === undefined) {
+    return;
+  }
+
+  if (!isPlainObject(scope)) {
+    errors.push(createError(
+      ERROR_CODES.invalidScopeFilterTimeAggregationOrOrderReference,
+      'scope must be a mapping.',
+      path
+    ));
+    return;
+  }
+
+  validateObjectKeys(scopeNode, SCOPE_KEYS, path, errors);
+  for (const key of SCOPE_KEYS) {
+    const value = scope[key];
+    if (value !== undefined) {
+      validateNonEmptyStringSequence(value, `${path}.${key}`, `${key} must be a non-empty sequence of non-empty strings.`, errors);
+    }
+  }
+}
+
+/**
+ * @param {unknown} timeNode
+ * @param {unknown} time
+ * @param {string} path
+ * @param {ValidationError[]} errors
+ */
+function validateTime(timeNode, time, path, errors) {
+  if (time === undefined) {
+    return;
+  }
+
+  if (!isPlainObject(time)) {
+    errors.push(createError(
+      ERROR_CODES.invalidScopeFilterTimeAggregationOrOrderReference,
+      'time must be a mapping.',
+      path
+    ));
+    return;
+  }
+
+  validateObjectKeys(timeNode, TIME_KEYS, path, errors);
+
+  const range = time.range;
+  const start = time.start;
+  const end = time.end;
+
+  if (range !== undefined) {
+    if (typeof range !== 'string' || !/^[1-9][0-9]*(h|d|w)$/.test(range)) {
+      errors.push(createError(
+        ERROR_CODES.invalidScopeFilterTimeAggregationOrOrderReference,
+        'time.range must match ^[1-9][0-9]*(h|d|w)$.',
+        `${path}.range`
+      ));
+    }
+
+    if (start !== undefined || end !== undefined) {
+      errors.push(createError(
+        ERROR_CODES.invalidScopeFilterTimeAggregationOrOrderReference,
+        'time.range must not appear with time.start or time.end.',
+        path
+      ));
+    }
+    return;
+  }
+
+  if (start !== undefined && !isRfc3339Timestamp(start)) {
+    errors.push(createError(
+      ERROR_CODES.invalidScopeFilterTimeAggregationOrOrderReference,
+      'time.start must be an RFC 3339 timestamp.',
+      `${path}.start`
+    ));
+  }
+
+  if (end !== undefined && !isRfc3339Timestamp(end)) {
+    errors.push(createError(
+      ERROR_CODES.invalidScopeFilterTimeAggregationOrOrderReference,
+      'time.end must be an RFC 3339 timestamp.',
+      `${path}.end`
+    ));
+  }
+
+  if (typeof start === 'string' && typeof end === 'string' && isRfc3339Timestamp(start) && isRfc3339Timestamp(end)) {
+    if (Date.parse(start) >= Date.parse(end)) {
+      errors.push(createError(
+        ERROR_CODES.invalidScopeFilterTimeAggregationOrOrderReference,
+        'time.start must precede time.end.',
+        path
+      ));
+    }
+  }
+}
+
+/**
+ * @param {unknown} filtersNode
+ * @param {unknown} filters
+ * @param {string} path
+ * @param {ValidationError[]} errors
+ */
+function validateFilters(filtersNode, filters, path, errors) {
+  if (filters === undefined) {
+    return;
+  }
+
+  if (!isPlainObject(filters)) {
+    errors.push(createError(
+      ERROR_CODES.invalidScopeFilterTimeAggregationOrOrderReference,
+      'filters must be a mapping.',
+      path
+    ));
+    return;
+  }
+
+  validateObjectKeys(filtersNode, FILTER_DIMENSION_VALUES, path, errors);
+  for (const [key, value] of Object.entries(filters)) {
+    validateFilterValue(value, `${path}.${key}`, errors);
+  }
+}
+
+/**
+ * @param {unknown} value
+ * @param {string} path
+ * @param {ValidationError[]} errors
+ */
+function validateFilterValue(value, path, errors) {
+  if (Array.isArray(value)) {
+    if (value.length === 0) {
+      errors.push(createError(
+        ERROR_CODES.invalidScopeFilterTimeAggregationOrOrderReference,
+        'filter sequences must be non-empty.',
+        path
+      ));
+      return;
+    }
+
+    for (const [index, item] of value.entries()) {
+      if (typeof item !== 'string' || item.length === 0) {
+        errors.push(createError(
+          ERROR_CODES.invalidScopeFilterTimeAggregationOrOrderReference,
+          'filter values must be non-empty strings or non-empty sequences of non-empty strings.',
+          `${path}[${index}]`
+        ));
+      }
+    }
+    return;
+  }
+
+  if (typeof value !== 'string' || value.length === 0) {
+    errors.push(createError(
+      ERROR_CODES.invalidScopeFilterTimeAggregationOrOrderReference,
+      'filter values must be non-empty strings or non-empty sequences of non-empty strings.',
+      path
+    ));
+  }
+}
+
+/**
+ * @param {unknown} limit
+ * @param {string} path
+ * @param {ValidationError[]} errors
+ */
+function validateLimit(limit, path, errors) {
+  if (limit === undefined) {
+    return;
+  }
+
+  if (typeof limit !== 'number' || !Number.isInteger(limit) || limit <= 0) {
+    errors.push(createError(
+      ERROR_CODES.invalidScopeFilterTimeAggregationOrOrderReference,
+      'limit must be a positive integer.',
+      path
+    ));
+  }
+}
+
+/**
+ * @param {unknown} orderByNode
+ * @param {unknown} orderBy
+ * @param {string} path
+ * @param {ValidationError[]} errors
+ */
+function validateOrderBy(orderByNode, orderBy, path, errors) {
+  if (orderBy === undefined) {
+    return;
+  }
+
+  if (!Array.isArray(orderBy) || orderBy.length === 0) {
+    errors.push(createError(
+      ERROR_CODES.invalidScopeFilterTimeAggregationOrOrderReference,
+      'order-by must be a non-empty sequence.',
+      path
+    ));
+    return;
+  }
+
+  for (const [index, clause] of orderBy.entries()) {
+    const clausePath = `${path}[${index}]`;
+    const clauseNode = getSequenceItemNode(orderByNode, index);
+    if (!isPlainObject(clause)) {
+      errors.push(createError(
+        ERROR_CODES.invalidScopeFilterTimeAggregationOrOrderReference,
+        'order-by entries must be mappings.',
+        clausePath
+      ));
+      continue;
+    }
+
+    validateObjectKeys(clauseNode, ORDER_BY_KEYS, clausePath, errors);
+    validateStringField(clause.field, `${clausePath}.field`, true, errors);
+    validateStringField(clause.direction, `${clausePath}.direction`, true, errors);
+    if (typeof clause.direction === 'string' && !ORDER_DIRECTION_VALUES.includes(clause.direction)) {
+      errors.push(createError(
+        ERROR_CODES.invalidScopeFilterTimeAggregationOrOrderReference,
+        'order-by.direction must be exactly "asc" or "desc".',
+        `${clausePath}.direction`
+      ));
+    }
+  }
 }
 
 /**
@@ -447,7 +700,9 @@ const SEMANTIC_FILTER_VALUE_SETS = {
   'run-conclusion': RUN_CONCLUSION_VALUES,
   status: GRADER_STATUS_VALUES,
   'eval-result': EVAL_RESULT_VALUES,
-  'outcome-state': OUTCOME_STATE_VALUES
+  'outcome-state': OUTCOME_STATE_VALUES,
+  'finding-status': FINDING_STATUS_VALUES,
+  'finding-severity': FINDING_SEVERITY_VALUES
 };
 
 /**
@@ -511,6 +766,50 @@ function validateOptionalStringField(value, path, errors) {
       path
     ));
   }
+}
+
+/**
+ * @param {unknown} value
+ * @param {string} path
+ * @param {string} message
+ * @param {ValidationError[]} errors
+ */
+function validateNonEmptyStringSequence(value, path, message, errors) {
+  if (!Array.isArray(value) || value.length === 0) {
+    errors.push(createError(
+      ERROR_CODES.invalidScopeFilterTimeAggregationOrOrderReference,
+      message,
+      path
+    ));
+    return;
+  }
+
+  for (const [index, item] of value.entries()) {
+    if (typeof item !== 'string' || item.length === 0) {
+      errors.push(createError(
+        ERROR_CODES.invalidScopeFilterTimeAggregationOrOrderReference,
+        message,
+        `${path}[${index}]`
+      ));
+    }
+  }
+}
+
+/**
+ * @param {unknown} value
+ * @returns {value is string}
+ */
+function isRfc3339Timestamp(value) {
+  if (typeof value !== 'string') {
+    return false;
+  }
+
+  const rfc3339Pattern = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d+)?(?:Z|[+-]\d{2}:\d{2})$/;
+  if (!rfc3339Pattern.test(value)) {
+    return false;
+  }
+
+  return !Number.isNaN(Date.parse(value));
 }
 
 /**

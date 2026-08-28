@@ -14,6 +14,32 @@ export const CUSTOM_PAGE_KEYS = ['id', 'kind', 'title', 'description', 'views'];
 
 export const VIEW_KEYS = ['id', 'title', 'description', 'data', 'mark', 'encoding'];
 export const VIEW_DATA_KEYS = ['source', 'scope', 'time', 'filters', 'limit', 'order-by'];
+export const SCOPE_KEYS = ['organizations', 'repositories', 'workflows'];
+export const TIME_KEYS = ['range', 'start', 'end'];
+
+export const ORDER_BY_KEYS = ['field', 'direction'];
+export const ORDER_DIRECTION_VALUES = ['asc', 'desc'];
+
+export const FILTER_DIMENSION_VALUES = [
+  'organization',
+  'repository',
+  'workflow',
+  'experiment',
+  'variant',
+  'workflow-active',
+  'run-status',
+  'run-conclusion',
+  'outcome-state',
+  'rollout-mode',
+  'engine',
+  'requested-model',
+  'resolved-model',
+  'status',
+  'eval-result',
+  'operational-value-definition',
+  'finding-status',
+  'finding-severity'
+];
 
 export const PAGE_KIND_VALUES = ['built-in', 'custom'];
 
@@ -67,11 +93,14 @@ export const RUN_CONCLUSION_VALUES = [
 export const GRADER_STATUS_VALUES = ['pass', 'fail', 'error', 'unavailable'];
 export const EVAL_RESULT_VALUES = ['YES', 'NO', 'UNKNOWN'];
 export const OUTCOME_STATE_VALUES = ['accepted', 'rejected', 'ignored', 'pending', 'lifecycle', 'lifecycle-close'];
+export const FINDING_STATUS_VALUES = ['open', 'resolved', 'dismissed', 'unknown'];
+export const FINDING_SEVERITY_VALUES = ['critical', 'high', 'medium', 'low', 'informational', 'unknown'];
 
 export const ERROR_CODES = {
   invalidYamlSyntax: 'DLS-E001',
   invalidDocumentShape: 'DLS-E002',
   missingOrInvalidRequiredField: 'DLS-E003',
   unknownOrDuplicateKey: 'DLS-E004',
-  nonCanonicalVocabularyOrIdentifier: 'DLS-E005'
+  nonCanonicalVocabularyOrIdentifier: 'DLS-E005',
+  invalidScopeFilterTimeAggregationOrOrderReference: 'DLS-E010'
 };
