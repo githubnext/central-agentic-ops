@@ -1121,6 +1121,7 @@ test("CAO dashboard reviewer checks successful documentation deployments", () =>
   assert.match(source, /toolsets: \[repos, issues, actions\]/);
   assert.match(source, /githubnext\.github\.io/);
   assert.match(source, /at most the latest 100 runs from the last 24 hours/);
+  assert.match(source, /overview, dispatches, packages, repositories, workflows, runs, and coverage routes/);
   assert.match(source, /title-prefix: "\[cao-dashboard\] "/);
   assert.match(source, /close-older-key: cao-dashboard-review/);
   assert.match(source, /If an open issue already describes the same fingerprint, call `noop`/);
@@ -1376,6 +1377,7 @@ test("Pages is an explicit least-privilege add-on", () => {
   assert.match(deployedWorkflows, /const role = workflowRole\(source\)/);
   assert.match(deployedWorkflows, /sourceAvailable: !\/GitHub API 404/);
   assert.match(deployedWorkflows, /run\.conclusion === "action_required"\) current\.actionRequired \+= 1/);
+  assert.match(deployedWorkflows, /event: run\.event/);
   assert.doesNotMatch(deployedWorkflows, /\["failure", "timed_out", "startup_failure", "action_required"\]/);
   assert.match(operationalValues, /workflow\.operationalValue !== true/);
   assert.doesNotMatch(operationalValues, /const workerIds = new Set/);
@@ -1503,12 +1505,14 @@ test("Pages renders one canonical authored workflow detail across repository and
       organizationRepositories: {},
       bundles: [{ repository: "acme/control", name: "Optimization", workflows: [{ lockPath: orchestratorPath }] }],
       workflows: [
-        { repository: "acme/control", visibility: "public", path: orchestratorPath, name: "Optimization", state: "active", htmlUrl: "https://github.com/acme/control/blob/main/.github/workflows/operation.md?plain=1", updatedAt: "2026-08-26T10:00:00Z", role: "orchestrator", runHealth: { runs: 1, successful: 1, failed: 0, cancelled: 0, skipped: 0, pending: 0, other: 0 } },
+        { repository: "acme/control", visibility: "public", path: orchestratorPath, name: "Optimization", state: "active", htmlUrl: "https://github.com/acme/control/blob/main/.github/workflows/operation.md?plain=1", updatedAt: "2026-08-26T10:00:00Z", role: "orchestrator", runHealth: { runs: 1, successful: 1, failed: 0, cancelled: 0, skipped: 0, pending: 0, other: 0, runRecords: [
+          { runId: 5, event: "workflow_dispatch", conclusion: "success", status: "completed", createdAt: "2026-08-26T11:00:00Z", displayTitle: "Optimization manual run" },
+        ] } },
         { repository: "acme/control", visibility: "public", path: workerPath, name: "Credit optimizer", state: "active", htmlUrl: "https://github.com/acme/control/blob/main/.github/workflows/worker.md?plain=1", updatedAt: "2026-08-26T10:00:00Z", role: "worker", runHealth: { runs: 4, successful: 1, failed: 1, actionRequired: 1, cancelled: 0, skipped: 0, pending: 1, other: 0, runRecords: [
-          { runId: 1, conclusion: "success", status: "completed", createdAt: "2026-08-26T08:00:00Z", displayTitle: "Credit optimizer success" },
-          { runId: 2, conclusion: "failure", status: "completed", createdAt: "2026-08-26T09:00:00Z", displayTitle: "Credit optimizer failure" },
-          { runId: 3, conclusion: null, status: "in_progress", createdAt: "2026-08-26T10:00:00Z", displayTitle: "Credit optimizer running" },
-          { runId: 4, conclusion: "action_required", status: "completed", createdAt: "2026-08-26T10:30:00Z", displayTitle: "Credit optimizer approval" },
+          { runId: 1, event: "workflow_dispatch", conclusion: "success", status: "completed", createdAt: "2026-08-26T08:00:00Z", displayTitle: "Credit optimizer success" },
+          { runId: 2, event: "workflow_dispatch", conclusion: "failure", status: "completed", createdAt: "2026-08-26T09:00:00Z", displayTitle: "Credit optimizer failure" },
+          { runId: 3, event: "schedule", conclusion: null, status: "in_progress", createdAt: "2026-08-26T10:00:00Z", displayTitle: "Credit optimizer running" },
+          { runId: 4, event: "workflow_dispatch", conclusion: "action_required", status: "completed", createdAt: "2026-08-26T10:30:00Z", displayTitle: "Credit optimizer approval" },
         ] } },
         { repository: "acme/service", visibility: "public", path: standalonePath, name: "Local audit", state: "disabled_manually", htmlUrl: "https://github.com/acme/service/blob/main/.github/workflows/local-audit.md?plain=1", updatedAt: "2026-08-26T10:00:00Z", role: "standalone", runHealth: { runs: 0, successful: 0, failed: 0, cancelled: 0, skipped: 0, pending: 0, other: 0, runRecords: [] } },
       ],
@@ -1567,6 +1571,7 @@ globalThis.fetch = async (input) => {
     });
 
     const overview = readFileSync(join(outputPath, "index.html"), "utf8");
+    const dispatches = readFileSync(join(outputPath, "dispatches", "index.html"), "utf8");
     const catalog = readFileSync(join(outputPath, "workflows", "index.html"), "utf8");
     const repositories = readFileSync(join(outputPath, "repositories", "index.html"), "utf8");
     const repositoryWorkflows = readFileSync(join(outputPath, "repositories", "acme-control.html"), "utf8");
@@ -1585,6 +1590,7 @@ globalThis.fetch = async (input) => {
     assert.match(overview, /<title>Overview \| control<\/title>/);
     assert.match(overview, /class="sidebar-brand"[^>]*>[\s\S]*?<span>control<\/span>/);
     assert.match(overview, /<span>Overview<\/span>[\s\S]*?<span>Repositories<\/span>[\s\S]*?<span>Packages<\/span>/);
+    assert.match(overview, /href="\.\/dispatches\/"[\s\S]*?<span>Dispatches<\/span>/);
     assert.doesNotMatch(overview, /class="nav-children"/);
     assert.doesNotMatch(overview, /class="attention-link"/);
     assert.match(overview, /class="attention-panel"/);
@@ -1596,6 +1602,21 @@ globalThis.fetch = async (input) => {
     assert.match(overview, /href="runs\/">View all runs<\/a>/);
     assert.doesNotMatch(overview, />View activity<\/a>/);
     assert.match(overview, /class="operation-card-list"/);
+    assert.match(dispatches, /<title>Dispatches \| control<\/title>/);
+    assert.match(dispatches, /Package-worker dispatches/);
+    assert.match(dispatches, /Complete 24-hour Actions run window/);
+    assert.match(dispatches, /3 dispatches/);
+    assert.match(dispatches, /Credit optimizer success/);
+    assert.match(dispatches, /Credit optimizer failure/);
+    assert.match(dispatches, /Credit optimizer approval/);
+    assert.ok(dispatches.indexOf("Credit optimizer approval") < dispatches.indexOf("Credit optimizer failure"));
+    assert.ok(dispatches.indexOf("Credit optimizer failure") < dispatches.indexOf("Credit optimizer success"));
+    assert.match(dispatches, /data-package="Optimization"/);
+    assert.match(dispatches, /github\.com\/acme\/control\/actions\/runs\/2/);
+    assert.match(dispatches, /id="dispatch-search"/);
+    assert.match(dispatches, /id="dispatch-package"/);
+    assert.match(dispatches, /new URLSearchParams\(window\.location\.search\)/);
+    assert.doesNotMatch(dispatches, /Credit optimizer running|Optimization manual run/);
     assert.match(catalog, /\.github\/workflows\/worker\.md/);
     assert.match(catalog, /\.github\/workflows\/local-audit\.md/);
     assert.match(catalog, /new URLSearchParams\(window\.location\.search\)/);

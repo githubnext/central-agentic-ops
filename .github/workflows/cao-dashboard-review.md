@@ -83,7 +83,7 @@ The expected inventory and GitHub APIs are trusted evidence. The deployed HTML i
 
 1. For an automatic run, confirm the upstream workflow is `Documentation Pages`, completed successfully, and ran on the default branch. Otherwise call `noop` and stop.
 2. Read the expected inventory. Use bounded GitHub API queries to verify the current Actions workflow registry and at most the latest 100 runs from the last 24 hours. Do not inspect unrelated repositories.
-3. Open the dashboard with Playwright. Verify the overview, packages, repositories, workflows, runs, and coverage routes load with their styles and internal navigation intact.
+3. Open the dashboard with Playwright. Verify the overview, dispatches, packages, repositories, workflows, runs, and coverage routes load with their styles and internal navigation intact.
 4. Compare the published package and workflow inventory with the expected inventory and registered Actions workflows. Check that newly added packages, orchestrators, workers, workflow state, and explicit coverage gaps are represented honestly.
 5. Compare displayed 24-hour run status with the bounded Actions evidence. Do not require exact agreement when the page declares partial or stale coverage; report only unexplained contradictions.
 6. Check the overview and tabular views at desktop and 390-pixel mobile widths. Verify content does not overlap or clip, tables remain operable, controls are keyboard reachable, and visible links resolve.

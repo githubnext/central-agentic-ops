@@ -553,6 +553,7 @@ function layout({ title, description, content, nested = false, navigation = "", 
   const stylesheetLink = `<${"link"} rel="stylesheet" href="${root}styles.css">`;
   const packagesHref = `${root}packages/index.html`;
   const overviewCurrent = activeSection === "overview" ? ' aria-current="page"' : "";
+  const dispatchesCurrent = activeSection === "dispatches" ? ' aria-current="page"' : "";
   const repositoriesCurrent = activeSection === "repositories" ? ' aria-current="page"' : "";
   const packagesCurrent = activeSection === "packages" || activeBundle ? ' aria-current="page"' : "";
   const freshness = `<time class="freshness" datetime="${escapeHtml(generatedAt)}">Last updated ${escapeHtml(formatDate(generatedAt))}</time>`;
@@ -578,6 +579,7 @@ function layout({ title, description, content, nested = false, navigation = "", 
       <a class="sidebar-brand" href="${root}">${agenticWorkflowMark()}<span>${escapeHtml(repo)}</span></a>
       <nav class="primary-nav" aria-label="Primary">
         <a href="${root}"${overviewCurrent}>${octicon("server")}<span>Overview</span></a>
+        <a href="${root}dispatches/"${dispatchesCurrent}>${octicon("workflow")}<span>Dispatches</span></a>
         <a href="${root}repositories/"${repositoriesCurrent}>${octicon("repo")}<span>Repositories</span></a>
         <a href="${packagesHref}"${packagesCurrent}>${octicon("package")}<span>Packages</span></a>
       </nav>
@@ -591,12 +593,12 @@ function layout({ title, description, content, nested = false, navigation = "", 
             <p class="lede">${escapeHtml(description)}</p>
           </div>
         </header>
-        ${activeBundle || overviewMode || ["overview", "workflows", "repositories"].includes(activeSection) ? "" : `<div class="toolbar" aria-label="Report controls">
+        ${activeBundle || overviewMode || ["overview", "dispatches", "workflows", "repositories"].includes(activeSection) ? "" : `<div class="toolbar" aria-label="Report controls">
           ${overviewMode ? "" : `<div class="filter-control"><span class="scope-label">${octicon("issue")}<strong>Filter</strong><span class="count-badge">2</span></span><code>mode:review mode:live</code><span class="search-control" aria-hidden="true">${octicon("eye")}</span></div>`}
           ${overviewMode ? "" : '<span class="scope-period">All recorded</span>'}
           <a class="export-control" href="${root}records.json">Export JSON</a>
         </div>`}
-        ${overviewMode || nested || ["overview", "workflows", "repositories"].includes(activeSection) ? "" : '<p class="scope-note">Results are based on the workflows and durable outputs available in this repository.</p>'}
+        ${overviewMode || nested || ["overview", "dispatches", "workflows", "repositories"].includes(activeSection) ? "" : '<p class="scope-note">Results are based on the workflows and durable outputs available in this repository.</p>'}
         <div class="report-body">${content}</div>
       </main>
       <footer>Generated deterministically from GitHub repository data.</footer>
@@ -1045,6 +1047,7 @@ const dashboardScope = configuredDashboardScope();
 await writeFile(path.join(outputDirectory, "styles.css"), stylesheet());
 await Promise.all([
   mkdir(path.join(outputDirectory, "coverage"), { recursive: true }),
+  mkdir(path.join(outputDirectory, "dispatches"), { recursive: true }),
   mkdir(path.join(outputDirectory, "repositories"), { recursive: true }),
   mkdir(path.join(outputDirectory, "runs"), { recursive: true }),
   mkdir(path.join(outputDirectory, "workflows"), { recursive: true }),
@@ -1054,6 +1057,14 @@ await writeFile(path.join(outputDirectory, "index.html"), layout({
   description: "Managed packages, execution health, and items requiring attention.",
   content: deployedWorkflowContent("overview"),
   activeSection: "overview",
+}));
+await writeFile(path.join(outputDirectory, "dispatches", "index.html"), layout({
+  title: "Dispatches",
+  description: `Package-worker dispatch activity retained from ${dashboardScope.description}.`,
+  content: dispatchCatalogContent(canonicalWorkflows),
+  nested: true,
+  navigation: '<nav aria-label="Report navigation"><div class="shell"><a href="../">Overview</a><span aria-current="page">Dispatches</span></div></nav>',
+  activeSection: "dispatches",
 }));
 await writeFile(path.join(outputDirectory, "repositories", "index.html"), layout({
   title: "Repositories",
@@ -1448,6 +1459,79 @@ function runCatalogContent(workflows, selectedFilter) {
     };
     for (const control of [search, repository]) control.addEventListener("input", () => { syncUrl(); apply(); });
     syncLinks();
+    apply();
+  })();
+  </script>`;
+}
+
+function dispatchCatalogContent(workflows) {
+  const failureConclusions = new Set(["failure", "startup_failure", "timed_out"]);
+  const dispatches = workflows.flatMap((workflow) => {
+    const packages = workflowOperationMemberships(workflow);
+    if (workflowRole(workflow) !== "worker" || packages.length === 0) return [];
+    return (workflow.runHealth?.runRecords || [])
+      .filter((run) => run.event === "workflow_dispatch")
+      .map((run) => ({
+        ...run,
+        packageName: packages.join(", "),
+        repository: workflow.repository,
+        workflowName: workflow.name,
+        workflowPath: workflow.path,
+      }));
+  }).sort((left, right) => Date.parse(right.createdAt || "") - Date.parse(left.createdAt || ""));
+  const packageOptions = [...new Set(dispatches.map((dispatch) => dispatch.packageName))].sort()
+    .map((packageName) => `<option value="${escapeHtml(packageName)}">${escapeHtml(packageName)}</option>`).join("");
+  const rows = dispatches.map((dispatch) => {
+    const statusLabel = dispatch.conclusion === "action_required" ? "Approval required" : dispatch.conclusion === null ? dispatch.status || "in progress" : dispatch.conclusion || "unknown";
+    const statusClassName = failureConclusions.has(dispatch.conclusion) ? "status-danger" : dispatch.conclusion === "action_required" || dispatch.conclusion === null ? "status-attention" : dispatch.conclusion === "success" ? "status-success" : "status-muted";
+    const runTitle = dispatch.displayTitle || `Run ${dispatch.runId}`;
+    const searchText = `${runTitle} ${dispatch.packageName} ${dispatch.workflowName} ${dispatch.repository} ${statusLabel}`.toLowerCase();
+    return `<tr data-dispatch-row data-package="${escapeHtml(dispatch.packageName)}" data-search="${escapeHtml(searchText)}"><th scope="row"><a href="https://github.com/${escapeHtml(dispatch.repository)}/actions/runs/${escapeHtml(dispatch.runId)}"><time datetime="${escapeHtml(dispatch.createdAt || "")}">${escapeHtml(formatDate(dispatch.createdAt))}</time>${octicon("external-link")}</a></th><td>${escapeHtml(dispatch.packageName)}</td><td><a href="../repositories/${escapeHtml(repositoryWorkflowPageName(dispatch.repository, dispatch.workflowPath))}.html">${escapeHtml(dispatch.workflowName)}</a></td><td>${escapeHtml(runTitle)}</td><td><a href="../repositories/${escapeHtml(repositoryPageName(dispatch.repository))}.html">${escapeHtml(dispatch.repository)}</a></td><td><span class="status ${statusClassName}">${escapeHtml(statusLabel.replaceAll("_", " "))}</span></td></tr>`;
+  }).join("\n");
+  const health = deployedInventory.runHealth || {};
+  const coverage = health.available
+    ? `${health.complete ? "Complete" : "Partial"} ${health.windowHours || 24}-hour Actions run window.`
+    : "Actions run data is unavailable.";
+  return `<section class="dispatch-catalog" aria-labelledby="dispatch-catalog-heading">
+    <div class="section-heading"><div><span class="scope-kicker">Control-plane activity</span><h2 id="dispatch-catalog-heading">Package-worker dispatches</h2><p>Worker runs whose authoritative GitHub Actions trigger is <code>workflow_dispatch</code>, ordered newest first. ${escapeHtml(coverage)}</p></div><strong>${formatCount(dispatches.length)} dispatches</strong></div>
+    <div class="catalog-toolbar run-toolbar" aria-label="Dispatch filters">
+      <label class="catalog-search"><span>Search dispatches</span><input id="dispatch-search" type="search" placeholder="Run, package, worker, status, or repository" autocomplete="off"></label>
+      <label><span>Package</span><select id="dispatch-package"><option value="">All packages</option>${packageOptions}</select></label>
+    </div>
+    <p class="catalog-result run-result" id="dispatch-result" aria-live="polite"></p>
+    <div class="table-region" role="region" aria-labelledby="dispatch-catalog-heading" tabindex="0"><table><thead><tr><th scope="col">Started</th><th scope="col">Package</th><th scope="col">Worker</th><th scope="col">Run title</th><th scope="col">Runtime repository</th><th scope="col">Status</th></tr></thead><tbody>${rows || '<tr><td colspan="6">No package-worker dispatches were observed in the current run window.</td></tr>'}</tbody></table></div>
+  </section>
+  <script>
+  (() => {
+    const rows = [...document.querySelectorAll("[data-dispatch-row]")];
+    const search = document.querySelector("#dispatch-search");
+    const packageSelect = document.querySelector("#dispatch-package");
+    const result = document.querySelector("#dispatch-result");
+    if (!search || !packageSelect || !result) return;
+    const params = new URLSearchParams(window.location.search);
+    search.value = params.get("q") || "";
+    const packageValue = params.get("package") || "";
+    if ([...packageSelect.options].some((option) => option.value === packageValue)) packageSelect.value = packageValue;
+    const apply = () => {
+      const query = search.value.trim().toLowerCase();
+      let matched = 0;
+      for (const row of rows) {
+        const matches = (!query || row.dataset.search.includes(query))
+          && (!packageSelect.value || row.dataset.package === packageSelect.value);
+        row.hidden = !matches;
+        if (matches) matched += 1;
+      }
+      result.textContent = matched.toLocaleString() + " of " + rows.length.toLocaleString() + " dispatches";
+    };
+    const syncUrl = () => {
+      for (const [name, value] of [["q", search.value.trim()], ["package", packageSelect.value]]) {
+        if (value) params.set(name, value);
+        else params.delete(name);
+      }
+      const query = params.toString();
+      window.history.replaceState(null, "", window.location.pathname + (query ? "?" + query : "") + window.location.hash);
+    };
+    for (const control of [search, packageSelect]) control.addEventListener("input", () => { syncUrl(); apply(); });
     apply();
   })();
   </script>`;
