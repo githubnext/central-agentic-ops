@@ -1,25 +1,5 @@
 ---
-type Operation = {
-  slug: string;
-  name: string;
-  description: string;
-};
-
-const manifests = import.meta.glob<string>("../../*/aw.yml", { query: "?raw", import: "default", eager: true });
-
-function readManifestField(manifest: string, field: string): string {
-  const match = manifest.match(new RegExp(`^${field}:[ \\t]*(.+)$`, "m"));
-  return match ? match[1].trim().replace(/^["']|["']$/g, "") : "";
-}
-
-const operations: Operation[] = Object.entries(manifests)
-  .flatMap(([path, manifest]) => {
-    const slug = path.split("/").at(-2) ?? "";
-    const name = readManifestField(manifest, "name");
-    if (!slug || !name) return [];
-    return [{ slug, name, description: readManifestField(manifest, "description") }];
-  })
-  .sort((a, b) => a.name.localeCompare(b.name));
+import { catalogEntries as operations } from "../lib/catalog";
 
 // The quickstart walks through Dependabot, so preselect it when the catalog ships it.
 const defaultOperation = operations.find((operation) => operation.slug === "dependabot")?.slug ?? operations[0]?.slug;

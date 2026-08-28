@@ -1,0 +1,234 @@
+---
+import StarlightPage from "@astrojs/starlight/components/StarlightPage.astro";
+import { catalogEntries } from "../../lib/catalog";
+
+const basePath = import.meta.env.BASE_URL.replace(/\/$/, "");
+---
+
+<StarlightPage
+  frontmatter={{
+    title: "Package catalog",
+    description: "Installable Central Agentic Ops packages discovered from their aw.yml manifests.",
+    editUrl: false,
+  }}
+>
+  <p class="catalog-intro">
+    Install a focused package into your private control plane. Every entry is generated from its manifest and opens to
+    GitHub installation instructions, workflow inventory, and the package's full README when available.
+  </p>
+
+  <section class="catalog-browser not-content" aria-label="Browse packages">
+    <div class="catalog-toolbar">
+      <label class="catalog-search">
+        <span>Search packages</span>
+        <input type="search" placeholder="Search by name or purpose" data-catalog-search />
+      </label>
+      <p class="catalog-count" aria-live="polite">
+        <strong data-catalog-count>{catalogEntries.length}</strong>
+        <span data-catalog-count-label>packages</span>
+      </p>
+    </div>
+
+    <ul class="catalog-grid">
+      {
+        catalogEntries.map((entry) => (
+          <li
+            class="catalog-item"
+            data-catalog-item
+            data-search={`${entry.name} ${entry.description}`.toLocaleLowerCase()}
+          >
+            <a href={`${basePath}/catalog/${entry.slug}/`}>
+              <div class="catalog-heading">
+                <h2>{entry.name}</h2>
+                <span>Package</span>
+              </div>
+              <p>{entry.description}</p>
+              <div class="catalog-meta">
+                <span>{entry.includes.length} {entry.includes.length === 1 ? "workflow" : "workflows"}</span>
+                <span>{entry.ReadmeContent ? "Full guide" : "Manifest guide"}</span>
+              </div>
+            </a>
+          </li>
+        ))
+      }
+    </ul>
+
+    <p class="catalog-empty" data-catalog-empty hidden>No packages match your search.</p>
+  </section>
+</StarlightPage>
+
+<script>
+  const searchInput = document.querySelector<HTMLInputElement>("[data-catalog-search]");
+  const packageItems = [...document.querySelectorAll<HTMLElement>("[data-catalog-item]")];
+  const resultCount = document.querySelector<HTMLElement>("[data-catalog-count]");
+  const resultCountLabel = document.querySelector<HTMLElement>("[data-catalog-count-label]");
+  const emptyMessage = document.querySelector<HTMLElement>("[data-catalog-empty]");
+
+  searchInput?.addEventListener("input", () => {
+    const query = searchInput.value.trim().toLocaleLowerCase();
+    let visibleCount = 0;
+
+    for (const item of packageItems) {
+      const visible = item.dataset.search?.includes(query) ?? false;
+      item.hidden = !visible;
+      if (visible) visibleCount += 1;
+    }
+
+    if (resultCount) resultCount.textContent = String(visibleCount);
+    if (resultCountLabel) resultCountLabel.textContent = visibleCount === 1 ? "package" : "packages";
+    if (emptyMessage) emptyMessage.hidden = visibleCount !== 0;
+  });
+</script>
+
+<style>
+  .catalog-intro {
+    max-width: 46rem;
+    color: var(--sl-color-gray-2);
+    font-size: 1.05rem;
+  }
+
+  .catalog-browser {
+    margin-block-start: 2rem;
+  }
+
+  .catalog-toolbar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: end;
+    justify-content: space-between;
+    gap: 1rem;
+    margin-block-end: 1.25rem;
+  }
+
+  .catalog-search {
+    display: grid;
+    flex: 1 1 22rem;
+    gap: 0.4rem;
+    max-width: 34rem;
+    color: var(--sl-color-white);
+    font-size: 0.875rem;
+    font-weight: 600;
+  }
+
+  .catalog-search input {
+    width: 100%;
+    min-height: 2.5rem;
+    padding: 0.55rem 0.75rem;
+    border: 1px solid var(--sl-color-gray-4);
+    border-radius: 6px;
+    background: var(--sl-color-bg);
+    color: var(--sl-color-white);
+    font: inherit;
+  }
+
+  .catalog-search input:focus {
+    border-color: var(--sl-color-accent-high);
+    outline: 2px solid color-mix(in srgb, var(--sl-color-accent-high) 30%, transparent);
+    outline-offset: 1px;
+  }
+
+  .catalog-count {
+    margin: 0;
+    color: var(--sl-color-gray-3);
+    font-size: 0.875rem;
+  }
+
+  .catalog-count strong {
+    color: var(--sl-color-white);
+  }
+
+  .catalog-grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: 1rem;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .catalog-item {
+    min-width: 0;
+  }
+
+  .catalog-item[hidden] {
+    display: none;
+  }
+
+  .catalog-item a {
+    display: flex;
+    min-height: 100%;
+    flex-direction: column;
+    gap: 0.85rem;
+    padding: 1.25rem;
+    border: 1px solid var(--sl-color-gray-5);
+    border-radius: 6px;
+    background: var(--sl-color-bg);
+    color: inherit;
+    text-decoration: none;
+    transition: border-color 160ms ease, box-shadow 160ms ease;
+  }
+
+  .catalog-item a:hover {
+    border-color: var(--sl-color-accent-high);
+    box-shadow: 0 3px 12px color-mix(in srgb, var(--sl-color-black) 16%, transparent);
+  }
+
+  .catalog-item a:focus-visible {
+    outline: 2px solid var(--sl-color-accent-high);
+    outline-offset: 2px;
+  }
+
+  .catalog-heading {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 0.75rem;
+  }
+
+  .catalog-heading h2 {
+    margin: 0;
+    color: var(--sl-color-white);
+    font-size: 1rem;
+    line-height: 1.3;
+  }
+
+  .catalog-heading > span {
+    flex: 0 0 auto;
+    color: var(--sl-color-gray-3);
+    font-size: 0.75rem;
+  }
+
+  .catalog-item p {
+    flex: 1;
+    margin: 0;
+    color: var(--sl-color-gray-2);
+    font-size: 0.9rem;
+    line-height: 1.5;
+  }
+
+  .catalog-meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4rem 0.65rem;
+    color: var(--sl-color-gray-3);
+    font-size: 0.75rem;
+  }
+
+  .catalog-meta > span + span::before {
+    margin-inline-end: 0.65rem;
+    color: var(--sl-color-gray-5);
+    content: "·";
+  }
+
+  .catalog-empty {
+    margin-block: 2rem;
+    color: var(--sl-color-gray-3);
+    text-align: center;
+  }
+
+  @media (min-width: 50rem) {
+    .catalog-grid {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+  }
+</style>
