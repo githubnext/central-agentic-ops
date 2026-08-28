@@ -85,7 +85,7 @@ Audit the operation workflows in this package against the original specification
 
 Read only these package sources and the applicable ledger path, plus the authoritative GOV.UK source:
 
-- `.github/workflows/advisory.md`
+- `.github/workflows/uk-ai-advisory.md`
 - `.github/workflows/advisory-uk-ai-operational-resilience.md`
 - `advisory/implementation-status.md` when present, otherwise `.github/aw/advisory/implementation-status.md`
 

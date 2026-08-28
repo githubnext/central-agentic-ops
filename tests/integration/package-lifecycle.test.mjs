@@ -27,7 +27,7 @@ const advisoryExpectedFiles = [
   ".github/aw/advisory/implementation-status.md",
   ".github/workflows/advisory-package-maintainer.md",
   ".github/workflows/advisory-uk-ai-operational-resilience.md",
-  ".github/workflows/advisory.md",
+  ".github/workflows/uk-ai-advisory.md",
   ".github/workflows/shared/control-precompute.md",
   ".github/workflows/shared/control.md",
 ];
@@ -137,7 +137,7 @@ function assertCorePackage(consumer) {
   }
   assert.ok(!existsSync(join(consumer, ".github", "workflows", "ops-pages.yml")));
   assert.ok(!existsSync(join(consumer, ".github", "ops-values")));
-  assert.ok(!existsSync(join(consumer, ".github", "workflows", "advisory.md")));
+  assert.ok(!existsSync(join(consumer, ".github", "workflows", "uk-ai-advisory.md")));
   assert.ok(!existsSync(join(consumer, ".github", "aw", "advisory", "implementation-status.md")));
   assert.ok(!existsSync(join(consumer, ".github", "workflows", "eu-cra-compliance.md")));
   assert.ok(!existsSync(join(consumer, ".github", "aw", "eu-cra-compliance", "implementation-status.md")));
@@ -209,7 +209,7 @@ test("gh aw add installs the focused Advisory package contract", { timeout: 180_
       [
         ".github/aw/advisory/implementation-status.md",
         ".github/workflows/advisory-package-maintainer.md",
-        ".github/workflows/advisory.md",
+        ".github/workflows/uk-ai-advisory.md",
       ],
       "focused Advisory package manifest must own its entry workflows and ledger",
     );

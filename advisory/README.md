@@ -11,7 +11,7 @@ The UK AI Advisory package applies the UK government [AI open-code and vulnerabi
 
 | Workflow | Responsibility |
 | --- | --- |
-| [`advisory`](../.github/workflows/advisory.md) | Discovers, ranks, selects, and dispatches repository-level work. |
+| [`advisory`](../.github/workflows/uk-ai-advisory.md) | Discovers, ranks, selects, and dispatches repository-level work. |
 | [`advisory-uk-ai-operational-resilience`](../.github/workflows/advisory-uk-ai-operational-resilience.md) | Produces one evidence-backed, non-binding operational resilience advisory for a selected repository. |
 | [`advisory-package-maintainer`](../.github/workflows/advisory-package-maintainer.md) | Weekly audits package coverage against the original specification and current GOV.UK guidance. |
 
