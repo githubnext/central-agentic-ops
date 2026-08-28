@@ -978,7 +978,7 @@ test("daily dashboard review uses the GitHub Copilot Pi engine", () => {
 test("daily dashboard renderer builds incrementally inside its own directory", () => {
   const source = workflow("daily-dashboard-language-renderer.md");
 
-  assert.match(source, /^model: copilot\/gpt-5\.6-sol$/m);
+  assert.match(source, /^model: copilot\/gpt-5\.4$/m);
   assert.match(source, /engine:\n\s+id: pi/);
   assert.match(source, /^timeout-minutes: 60$/m);
   assert.match(source, /^max-turns: 500$/m);
