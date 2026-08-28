@@ -20,6 +20,25 @@ export const FIELD_DEFINITION_KEYS = ['field', 'type', 'aggregate', 'time-unit',
 export const FIELD_TYPE_VALUES = ['nominal', 'ordinal', 'quantitative', 'temporal'];
 export const AGGREGATE_VALUES = ['count', 'distinct-count', 'sum', 'mean', 'min', 'max', 'none'];
 export const TIME_UNIT_VALUES = ['hour', 'day', 'week', 'month'];
+export const LINK_RELATION_VALUES = [
+  'organization',
+  'repository',
+  'workflow',
+  'run',
+  'issue',
+  'pull-request',
+  'evidence',
+  'external'
+];
+export const LINK_OBJECT_KEYS = ['relation', 'href', 'label'];
+export const RELATION_LINK_FIELD_RELATIONS = {
+  'issue-link': 'issue',
+  'pull-request-link': 'pull-request',
+  'run-link': 'run',
+  'evidence-link': 'evidence',
+  'external-link': 'external'
+};
+export const LINK_FIELD_NAMES = Object.keys(RELATION_LINK_FIELD_RELATIONS);
 export const DATASET_METADATA_KEYS = [
   'source-id',
   'source-kind',
@@ -176,6 +195,7 @@ export const ERROR_CODES = {
   missingOrInvalidRequiredField: 'DLS-E003',
   unknownOrDuplicateKey: 'DLS-E004',
   nonCanonicalVocabularyOrIdentifier: 'DLS-E005',
+  invalidLinkReference: 'DLS-E009',
   invalidScopeFilterTimeAggregationOrOrderReference: 'DLS-E010',
   missingRequiredProvenanceOrDataStateMetadata: 'DLS-E012'
 };

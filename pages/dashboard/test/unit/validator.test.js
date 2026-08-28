@@ -835,44 +835,91 @@ dashboard:
     }
   });
 
-  it('DLS-DATA-001 accepts canonical source metadata fields on a custom view data source', () => {
+  it('DLS-VIEW-003 rejects metric value encodings with non-quantitative type or time-unit using DLS-E010', () => {
     const result = validateDashboardDocument(`language-version: "0.1.0"
 dashboard:
-  id: source-metadata
-  title: Source Metadata
+  id: invalid-metric-value
+  title: Invalid Metric Value
   pages:
-    - id: usage-page
+    - id: summary
       kind: custom
       views:
-        - id: usage-metric
+        - id: bad-metric
           data:
             source: usage
-            source-metadata:
-              source-id: usage-snapshot
-              source-kind: warehouse-export
-              as-of: "2026-08-28T12:00:00Z"
-              retrieved-at: "2026-08-28T12:05:00Z"
-              coverage-start: "2026-08-01T00:00:00Z"
-              coverage-end: "2026-08-29T00:00:00Z"
-              completeness: partial
-              freshness: stale
           mark: metric
           encoding:
             value:
-              field: aic
-              aggregate: sum
+              field: observed-at
+              type: temporal
+              time-unit: day
 `);
 
     expect(result.ok).toBe(false);
     if (!result.ok) {
-      expect(result.errors).toEqual([
-        expect.objectContaining({ code: 'DLS-E004', path: '$.dashboard.pages[0].views[0].data.source-metadata' })
+      expect(result.errors).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({ code: 'DLS-E010', path: '$.dashboard.pages[0].views[0].encoding.value.type' }),
+          expect.objectContaining({ code: 'DLS-E010', path: '$.dashboard.pages[0].views[0].encoding.value.time-unit' })
+        ])
+      );
+    }
+  });
+
+  it('DLS-LINK-001 DLS-LINK-005 DLS-VIEW-007 DLS-VIEW-014 accept relation-specific href fields and reject non-link href fields with DLS-E009', () => {
+    const accepted = validateDashboardDocument(`language-version: "0.1.0"
+dashboard:
+  id: findings-links
+  title: Findings Links
+  pages:
+    - id: findings-table
+      kind: custom
+      views:
+        - id: open-findings
+          data:
+            source: findings
+            filters:
+              finding-status: open
+          mark: table
+          encoding:
+            columns:
+              - field: finding-summary
+              - field: finding-severity
+            href:
+              field: pull-request-link
+`);
+
+    expect(accepted.ok).toBe(true);
+
+    const rejected = validateDashboardDocument(`language-version: "0.1.0"
+dashboard:
+  id: invalid-finding-links
+  title: Invalid Finding Links
+  pages:
+    - id: findings-table
+      kind: custom
+      views:
+        - id: invalid-href
+          data:
+            source: findings
+          mark: table
+          encoding:
+            columns:
+              - field: finding-summary
+            href:
+              field: finding-summary
+`);
+
+    expect(rejected.ok).toBe(false);
+    if (!rejected.ok) {
+      expect(rejected.errors).toEqual([
+        expect.objectContaining({ code: 'DLS-E009', path: '$.dashboard.pages[0].views[0].encoding.href.field' })
       ]);
     }
   });
 
-  it('DLS-DATA-001 DLS-DATA-006 DLS-DATA-007 DLS-DATA-008 currently reports both the vocabulary gap and DLS-E012 metadata errors for attempted source metadata', () => {
-    const result = validateDashboardDocument(`language-version: "0.1.0"
+  it('DLS-LINK-001 DLS-SAFE-004 DLS-DATA-001 validates provenance-link as one safe HTTPS Section 9.1 link object with DLS-E012 on violations', () => {
+    const invalidMetadataLink = validateDashboardDocument(`language-version: "0.1.0"
 dashboard:
   id: invalid-source-metadata
   title: Invalid Source Metadata
@@ -886,12 +933,14 @@ dashboard:
             source-metadata:
               source-id: usage-snapshot
               source-kind: warehouse-export
-              as-of: 2026-08-28
+              as-of: "2026-08-28T12:00:00Z"
               retrieved-at: "2026-08-28T12:05:00Z"
-              coverage-start: "2026-08-29T00:00:00Z"
-              coverage-end: "2026-08-01T00:00:00Z"
-              completeness: partial-ish
-              freshness: cold
+              completeness: partial
+              freshness: stale
+              provenance-link:
+                relation: external
+                href: "http://example.com/provenance"
+                label: Provenance
           mark: metric
           encoding:
             value:
@@ -899,15 +948,12 @@ dashboard:
               aggregate: sum
 `);
 
-    expect(result.ok).toBe(false);
-    if (!result.ok) {
-      expect(result.errors).toEqual(
+    expect(invalidMetadataLink.ok).toBe(false);
+    if (!invalidMetadataLink.ok) {
+      expect(invalidMetadataLink.errors).toEqual(
         expect.arrayContaining([
           expect.objectContaining({ code: 'DLS-E004', path: '$.dashboard.pages[0].views[0].data.source-metadata' }),
-          expect.objectContaining({ code: 'DLS-E012', path: '$.dashboard.pages[0].views[0].data.source-metadata.as-of' }),
-          expect.objectContaining({ code: 'DLS-E012', path: '$.dashboard.pages[0].views[0].data.source-metadata' }),
-          expect.objectContaining({ code: 'DLS-E012', path: '$.dashboard.pages[0].views[0].data.source-metadata.completeness' }),
-          expect.objectContaining({ code: 'DLS-E012', path: '$.dashboard.pages[0].views[0].data.source-metadata.freshness' })
+          expect.objectContaining({ code: 'DLS-E012', path: '$.dashboard.pages[0].views[0].data.source-metadata.provenance-link.href' })
         ])
       );
     }
