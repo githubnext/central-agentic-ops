@@ -1047,7 +1047,7 @@ test("clean-room compilation emits the expected GitHub Actions settings", { time
       "advisory-package-maintainer.lock.yml",
       "daily-dashboard-language-renderer.lock.yml",
       "daily-dashboard-language-spec-review.lock.yml",
-      "daily-multi-device-docs-tester.lock.yml",
+      "multi-device-docs-tester.lock.yml",
       "eu-cra-compliance-package-maintainer.lock.yml",
       "docs-explanatory-diagrams.lock.yml",
       "pr-reviewer.lock.yml",

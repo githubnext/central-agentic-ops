@@ -17,7 +17,7 @@ permissions:
   issues: read
   pull-requests: read
 
-tracker-id: daily-multi-device-docs-tester
+tracker-id: multi-device-docs-tester
 strict: true
 timeout-minutes: 30
 runtimes:
@@ -54,6 +54,10 @@ network:
     - playwright
 
 pre-agent-steps:
+  - name: Install documentation dependencies
+    run: timeout 10m npm ci --ignore-scripts
+  - name: Build documentation
+    run: timeout 10m npm run docs:build
   - name: Configure Playwright CLI launch options
     env:
       EXPR_GITHUB_WORKSPACE: ${{ github.workspace }}
@@ -125,7 +129,7 @@ Inspect committed package manifests, lockfiles, task definitions, and documentat
 - the documented build and preview commands; and
 - the local site base path.
 
-Use only commands already defined by the repository. Install dependencies reproducibly from the lockfile, build the documentation, and start its preview server on an available local port. Capture the server log and wait up to 120 seconds for the derived site URL to respond. Do not assume a framework, directory name, script name, port, or URL base path.
+The workflow has already installed dependencies reproducibly from the lockfile and built the documentation outside the agent firewall. Verify the expected dependency and build outputs exist, but do not reinstall dependencies or rebuild the site. Use the repository's discovered preview command to start the prepared site on an available local port. Capture the server log and wait up to 120 seconds for the derived site URL to respond. Do not assume a framework, directory name, script name, port, or URL base path.
 
 If the repository does not define enough information to build and preview its documentation, call `noop` with the missing prerequisite and stop.
 
