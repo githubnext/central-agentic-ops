@@ -6,10 +6,6 @@ import {
   BUILT_IN_PAGE_VALUES,
   CUSTOM_PAGE_KEYS,
   DASHBOARD_KEYS,
-  DATASET_AVAILABILITY_VALUES,
-  DATASET_COMPLETENESS_VALUES,
-  DATASET_FRESHNESS_VALUES,
-  DATASET_METADATA_KEYS,
   DEFAULTS_KEYS,
   ERROR_CODES,
   EVAL_RESULT_VALUES,
@@ -399,7 +395,6 @@ function validateView(view, viewNode, path, viewIds, errors) {
   }
 
   validateSemanticFieldLiterals(view.data, `${path}.data`, errors);
-  validateDatasetMetadata(getValueNodeByKey(viewNode, 'data'), view.data, `${path}.data`, errors);
   validateEncoding(getValueNodeByKey(viewNode, 'encoding'), view.encoding, view.mark, sourceName, view.data, path, errors);
 }
 
@@ -689,107 +684,6 @@ function validateFilterLiteralSet(filters, path, errors) {
     if (value !== undefined) {
       validateEnumeratedFilterValue(value, allowedValues, `${path}.${field}`, errors);
     }
-  }
-}
-
-/**
- * @param {unknown} dataNode
- * @param {unknown} data
- * @param {string} path
- * @param {ValidationError[]} errors
- */
-function validateDatasetMetadata(dataNode, data, path, errors) {
-  if (!isPlainObject(data)) {
-    return;
-  }
-
-  const metadata = data['source-metadata'];
-  if (metadata === undefined) {
-    return;
-  }
-
-  const metadataPath = `${path}.source-metadata`;
-  if (!isPlainObject(metadata)) {
-    errors.push(createError(
-      ERROR_CODES.missingRequiredProvenanceOrDataStateMetadata,
-      'source-metadata must be a mapping when provided.',
-      metadataPath
-    ));
-    return;
-  }
-
-  const metadataNode = getValueNodeByKey(dataNode, 'source-metadata');
-  validateObjectKeys(metadataNode, DATASET_METADATA_KEYS, metadataPath, errors);
-
-  for (const key of ['source-id', 'source-kind', 'as-of', 'retrieved-at', 'completeness', 'freshness']) {
-    validateStringField(metadata[key], `${metadataPath}.${key}`, true, errors);
-  }
-
-  for (const key of ['coverage-start', 'coverage-end']) {
-    if (metadata[key] !== undefined && !isRfc3339Timestamp(metadata[key])) {
-      errors.push(createError(
-        ERROR_CODES.missingRequiredProvenanceOrDataStateMetadata,
-        `${key} must be an RFC 3339 timestamp when provided.`,
-        `${metadataPath}.${key}`
-      ));
-    }
-  }
-
-  for (const key of ['as-of', 'retrieved-at']) {
-    if (metadata[key] !== undefined && !isRfc3339Timestamp(metadata[key])) {
-      errors.push(createError(
-        ERROR_CODES.missingRequiredProvenanceOrDataStateMetadata,
-        `${key} must be an RFC 3339 timestamp.`,
-        `${metadataPath}.${key}`
-      ));
-    }
-  }
-
-  if (
-    typeof metadata['coverage-start'] === 'string' &&
-    typeof metadata['coverage-end'] === 'string' &&
-    isRfc3339Timestamp(metadata['coverage-start']) &&
-    isRfc3339Timestamp(metadata['coverage-end']) &&
-    Date.parse(metadata['coverage-start']) >= Date.parse(metadata['coverage-end'])
-  ) {
-    errors.push(createError(
-      ERROR_CODES.missingRequiredProvenanceOrDataStateMetadata,
-      'coverage-start must precede coverage-end.',
-      metadataPath
-    ));
-  }
-
-  validateEnumeratedMetadataValue(
-    metadata.completeness,
-    DATASET_COMPLETENESS_VALUES,
-    `${metadataPath}.completeness`,
-    'completeness',
-    errors
-  );
-  validateEnumeratedMetadataValue(
-    metadata.freshness,
-    DATASET_FRESHNESS_VALUES,
-    `${metadataPath}.freshness`,
-    'freshness',
-    errors
-  );
-
-  if (metadata['provenance-link'] !== undefined && !isPlainObject(metadata['provenance-link'])) {
-    errors.push(createError(
-      ERROR_CODES.missingRequiredProvenanceOrDataStateMetadata,
-      'provenance-link must be a Section 9.1 link object when provided.',
-      `${metadataPath}.provenance-link`
-    ));
-  }
-
-  if (metadata.availability !== undefined) {
-    validateEnumeratedMetadataValue(
-      metadata.availability,
-      DATASET_AVAILABILITY_VALUES,
-      `${metadataPath}.availability`,
-      'availability',
-      errors
-    );
   }
 }
 
@@ -1173,27 +1067,6 @@ function validateEnumeratedFilterValue(value, allowedValues, path, errors) {
         ));
       }
     }
-  }
-}
-
-/**
- * @param {unknown} value
- * @param {string[]} allowedValues
- * @param {string} path
- * @param {string} label
- * @param {ValidationError[]} errors
- */
-function validateEnumeratedMetadataValue(value, allowedValues, path, label, errors) {
-  if (typeof value !== 'string') {
-    return;
-  }
-
-  if (!allowedValues.includes(value)) {
-    errors.push(createError(
-      ERROR_CODES.missingRequiredProvenanceOrDataStateMetadata,
-      `${label} must use one of the canonical values: ${allowedValues.join(', ')}.`,
-      path
-    ));
   }
 }
 

@@ -368,7 +368,7 @@ Data quality has three independent axes:
 
 - **DLS-DATA-001:** Every consumed logical source **MUST** provide `source-id`, `source-kind`, `as-of`, `retrieved-at`, `completeness`, and `freshness`.
 - **DLS-DATA-002:** Provenance and freshness **MUST** remain associated with derived metrics, tables, charts, rankings, and links.
-- **DLS-DATA-003:** A presenter **MUST** expose `as-of`, freshness, completeness, and source identity for every page or view.
+- **DLS-DATA-003:** A presenter **MUST** expose `as-of`, freshness, completeness, and source identity for every page or view. Source metadata is runtime input outside the dashboard YAML.
 - **DLS-DATA-004:** An empty selection **MUST** have availability `empty`; `count` and `distinct-count` over that selection **MUST** produce zero, while other aggregates **MUST** remain absent.
 - **DLS-DATA-005:** An unavailable result **MUST** identify the affected source and **MUST NOT** fabricate observations or carry forward an unmarked previous value.
 - **DLS-DATA-006:** A partial result **MUST** identify known missing scope or time coverage and **MUST NOT** be labeled complete.
@@ -478,8 +478,9 @@ If `order-by.field` matches more than one possible output, or matches a source f
 - **DLS-VIEW-010:** `data.limit` **MUST** be a positive integer, and `data.order-by.field` **MUST** reference either a source field valid at the post-aggregation output grain or one unique aggregate-output identifier. Ambiguous or invalid order references **MUST** be rejected with `DLS-E010`.
 - **DLS-VIEW-011:** A custom view **MUST NOT** contain scripts, joins, formulas, expressions, templates, plugins, or undeclared transforms.
 - **DLS-VIEW-012:** A custom view **MUST** apply defaults, filtering, aggregation, ordering, and limiting in the order defined by Sections 6, 7, and 11.2, and ordering **MUST** use the resolved output identifier before applying `limit` and then the canonical entity ID ascending tie-break from **DLS-AGG-008**.
-- **DLS-VIEW-013:** A custom view **MUST** expose its source provenance, freshness, completeness, effective scope, effective time range, and effective filters.
-- **DLS-VIEW-014:** A presenter rendering `href` **MUST** use the referenced link object's `href` as the navigation target and **MUST** expose the link object's `label` as the accessible link label. If the referenced link field is absent for a datum, the datum **MUST** remain valid and **MUST** render without a link.
+- **DLS-VIEW-013:** Before mark-specific rendering, a custom view **MUST** determine and expose exactly one view-level availability state of `available`, `empty`, or `unavailable`, together with its source provenance, freshness, completeness, effective scope, effective time range, and effective filters. An `empty` or `unavailable` state **MUST NOT** make the view invalid or cause the presenter to omit it; its textual state output **MUST** identify the affected source, effective scope, time range, and filters.
+- **DLS-VIEW-014:** Under `empty`, a `metric` **MUST** render an absent aggregate value, except that `count` and `distinct-count` **MUST** render zero; a `table` **MUST** render zero rows; and a `chart` **MUST** render zero points. Under `unavailable`, a `metric` **MUST** render no numeric value and a `table` or `chart` **MUST** render no rows or points. A presenter **MUST NOT** synthesize placeholder observations, zero-valued non-count aggregates, or links for either state.
+- **DLS-VIEW-015:** A presenter rendering `href` **MUST** use the referenced link object's `href` as the navigation target and **MUST** expose the link object's `label` as the accessible link label. If the referenced link field is absent for a datum, including every resulting datum, the datum and view **MUST** remain valid and **MUST** render without links.
 
 ---
 
@@ -489,7 +490,7 @@ Validation proceeds conceptually through YAML syntax, document count, structural
 
 - **DLS-VAL-001:** A validator **MUST** report every detected error with an error code, a human-readable message, and a location identifying the nearest YAML path.
 - **DLS-VAL-002:** A validator **MUST** reject a document when any Level 1 structural requirement fails.
-- **DLS-VAL-003:** A Level 2 or Level 3 validator **MUST** reject incompatible source fields, filters, aggregates, encodings, links, or data relationships. A validator **MUST** reject an `href` reference to a non-link field or an ambiguous multi-link field with link-specific error code `DLS-E009`, and **MUST** reject ambiguous or invalid aggregate-order references with `DLS-E010`.
+- **DLS-VAL-003:** A Level 2 or Level 3 validator **MUST** reject incompatible source fields, filters, aggregates, encodings, links, or data relationships. A validator **MUST** reject an `href` reference to a non-link field or an ambiguous multi-link field with link-specific error code `DLS-E009`, and **MUST** reject ambiguous or invalid aggregate-order references with `DLS-E010`. A valid custom view **MUST NOT** be rejected merely because its runtime result is `empty` or `unavailable`; `DLS-E012` applies only when required external source metadata needed to determine those states is missing.
 - **DLS-VAL-004:** Error reporting **MUST NOT** expose credentials, secret values, or sensitive source payloads.
 
 Error codes are listed in Appendix B.
@@ -745,7 +746,7 @@ dashboard:
 | `DLS-E009` | Unsafe, invalid, ambiguous, or incompatible link or `href` reference |
 | `DLS-E010` | Invalid scope, filter, time range, aggregation, or aggregate-order reference |
 | `DLS-E011` | Invalid entity relationship or source grain |
-| `DLS-E012` | Missing required provenance or data-state metadata |
+| `DLS-E012` | Missing required external provenance or data-state metadata; not an `empty` or `unavailable` runtime result |
 
 ### Appendix C: Invalid Examples (Informative)
 

@@ -835,7 +835,7 @@ dashboard:
     }
   });
 
-  it('DLS-DATA-001 accepts canonical source metadata fields on a custom view data source', () => {
+  it('DLS-DATA-001 DLS-VAL-003 rejects inline source metadata because it is external to dashboard YAML', () => {
     const result = validateDashboardDocument(`language-version: "0.1.0"
 dashboard:
   id: source-metadata
@@ -871,7 +871,7 @@ dashboard:
     }
   });
 
-  it('DLS-DATA-001 DLS-DATA-006 DLS-DATA-007 DLS-DATA-008 currently reports both the vocabulary gap and DLS-E012 metadata errors for attempted source metadata', () => {
+  it('DLS-VAL-003 reserves DLS-E012 for missing external metadata, not invalid inline metadata', () => {
     const result = validateDashboardDocument(`language-version: "0.1.0"
 dashboard:
   id: invalid-source-metadata
@@ -901,15 +901,9 @@ dashboard:
 
     expect(result.ok).toBe(false);
     if (!result.ok) {
-      expect(result.errors).toEqual(
-        expect.arrayContaining([
-          expect.objectContaining({ code: 'DLS-E004', path: '$.dashboard.pages[0].views[0].data.source-metadata' }),
-          expect.objectContaining({ code: 'DLS-E012', path: '$.dashboard.pages[0].views[0].data.source-metadata.as-of' }),
-          expect.objectContaining({ code: 'DLS-E012', path: '$.dashboard.pages[0].views[0].data.source-metadata' }),
-          expect.objectContaining({ code: 'DLS-E012', path: '$.dashboard.pages[0].views[0].data.source-metadata.completeness' }),
-          expect.objectContaining({ code: 'DLS-E012', path: '$.dashboard.pages[0].views[0].data.source-metadata.freshness' })
-        ])
-      );
+      expect(result.errors).toEqual([
+        expect.objectContaining({ code: 'DLS-E004', path: '$.dashboard.pages[0].views[0].data.source-metadata' })
+      ]);
     }
   });
 
