@@ -19,7 +19,7 @@ permissions:
 tracker-id: daily-dashboard-language-renderer
 max-turns: 500
 max-ai-credits: 1000
-model: copilot/gpt-5.6-sol
+model: copilot/gpt-5.4
 engine:
   id: pi
 strict: true
