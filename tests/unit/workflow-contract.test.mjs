@@ -323,7 +323,7 @@ test("enterprise defaults, budgets, timeouts, and concurrency are finite", () =>
     "eu-cra-compliance-security-requirements-auditor.md": { credits: 150, timeout: 30 },
     "eu-cra-compliance-supply-chain-sbom-auditor.md": { credits: 150, timeout: 30 },
     "eu-cra-compliance-vulnerability-handling-auditor.md": { credits: 150, timeout: 30 },
-    "optimization-ai-credit-auditor.md": { credits: 350, timeout: 25 },
+    "optimization-ai-credit-auditor.md": { credits: 350, timeout: 35 },
     "optimization-ai-credit-optimizer.md": { credits: 500, timeout: 30 },
   };
 
@@ -375,6 +375,22 @@ test("workers disable costly daily AIC burn checks", () => {
   for (const [name, source] of workers) {
     assert.match(source, /^max-daily-ai-credits: -1$/m, name);
   }
+});
+
+test("AI Credit auditor uses gh-aw forecast for cost projections", () => {
+  const auditor = workflow("optimization-ai-credit-auditor.md");
+
+  assert.match(auditor, /gh aw forecast \\/);
+  assert.match(auditor, /--repo "\$TARGET_REPOSITORY"/);
+  assert.match(auditor, /--days 30/);
+  assert.match(auditor, /--period month/);
+  assert.match(auditor, /--json/);
+  assert.match(auditor, /FORECAST_EXIT_CODE=0/);
+  assert.match(auditor, /FORECAST_JSON_VALID=false/);
+  assert.match(auditor, /weekly_monte_carlo/);
+  assert.match(auditor, /monthly_monte_carlo/);
+  assert.match(auditor, /1 AIC = \$0\.01 USD/);
+  assert.match(auditor, /billing dashboards remain authoritative/);
 });
 
 test("aggregate AI Credit admission reduces target fan-out", () => {
