@@ -682,7 +682,29 @@ dashboard:
     }
   });
 
-  it('DLS-AGG-002 DLS-AGG-005 DLS-VIEW-008 DLS-VIEW-009 accept canonical aggregates aliases and temporal bucketing', () => {
+  it('DLS-VIEW-001 accepts custom pages without explicit titles when ids are canonical defaults', () => {
+    const result = validateDashboardDocument(`language-version: "0.1.0"
+dashboard:
+  id: custom-page-defaults
+  title: Custom Page Defaults
+  pages:
+    - id: usage-summary
+      kind: custom
+      views:
+        - id: total-aic
+          data:
+            source: usage
+          mark: metric
+          encoding:
+            value:
+              field: aic
+              aggregate: sum
+`);
+
+    expect(result.ok).toBe(true);
+  });
+
+  it('DLS-AGG-002 DLS-AGG-005 DLS-VIEW-006 DLS-VIEW-008 DLS-VIEW-009 accept canonical aggregates aliases and temporal bucketing for line and bar chart defaults', () => {
     const result = validateDashboardDocument(`language-version: "0.1.0"
 dashboard:
   id: aggregation-valid
@@ -721,6 +743,18 @@ dashboard:
               type: quantitative
             color:
               field: operational-value-definition
+        - id: repository-chart
+          data:
+            source: usage
+          mark: chart
+          encoding:
+            x:
+              field: repository
+              type: nominal
+            y:
+              field: aic
+              aggregate: sum
+              type: quantitative
 `);
 
     expect(result.ok).toBe(true);
@@ -788,6 +822,52 @@ dashboard:
           expect.objectContaining({ code: 'DLS-E003', path: '$.dashboard.pages[0].views[2].encoding.value' }),
           expect.objectContaining({ code: 'DLS-E003', path: '$.dashboard.pages[0].views[3].encoding.columns' }),
           expect.objectContaining({ code: 'DLS-E010', path: '$.dashboard.pages[0].views[3].encoding.y.type' })
+        ])
+      );
+    }
+  });
+
+  it('DLS-VIEW-005 DLS-VIEW-006 reject invalid chart default shapes with DLS-E010', () => {
+    const result = validateDashboardDocument(`language-version: "0.1.0"
+dashboard:
+  id: invalid-chart-defaults
+  title: Invalid Chart Defaults
+  pages:
+    - id: summary
+      kind: custom
+      views:
+        - id: missing-temporal-bucket
+          data:
+            source: runs
+          mark: chart
+          encoding:
+            x:
+              field: started-at
+              type: temporal
+            y:
+              field: run
+              aggregate: count
+              type: quantitative
+        - id: quantitative-x-chart
+          data:
+            source: usage
+          mark: chart
+          encoding:
+            x:
+              field: aic
+              type: quantitative
+            y:
+              field: aic
+              aggregate: sum
+              type: quantitative
+`);
+
+    expect(result.ok).toBe(false);
+    if (!result.ok) {
+      expect(result.errors).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({ code: 'DLS-E010', path: '$.dashboard.pages[0].views[0].encoding.x' }),
+          expect.objectContaining({ code: 'DLS-E010', path: '$.dashboard.pages[0].views[1].encoding.x.type' })
         ])
       );
     }

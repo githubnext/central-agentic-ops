@@ -318,6 +318,14 @@ function validateBuiltInPage(page, path, errors) {
  * @param {ValidationError[]} errors
  */
 function validateCustomPage(page, pageNode, path, errors) {
+  if (page.title === undefined && typeof page.id === 'string' && !IDENTIFIER_PATTERN.test(page.id)) {
+    errors.push(createError(
+      ERROR_CODES.nonCanonicalVocabularyOrIdentifier,
+      'custom page title default requires a canonical page id.',
+      `${path}.id`
+    ));
+  }
+
   if (!Array.isArray(page.views) || page.views.length === 0) {
     errors.push(createError(
       ERROR_CODES.missingOrInvalidRequiredField,
@@ -356,6 +364,14 @@ function validateView(view, viewNode, path, viewIds, errors) {
       path
     ));
     return;
+  }
+
+  if (view.title === undefined && typeof view.id === 'string' && !IDENTIFIER_PATTERN.test(view.id)) {
+    errors.push(createError(
+      ERROR_CODES.nonCanonicalVocabularyOrIdentifier,
+      'view title default requires a canonical view id.',
+      `${path}.id`
+    ));
   }
 
   validateObjectKeys(viewNode, VIEW_KEYS, path, errors);
@@ -929,6 +945,26 @@ function validateChartEncoding(encodingNode, encoding, sourceName, path, aggrega
   validateRequiredFieldDefinition(getValueNodeByKey(encodingNode, 'x'), encoding.x, sourceName, `${path}.x`, aggregateOutputIds, errors);
   validateRequiredFieldDefinition(getValueNodeByKey(encodingNode, 'y'), encoding.y, sourceName, `${path}.y`, aggregateOutputIds, errors);
 
+  if (isPlainObject(encoding.x) && encoding.x.type !== undefined && !['nominal', 'ordinal', 'temporal'].includes(String(encoding.x.type))) {
+    errors.push(createError(
+      ERROR_CODES.invalidScopeFilterTimeAggregationOrOrderReference,
+      'chart x encoding must use a nominal, ordinal, or temporal type when explicitly typed.',
+      `${path}.x.type`
+    ));
+  }
+
+  if (isPlainObject(encoding.x) && encoding.x['time-unit'] !== undefined) {
+    const xFieldName = typeof encoding.x.field === 'string' ? encoding.x.field : null;
+    const xType = typeof encoding.x.type === 'string' ? encoding.x.type : null;
+    if (xType !== 'temporal' && (!xFieldName || !TEMPORAL_FIELD_NAMES.includes(xFieldName))) {
+      errors.push(createError(
+        ERROR_CODES.invalidScopeFilterTimeAggregationOrOrderReference,
+        'chart x time-unit requires a temporal field.',
+        `${path}.x.time-unit`
+      ));
+    }
+  }
+
   if (encoding.value !== undefined) {
     errors.push(createError(
       ERROR_CODES.missingOrInvalidRequiredField,
@@ -966,6 +1002,20 @@ function validateChartEncoding(encodingNode, encoding, sourceName, path, aggrega
       ERROR_CODES.invalidScopeFilterTimeAggregationOrOrderReference,
       'chart y encoding must be quantitative when explicitly typed.',
       `${path}.y.type`
+    ));
+  }
+
+  const xType = isPlainObject(encoding.x) && typeof encoding.x.type === 'string' ? encoding.x.type : null;
+  const xFieldName = isPlainObject(encoding.x) && typeof encoding.x.field === 'string' ? encoding.x.field : null;
+  const xIsTemporal = xType === 'temporal' || (xType === null && xFieldName !== null && TEMPORAL_FIELD_NAMES.includes(xFieldName));
+  const xHasTimeUnit = isPlainObject(encoding.x) && encoding.x['time-unit'] !== undefined;
+  const expectedDefault = xIsTemporal ? 'line' : 'bar';
+
+  if (expectedDefault === 'line' && !xHasTimeUnit) {
+    errors.push(createError(
+      ERROR_CODES.invalidScopeFilterTimeAggregationOrOrderReference,
+      'chart views with temporal x must declare a temporal bucket to realize the line time-series default conservatively.',
+      `${path}.x`
     ));
   }
 }
