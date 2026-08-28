@@ -159,7 +159,7 @@ const agents = [
         <div class="copy-dialog-card">
           <div class="copy-dialog-burst" aria-hidden="true"></div>
           <span class="copy-dialog-kicker">Next steps</span>
-          <h3 class="copy-dialog-title" id="ops-wizard-copy-dialog-title" tabindex="-1">
+          <h3 class="copy-dialog-title" id="ops-wizard-copy-dialog-title">
             Prompt copied — launch it from a fresh control repository
           </h3>
           <ol class="copy-dialog-steps">
@@ -281,7 +281,6 @@ const agents = [
       const copyButton = form.querySelector<HTMLButtonElement>("[data-copy-prompt]");
       const copyLabel = copyButton?.querySelector<HTMLElement>(".copy-label");
       const copyDialog = form.querySelector<HTMLDialogElement>("[data-copy-dialog]");
-      const copyDialogTitle = form.querySelector<HTMLElement>("#ops-wizard-copy-dialog-title");
       const copyDialogClose = form.querySelector<HTMLButtonElement>("[data-copy-dialog-close]");
       let resetCopyLabel: ReturnType<typeof setTimeout> | undefined;
 
@@ -289,7 +288,7 @@ const agents = [
         if (!copyDialog) return;
         if (typeof copyDialog.showModal === "function") {
           if (!copyDialog.open) copyDialog.showModal();
-          copyDialogTitle?.focus();
+          copyDialogClose?.focus();
         }
       }
 
@@ -805,7 +804,7 @@ const agents = [
       text-transform: uppercase;
     }
 
-    .copy-dialog-card h3.copy-dialog-title {
+    .copy-dialog-card .copy-dialog-title {
       margin: 0;
       color: var(--sl-color-white);
       font-size: var(--sl-text-xl);
