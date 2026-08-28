@@ -24,4 +24,4 @@ The current aggregation slice adds conservative Section 7 and Section 11 field-d
 
 The latest provenance/freshness/data-states slice audited Section 8 and recorded a specification gap: required logical-source metadata is defined outside the dashboard YAML, but no Section 4.2 document vocabulary admits it yet. The validator therefore continues to reject attempted inline `source-metadata` keys conservatively rather than inventing undeclared YAML semantics.
 
-The current custom-pages slice tightens Section 11 validation around title defaultability and conservative chart defaults: custom pages may omit `title` when their IDs remain canonical, temporal charts are accepted with explicit temporal bucketing for the line-series default, and non-temporal charts are accepted on nominal categorical `x` for the bar default.
+The current built-in-pages slice begins Section 10 validation with `DLS-PAGE-001`: built-in pages may omit `title` when their `page` name is canonical, while non-canonical built-in page names continue to be rejected so title defaulting never invents unsupported page semantics.

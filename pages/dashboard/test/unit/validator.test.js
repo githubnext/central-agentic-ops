@@ -219,6 +219,41 @@ dashboard:
     }
   });
 
+  it('DLS-PAGE-001 accepts an omitted built-in page title when the page name is canonical', () => {
+    const result = validateDashboardDocument(`language-version: "0.1.0"
+dashboard:
+  id: built-in-title-default
+  title: Built-in Title Default
+  pages:
+    - id: usage
+      kind: built-in
+      page: usage
+`);
+
+    expect(result.ok).toBe(true);
+  });
+
+  it('DLS-PAGE-001 rejects an omitted built-in page title when the page name is non-canonical', () => {
+    const result = validateDashboardDocument(`language-version: "0.1.0"
+dashboard:
+  id: invalid-built-in-title-default
+  title: Invalid Built-in Title Default
+  pages:
+    - id: usage
+      kind: built-in
+      page: Usage
+`);
+
+    expect(result.ok).toBe(false);
+    if (!result.ok) {
+      expect(result.errors).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({ code: 'DLS-E005', path: '$.dashboard.pages[0].page' })
+        ])
+      );
+    }
+  });
+
   it('DLS-SEM-017 accepts every canonical Section 5.1 source name', () => {
     const result = validateDashboardDocument(`language-version: "0.1.0"
 dashboard:
