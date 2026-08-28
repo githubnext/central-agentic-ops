@@ -6,10 +6,20 @@ import {
   DASHBOARD_KEYS,
   DEFAULTS_KEYS,
   ERROR_CODES,
+  EVAL_RESULT_VALUES,
+  GRADER_STATUS_VALUES,
   IDENTIFIER_PATTERN,
   LANGUAGE_VERSION,
+  OUTCOME_STATE_VALUES,
   PAGE_KIND_VALUES,
-  ROOT_KEYS
+  ROOT_KEYS,
+  ROLLOUT_MODE_VALUES,
+  RUN_CONCLUSION_VALUES,
+  RUN_STATUS_VALUES,
+  SOURCE_VALUES,
+  VIEW_DATA_KEYS,
+  VIEW_KEYS,
+  WORKFLOW_ACTIVE_VALUES
 } from './specification.js';
 
 /**
@@ -251,7 +261,7 @@ function validatePage(page, pageNode, path, pageIds, errors) {
 
   if (page.kind === 'custom') {
     validateObjectKeys(pageNode, CUSTOM_PAGE_KEYS, path, errors);
-    validateCustomPage(page, path, errors);
+    validateCustomPage(page, pageNode, path, errors);
     return;
   }
 
@@ -276,10 +286,11 @@ function validateBuiltInPage(page, path, errors) {
 
 /**
  * @param {Record<string, unknown>} page
+ * @param {unknown} pageNode
  * @param {string} path
  * @param {ValidationError[]} errors
  */
-function validateCustomPage(page, path, errors) {
+function validateCustomPage(page, pageNode, path, errors) {
   if (!Array.isArray(page.views) || page.views.length === 0) {
     errors.push(createError(
       ERROR_CODES.missingOrInvalidRequiredField,
@@ -291,29 +302,153 @@ function validateCustomPage(page, path, errors) {
 
   /** @type {Set<string>} */
   const viewIds = new Set();
+  const viewsNode = getValueNodeByKey(pageNode, 'views');
   page.views.forEach((view, index) => {
-    if (!isPlainObject(view)) {
-      errors.push(createError(
-        ERROR_CODES.missingOrInvalidRequiredField,
-        'view must be a mapping.',
-        `${path}.views[${index}]`
-      ));
-      return;
-    }
-
-    validateRequiredIdentifier(view.id, `${path}.views[${index}].id`, 'view id', errors);
-    if (typeof view.id === 'string') {
-      if (viewIds.has(view.id)) {
-        errors.push(createError(
-          ERROR_CODES.missingOrInvalidRequiredField,
-          'view id must be unique within page.views.',
-          `${path}.views[${index}].id`
-        ));
-      }
-      viewIds.add(view.id);
-    }
+    validateView(
+      view,
+      getSequenceItemNode(viewsNode, index),
+      `${path}.views[${index}]`,
+      viewIds,
+      errors
+    );
   });
 }
+
+/**
+ * @param {unknown} view
+ * @param {unknown} viewNode
+ * @param {string} path
+ * @param {Set<string>} viewIds
+ * @param {ValidationError[]} errors
+ */
+function validateView(view, viewNode, path, viewIds, errors) {
+  if (!isPlainObject(view)) {
+    errors.push(createError(
+      ERROR_CODES.missingOrInvalidRequiredField,
+      'view must be a mapping.',
+      path
+    ));
+    return;
+  }
+
+  validateObjectKeys(viewNode, VIEW_KEYS, path, errors);
+  validateRequiredIdentifier(view.id, `${path}.id`, 'view id', errors);
+  if (typeof view.id === 'string') {
+    if (viewIds.has(view.id)) {
+      errors.push(createError(
+        ERROR_CODES.missingOrInvalidRequiredField,
+        'view id must be unique within page.views.',
+        `${path}.id`
+      ));
+    }
+    viewIds.add(view.id);
+  }
+
+  validateOptionalStringField(view.title, `${path}.title`, errors);
+  validateOptionalStringField(view.description, `${path}.description`, errors);
+
+  if (!isPlainObject(view.data)) {
+    errors.push(createError(
+      ERROR_CODES.missingOrInvalidRequiredField,
+      'data must be a mapping.',
+      `${path}.data`
+    ));
+  } else {
+    validateObjectKeys(getValueNodeByKey(viewNode, 'data'), VIEW_DATA_KEYS, `${path}.data`, errors);
+    validateSource(view.data.source, `${path}.data.source`, errors);
+  }
+
+  validateSemanticFieldLiterals(view.data, `${path}.data`, errors);
+}
+
+/**
+ * @param {unknown} source
+ * @param {string} path
+ * @param {ValidationError[]} errors
+ */
+function validateSource(source, path, errors) {
+  validateStringField(source, path, true, errors);
+  if (typeof source === 'string' && !SOURCE_VALUES.includes(source)) {
+    errors.push(createError(
+      ERROR_CODES.nonCanonicalVocabularyOrIdentifier,
+      'source must use one canonical Section 5.1 source name.',
+      path
+    ));
+  }
+}
+
+/**
+ * @param {unknown} data
+ * @param {string} path
+ * @param {ValidationError[]} errors
+ */
+function validateSemanticFieldLiterals(data, path, errors) {
+  if (!isPlainObject(data)) {
+    return;
+  }
+
+  validateFilterLiteralSet(data.filters, `${path}.filters`, errors);
+}
+
+/**
+ * @param {unknown} filters
+ * @param {string} path
+ * @param {ValidationError[]} errors
+ */
+function validateFilterLiteralSet(filters, path, errors) {
+  if (!isPlainObject(filters)) {
+    return;
+  }
+
+  for (const [field, allowedValues] of Object.entries(SEMANTIC_FILTER_VALUE_SETS)) {
+    const value = filters[field];
+    if (value !== undefined) {
+      validateEnumeratedFilterValue(value, allowedValues, `${path}.${field}`, errors);
+    }
+  }
+}
+
+/**
+ * @param {unknown} value
+ * @param {string[]} allowedValues
+ * @param {string} path
+ * @param {ValidationError[]} errors
+ */
+function validateEnumeratedFilterValue(value, allowedValues, path, errors) {
+  if (typeof value === 'string') {
+    if (!allowedValues.includes(value)) {
+      errors.push(createError(
+        ERROR_CODES.nonCanonicalVocabularyOrIdentifier,
+        `Value at ${path} must use one of the canonical values: ${allowedValues.join(', ')}.`,
+        path
+      ));
+    }
+    return;
+  }
+
+  if (Array.isArray(value)) {
+    for (const [index, item] of value.entries()) {
+      if (typeof item !== 'string' || !allowedValues.includes(item)) {
+        errors.push(createError(
+          ERROR_CODES.nonCanonicalVocabularyOrIdentifier,
+          `Value at ${path}[${index}] must use one of the canonical values: ${allowedValues.join(', ')}.`,
+          `${path}[${index}]`
+        ));
+      }
+    }
+  }
+}
+
+/** @type {Record<string, string[]>} */
+const SEMANTIC_FILTER_VALUE_SETS = {
+  'rollout-mode': ROLLOUT_MODE_VALUES,
+  'workflow-active': WORKFLOW_ACTIVE_VALUES,
+  'run-status': RUN_STATUS_VALUES,
+  'run-conclusion': RUN_CONCLUSION_VALUES,
+  status: GRADER_STATUS_VALUES,
+  'eval-result': EVAL_RESULT_VALUES,
+  'outcome-state': OUTCOME_STATE_VALUES
+};
 
 /**
  * @param {unknown} value

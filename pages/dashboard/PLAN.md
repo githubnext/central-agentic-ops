@@ -5,7 +5,7 @@
 - [x] **Scaffold** — `package.json` (ESM, private, scripts for `typecheck`, `lint`, `test`, `test:e2e`), `tsconfig.json` with `checkJs` and `strict`, ESLint flat config, Vitest config, Playwright config, `README.md`, and `PLAN.md`.
 - [x] **Reactive core** — state, derived values, effects, disposal, and the DOM builder with keyed lists; unit tests including update, removal, and reordering.
 - [x] **Document model and validation** — Sections 4 and 12: root structure, vocabulary, unknown and duplicate key rejection, identifier grammar, uniqueness, error codes from Appendix B with code, message, and YAML path.
-- [ ] **Semantic model** — Section 5 sources, grain, field catalog, and intrinsic types.
+- [x] **Semantic model** — Section 5 sources, grain, field catalog, and intrinsic types.
 - [ ] **Scope, time, filters** — Section 6 including context composition.
 - [ ] **Dimensions, measures, aggregation** — Section 7 including canonical dimensions, measures, aggregates, and time units.
 - [ ] **Provenance, freshness, data states** — Section 8 including unavailable, empty, partial, and stale states.
@@ -25,6 +25,14 @@
 - 2026-08-28: `npm run test:e2e` is currently blocked because the browser runtime used by the workflow environment does not expose a launchable Chromium binary (`browserType.launch: Executable doesn't exist`). Unit, typecheck, and lint gates pass; browser tests are present but cannot launch until the browser dependency is provisioned. The workflow now prefers the built-in Playwright MCP browser tools instead of the incompatible `playwright-cli` wrapper.
 
 ## Run log
+
+### 2026-08-28 (semantic model slice)
+
+- Shipped the first Semantic model slice in `src/specification.js` and `src/validator.js`, adding canonical Section 5.1 source-name validation for custom-view `data.source` and conservative canonical-enumeration checks for intrinsic semantic filter literals.
+- Added unit coverage in `test/unit/validator.test.js` for `DLS-SEM-017`, `DLS-SEM-021`, and canonical intrinsic enumeration spellings from `DLS-SEM-004`, `DLS-SEM-005`, `DLS-SEM-006`, `DLS-SEM-008`, `DLS-SEM-009`, and `DLS-SEM-015`.
+- Verified `npm install`, `npm run typecheck`, `npm run lint`, and `npm test`; `npm run test:e2e` still fails in this environment because the Playwright Chromium executable is not provisioned.
+- Next milestone: Scope, time, filters.
+
 
 ### 2026-08-28
 
