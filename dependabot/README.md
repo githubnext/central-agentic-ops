@@ -64,7 +64,7 @@ Start with one representative repository:
 
 1. Open the generated **Dependabot** workflow in the control repository's **Actions** tab.
 2. Select **Run workflow**.
-3. Set `target_repo` to one fully qualified `owner/repository` name.
+3. Leave `target_repo` blank to review the control repository itself, or set it to one fully qualified `owner/repository` name to review another repository.
 4. Keep `max_repos` at `1` and `safe_output_mode` at `review`.
 5. Trigger a `workflow_dispatch` run and inspect repository selection, the dispatched worker workflow, review outputs in the control repository, and control-plane correlation data.
 
@@ -89,7 +89,7 @@ Promote in order: one-repository review, limited live, then scheduled live. Chan
 
 ## Targeting
 
-A manual `target_repo` can address a fully qualified repository only when its owner is allowlisted and the configured credential can access it. Without an explicit target, bounded automatic discovery enumerates repositories in the organization that owns the control repository. Enterprise-wide automatic discovery across multiple organizations is not provided.
+A manual `target_repo` can address a fully qualified repository only when its owner is allowlisted and the configured credential can access it. A manual `review` run with no explicit target uses the control repository itself. Scheduled runs, and manual `live` runs without a target, use bounded automatic discovery across repositories in the organization that owns the control repository. Enterprise-wide automatic discovery across multiple organizations is not provided.
 
 The orchestrator favors:
 

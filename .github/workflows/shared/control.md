@@ -76,7 +76,7 @@ imports:
     with:
       bundle: ${{ github.aw.import-inputs.bundle }}
       role: ${{ github.aw.import-inputs.role }}
-      target_repo: ${{ github.event.inputs.target_repo || '' }}
+      target_repo: ${{ github.event.inputs.target_repo || (github.event_name == 'workflow_dispatch' && env.GH_AW_SAFE_OUTPUT_MODE == 'review' && github.repository) || '' }}
       organization: ${{ github.repository_owner }}
       max_repos: "${{ github.aw.import-inputs.max_repos }}"
       max_scan_repos: "${{ github.aw.import-inputs.max_scan_repos }}"

@@ -823,6 +823,15 @@ test("shared control keeps manual and scheduled routing event-scoped", () => {
   assert.doesNotMatch(precompute, /ROLLOUT_PERCENT.*(?:eval|curl|gh api)/);
 });
 
+test("blank manual reviews target the control repository before discovery", () => {
+  const control = workflow("shared/control.md");
+
+  assert.match(
+    control,
+    /target_repo: \$\{\{ github\.event\.inputs\.target_repo \|\| \(github\.event_name == 'workflow_dispatch' && env\.GH_AW_SAFE_OUTPUT_MODE == 'review' && github\.repository\) \|\| '' \}\}/,
+  );
+});
+
 test("orchestrators dispatch workers only through safe-output tools", () => {
   const control = workflow("shared/control.md");
 

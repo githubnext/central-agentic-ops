@@ -164,7 +164,7 @@ Both operation orchestrators expose the same inputs under **Run workflow**:
 
 | Input | Type | Default | Effect |
 | --- | --- | --- | --- |
-| `target_repo` | String | Automatic discovery | Restricts the run to one fully qualified `owner/repository` target whose owner is allowlisted. |
+| `target_repo` | String | Control repository in `review`; automatic discovery in `live` | Restricts the run to one fully qualified `owner/repository` target whose owner is allowlisted. |
 | `safe_output_repo` | String | Current control-plane repository | Overrides the review safe output destination with an allowlisted repository for this manual run. |
 | `max_repos` | Number | `1` | Caps repositories selected by this run. It cannot exceed the orchestrator workflow's declared dispatch limit. |
 | `rollout_percent` | Number | `100` | Overrides the operation rollout percentage for this run. Accepts integers from `1` through `100`. |
@@ -174,7 +174,7 @@ Both operation orchestrators expose the same inputs under **Run workflow**:
 | `batch_index` | Number | `0` | Selects one zero-based batch from that cell. |
 | `safe_output_mode` | Choice | `review` | Selects review routing or live safe output processing for this `workflow_dispatch` run. |
 
-`workflow_dispatch` inputs affect only the dispatched run. They do not update repository variables or another operation's policy. Precompute emits a content-addressed `inventory_version` and deterministic `batch_id`; the same inventory and scheduling inputs produce the same batch. These controls do not auto-advance batches, retry work, or provide durable completion tracking. The percentage cap is rounded up so a non-empty candidate set can select at least one repository. `max_repos`, the percentage cap, and the target count permitted by the orchestrator workflow's remaining dispatch budget are cumulative; the smallest cap wins. Invalid or out-of-range caps fail precomputation. During validation, specify one `target_repo`, keep `max_repos` at `1`, and begin in review mode.
+`workflow_dispatch` inputs affect only the dispatched run. They do not update repository variables or another operation's policy. Precompute emits a content-addressed `inventory_version` and deterministic `batch_id`; the same inventory and scheduling inputs produce the same batch. These controls do not auto-advance batches, retry work, or provide durable completion tracking. The percentage cap is rounded up so a non-empty candidate set can select at least one repository. `max_repos`, the percentage cap, and the target count permitted by the orchestrator workflow's remaining dispatch budget are cumulative; the smallest cap wins. Invalid or out-of-range caps fail precomputation. During validation, leave `target_repo` blank to review the control repository itself or specify one explicit target, keep `max_repos` at `1`, and begin in review mode.
 
 Example cap calculation:
 
