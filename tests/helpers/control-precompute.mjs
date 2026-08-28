@@ -10,23 +10,26 @@ export function controlPrecomputeScript() {
     join(root, ".github", "workflows", "shared", "control-precompute.md"),
     "utf8",
   );
-  const marker = "    run: |\n";
-  const markerIndex = source.indexOf(marker);
-  assert.notEqual(markerIndex, -1, "control precompute run block is missing");
-
-  const lines = source.slice(markerIndex + marker.length).split("\n");
-  const script = [];
-  for (const line of lines) {
-    if (line === "---") break;
-    if (line.startsWith("      ")) {
-      script.push(line.slice(6));
-    } else if (line.length === 0) {
-      script.push("");
-    } else {
-      break;
+  const lines = source.split("\n");
+  const scripts = [];
+  for (let index = 0; index < lines.length; index += 1) {
+    if (lines[index] !== "    run: |") continue;
+    const script = [];
+    for (index += 1; index < lines.length; index += 1) {
+      const line = lines[index];
+      if (line.startsWith("      ")) {
+        script.push(line.slice(6));
+      } else if (line.length === 0) {
+        script.push("");
+      } else {
+        index -= 1;
+        break;
+      }
     }
+    scripts.push(script.join("\n"));
   }
-  return script.join("\n");
+  assert.ok(scripts.length > 0, "control precompute run block is missing");
+  return scripts.join("\n");
 }
 
 export function controlEnvironment(overrides = {}) {
@@ -57,6 +60,7 @@ export function controlEnvironment(overrides = {}) {
     ORCHESTRATOR_CREDITS: "250",
     WORKER_CREDITS_PER_TARGET: "600",
     AGGREGATE_CREDIT_LIMIT: "1100",
+    MONTHLY_CREDIT_BUDGET: "0",
     GITHUB_REPOSITORY: "acme/control",
     GITHUB_SERVER_URL: "https://github.com",
     GITHUB_WORKFLOW_REF: "acme/control/.github/workflows/dependabot.lock.yml@main",

@@ -292,6 +292,15 @@ test("enterprise-scale limits remain bounded across inventory sizes", () => {
 });
 
 test("enterprise defaults, budgets, timeouts, and concurrency are finite", () => {
+  const monthlyBudgetVariables = {
+    "advisory.md": "CENTRAL_AGENTIC_OPS_ADVISORY_MONTHLY_AI_CREDIT_BUDGET",
+    "ambient-context.md": "CENTRAL_AGENTIC_OPS_AMBIENT_CONTEXT_MONTHLY_AI_CREDIT_BUDGET",
+    "aw-failures.md": "CENTRAL_AGENTIC_OPS_AW_FAILURES_MONTHLY_AI_CREDIT_BUDGET",
+    "aw-maintenance.md": "CENTRAL_AGENTIC_OPS_AW_MAINTENANCE_MONTHLY_AI_CREDIT_BUDGET",
+    "dependabot.md": "CENTRAL_AGENTIC_OPS_DEPENDABOT_MONTHLY_AI_CREDIT_BUDGET",
+    "eu-cra-compliance.md": "CENTRAL_AGENTIC_OPS_EU_CRA_COMPLIANCE_MONTHLY_AI_CREDIT_BUDGET",
+    "optimization.md": "CENTRAL_AGENTIC_OPS_OPTIMIZATION_MONTHLY_AI_CREDIT_BUDGET",
+  };
   const expected = {
     "advisory.md": { credits: 250, timeout: 15, dispatchMax: 50, workers: 1 },
     "advisory-package-maintainer.md": { credits: 200, timeout: 20 },
@@ -314,7 +323,7 @@ test("enterprise defaults, budgets, timeouts, and concurrency are finite", () =>
     "eu-cra-compliance-security-requirements-auditor.md": { credits: 150, timeout: 30 },
     "eu-cra-compliance-supply-chain-sbom-auditor.md": { credits: 150, timeout: 30 },
     "eu-cra-compliance-vulnerability-handling-auditor.md": { credits: 150, timeout: 30 },
-    "optimization-ai-credit-auditor.md": { credits: 350, timeout: 25 },
+    "optimization-ai-credit-auditor.md": { credits: 350, timeout: 35 },
     "optimization-ai-credit-optimizer.md": { credits: 500, timeout: 30 },
   };
 
@@ -327,6 +336,8 @@ test("enterprise defaults, budgets, timeouts, and concurrency are finite", () =>
     if (limits.dispatchMax) {
       assert.match(source, new RegExp(`dispatch_max: "${limits.dispatchMax}"`), name);
       assert.match(source, new RegExp(`dispatch-workflow:[\\s\\S]*?max: ${limits.dispatchMax}`), name);
+      const budgetBinding = `monthly_credit_budget: \${{ vars.${monthlyBudgetVariables[name]} || '0' }}`;
+      assert.ok(source.includes(budgetBinding), name);
     }
   }
 
@@ -346,7 +357,9 @@ test("enterprise defaults, budgets, timeouts, and concurrency are finite", () =>
   assert.match(precompute, /dispatch_max must be an integer from 1 through 1000/);
   assert.match(precompute, /\(\$dispatch_max \| tonumber\) \/ \$eligible_workers \| floor/);
   assert.match(precompute, /\(\$aggregate_credit_limit \| tonumber\) - \(\$orchestrator_credits \| tonumber\)/);
-  assert.match(precompute, /\[\(\$max_repos \| tonumber\), \$percent_cap, \$credit_cap\] \| min/);
+  assert.match(precompute, /\[\.effective_max_repos, \.monthly_budget_target_cap\] \| min/);
+  assert.match(precompute, /monthly_credit_budget must be a non-negative integer/);
+  assert.match(precompute, /gh aw logs "\$workflow_id" --start-date "\$month_start" --json -c 1000/);
   assert.doesNotMatch(precompute, /--paginate/);
   assert.doesNotMatch(control, /repositories: \["\*"\]/);
 });
@@ -362,6 +375,22 @@ test("workers disable costly daily AIC burn checks", () => {
   for (const [name, source] of workers) {
     assert.match(source, /^max-daily-ai-credits: -1$/m, name);
   }
+});
+
+test("AI Credit auditor uses gh-aw forecast for cost projections", () => {
+  const auditor = workflow("optimization-ai-credit-auditor.md");
+
+  assert.match(auditor, /gh aw forecast \\/);
+  assert.match(auditor, /--repo "\$TARGET_REPOSITORY"/);
+  assert.match(auditor, /--days 30/);
+  assert.match(auditor, /--period month/);
+  assert.match(auditor, /--json/);
+  assert.match(auditor, /FORECAST_EXIT_CODE=0/);
+  assert.match(auditor, /FORECAST_JSON_VALID=false/);
+  assert.match(auditor, /weekly_monte_carlo/);
+  assert.match(auditor, /monthly_monte_carlo/);
+  assert.match(auditor, /1 AIC = \$0\.01 USD/);
+  assert.match(auditor, /billing dashboards remain authoritative/);
 });
 
 test("aggregate AI Credit admission reduces target fan-out", () => {
@@ -419,8 +448,11 @@ test("package manifests exclude repository-only tests", () => {
 
 test("operational-value graders expose deterministic run-scoped contracts", () => {
   const gradersDirectory = join(root, ".github", "graders");
-  const graders = readdirSync(gradersDirectory).filter((name) => name.endsWith("-operational-value.sh")).sort();
-  assert.deepEqual(graders, [
+  const packageGradersDirectory = join(root, ".github", "workflows", "graders");
+  const packageMaintainerGrader = "eu-cra-compliance-package-maintainer-operational-value.sh";
+  const graders = readdirSync(gradersDirectory).filter((name) => name.endsWith("-operational-value.sh"));
+  const packageGraders = readdirSync(packageGradersDirectory).filter((name) => name.endsWith("-operational-value.sh"));
+  assert.deepEqual([...graders, ...packageGraders].sort(), [
     "ambient-context-agents-md-curator-operational-value.sh",
     "aw-failures-investigator-operational-value.sh",
     "dependabot-release-train-updater-operational-value.sh",
@@ -434,13 +466,16 @@ test("operational-value graders expose deterministic run-scoped contracts", () =
     "optimization-ai-credit-auditor-operational-value.sh",
     "optimization-ai-credit-optimizer-operational-value.sh",
   ]);
+  assert.deepEqual(packageGraders, [packageMaintainerGrader]);
 
-  for (const name of graders) {
-    const executable = join(gradersDirectory, name);
+  for (const name of [...graders, ...packageGraders]) {
+    const isPackageMaintainer = name === packageMaintainerGrader;
+    const executable = join(isPackageMaintainer ? packageGradersDirectory : gradersDirectory, name);
     const workflowName = name.replace(/-operational-value\.sh$/, ".md");
+    const runPath = isPackageMaintainer ? `./graders/${name}` : `.github/graders/${name}`;
     assert.match(
       workflow(workflowName),
-      new RegExp(`graders:\\s+operational-value:\\s+run: \\.github/graders/${name.replace(".", "\\.")}`),
+      new RegExp(`graders:\\s+operational-value:\\s+run: ${runPath.replaceAll(".", "\\.")}`),
       `${name}: workflow must execute the frozen operational-value evaluator`,
     );
     const definition = JSON.parse(execFileSync(executable, ["--definition"], { encoding: "utf8" }));
@@ -876,7 +911,7 @@ test("EU CRA Advisor workflows preserve advisory and human-review boundaries", (
   assert.match(maintainer, /draft: true/);
   assert.match(maintainer, /create-issue:[\s\S]*?max: 1/);
   assert.match(maintainer, /deduplicate-by-title: true/);
-  assert.match(maintainer, /graders:\n\s+operational-value:\n\s+run: \.github\/graders\/eu-cra-compliance-package-maintainer-operational-value\.sh/);
+  assert.match(maintainer, /graders:\n\s+operational-value:\n\s+run: \.\/graders\/eu-cra-compliance-package-maintainer-operational-value\.sh/);
   assert.doesNotMatch(maintainer, /shared\/control\.md/);
 
   const ledger = readFileSync(join(root, "eu-cra-compliance", "implementation-status.md"), "utf8");
@@ -950,6 +985,22 @@ test("SVG visual audit covers every tracked SVG in both color schemes", () => {
   assert.match(source, /upload-artifact:/);
   assert.match(source, /http:\/\/localhost:4321\//);
   assert.match(source, /Never claim success if any manifest entry was skipped/);
+});
+
+test("multi-device docs tester covers PR browser and appearance compatibility", () => {
+  const source = workflow("multi-device-docs-tester.md");
+
+  assert.match(source, /pull_request:/);
+  assert.match(source, /- "docs\/\*\*"/);
+  assert.match(source, /playwright@1\.63\.0-alpha-2026-08-05 install --with-deps webkit/);
+  assert.match(source, /^      cat > "\$EXPR_GITHUB_WORKSPACE\/\.playwright\/webkit\.config\.json" <<'EOF'\n      \{\}\n      EOF$/m);
+  assert.match(source, /for BROWSER in chrome webkit/);
+  assert.match(source, /colorScheme: "light"/);
+  assert.match(source, /colorScheme: "dark"/);
+  assert.match(source, /currentSrc/);
+  assert.match(source, /create-check-run:/);
+  assert.match(source, /action_required/);
+  assert.match(source, /multi-device-docs\/screenshots/);
 });
 
 test("docs diagram generator creates one validated theme-aware SVG pair", () => {
@@ -1047,7 +1098,7 @@ test("clean-room compilation emits the expected GitHub Actions settings", { time
       "advisory-package-maintainer.lock.yml",
       "daily-dashboard-language-renderer.lock.yml",
       "daily-dashboard-language-spec-review.lock.yml",
-      "daily-multi-device-docs-tester.lock.yml",
+      "multi-device-docs-tester.lock.yml",
       "eu-cra-compliance-package-maintainer.lock.yml",
       "docs-explanatory-diagrams.lock.yml",
       "pr-reviewer.lock.yml",

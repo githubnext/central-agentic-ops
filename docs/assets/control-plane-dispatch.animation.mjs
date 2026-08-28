@@ -149,25 +149,30 @@ function randomizedStarts(count, minimum, maximum, interval) {
 }
 
 function createLayers() {
-  const packageStarts = randomizedStarts(6, 8, 62, 6);
+  const packageStarts = randomizedStarts(12, 8, 74, 6);
   const organizationStarts = randomizedStarts(12, 76, 148, 5);
   const repoStarts = randomizedStarts(4, 172, 204, 4);
   const repoDurations = [32, 26, 26, 32];
   const reportArrival = Math.max(...repoStarts.map((start, index) => start + repoDurations[index]));
-  const dependabotDispatch = Math.min(...packageStarts.slice(0, 3));
-  const optimizationDispatch = Math.min(...packageStarts.slice(3));
+  const packages = [
+    { name: "Supply chain", position: [580, 200], starts: packageStarts.slice(0, 3) },
+    { name: "Compliance", position: [580, 252], starts: packageStarts.slice(3, 6) },
+    { name: "Security", position: [580, 304], starts: packageStarts.slice(6, 9) },
+    { name: "Governance", position: [580, 356], starts: packageStarts.slice(9, 12) },
+  ];
+  const organizationTargets = [[630, 184], [630, 280], [630, 376]];
   const layers = [
-    statusLayer("Dependabot pending", STATUS_PENDING_ASSET_ID, [580, 240], blinkingOpacity(dependabotDispatch, reportArrival), dependabotDispatch, reportArrival),
-    statusLayer("Optimization pending", STATUS_PENDING_ASSET_ID, [580, 320], blinkingOpacity(optimizationDispatch, reportArrival), optimizationDispatch, reportArrival),
-    statusLayer("Dependabot complete", STATUS_SUCCESS_ASSET_ID, [580, 240], staticValue(100), reportArrival, 300),
-    statusLayer("Optimization complete", STATUS_SUCCESS_ASSET_ID, [580, 320], staticValue(100), reportArrival, 300),
+    ...packages.flatMap(({ name, position, starts }) => {
+      const dispatch = Math.min(...starts);
+      return [
+        statusLayer(`${name} pending`, STATUS_PENDING_ASSET_ID, position, blinkingOpacity(dispatch, reportArrival), dispatch, reportArrival),
+        statusLayer(`${name} complete`, STATUS_SUCCESS_ASSET_ID, position, staticValue(100), reportArrival, 300),
+      ];
+    }),
     reportUpdateLayer([930, 144], reportArrival),
-    pipelineSparkle("Dependabot to Org A", [[580, 240], [615, 240], [615, 184], [630, 184]], packageStarts[0], 20),
-    pipelineSparkle("Dependabot to Org B", [[580, 240], [615, 240], [615, 280], [630, 280]], packageStarts[1], 20),
-    pipelineSparkle("Dependabot to Org C", [[580, 240], [615, 240], [615, 376], [630, 376]], packageStarts[2], 26),
-    pipelineSparkle("Optimization to Org A", [[580, 320], [615, 320], [615, 184], [630, 184]], packageStarts[3], 26),
-    pipelineSparkle("Optimization to Org B", [[580, 320], [615, 320], [615, 280], [630, 280]], packageStarts[4], 20),
-    pipelineSparkle("Optimization to Org C", [[580, 320], [615, 320], [615, 376], [630, 376]], packageStarts[5], 20),
+    ...packages.flatMap(({ name, position, starts }) => organizationTargets.map(([targetX, targetY], index) =>
+      pipelineSparkle(`${name} to Org ${String.fromCharCode(65 + index)}`, [position, [615, position[1]], [615, targetY], [targetX, targetY]], starts[index], index === 2 ? 26 : 20),
+    )),
     pipelineSparkle("Org A to Repo 1", [[730, 184], [755, 184], [755, 172], [780, 172]], organizationStarts[0], 24),
     pipelineSparkle("Org A to Repo 2", [[730, 184], [755, 184], [755, 244], [780, 244]], organizationStarts[1], 24),
     pipelineSparkle("Org A to Repo 3", [[730, 184], [755, 184], [755, 316], [780, 316]], organizationStarts[2], 30),
@@ -193,25 +198,30 @@ function createLayers() {
 }
 
 function createMobileLayers() {
-  const packageStarts = randomizedStarts(6, 8, 62, 6);
+  const packageStarts = randomizedStarts(12, 8, 74, 6);
   const organizationStarts = randomizedStarts(12, 76, 148, 5);
   const repoStarts = randomizedStarts(4, 172, 204, 4);
   const repoDurations = [32, 26, 26, 32];
   const reportArrival = Math.max(...repoStarts.map((start, index) => start + repoDurations[index]));
-  const dependabotDispatch = Math.min(...packageStarts.slice(0, 3));
-  const optimizationDispatch = Math.min(...packageStarts.slice(3));
+  const packages = [
+    { name: "Supply chain", position: [57, 128], starts: packageStarts.slice(0, 3) },
+    { name: "Compliance", position: [147, 128], starts: packageStarts.slice(3, 6) },
+    { name: "Security", position: [237, 128], starts: packageStarts.slice(6, 9) },
+    { name: "Governance", position: [327, 128], starts: packageStarts.slice(9, 12) },
+  ];
+  const organizationTargets = [[75, 216], [195, 216], [315, 216]];
   const layers = [
-    statusLayer("Dependabot pending", STATUS_PENDING_ASSET_ID, [107, 128], blinkingOpacity(dependabotDispatch, reportArrival), dependabotDispatch, reportArrival),
-    statusLayer("Optimization pending", STATUS_PENDING_ASSET_ID, [283, 128], blinkingOpacity(optimizationDispatch, reportArrival), optimizationDispatch, reportArrival),
-    statusLayer("Dependabot complete", STATUS_SUCCESS_ASSET_ID, [107, 128], staticValue(100), reportArrival, 300),
-    statusLayer("Optimization complete", STATUS_SUCCESS_ASSET_ID, [283, 128], staticValue(100), reportArrival, 300),
+    ...packages.flatMap(({ name, position, starts }) => {
+      const dispatch = Math.min(...starts);
+      return [
+        statusLayer(`${name} pending`, STATUS_PENDING_ASSET_ID, position, blinkingOpacity(dispatch, reportArrival), dispatch, reportArrival),
+        statusLayer(`${name} complete`, STATUS_SUCCESS_ASSET_ID, position, staticValue(100), reportArrival, 300),
+      ];
+    }),
     reportUpdateLayer([58, 590], reportArrival),
-    pipelineSparkle("Dependabot to Org A", [[107, 128], [107, 180], [75, 180], [75, 216]], packageStarts[0], 20),
-    pipelineSparkle("Dependabot to Org B", [[107, 128], [107, 180], [195, 180], [195, 216]], packageStarts[1], 20),
-    pipelineSparkle("Dependabot to Org C", [[107, 128], [107, 180], [315, 180], [315, 216]], packageStarts[2], 26),
-    pipelineSparkle("Optimization to Org A", [[283, 128], [283, 180], [75, 180], [75, 216]], packageStarts[3], 26),
-    pipelineSparkle("Optimization to Org B", [[283, 128], [283, 180], [195, 180], [195, 216]], packageStarts[4], 20),
-    pipelineSparkle("Optimization to Org C", [[283, 128], [283, 180], [315, 180], [315, 216]], packageStarts[5], 20),
+    ...packages.flatMap(({ name, position, starts }) => organizationTargets.map(([targetX, targetY], index) =>
+      pipelineSparkle(`${name} to Org ${String.fromCharCode(65 + index)}`, [position, [position[0], 180], [targetX, 180], [targetX, targetY]], starts[index], index === 2 ? 26 : 20),
+    )),
     pipelineSparkle("Org A to Repo 1", [[75, 272], [75, 320], [130, 320], [130, 376]], organizationStarts[0], 24),
     pipelineSparkle("Org A to Repo 2", [[75, 272], [75, 320], [260, 320], [260, 376]], organizationStarts[1], 24),
     pipelineSparkle("Org A to Repo 3", [[75, 272], [75, 320], [55, 320], [55, 476], [80, 476]], organizationStarts[2], 30),

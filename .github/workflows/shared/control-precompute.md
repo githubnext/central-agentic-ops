@@ -76,6 +76,9 @@ import-schema:
   aggregate_credit_limit:
     type: string
     default: "1100"
+  monthly_credit_budget:
+    type: string
+    default: "0"
 
 tools:
   github:
@@ -111,6 +114,7 @@ steps:
       ORCHESTRATOR_CREDITS: ${{ github.aw.import-inputs.orchestrator_credits }}
       WORKER_CREDITS_PER_TARGET: ${{ github.aw.import-inputs.worker_credits_per_target }}
       AGGREGATE_CREDIT_LIMIT: ${{ github.aw.import-inputs.aggregate_credit_limit }}
+      MONTHLY_CREDIT_BUDGET: ${{ github.aw.import-inputs.monthly_credit_budget }}
     run: |
       set -euo pipefail
       mkdir -p /tmp/gh-aw/agent
@@ -526,7 +530,6 @@ steps:
           echo "AI Credit admission values must be integers and aggregate_credit_limit must be positive" >&2
           exit 1
         fi
-
         load_control_source
         workers_json=$(extract_dispatch_workers)
 
@@ -639,6 +642,80 @@ steps:
       validate_output_destination
       prepare_allowlist
       write_orchestrator_precompute
+  - name: Apply monthly package budget
+    env:
+      GH_REPO: ${{ github.repository }}
+      BUNDLE: ${{ github.aw.import-inputs.bundle }}
+      ROLE: ${{ github.aw.import-inputs.role }}
+      MONTHLY_CREDIT_BUDGET: ${{ github.aw.import-inputs.monthly_credit_budget }}
+      ORCHESTRATOR_CREDITS: ${{ github.aw.import-inputs.orchestrator_credits }}
+      WORKER_CREDITS_PER_TARGET: ${{ github.aw.import-inputs.worker_credits_per_target }}
+    run: |
+      set -euo pipefail
+      OUT=/tmp/gh-aw/agent/control-precompute.json
+      [ "$ROLE" = "orchestrator" ] || exit 0
+      [ "$(jq -r '.enabled' "$OUT")" = "true" ] || exit 0
+      if ! [[ "$MONTHLY_CREDIT_BUDGET" =~ ^[0-9]+$ ]]; then
+        echo "monthly_credit_budget must be a non-negative integer" >&2
+        exit 1
+      fi
+      if [ "$MONTHLY_CREDIT_BUDGET" -gt 0 ] && [ "$WORKER_CREDITS_PER_TARGET" -eq 0 ]; then
+        echo "monthly_credit_budget requires positive worker_credits_per_target" >&2
+        exit 1
+      fi
+
+      monthly_ai_credits_spent="0"
+      monthly_budget_error=""
+      if [ "$MONTHLY_CREDIT_BUDGET" -gt 0 ]; then
+        month_start=$(date -u +%Y-%m-01)
+        parts_dir=/tmp/gh-aw/agent/monthly-budget-parts
+        mkdir -p "$parts_dir"
+        rm -f "$parts_dir"/*.json
+        {
+          printf '%s\n' "$BUNDLE"
+          jq -r '.[]' /tmp/gh-aw/agent/workers.json
+        } | sort -u > /tmp/gh-aw/agent/monthly-budget-workflows
+
+        while IFS= read -r workflow_id; do
+          [ -n "$workflow_id" ] || continue
+          safe_workflow_id=$(printf '%s' "$workflow_id" | tr -cs 'A-Za-z0-9._-' '_')
+          part_file="$parts_dir/$safe_workflow_id.json"
+          part_exit=0
+          gh aw logs "$workflow_id" --start-date "$month_start" --json -c 1000 > "$part_file" || part_exit=$?
+          if ! jq -e '(.runs // []) | type == "array"' "$part_file" >/dev/null 2>&1; then
+            monthly_budget_error="could not read valid month-to-date AI Credit usage for $workflow_id (exit code $part_exit)"
+            break
+          fi
+        done < /tmp/gh-aw/agent/monthly-budget-workflows
+
+        if [ -z "$monthly_budget_error" ]; then
+          monthly_ai_credits_spent=$(jq -s '
+            map(.runs // []) | add // [] | unique_by(.run_id)
+            | map(.aic // 0) | add // 0
+          ' "$parts_dir"/*.json)
+        fi
+      fi
+
+      jq \
+        --arg budget "$MONTHLY_CREDIT_BUDGET" \
+        --arg spent "$monthly_ai_credits_spent" \
+        --arg budget_error "$monthly_budget_error" '
+          ($budget | tonumber) as $b
+          | ($spent | tonumber) as $s
+          | .monthly_credit_budget = $b
+          | .monthly_ai_credits_spent = $s
+          | .monthly_ai_credits_remaining = ([0, ($b - $s)] | max)
+          | .monthly_budget_error = $budget_error
+          | .monthly_budget_target_cap = (
+              if $b == 0 then .max_repos | tonumber
+              elif $budget_error != "" or $b <= ($s + .orchestrator_credits) then 0
+              else (($b - $s - .orchestrator_credits) / .worker_credits_per_target | floor)
+              end
+            )
+          | .effective_max_repos = ([.effective_max_repos, .monthly_budget_target_cap] | min)
+        ' "$OUT" > "$OUT.tmp"
+      mv "$OUT.tmp" "$OUT"
+      cp "$OUT" /tmp/gh-aw/agent/dispatch-precompute.json
 ---
 
 Read `/tmp/gh-aw/agent/control-precompute.json` before making control decisions. Treat it as authoritative for `control_role`, enablement state, target repository inputs, safe-output routing, and worker workflow availability. `/tmp/gh-aw/agent/dispatch-precompute.json` is also written for compatibility with existing dispatch-oriented instructions.
