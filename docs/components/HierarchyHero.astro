@@ -1,9 +1,9 @@
 ---
 import type { HTMLAttributes } from "astro/types";
 import dispatchFallback from "../assets/control-plane-dispatch-fallback.svg";
-import dispatchFallbackNight from "../assets/control-plane-dispatch-fallback-night.svg";
+import dispatchFallbackDark from "../assets/control-plane-dispatch-fallback-dark.svg";
 import mobileDispatchFallback from "../assets/control-plane-dispatch-mobile.svg";
-import mobileDispatchFallbackNight from "../assets/control-plane-dispatch-mobile-night.svg";
+import mobileDispatchFallbackDark from "../assets/control-plane-dispatch-mobile-dark.svg";
 import OpsWizard from "./OpsWizard.astro";
 
 const PAGE_TITLE_ID = "_top";
@@ -60,7 +60,7 @@ const { title = data.title, tagline, actions = [] } = data.hero || {};
 
     <div class="desktop-scene">
       <picture>
-        <source media="(prefers-color-scheme: dark)" srcset={dispatchFallbackNight.src} />
+        <source media="(prefers-color-scheme: dark)" srcset={dispatchFallbackDark.src} />
         <img
           src={dispatchFallback.src}
           width={dispatchFallback.width}
@@ -76,7 +76,7 @@ const { title = data.title, tagline, actions = [] } = data.hero || {};
 
     <div class="mobile-scene" aria-hidden="true">
       <picture>
-        <source media="(prefers-color-scheme: dark)" srcset={mobileDispatchFallbackNight.src} />
+        <source media="(prefers-color-scheme: dark)" srcset={mobileDispatchFallbackDark.src} />
         <img
           src={mobileDispatchFallback.src}
           width={mobileDispatchFallback.width}
