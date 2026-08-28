@@ -27,6 +27,8 @@ const agents = [
 ---
 
 <section class="ops-wizard" aria-labelledby="ops-wizard-title">
+  <div class="wizard-glow wizard-glow-primary" aria-hidden="true"></div>
+  <div class="wizard-glow wizard-glow-secondary" aria-hidden="true"></div>
   <div class="wizard-intro">
     <p class="wizard-eyebrow">Setup wizard</p>
     <h2 id="ops-wizard-title">Start an operation in three steps</h2>
@@ -34,6 +36,11 @@ const agents = [
       Pick the operation you want to run and the coding agent you use, then copy the generated prompt. The agent creates
       your private control plane repository, installs the operation, and runs it once in <code>review</code> mode.
     </p>
+    <div class="wizard-badges" aria-label="Wizard benefits">
+      <span>Private control plane</span>
+      <span>Review-mode first run</span>
+      <span>Agent-ready prompt</span>
+    </div>
   </div>
 
   <form class="wizard-form" data-ops-wizard>
@@ -135,6 +142,13 @@ const agents = [
         <div class="prompt-toolbar">
           <span class="prompt-summary" data-prompt-summary></span>
           <button type="button" class="copy-button" data-copy-prompt>
+            <span class="copy-icon" aria-hidden="true">
+              <svg viewBox="0 0 20 20" focusable="false">
+                <path
+                  d="M6.5 5.5V3.75A1.75 1.75 0 0 1 8.25 2h6A1.75 1.75 0 0 1 16 3.75v8.5A1.75 1.75 0 0 1 14.25 14H12.5v1.75A1.75 1.75 0 0 1 10.75 17h-5A1.75 1.75 0 0 1 4 15.25v-8A1.75 1.75 0 0 1 5.75 5.5h.75Zm1.5 0h2.75a1.75 1.75 0 0 1 1.75 1.75v5.25h1.75a.25.25 0 0 0 .25-.25v-8.5a.25.25 0 0 0-.25-.25h-6a.25.25 0 0 0-.25.25V5.5Zm-2.25 1.5a.25.25 0 0 0-.25.25v8a.25.25 0 0 0 .25.25h5a.25.25 0 0 0 .25-.25v-8a.25.25 0 0 0-.25-.25h-5Z"
+                ></path>
+              </svg>
+            </span>
             <span class="copy-label">Copy prompt</span>
           </button>
         </div>
@@ -143,12 +157,15 @@ const agents = [
       <p class="copy-status" role="status" aria-live="polite" data-copy-status></p>
       <dialog class="copy-dialog" data-copy-dialog aria-labelledby="ops-wizard-copy-dialog-title">
         <div class="copy-dialog-card">
-          <p class="copy-dialog-title" id="ops-wizard-copy-dialog-title">Prompt copied</p>
-          <p>
-            Create a repository, then paste the copied prompt into the starter text box to start setting up your control
-            plane.
-          </p>
-          <button type="button" class="copy-dialog-close" data-copy-dialog-close>Got it</button>
+          <div class="copy-dialog-burst" aria-hidden="true"></div>
+          <p class="copy-dialog-kicker">Prompt copied</p>
+          <p class="copy-dialog-title" id="ops-wizard-copy-dialog-title">Launch it from a fresh control repository</p>
+          <ol class="copy-dialog-steps">
+            <li>Create a new private repository for your Central Agentic Ops control plane.</li>
+            <li>Open the repository in your preferred coding agent.</li>
+            <li>Paste the copied prompt into the starter text box and let the agent prepare the repo.</li>
+          </ol>
+          <button type="button" class="copy-dialog-close" data-copy-dialog-close>Start setup</button>
         </div>
       </dialog>
     </fieldset>
@@ -337,20 +354,54 @@ const agents = [
       gap: 1.75rem;
       margin-inline: auto;
       overflow: hidden;
-      border: 1px solid color-mix(in srgb, var(--sl-color-gray-5) 60%, transparent);
-      border-radius: 1rem;
+      border: 1px solid color-mix(in srgb, var(--sl-color-text-accent) 42%, transparent);
+      border-radius: 1.25rem;
       background:
-        radial-gradient(120% 90% at 50% -10%, color-mix(in srgb, var(--sl-color-text-accent) 14%, transparent), transparent 60%),
-        color-mix(in srgb, var(--sl-color-black) 30%, transparent);
+        linear-gradient(135deg, color-mix(in srgb, #5b5cff 20%, transparent), transparent 36%),
+        radial-gradient(circle at 8% 0%, color-mix(in srgb, #00d4ff 22%, transparent), transparent 28%),
+        radial-gradient(circle at 92% 16%, color-mix(in srgb, #ff4ecd 24%, transparent), transparent 30%),
+        radial-gradient(120% 90% at 50% -10%, color-mix(in srgb, var(--sl-color-text-accent) 20%, transparent), transparent 60%),
+        color-mix(in srgb, var(--sl-color-black) 35%, transparent);
       padding: clamp(1.25rem, 2.5vw, 2.25rem);
-      box-shadow: 0 1.5rem 3rem color-mix(in srgb, var(--sl-color-black) 35%, transparent);
+      box-shadow:
+        0 1.5rem 3rem color-mix(in srgb, var(--sl-color-black) 35%, transparent),
+        inset 0 1px 0 color-mix(in srgb, var(--sl-color-white) 16%, transparent);
+      isolation: isolate;
+    }
+
+    .wizard-glow {
+      position: absolute;
+      z-index: -1;
+      width: 16rem;
+      height: 16rem;
+      border-radius: 999px;
+      filter: blur(2rem);
+      opacity: 0.48;
+      pointer-events: none;
+    }
+
+    .wizard-glow-primary {
+      top: -6rem;
+      right: -4rem;
+      background: #ff4ecd;
+    }
+
+    .wizard-glow-secondary {
+      bottom: -7rem;
+      left: -5rem;
+      background: #00d4ff;
     }
 
     .wizard-eyebrow {
+      align-self: center;
       margin: 0;
-      color: var(--sl-color-text-accent);
+      border: 1px solid color-mix(in srgb, var(--sl-color-text-accent) 55%, transparent);
+      border-radius: 999px;
+      background: color-mix(in srgb, var(--sl-color-text-accent) 14%, transparent);
+      padding: 0.25rem 0.7rem;
+      color: color-mix(in srgb, var(--sl-color-text-accent) 85%, var(--sl-color-white));
       font-size: var(--sl-text-xs);
-      font-weight: 600;
+      font-weight: 700;
       letter-spacing: 0.08em;
       text-transform: uppercase;
     }
@@ -365,8 +416,9 @@ const agents = [
     .wizard-intro h2 {
       margin: 0;
       color: var(--sl-color-white);
-      font-size: clamp(1.375rem, 2.5vw, 1.75rem);
+      font-size: clamp(1.6rem, 3.8vw, 2.35rem);
       line-height: 1.2;
+      text-shadow: 0 0.75rem 2rem color-mix(in srgb, var(--sl-color-black) 45%, transparent);
     }
 
     .wizard-lede {
@@ -375,6 +427,24 @@ const agents = [
       color: var(--sl-color-gray-2);
       font-size: var(--sl-text-sm);
       line-height: 1.6;
+    }
+
+    .wizard-badges {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 0.5rem;
+      margin-top: 0.25rem;
+    }
+
+    .wizard-badges span {
+      border: 1px solid color-mix(in srgb, var(--sl-color-white) 18%, transparent);
+      border-radius: 999px;
+      background: color-mix(in srgb, var(--sl-color-white) 8%, transparent);
+      padding: 0.35rem 0.7rem;
+      color: var(--sl-color-gray-1);
+      font-size: var(--sl-text-xs);
+      font-weight: 600;
     }
 
     .wizard-form {
@@ -387,9 +457,11 @@ const agents = [
       display: flex;
       flex-direction: column;
       gap: 0.75rem;
-      border: 0;
+      border: 1px solid color-mix(in srgb, var(--sl-color-white) 12%, transparent);
+      border-radius: 0.9rem;
       margin: 0;
-      padding: 0;
+      background: color-mix(in srgb, var(--sl-color-black) 18%, transparent);
+      padding: 1rem;
     }
 
     .wizard-step legend {
@@ -409,9 +481,11 @@ const agents = [
       align-items: center;
       justify-content: center;
       border-radius: 50%;
-      background: var(--sl-color-text-accent);
+      background: linear-gradient(135deg, #00d4ff, #9b5cff 50%, #ff4ecd);
       color: var(--sl-color-black);
       font-size: var(--sl-text-xs);
+      font-weight: 800;
+      box-shadow: 0 0.5rem 1.25rem color-mix(in srgb, var(--sl-color-text-accent) 30%, transparent);
     }
 
     .card-grid {
@@ -425,9 +499,11 @@ const agents = [
       display: flex;
       align-items: flex-start;
       gap: 0.625rem;
-      border: 1px solid color-mix(in srgb, var(--sl-color-gray-5) 70%, transparent);
-      border-radius: 0.625rem;
-      background: color-mix(in srgb, var(--sl-color-black) 20%, transparent);
+      border: 1px solid color-mix(in srgb, var(--sl-color-gray-5) 65%, transparent);
+      border-radius: 0.8rem;
+      background:
+        linear-gradient(145deg, color-mix(in srgb, var(--sl-color-white) 8%, transparent), transparent),
+        color-mix(in srgb, var(--sl-color-black) 24%, transparent);
       padding: 0.875rem 2.25rem 0.875rem 0.875rem;
       cursor: pointer;
       transition: border-color 160ms ease, background-color 160ms ease, transform 160ms ease, box-shadow 160ms ease;
@@ -435,8 +511,10 @@ const agents = [
 
     .option-card:hover {
       transform: translateY(-2px);
-      border-color: color-mix(in srgb, var(--sl-color-text-accent) 70%, transparent);
-      background: color-mix(in srgb, var(--sl-color-text-accent) 8%, transparent);
+      border-color: color-mix(in srgb, #00d4ff 70%, transparent);
+      background:
+        linear-gradient(145deg, color-mix(in srgb, #00d4ff 12%, transparent), color-mix(in srgb, #ff4ecd 8%, transparent)),
+        color-mix(in srgb, var(--sl-color-black) 16%, transparent);
       box-shadow: 0 0.5rem 1.25rem color-mix(in srgb, var(--sl-color-black) 30%, transparent);
     }
 
@@ -447,8 +525,13 @@ const agents = [
     }
 
     .option-card:has(input:checked) {
-      border-color: var(--sl-color-text-accent);
-      background: color-mix(in srgb, var(--sl-color-text-accent) 12%, transparent);
+      border-color: color-mix(in srgb, #00d4ff 80%, var(--sl-color-text-accent));
+      background:
+        linear-gradient(145deg, color-mix(in srgb, #00d4ff 16%, transparent), color-mix(in srgb, #ff4ecd 13%, transparent)),
+        color-mix(in srgb, var(--sl-color-black) 18%, transparent);
+      box-shadow:
+        0 0.75rem 1.5rem color-mix(in srgb, var(--sl-color-black) 28%, transparent),
+        inset 0 1px 0 color-mix(in srgb, var(--sl-color-white) 14%, transparent);
     }
 
     .option-check {
@@ -461,7 +544,7 @@ const agents = [
       align-items: center;
       justify-content: center;
       border-radius: 50%;
-      background: var(--sl-color-text-accent);
+      background: linear-gradient(135deg, #00d4ff, #ff4ecd);
       opacity: 0;
       transform: scale(0.6);
       transition: opacity 160ms ease, transform 160ms ease;
@@ -528,9 +611,11 @@ const agents = [
     .ops-wizard input[type="text"],
     .ops-wizard textarea {
       width: 100%;
-      border: 1px solid color-mix(in srgb, var(--sl-color-gray-5) 70%, transparent);
-      border-radius: 0.375rem;
-      background: color-mix(in srgb, var(--sl-color-black) 35%, transparent);
+      border: 1px solid color-mix(in srgb, var(--sl-color-text-accent) 38%, transparent);
+      border-radius: 0.55rem;
+      background:
+        linear-gradient(145deg, color-mix(in srgb, #00d4ff 6%, transparent), transparent),
+        color-mix(in srgb, var(--sl-color-black) 36%, transparent);
       padding: 0.5rem 0.625rem;
       color: var(--sl-color-white);
       font-size: var(--sl-text-sm);
@@ -554,9 +639,12 @@ const agents = [
 
     .prompt-panel {
       overflow: hidden;
-      border: 1px solid color-mix(in srgb, var(--sl-color-gray-5) 70%, transparent);
-      border-radius: 0.625rem;
-      background: color-mix(in srgb, var(--sl-color-black) 45%, transparent);
+      border: 1px solid color-mix(in srgb, #00d4ff 34%, transparent);
+      border-radius: 0.9rem;
+      background:
+        linear-gradient(145deg, color-mix(in srgb, #00d4ff 10%, transparent), color-mix(in srgb, #ff4ecd 8%, transparent)),
+        color-mix(in srgb, var(--sl-color-black) 46%, transparent);
+      box-shadow: inset 0 1px 0 color-mix(in srgb, var(--sl-color-white) 12%, transparent);
     }
 
     .prompt-toolbar {
@@ -566,14 +654,16 @@ const agents = [
       justify-content: space-between;
       gap: 0.5rem;
       border-bottom: 1px solid color-mix(in srgb, var(--sl-color-gray-5) 60%, transparent);
-      background: color-mix(in srgb, var(--sl-color-black) 30%, transparent);
+      background:
+        linear-gradient(90deg, color-mix(in srgb, #00d4ff 14%, transparent), color-mix(in srgb, #ff4ecd 14%, transparent)),
+        color-mix(in srgb, var(--sl-color-black) 30%, transparent);
       padding: 0.5rem 0.625rem 0.5rem 0.875rem;
     }
 
     .prompt-summary {
       color: var(--sl-color-gray-2);
       font-size: var(--sl-text-xs);
-      font-weight: 600;
+      font-weight: 700;
     }
 
     .prompt-panel pre {
@@ -592,47 +682,86 @@ const agents = [
     .copy-button {
       display: inline-flex;
       align-items: center;
-      border: 1px solid var(--sl-color-text-accent);
-      border-radius: 0.375rem;
-      background: var(--sl-color-text-accent);
-      padding: 0.3rem 0.85rem;
-      color: var(--sl-color-black);
+      gap: 0.35rem;
+      border: 1px solid color-mix(in srgb, #00d4ff 70%, transparent);
+      border-radius: 999px;
+      background: linear-gradient(135deg, #00d4ff, #9b5cff 52%, #ff4ecd);
+      padding: 0.38rem 0.9rem;
+      color: var(--sl-color-white);
       font-size: var(--sl-text-xs);
-      font-weight: 600;
+      font-weight: 800;
       cursor: pointer;
-      transition: background-color 160ms ease, transform 160ms ease;
+      box-shadow: 0 0.75rem 1.5rem color-mix(in srgb, #9b5cff 30%, transparent);
+      transition: filter 160ms ease, transform 160ms ease, box-shadow 160ms ease;
+    }
+
+    .copy-icon {
+      display: inline-flex;
+      width: 1rem;
+      height: 1rem;
+    }
+
+    .copy-icon svg {
+      width: 100%;
+      height: 100%;
+      fill: currentColor;
     }
 
     .copy-button:hover,
     .copy-button:focus-visible {
       transform: translateY(-1px);
-      background: color-mix(in srgb, var(--sl-color-text-accent) 85%, var(--sl-color-white));
+      filter: saturate(1.15) brightness(1.08);
+      box-shadow: 0 1rem 1.75rem color-mix(in srgb, #9b5cff 38%, transparent);
     }
 
     .copy-button.is-copied {
-      border-color: var(--sl-color-green);
-      background: var(--sl-color-green);
+      border-color: color-mix(in srgb, var(--sl-color-green) 70%, var(--sl-color-white));
+      background: linear-gradient(135deg, var(--sl-color-green), #00d4ff);
+      color: var(--sl-color-black);
     }
 
     .copy-dialog {
       max-width: min(26rem, calc(100% - 2rem));
-      border: 1px solid color-mix(in srgb, var(--sl-color-text-accent) 50%, transparent);
-      border-radius: 0.875rem;
-      background: var(--sl-color-bg);
+      border: 1px solid color-mix(in srgb, #00d4ff 55%, transparent);
+      border-radius: 1rem;
+      background:
+        radial-gradient(circle at 20% 0%, color-mix(in srgb, #00d4ff 25%, transparent), transparent 38%),
+        radial-gradient(circle at 100% 12%, color-mix(in srgb, #ff4ecd 22%, transparent), transparent 34%),
+        var(--sl-color-bg);
       padding: 0;
       color: var(--sl-color-white);
       box-shadow: 0 1.5rem 4rem color-mix(in srgb, var(--sl-color-black) 55%, transparent);
     }
 
     .copy-dialog::backdrop {
-      background: color-mix(in srgb, var(--sl-color-black) 65%, transparent);
+      background:
+        radial-gradient(circle at 50% 10%, color-mix(in srgb, #9b5cff 22%, transparent), transparent 34%),
+        color-mix(in srgb, var(--sl-color-black) 70%, transparent);
     }
 
     .copy-dialog-card {
+      position: relative;
       display: flex;
       flex-direction: column;
       gap: 0.875rem;
-      padding: 1.25rem;
+      overflow: hidden;
+      padding: 1.4rem;
+    }
+
+    .copy-dialog-burst {
+      width: 3rem;
+      height: 0.35rem;
+      border-radius: 999px;
+      background: linear-gradient(90deg, #00d4ff, #9b5cff, #ff4ecd);
+      box-shadow: 0 0.5rem 1.5rem color-mix(in srgb, #9b5cff 50%, transparent);
+    }
+
+    .copy-dialog-kicker {
+      color: color-mix(in srgb, #00d4ff 78%, var(--sl-color-white)) !important;
+      font-size: var(--sl-text-xs) !important;
+      font-weight: 800;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
     }
 
     .copy-dialog-card p {
@@ -644,20 +773,35 @@ const agents = [
 
     .copy-dialog-card .copy-dialog-title {
       color: var(--sl-color-white);
-      font-size: var(--sl-text-lg);
+      font-size: var(--sl-text-xl);
       font-weight: 700;
       line-height: 1.2;
     }
 
+    .copy-dialog-steps {
+      display: grid;
+      gap: 0.55rem;
+      margin: 0;
+      padding-inline-start: 1.25rem;
+      color: var(--sl-color-gray-2);
+      font-size: var(--sl-text-sm);
+      line-height: 1.55;
+    }
+
+    .copy-dialog-steps li::marker {
+      color: color-mix(in srgb, #ff4ecd 70%, var(--sl-color-text-accent));
+      font-weight: 800;
+    }
+
     .copy-dialog-close {
       align-self: flex-start;
-      border: 1px solid var(--sl-color-text-accent);
-      border-radius: 0.375rem;
-      background: var(--sl-color-text-accent);
-      padding: 0.35rem 0.9rem;
-      color: var(--sl-color-black);
+      border: 1px solid color-mix(in srgb, #00d4ff 70%, transparent);
+      border-radius: 999px;
+      background: linear-gradient(135deg, #00d4ff, #9b5cff 55%, #ff4ecd);
+      padding: 0.45rem 1rem;
+      color: var(--sl-color-white);
       font-size: var(--sl-text-xs);
-      font-weight: 600;
+      font-weight: 800;
       cursor: pointer;
     }
 
