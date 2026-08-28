@@ -70,7 +70,6 @@ network:
   allowed:
     - defaults
     - github
-    - agentconfig.org
 
 run-name: "Ambient context AGENTS.md · ${{ inputs.target_repo }} · ${{ inputs.safe_output_mode || 'review' }}"
 

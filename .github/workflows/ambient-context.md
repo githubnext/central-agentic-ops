@@ -91,7 +91,6 @@ network:
   allowed:
     - defaults
     - github
-    - agentconfig.org
 
 safe-outputs:
   dispatch-workflow:
