@@ -6,6 +6,7 @@ description: "Manifest-aware dependency release-train updater that repairs or pr
 name: "Dependabot / Release Train Updater"
 
 max-ai-credits: 600
+max-daily-ai-credits: -1
 
 on:
   workflow_dispatch:

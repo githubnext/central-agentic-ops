@@ -351,6 +351,19 @@ test("enterprise defaults, budgets, timeouts, and concurrency are finite", () =>
   assert.doesNotMatch(control, /repositories: \["\*"\]/);
 });
 
+test("workers disable costly daily AIC burn checks", () => {
+  const workers = readdirSync(workflowsDirectory)
+    .filter((name) => name.endsWith(".md"))
+    .map((name) => [name, workflow(name)])
+    .filter(([, source]) => /^\s+role: worker$/m.test(source));
+
+  assert.ok(workers.length > 0, "expected at least one worker workflow");
+
+  for (const [name, source] of workers) {
+    assert.match(source, /^max-daily-ai-credits: -1$/m, name);
+  }
+});
+
 test("aggregate AI Credit admission reduces target fan-out", () => {
   const base = {
     eventName: "schedule",

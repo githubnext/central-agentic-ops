@@ -3,6 +3,7 @@ emoji: ":shield:"
 description: "Produces a recent-change-focused, non-binding UK AI open-code operational resilience advisory for one repository."
 name: "Advisory / UK AI Operational Resilience"
 max-ai-credits: 600
+max-daily-ai-credits: -1
 
 on:
   workflow_dispatch:

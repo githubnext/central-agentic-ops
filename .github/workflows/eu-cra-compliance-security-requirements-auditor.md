@@ -3,6 +3,7 @@ emoji: ":shield:"
 description: "Audits CRA product cybersecurity requirements and records implementation evidence and gaps."
 name: "EU CRA Advisor / Security Requirements Auditor"
 max-ai-credits: 150
+max-daily-ai-credits: -1
 
 on:
   workflow_dispatch:

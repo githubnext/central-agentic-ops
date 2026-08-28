@@ -3,6 +3,7 @@ emoji: ":alarm_clock:"
 description: "Audits Article 14 awareness, decision, notification-timeline, and evidence-preservation readiness."
 name: "EU CRA Advisor / Article 14 Reporting Readiness"
 max-ai-credits: 150
+max-daily-ai-credits: -1
 
 on:
   workflow_dispatch:

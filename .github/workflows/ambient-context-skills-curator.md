@@ -6,6 +6,7 @@ description: "Weekly ambient-context curation for one repository's agent skills:
 name: "Ambient Context / Skills Curator"
 
 max-ai-credits: 400
+max-daily-ai-credits: -1
 
 on:
   workflow_dispatch:
