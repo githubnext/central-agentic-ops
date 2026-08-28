@@ -8,6 +8,7 @@ on:
         required: true
         type: choice
         options:
+          - advisory
           - dependabot
           - optimization
       target_repo:

@@ -7,7 +7,7 @@ on:
         description: Package orchestrator to exercise
         required: true
         type: choice
-        options: [dependabot, optimization]
+        options: [advisory, dependabot, optimization]
       target_repo:
         description: Dedicated OWNER/REPO canary target
         required: true

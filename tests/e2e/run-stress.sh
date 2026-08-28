@@ -9,7 +9,9 @@ set -euo pipefail
 : "${CONFIRMATION:?CONFIRMATION is required}"
 
 case "$BUNDLE" in
+  advisory) workflow_file=advisory.lock.yml ;;
   dependabot) workflow_file=dependabot.lock.yml ;;
+  eu-cra-compliance) workflow_file=eu-cra-compliance.lock.yml ;;
   optimization) workflow_file=optimization.lock.yml ;;
   *) printf 'Unsupported package: %s\n' "$BUNDLE" >&2; exit 1 ;;
 esac

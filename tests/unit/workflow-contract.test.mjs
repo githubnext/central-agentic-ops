@@ -293,16 +293,27 @@ test("enterprise-scale limits remain bounded across inventory sizes", () => {
 
 test("enterprise defaults, budgets, timeouts, and concurrency are finite", () => {
   const expected = {
+    "advisory.md": { credits: 250, timeout: 15, dispatchMax: 50, workers: 1 },
+    "advisory-package-maintainer.md": { credits: 200, timeout: 20 },
+    "advisory-uk-ai-operational-resilience.md": { credits: 600, timeout: 30 },
     "ambient-context.md": { credits: 250, timeout: 15, dispatchMax: 20, workers: 2 },
     "aw-failures.md": { credits: 250, timeout: 15, dispatchMax: 50, workers: 1 },
     "aw-maintenance.md": { credits: 250, timeout: 15, dispatchMax: 50, workers: 1 },
     "dependabot.md": { credits: 250, timeout: 15, dispatchMax: 50, workers: 1 },
+    "eu-cra-compliance.md": { credits: 200, timeout: 15, dispatchMax: 48, workers: 6 },
+    "eu-cra-compliance-package-maintainer.md": { credits: 200, timeout: 20 },
     "optimization.md": { credits: 250, timeout: 15, dispatchMax: 20, workers: 2 },
     "ambient-context-agents-md-curator.md": { credits: 400, timeout: 25 },
     "ambient-context-skills-curator.md": { credits: 400, timeout: 20 },
     "aw-failures-investigator.md": { credits: 500, timeout: 30 },
     "aw-maintenance-upgrade.md": { credits: 500, timeout: 30 },
     "dependabot-release-train-updater.md": { credits: 600, timeout: 60 },
+    "eu-cra-compliance-article-14-reporting-readiness.md": { credits: 150, timeout: 30 },
+    "eu-cra-compliance-conformity-release-evidence.md": { credits: 150, timeout: 30 },
+    "eu-cra-compliance-scope-classifier.md": { credits: 150, timeout: 25 },
+    "eu-cra-compliance-security-requirements-auditor.md": { credits: 150, timeout: 30 },
+    "eu-cra-compliance-supply-chain-sbom-auditor.md": { credits: 150, timeout: 30 },
+    "eu-cra-compliance-vulnerability-handling-auditor.md": { credits: 150, timeout: 30 },
     "optimization-ai-credit-auditor.md": { credits: 350, timeout: 25 },
     "optimization-ai-credit-optimizer.md": { credits: 500, timeout: 30 },
   };
@@ -387,7 +398,7 @@ test("deterministic workflows pin third-party actions by commit SHA", () => {
 });
 
 test("package manifests exclude repository-only tests", () => {
-  for (const relativePath of ["aw.yml", join("ambient-context", "aw.yml"), join("aw-failures", "aw.yml"), join("aw-maintenance", "aw.yml"), join("dependabot", "aw.yml"), join("optimization", "aw.yml")]) {
+  for (const relativePath of ["aw.yml", join("advisory", "aw.yml"), join("ambient-context", "aw.yml"), join("aw-failures", "aw.yml"), join("aw-maintenance", "aw.yml"), join("dependabot", "aw.yml"), join("eu-cra-compliance", "aw.yml"), join("optimization", "aw.yml")]) {
     const manifest = readFileSync(join(root, relativePath), "utf8");
     assert.doesNotMatch(manifest, /(?:review-smoke|enterprise-canary|enterprise-stress|tests\/e2e|\.github\/aw\/e2e)/, relativePath);
   }
@@ -400,6 +411,13 @@ test("operational-value graders expose deterministic run-scoped contracts", () =
     "ambient-context-agents-md-curator-operational-value.sh",
     "aw-failures-investigator-operational-value.sh",
     "dependabot-release-train-updater-operational-value.sh",
+    "eu-cra-compliance-article-14-reporting-readiness-operational-value.sh",
+    "eu-cra-compliance-conformity-release-evidence-operational-value.sh",
+    "eu-cra-compliance-package-maintainer-operational-value.sh",
+    "eu-cra-compliance-scope-classifier-operational-value.sh",
+    "eu-cra-compliance-security-requirements-auditor-operational-value.sh",
+    "eu-cra-compliance-supply-chain-sbom-auditor-operational-value.sh",
+    "eu-cra-compliance-vulnerability-handling-auditor-operational-value.sh",
     "optimization-ai-credit-auditor-operational-value.sh",
     "optimization-ai-credit-optimizer-operational-value.sh",
   ]);
@@ -420,6 +438,7 @@ test("operational-value graders expose deterministic run-scoped contracts", () =
       input: JSON.stringify(definition.validationExamples[example]),
     }));
     assert.ok(score("targetAttained") > score("targetMissed"), name);
+    assert.equal(score("targetMissed"), 0, `${name}: complete missed opportunity`);
     assert.equal(score("missing"), null, `${name}: missing`);
     assert.equal(score("malformed"), null, `${name}: malformed`);
   }
@@ -562,6 +581,8 @@ test("live workers require target-owned package authority before agent execution
   assert.match(precompute, /validate_worker_dispatch\n\s+validate_output_destination\n\s+validate_live_authority\n\s+write_worker_precompute/);
 
   for (const [name, bundle] of [
+    ["advisory.md", "advisory"],
+    ["advisory-uk-ai-operational-resilience.md", "advisory"],
     ["ambient-context.md", "ambient-context"],
     ["ambient-context-agents-md-curator.md", "ambient-context"],
     ["ambient-context-skills-curator.md", "ambient-context"],
@@ -571,6 +592,13 @@ test("live workers require target-owned package authority before agent execution
     ["aw-maintenance-upgrade.md", "aw-maintenance"],
     ["dependabot.md", "dependabot"],
     ["dependabot-release-train-updater.md", "dependabot"],
+    ["eu-cra-compliance.md", "eu-cra-compliance"],
+    ["eu-cra-compliance-article-14-reporting-readiness.md", "eu-cra-compliance"],
+    ["eu-cra-compliance-conformity-release-evidence.md", "eu-cra-compliance"],
+    ["eu-cra-compliance-scope-classifier.md", "eu-cra-compliance"],
+    ["eu-cra-compliance-security-requirements-auditor.md", "eu-cra-compliance"],
+    ["eu-cra-compliance-supply-chain-sbom-auditor.md", "eu-cra-compliance"],
+    ["eu-cra-compliance-vulnerability-handling-auditor.md", "eu-cra-compliance"],
     ["optimization.md", "optimization"],
     ["optimization-ai-credit-auditor.md", "optimization"],
     ["optimization-ai-credit-optimizer.md", "optimization"],
@@ -581,10 +609,12 @@ test("live workers require target-owned package authority before agent execution
 
 test("orchestrators expose scheduled variables and independent manual inputs", () => {
   for (const [name, packageName] of [
+    ["advisory.md", "ADVISORY"],
     ["ambient-context.md", "AMBIENT_CONTEXT"],
     ["aw-failures.md", "AW_FAILURES"],
     ["aw-maintenance.md", "AW_MAINTENANCE"],
     ["dependabot.md", "DEPENDABOT"],
+    ["eu-cra-compliance.md", "EU_CRA_COMPLIANCE"],
     ["optimization.md", "OPTIMIZATION"],
   ]) {
     const source = workflow(name);
@@ -630,7 +660,7 @@ test("shared control keeps manual and scheduled routing event-scoped", () => {
   const control = workflow("shared/control.md");
   const precompute = workflow("shared/control-precompute.md");
 
-  for (const name of ["ambient-context.md", "aw-failures.md", "aw-maintenance.md", "dependabot.md", "optimization.md"]) {
+  for (const name of ["advisory.md", "ambient-context.md", "aw-failures.md", "aw-maintenance.md", "dependabot.md", "eu-cra-compliance.md", "optimization.md"]) {
     const orchestrator = workflow(name);
     assert.match(orchestrator, /GH_AW_SAFE_OUTPUT_MODE:.*inputs\.safe_output_mode.*\|\| 'review'/);
     assert.match(orchestrator, /CENTRAL_AGENTIC_OPS_PACKAGE_ENABLED:.*_ENABLED \|\| 'true'/);
@@ -652,11 +682,18 @@ test("shared control keeps manual and scheduled routing event-scoped", () => {
 
 test("every worker uses the standard dispatch envelope and safe mode vocabulary", () => {
   const workerNames = [
+    ["advisory-uk-ai-operational-resilience.md", "ADVISORY", "ADVISORY_UK_AI_OPERATIONAL_RESILIENCE"],
     ["ambient-context-agents-md-curator.md", "AMBIENT_CONTEXT", "AMBIENT_CONTEXT_AGENTS_MD"],
     ["ambient-context-skills-curator.md", "AMBIENT_CONTEXT", "AMBIENT_CONTEXT_SKILLS"],
     ["aw-failures-investigator.md", "AW_FAILURES", "AW_FAILURES_INVESTIGATOR"],
     ["aw-maintenance-upgrade.md", "AW_MAINTENANCE", "AW_MAINTENANCE_UPGRADE"],
     ["dependabot-release-train-updater.md", "DEPENDABOT", "DEPENDABOT_UPDATER"],
+    ["eu-cra-compliance-article-14-reporting-readiness.md", "EU_CRA_COMPLIANCE", "EU_CRA_COMPLIANCE_ARTICLE_14_REPORTING_READINESS"],
+    ["eu-cra-compliance-conformity-release-evidence.md", "EU_CRA_COMPLIANCE", "EU_CRA_COMPLIANCE_CONFORMITY_RELEASE_EVIDENCE"],
+    ["eu-cra-compliance-scope-classifier.md", "EU_CRA_COMPLIANCE", "EU_CRA_COMPLIANCE_SCOPE_CLASSIFIER"],
+    ["eu-cra-compliance-security-requirements-auditor.md", "EU_CRA_COMPLIANCE", "EU_CRA_COMPLIANCE_SECURITY_REQUIREMENTS_AUDITOR"],
+    ["eu-cra-compliance-supply-chain-sbom-auditor.md", "EU_CRA_COMPLIANCE", "EU_CRA_COMPLIANCE_SUPPLY_CHAIN_SBOM_AUDITOR"],
+    ["eu-cra-compliance-vulnerability-handling-auditor.md", "EU_CRA_COMPLIANCE", "EU_CRA_COMPLIANCE_VULNERABILITY_HANDLING_AUDITOR"],
     ["optimization-ai-credit-auditor.md", "OPTIMIZATION", "OPTIMIZATION_AUDITOR"],
     ["optimization-ai-credit-optimizer.md", "OPTIMIZATION", "OPTIMIZATION_OPTIMIZER"],
   ];
@@ -695,6 +732,179 @@ test("every worker uses the standard dispatch envelope and safe mode vocabulary"
       assert.match(line, /safe_output_mode.*'review'.*safe_output_repo.*github\.repository.*target_repo/);
     }
   }
+});
+
+test("Advisory preserves UK AI guidance and human-review boundaries", () => {
+  const orchestrator = workflow("advisory.md");
+  const maintainer = workflow("advisory-package-maintainer.md");
+  const worker = workflow("advisory-uk-ai-operational-resilience.md");
+  const readme = readFileSync(join(root, "advisory", "README.md"), "utf8");
+
+  assert.match(orchestrator, /^name: "Advisory"$/m);
+  assert.match(worker, /^name: "Advisory \/ UK AI Operational Resilience"$/m);
+  for (const source of [orchestrator, worker, readme]) {
+    assert.match(source, /advisory and non-binding/i);
+    assert.match(source, /no guarantee of completeness, correctness, accuracy/i);
+    assert.match(source, /human review/i);
+  }
+
+  assert.match(orchestrator, /schedule: "daily on weekdays"/);
+  assert.match(orchestrator, /workflows: \[advisory-uk-ai-operational-resilience\]/);
+  assert.match(orchestrator, /Use bounded two-stage discovery/);
+  assert.match(orchestrator, /AI is a threat accelerator, not an eligibility requirement/);
+  assert.match(orchestrator, /prolonged inactivity without credible ownership or automated hygiene is a priority signal/);
+  assert.match(worker, /https:\/\/www\.gov\.uk\/guidance\/ai-open-code-and-vulnerability-risk-in-the-public-sector/);
+  assert.match(worker, /incomplete by design/i);
+  assert.match(worker, /do not authorize opening, restricting, hiding, or decommissioning code/i);
+  assert.match(worker, /If the guidance, repository metadata, commits, or another required source is inaccessible, stop analysis, call `report_incomplete`/);
+  assert.match(worker, /source_access/);
+  assert.match(worker, /repository_metadata/);
+  assert.match(worker, /visibility: repositoryData\.visibility/);
+  assert.match(worker, /open_dependabot_alerts/);
+  assert.match(worker, /dependency_automation/);
+  assert.match(worker, /security_policy/);
+  assert.match(worker, /age_days: ageDays\(alert\.created_at\)/);
+  assert.match(worker, /secret_type_display_name/);
+  assert.doesNotMatch(worker, /alert\.secret\b/);
+  assert.match(worker, /Open by default/);
+  assert.match(worker, /patch SLAs and remediation capability/);
+  assert.match(worker, /rapid response to inbound vulnerability reports/);
+  assert.match(worker, /credible attacker, what publication adds to the risk, the realistic path to harm/);
+  assert.match(worker, /named re-approval owner and cadence/);
+  assert.match(worker, /cap the proposed tier at B/);
+  assert.match(worker, /A public repository with no recent commits and no evidence of active ownership or automated hygiene requires a dormancy finding/);
+  assert.match(worker, /patch_sla_controls/);
+  assert.match(worker, /disclosure_controls/);
+  assert.match(worker, /max: 1/);
+  assert.match(worker, /close-older-issues: true/);
+  assert.match(worker, /## agent: `asset-tier-classifier`/);
+  assert.match(worker, /## agent: `control-verifier`/);
+  assert.match(worker, /## agent: `ai-risk-scorer`/);
+  assert.doesNotMatch(worker, /^graders:/m);
+
+  assert.match(maintainer, /^name: "Advisory \/ Package Maintainer"$/m);
+  assert.match(maintainer, /schedule: weekly/);
+  assert.match(maintainer, /safe_output_mode:\n\s+default: review/);
+  assert.doesNotMatch(maintainer, /^\s+staged:/m);
+  assert.match(maintainer, /original specification and current authoritative GOV\.UK guidance/);
+  assert.match(maintainer, /https:\/\/www\.gov\.uk\/guidance\/ai-open-code-and-vulnerability-risk-in-the-public-sector/);
+  assert.match(maintainer, /update only the applicable ledger path/i);
+  assert.match(maintainer, /allowed-files:\n\s+- "advisory\/implementation-status\.md"\n\s+- "\.github\/aw\/advisory\/implementation-status\.md"/);
+  assert.match(maintainer, /draft: true/);
+  assert.match(maintainer, /create-issue:[\s\S]*?deduplicate-by-title: true[\s\S]*?max: 1/);
+  assert.match(maintainer, /If the authoritative source or a trusted package file cannot be accessed or reconciled, call `report_incomplete`/);
+  assert.match(maintainer, /Emit `noop` only after the authoritative source and every trusted file were evaluated successfully/);
+  assert.doesNotMatch(maintainer, /shared\/control\.md/);
+  assert.doesNotMatch(maintainer, /^graders:/m);
+
+  const ledger = readFileSync(join(root, "advisory", "implementation-status.md"), "utf8");
+  assert.match(ledger, /UK-AI-001/);
+  assert.match(ledger, /UK-AI-015/);
+  assert.match(ledger, /AI is a threat accelerator, not an eligibility requirement/);
+  assert.match(ledger, /credible attacker, what publication adds to risk, and the realistic path to harm/);
+  assert.match(ledger, /It does not prove that the package, an installed fleet, a repository, or an organization is secure/);
+});
+
+test("EU CRA Advisor workflows preserve advisory and human-review boundaries", () => {
+  const orchestrator = workflow("eu-cra-compliance.md");
+  const maintainer = workflow("eu-cra-compliance-package-maintainer.md");
+  const workers = [
+    ["eu-cra-compliance-scope-classifier.md", "Scope Classifier"],
+    ["eu-cra-compliance-security-requirements-auditor.md", "Security Requirements Auditor"],
+    ["eu-cra-compliance-supply-chain-sbom-auditor.md", "Supply Chain SBOM Auditor"],
+    ["eu-cra-compliance-vulnerability-handling-auditor.md", "Vulnerability Handling Auditor"],
+    ["eu-cra-compliance-article-14-reporting-readiness.md", "Article 14 Reporting Readiness"],
+    ["eu-cra-compliance-conformity-release-evidence.md", "Conformity Release Evidence"],
+  ];
+
+  assert.match(orchestrator, /^name: "EU CRA Advisor"$/m);
+  assert.match(orchestrator, /advisory and non-binding/i);
+  assert.match(orchestrator, /no guarantee of completeness, correctness, accuracy, or alignment with the EU Cyber Resilience Act/i);
+  assert.match(orchestrator, /must not analyze a target repository for CRA compliance/i);
+  assert.match(orchestrator, /Use bounded two-stage discovery/);
+  assert.match(orchestrator, /plus at most two alternates per available slot/);
+  assert.match(orchestrator, /sum of enabled, useful workers across selected repositories/);
+  assert.match(orchestrator, /Keep that total at or below 48/);
+
+  for (const [name, displayName] of [["eu-cra-compliance.md", null], ...workers, ["eu-cra-compliance-package-maintainer.md", "Package Maintainer"]]) {
+    const source = workflow(name);
+    if (displayName) {
+      assert.match(source, new RegExp(`^name: "EU CRA Advisor / ${displayName}"$`, "m"));
+    }
+    assert.match(source, /engine:\n\s+id: pi\n\s+model: copilot\/gpt-5\.4/);
+    assert.match(source, /copilot-requests: write/);
+    assert.match(source, /tools:\n\s+cli-proxy: true\n\s+github:\n\s+mode: gh-proxy/);
+  }
+
+  for (const [name, displayName] of workers) {
+    const source = workflow(name);
+    assert.match(source, /Regulation \(EU\) 2024\/2847/);
+    assert.match(source, /https:\/\/eur-lex\.europa\.eu\/eli\/reg\/2024\/2847\/oj/);
+    assert.match(source, /https:\/\/digital-strategy\.ec\.europa\.eu\/en\/policies\/cyber-resilience-act/);
+    assert.match(source, /source:\n\s+instrument: "Regulation \(EU\) 2024\/2847"\n\s+provision: ".+"\n\s+authority: "binding"/);
+    assert.match(source, /HUMAN_REVIEW_REQUIRED/);
+    assert.match(source, /commercial versus non-commercial FOSS treatment/);
+    assert.match(source, /important Class I or Class II classification/);
+    assert.match(source, /active exploitation, the severe-incident threshold, reportability/);
+    assert.match(source, /Never output `CRA COMPLIANT`, `LEGALLY COMPLIANT`, `CERTIFIED`, or `CE APPROVED`/);
+    assert.match(source, /Never (?:submit|notify)/i);
+    assert.match(source, /Do not put secrets, personal data, exploit details/);
+    assert.match(source, /^graders:\n\s+operational-value:\n\s+run: \.github\/graders\/eu-cra-compliance-.+-operational-value\.sh$/m);
+    assert.match(source, /<!-- operational-value: domain=[a-z0-9-]+ target=OWNER\/REPO target-sha=40_HEX_SHA -->/);
+    assert.match(source, /### Human Acceptance/);
+  }
+
+  assert.match(maintainer, /schedule: daily/);
+  assert.match(maintainer, /safe_output_mode:\n\s+default: review/);
+  assert.doesNotMatch(maintainer, /^\s+staged:/m);
+  assert.match(maintainer, /Systematically account for the complete Act: Articles 1–71, Annexes I–VIII/);
+  assert.match(maintainer, /update only the applicable ledger path/i);
+  assert.match(maintainer, /allowed-files:\n\s+- "eu-cra-compliance\/implementation-status\.md"\n\s+- "\.github\/aw\/eu-cra-compliance\/implementation-status\.md"/);
+  assert.match(maintainer, /draft: true/);
+  assert.match(maintainer, /create-issue:[\s\S]*?max: 1/);
+  assert.match(maintainer, /deduplicate-by-title: true/);
+  assert.match(maintainer, /graders:\n\s+operational-value:\n\s+run: \.github\/graders\/eu-cra-compliance-package-maintainer-operational-value\.sh/);
+  assert.doesNotMatch(maintainer, /shared\/control\.md/);
+
+  const ledger = readFileSync(join(root, "eu-cra-compliance", "implementation-status.md"), "utf8");
+  assert.match(ledger, /Articles 1–12/);
+  assert.match(ledger, /CRA-ART-001/);
+  assert.match(ledger, /Articles 60–71/);
+  assert.match(ledger, /Annexes II–VIII/);
+  assert.match(ledger, /CRA-ACTS-001/);
+  assert.match(ledger, /`IMPLEMENTED` means a workflow capability exists/);
+
+  const article14 = workflow("eu-cra-compliance-article-14-reporting-readiness.md");
+  assert.match(article14, /without undue delay and, in any event, no later than 24 hours/);
+  assert.match(article14, /without undue delay and, in any event, no later than 72 hours/);
+  assert.match(article14, /no later than 14 days after a corrective or mitigating measure becomes available/);
+  assert.match(article14, /no later than one month after submission of the incident notification/);
+  assert.match(article14, /vulnerability description, severity and impact, available malicious-actor information/);
+  assert.match(article14, /detailed incident description, severity and impact, likely threat type or root cause/);
+  assert.match(article14, /never expose sensitive details in the issue/);
+  assert.match(article14, /intermediate status report when requested by the CSIRT coordinator/);
+  assert.match(article14, /awareness of either an actively exploited vulnerability or a severe incident having an impact on product security/);
+  assert.match(article14, /affected users and, where appropriate, all users without undue delay/);
+  assert.match(article14, /Do not incorrectly make user communication contingent on completion of a regulatory notification/);
+  assert.match(article14, /Do not start or calculate an SLA clock from a guessed timestamp/);
+  assert.match(article14, /manufacturer-awareness evidence cannot be determined, report a critical evidence gap/);
+
+  const security = workflow("eu-cra-compliance-security-requirements-auditor.md");
+  assert.match(security, /absence of known exploitable vulnerabilities at market placement/);
+  assert.doesNotMatch(security, /absence or reduction of known exploitable vulnerabilities/);
+  assert.match(security, /leave operational distribution and remediation-process evidence to the vulnerability-handling auditor/);
+
+  const supplyChain = workflow("eu-cra-compliance-supply-chain-sbom-auditor.md");
+  assert.match(supplyChain, /machine-readable SBOM covering at least top-level dependencies/);
+  assert.match(supplyChain, /Annex I, Part II, point \(1\)/);
+  assert.match(supplyChain, /implementation evidence beyond that express minimum/);
+
+  const conformity = workflow("eu-cra-compliance-conformity-release-evidence.md");
+  assert.match(conformity, /at least 10 years after market placement or for the support period, whichever is longer/);
+
+  assert.match(ledger, /CRA-ART-014.*reportability requires human review \| IMPLEMENTED \|/);
+  assert.match(ledger, /CRA-ART-028-031.*final release require human review \| IMPLEMENTED \|/);
+  assert.match(ledger, /CRA-ANNEX-VIII.*Route selection requires human review \| IMPLEMENTED \|/);
 });
 
 test("workers reject disabled, malformed, or over-ceiling dispatches before execution", () => {
@@ -743,6 +953,23 @@ test("docs diagram generator creates one validated theme-aware SVG pair", () => 
   assert.match(source, /Call `noop`/);
 });
 
+test("daily dashboard review uses the GitHub Copilot Pi engine", () => {
+  const source = workflow("daily-dashboard-language-spec-review.md");
+
+  assert.match(source, /permissions:\n\s+contents: read\n\s+copilot-requests: write\n\s+issues: read/);
+  assert.match(source, /engine:\n\s+id: pi\n\s+model: copilot\/gpt-5\.4/);
+  assert.doesNotMatch(source, /engine: codex/);
+  assert.doesNotMatch(source, /runtime:\s+docker-sbx/);
+});
+
+test("daily dashboard review lock file does not require docker-sbx secrets", () => {
+  const lock = workflow("daily-dashboard-language-spec-review.lock.yml");
+
+  assert.doesNotMatch(lock, /docker-sbx/);
+  assert.doesNotMatch(lock, /DOCKER_PAT/);
+  assert.doesNotMatch(lock, /DOCKER_USERNAME/);
+});
+
 test("clean-room compilation emits the expected GitHub Actions settings", { timeout: 120_000 }, () => {
   const temporaryRoot = mkdtempSync(join(tmpdir(), "central-agentic-ops-test-"));
 
@@ -765,6 +992,8 @@ test("clean-room compilation emits the expected GitHub Actions settings", { time
       .filter((name) => name.endsWith(".lock.yml"))
       .sort();
     const packageLockNames = [
+      "advisory-uk-ai-operational-resilience.lock.yml",
+      "advisory.lock.yml",
       "ambient-context-agents-md-curator.lock.yml",
       "ambient-context-skills-curator.lock.yml",
       "ambient-context.lock.yml",
@@ -774,12 +1003,22 @@ test("clean-room compilation emits the expected GitHub Actions settings", { time
       "aw-maintenance.lock.yml",
       "dependabot-release-train-updater.lock.yml",
       "dependabot.lock.yml",
+      "eu-cra-compliance-article-14-reporting-readiness.lock.yml",
+      "eu-cra-compliance-conformity-release-evidence.lock.yml",
+      "eu-cra-compliance-scope-classifier.lock.yml",
+      "eu-cra-compliance-security-requirements-auditor.lock.yml",
+      "eu-cra-compliance-supply-chain-sbom-auditor.lock.yml",
+      "eu-cra-compliance-vulnerability-handling-auditor.lock.yml",
+      "eu-cra-compliance.lock.yml",
       "optimization-ai-credit-auditor.lock.yml",
       "optimization-ai-credit-optimizer.lock.yml",
       "optimization.lock.yml",
     ];
     const expectedLockNames = [
       ...packageLockNames,
+      "advisory-package-maintainer.lock.yml",
+      "daily-dashboard-language-spec-review.lock.yml",
+      "eu-cra-compliance-package-maintainer.lock.yml",
       "docs-explanatory-diagrams.lock.yml",
       "pr-reviewer.lock.yml",
       "svg-visual-audit.lock.yml",
@@ -807,10 +1046,12 @@ test("clean-room compilation emits the expected GitHub Actions settings", { time
     }
 
     const orchestratorGates = new Map([
+      ["advisory.lock.yml", "ADVISORY"],
       ["ambient-context.lock.yml", "AMBIENT_CONTEXT"],
       ["aw-failures.lock.yml", "AW_FAILURES"],
       ["aw-maintenance.lock.yml", "AW_MAINTENANCE"],
       ["dependabot.lock.yml", "DEPENDABOT"],
+      ["eu-cra-compliance.lock.yml", "EU_CRA_COMPLIANCE"],
       ["optimization.lock.yml", "OPTIMIZATION"],
     ]);
     for (const [name, packageName] of orchestratorGates) {
@@ -834,11 +1075,18 @@ test("clean-room compilation emits the expected GitHub Actions settings", { time
     }
 
     const workerGates = new Map([
+      ["advisory-uk-ai-operational-resilience.lock.yml", ["ADVISORY", "ADVISORY_UK_AI_OPERATIONAL_RESILIENCE"]],
       ["ambient-context-agents-md-curator.lock.yml", ["AMBIENT_CONTEXT", "AMBIENT_CONTEXT_AGENTS_MD"]],
       ["ambient-context-skills-curator.lock.yml", ["AMBIENT_CONTEXT", "AMBIENT_CONTEXT_SKILLS"]],
       ["aw-failures-investigator.lock.yml", ["AW_FAILURES", "AW_FAILURES_INVESTIGATOR"]],
       ["aw-maintenance-upgrade.lock.yml", ["AW_MAINTENANCE", "AW_MAINTENANCE_UPGRADE"]],
       ["dependabot-release-train-updater.lock.yml", ["DEPENDABOT", "DEPENDABOT_UPDATER"]],
+      ["eu-cra-compliance-article-14-reporting-readiness.lock.yml", ["EU_CRA_COMPLIANCE", "EU_CRA_COMPLIANCE_ARTICLE_14_REPORTING_READINESS"]],
+      ["eu-cra-compliance-conformity-release-evidence.lock.yml", ["EU_CRA_COMPLIANCE", "EU_CRA_COMPLIANCE_CONFORMITY_RELEASE_EVIDENCE"]],
+      ["eu-cra-compliance-scope-classifier.lock.yml", ["EU_CRA_COMPLIANCE", "EU_CRA_COMPLIANCE_SCOPE_CLASSIFIER"]],
+      ["eu-cra-compliance-security-requirements-auditor.lock.yml", ["EU_CRA_COMPLIANCE", "EU_CRA_COMPLIANCE_SECURITY_REQUIREMENTS_AUDITOR"]],
+      ["eu-cra-compliance-supply-chain-sbom-auditor.lock.yml", ["EU_CRA_COMPLIANCE", "EU_CRA_COMPLIANCE_SUPPLY_CHAIN_SBOM_AUDITOR"]],
+      ["eu-cra-compliance-vulnerability-handling-auditor.lock.yml", ["EU_CRA_COMPLIANCE", "EU_CRA_COMPLIANCE_VULNERABILITY_HANDLING_AUDITOR"]],
       ["optimization-ai-credit-auditor.lock.yml", ["OPTIMIZATION", "OPTIMIZATION_AUDITOR"]],
       ["optimization-ai-credit-optimizer.lock.yml", ["OPTIMIZATION", "OPTIMIZATION_OPTIMIZER"]],
     ]);
@@ -863,6 +1111,16 @@ test("clean-room compilation emits the expected GitHub Actions settings", { time
     const generatedReviewBundle = workflow("dependabot-release-train-updater.lock.yml", generatedDirectory);
     assert.match(generatedReviewBundle, /GH_AW_SAFE_OUTPUTS_STAGED/);
     assert.doesNotMatch(generatedReviewBundle, /GH_AW_SAFE_OUTPUTS_STAGED:.*preview_only/);
+
+    const advisoryMaintainer = workflow("advisory-package-maintainer.lock.yml", generatedDirectory);
+    assert.match(advisoryMaintainer, /schedule:/);
+    assert.match(advisoryMaintainer, /advisory\/implementation-status\.md/);
+    assert.match(advisoryMaintainer, /copilot\/gpt-5\.4/);
+
+    const craMaintainer = workflow("eu-cra-compliance-package-maintainer.lock.yml", generatedDirectory);
+    assert.match(craMaintainer, /schedule:/);
+    assert.match(craMaintainer, /eu-cra-compliance\/implementation-status\.md/);
+    assert.match(craMaintainer, /copilot\/gpt-5\.4/);
 
     const prReviewer = workflow("pr-reviewer.lock.yml", generatedDirectory);
     assert.match(prReviewer, /create_pull_request_review_comment/);
@@ -945,10 +1203,22 @@ test("Pages inventory links multiline orchestrator worker lists", () => {
       id: bundle.id,
       workers: bundle.workers.map((worker) => worker.id),
     })), [
+      { id: "advisory", workers: ["advisory-uk-ai-operational-resilience"] },
       { id: "ambient-context", workers: ["ambient-context-agents-md-curator", "ambient-context-skills-curator"] },
       { id: "aw-failures", workers: ["aw-failures-investigator"] },
       { id: "aw-maintenance", workers: ["aw-maintenance-upgrade"] },
       { id: "dependabot", workers: ["dependabot-release-train-updater"] },
+      {
+        id: "eu-cra-compliance",
+        workers: [
+          "eu-cra-compliance-scope-classifier",
+          "eu-cra-compliance-security-requirements-auditor",
+          "eu-cra-compliance-supply-chain-sbom-auditor",
+          "eu-cra-compliance-vulnerability-handling-auditor",
+          "eu-cra-compliance-article-14-reporting-readiness",
+          "eu-cra-compliance-conformity-release-evidence",
+        ],
+      },
       { id: "optimization", workers: ["optimization-ai-credit-auditor", "optimization-ai-credit-optimizer"] },
     ]);
   } finally {
