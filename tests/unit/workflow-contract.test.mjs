@@ -295,7 +295,6 @@ test("enterprise defaults, budgets, timeouts, and concurrency are finite", () =>
   const monthlyBudgetVariables = {
     "advisory.md": "CENTRAL_AGENTIC_OPS_ADVISORY_MONTHLY_AI_CREDIT_BUDGET",
     "ambient-context.md": "CENTRAL_AGENTIC_OPS_AMBIENT_CONTEXT_MONTHLY_AI_CREDIT_BUDGET",
-    "aw-failures.md": "CENTRAL_AGENTIC_OPS_AW_FAILURES_MONTHLY_AI_CREDIT_BUDGET",
     "aw-maintenance.md": "CENTRAL_AGENTIC_OPS_AW_MAINTENANCE_MONTHLY_AI_CREDIT_BUDGET",
     "dependabot.md": "CENTRAL_AGENTIC_OPS_DEPENDABOT_MONTHLY_AI_CREDIT_BUDGET",
     "eu-cra-compliance.md": "CENTRAL_AGENTIC_OPS_EU_CRA_COMPLIANCE_MONTHLY_AI_CREDIT_BUDGET",
@@ -306,8 +305,7 @@ test("enterprise defaults, budgets, timeouts, and concurrency are finite", () =>
     "advisory-package-maintainer.md": { credits: 200, timeout: 20 },
     "advisory-uk-ai-operational-resilience.md": { credits: 600, timeout: 30 },
     "ambient-context.md": { credits: 250, timeout: 15, dispatchMax: 20, workers: 2 },
-    "aw-failures.md": { credits: 250, timeout: 15, dispatchMax: 50, workers: 1 },
-    "aw-maintenance.md": { credits: 250, timeout: 15, dispatchMax: 50, workers: 1 },
+    "aw-maintenance.md": { credits: 250, timeout: 15, dispatchMax: 50, workers: 2 },
     "dependabot.md": { credits: 250, timeout: 15, dispatchMax: 50, workers: 1 },
     "eu-cra-compliance.md": { credits: 200, timeout: 15, dispatchMax: 48, workers: 6 },
     "eu-cra-compliance-package-maintainer.md": { credits: 200, timeout: 20 },
@@ -440,7 +438,7 @@ test("deterministic workflows pin third-party actions by commit SHA", () => {
 });
 
 test("package manifests exclude repository-only tests", () => {
-  for (const relativePath of ["aw.yml", join("advisory", "aw.yml"), join("ambient-context", "aw.yml"), join("aw-failures", "aw.yml"), join("aw-maintenance", "aw.yml"), join("dependabot", "aw.yml"), join("eu-cra-compliance", "aw.yml"), join("optimization", "aw.yml")]) {
+  for (const relativePath of ["aw.yml", join("advisory", "aw.yml"), join("ambient-context", "aw.yml"), join("aw-maintenance", "aw.yml"), join("dependabot", "aw.yml"), join("eu-cra-compliance", "aw.yml"), join("optimization", "aw.yml")]) {
     const manifest = readFileSync(join(root, relativePath), "utf8");
     assert.doesNotMatch(manifest, /(?:review-smoke|enterprise-canary|enterprise-stress|tests\/e2e|\.github\/aw\/e2e)/, relativePath);
   }
@@ -692,8 +690,7 @@ test("live workers require target-owned package authority before agent execution
     ["ambient-context.md", "ambient-context"],
     ["ambient-context-agents-md-curator.md", "ambient-context"],
     ["ambient-context-skills-curator.md", "ambient-context"],
-    ["aw-failures.md", "aw-failures"],
-    ["aw-failures-investigator.md", "aw-failures"],
+    ["aw-failures-investigator.md", "aw-maintenance"],
     ["aw-maintenance.md", "aw-maintenance"],
     ["aw-maintenance-upgrade.md", "aw-maintenance"],
     ["dependabot.md", "dependabot"],
@@ -717,7 +714,6 @@ test("orchestrators expose scheduled variables and independent manual inputs", (
   for (const [name, packageName] of [
     ["advisory.md", "ADVISORY"],
     ["ambient-context.md", "AMBIENT_CONTEXT"],
-    ["aw-failures.md", "AW_FAILURES"],
     ["aw-maintenance.md", "AW_MAINTENANCE"],
     ["dependabot.md", "DEPENDABOT"],
     ["eu-cra-compliance.md", "EU_CRA_COMPLIANCE"],
@@ -738,7 +734,7 @@ test("orchestrators expose scheduled variables and independent manual inputs", (
     assert.match(source, /CENTRAL_AGENTIC_OPS_BATCH_SIZE \|\| '100000'/);
     assert.match(source, /CENTRAL_AGENTIC_OPS_BATCH_INDEX \|\| '0'/);
     assert.match(source, /CENTRAL_AGENTIC_OPS_ALLOWED_OWNERS \|\| github\.repository_owner/);
-    assert.match(source, /CENTRAL_AGENTIC_OPS_MAX_AI_CREDITS_PER_RUN \|\| '1100'/);
+    assert.match(source, new RegExp(`CENTRAL_AGENTIC_OPS_MAX_AI_CREDITS_PER_RUN \\|\\| '${name === "aw-maintenance.md" ? "1250" : "1100"}'`));
   }
 });
 
@@ -754,8 +750,7 @@ test("operation workflows optionally load per-operation markdown steering", () =
     ["ambient-context.md", "ambient-context"],
     ["ambient-context-agents-md-curator.md", "ambient-context"],
     ["ambient-context-skills-curator.md", "ambient-context"],
-    ["aw-failures.md", "aw-failures"],
-    ["aw-failures-investigator.md", "aw-failures"],
+    ["aw-failures-investigator.md", "aw-maintenance"],
     ["aw-maintenance.md", "aw-maintenance"],
     ["aw-maintenance-upgrade.md", "aw-maintenance"],
     ["dependabot.md", "dependabot"],
@@ -804,7 +799,7 @@ test("shared control keeps manual and scheduled routing event-scoped", () => {
   const control = workflow("shared/control.md");
   const precompute = workflow("shared/control-precompute.md");
 
-  for (const name of ["advisory.md", "ambient-context.md", "aw-failures.md", "aw-maintenance.md", "dependabot.md", "eu-cra-compliance.md", "optimization.md"]) {
+  for (const name of ["advisory.md", "ambient-context.md", "aw-maintenance.md", "dependabot.md", "eu-cra-compliance.md", "optimization.md"]) {
     const orchestrator = workflow(name);
     assert.match(orchestrator, /GH_AW_SAFE_OUTPUT_MODE:.*inputs\.safe_output_mode.*\|\| 'review'/);
     assert.match(orchestrator, /CENTRAL_AGENTIC_OPS_PACKAGE_ENABLED:.*_ENABLED \|\| 'true'/);
@@ -847,7 +842,7 @@ test("every worker uses the standard dispatch envelope and safe mode vocabulary"
     ["advisory-uk-ai-operational-resilience.md", "ADVISORY", "ADVISORY_UK_AI_OPERATIONAL_RESILIENCE"],
     ["ambient-context-agents-md-curator.md", "AMBIENT_CONTEXT", "AMBIENT_CONTEXT_AGENTS_MD"],
     ["ambient-context-skills-curator.md", "AMBIENT_CONTEXT", "AMBIENT_CONTEXT_SKILLS"],
-    ["aw-failures-investigator.md", "AW_FAILURES", "AW_FAILURES_INVESTIGATOR"],
+    ["aw-failures-investigator.md", "AW_MAINTENANCE", "AW_MAINTENANCE_FAILURES"],
     ["aw-maintenance-upgrade.md", "AW_MAINTENANCE", "AW_MAINTENANCE_UPGRADE"],
     ["dependabot-release-train-updater.md", "DEPENDABOT", "DEPENDABOT_UPDATER"],
     ["eu-cra-compliance-article-14-reporting-readiness.md", "EU_CRA_COMPLIANCE", "EU_CRA_COMPLIANCE_ARTICLE_14_REPORTING_READINESS"],
@@ -1240,7 +1235,6 @@ test("clean-room compilation emits the expected GitHub Actions settings", { time
       "ambient-context-skills-curator.lock.yml",
       "ambient-context.lock.yml",
       "aw-failures-investigator.lock.yml",
-      "aw-failures.lock.yml",
       "aw-maintenance-upgrade.lock.yml",
       "aw-maintenance.lock.yml",
       "dependabot-release-train-updater.lock.yml",
@@ -1294,7 +1288,6 @@ test("clean-room compilation emits the expected GitHub Actions settings", { time
     const orchestratorGates = new Map([
       ["advisory.lock.yml", "ADVISORY"],
       ["ambient-context.lock.yml", "AMBIENT_CONTEXT"],
-      ["aw-failures.lock.yml", "AW_FAILURES"],
       ["aw-maintenance.lock.yml", "AW_MAINTENANCE"],
       ["dependabot.lock.yml", "DEPENDABOT"],
       ["eu-cra-compliance.lock.yml", "EU_CRA_COMPLIANCE"],
@@ -1330,7 +1323,7 @@ test("clean-room compilation emits the expected GitHub Actions settings", { time
       ["advisory-uk-ai-operational-resilience.lock.yml", ["ADVISORY", "ADVISORY_UK_AI_OPERATIONAL_RESILIENCE"]],
       ["ambient-context-agents-md-curator.lock.yml", ["AMBIENT_CONTEXT", "AMBIENT_CONTEXT_AGENTS_MD"]],
       ["ambient-context-skills-curator.lock.yml", ["AMBIENT_CONTEXT", "AMBIENT_CONTEXT_SKILLS"]],
-      ["aw-failures-investigator.lock.yml", ["AW_FAILURES", "AW_FAILURES_INVESTIGATOR"]],
+      ["aw-failures-investigator.lock.yml", ["AW_MAINTENANCE", "AW_MAINTENANCE_FAILURES"]],
       ["aw-maintenance-upgrade.lock.yml", ["AW_MAINTENANCE", "AW_MAINTENANCE_UPGRADE"]],
       ["dependabot-release-train-updater.lock.yml", ["DEPENDABOT", "DEPENDABOT_UPDATER"]],
       ["eu-cra-compliance-article-14-reporting-readiness.lock.yml", ["EU_CRA_COMPLIANCE", "EU_CRA_COMPLIANCE_ARTICLE_14_REPORTING_READINESS"]],
@@ -1482,8 +1475,7 @@ test("Pages inventory links multiline orchestrator worker lists", () => {
     })), [
       { id: "advisory", workers: ["advisory-uk-ai-operational-resilience"] },
       { id: "ambient-context", workers: ["ambient-context-agents-md-curator", "ambient-context-skills-curator"] },
-      { id: "aw-failures", workers: ["aw-failures-investigator"] },
-      { id: "aw-maintenance", workers: ["aw-maintenance-upgrade"] },
+      { id: "aw-maintenance", workers: ["aw-maintenance-upgrade", "aw-failures-investigator"] },
       { id: "dependabot", workers: ["dependabot-release-train-updater"] },
       {
         id: "eu-cra-compliance",

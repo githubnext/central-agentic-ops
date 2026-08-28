@@ -124,7 +124,7 @@ function runCommand(command, {
   const completeConfig = {
     sourceIssue: currentSourceIssue,
     targetRepository: { default_branch: "main", archived: false, disabled: false, has_issues: true },
-    authoritySource: "version: 1\nbundles:\n  aw-failures:\n    authority: acme/control\n",
+    authoritySource: "version: 1\nbundles:\n  aw-maintenance:\n    authority: acme/control\n",
     targetIssue,
     commentBody: `Published\n\n${publicationCommentMarker("acme/service", 84)}`,
     run: {
@@ -161,7 +161,7 @@ function runCommand(command, {
         GITHUB_SERVER_URL: "https://github.com",
         MOCK_CONFIG: JSON.stringify(completeConfig),
         MOCK_LOG: logPath,
-        PACKAGE: "aw-failures",
+        PACKAGE: "aw-maintenance",
         PUBLISH_CONTROL_REPOS: "acme/control",
         PUBLISH_REVIEWERS: "octocat",
         REVIEWER: "octocat",
@@ -207,7 +207,7 @@ test("inspect and validate-run emit trusted publication inputs", () => {
 
   const validation = runCommand("validate-run");
   assert.equal(validation.status, 0, validation.stderr);
-  assert.match(validation.output, /package=aw-failures/);
+  assert.match(validation.output, /package=aw-maintenance/);
   assert.match(validation.output, /target_repository=acme\/service/);
   assert.equal(validation.requests[0].authorization, "Bearer control-token");
 });
@@ -273,7 +273,7 @@ test("publish fails closed for missing, malformed, or mismatched authority", () 
   for (const [config, message] of [
     [{ authorityMissing: true }, /GitHub API 404/],
     [{ authoritySource: "version: [" }, /not valid safe YAML/],
-    [{ authoritySource: "version: 1\nbundles:\n  aw-failures:\n    authority: acme/other\n" }, /different control repository/],
+    [{ authoritySource: "version: 1\nbundles:\n  aw-maintenance:\n    authority: acme/other\n" }, /different control repository/],
   ]) {
     const result = runCommand("publish", { config });
     assert.notEqual(result.status, 0);
@@ -338,4 +338,3 @@ test("publish fails closed when target idempotency cannot be proven within its b
   );
   assert.equal(result.requests.some(({ method }) => method === "POST"), false);
 });
-

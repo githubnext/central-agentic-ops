@@ -74,7 +74,7 @@ Keep `CENTRAL_AGENTIC_OPS_ALLOWED_OWNERS` and `CENTRAL_AGENTIC_OPS_ALLOWED_REPOS
 ```yaml
 version: 1
 bundles:
-  aw-failures:
+  aw-maintenance:
     authority: acme/central-agentic-ops
 ```
 
