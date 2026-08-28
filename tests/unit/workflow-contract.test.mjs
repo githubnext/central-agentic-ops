@@ -9,10 +9,36 @@ import { policyCases, userFacingScenarios } from "./workflow-contract.matrix.mjs
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), "../..");
 const workflowsDirectory = join(root, ".github", "workflows");
-const modes = ["staged", "review", "live"];
+const modes = ["review", "live"];
 
 function workflow(name, directory = workflowsDirectory) {
   return readFileSync(join(directory, name), "utf8");
+}
+
+function generatedJobs(source) {
+  const jobsStart = source.indexOf("\njobs:\n");
+  assert.notEqual(jobsStart, -1, "generated workflow has no jobs section");
+  const jobsSource = source.slice(jobsStart + 7);
+  const matches = [...jobsSource.matchAll(/^  ([A-Za-z0-9_-]+):\n/gm)];
+
+  return new Map(matches.map((match, index) => {
+    const block = jobsSource.slice(match.index, matches[index + 1]?.index ?? jobsSource.length);
+    const inlineNeeds = /^    needs: ([A-Za-z0-9_-]+)$/m.exec(block);
+    const listNeeds = /^    needs:\n((?:      - [A-Za-z0-9_-]+\n)+)/m.exec(block);
+    const needs = inlineNeeds
+      ? [inlineNeeds[1]]
+      : [...(listNeeds?.[1].matchAll(/^      - ([A-Za-z0-9_-]+)$/gm) ?? [])].map((item) => item[1]);
+
+    return [match[1], { block, needs }];
+  }));
+}
+
+function transitivelyNeeds(jobs, jobName, dependency, visited = new Set()) {
+  if (visited.has(jobName)) return false;
+  visited.add(jobName);
+  const needs = jobs.get(jobName)?.needs ?? [];
+  return needs.includes(dependency)
+    || needs.some((name) => transitivelyNeeds(jobs, name, dependency, visited));
 }
 
 function resolvePolicy({
@@ -29,7 +55,20 @@ function resolvePolicy({
   orchestratorCredits = 0,
   workerCreditsPerTarget = 0,
   aggregateCreditLimit = 1100,
+  packageEnabled = true,
 }) {
+  if (packageEnabled === false) {
+    return {
+      enabled: false,
+      safeOutputMode: null,
+      safeOutputRepo: "",
+      effectiveMaxRepos: 0,
+      dispatchAllowed: false,
+    };
+  }
+  if (packageEnabled !== true) {
+    throw new TypeError("packageEnabled must be true or false");
+  }
   if (!Number.isInteger(maxRepos) || maxRepos < 1 || maxRepos > 1000) {
     throw new RangeError("maxRepos must be an integer from 1 through 1000");
   }
@@ -43,9 +82,12 @@ function resolvePolicy({
   }
 
   const requestedMode = eventName === "workflow_dispatch"
-    ? manualMode || "staged"
-    : configuredMode || "staged";
-  const safeOutputMode = requestedMode === "preview" ? "staged" : requestedMode;
+    ? manualMode || "review"
+    : configuredMode || "review";
+  if (!modes.includes(requestedMode)) {
+    throw new RangeError("safeOutputMode must be review or live");
+  }
+  const safeOutputMode = requestedMode;
   const reviewOutputRepo = manualReviewRepo || controlRepository;
   const percentCap = totalRepositories === 0
     ? 0
@@ -57,10 +99,9 @@ function resolvePolicy({
   const effectiveMaxRepos = Math.min(maxRepos, percentCap, dispatchCap, creditCap);
 
   return {
-    enabled: eventName === "workflow_dispatch" || modes.includes(configuredMode),
+    enabled: packageEnabled,
     safeOutputMode,
     safeOutputRepo: safeOutputMode === "review" ? reviewOutputRepo : "",
-    previewOnly: !["review", "live"].includes(safeOutputMode),
     effectiveMaxRepos,
     dispatchAllowed: true,
   };
@@ -70,9 +111,9 @@ test("all scheduled configurations and manual selections route safely", () => {
   const cases = policyCases();
   const uniqueInputs = new Set(cases.map(({ id, ...values }) => JSON.stringify(values)));
 
-  assert.equal(cases.length, 126);
-  assert.equal(cases.filter(({ eventName }) => eventName === "schedule").length, 18);
-  assert.equal(cases.filter(({ eventName }) => eventName === "workflow_dispatch").length, 108);
+  assert.equal(cases.length, 120);
+  assert.equal(cases.filter(({ eventName }) => eventName === "schedule").length, 24);
+  assert.equal(cases.filter(({ eventName }) => eventName === "workflow_dispatch").length, 96);
   assert.equal(uniqueInputs.size, cases.length, "matrix contains duplicate policy inputs");
 
   for (const scenario of cases) {
@@ -83,21 +124,23 @@ test("all scheduled configurations and manual selections route safely", () => {
     const expectedReviewRepo = scenario.manualReviewRepo || "acme/control-plane";
     const percentageCap = scenario.rolloutPercent === 10 ? 3 : 25;
 
-    assert.equal(policy.safeOutputMode, expectedMode, scenario.id);
-    assert.equal(policy.previewOnly, expectedMode === "staged", scenario.id);
+    assert.equal(policy.enabled, scenario.packageEnabled, scenario.id);
+    assert.equal(policy.safeOutputMode, scenario.packageEnabled ? expectedMode : null, scenario.id);
     assert.equal(
       policy.safeOutputRepo,
-      expectedMode === "review" ? expectedReviewRepo : "",
+      scenario.packageEnabled && expectedMode === "review" ? expectedReviewRepo : "",
       scenario.id,
     );
     assert.equal(
       policy.dispatchAllowed,
-      true,
+      scenario.packageEnabled,
       scenario.id,
     );
     assert.equal(
       policy.effectiveMaxRepos,
-      scenario.maxRepos ? Math.min(scenario.maxRepos, percentageCap) : percentageCap,
+      scenario.packageEnabled
+        ? (scenario.maxRepos ? Math.min(scenario.maxRepos, percentageCap) : percentageCap)
+        : 0,
       scenario.id,
     );
   }
@@ -107,19 +150,23 @@ test("every checked user-facing scenario is backed by the exhaustive matrix", ()
   const cases = policyCases();
   const groupCounts = Object.groupBy(userFacingScenarios, ({ group }) => group);
 
-  assert.equal(userFacingScenarios.length, 24);
-  assert.equal(new Set(userFacingScenarios.map(({ name }) => name)).size, 24);
-  assert.equal(groupCounts["Scheduled modes"].length, 8);
-  assert.equal(groupCounts["Manual runs"].length, 4);
-  assert.equal(groupCounts["Review routing"].length, 5);
+  assert.equal(userFacingScenarios.length, 22);
+  assert.equal(new Set(userFacingScenarios.map(({ name }) => name)).size, 22);
+  assert.equal(groupCounts["Scheduled modes"].length, 4);
+  assert.equal(groupCounts["Manual runs"].length, 3);
+  assert.equal(groupCounts["Review routing"].length, 4);
   assert.equal(groupCounts["Rollout limits"].length, 7);
+  assert.equal(groupCounts["Kill switch"].length, 4);
 
   for (const scenario of userFacingScenarios) {
     const matrixCase = cases.find(({ id, totalRepositories, ...inputs }) =>
-      Object.entries(scenario.inputs).every(([name, value]) => inputs[name] === value));
+      Object.entries(scenario.inputs).every(([name, value]) => inputs[name] === value)
+      && inputs.packageEnabled === (scenario.inputs.packageEnabled ?? true));
 
     assert.ok(matrixCase, `${scenario.name} is missing from the exhaustive matrix`);
-    const { enabled, ...actual } = resolvePolicy(matrixCase);
+    const policy = resolvePolicy(matrixCase);
+    assert.equal(policy.enabled, scenario.inputs.packageEnabled ?? true, scenario.name);
+    const { enabled, ...actual } = policy;
     assert.deepEqual(actual, scenario.expected, scenario.name);
   }
 });
@@ -140,27 +187,50 @@ test("percentage rollout rejects invalid settings and handles an empty organizat
   }
 
   assert.equal(resolvePolicy({ maxRepos: 1, rolloutPercent: 10, totalRepositories: 0 }).effectiveMaxRepos, 0);
+  for (const configuredMode of ["unknown", "preview", "preview_only", "staged", "Review", "LIVE", "review "]) {
+    assert.throws(() => resolvePolicy({
+      eventName: "schedule",
+      configuredMode,
+      maxRepos: 1,
+      rolloutPercent: 100,
+      totalRepositories: 25,
+    }), RangeError);
+  }
+  assert.deepEqual(resolvePolicy({
+    eventName: "schedule",
+    configuredMode: "invalid-but-disabled",
+    packageEnabled: false,
+    maxRepos: 0,
+    rolloutPercent: 0,
+    totalRepositories: 25,
+  }), {
+    enabled: false,
+    safeOutputMode: null,
+    safeOutputRepo: "",
+    effectiveMaxRepos: 0,
+    dispatchAllowed: false,
+  });
   assert.equal(resolvePolicy({
     eventName: "schedule",
-    configuredMode: "unknown",
+    configuredMode: "",
     maxRepos: 1,
     rolloutPercent: 100,
     totalRepositories: 25,
-  }).enabled, false);
+  }).safeOutputMode, "review");
   assert.equal(resolvePolicy({
-    eventName: "schedule",
-    configuredMode: "preview",
+    eventName: "workflow_dispatch",
+    manualMode: "",
     maxRepos: 1,
     rolloutPercent: 100,
     totalRepositories: 25,
-  }).safeOutputMode, "staged");
+  }).safeOutputMode, "review");
 });
 
 test("manual requests run independently of scheduled configuration", () => {
   for (const manualMode of modes) {
     const policy = resolvePolicy({
       eventName: "workflow_dispatch",
-      configuredMode: "disabled",
+      configuredMode: manualMode === "review" ? "live" : "review",
       manualMode,
       manualReviewRepo: manualMode === "review" ? "acme/manual-review" : "",
       maxRepos: 1,
@@ -317,7 +387,7 @@ test("deterministic workflows pin third-party actions by commit SHA", () => {
     join(".github", "workflows", "copilot-setup-steps.yml"),
     join(".github", "workflows", "enterprise-canary.yml"),
     join(".github", "workflows", "enterprise-stress.yml"),
-    join(".github", "workflows", "staged-smoke.yml"),
+    join(".github", "workflows", "review-smoke.yml"),
     join("pages", "pages.yml"),
   ]) {
     const source = readFileSync(join(root, relativePath), "utf8");
@@ -330,7 +400,7 @@ test("deterministic workflows pin third-party actions by commit SHA", () => {
 test("package manifests exclude repository-only tests", () => {
   for (const relativePath of ["aw.yml", join("advisory", "aw.yml"), join("ambient-context", "aw.yml"), join("aw-failures", "aw.yml"), join("aw-maintenance", "aw.yml"), join("dependabot", "aw.yml"), join("eu-cra-compliance", "aw.yml"), join("optimization", "aw.yml")]) {
     const manifest = readFileSync(join(root, relativePath), "utf8");
-    assert.doesNotMatch(manifest, /(?:staged-smoke|enterprise-canary|enterprise-stress|tests\/e2e|\.github\/aw\/e2e)/, relativePath);
+    assert.doesNotMatch(manifest, /(?:review-smoke|enterprise-canary|enterprise-stress|tests\/e2e|\.github\/aw\/e2e)/, relativePath);
   }
 });
 
@@ -392,19 +462,21 @@ test("operational-value graders expose deterministic run-scoped contracts", () =
   assert.match(optimizerEvaluator, /target-workflow:\$\{target_repo\}:\$\{workflow\}:\$\{optimizer_run_id\}/);
 });
 
-test("staged smoke is manual, bounded, and cannot request writes", () => {
-  const smoke = workflow("staged-smoke.yml");
+test("review smoke is manual, protected, bounded, and cannot change the target", () => {
+  const smoke = workflow("review-smoke.yml");
   const harness = readFileSync(join(root, "tests", "e2e", "run-canary.sh"), "utf8");
   assert.match(smoke, /workflow_dispatch:/);
   assert.doesNotMatch(smoke, /^\s+schedule:/m);
   assert.match(smoke, /actions: write/);
   assert.match(smoke, /timeout-minutes: 75/);
-  assert.match(smoke, /SAFE_OUTPUT_MODE: staged/);
+  assert.match(smoke, /environment: central-agentic-ops-review/);
+  assert.match(smoke, /SAFE_OUTPUT_MODE: review/);
+  assert.match(smoke, /SAFE_OUTPUT_REPO: \$\{\{ inputs\.safe_output_repo \}\}/);
   assert.match(smoke, /bash tests\/e2e\/run-canary\.sh/);
-  assert.match(smoke, /group: staged-smoke-/);
+  assert.match(smoke, /group: review-smoke-/);
   assert.match(harness, /max_repos=1/);
   assert.match(harness, /snapshot_repository/);
-  assert.match(harness, /staged canary mutated target repository state/);
+  assert.match(harness, /review canary mutated target repository state/);
   assert.match(harness, /No correlated worker run was found/);
 });
 
@@ -425,7 +497,7 @@ test("enterprise canaries are manual, protected, confirmed, and bounded", () => 
   assert.match(canary, /bash tests\/e2e\/run-canary\.sh/);
   assert.match(stress, /bash tests\/e2e\/run-stress\.sh/);
 
-  assert.match(canary, /options: \[staged, review, live\]/);
+  assert.match(canary, /options: \[review, live\]/);
   assert.match(canary, /environment: central-agentic-ops-\$\{\{ inputs\.safe_output_mode \}\}/);
   assert.match(canary, /require_output:/);
   assert.match(canaryHarness, /confirmation must be REVIEW/);
@@ -436,10 +508,10 @@ test("enterprise canaries are manual, protected, confirmed, and bounded", () => 
   assert.match(stress, /environment: central-agentic-ops-\$\{\{ 'stress' \}\}/);
   assert.match(stress, /options: \[2, 3, 5\]/);
   assert.match(stressHarness, /target_repo must use OWNER\/REPO form/);
-  assert.match(stressHarness, /STRESS \$TARGET_REPO \$RUNS/);
+  assert.match(stressHarness, /STRESS \$TARGET_REPO REVIEW \$SAFE_OUTPUT_REPO \$RUNS/);
   assert.match(stressHarness, /RUNS - 1/);
-  assert.match(stressHarness, /safe_output_mode=staged/);
-  assert.match(stressHarness, /staged stress run mutated target repository state/);
+  assert.match(stressHarness, /safe_output_mode=review/);
+  assert.match(stressHarness, /review stress run mutated target repository state/);
 });
 
 test("ownership, provenance, and workflow identity fail closed", () => {
@@ -477,8 +549,8 @@ test("public read-only operation uses the built-in token without widening access
 
   assert.match(precompute, /GH_TOKEN:.*GH_AW_GITHUB_TOKEN.*secrets\.GITHUB_TOKEN/);
   assert.match(precompute, /\{id, full_name, archived, disabled, private, pushed_at, default_branch\}/);
-  assert.match(authentication, /App or PAT is not required for a bounded `staged` scan when every target repository is public/);
-  assert.match(authentication, /use `review` only when safe outputs remain in the current control repository/);
+  assert.match(authentication, /App or PAT is not required for a bounded `review` run when every target repository is public/);
+  assert.match(authentication, /use `review` mode and keep safe outputs in the current control repository/);
   assert.match(authentication, /configure an App or PAT for private or internal targets, an alternate review repository, or any `live` cross-repository write/);
   assert.match(authentication, /report incomplete and produce no speculative result/);
   assert.match(configuration, /no App or PAT secret is required/);
@@ -506,7 +578,7 @@ test("live workers require target-owned package authority before agent execution
   assert.match(precompute, /contents\/\.github\/central-agentic-ops\.yml/);
   assert.match(precompute, /YAML\.safe_load/);
   assert.match(precompute, /target assigns live authority for \$BUNDLE to a different control repository/);
-  assert.match(precompute, /validate_worker_dispatch\n\s+validate_live_authority\n\s+write_worker_precompute/);
+  assert.match(precompute, /validate_worker_dispatch\n\s+validate_output_destination\n\s+validate_live_authority\n\s+write_worker_precompute/);
 
   for (const [name, bundle] of [
     ["advisory.md", "advisory"],
@@ -547,8 +619,10 @@ test("orchestrators expose scheduled variables and independent manual inputs", (
   ]) {
     const source = workflow(name);
 
+    assert.match(source, new RegExp(`^if: \\(vars\\.CENTRAL_AGENTIC_OPS_${packageName}_ENABLED \\|\\| 'true'\\) == 'true'$`, "m"));
     assert.match(source, /rollout_percent:\n\s+default: 100\n\s+type: number/);
-    assert.match(source, new RegExp(`CENTRAL_AGENTIC_OPS_${packageName}_MODE \\|\\| 'staged'`));
+    assert.match(source, new RegExp(`CENTRAL_AGENTIC_OPS_${packageName}_ENABLED \\|\\| 'true'`));
+    assert.match(source, new RegExp(`CENTRAL_AGENTIC_OPS_${packageName}_MODE \\|\\| 'review'`));
     assert.match(source, new RegExp(`CENTRAL_AGENTIC_OPS_${packageName}_MAX_REPOS \\|\\| '1'`));
     assert.doesNotMatch(source, new RegExp(`CENTRAL_AGENTIC_OPS_${packageName}_REVIEW_REPO`));
     assert.match(source, new RegExp(`CENTRAL_AGENTIC_OPS_${packageName}_ROLLOUT_PERCENT \\|\\| '100'`));
@@ -562,13 +636,24 @@ test("orchestrators expose scheduled variables and independent manual inputs", (
   }
 });
 
-test("review destinations must be accessible and private", () => {
+test("review destinations must be isolated, accessible, and private", () => {
   const precompute = workflow("shared/control-precompute.md");
 
-  assert.match(precompute, /validate_review_destination/);
+  assert.match(precompute, /validate_output_destination/);
+  assert.match(precompute, /review safe_output_repo must differ from target_repo/);
+  assert.match(precompute, /live worker safe_output_repo must equal target_repo/);
   assert.match(precompute, /gh api "repos\/\$SAFE_OUTPUT_REPO" --jq '\.private'/);
   assert.match(precompute, /review safe_output_repo must be accessible/);
   assert.match(precompute, /review safe_output_repo must be private/);
+});
+
+test("safe-output modes are review and live with a separate package kill switch", () => {
+  const control = workflow("shared/control.md");
+  const precompute = workflow("shared/control-precompute.md");
+
+  assert.match(control, /rollout_mode:[\s\S]*?options: \[review, live\][\s\S]*?default: "review"/);
+  assert.match(control, /package_enabled:[\s\S]*?default: "true"/);
+  assert.doesNotMatch(`${control}\n${precompute}`, /preview_only|\bstaged\b/);
 });
 
 test("shared control keeps manual and scheduled routing event-scoped", () => {
@@ -577,7 +662,8 @@ test("shared control keeps manual and scheduled routing event-scoped", () => {
 
   for (const name of ["advisory.md", "ambient-context.md", "aw-failures.md", "aw-maintenance.md", "dependabot.md", "eu-cra-compliance.md", "optimization.md"]) {
     const orchestrator = workflow(name);
-    assert.match(orchestrator, /GH_AW_SAFE_OUTPUT_MODE:.*== 'preview' && 'staged'/);
+    assert.match(orchestrator, /GH_AW_SAFE_OUTPUT_MODE:.*inputs\.safe_output_mode.*\|\| 'review'/);
+    assert.match(orchestrator, /CENTRAL_AGENTIC_OPS_PACKAGE_ENABLED:.*_ENABLED \|\| 'true'/);
     assert.match(orchestrator, /REVIEW_OUTPUT_REPO:.*inputs\.safe_output_repo \|\| github\.repository/);
     assert.match(orchestrator, /SAFE_OUTPUT_REPO:.*== 'review'/);
   }
@@ -585,7 +671,7 @@ test("shared control keeps manual and scheduled routing event-scoped", () => {
   assert.match(control, /safe_output_repo: \$\{\{ env\.SAFE_OUTPUT_REPO \}\}/);
   assert.doesNotMatch(control, /review_repo/);
   assert.match(control, /rollout_percent: "\$\{\{ github\.aw\.import-inputs\.rollout_percent \}\}"/);
-  assert.match(control, /GH_AW_SAFE_OUTPUT_MODE == 'live'.*GH_AW_SAFE_OUTPUT_MODE == 'review'.*'false' \|\| 'true'/);
+  assert.match(control, /enabled: \$\{\{ env\.CENTRAL_AGENTIC_OPS_PACKAGE_ENABLED \|\| github\.aw\.import-inputs\.package_enabled \}\}/);
   assert.match(control, /select no more than `effective_max_repos` repositories/);
 
   assert.match(precompute, /rollout_percent must be an integer from 1 through 100/);
@@ -596,30 +682,33 @@ test("shared control keeps manual and scheduled routing event-scoped", () => {
 
 test("every worker uses the standard dispatch envelope and safe mode vocabulary", () => {
   const workerNames = [
-    "advisory-uk-ai-operational-resilience.md",
-    "ambient-context-agents-md-curator.md",
-    "ambient-context-skills-curator.md",
-    "aw-failures-investigator.md",
-    "aw-maintenance-upgrade.md",
-    "dependabot-release-train-updater.md",
-    "eu-cra-compliance-article-14-reporting-readiness.md",
-    "eu-cra-compliance-conformity-release-evidence.md",
-    "eu-cra-compliance-scope-classifier.md",
-    "eu-cra-compliance-security-requirements-auditor.md",
-    "eu-cra-compliance-supply-chain-sbom-auditor.md",
-    "eu-cra-compliance-vulnerability-handling-auditor.md",
-    "optimization-ai-credit-auditor.md",
-    "optimization-ai-credit-optimizer.md",
+    ["advisory-uk-ai-operational-resilience.md", "ADVISORY", "ADVISORY_UK_AI_OPERATIONAL_RESILIENCE"],
+    ["ambient-context-agents-md-curator.md", "AMBIENT_CONTEXT", "AMBIENT_CONTEXT_AGENTS_MD"],
+    ["ambient-context-skills-curator.md", "AMBIENT_CONTEXT", "AMBIENT_CONTEXT_SKILLS"],
+    ["aw-failures-investigator.md", "AW_FAILURES", "AW_FAILURES_INVESTIGATOR"],
+    ["aw-maintenance-upgrade.md", "AW_MAINTENANCE", "AW_MAINTENANCE_UPGRADE"],
+    ["dependabot-release-train-updater.md", "DEPENDABOT", "DEPENDABOT_UPDATER"],
+    ["eu-cra-compliance-article-14-reporting-readiness.md", "EU_CRA_COMPLIANCE", "EU_CRA_COMPLIANCE_ARTICLE_14_REPORTING_READINESS"],
+    ["eu-cra-compliance-conformity-release-evidence.md", "EU_CRA_COMPLIANCE", "EU_CRA_COMPLIANCE_CONFORMITY_RELEASE_EVIDENCE"],
+    ["eu-cra-compliance-scope-classifier.md", "EU_CRA_COMPLIANCE", "EU_CRA_COMPLIANCE_SCOPE_CLASSIFIER"],
+    ["eu-cra-compliance-security-requirements-auditor.md", "EU_CRA_COMPLIANCE", "EU_CRA_COMPLIANCE_SECURITY_REQUIREMENTS_AUDITOR"],
+    ["eu-cra-compliance-supply-chain-sbom-auditor.md", "EU_CRA_COMPLIANCE", "EU_CRA_COMPLIANCE_SUPPLY_CHAIN_SBOM_AUDITOR"],
+    ["eu-cra-compliance-vulnerability-handling-auditor.md", "EU_CRA_COMPLIANCE", "EU_CRA_COMPLIANCE_VULNERABILITY_HANDLING_AUDITOR"],
+    ["optimization-ai-credit-auditor.md", "OPTIMIZATION", "OPTIMIZATION_AUDITOR"],
+    ["optimization-ai-credit-optimizer.md", "OPTIMIZATION", "OPTIMIZATION_OPTIMIZER"],
   ];
 
-  for (const name of workerNames) {
+  for (const [name, packageName, workerName] of workerNames) {
     const source = workflow(name);
 
+    assert.match(
+      source,
+      new RegExp(`^if: >-\\n  \\(vars\\.CENTRAL_AGENTIC_OPS_${packageName}_ENABLED \\|\\| 'true'\\) == 'true' &&\\n  \\(vars\\.CENTRAL_AGENTIC_OPS_${workerName}_ENABLED \\|\\| 'true'\\) == 'true'$`, "m"),
+    );
     for (const input of [
       "target_repo",
       "safe_output_repo",
       "safe_output_mode",
-      "preview_only",
       "correlation_id",
       "central_repo",
       "control_plane_run_url",
@@ -627,14 +716,20 @@ test("every worker uses the standard dispatch envelope and safe mode vocabulary"
       assert.match(source, new RegExp(`^      ${input}:`, "m"), `${name} is missing ${input}`);
     }
 
-    assert.match(source, /safe-outputs:\n\s+staged: \$\{\{ inputs\.preview_only == 'true' \}\}/);
+    assert.doesNotMatch(source, /^      preview_only:/m);
+    assert.doesNotMatch(source, /^\s+staged:/m);
     assert.doesNotMatch(source, /safe_output_mode == 'private'/);
+    assert.match(source, /CENTRAL_AGENTIC_OPS_PACKAGE_ENABLED:.*_ENABLED \|\| 'true'/);
     assert.match(source, /CENTRAL_AGENTIC_OPS_WORKER_ENABLED:.*\|\| 'true'/);
-    assert.match(source, /CENTRAL_AGENTIC_OPS_WORKER_MAX_MODE:.*\|\| 'staged'/);
-    assert.match(source, /GH_AW_SAFE_OUTPUT_MODE: \$\{\{ inputs\.safe_output_mode \|\| 'staged' \}\}/);
+    assert.match(source, /CENTRAL_AGENTIC_OPS_WORKER_MAX_MODE:.*\|\| 'review'/);
+    assert.match(source, /GH_AW_SAFE_OUTPUT_MODE: \$\{\{ inputs\.safe_output_mode \|\| 'review' \}\}/);
+    assert.match(source, /SAFE_OUTPUT_REPO:.*safe_output_mode.*'review'.*safe_output_repo.*github\.repository.*target_repo/);
 
     for (const line of source.match(/^\s+target-repo:.*$/gm) || []) {
-      assert.match(line, /github\.event\.inputs\.safe_output_repo/);
+      assert.match(line, /safe_output_mode.*'review'.*safe_output_repo.*github\.repository.*target_repo/);
+    }
+    for (const line of source.match(/^\s+- repository:.*inputs\.safe_output_repo.*$/gm) || []) {
+      assert.match(line, /safe_output_mode.*'review'.*safe_output_repo.*github\.repository.*target_repo/);
     }
   }
 });
@@ -689,8 +784,8 @@ test("Advisory preserves UK AI guidance and human-review boundaries", () => {
 
   assert.match(maintainer, /^name: "Advisory \/ Package Maintainer"$/m);
   assert.match(maintainer, /schedule: weekly/);
-  assert.match(maintainer, /safe_output_mode:\n\s+default: staged/);
-  assert.match(maintainer, /staged: \$\{\{ github\.event_name == 'workflow_dispatch' && inputs\.safe_output_mode != 'live' \}\}/);
+  assert.match(maintainer, /safe_output_mode:\n\s+default: review/);
+  assert.doesNotMatch(maintainer, /^\s+staged:/m);
   assert.match(maintainer, /original specification and current authoritative GOV\.UK guidance/);
   assert.match(maintainer, /https:\/\/www\.gov\.uk\/guidance\/ai-open-code-and-vulnerability-risk-in-the-public-sector/);
   assert.match(maintainer, /update only the applicable ledger path/i);
@@ -760,8 +855,8 @@ test("EU CRA Advisor workflows preserve advisory and human-review boundaries", (
   }
 
   assert.match(maintainer, /schedule: daily/);
-  assert.match(maintainer, /safe_output_mode:\n\s+default: staged/);
-  assert.match(maintainer, /staged: \$\{\{ github\.event_name == 'workflow_dispatch' && inputs\.safe_output_mode != 'live' \}\}/);
+  assert.match(maintainer, /safe_output_mode:\n\s+default: review/);
+  assert.doesNotMatch(maintainer, /^\s+staged:/m);
   assert.match(maintainer, /Systematically account for the complete Act: Articles 1–71, Annexes I–VIII/);
   assert.match(maintainer, /update only the applicable ledger path/i);
   assert.match(maintainer, /allowed-files:\n\s+- "eu-cra-compliance\/implementation-status\.md"\n\s+- "\.github\/aw\/eu-cra-compliance\/implementation-status\.md"/);
@@ -820,10 +915,12 @@ test("workers reject disabled, malformed, or over-ceiling dispatches before exec
     assert.match(control, new RegExp(`${input}:`));
     assert.match(precompute, new RegExp(`${input}:`));
   }
-  assert.match(precompute, /validate_worker_dispatch\n\s+validate_live_authority\n\s+write_worker_precompute/);
+  assert.match(precompute, /validate_worker_dispatch\n\s+validate_output_destination\n\s+validate_live_authority\n\s+write_worker_precompute/);
   assert.match(precompute, /worker is disabled by its control-plane policy/);
   assert.match(precompute, /safe_output_mode exceeds the worker_max_mode ceiling/);
-  assert.match(precompute, /preview_only is inconsistent with safe_output_mode/);
+  assert.match(precompute, /must be review or live/);
+  assert.match(precompute, /enabled must be true or false/);
+  assert.match(precompute, /package disabled by its control-plane kill switch/);
   assert.match(precompute, /central_repo must identify the current control repository/);
   assert.match(precompute, /control_plane_run_url must match correlation_id and central_repo/);
 });
@@ -938,25 +1035,82 @@ test("clean-room compilation emits the expected GitHub Actions settings", { time
       assert.match(generated, /inventory_version/);
       assert.match(generated, /batch_id/);
       assert.match(generated, /outside CENTRAL_AGENTIC_OPS_ALLOWED_OWNERS/);
+      assert.match(generated, /review safe_output_repo must differ from target_repo/);
+      assert.match(generated, /review safe_output_repo must be accessible/);
+      assert.match(generated, /review safe_output_repo must be private/);
+      assert.match(generated, /live worker safe_output_repo must equal target_repo/);
+      assert.match(generated, /target assigns live authority for .+ to a different control repository/);
+      assert.doesNotMatch(generated, /PREVIEW_ONLY|preview_only/);
+      assert.doesNotMatch(generated, /== 'preview'/);
       assert.doesNotMatch(generated, /safe_output_mode == 'private'/);
     }
 
-    for (const name of ["advisory.lock.yml", "ambient-context.lock.yml", "aw-failures.lock.yml", "aw-maintenance.lock.yml", "dependabot.lock.yml", "eu-cra-compliance.lock.yml", "optimization.lock.yml"]) {
+    const orchestratorGates = new Map([
+      ["advisory.lock.yml", "ADVISORY"],
+      ["ambient-context.lock.yml", "AMBIENT_CONTEXT"],
+      ["aw-failures.lock.yml", "AW_FAILURES"],
+      ["aw-maintenance.lock.yml", "AW_MAINTENANCE"],
+      ["dependabot.lock.yml", "DEPENDABOT"],
+      ["eu-cra-compliance.lock.yml", "EU_CRA_COMPLIANCE"],
+      ["optimization.lock.yml", "OPTIMIZATION"],
+    ]);
+    for (const [name, packageName] of orchestratorGates) {
       const generated = workflow(name, generatedDirectory);
-      assert.match(generated, /GH_AW_SAFE_OUTPUT_MODE:.*== 'preview' && 'staged'/);
+      const jobs = generatedJobs(generated);
+      assert.match(
+        jobs.get("activation").block,
+        new RegExp(`^    if: \\(vars\\.CENTRAL_AGENTIC_OPS_${packageName}_ENABLED \\|\\| 'true'\\) == 'true'$`, "m"),
+      );
+      for (const jobName of jobs.keys()) {
+        if (jobName !== "activation") {
+          assert.ok(transitivelyNeeds(jobs, jobName, "activation"), `${name} job ${jobName} bypasses activation`);
+        }
+      }
+      assert.match(generated, /GH_AW_SAFE_OUTPUT_MODE:.*inputs\.safe_output_mode.*\|\| 'review'/);
+      assert.match(generated, /CENTRAL_AGENTIC_OPS_PACKAGE_ENABLED:.*_ENABLED \|\| 'true'/);
       assert.match(generated, /ROLLOUT_PERCENT: \$\{\{ inputs\.rollout_percent \|\| vars\.CENTRAL_AGENTIC_OPS_.+_ROLLOUT_PERCENT \|\| '100' \}\}/);
       assert.match(generated, /rollout_percent:\n\s+default: 100\n\s+type: number/);
       assert.match(generated, /timeout-minutes: 15/);
       assert.match(generated, /cancel-in-progress: true/);
     }
 
-    for (const name of packageLockNames.filter((name) => !["advisory.lock.yml", "ambient-context.lock.yml", "aw-failures.lock.yml", "aw-maintenance.lock.yml", "dependabot.lock.yml", "eu-cra-compliance.lock.yml", "optimization.lock.yml"].includes(name))) {
+    const workerGates = new Map([
+      ["advisory-uk-ai-operational-resilience.lock.yml", ["ADVISORY", "ADVISORY_UK_AI_OPERATIONAL_RESILIENCE"]],
+      ["ambient-context-agents-md-curator.lock.yml", ["AMBIENT_CONTEXT", "AMBIENT_CONTEXT_AGENTS_MD"]],
+      ["ambient-context-skills-curator.lock.yml", ["AMBIENT_CONTEXT", "AMBIENT_CONTEXT_SKILLS"]],
+      ["aw-failures-investigator.lock.yml", ["AW_FAILURES", "AW_FAILURES_INVESTIGATOR"]],
+      ["aw-maintenance-upgrade.lock.yml", ["AW_MAINTENANCE", "AW_MAINTENANCE_UPGRADE"]],
+      ["dependabot-release-train-updater.lock.yml", ["DEPENDABOT", "DEPENDABOT_UPDATER"]],
+      ["eu-cra-compliance-article-14-reporting-readiness.lock.yml", ["EU_CRA_COMPLIANCE", "EU_CRA_COMPLIANCE_ARTICLE_14_REPORTING_READINESS"]],
+      ["eu-cra-compliance-conformity-release-evidence.lock.yml", ["EU_CRA_COMPLIANCE", "EU_CRA_COMPLIANCE_CONFORMITY_RELEASE_EVIDENCE"]],
+      ["eu-cra-compliance-scope-classifier.lock.yml", ["EU_CRA_COMPLIANCE", "EU_CRA_COMPLIANCE_SCOPE_CLASSIFIER"]],
+      ["eu-cra-compliance-security-requirements-auditor.lock.yml", ["EU_CRA_COMPLIANCE", "EU_CRA_COMPLIANCE_SECURITY_REQUIREMENTS_AUDITOR"]],
+      ["eu-cra-compliance-supply-chain-sbom-auditor.lock.yml", ["EU_CRA_COMPLIANCE", "EU_CRA_COMPLIANCE_SUPPLY_CHAIN_SBOM_AUDITOR"]],
+      ["eu-cra-compliance-vulnerability-handling-auditor.lock.yml", ["EU_CRA_COMPLIANCE", "EU_CRA_COMPLIANCE_VULNERABILITY_HANDLING_AUDITOR"]],
+      ["optimization-ai-credit-auditor.lock.yml", ["OPTIMIZATION", "OPTIMIZATION_AUDITOR"]],
+      ["optimization-ai-credit-optimizer.lock.yml", ["OPTIMIZATION", "OPTIMIZATION_OPTIMIZER"]],
+    ]);
+    for (const [name, [packageName, workerName]] of workerGates) {
       const generated = workflow(name, generatedDirectory);
-      assert.match(generated, /GH_AW_SAFE_OUTPUT_MODE: \$\{\{ inputs\.safe_output_mode \|\| 'staged' \}\}/);
+      const jobs = generatedJobs(generated);
+      const activation = jobs.get("activation").block;
+      const normalizedActivation = activation.replace(/\s+/g, " ");
+      assert.match(normalizedActivation, new RegExp(`vars\\.CENTRAL_AGENTIC_OPS_${packageName}_ENABLED \\|\\| 'true'`));
+      assert.match(normalizedActivation, new RegExp(`vars\\.CENTRAL_AGENTIC_OPS_${workerName}_ENABLED \\|\\| 'true'`));
+      for (const jobName of jobs.keys()) {
+        if (jobName !== "activation") {
+          assert.ok(transitivelyNeeds(jobs, jobName, "activation"), `${name} job ${jobName} bypasses activation`);
+        }
+      }
+      assert.match(generated, /GH_AW_SAFE_OUTPUT_MODE: \$\{\{ inputs\.safe_output_mode \|\| 'review' \}\}/);
+      assert.match(generated, /SAFE_OUTPUT_REPO:.*safe_output_mode.*'review'.*safe_output_repo.*github\.repository.*inputs\.target_repo/);
       assert.match(generated, /ROLLOUT_PERCENT: "100"/);
       assert.match(generated, /GH_AW_SAFE_OUTPUTS_CONFIG:/);
-      assert.match(generated, /PREVIEW_ONLY: \$\{\{ \(env\.GH_AW_SAFE_OUTPUT_MODE == 'live' \|\| env\.GH_AW_SAFE_OUTPUT_MODE == 'review'\) && 'false' \|\| 'true' \}\}/);
     }
+
+    const generatedReviewBundle = workflow("dependabot-release-train-updater.lock.yml", generatedDirectory);
+    assert.match(generatedReviewBundle, /GH_AW_SAFE_OUTPUTS_STAGED/);
+    assert.doesNotMatch(generatedReviewBundle, /GH_AW_SAFE_OUTPUTS_STAGED:.*preview_only/);
 
     const advisoryMaintainer = workflow("advisory-package-maintainer.lock.yml", generatedDirectory);
     assert.match(advisoryMaintainer, /schedule:/);

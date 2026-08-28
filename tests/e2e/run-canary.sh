@@ -43,9 +43,6 @@ esac
   || { printf 'target_repo must use OWNER/REPO form\n' >&2; exit 1; }
 
 case "$SAFE_OUTPUT_MODE" in
-  staged)
-    [[ -z "$SAFE_OUTPUT_REPO" ]] || { printf 'staged mode does not accept safe_output_repo\n' >&2; exit 1; }
-    ;;
   review)
     [[ "$SAFE_OUTPUT_REPO" =~ ^[A-Za-z0-9][A-Za-z0-9-]*/[A-Za-z0-9._-]+$ ]] \
       || { printf 'review mode requires safe_output_repo in OWNER/REPO form\n' >&2; exit 1; }
@@ -61,7 +58,7 @@ case "$SAFE_OUTPUT_MODE" in
     [[ "$CONFIRMATION" == "LIVE $TARGET_REPO" ]] \
       || { printf 'confirmation must be LIVE %s\n' "$TARGET_REPO" >&2; exit 1; }
     ;;
-  *) printf 'safe_output_mode must be staged, review, or live\n' >&2; exit 1 ;;
+  *) printf 'safe_output_mode must be review or live\n' >&2; exit 1 ;;
 esac
 
 case "$REQUIRE_OUTPUT" in
@@ -142,10 +139,6 @@ done < "$worker_ids_file"
 
 target_after=$(snapshot_repository "$TARGET_REPO")
 case "$SAFE_OUTPUT_MODE" in
-  staged)
-    [[ "$target_after" == "$target_before" ]] \
-      || { printf 'staged canary mutated target repository state\n' >&2; exit 1; }
-    ;;
   review)
     [[ "$target_after" == "$target_before" ]] \
       || { printf 'review canary mutated target repository state\n' >&2; exit 1; }

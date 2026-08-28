@@ -8,8 +8,12 @@ import-schema:
     options: [orchestrator, worker]
     required: true
   rollout_mode:
+    type: choice
+    options: [review, live]
+    default: "review"
+  package_enabled:
     type: string
-    default: "staged"
+    default: "true"
   rollout_percent:
     type: string
     default: "100"
@@ -45,7 +49,7 @@ import-schema:
     default: "true"
   worker_max_mode:
     type: string
-    default: "staged"
+    default: "review"
   orchestrator_credits:
     type: string
     default: "0"
@@ -83,10 +87,9 @@ imports:
       rollout_percent: "${{ github.aw.import-inputs.rollout_percent }}"
       safe_output_mode: ${{ env.GH_AW_SAFE_OUTPUT_MODE }}
       safe_output_repo: ${{ env.SAFE_OUTPUT_REPO }}
-      preview_only: ${{ (env.GH_AW_SAFE_OUTPUT_MODE == 'live' || env.GH_AW_SAFE_OUTPUT_MODE == 'review') && 'false' || 'true' }}
-      enabled: ${{ github.event_name == 'workflow_dispatch' || env.CENTRAL_AGENTIC_OPS_MODE == 'staged' || env.CENTRAL_AGENTIC_OPS_MODE == 'review' || env.CENTRAL_AGENTIC_OPS_MODE == 'live' }}
+      enabled: ${{ env.CENTRAL_AGENTIC_OPS_PACKAGE_ENABLED || github.aw.import-inputs.package_enabled }}
       worker_enabled: ${{ env.CENTRAL_AGENTIC_OPS_WORKER_ENABLED || 'true' }}
-      worker_max_mode: ${{ env.CENTRAL_AGENTIC_OPS_WORKER_MAX_MODE || 'staged' }}
+      worker_max_mode: ${{ env.CENTRAL_AGENTIC_OPS_WORKER_MAX_MODE || 'review' }}
       correlation_id: ${{ github.event.inputs.correlation_id || '' }}
       central_repo: ${{ github.event.inputs.central_repo || '' }}
       control_plane_run_url: ${{ github.event.inputs.control_plane_run_url || '' }}
@@ -95,9 +98,9 @@ imports:
       aggregate_credit_limit: "${{ github.aw.import-inputs.aggregate_credit_limit }}"
 ---
 
-Read `/tmp/gh-aw/agent/control-precompute.json` before making control decisions. Treat it as authoritative for `control_role`, enablement state, target repository inputs, safe-output routing, and worker workflow availability.
+Read `/tmp/gh-aw/agent/control-precompute.json` before making control decisions. Treat it as authoritative for `control_role`, package enablement state, target repository inputs, safe-output routing, and worker workflow availability.
 
-If `control_role` is `worker`, this workflow is a dispatched worker. Do not select repositories and do not dispatch workflows. Use the importing workflow's mission instructions, and treat `target_repo`, `safe_output_mode`, `safe_output_repo`, `preview_only`, `correlation_id`, `central_repo`, and `control_plane_run_url` as the standard control-plane envelope. When `correlation_id` is present, include a short `### Control Plane` section in safe-output issues, pull requests, or comments with the correlation ID, central repository, and control plane run URL. Safe outputs are created in `SAFE_OUTPUT_REPO`.
+If `control_role` is `worker`, this workflow is a dispatched worker. Do not select repositories and do not dispatch workflows. Use the importing workflow's mission instructions, and treat `target_repo`, `safe_output_mode`, `safe_output_repo`, `correlation_id`, `central_repo`, and `control_plane_run_url` as the standard control-plane envelope. When `correlation_id` is present, include a short `### Control Plane` section in safe-output issues, pull requests, or comments with the correlation ID, central repository, and control plane run URL. Safe outputs are created in `SAFE_OUTPUT_REPO`.
 
 When `target_repo` is present, prefer a dedicated `target/` checkout when the importing workflow provides one. Treat that checkout as the authoritative target-repository snapshot for analysis, and treat the workspace root as the repository where safe outputs land. In `review` mode, do not treat `SAFE_OUTPUT_REPO` as a live substitute for the target repository. Instead, prefer an artifact-backed review bundle in `SAFE_OUTPUT_REPO` for target-bound outputs that would otherwise mutate target git state. Use the same safe-output primitive only when gh-aw natively supports that primitive against the review repository; otherwise publish a clearly labeled review bundle that identifies the target repository, intended safe-output primitive, base branch when known, and the key evidence needed for human review.
 
@@ -111,11 +114,11 @@ In `review` mode, built-in safe outputs operate against `SAFE_OUTPUT_REPO`. Neve
 
 If `control_role` is `orchestrator`, filter and prioritize target repositories, then dispatch the configured worker workflows.
 
-Use the `enabled`, `inventory_version`, `batch_id`, `max_repos`, `rollout_percent`, `effective_max_repos`, `safe_output_mode`, `safe_output_repo`, and `preview_only` fields from `/tmp/gh-aw/agent/control-precompute.json`; do not infer those values from workflow inputs.
+Use the `enabled`, `inventory_version`, `batch_id`, `max_repos`, `rollout_percent`, `effective_max_repos`, `safe_output_mode`, and `safe_output_repo` fields from `/tmp/gh-aw/agent/control-precompute.json`; do not infer those values from workflow inputs.
 
 For orchestrators, use the importing package's `Discovery` and `Workers` sections only for ranking, prioritization, and deciding whether a precomputed candidate is useful for this package.
 
-- If `enabled` is not `true`, do not select repositories or dispatch workers. Call `report_incomplete` explaining that the package is installed but not enabled; set its rollout-mode variable to `staged`, `review`, or `live` after configuration and manual testing.
+- If `enabled` is not `true`, do not select repositories or dispatch workers. Call `report_incomplete` explaining that the package is disabled by its package kill switch.
 - If `repo_error` is non-empty, select no repositories and dispatch no workers. Call `report_incomplete` with the precomputed error; do not retry discovery, fall back to inferred inventory, or wait for an API rate limit to reset.
 
 Continue with the repository targeting and workflow dispatch steps below.
@@ -143,7 +146,6 @@ Continue with the repository targeting and workflow dispatch steps below.
   - `target_repo`: selected target repository
   - `safe_output_mode`: `safe_output_mode`
   - `safe_output_repo`: `effective_safe_output_repo`
-  - `preview_only`: `preview_only`
   - `correlation_id`: `${{ github.run_id }}-${{ github.run_number }}`
   - `central_repo`: `${{ github.repository }}`
   - `control_plane_run_url`: `${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}`
@@ -162,7 +164,7 @@ Continue with the repository targeting and workflow dispatch steps below.
   - Selected targets: <count>
   - Safe output mode: <safe_output_mode>
   - Safe output repository: <safe_output_repo or not applicable>
-  - Staged outputs: <true or false>
+  - Target changes allowed: <true only for live mode>
 
   ### Repository Decisions
   - Selected: <repository list with priority rationale, or none>

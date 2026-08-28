@@ -18,9 +18,6 @@ on:
         type: string
       safe_output_mode:
         type: string
-      preview_only:
-        default: "true"
-        type: string
       correlation_id:
         type: string
       central_repo:
@@ -39,7 +36,7 @@ on:
         type: string
 
 checkout:
-  - repository: ${{ inputs.safe_output_repo }}
+  - repository: ${{ (inputs.safe_output_mode || 'review') == 'review' && (inputs.safe_output_repo || github.repository) || inputs.target_repo }}
     github-token: ${{ secrets.GH_AW_GITHUB_TOKEN || secrets.GITHUB_TOKEN }}
     fetch-depth: 0
     fetch: ["*"]
@@ -49,12 +46,17 @@ checkout:
     path: target
 
 env:
+  CENTRAL_AGENTIC_OPS_PACKAGE_ENABLED: ${{ vars.CENTRAL_AGENTIC_OPS_DEPENDABOT_ENABLED || 'true' }}
   CENTRAL_AGENTIC_OPS_WORKER_ENABLED: ${{ vars.CENTRAL_AGENTIC_OPS_DEPENDABOT_UPDATER_ENABLED || 'true' }}
-  CENTRAL_AGENTIC_OPS_WORKER_MAX_MODE: ${{ vars.CENTRAL_AGENTIC_OPS_DEPENDABOT_UPDATER_MAX_MODE || 'staged' }}
-  GH_AW_SAFE_OUTPUT_MODE: ${{ inputs.safe_output_mode || 'staged' }}
+  CENTRAL_AGENTIC_OPS_WORKER_MAX_MODE: ${{ vars.CENTRAL_AGENTIC_OPS_DEPENDABOT_UPDATER_MAX_MODE || 'review' }}
+  GH_AW_SAFE_OUTPUT_MODE: ${{ inputs.safe_output_mode || 'review' }}
   REVIEW_OUTPUT_REPO: ${{ inputs.safe_output_repo || github.repository }}
-  SAFE_OUTPUT_REPO: ${{ inputs.safe_output_mode == 'review' && (inputs.safe_output_repo || github.repository) || '' }}
+  SAFE_OUTPUT_REPO: ${{ (inputs.safe_output_mode || 'review') == 'review' && (inputs.safe_output_repo || github.repository) || inputs.target_repo }}
   TARGET_REPO: ${{ inputs.target_repo || '' }}
+
+if: >-
+  (vars.CENTRAL_AGENTIC_OPS_DEPENDABOT_ENABLED || 'true') == 'true' &&
+  (vars.CENTRAL_AGENTIC_OPS_DEPENDABOT_UPDATER_ENABLED || 'true') == 'true'
 
 imports:
   - uses: shared/control.md
@@ -108,7 +110,7 @@ network:
     - opentelemetry.io
     - "*.opentelemetry.io"
 
-run-name: "Dependabot release train · ${{ inputs.target_repo }} · ${{ inputs.safe_output_mode || (inputs.preview_only == 'true' && 'staged' || 'live') }}"
+run-name: "Dependabot release train · ${{ inputs.target_repo }} · ${{ inputs.safe_output_mode || 'review' }}"
 
 concurrency:
   group: "${{ github.workflow }}-${{ inputs.target_repo }}"
@@ -128,10 +130,8 @@ graders:
     run: .github/graders/dependabot-release-train-updater-operational-value.sh
 
 safe-outputs:
-  staged: ${{ inputs.preview_only == 'true' }}
   create-pull-request:
-    staged: ${{ inputs.safe_output_mode == 'review' }}
-    target-repo: ${{ github.event.inputs.safe_output_repo }}
+    target-repo: ${{ (inputs.safe_output_mode || 'review') == 'review' && (inputs.safe_output_repo || github.repository) || inputs.target_repo }}
     title-prefix: "[dependabot-agent] "
     draft: true
     max: 1
@@ -248,9 +248,8 @@ safe-outputs:
       - "**/tests/**"
       - "**/__tests__/**"
   push-to-pull-request-branch:
-    staged: ${{ inputs.safe_output_mode == 'review' }}
     target: "*"
-    target-repo: ${{ github.event.inputs.safe_output_repo }}
+    target-repo: ${{ (inputs.safe_output_mode || 'review') == 'review' && (inputs.safe_output_repo || github.repository) || inputs.target_repo }}
     required-title-prefix: "[dependabot-agent] "
     max: 1
     if-no-changes: ignore
@@ -362,9 +361,8 @@ safe-outputs:
       - "**/tests/**"
       - "**/__tests__/**"
   update-pull-request:
-    staged: ${{ inputs.safe_output_mode == 'review' }}
     target: "*"
-    target-repo: ${{ github.event.inputs.safe_output_repo }}
+    target-repo: ${{ (inputs.safe_output_mode || 'review') == 'review' && (inputs.safe_output_repo || github.repository) || inputs.target_repo }}
     required-title-prefix: "[dependabot-agent] "
     title: true
     body: true
@@ -372,10 +370,10 @@ safe-outputs:
     update-branch: true
     max: 1
   add-comment:
-    target-repo: ${{ github.event.inputs.safe_output_repo }}
+    target-repo: ${{ (inputs.safe_output_mode || 'review') == 'review' && (inputs.safe_output_repo || github.repository) || inputs.target_repo }}
     max: 3
   create-issue:
-    target-repo: ${{ github.event.inputs.safe_output_repo }}
+    target-repo: ${{ (inputs.safe_output_mode || 'review') == 'review' && (inputs.safe_output_repo || github.repository) || inputs.target_repo }}
     title-prefix: "[dependabot-agent] "
     expires: 14d
     max: 2
@@ -418,7 +416,7 @@ Read repository evidence from `target/`. Make all PR changes in the repository c
 
 In `review` mode, do not try to make the control-plane repository look like the target repository. Treat review mode as artifact-backed review, not as a control-plane pull request. If the live outcome would be `create-pull-request`, `push-to-pull-request-branch`, or `update-pull-request`, prepare a bundle directory under `/tmp/gh-aw/agent/review-bundles/dependabot-release-train-updater/<bundle-or-lane>/` with `summary.md`, `changed-files.txt`, `validation.txt`, and any patch or bundle files you can produce safely, then call `publish_review_bundle` with that directory and create an issue or comment in `SAFE_OUTPUT_REPO` linking the intended target repository and review guidance. Files outside `/tmp/gh-aw/agent/` are not persisted to the publisher job.
 
-Treat `target_repo`, `safe_output_mode`, `safe_output_repo`, `preview_only`, `correlation_id`, `central_repo`, and `control_plane_run_url` as the live control-plane envelope.
+Treat `target_repo`, `safe_output_mode`, `safe_output_repo`, `correlation_id`, `central_repo`, and `control_plane_run_url` as the control-plane envelope.
 
 ## Validate and refine the work item
 

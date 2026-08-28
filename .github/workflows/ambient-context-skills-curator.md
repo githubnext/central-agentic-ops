@@ -18,9 +18,6 @@ on:
         type: string
       safe_output_mode:
         type: string
-      preview_only:
-        default: "true"
-        type: string
       correlation_id:
         type: string
       central_repo:
@@ -31,7 +28,7 @@ on:
         type: string
 
 checkout:
-  - repository: ${{ inputs.safe_output_repo }}
+  - repository: ${{ (inputs.safe_output_mode || 'review') == 'review' && (inputs.safe_output_repo || github.repository) || inputs.target_repo }}
     github-token: ${{ secrets.GH_AW_GITHUB_TOKEN || secrets.GITHUB_TOKEN }}
     current: true
   - repository: ${{ inputs.target_repo }}
@@ -40,12 +37,17 @@ checkout:
     fetch-depth: 0
 
 env:
+  CENTRAL_AGENTIC_OPS_PACKAGE_ENABLED: ${{ vars.CENTRAL_AGENTIC_OPS_AMBIENT_CONTEXT_ENABLED || 'true' }}
   CENTRAL_AGENTIC_OPS_WORKER_ENABLED: ${{ vars.CENTRAL_AGENTIC_OPS_AMBIENT_CONTEXT_SKILLS_ENABLED || 'true' }}
-  CENTRAL_AGENTIC_OPS_WORKER_MAX_MODE: ${{ vars.CENTRAL_AGENTIC_OPS_AMBIENT_CONTEXT_SKILLS_MAX_MODE || 'staged' }}
-  GH_AW_SAFE_OUTPUT_MODE: ${{ inputs.safe_output_mode || 'staged' }}
+  CENTRAL_AGENTIC_OPS_WORKER_MAX_MODE: ${{ vars.CENTRAL_AGENTIC_OPS_AMBIENT_CONTEXT_SKILLS_MAX_MODE || 'review' }}
+  GH_AW_SAFE_OUTPUT_MODE: ${{ inputs.safe_output_mode || 'review' }}
   REVIEW_OUTPUT_REPO: ${{ inputs.safe_output_repo || github.repository }}
-  SAFE_OUTPUT_REPO: ${{ inputs.safe_output_mode == 'review' && (inputs.safe_output_repo || github.repository) || '' }}
+  SAFE_OUTPUT_REPO: ${{ (inputs.safe_output_mode || 'review') == 'review' && (inputs.safe_output_repo || github.repository) || inputs.target_repo }}
   TARGET_REPO: ${{ inputs.target_repo || '' }}
+
+if: >-
+  (vars.CENTRAL_AGENTIC_OPS_AMBIENT_CONTEXT_ENABLED || 'true') == 'true' &&
+  (vars.CENTRAL_AGENTIC_OPS_AMBIENT_CONTEXT_SKILLS_ENABLED || 'true') == 'true'
 
 imports:
   - uses: shared/control.md
@@ -67,7 +69,7 @@ network:
     - defaults
     - github
 
-run-name: "Ambient context skills · ${{ inputs.target_repo }} · ${{ inputs.safe_output_mode || (inputs.preview_only == 'true' && 'staged' || 'live') }}"
+run-name: "Ambient context skills · ${{ inputs.target_repo }} · ${{ inputs.safe_output_mode || 'review' }}"
 
 concurrency:
   group: "${{ github.workflow }}-${{ inputs.target_repo }}"
@@ -95,13 +97,12 @@ tools:
     - "find"
 
 safe-outputs:
-  staged: ${{ inputs.preview_only == 'true' }}
   create-issue:
     expires: 30d
     title-prefix: "[ambient-context:skills] "
     close-older-issues: true
     max: 1
-    target-repo: ${{ github.event.inputs.safe_output_repo }}
+    target-repo: ${{ (inputs.safe_output_mode || 'review') == 'review' && (inputs.safe_output_repo || github.repository) || inputs.target_repo }}
 
 timeout-minutes: 20
 

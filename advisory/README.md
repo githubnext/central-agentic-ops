@@ -27,13 +27,14 @@ gh aw add-wizard githubnext/central-agentic-ops/advisory@<catalog-release>
 
 Configure the shared GitHub App or PAT described in the [authentication guide](../docs/authentication.md). Start with one representative repository and:
 
-- `CENTRAL_AGENTIC_OPS_ADVISORY_MODE=staged`
+- `CENTRAL_AGENTIC_OPS_ADVISORY_ENABLED=true`
+- `CENTRAL_AGENTIC_OPS_ADVISORY_MODE=review`
 - `CENTRAL_AGENTIC_OPS_ADVISORY_MAX_REPOS=1`
 - `CENTRAL_AGENTIC_OPS_ADVISORY_ROLLOUT_PERCENT=100`
 - `CENTRAL_AGENTIC_OPS_ADVISORY_UK_AI_OPERATIONAL_RESILIENCE_ENABLED=true`
-- `CENTRAL_AGENTIC_OPS_ADVISORY_UK_AI_OPERATIONAL_RESILIENCE_MAX_MODE=staged`
+- `CENTRAL_AGENTIC_OPS_ADVISORY_UK_AI_OPERATIONAL_RESILIENCE_MAX_MODE=review`
 
-Run the **Advisory** workflow manually with an explicit `target_repo`, `max_repos` set to `1`, and `safe_output_mode` set to `staged`. Review repository selection, the worker's staged issue, source accessibility, sensitive-data handling, and control-plane correlation before promoting to `review` or `live`.
+Run the **Advisory** workflow manually with an explicit `target_repo`, `max_repos` set to `1`, and `safe_output_mode` set to `review`. Review repository selection, the worker's review issue, source accessibility, sensitive-data handling, and control-plane correlation before promoting to `live`.
 
 ## Safety Boundaries
 

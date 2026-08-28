@@ -22,9 +22,8 @@
   <text x="74" y="205" class="copy">Policy, limits, credentials,</text>
   <text x="74" y="226" class="copy">and rollout mode stay here.</text>
   <text x="74" y="273" class="eyebrow">ROLLOUT MODE</text>
-  <rect x="74" y="292" width="54" height="32" rx="5" class="node"/><text x="101" y="313" text-anchor="middle" class="small">Staged</text>
-  <rect x="132" y="292" width="54" height="32" rx="5" fill="var(--accent)" fill-opacity=".12" stroke="var(--accent)"/><text x="159" y="313" text-anchor="middle" class="small">Review</text>
-  <rect x="190" y="292" width="54" height="32" rx="5" class="node"/><text x="217" y="313" text-anchor="middle" class="small">Live</text>
+  <rect x="74" y="292" width="83" height="32" rx="5" fill="var(--accent)" fill-opacity=".12" stroke="var(--accent)"/><text x="115.5" y="313" text-anchor="middle" class="small">Review</text>
+  <rect x="161" y="292" width="83" height="32" rx="5" class="node"/><text x="202.5" y="313" text-anchor="middle" class="small">Live</text>
   <circle cx="82" cy="359" r="9" fill="var(--accent)"/><path d="m78 359 3 3 6-7" fill="none" stroke="var(--bg)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
   <text x="100" y="364" class="label">Human approval</text>
   <text x="74" y="392" class="small">required before live operation</text>

@@ -71,7 +71,7 @@ steps:
           re.MULTILINE,
       )
       diagram_signal_re = re.compile(
-          r"(?:-->|\+--|\|\s*$|\bv\s*$|\bstaged\s*\|\s*review\s*\|\s*live\b)",
+          r"(?:-->|\+--|\|\s*$|\bv\s*$|\breview\s*\|\s*live\b)",
           re.MULTILINE,
       )
       picture_re = re.compile(r"<picture\b[\s\S]*?</picture>", re.IGNORECASE)

@@ -38,13 +38,13 @@ A worker receives one target and performs one bounded mission. It must:
 
 - treat control precomputation as authoritative;
 - analyze only `target_repo`;
-- honor `safe_output_mode`, `safe_output_repo`, and `preview_only`;
+- honor `safe_output_mode` and `safe_output_repo`;
 - use only declared permissions, network access, tools, and safe outputs;
 - include correlation metadata in user-visible outputs when provided;
 - avoid organization-wide discovery and downstream workflow dispatch;
 - fail closed when routing or required evidence is incomplete.
 
-The worker may apply stricter behavior than requested, such as returning no output when evidence is insufficient. It may never promote itself from staged to review or live.
+The worker may apply stricter behavior than requested, such as returning no output when evidence is insufficient. It may never promote itself from review to live.
 
 A worker receives control data shaped like:
 
@@ -52,7 +52,6 @@ A worker receives control data shaped like:
 target_repo: acme/example-service
 safe_output_mode: review
 safe_output_repo: acme/central-agentic-ops-review
-preview_only: false
 correlation_id: dependabot-2026-08-25-001
 central_repo: acme/central-agentic-ops
 control_plane_run_url: https://github.com/acme/central-agentic-ops/actions/runs/123456
@@ -105,12 +104,12 @@ Add worker-specific configuration only when a worker has a materially different 
 | Control | Purpose | Default |
 | --- | --- | --- |
 | `enabled` | Explicitly includes or excludes a worker workflow from dispatch | `true` for installed worker workflows |
-| `max_mode` | Caps the most permissive mode a worker workflow can execute | `staged` |
+| `max_mode` | Caps the most permissive mode a worker workflow can execute | `review` |
 | worker workflow limit | Caps worker workflow-specific volume or resource use | Existing Agentic Workflow limit |
 
 Mode ordering is:
 
-`staged < review < live`
+`review < live`
 
 The effective worker mode is the less permissive of the requested operation mode and the worker ceiling:
 

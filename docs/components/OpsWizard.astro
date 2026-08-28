@@ -52,7 +52,7 @@ const agents = [
     <h2 id="ops-wizard-title">Start an operation in three steps</h2>
     <p class="wizard-lede">
       Pick the operation you want to run and the coding agent you use, then copy the generated prompt. The agent creates
-      your private control plane repository, installs the operation, and runs it once in <code>staged</code> mode.
+      your private control plane repository, installs the operation, and runs it once in <code>review</code> mode.
     </p>
   </div>
 
@@ -233,17 +233,17 @@ const agents = [
           "## First run",
           "",
           "- Set `CENTRAL_AGENTIC_OPS_ALLOWED_OWNERS` to the owner of the repositories the operation may touch.",
-          "- Keep the package rollout variables at `staged` mode and cap scheduled selection at one repository.",
-          "- Trigger one manual run of the orchestrator against a single low-risk target repository with `safe_output_mode=staged`.",
+          "- Keep the package rollout variables at `review` mode and cap scheduled selection at one repository.",
+          "- Trigger one manual run of the orchestrator against a single low-risk target repository with `safe_output_mode=review`.",
           "- Watch the run with `gh run watch` and summarize the orchestrator report.",
         ]
       : [
           "## First run",
           "",
           `- \`gh variable set CENTRAL_AGENTIC_OPS_ALLOWED_OWNERS --body "${owner}"\``,
-          `- \`gh variable set ${variablePrefix(operation.value)}_MODE --body "staged"\``,
+          `- \`gh variable set ${variablePrefix(operation.value)}_MODE --body "review"\``,
           `- \`gh variable set ${variablePrefix(operation.value)}_MAX_REPOS --body "1"\``,
-          `- Trigger one manual run: \`gh workflow run ${operation.value}.lock.yml --raw-field target_repo="${owner}/<target-repo>" --raw-field max_repos="1" --raw-field safe_output_mode="staged"\`.`,
+          `- Trigger one manual run: \`gh workflow run ${operation.value}.lock.yml --raw-field target_repo="${owner}/<target-repo>" --raw-field max_repos="1" --raw-field safe_output_mode="review"\`.`,
           "- Watch the run with `gh run watch` and summarize the orchestrator report.",
         ];
 
@@ -260,7 +260,7 @@ const agents = [
       "## Rules",
       "",
       "- Keep the control repository private.",
-      "- Keep the operation in `staged` mode for the first run; never switch it to `live` without asking me.",
+      "- Keep the operation in `review` mode for the first run; never switch it to `live` without asking me.",
       "- Never edit generated `.lock.yml` files by hand; change the Markdown source and recompile.",
       "- Stop and ask me before adding secrets, widening permissions, or targeting additional repositories.",
       "",

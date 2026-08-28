@@ -5,7 +5,7 @@ description: Repository variables, secrets, and manual inputs for Central Agenti
 
 Control-plane configuration is stored as GitHub repository variables and secrets in the private central control repository. Scheduled runs use that configuration. Manual workflow inputs define a separate run without changing scheduled configuration. Values computed inside a workflow are runtime state and must not be configured directly.
 
-For a first installation, follow [Install and run safely](getting-started.md) and return here only for exact setting names and defaults. Keep every operation in `staged` and `max_repos` at `1` until its promotion checks pass.
+For a first installation, follow [Install and run safely](getting-started.md) and return here only for exact setting names and defaults. Keep every operation in `review` and `max_repos` at `1` until its promotion checks pass.
 
 ## Required Baseline
 
@@ -14,15 +14,15 @@ For private or internal targets, alternate review repositories, or live target w
 1. A GitHub App using `GH_AW_GITHUB_APP_ID` and `GH_AW_GITHUB_APP_PRIVATE_KEY` is preferred.
 2. A fine-grained PAT can be supplied through `GH_AW_GITHUB_TOKEN` as a fallback or as the only authentication method.
 
-For public targets only, bounded staged scans can instead use the automatically provided `GITHUB_TOKEN`; no App or PAT secret is required. Review is supported without an App or PAT only when outputs stay in the current control repository and its workflow-token permissions authorize them. See [Public Read-Only Profile](authentication.md#public-read-only-profile).
+For public targets only, bounded review runs can instead use the automatically provided `GITHUB_TOKEN`; no App or PAT secret is required when outputs stay in the current control repository and its workflow-token permissions authorize them. See [Public Read-Only Profile](authentication.md#public-read-only-profile).
 
-Every installed operation has an independent mode. Installation defaults each mode to `staged`.
+Every installed operation has an independent output mode and kill switch. Installation defaults each mode to `review` and each kill switch to `true`, so packages are immediately runnable without target writes.
 
 :::tip[Variables describe policy; secrets prove identity]
 Put modes, limits, and owner names in repository variables. Put private keys and tokens in repository secrets. Never pass credentials through `workflow_dispatch` inputs.
 :::
 
-For a one-repository staged Dependabot rollout, set this baseline:
+For a one-repository Dependabot review, set this baseline:
 
 ```bash
 CONTROL_REPO="acme/central-agentic-ops"
@@ -30,12 +30,12 @@ CONTROL_REPO="acme/central-agentic-ops"
 gh variable set CENTRAL_AGENTIC_OPS_ALLOWED_OWNERS \
 	--repo "$CONTROL_REPO" --body "acme"
 gh variable set CENTRAL_AGENTIC_OPS_DEPENDABOT_MODE \
-	--repo "$CONTROL_REPO" --body "staged"
+	--repo "$CONTROL_REPO" --body "review"
 gh variable set CENTRAL_AGENTIC_OPS_DEPENDABOT_MAX_REPOS \
 	--repo "$CONTROL_REPO" --body "1"
 ```
 
-Add an App or PAT when the target is private or internal. Keep the mode at `staged` until the promotion checks pass.
+Add an App or PAT when the target is private or internal. Keep the mode at `review` until the promotion checks pass.
 
 ## Repository Variables
 
@@ -49,52 +49,64 @@ Add an App or PAT when the target is private or internal. Keep the mode at `stag
 | `CENTRAL_AGENTIC_OPS_BATCH_SIZE` | Shared | No | `100000` | Maximum repositories exposed to an orchestrator from its selected cell. Accepts `1` through `100000`. |
 | `CENTRAL_AGENTIC_OPS_BATCH_INDEX` | Shared | No | `0` | Zero-based batch selected for a scheduled run. |
 | `CENTRAL_AGENTIC_OPS_MAX_AI_CREDITS_PER_RUN` | Shared | No | `1100` | Maximum declared orchestrator-plus-worker AI Credits admitted for one orchestration. |
-| `CENTRAL_AGENTIC_OPS_ADVISORY_MODE` | Advisory | Yes when installed | `staged` | Sets the operation mode to `staged`, `review`, or `live`. |
+| `CENTRAL_AGENTIC_OPS_ADVISORY_ENABLED` | Advisory | No | `true` | Package kill switch. Set to `false` to stop orchestrator and worker dispatches. |
+| `CENTRAL_AGENTIC_OPS_ADVISORY_MODE` | Advisory | No | `review` | Sets the output mode to `review` or `live`. |
 | `CENTRAL_AGENTIC_OPS_ADVISORY_MAX_REPOS` | Advisory | No | `1` | Scheduled repository-selection cap. Accepts `1` through `1000`; dispatch and credit limits may reduce it further. |
 | `CENTRAL_AGENTIC_OPS_ADVISORY_ROLLOUT_PERCENT` | Advisory | No | `100` | Limits selection to this percentage of discovered repositories. Accepts integers from `1` through `100`. |
 | `CENTRAL_AGENTIC_OPS_ADVISORY_UK_AI_OPERATIONAL_RESILIENCE_ENABLED` | Advisory worker | No | `true` | UK AI operational resilience worker kill switch. |
-| `CENTRAL_AGENTIC_OPS_ADVISORY_UK_AI_OPERATIONAL_RESILIENCE_MAX_MODE` | Advisory worker | No | `staged` | UK AI operational resilience worker mode ceiling. |
-| `CENTRAL_AGENTIC_OPS_AMBIENT_CONTEXT_MODE` | Ambient Context | Yes when installed | `staged` | Sets the operation mode to `staged`, `review`, or `live`. |
+| `CENTRAL_AGENTIC_OPS_ADVISORY_UK_AI_OPERATIONAL_RESILIENCE_MAX_MODE` | Advisory worker | No | `review` | UK AI operational resilience worker mode ceiling. |
+| `CENTRAL_AGENTIC_OPS_AMBIENT_CONTEXT_ENABLED` | Ambient Context | No | `true` | Package kill switch. Set to `false` to stop orchestrator and worker dispatches. |
+| `CENTRAL_AGENTIC_OPS_AMBIENT_CONTEXT_MODE` | Ambient Context | No | `review` | Sets the output mode to `review` or `live`. |
 | `CENTRAL_AGENTIC_OPS_AMBIENT_CONTEXT_MAX_REPOS` | Ambient Context | No | `1` | Scheduled repository-selection cap. Accepts `1` through `1000`; dispatch limits may reduce it further. |
 | `CENTRAL_AGENTIC_OPS_AMBIENT_CONTEXT_ROLLOUT_PERCENT` | Ambient Context | No | `100` | Limits selection to this percentage of discovered repositories. Accepts integers from `1` through `100`. |
 | `CENTRAL_AGENTIC_OPS_AMBIENT_CONTEXT_AGENTS_MD_ENABLED` | Ambient Context worker | No | `true` | Worker kill switch for the `AGENTS.md` curator. |
-| `CENTRAL_AGENTIC_OPS_AMBIENT_CONTEXT_AGENTS_MD_MAX_MODE` | Ambient Context worker | No | `staged` | Maximum `AGENTS.md` curator mode. |
+| `CENTRAL_AGENTIC_OPS_AMBIENT_CONTEXT_AGENTS_MD_MAX_MODE` | Ambient Context worker | No | `review` | Maximum `AGENTS.md` curator mode. |
 | `CENTRAL_AGENTIC_OPS_AMBIENT_CONTEXT_SKILLS_ENABLED` | Ambient Context worker | No | `true` | Worker kill switch for the skills curator. |
-| `CENTRAL_AGENTIC_OPS_AMBIENT_CONTEXT_SKILLS_MAX_MODE` | Ambient Context worker | No | `staged` | Maximum skills curator mode. |
-| `CENTRAL_AGENTIC_OPS_AW_FAILURES_MODE` | AW Failures | Yes when installed | `staged` | Sets the operation mode to `staged`, `review`, or `live`. |
+| `CENTRAL_AGENTIC_OPS_AMBIENT_CONTEXT_SKILLS_MAX_MODE` | Ambient Context worker | No | `review` | Maximum skills curator mode. |
+| `CENTRAL_AGENTIC_OPS_AW_FAILURES_ENABLED` | AW Failures | No | `true` | Package kill switch. Set to `false` to stop orchestrator and worker dispatches. |
+| `CENTRAL_AGENTIC_OPS_AW_FAILURES_MODE` | AW Failures | No | `review` | Sets the output mode to `review` or `live`. |
 | `CENTRAL_AGENTIC_OPS_AW_FAILURES_MAX_REPOS` | AW Failures | No | `1` | Scheduled repository-selection cap. Accepts `1` through `1000`; dispatch limits may reduce it further. |
 | `CENTRAL_AGENTIC_OPS_AW_FAILURES_ROLLOUT_PERCENT` | AW Failures | No | `100` | Limits selection to this percentage of discovered repositories. Accepts integers from `1` through `100`. |
 | `CENTRAL_AGENTIC_OPS_AW_FAILURES_INVESTIGATOR_ENABLED` | AW Failures worker | No | `true` | Worker kill switch for the investigator. |
-| `CENTRAL_AGENTIC_OPS_AW_FAILURES_INVESTIGATOR_MAX_MODE` | AW Failures worker | No | `staged` | Maximum investigator mode: `staged`, `review`, or `live`. |
-| `CENTRAL_AGENTIC_OPS_DEPENDABOT_MODE` | Dependabot | Yes when installed | `staged` | Sets the operation mode to `staged`, `review`, or `live`. |
+| `CENTRAL_AGENTIC_OPS_AW_FAILURES_INVESTIGATOR_MAX_MODE` | AW Failures worker | No | `review` | Maximum investigator mode: `review` or `live`. |
+| `CENTRAL_AGENTIC_OPS_AW_MAINTENANCE_ENABLED` | AW Maintenance | No | `true` | Package kill switch. Set to `false` to stop orchestrator and worker dispatches. |
+| `CENTRAL_AGENTIC_OPS_AW_MAINTENANCE_MODE` | AW Maintenance | No | `review` | Sets the output mode to `review` or `live`. |
+| `CENTRAL_AGENTIC_OPS_AW_MAINTENANCE_MAX_REPOS` | AW Maintenance | No | `1` | Scheduled repository-selection cap. Accepts `1` through `1000`; dispatch limits may reduce it further. |
+| `CENTRAL_AGENTIC_OPS_AW_MAINTENANCE_ROLLOUT_PERCENT` | AW Maintenance | No | `100` | Limits selection to this percentage of discovered repositories. Accepts integers from `1` through `100`. |
+| `CENTRAL_AGENTIC_OPS_AW_MAINTENANCE_UPGRADE_ENABLED` | AW Maintenance worker | No | `true` | Worker kill switch for the upgrade worker. |
+| `CENTRAL_AGENTIC_OPS_AW_MAINTENANCE_UPGRADE_MAX_MODE` | AW Maintenance worker | No | `review` | Maximum upgrade worker mode: `review` or `live`. |
+| `CENTRAL_AGENTIC_OPS_DEPENDABOT_ENABLED` | Dependabot | No | `true` | Package kill switch. Set to `false` to stop orchestrator and worker dispatches. |
+| `CENTRAL_AGENTIC_OPS_DEPENDABOT_MODE` | Dependabot | No | `review` | Sets the output mode to `review` or `live`. |
 | `CENTRAL_AGENTIC_OPS_DEPENDABOT_MAX_REPOS` | Dependabot | No | `1` | Scheduled repository-selection cap. Accepts `1` through `1000`; dispatch limits may reduce it further. |
 | `CENTRAL_AGENTIC_OPS_DEPENDABOT_ROLLOUT_PERCENT` | Dependabot | No | `100` | Limits selection to this percentage of discovered repositories. Accepts integers from `1` through `100`. |
 | `CENTRAL_AGENTIC_OPS_DEPENDABOT_UPDATER_ENABLED` | Dependabot worker | No | `true` | Worker kill switch. Set to `false` to reject updater runs. |
-| `CENTRAL_AGENTIC_OPS_DEPENDABOT_UPDATER_MAX_MODE` | Dependabot worker | No | `staged` | Maximum updater mode: `staged`, `review`, or `live`. |
-| `CENTRAL_AGENTIC_OPS_EU_CRA_COMPLIANCE_MODE` | EU CRA Advisor | Yes when installed | `staged` | Sets the operation mode to `staged`, `review`, or `live`. |
+| `CENTRAL_AGENTIC_OPS_DEPENDABOT_UPDATER_MAX_MODE` | Dependabot worker | No | `review` | Maximum updater mode: `review` or `live`. |
+| `CENTRAL_AGENTIC_OPS_EU_CRA_COMPLIANCE_ENABLED` | EU CRA Advisor | No | `true` | Package kill switch. Set to `false` to stop orchestrator and worker dispatches. |
+| `CENTRAL_AGENTIC_OPS_EU_CRA_COMPLIANCE_MODE` | EU CRA Advisor | No | `review` | Sets the output mode to `review` or `live`. |
 | `CENTRAL_AGENTIC_OPS_EU_CRA_COMPLIANCE_MAX_REPOS` | EU CRA Advisor | No | `1` | Scheduled repository-selection cap. Accepts `1` through `1000`; dispatch and credit limits may reduce it further. |
 | `CENTRAL_AGENTIC_OPS_EU_CRA_COMPLIANCE_ROLLOUT_PERCENT` | EU CRA Advisor | No | `100` | Limits selection to this percentage of discovered repositories. Accepts integers from `1` through `100`. |
 | `CENTRAL_AGENTIC_OPS_EU_CRA_COMPLIANCE_SCOPE_CLASSIFIER_ENABLED` | EU CRA Advisor worker | No | `true` | Scope classifier kill switch. |
-| `CENTRAL_AGENTIC_OPS_EU_CRA_COMPLIANCE_SCOPE_CLASSIFIER_MAX_MODE` | EU CRA Advisor worker | No | `staged` | Scope classifier mode ceiling. |
+| `CENTRAL_AGENTIC_OPS_EU_CRA_COMPLIANCE_SCOPE_CLASSIFIER_MAX_MODE` | EU CRA Advisor worker | No | `review` | Scope classifier mode ceiling. |
 | `CENTRAL_AGENTIC_OPS_EU_CRA_COMPLIANCE_SECURITY_REQUIREMENTS_AUDITOR_ENABLED` | EU CRA Advisor worker | No | `true` | Security requirements auditor kill switch. |
-| `CENTRAL_AGENTIC_OPS_EU_CRA_COMPLIANCE_SECURITY_REQUIREMENTS_AUDITOR_MAX_MODE` | EU CRA Advisor worker | No | `staged` | Security requirements auditor mode ceiling. |
+| `CENTRAL_AGENTIC_OPS_EU_CRA_COMPLIANCE_SECURITY_REQUIREMENTS_AUDITOR_MAX_MODE` | EU CRA Advisor worker | No | `review` | Security requirements auditor mode ceiling. |
 | `CENTRAL_AGENTIC_OPS_EU_CRA_COMPLIANCE_SUPPLY_CHAIN_SBOM_AUDITOR_ENABLED` | EU CRA Advisor worker | No | `true` | Supply-chain/SBOM auditor kill switch. |
-| `CENTRAL_AGENTIC_OPS_EU_CRA_COMPLIANCE_SUPPLY_CHAIN_SBOM_AUDITOR_MAX_MODE` | EU CRA Advisor worker | No | `staged` | Supply-chain/SBOM auditor mode ceiling. |
+| `CENTRAL_AGENTIC_OPS_EU_CRA_COMPLIANCE_SUPPLY_CHAIN_SBOM_AUDITOR_MAX_MODE` | EU CRA Advisor worker | No | `review` | Supply-chain/SBOM auditor mode ceiling. |
 | `CENTRAL_AGENTIC_OPS_EU_CRA_COMPLIANCE_VULNERABILITY_HANDLING_AUDITOR_ENABLED` | EU CRA Advisor worker | No | `true` | Vulnerability-handling auditor kill switch. |
-| `CENTRAL_AGENTIC_OPS_EU_CRA_COMPLIANCE_VULNERABILITY_HANDLING_AUDITOR_MAX_MODE` | EU CRA Advisor worker | No | `staged` | Vulnerability-handling auditor mode ceiling. |
+| `CENTRAL_AGENTIC_OPS_EU_CRA_COMPLIANCE_VULNERABILITY_HANDLING_AUDITOR_MAX_MODE` | EU CRA Advisor worker | No | `review` | Vulnerability-handling auditor mode ceiling. |
 | `CENTRAL_AGENTIC_OPS_EU_CRA_COMPLIANCE_ARTICLE_14_REPORTING_READINESS_ENABLED` | EU CRA Advisor worker | No | `true` | Article 14 reporting-readiness kill switch. |
-| `CENTRAL_AGENTIC_OPS_EU_CRA_COMPLIANCE_ARTICLE_14_REPORTING_READINESS_MAX_MODE` | EU CRA Advisor worker | No | `staged` | Article 14 reporting-readiness mode ceiling. |
+| `CENTRAL_AGENTIC_OPS_EU_CRA_COMPLIANCE_ARTICLE_14_REPORTING_READINESS_MAX_MODE` | EU CRA Advisor worker | No | `review` | Article 14 reporting-readiness mode ceiling. |
 | `CENTRAL_AGENTIC_OPS_EU_CRA_COMPLIANCE_CONFORMITY_RELEASE_EVIDENCE_ENABLED` | EU CRA Advisor worker | No | `true` | Conformity/release-evidence kill switch. |
-| `CENTRAL_AGENTIC_OPS_EU_CRA_COMPLIANCE_CONFORMITY_RELEASE_EVIDENCE_MAX_MODE` | EU CRA Advisor worker | No | `staged` | Conformity/release-evidence mode ceiling. |
-| `CENTRAL_AGENTIC_OPS_OPTIMIZATION_MODE` | Optimization | Yes when installed | `staged` | Sets the operation mode to `staged`, `review`, or `live`. |
+| `CENTRAL_AGENTIC_OPS_EU_CRA_COMPLIANCE_CONFORMITY_RELEASE_EVIDENCE_MAX_MODE` | EU CRA Advisor worker | No | `review` | Conformity/release-evidence mode ceiling. |
+| `CENTRAL_AGENTIC_OPS_OPTIMIZATION_ENABLED` | Optimization | No | `true` | Package kill switch. Set to `false` to stop orchestrator and worker dispatches. |
+| `CENTRAL_AGENTIC_OPS_OPTIMIZATION_MODE` | Optimization | No | `review` | Sets the output mode to `review` or `live`. |
 | `CENTRAL_AGENTIC_OPS_OPTIMIZATION_MAX_REPOS` | Optimization | No | `1` | Scheduled repository-selection cap. Accepts `1` through `1000`; dispatch limits may reduce it further. |
 | `CENTRAL_AGENTIC_OPS_OPTIMIZATION_ROLLOUT_PERCENT` | Optimization | No | `100` | Limits selection to this percentage of discovered repositories. Accepts integers from `1` through `100`. |
 | `CENTRAL_AGENTIC_OPS_OPTIMIZATION_AUDITOR_ENABLED` | Optimization worker | No | `true` | Worker kill switch for the auditor. |
-| `CENTRAL_AGENTIC_OPS_OPTIMIZATION_AUDITOR_MAX_MODE` | Optimization worker | No | `staged` | Maximum auditor mode. |
+| `CENTRAL_AGENTIC_OPS_OPTIMIZATION_AUDITOR_MAX_MODE` | Optimization worker | No | `review` | Maximum auditor mode. |
 | `CENTRAL_AGENTIC_OPS_OPTIMIZATION_OPTIMIZER_ENABLED` | Optimization worker | No | `true` | Worker kill switch for the optimizer. |
-| `CENTRAL_AGENTIC_OPS_OPTIMIZATION_OPTIMIZER_MAX_MODE` | Optimization worker | No | `staged` | Maximum optimizer mode. |
+| `CENTRAL_AGENTIC_OPS_OPTIMIZATION_OPTIMIZER_MAX_MODE` | Optimization worker | No | `review` | Maximum optimizer mode. |
 
-An empty or unrecognized operation mode disables scheduled selection and worker workflow dispatch. It does not block a `workflow_dispatch` run. Scheduled review mode routes safe outputs to the current control-plane repository. For an all-stop procedure, see [Emergency Stop](operations.md#emergency-stop).
+Only `review` and `live` are valid output modes. Set the package's `CENTRAL_AGENTIC_OPS_<PACKAGE>_ENABLED` variable to `false` to disable both scheduled and manual dispatches. Scheduled review mode routes safe outputs to the current control-plane repository. For an all-stop procedure, see [Emergency Stop](operations.md#emergency-stop).
 
 ### Pages Report Destinations
 
@@ -113,7 +125,7 @@ Ops Publish prefers the existing GitHub App configuration. PAT fallback uses sep
 | Name | Scope | Required | Purpose |
 | --- | --- | --- | --- |
 | `GH_AW_GITHUB_APP_PRIVATE_KEY` | Shared | With App authentication | Private key paired with `GH_AW_GITHUB_APP_ID`. |
-| `GH_AW_GITHUB_TOKEN` | Shared | For cross-repository access without a complete App configuration | Fine-grained PAT fallback for control-plane GitHub access. Not required for the public read-only profile. |
+| `GH_AW_GITHUB_TOKEN` | Shared | For cross-repository access without a complete App configuration | Fine-grained PAT fallback for control-plane GitHub access. Not required for public targets reviewed in the control repository. |
 | `GH_AW_CI_TOKEN` | Dependabot | Optional | Token used by the Dependabot safe output path when an additional empty commit is required. |
 
 Keep secrets in the control repository. Do not place credentials in variables, workflow inputs, dispatch envelopes, or target repositories. See [Authentication](authentication.md) for permissions, precedence, rotation, and revocation.
@@ -132,9 +144,9 @@ Both operation orchestrators expose the same inputs under **Run workflow**:
 | `cell_index` | Number | `0` | Selects one zero-based inventory cell. |
 | `batch_size` | Number | `100000` | Bounds the repositories supplied to the orchestrator from that cell. |
 | `batch_index` | Number | `0` | Selects one zero-based batch from that cell. |
-| `safe_output_mode` | Choice | `staged` | Selects staged mode, review routing, or live safe output processing for this `workflow_dispatch` run. |
+| `safe_output_mode` | Choice | `review` | Selects review routing or live safe output processing for this `workflow_dispatch` run. |
 
-`workflow_dispatch` inputs affect only the dispatched run. They do not update repository variables or another operation's policy. Precompute emits a content-addressed `inventory_version` and deterministic `batch_id`; the same inventory and scheduling inputs produce the same batch. These controls do not auto-advance batches, retry work, or provide durable completion tracking. The percentage cap is rounded up so a non-empty candidate set can select at least one repository. `max_repos`, the percentage cap, and the target count permitted by the orchestrator workflow's remaining dispatch budget are cumulative; the smallest cap wins. Invalid or out-of-range caps fail precomputation. During validation, specify one `target_repo`, keep `max_repos` at `1`, and begin in staged mode.
+`workflow_dispatch` inputs affect only the dispatched run. They do not update repository variables or another operation's policy. Precompute emits a content-addressed `inventory_version` and deterministic `batch_id`; the same inventory and scheduling inputs produce the same batch. These controls do not auto-advance batches, retry work, or provide durable completion tracking. The percentage cap is rounded up so a non-empty candidate set can select at least one repository. `max_repos`, the percentage cap, and the target count permitted by the orchestrator workflow's remaining dispatch budget are cumulative; the smallest cap wins. Invalid or out-of-range caps fail precomputation. During validation, specify one `target_repo`, keep `max_repos` at `1`, and begin in review mode.
 
 Example cap calculation:
 
@@ -172,7 +184,8 @@ Control values resolve in this order:
 | Decision | Resolution |
 | --- | --- |
 | Authentication | GitHub App, then `GH_AW_GITHUB_TOKEN`, then the run's `GITHUB_TOKEN` where that token can authorize the operation. |
-| Mode | Schedule-triggered runs use the operation mode variable. `workflow_dispatch` runs use the `safe_output_mode` workflow input and do not change or depend on the scheduled mode. Missing values default to `staged`; legacy `preview` values normalize to `staged`. |
+| Package enablement | `CENTRAL_AGENTIC_OPS_<PACKAGE>_ENABLED`, then `true`. A false value stops scheduled and manual package dispatches before repository access. |
+| Mode | Schedule-triggered runs use the operation mode variable. `workflow_dispatch` runs use the `safe_output_mode` workflow input and do not change the scheduled mode. Missing values default to `review`; only `review` and `live` are valid. |
 | Review destination | `safe_output_repo` workflow input for a manual run, otherwise `github.repository`. |
 | Allowed repository owners | `CENTRAL_AGENTIC_OPS_ALLOWED_OWNERS`, otherwise `github.repository_owner`. Applies to orchestrated and directly dispatched workers. |
 | Absolute repository cap | `max_repos` workflow input, then the operation max-repositories variable, then `1`. |
@@ -204,11 +217,10 @@ The following names appear in workflow execution but are derived by shared contr
 | `TARGET_REPO` | The `target_repo` workflow input or the worker workflow dispatch envelope. |
 | `REVIEW_OUTPUT_REPO` | The `safe_output_repo` workflow input or current `github.repository`. |
 | `SAFE_OUTPUT_REPO` | The effective destination computed for the selected mode. |
-| `preview_only` | Whether the effective mode requires staged mode for safe outputs. |
 | `GH_TOKEN` | The credential selected for explicit GitHub CLI steps. |
 | `GITHUB_TOKEN` | A token supplied by GitHub Actions for the current run. |
 
-Other `GH_AW_*` values, including safe-output files and staging flags, are managed by the gh-aw runtime and are not control-plane configuration.
+Other `GH_AW_*` values, including safe-output files, are managed by the gh-aw runtime and are not control-plane configuration.
 
 ## Sources of Truth
 

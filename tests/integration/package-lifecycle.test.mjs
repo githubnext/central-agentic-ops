@@ -71,7 +71,7 @@ const repositoryOnlyFiles = [
   ".github/aw/e2e/run-stress.sh",
   ".github/workflows/enterprise-canary.yml",
   ".github/workflows/enterprise-stress.yml",
-  ".github/workflows/staged-smoke.yml",
+  ".github/workflows/review-smoke.yml",
 ];
 
 function run(command, args, cwd) {

@@ -10,10 +10,10 @@ on:
   workflow_dispatch:
     inputs:
       safe_output_mode:
-        default: staged
+        default: review
         type: choice
         options:
-          - staged
+          - review
           - live
 
 checkout:
@@ -44,7 +44,7 @@ network:
     - single-market-economy.ec.europa.eu
     - enisa.europa.eu
 
-run-name: "CRA package implementation-status maintenance · ${{ inputs.safe_output_mode || 'live' }}"
+run-name: "CRA package implementation-status maintenance · ${{ inputs.safe_output_mode || 'review' }}"
 
 concurrency:
   group: "${{ github.workflow }}"
@@ -64,7 +64,6 @@ graders:
     run: .github/graders/eu-cra-compliance-package-maintainer-operational-value.sh
 
 safe-outputs:
-  staged: ${{ github.event_name == 'workflow_dispatch' && inputs.safe_output_mode != 'live' }}
   create-pull-request:
     title-prefix: "[eu-cra:implementation-status] "
     draft: true

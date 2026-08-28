@@ -82,13 +82,13 @@ async function mapWithConcurrency(values, concurrency, mapper) {
           const aic = Number(run.aic);
           if (!Number.isFinite(runId) || !Number.isFinite(aic)) continue;
           const metadata = workflowByRun.get(`${repository}:${runId}`);
-          const mode = metadata?.run?.displayTitle?.match(/(?:^|\s[·|:-]\s)(preview|staged|review|live)$/i)?.[1]?.toLowerCase() || null;
+          const mode = metadata?.run?.displayTitle?.match(/(?:^|\s[·|:-]\s)(review|live)$/i)?.[1]?.toLowerCase() || null;
           runs.set(`${repository}:${runId}`, {
             repository,
             runId,
             workflowName: run.workflow_name || run.workflow || metadata?.workflow?.name || null,
             workflowPath: metadata?.workflow?.path || null,
-            mode: mode === "preview" ? "staged" : mode,
+            mode,
             conclusion: metadata?.run?.conclusion || null,
             createdAt: run.created_at || run.started_at || metadata?.run?.createdAt || null,
             aic,

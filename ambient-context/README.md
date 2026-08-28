@@ -53,29 +53,30 @@ To install only this package into an existing private control repository:
 gh aw add githubnext/central-agentic-ops/ambient-context@<catalog-release>
 ```
 
-The package is left in `staged` mode. Configure `CENTRAL_AGENTIC_OPS_AMBIENT_CONTEXT_MODE` before it can act.
+The package is immediately runnable in `review` mode. Proposals are written to the control repository without changing the target.
 
 ## Configure
 
 | Setting | Type | Required | Purpose |
 | --- | --- | --- | --- |
-| `CENTRAL_AGENTIC_OPS_AMBIENT_CONTEXT_MODE` | Repository variable | Yes | Package mode: `staged`, `review`, or `live`. Defaults to `staged`. |
+| `CENTRAL_AGENTIC_OPS_AMBIENT_CONTEXT_ENABLED` | Repository variable | No | Package kill switch; defaults to `true`. Set to `false` to stop orchestrator and worker dispatches. |
+| `CENTRAL_AGENTIC_OPS_AMBIENT_CONTEXT_MODE` | Repository variable | No | Package output mode: `review` or `live`. Defaults to `review`. |
 | `CENTRAL_AGENTIC_OPS_AMBIENT_CONTEXT_MAX_REPOS` | Repository variable | No | Scheduled selection cap; defaults to `1`. |
 | `CENTRAL_AGENTIC_OPS_AMBIENT_CONTEXT_ROLLOUT_PERCENT` | Repository variable | No | Percentage of discovered repositories eligible for selection. Accepts `1` through `100` and defaults to `100`. |
 | `CENTRAL_AGENTIC_OPS_AMBIENT_CONTEXT_AGENTS_MD_ENABLED` | Repository variable | No | `AGENTS.md` curator kill switch; defaults to `true`. |
-| `CENTRAL_AGENTIC_OPS_AMBIENT_CONTEXT_AGENTS_MD_MAX_MODE` | Repository variable | No | `AGENTS.md` curator mode ceiling; defaults to `staged`. |
+| `CENTRAL_AGENTIC_OPS_AMBIENT_CONTEXT_AGENTS_MD_MAX_MODE` | Repository variable | No | `AGENTS.md` curator mode ceiling; defaults to `review`. |
 | `CENTRAL_AGENTIC_OPS_AMBIENT_CONTEXT_SKILLS_ENABLED` | Repository variable | No | Skills curator kill switch; defaults to `true`. |
-| `CENTRAL_AGENTIC_OPS_AMBIENT_CONTEXT_SKILLS_MAX_MODE` | Repository variable | No | Skills curator mode ceiling; defaults to `staged`. |
+| `CENTRAL_AGENTIC_OPS_AMBIENT_CONTEXT_SKILLS_MAX_MODE` | Repository variable | No | Skills curator mode ceiling; defaults to `review`. |
 
 Shared control-plane settings — `GH_AW_GITHUB_APP_ID`, `GH_AW_GITHUB_APP_PRIVATE_KEY`, `GH_AW_GITHUB_TOKEN`, `CENTRAL_AGENTIC_OPS_ALLOWED_OWNERS`, `CENTRAL_AGENTIC_OPS_MAX_SCAN_REPOS`, cell and batch variables, and `CENTRAL_AGENTIC_OPS_MAX_AI_CREDITS_PER_RUN` — behave exactly as they do for the core packages. See the [configuration reference](../docs/configuration.md) and the [authentication guide](../docs/authentication.md).
 
-## Validate in staged mode
+## Validate in review mode
 
 1. Open the generated **Ambient Context** workflow in the control repository's **Actions** tab.
 2. Select **Run workflow**.
 3. Set `target_repo` to one fully qualified `owner/repository` name that has a root `AGENTS.md`.
-4. Keep `max_repos` at `1` and `safe_output_mode` at `staged`.
-5. Inspect repository selection, the dispatched workers, the staged issue bodies, and the agentic prompts they contain before promoting the package.
+4. Keep `max_repos` at `1` and `safe_output_mode` at `review`.
+5. Inspect repository selection, the dispatched workers, and the review issues and agentic prompts in the control repository before promoting the package.
 
 Repeat with a repository that has no `AGENTS.md` and confirm that it is reported as skipped and that no worker produces an issue.
 
@@ -83,11 +84,10 @@ Repeat with a repository that has no `AGENTS.md` and confirm that it is reported
 
 | Mode | Behavior |
 | --- | --- |
-| `staged` | Safe outputs are generated without GitHub API writes. |
 | `review` | Issues are routed to the control-plane repository; manual runs may override it with `safe_output_repo`. |
 | `live` | Issues are created in the selected target repository. |
 
-Promote in order: one-repository staged, private review, limited live, then scheduled live.
+Promote in order: one-repository review, limited live, then scheduled live.
 
 ## Cadence
 
@@ -129,7 +129,7 @@ The skills curator has no evaluator. It would have to claim the same merged pull
 
 ## Pause or Stop
 
-Set `CENTRAL_AGENTIC_OPS_AMBIENT_CONTEXT_MODE` to `staged` to put future scheduled runs in staged mode. Clearing the mode stops scheduled selection and worker dispatch. For a control-plane-wide stop, follow the [emergency-stop procedure](../docs/operations.md#emergency-stop).
+Set `CENTRAL_AGENTIC_OPS_AMBIENT_CONTEXT_ENABLED` to `false` and cancel active runs. Re-enable in `review` mode after resolving the incident. For a control-plane-wide stop, follow the [emergency-stop procedure](../docs/operations.md#emergency-stop).
 
 ## More Information
 

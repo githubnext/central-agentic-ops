@@ -10,15 +10,14 @@ Package maintainers can optionally turn these settings into a guided `gh aw add-
 | Your use case | Credential |
 | --- | --- |
 | Private or internal targets, alternate review repositories, or live writes | GitHub App preferred; fine-grained PAT supported |
-| Public targets in `staged` mode | Built-in `GITHUB_TOKEN` |
-| Review outputs kept in the control repository | Built-in token only when its repository permissions authorize the output |
+| Public targets with review outputs kept in the control repository | Built-in token only when its repository permissions authorize the output |
 
 ```text
 Does the run need a private target, cross-repository data, or live writes?
 	|
 	+-- yes --> GitHub App (preferred) or fine-grained PAT
 	|
-	+-- no ---> Public target in staged mode --> built-in GITHUB_TOKEN
+	+-- no ---> Public target reviewed in the control repository --> built-in GITHUB_TOKEN
 ```
 
 :::tip[Default to a GitHub App]
@@ -59,7 +58,7 @@ When manual workflow steps need `GH_TOKEN`, they select the imported App token f
 
 ## Public Read-Only Profile
 
-An App or PAT is not required for a bounded `staged` scan when every target repository is public. GitHub Actions automatically provides `GITHUB_TOKEN`; the workflows use it for control-repository workflow discovery and can check out other public repositories. This is built-in-token operation, not anonymous or credential-free operation.
+An App or PAT is not required for a bounded `review` run when every target repository is public and outputs remain in the private control repository. GitHub Actions automatically provides `GITHUB_TOKEN`; the workflows use it for control-repository workflow discovery, public checkout, and review outputs authorized in the control repository. This is built-in-token operation, not anonymous or credential-free operation.
 
 :::caution[Public does not mean fully readable]
 The built-in token may check out public code, but it does not automatically gain access to another repository's Actions logs, security data, issues, pull requests, or write APIs.
@@ -67,10 +66,9 @@ The built-in token may check out public code, but it does not automatically gain
 
 Keep this profile within these boundaries:
 
-- use `staged` mode for public target analysis;
+- use `review` mode and keep safe outputs in the current control repository;
 - keep target owners allowlisted and all repository and dispatch caps in force;
 - treat unavailable cross-repository API data, including Actions logs or security data, as incomplete rather than weakening the requested analysis;
-- use `review` only when safe outputs remain in the current control repository and its `GITHUB_TOKEN` permissions authorize the output;
 - configure an App or PAT for private or internal targets, an alternate review repository, or any `live` cross-repository write.
 
 The workflow token is scoped to the repository containing the workflow. Public checkout does not grant target-repository write access, and a public repository's visibility does not expand the token's Actions, security, issue, or pull-request permissions. If a worker cannot read required target evidence with the available token, it must report incomplete and produce no speculative result.
@@ -113,7 +111,7 @@ The GitHub CLI prompts for the token without echoing it. Do not include the toke
 For a GitHub App:
 
 1. Add the replacement private key to the existing repository secret.
-2. Validate staged runs for each installed operation.
+2. Validate review runs for each installed operation.
 3. Revoke the old private key.
 4. Recheck App installation repository access and permissions.
 
@@ -121,10 +119,10 @@ For a PAT:
 
 1. Create a replacement fine-grained PAT with the same or narrower repository access.
 2. Replace `GH_AW_GITHUB_TOKEN`.
-3. Validate staged runs.
+3. Validate review runs.
 4. Revoke the previous PAT.
 
-For suspected credential exposure, disable scheduled Agentic Workflows or set operations to an unrecognized/empty mode, revoke the credential, inspect GitHub Actions logs and safe outputs, rotate credentials, and resume from staged mode.
+For suspected credential exposure, set affected package kill switches to `false`, cancel active runs, revoke the credential, inspect GitHub Actions logs and safe outputs, rotate credentials, and resume in review mode.
 
 :::danger[Suspected exposure]
 Stopping an operation does not revoke its credential. Disable affected runs and revoke the App installation or PAT before investigating further.
@@ -139,4 +137,4 @@ Before promotion, verify:
 - expected precedence when both are configured;
 - target repository coverage;
 - read operations for repository and workflow discovery;
-- a staged safe output without credential material.
+- a review output in the intended private repository without credential material.

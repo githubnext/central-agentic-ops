@@ -252,7 +252,7 @@ A grader applies a named grading criterion and produces a deterministic grader o
 - **DLS-SEM-018:** Each logical source **MUST** preserve the grain declared in Section 5.1; duplicated observations **MUST** retain distinct observation identifiers in provenance.
 - **DLS-SEM-019:** A `usage` row **MUST** represent one model invocation and **MUST NOT** repeat invocation-level AIC across token-class rows.
 - **DLS-SEM-020:** Grader values, eval results, AIC, each raw-token measure, outcome states, and operational value **MUST** remain separately named throughout filtering, aggregation, and presentation.
-- **DLS-SEM-021:** `rollout-mode` **MUST** use `staged`, `review`, `live`, or `unknown`.
+- **DLS-SEM-021:** `rollout-mode` **MUST** use `review`, `live`, or `unknown`.
 
 ---
 

@@ -37,19 +37,21 @@ on:
         default: 0
         type: number
       safe_output_mode:
-        default: "staged"
+        default: "review"
         type: choice
         options:
-          - staged
           - review
           - live
 
 env:
-  CENTRAL_AGENTIC_OPS_MODE: ${{ vars.CENTRAL_AGENTIC_OPS_OPTIMIZATION_MODE || 'staged' }}
-  GH_AW_SAFE_OUTPUT_MODE: ${{ (inputs.safe_output_mode || vars.CENTRAL_AGENTIC_OPS_OPTIMIZATION_MODE || 'staged') == 'preview' && 'staged' || (inputs.safe_output_mode || vars.CENTRAL_AGENTIC_OPS_OPTIMIZATION_MODE || 'staged') }}
+  CENTRAL_AGENTIC_OPS_PACKAGE_ENABLED: ${{ vars.CENTRAL_AGENTIC_OPS_OPTIMIZATION_ENABLED || 'true' }}
+  CENTRAL_AGENTIC_OPS_MODE: ${{ vars.CENTRAL_AGENTIC_OPS_OPTIMIZATION_MODE || 'review' }}
+  GH_AW_SAFE_OUTPUT_MODE: ${{ inputs.safe_output_mode || vars.CENTRAL_AGENTIC_OPS_OPTIMIZATION_MODE || 'review' }}
   REVIEW_OUTPUT_REPO: ${{ inputs.safe_output_repo || github.repository }}
-  SAFE_OUTPUT_REPO: ${{ (inputs.safe_output_mode || vars.CENTRAL_AGENTIC_OPS_OPTIMIZATION_MODE || 'staged') == 'review' && (inputs.safe_output_repo || github.repository) || '' }}
+  SAFE_OUTPUT_REPO: ${{ (inputs.safe_output_mode || vars.CENTRAL_AGENTIC_OPS_OPTIMIZATION_MODE || 'review') == 'review' && (inputs.safe_output_repo || github.repository) || '' }}
   TARGET_REPO: ${{ inputs.target_repo || '' }}
+
+if: (vars.CENTRAL_AGENTIC_OPS_OPTIMIZATION_ENABLED || 'true') == 'true'
 
 imports:
   - uses: shared/control.md

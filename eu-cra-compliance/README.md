@@ -20,7 +20,7 @@ The EU CRA Advisor package helps a private Central Agentic Ops control repositor
 | [`eu-cra-compliance-conformity-release-evidence`](../.github/workflows/eu-cra-compliance-conformity-release-evidence.md) | Audits technical documentation, conformity, declaration, and release-gate evidence. |
 | [`eu-cra-compliance-package-maintainer`](../.github/workflows/eu-cra-compliance-package-maintainer.md) | Daily audits fleet coverage against the current Act and maintains the implementation ledger. |
 
-The orchestrator dispatches at most 48 repository-level workers per run. Each worker creates at most one evidence issue, uses the shared control plane, and defaults to staged output.
+The orchestrator dispatches at most 48 repository-level workers per run. Each worker creates at most one evidence issue, uses the shared control plane, and defaults to review output.
 
 The package maintainer runs independently of repository dispatch. It updates the [implementation-status ledger](implementation-status.md) only through a draft pull request and may open at most one deduplicated issue for the highest-priority concrete fleet gap. Installed packages keep the ledger at `.github/aw/eu-cra-compliance/implementation-status.md`.
 
@@ -32,11 +32,12 @@ gh aw add-wizard githubnext/central-agentic-ops/eu-cra-compliance@<catalog-relea
 
 Configure the shared GitHub App or PAT described in the [authentication guide](../docs/authentication.md). Start with one representative repository and:
 
-- `CENTRAL_AGENTIC_OPS_EU_CRA_COMPLIANCE_MODE=staged`
+- `CENTRAL_AGENTIC_OPS_EU_CRA_COMPLIANCE_ENABLED=true`
+- `CENTRAL_AGENTIC_OPS_EU_CRA_COMPLIANCE_MODE=review`
 - `CENTRAL_AGENTIC_OPS_EU_CRA_COMPLIANCE_MAX_REPOS=1`
 - `CENTRAL_AGENTIC_OPS_EU_CRA_COMPLIANCE_ROLLOUT_PERCENT=100`
 
-Each worker has an independent `<WORKER>_ENABLED` kill switch and `<WORKER>_MAX_MODE` ceiling listed in the [configuration reference](../docs/configuration.md). Promote through `staged`, `review`, and then limited `live` only after reviewing evidence handling and credential access.
+Each worker has an independent `<WORKER>_ENABLED` kill switch and `<WORKER>_MAX_MODE` ceiling listed in the [configuration reference](../docs/configuration.md). Promote from `review` to limited `live` only after reviewing evidence handling and credential access.
 
 ## Safety Boundaries
 

@@ -65,8 +65,8 @@ const { title = data.title, tagline, actions = [] } = data.hero || {};
           </div>
           <div class="rollout">
             <p>Rollout mode</p>
-            <div class="mode-track" role="group" aria-label="Staged, review, then live rollout">
-              <span>Staged</span><span>Review</span><span>Live</span>
+            <div class="mode-track" role="group" aria-label="Review, then live rollout">
+              <span>Review</span><span>Live</span>
             </div>
             <div class="human-gate"><span aria-hidden="true">✓</span> Human approval before live</div>
           </div>
@@ -334,7 +334,7 @@ const { title = data.title, tagline, actions = [] } = data.hero || {};
 
     .mode-track {
       display: grid;
-      grid-template-columns: repeat(3, 1fr);
+      grid-template-columns: repeat(2, 1fr);
       overflow: hidden;
       border: 1px solid var(--sl-color-gray-5);
       border-radius: 5px;
@@ -352,7 +352,7 @@ const { title = data.title, tagline, actions = [] } = data.hero || {};
       border-inline-start: 1px solid var(--sl-color-gray-5);
     }
 
-    .mode-track span:nth-child(2) {
+    .mode-track span:first-child {
       color: var(--sl-color-white);
     }
 

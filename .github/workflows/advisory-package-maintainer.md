@@ -10,10 +10,10 @@ on:
   workflow_dispatch:
     inputs:
       safe_output_mode:
-        default: staged
+        default: review
         type: choice
         options:
-          - staged
+          - review
           - live
 
 checkout:
@@ -40,7 +40,7 @@ network:
     - github
     - www.gov.uk
 
-run-name: "Advisory package alignment maintenance · ${{ inputs.safe_output_mode || 'live' }}"
+run-name: "Advisory package alignment maintenance · ${{ inputs.safe_output_mode || 'review' }}"
 
 concurrency:
   group: "${{ github.workflow }}"
@@ -56,7 +56,6 @@ tools:
   web-fetch:
 
 safe-outputs:
-  staged: ${{ github.event_name == 'workflow_dispatch' && inputs.safe_output_mode != 'live' }}
   create-pull-request:
     title-prefix: "[advisory:implementation-status] "
     draft: true

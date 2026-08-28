@@ -3,6 +3,7 @@ set -euo pipefail
 
 : "${BUNDLE:?BUNDLE is required}"
 : "${TARGET_REPO:?TARGET_REPO is required}"
+: "${SAFE_OUTPUT_REPO:?SAFE_OUTPUT_REPO is required}"
 : "${CONTROL_REF:?CONTROL_REF is required}"
 : "${RUNS:?RUNS is required}"
 : "${CONFIRMATION:?CONFIRMATION is required}"
@@ -20,8 +21,14 @@ case "$RUNS" in
 esac
 [[ "$TARGET_REPO" =~ ^[A-Za-z0-9][A-Za-z0-9-]*/[A-Za-z0-9._-]+$ ]] \
   || { printf 'target_repo must use OWNER/REPO form\n' >&2; exit 1; }
-[[ "$CONFIRMATION" == "STRESS $TARGET_REPO $RUNS" ]] \
-  || { printf 'confirmation must be STRESS %s %s\n' "$TARGET_REPO" "$RUNS" >&2; exit 1; }
+[[ "$SAFE_OUTPUT_REPO" =~ ^[A-Za-z0-9][A-Za-z0-9-]*/[A-Za-z0-9._-]+$ ]] \
+  || { printf 'safe_output_repo must use OWNER/REPO form\n' >&2; exit 1; }
+[[ "$SAFE_OUTPUT_REPO" != "$TARGET_REPO" ]] \
+  || { printf 'review and target repositories must differ\n' >&2; exit 1; }
+[[ "$CONFIRMATION" == "STRESS $TARGET_REPO REVIEW $SAFE_OUTPUT_REPO $RUNS" ]] \
+  || { printf 'confirmation must be STRESS %s REVIEW %s %s\n' "$TARGET_REPO" "$SAFE_OUTPUT_REPO" "$RUNS" >&2; exit 1; }
+[[ $(gh api "repos/$SAFE_OUTPUT_REPO" --jq '.private') == true ]] \
+  || { printf 'review repository must be private\n' >&2; exit 1; }
 
 snapshot_repository() {
   local repository=$1
@@ -37,9 +44,10 @@ for _ in $(seq 1 "$RUNS"); do
   gh workflow run "$workflow_file" \
     --ref "$CONTROL_REF" \
     --raw-field "target_repo=$TARGET_REPO" \
+    --raw-field "safe_output_repo=$SAFE_OUTPUT_REPO" \
     --raw-field "max_repos=1" \
     --raw-field "rollout_percent=100" \
-    --raw-field "safe_output_mode=staged"
+    --raw-field "safe_output_mode=review"
 done
 
 run_ids_file=$(mktemp)
@@ -75,12 +83,13 @@ done < "$run_ids_file"
 [[ "$cancelled" -ge $((RUNS - 1)) ]] \
   || { printf 'Expected at least %s superseded runs, observed %s\n' "$((RUNS - 1))" "$cancelled" >&2; exit 1; }
 [[ $(snapshot_repository "$TARGET_REPO") == "$target_before" ]] \
-  || { printf 'staged stress run mutated target repository state\n' >&2; exit 1; }
+  || { printf 'review stress run mutated target repository state\n' >&2; exit 1; }
 
 {
   printf '## Enterprise stress canary\n'
   printf -- '- Package: `%s`\n' "$BUNDLE"
   printf -- '- Target: `%s`\n' "$TARGET_REPO"
+  printf -- '- Review destination: `%s`\n' "$SAFE_OUTPUT_REPO"
   printf -- '- Requested runs: `%s`\n' "$RUNS"
   printf -- '- Superseded runs: `%s`\n' "$cancelled"
 } >> "$GITHUB_STEP_SUMMARY"
