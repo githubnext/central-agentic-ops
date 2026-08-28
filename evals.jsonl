@@ -1,0 +1,3 @@
+{"id":"dashboard-personas-simulated","question":"Did the agent assess representative dashboard requirements from multiple user profiles?","answer":"YES","model":"copilot/gpt-5.4","timestamp":"2026-08-28T03:31:44.822Z","runid":"33138981845"}
+{"id":"yaml-renderability-assessed","question":"Did the agent determine whether the Dashboard Language YAML can concretely specify a renderable dashboard?","answer":"YES","model":"copilot/gpt-5.4","timestamp":"2026-08-28T03:31:44.822Z","runid":"33138981845"}
+{"id":"actionable-recommendation-published","question":"Did the agent create a W3C-style recommendation issue for actionable specification gaps, or report a no-op?","answer":"YES","model":"copilot/gpt-5.4","timestamp":"2026-08-28T03:31:44.822Z","runid":"33138981845"}
