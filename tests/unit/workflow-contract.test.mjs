@@ -1033,6 +1033,24 @@ test("multi-device docs tester covers PR browser and appearance compatibility", 
   assert.match(source, /multi-device-docs\/screenshots/);
 });
 
+test("accessibility expert audits the served docs site with axe-core evidence", () => {
+  const source = workflow("accessibility-expert.md");
+
+  assert.match(source, /^name: Accessibility Expert$/m);
+  assert.match(source, /schedule: weekly/);
+  assert.match(source, /workflow_dispatch:/);
+  assert.match(source, /engine:\n\s+id: pi\n\s+model: copilot\/gpt-5\.4/);
+  assert.match(source, /playwright:\n\s+mode: cli/);
+  assert.match(source, /npm pack axe-core@4\.13\.0/);
+  assert.match(source, /WCAG 2\.2 Level AA/);
+  assert.match(source, /colorScheme: "light"/);
+  assert.match(source, /colorScheme: "dark"/);
+  assert.match(source, /prefers-reduced-motion/);
+  assert.match(source, /create-issue:\n\s+title-prefix: "\[accessibility\] "/);
+  assert.match(source, /close-older-key: accessibility-expert/);
+  assert.doesNotMatch(source, /^\s+(create-pull-request|add-comment|create-discussion|push-to-pull-request-branch):/m);
+});
+
 test("docs diagram generator creates one validated theme-aware SVG pair", () => {
   const source = workflow("docs-explanatory-diagrams.md");
 
@@ -1125,6 +1143,7 @@ test("clean-room compilation emits the expected GitHub Actions settings", { time
     ];
     const expectedLockNames = [
       ...packageLockNames,
+      "accessibility-expert.lock.yml",
       "advisory-package-maintainer.lock.yml",
       "daily-dashboard-language-renderer.lock.yml",
       "daily-dashboard-language-spec-review.lock.yml",
