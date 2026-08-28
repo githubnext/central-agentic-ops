@@ -823,6 +823,15 @@ test("shared control keeps manual and scheduled routing event-scoped", () => {
   assert.doesNotMatch(precompute, /ROLLOUT_PERCENT.*(?:eval|curl|gh api)/);
 });
 
+test("orchestrators dispatch workers only through safe-output tools", () => {
+  const control = workflow("shared/control.md");
+
+  assert.match(control, /call the configured `dispatch-workflow` tool from `<safe-output-tools>`/);
+  assert.match(control, /do not use `gh workflow run` or the Actions workflow-dispatch API/);
+  assert.match(control, /safeoutputs <tool_name> \./);
+  assert.match(control, /never invoke `<tool_name>`, `noop`, or `report_incomplete` as a bare shell command/);
+});
+
 test("every worker uses the standard dispatch envelope and safe mode vocabulary", () => {
   const workerNames = [
     ["advisory-uk-ai-operational-resilience.md", "ADVISORY", "ADVISORY_UK_AI_OPERATIONAL_RESILIENCE"],

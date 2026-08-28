@@ -203,6 +203,9 @@ Continue with the repository targeting and workflow dispatch steps below.
 4. If no eligible target repositories are found, dispatch zero workers and report the targeting decision.
 
 5. Dispatch each enabled worker workflow for each selected target repository with this standard input envelope:
+  - call the configured `dispatch-workflow` tool from `<safe-output-tools>`; its name is the worker workflow slug with hyphens replaced by underscores
+  - do not use `gh workflow run` or the Actions workflow-dispatch API; those bypass safe-output validation and do not count as safe outputs
+  - when using shell transport, pipe the final JSON envelope to `safeoutputs <tool_name> .`; never invoke `<tool_name>`, `noop`, or `report_incomplete` as a bare shell command
   - `target_repo`: selected target repository
   - `safe_output_mode`: `safe_output_mode`
   - `safe_output_repo`: `effective_safe_output_repo`
