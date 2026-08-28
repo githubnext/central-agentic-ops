@@ -871,6 +871,49 @@ dashboard:
     }
   });
 
+  it('DLS-VIEW-013 DLS-VAL-003 accepts custom views without inline runtime state metadata', () => {
+    const result = validateDashboardDocument(`language-version: "0.1.0"
+dashboard:
+  id: runtime-data-states
+  title: Runtime Data States
+  pages:
+    - id: findings-page
+      kind: custom
+      views:
+        - id: finding-count
+          data:
+            source: findings
+          mark: metric
+          encoding:
+            value:
+              field: finding
+              aggregate: count
+        - id: recent-findings
+          data:
+            source: findings
+          mark: table
+          encoding:
+            columns:
+              - field: finding-summary
+              - field: issue-link
+            href:
+              field: issue-link
+        - id: findings-by-day
+          data:
+            source: findings
+          mark: chart
+          encoding:
+            x:
+              field: observed-at
+              time-unit: day
+            y:
+              field: finding
+              aggregate: count
+`);
+
+    expect(result.ok).toBe(true);
+  });
+
   it('DLS-VAL-003 reserves DLS-E012 for missing external metadata, not invalid inline metadata', () => {
     const result = validateDashboardDocument(`language-version: "0.1.0"
 dashboard:
