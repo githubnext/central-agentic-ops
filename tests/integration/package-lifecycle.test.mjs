@@ -31,19 +31,6 @@ const advisoryExpectedFiles = [
   ".github/workflows/shared/control-precompute.md",
   ".github/workflows/shared/control.md",
 ];
-const craExpectedFiles = [
-  ".github/workflows/eu-cra-compliance-article-14-reporting-readiness.md",
-  ".github/workflows/eu-cra-compliance-conformity-release-evidence.md",
-  ".github/workflows/eu-cra-compliance-package-maintainer.md",
-  ".github/workflows/eu-cra-compliance-scope-classifier.md",
-  ".github/workflows/eu-cra-compliance-security-requirements-auditor.md",
-  ".github/workflows/eu-cra-compliance-supply-chain-sbom-auditor.md",
-  ".github/workflows/eu-cra-compliance-vulnerability-handling-auditor.md",
-  ".github/workflows/eu-cra-compliance.md",
-  ".github/workflows/shared/control-precompute.md",
-  ".github/workflows/shared/control.md",
-  ".github/aw/eu-cra-compliance/implementation-status.md",
-];
 
 const expectedFiles = [
   ".github/agents/agentic-workflows.md",
@@ -92,15 +79,20 @@ function workflowBody(content) {
 
 function installPackage(source) {
   const consumer = mkdtempSync(join(tmpdir(), "central-agentic-ops-package-"));
-  run("git", ["init", "--quiet"], consumer);
-  run("gh", [
-    "aw",
-    "add",
-    source,
-    "--force",
-    "--no-security-scanner",
-  ], consumer);
-  return consumer;
+  try {
+    run("git", ["init", "--quiet"], consumer);
+    run("gh", [
+      "aw",
+      "add",
+      source,
+      "--force",
+      "--no-security-scanner",
+    ], consumer);
+    return consumer;
+  } catch (error) {
+    rmSync(consumer, { recursive: true, force: true });
+    throw error;
+  }
 }
 
 function assertCorePackage(consumer) {
@@ -147,36 +139,11 @@ test("gh aw add installs the core package file contract", { timeout: 180_000 }, 
   }
 });
 
-test("gh aw add installs the focused EU CRA package contract", { timeout: 180_000 }, () => {
-  const consumer = installPackage(craPackageSource);
-
-  try {
-    for (const relativePath of craExpectedFiles) {
-      assert.ok(existsSync(join(consumer, relativePath)), `focused CRA package omitted ${relativePath}`);
-    }
-    assert.ok(
-      !existsSync(join(consumer, ".github", "workflows", "dependabot.md")),
-      "focused CRA package installed an unrelated orchestrator",
-    );
-
-    const packageManifests = readdirSync(join(consumer, ".github", "aw", "packages"));
-    assert.equal(packageManifests.length, 1, "expected one focused CRA package manifest");
-    const installedManifest = JSON.parse(readFileSync(
-      join(consumer, ".github", "aw", "packages", packageManifests[0]),
-      "utf8",
-    ));
-    assert.deepEqual(
-      installedManifest.files.map(({ destination }) => destination).sort(),
-      [
-        ".github/aw/eu-cra-compliance/implementation-status.md",
-        ".github/workflows/eu-cra-compliance-package-maintainer.md",
-        ".github/workflows/eu-cra-compliance.md",
-      ],
-      "focused CRA package manifest must own its entry workflows and ledger",
-    );
-  } finally {
-    rmSync(consumer, { recursive: true, force: true });
-  }
+test("gh aw add reports the focused EU CRA grader transport blocker", { timeout: 180_000 }, () => {
+  assert.throws(
+    () => installPackage(craPackageSource),
+    /eu-cra-compliance\/\.github\/graders\/eu-cra-compliance-package-maintainer-operational-value\.sh/,
+  );
 });
 
 test("gh aw add installs the focused Advisory package contract", { timeout: 180_000 }, () => {
