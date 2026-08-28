@@ -608,6 +608,8 @@ test("ownership, provenance, and workflow identity fail closed", () => {
   assert.match(control, /Do not loop, wait for replenishment, or redispatch itself/);
   assert.match(control, /If a dispatch fails or is rate-limited, do not retry it in the same run/);
   assert.match(workflow("optimization-ai-credit-optimizer.md"), /group_by\(\.workflow_path\)/);
+  assert.match(workflow("shared/target-checkout-read-org-token.md"), /path: target/);
+  assert.match(workflow("optimization-ai-credit-optimizer.lock.yml"), /Checkout \$\{\{ inputs\.target_repo \}\} into target[\s\S]*?path: target/);
   assert.match(workflow("optimization-ai-credit-auditor.md"), /Group by `workflow_path`/);
   for (const name of ["optimization-ai-credit-auditor.md", "optimization-ai-credit-optimizer.md"]) {
     assert.match(workflow(name), /branch-name: "memory\/token-audit-\$\{\{ inputs\.central_repo \}\}-\$\{\{ inputs\.target_repo \}\}"/);
