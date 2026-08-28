@@ -902,8 +902,8 @@ test("Advisory preserves UK AI guidance and human-review boundaries", () => {
   const worker = workflow("advisory-uk-ai-operational-resilience.md");
   const readme = readFileSync(join(root, "advisory", "README.md"), "utf8");
 
-  assert.match(orchestrator, /^name: "Advisory"$/m);
-  assert.match(worker, /^name: "Advisory \/ UK AI Operational Resilience"$/m);
+  assert.match(orchestrator, /^name: "UK AI Advisory"$/m);
+  assert.match(worker, /^name: "UK AI Advisory \/ Operational Resilience"$/m);
   for (const source of [orchestrator, worker, readme]) {
     assert.match(source, /advisory and non-binding/i);
     assert.match(source, /no guarantee of completeness, correctness, accuracy/i);
@@ -944,7 +944,7 @@ test("Advisory preserves UK AI guidance and human-review boundaries", () => {
   assert.match(worker, /## agent: `ai-risk-scorer`/);
   assert.doesNotMatch(worker, /^graders:/m);
 
-  assert.match(maintainer, /^name: "Advisory \/ Package Maintainer"$/m);
+  assert.match(maintainer, /^name: "UK AI Advisory \/ Package Maintainer"$/m);
   assert.match(maintainer, /schedule: weekly/);
   assert.match(maintainer, /safe_output_mode:\n\s+default: review/);
   assert.doesNotMatch(maintainer, /^\s+staged:/m);

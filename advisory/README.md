@@ -1,11 +1,11 @@
-<!-- Advisory outputs are advisory and non-binding. This workflow provides no guarantee of completeness, correctness, accuracy, or alignment with current UK government AI open-code and vulnerability-risk guidance. -->
+<!-- UK AI Advisory outputs are advisory and non-binding. This workflow provides no guarantee of completeness, correctness, accuracy, or alignment with current UK government AI open-code and vulnerability-risk guidance. -->
 
-# Advisory
+# UK AI Advisory
 
 > [!WARNING]
-> Advisory outputs are non-binding. They are not a security assessment, accreditation, or authorization to open, restrict, hide, or decommission code. They provide no guarantee of completeness, correctness, accuracy, or alignment with current UK government guidance. Human review against authoritative sources is required.
+> UK AI Advisory outputs are non-binding. They are not a security assessment, accreditation, or authorization to open, restrict, hide, or decommission code. They provide no guarantee of completeness, correctness, accuracy, or alignment with current UK government guidance. Human review against authoritative sources is required.
 
-The Advisory package applies the UK government [AI open-code and vulnerability-risk guidance for the public sector](https://www.gov.uk/guidance/ai-open-code-and-vulnerability-risk-in-the-public-sector) from a private Central Agentic Ops control repository. It uses recent changes and available security evidence to identify operational-resilience gaps; it cannot observe every organizational, deployment, incident, or confidential control.
+The UK AI Advisory package applies the UK government [AI open-code and vulnerability-risk guidance for the public sector](https://www.gov.uk/guidance/ai-open-code-and-vulnerability-risk-in-the-public-sector) from a private Central Agentic Ops control repository. It uses recent changes and available security evidence to identify operational-resilience gaps; it cannot observe every organizational, deployment, incident, or confidential control.
 
 ## Package Contents
 
@@ -34,7 +34,7 @@ Configure the shared GitHub App or PAT described in the [authentication guide](.
 - `CENTRAL_AGENTIC_OPS_ADVISORY_UK_AI_OPERATIONAL_RESILIENCE_ENABLED=true`
 - `CENTRAL_AGENTIC_OPS_ADVISORY_UK_AI_OPERATIONAL_RESILIENCE_MAX_MODE=review`
 
-Run the **Advisory** workflow manually with an explicit `target_repo`, `max_repos` set to `1`, and `safe_output_mode` set to `review`. Review repository selection, the worker's review issue, source accessibility, sensitive-data handling, and control-plane correlation before promoting to `live`.
+Run the **UK AI Advisory** workflow manually with an explicit `target_repo`, `max_repos` set to `1`, and `safe_output_mode` set to `review`. Review repository selection, the worker's review issue, source accessibility, sensitive-data handling, and control-plane correlation before promoting to `live`.
 
 ## Safety Boundaries
 
@@ -49,6 +49,6 @@ Run the **Advisory** workflow manually with an explicit `target_repo`, `max_repo
 
 ## Weekly Alignment Audit
 
-The **Advisory / Package Maintainer** runs weekly and fetches the authoritative GOV.UK guidance on every run. It reconciles the stable original requirement IDs, current guidance, and observed package workflows. It emits `noop` when coverage is materially current, proposes a one-file ledger update through a draft pull request when coverage changes, or creates one deduplicated improvement issue for the highest-priority untracked fleet gap.
+The **UK AI Advisory / Package Maintainer** runs weekly and fetches the authoritative GOV.UK guidance on every run. It reconciles the stable original requirement IDs, current guidance, and observed package workflows. It emits `noop` when coverage is materially current, proposes a one-file ledger update through a draft pull request when coverage changes, or creates one deduplicated improvement issue for the highest-priority untracked fleet gap.
 
 An inaccessible source or package file produces an incomplete run rather than a speculative alignment claim. Verification dates change only with material source or coverage changes, so the weekly audit does not create date-only pull requests.

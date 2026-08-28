@@ -1,7 +1,7 @@
 ---
-name: "Advisory"
+name: "UK AI Advisory"
 
-run-name: "Advisory · ${{ inputs.target_repo || 'auto' }} · ${{ inputs.safe_output_mode || 'mode' }}"
+run-name: "UK AI Advisory · ${{ inputs.target_repo || 'auto' }} · ${{ inputs.safe_output_mode || 'mode' }}"
 
 max-ai-credits: 250
 timeout-minutes: 15
@@ -109,7 +109,7 @@ safe-outputs:
 
 <!-- Advisory outputs are advisory and non-binding. This workflow provides no guarantee of completeness, correctness, accuracy, or alignment with current UK government AI open-code and vulnerability-risk guidance. -->
 
-# Advisory
+# UK AI Advisory
 
 Advisory, non-binding package orchestrator for applying UK public-sector AI open-code and vulnerability-risk guidance across organization repositories. It provides no security assessment, accreditation, authorization, or guarantee of completeness. Select and rank repositories only; the worker owns repository analysis and every finding requires human review against current authoritative guidance.
 

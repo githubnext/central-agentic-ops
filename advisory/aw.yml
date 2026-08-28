@@ -1,4 +1,4 @@
-name: Advisory
+name: UK AI Advisory
 description: Advisory, non-binding UK AI open-code operational resilience review across centrally selected repositories.
 min-version: v0.87.6
 includes:

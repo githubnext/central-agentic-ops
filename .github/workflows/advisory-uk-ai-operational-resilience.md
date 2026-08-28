@@ -1,7 +1,7 @@
 ---
 emoji: ":shield:"
 description: "Produces a recent-change-focused, non-binding UK AI open-code operational resilience advisory for one repository."
-name: "Advisory / UK AI Operational Resilience"
+name: "UK AI Advisory / Operational Resilience"
 max-ai-credits: 600
 max-daily-ai-credits: -1
 
@@ -290,7 +290,7 @@ steps:
 
 <!-- Advisory outputs are advisory and non-binding. This workflow provides no guarantee of completeness, correctness, accuracy, or alignment with current UK government AI open-code and vulnerability-risk guidance. -->
 
-# Advisory / UK AI Operational Resilience
+# UK AI Advisory / Operational Resilience
 
 Produce a non-binding, recent-change-focused operational resilience advisory for one repository using the UK government guidance at `https://www.gov.uk/guidance/ai-open-code-and-vulnerability-risk-in-the-public-sector`.
 

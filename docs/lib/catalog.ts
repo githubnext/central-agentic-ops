@@ -64,4 +64,7 @@ export const catalogEntries: CatalogEntry[] = Object.entries(manifests)
       ReadmeContent: readme?.Content,
     };
   })
-  .sort((left, right) => left.name.localeCompare(right.name));
+  .sort((left, right) => {
+    const advisoryRank = (entry: CatalogEntry) => /advisor(y|ies)?/i.test(entry.name) ? 1 : 0;
+    return advisoryRank(left) - advisoryRank(right) || left.name.localeCompare(right.name);
+  });
