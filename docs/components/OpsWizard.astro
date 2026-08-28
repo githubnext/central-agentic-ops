@@ -286,6 +286,7 @@ const agents = [
         if (!copyDialog) return;
         if (typeof copyDialog.showModal === "function") {
           if (!copyDialog.open) copyDialog.showModal();
+          copyDialogClose?.focus();
         }
       }
 
@@ -347,6 +348,11 @@ const agents = [
 <style>
   @layer starlight.core {
     .ops-wizard {
+      --wizard-blue: #00d4ff;
+      --wizard-indigo: #5b5cff;
+      --wizard-pink: #ff4ecd;
+      --wizard-violet: #9b5cff;
+
       position: relative;
       display: flex;
       width: min(58rem, 100%);
@@ -357,9 +363,9 @@ const agents = [
       border: 1px solid color-mix(in srgb, var(--sl-color-text-accent) 42%, transparent);
       border-radius: 1.25rem;
       background:
-        linear-gradient(135deg, color-mix(in srgb, #5b5cff 20%, transparent), transparent 36%),
-        radial-gradient(circle at 8% 0%, color-mix(in srgb, #00d4ff 22%, transparent), transparent 28%),
-        radial-gradient(circle at 92% 16%, color-mix(in srgb, #ff4ecd 24%, transparent), transparent 30%),
+        linear-gradient(135deg, color-mix(in srgb, var(--wizard-indigo) 20%, transparent), transparent 36%),
+        radial-gradient(circle at 8% 0%, color-mix(in srgb, var(--wizard-blue) 22%, transparent), transparent 28%),
+        radial-gradient(circle at 92% 16%, color-mix(in srgb, var(--wizard-pink) 24%, transparent), transparent 30%),
         radial-gradient(120% 90% at 50% -10%, color-mix(in srgb, var(--sl-color-text-accent) 20%, transparent), transparent 60%),
         color-mix(in srgb, var(--sl-color-black) 35%, transparent);
       padding: clamp(1.25rem, 2.5vw, 2.25rem);
@@ -383,13 +389,13 @@ const agents = [
     .wizard-glow-primary {
       top: -6rem;
       right: -4rem;
-      background: #ff4ecd;
+      background: var(--wizard-pink);
     }
 
     .wizard-glow-secondary {
       bottom: -7rem;
       left: -5rem;
-      background: #00d4ff;
+      background: var(--wizard-blue);
     }
 
     .wizard-eyebrow {
@@ -485,7 +491,7 @@ const agents = [
       align-items: center;
       justify-content: center;
       border-radius: 50%;
-      background: linear-gradient(135deg, #00d4ff, #9b5cff 50%, #ff4ecd);
+      background: linear-gradient(135deg, var(--wizard-blue), var(--wizard-violet) 50%, var(--wizard-pink));
       color: var(--sl-color-black);
       font-size: var(--sl-text-xs);
       font-weight: 800;
@@ -515,9 +521,13 @@ const agents = [
 
     .option-card:hover {
       transform: translateY(-2px);
-      border-color: color-mix(in srgb, #00d4ff 70%, transparent);
+      border-color: color-mix(in srgb, var(--wizard-blue) 70%, transparent);
       background:
-        linear-gradient(145deg, color-mix(in srgb, #00d4ff 12%, transparent), color-mix(in srgb, #ff4ecd 8%, transparent)),
+        linear-gradient(
+          145deg,
+          color-mix(in srgb, var(--wizard-blue) 12%, transparent),
+          color-mix(in srgb, var(--wizard-pink) 8%, transparent)
+        ),
         color-mix(in srgb, var(--sl-color-black) 16%, transparent);
       box-shadow: 0 0.5rem 1.25rem color-mix(in srgb, var(--sl-color-black) 30%, transparent);
     }
@@ -529,9 +539,13 @@ const agents = [
     }
 
     .option-card:has(input:checked) {
-      border-color: color-mix(in srgb, #00d4ff 80%, var(--sl-color-text-accent));
+      border-color: color-mix(in srgb, var(--wizard-blue) 80%, var(--sl-color-text-accent));
       background:
-        linear-gradient(145deg, color-mix(in srgb, #00d4ff 16%, transparent), color-mix(in srgb, #ff4ecd 13%, transparent)),
+        linear-gradient(
+          145deg,
+          color-mix(in srgb, var(--wizard-blue) 16%, transparent),
+          color-mix(in srgb, var(--wizard-pink) 13%, transparent)
+        ),
         color-mix(in srgb, var(--sl-color-black) 18%, transparent);
       box-shadow:
         0 0.75rem 1.5rem color-mix(in srgb, var(--sl-color-black) 28%, transparent),
@@ -548,7 +562,7 @@ const agents = [
       align-items: center;
       justify-content: center;
       border-radius: 50%;
-      background: linear-gradient(135deg, #00d4ff, #ff4ecd);
+      background: linear-gradient(135deg, var(--wizard-blue), var(--wizard-pink));
       opacity: 0;
       transform: scale(0.6);
       transition: opacity 160ms ease, transform 160ms ease;
@@ -618,7 +632,7 @@ const agents = [
       border: 1px solid color-mix(in srgb, var(--sl-color-text-accent) 38%, transparent);
       border-radius: 0.55rem;
       background:
-        linear-gradient(145deg, color-mix(in srgb, #00d4ff 6%, transparent), transparent),
+        linear-gradient(145deg, color-mix(in srgb, var(--wizard-blue) 6%, transparent), transparent),
         color-mix(in srgb, var(--sl-color-black) 36%, transparent);
       padding: 0.5rem 0.625rem;
       color: var(--sl-color-white);
@@ -643,10 +657,14 @@ const agents = [
 
     .prompt-panel {
       overflow: hidden;
-      border: 1px solid color-mix(in srgb, #00d4ff 34%, transparent);
+      border: 1px solid color-mix(in srgb, var(--wizard-blue) 34%, transparent);
       border-radius: 0.9rem;
       background:
-        linear-gradient(145deg, color-mix(in srgb, #00d4ff 10%, transparent), color-mix(in srgb, #ff4ecd 8%, transparent)),
+        linear-gradient(
+          145deg,
+          color-mix(in srgb, var(--wizard-blue) 10%, transparent),
+          color-mix(in srgb, var(--wizard-pink) 8%, transparent)
+        ),
         color-mix(in srgb, var(--sl-color-black) 46%, transparent);
       box-shadow: inset 0 1px 0 color-mix(in srgb, var(--sl-color-white) 12%, transparent);
     }
@@ -659,7 +677,11 @@ const agents = [
       gap: 0.5rem;
       border-bottom: 1px solid color-mix(in srgb, var(--sl-color-gray-5) 60%, transparent);
       background:
-        linear-gradient(90deg, color-mix(in srgb, #00d4ff 14%, transparent), color-mix(in srgb, #ff4ecd 14%, transparent)),
+        linear-gradient(
+          90deg,
+          color-mix(in srgb, var(--wizard-blue) 14%, transparent),
+          color-mix(in srgb, var(--wizard-pink) 14%, transparent)
+        ),
         color-mix(in srgb, var(--sl-color-black) 30%, transparent);
       padding: 0.5rem 0.625rem 0.5rem 0.875rem;
     }
@@ -687,15 +709,15 @@ const agents = [
       display: inline-flex;
       align-items: center;
       gap: 0.35rem;
-      border: 1px solid color-mix(in srgb, #00d4ff 70%, transparent);
+      border: 1px solid color-mix(in srgb, var(--wizard-blue) 70%, transparent);
       border-radius: 999px;
-      background: linear-gradient(135deg, #00d4ff, #9b5cff 52%, #ff4ecd);
+      background: linear-gradient(135deg, var(--wizard-blue), var(--wizard-violet) 52%, var(--wizard-pink));
       padding: 0.38rem 0.9rem;
       color: var(--sl-color-white);
       font-size: var(--sl-text-xs);
       font-weight: 800;
       cursor: pointer;
-      box-shadow: 0 0.75rem 1.5rem color-mix(in srgb, #9b5cff 30%, transparent);
+      box-shadow: 0 0.75rem 1.5rem color-mix(in srgb, var(--wizard-violet) 30%, transparent);
       transition: filter 160ms ease, transform 160ms ease, box-shadow 160ms ease;
     }
 
@@ -715,22 +737,22 @@ const agents = [
     .copy-button:focus-visible {
       transform: translateY(-1px);
       filter: saturate(1.15) brightness(1.08);
-      box-shadow: 0 1rem 1.75rem color-mix(in srgb, #9b5cff 38%, transparent);
+      box-shadow: 0 1rem 1.75rem color-mix(in srgb, var(--wizard-violet) 38%, transparent);
     }
 
     .copy-button.is-copied {
       border-color: color-mix(in srgb, var(--sl-color-green) 70%, var(--sl-color-white));
-      background: linear-gradient(135deg, var(--sl-color-green), #00d4ff);
+      background: linear-gradient(135deg, var(--sl-color-green), var(--wizard-blue));
       color: var(--sl-color-black);
     }
 
     .copy-dialog {
       max-width: min(26rem, calc(100% - 2rem));
-      border: 1px solid color-mix(in srgb, #00d4ff 55%, transparent);
+      border: 1px solid color-mix(in srgb, var(--wizard-blue) 55%, transparent);
       border-radius: 1rem;
       background:
-        radial-gradient(circle at 20% 0%, color-mix(in srgb, #00d4ff 25%, transparent), transparent 38%),
-        radial-gradient(circle at 100% 12%, color-mix(in srgb, #ff4ecd 22%, transparent), transparent 34%),
+        radial-gradient(circle at 20% 0%, color-mix(in srgb, var(--wizard-blue) 25%, transparent), transparent 38%),
+        radial-gradient(circle at 100% 12%, color-mix(in srgb, var(--wizard-pink) 22%, transparent), transparent 34%),
         var(--sl-color-bg);
       padding: 0;
       color: var(--sl-color-white);
@@ -739,7 +761,7 @@ const agents = [
 
     .copy-dialog::backdrop {
       background:
-        radial-gradient(circle at 50% 10%, color-mix(in srgb, #9b5cff 22%, transparent), transparent 34%),
+        radial-gradient(circle at 50% 10%, color-mix(in srgb, var(--wizard-violet) 22%, transparent), transparent 34%),
         color-mix(in srgb, var(--sl-color-black) 70%, transparent);
     }
 
@@ -756,8 +778,8 @@ const agents = [
       width: 3rem;
       height: 0.35rem;
       border-radius: 999px;
-      background: linear-gradient(90deg, #00d4ff, #9b5cff, #ff4ecd);
-      box-shadow: 0 0.5rem 1.5rem color-mix(in srgb, #9b5cff 50%, transparent);
+      background: linear-gradient(90deg, var(--wizard-blue), var(--wizard-violet), var(--wizard-pink));
+      box-shadow: 0 0.5rem 1.5rem color-mix(in srgb, var(--wizard-violet) 50%, transparent);
     }
 
     .copy-dialog-card p {
@@ -768,7 +790,7 @@ const agents = [
     }
 
     .copy-dialog-kicker {
-      color: color-mix(in srgb, #00d4ff 78%, var(--sl-color-white));
+      color: color-mix(in srgb, var(--wizard-blue) 78%, var(--sl-color-white));
       font-size: var(--sl-text-xs);
       font-weight: 800;
       letter-spacing: 0.08em;
@@ -793,15 +815,15 @@ const agents = [
     }
 
     .copy-dialog-steps li::marker {
-      color: color-mix(in srgb, #ff4ecd 70%, var(--sl-color-text-accent));
+      color: color-mix(in srgb, var(--wizard-pink) 70%, var(--sl-color-text-accent));
       font-weight: 800;
     }
 
     .copy-dialog-close {
       align-self: flex-start;
-      border: 1px solid color-mix(in srgb, #00d4ff 70%, transparent);
+      border: 1px solid color-mix(in srgb, var(--wizard-blue) 70%, transparent);
       border-radius: 999px;
-      background: linear-gradient(135deg, #00d4ff, #9b5cff 55%, #ff4ecd);
+      background: linear-gradient(135deg, var(--wizard-blue), var(--wizard-violet) 55%, var(--wizard-pink));
       padding: 0.45rem 1rem;
       color: var(--sl-color-white);
       font-size: var(--sl-text-xs);
