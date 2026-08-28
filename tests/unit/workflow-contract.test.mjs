@@ -1035,12 +1035,23 @@ test("daily dashboard renderer builds incrementally inside its own directory", (
   assert.match(source, /^max-turns: 500$/m);
   assert.match(source, /playwright:\n\s+mode: cli/);
   assert.match(source, /create-pull-request:[\s\S]*?allowed-files:\n\s+- "pages\/dashboard\/\*\*"/);
-  assert.match(source, /push-to-pull-request-branch:[\s\S]*?allowed-files:\n\s+- "pages\/dashboard\/\*\*"/);
+  assert.match(source, /skip-if-match: "is:pr is:open label:dashboard-language-renderer"/);
+  assert.doesNotMatch(source, /push-to-pull-request-branch:/);
   assert.match(source, /pages\/dashboard\/PLAN\.md/);
-  assert.match(source, /If one exists, call `noop`/);
-  assert.doesNotMatch(source, /fetch and check out its branch/);
   assert.doesNotMatch(source, /allowed-files:\n(?:\s+- .*\n)*\s+- "(?!pages\/dashboard\/)/);
   assert.match(source, /Never modify[^.]*\.github\/scripts\/pages-report\//);
+});
+
+test("dashboard CI runs the package quality gates", () => {
+  const source = workflow("cid.yml");
+
+  assert.match(source, /pages\/dashboard\/\*\*/);
+  assert.match(source, /working-directory: pages\/dashboard/);
+  assert.match(source, /cache-dependency-path: pages\/dashboard\/package-lock\.json/);
+  assert.match(source, /npx playwright install --with-deps chromium/);
+  for (const command of ["npm run typecheck", "npm run lint", "npm test", "npm run test:e2e"]) {
+    assert.match(source, new RegExp(`run: ${command.replaceAll(".", "\\.")}`));
+  }
 });
 
 test("daily dashboard review lock file does not require docker-sbx secrets", () => {
