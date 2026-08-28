@@ -1454,6 +1454,9 @@ test("Documentation Pages embeds this repository's control-plane report", () => 
   assert.match(workflowSource, /actions: read/);
   assert.match(workflowSource, /issues: read/);
   assert.match(workflowSource, /pull-requests: read/);
+  assert.match(workflowSource, /Restore AI Credit usage cache/);
+  assert.match(workflowSource, /REPORT_AIC_CACHE: \.cache\/documentation-pages-aic/);
+  assert.match(workflowSource, /Save AI Credit usage cache/);
   assert.match(workflowSource, /REPORT_ALLOWED_REPOS: \$\{\{ github\.repository \}\}/);
   assert.match(workflowSource, /REPORT_OUTPUT: dist\/cao/);
   assert.match(workflowSource, /path: dist/);

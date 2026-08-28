@@ -103,13 +103,29 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-documentation-pages-operational-values-${{ github.repository }}-
 
+      - name: Restore AI Credit usage cache
+        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: .cache/documentation-pages-aic
+          key: ${{ runner.os }}-documentation-pages-aic-${{ github.repository }}-${{ github.run_id }}
+          restore-keys: |
+            ${{ runner.os }}-documentation-pages-aic-${{ github.repository }}-
+
       - name: Collect AI Credit usage
         env:
           GH_TOKEN: ${{ github.token }}
+          REPORT_AIC_CACHE: .cache/documentation-pages-aic
           REPORT_AIC_CONCURRENCY: "3"
           REPORT_AIC_USAGE: ${{ runner.temp }}/aic-usage.json
           REPORT_DEPLOYED_WORKFLOWS: ${{ runner.temp }}/deployed-workflows.json
         run: node .github/scripts/pages-report/aic-usage.mjs
+
+      - name: Save AI Credit usage cache
+        if: always()
+        uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: .cache/documentation-pages-aic
+          key: ${{ runner.os }}-documentation-pages-aic-${{ github.repository }}-${{ github.run_id }}
 
       - name: Collect operational-value observations
         env:
