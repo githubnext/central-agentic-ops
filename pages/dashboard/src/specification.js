@@ -115,6 +115,71 @@ export const BUILT_IN_PAGE_REQUIRED_SOURCES = {
   findings: ['findings']
 };
 
+export const BUILT_IN_PAGE_REQUIRED_FIELDS = {
+  overview: {
+    workflows: ['workflow-active', 'rollout-mode'],
+    runs: ['run-status', 'run-conclusion', 'repository', 'workflow'],
+    usage: ['aic'],
+    findings: ['observed-at'],
+    'operational-values': ['operational-value', 'observed-at']
+  },
+  organizations: {
+    organizations: ['organization'],
+    repositories: ['repository'],
+    workflows: ['workflow'],
+    runs: ['run'],
+    usage: ['aic']
+  },
+  repositories: {
+    repositories: ['repository'],
+    runs: ['run'],
+    usage: ['aic'],
+    'operational-values': ['operational-value', 'operational-value-definition']
+  },
+  workflows: {
+    workflows: ['workflow', 'workflow-active', 'rollout-mode'],
+    runs: ['run', 'run-conclusion'],
+    outcomes: ['outcome-state'],
+    usage: ['aic'],
+    findings: ['finding'],
+    'operational-values': ['operational-value']
+  },
+  runs: {
+    runs: ['run', 'run-status', 'run-conclusion', 'organization', 'repository', 'workflow', 'rollout-mode', 'engine', 'requested-model', 'resolved-model', 'started-at']
+  },
+  experiments: {
+    experiments: ['experiment'],
+    'experiment-assignments': ['run', 'variant'],
+    'grader-observations': ['grader'],
+    'eval-observations': ['eval'],
+    outcomes: ['outcome-state'],
+    usage: ['aic'],
+    'operational-values': ['operational-value']
+  },
+  graders: {
+    graders: ['grader'],
+    'grader-observations': ['grader', 'run', 'value', 'status', 'observed-at']
+  },
+  evals: {
+    evals: ['eval'],
+    'eval-observations': ['eval', 'run', 'eval-result', 'requested-model', 'resolved-model', 'observed-at']
+  },
+  usage: {
+    usage: ['input-tokens', 'output-tokens', 'cache-read-tokens', 'cache-write-tokens', 'reasoning-tokens', 'aic', 'engine', 'requested-model', 'resolved-model', 'organization', 'repository', 'workflow', 'rollout-mode', 'observed-at']
+  },
+  'engines-models': {
+    runs: ['engine', 'requested-model', 'resolved-model', 'run', 'run-conclusion'],
+    outcomes: ['outcome-state'],
+    usage: ['input-tokens', 'output-tokens', 'cache-read-tokens', 'cache-write-tokens', 'reasoning-tokens', 'aic']
+  },
+  'operational-value': {
+    'operational-values': ['observed-at', 'operational-value', 'operational-value-definition', 'operational-case', 'evaluator-digest', 'requested-evidence-at', 'evidence-cutoff', 'maturity-at', 'maturity-status', 'evidence-link', 'experiment', 'delta-from-baseline']
+  },
+  findings: {
+    findings: ['finding-summary', 'finding-severity', 'finding-status', 'organization', 'repository', 'workflow', 'observed-at', 'issue-link', 'pull-request-link', 'run-link']
+  }
+};
+
 export const SOURCE_VALUES = [
   'organizations',
   'repositories',

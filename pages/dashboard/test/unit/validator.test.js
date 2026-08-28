@@ -241,11 +241,23 @@ dashboard:
           - id: usage-summary
             data:
               source: usage
-            mark: metric
+            mark: table
             encoding:
-              value:
-                field: invocation
-                aggregate: count
+              columns:
+                - field: input-tokens
+                - field: output-tokens
+                - field: cache-read-tokens
+                - field: cache-write-tokens
+                - field: reasoning-tokens
+                - field: aic
+                - field: engine
+                - field: requested-model
+                - field: resolved-model
+                - field: organization
+                - field: repository
+                - field: workflow
+                - field: rollout-mode
+                - field: observed-at
 `);
 
     expect(result.ok).toBe(true);
@@ -341,21 +353,30 @@ dashboard:
             mark: table
             encoding:
               columns:
+                - field: engine
+                - field: requested-model
+                - field: resolved-model
                 - field: run
+                - field: run-conclusion
           - id: outcomes-view
             data:
               source: outcomes
             mark: table
             encoding:
               columns:
-                - field: safe-output
+                - field: outcome-state
           - id: usage-view
             data:
               source: usage
             mark: table
             encoding:
               columns:
-                - field: invocation
+                - field: input-tokens
+                - field: output-tokens
+                - field: cache-read-tokens
+                - field: cache-write-tokens
+                - field: reasoning-tokens
+                - field: aic
 `);
 
     expect(result.ok).toBe(true);
@@ -434,6 +455,184 @@ dashboard:
         })
       ]);
     }
+  });
+
+  it('DLS-PAGE-006 rejects a runs built-in page definition that omits required run fields with DLS-E003', () => {
+    const result = validateDashboardDocument(`language-version: "0.1.0"
+dashboard:
+  id: incomplete-runs-page
+  title: Incomplete Runs Page
+  pages:
+    - id: runs
+      kind: built-in
+      page: runs
+      title: Runs
+      definition:
+        views:
+          - id: run-table
+            data:
+              source: runs
+            mark: table
+            encoding:
+              columns:
+                - field: run
+                - field: run-status
+                - field: run-conclusion
+`);
+
+    expect(result.ok).toBe(false);
+    if (!result.ok) {
+      expect(result.errors).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({
+            code: 'DLS-E003',
+            path: '$.dashboard.pages[0].definition.views',
+            message: 'built-in page "runs" definition must expose field "organization" for source "runs".'
+          }),
+          expect.objectContaining({
+            code: 'DLS-E003',
+            path: '$.dashboard.pages[0].definition.views',
+            message: 'built-in page "runs" definition must expose field "repository" for source "runs".'
+          }),
+          expect.objectContaining({
+            code: 'DLS-E003',
+            path: '$.dashboard.pages[0].definition.views',
+            message: 'built-in page "runs" definition must expose field "workflow" for source "runs".'
+          }),
+          expect.objectContaining({
+            code: 'DLS-E003',
+            path: '$.dashboard.pages[0].definition.views',
+            message: 'built-in page "runs" definition must expose field "rollout-mode" for source "runs".'
+          }),
+          expect.objectContaining({
+            code: 'DLS-E003',
+            path: '$.dashboard.pages[0].definition.views',
+            message: 'built-in page "runs" definition must expose field "engine" for source "runs".'
+          }),
+          expect.objectContaining({
+            code: 'DLS-E003',
+            path: '$.dashboard.pages[0].definition.views',
+            message: 'built-in page "runs" definition must expose field "requested-model" for source "runs".'
+          }),
+          expect.objectContaining({
+            code: 'DLS-E003',
+            path: '$.dashboard.pages[0].definition.views',
+            message: 'built-in page "runs" definition must expose field "resolved-model" for source "runs".'
+          }),
+          expect.objectContaining({
+            code: 'DLS-E003',
+            path: '$.dashboard.pages[0].definition.views',
+            message: 'built-in page "runs" definition must expose field "started-at" for source "runs".'
+          })
+        ])
+      );
+    }
+  });
+
+  it('DLS-PAGE-006 DLS-PAGE-010 DLS-PAGE-011 DLS-PAGE-012 DLS-PAGE-013 accepts built-in definitions that conservatively cover required fields', () => {
+    const result = validateDashboardDocument(`language-version: "0.1.0"
+dashboard:
+  id: built-in-field-coverage
+  title: Built In Field Coverage
+  pages:
+    - id: runs
+      kind: built-in
+      page: runs
+      title: Runs
+      definition:
+        views:
+          - id: run-table
+            data:
+              source: runs
+            mark: table
+            encoding:
+              columns:
+                - field: run
+                - field: run-status
+                - field: run-conclusion
+                - field: organization
+                - field: repository
+                - field: workflow
+                - field: rollout-mode
+                - field: engine
+                - field: requested-model
+                - field: resolved-model
+                - field: started-at
+    - id: usage
+      kind: built-in
+      page: usage
+      title: Usage
+      definition:
+        views:
+          - id: usage-table
+            data:
+              source: usage
+            mark: table
+            encoding:
+              columns:
+                - field: input-tokens
+                - field: output-tokens
+                - field: cache-read-tokens
+                - field: cache-write-tokens
+                - field: reasoning-tokens
+                - field: aic
+                - field: engine
+                - field: requested-model
+                - field: resolved-model
+                - field: organization
+                - field: repository
+                - field: workflow
+                - field: rollout-mode
+                - field: observed-at
+    - id: operational-value
+      kind: built-in
+      page: operational-value
+      title: Operational Value
+      definition:
+        views:
+          - id: operational-value-table
+            data:
+              source: operational-values
+            mark: table
+            encoding:
+              columns:
+                - field: observed-at
+                - field: operational-value
+                - field: operational-value-definition
+                - field: operational-case
+                - field: evaluator-digest
+                - field: requested-evidence-at
+                - field: evidence-cutoff
+                - field: maturity-at
+                - field: maturity-status
+                - field: evidence-link
+                - field: experiment
+                - field: delta-from-baseline
+    - id: findings
+      kind: built-in
+      page: findings
+      title: Findings
+      definition:
+        views:
+          - id: findings-table
+            data:
+              source: findings
+            mark: table
+            encoding:
+              columns:
+                - field: finding-summary
+                - field: finding-severity
+                - field: finding-status
+                - field: organization
+                - field: repository
+                - field: workflow
+                - field: observed-at
+                - field: issue-link
+                - field: pull-request-link
+                - field: run-link
+`);
+
+    expect(result.ok).toBe(true);
   });
 
   it('DLS-SEM-017 accepts every canonical Section 5.1 source name', () => {
