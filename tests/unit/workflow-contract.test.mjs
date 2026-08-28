@@ -975,6 +975,21 @@ test("daily dashboard review uses the GitHub Copilot Pi engine", () => {
   assert.doesNotMatch(source, /runtime:\s+docker-sbx/);
 });
 
+test("daily dashboard renderer builds incrementally inside its own directory", () => {
+  const source = workflow("daily-dashboard-language-renderer.md");
+
+  assert.match(source, /^model: copilot\/gpt-5\.6-sol$/m);
+  assert.match(source, /engine:\n\s+id: pi/);
+  assert.match(source, /^timeout-minutes: 60$/m);
+  assert.match(source, /^max-turns: 500$/m);
+  assert.match(source, /playwright:\n\s+mode: cli/);
+  assert.match(source, /create-pull-request:[\s\S]*?allowed-files:\n\s+- "pages\/dashboard\/\*\*"/);
+  assert.match(source, /push-to-pull-request-branch:[\s\S]*?allowed-files:\n\s+- "pages\/dashboard\/\*\*"/);
+  assert.match(source, /pages\/dashboard\/PLAN\.md/);
+  assert.doesNotMatch(source, /allowed-files:\n(?:\s+- .*\n)*\s+- "(?!pages\/dashboard\/)/);
+  assert.match(source, /Never modify[^.]*\.github\/scripts\/pages-report\//);
+});
+
 test("daily dashboard review lock file does not require docker-sbx secrets", () => {
   const lock = workflow("daily-dashboard-language-spec-review.lock.yml");
 
@@ -1030,7 +1045,9 @@ test("clean-room compilation emits the expected GitHub Actions settings", { time
     const expectedLockNames = [
       ...packageLockNames,
       "advisory-package-maintainer.lock.yml",
+      "daily-dashboard-language-renderer.lock.yml",
       "daily-dashboard-language-spec-review.lock.yml",
+      "daily-multi-device-docs-tester.lock.yml",
       "eu-cra-compliance-package-maintainer.lock.yml",
       "docs-explanatory-diagrams.lock.yml",
       "pr-reviewer.lock.yml",

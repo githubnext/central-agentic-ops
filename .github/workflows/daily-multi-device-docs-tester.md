@@ -17,14 +17,7 @@ permissions:
   issues: read
   pull-requests: read
 
-sandbox:
-  agent:
-    id: awf
 tracker-id: daily-multi-device-docs-tester
-max-turns: 80  # 10 devices × ~5 turns each + setup/report overhead
-model: gpt-5.4
-engine:
-  id: copilot
 strict: true
 timeout-minutes: 30
 runtimes:
