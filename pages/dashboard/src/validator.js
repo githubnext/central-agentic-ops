@@ -12,6 +12,9 @@ import {
   DATASET_METADATA_KEYS,
   DEFAULTS_KEYS,
   ERROR_CODES,
+  LINK_FIELD_NAMES,
+  LINK_OBJECT_KEYS,
+  LINK_RELATION_VALUES,
   EVAL_RESULT_VALUES,
   FIELD_DEFINITION_KEYS,
   FIELD_TYPE_VALUES,
@@ -774,12 +777,10 @@ function validateDatasetMetadata(dataNode, data, path, errors) {
     errors
   );
 
-  if (metadata['provenance-link'] !== undefined && !isPlainObject(metadata['provenance-link'])) {
-    errors.push(createError(
-      ERROR_CODES.missingRequiredProvenanceOrDataStateMetadata,
-      'provenance-link must be a Section 9.1 link object when provided.',
-      `${metadataPath}.provenance-link`
-    ));
+  if (metadata['provenance-link'] !== undefined) {
+    validateLinkObject(metadata['provenance-link'], `${metadataPath}.provenance-link`, 'provenance-link', errors, {
+      code: ERROR_CODES.missingRequiredProvenanceOrDataStateMetadata
+    });
   }
 
   if (metadata.availability !== undefined) {
@@ -840,6 +841,23 @@ function validateEncoding(encodingNode, encoding, mark, sourceName, data, viewPa
 function validateMetricEncoding(encodingNode, encoding, sourceName, path, aggregateOutputIds, errors) {
   validateRequiredFieldDefinition(getValueNodeByKey(encodingNode, 'value'), encoding.value, sourceName, `${path}.value`, aggregateOutputIds, errors);
 
+  const valueFieldDefinition = isPlainObject(encoding.value) ? encoding.value : null;
+  if (valueFieldDefinition && valueFieldDefinition['time-unit'] !== undefined) {
+    errors.push(createError(
+      ERROR_CODES.invalidScopeFilterTimeAggregationOrOrderReference,
+      'metric value encoding must not declare time-unit.',
+      `${path}.value.time-unit`
+    ));
+  }
+
+  if (valueFieldDefinition && valueFieldDefinition.type !== undefined && valueFieldDefinition.type !== 'quantitative') {
+    errors.push(createError(
+      ERROR_CODES.invalidScopeFilterTimeAggregationOrOrderReference,
+      'metric value encoding must be quantitative when explicitly typed.',
+      `${path}.value.type`
+    ));
+  }
+
   for (const forbiddenChannel of ['columns', 'x', 'y', 'color']) {
     if (encoding[forbiddenChannel] !== undefined) {
       errors.push(createError(
@@ -851,7 +869,7 @@ function validateMetricEncoding(encodingNode, encoding, sourceName, path, aggreg
   }
 
   if (encoding.href !== undefined) {
-    validateFieldDefinition(getValueNodeByKey(encodingNode, 'href'), encoding.href, sourceName, `${path}.href`, aggregateOutputIds, errors);
+    validateHrefFieldDefinition(getValueNodeByKey(encodingNode, 'href'), encoding.href, sourceName, `${path}.href`, aggregateOutputIds, errors);
   }
 }
 
@@ -895,7 +913,7 @@ function validateTableEncoding(encodingNode, encoding, sourceName, path, aggrega
   }
 
   if (encoding.href !== undefined) {
-    validateFieldDefinition(getValueNodeByKey(encodingNode, 'href'), encoding.href, sourceName, `${path}.href`, aggregateOutputIds, errors);
+    validateHrefFieldDefinition(getValueNodeByKey(encodingNode, 'href'), encoding.href, sourceName, `${path}.href`, aggregateOutputIds, errors);
   }
 }
 
@@ -932,7 +950,15 @@ function validateChartEncoding(encodingNode, encoding, sourceName, path, aggrega
   }
 
   if (encoding.href !== undefined) {
-    validateFieldDefinition(getValueNodeByKey(encodingNode, 'href'), encoding.href, sourceName, `${path}.href`, aggregateOutputIds, errors);
+    validateHrefFieldDefinition(getValueNodeByKey(encodingNode, 'href'), encoding.href, sourceName, `${path}.href`, aggregateOutputIds, errors);
+  }
+
+  if (isPlainObject(encoding.x) && encoding.x.aggregate !== undefined) {
+    errors.push(createError(
+      ERROR_CODES.invalidScopeFilterTimeAggregationOrOrderReference,
+      'chart x encoding must not declare an aggregate.',
+      `${path}.x.aggregate`
+    ));
   }
 
   if (isPlainObject(encoding.y) && encoding.y.type !== undefined && encoding.y.type !== 'quantitative') {
@@ -1074,6 +1100,35 @@ function validateFieldDefinition(fieldNode, fieldDefinition, sourceName, path, a
 }
 
 /**
+ * @param {unknown} fieldNode
+ * @param {unknown} fieldDefinition
+ * @param {string | null} sourceName
+ * @param {string} path
+ * @param {Map<string, string>} aggregateOutputIds
+ * @param {ValidationError[]} errors
+ */
+function validateHrefFieldDefinition(fieldNode, fieldDefinition, sourceName, path, aggregateOutputIds, errors) {
+  validateFieldDefinition(fieldNode, fieldDefinition, sourceName, path, aggregateOutputIds, errors);
+
+  if (!isPlainObject(fieldDefinition)) {
+    return;
+  }
+
+  const fieldName = typeof fieldDefinition.field === 'string' ? fieldDefinition.field : null;
+  if (!fieldName) {
+    return;
+  }
+
+  if (!LINK_FIELD_NAMES.includes(fieldName)) {
+    errors.push(createError(
+      ERROR_CODES.invalidLinkReference,
+      'href.field must reference exactly one relation-specific link field.',
+      `${path}.field`
+    ));
+  }
+}
+
+/**
  * @param {string} fieldName
  * @param {string} aggregate
  * @param {string} path
@@ -1194,6 +1249,71 @@ function validateEnumeratedMetadataValue(value, allowedValues, path, label, erro
       `${label} must use one of the canonical values: ${allowedValues.join(', ')}.`,
       path
     ));
+  }
+}
+
+/**
+ * @param {unknown} value
+ * @param {string} path
+ * @param {string} fieldLabel
+ * @param {ValidationError[]} errors
+ * @param {{ relation?: string, code?: string }} [options]
+ */
+function validateLinkObject(value, path, fieldLabel, errors, options = {}) {
+  const code = options.code ?? ERROR_CODES.invalidLinkReference;
+  if (!isPlainObject(value)) {
+    errors.push(createError(
+      code,
+      `${fieldLabel} must be a Section 9.1 link object.`,
+      path
+    ));
+    return;
+  }
+
+  validateObjectKeys(value, LINK_OBJECT_KEYS, path, errors);
+  validateStringField(value.relation, `${path}.relation`, true, errors);
+  validateStringField(value.href, `${path}.href`, true, errors);
+  validateStringField(value.label, `${path}.label`, true, errors);
+
+  if (typeof value.relation === 'string' && !LINK_RELATION_VALUES.includes(value.relation)) {
+    errors.push(createError(
+      code,
+      'link relation must use one canonical Section 9.1 relation value.',
+      `${path}.relation`
+    ));
+  }
+
+  if (options.relation && typeof value.relation === 'string' && value.relation != options.relation) {
+    errors.push(createError(
+      code,
+      `${fieldLabel} relation must be exactly "${options.relation}".`,
+      `${path}.relation`
+    ));
+  }
+
+  if (typeof value.href === 'string' && !isSafeHttpsUrl(value.href)) {
+    errors.push(createError(
+      code,
+      'link href must be an absolute HTTPS URL without embedded credentials.',
+      `${path}.href`
+    ));
+  }
+}
+
+/**
+ * @param {unknown} value
+ * @returns {value is string}
+ */
+function isSafeHttpsUrl(value) {
+  if (typeof value !== 'string' || value.length === 0) {
+    return false;
+  }
+
+  try {
+    const url = new URL(value);
+    return url.protocol === 'https:' && url.username === '' && url.password === '';
+  } catch {
+    return false;
   }
 }
 
