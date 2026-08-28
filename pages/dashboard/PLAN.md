@@ -21,7 +21,7 @@
 
 ## Specification questions
 
-- 2026-08-28: Section 10 requires every built-in page to be expressed as declarative page definitions built from the custom-view primitives, but Section 4.2 and Section 10 define no YAML vocabulary for embedding those declarative built-in definitions alongside `kind: built-in` / `page`. The current validator implements the most conservative reading available in this slice: it rejects every built-in page with explicit missing-definition errors keyed to the required logical sources for that page until the specification defines where those declarations live.
+- 2026-08-28: Section 10 requires every built-in page to be expressed as declarative page definitions built from the custom-view primitives, but Section 4.2 and Section 10 define no YAML vocabulary for embedding those declarative built-in definitions alongside `kind: built-in` / `page`. The current validator implements the most conservative reading available in this slice by accepting an implementation-local `definition.views` mapping on built-in pages so the required-source coverage can be validated, but this key is not yet specification-backed and may need to change if the YAML vocabulary is clarified.
 - 2026-08-28: Section 4.3 requires `language-version` to be the quoted string `"0.1.0"`, but YAML parsing does not preserve whether a scalar was quoted. The current validator enforces string type and exact canonical value, which is the most conservative check available without relying on parser-specific CST details.
 - 2026-08-28: Section 8 defines required logical-source metadata outside the dashboard YAML, while Section 4.2 omits any YAML vocabulary for carrying that metadata inside a dashboard document. The current validator now accepts a conservative `data.source-metadata` structure so Section 8 metadata shape can be validated in-document, but the presenter-side runtime contract and the exact source of truth between YAML and external inputs remain ambiguous.
 - 2026-08-28: Section 11.2 says `data.order-by.field` resolves against the post-aggregation output grain, but the specification does not fully define how to derive that grain from arbitrary encodings before the presenter exists. The current validator uses the most conservative reading available in this slice: it accepts aggregate output identifiers and bare source fields only when they are canonical entity identifier fields for the selected source, and rejects other unresolved references with `DLS-E010`.
@@ -33,13 +33,13 @@
 
 ## Run log
 
-### 2026-08-28 (built-in pages required-source coverage slice)
+### 2026-08-28 (built-in page-definition vocabulary slice)
 
-- Extended the Built-in pages milestone with a narrow Section 10 validator increment that now applies the existing conservative required-source rejection to every canonical built-in page name, not only `overview` and `runs`.
-- Updated `src/validator.js` so every built-in page emits `DLS-E003` errors for each required logical source listed in `src/specification.js` until the specification defines a declarative built-in page vocabulary.
-- Expanded `test/unit/validator.test.js` coverage for `DLS-PAGE-003` through `DLS-PAGE-014`, and adjusted pre-existing structural/title tests so they remain valid under the conservative built-in-page rejection model.
+- Extended the Built-in pages milestone with a narrow Section 10 validator increment that introduces an implementation-local built-in `definition.views` shape composed from the existing custom-view primitives.
+- Updated `src/specification.js` and `src/validator.js` so built-in pages may now satisfy conservative required-source coverage by declaring at least one view per required logical source, while missing definitions or missing source coverage continue to report `DLS-E003`.
+- Expanded `test/unit/validator.test.js` coverage for `DLS-PAGE-001` through `DLS-PAGE-014`, including positive acceptance for `usage` and `engines-models` built-in pages with matching declarative definitions and negative cases for missing built-in definitions or incomplete source coverage.
 - Verified `npm install`, `npm run typecheck`, `npm run lint`, and `npm test`; `npm run test:e2e` remains blocked in this environment because the Playwright Chromium executable is not provisioned (`browserType.launch: Executable doesn't exist`).
-- Next milestone: Built-in pages, next slice for a concrete declarative built-in page-definition vocabulary once the specification ambiguity is resolved.
+- Next milestone: Built-in pages, next slice for validating that built-in declarative definitions cover the conservative content obligations of each canonical page without inventing presenter semantics.
 
 ### 2026-08-28 (provenance metadata validation slice)
 

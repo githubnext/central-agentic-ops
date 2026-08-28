@@ -24,4 +24,4 @@ The current aggregation slice adds conservative Section 7 and Section 11 field-d
 
 The latest provenance/freshness/data-states slice audited Section 8 and recorded a specification gap: required logical-source metadata is defined outside the dashboard YAML, but no Section 4.2 document vocabulary admits it yet. The validator therefore continues to reject attempted inline `source-metadata` keys conservatively rather than inventing undeclared YAML semantics.
 
-The current built-in-pages slice begins Section 10 validation with `DLS-PAGE-001`: built-in pages may omit `title` when their `page` name is canonical, while non-canonical built-in page names continue to be rejected so title defaulting never invents unsupported page semantics.
+The current built-in-pages slice adds a conservative implementation-local built-in `definition.views` shape so Section 10 pages can declare custom-view-style source coverage without inventing presenter behavior beyond the specification's built-in page names and required-source catalog.

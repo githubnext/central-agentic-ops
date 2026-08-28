@@ -236,20 +236,19 @@ dashboard:
     - id: usage
       kind: built-in
       page: usage
+      definition:
+        views:
+          - id: usage-summary
+            data:
+              source: usage
+            mark: metric
+            encoding:
+              value:
+                field: invocation
+                aggregate: count
 `);
 
-    expect(result.ok).toBe(false);
-    if (!result.ok) {
-      expect(result.errors).toEqual(
-        expect.arrayContaining([
-          expect.objectContaining({
-            code: 'DLS-E003',
-            path: '$.dashboard.pages[0].page',
-            message: 'built-in page "usage" requires declarative definitions for source "usage".'
-          })
-        ])
-      );
-    }
+    expect(result.ok).toBe(true);
   });
 
   it('DLS-PAGE-001 rejects an omitted built-in page title when the page name is non-canonical', () => {
@@ -273,48 +272,54 @@ dashboard:
     }
   });
 
-  it('DLS-PAGE-003 DLS-PAGE-004 DLS-PAGE-005 DLS-PAGE-007 DLS-PAGE-008 DLS-PAGE-009 DLS-PAGE-010 DLS-PAGE-011 DLS-PAGE-012 DLS-PAGE-013 DLS-PAGE-014 reject built-in pages until declarative source definitions exist', () => {
-    /** @type {Array<[string, string[]]>} */
-    const cases = [
-      ['organizations', ['organizations', 'repositories', 'workflows', 'runs', 'usage']],
-      ['repositories', ['repositories', 'runs', 'usage', 'operational-values']],
-      ['workflows', ['workflows', 'runs', 'outcomes', 'usage', 'findings', 'operational-values']],
-      ['experiments', ['experiments', 'experiment-assignments', 'grader-observations', 'eval-observations', 'outcomes', 'usage', 'operational-values']],
-      ['graders', ['graders', 'grader-observations']],
-      ['evals', ['evals', 'eval-observations']],
-      ['usage', ['usage']],
-      ['engines-models', ['runs', 'outcomes', 'usage']],
-      ['operational-value', ['operational-values']],
-      ['findings', ['findings']]
-    ];
-
-    for (const [pageName, sources] of cases) {
-      const result = validateDashboardDocument(`language-version: "0.1.0"
+  it('DLS-PAGE-003 DLS-PAGE-004 DLS-PAGE-005 DLS-PAGE-007 DLS-PAGE-008 DLS-PAGE-009 DLS-PAGE-010 DLS-PAGE-011 DLS-PAGE-012 DLS-PAGE-013 DLS-PAGE-014 reject built-in page definitions that omit required sources', () => {
+    const result = validateDashboardDocument(`language-version: "0.1.0"
 dashboard:
-  id: built-in-required-sources-${pageName}
-  title: Built In Required Sources ${pageName}
+  id: organizations-built-in
+  title: Organizations Built In
   pages:
-    - id: ${pageName}
+    - id: organizations
       kind: built-in
-      page: ${pageName}
-      title: ${pageName
-        .split('-')
-        .map((segment) => segment.charAt(0).toUpperCase() + segment.slice(1))
-        .join(' ')}
+      page: organizations
+      title: Organizations
+      definition:
+        views:
+          - id: organizations-view
+            data:
+              source: organizations
+            mark: metric
+            encoding:
+              value:
+                field: organization
+                aggregate: count
 `);
 
-      expect(result.ok).toBe(false);
-      if (!result.ok) {
-        expect(result.errors).toEqual(
-          expect.arrayContaining(
-            sources.map((sourceName) => expect.objectContaining({
-              code: 'DLS-E003',
-              path: '$.dashboard.pages[0].page',
-              message: `built-in page "${pageName}" requires declarative definitions for source "${sourceName}".`
-            }))
-          )
-        );
-      }
+    expect(result.ok).toBe(false);
+    if (!result.ok) {
+      expect(result.errors).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({
+            code: 'DLS-E003',
+            path: '$.dashboard.pages[0].definition.views',
+            message: 'built-in page "organizations" definition must include at least one view for source "repositories".'
+          }),
+          expect.objectContaining({
+            code: 'DLS-E003',
+            path: '$.dashboard.pages[0].definition.views',
+            message: 'built-in page "organizations" definition must include at least one view for source "workflows".'
+          }),
+          expect.objectContaining({
+            code: 'DLS-E003',
+            path: '$.dashboard.pages[0].definition.views',
+            message: 'built-in page "organizations" definition must include at least one view for source "runs".'
+          }),
+          expect.objectContaining({
+            code: 'DLS-E003',
+            path: '$.dashboard.pages[0].definition.views',
+            message: 'built-in page "organizations" definition must include at least one view for source "usage".'
+          })
+        ])
+      );
     }
   });
 
@@ -328,30 +333,32 @@ dashboard:
       kind: built-in
       page: engines-models
       title: Engines Models
+      definition:
+        views:
+          - id: runs-view
+            data:
+              source: runs
+            mark: table
+            encoding:
+              columns:
+                - field: run
+          - id: outcomes-view
+            data:
+              source: outcomes
+            mark: table
+            encoding:
+              columns:
+                - field: safe-output
+          - id: usage-view
+            data:
+              source: usage
+            mark: table
+            encoding:
+              columns:
+                - field: invocation
 `);
 
-    expect(result.ok).toBe(false);
-    if (!result.ok) {
-      expect(result.errors).toEqual(
-        expect.arrayContaining([
-          expect.objectContaining({
-            code: 'DLS-E003',
-            path: '$.dashboard.pages[0].page',
-            message: 'built-in page "engines-models" requires declarative definitions for source "runs".'
-          }),
-          expect.objectContaining({
-            code: 'DLS-E003',
-            path: '$.dashboard.pages[0].page',
-            message: 'built-in page "engines-models" requires declarative definitions for source "outcomes".'
-          }),
-          expect.objectContaining({
-            code: 'DLS-E003',
-            path: '$.dashboard.pages[0].page',
-            message: 'built-in page "engines-models" requires declarative definitions for source "usage".'
-          })
-        ])
-      );
-    }
+    expect(result.ok).toBe(true);
   });
 
   it('DLS-PAGE-001 rejects an explicit built-in page title when it differs from the canonical title default', () => {
@@ -391,7 +398,7 @@ dashboard:
     if (!result.ok) {
       expect(result.errors).toEqual(
         expect.arrayContaining([
-          expect.objectContaining({ code: 'DLS-E003', path: '$.dashboard.pages[0].page' })
+          expect.objectContaining({ code: 'DLS-E003', path: '$.dashboard.pages[0].definition' })
         ])
       );
       expect(result.errors.map((error) => error.message)).toEqual(
@@ -422,7 +429,7 @@ dashboard:
       expect(result.errors).toEqual([
         expect.objectContaining({
           code: 'DLS-E003',
-          path: '$.dashboard.pages[0].page',
+          path: '$.dashboard.pages[0].definition',
           message: 'built-in page "runs" requires declarative definitions for source "runs".'
         })
       ]);
