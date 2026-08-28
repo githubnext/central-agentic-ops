@@ -329,26 +329,89 @@ function validateBuiltInPage(page, path, errors) {
     return;
   }
 
-  validateBuiltInPageContent(/** @type {keyof typeof BUILT_IN_PAGE_REQUIRED_SOURCES} */ (page.page), path, errors);
+  validateBuiltInPageContent(
+    /** @type {keyof typeof BUILT_IN_PAGE_REQUIRED_SOURCES} */ (page.page),
+    page,
+    path,
+    errors
+  );
 }
 
 /**
  * @param {keyof typeof BUILT_IN_PAGE_REQUIRED_SOURCES} pageName
+ * @param {Record<string, unknown>} page
  * @param {string} path
  * @param {ValidationError[]} errors
  */
-function validateBuiltInPageContent(pageName, path, errors) {
+function validateBuiltInPageContent(pageName, page, path, errors) {
   const requiredSources = BUILT_IN_PAGE_REQUIRED_SOURCES[pageName];
   if (!requiredSources) {
     return;
   }
 
-  for (const sourceName of requiredSources) {
+  const definition = page.definition;
+  if (!isPlainObject(definition)) {
+    for (const sourceName of requiredSources) {
+      errors.push(createError(
+        ERROR_CODES.missingOrInvalidRequiredField,
+        `built-in page "${pageName}" requires declarative definitions for source "${sourceName}".`,
+        `${path}.definition`
+      ));
+    }
+    return;
+  }
+
+  validateBuiltInPageDefinition(pageName, definition, path, errors);
+}
+
+/**
+ * @param {keyof typeof BUILT_IN_PAGE_REQUIRED_SOURCES} pageName
+ * @param {Record<string, unknown>} definition
+ * @param {string} path
+ * @param {ValidationError[]} errors
+ */
+function validateBuiltInPageDefinition(pageName, definition, path, errors) {
+  if (!Array.isArray(definition.views) || definition.views.length === 0) {
     errors.push(createError(
       ERROR_CODES.missingOrInvalidRequiredField,
-      `built-in page "${pageName}" requires declarative definitions for source "${sourceName}".`,
-      `${path}.page`
+      'built-in page definition must contain a non-empty views sequence.',
+      `${path}.definition.views`
     ));
+    return;
+  }
+
+  const seenSources = new Set();
+  for (const [index, view] of definition.views.entries()) {
+    if (!isPlainObject(view)) {
+      errors.push(createError(
+        ERROR_CODES.missingOrInvalidRequiredField,
+        'built-in page definition view must be a mapping.',
+        `${path}.definition.views[${index}]`
+      ));
+      continue;
+    }
+
+    const data = view.data;
+    if (!isPlainObject(data) || typeof data.source !== 'string') {
+      errors.push(createError(
+        ERROR_CODES.missingOrInvalidRequiredField,
+        'built-in page definition view must contain a data mapping with one canonical source.',
+        `${path}.definition.views[${index}].data.source`
+      ));
+      continue;
+    }
+
+    seenSources.add(data.source);
+  }
+
+  for (const sourceName of BUILT_IN_PAGE_REQUIRED_SOURCES[pageName]) {
+    if (!seenSources.has(sourceName)) {
+      errors.push(createError(
+        ERROR_CODES.missingOrInvalidRequiredField,
+        `built-in page "${pageName}" definition must include at least one view for source "${sourceName}".`,
+        `${path}.definition.views`
+      ));
+    }
   }
 }
 

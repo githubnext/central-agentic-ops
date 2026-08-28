@@ -9,7 +9,7 @@ export const IDENTIFIER_PATTERN = /^[a-z][a-z0-9]*(?:-[a-z0-9]+)*$/;
 export const ROOT_KEYS = ['language-version', 'dashboard'];
 export const DASHBOARD_KEYS = ['id', 'title', 'description', 'defaults', 'pages'];
 export const DEFAULTS_KEYS = ['scope', 'time', 'filters'];
-export const BUILT_IN_PAGE_KEYS = ['id', 'kind', 'page', 'title', 'description'];
+export const BUILT_IN_PAGE_KEYS = ['id', 'kind', 'page', 'title', 'description', 'definition'];
 export const CUSTOM_PAGE_KEYS = ['id', 'kind', 'title', 'description', 'views'];
 
 export const VIEW_KEYS = ['id', 'title', 'description', 'data', 'mark', 'encoding'];
@@ -97,6 +97,8 @@ export const BUILT_IN_PAGE_VALUES = [
   'operational-value',
   'findings'
 ];
+
+export const BUILT_IN_PAGE_DEFINITION_KEYS = ['views'];
 
 export const BUILT_IN_PAGE_REQUIRED_SOURCES = {
   overview: ['workflows', 'runs', 'usage', 'findings', 'operational-values'],
