@@ -1406,6 +1406,7 @@ test("clean-room compilation emits the expected GitHub Actions settings", { time
 test("Pages is an explicit least-privilege add-on", () => {
   const rootManifest = readFileSync(join(root, "aw.yml"), "utf8");
   const pagesWorkflow = readFileSync(join(root, "pages", "pages.yml"), "utf8");
+  const aicUsage = readFileSync(join(root, ".github", "scripts", "pages-report", "aic-usage.mjs"), "utf8");
   const deployedWorkflows = readFileSync(join(root, ".github", "scripts", "pages-report", "deployed-workflows.mjs"), "utf8");
   const operationalValues = readFileSync(join(root, ".github", "scripts", "pages-report", "operational-values.mjs"), "utf8");
   const report = readFileSync(join(root, ".github", "scripts", "pages-report", "report.mjs"), "utf8");
@@ -1419,6 +1420,7 @@ test("Pages is an explicit least-privilege add-on", () => {
   assert.match(pagesWorkflow, /go clean -cache -modcache/);
   assert.doesNotMatch(pagesWorkflow, /pages-aic|REPORT_AIC_CACHE/);
   assert.doesNotMatch(pagesWorkflow, /workflow_run|github\.ref_name/);
+  assert.match(aicUsage, /"--start-date", "-2d", "--cache-before", "-2d"/);
   assert.match(pagesWorkflow, /REPORT_VALUE_CACHE: \.cache\/pages-operational-values\/observations\.json/);
   assert.match(pagesWorkflow, /Save operational-value observation cache/);
   assert.match(deployedWorkflows, /const capabilities = await workflowCapabilities\(item\.repository, item\.path\)/);
@@ -1455,6 +1457,9 @@ test("Documentation Pages embeds this repository's control-plane report", () => 
   assert.match(workflowSource, /actions: read/);
   assert.match(workflowSource, /issues: read/);
   assert.match(workflowSource, /pull-requests: read/);
+  assert.match(workflowSource, /Restore AI Credit usage cache/);
+  assert.match(workflowSource, /REPORT_AIC_CACHE: \.cache\/documentation-pages-aic/);
+  assert.match(workflowSource, /Save AI Credit usage cache/);
   assert.match(workflowSource, /REPORT_ALLOWED_REPOS: \$\{\{ github\.repository \}\}/);
   assert.match(workflowSource, /REPORT_OUTPUT: dist\/cao/);
   assert.match(workflowSource, /path: dist/);
