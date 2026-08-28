@@ -40,6 +40,7 @@ import {
   TEMPORAL_FIELD_NAMES,
   TIME_KEYS,
   BUILT_IN_PAGE_REQUIRED_SOURCES,
+  BUILT_IN_PAGE_REQUIRED_FIELDS,
   TIME_UNIT_VALUES,
   VIEW_DATA_KEYS,
   VIEW_ENCODING_KEYS,
@@ -380,7 +381,8 @@ function validateBuiltInPageDefinition(pageName, definition, path, errors) {
     return;
   }
 
-  const seenSources = new Set();
+  /** @type {Map<string, Set<string>>} */
+  const sourceFieldCoverage = new Map();
   for (const [index, view] of definition.views.entries()) {
     if (!isPlainObject(view)) {
       errors.push(createError(
@@ -401,18 +403,81 @@ function validateBuiltInPageDefinition(pageName, definition, path, errors) {
       continue;
     }
 
-    seenSources.add(data.source);
+    if (!sourceFieldCoverage.has(data.source)) {
+      sourceFieldCoverage.set(data.source, new Set());
+    }
+
+    collectBuiltInDefinitionFieldCoverage(view.encoding, sourceFieldCoverage.get(data.source));
   }
 
   for (const sourceName of BUILT_IN_PAGE_REQUIRED_SOURCES[pageName]) {
-    if (!seenSources.has(sourceName)) {
+    if (!sourceFieldCoverage.has(sourceName)) {
       errors.push(createError(
         ERROR_CODES.missingOrInvalidRequiredField,
         `built-in page "${pageName}" definition must include at least one view for source "${sourceName}".`,
         `${path}.definition.views`
       ));
+      continue;
+    }
+
+    const requiredFields = getBuiltInRequiredFields(pageName, sourceName);
+    const coveredFields = sourceFieldCoverage.get(sourceName) ?? new Set();
+    for (const fieldName of requiredFields) {
+      if (!coveredFields.has(fieldName)) {
+        errors.push(createError(
+          ERROR_CODES.missingOrInvalidRequiredField,
+          `built-in page "${pageName}" definition must expose field "${fieldName}" for source "${sourceName}".`,
+          `${path}.definition.views`
+        ));
+      }
     }
   }
+}
+
+/**
+ * @param {keyof typeof BUILT_IN_PAGE_REQUIRED_FIELDS} pageName
+ * @param {string} sourceName
+ * @returns {string[]}
+ */
+function getBuiltInRequiredFields(pageName, sourceName) {
+  const pageFields = BUILT_IN_PAGE_REQUIRED_FIELDS[pageName];
+  if (!pageFields || !Object.hasOwn(pageFields, sourceName)) {
+    return [];
+  }
+
+  return /** @type {string[]} */ (pageFields[/** @type {keyof typeof pageFields} */ (sourceName)]);
+}
+
+/**
+ * @param {unknown} encoding
+ * @param {Set<string> | undefined} coveredFields
+ */
+function collectBuiltInDefinitionFieldCoverage(encoding, coveredFields) {
+  if (!isPlainObject(encoding) || !coveredFields) {
+    return;
+  }
+
+  for (const channel of ['value', 'x', 'y', 'color', 'href']) {
+    collectFieldDefinitionCoverage(encoding[channel], coveredFields);
+  }
+
+  if (Array.isArray(encoding.columns)) {
+    for (const column of encoding.columns) {
+      collectFieldDefinitionCoverage(column, coveredFields);
+    }
+  }
+}
+
+/**
+ * @param {unknown} fieldDefinition
+ * @param {Set<string>} coveredFields
+ */
+function collectFieldDefinitionCoverage(fieldDefinition, coveredFields) {
+  if (!isPlainObject(fieldDefinition) || typeof fieldDefinition.field !== 'string') {
+    return;
+  }
+
+  coveredFields.add(fieldDefinition.field);
 }
 
 /**
