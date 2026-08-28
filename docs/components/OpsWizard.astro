@@ -26,22 +26,37 @@ const agents = [
 ];
 ---
 
-<section class="ops-wizard" aria-labelledby="ops-wizard-title">
-  <div class="wizard-intro">
-    <p class="wizard-eyebrow">Setup wizard</p>
-    <h2 id="ops-wizard-title">Start an operation in three steps</h2>
-    <p class="wizard-lede">
-      Pick the operation you want to run and the coding agent you use, then copy the generated prompt. The agent creates
-      your private control plane repository, installs the operation, and runs it once in <code>review</code> mode.
-    </p>
-    <ul class="wizard-badges" aria-label="Wizard benefits">
-      <li>Private control plane</li>
-      <li>Review-mode first run</li>
-      <li>Agent-ready prompt</li>
-    </ul>
-  </div>
+<section class="ops-wizard-shell" aria-labelledby="ops-wizard-title">
+  <details class="ops-wizard">
+    <summary class="wizard-toggle">
+      <span class="wizard-eyebrow">Setup wizard</span>
+      <span class="wizard-toggle-copy">
+        <span class="wizard-toggle-title" id="ops-wizard-title">Start an operation in three steps</span>
+        <span class="wizard-toggle-lede">
+          Generate a copy-ready prompt for creating a private control plane and running the first review-mode operation.
+        </span>
+      </span>
+      <span class="wizard-toggle-action" aria-hidden="true">
+        <span class="wizard-toggle-open">Open wizard</span>
+        <span class="wizard-toggle-close">Close wizard</span>
+      </span>
+    </summary>
 
-  <form class="wizard-form" data-ops-wizard>
+    <div class="wizard-body">
+      <div class="wizard-intro">
+        <p class="wizard-lede">
+          Pick the operation you want to run and the coding agent you use, then copy the generated prompt. The agent
+          creates your private control plane repository, installs the operation, and runs it once in <code>review</code>
+          mode.
+        </p>
+        <ul class="wizard-badges" aria-label="Wizard benefits">
+          <li>Private control plane</li>
+          <li>Review-mode first run</li>
+          <li>Agent-ready prompt</li>
+        </ul>
+      </div>
+
+      <form class="wizard-form" data-ops-wizard>
     <fieldset class="wizard-step">
       <legend><span class="step-number">1</span> Choose the operation to run</legend>
       <div class="card-grid">
@@ -136,9 +151,12 @@ const agents = [
           an operation manually.
         </p>
       </noscript>
-      <div class="prompt-panel">
+      <div class="prompt-panel" aria-label="Generated prompt preview">
         <div class="prompt-toolbar">
-          <span class="prompt-summary" data-prompt-summary></span>
+        <span class="prompt-summary">
+          <span data-prompt-summary></span>
+          <span class="prompt-preview-label">Prompt preview</span>
+        </span>
           <button type="button" class="copy-button" data-copy-prompt>
             <span class="copy-icon" aria-hidden="true">
               <svg viewBox="0 0 20 20" focusable="false">
@@ -168,7 +186,9 @@ const agents = [
         </div>
       </dialog>
     </fieldset>
-  </form>
+      </form>
+    </div>
+  </details>
 </section>
 
 <script>
@@ -345,33 +365,104 @@ const agents = [
 
 <style>
   @layer starlight.core {
+    .ops-wizard-shell {
+      width: min(52rem, 100%);
+      margin-inline: auto;
+    }
+
     .ops-wizard {
       --wizard-blue: #00d4ff;
       --wizard-indigo: #5b5cff;
       --wizard-pink: #ff4ecd;
       --wizard-violet: #9b5cff;
-      --wizard-glow-opacity: 0.48;
+      --wizard-glow-opacity: 0.16;
 
       position: relative;
-      display: flex;
-      width: min(58rem, 100%);
-      flex-direction: column;
-      gap: 1.75rem;
-      margin-inline: auto;
       overflow: hidden;
-      border: 1px solid color-mix(in srgb, var(--sl-color-text-accent) 42%, transparent);
-      border-radius: 1.25rem;
+      border: 1px solid color-mix(in srgb, var(--sl-color-text-accent) 28%, transparent);
+      border-radius: 1rem;
       background:
-        linear-gradient(135deg, color-mix(in srgb, var(--wizard-indigo) 20%, transparent), transparent 36%),
-        radial-gradient(circle at 8% 0%, color-mix(in srgb, var(--wizard-blue) 22%, transparent), transparent 28%),
-        radial-gradient(circle at 92% 16%, color-mix(in srgb, var(--wizard-pink) 24%, transparent), transparent 30%),
-        radial-gradient(120% 90% at 50% -10%, color-mix(in srgb, var(--sl-color-text-accent) 20%, transparent), transparent 60%),
-        color-mix(in srgb, var(--sl-color-black) 35%, transparent);
-      padding: clamp(1.25rem, 2.5vw, 2.25rem);
+        linear-gradient(135deg, color-mix(in srgb, var(--wizard-indigo) 8%, transparent), transparent 45%),
+        color-mix(in srgb, var(--sl-color-black) 20%, transparent);
       box-shadow:
-        0 1.5rem 3rem color-mix(in srgb, var(--sl-color-black) 35%, transparent),
-        inset 0 1px 0 color-mix(in srgb, var(--sl-color-white) 16%, transparent);
+        0 0.75rem 1.75rem color-mix(in srgb, var(--sl-color-black) 22%, transparent),
+        inset 0 1px 0 color-mix(in srgb, var(--sl-color-white) 10%, transparent);
       isolation: isolate;
+    }
+
+    .wizard-toggle {
+      position: relative;
+      z-index: 1;
+      display: grid;
+      grid-template-columns: auto minmax(0, 1fr) auto;
+      gap: 0.75rem;
+      align-items: center;
+      padding: 0.85rem 1rem;
+      cursor: pointer;
+      list-style: none;
+    }
+
+    .wizard-toggle::-webkit-details-marker {
+      display: none;
+    }
+
+    .wizard-toggle:focus-visible {
+      outline: 2px solid var(--sl-color-text-accent);
+      outline-offset: -4px;
+    }
+
+    .wizard-toggle-copy {
+      display: flex;
+      min-width: 0;
+      flex-direction: column;
+      gap: 0.15rem;
+    }
+
+    .wizard-toggle-title {
+      color: var(--sl-color-white);
+      font-size: var(--sl-text-lg);
+      font-weight: 700;
+      line-height: 1.2;
+    }
+
+    .wizard-toggle-lede {
+      color: var(--sl-color-gray-2);
+      font-size: var(--sl-text-xs);
+      line-height: 1.45;
+    }
+
+    .wizard-toggle-action {
+      border: 1px solid color-mix(in srgb, var(--sl-color-text-accent) 42%, transparent);
+      border-radius: 999px;
+      background: color-mix(in srgb, var(--sl-color-text-accent) 10%, transparent);
+      padding: 0.32rem 0.7rem;
+      color: color-mix(in srgb, var(--sl-color-text-accent) 84%, var(--sl-color-white));
+      font-size: var(--sl-text-xs);
+      font-weight: 800;
+      white-space: nowrap;
+    }
+
+    .ops-wizard[open] .wizard-toggle-action {
+      background: color-mix(in srgb, var(--sl-color-white) 8%, transparent);
+    }
+
+    .wizard-toggle-close,
+    .ops-wizard[open] .wizard-toggle-open {
+      display: none;
+    }
+
+    .ops-wizard[open] .wizard-toggle-close {
+      display: inline;
+    }
+
+    .wizard-body {
+      position: relative;
+      z-index: 1;
+      display: flex;
+      flex-direction: column;
+      gap: 1.25rem;
+      border-top: 1px solid color-mix(in srgb, var(--sl-color-white) 10%, transparent);
+      padding: clamp(1rem, 2vw, 1.5rem);
     }
 
     .ops-wizard::before,
@@ -383,7 +474,7 @@ const agents = [
       border-radius: 999px;
       content: "";
       filter: blur(2rem);
-      opacity: var(--wizard-glow-opacity);
+      opacity: 0;
       pointer-events: none;
     }
 
@@ -399,13 +490,17 @@ const agents = [
       background: var(--wizard-blue);
     }
 
+    .ops-wizard[open]::before,
+    .ops-wizard[open]::after {
+      opacity: var(--wizard-glow-opacity);
+    }
+
     .wizard-eyebrow {
-      align-self: center;
       margin: 0;
       border: 1px solid color-mix(in srgb, var(--sl-color-text-accent) 55%, transparent);
       border-radius: 999px;
-      background: color-mix(in srgb, var(--sl-color-text-accent) 14%, transparent);
-      padding: 0.25rem 0.7rem;
+      background: color-mix(in srgb, var(--sl-color-text-accent) 10%, transparent);
+      padding: 0.22rem 0.6rem;
       color: color-mix(in srgb, var(--sl-color-text-accent) 85%, var(--sl-color-white));
       font-size: var(--sl-text-xs);
       font-weight: 700;
@@ -420,14 +515,6 @@ const agents = [
       flex-direction: column;
       gap: 0.5rem;
       text-align: center;
-    }
-
-    .wizard-intro h2 {
-      margin: 0;
-      color: var(--sl-color-white);
-      font-size: clamp(1.6rem, 3.8vw, 2.35rem);
-      line-height: 1.2;
-      text-shadow: 0 0.75rem 2rem color-mix(in srgb, var(--sl-color-black) 45%, transparent);
     }
 
     .wizard-lede {
@@ -691,22 +778,37 @@ const agents = [
     }
 
     .prompt-summary {
+      display: inline-flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 0.5rem;
       color: var(--sl-color-gray-2);
       font-size: var(--sl-text-xs);
       font-weight: 700;
     }
 
+    .prompt-preview-label {
+      border: 1px solid color-mix(in srgb, var(--sl-color-white) 14%, transparent);
+      border-radius: 999px;
+      padding: 0.16rem 0.45rem;
+      color: var(--sl-color-gray-3);
+      font-weight: 800;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+    }
+
     .prompt-panel pre {
-      max-height: 22rem;
+      max-height: 11rem;
       overflow: auto;
       margin: 0;
-      padding: 1rem;
+      padding: 0.85rem 1rem;
       color: var(--sl-color-gray-1);
       font-size: var(--sl-text-xs);
       line-height: 1.6;
       text-align: start;
       white-space: pre-wrap;
       word-break: break-word;
+      mask-image: linear-gradient(to bottom, #000 78%, transparent);
     }
 
     .copy-button {
@@ -851,6 +953,16 @@ const agents = [
       .option-card:hover,
       .copy-button:hover {
         transform: none;
+      }
+    }
+
+    @media (max-width: 38rem) {
+      .wizard-toggle {
+        grid-template-columns: 1fr;
+      }
+
+      .wizard-toggle-action {
+        justify-self: start;
       }
     }
   }
