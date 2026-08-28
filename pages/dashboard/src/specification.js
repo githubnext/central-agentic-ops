@@ -20,6 +20,20 @@ export const FIELD_DEFINITION_KEYS = ['field', 'type', 'aggregate', 'time-unit',
 export const FIELD_TYPE_VALUES = ['nominal', 'ordinal', 'quantitative', 'temporal'];
 export const AGGREGATE_VALUES = ['count', 'distinct-count', 'sum', 'mean', 'min', 'max', 'none'];
 export const TIME_UNIT_VALUES = ['hour', 'day', 'week', 'month'];
+export const DATASET_METADATA_KEYS = [
+  'source-id',
+  'source-kind',
+  'as-of',
+  'retrieved-at',
+  'coverage-start',
+  'coverage-end',
+  'completeness',
+  'freshness',
+  'provenance-link'
+];
+export const DATASET_COMPLETENESS_VALUES = ['complete', 'partial', 'unknown'];
+export const DATASET_FRESHNESS_VALUES = ['fresh', 'stale', 'unknown'];
+export const DATASET_AVAILABILITY_VALUES = ['available', 'empty', 'unavailable'];
 export const SCOPE_KEYS = ['organizations', 'repositories', 'workflows'];
 export const TIME_KEYS = ['range', 'start', 'end'];
 
@@ -162,5 +176,6 @@ export const ERROR_CODES = {
   missingOrInvalidRequiredField: 'DLS-E003',
   unknownOrDuplicateKey: 'DLS-E004',
   nonCanonicalVocabularyOrIdentifier: 'DLS-E005',
-  invalidScopeFilterTimeAggregationOrOrderReference: 'DLS-E010'
+  invalidScopeFilterTimeAggregationOrOrderReference: 'DLS-E010',
+  missingRequiredProvenanceOrDataStateMetadata: 'DLS-E012'
 };

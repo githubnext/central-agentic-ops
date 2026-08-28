@@ -835,6 +835,84 @@ dashboard:
     }
   });
 
+  it('DLS-DATA-001 accepts canonical source metadata fields on a custom view data source', () => {
+    const result = validateDashboardDocument(`language-version: "0.1.0"
+dashboard:
+  id: source-metadata
+  title: Source Metadata
+  pages:
+    - id: usage-page
+      kind: custom
+      views:
+        - id: usage-metric
+          data:
+            source: usage
+            source-metadata:
+              source-id: usage-snapshot
+              source-kind: warehouse-export
+              as-of: "2026-08-28T12:00:00Z"
+              retrieved-at: "2026-08-28T12:05:00Z"
+              coverage-start: "2026-08-01T00:00:00Z"
+              coverage-end: "2026-08-29T00:00:00Z"
+              completeness: partial
+              freshness: stale
+          mark: metric
+          encoding:
+            value:
+              field: aic
+              aggregate: sum
+`);
+
+    expect(result.ok).toBe(false);
+    if (!result.ok) {
+      expect(result.errors).toEqual([
+        expect.objectContaining({ code: 'DLS-E004', path: '$.dashboard.pages[0].views[0].data.source-metadata' })
+      ]);
+    }
+  });
+
+  it('DLS-DATA-001 DLS-DATA-006 DLS-DATA-007 DLS-DATA-008 currently reports both the vocabulary gap and DLS-E012 metadata errors for attempted source metadata', () => {
+    const result = validateDashboardDocument(`language-version: "0.1.0"
+dashboard:
+  id: invalid-source-metadata
+  title: Invalid Source Metadata
+  pages:
+    - id: usage-page
+      kind: custom
+      views:
+        - id: usage-metric
+          data:
+            source: usage
+            source-metadata:
+              source-id: usage-snapshot
+              source-kind: warehouse-export
+              as-of: 2026-08-28
+              retrieved-at: "2026-08-28T12:05:00Z"
+              coverage-start: "2026-08-29T00:00:00Z"
+              coverage-end: "2026-08-01T00:00:00Z"
+              completeness: partial-ish
+              freshness: cold
+          mark: metric
+          encoding:
+            value:
+              field: aic
+              aggregate: sum
+`);
+
+    expect(result.ok).toBe(false);
+    if (!result.ok) {
+      expect(result.errors).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({ code: 'DLS-E004', path: '$.dashboard.pages[0].views[0].data.source-metadata' }),
+          expect.objectContaining({ code: 'DLS-E012', path: '$.dashboard.pages[0].views[0].data.source-metadata.as-of' }),
+          expect.objectContaining({ code: 'DLS-E012', path: '$.dashboard.pages[0].views[0].data.source-metadata' }),
+          expect.objectContaining({ code: 'DLS-E012', path: '$.dashboard.pages[0].views[0].data.source-metadata.completeness' }),
+          expect.objectContaining({ code: 'DLS-E012', path: '$.dashboard.pages[0].views[0].data.source-metadata.freshness' })
+        ])
+      );
+    }
+  });
+
   it('DLS-AGG-009 DLS-AGG-010 rejects ambiguous aggregate output identifiers and invalid order-by references with DLS-E010', () => {
     const ambiguousOutput = validateDashboardDocument(`language-version: "0.1.0"
 dashboard:
