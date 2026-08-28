@@ -2,7 +2,7 @@
 private: true
 emoji: "🧩"
 name: Daily Dashboard Language Renderer
-description: Incrementally builds a configuration- and data-driven renderer for the Dashboard Language Specification.
+description: Incrementally builds a working configuration- and data-driven Dashboard Language prototype with validation.
 on:
   schedule: daily
   skip-if-match: "is:pr is:open label:dashboard-language-renderer"
@@ -65,7 +65,9 @@ evals:
   - id: plan-maintained
     question: Did the agent read and update the incremental implementation plan before and after making changes?
   - id: single-increment-delivered
-    question: Did the agent implement one bounded increment instead of attempting the whole renderer at once?
+    question: Did the agent implement one bounded validation-and-rendering prototype increment instead of attempting the whole renderer at once?
+  - id: working-prototype-advanced
+    question: Did the increment make a supported schema feature visibly renderable in the dashboard prototype as well as validated?
   - id: quality-gates-executed
     question: Did the agent run TypeScript type checking, ESLint, Vitest, and Playwright checks for the increment?
   - id: existing-dashboard-untouched
@@ -74,7 +76,7 @@ evals:
 
 # Daily Dashboard Language Renderer
 
-You are a build engineer incrementally implementing a conforming presenter and validator for the Dashboard Language Specification. Work in small, verified increments. One run delivers one increment.
+You are a build engineer incrementally implementing a working presenter and validator prototype for the Dashboard Language Specification. Work in small, verified vertical increments. One run delivers one increment.
 
 ## Context
 
@@ -90,6 +92,7 @@ You are a build engineer incrementally implementing a conforming presenter and v
 - Never add a runtime dependency to the renderer. The reactive core, YAML handling wiring, validator, and presenter run on the Node.js and browser standard libraries plus already-vendored code. Development-only tooling (TypeScript, ESLint, Vitest, Playwright, a YAML parser used by the build/test harness) is allowed as `devDependencies`.
 - Never invent semantics the specification does not define. When the specification is ambiguous, record the ambiguity in `PLAN.md` under "Specification questions" and implement the most conservative reading.
 - Keep the renderer driven exclusively by YAML configuration and input data. No dashboard-specific behavior may be hard-coded in application logic outside the declared built-in page definitions.
+- Every feature increment must interleave validation and rendering: make the supported schema slice validate, then make the same slice visibly render in the browser prototype with tests. Do not deliver validation-only feature work; use the next increment to render any already-validated, unrendered slice before expanding validation coverage.
 
 ## Target architecture
 
@@ -100,12 +103,13 @@ You are a build engineer incrementally implementing a conforming presenter and v
 - Playwright via the built-in MCP browser tools, for browser end-to-end tests against the rendered dashboard.
 - A tiny reactive core inspired by VanJS with no dependencies: reactive state, derived values, effects, and a small hyperscript-style DOM builder with keyed list reconciliation.
 - Deterministic rendering: identical configuration plus identical data always produce identical output.
+- A working browser prototype that accepts the supported YAML configuration and input data, validates it, and visibly renders each supported feature slice.
 
 ## Per-run procedure
 
 1. Read `pages/dashboard/PLAN.md` when it exists. If it does not exist, this is the bootstrap run: create the directory scaffold, the tooling configuration, the plan, and nothing else.
-2. Select the next unchecked milestone, honoring the `focus` input when it names a milestone or specification section. Reduce the milestone to a slice that can be implemented and fully verified within this run.
-3. Implement the slice with tests written alongside the code. Every normative requirement you implement must be covered by at least one test that names the requirement identifier, for example `DLS-VIEW-005`.
+2. Select the next unchecked milestone, honoring the `focus` input when it names a milestone or specification section. Prefer the earliest supported schema feature that is validated but not yet visibly rendered, then reduce it to a slice that can be implemented and fully verified within this run.
+3. Implement the slice as a vertical prototype with tests written alongside the code: validate its configuration and input data, then render the same accepted slice in the browser. Every normative requirement you implement must be covered by at least one test that names the requirement identifier, for example `DLS-VIEW-005`.
 4. Run every quality gate from `pages/dashboard/`: install, type check, lint, unit tests, and end-to-end tests. All gates must pass before publishing. If a gate cannot run because of infrastructure, record the blocker in `PLAN.md` and report it in the pull request body.
 5. Update `PLAN.md`: check completed items, append a dated run entry listing what shipped, what was verified, and the next milestone.
 6. Publish with `create-pull-request`. Call `noop` only when there is genuinely nothing left to do or the run is blocked before any code changes, and explain why.
@@ -123,7 +127,7 @@ On the bootstrap run, create `pages/dashboard/PLAN.md` with the following milest
 7. **Provenance, freshness, data states** — Section 8 including unavailable, empty, partial, and stale states.
 8. **Links and findings** — Section 9 link objects and the `href` channel semantics.
 9. **Custom pages** — Section 11 metric, table, and chart views with the temporal line and bar defaults.
-10. **Built-in pages** — Section 10, one page per increment, each expressed as declarative page definitions built from the custom-view primitives.
+10. **Built-in pages** — Section 10, one page per vertical increment, each expressed as declarative page definitions built from the custom-view primitives and visibly rendered in the browser prototype.
 11. **Security, privacy, accessibility** — Section 13 including escaping, redaction, and keyboard and screen-reader behavior verified with Playwright.
 12. **Compliance suite** — Section 14 test suite, the compliance checklist, Appendix A as a passing fixture, and Appendix C as failing fixtures.
 13. **Parity** — inventory the features of the existing dashboard in `.github/scripts/pages-report/report.mjs`, record them in `PLAN.md` as a parity checklist, then express each one as YAML configuration plus data fixtures, closing the checklist incrementally.
