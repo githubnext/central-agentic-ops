@@ -589,7 +589,7 @@ function validateLimit(limit, path, errors) {
     return;
   }
 
-  if (!Number.isInteger(limit) || limit <= 0) {
+  if (typeof limit !== 'number' || !Number.isInteger(limit) || limit <= 0) {
     errors.push(createError(
       ERROR_CODES.invalidScopeFilterTimeAggregationOrOrderReference,
       'limit must be a positive integer.',
