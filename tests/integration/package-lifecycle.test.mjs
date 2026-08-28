@@ -122,6 +122,7 @@ function assertCorePackage(consumer) {
   assert.deepEqual(
     installedManifest.files.map(({ destination }) => destination).sort(),
     [
+      ".github/graders/aw-failures-investigator-operational-value.sh",
       ".github/workflows/ambient-context.md",
       ".github/workflows/aw-failures-investigator.md",
       ".github/workflows/aw-maintenance.md",
