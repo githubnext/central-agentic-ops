@@ -292,6 +292,15 @@ test("enterprise-scale limits remain bounded across inventory sizes", () => {
 });
 
 test("enterprise defaults, budgets, timeouts, and concurrency are finite", () => {
+  const monthlyBudgetVariables = {
+    "advisory.md": "CENTRAL_AGENTIC_OPS_ADVISORY_MONTHLY_AI_CREDIT_BUDGET",
+    "ambient-context.md": "CENTRAL_AGENTIC_OPS_AMBIENT_CONTEXT_MONTHLY_AI_CREDIT_BUDGET",
+    "aw-failures.md": "CENTRAL_AGENTIC_OPS_AW_FAILURES_MONTHLY_AI_CREDIT_BUDGET",
+    "aw-maintenance.md": "CENTRAL_AGENTIC_OPS_AW_MAINTENANCE_MONTHLY_AI_CREDIT_BUDGET",
+    "dependabot.md": "CENTRAL_AGENTIC_OPS_DEPENDABOT_MONTHLY_AI_CREDIT_BUDGET",
+    "eu-cra-compliance.md": "CENTRAL_AGENTIC_OPS_EU_CRA_COMPLIANCE_MONTHLY_AI_CREDIT_BUDGET",
+    "optimization.md": "CENTRAL_AGENTIC_OPS_OPTIMIZATION_MONTHLY_AI_CREDIT_BUDGET",
+  };
   const expected = {
     "advisory.md": { credits: 250, timeout: 15, dispatchMax: 50, workers: 1 },
     "advisory-package-maintainer.md": { credits: 200, timeout: 20 },
@@ -327,6 +336,8 @@ test("enterprise defaults, budgets, timeouts, and concurrency are finite", () =>
     if (limits.dispatchMax) {
       assert.match(source, new RegExp(`dispatch_max: "${limits.dispatchMax}"`), name);
       assert.match(source, new RegExp(`dispatch-workflow:[\\s\\S]*?max: ${limits.dispatchMax}`), name);
+      const budgetBinding = `monthly_credit_budget: \${{ vars.${monthlyBudgetVariables[name]} || '0' }}`;
+      assert.ok(source.includes(budgetBinding), name);
     }
   }
 
@@ -346,7 +357,9 @@ test("enterprise defaults, budgets, timeouts, and concurrency are finite", () =>
   assert.match(precompute, /dispatch_max must be an integer from 1 through 1000/);
   assert.match(precompute, /\(\$dispatch_max \| tonumber\) \/ \$eligible_workers \| floor/);
   assert.match(precompute, /\(\$aggregate_credit_limit \| tonumber\) - \(\$orchestrator_credits \| tonumber\)/);
-  assert.match(precompute, /\[\(\$max_repos \| tonumber\), \$percent_cap, \$credit_cap\] \| min/);
+  assert.match(precompute, /\[\.effective_max_repos, \.monthly_budget_target_cap\] \| min/);
+  assert.match(precompute, /monthly_credit_budget must be a non-negative integer/);
+  assert.match(precompute, /gh aw logs "\$workflow_id" --start-date "\$month_start" --json -c 1000/);
   assert.doesNotMatch(precompute, /--paginate/);
   assert.doesNotMatch(control, /repositories: \["\*"\]/);
 });

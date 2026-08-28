@@ -71,6 +71,7 @@ imports:
       orchestrator_credits: "250"
       worker_credits_per_target: "500"
       aggregate_credit_limit: ${{ vars.CENTRAL_AGENTIC_OPS_MAX_AI_CREDITS_PER_RUN || '1100' }}
+      monthly_credit_budget: ${{ vars.CENTRAL_AGENTIC_OPS_AW_FAILURES_MONTHLY_AI_CREDIT_BUDGET || '0' }}
 
 permissions:
   contents: read
