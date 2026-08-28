@@ -2,11 +2,18 @@ name: Documentation Pages
 
 on:
   workflow_dispatch:
+  schedule:
+    - cron: "23 5 * * *"
   push:
     branches: [main]
     paths:
+      - .github/scripts/pages-report/**
       - .github/workflows/documentation-pages.yml
+      - .github/workflows/*.lock.yml
+      - .github/workflows/*.md
+      - "*/aw.yml"
       - astro.config.mjs
+      - aw.yml
       - docs/**
       - package.json
       - package-lock.json
@@ -23,8 +30,11 @@ jobs:
   build:
     runs-on: ubuntu-latest
     permissions:
+      actions: read
       contents: read
+      issues: read
       pages: write
+      pull-requests: read
     steps:
       - name: Checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -45,6 +55,90 @@ jobs:
 
       - name: Build documentation
         run: npm run docs:build
+
+      - name: Extract control-plane inventory
+        env:
+          REPORT_INVENTORY: ${{ runner.temp }}/control-plane-inventory.json
+        run: node .github/scripts/pages-report/inventory.mjs
+
+      - name: Discover deployed agentic workflows
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          REPORT_ALLOWED_REPOS: ${{ github.repository }}
+          REPORT_DEPLOYED_WORKFLOWS: ${{ runner.temp }}/deployed-workflows.json
+        run: node .github/scripts/pages-report/deployed-workflows.mjs
+
+      - name: Install gh-aw CLI
+        uses: github/gh-aw-actions/setup-cli@b304200a0ef4b3998673bfc7945acb08ab8c88b7 # v0.87.2
+        with:
+          version: v0.87.2
+
+      - name: Checkout operational-value replay runtime
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          repository: github/gh-aw
+          ref: 5cd744cc263a9d1ec5660fbf5604eaceb6f83430
+          path: .cache/gh-aw-operational-value-source
+          persist-credentials: false
+
+      - name: Setup Go for operational-value replay
+        uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
+        with:
+          go-version-file: .cache/gh-aw-operational-value-source/go.mod
+          cache: false
+
+      - name: Build operational-value replay runtime
+        working-directory: .cache/gh-aw-operational-value-source
+        run: |
+          mkdir -p "$RUNNER_TEMP/gh-aw-operational-value"
+          go build -ldflags "-s -w -X main.version=v0.87.6" \
+            -o "$RUNNER_TEMP/gh-aw-operational-value/gh-aw" ./cmd/gh-aw
+          go clean -cache -modcache
+
+      - name: Restore operational-value observation cache
+        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: .cache/pages-operational-values
+          key: ${{ runner.os }}-documentation-pages-operational-values-${{ github.repository }}-${{ github.run_id }}
+          restore-keys: |
+            ${{ runner.os }}-documentation-pages-operational-values-${{ github.repository }}-
+
+      - name: Collect AI Credit usage
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPORT_AIC_CONCURRENCY: "3"
+          REPORT_AIC_USAGE: ${{ runner.temp }}/aic-usage.json
+          REPORT_DEPLOYED_WORKFLOWS: ${{ runner.temp }}/deployed-workflows.json
+        run: node .github/scripts/pages-report/aic-usage.mjs
+
+      - name: Collect operational-value observations
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPORT_DEPLOYED_WORKFLOWS: ${{ runner.temp }}/deployed-workflows.json
+          REPORT_GH_AW_BIN: ${{ runner.temp }}/gh-aw-operational-value/gh-aw
+          REPORT_OPERATIONAL_VALUES: ${{ runner.temp }}/operational-values.json
+          REPORT_VALUE_CACHE: .cache/pages-operational-values/observations.json
+          REPORT_VALUE_CONCURRENCY: "3"
+        run: node .github/scripts/pages-report/operational-values.mjs
+
+      - name: Save operational-value observation cache
+        if: always()
+        uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: .cache/pages-operational-values
+          key: ${{ runner.os }}-documentation-pages-operational-values-${{ github.repository }}-${{ github.run_id }}
+
+      - name: Build operations report
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          REPORT_ALLOWED_REPOS: ${{ github.repository }}
+          REPORT_REPOSITORY_VARIABLES: ${{ toJSON(vars) }}
+          REPORT_AIC_USAGE: ${{ runner.temp }}/aic-usage.json
+          REPORT_INVENTORY: ${{ runner.temp }}/control-plane-inventory.json
+          REPORT_DEPLOYED_WORKFLOWS: ${{ runner.temp }}/deployed-workflows.json
+          REPORT_OPERATIONAL_VALUES: ${{ runner.temp }}/operational-values.json
+          REPORT_OUTPUT: dist/cao
+        run: node .github/scripts/pages-report/report.mjs
 
       - name: Upload Pages artifact
         uses: actions/upload-pages-artifact@7b1f4a764d45c48632c6b24a0339c27f5614fb0b # v4

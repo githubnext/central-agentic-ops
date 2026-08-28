@@ -1110,6 +1110,23 @@ test("daily dashboard review uses the GitHub Copilot Pi engine", () => {
   assert.doesNotMatch(source, /runtime:\s+docker-sbx/);
 });
 
+test("CAO dashboard reviewer checks successful documentation deployments", () => {
+  const source = workflow("cao-dashboard-review.md");
+
+  assert.match(source, /workflow_run:\n\s+workflows: \["Documentation Pages"\]\n\s+types: \[completed\]\n\s+branches: \[main\]/);
+  assert.match(source, /github\.event\.workflow_run\.conclusion == 'success'/);
+  assert.match(source, /REPORT_INVENTORY=\/tmp\/gh-aw\/agent\/cao-dashboard-review\/expected-inventory\.json/);
+  assert.match(source, /githubnext\.github\.io\/central-agentic-ops\/cao\//);
+  assert.match(source, /playwright:\n\s+mode: cli/);
+  assert.match(source, /toolsets: \[repos, issues, actions\]/);
+  assert.match(source, /githubnext\.github\.io/);
+  assert.match(source, /at most the latest 100 runs from the last 24 hours/);
+  assert.match(source, /title-prefix: "\[cao-dashboard\] "/);
+  assert.match(source, /close-older-key: cao-dashboard-review/);
+  assert.match(source, /If an open issue already describes the same fingerprint, call `noop`/);
+  assert.doesNotMatch(source, /^\s+(create-pull-request|add-comment|create-discussion|push-to-pull-request-branch):/m);
+});
+
 test("daily dashboard renderer builds incrementally inside its own directory", () => {
   const source = workflow("daily-dashboard-language-renderer.md");
 
@@ -1194,6 +1211,7 @@ test("clean-room compilation emits the expected GitHub Actions settings", { time
       ...packageLockNames,
       "accessibility-expert.lock.yml",
       "advisory-package-maintainer.lock.yml",
+      "cao-dashboard-review.lock.yml",
       "daily-dashboard-language-renderer.lock.yml",
       "daily-dashboard-language-spec-review.lock.yml",
       "multi-device-docs-tester.lock.yml",
@@ -1376,6 +1394,25 @@ test("Pages is an explicit least-privilege add-on", () => {
   }
 });
 
+test("Documentation Pages embeds this repository's control-plane report", () => {
+  const workflowSource = readFileSync(join(root, ".github", "workflows", "documentation-pages.yml"), "utf8");
+  const astroConfig = readFileSync(join(root, "astro.config.mjs"), "utf8");
+
+  assert.match(workflowSource, /schedule:\n\s+- cron: "23 5 \* \* \*"/);
+  assert.match(workflowSource, /- \.github\/scripts\/pages-report\/\*\*/);
+  assert.match(workflowSource, /- \.github\/workflows\/\*\.md/);
+  assert.match(workflowSource, /- "\*\/aw\.yml"/);
+  assert.match(workflowSource, /actions: read/);
+  assert.match(workflowSource, /issues: read/);
+  assert.match(workflowSource, /pull-requests: read/);
+  assert.match(workflowSource, /REPORT_ALLOWED_REPOS: \$\{\{ github\.repository \}\}/);
+  assert.match(workflowSource, /REPORT_OUTPUT: dist\/cao/);
+  assert.match(workflowSource, /path: dist/);
+  assert.doesNotMatch(workflowSource, /REPORT_INCLUDE_PRIVATE:\s*true/);
+  assert.equal((workflowSource.match(/actions\/deploy-pages@/g) || []).length, 1);
+  assert.match(astroConfig, /label: "Control plane status", link: "\/cao\/"/);
+});
+
 test("Pages inventory links multiline orchestrator worker lists", () => {
   const temporaryRoot = mkdtempSync(join(tmpdir(), "central-agentic-ops-inventory-"));
   const outputPath = join(temporaryRoot, "control-plane.json");
@@ -1437,7 +1474,7 @@ test("Pages report SVGs use theme colors in light and dark modes", () => {
 
 test("Pages renders one canonical authored workflow detail across repository and package views", () => {
   const temporaryRoot = mkdtempSync(join(tmpdir(), "central-agentic-ops-workflow-pages-"));
-  const outputPath = join(temporaryRoot, "site");
+  const outputPath = join(temporaryRoot, "dist", "cao");
   const inventoryPath = join(temporaryRoot, "inventory.json");
   const deployedPath = join(temporaryRoot, "deployed.json");
   const aicPath = join(temporaryRoot, "aic.json");
@@ -1544,6 +1581,7 @@ globalThis.fetch = async (input) => {
     const actionRequiredRuns = readFileSync(join(outputPath, "runs", "action-required.html"), "utf8");
     const inProgressRuns = readFileSync(join(outputPath, "runs", "in-progress.html"), "utf8");
     const coverageDiagnostics = readFileSync(join(outputPath, "coverage", "index.html"), "utf8");
+    assert.doesNotMatch(overview, /\b(?:href|src)="\/(?!\/)/);
     assert.match(overview, /<title>Overview \| control<\/title>/);
     assert.match(overview, /class="sidebar-brand"[^>]*>[\s\S]*?<span>control<\/span>/);
     assert.match(overview, /<span>Overview<\/span>[\s\S]*?<span>Repositories<\/span>[\s\S]*?<span>Packages<\/span>/);
