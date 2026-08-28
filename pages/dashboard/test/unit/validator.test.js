@@ -254,6 +254,43 @@ dashboard:
     }
   });
 
+  it('DLS-PAGE-001 accepts an explicit built-in page title when it matches the canonical title default', () => {
+    const result = validateDashboardDocument(`language-version: "0.1.0"
+dashboard:
+  id: explicit-built-in-title-default
+  title: Explicit Built-in Title Default
+  pages:
+    - id: engines-models
+      kind: built-in
+      page: engines-models
+      title: Engines Models
+`);
+
+    expect(result.ok).toBe(true);
+  });
+
+  it('DLS-PAGE-001 rejects an explicit built-in page title when it differs from the canonical title default', () => {
+    const result = validateDashboardDocument(`language-version: "0.1.0"
+dashboard:
+  id: mismatched-built-in-title
+  title: Mismatched Built-in Title
+  pages:
+    - id: runs
+      kind: built-in
+      page: runs
+      title: Run Details
+`);
+
+    expect(result.ok).toBe(false);
+    if (!result.ok) {
+      expect(result.errors).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({ code: 'DLS-E005', path: '$.dashboard.pages[0].title' })
+        ])
+      );
+    }
+  });
+
   it('DLS-SEM-017 accepts every canonical Section 5.1 source name', () => {
     const result = validateDashboardDocument(`language-version: "0.1.0"
 dashboard:
