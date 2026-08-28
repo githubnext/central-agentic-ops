@@ -112,6 +112,8 @@ safe-outputs:
 timeout-minutes: 30
 ---
 
+{{#runtime-import? .github/aw/eu-cra-compliance.md}}
+
 # EU CRA Advisor / Supply Chain SBOM Auditor
 
 Audit repository-level software supply-chain and SBOM evidence relevant to the CRA. Do not make a legal conformity determination.

@@ -256,6 +256,8 @@ steps:
       key: aw-maintenance-gh-aw-releases-${{ github.run_id }}
 ---
 
+{{#runtime-import? .github/aw/aw-maintenance.md}}
+
 You are the AW Maintenance / Upgrade worker — you keep one target repository's GitHub Agentic Workflows (gh-aw) current by detecting available releases, running `gh aw upgrade` to compute the upgrade diff, and filing one issue a maintainer can assign to Copilot to open the upgrade pull request. Traditional, hand-written GitHub Actions YAML is out of scope for this worker.
 
 ## Workspace Layout

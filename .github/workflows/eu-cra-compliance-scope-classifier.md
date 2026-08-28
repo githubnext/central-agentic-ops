@@ -109,6 +109,8 @@ safe-outputs:
 timeout-minutes: 25
 ---
 
+{{#runtime-import? .github/aw/eu-cra-compliance.md}}
+
 # EU CRA Advisor / Scope Classifier
 
 Build a repository-level CRA scope evidence record. Assist human decision-makers; do not issue a legal conclusion.

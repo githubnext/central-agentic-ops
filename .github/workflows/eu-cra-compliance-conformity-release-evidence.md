@@ -111,6 +111,8 @@ safe-outputs:
 timeout-minutes: 30
 ---
 
+{{#runtime-import? .github/aw/eu-cra-compliance.md}}
+
 # EU CRA Advisor / Conformity Release Evidence
 
 Audit evidence used by human conformity and market-release gates. Do not select a conformity route, approve a declaration, authorize CE marking, or approve market release.

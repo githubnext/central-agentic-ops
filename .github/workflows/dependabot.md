@@ -102,6 +102,8 @@ safe-outputs:
 source: githubnext/central-agentic-ops@2de9130ff1709fccdacbe5261fd5da71995e6721
 ---
 
+{{#runtime-import? .github/aw/dependabot.md}}
+
 # Dependabot
 
 Package orchestrator for organization-wide dependency release-train maintenance. Use the shared control plane to select target repositories and dispatch `dependabot-release-train-updater`; keep dispatch repository-scoped and let the updater own manifest-aware bundle construction inside each selected repository.

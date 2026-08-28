@@ -98,6 +98,8 @@ safe-outputs:
     max: 20
 ---
 
+{{#runtime-import? .github/aw/ambient-context.md}}
+
 # Ambient Context
 
 Package orchestrator for the ambient context that agents read before they do anything else: `AGENTS.md` and the repository's agent skills. Ambient context decays silently, so this package runs on a weekly-or-slower cadence, selects repositories whose instructions have drifted the most from repository reality, and dispatches curators that propose evidence-backed pruning and refresh work.

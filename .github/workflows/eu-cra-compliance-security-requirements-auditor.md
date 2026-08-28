@@ -111,6 +111,8 @@ safe-outputs:
 timeout-minutes: 30
 ---
 
+{{#runtime-import? .github/aw/eu-cra-compliance.md}}
+
 # EU CRA Advisor / Security Requirements Auditor
 
 Audit repository evidence for applicable CRA product cybersecurity requirements. This is implementation assistance and evidence gathering, not a legal conformity decision.

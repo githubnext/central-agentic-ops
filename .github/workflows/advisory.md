@@ -105,6 +105,8 @@ safe-outputs:
     max: 50
 ---
 
+{{#runtime-import? .github/aw/advisory.md}}
+
 <!-- Advisory outputs are advisory and non-binding. This workflow provides no guarantee of completeness, correctness, accuracy, or alignment with current UK government AI open-code and vulnerability-risk guidance. -->
 
 # Advisory
