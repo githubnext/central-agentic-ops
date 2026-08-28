@@ -53,12 +53,14 @@ Add an App or PAT when the target is private or internal. Keep the mode at `revi
 | `CENTRAL_AGENTIC_OPS_ADVISORY_MODE` | Advisory | No | `review` | Sets the output mode to `review` or `live`. |
 | `CENTRAL_AGENTIC_OPS_ADVISORY_MAX_REPOS` | Advisory | No | `1` | Scheduled repository-selection cap. Accepts `1` through `1000`; dispatch and credit limits may reduce it further. |
 | `CENTRAL_AGENTIC_OPS_ADVISORY_ROLLOUT_PERCENT` | Advisory | No | `100` | Limits selection to this percentage of discovered repositories. Accepts integers from `1` through `100`. |
+| `CENTRAL_AGENTIC_OPS_ADVISORY_MONTHLY_AI_CREDIT_BUDGET` | Advisory | No | `0` | Monthly package budget in AI Credits. `0` disables monthly budget tuning. |
 | `CENTRAL_AGENTIC_OPS_ADVISORY_UK_AI_OPERATIONAL_RESILIENCE_ENABLED` | Advisory worker | No | `true` | UK AI operational resilience worker kill switch. |
 | `CENTRAL_AGENTIC_OPS_ADVISORY_UK_AI_OPERATIONAL_RESILIENCE_MAX_MODE` | Advisory worker | No | `review` | UK AI operational resilience worker mode ceiling. |
 | `CENTRAL_AGENTIC_OPS_AMBIENT_CONTEXT_ENABLED` | Ambient Context | No | `true` | Package kill switch. Set to `false` to stop orchestrator and worker dispatches. |
 | `CENTRAL_AGENTIC_OPS_AMBIENT_CONTEXT_MODE` | Ambient Context | No | `review` | Sets the output mode to `review` or `live`. |
 | `CENTRAL_AGENTIC_OPS_AMBIENT_CONTEXT_MAX_REPOS` | Ambient Context | No | `1` | Scheduled repository-selection cap. Accepts `1` through `1000`; dispatch limits may reduce it further. |
 | `CENTRAL_AGENTIC_OPS_AMBIENT_CONTEXT_ROLLOUT_PERCENT` | Ambient Context | No | `100` | Limits selection to this percentage of discovered repositories. Accepts integers from `1` through `100`. |
+| `CENTRAL_AGENTIC_OPS_AMBIENT_CONTEXT_MONTHLY_AI_CREDIT_BUDGET` | Ambient Context | No | `0` | Monthly package budget in AI Credits. `0` disables monthly budget tuning. |
 | `CENTRAL_AGENTIC_OPS_AMBIENT_CONTEXT_AGENTS_MD_ENABLED` | Ambient Context worker | No | `true` | Worker kill switch for the `AGENTS.md` curator. |
 | `CENTRAL_AGENTIC_OPS_AMBIENT_CONTEXT_AGENTS_MD_MAX_MODE` | Ambient Context worker | No | `review` | Maximum `AGENTS.md` curator mode. |
 | `CENTRAL_AGENTIC_OPS_AMBIENT_CONTEXT_SKILLS_ENABLED` | Ambient Context worker | No | `true` | Worker kill switch for the skills curator. |
@@ -67,24 +69,28 @@ Add an App or PAT when the target is private or internal. Keep the mode at `revi
 | `CENTRAL_AGENTIC_OPS_AW_FAILURES_MODE` | AW Failures | No | `review` | Sets the output mode to `review` or `live`. |
 | `CENTRAL_AGENTIC_OPS_AW_FAILURES_MAX_REPOS` | AW Failures | No | `1` | Scheduled repository-selection cap. Accepts `1` through `1000`; dispatch limits may reduce it further. |
 | `CENTRAL_AGENTIC_OPS_AW_FAILURES_ROLLOUT_PERCENT` | AW Failures | No | `100` | Limits selection to this percentage of discovered repositories. Accepts integers from `1` through `100`. |
+| `CENTRAL_AGENTIC_OPS_AW_FAILURES_MONTHLY_AI_CREDIT_BUDGET` | AW Failures | No | `0` | Monthly package budget in AI Credits. `0` disables monthly budget tuning. |
 | `CENTRAL_AGENTIC_OPS_AW_FAILURES_INVESTIGATOR_ENABLED` | AW Failures worker | No | `true` | Worker kill switch for the investigator. |
 | `CENTRAL_AGENTIC_OPS_AW_FAILURES_INVESTIGATOR_MAX_MODE` | AW Failures worker | No | `review` | Maximum investigator mode: `review` or `live`. |
 | `CENTRAL_AGENTIC_OPS_AW_MAINTENANCE_ENABLED` | AW Maintenance | No | `true` | Package kill switch. Set to `false` to stop orchestrator and worker dispatches. |
 | `CENTRAL_AGENTIC_OPS_AW_MAINTENANCE_MODE` | AW Maintenance | No | `review` | Sets the output mode to `review` or `live`. |
 | `CENTRAL_AGENTIC_OPS_AW_MAINTENANCE_MAX_REPOS` | AW Maintenance | No | `1` | Scheduled repository-selection cap. Accepts `1` through `1000`; dispatch limits may reduce it further. |
 | `CENTRAL_AGENTIC_OPS_AW_MAINTENANCE_ROLLOUT_PERCENT` | AW Maintenance | No | `100` | Limits selection to this percentage of discovered repositories. Accepts integers from `1` through `100`. |
+| `CENTRAL_AGENTIC_OPS_AW_MAINTENANCE_MONTHLY_AI_CREDIT_BUDGET` | AW Maintenance | No | `0` | Monthly package budget in AI Credits. `0` disables monthly budget tuning. |
 | `CENTRAL_AGENTIC_OPS_AW_MAINTENANCE_UPGRADE_ENABLED` | AW Maintenance worker | No | `true` | Worker kill switch for the upgrade worker. |
 | `CENTRAL_AGENTIC_OPS_AW_MAINTENANCE_UPGRADE_MAX_MODE` | AW Maintenance worker | No | `review` | Maximum upgrade worker mode: `review` or `live`. |
 | `CENTRAL_AGENTIC_OPS_DEPENDABOT_ENABLED` | Dependabot | No | `true` | Package kill switch. Set to `false` to stop orchestrator and worker dispatches. |
 | `CENTRAL_AGENTIC_OPS_DEPENDABOT_MODE` | Dependabot | No | `review` | Sets the output mode to `review` or `live`. |
 | `CENTRAL_AGENTIC_OPS_DEPENDABOT_MAX_REPOS` | Dependabot | No | `1` | Scheduled repository-selection cap. Accepts `1` through `1000`; dispatch limits may reduce it further. |
 | `CENTRAL_AGENTIC_OPS_DEPENDABOT_ROLLOUT_PERCENT` | Dependabot | No | `100` | Limits selection to this percentage of discovered repositories. Accepts integers from `1` through `100`. |
+| `CENTRAL_AGENTIC_OPS_DEPENDABOT_MONTHLY_AI_CREDIT_BUDGET` | Dependabot | No | `0` | Monthly package budget in AI Credits. `0` disables monthly budget tuning. |
 | `CENTRAL_AGENTIC_OPS_DEPENDABOT_UPDATER_ENABLED` | Dependabot worker | No | `true` | Worker kill switch. Set to `false` to reject updater runs. |
 | `CENTRAL_AGENTIC_OPS_DEPENDABOT_UPDATER_MAX_MODE` | Dependabot worker | No | `review` | Maximum updater mode: `review` or `live`. |
 | `CENTRAL_AGENTIC_OPS_EU_CRA_COMPLIANCE_ENABLED` | EU CRA Advisor | No | `true` | Package kill switch. Set to `false` to stop orchestrator and worker dispatches. |
 | `CENTRAL_AGENTIC_OPS_EU_CRA_COMPLIANCE_MODE` | EU CRA Advisor | No | `review` | Sets the output mode to `review` or `live`. |
 | `CENTRAL_AGENTIC_OPS_EU_CRA_COMPLIANCE_MAX_REPOS` | EU CRA Advisor | No | `1` | Scheduled repository-selection cap. Accepts `1` through `1000`; dispatch and credit limits may reduce it further. |
 | `CENTRAL_AGENTIC_OPS_EU_CRA_COMPLIANCE_ROLLOUT_PERCENT` | EU CRA Advisor | No | `100` | Limits selection to this percentage of discovered repositories. Accepts integers from `1` through `100`. |
+| `CENTRAL_AGENTIC_OPS_EU_CRA_COMPLIANCE_MONTHLY_AI_CREDIT_BUDGET` | EU CRA Advisor | No | `0` | Monthly package budget in AI Credits. `0` disables monthly budget tuning. |
 | `CENTRAL_AGENTIC_OPS_EU_CRA_COMPLIANCE_SCOPE_CLASSIFIER_ENABLED` | EU CRA Advisor worker | No | `true` | Scope classifier kill switch. |
 | `CENTRAL_AGENTIC_OPS_EU_CRA_COMPLIANCE_SCOPE_CLASSIFIER_MAX_MODE` | EU CRA Advisor worker | No | `review` | Scope classifier mode ceiling. |
 | `CENTRAL_AGENTIC_OPS_EU_CRA_COMPLIANCE_SECURITY_REQUIREMENTS_AUDITOR_ENABLED` | EU CRA Advisor worker | No | `true` | Security requirements auditor kill switch. |
@@ -101,12 +107,26 @@ Add an App or PAT when the target is private or internal. Keep the mode at `revi
 | `CENTRAL_AGENTIC_OPS_OPTIMIZATION_MODE` | Optimization | No | `review` | Sets the output mode to `review` or `live`. |
 | `CENTRAL_AGENTIC_OPS_OPTIMIZATION_MAX_REPOS` | Optimization | No | `1` | Scheduled repository-selection cap. Accepts `1` through `1000`; dispatch limits may reduce it further. |
 | `CENTRAL_AGENTIC_OPS_OPTIMIZATION_ROLLOUT_PERCENT` | Optimization | No | `100` | Limits selection to this percentage of discovered repositories. Accepts integers from `1` through `100`. |
+| `CENTRAL_AGENTIC_OPS_OPTIMIZATION_MONTHLY_AI_CREDIT_BUDGET` | Optimization | No | `0` | Monthly package budget in AI Credits. `0` disables monthly budget tuning. |
 | `CENTRAL_AGENTIC_OPS_OPTIMIZATION_AUDITOR_ENABLED` | Optimization worker | No | `true` | Worker kill switch for the auditor. |
 | `CENTRAL_AGENTIC_OPS_OPTIMIZATION_AUDITOR_MAX_MODE` | Optimization worker | No | `review` | Maximum auditor mode. |
 | `CENTRAL_AGENTIC_OPS_OPTIMIZATION_OPTIMIZER_ENABLED` | Optimization worker | No | `true` | Worker kill switch for the optimizer. |
 | `CENTRAL_AGENTIC_OPS_OPTIMIZATION_OPTIMIZER_MAX_MODE` | Optimization worker | No | `review` | Maximum optimizer mode. |
 
 Only `review` and `live` are valid output modes. Set the package's `CENTRAL_AGENTIC_OPS_<PACKAGE>_ENABLED` variable to `false` to disable both scheduled and manual dispatches. Scheduled review mode routes safe outputs to the current control-plane repository. For an all-stop procedure, see [Emergency Stop](operations.md#emergency-stop).
+
+### Monthly Package Budgets
+
+Set `CENTRAL_AGENTIC_OPS_<PACKAGE>_MONTHLY_AI_CREDIT_BUDGET` to a positive integer to enable monthly budget tuning for that package. AI Credits are the native billing unit; 1 AIC is $0.01 USD. For example, this gives Dependabot a 10,000 AIC ($100) monthly budget:
+
+```bash
+gh variable set CENTRAL_AGENTIC_OPS_DEPENDABOT_MONTHLY_AI_CREDIT_BUDGET \
+	--repo "acme/central-agentic-ops" --body "10000"
+```
+
+Before each scheduled or manual orchestration, shared control totals actual AIC for the package orchestrator and its workers since the first day of the current UTC month. It reserves the orchestrator's declared maximum and admits the largest whole number of target worker sets that fits the remaining budget. Existing `max_repos`, rollout, dispatch, and per-run AI Credit caps remain cumulative, so the smallest cap wins. This feedback loop drives admitted workload toward the budget without admitting a worker set whose declared maximum exceeds the remaining capacity after the orchestration reserve. Exact utilization can remain below 100 percent when less than one complete target set fits or a run consumes less than its declared maximum. Because the orchestrator has already started when this check runs, this is a worker-admission budget rather than an account-level billing hard stop.
+
+Budget usage must be readable. If any package workflow's month-to-date logs are unavailable or invalid, the orchestration fails closed with zero dispatch capacity instead of running without the configured budget. Set the variable to `0` or delete it to disable monthly budget tuning.
 
 ### Pages Report Destinations
 
@@ -192,6 +212,7 @@ Control values resolve in this order:
 | Discovery scan cap | `CENTRAL_AGENTIC_OPS_MAX_SCAN_REPOS`, then `1000`; hard maximum `100000`. |
 | Scheduled inventory slice | Cell count/index and batch size/index variables; defaults select the complete discovered inventory. Manual inputs override these values for one run. |
 | Aggregate AI Credit cap | `CENTRAL_AGENTIC_OPS_MAX_AI_CREDITS_PER_RUN`, then `1100`; selection is reduced to fit the declared orchestrator and worker maxima. |
+| Monthly package AI Credit budget | `CENTRAL_AGENTIC_OPS_<PACKAGE>_MONTHLY_AI_CREDIT_BUDGET`, then `0` (disabled); when enabled, month-to-date actual AIC and declared run maxima reduce target selection to the remaining monthly capacity. |
 | Rollout percentage | `rollout_percent` workflow input, then the operation rollout-percentage variable, then `100`. |
 | Target selection | `target_repo` workflow input, otherwise control-plane discovery. |
 

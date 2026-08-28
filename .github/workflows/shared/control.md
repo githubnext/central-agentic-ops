@@ -59,6 +59,9 @@ import-schema:
   aggregate_credit_limit:
     type: string
     default: "1100"
+  monthly_credit_budget:
+    type: string
+    default: "0"
 
 github-app:
   client-id: ${{ vars.GH_AW_GITHUB_APP_ID }}
@@ -96,6 +99,7 @@ imports:
       orchestrator_credits: "${{ github.aw.import-inputs.orchestrator_credits }}"
       worker_credits_per_target: "${{ github.aw.import-inputs.worker_credits_per_target }}"
       aggregate_credit_limit: "${{ github.aw.import-inputs.aggregate_credit_limit }}"
+      monthly_credit_budget: "${{ github.aw.import-inputs.monthly_credit_budget }}"
 ---
 
 Read `/tmp/gh-aw/agent/control-precompute.json` before making control decisions. Treat it as authoritative for `control_role`, package enablement state, target repository inputs, safe-output routing, and worker workflow availability.
@@ -114,12 +118,13 @@ In `review` mode, built-in safe outputs operate against `SAFE_OUTPUT_REPO`. Neve
 
 If `control_role` is `orchestrator`, filter and prioritize target repositories, then dispatch the configured worker workflows.
 
-Use the `enabled`, `inventory_version`, `batch_id`, `max_repos`, `rollout_percent`, `effective_max_repos`, `safe_output_mode`, and `safe_output_repo` fields from `/tmp/gh-aw/agent/control-precompute.json`; do not infer those values from workflow inputs.
+Use the `enabled`, `inventory_version`, `batch_id`, `max_repos`, `rollout_percent`, `effective_max_repos`, `monthly_credit_budget`, `monthly_ai_credits_spent`, `monthly_ai_credits_remaining`, `monthly_budget_target_cap`, `safe_output_mode`, and `safe_output_repo` fields from `/tmp/gh-aw/agent/control-precompute.json`; do not infer those values from workflow inputs.
 
 For orchestrators, use the importing package's `Discovery` and `Workers` sections only for ranking, prioritization, and deciding whether a precomputed candidate is useful for this package.
 
 - If `enabled` is not `true`, do not select repositories or dispatch workers. Call `report_incomplete` explaining that the package is disabled by its package kill switch.
 - If `repo_error` is non-empty, select no repositories and dispatch no workers. Call `report_incomplete` with the precomputed error; do not retry discovery, fall back to inferred inventory, or wait for an API rate limit to reset.
+- If `monthly_budget_error` is non-empty, select no repositories and dispatch no workers. Call `report_incomplete` with the precomputed error; do not ignore the configured budget or estimate missing usage.
 
 Continue with the repository targeting and workflow dispatch steps below.
 
@@ -165,6 +170,10 @@ Continue with the repository targeting and workflow dispatch steps below.
   - Safe output mode: <safe_output_mode>
   - Safe output repository: <safe_output_repo or not applicable>
   - Target changes allowed: <true only for live mode>
+  - Monthly AI Credit budget: <monthly_credit_budget, or disabled when 0>
+  - Month-to-date AI Credits: <monthly_ai_credits_spent>
+  - Monthly AI Credits remaining: <monthly_ai_credits_remaining>
+  - Budget target cap: <monthly_budget_target_cap>
 
   ### Repository Decisions
   - Selected: <repository list with priority rationale, or none>

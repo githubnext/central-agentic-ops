@@ -80,7 +80,7 @@ pre-agent-steps:
     run: |
       mkdir -p "${{ github.workspace }}/.playwright"
       set +e
-      timeout 10m npx --yes playwright@1.63.0-alpha-2026-08-05 install webkit \
+      timeout 10m npx --yes playwright@1.63.0-alpha-2026-08-05 install --with-deps webkit \
         > "${{ github.workspace }}/.playwright/webkit-install.log" 2>&1
       WEBKIT_INSTALL_STATUS=$?
       set -e
@@ -102,9 +102,9 @@ pre-agent-steps:
         }
       }
       EOF
-        cat > "$EXPR_GITHUB_WORKSPACE/.playwright/webkit.config.json" <<'EOF'
-        {}
-        EOF
+      cat > "$EXPR_GITHUB_WORKSPACE/.playwright/webkit.config.json" <<'EOF'
+      {}
+      EOF
   - name: Playwright browser launch preflight
     id: playwright-preflight
     env:

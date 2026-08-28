@@ -32,6 +32,7 @@ const advisoryExpectedFiles = [
   ".github/workflows/shared/control.md",
 ];
 const craExpectedFiles = [
+  ".github/aw/eu-cra-compliance/implementation-status.md",
   ".github/workflows/eu-cra-compliance-article-14-reporting-readiness.md",
   ".github/workflows/eu-cra-compliance-conformity-release-evidence.md",
   ".github/workflows/eu-cra-compliance-package-maintainer.md",
@@ -40,9 +41,9 @@ const craExpectedFiles = [
   ".github/workflows/eu-cra-compliance-supply-chain-sbom-auditor.md",
   ".github/workflows/eu-cra-compliance-vulnerability-handling-auditor.md",
   ".github/workflows/eu-cra-compliance.md",
+  ".github/workflows/graders/eu-cra-compliance-package-maintainer-operational-value.sh",
   ".github/workflows/shared/control-precompute.md",
   ".github/workflows/shared/control.md",
-  ".github/aw/eu-cra-compliance/implementation-status.md",
 ];
 
 const expectedFiles = [
@@ -92,15 +93,20 @@ function workflowBody(content) {
 
 function installPackage(source) {
   const consumer = mkdtempSync(join(tmpdir(), "central-agentic-ops-package-"));
-  run("git", ["init", "--quiet"], consumer);
-  run("gh", [
-    "aw",
-    "add",
-    source,
-    "--force",
-    "--no-security-scanner",
-  ], consumer);
-  return consumer;
+  try {
+    run("git", ["init", "--quiet"], consumer);
+    run("gh", [
+      "aw",
+      "add",
+      source,
+      "--force",
+      "--no-security-scanner",
+    ], consumer);
+    return consumer;
+  } catch (error) {
+    rmSync(consumer, { recursive: true, force: true });
+    throw error;
+  }
 }
 
 function assertCorePackage(consumer) {
@@ -171,8 +177,9 @@ test("gh aw add installs the focused EU CRA package contract", { timeout: 180_00
         ".github/aw/eu-cra-compliance/implementation-status.md",
         ".github/workflows/eu-cra-compliance-package-maintainer.md",
         ".github/workflows/eu-cra-compliance.md",
+        ".github/workflows/graders/eu-cra-compliance-package-maintainer-operational-value.sh",
       ],
-      "focused CRA package manifest must own its entry workflows and ledger",
+      "focused CRA package manifest must own its entry workflows, evaluator, and ledger",
     );
   } finally {
     rmSync(consumer, { recursive: true, force: true });
