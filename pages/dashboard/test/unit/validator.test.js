@@ -219,6 +219,256 @@ dashboard:
     }
   });
 
+  it('DLS-SEM-017 accepts every canonical Section 5.1 source name', () => {
+    const result = validateDashboardDocument(`language-version: "0.1.0"
+dashboard:
+  id: source-catalog
+  title: Source Catalog
+  pages:
+    - id: all-sources
+      kind: custom
+      views:
+        - id: organizations-view
+          data:
+            source: organizations
+          mark: metric
+          encoding:
+            value:
+              field: organization
+              aggregate: count
+        - id: repositories-view
+          data:
+            source: repositories
+          mark: metric
+          encoding:
+            value:
+              field: repository
+              aggregate: count
+        - id: workflows-view
+          data:
+            source: workflows
+          mark: metric
+          encoding:
+            value:
+              field: workflow
+              aggregate: count
+        - id: runs-view
+          data:
+            source: runs
+          mark: metric
+          encoding:
+            value:
+              field: run
+              aggregate: count
+        - id: experiments-view
+          data:
+            source: experiments
+          mark: metric
+          encoding:
+            value:
+              field: experiment
+              aggregate: count
+        - id: experiment-assignments-view
+          data:
+            source: experiment-assignments
+          mark: metric
+          encoding:
+            value:
+              field: run
+              aggregate: count
+        - id: graders-view
+          data:
+            source: graders
+          mark: metric
+          encoding:
+            value:
+              field: grader
+              aggregate: count
+        - id: grader-observations-view
+          data:
+            source: grader-observations
+          mark: metric
+          encoding:
+            value:
+              field: grader
+              aggregate: count
+        - id: evals-view
+          data:
+            source: evals
+          mark: metric
+          encoding:
+            value:
+              field: eval
+              aggregate: count
+        - id: eval-observations-view
+          data:
+            source: eval-observations
+          mark: metric
+          encoding:
+            value:
+              field: eval
+              aggregate: count
+        - id: usage-view
+          data:
+            source: usage
+          mark: metric
+          encoding:
+            value:
+              field: aic
+              aggregate: sum
+        - id: outcomes-view
+          data:
+            source: outcomes
+          mark: metric
+          encoding:
+            value:
+              field: safe-output
+              aggregate: count
+        - id: findings-view
+          data:
+            source: findings
+          mark: metric
+          encoding:
+            value:
+              field: finding
+              aggregate: count
+        - id: operational-values-view
+          data:
+            source: operational-values
+          mark: metric
+          encoding:
+            value:
+              field: operational-value
+              aggregate: max
+`);
+
+    expect(result.ok).toBe(true);
+  });
+
+  it('DLS-SEM-017 rejects unknown source names with DLS-E005', () => {
+    const result = validateDashboardDocument(`language-version: "0.1.0"
+dashboard:
+  id: invalid-source
+  title: Invalid Source
+  pages:
+    - id: custom-page
+      kind: custom
+      views:
+        - id: invalid-view
+          data:
+            source: deployments
+          mark: metric
+          encoding:
+            value:
+              field: repository
+              aggregate: count
+`);
+
+    expect(result.ok).toBe(false);
+    if (!result.ok) {
+      expect(result.errors).toEqual([
+        expect.objectContaining({ code: 'DLS-E005', path: '$.dashboard.pages[0].views[0].data.source' })
+      ]);
+    }
+  });
+
+  it('DLS-SEM-021 accepts rollout-mode canonical values and rejects non-canonical spellings', () => {
+    const accepted = validateDashboardDocument(`language-version: "0.1.0"
+dashboard:
+  id: rollout-mode-filter
+  title: Rollout Mode Filter
+  pages:
+    - id: custom-page
+      kind: custom
+      views:
+        - id: usage-view
+          data:
+            source: usage
+            filters:
+              rollout-mode:
+                - review
+                - live
+                - unknown
+          mark: metric
+          encoding:
+            value:
+              field: aic
+              aggregate: sum
+`);
+
+    expect(accepted.ok).toBe(true);
+
+    const rejected = validateDashboardDocument(`language-version: "0.1.0"
+dashboard:
+  id: invalid-rollout-mode
+  title: Invalid Rollout Mode
+  pages:
+    - id: custom-page
+      kind: custom
+      views:
+        - id: usage-view
+          data:
+            source: usage
+            filters:
+              rollout-mode:
+                - review
+                - in_review
+          mark: metric
+          encoding:
+            value:
+              field: aic
+              aggregate: sum
+`);
+
+    expect(rejected.ok).toBe(false);
+    if (!rejected.ok) {
+      expect(rejected.errors).toEqual([
+        expect.objectContaining({ code: 'DLS-E005', path: '$.dashboard.pages[0].views[0].data.filters.rollout-mode[1]' })
+      ]);
+    }
+  });
+
+  it('DLS-SEM-004 DLS-SEM-005 DLS-SEM-006 DLS-SEM-008 DLS-SEM-009 DLS-SEM-015 reject non-canonical intrinsic enumerations in filters', () => {
+    const result = validateDashboardDocument(`language-version: "0.1.0"
+dashboard:
+  id: invalid-intrinsic-enums
+  title: Invalid Intrinsic Enums
+  pages:
+    - id: custom-page
+      kind: custom
+      views:
+        - id: invalid-filters
+          data:
+            source: runs
+            filters:
+              workflow-active: maybe
+              run-status: in_progress
+              run-conclusion: action_required
+              status: passed
+              eval-result: yes
+              outcome-state: lifecycle_close
+          mark: metric
+          encoding:
+            value:
+              field: run
+              aggregate: count
+`);
+
+    expect(result.ok).toBe(false);
+    if (!result.ok) {
+      expect(result.errors).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({ code: 'DLS-E005', path: '$.dashboard.pages[0].views[0].data.filters.workflow-active' }),
+          expect.objectContaining({ code: 'DLS-E005', path: '$.dashboard.pages[0].views[0].data.filters.run-status' }),
+          expect.objectContaining({ code: 'DLS-E005', path: '$.dashboard.pages[0].views[0].data.filters.run-conclusion' }),
+          expect.objectContaining({ code: 'DLS-E005', path: '$.dashboard.pages[0].views[0].data.filters.status' }),
+          expect.objectContaining({ code: 'DLS-E005', path: '$.dashboard.pages[0].views[0].data.filters.eval-result' }),
+          expect.objectContaining({ code: 'DLS-E005', path: '$.dashboard.pages[0].views[0].data.filters.outcome-state' })
+        ])
+      );
+    }
+  });
+
   it('DLS-VAL-001 reports code message and YAML path for each detected error', () => {
     const result = validateDashboardDocument(`language-version: "0.1"
 dashboard:
