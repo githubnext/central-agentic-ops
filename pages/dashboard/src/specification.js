@@ -14,6 +14,12 @@ export const CUSTOM_PAGE_KEYS = ['id', 'kind', 'title', 'description', 'views'];
 
 export const VIEW_KEYS = ['id', 'title', 'description', 'data', 'mark', 'encoding'];
 export const VIEW_DATA_KEYS = ['source', 'scope', 'time', 'filters', 'limit', 'order-by'];
+export const VIEW_MARK_VALUES = ['metric', 'table', 'chart'];
+export const VIEW_ENCODING_KEYS = ['value', 'columns', 'x', 'y', 'color', 'href'];
+export const FIELD_DEFINITION_KEYS = ['field', 'type', 'aggregate', 'time-unit', 'title', 'as'];
+export const FIELD_TYPE_VALUES = ['nominal', 'ordinal', 'quantitative', 'temporal'];
+export const AGGREGATE_VALUES = ['count', 'distinct-count', 'sum', 'mean', 'min', 'max', 'none'];
+export const TIME_UNIT_VALUES = ['hour', 'day', 'week', 'month'];
 export const SCOPE_KEYS = ['organizations', 'repositories', 'workflows'];
 export const TIME_KEYS = ['range', 'start', 'end'];
 
@@ -75,6 +81,23 @@ export const SOURCE_VALUES = [
   'operational-values'
 ];
 
+export const SOURCE_FIELDS = {
+  organizations: ['organization', 'organization-name', 'observed-at'],
+  repositories: ['organization', 'repository', 'repository-name', 'rollout-mode', 'observed-at'],
+  workflows: ['organization', 'repository', 'workflow', 'workflow-name', 'workflow-active', 'rollout-mode', 'observed-at'],
+  runs: ['organization', 'repository', 'workflow', 'run', 'started-at', 'ended-at', 'run-status', 'run-conclusion', 'rollout-mode', 'engine', 'requested-model', 'resolved-model'],
+  experiments: ['experiment', 'experiment-name', 'observed-at'],
+  'experiment-assignments': ['organization', 'repository', 'workflow', 'run', 'experiment', 'variant', 'observed-at'],
+  graders: ['grader', 'grader-name', 'observed-at'],
+  'grader-observations': ['organization', 'repository', 'workflow', 'run', 'experiment', 'grader', 'value', 'status', 'rollout-mode', 'observed-at'],
+  evals: ['eval', 'eval-name', 'eval-question', 'requested-model', 'observed-at'],
+  'eval-observations': ['organization', 'repository', 'workflow', 'run', 'experiment', 'eval', 'eval-result', 'requested-model', 'resolved-model', 'rollout-mode', 'observed-at'],
+  usage: ['organization', 'repository', 'workflow', 'run', 'invocation', 'engine', 'requested-model', 'resolved-model', 'rollout-mode', 'input-tokens', 'output-tokens', 'cache-read-tokens', 'cache-write-tokens', 'reasoning-tokens', 'aic', 'observed-at'],
+  outcomes: ['organization', 'repository', 'workflow', 'run', 'safe-output', 'outcome-state', 'evidence-strength', 'observed-at', 'issue-link', 'pull-request-link', 'run-link', 'external-link'],
+  findings: ['organization', 'repository', 'workflow', 'run', 'finding', 'finding-severity', 'finding-status', 'finding-summary', 'observed-at', 'issue-link', 'pull-request-link', 'run-link', 'external-link'],
+  'operational-values': ['organization', 'repository', 'workflow', 'run', 'experiment', 'operational-case', 'evaluator-digest', 'rollout-mode', 'operational-value', 'operational-value-definition', 'requested-evidence-at', 'evidence-cutoff', 'maturity-at', 'maturity-status', 'delta-from-baseline', 'observed-at', 'evidence-link']
+};
+
 export const ROLLOUT_MODE_VALUES = ['review', 'live', 'unknown'];
 export const WORKFLOW_ACTIVE_VALUES = ['true', 'false', 'unknown'];
 export const RUN_STATUS_VALUES = ['queued', 'in-progress', 'completed', 'unknown'];
@@ -95,6 +118,43 @@ export const EVAL_RESULT_VALUES = ['YES', 'NO', 'UNKNOWN'];
 export const OUTCOME_STATE_VALUES = ['accepted', 'rejected', 'ignored', 'pending', 'lifecycle', 'lifecycle-close'];
 export const FINDING_STATUS_VALUES = ['open', 'resolved', 'dismissed', 'unknown'];
 export const FINDING_SEVERITY_VALUES = ['critical', 'high', 'medium', 'low', 'informational', 'unknown'];
+
+export const SOURCE_ENTITY_IDENTIFIER_FIELDS = {
+  organizations: ['organization'],
+  repositories: ['repository'],
+  workflows: ['workflow'],
+  runs: ['run'],
+  experiments: ['experiment'],
+  'experiment-assignments': ['run', 'experiment', 'variant'],
+  graders: ['grader'],
+  'grader-observations': ['grader', 'run'],
+  evals: ['eval'],
+  'eval-observations': ['eval', 'run'],
+  usage: ['invocation'],
+  outcomes: ['safe-output'],
+  findings: ['finding'],
+  'operational-values': ['operational-value-definition', 'operational-case', 'run']
+};
+
+export const TEMPORAL_FIELD_NAMES = [
+  'observed-at',
+  'started-at',
+  'ended-at',
+  'requested-evidence-at',
+  'evidence-cutoff',
+  'maturity-at'
+];
+
+export const ADDITIVE_MEASURE_FIELDS = [
+  'input-tokens',
+  'output-tokens',
+  'cache-read-tokens',
+  'cache-write-tokens',
+  'reasoning-tokens',
+  'aic'
+];
+
+export const NON_ADDITIVE_MEASURE_FIELDS = ['value', 'operational-value'];
 
 export const ERROR_CODES = {
   invalidYamlSyntax: 'DLS-E001',

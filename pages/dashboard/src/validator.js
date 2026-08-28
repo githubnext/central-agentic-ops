@@ -1,5 +1,7 @@
 import { parseAllDocuments } from 'yaml';
 import {
+  ADDITIVE_MEASURE_FIELDS,
+  AGGREGATE_VALUES,
   BUILT_IN_PAGE_KEYS,
   BUILT_IN_PAGE_VALUES,
   CUSTOM_PAGE_KEYS,
@@ -7,12 +9,15 @@ import {
   DEFAULTS_KEYS,
   ERROR_CODES,
   EVAL_RESULT_VALUES,
+  FIELD_DEFINITION_KEYS,
+  FIELD_TYPE_VALUES,
   FILTER_DIMENSION_VALUES,
   FINDING_SEVERITY_VALUES,
   FINDING_STATUS_VALUES,
   GRADER_STATUS_VALUES,
   IDENTIFIER_PATTERN,
   LANGUAGE_VERSION,
+  NON_ADDITIVE_MEASURE_FIELDS,
   ORDER_BY_KEYS,
   ORDER_DIRECTION_VALUES,
   OUTCOME_STATE_VALUES,
@@ -22,10 +27,16 @@ import {
   RUN_CONCLUSION_VALUES,
   RUN_STATUS_VALUES,
   SCOPE_KEYS,
+  SOURCE_ENTITY_IDENTIFIER_FIELDS,
+  SOURCE_FIELDS,
   SOURCE_VALUES,
+  TEMPORAL_FIELD_NAMES,
   TIME_KEYS,
+  TIME_UNIT_VALUES,
   VIEW_DATA_KEYS,
+  VIEW_ENCODING_KEYS,
   VIEW_KEYS,
+  VIEW_MARK_VALUES,
   WORKFLOW_ACTIVE_VALUES
 } from './specification.js';
 
@@ -356,6 +367,17 @@ function validateView(view, viewNode, path, viewIds, errors) {
   validateOptionalStringField(view.title, `${path}.title`, errors);
   validateOptionalStringField(view.description, `${path}.description`, errors);
 
+  validateStringField(view.mark, `${path}.mark`, true, errors);
+  if (typeof view.mark === 'string' && !VIEW_MARK_VALUES.includes(view.mark)) {
+    errors.push(createError(
+      ERROR_CODES.nonCanonicalVocabularyOrIdentifier,
+      'mark must use one canonical custom-view mark value.',
+      `${path}.mark`
+    ));
+  }
+
+  /** @type {string | null} */
+  let sourceName = null;
   if (!isPlainObject(view.data)) {
     errors.push(createError(
       ERROR_CODES.missingOrInvalidRequiredField,
@@ -366,10 +388,14 @@ function validateView(view, viewNode, path, viewIds, errors) {
     const dataNode = getValueNodeByKey(viewNode, 'data');
     validateObjectKeys(dataNode, VIEW_DATA_KEYS, `${path}.data`, errors);
     validateSource(view.data.source, `${path}.data.source`, errors);
+    if (typeof view.data.source === 'string' && SOURCE_VALUES.includes(view.data.source)) {
+      sourceName = view.data.source;
+    }
     validateContext(dataNode, view.data, `${path}.data`, errors);
   }
 
   validateSemanticFieldLiterals(view.data, `${path}.data`, errors);
+  validateEncoding(getValueNodeByKey(viewNode, 'encoding'), view.encoding, view.mark, sourceName, view.data, path, errors);
 }
 
 /**
@@ -657,6 +683,358 @@ function validateFilterLiteralSet(filters, path, errors) {
     const value = filters[field];
     if (value !== undefined) {
       validateEnumeratedFilterValue(value, allowedValues, `${path}.${field}`, errors);
+    }
+  }
+}
+
+/**
+ * @param {unknown} encodingNode
+ * @param {unknown} encoding
+ * @param {unknown} mark
+ * @param {string | null} sourceName
+ * @param {unknown} data
+ * @param {string} viewPath
+ * @param {ValidationError[]} errors
+ */
+function validateEncoding(encodingNode, encoding, mark, sourceName, data, viewPath, errors) {
+  if (!isPlainObject(encoding)) {
+    errors.push(createError(
+      ERROR_CODES.missingOrInvalidRequiredField,
+      'encoding must be a mapping.',
+      `${viewPath}.encoding`
+    ));
+    return;
+  }
+
+  validateObjectKeys(encodingNode, VIEW_ENCODING_KEYS, `${viewPath}.encoding`, errors);
+
+  /** @type {Map<string, string>} */
+  const aggregateOutputIds = new Map();
+  const markValue = typeof mark === 'string' ? mark : null;
+
+  if (markValue === 'metric') {
+    validateMetricEncoding(encodingNode, encoding, sourceName, `${viewPath}.encoding`, aggregateOutputIds, errors);
+  } else if (markValue === 'table') {
+    validateTableEncoding(encodingNode, encoding, sourceName, `${viewPath}.encoding`, aggregateOutputIds, errors);
+  } else if (markValue === 'chart') {
+    validateChartEncoding(encodingNode, encoding, sourceName, `${viewPath}.encoding`, aggregateOutputIds, errors);
+  }
+
+  validateOrderByReferences(data, aggregateOutputIds, sourceName, viewPath, errors);
+}
+
+/**
+ * @param {unknown} encodingNode
+ * @param {Record<string, unknown>} encoding
+ * @param {string | null} sourceName
+ * @param {string} path
+ * @param {Map<string, string>} aggregateOutputIds
+ * @param {ValidationError[]} errors
+ */
+function validateMetricEncoding(encodingNode, encoding, sourceName, path, aggregateOutputIds, errors) {
+  validateRequiredFieldDefinition(getValueNodeByKey(encodingNode, 'value'), encoding.value, sourceName, `${path}.value`, aggregateOutputIds, errors);
+
+  for (const forbiddenChannel of ['columns', 'x', 'y', 'color']) {
+    if (encoding[forbiddenChannel] !== undefined) {
+      errors.push(createError(
+        ERROR_CODES.missingOrInvalidRequiredField,
+        `metric views must not encode ${forbiddenChannel}.`,
+        `${path}.${forbiddenChannel}`
+      ));
+    }
+  }
+
+  if (encoding.href !== undefined) {
+    validateFieldDefinition(getValueNodeByKey(encodingNode, 'href'), encoding.href, sourceName, `${path}.href`, aggregateOutputIds, errors);
+  }
+}
+
+/**
+ * @param {unknown} encodingNode
+ * @param {Record<string, unknown>} encoding
+ * @param {string | null} sourceName
+ * @param {string} path
+ * @param {Map<string, string>} aggregateOutputIds
+ * @param {ValidationError[]} errors
+ */
+function validateTableEncoding(encodingNode, encoding, sourceName, path, aggregateOutputIds, errors) {
+  if (!Array.isArray(encoding.columns) || encoding.columns.length === 0) {
+    errors.push(createError(
+      ERROR_CODES.missingOrInvalidRequiredField,
+      'table views must encode a non-empty columns sequence.',
+      `${path}.columns`
+    ));
+  } else {
+    const columnsNode = getValueNodeByKey(encodingNode, 'columns');
+    for (const [index, column] of encoding.columns.entries()) {
+      validateFieldDefinition(
+        getSequenceItemNode(columnsNode, index),
+        column,
+        sourceName,
+        `${path}.columns[${index}]`,
+        aggregateOutputIds,
+        errors
+      );
+    }
+  }
+
+  for (const forbiddenChannel of ['value', 'x', 'y', 'color']) {
+    if (encoding[forbiddenChannel] !== undefined) {
+      errors.push(createError(
+        ERROR_CODES.missingOrInvalidRequiredField,
+        `table views must not encode ${forbiddenChannel}.`,
+        `${path}.${forbiddenChannel}`
+      ));
+    }
+  }
+
+  if (encoding.href !== undefined) {
+    validateFieldDefinition(getValueNodeByKey(encodingNode, 'href'), encoding.href, sourceName, `${path}.href`, aggregateOutputIds, errors);
+  }
+}
+
+/**
+ * @param {unknown} encodingNode
+ * @param {Record<string, unknown>} encoding
+ * @param {string | null} sourceName
+ * @param {string} path
+ * @param {Map<string, string>} aggregateOutputIds
+ * @param {ValidationError[]} errors
+ */
+function validateChartEncoding(encodingNode, encoding, sourceName, path, aggregateOutputIds, errors) {
+  validateRequiredFieldDefinition(getValueNodeByKey(encodingNode, 'x'), encoding.x, sourceName, `${path}.x`, aggregateOutputIds, errors);
+  validateRequiredFieldDefinition(getValueNodeByKey(encodingNode, 'y'), encoding.y, sourceName, `${path}.y`, aggregateOutputIds, errors);
+
+  if (encoding.value !== undefined) {
+    errors.push(createError(
+      ERROR_CODES.missingOrInvalidRequiredField,
+      'chart views must not encode value.',
+      `${path}.value`
+    ));
+  }
+
+  if (encoding.columns !== undefined) {
+    errors.push(createError(
+      ERROR_CODES.missingOrInvalidRequiredField,
+      'chart views must not encode columns.',
+      `${path}.columns`
+    ));
+  }
+
+  if (encoding.color !== undefined) {
+    validateFieldDefinition(getValueNodeByKey(encodingNode, 'color'), encoding.color, sourceName, `${path}.color`, aggregateOutputIds, errors);
+  }
+
+  if (encoding.href !== undefined) {
+    validateFieldDefinition(getValueNodeByKey(encodingNode, 'href'), encoding.href, sourceName, `${path}.href`, aggregateOutputIds, errors);
+  }
+
+  if (isPlainObject(encoding.y) && encoding.y.type !== undefined && encoding.y.type !== 'quantitative') {
+    errors.push(createError(
+      ERROR_CODES.invalidScopeFilterTimeAggregationOrOrderReference,
+      'chart y encoding must be quantitative when explicitly typed.',
+      `${path}.y.type`
+    ));
+  }
+}
+
+/**
+ * @param {unknown} fieldNode
+ * @param {unknown} fieldDefinition
+ * @param {string | null} sourceName
+ * @param {string} path
+ * @param {Map<string, string>} aggregateOutputIds
+ * @param {ValidationError[]} errors
+ */
+function validateRequiredFieldDefinition(fieldNode, fieldDefinition, sourceName, path, aggregateOutputIds, errors) {
+  if (fieldDefinition === undefined) {
+    errors.push(createError(
+      ERROR_CODES.missingOrInvalidRequiredField,
+      `${path.split('.').at(-1)} is required.`,
+      path
+    ));
+    return;
+  }
+
+  validateFieldDefinition(fieldNode, fieldDefinition, sourceName, path, aggregateOutputIds, errors);
+}
+
+/**
+ * @param {unknown} fieldNode
+ * @param {unknown} fieldDefinition
+ * @param {string | null} sourceName
+ * @param {string} path
+ * @param {Map<string, string>} aggregateOutputIds
+ * @param {ValidationError[]} errors
+ */
+function validateFieldDefinition(fieldNode, fieldDefinition, sourceName, path, aggregateOutputIds, errors) {
+  if (!isPlainObject(fieldDefinition)) {
+    errors.push(createError(
+      ERROR_CODES.missingOrInvalidRequiredField,
+      'field definitions must be mappings.',
+      path
+    ));
+    return;
+  }
+
+  validateObjectKeys(fieldNode, FIELD_DEFINITION_KEYS, path, errors);
+  validateStringField(fieldDefinition.field, `${path}.field`, true, errors);
+  validateOptionalStringField(fieldDefinition.title, `${path}.title`, errors);
+
+  const aggregate = fieldDefinition.aggregate ?? 'none';
+  if (fieldDefinition.aggregate !== undefined) {
+    validateStringField(fieldDefinition.aggregate, `${path}.aggregate`, true, errors);
+    if (typeof fieldDefinition.aggregate === 'string' && !AGGREGATE_VALUES.includes(fieldDefinition.aggregate)) {
+      errors.push(createError(
+        ERROR_CODES.nonCanonicalVocabularyOrIdentifier,
+        'aggregate must use one canonical aggregate value.',
+        `${path}.aggregate`
+      ));
+    }
+  }
+
+  if (fieldDefinition.type !== undefined) {
+    validateStringField(fieldDefinition.type, `${path}.type`, true, errors);
+    if (typeof fieldDefinition.type === 'string' && !FIELD_TYPE_VALUES.includes(fieldDefinition.type)) {
+      errors.push(createError(
+        ERROR_CODES.nonCanonicalVocabularyOrIdentifier,
+        'type must use one canonical field type.',
+        `${path}.type`
+      ));
+    }
+  }
+
+  if (fieldDefinition['time-unit'] !== undefined) {
+    validateStringField(fieldDefinition['time-unit'], `${path}.time-unit`, true, errors);
+    if (typeof fieldDefinition['time-unit'] === 'string' && !TIME_UNIT_VALUES.includes(fieldDefinition['time-unit'])) {
+      errors.push(createError(
+        ERROR_CODES.nonCanonicalVocabularyOrIdentifier,
+        'time-unit must use one canonical time unit.',
+        `${path}.time-unit`
+      ));
+    }
+  }
+
+  if (fieldDefinition.as !== undefined) {
+    validateStringField(fieldDefinition.as, `${path}.as`, true, errors);
+    if (aggregate === 'none') {
+      errors.push(createError(
+        ERROR_CODES.invalidScopeFilterTimeAggregationOrOrderReference,
+        'field definitions with aggregate none must not include as.',
+        `${path}.as`
+      ));
+    }
+  }
+
+  if (fieldDefinition['time-unit'] !== undefined) {
+    const fieldName = typeof fieldDefinition.field === 'string' ? fieldDefinition.field : null;
+    if (!fieldName || !TEMPORAL_FIELD_NAMES.includes(fieldName)) {
+      errors.push(createError(
+        ERROR_CODES.invalidScopeFilterTimeAggregationOrOrderReference,
+        'time-unit may be used only with a temporal field.',
+        `${path}.time-unit`
+      ));
+    }
+  }
+
+  const fieldName = typeof fieldDefinition.field === 'string' ? fieldDefinition.field : null;
+  if (fieldName && sourceName) {
+    const sourceFields = SOURCE_FIELDS[/** @type {keyof typeof SOURCE_FIELDS} */ (sourceName)];
+    if (!sourceFields.includes(fieldName)) {
+      errors.push(createError(
+        ERROR_CODES.invalidScopeFilterTimeAggregationOrOrderReference,
+        'field must exist in the selected source.',
+        `${path}.field`
+      ));
+    }
+  }
+
+  if (fieldName && typeof aggregate === 'string' && AGGREGATE_VALUES.includes(aggregate)) {
+    validateAggregateCompatibility(fieldName, aggregate, path, errors);
+    if (aggregate !== 'none') {
+      const outputId = typeof fieldDefinition.as === 'string' ? fieldDefinition.as : `${aggregate}-${fieldName}`;
+      const existingPath = aggregateOutputIds.get(outputId);
+      if (existingPath) {
+        errors.push(createError(
+          ERROR_CODES.invalidScopeFilterTimeAggregationOrOrderReference,
+          'aggregate output identifiers must be unique within a view.',
+          path
+        ));
+      } else {
+        aggregateOutputIds.set(outputId, path);
+      }
+    }
+  }
+}
+
+/**
+ * @param {string} fieldName
+ * @param {string} aggregate
+ * @param {string} path
+ * @param {ValidationError[]} errors
+ */
+function validateAggregateCompatibility(fieldName, aggregate, path, errors) {
+  if (aggregate === 'sum' && !ADDITIVE_MEASURE_FIELDS.includes(fieldName)) {
+    errors.push(createError(
+      ERROR_CODES.invalidScopeFilterTimeAggregationOrOrderReference,
+      'sum is allowed only for raw-token measures and aic.',
+      `${path}.aggregate`
+    ));
+  }
+
+  if (NON_ADDITIVE_MEASURE_FIELDS.includes(fieldName) && !['none', 'mean', 'min', 'max'].includes(aggregate)) {
+    errors.push(createError(
+      ERROR_CODES.invalidScopeFilterTimeAggregationOrOrderReference,
+      'value and operational-value support only none, mean, min, or max.',
+      `${path}.aggregate`
+    ));
+  }
+}
+
+/**
+ * @param {unknown} data
+ * @param {Map<string, string>} aggregateOutputIds
+ * @param {string | null} sourceName
+ * @param {string} viewPath
+ * @param {ValidationError[]} errors
+ */
+function validateOrderByReferences(data, aggregateOutputIds, sourceName, viewPath, errors) {
+  if (!isPlainObject(data) || !Array.isArray(data['order-by']) || !sourceName) {
+    return;
+  }
+
+  const sourceFieldSet = new Set(SOURCE_FIELDS[/** @type {keyof typeof SOURCE_FIELDS} */ (sourceName)]);
+  const entityIdSet = new Set(SOURCE_ENTITY_IDENTIFIER_FIELDS[/** @type {keyof typeof SOURCE_ENTITY_IDENTIFIER_FIELDS} */ (sourceName)] ?? []);
+
+  for (const [index, clause] of data['order-by'].entries()) {
+    if (!isPlainObject(clause) || typeof clause.field !== 'string') {
+      continue;
+    }
+
+    const fieldPath = `${viewPath}.data.order-by[${index}].field`;
+    const fieldName = clause.field;
+    const matchesAggregateOutput = aggregateOutputIds.has(fieldName);
+    const matchesSourceField = sourceFieldSet.has(fieldName);
+
+    if (matchesAggregateOutput && matchesSourceField) {
+      errors.push(createError(
+        ERROR_CODES.invalidScopeFilterTimeAggregationOrOrderReference,
+        'order-by.field must resolve to exactly one output field at the post-aggregation grain.',
+        fieldPath
+      ));
+      continue;
+    }
+
+    if (matchesAggregateOutput) {
+      continue;
+    }
+
+    if (!matchesSourceField || !entityIdSet.has(fieldName)) {
+      errors.push(createError(
+        ERROR_CODES.invalidScopeFilterTimeAggregationOrOrderReference,
+        'order-by.field must reference one unique aggregate output identifier or one source field valid at the output grain.',
+        fieldPath
+      ));
     }
   }
 }
