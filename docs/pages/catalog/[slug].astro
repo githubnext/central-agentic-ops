@@ -1,0 +1,103 @@
+---
+import StarlightPage from "@astrojs/starlight/components/StarlightPage.astro";
+import { catalogEntries } from "../../lib/catalog";
+
+export function getStaticPaths() {
+  return catalogEntries.map((entry) => ({ params: { slug: entry.slug } }));
+}
+
+const entry = catalogEntries.find(({ slug }) => slug === Astro.params.slug);
+if (!entry) throw new Error(`Unknown package: ${Astro.params.slug}`);
+
+const basePath = import.meta.env.BASE_URL.replace(/\/$/, "");
+const repositoryBase = "https://github.com/githubnext/central-agentic-ops";
+const packageUrl = `${repositoryBase}/tree/main/${entry.slug}`;
+const manifestUrl = `${repositoryBase}/blob/main/${entry.slug}/${entry.manifestFile}`;
+const editUrl = entry.readmePath
+  ? `${repositoryBase}/edit/main/${entry.readmePath}`
+  : `${repositoryBase}/edit/main/${entry.slug}/${entry.manifestFile}`;
+const installCommand = `gh aw add-wizard githubnext/central-agentic-ops/${entry.slug}@<catalog-release>`;
+const ReadmeContent = entry.ReadmeContent;
+---
+
+<StarlightPage
+  frontmatter={{
+    title: entry.name,
+    description: entry.description,
+    editUrl,
+  }}
+>
+  <section class="package-overview" aria-label="What it does">
+    <p>{entry.description}</p>
+    <p class="package-meta">
+      {entry.includes.length} {entry.includes.length === 1 ? "workflow" : "workflows"}
+      <span aria-hidden="true">·</span>
+      Requires gh-aw {entry.minVersion}
+    </p>
+  </section>
+
+  {
+    ReadmeContent ? (
+      <section class="package-guide" aria-labelledby="package-guide">
+        <h2 id="package-guide">Package guide</h2>
+        <div class="package-readme">
+          <ReadmeContent />
+        </div>
+      </section>
+    ) : (
+      <section class="package-guide" aria-labelledby="package-guide">
+        <h2 id="package-guide">Package guide</h2>
+        <p>
+          This package does not yet include a README. Use its manifest and workflow sources as the authoritative package
+          inventory until a package guide is added.
+        </p>
+        <a href={packageUrl}>Browse this package on GitHub</a>
+      </section>
+    )
+  }
+
+  <section class="install-package" aria-labelledby="install-package">
+    <h2 id="install-package">Add this package</h2>
+    <p>
+      From a private control repository, install a reviewed release tag or full commit SHA:
+    </p>
+    <pre><code>{installCommand}</code></pre>
+    <p>
+      Follow the <a href={`${basePath}/getting-started/`}>Quickstart</a> for prerequisites and first-run validation, or
+      <a href={packageUrl}> view the package source on GitHub</a>.
+    </p>
+  </section>
+
+  <section class="package-inventory" aria-labelledby="package-inventory">
+    <h2 id="package-inventory">Package inventory</h2>
+    <ul>
+      {entry.includes.map((includedPath) => <li><code>{includedPath}</code></li>)}
+    </ul>
+    <a href={manifestUrl}>View {entry.manifestFile} on GitHub</a>
+  </section>
+</StarlightPage>
+
+<style>
+  .package-meta {
+    color: var(--sl-color-gray-3);
+    font-size: 0.875rem;
+  }
+
+  .package-meta span {
+    margin-inline: 0.35rem;
+  }
+
+  .package-guide,
+  .install-package,
+  .package-inventory {
+    margin-block-start: 2.5rem;
+  }
+
+  .package-inventory ul {
+    padding-inline-start: 1.25rem;
+  }
+
+  .package-readme :global(h1) {
+    display: none;
+  }
+</style>
