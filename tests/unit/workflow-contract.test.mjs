@@ -976,6 +976,8 @@ test("multi-device docs tester covers PR browser and appearance compatibility", 
 
   assert.match(source, /pull_request:/);
   assert.match(source, /- "docs\/\*\*"/);
+  assert.match(source, /playwright@1\.63\.0-alpha-2026-08-05 install --with-deps webkit/);
+  assert.match(source, /^      cat > "\$EXPR_GITHUB_WORKSPACE\/\.playwright\/webkit\.config\.json" <<'EOF'\n      \{\}\n      EOF$/m);
   assert.match(source, /for BROWSER in chrome webkit/);
   assert.match(source, /colorScheme: "light"/);
   assert.match(source, /colorScheme: "dark"/);
