@@ -9,19 +9,16 @@ const agents = [
     id: "copilot",
     name: "GitHub Copilot CLI",
     command: "copilot",
-    install: "npm install -g @github/copilot",
   },
   {
     id: "claude",
     name: "Claude Code",
     command: "claude",
-    install: "npm install -g @anthropic-ai/claude-code",
   },
   {
     id: "codex",
     name: "OpenAI Codex CLI",
     command: "codex",
-    install: "npm install -g @openai/codex",
   },
 ];
 ---
@@ -45,9 +42,9 @@ const agents = [
     <div class="wizard-body">
       <div class="wizard-intro">
         <p class="wizard-lede">
-          Pick the operation you want to run and the coding agent you use, then copy the generated prompt. The agent
-          creates your private control plane repository, installs the operation, and runs it once in <code>review</code>
-          mode.
+          Pick the operation you want to run and the coding agent you use, then copy the generated prompt. Create a new
+          private control plane repository and paste the prompt into the agent text box to initialize it in
+          <code>review</code> mode.
         </p>
         <ul class="wizard-badges" aria-label="Wizard benefits">
           <li>Private control plane</li>
@@ -112,14 +109,12 @@ const agents = [
                 name="agent"
                 value={agent.id}
                 data-agent-name={agent.name}
-                data-agent-command={agent.command}
-                data-agent-install={agent.install}
                 checked={index === 0}
               />
               <span class="option-body">
                 <span class="option-name">{agent.name}</span>
                 <span class="option-description">
-                  Run <code>{agent.command}</code> in an empty working directory, then paste the prompt.
+                  Use <code>{agent.command}</code> to initialize your control plane repository.
                 </span>
               </span>
               <span class="option-check" aria-hidden="true" />
@@ -140,15 +135,15 @@ const agents = [
     </fieldset>
 
     <fieldset class="wizard-step">
-      <legend><span class="step-number">3</span> Copy the prompt and run it</legend>
+      <legend><span class="step-number">3</span> Copy the prompt</legend>
       <p class="run-hint">
-        Install the agent with <code data-agent-install-hint>npm install -g @github/copilot</code>, start it with
-        <code data-agent-command-hint>copilot</code>, and paste the prompt below.
+        Create a new private control plane repository, then paste this prompt into your coding agent's text box to
+        initialize the repository.
       </p>
       <noscript>
         <p class="run-hint">
-          This wizard needs JavaScript. Follow the <a href="/central-agentic-ops/getting-started/">Quickstart</a> to install
-          an operation manually.
+          This wizard needs JavaScript. Follow the <a href="/central-agentic-ops/getting-started/">Quickstart</a> to
+          initialize an operation manually.
         </p>
       </noscript>
       <div class="prompt-panel" aria-label="Generated prompt preview">
@@ -224,7 +219,7 @@ const agents = [
       "",
       "1. Confirm the GitHub CLI is authenticated with `repo` and `workflow` scopes: `gh auth status`.",
       "2. Install the Agentic Workflows extension: `gh extension install github/gh-aw` (skip if `gh aw --help` already works).",
-      `3. Create the private control repository and work inside it: \`gh repo create ${controlRepo} --private --clone\`.`,
+      `3. Work inside the private control repository at \`${controlRepo}\` that I have created.`,
     ];
 
     const body = isCustom
@@ -293,8 +288,6 @@ const agents = [
       const status = form.querySelector<HTMLParagraphElement>("[data-copy-status]");
       const summary = form.querySelector<HTMLElement>("[data-prompt-summary]");
       const customIdea = form.querySelector<HTMLElement>("[data-custom-idea]");
-      const commandHint = form.querySelector<HTMLElement>("[data-agent-command-hint]");
-      const installHint = form.querySelector<HTMLElement>("[data-agent-install-hint]");
       const copyButton = form.querySelector<HTMLButtonElement>("[data-copy-prompt]");
       const copyLabel = copyButton?.querySelector<HTMLElement>(".copy-label");
       const copyDialog = form.querySelector<HTMLDialogElement>("[data-copy-dialog]");
@@ -317,8 +310,6 @@ const agents = [
         const operation = selected(form, "operation");
         const agent = selected(form, "agent");
         if (customIdea) customIdea.hidden = operation?.value !== "custom";
-        if (commandHint && agent) commandHint.textContent = agent.dataset.agentCommand || "";
-        if (installHint && agent) installHint.textContent = agent.dataset.agentInstall || "";
         if (summary) {
           summary.textContent =
             operation && agent ? `${operation.dataset.operationName} with ${agent.dataset.agentName}` : "";
