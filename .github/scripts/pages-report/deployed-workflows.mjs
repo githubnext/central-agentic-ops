@@ -249,6 +249,7 @@ async function collectRunHealth(registryByRepository) {
           current.runIds.push(run.id);
           current.runRecords.push({
             runId: run.id,
+            event: run.event,
             conclusion: run.conclusion,
             status: run.status,
             createdAt: run.created_at,
