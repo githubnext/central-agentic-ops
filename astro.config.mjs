@@ -86,7 +86,7 @@ export default defineConfig({
         {
           label: "Run safely",
           items: [
-            { label: "Control plane status", link: "/control-plane/" },
+            { label: "Control plane status", link: "/cao/" },
             { label: "Roll out an operation", link: "/rollout-and-routing/" },
             { label: "Monitor and recover", link: "/operations/" },
             { label: "Emergency stop", link: "/operations/#emergency-stop" },

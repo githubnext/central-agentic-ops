@@ -1116,7 +1116,7 @@ test("control-plane dashboard reviewer checks successful documentation deploymen
   assert.match(source, /workflow_run:\n\s+workflows: \["Documentation Pages"\]\n\s+types: \[completed\]\n\s+branches: \[main\]/);
   assert.match(source, /github\.event\.workflow_run\.conclusion == 'success'/);
   assert.match(source, /REPORT_INVENTORY=\/tmp\/gh-aw\/agent\/control-plane-dashboard-review\/expected-inventory\.json/);
-  assert.match(source, /githubnext\.github\.io\/central-agentic-ops\/control-plane\//);
+  assert.match(source, /githubnext\.github\.io\/central-agentic-ops\/cao\//);
   assert.match(source, /playwright:\n\s+mode: cli/);
   assert.match(source, /toolsets: \[repos, issues, actions\]/);
   assert.match(source, /githubnext\.github\.io/);
@@ -1406,11 +1406,11 @@ test("Documentation Pages embeds this repository's control-plane report", () => 
   assert.match(workflowSource, /issues: read/);
   assert.match(workflowSource, /pull-requests: read/);
   assert.match(workflowSource, /REPORT_ALLOWED_REPOS: \$\{\{ github\.repository \}\}/);
-  assert.match(workflowSource, /REPORT_OUTPUT: dist\/control-plane/);
+  assert.match(workflowSource, /REPORT_OUTPUT: dist\/cao/);
   assert.match(workflowSource, /path: dist/);
   assert.doesNotMatch(workflowSource, /REPORT_INCLUDE_PRIVATE:\s*true/);
   assert.equal((workflowSource.match(/actions\/deploy-pages@/g) || []).length, 1);
-  assert.match(astroConfig, /label: "Control plane status", link: "\/control-plane\/"/);
+  assert.match(astroConfig, /label: "Control plane status", link: "\/cao\/"/);
 });
 
 test("Pages inventory links multiline orchestrator worker lists", () => {
@@ -1474,7 +1474,7 @@ test("Pages report SVGs use theme colors in light and dark modes", () => {
 
 test("Pages renders one canonical authored workflow detail across repository and package views", () => {
   const temporaryRoot = mkdtempSync(join(tmpdir(), "central-agentic-ops-workflow-pages-"));
-  const outputPath = join(temporaryRoot, "dist", "control-plane");
+  const outputPath = join(temporaryRoot, "dist", "cao");
   const inventoryPath = join(temporaryRoot, "inventory.json");
   const deployedPath = join(temporaryRoot, "deployed.json");
   const aicPath = join(temporaryRoot, "aic.json");

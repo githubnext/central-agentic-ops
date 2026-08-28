@@ -72,7 +72,7 @@ Review the control-plane dashboard deployed from this repository and report only
 ## Context
 
 - Repository: `${{ github.repository }}`
-- Dashboard: `https://githubnext.github.io/central-agentic-ops/control-plane/`
+- Dashboard: `https://githubnext.github.io/central-agentic-ops/cao/`
 - Upstream workflow run: `${{ github.event.workflow_run.html_url || 'manual review' }}`
 - Upstream conclusion: `${{ github.event.workflow_run.conclusion || 'manual review' }}`
 - Expected inventory: `/tmp/gh-aw/agent/control-plane-dashboard-review/expected-inventory.json`

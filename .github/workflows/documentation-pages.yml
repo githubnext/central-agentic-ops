@@ -137,7 +137,7 @@ jobs:
           REPORT_INVENTORY: ${{ runner.temp }}/control-plane-inventory.json
           REPORT_DEPLOYED_WORKFLOWS: ${{ runner.temp }}/deployed-workflows.json
           REPORT_OPERATIONAL_VALUES: ${{ runner.temp }}/operational-values.json
-          REPORT_OUTPUT: dist/control-plane
+          REPORT_OUTPUT: dist/cao
         run: node .github/scripts/pages-report/report.mjs
 
       - name: Upload Pages artifact
