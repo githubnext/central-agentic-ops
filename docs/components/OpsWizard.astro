@@ -746,8 +746,12 @@ const agents = [
 
     .copy-button.is-copied {
       border-color: color-mix(in srgb, var(--sl-color-green) 70%, var(--sl-color-white));
-      background: linear-gradient(135deg, var(--sl-color-green), var(--wizard-blue));
-      color: var(--sl-color-black);
+      background: linear-gradient(
+        135deg,
+        color-mix(in srgb, var(--sl-color-green) 72%, var(--sl-color-black)),
+        color-mix(in srgb, var(--wizard-blue) 72%, var(--sl-color-black))
+      );
+      color: var(--sl-color-white);
     }
 
     .copy-dialog {
@@ -801,7 +805,7 @@ const agents = [
       text-transform: uppercase;
     }
 
-    .copy-dialog-card .copy-dialog-title {
+    .copy-dialog-card h3.copy-dialog-title {
       margin: 0;
       color: var(--sl-color-white);
       font-size: var(--sl-text-xl);
