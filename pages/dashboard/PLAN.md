@@ -29,9 +29,17 @@
 ## Infrastructure blockers
 
 - 2026-08-28: `npm run typecheck`, `npm run lint`, and `npm test` can fail immediately after `npm install` if the runner has not linked local `node_modules/.bin` shims or installed the declared type packages yet; rerunning after installation from the package directory is currently required in this environment.
-- 2026-08-28: `npm run test:e2e` is currently blocked in this environment by a Playwright runner/tooling mismatch (`Playwright Test did not expect test() to be called here` via the resolved local runner) rather than by dashboard code. The workflow should prefer the built-in Playwright MCP browser tools until the package-level Playwright harness is aligned with the provisioned runner.
+- 2026-08-28: `npm run test:e2e` is currently blocked in this environment because the Playwright Chromium executable is not provisioned (`browserType.launch: Executable doesn't exist`). The workflow should prefer the built-in Playwright MCP browser tools until the package-level browser dependency is available.
 
 ## Run log
+
+### 2026-08-28 (built-in pages required-source coverage slice)
+
+- Extended the Built-in pages milestone with a narrow Section 10 validator increment that now applies the existing conservative required-source rejection to every canonical built-in page name, not only `overview` and `runs`.
+- Updated `src/validator.js` so every built-in page emits `DLS-E003` errors for each required logical source listed in `src/specification.js` until the specification defines a declarative built-in page vocabulary.
+- Expanded `test/unit/validator.test.js` coverage for `DLS-PAGE-003` through `DLS-PAGE-014`, and adjusted pre-existing structural/title tests so they remain valid under the conservative built-in-page rejection model.
+- Verified `npm install`, `npm run typecheck`, `npm run lint`, and `npm test`; `npm run test:e2e` remains blocked in this environment because the Playwright Chromium executable is not provisioned (`browserType.launch: Executable doesn't exist`).
+- Next milestone: Built-in pages, next slice for a concrete declarative built-in page-definition vocabulary once the specification ambiguity is resolved.
 
 ### 2026-08-28 (provenance metadata validation slice)
 

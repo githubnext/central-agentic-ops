@@ -30,13 +30,17 @@ dashboard:
 
 describe('dashboard document validation', () => {
   it('DLS-DOC-002 DLS-DOC-003 DLS-DOC-004 accepts the minimal structural document shape', () => {
-    const result = validateDashboardDocument(validDocument);
+    const result = validateDashboardDocument(validDocument.replace(`
+    - id: usage
+      kind: built-in
+      page: usage
+      title: Usage`, ''));
 
     expect(result.ok).toBe(true);
     if (result.ok) {
       expect(result.value.languageVersion).toBe('0.1.0');
       expect(result.value.dashboard.id).toBe('agentic-operations');
-      expect(result.value.dashboard.pages).toHaveLength(2);
+      expect(result.value.dashboard.pages).toHaveLength(1);
     }
   });
 
@@ -97,9 +101,11 @@ dashboard:
 
     expect(result.ok).toBe(false);
     if (!result.ok) {
-      expect(result.errors).toEqual([
-        expect.objectContaining({ code: 'DLS-E005', path: '$.language-version' })
-      ]);
+      expect(result.errors).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({ code: 'DLS-E005', path: '$.language-version' })
+        ])
+      );
     }
   });
 
@@ -188,9 +194,11 @@ dashboard:
 
     expect(result.ok).toBe(false);
     if (!result.ok) {
-      expect(result.errors).toEqual([
-        expect.objectContaining({ code: 'DLS-E004', path: '$.dashboard.defaults.timezone' })
-      ]);
+      expect(result.errors).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({ code: 'DLS-E004', path: '$.dashboard.defaults.timezone' })
+        ])
+      );
     }
   });
 
@@ -219,7 +227,7 @@ dashboard:
     }
   });
 
-  it('DLS-PAGE-001 accepts an omitted built-in page title when the page name is canonical', () => {
+  it('DLS-PAGE-001 DLS-PAGE-010 accepts an omitted built-in page title when the page name is canonical', () => {
     const result = validateDashboardDocument(`language-version: "0.1.0"
 dashboard:
   id: built-in-title-default
@@ -230,7 +238,18 @@ dashboard:
       page: usage
 `);
 
-    expect(result.ok).toBe(true);
+    expect(result.ok).toBe(false);
+    if (!result.ok) {
+      expect(result.errors).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({
+            code: 'DLS-E003',
+            path: '$.dashboard.pages[0].page',
+            message: 'built-in page "usage" requires declarative definitions for source "usage".'
+          })
+        ])
+      );
+    }
   });
 
   it('DLS-PAGE-001 rejects an omitted built-in page title when the page name is non-canonical', () => {
@@ -254,7 +273,52 @@ dashboard:
     }
   });
 
-  it('DLS-PAGE-001 accepts an explicit built-in page title when it matches the canonical title default', () => {
+  it('DLS-PAGE-003 DLS-PAGE-004 DLS-PAGE-005 DLS-PAGE-007 DLS-PAGE-008 DLS-PAGE-009 DLS-PAGE-010 DLS-PAGE-011 DLS-PAGE-012 DLS-PAGE-013 DLS-PAGE-014 reject built-in pages until declarative source definitions exist', () => {
+    /** @type {Array<[string, string[]]>} */
+    const cases = [
+      ['organizations', ['organizations', 'repositories', 'workflows', 'runs', 'usage']],
+      ['repositories', ['repositories', 'runs', 'usage', 'operational-values']],
+      ['workflows', ['workflows', 'runs', 'outcomes', 'usage', 'findings', 'operational-values']],
+      ['experiments', ['experiments', 'experiment-assignments', 'grader-observations', 'eval-observations', 'outcomes', 'usage', 'operational-values']],
+      ['graders', ['graders', 'grader-observations']],
+      ['evals', ['evals', 'eval-observations']],
+      ['usage', ['usage']],
+      ['engines-models', ['runs', 'outcomes', 'usage']],
+      ['operational-value', ['operational-values']],
+      ['findings', ['findings']]
+    ];
+
+    for (const [pageName, sources] of cases) {
+      const result = validateDashboardDocument(`language-version: "0.1.0"
+dashboard:
+  id: built-in-required-sources-${pageName}
+  title: Built In Required Sources ${pageName}
+  pages:
+    - id: ${pageName}
+      kind: built-in
+      page: ${pageName}
+      title: ${pageName
+        .split('-')
+        .map((segment) => segment.charAt(0).toUpperCase() + segment.slice(1))
+        .join(' ')}
+`);
+
+      expect(result.ok).toBe(false);
+      if (!result.ok) {
+        expect(result.errors).toEqual(
+          expect.arrayContaining(
+            sources.map((sourceName) => expect.objectContaining({
+              code: 'DLS-E003',
+              path: '$.dashboard.pages[0].page',
+              message: `built-in page "${pageName}" requires declarative definitions for source "${sourceName}".`
+            }))
+          )
+        );
+      }
+    }
+  });
+
+  it('DLS-PAGE-001 DLS-PAGE-011 accepts an explicit built-in page title when it matches the canonical title default', () => {
     const result = validateDashboardDocument(`language-version: "0.1.0"
 dashboard:
   id: explicit-built-in-title-default
@@ -266,7 +330,28 @@ dashboard:
       title: Engines Models
 `);
 
-    expect(result.ok).toBe(true);
+    expect(result.ok).toBe(false);
+    if (!result.ok) {
+      expect(result.errors).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({
+            code: 'DLS-E003',
+            path: '$.dashboard.pages[0].page',
+            message: 'built-in page "engines-models" requires declarative definitions for source "runs".'
+          }),
+          expect.objectContaining({
+            code: 'DLS-E003',
+            path: '$.dashboard.pages[0].page',
+            message: 'built-in page "engines-models" requires declarative definitions for source "outcomes".'
+          }),
+          expect.objectContaining({
+            code: 'DLS-E003',
+            path: '$.dashboard.pages[0].page',
+            message: 'built-in page "engines-models" requires declarative definitions for source "usage".'
+          })
+        ])
+      );
+    }
   });
 
   it('DLS-PAGE-001 rejects an explicit built-in page title when it differs from the canonical title default', () => {

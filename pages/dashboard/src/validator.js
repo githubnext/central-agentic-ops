@@ -338,11 +338,11 @@ function validateBuiltInPage(page, path, errors) {
  * @param {ValidationError[]} errors
  */
 function validateBuiltInPageContent(pageName, path, errors) {
-  if (pageName !== 'overview' && pageName !== 'runs') {
+  const requiredSources = BUILT_IN_PAGE_REQUIRED_SOURCES[pageName];
+  if (!requiredSources) {
     return;
   }
 
-  const requiredSources = BUILT_IN_PAGE_REQUIRED_SOURCES[pageName];
   for (const sourceName of requiredSources) {
     errors.push(createError(
       ERROR_CODES.missingOrInvalidRequiredField,
