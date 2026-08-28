@@ -293,7 +293,7 @@ test("enterprise-scale limits remain bounded across inventory sizes", () => {
 
 test("enterprise defaults, budgets, timeouts, and concurrency are finite", () => {
   const monthlyBudgetVariables = {
-    "advisory.md": "CENTRAL_AGENTIC_OPS_ADVISORY_MONTHLY_AI_CREDIT_BUDGET",
+    "uk-ai-advisory.md": "CENTRAL_AGENTIC_OPS_ADVISORY_MONTHLY_AI_CREDIT_BUDGET",
     "ambient-context.md": "CENTRAL_AGENTIC_OPS_AMBIENT_CONTEXT_MONTHLY_AI_CREDIT_BUDGET",
     "aw-maintenance.md": "CENTRAL_AGENTIC_OPS_AW_MAINTENANCE_MONTHLY_AI_CREDIT_BUDGET",
     "dependabot.md": "CENTRAL_AGENTIC_OPS_DEPENDABOT_MONTHLY_AI_CREDIT_BUDGET",
@@ -301,7 +301,7 @@ test("enterprise defaults, budgets, timeouts, and concurrency are finite", () =>
     "optimization.md": "CENTRAL_AGENTIC_OPS_OPTIMIZATION_MONTHLY_AI_CREDIT_BUDGET",
   };
   const expected = {
-    "advisory.md": { credits: 250, timeout: 15, dispatchMax: 50, workers: 1 },
+    "uk-ai-advisory.md": { credits: 250, timeout: 15, dispatchMax: 50, workers: 1 },
     "advisory-package-maintainer.md": { credits: 200, timeout: 20 },
     "advisory-uk-ai-operational-resilience.md": { credits: 600, timeout: 30 },
     "ambient-context.md": { credits: 250, timeout: 15, dispatchMax: 20, workers: 2 },
@@ -687,7 +687,7 @@ test("live workers require target-owned package authority before agent execution
   assert.match(precompute, /validate_worker_dispatch\n\s+validate_output_destination\n\s+validate_live_authority\n\s+write_worker_precompute/);
 
   for (const [name, bundle] of [
-    ["advisory.md", "advisory"],
+    ["uk-ai-advisory.md", "advisory"],
     ["advisory-uk-ai-operational-resilience.md", "advisory"],
     ["ambient-context.md", "ambient-context"],
     ["ambient-context-agents-md-curator.md", "ambient-context"],
@@ -714,7 +714,7 @@ test("live workers require target-owned package authority before agent execution
 
 test("orchestrators expose scheduled variables and independent manual inputs", () => {
   for (const [name, packageName] of [
-    ["advisory.md", "ADVISORY"],
+    ["uk-ai-advisory.md", "ADVISORY"],
     ["ambient-context.md", "AMBIENT_CONTEXT"],
     ["aw-maintenance.md", "AW_MAINTENANCE"],
     ["dependabot.md", "DEPENDABOT"],
@@ -747,7 +747,7 @@ test("operation workflows optionally load per-operation markdown steering", () =
   assert.match(packageSkill, /\{\{#runtime-import\? \.github\/cao\/<package-slug>\.md\}\}/);
 
   for (const [name, operation] of [
-    ["advisory.md", "advisory"],
+    ["uk-ai-advisory.md", "advisory"],
     ["advisory-uk-ai-operational-resilience.md", "advisory"],
     ["ambient-context.md", "ambient-context"],
     ["ambient-context-agents-md-curator.md", "ambient-context"],
@@ -801,7 +801,7 @@ test("shared control keeps manual and scheduled routing event-scoped", () => {
   const control = workflow("shared/control.md");
   const precompute = workflow("shared/control-precompute.md");
 
-  for (const name of ["advisory.md", "ambient-context.md", "aw-maintenance.md", "dependabot.md", "eu-cra-compliance.md", "optimization.md"]) {
+  for (const name of ["uk-ai-advisory.md", "ambient-context.md", "aw-maintenance.md", "dependabot.md", "eu-cra-compliance.md", "optimization.md"]) {
     const orchestrator = workflow(name);
     assert.match(orchestrator, /GH_AW_SAFE_OUTPUT_MODE:.*inputs\.safe_output_mode.*\|\| 'review'/);
     assert.match(orchestrator, /CENTRAL_AGENTIC_OPS_PACKAGE_ENABLED:.*_ENABLED \|\| 'true'/);
@@ -894,13 +894,13 @@ test("every worker uses the standard dispatch envelope and safe mode vocabulary"
 });
 
 test("Advisory preserves UK AI guidance and human-review boundaries", () => {
-  const orchestrator = workflow("advisory.md");
+  const orchestrator = workflow("uk-ai-advisory.md");
   const maintainer = workflow("advisory-package-maintainer.md");
   const worker = workflow("advisory-uk-ai-operational-resilience.md");
   const readme = readFileSync(join(root, "advisory", "README.md"), "utf8");
 
-  assert.match(orchestrator, /^name: "Advisory"$/m);
-  assert.match(worker, /^name: "Advisory \/ UK AI Operational Resilience"$/m);
+  assert.match(orchestrator, /^name: "UK AI Advisory"$/m);
+  assert.match(worker, /^name: "UK AI Advisory \/ Operational Resilience"$/m);
   for (const source of [orchestrator, worker, readme]) {
     assert.match(source, /advisory and non-binding/i);
     assert.match(source, /no guarantee of completeness, correctness, accuracy/i);
@@ -941,7 +941,7 @@ test("Advisory preserves UK AI guidance and human-review boundaries", () => {
   assert.match(worker, /## agent: `ai-risk-scorer`/);
   assert.doesNotMatch(worker, /^graders:/m);
 
-  assert.match(maintainer, /^name: "Advisory \/ Package Maintainer"$/m);
+  assert.match(maintainer, /^name: "UK AI Advisory \/ Package Maintainer"$/m);
   assert.match(maintainer, /schedule: weekly/);
   assert.match(maintainer, /safe_output_mode:\n\s+default: review/);
   assert.doesNotMatch(maintainer, /^\s+staged:/m);
@@ -1233,6 +1233,7 @@ test("clean-room compilation emits the expected GitHub Actions settings", { time
     const packageLockNames = [
       "advisory-uk-ai-operational-resilience.lock.yml",
       "advisory.lock.yml",
+      "uk-ai-advisory.lock.yml",
       "ambient-context-agents-md-curator.lock.yml",
       "ambient-context-skills-curator.lock.yml",
       "ambient-context.lock.yml",
@@ -1288,7 +1289,7 @@ test("clean-room compilation emits the expected GitHub Actions settings", { time
     }
 
     const orchestratorGates = new Map([
-      ["advisory.lock.yml", "ADVISORY"],
+      ["uk-ai-advisory.lock.yml", "ADVISORY"],
       ["ambient-context.lock.yml", "AMBIENT_CONTEXT"],
       ["aw-maintenance.lock.yml", "AW_MAINTENANCE"],
       ["dependabot.lock.yml", "DEPENDABOT"],
@@ -1475,7 +1476,6 @@ test("Pages inventory links multiline orchestrator worker lists", () => {
       id: bundle.id,
       workers: bundle.workers.map((worker) => worker.id),
     })), [
-      { id: "advisory", workers: ["advisory-uk-ai-operational-resilience"] },
       { id: "ambient-context", workers: ["ambient-context-agents-md-curator", "ambient-context-skills-curator"] },
       { id: "aw-maintenance", workers: ["aw-maintenance-upgrade", "aw-failures-investigator"] },
       { id: "dependabot", workers: ["dependabot-release-train-updater"] },
@@ -1491,6 +1491,7 @@ test("Pages inventory links multiline orchestrator worker lists", () => {
         ],
       },
       { id: "optimization", workers: ["optimization-ai-credit-auditor", "optimization-ai-credit-optimizer"] },
+      { id: "uk-ai-advisory", workers: ["advisory-uk-ai-operational-resilience"] },
     ]);
   } finally {
     rmSync(temporaryRoot, { recursive: true, force: true });

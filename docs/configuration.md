@@ -310,7 +310,7 @@ Other `GH_AW_*` values, including safe-output files, are managed by the gh-aw ru
 
 - Package inventory and minimum gh-aw versions: `aw.yml`, `advisory/aw.yml`, `ambient-context/aw.yml`, `aw-maintenance/aw.yml`, `dependabot/aw.yml`, `eu-cra-compliance/aw.yml`, and `optimization/aw.yml`
 - Shared resolution and precedence: `.github/workflows/shared/control.md`
-- Manual inputs: `.github/workflows/advisory.md`, `.github/workflows/ambient-context.md`, `.github/workflows/aw-maintenance.md`, `.github/workflows/dependabot.md`, `.github/workflows/eu-cra-compliance.md`, and `.github/workflows/optimization.md`
+- Manual inputs: `.github/workflows/uk-ai-advisory.md`, `.github/workflows/ambient-context.md`, `.github/workflows/aw-maintenance.md`, `.github/workflows/dependabot.md`, `.github/workflows/eu-cra-compliance.md`, and `.github/workflows/optimization.md`
 - Optional observability: `.github/workflows/shared/sentry.md`, `.github/workflows/shared/grafana.md`, and `.github/workflows/shared/datadog.md`
 
 When adding or renaming a setting, update the installer manifest, consuming workflow, and this reference in the same change.
