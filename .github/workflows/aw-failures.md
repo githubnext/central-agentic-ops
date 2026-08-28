@@ -97,6 +97,8 @@ safe-outputs:
     max: 50
 ---
 
+{{#runtime-import? .github/aw/aw-failures.md}}
+
 # AW Failures
 
 Package orchestrator for organization-wide agentic workflow failure triage. Use the shared control plane to select repositories that run their own custom Agentic Workflows, then dispatch `aw-failures-investigator` once per selected repository. The orchestrator only selects and ranks repositories; the worker owns failure bucketization and issue creation inside each target repository.

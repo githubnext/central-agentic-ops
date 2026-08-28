@@ -111,6 +111,8 @@ safe-outputs:
 timeout-minutes: 30
 ---
 
+{{#runtime-import? .github/aw/eu-cra-compliance.md}}
+
 # EU CRA Advisor / Article 14 Reporting Readiness
 
 Audit operational readiness for Article 14 reporting. This worker never decides reportability without human review and never sends a notification.

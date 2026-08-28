@@ -37,6 +37,14 @@ gh variable set CENTRAL_AGENTIC_OPS_DEPENDABOT_MAX_REPOS \
 
 Add an App or PAT when the target is private or internal. Keep the mode at `review` until the promotion checks pass.
 
+## Markdown Steering
+
+Each operation orchestrator can load repository-specific instructions from `.github/aw/<operation>.md` in the control repository. For example, `.github/aw/dependabot.md` can describe organization-specific dependency priorities, repositories to prefer or avoid, or additional evidence to consider.
+
+The supported operation names are `advisory`, `ambient-context`, `aw-failures`, `aw-maintenance`, `dependabot`, `eu-cra-compliance`, and `optimization`. These files are optional runtime imports: an operation continues with its packaged instructions when its steering file does not exist. Because steering files are separate from package-owned workflow sources, `gh aw update` does not overwrite them.
+
+Keep steering instructions within the operation's existing permissions, safety policy, and dispatch limits. Steering can refine selection and prioritization, but it cannot grant tools, credentials, permissions, or safe-output capabilities.
+
 ## Repository Variables
 
 | Name | Scope | Required | Default | Purpose |

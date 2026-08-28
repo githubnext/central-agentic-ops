@@ -97,6 +97,8 @@ safe-outputs:
     max: 50
 ---
 
+{{#runtime-import? .github/aw/aw-maintenance.md}}
+
 # AW Maintenance
 
 Package orchestrator for organization-wide GitHub Agentic Workflows (gh-aw) maintenance. Use the shared control plane to select repositories that install their own GitHub Agentic Workflows, then dispatch `aw-maintenance-upgrade` once per selected repository. The orchestrator only selects and ranks repositories; the worker owns release detection, the `gh aw upgrade` run, and issue filing inside each target repository.

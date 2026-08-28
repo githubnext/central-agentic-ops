@@ -714,6 +714,37 @@ test("orchestrators expose scheduled variables and independent manual inputs", (
   }
 });
 
+test("operation workflows optionally load per-operation markdown steering", () => {
+  for (const [name, operation] of [
+    ["advisory.md", "advisory"],
+    ["advisory-uk-ai-operational-resilience.md", "advisory"],
+    ["ambient-context.md", "ambient-context"],
+    ["ambient-context-agents-md-curator.md", "ambient-context"],
+    ["ambient-context-skills-curator.md", "ambient-context"],
+    ["aw-failures.md", "aw-failures"],
+    ["aw-failures-investigator.md", "aw-failures"],
+    ["aw-maintenance.md", "aw-maintenance"],
+    ["aw-maintenance-upgrade.md", "aw-maintenance"],
+    ["dependabot.md", "dependabot"],
+    ["dependabot-release-train-updater.md", "dependabot"],
+    ["eu-cra-compliance.md", "eu-cra-compliance"],
+    ["eu-cra-compliance-article-14-reporting-readiness.md", "eu-cra-compliance"],
+    ["eu-cra-compliance-conformity-release-evidence.md", "eu-cra-compliance"],
+    ["eu-cra-compliance-scope-classifier.md", "eu-cra-compliance"],
+    ["eu-cra-compliance-security-requirements-auditor.md", "eu-cra-compliance"],
+    ["eu-cra-compliance-supply-chain-sbom-auditor.md", "eu-cra-compliance"],
+    ["eu-cra-compliance-vulnerability-handling-auditor.md", "eu-cra-compliance"],
+    ["optimization.md", "optimization"],
+    ["optimization-ai-credit-auditor.md", "optimization"],
+    ["optimization-ai-credit-optimizer.md", "optimization"],
+  ]) {
+    assert.match(
+      workflow(name),
+      new RegExp(`\\{\\{#runtime-import\\? \\.github/aw/${operation}\\.md\\}\\}`),
+    );
+  }
+});
+
 test("review destinations must be isolated, accessible, and private", () => {
   const precompute = workflow("shared/control-precompute.md");
 
