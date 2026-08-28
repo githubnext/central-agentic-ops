@@ -346,7 +346,7 @@ steps:
         core.info(`Existing tracking issues: ${existingTrackingIssues.length}`);
 ---
 
-      {{#runtime-import? .github/aw/aw-failures.md}}
+{{#runtime-import? .github/aw/aw-failures.md}}
 
 You are the AW Failure Investigator — a worker that analyzes recent GitHub Agentic Workflow failures in one target repository, buckets them into failure clusters, and files focused fix issues for the buckets that are not already tracked.
 
