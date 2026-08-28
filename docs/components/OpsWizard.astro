@@ -158,7 +158,7 @@ const agents = [
       <dialog class="copy-dialog" data-copy-dialog aria-labelledby="ops-wizard-copy-dialog-title">
         <div class="copy-dialog-card">
           <div class="copy-dialog-burst" aria-hidden="true"></div>
-          <p class="copy-dialog-kicker">Prompt copied</p>
+          <span class="copy-dialog-kicker">Prompt copied</span>
           <p class="copy-dialog-title" id="ops-wizard-copy-dialog-title">Launch it from a fresh control repository</p>
           <ol class="copy-dialog-steps">
             <li>Create a new private repository for your Central Agentic Ops control plane.</li>
@@ -371,7 +371,7 @@ const agents = [
 
     .wizard-glow {
       position: absolute;
-      z-index: -1;
+      z-index: 0;
       width: 16rem;
       height: 16rem;
       border-radius: 999px;
@@ -407,6 +407,8 @@ const agents = [
     }
 
     .wizard-intro {
+      position: relative;
+      z-index: 1;
       display: flex;
       flex-direction: column;
       gap: 0.5rem;
@@ -448,6 +450,8 @@ const agents = [
     }
 
     .wizard-form {
+      position: relative;
+      z-index: 1;
       display: flex;
       flex-direction: column;
       gap: 1.5rem;
@@ -756,19 +760,19 @@ const agents = [
       box-shadow: 0 0.5rem 1.5rem color-mix(in srgb, #9b5cff 50%, transparent);
     }
 
-    .copy-dialog-card .copy-dialog-kicker {
-      color: color-mix(in srgb, #00d4ff 78%, var(--sl-color-white));
-      font-size: var(--sl-text-xs);
-      font-weight: 800;
-      letter-spacing: 0.08em;
-      text-transform: uppercase;
-    }
-
     .copy-dialog-card p {
       margin: 0;
       color: var(--sl-color-gray-2);
       font-size: var(--sl-text-sm);
       line-height: 1.6;
+    }
+
+    .copy-dialog-kicker {
+      color: color-mix(in srgb, #00d4ff 78%, var(--sl-color-white));
+      font-size: var(--sl-text-xs);
+      font-weight: 800;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
     }
 
     .copy-dialog-card .copy-dialog-title {
