@@ -71,7 +71,7 @@ test("ops publish derives routing from an allowlisted generated run", () => {
     },
   });
   assert.deepEqual(validated, {
-    packageName: "aw-failures",
+    packageName: "aw-maintenance",
     targetRepository: "acme/service",
     targetOwner: "acme",
     targetName: "service",
@@ -239,23 +239,23 @@ test("ops publish rejects non-review runs and destinations outside policy", () =
 });
 
 test("ops publish requires target-owned package authority", () => {
-  const authority = parseAuthorityYaml("version: 1\nbundles:\n  aw-failures:\n    authority: acme/control\n");
-  assert.doesNotThrow(() => assertTargetAuthority(authority, "aw-failures", "acme/control"));
+  const authority = parseAuthorityYaml("version: 1\nbundles:\n  aw-maintenance:\n    authority: acme/control\n");
+  assert.doesNotThrow(() => assertTargetAuthority(authority, "aw-maintenance", "acme/control"));
   assert.throws(
-    () => assertTargetAuthority(authority, "aw-failures", "acme/other-control"),
+    () => assertTargetAuthority(authority, "aw-maintenance", "acme/other-control"),
     /different control repository/,
   );
   assert.throws(() => parseAuthorityYaml("version: ["), /not valid safe YAML/);
   assert.throws(
-    () => parseAuthorityYaml("version: 1\ndefault: &default\n  authority: acme/control\nbundles:\n  aw-failures: *default\n"),
+    () => parseAuthorityYaml("version: 1\ndefault: &default\n  authority: acme/control\nbundles:\n  aw-maintenance: *default\n"),
     /not valid safe YAML/,
   );
   for (const document of [null, { version: 2, bundles: {} }, { version: 1, bundles: [] }]) {
-    assert.throws(() => assertTargetAuthority(document, "aw-failures", "acme/control"), /version 1 and a bundles mapping/);
+    assert.throws(() => assertTargetAuthority(document, "aw-maintenance", "acme/control"), /version 1 and a bundles mapping/);
   }
   assert.throws(
-    () => assertTargetAuthority({ version: 1, bundles: {} }, "aw-failures", "acme/control"),
-    /bundles.aw-failures.authority must use owner\/repository form/,
+    () => assertTargetAuthority({ version: 1, bundles: {} }, "aw-maintenance", "acme/control"),
+    /bundles.aw-maintenance.authority must use owner\/repository form/,
   );
 });
 

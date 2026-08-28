@@ -48,8 +48,8 @@ env:
   TARGET_REPO: ${{ inputs.target_repo || '' }}
 
 if: >-
-  (vars.CENTRAL_AGENTIC_OPS_AW_FAILURES_ENABLED || 'true') == 'true' &&
-  (vars.CENTRAL_AGENTIC_OPS_AW_FAILURES_INVESTIGATOR_ENABLED || 'true') == 'true'
+  (vars.CENTRAL_AGENTIC_OPS_AW_MAINTENANCE_ENABLED || 'true') == 'true' &&
+  (vars.CENTRAL_AGENTIC_OPS_AW_MAINTENANCE_FAILURES_ENABLED || 'true') == 'true'
 
 imports:
   - uses: shared/control.md
@@ -346,7 +346,7 @@ steps:
         core.info(`Existing tracking issues: ${existingTrackingIssues.length}`);
 ---
 
-{{#runtime-import? .github/cao/aw-failures.md}}
+{{#runtime-import? .github/cao/aw-maintenance.md}}
 
 You are the AW Failure Investigator — a worker that analyzes recent GitHub Agentic Workflow failures in one target repository, buckets them into failure clusters, and files focused fix issues for the buckets that are not already tracked.
 

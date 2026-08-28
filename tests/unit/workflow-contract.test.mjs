@@ -734,7 +734,7 @@ test("orchestrators expose scheduled variables and independent manual inputs", (
     assert.match(source, /CENTRAL_AGENTIC_OPS_BATCH_SIZE \|\| '100000'/);
     assert.match(source, /CENTRAL_AGENTIC_OPS_BATCH_INDEX \|\| '0'/);
     assert.match(source, /CENTRAL_AGENTIC_OPS_ALLOWED_OWNERS \|\| github\.repository_owner/);
-    assert.match(source, /CENTRAL_AGENTIC_OPS_MAX_AI_CREDITS_PER_RUN \|\| '1100'/);
+    assert.match(source, new RegExp(`CENTRAL_AGENTIC_OPS_MAX_AI_CREDITS_PER_RUN \\|\\| '${name === "aw-maintenance.md" ? "1250" : "1100"}'`));
   }
 });
 
@@ -1475,7 +1475,7 @@ test("Pages inventory links multiline orchestrator worker lists", () => {
     })), [
       { id: "advisory", workers: ["advisory-uk-ai-operational-resilience"] },
       { id: "ambient-context", workers: ["ambient-context-agents-md-curator", "ambient-context-skills-curator"] },
-      { id: "aw-maintenance", workers: ["aw-failures-investigator", "aw-maintenance-upgrade"] },
+      { id: "aw-maintenance", workers: ["aw-maintenance-upgrade", "aw-failures-investigator"] },
       { id: "dependabot", workers: ["dependabot-release-train-updater"] },
       {
         id: "eu-cra-compliance",
