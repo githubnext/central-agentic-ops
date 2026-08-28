@@ -196,7 +196,7 @@ Language keys and enumerated values use canonical kebab-case. Human-readable tit
 | Custom page | `id`, `kind`, `title`, `description`, `views` |
 | View | `id`, `title`, `description`, `data`, `mark`, `encoding` |
 | View `data` | `source`, `scope`, `time`, `filters`, `limit`, `order-by` |
-| Field definition | `field`, `type`, `aggregate`, `time-unit`, `title`, `as` |
+| Field definition | `field`, `type`, `aggregate`, `time-unit`, `title`, `as` (only when `aggregate` is not `none`) |
 
 ### 4.3 Normative Document Requirements
 
@@ -316,7 +316,7 @@ Allowed `time-unit` values are `hour`, `day`, `week`, and `month`. Buckets are h
 
 Unaggregated dimensions in an encoding form the grouping key. Aggregated fields are computed once per resulting group. A metric with no unaggregated dimension computes one value over its effective context.
 
-A field definition may also include an optional `as` property to name the aggregate output for subsequent references. When `aggregate` is not `none`, `as` **MAY** be used to provide an explicit output identifier; if omitted, the validator **MUST** derive a canonical identifier as `<aggregate>-<field>`. `as` is not valid for an unaggregated field (`aggregate: none`). Within one view, no two aggregate outputs may resolve to the same identifier; otherwise the document **MUST** be rejected.
+A field definition may also include an optional `as` property to name the aggregate output for subsequent references. This allows a view to refer to a derived metric by a stable identifier instead of inferring an implementation-specific name. When `as` is omitted, the canonical identifier is `<aggregate>-<field>`. See **DLS-AGG-009** and **DLS-AGG-010** for the normative validation rules.
 
 ### 7.4 Normative Aggregation Requirements
 
@@ -328,7 +328,7 @@ A field definition may also include an optional `as` property to name the aggreg
 - **DLS-AGG-006:** `count` and `distinct-count` **MUST** ignore absent values and **MUST NOT** substitute zero.
 - **DLS-AGG-007:** A time unit **MUST** be applied before grouping and **MUST** use the UTC boundaries in Section 7.3.
 - **DLS-AGG-008:** Rankings **MUST** disclose the ranked measure, direction, filters, time range, scope, and tie behavior; the ranking key **MUST** be resolved against the post-aggregation output identifier before applying `limit`, and ties **MUST** then be ordered by canonical entity ID ascending.
-- **DLS-AGG-009:** A field definition with `aggregate` other than `none` **MAY** include `as`; if omitted, the validator **MUST** derive a canonical output identifier as `<aggregate>-<field>`.
+- **DLS-AGG-009:** A field definition with `aggregate` other than `none` **MAY** include `as`; if omitted, the validator **MUST** derive a canonical output identifier as `<aggregate>-<field>`. A field definition with `aggregate: none` **MUST NOT** include `as`.
 - **DLS-AGG-010:** A view **MUST** reject duplicate aggregate-output identifiers within the same view and **MUST** reject ambiguous or invalid `data.order-by.field` references that do not resolve to exactly one source field at the output grain or one aggregate-output identifier; such failures **MUST** use `DLS-E010`.
 
 ---
@@ -460,9 +460,9 @@ An omitted `data` inherits dashboard defaults. Omitted `limit` means no language
 `data.order-by.field` resolves against the post-aggregation output grain. It **MUST** reference either:
 
 1. a source field still valid at the output grain without aggregation; or
-2. an aggregate-output identifier produced by an encoding field definition, using the explicit `as` value or the canonical `<aggregate>-<field>` output name when one is not specified.
+2. an aggregate-output identifier produced by an encoding field definition, using the explicit `as` value or the canonical `<aggregate>-<field>` output name when `as` is omitted.
 
-If `order-by.field` matches more than one possible output, or matches a source field that is no longer unique after aggregation, the validator **MUST** reject the document with `DLS-E010`. A presenter **MUST** apply the ranking using the resolved output identifier before `limit`, then apply the tie rule in **DLS-AGG-008**. In other words, the sort key is the resolved output identifier and the final tie-break is canonical entity ID ascending.
+If `order-by.field` matches more than one possible output, or matches a source field that is not present at the post-aggregation output grain, the validator **MUST** reject the document with `DLS-E010`. A presenter **MUST** apply the ranking using the resolved output identifier before `limit`, then apply the tie rule in **DLS-AGG-008**.
 
 ### 11.3 Normative Custom-View Requirements
 
@@ -473,7 +473,7 @@ If `order-by.field` matches more than one possible output, or matches a source f
 - **DLS-VIEW-005:** `chart` **MUST** encode `x` and quantitative `y`, **MAY** encode `color` and `href`, and **MUST NOT** encode `value` or `columns`.
 - **DLS-VIEW-006:** A `chart` with temporal `x` **MUST** use the line time-series default; any other valid `chart` **MUST** use the bar default.
 - **DLS-VIEW-007:** An encoding field **MUST** exist in the selected source and its declared type **MUST** be compatible with its intrinsic type or aggregate output type; when the field is aggregated, the effective output identifier **MUST** be the explicit `as` value or the canonical `<aggregate>-<field>` name, and duplicate identifiers within a view **MUST** be rejected. An `href` field **MUST** have intrinsic type link.
-- **DLS-VIEW-008:** A field definition **MUST** contain `field` and **MAY** contain only `type`, `aggregate`, `time-unit`, `title`, and `as` in addition.
+- **DLS-VIEW-008:** A field definition **MUST** contain `field` and **MAY** contain only `type`, `aggregate`, `time-unit`, `title`, and `as` in addition; `as` is valid only when `aggregate` is not `none`.
 - **DLS-VIEW-009:** `time-unit` **MUST** be used only with a temporal field and **MUST** use an allowed value from Section 7.3.
 - **DLS-VIEW-010:** `data.limit` **MUST** be a positive integer, and `data.order-by.field` **MUST** reference either a source field valid at the post-aggregation output grain or one unique aggregate-output identifier. Ambiguous or invalid order references **MUST** be rejected with `DLS-E010`.
 - **DLS-VIEW-011:** A custom view **MUST NOT** contain scripts, joins, formulas, expressions, templates, plugins, or undeclared transforms.
