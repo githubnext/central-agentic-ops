@@ -12,4 +12,4 @@ Incremental implementation workspace for the Dashboard Language presenter and va
 
 ## Status
 
-This directory currently contains the scaffold and quality-gate configuration only.
+This directory now includes the initial reactive core: state, derived values, effects, and a tiny DOM builder with keyed list reconciliation.
