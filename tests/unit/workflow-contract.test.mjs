@@ -1095,7 +1095,7 @@ test("SVG visual audit covers every tracked SVG in both color schemes", () => {
   assert.match(source, /overlap between a `<text>` element and its own descendant `<tspan>`/);
   assert.match(source, /create-check-run:/);
   assert.match(source, /upload-artifact:/);
-  assert.match(source, /http:\/\/localhost:4321\//);
+  assert.match(source, /http:\/\/host\.docker\.internal:4321\//);
   assert.match(source, /Never claim success if any manifest entry was skipped/);
 });
 

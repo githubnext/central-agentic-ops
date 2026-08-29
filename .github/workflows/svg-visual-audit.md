@@ -70,7 +70,7 @@ steps:
 
 # SVG Visual Audit
 
-Audit every SVG listed in `/tmp/gh-aw/agent/svg-audit/svg-files.txt`. The repository is available to Playwright at `http://localhost:4321/`.
+Audit every SVG listed in `/tmp/gh-aw/agent/svg-audit/svg-files.txt`. The repository is available to Playwright at `http://host.docker.internal:4321/`.
 
 ## Required procedure
 
