@@ -54,6 +54,7 @@
 - `src/components/badge.js` — presentation-only Primer status, mode, and active-state badges.
 - `src/components/data-state.js` — presentation-only data-state metrics card grid for availability, completeness, and freshness.
 - `src/components/table-region.js` — presentation-only reusable table wrapper for repeated table-region markup, header rows, empty-state rows, and keyed body-row descriptors across built-in and custom tables.
+- `src/components/view-chrome.js` — presentation-only reusable source, metadata, and effective-context chrome wrapper for custom views and shared provenance-adjacent presenter sections.
 
 ## Infrastructure blockers
 
@@ -61,6 +62,15 @@
 - 2026-08-28: `npm run test:e2e` is currently blocked in this environment because the Playwright Chromium executable is not provisioned (`browserType.launch: Executable doesn't exist`). The workflow should prefer the built-in Playwright MCP browser tools until the package-level browser dependency is available.
 
 ## Run log
+
+### 2026-08-29 (view-chrome custom-view metadata/context refactor)
+
+- Re-inventoried `src/presenter.js` and found the best remaining bounded duplication in repeated custom-view chrome construction: identical `.view-source`, `.view-metadata`, and `.view-context` markup assembled in `renderMetricView`, `renderTableView`, and `renderChartView`, plus closely related source/context-only state rendering in `renderCustomViewState` and provenance-adjacent chrome needs in built-in page rendering.
+- Added `src/components/view-chrome.js` as a presentation-only wrapper with a minimal API for source label text, metadata summary, effective-context details, and nested content.
+- Collapsed every duplicated custom-view chrome call site identified above in `src/presenter.js`, reusing the new component for metric, table, chart, and unavailable/empty custom-view states while preserving DOM text, class names, and ordering.
+- Added unit coverage in `test/unit/presenter.test.js` for the shared chrome component states covering source, metadata, context, and nested content rendering.
+- Proved unchanged behavior by keeping the existing presenter assertions intact and comparing the affected presenter output structurally through the refactor diff, confirming the affected views still emit the same source labels, metadata text, context lists, and table/chart bodies.
+- Next candidates in the queue: extract repeated built-in page provenance section rendering; extract repeated built-in page section heading plus inventory-table composition; extract repeated summary-list plus section wrappers where the presenter still assembles them inline.
 
 ### 2026-08-29 (table-region built-in inventory expansion refactor)
 

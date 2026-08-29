@@ -8,6 +8,7 @@ import { octicon, agenticWorkflowMark } from './octicons.js';
 import { renderStatusBadge, renderModeBadge, renderActiveStateBadge } from './components/badge.js';
 import { renderDataStateMetrics } from './components/data-state.js';
 import { renderTableRegion } from './components/table-region.js';
+import { renderViewChrome } from './components/view-chrome.js';
 
 /**
  * @typedef {{ availability: 'available'|'empty'|'unavailable', completeness: 'complete'|'partial'|'unknown', freshness: 'fresh'|'stale'|'unknown' }} DataState
@@ -354,14 +355,21 @@ function renderBuiltInPage(page, title, sources) {
     h('h2', null, title),
     renderDataStateMetrics(effectiveState),
     builtInBody,
-    h('h3', null, 'Provenance'),
-    h(
-      'ul',
-      { className: 'provenance-list' },
-      provenanceItems.length > 0
-        ? provenanceItems
-        : [h('li', null, 'No source provenance available for this page.')]
-    )
+    renderViewChrome({
+      sourceName: null,
+      metadata: null,
+      contextDetails: null,
+      content: [
+        h('h3', null, 'Provenance'),
+        h(
+          'ul',
+          { className: 'provenance-list' },
+          provenanceItems.length > 0
+            ? provenanceItems
+            : [h('li', null, 'No source provenance available for this page.')]
+        )
+      ]
+    })
   );
 }
 
@@ -1245,11 +1253,14 @@ function renderCustomViewState(pageId, title, sourceName, availability, contextD
         ? 'No observations matched the effective context.'
         : 'This view is unavailable.')
   ];
-  if (sourceName) {
-    content.push(h('p', { className: 'view-source' }, `Affected source: ${sourceName}`));
-  }
-  content.push(h('ul', { className: 'view-context' }, contextDetails.map((detail) => h('li', null, detail))));
-  return renderPageSection(pageId, title, content);
+  return renderPageSection(pageId, title, [
+    renderViewChrome({
+      sourceName: sourceName ? `Affected source: ${sourceName}` : null,
+      metadata: null,
+      contextDetails,
+      content
+    })
+  ]);
 }
 
 /**
@@ -1300,15 +1311,19 @@ function renderMetricView(pageId, title, view, sourceName, rows, metadata, conte
 
   /** @type {HTMLElement[]} */
   const content = [
-    h('p', { className: 'view-source' }, `Source: ${sourceName}`),
-    h('p', { className: 'view-metadata' }, `As of ${metadata['as-of']} • completeness ${metadata.completeness} • freshness ${metadata.freshness}`),
     h('p', { className: 'metric-value', 'data-metric-value': fieldName ?? 'unknown' }, valueText)
   ];
   if (link) {
     content.push(h('p', { className: 'metric-link' }, renderExternalLink(link)));
   }
-  content.push(h('ul', { className: 'view-context' }, contextDetails.map((detail) => h('li', null, detail))));
-  return renderPageSection(pageId, title, content);
+  return renderPageSection(pageId, title, [
+    renderViewChrome({
+      sourceName,
+      metadata,
+      contextDetails,
+      content
+    })
+  ]);
 }
 
 /**
@@ -1331,29 +1346,33 @@ function renderTableView(pageId, title, view, sourceName, rows, metadata, contex
   const hrefField = typeof hrefDefinition?.field === 'string' ? hrefDefinition.field : null;
 
   return renderPageSection(pageId, title, [
-    h('p', { className: 'view-source' }, `Source: ${sourceName}`),
-    h('p', { className: 'view-metadata' }, `As of ${metadata['as-of']} • completeness ${metadata.completeness} • freshness ${metadata.freshness}`),
-    renderTableRegion({
-      tableClassName: 'custom-table',
-      emptyMessage: 'No rows available.',
-      colSpan: Math.max(columns.length, 1),
-      headCells: columns.map((column) => fieldTitle(column)),
-      bodyRows: rows.length > 0
-        ? rows.map((row, rowIndex) => h(
-          'tr',
-          { 'data-custom-row-key': `${pageId}-${title}-${rowIndex}` },
-          ...columns.map((column, columnIndex) => {
-            const value = toText(row[column.field]);
-            if (columnIndex === 0 && hrefField) {
-              const link = findLink(row, /** @type {'external-link' | 'issue-link' | 'pull-request-link' | 'run-link' | 'evidence-link'} */ (hrefField));
-              return h('td', null, link ? renderExternalLink(link) : value);
-            }
-            return h('td', null, value);
-          })
-        ))
-        : []
-    }),
-    h('ul', { className: 'view-context' }, contextDetails.map((detail) => h('li', null, detail)))
+    renderViewChrome({
+      sourceName,
+      metadata,
+      contextDetails,
+      content: [
+        renderTableRegion({
+          tableClassName: 'custom-table',
+          emptyMessage: 'No rows available.',
+          colSpan: Math.max(columns.length, 1),
+          headCells: columns.map((column) => fieldTitle(column)),
+          bodyRows: rows.length > 0
+            ? rows.map((row, rowIndex) => h(
+              'tr',
+              { 'data-custom-row-key': `${pageId}-${title}-${rowIndex}` },
+              ...columns.map((column, columnIndex) => {
+                const value = toText(row[column.field]);
+                if (columnIndex === 0 && hrefField) {
+                  const link = findLink(row, /** @type {'external-link' | 'issue-link' | 'pull-request-link' | 'run-link' | 'evidence-link'} */ (hrefField));
+                  return h('td', null, link ? renderExternalLink(link) : value);
+                }
+                return h('td', null, value);
+              })
+            ))
+            : []
+        })
+      ]
+    })
   ]);
 }
 
@@ -1385,32 +1404,36 @@ function renderChartView(pageId, title, view, sourceName, rows, metadata, contex
     : [];
 
   return renderPageSection(pageId, title, [
-    h('p', { className: 'view-source' }, `Source: ${sourceName}`),
-    h('p', { className: 'view-metadata' }, `As of ${metadata['as-of']} • completeness ${metadata.completeness} • freshness ${metadata.freshness}`),
-    h('p', { className: 'chart-default', 'data-chart-default': chartDefault }, `Default chart type: ${chartDefault}`),
-    ...(color
-      ? [h(
-        'p',
-        { className: 'chart-legend-text', 'data-chart-legend': 'text' },
-        `Color categories: ${colorCategories.length > 0 ? colorCategories.join(', ') : 'unknown'}`
-      )]
-      : []),
-    renderTableRegion({
-      tableClassName: 'custom-chart-table',
-      emptyMessage: 'No points available.',
-      colSpan: color ? 3 : 2,
-      headCells: [x ? fieldTitle(x) : 'X', y ? fieldTitle(y) : 'Y', ...(color ? [fieldTitle(color)] : [])],
-      bodyRows: points.length > 0
-        ? points.map((point) => h(
-          'tr',
-          { 'data-custom-point-key': point.key },
-          h('td', null, point.x),
-          h('td', null, point.y),
-          color ? h('td', null, point.color ?? 'unknown') : null
-        ))
-        : []
-    }),
-    h('ul', { className: 'view-context' }, contextDetails.map((detail) => h('li', null, detail)))
+    renderViewChrome({
+      sourceName,
+      metadata,
+      contextDetails,
+      content: [
+        h('p', { className: 'chart-default', 'data-chart-default': chartDefault }, `Default chart type: ${chartDefault}`),
+        ...(color
+          ? [h(
+            'p',
+            { className: 'chart-legend-text', 'data-chart-legend': 'text' },
+            `Color categories: ${colorCategories.length > 0 ? colorCategories.join(', ') : 'unknown'}`
+          )]
+          : []),
+        renderTableRegion({
+          tableClassName: 'custom-chart-table',
+          emptyMessage: 'No points available.',
+          colSpan: color ? 3 : 2,
+          headCells: [x ? fieldTitle(x) : 'X', y ? fieldTitle(y) : 'Y', ...(color ? [fieldTitle(color)] : [])],
+          bodyRows: points.length > 0
+            ? points.map((point) => h(
+              'tr',
+              { 'data-custom-point-key': point.key },
+              h('td', null, point.x),
+              h('td', null, point.y),
+              color ? h('td', null, point.color ?? 'unknown') : null
+            ))
+            : []
+        })
+      ]
+    })
   ]);
 }
 

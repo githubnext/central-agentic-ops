@@ -1,8 +1,32 @@
 // @vitest-environment jsdom
 import { describe, expect, it } from 'vitest';
 import { renderDashboard, enableDashboardKeyboardNavigation } from '../../src/presenter.js';
+import { renderViewChrome } from '../../src/components/view-chrome.js';
 
 describe('presenter built-in and custom pages', () => {
+  it('renders shared view chrome for source, metadata, context, and content states', () => {
+    const rendered = renderViewChrome({
+      sourceName: 'usage',
+      metadata: {
+        'as-of': '2026-08-29T20:00:00Z',
+        completeness: 'partial',
+        freshness: 'stale'
+      },
+      contextDetails: ['Source: usage', 'Filters: {"rollout-mode":["live"]}'],
+      content: [
+        document.createElement('p')
+      ]
+    });
+
+    rendered.querySelector('p:last-of-type')?.replaceChildren('Body content');
+
+    expect(rendered.querySelector('.view-source')?.textContent).toBe('Source: usage');
+    expect(rendered.querySelector('.view-metadata')?.textContent).toBe('As of 2026-08-29T20:00:00Z • completeness partial • freshness stale');
+    expect(rendered.querySelector('.view-context')?.textContent).toContain('Source: usage');
+    expect(rendered.querySelector('.view-context')?.textContent).toContain('Filters: {"rollout-mode":["live"]}');
+    expect(rendered.textContent).toContain('Body content');
+  });
+
   it('DLS-PAGE-009 DLS-PAGE-014 renders built-in evals page with distinguishable definitions and observations, observed subject, YES/NO/UNKNOWN result, evaluation model when available, time, provenance, and independent data state deterministically', () => {
     /** @type {import('../../src/presenter.js').PresentationInput['document']} */
     const document = {
