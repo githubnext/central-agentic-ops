@@ -410,6 +410,10 @@ function renderBuiltInPageBody(page, pageSources) {
     return renderEvalsPage(pageSources);
   }
 
+  if (page.page === 'overview') {
+    return renderOverviewPage(pageSources);
+  }
+
   return h('p', { className: 'page-placeholder' }, `Built-in page ${page.page} is not rendered in this increment.`);
 }
 
@@ -1085,6 +1089,93 @@ function renderEvalsPage(pageSources) {
           : []
       })
     ])
+  );
+}
+
+/**
+ * @param {Map<string, LogicalSourceInput>} pageSources
+ * @returns {HTMLElement}
+ */
+function renderOverviewPage(pageSources) {
+  const workflowsSource = pageSources.get('workflows');
+  const runsSource = pageSources.get('runs');
+  const usageSource = pageSources.get('usage');
+  const findingsSource = pageSources.get('findings');
+  const operationalValuesSource = pageSources.get('operational-values');
+
+  const workflows = Array.isArray(workflowsSource?.rows) ? workflowsSource.rows : [];
+  const runs = Array.isArray(runsSource?.rows) ? runsSource.rows : [];
+  const usageRows = Array.isArray(usageSource?.rows) ? usageSource.rows : [];
+  const findings = Array.isArray(findingsSource?.rows) ? findingsSource.rows : [];
+  const operationalValues = Array.isArray(operationalValuesSource?.rows) ? operationalValuesSource.rows : [];
+
+  const rolloutModeCounts = countBy([...workflows, ...runs, ...usageRows].filter((row) => row['rollout-mode'] != null && row['rollout-mode'] !== ''), 'rollout-mode');
+  const activeStateCounts = countBy(workflows, 'workflow-active');
+  const runStatusCounts = countBy(runs, 'run-status');
+  const runConclusionCounts = countBy(runs, 'run-conclusion');
+  const repositoryRankings = summarizeOverviewEntityRankings(runs, 'repository');
+  const workflowRankings = summarizeOverviewEntityRankings(runs, 'workflow');
+  const largestAicSpenders = summarizeLargestAicSpenders(usageRows);
+  const recentFindings = [...findings]
+    .map((finding, index) => ({ key: getFindingKey(finding, index), finding }))
+    .sort((left, right) => compareObservedAt(right.finding, left.finding) || left.key.localeCompare(right.key));
+  const operationalTimeline = [...operationalValues]
+    .map((row, index) => ({ key: getOperationalValueKey(row, index), row }))
+    .sort((left, right) => compareObservedAt(left.row, right.row));
+
+  return h(
+    'div',
+    { className: 'overview-page' },
+    renderPageSection('overview', 'Rollout Mode Filtering', [renderSummaryList('overview-rollout-mode-counts', rolloutModeCounts)]),
+    renderPageSection('overview', 'Workflow Active State Inventory', [renderSummaryList('overview-workflow-active-counts', activeStateCounts)]),
+    renderPageSection('overview', 'Run Status Counts and Trends', [
+      renderSummaryList('overview-run-status-counts', runStatusCounts),
+      renderOverviewTrendList('overview-run-status-trends', runs, 'run-status')
+    ]),
+    renderPageSection('overview', 'Run Conclusion Counts and Trends', [
+      renderSummaryList('overview-run-conclusion-counts', runConclusionCounts),
+      renderOverviewTrendList('overview-run-conclusion-trends', runs, 'run-conclusion')
+    ]),
+    renderTitledRegion('overview', 'Repository Rankings', renderSummaryList('overview-repository-rankings', repositoryRankings)),
+    renderTitledRegion('overview', 'Workflow Rankings', renderSummaryList('overview-workflow-rankings', workflowRankings)),
+    renderTitledRegion('overview', 'Largest AIC Spenders', renderSummaryList('overview-largest-aic-spenders', largestAicSpenders)),
+    renderTitledRegion('overview', 'Recent Linked Findings', renderTableRegion({
+      tableClassName: 'overview-findings-table',
+      emptyMessage: 'No findings available.',
+      colSpan: 5,
+      headCells: [
+        'Observed At',
+        'Summary',
+        'Issue Link',
+        'Pull Request Link',
+        'Run Link'
+      ],
+      bodyRows: recentFindings.length > 0
+        ? keyed(
+          recentFindings,
+          (item) => renderOverviewFindingRow(/** @type {{ key: string, finding: Record<string, unknown> }} */ (item)),
+          (item) => /** @type {{ key: string }} */ (item).key
+        )
+        : []
+    })),
+    renderTitledRegion('overview', 'Operational Value Timeline', renderTableRegion({
+      tableClassName: 'overview-operational-value-table',
+      emptyMessage: 'No operational value observations available.',
+      colSpan: 4,
+      headCells: [
+        'Observed At',
+        'Definition',
+        'Operational Value',
+        'Evidence Link'
+      ],
+      bodyRows: operationalTimeline.length > 0
+        ? keyed(
+          operationalTimeline,
+          (item) => renderOverviewOperationalValueRow(/** @type {{ key: string, row: Record<string, unknown> }} */ (item)),
+          (item) => /** @type {{ key: string }} */ (item).key
+        )
+        : []
+    }))
   );
 }
 
@@ -1837,6 +1928,64 @@ function formatNumber(value) {
 }
 
 /**
+ * @param {Map<string, number>} counts
+ * @returns {Map<string, number>}
+ */
+function sortSummaryCountsDescending(counts) {
+  return new Map(
+    [...counts.entries()].sort((left, right) => {
+      if (right[1] !== left[1]) {
+        return right[1] - left[1];
+      }
+      return left[0].localeCompare(right[0]);
+    })
+  );
+}
+
+/**
+ * @param {Array<Record<string, unknown>>} rows
+ * @param {string} entityField
+ * @returns {Map<string, number>}
+ */
+function summarizeOverviewEntityRankings(rows, entityField) {
+  return sortSummaryCountsDescending(countBy(rows, entityField));
+}
+
+/**
+ * @param {Array<Record<string, unknown>>} usageRows
+ * @returns {Map<string, number>}
+ */
+function summarizeLargestAicSpenders(usageRows) {
+  /** @type {Map<string, number>} */
+  const totals = new Map();
+  for (const row of usageRows) {
+    const repository = toText(row.repository);
+    totals.set(repository, (totals.get(repository) ?? 0) + toNumber(row.aic));
+  }
+  return sortSummaryCountsDescending(totals);
+}
+
+/**
+ * @param {string} className
+ * @param {Array<Record<string, unknown>>} rows
+ * @param {string} field
+ * @returns {HTMLElement}
+ */
+function renderOverviewTrendList(className, rows, field) {
+  const counts = new Map();
+  for (const row of rows) {
+    const observedAt = toText(row['started-at']);
+    const value = toText(row[field]);
+    const key = `${observedAt} → ${value}`;
+    counts.set(key, (counts.get(key) ?? 0) + 1);
+  }
+  const ordered = new Map(
+    [...counts.entries()].sort((left, right) => left[0].localeCompare(right[0]))
+  );
+  return renderSummaryList(className, ordered);
+}
+
+/**
  * @param {{ key: string, finding: Record<string, unknown> }} item
  * @returns {HTMLElement}
  */
@@ -1940,6 +2089,39 @@ function renderOperationalValueRow(item) {
     h('td', null, toText(row['maturity-status'])),
     h('td', null, formatNullableNumber(row['delta-from-baseline'])),
     h('td', null, renderLinkCell(evidenceLink))
+  );
+}
+
+/**
+ * @param {{ key: string, finding: Record<string, unknown> }} item
+ * @returns {HTMLElement}
+ */
+function renderOverviewFindingRow(item) {
+  const finding = item.finding;
+  return h(
+    'tr',
+    { 'data-overview-finding-id': String(finding.finding ?? item.key) },
+    h('td', null, toText(finding['observed-at'])),
+    h('td', null, toText(finding['finding-summary'])),
+    h('td', null, renderLinkCell(findLink(finding, 'issue-link'))),
+    h('td', null, renderLinkCell(findLink(finding, 'pull-request-link'))),
+    h('td', null, renderLinkCell(findLink(finding, 'run-link')))
+  );
+}
+
+/**
+ * @param {{ key: string, row: Record<string, unknown> }} item
+ * @returns {HTMLElement}
+ */
+function renderOverviewOperationalValueRow(item) {
+  const row = item.row;
+  return h(
+    'tr',
+    { 'data-overview-operational-value-key': item.key },
+    h('td', null, toText(row['observed-at'])),
+    h('td', null, toText(row['operational-value-definition'])),
+    h('td', null, formatOperationalValue(row['operational-value'])),
+    h('td', null, renderLinkCell(findLink(row, 'evidence-link')))
   );
 }
 

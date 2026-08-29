@@ -19,6 +19,7 @@
   - [x] Slice: `DLS-PAGE-014` conservative built-in data-state exposure validation via implementation-local declarative markers.
   - [x] Slice: `DLS-PAGE-006` conservative run-link coverage validation for the `runs` built-in page.
   - [x] Slice: `DLS-PAGE-002` conservative `overview` linked-findings and operational-value timeline coverage validation.
+  - [x] Slice: `DLS-PAGE-002` and `DLS-PAGE-014` presenter render for the `overview` built-in page, exposing rollout-mode filtering, workflow active-state inventory, run status and conclusion counts and trends, repository and workflow rankings, largest AIC spenders, recent linked findings, operational-value timeline, and independent data-state summaries.
   - [x] Slice: `DLS-PAGE-006` and `DLS-PAGE-014` presenter render for the `runs` built-in page status counts, outcome counts, scope/model/time columns, run links, and independent data-state summaries.
   - [x] Slice: `DLS-PAGE-005` and `DLS-PAGE-014` presenter render for the `workflows` built-in page inventory, active state, rollout mode, run conclusions, downstream outcomes, available usage, findings, operational value counts, and independent data-state summaries.
   - [x] Slice: `DLS-PAGE-013` and `DLS-PAGE-014` presenter render for the `findings` built-in page summary, severity, status, scope, time, provenance, available issue/pull-request/run links, and independent data-state summaries.
@@ -62,6 +63,14 @@
 - 2026-08-28: `npm run test:e2e` is currently blocked in this environment because the Playwright Chromium executable is not provisioned (`browserType.launch: Executable doesn't exist`). The workflow should prefer the built-in Playwright MCP browser tools until the package-level browser dependency is available.
 
 ## Run log
+
+### 2026-08-29 (built-in overview render slice)
+
+- Extended the Built-in pages milestone with a narrow `DLS-PAGE-002` and `DLS-PAGE-014` presenter increment for the `overview` built-in page.
+- Updated `src/presenter.js` so declarative built-in `overview` definitions now render rollout-mode filtering, workflow active-state inventory, run status and conclusion counts and trends, repository and workflow rankings, largest AIC spenders, recent linked findings, and an operational-value timeline from the `workflows`, `runs`, `usage`, `findings`, and `operational-values` logical sources.
+- Added focused unit coverage in `test/unit/presenter.test.js` and browser coverage in `test/e2e/smoke.spec.js` that verify overview section headings, independent `availability`, `completeness`, and `freshness` summaries, rankings, trends, linked findings, operational-value timeline rows, and provenance entries.
+- Verified quality gates from `pages/dashboard/`: `npm install`, `npm run typecheck`, `npm run lint`, `npm test`, and `npm run test:e2e` all pass.
+- Next milestone: Security, privacy, accessibility, next slice for additional authorization-boundary or accessibility behavior, or Compliance suite parity between checklist coverage and the now-rendered `overview` built-in page.
 
 ### 2026-08-29 (titled-region view-chrome refactor)
 
