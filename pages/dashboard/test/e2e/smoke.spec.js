@@ -31,7 +31,7 @@ function buildPresenterModuleUrl() {
   return `data:text/javascript;charset=utf-8,${encodeURIComponent(presenterSource)}`;
 }
 
-test('DLS-PAGE-008 DLS-PAGE-014 built-in graders page renders distinguishable definitions and observations, observed subject, result, score when present, time, provenance, and independent data state in browser', async ({ page }) => {
+test('DLS-PAGE-009 DLS-PAGE-014 built-in evals page renders distinguishable definitions and observations, observed subject, YES/NO/UNKNOWN result, evaluation model when available, time, provenance, and independent data state in browser', async ({ page }) => {
   const presenterModuleUrl = buildPresenterModuleUrl();
 
   await page.setContent(`
@@ -42,14 +42,14 @@ test('DLS-PAGE-008 DLS-PAGE-014 built-in graders page renders distinguishable de
       const dashboardDocument = {
         languageVersion: '0.1.0',
         dashboard: {
-          id: 'built-in-graders-render',
-          title: 'Built In Graders Render',
+          id: 'built-in-evals-render',
+          title: 'Built In Evals Render',
           pages: [
             {
-              id: 'graders',
+              id: 'evals',
               kind: 'built-in',
-              page: 'graders',
-              title: 'Graders',
+              page: 'evals',
+              title: 'Evals',
               definition: {
                 'data-state': {
                   availability: true,
@@ -57,8 +57,8 @@ test('DLS-PAGE-008 DLS-PAGE-014 built-in graders page renders distinguishable de
                   freshness: true
                 },
                 views: [
-                  { id: 'graders-source', data: { source: 'graders' } },
-                  { id: 'grader-observations-source', data: { source: 'grader-observations' } }
+                  { id: 'evals-source', data: { source: 'evals' } },
+                  { id: 'eval-observations-source', data: { source: 'eval-observations' } }
                 ]
               }
             }
@@ -67,14 +67,14 @@ test('DLS-PAGE-008 DLS-PAGE-014 built-in graders page renders distinguishable de
       };
 
       const sources = {
-        graders: {
-          source: 'graders',
+        evals: {
+          source: 'evals',
           rows: [
-            { grader: 'quality', 'grader-name': 'Quality Gate', 'observed-at': '2026-08-29T09:00:00Z' },
-            { grader: 'safety', 'grader-name': 'Safety Gate', 'observed-at': '2026-08-29T09:05:00Z' }
+            { eval: 'release-risk', 'eval-name': 'Release Risk', 'eval-question': 'Is the release risky?', 'requested-model': 'gpt-4o', 'observed-at': '2026-08-29T09:00:00Z' },
+            { eval: 'doc-quality', 'eval-name': 'Documentation Quality', 'eval-question': 'Is the documentation complete?', 'requested-model': 'claude-3.5', 'observed-at': '2026-08-29T09:05:00Z' }
           ],
           metadata: {
-            'source-id': 'graders-fixture',
+            'source-id': 'evals-fixture',
             'source-kind': 'fixture',
             'as-of': '2026-08-29T20:00:00Z',
             'retrieved-at': '2026-08-29T20:01:00Z',
@@ -83,15 +83,15 @@ test('DLS-PAGE-008 DLS-PAGE-014 built-in graders page renders distinguishable de
             availability: 'available'
           }
         },
-        'grader-observations': {
-          source: 'grader-observations',
+        'eval-observations': {
+          source: 'eval-observations',
           rows: [
-            { organization: 'github', repository: 'central-agentic-ops', workflow: '.github/workflows/daily.yml', run: '1001', grader: 'quality', value: 0.75, status: 'pass', 'rollout-mode': 'live', 'observed-at': '2026-08-29T10:00:00Z' },
-            { organization: 'github', repository: 'central-agentic-ops', workflow: '.github/workflows/daily.yml', run: '1002', grader: 'quality', value: null, status: 'error', 'rollout-mode': 'live', 'observed-at': '2026-08-29T10:10:00Z' },
-            { organization: 'octo-org', repository: 'octo-repo', workflow: '.github/workflows/nightly.yml', run: '2001', grader: 'safety', value: 0.25, status: 'fail', 'rollout-mode': 'review', 'observed-at': '2026-08-29T10:20:00Z' }
+            { organization: 'github', repository: 'central-agentic-ops', workflow: '.github/workflows/daily.yml', run: '1001', eval: 'release-risk', 'eval-result': 'YES', 'requested-model': 'gpt-4o', 'resolved-model': 'gpt-4.1', 'rollout-mode': 'live', 'observed-at': '2026-08-29T10:00:00Z' },
+            { organization: 'github', repository: 'central-agentic-ops', workflow: '.github/workflows/daily.yml', run: '1002', eval: 'release-risk', 'eval-result': 'UNKNOWN', 'requested-model': 'gpt-4o', 'resolved-model': '', 'rollout-mode': 'live', 'observed-at': '2026-08-29T10:10:00Z' },
+            { organization: 'octo-org', repository: 'octo-repo', workflow: '.github/workflows/nightly.yml', run: '2001', eval: 'doc-quality', 'eval-result': 'NO', 'requested-model': 'claude-3.5', 'resolved-model': 'claude-3.7', 'rollout-mode': 'review', 'observed-at': '2026-08-29T10:20:00Z' }
           ],
           metadata: {
-            'source-id': 'grader-observations-fixture',
+            'source-id': 'eval-observations-fixture',
             'source-kind': 'fixture',
             'as-of': '2026-08-29T20:00:00Z',
             'retrieved-at': '2026-08-29T20:01:00Z',
@@ -106,39 +106,41 @@ test('DLS-PAGE-008 DLS-PAGE-014 built-in graders page renders distinguishable de
     </script>
   `);
 
-  await expect(page.getByRole('heading', { name: 'Built In Graders Render' })).toBeVisible();
-  await expect(page.getByRole('heading', { name: 'Graders', exact: true, level: 2 })).toBeVisible();
-  await expect(page.getByRole('heading', { name: 'Grader Definitions' })).toBeVisible();
-  await expect(page.getByRole('heading', { name: 'Grader Observations' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Built In Evals Render' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Evals', exact: true, level: 2 })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Eval Definitions' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Eval Observations' })).toBeVisible();
   await expect(page.locator('[data-state-axis="availability"]')).toHaveText('available');
   await expect(page.locator('[data-state-axis="completeness"]')).toHaveText('partial');
   await expect(page.locator('[data-state-axis="freshness"]')).toHaveText('stale');
-  await expect(page.locator('.graders-definitions-table tbody tr')).toHaveCount(2);
-  await expect(page.locator('.grader-observations-table tbody tr')).toHaveCount(3);
+  await expect(page.locator('.evals-definitions-table tbody tr')).toHaveCount(2);
+  await expect(page.locator('.eval-observations-table tbody tr')).toHaveCount(3);
 
-  await expect(page.locator('[data-grader-id="quality"] td').nth(1)).toHaveText('Quality Gate');
-  await expect(page.locator('[data-grader-id="quality"] td').nth(3)).toHaveText('2');
-  await expect(page.locator('[data-grader-id="quality"] td').nth(4)).toContainText('github / central-agentic-ops / .github/workflows/daily.yml / run 1001');
-  await expect(page.locator('[data-grader-id="quality"] td').nth(4)).toContainText('github / central-agentic-ops / .github/workflows/daily.yml / run 1002');
-  await expect(page.locator('[data-grader-id="quality"] td').nth(5)).toHaveText('pass: 1, error: 1');
-  await expect(page.locator('[data-grader-id="quality"] td').nth(6)).toHaveText('0.75');
-  await expect(page.locator('[data-grader-id="quality"] td').nth(7)).toHaveText('2026-08-29T10:10:00Z');
+  await expect(page.locator('[data-eval-id="release-risk"] td').nth(1)).toHaveText('Release Risk');
+  await expect(page.locator('[data-eval-id="release-risk"] td').nth(2)).toHaveText('Is the release risky?');
+  await expect(page.locator('[data-eval-id="release-risk"] td').nth(3)).toHaveText('gpt-4o');
+  await expect(page.locator('[data-eval-id="release-risk"] td').nth(5)).toHaveText('2');
+  await expect(page.locator('[data-eval-id="release-risk"] td').nth(6)).toContainText('github / central-agentic-ops / .github/workflows/daily.yml / run 1001');
+  await expect(page.locator('[data-eval-id="release-risk"] td').nth(6)).toContainText('github / central-agentic-ops / .github/workflows/daily.yml / run 1002');
+  await expect(page.locator('[data-eval-id="release-risk"] td').nth(7)).toHaveText('YES: 1, UNKNOWN: 1');
+  await expect(page.locator('[data-eval-id="release-risk"] td').nth(8)).toContainText('gpt-4o → gpt-4.1');
+  await expect(page.locator('[data-eval-id="release-risk"] td').nth(9)).toHaveText('2026-08-29T10:10:00Z');
 
-  await expect(page.locator('[data-grader-id="safety"] td').nth(1)).toHaveText('Safety Gate');
-  await expect(page.locator('[data-grader-id="safety"] td').nth(5)).toHaveText('fail: 1');
-  await expect(page.locator('[data-grader-id="safety"] td').nth(6)).toHaveText('0.25');
+  await expect(page.locator('[data-eval-id="doc-quality"] td').nth(1)).toHaveText('Documentation Quality');
+  await expect(page.locator('[data-eval-id="doc-quality"] td').nth(7)).toHaveText('NO: 1');
+  await expect(page.locator('[data-eval-id="doc-quality"] td').nth(8)).toContainText('claude-3.5 → claude-3.7');
 
-  await expect(page.locator('.grader-observations-table tbody tr').nth(0)).toContainText('quality');
-  await expect(page.locator('.grader-observations-table tbody tr').nth(0)).toContainText('github / central-agentic-ops / .github/workflows/daily.yml / run 1001');
-  await expect(page.locator('.grader-observations-table tbody tr').nth(0)).toContainText('pass');
-  await expect(page.locator('.grader-observations-table tbody tr').nth(0)).toContainText('0.75');
-  await expect(page.locator('.grader-observations-table tbody tr').nth(1)).toContainText('error');
-  await expect(page.locator('.grader-observations-table tbody tr').nth(1)).toContainText('Unavailable');
-  await expect(page.locator('.grader-observations-table tbody tr').nth(2)).toContainText('fail');
-  await expect(page.locator('.grader-observations-table tbody tr').nth(2)).toContainText('0.25');
+  await expect(page.locator('[data-eval-observation-key="release-risk-1001-0"]')).toContainText('release-risk');
+  await expect(page.locator('[data-eval-observation-key="release-risk-1001-0"]')).toContainText('YES');
+  await expect(page.locator('[data-eval-observation-key="release-risk-1001-0"]')).toContainText('gpt-4o');
+  await expect(page.locator('[data-eval-observation-key="release-risk-1001-0"]')).toContainText('gpt-4.1');
+  await expect(page.locator('[data-eval-observation-key="release-risk-1002-1"]')).toContainText('UNKNOWN');
+  await expect(page.locator('[data-eval-observation-key="release-risk-1002-1"]')).toContainText('unknown');
+  await expect(page.locator('[data-eval-observation-key="doc-quality-2001-2"]')).toContainText('NO');
+  await expect(page.locator('[data-eval-observation-key="doc-quality-2001-2"]')).toContainText('claude-3.7');
 
   await expect(page.locator('.provenance-list li')).toContainText([
-    'graders: graders-fixture (fixture) — as of 2026-08-29T20:00:00Z',
-    'grader-observations: grader-observations-fixture (fixture) — as of 2026-08-29T20:00:00Z'
+    'evals: evals-fixture (fixture) — as of 2026-08-29T20:00:00Z',
+    'eval-observations: eval-observations-fixture (fixture) — as of 2026-08-29T20:00:00Z'
   ]);
 });
