@@ -144,6 +144,10 @@ function renderBuiltInPageBody(page, pageSources) {
     return renderRunsPage(pageSources);
   }
 
+  if (page.page === 'workflows') {
+    return renderWorkflowsPage(pageSources);
+  }
+
   return h('p', { className: 'page-placeholder' }, `Built-in page ${page.page} is not rendered in this increment.`);
 }
 
@@ -246,6 +250,101 @@ function renderRunRow(item) {
         ? h('a', { href: runLink.href }, runLink.label)
         : 'Unavailable'
     )
+  );
+}
+
+/**
+ * @param {Map<string, LogicalSourceInput>} pageSources
+ * @returns {HTMLElement}
+ */
+function renderWorkflowsPage(pageSources) {
+  const workflowsSource = pageSources.get('workflows');
+  const runsSource = pageSources.get('runs');
+  const outcomesSource = pageSources.get('outcomes');
+  const usageSource = pageSources.get('usage');
+  const findingsSource = pageSources.get('findings');
+  const operationalValuesSource = pageSources.get('operational-values');
+
+  const workflows = Array.isArray(workflowsSource?.rows) ? workflowsSource.rows : [];
+  const runs = Array.isArray(runsSource?.rows) ? runsSource.rows : [];
+  const outcomes = Array.isArray(outcomesSource?.rows) ? outcomesSource.rows : [];
+  const usage = Array.isArray(usageSource?.rows) ? usageSource.rows : [];
+  const findings = Array.isArray(findingsSource?.rows) ? findingsSource.rows : [];
+  const operationalValues = Array.isArray(operationalValuesSource?.rows) ? operationalValuesSource.rows : [];
+
+  const workflowItems = workflows.map((workflow, index) => ({
+    key: getWorkflowKey(workflow, index),
+    workflow,
+    runCount: countMatchingRows(runs, workflow, 'workflow'),
+    conclusionCounts: countByMatchingRows(runs, workflow, 'workflow', 'run-conclusion'),
+    outcomeCount: countMatchingRows(outcomes, workflow, 'workflow'),
+    aicTotal: sumMatchingNumericRows(usage, workflow, 'workflow', 'aic'),
+    findingCount: countMatchingRows(findings, workflow, 'workflow'),
+    operationalValueCount: countMatchingRows(operationalValues, workflow, 'workflow')
+  }));
+
+  return h(
+    'div',
+    { className: 'workflows-page' },
+    h('h3', null, 'Workflow Inventory'),
+    h(
+      'table',
+      { className: 'workflows-table' },
+      h(
+        'thead',
+        null,
+        h(
+          'tr',
+          null,
+          h('th', null, 'Workflow'),
+          h('th', null, 'Organization'),
+          h('th', null, 'Repository'),
+          h('th', null, 'Active State'),
+          h('th', null, 'Rollout Mode'),
+          h('th', null, 'Run Count'),
+          h('th', null, 'Run Conclusions'),
+          h('th', null, 'Outcome Count'),
+          h('th', null, 'Available AIC'),
+          h('th', null, 'Finding Count'),
+          h('th', null, 'Operational Value Count')
+        )
+      ),
+      h(
+        'tbody',
+        null,
+        workflowItems.length > 0
+          ? keyed(
+            workflowItems,
+            (item) => renderWorkflowRow(/** @type {{ key: string, workflow: Record<string, unknown>, runCount: number, conclusionCounts: Map<string, number>, outcomeCount: number, aicTotal: number, findingCount: number, operationalValueCount: number }} */ (item)),
+            (item) => /** @type {{ key: string }} */ (item).key
+          )
+          : h('tr', null, h('td', { colSpan: 11 }, 'No workflows available.'))
+      )
+    )
+  );
+}
+
+/**
+ * @param {{ key: string, workflow: Record<string, unknown>, runCount: number, conclusionCounts: Map<string, number>, outcomeCount: number, aicTotal: number, findingCount: number, operationalValueCount: number }} item
+ * @returns {HTMLElement}
+ */
+function renderWorkflowRow(item) {
+  const workflow = item.workflow;
+
+  return h(
+    'tr',
+    { 'data-workflow-id': String(workflow.workflow ?? item.key) },
+    h('td', null, toText(workflow.workflow)),
+    h('td', null, toText(workflow.organization)),
+    h('td', null, toText(workflow.repository)),
+    h('td', null, toText(workflow['workflow-active'])),
+    h('td', null, toText(workflow['rollout-mode'])),
+    h('td', null, String(item.runCount)),
+    h('td', null, formatCounts(item.conclusionCounts)),
+    h('td', null, String(item.outcomeCount)),
+    h('td', null, formatNumber(item.aicTotal)),
+    h('td', null, String(item.findingCount)),
+    h('td', null, String(item.operationalValueCount))
   );
 }
 
@@ -377,12 +476,58 @@ function countMatchingOutcomes(outcomes, run) {
 }
 
 /**
+ * @param {Array<Record<string, unknown>>} rows
+ * @param {Record<string, unknown>} matchRow
+ * @param {string} field
+ * @returns {number}
+ */
+function countMatchingRows(rows, matchRow, field) {
+  return rows.filter((row) => row[field] === matchRow[field]).length;
+}
+
+/**
+ * @param {Array<Record<string, unknown>>} rows
+ * @param {Record<string, unknown>} matchRow
+ * @param {string} matchField
+ * @param {string} countField
+ * @returns {Map<string, number>}
+ */
+function countByMatchingRows(rows, matchRow, matchField, countField) {
+  return countBy(rows.filter((row) => row[matchField] === matchRow[matchField]), countField);
+}
+
+/**
+ * @param {Array<Record<string, unknown>>} rows
+ * @param {Record<string, unknown>} matchRow
+ * @param {string} matchField
+ * @param {string} numericField
+ * @returns {number}
+ */
+function sumMatchingNumericRows(rows, matchRow, matchField, numericField) {
+  return rows.reduce((total, row) => {
+    if (row[matchField] !== matchRow[matchField]) {
+      return total;
+    }
+    return total + toNumber(row[numericField]);
+  }, 0);
+}
+
+/**
  * @param {Record<string, unknown>} run
  * @param {number} index
  * @returns {string}
  */
 function getRunKey(run, index) {
   return typeof run.run === 'string' && run.run.length > 0 ? run.run : `run-${index}`;
+}
+
+/**
+ * @param {Record<string, unknown>} workflow
+ * @param {number} index
+ * @returns {string}
+ */
+function getWorkflowKey(workflow, index) {
+  return typeof workflow.workflow === 'string' && workflow.workflow.length > 0 ? workflow.workflow : `workflow-${index}`;
 }
 
 /**
@@ -403,6 +548,33 @@ function findRunLink(row) {
  */
 function toText(value) {
   return value == null || value === '' ? 'unknown' : String(value);
+}
+
+/**
+ * @param {unknown} value
+ * @returns {number}
+ */
+function toNumber(value) {
+  return typeof value === 'number' && Number.isFinite(value) ? value : 0;
+}
+
+/**
+ * @param {Map<string, number>} counts
+ * @returns {string}
+ */
+function formatCounts(counts) {
+  const entries = [...counts.entries()];
+  return entries.length > 0
+    ? entries.map(([name, count]) => `${name}: ${count}`).join(', ')
+    : 'No data available.';
+}
+
+/**
+ * @param {number} value
+ * @returns {string}
+ */
+function formatNumber(value) {
+  return Number.isInteger(value) ? String(value) : value.toFixed(2);
 }
 
 /**

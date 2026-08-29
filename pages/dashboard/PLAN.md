@@ -20,6 +20,7 @@
   - [x] Slice: `DLS-PAGE-006` conservative run-link coverage validation for the `runs` built-in page.
   - [x] Slice: `DLS-PAGE-002` conservative `overview` linked-findings and operational-value timeline coverage validation.
   - [x] Slice: `DLS-PAGE-006` and `DLS-PAGE-014` presenter render for the `runs` built-in page status counts, outcome counts, scope/model/time columns, run links, and independent data-state summaries.
+  - [x] Slice: `DLS-PAGE-005` and `DLS-PAGE-014` presenter render for the `workflows` built-in page inventory, active state, rollout mode, run conclusions, downstream outcomes, available usage, findings, operational value counts, and independent data-state summaries.
 - [ ] **Security, privacy, accessibility** — Section 13 including escaping, redaction, and keyboard and screen-reader behavior verified with Playwright.
 - [ ] **Compliance suite** — Section 14 test suite, the compliance checklist, Appendix A as a passing fixture, and Appendix C as failing fixtures.
 - [ ] **Parity** — inventory the features of the existing dashboard in `.github/scripts/pages-report/report.mjs`, record them in `PLAN.md` as a parity checklist, then express each one as YAML configuration plus data fixtures, closing the checklist incrementally.
@@ -38,6 +39,14 @@
 - 2026-08-28: `npm run test:e2e` is currently blocked in this environment because the Playwright Chromium executable is not provisioned (`browserType.launch: Executable doesn't exist`). The workflow should prefer the built-in Playwright MCP browser tools until the package-level browser dependency is available.
 
 ## Run log
+
+### 2026-08-29 (built-in workflows render slice)
+
+- Extended the Built-in pages milestone with a narrow `DLS-PAGE-005` and `DLS-PAGE-014` presenter increment for the `workflows` built-in page, rendering workflow inventory with active state, rollout mode, run counts, run conclusion summaries, downstream outcome counts, available AIC totals, finding counts, operational value counts, and independent data-state summaries.
+- Updated `src/presenter.js` so declarative built-in `workflows` definitions now render a concrete table from `workflows`, `runs`, `outcomes`, `usage`, `findings`, and `operational-values` logical sources, reusing the keyed-list DOM primitive for deterministic row reconciliation.
+- Expanded `test/unit/presenter.test.js` with a jsdom presenter contract for the `workflows` slice and replaced the browser smoke coverage in `test/e2e/smoke.spec.js` with a Playwright browser test that verifies the rendered workflow rows, aggregated counts, provenance, and independent `availability`, `completeness`, and `freshness` text.
+- Verified `npm install`, `npm run typecheck`, `npm run lint`, and `npm test`; `npm run test:e2e` remains blocked in this environment because the Playwright Chromium executable is not provisioned (`browserType.launch: Executable doesn't exist`).
+- Next milestone: Built-in pages, next slice for rendering one additional Section 10 built-in page from the declarative definitions or extracting the first reusable presentation component needed by that rendering.
 
 ### 2026-08-29 (built-in runs render slice)
 
