@@ -48,12 +48,28 @@
 - 2026-08-28: Section 8 defines required logical-source metadata outside the dashboard YAML, while Section 4.2 omits any YAML vocabulary for carrying that metadata inside a dashboard document. The current validator now accepts a conservative `data.source-metadata` structure so Section 8 metadata shape can be validated in-document, but the presenter-side runtime contract and the exact source of truth between YAML and external inputs remain ambiguous.
 - 2026-08-28: Section 11.2 says `data.order-by.field` resolves against the post-aggregation output grain, but the specification does not fully define how to derive that grain from arbitrary encodings before the presenter exists. The current validator uses the most conservative reading available in this slice: it accepts aggregate output identifiers and bare source fields only when they are canonical entity identifier fields for the selected source, and rejects other unresolved references with `DLS-E010`.
 
+## Component inventory
+
+- `src/components/badge.js` — presentation-only Primer status, mode, and active-state badges.
+- `src/components/data-state.js` — presentation-only data-state metrics card grid for availability, completeness, and freshness.
+- `src/components/table-region.js` — presentation-only reusable table wrapper for repeated table-region markup, header rows, and empty-state rows.
+
 ## Infrastructure blockers
 
 - 2026-08-28: `npm run typecheck`, `npm run lint`, and `npm test` can fail immediately after `npm install` if the runner has not linked local `node_modules/.bin` shims or installed the declared type packages yet; rerunning after installation from the package directory is currently required in this environment.
 - 2026-08-28: `npm run test:e2e` is currently blocked in this environment because the Playwright Chromium executable is not provisioned (`browserType.launch: Executable doesn't exist`). The workflow should prefer the built-in Playwright MCP browser tools until the package-level browser dependency is available.
 
 ## Run log
+
+### 2026-08-29 (table-region component refactor)
+
+- Inventoried repeated table wrapper construction in `src/presenter.js` and selected the highest-leverage bounded extraction: duplicated `.table-region > table > thead/tbody` markup shared by built-in runs, workflows, findings, and usage pages plus custom table and chart text-equivalent views.
+- Added `src/components/table-region.js`, a presentation-only reusable table wrapper component with a minimal API for table class name, header labels, empty-state message, column span, and prebuilt body rows, while preserving existing DOM text, accessible names, class names, and custom view `data-custom-view-mark` attributes.
+- Collapsed duplicated call sites in `src/presenter.js` for `renderRunsPage`, `renderWorkflowsPage`, `renderFindingsPage`, `renderUsagePage`, `renderTableView`, and `renderChartView`.
+- Added `test/unit/table-region.test.js` covering populated tables, empty tables, and custom table/chart attribute preservation.
+- Proved unchanged behavior by keeping the existing presenter unit tests and Playwright smoke tests green after the extraction, including custom-view and built-in page assertions that depend on the affected tables; compared the affected presenter output structurally via `git diff` against the pre-refactor `src/presenter.js` and confirmed the changes are limited to replacing duplicated construction with the shared component.
+- Verified quality gates from `pages/dashboard/`: `npm install`, `npm run typecheck`, `npm run lint`, `npm test`, and `npm run test:e2e` all pass.
+- Next candidates in the queue: extract repeated built-in inventory-table construction across `engines-models`, `organizations`, `repositories`, `experiments`, `graders`, `evals`, and `operational-value`; extract repeated custom-view source/metadata/context chrome; extract repeated provenance section rendering for built-in pages.
 
 ### 2026-08-29 (compliance smoke suite slice)
 

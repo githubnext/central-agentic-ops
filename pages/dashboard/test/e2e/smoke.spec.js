@@ -21,12 +21,17 @@ function buildPresenterModuleUrl() {
     .replace("'./badge.js'", JSON.stringify(badgeModuleUrl));
   const dataStateModuleUrl = `data:text/javascript;charset=utf-8,${encodeURIComponent(dataStateSource)}`;
 
+  const tableRegionSource = readFileSync(new URL('../../src/components/table-region.js', import.meta.url), 'utf8')
+    .replace("'../dom.js'", JSON.stringify(domModuleUrl));
+  const tableRegionModuleUrl = `data:text/javascript;charset=utf-8,${encodeURIComponent(tableRegionSource)}`;
+
   const presenterSource = readFileSync(new URL('../../src/presenter.js', import.meta.url), 'utf8')
     .replace("'./dom.js'", JSON.stringify(domModuleUrl))
     .replace("'./styles.js'", JSON.stringify(stylesModuleUrl))
     .replace("'./octicons.js'", JSON.stringify(octiconsModuleUrl))
     .replace("'./components/badge.js'", JSON.stringify(badgeModuleUrl))
-    .replace("'./components/data-state.js'", JSON.stringify(dataStateModuleUrl));
+    .replace("'./components/data-state.js'", JSON.stringify(dataStateModuleUrl))
+    .replace("'./components/table-region.js'", JSON.stringify(tableRegionModuleUrl));
 
   return `data:text/javascript;charset=utf-8,${encodeURIComponent(presenterSource)}`;
 }
