@@ -1,0 +1,3 @@
+{"id":"pages_audited","question":"Did the agent audit the locally served documentation site rather than reasoning from source markup alone?","answer":"YES","model":"copilot/gpt-5.4","timestamp":"2026-08-29T12:58:15.596Z","runid":"33253285274"}
+{"id":"automated_and_manual_checks","question":"Did the agent combine axe-core results with keyboard, focus, landmark, and color-scheme checks?","answer":"YES","model":"copilot/gpt-5.4","timestamp":"2026-08-29T12:58:15.596Z","runid":"33253285274"}
+{"id":"barriers_reported_with_evidence","question":"Did the agent report each accessibility barrier with the affected page, selector, WCAG criterion, and remediation?","answer":"YES","model":"copilot/gpt-5.4","timestamp":"2026-08-29T12:58:15.596Z","runid":"33253285274"}
