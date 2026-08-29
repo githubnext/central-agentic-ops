@@ -556,6 +556,94 @@ dashboard:
     }
   });
 
+  it('DLS-PAGE-002 DLS-PAGE-014 rejects an overview built-in page definition that omits linked findings and operational-value timeline coverage with DLS-E003', () => {
+    const result = validateDashboardDocument(`language-version: "0.1.0"
+dashboard:
+  id: incomplete-overview-page
+  title: Incomplete Overview Page
+  pages:
+    - id: overview
+      kind: built-in
+      page: overview
+      title: Overview
+      definition:
+        data-state:
+          availability: true
+          completeness: true
+          freshness: true
+        views:
+          - id: workflows-view
+            data:
+              source: workflows
+            mark: table
+            encoding:
+              columns:
+                - field: workflow-active
+                - field: rollout-mode
+          - id: runs-view
+            data:
+              source: runs
+            mark: table
+            encoding:
+              columns:
+                - field: run-status
+                - field: run-conclusion
+                - field: repository
+                - field: workflow
+          - id: usage-view
+            data:
+              source: usage
+            mark: metric
+            encoding:
+              value:
+                field: aic
+                aggregate: sum
+          - id: findings-view
+            data:
+              source: findings
+            mark: table
+            encoding:
+              columns:
+                - field: observed-at
+          - id: operational-values-view
+            data:
+              source: operational-values
+            mark: table
+            encoding:
+              columns:
+                - field: operational-value
+                - field: observed-at
+`);
+
+    expect(result.ok).toBe(false);
+    if (!result.ok) {
+      expect(result.errors).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({
+            code: 'DLS-E003',
+            path: '$.dashboard.pages[0].definition.views',
+            message: 'built-in page "overview" definition must expose field "issue-link" for source "findings".'
+          }),
+          expect.objectContaining({
+            code: 'DLS-E003',
+            path: '$.dashboard.pages[0].definition.views',
+            message: 'built-in page "overview" definition must expose field "pull-request-link" for source "findings".'
+          }),
+          expect.objectContaining({
+            code: 'DLS-E003',
+            path: '$.dashboard.pages[0].definition.views',
+            message: 'built-in page "overview" definition must expose field "run-link" for source "findings".'
+          }),
+          expect.objectContaining({
+            code: 'DLS-E003',
+            path: '$.dashboard.pages[0].definition.views',
+            message: 'built-in page "overview" definition must expose field "operational-value-definition" for source "operational-values".'
+          })
+        ])
+      );
+    }
+  });
+
   it('DLS-PAGE-014 rejects a built-in page definition that does not expose independent availability, completeness, and freshness', () => {
     const result = validateDashboardDocument(`language-version: "0.1.0"
 dashboard:
@@ -668,12 +756,86 @@ dashboard:
     }
   });
 
-  it('DLS-PAGE-006 DLS-PAGE-010 DLS-PAGE-011 DLS-PAGE-012 DLS-PAGE-013 DLS-PAGE-014 accepts built-in definitions that conservatively cover required fields', () => {
+  it('DLS-PAGE-002 DLS-PAGE-006 DLS-PAGE-010 DLS-PAGE-011 DLS-PAGE-012 DLS-PAGE-013 DLS-PAGE-014 accepts built-in definitions that conservatively cover required fields', () => {
     const result = validateDashboardDocument(`language-version: "0.1.0"
 dashboard:
   id: built-in-field-coverage
   title: Built In Field Coverage
   pages:
+    - id: overview
+      kind: built-in
+      page: overview
+      title: Overview
+      definition:
+        data-state:
+          availability: true
+          completeness: true
+          freshness: true
+        views:
+          - id: workflow-inventory
+            data:
+              source: workflows
+            mark: table
+            encoding:
+              columns:
+                - field: workflow-active
+                - field: rollout-mode
+          - id: run-trends
+            data:
+              source: runs
+            mark: chart
+            encoding:
+              x:
+                field: started-at
+                type: temporal
+                time-unit: day
+              y:
+                field: run
+                aggregate: count
+              color:
+                field: run-conclusion
+          - id: run-rankings
+            data:
+              source: runs
+            mark: table
+            encoding:
+              columns:
+                - field: repository
+                - field: workflow
+                - field: run-status
+                - field: run-conclusion
+          - id: usage-metric
+            data:
+              source: usage
+            mark: metric
+            encoding:
+              value:
+                field: aic
+                aggregate: sum
+          - id: recent-findings
+            data:
+              source: findings
+            mark: table
+            encoding:
+              columns:
+                - field: observed-at
+                - field: issue-link
+                - field: pull-request-link
+                - field: run-link
+          - id: operational-value-timeline
+            data:
+              source: operational-values
+            mark: chart
+            encoding:
+              x:
+                field: observed-at
+                type: temporal
+                time-unit: day
+              y:
+                field: operational-value
+                aggregate: max
+              color:
+                field: operational-value-definition
     - id: runs
       kind: built-in
       page: runs

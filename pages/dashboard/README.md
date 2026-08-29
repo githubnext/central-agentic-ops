@@ -27,3 +27,5 @@ The latest provenance/freshness/data-states slice audited Section 8 and recorded
 The current built-in-pages slice adds a conservative implementation-local built-in `definition.views` shape so Section 10 pages can declare custom-view-style source and field coverage without inventing presenter behavior beyond the specification's built-in page names and required-source catalog.
 
 The latest built-in-pages increment also adds a conservative implementation-local `definition.data-state` marker for `DLS-PAGE-014`, requiring declarative independent coverage of `availability`, `completeness`, and `freshness` on built-in pages.
+
+The current built-in-pages slice extends conservative Section 10 coverage for `overview`, requiring declarative built-in definitions to expose recent linked findings through relation-specific finding links and to expose operational-value timelines with definition-aware series coverage.
