@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import { describe, expect, it } from 'vitest';
-import { renderDashboard } from '../../src/presenter.js';
+import { renderDashboard, enableDashboardKeyboardNavigation } from '../../src/presenter.js';
 
 describe('presenter built-in pages', () => {
   it('DLS-PAGE-009 DLS-PAGE-014 renders built-in evals page with distinguishable definitions and observations, observed subject, YES/NO/UNKNOWN result, evaluation model when available, time, provenance, and independent data state deterministically', () => {
@@ -199,5 +199,113 @@ describe('presenter built-in pages', () => {
     expect(issueLink?.getAttribute('target')).toBe('_blank');
     expect(issueLink?.getAttribute('rel')).toBe('noopener noreferrer');
     expect(issueLink?.textContent).toBe('Issue 1 label');
+  });
+
+  it('DLS-SAFE-007 DLS-SAFE-008 enables keyboard navigation across labeled page sections without relying on color alone', () => {
+    /** @type {import('../../src/presenter.js').PresentationInput['document']} */
+    const dashboardDocument = {
+      languageVersion: '0.1.0',
+      dashboard: {
+        id: 'runs-dashboard',
+        title: 'Runs Dashboard',
+        pages: [
+          {
+            id: 'runs',
+            kind: /** @type {'built-in'} */ ('built-in'),
+            page: 'runs',
+            title: 'Runs',
+            definition: {
+              'data-state': {
+                availability: true,
+                completeness: true,
+                freshness: true
+              },
+              views: [
+                { id: 'runs-source', data: { source: 'runs' } },
+                { id: 'outcomes-source', data: { source: 'outcomes' } }
+              ]
+            }
+          }
+        ]
+      }
+    };
+
+    const rendered = renderDashboard({
+      document: dashboardDocument,
+      sources: {
+        runs: {
+          source: 'runs',
+          rows: [
+            {
+              organization: 'github',
+              repository: 'central-agentic-ops',
+              workflow: '.github/workflows/daily.yml',
+              run: '1001',
+              'run-status': 'completed',
+              'run-conclusion': 'success',
+              'rollout-mode': 'live',
+              engine: 'actions',
+              'requested-model': 'gpt-4o',
+              'resolved-model': 'gpt-4.1',
+              'started-at': '2026-08-29T10:00:00Z',
+              'run-link': {
+                relation: 'run',
+                href: 'https://example.com/runs/1001',
+                label: 'Run 1001'
+              }
+            }
+          ],
+          metadata: {
+            'source-id': 'runs-fixture',
+            'source-kind': 'fixture',
+            'as-of': '2026-08-29T20:00:00Z',
+            'retrieved-at': '2026-08-29T20:01:00Z',
+            completeness: 'complete',
+            freshness: 'fresh',
+            availability: 'available'
+          }
+        },
+        outcomes: {
+          source: 'outcomes',
+          rows: [
+            {
+              run: '1001',
+              'outcome-state': 'accepted'
+            }
+          ],
+          metadata: {
+            'source-id': 'outcomes-fixture',
+            'source-kind': 'fixture',
+            'as-of': '2026-08-29T20:00:00Z',
+            'retrieved-at': '2026-08-29T20:01:00Z',
+            completeness: 'complete',
+            freshness: 'fresh',
+            availability: 'available'
+          }
+        }
+      }
+    });
+
+    rendered.ownerDocument.body.append(rendered);
+    enableDashboardKeyboardNavigation(rendered);
+
+    const sections = rendered.querySelectorAll('.runs-page .page-section');
+    expect(sections).toHaveLength(4);
+    expect(sections[0]?.getAttribute('aria-labelledby')).toContain('runs-run-status-counts-heading');
+    expect(sections[1]?.getAttribute('aria-labelledby')).toContain('runs-run-conclusion-counts-heading');
+
+    const firstSection = /** @type {HTMLElement} */ (sections[0]);
+    const secondSection = /** @type {HTMLElement} */ (sections[1]);
+    const thirdSection = /** @type {HTMLElement} */ (sections[2]);
+
+    firstSection.focus();
+    firstSection.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowDown', bubbles: true }));
+    expect(rendered.ownerDocument.activeElement).toBe(secondSection);
+
+    secondSection.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowDown', bubbles: true }));
+    expect(rendered.ownerDocument.activeElement).toBe(thirdSection);
+
+    thirdSection.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowUp', bubbles: true }));
+    expect(rendered.ownerDocument.activeElement).toBe(secondSection);
   });
 });

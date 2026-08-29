@@ -366,53 +366,51 @@ function renderRunsPage(pageSources) {
   return h(
     'div',
     { className: 'runs-page' },
-    h('h3', null, 'Run Status Counts'),
-    renderSummaryList('run-status-counts', statusCounts),
-    h('h3', null, 'Run Conclusion Counts'),
-    renderSummaryList('run-conclusion-counts', conclusionCounts),
-    h('h3', null, 'Outcome Counts'),
-    renderSummaryList('run-outcome-counts', outcomeCounts),
-    h('h3', null, 'Runs'),
-    h(
-      'div',
-      { className: 'table-region' },
+    renderPageSection('runs', 'Run Status Counts', [renderSummaryList('run-status-counts', statusCounts)]),
+    renderPageSection('runs', 'Run Conclusion Counts', [renderSummaryList('run-conclusion-counts', conclusionCounts)]),
+    renderPageSection('runs', 'Outcome Counts', [renderSummaryList('run-outcome-counts', outcomeCounts)]),
+    renderPageSection('runs', 'Runs', [
       h(
-        'table',
-        { className: 'runs-table' },
+        'div',
+        { className: 'table-region' },
         h(
-          'thead',
-          null,
+          'table',
+          { className: 'runs-table' },
           h(
-            'tr',
+            'thead',
             null,
-            h('th', null, 'Run'),
-            h('th', null, 'Status'),
-            h('th', null, 'Conclusion'),
-            h('th', null, 'Organization'),
-            h('th', null, 'Repository'),
-            h('th', null, 'Workflow'),
-            h('th', null, 'Rollout Mode'),
-            h('th', null, 'Engine'),
-            h('th', null, 'Requested Model'),
-            h('th', null, 'Resolved Model'),
-            h('th', null, 'Started At'),
-            h('th', null, 'Outcome Count'),
-            h('th', null, 'Run Link')
-          )
-        ),
-        h(
-          'tbody',
-          null,
-          items.length > 0
-            ? keyed(
-              items,
-              (item) => renderRunRow(/** @type {{ key: string, run: Record<string, unknown>, outcomeCount: number }} */ (item)),
-              (item) => /** @type {{ key: string }} */ (item).key
+            h(
+              'tr',
+              null,
+              h('th', null, 'Run'),
+              h('th', null, 'Status'),
+              h('th', null, 'Conclusion'),
+              h('th', null, 'Organization'),
+              h('th', null, 'Repository'),
+              h('th', null, 'Workflow'),
+              h('th', null, 'Rollout Mode'),
+              h('th', null, 'Engine'),
+              h('th', null, 'Requested Model'),
+              h('th', null, 'Resolved Model'),
+              h('th', null, 'Started At'),
+              h('th', null, 'Outcome Count'),
+              h('th', null, 'Run Link')
             )
-            : h('tr', null, h('td', { colSpan: 13 }, 'No runs available.'))
+          ),
+          h(
+            'tbody',
+            null,
+            items.length > 0
+              ? keyed(
+                items,
+                (item) => renderRunRow(/** @type {{ key: string, run: Record<string, unknown>, outcomeCount: number }} */ (item)),
+                (item) => /** @type {{ key: string }} */ (item).key
+              )
+              : h('tr', null, h('td', { colSpan: 13 }, 'No runs available.'))
+          )
         )
       )
-    )
+    ])
   );
 }
 
@@ -542,48 +540,47 @@ function renderFindingsPage(pageSources) {
   return h(
     'div',
     { className: 'findings-page' },
-    h('h3', null, 'Finding Severity Counts'),
-    renderSummaryList('finding-severity-counts', severityCounts),
-    h('h3', null, 'Finding Status Counts'),
-    renderSummaryList('finding-status-counts', statusCounts),
-    h('h3', null, 'Findings'),
-    h(
-      'div',
-      { className: 'table-region' },
+    renderPageSection('findings', 'Finding Severity Counts', [renderSummaryList('finding-severity-counts', severityCounts)]),
+    renderPageSection('findings', 'Finding Status Counts', [renderSummaryList('finding-status-counts', statusCounts)]),
+    renderPageSection('findings', 'Findings', [
       h(
-        'table',
-        { className: 'findings-table' },
+        'div',
+        { className: 'table-region' },
         h(
-          'thead',
-          null,
+          'table',
+          { className: 'findings-table' },
           h(
-            'tr',
+            'thead',
             null,
-            h('th', null, 'Summary'),
-            h('th', null, 'Severity'),
-            h('th', null, 'Status'),
-            h('th', null, 'Organization'),
-            h('th', null, 'Repository'),
-            h('th', null, 'Workflow'),
-            h('th', null, 'Observed At'),
-            h('th', null, 'Issue Link'),
-            h('th', null, 'Pull Request Link'),
-            h('th', null, 'Run Link')
-          )
-        ),
-        h(
-          'tbody',
-          null,
-          items.length > 0
-            ? keyed(
-              items,
-              (item) => renderFindingRow(/** @type {{ key: string, finding: Record<string, unknown> }} */ (item)),
-              (item) => /** @type {{ key: string }} */ (item).key
+            h(
+              'tr',
+              null,
+              h('th', null, 'Summary'),
+              h('th', null, 'Severity'),
+              h('th', null, 'Status'),
+              h('th', null, 'Organization'),
+              h('th', null, 'Repository'),
+              h('th', null, 'Workflow'),
+              h('th', null, 'Observed At'),
+              h('th', null, 'Issue Link'),
+              h('th', null, 'Pull Request Link'),
+              h('th', null, 'Run Link')
             )
-            : h('tr', null, h('td', { colSpan: 10 }, 'No findings available.'))
+          ),
+          h(
+            'tbody',
+            null,
+            items.length > 0
+              ? keyed(
+                items,
+                (item) => renderFindingRow(/** @type {{ key: string, finding: Record<string, unknown> }} */ (item)),
+                (item) => /** @type {{ key: string }} */ (item).key
+              )
+              : h('tr', null, h('td', { colSpan: 10 }, 'No findings available.'))
+          )
         )
       )
-    )
+    ])
   );
 }
 
@@ -1120,79 +1117,81 @@ function renderEvalsPage(pageSources) {
   return h(
     'div',
     { className: 'evals-page' },
-    h('h3', null, 'Eval Definitions'),
-    h(
-      'div',
-      { className: 'table-region' },
+    renderPageSection('evals', 'Eval Definitions', [
       h(
-        'table',
-        { className: 'evals-definitions-table' },
+        'div',
+        { className: 'table-region' },
         h(
-          'thead',
-          null,
+          'table',
+          { className: 'evals-definitions-table' },
           h(
-            'tr',
+            'thead',
             null,
-            h('th', null, 'Eval'),
-            h('th', null, 'Eval Name'),
-            h('th', null, 'Eval Question'),
-            h('th', null, 'Requested Model'),
-            h('th', null, 'Definition Observed At'),
-            h('th', null, 'Observation Count'),
-            h('th', null, 'Observed Subjects'),
-            h('th', null, 'Results'),
-            h('th', null, 'Evaluation Models When Available'),
-            h('th', null, 'Latest Observation Time')
-          )
-        ),
-        h(
-          'tbody',
-          null,
-          items.length > 0
-            ? keyed(
-              items,
-              (item) => renderEvalDefinitionRow(/** @type {{ key: string, evaluation: Record<string, unknown>, observationCount: number, resultCounts: Map<string, number>, latestObservedAt: string, subjects: string[], models: string[] }} */ (item)),
-              (item) => /** @type {{ key: string }} */ (item).key
+            h(
+              'tr',
+              null,
+              h('th', null, 'Eval'),
+              h('th', null, 'Eval Name'),
+              h('th', null, 'Eval Question'),
+              h('th', null, 'Requested Model'),
+              h('th', null, 'Definition Observed At'),
+              h('th', null, 'Observation Count'),
+              h('th', null, 'Observed Subjects'),
+              h('th', null, 'Results'),
+              h('th', null, 'Evaluation Models When Available'),
+              h('th', null, 'Latest Observation Time')
             )
-            : h('tr', null, h('td', { colSpan: 10 }, 'No eval definitions available.'))
+          ),
+          h(
+            'tbody',
+            null,
+            items.length > 0
+              ? keyed(
+                items,
+                (item) => renderEvalDefinitionRow(/** @type {{ key: string, evaluation: Record<string, unknown>, observationCount: number, resultCounts: Map<string, number>, latestObservedAt: string, subjects: string[], models: string[] }} */ (item)),
+                (item) => /** @type {{ key: string }} */ (item).key
+              )
+              : h('tr', null, h('td', { colSpan: 10 }, 'No eval definitions available.'))
+          )
         )
       )
-    ),
-    h('h3', null, 'Eval Observations'),
-    h(
-      'div',
-      { className: 'table-region' },
+    ]),
+    renderPageSection('evals', 'Eval Observations', [
       h(
-        'table',
-        { className: 'eval-observations-table' },
+        'div',
+        { className: 'table-region' },
         h(
-          'thead',
-          null,
+          'table',
+          { className: 'eval-observations-table' },
           h(
-            'tr',
+            'thead',
             null,
-            h('th', null, 'Eval'),
-            h('th', null, 'Observed Subject'),
-            h('th', null, 'Run'),
-            h('th', null, 'Result'),
-            h('th', null, 'Requested Model'),
-            h('th', null, 'Resolved Model'),
-            h('th', null, 'Time')
-          )
-        ),
-        h(
-          'tbody',
-          null,
-          observationItems.length > 0
-            ? keyed(
-              observationItems,
-              (item) => renderEvalObservationRow(/** @type {{ key: string, observation: Record<string, unknown> }} */ (item)),
-              (item) => /** @type {{ key: string }} */ (item).key
+            h(
+              'tr',
+              null,
+              h('th', null, 'Eval'),
+              h('th', null, 'Observed Subject'),
+              h('th', null, 'Run'),
+              h('th', null, 'Result'),
+              h('th', null, 'Requested Model'),
+              h('th', null, 'Resolved Model'),
+              h('th', null, 'Time')
             )
-            : h('tr', null, h('td', { colSpan: 7 }, 'No eval observations available.'))
+          ),
+          h(
+            'tbody',
+            null,
+            observationItems.length > 0
+              ? keyed(
+                observationItems,
+                (item) => renderEvalObservationRow(/** @type {{ key: string, observation: Record<string, unknown> }} */ (item)),
+                (item) => /** @type {{ key: string }} */ (item).key
+              )
+              : h('tr', null, h('td', { colSpan: 7 }, 'No eval observations available.'))
+          )
         )
       )
-    )
+    ])
   );
 }
 
@@ -1320,6 +1319,25 @@ function renderSummaryList(className, counts) {
     entries.length > 0
       ? entries.map(([name, count]) => h('li', null, `${name}: ${count}`))
       : [h('li', null, 'No data available.')]
+  );
+}
+
+/**
+ * @param {string} pageId
+ * @param {string} title
+ * @param {HTMLElement[]} content
+ * @returns {HTMLElement}
+ */
+function renderPageSection(pageId, title, content) {
+  return h(
+    'section',
+    {
+      className: 'page-section',
+      tabIndex: 0,
+      'aria-labelledby': `${pageId}-${slugifyText(title)}-heading`
+    },
+    h('h3', { id: `${pageId}-${slugifyText(title)}-heading` }, title),
+    ...content
   );
 }
 
@@ -1670,6 +1688,14 @@ function renderLinkCell(link) {
 }
 
 /**
+ * @param {string} value
+ * @returns {string}
+ */
+function slugifyText(value) {
+  return value.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '') || 'section';
+}
+
+/**
  * @param {{ href: string, label: string }} link
  * @returns {HTMLElement}
  */
@@ -1680,6 +1706,32 @@ function renderExternalLink(link) {
     rel: 'noopener noreferrer',
     'aria-label': link.label
   }, link.label);
+}
+
+/**
+ * @param {HTMLElement} root
+ */
+export function enableDashboardKeyboardNavigation(root) {
+  const sections = [...root.querySelectorAll('.dashboard-page .page-section')]
+    .filter((section) => section instanceof HTMLElement);
+
+  for (const [index, section] of sections.entries()) {
+    section.addEventListener('keydown', (event) => {
+      if (!(event instanceof KeyboardEvent)) {
+        return;
+      }
+      if (event.key !== 'ArrowDown' && event.key !== 'ArrowUp') {
+        return;
+      }
+      const delta = event.key === 'ArrowDown' ? 1 : -1;
+      const nextSection = sections[index + delta];
+      if (!nextSection) {
+        return;
+      }
+      event.preventDefault();
+      nextSection.focus();
+    });
+  }
 }
 
 /**

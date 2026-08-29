@@ -232,3 +232,109 @@ test('DLS-SAFE-007 DLS-SAFE-008 DLS-SAFE-010 built-in findings page exposes acce
   await expect(issueLink).toHaveAttribute('target', '_blank');
   await expect(issueLink).toHaveAttribute('rel', 'noopener noreferrer');
 });
+
+test('DLS-SAFE-007 DLS-SAFE-008 keyboard navigation moves across labeled page sections in browser', async ({ page }) => {
+  const presenterModuleUrl = buildPresenterModuleUrl();
+
+  await page.setContent(`
+    <div id="root"></div>
+    <script type="module">
+      import { renderDashboard, enableDashboardKeyboardNavigation } from ${JSON.stringify(presenterModuleUrl)};
+
+      const dashboardDocument = {
+        languageVersion: '0.1.0',
+        dashboard: {
+          id: 'runs-dashboard',
+          title: 'Runs Dashboard',
+          pages: [
+            {
+              id: 'runs',
+              kind: 'built-in',
+              page: 'runs',
+              title: 'Runs',
+              definition: {
+                'data-state': {
+                  availability: true,
+                  completeness: true,
+                  freshness: true
+                },
+                views: [
+                  { id: 'runs-source', data: { source: 'runs' } },
+                  { id: 'outcomes-source', data: { source: 'outcomes' } }
+                ]
+              }
+            }
+          ]
+        }
+      };
+
+      const sources = {
+        runs: {
+          source: 'runs',
+          rows: [
+            {
+              organization: 'github',
+              repository: 'central-agentic-ops',
+              workflow: '.github/workflows/daily.yml',
+              run: '1001',
+              'run-status': 'completed',
+              'run-conclusion': 'success',
+              'rollout-mode': 'live',
+              engine: 'actions',
+              'requested-model': 'gpt-4o',
+              'resolved-model': 'gpt-4.1',
+              'started-at': '2026-08-29T10:00:00Z',
+              'run-link': {
+                relation: 'run',
+                href: 'https://example.com/runs/1001',
+                label: 'Run 1001'
+              }
+            }
+          ],
+          metadata: {
+            'source-id': 'runs-fixture',
+            'source-kind': 'fixture',
+            'as-of': '2026-08-29T20:00:00Z',
+            'retrieved-at': '2026-08-29T20:01:00Z',
+            completeness: 'complete',
+            freshness: 'fresh',
+            availability: 'available'
+          }
+        },
+        outcomes: {
+          source: 'outcomes',
+          rows: [
+            { run: '1001', 'outcome-state': 'accepted' }
+          ],
+          metadata: {
+            'source-id': 'outcomes-fixture',
+            'source-kind': 'fixture',
+            'as-of': '2026-08-29T20:00:00Z',
+            'retrieved-at': '2026-08-29T20:01:00Z',
+            completeness: 'complete',
+            freshness: 'fresh',
+            availability: 'available'
+          }
+        }
+      };
+
+      const root = document.querySelector('#root');
+      const dashboard = renderDashboard({ document: dashboardDocument, sources });
+      root.append(dashboard);
+      enableDashboardKeyboardNavigation(dashboard);
+    </script>
+  `);
+
+  const sections = page.locator('.runs-page .page-section');
+  await expect(sections).toHaveCount(4);
+  await expect(page.locator('#runs-run-status-counts-heading')).toHaveText('Run Status Counts');
+  await expect(page.locator('#runs-run-conclusion-counts-heading')).toHaveText('Run Conclusion Counts');
+
+  await sections.nth(0).focus();
+  await page.keyboard.press('ArrowDown');
+  await expect(sections.nth(1)).toBeFocused();
+  await page.keyboard.press('ArrowDown');
+  await expect(sections.nth(2)).toBeFocused();
+  await page.keyboard.press('ArrowUp');
+  await expect(sections.nth(1)).toBeFocused();
+});
