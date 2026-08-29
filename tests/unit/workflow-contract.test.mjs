@@ -1683,7 +1683,6 @@ globalThis.fetch = async (input) => {
     const packagesOverview = readFileSync(join(outputPath, "packages", "index.html"), "utf8");
     const failedRuns = readFileSync(join(outputPath, "runs", "failed.html"), "utf8");
     const actionRequiredRuns = readFileSync(join(outputPath, "runs", "action-required.html"), "utf8");
-    const inProgressRuns = readFileSync(join(outputPath, "runs", "in-progress.html"), "utf8");
     const coverageDiagnostics = readFileSync(join(outputPath, "coverage", "index.html"), "utf8");
     assert.doesNotMatch(overview, /\b(?:href|src)="\/(?!\/)/);
     assert.match(overview, /<title>Overview \| control<\/title>/);
@@ -1697,7 +1696,7 @@ globalThis.fetch = async (input) => {
     assert.match(overview, /href="runs\/failed\.html"[\s\S]*?1 failed runs/);
     assert.match(overview, /href="runs\/action-required\.html"[\s\S]*?1 run awaiting approval/);
     assert.match(overview, /href="workflows\/\?state=disabled"[\s\S]*?1 disabled workflows/);
-    assert.match(overview, /href="runs\/in-progress\.html"[\s\S]*?1 runs in progress/);
+    assert.doesNotMatch(overview, /href="runs\/in-progress\.html"|runs in progress|in progress/i);
     assert.match(overview, /href="coverage\/"[\s\S]*?Coverage needs context/);
     assert.match(overview, /href="runs\/">View all runs<\/a>/);
     assert.doesNotMatch(overview, />View activity<\/a>/);
@@ -1754,14 +1753,13 @@ globalThis.fetch = async (input) => {
     assert.match(failedRuns, /id="run-search"/);
     assert.match(failedRuns, /id="run-repository"/);
     assert.match(failedRuns, /new URLSearchParams\(window\.location\.search\)/);
-    assert.match(failedRuns, /data-run-filter-href="in-progress\.html"/);
+    assert.doesNotMatch(failedRuns, /data-run-filter-href="in-progress\.html"/);
     assert.match(failedRuns, /syncLinks\(\)/);
     assert.match(actionRequiredRuns, /Credit optimizer approval/);
     assert.doesNotMatch(actionRequiredRuns, /Credit optimizer failure|Credit optimizer running|Credit optimizer success/);
     assert.match(actionRequiredRuns, /Approval required/);
-    assert.match(inProgressRuns, /Credit optimizer running/);
-    assert.doesNotMatch(inProgressRuns, /Credit optimizer failure|Credit optimizer success/);
-    assert.match(inProgressRuns, /github\.com\/acme\/control\/actions\/runs\/3/);
+    assert.doesNotMatch(failedRuns, /runs in progress|in progress/i);
+    assert.doesNotMatch(actionRequiredRuns, /runs in progress|in progress/i);
     assert.match(coverageDiagnostics, /Private repository discovery is off/);
     assert.match(coverageDiagnostics, /Private repositories are excluded from workflow inventory and run-health totals/);
     assert.ok(packagesOverview.indexOf('class="bundle-utilization"') < packagesOverview.indexOf('class="trend-panel"'));

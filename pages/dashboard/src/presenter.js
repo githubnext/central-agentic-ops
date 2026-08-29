@@ -7,6 +7,7 @@ import { getPrimerStyles } from './styles.js';
 import { octicon, agenticWorkflowMark } from './octicons.js';
 import { renderStatusBadge, renderModeBadge, renderActiveStateBadge } from './components/badge.js';
 import { renderDataStateMetrics } from './components/data-state.js';
+import { renderTableRegion } from './components/table-region.js';
 
 /**
  * @typedef {{ availability: 'available'|'empty'|'unavailable', completeness: 'complete'|'partial'|'unknown', freshness: 'fresh'|'stale'|'unknown' }} DataState
@@ -444,46 +445,33 @@ function renderRunsPage(pageSources) {
     renderPageSection('runs', 'Run Conclusion Counts', [renderSummaryList('run-conclusion-counts', conclusionCounts)]),
     renderPageSection('runs', 'Outcome Counts', [renderSummaryList('run-outcome-counts', outcomeCounts)]),
     renderPageSection('runs', 'Runs', [
-      h(
-        'div',
-        { className: 'table-region' },
-        h(
-          'table',
-          { className: 'runs-table' },
-          h(
-            'thead',
-            null,
-            h(
-              'tr',
-              null,
-              h('th', null, 'Run'),
-              h('th', null, 'Status'),
-              h('th', null, 'Conclusion'),
-              h('th', null, 'Organization'),
-              h('th', null, 'Repository'),
-              h('th', null, 'Workflow'),
-              h('th', null, 'Rollout Mode'),
-              h('th', null, 'Engine'),
-              h('th', null, 'Requested Model'),
-              h('th', null, 'Resolved Model'),
-              h('th', null, 'Started At'),
-              h('th', null, 'Outcome Count'),
-              h('th', null, 'Run Link')
-            )
-          ),
-          h(
-            'tbody',
-            null,
-            items.length > 0
-              ? keyed(
-                items,
-                (item) => renderRunRow(/** @type {{ key: string, run: Record<string, unknown>, outcomeCount: number }} */ (item)),
-                (item) => /** @type {{ key: string }} */ (item).key
-              )
-              : h('tr', null, h('td', { colSpan: 13 }, 'No runs available.'))
+      renderTableRegion({
+        tableClassName: 'runs-table',
+        emptyMessage: 'No runs available.',
+        colSpan: 13,
+        headCells: [
+          'Run',
+          'Status',
+          'Conclusion',
+          'Organization',
+          'Repository',
+          'Workflow',
+          'Rollout Mode',
+          'Engine',
+          'Requested Model',
+          'Resolved Model',
+          'Started At',
+          'Outcome Count',
+          'Run Link'
+        ],
+        bodyRows: items.length > 0
+          ? keyed(
+            items,
+            (item) => renderRunRow(/** @type {{ key: string, run: Record<string, unknown>, outcomeCount: number }} */ (item)),
+            (item) => /** @type {{ key: string }} */ (item).key
           )
-        )
-      )
+          : []
+      })
     ])
   );
 }
@@ -555,44 +543,31 @@ function renderWorkflowsPage(pageSources) {
     'div',
     { className: 'workflows-page' },
     h('h3', null, 'Workflow Inventory'),
-    h(
-      'div',
-      { className: 'table-region' },
-      h(
-        'table',
-        { className: 'workflows-table' },
-        h(
-          'thead',
-          null,
-          h(
-            'tr',
-            null,
-            h('th', null, 'Workflow'),
-            h('th', null, 'Organization'),
-            h('th', null, 'Repository'),
-            h('th', null, 'Active State'),
-            h('th', null, 'Rollout Mode'),
-            h('th', null, 'Run Count'),
-            h('th', null, 'Run Conclusions'),
-            h('th', null, 'Outcome Count'),
-            h('th', null, 'Available AIC'),
-            h('th', null, 'Finding Count'),
-            h('th', null, 'Operational Value Count')
-          )
-        ),
-        h(
-          'tbody',
-          null,
-          workflowItems.length > 0
-            ? keyed(
-              workflowItems,
-              (item) => renderWorkflowRow(/** @type {{ key: string, workflow: Record<string, unknown>, runCount: number, conclusionCounts: Map<string, number>, outcomeCount: number, aicTotal: number, findingCount: number, operationalValueCount: number }} */ (item)),
-              (item) => /** @type {{ key: string }} */ (item).key
-            )
-            : h('tr', null, h('td', { colSpan: 11 }, 'No workflows available.'))
+    renderTableRegion({
+      tableClassName: 'workflows-table',
+      emptyMessage: 'No workflows available.',
+      colSpan: 11,
+      headCells: [
+        'Workflow',
+        'Organization',
+        'Repository',
+        'Active State',
+        'Rollout Mode',
+        'Run Count',
+        'Run Conclusions',
+        'Outcome Count',
+        'Available AIC',
+        'Finding Count',
+        'Operational Value Count'
+      ],
+      bodyRows: workflowItems.length > 0
+        ? keyed(
+          workflowItems,
+          (item) => renderWorkflowRow(/** @type {{ key: string, workflow: Record<string, unknown>, runCount: number, conclusionCounts: Map<string, number>, outcomeCount: number, aicTotal: number, findingCount: number, operationalValueCount: number }} */ (item)),
+          (item) => /** @type {{ key: string }} */ (item).key
         )
-      )
-    )
+        : []
+    })
   );
 }
 
@@ -617,43 +592,30 @@ function renderFindingsPage(pageSources) {
     renderPageSection('findings', 'Finding Severity Counts', [renderSummaryList('finding-severity-counts', severityCounts)]),
     renderPageSection('findings', 'Finding Status Counts', [renderSummaryList('finding-status-counts', statusCounts)]),
     renderPageSection('findings', 'Findings', [
-      h(
-        'div',
-        { className: 'table-region' },
-        h(
-          'table',
-          { className: 'findings-table' },
-          h(
-            'thead',
-            null,
-            h(
-              'tr',
-              null,
-              h('th', null, 'Summary'),
-              h('th', null, 'Severity'),
-              h('th', null, 'Status'),
-              h('th', null, 'Organization'),
-              h('th', null, 'Repository'),
-              h('th', null, 'Workflow'),
-              h('th', null, 'Observed At'),
-              h('th', null, 'Issue Link'),
-              h('th', null, 'Pull Request Link'),
-              h('th', null, 'Run Link')
-            )
-          ),
-          h(
-            'tbody',
-            null,
-            items.length > 0
-              ? keyed(
-                items,
-                (item) => renderFindingRow(/** @type {{ key: string, finding: Record<string, unknown> }} */ (item)),
-                (item) => /** @type {{ key: string }} */ (item).key
-              )
-              : h('tr', null, h('td', { colSpan: 10 }, 'No findings available.'))
+      renderTableRegion({
+        tableClassName: 'findings-table',
+        emptyMessage: 'No findings available.',
+        colSpan: 10,
+        headCells: [
+          'Summary',
+          'Severity',
+          'Status',
+          'Organization',
+          'Repository',
+          'Workflow',
+          'Observed At',
+          'Issue Link',
+          'Pull Request Link',
+          'Run Link'
+        ],
+        bodyRows: items.length > 0
+          ? keyed(
+            items,
+            (item) => renderFindingRow(/** @type {{ key: string, finding: Record<string, unknown> }} */ (item)),
+            (item) => /** @type {{ key: string }} */ (item).key
           )
-        )
-      )
+          : []
+      })
     ])
   );
 }
@@ -677,48 +639,35 @@ function renderUsagePage(pageSources) {
     h('h3', null, 'Usage Totals'),
     renderSummaryList('usage-totals', totals),
     h('h3', null, 'Usage Observations'),
-    h(
-      'div',
-      { className: 'table-region' },
-      h(
-        'table',
-        { className: 'usage-table' },
-        h(
-          'thead',
-          null,
-          h(
-            'tr',
-            null,
-            h('th', null, 'Organization'),
-            h('th', null, 'Repository'),
-            h('th', null, 'Workflow'),
-            h('th', null, 'Run'),
-            h('th', null, 'Engine'),
-            h('th', null, 'Requested Model'),
-            h('th', null, 'Resolved Model'),
-            h('th', null, 'Rollout Mode'),
-            h('th', null, 'Observed At'),
-            h('th', null, 'Input Tokens'),
-            h('th', null, 'Output Tokens'),
-            h('th', null, 'Cache Read Tokens'),
-            h('th', null, 'Cache Write Tokens'),
-            h('th', null, 'Reasoning Tokens'),
-            h('th', null, 'AIC')
-          )
-        ),
-        h(
-          'tbody',
-          null,
-          items.length > 0
-            ? keyed(
-              items,
-              (item) => renderUsageRow(/** @type {{ key: string, row: Record<string, unknown> }} */ (item)),
-              (item) => /** @type {{ key: string }} */ (item).key
-            )
-            : h('tr', null, h('td', { colSpan: 15 }, 'No usage observations available.'))
+    renderTableRegion({
+      tableClassName: 'usage-table',
+      emptyMessage: 'No usage observations available.',
+      colSpan: 15,
+      headCells: [
+        'Organization',
+        'Repository',
+        'Workflow',
+        'Run',
+        'Engine',
+        'Requested Model',
+        'Resolved Model',
+        'Rollout Mode',
+        'Observed At',
+        'Input Tokens',
+        'Output Tokens',
+        'Cache Read Tokens',
+        'Cache Write Tokens',
+        'Reasoning Tokens',
+        'AIC'
+      ],
+      bodyRows: items.length > 0
+        ? keyed(
+          items,
+          (item) => renderUsageRow(/** @type {{ key: string, row: Record<string, unknown> }} */ (item)),
+          (item) => /** @type {{ key: string }} */ (item).key
         )
-      )
-    )
+        : []
+    })
   );
 }
 
@@ -1501,33 +1450,26 @@ function renderTableView(pageId, title, view, sourceName, rows, metadata, contex
   return renderPageSection(pageId, title, [
     h('p', { className: 'view-source' }, `Source: ${sourceName}`),
     h('p', { className: 'view-metadata' }, `As of ${metadata['as-of']} • completeness ${metadata.completeness} • freshness ${metadata.freshness}`),
-    h(
-      'div',
-      { className: 'table-region' },
-      h(
-        'table',
-        { className: 'custom-table', 'data-custom-view-mark': 'table' },
-        h('thead', null, h('tr', null, ...columns.map((column) => h('th', null, fieldTitle(column))))),
-        h(
-          'tbody',
-          null,
-          rows.length > 0
-            ? rows.map((row, rowIndex) => h(
-              'tr',
-              { 'data-custom-row-key': `${pageId}-${title}-${rowIndex}` },
-              ...columns.map((column, columnIndex) => {
-                const value = toText(row[column.field]);
-                if (columnIndex === 0 && hrefField) {
-                  const link = findLink(row, /** @type {'external-link' | 'issue-link' | 'pull-request-link' | 'run-link' | 'evidence-link'} */ (hrefField));
-                  return h('td', null, link ? renderExternalLink(link) : value);
-                }
-                return h('td', null, value);
-              })
-            ))
-            : h('tr', null, h('td', { colSpan: Math.max(columns.length, 1) }, 'No rows available.'))
-        )
-      )
-    ),
+    renderTableRegion({
+      tableClassName: 'custom-table',
+      emptyMessage: 'No rows available.',
+      colSpan: Math.max(columns.length, 1),
+      headCells: columns.map((column) => fieldTitle(column)),
+      bodyRows: rows.length > 0
+        ? rows.map((row, rowIndex) => h(
+          'tr',
+          { 'data-custom-row-key': `${pageId}-${title}-${rowIndex}` },
+          ...columns.map((column, columnIndex) => {
+            const value = toText(row[column.field]);
+            if (columnIndex === 0 && hrefField) {
+              const link = findLink(row, /** @type {'external-link' | 'issue-link' | 'pull-request-link' | 'run-link' | 'evidence-link'} */ (hrefField));
+              return h('td', null, link ? renderExternalLink(link) : value);
+            }
+            return h('td', null, value);
+          })
+        ))
+        : []
+    }),
     h('ul', { className: 'view-context' }, contextDetails.map((detail) => h('li', null, detail)))
   ]);
 }
@@ -1570,36 +1512,21 @@ function renderChartView(pageId, title, view, sourceName, rows, metadata, contex
         `Color categories: ${colorCategories.length > 0 ? colorCategories.join(', ') : 'unknown'}`
       )]
       : []),
-    h(
-      'div',
-      { className: 'table-region' },
-      h(
-        'table',
-        { className: 'custom-chart-table', 'data-custom-view-mark': 'chart' },
-        h(
-          'thead',
-          null,
-          h('tr', null,
-            h('th', null, x ? fieldTitle(x) : 'X'),
-            h('th', null, y ? fieldTitle(y) : 'Y'),
-            color ? h('th', null, fieldTitle(color)) : null
-          )
-        ),
-        h(
-          'tbody',
-          null,
-          points.length > 0
-            ? points.map((point) => h(
-              'tr',
-              { 'data-custom-point-key': point.key },
-              h('td', null, point.x),
-              h('td', null, point.y),
-              color ? h('td', null, point.color ?? 'unknown') : null
-            ))
-            : h('tr', null, h('td', { colSpan: color ? 3 : 2 }, 'No points available.'))
-        )
-      )
-    ),
+    renderTableRegion({
+      tableClassName: 'custom-chart-table',
+      emptyMessage: 'No points available.',
+      colSpan: color ? 3 : 2,
+      headCells: [x ? fieldTitle(x) : 'X', y ? fieldTitle(y) : 'Y', ...(color ? [fieldTitle(color)] : [])],
+      bodyRows: points.length > 0
+        ? points.map((point) => h(
+          'tr',
+          { 'data-custom-point-key': point.key },
+          h('td', null, point.x),
+          h('td', null, point.y),
+          color ? h('td', null, point.color ?? 'unknown') : null
+        ))
+        : []
+    }),
     h('ul', { className: 'view-context' }, contextDetails.map((detail) => h('li', null, detail)))
   ]);
 }
