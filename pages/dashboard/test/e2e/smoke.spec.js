@@ -1,11 +1,38 @@
 import { readFileSync } from 'node:fs';
 import { test, expect } from '@playwright/test';
 
-test('DLS-PAGE-005 DLS-PAGE-014 built-in workflows page renders inventory, active state, rollout mode, run conclusions, outcomes, usage, findings, operational value, and independent data state in browser', async ({ page }) => {
+function buildPresenterModuleUrl() {
   const domSource = readFileSync(new URL('../../src/dom.js', import.meta.url), 'utf8');
-  const presenterSource = readFileSync(new URL('../../src/presenter.js', import.meta.url), 'utf8');
   const domModuleUrl = `data:text/javascript;charset=utf-8,${encodeURIComponent(domSource)}`;
-  const presenterModuleUrl = `data:text/javascript;charset=utf-8,${encodeURIComponent(presenterSource.replace("'./dom.js'", JSON.stringify(domModuleUrl)))}`;
+
+  const stylesSource = readFileSync(new URL('../../src/styles.js', import.meta.url), 'utf8');
+  const stylesModuleUrl = `data:text/javascript;charset=utf-8,${encodeURIComponent(stylesSource)}`;
+
+  const octiconsSource = readFileSync(new URL('../../src/octicons.js', import.meta.url), 'utf8')
+    .replace("'./dom.js'", JSON.stringify(domModuleUrl));
+  const octiconsModuleUrl = `data:text/javascript;charset=utf-8,${encodeURIComponent(octiconsSource)}`;
+
+  const badgeSource = readFileSync(new URL('../../src/components/badge.js', import.meta.url), 'utf8')
+    .replace("'../dom.js'", JSON.stringify(domModuleUrl));
+  const badgeModuleUrl = `data:text/javascript;charset=utf-8,${encodeURIComponent(badgeSource)}`;
+
+  const dataStateSource = readFileSync(new URL('../../src/components/data-state.js', import.meta.url), 'utf8')
+    .replace("'../dom.js'", JSON.stringify(domModuleUrl))
+    .replace("'./badge.js'", JSON.stringify(badgeModuleUrl));
+  const dataStateModuleUrl = `data:text/javascript;charset=utf-8,${encodeURIComponent(dataStateSource)}`;
+
+  const presenterSource = readFileSync(new URL('../../src/presenter.js', import.meta.url), 'utf8')
+    .replace("'./dom.js'", JSON.stringify(domModuleUrl))
+    .replace("'./styles.js'", JSON.stringify(stylesModuleUrl))
+    .replace("'./octicons.js'", JSON.stringify(octiconsModuleUrl))
+    .replace("'./components/badge.js'", JSON.stringify(badgeModuleUrl))
+    .replace("'./components/data-state.js'", JSON.stringify(dataStateModuleUrl));
+
+  return `data:text/javascript;charset=utf-8,${encodeURIComponent(presenterSource)}`;
+}
+
+test('DLS-PAGE-005 DLS-PAGE-014 built-in workflows page renders inventory, active state, rollout mode, run conclusions, outcomes, usage, findings, operational value, and independent data state in browser', async ({ page }) => {
+  const presenterModuleUrl = buildPresenterModuleUrl();
 
   await page.setContent(`
     <div id="root"></div>
@@ -203,10 +230,7 @@ test('DLS-PAGE-005 DLS-PAGE-014 built-in workflows page renders inventory, activ
 });
 
 test('DLS-PAGE-006 DLS-PAGE-014 built-in runs page renders status counts, outcomes, scope, models, time, run links, and independent data state in browser', async ({ page }) => {
-  const domSource = readFileSync(new URL('../../src/dom.js', import.meta.url), 'utf8');
-  const presenterSource = readFileSync(new URL('../../src/presenter.js', import.meta.url), 'utf8');
-  const domModuleUrl = `data:text/javascript;charset=utf-8,${encodeURIComponent(domSource)}`;
-  const presenterModuleUrl = `data:text/javascript;charset=utf-8,${encodeURIComponent(presenterSource.replace("'./dom.js'", JSON.stringify(domModuleUrl)))}`;
+  const presenterModuleUrl = buildPresenterModuleUrl();
 
   await page.setContent(`
     <div id="root"></div>
@@ -366,10 +390,7 @@ test('DLS-PAGE-006 DLS-PAGE-014 built-in runs page renders status counts, outcom
 });
 
 test('DLS-PAGE-013 DLS-PAGE-014 built-in findings page renders summary, severity, status, scope, time, provenance, and available issue, pull-request, and run links in browser', async ({ page }) => {
-  const domSource = readFileSync(new URL('../../src/dom.js', import.meta.url), 'utf8');
-  const presenterSource = readFileSync(new URL('../../src/presenter.js', import.meta.url), 'utf8');
-  const domModuleUrl = `data:text/javascript;charset=utf-8,${encodeURIComponent(domSource)}`;
-  const presenterModuleUrl = `data:text/javascript;charset=utf-8,${encodeURIComponent(presenterSource.replace("'./dom.js'", JSON.stringify(domModuleUrl)))}`;
+  const presenterModuleUrl = buildPresenterModuleUrl();
 
   await page.setContent(`
     <div id="root"></div>
@@ -494,4 +515,101 @@ test('DLS-PAGE-013 DLS-PAGE-014 built-in findings page renders summary, severity
   await expect(page.locator('.provenance-list li')).toContainText([
     'findings: findings-fixture (fixture) — as of 2026-08-29T16:30:00Z'
   ]);
+});
+
+test('DLS-PRES-001 GitHub Primer brand-aligned app shell, sidebar navigation, and Octicon elements render correctly in browser', async ({ page }) => {
+  const presenterModuleUrl = buildPresenterModuleUrl();
+
+  await page.setContent(`
+    <div id="root"></div>
+    <script type="module">
+      import { renderDashboard } from ${JSON.stringify(presenterModuleUrl)};
+
+      const dashboardDocument = {
+        languageVersion: '0.1.0',
+        dashboard: {
+          id: 'primer-shell-render',
+          title: 'Agentic Operations Dashboard',
+          description: 'Unified operational health, workflows, and execution telemetry.',
+          pages: [
+            {
+              id: 'workflows',
+              kind: 'built-in',
+              page: 'workflows',
+              title: 'Workflows',
+              definition: {
+                'data-state': { availability: true, completeness: true, freshness: true },
+                views: [{ id: 'workflows-source', data: { source: 'workflows' } }]
+              }
+            },
+            {
+              id: 'runs',
+              kind: 'built-in',
+              page: 'runs',
+              title: 'Runs',
+              definition: {
+                'data-state': { availability: true, completeness: true, freshness: true },
+                views: [{ id: 'runs-source', data: { source: 'runs' } }]
+              }
+            }
+          ]
+        }
+      };
+
+      const sources = {
+        workflows: {
+          source: 'workflows',
+          rows: [
+            {
+              organization: 'githubnext',
+              repository: 'central-agentic-ops',
+              workflow: 'dashboard.yml',
+              'workflow-active': 'true',
+              'rollout-mode': 'live'
+            }
+          ],
+          metadata: {
+            'source-id': 'workflows-fixture',
+            'source-kind': 'fixture',
+            'as-of': '2026-08-29T13:00:00Z',
+            'retrieved-at': '2026-08-29T13:01:00Z',
+            completeness: 'complete',
+            freshness: 'fresh',
+            availability: 'available'
+          }
+        },
+        runs: {
+          source: 'runs',
+          rows: [],
+          metadata: {
+            'source-id': 'runs-fixture',
+            'source-kind': 'fixture',
+            'as-of': '2026-08-29T13:00:00Z',
+            'retrieved-at': '2026-08-29T13:01:00Z',
+            completeness: 'complete',
+            freshness: 'fresh',
+            availability: 'empty'
+          }
+        }
+      };
+
+      document.querySelector('#root').append(renderDashboard({ document: dashboardDocument, sources }));
+    </script>
+  `);
+
+  await expect(page.locator('.skip-link')).toHaveAttribute('href', '#main-content');
+  await expect(page.locator('.org-sidebar')).toBeVisible();
+  await expect(page.locator('.sidebar-brand-mark')).toBeVisible();
+  await expect(page.locator('.brand-title')).toHaveText('Agentic Operations Dashboard');
+  await expect(page.locator('.brand-org')).toHaveText('githubnext');
+  await expect(page.locator('.primary-nav .nav-item')).toHaveCount(2);
+  await expect(page.locator('.primary-nav .nav-item').first()).toHaveClass(/active/);
+  await expect(page.locator('.primary-nav .nav-item .octicon-workflow')).toBeVisible();
+  await expect(page.locator('.primary-nav .nav-item .octicon-play')).toBeVisible();
+  await expect(page.locator('.breadcrumb')).toContainText('githubnext');
+  await expect(page.locator('.overview-header h1')).toHaveText('Agentic Operations Dashboard');
+  await expect(page.locator('.overview-header p')).toHaveText('Unified operational health, workflows, and execution telemetry.');
+  await expect(page.locator('.status.status-success').first()).toBeVisible();
+  await expect(page.locator('.mode-badge.mode-live')).toHaveText('live');
+  await expect(page.locator('.report-footer')).toContainText('GitHub Primer Design System');
 });

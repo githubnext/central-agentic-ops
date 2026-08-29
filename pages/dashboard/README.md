@@ -29,3 +29,6 @@ The current built-in-pages slice adds a conservative implementation-local built-
 The latest built-in-pages increment also adds a conservative implementation-local `definition.data-state` marker for `DLS-PAGE-014`, requiring declarative independent coverage of `availability`, `completeness`, and `freshness` on built-in pages.
 
 The current built-in-pages slice extends Section 10 rendering for `runs`, adding a visible browser prototype for status and conclusion counts, downstream outcome counts, scope/model/time columns, run links, and independent freshness/completeness/availability summaries derived from runtime source metadata.
+
+The latest presenter slice updates the presentation layer to clone the style of the current JavaScript dashboard in CAO (`.github/scripts/pages-report/report.mjs`), rendering dashboards that are GitHub brand-aligned using GitHub Primer CSS tokens, Octicons, sidebar navigation, responsive layout, and status/mode badges.
+

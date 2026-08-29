@@ -292,7 +292,78 @@ describe('presenter built-in pages', () => {
     expect(rendered.querySelector('tbody tr')?.textContent).toContain('Run 1001');
     expect(rendered.querySelector('tbody tr')?.textContent).toContain('2');
     expect(rendered.querySelectorAll('tbody tr')[1]?.textContent).toContain('Unavailable');
-    expect(rendered.querySelector('a')?.getAttribute('href')).toBe('https://example.com/runs/1001');
+    expect(rendered.querySelector('.runs-table a')?.getAttribute('href')).toBe('https://example.com/runs/1001');
+  });
+
+  it('DLS-PRES-001 renders GitHub Primer brand-aligned app shell, sidebar navigation, octicons, and metric badges', () => {
+    /** @type {import('../../src/presenter.js').PresentationInput['document']} */
+    const document = {
+      languageVersion: '0.1.0',
+      dashboard: {
+        id: 'primer-dashboard',
+        title: 'Primer Dashboard',
+        pages: [
+          {
+            id: 'workflows',
+            kind: /** @type {'built-in'} */ ('built-in'),
+            page: 'workflows',
+            title: 'Workflows',
+            definition: {
+              views: [
+                { id: 'workflows-source', data: { source: 'workflows' } }
+              ]
+            }
+          },
+          {
+            id: 'runs',
+            kind: /** @type {'built-in'} */ ('built-in'),
+            page: 'runs',
+            title: 'Runs'
+          }
+        ]
+      }
+    };
+
+    const rendered = renderDashboard({
+      document,
+      sources: {
+        workflows: {
+          source: 'workflows',
+          rows: [
+            {
+              organization: 'githubnext',
+              repository: 'central-agentic-ops',
+              workflow: 'dashboard.yml',
+              'workflow-active': 'true',
+              'rollout-mode': 'live'
+            }
+          ],
+          metadata: {
+            'source-id': 'workflows-fixture',
+            'source-kind': 'fixture',
+            'as-of': '2026-08-29T13:00:00Z',
+            'retrieved-at': '2026-08-29T13:01:00Z',
+            completeness: 'complete',
+            freshness: 'fresh',
+            availability: 'available'
+          }
+        }
+      }
+    });
+
+    expect(rendered.querySelector('style')?.textContent).toContain('--canvas');
+    expect(rendered.querySelector('.skip-link')?.getAttribute('href')).toBe('#main-content');
+    expect(rendered.querySelector('.app-shell')).not.toBeNull();
+    expect(rendered.querySelector('.org-sidebar')).not.toBeNull();
+    expect(rendered.querySelector('.sidebar-brand-mark')).not.toBeNull();
+    expect(rendered.querySelectorAll('.primary-nav .nav-item')).toHaveLength(2);
+    expect(rendered.querySelector('.primary-nav .nav-item.active')?.getAttribute('data-nav-page-id')).toBe('workflows');
+    expect(rendered.querySelector('.octicon-workflow')).not.toBeNull();
+    expect(rendered.querySelector('.octicon-play')).not.toBeNull();
+    expect(rendered.querySelector('.breadcrumb')?.textContent).toContain('Primer Dashboard');
+    expect(rendered.querySelector('.status-success')?.textContent).toBe('available');
+    expect(rendered.querySelector('.mode-live')?.textContent).toBe('live');
+    expect(rendered.querySelector('.report-footer')?.textContent).toContain('GitHub Primer');
   });
 
   it('DLS-PAGE-013 DLS-PAGE-014 renders built-in findings page summary, severity, status, scope, time, and available issue, pull-request, and run links deterministically', () => {

@@ -1,8 +1,12 @@
 /**
- * Tiny presenter prototype for built-in and custom dashboard pages.
+ * Presenter for built-in and custom dashboard pages using GitHub Primer styling and elements.
  */
 
 import { h, keyed } from './dom.js';
+import { getPrimerStyles } from './styles.js';
+import { octicon, agenticWorkflowMark } from './octicons.js';
+import { renderStatusBadge, renderModeBadge, renderActiveStateBadge } from './components/badge.js';
+import { renderDataStateMetrics } from './components/data-state.js';
 
 /**
  * @typedef {{ availability: 'available'|'empty'|'unavailable', completeness: 'complete'|'partial'|'unknown', freshness: 'fresh'|'stale'|'unknown' }} DataState
@@ -39,15 +43,176 @@ import { h, keyed } from './dom.js';
 export function renderDashboard(input) {
   const { document, sources } = input;
   const title = document.dashboard.title;
+  const description = document.dashboard.description;
+  const pages = document.dashboard.pages;
+  const orgName = inferOrganizationName(sources) || 'GitHub';
+
+  const styleEl = h('style', null, getPrimerStyles());
+  const skipLink = h('a', { href: '#main-content', className: 'skip-link' }, 'Skip to main content');
+
+  const sidebar = renderSidebar(document, pages, orgName);
+  const mainContent = renderMainContent(document, title, description, pages, sources, orgName);
 
   return h(
-    'main',
-    { className: 'dashboard-prototype' },
-    h('h1', null, title),
+    'div',
+    { className: 'dashboard-root' },
+    styleEl,
+    skipLink,
     h(
       'div',
-      { className: 'dashboard-pages' },
-      document.dashboard.pages.map((page) => renderPage(page, sources))
+      { className: 'app-shell' },
+      sidebar,
+      mainContent
+    )
+  );
+}
+
+/**
+ * @param {Record<string, LogicalSourceInput>} sources
+ * @returns {string | null}
+ */
+function inferOrganizationName(sources) {
+  for (const source of Object.values(sources)) {
+    if (Array.isArray(source?.rows)) {
+      for (const row of source.rows) {
+        if (typeof row?.organization === 'string' && row.organization.length > 0) {
+          return row.organization;
+        }
+      }
+    }
+  }
+  return null;
+}
+
+/**
+ * @param {PresentationDocument} document
+ * @param {Array<PresentableBuiltInPage | PresentableCustomPage>} pages
+ * @param {string} orgName
+ * @returns {HTMLElement}
+ */
+function renderSidebar(document, pages, orgName) {
+  return h(
+    'aside',
+    { className: 'org-sidebar', role: 'region', 'aria-label': 'Organization navigation' },
+    h(
+      'div',
+      { className: 'brand' },
+      h('div', { className: 'brand-mark' }, agenticWorkflowMark()),
+      h(
+        'div',
+        { className: 'brand-meta' },
+        h('span', { className: 'brand-title' }, document.dashboard.title),
+        h('span', { className: 'brand-org' }, orgName)
+      )
+    ),
+    h(
+      'nav',
+      { className: 'primary-nav', 'aria-label': 'Primary navigation' },
+      pages.map((page, index) => renderNavItem(page, index === 0))
+    ),
+    h(
+      'div',
+      { className: 'sidebar-footer' },
+      `CAO Dashboard • Lang v${document.languageVersion}`
+    )
+  );
+}
+
+/**
+ * @param {PresentableBuiltInPage | PresentableCustomPage} page
+ * @param {boolean} isActive
+ * @returns {HTMLElement}
+ */
+function renderNavItem(page, isActive) {
+  const iconName = getPageIcon(page);
+  const title = typeof page.title === 'string' && page.title.length > 0
+    ? page.title
+    : titleCase(page.id);
+
+  return h(
+    'a',
+    {
+      href: `#page-${page.id}`,
+      className: `nav-item${isActive ? ' active' : ''}`,
+      'aria-current': isActive ? 'page' : undefined,
+      'data-nav-page-id': page.id
+    },
+    h('span', { className: 'nav-icon' }, octicon(iconName)),
+    h('span', { className: 'nav-label' }, title)
+  );
+}
+
+/**
+ * @param {PresentableBuiltInPage | PresentableCustomPage} page
+ * @returns {string}
+ */
+function getPageIcon(page) {
+  if (page.kind === 'built-in') {
+    if (page.page === 'workflows') return 'workflow';
+    if (page.page === 'runs') return 'play';
+    if (page.page === 'tasks') return 'issue';
+    if (page.page === 'repositories') return 'repo';
+  }
+  const id = page.id.toLowerCase();
+  if (id.includes('workflow')) return 'workflow';
+  if (id.includes('run')) return 'play';
+  if (id.includes('metric') || id.includes('usage')) return 'graph';
+  if (id.includes('task') || id.includes('issue')) return 'issue';
+  if (id.includes('repo')) return 'repo';
+  if (id.includes('package')) return 'package';
+  return 'server';
+}
+
+/**
+ * @param {PresentationDocument} document
+ * @param {string} title
+ * @param {string | undefined} description
+ * @param {Array<PresentableBuiltInPage | PresentableCustomPage>} pages
+ * @param {Record<string, LogicalSourceInput>} sources
+ * @param {string} orgName
+ * @returns {HTMLElement}
+ */
+function renderMainContent(document, title, description, pages, sources, orgName) {
+  return h(
+    'div',
+    { className: 'app-main' },
+    h(
+      'nav',
+      { className: 'top-nav breadcrumb', 'aria-label': 'Breadcrumb' },
+      h(
+        'div',
+        { className: 'shell' },
+        h('a', { href: '#/' }, orgName),
+        h('a', { href: '#/dashboard' }, title)
+      )
+    ),
+    h(
+      'main',
+      { id: 'main-content', className: 'dashboard-prototype', tabIndex: -1 },
+      h(
+        'header',
+        { className: 'overview-header', 'aria-labelledby': 'page-title' },
+        h(
+          'div',
+          null,
+          h('div', { className: 'title-area' }, h('h1', { id: 'page-title' }, title)),
+          description ? h('p', { className: 'lede' }, description) : null
+        )
+      ),
+      h(
+        'div',
+        { className: 'report-body' },
+        h(
+          'div',
+          { className: 'dashboard-pages' },
+          pages.map((page) => renderPage(page, sources))
+        )
+      ),
+      h(
+        'footer',
+        { className: 'report-footer' },
+        h('p', null, 'Generated by Central Agentic Ops • GitHub Primer Design System')
+      )
     )
   );
 }
@@ -110,18 +275,9 @@ function renderBuiltInPage(page, title, sources) {
 
   return h(
     'section',
-    { className: 'dashboard-page', 'data-page-kind': 'built-in', 'data-page-name': page.page, 'data-page-id': page.id },
+    { className: 'dashboard-page', id: `page-${page.id}`, 'data-page-kind': 'built-in', 'data-page-name': page.page, 'data-page-id': page.id },
     h('h2', null, title),
-    h(
-      'dl',
-      { className: 'data-state-summary' },
-      h('dt', null, 'Availability'),
-      h('dd', { 'data-state-axis': 'availability' }, effectiveState.availability),
-      h('dt', null, 'Completeness'),
-      h('dd', { 'data-state-axis': 'completeness' }, effectiveState.completeness),
-      h('dt', null, 'Freshness'),
-      h('dd', { 'data-state-axis': 'freshness' }, effectiveState.freshness)
-    ),
+    renderDataStateMetrics(effectiveState),
     builtInBody,
     h('h3', null, 'Provenance'),
     h(
@@ -186,39 +342,43 @@ function renderRunsPage(pageSources) {
     renderSummaryList('run-outcome-counts', outcomeCounts),
     h('h3', null, 'Runs'),
     h(
-      'table',
-      { className: 'runs-table' },
+      'div',
+      { className: 'table-region' },
       h(
-        'thead',
-        null,
+        'table',
+        { className: 'runs-table' },
         h(
-          'tr',
+          'thead',
           null,
-          h('th', null, 'Run'),
-          h('th', null, 'Status'),
-          h('th', null, 'Conclusion'),
-          h('th', null, 'Organization'),
-          h('th', null, 'Repository'),
-          h('th', null, 'Workflow'),
-          h('th', null, 'Rollout Mode'),
-          h('th', null, 'Engine'),
-          h('th', null, 'Requested Model'),
-          h('th', null, 'Resolved Model'),
-          h('th', null, 'Started At'),
-          h('th', null, 'Outcome Count'),
-          h('th', null, 'Run Link')
-        )
-      ),
-      h(
-        'tbody',
-        null,
-        items.length > 0
-          ? keyed(
-            items,
-            (item) => renderRunRow(/** @type {{ key: string, run: Record<string, unknown>, outcomeCount: number }} */ (item)),
-            (item) => /** @type {{ key: string }} */ (item).key
+          h(
+            'tr',
+            null,
+            h('th', null, 'Run'),
+            h('th', null, 'Status'),
+            h('th', null, 'Conclusion'),
+            h('th', null, 'Organization'),
+            h('th', null, 'Repository'),
+            h('th', null, 'Workflow'),
+            h('th', null, 'Rollout Mode'),
+            h('th', null, 'Engine'),
+            h('th', null, 'Requested Model'),
+            h('th', null, 'Resolved Model'),
+            h('th', null, 'Started At'),
+            h('th', null, 'Outcome Count'),
+            h('th', null, 'Run Link')
           )
-          : h('tr', null, h('td', { colSpan: 13 }, 'No runs available.'))
+        ),
+        h(
+          'tbody',
+          null,
+          items.length > 0
+            ? keyed(
+              items,
+              (item) => renderRunRow(/** @type {{ key: string, run: Record<string, unknown>, outcomeCount: number }} */ (item)),
+              (item) => /** @type {{ key: string }} */ (item).key
+            )
+            : h('tr', null, h('td', { colSpan: 13 }, 'No runs available.'))
+        )
       )
     )
   );
@@ -236,12 +396,12 @@ function renderRunRow(item) {
     'tr',
     { 'data-run-id': String(run.run ?? item.key) },
     h('td', null, toText(run.run)),
-    h('td', null, toText(run['run-status'])),
-    h('td', null, toText(run['run-conclusion'])),
+    h('td', null, renderStatusBadge(run['run-status'])),
+    h('td', null, renderStatusBadge(run['run-conclusion'])),
     h('td', null, toText(run.organization)),
     h('td', null, toText(run.repository)),
     h('td', null, toText(run.workflow)),
-    h('td', null, toText(run['rollout-mode'])),
+    h('td', null, renderModeBadge(run['rollout-mode'])),
     h('td', null, toText(run.engine)),
     h('td', null, toText(run['requested-model'])),
     h('td', null, toText(run['resolved-model'])),
@@ -292,37 +452,41 @@ function renderWorkflowsPage(pageSources) {
     { className: 'workflows-page' },
     h('h3', null, 'Workflow Inventory'),
     h(
-      'table',
-      { className: 'workflows-table' },
+      'div',
+      { className: 'table-region' },
       h(
-        'thead',
-        null,
+        'table',
+        { className: 'workflows-table' },
         h(
-          'tr',
+          'thead',
           null,
-          h('th', null, 'Workflow'),
-          h('th', null, 'Organization'),
-          h('th', null, 'Repository'),
-          h('th', null, 'Active State'),
-          h('th', null, 'Rollout Mode'),
-          h('th', null, 'Run Count'),
-          h('th', null, 'Run Conclusions'),
-          h('th', null, 'Outcome Count'),
-          h('th', null, 'Available AIC'),
-          h('th', null, 'Finding Count'),
-          h('th', null, 'Operational Value Count')
-        )
-      ),
-      h(
-        'tbody',
-        null,
-        workflowItems.length > 0
-          ? keyed(
-            workflowItems,
-            (item) => renderWorkflowRow(/** @type {{ key: string, workflow: Record<string, unknown>, runCount: number, conclusionCounts: Map<string, number>, outcomeCount: number, aicTotal: number, findingCount: number, operationalValueCount: number }} */ (item)),
-            (item) => /** @type {{ key: string }} */ (item).key
+          h(
+            'tr',
+            null,
+            h('th', null, 'Workflow'),
+            h('th', null, 'Organization'),
+            h('th', null, 'Repository'),
+            h('th', null, 'Active State'),
+            h('th', null, 'Rollout Mode'),
+            h('th', null, 'Run Count'),
+            h('th', null, 'Run Conclusions'),
+            h('th', null, 'Outcome Count'),
+            h('th', null, 'Available AIC'),
+            h('th', null, 'Finding Count'),
+            h('th', null, 'Operational Value Count')
           )
-          : h('tr', null, h('td', { colSpan: 11 }, 'No workflows available.'))
+        ),
+        h(
+          'tbody',
+          null,
+          workflowItems.length > 0
+            ? keyed(
+              workflowItems,
+              (item) => renderWorkflowRow(/** @type {{ key: string, workflow: Record<string, unknown>, runCount: number, conclusionCounts: Map<string, number>, outcomeCount: number, aicTotal: number, findingCount: number, operationalValueCount: number }} */ (item)),
+              (item) => /** @type {{ key: string }} */ (item).key
+            )
+            : h('tr', null, h('td', { colSpan: 11 }, 'No workflows available.'))
+        )
       )
     )
   );
@@ -352,36 +516,40 @@ function renderFindingsPage(pageSources) {
     renderSummaryList('finding-status-counts', statusCounts),
     h('h3', null, 'Findings'),
     h(
-      'table',
-      { className: 'findings-table' },
+      'div',
+      { className: 'table-region' },
       h(
-        'thead',
-        null,
+        'table',
+        { className: 'findings-table' },
         h(
-          'tr',
+          'thead',
           null,
-          h('th', null, 'Summary'),
-          h('th', null, 'Severity'),
-          h('th', null, 'Status'),
-          h('th', null, 'Organization'),
-          h('th', null, 'Repository'),
-          h('th', null, 'Workflow'),
-          h('th', null, 'Observed At'),
-          h('th', null, 'Issue Link'),
-          h('th', null, 'Pull Request Link'),
-          h('th', null, 'Run Link')
-        )
-      ),
-      h(
-        'tbody',
-        null,
-        items.length > 0
-          ? keyed(
-            items,
-            (item) => renderFindingRow(/** @type {{ key: string, finding: Record<string, unknown> }} */ (item)),
-            (item) => /** @type {{ key: string }} */ (item).key
+          h(
+            'tr',
+            null,
+            h('th', null, 'Summary'),
+            h('th', null, 'Severity'),
+            h('th', null, 'Status'),
+            h('th', null, 'Organization'),
+            h('th', null, 'Repository'),
+            h('th', null, 'Workflow'),
+            h('th', null, 'Observed At'),
+            h('th', null, 'Issue Link'),
+            h('th', null, 'Pull Request Link'),
+            h('th', null, 'Run Link')
           )
-          : h('tr', null, h('td', { colSpan: 10 }, 'No findings available.'))
+        ),
+        h(
+          'tbody',
+          null,
+          items.length > 0
+            ? keyed(
+              items,
+              (item) => renderFindingRow(/** @type {{ key: string, finding: Record<string, unknown> }} */ (item)),
+              (item) => /** @type {{ key: string }} */ (item).key
+            )
+            : h('tr', null, h('td', { colSpan: 10 }, 'No findings available.'))
+        )
       )
     )
   );
@@ -400,8 +568,8 @@ function renderWorkflowRow(item) {
     h('td', null, toText(workflow.workflow)),
     h('td', null, toText(workflow.organization)),
     h('td', null, toText(workflow.repository)),
-    h('td', null, toText(workflow['workflow-active'])),
-    h('td', null, toText(workflow['rollout-mode'])),
+    h('td', null, renderActiveStateBadge(workflow['workflow-active'])),
+    h('td', null, renderModeBadge(workflow['rollout-mode'])),
     h('td', null, String(item.runCount)),
     h('td', null, formatCounts(item.conclusionCounts)),
     h('td', null, String(item.outcomeCount)),
