@@ -336,6 +336,10 @@ function renderBuiltInPageBody(page, pageSources) {
     return renderGradersPage(pageSources);
   }
 
+  if (page.page === 'evals') {
+    return renderEvalsPage(pageSources);
+  }
+
   return h('p', { className: 'page-placeholder' }, `Built-in page ${page.page} is not rendered in this increment.`);
 }
 
@@ -1088,6 +1092,111 @@ function renderGradersPage(pageSources) {
 }
 
 /**
+ * @param {Map<string, LogicalSourceInput>} pageSources
+ * @returns {HTMLElement}
+ */
+function renderEvalsPage(pageSources) {
+  const evalsSource = pageSources.get('evals');
+  const evalObservationsSource = pageSources.get('eval-observations');
+  const evals = Array.isArray(evalsSource?.rows) ? evalsSource.rows : [];
+  const observations = Array.isArray(evalObservationsSource?.rows) ? evalObservationsSource.rows : [];
+
+  const items = evals.map((evaluation, index) => ({
+    key: getEvalKey(evaluation, index),
+    evaluation,
+    observationCount: countMatchingRows(observations, evaluation, 'eval'),
+    resultCounts: countByMatchingRows(observations, evaluation, 'eval', 'eval-result'),
+    latestObservedAt: getLatestMatchingValue(observations, evaluation, 'eval', 'observed-at'),
+    subjects: summarizeSubjects(observations, evaluation, 'eval'),
+    models: summarizeObservationModels(observations, evaluation, 'eval')
+  }));
+
+  items.sort((left, right) => left.key.localeCompare(right.key));
+
+  const observationItems = observations
+    .map((observation, index) => ({ key: getEvalObservationKey(observation, index), observation }))
+    .sort((left, right) => left.key.localeCompare(right.key));
+
+  return h(
+    'div',
+    { className: 'evals-page' },
+    h('h3', null, 'Eval Definitions'),
+    h(
+      'div',
+      { className: 'table-region' },
+      h(
+        'table',
+        { className: 'evals-definitions-table' },
+        h(
+          'thead',
+          null,
+          h(
+            'tr',
+            null,
+            h('th', null, 'Eval'),
+            h('th', null, 'Eval Name'),
+            h('th', null, 'Eval Question'),
+            h('th', null, 'Requested Model'),
+            h('th', null, 'Definition Observed At'),
+            h('th', null, 'Observation Count'),
+            h('th', null, 'Observed Subjects'),
+            h('th', null, 'Results'),
+            h('th', null, 'Evaluation Models When Available'),
+            h('th', null, 'Latest Observation Time')
+          )
+        ),
+        h(
+          'tbody',
+          null,
+          items.length > 0
+            ? keyed(
+              items,
+              (item) => renderEvalDefinitionRow(/** @type {{ key: string, evaluation: Record<string, unknown>, observationCount: number, resultCounts: Map<string, number>, latestObservedAt: string, subjects: string[], models: string[] }} */ (item)),
+              (item) => /** @type {{ key: string }} */ (item).key
+            )
+            : h('tr', null, h('td', { colSpan: 10 }, 'No eval definitions available.'))
+        )
+      )
+    ),
+    h('h3', null, 'Eval Observations'),
+    h(
+      'div',
+      { className: 'table-region' },
+      h(
+        'table',
+        { className: 'eval-observations-table' },
+        h(
+          'thead',
+          null,
+          h(
+            'tr',
+            null,
+            h('th', null, 'Eval'),
+            h('th', null, 'Observed Subject'),
+            h('th', null, 'Run'),
+            h('th', null, 'Result'),
+            h('th', null, 'Requested Model'),
+            h('th', null, 'Resolved Model'),
+            h('th', null, 'Time')
+          )
+        ),
+        h(
+          'tbody',
+          null,
+          observationItems.length > 0
+            ? keyed(
+              observationItems,
+              (item) => renderEvalObservationRow(/** @type {{ key: string, observation: Record<string, unknown> }} */ (item)),
+              (item) => /** @type {{ key: string }} */ (item).key
+            )
+            : h('tr', null, h('td', { colSpan: 7 }, 'No eval observations available.'))
+        )
+      )
+    )
+  );
+}
+
+/**
  * @param {{ key: string, workflow: Record<string, unknown>, runCount: number, conclusionCounts: Map<string, number>, outcomeCount: number, aicTotal: number, findingCount: number, operationalValueCount: number }} item
  * @returns {HTMLElement}
  */
@@ -1353,6 +1462,27 @@ function getGraderObservationKey(observation, index) {
     return `${observation.grader}-${observation.run}-${index}`;
   }
   return `grader-observation-${index}`;
+}
+
+/**
+ * @param {Record<string, unknown>} evaluation
+ * @param {number} index
+ * @returns {string}
+ */
+function getEvalKey(evaluation, index) {
+  return typeof evaluation.eval === 'string' && evaluation.eval.length > 0 ? evaluation.eval : `eval-${index}`;
+}
+
+/**
+ * @param {Record<string, unknown>} observation
+ * @param {number} index
+ * @returns {string}
+ */
+function getEvalObservationKey(observation, index) {
+  if (typeof observation.eval === 'string' && typeof observation.run === 'string') {
+    return `${observation.eval}-${observation.run}-${index}`;
+  }
+  return `eval-observation-${index}`;
 }
 
 /**
@@ -1779,6 +1909,49 @@ function renderGraderObservationRow(item) {
 }
 
 /**
+ * @param {{ key: string, evaluation: Record<string, unknown>, observationCount: number, resultCounts: Map<string, number>, latestObservedAt: string, subjects: string[], models: string[] }} item
+ * @returns {HTMLElement}
+ */
+function renderEvalDefinitionRow(item) {
+  const evaluation = item.evaluation;
+
+  return h(
+    'tr',
+    { 'data-eval-id': String(evaluation.eval ?? item.key) },
+    h('td', null, toText(evaluation.eval)),
+    h('td', null, toText(evaluation['eval-name'])),
+    h('td', null, toText(evaluation['eval-question'])),
+    h('td', null, toText(evaluation['requested-model'])),
+    h('td', null, toText(evaluation['observed-at'])),
+    h('td', null, String(item.observationCount)),
+    h('td', null, item.subjects.length > 0 ? item.subjects.join(', ') : 'Unavailable'),
+    h('td', null, formatCounts(item.resultCounts)),
+    h('td', null, item.models.length > 0 ? item.models.join(', ') : 'Unavailable'),
+    h('td', null, item.latestObservedAt)
+  );
+}
+
+/**
+ * @param {{ key: string, observation: Record<string, unknown> }} item
+ * @returns {HTMLElement}
+ */
+function renderEvalObservationRow(item) {
+  const observation = item.observation;
+
+  return h(
+    'tr',
+    { 'data-eval-observation-key': item.key },
+    h('td', null, toText(observation.eval)),
+    h('td', null, getObservationSubject(observation)),
+    h('td', null, toText(observation.run)),
+    h('td', null, toText(observation['eval-result'])),
+    h('td', null, toText(observation['requested-model'])),
+    h('td', null, toText(observation['resolved-model'])),
+    h('td', null, toText(observation['observed-at']))
+  );
+}
+
+/**
  * @param {string} value
  * @returns {string}
  */
@@ -1857,6 +2030,32 @@ function summarizeScoreValues(rows, matchRow, matchField) {
     scores.push(formatNullableNumber(row.value));
   }
   return scores;
+}
+
+/**
+ * @param {Array<Record<string, unknown>>} rows
+ * @param {Record<string, unknown>} matchRow
+ * @param {string} matchField
+ * @returns {string[]}
+ */
+function summarizeObservationModels(rows, matchRow, matchField) {
+  const models = new Set();
+  for (const row of rows) {
+    if (row[matchField] !== matchRow[matchField]) {
+      continue;
+    }
+    const requested = typeof row['requested-model'] === 'string' && row['requested-model'].length > 0
+      ? row['requested-model']
+      : '';
+    const resolved = typeof row['resolved-model'] === 'string' && row['resolved-model'].length > 0
+      ? row['resolved-model']
+      : '';
+    const modelText = [requested, resolved].filter(Boolean).join(' → ');
+    if (modelText) {
+      models.add(modelText);
+    }
+  }
+  return [...models].sort();
 }
 
 /**
