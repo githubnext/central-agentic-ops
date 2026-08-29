@@ -323,7 +323,7 @@ An **output row** is the post-aggregation result of applying grouping and aggreg
 The **canonical post-aggregation row order** is defined for every output grain, entity-grain or group-grain, as follows:
 
 1. Apply each declared `order-by` clause in sequence, comparing each row's resolved output identifier value ascending or descending as declared.
-2. Break any ties remaining after step 1, or order all rows when `order-by` is entirely omitted, by the view's remaining unaggregated output dimensions that are not already fully determined by step 1, taken in encoding declaration order (`x`, then `y`, then `color`, then `columns` in declared sequence), each compared ascending by canonical field value after time bucketing.
+2. Break any ties remaining after step 1, or order all rows when `order-by` is entirely omitted, by the view's remaining unaggregated output dimensions that are not already fully determined by step 1. Only the grouping-capable encoding channels defined in Section 11.1 (`x`, `y`, `color`, and each `columns` entry) can hold an unaggregated output dimension; `value` and `href` are excluded because they do not participate in grouping. Consider these channels in that fixed declaration order (`x`, then `y`, then `color`, then each `columns` entry in its declared sequence), each compared ascending by canonical field value after time bucketing.
 3. Break any ties still remaining after step 2 by canonical entity ID ascending, when a canonical entity ID is present at the output grain; an entity-grain output row always has a canonical entity ID available for this step.
 
 A presenter **MUST** apply `limit` only after the canonical post-aggregation row order from steps 1 through 3 is fully resolved.
@@ -654,6 +654,7 @@ dashboard:
               aggregate: count
             color:
               field: run-conclusion
+              type: nominal
 ```
 
 The grouped table fixture MUST group `usage` by `resolved-model`, order by summed `aic` descending with `limit` applied, and use logical data containing rows whose summed `aic` ties across more than one `resolved-model`. The expected semantic output MUST apply `limit` only after resolving ties among equally ranked models by `resolved-model` ascending, so the retained rows are reproducible independent of renderer iteration order.
