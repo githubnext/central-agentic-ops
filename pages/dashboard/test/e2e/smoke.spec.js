@@ -12,7 +12,7 @@ test('DLS-PAGE-002 DLS-PAGE-014 built-in overview page renders independent data 
     <script type="module">
       import { renderDashboard } from ${JSON.stringify(presenterModuleUrl)};
 
-      const document = {
+      const dashboardDocument = {
         languageVersion: '0.1.0',
         dashboard: {
           id: 'built-in-overview-render',
@@ -110,12 +110,12 @@ test('DLS-PAGE-002 DLS-PAGE-014 built-in overview page renders independent data 
         }
       };
 
-      document.querySelector('#root').append(renderDashboard({ document, sources }));
+      document.querySelector('#root').append(renderDashboard({ document: dashboardDocument, sources }));
     </script>
   `);
 
   await expect(page.getByRole('heading', { name: 'Built In Overview Render' })).toBeVisible();
-  await expect(page.getByRole('heading', { name: 'Overview' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Overview', exact: true })).toBeVisible();
   await expect(page.locator('[data-state-axis="availability"]')).toHaveText('unavailable');
   await expect(page.locator('[data-state-axis="completeness"]')).toHaveText('partial');
   await expect(page.locator('[data-state-axis="freshness"]')).toHaveText('stale');
