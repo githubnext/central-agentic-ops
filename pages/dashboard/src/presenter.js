@@ -320,6 +320,10 @@ function renderBuiltInPageBody(page, pageSources) {
     return renderOperationalValuePage(pageSources);
   }
 
+  if (page.page === 'organizations') {
+    return renderOrganizationsPage(pageSources);
+  }
+
   return h('p', { className: 'page-placeholder' }, `Built-in page ${page.page} is not rendered in this increment.`);
 }
 
@@ -754,6 +758,77 @@ function renderOperationalValuePage(pageSources) {
 }
 
 /**
+ * @param {Map<string, LogicalSourceInput>} pageSources
+ * @returns {HTMLElement}
+ */
+function renderOrganizationsPage(pageSources) {
+  const organizationsSource = pageSources.get('organizations');
+  const repositoriesSource = pageSources.get('repositories');
+  const workflowsSource = pageSources.get('workflows');
+  const runsSource = pageSources.get('runs');
+  const usageSource = pageSources.get('usage');
+
+  const organizations = Array.isArray(organizationsSource?.rows) ? organizationsSource.rows : [];
+  const repositories = Array.isArray(repositoriesSource?.rows) ? repositoriesSource.rows : [];
+  const workflows = Array.isArray(workflowsSource?.rows) ? workflowsSource.rows : [];
+  const runs = Array.isArray(runsSource?.rows) ? runsSource.rows : [];
+  const usageRows = Array.isArray(usageSource?.rows) ? usageSource.rows : [];
+
+  const items = organizations.map((organization, index) => ({
+    key: getOrganizationKey(organization, index),
+    organization,
+    repositoryCount: countDistinctMatchingRows(repositories, organization, 'organization', 'repository'),
+    workflowCount: countDistinctMatchingRows(workflows, organization, 'organization', 'workflow'),
+    runCount: countDistinctMatchingRows(runs, organization, 'organization', 'run'),
+    usageTotals: summarizeUsageMeasures(usageRows.filter((row) => row.organization === organization.organization))
+  }));
+
+  return h(
+    'div',
+    { className: 'organizations-page' },
+    h('h3', null, 'Organization Inventory'),
+    h(
+      'div',
+      { className: 'table-region' },
+      h(
+        'table',
+        { className: 'organizations-table' },
+        h(
+          'thead',
+          null,
+          h(
+            'tr',
+            null,
+            h('th', null, 'Organization'),
+            h('th', null, 'Organization Name'),
+            h('th', null, 'Repository Count'),
+            h('th', null, 'Workflow Count'),
+            h('th', null, 'Run Count'),
+            h('th', null, 'Input Tokens'),
+            h('th', null, 'Output Tokens'),
+            h('th', null, 'Cache Read Tokens'),
+            h('th', null, 'Cache Write Tokens'),
+            h('th', null, 'Reasoning Tokens'),
+            h('th', null, 'AIC')
+          )
+        ),
+        h(
+          'tbody',
+          null,
+          items.length > 0
+            ? keyed(
+              items,
+              (item) => renderOrganizationRow(/** @type {{ key: string, organization: Record<string, unknown>, repositoryCount: number, workflowCount: number, runCount: number, usageTotals: Map<string, number> }} */ (item)),
+              (item) => /** @type {{ key: string }} */ (item).key
+            )
+            : h('tr', null, h('td', { colSpan: 11 }, 'No organizations available.'))
+        )
+      )
+    )
+  );
+}
+
+/**
  * @param {{ key: string, workflow: Record<string, unknown>, runCount: number, conclusionCounts: Map<string, number>, outcomeCount: number, aicTotal: number, findingCount: number, operationalValueCount: number }} item
  * @returns {HTMLElement}
  */
@@ -918,6 +993,23 @@ function countMatchingRows(rows, matchRow, field) {
  * @param {Array<Record<string, unknown>>} rows
  * @param {Record<string, unknown>} matchRow
  * @param {string} matchField
+ * @param {string} distinctField
+ * @returns {number}
+ */
+function countDistinctMatchingRows(rows, matchRow, matchField, distinctField) {
+  const values = new Set();
+  for (const row of rows) {
+    if (row[matchField] === matchRow[matchField] && row[distinctField] != null && row[distinctField] !== '') {
+      values.add(String(row[distinctField]));
+    }
+  }
+  return values.size;
+}
+
+/**
+ * @param {Array<Record<string, unknown>>} rows
+ * @param {Record<string, unknown>} matchRow
+ * @param {string} matchField
  * @param {string} countField
  * @returns {Map<string, number>}
  */
@@ -981,6 +1073,17 @@ function getUsageKey(usageRow, index) {
     return `${usageRow.run}-${index}`;
   }
   return `usage-${index}`;
+}
+
+/**
+ * @param {Record<string, unknown>} organization
+ * @param {number} index
+ * @returns {string}
+ */
+function getOrganizationKey(organization, index) {
+  return typeof organization.organization === 'string' && organization.organization.length > 0
+    ? organization.organization
+    : `organization-${index}`;
 }
 
 /**
@@ -1265,6 +1368,30 @@ function renderOperationalValueRow(item) {
     h('td', null, toText(row['maturity-status'])),
     h('td', null, formatNullableNumber(row['delta-from-baseline'])),
     h('td', null, renderLinkCell(evidenceLink))
+  );
+}
+
+/**
+ * @param {{ key: string, organization: Record<string, unknown>, repositoryCount: number, workflowCount: number, runCount: number, usageTotals: Map<string, number> }} item
+ * @returns {HTMLElement}
+ */
+function renderOrganizationRow(item) {
+  const organization = item.organization;
+
+  return h(
+    'tr',
+    { 'data-organization-id': String(organization.organization ?? item.key) },
+    h('td', null, toText(organization.organization)),
+    h('td', null, toText(organization['organization-name'])),
+    h('td', null, String(item.repositoryCount)),
+    h('td', null, String(item.workflowCount)),
+    h('td', null, String(item.runCount)),
+    h('td', null, formatNumber(item.usageTotals.get('input-tokens') ?? 0)),
+    h('td', null, formatNumber(item.usageTotals.get('output-tokens') ?? 0)),
+    h('td', null, formatNumber(item.usageTotals.get('cache-read-tokens') ?? 0)),
+    h('td', null, formatNumber(item.usageTotals.get('cache-write-tokens') ?? 0)),
+    h('td', null, formatNumber(item.usageTotals.get('reasoning-tokens') ?? 0)),
+    h('td', null, formatNumber(item.usageTotals.get('aic') ?? 0))
   );
 }
 
