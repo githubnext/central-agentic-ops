@@ -168,7 +168,7 @@ test('DLS-PAGE-005 DLS-PAGE-014 built-in workflows page renders inventory, activ
   await expect(page.locator('[data-state-axis="completeness"]')).toHaveText('partial');
   await expect(page.locator('[data-state-axis="freshness"]')).toHaveText('stale');
   await expect(page.locator('.workflows-table tbody tr')).toHaveCount(2);
-  await expect(page.locator('.workflows-table tbody tr').first()).toContainText([
+  await expect(page.locator('.workflows-table tbody tr').first().locator('td')).toContainText([
     'dashboard.yml',
     'githubnext',
     'central-agentic-ops',
@@ -181,7 +181,7 @@ test('DLS-PAGE-005 DLS-PAGE-014 built-in workflows page renders inventory, activ
     '1',
     '1'
   ]);
-  await expect(page.locator('.workflows-table tbody tr').nth(1)).toContainText([
+  await expect(page.locator('.workflows-table tbody tr').nth(1).locator('td')).toContainText([
     'release.yml',
     'false',
     'live',
