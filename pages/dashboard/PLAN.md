@@ -11,7 +11,7 @@
 - [x] **Provenance, freshness, data states** — Section 8 including unavailable, empty, partial, and stale states.
 - [x] **Links and findings** — Section 9 link objects and the `href` channel semantics.
 - [x] **Custom pages** — Section 11 metric, table, and chart views with the temporal line and bar defaults.
-- [ ] **Built-in pages** — Section 10, one page per increment, each expressed as declarative page definitions built from the custom-view primitives and visibly rendered in the browser prototype.
+- [ ] **Built-in pages** — Section 10, all 12 pages fully specified by the authoritative `dashboard.json`, including their view and build/composition definitions, and visibly rendered by a minimal generic JavaScript runtime.
   - [x] Slice: `DLS-PAGE-001` built-in page title default validation.
   - [x] Slice: `DLS-PAGE-001` canonical explicit title validation for built-in pages.
   - [x] Slice: `DLS-PAGE-002` and `DLS-PAGE-006` conservative required-source validation for built-in page definitions.
@@ -31,6 +31,9 @@
   - [x] Slice: `DLS-PAGE-007` and `DLS-PAGE-014` presenter render for the `experiments` built-in page, exposing experiment definitions plus observed run-to-variant assignments, grader observations, eval observations, downstream outcomes, available usage AIC, operational value by definition, provenance, and independent data-state summaries without implying causation.
   - [x] Slice: `DLS-PAGE-008` and `DLS-PAGE-014` presenter render for the `graders` built-in page, keeping grader definitions and grader observations distinguishable while exposing observed subject, result, score when present, time, provenance, and independent data-state summaries.
   - [x] Slice: `DLS-PAGE-009` and `DLS-PAGE-014` presenter render for the `evals` built-in page, keeping eval definitions and eval observations distinguishable while exposing observed subject, `YES`/`NO`/`UNKNOWN` result, evaluation model when available, time, provenance, and independent data-state summaries.
+  - [ ] Define `dashboard.json` as the single authoritative data-driven document containing all 12 built-in pages and every view and build/composition definition they require.
+  - [ ] Refactor each built-in page view in `src/presenter.js` into its `.json` equivalent, removing page-name dispatch and page-specific rendering/build logic while retaining only the minimum generic JavaScript interpreter and reusable primitives.
+  - [ ] Add build, unit, and browser coverage proving `dashboard.json` renders every specification-defined built-in page and that no page depends on custom page-specific JavaScript.
 - [ ] **Security, privacy, accessibility** — Section 13 including escaping, redaction, and keyboard and screen-reader behavior verified with Playwright.
   - [x] Slice: `DLS-SAFE-003`, `DLS-SAFE-007`, `DLS-SAFE-008`, and `DLS-SAFE-010` presenter render for inert text escaping, non-empty accessible names, labeled table columns, textual data-state labels, and labeled external links.
   - [x] Slice: `DLS-SAFE-007` and `DLS-SAFE-008` keyboard presenter behavior for focusable labeled sections with deterministic arrow-key traversal verified in unit and browser tests.
@@ -63,6 +66,12 @@
 - 2026-08-28: `npm run test:e2e` is currently blocked in this environment because the Playwright Chromium executable is not provisioned (`browserType.launch: Executable doesn't exist`). The workflow should prefer the built-in Playwright MCP browser tools until the package-level browser dependency is available.
 
 ## Run log
+
+### 2026-08-29 (data-driven built-in renderer plan)
+
+- Reframed the remaining Built-in pages work around an authoritative `dashboard.json` containing all 12 specification-defined pages, their views, and their build/composition definitions.
+- Added explicit follow-up slices to refactor the existing JavaScript page views into JSON equivalents, minimize the generic JavaScript runtime, and prove all built-in pages through build and browser coverage.
+- Next milestone: Built-in pages, starting with the authoritative `dashboard.json` schema and the first page-specific JavaScript-to-JSON migration.
 
 ### 2026-08-29 (built-in overview render slice)
 
