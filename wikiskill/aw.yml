@@ -1,0 +1,5 @@
+name: WikiSkill
+description: Optional workflow package for compiling repository agent experience into a persistent wiki and strictly improved executable skills.
+min-version: v0.87.6
+includes:
+  - .github/workflows/wikiskill.md
