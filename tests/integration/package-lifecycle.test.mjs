@@ -47,6 +47,7 @@ const craExpectedFiles = [
   ".github/workflows/shared/control.md",
 ];
 const dashboardExpectedFiles = [
+  ".github/aw/control-policy/resolve.mjs",
   ".github/aw/dashboard/report/aic-usage.mjs",
   ".github/aw/dashboard/report/deployed-workflows.mjs",
   ".github/aw/dashboard/report/inventory.mjs",
@@ -271,6 +272,7 @@ test("gh aw add --force restores dashboard workflows and report modules", { time
     writeFileSync(deployPath, `${deployWorkflow}\n# local integration-test change\n`);
 
     const removedFiles = [
+      ".github/aw/control-policy/resolve.mjs",
       ".github/aw/dashboard/report/report.mjs",
       ".github/workflows/dashboard-build.yml",
     ];

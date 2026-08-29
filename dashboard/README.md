@@ -15,6 +15,7 @@ The dashboard package publishes an access-controlled static view of Central Agen
 
 - `.github/workflows/dashboard-build.yml`: reusable, path-aware report build that uploads a mergeable Actions artifact.
 - `.github/workflows/dashboard.yml`: manual standalone GitHub Pages deployment.
+- `.github/aw/control-policy/resolve.mjs`: dependency-free checked-in policy resolver.
 - `.github/aw/dashboard/report`: deterministic inventory, AI Credit collection, and static report generation scripts.
 
 The publisher reads trusted workflow, issue, pull request, and value-artifact data from the installed repository. AI agents do not receive `pages: write`, `id-token: write`, or deployment authority.

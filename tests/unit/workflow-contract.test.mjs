@@ -1390,6 +1390,8 @@ test("Agent customizations preserve the deterministic dashboard exception", () =
 test("Dashboard package supports embedded and explicit standalone deployment", () => {
   const rootManifest = readFileSync(join(root, "aw.yml"), "utf8");
   const dashboardManifest = readFileSync(join(root, "dashboard", "aw.yml"), "utf8");
+  const canonicalPolicyResolver = readFileSync(join(root, ".github", "scripts", "control-policy", "resolve.mjs"), "utf8");
+  const dashboardPolicyResolver = readFileSync(join(root, "dashboard", "control-policy", "resolve.mjs"), "utf8");
   const buildWorkflow = readFileSync(join(root, "dashboard", "dashboard-build.yml"), "utf8");
   const deployWorkflow = readFileSync(join(root, "dashboard", "dashboard.yml"), "utf8");
   const aicUsage = readFileSync(join(root, "dashboard", "report", "aic-usage.mjs"), "utf8");
@@ -1402,6 +1404,8 @@ test("Dashboard package supports embedded and explicit standalone deployment", (
   assert.match(dashboardManifest, /name: Central Agentic Ops Dashboard/);
   assert.match(dashboardManifest, /source: dashboard\.yml\n\s+destination: \.github\/workflows\/dashboard\.yml\n\s+kind: action-workflow/);
   assert.match(dashboardManifest, /source: dashboard-build\.yml\n\s+destination: \.github\/workflows\/dashboard-build\.yml\n\s+kind: action-workflow/);
+  assert.match(dashboardManifest, /source: control-policy\/resolve\.mjs\n\s+destination: \.github\/aw\/control-policy\/resolve\.mjs/);
+  assert.equal(dashboardPolicyResolver, canonicalPolicyResolver, "dashboard policy resolver must match its canonical source");
   assert.match(buildWorkflow, /workflow_call:[\s\S]*?site-path:[\s\S]*?default: cao/);
   assert.match(buildWorkflow, /REPORT_OUTPUT: \$\{\{ runner\.temp \}\}\/central-agentic-ops-dashboard\/\$\{\{ inputs\.site-path \}\}/);
   assert.match(buildWorkflow, /site-path must not be absolute, traverse directories, or end with '\/'/);
