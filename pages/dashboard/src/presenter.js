@@ -231,12 +231,86 @@ function renderPage(page, sources) {
     return renderBuiltInPage(page, title, sources);
   }
 
+  return renderCustomPage(page, title, sources);
+}
+
+/**
+ * @param {PresentableCustomPage} page
+ * @param {string} title
+ * @param {Record<string, LogicalSourceInput>} sources
+ * @returns {HTMLElement}
+ */
+function renderCustomPage(page, title, sources) {
+  const views = Array.isArray(page.views) ? page.views : [];
+  const renderedViews = views.map((view, index) => renderCustomView(page.id, view, index, sources));
+
   return h(
     'section',
-    { className: 'dashboard-page', 'data-page-kind': 'custom', 'data-page-id': page.id },
+    { className: 'dashboard-page', id: `page-${page.id}`, 'data-page-kind': 'custom', 'data-page-id': page.id },
     h('h2', null, title),
-    h('p', null, 'Custom page rendering is not implemented in this increment.')
+    ...(renderedViews.length > 0
+      ? renderedViews
+      : [h('p', null, 'No custom views available.')])
   );
+}
+
+/**
+ * @param {string} pageId
+ * @param {unknown} view
+ * @param {number} index
+ * @param {Record<string, LogicalSourceInput>} sources
+ * @returns {HTMLElement}
+ */
+function renderCustomView(pageId, view, index, sources) {
+  const fallbackTitle = `View ${index + 1}`;
+  if (!isPlainObject(view)) {
+    return renderCustomViewState(pageId, fallbackTitle, null, 'unavailable', ['Invalid custom view definition.']);
+  }
+
+  const title = typeof view.title === 'string' && view.title.length > 0
+    ? view.title
+    : typeof view.id === 'string' && view.id.length > 0
+      ? titleCase(view.id)
+      : fallbackTitle;
+
+  const sourceName = getViewSource(view);
+  if (!sourceName) {
+    return renderCustomViewState(pageId, title, null, 'unavailable', ['Source unavailable.']);
+  }
+
+  const sourceInput = sources[sourceName];
+  if (!sourceInput || !Array.isArray(sourceInput.rows)) {
+    return renderCustomViewState(pageId, title, sourceName, 'unavailable', [`Source unavailable: ${sourceName}`]);
+  }
+
+  const state = sourceInput.metadata?.availability ?? inferAvailability(sourceInput.rows);
+  const metadata = sourceInput.metadata;
+  const contextDetails = [`Source: ${sourceName}`];
+  if (isPlainObject(view.data?.scope) && Object.keys(view.data.scope).length > 0) {
+    contextDetails.push(`Scope: ${JSON.stringify(view.data.scope)}`);
+  }
+  if (isPlainObject(view.data?.time) && Object.keys(view.data.time).length > 0) {
+    contextDetails.push(`Time: ${JSON.stringify(view.data.time)}`);
+  }
+  if (isPlainObject(view.data?.filters) && Object.keys(view.data.filters).length > 0) {
+    contextDetails.push(`Filters: ${JSON.stringify(view.data.filters)}`);
+  }
+
+  if (state !== 'available') {
+    return renderCustomViewState(pageId, title, sourceName, state, contextDetails);
+  }
+
+  if (view.mark === 'metric') {
+    return renderMetricView(pageId, title, view, sourceName, sourceInput.rows, metadata, contextDetails);
+  }
+  if (view.mark === 'table') {
+    return renderTableView(pageId, title, view, sourceName, sourceInput.rows, metadata, contextDetails);
+  }
+  if (view.mark === 'chart') {
+    return renderChartView(pageId, title, view, sourceName, sourceInput.rows, metadata, contextDetails);
+  }
+
+  return renderCustomViewState(pageId, title, sourceName, 'unavailable', [...contextDetails, 'Unsupported view mark.']);
 }
 
 /**
@@ -1320,6 +1394,230 @@ function renderSummaryList(className, counts) {
       ? entries.map(([name, count]) => h('li', null, `${name}: ${count}`))
       : [h('li', null, 'No data available.')]
   );
+}
+
+/**
+ * @param {string} pageId
+ * @param {string} title
+ * @param {string | null} sourceName
+ * @param {'available'|'empty'|'unavailable'} availability
+ * @param {string[]} contextDetails
+ * @returns {HTMLElement}
+ */
+function renderCustomViewState(pageId, title, sourceName, availability, contextDetails) {
+  /** @type {HTMLElement[]} */
+  const content = [
+    h('p', { 'data-view-availability': availability }, availability === 'available'
+      ? 'Data available.'
+      : availability === 'empty'
+        ? 'No observations matched the effective context.'
+        : 'This view is unavailable.')
+  ];
+  if (sourceName) {
+    content.push(h('p', { className: 'view-source' }, `Affected source: ${sourceName}`));
+  }
+  content.push(h('ul', { className: 'view-context' }, contextDetails.map((detail) => h('li', null, detail))));
+  return renderPageSection(pageId, title, content);
+}
+
+/**
+ * @param {string} pageId
+ * @param {string} title
+ * @param {Record<string, unknown>} view
+ * @param {string} sourceName
+ * @param {Array<Record<string, unknown>>} rows
+ * @param {SourceMetadata} metadata
+ * @param {string[]} contextDetails
+ * @returns {HTMLElement}
+ */
+function renderMetricView(pageId, title, view, sourceName, rows, metadata, contextDetails) {
+  const valueDefinition = isPlainObject(view.encoding) && isPlainObject(view.encoding.value)
+    ? view.encoding.value
+    : null;
+  const fieldName = typeof valueDefinition?.field === 'string' ? valueDefinition.field : null;
+  const aggregate = typeof valueDefinition?.aggregate === 'string' ? valueDefinition.aggregate : 'none';
+  const hrefDefinition = isPlainObject(view.encoding) && isPlainObject(view.encoding.href)
+    ? view.encoding.href
+    : null;
+  const hrefField = typeof hrefDefinition?.field === 'string' ? hrefDefinition.field : null;
+  const link = hrefField ? findFirstAvailableLink(rows, /** @type {'external-link' | 'issue-link' | 'pull-request-link' | 'run-link' | 'evidence-link'} */ (hrefField)) : null;
+
+  let valueText = 'Unavailable';
+  if (fieldName) {
+    if (aggregate === 'count') {
+      valueText = String(rows.filter((row) => row[fieldName] != null && row[fieldName] !== '').length);
+    } else if (aggregate === 'distinct-count') {
+      valueText = String(new Set(rows.map((row) => toText(row[fieldName]))).size);
+    } else if (aggregate === 'sum') {
+      valueText = formatNumber(rows.reduce((total, row) => total + toNumber(row[fieldName]), 0));
+    } else if (aggregate === 'mean') {
+      const numericValues = rows.map((row) => toNumber(row[fieldName])).filter((value) => Number.isFinite(value));
+      valueText = numericValues.length > 0
+        ? formatNumber(numericValues.reduce((total, value) => total + value, 0) / numericValues.length)
+        : 'Unavailable';
+    } else if (aggregate === 'min') {
+      const numericValues = rows.map((row) => toNumber(row[fieldName])).filter((value) => Number.isFinite(value));
+      valueText = numericValues.length > 0 ? formatNumber(Math.min(...numericValues)) : 'Unavailable';
+    } else if (aggregate === 'max') {
+      const numericValues = rows.map((row) => toNumber(row[fieldName])).filter((value) => Number.isFinite(value));
+      valueText = numericValues.length > 0 ? formatNumber(Math.max(...numericValues)) : 'Unavailable';
+    } else {
+      valueText = rows.length > 0 ? toText(rows[0][fieldName]) : 'Unavailable';
+    }
+  }
+
+  /** @type {HTMLElement[]} */
+  const content = [
+    h('p', { className: 'view-source' }, `Source: ${sourceName}`),
+    h('p', { className: 'view-metadata' }, `As of ${metadata['as-of']} • completeness ${metadata.completeness} • freshness ${metadata.freshness}`),
+    h('p', { className: 'metric-value', 'data-metric-value': fieldName ?? 'unknown' }, valueText)
+  ];
+  if (link) {
+    content.push(h('p', { className: 'metric-link' }, renderExternalLink(link)));
+  }
+  content.push(h('ul', { className: 'view-context' }, contextDetails.map((detail) => h('li', null, detail))));
+  return renderPageSection(pageId, title, content);
+}
+
+/**
+ * @param {string} pageId
+ * @param {string} title
+ * @param {Record<string, unknown>} view
+ * @param {string} sourceName
+ * @param {Array<Record<string, unknown>>} rows
+ * @param {SourceMetadata} metadata
+ * @param {string[]} contextDetails
+ * @returns {HTMLElement}
+ */
+function renderTableView(pageId, title, view, sourceName, rows, metadata, contextDetails) {
+  const columns = isPlainObject(view.encoding) && Array.isArray(view.encoding.columns)
+    ? view.encoding.columns.filter((column) => isPlainObject(column) && typeof column.field === 'string')
+    : [];
+  const hrefDefinition = isPlainObject(view.encoding) && isPlainObject(view.encoding.href)
+    ? view.encoding.href
+    : null;
+  const hrefField = typeof hrefDefinition?.field === 'string' ? hrefDefinition.field : null;
+
+  return renderPageSection(pageId, title, [
+    h('p', { className: 'view-source' }, `Source: ${sourceName}`),
+    h('p', { className: 'view-metadata' }, `As of ${metadata['as-of']} • completeness ${metadata.completeness} • freshness ${metadata.freshness}`),
+    h(
+      'div',
+      { className: 'table-region' },
+      h(
+        'table',
+        { className: 'custom-table', 'data-custom-view-mark': 'table' },
+        h('thead', null, h('tr', null, ...columns.map((column) => h('th', null, fieldTitle(column))))),
+        h(
+          'tbody',
+          null,
+          rows.length > 0
+            ? rows.map((row, rowIndex) => h(
+              'tr',
+              { 'data-custom-row-key': `${pageId}-${title}-${rowIndex}` },
+              ...columns.map((column, columnIndex) => {
+                const value = toText(row[column.field]);
+                if (columnIndex === 0 && hrefField) {
+                  const link = findLink(row, /** @type {'external-link' | 'issue-link' | 'pull-request-link' | 'run-link' | 'evidence-link'} */ (hrefField));
+                  return h('td', null, link ? renderExternalLink(link) : value);
+                }
+                return h('td', null, value);
+              })
+            ))
+            : h('tr', null, h('td', { colSpan: Math.max(columns.length, 1) }, 'No rows available.'))
+        )
+      )
+    ),
+    h('ul', { className: 'view-context' }, contextDetails.map((detail) => h('li', null, detail)))
+  ]);
+}
+
+/**
+ * @param {string} pageId
+ * @param {string} title
+ * @param {Record<string, unknown>} view
+ * @param {string} sourceName
+ * @param {Array<Record<string, unknown>>} rows
+ * @param {SourceMetadata} metadata
+ * @param {string[]} contextDetails
+ * @returns {HTMLElement}
+ */
+function renderChartView(pageId, title, view, sourceName, rows, metadata, contextDetails) {
+  const encoding = isPlainObject(view.encoding) ? view.encoding : null;
+  const x = isPlainObject(encoding?.x) && typeof encoding.x.field === 'string' ? encoding.x : null;
+  const y = isPlainObject(encoding?.y) && typeof encoding.y.field === 'string' ? encoding.y : null;
+  const color = isPlainObject(encoding?.color) && typeof encoding.color.field === 'string' ? encoding.color : null;
+  const chartDefault = x?.type === 'temporal' ? 'line' : 'bar';
+
+  const points = rows.map((row, rowIndex) => ({
+    key: `${pageId}-${title}-${rowIndex}`,
+    x: x ? toText(row[x.field]) : 'unknown',
+    y: y ? (typeof y.aggregate === 'string' && y.aggregate === 'count' ? '1' : toText(row[y.field])) : 'unknown',
+    color: color ? toText(row[color.field]) : null
+  }));
+
+  return renderPageSection(pageId, title, [
+    h('p', { className: 'view-source' }, `Source: ${sourceName}`),
+    h('p', { className: 'view-metadata' }, `As of ${metadata['as-of']} • completeness ${metadata.completeness} • freshness ${metadata.freshness}`),
+    h('p', { className: 'chart-default', 'data-chart-default': chartDefault }, `Default chart type: ${chartDefault}`),
+    h(
+      'div',
+      { className: 'table-region' },
+      h(
+        'table',
+        { className: 'custom-chart-table', 'data-custom-view-mark': 'chart' },
+        h(
+          'thead',
+          null,
+          h('tr', null,
+            h('th', null, x ? fieldTitle(x) : 'X'),
+            h('th', null, y ? fieldTitle(y) : 'Y'),
+            color ? h('th', null, fieldTitle(color)) : null
+          )
+        ),
+        h(
+          'tbody',
+          null,
+          points.length > 0
+            ? points.map((point) => h(
+              'tr',
+              { 'data-custom-point-key': point.key },
+              h('td', null, point.x),
+              h('td', null, point.y),
+              color ? h('td', null, point.color ?? 'unknown') : null
+            ))
+            : h('tr', null, h('td', { colSpan: color ? 3 : 2 }, 'No points available.'))
+        )
+      )
+    ),
+    h('ul', { className: 'view-context' }, contextDetails.map((detail) => h('li', null, detail)))
+  ]);
+}
+
+/**
+ * @param {Record<string, unknown>} fieldDefinition
+ * @returns {string}
+ */
+function fieldTitle(fieldDefinition) {
+  if (typeof fieldDefinition.title === 'string' && fieldDefinition.title.length > 0) {
+    return fieldDefinition.title;
+  }
+  return typeof fieldDefinition.field === 'string' ? titleCase(fieldDefinition.field) : 'Field';
+}
+
+/**
+ * @param {Array<Record<string, unknown>>} rows
+ * @param {'external-link' | 'issue-link' | 'pull-request-link' | 'run-link' | 'evidence-link'} field
+ * @returns {{ href: string, label: string } | null}
+ */
+function findFirstAvailableLink(rows, field) {
+  for (const row of rows) {
+    const link = findLink(row, field);
+    if (link) {
+      return link;
+    }
+  }
+  return null;
 }
 
 /**
