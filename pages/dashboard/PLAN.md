@@ -33,7 +33,7 @@
   - [x] Slice: `DLS-PAGE-009` and `DLS-PAGE-014` presenter render for the `evals` built-in page, keeping eval definitions and eval observations distinguishable while exposing observed subject, `YES`/`NO`/`UNKNOWN` result, evaluation model when available, time, provenance, and independent data-state summaries.
   - [x] Define `dashboard.json` as the single authoritative data-driven document containing all 12 built-in pages and every view and build/composition definition they require.
   - [x] Refactor the built-in page dispatcher in `src/presenter.js` from a page-name `if` chain to a declarative renderer registry keyed by `dashboard.json` page names, reducing page-name dispatch while retaining the existing generic runtime and reusable primitives.
-  - [ ] Continue refactoring each built-in page body in `src/presenter.js` into its `.json` equivalent, removing the remaining page-specific rendering/build logic while retaining only the minimum generic JavaScript interpreter and reusable primitives.
+  - [x] Continue refactoring each built-in page body in `src/presenter.js` into its `.json` equivalent, removing the remaining page-specific rendering/build logic while retaining only the minimum generic JavaScript interpreter and reusable primitives.
   - [x] Add build, unit, and browser coverage proving `dashboard.json` renders every specification-defined built-in page and that no page depends on custom page-specific JavaScript.
 - [ ] **Security, privacy, accessibility** — Section 13 including escaping, redaction, and keyboard and screen-reader behavior verified with Playwright.
   - [x] Slice: `DLS-SAFE-003`, `DLS-SAFE-007`, `DLS-SAFE-008`, and `DLS-SAFE-010` presenter render for inert text escaping, non-empty accessible names, labeled table columns, textual data-state labels, and labeled external links.
@@ -67,6 +67,14 @@
 - 2026-08-28: `npm run test:e2e` is currently blocked in this environment because the Playwright Chromium executable is not provisioned (`browserType.launch: Executable doesn't exist`). The workflow should prefer the built-in Playwright MCP browser tools until the package-level browser dependency is available.
 
 ## Run log
+
+### 2026-08-29 (built-in definition-interpreter slice)
+
+- Continued the Built-in pages milestone by shifting built-in page body composition from page-level dispatch functions toward a generic definition interpreter keyed by ordered `dashboard.json` `definition.views` entries.
+- Refactored `src/presenter.js` so built-in pages now render through `renderBuiltInPageFromDefinition(...)` and reusable section renderers, removing the remaining top-level per-page wrapper functions and making section titles derive from declarative view order and optional view titles.
+- Kept the implementation conservative: the existing validated implementation-local `definition.views` sequence remains the only built-in declarative contract, and no new specification semantics were invented.
+- Verified quality gates from `pages/dashboard/`: `npm install`, `npm run typecheck`, `npm run lint`, `npm test`, and `npx playwright test --config=playwright.config.mjs` all pass.
+- Next milestone: Built-in pages, with the remaining gap now narrowed to replacing implementation-local ordered view-to-section assumptions with a more fully generic built-in composition vocabulary if and when the specification defines one.
 
 ### 2026-08-29 (built-in coverage gate rerun slice)
 
