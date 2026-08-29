@@ -160,7 +160,7 @@ const agents = [
         </div>
         <pre data-prompt-output></pre>
       </div>
-      <button type="button" class="copy-button" data-copy-prompt>
+      <button type="button" class="wizard-copy-button" data-copy-prompt>
         <span class="copy-icon" aria-hidden="true">
           <svg viewBox="0 0 20 20" focusable="false">
             <path
@@ -827,13 +827,14 @@ const agents = [
       mask-image: linear-gradient(to bottom, #000 78%, transparent);
     }
 
-    .copy-button {
+    .wizard-copy-button {
       display: flex;
       width: 100%;
       align-items: center;
       justify-content: center;
       gap: 0.6rem;
       margin: 0.75rem 0 0;
+      opacity: 1;
       border: 1px solid color-mix(in srgb, var(--wizard-blue) 70%, transparent);
       border-radius: 0.9rem;
       background: linear-gradient(135deg, var(--wizard-blue), var(--wizard-violet) 52%, var(--wizard-pink));
@@ -858,14 +859,14 @@ const agents = [
       fill: currentColor;
     }
 
-    .copy-button:hover,
-    .copy-button:focus-visible {
+    .wizard-copy-button:hover,
+    .wizard-copy-button:focus-visible {
       transform: translateY(-1px);
       filter: saturate(1.15) brightness(1.08);
       box-shadow: 0 1rem 1.75rem color-mix(in srgb, var(--wizard-violet) 38%, transparent);
     }
 
-    .copy-button.is-copied {
+    .wizard-copy-button.is-copied {
       border-color: color-mix(in srgb, var(--sl-color-green) 70%, var(--sl-color-white));
       background: linear-gradient(
         135deg,
@@ -985,12 +986,12 @@ const agents = [
     @media (prefers-reduced-motion: reduce) {
       .option-card,
       .option-check,
-      .copy-button {
+      .wizard-copy-button {
         transition: none;
       }
 
       .option-card:hover,
-      .copy-button:hover {
+      .wizard-copy-button:hover {
         transform: none;
       }
     }
