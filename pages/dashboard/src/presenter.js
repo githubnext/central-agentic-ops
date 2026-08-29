@@ -443,7 +443,7 @@ function renderRunRow(item) {
       'td',
       null,
       runLink
-        ? h('a', { href: runLink.href }, runLink.label)
+        ? renderExternalLink(runLink)
         : 'Unavailable'
     )
   );
@@ -1666,7 +1666,20 @@ function toText(value) {
  * @returns {string | HTMLElement}
  */
 function renderLinkCell(link) {
-  return link ? h('a', { href: link.href }, link.label) : 'Unavailable';
+  return link ? renderExternalLink(link) : 'Unavailable';
+}
+
+/**
+ * @param {{ href: string, label: string }} link
+ * @returns {HTMLElement}
+ */
+function renderExternalLink(link) {
+  return h('a', {
+    href: link.href,
+    target: '_blank',
+    rel: 'noopener noreferrer',
+    'aria-label': link.label
+  }, link.label);
 }
 
 /**
