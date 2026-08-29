@@ -2020,6 +2020,43 @@ dashboard:
     }
   });
 
+  it('DLS-SAFE-005 DLS-VAL-004 rejects secret-bearing provenance metadata without echoing the secret value', () => {
+    const result = validateDashboardDocument(`language-version: "0.1.0"
+dashboard:
+  id: secret-metadata
+  title: Secret Metadata
+  pages:
+    - id: usage-page
+      kind: custom
+      views:
+        - id: usage-metric
+          data:
+            source: usage
+            source-metadata:
+              source-id: ghp_secretToken123456789
+              source-kind: fixture
+              as-of: "2026-08-29T12:00:00Z"
+              retrieved-at: "2026-08-29T12:05:00Z"
+              completeness: complete
+              freshness: fresh
+          mark: metric
+          encoding:
+            value:
+              field: aic
+              aggregate: sum
+`);
+
+    expect(result.ok).toBe(false);
+    if (!result.ok) {
+      expect(result.errors).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({ code: 'DLS-E012', path: '$.dashboard.pages[0].views[0].data.source-metadata.source-id' })
+        ])
+      );
+      expect(result.errors.map((error) => error.message).join('\n')).not.toContain('ghp_secretToken123456789');
+    }
+  });
+
   it('DLS-VAL-001 reports code message and YAML path for each detected error', () => {
     const result = validateDashboardDocument(`language-version: "0.1"
 dashboard:

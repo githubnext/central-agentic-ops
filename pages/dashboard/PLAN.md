@@ -33,6 +33,7 @@
 - [ ] **Security, privacy, accessibility** — Section 13 including escaping, redaction, and keyboard and screen-reader behavior verified with Playwright.
   - [x] Slice: `DLS-SAFE-003`, `DLS-SAFE-007`, `DLS-SAFE-008`, and `DLS-SAFE-010` presenter render for inert text escaping, non-empty accessible names, labeled table columns, textual data-state labels, and labeled external links.
   - [x] Slice: `DLS-SAFE-007` and `DLS-SAFE-008` keyboard presenter behavior for focusable labeled sections with deterministic arrow-key traversal verified in unit and browser tests.
+  - [x] Slice: `DLS-SAFE-005` and `DLS-VAL-004` validator rejection for secret-bearing provenance metadata with non-echoing error messages.
 - [ ] **Compliance suite** — Section 14 test suite, the compliance checklist, Appendix A as a passing fixture, and Appendix C as failing fixtures.
 - [ ] **Parity** — inventory the features of the existing dashboard in `dashboard/report/report.mjs`, record them in `PLAN.md` as a parity checklist, then express each one as YAML configuration plus data fixtures, closing the checklist incrementally.
 
@@ -50,6 +51,14 @@
 - 2026-08-28: `npm run test:e2e` is currently blocked in this environment because the Playwright Chromium executable is not provisioned (`browserType.launch: Executable doesn't exist`). The workflow should prefer the built-in Playwright MCP browser tools until the package-level browser dependency is available.
 
 ## Run log
+
+### 2026-08-29 (security secret-redaction validator slice)
+
+- Extended the Security, privacy, accessibility milestone with a narrow Section 13 and Section 12 validator increment for `DLS-SAFE-005` and `DLS-VAL-004` covering secret-bearing provenance metadata rejection without echoing secret values back into validation errors.
+- Updated `src/validator.js` so `data.source-metadata` now conservatively rejects credential-like strings and PEM-like private-key material across provenance metadata fields while keeping error messages generic and path-specific.
+- Added focused unit coverage in `test/unit/validator.test.js` that verifies rejected secret-bearing metadata and confirms the secret literal is not repeated in emitted error messages.
+- Verified all quality gates pass: `npm install`, `npm run typecheck`, `npm run lint`, `npm test`, and `npm run test:e2e`.
+- Next milestone: Security, privacy, accessibility, next slice for `DLS-SAFE-006` consuming-context authorization boundaries or additional screen-reader behavior.
 
 ### 2026-08-29 (security keyboard navigation slice)
 
