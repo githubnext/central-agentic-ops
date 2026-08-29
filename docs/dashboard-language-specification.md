@@ -318,6 +318,16 @@ Unaggregated dimensions in an encoding form the grouping key. Aggregated fields 
 
 A field definition may also include an optional `as` property to name the aggregate output for subsequent references. This allows a view to refer to a derived metric by a stable identifier instead of inferring an implementation-specific name. When `as` is omitted, the canonical identifier is `<aggregate>-<field>`. See **DLS-AGG-009** and **DLS-AGG-010** for the normative validation rules.
 
+An **output row** is the post-aggregation result of applying grouping and aggregation to a view's encoding. An output row is **entity-grain** when its output identifier is a canonical entity ID (for example, one row per repository or one row per run); otherwise it is **group-grain**, and its output identifier is the tuple of its remaining unaggregated output dimensions (for example `(day, run-conclusion)`), each taken after time bucketing.
+
+The **canonical post-aggregation row order** is defined for every output grain, entity-grain or group-grain, as follows:
+
+1. Apply each declared `order-by` clause in sequence, comparing each row's resolved output identifier value ascending or descending as declared.
+2. Break any ties remaining after step 1, or order all rows when `order-by` is entirely omitted, by the view's remaining unaggregated output dimensions that are not already fully determined by step 1, taken in encoding declaration order (`x`, then `y`, then `color`, then `columns` in declared sequence), each compared ascending by canonical field value after time bucketing.
+3. Break any ties still remaining after step 2 by canonical entity ID ascending, when a canonical entity ID is present at the output grain; an entity-grain output row always has a canonical entity ID available for this step.
+
+A presenter **MUST** apply `limit` only after the canonical post-aggregation row order from steps 1 through 3 is fully resolved.
+
 ### 7.4 Normative Aggregation Requirements
 
 - **DLS-AGG-001:** An implementation **MUST** group only by dimensions and **MUST** aggregate only measures or entity identifiers compatible with the selected aggregate.
@@ -327,9 +337,10 @@ A field definition may also include an optional `as` property to name the aggreg
 - **DLS-AGG-005:** Grader `value` and `operational-value` **MUST** use `none`, `mean`, `min`, or `max`, and aggregation **MUST** retain grader identity or operational-value definition, respectively.
 - **DLS-AGG-006:** `count` and `distinct-count` **MUST** ignore absent values and **MUST NOT** substitute zero.
 - **DLS-AGG-007:** A time unit **MUST** be applied before grouping and **MUST** use the UTC boundaries in Section 7.3.
-- **DLS-AGG-008:** Rankings **MUST** disclose the ranked measure, direction, filters, time range, scope, and tie behavior; the ranking key **MUST** be resolved against the post-aggregation output identifier before applying `limit`, and ties **MUST** then be ordered by canonical entity ID ascending.
+- **DLS-AGG-008:** Rankings **MUST** disclose the ranked measure, direction, filters, time range, scope, and tie behavior; the ranking key **MUST** be resolved against the post-aggregation output identifier before applying `limit`, and ties **MUST** then be broken using the canonical post-aggregation row order defined above for every post-aggregation output grain, entity-grain or group-grain, not only entity-grain outputs.
 - **DLS-AGG-009:** A field definition with `aggregate` other than `none` **MAY** include `as`; if omitted, the validator **MUST** derive a canonical output identifier as `<aggregate>-<field>`. A field definition with `aggregate: none` **MUST NOT** include `as`.
 - **DLS-AGG-010:** A view **MUST** reject duplicate aggregate-output identifiers within the same view and **MUST** reject ambiguous or invalid `data.order-by.field` references that do not resolve to exactly one source field at the output grain or one aggregate-output identifier; such failures **MUST** use `DLS-E010`.
+- **DLS-AGG-011:** If, after applying steps 1 and 2 of the canonical post-aggregation row order, one or more output rows remains tied and no canonical entity ID is available at the output grain to complete step 3, or if any remaining unaggregated output dimension used in step 2 has no canonical comparison defined by this specification for its declared or intrinsic type, a validator **MUST** reject the view with `DLS-E010` rather than leaving the presenter to invent an ordering.
 
 ---
 
@@ -455,14 +466,14 @@ View `data` contains `source` and may also contain:
 - `limit`, a positive integer; and
 - `order-by`, a non-empty sequence of mappings containing `field` and `direction`, where direction is `asc` or `desc`.
 
-An omitted `data` inherits dashboard defaults. Omitted `limit` means no language-level limit. Omitted `order-by` orders entity-grain rows by canonical entity ID ascending and leaves aggregate groups ordered by their encoded dimensions ascending.
+An omitted `data` inherits dashboard defaults. Omitted `limit` means no language-level limit. Omitted `order-by` uses the canonical post-aggregation row order defined in Section 7.4 starting directly from its tie-break steps: entity-grain rows order by canonical entity ID ascending, and group-grain rows order by their remaining unaggregated output dimensions, in encoding declaration order, ascending by canonical field value after time bucketing.
 
 `data.order-by.field` resolves against the post-aggregation output grain. It **MUST** reference either:
 
 1. a source field still valid at the output grain without aggregation; or
 2. an aggregate-output identifier produced by an encoding field definition, using the explicit `as` value or the canonical `<aggregate>-<field>` output name when `as` is omitted.
 
-If `order-by.field` matches more than one possible output, or matches a source field that is not present at the post-aggregation output grain, the validator **MUST** reject the document with `DLS-E010`. A presenter **MUST** apply the ranking using the resolved output identifier before `limit`, then apply the tie rule in **DLS-AGG-008**.
+If `order-by.field` matches more than one possible output, or matches a source field that is not present at the post-aggregation output grain, the validator **MUST** reject the document with `DLS-E010`. A presenter **MUST** apply the ranking using the resolved output identifier before `limit`, then apply the canonical post-aggregation row order defined in Section 7.4 (**DLS-AGG-008**, **DLS-AGG-011**) to break remaining ties, for both explicit and omitted `order-by`.
 
 ### 11.3 Normative Custom-View Requirements
 
@@ -475,9 +486,9 @@ If `order-by.field` matches more than one possible output, or matches a source f
 - **DLS-VIEW-007:** An encoding field **MUST** exist in the selected source and its declared type **MUST** be compatible with its intrinsic type or aggregate output type; when the field is aggregated, the effective output identifier **MUST** be the explicit `as` value or the canonical `<aggregate>-<field>` name, and duplicate identifiers within a view **MUST** be rejected. An `href` field **MUST** have intrinsic type link.
 - **DLS-VIEW-008:** A field definition **MUST** contain `field` and **MAY** contain only `type`, `aggregate`, `time-unit`, `title`, and `as` in addition; `as` is valid only when `aggregate` is not `none`.
 - **DLS-VIEW-009:** `time-unit` **MUST** be used only with a temporal field and **MUST** use an allowed value from Section 7.3.
-- **DLS-VIEW-010:** `data.limit` **MUST** be a positive integer, and `data.order-by.field` **MUST** reference either a source field valid at the post-aggregation output grain or one unique aggregate-output identifier. Ambiguous or invalid order references **MUST** be rejected with `DLS-E010`.
+- **DLS-VIEW-010:** `data.limit` **MUST** be a positive integer, and `data.order-by.field` **MUST** reference either a source field valid at the post-aggregation output grain or one unique aggregate-output identifier. Ambiguous or invalid order references **MUST** be rejected with `DLS-E010`, and a group-grain output whose canonical post-aggregation row order cannot be totally resolved **MUST** be rejected with `DLS-E010` under **DLS-AGG-011**.
 - **DLS-VIEW-011:** A custom view **MUST NOT** contain scripts, joins, formulas, expressions, templates, plugins, or undeclared transforms.
-- **DLS-VIEW-012:** A custom view **MUST** apply defaults, filtering, aggregation, ordering, and limiting in the order defined by Sections 6, 7, and 11.2, and ordering **MUST** use the resolved output identifier before applying `limit` and then the canonical entity ID ascending tie-break from **DLS-AGG-008**.
+- **DLS-VIEW-012:** A custom view **MUST** apply defaults, filtering, aggregation, ordering, and limiting in the order defined by Sections 6, 7, and 11.2, and ordering **MUST** use the resolved output identifier before applying `limit` and then the canonical post-aggregation row order from **DLS-AGG-008**, using the same algorithm whether `order-by` is explicit or omitted. A `chart`'s series and a `table`'s rows **MUST** inherit this canonical post-aggregation row order without constraining visual styling beyond the mark defaults in **DLS-VIEW-006**.
 - **DLS-VIEW-013:** Before mark-specific rendering, a custom view **MUST** determine and expose exactly one view-level availability state of `available`, `empty`, or `unavailable`, together with its source provenance, freshness, completeness, effective scope, effective time range, and effective filters. An `empty` or `unavailable` state **MUST NOT** make the view invalid or cause the presenter to omit it; its textual state output **MUST** identify the affected source, effective scope, time range, and filters.
 - **DLS-VIEW-014:** Under `empty`, a `metric` **MUST** render an absent aggregate value, except that `count` and `distinct-count` **MUST** render zero; a `table` **MUST** render zero rows; and a `chart` **MUST** render zero points. Under `unavailable`, a `metric` **MUST** render no numeric value and a `table` or `chart` **MUST** render no rows or points. A presenter **MUST NOT** synthesize placeholder observations, zero-valued non-count aggregates, or links for either state.
 - **DLS-VIEW-015:** A presenter rendering `href` **MUST** use the referenced link object's `href` as the navigation target and **MUST** expose the link object's `label` as the accessible link label. If the referenced link field is absent for a datum, including every resulting datum, the datum and view **MUST** remain valid and **MUST** render without links.
@@ -548,7 +559,7 @@ In the table, “accept” means validation succeeds; “reject” means validat
 | DLS-SEM-008–016 | T-SEM-002 | 2 | Distinguish grader, eval, tokens, AIC, run conclusions, outcomes, engine/models, and value; reject causal labeling. |
 | DLS-SEM-017–021 | T-SEM-003 | 2 | Validate source vocabulary, grain, token classes, rollout modes, and distinct measure names. |
 | DLS-CTX-001–008 | T-CTX-001 | 2 | Exercise ancestry, boundary times, Boolean filter rules, inheritance, rollout mode, unknown, and operation order. |
-| DLS-AGG-001–008 | T-AGG-001 | 2 | Exercise allowed aggregates, compatibility, nulls, UTC buckets, ranking disclosure, and deterministic ties. |
+| DLS-AGG-001–011 | T-AGG-001 | 2 | Exercise allowed aggregates, compatibility, nulls, UTC buckets, ranking disclosure, and deterministic ties for entity-grain and group-grain outputs, including total-order rejection. |
 | DLS-DATA-001–008 | T-DATA-001 | 2 | Exercise required metadata, derivation traceability, and each distinct data state. |
 | DLS-LINK-001–005 | T-LINK-001 | 2 | Validate link shape, safety, provenance, available associations, absent associations, and one-link-per-field cardinality. |
 | DLS-PAGE-001–014 | T-PAGE-001 | 3 | Evaluate each built-in fixture for required content, defaults, context, and data states. |
@@ -610,7 +621,69 @@ dashboard:
               field: finding-summary
 ```
 
-### 14.4 Recommended Execution Procedure
+### 14.4 Grouped Ordering Fixture Requirements
+
+A Level 2 or Level 3 compliance suite MUST include at least one time-bucketed grouped chart fixture and one grouped table fixture that demonstrate the canonical post-aggregation row order from Section 7.4.
+
+The grouped chart fixture MUST group `runs` by day and `run-conclusion`, order explicitly by the temporal dimension ascending, and use logical data containing more than one `run-conclusion` value on at least one shared day. The expected semantic output MUST break the same-day tie using the remaining unaggregated output dimension `run-conclusion`, taken from the `color` encoding, ordered ascending by canonical field value, independent of source row iteration order.
+
+```yaml
+language-version: "0.1.0"
+dashboard:
+  id: run-conclusions
+  title: Run Conclusions
+  pages:
+    - id: run-health
+      kind: custom
+      views:
+        - id: run-conclusions-by-day
+          data:
+            source: runs
+            order-by:
+              - field: started-at
+                direction: asc
+          mark: chart
+          encoding:
+            x:
+              field: started-at
+              type: temporal
+              time-unit: day
+            y:
+              field: run
+              type: quantitative
+              aggregate: count
+            color:
+              field: run-conclusion
+```
+
+The grouped table fixture MUST group `usage` by `resolved-model`, order by summed `aic` descending with `limit` applied, and use logical data containing rows whose summed `aic` ties across more than one `resolved-model`. The expected semantic output MUST apply `limit` only after resolving ties among equally ranked models by `resolved-model` ascending, so the retained rows are reproducible independent of renderer iteration order.
+
+```yaml
+language-version: "0.1.0"
+dashboard:
+  id: model-usage
+  title: Model Usage
+  pages:
+    - id: usage-ranking
+      kind: custom
+      views:
+        - id: top-models-by-aic
+          data:
+            source: usage
+            order-by:
+              - field: sum-aic
+                direction: desc
+            limit: 10
+          mark: table
+          encoding:
+            columns:
+              - field: resolved-model
+              - field: aic
+                aggregate: sum
+                as: sum-aic
+```
+
+### 14.5 Recommended Execution Procedure
 
 1. Validate positive and negative YAML fixtures.
 2. Validate semantic fixtures and relationships.
@@ -651,6 +724,7 @@ dashboard:
 - Defined intrinsic entities, observations, dimensions, measures, and relationships.
 - Defined built-in pages and constrained custom views.
 - Added provenance, freshness, data states, links, safety requirements, and compliance tests.
+- Defined the canonical post-aggregation row order for entity-grain and group-grain output rows, revised **DLS-AGG-008** and added **DLS-AGG-011**, aligned omitted and explicit `order-by` semantics in Section 11.2, updated **DLS-VIEW-010** and **DLS-VIEW-012**, and added grouped chart and grouped table compliance fixtures in Section 14.4.
 
 ---
 
