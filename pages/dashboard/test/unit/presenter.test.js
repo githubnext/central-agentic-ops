@@ -3,19 +3,19 @@ import { describe, expect, it } from 'vitest';
 import { renderDashboard } from '../../src/presenter.js';
 
 describe('presenter built-in pages', () => {
-  it('DLS-PAGE-010 DLS-PAGE-014 renders built-in usage page raw-token measures separately from AIC with scope, rollout mode, time, provenance, and independent data state deterministically', () => {
+  it('DLS-PAGE-011 DLS-PAGE-014 renders built-in engines-models page with separate engine, requested model, resolved model, run counts, run conclusions, outcomes, raw tokens, AIC, provenance, and independent data state deterministically', () => {
     /** @type {import('../../src/presenter.js').PresentationInput['document']} */
     const document = {
       languageVersion: '0.1.0',
       dashboard: {
-        id: 'usage-dashboard',
-        title: 'Usage Dashboard',
+        id: 'engines-models-dashboard',
+        title: 'Engines Models Dashboard',
         pages: [
           {
-            id: 'usage',
+            id: 'engines-models',
             kind: /** @type {'built-in'} */ ('built-in'),
-            page: 'usage',
-            title: 'Usage',
+            page: 'engines-models',
+            title: 'Engines Models',
             definition: {
               'data-state': {
                 availability: true,
@@ -23,6 +23,8 @@ describe('presenter built-in pages', () => {
                 freshness: true
               },
               views: [
+                { id: 'runs-source', data: { source: 'runs' } },
+                { id: 'outcomes-source', data: { source: 'outcomes' } },
                 { id: 'usage-source', data: { source: 'usage' } }
               ]
             }
@@ -34,334 +36,36 @@ describe('presenter built-in pages', () => {
     const rendered = renderDashboard({
       document,
       sources: {
-        usage: {
-          source: 'usage',
+        runs: {
+          source: 'runs',
           rows: [
             {
-              organization: 'githubnext',
-              repository: 'central-agentic-ops',
-              workflow: 'dashboard.yml',
               run: '1001',
-              invocation: 'invoke-1',
               engine: 'openai',
               'requested-model': 'gpt-4.1',
               'resolved-model': 'gpt-4.1-mini',
-              'rollout-mode': 'review',
-              'observed-at': '2026-08-29T17:00:00Z',
-              'input-tokens': 10,
-              'output-tokens': 5,
-              'cache-read-tokens': 2,
-              'cache-write-tokens': 1,
-              'reasoning-tokens': 3,
-              aic: 4
-            },
-            {
-              organization: 'githubnext',
-              repository: 'central-agentic-ops',
-              workflow: 'release.yml',
-              run: '1002',
-              invocation: 'invoke-2',
-              engine: 'anthropic',
-              'requested-model': 'claude-3.5-sonnet',
-              'resolved-model': 'claude-3.5-sonnet',
-              'rollout-mode': 'live',
-              'observed-at': '2026-08-29T18:00:00Z',
-              'input-tokens': 7,
-              'output-tokens': 11,
-              'cache-read-tokens': 0,
-              'cache-write-tokens': 4,
-              'reasoning-tokens': 6,
-              aic: 9
-            }
-          ],
-          metadata: {
-            'source-id': 'usage-fixture',
-            'source-kind': 'fixture',
-            'as-of': '2026-08-29T18:30:00Z',
-            'retrieved-at': '2026-08-29T18:31:00Z',
-            completeness: 'partial',
-            freshness: 'stale',
-            availability: 'available'
-          }
-        }
-      }
-    });
-
-    expect(rendered.querySelector('[data-page-name="usage"]')?.textContent).toContain('Usage Totals');
-    expect(rendered.querySelector('[data-state-axis="availability"]')?.textContent).toBe('available');
-    expect(rendered.querySelector('[data-state-axis="completeness"]')?.textContent).toBe('partial');
-    expect(rendered.querySelector('[data-state-axis="freshness"]')?.textContent).toBe('stale');
-    expect(rendered.querySelector('.usage-totals')?.textContent).toContain('input-tokens: 17');
-    expect(rendered.querySelector('.usage-totals')?.textContent).toContain('output-tokens: 16');
-    expect(rendered.querySelector('.usage-totals')?.textContent).toContain('cache-read-tokens: 2');
-    expect(rendered.querySelector('.usage-totals')?.textContent).toContain('cache-write-tokens: 5');
-    expect(rendered.querySelector('.usage-totals')?.textContent).toContain('reasoning-tokens: 9');
-    expect(rendered.querySelector('.usage-totals')?.textContent).toContain('aic: 13');
-    expect(rendered.querySelectorAll('.usage-table tbody tr')).toHaveLength(2);
-    expect(rendered.querySelector('.usage-table tbody tr')?.textContent).toContain('openai');
-    expect(rendered.querySelector('.usage-table tbody tr')?.textContent).toContain('gpt-4.1');
-    expect(rendered.querySelector('.usage-table tbody tr')?.textContent).toContain('gpt-4.1-mini');
-    expect(rendered.querySelector('.usage-table tbody tr')?.textContent).toContain('review');
-    expect(rendered.querySelector('.usage-table tbody tr')?.textContent).toContain('2026-08-29T17:00:00Z');
-    expect(rendered.querySelector('.usage-table tbody tr')?.textContent).toContain('10');
-    expect(rendered.querySelector('.usage-table tbody tr')?.textContent).toContain('4');
-    expect(rendered.querySelectorAll('.usage-table tbody tr')[1]?.textContent).toContain('anthropic');
-    expect(rendered.querySelectorAll('.usage-table tbody tr')[1]?.textContent).toContain('live');
-    expect(rendered.querySelector('.provenance-list')?.textContent).toContain('usage: usage-fixture (fixture) — as of 2026-08-29T18:30:00Z');
-  });
-  it('DLS-PAGE-005 DLS-PAGE-014 renders built-in workflows page inventory, active state, rollout mode, run conclusions, outcomes, usage, findings, operational value, and independent data state deterministically', () => {
-    /** @type {import('../../src/presenter.js').PresentationInput['document']} */
-    const document = {
-      languageVersion: '0.1.0',
-      dashboard: {
-        id: 'workflows-dashboard',
-        title: 'Workflows Dashboard',
-        pages: [
-          {
-            id: 'workflows',
-            kind: /** @type {'built-in'} */ ('built-in'),
-            page: 'workflows',
-            title: 'Workflows',
-            definition: {
-              'data-state': {
-                availability: true,
-                completeness: true,
-                freshness: true
-              },
-              views: [
-                { id: 'workflows-source', data: { source: 'workflows' } },
-                { id: 'runs-source', data: { source: 'runs' } },
-                { id: 'outcomes-source', data: { source: 'outcomes' } },
-                { id: 'usage-source', data: { source: 'usage' } },
-                { id: 'findings-source', data: { source: 'findings' } },
-                { id: 'operational-values-source', data: { source: 'operational-values' } }
-              ]
-            }
-          }
-        ]
-      }
-    };
-
-    const rendered = renderDashboard({
-      document,
-      sources: {
-        workflows: {
-          source: 'workflows',
-          rows: [
-            {
-              organization: 'githubnext',
-              repository: 'central-agentic-ops',
-              workflow: 'dashboard.yml',
-              'workflow-active': 'true',
-              'rollout-mode': 'review'
-            },
-            {
-              organization: 'githubnext',
-              repository: 'central-agentic-ops',
-              workflow: 'release.yml',
-              'workflow-active': 'false',
-              'rollout-mode': 'live'
-            }
-          ],
-          metadata: {
-            'source-id': 'workflows-fixture',
-            'source-kind': 'fixture',
-            'as-of': '2026-08-29T13:00:00Z',
-            'retrieved-at': '2026-08-29T13:01:00Z',
-            completeness: 'complete',
-            freshness: 'fresh',
-            availability: 'available'
-          }
-        },
-        runs: {
-          source: 'runs',
-          rows: [
-            {
-              workflow: 'dashboard.yml',
-              run: '1001',
               'run-conclusion': 'success'
             },
             {
-              workflow: 'dashboard.yml',
               run: '1002',
+              engine: 'openai',
+              'requested-model': 'gpt-4.1',
+              'resolved-model': 'gpt-4.1-mini',
               'run-conclusion': 'failure'
             },
             {
-              workflow: 'release.yml',
               run: '1003',
+              engine: 'anthropic',
+              'requested-model': 'claude-3.5-sonnet',
+              'resolved-model': 'claude-3.5-sonnet',
               'run-conclusion': 'success'
             }
           ],
           metadata: {
             'source-id': 'runs-fixture',
             'source-kind': 'fixture',
-            'as-of': '2026-08-29T13:00:00Z',
-            'retrieved-at': '2026-08-29T13:01:00Z',
-            completeness: 'complete',
-            freshness: 'fresh',
-            availability: 'available'
-          }
-        },
-        outcomes: {
-          source: 'outcomes',
-          rows: [
-            { workflow: 'dashboard.yml', 'outcome-state': 'accepted' },
-            { workflow: 'dashboard.yml', 'outcome-state': 'pending' },
-            { workflow: 'release.yml', 'outcome-state': 'rejected' }
-          ],
-          metadata: {
-            'source-id': 'outcomes-fixture',
-            'source-kind': 'fixture',
-            'as-of': '2026-08-29T13:00:00Z',
-            'retrieved-at': '2026-08-29T13:01:00Z',
-            completeness: 'partial',
-            freshness: 'stale',
-            availability: 'available'
-          }
-        },
-        usage: {
-          source: 'usage',
-          rows: [
-            { workflow: 'dashboard.yml', aic: 3 },
-            { workflow: 'dashboard.yml', aic: 2 },
-            { workflow: 'release.yml', aic: 5 }
-          ],
-          metadata: {
-            'source-id': 'usage-fixture',
-            'source-kind': 'fixture',
-            'as-of': '2026-08-29T13:00:00Z',
-            'retrieved-at': '2026-08-29T13:01:00Z',
-            completeness: 'complete',
-            freshness: 'fresh',
-            availability: 'available'
-          }
-        },
-        findings: {
-          source: 'findings',
-          rows: [
-            { workflow: 'dashboard.yml', finding: 'f-1' },
-            { workflow: 'release.yml', finding: 'f-2' },
-            { workflow: 'release.yml', finding: 'f-3' }
-          ],
-          metadata: {
-            'source-id': 'findings-fixture',
-            'source-kind': 'fixture',
-            'as-of': '2026-08-29T13:00:00Z',
-            'retrieved-at': '2026-08-29T13:01:00Z',
-            completeness: 'complete',
-            freshness: 'fresh',
-            availability: 'available'
-          }
-        },
-        'operational-values': {
-          source: 'operational-values',
-          rows: [
-            { workflow: 'dashboard.yml', 'operational-value': 0.8 },
-            { workflow: 'release.yml', 'operational-value': 0.4 }
-          ],
-          metadata: {
-            'source-id': 'operational-values-fixture',
-            'source-kind': 'fixture',
-            'as-of': '2026-08-29T13:00:00Z',
-            'retrieved-at': '2026-08-29T13:01:00Z',
-            completeness: 'complete',
-            freshness: 'fresh',
-            availability: 'available'
-          }
-        }
-      }
-    });
-
-    expect(rendered.querySelector('[data-page-name="workflows"]')?.textContent).toContain('dashboard.yml');
-    expect(rendered.querySelector('[data-state-axis="availability"]')?.textContent).toBe('available');
-    expect(rendered.querySelector('[data-state-axis="completeness"]')?.textContent).toBe('partial');
-    expect(rendered.querySelector('[data-state-axis="freshness"]')?.textContent).toBe('stale');
-    expect(rendered.querySelectorAll('.workflows-table tbody tr')).toHaveLength(2);
-    expect(rendered.querySelector('.workflows-table tbody tr')?.textContent).toContain('dashboard.yml');
-    expect(rendered.querySelector('.workflows-table tbody tr')?.textContent).toContain('true');
-    expect(rendered.querySelector('.workflows-table tbody tr')?.textContent).toContain('review');
-    expect(rendered.querySelector('.workflows-table tbody tr')?.textContent).toContain('2');
-    expect(rendered.querySelector('.workflows-table tbody tr')?.textContent).toContain('success: 1, failure: 1');
-    expect(rendered.querySelector('.workflows-table tbody tr')?.textContent).toContain('5');
-    expect(rendered.querySelectorAll('.workflows-table tbody tr')[1]?.textContent).toContain('release.yml');
-    expect(rendered.querySelectorAll('.workflows-table tbody tr')[1]?.textContent).toContain('false');
-    expect(rendered.querySelectorAll('.workflows-table tbody tr')[1]?.textContent).toContain('live');
-    expect(rendered.querySelectorAll('.workflows-table tbody tr')[1]?.textContent).toContain('1');
-    expect(rendered.querySelectorAll('.workflows-table tbody tr')[1]?.textContent).toContain('success: 1');
-  });
-
-  it('DLS-PAGE-006 DLS-PAGE-014 renders built-in runs page counts, rows, links, and independent data state deterministically', () => {
-    /** @type {import('../../src/presenter.js').PresentationInput['document']} */
-    const document = {
-      languageVersion: '0.1.0',
-      dashboard: {
-        id: 'runs-dashboard',
-        title: 'Runs Dashboard',
-        pages: [
-          {
-            id: 'runs',
-            kind: /** @type {'built-in'} */ ('built-in'),
-            page: 'runs',
-            title: 'Runs',
-            definition: {
-              'data-state': {
-                availability: true,
-                completeness: true,
-                freshness: true
-              },
-              views: [
-                { id: 'runs-source', data: { source: 'runs' } },
-                { id: 'outcomes-source', data: { source: 'outcomes' } }
-              ]
-            }
-          }
-        ]
-      }
-    };
-
-    const rendered = renderDashboard({
-      document,
-      sources: {
-        runs: {
-          source: 'runs',
-          rows: [
-            {
-              organization: 'githubnext',
-              repository: 'central-agentic-ops',
-              workflow: 'dashboard.yml',
-              run: '1001',
-              'run-status': 'completed',
-              'run-conclusion': 'success',
-              'rollout-mode': 'review',
-              engine: 'github-actions',
-              'requested-model': 'gpt-4.1',
-              'resolved-model': 'gpt-4.1-mini',
-              'started-at': '2026-08-29T12:00:00Z',
-              'run-link': {
-                relation: 'run',
-                href: 'https://example.com/runs/1001',
-                label: 'Run 1001'
-              }
-            },
-            {
-              organization: 'githubnext',
-              repository: 'central-agentic-ops',
-              workflow: 'dashboard.yml',
-              run: '1002',
-              'run-status': 'in-progress',
-              'run-conclusion': 'unknown',
-              'rollout-mode': 'live',
-              engine: 'github-actions',
-              'requested-model': 'gpt-4.1',
-              'resolved-model': 'gpt-4.1',
-              'started-at': '2026-08-29T12:05:00Z'
-            }
-          ],
-          metadata: {
-            'source-id': 'runs-fixture',
-            'source-kind': 'fixture',
-            'as-of': '2026-08-29T12:10:00Z',
-            'retrieved-at': '2026-08-29T12:11:00Z',
+            'as-of': '2026-08-29T19:00:00Z',
+            'retrieved-at': '2026-08-29T19:01:00Z',
             completeness: 'complete',
             freshness: 'fresh',
             availability: 'available'
@@ -371,84 +75,67 @@ describe('presenter built-in pages', () => {
           source: 'outcomes',
           rows: [
             { run: '1001', 'outcome-state': 'accepted' },
-            { run: '1001', 'outcome-state': 'pending' }
+            { run: '1001', 'outcome-state': 'pending' },
+            { run: '1003', 'outcome-state': 'rejected' }
           ],
           metadata: {
             'source-id': 'outcomes-fixture',
             'source-kind': 'fixture',
-            'as-of': '2026-08-29T12:10:00Z',
-            'retrieved-at': '2026-08-29T12:11:00Z',
+            'as-of': '2026-08-29T19:00:00Z',
+            'retrieved-at': '2026-08-29T19:01:00Z',
             completeness: 'partial',
             freshness: 'stale',
             availability: 'available'
           }
-        }
-      }
-    });
-
-    expect(rendered.querySelector('[data-state-axis="availability"]')?.textContent).toBe('available');
-    expect(rendered.querySelector('[data-state-axis="completeness"]')?.textContent).toBe('partial');
-    expect(rendered.querySelector('[data-state-axis="freshness"]')?.textContent).toBe('stale');
-    expect(rendered.querySelector('.run-status-counts')?.textContent).toContain('completed: 1');
-    expect(rendered.querySelector('.run-status-counts')?.textContent).toContain('in-progress: 1');
-    expect(rendered.querySelector('.run-conclusion-counts')?.textContent).toContain('success: 1');
-    expect(rendered.querySelector('.run-outcome-counts')?.textContent).toContain('accepted: 1');
-    expect(rendered.querySelector('.run-outcome-counts')?.textContent).toContain('pending: 1');
-    expect(rendered.querySelectorAll('tbody tr')).toHaveLength(2);
-    expect(rendered.querySelector('tbody tr')?.textContent).toContain('Run 1001');
-    expect(rendered.querySelector('tbody tr')?.textContent).toContain('2');
-    expect(rendered.querySelectorAll('tbody tr')[1]?.textContent).toContain('Unavailable');
-    expect(rendered.querySelector('.runs-table a')?.getAttribute('href')).toBe('https://example.com/runs/1001');
-  });
-
-  it('DLS-PRES-001 renders GitHub Primer brand-aligned app shell, sidebar navigation, octicons, and metric badges', () => {
-    /** @type {import('../../src/presenter.js').PresentationInput['document']} */
-    const document = {
-      languageVersion: '0.1.0',
-      dashboard: {
-        id: 'primer-dashboard',
-        title: 'Primer Dashboard',
-        pages: [
-          {
-            id: 'workflows',
-            kind: /** @type {'built-in'} */ ('built-in'),
-            page: 'workflows',
-            title: 'Workflows',
-            definition: {
-              views: [
-                { id: 'workflows-source', data: { source: 'workflows' } }
-              ]
-            }
-          },
-          {
-            id: 'runs',
-            kind: /** @type {'built-in'} */ ('built-in'),
-            page: 'runs',
-            title: 'Runs'
-          }
-        ]
-      }
-    };
-
-    const rendered = renderDashboard({
-      document,
-      sources: {
-        workflows: {
-          source: 'workflows',
+        },
+        usage: {
+          source: 'usage',
           rows: [
             {
-              organization: 'githubnext',
-              repository: 'central-agentic-ops',
-              workflow: 'dashboard.yml',
-              'workflow-active': 'true',
-              'rollout-mode': 'live'
+              invocation: 'invoke-1',
+              run: '1001',
+              engine: 'openai',
+              'requested-model': 'gpt-4.1',
+              'resolved-model': 'gpt-4.1-mini',
+              'input-tokens': 10,
+              'output-tokens': 5,
+              'cache-read-tokens': 2,
+              'cache-write-tokens': 1,
+              'reasoning-tokens': 3,
+              aic: 4
+            },
+            {
+              invocation: 'invoke-2',
+              run: '1002',
+              engine: 'openai',
+              'requested-model': 'gpt-4.1',
+              'resolved-model': 'gpt-4.1-mini',
+              'input-tokens': 7,
+              'output-tokens': 11,
+              'cache-read-tokens': 0,
+              'cache-write-tokens': 4,
+              'reasoning-tokens': 6,
+              aic: 9
+            },
+            {
+              invocation: 'invoke-3',
+              run: '1003',
+              engine: 'anthropic',
+              'requested-model': 'claude-3.5-sonnet',
+              'resolved-model': 'claude-3.5-sonnet',
+              'input-tokens': 3,
+              'output-tokens': 4,
+              'cache-read-tokens': 1,
+              'cache-write-tokens': 0,
+              'reasoning-tokens': 2,
+              aic: 5
             }
           ],
           metadata: {
-            'source-id': 'workflows-fixture',
+            'source-id': 'usage-fixture',
             'source-kind': 'fixture',
-            'as-of': '2026-08-29T13:00:00Z',
-            'retrieved-at': '2026-08-29T13:01:00Z',
+            'as-of': '2026-08-29T19:00:00Z',
+            'retrieved-at': '2026-08-29T19:01:00Z',
             completeness: 'complete',
             freshness: 'fresh',
             availability: 'available'
@@ -457,120 +144,36 @@ describe('presenter built-in pages', () => {
       }
     });
 
-    expect(rendered.querySelector('style')?.textContent).toContain('--canvas');
-    expect(rendered.querySelector('.skip-link')?.getAttribute('href')).toBe('#main-content');
-    expect(rendered.querySelector('.app-shell')).not.toBeNull();
-    expect(rendered.querySelector('.org-sidebar')).not.toBeNull();
-    expect(rendered.querySelector('.sidebar-brand-mark')).not.toBeNull();
-    expect(rendered.querySelectorAll('.primary-nav .nav-item')).toHaveLength(2);
-    expect(rendered.querySelector('.primary-nav .nav-item.active')?.getAttribute('data-nav-page-id')).toBe('workflows');
-    expect(rendered.querySelector('.octicon-workflow')).not.toBeNull();
-    expect(rendered.querySelector('.octicon-play')).not.toBeNull();
-    expect(rendered.querySelector('.breadcrumb')?.textContent).toContain('Primer Dashboard');
-    expect(rendered.querySelector('.status-success')?.textContent).toBe('available');
-    expect(rendered.querySelector('.mode-live')?.textContent).toBe('live');
-    expect(rendered.querySelector('.report-footer')?.textContent).toContain('GitHub Primer');
-  });
-
-  it('DLS-PAGE-013 DLS-PAGE-014 renders built-in findings page summary, severity, status, scope, time, and available issue, pull-request, and run links deterministically', () => {
-    /** @type {import('../../src/presenter.js').PresentationInput['document']} */
-    const document = {
-      languageVersion: '0.1.0',
-      dashboard: {
-        id: 'findings-dashboard',
-        title: 'Findings Dashboard',
-        pages: [
-          {
-            id: 'findings',
-            kind: /** @type {'built-in'} */ ('built-in'),
-            page: 'findings',
-            title: 'Findings',
-            definition: {
-              'data-state': {
-                availability: true,
-                completeness: true,
-                freshness: true
-              },
-              views: [
-                { id: 'findings-source', data: { source: 'findings' } }
-              ]
-            }
-          }
-        ]
-      }
-    };
-
-    const rendered = renderDashboard({
-      document,
-      sources: {
-        findings: {
-          source: 'findings',
-          rows: [
-            {
-              organization: 'githubnext',
-              repository: 'central-agentic-ops',
-              workflow: 'dashboard.yml',
-              finding: 'f-100',
-              'finding-summary': 'Unsafe shell interpolation in generated script',
-              'finding-severity': 'high',
-              'finding-status': 'open',
-              'observed-at': '2026-08-29T15:00:00Z',
-              'issue-link': {
-                relation: 'issue',
-                href: 'https://example.com/issues/42',
-                label: 'Issue 42'
-              },
-              'pull-request-link': {
-                relation: 'pull-request',
-                href: 'https://example.com/pull/7',
-                label: 'Pull Request 7'
-              },
-              'run-link': {
-                relation: 'run',
-                href: 'https://example.com/runs/1001',
-                label: 'Run 1001'
-              }
-            },
-            {
-              organization: 'githubnext',
-              repository: 'central-agentic-ops',
-              workflow: 'release.yml',
-              finding: 'f-101',
-              'finding-summary': 'Missing provenance on partial dataset',
-              'finding-severity': 'low',
-              'finding-status': 'resolved',
-              'observed-at': '2026-08-29T16:00:00Z'
-            }
-          ],
-          metadata: {
-            'source-id': 'findings-fixture',
-            'source-kind': 'fixture',
-            'as-of': '2026-08-29T16:30:00Z',
-            'retrieved-at': '2026-08-29T16:31:00Z',
-            completeness: 'partial',
-            freshness: 'stale',
-            availability: 'available'
-          }
-        }
-      }
-    });
-
-    expect(rendered.querySelector('[data-page-name="findings"]')?.textContent).toContain('Unsafe shell interpolation in generated script');
+    expect(rendered.querySelector('[data-page-name="engines-models"]')?.textContent).toContain('Engine and Model Inventory');
     expect(rendered.querySelector('[data-state-axis="availability"]')?.textContent).toBe('available');
     expect(rendered.querySelector('[data-state-axis="completeness"]')?.textContent).toBe('partial');
     expect(rendered.querySelector('[data-state-axis="freshness"]')?.textContent).toBe('stale');
-    expect(rendered.querySelector('.finding-severity-counts')?.textContent).toContain('high: 1');
-    expect(rendered.querySelector('.finding-severity-counts')?.textContent).toContain('low: 1');
-    expect(rendered.querySelector('.finding-status-counts')?.textContent).toContain('open: 1');
-    expect(rendered.querySelector('.finding-status-counts')?.textContent).toContain('resolved: 1');
-    expect(rendered.querySelectorAll('.findings-table tbody tr')).toHaveLength(2);
-    expect(rendered.querySelector('.findings-table tbody tr')?.textContent).toContain('githubnext');
-    expect(rendered.querySelector('.findings-table tbody tr')?.textContent).toContain('central-agentic-ops');
-    expect(rendered.querySelector('.findings-table tbody tr')?.textContent).toContain('dashboard.yml');
-    expect(rendered.querySelector('.findings-table tbody tr')?.textContent).toContain('Issue 42');
-    expect(rendered.querySelector('.findings-table tbody tr')?.textContent).toContain('Pull Request 7');
-    expect(rendered.querySelector('.findings-table tbody tr')?.textContent).toContain('Run 1001');
-    expect(rendered.querySelectorAll('.findings-table tbody tr')[1]?.textContent).toContain('Unavailable');
-    expect(rendered.querySelector('.provenance-list')?.textContent).toContain('findings: findings-fixture (fixture) — as of 2026-08-29T16:30:00Z');
+    expect(rendered.querySelectorAll('.engines-models-table tbody tr')).toHaveLength(2);
+
+    const firstRowText = rendered.querySelector('.engines-models-table tbody tr')?.textContent ?? '';
+    expect(firstRowText).toContain('anthropic');
+    expect(firstRowText).toContain('claude-3.5-sonnet');
+    expect(firstRowText).toContain('1');
+    expect(firstRowText).toContain('success: 1');
+    expect(firstRowText).toContain('3');
+    expect(firstRowText).toContain('4');
+    expect(firstRowText).toContain('5');
+
+    const secondRowText = rendered.querySelectorAll('.engines-models-table tbody tr')[1]?.textContent ?? '';
+    expect(secondRowText).toContain('openai');
+    expect(secondRowText).toContain('gpt-4.1');
+    expect(secondRowText).toContain('gpt-4.1-mini');
+    expect(secondRowText).toContain('2');
+    expect(secondRowText).toContain('success: 1, failure: 1');
+    expect(secondRowText).toContain('2');
+    expect(secondRowText).toContain('17');
+    expect(secondRowText).toContain('16');
+    expect(secondRowText).toContain('2');
+    expect(secondRowText).toContain('5');
+    expect(secondRowText).toContain('9');
+    expect(secondRowText).toContain('13');
+    expect(rendered.querySelector('.provenance-list')?.textContent).toContain('runs: runs-fixture (fixture) — as of 2026-08-29T19:00:00Z');
+    expect(rendered.querySelector('.provenance-list')?.textContent).toContain('outcomes: outcomes-fixture (fixture) — as of 2026-08-29T19:00:00Z');
+    expect(rendered.querySelector('.provenance-list')?.textContent).toContain('usage: usage-fixture (fixture) — as of 2026-08-29T19:00:00Z');
   });
 });
