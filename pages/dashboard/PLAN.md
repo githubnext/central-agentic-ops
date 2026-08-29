@@ -34,7 +34,7 @@
   - [x] Define `dashboard.json` as the single authoritative data-driven document containing all 12 built-in pages and every view and build/composition definition they require.
   - [x] Refactor the built-in page dispatcher in `src/presenter.js` from a page-name `if` chain to a declarative renderer registry keyed by `dashboard.json` page names, reducing page-name dispatch while retaining the existing generic runtime and reusable primitives.
   - [ ] Continue refactoring each built-in page body in `src/presenter.js` into its `.json` equivalent, removing the remaining page-specific rendering/build logic while retaining only the minimum generic JavaScript interpreter and reusable primitives.
-  - [ ] Add build, unit, and browser coverage proving `dashboard.json` renders every specification-defined built-in page and that no page depends on custom page-specific JavaScript.
+  - [x] Add build, unit, and browser coverage proving `dashboard.json` renders every specification-defined built-in page and that no page depends on custom page-specific JavaScript.
 - [ ] **Security, privacy, accessibility** — Section 13 including escaping, redaction, and keyboard and screen-reader behavior verified with Playwright.
   - [x] Slice: `DLS-SAFE-003`, `DLS-SAFE-007`, `DLS-SAFE-008`, and `DLS-SAFE-010` presenter render for inert text escaping, non-empty accessible names, labeled table columns, textual data-state labels, and labeled external links.
   - [x] Slice: `DLS-SAFE-007` and `DLS-SAFE-008` keyboard presenter behavior for focusable labeled sections with deterministic arrow-key traversal verified in unit and browser tests.
@@ -67,6 +67,14 @@
 - 2026-08-28: `npm run test:e2e` is currently blocked in this environment because the Playwright Chromium executable is not provisioned (`browserType.launch: Executable doesn't exist`). The workflow should prefer the built-in Playwright MCP browser tools until the package-level browser dependency is available.
 
 ## Run log
+
+### 2026-08-29 (built-in coverage gate rerun slice)
+
+- Re-ran the full `pages/dashboard/` quality gate stack after the authoritative `dashboard.json` milestone slice to verify the document-backed built-in page inventory remains green under strict `checkJs` typing.
+- Fixed strict type-check regressions by annotating the built-in renderer registry in `src/presenter.js` and the authoritative `dashboard.json` structure assertions in `test/unit/presenter.test.js`, without changing renderer behavior or expanding the implementation surface.
+- Verified quality gates from `pages/dashboard/`: `npm install`, `npm run typecheck`, `npm run lint`, `npm test`, and `npx playwright test --config=playwright.config.mjs` all pass.
+- Closed the Built-in pages subtask for build, unit, and browser coverage proving the authoritative `dashboard.json` contains and renders all 12 specification-defined built-in pages under the current renderer architecture.
+- Next milestone: Built-in pages, continuing the migration of remaining page-body composition out of `src/presenter.js` and into generic interpretation of declarative `dashboard.json` definitions.
 
 ### 2026-08-29 (authoritative dashboard document slice)
 
