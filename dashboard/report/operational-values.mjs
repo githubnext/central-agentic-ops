@@ -189,7 +189,19 @@ async function regradeRecord(record, evidenceAt, checkout) {
 
   const temporaryRoot = await mkdtemp(path.join(os.tmpdir(), "pages-operational-values-"));
   try {
-    const currentRecords = await mapWithConcurrency(selectedRuns, concurrency, async (selected) => {
+    let cachedRecords = [];
+    if (cachePath) {
+      try {
+        const cached = JSON.parse(await readFile(cachePath, "utf8"));
+        if (cached.schemaVersion === 1 && Array.isArray(cached.records)) cachedRecords = cached.records;
+      } catch (error) {
+        if (error.code !== "ENOENT") console.warn(`Ignoring operational-value cache: ${error.message}`);
+      }
+    }
+    const cachedRunKeys = new Set(cachedRecords
+      .filter((record) => record.observation)
+      .map(recordKey));
+    const currentRecords = await mapWithConcurrency(selectedRuns.filter((selected) => !cachedRunKeys.has(recordKey(selected))), concurrency, async (selected) => {
       const destination = path.join(temporaryRoot, `${selected.repository.replace("/", "-")}-${selected.runId}`);
       await mkdir(destination, { recursive: true });
       try {
@@ -209,15 +221,6 @@ async function regradeRecord(record, evidenceAt, checkout) {
       }
     });
 
-    let cachedRecords = [];
-    if (cachePath) {
-      try {
-        const cached = JSON.parse(await readFile(cachePath, "utf8"));
-        if (cached.schemaVersion === 1 && Array.isArray(cached.records)) cachedRecords = cached.records;
-      } catch (error) {
-        if (error.code !== "ENOENT") console.warn(`Ignoring operational-value cache: ${error.message}`);
-      }
-    }
     const retentionCutoff = Date.parse(generatedAt) - 90 * 24 * 60 * 60 * 1000;
     let records = mergeRecords(cachedRecords, currentRecords, retentionCutoff);
     const replayAvailable = await regradeSupported();

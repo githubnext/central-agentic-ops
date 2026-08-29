@@ -557,8 +557,9 @@ function layout({ title, description, content, nested = false, navigation = "", 
   const repositoriesCurrent = activeSection === "repositories" ? ' aria-current="page"' : "";
   const packagesCurrent = activeSection === "packages" || activeBundle ? ' aria-current="page"' : "";
   const freshness = `<time class="freshness" datetime="${escapeHtml(generatedAt)}">Last updated ${escapeHtml(formatDate(generatedAt))}</time>`;
+  const refreshLink = `<a class="refresh-control" href="https://github.com/${escapeHtml(repository)}/actions/workflows/dashboard.yml">Refresh</a>`;
   const repositoryLink = `<a class="repository-link" href="https://github.com/${escapeHtml(repository)}" aria-label="View ${escapeHtml(repository)} on GitHub" title="View ${escapeHtml(repository)} on GitHub">${octicon("mark-github")}</a>`;
-  const reportActions = `<div class="report-actions">${freshness}${repositoryLink}</div>`;
+  const reportActions = `<div class="report-actions">${freshness}${refreshLink}${repositoryLink}</div>`;
   const topNavigation = navigation
     ? navigation.replace("</div></nav>", `${reportActions}</div></nav>`)
     : `<nav aria-label="Report navigation"><div class="shell"><span aria-current="page">${escapeHtml(title)}</span>${reportActions}</div></nav>`;
@@ -2234,6 +2235,8 @@ footer a { min-height: 24px; display: inline-flex; align-items: center; }
 .app-main > nav .shell > * + *:not(.report-actions)::before { content: "/"; margin-right: 8px; color: var(--muted); }
 .report-actions { margin-left: auto; display: flex; align-items: center; gap: 10px; }
 .app-main > nav .freshness { max-width: none; flex: none; white-space: nowrap; }
+.refresh-control { min-height: 28px; display: inline-flex; align-items: center; padding: 4px 10px; border: 1px solid var(--border); border-radius: 6px; background: var(--canvas-subtle); color: var(--fg); font-size: .75rem; font-weight: 600; text-decoration: none; }
+.refresh-control:hover { background: var(--neutral-muted); }
 .repository-link { width: 28px; height: 28px; display: grid; flex: 0 0 28px; place-items: center; border-radius: 6px; color: var(--muted); text-decoration: none; transition: background-color 120ms ease, color 120ms ease; }
 .repository-link:hover { background: var(--neutral-muted); color: var(--fg); }
 .repository-link .octicon { width: 18px; height: 18px; }
