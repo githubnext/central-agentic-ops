@@ -1,0 +1,49 @@
+/**
+ * Reusable GitHub Primer status and mode badges.
+ */
+
+import { h } from '../dom.js';
+
+/**
+ * @param {unknown} status
+ * @returns {HTMLElement}
+ */
+export function renderStatusBadge(status) {
+  const text = status == null || status === '' ? 'unknown' : String(status);
+  const normalized = text.toLowerCase();
+  let statusClass = 'status-muted';
+
+  if (['success', 'completed', 'active', 'true', 'fresh', 'available', 'complete', 'accepted'].includes(normalized)) {
+    statusClass = 'status-success';
+  } else if (['in-progress', 'running', 'pending', 'review', 'partial', 'stale', 'attention', 'warning'].includes(normalized)) {
+    statusClass = 'status-attention';
+  } else if (['failure', 'failed', 'rejected', 'danger', 'unavailable', 'critical'].includes(normalized)) {
+    statusClass = 'status-danger';
+  }
+
+  return h('span', { className: `status ${statusClass}` }, text);
+}
+
+/**
+ * @param {unknown} mode
+ * @returns {HTMLElement}
+ */
+export function renderModeBadge(mode) {
+  const text = mode == null || mode === '' ? 'unknown' : String(mode);
+  const normalized = text.toLowerCase();
+  const modeClass = normalized === 'live' ? 'mode-live' : normalized === 'review' ? 'mode-review' : '';
+
+  return h('span', { className: `mode-badge ${modeClass}`.trim() }, text);
+}
+
+/**
+ * @param {unknown} active
+ * @returns {HTMLElement}
+ */
+export function renderActiveStateBadge(active) {
+  const text = String(active);
+  const isActive = text === 'true' || text === 'active';
+  const statusClass = isActive ? 'status-success' : 'status-muted';
+
+  return h('span', { className: `status ${statusClass}` }, text);
+}

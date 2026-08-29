@@ -104,7 +104,7 @@ Add worker-specific configuration only when a worker has a materially different 
 | Control | Purpose | Default |
 | --- | --- | --- |
 | `enabled` | Explicitly includes or excludes a worker workflow from dispatch | `true` for installed worker workflows |
-| `max_mode` | Caps the most permissive mode a worker workflow can execute | `review` |
+| `max-mode` | Caps the most permissive mode a worker workflow can execute | `review` |
 | worker workflow limit | Caps worker workflow-specific volume or resource use | Existing Agentic Workflow limit |
 
 Mode ordering is:
@@ -127,10 +127,19 @@ A manual dispatch may narrow the mode but must not exceed the worker ceiling. Re
 
 Example: Optimization can be live while `optimization-ai-credit-optimizer` remains capped at review. The auditor can run live under the same orchestrator if its own ceiling permits it.
 
-```bash
-gh variable set CENTRAL_AGENTIC_OPS_OPTIMIZATION_OPTIMIZER_MAX_MODE \
-	--repo "acme/central-agentic-ops" \
-	--body "review"
+```json
+{
+	"version": 1,
+	"control-plane": {
+		"packages": {
+			"optimization": {
+				"workers": {
+					"ai-credit-optimizer": { "max-mode": "review" }
+				}
+			}
+		}
+	}
+}
 ```
 
 :::caution[Ceilings only narrow]

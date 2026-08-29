@@ -1,0 +1,45 @@
+{
+  "version": 1,
+  "control-plane": {
+    "packages": {
+      "advisory": {
+        "workers": {
+          "uk-ai-operational-resilience": {}
+        }
+      },
+      "ambient-context": {
+        "workers": {
+          "agents-md-curator": {},
+          "skills-curator": {}
+        }
+      },
+      "aw-maintenance": {
+        "workers": {
+          "failures-investigator": {},
+          "upgrade": {}
+        }
+      },
+      "dependabot": {
+        "workers": {
+          "release-train-updater": {}
+        }
+      },
+      "eu-cra-compliance": {
+        "workers": {
+          "scope-classifier": {},
+          "security-requirements-auditor": {},
+          "supply-chain-sbom-auditor": {},
+          "vulnerability-handling-auditor": {},
+          "article-14-reporting-readiness": {},
+          "conformity-release-evidence": {}
+        }
+      },
+      "optimization": {
+        "workers": {
+          "ai-credit-auditor": {},
+          "ai-credit-optimizer": {}
+        }
+      }
+    }
+  }
+}

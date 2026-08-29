@@ -47,24 +47,19 @@ checkout:
     path: target
 
 env:
-  CENTRAL_AGENTIC_OPS_PACKAGE_ENABLED: ${{ vars.CENTRAL_AGENTIC_OPS_DEPENDABOT_ENABLED || 'true' }}
-  CENTRAL_AGENTIC_OPS_WORKER_ENABLED: ${{ vars.CENTRAL_AGENTIC_OPS_DEPENDABOT_UPDATER_ENABLED || 'true' }}
-  CENTRAL_AGENTIC_OPS_WORKER_MAX_MODE: ${{ vars.CENTRAL_AGENTIC_OPS_DEPENDABOT_UPDATER_MAX_MODE || 'review' }}
   GH_AW_SAFE_OUTPUT_MODE: ${{ inputs.safe_output_mode || 'review' }}
   REVIEW_OUTPUT_REPO: ${{ inputs.safe_output_repo || github.repository }}
   SAFE_OUTPUT_REPO: ${{ (inputs.safe_output_mode || 'review') == 'review' && (inputs.safe_output_repo || github.repository) || inputs.target_repo }}
   TARGET_REPO: ${{ inputs.target_repo || '' }}
 
-if: >-
-  (vars.CENTRAL_AGENTIC_OPS_DEPENDABOT_ENABLED || 'true') == 'true' &&
-  (vars.CENTRAL_AGENTIC_OPS_DEPENDABOT_UPDATER_ENABLED || 'true') == 'true'
+environment: central-agentic-ops
 
 imports:
   - uses: shared/control.md
     with:
-      bundle: dependabot
+      package: dependabot
       role: worker
-      allowed_owners: ${{ vars.CENTRAL_AGENTIC_OPS_ALLOWED_OWNERS || github.repository_owner }}
+      worker: release-train-updater
   - uses: shared/review-bundle.md
 
 permissions:

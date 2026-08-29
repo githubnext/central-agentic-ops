@@ -4,49 +4,70 @@ import { chmodSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "nod
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import test from "node:test";
-import { controlEnvironment, controlPrecomputeScript } from "../helpers/control-precompute.mjs";
+import {
+  controlEnvironment,
+  controlPolicy,
+  controlPrecomputeScript,
+  root,
+} from "../helpers/control-precompute.mjs";
 
 const script = controlPrecomputeScript();
 
 const failures = [
   ["malformed target repository", { TARGET_REPO: "not-a-repository" }, "target_repo must use owner/repository form"],
   ["missing worker target repository", { TARGET_REPO: "" }, "worker target_repo is required"],
-  ["disallowed target owner", { TARGET_REPO: "outside/target" }, "target_repo owner is outside CENTRAL_AGENTIC_OPS_ALLOWED_OWNERS"],
+  ["disallowed target owner", { TARGET_REPO: "outside/target" }, "target_repo owner is outside control-plane.scope.allowed-owners"],
   ["malformed review repository", { SAFE_OUTPUT_REPO: "not-a-repository" }, "safe_output_repo must use owner/repository form"],
-  ["disallowed review owner", { SAFE_OUTPUT_REPO: "outside/review" }, "safe_output_repo owner is outside CENTRAL_AGENTIC_OPS_ALLOWED_OWNERS"],
-  ["disabled worker", { WORKER_ENABLED: "false" }, "worker is disabled by its control-plane policy"],
-  ["worker mode ceiling", { SAFE_OUTPUT_MODE: "live", SAFE_OUTPUT_REPO: "acme/target" }, "safe_output_mode exceeds the worker_max_mode ceiling"],
-  ["invalid worker kill switch", { WORKER_ENABLED: "False" }, "worker_enabled must be true or false"],
-  ["removed worker ceiling", { WORKER_MAX_MODE: "preview" }, "worker_max_mode must be review or live"],
-  ["invalid safe-output mode", { SAFE_OUTPUT_MODE: "staged" }, "safe_output_mode must be review or live"],
-  ["invalid package kill switch", { ENABLED: "invalid" }, "enabled must be true or false"],
+  ["disallowed review owner", { SAFE_OUTPUT_REPO: "outside/review" }, "safe_output_repo owner is outside control-plane.scope.allowed-owners"],
+  ["worker mode ceiling", { REQUESTED_MODE: "live", SAFE_OUTPUT_REPO: "acme/target" }, "safe_output_mode exceeds checked-in policy"],
+  ["invalid safe-output mode", { REQUESTED_MODE: "staged" }, "safe_output_mode must be review or live"],
   ["invalid correlation ID", { CORRELATION_ID: "invalid" }, "correlation_id must identify an orchestrator run and attempt"],
   ["zero correlation ID", { CORRELATION_ID: "0-0" }, "correlation_id must identify an orchestrator run and attempt"],
   ["mismatched control repository", { CENTRAL_REPO: "acme/other" }, "central_repo must identify the current control repository"],
   ["mismatched control run URL", { CONTROL_PLANE_RUN_URL: "https://github.com/acme/control/actions/runs/999" }, "control_plane_run_url must match correlation_id and central_repo"],
-  ["oversized repository cap", { ROLE: "orchestrator", TARGET_REPO: "", MAX_REPOS: "1001" }, "max_repos must be an integer from 1 through 1000"],
-  ["oversized scan cap", { ROLE: "orchestrator", TARGET_REPO: "", MAX_SCAN_REPOS: "100001" }, "max_scan_repos must be an integer from 1 through 100000"],
-  ["invalid cell count", { ROLE: "orchestrator", TARGET_REPO: "", CELL_COUNT: "0" }, "cell_count must be an integer from 1 through 1000"],
-  ["invalid cell index", { ROLE: "orchestrator", TARGET_REPO: "", CELL_COUNT: "4", CELL_INDEX: "4" }, "cell_index must be an integer from 0 through cell_count minus 1"],
-  ["oversized batch", { ROLE: "orchestrator", TARGET_REPO: "", BATCH_SIZE: "100001" }, "batch_size must be an integer from 1 through 100000"],
-  ["invalid batch index", { ROLE: "orchestrator", TARGET_REPO: "", BATCH_INDEX: "-1" }, "batch_index must be a non-negative integer"],
-  ["invalid rollout percentage", { ROLE: "orchestrator", TARGET_REPO: "", ROLLOUT_PERCENT: "0" }, "rollout_percent must be an integer from 1 through 100"],
-  ["invalid credit budget", { ROLE: "orchestrator", TARGET_REPO: "", AGGREGATE_CREDIT_LIMIT: "0" }, "AI Credit admission values must be integers"],
+  ["oversized repository request", { ROLE: "orchestrator", TARGET_REPO: "", REQUESTED_MAX_REPOS: "1001" }, "max_repositories must be an integer in 1..1000"],
+  ["invalid rollout request", { ROLE: "orchestrator", TARGET_REPO: "", REQUESTED_ROLLOUT_PERCENT: "0" }, "rollout_percent must be an integer in 1..100"],
+  ["invalid credit declaration", { ROLE: "orchestrator", TARGET_REPO: "", ORCHESTRATOR_CREDITS: "invalid" }, "AI Credit admission values must be non-negative integers"],
 ];
 
-function runPrecompute(overrides = {}, ghScript = "printf 'true\\n'") {
+const invalidPolicies = [
+  ["invalid package kill switch", controlPolicy({ packagePolicy: { enabled: "invalid" } }), "control-plane.packages.dependabot.enabled must be a Boolean"],
+  ["invalid worker kill switch", controlPolicy({ workerPolicy: { enabled: "False" } }), "control-plane.packages.dependabot.workers.release-train-updater.enabled must be a Boolean"],
+  ["removed worker ceiling", controlPolicy({ workerPolicy: { "max-mode": "preview" } }), "control-plane.packages.dependabot.workers.release-train-updater.max-mode must be review or live"],
+  ["oversized scan cap", controlPolicy({ inventory: { "max-scan-repositories": 100001 } }), "control-plane.inventory.max-scan-repositories must be an integer in 1..100000"],
+  ["invalid cell count", controlPolicy({ inventory: { "cell-count": 0 } }), "control-plane.inventory.cell-count must be an integer in 1..1000"],
+  ["invalid cell index", controlPolicy({ inventory: { "cell-count": 4, "cell-index": 4 } }), "control-plane.inventory.cell-index must be smaller than cell-count"],
+  ["oversized batch", controlPolicy({ inventory: { "batch-size": 100001 } }), "control-plane.inventory.batch-size must be an integer in 1..100000"],
+  ["invalid batch index", controlPolicy({ inventory: { "batch-index": -1 } }), "control-plane.inventory.batch-index must be an integer in >= 0"],
+];
+
+function runPrecompute(overrides = {}, ghScript = "printf 'true\\n'", policy = controlPolicy()) {
   const directory = mkdtempSync(join(tmpdir(), "central-ops-precompute-"));
   const gh = join(directory, "gh");
+  const githubEnvironment = join(directory, "github-env");
+  const safeOutputs = join(directory, "safe-outputs.jsonl");
   writeFileSync(gh, `#!/bin/sh
+case "$*" in
+  *repos/acme/control/contents/.github/central-agentic-ops.json*)
+    printf '%s' "$CONTROL_POLICY" | base64
+    exit 0
+    ;;
+esac
 ${ghScript}
 `);
+  writeFileSync(githubEnvironment, "");
+  writeFileSync(safeOutputs, "");
   chmodSync(gh, 0o755);
 
   try {
     return spawnSync("bash", ["-c", script], {
+      cwd: root,
       encoding: "utf8",
       env: controlEnvironment({
         PATH: `${directory}:${process.env.PATH}`,
+        CONTROL_POLICY: policy,
+        GITHUB_ENV: githubEnvironment,
+        GH_AW_SAFE_OUTPUTS: safeOutputs,
         ...overrides,
       }),
     });
@@ -64,26 +85,34 @@ for (const [name, overrides, expectedError] of failures) {
   });
 }
 
+for (const [name, policy, expectedError] of invalidPolicies) {
+  test(`control precompute rejects ${name}`, () => {
+    const result = runPrecompute({}, undefined, policy);
+
+    assert.notEqual(result.status, 0, `${name} unexpectedly succeeded`);
+    assert.match(result.stderr, new RegExp(expectedError));
+  });
+}
+
 for (const role of ["orchestrator", "worker"]) {
   for (const safeOutputMode of ["review", "live"]) {
     test(`control precompute disables a ${role} in ${safeOutputMode} before validation or repository access`, () => {
       const result = runPrecompute(
         {
-          ENABLED: "false",
           ROLE: role,
           SAFE_OUTPUT_MODE: safeOutputMode,
           TARGET_REPO: "not-a-repository",
           SAFE_OUTPUT_REPO: "also-invalid",
         },
         "echo 'GitHub must not be called for a disabled package' >&2; exit 99",
+        controlPolicy({ packagePolicy: { enabled: false } }),
       );
 
       assert.equal(result.status, 0, result.stderr);
       const precompute = JSON.parse(readFileSync("/tmp/gh-aw/agent/control-precompute.json", "utf8"));
-      const dispatchPrecompute = JSON.parse(readFileSync("/tmp/gh-aw/agent/dispatch-precompute.json", "utf8"));
-      assert.deepEqual(precompute, dispatchPrecompute);
       assert.equal(precompute.control_role, role);
       assert.equal(precompute.enabled, "false");
+      assert.equal(precompute.reason, "package-disabled");
       assert.equal(precompute.effective_max_repos, 0);
       assert.deepEqual(precompute.candidate_repositories, []);
       assert.deepEqual(precompute.worker_workflows, []);
@@ -93,34 +122,38 @@ for (const role of ["orchestrator", "worker"]) {
 
 test("control precompute disables a worker before review repository access", () => {
   const result = runPrecompute(
-    { WORKER_ENABLED: "false" },
+    {},
     "echo 'GitHub must not be called for a disabled worker' >&2; exit 99",
+    controlPolicy({ workerPolicy: { enabled: false } }),
   );
 
-  assert.notEqual(result.status, 0);
-  assert.match(result.stderr, /worker is disabled by its control-plane policy/);
+  assert.equal(result.status, 0, result.stderr);
+  const precompute = JSON.parse(readFileSync("/tmp/gh-aw/agent/control-precompute.json", "utf8"));
+  assert.equal(precompute.reason, "worker-disabled");
   assert.doesNotMatch(result.stderr, /GitHub must not be called/);
 });
 
 for (const safeOutputMode of ["preview", "preview_only", "Review", "LIVE", "review "]) {
   test(`control precompute rejects unsupported mode ${JSON.stringify(safeOutputMode)}`, () => {
-    const result = runPrecompute({ SAFE_OUTPUT_MODE: safeOutputMode });
+    const result = runPrecompute({ REQUESTED_MODE: safeOutputMode });
 
     assert.notEqual(result.status, 0);
     assert.match(result.stderr, /safe_output_mode must be review or live/);
   });
 }
 
-test("control precompute writes a complete mirrored review worker envelope", () => {
+test("control precompute writes a complete review worker envelope", () => {
   const result = runPrecompute();
 
   assert.equal(result.status, 0, result.stderr);
   const precompute = JSON.parse(readFileSync("/tmp/gh-aw/agent/control-precompute.json", "utf8"));
-  const dispatchPrecompute = JSON.parse(readFileSync("/tmp/gh-aw/agent/dispatch-precompute.json", "utf8"));
-  assert.deepEqual(precompute, dispatchPrecompute);
   assert.deepEqual(precompute, {
+    authorized: true,
+    reason: "authorized",
     control_role: "worker",
+    package: "dependabot",
     bundle: "dependabot",
+    worker: "release-train-updater",
     enabled: "true",
     worker_enabled: "true",
     worker_max_mode: "review",
@@ -132,6 +165,11 @@ test("control precompute writes a complete mirrored review worker envelope", () 
     control_plane_run_url: "https://github.com/acme/control/actions/runs/123",
     candidate_repositories: [],
     worker_workflows: [],
+    policy_source: {
+      repository: "acme/control",
+      path: ".github/central-agentic-ops.json",
+      sha: "1111111111111111111111111111111111111111",
+    },
   });
 });
 
@@ -154,13 +192,13 @@ test("orchestrator derives its public central review destination without a dispa
       ROLE: "orchestrator",
       TARGET_REPO: "",
       CENTRAL_REPO: "",
-      MAX_REPOS: "1001",
+      REQUESTED_MAX_REPOS: "1001",
     },
     "printf 'false\\n'",
   );
 
   assert.notEqual(result.status, 0);
-  assert.match(result.stderr, /max_repos must be an integer from 1 through 1000/);
+  assert.match(result.stderr, /max_repositories must be an integer in 1\.\.1000/);
   assert.doesNotMatch(result.stderr, /non-central review safe_output_repo must be private/);
 });
 
@@ -175,42 +213,29 @@ test("control precompute rejects a public non-central review destination", () =>
 });
 
 function runLiveAuthority(authorityContent, overrides = {}) {
-  const directory = mkdtempSync(join(tmpdir(), "central-ops-authority-"));
-  const gh = join(directory, "gh");
-  writeFileSync(gh, `#!/bin/sh
+  return runPrecompute({
+    REQUESTED_MODE: "live",
+    SAFE_OUTPUT_REPO: "acme/target",
+    AUTHORITY_CONTENT: authorityContent,
+    ...overrides,
+  }, `
 case "$*" in
-  *contents/.github/central-agentic-ops.yml*)
+  *repos/acme/target/contents/.github/central-agentic-ops.json*)
     [ "$AUTHORITY_MODE" = "missing" ] && exit 1
     printf '%s' "$AUTHORITY_CONTENT" | base64
     ;;
-  *) printf 'main\\n' ;;
+  *repos/acme/target/commits/main*) printf '2222222222222222222222222222222222222222\\n' ;;
+  *repos/acme/target*) printf 'main\\n' ;;
+  *) printf 'true\\n' ;;
 esac
-`);
-  chmodSync(gh, 0o755);
-
-  try {
-    return spawnSync("bash", ["-c", script], {
-      encoding: "utf8",
-      env: controlEnvironment({
-        PATH: `${directory}:${process.env.PATH}`,
-        SAFE_OUTPUT_MODE: "live",
-        SAFE_OUTPUT_REPO: "acme/target",
-        WORKER_MAX_MODE: "live",
-        AUTHORITY_CONTENT: authorityContent,
-        ...overrides,
-      }),
-    });
-  } finally {
-    rmSync(directory, { recursive: true, force: true });
-  }
+`, controlPolicy({ packagePolicy: { mode: "live" }, workerPolicy: { "max-mode": "live" } }));
 }
 
 test("control precompute accepts matching target-owned live authority", () => {
-  const result = runLiveAuthority(`version: 1
-bundles:
-  dependabot:
-    authority: acme/control
-`);
+  const result = runLiveAuthority(JSON.stringify({
+    version: 1,
+    "target-authority": { packages: { dependabot: { authority: "acme/control" } } },
+  }));
 
   assert.equal(result.status, 0, result.stderr);
   const precompute = JSON.parse(readFileSync("/tmp/gh-aw/agent/control-precompute.json", "utf8"));
@@ -218,11 +243,10 @@ bundles:
 });
 
 test("control precompute accepts live authority case-insensitively", () => {
-  const result = runLiveAuthority(`version: 1
-bundles:
-  dependabot:
-    authority: ACME/CONTROL
-`);
+  const result = runLiveAuthority(JSON.stringify({
+    version: 1,
+    "target-authority": { packages: { dependabot: { authority: "ACME/CONTROL" } } },
+  }));
 
   assert.equal(result.status, 0, result.stderr);
 });
@@ -245,22 +269,20 @@ for (const safeOutputRepo of ["acme/target", "ACME/TARGET"]) {
 }
 
 test("control precompute binds live worker output to the authorized target", () => {
-  const result = runLiveAuthority(`version: 1
-bundles:
-  dependabot:
-    authority: acme/control
-`, { SAFE_OUTPUT_REPO: "acme/other" });
+  const result = runLiveAuthority(JSON.stringify({
+    version: 1,
+    "target-authority": { packages: { dependabot: { authority: "acme/control" } } },
+  }), { SAFE_OUTPUT_REPO: "acme/other" });
 
   assert.notEqual(result.status, 0);
   assert.match(result.stderr, /live worker safe_output_repo must equal target_repo/);
 });
 
 test("control precompute rejects a different live authority", () => {
-  const result = runLiveAuthority(`version: 1
-bundles:
-  dependabot:
-    authority: acme/other-control
-`);
+  const result = runLiveAuthority(JSON.stringify({
+    version: 1,
+    "target-authority": { packages: { dependabot: { authority: "acme/other-control" } } },
+  }));
 
   assert.notEqual(result.status, 0);
   assert.match(result.stderr, /target assigns live authority for dependabot to a different control repository/);
@@ -268,38 +290,38 @@ bundles:
 
 for (const [name, authorityContent] of [
   ["empty document", ""],
-  ["non-object document", "- dependabot\n"],
-  ["wrong version", "version: 2\nbundles: {}\n"],
-  ["string version", "version: '1'\nbundles: {}\n"],
-  ["missing bundles", "version: 1\n"],
-  ["non-object bundles", "version: 1\nbundles: []\n"],
-  ["missing package", "version: 1\nbundles:\n  optimization:\n    authority: acme/control\n"],
-  ["non-object package", "version: 1\nbundles:\n  dependabot: acme/control\n"],
-  ["non-string authority", "version: 1\nbundles:\n  dependabot:\n    authority: 1\n"],
-  ["YAML alias", "version: 1\ndefaults: &defaults\n  authority: acme/control\nbundles:\n  dependabot: *defaults\n"],
+  ["non-object document", "[]"],
+  ["wrong version", '{"version":2,"target-authority":{"packages":{}}}'],
+  ["string version", '{"version":"1","target-authority":{"packages":{}}}'],
+  ["missing target authority", '{"version":1,"control-plane":{}}'],
+  ["missing packages", '{"version":1,"target-authority":{}}'],
+  ["non-object packages", '{"version":1,"target-authority":{"packages":[]}}'],
+  ["missing package", '{"version":1,"target-authority":{"packages":{"optimization":{"authority":"acme/control"}}}}'],
+  ["non-object package", '{"version":1,"target-authority":{"packages":{"dependabot":"acme/control"}}}'],
+  ["non-string authority", '{"version":1,"target-authority":{"packages":{"dependabot":{"authority":1}}}}'],
+  ["duplicate key", '{"version":1,"version":1,"target-authority":{"packages":{}}}'],
 ]) {
   test(`control precompute rejects live authority with ${name}`, () => {
     const result = runLiveAuthority(authorityContent);
 
     assert.notEqual(result.status, 0);
-    assert.match(result.stderr, /target authority file must declare version 1 and bundles.dependabot.authority/);
+    assert.match(result.stderr, /target authority file must declare version 1 and target-authority.packages.dependabot.authority/);
   });
 }
 
 test("control precompute rejects malformed live authority repository", () => {
-  const result = runLiveAuthority(`version: 1
-bundles:
-  dependabot:
-    authority: not-a-repository
-`);
+  const result = runLiveAuthority(JSON.stringify({
+    version: 1,
+    "target-authority": { packages: { dependabot: { authority: "not-a-repository" } } },
+  }));
 
   assert.notEqual(result.status, 0);
-  assert.match(result.stderr, /bundles.dependabot.authority must use owner\/repository form/);
+  assert.match(result.stderr, /target-authority.packages.dependabot.authority has an invalid value/);
 });
 
 test("control precompute rejects missing target-owned live authority", () => {
   const result = runLiveAuthority("", { AUTHORITY_MODE: "missing" });
 
   assert.notEqual(result.status, 0);
-  assert.match(result.stderr, /live mode requires \.github\/central-agentic-ops\.yml on the target default branch/);
+  assert.match(result.stderr, /live mode requires \.github\/central-agentic-ops\.json on the target default branch/);
 });

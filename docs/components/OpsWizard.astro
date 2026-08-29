@@ -197,13 +197,24 @@ const agents = [
 <script>
   const CATALOG = "githubnext/central-agentic-ops";
   const CATALOG_REF = "main";
+  const PACKAGE_WORKERS: Record<string, string[]> = {
+    advisory: ["uk-ai-operational-resilience"],
+    "ambient-context": ["agents-md-curator", "skills-curator"],
+    "aw-maintenance": ["failures-investigator", "upgrade"],
+    dependabot: ["release-train-updater"],
+    "eu-cra-compliance": [
+      "scope-classifier",
+      "security-requirements-auditor",
+      "supply-chain-sbom-auditor",
+      "vulnerability-handling-auditor",
+      "article-14-reporting-readiness",
+      "conformity-release-evidence",
+    ],
+    optimization: ["ai-credit-auditor", "ai-credit-optimizer"],
+  };
 
   function selected(form: HTMLFormElement, name: string): HTMLInputElement | null {
     return form.querySelector<HTMLInputElement>(`input[name="${name}"]:checked`);
-  }
-
-  function variablePrefix(slug: string): string {
-    return `CENTRAL_AGENTIC_OPS_${slug.replace(/-/g, "_").toUpperCase()}`;
   }
 
   function buildPrompt(form: HTMLFormElement): string {
@@ -221,6 +232,19 @@ const agents = [
       "<describe the operation you want to run>";
     const operationName = operation.dataset.operationName || operation.value;
     const engine = agent.value;
+    const policy = !isCustom
+      ? JSON.stringify({
+          version: 1,
+          "control-plane": {
+            scope: { "allowed-owners": [owner] },
+            packages: {
+              [operation.value]: {
+                workers: Object.fromEntries(PACKAGE_WORKERS[operation.value].map((worker) => [worker, {}])),
+              },
+            },
+          },
+        }, null, 2)
+      : "";
 
     const setup = [
       "## Setup",
@@ -239,30 +263,33 @@ const agents = [
           "",
           "6. Create the orchestrator and every worker under `.github/workflows/`, then compile them with `gh aw compile`.",
           `7. Set \`engine: ${engine}\` in each new workflow's frontmatter.`,
-          "8. Commit and push the generated files, including the `.lock.yml` outputs.",
+          "8. Add the package and every worker to `.github/central-agentic-ops.json` in `review` mode with `max-repositories` set to `1`.",
+          "9. Commit and push the policy, sources, and generated `.lock.yml` files together.",
         ]
       : [
           `4. Install the operation package: \`gh aw add ${CATALOG}/${operation.value}@${CATALOG_REF}\`.`,
           `5. Set \`engine: ${engine}\` in the installed workflow frontmatter, then recompile with \`gh aw compile\`.`,
-          "6. Commit and push the installed files, including the `.lock.yml` outputs.",
+          "6. Create `.github/central-agentic-ops.json` with this policy:",
+          "",
+          "```json",
+          policy,
+          "```",
+          "",
+          "7. Commit and push the policy, installed sources, and generated `.lock.yml` files together.",
         ];
 
     const rollout = isCustom
       ? [
           "## First run",
           "",
-          "- Set `CENTRAL_AGENTIC_OPS_ALLOWED_OWNERS` to the owner of the repositories the operation may touch.",
-          "- Keep the package rollout variables at `review` mode and cap scheduled selection at one repository.",
+          "- Confirm `.github/central-agentic-ops.json` allows only the intended owners and keeps the package in `review` with a one-repository cap.",
           "- Trigger one manual run of the orchestrator against a single low-risk target repository with `safe_output_mode=review`.",
           "- Watch the run with `gh run watch` and summarize the orchestrator report.",
         ]
       : [
           "## First run",
           "",
-          `- \`gh variable set CENTRAL_AGENTIC_OPS_ALLOWED_OWNERS --body "${owner}"\``,
-          `- \`gh variable set ${variablePrefix(operation.value)}_MODE --body "review"\``,
-          `- \`gh variable set ${variablePrefix(operation.value)}_MAX_REPOS --body "1"\``,
-          `- Trigger one manual run: \`gh workflow run ${operation.value}.lock.yml --raw-field target_repo="${owner}/<target-repo>" --raw-field max_repos="1" --raw-field safe_output_mode="review"\`.`,
+          `- Trigger one manual run: \`gh aw run ${operation.value} --ref main --raw-field target_repo="${owner}/<target-repo>" --raw-field max_repos="1" --raw-field safe_output_mode="review"\`.`,
           "- Watch the run with `gh run watch` and summarize the orchestrator report.",
         ];
 
@@ -283,7 +310,7 @@ const agents = [
       "- Never edit generated `.lock.yml` files by hand; change the Markdown source and recompile.",
       "- Stop and ask me before adding secrets, widening permissions, or targeting additional repositories.",
       "",
-      "Report the control repository URL, the installed workflows, the variables you set, and the run URL when you are done.",
+      "Report the control repository URL, the installed workflows, the committed policy, and the run URL when you are done.",
     ].join("\n");
   }
 

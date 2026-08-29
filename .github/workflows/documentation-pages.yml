@@ -7,7 +7,9 @@ on:
   push:
     branches: [main]
     paths:
-      - .github/scripts/pages-report/**
+      - dashboard/report/**
+      - .github/central-agentic-ops.json
+      - .github/scripts/control-policy/resolve.mjs
       - .github/workflows/documentation-pages.yml
       - .github/workflows/*.lock.yml
       - .github/workflows/*.md
@@ -60,14 +62,20 @@ jobs:
       - name: Extract control-plane inventory
         env:
           REPORT_INVENTORY: ${{ runner.temp }}/control-plane-inventory.json
-        run: node .github/scripts/pages-report/inventory.mjs
+        run: node dashboard/report/inventory.mjs
+
+      - name: Resolve authoritative control policy
+        env:
+          GITHUB_REPOSITORY: ${{ github.repository }}
+        run: node .github/scripts/control-policy/resolve.mjs --control .github/central-agentic-ops.json > "$RUNNER_TEMP/control-settings.json"
 
       - name: Discover deployed agentic workflows
         env:
           GITHUB_TOKEN: ${{ github.token }}
           REPORT_ALLOWED_REPOS: ${{ github.repository }}
+          REPORT_CONTROL_SETTINGS: ${{ runner.temp }}/control-settings.json
           REPORT_DEPLOYED_WORKFLOWS: ${{ runner.temp }}/deployed-workflows.json
-        run: node .github/scripts/pages-report/deployed-workflows.mjs
+        run: node dashboard/report/deployed-workflows.mjs
 
       - name: Install gh-aw CLI
         uses: github/gh-aw-actions/setup-cli@b304200a0ef4b3998673bfc7945acb08ab8c88b7 # v0.87.2
@@ -119,7 +127,7 @@ jobs:
           REPORT_AIC_CONCURRENCY: "3"
           REPORT_AIC_USAGE: ${{ runner.temp }}/aic-usage.json
           REPORT_DEPLOYED_WORKFLOWS: ${{ runner.temp }}/deployed-workflows.json
-        run: node .github/scripts/pages-report/aic-usage.mjs
+        run: node dashboard/report/aic-usage.mjs
 
       - name: Save AI Credit usage cache
         if: always()
@@ -136,7 +144,7 @@ jobs:
           REPORT_OPERATIONAL_VALUES: ${{ runner.temp }}/operational-values.json
           REPORT_VALUE_CACHE: .cache/pages-operational-values/observations.json
           REPORT_VALUE_CONCURRENCY: "3"
-        run: node .github/scripts/pages-report/operational-values.mjs
+        run: node dashboard/report/operational-values.mjs
 
       - name: Save operational-value observation cache
         if: always()
@@ -149,13 +157,13 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ github.token }}
           REPORT_ALLOWED_REPOS: ${{ github.repository }}
-          REPORT_REPOSITORY_VARIABLES: ${{ toJSON(vars) }}
+          REPORT_CONTROL_SETTINGS: ${{ runner.temp }}/control-settings.json
           REPORT_AIC_USAGE: ${{ runner.temp }}/aic-usage.json
           REPORT_INVENTORY: ${{ runner.temp }}/control-plane-inventory.json
           REPORT_DEPLOYED_WORKFLOWS: ${{ runner.temp }}/deployed-workflows.json
           REPORT_OPERATIONAL_VALUES: ${{ runner.temp }}/operational-values.json
           REPORT_OUTPUT: dist/cao
-        run: node .github/scripts/pages-report/report.mjs
+        run: node dashboard/report/report.mjs
 
       - name: Upload Pages artifact
         uses: actions/upload-pages-artifact@7b1f4a764d45c48632c6b24a0339c27f5614fb0b # v4

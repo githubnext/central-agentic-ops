@@ -30,14 +30,29 @@ The package maintainer runs independently of repository dispatch. It updates the
 gh aw add-wizard githubnext/central-agentic-ops/eu-cra-compliance@<catalog-release>
 ```
 
-Configure the shared GitHub App or PAT described in the [authentication guide](../docs/authentication.md). Start with one representative repository and:
+Configure the shared GitHub App or PAT described in the [authentication guide](../docs/authentication.md), then declare the package and workers in `.github/central-agentic-ops.json`:
 
-- `CENTRAL_AGENTIC_OPS_EU_CRA_COMPLIANCE_ENABLED=true`
-- `CENTRAL_AGENTIC_OPS_EU_CRA_COMPLIANCE_MODE=review`
-- `CENTRAL_AGENTIC_OPS_EU_CRA_COMPLIANCE_MAX_REPOS=1`
-- `CENTRAL_AGENTIC_OPS_EU_CRA_COMPLIANCE_ROLLOUT_PERCENT=100`
+```json
+{
+	"version": 1,
+	"control-plane": {
+		"packages": {
+			"eu-cra-compliance": {
+				"workers": {
+					"scope-classifier": {},
+					"security-requirements-auditor": {},
+					"supply-chain-sbom-auditor": {},
+					"vulnerability-handling-auditor": {},
+					"article-14-reporting-readiness": {},
+					"conformity-release-evidence": {}
+				}
+			}
+		}
+	}
+}
+```
 
-Each worker has an independent `<WORKER>_ENABLED` kill switch and `<WORKER>_MAX_MODE` ceiling listed in the [configuration reference](../docs/configuration.md). Promote from `review` to limited `live` only after reviewing evidence handling and credential access.
+The omitted fields default to an enabled package and workers, `review` mode, one repository, and 100 percent rollout. Each worker may set its own `enabled` and `max-mode` fields. Promote to limited `live` only after reviewing evidence handling and credential access.
 
 ## Safety Boundaries
 

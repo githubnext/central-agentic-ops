@@ -25,14 +25,24 @@ The package maintainer runs independently of repository dispatch. It updates the
 gh aw add-wizard githubnext/central-agentic-ops/advisory@<catalog-release>
 ```
 
-Configure the shared GitHub App or PAT described in the [authentication guide](../docs/authentication.md). Start with one representative repository and:
+Configure the shared GitHub App or PAT described in the [authentication guide](../docs/authentication.md), then declare the package in the control repository's `.github/central-agentic-ops.json`:
 
-- `CENTRAL_AGENTIC_OPS_ADVISORY_ENABLED=true`
-- `CENTRAL_AGENTIC_OPS_ADVISORY_MODE=review`
-- `CENTRAL_AGENTIC_OPS_ADVISORY_MAX_REPOS=1`
-- `CENTRAL_AGENTIC_OPS_ADVISORY_ROLLOUT_PERCENT=100`
-- `CENTRAL_AGENTIC_OPS_ADVISORY_UK_AI_OPERATIONAL_RESILIENCE_ENABLED=true`
-- `CENTRAL_AGENTIC_OPS_ADVISORY_UK_AI_OPERATIONAL_RESILIENCE_MAX_MODE=review`
+```json
+{
+	"version": 1,
+	"control-plane": {
+		"packages": {
+			"advisory": {
+				"workers": {
+					"uk-ai-operational-resilience": {}
+				}
+			}
+		}
+	}
+}
+```
+
+The omitted fields default to an enabled package and worker, `review` mode, one repository, and 100 percent rollout. Add `control-plane.scope` when targets are outside the control repository owner.
 
 Run the **UK AI Advisory** workflow manually with an explicit `target_repo`, `max_repos` set to `1`, and `safe_output_mode` set to `review`. Review repository selection, the worker's review issue, source accessibility, sensitive-data handling, and control-plane correlation before promoting to `live`.
 

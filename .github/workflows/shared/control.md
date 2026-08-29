@@ -1,70 +1,27 @@
 ---
 import-schema:
-  bundle:
+  package:
     type: string
     required: true
   role:
     type: choice
     options: [orchestrator, worker]
     required: true
-  rollout_mode:
-    type: choice
-    options: [review, live]
-    default: "review"
-  package_enabled:
+  worker:
     type: string
-    default: "true"
-  rollout_percent:
-    type: string
-    default: "100"
-  max_repos:
-    type: string
-    default: "1"
-  max_scan_repos:
-    type: string
-    default: "1000"
-  cell_count:
-    type: string
-    default: "1"
-  cell_index:
-    type: string
-    default: "0"
-  batch_size:
-    type: string
-    default: "100000"
-  batch_index:
-    type: string
-    default: "0"
-  allowed_owners:
-    type: string
-    default: ""
-  allowed_repos:
-    type: string
-    default: ""
+    default: "__none__"
   dispatch_max:
     type: string
     default: "1"
-  worker_enabled:
-    type: string
-    default: "true"
-  worker_max_mode:
-    type: string
-    default: "review"
   orchestrator_credits:
     type: string
     default: "0"
   worker_credits_per_target:
     type: string
     default: "0"
-  aggregate_credit_limit:
-    type: string
-    default: "1100"
-  monthly_credit_budget:
-    type: string
-    default: "0"
 
 github-app:
-  client-id: ${{ vars.GH_AW_GITHUB_APP_ID }}
+  client-id: ${{ secrets.GH_AW_GITHUB_APP_ID }}
   private-key: ${{ secrets.GH_AW_GITHUB_APP_PRIVATE_KEY }}
   ignore-if-missing: true
 
@@ -74,38 +31,26 @@ imports:
   #- uses: datadog.md
   - uses: control-precompute.md
     with:
-      bundle: ${{ github.aw.import-inputs.bundle }}
+      package: ${{ github.aw.import-inputs.package }}
       role: ${{ github.aw.import-inputs.role }}
+      worker: ${{ github.aw.import-inputs.worker }}
       target_repo: ${{ github.event.inputs.target_repo || (github.event_name == 'workflow_dispatch' && env.GH_AW_SAFE_OUTPUT_MODE == 'review' && github.repository) || '' }}
-      organization: ${{ github.repository_owner }}
-      max_repos: "${{ github.aw.import-inputs.max_repos }}"
-      max_scan_repos: "${{ github.aw.import-inputs.max_scan_repos }}"
-      cell_count: "${{ github.aw.import-inputs.cell_count }}"
-      cell_index: "${{ github.aw.import-inputs.cell_index }}"
-      batch_size: "${{ github.aw.import-inputs.batch_size }}"
-      batch_index: "${{ github.aw.import-inputs.batch_index }}"
-      allowed_owners: "${{ github.aw.import-inputs.allowed_owners }}"
-      allowed_repos: "${{ github.aw.import-inputs.allowed_repos }}"
+      requested_mode: ${{ github.event.inputs.safe_output_mode || '' }}
+      requested_max_repos: ${{ github.event.inputs.max_repos || '' }}
+      requested_rollout_percent: ${{ github.event.inputs.rollout_percent || '' }}
       dispatch_max: "${{ github.aw.import-inputs.dispatch_max }}"
-      rollout_percent: "${{ github.aw.import-inputs.rollout_percent }}"
-      safe_output_mode: ${{ env.GH_AW_SAFE_OUTPUT_MODE }}
-      safe_output_repo: ${{ env.SAFE_OUTPUT_REPO }}
-      enabled: ${{ env.CENTRAL_AGENTIC_OPS_PACKAGE_ENABLED || github.aw.import-inputs.package_enabled }}
-      worker_enabled: ${{ env.CENTRAL_AGENTIC_OPS_WORKER_ENABLED || 'true' }}
-      worker_max_mode: ${{ env.CENTRAL_AGENTIC_OPS_WORKER_MAX_MODE || 'review' }}
+      safe_output_repo: ${{ github.event.inputs.safe_output_repo || (github.aw.import-inputs.role == 'orchestrator' && github.repository) || '' }}
       correlation_id: ${{ github.event.inputs.correlation_id || '' }}
       central_repo: ${{ github.event.inputs.central_repo || '' }}
       control_plane_run_url: ${{ github.event.inputs.control_plane_run_url || '' }}
       orchestrator_credits: "${{ github.aw.import-inputs.orchestrator_credits }}"
       worker_credits_per_target: "${{ github.aw.import-inputs.worker_credits_per_target }}"
-      aggregate_credit_limit: "${{ github.aw.import-inputs.aggregate_credit_limit }}"
-      monthly_credit_budget: "${{ github.aw.import-inputs.monthly_credit_budget }}"
 
 post-steps:
   - name: Emit control-plane dispatcher telemetry
     if: ${{ always() && github.aw.import-inputs.role == 'orchestrator' }}
     continue-on-error: true
-    uses: actions/github-script@v9
+    uses: actions/github-script@v9.0.0
     with:
       script: |
         const fs = require('fs');
@@ -141,7 +86,7 @@ post-steps:
               : 'empty';
 
         await otlp.logSpan('central-agentic-ops.dispatcher', {
-          'central_agentic_ops.dispatcher.package': String(precompute.bundle || 'unknown'),
+          'central_agentic_ops.dispatcher.package': String(precompute.package || precompute.bundle || 'unknown'),
           'central_agentic_ops.dispatcher.status': status,
           'central_agentic_ops.dispatcher.enabled': precompute.enabled === 'true',
           'central_agentic_ops.dispatcher.safe_output_mode': String(precompute.safe_output_mode || 'unknown'),

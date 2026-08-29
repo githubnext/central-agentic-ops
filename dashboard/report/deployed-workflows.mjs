@@ -1,4 +1,5 @@
 import { mkdir, writeFile } from "node:fs/promises";
+import { readFileSync } from "node:fs";
 import path from "node:path";
 
 (async () => {
@@ -8,12 +9,20 @@ const organization = process.env.REPORT_ORGANIZATION || repository.split("/")[0]
 const token = process.env.GITHUB_TOKEN || process.env.GH_TOKEN || "";
 const pagesToken = process.env.REPORT_PAGES_TOKEN || token;
 const outputPath = path.resolve(process.env.REPORT_DEPLOYED_WORKFLOWS || "_inventory/deployed-workflows.json");
+const controlSettingsPath = process.env.REPORT_CONTROL_SETTINGS;
 const includePrivate = process.env.REPORT_INCLUDE_PRIVATE === "true";
 const runWindowHours = Number(process.env.REPORT_RUN_WINDOW_HOURS || 24);
 const auditMaxPages = Number(process.env.REPORT_AUDIT_MAX_PAGES || 100);
 const maxRetryDelayMs = Number(process.env.REPORT_MAX_RETRY_SECONDS || 30) * 1000;
-const allowedRepositories = [...new Set((process.env.REPORT_ALLOWED_REPOS || "").split(",")
+if (!controlSettingsPath) throw new Error("REPORT_CONTROL_SETTINGS is required");
+const controlSettings = JSON.parse(readFileSync(controlSettingsPath, "utf8"));
+const policyRepositories = [...new Set((controlSettings.allowed_repositories || []).map((value) => value.toLowerCase()))];
+const requestedRepositories = [...new Set((process.env.REPORT_ALLOWED_REPOS || "").split(",")
   .map((value) => value.trim().toLowerCase()).filter(Boolean))];
+if (policyRepositories.length > 0 && requestedRepositories.some((value) => !policyRepositories.includes(value))) {
+  throw new Error("REPORT_ALLOWED_REPOS cannot widen checked-in control policy");
+}
+const allowedRepositories = requestedRepositories.length > 0 ? requestedRepositories : policyRepositories;
 const repositoryScopeEnabled = allowedRepositories.length > 0;
 
 if (!organization || !token) throw new Error("GITHUB_REPOSITORY (or REPORT_ORGANIZATION) and GITHUB_TOKEN are required");

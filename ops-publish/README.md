@@ -23,14 +23,14 @@ Pull requests, comments, and artifact-backed review bundles are not publishable 
 
 The review issue body is content, not routing authority. Before publishing, the workflow:
 
-1. requires the labeler to appear in `CENTRAL_AGENTIC_OPS_PUBLISH_REVIEWERS`;
+1. requires the labeler to appear in `control-plane.publishing.reviewers`;
 2. requires a bot-authored, open issue with generated workflow-run provenance;
-3. requires that run's repository to appear in `CENTRAL_AGENTIC_OPS_PUBLISH_CONTROL_REPOS`;
+3. requires that run's repository to appear in `control-plane.publishing.control-repositories`;
 4. fetches the cited run and requires a successful review-mode dispatch from a supported worker on the control repository's default branch;
 5. requires the review issue to have been created during that workflow run;
 6. derives the target repository and package from trusted run metadata;
-7. enforces `CENTRAL_AGENTIC_OPS_ALLOWED_OWNERS` and, when set, `CENTRAL_AGENTIC_OPS_ALLOWED_REPOS`;
-8. requires the target's default branch to assign that package to the cited control repository in `.github/central-agentic-ops.yml`;
+7. enforces `control-plane.scope.allowed-owners` and, when set, `control-plane.scope.allowed-repositories`;
+8. requires the target's exact default-branch commit to assign that package to the cited control repository in `.github/central-agentic-ops.json`;
 9. checks for an existing publication marker before creating an issue.
 
 The source issue may be edited during human review. Applying `ops:publish-to-target` binds approval to its title and body at that moment; a later edit fails publication until a reviewer removes and reapplies the label. Editing it cannot change the target, package, or control repository selected by the validated workflow run. The originating worker run must come from the control repository's default branch.
@@ -41,41 +41,55 @@ Copy the conventional workflow and script into the private control-plane or revi
 
 ```bash
 review_repository=/path/to/review-repository
-mkdir -p "$review_repository/.github/workflows" "$review_repository/.github/scripts/ops-publish"
+mkdir -p "$review_repository/.github/workflows" "$review_repository/.github/scripts/ops-publish" "$review_repository/.github/scripts/control-policy"
 cp ops-publish/ops-publish.yml "$review_repository/.github/workflows/ops-publish.yml"
 cp .github/scripts/ops-publish/ops-publish.mjs "$review_repository/.github/scripts/ops-publish/"
+cp .github/scripts/control-policy/resolve.mjs "$review_repository/.github/scripts/control-policy/"
 ```
 
 These files are conventional repository automation and are not part of an Agentic Workflow package. Pin the catalog checkout to a reviewed release or commit before copying them.
 
 ## Configure
 
-List the GitHub users allowed to publish reviewed issues:
+Enable publishing, scope its targets, and name its reviewers in the review repository's `.github/central-agentic-ops.json`:
+
+```json
+{
+  "version": 1,
+  "control-plane": {
+    "scope": {
+      "allowed-owners": ["acme"]
+    },
+    "publishing": {
+      "enabled": true,
+      "control-repositories": ["acme/central-agentic-ops"],
+      "reviewers": ["octocat", "hubot"]
+    }
+  }
+}
+```
+
+Create the approval label:
 
 ```bash
-REVIEW_REPO="acme/central-agentic-ops"
-
-gh variable set CENTRAL_AGENTIC_OPS_PUBLISH_REVIEWERS \
-  --repo "$REVIEW_REPO" --body "octocat,hubot"
 gh label create "ops:publish-to-target" \
-  --repo "$REVIEW_REPO" --color "1f883d" \
+  --repo "acme/central-agentic-ops" --color "1f883d" \
   --description "Publish this reviewed operations issue to its validated target"
 ```
 
-`CENTRAL_AGENTIC_OPS_PUBLISH_CONTROL_REPOS` defaults to the repository containing the add-on. When review issues arrive in a separate repository, set it to the exact comma-separated control repositories whose generated issues may be published:
+The target must contain matching authority on its default branch:
 
-```bash
-gh variable set CENTRAL_AGENTIC_OPS_PUBLISH_CONTROL_REPOS \
-  --repo "$REVIEW_REPO" --body "acme/central-agentic-ops"
-```
-
-Keep `CENTRAL_AGENTIC_OPS_ALLOWED_OWNERS` and `CENTRAL_AGENTIC_OPS_ALLOWED_REPOS` consistent with the control plane. The target must contain matching authority on its default branch:
-
-```yaml
-version: 1
-bundles:
-  aw-maintenance:
-    authority: acme/central-agentic-ops
+```json
+{
+  "version": 1,
+  "target-authority": {
+    "packages": {
+      "aw-maintenance": {
+        "authority": "acme/central-agentic-ops"
+      }
+    }
+  }
+}
 ```
 
 Configure the existing `GH_AW_GITHUB_APP_ID` and `GH_AW_GITHUB_APP_PRIVATE_KEY` where possible. The workflow mints separate, repository-scoped installation tokens for the control and target repositories. For PAT fallback, use dedicated fine-grained secrets: `CENTRAL_AGENTIC_OPS_PUBLISH_CONTROL_TOKEN` with Actions read access only to allowed control repositories, and `CENTRAL_AGENTIC_OPS_PUBLISH_TARGET_TOKEN` with Contents read plus Issues write access only to allowed target repositories. The workflow token handles only the review issue and can read a control run when the add-on and control plane share a repository.

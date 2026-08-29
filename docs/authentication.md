@@ -32,21 +32,18 @@ The supported control-plane credentials are:
 
 | Priority | Credential | Configuration |
 | --- | --- | --- |
-| 1 | GitHub App | Repository variable `GH_AW_GITHUB_APP_ID` and secret `GH_AW_GITHUB_APP_PRIVATE_KEY` |
+| 1 | GitHub App | Repository secrets `GH_AW_GITHUB_APP_ID` and `GH_AW_GITHUB_APP_PRIVATE_KEY` |
 | 2 | Fine-grained PAT | Repository secret `GH_AW_GITHUB_TOKEN` |
 | 3 | Workflow token | Repository-provided `GITHUB_TOKEN` for operations it can authorize |
 
 The GitHub App is preferred because it provides short-lived installation tokens, repository-scoped installation access, and centrally reviewable permissions. `ignore-if-missing: true` makes App configuration optional, allowing PAT-only installations.
 
-Configure the App ID as a repository variable and its private key as a repository secret:
+Configure the App ID and private key as repository secrets:
 
 ```bash
 CONTROL_REPO="acme/central-agentic-ops"
 
-gh variable set GH_AW_GITHUB_APP_ID \
-	--repo "$CONTROL_REPO" \
-	--body "<github-app-id>"
-
+printf '%s' '<github-app-id>' | gh secret set GH_AW_GITHUB_APP_ID --repo "$CONTROL_REPO"
 gh secret set GH_AW_GITHUB_APP_PRIVATE_KEY \
 	--repo "$CONTROL_REPO" \
 	< github-app-private-key.pem
@@ -75,7 +72,7 @@ The workflow token is scoped to the repository containing the workflow. Public c
 
 ## Credential Boundary
 
-- Credentials live only in the private control-plane repository's variables and secrets.
+- Credentials live only in the private control-plane repository's secrets.
 - worker workflows receive repository names and routing policy, never credentials.
 - Each Orchestrator and worker workflow run resolves its own token through imported shared control.
 - Tokens must not appear in prompts, logs, safe outputs, Repo Memory, review bundles, or correlation metadata.

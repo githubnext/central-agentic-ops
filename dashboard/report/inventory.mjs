@@ -30,8 +30,8 @@ function inlineList(source, key) {
     .map((item) => unquote(item));
 }
 
-function rolloutModeVariable(source) {
-  return source.match(/(?:rollout_mode|CENTRAL_AGENTIC_OPS_MODE):\s*\$\{\{\s*vars\.([A-Z0-9_]+)/)?.[1] || "";
+function controlPackage(source) {
+  return source.match(/uses:\s+shared\/control\.md[\s\S]*?package:\s+([a-z0-9][a-z0-9-]*)/)?.[1] || "";
 }
 
 function manifestIncludes(source) {
@@ -93,8 +93,8 @@ function discoverInventory() {
         emoji: scalar(source, "emoji"),
         trackerId: scalar(source, "tracker-id"),
         role,
+        controlPackage: role === "standalone" ? "" : controlPackage(source),
         maxAiCredits: Number.isFinite(maxAiCredits) && maxAiCredits > 0 ? maxAiCredits : null,
-        rolloutModeVariable: role === "orchestrator" ? rolloutModeVariable(source) : "",
         sourcePath,
         lockPath: `.github/workflows/${stem}.lock.yml`,
         compiled: existsSync(path.join(workflowDirectory, `${stem}.lock.yml`)),
@@ -109,8 +109,8 @@ function discoverInventory() {
     name: orchestrator.package?.name || orchestrator.name,
     description: orchestrator.package?.description || orchestrator.description,
     workflow: orchestrator.sourcePath,
+    controlPackage: orchestrator.controlPackage,
     maxAiCredits: orchestrator.maxAiCredits,
-    rolloutModeVariable: orchestrator.rolloutModeVariable,
     compiled: orchestrator.compiled,
     workers: orchestrator.workers.map((workerId) => workflowById.get(workerId)).filter(Boolean),
     missingWorkers: orchestrator.workers.filter((workerId) => !workflowById.has(workerId)),

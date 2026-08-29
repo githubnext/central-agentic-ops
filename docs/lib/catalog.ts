@@ -35,11 +35,21 @@ function requiredString(value: unknown, field: string, manifestPath: string): st
   return value.trim();
 }
 
-function stringList(value: unknown, field: string, manifestPath: string): string[] {
-  if (!Array.isArray(value) || value.some((item) => typeof item !== "string")) {
-    throw new Error(`${manifestPath} must define ${field} as a list of paths`);
+function workflowList(value: unknown, manifestPath: string): string[] {
+  if (!Array.isArray(value)) {
+    throw new Error(`${manifestPath} must define includes as a list of workflow paths or mappings`);
   }
-  return value;
+
+  return value.map((item, index) => {
+    if (typeof item === "string") return item;
+    if (typeof item !== "object" || item === null || Array.isArray(item)) {
+      throw new Error(`${manifestPath} includes[${index}] must be a workflow path or mapping`);
+    }
+
+    const mapping = item as Record<string, unknown>;
+    requiredString(mapping.source, `includes[${index}].source`, manifestPath);
+    return requiredString(mapping.destination, `includes[${index}].destination`, manifestPath);
+  });
 }
 
 export const catalogEntries: CatalogEntry[] = Object.entries(manifests)
@@ -58,7 +68,7 @@ export const catalogEntries: CatalogEntry[] = Object.entries(manifests)
       name: requiredString(manifest.name, "name", manifestPath),
       description: requiredString(manifest.description, "description", manifestPath),
       minVersion: requiredString(manifest["min-version"], "min-version", manifestPath),
-      includes: stringList(manifest.includes, "includes", manifestPath),
+      includes: workflowList(manifest.includes, manifestPath),
       manifestFile,
       readmePath: readme ? `${slug}/README.md` : undefined,
       ReadmeContent: readme?.Content,

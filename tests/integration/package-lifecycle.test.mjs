@@ -16,13 +16,14 @@ const packageSource = process.env.CENTRAL_AGENTIC_OPS_PACKAGE_SOURCE
   || "githubnext/central-agentic-ops@main";
 const updateSource = process.env.CENTRAL_AGENTIC_OPS_UPDATE_SOURCE
   || "githubnext/central-agentic-ops@main";
-function focusedPackageSource(slug) {
-  const separator = packageSource.lastIndexOf("@");
+function focusedPackageSource(slug, source = packageSource) {
+  const separator = source.lastIndexOf("@");
   assert.notEqual(separator, -1, "package source must include a ref");
-  return `${packageSource.slice(0, separator)}/${slug}${packageSource.slice(separator)}`;
+  return `${source.slice(0, separator)}/${slug}${source.slice(separator)}`;
 }
 const advisoryPackageSource = focusedPackageSource("advisory");
 const craPackageSource = focusedPackageSource("eu-cra-compliance");
+const dashboardPackageSource = focusedPackageSource("dashboard");
 const advisoryExpectedFiles = [
   ".github/aw/advisory/implementation-status.md",
   ".github/workflows/advisory-package-maintainer.md",
@@ -45,9 +46,19 @@ const craExpectedFiles = [
   ".github/workflows/shared/control-precompute.md",
   ".github/workflows/shared/control.md",
 ];
+const dashboardExpectedFiles = [
+  ".github/aw/dashboard/report/aic-usage.mjs",
+  ".github/aw/dashboard/report/deployed-workflows.mjs",
+  ".github/aw/dashboard/report/inventory.mjs",
+  ".github/aw/dashboard/report/operational-values.mjs",
+  ".github/aw/dashboard/report/report.mjs",
+  ".github/workflows/dashboard-build.yml",
+  ".github/workflows/dashboard.yml",
+];
 
 const expectedFiles = [
   ".github/agents/agentic-workflows.md",
+  ".github/aw/instructions.md",
   ".github/skills/agentic-workflows/SKILL.md",
   ".github/skills/create-ops-package/SKILL.md",
   ".github/workflows/ambient-context-agents-md-curator.md",
@@ -122,6 +133,7 @@ function assertCorePackage(consumer) {
   assert.deepEqual(
     installedManifest.files.map(({ destination }) => destination).sort(),
     [
+      ".github/aw/instructions.md",
       ".github/graders/aw-failures-investigator-operational-value.sh",
       ".github/workflows/ambient-context.md",
       ".github/workflows/aw-failures-investigator.md",
@@ -213,6 +225,74 @@ test("gh aw add installs the focused Advisory package contract", { timeout: 180_
       ],
       "focused Advisory package manifest must own its entry workflows and ledger",
     );
+  } finally {
+    rmSync(consumer, { recursive: true, force: true });
+  }
+});
+
+test("gh aw add installs the dashboard package contract", { timeout: 180_000 }, () => {
+  const consumer = installPackage(dashboardPackageSource);
+
+  try {
+    for (const relativePath of dashboardExpectedFiles) {
+      assert.ok(existsSync(join(consumer, relativePath)), `dashboard package omitted ${relativePath}`);
+    }
+
+    const packageManifests = readdirSync(join(consumer, ".github", "aw", "packages"));
+    assert.equal(packageManifests.length, 1, "expected one installed dashboard package manifest");
+    const installedManifest = JSON.parse(readFileSync(
+      join(consumer, ".github", "aw", "packages", packageManifests[0]),
+      "utf8",
+    ));
+    assert.deepEqual(
+      installedManifest.files.map(({ destination }) => destination).sort(),
+      dashboardExpectedFiles.toSorted(),
+      "dashboard package manifest must own both workflows and every report module",
+    );
+
+    const buildWorkflow = readFileSync(join(consumer, ".github", "workflows", "dashboard-build.yml"), "utf8");
+    const deployWorkflow = readFileSync(join(consumer, ".github", "workflows", "dashboard.yml"), "utf8");
+    assert.match(buildWorkflow, /workflow_call:[\s\S]*?site-path:/);
+    assert.match(buildWorkflow, /actions\/upload-artifact@[0-9a-f]{40}/);
+    assert.doesNotMatch(buildWorkflow, /actions\/(?:upload-pages-artifact|deploy-pages)@/);
+    assert.match(deployWorkflow, /enablement: false/);
+    assert.doesNotMatch(deployWorkflow, /schedule:/);
+  } finally {
+    rmSync(consumer, { recursive: true, force: true });
+  }
+});
+
+test("gh aw add --force restores dashboard workflows and report modules", { timeout: 180_000 }, () => {
+  const consumer = installPackage(dashboardPackageSource);
+
+  try {
+    const deployPath = join(consumer, ".github", "workflows", "dashboard.yml");
+    const deployWorkflow = readFileSync(deployPath, "utf8");
+    writeFileSync(deployPath, `${deployWorkflow}\n# local integration-test change\n`);
+
+    const removedFiles = [
+      ".github/aw/dashboard/report/report.mjs",
+      ".github/workflows/dashboard-build.yml",
+    ];
+    for (const relativePath of removedFiles) {
+      rmSync(join(consumer, relativePath));
+    }
+
+    run("gh", [
+      "aw",
+      "add",
+      dashboardPackageSource,
+      "--force",
+      "--no-security-scanner",
+    ], consumer);
+
+    assert.ok(
+      !readFileSync(deployPath, "utf8").includes("# local integration-test change"),
+      "gh aw add --force retained a local dashboard workflow modification",
+    );
+    for (const relativePath of removedFiles) {
+      assert.ok(existsSync(join(consumer, relativePath)), `gh aw add --force did not restore ${relativePath}`);
+    }
   } finally {
     rmSync(consumer, { recursive: true, force: true });
   }

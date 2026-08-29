@@ -4,7 +4,12 @@ import { chmodSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "nod
 import { tmpdir } from "node:os";
 import { delimiter, join } from "node:path";
 import test from "node:test";
-import { controlEnvironment, controlPrecomputeScript } from "../helpers/control-precompute.mjs";
+import {
+  controlEnvironment,
+  controlPolicy,
+  controlPrecomputeScript,
+  root,
+} from "../helpers/control-precompute.mjs";
 
 const script = controlPrecomputeScript();
 const workflowSource = `---
@@ -21,6 +26,8 @@ set -euo pipefail
 arguments="$*"
 if [[ "$arguments" == "api repos/acme/control --jq .private" ]]; then
   printf 'true\n'
+elif [[ "$arguments" == *"repos/acme/control/contents/.github/central-agentic-ops.json"* ]]; then
+  printf '%s' "$CONTROL_POLICY" | base64
 elif [[ "$arguments" == *"contents/.github/workflows/dependabot.md"* ]]; then
   printf '%s\\n' "$CONTROL_SOURCE_B64"
 elif [[ "$arguments" == *"actions/workflows?per_page=100"* ]]; then
@@ -56,22 +63,30 @@ fi
   chmodSync(executable, 0o755);
 }
 
-function runPrecompute(overrides = {}) {
+function runPrecompute(overrides = {}, policy = controlPolicy({
+  inventory: { "max-scan-repositories": 100000 },
+  packagePolicy: { "max-repositories": 1000, "rollout-percent": 10 },
+})) {
   const temporaryDirectory = mkdtempSync(join(tmpdir(), "central-agentic-ops-load-"));
   const logPath = join(temporaryDirectory, "gh.log");
+  const githubEnvironment = join(temporaryDirectory, "github-env");
+  const safeOutputs = join(temporaryDirectory, "safe-outputs.jsonl");
   mockGh(temporaryDirectory);
+  writeFileSync(githubEnvironment, "");
+  writeFileSync(safeOutputs, "");
 
   const result = spawnSync("bash", ["-c", script], {
+    cwd: root,
     encoding: "utf8",
     env: controlEnvironment({
       ROLE: "orchestrator",
       TARGET_REPO: "",
-      MAX_REPOS: "1000",
-      MAX_SCAN_REPOS: "100000",
       DISPATCH_MAX: "1000",
-      ROLLOUT_PERCENT: "10",
       WORKER_CREDITS_PER_TARGET: "0",
+      CONTROL_POLICY: policy,
       CONTROL_SOURCE_B64: Buffer.from(workflowSource).toString("base64"),
+      GITHUB_ENV: githubEnvironment,
+      GH_AW_SAFE_OUTPUTS: safeOutputs,
       MOCK_GH_LOG: logPath,
       PATH: `${temporaryDirectory}${delimiter}${process.env.PATH}`,
       ...overrides,
@@ -102,14 +117,17 @@ test("control precompute bounds a 100,000-repository inventory", { timeout: 120_
 });
 
 test("control precompute assigns stable cells and bounded batches", () => {
-  const overrides = {
-    MAX_SCAN_REPOS: "1000",
-    CELL_COUNT: "4",
-    CELL_INDEX: "1",
-    BATCH_SIZE: "100",
-    BATCH_INDEX: "1",
-  };
-  const first = runPrecompute(overrides);
+  const firstPolicy = controlPolicy({
+    inventory: {
+      "max-scan-repositories": 1000,
+      "cell-count": 4,
+      "cell-index": 1,
+      "batch-size": 100,
+      "batch-index": 1,
+    },
+    packagePolicy: { "max-repositories": 1000, "rollout-percent": 10 },
+  });
+  const first = runPrecompute({}, firstPolicy);
 
   try {
     assert.equal(first.result.status, 0, first.result.stderr);
@@ -122,7 +140,16 @@ test("control precompute assigns stable cells and bounded batches", () => {
     assert.equal(firstOutput.candidate_repositories.at(-1).id, 797);
     assert.ok(firstOutput.candidate_repositories.every(({ id }) => id % 4 === 1));
 
-    const second = runPrecompute({ ...overrides, BATCH_INDEX: "2" });
+    const second = runPrecompute({}, controlPolicy({
+      inventory: {
+        "max-scan-repositories": 1000,
+        "cell-count": 4,
+        "cell-index": 1,
+        "batch-size": 100,
+        "batch-index": 2,
+      },
+      packagePolicy: { "max-repositories": 1000, "rollout-percent": 10 },
+    }));
     try {
       assert.equal(second.result.status, 0, second.result.stderr);
       const secondOutput = JSON.parse(readFileSync("/tmp/gh-aw/agent/control-precompute.json", "utf8"));
@@ -141,14 +168,16 @@ test("control precompute assigns stable cells and bounded batches", () => {
 
 test("control precompute tunes target admission to the remaining monthly package budget", () => {
   const run = runPrecompute({
-    MAX_REPOS: "10",
-    MAX_SCAN_REPOS: "1000",
-    ROLLOUT_PERCENT: "100",
     ORCHESTRATOR_CREDITS: "250",
     WORKER_CREDITS_PER_TARGET: "600",
-    AGGREGATE_CREDIT_LIMIT: "10000",
-    MONTHLY_CREDIT_BUDGET: "2000",
-  });
+  }, controlPolicy({
+    inventory: { "max-scan-repositories": 1000 },
+    packagePolicy: {
+      "max-repositories": 10,
+      "rollout-percent": 100,
+      "monthly-ai-credit-budget": 2000,
+    },
+  }));
 
   try {
     assert.equal(run.result.status, 0, run.result.stderr);
@@ -165,14 +194,16 @@ test("control precompute tunes target admission to the remaining monthly package
 
 test("control precompute fails monthly budget admission closed when usage is unreadable", () => {
   const run = runPrecompute({
-    MAX_REPOS: "10",
-    MAX_SCAN_REPOS: "1000",
     DISPATCH_MAX: "10",
     WORKER_CREDITS_PER_TARGET: "600",
-    AGGREGATE_CREDIT_LIMIT: "10000",
-    MONTHLY_CREDIT_BUDGET: "2000",
     MOCK_FAIL_BUDGET: "true",
-  });
+  }, controlPolicy({
+    inventory: { "max-scan-repositories": 1000 },
+    packagePolicy: {
+      "max-repositories": 10,
+      "monthly-ai-credit-budget": 2000,
+    },
+  }));
 
   try {
     assert.equal(run.result.status, 0, run.result.stderr);
@@ -186,14 +217,14 @@ test("control precompute fails monthly budget admission closed when usage is unr
 });
 
 test("control precompute rejects an invalid monthly package budget", () => {
-  const run = runPrecompute({
-    MAX_SCAN_REPOS: "1000",
-    MONTHLY_CREDIT_BUDGET: "1.5",
-  });
+  const run = runPrecompute({}, controlPolicy({
+    inventory: { "max-scan-repositories": 1000 },
+    packagePolicy: { "monthly-ai-credit-budget": 1.5 },
+  }));
 
   try {
     assert.notEqual(run.result.status, 0);
-    assert.match(run.result.stderr, /monthly_credit_budget must be a non-negative integer/);
+    assert.match(run.result.stderr, /control-plane\.packages\.dependabot\.monthly-ai-credit-budget must be an integer in >= 0/);
   } finally {
     rmSync(run.temporaryDirectory, { recursive: true, force: true });
   }

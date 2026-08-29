@@ -13,7 +13,7 @@ Roll out each operation independently. Begin with one explicit target in `review
 4. Enable scheduled live operation with `max_repos` kept small.
 5. Increase limits only from observed evidence.
 
-Set the package kill switch to `false` whenever authentication, routing, output quality, cost, or provenance is uncertain. Resume in `review` after correcting the issue.
+Set the package's checked-in `enabled` field to `false` whenever authentication, routing, output quality, cost, or provenance is uncertain. Resume in `review` after correcting the issue.
 
 ![A control plane promotes bounded operations from review to live across organization repositories.](assets/control-plane-scale.svg)
 
@@ -26,14 +26,17 @@ review --approve--> limited live --observe--> scheduled live
 
 ## Operation-Level Control
 
-Each operation has its own mode. Review safe outputs route to the current control-plane repository unless a manual run supplies `safe_output_repo`. This is the primary unit of gradual rollout.
+Each package under `control-plane.packages` has its own mode and limits. Review safe outputs route to the current control-plane repository unless a manual run supplies an allowed `safe_output_repo`. This is the primary unit of gradual rollout.
 
-| Operation | Kill switch | Mode variable | Scheduled absolute cap | Rollout percentage variable |
-| --- | --- | --- | --- | --- |
-| Ambient Context | `CENTRAL_AGENTIC_OPS_AMBIENT_CONTEXT_ENABLED` | `CENTRAL_AGENTIC_OPS_AMBIENT_CONTEXT_MODE` | `CENTRAL_AGENTIC_OPS_AMBIENT_CONTEXT_MAX_REPOS` | `CENTRAL_AGENTIC_OPS_AMBIENT_CONTEXT_ROLLOUT_PERCENT` |
-| AW Maintenance | `CENTRAL_AGENTIC_OPS_AW_MAINTENANCE_ENABLED` | `CENTRAL_AGENTIC_OPS_AW_MAINTENANCE_MODE` | `CENTRAL_AGENTIC_OPS_AW_MAINTENANCE_MAX_REPOS` | `CENTRAL_AGENTIC_OPS_AW_MAINTENANCE_ROLLOUT_PERCENT` |
-| Dependabot | `CENTRAL_AGENTIC_OPS_DEPENDABOT_ENABLED` | `CENTRAL_AGENTIC_OPS_DEPENDABOT_MODE` | `CENTRAL_AGENTIC_OPS_DEPENDABOT_MAX_REPOS` | `CENTRAL_AGENTIC_OPS_DEPENDABOT_ROLLOUT_PERCENT` |
-| Optimization | `CENTRAL_AGENTIC_OPS_OPTIMIZATION_ENABLED` | `CENTRAL_AGENTIC_OPS_OPTIMIZATION_MODE` | `CENTRAL_AGENTIC_OPS_OPTIMIZATION_MAX_REPOS` | `CENTRAL_AGENTIC_OPS_OPTIMIZATION_ROLLOUT_PERCENT` |
+| Control | Package JSON field | Default |
+| --- | --- | --- |
+| Kill switch | `enabled` | `true` for a declared package |
+| Output mode | `mode` | `review` |
+| Scheduled absolute cap | `max-repositories` | `1` |
+| Rollout percentage | `rollout-percent` | `100` |
+| Monthly AIC budget | `monthly-ai-credit-budget` | `0` (disabled) |
+| Worker kill switch | `workers.<worker>.enabled` | `true` for a declared worker |
+| Worker mode ceiling | `workers.<worker>.max-mode` | `review` |
 
 Changing one operation does not change another. For example, Dependabot may be live while Optimization remains in review.
 
@@ -43,26 +46,28 @@ Absolute caps default to `1`, so missing configuration cannot create broad fan-o
 For 25 discovered repositories at 10 percent, the percentage cap is 3. If `max_repos` is `1`, only one repository can be selected.
 :::
 
-Automatic discovery scans at most `CENTRAL_AGENTIC_OPS_MAX_SCAN_REPOS` repositories, defaulting to `1000` with a hard maximum of `100000`. Shared cell count/index and batch size/index controls deterministically select one bounded inventory slice before ranking. They do not auto-advance or retry batches. Manual target and review repositories must belong to `CENTRAL_AGENTIC_OPS_ALLOWED_OWNERS`, which defaults to the control repository owner.
+Automatic discovery scans at most `control-plane.inventory.max-scan-repositories`, defaulting to `1000` with a hard maximum of `100000`. The checked-in cell and batch fields deterministically select one bounded inventory slice before ranking. They do not auto-advance or retry batches. Manual target and review repositories must satisfy `control-plane.scope`, whose allowed owners default to the control repository owner.
 
 ### Live Authority Check
 
-Discovery, an allowed owner, and credential access do not prove target enrollment. Before promoting an operation to `live`, add the operation and assigned control repository to `.github/central-agentic-ops.yml` on the target's default branch. Protect that file with target-owner review. Also verify the approved inventory records the target, operation, approving repository owner, review date, and revocation path.
+Discovery, an allowed owner, and credential access do not prove target enrollment. Before promoting an operation to `live`, add the package and assigned control repository to `.github/central-agentic-ops.json` on the target's default branch. Protect that file with target-owner review. Also verify the approved inventory records the target, operation, approving repository owner, review date, and revocation path.
 
 Every live worker reads the target-owned file before agent execution. It fails closed when the file is missing or malformed, the operation is absent, or `authority` does not match the dispatched `central_repo`. Review runs do not require the file because they cannot mutate the target. This prevents a second runtime from beginning a new live run for the same operation, but it does not cancel an already-running workflow in another control repository.
 
-```yaml
-# .github/central-agentic-ops.yml in the target repository
-version: 1
-bundles:
-	dependabot:
-		authority: acme/central-agentic-ops
-	optimization:
-		authority: acme/central-agentic-ops
+```json
+{
+	"version": 1,
+	"target-authority": {
+		"packages": {
+			"dependabot": { "authority": "acme/central-agentic-ops" },
+			"optimization": { "authority": "acme/central-agentic-ops" }
+		}
+	}
+}
 ```
 
 :::caution[Protect the authority file]
-Require target-owner review for changes to `.github/central-agentic-ops.yml`. Credential access and an allowed owner are not substitutes for target consent.
+Require target-owner review for changes to `.github/central-agentic-ops.json`. Credential access and an allowed owner are not substitutes for target consent.
 :::
 
 If an enterprise and organization runtime both select the same pair, keep both in `review` until operators assign one live authority. Do not rely on run timing, workflow concurrency, or repository protections to resolve the conflict. Separate control repositories have independent queues and kill switches.
@@ -93,7 +98,7 @@ For Pages reports, `safe_output_repo` retains its standard meaning as the safe-o
 
 ## `workflow_dispatch` Runs
 
-A `workflow_dispatch` run can set the `target_repo`, `max_repos`, `rollout_percent`, `safe_output_mode`, and `safe_output_repo` workflow inputs. These DispatchOps runs are useful for a controlled canary or incident diagnosis. They do not update repository variables or another operation's policy, and their requested mode does not depend on the configured scheduled mode.
+A `workflow_dispatch` run can set the `target_repo`, `max_repos`, `rollout_percent`, `safe_output_mode`, and `safe_output_repo` workflow inputs. These DispatchOps runs are useful for a controlled canary or incident diagnosis. They do not update checked-in policy. Mode and numeric requests may narrow the resolved package policy but cannot widen it.
 
 `workflow_dispatch` runs should narrow scope during validation:
 
@@ -119,7 +124,7 @@ Promote each operation independently:
 
 1. **Installed in review**: credentials and repository access are configured; proposals route to the private review destination without target writes.
 2. **Review verified**: run against one representative repository; inspect selection, prompts, permissions, correlation data, and the actionable proposal. For a Pages report, also verify that the access-controlled review site updates and production Pages does not.
-3. **Enrolled**: record target-owner approval and commit the assigned control repository to the target's protected `.github/central-agentic-ops.yml`.
+3. **Enrolled**: record target-owner approval and commit the assigned control repository to the target's protected `.github/central-agentic-ops.json`.
 4. **Limited live**: confirm no other control repository has live authority for the same operation, then manually target one low-risk repository and verify the resulting safe output and downstream CI. For a Pages report, verify the production site update independently of the review site.
 5. **Scheduled live**: enable scheduled operation with `max_repos` kept small, then increase limits only from observed evidence.
 
@@ -131,7 +136,7 @@ An operation does not become safer because it remained in a mode for several day
 
 ## Rollback
 
-The first rollback action is to set the affected package's `ENABLED` variable to `false`. For a narrower incident, disable the affected worker workflow so precomputation marks it ineligible. Then:
+The first rollback action is to set the affected package's `enabled` field to `false` in `.github/central-agentic-ops.json` and deploy that reviewed revision. For a narrower incident, set the worker's `enabled` field to `false`. Then:
 
 1. stop new dispatches;
 2. inspect the orchestrator run and correlated worker runs;
