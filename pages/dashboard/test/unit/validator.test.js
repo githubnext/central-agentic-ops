@@ -227,7 +227,7 @@ dashboard:
     }
   });
 
-  it('DLS-PAGE-001 DLS-PAGE-010 accepts an omitted built-in page title when the page name is canonical', () => {
+  it('DLS-PAGE-001 DLS-PAGE-010 DLS-PAGE-014 accepts an omitted built-in page title when the page name is canonical', () => {
     const result = validateDashboardDocument(`language-version: "0.1.0"
 dashboard:
   id: built-in-title-default
@@ -237,6 +237,10 @@ dashboard:
       kind: built-in
       page: usage
       definition:
+        data-state:
+          availability: true
+          completeness: true
+          freshness: true
         views:
           - id: usage-summary
             data:
@@ -295,6 +299,10 @@ dashboard:
       page: organizations
       title: Organizations
       definition:
+        data-state:
+          availability: true
+          completeness: true
+          freshness: true
         views:
           - id: organizations-view
             data:
@@ -335,7 +343,7 @@ dashboard:
     }
   });
 
-  it('DLS-PAGE-001 DLS-PAGE-011 accepts an explicit built-in page title when it matches the canonical title default', () => {
+  it('DLS-PAGE-001 DLS-PAGE-011 DLS-PAGE-014 accepts an explicit built-in page title when it matches the canonical title default', () => {
     const result = validateDashboardDocument(`language-version: "0.1.0"
 dashboard:
   id: explicit-built-in-title-default
@@ -346,6 +354,10 @@ dashboard:
       page: engines-models
       title: Engines Models
       definition:
+        data-state:
+          availability: true
+          completeness: true
+          freshness: true
         views:
           - id: runs-view
             data:
@@ -378,7 +390,6 @@ dashboard:
                 - field: reasoning-tokens
                 - field: aic
 `);
-
     expect(result.ok).toBe(true);
   });
 
@@ -457,7 +468,7 @@ dashboard:
     }
   });
 
-  it('DLS-PAGE-006 rejects a runs built-in page definition that omits required run fields with DLS-E003', () => {
+  it('DLS-PAGE-006 DLS-PAGE-014 rejects a runs built-in page definition that omits required run fields with DLS-E003', () => {
     const result = validateDashboardDocument(`language-version: "0.1.0"
 dashboard:
   id: incomplete-runs-page
@@ -468,6 +479,10 @@ dashboard:
       page: runs
       title: Runs
       definition:
+        data-state:
+          availability: true
+          completeness: true
+          freshness: true
         views:
           - id: run-table
             data:
@@ -529,35 +544,12 @@ dashboard:
     }
   });
 
-  it('DLS-PAGE-006 DLS-PAGE-010 DLS-PAGE-011 DLS-PAGE-012 DLS-PAGE-013 accepts built-in definitions that conservatively cover required fields', () => {
+  it('DLS-PAGE-014 rejects a built-in page definition that does not expose independent availability, completeness, and freshness', () => {
     const result = validateDashboardDocument(`language-version: "0.1.0"
 dashboard:
-  id: built-in-field-coverage
-  title: Built In Field Coverage
+  id: missing-built-in-data-state
+  title: Missing Built In Data State
   pages:
-    - id: runs
-      kind: built-in
-      page: runs
-      title: Runs
-      definition:
-        views:
-          - id: run-table
-            data:
-              source: runs
-            mark: table
-            encoding:
-              columns:
-                - field: run
-                - field: run-status
-                - field: run-conclusion
-                - field: organization
-                - field: repository
-                - field: workflow
-                - field: rollout-mode
-                - field: engine
-                - field: requested-model
-                - field: resolved-model
-                - field: started-at
     - id: usage
       kind: built-in
       page: usage
@@ -584,11 +576,158 @@ dashboard:
                 - field: workflow
                 - field: rollout-mode
                 - field: observed-at
+`);
+
+    expect(result.ok).toBe(false);
+    if (!result.ok) {
+      expect(result.errors).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({
+            code: 'DLS-E003',
+            path: '$.dashboard.pages[0].definition.data-state',
+            message: 'built-in page definition must expose independent availability, completeness, and freshness state.'
+          })
+        ])
+      );
+    }
+  });
+
+  it('DLS-PAGE-014 rejects a built-in page definition with non-canonical independent data-state markers', () => {
+    const result = validateDashboardDocument(`language-version: "0.1.0"
+dashboard:
+  id: invalid-built-in-data-state
+  title: Invalid Built In Data State
+  pages:
+    - id: usage
+      kind: built-in
+      page: usage
+      title: Usage
+      definition:
+        data-state:
+          availability: available
+          completeness: false
+          freshness: maybe
+          extra-axis: true
+        views:
+          - id: usage-table
+            data:
+              source: usage
+            mark: table
+            encoding:
+              columns:
+                - field: input-tokens
+                - field: output-tokens
+                - field: cache-read-tokens
+                - field: cache-write-tokens
+                - field: reasoning-tokens
+                - field: aic
+                - field: engine
+                - field: requested-model
+                - field: resolved-model
+                - field: organization
+                - field: repository
+                - field: workflow
+                - field: rollout-mode
+                - field: observed-at
+`);
+
+    expect(result.ok).toBe(false);
+    if (!result.ok) {
+      expect(result.errors).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({ code: 'DLS-E004', path: '$.dashboard.pages[0].definition.data-state.extra-axis' }),
+          expect.objectContaining({
+            code: 'DLS-E003',
+            path: '$.dashboard.pages[0].definition.data-state.availability',
+            message: 'built-in page definition must expose independent availability state with canonical boolean true.'
+          }),
+          expect.objectContaining({
+            code: 'DLS-E003',
+            path: '$.dashboard.pages[0].definition.data-state.completeness',
+            message: 'built-in page definition must expose independent completeness state with canonical boolean true.'
+          }),
+          expect.objectContaining({
+            code: 'DLS-E003',
+            path: '$.dashboard.pages[0].definition.data-state.freshness',
+            message: 'built-in page definition must expose independent freshness state with canonical boolean true.'
+          })
+        ])
+      );
+    }
+  });
+
+  it('DLS-PAGE-006 DLS-PAGE-010 DLS-PAGE-011 DLS-PAGE-012 DLS-PAGE-013 DLS-PAGE-014 accepts built-in definitions that conservatively cover required fields', () => {
+    const result = validateDashboardDocument(`language-version: "0.1.0"
+dashboard:
+  id: built-in-field-coverage
+  title: Built In Field Coverage
+  pages:
+    - id: runs
+      kind: built-in
+      page: runs
+      title: Runs
+      definition:
+        data-state:
+          availability: true
+          completeness: true
+          freshness: true
+        views:
+          - id: run-table
+            data:
+              source: runs
+            mark: table
+            encoding:
+              columns:
+                - field: run
+                - field: run-status
+                - field: run-conclusion
+                - field: organization
+                - field: repository
+                - field: workflow
+                - field: rollout-mode
+                - field: engine
+                - field: requested-model
+                - field: resolved-model
+                - field: started-at
+    - id: usage
+      kind: built-in
+      page: usage
+      title: Usage
+      definition:
+        data-state:
+          availability: true
+          completeness: true
+          freshness: true
+        views:
+          - id: usage-table
+            data:
+              source: usage
+            mark: table
+            encoding:
+              columns:
+                - field: input-tokens
+                - field: output-tokens
+                - field: cache-read-tokens
+                - field: cache-write-tokens
+                - field: reasoning-tokens
+                - field: aic
+                - field: engine
+                - field: requested-model
+                - field: resolved-model
+                - field: organization
+                - field: repository
+                - field: workflow
+                - field: rollout-mode
+                - field: observed-at
     - id: operational-value
       kind: built-in
       page: operational-value
       title: Operational Value
       definition:
+        data-state:
+          availability: true
+          completeness: true
+          freshness: true
         views:
           - id: operational-value-table
             data:
@@ -613,6 +752,10 @@ dashboard:
       page: findings
       title: Findings
       definition:
+        data-state:
+          availability: true
+          completeness: true
+          freshness: true
         views:
           - id: findings-table
             data:
