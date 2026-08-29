@@ -3,19 +3,19 @@ import { describe, expect, it } from 'vitest';
 import { renderDashboard } from '../../src/presenter.js';
 
 describe('presenter built-in pages', () => {
-  it('DLS-PAGE-012 DLS-PAGE-014 renders built-in operational-value page with time-ordered absolute attainment series, definition, operational case, evaluator digest, subject, evidence timing, maturity, baseline delta, evidence links, provenance, and independent data state deterministically', () => {
+  it('DLS-PAGE-003 DLS-PAGE-014 renders built-in organizations page with organization inventory, repository count, workflow count, run count, available usage measures, provenance, and independent data state deterministically', () => {
     /** @type {import('../../src/presenter.js').PresentationInput['document']} */
     const document = {
       languageVersion: '0.1.0',
       dashboard: {
-        id: 'operational-value-dashboard',
-        title: 'Operational Value Dashboard',
+        id: 'organizations-dashboard',
+        title: 'Organizations Dashboard',
         pages: [
           {
-            id: 'operational-value',
+            id: 'organizations',
             kind: /** @type {'built-in'} */ ('built-in'),
-            page: 'operational-value',
-            title: 'Operational Value',
+            page: 'organizations',
+            title: 'Organizations',
             definition: {
               'data-state': {
                 availability: true,
@@ -23,7 +23,11 @@ describe('presenter built-in pages', () => {
                 freshness: true
               },
               views: [
-                { id: 'operational-values-source', data: { source: 'operational-values' } }
+                { id: 'organizations-source', data: { source: 'organizations' } },
+                { id: 'repositories-source', data: { source: 'repositories' } },
+                { id: 'workflows-source', data: { source: 'workflows' } },
+                { id: 'runs-source', data: { source: 'runs' } },
+                { id: 'usage-source', data: { source: 'usage' } }
               ]
             }
           }
@@ -34,51 +38,14 @@ describe('presenter built-in pages', () => {
     const rendered = renderDashboard({
       document,
       sources: {
-        'operational-values': {
-          source: 'operational-values',
+        organizations: {
+          source: 'organizations',
           rows: [
-            {
-              organization: 'github',
-              repository: 'central-agentic-ops',
-              workflow: '.github/workflows/daily.yml',
-              run: '1002',
-              experiment: 'baseline-live',
-              'operational-case': 'merge-latency',
-              'evaluator-digest': 'sha256:def456',
-              'operational-value': 0.71,
-              'operational-value-definition': 'merge-efficiency',
-              'requested-evidence-at': '2026-08-28T09:30:00Z',
-              'evidence-cutoff': '2026-08-28T10:00:00Z',
-              'maturity-at': '2026-08-29T12:00:00Z',
-              'maturity-status': 'pending',
-              'delta-from-baseline': null,
-              'observed-at': '2026-08-28T11:00:00Z'
-            },
-            {
-              organization: 'github',
-              repository: 'central-agentic-ops',
-              workflow: '.github/workflows/daily.yml',
-              run: '1001',
-              experiment: 'baseline-review',
-              'operational-case': 'merge-latency',
-              'evaluator-digest': 'sha256:abc123',
-              'operational-value': 0.83,
-              'operational-value-definition': 'merge-efficiency',
-              'requested-evidence-at': '2026-08-29T09:30:00Z',
-              'evidence-cutoff': '2026-08-29T10:00:00Z',
-              'maturity-at': '2026-08-30T12:00:00Z',
-              'maturity-status': 'accepted',
-              'delta-from-baseline': 0.12,
-              'observed-at': '2026-08-29T11:00:00Z',
-              'evidence-link': {
-                relation: 'evidence',
-                href: 'https://example.com/evidence/1001',
-                label: 'Evidence 1001'
-              }
-            }
+            { organization: 'github', 'organization-name': 'GitHub', 'observed-at': '2026-08-29T10:00:00Z' },
+            { organization: 'octo-org', 'organization-name': 'Octo Org', 'observed-at': '2026-08-29T10:00:00Z' }
           ],
           metadata: {
-            'source-id': 'operational-values-fixture',
+            'source-id': 'organizations-fixture',
             'source-kind': 'fixture',
             'as-of': '2026-08-29T19:00:00Z',
             'retrieved-at': '2026-08-29T19:01:00Z',
@@ -86,41 +53,97 @@ describe('presenter built-in pages', () => {
             freshness: 'stale',
             availability: 'available'
           }
+        },
+        repositories: {
+          source: 'repositories',
+          rows: [
+            { organization: 'github', repository: 'central-agentic-ops', 'repository-name': 'Central Agentic Ops', 'rollout-mode': 'live', 'observed-at': '2026-08-29T10:00:00Z' },
+            { organization: 'github', repository: 'mona-tools', 'repository-name': 'Mona Tools', 'rollout-mode': 'review', 'observed-at': '2026-08-29T10:00:00Z' },
+            { organization: 'octo-org', repository: 'octo-repo', 'repository-name': 'Octo Repo', 'rollout-mode': 'live', 'observed-at': '2026-08-29T10:00:00Z' }
+          ],
+          metadata: {
+            'source-id': 'repositories-fixture',
+            'source-kind': 'fixture',
+            'as-of': '2026-08-29T19:00:00Z',
+            'retrieved-at': '2026-08-29T19:01:00Z',
+            completeness: 'complete',
+            freshness: 'fresh',
+            availability: 'available'
+          }
+        },
+        workflows: {
+          source: 'workflows',
+          rows: [
+            { organization: 'github', repository: 'central-agentic-ops', workflow: '.github/workflows/daily.yml', 'workflow-name': 'Daily', 'workflow-active': 'true', 'rollout-mode': 'live', 'observed-at': '2026-08-29T10:00:00Z' },
+            { organization: 'github', repository: 'mona-tools', workflow: '.github/workflows/review.yml', 'workflow-name': 'Review', 'workflow-active': 'false', 'rollout-mode': 'review', 'observed-at': '2026-08-29T10:00:00Z' },
+            { organization: 'octo-org', repository: 'octo-repo', workflow: '.github/workflows/nightly.yml', 'workflow-name': 'Nightly', 'workflow-active': 'true', 'rollout-mode': 'live', 'observed-at': '2026-08-29T10:00:00Z' }
+          ],
+          metadata: {
+            'source-id': 'workflows-fixture',
+            'source-kind': 'fixture',
+            'as-of': '2026-08-29T19:00:00Z',
+            'retrieved-at': '2026-08-29T19:01:00Z',
+            completeness: 'complete',
+            freshness: 'fresh',
+            availability: 'available'
+          }
+        },
+        runs: {
+          source: 'runs',
+          rows: [
+            { organization: 'github', repository: 'central-agentic-ops', workflow: '.github/workflows/daily.yml', run: '1001', 'started-at': '2026-08-29T09:00:00Z', 'run-status': 'completed', 'run-conclusion': 'success', 'rollout-mode': 'live', engine: 'gpt', 'requested-model': 'gpt-4o', 'resolved-model': 'gpt-4.1' },
+            { organization: 'github', repository: 'mona-tools', workflow: '.github/workflows/review.yml', run: '1002', 'started-at': '2026-08-29T09:30:00Z', 'run-status': 'completed', 'run-conclusion': 'failure', 'rollout-mode': 'review', engine: 'gpt', 'requested-model': 'gpt-4o-mini', 'resolved-model': 'gpt-4o-mini' },
+            { organization: 'octo-org', repository: 'octo-repo', workflow: '.github/workflows/nightly.yml', run: '2001', 'started-at': '2026-08-29T08:00:00Z', 'run-status': 'in-progress', 'run-conclusion': 'unknown', 'rollout-mode': 'live', engine: 'claude', 'requested-model': 'claude-3.5', 'resolved-model': 'claude-3.5' }
+          ],
+          metadata: {
+            'source-id': 'runs-fixture',
+            'source-kind': 'fixture',
+            'as-of': '2026-08-29T19:00:00Z',
+            'retrieved-at': '2026-08-29T19:01:00Z',
+            completeness: 'complete',
+            freshness: 'fresh',
+            availability: 'available'
+          }
+        },
+        usage: {
+          source: 'usage',
+          rows: [
+            { organization: 'github', repository: 'central-agentic-ops', workflow: '.github/workflows/daily.yml', run: '1001', invocation: 'u1', engine: 'gpt', 'requested-model': 'gpt-4o', 'resolved-model': 'gpt-4.1', 'rollout-mode': 'live', 'input-tokens': 100, 'output-tokens': 50, 'cache-read-tokens': 20, 'cache-write-tokens': 10, 'reasoning-tokens': 5, aic: 3.5, 'observed-at': '2026-08-29T09:05:00Z' },
+            { organization: 'github', repository: 'mona-tools', workflow: '.github/workflows/review.yml', run: '1002', invocation: 'u2', engine: 'gpt', 'requested-model': 'gpt-4o-mini', 'resolved-model': 'gpt-4o-mini', 'rollout-mode': 'review', 'input-tokens': 200, 'output-tokens': 80, 'cache-read-tokens': 40, 'cache-write-tokens': 15, 'reasoning-tokens': 7, aic: 4.5, 'observed-at': '2026-08-29T09:35:00Z' },
+            { organization: 'octo-org', repository: 'octo-repo', workflow: '.github/workflows/nightly.yml', run: '2001', invocation: 'u3', engine: 'claude', 'requested-model': 'claude-3.5', 'resolved-model': 'claude-3.5', 'rollout-mode': 'live', 'input-tokens': 150, 'output-tokens': 60, 'cache-read-tokens': 30, 'cache-write-tokens': 12, 'reasoning-tokens': 9, aic: 2.25, 'observed-at': '2026-08-29T08:05:00Z' }
+          ],
+          metadata: {
+            'source-id': 'usage-fixture',
+            'source-kind': 'fixture',
+            'as-of': '2026-08-29T19:00:00Z',
+            'retrieved-at': '2026-08-29T19:01:00Z',
+            completeness: 'complete',
+            freshness: 'fresh',
+            availability: 'available'
+          }
         }
       }
     });
 
-    expect(rendered.querySelector('[data-page-name="operational-value"]')?.textContent).toContain('Operational Value Timeline');
+    expect(rendered.querySelector('[data-page-name="organizations"]')?.textContent).toContain('Organization Inventory');
     expect(rendered.querySelector('[data-state-axis="availability"]')?.textContent).toBe('available');
     expect(rendered.querySelector('[data-state-axis="completeness"]')?.textContent).toBe('partial');
     expect(rendered.querySelector('[data-state-axis="freshness"]')?.textContent).toBe('stale');
-    expect(rendered.querySelectorAll('.operational-value-table tbody tr')).toHaveLength(2);
+    expect(rendered.querySelectorAll('.organizations-table tbody tr')).toHaveLength(2);
 
-    const firstRowText = rendered.querySelector('.operational-value-table tbody tr')?.textContent ?? '';
-    expect(firstRowText).toContain('2026-08-28T11:00:00Z');
-    expect(firstRowText).toContain('0.71');
-    expect(firstRowText).toContain('merge-efficiency');
-    expect(firstRowText).toContain('merge-latency');
-    expect(firstRowText).toContain('sha256:def456');
-    expect(firstRowText).toContain('github');
-    expect(firstRowText).toContain('central-agentic-ops');
-    expect(firstRowText).toContain('.github/workflows/daily.yml');
-    expect(firstRowText).toContain('1002');
-    expect(firstRowText).toContain('baseline-live');
-    expect(firstRowText).toContain('2026-08-28T09:30:00Z');
-    expect(firstRowText).toContain('2026-08-28T10:00:00Z');
-    expect(firstRowText).toContain('2026-08-29T12:00:00Z');
-    expect(firstRowText).toContain('pending');
-    expect(firstRowText).toContain('Unavailable');
+    const githubRow = rendered.querySelector('[data-organization-id="github"]');
+    expect(githubRow?.textContent).toContain('github');
+    expect(githubRow?.textContent).toContain('GitHub');
+    expect(githubRow?.textContent).toContain('2');
+    expect(githubRow?.textContent).toContain('8');
 
-    const secondRow = rendered.querySelectorAll('.operational-value-table tbody tr')[1];
-    const secondRowText = secondRow?.textContent ?? '';
-    expect(secondRowText).toContain('2026-08-29T11:00:00Z');
-    expect(secondRowText).toContain('0.83');
-    expect(secondRowText).toContain('accepted');
-    expect(secondRowText).toContain('0.12');
-    expect(secondRow?.querySelector('a')?.getAttribute('href')).toBe('https://example.com/evidence/1001');
-    expect(secondRow?.querySelector('a')?.textContent).toBe('Evidence 1001');
-    expect(rendered.querySelector('.provenance-list')?.textContent).toContain('operational-values: operational-values-fixture (fixture) — as of 2026-08-29T19:00:00Z');
+    const octoRow = rendered.querySelector('[data-organization-id="octo-org"]');
+    expect(octoRow?.textContent).toContain('octo-org');
+    expect(octoRow?.textContent).toContain('Octo Org');
+    expect(octoRow?.textContent).toContain('1');
+    expect(octoRow?.textContent).toContain('2.25');
+
+    expect(rendered.querySelector('.provenance-list')?.textContent).toContain('organizations: organizations-fixture (fixture) — as of 2026-08-29T19:00:00Z');
+    expect(rendered.querySelector('.provenance-list')?.textContent).toContain('usage: usage-fixture (fixture) — as of 2026-08-29T19:00:00Z');
   });
 });
