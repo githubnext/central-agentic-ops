@@ -77,11 +77,13 @@ pre-agent-steps:
   - name: Build documentation
     run: timeout 10m npm run docs:build
   - name: Install WebKit browser
+    env:
+      EXPR_GITHUB_WORKSPACE: ${{ github.workspace }}
     run: |
-      mkdir -p "${{ github.workspace }}/.playwright"
+      mkdir -p "$EXPR_GITHUB_WORKSPACE/.playwright"
       set +e
       timeout 10m npx --yes playwright@1.63.0-alpha-2026-08-05 install --with-deps webkit \
-        > "${{ github.workspace }}/.playwright/webkit-install.log" 2>&1
+        > "$EXPR_GITHUB_WORKSPACE/.playwright/webkit-install.log" 2>&1
       WEBKIT_INSTALL_STATUS=$?
       set -e
       if [ $WEBKIT_INSTALL_STATUS -ne 0 ]; then

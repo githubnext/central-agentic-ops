@@ -7,3 +7,6 @@ includes:
   - .github/workflows/aw-maintenance.md
   - .github/workflows/dependabot.md
   - .github/workflows/optimization.md
+resources:
+  - source: .github/aw/instructions.md
+    destination: .github/aw/instructions.md

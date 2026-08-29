@@ -55,7 +55,7 @@ pre-agent-steps:
     run: |
       mkdir -p /tmp/gh-aw/agent/cao-dashboard-review
       REPORT_INVENTORY=/tmp/gh-aw/agent/cao-dashboard-review/expected-inventory.json \
-        node .github/scripts/pages-report/inventory.mjs
+        node dashboard/report/inventory.mjs
 evals:
   - id: deployed-dashboard-inspected
     question: Did the agent inspect the deployed dashboard with a browser rather than infer its state from source alone?

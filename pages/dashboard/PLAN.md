@@ -25,7 +25,7 @@
   - [x] Slice: `DLS-PAGE-010` and `DLS-PAGE-014` presenter render for the `usage` built-in page, keeping each raw-token measure separate from AIC while exposing engine, requested model, resolved model, scope, rollout mode, time, provenance, and independent data-state summaries.
 - [ ] **Security, privacy, accessibility** — Section 13 including escaping, redaction, and keyboard and screen-reader behavior verified with Playwright.
 - [ ] **Compliance suite** — Section 14 test suite, the compliance checklist, Appendix A as a passing fixture, and Appendix C as failing fixtures.
-- [ ] **Parity** — inventory the features of the existing dashboard in `.github/scripts/pages-report/report.mjs`, record them in `PLAN.md` as a parity checklist, then express each one as YAML configuration plus data fixtures, closing the checklist incrementally.
+- [ ] **Parity** — inventory the features of the existing dashboard in `dashboard/report/report.mjs`, record them in `PLAN.md` as a parity checklist, then express each one as YAML configuration plus data fixtures, closing the checklist incrementally.
 
 ## Specification questions
 
@@ -52,7 +52,7 @@
 
 ### 2026-08-29 (GitHub Primer brand styling & presentation component slice)
 
-- Updated the dashboard presenter to clone the style of the current JavaScript dashboard implemented in CAO (`.github/scripts/pages-report/report.mjs`), generating dashboards that are GitHub brand-aligned using GitHub Primer CSS tokens and elements.
+- Updated the dashboard presenter to clone the style of the current JavaScript dashboard implemented in CAO (`dashboard/report/report.mjs`), generating dashboards that are GitHub brand-aligned using GitHub Primer CSS tokens and elements.
 - Added GitHub Primer design tokens and stylesheet module (`src/styles.js`) supporting dark, light, contrast, and high-contrast color schemes.
 - Added GitHub Octicons and CAO brand mark SVG helpers (`src/octicons.js`) with SVG namespace support in the DOM builder (`src/dom.js`).
 - Created reusable presentation components for Primer status/mode badges (`src/components/badge.js`) and data-state metrics card grids (`src/components/data-state.js`).

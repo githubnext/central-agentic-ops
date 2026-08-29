@@ -1,16 +1,23 @@
-name: Pages
+name: Central Agentic Ops Dashboard Build
 
 on:
+  workflow_call:
+    inputs:
+      site-path:
+        description: Relative path at which the dashboard will be mounted in the Pages artifact.
+        required: false
+        type: string
+        default: cao
   workflow_dispatch:
-  schedule:
-    - cron: "23 5 * * *"
+    inputs:
+      site-path:
+        description: Relative path at which the dashboard will be mounted in the artifact.
+        required: false
+        type: string
+        default: cao
 
 permissions:
   contents: read
-
-concurrency:
-  group: pages
-  cancel-in-progress: true
 
 jobs:
   build:
@@ -19,29 +26,38 @@ jobs:
       actions: read
       contents: read
       issues: read
-      pages: write
       pull-requests: read
     steps:
+      - name: Validate dashboard site path
+        env:
+          DASHBOARD_SITE_PATH: ${{ inputs.site-path }}
+        run: |
+          if [[ "$DASHBOARD_SITE_PATH" != "." && ! "$DASHBOARD_SITE_PATH" =~ ^[A-Za-z0-9][A-Za-z0-9._/-]*$ ]]; then
+            echo "site-path must be '.' or a relative URL path" >&2
+            exit 1
+          fi
+          if [[ "$DASHBOARD_SITE_PATH" == /* || "$DASHBOARD_SITE_PATH" == *..* || "$DASHBOARD_SITE_PATH" == */ || "$DASHBOARD_SITE_PATH" == *//* ]]; then
+            echo "site-path must not be absolute, traverse directories, or end with '/'" >&2
+            exit 1
+          fi
+
       - name: Checkout trusted report source
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           ref: ${{ github.event.repository.default_branch }}
           persist-credentials: false
 
-      - name: Configure Pages
-        uses: actions/configure-pages@983d7736d9b0ae728b81ab479565c72886d7745b # v5
-
       - name: Extract control-plane inventory
         env:
           REPORT_INVENTORY: ${{ runner.temp }}/control-plane-inventory.json
-        run: node .github/scripts/pages-report/inventory.mjs
+        run: node .github/aw/dashboard/report/inventory.mjs
 
       - name: Discover deployed agentic workflows
         env:
           GITHUB_TOKEN: ${{ github.token }}
           REPORT_ALLOWED_REPOS: ${{ vars.CENTRAL_AGENTIC_OPS_ALLOWED_REPOS }}
           REPORT_DEPLOYED_WORKFLOWS: ${{ runner.temp }}/deployed-workflows.json
-        run: node .github/scripts/pages-report/deployed-workflows.mjs
+        run: node .github/aw/dashboard/report/deployed-workflows.mjs
 
       - name: Install gh-aw CLI
         uses: github/gh-aw-actions/setup-cli@b304200a0ef4b3998673bfc7945acb08ab8c88b7 # v0.87.2
@@ -73,10 +89,10 @@ jobs:
       - name: Restore operational-value observation cache
         uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
-          path: .cache/pages-operational-values
-          key: ${{ runner.os }}-pages-operational-values-${{ github.repository }}-${{ github.run_id }}
+          path: .cache/dashboard-operational-values
+          key: ${{ runner.os }}-dashboard-operational-values-${{ github.repository }}-${{ github.run_id }}
           restore-keys: |
-            ${{ runner.os }}-pages-operational-values-${{ github.repository }}-
+            ${{ runner.os }}-dashboard-operational-values-${{ github.repository }}-
 
       - name: Collect AI Credit usage
         env:
@@ -84,7 +100,7 @@ jobs:
           REPORT_AIC_CONCURRENCY: "3"
           REPORT_AIC_USAGE: ${{ runner.temp }}/aic-usage.json
           REPORT_DEPLOYED_WORKFLOWS: ${{ runner.temp }}/deployed-workflows.json
-        run: node .github/scripts/pages-report/aic-usage.mjs
+        run: node .github/aw/dashboard/report/aic-usage.mjs
 
       - name: Collect operational-value observations
         env:
@@ -92,16 +108,16 @@ jobs:
           REPORT_DEPLOYED_WORKFLOWS: ${{ runner.temp }}/deployed-workflows.json
           REPORT_GH_AW_BIN: ${{ runner.temp }}/gh-aw-operational-value/gh-aw
           REPORT_OPERATIONAL_VALUES: ${{ runner.temp }}/operational-values.json
-          REPORT_VALUE_CACHE: .cache/pages-operational-values/observations.json
+          REPORT_VALUE_CACHE: .cache/dashboard-operational-values/observations.json
           REPORT_VALUE_CONCURRENCY: "3"
-        run: node .github/scripts/pages-report/operational-values.mjs
+        run: node .github/aw/dashboard/report/operational-values.mjs
 
       - name: Save operational-value observation cache
         if: always()
         uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
-          path: .cache/pages-operational-values
-          key: ${{ runner.os }}-pages-operational-values-${{ github.repository }}-${{ github.run_id }}
+          path: .cache/dashboard-operational-values
+          key: ${{ runner.os }}-dashboard-operational-values-${{ github.repository }}-${{ github.run_id }}
 
       - name: Build operations report
         env:
@@ -112,25 +128,13 @@ jobs:
           REPORT_INVENTORY: ${{ runner.temp }}/control-plane-inventory.json
           REPORT_DEPLOYED_WORKFLOWS: ${{ runner.temp }}/deployed-workflows.json
           REPORT_OPERATIONAL_VALUES: ${{ runner.temp }}/operational-values.json
-          REPORT_OUTPUT: _site
-        run: node .github/scripts/pages-report/report.mjs
+          REPORT_OUTPUT: ${{ runner.temp }}/central-agentic-ops-dashboard/${{ inputs.site-path }}
+        run: node .github/aw/dashboard/report/report.mjs
 
-      - name: Upload Pages artifact
-        uses: actions/upload-pages-artifact@7b1f4a764d45c48632c6b24a0339c27f5614fb0b # v4
+      - name: Upload dashboard artifact
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
-          path: _site
-
-  deploy:
-    needs: build
-    runs-on: ubuntu-latest
-    permissions:
-      contents: read
-      id-token: write
-      pages: write
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
-    steps:
-      - name: Deploy Pages
-        id: deployment
-        uses: actions/deploy-pages@d6db90164ac5ed86f2b6aed7e0febac5b3c0c03e # v4
+          name: central-agentic-ops-dashboard
+          path: ${{ runner.temp }}/central-agentic-ops-dashboard
+          if-no-files-found: error
+          retention-days: 1

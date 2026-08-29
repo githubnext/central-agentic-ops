@@ -38,7 +38,7 @@ safe-outputs:
       - "/tmp/gh-aw/agent/svg-audit/screenshots/**"
 steps:
   - name: Checkout repository
-    uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+    uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
     with:
       persist-credentials: false
   - name: Prepare SVG audit workspace
@@ -70,7 +70,7 @@ steps:
 
 # SVG Visual Audit
 
-Audit every SVG listed in `/tmp/gh-aw/agent/svg-audit/svg-files.txt`. The repository is available to Playwright at `http://localhost:4321/`.
+Audit every SVG listed in `/tmp/gh-aw/agent/svg-audit/svg-files.txt`. The repository is available to Playwright at `http://host.docker.internal:4321/`.
 
 ## Required procedure
 

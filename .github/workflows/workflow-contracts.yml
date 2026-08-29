@@ -22,9 +22,9 @@ jobs:
       - name: Install dependencies
         run: npm ci
       - name: Install gh-aw
-        uses: github/gh-aw-actions/setup-cli@1aa033c7bf25ac9428fe521065b90c30a7070c4e # v0.87.8
+        uses: github/gh-aw-actions/setup-cli@49dc896ccb7d6d975514cfe232bcbd68cc12e2c1 # v0.87.9
         with:
-          version: v0.87.8
+          version: v0.87.9
       - name: Run release gate
         env:
           CENTRAL_AGENTIC_OPS_PACKAGE_SOURCE: ${{ github.repository }}@${{ github.sha }}

@@ -37,7 +37,7 @@ tools:
     mode: cli
     version: "0.1.13"
 skills:
-  - githubnext/gh-aw-workshop/.github/skills/github-brand@56127b6381f0f1d976231bb924dadcbae18858de
+  - github/gh-aw-workshop/.github/skills/github-brand@56127b6381f0f1d976231bb924dadcbae18858de
 safe-outputs:
   create-pull-request:
     title-prefix: "[docs-diagrams] "

@@ -30,5 +30,5 @@ The latest built-in-pages increment also adds a conservative implementation-loca
 
 The current built-in-pages slice extends Section 10 rendering for `runs`, adding a visible browser prototype for status and conclusion counts, downstream outcome counts, scope/model/time columns, run links, and independent freshness/completeness/availability summaries derived from runtime source metadata.
 
-The latest presenter slice updates the presentation layer to clone the style of the current JavaScript dashboard in CAO (`.github/scripts/pages-report/report.mjs`), rendering dashboards that are GitHub brand-aligned using GitHub Primer CSS tokens, Octicons, sidebar navigation, responsive layout, and status/mode badges.
+The latest presenter slice updates the presentation layer to clone the style of the current JavaScript dashboard in CAO (`dashboard/report/report.mjs`), rendering dashboards that are GitHub brand-aligned using GitHub Primer CSS tokens, Octicons, sidebar navigation, responsive layout, and status/mode badges.
 

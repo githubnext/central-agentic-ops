@@ -428,7 +428,8 @@ test("deterministic workflows pin third-party actions by commit SHA", () => {
     join(".github", "workflows", "enterprise-canary.yml"),
     join(".github", "workflows", "enterprise-stress.yml"),
     join(".github", "workflows", "review-smoke.yml"),
-    join("pages", "pages.yml"),
+    join("dashboard", "dashboard-build.yml"),
+    join("dashboard", "dashboard.yml"),
   ]) {
     const source = readFileSync(join(root, relativePath), "utf8");
     for (const action of source.matchAll(/^\s*uses:\s+([^./\s][^@\s]+)@([^\s#]+)/gm)) {
@@ -438,7 +439,7 @@ test("deterministic workflows pin third-party actions by commit SHA", () => {
 });
 
 test("package manifests exclude repository-only tests", () => {
-  for (const relativePath of ["aw.yml", join("advisory", "aw.yml"), join("ambient-context", "aw.yml"), join("aw-maintenance", "aw.yml"), join("dependabot", "aw.yml"), join("eu-cra-compliance", "aw.yml"), join("optimization", "aw.yml")]) {
+  for (const relativePath of ["aw.yml", join("advisory", "aw.yml"), join("ambient-context", "aw.yml"), join("aw-maintenance", "aw.yml"), join("dashboard", "aw.yml"), join("dependabot", "aw.yml"), join("eu-cra-compliance", "aw.yml"), join("optimization", "aw.yml")]) {
     const manifest = readFileSync(join(root, relativePath), "utf8");
     assert.doesNotMatch(manifest, /(?:review-smoke|enterprise-canary|enterprise-stress|tests\/e2e|\.github\/aw\/e2e)/, relativePath);
   }
@@ -1094,7 +1095,7 @@ test("SVG visual audit covers every tracked SVG in both color schemes", () => {
   assert.match(source, /overlap between a `<text>` element and its own descendant `<tspan>`/);
   assert.match(source, /create-check-run:/);
   assert.match(source, /upload-artifact:/);
-  assert.match(source, /http:\/\/localhost:4321\//);
+  assert.match(source, /http:\/\/host\.docker\.internal:4321\//);
   assert.match(source, /Never claim success if any manifest entry was skipped/);
 });
 
@@ -1186,7 +1187,7 @@ test("daily dashboard renderer builds incrementally inside its own directory", (
   assert.doesNotMatch(source, /push-to-pull-request-branch:/);
   assert.match(source, /pages\/dashboard\/PLAN\.md/);
   assert.doesNotMatch(source, /allowed-files:\n(?:\s+- .*\n)*\s+- "(?!pages\/dashboard\/)/);
-  assert.match(source, /Never modify[^.]*\.github\/scripts\/pages-report\//);
+  assert.match(source, /Never modify, move, or delete the existing dashboard package in `dashboard\/`/);
 });
 
 test("dashboard CI runs the package quality gates", () => {
@@ -1399,26 +1400,56 @@ test("clean-room compilation emits the expected GitHub Actions settings", { time
   }
 });
 
-test("Pages is an explicit least-privilege add-on", () => {
+test("Agent customizations preserve the deterministic dashboard exception", () => {
+  const agent = readFileSync(join(root, ".github", "agents", "agentic-workflows.md"), "utf8");
+  const agenticWorkflowsSkill = readFileSync(join(root, ".github", "skills", "agentic-workflows", "SKILL.md"), "utf8");
+  const packageSkill = readFileSync(join(root, ".github", "skills", "create-ops-package", "SKILL.md"), "utf8");
+  const repositoryInstructions = readFileSync(join(root, ".github", "aw", "instructions.md"), "utf8");
+
+  assert.match(agent, /\.github\/aw\/instructions\.md/);
+  assert.match(agenticWorkflowsSkill, /\.github\/aw\/instructions\.md/);
+  assert.match(packageSkill, /## Deterministic Add-on Exception/);
+  assert.match(packageSkill, /site-path/);
+  assert.match(repositoryInstructions, /Keep `dashboard\/dashboard-build\.yml` reusable through `workflow_call`/);
+  assert.match(repositoryInstructions, /existing Pages site, retain one Pages artifact uploader and deployer/);
+  assert.match(repositoryInstructions, /must not add a schedule or another enable variable/);
+});
+
+test("Dashboard package supports embedded and explicit standalone deployment", () => {
   const rootManifest = readFileSync(join(root, "aw.yml"), "utf8");
-  const pagesWorkflow = readFileSync(join(root, "pages", "pages.yml"), "utf8");
-  const aicUsage = readFileSync(join(root, ".github", "scripts", "pages-report", "aic-usage.mjs"), "utf8");
-  const deployedWorkflows = readFileSync(join(root, ".github", "scripts", "pages-report", "deployed-workflows.mjs"), "utf8");
-  const operationalValues = readFileSync(join(root, ".github", "scripts", "pages-report", "operational-values.mjs"), "utf8");
-  const report = readFileSync(join(root, ".github", "scripts", "pages-report", "report.mjs"), "utf8");
+  const dashboardManifest = readFileSync(join(root, "dashboard", "aw.yml"), "utf8");
+  const buildWorkflow = readFileSync(join(root, "dashboard", "dashboard-build.yml"), "utf8");
+  const deployWorkflow = readFileSync(join(root, "dashboard", "dashboard.yml"), "utf8");
+  const aicUsage = readFileSync(join(root, "dashboard", "report", "aic-usage.mjs"), "utf8");
+  const deployedWorkflows = readFileSync(join(root, "dashboard", "report", "deployed-workflows.mjs"), "utf8");
+  const operationalValues = readFileSync(join(root, "dashboard", "report", "operational-values.mjs"), "utf8");
+  const report = readFileSync(join(root, "dashboard", "report", "report.mjs"), "utf8");
   const reportAssets = ["aic-usage.mjs", "deployed-workflows.mjs", "inventory.mjs", "operational-values.mjs", "report.mjs"];
 
-  assert.doesNotMatch(rootManifest, /pages\/pages|pages-report/);
-  assert.ok(!existsSync(join(root, "pages", "aw.yml")), "Pages must not masquerade as an Agentic Workflow package");
-  assert.match(pagesWorkflow, /pages: write/);
-  assert.match(pagesWorkflow, /id-token: write/);
-  assert.match(pagesWorkflow, /cache: false/);
-  assert.match(pagesWorkflow, /go clean -cache -modcache/);
-  assert.doesNotMatch(pagesWorkflow, /pages-aic|REPORT_AIC_CACHE/);
-  assert.doesNotMatch(pagesWorkflow, /workflow_run|github\.ref_name/);
+  assert.doesNotMatch(rootManifest, /dashboard\/dashboard|dashboard-build/);
+  assert.match(dashboardManifest, /name: Central Agentic Ops Dashboard/);
+  assert.match(dashboardManifest, /source: dashboard\.yml\n\s+destination: \.github\/workflows\/dashboard\.yml\n\s+kind: action-workflow/);
+  assert.match(dashboardManifest, /source: dashboard-build\.yml\n\s+destination: \.github\/workflows\/dashboard-build\.yml\n\s+kind: action-workflow/);
+  assert.match(buildWorkflow, /workflow_call:[\s\S]*?site-path:[\s\S]*?default: cao/);
+  assert.match(buildWorkflow, /REPORT_OUTPUT: \$\{\{ runner\.temp \}\}\/central-agentic-ops-dashboard\/\$\{\{ inputs\.site-path \}\}/);
+  assert.match(buildWorkflow, /site-path must not be absolute, traverse directories, or end with '\/'/);
+  assert.match(buildWorkflow, /actions\/upload-artifact@[0-9a-f]{40}/);
+  assert.doesNotMatch(buildWorkflow, /actions\/(?:configure-pages|upload-pages-artifact|deploy-pages)@/);
+  assert.doesNotMatch(buildWorkflow, /pages: write|id-token: write/);
+  assert.match(deployWorkflow, /uses: \.\/\.github\/workflows\/dashboard-build\.yml/);
+  assert.match(deployWorkflow, /site-path: "\."/);
+  assert.match(deployWorkflow, /enablement: false/);
+  assert.match(deployWorkflow, /pages: write/);
+  assert.match(deployWorkflow, /id-token: write/);
+  assert.doesNotMatch(deployWorkflow, /schedule:|workflow_run|github\.ref_name/);
+  assert.equal((deployWorkflow.match(/actions\/upload-pages-artifact@/g) || []).length, 1);
+  assert.equal((deployWorkflow.match(/actions\/deploy-pages@/g) || []).length, 1);
+  assert.match(buildWorkflow, /cache: false/);
+  assert.match(buildWorkflow, /go clean -cache -modcache/);
+  assert.doesNotMatch(buildWorkflow, /pages-aic|REPORT_AIC_CACHE/);
   assert.match(aicUsage, /"--start-date", "-2d", "--cache-before", "-2d"/);
-  assert.match(pagesWorkflow, /REPORT_VALUE_CACHE: \.cache\/pages-operational-values\/observations\.json/);
-  assert.match(pagesWorkflow, /Save operational-value observation cache/);
+  assert.match(buildWorkflow, /REPORT_VALUE_CACHE: \.cache\/dashboard-operational-values\/observations\.json/);
+  assert.match(buildWorkflow, /Save operational-value observation cache/);
   assert.match(deployedWorkflows, /const capabilities = await workflowCapabilities\(item\.repository, item\.path\)/);
   assert.match(deployedWorkflows, /const role = workflowRole\(source\)/);
   assert.match(deployedWorkflows, /sourceAvailable: !\/GitHub API 404/);
@@ -1435,9 +1466,10 @@ test("Pages is an explicit least-privilege add-on", () => {
   assert.match(report, /outputRepository/);
   assert.match(report, /const reportRepositoryNames =/);
   for (const assetName of reportAssets) {
-    const assetPath = join(root, ".github", "scripts", "pages-report", assetName);
+    const assetPath = join(root, "dashboard", "report", assetName);
     assert.ok(existsSync(assetPath), `missing report script ${assetName}`);
-    assert.match(pagesWorkflow, new RegExp(`\\.github/scripts/pages-report/${assetName.replace(".", "\\.")}`));
+    assert.match(dashboardManifest, new RegExp(`destination: \\.github/aw/dashboard/report/${assetName.replace(".", "\\.")}`));
+    assert.match(buildWorkflow, new RegExp(`\\.github/aw/dashboard/report/${assetName.replace(".", "\\.")}`));
     execFileSync(process.execPath, ["--check", assetPath]);
   }
 });
@@ -1447,7 +1479,7 @@ test("Documentation Pages embeds this repository's control-plane report", () => 
   const astroConfig = readFileSync(join(root, "astro.config.mjs"), "utf8");
 
   assert.match(workflowSource, /schedule:\n\s+- cron: "23 5 \* \* \*"/);
-  assert.match(workflowSource, /- \.github\/scripts\/pages-report\/\*\*/);
+  assert.match(workflowSource, /- dashboard\/report\/\*\*/);
   assert.match(workflowSource, /- \.github\/workflows\/\*\.md/);
   assert.match(workflowSource, /- "\*\/aw\.yml"/);
   assert.match(workflowSource, /actions: read/);
@@ -1464,11 +1496,11 @@ test("Documentation Pages embeds this repository's control-plane report", () => 
   assert.match(astroConfig, /label: "Control plane status", link: "\/cao\/"/);
 });
 
-test("Pages inventory links multiline orchestrator worker lists", () => {
+test("Dashboard inventory links multiline orchestrator worker lists", () => {
   const temporaryRoot = mkdtempSync(join(tmpdir(), "central-agentic-ops-inventory-"));
   const outputPath = join(temporaryRoot, "control-plane.json");
   try {
-    execFileSync(process.execPath, [join(root, ".github", "scripts", "pages-report", "inventory.mjs")], {
+    execFileSync(process.execPath, [join(root, "dashboard", "report", "inventory.mjs")], {
       env: { ...process.env, REPORT_ROOT: root, REPORT_INVENTORY: outputPath },
     });
     const inventory = JSON.parse(readFileSync(outputPath, "utf8"));
@@ -1498,8 +1530,8 @@ test("Pages inventory links multiline orchestrator worker lists", () => {
   }
 });
 
-test("Pages report SVGs use theme colors in light and dark modes", () => {
-  const report = readFileSync(join(root, ".github", "scripts", "pages-report", "report.mjs"), "utf8");
+test("Dashboard report SVGs use theme colors in light and dark modes", () => {
+  const report = readFileSync(join(root, "dashboard", "report", "report.mjs"), "utf8");
   const darkTheme = report.match(/:root \{([\s\S]*?)\n\}/)?.[1];
   const lightTheme = report.match(/@media \(prefers-color-scheme: light\) \{\s*:root \{([\s\S]*?)\n  \}/)?.[1];
 
@@ -1522,7 +1554,7 @@ test("Pages report SVGs use theme colors in light and dark modes", () => {
   assert.match(lightTheme, /--fg: #[0-9a-f]{6};/i);
 });
 
-test("Pages renders one canonical authored workflow detail across repository and package views", () => {
+test("Dashboard renders one canonical authored workflow detail across repository and package views", () => {
   const temporaryRoot = mkdtempSync(join(tmpdir(), "central-agentic-ops-workflow-pages-"));
   const outputPath = join(temporaryRoot, "dist", "cao");
   const inventoryPath = join(temporaryRoot, "inventory.json");
@@ -1603,7 +1635,7 @@ globalThis.fetch = async (input) => {
   return new Response(JSON.stringify(body), { status: 200, headers: { "content-type": "application/json" } });
 };
 `);
-    execFileSync(process.execPath, ["--import", mockFetchPath, join(root, ".github", "scripts", "pages-report", "report.mjs")], {
+    execFileSync(process.execPath, ["--import", mockFetchPath, join(root, "dashboard", "report", "report.mjs")], {
       env: {
         ...process.env,
         GITHUB_REPOSITORY: "acme/control",

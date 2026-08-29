@@ -1,12 +1,12 @@
 ---
 name: create-ops-package
-description: "Create a new Central Agentic Ops package from an agentic strategy or operational idea. Use when adding an ops package, orchestrator/worker workflow family, or organization-wide agentic automation; creates the orchestrator and workers together using shared/control.md and current repository conventions."
+description: "Create a Central Agentic Ops package from an agentic strategy, operational idea, or deterministic add-on. Use when adding an ops package, orchestrator/worker workflow family, organization-wide agentic automation, or the dashboard package; follows the repository's operational-package and add-on contracts."
 argument-hint: "Describe the agentic strategy, target repositories, and desired outcomes"
 ---
 
 # Create a Central Agentic Ops Package
 
-Turn an operational idea into a complete package of GitHub Agentic Workflows. A package always contains one orchestrator and at least one worker. Never finish with a standalone workflow.
+Turn an operational idea into a complete package of GitHub Agentic Workflows. An operational package always contains one orchestrator and at least one worker. Never finish an operational package with a standalone workflow. The deterministic dashboard follows the explicit add-on exception below.
 
 ## Procedure
 
@@ -23,6 +23,19 @@ Turn an operational idea into a complete package of GitHub Agentic Workflows. A 
 5. Create the orchestrator and every worker under `.github/workflows/` in the same change.
 6. Compile and validate all new source workflows. Repair failures before finishing.
 7. When an adopted worker already has an operational-value evaluator, preserve it under `.github/graders/` and keep its `graders.operational-value` registration. Evaluator design remains a separate post-adoption maintenance task.
+
+## Deterministic Add-on Exception
+
+The top-level `dashboard/` package is conventional GitHub Actions automation, not an agentic operation. Do not create an orchestrator, workers, runtime steering, rollout variables, or operational-value evaluators for it.
+
+- Keep the package separate from root `aw.yml` includes and from every operational package.
+- Install `dashboard/dashboard-build.yml` as `.github/workflows/dashboard-build.yml` and `dashboard/dashboard.yml` as `.github/workflows/dashboard.yml` with mapped `action-workflow` includes.
+- Keep the reusable builder path-aware through its `site-path` input and upload a normal artifact that an existing Pages workflow can merge before its single Pages upload and deployment.
+- Keep the standalone publisher manual-only, pass `enablement: false` to `actions/configure-pages`, and require Pages access control before use. Do not add a second enable variable.
+- Keep canonical report modules under `dashboard/report/` and install them under `.github/aw/dashboard/report/` as package resources.
+- Keep `pages/dashboard/` outside the package; it is the separate dashboard-language prototype.
+
+For this exception, validate manifest source/destination ownership, both action workflows, safe relative `site-path` handling, standalone Pages prerequisites, and clean-room `gh aw add` and `gh aw add --force` restoration. The remaining Package Contract and Validation sections apply to operational packages.
 
 ## Package Contract
 

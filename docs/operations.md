@@ -121,43 +121,47 @@ This path supports issue outputs only. It does not transfer issues, publish pull
 
 ## Publishing Pages Reports
 
-### Activating Pages
+### Install the dashboard package
 
-Pages is not part of the Agentic Workflow package catalog. After verifying that the control repository is private and its Pages site is access-controlled, copy the conventional workflow and report scripts from a checkout pinned to the desired catalog release or commit:
+The dashboard is a separate deterministic package rather than part of the root operations package. Install a reviewed release tag or full commit SHA:
 
 ```bash
-control_repository=/path/to/control-repository
-mkdir -p "$control_repository/.github/workflows" "$control_repository/.github/scripts/pages-report"
-cp pages/pages.yml "$control_repository/.github/workflows/pages.yml"
-cp .github/scripts/pages-report/*.mjs "$control_repository/.github/scripts/pages-report/"
+gh aw add githubnext/central-agentic-ops/dashboard@<catalog-release>
 ```
 
+Installation adds a reusable dashboard builder, a manual standalone Pages publisher, and their deterministic report modules. It is the explicit opt-in; there is no additional dashboard enable variable.
+
 :::note[Do not create `REPORT_PAGES_TOKEN`]
-The Pages publisher does not use a `REPORT_PAGES_TOKEN` secret. Its build job reads report data with the automatic `github.token` and explicit job-scoped permissions. Its deploy job uses GitHub Pages OIDC with `pages: write` and `id-token: write`. If a copied workflow requests `REPORT_PAGES_TOKEN`, it did not come from the current catalog release and should be reviewed or updated rather than supplied with a PAT.
+The dashboard does not use a `REPORT_PAGES_TOKEN` secret. Its build job reads report data with the automatic `github.token` and explicit job-scoped permissions. Its standalone deploy job uses GitHub Pages OIDC with `pages: write` and `id-token: write`. If an installed workflow requests `REPORT_PAGES_TOKEN`, it did not come from the current package and should be reviewed or updated rather than supplied with a PAT.
 :::
 
 :::caution[The report can contain private repository data]
-The generated site includes data from its private control-plane repository, including repository identity, issue and pull request content, comments, artifact-derived summaries, workflow names and states, and run links. A private source repository does not by itself make its Pages site private. Configure Pages access control for the intended audience before the first deployment, and do not use this add-on when that boundary is unavailable.
+The generated site includes data from its private control-plane repository, including repository identity, issue and pull request content, comments, artifact-derived summaries, workflow names and states, and run links. A private source repository does not by itself make its Pages site private. Configure Pages access control for the intended audience before the first deployment, and do not install this package when that boundary is unavailable.
 
 Organization discovery excludes unrelated private repositories by default. `REPORT_INCLUDE_PRIVATE` is a boolean flag, not a credential, and there is no `REPORT_INCLUDE_TOKEN`. The current catalog workflow does not set the flag or accept a cross-repository credential, so it cannot discover unrelated private repositories out of the box.
 
 A deliberate custom extension should mint a short-lived GitHub App token installed only on the selected repositories and grant `Metadata: read`, `Contents: read`, and `Actions: read`. The optional organization audit-log health query requires a compatible user token or fine-grained PAT with organization `Administration: read`; discovery continues without that health data when access is unavailable. Do not use a broad classic PAT.
 :::
 
-The add-on installs the following report components in the control-plane repository:
+The package installs the following components in the control-plane repository:
 
-- `.github/workflows/pages.yml`, the conventional build and deployment workflow;
-- `.github/scripts/pages-report/aic-usage.mjs`, the bounded AI Credit usage collector;
-- `.github/scripts/pages-report/deployed-workflows.mjs`, the deployed workflow and run-health collector;
-- `.github/scripts/pages-report/inventory.mjs`, the dependency-free control-plane inventory extractor;
-- `.github/scripts/pages-report/report.mjs`, the trusted static renderer.
+- `.github/workflows/dashboard-build.yml`, the reusable path-aware builder;
+- `.github/workflows/dashboard.yml`, the manual standalone publisher;
+- `.github/aw/dashboard/report/aic-usage.mjs`, the bounded AI Credit usage collector;
+- `.github/aw/dashboard/report/deployed-workflows.mjs`, the deployed workflow and run-health collector;
+- `.github/aw/dashboard/report/inventory.mjs`, the dependency-free control-plane inventory extractor;
+- `.github/aw/dashboard/report/report.mjs`, the trusted static renderer.
 
-After copying the report files from the pinned catalog checkout:
+For a standalone Pages site:
 
-1. Commit and push the installed files.
-2. In **Settings > Pages**, select **GitHub Actions** as the source and apply the required access controls.
-3. Run **Pages** from the repository's **Actions** page, or wait for its scheduled or repository-event trigger.
+1. In **Settings > Pages**, select **GitHub Actions** as the source and apply the required access controls.
+2. Protect the `github-pages` environment as required by your organization.
+3. Run **Central Agentic Ops Dashboard** from the repository's **Actions** page.
 4. Verify the deployment URL and confirm that the report shows data only from the intended control-plane repository.
+
+The standalone workflow passes `enablement: false` to `actions/configure-pages` and has no schedule. It cannot enable Pages or replace an existing site merely because the package was installed.
+
+For a repository with an existing Pages site, keep its current workflow as the only Pages artifact uploader and deployer. Add a job that calls `./.github/workflows/dashboard-build.yml` with a relative `site-path`, then download the `central-agentic-ops-dashboard` artifact into the existing site's build directory before its `actions/upload-pages-artifact` step. For example, `site-path: cao` combined with download `path: dist` publishes the dashboard under `dist/cao/` while preserving the rest of the site. Do not run the standalone dashboard workflow for an embedded installation.
 
 The workflow first runs `inventory.mjs` against the checked-out control-plane repository. It discovers manifests, package relationships, standalone workflows, and source/lock status, then writes normalized schema-versioned JSON to the runner's temporary directory. `deployed-workflows.mjs` discovers compiled workflows in the configured repository scope, records which workflows declare an operational-value evaluator, and retains bounded Actions run trigger metadata. `report.mjs` combines that inventory with accessible durable issues, pull requests, comments, review artifacts, and grader observations. Its Dispatches view lists retained package-worker runs triggered by `workflow_dispatch`, ordered newest first with direct Actions links; it does not infer unavailable parent-run relationships. Workflow completions trigger report rebuilds but are not published as report records themselves. The renderer writes the static site and a copy of the inventory to `_site`; the workflow uploads that directory as a Pages artifact and deploys it. Generated HTML and inventory are not committed to the repository.
 
@@ -165,7 +169,7 @@ Repository pages are outcome projections, not package projections. Reports and o
 
 Collection is bounded by the configured repository scope and available credentials. Inaccessible downstream repositories are reported as incomplete coverage rather than inferred from another source. Cross-repository private collection therefore requires the deliberately scoped GitHub App extension described above.
 
-Report implementation changes are released through this catalog. Install the newer catalog release in the control-plane repository to refresh the packaged workflow and renderer, then review, commit, and push the resulting changes. Use `gh aw update` for installed agentic workflows that retain source tracking.
+Report implementation changes are released through this catalog. Use `gh aw update` to refresh the installed workflows and report modules, then review, commit, and push the resulting changes.
 
 Pages report destinations are selected by the control-plane mode, while conventional GitHub Actions workflows perform the builds and deployments:
 
