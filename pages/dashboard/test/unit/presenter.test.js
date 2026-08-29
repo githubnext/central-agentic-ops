@@ -216,7 +216,7 @@ describe('presenter built-in and custom pages', () => {
     const pages = authoritativeDashboardDocument.dashboard.pages;
     expect(Array.isArray(pages)).toBe(true);
     expect(pages).toHaveLength(12);
-    expect(pages.map((page) => page.page)).toEqual([
+    expect(pages.map((/** @type {{ page: string }} */ page) => page.page)).toEqual([
       'overview',
       'organizations',
       'repositories',
@@ -241,7 +241,7 @@ describe('presenter built-in and custom pages', () => {
       });
       expect(Array.isArray(page.definition?.views)).toBe(true);
       expect(page.definition.views.length).toBeGreaterThan(0);
-      expect(page.definition.views.every((view) => typeof view?.data?.source === 'string')).toBe(true);
+      expect(page.definition.views.every((/** @type {{ data?: { source?: unknown } }} */ view) => typeof view?.data?.source === 'string')).toBe(true);
     }
   });
 

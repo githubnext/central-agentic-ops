@@ -1247,6 +1247,7 @@ function getViewSource(view) {
   return view.data.source;
 }
 
+/** @type {Record<string, (pageSources: Map<string, LogicalSourceInput>) => HTMLElement>} */
 const BUILT_IN_PAGE_RENDERERS = {
   overview: renderOverviewPage,
   organizations: renderOrganizationsPage,
