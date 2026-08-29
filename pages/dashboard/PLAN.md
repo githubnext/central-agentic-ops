@@ -19,6 +19,7 @@
   - [x] Slice: `DLS-PAGE-014` conservative built-in data-state exposure validation via implementation-local declarative markers.
   - [x] Slice: `DLS-PAGE-006` conservative run-link coverage validation for the `runs` built-in page.
   - [x] Slice: `DLS-PAGE-002` conservative `overview` linked-findings and operational-value timeline coverage validation.
+  - [x] Slice: `DLS-PAGE-006` and `DLS-PAGE-014` presenter render for the `runs` built-in page status counts, outcome counts, scope/model/time columns, run links, and independent data-state summaries.
 - [ ] **Security, privacy, accessibility** — Section 13 including escaping, redaction, and keyboard and screen-reader behavior verified with Playwright.
 - [ ] **Compliance suite** — Section 14 test suite, the compliance checklist, Appendix A as a passing fixture, and Appendix C as failing fixtures.
 - [ ] **Parity** — inventory the features of the existing dashboard in `.github/scripts/pages-report/report.mjs`, record them in `PLAN.md` as a parity checklist, then express each one as YAML configuration plus data fixtures, closing the checklist incrementally.
@@ -37,6 +38,15 @@
 - 2026-08-28: `npm run test:e2e` is currently blocked in this environment because the Playwright Chromium executable is not provisioned (`browserType.launch: Executable doesn't exist`). The workflow should prefer the built-in Playwright MCP browser tools until the package-level browser dependency is available.
 
 ## Run log
+
+### 2026-08-29 (built-in runs render slice)
+
+- Extended the Built-in pages milestone with a narrow `DLS-PAGE-006` and `DLS-PAGE-014` presenter increment for the `runs` built-in page, rendering run status counts, terminal conclusions, downstream outcome counts, scope, rollout mode, engine, requested model, resolved model, started time, run links, and independent data-state summaries.
+- Updated `src/presenter.js` so declarative built-in `runs` definitions now render a concrete table and summary lists from `runs` and `outcomes` logical sources, reusing the keyed-list DOM primitive for deterministic row reconciliation.
+- Replaced the previous browser smoke test with a Playwright browser test in `test/e2e/smoke.spec.js` that renders a built-in `runs` page and verifies counts, rows, links, provenance, and independent `availability`, `completeness`, and `freshness` text.
+- Added `test/unit/presenter.test.js` to cover deterministic presenter output for the same `runs` slice in jsdom.
+- Verified `npm install`, `npm run typecheck`, `npm run lint`, and `npm test`; `npm run test:e2e` remains blocked in this environment because the Playwright Chromium executable is not provisioned (`browserType.launch: Executable doesn't exist`).
+- Next milestone: Built-in pages, next slice for rendering one additional Section 10 built-in page from the declarative definitions or extracting the first reusable presentation component needed by that rendering.
 
 ### 2026-08-29 (built-in overview provenance-and-freshness render slice)
 
