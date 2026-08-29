@@ -27,6 +27,7 @@ test("landing diagram fallbacks use concrete light and dark palettes", () => {
     assert.equal(withoutRootPalette(light), withoutRootPalette(dark));
   }
 
+  assert.equal((hero.match(/<source media="\(prefers-color-scheme: light\)"/g) ?? []).length, 2);
   assert.equal((hero.match(/<source media="\(prefers-color-scheme: dark\)"/g) ?? []).length, 2);
 });
 
