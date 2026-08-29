@@ -54,7 +54,7 @@
 - `src/components/badge.js` — presentation-only Primer status, mode, and active-state badges.
 - `src/components/data-state.js` — presentation-only data-state metrics card grid for availability, completeness, and freshness.
 - `src/components/table-region.js` — presentation-only reusable table wrapper for repeated table-region markup, header rows, empty-state rows, and keyed body-row descriptors across built-in and custom tables.
-- `src/components/view-chrome.js` — presentation-only reusable page-section, custom-view source/metadata chrome, and built-in provenance-list helpers.
+- `src/components/view-chrome.js` — presentation-only reusable page-section, titled-region, custom-view source/metadata chrome, and built-in provenance-section helpers.
 
 ## Infrastructure blockers
 
@@ -62,6 +62,16 @@
 - 2026-08-28: `npm run test:e2e` is currently blocked in this environment because the Playwright Chromium executable is not provisioned (`browserType.launch: Executable doesn't exist`). The workflow should prefer the built-in Playwright MCP browser tools until the package-level browser dependency is available.
 
 ## Run log
+
+### 2026-08-29 (titled-region view-chrome refactor)
+
+- Re-inventoried repeated built-in section composition in `src/presenter.js` and selected the next bounded duplication slice: repeated `h('h3', ...)` plus a single summary list, table region, or provenance list across built-in page bodies.
+- Extended `src/components/view-chrome.js` with presentation-only `renderTitledRegion()` and `renderProvenanceSection()` helpers so built-in pages can reuse the existing focusable labeled `page-section` wrapper without rebuilding title-plus-content markup at each call site.
+- Collapsed every duplicated single-region call site identified in `src/presenter.js`: built-in provenance plus workflows, usage totals, usage observations, engines-models, operational-value, organizations, repositories, experiments, and graders definitions/observations.
+- Added unit coverage in `test/unit/view-chrome.test.js` for titled-region composition and reusable provenance-section rendering, including empty provenance fallback output.
+- Proved unchanged behavior by keeping the full existing unit and browser suites green and by capturing a presenter diff at `/tmp/gh-aw/agent/presenter-refactor.diff`, confirming the affected pages changed only by replacing repeated heading-plus-content assembly with `renderTitledRegion(...)` / `renderProvenanceSection(...)` calls while preserving the same DOM text, section headings, class names, and accessible labeling.
+- Verified quality gates from `pages/dashboard/`: `npm install`, `npm run typecheck`, `npm run lint`, `npm test`, and `npm run test:e2e` all pass.
+- Next candidates in the queue: extract repeated built-in summary-section composition for count lists; extract repeated custom-view context-list rendering; extract the next shared pure helpers around subject/provenance/count formatting in `src/presenter.js`.
 
 ### 2026-08-29 (view-chrome component refactor)
 

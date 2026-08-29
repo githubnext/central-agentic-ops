@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import { describe, expect, it } from 'vitest';
-import { renderPageSection, renderProvenanceList, renderViewHeader } from '../../src/components/view-chrome.js';
+import { renderPageSection, renderProvenanceList, renderProvenanceSection, renderTitledRegion, renderViewHeader } from '../../src/components/view-chrome.js';
 
 describe('view chrome component helpers', () => {
   it('DLS-SAFE-007 renders focusable labeled page sections with deterministic heading ids', () => {
@@ -40,5 +40,29 @@ describe('view chrome component helpers', () => {
     expect(header[0]?.textContent).toBe('Source: usage');
     expect(header[1]?.className).toBe('view-metadata');
     expect(header[1]?.textContent).toBe('As of 2026-08-29T20:00:00Z • completeness complete • freshness fresh');
+  });
+
+  it('DLS-SAFE-007 wraps single-content titled regions with the shared page-section markup', () => {
+    const region = renderTitledRegion('usage', 'Usage Totals', renderProvenanceList([]));
+
+    expect(region.className).toBe('page-section');
+    expect(region.getAttribute('aria-labelledby')).toBe('usage-usage-totals-heading');
+    expect(region.querySelector('h3')?.textContent).toBe('Usage Totals');
+    expect(region.querySelector('.provenance-list')?.textContent).toContain('No source provenance available for this page.');
+  });
+
+  it('DLS-PAGE-014 renders the provenance heading plus list as a reusable section', () => {
+    const section = renderProvenanceSection('evals', [
+      {
+        sourceName: 'evals',
+        sourceId: 'evals-fixture',
+        sourceKind: 'fixture',
+        asOf: '2026-08-29T20:00:00Z'
+      }
+    ]);
+
+    expect(section.querySelector('h3')?.textContent).toBe('Provenance');
+    expect(section.getAttribute('aria-labelledby')).toBe('evals-provenance-heading');
+    expect(section.querySelector('.provenance-list')?.textContent).toContain('evals: evals-fixture (fixture) — as of 2026-08-29T20:00:00Z');
   });
 });
