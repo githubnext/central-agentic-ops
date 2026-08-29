@@ -959,6 +959,139 @@ dashboard:
     expect(result.ok).toBe(true);
   });
 
+  it('DLS-PAGE-002 DLS-PAGE-014 accepts built-in overview page definitions that conservatively expose provenance and freshness coverage through source metadata-bearing views', () => {
+    const result = validateDashboardDocument(`language-version: "0.1.0"
+dashboard:
+  id: overview-provenance-freshness
+  title: Overview Provenance Freshness
+  pages:
+    - id: overview
+      kind: built-in
+      page: overview
+      title: Overview
+      definition:
+        data-state:
+          availability: true
+          completeness: true
+          freshness: true
+        views:
+          - id: workflow-inventory
+            data:
+              source: workflows
+              source-metadata:
+                source-id: workflows-fixture
+                source-kind: fixture
+                as-of: '2026-08-29T12:00:00Z'
+                retrieved-at: '2026-08-29T12:05:00Z'
+                completeness: complete
+                freshness: fresh
+                availability: available
+            mark: table
+            encoding:
+              columns:
+                - field: workflow-active
+                - field: rollout-mode
+          - id: run-trends
+            data:
+              source: runs
+              source-metadata:
+                source-id: runs-fixture
+                source-kind: fixture
+                as-of: '2026-08-29T12:00:00Z'
+                retrieved-at: '2026-08-29T12:05:00Z'
+                completeness: partial
+                freshness: stale
+                availability: empty
+            mark: chart
+            encoding:
+              x:
+                field: started-at
+                type: temporal
+                time-unit: day
+              y:
+                field: run
+                aggregate: count
+              color:
+                field: run-conclusion
+          - id: run-rankings
+            data:
+              source: runs
+              source-metadata:
+                source-id: runs-fixture
+                source-kind: fixture
+                as-of: '2026-08-29T12:00:00Z'
+                retrieved-at: '2026-08-29T12:05:00Z'
+                completeness: partial
+                freshness: stale
+                availability: empty
+            mark: table
+            encoding:
+              columns:
+                - field: repository
+                - field: workflow
+                - field: run-status
+                - field: run-conclusion
+          - id: usage-metric
+            data:
+              source: usage
+              source-metadata:
+                source-id: usage-fixture
+                source-kind: fixture
+                as-of: '2026-08-29T12:00:00Z'
+                retrieved-at: '2026-08-29T12:05:00Z'
+                completeness: complete
+                freshness: fresh
+                availability: available
+            mark: metric
+            encoding:
+              value:
+                field: aic
+                aggregate: sum
+          - id: recent-findings
+            data:
+              source: findings
+              source-metadata:
+                source-id: findings-fixture
+                source-kind: fixture
+                as-of: '2026-08-29T12:00:00Z'
+                retrieved-at: '2026-08-29T12:05:00Z'
+                completeness: complete
+                freshness: fresh
+                availability: available
+            mark: table
+            encoding:
+              columns:
+                - field: observed-at
+                - field: issue-link
+                - field: pull-request-link
+                - field: run-link
+          - id: operational-value-timeline
+            data:
+              source: operational-values
+              source-metadata:
+                source-id: operational-values-fixture
+                source-kind: fixture
+                as-of: '2026-08-29T12:00:00Z'
+                retrieved-at: '2026-08-29T12:05:00Z'
+                completeness: unknown
+                freshness: fresh
+                availability: unavailable
+            mark: chart
+            encoding:
+              x:
+                field: observed-at
+                type: temporal
+                time-unit: day
+              y:
+                field: operational-value
+                aggregate: max
+              color:
+                field: operational-value-definition
+`);
+
+    expect(result.ok).toBe(true);
+  });
+
   it('DLS-SEM-017 accepts every canonical Section 5.1 source name', () => {
     const result = validateDashboardDocument(`language-version: "0.1.0"
 dashboard:
