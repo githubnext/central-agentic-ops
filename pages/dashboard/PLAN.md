@@ -54,6 +54,7 @@
 - `src/components/badge.js` — presentation-only Primer status, mode, and active-state badges.
 - `src/components/data-state.js` — presentation-only data-state metrics card grid for availability, completeness, and freshness.
 - `src/components/table-region.js` — presentation-only reusable table wrapper for repeated table-region markup, header rows, empty-state rows, and keyed body-row descriptors across built-in and custom tables.
+- `src/components/view-chrome.js` — presentation-only reusable page-section, custom-view source/metadata chrome, and built-in provenance-list helpers.
 
 ## Infrastructure blockers
 
@@ -61,6 +62,16 @@
 - 2026-08-28: `npm run test:e2e` is currently blocked in this environment because the Playwright Chromium executable is not provisioned (`browserType.launch: Executable doesn't exist`). The workflow should prefer the built-in Playwright MCP browser tools until the package-level browser dependency is available.
 
 ## Run log
+
+### 2026-08-29 (view-chrome component refactor)
+
+- Inventoried repeated presenter chrome after the table-region extraction and selected the next bounded duplication slice: shared page-section markup plus repeated custom-view source/metadata paragraphs and built-in provenance list rendering in `src/presenter.js`.
+- Added `src/components/view-chrome.js`, a presentation-only reusable helper module for focusable labeled `page-section` wrappers, custom-view source/metadata header chrome, and conservative built-in provenance lists.
+- Collapsed the repeated custom metric/table/chart header markup and the built-in provenance list in `src/presenter.js` into the shared helpers while preserving all existing DOM text, accessible names, section heading ids, class names, and fallback messages.
+- Added `test/unit/view-chrome.test.js` covering deterministic section labeling, provenance list rendering, and reusable source/metadata chrome output.
+- Updated the Playwright data-URL module wiring in `test/e2e/smoke.spec.js` so browser coverage continues to exercise the presenter with the new shared component module.
+- Verified quality gates from `pages/dashboard/`: `npm install`, `npm run typecheck`, `npm run lint`, `npm test`, and `npm run test:e2e` all pass.
+- Next candidates in the queue: extract repeated built-in provenance heading-plus-list composition; extract repeated summary-section composition for built-in pages; continue parity inventory once the presenter refactor surface stabilizes.
 
 ### 2026-08-29 (table-region built-in inventory expansion refactor)
 
