@@ -38,6 +38,7 @@
   - [x] Slice: `DLS-SAFE-009` presenter render for non-color chart category semantics via explicit textual color-category legends alongside chart tabular equivalents.
 - [ ] **Compliance suite** — Section 14 test suite, the compliance checklist, Appendix A as a passing fixture, and Appendix C as failing fixtures.
   - [x] Slice: `DLS-TEST-001`, `DLS-TEST-002`, `DLS-TEST-003`, `T-DOC-001`, and `T-VAL-001` compliance smoke harness with machine-readable results, Appendix A passing coverage, and Appendix C failing fixtures.
+  - [x] Slice: `T-SEM-001`, `T-SEM-002`, `T-SEM-003`, and `T-CTX-001` checklist-backed machine-readable coverage for the implemented semantic and context validator/presenter requirements.
 - [ ] **Parity** — inventory the features of the existing dashboard in `dashboard/report/report.mjs`, record them in `PLAN.md` as a parity checklist, then express each one as YAML configuration plus data fixtures, closing the checklist incrementally.
 
 ## Specification questions
@@ -55,13 +56,13 @@
 
 ## Run log
 
-### 2026-08-29 (compliance smoke suite slice)
+### 2026-08-29 (compliance semantic-and-context coverage slice)
 
-- Started the Compliance suite milestone with a narrow Section 14 increment covering `DLS-TEST-001`, `DLS-TEST-002`, `DLS-TEST-003`, `T-DOC-001`, and `T-VAL-001`.
-- Added `src/compliance.js`, a small machine-readable compliance harness that records `testId`, `requirementId`, implementation version, pass/fail status, and failure evidence while exercising a passing Appendix A fixture plus failing Appendix C fixtures.
-- Added focused unit coverage in `test/unit/compliance.test.js` that verifies machine-readable result records, exact-time and explicit missing-data fixture coverage, Appendix A acceptance, and Appendix C rejection with documented error codes.
+- Extended the Compliance suite milestone with a narrow Section 14 increment covering `T-SEM-001`, `T-SEM-002`, `T-SEM-003`, and `T-CTX-001` for the semantic and context requirements already implemented in the validator and presenter.
+- Updated `src/compliance.js` so the machine-readable harness now records passing results for implemented `DLS-SEM-001`, `DLS-SEM-002`, `DLS-SEM-004`, `DLS-SEM-005`, `DLS-SEM-007` through `DLS-SEM-017`, `DLS-SEM-021`, and `DLS-CTX-001`, `DLS-CTX-002`, `DLS-CTX-004`, `DLS-CTX-005`, `DLS-CTX-006`, `DLS-CTX-009`, including presenter verification that experiments are rendered without implying causation.
+- Added focused unit coverage in `test/unit/compliance.test.js` that verifies machine-readable checklist results for the new `T-SEM-*` and `T-CTX-001` slices while preserving Appendix A / Appendix C smoke checks.
 - Verified all quality gates pass: `npm install`, `npm run typecheck`, `npm run lint`, `npm test`, and `npm run test:e2e`.
-- Next milestone: Compliance suite, next slice for `T-SEM-001`, `T-SEM-002`, `T-SEM-003`, and `T-CTX-001` checklist-backed fixture coverage.
+- Next milestone: Compliance suite, next slice for `T-AGG-001`, `T-LINK-001`, or `T-PAGE-001` checklist-backed machine-readable coverage.
 
 ### 2026-08-29 (security non-color chart semantics slice)
 

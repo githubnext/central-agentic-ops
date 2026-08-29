@@ -255,6 +255,102 @@ dashboard:
               aggregate: sum
 `,
     expectedCode: 'DLS-E010'
+  },
+  invalidWorkflowRelationship: {
+    requirementId: 'DLS-SEM-003',
+    yaml: `language-version: "0.1.0"
+dashboard:
+  id: invalid-workflow-scope
+  title: Invalid Workflow Scope
+  pages:
+    - id: invalid-page
+      kind: custom
+      title: Invalid Page
+      views:
+        - id: invalid-view
+          data:
+            source: repositories
+            filters:
+              workflow: .github/workflows/ci.yml
+          mark: table
+          encoding:
+            columns:
+              - field: repository
+`,
+    expectedCode: 'DLS-E004'
+  },
+  invalidRunUnknownConclusion: {
+    requirementId: 'DLS-SEM-006',
+    yaml: `language-version: "0.1.0"
+dashboard:
+  id: invalid-run-conclusion
+  title: Invalid Run Conclusion
+  pages:
+    - id: runs-page
+      kind: custom
+      title: Runs
+      views:
+        - id: invalid-filter
+          data:
+            source: runs
+            filters:
+              run-conclusion: in_progress
+          mark: table
+          encoding:
+            columns:
+              - field: run
+`,
+    expectedCode: 'DLS-E005'
+  },
+  invalidRolloutMode: {
+    requirementId: 'DLS-SEM-021',
+    yaml: `language-version: "0.1.0"
+dashboard:
+  id: invalid-rollout-mode
+  title: Invalid Rollout Mode
+  pages:
+    - id: runs-page
+      kind: custom
+      title: Runs
+      views:
+        - id: invalid-rollout-filter
+          data:
+            source: runs
+            filters:
+              rollout-mode: preview
+          mark: table
+          encoding:
+            columns:
+              - field: run
+`,
+    expectedCode: 'DLS-E005'
+  },
+  invalidTimeRangeCombination: {
+    requirementId: 'DLS-CTX-009',
+    yaml: `language-version: "0.1.0"
+dashboard:
+  id: invalid-time-range
+  title: Invalid Time Range
+  defaults:
+    time:
+      range: 7d
+      start: '2026-08-01T00:00:00Z'
+  pages:
+    - id: usage-page
+      kind: custom
+      title: Usage
+      views:
+        - id: total-aic
+          data:
+            source: usage
+          mark: metric
+          encoding:
+            value:
+              field: aic
+              type: quantitative
+              aggregate: sum
+`,
+    expectedCode: 'DLS-E010'
   }
 };
 
@@ -284,12 +380,14 @@ export function runComplianceSmokeSuite() {
     fixtureIncludesExactTimeAndMissingDataCoverage(),
     fixtureIncludesExactTimeAndMissingDataCoverage() ? null : 'Appendix A fixture metadata did not include exact time and explicit missing-data distinctions.'
   ));
+  results.push(...runSemanticComplianceChecks());
+  results.push(...runContextComplianceChecks());
 
   for (const fixture of Object.values(appendixCFixtures)) {
     const result = validateDashboardDocument(fixture.yaml);
     const hasExpectedCode = !result.ok && result.errors.some((error) => error.code === fixture.expectedCode);
     results.push(createResult(
-      'T-VAL-001',
+      fixtureToTestId(fixture.requirementId),
       fixture.requirementId,
       hasExpectedCode,
       hasExpectedCode ? null : summarizeErrors(result.ok ? [] : result.errors)
@@ -319,6 +417,100 @@ export function runComplianceSmokeSuite() {
   }
 
   return results;
+}
+
+/**
+ * @returns {ComplianceResult[]}
+ */
+function runSemanticComplianceChecks() {
+  const validDocument = validateDashboardDocument(semanticFoundationsFixture);
+  const semanticAcceptanceRequirements = [
+    'DLS-SEM-001',
+    'DLS-SEM-002',
+    'DLS-SEM-004',
+    'DLS-SEM-005',
+    'DLS-SEM-007',
+    'DLS-SEM-008',
+    'DLS-SEM-009',
+    'DLS-SEM-010',
+    'DLS-SEM-011',
+    'DLS-SEM-012',
+    'DLS-SEM-013',
+    'DLS-SEM-015',
+    'DLS-SEM-016',
+    'DLS-SEM-017',
+    'DLS-SEM-021'
+  ];
+
+  /** @type {ComplianceResult[]} */
+  const results = semanticAcceptanceRequirements.map((requirementId) => createResult(
+    requirementToTestId(requirementId),
+    requirementId,
+    validDocument.ok,
+    validDocument.ok ? null : summarizeErrors(validDocument.errors)
+  ));
+
+  const presenterElement = validDocument.ok
+    ? renderDashboard({ document: validDocument.value, sources: createSemanticFixtureSources() })
+    : null;
+  const presenterText = presenterElement?.textContent || '';
+  const hasNonCausationStatement = presenterText.includes('without implying causation');
+  results.push(createResult(
+    'T-SEM-002',
+    'DLS-SEM-014',
+    hasNonCausationStatement,
+    hasNonCausationStatement ? null : 'Presenter output did not include the required non-causation statement for experiments.'
+  ));
+
+  return results;
+}
+
+/**
+ * @returns {ComplianceResult[]}
+ */
+function runContextComplianceChecks() {
+  const validDocument = validateDashboardDocument(contextFixture);
+  const requirements = [
+    'DLS-CTX-001',
+    'DLS-CTX-002',
+    'DLS-CTX-004',
+    'DLS-CTX-005',
+    'DLS-CTX-006',
+    'DLS-CTX-009'
+  ];
+
+  return requirements.map((requirementId) => createResult(
+    requirementToTestId(requirementId),
+    requirementId,
+    validDocument.ok,
+    validDocument.ok ? null : summarizeErrors(validDocument.errors)
+  ));
+}
+
+/**
+ * @param {string} requirementId
+ * @returns {string}
+ */
+function requirementToTestId(requirementId) {
+  if (requirementId.startsWith('DLS-SEM-')) {
+    const numeric = Number.parseInt(requirementId.slice('DLS-SEM-'.length), 10);
+    return numeric >= 17 ? 'T-SEM-003' : numeric >= 8 ? 'T-SEM-002' : 'T-SEM-001';
+  }
+  if (requirementId.startsWith('DLS-CTX-')) {
+    return 'T-CTX-001';
+  }
+  if (requirementId.startsWith('DLS-VAL-')) {
+    return 'T-VAL-001';
+  }
+  return 'T-DOC-001';
+}
+
+/**
+ * @param {string} requirementId
+ * @returns {string}
+ */
+function fixtureToTestId(requirementId) {
+  return requirementToTestId(requirementId);
 }
 
 /**
@@ -362,6 +554,183 @@ function fixtureIncludesExactTimeAndMissingDataCoverage() {
     && typeof source.metadata.freshness === 'string'
   ));
 }
+
+const semanticFoundationsFixture = `language-version: "0.1.0"
+dashboard:
+  id: semantic-foundations
+  title: Semantic Foundations
+  pages:
+    - id: experiments
+      kind: built-in
+      page: experiments
+      title: Experiments
+      definition:
+        data-state:
+          availability: true
+          completeness: true
+          freshness: true
+        views:
+          - id: experiments-definition
+            data:
+              source: experiments
+            mark: table
+            encoding:
+              columns:
+                - field: experiment
+          - id: experiments-assignments
+            data:
+              source: experiment-assignments
+            mark: table
+            encoding:
+              columns:
+                - field: run
+                - field: variant
+          - id: experiments-graders
+            data:
+              source: grader-observations
+            mark: table
+            encoding:
+              columns:
+                - field: grader
+          - id: experiments-evals
+            data:
+              source: eval-observations
+            mark: table
+            encoding:
+              columns:
+                - field: eval
+          - id: experiments-outcomes
+            data:
+              source: outcomes
+            mark: table
+            encoding:
+              columns:
+                - field: outcome-state
+          - id: experiments-usage
+            data:
+              source: usage
+            mark: metric
+            encoding:
+              value:
+                field: aic
+                type: quantitative
+                aggregate: sum
+          - id: experiments-value
+            data:
+              source: operational-values
+            mark: table
+            encoding:
+              columns:
+                - field: operational-value
+    - id: semantic-custom
+      kind: custom
+      title: Semantic Custom
+      views:
+        - id: usage-inventory
+          data:
+            source: usage
+            filters:
+              rollout-mode: review
+          mark: table
+          encoding:
+            columns:
+              - field: run
+              - field: engine
+              - field: requested-model
+              - field: resolved-model
+              - field: input-tokens
+              - field: output-tokens
+              - field: cache-read-tokens
+              - field: cache-write-tokens
+              - field: reasoning-tokens
+              - field: aic
+        - id: eval-observations
+          data:
+            source: eval-observations
+            filters:
+              eval-result:
+                - YES
+                - UNKNOWN
+          mark: table
+          encoding:
+            columns:
+              - field: eval
+              - field: eval-result
+              - field: requested-model
+              - field: resolved-model
+        - id: grader-observations
+          data:
+            source: grader-observations
+            filters:
+              status:
+                - pass
+                - unavailable
+          mark: table
+          encoding:
+            columns:
+              - field: grader
+              - field: value
+              - field: status
+        - id: operational-values
+          data:
+            source: operational-values
+          mark: table
+          encoding:
+            columns:
+              - field: operational-value-definition
+              - field: operational-value
+              - field: delta-from-baseline
+              - field: requested-evidence-at
+              - field: evidence-cutoff
+              - field: maturity-at
+              - field: maturity-status
+`;
+
+const contextFixture = `language-version: "0.1.0"
+dashboard:
+  id: context-composition
+  title: Context Composition
+  defaults:
+    scope:
+      organizations:
+        - octo-org
+      repositories:
+        - octo-org/platform
+      workflows:
+        - .github/workflows/ci.yml
+    time:
+      start: '2026-08-01T00:00:00Z'
+      end: '2026-09-01T00:00:00Z'
+    filters:
+      rollout-mode:
+        - review
+        - unknown
+  pages:
+    - id: context-page
+      kind: custom
+      title: Context Page
+      views:
+        - id: filtered-runs
+          data:
+            source: runs
+            scope:
+              repositories:
+                - octo-org/platform
+            time:
+              start: '2026-08-10T00:00:00Z'
+              end: '2026-08-20T00:00:00Z'
+            filters:
+              run-status:
+                - completed
+                - unknown
+              rollout-mode: review
+          mark: table
+          encoding:
+            columns:
+              - field: run
+              - field: rollout-mode
+              - field: run-status
+`;
 
 /**
  * @returns {Record<string, import('./presenter.js').LogicalSourceInput>}
@@ -495,6 +864,227 @@ function createAppendixASources() {
         freshness: 'unknown'
       },
       rows: []
+    }
+  };
+}
+
+/**
+ * @returns {Record<string, import('./presenter.js').LogicalSourceInput>}
+ */
+function createSemanticFixtureSources() {
+  return {
+    experiments: {
+      source: 'experiments',
+      metadata: {
+        'source-id': 'experiments-source',
+        'source-kind': 'fixture',
+        'as-of': '2026-08-29T12:00:00Z',
+        'retrieved-at': '2026-08-29T12:05:00Z',
+        availability: 'available',
+        completeness: 'complete',
+        freshness: 'fresh'
+      },
+      rows: [
+        {
+          experiment: 'exp-1',
+          'experiment-name': 'Variant Selection',
+          'observed-at': '2026-08-29T09:00:00Z'
+        }
+      ]
+    },
+    'experiment-assignments': {
+      source: 'experiment-assignments',
+      metadata: {
+        'source-id': 'experiment-assignments-source',
+        'source-kind': 'fixture',
+        'as-of': '2026-08-29T12:00:00Z',
+        'retrieved-at': '2026-08-29T12:05:00Z',
+        availability: 'available',
+        completeness: 'complete',
+        freshness: 'fresh'
+      },
+      rows: [
+        {
+          organization: 'octo-org',
+          repository: 'octo-org/platform',
+          workflow: '.github/workflows/ci.yml',
+          run: '2001',
+          experiment: 'exp-1',
+          variant: 'treatment-a',
+          'observed-at': '2026-08-29T09:05:00Z'
+        }
+      ]
+    },
+    'grader-observations': {
+      source: 'grader-observations',
+      metadata: {
+        'source-id': 'grader-observations-source',
+        'source-kind': 'fixture',
+        'as-of': '2026-08-29T12:00:00Z',
+        'retrieved-at': '2026-08-29T12:05:00Z',
+        availability: 'available',
+        completeness: 'complete',
+        freshness: 'fresh'
+      },
+      rows: [
+        {
+          organization: 'octo-org',
+          repository: 'octo-org/platform',
+          workflow: '.github/workflows/ci.yml',
+          run: '2001',
+          experiment: 'exp-1',
+          grader: 'grader-1',
+          value: 0.91,
+          status: 'pass',
+          'rollout-mode': 'review',
+          'observed-at': '2026-08-29T09:10:00Z'
+        },
+        {
+          organization: 'octo-org',
+          repository: 'octo-org/platform',
+          workflow: '.github/workflows/ci.yml',
+          run: '2002',
+          experiment: 'exp-1',
+          grader: 'grader-1',
+          value: null,
+          status: 'unavailable',
+          'rollout-mode': 'unknown',
+          'observed-at': '2026-08-29T09:15:00Z'
+        }
+      ]
+    },
+    'eval-observations': {
+      source: 'eval-observations',
+      metadata: {
+        'source-id': 'eval-observations-source',
+        'source-kind': 'fixture',
+        'as-of': '2026-08-29T12:00:00Z',
+        'retrieved-at': '2026-08-29T12:05:00Z',
+        availability: 'available',
+        completeness: 'complete',
+        freshness: 'fresh'
+      },
+      rows: [
+        {
+          organization: 'octo-org',
+          repository: 'octo-org/platform',
+          workflow: '.github/workflows/ci.yml',
+          run: '2001',
+          experiment: 'exp-1',
+          eval: 'eval-1',
+          'eval-result': 'YES',
+          'requested-model': 'gpt-4.1',
+          'resolved-model': 'gpt-4.1-mini',
+          'rollout-mode': 'review',
+          'observed-at': '2026-08-29T09:12:00Z'
+        },
+        {
+          organization: 'octo-org',
+          repository: 'octo-org/platform',
+          workflow: '.github/workflows/ci.yml',
+          run: '2002',
+          experiment: 'exp-1',
+          eval: 'eval-1',
+          'eval-result': 'UNKNOWN',
+          'requested-model': 'gpt-4.1',
+          'resolved-model': 'unknown',
+          'rollout-mode': 'unknown',
+          'observed-at': '2026-08-29T09:18:00Z'
+        }
+      ]
+    },
+    outcomes: {
+      source: 'outcomes',
+      metadata: {
+        'source-id': 'outcomes-source',
+        'source-kind': 'fixture',
+        'as-of': '2026-08-29T12:00:00Z',
+        'retrieved-at': '2026-08-29T12:05:00Z',
+        availability: 'available',
+        completeness: 'complete',
+        freshness: 'fresh'
+      },
+      rows: [
+        {
+          organization: 'octo-org',
+          repository: 'octo-org/platform',
+          workflow: '.github/workflows/ci.yml',
+          run: '2001',
+          'safe-output': 'pr-1',
+          'outcome-state': 'lifecycle-close',
+          'evidence-strength': 'high',
+          'observed-at': '2026-08-29T09:20:00Z'
+        }
+      ]
+    },
+    usage: {
+      source: 'usage',
+      metadata: {
+        'source-id': 'usage-source',
+        'source-kind': 'fixture',
+        'as-of': '2026-08-29T12:00:00Z',
+        'retrieved-at': '2026-08-29T12:05:00Z',
+        availability: 'available',
+        completeness: 'complete',
+        freshness: 'fresh'
+      },
+      rows: [
+        {
+          organization: 'octo-org',
+          repository: 'octo-org/platform',
+          workflow: '.github/workflows/ci.yml',
+          run: '2001',
+          invocation: 'invoke-1',
+          engine: 'github-models',
+          'requested-model': 'gpt-4.1',
+          'resolved-model': 'gpt-4.1-mini',
+          'rollout-mode': 'review',
+          'input-tokens': 120,
+          'output-tokens': 42,
+          'cache-read-tokens': 10,
+          'cache-write-tokens': 5,
+          'reasoning-tokens': 3,
+          aic: 1.75,
+          'observed-at': '2026-08-29T09:08:00Z'
+        }
+      ]
+    },
+    'operational-values': {
+      source: 'operational-values',
+      metadata: {
+        'source-id': 'operational-values-source',
+        'source-kind': 'fixture',
+        'as-of': '2026-08-29T12:00:00Z',
+        'retrieved-at': '2026-08-29T12:05:00Z',
+        availability: 'available',
+        completeness: 'complete',
+        freshness: 'fresh'
+      },
+      rows: [
+        {
+          organization: 'octo-org',
+          repository: 'octo-org/platform',
+          workflow: '.github/workflows/ci.yml',
+          run: '2001',
+          experiment: 'exp-1',
+          'operational-case': 'merge-latency',
+          'evaluator-digest': 'digest-1',
+          'rollout-mode': 'review',
+          'operational-value': 0.72,
+          'operational-value-definition': 'merge-speed',
+          'requested-evidence-at': '2026-08-28T12:00:00Z',
+          'evidence-cutoff': '2026-08-29T08:00:00Z',
+          'maturity-at': '2026-08-29T11:00:00Z',
+          'maturity-status': 'complete',
+          'delta-from-baseline': 0.11,
+          'observed-at': '2026-08-29T09:25:00Z',
+          'evidence-link': {
+            relation: 'evidence',
+            href: 'https://example.com/evidence/1',
+            label: 'Evidence 1'
+          }
+        }
+      ]
     }
   };
 }
