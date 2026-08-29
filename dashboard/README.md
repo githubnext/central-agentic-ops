@@ -15,6 +15,7 @@ The dashboard package publishes an access-controlled static view of Central Agen
 
 - `.github/workflows/dashboard-build.yml`: reusable, path-aware report build that uploads a mergeable Actions artifact.
 - `.github/workflows/dashboard.yml`: manual standalone GitHub Pages deployment.
+- `.github/aw/control-policy/resolve.mjs`: dependency-free checked-in policy resolver.
 - `.github/aw/dashboard/report`: deterministic inventory, AI Credit collection, and static report generation scripts.
 
 The publisher reads trusted workflow, issue, pull request, and value-artifact data from the installed repository. AI agents do not receive `pages: write`, `id-token: write`, or deployment authority.
@@ -88,7 +89,7 @@ This example publishes the dashboard at `/operations/dashboard/`. Replace `dist`
 
 ## Configure
 
-1. Set `CENTRAL_AGENTIC_OPS_ALLOWED_REPOS` when report discovery should be limited to an explicit repository allowlist.
+1. Set `control-plane.scope.allowed-repositories` in `.github/central-agentic-ops.json` when report discovery should be limited to an explicit repository allowlist.
 2. Use `site-path: .` only when the dashboard is the whole site; use a relative URL path when embedding it.
 
 Do not install this package when the report would be public or when the repository plan cannot enforce the required access boundary. See [Publishing Pages Reports](../docs/operations.md#publishing-pages-reports) for operating details.

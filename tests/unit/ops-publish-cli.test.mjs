@@ -65,7 +65,8 @@ globalThis.fetch = async (input, options = {}) => {
   if (method === "GET" && url.pathname === "/repos/acme/review/issues/42") return response(config.sourceIssue);
   if (method === "PATCH" && url.pathname === "/repos/acme/review/issues/42") return response({ ...config.sourceIssue, state: "closed" });
   if (method === "GET" && url.pathname === "/repos/acme/service") return response(config.targetRepository);
-  if (method === "GET" && url.pathname === "/repos/acme/service/contents/.github/central-agentic-ops.yml") {
+  if (method === "GET" && url.pathname === "/repos/acme/service/commits/main") return response(config.targetCommit);
+  if (method === "GET" && url.pathname === "/repos/acme/service/contents/.github/central-agentic-ops.json") {
     if (config.authorityMissing) return response({ message: "Not Found" }, 404);
     return response({ content: Buffer.from(config.authoritySource).toString("base64") });
   }
@@ -107,12 +108,20 @@ function runCommand(command, {
   config = {},
   env = {},
   event,
+  settings = {
+    allowed_owners: ["acme"],
+    allowed_repositories: ["acme/service"],
+    publishing_enabled: true,
+    publishing_control_repositories: ["acme/control"],
+    publishing_reviewers: ["octocat"],
+  },
 } = {}) {
   const temporaryRoot = mkdtempSync(join(tmpdir(), "central-agentic-ops-publish-"));
   const mockFetchPath = join(temporaryRoot, "mock-fetch.mjs");
   const logPath = join(temporaryRoot, "requests.jsonl");
   const outputPath = join(temporaryRoot, "output.txt");
   const eventPath = join(temporaryRoot, "event.json");
+  const settingsPath = join(temporaryRoot, "control-settings.json");
   const currentSourceIssue = config.sourceIssue || sourceIssue();
   const approvedSourceIssue = approvedIssue || currentSourceIssue;
   const targetIssue = {
@@ -124,7 +133,11 @@ function runCommand(command, {
   const completeConfig = {
     sourceIssue: currentSourceIssue,
     targetRepository: { default_branch: "main", archived: false, disabled: false, has_issues: true },
-    authoritySource: "version: 1\nbundles:\n  aw-maintenance:\n    authority: acme/control\n",
+    targetCommit: { sha: "0123456789abcdef0123456789abcdef01234567" },
+    authoritySource: JSON.stringify({
+      version: 1,
+      "target-authority": { packages: { "aw-maintenance": { authority: "acme/control" } } },
+    }),
     targetIssue,
     commentBody: `Published\n\n${publicationCommentMarker("acme/service", 84)}`,
     run: {
@@ -144,14 +157,14 @@ function runCommand(command, {
   };
   writeFileSync(mockFetchPath, mockFetchSource);
   writeFileSync(outputPath, "");
+  writeFileSync(settingsPath, JSON.stringify(settings));
   if (event) writeFileSync(eventPath, JSON.stringify(event));
   try {
     const result = spawnSync(process.execPath, ["--import", mockFetchPath, scriptPath, command], {
       encoding: "utf8",
       env: {
         ...process.env,
-        ALLOWED_OWNERS: "acme",
-        ALLOWED_REPOS: "acme/service",
+        CONTROL_SETTINGS: settingsPath,
         CONTROL_REPOSITORY: "acme/control",
         CONTROL_TOKEN: "control-token",
         GITHUB_API_URL: "https://api.github.com",
@@ -162,8 +175,6 @@ function runCommand(command, {
         MOCK_CONFIG: JSON.stringify(completeConfig),
         MOCK_LOG: logPath,
         PACKAGE: "aw-maintenance",
-        PUBLISH_CONTROL_REPOS: "acme/control",
-        PUBLISH_REVIEWERS: "octocat",
         REVIEWER: "octocat",
         SOURCE_CONTENT_DIGEST: issueContentDigest(approvedSourceIssue.title, approvedSourceIssue.body),
         SOURCE_ISSUE: "42",
@@ -272,8 +283,8 @@ test("publish rejects invalid source and target state", () => {
 test("publish fails closed for missing, malformed, or mismatched authority", () => {
   for (const [config, message] of [
     [{ authorityMissing: true }, /GitHub API 404/],
-    [{ authoritySource: "version: [" }, /not valid safe YAML/],
-    [{ authoritySource: "version: 1\nbundles:\n  aw-maintenance:\n    authority: acme/other\n" }, /different control repository/],
+    [{ authoritySource: "version: [" }, /not valid control policy JSON/],
+    [{ authoritySource: JSON.stringify({ version: 1, "target-authority": { packages: { "aw-maintenance": { authority: "acme/other" } } } }) }, /different control repository/],
   ]) {
     const result = runCommand("publish", { config });
     assert.notEqual(result.status, 0);

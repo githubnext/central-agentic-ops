@@ -292,14 +292,6 @@ test("enterprise-scale limits remain bounded across inventory sizes", () => {
 });
 
 test("enterprise defaults, budgets, timeouts, and concurrency are finite", () => {
-  const monthlyBudgetVariables = {
-    "uk-ai-advisory.md": "CENTRAL_AGENTIC_OPS_ADVISORY_MONTHLY_AI_CREDIT_BUDGET",
-    "ambient-context.md": "CENTRAL_AGENTIC_OPS_AMBIENT_CONTEXT_MONTHLY_AI_CREDIT_BUDGET",
-    "aw-maintenance.md": "CENTRAL_AGENTIC_OPS_AW_MAINTENANCE_MONTHLY_AI_CREDIT_BUDGET",
-    "dependabot.md": "CENTRAL_AGENTIC_OPS_DEPENDABOT_MONTHLY_AI_CREDIT_BUDGET",
-    "eu-cra-compliance.md": "CENTRAL_AGENTIC_OPS_EU_CRA_COMPLIANCE_MONTHLY_AI_CREDIT_BUDGET",
-    "optimization.md": "CENTRAL_AGENTIC_OPS_OPTIMIZATION_MONTHLY_AI_CREDIT_BUDGET",
-  };
   const expected = {
     "uk-ai-advisory.md": { credits: 250, timeout: 15, dispatchMax: 50, workers: 1 },
     "advisory-package-maintainer.md": { credits: 200, timeout: 20 },
@@ -334,32 +326,31 @@ test("enterprise defaults, budgets, timeouts, and concurrency are finite", () =>
     if (limits.dispatchMax) {
       assert.match(source, new RegExp(`dispatch_max: "${limits.dispatchMax}"`), name);
       assert.match(source, new RegExp(`dispatch-workflow:[\\s\\S]*?max: ${limits.dispatchMax}`), name);
-      const budgetBinding = `monthly_credit_budget: \${{ vars.${monthlyBudgetVariables[name]} || '0' }}`;
-      assert.ok(source.includes(budgetBinding), name);
+      assert.match(source, new RegExp(`orchestrator_credits: "${limits.credits}"`), name);
     }
   }
 
   const control = workflow("shared/control.md");
   const precompute = workflow("shared/control-precompute.md");
-  assert.match(control, /max_repos: "\$\{\{ github\.aw\.import-inputs\.max_repos \}\}"/);
-  assert.match(control, /max_scan_repos: "\$\{\{ github\.aw\.import-inputs\.max_scan_repos \}\}"/);
-  assert.match(control, /allowed_owners: "\$\{\{ github\.aw\.import-inputs\.allowed_owners \}\}"/);
-  assert.match(control, /allowed_repos: "\$\{\{ github\.aw\.import-inputs\.allowed_repos \}\}"/);
+  assert.match(control, /package:\n\s+type: string\n\s+required: true/);
+  assert.match(control, /role:\n\s+type: choice\n\s+options: \[orchestrator, worker\]/);
+  assert.match(control, /worker:\n\s+type: string\n\s+default: "__none__"/);
+  assert.match(precompute, /node "\$resolver" --effective/);
+  assert.match(precompute, /contents\/\.github\/central-agentic-ops\.json/);
   assert.match(precompute, /max_repos must be an integer from 1 through 1000/);
   assert.match(precompute, /max_scan_repos must be an integer from 1 through 100000/);
-  assert.match(precompute, /CENTRAL_AGENTIC_OPS_ALLOWED_REPOS is invalid/);
+  assert.match(precompute, /control-plane\.scope\.allowed-repositories is invalid/);
   assert.match(precompute, /repo_source="allowed_repos"/);
   assert.match(precompute, /inventory_version/);
   assert.match(precompute, /batch_id/);
   assert.match(precompute, /\.id % \$cell_count/);
   assert.match(precompute, /dispatch_max must be an integer from 1 through 1000/);
   assert.match(precompute, /\(\$dispatch_max \| tonumber\) \/ \$eligible_workers \| floor/);
-  assert.match(precompute, /\(\$aggregate_credit_limit \| tonumber\) - \(\$orchestrator_credits \| tonumber\)/);
   assert.match(precompute, /\[\.effective_max_repos, \.monthly_budget_target_cap\] \| min/);
   assert.match(precompute, /monthly_credit_budget must be a non-negative integer/);
   assert.match(precompute, /gh aw logs "\$workflow_id" --start-date "\$month_start" --json -c 1000/);
   assert.doesNotMatch(precompute, /--paginate/);
-  assert.doesNotMatch(control, /repositories: \["\*"\]/);
+  assert.doesNotMatch(`${control}\n${precompute}`, /vars\.CENTRAL_AGENTIC_OPS_|repositories: \["\*"\]/);
 });
 
 test("workers disable costly daily AIC burn checks", () => {
@@ -596,7 +587,7 @@ test("ownership, provenance, and workflow identity fail closed", () => {
 
   assert.match(precompute, /validate_repository_owner "target_repo" "\$TARGET_REPO"/);
   assert.match(precompute, /validate_repository_owner "safe_output_repo" "\$SAFE_OUTPUT_REPO"/);
-  assert.match(precompute, /outside CENTRAL_AGENTIC_OPS_ALLOWED_OWNERS/);
+  assert.match(precompute, /outside control-plane\.scope\.allowed-owners/);
   assert.match(precompute, /\.path == \("\.github\/workflows\/" \+ \$worker \+ "\.lock\.yml"\)/);
   assert.doesNotMatch(precompute, /\.name == \$worker|gsub\("-"; " "\)/);
   assert.match(control, /central_repo`: `\$\{\{ github\.repository \}\}`/);
@@ -669,7 +660,7 @@ test("authentication prefers an optional GitHub App and retains bounded fallback
   const control = workflow("shared/control.md");
   const precompute = workflow("shared/control-precompute.md");
 
-  assert.match(control, /github-app:\n\s+client-id: \$\{\{ vars\.GH_AW_GITHUB_APP_ID \}\}/);
+  assert.match(control, /github-app:\n\s+client-id: \$\{\{ secrets\.GH_AW_GITHUB_APP_ID \}\}/);
   assert.match(control, /private-key: \$\{\{ secrets\.GH_AW_GITHUB_APP_PRIVATE_KEY \}\}/);
   assert.match(control, /ignore-if-missing: true/);
   assert.doesNotMatch(control, /repositories: \["\*"\]/);
@@ -680,10 +671,12 @@ test("live workers require target-owned package authority before agent execution
   const control = workflow("shared/control.md");
   const precompute = workflow("shared/control-precompute.md");
 
-  assert.match(control, /bundle:\n\s+type: string\n\s+required: true/);
+  assert.match(control, /package:\n\s+type: string\n\s+required: true/);
   assert.match(precompute, /validate_live_authority/);
-  assert.match(precompute, /contents\/\.github\/central-agentic-ops\.yml/);
-  assert.match(precompute, /YAML\.safe_load/);
+  assert.match(precompute, /commits\/\$default_branch/);
+  assert.match(precompute, /contents\/\.github\/central-agentic-ops\.json/);
+  assert.match(precompute, /node "\$RESOLVER" --authority/);
+  assert.doesNotMatch(precompute, /YAML|central-agentic-ops\.yml/);
   assert.match(precompute, /target assigns live authority for \$BUNDLE to a different control repository/);
   assert.match(precompute, /validate_worker_dispatch\n\s+validate_output_destination\n\s+validate_live_authority\n\s+write_worker_precompute/);
 
@@ -709,35 +702,28 @@ test("live workers require target-owned package authority before agent execution
     ["optimization-ai-credit-auditor.md", "optimization"],
     ["optimization-ai-credit-optimizer.md", "optimization"],
   ]) {
-    assert.match(workflow(name), new RegExp(`bundle: ${bundle}`));
+    assert.match(workflow(name), new RegExp(`package: ${bundle}`));
   }
 });
 
-test("orchestrators expose scheduled variables and independent manual inputs", () => {
+test("orchestrators use checked-in policy with independent manual narrowing", () => {
   for (const [name, packageName] of [
-    ["uk-ai-advisory.md", "ADVISORY"],
-    ["ambient-context.md", "AMBIENT_CONTEXT"],
-    ["aw-maintenance.md", "AW_MAINTENANCE"],
-    ["dependabot.md", "DEPENDABOT"],
-    ["eu-cra-compliance.md", "EU_CRA_COMPLIANCE"],
-    ["optimization.md", "OPTIMIZATION"],
+    ["uk-ai-advisory.md", "advisory"],
+    ["ambient-context.md", "ambient-context"],
+    ["aw-maintenance.md", "aw-maintenance"],
+    ["dependabot.md", "dependabot"],
+    ["eu-cra-compliance.md", "eu-cra-compliance"],
+    ["optimization.md", "optimization"],
   ]) {
     const source = workflow(name);
 
-    assert.match(source, new RegExp(`^if: \\(vars\\.CENTRAL_AGENTIC_OPS_${packageName}_ENABLED \\|\\| 'true'\\) == 'true'$`, "m"));
     assert.match(source, /rollout_percent:\n\s+default: 100\n\s+type: number/);
-    assert.match(source, new RegExp(`CENTRAL_AGENTIC_OPS_${packageName}_ENABLED \\|\\| 'true'`));
-    assert.match(source, new RegExp(`CENTRAL_AGENTIC_OPS_${packageName}_MODE \\|\\| 'review'`));
-    assert.match(source, new RegExp(`CENTRAL_AGENTIC_OPS_${packageName}_MAX_REPOS \\|\\| '1'`));
-    assert.doesNotMatch(source, new RegExp(`CENTRAL_AGENTIC_OPS_${packageName}_REVIEW_REPO`));
-    assert.match(source, new RegExp(`CENTRAL_AGENTIC_OPS_${packageName}_ROLLOUT_PERCENT \\|\\| '100'`));
-    assert.match(source, /CENTRAL_AGENTIC_OPS_MAX_SCAN_REPOS \|\| '1000'/);
-    assert.match(source, /CENTRAL_AGENTIC_OPS_CELL_COUNT \|\| '1'/);
-    assert.match(source, /CENTRAL_AGENTIC_OPS_CELL_INDEX \|\| '0'/);
-    assert.match(source, /CENTRAL_AGENTIC_OPS_BATCH_SIZE \|\| '100000'/);
-    assert.match(source, /CENTRAL_AGENTIC_OPS_BATCH_INDEX \|\| '0'/);
-    assert.match(source, /CENTRAL_AGENTIC_OPS_ALLOWED_OWNERS \|\| github\.repository_owner/);
-    assert.match(source, new RegExp(`CENTRAL_AGENTIC_OPS_MAX_AI_CREDITS_PER_RUN \\|\\| '${name === "aw-maintenance.md" ? "1250" : "1100"}'`));
+    assert.match(source, /max_repos:\n\s+default: 1\n\s+type: number/);
+    assert.match(source, /safe_output_mode:\n\s+default: "review"\n\s+type: choice/);
+    assert.match(source, new RegExp(`package: ${packageName}`));
+    assert.match(source, /role: orchestrator/);
+    assert.match(source, /environment: central-agentic-ops/);
+    assert.doesNotMatch(source, /vars\.CENTRAL_AGENTIC_OPS_|cell_count:|cell_index:|batch_size:|batch_index:/);
   }
 });
 
@@ -793,8 +779,8 @@ test("safe-output modes are review and live with a separate package kill switch"
   const control = workflow("shared/control.md");
   const precompute = workflow("shared/control-precompute.md");
 
-  assert.match(control, /rollout_mode:[\s\S]*?options: \[review, live\][\s\S]*?default: "review"/);
-  assert.match(control, /package_enabled:[\s\S]*?default: "true"/);
+  assert.match(precompute, /\.authorized.*!= "true"/);
+  assert.match(precompute, /\{type:"noop",message:\$message\}/);
   assert.doesNotMatch(`${control}\n${precompute}`, /preview_only|\bstaged\b/);
 });
 
@@ -805,15 +791,14 @@ test("shared control keeps manual and scheduled routing event-scoped", () => {
   for (const name of ["uk-ai-advisory.md", "ambient-context.md", "aw-maintenance.md", "dependabot.md", "eu-cra-compliance.md", "optimization.md"]) {
     const orchestrator = workflow(name);
     assert.match(orchestrator, /GH_AW_SAFE_OUTPUT_MODE:.*inputs\.safe_output_mode.*\|\| 'review'/);
-    assert.match(orchestrator, /CENTRAL_AGENTIC_OPS_PACKAGE_ENABLED:.*_ENABLED \|\| 'true'/);
     assert.match(orchestrator, /REVIEW_OUTPUT_REPO:.*inputs\.safe_output_repo \|\| github\.repository/);
     assert.match(orchestrator, /SAFE_OUTPUT_REPO:.*== 'review'/);
+    assert.doesNotMatch(orchestrator, /vars\.CENTRAL_AGENTIC_OPS_/);
   }
-  assert.match(control, /safe_output_mode: \$\{\{ env\.GH_AW_SAFE_OUTPUT_MODE \}\}/);
-  assert.match(control, /safe_output_repo: \$\{\{ env\.SAFE_OUTPUT_REPO \}\}/);
+  assert.match(control, /requested_mode: \$\{\{ github\.event\.inputs\.safe_output_mode \|\| '' \}\}/);
+  assert.match(control, /safe_output_repo: \$\{\{ github\.event\.inputs\.safe_output_repo/);
   assert.doesNotMatch(control, /review_repo/);
-  assert.match(control, /rollout_percent: "\$\{\{ github\.aw\.import-inputs\.rollout_percent \}\}"/);
-  assert.match(control, /enabled: \$\{\{ env\.CENTRAL_AGENTIC_OPS_PACKAGE_ENABLED \|\| github\.aw\.import-inputs\.package_enabled \}\}/);
+  assert.match(control, /requested_rollout_percent: \$\{\{ github\.event\.inputs\.rollout_percent \|\| '' \}\}/);
   assert.match(control, /select no more than `effective_max_repos` repositories/);
 
   assert.match(precompute, /rollout_percent must be an integer from 1 through 100/);
@@ -842,29 +827,29 @@ test("orchestrators dispatch workers only through safe-output tools", () => {
 
 test("every worker uses the standard dispatch envelope and safe mode vocabulary", () => {
   const workerNames = [
-    ["advisory-uk-ai-operational-resilience.md", "ADVISORY", "ADVISORY_UK_AI_OPERATIONAL_RESILIENCE"],
-    ["ambient-context-agents-md-curator.md", "AMBIENT_CONTEXT", "AMBIENT_CONTEXT_AGENTS_MD"],
-    ["ambient-context-skills-curator.md", "AMBIENT_CONTEXT", "AMBIENT_CONTEXT_SKILLS"],
-    ["aw-failures-investigator.md", "AW_MAINTENANCE", "AW_MAINTENANCE_FAILURES"],
-    ["aw-maintenance-upgrade.md", "AW_MAINTENANCE", "AW_MAINTENANCE_UPGRADE"],
-    ["dependabot-release-train-updater.md", "DEPENDABOT", "DEPENDABOT_UPDATER"],
-    ["eu-cra-compliance-article-14-reporting-readiness.md", "EU_CRA_COMPLIANCE", "EU_CRA_COMPLIANCE_ARTICLE_14_REPORTING_READINESS"],
-    ["eu-cra-compliance-conformity-release-evidence.md", "EU_CRA_COMPLIANCE", "EU_CRA_COMPLIANCE_CONFORMITY_RELEASE_EVIDENCE"],
-    ["eu-cra-compliance-scope-classifier.md", "EU_CRA_COMPLIANCE", "EU_CRA_COMPLIANCE_SCOPE_CLASSIFIER"],
-    ["eu-cra-compliance-security-requirements-auditor.md", "EU_CRA_COMPLIANCE", "EU_CRA_COMPLIANCE_SECURITY_REQUIREMENTS_AUDITOR"],
-    ["eu-cra-compliance-supply-chain-sbom-auditor.md", "EU_CRA_COMPLIANCE", "EU_CRA_COMPLIANCE_SUPPLY_CHAIN_SBOM_AUDITOR"],
-    ["eu-cra-compliance-vulnerability-handling-auditor.md", "EU_CRA_COMPLIANCE", "EU_CRA_COMPLIANCE_VULNERABILITY_HANDLING_AUDITOR"],
-    ["optimization-ai-credit-auditor.md", "OPTIMIZATION", "OPTIMIZATION_AUDITOR"],
-    ["optimization-ai-credit-optimizer.md", "OPTIMIZATION", "OPTIMIZATION_OPTIMIZER"],
+    ["advisory-uk-ai-operational-resilience.md", "advisory", "uk-ai-operational-resilience"],
+    ["ambient-context-agents-md-curator.md", "ambient-context", "agents-md-curator"],
+    ["ambient-context-skills-curator.md", "ambient-context", "skills-curator"],
+    ["aw-failures-investigator.md", "aw-maintenance", "failures-investigator"],
+    ["aw-maintenance-upgrade.md", "aw-maintenance", "upgrade"],
+    ["dependabot-release-train-updater.md", "dependabot", "release-train-updater"],
+    ["eu-cra-compliance-article-14-reporting-readiness.md", "eu-cra-compliance", "article-14-reporting-readiness"],
+    ["eu-cra-compliance-conformity-release-evidence.md", "eu-cra-compliance", "conformity-release-evidence"],
+    ["eu-cra-compliance-scope-classifier.md", "eu-cra-compliance", "scope-classifier"],
+    ["eu-cra-compliance-security-requirements-auditor.md", "eu-cra-compliance", "security-requirements-auditor"],
+    ["eu-cra-compliance-supply-chain-sbom-auditor.md", "eu-cra-compliance", "supply-chain-sbom-auditor"],
+    ["eu-cra-compliance-vulnerability-handling-auditor.md", "eu-cra-compliance", "vulnerability-handling-auditor"],
+    ["optimization-ai-credit-auditor.md", "optimization", "ai-credit-auditor"],
+    ["optimization-ai-credit-optimizer.md", "optimization", "ai-credit-optimizer"],
   ];
 
   for (const [name, packageName, workerName] of workerNames) {
     const source = workflow(name);
 
-    assert.match(
-      source,
-      new RegExp(`^if: >-\\n  \\(vars\\.CENTRAL_AGENTIC_OPS_${packageName}_ENABLED \\|\\| 'true'\\) == 'true' &&\\n  \\(vars\\.CENTRAL_AGENTIC_OPS_${workerName}_ENABLED \\|\\| 'true'\\) == 'true'$`, "m"),
-    );
+    assert.match(source, new RegExp(`package: ${packageName}`));
+    assert.match(source, /role: worker/);
+    assert.match(source, new RegExp(`worker: ${workerName}`));
+    assert.match(source, /environment: central-agentic-ops/);
     for (const input of [
       "target_repo",
       "safe_output_repo",
@@ -879,9 +864,7 @@ test("every worker uses the standard dispatch envelope and safe mode vocabulary"
     assert.doesNotMatch(source, /^      preview_only:/m);
     assert.doesNotMatch(source, /^\s+staged:/m);
     assert.doesNotMatch(source, /safe_output_mode == 'private'/);
-    assert.match(source, /CENTRAL_AGENTIC_OPS_PACKAGE_ENABLED:.*_ENABLED \|\| 'true'/);
-    assert.match(source, /CENTRAL_AGENTIC_OPS_WORKER_ENABLED:.*\|\| 'true'/);
-    assert.match(source, /CENTRAL_AGENTIC_OPS_WORKER_MAX_MODE:.*\|\| 'review'/);
+    assert.doesNotMatch(source, /vars\.CENTRAL_AGENTIC_OPS_/);
     assert.match(source, /GH_AW_SAFE_OUTPUT_MODE: \$\{\{ inputs\.safe_output_mode \|\| 'review' \}\}/);
     assert.match(source, /SAFE_OUTPUT_REPO:.*safe_output_mode.*'review'.*safe_output_repo.*github\.repository.*target_repo/);
 
@@ -1071,18 +1054,20 @@ test("workers reject disabled, malformed, or over-ceiling dispatches before exec
   const control = workflow("shared/control.md");
   const precompute = workflow("shared/control-precompute.md");
 
-  for (const input of ["worker_enabled", "worker_max_mode", "correlation_id", "central_repo", "control_plane_run_url"]) {
+  for (const input of ["worker", "correlation_id", "central_repo", "control_plane_run_url"]) {
     assert.match(control, new RegExp(`${input}:`));
     assert.match(precompute, new RegExp(`${input}:`));
   }
+  assert.match(precompute, /Resolve authoritative control policy/);
+  assert.match(precompute, /node "\$resolver" --effective/);
+  assert.match(precompute, /Central Agentic Ops policy denied this run/);
+  assert.match(precompute, /\{type:"noop",message:\$message\}/);
+  assert.match(precompute, /CAO_POLICY_AUTHORIZED=false/);
   assert.match(precompute, /validate_worker_dispatch\n\s+validate_output_destination\n\s+validate_live_authority\n\s+write_worker_precompute/);
-  assert.match(precompute, /worker is disabled by its control-plane policy/);
-  assert.match(precompute, /safe_output_mode exceeds the worker_max_mode ceiling/);
   assert.match(precompute, /must be review or live/);
-  assert.match(precompute, /enabled must be true or false/);
-  assert.match(precompute, /package disabled by its control-plane kill switch/);
   assert.match(precompute, /central_repo must identify the current control repository/);
   assert.match(precompute, /control_plane_run_url must match correlation_id and central_repo/);
+  assert.doesNotMatch(`${control}\n${precompute}`, /vars\.CENTRAL_AGENTIC_OPS_/);
 });
 
 test("SVG visual audit covers every tracked SVG in both color schemes", () => {
@@ -1249,7 +1234,6 @@ test("clean-room compilation emits the expected GitHub Actions settings", { time
       .sort();
     const packageLockNames = [
       "advisory-uk-ai-operational-resilience.lock.yml",
-      "advisory.lock.yml",
       "uk-ai-advisory.lock.yml",
       "ambient-context-agents-md-curator.lock.yml",
       "ambient-context-skills-curator.lock.yml",
@@ -1295,40 +1279,35 @@ test("clean-room compilation emits the expected GitHub Actions settings", { time
       assert.match(generated, /max_scan_repos must be an integer from 1 through 100000/);
       assert.match(generated, /inventory_version/);
       assert.match(generated, /batch_id/);
-      assert.match(generated, /outside CENTRAL_AGENTIC_OPS_ALLOWED_OWNERS/);
+      assert.match(generated, /outside control-plane\.scope\.allowed-owners/);
       assert.match(generated, /review safe_output_repo must differ from target_repo/);
       assert.match(generated, /review safe_output_repo must be accessible/);
       assert.match(generated, /non-central review safe_output_repo must be private/);
       assert.match(generated, /live worker safe_output_repo must equal target_repo/);
       assert.match(generated, /target assigns live authority for .+ to a different control repository/);
+      assert.match(generated, /\.github\/central-agentic-ops\.json/);
+      assert.match(generated, /CAO_POLICY_AUTHORIZED/);
+      assert.doesNotMatch(generated, /vars\.CENTRAL_AGENTIC_OPS_|central-agentic-ops\.yml/);
       assert.doesNotMatch(generated, /PREVIEW_ONLY|preview_only/);
       assert.doesNotMatch(generated, /== 'preview'/);
       assert.doesNotMatch(generated, /safe_output_mode == 'private'/);
     }
 
     const orchestratorGates = new Map([
-      ["uk-ai-advisory.lock.yml", "ADVISORY"],
-      ["ambient-context.lock.yml", "AMBIENT_CONTEXT"],
-      ["aw-maintenance.lock.yml", "AW_MAINTENANCE"],
-      ["dependabot.lock.yml", "DEPENDABOT"],
-      ["eu-cra-compliance.lock.yml", "EU_CRA_COMPLIANCE"],
-      ["optimization.lock.yml", "OPTIMIZATION"],
+      ["uk-ai-advisory.lock.yml", "advisory"],
+      ["ambient-context.lock.yml", "ambient-context"],
+      ["aw-maintenance.lock.yml", "aw-maintenance"],
+      ["dependabot.lock.yml", "dependabot"],
+      ["eu-cra-compliance.lock.yml", "eu-cra-compliance"],
+      ["optimization.lock.yml", "optimization"],
     ]);
     for (const [name, packageName] of orchestratorGates) {
       const generated = workflow(name, generatedDirectory);
-      const jobs = generatedJobs(generated);
-      assert.match(
-        jobs.get("activation").block,
-        new RegExp(`^    if: \\(vars\\.CENTRAL_AGENTIC_OPS_${packageName}_ENABLED \\|\\| 'true'\\) == 'true'$`, "m"),
-      );
-      for (const jobName of jobs.keys()) {
-        if (jobName !== "activation") {
-          assert.ok(transitivelyNeeds(jobs, jobName, "activation"), `${name} job ${jobName} bypasses activation`);
-        }
-      }
+      assert.match(generated, new RegExp(`BUNDLE: ${packageName}`));
+      assert.match(generated, /ROLE: orchestrator/);
+      assert.match(generated, /WORKER: __none__/);
       assert.match(generated, /GH_AW_SAFE_OUTPUT_MODE:.*inputs\.safe_output_mode.*\|\| 'review'/);
-      assert.match(generated, /CENTRAL_AGENTIC_OPS_PACKAGE_ENABLED:.*_ENABLED \|\| 'true'/);
-      assert.match(generated, /ROLLOUT_PERCENT: \$\{\{ inputs\.rollout_percent \|\| vars\.CENTRAL_AGENTIC_OPS_.+_ROLLOUT_PERCENT \|\| '100' \}\}/);
+      assert.match(generated, /REQUESTED_ROLLOUT_PERCENT: \$\{\{ github\.event\.inputs\.rollout_percent \|\| '' \}\}/);
       assert.match(generated, /rollout_percent:\n\s+default: 100\n\s+type: number/);
       assert.match(generated, /timeout-minutes: 15/);
       assert.match(generated, /cancel-in-progress: true/);
@@ -1341,36 +1320,29 @@ test("clean-room compilation emits the expected GitHub Actions settings", { time
     }
 
     const workerGates = new Map([
-      ["advisory-uk-ai-operational-resilience.lock.yml", ["ADVISORY", "ADVISORY_UK_AI_OPERATIONAL_RESILIENCE"]],
-      ["ambient-context-agents-md-curator.lock.yml", ["AMBIENT_CONTEXT", "AMBIENT_CONTEXT_AGENTS_MD"]],
-      ["ambient-context-skills-curator.lock.yml", ["AMBIENT_CONTEXT", "AMBIENT_CONTEXT_SKILLS"]],
-      ["aw-failures-investigator.lock.yml", ["AW_MAINTENANCE", "AW_MAINTENANCE_FAILURES"]],
-      ["aw-maintenance-upgrade.lock.yml", ["AW_MAINTENANCE", "AW_MAINTENANCE_UPGRADE"]],
-      ["dependabot-release-train-updater.lock.yml", ["DEPENDABOT", "DEPENDABOT_UPDATER"]],
-      ["eu-cra-compliance-article-14-reporting-readiness.lock.yml", ["EU_CRA_COMPLIANCE", "EU_CRA_COMPLIANCE_ARTICLE_14_REPORTING_READINESS"]],
-      ["eu-cra-compliance-conformity-release-evidence.lock.yml", ["EU_CRA_COMPLIANCE", "EU_CRA_COMPLIANCE_CONFORMITY_RELEASE_EVIDENCE"]],
-      ["eu-cra-compliance-scope-classifier.lock.yml", ["EU_CRA_COMPLIANCE", "EU_CRA_COMPLIANCE_SCOPE_CLASSIFIER"]],
-      ["eu-cra-compliance-security-requirements-auditor.lock.yml", ["EU_CRA_COMPLIANCE", "EU_CRA_COMPLIANCE_SECURITY_REQUIREMENTS_AUDITOR"]],
-      ["eu-cra-compliance-supply-chain-sbom-auditor.lock.yml", ["EU_CRA_COMPLIANCE", "EU_CRA_COMPLIANCE_SUPPLY_CHAIN_SBOM_AUDITOR"]],
-      ["eu-cra-compliance-vulnerability-handling-auditor.lock.yml", ["EU_CRA_COMPLIANCE", "EU_CRA_COMPLIANCE_VULNERABILITY_HANDLING_AUDITOR"]],
-      ["optimization-ai-credit-auditor.lock.yml", ["OPTIMIZATION", "OPTIMIZATION_AUDITOR"]],
-      ["optimization-ai-credit-optimizer.lock.yml", ["OPTIMIZATION", "OPTIMIZATION_OPTIMIZER"]],
+      ["advisory-uk-ai-operational-resilience.lock.yml", ["advisory", "uk-ai-operational-resilience"]],
+      ["ambient-context-agents-md-curator.lock.yml", ["ambient-context", "agents-md-curator"]],
+      ["ambient-context-skills-curator.lock.yml", ["ambient-context", "skills-curator"]],
+      ["aw-failures-investigator.lock.yml", ["aw-maintenance", "failures-investigator"]],
+      ["aw-maintenance-upgrade.lock.yml", ["aw-maintenance", "upgrade"]],
+      ["dependabot-release-train-updater.lock.yml", ["dependabot", "release-train-updater"]],
+      ["eu-cra-compliance-article-14-reporting-readiness.lock.yml", ["eu-cra-compliance", "article-14-reporting-readiness"]],
+      ["eu-cra-compliance-conformity-release-evidence.lock.yml", ["eu-cra-compliance", "conformity-release-evidence"]],
+      ["eu-cra-compliance-scope-classifier.lock.yml", ["eu-cra-compliance", "scope-classifier"]],
+      ["eu-cra-compliance-security-requirements-auditor.lock.yml", ["eu-cra-compliance", "security-requirements-auditor"]],
+      ["eu-cra-compliance-supply-chain-sbom-auditor.lock.yml", ["eu-cra-compliance", "supply-chain-sbom-auditor"]],
+      ["eu-cra-compliance-vulnerability-handling-auditor.lock.yml", ["eu-cra-compliance", "vulnerability-handling-auditor"]],
+      ["optimization-ai-credit-auditor.lock.yml", ["optimization", "ai-credit-auditor"]],
+      ["optimization-ai-credit-optimizer.lock.yml", ["optimization", "ai-credit-optimizer"]],
     ]);
     for (const [name, [packageName, workerName]] of workerGates) {
       const generated = workflow(name, generatedDirectory);
-      const jobs = generatedJobs(generated);
-      const activation = jobs.get("activation").block;
-      const normalizedActivation = activation.replace(/\s+/g, " ");
-      assert.match(normalizedActivation, new RegExp(`vars\\.CENTRAL_AGENTIC_OPS_${packageName}_ENABLED \\|\\| 'true'`));
-      assert.match(normalizedActivation, new RegExp(`vars\\.CENTRAL_AGENTIC_OPS_${workerName}_ENABLED \\|\\| 'true'`));
-      for (const jobName of jobs.keys()) {
-        if (jobName !== "activation") {
-          assert.ok(transitivelyNeeds(jobs, jobName, "activation"), `${name} job ${jobName} bypasses activation`);
-        }
-      }
+      assert.match(generated, new RegExp(`BUNDLE: ${packageName}`));
+      assert.match(generated, /ROLE: worker/);
+      assert.match(generated, new RegExp(`WORKER: ${workerName}`));
       assert.match(generated, /GH_AW_SAFE_OUTPUT_MODE: \$\{\{ inputs\.safe_output_mode \|\| 'review' \}\}/);
       assert.match(generated, /SAFE_OUTPUT_REPO:.*safe_output_mode.*'review'.*safe_output_repo.*github\.repository.*inputs\.target_repo/);
-      assert.match(generated, /ROLLOUT_PERCENT: "100"/);
+      assert.match(generated, /REQUESTED_ROLLOUT_PERCENT: \$\{\{ github\.event\.inputs\.rollout_percent \|\| '' \}\}/);
       assert.match(generated, /GH_AW_SAFE_OUTPUTS_CONFIG:/);
     }
 
@@ -1435,6 +1407,8 @@ test("Agent customizations preserve the deterministic dashboard exception", () =
 test("Dashboard package supports embedded and explicit standalone deployment", () => {
   const rootManifest = readFileSync(join(root, "aw.yml"), "utf8");
   const dashboardManifest = readFileSync(join(root, "dashboard", "aw.yml"), "utf8");
+  const canonicalPolicyResolver = readFileSync(join(root, ".github", "scripts", "control-policy", "resolve.mjs"), "utf8");
+  const dashboardPolicyResolver = readFileSync(join(root, "dashboard", "control-policy", "resolve.mjs"), "utf8");
   const buildWorkflow = readFileSync(join(root, "dashboard", "dashboard-build.yml"), "utf8");
   const deployWorkflow = readFileSync(join(root, "dashboard", "dashboard.yml"), "utf8");
   const aicUsage = readFileSync(join(root, "dashboard", "report", "aic-usage.mjs"), "utf8");
@@ -1447,6 +1421,8 @@ test("Dashboard package supports embedded and explicit standalone deployment", (
   assert.match(dashboardManifest, /name: Central Agentic Ops Dashboard/);
   assert.match(dashboardManifest, /source: dashboard\.yml\n\s+destination: \.github\/workflows\/dashboard\.yml\n\s+kind: action-workflow/);
   assert.match(dashboardManifest, /source: dashboard-build\.yml\n\s+destination: \.github\/workflows\/dashboard-build\.yml\n\s+kind: action-workflow/);
+  assert.match(dashboardManifest, /source: control-policy\/resolve\.mjs\n\s+destination: \.github\/aw\/control-policy\/resolve\.mjs/);
+  assert.equal(dashboardPolicyResolver, canonicalPolicyResolver, "dashboard policy resolver must match its canonical source");
   assert.match(buildWorkflow, /workflow_call:[\s\S]*?site-path:[\s\S]*?default: cao/);
   assert.match(buildWorkflow, /REPORT_OUTPUT: \$\{\{ runner\.temp \}\}\/central-agentic-ops-dashboard\/\$\{\{ inputs\.site-path \}\}/);
   assert.match(buildWorkflow, /site-path must not be absolute, traverse directories, or end with '\/'/);
@@ -1576,6 +1552,7 @@ test("Dashboard report SVGs use theme colors in light and dark modes", () => {
 test("Dashboard renders one canonical authored workflow detail across repository and package views", () => {
   const temporaryRoot = mkdtempSync(join(tmpdir(), "central-agentic-ops-workflow-pages-"));
   const outputPath = join(temporaryRoot, "dist", "cao");
+  const controlSettingsPath = join(temporaryRoot, "control-settings.json");
   const inventoryPath = join(temporaryRoot, "inventory.json");
   const deployedPath = join(temporaryRoot, "deployed.json");
   const aicPath = join(temporaryRoot, "aic.json");
@@ -1592,8 +1569,13 @@ test("Dashboard renders one canonical authored workflow detail across repository
         { id: "operation", name: "Optimization", description: "", role: "orchestrator", sourcePath: ".github/workflows/operation.md", lockPath: orchestratorPath, compiled: true, maxAiCredits: 10 },
         { id: "worker", name: "Credit optimizer", description: "", role: "worker", sourcePath: ".github/workflows/worker.md", lockPath: workerPath, compiled: true, maxAiCredits: 20 },
       ],
-      bundles: [{ id: "operation", name: "Optimization", description: "", workflow: ".github/workflows/operation.md", maxAiCredits: 10, rolloutModeVariable: "OPERATION_MODE", compiled: true, workers: [{ id: "worker", name: "Credit optimizer", lockPath: workerPath, maxAiCredits: 20 }], missingWorkers: [] }],
+      bundles: [{ id: "operation", name: "Optimization", description: "", workflow: ".github/workflows/operation.md", controlPackage: "optimization", maxAiCredits: 10, compiled: true, workers: [{ id: "worker", name: "Credit optimizer", lockPath: workerPath, maxAiCredits: 20 }], missingWorkers: [] }],
       standalone: [],
+    });
+    json(controlSettingsPath, {
+      allowed_owners: ["acme"],
+      allowed_repositories: ["acme/service"],
+      packages: { optimization: { enabled: true, mode: "live" } },
     });
     json(deployedPath, {
       schemaVersion: 1,
@@ -1660,7 +1642,7 @@ globalThis.fetch = async (input) => {
         GITHUB_REPOSITORY: "acme/control",
         GITHUB_TOKEN: "test-token",
         REPORT_ALLOWED_REPOS: "acme/service",
-        REPORT_REPOSITORY_VARIABLES: '{"OPERATION_MODE":"live"}',
+        REPORT_CONTROL_SETTINGS: controlSettingsPath,
         REPORT_INVENTORY: inventoryPath,
         REPORT_DEPLOYED_WORKFLOWS: deployedPath,
         REPORT_AIC_USAGE: aicPath,

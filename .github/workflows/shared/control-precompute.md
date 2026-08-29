@@ -1,63 +1,33 @@
 ---
 import-schema:
-  bundle:
+  package:
     type: string
     required: true
   role:
     type: choice
     options: [orchestrator, worker]
     required: true
+  worker:
+    type: string
+    default: ""
   target_repo:
     type: string
     default: ""
-  organization:
-    type: string
-    required: true
-  max_repos:
+  requested_mode:
     type: string
     default: ""
-  max_scan_repos:
-    type: string
-    default: "1000"
-  cell_count:
-    type: string
-    default: "1"
-  cell_index:
-    type: string
-    default: "0"
-  batch_size:
-    type: string
-    default: "100000"
-  batch_index:
-    type: string
-    default: "0"
-  allowed_owners:
+  requested_max_repos:
     type: string
     default: ""
-  allowed_repos:
+  requested_rollout_percent:
     type: string
     default: ""
   dispatch_max:
     type: string
     default: "1"
-  rollout_percent:
-    type: string
-    default: "100"
-  safe_output_mode:
-    type: string
-    default: "review"
   safe_output_repo:
     type: string
     default: ""
-  enabled:
-    type: string
-    default: "true"
-  worker_enabled:
-    type: string
-    default: "true"
-  worker_max_mode:
-    type: string
-    default: "review"
   correlation_id:
     type: string
     default: ""
@@ -73,12 +43,9 @@ import-schema:
   worker_credits_per_target:
     type: string
     default: "0"
-  aggregate_credit_limit:
-    type: string
-    default: "1100"
-  monthly_credit_budget:
-    type: string
-    default: "0"
+
+resources:
+  - ../../scripts/control-policy/resolve.mjs
 
 tools:
   github:
@@ -86,52 +53,103 @@ tools:
     toolsets: [repos, actions]
 
 steps:
+  - name: Resolve authoritative control policy
+    env:
+      GH_TOKEN: ${{ steps.github-mcp-app-token.outputs.token || secrets.GH_AW_GITHUB_TOKEN || secrets.GITHUB_TOKEN }}
+      WORKFLOW_SHA: ${{ github.workflow_sha }}
+      BUNDLE: ${{ github.aw.import-inputs.package }}
+      ROLE: ${{ github.aw.import-inputs.role }}
+      WORKER: ${{ github.aw.import-inputs.worker }}
+      REQUESTED_MODE: ${{ github.aw.import-inputs.requested_mode }}
+      REQUESTED_MAX_REPOS: ${{ github.aw.import-inputs.requested_max_repos }}
+      REQUESTED_ROLLOUT_PERCENT: ${{ github.aw.import-inputs.requested_rollout_percent }}
+    run: |
+      set -euo pipefail
+      [ "$ROLE" != "orchestrator" ] || WORKER=""
+      mkdir -p /tmp/gh-aw/agent
+      out=/tmp/gh-aw/agent/control-precompute.json
+      policy_file=/tmp/gh-aw/agent/central-agentic-ops.json
+      effective_file=/tmp/gh-aw/agent/effective-policy.json
+      resolver=.github/scripts/control-policy/resolve.mjs
+
+      if ! [[ "$WORKFLOW_SHA" =~ ^[0-9a-fA-F]{40,64}$ ]]; then
+        echo "github.workflow_sha must be an exact commit SHA" >&2
+        exit 1
+      fi
+      if ! gh api --method GET "repos/${GITHUB_REPOSITORY}/contents/.github/central-agentic-ops.json" \
+        -f ref="$WORKFLOW_SHA" --jq '.content' | base64 -d > "$policy_file"; then
+        echo "cannot read .github/central-agentic-ops.json at github.workflow_sha" >&2
+        exit 1
+      fi
+      if ! CAO_PACKAGE="$BUNDLE" \
+        CAO_ROLE="$ROLE" \
+        CAO_WORKER="$WORKER" \
+        CAO_REQUESTED_MODE="$REQUESTED_MODE" \
+        CAO_REQUESTED_MAX_REPOSITORIES="$REQUESTED_MAX_REPOS" \
+        CAO_REQUESTED_ROLLOUT_PERCENT="$REQUESTED_ROLLOUT_PERCENT" \
+        GITHUB_REPOSITORY="$GITHUB_REPOSITORY" \
+        node "$resolver" --effective "$policy_file" > "$effective_file"; then
+        echo "control policy validation failed" >&2
+        exit 1
+      fi
+
+      if [ "$(jq -r '.authorized' "$effective_file")" != "true" ]; then
+        reason=$(jq -r '.reason' "$effective_file")
+        jq -n \
+          --arg role "$ROLE" --arg package "$BUNDLE" --arg worker "$WORKER" \
+          --arg reason "$reason" --arg repository "$GITHUB_REPOSITORY" --arg sha "$WORKFLOW_SHA" \
+          '{authorized:false,$reason,control_role:$role,$package,$worker,enabled:"false",effective_max_repos:0,
+            repo_error:"",candidate_repositories:[],worker_workflows:[],
+            policy_source:{repository:$repository,path:".github/central-agentic-ops.json",sha:$sha}}' > "$out"
+        if [ -n "${GH_AW_SAFE_OUTPUTS:-}" ]; then
+          jq -cn --arg message "Central Agentic Ops policy denied this run: $reason" \
+            '{type:"noop",message:$message}' >> "$GH_AW_SAFE_OUTPUTS"
+        fi
+        echo "CAO_POLICY_AUTHORIZED=false" >> "$GITHUB_ENV"
+        exit 0
+      fi
+
+      {
+        echo "CAO_POLICY_AUTHORIZED=true"
+        echo "ENABLED=true"
+        echo "WORKER_ENABLED=true"
+        echo "WORKER_MAX_MODE=$(jq -r '.safe_output_mode' "$effective_file")"
+        echo "SAFE_OUTPUT_MODE=$(jq -r '.safe_output_mode' "$effective_file")"
+        echo "MAX_REPOS=$(jq -r '.max_repositories' "$effective_file")"
+        echo "ROLLOUT_PERCENT=$(jq -r '.rollout_percent' "$effective_file")"
+        echo "MONTHLY_CREDIT_BUDGET=$(jq -r '.monthly_ai_credit_budget' "$effective_file")"
+        echo "MAX_SCAN_REPOS=$(jq -r '.inventory["max-scan-repositories"]' "$effective_file")"
+        echo "CELL_COUNT=$(jq -r '.inventory["cell-count"]' "$effective_file")"
+        echo "CELL_INDEX=$(jq -r '.inventory["cell-index"]' "$effective_file")"
+        echo "BATCH_SIZE=$(jq -r '.inventory["batch-size"]' "$effective_file")"
+        echo "BATCH_INDEX=$(jq -r '.inventory["batch-index"]' "$effective_file")"
+        echo "ALLOWED_OWNERS=$(jq -r '.allowed_owners | join(",")' "$effective_file")"
+        echo "ALLOWED_REPOS=$(jq -r '.allowed_repositories | join(",")' "$effective_file")"
+        echo "ORGANIZATION=${GITHUB_REPOSITORY%%/*}"
+      } >> "$GITHUB_ENV"
+
   - name: Precompute control facts
     env:
       GH_TOKEN: ${{ steps.github-mcp-app-token.outputs.token || secrets.GH_AW_GITHUB_TOKEN || secrets.GITHUB_TOKEN }}
-      BUNDLE: ${{ github.aw.import-inputs.bundle }}
+      WORKFLOW_SHA: ${{ github.workflow_sha }}
+      BUNDLE: ${{ github.aw.import-inputs.package }}
       ROLE: ${{ github.aw.import-inputs.role }}
+      WORKER: ${{ github.aw.import-inputs.worker }}
       TARGET_REPO: ${{ github.aw.import-inputs.target_repo }}
-      ORGANIZATION: ${{ github.aw.import-inputs.organization }}
-      MAX_REPOS: ${{ github.aw.import-inputs.max_repos }}
-      MAX_SCAN_REPOS: ${{ github.aw.import-inputs.max_scan_repos }}
-      CELL_COUNT: ${{ github.aw.import-inputs.cell_count }}
-      CELL_INDEX: ${{ github.aw.import-inputs.cell_index }}
-      BATCH_SIZE: ${{ github.aw.import-inputs.batch_size }}
-      BATCH_INDEX: ${{ github.aw.import-inputs.batch_index }}
-      ALLOWED_OWNERS: ${{ github.aw.import-inputs.allowed_owners }}
-      ALLOWED_REPOS: ${{ github.aw.import-inputs.allowed_repos }}
       DISPATCH_MAX: ${{ github.aw.import-inputs.dispatch_max }}
-      ROLLOUT_PERCENT: ${{ github.aw.import-inputs.rollout_percent }}
-      SAFE_OUTPUT_MODE: ${{ github.aw.import-inputs.safe_output_mode }}
       SAFE_OUTPUT_REPO: ${{ github.aw.import-inputs.safe_output_repo }}
-      ENABLED: ${{ github.aw.import-inputs.enabled }}
-      WORKER_ENABLED: ${{ github.aw.import-inputs.worker_enabled }}
-      WORKER_MAX_MODE: ${{ github.aw.import-inputs.worker_max_mode }}
       CORRELATION_ID: ${{ github.aw.import-inputs.correlation_id }}
       CENTRAL_REPO: ${{ github.aw.import-inputs.central_repo }}
       CONTROL_PLANE_RUN_URL: ${{ github.aw.import-inputs.control_plane_run_url }}
       ORCHESTRATOR_CREDITS: ${{ github.aw.import-inputs.orchestrator_credits }}
       WORKER_CREDITS_PER_TARGET: ${{ github.aw.import-inputs.worker_credits_per_target }}
-      AGGREGATE_CREDIT_LIMIT: ${{ github.aw.import-inputs.aggregate_credit_limit }}
-      MONTHLY_CREDIT_BUDGET: ${{ github.aw.import-inputs.monthly_credit_budget }}
     run: |
       set -euo pipefail
+      [ "${CAO_POLICY_AUTHORIZED:-false}" = "true" ] || exit 0
+      [ "$ROLE" != "orchestrator" ] || WORKER=""
       mkdir -p /tmp/gh-aw/agent
       OUT=/tmp/gh-aw/agent/control-precompute.json
-
-      write_precompute() {
-        cp "$OUT" /tmp/gh-aw/agent/dispatch-precompute.json
-      }
-
-      write_disabled_precompute() {
-        jq -n \
-          --arg r "$ROLE" --arg b "$BUNDLE" \
-          '{control_role:$r,bundle:$b,enabled:"false",effective_max_repos:0,
-            repo_error:"package disabled by its control-plane kill switch",candidate_repositories:[],worker_workflows:[]}' \
-          > "$OUT"
-        write_precompute
-      }
+      RESOLVER=.github/scripts/control-policy/resolve.mjs
 
       write_worker_precompute() {
         jq -n \
@@ -145,11 +163,18 @@ steps:
           --arg correlation_id "$CORRELATION_ID" \
           --arg central_repo "$CENTRAL_REPO" \
           --arg control_plane_run_url "$CONTROL_PLANE_RUN_URL" \
-          '{control_role:"worker",$bundle,$enabled,$worker_enabled,$worker_max_mode,
+          --arg worker "$WORKER" \
+          --arg repository "$GITHUB_REPOSITORY" \
+          --arg workflow_sha "$WORKFLOW_SHA" \
+          --arg target_authority_sha "${TARGET_AUTHORITY_SHA:-}" \
+          '{authorized:true,reason:"authorized",control_role:"worker",package:$bundle,$bundle,$worker,$enabled,$worker_enabled,$worker_max_mode,
             $target_repo,$safe_output_mode,$safe_output_repo,
             $correlation_id,$central_repo,$control_plane_run_url,
-            candidate_repositories:[],worker_workflows:[]}' > "$OUT"
-        write_precompute
+            candidate_repositories:[],worker_workflows:[],
+            policy_source:{repository:$repository,path:".github/central-agentic-ops.json",sha:$workflow_sha}}
+            + (if $target_authority_sha == "" then {} else {
+                target_authority_source:{repository:$target_repo,path:".github/central-agentic-ops.json",sha:$target_authority_sha}
+              } end)' > "$OUT"
       }
 
       mode_rank() {
@@ -204,6 +229,7 @@ steps:
       validate_live_authority() {
         local authority
         local default_branch
+        local target_sha
 
         [ "$SAFE_OUTPUT_MODE" != "live" ] && return
         if ! [[ "$BUNDLE" =~ ^[a-z0-9][a-z0-9-]*$ ]]; then
@@ -214,32 +240,34 @@ steps:
           echo "live authority validation could not read the target default branch" >&2
           exit 1
         fi
-        if ! gh api --method GET "repos/$TARGET_REPO/contents/.github/central-agentic-ops.yml" \
-          -f ref="$default_branch" --jq '.content' | base64 -d \
-          > /tmp/gh-aw/agent/target-authority.yml; then
-          echo "live mode requires .github/central-agentic-ops.yml on the target default branch" >&2
+        if ! target_sha=$(gh api "repos/$TARGET_REPO/commits/$default_branch" --jq '.sha'); then
+          echo "live authority validation could not resolve the target default branch commit" >&2
           exit 1
         fi
-        if ! authority=$(ruby -ryaml -e '
-          document = YAML.safe_load(File.read(ARGV[0]), permitted_classes: [], permitted_symbols: [], aliases: false)
-          abort unless document.is_a?(Hash) && document["version"] == 1
-          bundles = document["bundles"]
-          abort unless bundles.is_a?(Hash) && bundles[ARGV[1]].is_a?(Hash)
-          authority = bundles[ARGV[1]]["authority"]
-          abort unless authority.is_a?(String)
-          puts authority
-        ' /tmp/gh-aw/agent/target-authority.yml "$BUNDLE" 2>/dev/null); then
-          echo "target authority file must declare version 1 and bundles.$BUNDLE.authority" >&2
+        if ! [[ "$target_sha" =~ ^[0-9a-fA-F]{40,64}$ ]]; then
+          echo "target default branch did not resolve to an exact commit SHA" >&2
+          exit 1
+        fi
+        if ! gh api --method GET "repos/$TARGET_REPO/contents/.github/central-agentic-ops.json" \
+          -f ref="$target_sha" --jq '.content' | base64 -d \
+          > /tmp/gh-aw/agent/target-authority.json; then
+          echo "live mode requires .github/central-agentic-ops.json on the target default branch" >&2
+          exit 1
+        fi
+        if ! authority=$(node "$RESOLVER" --authority /tmp/gh-aw/agent/target-authority.json "$BUNDLE"); then
+          echo "target authority file must declare version 1 and target-authority.packages.$BUNDLE.authority" >&2
           exit 1
         fi
         if ! [[ "$authority" =~ ^[A-Za-z0-9][A-Za-z0-9-]*/[A-Za-z0-9._-]+$ ]]; then
-          echo "bundles.$BUNDLE.authority must use owner/repository form" >&2
+          echo "target-authority.packages.$BUNDLE.authority must use owner/repository form" >&2
           exit 1
         fi
         if ! repository_equal "$authority" "$CENTRAL_REPO"; then
           echo "target assigns live authority for $BUNDLE to a different control repository" >&2
           exit 1
         fi
+
+        TARGET_AUTHORITY_SHA="$target_sha"
       }
 
       validate_output_destination() {
@@ -287,7 +315,7 @@ steps:
           fi
         done
 
-        echo "$label owner is outside CENTRAL_AGENTIC_OPS_ALLOWED_OWNERS" >&2
+        echo "$label owner is outside control-plane.scope.allowed-owners" >&2
         exit 1
       }
 
@@ -300,7 +328,7 @@ steps:
         if ! printf '%s' "$ALLOWED_REPOS" | jq -Rr \
           'split(",") | map(gsub("\\s"; "") | ascii_downcase) | unique[]' \
           > /tmp/gh-aw/agent/allowed-repos || grep -qx '' /tmp/gh-aw/agent/allowed-repos; then
-          echo "CENTRAL_AGENTIC_OPS_ALLOWED_REPOS is invalid" >&2
+          echo "control-plane.scope.allowed-repositories is invalid" >&2
           exit 1
         fi
         while read -r allowed_repo; do
@@ -525,10 +553,9 @@ steps:
           echo "rollout_percent must be an integer from 1 through 100" >&2
           exit 1
         fi
-        if ! [[ "$ORCHESTRATOR_CREDITS" =~ ^[0-9]+$ ]] || \
-           ! [[ "$WORKER_CREDITS_PER_TARGET" =~ ^[0-9]+$ ]] || \
-           ! [[ "$AGGREGATE_CREDIT_LIMIT" =~ ^[1-9][0-9]*$ ]]; then
-          echo "AI Credit admission values must be integers and aggregate_credit_limit must be positive" >&2
+          if ! [[ "$ORCHESTRATOR_CREDITS" =~ ^[0-9]+$ ]] || \
+            ! [[ "$WORKER_CREDITS_PER_TARGET" =~ ^[0-9]+$ ]]; then
+           echo "AI Credit admission values must be non-negative integers" >&2
           exit 1
         fi
         load_control_source
@@ -558,9 +585,12 @@ steps:
           --arg safe_output_repo "$SAFE_OUTPUT_REPO" \
           --arg orchestrator_credits "$ORCHESTRATOR_CREDITS" \
           --arg worker_credits_per_target "$WORKER_CREDITS_PER_TARGET" \
-          --arg aggregate_credit_limit "$AGGREGATE_CREDIT_LIMIT" \
+          --arg monthly_credit_budget "$MONTHLY_CREDIT_BUDGET" \
           --arg repo_source "$repo_source" \
           --arg repo_error "$repo_error" \
+          --arg package "$BUNDLE" \
+          --arg repository "$GITHUB_REPOSITORY" \
+          --arg workflow_sha "$WORKFLOW_SHA" \
           --slurpfile inventory_metadata /tmp/gh-aw/agent/inventory-metadata.json \
           --slurpfile workers /tmp/gh-aw/agent/workers.json \
           --slurpfile workflows /tmp/gh-aw/agent/workflows.json \
@@ -570,22 +600,20 @@ steps:
 
             $inventory_metadata[0] as $m | $candidates[0] as $c |
             {
-              control_role:"orchestrator", $enabled, $target_repo, $organization,
+              authorized:true, reason:"authorized", control_role:"orchestrator", package:$package, bundle:$package,
+              $enabled, $target_repo, $organization,
               $max_repos, $max_scan_repos, $dispatch_max, $rollout_percent,
               effective_max_repos: (
                 (if ($c | length) == 0 then 0
                  else [1, (($c | length) * ($rollout_percent | tonumber) / 100 | ceil)] | max
-                 end) as $percent_cap
-                | (if ($worker_credits_per_target | tonumber) == 0 then ($max_repos | tonumber)
-                   elif ($aggregate_credit_limit | tonumber) <= ($orchestrator_credits | tonumber) then 0
-                   else ((($aggregate_credit_limit | tonumber) - ($orchestrator_credits | tonumber)) / ($worker_credits_per_target | tonumber) | floor)
-                   end) as $credit_cap
-                | [($max_repos | tonumber), $percent_cap, $credit_cap] | min
+                  end) as $percent_cap
+                 | [($max_repos | tonumber), $percent_cap] | min
               ),
               orchestrator_credits:($orchestrator_credits | tonumber),
               worker_credits_per_target:($worker_credits_per_target | tonumber),
-              aggregate_credit_limit:($aggregate_credit_limit | tonumber),
+                monthly_credit_budget:($monthly_credit_budget | tonumber),
               $safe_output_mode, $safe_output_repo, $repo_source, $repo_error,
+                policy_source:{repository:$repository,path:".github/central-agentic-ops.json",sha:$workflow_sha},
               inventory_version:$m.inventory_version,
               inventory_repository_count:$m.inventory_repository_count,
               cell_count:$m.cell_count, cell_index:$m.cell_index,
@@ -619,14 +647,7 @@ steps:
                 end
               )
           ' > "$OUT"
-        write_precompute
       }
-
-      case "$ENABLED" in
-        true) ;;
-        false) write_disabled_precompute; exit 0 ;;
-        *) echo "enabled must be true or false" >&2; exit 1 ;;
-      esac
 
       mode_rank "$SAFE_OUTPUT_MODE" "safe_output_mode" >/dev/null
       if [ "$ROLE" = "orchestrator" ]; then
@@ -649,9 +670,8 @@ steps:
   - name: Apply monthly package budget
     env:
       GH_REPO: ${{ github.repository }}
-      BUNDLE: ${{ github.aw.import-inputs.bundle }}
+      BUNDLE: ${{ github.aw.import-inputs.package }}
       ROLE: ${{ github.aw.import-inputs.role }}
-      MONTHLY_CREDIT_BUDGET: ${{ github.aw.import-inputs.monthly_credit_budget }}
       ORCHESTRATOR_CREDITS: ${{ github.aw.import-inputs.orchestrator_credits }}
       WORKER_CREDITS_PER_TARGET: ${{ github.aw.import-inputs.worker_credits_per_target }}
     run: |
@@ -659,6 +679,7 @@ steps:
       OUT=/tmp/gh-aw/agent/control-precompute.json
       [ "$ROLE" = "orchestrator" ] || exit 0
       [ "$(jq -r '.enabled' "$OUT")" = "true" ] || exit 0
+      MONTHLY_CREDIT_BUDGET=$(jq -r '.monthly_credit_budget' "$OUT")
       if ! [[ "$MONTHLY_CREDIT_BUDGET" =~ ^[0-9]+$ ]]; then
         echo "monthly_credit_budget must be a non-negative integer" >&2
         exit 1
@@ -719,7 +740,6 @@ steps:
           | .effective_max_repos = ([.effective_max_repos, .monthly_budget_target_cap] | min)
         ' "$OUT" > "$OUT.tmp"
       mv "$OUT.tmp" "$OUT"
-      cp "$OUT" /tmp/gh-aw/agent/dispatch-precompute.json
 ---
 
-Read `/tmp/gh-aw/agent/control-precompute.json` before making control decisions. Treat it as authoritative for `control_role`, enablement state, target repository inputs, safe-output routing, and worker workflow availability. `/tmp/gh-aw/agent/dispatch-precompute.json` is also written for compatibility with existing dispatch-oriented instructions.
+Read `/tmp/gh-aw/agent/control-precompute.json` before making control decisions. Treat it as authoritative for `control_role`, enablement state, target repository inputs, safe-output routing, and worker workflow availability.

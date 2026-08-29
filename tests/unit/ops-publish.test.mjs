@@ -8,7 +8,7 @@ import {
   assertTargetAuthority,
   inspectPublishEvent,
   issueContentDigest,
-  parseAuthorityYaml,
+  parseAuthorityJson,
   publicationCommentMarker,
   publicationMarker,
   publishedIssueBody,
@@ -137,7 +137,7 @@ test("ops publish rejects unauthorized actors and untrusted routing", () => {
     repository: "acme/review",
     reviewers: "octocat",
     controlRepositories: "acme/other-control",
-  }), /outside CENTRAL_AGENTIC_OPS_PUBLISH_CONTROL_REPOS/);
+  }), /outside control-plane\.publishing\.control-repositories/);
 });
 
 test("ops publish rejects malformed review events and provenance", () => {
@@ -194,7 +194,7 @@ test("ops publish rejects non-review runs and destinations outside policy", () =
     reviewRepository: "acme/review",
     allowedOwners: "acme",
     allowedRepositories: "",
-  }), /outside CENTRAL_AGENTIC_OPS_ALLOWED_OWNERS/);
+  }), /outside control-plane\.scope\.allowed-owners/);
   assert.throws(() => validateWorkflowRun({
     run: { ...run, display_title: "AW failure investigation · acme/service · live" },
     inspection,
@@ -239,23 +239,19 @@ test("ops publish rejects non-review runs and destinations outside policy", () =
 });
 
 test("ops publish requires target-owned package authority", () => {
-  const authority = parseAuthorityYaml("version: 1\nbundles:\n  aw-maintenance:\n    authority: acme/control\n");
+  const authority = parseAuthorityJson(JSON.stringify({
+    version: 1,
+    "target-authority": { packages: { "aw-maintenance": { authority: "acme/control" } } },
+  }));
   assert.doesNotThrow(() => assertTargetAuthority(authority, "aw-maintenance", "acme/control"));
   assert.throws(
     () => assertTargetAuthority(authority, "aw-maintenance", "acme/other-control"),
     /different control repository/,
   );
-  assert.throws(() => parseAuthorityYaml("version: ["), /not valid safe YAML/);
+  assert.throws(() => parseAuthorityJson("version: ["), /not valid control policy JSON/);
   assert.throws(
-    () => parseAuthorityYaml("version: 1\ndefault: &default\n  authority: acme/control\nbundles:\n  aw-maintenance: *default\n"),
-    /not valid safe YAML/,
-  );
-  for (const document of [null, { version: 2, bundles: {} }, { version: 1, bundles: [] }]) {
-    assert.throws(() => assertTargetAuthority(document, "aw-maintenance", "acme/control"), /version 1 and a bundles mapping/);
-  }
-  assert.throws(
-    () => assertTargetAuthority({ version: 1, bundles: {} }, "aw-maintenance", "acme/control"),
-    /bundles.aw-maintenance.authority must use owner\/repository form/,
+    () => assertTargetAuthority({ version: 1, "target-authority": { packages: {} } }, "aw-maintenance", "acme/control"),
+    /target-authority.packages.aw-maintenance.authority must use owner\/repository form/,
   );
 });
 
@@ -284,7 +280,9 @@ test("Ops Publish remains an explicit least-privilege add-on", () => {
   assert.match(workflow, /github\.event\.label\.name == 'ops:publish-to-target'/);
   assert.match(workflow, /runs-on: ubuntu-latest\n\s+timeout-minutes: 10/);
   assert.match(workflow, /group: ops-publish-\$\{\{ github\.event\.issue\.number \}\}\n\s+cancel-in-progress: false/);
-  assert.match(workflow, /ref: \$\{\{ github\.event\.repository\.default_branch \}\}/);
+  assert.match(workflow, /ref: \$\{\{ github\.workflow_sha \}\}/);
+  assert.match(workflow, /resolve\.mjs --control \.github\/central-agentic-ops\.json/);
+  assert.doesNotMatch(workflow, /vars\.CENTRAL_AGENTIC_OPS_/);
   assert.match(workflow, /permissions:\n\s+actions: read\n\s+contents: read\n\s+issues: write/);
   assert.match(workflow, /actions\/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1/);
   assert.match(workflow, /permission-contents: read\n\s+permission-issues: write/);

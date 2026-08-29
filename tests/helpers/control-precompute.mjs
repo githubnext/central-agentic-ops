@@ -29,7 +29,36 @@ export function controlPrecomputeScript() {
     scripts.push(script.join("\n"));
   }
   assert.ok(scripts.length > 0, "control precompute run block is missing");
-  return scripts.join("\n");
+  return scripts.join('\nset -a\n. "$GITHUB_ENV"\nset +a\n');
+}
+
+export function controlPolicy({
+  scope = {},
+  inventory = {},
+  packagePolicy = {},
+  workerPolicy = {},
+} = {}) {
+  return JSON.stringify({
+    version: 1,
+    "control-plane": {
+      scope: { "allowed-owners": ["acme"], ...scope },
+      inventory,
+      packages: {
+        dependabot: {
+          mode: "review",
+          "max-repositories": 1,
+          "rollout-percent": 100,
+          ...packagePolicy,
+          workers: {
+            "release-train-updater": {
+              "max-mode": "review",
+              ...workerPolicy,
+            },
+          },
+        },
+      },
+    },
+  });
 }
 
 export function controlEnvironment(overrides = {}) {
@@ -37,23 +66,13 @@ export function controlEnvironment(overrides = {}) {
     ...process.env,
     BUNDLE: "dependabot",
     ROLE: "worker",
+    WORKER: "release-train-updater",
     TARGET_REPO: "acme/target",
-    ORGANIZATION: "acme",
-    MAX_REPOS: "1",
-    MAX_SCAN_REPOS: "1000",
-    CELL_COUNT: "1",
-    CELL_INDEX: "0",
-    BATCH_SIZE: "100000",
-    BATCH_INDEX: "0",
-    ALLOWED_OWNERS: "acme",
-    ALLOWED_REPOS: "",
+    REQUESTED_MODE: "review",
+    REQUESTED_MAX_REPOS: "",
+    REQUESTED_ROLLOUT_PERCENT: "",
     DISPATCH_MAX: "1",
-    ROLLOUT_PERCENT: "100",
-    SAFE_OUTPUT_MODE: "review",
     SAFE_OUTPUT_REPO: "acme/control",
-    ENABLED: "true",
-    WORKER_ENABLED: "true",
-    WORKER_MAX_MODE: "review",
     CORRELATION_ID: "123-1",
     CENTRAL_REPO: "acme/control",
     CONTROL_PLANE_RUN_URL: "https://github.com/acme/control/actions/runs/123",
@@ -63,7 +82,9 @@ export function controlEnvironment(overrides = {}) {
     MONTHLY_CREDIT_BUDGET: "0",
     GITHUB_REPOSITORY: "acme/control",
     GITHUB_SERVER_URL: "https://github.com",
+    WORKFLOW_SHA: "1111111111111111111111111111111111111111",
     GITHUB_WORKFLOW_REF: "acme/control/.github/workflows/dependabot.lock.yml@main",
+    CONTROL_POLICY: controlPolicy(),
     ...overrides,
   };
 }

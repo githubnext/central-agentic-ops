@@ -1,7 +1,7 @@
-import { execFileSync } from "node:child_process";
 import { createHash } from "node:crypto";
 import { appendFileSync, readFileSync } from "node:fs";
 import { pathToFileURL } from "node:url";
+import { parsePolicy } from "../control-policy/resolve.mjs";
 
 export const PUBLISH_LABEL = "ops:publish-to-target";
 const API_TIMEOUT_MS = 30_000;
@@ -34,6 +34,15 @@ function requireTimestamp(value, label) {
   const timestamp = Date.parse(value || "");
   if (!Number.isFinite(timestamp)) throw new Error(`${label} must be an ISO 8601 timestamp`);
   return timestamp;
+}
+
+function controlSettings() {
+  if (!process.env.CONTROL_SETTINGS) throw new Error("CONTROL_SETTINGS is required");
+  const settings = JSON.parse(readFileSync(process.env.CONTROL_SETTINGS, "utf8"));
+  if (!settings || Array.isArray(settings) || typeof settings !== "object") {
+    throw new Error("CONTROL_SETTINGS must contain resolved control policy");
+  }
+  return settings;
 }
 
 export function issueContentDigest(title, body) {
@@ -76,7 +85,7 @@ export function inspectPublishEvent({
 
   const allowedReviewers = configuredSet(reviewers);
   if (allowedReviewers.size === 0) {
-    throw new Error("CENTRAL_AGENTIC_OPS_PUBLISH_REVIEWERS must list at least one GitHub login");
+    throw new Error("control-plane.publishing.reviewers must list at least one GitHub login");
   }
   const reviewer = event.sender?.login || "";
   if (event.sender?.type !== "User" || !allowedReviewers.has(normalized(reviewer))) {
@@ -86,7 +95,7 @@ export function inspectPublishEvent({
   const provenance = generatedRun(event.issue?.body, serverUrl);
   const allowedControlRepositories = configuredSet(controlRepositories || repository);
   if (!allowedControlRepositories.has(normalized(provenance.controlRepository))) {
-    throw new Error("generated workflow run is outside CENTRAL_AGENTIC_OPS_PUBLISH_CONTROL_REPOS");
+    throw new Error("generated workflow run is outside control-plane.publishing.control-repositories");
   }
   const [controlOwner, controlName] = provenance.controlRepository.split("/");
   return {
@@ -134,37 +143,26 @@ export function validateWorkflowRun({ run, inspection, reviewRepository, allowed
 
   const owner = normalized(targetRepository.split("/")[0]);
   const ownerAllowlist = configuredSet(allowedOwners);
-  if (!ownerAllowlist.has(owner)) throw new Error("target repository owner is outside CENTRAL_AGENTIC_OPS_ALLOWED_OWNERS");
+  if (!ownerAllowlist.has(owner)) throw new Error("target repository owner is outside control-plane.scope.allowed-owners");
   const repositoryAllowlist = configuredSet(allowedRepositories);
   if (repositoryAllowlist.size > 0 && !repositoryAllowlist.has(normalized(targetRepository))) {
-    throw new Error("target repository is outside CENTRAL_AGENTIC_OPS_ALLOWED_REPOS");
+    throw new Error("target repository is outside control-plane.scope.allowed-repositories");
   }
   const [targetOwner, targetName] = targetRepository.split("/");
   return { packageName, targetRepository, targetOwner, targetName };
 }
 
-export function parseAuthorityYaml(source) {
-  const program = [
-    "document = YAML.safe_load(STDIN.read, permitted_classes: [], permitted_symbols: [], aliases: false)",
-    "STDOUT.write(JSON.generate(document))",
-  ].join("; ");
+export function parseAuthorityJson(source) {
   try {
-    return JSON.parse(execFileSync("ruby", ["-ryaml", "-rjson", "-e", program], {
-      input: source,
-      encoding: "utf8",
-      stdio: ["pipe", "pipe", "pipe"],
-    }));
+    return parsePolicy(source);
   } catch {
-    throw new Error("target authority file is not valid safe YAML");
+    throw new Error("target authority file is not valid control policy JSON");
   }
 }
 
 export function assertTargetAuthority(document, packageName, controlRepository) {
-  if (!document || document.version !== 1 || typeof document.bundles !== "object" || Array.isArray(document.bundles)) {
-    throw new Error("target authority file must declare version 1 and a bundles mapping");
-  }
-  const authority = document.bundles?.[packageName]?.authority;
-  requireRepository(authority, `bundles.${packageName}.authority`);
+  const authority = document?.["target-authority"]?.packages?.[packageName]?.authority;
+  requireRepository(authority, `target-authority.packages.${packageName}.authority`);
   if (normalized(authority) !== normalized(controlRepository)) {
     throw new Error(`target assigns live authority for ${packageName} to a different control repository`);
   }
@@ -214,13 +212,15 @@ function writeOutputs(values) {
 }
 
 async function inspectCommand() {
+  const settings = controlSettings();
+  if (settings.publishing_enabled !== true) throw new Error("Ops Publish is disabled by control policy");
   const event = JSON.parse(readFileSync(process.env.GITHUB_EVENT_PATH, "utf8"));
   const inspection = inspectPublishEvent({
     event,
     repository: process.env.GITHUB_REPOSITORY,
     serverUrl: process.env.GITHUB_SERVER_URL,
-    reviewers: process.env.PUBLISH_REVIEWERS,
-    controlRepositories: process.env.PUBLISH_CONTROL_REPOS,
+    reviewers: settings.publishing_reviewers,
+    controlRepositories: settings.publishing_control_repositories,
   });
   writeOutputs({
     control_owner: inspection.controlOwner,
@@ -236,6 +236,7 @@ async function inspectCommand() {
 }
 
 async function validateRunCommand() {
+  const settings = controlSettings();
   const inspection = {
     controlRepository: process.env.CONTROL_REPOSITORY,
     runId: process.env.SOURCE_RUN_ID,
@@ -251,8 +252,8 @@ async function validateRunCommand() {
     run,
     inspection,
     reviewRepository: process.env.GITHUB_REPOSITORY,
-    allowedOwners: process.env.ALLOWED_OWNERS,
-    allowedRepositories: process.env.ALLOWED_REPOS,
+    allowedOwners: settings.allowed_owners,
+    allowedRepositories: settings.allowed_repositories,
   });
   writeOutputs({
     package: validated.packageName,
@@ -319,13 +320,21 @@ async function publishCommand() {
 
   const target = await apiRequest(process.env.TARGET_TOKEN, apiUrl, `/repos/${targetRepository}`);
   if (target.archived || target.disabled || !target.has_issues) throw new Error("target repository cannot accept published issues");
+  const targetCommit = await apiRequest(
+    process.env.TARGET_TOKEN,
+    apiUrl,
+    `/repos/${targetRepository}/commits/${encodeURIComponent(target.default_branch)}`,
+  );
+  if (!/^[0-9a-fA-F]{40,64}$/.test(targetCommit.sha || "")) {
+    throw new Error("target default branch did not resolve to an exact commit SHA");
+  }
   const authorityFile = await apiRequest(
     process.env.TARGET_TOKEN,
     apiUrl,
-    `/repos/${targetRepository}/contents/.github/central-agentic-ops.yml?ref=${encodeURIComponent(target.default_branch)}`,
+    `/repos/${targetRepository}/contents/.github/central-agentic-ops.json?ref=${encodeURIComponent(targetCommit.sha)}`,
   );
   const authoritySource = Buffer.from(authorityFile.content || "", "base64").toString("utf8");
-  assertTargetAuthority(parseAuthorityYaml(authoritySource), packageName, process.env.CONTROL_REPOSITORY);
+  assertTargetAuthority(parseAuthorityJson(authoritySource), packageName, process.env.CONTROL_REPOSITORY);
 
   const marker = publicationMarker(sourceRepository, sourceIssueNumber);
   let targetIssue = await findPublishedIssue(

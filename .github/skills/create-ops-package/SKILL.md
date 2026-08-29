@@ -55,9 +55,9 @@ Create `.github/workflows/<package>.md` with:
 
 - `name` set to the exact package display name, with no `/` suffix, and a run name that includes target and safe-output mode
 - a schedule when the operation is periodic, plus `workflow_dispatch`
-- the standard dispatch inputs: `target_repo`, `safe_output_repo`, `max_repos`, and `safe_output_mode` with `review` and `live` choices, defaulting to `review`
-- `shared/control.md` imported with `role: orchestrator`
-- package-scoped variables named `CENTRAL_AGENTIC_OPS_<PACKAGE>_ENABLED`, `CENTRAL_AGENTIC_OPS_<PACKAGE>_MODE`, and `CENTRAL_AGENTIC_OPS_<PACKAGE>_ROLLOUT_PERCENT`, defaulting to `true`, `review`, and `100`; shared control routes review safe outputs to a manual `safe_output_repo` override or `github.repository`
+- the standard dispatch inputs: `target_repo`, `safe_output_repo`, `max_repos`, `rollout_percent`, and `safe_output_mode` with `review` and `live` choices, defaulting to `review`
+- `shared/control.md` imported with a static `package` slug, `role: orchestrator`, and request-only narrowing inputs
+- the package and every worker added to the closed `PACKAGES` map in `.github/scripts/control-policy/resolve.mjs` and declared in `.github/central-agentic-ops.json`; never add package policy variables or compatibility fallbacks
 - least-privilege permissions, explicit tools/network configuration, `strict: true`, and a bounded `max-ai-credits`
 - `safe-outputs.dispatch-workflow.workflows` listing every worker slug and a `max` consistent with `max_repos` and worker count
 - a prompt headed with the package display name and containing `Discovery`, `Workers`, and `Completion` sections
@@ -83,7 +83,7 @@ Create at least one `.github/workflows/<package>-<worker>.md`. Every worker must
 - `name` set to the exact `<Package Name> / <Worker Name>` hierarchy, where `<Package Name>` exactly matches the orchestrator's `name`
 - `workflow_dispatch` with the full control-plane envelope: `target_repo`, `safe_output_repo`, `safe_output_mode`, `correlation_id`, `central_repo`, `control_plane_run_url`, and `batch_label`
 - required `target_repo` and `safe_output_repo` string inputs
-- `shared/control.md` imported with `role: worker`
+- `shared/control.md` imported with static `package`, `role: worker`, and `worker` identities
 - a stable `tracker-id` equal to its filename stem
 - a run name containing `inputs.target_repo` and the effective mode
 - repository-scoped concurrency:
@@ -137,7 +137,7 @@ Before finishing:
 2. Confirm the orchestrator `name` is exactly `<Package Name>` and every worker `name` is exactly `<Package Name> / <Worker Name>`.
 3. Confirm the orchestrator dispatch list exactly matches the new worker stems.
 4. Confirm each worker accepts the complete standard envelope and imports `shared/control.md` as `worker`.
-5. Confirm the orchestrator imports `shared/control.md` as `orchestrator`, uses package-scoped mode and enablement variables, and defaults safely to review mode.
+5. Confirm the orchestrator imports `shared/control.md` with static package identity, reads policy only through the shared JSON resolver, and defaults safely to review mode.
 6. Confirm the orchestrator has a `Completion` section that preserves the exact standard report contract from `shared/control.md`; package-specific reporting must be additive.
 7. Confirm worker concurrency is keyed by `github.workflow` and `inputs.target_repo` with stale runs cancelled.
 8. Check permissions, tools, network hosts, safe-output limits, credits, timeouts, and dispatch maximums against actual need.
@@ -147,4 +147,4 @@ Before finishing:
 12. Review the generated diff for accidental lockfile churn, secret exposure, unsafe live defaults, fabricated value evidence, and deviations from the nearest package that are not justified by the strategy.
 13. Confirm every orchestrator and worker uses the same optional `.github/cao/<package-slug>.md` runtime import and that no package-owned steering file was added.
 
-Report the created package, worker responsibilities, shared imports, rollout variables, per-worker ops-value status, and validation results.
+Report the created package, worker responsibilities, shared imports, checked-in policy fields, per-worker ops-value status, and validation results.

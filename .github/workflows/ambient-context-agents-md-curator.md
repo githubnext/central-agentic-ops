@@ -38,24 +38,19 @@ checkout:
     fetch-depth: 0
 
 env:
-  CENTRAL_AGENTIC_OPS_PACKAGE_ENABLED: ${{ vars.CENTRAL_AGENTIC_OPS_AMBIENT_CONTEXT_ENABLED || 'true' }}
-  CENTRAL_AGENTIC_OPS_WORKER_ENABLED: ${{ vars.CENTRAL_AGENTIC_OPS_AMBIENT_CONTEXT_AGENTS_MD_ENABLED || 'true' }}
-  CENTRAL_AGENTIC_OPS_WORKER_MAX_MODE: ${{ vars.CENTRAL_AGENTIC_OPS_AMBIENT_CONTEXT_AGENTS_MD_MAX_MODE || 'review' }}
   GH_AW_SAFE_OUTPUT_MODE: ${{ inputs.safe_output_mode || 'review' }}
   REVIEW_OUTPUT_REPO: ${{ inputs.safe_output_repo || github.repository }}
   SAFE_OUTPUT_REPO: ${{ (inputs.safe_output_mode || 'review') == 'review' && (inputs.safe_output_repo || github.repository) || inputs.target_repo }}
   TARGET_REPO: ${{ inputs.target_repo || '' }}
 
-if: >-
-  (vars.CENTRAL_AGENTIC_OPS_AMBIENT_CONTEXT_ENABLED || 'true') == 'true' &&
-  (vars.CENTRAL_AGENTIC_OPS_AMBIENT_CONTEXT_AGENTS_MD_ENABLED || 'true') == 'true'
+environment: central-agentic-ops
 
 imports:
   - uses: shared/control.md
     with:
-      bundle: ambient-context
+      package: ambient-context
       role: worker
-      allowed_owners: ${{ vars.CENTRAL_AGENTIC_OPS_ALLOWED_OWNERS || github.repository_owner }}
+      worker: agents-md-curator
 
 permissions:
   contents: read

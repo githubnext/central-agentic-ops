@@ -115,7 +115,7 @@ Every orchestrator emits a `central-agentic-ops.dispatcher.run` span after norma
 
 The optional Ops Publish add-on turns an explicit human label into a deterministic issue publication without rerunning AI. It remains outside the Agentic Workflow package catalog: copy `ops-publish/ops-publish.yml` and `.github/scripts/ops-publish/ops-publish.mjs` from a pinned catalog revision into the private repository that receives review issues.
 
-Configure `CENTRAL_AGENTIC_OPS_PUBLISH_REVIEWERS`, create the `ops:publish-to-target` label, and configure `CENTRAL_AGENTIC_OPS_PUBLISH_CONTROL_REPOS` when the review repository differs from the control repository. Applying the label to an eligible bot-authored review issue validates the originating worker run, derives its target and package from trusted run metadata, enforces repository allowlists and target-owned package authority, creates the target issue with provenance, and closes the review issue.
+Enable `control-plane.publishing` in `.github/central-agentic-ops.json`, declare its `reviewers` and optional `control-repositories`, and create the `ops:publish-to-target` label. Applying the label to an eligible bot-authored review issue validates the originating worker run, derives its target and package from trusted run metadata, enforces checked-in scope and target-owned package authority, creates the target issue with provenance, and closes the review issue.
 
 This path supports issue outputs only. It does not transfer issues, publish pull requests or comments, or apply artifact-backed review bundles. GitHub issue transfer is not used because it is limited to repositories under one owner and cannot transfer a private issue to a public repository. See the add-on's `README.md` for installation, credentials, and failure behavior.
 
@@ -188,7 +188,7 @@ To operate a report publisher:
 
 Review Pages must be private and access-controlled for the intended reviewers. If the repository plan or policy cannot provide that boundary, review publication fails closed. Never publish review content to a public fallback site. Agents must not receive `pages: write`, `id-token: write`, or authority to promote review content to production.
 
-Setting a package's `*_ENABLED` variable to `false` prevents new package runs but does not remove an already deployed site. Changing from `live` to `review` redirects future publication to review Pages but does not unpublish production. To stop or roll back either site, disable its conventional Pages workflow, use its protected environment to block deployment, or redeploy a known-good source revision through normal repository procedures. Handle sensitive-data exposure as a Pages incident in addition to stopping the affected agentic package.
+Setting a package's checked-in `enabled` field to `false` prevents new package work after policy resolution but does not remove an already deployed site. Changing its policy mode from `live` to `review` redirects future publication to review Pages but does not unpublish production. To stop or roll back either site, disable its conventional Pages workflow, use its protected environment to block deployment, or redeploy a known-good source revision through normal repository procedures. Handle sensitive-data exposure as a Pages incident in addition to stopping the affected agentic package.
 
 ## Emergency Stop
 
@@ -204,7 +204,7 @@ A package kill switch is evaluated only after a workflow starts. It does not can
 4. Record the stop time, initiating administrator, reason, active correlation IDs, affected targets, and any safe outputs already created.
 5. Verify that the control repository has no queued or in-progress runs and that no new run can be manually dispatched.
 
-This is intentionally a GitHub-native administrative control rather than a workflow variable. A variable is evaluated only after a workflow starts and therefore cannot be the authoritative stop for all execution.
+This is intentionally a GitHub-native administrative control rather than checked-in workflow policy. Policy is evaluated only after a workflow starts and therefore cannot be the authoritative stop for all execution.
 
 The stop applies to one central control repository. In a deployment with an enterprise control repository and additional organization control repositories, an enterprise incident commander must identify and stop every participating control repository that falls within the incident scope.
 
@@ -214,7 +214,7 @@ Use narrower controls when a full stop is unnecessary:
 
 | Scope | Control | Limitation |
 | --- | --- | --- |
-| One package | Set its `CENTRAL_AGENTIC_OPS_<PACKAGE>_ENABLED` variable to `false` and cancel active runs | Stops scheduled and manual package work after control precomputation; does not cancel work already in progress. |
+| One package | Set `control-plane.packages.<package>.enabled` to `false`, deploy the reviewed revision, and cancel active runs | Stops package work after policy resolution; does not cancel work already in progress. |
 | One Orchestrator or worker workflow | Disable that workflow in GitHub Actions | Other enabled workflows can continue. |
 | Repository credentials | Revoke the App installation or PAT | Does not itself prevent runs that can use another available credential. |
 | Entire control plane | Disable Actions for the control repository and cancel active runs | Also stops unrelated Actions workflows in that repository. |
@@ -222,7 +222,7 @@ Use narrower controls when a full stop is unnecessary:
 To resume after an all-stop:
 
 1. Resolve the incident and rotate or narrow credentials when needed.
-2. Set every installed package mode to `review` and keep its package kill switch `false`.
+2. Set every installed package's checked-in mode to `review` and `enabled` to `false`.
 3. Re-enable Actions for the control repository.
 4. Re-enable one package, run one `workflow_dispatch` target with `max_repos: 1`, and verify routing, permissions, and safe outputs.
 5. Promote each package independently through the normal review gates.
@@ -232,7 +232,7 @@ To resume after an all-stop:
 For unexpected writes, unsafe routing, excessive dispatch, or credential concerns:
 
 1. Use the [emergency stop](#emergency-stop) when the incident affects shared control, authentication, or multiple packages.
-2. Otherwise, set the affected package's `*_ENABLED` variable to `false` and disable a specific worker workflow when the incident is worker-local.
+2. Otherwise, set the affected package or worker's checked-in `enabled` field to `false` and disable a specific worker workflow when the incident is worker-local.
 3. Cancel active orchestrator and worker runs; mode changes do not alter runs already in progress.
 4. Revoke or rotate credentials when exposure is possible.
 5. Trace `correlation_id`, `central_repo`, and `control_plane_run_url` across safe outputs.
@@ -266,7 +266,7 @@ A catalog maintainer cannot remotely disable workflows already installed in inde
 
 1. publish the affected release or commit and a known-good replacement;
 2. identify installations through package manifests and the approved control-repository inventory;
-3. set affected package kill switches to `false` and cancel active runs in every installation;
+3. commit `enabled: false` for affected packages and cancel active runs in every installation;
 4. revoke credentials when repository access must stop immediately;
 5. pin or restore the known-good package revision, compile affected workflows, and validate one review target;
 6. update projected catalog versions and lifecycle status after validation;
@@ -279,9 +279,9 @@ Removing or retagging the catalog source does not revoke installed files. Revoca
 A new package should:
 
 1. Define an orchestrator with a schedule and manual inputs.
-2. Add an independent mode installer variable; review safe outputs default to the control-plane repository.
-3. Import `shared/control.md` as `role: orchestrator` with those variables.
-4. Pass a stable lowercase package slug through shared control's `bundle` input and document the matching target authority entry.
+2. Add the package and its workers to the closed JSON schema and declare them in `.github/central-agentic-ops.json`; review remains the default mode.
+3. Import `shared/control.md` as `role: orchestrator` with a static package identity and request-only narrowing inputs.
+4. Pass the stable lowercase slug through shared control's `package` input and document the matching target-authority entry.
 5. Keep GitHub tools read-only.
 6. Declare only worker workflow dispatches as orchestrator workflow safe outputs.
 7. Document discovery, ranking, dispatch, completion, and no-op behavior.
@@ -299,7 +299,7 @@ A new worker should:
 6. Avoid repository discovery and downstream dispatch.
 7. Support review mode before live operation.
 8. Be added to exactly the orchestrators that are allowed to dispatch it.
-9. Receive a worker ceiling when its risk or maturity differs from its package peers.
+9. Receive a checked-in `max-mode` ceiling when its risk or maturity differs from its package peers.
 
 ## Change Validation
 

@@ -81,18 +81,21 @@ An allowed owner and a reachable credential are security boundaries, not evidenc
 
 Store this evidence in an enterprise- or organization-approved inventory, such as governed custom properties or a reviewed registry. The current workflows do not query or reconcile that inventory automatically. Until they do, scope the GitHub App installation or fine-grained PAT to enrolled repositories and treat broad owner discovery as review-only. Owner allowlists remain mandatory but are not sufficient for live enrollment.
 
-The target repository enforces its live mutation authority in `.github/central-agentic-ops.yml`:
+The target repository enforces its live mutation authority in `.github/central-agentic-ops.json`:
 
-```yaml
-version: 1
-bundles:
-  dependabot:
-    authority: acme/central-ops
-  optimization:
-    authority: acme/central-ops
+```json
+{
+  "version": 1,
+  "target-authority": {
+    "packages": {
+      "dependabot": { "authority": "acme/central-ops" },
+      "optimization": { "authority": "acme/central-ops" }
+    }
+  }
+}
 ```
 
-Protect this file on the default branch with a ruleset and CODEOWNERS approval from the target repository owner. Missing, malformed, or mismatched authority fails closed in `live` before the agent starts. The file records consent and authority only; keep credentials, rollout modes, schedules, and runtime state in the control repository. Review runs do not require it because they cannot mutate the target.
+Protect this file on the default branch with a ruleset and CODEOWNERS approval from the target repository owner. A live worker resolves that branch to an exact commit SHA; missing, malformed, or mismatched authority fails closed before the agent starts. The file records consent and authority only; keep credentials in Actions secrets and control policy in the control repository's JSON document. Review runs do not require target authority because they cannot mutate the target.
 
 ## Downstream Fan-Out and Provenance
 
@@ -100,7 +103,7 @@ Each central control repository fans out enabled packages to selected targets, s
 
 The standard `central_repo`, `control_plane_run_url`, and `correlation_id` fields identify the originating central runtime and run. Because `central_repo` differs between enterprise and organization control repositories, downstream safe outputs retain their runtime source.
 
-Cross-organization reach is explicit, allowlisted, and credential-scoped. Fully qualified `target_repo` values can address repositories outside the control repository's owning organization only when the owner appears in `CENTRAL_AGENTIC_OPS_ALLOWED_OWNERS` and the configured GitHub App or PAT can perform the operation. The safe default permits only the control repository's owner. The current bounded discovery path enumerates only that owner; automatic enterprise-wide discovery is not provided. This discovery limitation does not require copying workflows into organization or target repositories.
+Cross-organization reach is explicit, allowlisted, and credential-scoped. Fully qualified `target_repo` values can address repositories outside the control repository's owning organization only when the owner appears in `control-plane.scope.allowed-owners` and the configured GitHub App or PAT can perform the operation. The safe default permits only the control repository's owner. The current bounded discovery path enumerates only that owner; automatic enterprise-wide discovery is not provided. This discovery limitation does not require copying workflows into organization or target repositories.
 
 Repository-local workflow names cannot shadow central workers. Shared control resolves an orchestrator's declared worker slug only by its exact `.github/workflows/<slug>.lock.yml` path in the owning control repository. Target analytics use `workflow_path`, not display name, as identity so same-named target workflows remain separate. Target workflow definitions and logs are untrusted evidence, never policy. Persistent optimization history branches include `central_repo`, keeping enterprise and organization control-plane state separate when both target the same repository.
 

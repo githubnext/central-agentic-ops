@@ -53,22 +53,27 @@ To install only this package into an existing private control repository:
 gh aw add githubnext/central-agentic-ops/ambient-context@<catalog-release>
 ```
 
-The package is immediately runnable in `review` mode. Proposals are written to the control repository without changing the target.
+The package is runnable after its workers are declared in `.github/central-agentic-ops.json`. `review` is the default mode, so proposals are written to the control repository without changing the target.
 
 ## Configure
 
-| Setting | Type | Required | Purpose |
-| --- | --- | --- | --- |
-| `CENTRAL_AGENTIC_OPS_AMBIENT_CONTEXT_ENABLED` | Repository variable | No | Package kill switch; defaults to `true`. Set to `false` to stop orchestrator and worker dispatches. |
-| `CENTRAL_AGENTIC_OPS_AMBIENT_CONTEXT_MODE` | Repository variable | No | Package output mode: `review` or `live`. Defaults to `review`. |
-| `CENTRAL_AGENTIC_OPS_AMBIENT_CONTEXT_MAX_REPOS` | Repository variable | No | Scheduled selection cap; defaults to `1`. |
-| `CENTRAL_AGENTIC_OPS_AMBIENT_CONTEXT_ROLLOUT_PERCENT` | Repository variable | No | Percentage of discovered repositories eligible for selection. Accepts `1` through `100` and defaults to `100`. |
-| `CENTRAL_AGENTIC_OPS_AMBIENT_CONTEXT_AGENTS_MD_ENABLED` | Repository variable | No | `AGENTS.md` curator kill switch; defaults to `true`. |
-| `CENTRAL_AGENTIC_OPS_AMBIENT_CONTEXT_AGENTS_MD_MAX_MODE` | Repository variable | No | `AGENTS.md` curator mode ceiling; defaults to `review`. |
-| `CENTRAL_AGENTIC_OPS_AMBIENT_CONTEXT_SKILLS_ENABLED` | Repository variable | No | Skills curator kill switch; defaults to `true`. |
-| `CENTRAL_AGENTIC_OPS_AMBIENT_CONTEXT_SKILLS_MAX_MODE` | Repository variable | No | Skills curator mode ceiling; defaults to `review`. |
+```json
+{
+	"version": 1,
+	"control-plane": {
+		"packages": {
+			"ambient-context": {
+				"workers": {
+					"agents-md-curator": {},
+					"skills-curator": {}
+				}
+			}
+		}
+	}
+}
+```
 
-Shared control-plane settings — `GH_AW_GITHUB_APP_ID`, `GH_AW_GITHUB_APP_PRIVATE_KEY`, `GH_AW_GITHUB_TOKEN`, `CENTRAL_AGENTIC_OPS_ALLOWED_OWNERS`, `CENTRAL_AGENTIC_OPS_MAX_SCAN_REPOS`, cell and batch variables, and `CENTRAL_AGENTIC_OPS_MAX_AI_CREDITS_PER_RUN` — behave exactly as they do for the core packages. See the [configuration reference](../docs/configuration.md) and the [authentication guide](../docs/authentication.md).
+Package fields control `enabled`, `mode`, `max-repositories`, `rollout-percent`, and `monthly-ai-credit-budget`. Worker fields control `enabled` and `max-mode`. Shared scope, inventory, and credentials are documented in the [configuration reference](../docs/configuration.md) and [authentication guide](../docs/authentication.md).
 
 ## Validate in review mode
 
@@ -91,7 +96,7 @@ Promote in order: one-repository review, limited live, then scheduled live.
 
 ## Cadence
 
-The orchestrator is scheduled weekly. Ambient context should not be rewritten more often than the repository changes, and a weekly-or-slower pass matched with a per-repository issue that expires after 30 days keeps proposals fresh without creating maintenance noise. Slow the schedule further by lowering `CENTRAL_AGENTIC_OPS_AMBIENT_CONTEXT_ROLLOUT_PERCENT` or `CENTRAL_AGENTIC_OPS_AMBIENT_CONTEXT_MAX_REPOS`.
+The orchestrator is scheduled weekly. Ambient context should not be rewritten more often than the repository changes, and a weekly-or-slower pass matched with a per-repository issue that expires after 30 days keeps proposals fresh without creating maintenance noise. Slow the schedule further by lowering the package's checked-in `rollout-percent` or `max-repositories`.
 
 ## Operational Value
 
@@ -129,7 +134,7 @@ The skills curator has no evaluator. It would have to claim the same merged pull
 
 ## Pause or Stop
 
-Set `CENTRAL_AGENTIC_OPS_AMBIENT_CONTEXT_ENABLED` to `false` and cancel active runs. Re-enable in `review` mode after resolving the incident. For a control-plane-wide stop, follow the [emergency-stop procedure](../docs/operations.md#emergency-stop).
+Set `control-plane.packages.ambient-context.enabled` to `false`, deploy that reviewed policy revision, and cancel active runs. Re-enable in `review` mode after resolving the incident. For a control-plane-wide stop, follow the [emergency-stop procedure](../docs/operations.md#emergency-stop).
 
 ## More Information
 

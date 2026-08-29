@@ -115,7 +115,7 @@ Invalid caps, out-of-scope owners, and incomplete control facts stop before work
 | 🟢 Pass | `max_repos` below `1`, fractional, or above `1000` | Rejected. |
 | 🟢 Pass | `max_scan_repos` below `1` or above `100000` | Rejected. |
 | 🟢 Pass | Invalid cell count/index or batch size/index | Rejected. |
-| 🟢 Pass | Target or review repository outside `CENTRAL_AGENTIC_OPS_ALLOWED_OWNERS` | Rejected. |
+| 🟢 Pass | Target or review repository outside `control-plane.scope.allowed-owners` | Rejected. |
 | 🟢 Pass | Unknown or removed mode | Rejected before agent execution. |
 | 🟢 Pass | Invalid package kill-switch value | Rejected before agent execution. |
 | 🟢 Pass | Package kill switch set to `false` | Produces zero capacity and dispatches without repository inspection. |

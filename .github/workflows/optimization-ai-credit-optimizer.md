@@ -29,24 +29,19 @@ on:
         type: string
 
 env:
-  CENTRAL_AGENTIC_OPS_PACKAGE_ENABLED: ${{ vars.CENTRAL_AGENTIC_OPS_OPTIMIZATION_ENABLED || 'true' }}
-  CENTRAL_AGENTIC_OPS_WORKER_ENABLED: ${{ vars.CENTRAL_AGENTIC_OPS_OPTIMIZATION_OPTIMIZER_ENABLED || 'true' }}
-  CENTRAL_AGENTIC_OPS_WORKER_MAX_MODE: ${{ vars.CENTRAL_AGENTIC_OPS_OPTIMIZATION_OPTIMIZER_MAX_MODE || 'review' }}
   GH_AW_SAFE_OUTPUT_MODE: ${{ inputs.safe_output_mode || 'review' }}
   REVIEW_OUTPUT_REPO: ${{ inputs.safe_output_repo || github.repository }}
   SAFE_OUTPUT_REPO: ${{ (inputs.safe_output_mode || 'review') == 'review' && (inputs.safe_output_repo || github.repository) || inputs.target_repo }}
   TARGET_REPO: ${{ inputs.target_repo || '' }}
 
-if: >-
-  (vars.CENTRAL_AGENTIC_OPS_OPTIMIZATION_ENABLED || 'true') == 'true' &&
-  (vars.CENTRAL_AGENTIC_OPS_OPTIMIZATION_OPTIMIZER_ENABLED || 'true') == 'true'
+environment: central-agentic-ops
 
 imports:
   - uses: shared/control.md
     with:
-      bundle: optimization
+      package: optimization
       role: worker
-      allowed_owners: ${{ vars.CENTRAL_AGENTIC_OPS_ALLOWED_OWNERS || github.repository_owner }}
+      worker: ai-credit-optimizer
   - uses: shared/target-checkout-read-org-token.md
 
 permissions:

@@ -8,18 +8,20 @@ const repository = process.env.GITHUB_REPOSITORY;
 const token = process.env.GITHUB_TOKEN;
 const pagesToken = process.env.REPORT_PAGES_TOKEN || token;
 const outputDirectory = process.env.REPORT_OUTPUT || "_site";
+const controlSettingsPath = process.env.REPORT_CONTROL_SETTINGS;
 const inventoryPath = process.env.REPORT_INVENTORY;
 const deployedWorkflowsPath = process.env.REPORT_DEPLOYED_WORKFLOWS || "_inventory/deployed-workflows.json";
 const aicUsagePath = process.env.REPORT_AIC_USAGE || "_inventory/aic-usage.json";
 const operationalValuesPath = process.env.REPORT_OPERATIONAL_VALUES || "_inventory/operational-values.json";
 
-if (!repository || !token || !inventoryPath) {
-  throw new Error("GITHUB_REPOSITORY, GITHUB_TOKEN, and REPORT_INVENTORY are required");
+if (!repository || !token || !controlSettingsPath || !inventoryPath) {
+  throw new Error("GITHUB_REPOSITORY, GITHUB_TOKEN, REPORT_CONTROL_SETTINGS, and REPORT_INVENTORY are required");
 }
 
 const [owner, repo] = repository.split("/");
 const apiRoot = "https://api.github.com";
 const generatedAt = new Date().toISOString();
+const controlSettings = JSON.parse(readFileSync(controlSettingsPath, "utf8"));
 const inventory = JSON.parse(readFileSync(inventoryPath, "utf8"));
 const deployedInventory = existsSync(deployedWorkflowsPath)
   ? JSON.parse(readFileSync(deployedWorkflowsPath, "utf8"))
@@ -30,8 +32,13 @@ const aicUsage = existsSync(aicUsagePath)
 const operationalValues = existsSync(operationalValuesPath)
   ? JSON.parse(readFileSync(operationalValuesPath, "utf8"))
   : { schemaVersion: 1, selectedRuns: 0, observedRuns: 0, records: [] };
-const allowedRepositories = new Set((process.env.REPORT_ALLOWED_REPOS || "").split(",")
-  .map((value) => value.trim().toLowerCase()).filter(Boolean));
+const policyRepositories = [...new Set((controlSettings.allowed_repositories || []).map((value) => value.toLowerCase()))];
+const requestedRepositories = [...new Set((process.env.REPORT_ALLOWED_REPOS || "").split(",")
+  .map((value) => value.trim().toLowerCase()).filter(Boolean))];
+if (policyRepositories.length > 0 && requestedRepositories.some((value) => !policyRepositories.includes(value))) {
+  throw new Error("REPORT_ALLOWED_REPOS cannot widen checked-in control policy");
+}
+const allowedRepositories = new Set(requestedRepositories.length > 0 ? requestedRepositories : policyRepositories);
 if (inventory.schemaVersion !== 1 || !Array.isArray(inventory.workflows) || !Array.isArray(inventory.bundles)) {
   throw new Error(`Unsupported or invalid control-plane inventory: ${inventoryPath}`);
 }
@@ -487,22 +494,8 @@ function repositoryWorkflowTabs(repositoryName, workflow, selectedView) {
 }
 
 function configuredModeFor(bundle) {
-  const mode = repositoryVariables.get(bundle.rolloutModeVariable) || "review";
+  const mode = controlSettings.packages?.[bundle.controlPackage]?.mode || "review";
   return normalizeMode(mode) === "unknown" ? "review" : normalizeMode(mode);
-}
-
-function repositoryVariablesFromEnvironment() {
-  const source = process.env.REPORT_REPOSITORY_VARIABLES || "{}";
-  let values;
-  try {
-    values = JSON.parse(source);
-  } catch {
-    throw new Error("REPORT_REPOSITORY_VARIABLES must be valid JSON");
-  }
-  if (!values || Array.isArray(values) || typeof values !== "object") {
-    throw new Error("REPORT_REPOSITORY_VARIABLES must be a JSON object");
-  }
-  return Object.entries(values).map(([name, value]) => [name, String(value)]);
 }
 
 function modeIndicator(mode) {
@@ -615,16 +608,7 @@ const reportRepositoryNames = [...new Set([
   ...(deployedInventory.allowedRepositories || []),
   ...allowedRepositories,
 ].filter(Boolean))].sort();
-const [reportSources, variableResponse] = await Promise.all([
-  mapWithConcurrency(reportRepositoryNames, 4, repositoryReportSources),
-  process.env.REPORT_REPOSITORY_VARIABLES
-    ? Promise.resolve({ variables: [] })
-    : githubOptional(`/repos/${owner}/${repo}/actions/variables?per_page=100`, { variables: [] }),
-]);
-const repositoryVariables = new Map([
-  ...(variableResponse.variables || []).map((variable) => [variable.name, variable.value]),
-  ...repositoryVariablesFromEnvironment(),
-]);
+const reportSources = await mapWithConcurrency(reportRepositoryNames, 4, repositoryReportSources);
 const issueByUrl = new Map(reportSources.flatMap((source) => source.issues.map((issue) => [issue.url, issue])));
 const runCache = new Map();
 function normalizeMode(mode) {

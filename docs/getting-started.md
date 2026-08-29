@@ -86,36 +86,46 @@ The package installs:
 3. shared authentication, routing, and fail-closed controls;
 4. generated `.lock.yml` workflows that GitHub Actions executes.
 
-The installed operation defaults to `review` and is immediately runnable. Commit and push the installed files:
-
-```bash
-git add .github
-git commit -m "Install Dependabot operation"
-git push --set-upstream origin HEAD
-```
+The installed operation is runnable after its package and worker are declared in the control policy.
 
 Do not edit generated `.lock.yml` files directly. Update their Markdown sources and regenerate them with `gh aw compile`.
 
 ### Step 4 - Set the first-run boundary
 
-Configure the target owner, keep the scheduled operation in review, and cap scheduled selection at one repository:
+Create `.github/central-agentic-ops.json` with the target owner, package, and worker. The omitted package settings default to `review`, one repository, and 100 percent rollout:
 
-```bash
-TARGET_OWNER="${TARGET_REPO%%/*}"
-
-gh variable set CENTRAL_AGENTIC_OPS_ALLOWED_OWNERS --body "$TARGET_OWNER"
-gh variable set CENTRAL_AGENTIC_OPS_DEPENDABOT_MODE --body "review"
-gh variable set CENTRAL_AGENTIC_OPS_DEPENDABOT_MAX_REPOS --body "1"
+```json title=".github/central-agentic-ops.json"
+{
+	"version": 1,
+	"control-plane": {
+		"scope": {
+			"allowed-owners": ["acme"]
+		},
+		"packages": {
+			"dependabot": {
+				"workers": {
+					"release-train-updater": {}
+				}
+			}
+		}
+	}
+}
 ```
 
-These variables configure future scheduled runs. The manual run in the next step also names one explicit target and requests `review` mode.
+Replace `acme` if your target has a different owner. Commit the workflow sources, generated locks, resolver resource, and policy together so `github.workflow_sha` identifies one atomic configuration:
+
+```bash
+git add .github
+git commit -m "Install reviewed Dependabot operation"
+git push --set-upstream origin HEAD
+```
 
 ### Step 5 - Trigger one review run
 
 Run the installed orchestrator against the target repository:
 
 ```bash
-gh workflow run dependabot.lock.yml \
+gh aw run dependabot --ref main \
 	--raw-field target_repo="$TARGET_REPO" \
 	--raw-field max_repos="1" \
 	--raw-field rollout_percent="100" \
@@ -154,7 +164,7 @@ A successful first run proves the boundary:
 
 The worker may report that no dependency work is needed. That is still a successful first run when target selection, routing, and zero-write behavior are correct.
 
-Having trouble? Check [Configure Authentication](authentication.md) for repository access, [Configuration](configuration.md) for owner and mode settings, or [Monitor and Recover](operations.md) for failed runs.
+Having trouble? Check [Configure Authentication](authentication.md) for repository access, [Configuration](configuration.md) for policy fields, or [Monitor and Recover](operations.md) for failed runs.
 
 ## What's Next?
 

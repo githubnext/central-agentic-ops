@@ -23,24 +23,29 @@ jobs:
       - name: Checkout trusted publisher
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
-          ref: ${{ github.event.repository.default_branch }}
+          ref: ${{ github.workflow_sha }}
           persist-credentials: false
+
+      - name: Resolve authoritative control policy
+        env:
+          GITHUB_REPOSITORY: ${{ github.repository }}
+        run: node .github/scripts/control-policy/resolve.mjs --control .github/central-agentic-ops.json > "$RUNNER_TEMP/control-settings.json"
 
       - name: Inspect publication request
         id: inspect
         env:
-          PUBLISH_CONTROL_REPOS: ${{ vars.CENTRAL_AGENTIC_OPS_PUBLISH_CONTROL_REPOS || github.repository }}
-          PUBLISH_REVIEWERS: ${{ vars.CENTRAL_AGENTIC_OPS_PUBLISH_REVIEWERS }}
+          CONTROL_SETTINGS: ${{ runner.temp }}/control-settings.json
         run: node .github/scripts/ops-publish/ops-publish.mjs inspect
 
       - name: Generate control-repository token
         id: control-app-token
         env:
+          APP_CLIENT_ID: ${{ secrets.GH_AW_GITHUB_APP_ID }}
           APP_PRIVATE_KEY: ${{ secrets.GH_AW_GITHUB_APP_PRIVATE_KEY }}
-        if: vars.GH_AW_GITHUB_APP_ID != '' && env.APP_PRIVATE_KEY != ''
+        if: env.APP_CLIENT_ID != '' && env.APP_PRIVATE_KEY != ''
         uses: actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1 # v3.2.0
         with:
-          client-id: ${{ vars.GH_AW_GITHUB_APP_ID }}
+          client-id: ${{ env.APP_CLIENT_ID }}
           private-key: ${{ secrets.GH_AW_GITHUB_APP_PRIVATE_KEY }}
           owner: ${{ steps.inspect.outputs.control_owner }}
           repositories: ${{ steps.inspect.outputs.control_name }}
@@ -50,8 +55,7 @@ jobs:
       - name: Validate originating worker run
         id: validate
         env:
-          ALLOWED_OWNERS: ${{ vars.CENTRAL_AGENTIC_OPS_ALLOWED_OWNERS || github.repository_owner }}
-          ALLOWED_REPOS: ${{ vars.CENTRAL_AGENTIC_OPS_ALLOWED_REPOS }}
+          CONTROL_SETTINGS: ${{ runner.temp }}/control-settings.json
           CONTROL_REPOSITORY: ${{ steps.inspect.outputs.control_repository }}
           CONTROL_TOKEN: ${{ steps.control-app-token.outputs.token || secrets.CENTRAL_AGENTIC_OPS_PUBLISH_CONTROL_TOKEN || github.token }}
           SOURCE_RUN_ID: ${{ steps.inspect.outputs.run_id }}
@@ -62,11 +66,12 @@ jobs:
       - name: Generate target-repository token
         id: target-app-token
         env:
+          APP_CLIENT_ID: ${{ secrets.GH_AW_GITHUB_APP_ID }}
           APP_PRIVATE_KEY: ${{ secrets.GH_AW_GITHUB_APP_PRIVATE_KEY }}
-        if: vars.GH_AW_GITHUB_APP_ID != '' && env.APP_PRIVATE_KEY != ''
+        if: env.APP_CLIENT_ID != '' && env.APP_PRIVATE_KEY != ''
         uses: actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1 # v3.2.0
         with:
-          client-id: ${{ vars.GH_AW_GITHUB_APP_ID }}
+          client-id: ${{ env.APP_CLIENT_ID }}
           private-key: ${{ secrets.GH_AW_GITHUB_APP_PRIVATE_KEY }}
           owner: ${{ steps.validate.outputs.target_owner }}
           repositories: ${{ steps.validate.outputs.target_name }}
