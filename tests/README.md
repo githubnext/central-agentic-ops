@@ -2,7 +2,7 @@
 
 Use this as a lookup from configuration to verified behavior. Examples assume 25 discovered repositories. `-` means unset or not applicable. Statuses are `🟢 Pass` and `🔴 Fail`.
 
-Run dependency-free contract tests with `npm run test:unit`. Run the networked clean-room package and failure-injection tests with `npm run test:integration`; package tests require gh-aw and public GitHub access. Run synthetic enterprise scale tests with `npm run test:load`. `npm test` runs unit and integration tests, while `npm run check` adds load tests and compilation. Use `npm run compile:locks` when updating tracked lock files; it temporarily repairs gh-aw HTML-escaped expression operators until the upstream compiler fix is available. CI sets `CENTRAL_AGENTIC_OPS_PACKAGE_SOURCE` to the exact commit under test so package installation validates pull-request contents rather than only the default branch.
+Run dependency-free contract tests with `npm run test:unit`. Run the networked clean-room package and failure-injection tests with `npm run test:integration`; package tests require gh-aw and public GitHub access. Run synthetic enterprise scale tests with `npm run test:load`. `npm test` runs unit and integration tests, while `npm run check` adds load tests and compilation. Use `npm run compile:locks` when updating tracked lock files. CI sets `CENTRAL_AGENTIC_OPS_PACKAGE_SOURCE` to the exact commit under test so package installation validates pull-request contents rather than only the default branch.
 
 The automated suite checks source `.md` contracts, ops-value interfaces, smoke-workflow safety, generated workflows, and `gh aw add`/`gh aw update` package behavior. It does not execute agentic workflows or spend AI Credits; the manual `Review smoke` Actions workflow performs that opt-in runtime check.
 
@@ -13,7 +13,7 @@ The automated suite checks source `.md` contracts, ops-value interfaces, smoke-w
 | Unit | `tests/unit/` | `npm run test:unit` | Policy matrices, workflow contracts, safety limits, generated settings, and package manifest structure. |
 | Integration | `tests/integration/` | `npm run test:integration` | Clean-room `gh aw add`/`update` behavior and fail-closed execution of the actual control precompute shell. |
 | Load | `tests/load/` | `npm run test:load` | Actual pagination, deterministic batching, and admission logic over 100,000 synthetic repositories, including bounded API failure. |
-| Compilation | Source workflows | `npm run compile` | All agentic workflow sources compile without emitting repository artifacts; `npm run check:locks` rejects malformed tracked expressions. |
+| Compilation | Source workflows | `npm run compile` | All agentic workflow sources compile without emitting repository artifacts; unit contracts reject HTML-escaped operators in tracked expressions. |
 | Runtime review | `.github/workflows/review-smoke.yml` | Manual Actions dispatch | One bounded target and its workers complete; outputs route to a private review repository and target refs and issues remain unchanged. |
 | Runtime modes | `.github/workflows/enterprise-canary.yml` | Manual protected Actions dispatch | Repository-local review/live routing against dedicated repositories with mode-specific write assertions. |
 | Runtime stress | `.github/workflows/enterprise-stress.yml` | Manual protected Actions dispatch | Repository-local two, three, or five same-scope review runs verify cancellation and no target mutation. |
@@ -27,6 +27,7 @@ The integration suite creates disposable consumer repositories under the system 
 | --- | --- | --- |
 | 🟢 Pass | `gh aw add` | Installs the core orchestrators and workers, shared imports, packaged skills and agent, and package manifest; focused Advisory and EU CRA packages are validated separately. |
 | 🟢 Pass | `gh aw update --force` | Replaces a locally modified package workflow and restores deleted workflow dependencies, skills, and agent files for a branch-tracked package. |
+| 🟢 Pass | Dashboard `gh aw add` and `gh aw update --force` | Installs and restores the reusable builder, manual standalone publisher, and all deterministic report modules. |
 
 ## Enterprise Integration and Load
 
@@ -153,9 +154,9 @@ Compilation checks prove the source policy reaches the generated GitHub Actions 
 | 🟢 Pass | AI Credit Optimizer | Standard dispatch envelope and safe output settings compile. |
 | 🟢 Pass | All worker workflow safe outputs | Review/live routing vocabulary checked. |
 | 🟢 Pass | All generated package workflows | Emitted activation gates, transitive job dependencies, review isolation, live authority, output binding, and removed-mode settings checked in a clean-room compile. |
-| 🟢 Pass | Core catalog package | Installs no Pages workflow, renderer, or Pages permission surface. |
-| 🟢 Pass | Operational value | Schema-v4 evaluators are registered by workers and Pages consumes actual `grader_results.json` observations. |
-| 🟢 Pass | Pages add-on | Conventional publisher remains outside the reusable Agentic Workflow packages. |
-| 🟡 Upstream blocked | Grader package transport | The gh-aw operational-value merge commit does not install referenced `.github/graders/*.sh` files into a clean package consumer. |
+| 🟢 Pass | Core catalog package | Installs no dashboard workflow, renderer, or Pages permission surface. |
+| 🟢 Pass | Operational value | Schema-v4 evaluators are registered by workers and the dashboard consumes actual `grader_results.json` observations. |
+| 🟢 Pass | Dashboard package | Reusable builds mount under a relative path; standalone deployment remains manual, access-controlled, and separate from the root package. |
+| 🟢 Pass | Grader package transport | gh-aw installs and restores referenced `.github/graders/*.sh` files in clean package consumers. |
 
 Exhaustive coverage: 24 scheduled plus 96 manual cases, for 120 unique policy configurations and 22 user-facing scenarios. The custom review-bundle job retains gh-aw's internal `GH_AW_SAFE_OUTPUTS_STAGED` dry-run signal; it is compiler plumbing, not a public package mode.

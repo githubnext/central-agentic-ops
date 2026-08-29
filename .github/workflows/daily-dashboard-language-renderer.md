@@ -73,7 +73,7 @@ evals:
   - id: quality-gates-executed
     question: Did the agent run TypeScript type checking, ESLint, Vitest, and Playwright checks for the increment?
   - id: existing-dashboard-untouched
-    question: Did the agent leave the existing dashboard implementation under .github/scripts/pages-report unchanged?
+    question: Did the agent leave the existing dashboard package under dashboard/ unchanged outside pages/dashboard?
   - id: reusable-components-extended
     question: Did the agent build or extend a shared, tested reactive UI component (not one-off page-specific markup) when the increment needed one, and reuse existing components instead of duplicating them?
 ---
@@ -92,7 +92,7 @@ You are a build engineer incrementally implementing a working presenter and vali
 
 ## Hard constraints
 
-- Never modify, move, or delete the existing dashboard implementation in `.github/scripts/pages-report/`, `pages/pages.yml`, `pages/README.md`, or any file outside `pages/dashboard/`. Read them for reference only.
+- Never modify, move, or delete the existing dashboard package in `dashboard/` or any file outside `pages/dashboard/`. Read it for reference only.
 - Never add a runtime dependency to the renderer. The reactive core, YAML handling wiring, validator, and presenter run on the Node.js and browser standard libraries plus already-vendored code. Development-only tooling (TypeScript, ESLint, Vitest, Playwright, a YAML parser used by the build/test harness) is allowed as `devDependencies`.
 - Never invent semantics the specification does not define. When the specification is ambiguous, record the ambiguity in `PLAN.md` under "Specification questions" and implement the most conservative reading.
 - Keep the renderer driven exclusively by YAML configuration and input data. No dashboard-specific behavior may be hard-coded in application logic outside the declared built-in page definitions.
@@ -135,7 +135,7 @@ On the bootstrap run, create `pages/dashboard/PLAN.md` with the following milest
 10. **Built-in pages** — Section 10, one page per vertical increment, each expressed as declarative page definitions composed from the custom-view components and visibly rendered in the browser prototype.
 11. **Security, privacy, accessibility** — Section 13 including escaping, redaction, and keyboard and screen-reader behavior verified with Playwright.
 12. **Compliance suite** — Section 14 test suite, the compliance checklist, Appendix A as a passing fixture, and Appendix C as failing fixtures.
-13. **Parity** — inventory the features of the existing dashboard in `.github/scripts/pages-report/report.mjs`, record them in `PLAN.md` as a parity checklist, then express each one as YAML configuration plus data fixtures, closing the checklist incrementally.
+13. **Parity** — inventory the features of the existing dashboard in `dashboard/report/report.mjs`, record them in `PLAN.md` as a parity checklist, then express each one as YAML configuration plus data fixtures, closing the checklist incrementally.
 
 The component library is not a standalone milestone: build and extend it opportunistically inside milestones 6 onward, whenever a milestone's rendering slice needs a visual element that does not yet exist as a component. Track the components built so far in `PLAN.md`.
 
