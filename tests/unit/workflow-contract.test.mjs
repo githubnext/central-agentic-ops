@@ -1181,7 +1181,7 @@ test("daily dashboard renderer builds incrementally inside its own directory", (
   assert.match(source, /^timeout-minutes: 60$/m);
   assert.match(source, /^max-turns: 500$/m);
   assert.match(source, /playwright:\n\s+mode: mcp/);
-  assert.match(source, /create-pull-request:[\s\S]*?allowed-files:\n\s+- "pages\/dashboard\/\*\*"/);
+  assert.match(source, /create-pull-request:[\s\S]*?allowed-files:\n\s+- "pages\/dashboard\/README\.md"\n\s+- "pages\/dashboard\/PLAN\.md"\n\s+- "pages\/dashboard\/\*\*"/);
   assert.match(source, /skip-if-match: "is:pr is:open label:dashboard-language-renderer"/);
   assert.doesNotMatch(source, /push-to-pull-request-branch:/);
   assert.match(source, /pages\/dashboard\/PLAN\.md/);

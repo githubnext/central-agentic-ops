@@ -57,6 +57,8 @@ safe-outputs:
     draft: true
     if-no-changes: warn
     allowed-files:
+      - "pages/dashboard/README.md"
+      - "pages/dashboard/PLAN.md"
       - "pages/dashboard/**"
   noop:
 features:
