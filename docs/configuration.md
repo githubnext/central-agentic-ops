@@ -7,12 +7,15 @@ Persistent non-secret policy lives only in `.github/central-agentic-ops.json` in
 
 Keep credentials in Actions secrets. Manual inputs may select a target or narrow a checked-in limit for one run, but they never change policy or widen it.
 
+The policy is plain JSON so Node.js can parse it with the built-in `JSON.parse` API and no runtime dependencies. Its Draft 2020-12 schema is published at `.github/central-agentic-ops.schema.json`; the checked-in policy's `$schema` property enables editor completion and diagnostics. The dependency-free resolver remains the runtime validator for constraints JSON Schema cannot express, including duplicate keys, case-insensitive uniqueness, and `cell-index < cell-count`.
+
 ## Control Policy
 
 This minimal policy enables one Dependabot worker in `review` mode for repositories owned by `acme`:
 
 ```json
 {
+  "$schema": "https://raw.githubusercontent.com/githubnext/central-agentic-ops/main/.github/central-agentic-ops.schema.json",
   "version": 1,
   "control-plane": {
     "scope": {
@@ -168,7 +171,8 @@ Installed Central Agentic Ops packages do not include these optional provider fi
 
 ## Sources of Truth
 
-- Policy schema and resolution: `.github/scripts/control-policy/resolve.mjs` and [Control Policy Specification](control-policy-specification.md)
+- Machine-readable policy schema: `.github/central-agentic-ops.schema.json`
+- Runtime policy resolution: `.github/scripts/control-policy/resolve.mjs` and [Control Policy Specification](control-policy-specification.md)
 - Checked-in control policy: `.github/central-agentic-ops.json`
 - Shared runtime enforcement: `.github/workflows/shared/control-precompute.md`
 - Package inventory: the root and package `aw.yml` manifests

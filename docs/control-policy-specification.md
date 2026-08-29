@@ -76,6 +76,7 @@ Possession of credentials does not grant CAO policy authority. Inclusion in a co
 
 - The file **MUST** be named `.github/central-agentic-ops.json`.
 - It **MUST** contain one JSON document encoded as UTF-8.
+- It **SHOULD** identify the published Draft 2020-12 schema with `$schema` for editor completion and diagnostics.
 - The root **MUST** be a mapping.
 - `version` **MUST** be the integer `1`.
 - At least one of `control-plane` or `target-authority` **MUST** be present.
@@ -90,6 +91,7 @@ Authors should omit values that match schema defaults. This policy enables one p
 
 ```json
 {
+  "$schema": "https://raw.githubusercontent.com/githubnext/central-agentic-ops/main/.github/central-agentic-ops.schema.json",
   "version": 1,
   "control-plane": {
     "scope": {

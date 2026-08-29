@@ -1,12 +1,14 @@
 import assert from "node:assert/strict";
 import { spawnSync } from "node:child_process";
+import { readFileSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import test from "node:test";
-import { controlSettings, effectivePolicy, parsePolicy } from "../../.github/scripts/control-policy/resolve.mjs";
+import { PACKAGES, controlSettings, effectivePolicy, parsePolicy } from "../../.github/scripts/control-policy/resolve.mjs";
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), "../..");
 const resolver = join(root, ".github", "scripts", "control-policy", "resolve.mjs");
+const schema = JSON.parse(readFileSync(join(root, ".github", "central-agentic-ops.schema.json"), "utf8"));
 
 function validate(policy) {
   return spawnSync(process.execPath, [resolver, "--validate", "-"], {
@@ -53,6 +55,7 @@ function effectiveWithLimits(policy, requestedMaxRepositories, requestedRolloutP
 }
 
 const minimalPolicy = JSON.stringify({
+  $schema: schema.$id,
   version: 1,
   "control-plane": {
     scope: { "allowed-repositories": ["acme/payments-api", "acme/storefront"] },
@@ -70,6 +73,24 @@ test("control policy accepts the minimal version 1 control document", () => {
   const result = validate(minimalPolicy);
 
   assert.equal(result.status, 0, result.stderr);
+});
+
+test("control policy schema matches the JavaScript package catalog", () => {
+  const policy = JSON.parse(readFileSync(join(root, ".github", "central-agentic-ops.json"), "utf8"));
+  const controlPackages = schema.$defs.controlPackages.properties;
+  const targetPackages = schema.$defs.targetPackages.properties;
+
+  assert.equal(schema.$schema, "https://json-schema.org/draft/2020-12/schema");
+  assert.equal(policy.$schema, schema.$id);
+  assert.deepEqual(Object.keys(controlPackages).sort(), Object.keys(PACKAGES).sort());
+  assert.deepEqual(Object.keys(targetPackages).sort(), Object.keys(PACKAGES).sort());
+
+  for (const [packageName, workers] of Object.entries(PACKAGES)) {
+    const packageDefinition = schema.$defs[controlPackages[packageName].$ref.slice("#/$defs/".length)];
+    const workerReference = packageDefinition.allOf[1].properties.workers.$ref;
+    const workerDefinition = schema.$defs[workerReference.slice("#/$defs/".length)];
+    assert.deepEqual(Object.keys(workerDefinition.properties).sort(), Object.keys(workers).sort());
+  }
 });
 
 test("control policy applies schema defaults and package values", () => {
@@ -167,6 +188,7 @@ test("control policy accepts target-only authority in the version 1 shape", () =
 for (const [name, policy, error] of [
   ["legacy root bundles", '{"version":1,"bundles":{}}', /unknown key policy.bundles/],
   ["future versions", '{"version":2,"control-plane":{}}', /version must be an integer in 1..1/],
+  ["unknown schema URI", '{"$schema":"https://example.com/policy.schema.json","version":1,"control-plane":{}}', /\$schema must be https:\/\/raw\.githubusercontent\.com/],
   ["unknown nested keys", '{"version":1,"control-plane":{"packages":{"dependabot":{"surprise":true}}}}', /unknown key control-plane.packages.dependabot.surprise/],
   ["duplicate keys", '{"version":1,"version":1,"control-plane":{}}', /duplicate mapping key: version/],
   ["malformed JSON", '{"version":1,}', /invalid policy JSON/],

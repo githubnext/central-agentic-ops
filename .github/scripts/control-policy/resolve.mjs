@@ -30,7 +30,8 @@ export const PACKAGES = Object.freeze({
   },
 });
 
-const ROOT_KEYS = ["version", "control-plane", "target-authority"];
+const SCHEMA_URI = "https://raw.githubusercontent.com/githubnext/central-agentic-ops/main/.github/central-agentic-ops.schema.json";
+const ROOT_KEYS = ["$schema", "version", "control-plane", "target-authority"];
 const CONTROL_KEYS = ["scope", "inventory", "defaults", "packages", "publishing"];
 const SCOPE_KEYS = ["allowed-owners", "allowed-repositories"];
 const INVENTORY_KEYS = ["max-scan-repositories", "cell-count", "cell-index", "batch-size", "batch-index"];
@@ -145,6 +146,9 @@ function assertNoDuplicateKeys(source) {
 
 function validateDocument(document) {
   assertKeys(document, ROOT_KEYS, "policy");
+  if ("$schema" in document && document.$schema !== SCHEMA_URI) {
+    throw new PolicyError(`$schema must be ${SCHEMA_URI}`);
+  }
   assertInteger(document.version, "version", 1, 1);
   if (!("control-plane" in document) && !("target-authority" in document)) {
     throw new PolicyError("policy requires control-plane or target-authority");

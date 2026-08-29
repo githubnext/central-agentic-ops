@@ -1,0 +1,277 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://raw.githubusercontent.com/githubnext/central-agentic-ops/main/.github/central-agentic-ops.schema.json",
+  "title": "Central Agentic Ops Policy",
+  "description": "Versioned non-secret policy for Central Agentic Ops control and target repositories.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["version"],
+  "anyOf": [
+    { "required": ["control-plane"] },
+    { "required": ["target-authority"] }
+  ],
+  "properties": {
+    "$schema": {
+      "const": "https://raw.githubusercontent.com/githubnext/central-agentic-ops/main/.github/central-agentic-ops.schema.json"
+    },
+    "version": { "const": 1 },
+    "control-plane": { "$ref": "#/$defs/controlPlane" },
+    "target-authority": { "$ref": "#/$defs/targetAuthority" }
+  },
+  "$defs": {
+    "owner": {
+      "type": "string",
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9-]*$"
+    },
+    "repository": {
+      "type": "string",
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9-]*/[A-Za-z0-9._-]+$"
+    },
+    "login": {
+      "type": "string",
+      "pattern": "^[A-Za-z0-9](?:[A-Za-z0-9-]{0,37}[A-Za-z0-9])?$"
+    },
+    "mode": {
+      "type": "string",
+      "enum": ["review", "live"]
+    },
+    "maxRepositories": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 1000
+    },
+    "rolloutPercent": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 100
+    },
+    "monthlyAiCreditBudget": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "workerPolicy": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "enabled": { "type": "boolean" },
+        "max-mode": { "$ref": "#/$defs/mode" }
+      }
+    },
+    "packagePolicy": {
+      "type": "object",
+      "properties": {
+        "enabled": { "type": "boolean" },
+        "mode": { "$ref": "#/$defs/mode" },
+        "max-repositories": { "$ref": "#/$defs/maxRepositories" },
+        "rollout-percent": { "$ref": "#/$defs/rolloutPercent" },
+        "monthly-ai-credit-budget": { "$ref": "#/$defs/monthlyAiCreditBudget" }
+      }
+    },
+    "advisoryWorkers": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "uk-ai-operational-resilience": { "$ref": "#/$defs/workerPolicy" }
+      }
+    },
+    "ambientContextWorkers": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "agents-md-curator": { "$ref": "#/$defs/workerPolicy" },
+        "skills-curator": { "$ref": "#/$defs/workerPolicy" }
+      }
+    },
+    "awMaintenanceWorkers": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "failures-investigator": { "$ref": "#/$defs/workerPolicy" },
+        "upgrade": { "$ref": "#/$defs/workerPolicy" }
+      }
+    },
+    "dependabotWorkers": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "release-train-updater": { "$ref": "#/$defs/workerPolicy" }
+      }
+    },
+    "euCraComplianceWorkers": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "scope-classifier": { "$ref": "#/$defs/workerPolicy" },
+        "security-requirements-auditor": { "$ref": "#/$defs/workerPolicy" },
+        "supply-chain-sbom-auditor": { "$ref": "#/$defs/workerPolicy" },
+        "vulnerability-handling-auditor": { "$ref": "#/$defs/workerPolicy" },
+        "article-14-reporting-readiness": { "$ref": "#/$defs/workerPolicy" },
+        "conformity-release-evidence": { "$ref": "#/$defs/workerPolicy" }
+      }
+    },
+    "optimizationWorkers": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "ai-credit-auditor": { "$ref": "#/$defs/workerPolicy" },
+        "ai-credit-optimizer": { "$ref": "#/$defs/workerPolicy" }
+      }
+    },
+    "advisoryPackage": {
+      "allOf": [
+        { "$ref": "#/$defs/packagePolicy" },
+        { "properties": { "workers": { "$ref": "#/$defs/advisoryWorkers" } } }
+      ],
+      "unevaluatedProperties": false
+    },
+    "ambientContextPackage": {
+      "allOf": [
+        { "$ref": "#/$defs/packagePolicy" },
+        { "properties": { "workers": { "$ref": "#/$defs/ambientContextWorkers" } } }
+      ],
+      "unevaluatedProperties": false
+    },
+    "awMaintenancePackage": {
+      "allOf": [
+        { "$ref": "#/$defs/packagePolicy" },
+        { "properties": { "workers": { "$ref": "#/$defs/awMaintenanceWorkers" } } }
+      ],
+      "unevaluatedProperties": false
+    },
+    "dependabotPackage": {
+      "allOf": [
+        { "$ref": "#/$defs/packagePolicy" },
+        { "properties": { "workers": { "$ref": "#/$defs/dependabotWorkers" } } }
+      ],
+      "unevaluatedProperties": false
+    },
+    "euCraCompliancePackage": {
+      "allOf": [
+        { "$ref": "#/$defs/packagePolicy" },
+        { "properties": { "workers": { "$ref": "#/$defs/euCraComplianceWorkers" } } }
+      ],
+      "unevaluatedProperties": false
+    },
+    "optimizationPackage": {
+      "allOf": [
+        { "$ref": "#/$defs/packagePolicy" },
+        { "properties": { "workers": { "$ref": "#/$defs/optimizationWorkers" } } }
+      ],
+      "unevaluatedProperties": false
+    },
+    "controlPackages": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "advisory": { "$ref": "#/$defs/advisoryPackage" },
+        "ambient-context": { "$ref": "#/$defs/ambientContextPackage" },
+        "aw-maintenance": { "$ref": "#/$defs/awMaintenancePackage" },
+        "dependabot": { "$ref": "#/$defs/dependabotPackage" },
+        "eu-cra-compliance": { "$ref": "#/$defs/euCraCompliancePackage" },
+        "optimization": { "$ref": "#/$defs/optimizationPackage" }
+      }
+    },
+    "scope": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "allowed-owners": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": { "$ref": "#/$defs/owner" }
+        },
+        "allowed-repositories": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": { "$ref": "#/$defs/repository" }
+        }
+      }
+    },
+    "inventory": {
+      "type": "object",
+      "additionalProperties": false,
+      "$comment": "The runtime validator also requires cell-index to be smaller than cell-count.",
+      "properties": {
+        "max-scan-repositories": { "type": "integer", "minimum": 1, "maximum": 100000 },
+        "cell-count": { "type": "integer", "minimum": 1, "maximum": 1000 },
+        "cell-index": { "type": "integer", "minimum": 0 },
+        "batch-size": { "type": "integer", "minimum": 1, "maximum": 100000 },
+        "batch-index": { "type": "integer", "minimum": 0 }
+      }
+    },
+    "defaults": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "mode": { "$ref": "#/$defs/mode" },
+        "max-repositories": { "$ref": "#/$defs/maxRepositories" },
+        "rollout-percent": { "$ref": "#/$defs/rolloutPercent" },
+        "monthly-ai-credit-budget": { "$ref": "#/$defs/monthlyAiCreditBudget" }
+      }
+    },
+    "publishing": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "enabled": { "type": "boolean" },
+        "control-repositories": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": { "$ref": "#/$defs/repository" }
+        },
+        "reviewers": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": { "$ref": "#/$defs/login" }
+        }
+      },
+      "if": {
+        "required": ["enabled"],
+        "properties": { "enabled": { "const": true } }
+      },
+      "then": {
+        "required": ["reviewers"],
+        "properties": { "reviewers": { "minItems": 1 } }
+      }
+    },
+    "controlPlane": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "scope": { "$ref": "#/$defs/scope" },
+        "inventory": { "$ref": "#/$defs/inventory" },
+        "defaults": { "$ref": "#/$defs/defaults" },
+        "packages": { "$ref": "#/$defs/controlPackages" },
+        "publishing": { "$ref": "#/$defs/publishing" }
+      }
+    },
+    "targetPackage": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["authority"],
+      "properties": {
+        "authority": { "$ref": "#/$defs/repository" }
+      }
+    },
+    "targetPackages": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "advisory": { "$ref": "#/$defs/targetPackage" },
+        "ambient-context": { "$ref": "#/$defs/targetPackage" },
+        "aw-maintenance": { "$ref": "#/$defs/targetPackage" },
+        "dependabot": { "$ref": "#/$defs/targetPackage" },
+        "eu-cra-compliance": { "$ref": "#/$defs/targetPackage" },
+        "optimization": { "$ref": "#/$defs/targetPackage" }
+      }
+    },
+    "targetAuthority": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["packages"],
+      "properties": {
+        "packages": { "$ref": "#/$defs/targetPackages" }
+      }
+    }
+  }
+}
