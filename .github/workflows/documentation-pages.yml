@@ -17,6 +17,7 @@ on:
       - docs/**
       - package.json
       - package-lock.json
+      - pages/dashboard/**
       - src/**
 
 permissions:
