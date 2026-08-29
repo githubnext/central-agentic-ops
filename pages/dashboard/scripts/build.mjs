@@ -1,4 +1,5 @@
 import { cp, mkdir, rm } from "node:fs/promises";
+import { basename } from "node:path";
 
 const source = new URL("../", import.meta.url);
 const destination = new URL("../../../public/ymao/", import.meta.url);
@@ -8,5 +9,5 @@ await rm(destination, { force: true, recursive: true });
 await mkdir(destination, { recursive: true });
 await cp(source, destination, {
   recursive: true,
-  filter: (path) => !excluded.has(path.split("/").at(-1)),
+  filter: (path) => !excluded.has(basename(path)),
 });
