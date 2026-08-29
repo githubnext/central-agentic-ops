@@ -121,7 +121,7 @@ tracker-id: dependabot-release-train-updater
 
 tools:
   github:
-    mode: remote
+    mode: local
     min-integrity: approved
     toolsets: [default, repos, issues, pull_requests, actions, dependabot, code_security, security_advisories]
   web-fetch:
