@@ -245,6 +245,101 @@ describe('presenter built-in and custom pages', () => {
     }
   });
 
+  it('DLS-PAGE-002 DLS-PAGE-006 DLS-PAGE-008 DLS-PAGE-009 DLS-PAGE-010 DLS-PAGE-011 DLS-PAGE-012 DLS-PAGE-013 DLS-PAGE-014 renders built-in sections in authoritative dashboard.json view order grouped by declared source instead of hard-coded section index positions', () => {
+    /** @type {import('../../src/presenter.js').PresentationInput['document']} */
+    const document = {
+      languageVersion: '0.1.0',
+      dashboard: {
+        id: 'view-order-dashboard',
+        title: 'View Order Dashboard',
+        pages: [
+          {
+            id: 'runs',
+            kind: /** @type {'built-in'} */ ('built-in'),
+            page: 'runs',
+            title: 'Runs',
+            definition: {
+              'data-state': {
+                availability: true,
+                completeness: true,
+                freshness: true
+              },
+              views: [
+                { id: 'runs-table', title: 'Runs Inventory First', data: { source: 'runs' } },
+                { id: 'runs-status', title: 'Run Status Second', data: { source: 'runs' } },
+                { id: 'outcome-counts', title: 'Outcome Counts Third', data: { source: 'outcomes' } },
+                { id: 'run-conclusions', title: 'Run Conclusions Fourth', data: { source: 'runs' } }
+              ]
+            }
+          }
+        ]
+      }
+    };
+
+    const rendered = renderDashboard({
+      document,
+      sources: {
+        runs: {
+          source: 'runs',
+          rows: [
+            {
+              organization: 'github',
+              repository: 'central-agentic-ops',
+              workflow: '.github/workflows/daily.yml',
+              run: '1001',
+              'run-status': 'completed',
+              'run-conclusion': 'success',
+              'rollout-mode': 'live',
+              engine: 'actions',
+              'requested-model': 'gpt-4o',
+              'resolved-model': 'gpt-4.1',
+              'started-at': '2026-08-29T10:00:00Z'
+            }
+          ],
+          metadata: {
+            'source-id': 'runs-fixture',
+            'source-kind': 'fixture',
+            'as-of': '2026-08-29T20:00:00Z',
+            'retrieved-at': '2026-08-29T20:01:00Z',
+            completeness: 'complete',
+            freshness: 'fresh',
+            availability: 'available'
+          }
+        },
+        outcomes: {
+          source: 'outcomes',
+          rows: [
+            {
+              run: '1001',
+              'outcome-state': 'accepted'
+            }
+          ],
+          metadata: {
+            'source-id': 'outcomes-fixture',
+            'source-kind': 'fixture',
+            'as-of': '2026-08-29T20:00:00Z',
+            'retrieved-at': '2026-08-29T20:01:00Z',
+            completeness: 'complete',
+            freshness: 'fresh',
+            availability: 'available'
+          }
+        }
+      }
+    });
+
+    const headings = [...rendered.querySelectorAll('.runs-page .page-section h3')].map((element) => element.textContent);
+    expect(headings).toEqual([
+      'Runs Inventory First',
+      'Run Status Second',
+      'Outcome Counts Third',
+      'Run Conclusions Fourth'
+    ]);
+    expect(rendered.querySelector('.runs-table')).not.toBeNull();
+    expect(rendered.querySelector('.run-status-counts')?.textContent).toContain('completed: 1');
+    expect(rendered.querySelector('.run-outcome-counts')?.textContent).toContain('accepted: 1');
+    expect(rendered.querySelector('.run-conclusion-counts')?.textContent).toContain('success: 1');
+  });
+
   it('DLS-PAGE-009 DLS-PAGE-014 renders built-in evals page with distinguishable definitions and observations, observed subject, YES/NO/UNKNOWN result, evaluation model when available, time, provenance, and independent data state deterministically', () => {
     /** @type {import('../../src/presenter.js').PresentationInput['document']} */
     const document = {
@@ -757,7 +852,12 @@ describe('presenter built-in and custom pages', () => {
     const sections = rendered.querySelectorAll('.runs-page .page-section');
     expect(sections).toHaveLength(4);
     expect(sections[0]?.getAttribute('aria-labelledby')).toContain('runs-run-status-counts-heading');
-    expect(sections[1]?.getAttribute('aria-labelledby')).toContain('runs-run-conclusion-counts-heading');
+    expect([...sections].map((section) => section.getAttribute('aria-labelledby'))).toEqual([
+      'runs-run-status-counts-heading',
+      'runs-outcome-counts-heading',
+      'runs-run-conclusion-counts-heading',
+      'runs-runs-heading'
+    ]);
 
     const firstSection = /** @type {HTMLElement} */ (sections[0]);
     const secondSection = /** @type {HTMLElement} */ (sections[1]);
