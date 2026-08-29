@@ -58,7 +58,7 @@
 - `src/components/badge.js` — presentation-only Primer status, mode, and active-state badges.
 - `src/components/data-state.js` — presentation-only data-state metrics card grid for availability, completeness, and freshness.
 - `src/components/table-region.js` — presentation-only reusable table wrapper for repeated table-region markup, header rows, empty-state rows, and keyed body-row descriptors across built-in and custom tables.
-- `src/components/view-chrome.js` — presentation-only reusable page-section, titled-region, custom-view source/metadata/context chrome, and built-in provenance-section helpers.
+- `src/components/view-chrome.js` — presentation-only reusable page-section, titled-region, summary-region, custom-view source/metadata/context chrome, and built-in provenance-section helpers.
 
 ## Infrastructure blockers
 
@@ -90,6 +90,16 @@
 - Proved unchanged behavior by keeping the full existing unit and browser suites green and by capturing a presenter diff at `/tmp/gh-aw/agent/presenter-refactor.diff`, confirming the affected pages changed only by replacing repeated heading-plus-content assembly with `renderTitledRegion(...)` / `renderProvenanceSection(...)` calls while preserving the same DOM text, section headings, class names, and accessible labeling.
 - Verified quality gates from `pages/dashboard/`: `npm install`, `npm run typecheck`, `npm run lint`, `npm test`, and `npm run test:e2e` all pass.
 - Next candidates in the queue: extract repeated built-in summary-section composition for count lists; extract the next shared pure helpers around subject/provenance/count formatting in `src/presenter.js`; extract repeated built-in definitions/observations dual-region composition in `src/presenter.js`.
+
+### 2026-08-29 (summary-region view-chrome refactor)
+
+- Re-inventoried repeated section composition in `src/presenter.js` and selected the highest remaining bounded count-list slice: `renderPageSection(...)` wrapped around a single `renderSummaryList(...)` call in `renderRunsPage`, `renderFindingsPage`, and `renderOverviewPage`.
+- Extended `src/components/view-chrome.js` with presentation-only `renderSummaryRegion(pageId, title, listClassName, counts)` so repeated summary-section DOM can reuse the shared focusable labeled `page-section` wrapper without rebuilding the same section-plus-list shape.
+- Collapsed every duplicated single-summary call site identified in `src/presenter.js`: runs status/conclusion/outcome counts, findings severity/status counts, and overview rollout-mode/workflow-active summaries.
+- Added unit coverage in `test/unit/view-chrome.test.js` for populated and empty summary-region rendering, preserving the existing `No data available.` fallback semantics and deterministic heading ids.
+- Proved unchanged behavior by keeping the full suite green and rendering the existing overview presenter fixture to `/tmp/gh-aw/agent/behavior-check.html`, confirming the affected overview section headings and summary-list class names remain unchanged after the extraction.
+- Verified quality gates from `pages/dashboard/`: `npm install`, `npm run typecheck`, `npm run lint`, `npm test`, and `npx playwright test --config=playwright.config.mjs` all pass.
+- Next candidates in the queue: extract the next shared pure helpers around subject/provenance/count formatting in `src/presenter.js`; extract repeated built-in definitions/observations dual-region composition in `src/presenter.js`; extract repeated summary-plus-trend section composition in `src/presenter.js`.
 
 ### 2026-08-29 (custom-view context-list refactor)
 
