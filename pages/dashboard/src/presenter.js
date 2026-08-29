@@ -690,45 +690,32 @@ function renderEnginesModelsPage(pageSources) {
     'div',
     { className: 'engines-models-page' },
     h('h3', null, 'Engine and Model Inventory'),
-    h(
-      'div',
-      { className: 'table-region' },
-      h(
-        'table',
-        { className: 'engines-models-table' },
-        h(
-          'thead',
-          null,
-          h(
-            'tr',
-            null,
-            h('th', null, 'Engine'),
-            h('th', null, 'Requested Model'),
-            h('th', null, 'Resolved Model'),
-            h('th', null, 'Run Count'),
-            h('th', null, 'Run Conclusions'),
-            h('th', null, 'Outcome Count'),
-            h('th', null, 'Input Tokens'),
-            h('th', null, 'Output Tokens'),
-            h('th', null, 'Cache Read Tokens'),
-            h('th', null, 'Cache Write Tokens'),
-            h('th', null, 'Reasoning Tokens'),
-            h('th', null, 'AIC')
-          )
-        ),
-        h(
-          'tbody',
-          null,
-          items.length > 0
-            ? keyed(
-              items,
-              (item) => renderEngineModelRow(/** @type {{ key: string, engine: string, requestedModel: string, resolvedModel: string, runCount: number, conclusionCounts: Map<string, number>, outcomeCount: number, usageTotals: Map<string, number> }} */ (item)),
-              (item) => /** @type {{ key: string }} */ (item).key
-            )
-            : h('tr', null, h('td', { colSpan: 12 }, 'No engine or model observations available.'))
+    renderTableRegion({
+      tableClassName: 'engines-models-table',
+      emptyMessage: 'No engine or model observations available.',
+      colSpan: 12,
+      headCells: [
+        'Engine',
+        'Requested Model',
+        'Resolved Model',
+        'Run Count',
+        'Run Conclusions',
+        'Outcome Count',
+        'Input Tokens',
+        'Output Tokens',
+        'Cache Read Tokens',
+        'Cache Write Tokens',
+        'Reasoning Tokens',
+        'AIC'
+      ],
+      bodyRows: items.length > 0
+        ? keyed(
+          items,
+          (item) => renderEngineModelRow(/** @type {{ key: string, engine: string, requestedModel: string, resolvedModel: string, runCount: number, conclusionCounts: Map<string, number>, outcomeCount: number, usageTotals: Map<string, number> }} */ (item)),
+          (item) => /** @type {{ key: string }} */ (item).key
         )
-      )
-    )
+        : []
+    })
   );
 }
 
@@ -747,49 +734,36 @@ function renderOperationalValuePage(pageSources) {
     'div',
     { className: 'operational-value-page' },
     h('h3', null, 'Operational Value Timeline'),
-    h(
-      'div',
-      { className: 'table-region' },
-      h(
-        'table',
-        { className: 'operational-value-table' },
-        h(
-          'thead',
-          null,
-          h(
-            'tr',
-            null,
-            h('th', null, 'Observed At'),
-            h('th', null, 'Operational Value'),
-            h('th', null, 'Definition'),
-            h('th', null, 'Operational Case'),
-            h('th', null, 'Evaluator Digest'),
-            h('th', null, 'Organization'),
-            h('th', null, 'Repository'),
-            h('th', null, 'Workflow'),
-            h('th', null, 'Run'),
-            h('th', null, 'Experiment'),
-            h('th', null, 'Requested Evidence At'),
-            h('th', null, 'Evidence Cutoff'),
-            h('th', null, 'Maturity At'),
-            h('th', null, 'Maturity Status'),
-            h('th', null, 'Delta From Baseline'),
-            h('th', null, 'Evidence Link')
-          )
-        ),
-        h(
-          'tbody',
-          null,
-          items.length > 0
-            ? keyed(
-              items,
-              (item) => renderOperationalValueRow(/** @type {{ key: string, row: Record<string, unknown> }} */ (item)),
-              (item) => /** @type {{ key: string }} */ (item).key
-            )
-            : h('tr', null, h('td', { colSpan: 16 }, 'No operational value observations available.'))
+    renderTableRegion({
+      tableClassName: 'operational-value-table',
+      emptyMessage: 'No operational value observations available.',
+      colSpan: 16,
+      headCells: [
+        'Observed At',
+        'Operational Value',
+        'Definition',
+        'Operational Case',
+        'Evaluator Digest',
+        'Organization',
+        'Repository',
+        'Workflow',
+        'Run',
+        'Experiment',
+        'Requested Evidence At',
+        'Evidence Cutoff',
+        'Maturity At',
+        'Maturity Status',
+        'Delta From Baseline',
+        'Evidence Link'
+      ],
+      bodyRows: items.length > 0
+        ? keyed(
+          items,
+          (item) => renderOperationalValueRow(/** @type {{ key: string, row: Record<string, unknown> }} */ (item)),
+          (item) => /** @type {{ key: string }} */ (item).key
         )
-      )
-    )
+        : []
+    })
   );
 }
 
@@ -823,44 +797,31 @@ function renderOrganizationsPage(pageSources) {
     'div',
     { className: 'organizations-page' },
     h('h3', null, 'Organization Inventory'),
-    h(
-      'div',
-      { className: 'table-region' },
-      h(
-        'table',
-        { className: 'organizations-table' },
-        h(
-          'thead',
-          null,
-          h(
-            'tr',
-            null,
-            h('th', null, 'Organization'),
-            h('th', null, 'Organization Name'),
-            h('th', null, 'Repository Count'),
-            h('th', null, 'Workflow Count'),
-            h('th', null, 'Run Count'),
-            h('th', null, 'Input Tokens'),
-            h('th', null, 'Output Tokens'),
-            h('th', null, 'Cache Read Tokens'),
-            h('th', null, 'Cache Write Tokens'),
-            h('th', null, 'Reasoning Tokens'),
-            h('th', null, 'AIC')
-          )
-        ),
-        h(
-          'tbody',
-          null,
-          items.length > 0
-            ? keyed(
-              items,
-              (item) => renderOrganizationRow(/** @type {{ key: string, organization: Record<string, unknown>, repositoryCount: number, workflowCount: number, runCount: number, usageTotals: Map<string, number> }} */ (item)),
-              (item) => /** @type {{ key: string }} */ (item).key
-            )
-            : h('tr', null, h('td', { colSpan: 11 }, 'No organizations available.'))
+    renderTableRegion({
+      tableClassName: 'organizations-table',
+      emptyMessage: 'No organizations available.',
+      colSpan: 11,
+      headCells: [
+        'Organization',
+        'Organization Name',
+        'Repository Count',
+        'Workflow Count',
+        'Run Count',
+        'Input Tokens',
+        'Output Tokens',
+        'Cache Read Tokens',
+        'Cache Write Tokens',
+        'Reasoning Tokens',
+        'AIC'
+      ],
+      bodyRows: items.length > 0
+        ? keyed(
+          items,
+          (item) => renderOrganizationRow(/** @type {{ key: string, organization: Record<string, unknown>, repositoryCount: number, workflowCount: number, runCount: number, usageTotals: Map<string, number> }} */ (item)),
+          (item) => /** @type {{ key: string }} */ (item).key
         )
-      )
-    )
+        : []
+    })
   );
 }
 
@@ -893,40 +854,27 @@ function renderRepositoriesPage(pageSources) {
     'div',
     { className: 'repositories-page' },
     h('h3', null, 'Repository Inventory and Rankings'),
-    h(
-      'div',
-      { className: 'table-region' },
-      h(
-        'table',
-        { className: 'repositories-table' },
-        h(
-          'thead',
-          null,
-          h(
-            'tr',
-            null,
-            h('th', null, 'Repository'),
-            h('th', null, 'Repository Name'),
-            h('th', null, 'Organization'),
-            h('th', null, 'Rollout Mode'),
-            h('th', null, 'Run Count'),
-            h('th', null, 'AIC'),
-            h('th', null, 'Operational Value by Definition')
-          )
-        ),
-        h(
-          'tbody',
-          null,
-          items.length > 0
-            ? keyed(
-              items,
-              (item) => renderRepositoryRow(/** @type {{ key: string, repository: Record<string, unknown>, runCount: number, usageTotals: Map<string, number>, operationalValueDefinitions: Map<string, Array<number>> }} */ (item)),
-              (item) => /** @type {{ key: string }} */ (item).key
-            )
-            : h('tr', null, h('td', { colSpan: 7 }, 'No repositories available.'))
+    renderTableRegion({
+      tableClassName: 'repositories-table',
+      emptyMessage: 'No repositories available.',
+      colSpan: 7,
+      headCells: [
+        'Repository',
+        'Repository Name',
+        'Organization',
+        'Rollout Mode',
+        'Run Count',
+        'AIC',
+        'Operational Value by Definition'
+      ],
+      bodyRows: items.length > 0
+        ? keyed(
+          items,
+          (item) => renderRepositoryRow(/** @type {{ key: string, repository: Record<string, unknown>, runCount: number, usageTotals: Map<string, number>, operationalValueDefinitions: Map<string, Array<number>> }} */ (item)),
+          (item) => /** @type {{ key: string }} */ (item).key
         )
-      )
-    )
+        : []
+    })
   );
 }
 
@@ -973,41 +921,28 @@ function renderExperimentsPage(pageSources) {
       { className: 'page-note' },
       'Observed assignments, grader observations, eval observations, outcomes, usage, and operational value are presented together without implying causation.'
     ),
-    h(
-      'div',
-      { className: 'table-region' },
-      h(
-        'table',
-        { className: 'experiments-table' },
-        h(
-          'thead',
-          null,
-          h(
-            'tr',
-            null,
-            h('th', null, 'Experiment'),
-            h('th', null, 'Experiment Name'),
-            h('th', null, 'Observed Variants by Run Count'),
-            h('th', null, 'Grader Observations'),
-            h('th', null, 'Eval Observations'),
-            h('th', null, 'Outcome Observations'),
-            h('th', null, 'Usage AIC'),
-            h('th', null, 'Operational Value by Definition')
-          )
-        ),
-        h(
-          'tbody',
-          null,
-          items.length > 0
-            ? keyed(
-              items,
-              (item) => renderExperimentRow(/** @type {{ key: string, experiment: Record<string, unknown>, variantAssignments: Map<string, number>, graderStatusCounts: Map<string, number>, evalResultCounts: Map<string, number>, outcomeCounts: Map<string, number>, usageTotals: Map<string, number>, operationalValueDefinitions: Map<string, Array<number>> }} */ (item)),
-              (item) => /** @type {{ key: string }} */ (item).key
-            )
-            : h('tr', null, h('td', { colSpan: 8 }, 'No experiments available.'))
+    renderTableRegion({
+      tableClassName: 'experiments-table',
+      emptyMessage: 'No experiments available.',
+      colSpan: 8,
+      headCells: [
+        'Experiment',
+        'Experiment Name',
+        'Observed Variants by Run Count',
+        'Grader Observations',
+        'Eval Observations',
+        'Outcome Observations',
+        'Usage AIC',
+        'Operational Value by Definition'
+      ],
+      bodyRows: items.length > 0
+        ? keyed(
+          items,
+          (item) => renderExperimentRow(/** @type {{ key: string, experiment: Record<string, unknown>, variantAssignments: Map<string, number>, graderStatusCounts: Map<string, number>, evalResultCounts: Map<string, number>, outcomeCounts: Map<string, number>, usageTotals: Map<string, number>, operationalValueDefinitions: Map<string, Array<number>> }} */ (item)),
+          (item) => /** @type {{ key: string }} */ (item).key
         )
-      )
-    )
+        : []
+    })
   );
 }
 
@@ -1037,77 +972,51 @@ function renderGradersPage(pageSources) {
     'div',
     { className: 'graders-page' },
     h('h3', null, 'Grader Definitions'),
-    h(
-      'div',
-      { className: 'table-region' },
-      h(
-        'table',
-        { className: 'graders-definitions-table' },
-        h(
-          'thead',
-          null,
-          h(
-            'tr',
-            null,
-            h('th', null, 'Grader'),
-            h('th', null, 'Grader Name'),
-            h('th', null, 'Definition Observed At'),
-            h('th', null, 'Observation Count'),
-            h('th', null, 'Observed Subjects'),
-            h('th', null, 'Results'),
-            h('th', null, 'Scores When Present'),
-            h('th', null, 'Latest Observation Time')
-          )
-        ),
-        h(
-          'tbody',
-          null,
-          items.length > 0
-            ? keyed(
-              items,
-              (item) => renderGraderDefinitionRow(/** @type {{ key: string, grader: Record<string, unknown>, observationCount: number, statusCounts: Map<string, number>, latestObservedAt: string, subjects: string[], scoreValues: string[] }} */ (item)),
-              (item) => /** @type {{ key: string }} */ (item).key
-            )
-            : h('tr', null, h('td', { colSpan: 8 }, 'No grader definitions available.'))
+    renderTableRegion({
+      tableClassName: 'graders-definitions-table',
+      emptyMessage: 'No grader definitions available.',
+      colSpan: 8,
+      headCells: [
+        'Grader',
+        'Grader Name',
+        'Definition Observed At',
+        'Observation Count',
+        'Observed Subjects',
+        'Results',
+        'Scores When Present',
+        'Latest Observation Time'
+      ],
+      bodyRows: items.length > 0
+        ? keyed(
+          items,
+          (item) => renderGraderDefinitionRow(/** @type {{ key: string, grader: Record<string, unknown>, observationCount: number, statusCounts: Map<string, number>, latestObservedAt: string, subjects: string[], scoreValues: string[] }} */ (item)),
+          (item) => /** @type {{ key: string }} */ (item).key
         )
-      )
-    ),
+        : []
+    }),
     h('h3', null, 'Grader Observations'),
-    h(
-      'div',
-      { className: 'table-region' },
-      h(
-        'table',
-        { className: 'grader-observations-table' },
-        h(
-          'thead',
-          null,
-          h(
-            'tr',
-            null,
-            h('th', null, 'Grader'),
-            h('th', null, 'Observed Subject'),
-            h('th', null, 'Run'),
-            h('th', null, 'Result'),
-            h('th', null, 'Score'),
-            h('th', null, 'Time')
-          )
-        ),
-        h(
-          'tbody',
-          null,
-          observations.length > 0
-            ? keyed(
-              observations
-                .map((observation, index) => ({ key: getGraderObservationKey(observation, index), observation }))
-                .sort((left, right) => left.key.localeCompare(right.key)),
-              (item) => renderGraderObservationRow(/** @type {{ key: string, observation: Record<string, unknown> }} */ (item)),
-              (item) => /** @type {{ key: string }} */ (item).key
-            )
-            : h('tr', null, h('td', { colSpan: 6 }, 'No grader observations available.'))
+    renderTableRegion({
+      tableClassName: 'grader-observations-table',
+      emptyMessage: 'No grader observations available.',
+      colSpan: 6,
+      headCells: [
+        'Grader',
+        'Observed Subject',
+        'Run',
+        'Result',
+        'Score',
+        'Time'
+      ],
+      bodyRows: observations.length > 0
+        ? keyed(
+          observations
+            .map((observation, index) => ({ key: getGraderObservationKey(observation, index), observation }))
+            .sort((left, right) => left.key.localeCompare(right.key)),
+          (item) => renderGraderObservationRow(/** @type {{ key: string, observation: Record<string, unknown> }} */ (item)),
+          (item) => /** @type {{ key: string }} */ (item).key
         )
-      )
-    )
+        : []
+    })
   );
 }
 
@@ -1141,79 +1050,53 @@ function renderEvalsPage(pageSources) {
     'div',
     { className: 'evals-page' },
     renderPageSection('evals', 'Eval Definitions', [
-      h(
-        'div',
-        { className: 'table-region' },
-        h(
-          'table',
-          { className: 'evals-definitions-table' },
-          h(
-            'thead',
-            null,
-            h(
-              'tr',
-              null,
-              h('th', null, 'Eval'),
-              h('th', null, 'Eval Name'),
-              h('th', null, 'Eval Question'),
-              h('th', null, 'Requested Model'),
-              h('th', null, 'Definition Observed At'),
-              h('th', null, 'Observation Count'),
-              h('th', null, 'Observed Subjects'),
-              h('th', null, 'Results'),
-              h('th', null, 'Evaluation Models When Available'),
-              h('th', null, 'Latest Observation Time')
-            )
-          ),
-          h(
-            'tbody',
-            null,
-            items.length > 0
-              ? keyed(
-                items,
-                (item) => renderEvalDefinitionRow(/** @type {{ key: string, evaluation: Record<string, unknown>, observationCount: number, resultCounts: Map<string, number>, latestObservedAt: string, subjects: string[], models: string[] }} */ (item)),
-                (item) => /** @type {{ key: string }} */ (item).key
-              )
-              : h('tr', null, h('td', { colSpan: 10 }, 'No eval definitions available.'))
+      renderTableRegion({
+        tableClassName: 'evals-definitions-table',
+        emptyMessage: 'No eval definitions available.',
+        colSpan: 10,
+        headCells: [
+          'Eval',
+          'Eval Name',
+          'Eval Question',
+          'Requested Model',
+          'Definition Observed At',
+          'Observation Count',
+          'Observed Subjects',
+          'Results',
+          'Evaluation Models When Available',
+          'Latest Observation Time'
+        ],
+        bodyRows: items.length > 0
+          ? keyed(
+            items,
+            (item) => renderEvalDefinitionRow(/** @type {{ key: string, evaluation: Record<string, unknown>, observationCount: number, resultCounts: Map<string, number>, latestObservedAt: string, subjects: string[], models: string[] }} */ (item)),
+            (item) => /** @type {{ key: string }} */ (item).key
           )
-        )
-      )
+          : []
+      })
     ]),
     renderPageSection('evals', 'Eval Observations', [
-      h(
-        'div',
-        { className: 'table-region' },
-        h(
-          'table',
-          { className: 'eval-observations-table' },
-          h(
-            'thead',
-            null,
-            h(
-              'tr',
-              null,
-              h('th', null, 'Eval'),
-              h('th', null, 'Observed Subject'),
-              h('th', null, 'Run'),
-              h('th', null, 'Result'),
-              h('th', null, 'Requested Model'),
-              h('th', null, 'Resolved Model'),
-              h('th', null, 'Time')
-            )
-          ),
-          h(
-            'tbody',
-            null,
-            observationItems.length > 0
-              ? keyed(
-                observationItems,
-                (item) => renderEvalObservationRow(/** @type {{ key: string, observation: Record<string, unknown> }} */ (item)),
-                (item) => /** @type {{ key: string }} */ (item).key
-              )
-              : h('tr', null, h('td', { colSpan: 7 }, 'No eval observations available.'))
+      renderTableRegion({
+        tableClassName: 'eval-observations-table',
+        emptyMessage: 'No eval observations available.',
+        colSpan: 7,
+        headCells: [
+          'Eval',
+          'Observed Subject',
+          'Run',
+          'Result',
+          'Requested Model',
+          'Resolved Model',
+          'Time'
+        ],
+        bodyRows: observationItems.length > 0
+          ? keyed(
+            observationItems,
+            (item) => renderEvalObservationRow(/** @type {{ key: string, observation: Record<string, unknown> }} */ (item)),
+            (item) => /** @type {{ key: string }} */ (item).key
           )
-        )
-      )
+          : []
+      })
     ])
   );
 }

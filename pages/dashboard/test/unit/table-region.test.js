@@ -54,4 +54,28 @@ describe('renderTableRegion', () => {
     expect(table.querySelector('table')?.getAttribute('data-custom-view-mark')).toBe('table');
     expect(chart.querySelector('table')?.getAttribute('data-custom-view-mark')).toBe('chart');
   });
+
+  it('accepts keyed-list descriptors as populated body rows', async () => {
+    const { keyed } = await import('../../src/dom.js');
+    const rendered = renderTableRegion({
+      tableClassName: 'evals-definitions-table',
+      emptyMessage: 'No eval definitions available.',
+      colSpan: 2,
+      headCells: ['Eval', 'Results'],
+      bodyRows: keyed(
+        [{ key: 'release-risk' }],
+        /** @param {unknown} item */
+        (item) => {
+          const keyedItem = /** @type {{ key: string }} */ (item);
+          return h('tr', { 'data-key': keyedItem.key }, h('td', null, keyedItem.key), h('td', null, 'YES: 1'));
+        },
+        /** @param {unknown} item */
+        (item) => /** @type {{ key: string }} */ (item).key
+      )
+    });
+
+    expect(rendered.querySelectorAll('tbody tr')).toHaveLength(1);
+    expect(rendered.querySelector('tbody')?.textContent).toContain('release-risk');
+    expect(rendered.querySelector('tbody')?.textContent).not.toContain('No eval definitions available.');
+  });
 });
