@@ -1191,6 +1191,21 @@ test("daily dashboard renderer builds incrementally inside its own directory", (
   assert.match(source, /Never modify, move, or delete the existing dashboard package in `dashboard\/`/);
 });
 
+test("daily dashboard component refactorer extracts reusable components in place", () => {
+  const source = workflow("daily-dashboard-component-refactorer.md");
+
+  assert.match(source, /^model: copilot\/gpt-5\.4$/m);
+  assert.match(source, /engine:\n\s+id: pi/);
+  assert.match(source, /playwright:\n\s+mode: mcp/);
+  assert.match(source, /skip-if-match: "is:pr is:open label:dashboard-component-refactor"/);
+  assert.match(source, /create-pull-request:[\s\S]*?allowed-files:\n\s+- "pages\/dashboard\/README\.md"\n\s+- "pages\/dashboard\/PLAN\.md"\n\s+- "pages\/dashboard\/\*\*"/);
+  assert.doesNotMatch(source, /allowed-files:\n(?:\s+- .*\n)*\s+- "(?!pages\/dashboard\/)/);
+  assert.doesNotMatch(source, /push-to-pull-request-branch:/);
+  assert.match(source, /pages\/dashboard\/src\/components\//);
+  assert.match(source, /Never modify, move, or delete the existing dashboard package in `dashboard\/`/);
+  assert.match(source, /Never weaken, skip, or delete an existing test/);
+});
+
 test("dashboard CI runs the package quality gates", () => {
   const source = workflow("cid.yml");
 
@@ -1260,6 +1275,7 @@ test("clean-room compilation emits the expected GitHub Actions settings", { time
       "accessibility-expert.lock.yml",
       "advisory-package-maintainer.lock.yml",
       "cao-dashboard-review.lock.yml",
+      "daily-dashboard-component-refactorer.lock.yml",
       "daily-dashboard-language-renderer.lock.yml",
       "daily-dashboard-language-spec-review.lock.yml",
       "multi-device-docs-tester.lock.yml",
