@@ -107,7 +107,7 @@ export const BUILT_IN_PAGE_REQUIRED_SOURCES = {
   organizations: ['organizations', 'repositories', 'workflows', 'runs', 'usage'],
   repositories: ['repositories', 'runs', 'usage', 'operational-values'],
   workflows: ['workflows', 'runs', 'outcomes', 'usage', 'findings', 'operational-values'],
-  runs: ['runs'],
+  runs: ['runs', 'outcomes'],
   experiments: ['experiments', 'experiment-assignments', 'grader-observations', 'eval-observations', 'outcomes', 'usage', 'operational-values'],
   graders: ['graders', 'grader-observations'],
   evals: ['evals', 'eval-observations'],
@@ -147,7 +147,8 @@ export const BUILT_IN_PAGE_REQUIRED_FIELDS = {
     'operational-values': ['operational-value']
   },
   runs: {
-    runs: ['run', 'run-status', 'run-conclusion', 'organization', 'repository', 'workflow', 'rollout-mode', 'engine', 'requested-model', 'resolved-model', 'started-at']
+    runs: ['run', 'run-status', 'run-conclusion', 'organization', 'repository', 'workflow', 'rollout-mode', 'engine', 'requested-model', 'resolved-model', 'started-at'],
+    outcomes: ['run-link']
   },
   experiments: {
     experiments: ['experiment'],
