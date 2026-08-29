@@ -312,6 +312,10 @@ function renderBuiltInPageBody(page, pageSources) {
     return renderUsagePage(pageSources);
   }
 
+  if (page.page === 'engines-models') {
+    return renderEnginesModelsPage(pageSources);
+  }
+
   return h('p', { className: 'page-placeholder' }, `Built-in page ${page.page} is not rendered in this increment.`);
 }
 
@@ -566,21 +570,7 @@ function renderFindingsPage(pageSources) {
 function renderUsagePage(pageSources) {
   const usageSource = pageSources.get('usage');
   const usageRows = Array.isArray(usageSource?.rows) ? usageSource.rows : [];
-  const usageMeasures = [
-    'input-tokens',
-    'output-tokens',
-    'cache-read-tokens',
-    'cache-write-tokens',
-    'reasoning-tokens',
-    'aic'
-  ];
-
-  /** @type {Map<string, number>} */
-  const totals = new Map();
-  for (const measure of usageMeasures) {
-    totals.set(measure, usageRows.reduce((sum, row) => sum + toNumber(row[measure]), 0));
-  }
-
+  const totals = summarizeUsageMeasures(usageRows);
   const items = usageRows.map((row, index) => ({
     key: getUsageKey(row, index),
     row
@@ -631,6 +621,67 @@ function renderUsagePage(pageSources) {
               (item) => /** @type {{ key: string }} */ (item).key
             )
             : h('tr', null, h('td', { colSpan: 15 }, 'No usage observations available.'))
+        )
+      )
+    )
+  );
+}
+
+/**
+ * @param {Map<string, LogicalSourceInput>} pageSources
+ * @returns {HTMLElement}
+ */
+function renderEnginesModelsPage(pageSources) {
+  const runsSource = pageSources.get('runs');
+  const outcomesSource = pageSources.get('outcomes');
+  const usageSource = pageSources.get('usage');
+
+  const runs = Array.isArray(runsSource?.rows) ? runsSource.rows : [];
+  const outcomes = Array.isArray(outcomesSource?.rows) ? outcomesSource.rows : [];
+  const usageRows = Array.isArray(usageSource?.rows) ? usageSource.rows : [];
+
+  const items = groupEngineModelRows(runs, outcomes, usageRows);
+
+  return h(
+    'div',
+    { className: 'engines-models-page' },
+    h('h3', null, 'Engine and Model Inventory'),
+    h(
+      'div',
+      { className: 'table-region' },
+      h(
+        'table',
+        { className: 'engines-models-table' },
+        h(
+          'thead',
+          null,
+          h(
+            'tr',
+            null,
+            h('th', null, 'Engine'),
+            h('th', null, 'Requested Model'),
+            h('th', null, 'Resolved Model'),
+            h('th', null, 'Run Count'),
+            h('th', null, 'Run Conclusions'),
+            h('th', null, 'Outcome Count'),
+            h('th', null, 'Input Tokens'),
+            h('th', null, 'Output Tokens'),
+            h('th', null, 'Cache Read Tokens'),
+            h('th', null, 'Cache Write Tokens'),
+            h('th', null, 'Reasoning Tokens'),
+            h('th', null, 'AIC')
+          )
+        ),
+        h(
+          'tbody',
+          null,
+          items.length > 0
+            ? keyed(
+              items,
+              (item) => renderEngineModelRow(/** @type {{ key: string, engine: string, requestedModel: string, resolvedModel: string, runCount: number, conclusionCounts: Map<string, number>, outcomeCount: number, usageTotals: Map<string, number> }} */ (item)),
+              (item) => /** @type {{ key: string }} */ (item).key
+            )
+            : h('tr', null, h('td', { colSpan: 12 }, 'No engine or model observations available.'))
         )
       )
     )
@@ -868,6 +919,104 @@ function getUsageKey(usageRow, index) {
 }
 
 /**
+ * @param {Array<Record<string, unknown>>} usageRows
+ * @returns {Map<string, number>}
+ */
+function summarizeUsageMeasures(usageRows) {
+  const usageMeasures = [
+    'input-tokens',
+    'output-tokens',
+    'cache-read-tokens',
+    'cache-write-tokens',
+    'reasoning-tokens',
+    'aic'
+  ];
+
+  /** @type {Map<string, number>} */
+  const totals = new Map();
+  for (const measure of usageMeasures) {
+    totals.set(measure, usageRows.reduce((sum, row) => sum + toNumber(row[measure]), 0));
+  }
+  return totals;
+}
+
+/**
+ * @param {Array<Record<string, unknown>>} runs
+ * @param {Array<Record<string, unknown>>} outcomes
+ * @param {Array<Record<string, unknown>>} usageRows
+ * @returns {Array<{ key: string, engine: string, requestedModel: string, resolvedModel: string, runCount: number, conclusionCounts: Map<string, number>, outcomeCount: number, usageTotals: Map<string, number> }>}
+ */
+function groupEngineModelRows(runs, outcomes, usageRows) {
+  /** @type {Map<string, { key: string, engine: string, requestedModel: string, resolvedModel: string, runIds: Set<string>, conclusionCounts: Map<string, number>, outcomeCount: number, usageRows: Array<Record<string, unknown>> }>} */
+  const groups = new Map();
+
+  for (const run of runs) {
+    const key = getEngineModelGroupKey(run);
+    const group = ensureEngineModelGroup(groups, key, run);
+    const runId = typeof run.run === 'string' ? run.run : '';
+    if (runId && !group.runIds.has(runId)) {
+      group.runIds.add(runId);
+      const conclusion = toText(run['run-conclusion']);
+      group.conclusionCounts.set(conclusion, (group.conclusionCounts.get(conclusion) ?? 0) + 1);
+      group.outcomeCount += countMatchingOutcomes(outcomes, run);
+    }
+  }
+
+  for (const usageRow of usageRows) {
+    const key = getEngineModelGroupKey(usageRow);
+    const group = ensureEngineModelGroup(groups, key, usageRow);
+    group.usageRows.push(usageRow);
+  }
+
+  return [...groups.values()]
+    .map((group) => ({
+      key: group.key,
+      engine: group.engine,
+      requestedModel: group.requestedModel,
+      resolvedModel: group.resolvedModel,
+      runCount: group.runIds.size,
+      conclusionCounts: group.conclusionCounts,
+      outcomeCount: group.outcomeCount,
+      usageTotals: summarizeUsageMeasures(group.usageRows)
+    }))
+    .sort((left, right) => left.key.localeCompare(right.key));
+}
+
+/**
+ * @param {Map<string, { key: string, engine: string, requestedModel: string, resolvedModel: string, runIds: Set<string>, conclusionCounts: Map<string, number>, outcomeCount: number, usageRows: Array<Record<string, unknown>> }>} groups
+ * @param {string} key
+ * @param {Record<string, unknown>} row
+ * @returns {{ key: string, engine: string, requestedModel: string, resolvedModel: string, runIds: Set<string>, conclusionCounts: Map<string, number>, outcomeCount: number, usageRows: Array<Record<string, unknown>> }}
+ */
+function ensureEngineModelGroup(groups, key, row) {
+  const existing = groups.get(key);
+  if (existing) {
+    return existing;
+  }
+
+  const created = {
+    key,
+    engine: toText(row.engine),
+    requestedModel: toText(row['requested-model']),
+    resolvedModel: toText(row['resolved-model']),
+    runIds: new Set(),
+    conclusionCounts: new Map(),
+    outcomeCount: 0,
+    usageRows: []
+  };
+  groups.set(key, created);
+  return created;
+}
+
+/**
+ * @param {Record<string, unknown>} row
+ * @returns {string}
+ */
+function getEngineModelGroupKey(row) {
+  return [toText(row.engine), toText(row['requested-model']), toText(row['resolved-model'])].join('::');
+}
+
+/**
  * @param {Record<string, unknown>} row
  * @returns {{ href: string, label: string } | null}
  */
@@ -982,6 +1131,29 @@ function renderUsageRow(item) {
     h('td', null, formatNumber(toNumber(usage['cache-write-tokens']))),
     h('td', null, formatNumber(toNumber(usage['reasoning-tokens']))),
     h('td', null, formatNumber(toNumber(usage.aic)))
+  );
+}
+
+/**
+ * @param {{ key: string, engine: string, requestedModel: string, resolvedModel: string, runCount: number, conclusionCounts: Map<string, number>, outcomeCount: number, usageTotals: Map<string, number> }} item
+ * @returns {HTMLElement}
+ */
+function renderEngineModelRow(item) {
+  return h(
+    'tr',
+    { 'data-engine-model-key': item.key },
+    h('td', null, item.engine),
+    h('td', null, item.requestedModel),
+    h('td', null, item.resolvedModel),
+    h('td', null, String(item.runCount)),
+    h('td', null, formatCounts(item.conclusionCounts)),
+    h('td', null, String(item.outcomeCount)),
+    h('td', null, formatNumber(item.usageTotals.get('input-tokens') ?? 0)),
+    h('td', null, formatNumber(item.usageTotals.get('output-tokens') ?? 0)),
+    h('td', null, formatNumber(item.usageTotals.get('cache-read-tokens') ?? 0)),
+    h('td', null, formatNumber(item.usageTotals.get('cache-write-tokens') ?? 0)),
+    h('td', null, formatNumber(item.usageTotals.get('reasoning-tokens') ?? 0)),
+    h('td', null, formatNumber(item.usageTotals.get('aic') ?? 0))
   );
 }
 
