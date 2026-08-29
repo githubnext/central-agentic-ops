@@ -4,6 +4,14 @@ min-version: v0.87.6
 includes:
   - .github/workflows/eu-cra-compliance.md
   - .github/workflows/eu-cra-compliance-package-maintainer.md
+  - .github/workflows/eu-cra-compliance-scope-classifier.md
+  - .github/workflows/eu-cra-compliance-security-requirements-auditor.md
+  - .github/workflows/eu-cra-compliance-supply-chain-sbom-auditor.md
+  - .github/workflows/eu-cra-compliance-vulnerability-handling-auditor.md
+  - .github/workflows/eu-cra-compliance-article-14-reporting-readiness.md
+  - .github/workflows/eu-cra-compliance-conformity-release-evidence.md
 resources:
   - source: implementation-status.md
     destination: .github/aw/eu-cra-compliance/implementation-status.md
+  - source: eu-cra-report-operational-value-runtime.bash
+    destination: .github/aw/eu-cra-compliance/eu-cra-report-operational-value-runtime.bash
