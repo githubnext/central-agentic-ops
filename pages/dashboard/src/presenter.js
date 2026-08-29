@@ -308,6 +308,10 @@ function renderBuiltInPageBody(page, pageSources) {
     return renderFindingsPage(pageSources);
   }
 
+  if (page.page === 'usage') {
+    return renderUsagePage(pageSources);
+  }
+
   return h('p', { className: 'page-placeholder' }, `Built-in page ${page.page} is not rendered in this increment.`);
 }
 
@@ -556,6 +560,84 @@ function renderFindingsPage(pageSources) {
 }
 
 /**
+ * @param {Map<string, LogicalSourceInput>} pageSources
+ * @returns {HTMLElement}
+ */
+function renderUsagePage(pageSources) {
+  const usageSource = pageSources.get('usage');
+  const usageRows = Array.isArray(usageSource?.rows) ? usageSource.rows : [];
+  const usageMeasures = [
+    'input-tokens',
+    'output-tokens',
+    'cache-read-tokens',
+    'cache-write-tokens',
+    'reasoning-tokens',
+    'aic'
+  ];
+
+  /** @type {Map<string, number>} */
+  const totals = new Map();
+  for (const measure of usageMeasures) {
+    totals.set(measure, usageRows.reduce((sum, row) => sum + toNumber(row[measure]), 0));
+  }
+
+  const items = usageRows.map((row, index) => ({
+    key: getUsageKey(row, index),
+    row
+  }));
+
+  return h(
+    'div',
+    { className: 'usage-page' },
+    h('h3', null, 'Usage Totals'),
+    renderSummaryList('usage-totals', totals),
+    h('h3', null, 'Usage Observations'),
+    h(
+      'div',
+      { className: 'table-region' },
+      h(
+        'table',
+        { className: 'usage-table' },
+        h(
+          'thead',
+          null,
+          h(
+            'tr',
+            null,
+            h('th', null, 'Organization'),
+            h('th', null, 'Repository'),
+            h('th', null, 'Workflow'),
+            h('th', null, 'Run'),
+            h('th', null, 'Engine'),
+            h('th', null, 'Requested Model'),
+            h('th', null, 'Resolved Model'),
+            h('th', null, 'Rollout Mode'),
+            h('th', null, 'Observed At'),
+            h('th', null, 'Input Tokens'),
+            h('th', null, 'Output Tokens'),
+            h('th', null, 'Cache Read Tokens'),
+            h('th', null, 'Cache Write Tokens'),
+            h('th', null, 'Reasoning Tokens'),
+            h('th', null, 'AIC')
+          )
+        ),
+        h(
+          'tbody',
+          null,
+          items.length > 0
+            ? keyed(
+              items,
+              (item) => renderUsageRow(/** @type {{ key: string, row: Record<string, unknown> }} */ (item)),
+              (item) => /** @type {{ key: string }} */ (item).key
+            )
+            : h('tr', null, h('td', { colSpan: 15 }, 'No usage observations available.'))
+        )
+      )
+    )
+  );
+}
+
+/**
  * @param {{ key: string, workflow: Record<string, unknown>, runCount: number, conclusionCounts: Map<string, number>, outcomeCount: number, aicTotal: number, findingCount: number, operationalValueCount: number }} item
  * @returns {HTMLElement}
  */
@@ -771,6 +853,21 @@ function getFindingKey(finding, index) {
 }
 
 /**
+ * @param {Record<string, unknown>} usageRow
+ * @param {number} index
+ * @returns {string}
+ */
+function getUsageKey(usageRow, index) {
+  if (typeof usageRow.invocation === 'string' && usageRow.invocation.length > 0) {
+    return usageRow.invocation;
+  }
+  if (typeof usageRow.run === 'string' && usageRow.run.length > 0) {
+    return `${usageRow.run}-${index}`;
+  }
+  return `usage-${index}`;
+}
+
+/**
  * @param {Record<string, unknown>} row
  * @returns {{ href: string, label: string } | null}
  */
@@ -857,6 +954,34 @@ function renderFindingRow(item) {
     h('td', null, renderLinkCell(issueLink)),
     h('td', null, renderLinkCell(pullRequestLink)),
     h('td', null, renderLinkCell(runLink))
+  );
+}
+
+/**
+ * @param {{ key: string, row: Record<string, unknown> }} item
+ * @returns {HTMLElement}
+ */
+function renderUsageRow(item) {
+  const usage = item.row;
+
+  return h(
+    'tr',
+    { 'data-usage-key': item.key },
+    h('td', null, toText(usage.organization)),
+    h('td', null, toText(usage.repository)),
+    h('td', null, toText(usage.workflow)),
+    h('td', null, toText(usage.run)),
+    h('td', null, toText(usage.engine)),
+    h('td', null, toText(usage['requested-model'])),
+    h('td', null, toText(usage['resolved-model'])),
+    h('td', null, renderModeBadge(usage['rollout-mode'])),
+    h('td', null, toText(usage['observed-at'])),
+    h('td', null, formatNumber(toNumber(usage['input-tokens']))),
+    h('td', null, formatNumber(toNumber(usage['output-tokens']))),
+    h('td', null, formatNumber(toNumber(usage['cache-read-tokens']))),
+    h('td', null, formatNumber(toNumber(usage['cache-write-tokens']))),
+    h('td', null, formatNumber(toNumber(usage['reasoning-tokens']))),
+    h('td', null, formatNumber(toNumber(usage.aic)))
   );
 }
 
