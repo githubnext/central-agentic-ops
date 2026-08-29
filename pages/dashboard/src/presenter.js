@@ -316,6 +316,10 @@ function renderBuiltInPageBody(page, pageSources) {
     return renderEnginesModelsPage(pageSources);
   }
 
+  if (page.page === 'operational-value') {
+    return renderOperationalValuePage(pageSources);
+  }
+
   return h('p', { className: 'page-placeholder' }, `Built-in page ${page.page} is not rendered in this increment.`);
 }
 
@@ -689,6 +693,67 @@ function renderEnginesModelsPage(pageSources) {
 }
 
 /**
+ * @param {Map<string, LogicalSourceInput>} pageSources
+ * @returns {HTMLElement}
+ */
+function renderOperationalValuePage(pageSources) {
+  const operationalValuesSource = pageSources.get('operational-values');
+  const rows = Array.isArray(operationalValuesSource?.rows) ? operationalValuesSource.rows : [];
+  const items = [...rows]
+    .map((row, index) => ({ key: getOperationalValueKey(row, index), row }))
+    .sort((left, right) => compareObservedAt(left.row, right.row));
+
+  return h(
+    'div',
+    { className: 'operational-value-page' },
+    h('h3', null, 'Operational Value Timeline'),
+    h(
+      'div',
+      { className: 'table-region' },
+      h(
+        'table',
+        { className: 'operational-value-table' },
+        h(
+          'thead',
+          null,
+          h(
+            'tr',
+            null,
+            h('th', null, 'Observed At'),
+            h('th', null, 'Operational Value'),
+            h('th', null, 'Definition'),
+            h('th', null, 'Operational Case'),
+            h('th', null, 'Evaluator Digest'),
+            h('th', null, 'Organization'),
+            h('th', null, 'Repository'),
+            h('th', null, 'Workflow'),
+            h('th', null, 'Run'),
+            h('th', null, 'Experiment'),
+            h('th', null, 'Requested Evidence At'),
+            h('th', null, 'Evidence Cutoff'),
+            h('th', null, 'Maturity At'),
+            h('th', null, 'Maturity Status'),
+            h('th', null, 'Delta From Baseline'),
+            h('th', null, 'Evidence Link')
+          )
+        ),
+        h(
+          'tbody',
+          null,
+          items.length > 0
+            ? keyed(
+              items,
+              (item) => renderOperationalValueRow(/** @type {{ key: string, row: Record<string, unknown> }} */ (item)),
+              (item) => /** @type {{ key: string }} */ (item).key
+            )
+            : h('tr', null, h('td', { colSpan: 16 }, 'No operational value observations available.'))
+        )
+      )
+    )
+  );
+}
+
+/**
  * @param {{ key: string, workflow: Record<string, unknown>, runCount: number, conclusionCounts: Map<string, number>, outcomeCount: number, aicTotal: number, findingCount: number, operationalValueCount: number }} item
  * @returns {HTMLElement}
  */
@@ -916,6 +981,22 @@ function getUsageKey(usageRow, index) {
     return `${usageRow.run}-${index}`;
   }
   return `usage-${index}`;
+}
+
+/**
+ * @param {Record<string, unknown>} operationalValueRow
+ * @param {number} index
+ * @returns {string}
+ */
+function getOperationalValueKey(operationalValueRow, index) {
+  const definition = typeof operationalValueRow['operational-value-definition'] === 'string'
+    ? operationalValueRow['operational-value-definition']
+    : 'definition';
+  const run = typeof operationalValueRow.run === 'string' ? operationalValueRow.run : `run-${index}`;
+  const observedAt = typeof operationalValueRow['observed-at'] === 'string'
+    ? operationalValueRow['observed-at']
+    : `observed-${index}`;
+  return `${definition}::${run}::${observedAt}`;
 }
 
 /**
@@ -1158,6 +1239,36 @@ function renderEngineModelRow(item) {
 }
 
 /**
+ * @param {{ key: string, row: Record<string, unknown> }} item
+ * @returns {HTMLElement}
+ */
+function renderOperationalValueRow(item) {
+  const row = item.row;
+  const evidenceLink = findLink(row, 'evidence-link');
+
+  return h(
+    'tr',
+    { 'data-operational-value-key': item.key },
+    h('td', null, toText(row['observed-at'])),
+    h('td', null, formatOperationalValue(row['operational-value'])),
+    h('td', null, toText(row['operational-value-definition'])),
+    h('td', null, toText(row['operational-case'])),
+    h('td', null, toText(row['evaluator-digest'])),
+    h('td', null, toText(row.organization)),
+    h('td', null, toText(row.repository)),
+    h('td', null, toText(row.workflow)),
+    h('td', null, toText(row.run)),
+    h('td', null, toText(row.experiment)),
+    h('td', null, toText(row['requested-evidence-at'])),
+    h('td', null, toText(row['evidence-cutoff'])),
+    h('td', null, toText(row['maturity-at'])),
+    h('td', null, toText(row['maturity-status'])),
+    h('td', null, formatNullableNumber(row['delta-from-baseline'])),
+    h('td', null, renderLinkCell(evidenceLink))
+  );
+}
+
+/**
  * @param {string} value
  * @returns {string}
  */
@@ -1167,6 +1278,48 @@ function titleCase(value) {
     .filter(Boolean)
     .map((part) => part[0] ? `${part[0].toUpperCase()}${part.slice(1)}` : part)
     .join(' ');
+}
+
+/**
+ * @param {unknown} value
+ * @returns {string}
+ */
+function formatOperationalValue(value) {
+  if (value === null) {
+    return 'Unavailable';
+  }
+  return formatNullableNumber(value);
+}
+
+/**
+ * @param {unknown} value
+ * @returns {string}
+ */
+function formatNullableNumber(value) {
+  return typeof value === 'number' && Number.isFinite(value)
+    ? formatNumber(value)
+    : 'Unavailable';
+}
+
+/**
+ * @param {Record<string, unknown>} left
+ * @param {Record<string, unknown>} right
+ * @returns {number}
+ */
+function compareObservedAt(left, right) {
+  const leftValue = typeof left['observed-at'] === 'string' ? Date.parse(left['observed-at']) : Number.NaN;
+  const rightValue = typeof right['observed-at'] === 'string' ? Date.parse(right['observed-at']) : Number.NaN;
+
+  if (Number.isNaN(leftValue) && Number.isNaN(rightValue)) {
+    return 0;
+  }
+  if (Number.isNaN(leftValue)) {
+    return 1;
+  }
+  if (Number.isNaN(rightValue)) {
+    return -1;
+  }
+  return leftValue - rightValue;
 }
 
 /**

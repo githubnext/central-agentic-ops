@@ -31,7 +31,7 @@ function buildPresenterModuleUrl() {
   return `data:text/javascript;charset=utf-8,${encodeURIComponent(presenterSource)}`;
 }
 
-test('DLS-PAGE-011 DLS-PAGE-014 built-in engines-models page renders separate engine, requested model, resolved model, run counts, run conclusions, outcomes, raw tokens, AIC, provenance, and independent data state in browser', async ({ page }) => {
+test('DLS-PAGE-012 DLS-PAGE-014 built-in operational-value page renders a time-ordered absolute attainment series with definition, operational case, evaluator digest, subject, evidence timing, maturity, delta, evidence links, provenance, and independent data state in browser', async ({ page }) => {
   const presenterModuleUrl = buildPresenterModuleUrl();
 
   await page.setContent(`
@@ -42,14 +42,14 @@ test('DLS-PAGE-011 DLS-PAGE-014 built-in engines-models page renders separate en
       const dashboardDocument = {
         languageVersion: '0.1.0',
         dashboard: {
-          id: 'built-in-engines-models-render',
-          title: 'Built In Engines Models Render',
+          id: 'built-in-operational-value-render',
+          title: 'Built In Operational Value Render',
           pages: [
             {
-              id: 'engines-models',
+              id: 'operational-value',
               kind: 'built-in',
-              page: 'engines-models',
-              title: 'Engines Models',
+              page: 'operational-value',
+              title: 'Operational Value',
               definition: {
                 'data-state': {
                   availability: true,
@@ -57,9 +57,7 @@ test('DLS-PAGE-011 DLS-PAGE-014 built-in engines-models page renders separate en
                   freshness: true
                 },
                 views: [
-                  { id: 'runs-source', data: { source: 'runs' } },
-                  { id: 'outcomes-source', data: { source: 'outcomes' } },
-                  { id: 'usage-source', data: { source: 'usage' } }
+                  { id: 'operational-values-source', data: { source: 'operational-values' } }
                 ]
               }
             }
@@ -68,108 +66,56 @@ test('DLS-PAGE-011 DLS-PAGE-014 built-in engines-models page renders separate en
       };
 
       const sources = {
-        runs: {
-          source: 'runs',
+        'operational-values': {
+          source: 'operational-values',
           rows: [
             {
-              run: '1001',
-              engine: 'openai',
-              'requested-model': 'gpt-4.1',
-              'resolved-model': 'gpt-4.1-mini',
-              'run-conclusion': 'success'
-            },
-            {
+              organization: 'github',
+              repository: 'central-agentic-ops',
+              workflow: '.github/workflows/daily.yml',
               run: '1002',
-              engine: 'openai',
-              'requested-model': 'gpt-4.1',
-              'resolved-model': 'gpt-4.1-mini',
-              'run-conclusion': 'failure'
+              experiment: 'baseline-live',
+              'operational-case': 'merge-latency',
+              'evaluator-digest': 'sha256:def456',
+              'operational-value': 0.71,
+              'operational-value-definition': 'merge-efficiency',
+              'requested-evidence-at': '2026-08-28T09:30:00Z',
+              'evidence-cutoff': '2026-08-28T10:00:00Z',
+              'maturity-at': '2026-08-29T12:00:00Z',
+              'maturity-status': 'pending',
+              'delta-from-baseline': null,
+              'observed-at': '2026-08-28T11:00:00Z'
             },
             {
-              run: '1003',
-              engine: 'anthropic',
-              'requested-model': 'claude-3.5-sonnet',
-              'resolved-model': 'claude-3.5-sonnet',
-              'run-conclusion': 'success'
+              organization: 'github',
+              repository: 'central-agentic-ops',
+              workflow: '.github/workflows/daily.yml',
+              run: '1001',
+              experiment: 'baseline-review',
+              'operational-case': 'merge-latency',
+              'evaluator-digest': 'sha256:abc123',
+              'operational-value': 0.83,
+              'operational-value-definition': 'merge-efficiency',
+              'requested-evidence-at': '2026-08-29T09:30:00Z',
+              'evidence-cutoff': '2026-08-29T10:00:00Z',
+              'maturity-at': '2026-08-30T12:00:00Z',
+              'maturity-status': 'accepted',
+              'delta-from-baseline': 0.12,
+              'observed-at': '2026-08-29T11:00:00Z',
+              'evidence-link': {
+                relation: 'evidence',
+                href: 'https://example.com/evidence/1001',
+                label: 'Evidence 1001'
+              }
             }
           ],
           metadata: {
-            'source-id': 'runs-fixture',
-            'source-kind': 'fixture',
-            'as-of': '2026-08-29T19:00:00Z',
-            'retrieved-at': '2026-08-29T19:01:00Z',
-            completeness: 'complete',
-            freshness: 'fresh',
-            availability: 'available'
-          }
-        },
-        outcomes: {
-          source: 'outcomes',
-          rows: [
-            { run: '1001', 'outcome-state': 'accepted' },
-            { run: '1001', 'outcome-state': 'pending' },
-            { run: '1003', 'outcome-state': 'rejected' }
-          ],
-          metadata: {
-            'source-id': 'outcomes-fixture',
+            'source-id': 'operational-values-fixture',
             'source-kind': 'fixture',
             'as-of': '2026-08-29T19:00:00Z',
             'retrieved-at': '2026-08-29T19:01:00Z',
             completeness: 'partial',
             freshness: 'stale',
-            availability: 'available'
-          }
-        },
-        usage: {
-          source: 'usage',
-          rows: [
-            {
-              invocation: 'invoke-1',
-              run: '1001',
-              engine: 'openai',
-              'requested-model': 'gpt-4.1',
-              'resolved-model': 'gpt-4.1-mini',
-              'input-tokens': 10,
-              'output-tokens': 5,
-              'cache-read-tokens': 2,
-              'cache-write-tokens': 1,
-              'reasoning-tokens': 3,
-              aic: 4
-            },
-            {
-              invocation: 'invoke-2',
-              run: '1002',
-              engine: 'openai',
-              'requested-model': 'gpt-4.1',
-              'resolved-model': 'gpt-4.1-mini',
-              'input-tokens': 7,
-              'output-tokens': 11,
-              'cache-read-tokens': 0,
-              'cache-write-tokens': 4,
-              'reasoning-tokens': 6,
-              aic: 9
-            },
-            {
-              invocation: 'invoke-3',
-              run: '1003',
-              engine: 'anthropic',
-              'requested-model': 'claude-3.5-sonnet',
-              'resolved-model': 'claude-3.5-sonnet',
-              'input-tokens': 3,
-              'output-tokens': 4,
-              'cache-read-tokens': 1,
-              'cache-write-tokens': 0,
-              'reasoning-tokens': 2,
-              aic: 5
-            }
-          ],
-          metadata: {
-            'source-id': 'usage-fixture',
-            'source-kind': 'fixture',
-            'as-of': '2026-08-29T19:00:00Z',
-            'retrieved-at': '2026-08-29T19:01:00Z',
-            completeness: 'complete',
-            freshness: 'fresh',
             availability: 'available'
           }
         }
@@ -179,43 +125,44 @@ test('DLS-PAGE-011 DLS-PAGE-014 built-in engines-models page renders separate en
     </script>
   `);
 
-  await expect(page.getByRole('heading', { name: 'Built In Engines Models Render' })).toBeVisible();
-  await expect(page.getByRole('heading', { name: 'Engines Models', exact: true, level: 2 })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Built In Operational Value Render' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Operational Value', exact: true, level: 2 })).toBeVisible();
   await expect(page.locator('[data-state-axis="availability"]')).toHaveText('available');
   await expect(page.locator('[data-state-axis="completeness"]')).toHaveText('partial');
   await expect(page.locator('[data-state-axis="freshness"]')).toHaveText('stale');
-  await expect(page.locator('.engines-models-table tbody tr')).toHaveCount(2);
-  await expect(page.locator('.engines-models-table tbody tr').first().locator('td')).toContainText([
-    'anthropic',
-    'claude-3.5-sonnet',
-    'claude-3.5-sonnet',
-    '1',
-    'success: 1',
-    '1',
-    '3',
-    '4',
-    '1',
-    '0',
-    '2',
-    '5'
+  await expect(page.locator('.operational-value-table tbody tr')).toHaveCount(2);
+  await expect(page.locator('.operational-value-table tbody tr').first().locator('td')).toContainText([
+    '2026-08-28T11:00:00Z',
+    '0.71',
+    'merge-efficiency',
+    'merge-latency',
+    'sha256:def456',
+    'github',
+    'central-agentic-ops',
+    '.github/workflows/daily.yml',
+    '1002',
+    'baseline-live',
+    '2026-08-28T09:30:00Z',
+    '2026-08-28T10:00:00Z',
+    '2026-08-29T12:00:00Z',
+    'pending',
+    'Unavailable',
+    'Unavailable'
   ]);
-  await expect(page.locator('.engines-models-table tbody tr').nth(1).locator('td')).toContainText([
-    'openai',
-    'gpt-4.1',
-    'gpt-4.1-mini',
-    '2',
-    'success: 1, failure: 1',
-    '2',
-    '17',
-    '16',
-    '2',
-    '5',
-    '9',
-    '13'
+  await expect(page.locator('.operational-value-table tbody tr').nth(1).locator('td')).toContainText([
+    '2026-08-29T11:00:00Z',
+    '0.83',
+    'merge-efficiency',
+    'merge-latency',
+    'sha256:abc123',
+    '1001',
+    'baseline-review',
+    'accepted',
+    '0.12',
+    'Evidence 1001'
   ]);
+  await expect(page.locator('.operational-value-table tbody tr').nth(1).getByRole('link', { name: 'Evidence 1001' })).toHaveAttribute('href', 'https://example.com/evidence/1001');
   await expect(page.locator('.provenance-list li')).toContainText([
-    'runs: runs-fixture (fixture) — as of 2026-08-29T19:00:00Z',
-    'outcomes: outcomes-fixture (fixture) — as of 2026-08-29T19:00:00Z',
-    'usage: usage-fixture (fixture) — as of 2026-08-29T19:00:00Z'
+    'operational-values: operational-values-fixture (fixture) — as of 2026-08-29T19:00:00Z'
   ]);
 });
