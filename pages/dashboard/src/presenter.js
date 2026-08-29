@@ -328,6 +328,10 @@ function renderBuiltInPageBody(page, pageSources) {
     return renderRepositoriesPage(pageSources);
   }
 
+  if (page.page === 'experiments') {
+    return renderExperimentsPage(pageSources);
+  }
+
   return h('p', { className: 'page-placeholder' }, `Built-in page ${page.page} is not rendered in this increment.`);
 }
 
@@ -899,6 +903,87 @@ function renderRepositoriesPage(pageSources) {
 }
 
 /**
+ * @param {Map<string, LogicalSourceInput>} pageSources
+ * @returns {HTMLElement}
+ */
+function renderExperimentsPage(pageSources) {
+  const experimentsSource = pageSources.get('experiments');
+  const assignmentsSource = pageSources.get('experiment-assignments');
+  const graderObservationsSource = pageSources.get('grader-observations');
+  const evalObservationsSource = pageSources.get('eval-observations');
+  const outcomesSource = pageSources.get('outcomes');
+  const usageSource = pageSources.get('usage');
+  const operationalValuesSource = pageSources.get('operational-values');
+
+  const experiments = Array.isArray(experimentsSource?.rows) ? experimentsSource.rows : [];
+  const assignments = Array.isArray(assignmentsSource?.rows) ? assignmentsSource.rows : [];
+  const graderObservations = Array.isArray(graderObservationsSource?.rows) ? graderObservationsSource.rows : [];
+  const evalObservations = Array.isArray(evalObservationsSource?.rows) ? evalObservationsSource.rows : [];
+  const outcomes = Array.isArray(outcomesSource?.rows) ? outcomesSource.rows : [];
+  const usageRows = Array.isArray(usageSource?.rows) ? usageSource.rows : [];
+  const operationalValues = Array.isArray(operationalValuesSource?.rows) ? operationalValuesSource.rows : [];
+
+  const items = experiments.map((experiment, index) => ({
+    key: getExperimentKey(experiment, index),
+    experiment,
+    variantAssignments: summarizeVariantAssignments(assignments, experiment),
+    graderStatusCounts: countByMatchingRows(graderObservations, experiment, 'experiment', 'status'),
+    evalResultCounts: countByMatchingRows(evalObservations, experiment, 'experiment', 'eval-result'),
+    outcomeCounts: countOutcomesForExperiment(assignments, outcomes, experiment),
+    usageTotals: summarizeUsageMeasures(usageRows.filter((row) => row.experiment === experiment.experiment)),
+    operationalValueDefinitions: summarizeExperimentOperationalValues(operationalValues, experiment)
+  }));
+
+  items.sort((left, right) => left.key.localeCompare(right.key));
+
+  return h(
+    'div',
+    { className: 'experiments-page' },
+    h('h3', null, 'Experiment Definitions and Observed Associations'),
+    h(
+      'p',
+      { className: 'page-note' },
+      'Observed assignments, grader observations, eval observations, outcomes, usage, and operational value are presented together without implying causation.'
+    ),
+    h(
+      'div',
+      { className: 'table-region' },
+      h(
+        'table',
+        { className: 'experiments-table' },
+        h(
+          'thead',
+          null,
+          h(
+            'tr',
+            null,
+            h('th', null, 'Experiment'),
+            h('th', null, 'Experiment Name'),
+            h('th', null, 'Observed Variants by Run Count'),
+            h('th', null, 'Grader Observations'),
+            h('th', null, 'Eval Observations'),
+            h('th', null, 'Outcome Observations'),
+            h('th', null, 'Usage AIC'),
+            h('th', null, 'Operational Value by Definition')
+          )
+        ),
+        h(
+          'tbody',
+          null,
+          items.length > 0
+            ? keyed(
+              items,
+              (item) => renderExperimentRow(/** @type {{ key: string, experiment: Record<string, unknown>, variantAssignments: Map<string, number>, graderStatusCounts: Map<string, number>, evalResultCounts: Map<string, number>, outcomeCounts: Map<string, number>, usageTotals: Map<string, number>, operationalValueDefinitions: Map<string, Array<number>> }} */ (item)),
+              (item) => /** @type {{ key: string }} */ (item).key
+            )
+            : h('tr', null, h('td', { colSpan: 8 }, 'No experiments available.'))
+        )
+      )
+    )
+  );
+}
+
+/**
  * @param {{ key: string, workflow: Record<string, unknown>, runCount: number, conclusionCounts: Map<string, number>, outcomeCount: number, aicTotal: number, findingCount: number, operationalValueCount: number }} item
  * @returns {HTMLElement}
  */
@@ -1165,6 +1250,17 @@ function getRepositoryKey(repository, index) {
   return typeof repository.repository === 'string' && repository.repository.length > 0
     ? repository.repository
     : `repository-${index}`;
+}
+
+/**
+ * @param {Record<string, unknown>} experiment
+ * @param {number} index
+ * @returns {string}
+ */
+function getExperimentKey(experiment, index) {
+  return typeof experiment.experiment === 'string' && experiment.experiment.length > 0
+    ? experiment.experiment
+    : `experiment-${index}`;
 }
 
 /**
@@ -1497,6 +1593,27 @@ function renderRepositoryRow(item) {
 }
 
 /**
+ * @param {{ key: string, experiment: Record<string, unknown>, variantAssignments: Map<string, number>, graderStatusCounts: Map<string, number>, evalResultCounts: Map<string, number>, outcomeCounts: Map<string, number>, usageTotals: Map<string, number>, operationalValueDefinitions: Map<string, Array<number>> }} item
+ * @returns {HTMLElement}
+ */
+function renderExperimentRow(item) {
+  const experiment = item.experiment;
+
+  return h(
+    'tr',
+    { 'data-experiment-id': String(experiment.experiment ?? item.key) },
+    h('td', null, toText(experiment.experiment)),
+    h('td', null, toText(experiment['experiment-name'])),
+    h('td', null, formatCounts(item.variantAssignments)),
+    h('td', null, formatCounts(item.graderStatusCounts)),
+    h('td', null, formatCounts(item.evalResultCounts)),
+    h('td', null, formatCounts(item.outcomeCounts)),
+    h('td', null, formatNumber(item.usageTotals.get('aic') ?? 0)),
+    h('td', null, formatOperationalValueDefinitions(item.operationalValueDefinitions))
+  );
+}
+
+/**
  * @param {string} value
  * @returns {string}
  */
@@ -1561,6 +1678,56 @@ function summarizeRepositoryOperationalValues(operationalValues, repository) {
 
   for (const row of operationalValues) {
     if (row.repository !== repository.repository) {
+      continue;
+    }
+    const definition = toText(row['operational-value-definition']);
+    const value = row['operational-value'];
+    if (typeof value !== 'number' || !Number.isFinite(value)) {
+      continue;
+    }
+    const values = byDefinition.get(definition) ?? [];
+    values.push(value);
+    byDefinition.set(definition, values);
+  }
+
+  return byDefinition;
+}
+
+/**
+ * @param {Array<Record<string, unknown>>} assignments
+ * @param {Record<string, unknown>} experiment
+ * @returns {Map<string, number>}
+ */
+function summarizeVariantAssignments(assignments, experiment) {
+  return countBy(assignments.filter((row) => row.experiment === experiment.experiment), 'variant');
+}
+
+/**
+ * @param {Array<Record<string, unknown>>} assignments
+ * @param {Array<Record<string, unknown>>} outcomes
+ * @param {Record<string, unknown>} experiment
+ * @returns {Map<string, number>}
+ */
+function countOutcomesForExperiment(assignments, outcomes, experiment) {
+  const runIds = new Set(
+    assignments
+      .filter((row) => row.experiment === experiment.experiment && typeof row.run === 'string' && row.run.length > 0)
+      .map((row) => String(row.run))
+  );
+  return countBy(outcomes.filter((row) => typeof row.run === 'string' && runIds.has(row.run)), 'outcome-state');
+}
+
+/**
+ * @param {Array<Record<string, unknown>>} operationalValues
+ * @param {Record<string, unknown>} experiment
+ * @returns {Map<string, Array<number>>}
+ */
+function summarizeExperimentOperationalValues(operationalValues, experiment) {
+  /** @type {Map<string, Array<number>>} */
+  const byDefinition = new Map();
+
+  for (const row of operationalValues) {
+    if (row.experiment !== experiment.experiment) {
       continue;
     }
     const definition = toText(row['operational-value-definition']);
