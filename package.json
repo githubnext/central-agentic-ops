@@ -3,7 +3,7 @@
   "private": true,
   "scripts": {
     "docs:dev": "astro dev",
-    "docs:build": "astro build",
+    "docs:build": "npm --prefix pages/dashboard run build && astro build",
     "docs:preview": "astro preview",
     "test": "npm run test:unit && npm run test:integration",
     "test:unit": "node --test tests/unit/*.test.mjs",
