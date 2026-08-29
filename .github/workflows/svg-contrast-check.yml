@@ -40,7 +40,11 @@ jobs:
           npm install --no-save @playwright/test
           npx playwright install --with-deps chromium
 
-      - name: Find changed SVG files
+      # Only push events narrow the check to changed files, so that failures
+      # can be attributed to a specific push for issue filing. Pull requests
+      # always scan every tracked SVG (SVG_FILES stays unset below), giving
+      # full coverage on every PR regardless of which files it touches.
+      - name: Find changed SVG files (push only)
         id: changed
         if: github.event_name == 'push'
         run: |
@@ -55,7 +59,7 @@ jobs:
           echo "$files" >> "$GITHUB_OUTPUT"
           echo "EOF" >> "$GITHUB_OUTPUT"
 
-      - name: Run contrast check on changed SVG files
+      - name: Run contrast check (changed files on push, full scan on PR)
         id: check
         continue-on-error: true
         env:

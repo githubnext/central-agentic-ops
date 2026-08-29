@@ -252,8 +252,13 @@ for (const svgPath of svgFiles) {
 
           // Composite fill over the accumulated background when the element has
           // opacity < 1 (e.g. fill="#8250df" opacity="0.1" produces a near-white
-          // tint rather than the solid fill color).
-          const opacity = parseFloat(bg.getAttribute("opacity") || bg.getAttribute("fill-opacity") || "1");
+          // tint rather than the solid fill color). Effective alpha is the
+          // product of `opacity` and `fill-opacity`; read both from computed
+          // style so CSS-applied opacity (not just attributes) is honored.
+          const bgStyle = window.getComputedStyle(bg);
+          const elementOpacity = parseFloat(bgStyle.opacity || bg.getAttribute("opacity") || "1");
+          const fillOpacity = parseFloat(bgStyle.fillOpacity || bg.getAttribute("fill-opacity") || "1");
+          const opacity = elementOpacity * fillOpacity;
           if (opacity >= 1) {
             bgColor = parsed; // opaque: replace current accumulator
           } else {
