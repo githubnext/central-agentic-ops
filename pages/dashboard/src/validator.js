@@ -10,6 +10,8 @@ import {
   DATASET_COMPLETENESS_VALUES,
   DATASET_FRESHNESS_VALUES,
   DATASET_METADATA_KEYS,
+  BUILT_IN_PAGE_DATA_STATE_KEYS,
+  BUILT_IN_PAGE_DEFINITION_KEYS,
   DEFAULTS_KEYS,
   ERROR_CODES,
   LINK_FIELD_NAMES,
@@ -372,6 +374,9 @@ function validateBuiltInPageContent(pageName, page, path, errors) {
  * @param {ValidationError[]} errors
  */
 function validateBuiltInPageDefinition(pageName, definition, path, errors) {
+  validateBuiltInPageDefinitionKeys(definition, path, errors);
+  validateBuiltInPageDataState(definition['data-state'], path, errors);
+
   if (!Array.isArray(definition.views) || definition.views.length === 0) {
     errors.push(createError(
       ERROR_CODES.missingOrInvalidRequiredField,
@@ -446,6 +451,60 @@ function getBuiltInRequiredFields(pageName, sourceName) {
   }
 
   return /** @type {string[]} */ (pageFields[/** @type {keyof typeof pageFields} */ (sourceName)]);
+}
+
+/**
+ * @param {Record<string, unknown>} definition
+ * @param {string} path
+ * @param {ValidationError[]} errors
+ */
+function validateBuiltInPageDefinitionKeys(definition, path, errors) {
+  for (const key of Object.keys(definition)) {
+    if (!BUILT_IN_PAGE_DEFINITION_KEYS.includes(key)) {
+      errors.push(createError(
+        ERROR_CODES.unknownOrDuplicateKey,
+        `Unknown key "${key}" is not allowed at ${path}.definition.`,
+        `${path}.definition.${key}`
+      ));
+    }
+  }
+}
+
+/**
+ * @param {unknown} dataState
+ * @param {string} path
+ * @param {ValidationError[]} errors
+ */
+function validateBuiltInPageDataState(dataState, path, errors) {
+  const dataStatePath = `${path}.definition.data-state`;
+  if (!isPlainObject(dataState)) {
+    errors.push(createError(
+      ERROR_CODES.missingOrInvalidRequiredField,
+      'built-in page definition must expose independent availability, completeness, and freshness state.',
+      dataStatePath
+    ));
+    return;
+  }
+
+  for (const key of Object.keys(dataState)) {
+    if (!BUILT_IN_PAGE_DATA_STATE_KEYS.includes(key)) {
+      errors.push(createError(
+        ERROR_CODES.unknownOrDuplicateKey,
+        `Unknown key "${key}" is not allowed at ${dataStatePath}.`,
+        `${dataStatePath}.${key}`
+      ));
+    }
+  }
+
+  for (const key of BUILT_IN_PAGE_DATA_STATE_KEYS) {
+    if (dataState[key] !== true) {
+      errors.push(createError(
+        ERROR_CODES.missingOrInvalidRequiredField,
+        `built-in page definition must expose independent ${key} state with canonical boolean true.`,
+        `${dataStatePath}.${key}`
+      ));
+    }
+  }
 }
 
 /**

@@ -98,7 +98,9 @@ export const BUILT_IN_PAGE_VALUES = [
   'findings'
 ];
 
-export const BUILT_IN_PAGE_DEFINITION_KEYS = ['views'];
+export const BUILT_IN_PAGE_DEFINITION_KEYS = ['views', 'data-state'];
+
+export const BUILT_IN_PAGE_DATA_STATE_KEYS = ['availability', 'completeness', 'freshness'];
 
 export const BUILT_IN_PAGE_REQUIRED_SOURCES = {
   overview: ['workflows', 'runs', 'usage', 'findings', 'operational-values'],
