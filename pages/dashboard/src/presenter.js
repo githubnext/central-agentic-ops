@@ -1555,11 +1555,21 @@ function renderChartView(pageId, title, view, sourceName, rows, metadata, contex
     y: y ? (typeof y.aggregate === 'string' && y.aggregate === 'count' ? '1' : toText(row[y.field])) : 'unknown',
     color: color ? toText(row[color.field]) : null
   }));
+  const colorCategories = color
+    ? [...new Set(points.map((point) => point.color ?? 'unknown'))].sort((left, right) => left.localeCompare(right))
+    : [];
 
   return renderPageSection(pageId, title, [
     h('p', { className: 'view-source' }, `Source: ${sourceName}`),
     h('p', { className: 'view-metadata' }, `As of ${metadata['as-of']} • completeness ${metadata.completeness} • freshness ${metadata.freshness}`),
     h('p', { className: 'chart-default', 'data-chart-default': chartDefault }, `Default chart type: ${chartDefault}`),
+    ...(color
+      ? [h(
+        'p',
+        { className: 'chart-legend-text', 'data-chart-legend': 'text' },
+        `Color categories: ${colorCategories.length > 0 ? colorCategories.join(', ') : 'unknown'}`
+      )]
+      : []),
     h(
       'div',
       { className: 'table-region' },

@@ -412,6 +412,7 @@ describe('presenter built-in and custom pages', () => {
 
     const chartSection = [...rendered.querySelectorAll('.page-section')].find((section) => section.textContent?.includes('Daily Runs'));
     expect(chartSection?.querySelector('[data-chart-default="line"]')?.textContent).toContain('Default chart type: line');
+    expect(chartSection?.querySelector('[data-chart-legend="text"]')?.textContent).toBe('Color categories: failure, success');
     expect(chartSection?.querySelectorAll('.custom-chart-table tbody tr')).toHaveLength(2);
 
     const emptySection = [...rendered.querySelectorAll('.page-section')].find((section) => section.textContent?.includes('Empty Usage'));
