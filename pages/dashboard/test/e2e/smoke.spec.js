@@ -124,15 +124,15 @@ test('DLS-PAGE-006 DLS-PAGE-014 built-in runs page renders status counts, outcom
   `);
 
   await expect(page.getByRole('heading', { name: 'Built In Runs Render' })).toBeVisible();
-  await expect(page.getByRole('heading', { name: 'Runs', exact: true })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Runs', exact: true, level: 2 })).toBeVisible();
   await expect(page.locator('[data-state-axis="availability"]')).toHaveText('available');
   await expect(page.locator('[data-state-axis="completeness"]')).toHaveText('partial');
   await expect(page.locator('[data-state-axis="freshness"]')).toHaveText('stale');
-  await expect(page.locator('.run-status-counts')).toContainText(['completed: 1', 'in-progress: 1']);
-  await expect(page.locator('.run-conclusion-counts')).toContainText(['success: 1', 'unknown: 1']);
-  await expect(page.locator('.run-outcome-counts')).toContainText(['accepted: 1', 'pending: 1']);
+  await expect(page.locator('.run-status-counts li')).toContainText(['completed: 1', 'in-progress: 1']);
+  await expect(page.locator('.run-conclusion-counts li')).toContainText(['success: 1', 'unknown: 1']);
+  await expect(page.locator('.run-outcome-counts li')).toContainText(['accepted: 1', 'pending: 1']);
   await expect(page.locator('tbody tr')).toHaveCount(2);
-  await expect(page.locator('tbody tr').first()).toContainText([
+  await expect(page.locator('tbody tr').first().locator('td')).toContainText([
     '1001',
     'completed',
     'success',
@@ -147,7 +147,7 @@ test('DLS-PAGE-006 DLS-PAGE-014 built-in runs page renders status counts, outcom
     '2',
     'Run 1001'
   ]);
-  await expect(page.locator('tbody tr').nth(1)).toContainText([
+  await expect(page.locator('tbody tr').nth(1).locator('td')).toContainText([
     '1002',
     'in-progress',
     'unknown',
