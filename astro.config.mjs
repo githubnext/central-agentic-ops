@@ -61,10 +61,40 @@ export default defineConfig({
         Banner: "./docs/components/ExperimentalBanner.astro",
         Footer: "./docs/components/SiteFooter.astro",
         Hero: "./docs/components/HierarchyHero.astro",
+        // starlight-theme-galaxy's ThemeSelect renders an unlabeled theme toggle button
+        // (its HeaderButton drops the aria-label prop); this override fixes the a11y bug.
+        ThemeSelect: "./docs/components/ThemeSelect.astro",
       },
       editLink: {
         baseUrl: "https://github.com/githubnext/central-agentic-ops/edit/main/",
       },
+      head: [
+        {
+          // Starlight renders wide markdown tables as their own horizontally scrollable
+          // regions (`overflow: auto`), but they aren't keyboard focusable, so keyboard
+          // users can't reach clipped columns (axe `scrollable-region-focusable`, WCAG
+          // 2.1.1/2.1.3). Make overflowing tables focusable with an accessible name.
+          tag: "script",
+          content: `(function () {
+            function markScrollableTables() {
+              document.querySelectorAll(".sl-markdown-content table").forEach((table) => {
+                if (table.scrollWidth <= table.clientWidth) return;
+                if (!table.hasAttribute("tabindex")) table.setAttribute("tabindex", "0");
+                if (!table.hasAttribute("aria-label") && !table.hasAttribute("aria-labelledby")) {
+                  table.setAttribute("aria-label", "Scrollable table");
+                }
+              });
+            }
+            if (document.readyState === "loading") {
+              document.addEventListener("DOMContentLoaded", markScrollableTables);
+            } else {
+              markScrollableTables();
+            }
+            window.addEventListener("resize", markScrollableTables);
+            document.addEventListener("astro:page-load", markScrollableTables);
+          })();`,
+        },
+      ],
       social: [
         {
           icon: "github",
