@@ -23,6 +23,7 @@ function focusedPackageSource(slug) {
 }
 const advisoryPackageSource = focusedPackageSource("advisory");
 const craPackageSource = focusedPackageSource("eu-cra-compliance");
+const wikiskillPackageSource = focusedPackageSource("wikiskill");
 const advisoryExpectedFiles = [
   ".github/aw/advisory/implementation-status.md",
   ".github/workflows/advisory-package-maintainer.md",
@@ -44,6 +45,15 @@ const craExpectedFiles = [
   ".github/workflows/graders/eu-cra-compliance-package-maintainer-operational-value.sh",
   ".github/workflows/shared/control-precompute.md",
   ".github/workflows/shared/control.md",
+];
+const wikiskillExpectedFiles = [
+  ".github/workflows/shared/control-precompute.md",
+  ".github/workflows/shared/control.md",
+  ".github/workflows/shared/review-bundle.md",
+  ".github/workflows/wikiskill-experience-compiler.md",
+  ".github/workflows/wikiskill-skill-proposer.md",
+  ".github/workflows/wikiskill-skill-validator.md",
+  ".github/workflows/wikiskill.md",
 ];
 
 const expectedFiles = [
@@ -212,6 +222,34 @@ test("gh aw add installs the focused Advisory package contract", { timeout: 180_
         ".github/workflows/uk-ai-advisory.md",
       ],
       "focused Advisory package manifest must own its entry workflows and ledger",
+    );
+  } finally {
+    rmSync(consumer, { recursive: true, force: true });
+  }
+});
+
+test("gh aw add installs the focused WikiSkill package contract", { timeout: 180_000 }, () => {
+  const consumer = installPackage(wikiskillPackageSource);
+
+  try {
+    for (const relativePath of wikiskillExpectedFiles) {
+      assert.ok(existsSync(join(consumer, relativePath)), `focused WikiSkill package omitted ${relativePath}`);
+    }
+    assert.ok(
+      !existsSync(join(consumer, ".github", "workflows", "dependabot.md")),
+      "focused WikiSkill package installed an unrelated orchestrator",
+    );
+
+    const packageManifests = readdirSync(join(consumer, ".github", "aw", "packages"));
+    assert.equal(packageManifests.length, 1, "expected one focused WikiSkill package manifest");
+    const installedManifest = JSON.parse(readFileSync(
+      join(consumer, ".github", "aw", "packages", packageManifests[0]),
+      "utf8",
+    ));
+    assert.deepEqual(
+      installedManifest.files.map(({ destination }) => destination).sort(),
+      [".github/workflows/wikiskill.md"],
+      "focused WikiSkill package manifest must own its orchestrator entry point",
     );
   } finally {
     rmSync(consumer, { recursive: true, force: true });

@@ -299,6 +299,7 @@ test("enterprise defaults, budgets, timeouts, and concurrency are finite", () =>
     "dependabot.md": "CENTRAL_AGENTIC_OPS_DEPENDABOT_MONTHLY_AI_CREDIT_BUDGET",
     "eu-cra-compliance.md": "CENTRAL_AGENTIC_OPS_EU_CRA_COMPLIANCE_MONTHLY_AI_CREDIT_BUDGET",
     "optimization.md": "CENTRAL_AGENTIC_OPS_OPTIMIZATION_MONTHLY_AI_CREDIT_BUDGET",
+    "wikiskill.md": "CENTRAL_AGENTIC_OPS_WIKISKILL_MONTHLY_AI_CREDIT_BUDGET",
   };
   const expected = {
     "uk-ai-advisory.md": { credits: 250, timeout: 15, dispatchMax: 50, workers: 1 },
@@ -323,6 +324,10 @@ test("enterprise defaults, budgets, timeouts, and concurrency are finite", () =>
     "eu-cra-compliance-vulnerability-handling-auditor.md": { credits: 150, timeout: 30 },
     "optimization-ai-credit-auditor.md": { credits: 350, timeout: 35 },
     "optimization-ai-credit-optimizer.md": { credits: 500, timeout: 30 },
+    "wikiskill.md": { credits: 200, timeout: 15, dispatchMax: 30, workers: 3 },
+    "wikiskill-experience-compiler.md": { credits: 300, timeout: 30 },
+    "wikiskill-skill-proposer.md": { credits: 250, timeout: 20 },
+    "wikiskill-skill-validator.md": { credits: 350, timeout: 30 },
   };
 
   for (const [name, limits] of Object.entries(expected)) {
@@ -438,7 +443,7 @@ test("deterministic workflows pin third-party actions by commit SHA", () => {
 });
 
 test("package manifests exclude repository-only tests", () => {
-  for (const relativePath of ["aw.yml", join("advisory", "aw.yml"), join("ambient-context", "aw.yml"), join("aw-maintenance", "aw.yml"), join("dependabot", "aw.yml"), join("eu-cra-compliance", "aw.yml"), join("optimization", "aw.yml")]) {
+  for (const relativePath of ["aw.yml", join("advisory", "aw.yml"), join("ambient-context", "aw.yml"), join("aw-maintenance", "aw.yml"), join("dependabot", "aw.yml"), join("eu-cra-compliance", "aw.yml"), join("optimization", "aw.yml"), join("wikiskill", "aw.yml")]) {
     const manifest = readFileSync(join(root, relativePath), "utf8");
     assert.doesNotMatch(manifest, /(?:review-smoke|enterprise-canary|enterprise-stress|tests\/e2e|\.github\/aw\/e2e)/, relativePath);
   }
@@ -707,6 +712,10 @@ test("live workers require target-owned package authority before agent execution
     ["optimization.md", "optimization"],
     ["optimization-ai-credit-auditor.md", "optimization"],
     ["optimization-ai-credit-optimizer.md", "optimization"],
+    ["wikiskill.md", "wikiskill"],
+    ["wikiskill-experience-compiler.md", "wikiskill"],
+    ["wikiskill-skill-proposer.md", "wikiskill"],
+    ["wikiskill-skill-validator.md", "wikiskill"],
   ]) {
     assert.match(workflow(name), new RegExp(`bundle: ${bundle}`));
   }
@@ -720,6 +729,7 @@ test("orchestrators expose scheduled variables and independent manual inputs", (
     ["dependabot.md", "DEPENDABOT"],
     ["eu-cra-compliance.md", "EU_CRA_COMPLIANCE"],
     ["optimization.md", "OPTIMIZATION"],
+    ["wikiskill.md", "WIKISKILL"],
   ]) {
     const source = workflow(name);
 
@@ -767,6 +777,10 @@ test("operation workflows optionally load per-operation markdown steering", () =
     ["optimization.md", "optimization"],
     ["optimization-ai-credit-auditor.md", "optimization"],
     ["optimization-ai-credit-optimizer.md", "optimization"],
+    ["wikiskill.md", "wikiskill"],
+    ["wikiskill-experience-compiler.md", "wikiskill"],
+    ["wikiskill-skill-proposer.md", "wikiskill"],
+    ["wikiskill-skill-validator.md", "wikiskill"],
   ]) {
     assert.match(
       workflow(name),
@@ -801,7 +815,7 @@ test("shared control keeps manual and scheduled routing event-scoped", () => {
   const control = workflow("shared/control.md");
   const precompute = workflow("shared/control-precompute.md");
 
-  for (const name of ["uk-ai-advisory.md", "ambient-context.md", "aw-maintenance.md", "dependabot.md", "eu-cra-compliance.md", "optimization.md"]) {
+  for (const name of ["uk-ai-advisory.md", "ambient-context.md", "aw-maintenance.md", "dependabot.md", "eu-cra-compliance.md", "optimization.md", "wikiskill.md"]) {
     const orchestrator = workflow(name);
     assert.match(orchestrator, /GH_AW_SAFE_OUTPUT_MODE:.*inputs\.safe_output_mode.*\|\| 'review'/);
     assert.match(orchestrator, /CENTRAL_AGENTIC_OPS_PACKAGE_ENABLED:.*_ENABLED \|\| 'true'/);
@@ -855,6 +869,9 @@ test("every worker uses the standard dispatch envelope and safe mode vocabulary"
     ["eu-cra-compliance-vulnerability-handling-auditor.md", "EU_CRA_COMPLIANCE", "EU_CRA_COMPLIANCE_VULNERABILITY_HANDLING_AUDITOR"],
     ["optimization-ai-credit-auditor.md", "OPTIMIZATION", "OPTIMIZATION_AUDITOR"],
     ["optimization-ai-credit-optimizer.md", "OPTIMIZATION", "OPTIMIZATION_OPTIMIZER"],
+    ["wikiskill-experience-compiler.md", "WIKISKILL", "WIKISKILL_EXPERIENCE_COMPILER"],
+    ["wikiskill-skill-proposer.md", "WIKISKILL", "WIKISKILL_SKILL_PROPOSER"],
+    ["wikiskill-skill-validator.md", "WIKISKILL", "WIKISKILL_SKILL_VALIDATOR"],
   ];
 
   for (const [name, packageName, workerName] of workerNames) {
@@ -890,6 +907,40 @@ test("every worker uses the standard dispatch envelope and safe mode vocabulary"
     for (const line of source.match(/^\s+- repository:.*inputs\.safe_output_repo.*$/gm) || []) {
       assert.match(line, /safe_output_mode.*'review'.*safe_output_repo.*github\.repository.*target_repo/);
     }
+  }
+});
+
+test("WikiSkill preserves experience, wiki, candidate, and validation boundaries", () => {
+  const orchestrator = workflow("wikiskill.md");
+  const compiler = workflow("wikiskill-experience-compiler.md");
+  const proposer = workflow("wikiskill-skill-proposer.md");
+  const validator = workflow("wikiskill-skill-validator.md");
+  const manifest = readFileSync(join(root, "wikiskill", "aw.yml"), "utf8");
+
+  assert.match(orchestrator, /^name: "WikiSkill"$/m);
+  assert.match(orchestrator, /workflows: \[wikiskill-experience-compiler, wikiskill-skill-proposer, wikiskill-skill-validator\]/);
+  assert.match(orchestrator, /worker_credits_per_target: "900"/);
+  assert.match(manifest, /- \.github\/workflows\/wikiskill\.md/);
+
+  assert.match(compiler, /^name: "WikiSkill \/ Experience Compiler"$/m);
+  assert.match(compiler, /never create, edit, validate, or activate a skill/i);
+  assert.match(compiler, /Never persist raw traces/i);
+  assert.match(compiler, /Never delete a pattern because a candidate skill failed/i);
+
+  assert.match(proposer, /^name: "WikiSkill \/ Skill Proposer"$/m);
+  assert.match(proposer, /Do not query or read issues, pull requests, review comments, workflow runs, logs, or other raw experience/);
+  assert.match(proposer, /unchanged rejected proposals must not cycle/i);
+  assert.doesNotMatch(proposer, /toolsets: \[[^\]]*(?:issues|pull_requests|actions)/);
+
+  assert.match(validator, /^name: "WikiSkill \/ Skill Validator"$/m);
+  assert.match(validator, /candidate_score > incumbent_score/);
+  assert.match(validator, /The proposer must not receive these cases/);
+  assert.match(validator, /\.github\/skills\/wikiskill-\*\/SKILL\.md/);
+
+  for (const source of [compiler, proposer, validator]) {
+    assert.match(source, /uses: shared\/review-bundle\.md/);
+    assert.match(source, /draft: true/);
+    assert.match(source, /publish_review_bundle/);
   }
 });
 
@@ -1252,6 +1303,10 @@ test("clean-room compilation emits the expected GitHub Actions settings", { time
       "optimization-ai-credit-auditor.lock.yml",
       "optimization-ai-credit-optimizer.lock.yml",
       "optimization.lock.yml",
+      "wikiskill-experience-compiler.lock.yml",
+      "wikiskill-skill-proposer.lock.yml",
+      "wikiskill-skill-validator.lock.yml",
+      "wikiskill.lock.yml",
     ];
     const expectedLockNames = [
       ...packageLockNames,
@@ -1295,6 +1350,7 @@ test("clean-room compilation emits the expected GitHub Actions settings", { time
       ["dependabot.lock.yml", "DEPENDABOT"],
       ["eu-cra-compliance.lock.yml", "EU_CRA_COMPLIANCE"],
       ["optimization.lock.yml", "OPTIMIZATION"],
+      ["wikiskill.lock.yml", "WIKISKILL"],
     ]);
     for (const [name, packageName] of orchestratorGates) {
       const generated = workflow(name, generatedDirectory);
@@ -1337,6 +1393,9 @@ test("clean-room compilation emits the expected GitHub Actions settings", { time
       ["eu-cra-compliance-vulnerability-handling-auditor.lock.yml", ["EU_CRA_COMPLIANCE", "EU_CRA_COMPLIANCE_VULNERABILITY_HANDLING_AUDITOR"]],
       ["optimization-ai-credit-auditor.lock.yml", ["OPTIMIZATION", "OPTIMIZATION_AUDITOR"]],
       ["optimization-ai-credit-optimizer.lock.yml", ["OPTIMIZATION", "OPTIMIZATION_OPTIMIZER"]],
+      ["wikiskill-experience-compiler.lock.yml", ["WIKISKILL", "WIKISKILL_EXPERIENCE_COMPILER"]],
+      ["wikiskill-skill-proposer.lock.yml", ["WIKISKILL", "WIKISKILL_SKILL_PROPOSER"]],
+      ["wikiskill-skill-validator.lock.yml", ["WIKISKILL", "WIKISKILL_SKILL_VALIDATOR"]],
     ]);
     for (const [name, [packageName, workerName]] of workerGates) {
       const generated = workflow(name, generatedDirectory);
@@ -1492,6 +1551,10 @@ test("Pages inventory links multiline orchestrator worker lists", () => {
       },
       { id: "optimization", workers: ["optimization-ai-credit-auditor", "optimization-ai-credit-optimizer"] },
       { id: "uk-ai-advisory", workers: ["advisory-uk-ai-operational-resilience"] },
+      {
+        id: "wikiskill",
+        workers: ["wikiskill-experience-compiler", "wikiskill-skill-proposer", "wikiskill-skill-validator"],
+      },
     ]);
   } finally {
     rmSync(temporaryRoot, { recursive: true, force: true });
