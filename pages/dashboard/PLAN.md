@@ -53,7 +53,7 @@
 
 - `src/components/badge.js` — presentation-only Primer status, mode, and active-state badges.
 - `src/components/data-state.js` — presentation-only data-state metrics card grid for availability, completeness, and freshness.
-- `src/components/table-region.js` — presentation-only reusable table wrapper for repeated table-region markup, header rows, and empty-state rows.
+- `src/components/table-region.js` — presentation-only reusable table wrapper for repeated table-region markup, header rows, empty-state rows, and keyed body-row descriptors across built-in and custom tables.
 
 ## Infrastructure blockers
 
@@ -61,6 +61,15 @@
 - 2026-08-28: `npm run test:e2e` is currently blocked in this environment because the Playwright Chromium executable is not provisioned (`browserType.launch: Executable doesn't exist`). The workflow should prefer the built-in Playwright MCP browser tools until the package-level browser dependency is available.
 
 ## Run log
+
+### 2026-08-29 (table-region built-in inventory expansion refactor)
+
+- Re-inventoried `src/presenter.js` after the first table extraction and found the best remaining bounded duplication in repeated `.table-region > table > thead/tbody` construction still in `renderEnginesModelsPage`, `renderOperationalValuePage`, `renderOrganizationsPage`, `renderRepositoriesPage`, `renderExperimentsPage`, `renderGradersPage`, and `renderEvalsPage`.
+- Reused `src/components/table-region.js` at every remaining duplicated call site identified above, preserving all existing DOM text, accessible names, class names, empty-state messages, and keyed row renderers while collapsing seven more built-in table wrappers into the shared component.
+- Added unit coverage in `test/unit/table-region.test.js` for keyed-list descriptor bodies so the shared component is explicitly tested against the built-in presenter's keyed table usage.
+- Proved unchanged behavior by keeping the full existing unit and browser suites green and by reviewing the presenter diff to confirm the affected pages changed only by replacing duplicated table wrapper construction with `renderTableRegion(...)` calls.
+- Verified quality gates from `pages/dashboard/`: `npm install`, `npm run typecheck`, `npm run lint`, `npm test`, and `npm run test:e2e` all pass.
+- Next candidates in the queue: extract repeated custom-view source/metadata/context chrome; extract repeated provenance section rendering for built-in pages; extract repeated built-in page section headings plus inventory-table composition once the remaining table call sites settle.
 
 ### 2026-08-29 (table-region component refactor)
 
@@ -70,7 +79,7 @@
 - Added `test/unit/table-region.test.js` covering populated tables, empty tables, and custom table/chart attribute preservation.
 - Proved unchanged behavior by keeping the existing presenter unit tests and Playwright smoke tests green after the extraction, including custom-view and built-in page assertions that depend on the affected tables; compared the affected presenter output structurally via `git diff` against the pre-refactor `src/presenter.js` and confirmed the changes are limited to replacing duplicated construction with the shared component.
 - Verified quality gates from `pages/dashboard/`: `npm install`, `npm run typecheck`, `npm run lint`, `npm test`, and `npm run test:e2e` all pass.
-- Next candidates in the queue: extract repeated built-in inventory-table construction across `engines-models`, `organizations`, `repositories`, `experiments`, `graders`, `evals`, and `operational-value`; extract repeated custom-view source/metadata/context chrome; extract repeated provenance section rendering for built-in pages.
+- Next candidates in the queue: extract repeated custom-view source/metadata/context chrome; extract repeated provenance section rendering for built-in pages; extract repeated built-in page section headings plus inventory-table composition once the remaining table call sites settle.
 
 ### 2026-08-29 (compliance semantic-and-context coverage slice)
 
