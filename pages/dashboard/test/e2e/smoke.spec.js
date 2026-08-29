@@ -31,6 +31,145 @@ function buildPresenterModuleUrl() {
   return `data:text/javascript;charset=utf-8,${encodeURIComponent(presenterSource)}`;
 }
 
+test('DLS-PAGE-010 DLS-PAGE-014 built-in usage page renders raw-token measures separately from AIC with scope, rollout mode, time, provenance, and independent data state in browser', async ({ page }) => {
+  const presenterModuleUrl = buildPresenterModuleUrl();
+
+  await page.setContent(`
+    <div id="root"></div>
+    <script type="module">
+      import { renderDashboard } from ${JSON.stringify(presenterModuleUrl)};
+
+      const dashboardDocument = {
+        languageVersion: '0.1.0',
+        dashboard: {
+          id: 'built-in-usage-render',
+          title: 'Built In Usage Render',
+          pages: [
+            {
+              id: 'usage',
+              kind: 'built-in',
+              page: 'usage',
+              title: 'Usage',
+              definition: {
+                'data-state': {
+                  availability: true,
+                  completeness: true,
+                  freshness: true
+                },
+                views: [
+                  { id: 'usage-source', data: { source: 'usage' } }
+                ]
+              }
+            }
+          ]
+        }
+      };
+
+      const sources = {
+        usage: {
+          source: 'usage',
+          rows: [
+            {
+              organization: 'githubnext',
+              repository: 'central-agentic-ops',
+              workflow: 'dashboard.yml',
+              run: '1001',
+              invocation: 'invoke-1',
+              engine: 'openai',
+              'requested-model': 'gpt-4.1',
+              'resolved-model': 'gpt-4.1-mini',
+              'rollout-mode': 'review',
+              'observed-at': '2026-08-29T17:00:00Z',
+              'input-tokens': 10,
+              'output-tokens': 5,
+              'cache-read-tokens': 2,
+              'cache-write-tokens': 1,
+              'reasoning-tokens': 3,
+              aic: 4
+            },
+            {
+              organization: 'githubnext',
+              repository: 'central-agentic-ops',
+              workflow: 'release.yml',
+              run: '1002',
+              invocation: 'invoke-2',
+              engine: 'anthropic',
+              'requested-model': 'claude-3.5-sonnet',
+              'resolved-model': 'claude-3.5-sonnet',
+              'rollout-mode': 'live',
+              'observed-at': '2026-08-29T18:00:00Z',
+              'input-tokens': 7,
+              'output-tokens': 11,
+              'cache-read-tokens': 0,
+              'cache-write-tokens': 4,
+              'reasoning-tokens': 6,
+              aic: 9
+            }
+          ],
+          metadata: {
+            'source-id': 'usage-fixture',
+            'source-kind': 'fixture',
+            'as-of': '2026-08-29T18:30:00Z',
+            'retrieved-at': '2026-08-29T18:31:00Z',
+            completeness: 'partial',
+            freshness: 'stale',
+            availability: 'available'
+          }
+        }
+      };
+
+      document.querySelector('#root').append(renderDashboard({ document: dashboardDocument, sources }));
+    </script>
+  `);
+
+  await expect(page.getByRole('heading', { name: 'Built In Usage Render' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Usage', exact: true, level: 2 })).toBeVisible();
+  await expect(page.locator('[data-state-axis="availability"]')).toHaveText('available');
+  await expect(page.locator('[data-state-axis="completeness"]')).toHaveText('partial');
+  await expect(page.locator('[data-state-axis="freshness"]')).toHaveText('stale');
+  await expect(page.locator('.usage-totals li')).toContainText([
+    'input-tokens: 17',
+    'output-tokens: 16',
+    'cache-read-tokens: 2',
+    'cache-write-tokens: 5',
+    'reasoning-tokens: 9',
+    'aic: 13'
+  ]);
+  await expect(page.locator('.usage-table tbody tr')).toHaveCount(2);
+  await expect(page.locator('.usage-table tbody tr').first().locator('td')).toContainText([
+    'githubnext',
+    'central-agentic-ops',
+    'dashboard.yml',
+    '1001',
+    'openai',
+    'gpt-4.1',
+    'gpt-4.1-mini',
+    'review',
+    '2026-08-29T17:00:00Z',
+    '10',
+    '5',
+    '2',
+    '1',
+    '3',
+    '4'
+  ]);
+  await expect(page.locator('.usage-table tbody tr').nth(1).locator('td')).toContainText([
+    'release.yml',
+    'anthropic',
+    'claude-3.5-sonnet',
+    'live',
+    '2026-08-29T18:00:00Z',
+    '7',
+    '11',
+    '4',
+    '6',
+    '9'
+  ]);
+  await expect(page.locator('.provenance-list li')).toContainText([
+    'usage: usage-fixture (fixture) — as of 2026-08-29T18:30:00Z'
+  ]);
+});
+
 test('DLS-PAGE-005 DLS-PAGE-014 built-in workflows page renders inventory, active state, rollout mode, run conclusions, outcomes, usage, findings, operational value, and independent data state in browser', async ({ page }) => {
   const presenterModuleUrl = buildPresenterModuleUrl();
 

@@ -3,6 +3,112 @@ import { describe, expect, it } from 'vitest';
 import { renderDashboard } from '../../src/presenter.js';
 
 describe('presenter built-in pages', () => {
+  it('DLS-PAGE-010 DLS-PAGE-014 renders built-in usage page raw-token measures separately from AIC with scope, rollout mode, time, provenance, and independent data state deterministically', () => {
+    /** @type {import('../../src/presenter.js').PresentationInput['document']} */
+    const document = {
+      languageVersion: '0.1.0',
+      dashboard: {
+        id: 'usage-dashboard',
+        title: 'Usage Dashboard',
+        pages: [
+          {
+            id: 'usage',
+            kind: /** @type {'built-in'} */ ('built-in'),
+            page: 'usage',
+            title: 'Usage',
+            definition: {
+              'data-state': {
+                availability: true,
+                completeness: true,
+                freshness: true
+              },
+              views: [
+                { id: 'usage-source', data: { source: 'usage' } }
+              ]
+            }
+          }
+        ]
+      }
+    };
+
+    const rendered = renderDashboard({
+      document,
+      sources: {
+        usage: {
+          source: 'usage',
+          rows: [
+            {
+              organization: 'githubnext',
+              repository: 'central-agentic-ops',
+              workflow: 'dashboard.yml',
+              run: '1001',
+              invocation: 'invoke-1',
+              engine: 'openai',
+              'requested-model': 'gpt-4.1',
+              'resolved-model': 'gpt-4.1-mini',
+              'rollout-mode': 'review',
+              'observed-at': '2026-08-29T17:00:00Z',
+              'input-tokens': 10,
+              'output-tokens': 5,
+              'cache-read-tokens': 2,
+              'cache-write-tokens': 1,
+              'reasoning-tokens': 3,
+              aic: 4
+            },
+            {
+              organization: 'githubnext',
+              repository: 'central-agentic-ops',
+              workflow: 'release.yml',
+              run: '1002',
+              invocation: 'invoke-2',
+              engine: 'anthropic',
+              'requested-model': 'claude-3.5-sonnet',
+              'resolved-model': 'claude-3.5-sonnet',
+              'rollout-mode': 'live',
+              'observed-at': '2026-08-29T18:00:00Z',
+              'input-tokens': 7,
+              'output-tokens': 11,
+              'cache-read-tokens': 0,
+              'cache-write-tokens': 4,
+              'reasoning-tokens': 6,
+              aic: 9
+            }
+          ],
+          metadata: {
+            'source-id': 'usage-fixture',
+            'source-kind': 'fixture',
+            'as-of': '2026-08-29T18:30:00Z',
+            'retrieved-at': '2026-08-29T18:31:00Z',
+            completeness: 'partial',
+            freshness: 'stale',
+            availability: 'available'
+          }
+        }
+      }
+    });
+
+    expect(rendered.querySelector('[data-page-name="usage"]')?.textContent).toContain('Usage Totals');
+    expect(rendered.querySelector('[data-state-axis="availability"]')?.textContent).toBe('available');
+    expect(rendered.querySelector('[data-state-axis="completeness"]')?.textContent).toBe('partial');
+    expect(rendered.querySelector('[data-state-axis="freshness"]')?.textContent).toBe('stale');
+    expect(rendered.querySelector('.usage-totals')?.textContent).toContain('input-tokens: 17');
+    expect(rendered.querySelector('.usage-totals')?.textContent).toContain('output-tokens: 16');
+    expect(rendered.querySelector('.usage-totals')?.textContent).toContain('cache-read-tokens: 2');
+    expect(rendered.querySelector('.usage-totals')?.textContent).toContain('cache-write-tokens: 5');
+    expect(rendered.querySelector('.usage-totals')?.textContent).toContain('reasoning-tokens: 9');
+    expect(rendered.querySelector('.usage-totals')?.textContent).toContain('aic: 13');
+    expect(rendered.querySelectorAll('.usage-table tbody tr')).toHaveLength(2);
+    expect(rendered.querySelector('.usage-table tbody tr')?.textContent).toContain('openai');
+    expect(rendered.querySelector('.usage-table tbody tr')?.textContent).toContain('gpt-4.1');
+    expect(rendered.querySelector('.usage-table tbody tr')?.textContent).toContain('gpt-4.1-mini');
+    expect(rendered.querySelector('.usage-table tbody tr')?.textContent).toContain('review');
+    expect(rendered.querySelector('.usage-table tbody tr')?.textContent).toContain('2026-08-29T17:00:00Z');
+    expect(rendered.querySelector('.usage-table tbody tr')?.textContent).toContain('10');
+    expect(rendered.querySelector('.usage-table tbody tr')?.textContent).toContain('4');
+    expect(rendered.querySelectorAll('.usage-table tbody tr')[1]?.textContent).toContain('anthropic');
+    expect(rendered.querySelectorAll('.usage-table tbody tr')[1]?.textContent).toContain('live');
+    expect(rendered.querySelector('.provenance-list')?.textContent).toContain('usage: usage-fixture (fixture) — as of 2026-08-29T18:30:00Z');
+  });
   it('DLS-PAGE-005 DLS-PAGE-014 renders built-in workflows page inventory, active state, rollout mode, run conclusions, outcomes, usage, findings, operational value, and independent data state deterministically', () => {
     /** @type {import('../../src/presenter.js').PresentationInput['document']} */
     const document = {

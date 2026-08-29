@@ -22,6 +22,7 @@
   - [x] Slice: `DLS-PAGE-006` and `DLS-PAGE-014` presenter render for the `runs` built-in page status counts, outcome counts, scope/model/time columns, run links, and independent data-state summaries.
   - [x] Slice: `DLS-PAGE-005` and `DLS-PAGE-014` presenter render for the `workflows` built-in page inventory, active state, rollout mode, run conclusions, downstream outcomes, available usage, findings, operational value counts, and independent data-state summaries.
   - [x] Slice: `DLS-PAGE-013` and `DLS-PAGE-014` presenter render for the `findings` built-in page summary, severity, status, scope, time, provenance, available issue/pull-request/run links, and independent data-state summaries.
+  - [x] Slice: `DLS-PAGE-010` and `DLS-PAGE-014` presenter render for the `usage` built-in page, keeping each raw-token measure separate from AIC while exposing engine, requested model, resolved model, scope, rollout mode, time, provenance, and independent data-state summaries.
 - [ ] **Security, privacy, accessibility** — Section 13 including escaping, redaction, and keyboard and screen-reader behavior verified with Playwright.
 - [ ] **Compliance suite** — Section 14 test suite, the compliance checklist, Appendix A as a passing fixture, and Appendix C as failing fixtures.
 - [ ] **Parity** — inventory the features of the existing dashboard in `.github/scripts/pages-report/report.mjs`, record them in `PLAN.md` as a parity checklist, then express each one as YAML configuration plus data fixtures, closing the checklist incrementally.
@@ -40,6 +41,14 @@
 - 2026-08-28: `npm run test:e2e` is currently blocked in this environment because the Playwright Chromium executable is not provisioned (`browserType.launch: Executable doesn't exist`). The workflow should prefer the built-in Playwright MCP browser tools until the package-level browser dependency is available.
 
 ## Run log
+
+### 2026-08-29 (built-in usage render slice)
+
+- Extended the Built-in pages milestone with a narrow `DLS-PAGE-010` and `DLS-PAGE-014` presenter increment for the `usage` built-in page, rendering raw-token totals separately from AIC plus per-observation engine, requested model, resolved model, scope, rollout mode, observed time, provenance, and independent data-state summaries.
+- Updated `src/presenter.js` so declarative built-in `usage` definitions now render a concrete totals summary and usage table from the `usage` logical source, reusing the keyed-list DOM primitive and the existing mode-badge component for deterministic row reconciliation and presentation.
+- Expanded `test/unit/presenter.test.js` with a jsdom presenter contract for the `usage` slice and added a Playwright browser test in `test/e2e/smoke.spec.js` that verifies separate raw-token and AIC totals, rendered usage rows, provenance, and independent `availability`, `completeness`, and `freshness` text.
+- Verified all quality gates pass: `npm install`, `npm run typecheck`, `npm run lint`, `npm test`, and `npm run test:e2e`.
+- Next milestone: Built-in pages, next slice for rendering one additional Section 10 built-in page such as `engines-models` or `operational-value` from the declarative definitions.
 
 ### 2026-08-29 (GitHub Primer brand styling & presentation component slice)
 
