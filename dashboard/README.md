@@ -29,6 +29,14 @@ gh aw add githubnext/central-agentic-ops/dashboard@<catalog-release>
 
 Installing this separate package is the explicit opt-in to dashboard automation. It is not included by the root Central Agentic Ops package and does not use an additional enable variable.
 
+To refresh or restore package-owned files, reinstall a reviewed release with force:
+
+```bash
+gh aw add githubnext/central-agentic-ops/dashboard@<catalog-release> --force
+```
+
+The package contains only deterministic action workflows and resources, so `gh aw update` has no source-tracked agentic workflow through which to discover it.
+
 ## Standalone Pages site
 
 Before running the standalone deployment, configure the private control-plane or review repository that will own the Pages site:

@@ -27,7 +27,7 @@ The integration suite creates disposable consumer repositories under the system 
 | --- | --- | --- |
 | 🟢 Pass | `gh aw add` | Installs the core orchestrators and workers, shared imports, packaged skills and agent, and package manifest; focused Advisory and EU CRA packages are validated separately. |
 | 🟢 Pass | `gh aw update --force` | Replaces a locally modified package workflow and restores deleted workflow dependencies, skills, and agent files for a branch-tracked package. |
-| 🟢 Pass | Dashboard `gh aw add` and `gh aw update --force` | Installs and restores the reusable builder, manual standalone publisher, and all deterministic report modules. |
+| 🟢 Pass | Dashboard `gh aw add` and `gh aw add --force` | Installs and restores the reusable builder, manual standalone publisher, and all deterministic report modules. |
 
 ## Enterprise Integration and Load
 

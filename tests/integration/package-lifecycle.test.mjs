@@ -24,7 +24,6 @@ function focusedPackageSource(slug, source = packageSource) {
 const advisoryPackageSource = focusedPackageSource("advisory");
 const craPackageSource = focusedPackageSource("eu-cra-compliance");
 const dashboardPackageSource = focusedPackageSource("dashboard");
-const dashboardUpdateSource = focusedPackageSource("dashboard", updateSource);
 const advisoryExpectedFiles = [
   ".github/aw/advisory/implementation-status.md",
   ".github/workflows/advisory-package-maintainer.md",
@@ -263,8 +262,8 @@ test("gh aw add installs the dashboard package contract", { timeout: 180_000 }, 
   }
 });
 
-test("gh aw update restores dashboard workflows and report modules", { timeout: 180_000 }, () => {
-  const consumer = installPackage(dashboardUpdateSource);
+test("gh aw add --force restores dashboard workflows and report modules", { timeout: 180_000 }, () => {
+  const consumer = installPackage(dashboardPackageSource);
 
   try {
     const deployPath = join(consumer, ".github", "workflows", "dashboard.yml");
@@ -281,21 +280,18 @@ test("gh aw update restores dashboard workflows and report modules", { timeout: 
 
     run("gh", [
       "aw",
-      "update",
+      "add",
+      dashboardPackageSource,
       "--force",
-      "--no-merge",
-      "--no-compile",
       "--no-security-scanner",
-      "--cool-down",
-      "0",
     ], consumer);
 
     assert.ok(
       !readFileSync(deployPath, "utf8").includes("# local integration-test change"),
-      "gh aw update retained a local dashboard workflow modification",
+      "gh aw add --force retained a local dashboard workflow modification",
     );
     for (const relativePath of removedFiles) {
-      assert.ok(existsSync(join(consumer, relativePath)), `gh aw update did not restore ${relativePath}`);
+      assert.ok(existsSync(join(consumer, relativePath)), `gh aw add --force did not restore ${relativePath}`);
     }
   } finally {
     rmSync(consumer, { recursive: true, force: true });

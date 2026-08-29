@@ -35,7 +35,7 @@ The top-level `dashboard/` package is conventional GitHub Actions automation, no
 - Keep canonical report modules under `dashboard/report/` and install them under `.github/aw/dashboard/report/` as package resources.
 - Keep `pages/dashboard/` outside the package; it is the separate dashboard-language prototype.
 
-For this exception, validate manifest source/destination ownership, both action workflows, safe relative `site-path` handling, standalone Pages prerequisites, and clean-room `gh aw add` and `gh aw update` restoration. The remaining Package Contract and Validation sections apply to operational packages.
+For this exception, validate manifest source/destination ownership, both action workflows, safe relative `site-path` handling, standalone Pages prerequisites, and clean-room `gh aw add` and `gh aw add --force` restoration. The remaining Package Contract and Validation sections apply to operational packages.
 
 ## Package Contract
 
