@@ -2,7 +2,7 @@
 private: true
 emoji: "🧩"
 name: Daily Dashboard Language Renderer
-description: Incrementally builds a working configuration- and data-driven Dashboard Language prototype with validation.
+description: Builds all specification-defined pages in a working configuration- and data-driven Dashboard Language prototype.
 on:
   schedule: daily
   skip-if-match: "is:pr is:open label:dashboard-language-renderer"
@@ -74,8 +74,8 @@ evals:
     question: Did the agent run TypeScript type checking, ESLint, Vitest, and Playwright checks for the increment?
   - id: existing-dashboard-untouched
     question: Did the agent leave the existing dashboard package under dashboard/ unchanged outside pages/dashboard?
-  - id: reusable-components-extended
-    question: Did the agent build or extend a shared, tested reactive UI component (not one-off page-specific markup) when the increment needed one, and reuse existing components instead of duplicating them?
+  - id: data-driven-built-ins
+    question: Did the agent move built-in page views and build definitions into dashboard.json while keeping custom JavaScript to the minimum generic runtime needed to interpret them?
 ---
 
 # Daily Dashboard Language Renderer
@@ -95,7 +95,8 @@ You are a build engineer incrementally implementing a working presenter and vali
 - Never modify, move, or delete the existing dashboard package in `dashboard/` or any file outside `pages/dashboard/`. Read it for reference only.
 - Never add a runtime dependency to the renderer. The reactive core, YAML handling wiring, validator, and presenter run on the Node.js and browser standard libraries plus already-vendored code. Development-only tooling (TypeScript, ESLint, Vitest, Playwright, a YAML parser used by the build/test harness) is allowed as `devDependencies`.
 - Never invent semantics the specification does not define. When the specification is ambiguous, record the ambiguity in `PLAN.md` under "Specification questions" and implement the most conservative reading.
-- Keep the renderer driven exclusively by YAML configuration and input data. No dashboard-specific behavior may be hard-coded in application logic outside the declared built-in page definitions.
+- Keep the renderer driven exclusively by configuration and input data. Make `pages/dashboard/dashboard.json` the single authoritative, data-driven document for all 12 specification-defined built-in pages, including every view and build definition.
+- Use the minimum amount of custom JavaScript: retain only generic validation, interpretation, reactive state, and rendering primitives. Do not add or preserve built-in-page-specific view or build logic in JavaScript; refactor it into the equivalent declarative JSON.
 - Every feature increment must interleave validation and rendering: make the supported schema slice validate, then make the same slice visibly render in the browser prototype with tests. Do not deliver validation-only feature work; use the next increment to render any already-validated, unrendered slice before expanding validation coverage.
 
 ## Target architecture
@@ -106,16 +107,17 @@ You are a build engineer incrementally implementing a working presenter and vali
 - Vitest for unit and contract tests.
 - Playwright via the built-in MCP browser tools, for browser end-to-end tests against the rendered dashboard.
 - A tiny reactive core inspired by VanJS with no dependencies: reactive state, derived values, effects, and a small hyperscript-style DOM builder with keyed list reconciliation.
-- A growing library of reusable reactive UI components under `pages/dashboard/src/components/` (for example metric cards, tables, charts, badges, filters, and links), built on top of the reactive core and DOM builder. Each component takes reactive state/derived values as input, is presentation-only and dashboard-config-agnostic, and ships with its own unit tests. Views and built-in pages compose these components rather than hard-coding one-off DOM trees.
+- A single authoritative `pages/dashboard/dashboard.json` that fully specifies every built-in page, its views, and its build/composition definitions from the specification.
+- A minimal generic JavaScript runtime and reusable reactive UI primitives under `pages/dashboard/src/components/` (for example metric cards, tables, charts, badges, filters, and links). The runtime interprets `dashboard.json`; it does not select, assemble, or render built-in pages through page-specific JavaScript.
 - Deterministic rendering: identical configuration plus identical data always produce identical output.
-- A working browser prototype that accepts the supported YAML configuration and input data, validates it, and visibly renders each supported feature slice.
+- A working browser prototype whose build accepts `dashboard.json` plus input data, validates them, and visibly renders all specification-defined built-in pages.
 
 ## Per-run procedure
 
-1. Read `pages/dashboard/PLAN.md` when it exists. If it does not exist, this is the bootstrap run: create the directory scaffold, the tooling configuration, the plan, and nothing else.
-2. Select the next unchecked milestone, honoring the `focus` input when it names a milestone or specification section. Prefer the earliest supported schema feature that is validated but not yet visibly rendered, then reduce it to a slice that can be implemented and fully verified within this run.
-3. Implement the slice as a vertical prototype with tests written alongside the code: validate its configuration and input data, then render the same accepted slice in the browser. Before writing page-specific DOM code, check `pages/dashboard/src/components/` for an existing reusable component that covers the visual need; extend it if it is close but incomplete, or add a new component there if none fits, rather than inlining one-off markup. Every normative requirement you implement must be covered by at least one test that names the requirement identifier, for example `DLS-VIEW-005`.
-4. Run every quality gate from `pages/dashboard/`: install, type check, lint, unit tests, and end-to-end tests. All gates must pass before publishing. If `typecheck`, `lint`, or `test` fail immediately after `npm install` with a missing binary or missing type-package error, the local `node_modules/.bin` shims or declared `@types/*` packages may not be linked yet; rerun the same command once from `pages/dashboard/` before treating it as a real failure. Prefer the built-in Playwright MCP browser tools over `npm run test:e2e` for end-to-end checks; only fall back to the package-level `test:e2e` script once its Playwright browser binary is confirmed installed, since a missing Chromium executable is an infrastructure gap, not a test failure. If a gate cannot run because of infrastructure, record the blocker in `PLAN.md` and report it in the pull request body.
+1. Read `pages/dashboard/PLAN.md` and `pages/dashboard/dashboard.json` when they exist. If `PLAN.md` does not exist, this is the bootstrap run: create the directory scaffold, the tooling configuration, the plan, and nothing else.
+2. Select the next unchecked milestone, honoring the `focus` input when it names a milestone or specification section. Until the data-driven built-in milestone is complete, prioritize moving the next page-specific JavaScript view and its build composition into `dashboard.json`, while keeping every already-migrated built-in page working.
+3. Implement the slice as a vertical prototype with tests written alongside the code: declare the view and build in `dashboard.json`, validate its configuration and input data, then render it through the generic runtime in the browser. Extend JavaScript only when the JSON needs a missing reusable, dashboard-agnostic primitive; never add page-name dispatch or page-specific DOM construction. Every normative requirement you implement must be covered by at least one test that names the requirement identifier, for example `DLS-VIEW-005`.
+4. Run every quality gate from `pages/dashboard/`: install, build, type check, lint, unit tests, and end-to-end tests. The build must prove that `dashboard.json` produces all 12 built-in pages without page-specific JavaScript. All gates must pass before publishing. If `typecheck`, `lint`, or `test` fail immediately after `npm install` with a missing binary or missing type-package error, the local `node_modules/.bin` shims or declared `@types/*` packages may not be linked yet; rerun the same command once from `pages/dashboard/` before treating it as a real failure. Prefer the built-in Playwright MCP browser tools over `npm run test:e2e` for end-to-end checks; only fall back to the package-level `test:e2e` script once its Playwright browser binary is confirmed installed, since a missing Chromium executable is an infrastructure gap, not a test failure. If a gate cannot run because of infrastructure, record the blocker in `PLAN.md` and report it in the pull request body.
 5. Update `PLAN.md`: check completed items, append a dated run entry listing what shipped, what was verified, and the next milestone.
 6. Publish with `create-pull-request`. Call `noop` only when there is genuinely nothing left to do or the run is blocked before any code changes, and explain why.
 
@@ -132,12 +134,12 @@ On the bootstrap run, create `pages/dashboard/PLAN.md` with the following milest
 7. **Provenance, freshness, data states** — Section 8 including unavailable, empty, partial, and stale states.
 8. **Links and findings** — Section 9 link objects and the `href` channel semantics.
 9. **Custom pages** — Section 11 metric, table, and chart views with the temporal line and bar defaults, each implemented as a reusable component in `pages/dashboard/src/components/`.
-10. **Built-in pages** — Section 10, one page per vertical increment, each expressed as declarative page definitions composed from the custom-view components and visibly rendered in the browser prototype.
+10. **Built-in pages** — Section 10, all 12 pages fully specified in `dashboard.json`, including their views and build/composition definitions, and visibly rendered by the minimal generic JavaScript runtime.
 11. **Security, privacy, accessibility** — Section 13 including escaping, redaction, and keyboard and screen-reader behavior verified with Playwright.
 12. **Compliance suite** — Section 14 test suite, the compliance checklist, Appendix A as a passing fixture, and Appendix C as failing fixtures.
 13. **Parity** — inventory the features of the existing dashboard in `dashboard/report/report.mjs`, record them in `PLAN.md` as a parity checklist, then express each one as YAML configuration plus data fixtures, closing the checklist incrementally.
 
-The component library is not a standalone milestone: build and extend it opportunistically inside milestones 6 onward, whenever a milestone's rendering slice needs a visual element that does not yet exist as a component. Track the components built so far in `PLAN.md`.
+The component library is not a standalone milestone: build and extend only generic mark and interaction primitives opportunistically inside milestones 6 onward. Keep built-in page selection, views, and build composition in `dashboard.json`, and track the remaining page-specific JavaScript migrations in `PLAN.md`.
 
 ## Playwright
 

@@ -1174,6 +1174,11 @@ test("daily dashboard renderer builds incrementally inside its own directory", (
   assert.match(source, /pages\/dashboard\/PLAN\.md/);
   assert.doesNotMatch(source, /allowed-files:\n(?:\s+- .*\n)*\s+- "(?!pages\/dashboard\/)/);
   assert.match(source, /Never modify, move, or delete the existing dashboard package in `dashboard\/`/);
+  assert.match(source, /`pages\/dashboard\/dashboard\.json` the single authoritative, data-driven document for all 12 specification-defined built-in pages/);
+  assert.match(source, /including every view and build definition/);
+  assert.match(source, /Use the minimum amount of custom JavaScript/);
+  assert.match(source, /refactor it into the equivalent declarative JSON/);
+  assert.match(source, /The build must prove that `dashboard\.json` produces all 12 built-in pages without page-specific JavaScript/);
 });
 
 test("daily dashboard component refactorer extracts reusable components in place", () => {
