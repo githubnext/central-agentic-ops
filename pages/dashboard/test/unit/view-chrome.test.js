@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import { describe, expect, it } from 'vitest';
-import { renderContextList, renderPageSection, renderProvenanceList, renderProvenanceSection, renderTitledRegion, renderViewHeader } from '../../src/components/view-chrome.js';
+import { renderContextList, renderPageSection, renderProvenanceList, renderProvenanceSection, renderSummaryRegion, renderTitledRegion, renderViewHeader } from '../../src/components/view-chrome.js';
 
 describe('view chrome component helpers', () => {
   it('DLS-SAFE-007 renders focusable labeled page sections with deterministic heading ids', () => {
@@ -62,6 +62,24 @@ describe('view chrome component helpers', () => {
     expect(region.getAttribute('aria-labelledby')).toBe('usage-usage-totals-heading');
     expect(region.querySelector('h3')?.textContent).toBe('Usage Totals');
     expect(region.querySelector('.provenance-list')?.textContent).toContain('No source provenance available for this page.');
+  });
+
+  it('DLS-VIEW-013 renders reusable summary regions including empty counts', () => {
+    const populated = renderSummaryRegion('overview', 'Rollout Mode Filtering', 'overview-rollout-mode-counts', new Map([
+      ['shadow', 2],
+      ['full', 1]
+    ]));
+    const empty = renderSummaryRegion('runs', 'Outcome Counts', 'run-outcome-counts', new Map());
+
+    expect(populated.className).toBe('page-section');
+    expect(populated.getAttribute('aria-labelledby')).toBe('overview-rollout-mode-filtering-heading');
+    expect(populated.querySelector('h3')?.textContent).toBe('Rollout Mode Filtering');
+    expect(populated.querySelector('ul')?.className).toBe('overview-rollout-mode-counts');
+    expect(populated.querySelectorAll('li')).toHaveLength(2);
+    expect(populated.textContent).toContain('shadow: 2');
+    expect(populated.textContent).toContain('full: 1');
+    expect(empty.querySelector('ul')?.className).toBe('run-outcome-counts');
+    expect(empty.textContent).toContain('No data available.');
   });
 
   it('DLS-PAGE-014 renders the provenance heading plus list as a reusable section', () => {

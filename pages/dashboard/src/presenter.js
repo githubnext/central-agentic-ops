@@ -8,7 +8,7 @@ import { octicon, agenticWorkflowMark } from './octicons.js';
 import { renderStatusBadge, renderModeBadge, renderActiveStateBadge } from './components/badge.js';
 import { renderDataStateMetrics } from './components/data-state.js';
 import { renderTableRegion } from './components/table-region.js';
-import { renderContextList, renderPageSection, renderProvenanceSection, renderTitledRegion, renderViewHeader } from './components/view-chrome.js';
+import { renderContextList, renderPageSection, renderProvenanceSection, renderSummaryRegion, renderTitledRegion, renderViewHeader } from './components/view-chrome.js';
 
 /**
  * @typedef {{ availability: 'available'|'empty'|'unavailable', completeness: 'complete'|'partial'|'unknown', freshness: 'fresh'|'stale'|'unknown' }} DataState
@@ -440,9 +440,9 @@ function renderRunsPage(pageSources) {
   return h(
     'div',
     { className: 'runs-page' },
-    renderPageSection('runs', 'Run Status Counts', [renderSummaryList('run-status-counts', statusCounts)]),
-    renderPageSection('runs', 'Run Conclusion Counts', [renderSummaryList('run-conclusion-counts', conclusionCounts)]),
-    renderPageSection('runs', 'Outcome Counts', [renderSummaryList('run-outcome-counts', outcomeCounts)]),
+    renderSummaryRegion('runs', 'Run Status Counts', 'run-status-counts', statusCounts),
+    renderSummaryRegion('runs', 'Run Conclusion Counts', 'run-conclusion-counts', conclusionCounts),
+    renderSummaryRegion('runs', 'Outcome Counts', 'run-outcome-counts', outcomeCounts),
     renderPageSection('runs', 'Runs', [
       renderTableRegion({
         tableClassName: 'runs-table',
@@ -587,8 +587,8 @@ function renderFindingsPage(pageSources) {
   return h(
     'div',
     { className: 'findings-page' },
-    renderPageSection('findings', 'Finding Severity Counts', [renderSummaryList('finding-severity-counts', severityCounts)]),
-    renderPageSection('findings', 'Finding Status Counts', [renderSummaryList('finding-status-counts', statusCounts)]),
+    renderSummaryRegion('findings', 'Finding Severity Counts', 'finding-severity-counts', severityCounts),
+    renderSummaryRegion('findings', 'Finding Status Counts', 'finding-status-counts', statusCounts),
     renderPageSection('findings', 'Findings', [
       renderTableRegion({
         tableClassName: 'findings-table',
@@ -1126,8 +1126,8 @@ function renderOverviewPage(pageSources) {
   return h(
     'div',
     { className: 'overview-page' },
-    renderPageSection('overview', 'Rollout Mode Filtering', [renderSummaryList('overview-rollout-mode-counts', rolloutModeCounts)]),
-    renderPageSection('overview', 'Workflow Active State Inventory', [renderSummaryList('overview-workflow-active-counts', activeStateCounts)]),
+    renderSummaryRegion('overview', 'Rollout Mode Filtering', 'overview-rollout-mode-counts', rolloutModeCounts),
+    renderSummaryRegion('overview', 'Workflow Active State Inventory', 'overview-workflow-active-counts', activeStateCounts),
     renderPageSection('overview', 'Run Status Counts and Trends', [
       renderSummaryList('overview-run-status-counts', runStatusCounts),
       renderOverviewTrendList('overview-run-status-trends', runs, 'run-status')
@@ -1296,14 +1296,7 @@ function getViewSource(view) {
  * @returns {HTMLElement}
  */
 function renderSummaryList(className, counts) {
-  const entries = [...counts.entries()];
-  return h(
-    'ul',
-    { className },
-    entries.length > 0
-      ? entries.map(([name, count]) => h('li', null, `${name}: ${count}`))
-      : [h('li', null, 'No data available.')]
-  );
+  return renderSummaryRegion('summary', 'Summary', className, counts).querySelector('ul') ?? h('ul', { className });
 }
 
 /**
