@@ -24,6 +24,16 @@ export function renderPageSection(pageId, title, content) {
 }
 
 /**
+ * @param {string} pageId
+ * @param {string} title
+ * @param {HTMLElement} content
+ * @returns {HTMLElement}
+ */
+export function renderTitledRegion(pageId, title, content) {
+  return renderPageSection(pageId, title, [content]);
+}
+
+/**
  * @param {string} sourceName
  * @param {{ 'as-of': string, completeness: string, freshness: string }} metadata
  * @returns {HTMLElement[]}
@@ -51,6 +61,15 @@ export function renderProvenanceList(items) {
       ))
       : [h('li', null, 'No source provenance available for this page.')]
   );
+}
+
+/**
+ * @param {string} pageId
+ * @param {Array<{ sourceName: string, sourceId: string, sourceKind: string, asOf: string }>} items
+ * @returns {HTMLElement}
+ */
+export function renderProvenanceSection(pageId, items) {
+  return renderTitledRegion(pageId, 'Provenance', renderProvenanceList(items));
 }
 
 /**

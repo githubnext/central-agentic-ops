@@ -8,7 +8,7 @@ import { octicon, agenticWorkflowMark } from './octicons.js';
 import { renderStatusBadge, renderModeBadge, renderActiveStateBadge } from './components/badge.js';
 import { renderDataStateMetrics } from './components/data-state.js';
 import { renderTableRegion } from './components/table-region.js';
-import { renderPageSection, renderProvenanceList, renderViewHeader } from './components/view-chrome.js';
+import { renderPageSection, renderProvenanceSection, renderTitledRegion, renderViewHeader } from './components/view-chrome.js';
 
 /**
  * @typedef {{ availability: 'available'|'empty'|'unavailable', completeness: 'complete'|'partial'|'unknown', freshness: 'fresh'|'stale'|'unknown' }} DataState
@@ -356,8 +356,7 @@ function renderBuiltInPage(page, title, sources) {
     h('h2', null, title),
     renderDataStateMetrics(effectiveState),
     builtInBody,
-    h('h3', null, 'Provenance'),
-    renderProvenanceList(provenanceItems)
+    renderProvenanceSection(page.id, provenanceItems)
   );
 }
 
@@ -538,8 +537,7 @@ function renderWorkflowsPage(pageSources) {
   return h(
     'div',
     { className: 'workflows-page' },
-    h('h3', null, 'Workflow Inventory'),
-    renderTableRegion({
+    renderTitledRegion('workflows', 'Workflow Inventory', renderTableRegion({
       tableClassName: 'workflows-table',
       emptyMessage: 'No workflows available.',
       colSpan: 11,
@@ -563,7 +561,7 @@ function renderWorkflowsPage(pageSources) {
           (item) => /** @type {{ key: string }} */ (item).key
         )
         : []
-    })
+    }))
   );
 }
 
@@ -632,10 +630,8 @@ function renderUsagePage(pageSources) {
   return h(
     'div',
     { className: 'usage-page' },
-    h('h3', null, 'Usage Totals'),
-    renderSummaryList('usage-totals', totals),
-    h('h3', null, 'Usage Observations'),
-    renderTableRegion({
+    renderTitledRegion('usage', 'Usage Totals', renderSummaryList('usage-totals', totals)),
+    renderTitledRegion('usage', 'Usage Observations', renderTableRegion({
       tableClassName: 'usage-table',
       emptyMessage: 'No usage observations available.',
       colSpan: 15,
@@ -663,7 +659,7 @@ function renderUsagePage(pageSources) {
           (item) => /** @type {{ key: string }} */ (item).key
         )
         : []
-    })
+    }))
   );
 }
 
@@ -685,8 +681,7 @@ function renderEnginesModelsPage(pageSources) {
   return h(
     'div',
     { className: 'engines-models-page' },
-    h('h3', null, 'Engine and Model Inventory'),
-    renderTableRegion({
+    renderTitledRegion('engines-models', 'Engine and Model Inventory', renderTableRegion({
       tableClassName: 'engines-models-table',
       emptyMessage: 'No engine or model observations available.',
       colSpan: 12,
@@ -711,7 +706,7 @@ function renderEnginesModelsPage(pageSources) {
           (item) => /** @type {{ key: string }} */ (item).key
         )
         : []
-    })
+    }))
   );
 }
 
@@ -729,8 +724,7 @@ function renderOperationalValuePage(pageSources) {
   return h(
     'div',
     { className: 'operational-value-page' },
-    h('h3', null, 'Operational Value Timeline'),
-    renderTableRegion({
+    renderTitledRegion('operational-value', 'Operational Value Timeline', renderTableRegion({
       tableClassName: 'operational-value-table',
       emptyMessage: 'No operational value observations available.',
       colSpan: 16,
@@ -759,7 +753,7 @@ function renderOperationalValuePage(pageSources) {
           (item) => /** @type {{ key: string }} */ (item).key
         )
         : []
-    })
+    }))
   );
 }
 
@@ -792,8 +786,7 @@ function renderOrganizationsPage(pageSources) {
   return h(
     'div',
     { className: 'organizations-page' },
-    h('h3', null, 'Organization Inventory'),
-    renderTableRegion({
+    renderTitledRegion('organizations', 'Organization Inventory', renderTableRegion({
       tableClassName: 'organizations-table',
       emptyMessage: 'No organizations available.',
       colSpan: 11,
@@ -817,7 +810,7 @@ function renderOrganizationsPage(pageSources) {
           (item) => /** @type {{ key: string }} */ (item).key
         )
         : []
-    })
+    }))
   );
 }
 
@@ -849,8 +842,7 @@ function renderRepositoriesPage(pageSources) {
   return h(
     'div',
     { className: 'repositories-page' },
-    h('h3', null, 'Repository Inventory and Rankings'),
-    renderTableRegion({
+    renderTitledRegion('repositories', 'Repository Inventory and Rankings', renderTableRegion({
       tableClassName: 'repositories-table',
       emptyMessage: 'No repositories available.',
       colSpan: 7,
@@ -870,7 +862,7 @@ function renderRepositoriesPage(pageSources) {
           (item) => /** @type {{ key: string }} */ (item).key
         )
         : []
-    })
+    }))
   );
 }
 
@@ -911,34 +903,35 @@ function renderExperimentsPage(pageSources) {
   return h(
     'div',
     { className: 'experiments-page' },
-    h('h3', null, 'Experiment Definitions and Observed Associations'),
-    h(
-      'p',
-      { className: 'page-note' },
-      'Observed assignments, grader observations, eval observations, outcomes, usage, and operational value are presented together without implying causation.'
-    ),
-    renderTableRegion({
-      tableClassName: 'experiments-table',
-      emptyMessage: 'No experiments available.',
-      colSpan: 8,
-      headCells: [
-        'Experiment',
-        'Experiment Name',
-        'Observed Variants by Run Count',
-        'Grader Observations',
-        'Eval Observations',
-        'Outcome Observations',
-        'Usage AIC',
-        'Operational Value by Definition'
-      ],
-      bodyRows: items.length > 0
-        ? keyed(
-          items,
-          (item) => renderExperimentRow(/** @type {{ key: string, experiment: Record<string, unknown>, variantAssignments: Map<string, number>, graderStatusCounts: Map<string, number>, evalResultCounts: Map<string, number>, outcomeCounts: Map<string, number>, usageTotals: Map<string, number>, operationalValueDefinitions: Map<string, Array<number>> }} */ (item)),
-          (item) => /** @type {{ key: string }} */ (item).key
-        )
-        : []
-    })
+    renderPageSection('experiments', 'Experiment Definitions and Observed Associations', [
+      h(
+        'p',
+        { className: 'page-note' },
+        'Observed assignments, grader observations, eval observations, outcomes, usage, and operational value are presented together without implying causation.'
+      ),
+      renderTableRegion({
+        tableClassName: 'experiments-table',
+        emptyMessage: 'No experiments available.',
+        colSpan: 8,
+        headCells: [
+          'Experiment',
+          'Experiment Name',
+          'Observed Variants by Run Count',
+          'Grader Observations',
+          'Eval Observations',
+          'Outcome Observations',
+          'Usage AIC',
+          'Operational Value by Definition'
+        ],
+        bodyRows: items.length > 0
+          ? keyed(
+            items,
+            (item) => renderExperimentRow(/** @type {{ key: string, experiment: Record<string, unknown>, variantAssignments: Map<string, number>, graderStatusCounts: Map<string, number>, evalResultCounts: Map<string, number>, outcomeCounts: Map<string, number>, usageTotals: Map<string, number>, operationalValueDefinitions: Map<string, Array<number>> }} */ (item)),
+            (item) => /** @type {{ key: string }} */ (item).key
+          )
+          : []
+      })
+    ])
   );
 }
 
@@ -967,8 +960,7 @@ function renderGradersPage(pageSources) {
   return h(
     'div',
     { className: 'graders-page' },
-    h('h3', null, 'Grader Definitions'),
-    renderTableRegion({
+    renderTitledRegion('graders', 'Grader Definitions', renderTableRegion({
       tableClassName: 'graders-definitions-table',
       emptyMessage: 'No grader definitions available.',
       colSpan: 8,
@@ -989,9 +981,8 @@ function renderGradersPage(pageSources) {
           (item) => /** @type {{ key: string }} */ (item).key
         )
         : []
-    }),
-    h('h3', null, 'Grader Observations'),
-    renderTableRegion({
+    })),
+    renderTitledRegion('graders', 'Grader Observations', renderTableRegion({
       tableClassName: 'grader-observations-table',
       emptyMessage: 'No grader observations available.',
       colSpan: 6,
@@ -1012,7 +1003,7 @@ function renderGradersPage(pageSources) {
           (item) => /** @type {{ key: string }} */ (item).key
         )
         : []
-    })
+    }))
   );
 }
 
