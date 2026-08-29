@@ -332,6 +332,10 @@ function renderBuiltInPageBody(page, pageSources) {
     return renderExperimentsPage(pageSources);
   }
 
+  if (page.page === 'graders') {
+    return renderGradersPage(pageSources);
+  }
+
   return h('p', { className: 'page-placeholder' }, `Built-in page ${page.page} is not rendered in this increment.`);
 }
 
@@ -984,6 +988,106 @@ function renderExperimentsPage(pageSources) {
 }
 
 /**
+ * @param {Map<string, LogicalSourceInput>} pageSources
+ * @returns {HTMLElement}
+ */
+function renderGradersPage(pageSources) {
+  const gradersSource = pageSources.get('graders');
+  const graderObservationsSource = pageSources.get('grader-observations');
+  const graders = Array.isArray(gradersSource?.rows) ? gradersSource.rows : [];
+  const observations = Array.isArray(graderObservationsSource?.rows) ? graderObservationsSource.rows : [];
+
+  const items = graders.map((grader, index) => ({
+    key: getGraderKey(grader, index),
+    grader,
+    observationCount: countMatchingRows(observations, grader, 'grader'),
+    statusCounts: countByMatchingRows(observations, grader, 'grader', 'status'),
+    latestObservedAt: getLatestMatchingValue(observations, grader, 'grader', 'observed-at'),
+    subjects: summarizeSubjects(observations, grader, 'grader'),
+    scoreValues: summarizeScoreValues(observations, grader, 'grader')
+  }));
+
+  items.sort((left, right) => left.key.localeCompare(right.key));
+
+  return h(
+    'div',
+    { className: 'graders-page' },
+    h('h3', null, 'Grader Definitions'),
+    h(
+      'div',
+      { className: 'table-region' },
+      h(
+        'table',
+        { className: 'graders-definitions-table' },
+        h(
+          'thead',
+          null,
+          h(
+            'tr',
+            null,
+            h('th', null, 'Grader'),
+            h('th', null, 'Grader Name'),
+            h('th', null, 'Definition Observed At'),
+            h('th', null, 'Observation Count'),
+            h('th', null, 'Observed Subjects'),
+            h('th', null, 'Results'),
+            h('th', null, 'Scores When Present'),
+            h('th', null, 'Latest Observation Time')
+          )
+        ),
+        h(
+          'tbody',
+          null,
+          items.length > 0
+            ? keyed(
+              items,
+              (item) => renderGraderDefinitionRow(/** @type {{ key: string, grader: Record<string, unknown>, observationCount: number, statusCounts: Map<string, number>, latestObservedAt: string, subjects: string[], scoreValues: string[] }} */ (item)),
+              (item) => /** @type {{ key: string }} */ (item).key
+            )
+            : h('tr', null, h('td', { colSpan: 8 }, 'No grader definitions available.'))
+        )
+      )
+    ),
+    h('h3', null, 'Grader Observations'),
+    h(
+      'div',
+      { className: 'table-region' },
+      h(
+        'table',
+        { className: 'grader-observations-table' },
+        h(
+          'thead',
+          null,
+          h(
+            'tr',
+            null,
+            h('th', null, 'Grader'),
+            h('th', null, 'Observed Subject'),
+            h('th', null, 'Run'),
+            h('th', null, 'Result'),
+            h('th', null, 'Score'),
+            h('th', null, 'Time')
+          )
+        ),
+        h(
+          'tbody',
+          null,
+          observations.length > 0
+            ? keyed(
+              observations
+                .map((observation, index) => ({ key: getGraderObservationKey(observation, index), observation }))
+                .sort((left, right) => left.key.localeCompare(right.key)),
+              (item) => renderGraderObservationRow(/** @type {{ key: string, observation: Record<string, unknown> }} */ (item)),
+              (item) => /** @type {{ key: string }} */ (item).key
+            )
+            : h('tr', null, h('td', { colSpan: 6 }, 'No grader observations available.'))
+        )
+      )
+    )
+  );
+}
+
+/**
  * @param {{ key: string, workflow: Record<string, unknown>, runCount: number, conclusionCounts: Map<string, number>, outcomeCount: number, aicTotal: number, findingCount: number, operationalValueCount: number }} item
  * @returns {HTMLElement}
  */
@@ -1228,6 +1332,27 @@ function getUsageKey(usageRow, index) {
     return `${usageRow.run}-${index}`;
   }
   return `usage-${index}`;
+}
+
+/**
+ * @param {Record<string, unknown>} grader
+ * @param {number} index
+ * @returns {string}
+ */
+function getGraderKey(grader, index) {
+  return typeof grader.grader === 'string' && grader.grader.length > 0 ? grader.grader : `grader-${index}`;
+}
+
+/**
+ * @param {Record<string, unknown>} observation
+ * @param {number} index
+ * @returns {string}
+ */
+function getGraderObservationKey(observation, index) {
+  if (typeof observation.grader === 'string' && typeof observation.run === 'string') {
+    return `${observation.grader}-${observation.run}-${index}`;
+  }
+  return `grader-observation-${index}`;
 }
 
 /**
@@ -1614,6 +1739,46 @@ function renderExperimentRow(item) {
 }
 
 /**
+ * @param {{ key: string, grader: Record<string, unknown>, observationCount: number, statusCounts: Map<string, number>, latestObservedAt: string, subjects: string[], scoreValues: string[] }} item
+ * @returns {HTMLElement}
+ */
+function renderGraderDefinitionRow(item) {
+  const grader = item.grader;
+
+  return h(
+    'tr',
+    { 'data-grader-id': String(grader.grader ?? item.key) },
+    h('td', null, toText(grader.grader)),
+    h('td', null, toText(grader['grader-name'])),
+    h('td', null, toText(grader['observed-at'])),
+    h('td', null, String(item.observationCount)),
+    h('td', null, item.subjects.length > 0 ? item.subjects.join(', ') : 'Unavailable'),
+    h('td', null, formatCounts(item.statusCounts)),
+    h('td', null, item.scoreValues.length > 0 ? item.scoreValues.join(', ') : 'Unavailable'),
+    h('td', null, item.latestObservedAt)
+  );
+}
+
+/**
+ * @param {{ key: string, observation: Record<string, unknown> }} item
+ * @returns {HTMLElement}
+ */
+function renderGraderObservationRow(item) {
+  const observation = item.observation;
+
+  return h(
+    'tr',
+    { 'data-grader-observation-key': item.key },
+    h('td', null, toText(observation.grader)),
+    h('td', null, getObservationSubject(observation)),
+    h('td', null, toText(observation.run)),
+    h('td', null, renderStatusBadge(observation.status)),
+    h('td', null, formatNullableNumber(observation.value)),
+    h('td', null, toText(observation['observed-at']))
+  );
+}
+
+/**
  * @param {string} value
  * @returns {string}
  */
@@ -1634,6 +1799,75 @@ function formatOperationalValue(value) {
     return 'Unavailable';
   }
   return formatNullableNumber(value);
+}
+
+/**
+ * @param {Array<Record<string, unknown>>} rows
+ * @param {Record<string, unknown>} matchRow
+ * @param {string} matchField
+ * @param {string} valueField
+ * @returns {string}
+ */
+function getLatestMatchingValue(rows, matchRow, matchField, valueField) {
+  let latest = '';
+  for (const row of rows) {
+    if (row[matchField] !== matchRow[matchField]) {
+      continue;
+    }
+    const value = toText(row[valueField]);
+    if (value > latest) {
+      latest = value;
+    }
+  }
+  return latest || 'Unavailable';
+}
+
+/**
+ * @param {Array<Record<string, unknown>>} rows
+ * @param {Record<string, unknown>} matchRow
+ * @param {string} matchField
+ * @returns {string[]}
+ */
+function summarizeSubjects(rows, matchRow, matchField) {
+  const subjects = new Set();
+  for (const row of rows) {
+    if (row[matchField] !== matchRow[matchField]) {
+      continue;
+    }
+    subjects.add(getObservationSubject(row));
+  }
+  return [...subjects].sort();
+}
+
+/**
+ * @param {Array<Record<string, unknown>>} rows
+ * @param {Record<string, unknown>} matchRow
+ * @param {string} matchField
+ * @returns {string[]}
+ */
+function summarizeScoreValues(rows, matchRow, matchField) {
+  const scores = [];
+  for (const row of rows) {
+    if (row[matchField] !== matchRow[matchField]) {
+      continue;
+    }
+    if (row.value === null || row.value === undefined || row.value === '') {
+      continue;
+    }
+    scores.push(formatNullableNumber(row.value));
+  }
+  return scores;
+}
+
+/**
+ * @param {Record<string, unknown>} row
+ * @returns {string}
+ */
+function getObservationSubject(row) {
+  const subjectParts = [row.organization, row.repository, row.workflow].filter((value) => typeof value === 'string' && value.length > 0);
+  const run = typeof row.run === 'string' && row.run.length > 0 ? `run ${row.run}` : '';
+  const subject = [...subjectParts, run].filter(Boolean).join(' / ');
+  return subject || 'Unavailable';
 }
 
 /**
