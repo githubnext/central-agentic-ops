@@ -103,6 +103,13 @@ describe('presenter built-in pages', () => {
     expect(releaseRiskYesRow?.textContent).toContain('gpt-4o');
     expect(releaseRiskYesRow?.textContent).toContain('gpt-4.1');
 
+    const sidebarCurrentPage = rendered.querySelector('.primary-nav a[aria-current="page"]');
+    expect(sidebarCurrentPage?.getAttribute('aria-current')).toBe('page');
+    expect(sidebarCurrentPage?.textContent).toContain('Evals');
+
+    const skipLink = rendered.querySelector('.skip-link');
+    expect(skipLink?.getAttribute('href')).toBe('#main-content');
+
     const releaseRiskUnknownRow = rendered.querySelector('[data-eval-observation-key="release-risk-1002-1"]');
     expect(releaseRiskUnknownRow?.textContent).toContain('UNKNOWN');
     expect(releaseRiskUnknownRow?.textContent).toContain('unknown');
@@ -113,5 +120,84 @@ describe('presenter built-in pages', () => {
 
     expect(rendered.querySelector('.provenance-list')?.textContent).toContain('evals: evals-fixture (fixture) — as of 2026-08-29T20:00:00Z');
     expect(rendered.querySelector('.provenance-list')?.textContent).toContain('eval-observations: eval-observations-fixture (fixture) — as of 2026-08-29T20:00:00Z');
+  });
+
+  it('DLS-SAFE-007 DLS-SAFE-010 DLS-SAFE-003 renders non-empty accessible names and inert text labels while preserving safe external link attributes', () => {
+    /** @type {import('../../src/presenter.js').PresentationInput['document']} */
+    const document = {
+      languageVersion: '0.1.0',
+      dashboard: {
+        id: 'findings-dashboard',
+        title: 'Security Dashboard',
+        pages: [
+          {
+            id: 'findings',
+            kind: /** @type {'built-in'} */ ('built-in'),
+            page: 'findings',
+            title: 'Findings',
+            definition: {
+              'data-state': {
+                availability: true,
+                completeness: true,
+                freshness: true
+              },
+              views: [
+                { id: 'findings-source', data: { source: 'findings' } }
+              ]
+            }
+          }
+        ]
+      }
+    };
+
+    const rendered = renderDashboard({
+      document,
+      sources: {
+        findings: {
+          source: 'findings',
+          rows: [
+            {
+              finding: 'unsafe-html',
+              'finding-summary': '<img src=x onerror=alert(1)>',
+              'finding-severity': 'critical',
+              'finding-status': 'open',
+              organization: 'github',
+              repository: 'central-agentic-ops',
+              workflow: '.github/workflows/daily.yml',
+              'observed-at': '2026-08-29T12:00:00Z',
+              'issue-link': {
+                relation: 'issue',
+                href: 'https://example.com/issues/1',
+                label: 'Issue 1 label'
+              }
+            }
+          ],
+          metadata: {
+            'source-id': 'findings-fixture',
+            'source-kind': 'fixture',
+            'as-of': '2026-08-29T20:00:00Z',
+            'retrieved-at': '2026-08-29T20:01:00Z',
+            completeness: 'complete',
+            freshness: 'fresh',
+            availability: 'available'
+          }
+        }
+      }
+    });
+
+    expect(rendered.querySelector('[data-page-name="findings"] h2')?.textContent).toBe('Findings');
+    expect(rendered.querySelector('.brand-title')?.textContent).toBe('Security Dashboard');
+    expect(rendered.querySelector('.findings-table thead')?.textContent).toContain('Issue Link');
+
+    const summaryCell = rendered.querySelector('[data-finding-id="unsafe-html"] td');
+    expect(summaryCell?.textContent).toBe('<img src=x onerror=alert(1)>');
+    expect(summaryCell?.querySelector('img')).toBeNull();
+
+    const issueLink = rendered.querySelector('[data-finding-id="unsafe-html"] a');
+    expect(issueLink?.getAttribute('href')).toBe('https://example.com/issues/1');
+    expect(issueLink?.getAttribute('aria-label')).toBe('Issue 1 label');
+    expect(issueLink?.getAttribute('target')).toBe('_blank');
+    expect(issueLink?.getAttribute('rel')).toBe('noopener noreferrer');
+    expect(issueLink?.textContent).toBe('Issue 1 label');
   });
 });

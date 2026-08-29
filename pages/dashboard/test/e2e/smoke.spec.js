@@ -144,3 +144,91 @@ test('DLS-PAGE-009 DLS-PAGE-014 built-in evals page renders distinguishable defi
     'eval-observations: eval-observations-fixture (fixture) — as of 2026-08-29T20:00:00Z'
   ]);
 });
+
+test('DLS-SAFE-007 DLS-SAFE-008 DLS-SAFE-010 built-in findings page exposes accessible names, labeled columns, textual data states, and labeled external links in browser', async ({ page }) => {
+  const presenterModuleUrl = buildPresenterModuleUrl();
+
+  await page.setContent(`
+    <div id="root"></div>
+    <script type="module">
+      import { renderDashboard } from ${JSON.stringify(presenterModuleUrl)};
+
+      const dashboardDocument = {
+        languageVersion: '0.1.0',
+        dashboard: {
+          id: 'security-dashboard',
+          title: 'Security Dashboard',
+          pages: [
+            {
+              id: 'findings',
+              kind: 'built-in',
+              page: 'findings',
+              title: 'Findings',
+              definition: {
+                'data-state': {
+                  availability: true,
+                  completeness: true,
+                  freshness: true
+                },
+                views: [
+                  { id: 'findings-source', data: { source: 'findings' } }
+                ]
+              }
+            }
+          ]
+        }
+      };
+
+      const sources = {
+        findings: {
+          source: 'findings',
+          rows: [
+            {
+              finding: 'unsafe-html',
+              'finding-summary': '<img src=x onerror=alert(1)>',
+              'finding-severity': 'critical',
+              'finding-status': 'open',
+              organization: 'github',
+              repository: 'central-agentic-ops',
+              workflow: '.github/workflows/daily.yml',
+              'observed-at': '2026-08-29T12:00:00Z',
+              'issue-link': {
+                relation: 'issue',
+                href: 'https://example.com/issues/1',
+                label: 'Issue 1 label'
+              }
+            }
+          ],
+          metadata: {
+            'source-id': 'findings-fixture',
+            'source-kind': 'fixture',
+            'as-of': '2026-08-29T20:00:00Z',
+            'retrieved-at': '2026-08-29T20:01:00Z',
+            completeness: 'complete',
+            freshness: 'fresh',
+            availability: 'available'
+          }
+        }
+      };
+
+      document.querySelector('#root').append(renderDashboard({ document: dashboardDocument, sources }));
+    </script>
+  `);
+
+  await expect(page.getByRole('link', { name: 'Skip to main content' })).toBeVisible();
+  await expect(page.getByRole('navigation', { name: 'Primary navigation' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Security Dashboard' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Findings', exact: true, level: 2 })).toBeVisible();
+  await expect(page.locator('[data-state-axis="availability"]')).toHaveText('available');
+  await expect(page.locator('[data-state-axis="completeness"]')).toHaveText('complete');
+  await expect(page.locator('[data-state-axis="freshness"]')).toHaveText('fresh');
+  await expect(page.getByRole('columnheader', { name: 'Issue Link' })).toBeVisible();
+  await expect(page.locator('[data-finding-id="unsafe-html"] td').first()).toHaveText('<img src=x onerror=alert(1)>');
+  await expect(page.locator('[data-finding-id="unsafe-html"] img')).toHaveCount(0);
+
+  const issueLink = page.getByRole('link', { name: 'Issue 1 label' });
+  await expect(issueLink).toBeVisible();
+  await expect(issueLink).toHaveAttribute('href', 'https://example.com/issues/1');
+  await expect(issueLink).toHaveAttribute('target', '_blank');
+  await expect(issueLink).toHaveAttribute('rel', 'noopener noreferrer');
+});
