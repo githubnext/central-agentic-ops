@@ -1,0 +1,630 @@
+{
+  "language-version": "0.1.0",
+  "dashboard": {
+    "id": "central-agentic-ops-dashboard",
+    "title": "Central Agentic Ops Dashboard",
+    "description": "Authoritative declarative dashboard document for all specification-defined built-in pages in the presenter prototype.",
+    "pages": [
+      {
+        "id": "overview",
+        "kind": "built-in",
+        "page": "overview",
+        "title": "Overview",
+        "definition": {
+          "data-state": {
+            "availability": true,
+            "completeness": true,
+            "freshness": true
+          },
+          "views": [
+            {
+              "id": "overview-workflows-source",
+              "title": "Overview workflows source",
+              "data": { "source": "workflows" },
+              "mark": "table",
+              "encoding": {
+                "columns": [
+                  { "field": "workflow", "type": "nominal" },
+                  { "field": "workflow-active", "type": "nominal" },
+                  { "field": "rollout-mode", "type": "nominal" }
+                ]
+              }
+            },
+            {
+              "id": "overview-runs-source",
+              "title": "Overview runs source",
+              "data": { "source": "runs" },
+              "mark": "table",
+              "encoding": {
+                "columns": [
+                  { "field": "repository", "type": "nominal" },
+                  { "field": "workflow", "type": "nominal" },
+                  { "field": "run-status", "type": "nominal" },
+                  { "field": "run-conclusion", "type": "nominal" }
+                ]
+              }
+            },
+            {
+              "id": "overview-usage-source",
+              "title": "Overview usage source",
+              "data": { "source": "usage" },
+              "mark": "metric",
+              "encoding": {
+                "value": { "field": "aic", "type": "quantitative", "aggregate": "sum" }
+              }
+            },
+            {
+              "id": "overview-findings-source",
+              "title": "Overview findings source",
+              "data": { "source": "findings" },
+              "mark": "table",
+              "encoding": {
+                "columns": [
+                  { "field": "observed-at", "type": "temporal" },
+                  { "field": "issue-link", "type": "nominal" },
+                  { "field": "pull-request-link", "type": "nominal" },
+                  { "field": "run-link", "type": "nominal" }
+                ]
+              }
+            },
+            {
+              "id": "overview-operational-values-source",
+              "title": "Overview operational values source",
+              "data": { "source": "operational-values" },
+              "mark": "chart",
+              "encoding": {
+                "x": { "field": "observed-at", "type": "temporal", "time-unit": "day" },
+                "y": { "field": "operational-value", "type": "quantitative" },
+                "color": { "field": "operational-value-definition", "type": "nominal" }
+              }
+            }
+          ]
+        }
+      },
+      {
+        "id": "organizations",
+        "kind": "built-in",
+        "page": "organizations",
+        "title": "Organizations",
+        "definition": {
+          "data-state": {
+            "availability": true,
+            "completeness": true,
+            "freshness": true
+          },
+          "views": [
+            {
+              "id": "organizations-organizations-source",
+              "data": { "source": "organizations" },
+              "mark": "table",
+              "encoding": {
+                "columns": [
+                  { "field": "organization", "type": "nominal" }
+                ]
+              }
+            },
+            {
+              "id": "organizations-repositories-source",
+              "data": { "source": "repositories" },
+              "mark": "table",
+              "encoding": {
+                "columns": [
+                  { "field": "repository", "type": "nominal" }
+                ]
+              }
+            },
+            {
+              "id": "organizations-workflows-source",
+              "data": { "source": "workflows" },
+              "mark": "table",
+              "encoding": {
+                "columns": [
+                  { "field": "workflow", "type": "nominal" }
+                ]
+              }
+            },
+            {
+              "id": "organizations-runs-source",
+              "data": { "source": "runs" },
+              "mark": "metric",
+              "encoding": {
+                "value": { "field": "run", "type": "nominal", "aggregate": "distinct-count" }
+              }
+            },
+            {
+              "id": "organizations-usage-source",
+              "data": { "source": "usage" },
+              "mark": "metric",
+              "encoding": {
+                "value": { "field": "aic", "type": "quantitative", "aggregate": "sum" }
+              }
+            }
+          ]
+        }
+      },
+      {
+        "id": "repositories",
+        "kind": "built-in",
+        "page": "repositories",
+        "title": "Repositories",
+        "definition": {
+          "data-state": {
+            "availability": true,
+            "completeness": true,
+            "freshness": true
+          },
+          "views": [
+            {
+              "id": "repositories-repositories-source",
+              "data": { "source": "repositories" },
+              "mark": "table",
+              "encoding": {
+                "columns": [
+                  { "field": "repository", "type": "nominal" }
+                ]
+              }
+            },
+            {
+              "id": "repositories-runs-source",
+              "data": { "source": "runs" },
+              "mark": "metric",
+              "encoding": {
+                "value": { "field": "run", "type": "nominal", "aggregate": "distinct-count" }
+              }
+            },
+            {
+              "id": "repositories-usage-source",
+              "data": { "source": "usage" },
+              "mark": "metric",
+              "encoding": {
+                "value": { "field": "aic", "type": "quantitative", "aggregate": "sum" }
+              }
+            },
+            {
+              "id": "repositories-operational-values-source",
+              "data": { "source": "operational-values" },
+              "mark": "table",
+              "encoding": {
+                "columns": [
+                  { "field": "operational-value", "type": "quantitative" },
+                  { "field": "operational-value-definition", "type": "nominal" }
+                ]
+              }
+            }
+          ]
+        }
+      },
+      {
+        "id": "workflows",
+        "kind": "built-in",
+        "page": "workflows",
+        "title": "Workflows",
+        "definition": {
+          "data-state": {
+            "availability": true,
+            "completeness": true,
+            "freshness": true
+          },
+          "views": [
+            {
+              "id": "workflows-workflows-source",
+              "data": { "source": "workflows" },
+              "mark": "table",
+              "encoding": {
+                "columns": [
+                  { "field": "workflow", "type": "nominal" },
+                  { "field": "workflow-active", "type": "nominal" },
+                  { "field": "rollout-mode", "type": "nominal" }
+                ]
+              }
+            },
+            {
+              "id": "workflows-runs-source",
+              "data": { "source": "runs" },
+              "mark": "table",
+              "encoding": {
+                "columns": [
+                  { "field": "run", "type": "nominal" },
+                  { "field": "run-conclusion", "type": "nominal" }
+                ]
+              }
+            },
+            {
+              "id": "workflows-outcomes-source",
+              "data": { "source": "outcomes" },
+              "mark": "metric",
+              "encoding": {
+                "value": { "field": "outcome-state", "type": "nominal", "aggregate": "count" }
+              }
+            },
+            {
+              "id": "workflows-usage-source",
+              "data": { "source": "usage" },
+              "mark": "metric",
+              "encoding": {
+                "value": { "field": "aic", "type": "quantitative", "aggregate": "sum" }
+              }
+            },
+            {
+              "id": "workflows-findings-source",
+              "data": { "source": "findings" },
+              "mark": "metric",
+              "encoding": {
+                "value": { "field": "finding", "type": "nominal", "aggregate": "count" }
+              }
+            },
+            {
+              "id": "workflows-operational-values-source",
+              "data": { "source": "operational-values" },
+              "mark": "metric",
+              "encoding": {
+                "value": { "field": "operational-value", "type": "quantitative", "aggregate": "count" }
+              }
+            }
+          ]
+        }
+      },
+      {
+        "id": "runs",
+        "kind": "built-in",
+        "page": "runs",
+        "title": "Runs",
+        "definition": {
+          "data-state": {
+            "availability": true,
+            "completeness": true,
+            "freshness": true
+          },
+          "views": [
+            {
+              "id": "runs-runs-source",
+              "data": { "source": "runs" },
+              "mark": "table",
+              "encoding": {
+                "columns": [
+                  { "field": "run", "type": "nominal" },
+                  { "field": "run-status", "type": "nominal" },
+                  { "field": "run-conclusion", "type": "nominal" },
+                  { "field": "organization", "type": "nominal" },
+                  { "field": "repository", "type": "nominal" },
+                  { "field": "workflow", "type": "nominal" },
+                  { "field": "rollout-mode", "type": "nominal" },
+                  { "field": "engine", "type": "nominal" },
+                  { "field": "requested-model", "type": "nominal" },
+                  { "field": "resolved-model", "type": "nominal" },
+                  { "field": "started-at", "type": "temporal" }
+                ]
+              }
+            },
+            {
+              "id": "runs-outcomes-source",
+              "data": { "source": "outcomes" },
+              "mark": "table",
+              "encoding": {
+                "href": { "field": "run-link", "type": "nominal" },
+                "columns": [
+                  { "field": "run-link", "type": "nominal" }
+                ]
+              }
+            }
+          ]
+        }
+      },
+      {
+        "id": "experiments",
+        "kind": "built-in",
+        "page": "experiments",
+        "title": "Experiments",
+        "definition": {
+          "data-state": {
+            "availability": true,
+            "completeness": true,
+            "freshness": true
+          },
+          "views": [
+            {
+              "id": "experiments-experiments-source",
+              "data": { "source": "experiments" },
+              "mark": "table",
+              "encoding": {
+                "columns": [
+                  { "field": "experiment", "type": "nominal" }
+                ]
+              }
+            },
+            {
+              "id": "experiments-assignments-source",
+              "data": { "source": "experiment-assignments" },
+              "mark": "table",
+              "encoding": {
+                "columns": [
+                  { "field": "run", "type": "nominal" },
+                  { "field": "variant", "type": "nominal" }
+                ]
+              }
+            },
+            {
+              "id": "experiments-grader-observations-source",
+              "data": { "source": "grader-observations" },
+              "mark": "metric",
+              "encoding": {
+                "value": { "field": "grader", "type": "nominal", "aggregate": "count" }
+              }
+            },
+            {
+              "id": "experiments-eval-observations-source",
+              "data": { "source": "eval-observations" },
+              "mark": "metric",
+              "encoding": {
+                "value": { "field": "eval", "type": "nominal", "aggregate": "count" }
+              }
+            },
+            {
+              "id": "experiments-outcomes-source",
+              "data": { "source": "outcomes" },
+              "mark": "metric",
+              "encoding": {
+                "value": { "field": "outcome-state", "type": "nominal", "aggregate": "count" }
+              }
+            },
+            {
+              "id": "experiments-usage-source",
+              "data": { "source": "usage" },
+              "mark": "metric",
+              "encoding": {
+                "value": { "field": "aic", "type": "quantitative", "aggregate": "sum" }
+              }
+            },
+            {
+              "id": "experiments-operational-values-source",
+              "data": { "source": "operational-values" },
+              "mark": "metric",
+              "encoding": {
+                "value": { "field": "operational-value", "type": "quantitative", "aggregate": "count" }
+              }
+            }
+          ]
+        }
+      },
+      {
+        "id": "graders",
+        "kind": "built-in",
+        "page": "graders",
+        "title": "Graders",
+        "definition": {
+          "data-state": {
+            "availability": true,
+            "completeness": true,
+            "freshness": true
+          },
+          "views": [
+            {
+              "id": "graders-graders-source",
+              "data": { "source": "graders" },
+              "mark": "table",
+              "encoding": {
+                "columns": [
+                  { "field": "grader", "type": "nominal" }
+                ]
+              }
+            },
+            {
+              "id": "graders-observations-source",
+              "data": { "source": "grader-observations" },
+              "mark": "table",
+              "encoding": {
+                "columns": [
+                  { "field": "grader", "type": "nominal" },
+                  { "field": "run", "type": "nominal" },
+                  { "field": "value", "type": "quantitative" },
+                  { "field": "status", "type": "nominal" },
+                  { "field": "observed-at", "type": "temporal" }
+                ]
+              }
+            }
+          ]
+        }
+      },
+      {
+        "id": "evals",
+        "kind": "built-in",
+        "page": "evals",
+        "title": "Evals",
+        "definition": {
+          "data-state": {
+            "availability": true,
+            "completeness": true,
+            "freshness": true
+          },
+          "views": [
+            {
+              "id": "evals-evals-source",
+              "data": { "source": "evals" },
+              "mark": "table",
+              "encoding": {
+                "columns": [
+                  { "field": "eval", "type": "nominal" }
+                ]
+              }
+            },
+            {
+              "id": "evals-observations-source",
+              "data": { "source": "eval-observations" },
+              "mark": "table",
+              "encoding": {
+                "columns": [
+                  { "field": "eval", "type": "nominal" },
+                  { "field": "run", "type": "nominal" },
+                  { "field": "eval-result", "type": "nominal" },
+                  { "field": "requested-model", "type": "nominal" },
+                  { "field": "resolved-model", "type": "nominal" },
+                  { "field": "observed-at", "type": "temporal" }
+                ]
+              }
+            }
+          ]
+        }
+      },
+      {
+        "id": "usage",
+        "kind": "built-in",
+        "page": "usage",
+        "title": "Usage",
+        "definition": {
+          "data-state": {
+            "availability": true,
+            "completeness": true,
+            "freshness": true
+          },
+          "views": [
+            {
+              "id": "usage-usage-source",
+              "data": { "source": "usage" },
+              "mark": "table",
+              "encoding": {
+                "columns": [
+                  { "field": "input-tokens", "type": "quantitative" },
+                  { "field": "output-tokens", "type": "quantitative" },
+                  { "field": "cache-read-tokens", "type": "quantitative" },
+                  { "field": "cache-write-tokens", "type": "quantitative" },
+                  { "field": "reasoning-tokens", "type": "quantitative" },
+                  { "field": "aic", "type": "quantitative" },
+                  { "field": "engine", "type": "nominal" },
+                  { "field": "requested-model", "type": "nominal" },
+                  { "field": "resolved-model", "type": "nominal" },
+                  { "field": "organization", "type": "nominal" },
+                  { "field": "repository", "type": "nominal" },
+                  { "field": "workflow", "type": "nominal" },
+                  { "field": "rollout-mode", "type": "nominal" },
+                  { "field": "observed-at", "type": "temporal" }
+                ]
+              }
+            }
+          ]
+        }
+      },
+      {
+        "id": "engines-models",
+        "kind": "built-in",
+        "page": "engines-models",
+        "title": "Engines Models",
+        "definition": {
+          "data-state": {
+            "availability": true,
+            "completeness": true,
+            "freshness": true
+          },
+          "views": [
+            {
+              "id": "engines-models-runs-source",
+              "data": { "source": "runs" },
+              "mark": "table",
+              "encoding": {
+                "columns": [
+                  { "field": "engine", "type": "nominal" },
+                  { "field": "requested-model", "type": "nominal" },
+                  { "field": "resolved-model", "type": "nominal" },
+                  { "field": "run", "type": "nominal" },
+                  { "field": "run-conclusion", "type": "nominal" }
+                ]
+              }
+            },
+            {
+              "id": "engines-models-outcomes-source",
+              "data": { "source": "outcomes" },
+              "mark": "metric",
+              "encoding": {
+                "value": { "field": "outcome-state", "type": "nominal", "aggregate": "count" }
+              }
+            },
+            {
+              "id": "engines-models-usage-source",
+              "data": { "source": "usage" },
+              "mark": "table",
+              "encoding": {
+                "columns": [
+                  { "field": "input-tokens", "type": "quantitative" },
+                  { "field": "output-tokens", "type": "quantitative" },
+                  { "field": "cache-read-tokens", "type": "quantitative" },
+                  { "field": "cache-write-tokens", "type": "quantitative" },
+                  { "field": "reasoning-tokens", "type": "quantitative" },
+                  { "field": "aic", "type": "quantitative" }
+                ]
+              }
+            }
+          ]
+        }
+      },
+      {
+        "id": "operational-value",
+        "kind": "built-in",
+        "page": "operational-value",
+        "title": "Operational Value",
+        "definition": {
+          "data-state": {
+            "availability": true,
+            "completeness": true,
+            "freshness": true
+          },
+          "views": [
+            {
+              "id": "operational-value-source",
+              "data": { "source": "operational-values" },
+              "mark": "table",
+              "encoding": {
+                "columns": [
+                  { "field": "observed-at", "type": "temporal" },
+                  { "field": "operational-value", "type": "quantitative" },
+                  { "field": "operational-value-definition", "type": "nominal" },
+                  { "field": "operational-case", "type": "nominal" },
+                  { "field": "evaluator-digest", "type": "nominal" },
+                  { "field": "requested-evidence-at", "type": "temporal" },
+                  { "field": "evidence-cutoff", "type": "temporal" },
+                  { "field": "maturity-at", "type": "temporal" },
+                  { "field": "maturity-status", "type": "nominal" },
+                  { "field": "evidence-link", "type": "nominal" },
+                  { "field": "experiment", "type": "nominal" },
+                  { "field": "delta-from-baseline", "type": "quantitative" }
+                ]
+              }
+            }
+          ]
+        }
+      },
+      {
+        "id": "findings",
+        "kind": "built-in",
+        "page": "findings",
+        "title": "Findings",
+        "definition": {
+          "data-state": {
+            "availability": true,
+            "completeness": true,
+            "freshness": true
+          },
+          "views": [
+            {
+              "id": "findings-source",
+              "data": { "source": "findings" },
+              "mark": "table",
+              "encoding": {
+                "columns": [
+                  { "field": "finding-summary", "type": "nominal" },
+                  { "field": "finding-severity", "type": "nominal" },
+                  { "field": "finding-status", "type": "nominal" },
+                  { "field": "organization", "type": "nominal" },
+                  { "field": "repository", "type": "nominal" },
+                  { "field": "workflow", "type": "nominal" },
+                  { "field": "observed-at", "type": "temporal" },
+                  { "field": "issue-link", "type": "nominal" },
+                  { "field": "pull-request-link", "type": "nominal" },
+                  { "field": "run-link", "type": "nominal" }
+                ]
+              }
+            }
+          ]
+        }
+      }
+    ]
+  }
+}

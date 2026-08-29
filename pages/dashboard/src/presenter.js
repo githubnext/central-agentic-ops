@@ -366,52 +366,9 @@ function renderBuiltInPage(page, title, sources) {
  * @returns {HTMLElement}
  */
 function renderBuiltInPageBody(page, pageSources) {
-  if (page.page === 'runs') {
-    return renderRunsPage(pageSources);
-  }
-
-  if (page.page === 'workflows') {
-    return renderWorkflowsPage(pageSources);
-  }
-
-  if (page.page === 'findings') {
-    return renderFindingsPage(pageSources);
-  }
-
-  if (page.page === 'usage') {
-    return renderUsagePage(pageSources);
-  }
-
-  if (page.page === 'engines-models') {
-    return renderEnginesModelsPage(pageSources);
-  }
-
-  if (page.page === 'operational-value') {
-    return renderOperationalValuePage(pageSources);
-  }
-
-  if (page.page === 'organizations') {
-    return renderOrganizationsPage(pageSources);
-  }
-
-  if (page.page === 'repositories') {
-    return renderRepositoriesPage(pageSources);
-  }
-
-  if (page.page === 'experiments') {
-    return renderExperimentsPage(pageSources);
-  }
-
-  if (page.page === 'graders') {
-    return renderGradersPage(pageSources);
-  }
-
-  if (page.page === 'evals') {
-    return renderEvalsPage(pageSources);
-  }
-
-  if (page.page === 'overview') {
-    return renderOverviewPage(pageSources);
+  const renderer = BUILT_IN_PAGE_RENDERERS[page.page];
+  if (renderer) {
+    return renderer(pageSources);
   }
 
   return h('p', { className: 'page-placeholder' }, `Built-in page ${page.page} is not rendered in this increment.`);
@@ -1289,6 +1246,21 @@ function getViewSource(view) {
   }
   return view.data.source;
 }
+
+const BUILT_IN_PAGE_RENDERERS = {
+  overview: renderOverviewPage,
+  organizations: renderOrganizationsPage,
+  repositories: renderRepositoriesPage,
+  workflows: renderWorkflowsPage,
+  runs: renderRunsPage,
+  experiments: renderExperimentsPage,
+  graders: renderGradersPage,
+  evals: renderEvalsPage,
+  usage: renderUsagePage,
+  'engines-models': renderEnginesModelsPage,
+  'operational-value': renderOperationalValuePage,
+  findings: renderFindingsPage
+};
 
 /**
  * @param {Map<string, number>} counts
