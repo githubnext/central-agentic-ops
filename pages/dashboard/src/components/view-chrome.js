@@ -34,6 +34,14 @@ export function renderTitledRegion(pageId, title, content) {
 }
 
 /**
+ * @param {string[]} details
+ * @returns {HTMLElement}
+ */
+export function renderContextList(details) {
+  return h('ul', { className: 'view-context' }, details.map((detail) => h('li', null, detail)));
+}
+
+/**
  * @param {string} sourceName
  * @param {{ 'as-of': string, completeness: string, freshness: string }} metadata
  * @returns {HTMLElement[]}

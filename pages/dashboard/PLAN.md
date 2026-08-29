@@ -54,7 +54,7 @@
 - `src/components/badge.js` — presentation-only Primer status, mode, and active-state badges.
 - `src/components/data-state.js` — presentation-only data-state metrics card grid for availability, completeness, and freshness.
 - `src/components/table-region.js` — presentation-only reusable table wrapper for repeated table-region markup, header rows, empty-state rows, and keyed body-row descriptors across built-in and custom tables.
-- `src/components/view-chrome.js` — presentation-only reusable page-section, titled-region, custom-view source/metadata chrome, and built-in provenance-section helpers.
+- `src/components/view-chrome.js` — presentation-only reusable page-section, titled-region, custom-view source/metadata/context chrome, and built-in provenance-section helpers.
 
 ## Infrastructure blockers
 
@@ -71,7 +71,17 @@
 - Added unit coverage in `test/unit/view-chrome.test.js` for titled-region composition and reusable provenance-section rendering, including empty provenance fallback output.
 - Proved unchanged behavior by keeping the full existing unit and browser suites green and by capturing a presenter diff at `/tmp/gh-aw/agent/presenter-refactor.diff`, confirming the affected pages changed only by replacing repeated heading-plus-content assembly with `renderTitledRegion(...)` / `renderProvenanceSection(...)` calls while preserving the same DOM text, section headings, class names, and accessible labeling.
 - Verified quality gates from `pages/dashboard/`: `npm install`, `npm run typecheck`, `npm run lint`, `npm test`, and `npm run test:e2e` all pass.
-- Next candidates in the queue: extract repeated built-in summary-section composition for count lists; extract repeated custom-view context-list rendering; extract the next shared pure helpers around subject/provenance/count formatting in `src/presenter.js`.
+- Next candidates in the queue: extract repeated built-in summary-section composition for count lists; extract the next shared pure helpers around subject/provenance/count formatting in `src/presenter.js`; extract repeated built-in definitions/observations dual-region composition in `src/presenter.js`.
+
+### 2026-08-29 (custom-view context-list refactor)
+
+- Re-inventoried duplication in `src/presenter.js` and selected the highest remaining bounded custom-view chrome slice: repeated `.view-context` list construction in `renderCustomViewState`, `renderMetricView`, `renderTableView`, and `renderChartView`.
+- Extended `src/components/view-chrome.js` with presentation-only `renderContextList(details)` so custom views can reuse the same context-strip DOM shape without rebuilding the unordered-list markup at each call site.
+- Collapsed every duplicated custom-view context-list call site identified in `src/presenter.js`, preserving the same DOM text, list item ordering, class names, and empty-list behavior.
+- Added unit coverage in `test/unit/view-chrome.test.js` for populated and empty context-list rendering under `DLS-VIEW-013`.
+- Proved unchanged behavior by keeping the full test suite green, capturing the affected diff at `/tmp/gh-aw/agent/context-list-refactor.diff`, and rendering the existing custom-views presenter fixture to `/tmp/gh-aw/agent/custom-page-after.html` to confirm the refactored page still emits the same custom metric, table, chart, empty, and unavailable view text.
+- Verified quality gates from `pages/dashboard/`: `npm install`, `npm run typecheck`, `npm run lint`, `npm test`, and `npm run test:e2e` all pass.
+- Next candidates in the queue: extract repeated built-in summary-section composition for count lists; extract the next shared pure helpers around subject/provenance/count formatting in `src/presenter.js`; extract repeated built-in definitions/observations dual-region composition in `src/presenter.js`.
 
 ### 2026-08-29 (view-chrome component refactor)
 
