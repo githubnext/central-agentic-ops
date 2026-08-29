@@ -8,7 +8,7 @@ import { octicon, agenticWorkflowMark } from './octicons.js';
 import { renderStatusBadge, renderModeBadge, renderActiveStateBadge } from './components/badge.js';
 import { renderDataStateMetrics } from './components/data-state.js';
 import { renderTableRegion } from './components/table-region.js';
-import { renderPageSection, renderProvenanceSection, renderTitledRegion, renderViewHeader } from './components/view-chrome.js';
+import { renderContextList, renderPageSection, renderProvenanceSection, renderTitledRegion, renderViewHeader } from './components/view-chrome.js';
 
 /**
  * @typedef {{ availability: 'available'|'empty'|'unavailable', completeness: 'complete'|'partial'|'unknown', freshness: 'fresh'|'stale'|'unknown' }} DataState
@@ -1235,7 +1235,7 @@ function renderCustomViewState(pageId, title, sourceName, availability, contextD
   if (sourceName) {
     content.push(h('p', { className: 'view-source' }, `Affected source: ${sourceName}`));
   }
-  content.push(h('ul', { className: 'view-context' }, contextDetails.map((detail) => h('li', null, detail))));
+  content.push(renderContextList(contextDetails));
   return renderPageSection(pageId, title, content);
 }
 
@@ -1293,7 +1293,7 @@ function renderMetricView(pageId, title, view, sourceName, rows, metadata, conte
   if (link) {
     content.push(h('p', { className: 'metric-link' }, renderExternalLink(link)));
   }
-  content.push(h('ul', { className: 'view-context' }, contextDetails.map((detail) => h('li', null, detail))));
+  content.push(renderContextList(contextDetails));
   return renderPageSection(pageId, title, content);
 }
 
@@ -1338,7 +1338,7 @@ function renderTableView(pageId, title, view, sourceName, rows, metadata, contex
         ))
         : []
     }),
-    h('ul', { className: 'view-context' }, contextDetails.map((detail) => h('li', null, detail)))
+    renderContextList(contextDetails)
   ]);
 }
 
@@ -1394,7 +1394,7 @@ function renderChartView(pageId, title, view, sourceName, rows, metadata, contex
         ))
         : []
     }),
-    h('ul', { className: 'view-context' }, contextDetails.map((detail) => h('li', null, detail)))
+    renderContextList(contextDetails)
   ]);
 }
 

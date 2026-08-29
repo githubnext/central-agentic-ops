@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import { describe, expect, it } from 'vitest';
-import { renderPageSection, renderProvenanceList, renderProvenanceSection, renderTitledRegion, renderViewHeader } from '../../src/components/view-chrome.js';
+import { renderContextList, renderPageSection, renderProvenanceList, renderProvenanceSection, renderTitledRegion, renderViewHeader } from '../../src/components/view-chrome.js';
 
 describe('view chrome component helpers', () => {
   it('DLS-SAFE-007 renders focusable labeled page sections with deterministic heading ids', () => {
@@ -40,6 +40,19 @@ describe('view chrome component helpers', () => {
     expect(header[0]?.textContent).toBe('Source: usage');
     expect(header[1]?.className).toBe('view-metadata');
     expect(header[1]?.textContent).toBe('As of 2026-08-29T20:00:00Z • completeness complete • freshness fresh');
+  });
+
+  it('DLS-VIEW-013 renders reusable custom-view context lists including empty input', () => {
+    const populated = renderContextList(['Source: usage', 'Scope: {"organization":"github"}']);
+    const empty = renderContextList([]);
+
+    expect(populated.className).toBe('view-context');
+    expect(populated.querySelectorAll('li')).toHaveLength(2);
+    expect(populated.textContent).toContain('Source: usage');
+    expect(populated.textContent).toContain('Scope: {"organization":"github"}');
+    expect(empty.className).toBe('view-context');
+    expect(empty.querySelectorAll('li')).toHaveLength(0);
+    expect(empty.textContent).toBe('');
   });
 
   it('DLS-SAFE-007 wraps single-content titled regions with the shared page-section markup', () => {
