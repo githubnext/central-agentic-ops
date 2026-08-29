@@ -1086,7 +1086,6 @@ await Promise.all([
   ["all", "index.html", "Runs"],
   ["failed", "failed.html", "Failed runs"],
   ["action-required", "action-required.html", "Approval required"],
-  ["in-progress", "in-progress.html", "Runs in progress"],
 ].map(async ([filter, fileName, title]) => writeFile(path.join(outputDirectory, "runs", fileName), layout({
   title,
   description: `${title} retained from ${dashboardScope.description}.`,
@@ -1239,26 +1238,23 @@ function controlPlaneStatusContent(workflows, coverage, repositories, health, he
   const inventoryWarnings = bundleDefinitions.reduce((total, bundle) => total + (bundle.compiled ? 0 : 1) + bundle.missingWorkers.length, 0);
   const coverageGap = !deployedInventory.includePrivate || !runHealthAvailable || !deployedInventory.runHealth.complete || !spend.available || !spend.complete;
   const failureRate = health.runs > 0 ? health.failed / health.runs : 0;
-  const otherRuns = Math.max(0, health.runs - health.successful - health.failed - health.actionRequired - health.pending);
   const percent = (value) => health.runs > 0 ? `${(value / health.runs * 100).toFixed(2)}%` : "0%";
   const state = health.failed > 0 || inventoryWarnings > 0
     ? { className: "control-plane-critical", icon: "issue", label: "Attention required" }
     : health.actionRequired > 0
       ? { className: "control-plane-monitoring", icon: "issue", label: "Approval required" }
-      : health.pending > 0 || coverageGap
-      ? { className: "control-plane-monitoring", icon: "play", label: "Monitoring" }
-      : { className: "control-plane-healthy", icon: "check-circle", label: "Healthy" };
+      : coverageGap
+        ? { className: "control-plane-monitoring", icon: "play", label: "Monitoring" }
+        : { className: "control-plane-healthy", icon: "check-circle", label: "Healthy" };
   const summary = health.failed > 0
     ? `${formatCount(health.failed)} of ${formatCount(health.runs)} runs failed across ${formatCount(failureRepositories)} of ${formatCount(repositories.length)} repositories in the current window.`
     : health.actionRequired > 0
       ? `${formatCount(health.actionRequired)} run${health.actionRequired === 1 ? " is" : "s are"} waiting for a maintainer to approve execution.`
       : !runHealthAvailable
       ? "Run telemetry is unavailable, so execution health cannot be determined."
-      : health.pending > 0
-        ? `${formatCount(health.pending)} runs are in progress; no failures are currently observed.`
-        : health.runs > 0
-          ? `No failures observed across ${formatCount(health.runs)} runs in the current window.`
-          : "No workflow runs were observed in the current window.";
+      : health.runs > 0
+        ? `No failures observed across ${formatCount(health.runs)} runs in the current window.`
+        : "No workflow runs were observed in the current window.";
   const failureRateLabel = runHealthAvailable && health.runs > 0
     ? new Intl.NumberFormat("en", { style: "percent", maximumFractionDigits: 1 }).format(failureRate)
     : "—";
@@ -1275,14 +1271,13 @@ function controlPlaneStatusContent(workflows, coverage, repositories, health, he
       <div><dt>Active workflows</dt><dd>${formatCount(active)}</dd><p>${formatCount(disabled)} disabled · ${formatCount(coverage.discovered)} repositories</p></div>
       <div><dt>Runs · 24h</dt><dd>${runHealthAvailable ? formatCount(health.runs) : "—"}</dd><p>${escapeHtml(healthLabel)}</p></div>
       <div class="vital-failures"><dt>Failure rate</dt><dd>${failureRateLabel}</dd><p>${runHealthAvailable ? `${formatCount(health.failed)} failed runs` : "Telemetry unavailable"}</p></div>
-      <div class="vital-running"><dt>Running now</dt><dd>${runHealthAvailable ? formatCount(health.pending) : "—"}</dd><p>Queued or in progress</p></div>
     </dl>
     <div class="execution-health">
       <div class="execution-health-heading"><strong>24-hour execution health</strong><span>${escapeHtml(aicCoverage)} · <a href="runs/">View all runs</a></span></div>
-      <div class="execution-track" role="img" aria-label="${formatCount(health.successful)} successful, ${formatCount(health.failed)} failed, ${formatCount(health.actionRequired)} awaiting approval, ${formatCount(health.pending)} running, and ${formatCount(otherRuns)} other runs">
-        <span class="execution-success" style="width:${percent(health.successful)}"></span><span class="execution-failed" style="width:${percent(health.failed)}"></span><span class="execution-approval" style="width:${percent(health.actionRequired)}"></span><span class="execution-running" style="width:${percent(health.pending)}"></span><span class="execution-other" style="width:${percent(otherRuns)}"></span>
+      <div class="execution-track" role="img" aria-label="${formatCount(health.successful)} successful, ${formatCount(health.failed)} failed, ${formatCount(health.actionRequired)} awaiting approval, and ${formatCount(health.other)} other runs">
+        <span class="execution-success" style="width:${percent(health.successful)}"></span><span class="execution-failed" style="width:${percent(health.failed)}"></span><span class="execution-approval" style="width:${percent(health.actionRequired)}"></span><span class="execution-other" style="width:${percent(health.other)}"></span>
       </div>
-      <ul class="execution-legend"><li><span class="legend-success"></span>Successful <strong>${formatCount(health.successful)}</strong></li><li><span class="legend-failed"></span>Failed <strong>${formatCount(health.failed)}</strong></li><li><span class="legend-approval"></span>Approval required <strong>${formatCount(health.actionRequired)}</strong></li><li><span class="legend-running"></span>Running <strong>${formatCount(health.pending)}</strong></li><li><span class="legend-other"></span>Other <strong>${formatCount(otherRuns)}</strong></li></ul>
+      <ul class="execution-legend"><li><span class="legend-success"></span>Successful <strong>${formatCount(health.successful)}</strong></li><li><span class="legend-failed"></span>Failed <strong>${formatCount(health.failed)}</strong></li><li><span class="legend-approval"></span>Approval required <strong>${formatCount(health.actionRequired)}</strong></li><li><span class="legend-other"></span>Other <strong>${formatCount(health.other)}</strong></li></ul>
     </div>
   </section>`;
 }
@@ -1323,7 +1318,7 @@ function coverageDiagnostics(spend) {
   });
   if (!deployedInventory.runHealth?.available) diagnostics.push({
     title: "Run telemetry is unavailable",
-    effect: "Run status, failures, and in-progress counts cannot be determined.",
+    effect: "Run status and failure counts cannot be determined.",
   });
   else if (!deployedInventory.runHealth.complete) diagnostics.push({
     title: "Run telemetry is partial",
@@ -1348,9 +1343,8 @@ function attentionContent(workflows, repositories, health, spend) {
   if (health.failed > 0) items.push(`<li class="attention-action attention-critical"><a class="attention-item-link" href="runs/failed.html">${octicon("issue")}<div><strong>${formatCount(health.failed)} failed runs</strong><span>Across ${formatCount(failureRepositories.length)} repositor${failureRepositories.length === 1 ? "y" : "ies"} in the current window</span></div></a></li>`);
   if (health.actionRequired > 0) items.push(`<li class="attention-action"><a class="attention-item-link" href="runs/action-required.html">${octicon("shield")}<div><strong>${formatCount(health.actionRequired)} run${health.actionRequired === 1 ? "" : "s"} awaiting approval</strong><span>A maintainer must approve execution in GitHub Actions</span></div></a></li>`);
   if (disabled.length > 0) items.push(`<li class="attention-action"><a class="attention-item-link" href="workflows/?state=disabled">${octicon("eye")}<div><strong>${formatCount(disabled.length)} disabled workflows</strong><span>Repository-owned workflows not currently active</span></div></a></li>`);
-  if (health.pending > 0) items.push(`<li class="attention-action"><a class="attention-item-link" href="runs/in-progress.html">${octicon("play")}<div><strong>${formatCount(health.pending)} runs in progress</strong><span>Pending completion in the current run window</span></div></a></li>`);
   if (dataGaps.length > 0) items.push(`<li class="attention-action"><a class="attention-item-link" href="coverage/">${octicon("codescan")}<div><strong>Coverage needs context</strong><span>${escapeHtml(dataGaps.map((gap) => gap.title.toLowerCase()).join("; "))}</span></div></a></li>`);
-  if (items.length === 0) items.push(`<li>${octicon("check-circle")}<div><strong>No immediate attention items</strong><span>No failures, approval-gated runs, disabled workflows, pending runs, or coverage gaps observed</span></div></li>`);
+  if (items.length === 0) items.push(`<li>${octicon("check-circle")}<div><strong>No immediate attention items</strong><span>No failures, approval-gated runs, disabled workflows, or coverage gaps observed</span></div></li>`);
   return `<section class="attention-panel" aria-labelledby="attention-heading"><header><div><span class="scope-kicker">Act now</span><h2 id="attention-heading">Needs attention</h2></div><strong>${formatCount(items.length)}</strong></header><ul>${items.join("")}</ul></section>`;
 }
 
@@ -1374,8 +1368,6 @@ function repositoryHealthContent(repositories, available, repositoryLinkPrefix =
       ? `<a class="status status-danger" href="../runs/failed.html?repository=${encodeURIComponent(entry.repository)}">Needs attention</a>`
       : entry.health.actionRequired > 0
         ? `<a class="status status-attention" href="../runs/action-required.html?repository=${encodeURIComponent(entry.repository)}">Approval required</a>`
-        : entry.health.pending > 0
-        ? `<a class="status status-attention" href="../runs/in-progress.html?repository=${encodeURIComponent(entry.repository)}">In progress</a>`
         : entry.health.runs > 0
           ? '<span class="status status-success">No failures observed</span>'
           : entry.disabled > 0
@@ -1398,20 +1390,20 @@ function runCatalogContent(workflows, selectedFilter) {
     repository: workflow.repository,
     workflowName: workflow.name,
     workflowPath: workflow.path,
-    category: failureConclusions.has(run.conclusion) ? "failed" : run.conclusion === "action_required" ? "action-required" : run.conclusion === null ? "in-progress" : "other",
+    category: failureConclusions.has(run.conclusion) ? "failed" : run.conclusion === "action_required" ? "action-required" : "other",
   })));
   const runs = allRuns.filter((run) => selectedFilter === "all" || run.category === selectedFilter)
     .sort((left, right) => Date.parse(right.createdAt || "") - Date.parse(left.createdAt || ""));
   const repositoryOptions = [...new Set(allRuns.map((run) => run.repository))].sort()
     .map((repositoryName) => `<option value="${escapeHtml(repositoryName)}">${escapeHtml(repositoryName)}</option>`).join("");
   const rows = runs.map((run) => {
-    const statusLabel = run.category === "action-required" ? "Approval required" : run.category === "in-progress" ? run.status || "in progress" : run.conclusion || "unknown";
-    const statusClass = run.category === "failed" ? "status-danger" : ["action-required", "in-progress"].includes(run.category) ? "status-attention" : run.conclusion === "success" ? "status-success" : "status-muted";
+    const statusLabel = run.category === "action-required" ? "Approval required" : run.conclusion || "unknown";
+    const statusClass = run.category === "failed" ? "status-danger" : run.category === "action-required" ? "status-attention" : run.conclusion === "success" ? "status-success" : "status-muted";
     const searchText = `${run.displayTitle || `Run ${run.runId}`} ${run.workflowName} ${run.repository} ${statusLabel}`.toLowerCase();
     return `<tr data-run-row data-repository="${escapeHtml(run.repository)}" data-search="${escapeHtml(searchText)}"><th scope="row"><a href="https://github.com/${escapeHtml(run.repository)}/actions/runs/${escapeHtml(run.runId)}">${escapeHtml(run.displayTitle || `Run ${run.runId}`)}${octicon("external-link")}</a></th><td><a href="../repositories/${escapeHtml(repositoryWorkflowPageName(run.repository, run.workflowPath))}.html">${escapeHtml(run.workflowName)}</a></td><td><a href="../repositories/${escapeHtml(repositoryPageName(run.repository))}.html">${escapeHtml(run.repository)}</a></td><td><span class="status ${statusClass}">${escapeHtml(statusLabel.replaceAll("_", " "))}</span></td><td><time datetime="${escapeHtml(run.createdAt || "")}">${escapeHtml(formatDate(run.createdAt))}</time></td></tr>`;
   }).join("\n");
-  const labels = { all: "All", failed: "Failed", "action-required": "Approval required", "in-progress": "In progress" };
-  const tabs = [["all", "index.html"], ["failed", "failed.html"], ["action-required", "action-required.html"], ["in-progress", "in-progress.html"]]
+  const labels = { all: "All", failed: "Failed", "action-required": "Approval required" };
+  const tabs = [["all", "index.html"], ["failed", "failed.html"], ["action-required", "action-required.html"]]
     .map(([filter, href]) => `<a href="${href}" data-run-filter-href="${href}"${selectedFilter === filter ? ' aria-current="page"' : ""}>${labels[filter]}</a>`).join("");
   return `<nav class="mode-tabs" aria-label="Filter runs by status">${tabs}</nav>
   <section class="run-catalog" aria-labelledby="run-catalog-heading">
@@ -1483,8 +1475,18 @@ function dispatchCatalogContent(workflows) {
   const packageOptions = [...new Set(dispatches.map((dispatch) => dispatch.packageName))].sort()
     .map((packageName) => `<option value="${escapeHtml(packageName)}">${escapeHtml(packageName)}</option>`).join("");
   const rows = dispatches.map((dispatch) => {
-    const statusLabel = dispatch.conclusion === "action_required" ? "Approval required" : dispatch.conclusion === null ? dispatch.status || "in progress" : dispatch.conclusion || "unknown";
-    const statusClassName = failureConclusions.has(dispatch.conclusion) ? "status-danger" : dispatch.conclusion === "action_required" || dispatch.conclusion === null ? "status-attention" : dispatch.conclusion === "success" ? "status-success" : "status-muted";
+    const statusLabel = dispatch.conclusion === "action_required"
+      ? "Approval required"
+      : dispatch.conclusion === null || dispatch.conclusion === "unknown"
+        ? (dispatch.status && dispatch.status !== "in_progress" ? dispatch.status.replaceAll("_", " ") : "Unknown")
+        : dispatch.conclusion || "unknown";
+    const statusClassName = failureConclusions.has(dispatch.conclusion)
+      ? "status-danger"
+      : dispatch.conclusion === "action_required"
+        ? "status-attention"
+        : dispatch.conclusion === "success"
+          ? "status-success"
+          : "status-muted";
     const runTitle = dispatch.displayTitle || `Run ${dispatch.runId}`;
     const searchText = `${runTitle} ${dispatch.packageName} ${dispatch.workflowName} ${dispatch.repository} ${statusLabel}`.toLowerCase();
     return `<tr data-dispatch-row data-package="${escapeHtml(dispatch.packageName)}" data-search="${escapeHtml(searchText)}"><th scope="row"><a href="https://github.com/${escapeHtml(dispatch.repository)}/actions/runs/${escapeHtml(dispatch.runId)}"><time datetime="${escapeHtml(dispatch.createdAt || "")}">${escapeHtml(formatDate(dispatch.createdAt))}</time>${octicon("external-link")}</a></th><td>${escapeHtml(dispatch.packageName)}</td><td><a href="../repositories/${escapeHtml(repositoryWorkflowPageName(dispatch.repository, dispatch.workflowPath))}.html">${escapeHtml(dispatch.workflowName)}</a></td><td>${escapeHtml(runTitle)}</td><td><a href="../repositories/${escapeHtml(repositoryPageName(dispatch.repository))}.html">${escapeHtml(dispatch.repository)}</a></td><td><span class="status ${statusClassName}">${escapeHtml(statusLabel.replaceAll("_", " "))}</span></td></tr>`;
