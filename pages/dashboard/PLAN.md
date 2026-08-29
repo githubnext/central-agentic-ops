@@ -68,6 +68,14 @@
 
 ## Run log
 
+### 2026-08-29 (built-in source-ordered definition interpreter slice)
+
+- Continued the Built-in pages milestone with a bounded presenter increment that removes the remaining dependence on hard-coded built-in section index positions when mapping `definition.views` to rendered built-in sections.
+- Updated `src/presenter.js` so `renderBuiltInPageFromDefinition(...)` now matches built-in section renderers by declared view `data.source`, consuming repeated source-backed sections in view order and falling back conservatively to any remaining declared sections.
+- Added focused unit coverage in `test/unit/presenter.test.js` proving a built-in `runs` page can reorder repeated `runs` and `outcomes` views declaratively while preserving the correct rendered section bodies and titles.
+- Verified quality gates from `pages/dashboard/`: `npm install`, `npm run typecheck`, `npm run lint`, `npm test`, and `npx playwright test --config=playwright.config.mjs` all pass.
+- Next milestone: Built-in pages, with the remaining gap now narrowed to replacing implementation-local source-to-section assumptions with a more fully generic built-in composition vocabulary if and when the specification defines one.
+
 ### 2026-08-29 (built-in definition-interpreter slice)
 
 - Continued the Built-in pages milestone by shifting built-in page body composition from page-level dispatch functions toward a generic definition interpreter keyed by ordered `dashboard.json` `definition.views` entries.

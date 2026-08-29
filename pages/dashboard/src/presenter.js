@@ -1377,14 +1377,48 @@ function getViewSource(view) {
  * @returns {HTMLElement}
  */
 function renderBuiltInPageFromDefinition(pageId, sectionDefinitions, viewDefinitions, pageSources) {
-  const renderedSections = sectionDefinitions.map((sectionDefinition, index) => {
-    const matchingView = viewDefinitions[index];
-    const viewTitle = isPlainObject(matchingView) && typeof matchingView.title === 'string' && matchingView.title.length > 0
-      ? matchingView.title
+  const sectionsBySource = new Map();
+  for (const sectionDefinition of sectionDefinitions) {
+    const existing = sectionsBySource.get(sectionDefinition.source) ?? [];
+    existing.push(sectionDefinition);
+    sectionsBySource.set(sectionDefinition.source, existing);
+  }
+
+  /** @type {Map<string, number>} */
+  const consumedCountsBySource = new Map();
+  /** @type {Array<HTMLElement>} */
+  const renderedSections = [];
+
+  for (const viewDefinition of viewDefinitions) {
+    if (!isPlainObject(viewDefinition)) {
+      continue;
+    }
+    const sourceName = getViewSource(viewDefinition);
+    if (!sourceName) {
+      continue;
+    }
+    const sourceSections = /** @type {Array<{ source: string, title: string, render: (pageSources: Map<string, LogicalSourceInput>) => HTMLElement }>} */ (sectionsBySource.get(sourceName) ?? []);
+    const consumedCount = consumedCountsBySource.get(sourceName) ?? 0;
+    const sectionDefinition = sourceSections[consumedCount];
+    if (!sectionDefinition) {
+      continue;
+    }
+
+    consumedCountsBySource.set(sourceName, consumedCount + 1);
+    const viewTitle = typeof viewDefinition.title === 'string' && viewDefinition.title.length > 0
+      ? viewDefinition.title
       : sectionDefinition.title;
-    const content = sectionDefinition.render(pageSources);
-    return renderPageSection(pageId, viewTitle, [content]);
-  });
+    renderedSections.push(renderPageSection(pageId, viewTitle, [sectionDefinition.render(pageSources)]));
+  }
+
+  for (const sectionDefinition of sectionDefinitions) {
+    const consumedCount = consumedCountsBySource.get(sectionDefinition.source) ?? 0;
+    const sourceSections = /** @type {Array<{ source: string, title: string, render: (pageSources: Map<string, LogicalSourceInput>) => HTMLElement }>} */ (sectionsBySource.get(sectionDefinition.source) ?? []);
+    const sourceIndex = sourceSections.indexOf(sectionDefinition);
+    if (sourceIndex >= consumedCount) {
+      renderedSections.push(renderPageSection(pageId, sectionDefinition.title, [sectionDefinition.render(pageSources)]));
+    }
+  }
 
   return h(
     'div',
