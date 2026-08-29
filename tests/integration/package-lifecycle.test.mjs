@@ -34,6 +34,13 @@ const advisoryExpectedFiles = [
 ];
 const craExpectedFiles = [
   ".github/aw/eu-cra-compliance/implementation-status.md",
+  ".github/aw/eu-cra-compliance/eu-cra-report-operational-value-runtime.bash",
+  ".github/graders/eu-cra-compliance-article-14-reporting-readiness-operational-value.sh",
+  ".github/graders/eu-cra-compliance-conformity-release-evidence-operational-value.sh",
+  ".github/graders/eu-cra-compliance-scope-classifier-operational-value.sh",
+  ".github/graders/eu-cra-compliance-security-requirements-auditor-operational-value.sh",
+  ".github/graders/eu-cra-compliance-supply-chain-sbom-auditor-operational-value.sh",
+  ".github/graders/eu-cra-compliance-vulnerability-handling-auditor-operational-value.sh",
   ".github/workflows/eu-cra-compliance-article-14-reporting-readiness.md",
   ".github/workflows/eu-cra-compliance-conformity-release-evidence.md",
   ".github/workflows/eu-cra-compliance-package-maintainer.md",
@@ -187,10 +194,23 @@ test("gh aw add installs the focused EU CRA package contract", { timeout: 180_00
       installedManifest.files.map(({ destination }) => destination).sort(),
       [
         ".github/aw/eu-cra-compliance/implementation-status.md",
+        ".github/aw/eu-cra-compliance/eu-cra-report-operational-value-runtime.bash",
+        ".github/graders/eu-cra-compliance-article-14-reporting-readiness-operational-value.sh",
+        ".github/graders/eu-cra-compliance-conformity-release-evidence-operational-value.sh",
+        ".github/graders/eu-cra-compliance-scope-classifier-operational-value.sh",
+        ".github/graders/eu-cra-compliance-security-requirements-auditor-operational-value.sh",
+        ".github/graders/eu-cra-compliance-supply-chain-sbom-auditor-operational-value.sh",
+        ".github/graders/eu-cra-compliance-vulnerability-handling-auditor-operational-value.sh",
+        ".github/workflows/eu-cra-compliance-article-14-reporting-readiness.md",
+        ".github/workflows/eu-cra-compliance-conformity-release-evidence.md",
         ".github/workflows/eu-cra-compliance-package-maintainer.md",
+        ".github/workflows/eu-cra-compliance-scope-classifier.md",
+        ".github/workflows/eu-cra-compliance-security-requirements-auditor.md",
+        ".github/workflows/eu-cra-compliance-supply-chain-sbom-auditor.md",
+        ".github/workflows/eu-cra-compliance-vulnerability-handling-auditor.md",
         ".github/workflows/eu-cra-compliance.md",
         ".github/workflows/graders/eu-cra-compliance-package-maintainer-operational-value.sh",
-      ],
+      ].sort(),
       "focused CRA package manifest must own its entry workflows, evaluator, and ledger",
     );
   } finally {
