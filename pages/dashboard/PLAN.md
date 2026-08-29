@@ -34,6 +34,7 @@
   - [x] Slice: `DLS-SAFE-003`, `DLS-SAFE-007`, `DLS-SAFE-008`, and `DLS-SAFE-010` presenter render for inert text escaping, non-empty accessible names, labeled table columns, textual data-state labels, and labeled external links.
   - [x] Slice: `DLS-SAFE-007` and `DLS-SAFE-008` keyboard presenter behavior for focusable labeled sections with deterministic arrow-key traversal verified in unit and browser tests.
   - [x] Slice: `DLS-SAFE-005` and `DLS-VAL-004` validator rejection for secret-bearing provenance metadata with non-echoing error messages.
+  - [x] Slice: `DLS-SAFE-006`, `DLS-VIEW-013`, `DLS-VIEW-014`, and `DLS-VIEW-015` presenter render for custom metric, table, and chart views with visible available/empty/unavailable state output, effective-context text, and non-fabricated per-row links constrained to provided source data.
 - [ ] **Compliance suite** — Section 14 test suite, the compliance checklist, Appendix A as a passing fixture, and Appendix C as failing fixtures.
 - [ ] **Parity** — inventory the features of the existing dashboard in `dashboard/report/report.mjs`, record them in `PLAN.md` as a parity checklist, then express each one as YAML configuration plus data fixtures, closing the checklist incrementally.
 
@@ -51,6 +52,14 @@
 - 2026-08-28: `npm run test:e2e` is currently blocked in this environment because the Playwright Chromium executable is not provisioned (`browserType.launch: Executable doesn't exist`). The workflow should prefer the built-in Playwright MCP browser tools until the package-level browser dependency is available.
 
 ## Run log
+
+### 2026-08-29 (custom views data-state render slice)
+
+- Extended the Security, privacy, accessibility milestone with a narrow presenter increment spanning `DLS-SAFE-006`, `DLS-VIEW-013`, `DLS-VIEW-014`, and `DLS-VIEW-015` for custom-page rendering.
+- Updated `src/presenter.js` so custom pages now visibly render supported metric, table, and chart views from provided YAML definitions, expose per-view source and effective-context text, show explicit `available`/`empty`/`unavailable` states instead of omitting views, preserve chart semantic defaults as text, and render links only when the provided row carries the referenced relation-specific link object.
+- Added focused unit coverage in `test/unit/presenter.test.js` and browser coverage in `test/e2e/smoke.spec.js` that verify aggregate metric output, labeled table and chart text equivalents, empty/unavailable custom-view states, and absent-link rows remaining unlinked.
+- Verified all quality gates pass: `npm install`, `npm run typecheck`, `npm run lint`, `npm test`, and `npm run test:e2e`.
+- Next milestone: Security, privacy, accessibility, next slice for `DLS-SAFE-009` non-color semantics or additional consuming-context authorization boundary behavior once the runtime context contract is specified.
 
 ### 2026-08-29 (security secret-redaction validator slice)
 

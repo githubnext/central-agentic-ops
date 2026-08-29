@@ -2,7 +2,7 @@
 import { describe, expect, it } from 'vitest';
 import { renderDashboard, enableDashboardKeyboardNavigation } from '../../src/presenter.js';
 
-describe('presenter built-in pages', () => {
+describe('presenter built-in and custom pages', () => {
   it('DLS-PAGE-009 DLS-PAGE-014 renders built-in evals page with distinguishable definitions and observations, observed subject, YES/NO/UNKNOWN result, evaluation model when available, time, provenance, and independent data state deterministically', () => {
     /** @type {import('../../src/presenter.js').PresentationInput['document']} */
     const document = {
@@ -199,6 +199,228 @@ describe('presenter built-in pages', () => {
     expect(issueLink?.getAttribute('target')).toBe('_blank');
     expect(issueLink?.getAttribute('rel')).toBe('noopener noreferrer');
     expect(issueLink?.textContent).toBe('Issue 1 label');
+  });
+
+  it('DLS-VIEW-013 DLS-VIEW-014 DLS-VIEW-015 DLS-SAFE-006 renders custom views with available, empty, and unavailable states while exposing only provided observations and links', () => {
+    /** @type {import('../../src/presenter.js').PresentationInput['document']} */
+    const document = {
+      languageVersion: '0.1.0',
+      dashboard: {
+        id: 'custom-dashboard',
+        title: 'Custom Dashboard',
+        pages: [
+          {
+            id: 'custom-views',
+            kind: /** @type {'custom'} */ ('custom'),
+            title: 'Custom Views',
+            views: [
+              {
+                id: 'total-aic',
+                title: 'Total AI Credits',
+                data: {
+                  source: 'usage',
+                  filters: {
+                    'rollout-mode': ['review', 'live']
+                  }
+                },
+                mark: 'metric',
+                encoding: {
+                  value: {
+                    field: 'aic',
+                    type: 'quantitative',
+                    aggregate: 'sum'
+                  }
+                }
+              },
+              {
+                id: 'findings-table',
+                title: 'Findings Table',
+                data: {
+                  source: 'findings',
+                  time: {
+                    range: '30d'
+                  }
+                },
+                mark: 'table',
+                encoding: {
+                  columns: [
+                    { field: 'finding-summary' },
+                    { field: 'finding-severity' },
+                    { field: 'finding-status' }
+                  ],
+                  href: {
+                    field: 'pull-request-link'
+                  }
+                }
+              },
+              {
+                id: 'daily-runs',
+                title: 'Daily Runs',
+                data: {
+                  source: 'runs'
+                },
+                mark: 'chart',
+                encoding: {
+                  x: {
+                    field: 'started-at',
+                    type: 'temporal',
+                    'time-unit': 'day'
+                  },
+                  y: {
+                    field: 'run',
+                    type: 'quantitative',
+                    aggregate: 'count'
+                  },
+                  color: {
+                    field: 'run-conclusion',
+                    type: 'nominal'
+                  }
+                }
+              },
+              {
+                id: 'empty-usage',
+                title: 'Empty Usage',
+                data: {
+                  source: 'empty-usage'
+                },
+                mark: 'metric',
+                encoding: {
+                  value: {
+                    field: 'aic',
+                    type: 'quantitative',
+                    aggregate: 'sum'
+                  }
+                }
+              },
+              {
+                id: 'missing-source',
+                title: 'Missing Source',
+                data: {
+                  source: 'missing-source'
+                },
+                mark: 'table',
+                encoding: {
+                  columns: [
+                    { field: 'finding-summary' }
+                  ]
+                }
+              }
+            ]
+          }
+        ]
+      }
+    };
+
+    const rendered = renderDashboard({
+      document,
+      sources: {
+        usage: {
+          source: 'usage',
+          rows: [
+            { organization: 'github', repository: 'central-agentic-ops', workflow: '.github/workflows/daily.yml', run: '1001', engine: 'actions', 'requested-model': 'gpt-4o', 'resolved-model': 'gpt-4.1', 'rollout-mode': 'live', aic: 2, 'observed-at': '2026-08-29T10:00:00Z' },
+            { organization: 'github', repository: 'central-agentic-ops', workflow: '.github/workflows/daily.yml', run: '1002', engine: 'actions', 'requested-model': 'gpt-4o', 'resolved-model': 'gpt-4.1', 'rollout-mode': 'review', aic: 3, 'observed-at': '2026-08-29T11:00:00Z' }
+          ],
+          metadata: {
+            'source-id': 'usage-fixture',
+            'source-kind': 'fixture',
+            'as-of': '2026-08-29T20:00:00Z',
+            'retrieved-at': '2026-08-29T20:01:00Z',
+            completeness: 'complete',
+            freshness: 'fresh',
+            availability: 'available'
+          }
+        },
+        findings: {
+          source: 'findings',
+          rows: [
+            {
+              finding: 'finding-1',
+              'finding-summary': 'Unsafe dependency',
+              'finding-severity': 'high',
+              'finding-status': 'open',
+              'pull-request-link': {
+                relation: 'pull-request',
+                href: 'https://example.com/pull/1',
+                label: 'PR 1'
+              }
+            },
+            {
+              finding: 'finding-2',
+              'finding-summary': 'Missing tests',
+              'finding-severity': 'medium',
+              'finding-status': 'resolved'
+            }
+          ],
+          metadata: {
+            'source-id': 'findings-fixture',
+            'source-kind': 'fixture',
+            'as-of': '2026-08-29T20:00:00Z',
+            'retrieved-at': '2026-08-29T20:01:00Z',
+            completeness: 'partial',
+            freshness: 'stale',
+            availability: 'available'
+          }
+        },
+        runs: {
+          source: 'runs',
+          rows: [
+            { run: '1001', 'started-at': '2026-08-29T10:00:00Z', 'run-conclusion': 'success' },
+            { run: '1002', 'started-at': '2026-08-29T11:00:00Z', 'run-conclusion': 'failure' }
+          ],
+          metadata: {
+            'source-id': 'runs-fixture',
+            'source-kind': 'fixture',
+            'as-of': '2026-08-29T20:00:00Z',
+            'retrieved-at': '2026-08-29T20:01:00Z',
+            completeness: 'complete',
+            freshness: 'fresh',
+            availability: 'available'
+          }
+        },
+        'empty-usage': {
+          source: 'empty-usage',
+          rows: [],
+          metadata: {
+            'source-id': 'empty-usage-fixture',
+            'source-kind': 'fixture',
+            'as-of': '2026-08-29T20:00:00Z',
+            'retrieved-at': '2026-08-29T20:01:00Z',
+            completeness: 'unknown',
+            freshness: 'unknown',
+            availability: 'empty'
+          }
+        }
+      }
+    });
+
+    const customPage = rendered.querySelector('[data-page-kind="custom"]');
+    expect(customPage?.querySelector('h2')?.textContent).toBe('Custom Views');
+
+    const metricSection = [...rendered.querySelectorAll('.page-section')].find((section) => section.textContent?.includes('Total AI Credits'));
+    expect(metricSection?.querySelector('[data-metric-value="aic"]')?.textContent).toBe('5');
+    expect(metricSection?.textContent).toContain('Source: usage');
+    expect(metricSection?.textContent).toContain('Filters: {"rollout-mode":["review","live"]}');
+
+    const tableSection = [...rendered.querySelectorAll('.page-section')].find((section) => section.textContent?.includes('Findings Table'));
+    const tableRows = tableSection ? tableSection.querySelectorAll('.custom-table tbody tr') : null;
+    expect(tableRows).toHaveLength(2);
+    const linkedCell = tableRows?.[0]?.querySelector('a');
+    expect(linkedCell?.textContent).toBe('PR 1');
+    expect(linkedCell?.getAttribute('aria-label')).toBe('PR 1');
+    expect(tableRows?.[1]?.textContent).toContain('Missing tests');
+    expect(tableRows?.[1]?.querySelector('a')).toBeNull();
+
+    const chartSection = [...rendered.querySelectorAll('.page-section')].find((section) => section.textContent?.includes('Daily Runs'));
+    expect(chartSection?.querySelector('[data-chart-default="line"]')?.textContent).toContain('Default chart type: line');
+    expect(chartSection?.querySelectorAll('.custom-chart-table tbody tr')).toHaveLength(2);
+
+    const emptySection = [...rendered.querySelectorAll('.page-section')].find((section) => section.textContent?.includes('Empty Usage'));
+    expect(emptySection?.querySelector('[data-view-availability="empty"]')?.textContent).toBe('No observations matched the effective context.');
+    expect(emptySection?.textContent).toContain('Affected source: empty-usage');
+
+    const unavailableSection = [...rendered.querySelectorAll('.page-section')].find((section) => section.textContent?.includes('Missing Source'));
+    expect(unavailableSection?.querySelector('[data-view-availability="unavailable"]')?.textContent).toBe('This view is unavailable.');
+    expect(unavailableSection?.textContent).toContain('Source unavailable: missing-source');
   });
 
   it('DLS-SAFE-007 DLS-SAFE-008 enables keyboard navigation across labeled page sections without relying on color alone', () => {

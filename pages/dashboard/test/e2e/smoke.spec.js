@@ -233,6 +233,233 @@ test('DLS-SAFE-007 DLS-SAFE-008 DLS-SAFE-010 built-in findings page exposes acce
   await expect(issueLink).toHaveAttribute('rel', 'noopener noreferrer');
 });
 
+test('DLS-VIEW-013 DLS-VIEW-014 DLS-VIEW-015 DLS-SAFE-006 custom views render available, empty, and unavailable states with tabular/text equivalents in browser', async ({ page }) => {
+  const presenterModuleUrl = buildPresenterModuleUrl();
+
+  await page.setContent(`
+    <div id="root"></div>
+    <script type="module">
+      import { renderDashboard } from ${JSON.stringify(presenterModuleUrl)};
+
+      const dashboardDocument = {
+        languageVersion: '0.1.0',
+        dashboard: {
+          id: 'custom-dashboard',
+          title: 'Custom Dashboard',
+          pages: [
+            {
+              id: 'custom-views',
+              kind: 'custom',
+              title: 'Custom Views',
+              views: [
+                {
+                  id: 'total-aic',
+                  title: 'Total AI Credits',
+                  data: {
+                    source: 'usage',
+                    filters: {
+                      'rollout-mode': ['review', 'live']
+                    }
+                  },
+                  mark: 'metric',
+                  encoding: {
+                    value: {
+                      field: 'aic',
+                      type: 'quantitative',
+                      aggregate: 'sum'
+                    }
+                  }
+                },
+                {
+                  id: 'findings-table',
+                  title: 'Findings Table',
+                  data: {
+                    source: 'findings',
+                    time: {
+                      range: '30d'
+                    }
+                  },
+                  mark: 'table',
+                  encoding: {
+                    columns: [
+                      { field: 'finding-summary' },
+                      { field: 'finding-severity' },
+                      { field: 'finding-status' }
+                    ],
+                    href: {
+                      field: 'pull-request-link'
+                    }
+                  }
+                },
+                {
+                  id: 'daily-runs',
+                  title: 'Daily Runs',
+                  data: {
+                    source: 'runs'
+                  },
+                  mark: 'chart',
+                  encoding: {
+                    x: {
+                      field: 'started-at',
+                      type: 'temporal',
+                      'time-unit': 'day'
+                    },
+                    y: {
+                      field: 'run',
+                      type: 'quantitative',
+                      aggregate: 'count'
+                    },
+                    color: {
+                      field: 'run-conclusion',
+                      type: 'nominal'
+                    }
+                  }
+                },
+                {
+                  id: 'empty-usage',
+                  title: 'Empty Usage',
+                  data: {
+                    source: 'empty-usage'
+                  },
+                  mark: 'metric',
+                  encoding: {
+                    value: {
+                      field: 'aic',
+                      type: 'quantitative',
+                      aggregate: 'sum'
+                    }
+                  }
+                },
+                {
+                  id: 'missing-source',
+                  title: 'Missing Source',
+                  data: {
+                    source: 'missing-source'
+                  },
+                  mark: 'table',
+                  encoding: {
+                    columns: [
+                      { field: 'finding-summary' }
+                    ]
+                  }
+                }
+              ]
+            }
+          ]
+        }
+      };
+
+      const sources = {
+        usage: {
+          source: 'usage',
+          rows: [
+            { organization: 'github', repository: 'central-agentic-ops', workflow: '.github/workflows/daily.yml', run: '1001', engine: 'actions', 'requested-model': 'gpt-4o', 'resolved-model': 'gpt-4.1', 'rollout-mode': 'live', aic: 2, 'observed-at': '2026-08-29T10:00:00Z' },
+            { organization: 'github', repository: 'central-agentic-ops', workflow: '.github/workflows/daily.yml', run: '1002', engine: 'actions', 'requested-model': 'gpt-4o', 'resolved-model': 'gpt-4.1', 'rollout-mode': 'review', aic: 3, 'observed-at': '2026-08-29T11:00:00Z' }
+          ],
+          metadata: {
+            'source-id': 'usage-fixture',
+            'source-kind': 'fixture',
+            'as-of': '2026-08-29T20:00:00Z',
+            'retrieved-at': '2026-08-29T20:01:00Z',
+            completeness: 'complete',
+            freshness: 'fresh',
+            availability: 'available'
+          }
+        },
+        findings: {
+          source: 'findings',
+          rows: [
+            {
+              finding: 'finding-1',
+              'finding-summary': 'Unsafe dependency',
+              'finding-severity': 'high',
+              'finding-status': 'open',
+              'pull-request-link': {
+                relation: 'pull-request',
+                href: 'https://example.com/pull/1',
+                label: 'PR 1'
+              }
+            },
+            {
+              finding: 'finding-2',
+              'finding-summary': 'Missing tests',
+              'finding-severity': 'medium',
+              'finding-status': 'resolved'
+            }
+          ],
+          metadata: {
+            'source-id': 'findings-fixture',
+            'source-kind': 'fixture',
+            'as-of': '2026-08-29T20:00:00Z',
+            'retrieved-at': '2026-08-29T20:01:00Z',
+            completeness: 'partial',
+            freshness: 'stale',
+            availability: 'available'
+          }
+        },
+        runs: {
+          source: 'runs',
+          rows: [
+            { run: '1001', 'started-at': '2026-08-29T10:00:00Z', 'run-conclusion': 'success' },
+            { run: '1002', 'started-at': '2026-08-29T11:00:00Z', 'run-conclusion': 'failure' }
+          ],
+          metadata: {
+            'source-id': 'runs-fixture',
+            'source-kind': 'fixture',
+            'as-of': '2026-08-29T20:00:00Z',
+            'retrieved-at': '2026-08-29T20:01:00Z',
+            completeness: 'complete',
+            freshness: 'fresh',
+            availability: 'available'
+          }
+        },
+        'empty-usage': {
+          source: 'empty-usage',
+          rows: [],
+          metadata: {
+            'source-id': 'empty-usage-fixture',
+            'source-kind': 'fixture',
+            'as-of': '2026-08-29T20:00:00Z',
+            'retrieved-at': '2026-08-29T20:01:00Z',
+            completeness: 'unknown',
+            freshness: 'unknown',
+            availability: 'empty'
+          }
+        }
+      };
+
+      document.querySelector('#root').append(renderDashboard({ document: dashboardDocument, sources }));
+    </script>
+  `);
+
+  await expect(page.getByRole('heading', { name: 'Custom Dashboard' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Custom Views', exact: true, level: 2 })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Total AI Credits' })).toBeVisible();
+  await expect(page.locator('[data-metric-value="aic"]')).toHaveText('5');
+  const metricSection = page.locator('.page-section').filter({ has: page.getByRole('heading', { name: 'Total AI Credits' }) });
+  await expect(metricSection).toContainText('Source: usage');
+  await expect(metricSection).toContainText('Filters: {"rollout-mode":["review","live"]}');
+
+  await expect(page.getByRole('heading', { name: 'Findings Table' })).toBeVisible();
+  await expect(page.locator('.custom-table tbody tr')).toHaveCount(2);
+  await expect(page.getByRole('link', { name: 'PR 1' })).toHaveAttribute('href', 'https://example.com/pull/1');
+  await expect(page.locator('.custom-table tbody tr').nth(1)).toContainText('Missing tests');
+
+  await expect(page.getByRole('heading', { name: 'Daily Runs' })).toBeVisible();
+  await expect(page.locator('[data-chart-default="line"]')).toHaveText('Default chart type: line');
+  await expect(page.locator('.custom-chart-table tbody tr')).toHaveCount(2);
+
+  await expect(page.getByRole('heading', { name: 'Empty Usage' })).toBeVisible();
+  await expect(page.locator('[data-view-availability="empty"]')).toHaveText('No observations matched the effective context.');
+  const emptySection = page.locator('.page-section').filter({ has: page.getByRole('heading', { name: 'Empty Usage' }) });
+  await expect(emptySection).toContainText('Affected source: empty-usage');
+
+  await expect(page.getByRole('heading', { name: 'Missing Source' })).toBeVisible();
+  await expect(page.locator('[data-view-availability="unavailable"]')).toHaveText('This view is unavailable.');
+  const unavailableSection = page.locator('.page-section').filter({ has: page.getByRole('heading', { name: 'Missing Source' }) });
+  await expect(unavailableSection).toContainText('Source unavailable: missing-source');
+});
+
 test('DLS-SAFE-007 DLS-SAFE-008 keyboard navigation moves across labeled page sections in browser', async ({ page }) => {
   const presenterModuleUrl = buildPresenterModuleUrl();
 
