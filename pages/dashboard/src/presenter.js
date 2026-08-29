@@ -304,6 +304,10 @@ function renderBuiltInPageBody(page, pageSources) {
     return renderWorkflowsPage(pageSources);
   }
 
+  if (page.page === 'findings') {
+    return renderFindingsPage(pageSources);
+  }
+
   return h('p', { className: 'page-placeholder' }, `Built-in page ${page.page} is not rendered in this increment.`);
 }
 
@@ -482,6 +486,69 @@ function renderWorkflowsPage(pageSources) {
               (item) => /** @type {{ key: string }} */ (item).key
             )
             : h('tr', null, h('td', { colSpan: 11 }, 'No workflows available.'))
+        )
+      )
+    )
+  );
+}
+
+/**
+ * @param {Map<string, LogicalSourceInput>} pageSources
+ * @returns {HTMLElement}
+ */
+function renderFindingsPage(pageSources) {
+  const findingsSource = pageSources.get('findings');
+  const findings = Array.isArray(findingsSource?.rows) ? findingsSource.rows : [];
+
+  const severityCounts = countBy(findings, 'finding-severity');
+  const statusCounts = countBy(findings, 'finding-status');
+  const items = findings.map((finding, index) => ({
+    key: getFindingKey(finding, index),
+    finding
+  }));
+
+  return h(
+    'div',
+    { className: 'findings-page' },
+    h('h3', null, 'Finding Severity Counts'),
+    renderSummaryList('finding-severity-counts', severityCounts),
+    h('h3', null, 'Finding Status Counts'),
+    renderSummaryList('finding-status-counts', statusCounts),
+    h('h3', null, 'Findings'),
+    h(
+      'div',
+      { className: 'table-region' },
+      h(
+        'table',
+        { className: 'findings-table' },
+        h(
+          'thead',
+          null,
+          h(
+            'tr',
+            null,
+            h('th', null, 'Summary'),
+            h('th', null, 'Severity'),
+            h('th', null, 'Status'),
+            h('th', null, 'Organization'),
+            h('th', null, 'Repository'),
+            h('th', null, 'Workflow'),
+            h('th', null, 'Observed At'),
+            h('th', null, 'Issue Link'),
+            h('th', null, 'Pull Request Link'),
+            h('th', null, 'Run Link')
+          )
+        ),
+        h(
+          'tbody',
+          null,
+          items.length > 0
+            ? keyed(
+              items,
+              (item) => renderFindingRow(/** @type {{ key: string, finding: Record<string, unknown> }} */ (item)),
+              (item) => /** @type {{ key: string }} */ (item).key
+            )
+            : h('tr', null, h('td', { colSpan: 10 }, 'No findings available.'))
         )
       )
     )
@@ -695,11 +762,29 @@ function getWorkflowKey(workflow, index) {
 }
 
 /**
+ * @param {Record<string, unknown>} finding
+ * @param {number} index
+ * @returns {string}
+ */
+function getFindingKey(finding, index) {
+  return typeof finding.finding === 'string' && finding.finding.length > 0 ? finding.finding : `finding-${index}`;
+}
+
+/**
  * @param {Record<string, unknown>} row
  * @returns {{ href: string, label: string } | null}
  */
 function findRunLink(row) {
-  const candidate = row['run-link'];
+  return findLink(row, 'run-link');
+}
+
+/**
+ * @param {Record<string, unknown>} row
+ * @param {'issue-link'|'pull-request-link'|'run-link'|'external-link'|'evidence-link'} field
+ * @returns {{ href: string, label: string } | null}
+ */
+function findLink(row, field) {
+  const candidate = row[field];
   if (!isPlainObject(candidate) || typeof candidate.href !== 'string' || typeof candidate.label !== 'string') {
     return null;
   }
@@ -712,6 +797,14 @@ function findRunLink(row) {
  */
 function toText(value) {
   return value == null || value === '' ? 'unknown' : String(value);
+}
+
+/**
+ * @param {{ href: string, label: string } | null} link
+ * @returns {string | HTMLElement}
+ */
+function renderLinkCell(link) {
+  return link ? h('a', { href: link.href }, link.label) : 'Unavailable';
 }
 
 /**
@@ -739,6 +832,32 @@ function formatCounts(counts) {
  */
 function formatNumber(value) {
   return Number.isInteger(value) ? String(value) : value.toFixed(2);
+}
+
+/**
+ * @param {{ key: string, finding: Record<string, unknown> }} item
+ * @returns {HTMLElement}
+ */
+function renderFindingRow(item) {
+  const finding = item.finding;
+  const issueLink = findLink(finding, 'issue-link');
+  const pullRequestLink = findLink(finding, 'pull-request-link');
+  const runLink = findLink(finding, 'run-link');
+
+  return h(
+    'tr',
+    { 'data-finding-id': String(finding.finding ?? item.key) },
+    h('td', null, toText(finding['finding-summary'])),
+    h('td', null, toText(finding['finding-severity'])),
+    h('td', null, toText(finding['finding-status'])),
+    h('td', null, toText(finding.organization)),
+    h('td', null, toText(finding.repository)),
+    h('td', null, toText(finding.workflow)),
+    h('td', null, toText(finding['observed-at'])),
+    h('td', null, renderLinkCell(issueLink)),
+    h('td', null, renderLinkCell(pullRequestLink)),
+    h('td', null, renderLinkCell(runLink))
+  );
 }
 
 /**

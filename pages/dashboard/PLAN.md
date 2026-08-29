@@ -21,6 +21,7 @@
   - [x] Slice: `DLS-PAGE-002` conservative `overview` linked-findings and operational-value timeline coverage validation.
   - [x] Slice: `DLS-PAGE-006` and `DLS-PAGE-014` presenter render for the `runs` built-in page status counts, outcome counts, scope/model/time columns, run links, and independent data-state summaries.
   - [x] Slice: `DLS-PAGE-005` and `DLS-PAGE-014` presenter render for the `workflows` built-in page inventory, active state, rollout mode, run conclusions, downstream outcomes, available usage, findings, operational value counts, and independent data-state summaries.
+  - [x] Slice: `DLS-PAGE-013` and `DLS-PAGE-014` presenter render for the `findings` built-in page summary, severity, status, scope, time, provenance, available issue/pull-request/run links, and independent data-state summaries.
 - [ ] **Security, privacy, accessibility** — Section 13 including escaping, redaction, and keyboard and screen-reader behavior verified with Playwright.
 - [ ] **Compliance suite** — Section 14 test suite, the compliance checklist, Appendix A as a passing fixture, and Appendix C as failing fixtures.
 - [ ] **Parity** — inventory the features of the existing dashboard in `.github/scripts/pages-report/report.mjs`, record them in `PLAN.md` as a parity checklist, then express each one as YAML configuration plus data fixtures, closing the checklist incrementally.
@@ -50,6 +51,14 @@
 - Configured Playwright runner to use the system Chromium binary and expanded unit and E2E test suites to verify Primer styling, brand elements, sidebar navigation, and data badges.
 - Verified all quality gates pass: `npm run typecheck`, `npm run lint`, `npm test`, and `npm run test:e2e`.
 - Next milestone: Built-in pages, next slice for rendering remaining Section 10 built-in pages (such as overview or tasks) or custom page views.
+
+### 2026-08-29 (built-in findings render slice)
+
+- Extended the Built-in pages milestone with a narrow `DLS-PAGE-013` and `DLS-PAGE-014` presenter increment for the `findings` built-in page, rendering finding summary, severity, status, scope, observed time, available issue/pull-request/run links, and independent data-state summaries.
+- Updated `src/presenter.js` so declarative built-in `findings` definitions now render severity and status summary lists plus a concrete findings table from the `findings` logical source, preserving absent-link rows without fabricated links.
+- Expanded `test/unit/presenter.test.js` with a jsdom presenter contract for the `findings` slice and added a Playwright browser test in `test/e2e/smoke.spec.js` that verifies rendered finding rows, available and absent links, provenance, and independent `availability`, `completeness`, and `freshness` text.
+- Verified `npm install`, `npm run typecheck`, `npm run lint`, and `npm test`; `npm run test:e2e` remains blocked in this environment because the Playwright Chromium executable is not provisioned (`browserType.launch: Executable doesn't exist`).
+- Next milestone: Built-in pages, next slice for rendering one additional Section 10 built-in page from the declarative definitions or extracting the first reusable presentation component needed by that rendering.
 
 ### 2026-08-29 (built-in workflows render slice)
 

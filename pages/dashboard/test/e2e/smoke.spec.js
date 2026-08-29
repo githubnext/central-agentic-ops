@@ -389,6 +389,134 @@ test('DLS-PAGE-006 DLS-PAGE-014 built-in runs page renders status counts, outcom
   ]);
 });
 
+test('DLS-PAGE-013 DLS-PAGE-014 built-in findings page renders summary, severity, status, scope, time, provenance, and available issue, pull-request, and run links in browser', async ({ page }) => {
+  const presenterModuleUrl = buildPresenterModuleUrl();
+
+  await page.setContent(`
+    <div id="root"></div>
+    <script type="module">
+      import { renderDashboard } from ${JSON.stringify(presenterModuleUrl)};
+
+      const dashboardDocument = {
+        languageVersion: '0.1.0',
+        dashboard: {
+          id: 'built-in-findings-render',
+          title: 'Built In Findings Render',
+          pages: [
+            {
+              id: 'findings',
+              kind: 'built-in',
+              page: 'findings',
+              title: 'Findings',
+              definition: {
+                'data-state': {
+                  availability: true,
+                  completeness: true,
+                  freshness: true
+                },
+                views: [
+                  { id: 'findings-source', data: { source: 'findings' } }
+                ]
+              }
+            }
+          ]
+        }
+      };
+
+      const sources = {
+        findings: {
+          source: 'findings',
+          rows: [
+            {
+              organization: 'githubnext',
+              repository: 'central-agentic-ops',
+              workflow: 'dashboard.yml',
+              finding: 'f-100',
+              'finding-summary': 'Unsafe shell interpolation in generated script',
+              'finding-severity': 'high',
+              'finding-status': 'open',
+              'observed-at': '2026-08-29T15:00:00Z',
+              'issue-link': {
+                relation: 'issue',
+                href: 'https://example.com/issues/42',
+                label: 'Issue 42'
+              },
+              'pull-request-link': {
+                relation: 'pull-request',
+                href: 'https://example.com/pull/7',
+                label: 'Pull Request 7'
+              },
+              'run-link': {
+                relation: 'run',
+                href: 'https://example.com/runs/1001',
+                label: 'Run 1001'
+              }
+            },
+            {
+              organization: 'githubnext',
+              repository: 'central-agentic-ops',
+              workflow: 'release.yml',
+              finding: 'f-101',
+              'finding-summary': 'Missing provenance on partial dataset',
+              'finding-severity': 'low',
+              'finding-status': 'resolved',
+              'observed-at': '2026-08-29T16:00:00Z'
+            }
+          ],
+          metadata: {
+            'source-id': 'findings-fixture',
+            'source-kind': 'fixture',
+            'as-of': '2026-08-29T16:30:00Z',
+            'retrieved-at': '2026-08-29T16:31:00Z',
+            completeness: 'partial',
+            freshness: 'stale',
+            availability: 'available'
+          }
+        }
+      };
+
+      document.querySelector('#root').append(renderDashboard({ document: dashboardDocument, sources }));
+    </script>
+  `);
+
+  await expect(page.getByRole('heading', { name: 'Built In Findings Render' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Findings', exact: true, level: 2 })).toBeVisible();
+  await expect(page.locator('[data-state-axis="availability"]')).toHaveText('available');
+  await expect(page.locator('[data-state-axis="completeness"]')).toHaveText('partial');
+  await expect(page.locator('[data-state-axis="freshness"]')).toHaveText('stale');
+  await expect(page.locator('.finding-severity-counts li')).toContainText(['high: 1', 'low: 1']);
+  await expect(page.locator('.finding-status-counts li')).toContainText(['open: 1', 'resolved: 1']);
+  await expect(page.locator('.findings-table tbody tr')).toHaveCount(2);
+  await expect(page.locator('.findings-table tbody tr').first().locator('td')).toContainText([
+    'Unsafe shell interpolation in generated script',
+    'high',
+    'open',
+    'githubnext',
+    'central-agentic-ops',
+    'dashboard.yml',
+    '2026-08-29T15:00:00Z',
+    'Issue 42',
+    'Pull Request 7',
+    'Run 1001'
+  ]);
+  await expect(page.locator('.findings-table tbody tr').nth(1).locator('td')).toContainText([
+    'Missing provenance on partial dataset',
+    'low',
+    'resolved',
+    'release.yml',
+    '2026-08-29T16:00:00Z',
+    'Unavailable',
+    'Unavailable',
+    'Unavailable'
+  ]);
+  await expect(page.getByRole('link', { name: 'Issue 42' })).toHaveAttribute('href', 'https://example.com/issues/42');
+  await expect(page.getByRole('link', { name: 'Pull Request 7' })).toHaveAttribute('href', 'https://example.com/pull/7');
+  await expect(page.getByRole('link', { name: 'Run 1001' })).toHaveAttribute('href', 'https://example.com/runs/1001');
+  await expect(page.locator('.provenance-list li')).toContainText([
+    'findings: findings-fixture (fixture) — as of 2026-08-29T16:30:00Z'
+  ]);
+});
+
 test('DLS-PRES-001 GitHub Primer brand-aligned app shell, sidebar navigation, and Octicon elements render correctly in browser', async ({ page }) => {
   const presenterModuleUrl = buildPresenterModuleUrl();
 
@@ -485,4 +613,3 @@ test('DLS-PRES-001 GitHub Primer brand-aligned app shell, sidebar navigation, an
   await expect(page.locator('.mode-badge.mode-live')).toHaveText('live');
   await expect(page.locator('.report-footer')).toContainText('GitHub Primer Design System');
 });
-

@@ -365,4 +365,106 @@ describe('presenter built-in pages', () => {
     expect(rendered.querySelector('.mode-live')?.textContent).toBe('live');
     expect(rendered.querySelector('.report-footer')?.textContent).toContain('GitHub Primer');
   });
+
+  it('DLS-PAGE-013 DLS-PAGE-014 renders built-in findings page summary, severity, status, scope, time, and available issue, pull-request, and run links deterministically', () => {
+    /** @type {import('../../src/presenter.js').PresentationInput['document']} */
+    const document = {
+      languageVersion: '0.1.0',
+      dashboard: {
+        id: 'findings-dashboard',
+        title: 'Findings Dashboard',
+        pages: [
+          {
+            id: 'findings',
+            kind: /** @type {'built-in'} */ ('built-in'),
+            page: 'findings',
+            title: 'Findings',
+            definition: {
+              'data-state': {
+                availability: true,
+                completeness: true,
+                freshness: true
+              },
+              views: [
+                { id: 'findings-source', data: { source: 'findings' } }
+              ]
+            }
+          }
+        ]
+      }
+    };
+
+    const rendered = renderDashboard({
+      document,
+      sources: {
+        findings: {
+          source: 'findings',
+          rows: [
+            {
+              organization: 'githubnext',
+              repository: 'central-agentic-ops',
+              workflow: 'dashboard.yml',
+              finding: 'f-100',
+              'finding-summary': 'Unsafe shell interpolation in generated script',
+              'finding-severity': 'high',
+              'finding-status': 'open',
+              'observed-at': '2026-08-29T15:00:00Z',
+              'issue-link': {
+                relation: 'issue',
+                href: 'https://example.com/issues/42',
+                label: 'Issue 42'
+              },
+              'pull-request-link': {
+                relation: 'pull-request',
+                href: 'https://example.com/pull/7',
+                label: 'Pull Request 7'
+              },
+              'run-link': {
+                relation: 'run',
+                href: 'https://example.com/runs/1001',
+                label: 'Run 1001'
+              }
+            },
+            {
+              organization: 'githubnext',
+              repository: 'central-agentic-ops',
+              workflow: 'release.yml',
+              finding: 'f-101',
+              'finding-summary': 'Missing provenance on partial dataset',
+              'finding-severity': 'low',
+              'finding-status': 'resolved',
+              'observed-at': '2026-08-29T16:00:00Z'
+            }
+          ],
+          metadata: {
+            'source-id': 'findings-fixture',
+            'source-kind': 'fixture',
+            'as-of': '2026-08-29T16:30:00Z',
+            'retrieved-at': '2026-08-29T16:31:00Z',
+            completeness: 'partial',
+            freshness: 'stale',
+            availability: 'available'
+          }
+        }
+      }
+    });
+
+    expect(rendered.querySelector('[data-page-name="findings"]')?.textContent).toContain('Unsafe shell interpolation in generated script');
+    expect(rendered.querySelector('[data-state-axis="availability"]')?.textContent).toBe('available');
+    expect(rendered.querySelector('[data-state-axis="completeness"]')?.textContent).toBe('partial');
+    expect(rendered.querySelector('[data-state-axis="freshness"]')?.textContent).toBe('stale');
+    expect(rendered.querySelector('.finding-severity-counts')?.textContent).toContain('high: 1');
+    expect(rendered.querySelector('.finding-severity-counts')?.textContent).toContain('low: 1');
+    expect(rendered.querySelector('.finding-status-counts')?.textContent).toContain('open: 1');
+    expect(rendered.querySelector('.finding-status-counts')?.textContent).toContain('resolved: 1');
+    expect(rendered.querySelectorAll('.findings-table tbody tr')).toHaveLength(2);
+    expect(rendered.querySelector('.findings-table tbody tr')?.textContent).toContain('githubnext');
+    expect(rendered.querySelector('.findings-table tbody tr')?.textContent).toContain('central-agentic-ops');
+    expect(rendered.querySelector('.findings-table tbody tr')?.textContent).toContain('dashboard.yml');
+    expect(rendered.querySelector('.findings-table tbody tr')?.textContent).toContain('Issue 42');
+    expect(rendered.querySelector('.findings-table tbody tr')?.textContent).toContain('Pull Request 7');
+    expect(rendered.querySelector('.findings-table tbody tr')?.textContent).toContain('Run 1001');
+    expect(rendered.querySelectorAll('.findings-table tbody tr')[1]?.textContent).toContain('Unavailable');
+    expect(rendered.querySelector('.provenance-list')?.textContent).toContain('findings: findings-fixture (fixture) — as of 2026-08-29T16:30:00Z');
+  });
 });
