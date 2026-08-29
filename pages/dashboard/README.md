@@ -28,4 +28,4 @@ The current built-in-pages slice adds a conservative implementation-local built-
 
 The latest built-in-pages increment also adds a conservative implementation-local `definition.data-state` marker for `DLS-PAGE-014`, requiring declarative independent coverage of `availability`, `completeness`, and `freshness` on built-in pages.
 
-The current built-in-pages slice extends conservative Section 10 coverage for `overview`, requiring declarative built-in definitions to expose recent linked findings through relation-specific finding links, to expose operational-value timelines with definition-aware series coverage, and to render page-level provenance plus independent freshness/completeness/availability summaries in the browser prototype.
+The current built-in-pages slice extends Section 10 rendering for `runs`, adding a visible browser prototype for status and conclusion counts, downstream outcome counts, scope/model/time columns, run links, and independent freshness/completeness/availability summaries derived from runtime source metadata.
