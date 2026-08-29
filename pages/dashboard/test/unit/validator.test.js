@@ -458,17 +458,24 @@ dashboard:
 
     expect(result.ok).toBe(false);
     if (!result.ok) {
-      expect(result.errors).toEqual([
-        expect.objectContaining({
-          code: 'DLS-E003',
-          path: '$.dashboard.pages[0].definition',
-          message: 'built-in page "runs" requires declarative definitions for source "runs".'
-        })
-      ]);
+      expect(result.errors).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({
+            code: 'DLS-E003',
+            path: '$.dashboard.pages[0].definition',
+            message: 'built-in page "runs" requires declarative definitions for source "runs".'
+          }),
+          expect.objectContaining({
+            code: 'DLS-E003',
+            path: '$.dashboard.pages[0].definition',
+            message: 'built-in page "runs" requires declarative definitions for source "outcomes".'
+          })
+        ])
+      );
     }
   });
 
-  it('DLS-PAGE-006 DLS-PAGE-014 rejects a runs built-in page definition that omits required run fields with DLS-E003', () => {
+  it('DLS-PAGE-006 DLS-PAGE-014 rejects a runs built-in page definition that omits required run fields and run links with DLS-E003', () => {
     const result = validateDashboardDocument(`language-version: "0.1.0"
 dashboard:
   id: incomplete-runs-page
@@ -538,6 +545,11 @@ dashboard:
             code: 'DLS-E003',
             path: '$.dashboard.pages[0].definition.views',
             message: 'built-in page "runs" definition must expose field "started-at" for source "runs".'
+          }),
+          expect.objectContaining({
+            code: 'DLS-E003',
+            path: '$.dashboard.pages[0].definition.views',
+            message: 'built-in page "runs" definition must include at least one view for source "outcomes".'
           })
         ])
       );
@@ -689,6 +701,13 @@ dashboard:
                 - field: requested-model
                 - field: resolved-model
                 - field: started-at
+          - id: run-links
+            data:
+              source: outcomes
+            mark: table
+            encoding:
+              columns:
+                - field: run-link
     - id: usage
       kind: built-in
       page: usage
