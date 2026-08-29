@@ -1,6 +1,14 @@
 // @vitest-environment jsdom
 import { describe, expect, it } from 'vitest';
+import { readFileSync } from 'node:fs';
+import { fileURLToPath } from 'node:url';
+import { dirname, resolve } from 'node:path';
 import { renderDashboard, enableDashboardKeyboardNavigation } from '../../src/presenter.js';
+
+const fixtureDirectory = dirname(fileURLToPath(import.meta.url));
+const authoritativeDashboardDocument = JSON.parse(
+  readFileSync(resolve(fixtureDirectory, '../../dashboard.json'), 'utf8')
+);
 
 describe('presenter built-in and custom pages', () => {
   it('DLS-PAGE-002 DLS-PAGE-014 renders built-in overview page with rollout-mode filtering, workflow active-state inventory, run status and conclusion counts and trends, repository and workflow rankings, largest AIC spenders, recent linked findings, operational-value timeline, and provenance/freshness data state deterministically', () => {
@@ -202,6 +210,39 @@ describe('presenter built-in and custom pages', () => {
     expect(rendered.querySelector('[data-overview-operational-value-key="review-quality::1003::2026-08-29T12:45:00Z"]')?.textContent).toContain('Evidence 2');
     expect(rendered.querySelector('.provenance-list')?.textContent).toContain('workflows: workflows-fixture (fixture) — as of 2026-08-29T20:00:00Z');
     expect(rendered.querySelector('.provenance-list')?.textContent).toContain('operational-values: operational-values-fixture (fixture) — as of 2026-08-29T20:00:00Z');
+  });
+
+  it('DLS-PAGE-001 DLS-PAGE-002 DLS-PAGE-003 DLS-PAGE-004 DLS-PAGE-005 DLS-PAGE-006 DLS-PAGE-007 DLS-PAGE-008 DLS-PAGE-009 DLS-PAGE-010 DLS-PAGE-011 DLS-PAGE-012 DLS-PAGE-013 DLS-PAGE-014 authoritative dashboard.json contains all 12 specification-defined built-in pages with declarative data-state and source coverage', () => {
+    const pages = authoritativeDashboardDocument.dashboard.pages;
+    expect(Array.isArray(pages)).toBe(true);
+    expect(pages).toHaveLength(12);
+    expect(pages.map((page) => page.page)).toEqual([
+      'overview',
+      'organizations',
+      'repositories',
+      'workflows',
+      'runs',
+      'experiments',
+      'graders',
+      'evals',
+      'usage',
+      'engines-models',
+      'operational-value',
+      'findings'
+    ]);
+
+    for (const page of pages) {
+      expect(page.kind).toBe('built-in');
+      expect(page.id).toBe(page.page);
+      expect(page.definition?.['data-state']).toEqual({
+        availability: true,
+        completeness: true,
+        freshness: true
+      });
+      expect(Array.isArray(page.definition?.views)).toBe(true);
+      expect(page.definition.views.length).toBeGreaterThan(0);
+      expect(page.definition.views.every((view) => typeof view?.data?.source === 'string')).toBe(true);
+    }
   });
 
   it('DLS-PAGE-009 DLS-PAGE-014 renders built-in evals page with distinguishable definitions and observations, observed subject, YES/NO/UNKNOWN result, evaluation model when available, time, provenance, and independent data state deterministically', () => {

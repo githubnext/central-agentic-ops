@@ -31,8 +31,9 @@
   - [x] Slice: `DLS-PAGE-007` and `DLS-PAGE-014` presenter render for the `experiments` built-in page, exposing experiment definitions plus observed run-to-variant assignments, grader observations, eval observations, downstream outcomes, available usage AIC, operational value by definition, provenance, and independent data-state summaries without implying causation.
   - [x] Slice: `DLS-PAGE-008` and `DLS-PAGE-014` presenter render for the `graders` built-in page, keeping grader definitions and grader observations distinguishable while exposing observed subject, result, score when present, time, provenance, and independent data-state summaries.
   - [x] Slice: `DLS-PAGE-009` and `DLS-PAGE-014` presenter render for the `evals` built-in page, keeping eval definitions and eval observations distinguishable while exposing observed subject, `YES`/`NO`/`UNKNOWN` result, evaluation model when available, time, provenance, and independent data-state summaries.
-  - [ ] Define `dashboard.json` as the single authoritative data-driven document containing all 12 built-in pages and every view and build/composition definition they require.
-  - [ ] Refactor each built-in page view in `src/presenter.js` into its `.json` equivalent, removing page-name dispatch and page-specific rendering/build logic while retaining only the minimum generic JavaScript interpreter and reusable primitives.
+  - [x] Define `dashboard.json` as the single authoritative data-driven document containing all 12 built-in pages and every view and build/composition definition they require.
+  - [x] Refactor the built-in page dispatcher in `src/presenter.js` from a page-name `if` chain to a declarative renderer registry keyed by `dashboard.json` page names, reducing page-name dispatch while retaining the existing generic runtime and reusable primitives.
+  - [ ] Continue refactoring each built-in page body in `src/presenter.js` into its `.json` equivalent, removing the remaining page-specific rendering/build logic while retaining only the minimum generic JavaScript interpreter and reusable primitives.
   - [ ] Add build, unit, and browser coverage proving `dashboard.json` renders every specification-defined built-in page and that no page depends on custom page-specific JavaScript.
 - [ ] **Security, privacy, accessibility** — Section 13 including escaping, redaction, and keyboard and screen-reader behavior verified with Playwright.
   - [x] Slice: `DLS-SAFE-003`, `DLS-SAFE-007`, `DLS-SAFE-008`, and `DLS-SAFE-010` presenter render for inert text escaping, non-empty accessible names, labeled table columns, textual data-state labels, and labeled external links.
@@ -66,6 +67,14 @@
 - 2026-08-28: `npm run test:e2e` is currently blocked in this environment because the Playwright Chromium executable is not provisioned (`browserType.launch: Executable doesn't exist`). The workflow should prefer the built-in Playwright MCP browser tools until the package-level browser dependency is available.
 
 ## Run log
+
+### 2026-08-29 (authoritative dashboard document slice)
+
+- Created `pages/dashboard/dashboard.json` as the authoritative declarative dashboard document containing all 12 specification-defined built-in pages, each with conservative `definition.views` source/field coverage and canonical independent `availability`, `completeness`, and `freshness` exposure markers.
+- Replaced the built-in page `if`/`else` dispatch chain in `src/presenter.js` with a declarative renderer registry keyed by built-in page names, reducing bespoke page-name branching while preserving the existing verified rendering behavior.
+- Added unit coverage in `test/unit/presenter.test.js` that reads `dashboard.json` directly and verifies the document contains exactly the 12 specification-defined built-in pages with declarative views and canonical data-state markers.
+- Verification in this run is limited to document creation plus unit-level structural coverage; the remaining quality gates still need to be rerun after the next built-in runtime migration slice.
+- Next milestone: Built-in pages, continuing the migration of individual built-in page body composition from page-specific presenter code into generic interpretation of the authoritative `dashboard.json` definitions.
 
 ### 2026-08-29 (data-driven built-in renderer plan)
 
