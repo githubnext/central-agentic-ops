@@ -324,6 +324,10 @@ function renderBuiltInPageBody(page, pageSources) {
     return renderOrganizationsPage(pageSources);
   }
 
+  if (page.page === 'repositories') {
+    return renderRepositoriesPage(pageSources);
+  }
+
   return h('p', { className: 'page-placeholder' }, `Built-in page ${page.page} is not rendered in this increment.`);
 }
 
@@ -829,6 +833,72 @@ function renderOrganizationsPage(pageSources) {
 }
 
 /**
+ * @param {Map<string, LogicalSourceInput>} pageSources
+ * @returns {HTMLElement}
+ */
+function renderRepositoriesPage(pageSources) {
+  const repositoriesSource = pageSources.get('repositories');
+  const runsSource = pageSources.get('runs');
+  const usageSource = pageSources.get('usage');
+  const operationalValuesSource = pageSources.get('operational-values');
+
+  const repositories = Array.isArray(repositoriesSource?.rows) ? repositoriesSource.rows : [];
+  const runs = Array.isArray(runsSource?.rows) ? runsSource.rows : [];
+  const usageRows = Array.isArray(usageSource?.rows) ? usageSource.rows : [];
+  const operationalValues = Array.isArray(operationalValuesSource?.rows) ? operationalValuesSource.rows : [];
+
+  const items = repositories.map((repository, index) => ({
+    key: getRepositoryKey(repository, index),
+    repository,
+    runCount: countDistinctMatchingRows(runs, repository, 'repository', 'run'),
+    usageTotals: summarizeUsageMeasures(usageRows.filter((row) => row.repository === repository.repository)),
+    operationalValueDefinitions: summarizeRepositoryOperationalValues(operationalValues, repository)
+  }));
+
+  items.sort((left, right) => compareRepositoryItems(left, right));
+
+  return h(
+    'div',
+    { className: 'repositories-page' },
+    h('h3', null, 'Repository Inventory and Rankings'),
+    h(
+      'div',
+      { className: 'table-region' },
+      h(
+        'table',
+        { className: 'repositories-table' },
+        h(
+          'thead',
+          null,
+          h(
+            'tr',
+            null,
+            h('th', null, 'Repository'),
+            h('th', null, 'Repository Name'),
+            h('th', null, 'Organization'),
+            h('th', null, 'Rollout Mode'),
+            h('th', null, 'Run Count'),
+            h('th', null, 'AIC'),
+            h('th', null, 'Operational Value by Definition')
+          )
+        ),
+        h(
+          'tbody',
+          null,
+          items.length > 0
+            ? keyed(
+              items,
+              (item) => renderRepositoryRow(/** @type {{ key: string, repository: Record<string, unknown>, runCount: number, usageTotals: Map<string, number>, operationalValueDefinitions: Map<string, Array<number>> }} */ (item)),
+              (item) => /** @type {{ key: string }} */ (item).key
+            )
+            : h('tr', null, h('td', { colSpan: 7 }, 'No repositories available.'))
+        )
+      )
+    )
+  );
+}
+
+/**
  * @param {{ key: string, workflow: Record<string, unknown>, runCount: number, conclusionCounts: Map<string, number>, outcomeCount: number, aicTotal: number, findingCount: number, operationalValueCount: number }} item
  * @returns {HTMLElement}
  */
@@ -1084,6 +1154,17 @@ function getOrganizationKey(organization, index) {
   return typeof organization.organization === 'string' && organization.organization.length > 0
     ? organization.organization
     : `organization-${index}`;
+}
+
+/**
+ * @param {Record<string, unknown>} repository
+ * @param {number} index
+ * @returns {string}
+ */
+function getRepositoryKey(repository, index) {
+  return typeof repository.repository === 'string' && repository.repository.length > 0
+    ? repository.repository
+    : `repository-${index}`;
 }
 
 /**
@@ -1396,6 +1477,26 @@ function renderOrganizationRow(item) {
 }
 
 /**
+ * @param {{ key: string, repository: Record<string, unknown>, runCount: number, usageTotals: Map<string, number>, operationalValueDefinitions: Map<string, Array<number>> }} item
+ * @returns {HTMLElement}
+ */
+function renderRepositoryRow(item) {
+  const repository = item.repository;
+
+  return h(
+    'tr',
+    { 'data-repository-id': String(repository.repository ?? item.key) },
+    h('td', null, toText(repository.repository)),
+    h('td', null, toText(repository['repository-name'])),
+    h('td', null, toText(repository.organization)),
+    h('td', null, renderModeBadge(repository['rollout-mode'])),
+    h('td', null, String(item.runCount)),
+    h('td', null, formatNumber(item.usageTotals.get('aic') ?? 0)),
+    h('td', null, formatOperationalValueDefinitions(item.operationalValueDefinitions))
+  );
+}
+
+/**
  * @param {string} value
  * @returns {string}
  */
@@ -1447,6 +1548,81 @@ function compareObservedAt(left, right) {
     return -1;
   }
   return leftValue - rightValue;
+}
+
+/**
+ * @param {Array<Record<string, unknown>>} operationalValues
+ * @param {Record<string, unknown>} repository
+ * @returns {Map<string, Array<number>>}
+ */
+function summarizeRepositoryOperationalValues(operationalValues, repository) {
+  /** @type {Map<string, Array<number>>} */
+  const byDefinition = new Map();
+
+  for (const row of operationalValues) {
+    if (row.repository !== repository.repository) {
+      continue;
+    }
+    const definition = toText(row['operational-value-definition']);
+    const value = row['operational-value'];
+    if (typeof value !== 'number' || !Number.isFinite(value)) {
+      continue;
+    }
+    const values = byDefinition.get(definition) ?? [];
+    values.push(value);
+    byDefinition.set(definition, values);
+  }
+
+  return byDefinition;
+}
+
+/**
+ * @param {Map<string, Array<number>>} definitions
+ * @returns {string}
+ */
+function formatOperationalValueDefinitions(definitions) {
+  const entries = [...definitions.entries()]
+    .sort(([left], [right]) => left.localeCompare(right))
+    .map(([definition, values]) => `${definition}: ${values.map((value) => formatNumber(value)).join(', ')}`);
+  return entries.length > 0 ? entries.join(' | ') : 'Unavailable';
+}
+
+/**
+ * @param {{ key: string, repository: Record<string, unknown>, runCount: number, usageTotals: Map<string, number>, operationalValueDefinitions: Map<string, Array<number>> }} left
+ * @param {{ key: string, repository: Record<string, unknown>, runCount: number, usageTotals: Map<string, number>, operationalValueDefinitions: Map<string, Array<number>> }} right
+ * @returns {number}
+ */
+function compareRepositoryItems(left, right) {
+  const runDelta = right.runCount - left.runCount;
+  if (runDelta !== 0) {
+    return runDelta;
+  }
+
+  const aicDelta = (right.usageTotals.get('aic') ?? 0) - (left.usageTotals.get('aic') ?? 0);
+  if (aicDelta !== 0) {
+    return aicDelta;
+  }
+
+  const valueDelta = summarizeOperationalValueMagnitude(right.operationalValueDefinitions) - summarizeOperationalValueMagnitude(left.operationalValueDefinitions);
+  if (valueDelta !== 0) {
+    return valueDelta;
+  }
+
+  return left.key.localeCompare(right.key);
+}
+
+/**
+ * @param {Map<string, Array<number>>} definitions
+ * @returns {number}
+ */
+function summarizeOperationalValueMagnitude(definitions) {
+  let total = 0;
+  for (const values of definitions.values()) {
+    for (const value of values) {
+      total += value;
+    }
+  }
+  return total;
 }
 
 /**
