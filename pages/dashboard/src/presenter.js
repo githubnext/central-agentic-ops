@@ -8,7 +8,7 @@ import { octicon, agenticWorkflowMark } from './octicons.js';
 import { renderStatusBadge, renderModeBadge, renderActiveStateBadge } from './components/badge.js';
 import { renderDataStateMetrics } from './components/data-state.js';
 import { renderTableRegion } from './components/table-region.js';
-import { renderContextList, renderPageSection, renderProvenanceSection, renderSummaryRegion, renderTitledRegion, renderViewHeader } from './components/view-chrome.js';
+import { renderContextList, renderPageSection, renderProvenanceSection, renderSummaryRegion, renderViewHeader } from './components/view-chrome.js';
 
 /**
  * @typedef {{ availability: 'available'|'empty'|'unavailable', completeness: 'complete'|'partial'|'unknown', freshness: 'fresh'|'stale'|'unknown' }} DataState
@@ -366,9 +366,10 @@ function renderBuiltInPage(page, title, sources) {
  * @returns {HTMLElement}
  */
 function renderBuiltInPageBody(page, pageSources) {
-  const renderer = BUILT_IN_PAGE_RENDERERS[page.page];
-  if (renderer) {
-    return renderer(pageSources);
+  const viewDefinitions = Array.isArray(page.definition?.views) ? page.definition.views : [];
+  const spec = BUILT_IN_PAGE_RENDERERS[page.page];
+  if (spec) {
+    return renderBuiltInPageFromDefinition(page.id, spec, viewDefinitions, pageSources);
   }
 
   return h('p', { className: 'page-placeholder' }, `Built-in page ${page.page} is not rendered in this increment.`);
@@ -378,58 +379,78 @@ function renderBuiltInPageBody(page, pageSources) {
  * @param {Map<string, LogicalSourceInput>} pageSources
  * @returns {HTMLElement}
  */
-function renderRunsPage(pageSources) {
+/**
+ * @param {Map<string, LogicalSourceInput>} pageSources
+ * @returns {HTMLElement}
+ */
+function renderRunsStatusSummary(pageSources) {
+  const runsSource = pageSources.get('runs');
+  const runs = Array.isArray(runsSource?.rows) ? runsSource.rows : [];
+  return renderSummaryList('run-status-counts', countBy(runs, 'run-status'));
+}
+
+/**
+ * @param {Map<string, LogicalSourceInput>} pageSources
+ * @returns {HTMLElement}
+ */
+function renderRunsConclusionSummary(pageSources) {
+  const runsSource = pageSources.get('runs');
+  const runs = Array.isArray(runsSource?.rows) ? runsSource.rows : [];
+  return renderSummaryList('run-conclusion-counts', countBy(runs, 'run-conclusion'));
+}
+
+/**
+ * @param {Map<string, LogicalSourceInput>} pageSources
+ * @returns {HTMLElement}
+ */
+function renderRunsOutcomeSummary(pageSources) {
+  const outcomeSource = pageSources.get('outcomes');
+  const outcomes = Array.isArray(outcomeSource?.rows) ? outcomeSource.rows : [];
+  return renderSummaryList('run-outcome-counts', countBy(outcomes, 'outcome-state'));
+}
+
+/**
+ * @param {Map<string, LogicalSourceInput>} pageSources
+ * @returns {HTMLElement}
+ */
+function renderRunsInventory(pageSources) {
   const runsSource = pageSources.get('runs');
   const outcomeSource = pageSources.get('outcomes');
   const runs = Array.isArray(runsSource?.rows) ? runsSource.rows : [];
   const outcomes = Array.isArray(outcomeSource?.rows) ? outcomeSource.rows : [];
-
-  const statusCounts = countBy(runs, 'run-status');
-  const conclusionCounts = countBy(runs, 'run-conclusion');
-  const outcomeCounts = countBy(outcomes, 'outcome-state');
-
   const items = runs.map((run, index) => ({
     key: getRunKey(run, index),
     run,
     outcomeCount: countMatchingOutcomes(outcomes, run)
   }));
 
-  return h(
-    'div',
-    { className: 'runs-page' },
-    renderSummaryRegion('runs', 'Run Status Counts', 'run-status-counts', statusCounts),
-    renderSummaryRegion('runs', 'Run Conclusion Counts', 'run-conclusion-counts', conclusionCounts),
-    renderSummaryRegion('runs', 'Outcome Counts', 'run-outcome-counts', outcomeCounts),
-    renderPageSection('runs', 'Runs', [
-      renderTableRegion({
-        tableClassName: 'runs-table',
-        emptyMessage: 'No runs available.',
-        colSpan: 13,
-        headCells: [
-          'Run',
-          'Status',
-          'Conclusion',
-          'Organization',
-          'Repository',
-          'Workflow',
-          'Rollout Mode',
-          'Engine',
-          'Requested Model',
-          'Resolved Model',
-          'Started At',
-          'Outcome Count',
-          'Run Link'
-        ],
-        bodyRows: items.length > 0
-          ? keyed(
-            items,
-            (item) => renderRunRow(/** @type {{ key: string, run: Record<string, unknown>, outcomeCount: number }} */ (item)),
-            (item) => /** @type {{ key: string }} */ (item).key
-          )
-          : []
-      })
-    ])
-  );
+  return renderTableRegion({
+    tableClassName: 'runs-table',
+    emptyMessage: 'No runs available.',
+    colSpan: 13,
+    headCells: [
+      'Run',
+      'Status',
+      'Conclusion',
+      'Organization',
+      'Repository',
+      'Workflow',
+      'Rollout Mode',
+      'Engine',
+      'Requested Model',
+      'Resolved Model',
+      'Started At',
+      'Outcome Count',
+      'Run Link'
+    ],
+    bodyRows: items.length > 0
+      ? keyed(
+        items,
+        (item) => renderRunRow(/** @type {{ key: string, run: Record<string, unknown>, outcomeCount: number }} */ (item)),
+        (item) => /** @type {{ key: string }} */ (item).key
+      )
+      : []
+  });
 }
 
 /**
@@ -469,7 +490,11 @@ function renderRunRow(item) {
  * @param {Map<string, LogicalSourceInput>} pageSources
  * @returns {HTMLElement}
  */
-function renderWorkflowsPage(pageSources) {
+/**
+ * @param {Map<string, LogicalSourceInput>} pageSources
+ * @returns {HTMLElement}
+ */
+function renderWorkflowsInventory(pageSources) {
   const workflowsSource = pageSources.get('workflows');
   const runsSource = pageSources.get('runs');
   const outcomesSource = pageSources.get('outcomes');
@@ -495,140 +520,161 @@ function renderWorkflowsPage(pageSources) {
     operationalValueCount: countMatchingRows(operationalValues, workflow, 'workflow')
   }));
 
-  return h(
-    'div',
-    { className: 'workflows-page' },
-    renderTitledRegion('workflows', 'Workflow Inventory', renderTableRegion({
-      tableClassName: 'workflows-table',
-      emptyMessage: 'No workflows available.',
-      colSpan: 11,
-      headCells: [
-        'Workflow',
-        'Organization',
-        'Repository',
-        'Active State',
-        'Rollout Mode',
-        'Run Count',
-        'Run Conclusions',
-        'Outcome Count',
-        'Available AIC',
-        'Finding Count',
-        'Operational Value Count'
-      ],
-      bodyRows: workflowItems.length > 0
-        ? keyed(
-          workflowItems,
-          (item) => renderWorkflowRow(/** @type {{ key: string, workflow: Record<string, unknown>, runCount: number, conclusionCounts: Map<string, number>, outcomeCount: number, aicTotal: number, findingCount: number, operationalValueCount: number }} */ (item)),
-          (item) => /** @type {{ key: string }} */ (item).key
-        )
-        : []
-    }))
-  );
+  return renderTableRegion({
+    tableClassName: 'workflows-table',
+    emptyMessage: 'No workflows available.',
+    colSpan: 11,
+    headCells: [
+      'Workflow',
+      'Organization',
+      'Repository',
+      'Active State',
+      'Rollout Mode',
+      'Run Count',
+      'Run Conclusions',
+      'Outcome Count',
+      'Available AIC',
+      'Finding Count',
+      'Operational Value Count'
+    ],
+    bodyRows: workflowItems.length > 0
+      ? keyed(
+        workflowItems,
+        (item) => renderWorkflowRow(/** @type {{ key: string, workflow: Record<string, unknown>, runCount: number, conclusionCounts: Map<string, number>, outcomeCount: number, aicTotal: number, findingCount: number, operationalValueCount: number }} */ (item)),
+        (item) => /** @type {{ key: string }} */ (item).key
+      )
+      : []
+  });
 }
 
 /**
  * @param {Map<string, LogicalSourceInput>} pageSources
  * @returns {HTMLElement}
  */
-function renderFindingsPage(pageSources) {
+/**
+ * @param {Map<string, LogicalSourceInput>} pageSources
+ * @returns {HTMLElement}
+ */
+function renderFindingsSeveritySummary(pageSources) {
   const findingsSource = pageSources.get('findings');
   const findings = Array.isArray(findingsSource?.rows) ? findingsSource.rows : [];
+  return renderSummaryList('finding-severity-counts', countBy(findings, 'finding-severity'));
+}
 
-  const severityCounts = countBy(findings, 'finding-severity');
-  const statusCounts = countBy(findings, 'finding-status');
+/**
+ * @param {Map<string, LogicalSourceInput>} pageSources
+ * @returns {HTMLElement}
+ */
+function renderFindingsStatusSummary(pageSources) {
+  const findingsSource = pageSources.get('findings');
+  const findings = Array.isArray(findingsSource?.rows) ? findingsSource.rows : [];
+  return renderSummaryList('finding-status-counts', countBy(findings, 'finding-status'));
+}
+
+/**
+ * @param {Map<string, LogicalSourceInput>} pageSources
+ * @returns {HTMLElement}
+ */
+function renderFindingsInventory(pageSources) {
+  const findingsSource = pageSources.get('findings');
+  const findings = Array.isArray(findingsSource?.rows) ? findingsSource.rows : [];
   const items = findings.map((finding, index) => ({
     key: getFindingKey(finding, index),
     finding
   }));
 
-  return h(
-    'div',
-    { className: 'findings-page' },
-    renderSummaryRegion('findings', 'Finding Severity Counts', 'finding-severity-counts', severityCounts),
-    renderSummaryRegion('findings', 'Finding Status Counts', 'finding-status-counts', statusCounts),
-    renderPageSection('findings', 'Findings', [
-      renderTableRegion({
-        tableClassName: 'findings-table',
-        emptyMessage: 'No findings available.',
-        colSpan: 10,
-        headCells: [
-          'Summary',
-          'Severity',
-          'Status',
-          'Organization',
-          'Repository',
-          'Workflow',
-          'Observed At',
-          'Issue Link',
-          'Pull Request Link',
-          'Run Link'
-        ],
-        bodyRows: items.length > 0
-          ? keyed(
-            items,
-            (item) => renderFindingRow(/** @type {{ key: string, finding: Record<string, unknown> }} */ (item)),
-            (item) => /** @type {{ key: string }} */ (item).key
-          )
-          : []
-      })
-    ])
-  );
+  return renderTableRegion({
+    tableClassName: 'findings-table',
+    emptyMessage: 'No findings available.',
+    colSpan: 10,
+    headCells: [
+      'Summary',
+      'Severity',
+      'Status',
+      'Organization',
+      'Repository',
+      'Workflow',
+      'Observed At',
+      'Issue Link',
+      'Pull Request Link',
+      'Run Link'
+    ],
+    bodyRows: items.length > 0
+      ? keyed(
+        items,
+        (item) => renderFindingRow(/** @type {{ key: string, finding: Record<string, unknown> }} */ (item)),
+        (item) => /** @type {{ key: string }} */ (item).key
+      )
+      : []
+  });
 }
 
 /**
  * @param {Map<string, LogicalSourceInput>} pageSources
  * @returns {HTMLElement}
  */
-function renderUsagePage(pageSources) {
+/**
+ * @param {Map<string, LogicalSourceInput>} pageSources
+ * @returns {HTMLElement}
+ */
+function renderUsageTotalsSection(pageSources) {
   const usageSource = pageSources.get('usage');
   const usageRows = Array.isArray(usageSource?.rows) ? usageSource.rows : [];
-  const totals = summarizeUsageMeasures(usageRows);
+  return renderSummaryList('usage-totals', summarizeUsageMeasures(usageRows));
+}
+
+/**
+ * @param {Map<string, LogicalSourceInput>} pageSources
+ * @returns {HTMLElement}
+ */
+function renderUsageObservationsSection(pageSources) {
+  const usageSource = pageSources.get('usage');
+  const usageRows = Array.isArray(usageSource?.rows) ? usageSource.rows : [];
   const items = usageRows.map((row, index) => ({
     key: getUsageKey(row, index),
     row
   }));
 
-  return h(
-    'div',
-    { className: 'usage-page' },
-    renderTitledRegion('usage', 'Usage Totals', renderSummaryList('usage-totals', totals)),
-    renderTitledRegion('usage', 'Usage Observations', renderTableRegion({
-      tableClassName: 'usage-table',
-      emptyMessage: 'No usage observations available.',
-      colSpan: 15,
-      headCells: [
-        'Organization',
-        'Repository',
-        'Workflow',
-        'Run',
-        'Engine',
-        'Requested Model',
-        'Resolved Model',
-        'Rollout Mode',
-        'Observed At',
-        'Input Tokens',
-        'Output Tokens',
-        'Cache Read Tokens',
-        'Cache Write Tokens',
-        'Reasoning Tokens',
-        'AIC'
-      ],
-      bodyRows: items.length > 0
-        ? keyed(
-          items,
-          (item) => renderUsageRow(/** @type {{ key: string, row: Record<string, unknown> }} */ (item)),
-          (item) => /** @type {{ key: string }} */ (item).key
-        )
-        : []
-    }))
-  );
+  return renderTableRegion({
+    tableClassName: 'usage-table',
+    emptyMessage: 'No usage observations available.',
+    colSpan: 15,
+    headCells: [
+      'Organization',
+      'Repository',
+      'Workflow',
+      'Run',
+      'Engine',
+      'Requested Model',
+      'Resolved Model',
+      'Rollout Mode',
+      'Observed At',
+      'Input Tokens',
+      'Output Tokens',
+      'Cache Read Tokens',
+      'Cache Write Tokens',
+      'Reasoning Tokens',
+      'AIC'
+    ],
+    bodyRows: items.length > 0
+      ? keyed(
+        items,
+        (item) => renderUsageRow(/** @type {{ key: string, row: Record<string, unknown> }} */ (item)),
+        (item) => /** @type {{ key: string }} */ (item).key
+      )
+      : []
+  });
 }
 
 /**
  * @param {Map<string, LogicalSourceInput>} pageSources
  * @returns {HTMLElement}
  */
-function renderEnginesModelsPage(pageSources) {
+/**
+ * @param {Map<string, LogicalSourceInput>} pageSources
+ * @returns {HTMLElement}
+ */
+function renderEnginesModelsInventory(pageSources) {
   const runsSource = pageSources.get('runs');
   const outcomesSource = pageSources.get('outcomes');
   const usageSource = pageSources.get('usage');
@@ -639,90 +685,90 @@ function renderEnginesModelsPage(pageSources) {
 
   const items = groupEngineModelRows(runs, outcomes, usageRows);
 
-  return h(
-    'div',
-    { className: 'engines-models-page' },
-    renderTitledRegion('engines-models', 'Engine and Model Inventory', renderTableRegion({
-      tableClassName: 'engines-models-table',
-      emptyMessage: 'No engine or model observations available.',
-      colSpan: 12,
-      headCells: [
-        'Engine',
-        'Requested Model',
-        'Resolved Model',
-        'Run Count',
-        'Run Conclusions',
-        'Outcome Count',
-        'Input Tokens',
-        'Output Tokens',
-        'Cache Read Tokens',
-        'Cache Write Tokens',
-        'Reasoning Tokens',
-        'AIC'
-      ],
-      bodyRows: items.length > 0
-        ? keyed(
-          items,
-          (item) => renderEngineModelRow(/** @type {{ key: string, engine: string, requestedModel: string, resolvedModel: string, runCount: number, conclusionCounts: Map<string, number>, outcomeCount: number, usageTotals: Map<string, number> }} */ (item)),
-          (item) => /** @type {{ key: string }} */ (item).key
-        )
-        : []
-    }))
-  );
+  return renderTableRegion({
+    tableClassName: 'engines-models-table',
+    emptyMessage: 'No engine or model observations available.',
+    colSpan: 12,
+    headCells: [
+      'Engine',
+      'Requested Model',
+      'Resolved Model',
+      'Run Count',
+      'Run Conclusions',
+      'Outcome Count',
+      'Input Tokens',
+      'Output Tokens',
+      'Cache Read Tokens',
+      'Cache Write Tokens',
+      'Reasoning Tokens',
+      'AIC'
+    ],
+    bodyRows: items.length > 0
+      ? keyed(
+        items,
+        (item) => renderEngineModelRow(/** @type {{ key: string, engine: string, requestedModel: string, resolvedModel: string, runCount: number, conclusionCounts: Map<string, number>, outcomeCount: number, usageTotals: Map<string, number> }} */ (item)),
+        (item) => /** @type {{ key: string }} */ (item).key
+      )
+      : []
+  });
 }
 
 /**
  * @param {Map<string, LogicalSourceInput>} pageSources
  * @returns {HTMLElement}
  */
-function renderOperationalValuePage(pageSources) {
+/**
+ * @param {Map<string, LogicalSourceInput>} pageSources
+ * @returns {HTMLElement}
+ */
+function renderOperationalValueTimelineSection(pageSources) {
   const operationalValuesSource = pageSources.get('operational-values');
   const rows = Array.isArray(operationalValuesSource?.rows) ? operationalValuesSource.rows : [];
   const items = [...rows]
     .map((row, index) => ({ key: getOperationalValueKey(row, index), row }))
     .sort((left, right) => compareObservedAt(left.row, right.row));
 
-  return h(
-    'div',
-    { className: 'operational-value-page' },
-    renderTitledRegion('operational-value', 'Operational Value Timeline', renderTableRegion({
-      tableClassName: 'operational-value-table',
-      emptyMessage: 'No operational value observations available.',
-      colSpan: 16,
-      headCells: [
-        'Observed At',
-        'Operational Value',
-        'Definition',
-        'Operational Case',
-        'Evaluator Digest',
-        'Organization',
-        'Repository',
-        'Workflow',
-        'Run',
-        'Experiment',
-        'Requested Evidence At',
-        'Evidence Cutoff',
-        'Maturity At',
-        'Maturity Status',
-        'Delta From Baseline',
-        'Evidence Link'
-      ],
-      bodyRows: items.length > 0
-        ? keyed(
-          items,
-          (item) => renderOperationalValueRow(/** @type {{ key: string, row: Record<string, unknown> }} */ (item)),
-          (item) => /** @type {{ key: string }} */ (item).key
-        )
-        : []
-    }))
-  );
+  return renderTableRegion({
+    tableClassName: 'operational-value-table',
+    emptyMessage: 'No operational value observations available.',
+    colSpan: 16,
+    headCells: [
+      'Observed At',
+      'Operational Value',
+      'Definition',
+      'Operational Case',
+      'Evaluator Digest',
+      'Organization',
+      'Repository',
+      'Workflow',
+      'Run',
+      'Experiment',
+      'Requested Evidence At',
+      'Evidence Cutoff',
+      'Maturity At',
+      'Maturity Status',
+      'Delta From Baseline',
+      'Evidence Link'
+    ],
+    bodyRows: items.length > 0
+      ? keyed(
+        items,
+        (item) => renderOperationalValueRow(/** @type {{ key: string, row: Record<string, unknown> }} */ (item)),
+        (item) => /** @type {{ key: string }} */ (item).key
+      )
+      : []
+  });
 }
 
 /**
  * @param {Map<string, LogicalSourceInput>} pageSources
  * @returns {HTMLElement}
  */
-function renderOrganizationsPage(pageSources) {
+/**
+ * @param {Map<string, LogicalSourceInput>} pageSources
+ * @returns {HTMLElement}
+ */
+function renderOrganizationsInventory(pageSources) {
   const organizationsSource = pageSources.get('organizations');
   const repositoriesSource = pageSources.get('repositories');
   const workflowsSource = pageSources.get('workflows');
@@ -744,42 +790,42 @@ function renderOrganizationsPage(pageSources) {
     usageTotals: summarizeUsageMeasures(usageRows.filter((row) => row.organization === organization.organization))
   }));
 
-  return h(
-    'div',
-    { className: 'organizations-page' },
-    renderTitledRegion('organizations', 'Organization Inventory', renderTableRegion({
-      tableClassName: 'organizations-table',
-      emptyMessage: 'No organizations available.',
-      colSpan: 11,
-      headCells: [
-        'Organization',
-        'Organization Name',
-        'Repository Count',
-        'Workflow Count',
-        'Run Count',
-        'Input Tokens',
-        'Output Tokens',
-        'Cache Read Tokens',
-        'Cache Write Tokens',
-        'Reasoning Tokens',
-        'AIC'
-      ],
-      bodyRows: items.length > 0
-        ? keyed(
-          items,
-          (item) => renderOrganizationRow(/** @type {{ key: string, organization: Record<string, unknown>, repositoryCount: number, workflowCount: number, runCount: number, usageTotals: Map<string, number> }} */ (item)),
-          (item) => /** @type {{ key: string }} */ (item).key
-        )
-        : []
-    }))
-  );
+  return renderTableRegion({
+    tableClassName: 'organizations-table',
+    emptyMessage: 'No organizations available.',
+    colSpan: 11,
+    headCells: [
+      'Organization',
+      'Organization Name',
+      'Repository Count',
+      'Workflow Count',
+      'Run Count',
+      'Input Tokens',
+      'Output Tokens',
+      'Cache Read Tokens',
+      'Cache Write Tokens',
+      'Reasoning Tokens',
+      'AIC'
+    ],
+    bodyRows: items.length > 0
+      ? keyed(
+        items,
+        (item) => renderOrganizationRow(/** @type {{ key: string, organization: Record<string, unknown>, repositoryCount: number, workflowCount: number, runCount: number, usageTotals: Map<string, number> }} */ (item)),
+        (item) => /** @type {{ key: string }} */ (item).key
+      )
+      : []
+  });
 }
 
 /**
  * @param {Map<string, LogicalSourceInput>} pageSources
  * @returns {HTMLElement}
  */
-function renderRepositoriesPage(pageSources) {
+/**
+ * @param {Map<string, LogicalSourceInput>} pageSources
+ * @returns {HTMLElement}
+ */
+function renderRepositoriesInventory(pageSources) {
   const repositoriesSource = pageSources.get('repositories');
   const runsSource = pageSources.get('runs');
   const usageSource = pageSources.get('usage');
@@ -800,38 +846,38 @@ function renderRepositoriesPage(pageSources) {
 
   items.sort((left, right) => compareRepositoryItems(left, right));
 
-  return h(
-    'div',
-    { className: 'repositories-page' },
-    renderTitledRegion('repositories', 'Repository Inventory and Rankings', renderTableRegion({
-      tableClassName: 'repositories-table',
-      emptyMessage: 'No repositories available.',
-      colSpan: 7,
-      headCells: [
-        'Repository',
-        'Repository Name',
-        'Organization',
-        'Rollout Mode',
-        'Run Count',
-        'AIC',
-        'Operational Value by Definition'
-      ],
-      bodyRows: items.length > 0
-        ? keyed(
-          items,
-          (item) => renderRepositoryRow(/** @type {{ key: string, repository: Record<string, unknown>, runCount: number, usageTotals: Map<string, number>, operationalValueDefinitions: Map<string, Array<number>> }} */ (item)),
-          (item) => /** @type {{ key: string }} */ (item).key
-        )
-        : []
-    }))
-  );
+  return renderTableRegion({
+    tableClassName: 'repositories-table',
+    emptyMessage: 'No repositories available.',
+    colSpan: 7,
+    headCells: [
+      'Repository',
+      'Repository Name',
+      'Organization',
+      'Rollout Mode',
+      'Run Count',
+      'AIC',
+      'Operational Value by Definition'
+    ],
+    bodyRows: items.length > 0
+      ? keyed(
+        items,
+        (item) => renderRepositoryRow(/** @type {{ key: string, repository: Record<string, unknown>, runCount: number, usageTotals: Map<string, number>, operationalValueDefinitions: Map<string, Array<number>> }} */ (item)),
+        (item) => /** @type {{ key: string }} */ (item).key
+      )
+      : []
+  });
 }
 
 /**
  * @param {Map<string, LogicalSourceInput>} pageSources
  * @returns {HTMLElement}
  */
-function renderExperimentsPage(pageSources) {
+/**
+ * @param {Map<string, LogicalSourceInput>} pageSources
+ * @returns {HTMLElement}
+ */
+function renderExperimentsInventory(pageSources) {
   const experimentsSource = pageSources.get('experiments');
   const assignmentsSource = pageSources.get('experiment-assignments');
   const graderObservationsSource = pageSources.get('grader-observations');
@@ -863,36 +909,34 @@ function renderExperimentsPage(pageSources) {
 
   return h(
     'div',
-    { className: 'experiments-page' },
-    renderPageSection('experiments', 'Experiment Definitions and Observed Associations', [
-      h(
-        'p',
-        { className: 'page-note' },
-        'Observed assignments, grader observations, eval observations, outcomes, usage, and operational value are presented together without implying causation.'
-      ),
-      renderTableRegion({
-        tableClassName: 'experiments-table',
-        emptyMessage: 'No experiments available.',
-        colSpan: 8,
-        headCells: [
-          'Experiment',
-          'Experiment Name',
-          'Observed Variants by Run Count',
-          'Grader Observations',
-          'Eval Observations',
-          'Outcome Observations',
-          'Usage AIC',
-          'Operational Value by Definition'
-        ],
-        bodyRows: items.length > 0
-          ? keyed(
-            items,
-            (item) => renderExperimentRow(/** @type {{ key: string, experiment: Record<string, unknown>, variantAssignments: Map<string, number>, graderStatusCounts: Map<string, number>, evalResultCounts: Map<string, number>, outcomeCounts: Map<string, number>, usageTotals: Map<string, number>, operationalValueDefinitions: Map<string, Array<number>> }} */ (item)),
-            (item) => /** @type {{ key: string }} */ (item).key
-          )
-          : []
-      })
-    ])
+    null,
+    h(
+      'p',
+      { className: 'page-note' },
+      'Observed assignments, grader observations, eval observations, outcomes, usage, and operational value are presented together without implying causation.'
+    ),
+    renderTableRegion({
+      tableClassName: 'experiments-table',
+      emptyMessage: 'No experiments available.',
+      colSpan: 8,
+      headCells: [
+        'Experiment',
+        'Experiment Name',
+        'Observed Variants by Run Count',
+        'Grader Observations',
+        'Eval Observations',
+        'Outcome Observations',
+        'Usage AIC',
+        'Operational Value by Definition'
+      ],
+      bodyRows: items.length > 0
+        ? keyed(
+          items,
+          (item) => renderExperimentRow(/** @type {{ key: string, experiment: Record<string, unknown>, variantAssignments: Map<string, number>, graderStatusCounts: Map<string, number>, evalResultCounts: Map<string, number>, outcomeCounts: Map<string, number>, usageTotals: Map<string, number>, operationalValueDefinitions: Map<string, Array<number>> }} */ (item)),
+          (item) => /** @type {{ key: string }} */ (item).key
+        )
+        : []
+    })
   );
 }
 
@@ -900,7 +944,11 @@ function renderExperimentsPage(pageSources) {
  * @param {Map<string, LogicalSourceInput>} pageSources
  * @returns {HTMLElement}
  */
-function renderGradersPage(pageSources) {
+/**
+ * @param {Map<string, LogicalSourceInput>} pageSources
+ * @returns {HTMLElement}
+ */
+function renderGradersDefinitions(pageSources) {
   const gradersSource = pageSources.get('graders');
   const graderObservationsSource = pageSources.get('grader-observations');
   const graders = Array.isArray(gradersSource?.rows) ? gradersSource.rows : [];
@@ -918,61 +966,71 @@ function renderGradersPage(pageSources) {
 
   items.sort((left, right) => left.key.localeCompare(right.key));
 
-  return h(
-    'div',
-    { className: 'graders-page' },
-    renderTitledRegion('graders', 'Grader Definitions', renderTableRegion({
-      tableClassName: 'graders-definitions-table',
-      emptyMessage: 'No grader definitions available.',
-      colSpan: 8,
-      headCells: [
-        'Grader',
-        'Grader Name',
-        'Definition Observed At',
-        'Observation Count',
-        'Observed Subjects',
-        'Results',
-        'Scores When Present',
-        'Latest Observation Time'
-      ],
-      bodyRows: items.length > 0
-        ? keyed(
-          items,
-          (item) => renderGraderDefinitionRow(/** @type {{ key: string, grader: Record<string, unknown>, observationCount: number, statusCounts: Map<string, number>, latestObservedAt: string, subjects: string[], scoreValues: string[] }} */ (item)),
-          (item) => /** @type {{ key: string }} */ (item).key
-        )
-        : []
-    })),
-    renderTitledRegion('graders', 'Grader Observations', renderTableRegion({
-      tableClassName: 'grader-observations-table',
-      emptyMessage: 'No grader observations available.',
-      colSpan: 6,
-      headCells: [
-        'Grader',
-        'Observed Subject',
-        'Run',
-        'Result',
-        'Score',
-        'Time'
-      ],
-      bodyRows: observations.length > 0
-        ? keyed(
-          observations
-            .map((observation, index) => ({ key: getGraderObservationKey(observation, index), observation }))
-            .sort((left, right) => left.key.localeCompare(right.key)),
-          (item) => renderGraderObservationRow(/** @type {{ key: string, observation: Record<string, unknown> }} */ (item)),
-          (item) => /** @type {{ key: string }} */ (item).key
-        )
-        : []
-    }))
-  );
+  return renderTableRegion({
+    tableClassName: 'graders-definitions-table',
+    emptyMessage: 'No grader definitions available.',
+    colSpan: 8,
+    headCells: [
+      'Grader',
+      'Grader Name',
+      'Definition Observed At',
+      'Observation Count',
+      'Observed Subjects',
+      'Results',
+      'Scores When Present',
+      'Latest Observation Time'
+    ],
+    bodyRows: items.length > 0
+      ? keyed(
+        items,
+        (item) => renderGraderDefinitionRow(/** @type {{ key: string, grader: Record<string, unknown>, observationCount: number, statusCounts: Map<string, number>, latestObservedAt: string, subjects: string[], scoreValues: string[] }} */ (item)),
+        (item) => /** @type {{ key: string }} */ (item).key
+      )
+      : []
+  });
 }
 
 /**
  * @param {Map<string, LogicalSourceInput>} pageSources
  * @returns {HTMLElement}
  */
-function renderEvalsPage(pageSources) {
+function renderGradersObservations(pageSources) {
+  const graderObservationsSource = pageSources.get('grader-observations');
+  const observations = Array.isArray(graderObservationsSource?.rows) ? graderObservationsSource.rows : [];
+
+  return renderTableRegion({
+    tableClassName: 'grader-observations-table',
+    emptyMessage: 'No grader observations available.',
+    colSpan: 6,
+    headCells: [
+      'Grader',
+      'Observed Subject',
+      'Run',
+      'Result',
+      'Score',
+      'Time'
+    ],
+    bodyRows: observations.length > 0
+      ? keyed(
+        observations
+          .map((observation, index) => ({ key: getGraderObservationKey(observation, index), observation }))
+          .sort((left, right) => left.key.localeCompare(right.key)),
+        (item) => renderGraderObservationRow(/** @type {{ key: string, observation: Record<string, unknown> }} */ (item)),
+        (item) => /** @type {{ key: string }} */ (item).key
+      )
+      : []
+  });
+}
+
+/**
+ * @param {Map<string, LogicalSourceInput>} pageSources
+ * @returns {HTMLElement}
+ */
+/**
+ * @param {Map<string, LogicalSourceInput>} pageSources
+ * @returns {HTMLElement}
+ */
+function renderEvalsDefinitions(pageSources) {
   const evalsSource = pageSources.get('evals');
   const evalObservationsSource = pageSources.get('eval-observations');
   const evals = Array.isArray(evalsSource?.rows) ? evalsSource.rows : [];
@@ -990,150 +1048,210 @@ function renderEvalsPage(pageSources) {
 
   items.sort((left, right) => left.key.localeCompare(right.key));
 
-  const observationItems = observations
-    .map((observation, index) => ({ key: getEvalObservationKey(observation, index), observation }))
-    .sort((left, right) => left.key.localeCompare(right.key));
-
-  return h(
-    'div',
-    { className: 'evals-page' },
-    renderPageSection('evals', 'Eval Definitions', [
-      renderTableRegion({
-        tableClassName: 'evals-definitions-table',
-        emptyMessage: 'No eval definitions available.',
-        colSpan: 10,
-        headCells: [
-          'Eval',
-          'Eval Name',
-          'Eval Question',
-          'Requested Model',
-          'Definition Observed At',
-          'Observation Count',
-          'Observed Subjects',
-          'Results',
-          'Evaluation Models When Available',
-          'Latest Observation Time'
-        ],
-        bodyRows: items.length > 0
-          ? keyed(
-            items,
-            (item) => renderEvalDefinitionRow(/** @type {{ key: string, evaluation: Record<string, unknown>, observationCount: number, resultCounts: Map<string, number>, latestObservedAt: string, subjects: string[], models: string[] }} */ (item)),
-            (item) => /** @type {{ key: string }} */ (item).key
-          )
-          : []
-      })
-    ]),
-    renderPageSection('evals', 'Eval Observations', [
-      renderTableRegion({
-        tableClassName: 'eval-observations-table',
-        emptyMessage: 'No eval observations available.',
-        colSpan: 7,
-        headCells: [
-          'Eval',
-          'Observed Subject',
-          'Run',
-          'Result',
-          'Requested Model',
-          'Resolved Model',
-          'Time'
-        ],
-        bodyRows: observationItems.length > 0
-          ? keyed(
-            observationItems,
-            (item) => renderEvalObservationRow(/** @type {{ key: string, observation: Record<string, unknown> }} */ (item)),
-            (item) => /** @type {{ key: string }} */ (item).key
-          )
-          : []
-      })
-    ])
-  );
+  return renderTableRegion({
+    tableClassName: 'evals-definitions-table',
+    emptyMessage: 'No eval definitions available.',
+    colSpan: 10,
+    headCells: [
+      'Eval',
+      'Eval Name',
+      'Eval Question',
+      'Requested Model',
+      'Definition Observed At',
+      'Observation Count',
+      'Observed Subjects',
+      'Results',
+      'Evaluation Models When Available',
+      'Latest Observation Time'
+    ],
+    bodyRows: items.length > 0
+      ? keyed(
+        items,
+        (item) => renderEvalDefinitionRow(/** @type {{ key: string, evaluation: Record<string, unknown>, observationCount: number, resultCounts: Map<string, number>, latestObservedAt: string, subjects: string[], models: string[] }} */ (item)),
+        (item) => /** @type {{ key: string }} */ (item).key
+      )
+      : []
+  });
 }
 
 /**
  * @param {Map<string, LogicalSourceInput>} pageSources
  * @returns {HTMLElement}
  */
-function renderOverviewPage(pageSources) {
+function renderEvalsObservations(pageSources) {
+  const evalObservationsSource = pageSources.get('eval-observations');
+  const observations = Array.isArray(evalObservationsSource?.rows) ? evalObservationsSource.rows : [];
+
+  const observationItems = observations
+    .map((observation, index) => ({ key: getEvalObservationKey(observation, index), observation }))
+    .sort((left, right) => left.key.localeCompare(right.key));
+
+  return renderTableRegion({
+    tableClassName: 'eval-observations-table',
+    emptyMessage: 'No eval observations available.',
+    colSpan: 7,
+    headCells: [
+      'Eval',
+      'Observed Subject',
+      'Run',
+      'Result',
+      'Requested Model',
+      'Resolved Model',
+      'Time'
+    ],
+    bodyRows: observationItems.length > 0
+      ? keyed(
+        observationItems,
+        (item) => renderEvalObservationRow(/** @type {{ key: string, observation: Record<string, unknown> }} */ (item)),
+        (item) => /** @type {{ key: string }} */ (item).key
+      )
+      : []
+  });
+}
+
+/**
+ * @param {Map<string, LogicalSourceInput>} pageSources
+ * @returns {HTMLElement}
+ */
+/**
+ * @param {Map<string, LogicalSourceInput>} pageSources
+ * @returns {HTMLElement}
+ */
+function renderOverviewRolloutModeSummary(pageSources) {
   const workflowsSource = pageSources.get('workflows');
   const runsSource = pageSources.get('runs');
   const usageSource = pageSources.get('usage');
-  const findingsSource = pageSources.get('findings');
-  const operationalValuesSource = pageSources.get('operational-values');
-
   const workflows = Array.isArray(workflowsSource?.rows) ? workflowsSource.rows : [];
   const runs = Array.isArray(runsSource?.rows) ? runsSource.rows : [];
   const usageRows = Array.isArray(usageSource?.rows) ? usageSource.rows : [];
-  const findings = Array.isArray(findingsSource?.rows) ? findingsSource.rows : [];
-  const operationalValues = Array.isArray(operationalValuesSource?.rows) ? operationalValuesSource.rows : [];
+  return renderSummaryList('overview-rollout-mode-counts', countBy([...workflows, ...runs, ...usageRows].filter((row) => row['rollout-mode'] != null && row['rollout-mode'] !== ''), 'rollout-mode'));
+}
 
-  const rolloutModeCounts = countBy([...workflows, ...runs, ...usageRows].filter((row) => row['rollout-mode'] != null && row['rollout-mode'] !== ''), 'rollout-mode');
-  const activeStateCounts = countBy(workflows, 'workflow-active');
-  const runStatusCounts = countBy(runs, 'run-status');
-  const runConclusionCounts = countBy(runs, 'run-conclusion');
-  const repositoryRankings = summarizeOverviewEntityRankings(runs, 'repository');
-  const workflowRankings = summarizeOverviewEntityRankings(runs, 'workflow');
-  const largestAicSpenders = summarizeLargestAicSpenders(usageRows);
+/**
+ * @param {Map<string, LogicalSourceInput>} pageSources
+ * @returns {HTMLElement}
+ */
+function renderOverviewWorkflowActiveSummary(pageSources) {
+  const workflowsSource = pageSources.get('workflows');
+  const workflows = Array.isArray(workflowsSource?.rows) ? workflowsSource.rows : [];
+  return renderSummaryList('overview-workflow-active-counts', countBy(workflows, 'workflow-active'));
+}
+
+/**
+ * @param {Map<string, LogicalSourceInput>} pageSources
+ * @returns {HTMLElement}
+ */
+function renderOverviewRunStatusSection(pageSources) {
+  const runsSource = pageSources.get('runs');
+  const runs = Array.isArray(runsSource?.rows) ? runsSource.rows : [];
+  return h('div', null,
+    renderSummaryList('overview-run-status-counts', countBy(runs, 'run-status')),
+    renderOverviewTrendList('overview-run-status-trends', runs, 'run-status'));
+}
+
+/**
+ * @param {Map<string, LogicalSourceInput>} pageSources
+ * @returns {HTMLElement}
+ */
+function renderOverviewRunConclusionSection(pageSources) {
+  const runsSource = pageSources.get('runs');
+  const runs = Array.isArray(runsSource?.rows) ? runsSource.rows : [];
+  return h('div', null,
+    renderSummaryList('overview-run-conclusion-counts', countBy(runs, 'run-conclusion')),
+    renderOverviewTrendList('overview-run-conclusion-trends', runs, 'run-conclusion'));
+}
+
+/**
+ * @param {Map<string, LogicalSourceInput>} pageSources
+ * @returns {HTMLElement}
+ */
+function renderOverviewRepositoryRankings(pageSources) {
+  const runsSource = pageSources.get('runs');
+  const runs = Array.isArray(runsSource?.rows) ? runsSource.rows : [];
+  return renderSummaryList('overview-repository-rankings', summarizeOverviewEntityRankings(runs, 'repository'));
+}
+
+/**
+ * @param {Map<string, LogicalSourceInput>} pageSources
+ * @returns {HTMLElement}
+ */
+function renderOverviewWorkflowRankings(pageSources) {
+  const runsSource = pageSources.get('runs');
+  const runs = Array.isArray(runsSource?.rows) ? runsSource.rows : [];
+  return renderSummaryList('overview-workflow-rankings', summarizeOverviewEntityRankings(runs, 'workflow'));
+}
+
+/**
+ * @param {Map<string, LogicalSourceInput>} pageSources
+ * @returns {HTMLElement}
+ */
+function renderOverviewLargestAicSpenders(pageSources) {
+  const usageSource = pageSources.get('usage');
+  const usageRows = Array.isArray(usageSource?.rows) ? usageSource.rows : [];
+  return renderSummaryList('overview-largest-aic-spenders', summarizeLargestAicSpenders(usageRows));
+}
+
+/**
+ * @param {Map<string, LogicalSourceInput>} pageSources
+ * @returns {HTMLElement}
+ */
+function renderOverviewRecentFindings(pageSources) {
+  const findingsSource = pageSources.get('findings');
+  const findings = Array.isArray(findingsSource?.rows) ? findingsSource.rows : [];
   const recentFindings = [...findings]
     .map((finding, index) => ({ key: getFindingKey(finding, index), finding }))
     .sort((left, right) => compareObservedAt(right.finding, left.finding) || left.key.localeCompare(right.key));
+
+  return renderTableRegion({
+    tableClassName: 'overview-findings-table',
+    emptyMessage: 'No findings available.',
+    colSpan: 5,
+    headCells: [
+      'Observed At',
+      'Summary',
+      'Issue Link',
+      'Pull Request Link',
+      'Run Link'
+    ],
+    bodyRows: recentFindings.length > 0
+      ? keyed(
+        recentFindings,
+        (item) => renderOverviewFindingRow(/** @type {{ key: string, finding: Record<string, unknown> }} */ (item)),
+        (item) => /** @type {{ key: string }} */ (item).key
+      )
+      : []
+  });
+}
+
+/**
+ * @param {Map<string, LogicalSourceInput>} pageSources
+ * @returns {HTMLElement}
+ */
+function renderOverviewOperationalValueTimeline(pageSources) {
+  const operationalValuesSource = pageSources.get('operational-values');
+  const operationalValues = Array.isArray(operationalValuesSource?.rows) ? operationalValuesSource.rows : [];
   const operationalTimeline = [...operationalValues]
     .map((row, index) => ({ key: getOperationalValueKey(row, index), row }))
     .sort((left, right) => compareObservedAt(left.row, right.row));
 
-  return h(
-    'div',
-    { className: 'overview-page' },
-    renderSummaryRegion('overview', 'Rollout Mode Filtering', 'overview-rollout-mode-counts', rolloutModeCounts),
-    renderSummaryRegion('overview', 'Workflow Active State Inventory', 'overview-workflow-active-counts', activeStateCounts),
-    renderPageSection('overview', 'Run Status Counts and Trends', [
-      renderSummaryList('overview-run-status-counts', runStatusCounts),
-      renderOverviewTrendList('overview-run-status-trends', runs, 'run-status')
-    ]),
-    renderPageSection('overview', 'Run Conclusion Counts and Trends', [
-      renderSummaryList('overview-run-conclusion-counts', runConclusionCounts),
-      renderOverviewTrendList('overview-run-conclusion-trends', runs, 'run-conclusion')
-    ]),
-    renderTitledRegion('overview', 'Repository Rankings', renderSummaryList('overview-repository-rankings', repositoryRankings)),
-    renderTitledRegion('overview', 'Workflow Rankings', renderSummaryList('overview-workflow-rankings', workflowRankings)),
-    renderTitledRegion('overview', 'Largest AIC Spenders', renderSummaryList('overview-largest-aic-spenders', largestAicSpenders)),
-    renderTitledRegion('overview', 'Recent Linked Findings', renderTableRegion({
-      tableClassName: 'overview-findings-table',
-      emptyMessage: 'No findings available.',
-      colSpan: 5,
-      headCells: [
-        'Observed At',
-        'Summary',
-        'Issue Link',
-        'Pull Request Link',
-        'Run Link'
-      ],
-      bodyRows: recentFindings.length > 0
-        ? keyed(
-          recentFindings,
-          (item) => renderOverviewFindingRow(/** @type {{ key: string, finding: Record<string, unknown> }} */ (item)),
-          (item) => /** @type {{ key: string }} */ (item).key
-        )
-        : []
-    })),
-    renderTitledRegion('overview', 'Operational Value Timeline', renderTableRegion({
-      tableClassName: 'overview-operational-value-table',
-      emptyMessage: 'No operational value observations available.',
-      colSpan: 4,
-      headCells: [
-        'Observed At',
-        'Definition',
-        'Operational Value',
-        'Evidence Link'
-      ],
-      bodyRows: operationalTimeline.length > 0
-        ? keyed(
-          operationalTimeline,
-          (item) => renderOverviewOperationalValueRow(/** @type {{ key: string, row: Record<string, unknown> }} */ (item)),
-          (item) => /** @type {{ key: string }} */ (item).key
-        )
-        : []
-    }))
-  );
+  return renderTableRegion({
+    tableClassName: 'overview-operational-value-table',
+    emptyMessage: 'No operational value observations available.',
+    colSpan: 4,
+    headCells: [
+      'Observed At',
+      'Definition',
+      'Operational Value',
+      'Evidence Link'
+    ],
+    bodyRows: operationalTimeline.length > 0
+      ? keyed(
+        operationalTimeline,
+        (item) => renderOverviewOperationalValueRow(/** @type {{ key: string, row: Record<string, unknown> }} */ (item)),
+        (item) => /** @type {{ key: string }} */ (item).key
+      )
+      : []
+  });
 }
 
 /**
@@ -1247,20 +1365,88 @@ function getViewSource(view) {
   return view.data.source;
 }
 
-/** @type {Record<string, (pageSources: Map<string, LogicalSourceInput>) => HTMLElement>} */
+/**
+ * @typedef {{ title: string, render: (pageSources: Map<string, LogicalSourceInput>) => HTMLElement }} BuiltInSectionRenderer
+ */
+
+/**
+ * @param {string} pageId
+ * @param {Array<{ source: string, title: string, render: (pageSources: Map<string, LogicalSourceInput>) => HTMLElement }>} sectionDefinitions
+ * @param {Array<unknown>} viewDefinitions
+ * @param {Map<string, LogicalSourceInput>} pageSources
+ * @returns {HTMLElement}
+ */
+function renderBuiltInPageFromDefinition(pageId, sectionDefinitions, viewDefinitions, pageSources) {
+  const renderedSections = sectionDefinitions.map((sectionDefinition, index) => {
+    const matchingView = viewDefinitions[index];
+    const viewTitle = isPlainObject(matchingView) && typeof matchingView.title === 'string' && matchingView.title.length > 0
+      ? matchingView.title
+      : sectionDefinition.title;
+    const content = sectionDefinition.render(pageSources);
+    return renderPageSection(pageId, viewTitle, [content]);
+  });
+
+  return h(
+    'div',
+    { className: `${pageId}-page` },
+    ...renderedSections
+  );
+}
+
+/** @type {Record<string, Array<{ source: string, title: string, render: (pageSources: Map<string, LogicalSourceInput>) => HTMLElement }>>} */
 const BUILT_IN_PAGE_RENDERERS = {
-  overview: renderOverviewPage,
-  organizations: renderOrganizationsPage,
-  repositories: renderRepositoriesPage,
-  workflows: renderWorkflowsPage,
-  runs: renderRunsPage,
-  experiments: renderExperimentsPage,
-  graders: renderGradersPage,
-  evals: renderEvalsPage,
-  usage: renderUsagePage,
-  'engines-models': renderEnginesModelsPage,
-  'operational-value': renderOperationalValuePage,
-  findings: renderFindingsPage
+  overview: [
+    { source: 'workflows', title: 'Rollout Mode Filtering', render: renderOverviewRolloutModeSummary },
+    { source: 'workflows', title: 'Workflow Active State Inventory', render: renderOverviewWorkflowActiveSummary },
+    { source: 'runs', title: 'Run Status Counts and Trends', render: renderOverviewRunStatusSection },
+    { source: 'runs', title: 'Run Conclusion Counts and Trends', render: renderOverviewRunConclusionSection },
+    { source: 'runs', title: 'Repository Rankings', render: renderOverviewRepositoryRankings },
+    { source: 'runs', title: 'Workflow Rankings', render: renderOverviewWorkflowRankings },
+    { source: 'usage', title: 'Largest AIC Spenders', render: renderOverviewLargestAicSpenders },
+    { source: 'findings', title: 'Recent Linked Findings', render: renderOverviewRecentFindings },
+    { source: 'operational-values', title: 'Operational Value Timeline', render: renderOverviewOperationalValueTimeline }
+  ],
+  organizations: [
+    { source: 'organizations', title: 'Organization Inventory', render: renderOrganizationsInventory }
+  ],
+  repositories: [
+    { source: 'repositories', title: 'Repository Inventory and Rankings', render: renderRepositoriesInventory }
+  ],
+  workflows: [
+    { source: 'workflows', title: 'Workflow Inventory', render: renderWorkflowsInventory }
+  ],
+  runs: [
+    { source: 'runs', title: 'Run Status Counts', render: renderRunsStatusSummary },
+    { source: 'runs', title: 'Run Conclusion Counts', render: renderRunsConclusionSummary },
+    { source: 'outcomes', title: 'Outcome Counts', render: renderRunsOutcomeSummary },
+    { source: 'runs', title: 'Runs', render: renderRunsInventory }
+  ],
+  experiments: [
+    { source: 'experiments', title: 'Experiment Definitions and Observed Associations', render: renderExperimentsInventory }
+  ],
+  graders: [
+    { source: 'graders', title: 'Grader Definitions', render: renderGradersDefinitions },
+    { source: 'grader-observations', title: 'Grader Observations', render: renderGradersObservations }
+  ],
+  evals: [
+    { source: 'evals', title: 'Eval Definitions', render: renderEvalsDefinitions },
+    { source: 'eval-observations', title: 'Eval Observations', render: renderEvalsObservations }
+  ],
+  usage: [
+    { source: 'usage', title: 'Usage Totals', render: renderUsageTotalsSection },
+    { source: 'usage', title: 'Usage Observations', render: renderUsageObservationsSection }
+  ],
+  'engines-models': [
+    { source: 'runs', title: 'Engine and Model Inventory', render: renderEnginesModelsInventory }
+  ],
+  'operational-value': [
+    { source: 'operational-values', title: 'Operational Value Timeline', render: renderOperationalValueTimelineSection }
+  ],
+  findings: [
+    { source: 'findings', title: 'Finding Severity Counts', render: renderFindingsSeveritySummary },
+    { source: 'findings', title: 'Finding Status Counts', render: renderFindingsStatusSummary },
+    { source: 'findings', title: 'Findings', render: renderFindingsInventory }
+  ]
 };
 
 /**
