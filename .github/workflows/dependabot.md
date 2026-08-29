@@ -126,4 +126,4 @@ Use age, exploitability evidence, dependency directness, runtime use, deployment
 
 ## Completion
 
-Summarize candidate count, selected repositories, skipped repositories and reasons, priority rationale, dispatched workers, and deferred work. When no repository warrants action, report a no-op with a brief explanation.
+Summarize candidate count, selected repositories, skipped repositories and reasons, priority rationale, dispatched workers, and deferred work. When no repository warrants a dispatch, call the `noop` safe-output tool with a brief explanation instead of ending the run with only a narrative report; a text-only "Outcome" section does not count as a safe output.

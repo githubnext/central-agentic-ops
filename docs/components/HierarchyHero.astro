@@ -60,6 +60,7 @@ const { title = data.title, tagline, actions = [] } = data.hero || {};
 
     <div class="desktop-scene">
       <picture>
+        <source media="(prefers-color-scheme: light)" srcset={dispatchFallback.src} />
         <source media="(prefers-color-scheme: dark)" srcset={dispatchFallbackDark.src} />
         <img
           src={dispatchFallback.src}
@@ -76,6 +77,7 @@ const { title = data.title, tagline, actions = [] } = data.hero || {};
 
     <div class="mobile-scene" aria-hidden="true">
       <picture>
+        <source media="(prefers-color-scheme: light)" srcset={mobileDispatchFallback.src} />
         <source media="(prefers-color-scheme: dark)" srcset={mobileDispatchFallbackDark.src} />
         <img
           src={mobileDispatchFallback.src}

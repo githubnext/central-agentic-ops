@@ -28,6 +28,7 @@ network:
     - defaults
     - playwright
     - local
+    - host.docker.internal
 safe-outputs:
   create-check-run:
     name: "SVG Visual Audit Result"

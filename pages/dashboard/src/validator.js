@@ -965,6 +965,8 @@ function validateDatasetMetadata(dataNode, data, path, errors) {
     return;
   }
 
+  rejectSensitiveStringsInObject(metadata, metadataPath, errors);
+
   const metadataNode = getValueNodeByKey(dataNode, 'source-metadata');
   validateObjectKeys(metadataNode, DATASET_METADATA_KEYS, metadataPath, errors);
 
@@ -1593,6 +1595,46 @@ function isSafeHttpsUrl(value) {
   } catch {
     return false;
   }
+}
+
+/**
+ * @param {Record<string, unknown>} value
+ * @param {string} path
+ * @param {ValidationError[]} errors
+ */
+function rejectSensitiveStringsInObject(value, path, errors) {
+  for (const [key, candidate] of Object.entries(value)) {
+    if (typeof candidate !== 'string') {
+      continue;
+    }
+    if (!looksSensitive(candidate)) {
+      continue;
+    }
+    errors.push(createError(
+      ERROR_CODES.missingRequiredProvenanceOrDataStateMetadata,
+      `${key} must not contain authentication credentials, secret tokens, or private keys.`,
+      `${path}.${key}`
+    ));
+  }
+}
+
+/**
+ * @param {string} value
+ * @returns {boolean}
+ */
+function looksSensitive(value) {
+  const normalized = value.trim();
+  if (normalized.length === 0) {
+    return false;
+  }
+
+  return normalized.includes('-----BEGIN')
+    || /^gh[pousr]_[A-Za-z0-9_]+$/i.test(normalized)
+    || /^github_pat_[A-Za-z0-9_]+$/i.test(normalized)
+    || /^sk-[A-Za-z0-9]+$/i.test(normalized)
+    || /^AKIA[A-Z0-9]{16}$/.test(normalized)
+    || /^AIza[0-9A-Za-z\-_]{20,}$/.test(normalized)
+    || /^xox[baprs]-[A-Za-z0-9-]+$/.test(normalized);
 }
 
 /** @type {Record<string, string[]>} */

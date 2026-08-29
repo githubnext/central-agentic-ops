@@ -1081,6 +1081,7 @@ test("SVG visual audit covers every tracked SVG in both color schemes", () => {
   assert.match(source, /create-check-run:/);
   assert.match(source, /upload-artifact:/);
   assert.match(source, /http:\/\/host\.docker\.internal:4321\//);
+  assert.match(source, /- host\.docker\.internal/);
   assert.match(source, /Never claim success if any manifest entry was skipped/);
 });
 
@@ -1175,6 +1176,21 @@ test("daily dashboard renderer builds incrementally inside its own directory", (
   assert.match(source, /Never modify, move, or delete the existing dashboard package in `dashboard\/`/);
 });
 
+test("daily dashboard component refactorer extracts reusable components in place", () => {
+  const source = workflow("daily-dashboard-component-refactorer.md");
+
+  assert.match(source, /^model: copilot\/gpt-5\.4$/m);
+  assert.match(source, /engine:\n\s+id: pi/);
+  assert.match(source, /playwright:\n\s+mode: mcp/);
+  assert.match(source, /skip-if-match: "is:pr is:open label:dashboard-component-refactor"/);
+  assert.match(source, /create-pull-request:[\s\S]*?allowed-files:\n\s+- "pages\/dashboard\/README\.md"\n\s+- "pages\/dashboard\/PLAN\.md"\n\s+- "pages\/dashboard\/\*\*"/);
+  assert.doesNotMatch(source, /allowed-files:\n(?:\s+- .*\n)*\s+- "(?!pages\/dashboard\/)/);
+  assert.doesNotMatch(source, /push-to-pull-request-branch:/);
+  assert.match(source, /pages\/dashboard\/src\/components\//);
+  assert.match(source, /Never modify, move, or delete the existing dashboard package in `dashboard\/`/);
+  assert.match(source, /Never weaken, skip, or delete an existing test/);
+});
+
 test("dashboard CI runs the package quality gates", () => {
   const source = workflow("cid.yml");
 
@@ -1243,6 +1259,7 @@ test("clean-room compilation emits the expected GitHub Actions settings", { time
       "accessibility-expert.lock.yml",
       "advisory-package-maintainer.lock.yml",
       "cao-dashboard-review.lock.yml",
+      "daily-dashboard-component-refactorer.lock.yml",
       "daily-dashboard-language-renderer.lock.yml",
       "daily-dashboard-language-spec-review.lock.yml",
       "multi-device-docs-tester.lock.yml",
@@ -1425,6 +1442,7 @@ test("Dashboard package supports embedded and explicit standalone deployment", (
   assert.doesNotMatch(buildWorkflow, /pages-aic|REPORT_AIC_CACHE/);
   assert.match(aicUsage, /"--start-date", "-2d", "--cache-before", "-2d"/);
   assert.match(buildWorkflow, /REPORT_VALUE_CACHE: \.cache\/dashboard-operational-values\/observations\.json/);
+  assert.match(buildWorkflow, /actions\/cache\/restore@[0-9a-f]{40}/);
   assert.match(buildWorkflow, /Save operational-value observation cache/);
   assert.match(deployedWorkflows, /const capabilities = await workflowCapabilities\(item\.repository, item\.path\)/);
   assert.match(deployedWorkflows, /const role = workflowRole\(source\)/);
@@ -1433,6 +1451,7 @@ test("Dashboard package supports embedded and explicit standalone deployment", (
   assert.match(deployedWorkflows, /event: run\.event/);
   assert.doesNotMatch(deployedWorkflows, /\["failure", "timed_out", "startup_failure", "action_required"\]/);
   assert.match(operationalValues, /workflow\.operationalValue !== true/);
+  assert.match(operationalValues, /selectedRuns\.filter\(\(selected\) => !cachedRunKeys\.has\(recordKey\(selected\)\)\)/);
   assert.doesNotMatch(operationalValues, /const workerIds = new Set/);
   assert.match(report, /function valueObservationRepository\(record\)/);
   assert.match(report, /function valueWorkflowKey\(runtimeRepository, workflowPath/);
@@ -1646,10 +1665,10 @@ globalThis.fetch = async (input) => {
     const packagesOverview = readFileSync(join(outputPath, "packages", "index.html"), "utf8");
     const failedRuns = readFileSync(join(outputPath, "runs", "failed.html"), "utf8");
     const actionRequiredRuns = readFileSync(join(outputPath, "runs", "action-required.html"), "utf8");
-    const inProgressRuns = readFileSync(join(outputPath, "runs", "in-progress.html"), "utf8");
     const coverageDiagnostics = readFileSync(join(outputPath, "coverage", "index.html"), "utf8");
     assert.doesNotMatch(overview, /\b(?:href|src)="\/(?!\/)/);
     assert.match(overview, /<title>Overview \| control<\/title>/);
+    assert.match(overview, /class="refresh-control" href="https:\/\/github\.com\/acme\/control\/actions\/workflows\/dashboard\.yml">Refresh<\/a>/);
     assert.match(overview, /class="sidebar-brand"[^>]*>[\s\S]*?<span>control<\/span>/);
     assert.match(overview, /<span>Overview<\/span>[\s\S]*?<span>Repositories<\/span>[\s\S]*?<span>Packages<\/span>/);
     assert.match(overview, /href="\.\/dispatches\/"[\s\S]*?<span>Dispatches<\/span>/);
@@ -1659,7 +1678,7 @@ globalThis.fetch = async (input) => {
     assert.match(overview, /href="runs\/failed\.html"[\s\S]*?1 failed runs/);
     assert.match(overview, /href="runs\/action-required\.html"[\s\S]*?1 run awaiting approval/);
     assert.match(overview, /href="workflows\/\?state=disabled"[\s\S]*?1 disabled workflows/);
-    assert.match(overview, /href="runs\/in-progress\.html"[\s\S]*?1 runs in progress/);
+    assert.doesNotMatch(overview, /href="runs\/in-progress\.html"|runs in progress|in progress/i);
     assert.match(overview, /href="coverage\/"[\s\S]*?Coverage needs context/);
     assert.match(overview, /href="runs\/">View all runs<\/a>/);
     assert.doesNotMatch(overview, />View activity<\/a>/);
@@ -1716,14 +1735,13 @@ globalThis.fetch = async (input) => {
     assert.match(failedRuns, /id="run-search"/);
     assert.match(failedRuns, /id="run-repository"/);
     assert.match(failedRuns, /new URLSearchParams\(window\.location\.search\)/);
-    assert.match(failedRuns, /data-run-filter-href="in-progress\.html"/);
+    assert.doesNotMatch(failedRuns, /data-run-filter-href="in-progress\.html"/);
     assert.match(failedRuns, /syncLinks\(\)/);
     assert.match(actionRequiredRuns, /Credit optimizer approval/);
     assert.doesNotMatch(actionRequiredRuns, /Credit optimizer failure|Credit optimizer running|Credit optimizer success/);
     assert.match(actionRequiredRuns, /Approval required/);
-    assert.match(inProgressRuns, /Credit optimizer running/);
-    assert.doesNotMatch(inProgressRuns, /Credit optimizer failure|Credit optimizer success/);
-    assert.match(inProgressRuns, /github\.com\/acme\/control\/actions\/runs\/3/);
+    assert.doesNotMatch(failedRuns, /runs in progress|in progress/i);
+    assert.doesNotMatch(actionRequiredRuns, /runs in progress|in progress/i);
     assert.match(coverageDiagnostics, /Private repository discovery is off/);
     assert.match(coverageDiagnostics, /Private repositories are excluded from workflow inventory and run-health totals/);
     assert.ok(packagesOverview.indexOf('class="bundle-utilization"') < packagesOverview.indexOf('class="trend-panel"'));

@@ -48,7 +48,7 @@ Before running the standalone deployment, configure the private control-plane or
 
 The workflow passes `enablement: false` to `actions/configure-pages`, so a run validates existing Pages configuration but never enables Pages for the repository.
 
-Run **Central Agentic Ops Dashboard** manually from the repository's **Actions** page. The standalone workflow is deliberately not scheduled, so installing the package cannot replace an existing Pages deployment without an explicit run.
+Use **Refresh** in the dashboard header to open **Central Agentic Ops Dashboard** on the repository's **Actions** page, then click **Run workflow**. The standalone workflow is deliberately not scheduled, so installing the package cannot replace an existing Pages deployment without an explicit run. Operational-value observations are retained in the Actions cache, so refreshes reuse existing immutable run data.
 
 ## Existing Pages site
 

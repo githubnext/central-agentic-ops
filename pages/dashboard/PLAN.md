@@ -24,8 +24,21 @@
   - [x] Slice: `DLS-PAGE-013` and `DLS-PAGE-014` presenter render for the `findings` built-in page summary, severity, status, scope, time, provenance, available issue/pull-request/run links, and independent data-state summaries.
   - [x] Slice: `DLS-PAGE-010` and `DLS-PAGE-014` presenter render for the `usage` built-in page, keeping each raw-token measure separate from AIC while exposing engine, requested model, resolved model, scope, rollout mode, time, provenance, and independent data-state summaries.
   - [x] Slice: `DLS-PAGE-011` and `DLS-PAGE-014` presenter render for the `engines-models` built-in page, exposing engine, requested model, and resolved model as separate dimensions with run counts, run conclusions, downstream outcomes, raw tokens, AIC, provenance, and independent data-state summaries.
+  - [x] Slice: `DLS-PAGE-012` and `DLS-PAGE-014` presenter render for the `operational-value` built-in page, exposing a time-ordered absolute-attainment series with definition, operational case, evaluator digest, subject, requested evidence time, effective evidence cutoff, maturity time and status, accepted evidence links when available, separate baseline delta, provenance, and independent data-state summaries.
+  - [x] Slice: `DLS-PAGE-003` and `DLS-PAGE-014` presenter render for the `organizations` built-in page, exposing organization inventory, repository counts, workflow counts, run counts, available usage measures, provenance, and independent data-state summaries.
+  - [x] Slice: `DLS-PAGE-004` and `DLS-PAGE-014` presenter render for the `repositories` built-in page, exposing repository inventory plus deterministic rankings by run count, AIC, and available operational value while keeping operational-value definitions separate, with provenance and independent data-state summaries.
+  - [x] Slice: `DLS-PAGE-007` and `DLS-PAGE-014` presenter render for the `experiments` built-in page, exposing experiment definitions plus observed run-to-variant assignments, grader observations, eval observations, downstream outcomes, available usage AIC, operational value by definition, provenance, and independent data-state summaries without implying causation.
+  - [x] Slice: `DLS-PAGE-008` and `DLS-PAGE-014` presenter render for the `graders` built-in page, keeping grader definitions and grader observations distinguishable while exposing observed subject, result, score when present, time, provenance, and independent data-state summaries.
+  - [x] Slice: `DLS-PAGE-009` and `DLS-PAGE-014` presenter render for the `evals` built-in page, keeping eval definitions and eval observations distinguishable while exposing observed subject, `YES`/`NO`/`UNKNOWN` result, evaluation model when available, time, provenance, and independent data-state summaries.
 - [ ] **Security, privacy, accessibility** — Section 13 including escaping, redaction, and keyboard and screen-reader behavior verified with Playwright.
+  - [x] Slice: `DLS-SAFE-003`, `DLS-SAFE-007`, `DLS-SAFE-008`, and `DLS-SAFE-010` presenter render for inert text escaping, non-empty accessible names, labeled table columns, textual data-state labels, and labeled external links.
+  - [x] Slice: `DLS-SAFE-007` and `DLS-SAFE-008` keyboard presenter behavior for focusable labeled sections with deterministic arrow-key traversal verified in unit and browser tests.
+  - [x] Slice: `DLS-SAFE-005` and `DLS-VAL-004` validator rejection for secret-bearing provenance metadata with non-echoing error messages.
+  - [x] Slice: `DLS-SAFE-006`, `DLS-VIEW-013`, `DLS-VIEW-014`, and `DLS-VIEW-015` presenter render for custom metric, table, and chart views with visible available/empty/unavailable state output, effective-context text, and non-fabricated per-row links constrained to provided source data.
+  - [x] Slice: `DLS-SAFE-009` presenter render for non-color chart category semantics via explicit textual color-category legends alongside chart tabular equivalents.
 - [ ] **Compliance suite** — Section 14 test suite, the compliance checklist, Appendix A as a passing fixture, and Appendix C as failing fixtures.
+  - [x] Slice: `DLS-TEST-001`, `DLS-TEST-002`, `DLS-TEST-003`, `T-DOC-001`, and `T-VAL-001` compliance smoke harness with machine-readable results, Appendix A passing coverage, and Appendix C failing fixtures.
+  - [x] Slice: `T-SEM-001`, `T-SEM-002`, `T-SEM-003`, and `T-CTX-001` checklist-backed machine-readable coverage for the implemented semantic and context validator/presenter requirements.
 - [ ] **Parity** — inventory the features of the existing dashboard in `dashboard/report/report.mjs`, record them in `PLAN.md` as a parity checklist, then express each one as YAML configuration plus data fixtures, closing the checklist incrementally.
 
 ## Specification questions
@@ -36,12 +49,153 @@
 - 2026-08-28: Section 8 defines required logical-source metadata outside the dashboard YAML, while Section 4.2 omits any YAML vocabulary for carrying that metadata inside a dashboard document. The current validator now accepts a conservative `data.source-metadata` structure so Section 8 metadata shape can be validated in-document, but the presenter-side runtime contract and the exact source of truth between YAML and external inputs remain ambiguous.
 - 2026-08-28: Section 11.2 says `data.order-by.field` resolves against the post-aggregation output grain, but the specification does not fully define how to derive that grain from arbitrary encodings before the presenter exists. The current validator uses the most conservative reading available in this slice: it accepts aggregate output identifiers and bare source fields only when they are canonical entity identifier fields for the selected source, and rejects other unresolved references with `DLS-E010`.
 
+## Component inventory
+
+- `src/components/badge.js` — presentation-only Primer status, mode, and active-state badges.
+- `src/components/data-state.js` — presentation-only data-state metrics card grid for availability, completeness, and freshness.
+- `src/components/table-region.js` — presentation-only reusable table wrapper for repeated table-region markup, header rows, empty-state rows, and keyed body-row descriptors across built-in and custom tables.
+- `src/components/view-chrome.js` — presentation-only reusable page-section, titled-region, custom-view source/metadata chrome, and built-in provenance-section helpers.
+
 ## Infrastructure blockers
 
 - 2026-08-28: `npm run typecheck`, `npm run lint`, and `npm test` can fail immediately after `npm install` if the runner has not linked local `node_modules/.bin` shims or installed the declared type packages yet; rerunning after installation from the package directory is currently required in this environment.
 - 2026-08-28: `npm run test:e2e` is currently blocked in this environment because the Playwright Chromium executable is not provisioned (`browserType.launch: Executable doesn't exist`). The workflow should prefer the built-in Playwright MCP browser tools until the package-level browser dependency is available.
 
 ## Run log
+
+### 2026-08-29 (titled-region view-chrome refactor)
+
+- Re-inventoried repeated built-in section composition in `src/presenter.js` and selected the next bounded duplication slice: repeated `h('h3', ...)` plus a single summary list, table region, or provenance list across built-in page bodies.
+- Extended `src/components/view-chrome.js` with presentation-only `renderTitledRegion()` and `renderProvenanceSection()` helpers so built-in pages can reuse the existing focusable labeled `page-section` wrapper without rebuilding title-plus-content markup at each call site.
+- Collapsed every duplicated single-region call site identified in `src/presenter.js`: built-in provenance plus workflows, usage totals, usage observations, engines-models, operational-value, organizations, repositories, experiments, and graders definitions/observations.
+- Added unit coverage in `test/unit/view-chrome.test.js` for titled-region composition and reusable provenance-section rendering, including empty provenance fallback output.
+- Proved unchanged behavior by keeping the full existing unit and browser suites green and by capturing a presenter diff at `/tmp/gh-aw/agent/presenter-refactor.diff`, confirming the affected pages changed only by replacing repeated heading-plus-content assembly with `renderTitledRegion(...)` / `renderProvenanceSection(...)` calls while preserving the same DOM text, section headings, class names, and accessible labeling.
+- Verified quality gates from `pages/dashboard/`: `npm install`, `npm run typecheck`, `npm run lint`, `npm test`, and `npm run test:e2e` all pass.
+- Next candidates in the queue: extract repeated built-in summary-section composition for count lists; extract repeated custom-view context-list rendering; extract the next shared pure helpers around subject/provenance/count formatting in `src/presenter.js`.
+
+### 2026-08-29 (view-chrome component refactor)
+
+- Inventoried repeated presenter chrome after the table-region extraction and selected the next bounded duplication slice: shared page-section markup plus repeated custom-view source/metadata paragraphs and built-in provenance list rendering in `src/presenter.js`.
+- Added `src/components/view-chrome.js`, a presentation-only reusable helper module for focusable labeled `page-section` wrappers, custom-view source/metadata header chrome, and conservative built-in provenance lists.
+- Collapsed the repeated custom metric/table/chart header markup and the built-in provenance list in `src/presenter.js` into the shared helpers while preserving all existing DOM text, accessible names, section heading ids, class names, and fallback messages.
+- Added `test/unit/view-chrome.test.js` covering deterministic section labeling, provenance list rendering, and reusable source/metadata chrome output.
+- Updated the Playwright data-URL module wiring in `test/e2e/smoke.spec.js` so browser coverage continues to exercise the presenter with the new shared component module.
+- Verified quality gates from `pages/dashboard/`: `npm install`, `npm run typecheck`, `npm run lint`, `npm test`, and `npm run test:e2e` all pass.
+- Next candidates in the queue: extract repeated built-in provenance heading-plus-list composition; extract repeated summary-section composition for built-in pages; continue parity inventory once the presenter refactor surface stabilizes.
+
+### 2026-08-29 (table-region built-in inventory expansion refactor)
+
+- Re-inventoried `src/presenter.js` after the first table extraction and found the best remaining bounded duplication in repeated `.table-region > table > thead/tbody` construction still in `renderEnginesModelsPage`, `renderOperationalValuePage`, `renderOrganizationsPage`, `renderRepositoriesPage`, `renderExperimentsPage`, `renderGradersPage`, and `renderEvalsPage`.
+- Reused `src/components/table-region.js` at every remaining duplicated call site identified above, preserving all existing DOM text, accessible names, class names, empty-state messages, and keyed row renderers while collapsing seven more built-in table wrappers into the shared component.
+- Added unit coverage in `test/unit/table-region.test.js` for keyed-list descriptor bodies so the shared component is explicitly tested against the built-in presenter's keyed table usage.
+- Proved unchanged behavior by keeping the full existing unit and browser suites green and by reviewing the presenter diff to confirm the affected pages changed only by replacing duplicated table wrapper construction with `renderTableRegion(...)` calls.
+- Verified quality gates from `pages/dashboard/`: `npm install`, `npm run typecheck`, `npm run lint`, `npm test`, and `npm run test:e2e` all pass.
+- Next candidates in the queue: extract repeated custom-view source/metadata/context chrome; extract repeated provenance section rendering for built-in pages; extract repeated built-in page section headings plus inventory-table composition once the remaining table call sites settle.
+
+### 2026-08-29 (table-region component refactor)
+
+- Inventoried repeated table wrapper construction in `src/presenter.js` and selected the highest-leverage bounded extraction: duplicated `.table-region > table > thead/tbody` markup shared by built-in runs, workflows, findings, and usage pages plus custom table and chart text-equivalent views.
+- Added `src/components/table-region.js`, a presentation-only reusable table wrapper component with a minimal API for table class name, header labels, empty-state message, column span, and prebuilt body rows, while preserving existing DOM text, accessible names, class names, and custom view `data-custom-view-mark` attributes.
+- Collapsed duplicated call sites in `src/presenter.js` for `renderRunsPage`, `renderWorkflowsPage`, `renderFindingsPage`, `renderUsagePage`, `renderTableView`, and `renderChartView`.
+- Added `test/unit/table-region.test.js` covering populated tables, empty tables, and custom table/chart attribute preservation.
+- Proved unchanged behavior by keeping the existing presenter unit tests and Playwright smoke tests green after the extraction, including custom-view and built-in page assertions that depend on the affected tables; compared the affected presenter output structurally via `git diff` against the pre-refactor `src/presenter.js` and confirmed the changes are limited to replacing duplicated construction with the shared component.
+- Verified quality gates from `pages/dashboard/`: `npm install`, `npm run typecheck`, `npm run lint`, `npm test`, and `npm run test:e2e` all pass.
+- Next candidates in the queue: extract repeated custom-view source/metadata/context chrome; extract repeated provenance section rendering for built-in pages; extract repeated built-in page section headings plus inventory-table composition once the remaining table call sites settle.
+
+### 2026-08-29 (compliance semantic-and-context coverage slice)
+
+- Extended the Compliance suite milestone with a narrow Section 14 increment covering `T-SEM-001`, `T-SEM-002`, `T-SEM-003`, and `T-CTX-001` for the semantic and context requirements already implemented in the validator and presenter.
+- Updated `src/compliance.js` so the machine-readable harness now records passing results for implemented `DLS-SEM-001`, `DLS-SEM-002`, `DLS-SEM-004`, `DLS-SEM-005`, `DLS-SEM-007` through `DLS-SEM-017`, `DLS-SEM-021`, and `DLS-CTX-001`, `DLS-CTX-002`, `DLS-CTX-004`, `DLS-CTX-005`, `DLS-CTX-006`, `DLS-CTX-009`, including presenter verification that experiments are rendered without implying causation.
+- Added focused unit coverage in `test/unit/compliance.test.js` that verifies machine-readable checklist results for the new `T-SEM-*` and `T-CTX-001` slices while preserving Appendix A / Appendix C smoke checks.
+- Verified all quality gates pass: `npm install`, `npm run typecheck`, `npm run lint`, `npm test`, and `npm run test:e2e`.
+- Next milestone: Compliance suite, next slice for `T-AGG-001`, `T-LINK-001`, or `T-PAGE-001` checklist-backed machine-readable coverage.
+
+### 2026-08-29 (security non-color chart semantics slice)
+
+- Extended the Security, privacy, accessibility milestone with a narrow presenter increment for `DLS-SAFE-009`, ensuring custom chart color encodings are never communicated by color alone.
+- Updated `src/presenter.js` so chart views with a `color` encoding now render an explicit textual category legend derived deterministically from the rendered data, alongside the existing tabular equivalent.
+- Added focused unit coverage in `test/unit/presenter.test.js` and browser coverage in `test/e2e/smoke.spec.js` that verify visible textual color-category labels for chart series.
+- Next milestone: Security, privacy, accessibility, next slice for additional consuming-context authorization-boundary behavior once the runtime context contract is specified.
+
+### 2026-08-29 (custom views data-state render slice)
+
+- Extended the Security, privacy, accessibility milestone with a narrow presenter increment spanning `DLS-SAFE-006`, `DLS-VIEW-013`, `DLS-VIEW-014`, and `DLS-VIEW-015` for custom-page rendering.
+- Updated `src/presenter.js` so custom pages now visibly render supported metric, table, and chart views from provided YAML definitions, expose per-view source and effective-context text, show explicit `available`/`empty`/`unavailable` states instead of omitting views, preserve chart semantic defaults as text, and render links only when the provided row carries the referenced relation-specific link object.
+- Added focused unit coverage in `test/unit/presenter.test.js` and browser coverage in `test/e2e/smoke.spec.js` that verify aggregate metric output, labeled table and chart text equivalents, empty/unavailable custom-view states, and absent-link rows remaining unlinked.
+- Verified all quality gates pass: `npm install`, `npm run typecheck`, `npm run lint`, `npm test`, and `npm run test:e2e`.
+- Next milestone: Security, privacy, accessibility, next slice for `DLS-SAFE-009` non-color semantics or additional consuming-context authorization boundary behavior once the runtime context contract is specified.
+
+### 2026-08-29 (security secret-redaction validator slice)
+
+- Extended the Security, privacy, accessibility milestone with a narrow Section 13 and Section 12 validator increment for `DLS-SAFE-005` and `DLS-VAL-004` covering secret-bearing provenance metadata rejection without echoing secret values back into validation errors.
+- Updated `src/validator.js` so `data.source-metadata` now conservatively rejects credential-like strings and PEM-like private-key material across provenance metadata fields while keeping error messages generic and path-specific.
+- Added focused unit coverage in `test/unit/validator.test.js` that verifies rejected secret-bearing metadata and confirms the secret literal is not repeated in emitted error messages.
+- Verified all quality gates pass: `npm install`, `npm run typecheck`, `npm run lint`, `npm test`, and `npm run test:e2e`.
+- Next milestone: Security, privacy, accessibility, next slice for `DLS-SAFE-006` consuming-context authorization boundaries or additional screen-reader behavior.
+
+### 2026-08-29 (security keyboard navigation slice)
+
+- Extended the Security, privacy, accessibility milestone with a narrow Section 13 presenter increment for `DLS-SAFE-007` and `DLS-SAFE-008` covering keyboard traversal across labeled page sections.
+- Updated `src/presenter.js` so built-in runs, findings, and evals content is grouped into reusable focusable `page-section` regions with stable accessible headings, and added `enableDashboardKeyboardNavigation()` for deterministic ArrowUp/ArrowDown movement between adjacent sections without changing page semantics.
+- Added focused unit coverage in `test/unit/presenter.test.js` and browser coverage in `test/e2e/smoke.spec.js` that verify section labels, focusability, and keyboard traversal across runs page sections.
+- Verified all quality gates pass: `npm install`, `npm run typecheck`, `npm run lint`, `npm test`, and `npm run test:e2e`.
+- Next milestone: Security, privacy, accessibility, next slice for privacy/redaction semantics or additional screen-reader-oriented presenter behavior.
+
+### 2026-08-29 (security accessibility presenter slice)
+
+- Started the Security, privacy, accessibility milestone with a narrow Section 13 presenter increment for `DLS-SAFE-003`, `DLS-SAFE-007`, `DLS-SAFE-008`, and `DLS-SAFE-010`.
+- Updated `src/presenter.js` so rendered external links now preserve the specification's non-empty labels as accessible names and open with conservative `target="_blank"` plus `rel="noopener noreferrer"`, while untrusted finding summaries continue to render as inert text nodes rather than markup.
+- Added focused unit coverage in `test/unit/presenter.test.js` and browser coverage in `test/e2e/smoke.spec.js` that verify skip navigation presence, page accessible names, labeled table columns, distinct textual data-state labels, inert HTML-like text rendering, and labeled issue links.
+- Verified all quality gates pass: `npm install`, `npm run typecheck`, `npm run lint`, `npm test`, and `npm run test:e2e`.
+- Next milestone: Security, privacy, accessibility, next slice for keyboard behavior and additional redaction/privacy semantics.
+
+### 2026-08-29 (built-in evals render slice)
+
+- Extended the Built-in pages milestone with a narrow `DLS-PAGE-009` and `DLS-PAGE-014` presenter increment for the `evals` built-in page, rendering distinguishable eval definitions and eval observations with observed subject, `YES`/`NO`/`UNKNOWN` result, evaluation model when available, time, provenance, and independent data-state summaries.
+- Updated `src/presenter.js` so declarative built-in `evals` definitions now render separate definitions and observations tables from the `evals` and `eval-observations` logical sources with deterministic ordering and conservative unavailable handling for absent resolved models.
+- Replaced the presenter unit and browser smoke coverage with focused `DLS-PAGE-009` / `DLS-PAGE-014` tests in `test/unit/presenter.test.js` and `test/e2e/smoke.spec.js` that verify definition-versus-observation separation, subject strings, result rendering, evaluation-model exposure, provenance, and independent `availability`, `completeness`, and `freshness` text.
+- Verified all quality gates pass: `npm install`, `npm run typecheck`, `npm run lint`, `npm test`, and `npm run test:e2e`.
+- Next milestone: Security, privacy, accessibility.
+
+### 2026-08-29 (built-in graders render slice)
+
+- Extended the Built-in pages milestone with a narrow `DLS-PAGE-008` and `DLS-PAGE-014` presenter increment for the `graders` built-in page, rendering distinguishable grader definitions and grader observations with observed subject, result, score when present, time, provenance, and independent data-state summaries.
+- Updated `src/presenter.js` so declarative built-in `graders` definitions now render separate definitions and observations tables from the `graders` and `grader-observations` logical sources with deterministic ordering and conservative unavailable handling for absent scores.
+- Replaced the presenter unit and browser smoke coverage with focused `DLS-PAGE-008` / `DLS-PAGE-014` tests in `test/unit/presenter.test.js` and `test/e2e/smoke.spec.js` that verify definition-versus-observation separation, subject strings, result counts, score rendering, provenance, and independent `availability`, `completeness`, and `freshness` text.
+- Verified all quality gates pass: `npm install`, `npm run typecheck`, `npm run lint`, `npm test`, and `npm run test:e2e`.
+- Next milestone: Built-in pages, next slice for rendering one additional Section 10 built-in page such as `evals` from the declarative definitions.
+
+### 2026-08-29 (built-in experiments render slice)
+
+- Extended the Built-in pages milestone with a narrow `DLS-PAGE-007` and `DLS-PAGE-014` presenter increment for the `experiments` built-in page, rendering experiment definitions alongside observed run-to-variant assignments, grader observations, eval observations, downstream outcomes, available usage AIC, and operational value by definition.
+- Updated `src/presenter.js` so declarative built-in `experiments` definitions now render a concrete inventory table from the `experiments`, `experiment-assignments`, `grader-observations`, `eval-observations`, `outcomes`, `usage`, and `operational-values` logical sources, while adding an explicit non-causation note to preserve the specification's conservative semantics.
+- Replaced the presenter unit and browser smoke coverage with focused `DLS-PAGE-007` / `DLS-PAGE-014` tests in `test/unit/presenter.test.js` and `test/e2e/smoke.spec.js` that verify deterministic variant, grader, eval, outcome, usage, operational-value, provenance, and independent `availability`, `completeness`, and `freshness` rendering.
+- Verified all quality gates pass: `npm install`, `npm run typecheck`, `npm run lint`, `npm test`, and `npm run test:e2e`.
+- Next milestone: Built-in pages, next slice for rendering one additional Section 10 built-in page such as `graders` or `evals` from the declarative definitions.
+
+### 2026-08-29 (built-in repositories render slice)
+
+- Extended the Built-in pages milestone with a narrow `DLS-PAGE-004` and `DLS-PAGE-014` presenter increment for the `repositories` built-in page, rendering repository inventory plus deterministic rankings by run count, AIC, and available operational value while preserving operational-value definitions as separate labeled values instead of combining them.
+- Updated `src/presenter.js` so declarative built-in `repositories` definitions now render a concrete inventory table from the `repositories`, `runs`, `usage`, and `operational-values` logical sources with stable ranking order and conservative unavailable handling when a repository has no operational-value observations.
+- Replaced the presenter unit and browser smoke coverage with focused `DLS-PAGE-004` / `DLS-PAGE-014` tests in `test/unit/presenter.test.js` and `test/e2e/smoke.spec.js` that verify row ordering, run counts, AIC totals, separated operational-value definitions, provenance, and independent `availability`, `completeness`, and `freshness` text.
+- Verified all quality gates pass: `npm install`, `npm run typecheck`, `npm run lint`, `npm test`, and `npm run test:e2e`.
+- Next milestone: Built-in pages, next slice for rendering one additional Section 10 built-in page such as `experiments`, `graders`, or `evals` from the declarative definitions.
+
+### 2026-08-29 (built-in organizations render slice)
+
+- Extended the Built-in pages milestone with a narrow `DLS-PAGE-003` and `DLS-PAGE-014` presenter increment for the `organizations` built-in page, rendering organization inventory with repository, workflow, and run counts plus separated available usage measures.
+- Updated `src/presenter.js` so declarative built-in `organizations` definitions now render a concrete inventory table from the `organizations`, `repositories`, `workflows`, `runs`, and `usage` logical sources with deterministic per-organization counting and usage-measure summarization.
+- Replaced the presenter unit and browser smoke coverage with focused `DLS-PAGE-003` / `DLS-PAGE-014` tests in `test/unit/presenter.test.js` and `test/e2e/smoke.spec.js` that verify organization rows, counts, separated usage totals, provenance, and independent `availability`, `completeness`, and `freshness` text.
+- Verified all quality gates pass: `npm install`, `npm run typecheck`, `npm run lint`, `npm test`, and `npm run test:e2e`.
+- Next milestone: Built-in pages, next slice for rendering one additional Section 10 built-in page such as `repositories` from the declarative definitions.
+
+### 2026-08-29 (built-in operational-value render slice)
+
+- Extended the Built-in pages milestone with a narrow `DLS-PAGE-012` and `DLS-PAGE-014` presenter increment for the `operational-value` built-in page, rendering a time-ordered absolute-attainment series with definition, operational case, evaluator digest, subject scope, requested evidence time, effective evidence cutoff, maturity time and status, separate baseline delta, available evidence links, provenance, and independent data-state summaries.
+- Updated `src/presenter.js` so declarative built-in `operational-value` definitions now render a concrete timeline table from the `operational-values` logical source with deterministic chronological ordering and conservative absent-value handling for optional delta and evidence-link fields.
+- Replaced the presenter unit and browser smoke coverage with focused `DLS-PAGE-012` / `DLS-PAGE-014` tests in `test/unit/presenter.test.js` and `test/e2e/smoke.spec.js` that verify chronology, absolute attainment values, evidence timing, maturity status, optional delta and evidence link rendering, provenance, and independent `availability`, `completeness`, and `freshness` text.
+- Verified all quality gates pass: `npm install`, `npm run typecheck`, `npm run lint`, `npm test`, and `npm run test:e2e`.
+- Next milestone: Built-in pages, next slice for rendering one additional Section 10 built-in page such as `organizations` or `repositories` from the declarative definitions.
 
 ### 2026-08-29 (built-in engines-models render slice)
 
