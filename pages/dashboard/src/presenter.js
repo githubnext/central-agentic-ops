@@ -8,6 +8,7 @@ import { octicon, agenticWorkflowMark } from './octicons.js';
 import { renderStatusBadge, renderModeBadge, renderActiveStateBadge } from './components/badge.js';
 import { renderDataStateMetrics } from './components/data-state.js';
 import { renderTableRegion } from './components/table-region.js';
+import { renderPageSection, renderProvenanceList, renderViewHeader } from './components/view-chrome.js';
 
 /**
  * @typedef {{ availability: 'available'|'empty'|'unavailable', completeness: 'complete'|'partial'|'unknown', freshness: 'fresh'|'stale'|'unknown' }} DataState
@@ -339,11 +340,12 @@ function renderBuiltInPage(page, title, sources) {
   const effectiveState = summarizeDataState(pageSources);
   const provenanceItems = [...pageSources.entries()].map(([sourceName, sourceInput]) => {
     const metadata = sourceInput.metadata;
-    return h(
-      'li',
-      null,
-      `${sourceName}: ${metadata['source-id']} (${metadata['source-kind']}) — as of ${metadata['as-of']}`
-    );
+    return {
+      sourceName,
+      sourceId: metadata['source-id'],
+      sourceKind: metadata['source-kind'],
+      asOf: metadata['as-of']
+    };
   });
 
   const builtInBody = renderBuiltInPageBody(page, pageSources);
@@ -355,13 +357,7 @@ function renderBuiltInPage(page, title, sources) {
     renderDataStateMetrics(effectiveState),
     builtInBody,
     h('h3', null, 'Provenance'),
-    h(
-      'ul',
-      { className: 'provenance-list' },
-      provenanceItems.length > 0
-        ? provenanceItems
-        : [h('li', null, 'No source provenance available for this page.')]
-    )
+    renderProvenanceList(provenanceItems)
   );
 }
 
@@ -1300,8 +1296,7 @@ function renderMetricView(pageId, title, view, sourceName, rows, metadata, conte
 
   /** @type {HTMLElement[]} */
   const content = [
-    h('p', { className: 'view-source' }, `Source: ${sourceName}`),
-    h('p', { className: 'view-metadata' }, `As of ${metadata['as-of']} • completeness ${metadata.completeness} • freshness ${metadata.freshness}`),
+    ...renderViewHeader(sourceName, metadata),
     h('p', { className: 'metric-value', 'data-metric-value': fieldName ?? 'unknown' }, valueText)
   ];
   if (link) {
@@ -1331,8 +1326,7 @@ function renderTableView(pageId, title, view, sourceName, rows, metadata, contex
   const hrefField = typeof hrefDefinition?.field === 'string' ? hrefDefinition.field : null;
 
   return renderPageSection(pageId, title, [
-    h('p', { className: 'view-source' }, `Source: ${sourceName}`),
-    h('p', { className: 'view-metadata' }, `As of ${metadata['as-of']} • completeness ${metadata.completeness} • freshness ${metadata.freshness}`),
+    ...renderViewHeader(sourceName, metadata),
     renderTableRegion({
       tableClassName: 'custom-table',
       emptyMessage: 'No rows available.',
@@ -1385,8 +1379,7 @@ function renderChartView(pageId, title, view, sourceName, rows, metadata, contex
     : [];
 
   return renderPageSection(pageId, title, [
-    h('p', { className: 'view-source' }, `Source: ${sourceName}`),
-    h('p', { className: 'view-metadata' }, `As of ${metadata['as-of']} • completeness ${metadata.completeness} • freshness ${metadata.freshness}`),
+    ...renderViewHeader(sourceName, metadata),
     h('p', { className: 'chart-default', 'data-chart-default': chartDefault }, `Default chart type: ${chartDefault}`),
     ...(color
       ? [h(
@@ -1438,25 +1431,6 @@ function findFirstAvailableLink(rows, field) {
     }
   }
   return null;
-}
-
-/**
- * @param {string} pageId
- * @param {string} title
- * @param {HTMLElement[]} content
- * @returns {HTMLElement}
- */
-function renderPageSection(pageId, title, content) {
-  return h(
-    'section',
-    {
-      className: 'page-section',
-      tabIndex: 0,
-      'aria-labelledby': `${pageId}-${slugifyText(title)}-heading`
-    },
-    h('h3', { id: `${pageId}-${slugifyText(title)}-heading` }, title),
-    ...content
-  );
 }
 
 /**
@@ -1803,14 +1777,6 @@ function toText(value) {
  */
 function renderLinkCell(link) {
   return link ? renderExternalLink(link) : 'Unavailable';
-}
-
-/**
- * @param {string} value
- * @returns {string}
- */
-function slugifyText(value) {
-  return value.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '') || 'section';
 }
 
 /**
