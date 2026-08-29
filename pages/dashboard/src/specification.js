@@ -122,8 +122,8 @@ export const BUILT_IN_PAGE_REQUIRED_FIELDS = {
     workflows: ['workflow-active', 'rollout-mode'],
     runs: ['run-status', 'run-conclusion', 'repository', 'workflow'],
     usage: ['aic'],
-    findings: ['observed-at'],
-    'operational-values': ['operational-value', 'observed-at']
+    findings: ['observed-at', 'issue-link', 'pull-request-link', 'run-link'],
+    'operational-values': ['operational-value', 'operational-value-definition', 'observed-at']
   },
   organizations: {
     organizations: ['organization'],
