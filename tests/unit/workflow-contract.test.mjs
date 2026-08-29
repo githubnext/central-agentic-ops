@@ -1450,6 +1450,7 @@ test("Dashboard package supports embedded and explicit standalone deployment", (
   assert.doesNotMatch(buildWorkflow, /pages-aic|REPORT_AIC_CACHE/);
   assert.match(aicUsage, /"--start-date", "-2d", "--cache-before", "-2d"/);
   assert.match(buildWorkflow, /REPORT_VALUE_CACHE: \.cache\/dashboard-operational-values\/observations\.json/);
+  assert.match(buildWorkflow, /actions\/cache\/restore@[0-9a-f]{40}/);
   assert.match(buildWorkflow, /Save operational-value observation cache/);
   assert.match(deployedWorkflows, /const capabilities = await workflowCapabilities\(item\.repository, item\.path\)/);
   assert.match(deployedWorkflows, /const role = workflowRole\(source\)/);
@@ -1458,6 +1459,7 @@ test("Dashboard package supports embedded and explicit standalone deployment", (
   assert.match(deployedWorkflows, /event: run\.event/);
   assert.doesNotMatch(deployedWorkflows, /\["failure", "timed_out", "startup_failure", "action_required"\]/);
   assert.match(operationalValues, /workflow\.operationalValue !== true/);
+  assert.match(operationalValues, /selectedRuns\.filter\(\(selected\) => !cachedRunKeys\.has\(recordKey\(selected\)\)\)/);
   assert.doesNotMatch(operationalValues, /const workerIds = new Set/);
   assert.match(report, /function valueObservationRepository\(record\)/);
   assert.match(report, /function valueWorkflowKey\(runtimeRepository, workflowPath/);
@@ -1669,6 +1671,7 @@ globalThis.fetch = async (input) => {
     const coverageDiagnostics = readFileSync(join(outputPath, "coverage", "index.html"), "utf8");
     assert.doesNotMatch(overview, /\b(?:href|src)="\/(?!\/)/);
     assert.match(overview, /<title>Overview \| control<\/title>/);
+    assert.match(overview, /class="refresh-control" href="https:\/\/github\.com\/acme\/control\/actions\/workflows\/dashboard\.yml">Refresh<\/a>/);
     assert.match(overview, /class="sidebar-brand"[^>]*>[\s\S]*?<span>control<\/span>/);
     assert.match(overview, /<span>Overview<\/span>[\s\S]*?<span>Repositories<\/span>[\s\S]*?<span>Packages<\/span>/);
     assert.match(overview, /href="\.\/dispatches\/"[\s\S]*?<span>Dispatches<\/span>/);
