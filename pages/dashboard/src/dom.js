@@ -76,6 +76,22 @@ export function keyed(items, renderItem, key) {
   return descriptor;
 }
 
+const SVG_TAGS = new Set([
+  'svg',
+  'path',
+  'symbol',
+  'use',
+  'g',
+  'defs',
+  'line',
+  'circle',
+  'rect',
+  'polyline',
+  'polygon',
+  'text',
+  'tspan'
+]);
+
 /**
  * @param {string} name
  * @param {Record<string, unknown> | null | undefined} [props]
@@ -83,7 +99,9 @@ export function keyed(items, renderItem, key) {
  * @returns {HTMLElement}
  */
 export function h(name, props, ...children) {
-  const element = document.createElement(name);
+  const element = SVG_TAGS.has(name)
+    ? /** @type {HTMLElement} */ (/** @type {unknown} */ (document.createElementNS('http://www.w3.org/2000/svg', name)))
+    : document.createElement(name);
   applyProps(element, props ?? {});
   appendChildren(element, flattenChildren(children));
   return element;

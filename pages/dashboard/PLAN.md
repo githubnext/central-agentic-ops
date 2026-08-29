@@ -40,6 +40,17 @@
 
 ## Run log
 
+### 2026-08-29 (GitHub Primer brand styling & presentation component slice)
+
+- Updated the dashboard presenter to clone the style of the current JavaScript dashboard implemented in CAO (`.github/scripts/pages-report/report.mjs`), generating dashboards that are GitHub brand-aligned using GitHub Primer CSS tokens and elements.
+- Added GitHub Primer design tokens and stylesheet module (`src/styles.js`) supporting dark, light, contrast, and high-contrast color schemes.
+- Added GitHub Octicons and CAO brand mark SVG helpers (`src/octicons.js`) with SVG namespace support in the DOM builder (`src/dom.js`).
+- Created reusable presentation components for Primer status/mode badges (`src/components/badge.js`) and data-state metrics card grids (`src/components/data-state.js`).
+- Updated `src/presenter.js` to render the Primer `.app-shell` layout with `.org-sidebar`, brand mark, `.primary-nav` with Octicons, breadcrumbs, `.overview-header`, `.table-region` data tables, and `.report-footer`.
+- Configured Playwright runner to use the system Chromium binary and expanded unit and E2E test suites to verify Primer styling, brand elements, sidebar navigation, and data badges.
+- Verified all quality gates pass: `npm run typecheck`, `npm run lint`, `npm test`, and `npm run test:e2e`.
+- Next milestone: Built-in pages, next slice for rendering remaining Section 10 built-in pages (such as overview or tasks) or custom page views.
+
 ### 2026-08-29 (built-in workflows render slice)
 
 - Extended the Built-in pages milestone with a narrow `DLS-PAGE-005` and `DLS-PAGE-014` presenter increment for the `workflows` built-in page, rendering workflow inventory with active state, rollout mode, run counts, run conclusion summaries, downstream outcome counts, available AIC totals, finding counts, operational value counts, and independent data-state summaries.
