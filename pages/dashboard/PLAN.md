@@ -28,6 +28,7 @@
   - [x] Slice: `DLS-PAGE-003` and `DLS-PAGE-014` presenter render for the `organizations` built-in page, exposing organization inventory, repository counts, workflow counts, run counts, available usage measures, provenance, and independent data-state summaries.
   - [x] Slice: `DLS-PAGE-004` and `DLS-PAGE-014` presenter render for the `repositories` built-in page, exposing repository inventory plus deterministic rankings by run count, AIC, and available operational value while keeping operational-value definitions separate, with provenance and independent data-state summaries.
   - [x] Slice: `DLS-PAGE-007` and `DLS-PAGE-014` presenter render for the `experiments` built-in page, exposing experiment definitions plus observed run-to-variant assignments, grader observations, eval observations, downstream outcomes, available usage AIC, operational value by definition, provenance, and independent data-state summaries without implying causation.
+  - [x] Slice: `DLS-PAGE-008` and `DLS-PAGE-014` presenter render for the `graders` built-in page, keeping grader definitions and grader observations distinguishable while exposing observed subject, result, score when present, time, provenance, and independent data-state summaries.
 - [ ] **Security, privacy, accessibility** — Section 13 including escaping, redaction, and keyboard and screen-reader behavior verified with Playwright.
 - [ ] **Compliance suite** — Section 14 test suite, the compliance checklist, Appendix A as a passing fixture, and Appendix C as failing fixtures.
 - [ ] **Parity** — inventory the features of the existing dashboard in `dashboard/report/report.mjs`, record them in `PLAN.md` as a parity checklist, then express each one as YAML configuration plus data fixtures, closing the checklist incrementally.
@@ -46,6 +47,14 @@
 - 2026-08-28: `npm run test:e2e` is currently blocked in this environment because the Playwright Chromium executable is not provisioned (`browserType.launch: Executable doesn't exist`). The workflow should prefer the built-in Playwright MCP browser tools until the package-level browser dependency is available.
 
 ## Run log
+
+### 2026-08-29 (built-in graders render slice)
+
+- Extended the Built-in pages milestone with a narrow `DLS-PAGE-008` and `DLS-PAGE-014` presenter increment for the `graders` built-in page, rendering distinguishable grader definitions and grader observations with observed subject, result, score when present, time, provenance, and independent data-state summaries.
+- Updated `src/presenter.js` so declarative built-in `graders` definitions now render separate definitions and observations tables from the `graders` and `grader-observations` logical sources with deterministic ordering and conservative unavailable handling for absent scores.
+- Replaced the presenter unit and browser smoke coverage with focused `DLS-PAGE-008` / `DLS-PAGE-014` tests in `test/unit/presenter.test.js` and `test/e2e/smoke.spec.js` that verify definition-versus-observation separation, subject strings, result counts, score rendering, provenance, and independent `availability`, `completeness`, and `freshness` text.
+- Verified all quality gates pass: `npm install`, `npm run typecheck`, `npm run lint`, `npm test`, and `npm run test:e2e`.
+- Next milestone: Built-in pages, next slice for rendering one additional Section 10 built-in page such as `evals` from the declarative definitions.
 
 ### 2026-08-29 (built-in experiments render slice)
 
