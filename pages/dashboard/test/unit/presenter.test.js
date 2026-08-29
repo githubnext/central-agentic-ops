@@ -3,6 +3,187 @@ import { describe, expect, it } from 'vitest';
 import { renderDashboard } from '../../src/presenter.js';
 
 describe('presenter built-in pages', () => {
+  it('DLS-PAGE-005 DLS-PAGE-014 renders built-in workflows page inventory, active state, rollout mode, run conclusions, outcomes, usage, findings, operational value, and independent data state deterministically', () => {
+    /** @type {import('../../src/presenter.js').PresentationInput['document']} */
+    const document = {
+      languageVersion: '0.1.0',
+      dashboard: {
+        id: 'workflows-dashboard',
+        title: 'Workflows Dashboard',
+        pages: [
+          {
+            id: 'workflows',
+            kind: /** @type {'built-in'} */ ('built-in'),
+            page: 'workflows',
+            title: 'Workflows',
+            definition: {
+              'data-state': {
+                availability: true,
+                completeness: true,
+                freshness: true
+              },
+              views: [
+                { id: 'workflows-source', data: { source: 'workflows' } },
+                { id: 'runs-source', data: { source: 'runs' } },
+                { id: 'outcomes-source', data: { source: 'outcomes' } },
+                { id: 'usage-source', data: { source: 'usage' } },
+                { id: 'findings-source', data: { source: 'findings' } },
+                { id: 'operational-values-source', data: { source: 'operational-values' } }
+              ]
+            }
+          }
+        ]
+      }
+    };
+
+    const rendered = renderDashboard({
+      document,
+      sources: {
+        workflows: {
+          source: 'workflows',
+          rows: [
+            {
+              organization: 'githubnext',
+              repository: 'central-agentic-ops',
+              workflow: 'dashboard.yml',
+              'workflow-active': 'true',
+              'rollout-mode': 'review'
+            },
+            {
+              organization: 'githubnext',
+              repository: 'central-agentic-ops',
+              workflow: 'release.yml',
+              'workflow-active': 'false',
+              'rollout-mode': 'live'
+            }
+          ],
+          metadata: {
+            'source-id': 'workflows-fixture',
+            'source-kind': 'fixture',
+            'as-of': '2026-08-29T13:00:00Z',
+            'retrieved-at': '2026-08-29T13:01:00Z',
+            completeness: 'complete',
+            freshness: 'fresh',
+            availability: 'available'
+          }
+        },
+        runs: {
+          source: 'runs',
+          rows: [
+            {
+              workflow: 'dashboard.yml',
+              run: '1001',
+              'run-conclusion': 'success'
+            },
+            {
+              workflow: 'dashboard.yml',
+              run: '1002',
+              'run-conclusion': 'failure'
+            },
+            {
+              workflow: 'release.yml',
+              run: '1003',
+              'run-conclusion': 'success'
+            }
+          ],
+          metadata: {
+            'source-id': 'runs-fixture',
+            'source-kind': 'fixture',
+            'as-of': '2026-08-29T13:00:00Z',
+            'retrieved-at': '2026-08-29T13:01:00Z',
+            completeness: 'complete',
+            freshness: 'fresh',
+            availability: 'available'
+          }
+        },
+        outcomes: {
+          source: 'outcomes',
+          rows: [
+            { workflow: 'dashboard.yml', 'outcome-state': 'accepted' },
+            { workflow: 'dashboard.yml', 'outcome-state': 'pending' },
+            { workflow: 'release.yml', 'outcome-state': 'rejected' }
+          ],
+          metadata: {
+            'source-id': 'outcomes-fixture',
+            'source-kind': 'fixture',
+            'as-of': '2026-08-29T13:00:00Z',
+            'retrieved-at': '2026-08-29T13:01:00Z',
+            completeness: 'partial',
+            freshness: 'stale',
+            availability: 'available'
+          }
+        },
+        usage: {
+          source: 'usage',
+          rows: [
+            { workflow: 'dashboard.yml', aic: 3 },
+            { workflow: 'dashboard.yml', aic: 2 },
+            { workflow: 'release.yml', aic: 5 }
+          ],
+          metadata: {
+            'source-id': 'usage-fixture',
+            'source-kind': 'fixture',
+            'as-of': '2026-08-29T13:00:00Z',
+            'retrieved-at': '2026-08-29T13:01:00Z',
+            completeness: 'complete',
+            freshness: 'fresh',
+            availability: 'available'
+          }
+        },
+        findings: {
+          source: 'findings',
+          rows: [
+            { workflow: 'dashboard.yml', finding: 'f-1' },
+            { workflow: 'release.yml', finding: 'f-2' },
+            { workflow: 'release.yml', finding: 'f-3' }
+          ],
+          metadata: {
+            'source-id': 'findings-fixture',
+            'source-kind': 'fixture',
+            'as-of': '2026-08-29T13:00:00Z',
+            'retrieved-at': '2026-08-29T13:01:00Z',
+            completeness: 'complete',
+            freshness: 'fresh',
+            availability: 'available'
+          }
+        },
+        'operational-values': {
+          source: 'operational-values',
+          rows: [
+            { workflow: 'dashboard.yml', 'operational-value': 0.8 },
+            { workflow: 'release.yml', 'operational-value': 0.4 }
+          ],
+          metadata: {
+            'source-id': 'operational-values-fixture',
+            'source-kind': 'fixture',
+            'as-of': '2026-08-29T13:00:00Z',
+            'retrieved-at': '2026-08-29T13:01:00Z',
+            completeness: 'complete',
+            freshness: 'fresh',
+            availability: 'available'
+          }
+        }
+      }
+    });
+
+    expect(rendered.querySelector('[data-page-name="workflows"]')?.textContent).toContain('dashboard.yml');
+    expect(rendered.querySelector('[data-state-axis="availability"]')?.textContent).toBe('available');
+    expect(rendered.querySelector('[data-state-axis="completeness"]')?.textContent).toBe('partial');
+    expect(rendered.querySelector('[data-state-axis="freshness"]')?.textContent).toBe('stale');
+    expect(rendered.querySelectorAll('.workflows-table tbody tr')).toHaveLength(2);
+    expect(rendered.querySelector('.workflows-table tbody tr')?.textContent).toContain('dashboard.yml');
+    expect(rendered.querySelector('.workflows-table tbody tr')?.textContent).toContain('true');
+    expect(rendered.querySelector('.workflows-table tbody tr')?.textContent).toContain('review');
+    expect(rendered.querySelector('.workflows-table tbody tr')?.textContent).toContain('2');
+    expect(rendered.querySelector('.workflows-table tbody tr')?.textContent).toContain('success: 1, failure: 1');
+    expect(rendered.querySelector('.workflows-table tbody tr')?.textContent).toContain('5');
+    expect(rendered.querySelectorAll('.workflows-table tbody tr')[1]?.textContent).toContain('release.yml');
+    expect(rendered.querySelectorAll('.workflows-table tbody tr')[1]?.textContent).toContain('false');
+    expect(rendered.querySelectorAll('.workflows-table tbody tr')[1]?.textContent).toContain('live');
+    expect(rendered.querySelectorAll('.workflows-table tbody tr')[1]?.textContent).toContain('1');
+    expect(rendered.querySelectorAll('.workflows-table tbody tr')[1]?.textContent).toContain('success: 1');
+  });
+
   it('DLS-PAGE-006 DLS-PAGE-014 renders built-in runs page counts, rows, links, and independent data state deterministically', () => {
     /** @type {import('../../src/presenter.js').PresentationInput['document']} */
     const document = {
