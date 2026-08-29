@@ -41,6 +41,215 @@ function buildPresenterModuleUrl() {
   return `data:text/javascript;charset=utf-8,${encodeURIComponent(presenterSource)}`;
 }
 
+test('DLS-PAGE-002 DLS-PAGE-014 built-in overview page renders rollout-mode filtering, workflow active-state inventory, run status and conclusion counts and trends, repository/workflow rankings, largest AIC spenders, linked findings, operational-value timeline, and provenance/freshness in browser', async ({ page }) => {
+  const presenterModuleUrl = buildPresenterModuleUrl();
+
+  await page.setContent(`
+    <div id="root"></div>
+    <script type="module">
+      import { renderDashboard } from ${JSON.stringify(presenterModuleUrl)};
+
+      const dashboardDocument = {
+        languageVersion: '0.1.0',
+        dashboard: {
+          id: 'built-in-overview-render',
+          title: 'Built In Overview Render',
+          pages: [
+            {
+              id: 'overview',
+              kind: 'built-in',
+              page: 'overview',
+              title: 'Overview',
+              definition: {
+                'data-state': {
+                  availability: true,
+                  completeness: true,
+                  freshness: true
+                },
+                views: [
+                  { id: 'workflows-source', data: { source: 'workflows' } },
+                  { id: 'runs-source', data: { source: 'runs' } },
+                  { id: 'usage-source', data: { source: 'usage' } },
+                  { id: 'findings-source', data: { source: 'findings' } },
+                  { id: 'operational-values-source', data: { source: 'operational-values' } }
+                ]
+              }
+            }
+          ]
+        }
+      };
+
+      const sources = {
+        workflows: {
+          source: 'workflows',
+          rows: [
+            { organization: 'github', repository: 'central-agentic-ops', workflow: '.github/workflows/daily.yml', 'workflow-active': 'true', 'rollout-mode': 'live', 'observed-at': '2026-08-29T09:00:00Z' },
+            { organization: 'github', repository: 'central-agentic-ops', workflow: '.github/workflows/review.yml', 'workflow-active': 'false', 'rollout-mode': 'review', 'observed-at': '2026-08-29T09:05:00Z' }
+          ],
+          metadata: {
+            'source-id': 'workflows-fixture',
+            'source-kind': 'fixture',
+            'as-of': '2026-08-29T20:00:00Z',
+            'retrieved-at': '2026-08-29T20:01:00Z',
+            completeness: 'partial',
+            freshness: 'stale',
+            availability: 'available'
+          }
+        },
+        runs: {
+          source: 'runs',
+          rows: [
+            { organization: 'github', repository: 'central-agentic-ops', workflow: '.github/workflows/daily.yml', run: '1001', 'started-at': '2026-08-29T10:00:00Z', 'run-status': 'completed', 'run-conclusion': 'success', 'rollout-mode': 'live', engine: 'openai', 'requested-model': 'gpt-4o', 'resolved-model': 'gpt-4.1' },
+            { organization: 'github', repository: 'central-agentic-ops', workflow: '.github/workflows/daily.yml', run: '1002', 'started-at': '2026-08-29T11:00:00Z', 'run-status': 'completed', 'run-conclusion': 'failure', 'rollout-mode': 'live', engine: 'openai', 'requested-model': 'gpt-4o', 'resolved-model': 'gpt-4.1' },
+            { organization: 'github', repository: 'central-agentic-ops', workflow: '.github/workflows/review.yml', run: '1003', 'started-at': '2026-08-29T12:00:00Z', 'run-status': 'in-progress', 'run-conclusion': 'unknown', 'rollout-mode': 'review', engine: 'anthropic', 'requested-model': 'claude-3.5', 'resolved-model': 'claude-3.7' }
+          ],
+          metadata: {
+            'source-id': 'runs-fixture',
+            'source-kind': 'fixture',
+            'as-of': '2026-08-29T20:00:00Z',
+            'retrieved-at': '2026-08-29T20:01:00Z',
+            completeness: 'complete',
+            freshness: 'fresh',
+            availability: 'available'
+          }
+        },
+        usage: {
+          source: 'usage',
+          rows: [
+            { repository: 'central-agentic-ops', workflow: '.github/workflows/daily.yml', run: '1001', 'rollout-mode': 'live', aic: 12, engine: 'openai', 'requested-model': 'gpt-4o', 'resolved-model': 'gpt-4.1', 'observed-at': '2026-08-29T10:05:00Z' },
+            { repository: 'central-agentic-ops', workflow: '.github/workflows/daily.yml', run: '1002', 'rollout-mode': 'live', aic: 18, engine: 'openai', 'requested-model': 'gpt-4o', 'resolved-model': 'gpt-4.1', 'observed-at': '2026-08-29T11:05:00Z' },
+            { repository: 'central-agentic-ops', workflow: '.github/workflows/review.yml', run: '1003', 'rollout-mode': 'review', aic: 5, engine: 'anthropic', 'requested-model': 'claude-3.5', 'resolved-model': 'claude-3.7', 'observed-at': '2026-08-29T12:05:00Z' }
+          ],
+          metadata: {
+            'source-id': 'usage-fixture',
+            'source-kind': 'fixture',
+            'as-of': '2026-08-29T20:00:00Z',
+            'retrieved-at': '2026-08-29T20:01:00Z',
+            completeness: 'complete',
+            freshness: 'fresh',
+            availability: 'available'
+          }
+        },
+        findings: {
+          source: 'findings',
+          rows: [
+            {
+              finding: 'finding-2',
+              'finding-summary': 'Review workflow needs triage',
+              'finding-severity': 'medium',
+              'finding-status': 'open',
+              organization: 'github',
+              repository: 'central-agentic-ops',
+              workflow: '.github/workflows/review.yml',
+              'observed-at': '2026-08-29T12:30:00Z',
+              'issue-link': { relation: 'issue', href: 'https://example.com/issues/2', label: 'Issue 2' },
+              'pull-request-link': { relation: 'pull-request', href: 'https://example.com/pulls/2', label: 'PR 2' },
+              'run-link': { relation: 'run', href: 'https://example.com/runs/1003', label: 'Run 1003' }
+            },
+            {
+              finding: 'finding-1',
+              'finding-summary': 'Daily workflow regression',
+              'finding-severity': 'high',
+              'finding-status': 'open',
+              organization: 'github',
+              repository: 'central-agentic-ops',
+              workflow: '.github/workflows/daily.yml',
+              'observed-at': '2026-08-29T11:30:00Z',
+              'issue-link': { relation: 'issue', href: 'https://example.com/issues/1', label: 'Issue 1' },
+              'pull-request-link': { relation: 'pull-request', href: 'https://example.com/pulls/1', label: 'PR 1' },
+              'run-link': { relation: 'run', href: 'https://example.com/runs/1002', label: 'Run 1002' }
+            }
+          ],
+          metadata: {
+            'source-id': 'findings-fixture',
+            'source-kind': 'fixture',
+            'as-of': '2026-08-29T20:00:00Z',
+            'retrieved-at': '2026-08-29T20:01:00Z',
+            completeness: 'complete',
+            freshness: 'fresh',
+            availability: 'available'
+          }
+        },
+        'operational-values': {
+          source: 'operational-values',
+          rows: [
+            {
+              organization: 'github',
+              repository: 'central-agentic-ops',
+              workflow: '.github/workflows/daily.yml',
+              run: '1001',
+              'operational-value': 0.65,
+              'operational-value-definition': 'ship-success',
+              'observed-at': '2026-08-29T10:30:00Z',
+              'evidence-link': { relation: 'evidence', href: 'https://example.com/evidence/1', label: 'Evidence 1' }
+            },
+            {
+              organization: 'github',
+              repository: 'central-agentic-ops',
+              workflow: '.github/workflows/review.yml',
+              run: '1003',
+              'operational-value': 0.8,
+              'operational-value-definition': 'review-quality',
+              'observed-at': '2026-08-29T12:45:00Z',
+              'evidence-link': { relation: 'evidence', href: 'https://example.com/evidence/2', label: 'Evidence 2' }
+            }
+          ],
+          metadata: {
+            'source-id': 'operational-values-fixture',
+            'source-kind': 'fixture',
+            'as-of': '2026-08-29T20:00:00Z',
+            'retrieved-at': '2026-08-29T20:01:00Z',
+            completeness: 'complete',
+            freshness: 'fresh',
+            availability: 'available'
+          }
+        }
+      };
+
+      document.querySelector('#root').append(renderDashboard({ document: dashboardDocument, sources }));
+    </script>
+  `);
+
+  await expect(page.getByRole('heading', { name: 'Built In Overview Render' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Overview', exact: true, level: 2 })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Rollout Mode Filtering' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Workflow Active State Inventory' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Run Status Counts and Trends' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Run Conclusion Counts and Trends' })).toBeVisible();
+  await expect(page.locator('[data-state-axis="availability"]')).toHaveText('available');
+  await expect(page.locator('[data-state-axis="completeness"]')).toHaveText('partial');
+  await expect(page.locator('[data-state-axis="freshness"]')).toHaveText('stale');
+  await expect(page.locator('.overview-rollout-mode-counts')).toContainText('live: 5');
+  await expect(page.locator('.overview-rollout-mode-counts')).toContainText('review: 3');
+  await expect(page.locator('.overview-workflow-active-counts')).toContainText('true: 1');
+  await expect(page.locator('.overview-workflow-active-counts')).toContainText('false: 1');
+  await expect(page.locator('.overview-run-status-counts')).toContainText('completed: 2');
+  await expect(page.locator('.overview-run-status-counts')).toContainText('in-progress: 1');
+  await expect(page.locator('.overview-run-status-trends')).toContainText('2026-08-29T10:00:00Z → completed: 1');
+  await expect(page.locator('.overview-run-conclusion-counts')).toContainText('success: 1');
+  await expect(page.locator('.overview-run-conclusion-counts')).toContainText('failure: 1');
+  await expect(page.locator('.overview-run-conclusion-counts')).toContainText('unknown: 1');
+  await expect(page.locator('.overview-repository-rankings')).toContainText('central-agentic-ops: 3');
+  await expect(page.locator('.overview-workflow-rankings')).toContainText('.github/workflows/daily.yml: 2');
+  await expect(page.locator('.overview-workflow-rankings')).toContainText('.github/workflows/review.yml: 1');
+  await expect(page.locator('.overview-largest-aic-spenders')).toContainText('central-agentic-ops: 35');
+  await expect(page.locator('.overview-findings-table tbody tr')).toHaveCount(2);
+  await expect(page.locator('[data-overview-finding-id="finding-2"]')).toContainText('Review workflow needs triage');
+  await expect(page.getByRole('link', { name: 'Issue 2' })).toBeVisible();
+  await expect(page.getByRole('link', { name: 'PR 2' })).toBeVisible();
+  await expect(page.getByRole('link', { name: 'Run 1003' })).toBeVisible();
+  await expect(page.locator('.overview-operational-value-table tbody tr')).toHaveCount(2);
+  await expect(page.locator('[data-overview-operational-value-key="ship-success::1001::2026-08-29T10:30:00Z"]')).toContainText('0.65');
+  await expect(page.getByRole('link', { name: 'Evidence 2' })).toBeVisible();
+  await expect(page.locator('.provenance-list li')).toContainText([
+    'workflows: workflows-fixture (fixture) — as of 2026-08-29T20:00:00Z',
+    'runs: runs-fixture (fixture) — as of 2026-08-29T20:00:00Z',
+    'usage: usage-fixture (fixture) — as of 2026-08-29T20:00:00Z',
+    'findings: findings-fixture (fixture) — as of 2026-08-29T20:00:00Z',
+    'operational-values: operational-values-fixture (fixture) — as of 2026-08-29T20:00:00Z'
+  ]);
+});
+
 test('DLS-PAGE-009 DLS-PAGE-014 built-in evals page renders distinguishable definitions and observations, observed subject, YES/NO/UNKNOWN result, evaluation model when available, time, provenance, and independent data state in browser', async ({ page }) => {
   const presenterModuleUrl = buildPresenterModuleUrl();
 
