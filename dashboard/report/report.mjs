@@ -1475,8 +1475,18 @@ function dispatchCatalogContent(workflows) {
   const packageOptions = [...new Set(dispatches.map((dispatch) => dispatch.packageName))].sort()
     .map((packageName) => `<option value="${escapeHtml(packageName)}">${escapeHtml(packageName)}</option>`).join("");
   const rows = dispatches.map((dispatch) => {
-    const statusLabel = dispatch.conclusion === "action_required" ? "Approval required" : dispatch.conclusion === null ? dispatch.status || "in progress" : dispatch.conclusion || "unknown";
-    const statusClassName = failureConclusions.has(dispatch.conclusion) ? "status-danger" : dispatch.conclusion === "action_required" || dispatch.conclusion === null ? "status-attention" : dispatch.conclusion === "success" ? "status-success" : "status-muted";
+    const statusLabel = dispatch.conclusion === "action_required"
+      ? "Approval required"
+      : dispatch.conclusion === null || dispatch.conclusion === "unknown"
+        ? (dispatch.status && dispatch.status !== "in_progress" ? dispatch.status.replaceAll("_", " ") : "Unknown")
+        : dispatch.conclusion || "unknown";
+    const statusClassName = failureConclusions.has(dispatch.conclusion)
+      ? "status-danger"
+      : dispatch.conclusion === "action_required"
+        ? "status-attention"
+        : dispatch.conclusion === "success"
+          ? "status-success"
+          : "status-muted";
     const runTitle = dispatch.displayTitle || `Run ${dispatch.runId}`;
     const searchText = `${runTitle} ${dispatch.packageName} ${dispatch.workflowName} ${dispatch.repository} ${statusLabel}`.toLowerCase();
     return `<tr data-dispatch-row data-package="${escapeHtml(dispatch.packageName)}" data-search="${escapeHtml(searchText)}"><th scope="row"><a href="https://github.com/${escapeHtml(dispatch.repository)}/actions/runs/${escapeHtml(dispatch.runId)}"><time datetime="${escapeHtml(dispatch.createdAt || "")}">${escapeHtml(formatDate(dispatch.createdAt))}</time>${octicon("external-link")}</a></th><td>${escapeHtml(dispatch.packageName)}</td><td><a href="../repositories/${escapeHtml(repositoryWorkflowPageName(dispatch.repository, dispatch.workflowPath))}.html">${escapeHtml(dispatch.workflowName)}</a></td><td>${escapeHtml(runTitle)}</td><td><a href="../repositories/${escapeHtml(repositoryPageName(dispatch.repository))}.html">${escapeHtml(dispatch.repository)}</a></td><td><span class="status ${statusClassName}">${escapeHtml(statusLabel.replaceAll("_", " "))}</span></td></tr>`;
