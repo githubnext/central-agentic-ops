@@ -1223,8 +1223,9 @@ describe('presenter built-in and custom pages', () => {
     const rows = [...rendered.querySelectorAll('.custom-table tbody tr')];
     expect(rows).toHaveLength(2);
     expect(rows.map((row) => row.textContent)).toEqual(['charlie6', 'alpha5']);
-    const filter = /** @type {HTMLInputElement} */ (rendered.querySelector('[aria-label="Filter Repository usage"]'));
+    const filter = /** @type {HTMLInputElement} */ (rendered.querySelector('.table-filter input'));
     expect(filter).toBeTruthy();
+    expect(filter.closest('label')?.textContent).toContain('Filter Repository usage');
     filter.value = 'alpha';
     filter.dispatchEvent(new Event('input'));
     expect(rows.map((row) => row.hasAttribute('hidden'))).toEqual([true, false]);

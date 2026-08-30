@@ -27,7 +27,6 @@ export function renderTableRegion(options) {
           h('input', {
             type: 'search',
             placeholder: 'Filter rows',
-            'aria-label': filterLabel,
             'data-table-filter': ''
           })
         ),
