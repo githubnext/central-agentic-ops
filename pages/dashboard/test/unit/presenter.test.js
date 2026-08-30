@@ -243,6 +243,58 @@ describe('presenter built-in and custom pages', () => {
       expect(page.definition.views.length).toBeGreaterThan(0);
       expect(page.definition.views.every((/** @type {{ data?: { source?: unknown } }} */ view) => typeof view?.data?.source === 'string')).toBe(true);
     }
+
+    const repositoriesPage = pages.find((/** @type {{ page: string }} */ page) => page.page === 'repositories');
+    expect(repositoriesPage?.definition.views).toMatchObject([
+      {
+        id: 'repositories-repositories-source',
+        title: 'Repository Inventory',
+        data: { source: 'repositories' }
+      },
+      {
+        id: 'repositories-by-run-count',
+        title: 'Repositories by Run Count',
+        data: {
+          source: 'runs',
+          'order-by': [{ field: 'run-count', direction: 'desc' }]
+        },
+        encoding: {
+          columns: [
+            { field: 'repository' },
+            { field: 'run', aggregate: 'distinct-count', as: 'run-count' }
+          ]
+        }
+      },
+      {
+        id: 'repositories-by-aic',
+        title: 'Repositories by AIC',
+        data: {
+          source: 'usage',
+          'order-by': [{ field: 'total-aic', direction: 'desc' }]
+        },
+        encoding: {
+          columns: [
+            { field: 'repository' },
+            { field: 'aic', aggregate: 'sum', as: 'total-aic' }
+          ]
+        }
+      },
+      {
+        id: 'repositories-by-operational-value',
+        title: 'Repositories by Operational Value',
+        data: {
+          source: 'operational-values',
+          'order-by': [{ field: 'mean-operational-value', direction: 'desc' }]
+        },
+        encoding: {
+          columns: [
+            { field: 'repository' },
+            { field: 'operational-value-definition' },
+            { field: 'operational-value', aggregate: 'mean', as: 'mean-operational-value' }
+          ]
+        }
+      }
+    ]);
   });
 
   it('DLS-PAGE-009 DLS-PAGE-014 renders built-in evals page with distinguishable definitions and observations, observed subject, YES/NO/UNKNOWN result, evaluation model when available, time, provenance, and independent data state deterministically', () => {
