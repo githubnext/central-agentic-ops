@@ -46,11 +46,14 @@
 - [ ] **Compliance suite** — Section 14 test suite, the compliance checklist, Appendix A as a passing fixture, and Appendix C as failing fixtures.
   - [x] Slice: `DLS-TEST-001`, `DLS-TEST-002`, `DLS-TEST-003`, `T-DOC-001`, and `T-VAL-001` compliance smoke harness with machine-readable results, Appendix A passing coverage, and Appendix C failing fixtures.
   - [x] Slice: `T-SEM-001`, `T-SEM-002`, `T-SEM-003`, and `T-CTX-001` checklist-backed machine-readable coverage for the implemented semantic and context validator/presenter requirements.
+  - [x] Slice: `T-PAGE-001` conservative machine-readable coverage for implemented built-in page data-state exposure via the Appendix A presenter fixture.
 - [ ] **Parity** — inventory the features of the existing dashboard in `dashboard/report/report.mjs`, record them in `PLAN.md` as a parity checklist, then express each one as YAML configuration plus data fixtures, closing the checklist incrementally.
   - [x] Motion audit: port the report's 120ms interactive color/background transitions and 80ms chart-point tooltip fade; retain the existing repository-link transition, and disable nonessential motion for reduced-motion users. The report contains no keyframe animations, and its catalog disclosure transition has no renderer equivalent yet.
   - [x] Preview fixtures: provide multi-point, multi-series operational-value observations plus linked run and evidence records so the browser dashboard renders meaningful chart geometry and actionable links.
 
 ## Specification questions
+
+- 2026-08-30: Section 14.2 `T-LINK-001` requires linked rendering of every GitHub-addressable entity, but Section 10 and Appendix A do not define a built-in fixture that guarantees every such entity will be rendered as a direct anchor in the current presenter surface. The compliance harness now records conservative machine-readable `T-PAGE-001` coverage for built-in data-state exposure, while `T-LINK-001` remains deferred until the fixture vocabulary and presenter surface make that requirement observable without inventing additional semantics.
 
 - 2026-08-28: Section 10 requires every built-in page to be expressed as declarative page definitions built from the custom-view primitives, but Section 4.2 and Section 10 define no YAML vocabulary for embedding those declarative built-in definitions alongside `kind: built-in` / `page`. The current validator implements the most conservative reading available in this slice by accepting an implementation-local `definition.views` sequence on built-in pages so required source, field, and run-link coverage can be validated, but this key is not yet specification-backed and may need to change if the YAML vocabulary is clarified.
 - 2026-08-28: `DLS-PAGE-014` says every built-in page must expose availability, completeness, and freshness independently, but Section 10 does not define a declarative YAML shape for asserting that exposure inside a built-in page definition. The current validator uses a conservative implementation-local `definition.data-state` marker with canonical boolean `true` for each axis. The presenter prototype now renders independent page-level summaries from runtime source metadata, but the exact normative YAML vocabulary for binding built-in definitions to those summaries remains unspecified.
@@ -80,6 +83,15 @@
 - Added unit coverage in `test/unit/view-chrome.test.js` for populated and empty `renderContextChrome(...)` output and for `renderViewSectionChrome(...)` composition, preserving the existing `DLS-VIEW-013` assertions around custom-view chrome.
 - Proved unchanged behavior by keeping `npm install`, `npm run typecheck`, `npm run lint`, `npm test`, and `npx playwright test --config=playwright.config.mjs` green from `pages/dashboard/`, and by capturing the affected refactor diff at `/tmp/gh-aw/agent/view-section-chrome-refactor.diff` to confirm the change is limited to shared chrome extraction and call-site replacement.
 - Next candidates in the queue: extract the repeated custom-view state-message plus context composition in `src/presenter.js`; extract shared pure helpers for metric/chart aggregate value formatting; extract shared link-cell composition across custom metric and custom table views.
+
+### 2026-08-30 (compliance built-in page data-state slice)
+
+- Continued the Compliance suite milestone with a narrow `T-PAGE-001` increment for already-implemented built-in page behavior, using the Appendix A presenter fixture instead of inventing new runtime semantics.
+- Extended `src/compliance.js` so the machine-readable smoke suite now records a passing `T-PAGE-001` result for `DLS-PAGE-014` when the rendered Appendix A built-in pages expose independent `Availability`, `Completeness`, and `Freshness` text.
+- Added unit coverage in `test/unit/compliance.test.js` that asserts the new machine-readable `T-PAGE-001` / `DLS-PAGE-014` result alongside the existing semantic and context checklist coverage.
+- Verified `pages/dashboard/` quality gates in this run: `npm install`, `npm run typecheck`, `npm run lint`, and `npm test` all pass.
+- Deferred `T-LINK-001` checklist automation for this run and recorded the fixture/presenter observability ambiguity under Specification questions rather than inventing broader link semantics.
+- Next milestone: Compliance suite, continuing with `T-LINK-001` or `T-AGG-001` once the fixture surface supports conservative machine-readable assertions.
 
 ### 2026-08-30 (security context-permitted custom views slice)
 
