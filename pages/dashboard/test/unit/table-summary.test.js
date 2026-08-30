@@ -28,6 +28,16 @@ describe('renderTableSummaryRow', () => {
     expect(rendered.querySelector('svg')?.getAttribute('aria-label')).toBe('Score distribution, 3 values');
   });
 
+  it('reports an unavailable deviation for a single quantitative value', () => {
+    const rendered = renderTableSummaryRow([{
+      label: 'Score',
+      type: 'quantitative',
+      values: [4]
+    }]);
+
+    expect(rendered.textContent).toContain('Standard deviationN/A');
+  });
+
   it('auto-detects boolean values and summarizes their true percentage', () => {
     const rendered = renderTableSummaryRow([{
       label: 'Ready',

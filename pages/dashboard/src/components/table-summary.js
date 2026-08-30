@@ -97,7 +97,7 @@ function renderQuantitativeSummary(label, values) {
     ? Math.sqrt(
       values.reduce((total, value) => total + ((value - mean) ** 2), 0) / (values.length - 1)
     )
-    : 0;
+    : null;
   return h(
     'div',
     { className: 'table-summary-quantitative' },
@@ -110,7 +110,12 @@ function renderQuantitativeSummary(label, values) {
       null,
       h('div', null, h('dt', null, 'Mean'), h('dd', null, formatStatistic(mean))),
       h('div', null, h('dt', null, 'Median'), h('dd', null, formatStatistic(median))),
-      h('div', null, h('dt', null, 'Standard deviation'), h('dd', null, formatStatistic(deviation)))
+      h(
+        'div',
+        null,
+        h('dt', null, 'Standard deviation'),
+        h('dd', null, deviation === null ? 'N/A' : formatStatistic(deviation))
+      )
     )
   );
 }
