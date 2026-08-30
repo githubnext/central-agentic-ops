@@ -454,6 +454,7 @@ dashboard:
       );
       expect(result.errors.map((error) => error.message)).toEqual(
         expect.arrayContaining([
+          'built-in page "overview" requires declarative definitions for source "repositories".',
           'built-in page "overview" requires declarative definitions for source "workflows".',
           'built-in page "overview" requires declarative definitions for source "runs".',
           'built-in page "overview" requires declarative definitions for source "usage".',
@@ -791,6 +792,14 @@ dashboard:
           completeness: true
           freshness: true
         views:
+          - id: repository-inventory
+            data:
+              source: repositories
+            mark: metric
+            encoding:
+              value:
+                field: repository
+                aggregate: distinct-count
           - id: workflow-inventory
             data:
               source: workflows
@@ -994,6 +1003,22 @@ dashboard:
           completeness: true
           freshness: true
         views:
+          - id: repository-inventory
+            data:
+              source: repositories
+              source-metadata:
+                source-id: repositories-fixture
+                source-kind: fixture
+                as-of: '2026-08-29T12:00:00Z'
+                retrieved-at: '2026-08-29T12:05:00Z'
+                completeness: complete
+                freshness: fresh
+                availability: available
+            mark: metric
+            encoding:
+              value:
+                field: repository
+                aggregate: distinct-count
           - id: workflow-inventory
             data:
               source: workflows

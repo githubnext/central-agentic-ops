@@ -25,6 +25,7 @@
               "layout": "full",
               "views": [
                 "overview-active-workflows",
+                "overview-repositories",
                 "overview-runs",
                 "overview-failed-runs",
                 "overview-usage",
@@ -64,6 +65,17 @@
               "layout": "third",
               "encoding": {
                 "value": { "field": "workflow", "type": "nominal", "aggregate": "distinct-count" }
+              }
+            },
+            {
+              "id": "overview-repositories",
+              "title": "Repositories",
+              "description": "Count of repositories currently represented in the control plane.",
+              "data": { "source": "repositories" },
+              "mark": "metric",
+              "layout": "third",
+              "encoding": {
+                "value": { "field": "repository", "type": "nominal", "aggregate": "distinct-count" }
               }
             },
             {

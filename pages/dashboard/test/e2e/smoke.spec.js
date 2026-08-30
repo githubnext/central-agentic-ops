@@ -48,7 +48,7 @@ function buildPresenterModuleUrl() {
   return `data:text/javascript;charset=utf-8,${encodeURIComponent(presenterSource)}`;
 }
 
-test('DLS-PAGE-002 DLS-PAGE-014 built-in overview page renders rollout-mode filtering, workflow active-state inventory, run status and conclusion counts and trends, repository/workflow rankings, largest AIC spenders, linked findings, operational-value timeline, and provenance/freshness in browser', async ({ page }) => {
+test('DLS-PAGE-002 DLS-PAGE-014 built-in overview page renders repository count, rollout-mode filtering, workflow active-state inventory, run status and conclusion counts and trends, repository/workflow rankings, largest AIC spenders, linked findings, operational-value timeline, and provenance/freshness in browser', async ({ page }) => {
   const presenterModuleUrl = buildPresenterModuleUrl();
 
   await page.setContent(`
@@ -87,6 +87,22 @@ test('DLS-PAGE-002 DLS-PAGE-014 built-in overview page renders rollout-mode filt
       };
 
       const sources = {
+        repositories: {
+          source: 'repositories',
+          rows: [
+            { organization: 'github', repository: 'central-agentic-ops' },
+            { organization: 'github', repository: 'dashboard-service' }
+          ],
+          metadata: {
+            'source-id': 'repositories-fixture',
+            'source-kind': 'fixture',
+            'as-of': '2026-08-29T20:00:00Z',
+            'retrieved-at': '2026-08-29T20:01:00Z',
+            completeness: 'complete',
+            freshness: 'fresh',
+            availability: 'available'
+          }
+        },
         workflows: {
           source: 'workflows',
           rows: [
@@ -220,7 +236,7 @@ test('DLS-PAGE-002 DLS-PAGE-014 built-in overview page renders rollout-mode filt
   await expect(page.getByRole('heading', { name: 'Built In Overview Render' })).toBeVisible();
   await expect(page.getByRole('heading', { name: 'Overview', exact: true, level: 2 })).toBeVisible();
   await expect(page.locator('.overview-page')).toHaveAttribute('data-page-kind', 'custom');
-  await expect(page.locator('.overview-page .custom-view')).toHaveCount(10);
+  await expect(page.locator('.overview-page .custom-view')).toHaveCount(11);
   await expect(page.locator('.overview-page .layout-section')).toHaveCount(4);
   await expect(page.getByRole('heading', { name: 'Control plane health', level: 3 })).toBeVisible();
   await expect(page.getByRole('heading', { name: 'Active workflows', level: 4 })).toBeVisible();
@@ -229,6 +245,7 @@ test('DLS-PAGE-002 DLS-PAGE-014 built-in overview page renders rollout-mode filt
   await expect(page.locator('[data-state-axis="completeness"]')).toHaveText('partial');
   await expect(page.locator('[data-state-axis="freshness"]')).toHaveText('stale');
   await expect(page.locator('.overview-page [data-metric-value="aic"]')).toHaveText('35');
+  await expect(page.locator('.overview-page [data-metric-value="repository"]')).toHaveText('2');
   await expect(page.locator('[data-section-id="execution-trends"] .custom-view:last-child .custom-chart-table tbody tr')).toHaveCount(2);
   await expect(page.getByRole('link', { name: 'Issue 2' })).toBeVisible();
 

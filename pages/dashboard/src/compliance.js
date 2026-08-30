@@ -36,6 +36,14 @@ dashboard:
           completeness: true
           freshness: true
         views:
+          - id: repository-overview
+            data:
+              source: repositories
+            mark: metric
+            encoding:
+              value:
+                field: repository
+                aggregate: distinct-count
           - id: workflow-overview
             data:
               source: workflows

@@ -54,7 +54,7 @@ describe('presenter built-in and custom pages', () => {
     expect(topology?.textContent).toContain('safe outputs only');
   });
 
-  it('DLS-PAGE-002 DLS-PAGE-014 renders built-in overview page with rollout-mode filtering, workflow active-state inventory, run status and conclusion counts and trends, repository and workflow rankings, largest AIC spenders, recent linked findings, operational-value timeline, and provenance/freshness data state deterministically', () => {
+  it('DLS-PAGE-002 DLS-PAGE-014 renders built-in overview page with repository count, rollout-mode filtering, workflow active-state inventory, run status and conclusion counts and trends, repository and workflow rankings, largest AIC spenders, recent linked findings, operational-value timeline, and provenance/freshness data state deterministically', () => {
     /** @type {import('../../src/presenter.js').PresentationInput['document']} */
     const document = {
       languageVersion: '0.1.0',
@@ -89,6 +89,22 @@ describe('presenter built-in and custom pages', () => {
     const rendered = renderDashboard({
       document,
       sources: {
+        repositories: {
+          source: 'repositories',
+          rows: [
+            { organization: 'github', repository: 'central-agentic-ops' },
+            { organization: 'github', repository: 'dashboard-service' }
+          ],
+          metadata: {
+            'source-id': 'repositories-fixture',
+            'source-kind': 'fixture',
+            'as-of': '2026-08-29T20:00:00Z',
+            'retrieved-at': '2026-08-29T20:01:00Z',
+            completeness: 'complete',
+            freshness: 'fresh',
+            availability: 'available'
+          }
+        },
         workflows: {
           source: 'workflows',
           rows: [
@@ -218,13 +234,14 @@ describe('presenter built-in and custom pages', () => {
 
     const overviewPage = rendered.querySelector('[data-page-name="overview"]');
     expect(overviewPage?.getAttribute('data-page-kind')).toBe('custom');
-    expect(overviewPage?.querySelectorAll('.custom-view')).toHaveLength(10);
+    expect(overviewPage?.querySelectorAll('.custom-view')).toHaveLength(11);
     expect(overviewPage?.querySelectorAll('.layout-section')).toHaveLength(4);
     expect(overviewPage?.querySelector('[data-section-id="control-plane-health"]')?.getAttribute('data-section-layout')).toBe('full');
     expect(overviewPage?.querySelector('[data-section-id="needs-attention"]')?.getAttribute('data-section-layout')).toBe('wide');
     expect(overviewPage?.querySelector('[data-section-id="managed-workflows"]')?.getAttribute('data-section-layout')).toBe('narrow');
     expect(overviewPage?.querySelectorAll('.layout-section > .custom-view-grid')).toHaveLength(4);
     expect(overviewPage?.textContent).toContain('Active workflows');
+    expect(overviewPage?.querySelector('[data-metric-value="repository"]')?.textContent).toBe('2');
     expect(overviewPage?.textContent).toContain('Operational value timeline');
     expect(overviewPage?.querySelector('.layout-section h3')?.textContent).toBe('Control plane health');
     expect(overviewPage?.querySelector('.layout-section .page-section h4')?.textContent).toBe('Active workflows');
