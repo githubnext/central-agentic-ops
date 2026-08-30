@@ -88,6 +88,21 @@ main.dashboard-prototype { width: min(1280px, 100%); flex: 1; margin: 0 auto; pa
 .dashboard-pages { display: flex; flex-direction: column; gap: 24px; }
 .dashboard-page { padding: 0; }
 .dashboard-page > h2 { margin: 0 0 14px; font-size: 1.25rem; font-weight: 600; }
+.custom-view-grid { display: grid; grid-template-columns: repeat(12, minmax(0, 1fr)); gap: 16px; }
+.custom-view { min-width: 0; grid-column: span 12; }
+.custom-view[data-view-layout="half"] { grid-column: span 6; }
+.custom-view[data-view-layout="third"] { grid-column: span 4; }
+.chart-widget { min-height: 180px; display: grid; place-items: center; margin: 12px 0; border: 1px solid var(--border); border-radius: 6px; background: var(--canvas-subtle); }
+.chart-widget svg { width: min(100%, 420px); max-height: 220px; overflow: visible; }
+.pie-chart-track { stroke: var(--border-muted); }
+.pie-chart-segment { transform: rotate(-90deg); transform-origin: center; stroke: var(--accent); }
+.chart-series-1 { stroke: var(--success); }
+.chart-series-2 { stroke: var(--attention); }
+.chart-series-3 { stroke: var(--danger); }
+.chart-series-4 { stroke: var(--accent); }
+.chart-series-5 { stroke: var(--muted); }
+.line-chart-axis { stroke: var(--border); stroke-width: 1; }
+.line-chart-series { stroke: var(--accent); stroke-width: 2; vector-effect: non-scaling-stroke; }
 h3 { margin: 16px 0 8px; font-size: 1rem; font-weight: 600; }
 .metrics { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; margin: 0 0 20px; overflow: visible; }
 .metrics div, .data-state-summary > div { min-width: 0; min-height: 90px; padding: 14px 16px; border: 1px solid var(--border); border-radius: 6px; background: var(--canvas-subtle); }
@@ -133,6 +148,7 @@ footer { padding: 20px 0; border-top: 1px solid var(--border); color: var(--mute
   .overview-header { min-height: 0; padding: 24px 0 20px; flex-direction: column; gap: 12px; }
   main.dashboard-prototype { padding: 0 14px 28px; }
   .data-state-summary, .metrics { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .custom-view[data-view-layout="half"], .custom-view[data-view-layout="third"] { grid-column: span 12; }
 }
 @media (max-width: 420px) {
   .data-state-summary, .metrics { grid-template-columns: 1fr; }
@@ -176,4 +192,3 @@ footer { padding: 20px 0; border-top: 1px solid var(--border); color: var(--mute
 }
 
 export const getPrimerStyles = primerStylesheet;
-

@@ -194,7 +194,7 @@ Language keys and enumerated values use canonical kebab-case. Human-readable tit
 | `defaults` | `scope`, `time`, `filters` |
 | Built-in page | `id`, `kind`, `page`, `title`, `description` |
 | Custom page | `id`, `kind`, `title`, `description`, `views` |
-| View | `id`, `title`, `description`, `data`, `mark`, `encoding` |
+| View | `id`, `title`, `description`, `data`, `mark`, `chart`, `layout`, `encoding` |
 | View `data` | `source`, `scope`, `time`, `filters`, `limit`, `order-by` |
 | Field definition | `field`, `type`, `aggregate`, `time-unit`, `title`, `as` (only when `aggregate` is not `none`) |
 
@@ -456,7 +456,9 @@ Allowed encoding channels are `value`, `columns`, `x`, `y`, `color`, and `href`.
 
 Field `type` values are `nominal`, `ordinal`, `quantitative`, and `temporal`. When omitted, type defaults to the intrinsic field type. A field title defaults to its kebab-case field name with words capitalized.
 
-A `chart` with temporal `x` has a line time-series default. Other charts have a bar default. These known defaults are semantic; this specification does not define visual styling.
+A chart may set `chart` to `line`, `bar`, or `pie`. When `chart` is omitted, temporal `x` has a line time-series default and any other valid chart has a bar default. A line chart uses temporal `x`; a pie chart uses nominal or ordinal `x` for categories and quantitative `y` for values. These known widget types and defaults are semantic; this specification does not define visual styling.
+
+A view may set the structural `layout` hint to `full`, `half`, or `third`. The values describe the preferred share of an available row, not fixed dimensions. Presenters **MAY** collapse every hint to `full` when space, accessibility, or output media requires it; source order remains the reading and focus order.
 
 ### 11.2 Data Narrowing
 
@@ -481,8 +483,8 @@ If `order-by.field` matches more than one possible output, or matches a source f
 - **DLS-VIEW-002:** Every view **MUST** contain a unique `id`, a `data` mapping with one canonical `source`, one allowed `mark`, and an `encoding` mapping.
 - **DLS-VIEW-003:** `metric` **MUST** encode exactly one `value` field and **MAY** encode `href`; it **MUST NOT** encode chart or table channels.
 - **DLS-VIEW-004:** `table` **MUST** encode non-empty `columns` and **MAY** encode `href`; it **MUST NOT** encode `value`, `x`, `y`, or `color`.
-- **DLS-VIEW-005:** `chart` **MUST** encode `x` and quantitative `y`, **MAY** encode `color` and `href`, and **MUST NOT** encode `value` or `columns`.
-- **DLS-VIEW-006:** A `chart` with temporal `x` **MUST** use the line time-series default; any other valid `chart` **MUST** use the bar default.
+- **DLS-VIEW-005:** `chart` **MUST** encode `x` and quantitative `y`, **MAY** encode `color` and `href`, and **MUST NOT** encode `value` or `columns`. Its optional `chart` widget **MUST** be `line`, `bar`, or `pie`; `line` **MUST** use temporal `x`, while `pie` **MUST** use nominal or ordinal `x`.
+- **DLS-VIEW-006:** A `chart` with temporal `x` **MUST** use the line time-series default when its widget is omitted; any other valid `chart` **MUST** use the bar default. An optional `layout` hint **MUST** be `full`, `half`, or `third`, **MUST NOT** change source order, and **MAY** be collapsed by a presenter.
 - **DLS-VIEW-007:** An encoding field **MUST** exist in the selected source and its declared type **MUST** be compatible with its intrinsic type or aggregate output type; when the field is aggregated, the effective output identifier **MUST** be the explicit `as` value or the canonical `<aggregate>-<field>` name, and duplicate identifiers within a view **MUST** be rejected. An `href` field **MUST** have intrinsic type link.
 - **DLS-VIEW-008:** A field definition **MUST** contain `field` and **MAY** contain only `type`, `aggregate`, `time-unit`, `title`, and `as` in addition; `as` is valid only when `aggregate` is not `none`.
 - **DLS-VIEW-009:** `time-unit` **MUST** be used only with a temporal field and **MUST** use an allowed value from Section 7.3.

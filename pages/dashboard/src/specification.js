@@ -12,9 +12,11 @@ export const DEFAULTS_KEYS = ['scope', 'time', 'filters'];
 export const BUILT_IN_PAGE_KEYS = ['id', 'kind', 'page', 'title', 'description', 'definition'];
 export const CUSTOM_PAGE_KEYS = ['id', 'kind', 'title', 'description', 'views'];
 
-export const VIEW_KEYS = ['id', 'title', 'description', 'data', 'mark', 'encoding'];
+export const VIEW_KEYS = ['id', 'title', 'description', 'data', 'mark', 'chart', 'layout', 'encoding'];
 export const VIEW_DATA_KEYS = ['source', 'scope', 'time', 'filters', 'limit', 'order-by', 'source-metadata'];
 export const VIEW_MARK_VALUES = ['metric', 'table', 'chart'];
+export const VIEW_CHART_VALUES = ['bar', 'line', 'pie'];
+export const VIEW_LAYOUT_VALUES = ['full', 'half', 'third'];
 export const VIEW_ENCODING_KEYS = ['value', 'columns', 'x', 'y', 'color', 'href'];
 export const FIELD_DEFINITION_KEYS = ['field', 'type', 'aggregate', 'time-unit', 'title', 'as'];
 export const FIELD_TYPE_VALUES = ['nominal', 'ordinal', 'quantitative', 'temporal'];

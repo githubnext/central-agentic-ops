@@ -873,4 +873,69 @@ describe('presenter built-in and custom pages', () => {
     thirdSection.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowUp', bubbles: true }));
     expect(rendered.ownerDocument.activeElement).toBe(secondSection);
   });
+
+  it('DLS-VIEW-005 DLS-VIEW-006 renders explicit line and pie widgets in the requested structural layout', () => {
+    const rendered = renderDashboard({
+      document: {
+        languageVersion: '0.1.0',
+        dashboard: {
+          id: 'chart-dashboard',
+          title: 'Chart Dashboard',
+          pages: [{
+            id: 'charts',
+            kind: /** @type {'custom'} */ ('custom'),
+            views: [
+              {
+                id: 'run-trend',
+                title: 'Run Trend',
+                data: { source: 'runs' },
+                mark: 'chart',
+                chart: 'line',
+                layout: 'half',
+                encoding: {
+                  x: { field: 'started-at', type: 'temporal' },
+                  y: { field: 'run', type: 'quantitative', aggregate: 'count' }
+                }
+              },
+              {
+                id: 'conclusions',
+                title: 'Conclusions',
+                data: { source: 'runs' },
+                mark: 'chart',
+                chart: 'pie',
+                layout: 'half',
+                encoding: {
+                  x: { field: 'run-conclusion', type: 'nominal' },
+                  y: { field: 'run', type: 'quantitative', aggregate: 'count' }
+                }
+              }
+            ]
+          }]
+        }
+      },
+      sources: {
+        runs: {
+          source: 'runs',
+          rows: [
+            { run: '1', 'started-at': '2026-08-28T00:00:00Z', 'run-conclusion': 'success' },
+            { run: '2', 'started-at': '2026-08-29T00:00:00Z', 'run-conclusion': 'failure' }
+          ],
+          metadata: {
+            'source-id': 'runs-fixture',
+            'source-kind': 'fixture',
+            'as-of': '2026-08-29T20:00:00Z',
+            'retrieved-at': '2026-08-29T20:01:00Z',
+            completeness: 'complete',
+            freshness: 'fresh',
+            availability: 'available'
+          }
+        }
+      }
+    });
+
+    expect(rendered.querySelectorAll('.custom-view-grid > [data-view-layout="half"]')).toHaveLength(2);
+    expect(rendered.querySelector('[data-chart-widget="line"] polyline')?.getAttribute('points')).not.toBe('');
+    expect(rendered.querySelectorAll('[data-chart-widget="pie"] [data-chart-category]')).toHaveLength(2);
+    expect(rendered.querySelector('[data-chart-widget="pie"]')?.getAttribute('aria-label')).toBeNull();
+  });
 });
