@@ -798,6 +798,7 @@ function renderChartWidget(chartType, points) {
               role: 'img',
               'aria-label': chartPointLabel(point)
             },
+            h('title', null, chartPointLabel(point)),
             h('circle', {
               className: `line-chart-point chart-series-${(seriesIndex % 5) + 1}`,
               cx: x,
@@ -813,8 +814,7 @@ function renderChartWidget(chartType, points) {
               },
               h('rect', { width: 42, height: 9, rx: 2 }),
               h('text', { x: 3, y: 6 }, chartPointLabel(point))
-            ),
-            h('title', null, chartPointLabel(point))))
+            )))
           ];
         })
       )

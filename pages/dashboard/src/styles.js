@@ -105,7 +105,7 @@ main.dashboard-prototype { width: min(1280px, 100%); flex: 1; margin: 0 auto; pa
 .line-chart-axis { stroke: var(--border); stroke-width: 1; }
 .line-chart-series { stroke: var(--accent); stroke-width: 2; vector-effect: non-scaling-stroke; }
 .line-chart-point { fill: var(--canvas); stroke-width: 2; vector-effect: non-scaling-stroke; }
-.chart-point { cursor: crosshair; outline: none; }
+.chart-point { cursor: crosshair; }
 .point-tooltip { opacity: 0; pointer-events: none; transition: opacity 80ms linear; }
 .point-tooltip rect { fill: var(--canvas-subtle); stroke: var(--border); vector-effect: non-scaling-stroke; }
 .point-tooltip text { fill: var(--fg); font-size: 3px; font-weight: 600; }
@@ -113,7 +113,7 @@ main.dashboard-prototype { width: min(1280px, 100%); flex: 1; margin: 0 auto; pa
 .chart-point:focus-visible .line-chart-point { stroke: var(--focus); stroke-width: 3; }
 .bar-chart-axis { stroke: var(--border); stroke-width: 1; }
 .bar-chart-bar { fill: var(--accent); stroke: var(--canvas); stroke-width: .5; }
-.chart-widget [tabindex]:focus-visible { outline: none; stroke: var(--focus); stroke-width: 3; }
+.chart-widget [tabindex]:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; stroke: var(--focus); stroke-width: 3; }
 .chart-widget .chart-series-1 { stroke: var(--success); }
 .chart-widget .chart-series-2 { stroke: var(--attention); }
 .chart-widget .chart-series-3 { stroke: var(--danger); }
