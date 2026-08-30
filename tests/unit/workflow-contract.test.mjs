@@ -321,7 +321,7 @@ test("enterprise defaults, budgets, timeouts, and concurrency are finite", () =>
     const source = workflow(name);
     assert.match(source, new RegExp(`max-ai-credits: ${limits.credits}`), name);
     assert.match(source, new RegExp(`timeout-minutes: ${limits.timeout}`), name);
-    assert.match(source, /concurrency:\n\s+group:.*\n\s+cancel-in-progress: true/, name);
+    assert.match(source, /concurrency:\n\s+group:.*\n(?:\s+job-discriminator:.*\n)?\s+cancel-in-progress: true/, name);
     assert.doesNotMatch(source, /^\s+(contents|actions|issues|pull-requests): write$/m, name);
     if (limits.dispatchMax) {
       assert.match(source, new RegExp(`dispatch_max: "${limits.dispatchMax}"`), name);
@@ -905,6 +905,7 @@ test("Advisory preserves UK AI guidance and human-review boundaries", () => {
   assert.match(worker, /visibility: repositoryData\.visibility/);
   assert.match(worker, /open_dependabot_alerts/);
   assert.match(worker, /secret-scanning-alerts: read/);
+  assert.match(worker, /job-discriminator: \$\{\{ github\.run_id \}\}/);
   assert.match(worker, /dependency_automation/);
   assert.match(worker, /security_policy/);
   assert.match(worker, /age_days: ageDays\(alert\.created_at\)/);
