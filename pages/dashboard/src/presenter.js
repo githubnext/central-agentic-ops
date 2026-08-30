@@ -334,11 +334,13 @@ function inferAvailability(rows) {
  * @returns {DataState}
  */
 function summarizeDataState(pageSources) {
-  const metadata = [...pageSources.values()].map((source) => source.metadata);
+  const sourceInputs = [...pageSources.values()];
+  const metadata = sourceInputs.map((source) => source.metadata);
+  const availabilities = sourceInputs.map((source) => source.metadata.availability ?? inferAvailability(source.rows));
   return {
-    availability: metadata.some((value) => (value.availability ?? 'available') === 'unavailable')
+    availability: availabilities.includes('unavailable')
       ? 'unavailable'
-      : metadata.length === 0 || metadata.every((value) => value.availability === 'empty')
+      : availabilities.length === 0 || availabilities.every((value) => value === 'empty')
         ? 'empty'
         : 'available',
     completeness: metadata.some((value) => value.completeness === 'partial')
