@@ -107,7 +107,7 @@ export const BUILT_IN_PAGE_SECTION_KEYS = ['id', 'title', 'description', 'layout
 export const BUILT_IN_PAGE_SECTION_LAYOUT_VALUES = ['full', 'wide', 'narrow'];
 
 export const BUILT_IN_PAGE_REQUIRED_SOURCES = {
-  overview: ['workflows', 'runs', 'usage', 'findings', 'operational-values'],
+  overview: ['repositories', 'workflows', 'runs', 'usage', 'findings', 'operational-values'],
   organizations: ['organizations', 'repositories', 'workflows', 'runs', 'usage'],
   repositories: ['repositories', 'runs', 'usage', 'operational-values'],
   workflows: ['workflows', 'runs', 'outcomes', 'usage', 'findings', 'operational-values'],
@@ -123,6 +123,7 @@ export const BUILT_IN_PAGE_REQUIRED_SOURCES = {
 
 export const BUILT_IN_PAGE_REQUIRED_FIELDS = {
   overview: {
+    repositories: ['repository'],
     workflows: ['workflow-active', 'rollout-mode'],
     runs: ['run-status', 'run-conclusion', 'repository', 'workflow'],
     usage: ['aic'],

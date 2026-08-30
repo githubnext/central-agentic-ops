@@ -78,7 +78,7 @@ The language is designed to be minimal, deterministic, auditable, and safe to va
 
 ### 1.4 Basis and Domain Additions
 
-The built-in page requirements are grounded in reviewed Central Agentic Ops surfaces: an overview with rollout-mode filtering, workflow inventory and active state, run status and conclusion trends and counts, repository and workflow rankings, largest AIC spenders, findings linked to issues, pull requests, or runs, operational-value timelines, explicit provenance and freshness, and empty or unavailable states.
+The built-in page requirements are grounded in reviewed Central Agentic Ops surfaces: an overview with rollout-mode filtering, repository count, workflow inventory and active state, run status and conclusion trends and counts, repository and workflow rankings, largest AIC spenders, findings linked to issues, pull requests, or runs, operational-value timelines, explicit provenance and freshness, and empty or unavailable states.
 
 Engine, requested-model, and resolved-model dimensions are GitHub Agentic Workflows domain requirements. They are not represented here as observed Central Agentic Ops surface behavior.
 
@@ -425,7 +425,7 @@ Allowed built-in page names are:
 ### 10.2 Required Content
 
 - **DLS-PAGE-001:** A built-in page **MUST** contain `id`, `kind: built-in`, and one allowed `page`; an omitted title **MUST** default to the page name with words capitalized.
-- **DLS-PAGE-002:** The `overview` page **MUST** expose rollout-mode filtering, workflow active-state inventory, run status and conclusion counts and trends, repository and workflow rankings, largest AIC spenders, recent linked findings, an operational-value timeline, and provenance and freshness.
+- **DLS-PAGE-002:** The `overview` page **MUST** expose rollout-mode filtering, a repository count, workflow active-state inventory, run status and conclusion counts and trends, repository and workflow rankings, largest AIC spenders, recent linked findings, an operational-value timeline, and provenance and freshness.
 - **DLS-PAGE-003:** The `organizations` page **MUST** expose organization inventory, repository count, workflow count, run count, available usage measures, and data state by organization.
 - **DLS-PAGE-004:** The `repositories` page **MUST** expose repository inventory and rankings by run count, AIC, and available operational value without combining different operational-value definitions.
 - **DLS-PAGE-005:** The `workflows` page **MUST** expose workflow inventory, active state, rollout mode, run count, run conclusions, downstream outcome counts, available usage, findings, and operational value.

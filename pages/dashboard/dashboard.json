@@ -24,6 +24,7 @@
               "description": "Current workflow inventory, execution volume, failures, and AI Credit consumption.",
               "layout": "full",
               "views": [
+                "overview-repositories",
                 "overview-active-workflows",
                 "overview-runs",
                 "overview-failed-runs",
@@ -55,6 +56,17 @@
             }
           ],
           "views": [
+            {
+              "id": "overview-repositories",
+              "title": "Repositories",
+              "description": "Count of repositories currently represented in the control plane.",
+              "data": { "source": "repositories" },
+              "mark": "metric",
+              "layout": "third",
+              "encoding": {
+                "value": { "field": "repository", "type": "nominal", "aggregate": "distinct-count" }
+              }
+            },
             {
               "id": "overview-active-workflows",
               "title": "Active workflows",
