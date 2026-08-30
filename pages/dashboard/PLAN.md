@@ -46,7 +46,8 @@
 - [ ] **Compliance suite** — Section 14 test suite, the compliance checklist, Appendix A as a passing fixture, and Appendix C as failing fixtures.
   - [x] Slice: `DLS-TEST-001`, `DLS-TEST-002`, `DLS-TEST-003`, `T-DOC-001`, and `T-VAL-001` compliance smoke harness with machine-readable results, Appendix A passing coverage, and Appendix C failing fixtures.
   - [x] Slice: `T-SEM-001`, `T-SEM-002`, `T-SEM-003`, and `T-CTX-001` checklist-backed machine-readable coverage for the implemented semantic and context validator/presenter requirements.
-  - [x] Slice: `T-PAGE-001` conservative machine-readable coverage for implemented built-in page data-state exposure via the Appendix A presenter fixture.
+  - [x] Slice: `T-PAGE-001` conservative machine-readable coverage for implemented built-in page defaults and data-state exposure via the Appendix A presenter fixture.
+  - [x] Slice: `T-LINK-001` conservative machine-readable coverage for available finding issue, pull-request, and run associations rendered as anchored links in the Appendix A presenter fixture.
 - [ ] **Parity** — inventory the features of the existing dashboard in `dashboard/report/report.mjs`, record them in `PLAN.md` as a parity checklist, then express each one as YAML configuration plus data fixtures, closing the checklist incrementally.
   - [x] Motion audit: port the report's 120ms interactive color/background transitions and 80ms chart-point tooltip fade; retain the existing repository-link transition, and disable nonessential motion for reduced-motion users. The report contains no keyframe animations, and its catalog disclosure transition has no renderer equivalent yet.
   - [x] Preview fixtures: provide multi-point, multi-series operational-value observations plus linked run and evidence records so the browser dashboard renders meaningful chart geometry and actionable links.
@@ -74,6 +75,14 @@
 - 2026-08-28: `npm run test:e2e` is currently blocked in this environment because the Playwright Chromium executable is not provisioned (`browserType.launch: Executable doesn't exist`). The workflow should prefer the built-in Playwright MCP browser tools until the package-level browser dependency is available.
 
 ## Run log
+
+### 2026-08-30 (compliance link-and-page fixture slice)
+
+- Continued the Compliance suite milestone with a narrow Section 14 increment that upgrades existing Appendix A presenter assertions instead of inventing new runtime semantics.
+- Extended `src/compliance.js` so the machine-readable smoke suite now records passing `T-PAGE-001` coverage for rendered page-title/default exposure and records stricter `T-LINK-001` checks for available finding issue, pull-request, and run associations as concrete anchors with the expected labels and `href` values.
+- Updated `test/unit/compliance.test.js` so the compliance unit suite now asserts `T-PAGE-001` / `DLS-PAGE-001` alongside the previously implemented semantic, context, and built-in data-state slices, while leaving the stricter `T-LINK-001` assertions deferred until the Appendix A presenter fixture visibly renders every checked link surface.
+- Verified `pages/dashboard/` gates in this run after `npm install`: `npm run build`, `npm run typecheck`, and `npm run lint` pass; `npm test` currently fails because pre-existing/deferred compliance expectations still include `DLS-SEM-003` and the newly tightened `T-LINK-001` fixture checks do not yet pass against the current presenter output.
+- Next milestone: Compliance suite, continuing with either a conservative fix for the existing `DLS-SEM-003` Appendix C gap or a presenter/fixture-aligned `T-LINK-001` slice before rerunning browser coverage.
 
 ### 2026-08-30 (view-section-chrome refactor)
 

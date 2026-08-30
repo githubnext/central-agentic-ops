@@ -514,13 +514,23 @@ function runPageComplianceChecks(document, sources) {
   const exposesCompleteness = text.includes('Completeness');
   const exposesFreshness = text.includes('Freshness');
   const hasIndependentDataStates = exposesAvailability && exposesCompleteness && exposesFreshness;
+  const pageTitles = ['Overview', 'Workflows', 'Usage by Repository'];
+  const hasRequiredPageTitles = pageTitles.every((title) => text.includes(title));
 
-  return [createResult(
+  return [
+    createResult(
+      'T-PAGE-001',
+      'DLS-PAGE-001',
+      hasRequiredPageTitles,
+      hasRequiredPageTitles ? null : 'Rendered Appendix A fixture did not expose the expected built-in and custom page titles.'
+    ),
+    createResult(
     'T-PAGE-001',
     'DLS-PAGE-014',
     hasIndependentDataStates,
     hasIndependentDataStates ? null : 'Rendered built-in fixture did not expose independent availability, completeness, and freshness text.'
-  )];
+    )
+  ];
 }
 
 /**
@@ -530,17 +540,45 @@ function runPageComplianceChecks(document, sources) {
  */
 function runLinkComplianceChecks(document, sources) {
   const rendered = renderDashboard({ document, sources });
-  const text = rendered.textContent || '';
-  const hasRunReference = text.includes('Run 1001');
-  const hasPullRequestReference = text.includes('PR #12');
-  const passes = hasRunReference && hasPullRequestReference;
+  const pageSections = [...rendered.querySelectorAll('.dashboard-page')]
+    .filter((page) => page instanceof HTMLElement && !page.hidden);
+  const activePage = pageSections[0] ?? rendered;
+  const linkElements = [...activePage.querySelectorAll('a[href]')];
+  const anchorsByLabel = new Map(
+    linkElements.map((element) => [element.textContent?.trim() || '', element])
+  );
+  const expectedLinks = [
+    { label: 'Issue #7', href: 'https://github.com/octo-org/platform/issues/7' },
+    { label: 'PR #12', href: 'https://github.com/octo-org/platform/pull/12' },
+    { label: 'Run 1001', href: 'https://github.com/octo-org/platform/actions/runs/1001' }
+  ];
+  /**
+   * @param {string | null | undefined} text
+   * @returns {string}
+   */
+  const normalizeAnchorText = (text) => String(text || '').replace(/\s+/g, ' ').trim();
+  const missingLinks = expectedLinks.filter(({ label, href }) => {
+    const anchor = anchorsByLabel.get(label)
+      ?? linkElements.find((element) => normalizeAnchorText(element.textContent) === label)
+      ?? null;
+    return !(anchor instanceof HTMLAnchorElement) || anchor.getAttribute('href') !== href;
+  });
+  const passes = missingLinks.length === 0;
 
-  return [createResult(
-    'T-LINK-001',
-    'DLS-LINK-006',
-    passes,
-    passes ? null : 'Rendered fixture did not expose every available GitHub-addressable entity references when links were available.'
-  )];
+  return [
+    createResult(
+      'T-LINK-001',
+      'DLS-LINK-003',
+      passes,
+      passes ? null : `Rendered fixture did not expose required available associations: ${missingLinks.map(({ label }) => label).join(', ')}`
+    ),
+    createResult(
+      'T-LINK-001',
+      'DLS-LINK-006',
+      passes,
+      passes ? null : `Rendered fixture did not render every available GitHub-addressable entity as a link: ${missingLinks.map(({ label }) => label).join(', ')}`
+    )
+  ];
 }
 
 /**
