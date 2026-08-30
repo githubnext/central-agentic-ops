@@ -393,7 +393,7 @@ test('DLS-SAFE-004 DLS-SAFE-007 DLS-SAFE-008 DLS-SAFE-010 built-in findings page
   `);
 
   await expect(page.getByRole('link', { name: 'Skip to main content' })).toBeVisible();
-  await expect(page.getByRole('navigation', { name: 'Primary navigation' })).toBeVisible();
+  await expect(page.getByRole('navigation', { name: 'Primary' })).toBeVisible();
   await expect(page.getByRole('heading', { name: 'Security Dashboard' })).toBeVisible();
   await expect(page.getByRole('heading', { name: 'Findings', exact: true, level: 2 })).toBeVisible();
   await expect(page.locator('[data-state-axis="availability"]')).toHaveText('available');
