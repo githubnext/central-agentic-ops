@@ -4,6 +4,7 @@
     "id": "central-agentic-ops-dashboard",
     "title": "Central Agentic Ops Dashboard",
     "description": "Authoritative declarative dashboard document for all specification-defined built-in pages in the presenter prototype.",
+    "repository": "githubnext/central-agentic-ops",
     "pages": [
       {
         "id": "overview",

@@ -366,6 +366,14 @@ function validateDashboard(dashboard, dashboardNode, errors) {
     ));
   }
 
+  if (dashboard.repository !== undefined && !isSafeRepositorySlug(dashboard.repository)) {
+    errors.push(createError(
+      ERROR_CODES.missingOrInvalidRequiredField,
+      'repository must be a non-empty owner/repo slug identifying the GitHub repository hosting the dashboard.',
+      '$.dashboard.repository'
+    ));
+  }
+
   if (dashboard.defaults !== undefined) {
     if (!isPlainObject(dashboard.defaults)) {
       errors.push(createError(
@@ -2170,6 +2178,31 @@ function isSafeGithubUrlBase(value) {
 
   const url = new URL(/** @type {string} */ (value));
   return url.search === '' && url.hash === '';
+}
+
+const REPOSITORY_OWNER_PATTERN = /^[A-Za-z0-9](?:[A-Za-z0-9-]*[A-Za-z0-9])?$/;
+const REPOSITORY_NAME_PATTERN = /^[A-Za-z0-9._-]+$/;
+
+/**
+ * @param {unknown} value
+ * @returns {value is string}
+ */
+function isSafeRepositorySlug(value) {
+  if (typeof value !== 'string' || looksSensitive(value)) {
+    return false;
+  }
+
+  const segments = value.split('/');
+  if (segments.length !== 2) {
+    return false;
+  }
+
+  const [owner, name] = segments;
+  return (
+    REPOSITORY_OWNER_PATTERN.test(owner) &&
+    REPOSITORY_NAME_PATTERN.test(name) &&
+    !name.includes('..')
+  );
 }
 
 /**
