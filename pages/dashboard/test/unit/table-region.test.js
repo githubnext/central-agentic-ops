@@ -15,30 +15,30 @@ describe('renderTableRegion', () => {
       ]
     });
 
-    it('adds reusable data summaries to the table header', () => {
-      const rendered = renderTableRegion({
-        tableClassName: 'custom-table',
-        emptyMessage: 'No rows available.',
-        colSpan: 2,
-        headCells: ['Status', 'Score'],
-        summaryColumns: [
-          { label: 'Status', type: 'nominal', values: ['open', 'open', 'closed'] },
-          { label: 'Score', type: 'quantitative', values: [1, 2, 3] }
-        ],
-        bodyRows: [
-          h('tr', null, h('td', null, 'open'), h('td', null, '1'))
-        ]
-      });
-
-      expect(rendered.querySelectorAll('thead tr')).toHaveLength(2);
-      expect(rendered.querySelector('.table-summary-categories')?.textContent).toContain('open66.7%');
-      expect(rendered.querySelector('.table-summary-histogram')).not.toBeNull();
-    });
-
     expect(rendered.querySelectorAll('thead th')).toHaveLength(2);
     expect(rendered.querySelector('thead')?.textContent).toContain('Run');
     expect(rendered.querySelector('tbody')?.textContent).toContain('1001');
     expect(rendered.className).toBe('table-region');
+  });
+
+  it('adds reusable data summaries to the table header', () => {
+    const rendered = renderTableRegion({
+      tableClassName: 'custom-table',
+      emptyMessage: 'No rows available.',
+      colSpan: 2,
+      headCells: ['Status', 'Score'],
+      summaryColumns: [
+        { label: 'Status', type: 'nominal', values: ['open', 'open', 'closed'] },
+        { label: 'Score', type: 'quantitative', values: [1, 2, 3] }
+      ],
+      bodyRows: [
+        h('tr', null, h('td', null, 'open'), h('td', null, '1'))
+      ]
+    });
+
+    expect(rendered.querySelectorAll('thead tr')).toHaveLength(2);
+    expect(rendered.querySelector('.table-summary-categories')?.textContent).toContain('open66.7%');
+    expect(rendered.querySelector('.table-summary-histogram')).not.toBeNull();
   });
 
   it('renders the empty row when no body rows are provided', () => {
