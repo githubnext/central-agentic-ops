@@ -923,7 +923,102 @@ describe('presenter built-in and custom pages', () => {
 
     expect(rendered.querySelectorAll('.custom-view-grid > [data-view-layout="half"]')).toHaveLength(2);
     expect(rendered.querySelector('[data-chart-widget="line"] polyline')?.getAttribute('points')).not.toBe('');
+    expect(rendered.querySelectorAll('[data-chart-widget="line"] [role="img"][tabindex="0"]')).toHaveLength(2);
     expect(rendered.querySelectorAll('[data-chart-widget="pie"] [data-chart-category]')).toHaveLength(2);
     expect(rendered.querySelector('[data-chart-widget="pie"] svg')?.getAttribute('aria-label')).toContain('Pie chart:');
+  });
+
+  it('shows one hash-addressable page at a time and updates active navigation without scrolling', () => {
+    const rendered = renderDashboard({
+      document: {
+        languageVersion: '0.1.0',
+        dashboard: {
+          id: 'page-navigation',
+          title: 'Page Navigation',
+          pages: [
+            { id: 'first', kind: /** @type {'custom'} */ ('custom'), title: 'First', views: [] },
+            { id: 'second', kind: /** @type {'custom'} */ ('custom'), title: 'Second', views: [] }
+          ]
+        }
+      },
+      sources: {}
+    });
+    rendered.ownerDocument.body.append(rendered);
+
+    const first = /** @type {HTMLElement} */ (rendered.querySelector('#page-first'));
+    const second = /** @type {HTMLElement} */ (rendered.querySelector('#page-second'));
+    const secondLink = /** @type {HTMLAnchorElement} */ (rendered.querySelector('[data-nav-page-id="second"]'));
+    expect(first.hidden).toBe(false);
+    expect(second.hidden).toBe(true);
+
+    secondLink.click();
+
+    expect(first.hidden).toBe(true);
+    expect(second.hidden).toBe(false);
+    expect(secondLink.getAttribute('aria-current')).toBe('page');
+    expect(rendered.ownerDocument.defaultView?.location.hash).toBe('#page-second');
+    expect(rendered.ownerDocument.activeElement).toBe(second.querySelector('h2'));
+    rendered.ownerDocument.defaultView?.history.replaceState(null, '', '/');
+  });
+
+  it('renders accessible bars and rejects unsafe runtime links', () => {
+    const rendered = renderDashboard({
+      document: {
+        languageVersion: '0.1.0',
+        dashboard: {
+          id: 'bar-dashboard',
+          title: 'Bar Dashboard',
+          pages: [{
+            id: 'bars',
+            kind: /** @type {'custom'} */ ('custom'),
+            views: [
+              {
+                id: 'bar-chart',
+                data: { source: 'runs' },
+                mark: 'chart',
+                chart: 'bar',
+                encoding: {
+                  x: { field: 'run-conclusion', type: 'nominal' },
+                  y: { field: 'run', type: 'quantitative', aggregate: 'count' },
+                  color: { field: 'run-conclusion', type: 'nominal' }
+                }
+              },
+              {
+                id: 'unsafe-link',
+                data: { source: 'runs' },
+                mark: 'table',
+                encoding: {
+                  columns: [{ field: 'run' }],
+                  href: { field: 'run-link' }
+                }
+              }
+            ]
+          }]
+        }
+      },
+      sources: {
+        runs: {
+          source: 'runs',
+          rows: [
+            { run: '1', 'run-conclusion': 'success', 'run-link': { href: 'javascript:alert(1)', label: 'Unsafe' } },
+            { run: '2', 'run-conclusion': 'failure', 'run-link': { href: 'https://example.com/runs/2', label: 'Run 2' } }
+          ],
+          metadata: {
+            'source-id': 'runs-fixture',
+            'source-kind': 'fixture',
+            'as-of': '2026-08-29T20:00:00Z',
+            'retrieved-at': '2026-08-29T20:01:00Z',
+            completeness: 'complete',
+            freshness: 'fresh',
+            availability: 'available'
+          }
+        }
+      }
+    });
+
+    expect(rendered.querySelectorAll('[data-chart-widget="bar"] rect[role="img"]')).toHaveLength(2);
+    expect(rendered.querySelector('[data-chart-widget="bar"] rect')?.getAttribute('aria-label')).toContain('success');
+    expect(rendered.querySelectorAll('.custom-table a')).toHaveLength(1);
+    expect(rendered.querySelector('.custom-table a')?.textContent).toContain('Run 2');
   });
 });

@@ -286,62 +286,6 @@ function renderCustomPage(page, title, sources) {
       pageSources.set(sourceName, sources[sourceName]);
     }
 
-    /**
-     * Shows a single dashboard page and keeps sidebar state synchronized with the URL hash.
-     * @param {HTMLElement} root
-     */
-    export function enableDashboardPageNavigation(root) {
-      const pages = [...root.querySelectorAll('.dashboard-page')]
-        .filter((page) => page instanceof HTMLElement);
-      const links = [...root.querySelectorAll('[data-nav-page-id]')]
-        .filter((link) => link instanceof HTMLAnchorElement);
-      if (pages.length === 0 || links.length === 0) {
-        return;
-      }
-
-      const availableIds = new Set(pages.map((page) => page.dataset.pageId));
-      const pageIdFromHash = () => {
-        const hash = root.ownerDocument.defaultView?.location.hash ?? '';
-        if (!hash.startsWith('#page-')) return null;
-        const pageId = decodeURIComponent(hash.slice('#page-'.length));
-        return availableIds.has(pageId) ? pageId : null;
-      };
-      const activate = (pageId) => {
-        for (const page of pages) {
-          const isActive = page.dataset.pageId === pageId;
-          page.hidden = !isActive;
-          page.setAttribute('aria-hidden', String(!isActive));
-        }
-        for (const link of links) {
-          const isActive = link.dataset.navPageId === pageId;
-          link.classList.toggle('active', isActive);
-          if (isActive) {
-            link.setAttribute('aria-current', 'page');
-          } else {
-            link.removeAttribute('aria-current');
-          }
-        }
-      };
-
-      activate(pageIdFromHash() ?? pages[0].dataset.pageId ?? '');
-      root.addEventListener('click', (event) => {
-        if (!(event.target instanceof Element)) return;
-        const link = event.target.closest('[data-nav-page-id]');
-        if (!(link instanceof HTMLAnchorElement)) return;
-        event.preventDefault();
-        const pageId = link.dataset.navPageId;
-        if (!pageId || !availableIds.has(pageId)) return;
-        root.ownerDocument.defaultView?.history.pushState(null, '', link.href);
-        activate(pageId);
-        root.querySelector(`#page-${CSS.escape(pageId)}`)?.querySelector('h2')?.focus();
-      });
-
-      const defaultView = root.ownerDocument.defaultView;
-      defaultView?.addEventListener('hashchange', () => {
-        const pageId = pageIdFromHash();
-        if (pageId) activate(pageId);
-      });
-    }
   }
   const renderedViews = views.map((view, index) => {
     const rendered = renderCustomView(page.id, view, index, sources);
@@ -360,13 +304,80 @@ function renderCustomPage(page, title, sources) {
       'data-page-name': page.id,
       'data-page-id': page.id
     },
-    h('h2', null, title),
+    h('h2', { tabIndex: -1 }, title),
     page.description ? h('p', { className: 'page-description' }, page.description) : null,
     renderDataStateMetrics(summarizeDataState(pageSources)),
     ...(renderedViews.length > 0
       ? [h('div', { className: 'custom-view-grid' }, ...renderedViews)]
       : [h('p', null, 'No custom views available.')])
   );
+}
+
+/**
+ * Shows a single dashboard page and keeps sidebar state synchronized with the URL hash.
+ * @param {HTMLElement} root
+ */
+export function enableDashboardPageNavigation(root) {
+  const pages = [...root.querySelectorAll('.dashboard-page')]
+    .filter((page) => page instanceof HTMLElement);
+  const links = [...root.querySelectorAll('[data-nav-page-id]')]
+    .filter((link) => link instanceof HTMLAnchorElement);
+  if (pages.length === 0 || links.length === 0) {
+    return;
+  }
+
+  const availableIds = new Set(pages.map((page) => page.dataset.pageId));
+  const pageIdFromHash = () => {
+    const hash = root.ownerDocument.defaultView?.location.hash ?? '';
+    if (!hash.startsWith('#page-')) return null;
+    try {
+      const pageId = decodeURIComponent(hash.slice('#page-'.length));
+      return availableIds.has(pageId) ? pageId : null;
+    } catch {
+      return null;
+    }
+  };
+  /** @param {string} pageId */
+  const activate = (pageId) => {
+    for (const page of pages) {
+      const isActive = page.dataset.pageId === pageId;
+      page.hidden = !isActive;
+      page.setAttribute('aria-hidden', String(!isActive));
+    }
+    for (const link of links) {
+      const isActive = link.dataset.navPageId === pageId;
+      link.classList.toggle('active', isActive);
+      if (isActive) {
+        link.setAttribute('aria-current', 'page');
+      } else {
+        link.removeAttribute('aria-current');
+      }
+    }
+  };
+
+  activate(pageIdFromHash() ?? pages[0].dataset.pageId ?? '');
+  root.addEventListener('click', (event) => {
+    if (!(event.target instanceof Element)) return;
+    const link = event.target.closest('[data-nav-page-id]');
+    if (!(link instanceof HTMLAnchorElement)) return;
+    event.preventDefault();
+    const pageId = link.dataset.navPageId;
+    if (!pageId || !availableIds.has(pageId)) return;
+    root.ownerDocument.defaultView?.history.pushState(null, '', link.href);
+    activate(pageId);
+    pages.find((page) => page.dataset.pageId === pageId)?.querySelector('h2')?.focus();
+  });
+
+  const defaultView = root.ownerDocument.defaultView;
+  const onHashChange = () => {
+    if (!root.isConnected) {
+      defaultView?.removeEventListener('hashchange', onHashChange);
+      return;
+    }
+    const pageId = pageIdFromHash();
+    if (pageId) activate(pageId);
+  };
+  defaultView?.addEventListener('hashchange', onHashChange);
 }
 
 /**
@@ -619,12 +630,7 @@ function renderChartView(pageId, title, view, sourceName, rows, metadata, contex
   const chartDefault = x?.type === 'temporal' ? 'line' : 'bar';
   const chartType = typeof view.chart === 'string' ? view.chart : chartDefault;
 
-  const points = rows.map((row, rowIndex) => ({
-    key: `${pageId}-${title}-${rowIndex}`,
-    x: x ? toText(row[x.field]) : 'unknown',
-    y: y ? (typeof y.aggregate === 'string' && y.aggregate === 'count' ? 1 : toNumber(row[y.field])) : 0,
-    color: color ? toText(row[color.field]) : null
-  }));
+  const points = buildChartPoints(pageId, title, rows, x, y, color);
   const colorCategories = color
     ? [...new Set(points.map((point) => point.color ?? 'unknown'))].sort((left, right) => left.localeCompare(right))
     : [];
@@ -661,6 +667,58 @@ function renderChartView(pageId, title, view, sourceName, rows, metadata, contex
     }),
     renderContextList(contextDetails)
   ]);
+}
+
+/**
+ * @param {string} pageId
+ * @param {string} title
+ * @param {Array<Record<string, unknown>>} rows
+ * @param {Record<string, any> | null} x
+ * @param {Record<string, any> | null} y
+ * @param {Record<string, any> | null} color
+ * @returns {Array<{ key: string, x: string, y: number, color: string | null }>}
+ */
+function buildChartPoints(pageId, title, rows, x, y, color) {
+  const aggregate = typeof y?.aggregate === 'string' ? y.aggregate : null;
+  if (!aggregate) {
+    return rows.map((row, rowIndex) => ({
+      key: `${pageId}-${title}-${rowIndex}`,
+      x: x ? toText(row[x.field]) : 'unknown',
+      y: y ? toNumber(row[y.field]) : 0,
+      color: color ? toText(row[color.field]) : null
+    }));
+  }
+
+  /** @type {Map<string, { x: string, color: string | null, values: unknown[] }>} */
+  const groups = new Map();
+  for (const row of rows) {
+    const xValue = x ? toText(row[x.field]) : 'unknown';
+    const colorValue = color ? toText(row[color.field]) : null;
+    const key = JSON.stringify([xValue, colorValue]);
+    const group = groups.get(key) ?? { x: xValue, color: colorValue, values: [] };
+    group.values.push(y ? row[y.field] : null);
+    groups.set(key, group);
+  }
+  return [...groups.values()].map((group, index) => {
+    const numericValues = group.values.map(toNumber);
+    let value = 0;
+    if (aggregate === 'count') {
+      value = group.values.filter((candidate) => candidate != null && candidate !== '').length;
+    } else if (aggregate === 'distinct-count') {
+      value = new Set(group.values.map(toText)).size;
+    } else if (aggregate === 'sum') {
+      value = numericValues.reduce((total, candidate) => total + candidate, 0);
+    } else if (aggregate === 'mean') {
+      value = numericValues.length > 0
+        ? numericValues.reduce((total, candidate) => total + candidate, 0) / numericValues.length
+        : 0;
+    } else if (aggregate === 'min') {
+      value = numericValues.length > 0 ? Math.min(...numericValues) : 0;
+    } else if (aggregate === 'max') {
+      value = numericValues.length > 0 ? Math.max(...numericValues) : 0;
+    }
+    return { key: `${pageId}-${title}-${index}`, x: group.x, y: value, color: group.color };
+  });
 }
 
 /**
@@ -710,6 +768,7 @@ function renderChartWidget(chartType, points) {
 
   if (chartType === 'line') {
     const series = groupChartSeries(points);
+    const xValues = [...new Set(points.map((point) => point.x))];
     const values = points.map((point) => toNumber(point.y));
     const finiteValues = values.filter(Number.isFinite);
     const maximum = Math.max(...finiteValues, 1);
@@ -721,8 +780,9 @@ function renderChartWidget(chartType, points) {
         { viewBox: '0 0 100 42', role: 'img', 'aria-label': `Line chart with ${points.length} points` },
         h('line', { className: 'line-chart-axis', x1: 0, y1: 38, x2: 100, y2: 38 }),
         ...series.flatMap(([seriesName, seriesPoints], seriesIndex) => {
-          const coordinates = seriesPoints.map((point, index) => {
-            const x = seriesPoints.length < 2 ? 50 : (index / (seriesPoints.length - 1)) * 100;
+          const coordinates = seriesPoints.map((point) => {
+            const xIndex = xValues.indexOf(point.x);
+            const x = xValues.length < 2 ? 50 : (xIndex / (xValues.length - 1)) * 100;
             const y = 38 - (Math.max(0, point.y) / maximum) * 34;
             return { point, x, y };
           });
