@@ -13,6 +13,7 @@ import { formatAggregateValue, formatNumber, toNumber } from './view-formatters.
 import { renderActiveStateBadge, renderModeBadge, renderStatusBadge } from './components/badge.js';
 import { renderOperationalOverview } from './components/operational-overview.js';
 import { findFirstLink, findLink, renderExternalLink, renderLinkedValueWithExternalLink } from './components/link-content.js';
+import { renderLinkedText, createEntityAwareCellRenderer } from './components/linked-text.js';
 import { renderPackagesView } from './components/packages-view.js';
 
 /**
@@ -1125,6 +1126,8 @@ function renderTableCellValue(field, value) {
   return toText(value);
 }
 
+const renderEntityAwareCellValue = createEntityAwareCellRenderer(ENTITY_LINK_FIELDS, findLink, renderTableCellValue, toText);
+
 /**
  * @param {string} pageId
  * @param {string} title
@@ -1675,37 +1678,6 @@ function trimmedString(value) {
  */
 function toText(value) {
   return value == null || value === '' ? 'unknown' : String(value);
-}
-
-/**
- * Renders text as a GitHub link when a link is available, otherwise as plain text.
- * @param {string} text
- * @param {{ href: string, label: string } | null} link
- * @returns {string | HTMLElement}
- */
-function renderLinkedText(text, link) {
-  return link
-    ? h('a', { href: link.href, target: '_blank', rel: 'noopener noreferrer', 'aria-label': link.label }, text)
-    : text;
-}
-
-/**
- * @param {string} field
- * @param {unknown} value
- * @param {Record<string, unknown>} row
- * @returns {string | HTMLElement}
- */
-function renderEntityAwareCellValue(field, value, row) {
-  const linkField = Object.prototype.hasOwnProperty.call(ENTITY_LINK_FIELDS, field)
-    ? ENTITY_LINK_FIELDS[/** @type {keyof typeof ENTITY_LINK_FIELDS} */ (field)]
-    : null;
-  if (linkField) {
-    const link = findLink(row, linkField);
-    if (link) {
-      return renderLinkedText(toText(value), link);
-    }
-  }
-  return renderTableCellValue(field, value);
 }
 
 
