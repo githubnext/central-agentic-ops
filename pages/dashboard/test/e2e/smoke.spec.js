@@ -658,6 +658,8 @@ test('DLS-VIEW-013 DLS-VIEW-014 DLS-VIEW-015 DLS-SAFE-006 custom views render av
   await expect(page.getByRole('heading', { name: 'Daily Runs' })).toBeVisible();
   await expect(page.locator('[data-chart-default="line"]')).toHaveText('Default chart type: line');
   await expect(page.locator('[data-chart-legend="text"]')).toHaveText('Color categories: failure, success');
+  await expect(page.locator('[data-chart-legend="visual"] li')).toHaveCount(2);
+  await expect(page.locator('[data-chart-legend="visual"] li span')).toHaveText(['failure', 'success']);
   await expect(page.locator('.custom-chart-table tbody tr')).toHaveCount(2);
 
   await expect(page.getByRole('heading', { name: 'Empty Usage' })).toBeVisible();

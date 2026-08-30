@@ -818,8 +818,11 @@ describe('presenter built-in and custom pages', () => {
     expect(tableSection?.textContent).not.toContain('Out of range finding');
 
     const chartSection = [...rendered.querySelectorAll('.page-section')].find((section) => section.textContent?.includes('Daily Runs'));
+    const chartLegendLabels = chartSection ? [...chartSection.querySelectorAll('[data-chart-legend="visual"] li span')] : [];
     expect(chartSection?.querySelector('[data-chart-default="line"]')?.textContent).toContain('Default chart type: line');
     expect(chartSection?.querySelector('[data-chart-legend="text"]')?.textContent).toBe('Color categories: failure, success');
+    expect(chartSection?.querySelectorAll('[data-chart-legend="visual"] li')).toHaveLength(2);
+    expect(chartLegendLabels.map((item) => item.textContent)).toEqual(['failure', 'success']);
     expect(chartSection?.querySelectorAll('.custom-chart-table tbody tr')).toHaveLength(2);
 
     const emptySection = [...rendered.querySelectorAll('.page-section')].find((section) => section.textContent?.includes('Empty Usage'));
@@ -1039,7 +1042,7 @@ describe('presenter built-in and custom pages', () => {
     rendered.ownerDocument.defaultView?.history.replaceState(null, '', '/');
   });
 
-  it('DLS-SAFE-004 DLS-SAFE-008 DLS-SAFE-009 renders accessible bars and rejects unsafe runtime links', () => {
+  it('DLS-SAFE-004 DLS-SAFE-008 DLS-SAFE-009 renders accessible bars, visual chart legends, and rejects unsafe runtime links', () => {
     const rendered = renderDashboard({
       document: {
         languageVersion: '0.1.0',
@@ -1096,6 +1099,8 @@ describe('presenter built-in and custom pages', () => {
 
     expect(rendered.querySelectorAll('[data-chart-widget="bar"] rect[role="img"]')).toHaveLength(2);
     expect(rendered.querySelector('[data-chart-widget="bar"] rect')?.getAttribute('aria-label')).toContain('success');
+    expect(rendered.querySelector('[data-chart-legend="visual"]')?.getAttribute('class')).toContain('chart-legend-bar');
+    expect([...rendered.querySelectorAll('[data-chart-legend="visual"] li span')].map((item) => item.textContent)).toEqual(['failure', 'success']);
     expect(rendered.querySelectorAll('.custom-table a')).toHaveLength(1);
     expect(rendered.querySelector('.custom-table a')?.textContent).toContain('Run 2');
   });
