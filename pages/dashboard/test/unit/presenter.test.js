@@ -222,9 +222,10 @@ describe('presenter built-in and custom pages', () => {
     expect(views[0]?.getAttribute('data-disclosure')).toBe('essential');
     const supplemental = /** @type {HTMLDetailsElement} */ (views[1]);
     expect(supplemental.tagName).toBe('DETAILS');
+    expect(supplemental.getAttribute('data-disclosure')).toBe('supplemental');
     expect(supplemental.open).toBe(false);
     expect(supplemental.querySelector('summary')?.textContent).toContain('Completed runs');
-    expect(supplemental.querySelector('.page-section')?.textContent).toContain('1');
+    expect(supplemental.querySelector(':scope > .page-section')?.textContent).toContain('1');
   });
 
   it('DLS-PAGE-002 DLS-PAGE-014 renders the report-style operational overview, managed repository summary, managed packages, execution trends, and provenance data state deterministically', () => {

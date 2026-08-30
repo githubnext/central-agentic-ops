@@ -102,6 +102,9 @@ dashboard:
         code: 'DLS-E005',
         path: '$.dashboard.pages[0].views[4].disclosure'
       }));
+      expect(nonCanonical.errors).not.toContainEqual(expect.objectContaining({
+        code: 'DLS-E013'
+      }));
     }
   });
 

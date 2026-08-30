@@ -777,8 +777,6 @@ function validateView(view, viewNode, path, viewIds, errors) {
         `${path}.layout`
       ));
     }
-
-
   }
 
   /** @type {string | null} */
@@ -821,7 +819,9 @@ function validateProgressiveDisclosure(views, path, errors) {
     return;
   }
 
-  const essentialCount = validViews.filter((view) => view.disclosure !== 'supplemental').length;
+  const essentialCount = validViews.filter((view) => (
+    view.disclosure === undefined || view.disclosure === 'essential'
+  )).length;
   if (essentialCount < 1 || essentialCount > MAX_ESSENTIAL_VIEWS_PER_PAGE) {
     errors.push(createError(
       ERROR_CODES.invalidProgressiveDisclosureConfiguration,
