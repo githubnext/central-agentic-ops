@@ -37,6 +37,10 @@ import { renderActiveStateBadge, renderModeBadge, renderStatusBadge } from './co
  */
 
 /**
+ * @typedef {{ field: string, aggregate?: string, as?: string, direction?: string } & Record<string, unknown>} TableField
+ */
+
+/**
  * @typedef {{ languageVersion: string, dashboard: { id: string, title: string, description?: string, defaults?: Record<string, unknown>, pages: Array<PresentableBuiltInPage | PresentableCustomPage> } }} PresentationDocument
  */
 
@@ -870,9 +874,9 @@ function renderMetricView(pageId, title, view, sourceName, rows, metadata, conte
  * @returns {HTMLElement}
  */
 function renderTableView(pageId, title, view, sourceName, rows, metadata, contextDetails, headingTag = 'h3') {
-  const columns = isPlainObject(view.encoding) && Array.isArray(view.encoding.columns)
+  const columns = /** @type {TableField[]} */ (isPlainObject(view.encoding) && Array.isArray(view.encoding.columns)
     ? view.encoding.columns.filter((column) => isPlainObject(column) && typeof column.field === 'string')
-    : [];
+    : []);
   const hrefDefinition = isPlainObject(view.encoding) && isPlainObject(view.encoding.href)
     ? view.encoding.href
     : null;
@@ -906,16 +910,16 @@ function renderTableView(pageId, title, view, sourceName, rows, metadata, contex
 
 /**
  * @param {Array<Record<string, unknown>>} rows
- * @param {Array<Record<string, unknown>>} columns
+ * @param {TableField[]} columns
  * @param {unknown} dataConfig
  * @returns {Array<Record<string, unknown>>}
  */
 function prepareTableRows(rows, columns, dataConfig) {
   const aggregateColumns = columns.filter((column) => typeof column.aggregate === 'string');
   let prepared = aggregateColumns.length > 0 ? aggregateTableRows(rows, columns) : [...rows];
-  const orderBy = isPlainObject(dataConfig) && Array.isArray(dataConfig['order-by'])
+  const orderBy = /** @type {TableField[]} */ (isPlainObject(dataConfig) && Array.isArray(dataConfig['order-by'])
     ? dataConfig['order-by'].filter((item) => isPlainObject(item) && typeof item.field === 'string')
-    : [];
+    : []);
   if (orderBy.length > 0) {
     prepared.sort((left, right) => compareOrderedRows(left, right, orderBy, columns));
   }
@@ -927,7 +931,7 @@ function prepareTableRows(rows, columns, dataConfig) {
 
 /**
  * @param {Array<Record<string, unknown>>} rows
- * @param {Array<Record<string, unknown>>} columns
+ * @param {TableField[]} columns
  * @returns {Array<Record<string, unknown>>}
  */
 function aggregateTableRows(rows, columns) {
@@ -972,8 +976,8 @@ function aggregateTableValue(rows, field, aggregate) {
 /**
  * @param {Record<string, unknown>} left
  * @param {Record<string, unknown>} right
- * @param {Array<Record<string, unknown>>} orderBy
- * @param {Array<Record<string, unknown>>} columns
+ * @param {TableField[]} orderBy
+ * @param {TableField[]} columns
  * @returns {number}
  */
 function compareOrderedRows(left, right, orderBy, columns) {
@@ -1018,8 +1022,7 @@ function renderTableCellValue(field, value) {
   ].includes(field)) {
     return renderStatusBadge(value);
   }
-  const link = findLink({ [field]: value }, /** @type {'external-link' | 'issue-link' | 'pull-request-link' | 'run-link' | 'evidence-link'} */ (field));
-  return link ? renderExternalLink(link) : toText(value);
+  return toText(value);
 }
 
 /**
