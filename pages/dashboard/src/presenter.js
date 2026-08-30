@@ -895,7 +895,8 @@ function renderTableView(pageId, title, view, sourceName, rows, metadata, contex
           'tr',
           { 'data-custom-row-key': `${pageId}-${title}-${rowIndex}` },
           ...columns.map((column, columnIndex) => {
-            const value = renderTableCellValue(column.field, row[column.field]);
+            const outputField = typeof column.as === 'string' ? column.as : column.field;
+            const value = renderTableCellValue(column.field, row[outputField]);
             if (columnIndex === 0 && hrefField) {
               const link = findLink(row, /** @type {'external-link' | 'issue-link' | 'pull-request-link' | 'run-link' | 'evidence-link'} */ (hrefField));
               return h('td', null, value, link ? ' ' : null, link ? renderExternalLink(link) : null);
@@ -949,7 +950,6 @@ function aggregateTableRows(rows, columns) {
     for (const column of columns.filter((candidate) => typeof candidate.aggregate === 'string')) {
       const outputField = typeof column.as === 'string' ? column.as : column.field;
       output[outputField] = aggregateTableValue(group, column.field, column.aggregate);
-      if (outputField !== column.field) output[column.field] = output[outputField];
     }
     return output;
   });
