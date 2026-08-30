@@ -524,7 +524,7 @@ describe('presenter built-in and custom pages', () => {
     });
 
     expect(rendered.querySelector('[data-page-name="findings"] h2')?.textContent).toBe('Findings');
-    expect(rendered.querySelector('.brand-title')?.textContent).toBe('Security Dashboard');
+    expect(rendered.querySelector('.sidebar-brand > span')?.textContent).toBe('github');
     expect(rendered.querySelector('.findings-page .custom-table thead')?.textContent).toContain('Issue Link');
 
     const summaryCell = rendered.querySelector('.findings-page .custom-table tbody td');
