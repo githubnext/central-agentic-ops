@@ -403,6 +403,7 @@ A finding is an observation with a stable finding ID, summary, status, severity,
 - **DLS-LINK-003:** A finding or outcome **MUST** expose relation-specific links to its associated issue, pull request, or run when those associations are available.
 - **DLS-LINK-004:** A finding, outcome, or operational-value observation without an available link association **MUST** remain valid and **MUST NOT** contain a fabricated link.
 - **DLS-LINK-005:** A relation-specific link field, when present, **MUST** contain exactly one Section 9.1 link object and **MUST NOT** contain a sequence, mapping of multiple relations, or scalar URL.
+- **DLS-LINK-006:** A presenter **MUST** render every GitHub-addressable entity exposed in the user experience as a link to that entity when its address is available. This requirement applies wherever the entity is rendered, including identifiers, names, and labels in metrics, tables, charts, rankings, filters, and detail views. A presenter **MUST NOT** fabricate a link when an entity address is unavailable.
 
 ---
 
@@ -563,7 +564,7 @@ In the table, “accept” means validation succeeds; “reject” means validat
 | DLS-CTX-001–008 | T-CTX-001 | 2 | Exercise ancestry, boundary times, Boolean filter rules, inheritance, rollout mode, unknown, and operation order. |
 | DLS-AGG-001–011 | T-AGG-001 | 2 | Exercise allowed aggregates, compatibility, nulls, UTC buckets, ranking disclosure, and deterministic ties for entity-grain and group-grain outputs, including total-order rejection. |
 | DLS-DATA-001–008 | T-DATA-001 | 2 | Exercise required metadata, derivation traceability, and each distinct data state. |
-| DLS-LINK-001–005 | T-LINK-001 | 2 | Validate link shape, safety, provenance, available associations, absent associations, and one-link-per-field cardinality. |
+| DLS-LINK-001–006 | T-LINK-001 | 2 | Validate link shape, safety, provenance, available associations, absent associations, one-link-per-field cardinality, and linked rendering of every GitHub-addressable entity. |
 | DLS-PAGE-001–014 | T-PAGE-001 | 3 | Evaluate each built-in fixture for required content, defaults, context, and data states. |
 | DLS-VIEW-001–006 | T-VIEW-001 | 3 | Validate custom structure and every allowed mark/channel combination. |
 | DLS-VIEW-007–014 | T-VIEW-002 | 3 | Validate fields, types, link-compatible `href`, time units, ordering, exclusions, operation order, exposed context, and link labels. |
@@ -728,6 +729,7 @@ dashboard:
 - Defined built-in pages and constrained custom views.
 - Added provenance, freshness, data states, links, safety requirements, and compliance tests.
 - Defined the canonical post-aggregation row order for entity-grain and group-grain output rows, revised **DLS-AGG-008** and added **DLS-AGG-011**, aligned omitted and explicit `order-by` semantics in Section 11.2, updated **DLS-VIEW-010** and **DLS-VIEW-012**, and added grouped chart and grouped table compliance fixtures in Section 14.4.
+- Required presenters to render every GitHub-addressable entity as a link when its address is available.
 
 ---
 
