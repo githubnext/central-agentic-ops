@@ -36,13 +36,14 @@
   - [x] Continue refactoring each built-in page body in `src/presenter.js` into its `.json` equivalent, removing the remaining page-specific rendering/build logic while retaining only the minimum generic JavaScript interpreter and reusable primitives.
   - [x] Add build, unit, and browser coverage proving `dashboard.json` renders every specification-defined built-in page and that no page depends on custom page-specific JavaScript.
   - [x] Specify the `repositories` inventory and its run-count, AIC, and per-definition operational-value rankings as separate declarative views with explicit descending ranking keys.
-- [ ] **Security, privacy, accessibility** — Section 13 including escaping, redaction, and keyboard and screen-reader behavior verified with Playwright.
+- [x] **Security, privacy, accessibility** — Section 13 including escaping, redaction, and keyboard and screen-reader behavior verified with Playwright.
   - [x] Slice: `DLS-SAFE-003`, `DLS-SAFE-004`, `DLS-SAFE-007`, `DLS-SAFE-008`, and `DLS-SAFE-010` presenter render for inert text escaping, https-only safe link exposure, non-empty accessible names, labeled table columns, textual data-state labels, and labeled external links.
   - [x] Slice: `DLS-SAFE-007` and `DLS-SAFE-008` keyboard presenter behavior for focusable labeled sections with deterministic arrow-key traversal verified in unit and browser tests.
   - [x] Slice: `DLS-SAFE-005` and `DLS-VAL-004` validator rejection for secret-bearing provenance metadata with non-echoing error messages.
   - [x] Slice: `DLS-SAFE-006`, `DLS-VIEW-013`, `DLS-VIEW-014`, and `DLS-VIEW-015` presenter render for custom metric, table, and chart views with visible available/empty/unavailable state output, effective-context text, and non-fabricated per-row links constrained to provided source data.
   - [x] Slice: `DLS-SAFE-006`, `DLS-CTX-003`, `DLS-CTX-004`, and `DLS-CTX-008` presenter enforcement for custom-view scope, absolute-time, and filter narrowing so only context-permitted observations and links are rendered.
   - [x] Slice: `DLS-SAFE-009` presenter render for non-color chart category semantics via explicit textual color-category legends alongside chart tabular equivalents.
+  - [x] Closure verification: rerun build, typecheck, lint, unit, and browser gates against the already-implemented Section 13 slices before marking the milestone complete.
 - [x] **Compliance suite** — Section 14 test suite, the compliance checklist, Appendix A as a passing fixture, and Appendix C as failing fixtures.
   - [x] Slice: `DLS-TEST-001`, `DLS-TEST-002`, `DLS-TEST-003`, `T-DOC-001`, and `T-VAL-001` compliance smoke harness with machine-readable results, Appendix A passing coverage, and Appendix C failing fixtures.
   - [x] Slice: `T-SEM-001`, `T-SEM-002`, `T-SEM-003`, and `T-CTX-001` checklist-backed machine-readable coverage for the implemented semantic and context validator/presenter requirements.
@@ -82,6 +83,12 @@
 - Tightened existing findings accessibility test names to record `DLS-SAFE-004` alongside the already-covered `DLS-SAFE-003`, `DLS-SAFE-007`, `DLS-SAFE-008`, and `DLS-SAFE-010` surfaces, matching the specification's safe-link handling requirement more directly.
 - Verified `pages/dashboard/` quality gates in this run: `npm install`, `npm run build`, `npm run typecheck`, `npm run lint`, `npm test`, and `npx playwright test --config=playwright.config.mjs` all pass.
 - Next milestone: Security, privacy, accessibility, continuing with the remaining Section 13 closure work and parity follow-up inventory once the milestone is complete.
+
+### 2026-08-30 (security milestone closure verification)
+- Re-ran the full `pages/dashboard/` quality gate stack on the current Section 13 implementation and confirmed the repository already contains the conservative escaping, safe-link, redaction, keyboard-navigation, context-narrowing, and non-color chart semantics slices without requiring additional code changes.
+- Verified quality gates from `pages/dashboard/`: `npm install`, `npm run build`, `npm run typecheck` (required one immediate rerun after install because local type definitions were not linked yet), `npm run lint`, `npm test`, and `npx playwright test --config=playwright.config.mjs` all pass.
+- Marked the Security, privacy, accessibility milestone complete now that its implemented Section 13 slices are green end-to-end in build, unit, and browser verification.
+- Next milestone: Parity, continuing the report feature and presentation inventory closure work under the existing declarative and reusable-runtime constraints.
 
 ## Run log
 
