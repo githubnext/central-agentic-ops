@@ -165,6 +165,15 @@ jobs:
           REPORT_OUTPUT: dist/cao
         run: node dashboard/report/report.mjs
 
+      - name: Build Dashboard Language report sources
+        env:
+          REPORT_AIC_USAGE: ${{ runner.temp }}/aic-usage.json
+          REPORT_DASHBOARD_SOURCES: dist/ymao/sources.json
+          REPORT_DEPLOYED_WORKFLOWS: ${{ runner.temp }}/deployed-workflows.json
+          REPORT_OPERATIONAL_VALUES: ${{ runner.temp }}/operational-values.json
+          REPORT_RECORDS: dist/cao/records.json
+        run: node dashboard/report/dashboard-language-sources.mjs
+
       - name: Upload Pages artifact
         uses: actions/upload-pages-artifact@7b1f4a764d45c48632c6b24a0339c27f5614fb0b # v4
         with:
