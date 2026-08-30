@@ -1,0 +1,272 @@
+import { mkdir, readFile, writeFile } from "node:fs/promises";
+import path from "node:path";
+import { pathToFileURL } from "node:url";
+
+const sourceNames = [
+  "organizations",
+  "repositories",
+  "workflows",
+  "runs",
+  "experiments",
+  "experiment-assignments",
+  "graders",
+  "grader-observations",
+  "evals",
+  "eval-observations",
+  "usage",
+  "outcomes",
+  "findings",
+  "operational-values",
+];
+
+function repositoryParts(repository = "") {
+  const [organization = "", name = ""] = repository.split("/");
+  return { organization, repository: name };
+}
+
+function rolloutMode(value) {
+  const match = String(value || "").match(/(?:^|\s[·|:\-]\s)(review|live)$/i);
+  return match?.[1]?.toLowerCase() || (["review", "live"].includes(value) ? value : "unknown");
+}
+
+function runConclusion(value) {
+  const normalized = String(value || "unknown").replaceAll("_", "-");
+  return [
+    "success", "failure", "cancelled", "timed-out", "action-required",
+    "neutral", "skipped", "stale", "startup-failure",
+  ].includes(normalized) ? normalized : "unknown";
+}
+
+function link(relation, href, label) {
+  return typeof href === "string" && href.startsWith("https://")
+    ? { relation, href, label }
+    : undefined;
+}
+
+function sourceMetadata(name, generatedAt, available, complete) {
+  return {
+    "source-id": `central-agentic-ops-${name}`,
+    "source-kind": "github",
+    "as-of": generatedAt,
+    "retrieved-at": generatedAt,
+    completeness: complete ? "complete" : "partial",
+    freshness: available ? "fresh" : "unknown",
+    availability: available ? "available" : "unavailable",
+  };
+}
+
+function source(name, rows, generatedAt, available = true, complete = true) {
+  return {
+    source: name,
+    rows,
+    metadata: sourceMetadata(name, generatedAt, available, complete),
+  };
+}
+
+function packageMemberships(deployed) {
+  const memberships = new Map();
+  for (const bundle of deployed.bundles || []) {
+    for (const workflow of bundle.workflows || []) {
+      memberships.set(`${bundle.repository}:${workflow.lockPath}`, {
+        id: bundle.path?.replace(/\/aw\.yml$|^aw\.yml$/g, "") || bundle.name,
+        name: bundle.name,
+      });
+    }
+  }
+  return memberships;
+}
+
+function workflowRows(deployed, generatedAt) {
+  const memberships = packageMemberships(deployed);
+  return (deployed.workflows || []).map((workflow) => {
+    const names = repositoryParts(workflow.repository);
+    const membership = memberships.get(`${workflow.repository}:${workflow.path}`);
+    const recentMode = rolloutMode(workflow.runHealth?.runRecords?.[0]?.displayTitle);
+    return {
+      ...names,
+      ...(membership ? { package: membership.id, "package-name": membership.name } : {}),
+      "workflow-role": workflow.role || (membership ? "worker" : "standalone"),
+      workflow: workflow.path?.replace(/\.lock\.yml$/, ".md") || "",
+      "workflow-name": workflow.name || workflow.path || "Unknown workflow",
+      "workflow-active": workflow.state === "active"
+        ? "true"
+        : String(workflow.state).startsWith("disabled") ? "false" : "unknown",
+      "rollout-mode": recentMode,
+      "observed-at": workflow.updatedAt || generatedAt,
+    };
+  });
+}
+
+function runRows(deployed) {
+  const rows = new Map();
+  for (const workflow of deployed.workflows || []) {
+    const names = repositoryParts(workflow.repository);
+    for (const run of workflow.runHealth?.runRecords || []) {
+      const key = `${workflow.repository}:${run.runId}`;
+      rows.set(key, {
+        ...names,
+        workflow: workflow.path?.replace(/\.lock\.yml$/, ".md") || "",
+        run: String(run.runId),
+        "started-at": run.startedAt || run.createdAt,
+        "ended-at": run.status === "completed" ? run.updatedAt : undefined,
+        "run-status": run.status === "in_progress" ? "in-progress" : run.status || "unknown",
+        "run-conclusion": runConclusion(run.conclusion),
+        "rollout-mode": rolloutMode(run.displayTitle),
+        engine: "unknown",
+        "requested-model": "unknown",
+        "resolved-model": "unknown",
+        "run-link": link("run", `https://github.com/${workflow.repository}/actions/runs/${run.runId}`, `View run ${run.runId}`),
+      });
+    }
+  }
+  return [...rows.values()];
+}
+
+function usageRows(usage) {
+  return (usage.runs || []).map((run, index) => ({
+    ...repositoryParts(run.repository),
+    workflow: run.workflowPath?.replace(/\.lock\.yml$/, ".md") || run.workflowName || "",
+    run: String(run.runId),
+    invocation: `${run.repository}:${run.runId}:${index}`,
+    engine: "unknown",
+    "requested-model": "unknown",
+    "resolved-model": "unknown",
+    "rollout-mode": run.mode || "unknown",
+    "input-tokens": null,
+    "output-tokens": null,
+    "cache-read-tokens": null,
+    "cache-write-tokens": null,
+    "reasoning-tokens": null,
+    aic: run.aic,
+    "observed-at": run.createdAt || usage.generatedAt,
+  }));
+}
+
+function recordLink(record, relation) {
+  const expectedKind = relation === "issue" ? "issue" : "pull-request";
+  return record.kind === expectedKind ? link(relation, record.url, `View ${relation.replaceAll("-", " ")}`) : undefined;
+}
+
+function findingRows(records) {
+  return records.map((record) => ({
+    ...repositoryParts(record.repository),
+    workflow: record.workflowPath?.replace(/\.lock\.yml$/, ".md") || record.workflow || "",
+    run: String(record.runUrl?.match(/\/runs\/(\d+)/)?.[1] || ""),
+    finding: record.id,
+    "finding-severity": record.warning ? "medium" : "informational",
+    "finding-status": record.state === "open" ? "open" : record.state === "closed" ? "resolved" : "unknown",
+    "finding-summary": record.summary || record.title,
+    "observed-at": record.updatedAt || record.createdAt,
+    "issue-link": recordLink(record, "issue"),
+    "pull-request-link": recordLink(record, "pull-request"),
+    "run-link": link("run", record.runUrl, "View workflow run"),
+    "external-link": link("external", record.url, "View output"),
+  }));
+}
+
+function outcomeRows(records) {
+  return records.map((record) => ({
+    ...repositoryParts(record.repository),
+    workflow: record.workflowPath?.replace(/\.lock\.yml$/, ".md") || record.workflow || "",
+    run: String(record.runUrl?.match(/\/runs\/(\d+)/)?.[1] || ""),
+    "safe-output": record.id,
+    "outcome-state": record.state === "closed"
+      ? "lifecycle-close"
+      : record.kind === "noop" ? "ignored" : "pending",
+    "evidence-strength": record.kind === "review-bundle" ? "proposal" : "durable",
+    "observed-at": record.updatedAt || record.createdAt,
+    "issue-link": recordLink(record, "issue"),
+    "pull-request-link": recordLink(record, "pull-request"),
+    "run-link": link("run", record.runUrl, "View workflow run"),
+    "external-link": link("external", record.url, "View output"),
+  }));
+}
+
+function operationalValueRows(values) {
+  return (values.records || []).filter((record) => record.observation).map((record) => {
+    const target = record.observation.case?.targetRepo || record.observation.subject?.repository || record.repository;
+    return {
+      ...repositoryParts(target),
+      workflow: record.workflowPath?.replace(/\.lock\.yml$/, ".md") || record.workflowId || "",
+      run: String(record.runId),
+      experiment: record.observation.experiment || "",
+      "operational-case": record.observation.opportunityKey || record.workflowId || "unknown",
+      "evaluator-digest": record.evaluatorDigest || "",
+      "rollout-mode": "unknown",
+      "operational-value": record.value,
+      "operational-value-definition": record.workflowId || "operational-value",
+      "requested-evidence-at": record.observation.subject?.createdAt || record.observation.evidenceAt,
+      "evidence-cutoff": record.observation.evidenceAt,
+      "maturity-at": record.observation.maturesAt || record.observation.evidenceAt,
+      "maturity-status": record.observation.mature ? "matured" : "interim",
+      "delta-from-baseline": record.deltaFromBaseline,
+      "observed-at": record.observation.evidenceAt,
+      "evidence-link": link("evidence", record.runUrl, `View run ${record.runId}`),
+    };
+  });
+}
+
+export function buildDashboardLanguageSources({ deployed, usage, operationalValues, report }) {
+  const generatedAt = report.generatedAt || deployed.generatedAt || new Date().toISOString();
+  const workflows = workflowRows(deployed, generatedAt);
+  const runs = runRows(deployed);
+  const records = report.records || [];
+  const values = operationalValueRows(operationalValues);
+  const repositories = new Map();
+  for (const row of [...workflows, ...runs, ...findingRows(records), ...values]) {
+    if (!row.organization || !row.repository) continue;
+    repositories.set(`${row.organization}/${row.repository}`, {
+      organization: row.organization,
+      repository: row.repository,
+      "repository-name": row.repository,
+      "rollout-mode": row["rollout-mode"] || "unknown",
+      "observed-at": row["observed-at"] || generatedAt,
+    });
+  }
+  const organizations = [...new Set([...repositories.values()].map((row) => row.organization))].map((organization) => ({
+    organization,
+    "organization-name": organization,
+    "observed-at": generatedAt,
+  }));
+  const discoveryAvailable = deployed.discovery?.complete !== false;
+  const runAvailable = deployed.runHealth?.available === true;
+  const runComplete = deployed.runHealth?.complete === true;
+  const usageAvailable = usage.available === true;
+  const usageComplete = usage.complete === true;
+  const valueAvailable = operationalValues.records !== undefined;
+
+  const sources = Object.fromEntries(sourceNames.map((name) => [name, source(name, [], generatedAt, false, false)]));
+  sources.organizations = source("organizations", organizations, generatedAt, discoveryAvailable, deployed.discovery?.complete === true);
+  sources.repositories = source("repositories", [...repositories.values()], generatedAt, discoveryAvailable, deployed.discovery?.complete === true);
+  sources.workflows = source("workflows", workflows, generatedAt, discoveryAvailable, deployed.discovery?.complete === true);
+  sources.runs = source("runs", runs, generatedAt, runAvailable, runComplete);
+  sources.usage = source("usage", usageRows(usage), generatedAt, usageAvailable, usageComplete);
+  sources.outcomes = source("outcomes", outcomeRows(records), generatedAt);
+  sources.findings = source("findings", findingRows(records), generatedAt);
+  sources["operational-values"] = source("operational-values", values, generatedAt, valueAvailable, true);
+  return sources;
+}
+
+async function main() {
+  const deployedPath = process.env.REPORT_DEPLOYED_WORKFLOWS;
+  const usagePath = process.env.REPORT_AIC_USAGE;
+  const operationalValuesPath = process.env.REPORT_OPERATIONAL_VALUES;
+  const reportPath = process.env.REPORT_RECORDS;
+  const outputPath = process.env.REPORT_DASHBOARD_SOURCES;
+  if (!deployedPath || !usagePath || !operationalValuesPath || !reportPath || !outputPath) {
+    throw new Error("REPORT_DEPLOYED_WORKFLOWS, REPORT_AIC_USAGE, REPORT_OPERATIONAL_VALUES, REPORT_RECORDS, and REPORT_DASHBOARD_SOURCES are required");
+  }
+  const [deployed, usage, operationalValues, report] = await Promise.all(
+    [deployedPath, usagePath, operationalValuesPath, reportPath].map(async (file) => JSON.parse(await readFile(file, "utf8"))),
+  );
+  const sources = buildDashboardLanguageSources({ deployed, usage, operationalValues, report });
+  await mkdir(path.dirname(outputPath), { recursive: true });
+  await writeFile(outputPath, `${JSON.stringify(sources, null, 2)}\n`);
+}
+
+if (process.argv[1] && import.meta.url === pathToFileURL(path.resolve(process.argv[1])).href) {
+  main().catch((error) => {
+    console.error(error);
+    process.exitCode = 1;
+  });
+}

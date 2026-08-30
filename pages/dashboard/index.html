@@ -6,7 +6,7 @@
     <title>Central Agentic Ops — Dashboard Language Renderer Preview</title>
     <meta
       name="description"
-      content="Live browser preview of the Dashboard Language Renderer built-in pages, rendered from illustrative fixture data."
+      content="Live browser preview of the Dashboard Language Renderer built-in pages."
     >
   </head>
   <body>
@@ -34,7 +34,7 @@
         dashboard: dashboardSchema.dashboard,
       };
 
-      const sources = {
+      let sources = {
         organizations: {
           source: "organizations",
           rows: [
@@ -191,6 +191,15 @@
           metadata: metadata("operational-values-fixture"),
         },
       };
+
+      try {
+        const liveSourcesResponse = await fetch("./sources.json");
+        if (liveSourcesResponse.ok) {
+          sources = await liveSourcesResponse.json();
+        }
+      } catch {
+        // Retain the illustrative fixture data when the generated report is unavailable.
+      }
 
       document.querySelector("#root").append(renderDashboard({ document: dashboardDocument, sources }));
     </script>
