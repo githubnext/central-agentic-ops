@@ -792,15 +792,29 @@ function renderChartWidget(chartType, points) {
               fill: 'none',
               'data-chart-series': seriesName
             }),
-            ...coordinates.map(({ point, x, y }) => h('circle', {
-              className: `line-chart-point chart-series-${(seriesIndex % 5) + 1}`,
-              cx: x,
-              cy: y,
-              r: 2.5,
+            ...coordinates.map(({ point, x, y }) => h('g', {
+              className: 'chart-point',
               tabIndex: 0,
               role: 'img',
               'aria-label': chartPointLabel(point)
-            }, h('title', null, chartPointLabel(point))))
+            },
+            h('circle', {
+              className: `line-chart-point chart-series-${(seriesIndex % 5) + 1}`,
+              cx: x,
+              cy: y,
+              r: 2.5
+            }),
+            h(
+              'g',
+              {
+                className: 'point-tooltip',
+                transform: `translate(${Math.min(Math.max(x - 21, 1), 57)} ${Math.max(y - 12, 1)})`,
+                'aria-hidden': 'true'
+              },
+              h('rect', { width: 42, height: 9, rx: 2 }),
+              h('text', { x: 3, y: 6 }, chartPointLabel(point))
+            ),
+            h('title', null, chartPointLabel(point))))
           ];
         })
       )

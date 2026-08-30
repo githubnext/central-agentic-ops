@@ -54,10 +54,10 @@ body { margin: 0; background: var(--canvas); color: var(--fg); font: .875rem/1.5
 .dashboard-root { min-height: 100vh; background: var(--canvas); color: var(--fg); font: .875rem/1.5 -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
 .octicon-sprite { width: 0; height: 0; position: absolute; overflow: hidden; }
 .octicon { width: 16px; height: 16px; flex: 0 0 16px; fill: currentColor; vertical-align: text-bottom; }
-a { color: var(--accent); text-decoration: none; text-underline-offset: 2px; }
+a { color: var(--accent); text-decoration: none; text-underline-offset: 2px; transition: color 120ms ease; }
 a:hover { text-decoration: underline; text-decoration-thickness: 2px; }
 a:focus-visible, [tabindex]:focus-visible, button:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
-.skip-link { position: fixed; z-index: 10; top: -80px; left: 12px; padding: 7px 12px; border: 1px solid var(--focus); border-radius: 6px; background: var(--canvas); color: var(--accent); font-weight: 600; text-decoration: none; }
+.skip-link { position: fixed; z-index: 10; top: -80px; left: 12px; padding: 7px 12px; border: 1px solid var(--focus); border-radius: 6px; background: var(--canvas); color: var(--accent); font-weight: 600; text-decoration: none; transition: top 120ms ease, color 120ms ease; }
 .skip-link:focus { top: 8px; }
 .app-shell { min-height: 100vh; display: grid; grid-template-columns: 232px minmax(0, 1fr); }
 .org-sidebar { min-width: 0; display: flex; flex-direction: column; gap: 8px; padding: 24px 16px 16px; border-right: 1px solid var(--border); background: var(--canvas-subtle); }
@@ -65,7 +65,7 @@ a:focus-visible, [tabindex]:focus-visible, button:focus-visible { outline: 2px s
 .sidebar-brand-mark { width: 24px; height: 24px; flex: 0 0 24px; overflow: visible; }
 .sidebar-brand > span { min-width: 0; overflow: hidden; text-overflow: ellipsis; }
 .primary-nav { display: flex; flex-direction: column; gap: 2px; }
-.primary-nav a, .nav-parent { min-height: 32px; display: flex; align-items: center; gap: 10px; position: relative; padding: 6px 8px; border-radius: 6px; color: var(--fg); font-weight: 500; text-decoration: none; }
+.primary-nav a, .nav-parent { min-height: 32px; display: flex; align-items: center; gap: 10px; position: relative; padding: 6px 8px; border-radius: 6px; color: var(--fg); font-weight: 500; text-decoration: none; transition: background-color 120ms ease, color 120ms ease; }
 .primary-nav :is(a, .nav-parent) > .octicon { color: var(--muted); }
 .primary-nav a:hover { background: var(--neutral-muted); }
 .primary-nav a[aria-current="page"] { background: var(--neutral-muted); font-weight: 600; }
@@ -105,6 +105,12 @@ main.dashboard-prototype { width: min(1280px, 100%); flex: 1; margin: 0 auto; pa
 .line-chart-axis { stroke: var(--border); stroke-width: 1; }
 .line-chart-series { stroke: var(--accent); stroke-width: 2; vector-effect: non-scaling-stroke; }
 .line-chart-point { fill: var(--canvas); stroke-width: 2; vector-effect: non-scaling-stroke; }
+.chart-point { cursor: crosshair; outline: none; }
+.point-tooltip { opacity: 0; pointer-events: none; transition: opacity 80ms linear; }
+.point-tooltip rect { fill: var(--canvas-subtle); stroke: var(--border); vector-effect: non-scaling-stroke; }
+.point-tooltip text { fill: var(--fg); font-size: 3px; font-weight: 600; }
+.chart-point:hover .point-tooltip, .chart-point:focus-visible .point-tooltip { opacity: 1; }
+.chart-point:focus-visible .line-chart-point { stroke: var(--focus); stroke-width: 3; }
 .bar-chart-axis { stroke: var(--border); stroke-width: 1; }
 .bar-chart-bar { fill: var(--accent); stroke: var(--canvas); stroke-width: .5; }
 .chart-widget [tabindex]:focus-visible { outline: none; stroke: var(--focus); stroke-width: 3; }
@@ -118,7 +124,8 @@ main.dashboard-prototype { width: min(1280px, 100%); flex: 1; margin: 0 auto; pa
 .bar-chart-bar.chart-series-3 { fill: var(--danger); }
 .bar-chart-bar.chart-series-4 { fill: var(--accent); }
 .bar-chart-bar.chart-series-5 { fill: var(--muted); }
-.metric-link a, .custom-table a { display: inline-flex; align-items: center; gap: 4px; }
+.metric-link a, .custom-table a { display: inline-flex; align-items: center; gap: 4px; border-radius: 4px; transition: background-color 120ms ease, color 120ms ease; }
+.metric-link a:hover, .custom-table a:hover { background: var(--neutral-muted); }
 .metric-link .octicon, .custom-table a .octicon { width: 12px; height: 12px; }
 h3 { margin: 16px 0 8px; font-size: 1rem; font-weight: 600; }
 .metrics { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; margin: 0 0 20px; overflow: visible; }
@@ -170,7 +177,10 @@ footer { padding: 20px 0; border-top: 1px solid var(--border); color: var(--mute
 @media (max-width: 420px) {
   .data-state-summary, .metrics { grid-template-columns: 1fr; }
 }
-@media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+  *, *::before, *::after { scroll-behavior: auto !important; transition-duration: 0.01ms !important; }
+}
 @media (prefers-contrast: more) {
   :root {
     --border: var(--fg);
