@@ -54,7 +54,8 @@ import {
   VIEW_KEYS,
   VIEW_LAYOUT_VALUES,
   VIEW_MARK_VALUES,
-  WORKFLOW_ACTIVE_VALUES
+  WORKFLOW_ACTIVE_VALUES,
+  WORKFLOW_ROLE_VALUES
 } from './specification.js';
 
 /**
@@ -140,6 +141,142 @@ export function validateDashboardDocument(source) {
     },
     errors: []
   };
+}
+
+/**
+ * Validate runtime logical-source relationships that cannot be expressed in the dashboard document.
+ *
+ * @param {Record<string, { rows?: unknown[] } | undefined>} sources
+ * @returns {{ ok: true, errors: [] } | { ok: false, errors: ValidationError[] }}
+ */
+export function validateLogicalSources(sources) {
+  /** @type {ValidationError[]} */
+  const errors = [];
+  const workflowRows = sources.workflows?.rows;
+  if (workflowRows === undefined) return { ok: true, errors: [] };
+  if (!Array.isArray(workflowRows)) {
+    errors.push(createError(
+      ERROR_CODES.missingOrInvalidRequiredField,
+      'workflows.rows must be a sequence.',
+      '$.sources.workflows.rows'
+    ));
+    return { ok: false, errors };
+  }
+
+  /** @type {Map<string, Array<{ row: Record<string, unknown>, index: number }>>} */
+  const packageRows = new Map();
+  for (const [index, candidate] of workflowRows.entries()) {
+    const path = `$.sources.workflows.rows[${index}]`;
+    if (!isPlainObject(candidate)) {
+      errors.push(createError(
+        ERROR_CODES.missingOrInvalidRequiredField,
+        'Each workflows row must be a mapping.',
+        path
+      ));
+      continue;
+    }
+
+    const role = candidate['workflow-role'];
+    if (typeof role !== 'string' || !WORKFLOW_ROLE_VALUES.includes(role)) {
+      errors.push(createError(
+        ERROR_CODES.nonCanonicalVocabularyOrIdentifier,
+        'workflow-role must use orchestrator, worker, or standalone.',
+        `${path}.workflow-role`
+      ));
+    }
+
+    const packageId = candidate.package;
+    const hasPackage = typeof packageId === 'string' && packageId.length > 0;
+    if ((role === 'orchestrator' || role === 'worker') && !hasPackage) {
+      errors.push(createError(
+        ERROR_CODES.invalidEntityRelationshipOrSourceGrain,
+        'An orchestrator or worker workflow must identify its package.',
+        `${path}.package`
+      ));
+    }
+    if (role === 'standalone' && packageId != null) {
+      errors.push(createError(
+        ERROR_CODES.invalidEntityRelationshipOrSourceGrain,
+        'A standalone workflow must not identify a package.',
+        `${path}.package`
+      ));
+    }
+
+    validateNonNegativeSourceMeasure(candidate['max-ai-credits'], `${path}.max-ai-credits`, errors);
+    validateNonNegativeSourceMeasure(candidate['package-aic-allowance'], `${path}.package-aic-allowance`, errors);
+
+    if (hasPackage && (role === 'orchestrator' || role === 'worker')) {
+      const key = sourceEntityKey(candidate, 'package');
+      const rows = packageRows.get(key) ?? [];
+      rows.push({ row: candidate, index });
+      packageRows.set(key, rows);
+    }
+  }
+
+  for (const rows of packageRows.values()) {
+    const workflowAllowances = new Map(rows
+      .filter(({ row }) => typeof row.workflow === 'string' && isNonNegativeFiniteNumber(row['max-ai-credits']))
+      .map(({ row }) => [sourceEntityKey(row, 'workflow'), /** @type {number} */ (row['max-ai-credits'])]));
+    const expectedAllowance = [...workflowAllowances.values()].reduce((total, value) => total + value, 0);
+    for (const { row, index } of rows) {
+      const allowance = row['package-aic-allowance'];
+      if (isNonNegativeFiniteNumber(allowance) && !numbersEqual(allowance, expectedAllowance)) {
+        errors.push(createError(
+          ERROR_CODES.invalidEntityRelationshipOrSourceGrain,
+          'package-aic-allowance must equal the sum of available per-run workflow limits.',
+          `$.sources.workflows.rows[${index}].package-aic-allowance`
+        ));
+      }
+    }
+  }
+
+  return errors.length > 0 ? { ok: false, errors } : { ok: true, errors: [] };
+}
+
+/**
+ * @param {unknown} value
+ * @param {string} path
+ * @param {ValidationError[]} errors
+ */
+function validateNonNegativeSourceMeasure(value, path, errors) {
+  if (value == null) return;
+  if (!isNonNegativeFiniteNumber(value)) {
+    errors.push(createError(
+      ERROR_CODES.invalidEntityRelationshipOrSourceGrain,
+      'Configured AI Credit limits must be finite non-negative numbers.',
+      path
+    ));
+  }
+}
+
+/**
+ * @param {unknown} value
+ * @returns {value is number}
+ */
+function isNonNegativeFiniteNumber(value) {
+  return typeof value === 'number' && Number.isFinite(value) && value >= 0;
+}
+
+/**
+ * @param {Record<string, unknown>} row
+ * @param {string} field
+ * @returns {string}
+ */
+function sourceEntityKey(row, field) {
+  return JSON.stringify([
+    String(row.organization ?? ''),
+    String(row.repository ?? ''),
+    String(row[field] ?? '')
+  ]);
+}
+
+/**
+ * @param {number} left
+ * @param {number} right
+ * @returns {boolean}
+ */
+function numbersEqual(left, right) {
+  return Math.abs(left - right) <= Number.EPSILON * Math.max(1, Math.abs(left), Math.abs(right));
 }
 
 /**
@@ -1881,6 +2018,7 @@ function looksSensitive(value) {
 const SEMANTIC_FILTER_VALUE_SETS = {
   'rollout-mode': ROLLOUT_MODE_VALUES,
   'workflow-active': WORKFLOW_ACTIVE_VALUES,
+  'workflow-role': WORKFLOW_ROLE_VALUES,
   'run-status': RUN_STATUS_VALUES,
   'run-conclusion': RUN_CONCLUSION_VALUES,
   status: GRADER_STATUS_VALUES,

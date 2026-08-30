@@ -41,6 +41,11 @@ function buildPresenterModuleUrl() {
     .replace("'../view-formatters.js'", JSON.stringify(viewFormattersModuleUrl));
   const operationalOverviewModuleUrl = `data:text/javascript;charset=utf-8,${encodeURIComponent(operationalOverviewSource)}`;
 
+  const packagesViewSource = readFileSync(new URL('../../src/components/packages-view.js', import.meta.url), 'utf8')
+    .replace("'../dom.js'", JSON.stringify(domModuleUrl))
+    .replace("'../view-formatters.js'", JSON.stringify(viewFormattersModuleUrl));
+  const packagesViewModuleUrl = `data:text/javascript;charset=utf-8,${encodeURIComponent(packagesViewSource)}`;
+
   const presenterSource = readFileSync(new URL('../../src/presenter.js', import.meta.url), 'utf8')
     .replace("'../dashboard.json'", JSON.stringify(dashboardModuleUrl))
     .replace("'./dom.js'", JSON.stringify(domModuleUrl))
@@ -51,6 +56,7 @@ function buildPresenterModuleUrl() {
     .replace("'./components/table-region.js'", JSON.stringify(tableRegionModuleUrl))
     .replace("'./components/view-chrome.js'", JSON.stringify(viewChromeModuleUrl))
     .replace("'./components/operational-overview.js'", JSON.stringify(operationalOverviewModuleUrl))
+    .replace("'./components/packages-view.js'", JSON.stringify(packagesViewModuleUrl))
     .replace("'./view-formatters.js'", JSON.stringify(viewFormattersModuleUrl));
 
   return `data:text/javascript;charset=utf-8,${encodeURIComponent(presenterSource)}`;
@@ -265,6 +271,101 @@ test('DLS-PAGE-002 DLS-PAGE-014 built-in overview page renders the report-style 
   expect(attentionBox).not.toBeNull();
   expect(packagesBox).not.toBeNull();
   expect(packagesBox?.y).toBeGreaterThan(attentionBox?.y ?? 0);
+});
+
+test('DLS-PAGE-014 DLS-PAGE-015 built-in packages page renders report-style mode filters, AIC utilization, and run trends in browser', async ({ page }) => {
+  const presenterModuleUrl = buildPresenterModuleUrl();
+
+  await page.setContent(`
+    <div id="root"></div>
+    <script type="module">
+      import { renderDashboard } from ${JSON.stringify(presenterModuleUrl)};
+
+      const metadata = {
+        'source-id': 'packages-fixture',
+        'source-kind': 'fixture',
+        'as-of': '2026-08-29T20:00:00Z',
+        'retrieved-at': '2026-08-29T20:01:00Z',
+        completeness: 'complete',
+        freshness: 'fresh',
+        availability: 'available'
+      };
+      const documentModel = {
+        languageVersion: '0.1.0',
+        dashboard: {
+          id: 'packages-render',
+          title: 'Central Agentic Ops',
+          pages: [{
+            id: 'packages',
+            kind: 'built-in',
+            page: 'packages',
+            title: 'Packages',
+            description: 'Activity from centrally managed packages.',
+            definition: {
+              'data-state': { availability: true, completeness: true, freshness: true },
+              views: [
+                { id: 'package-workflows', data: { source: 'workflows' } },
+                { id: 'package-runs', data: { source: 'runs' } },
+                { id: 'package-usage', data: { source: 'usage' } }
+              ]
+            }
+          }]
+        }
+      };
+      const sources = {
+        workflows: {
+          source: 'workflows',
+          rows: [
+            { package: 'ambient-context', 'package-name': 'Ambient Context', workflow: '.github/workflows/ambient-context.md', 'workflow-role': 'orchestrator', 'rollout-mode': 'review', 'max-ai-credits': 250, 'package-aic-allowance': 1050 },
+            { package: 'aw-maintenance', 'package-name': 'AW Maintenance', workflow: '.github/workflows/aw-maintenance.md', 'workflow-role': 'orchestrator', 'rollout-mode': 'review', 'max-ai-credits': 250, 'package-aic-allowance': 1250 }
+          ],
+          metadata
+        },
+        runs: {
+          source: 'runs',
+          rows: [
+            { workflow: '.github/workflows/aw-maintenance.md', run: '1', 'started-at': '2026-08-28T10:00:00Z', 'run-conclusion': 'success', 'rollout-mode': 'review' },
+            { workflow: '.github/workflows/aw-maintenance.md', run: '2', 'started-at': '2026-08-29T10:00:00Z', 'run-conclusion': 'failure', 'rollout-mode': 'live' }
+          ],
+          metadata
+        },
+        usage: {
+          source: 'usage',
+          rows: [
+            { workflow: '.github/workflows/aw-maintenance.md', run: '1', invocation: 'a', aic: 23.9, 'rollout-mode': 'review' }
+          ],
+          metadata: { ...metadata, completeness: 'partial' }
+        }
+      };
+
+      document.querySelector('#root').append(renderDashboard({ document: documentModel, sources }));
+    </script>
+  `);
+
+  await expect(page.getByRole('heading', { name: 'Packages', level: 2 })).toBeVisible();
+  await expect(page.getByRole('tab', { name: 'All' })).toHaveAttribute('aria-selected', 'true');
+  await expect(page.locator('.package-utilization-card')).toHaveCount(2);
+  await expect(page.locator('[data-package-id="aw-maintenance"]')).toContainText('9.6%');
+  await expect(page.locator('[data-package-id="ambient-context"]')).toContainText('No AIC usage was reported');
+  await expect(page.getByRole('heading', { name: 'All runs over time', level: 3 })).toBeVisible();
+  await expect(page.locator('.package-chart-point')).toHaveCount(30);
+
+  await page.getByRole('tab', { name: 'All' }).focus();
+  await page.keyboard.press('ArrowRight');
+  await expect(page.getByRole('tab', { name: 'Review' })).toHaveAttribute('aria-selected', 'true');
+  await expect(page.getByRole('tab', { name: 'Review' })).toBeFocused();
+
+  await page.getByRole('tab', { name: 'Live' }).click();
+  await expect(page.getByRole('tab', { name: 'Live' })).toHaveAttribute('aria-selected', 'true');
+  await expect(page.getByRole('heading', { name: 'Live runs over time', level: 3 })).toBeVisible();
+  await expect(page.locator('.package-trend-panel header')).toContainText('1as of');
+
+  await page.setViewportSize({ width: 600, height: 900 });
+  const cards = page.locator('.package-utilization-card');
+  const firstCard = await cards.nth(0).boundingBox();
+  const secondCard = await cards.nth(1).boundingBox();
+  expect(firstCard).not.toBeNull();
+  expect(secondCard?.y).toBeGreaterThan(firstCard?.y ?? 0);
 });
 
 test('DLS-PAGE-009 DLS-PAGE-014 built-in evals page renders distinguishable definitions and observations, observed subject, YES/NO/UNKNOWN result, evaluation model when available, time, provenance, and independent data state in browser', async ({ page }) => {

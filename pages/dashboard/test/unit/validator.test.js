@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { readFileSync } from 'node:fs';
-import { validateDashboardDocument } from '../../src/validator.js';
+import { validateDashboardDocument, validateLogicalSources } from '../../src/validator.js';
 
 const authoritativeDashboardSource = readFileSync(`${process.cwd()}/dashboard.json`, 'utf8');
 
@@ -600,6 +600,38 @@ dashboard:
             code: 'DLS-E003',
             path: '$.dashboard.pages[0].definition',
             message: 'built-in page "runs" requires declarative definitions for source "outcomes".'
+          })
+        ])
+      );
+    }
+  });
+
+  it('DLS-PAGE-015 rejects a packages built-in page without declarative built-in source definitions with DLS-E003', () => {
+    const result = validateDashboardDocument(`language-version: "0.1.0"
+dashboard:
+  id: packages-page
+  title: Packages Page
+  pages:
+    - id: packages
+      kind: built-in
+      page: packages
+`);
+
+    expect(result.ok).toBe(false);
+    if (!result.ok) {
+      expect(result.errors).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({
+            code: 'DLS-E003',
+            message: 'built-in page "packages" requires declarative definitions for source "workflows".'
+          }),
+          expect.objectContaining({
+            code: 'DLS-E003',
+            message: 'built-in page "packages" requires declarative definitions for source "runs".'
+          }),
+          expect.objectContaining({
+            code: 'DLS-E003',
+            message: 'built-in page "packages" requires declarative definitions for source "usage".'
           })
         ])
       );
@@ -1453,6 +1485,129 @@ dashboard:
       expect(rejected.errors).toEqual([
         expect.objectContaining({ code: 'DLS-E005', path: '$.dashboard.pages[0].views[0].data.filters.rollout-mode[1]' })
       ]);
+    }
+  });
+
+  it('DLS-SEM-022 accepts workflow-role canonical values and rejects unknown roles', () => {
+    const accepted = validateDashboardDocument(`language-version: "0.1.0"
+dashboard:
+  id: workflow-role-filter
+  title: Workflow Role Filter
+  pages:
+    - id: custom-page
+      kind: custom
+      views:
+        - id: workflows-view
+          data:
+            source: workflows
+            filters:
+              workflow-role:
+                - orchestrator
+                - worker
+                - standalone
+          mark: metric
+          encoding:
+            value:
+              field: workflow
+              aggregate: count
+`);
+
+    expect(accepted.ok).toBe(true);
+
+    const rejected = validateDashboardDocument(`language-version: "0.1.0"
+dashboard:
+  id: invalid-workflow-role
+  title: Invalid Workflow Role
+  pages:
+    - id: custom-page
+      kind: custom
+      views:
+        - id: workflows-view
+          data:
+            source: workflows
+            filters:
+              workflow-role:
+                - orchestrator
+                - controller
+          mark: metric
+          encoding:
+            value:
+              field: workflow
+              aggregate: count
+`);
+
+    expect(rejected.ok).toBe(false);
+    if (!rejected.ok) {
+      expect(rejected.errors).toEqual([
+        expect.objectContaining({ code: 'DLS-E005', path: '$.dashboard.pages[0].views[0].data.filters.workflow-role[1]' })
+      ]);
+    }
+  });
+
+  it('DLS-SEM-022 DLS-SEM-023 validates package membership and configured allowances in logical workflow sources', () => {
+    const accepted = validateLogicalSources({
+      workflows: {
+        rows: [
+          {
+            organization: 'octo-org',
+            repository: 'platform',
+            package: 'daily-ops',
+            workflow: 'orchestrator.yml',
+            'workflow-role': 'orchestrator',
+            'max-ai-credits': 100,
+            'package-aic-allowance': 250
+          },
+          {
+            organization: 'octo-org',
+            repository: 'platform',
+            package: 'daily-ops',
+            workflow: 'worker.yml',
+            'workflow-role': 'worker',
+            'max-ai-credits': 150,
+            'package-aic-allowance': 250
+          },
+          {
+            organization: 'octo-org',
+            repository: 'target-service',
+            workflow: 'ci.yml',
+            'workflow-role': 'standalone'
+          }
+        ]
+      }
+    });
+
+    expect(accepted.ok).toBe(true);
+
+    const rejected = validateLogicalSources({
+      workflows: {
+        rows: [
+          { workflow: 'worker.yml', 'workflow-role': 'worker' },
+          { package: 'invalid', workflow: 'standalone.yml', 'workflow-role': 'standalone' },
+          {
+            package: 'negative',
+            workflow: 'negative.yml',
+            'workflow-role': 'orchestrator',
+            'max-ai-credits': -1
+          },
+          {
+            package: 'mismatch',
+            workflow: 'mismatch.yml',
+            'workflow-role': 'orchestrator',
+            'max-ai-credits': 100,
+            'package-aic-allowance': 99
+          }
+        ]
+      }
+    });
+
+    expect(rejected.ok).toBe(false);
+    if (!rejected.ok) {
+      expect(rejected.errors).toEqual(expect.arrayContaining([
+        expect.objectContaining({ code: 'DLS-E011', path: '$.sources.workflows.rows[0].package' }),
+        expect.objectContaining({ code: 'DLS-E011', path: '$.sources.workflows.rows[1].package' }),
+        expect.objectContaining({ code: 'DLS-E011', path: '$.sources.workflows.rows[2].max-ai-credits' }),
+        expect.objectContaining({ code: 'DLS-E011', path: '$.sources.workflows.rows[3].package-aic-allowance' })
+      ]));
     }
   });
 

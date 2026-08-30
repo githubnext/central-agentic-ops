@@ -71,8 +71,10 @@ export const FILTER_DIMENSION_VALUES = [
   'organization',
   'repository',
   'workflow',
+  'package',
   'experiment',
   'variant',
+  'workflow-role',
   'workflow-active',
   'run-status',
   'run-conclusion',
@@ -94,6 +96,7 @@ export const BUILT_IN_PAGE_VALUES = [
   'overview',
   'organizations',
   'repositories',
+  'packages',
   'workflows',
   'runs',
   'experiments',
@@ -115,6 +118,7 @@ export const BUILT_IN_PAGE_REQUIRED_SOURCES = {
   overview: ['repositories', 'workflows', 'runs', 'usage', 'findings', 'operational-values'],
   organizations: ['organizations', 'repositories', 'workflows', 'runs', 'usage'],
   repositories: ['repositories', 'runs', 'usage', 'operational-values'],
+  packages: ['workflows', 'runs', 'usage'],
   workflows: ['workflows', 'runs', 'outcomes', 'usage', 'findings', 'operational-values'],
   runs: ['runs', 'outcomes'],
   experiments: ['experiments', 'experiment-assignments', 'grader-observations', 'eval-observations', 'outcomes', 'usage', 'operational-values'],
@@ -147,6 +151,11 @@ export const BUILT_IN_PAGE_REQUIRED_FIELDS = {
     runs: ['run'],
     usage: ['aic'],
     'operational-values': ['operational-value', 'operational-value-definition']
+  },
+  packages: {
+    workflows: ['organization', 'repository', 'package', 'package-name', 'workflow', 'workflow-role', 'rollout-mode', 'max-ai-credits', 'package-aic-allowance'],
+    runs: ['organization', 'repository', 'workflow', 'run', 'started-at', 'run-conclusion', 'rollout-mode'],
+    usage: ['organization', 'repository', 'workflow', 'run', 'aic', 'rollout-mode', 'observed-at']
   },
   workflows: {
     workflows: ['workflow', 'workflow-active', 'rollout-mode'],
@@ -213,7 +222,7 @@ export const SOURCE_VALUES = [
 export const SOURCE_FIELDS = {
   organizations: ['organization', 'organization-name', 'observed-at', 'organization-link'],
   repositories: ['organization', 'repository', 'repository-name', 'rollout-mode', 'observed-at', 'organization-link', 'repository-link'],
-  workflows: ['organization', 'repository', 'workflow', 'workflow-name', 'workflow-active', 'rollout-mode', 'observed-at', 'organization-link', 'repository-link', 'workflow-link'],
+  workflows: ['organization', 'repository', 'package', 'package-name', 'workflow', 'workflow-name', 'workflow-role', 'workflow-active', 'rollout-mode', 'max-ai-credits', 'package-aic-allowance', 'package-worker-count', 'inventory-ready', 'observed-at', 'organization-link', 'repository-link', 'workflow-link'],
   runs: ['organization', 'repository', 'workflow', 'run', 'started-at', 'ended-at', 'run-status', 'run-conclusion', 'rollout-mode', 'engine', 'requested-model', 'resolved-model', 'organization-link', 'repository-link', 'workflow-link', 'run-link'],
   experiments: ['experiment', 'experiment-name', 'observed-at'],
   'experiment-assignments': ['organization', 'repository', 'workflow', 'run', 'experiment', 'variant', 'observed-at'],
@@ -229,6 +238,7 @@ export const SOURCE_FIELDS = {
 
 export const ROLLOUT_MODE_VALUES = ['review', 'live', 'unknown'];
 export const WORKFLOW_ACTIVE_VALUES = ['true', 'false', 'unknown'];
+export const WORKFLOW_ROLE_VALUES = ['orchestrator', 'worker', 'standalone'];
 export const RUN_STATUS_VALUES = ['queued', 'in-progress', 'completed', 'unknown'];
 export const RUN_CONCLUSION_VALUES = [
   'success',
@@ -293,6 +303,7 @@ export const ERROR_CODES = {
   nonCanonicalVocabularyOrIdentifier: 'DLS-E005',
   invalidLinkReference: 'DLS-E009',
   invalidScopeFilterTimeAggregationOrOrderReference: 'DLS-E010',
+  invalidEntityRelationshipOrSourceGrain: 'DLS-E011',
   missingRequiredProvenanceOrDataStateMetadata: 'DLS-E012',
   invalidProgressiveDisclosureConfiguration: 'DLS-E013'
 };

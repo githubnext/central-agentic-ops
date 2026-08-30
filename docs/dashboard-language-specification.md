@@ -15,7 +15,7 @@ sidebar:
 
 ## Abstract
 
-This specification defines a small, declarative, YAML-based language for describing dashboards about organizations, repositories, agentic workflows, runs, experiments, graders, evals, usage, findings, and operational value. A dashboard contains built-in pages or custom pages. Custom pages use a constrained Vega-inspired model composed of `source`, optional `data`, `mark`, and `encoding`. This specification defines intrinsic domain semantics, aggregation and filtering rules, provenance and freshness requirements, explicit unavailable-data states, links, conformance, and compliance tests. It does not define data retrieval, implementation architecture, or rendering technology.
+This specification defines a small, declarative, YAML-based language for describing dashboards about organizations, repositories, centrally managed packages, agentic workflows, runs, experiments, graders, evals, usage, findings, and operational value. A dashboard contains built-in pages or custom pages. Custom pages use a constrained Vega-inspired model composed of `source`, optional `data`, `mark`, and `encoding`. This specification defines intrinsic domain semantics, aggregation and filtering rules, provenance and freshness requirements, explicit unavailable-data states, links, conformance, and compliance tests. It does not define data retrieval, implementation architecture, or rendering technology.
 
 ## Status of This Document
 
@@ -78,7 +78,7 @@ The language is designed to be minimal, deterministic, auditable, and safe to va
 
 ### 1.4 Basis and Domain Additions
 
-The built-in page requirements are grounded in reviewed Central Agentic Ops surfaces: an overview with rollout-mode filtering, a repository summary number, workflow inventory and active state, run status and conclusion trends and counts, repository and workflow rankings, largest AIC spenders, findings linked to issues, pull requests, or runs, operational-value timelines, explicit provenance and freshness, and empty or unavailable states.
+The built-in page requirements are grounded in reviewed Central Agentic Ops surfaces: an overview with rollout-mode filtering, a repository summary number, workflow inventory and active state, package AIC utilization against configured per-run limits, package-run trends, run status and conclusion trends and counts, repository and workflow rankings, largest AIC spenders, findings linked to issues, pull requests, or runs, operational-value timelines, explicit provenance and freshness, and empty or unavailable states.
 
 Engine, requested-model, and resolved-model dimensions are GitHub Agentic Workflows domain requirements. They are not represented here as observed Central Agentic Ops surface behavior.
 
@@ -117,6 +117,9 @@ This specification defines three conformance classes:
 | Dashboard | One named collection of ordered pages and shared defaults. |
 | Built-in page | A page whose semantic content is defined by Section 10. |
 | Custom page | A page containing one or more declarative views. |
+| Package | A repository-scoped group containing one centrally managed orchestrator workflow and one or more worker workflows. |
+| Workflow role | A workflow's role as `orchestrator`, `worker`, or `standalone`; standalone workflows do not belong to a package. |
+| Package AIC allowance | The sum of configured per-run AI Credit limits for one complete package attempt. |
 | Dimension | A categorical, identifying, or temporal value used to group or filter observations. |
 | Measure | A numeric observation that may be aggregated only according to its declared semantics. |
 | Observation | A recorded value with time, provenance, and data-quality metadata. |
@@ -131,18 +134,21 @@ This specification defines three conformance classes:
 ```text
 organization
   └─ repository
-       └─ workflow
+       ├─ package
+       │    ├─ orchestrator workflow
+       │    └─ worker workflow
+       └─ standalone workflow
             └─ run
-                ├─ experiment assignment
-                ├─ usage observations
-                ├─ grader observations
-                ├─ eval observations
-                ├─ outcome observations
-                ├─ findings
-                └─ operational-value observations
+                 ├─ experiment assignment
+                 ├─ usage observations
+                 ├─ grader observations
+                 ├─ eval observations
+                 ├─ outcome observations
+                 ├─ findings
+                 └─ operational-value observations
 ```
 
-Graders and evals are definitions. Grader observations and eval observations are records produced using those definitions. An experiment assignment associates one run with one named variant, but this language does not manage experiments.
+Every workflow role may have runs and their associated observations; the diagram expands that relationship once for brevity. Graders and evals are definitions. Grader observations and eval observations are records produced using those definitions. An experiment assignment associates one run with one named variant, but this language does not manage experiments.
 
 ### 3.3 Normative Semantic Foundations
 
@@ -225,7 +231,7 @@ The `source` vocabulary is closed in version 0.1.0.
 |---|---|---|
 | `organizations` | organization | `organization`, `organization-name`, `observed-at`, `organization-link` |
 | `repositories` | repository | `organization`, `repository`, `repository-name`, `rollout-mode`, `observed-at`, `organization-link`, `repository-link` |
-| `workflows` | workflow | `organization`, `repository`, `workflow`, `workflow-name`, `workflow-active`, `rollout-mode`, `observed-at`, `organization-link`, `repository-link`, `workflow-link` |
+| `workflows` | workflow | `organization`, `repository`, optional `package` and `package-name`, `workflow`, `workflow-name`, `workflow-role`, `workflow-active`, `rollout-mode`, `max-ai-credits`, `package-aic-allowance`, `package-worker-count`, `inventory-ready`, `observed-at`, `organization-link`, `repository-link`, `workflow-link` |
 | `runs` | run | `organization`, `repository`, `workflow`, `run`, `started-at`, `ended-at`, `run-status`, `run-conclusion`, `rollout-mode`, `engine`, `requested-model`, `resolved-model`, `organization-link`, `repository-link`, `workflow-link`, `run-link` |
 | `experiments` | experiment | `experiment`, `experiment-name`, `observed-at` |
 | `experiment-assignments` | experiment assignment | scope IDs, `run`, `experiment`, `variant`, `observed-at` |
@@ -244,9 +250,9 @@ The `source` vocabulary is closed in version 0.1.0.
 
 The canonical raw-token measures are `input-tokens`, `output-tokens`, `cache-read-tokens`, `cache-write-tokens`, and `reasoning-tokens`. They remain separate because provider reporting conventions may overlap.
 
-### 5.3 Graders, Evals, and Operational Value
+### 5.3 Packages, Graders, Evals, and Operational Value
 
-A grader applies a named grading criterion and produces a deterministic grader observation. An eval is a binary evaluation question and produces a `yes`, `no`, or `unknown` observation; it may use an AI model. Operational value is a separate absolute-attainment observation with an evidence cutoff and maturity time. These concepts are not interchangeable.
+A package groups one orchestrator and one or more workers that execute centrally managed operations. `max-ai-credits` is the configured per-run limit for one workflow; `package-aic-allowance` is the sum of those limits for one complete package attempt and is not actual usage. A grader applies a named grading criterion and produces a deterministic grader observation. An eval is a binary evaluation question and produces a `yes`, `no`, or `unknown` observation; it may use an AI model. Operational value is a separate absolute-attainment observation with an evidence cutoff and maturity time. These concepts are not interchangeable.
 
 ### 5.4 Normative Source Requirements
 
@@ -255,6 +261,8 @@ A grader applies a named grading criterion and produces a deterministic grader o
 - **DLS-SEM-019:** A `usage` row **MUST** represent one model invocation and **MUST NOT** repeat invocation-level AIC across token-class rows.
 - **DLS-SEM-020:** Grader values, eval results, AIC, each raw-token measure, outcome states, and operational value **MUST** remain separately named throughout filtering, aggregation, and presentation.
 - **DLS-SEM-021:** `rollout-mode` **MUST** use `review`, `live`, or `unknown`.
+- **DLS-SEM-022:** `workflow-role` **MUST** use `orchestrator`, `worker`, or `standalone`. An orchestrator or worker workflow **MUST** identify its `package`; a standalone workflow **MUST NOT** identify a package.
+- **DLS-SEM-023:** `max-ai-credits` and `package-aic-allowance`, when available, **MUST** be non-negative. `package-aic-allowance` **MUST** equal the sum of the package's available configured per-run workflow limits and **MUST NOT** be presented as actual AIC usage.
 
 ---
 
@@ -293,7 +301,7 @@ Dashboard defaults establish the initial context. A custom view's `data` context
 
 ### 7.1 Canonical Dimensions
 
-Canonical dimensions include entity IDs, `variant`, `workflow-active`, `run-status`, `run-conclusion`, `outcome-state`, `rollout-mode`, `engine`, `requested-model`, `resolved-model`, operational-value definition, categorical observation results, and temporal fields.
+Canonical dimensions include entity IDs, `package`, `workflow-role`, `variant`, `workflow-active`, `run-status`, `run-conclusion`, `outcome-state`, `rollout-mode`, `engine`, `requested-model`, `resolved-model`, operational-value definition, categorical observation results, and temporal fields.
 
 ### 7.2 Canonical Measures
 
@@ -425,7 +433,7 @@ A finding is an observation with a stable finding ID, summary, status, severity,
 
 Allowed built-in page names are:
 
-`overview`, `organizations`, `repositories`, `workflows`, `runs`, `experiments`, `graders`, `evals`, `usage`, `engines-models`, `operational-value`, and `findings`.
+`overview`, `organizations`, `repositories`, `packages`, `workflows`, `runs`, `experiments`, `graders`, `evals`, `usage`, `engines-models`, `operational-value`, and `findings`.
 
 ### 10.2 Required Content
 
@@ -443,6 +451,7 @@ Allowed built-in page names are:
 - **DLS-PAGE-012:** The `operational-value` page **MUST** expose a time-ordered absolute-attainment series with definition, operational case, evaluator digest, subject, requested evidence time, effective evidence cutoff, maturity time and status, accepted evidence provenance, freshness, applicable experiment assignment, and separate baseline delta when available.
 - **DLS-PAGE-013:** The `findings` page **MUST** expose finding summary, severity, status, scope, time, provenance, and available issue, pull-request, and run links.
 - **DLS-PAGE-014:** Every built-in page **MUST** honor the dashboard scope, time, and filters and expose availability, completeness, and freshness independently.
+- **DLS-PAGE-015:** The `packages` page **MUST** expose centrally managed package inventory, rollout-mode filtering, actual package AIC against summed per-run limits without treating missing usage as zero, the complete-attempt AIC allowance, retained usage coverage, and time-ordered successful, failed, and cancelled package-run trends.
 
 ---
 
@@ -590,12 +599,12 @@ In the table, “accept” means validation succeeds; “reject” means validat
 | DLS-DOC-001–011 | T-DOC-001 | 1 | Apply positive and negative syntax, root, version, identity, vocabulary, GitHub URL base, defaults, page-shape, and scalar-type fixtures. |
 | DLS-SEM-001–007 | T-SEM-001 | 2 | Validate entity ancestry, active state, run status, run conclusion, and explicit experiment assignments. |
 | DLS-SEM-008–016 | T-SEM-002 | 2 | Distinguish grader, eval, tokens, AIC, run conclusions, outcomes, engine/models, and value; reject causal labeling. |
-| DLS-SEM-017–021 | T-SEM-003 | 2 | Validate source vocabulary, grain, token classes, rollout modes, and distinct measure names. |
+| DLS-SEM-017–023 | T-SEM-003 | 2 | Validate source vocabulary, grain, token classes, rollout modes, package workflow roles and membership, per-run package allowances, and distinct measure names. |
 | DLS-CTX-001–008 | T-CTX-001 | 2 | Exercise ancestry, boundary times, Boolean filter rules, inheritance, rollout mode, unknown, and operation order. |
 | DLS-AGG-001–011 | T-AGG-001 | 2 | Exercise allowed aggregates, compatibility, nulls, UTC buckets, ranking disclosure, and deterministic ties for entity-grain and group-grain outputs, including total-order rejection. |
 | DLS-DATA-001–008 | T-DATA-001 | 2 | Exercise required metadata, derivation traceability, and each distinct data state. |
 | DLS-LINK-001–007 | T-LINK-001 | 2 | Validate link shape, safety, provenance, available associations, absent associations, one-link-per-field cardinality, GitHub URL base resolution, and linked rendering of every GitHub-addressable entity. |
-| DLS-PAGE-001–014 | T-PAGE-001 | 3 | Evaluate each built-in fixture for required content, defaults, context, and data states. |
+| DLS-PAGE-001–015 | T-PAGE-001 | 3 | Evaluate each built-in fixture for required content, defaults, context, and data states. |
 | DLS-VIEW-001–006 | T-VIEW-001 | 3 | Validate custom structure and every allowed mark/channel combination. |
 | DLS-VIEW-007–015 | T-VIEW-002 | 3 | Validate fields, types, link-compatible `href`, time units, ordering, exclusions, operation order, exposed context, and link labels. |
 | DLS-VIEW-016–021 | T-VIEW-003 | 3 | Validate disclosure vocabulary, one-to-four essential views, initial collapsed state, accessible controls, source order, and unchanged semantic output. |
@@ -766,6 +775,7 @@ dashboard:
 - Required presenters to render every GitHub-addressable entity as a link when its address is available.
 - Added `dashboard.github-url-base` so generated GitHub entity links default to GitHub.com and can target GitHub Enterprise deployments.
 - Added essential and supplemental view disclosure, a four-essential-view authoring bound, accessible presentation requirements, and SEQ and NASA-TLX user-research guidance.
+- Added centrally managed package semantics and the `packages` built-in page for mode-filtered package AIC utilization and package-run trends.
 
 ---
 
