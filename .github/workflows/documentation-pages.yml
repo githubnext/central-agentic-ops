@@ -161,6 +161,7 @@ jobs:
           REPORT_AIC_USAGE: ${{ runner.temp }}/aic-usage.json
           REPORT_INVENTORY: ${{ runner.temp }}/control-plane-inventory.json
           REPORT_DEPLOYED_WORKFLOWS: ${{ runner.temp }}/deployed-workflows.json
+          REPORT_DASHBOARD_DATA_OUTPUT: dist/ymao/data.json
           REPORT_OPERATIONAL_VALUES: ${{ runner.temp }}/operational-values.json
           REPORT_OUTPUT: dist/cao
         run: node dashboard/report/report.mjs

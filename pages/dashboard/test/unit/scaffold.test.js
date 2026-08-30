@@ -7,10 +7,11 @@ describe('DLS-CONF-004 scaffold gates', () => {
     expect(true).toBe(true);
   });
 
-  it('keeps the browser preview populated with chart and linked-run fixtures', () => {
+  it('loads generated control-plane data instead of embedded fixtures', () => {
     const preview = readFileSync(resolve('index.html'), 'utf8');
 
-    expect(preview.match(/"operational-value":/g)).toHaveLength(4);
-    expect(preview.match(/"run-link":/g)?.length).toBeGreaterThanOrEqual(5);
+    expect(preview).toContain('fetch("./data.json")');
+    expect(preview).not.toContain('"source-kind": "fixture"');
+    expect(preview).not.toContain('"operational-value":');
   });
 });

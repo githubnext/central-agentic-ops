@@ -8,6 +8,7 @@ const repository = process.env.GITHUB_REPOSITORY;
 const token = process.env.GITHUB_TOKEN;
 const pagesToken = process.env.REPORT_PAGES_TOKEN || token;
 const outputDirectory = process.env.REPORT_OUTPUT || "_site";
+const dashboardDataOutput = process.env.REPORT_DASHBOARD_DATA_OUTPUT;
 const controlSettingsPath = process.env.REPORT_CONTROL_SETTINGS;
 const inventoryPath = process.env.REPORT_INVENTORY;
 const deployedWorkflowsPath = process.env.REPORT_DEPLOYED_WORKFLOWS || "_inventory/deployed-workflows.json";
@@ -945,6 +946,167 @@ const canonicalWorkflowByKey = new Map(canonicalWorkflows.map((workflow) => [
   valueWorkflowKey(workflow.repository, workflow.path),
   workflow,
 ]));
+
+function dashboardRepositoryFields(repositoryName) {
+  const [organization, ...repositoryParts] = String(repositoryName).split("/");
+  return { organization, repository: repositoryParts.join("/") || organization };
+}
+
+function dashboardWorkflowMode(workflow) {
+  const packageId = workflowOperationMemberships(workflow)[0];
+  const bundle = bundleDefinitions.find((candidate) => candidate.id === packageId);
+  return bundle ? configuredModeFor(bundle) : "unknown";
+}
+
+function dashboardSource(name, rows, { available = true, complete = true, observedAt = [] } = {}) {
+  const timestamps = observedAt.filter(Boolean).map((value) => new Date(value).getTime()).filter(Number.isFinite);
+  return {
+    source: name,
+    rows,
+    metadata: {
+      "source-id": `central-agentic-ops:${name}`,
+      "source-kind": "GitHub control-plane report",
+      "as-of": timestamps.length > 0 ? new Date(Math.max(...timestamps)).toISOString() : generatedAt,
+      "retrieved-at": generatedAt,
+      completeness: complete ? "complete" : "partial",
+      freshness: "fresh",
+      availability: available ? (rows.length > 0 ? "available" : "empty") : "unavailable",
+    },
+  };
+}
+
+function dashboardLogicalSources() {
+  const workflowRows = canonicalWorkflows.map((workflow) => ({
+    ...dashboardRepositoryFields(workflow.repository),
+    workflow: workflow.path,
+    "workflow-name": workflow.name,
+    "workflow-active": workflow.state === "active" ? "true" : "false",
+    "rollout-mode": dashboardWorkflowMode(workflow),
+    "observed-at": workflow.updatedAt || generatedAt,
+  }));
+  const runRows = canonicalWorkflows.flatMap((workflow) => (workflow.runHealth?.runRecords || []).map((run) => ({
+    ...dashboardRepositoryFields(workflow.repository),
+    workflow: workflow.path,
+    run: String(run.runId),
+    "started-at": run.createdAt,
+    "run-status": run.status || "unknown",
+    "run-conclusion": run.conclusion || "unknown",
+    "rollout-mode": dashboardWorkflowMode(workflow),
+    "run-link": {
+      relation: "run",
+      href: `https://github.com/${workflow.repository}/actions/runs/${run.runId}`,
+      label: run.displayTitle || `View run ${run.runId}`,
+    },
+  })));
+  const repositoryNames = [...new Set([
+    ...canonicalWorkflows.map((workflow) => workflow.repository),
+    ...reportRecords.map((record) => record.repository),
+    ...operationalValues.records.filter((record) => record.observation).map(valueObservationRepository),
+  ].filter(Boolean))].sort();
+  const repositoryRows = repositoryNames.map((repositoryName) => ({
+    ...dashboardRepositoryFields(repositoryName),
+    "repository-name": dashboardRepositoryFields(repositoryName).repository,
+    "rollout-mode": canonicalWorkflows
+      .filter((workflow) => workflow.repository === repositoryName)
+      .map(dashboardWorkflowMode)
+      .find((mode) => mode !== "unknown") || "unknown",
+    "observed-at": generatedAt,
+  }));
+  const organizationRows = [...new Set(repositoryRows.map((row) => row.organization))].sort().map((organization) => ({
+    organization,
+    "organization-name": organization,
+    "observed-at": generatedAt,
+  }));
+  const usageRows = (aicUsage.runs || []).map((run) => {
+    const workflow = canonicalWorkflowByKey.get(valueWorkflowKey(run.repository, run.workflowPath));
+    return {
+      ...dashboardRepositoryFields(run.repository),
+      workflow: run.workflowPath || workflow?.path,
+      run: String(run.runId),
+      invocation: `${run.repository}:${run.runId}`,
+      "rollout-mode": run.mode || (workflow ? dashboardWorkflowMode(workflow) : "unknown"),
+      aic: run.aic,
+      "observed-at": run.createdAt || generatedAt,
+    };
+  });
+  const outcomeRows = reportRecords.map((record) => ({
+    ...dashboardRepositoryFields(record.repository),
+    workflow: record.workflowPath || record.workflow,
+    run: record.correlationId || undefined,
+    "safe-output": record.id,
+    "outcome-state": record.state,
+    "observed-at": record.updatedAt,
+    ...(record.kind === "issue" ? { "issue-link": { relation: "issue", href: record.url, label: record.title } } : {}),
+    ...(record.kind === "pull-request" ? { "pull-request-link": { relation: "pull-request", href: record.url, label: record.title } } : {}),
+    ...(record.runUrl ? { "run-link": { relation: "run", href: record.runUrl, label: "View workflow run" } } : {}),
+  }));
+  const findingRows = reportRecords.map((record) => ({
+    ...dashboardRepositoryFields(record.repository),
+    workflow: record.workflowPath || record.workflow,
+    run: record.correlationId || undefined,
+    finding: record.id,
+    "finding-status": record.state,
+    "finding-summary": record.summary || record.title,
+    "observed-at": record.updatedAt,
+    ...(record.kind === "issue" ? { "issue-link": { relation: "issue", href: record.url, label: record.title } } : {}),
+    ...(record.kind === "pull-request" ? { "pull-request-link": { relation: "pull-request", href: record.url, label: record.title } } : {}),
+    ...(record.runUrl ? { "run-link": { relation: "run", href: record.runUrl, label: "View workflow run" } } : {}),
+  }));
+  const valueRows = operationalValues.records.filter((record) => record.observation).map((record) => ({
+    ...dashboardRepositoryFields(valueObservationRepository(record)),
+    workflow: record.workflowPath || record.workflowId,
+    run: record.runId ? String(record.runId) : undefined,
+    "operational-case": record.observation.opportunityKey,
+    "evaluator-digest": record.evaluatorDigest,
+    "rollout-mode": record.mode || "unknown",
+    "operational-value": record.value,
+    "operational-value-definition": record.workflowId,
+    "requested-evidence-at": record.observation.subject?.createdAt,
+    "evidence-cutoff": record.observation.evidenceAt,
+    "maturity-at": record.observation.evidenceAt,
+    "maturity-status": record.observation.mature ? "matured" : "interim",
+    "delta-from-baseline": record.deltaFromBaseline,
+    "observed-at": record.observation.evidenceAt,
+    ...(record.runUrl ? { "evidence-link": { relation: "evidence", href: record.runUrl, label: "View evidence run" } } : {}),
+  }));
+  const discoveryComplete = deployedInventory.discovery?.complete === true;
+  const runHealthAvailable = deployedInventory.runHealth?.available === true;
+  const runHealthComplete = deployedInventory.runHealth?.complete === true;
+  const usageAvailable = (aicUsage.repositories || []).some((entry) => entry.available === true);
+  const usageComplete = usageAvailable && (aicUsage.repositories || []).every((entry) => entry.complete === true);
+  const valuesAvailable = operationalValues.records.length > 0;
+  const valuesComplete = valuesAvailable && operationalValues.records.every((record) => record.status === "pass");
+  return {
+    organizations: dashboardSource("organizations", organizationRows, { complete: discoveryComplete }),
+    repositories: dashboardSource("repositories", repositoryRows, { complete: discoveryComplete }),
+    workflows: dashboardSource("workflows", workflowRows, {
+      complete: discoveryComplete,
+      observedAt: workflowRows.map((row) => row["observed-at"]),
+    }),
+    runs: dashboardSource("runs", runRows, {
+      available: runHealthAvailable,
+      complete: runHealthComplete,
+      observedAt: runRows.map((row) => row["started-at"]),
+    }),
+    outcomes: dashboardSource("outcomes", outcomeRows, { observedAt: outcomeRows.map((row) => row["observed-at"]) }),
+    usage: dashboardSource("usage", usageRows, {
+      available: usageAvailable,
+      complete: usageComplete,
+      observedAt: usageRows.map((row) => row["observed-at"]),
+    }),
+    findings: dashboardSource("findings", findingRows, { observedAt: findingRows.map((row) => row["observed-at"]) }),
+    "operational-values": dashboardSource("operational-values", valueRows, {
+      available: valuesAvailable,
+      complete: valuesComplete,
+      observedAt: valueRows.map((row) => row["observed-at"]),
+    }),
+  };
+}
+
+if (dashboardDataOutput) {
+  await mkdir(path.dirname(dashboardDataOutput), { recursive: true });
+  await writeFile(dashboardDataOutput, `${JSON.stringify({ sources: dashboardLogicalSources() }, null, 2)}\n`);
+}
 
 function workflowOperationMemberships(workflow) {
   const memberships = new Map();

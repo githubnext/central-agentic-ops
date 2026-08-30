@@ -1489,6 +1489,7 @@ test("Documentation Pages embeds this repository's control-plane report", () => 
   assert.match(workflowSource, /REPORT_AIC_CACHE: \.cache\/documentation-pages-aic/);
   assert.match(workflowSource, /Save AI Credit usage cache/);
   assert.match(workflowSource, /REPORT_ALLOWED_REPOS: \$\{\{ github\.repository \}\}/);
+  assert.match(workflowSource, /REPORT_DASHBOARD_DATA_OUTPUT: dist\/ymao\/data\.json/);
   assert.match(workflowSource, /REPORT_OUTPUT: dist\/cao/);
   assert.match(workflowSource, /path: dist/);
   assert.doesNotMatch(workflowSource, /REPORT_INCLUDE_PRIVATE:\s*true/);
@@ -1557,6 +1558,7 @@ test("Dashboard report SVGs use theme colors in light and dark modes", () => {
 test("Dashboard renders one canonical authored workflow detail across repository and package views", () => {
   const temporaryRoot = mkdtempSync(join(tmpdir(), "central-agentic-ops-workflow-pages-"));
   const outputPath = join(temporaryRoot, "dist", "cao");
+  const dashboardDataPath = join(temporaryRoot, "dist", "ymao", "data.json");
   const controlSettingsPath = join(temporaryRoot, "control-settings.json");
   const inventoryPath = join(temporaryRoot, "inventory.json");
   const deployedPath = join(temporaryRoot, "deployed.json");
@@ -1650,6 +1652,7 @@ globalThis.fetch = async (input) => {
         REPORT_CONTROL_SETTINGS: controlSettingsPath,
         REPORT_INVENTORY: inventoryPath,
         REPORT_DEPLOYED_WORKFLOWS: deployedPath,
+        REPORT_DASHBOARD_DATA_OUTPUT: dashboardDataPath,
         REPORT_AIC_USAGE: aicPath,
         REPORT_OPERATIONAL_VALUES: valuesPath,
         REPORT_OUTPUT: outputPath,
@@ -1657,6 +1660,12 @@ globalThis.fetch = async (input) => {
     });
 
     const overview = readFileSync(join(outputPath, "index.html"), "utf8");
+    const dashboardData = JSON.parse(readFileSync(dashboardDataPath, "utf8"));
+    assert.equal(dashboardData.sources.workflows.rows.length, 3);
+    assert.equal(dashboardData.sources.runs.rows.length, 5);
+    assert.equal(dashboardData.sources.usage.rows[0].aic, 12.5);
+    assert.equal(dashboardData.sources.findings.rows.length, 2);
+    assert.equal(dashboardData.sources["operational-values"].rows[0]["operational-value"], 0.8);
     const dispatches = readFileSync(join(outputPath, "dispatches", "index.html"), "utf8");
     const catalog = readFileSync(join(outputPath, "workflows", "index.html"), "utf8");
     const repositories = readFileSync(join(outputPath, "repositories", "index.html"), "utf8");

@@ -6,24 +6,13 @@
     <title>Central Agentic Ops — Dashboard Language Renderer Preview</title>
     <meta
       name="description"
-      content="Live browser preview of the Dashboard Language Renderer built-in pages, rendered from illustrative fixture data."
+      content="Live Dashboard Language Renderer view of Central Agentic Ops data."
     />
   </head>
   <body>
     <div id="root"></div>
     <script type="module">
       import { renderDashboard } from "./src/presenter.js";
-
-      const metadata = (id, overrides = {}) => ({
-        "source-id": id,
-        "source-kind": "fixture",
-        "as-of": "2026-08-29T19:00:00Z",
-        "retrieved-at": "2026-08-29T19:01:00Z",
-        completeness: "complete",
-        freshness: "fresh",
-        availability: "available",
-        ...overrides,
-      });
 
       const dashboardSchema = await fetch("./dashboard.json").then((response) => {
         if (!response.ok) throw new Error(`Unable to load dashboard.json: ${response.status}`);
@@ -33,152 +22,10 @@
         languageVersion: dashboardSchema["language-version"],
         dashboard: dashboardSchema.dashboard,
       };
-
-      const sources = {
-        organizations: {
-          source: "organizations",
-          rows: [
-            { organization: "github", "organization-name": "GitHub", "observed-at": "2026-08-29T10:00:00Z" },
-            { organization: "octo-org", "organization-name": "Octo Org", "observed-at": "2026-08-29T10:00:00Z" },
-          ],
-          metadata: metadata("organizations-fixture"),
-        },
-        repositories: {
-          source: "repositories",
-          rows: [
-            { organization: "github", repository: "central-agentic-ops", "repository-name": "Central Agentic Ops", "rollout-mode": "live", "observed-at": "2026-08-29T10:00:00Z" },
-            { organization: "github", repository: "mona-tools", "repository-name": "Mona Tools", "rollout-mode": "review", "observed-at": "2026-08-29T10:00:00Z" },
-            { organization: "octo-org", repository: "octo-repo", "repository-name": "Octo Repo", "rollout-mode": "live", "observed-at": "2026-08-29T10:00:00Z" },
-          ],
-          metadata: metadata("repositories-fixture"),
-        },
-        workflows: {
-          source: "workflows",
-          rows: [
-            { organization: "github", repository: "central-agentic-ops", workflow: ".github/workflows/daily.yml", "workflow-name": "Daily", "workflow-active": "true", "rollout-mode": "live", "observed-at": "2026-08-29T10:00:00Z" },
-            { organization: "github", repository: "mona-tools", workflow: ".github/workflows/review.yml", "workflow-name": "Review", "workflow-active": "false", "rollout-mode": "review", "observed-at": "2026-08-29T10:00:00Z" },
-            { organization: "octo-org", repository: "octo-repo", workflow: ".github/workflows/nightly.yml", "workflow-name": "Nightly", "workflow-active": "true", "rollout-mode": "live", "observed-at": "2026-08-29T10:00:00Z" },
-          ],
-          metadata: metadata("workflows-fixture"),
-        },
-        runs: {
-          source: "runs",
-          rows: [
-            { organization: "github", repository: "central-agentic-ops", workflow: ".github/workflows/daily.yml", run: "1001", "started-at": "2026-08-29T09:00:00Z", "run-status": "completed", "run-conclusion": "success", "rollout-mode": "live", engine: "gpt", "requested-model": "gpt-4o", "resolved-model": "gpt-4.1", "run-link": { relation: "run", href: "https://github.com/githubnext/central-agentic-ops/actions/runs/1001", label: "View run 1001" } },
-            { organization: "github", repository: "mona-tools", workflow: ".github/workflows/review.yml", run: "1002", "started-at": "2026-08-29T09:30:00Z", "run-status": "completed", "run-conclusion": "failure", "rollout-mode": "review", engine: "gpt", "requested-model": "gpt-4o-mini", "resolved-model": "gpt-4o-mini", "run-link": { relation: "run", href: "https://github.com/githubnext/mona-tools/actions/runs/1002", label: "View run 1002" } },
-            { organization: "octo-org", repository: "octo-repo", workflow: ".github/workflows/nightly.yml", run: "2001", "started-at": "2026-08-29T08:00:00Z", "run-status": "in-progress", "run-conclusion": "unknown", "rollout-mode": "live", engine: "claude", "requested-model": "claude-3.5", "resolved-model": "claude-3.5", "run-link": { relation: "run", href: "https://github.com/octo-org/octo-repo/actions/runs/2001", label: "View run 2001" } },
-          ],
-          metadata: metadata("runs-fixture"),
-        },
-        outcomes: {
-          source: "outcomes",
-          rows: [
-            { organization: "github", repository: "central-agentic-ops", workflow: ".github/workflows/daily.yml", run: "1001", "outcome-state": "applied", "run-link": { relation: "run", href: "https://github.com/githubnext/central-agentic-ops/actions/runs/1001", label: "View run 1001" } },
-            { organization: "github", repository: "mona-tools", workflow: ".github/workflows/review.yml", run: "1002", "outcome-state": "rejected", "run-link": { relation: "run", href: "https://github.com/githubnext/mona-tools/actions/runs/1002", label: "View run 1002" } },
-          ],
-          metadata: metadata("outcomes-fixture"),
-        },
-        usage: {
-          source: "usage",
-          rows: [
-            { organization: "github", repository: "central-agentic-ops", workflow: ".github/workflows/daily.yml", run: "1001", invocation: "u1", engine: "gpt", "requested-model": "gpt-4o", "resolved-model": "gpt-4.1", "rollout-mode": "live", "input-tokens": 100, "output-tokens": 50, "cache-read-tokens": 20, "cache-write-tokens": 10, "reasoning-tokens": 5, aic: 3.5, "observed-at": "2026-08-29T09:05:00Z" },
-            { organization: "github", repository: "mona-tools", workflow: ".github/workflows/review.yml", run: "1002", invocation: "u2", engine: "gpt", "requested-model": "gpt-4o-mini", "resolved-model": "gpt-4o-mini", "rollout-mode": "review", "input-tokens": 200, "output-tokens": 80, "cache-read-tokens": 40, "cache-write-tokens": 15, "reasoning-tokens": 7, aic: 4.5, "observed-at": "2026-08-29T09:35:00Z" },
-            { organization: "octo-org", repository: "octo-repo", workflow: ".github/workflows/nightly.yml", run: "2001", invocation: "u3", engine: "claude", "requested-model": "claude-3.5", "resolved-model": "claude-3.5", "rollout-mode": "live", "input-tokens": 150, "output-tokens": 60, "cache-read-tokens": 30, "cache-write-tokens": 12, "reasoning-tokens": 9, aic: 2.25, "observed-at": "2026-08-29T08:05:00Z" },
-          ],
-          metadata: metadata("usage-fixture"),
-        },
-        findings: {
-          source: "findings",
-          rows: [
-            {
-              finding: "f-1",
-              "finding-summary": "Workflow retried more than expected during rollout.",
-              "finding-severity": "medium",
-              "finding-status": "open",
-              organization: "github",
-              repository: "mona-tools",
-              workflow: ".github/workflows/review.yml",
-              "observed-at": "2026-08-29T09:40:00Z",
-              "issue-link": { relation: "issue", href: "https://github.com/githubnext/mona-tools/issues/42", label: "View issue 42" },
-            },
-          ],
-          metadata: metadata("findings-fixture"),
-        },
-        "operational-values": {
-          source: "operational-values",
-          rows: [
-            {
-              "observed-at": "2026-08-29T09:10:00Z",
-              "operational-value": 0.82,
-              "operational-value-definition": "issue-resolution-rate",
-              "operational-case": "triage",
-              "evaluator-digest": "sha256:abc123",
-              organization: "github",
-              repository: "central-agentic-ops",
-              workflow: ".github/workflows/daily.yml",
-              run: "1001",
-              "requested-evidence-at": "2026-08-29T09:00:00Z",
-              "evidence-cutoff": "2026-08-29T09:05:00Z",
-              "maturity-at": "2026-08-29T09:15:00Z",
-              "maturity-status": "matured",
-              "delta-from-baseline": 0.05,
-              "evidence-link": { relation: "evidence", href: "https://github.com/githubnext/central-agentic-ops/issues/201", label: "View evidence issue 201" },
-            },
-            {
-              "observed-at": "2026-08-27T09:10:00Z",
-              "operational-value": 0.58,
-              "operational-value-definition": "issue-resolution-rate",
-              "operational-case": "triage",
-              "evaluator-digest": "sha256:def456",
-              organization: "github",
-              repository: "central-agentic-ops",
-              workflow: ".github/workflows/daily.yml",
-              run: "998",
-              "requested-evidence-at": "2026-08-27T09:00:00Z",
-              "evidence-cutoff": "2026-08-27T09:05:00Z",
-              "maturity-at": "2026-08-27T09:15:00Z",
-              "maturity-status": "matured",
-              "delta-from-baseline": -0.03,
-              "evidence-link": { relation: "evidence", href: "https://github.com/githubnext/central-agentic-ops/issues/198", label: "View evidence issue 198" },
-            },
-            {
-              "observed-at": "2026-08-28T09:10:00Z",
-              "operational-value": 0.71,
-              "operational-value-definition": "issue-resolution-rate",
-              "operational-case": "triage",
-              "evaluator-digest": "sha256:ghi789",
-              organization: "github",
-              repository: "central-agentic-ops",
-              workflow: ".github/workflows/daily.yml",
-              run: "999",
-              "requested-evidence-at": "2026-08-28T09:00:00Z",
-              "evidence-cutoff": "2026-08-28T09:05:00Z",
-              "maturity-at": "2026-08-28T09:15:00Z",
-              "maturity-status": "matured",
-              "delta-from-baseline": 0.02,
-              "evidence-link": { relation: "evidence", href: "https://github.com/githubnext/central-agentic-ops/issues/199", label: "View evidence issue 199" },
-            },
-            {
-              "observed-at": "2026-08-29T10:10:00Z",
-              "operational-value": 0.76,
-              "operational-value-definition": "review-quality",
-              "operational-case": "review",
-              "evaluator-digest": "sha256:jkl012",
-              organization: "github",
-              repository: "mona-tools",
-              workflow: ".github/workflows/review.yml",
-              run: "1002",
-              "requested-evidence-at": "2026-08-29T10:00:00Z",
-              "evidence-cutoff": "2026-08-29T10:05:00Z",
-              "maturity-at": "2026-08-29T10:15:00Z",
-              "maturity-status": "interim",
-              "delta-from-baseline": 0.04,
-              "evidence-link": { relation: "evidence", href: "https://github.com/githubnext/mona-tools/pull/43", label: "View evidence pull request 43" },
-            },
-          ],
-          metadata: metadata("operational-values-fixture"),
-        },
-      };
+      const { sources } = await fetch("./data.json").then((response) => {
+        if (!response.ok) throw new Error(`Unable to load live dashboard data: ${response.status}`);
+        return response.json();
+      });
 
       document.querySelector("#root").append(renderDashboard({ document: dashboardDocument, sources }));
     </script>
