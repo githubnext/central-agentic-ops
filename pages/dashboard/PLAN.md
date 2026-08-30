@@ -66,7 +66,7 @@
 - `src/components/badge.js` — presentation-only Primer status, mode, and active-state badges.
 - `src/components/data-state.js` — presentation-only data-state metrics card grid for availability, completeness, and freshness.
 - `src/components/table-region.js` — presentation-only reusable table wrapper for repeated table-region markup, header rows, empty-state rows, and keyed body-row descriptors across built-in and custom tables.
-- `src/components/view-chrome.js` — presentation-only reusable page-section, titled-region, summary-list/summary-region, generic custom-view chrome paragraphs, custom-view source/metadata/context chrome, and built-in provenance-section helpers.
+- `src/components/view-chrome.js` — presentation-only reusable page-section, titled-region, summary-list/summary-region, generic custom-view chrome paragraphs, custom-view source/metadata/context chrome, shared custom-view section chrome, and built-in provenance-section helpers.
 
 ## Infrastructure blockers
 
@@ -74,6 +74,15 @@
 - 2026-08-28: `npm run test:e2e` is currently blocked in this environment because the Playwright Chromium executable is not provisioned (`browserType.launch: Executable doesn't exist`). The workflow should prefer the built-in Playwright MCP browser tools until the package-level browser dependency is available.
 
 ## Run log
+
+### 2026-08-30 (view-section-chrome refactor)
+
+- Re-inventoried repeated UI construction under `pages/dashboard/src/` and selected the highest remaining bounded custom-view chrome slice: repeated `renderViewHeader(...)` plus `renderContextList(...)` composition shared by metric, table, and chart custom-view renderers in `src/presenter.js`.
+- Extended `src/components/view-chrome.js` with presentation-only `renderContextChrome(...)` and `renderViewSectionChrome(...)`, then replaced every identified custom-view call site in `src/presenter.js` so metric, table, and chart views all reuse the same shared section-chrome assembly.
+- Collapsed the identified call sites in `src/presenter.js`: `renderMetricView(...)`, `renderTableView(...)`, and `renderChartView(...)`, while leaving the distinct unavailable/empty custom-view state helper unchanged because its `Affected source:` line differs from the source/metadata pattern.
+- Added unit coverage in `test/unit/view-chrome.test.js` for populated and empty `renderContextChrome(...)` output and for `renderViewSectionChrome(...)` composition, preserving the existing `DLS-VIEW-013` assertions around custom-view chrome.
+- Proved unchanged behavior by keeping `npm install`, `npm run typecheck`, `npm run lint`, `npm test`, and `npx playwright test --config=playwright.config.mjs` green from `pages/dashboard/`, and by capturing the affected refactor diff at `/tmp/gh-aw/agent/view-section-chrome-refactor.diff` to confirm the change is limited to shared chrome extraction and call-site replacement.
+- Next candidates in the queue: extract the repeated custom-view state-message plus context composition in `src/presenter.js`; extract shared pure helpers for metric/chart aggregate value formatting; extract shared link-cell composition across custom metric and custom table views.
 
 ### 2026-08-30 (compliance built-in page data-state slice)
 

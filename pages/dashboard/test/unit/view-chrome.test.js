@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import { describe, expect, it } from 'vitest';
-import { renderContextList, renderPageSection, renderProvenanceList, renderProvenanceSection, renderSummaryList, renderSummaryRegion, renderTitledRegion, renderViewChrome, renderViewHeader } from '../../src/components/view-chrome.js';
+import { renderContextChrome, renderContextList, renderPageSection, renderProvenanceList, renderProvenanceSection, renderSummaryList, renderSummaryRegion, renderTitledRegion, renderViewChrome, renderViewHeader, renderViewSectionChrome } from '../../src/components/view-chrome.js';
 
 describe('view chrome component helpers', () => {
   it('DLS-SAFE-007 renders focusable labeled page sections with deterministic heading ids', () => {
@@ -71,6 +71,40 @@ describe('view chrome component helpers', () => {
     expect(empty.className).toBe('view-context');
     expect(empty.querySelectorAll('li')).toHaveLength(0);
     expect(empty.textContent).toBe('');
+  });
+
+  it('DLS-VIEW-013 renders reusable context chrome around the shared context list', () => {
+    const populated = renderContextChrome(['Source: usage', 'Filters: {"status":"open"}']);
+    const empty = renderContextChrome([]);
+
+    expect(populated).toHaveLength(1);
+    expect(populated[0]?.className).toBe('view-context');
+    expect(populated[0]?.querySelectorAll('li')).toHaveLength(2);
+    expect(populated[0]?.textContent).toContain('Source: usage');
+    expect(populated[0]?.textContent).toContain('Filters: {"status":"open"}');
+    expect(empty).toHaveLength(1);
+    expect(empty[0]?.className).toBe('view-context');
+    expect(empty[0]?.querySelectorAll('li')).toHaveLength(0);
+  });
+
+  it('DLS-VIEW-013 renders reusable view section chrome for shared header plus context composition', () => {
+    const chrome = renderViewSectionChrome(
+      'usage',
+      {
+        'as-of': '2026-08-29T20:00:00Z',
+        completeness: 'complete',
+        freshness: 'fresh'
+      },
+      ['Source: usage', 'Scope: {"organization":"github"}']
+    );
+
+    expect(chrome).toHaveLength(3);
+    expect(chrome[0]?.className).toBe('view-source');
+    expect(chrome[0]?.textContent).toBe('Source: usage');
+    expect(chrome[1]?.className).toBe('view-metadata');
+    expect(chrome[1]?.textContent).toBe('As of 2026-08-29T20:00:00Z • completeness complete • freshness fresh');
+    expect(chrome[2]?.className).toBe('view-context');
+    expect(chrome[2]?.textContent).toContain('Scope: {"organization":"github"}');
   });
 
   it('DLS-SAFE-007 wraps single-content titled regions with the shared page-section markup', () => {
