@@ -90,8 +90,6 @@
 - Marked the Compliance suite milestone complete now that the compliance harness and tests are green end-to-end for the implemented conservative Section 14 slices.
 - Next milestone: Security, privacy, accessibility, continuing with the remaining Section 13 verification needed to close that milestone before parity follow-up work.
 
-### 2026-08-30 (compliance link-and-page fixture slice)
-
 ### 2026-08-30 (view-section-chrome refactor)
 
 - Re-inventoried repeated UI construction under `pages/dashboard/src/` and selected the highest remaining bounded custom-view chrome slice: repeated `renderViewHeader(...)` plus `renderContextList(...)` composition shared by metric, table, and chart custom-view renderers in `src/presenter.js`.
