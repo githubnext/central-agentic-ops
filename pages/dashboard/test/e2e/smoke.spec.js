@@ -404,7 +404,7 @@ test('DLS-SAFE-007 DLS-SAFE-008 DLS-SAFE-010 built-in findings page exposes acce
   await expect(issueLink).toHaveAttribute('rel', 'noopener noreferrer');
 });
 
-test('DLS-VIEW-013 DLS-VIEW-014 DLS-VIEW-015 DLS-SAFE-006 custom views render available, empty, and unavailable states with tabular/text equivalents in browser', async ({ page }) => {
+test('DLS-VIEW-013 DLS-VIEW-014 DLS-VIEW-015 DLS-SAFE-006 custom views render available, empty, and unavailable states with only context-permitted observations in browser', async ({ page }) => {
   const presenterModuleUrl = buildPresenterModuleUrl();
 
   await page.setContent(`
@@ -446,8 +446,12 @@ test('DLS-VIEW-013 DLS-VIEW-014 DLS-VIEW-015 DLS-SAFE-006 custom views render av
                   title: 'Findings Table',
                   data: {
                     source: 'findings',
+                    scope: {
+                      repositories: ['central-agentic-ops']
+                    },
                     time: {
-                      range: '30d'
+                      start: '2026-08-29T00:00:00Z',
+                      end: '2026-08-30T00:00:00Z'
                     }
                   },
                   mark: 'table',
@@ -542,6 +546,9 @@ test('DLS-VIEW-013 DLS-VIEW-014 DLS-VIEW-015 DLS-SAFE-006 custom views render av
           rows: [
             {
               finding: 'finding-1',
+              organization: 'github',
+              repository: 'central-agentic-ops',
+              'observed-at': '2026-08-29T12:00:00Z',
               'finding-summary': 'Unsafe dependency',
               'finding-severity': 'high',
               'finding-status': 'open',
@@ -553,9 +560,26 @@ test('DLS-VIEW-013 DLS-VIEW-014 DLS-VIEW-015 DLS-SAFE-006 custom views render av
             },
             {
               finding: 'finding-2',
-              'finding-summary': 'Missing tests',
+              organization: 'github',
+              repository: 'other-repo',
+              'observed-at': '2026-08-29T13:00:00Z',
+              'finding-summary': 'Out of scope finding',
               'finding-severity': 'medium',
-              'finding-status': 'resolved'
+              'finding-status': 'resolved',
+              'pull-request-link': {
+                relation: 'pull-request',
+                href: 'https://example.com/pull/2',
+                label: 'PR 2'
+              }
+            },
+            {
+              finding: 'finding-3',
+              organization: 'github',
+              repository: 'central-agentic-ops',
+              'observed-at': '2026-08-30T01:00:00Z',
+              'finding-summary': 'Out of range finding',
+              'finding-severity': 'low',
+              'finding-status': 'open'
             }
           ],
           metadata: {
@@ -612,9 +636,13 @@ test('DLS-VIEW-013 DLS-VIEW-014 DLS-VIEW-015 DLS-SAFE-006 custom views render av
   await expect(metricSection).toContainText('Filters: {"rollout-mode":["review","live"]}');
 
   await expect(page.getByRole('heading', { name: 'Findings Table' })).toBeVisible();
-  await expect(page.locator('.custom-table tbody tr')).toHaveCount(2);
+  await expect(page.locator('.custom-table tbody tr')).toHaveCount(1);
   await expect(page.getByRole('link', { name: 'PR 1' })).toHaveAttribute('href', 'https://example.com/pull/1');
-  await expect(page.locator('.custom-table tbody tr').nth(1)).toContainText('Missing tests');
+  const tableSection = page.locator('.page-section').filter({ has: page.getByRole('heading', { name: 'Findings Table' }) });
+  await expect(tableSection).toContainText('Scope: {"repositories":["central-agentic-ops"]}');
+  await expect(tableSection).toContainText('Time: {"start":"2026-08-29T00:00:00Z","end":"2026-08-30T00:00:00Z"}');
+  await expect(tableSection).not.toContainText('Out of scope finding');
+  await expect(tableSection).not.toContainText('Out of range finding');
 
   await expect(page.getByRole('heading', { name: 'Daily Runs' })).toBeVisible();
   await expect(page.locator('[data-chart-default="line"]')).toHaveText('Default chart type: line');

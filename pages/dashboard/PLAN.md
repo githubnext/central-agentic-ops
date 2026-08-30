@@ -41,6 +41,7 @@
   - [x] Slice: `DLS-SAFE-007` and `DLS-SAFE-008` keyboard presenter behavior for focusable labeled sections with deterministic arrow-key traversal verified in unit and browser tests.
   - [x] Slice: `DLS-SAFE-005` and `DLS-VAL-004` validator rejection for secret-bearing provenance metadata with non-echoing error messages.
   - [x] Slice: `DLS-SAFE-006`, `DLS-VIEW-013`, `DLS-VIEW-014`, and `DLS-VIEW-015` presenter render for custom metric, table, and chart views with visible available/empty/unavailable state output, effective-context text, and non-fabricated per-row links constrained to provided source data.
+  - [x] Slice: `DLS-SAFE-006`, `DLS-CTX-003`, `DLS-CTX-004`, and `DLS-CTX-008` presenter enforcement for custom-view scope, absolute-time, and filter narrowing so only context-permitted observations and links are rendered.
   - [x] Slice: `DLS-SAFE-009` presenter render for non-color chart category semantics via explicit textual color-category legends alongside chart tabular equivalents.
 - [ ] **Compliance suite** — Section 14 test suite, the compliance checklist, Appendix A as a passing fixture, and Appendix C as failing fixtures.
   - [x] Slice: `DLS-TEST-001`, `DLS-TEST-002`, `DLS-TEST-003`, `T-DOC-001`, and `T-VAL-001` compliance smoke harness with machine-readable results, Appendix A passing coverage, and Appendix C failing fixtures.
@@ -68,6 +69,14 @@
 - 2026-08-28: `npm run test:e2e` is currently blocked in this environment because the Playwright Chromium executable is not provisioned (`browserType.launch: Executable doesn't exist`). The workflow should prefer the built-in Playwright MCP browser tools until the package-level browser dependency is available.
 
 ## Run log
+
+### 2026-08-30 (security context-permitted custom views slice)
+
+- Continued the Security, privacy, accessibility milestone with a narrow `DLS-SAFE-006` vertical increment that now enforces custom-view narrowing context in the presenter rather than only echoing the declared context text.
+- Updated `src/presenter.js` so custom metric, table, and chart views filter rows by declared `scope`, absolute `time.start`/`time.end`, and `filters` before rendering, returning the existing explicit `empty` or `unavailable` states when the narrowed selection has no usable observations.
+- Added focused unit and browser coverage in `test/unit/presenter.test.js` and `test/e2e/smoke.spec.js` that verify out-of-scope and out-of-range finding rows and their links are omitted while in-scope rows and links remain visible and the effective-context text stays exposed.
+- Verification still pending in this run: execute the full `pages/dashboard/` gate stack and then continue with the remaining Section 13 screen-reader/accessibility or compliance slices.
+- Next milestone: Security, privacy, accessibility, continuing with the remaining Section 13 slices that are not yet covered in the checklist.
 
 ### 2026-08-30 (repositories ranking-definition slice)
 

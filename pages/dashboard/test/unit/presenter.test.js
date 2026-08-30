@@ -532,7 +532,7 @@ describe('presenter built-in and custom pages', () => {
     expect(issueLink?.textContent).toBe('Issue 1 label');
   });
 
-  it('DLS-VIEW-013 DLS-VIEW-014 DLS-VIEW-015 DLS-SAFE-006 renders custom views with available, empty, and unavailable states while exposing only provided observations and links', () => {
+  it('DLS-VIEW-013 DLS-VIEW-014 DLS-VIEW-015 DLS-SAFE-006 renders custom views with available, empty, and unavailable states while exposing only context-permitted observations and links', () => {
     /** @type {import('../../src/presenter.js').PresentationInput['document']} */
     const document = {
       languageVersion: '0.1.0',
@@ -568,8 +568,12 @@ describe('presenter built-in and custom pages', () => {
                 title: 'Findings Table',
                 data: {
                   source: 'findings',
+                  scope: {
+                    repositories: ['central-agentic-ops']
+                  },
                   time: {
-                    range: '30d'
+                    start: '2026-08-29T00:00:00Z',
+                    end: '2026-08-30T00:00:00Z'
                   }
                 },
                 mark: 'table',
@@ -666,6 +670,9 @@ describe('presenter built-in and custom pages', () => {
           rows: [
             {
               finding: 'finding-1',
+              organization: 'github',
+              repository: 'central-agentic-ops',
+              'observed-at': '2026-08-29T12:00:00Z',
               'finding-summary': 'Unsafe dependency',
               'finding-severity': 'high',
               'finding-status': 'open',
@@ -677,9 +684,26 @@ describe('presenter built-in and custom pages', () => {
             },
             {
               finding: 'finding-2',
-              'finding-summary': 'Missing tests',
+              organization: 'github',
+              repository: 'other-repo',
+              'observed-at': '2026-08-29T13:00:00Z',
+              'finding-summary': 'Out of scope finding',
               'finding-severity': 'medium',
-              'finding-status': 'resolved'
+              'finding-status': 'resolved',
+              'pull-request-link': {
+                relation: 'pull-request',
+                href: 'https://example.com/pull/2',
+                label: 'PR 2'
+              }
+            },
+            {
+              finding: 'finding-3',
+              organization: 'github',
+              repository: 'central-agentic-ops',
+              'observed-at': '2026-08-30T01:00:00Z',
+              'finding-summary': 'Out of range finding',
+              'finding-severity': 'low',
+              'finding-status': 'open'
             }
           ],
           metadata: {
@@ -734,12 +758,14 @@ describe('presenter built-in and custom pages', () => {
 
     const tableSection = [...rendered.querySelectorAll('.page-section')].find((section) => section.textContent?.includes('Findings Table'));
     const tableRows = tableSection ? tableSection.querySelectorAll('.custom-table tbody tr') : null;
-    expect(tableRows).toHaveLength(2);
+    expect(tableRows).toHaveLength(1);
     const linkedCell = tableRows?.[0]?.querySelector('a');
     expect(linkedCell?.textContent).toBe('PR 1');
     expect(linkedCell?.getAttribute('aria-label')).toBe('PR 1');
-    expect(tableRows?.[1]?.textContent).toContain('Missing tests');
-    expect(tableRows?.[1]?.querySelector('a')).toBeNull();
+    expect(tableSection?.textContent).toContain('Scope: {"repositories":["central-agentic-ops"]}');
+    expect(tableSection?.textContent).toContain('Time: {"start":"2026-08-29T00:00:00Z","end":"2026-08-30T00:00:00Z"}');
+    expect(tableSection?.textContent).not.toContain('Out of scope finding');
+    expect(tableSection?.textContent).not.toContain('Out of range finding');
 
     const chartSection = [...rendered.querySelectorAll('.page-section')].find((section) => section.textContent?.includes('Daily Runs'));
     expect(chartSection?.querySelector('[data-chart-default="line"]')?.textContent).toContain('Default chart type: line');
