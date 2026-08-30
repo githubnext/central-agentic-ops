@@ -486,11 +486,11 @@ test('DLS-PAGE-009 DLS-PAGE-014 built-in evals page renders distinguishable defi
   await expect(page.locator('[data-state-axis="availability"]')).toHaveText('available');
   await expect(page.locator('[data-state-axis="completeness"]')).toHaveText('partial');
   await expect(page.locator('[data-state-axis="freshness"]')).toHaveText('stale');
-  await expect(page.locator('.evals-page .custom-table').nth(0).locator('tbody tr')).toHaveCount(2);
-  await expect(page.locator('.evals-page .custom-table').nth(1).locator('tbody tr')).toHaveCount(3);
-  await expect(page.locator('.evals-page')).toContainText('release-risk');
-  await expect(page.locator('.evals-page')).toContainText('UNKNOWN');
-  await expect(page.locator('.evals-page')).toContainText('claude-3.7');
+  await expect(page.locator('[data-page-id="evals"] .custom-table').nth(0).locator('tbody tr')).toHaveCount(2);
+  await expect(page.locator('[data-page-id="evals"] .custom-table').nth(1).locator('tbody tr')).toHaveCount(3);
+  await expect(page.locator('[data-page-id="evals"]')).toContainText('release-risk');
+  await expect(page.locator('[data-page-id="evals"]')).toContainText('UNKNOWN');
+  await expect(page.locator('[data-page-id="evals"]')).toContainText('claude-3.7');
 });
 
 test('DLS-SAFE-004 DLS-SAFE-007 DLS-SAFE-008 DLS-SAFE-010 built-in findings page exposes accessible names, labeled columns, textual data states, and only safe labeled external links in browser', async ({ page }) => {
@@ -571,8 +571,8 @@ test('DLS-SAFE-004 DLS-SAFE-007 DLS-SAFE-008 DLS-SAFE-010 built-in findings page
   await expect(page.locator('[data-state-axis="completeness"]')).toHaveText('complete');
   await expect(page.locator('[data-state-axis="freshness"]')).toHaveText('fresh');
   await expect(page.getByRole('columnheader', { name: 'Issue Link' })).toBeVisible();
-  await expect(page.locator('.findings-page .custom-table tbody td').first()).toContainText('<img src=x onerror=alert(1)>');
-  await expect(page.locator('.findings-page .custom-table tbody img')).toHaveCount(0);
+  await expect(page.locator('[data-page-id="findings"] .custom-table tbody td').first()).toContainText('<img src=x onerror=alert(1)>');
+  await expect(page.locator('[data-page-id="findings"] .custom-table tbody img')).toHaveCount(0);
 
   const issueLink = page.getByRole('link', { name: 'Issue 1 label' });
   await expect(issueLink).toBeVisible();
@@ -949,7 +949,7 @@ test('DLS-SAFE-007 DLS-SAFE-008 keyboard navigation moves across labeled page se
     </script>
   `);
 
-  const sections = page.locator('.runs-page .page-section');
+  const sections = page.locator('[data-page-id="runs"] .page-section');
   await expect(sections).toHaveCount(2);
   await expect(page.locator('#runs-runs-runs-source-heading')).toHaveText('Runs Runs Source');
   await expect(page.locator('#runs-runs-outcomes-source-heading')).toHaveText('Runs Outcomes Source');
