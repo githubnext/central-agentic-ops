@@ -760,7 +760,7 @@ function renderTableView(pageId, title, view, sourceName, rows, metadata, contex
     { 'data-custom-row-key': `${pageId}-${title}-${rowIndex}` },
     ...columns.map((column, columnIndex) => {
       const outputField = typeof column.as === 'string' ? column.as : column.field;
-      const value = renderEntityAwareCellValue(column.field, row[outputField], row);
+      const value = renderEntityAwareCellValue(column, row[outputField], row);
       if (columnIndex === 0 && hrefField) {
         const link = findLink(row, /** @type {LinkFieldName} */ (hrefField));
         return h('td', null, renderLinkedValueWithExternalLink(value, link));

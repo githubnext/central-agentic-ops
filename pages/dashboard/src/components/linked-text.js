@@ -19,18 +19,20 @@ export function renderLinkedText(text, link) {
 /**
  * @param {Record<string, string>} entityLinkFields
  * @param {(row: Record<string, unknown>, field: string) => { href: string, label: string } | null} findLink
- * @param {(field: string, value: unknown) => string | HTMLElement} renderTableCellValue
+ * @param {(display: unknown, value: unknown) => string | HTMLElement} renderTableCellValue
  * @param {(value: unknown) => string} toText
- * @returns {(field: string, value: unknown, row: Record<string, unknown>) => string | HTMLElement}
+ * @returns {(column: string | { field: string, display?: unknown }, value: unknown, row: Record<string, unknown>) => string | HTMLElement}
  */
 export function createEntityAwareCellRenderer(entityLinkFields, findLink, renderTableCellValue, toText) {
   /**
-   * @param {string} field
+   * @param {string | { field: string, display?: unknown }} column
    * @param {unknown} value
    * @param {Record<string, unknown>} row
    * @returns {string | HTMLElement}
    */
-  return function renderEntityAwareCellValue(field, value, row) {
+  return function renderEntityAwareCellValue(column, value, row) {
+    const field = typeof column === 'string' ? column : column.field;
+    const display = typeof column === 'string' ? column : column.display;
     const linkField = Object.prototype.hasOwnProperty.call(entityLinkFields, field)
       ? entityLinkFields[/** @type {keyof typeof entityLinkFields} */ (field)]
       : null;
@@ -40,6 +42,6 @@ export function createEntityAwareCellRenderer(entityLinkFields, findLink, render
         return renderLinkedText(toText(value), link);
       }
     }
-    return renderTableCellValue(field, value);
+    return renderTableCellValue(display, value);
   };
 }
