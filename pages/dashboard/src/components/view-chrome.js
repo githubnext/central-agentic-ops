@@ -74,10 +74,18 @@ export function renderContextList(details) {
  * @returns {HTMLElement[]}
  */
 export function renderViewHeader(sourceName, metadata) {
-  return [
-    h('p', { className: 'view-source' }, `Source: ${sourceName}`),
-    h('p', { className: 'view-metadata' }, `As of ${metadata['as-of']} • completeness ${metadata.completeness} • freshness ${metadata.freshness}`)
-  ];
+  return renderViewChrome([
+    `Source: ${sourceName}`,
+    `As of ${metadata['as-of']} • completeness ${metadata.completeness} • freshness ${metadata.freshness}`
+  ]);
+}
+
+/**
+ * @param {string[]} lines
+ * @returns {HTMLElement[]}
+ */
+export function renderViewChrome(lines) {
+  return lines.map((line, index) => h('p', { className: index === 0 ? 'view-source' : 'view-metadata' }, line));
 }
 
 /**
