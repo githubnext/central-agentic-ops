@@ -949,7 +949,10 @@ const canonicalWorkflowByKey = new Map(canonicalWorkflows.map((workflow) => [
 
 function dashboardRepositoryFields(repositoryName) {
   const [organization, ...repositoryParts] = String(repositoryName).split("/");
-  return { organization, repository: repositoryParts.join("/") || organization };
+  if (!organization || repositoryParts.length === 0 || repositoryParts.some((part) => !part)) {
+    throw new Error(`Dashboard source repository must use owner/name format: ${repositoryName}`);
+  }
+  return { organization, repository: repositoryParts.join("/") };
 }
 
 function dashboardWorkflowMode(workflow) {
