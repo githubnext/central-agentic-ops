@@ -21,6 +21,7 @@ export function renderOperationalOverview(sources) {
   const usage = rowsFor(sources, 'usage');
   const findings = rowsFor(sources, 'findings');
   const packages = summarizePackages(workflows);
+  const packageAicUsage = summarizePackageAicUsage(workflows, usage);
   const health = summarizeRunHealth(runs);
   const repositoryCount = repositories.length > 0
     ? new Set(repositories.map(repositoryKey).filter(Boolean)).size
@@ -57,6 +58,7 @@ export function renderOperationalOverview(sources) {
       usageSource: sources.usage,
       usage
     }),
+    renderPackageAicUtilization(packages, packageAicUsage, sources.usage),
     h(
       'div',
       { className: 'overview-operations-grid' },
@@ -282,6 +284,114 @@ function renderManagedPackages(packages) {
         : [h('p', { className: 'empty' }, 'No managed packages observed.')])
     )
   );
+}
+
+/**
+ * Renders the report's package-level AI Credit utilization panel: actual AIC
+ * spend against each package's summed per-run allowance, with a threshold-
+ * colored meter bar per package (Section: Parity, "Package AI Credit
+ * utilization bars and threshold treatments").
+ * @param {ReturnType<typeof summarizePackages>} packages
+ * @param {ReturnType<typeof summarizePackageAicUsage>} usageByPackage
+ * @param {import('../presenter.js').LogicalSourceInput | undefined} usageSource
+ * @returns {HTMLElement}
+ */
+function renderPackageAicUtilization(packages, usageByPackage, usageSource) {
+  const available = usageSource?.metadata?.availability !== 'unavailable';
+  const complete = usageSource?.metadata?.completeness !== 'partial';
+  const eligiblePackages = packages.filter((entry) => typeof entry.allowance === 'number' && entry.allowance > 0);
+  const summary = available
+    ? `Actual AI Credits against summed per-run limits for retained package runs.${complete ? '' : ' Partial usage coverage.'}`
+    : 'AI Credit usage artifacts are unavailable.';
+
+  return h(
+    'section',
+    { className: 'package-aic-utilization', 'aria-labelledby': 'package-aic-utilization-heading' },
+    h(
+      'header',
+      null,
+      h('span', { className: 'scope-kicker' }, 'Control plane'),
+      h('h3', { id: 'package-aic-utilization-heading' }, 'Package AIC utilization'),
+      h('p', null, summary)
+    ),
+    h(
+      'div',
+      { className: 'utilization-grid' },
+      ...(eligiblePackages.length > 0
+        ? eligiblePackages.map((entry) => renderPackageUtilizationCard(entry, usageByPackage, available))
+        : [h('p', { className: 'empty' }, 'No packages with a configured AIC allowance were observed.')])
+    )
+  );
+}
+
+/**
+ * @param {ReturnType<typeof summarizePackages>[number]} entry
+ * @param {ReturnType<typeof summarizePackageAicUsage>} usageByPackage
+ * @param {boolean} available
+ * @returns {HTMLElement}
+ */
+function renderPackageUtilizationCard(entry, usageByPackage, available) {
+  const used = usageByPackage.used.get(entry.id) ?? 0;
+  const reportedRuns = usageByPackage.reportedRuns.get(entry.id) ?? 0;
+  const allowance = /** @type {number} */ (entry.allowance);
+  const ratio = available && allowance > 0 ? used / allowance : null;
+  const meterPercent = ratio === null ? 0 : Math.min(100, ratio * 100);
+  const status = !available || ratio === null ? 'empty' : ratio >= 0.8 ? 'high' : ratio >= 0.5 ? 'medium' : 'low';
+  const valueText = !available || ratio === null ? '—' : formatPercent(ratio);
+  const detail = !available
+    ? 'AI Credit usage artifacts are unavailable.'
+    : reportedRuns === 0
+      ? 'No completed runs in the retained window.'
+      : `${formatNumber(used)} of ${formatNumber(allowance)} AIC across ${formatNumber(reportedRuns)} reported run${reportedRuns === 1 ? '' : 's'}.`;
+  const ariaLabel = ratio === null
+    ? `${entry.name}: no utilization available`
+    : `${entry.name}: ${formatNumber(used)} of ${formatNumber(allowance)} AI Credits used, ${formatPercent(ratio)}`;
+
+  return h(
+    'article',
+    { className: `utilization-item utilization-${status}`, dataset: { packageId: entry.id } },
+    h('header', null, h('span', null, entry.name), h('strong', null, valueText)),
+    h(
+      'div',
+      { className: 'utilization-track', role: 'img', 'aria-label': ariaLabel },
+      h('span', { style: `width: ${meterPercent.toFixed(2)}%` })
+    ),
+    h('p', null, detail)
+  );
+}
+
+/**
+ * Aggregates reported AI Credit usage per package by joining usage rows to
+ * their owning package through the workflow path recorded on each workflow
+ * inventory row.
+ * @param {Array<Record<string, unknown>>} workflows
+ * @param {Array<Record<string, unknown>>} usage
+ * @returns {{ used: Map<string, number>, reportedRuns: Map<string, number> }}
+ */
+function summarizePackageAicUsage(workflows, usage) {
+  /** @type {Map<string, string>} */
+  const workflowToPackage = new Map();
+  for (const row of workflows) {
+    const packageId = row.package;
+    const workflowPath = row.workflow;
+    if (typeof packageId === 'string' && packageId.length > 0 && typeof workflowPath === 'string' && workflowPath.length > 0) {
+      workflowToPackage.set(workflowPath, packageId);
+    }
+  }
+  /** @type {Map<string, number>} */
+  const used = new Map();
+  /** @type {Map<string, number>} */
+  const reportedRuns = new Map();
+  for (const row of usage) {
+    const workflowPath = typeof row.workflow === 'string' ? row.workflow : '';
+    const packageId = workflowToPackage.get(workflowPath);
+    if (!packageId) continue;
+    const aic = Number(row.aic);
+    if (!Number.isFinite(aic)) continue;
+    used.set(packageId, (used.get(packageId) ?? 0) + aic);
+    reportedRuns.set(packageId, (reportedRuns.get(packageId) ?? 0) + 1);
+  }
+  return { used, reportedRuns };
 }
 
 /**

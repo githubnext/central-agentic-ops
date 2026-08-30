@@ -207,6 +207,20 @@ h3 { margin: 16px 0 8px; font-size: 1rem; font-weight: 600; }
 .legend-failed { background: var(--danger); }
 .legend-approval { background: var(--attention); }
 .legend-other { background: var(--muted); }
+.package-aic-utilization > header { padding: 4px 0 12px; }
+.package-aic-utilization > header h3 { margin: 2px 0 0; font-size: 1.125rem; }
+.package-aic-utilization > header p { margin: 2px 0 0; color: var(--muted); font-size: .8125rem; }
+.utilization-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 14px; }
+.utilization-item { min-width: 0; padding: 14px 16px; border: 1px solid var(--border); border-radius: 6px; background: var(--canvas); }
+.utilization-item > header { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; }
+.utilization-item > header span { overflow: hidden; font-weight: 600; text-overflow: ellipsis; white-space: nowrap; }
+.utilization-item > header strong { font-size: 1.25rem; font-variant-numeric: tabular-nums; }
+.utilization-track { height: 8px; margin: 12px 0 8px; overflow: hidden; border-radius: 4px; background: var(--canvas-subtle); box-shadow: inset 0 0 0 1px var(--border); }
+.utilization-track span { display: block; height: 100%; border-radius: inherit; background: var(--success); }
+.utilization-medium .utilization-track span { background: var(--attention); }
+.utilization-high .utilization-track span { background: var(--danger); }
+.utilization-empty .utilization-track span { background: var(--muted); }
+.utilization-item p { min-height: 18px; margin: 0; color: var(--muted); font-size: .75rem; }
 .overview-operations-grid { display: grid; grid-template-columns: minmax(0, 7fr) minmax(320px, 5fr); gap: 16px; align-items: start; }
 .attention-panel { overflow: hidden; border: 1px solid var(--border); border-radius: 6px; background: var(--canvas); }
 .attention-panel > header { min-height: 72px; display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 14px 16px; border-bottom: 1px solid var(--border); background: var(--canvas-subtle); }
