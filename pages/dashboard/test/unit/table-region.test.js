@@ -99,7 +99,7 @@ describe('renderTableRegion', () => {
     input.value = 'failure';
     input.dispatchEvent(new Event('input'));
 
-    expect(rows.map((row) => row.hidden)).toEqual([true, false]);
+    expect(rows.map((row) => row.hasAttribute('hidden'))).toEqual([true, false]);
     expect(rendered.querySelector('.table-filter-result')?.textContent).toBe('1 result');
   });
 });

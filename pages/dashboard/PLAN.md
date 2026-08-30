@@ -85,6 +85,7 @@
 - Continued the Parity milestone with the report's interactive catalog-search pattern as a reusable renderer primitive rather than copying report-specific workflow, run, or dispatch logic.
 - Added accessible text filtering and live visible-result counts to populated declarative table views, with report-aligned control styling and no changes to dashboard-language semantics.
 - Added component, presenter, and browser coverage for case-insensitive filtering, row visibility, accessible labels, and singular/plural result announcements.
+- Verified `npm run build`, `npm run typecheck`, `npm run lint`, `npm test` (102 tests), and `npm run test:e2e` (7 browser tests) from `pages/dashboard/`.
 - Next milestone: Parity, continuing the remaining report feature and presentation inventory closure work under the existing declarative and reusable-runtime constraints.
 
 ### 2026-08-30 (parity visual inventory slice)

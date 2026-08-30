@@ -72,7 +72,8 @@ export function renderTableRegion(options) {
 function enableTableFilter(region) {
   const input = region.querySelector('[data-table-filter]');
   const output = region.querySelector('.table-filter-result');
-  const rows = [...region.querySelectorAll('tbody > tr')];
+  const rows = [...region.querySelectorAll('tbody > tr')]
+    .filter((row) => row instanceof HTMLTableRowElement);
   if (!(input instanceof HTMLInputElement) || !(output instanceof HTMLOutputElement)) return;
 
   input.addEventListener('input', () => {

@@ -233,7 +233,7 @@ test('DLS-PAGE-002 DLS-PAGE-014 built-in overview page renders rollout-mode filt
   await expect(page.getByRole('link', { name: 'Issue 2' })).toBeVisible();
 
   const recentRuns = page.getByRole('heading', { name: 'Recent runs', level: 4 }).locator('..');
-  await recentRuns.getByRole('searchbox', { name: 'Filter Recent runs' }).fill('1002');
+  await recentRuns.getByRole('searchbox', { name: 'Filter Recent runs' }).fill('failure');
   await expect(recentRuns.locator('tbody tr:visible')).toHaveCount(1);
   await expect(recentRuns.locator('.table-filter-result')).toHaveText('1 result');
 });
