@@ -1592,9 +1592,10 @@ function deriveEntityLinkRow(row, githubUrlBase) {
     };
   }
   if (repositorySlug && workflow && !findLink(row, 'workflow-link')) {
+    const workflowPath = workflow.replace(/^\/+/, '');
     derived['workflow-link'] = {
       relation: 'workflow',
-      href: `${githubUrlBase}/${repositorySlug}/blob/HEAD/${workflow}`,
+      href: `${githubUrlBase}/${repositorySlug}/blob/HEAD/${workflowPath}`,
       label: `View ${workflow} on GitHub`
     };
   }
