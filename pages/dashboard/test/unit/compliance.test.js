@@ -38,7 +38,7 @@ describe('compliance suite', () => {
     expect(result.ok).toBe(true);
   });
 
-  it('T-SEM-001 T-SEM-002 T-SEM-003 and T-CTX-001 record passing machine-readable compliance results for the implemented semantic and context slices', () => {
+  it('T-SEM-001 T-SEM-002 T-SEM-003 T-CTX-001 T-PAGE-001 and T-LINK-001 record passing machine-readable compliance results for the implemented semantic, context, built-in page, and link slices', () => {
     const results = runComplianceSmokeSuite();
     const coveredPairs = [
       ['T-SEM-001', 'DLS-SEM-001'],
@@ -48,7 +48,8 @@ describe('compliance suite', () => {
       ['T-SEM-003', 'DLS-SEM-017'],
       ['T-SEM-003', 'DLS-SEM-021'],
       ['T-CTX-001', 'DLS-CTX-001'],
-      ['T-CTX-001', 'DLS-CTX-005']
+      ['T-CTX-001', 'DLS-CTX-005'],
+      ['T-PAGE-001', 'DLS-PAGE-014']
     ];
 
     for (const [testId, requirementId] of coveredPairs) {
