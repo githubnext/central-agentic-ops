@@ -24,11 +24,11 @@ describe('renderTableSummaryRow', () => {
 
     expect(rendered.textContent).toContain('Mean2');
     expect(rendered.textContent).toContain('Median2');
-    expect(rendered.textContent).toContain('Standard deviation0.82');
+    expect(rendered.textContent).toContain('Standard deviation1');
     expect(rendered.querySelector('svg')?.getAttribute('aria-label')).toBe('Score distribution, 3 values');
   });
 
-  it('summarizes boolean values by true percentage', () => {
+  it('auto-detects boolean values and summarizes their true percentage', () => {
     const rendered = renderTableSummaryRow([{
       label: 'Ready',
       type: 'nominal',

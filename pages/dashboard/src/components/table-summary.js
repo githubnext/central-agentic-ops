@@ -93,9 +93,11 @@ function renderQuantitativeSummary(label, values) {
   const median = sortedValues.length % 2 === 0
     ? (sortedValues[middle - 1] + sortedValues[middle]) / 2
     : sortedValues[middle];
-  const deviation = Math.sqrt(
-    values.reduce((total, value) => total + ((value - mean) ** 2), 0) / values.length
-  );
+  const deviation = values.length > 1
+    ? Math.sqrt(
+      values.reduce((total, value) => total + ((value - mean) ** 2), 0) / (values.length - 1)
+    )
+    : 0;
   return h(
     'div',
     { className: 'table-summary-quantitative' },
