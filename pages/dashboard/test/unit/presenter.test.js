@@ -244,7 +244,7 @@ describe('presenter built-in and custom pages', () => {
     expect(overviewPage?.querySelector('[data-metric-value="repository"]')?.textContent).toBe('2');
     expect(overviewPage?.textContent).toContain('Operational value timeline');
     expect(overviewPage?.querySelector('.layout-section h3')?.textContent).toBe('Control plane health');
-    expect(overviewPage?.querySelector('.layout-section .page-section h4')?.textContent).toBe('Repositories');
+    expect(overviewPage?.querySelector('.layout-section .page-section h4')?.textContent).toBe('Active workflows');
     expect(rendered.querySelector('[data-state-axis="availability"]')?.textContent).toBe('available');
     expect(rendered.querySelector('[data-state-axis="completeness"]')?.textContent).toBe('partial');
     expect(rendered.querySelector('[data-state-axis="freshness"]')?.textContent).toBe('stale');
