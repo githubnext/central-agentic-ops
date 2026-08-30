@@ -2095,6 +2095,7 @@ dashboard:
             x:
               field: started-at
               type: temporal
+              time-unit: day
             y:
               field: run
               type: quantitative

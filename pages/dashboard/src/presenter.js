@@ -1646,7 +1646,7 @@ function renderChartView(pageId, title, view, sourceName, rows, metadata, contex
   const points = rows.map((row, rowIndex) => ({
     key: `${pageId}-${title}-${rowIndex}`,
     x: x ? toText(row[x.field]) : 'unknown',
-    y: y ? (typeof y.aggregate === 'string' && y.aggregate === 'count' ? '1' : toText(row[y.field])) : 'unknown',
+    y: y ? (typeof y.aggregate === 'string' && y.aggregate === 'count' ? 1 : toNumber(row[y.field])) : 0,
     color: color ? toText(row[color.field]) : null
   }));
   const colorCategories = color
@@ -1689,7 +1689,7 @@ function renderChartView(pageId, title, view, sourceName, rows, metadata, contex
 
 /**
  * @param {string} chartType
- * @param {Array<{ x: string, y: string, color: string | null }>} points
+ * @param {Array<{ x: string, y: number, color: string | null }>} points
  * @returns {HTMLElement}
  */
 function renderChartWidget(chartType, points) {
