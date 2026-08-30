@@ -41,17 +41,22 @@ export function renderTitledRegion(pageId, title, content) {
  * @returns {HTMLElement}
  */
 export function renderSummaryRegion(pageId, title, listClassName, counts) {
+  return renderTitledRegion(pageId, title, renderSummaryList(listClassName, counts));
+}
+
+/**
+ * @param {string} listClassName
+ * @param {Map<string, number>} counts
+ * @returns {HTMLElement}
+ */
+export function renderSummaryList(listClassName, counts) {
   const entries = [...counts.entries()];
-  return renderTitledRegion(
-    pageId,
-    title,
-    h(
-      'ul',
-      { className: listClassName },
-      entries.length > 0
-        ? entries.map(([name, count]) => h('li', null, `${name}: ${count}`))
-        : [h('li', null, 'No data available.')]
-    )
+  return h(
+    'ul',
+    { className: listClassName },
+    entries.length > 0
+      ? entries.map(([name, count]) => h('li', null, `${name}: ${count}`))
+      : [h('li', null, 'No data available.')]
   );
 }
 

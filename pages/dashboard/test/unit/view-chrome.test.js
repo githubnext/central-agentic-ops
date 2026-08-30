@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import { describe, expect, it } from 'vitest';
-import { renderContextList, renderPageSection, renderProvenanceList, renderProvenanceSection, renderSummaryRegion, renderTitledRegion, renderViewHeader } from '../../src/components/view-chrome.js';
+import { renderContextList, renderPageSection, renderProvenanceList, renderProvenanceSection, renderSummaryList, renderSummaryRegion, renderTitledRegion, renderViewHeader } from '../../src/components/view-chrome.js';
 
 describe('view chrome component helpers', () => {
   it('DLS-SAFE-007 renders focusable labeled page sections with deterministic heading ids', () => {
@@ -64,6 +64,21 @@ describe('view chrome component helpers', () => {
     expect(region.querySelector('.provenance-list')?.textContent).toContain('No source provenance available for this page.');
   });
 
+  it('DLS-VIEW-013 renders reusable summary lists including empty counts', () => {
+    const populated = renderSummaryList('overview-rollout-mode-counts', new Map([
+      ['shadow', 2],
+      ['full', 1]
+    ]));
+    const empty = renderSummaryList('run-outcome-counts', new Map());
+
+    expect(populated.className).toBe('overview-rollout-mode-counts');
+    expect(populated.querySelectorAll('li')).toHaveLength(2);
+    expect(populated.textContent).toContain('shadow: 2');
+    expect(populated.textContent).toContain('full: 1');
+    expect(empty.className).toBe('run-outcome-counts');
+    expect(empty.textContent).toContain('No data available.');
+  });
+
   it('DLS-VIEW-013 renders reusable summary regions including empty counts', () => {
     const populated = renderSummaryRegion('overview', 'Rollout Mode Filtering', 'overview-rollout-mode-counts', new Map([
       ['shadow', 2],
@@ -75,7 +90,6 @@ describe('view chrome component helpers', () => {
     expect(populated.getAttribute('aria-labelledby')).toBe('overview-rollout-mode-filtering-heading');
     expect(populated.querySelector('h3')?.textContent).toBe('Rollout Mode Filtering');
     expect(populated.querySelector('ul')?.className).toBe('overview-rollout-mode-counts');
-    expect(populated.querySelectorAll('li')).toHaveLength(2);
     expect(populated.textContent).toContain('shadow: 2');
     expect(populated.textContent).toContain('full: 1');
     expect(empty.querySelector('ul')?.className).toBe('run-outcome-counts');
