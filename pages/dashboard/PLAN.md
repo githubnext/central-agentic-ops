@@ -54,6 +54,7 @@
   - [x] Motion audit: port the report's 120ms interactive color/background transitions and 80ms chart-point tooltip fade; retain the existing repository-link transition, and disable nonessential motion for reduced-motion users. The report contains no keyframe animations, and its catalog disclosure transition has no renderer equivalent yet.
   - [x] Motion audit verification: add automated parity coverage proving the retained 120ms navigation/link transitions, 80ms chart tooltip fade, repository-link transition, and reduced-motion override remain present in the generic stylesheet.
   - [x] Preview fixtures: provide multi-point, multi-series operational-value observations plus linked run and evidence records so the browser dashboard renders meaningful chart geometry and actionable links.
+  - [x] Safe-link parity verification: harden automated coverage so credential-bearing, non-HTTPS, and blank-label runtime links are all omitted across reusable metric and table link surfaces while safe HTTPS links remain visible.
 
 ## Specification questions
 
@@ -95,6 +96,13 @@
 - Continued the Parity milestone with a narrow non-semantic verification increment against the already-implemented motion audit patterns derived from `dashboard/report/report.mjs`.
 - Added automated unit coverage in `test/unit/scaffold.test.js` proving the generic stylesheet still includes the retained 120ms color/background transitions, the 80ms chart-point tooltip fade, the repository-link transition, and the reduced-motion override that suppresses nonessential motion.
 - Re-read `dashboard/report/report.mjs` and kept the implementation conservative: no new runtime behavior or dashboard semantics were introduced because this slice only hardens parity evidence for existing generic styling primitives.
+- Next milestone: Parity, continuing the remaining report feature and presentation inventory closure work under the existing declarative and reusable-runtime constraints.
+
+### 2026-08-30 (parity safe-link verification slice)
+- Continued the Parity milestone with a narrow verification increment on reusable runtime link handling, keeping the existing conservative `https`-only sanitizer and extending evidence rather than inventing new semantics.
+- Expanded `test/unit/presenter.test.js` and `test/e2e/smoke.spec.js` so `DLS-SAFE-004` coverage now proves credential-bearing links, non-HTTPS `ftp:` links, and blank-label links are all omitted across both custom table and custom metric link surfaces while safe HTTPS links remain visible.
+- Re-read the report reference and kept this slice presentation-aligned but non-semantic: no renderer code or declarative dashboard composition changed because the existing generic runtime already satisfied the conservative behavior.
+- Verified `pages/dashboard/` quality gates in this run: `npm install`, `npm run build`, `npm run typecheck` (rerun once per environment guidance), `npm run lint`, `npm test`, and `npx playwright test --config=playwright.config.mjs` all pass.
 - Next milestone: Parity, continuing the remaining report feature and presentation inventory closure work under the existing declarative and reusable-runtime constraints.
 
 ## Run log
