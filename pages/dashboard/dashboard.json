@@ -69,8 +69,8 @@
             },
             {
               "id": "overview-repositories",
-              "title": "Repositories",
-              "description": "Count of repositories currently represented in the control plane.",
+              "title": "Managed repositories",
+              "description": "Count of repositories managed by Central Agentic Ops.",
               "data": { "source": "repositories" },
               "mark": "metric",
               "layout": "third",
