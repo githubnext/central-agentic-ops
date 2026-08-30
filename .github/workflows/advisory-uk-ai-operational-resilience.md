@@ -57,6 +57,7 @@ permissions:
   issues: read
   pull-requests: read
   security-events: read
+  secret-scanning-alerts: read
   vulnerability-alerts: read
 
 engine:
@@ -75,6 +76,7 @@ run-name: "UK AI operational resilience advisory · ${{ inputs.target_repo }} ·
 
 concurrency:
   group: "${{ github.workflow }}-${{ inputs.target_repo }}"
+  job-discriminator: ${{ github.run_id }}
   cancel-in-progress: true
 
 tracker-id: advisory-uk-ai-operational-resilience
