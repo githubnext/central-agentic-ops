@@ -88,10 +88,14 @@ function renderQuantitativeSummary(label, values) {
     return h('span', { className: 'table-summary-empty' }, 'No numeric values');
   }
   const mean = values.reduce((total, value) => total + value, 0) / values.length;
+  const sortedValues = [...values].sort((left, right) => left - right);
+  const middle = Math.floor(sortedValues.length / 2);
+  const median = sortedValues.length % 2 === 0
+    ? (sortedValues[middle - 1] + sortedValues[middle]) / 2
+    : sortedValues[middle];
   const deviation = Math.sqrt(
     values.reduce((total, value) => total + ((value - mean) ** 2), 0) / values.length
   );
-  const formattedMean = formatStatistic(mean);
   return h(
     'div',
     { className: 'table-summary-quantitative' },
@@ -102,8 +106,8 @@ function renderQuantitativeSummary(label, values) {
     h(
       'dl',
       null,
-      h('div', null, h('dt', null, 'Average'), h('dd', null, formattedMean)),
-      h('div', null, h('dt', null, 'Mean'), h('dd', null, formattedMean)),
+      h('div', null, h('dt', null, 'Mean'), h('dd', null, formatStatistic(mean))),
+      h('div', null, h('dt', null, 'Median'), h('dd', null, formatStatistic(median))),
       h('div', null, h('dt', null, 'Standard deviation'), h('dd', null, formatStatistic(deviation)))
     )
   );
