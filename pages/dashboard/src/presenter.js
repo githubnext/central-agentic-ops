@@ -23,11 +23,15 @@ import { renderContextChrome, renderPageSection, renderViewSectionChrome } from 
  */
 
 /**
- * @typedef {{ id: string, kind: 'built-in', page: string, title?: string, description?: string, definition?: { views?: Array<unknown>, ['data-state']?: Record<string, boolean> } }} PresentableBuiltInPage
+ * @typedef {{ id: string, title?: string, description?: string, layout: 'full'|'wide'|'narrow', views: string[] }} PresentablePageSection
  */
 
 /**
- * @typedef {{ id: string, kind: 'custom', title?: string, description?: string, views: unknown[] }} PresentableCustomPage
+ * @typedef {{ id: string, kind: 'built-in', page: string, title?: string, description?: string, definition?: { views?: Array<unknown>, sections?: PresentablePageSection[], ['data-state']?: Record<string, boolean> } }} PresentableBuiltInPage
+ */
+
+/**
+ * @typedef {{ id: string, kind: 'custom', title?: string, description?: string, views: unknown[], sections?: PresentablePageSection[] }} PresentableCustomPage
  */
 
 /**
@@ -48,7 +52,8 @@ const BUILT_IN_PAGE_PAYLOADS = /** @type {Record<string, PresentableCustomPage>}
       kind: 'custom',
       title: page.title,
       description: 'description' in page ? page.description : undefined,
-      views: page.definition.views
+      views: page.definition.views,
+      sections: page.definition.sections
     }
   ])
 ));
@@ -65,7 +70,8 @@ function getBuiltInPagePayload(page) {
     kind: 'custom',
     title: page.title ?? payload?.title,
     description: page.description ?? payload?.description,
-    views: payload?.views ?? []
+    views: payload?.views ?? [],
+    sections: payload?.sections
   };
 }
 
@@ -278,6 +284,7 @@ function renderPage(page, sources) {
  */
 function renderCustomPage(page, title, sources) {
   const views = Array.isArray(page.views) ? page.views : [];
+  const sections = Array.isArray(page.sections) ? page.sections : [];
   /** @type {Map<string, LogicalSourceInput>} */
   const pageSources = new Map();
   for (const view of views) {
@@ -288,12 +295,23 @@ function renderCustomPage(page, title, sources) {
 
   }
   const renderedViews = views.map((view, index) => {
-    const rendered = renderCustomView(page.id, view, index, sources);
+    const rendered = renderCustomView(page.id, view, index, sources, sections.length > 0 ? 'h4' : 'h3');
     const layout = isPlainObject(view) && typeof view.layout === 'string' ? view.layout : 'full';
     rendered.classList.add('custom-view');
     rendered.setAttribute('data-view-layout', layout);
     return rendered;
   });
+  const renderedViewsById = new Map(views.map((view, index) => [
+    isPlainObject(view) && typeof view.id === 'string' ? view.id : `view-${index + 1}`,
+    renderedViews[index]
+  ]));
+  const renderedContent = sections.length > 0
+    ? h(
+      'div',
+      { className: 'page-layout-grid' },
+      ...sections.map((section) => renderLayoutSection(page.id, section, renderedViewsById))
+    )
+    : h('div', { className: 'custom-view-grid' }, ...renderedViews);
 
   return h(
     'section',
@@ -308,8 +326,40 @@ function renderCustomPage(page, title, sources) {
     page.description ? h('p', { className: 'page-description' }, page.description) : null,
     renderDataStateMetrics(summarizeDataState(pageSources)),
     ...(renderedViews.length > 0
-      ? [h('div', { className: 'custom-view-grid' }, ...renderedViews)]
+      ? [renderedContent]
       : [h('p', null, 'No custom views available.')])
+  );
+}
+
+/**
+ * @param {string} pageId
+ * @param {PresentablePageSection} section
+ * @param {Map<string, HTMLElement>} renderedViews
+ * @returns {HTMLElement}
+ */
+function renderLayoutSection(pageId, section, renderedViews) {
+  const title = section.title ?? titleCase(section.id);
+  const headingId = `${pageId}-${section.id}-layout-heading`;
+  return h(
+    'section',
+    {
+      className: 'layout-section',
+      'data-section-id': section.id,
+      'data-section-layout': section.layout,
+      'aria-labelledby': headingId
+    },
+    h(
+      'header',
+      { className: 'layout-section-header' },
+      h('h3', { id: headingId }, title),
+      section.description ? h('p', null, section.description) : null
+    ),
+    h(
+      'div',
+      { className: 'custom-view-grid' },
+      ...section.views.map((viewId) => renderedViews.get(viewId)
+        ?? h('p', { className: 'empty', 'data-missing-view-id': viewId }, `View unavailable: ${viewId}`))
+    )
   );
 }
 
@@ -430,12 +480,13 @@ function summarizeDataState(pageSources) {
  * @param {unknown} view
  * @param {number} index
  * @param {Record<string, LogicalSourceInput>} sources
+ * @param {'h3'|'h4'} [headingTag]
  * @returns {HTMLElement}
  */
-function renderCustomView(pageId, view, index, sources) {
+function renderCustomView(pageId, view, index, sources, headingTag = 'h3') {
   const fallbackTitle = `View ${index + 1}`;
   if (!isPlainObject(view)) {
-    return renderCustomViewState(pageId, fallbackTitle, null, 'unavailable', ['Invalid custom view definition.']);
+    return renderCustomViewState(pageId, fallbackTitle, null, 'unavailable', ['Invalid custom view definition.'], headingTag);
   }
 
   const title = typeof view.title === 'string' && view.title.length > 0
@@ -446,12 +497,12 @@ function renderCustomView(pageId, view, index, sources) {
 
   const sourceName = getViewSource(view);
   if (!sourceName) {
-    return renderCustomViewState(pageId, title, null, 'unavailable', ['Source unavailable.']);
+    return renderCustomViewState(pageId, title, null, 'unavailable', ['Source unavailable.'], headingTag);
   }
 
   const sourceInput = sources[sourceName];
   if (!sourceInput || !Array.isArray(sourceInput.rows)) {
-    return renderCustomViewState(pageId, title, sourceName, 'unavailable', [`Source unavailable: ${sourceName}`]);
+    return renderCustomViewState(pageId, title, sourceName, 'unavailable', [`Source unavailable: ${sourceName}`], headingTag);
   }
 
   const contextDetails = [`Source: ${sourceName}`];
@@ -470,24 +521,24 @@ function renderCustomView(pageId, view, index, sources) {
   const state = sourceInput.metadata?.availability ?? inferAvailability(filteredRows);
 
   if (state !== 'available') {
-    return renderCustomViewState(pageId, title, sourceName, state, contextDetails);
+    return renderCustomViewState(pageId, title, sourceName, state, contextDetails, headingTag);
   }
 
   if (filteredRows.length === 0) {
-    return renderCustomViewState(pageId, title, sourceName, 'empty', contextDetails);
+    return renderCustomViewState(pageId, title, sourceName, 'empty', contextDetails, headingTag);
   }
 
   if (view.mark === 'metric') {
-    return renderMetricView(pageId, title, view, sourceName, filteredRows, metadata, contextDetails);
+    return renderMetricView(pageId, title, view, sourceName, filteredRows, metadata, contextDetails, headingTag);
   }
   if (view.mark === 'table') {
-    return renderTableView(pageId, title, view, sourceName, filteredRows, metadata, contextDetails);
+    return renderTableView(pageId, title, view, sourceName, filteredRows, metadata, contextDetails, headingTag);
   }
   if (view.mark === 'chart') {
-    return renderChartView(pageId, title, view, sourceName, filteredRows, metadata, contextDetails);
+    return renderChartView(pageId, title, view, sourceName, filteredRows, metadata, contextDetails, headingTag);
   }
 
-  return renderCustomViewState(pageId, title, sourceName, 'unavailable', [...contextDetails, 'Unsupported view mark.']);
+  return renderCustomViewState(pageId, title, sourceName, 'unavailable', [...contextDetails, 'Unsupported view mark.'], headingTag);
 }
 
 /**
@@ -496,9 +547,10 @@ function renderCustomView(pageId, view, index, sources) {
  * @param {string | null} sourceName
  * @param {'available'|'empty'|'unavailable'} availability
  * @param {string[]} contextDetails
+ * @param {'h3'|'h4'} [headingTag]
  * @returns {HTMLElement}
  */
-function renderCustomViewState(pageId, title, sourceName, availability, contextDetails) {
+function renderCustomViewState(pageId, title, sourceName, availability, contextDetails, headingTag = 'h3') {
   /** @type {HTMLElement[]} */
   const content = [
     h('p', { 'data-view-availability': availability }, availability === 'available'
@@ -511,7 +563,7 @@ function renderCustomViewState(pageId, title, sourceName, availability, contextD
     content.push(h('p', { className: 'view-source' }, `Affected source: ${sourceName}`));
   }
   content.push(...renderContextChrome(contextDetails));
-  return renderPageSection(pageId, title, content);
+  return renderPageSection(pageId, title, content, headingTag);
 }
 
 /**
@@ -522,9 +574,10 @@ function renderCustomViewState(pageId, title, sourceName, availability, contextD
  * @param {Array<Record<string, unknown>>} rows
  * @param {SourceMetadata} metadata
  * @param {string[]} contextDetails
+ * @param {'h3'|'h4'} [headingTag]
  * @returns {HTMLElement}
  */
-function renderMetricView(pageId, title, view, sourceName, rows, metadata, contextDetails) {
+function renderMetricView(pageId, title, view, sourceName, rows, metadata, contextDetails, headingTag = 'h3') {
   const valueDefinition = isPlainObject(view.encoding) && isPlainObject(view.encoding.value)
     ? view.encoding.value
     : null;
@@ -568,7 +621,7 @@ function renderMetricView(pageId, title, view, sourceName, rows, metadata, conte
   if (link) {
     content.push(h('p', { className: 'metric-link' }, renderExternalLink(link)));
   }
-  return renderPageSection(pageId, title, content);
+  return renderPageSection(pageId, title, content, headingTag);
 }
 
 /**
@@ -579,9 +632,10 @@ function renderMetricView(pageId, title, view, sourceName, rows, metadata, conte
  * @param {Array<Record<string, unknown>>} rows
  * @param {SourceMetadata} metadata
  * @param {string[]} contextDetails
+ * @param {'h3'|'h4'} [headingTag]
  * @returns {HTMLElement}
  */
-function renderTableView(pageId, title, view, sourceName, rows, metadata, contextDetails) {
+function renderTableView(pageId, title, view, sourceName, rows, metadata, contextDetails, headingTag = 'h3') {
   const columns = isPlainObject(view.encoding) && Array.isArray(view.encoding.columns)
     ? view.encoding.columns.filter((column) => isPlainObject(column) && typeof column.field === 'string')
     : [];
@@ -612,7 +666,7 @@ function renderTableView(pageId, title, view, sourceName, rows, metadata, contex
         ))
         : []
     })
-  ]);
+  ], headingTag);
 }
 
 /**
@@ -623,9 +677,10 @@ function renderTableView(pageId, title, view, sourceName, rows, metadata, contex
  * @param {Array<Record<string, unknown>>} rows
  * @param {SourceMetadata} metadata
  * @param {string[]} contextDetails
+ * @param {'h3'|'h4'} [headingTag]
  * @returns {HTMLElement}
  */
-function renderChartView(pageId, title, view, sourceName, rows, metadata, contextDetails) {
+function renderChartView(pageId, title, view, sourceName, rows, metadata, contextDetails, headingTag = 'h3') {
   const encoding = isPlainObject(view.encoding) ? view.encoding : null;
   const x = isPlainObject(encoding?.x) && typeof encoding.x.field === 'string' ? encoding.x : null;
   const y = isPlainObject(encoding?.y) && typeof encoding.y.field === 'string' ? encoding.y : null;
@@ -668,7 +723,7 @@ function renderChartView(pageId, title, view, sourceName, rows, metadata, contex
         ))
         : []
     })
-  ]);
+  ], headingTag);
 }
 
 /**

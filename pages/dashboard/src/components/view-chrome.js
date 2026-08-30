@@ -8,9 +8,10 @@ import { h } from '../dom.js';
  * @param {string} pageId
  * @param {string} title
  * @param {HTMLElement[]} content
+ * @param {'h3'|'h4'} [headingTag]
  * @returns {HTMLElement}
  */
-export function renderPageSection(pageId, title, content) {
+export function renderPageSection(pageId, title, content, headingTag = 'h3') {
   return h(
     'section',
     {
@@ -18,7 +19,7 @@ export function renderPageSection(pageId, title, content) {
       tabIndex: 0,
       'aria-labelledby': `${pageId}-${slugifyText(title)}-heading`
     },
-    h('h3', { id: `${pageId}-${slugifyText(title)}-heading` }, title),
+    h(headingTag, { id: `${pageId}-${slugifyText(title)}-heading` }, title),
     ...content
   );
 }

@@ -49,6 +49,7 @@
   - [x] Slice: `T-PAGE-001` conservative machine-readable coverage for implemented built-in page defaults and data-state exposure via the Appendix A presenter fixture.
   - [x] Slice: `T-LINK-001` conservative machine-readable coverage for available finding issue, pull-request, and run associations rendered as anchored links in the Appendix A presenter fixture.
 - [ ] **Parity** — inventory the features of the existing dashboard in `dashboard/report/report.mjs`, record them in `PLAN.md` as a parity checklist, then express each one as YAML configuration plus data fixtures, closing the checklist incrementally.
+  - [x] Overview structure: express the report's full-width control-plane health, paired wide/narrow attention and managed-workflow panels, and full-width execution/value trends as declarative JSON sections rendered by the generic presenter.
   - [x] Motion audit: port the report's 120ms interactive color/background transitions and 80ms chart-point tooltip fade; retain the existing repository-link transition, and disable nonessential motion for reduced-motion users. The report contains no keyframe animations, and its catalog disclosure transition has no renderer equivalent yet.
   - [x] Preview fixtures: provide multi-point, multi-series operational-value observations plus linked run and evidence records so the browser dashboard renders meaningful chart geometry and actionable links.
 
