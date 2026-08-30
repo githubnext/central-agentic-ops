@@ -60,7 +60,7 @@
 - `src/components/badge.js` — presentation-only Primer status, mode, and active-state badges.
 - `src/components/data-state.js` — presentation-only data-state metrics card grid for availability, completeness, and freshness.
 - `src/components/table-region.js` — presentation-only reusable table wrapper for repeated table-region markup, header rows, empty-state rows, and keyed body-row descriptors across built-in and custom tables.
-- `src/components/view-chrome.js` — presentation-only reusable page-section, titled-region, summary-list/summary-region, custom-view source/metadata/context chrome, and built-in provenance-section helpers.
+- `src/components/view-chrome.js` — presentation-only reusable page-section, titled-region, summary-list/summary-region, generic custom-view chrome paragraphs, custom-view source/metadata/context chrome, and built-in provenance-section helpers.
 
 ## Infrastructure blockers
 
@@ -68,6 +68,15 @@
 - 2026-08-28: `npm run test:e2e` is currently blocked in this environment because the Playwright Chromium executable is not provisioned (`browserType.launch: Executable doesn't exist`). The workflow should prefer the built-in Playwright MCP browser tools until the package-level browser dependency is available.
 
 ## Run log
+
+### 2026-08-30 (view-chrome paragraph refactor)
+
+- Re-inventoried the remaining repeated UI construction under `pages/dashboard/src/` and selected the next bounded helper slice inside the shared chrome library: repeated custom-view paragraph assembly where the first line uses `.view-source` and subsequent lines use `.view-metadata`.
+- Extended `src/components/view-chrome.js` with presentation-only `renderViewChrome(lines)` and rewired `renderViewHeader(...)` to compose it, collapsing the duplicated paragraph shape used by source and metadata chrome into one reusable helper for future custom-view slices.
+- Collapsed the identified call sites in `src/components/view-chrome.js`: the existing source line and metadata line emitted by `renderViewHeader(...)`, which now reuse the shared paragraph helper while preserving DOM text and class names.
+- Added unit coverage in `test/unit/view-chrome.test.js` for populated and empty `renderViewChrome(...)` inputs alongside the existing `renderViewHeader(...)` assertions.
+- Proved unchanged behavior by keeping `npm install`, `npm run typecheck`, `npm run lint`, `npm test`, and `npx playwright test --config=playwright.config.mjs` green from `pages/dashboard/`, and by capturing the affected diff at `/tmp/gh-aw/agent/view-chrome-refactor.diff` to confirm the change is limited to introducing the shared helper and composing it from the existing header helper.
+- Next candidates in the queue: extract the repeated custom-view section composition shared by metric, table, and chart renderers in `src/presenter.js`; extract shared pure helpers for chart/table row text formatting and link-column composition; extract the repeated state-message plus context composition in unavailable and empty custom views.
 
 ### 2026-08-30 (repositories ranking-definition slice)
 
