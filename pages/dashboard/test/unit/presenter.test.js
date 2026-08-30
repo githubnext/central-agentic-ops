@@ -225,6 +225,18 @@ describe('presenter built-in and custom pages', () => {
     expect(repositoryLink?.getAttribute('title')).toBe('View octo-org/agentic-operations on GitHub');
   });
 
+  it('renders section-labeled Attention Investigate Explore navigation groups in the sidebar', () => {
+    const rendered = renderDashboard({
+      document: authoritativeDashboardDocument,
+      sources: {}
+    });
+
+    const labels = [...rendered.querySelectorAll('.nav-section-label')].map((node) => node.textContent?.trim());
+    expect(labels).toEqual(['Attention', 'Investigate', 'Explore']);
+    expect(rendered.querySelector('[data-nav-page-id="overview"]')?.previousElementSibling?.textContent).toBe('Attention');
+    expect(rendered.querySelector('[data-nav-page-id="runs"]')?.previousElementSibling?.textContent).toBe('Investigate');
+  });
+
   it('DLS-VIEW-018 DLS-VIEW-019 DLS-VIEW-020 progressively discloses supplemental views in source order', () => {
     const document = {
       languageVersion: '0.1.0',

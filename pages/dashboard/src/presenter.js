@@ -166,6 +166,20 @@ function inferOrganizationName(sources) {
  */
 function renderSidebar(pages, orgName) {
   const firstPageId = pages[0]?.id;
+  const navigationSections = [
+    {
+      label: 'Attention',
+      pages: pages.filter((page) => page.id === 'overview')
+    },
+    {
+      label: 'Investigate',
+      pages: pages.filter((page) => ['runs', 'findings', 'operational-value'].includes(page.id))
+    },
+    {
+      label: 'Explore',
+      pages: pages.filter((page) => !['overview', 'runs', 'findings', 'operational-value'].includes(page.id))
+    }
+  ].filter((section) => section.pages.length > 0);
   return h(
     'aside',
     { className: 'org-sidebar', 'aria-label': 'Central Agentic Ops navigation' },
@@ -178,7 +192,10 @@ function renderSidebar(pages, orgName) {
     h(
       'nav',
       { className: 'primary-nav', 'aria-label': 'Primary' },
-      pages.map((page, index) => renderNavItem(page, index === 0))
+      navigationSections.flatMap((section) => [
+        h('span', { className: 'nav-section-label' }, section.label),
+        ...section.pages.map((page, index) => renderNavItem(page, firstPageId === page.id && index === 0))
+      ])
     )
   );
 }

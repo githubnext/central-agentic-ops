@@ -71,7 +71,7 @@
 - [x] Operational overview health banner, execution-health bar, attention list, managed-package cards, and execution/value trends.
 - [x] Package-specific All/Review/Live mode tabs, package utilization cards, and 30-day cumulative run trends.
 - [x] Reusable table search, announced shown/matched counts, bounded nominal facets, URL-synchronized filter state, and 25-row progressive disclosure.
-- [ ] Section-labeled Attention/Investigate/Explore navigation.
+- [x] Section-labeled Attention/Investigate/Explore navigation.
 - [x] Report actions for a descriptive refresh control and a GitHub repository link, driven by a new `dashboard.repository` configuration field.
 - [ ] Mode, package, repository, and workflow view tabs with configured-mode indicators.
 - [ ] Dense findings/outcomes indexes, category summaries, and durable output detail presentation.
@@ -116,6 +116,13 @@
 - 2026-08-28: `npm run test:e2e` is currently blocked in this environment because the Playwright Chromium executable is not provisioned (`browserType.launch: Executable doesn't exist`). The workflow should prefer the built-in Playwright MCP browser tools until the package-level browser dependency is available.
 
 ## Run log
+
+### 2026-08-30 (section-labeled navigation parity slice)
+- Continued the Parity milestone with a narrow presenter-and-style increment derived from the report sidebar structure in `dashboard/report/report.mjs`, keeping the change generic and limited to navigation chrome.
+- Updated `src/presenter.js` to group sidebar page links into labeled `Attention`, `Investigate`, and `Explore` sections without introducing page-specific rendering bodies, and added matching generic `.nav-section-label` styling in `src/styles.js`.
+- Added unit coverage in `test/unit/presenter.test.js` for the new sidebar labels and browser coverage in `test/e2e/smoke.spec.js` for the overview-only fixture's rendered `Attention` group.
+- Verified `pages/dashboard/` quality gates in this run: `npm install`, `npm run build`, `npm run typecheck` (failed before install because local type definitions were not linked yet, then passed after install), `npm run lint`, `npm test`, and `npx playwright test --config=playwright.config.mjs` all pass.
+- Next milestone: Parity, continuing the remaining report feature and presentation inventory closure work (mode/package/repository/workflow tabs with configured-mode indicators) under the existing declarative and reusable-runtime constraints.
 
 ### 2026-08-30 (report actions refresh description and repository link slice)
 - Continued the Parity milestone by adding descriptive report actions matching `dashboard/report/report.mjs`'s `refreshLink`/`repositoryLink` chrome: the toolbar's Refresh control now exposes a descriptive `title`/`aria-label`, and a GitHub repository link icon renders beside it using the existing (previously unused) `.repository-link` styling.
