@@ -63,6 +63,57 @@ describe('dashboard document validation', () => {
     }
   });
 
+  it('DLS-DOC-011 accepts a safe github-url-base and rejects unsafe or malformed values with DLS-E003', () => {
+    const baseDocument = validDocument.replace(`
+    - id: usage
+      kind: built-in
+      page: usage
+      title: Usage`, '');
+
+    const withGithubUrlBase = baseDocument.replace(
+      '  title: Agentic Operations\n',
+      '  title: Agentic Operations\n  github-url-base: https://github.example.com\n'
+    );
+    const accepted = validateDashboardDocument(withGithubUrlBase);
+    expect(accepted.ok).toBe(true);
+
+    const withCredentials = baseDocument.replace(
+      '  title: Agentic Operations\n',
+      '  title: Agentic Operations\n  github-url-base: "https://user:pass@github.example.com"\n'
+    );
+    const rejectedCredentials = validateDashboardDocument(withCredentials);
+    expect(rejectedCredentials.ok).toBe(false);
+    if (!rejectedCredentials.ok) {
+      expect(rejectedCredentials.errors).toContainEqual(
+        expect.objectContaining({ code: 'DLS-E003', path: '$.dashboard.github-url-base' })
+      );
+    }
+
+    const withQuery = baseDocument.replace(
+      '  title: Agentic Operations\n',
+      '  title: Agentic Operations\n  github-url-base: https://github.example.com?foo=bar\n'
+    );
+    const rejectedQuery = validateDashboardDocument(withQuery);
+    expect(rejectedQuery.ok).toBe(false);
+    if (!rejectedQuery.ok) {
+      expect(rejectedQuery.errors).toContainEqual(
+        expect.objectContaining({ code: 'DLS-E003', path: '$.dashboard.github-url-base' })
+      );
+    }
+
+    const withHttp = baseDocument.replace(
+      '  title: Agentic Operations\n',
+      '  title: Agentic Operations\n  github-url-base: http://github.example.com\n'
+    );
+    const rejectedHttp = validateDashboardDocument(withHttp);
+    expect(rejectedHttp.ok).toBe(false);
+    if (!rejectedHttp.ok) {
+      expect(rejectedHttp.errors).toContainEqual(
+        expect.objectContaining({ code: 'DLS-E003', path: '$.dashboard.github-url-base' })
+      );
+    }
+  });
+
   it('DLS-DOC-001 rejects multiple YAML documents with DLS-E002', () => {
     const result = validateDashboardDocument(`${validDocument}\n---\n${validDocument}`);
 

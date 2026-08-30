@@ -216,6 +216,14 @@ function validateDashboard(dashboard, dashboardNode, errors) {
   validateStringField(dashboard.title, '$.dashboard.title', true, errors);
   validateOptionalStringField(dashboard.description, '$.dashboard.description', errors);
 
+  if (dashboard['github-url-base'] !== undefined && !isSafeGithubUrlBase(dashboard['github-url-base'])) {
+    errors.push(createError(
+      ERROR_CODES.missingOrInvalidRequiredField,
+      'github-url-base must be an absolute HTTPS URL without credentials, query, or fragment.',
+      '$.dashboard.github-url-base'
+    ));
+  }
+
   if (dashboard.defaults !== undefined) {
     if (!isPlainObject(dashboard.defaults)) {
       errors.push(createError(
@@ -1763,6 +1771,19 @@ function isSafeHttpsUrl(value) {
   } catch {
     return false;
   }
+}
+
+/**
+ * @param {unknown} value
+ * @returns {value is string}
+ */
+function isSafeGithubUrlBase(value) {
+  if (!isSafeHttpsUrl(value)) {
+    return false;
+  }
+
+  const url = new URL(/** @type {string} */ (value));
+  return url.search === '' && url.hash === '';
 }
 
 /**
