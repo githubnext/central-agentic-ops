@@ -244,13 +244,19 @@ function renderMainContent(document, title, description, pages, sources, orgName
         { className: 'shell' },
         h('a', { href: '#/' }, orgName),
         h('a', { href: '#/dashboard' }, title),
-        latestRetrieval
-          ? h(
-            'div',
-            { className: 'report-actions' },
-            h('time', { className: 'freshness', dateTime: latestRetrieval }, `Last updated ${formatReportDate(latestRetrieval)}`)
+        h(
+          'div',
+          { className: 'report-actions' },
+          latestRetrieval
+            ? h('time', { className: 'freshness', dateTime: latestRetrieval }, `Last updated ${formatReportDate(latestRetrieval)}`)
+            : null,
+          h(
+            'button',
+            { type: 'button', className: 'refresh-button', onclick: () => window.location.reload() },
+            octicon('sync'),
+            h('span', null, 'Refresh')
           )
-          : null
+        )
       )
     ),
     h(
