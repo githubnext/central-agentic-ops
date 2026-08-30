@@ -102,7 +102,7 @@ function renderPackageUtilization(sources, mode, headingId) {
   const available = Boolean(sources.usage) && usageMetadata?.availability !== 'unavailable';
   const completeness = usageMetadata?.completeness ?? 'unknown';
   const windowLabel = sourceWindowLabel(usageMetadata);
-  const modeLabel = mode === 'all' ? 'all' : mode;
+  const modeLabel = mode;
 
   return h(
     'section',
