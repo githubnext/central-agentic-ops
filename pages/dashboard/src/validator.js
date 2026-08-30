@@ -28,6 +28,7 @@ import {
   GRADER_STATUS_VALUES,
   IDENTIFIER_PATTERN,
   LANGUAGE_VERSION,
+  MAX_ESSENTIAL_VIEWS_PER_PAGE,
   NON_ADDITIVE_MEASURE_FIELDS,
   ORDER_BY_KEYS,
   ORDER_DIRECTION_VALUES,
@@ -48,6 +49,7 @@ import {
   TIME_UNIT_VALUES,
   VIEW_DATA_KEYS,
   VIEW_CHART_VALUES,
+  VIEW_DISCLOSURE_VALUES,
   VIEW_ENCODING_KEYS,
   VIEW_KEYS,
   VIEW_LAYOUT_VALUES,
@@ -399,6 +401,7 @@ function validateBuiltInPageDefinition(pageName, definition, path, errors) {
   }
 
   validateBuiltInPageSections(definition.sections, definition.views, path, errors);
+  validateProgressiveDisclosure(definition.views, `${path}.definition.views`, errors);
 
   /** @type {Map<string, Set<string>>} */
   const sourceFieldCoverage = new Map();
@@ -694,6 +697,7 @@ function validateCustomPage(page, pageNode, path, errors) {
       errors
     );
   });
+  validateProgressiveDisclosure(page.views, `${path}.views`, errors);
 }
 
 /**
@@ -773,6 +777,8 @@ function validateView(view, viewNode, path, viewIds, errors) {
         `${path}.layout`
       ));
     }
+
+
   }
 
   /** @type {string | null} */
@@ -796,6 +802,51 @@ function validateView(view, viewNode, path, viewIds, errors) {
   validateSemanticFieldLiterals(view.data, `${path}.data`, errors);
   validateDatasetMetadata(getValueNodeByKey(viewNode, 'data'), view.data, `${path}.data`, errors);
   validateEncoding(getValueNodeByKey(viewNode, 'encoding'), view.encoding, view.mark, view.chart, sourceName, view.data, path, errors);
+}
+
+/**
+ * @param {unknown[]} views
+ * @param {string} path
+ * @param {ValidationError[]} errors
+ */
+function validateProgressiveDisclosure(views, path, errors) {
+  const validViews = views.filter(isPlainObject);
+  for (const [index, view] of views.entries()) {
+    if (isPlainObject(view)) {
+      validateDisclosureValue(view.disclosure, `${path}[${index}].disclosure`, errors);
+    }
+  }
+
+  if (!validViews.some((view) => Object.hasOwn(view, 'disclosure'))) {
+    return;
+  }
+
+  const essentialCount = validViews.filter((view) => view.disclosure !== 'supplemental').length;
+  if (essentialCount < 1 || essentialCount > MAX_ESSENTIAL_VIEWS_PER_PAGE) {
+    errors.push(createError(
+      ERROR_CODES.invalidProgressiveDisclosureConfiguration,
+      `A page must expose between 1 and ${MAX_ESSENTIAL_VIEWS_PER_PAGE} essential views initially; found ${essentialCount}. Mark non-essential views as "supplemental".`,
+      path
+    ));
+  }
+}
+
+/**
+ * @param {unknown} disclosure
+ * @param {string} path
+ * @param {ValidationError[]} errors
+ */
+function validateDisclosureValue(disclosure, path, errors) {
+  if (disclosure === undefined) {
+    return;
+  }
+  if (typeof disclosure !== 'string' || !VIEW_DISCLOSURE_VALUES.includes(disclosure)) {
+    errors.push(createError(
+      ERROR_CODES.nonCanonicalVocabularyOrIdentifier,
+      'disclosure must be exactly "essential" or "supplemental".',
+      path
+    ));
+  }
 }
 
 /**

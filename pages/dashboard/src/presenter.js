@@ -353,9 +353,31 @@ function renderCustomPage(page, title, sources, useOperationalOverview) {
   const renderedViews = views.map((view, index) => {
     const rendered = renderCustomView(page.id, view, index, sources, sections.length > 0 ? 'h4' : 'h3');
     const layout = isPlainObject(view) && typeof view.layout === 'string' ? view.layout : 'full';
+    const disclosure = isPlainObject(view) && view.disclosure === 'supplemental' ? 'supplemental' : 'essential';
     rendered.classList.add('custom-view');
     rendered.setAttribute('data-view-layout', layout);
-    return rendered;
+    rendered.setAttribute('data-disclosure', disclosure);
+    if (disclosure === 'essential') {
+      return rendered;
+    }
+
+    rendered.classList.remove('custom-view');
+    rendered.removeAttribute('data-view-layout');
+    return h(
+      'details',
+      {
+        className: 'custom-view view-disclosure',
+        'data-view-layout': layout,
+        'data-disclosure': disclosure
+      },
+      h(
+        'summary',
+        { className: 'view-disclosure-summary' },
+        h('span', null, getViewTitle(view, index)),
+        h('span', { className: 'view-disclosure-hint' }, 'Show details')
+      ),
+      rendered
+    );
   });
   const renderedViewsById = new Map(views.map((view, index) => [
     isPlainObject(view) && typeof view.id === 'string' ? view.id : `view-${index + 1}`,
@@ -564,11 +586,7 @@ function renderCustomView(pageId, view, index, sources, headingTag = 'h3') {
     return renderCustomViewState(pageId, fallbackTitle, null, 'unavailable', ['Invalid custom view definition.'], headingTag);
   }
 
-  const title = typeof view.title === 'string' && view.title.length > 0
-    ? view.title
-    : typeof view.id === 'string' && view.id.length > 0
-      ? titleCase(view.id)
-      : fallbackTitle;
+  const title = getViewTitle(view, index);
 
   const sourceName = getViewSource(view);
   if (!sourceName) {
@@ -617,6 +635,23 @@ function renderCustomView(pageId, view, index, sources, headingTag = 'h3') {
   }
 
   return renderCustomViewState(pageId, title, sourceName, 'unavailable', [...contextDetails, 'Unsupported view mark.'], headingTag);
+}
+
+/**
+ * @param {unknown} view
+ * @param {number} index
+ * @returns {string}
+ */
+function getViewTitle(view, index) {
+  if (isPlainObject(view)) {
+    if (typeof view.title === 'string' && view.title.length > 0) {
+      return view.title;
+    }
+    if (typeof view.id === 'string' && view.id.length > 0) {
+      return titleCase(view.id);
+    }
+  }
+  return `View ${index + 1}`;
 }
 
 /**

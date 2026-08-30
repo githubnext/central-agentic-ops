@@ -195,7 +195,7 @@ Language keys and enumerated values use canonical kebab-case. Human-readable tit
 | `defaults` | `scope`, `time`, `filters` |
 | Built-in page | `id`, `kind`, `page`, `title`, `description` |
 | Custom page | `id`, `kind`, `title`, `description`, `views` |
-| View | `id`, `title`, `description`, `data`, `mark`, `chart`, `layout`, `encoding` |
+| View | `id`, `title`, `description`, `data`, `mark`, `chart`, `layout`, `disclosure`, `encoding` |
 | View `data` | `source`, `scope`, `time`, `filters`, `limit`, `order-by` |
 | Field definition | `field`, `type`, `aggregate`, `time-unit`, `title`, `as` (only when `aggregate` is not `none`) |
 
@@ -483,7 +483,15 @@ An omitted `data` inherits dashboard defaults. Omitted `limit` means no language
 
 If `order-by.field` matches more than one possible output, or matches a source field that is not present at the post-aggregation output grain, the validator **MUST** reject the document with `DLS-E010`. A presenter **MUST** apply the ranking using the resolved output identifier before `limit`, then apply the canonical post-aggregation row order defined in Section 7.4 (**DLS-AGG-008**, **DLS-AGG-011**) to break remaining ties, for both explicit and omitted `order-by`.
 
-### 11.3 Normative Custom-View Requirements
+### 11.3 Progressive Disclosure
+
+A view may set `disclosure` to `essential` or `supplemental`. An omitted value defaults to `essential`. Essential views contain the minimum information needed for the page's primary task and are visible initially. Supplemental views contain useful but non-essential detail and are initially collapsed behind a user-operated control.
+
+A page that uses `disclosure` has an **initial information-unit count** equal to its number of effective essential views. The upper bound of four is a conservative design heuristic informed by Cowan's finding that attention-based short-term storage is limited to approximately four chunks [COWAN-2001]. A dashboard view has not been experimentally established as one memory chunk, so this bound is a guardrail rather than a claim of psychological equivalence. Authors **SHOULD** expose fewer essential views when task analysis supports doing so. Pages that do not use `disclosure` retain the version 0.1.0 presentation behavior for compatibility.
+
+Disclosure changes presentation only. It does not change data processing, data state, provenance, links, source order, or whether required page content is available to the user.
+
+### 11.4 Normative Custom-View Requirements
 
 - **DLS-VIEW-001:** A custom page **MUST** contain `id`, `kind: custom`, and a non-empty `views` sequence; an omitted title **MUST** default from its page ID.
 - **DLS-VIEW-002:** Every view **MUST** contain a unique `id`, a `data` mapping with one canonical `source`, one allowed `mark`, and an `encoding` mapping.
@@ -500,6 +508,12 @@ If `order-by.field` matches more than one possible output, or matches a source f
 - **DLS-VIEW-013:** Before mark-specific rendering, a custom view **MUST** determine and expose exactly one view-level availability state of `available`, `empty`, or `unavailable`, together with its source provenance, freshness, completeness, effective scope, effective time range, and effective filters. An `empty` or `unavailable` state **MUST NOT** make the view invalid or cause the presenter to omit it; its textual state output **MUST** identify the affected source, effective scope, time range, and filters.
 - **DLS-VIEW-014:** Under `empty`, a `metric` **MUST** render an absent aggregate value, except that `count` and `distinct-count` **MUST** render zero; a `table` **MUST** render zero rows; and a `chart` **MUST** render zero points. Under `unavailable`, a `metric` **MUST** render no numeric value and a `table` or `chart` **MUST** render no rows or points. A presenter **MUST NOT** synthesize placeholder observations, zero-valued non-count aggregates, or links for either state.
 - **DLS-VIEW-015:** A presenter rendering `href` **MUST** use the referenced link object's `href` as the navigation target and **MUST** expose the link object's `label` as the accessible link label. If the referenced link field is absent for a datum, including every resulting datum, the datum and view **MUST** remain valid and **MUST** render without links.
+- **DLS-VIEW-016:** `disclosure`, when present, **MUST** be exactly `essential` or `supplemental`; an omitted value **MUST** default to `essential`.
+- **DLS-VIEW-017:** A page containing one or more views with `disclosure` **MUST** have at least one and no more than four effective essential views. Declarative built-in view definitions and custom page views use the same count. Section references **MUST NOT** be counted as additional views.
+- **DLS-VIEW-018:** On initial presentation, a presenter **MUST** expose essential views and **MUST** collapse supplemental views behind user-operated disclosure controls. User-directed expansion **MAY** expose more than four views.
+- **DLS-VIEW-019:** Supplemental views **MUST** remain discoverable and operable and **MUST NOT** be silently omitted. Disclosure controls and views **MUST** preserve document source order in reading and focus order.
+- **DLS-VIEW-020:** A disclosure control **MUST** expose the controlled view's accessible name and expanded state. Collapsed content **MUST** be excluded from sequential focus navigation and the accessibility tree.
+- **DLS-VIEW-021:** Disclosure state **MUST NOT** alter filtering, aggregation, ordering, limiting, provenance, freshness, completeness, availability, links, required built-in content, or semantic output.
 
 ---
 
@@ -511,6 +525,7 @@ Validation proceeds conceptually through YAML syntax, document count, structural
 - **DLS-VAL-002:** A validator **MUST** reject a document when any Level 1 structural requirement fails.
 - **DLS-VAL-003:** A Level 2 or Level 3 validator **MUST** reject incompatible source fields, filters, aggregates, encodings, links, or data relationships. A validator **MUST** reject an `href` reference to a non-link field or an ambiguous multi-link field with link-specific error code `DLS-E009`, and **MUST** reject ambiguous or invalid aggregate-order references with `DLS-E010`. A valid custom view **MUST NOT** be rejected merely because its runtime result is `empty` or `unavailable`; `DLS-E012` applies only when required external source metadata needed to determine those states is missing.
 - **DLS-VAL-004:** Error reporting **MUST NOT** expose credentials, secret values, or sensitive source payloads.
+- **DLS-VAL-005:** A validator **MUST** reject a page that uses `disclosure` and has zero or more than four effective essential views using `DLS-E013`.
 
 Error codes are listed in Appendix B.
 
@@ -530,7 +545,17 @@ Run, finding, grader, eval, usage, and provenance data may identify people, repo
 
 Accessible semantics apply independently of visual renderer choice. Each view has a title, table fields have labels, links have labels, and data states have text equivalents.
 
-### 13.4 Normative Safety Requirements
+### 13.4 Cognitive-Load Evaluation
+
+The four-view limit is a deterministic authoring bound. Teams should also evaluate representative page tasks with representative users because view complexity, prior knowledge, accessibility needs, and task pressure are not captured by element counts.
+
+The **Single Ease Question** (SEQ) is a seven-point post-task difficulty rating [SEQ]. As an initial investigation bound, teams **SHOULD** target a mean SEQ of at least 5.5, the published cross-study benchmark, and inspect task completion, errors, time, and the score's uncertainty rather than treating the mean alone as proof of usability.
+
+The **NASA Task Load Index** (NASA-TLX) measures mental, physical, and temporal demand, performance, effort, and frustration on 0–100 scales [NASA-TLX]. Its authors did not establish a universal pass/fail score. Teams **SHOULD** preregister a task- and population-specific baseline and smallest effect of interest, report all six subscales and uncertainty intervals, and investigate a page when the confidence interval for its paired workload increase exceeds that bound. Weighted and unweighted scoring **MUST NOT** be combined without identification.
+
+Research should compare one through four essential views, record disclosure use, and include keyboard and assistive-technology tasks. The evidence supports using four as a ceiling, not as a target.
+
+### 13.5 Normative Safety Requirements
 
 - **DLS-SAFE-001:** A parser **MUST** use YAML safe-loading behavior and **MUST** reject custom tags, aliases, and cyclic structures.
 - **DLS-SAFE-002:** A processor **MUST NOT** execute document content or interpret any field as code, a template, a command, or a network-fetch instruction.
@@ -572,8 +597,9 @@ In the table, “accept” means validation succeeds; “reject” means validat
 | DLS-LINK-001–007 | T-LINK-001 | 2 | Validate link shape, safety, provenance, available associations, absent associations, one-link-per-field cardinality, GitHub URL base resolution, and linked rendering of every GitHub-addressable entity. |
 | DLS-PAGE-001–014 | T-PAGE-001 | 3 | Evaluate each built-in fixture for required content, defaults, context, and data states. |
 | DLS-VIEW-001–006 | T-VIEW-001 | 3 | Validate custom structure and every allowed mark/channel combination. |
-| DLS-VIEW-007–014 | T-VIEW-002 | 3 | Validate fields, types, link-compatible `href`, time units, ordering, exclusions, operation order, exposed context, and link labels. |
-| DLS-VAL-001–004 | T-VAL-001 | 1–3 | Verify rejection, coded path-specific errors, semantic checks, and secret redaction. |
+| DLS-VIEW-007–015 | T-VIEW-002 | 3 | Validate fields, types, link-compatible `href`, time units, ordering, exclusions, operation order, exposed context, and link labels. |
+| DLS-VIEW-016–021 | T-VIEW-003 | 3 | Validate disclosure vocabulary, one-to-four essential views, initial collapsed state, accessible controls, source order, and unchanged semantic output. |
+| DLS-VAL-001–005 | T-VAL-001 | 1–3 | Verify rejection, coded path-specific errors, semantic checks, progressive-disclosure bounds, and secret redaction. |
 | DLS-SAFE-001–006 | T-SAFE-001 | 3 | Exercise safe YAML, inert content, sanitization, HTTPS links, secrets, and authorization boundaries. |
 | DLS-SAFE-007–010 | T-SAFE-002 | 3 | Inspect names, textual alternatives, labels, and non-color semantics. |
 | DLS-TEST-001–003 | T-TEST-001 | 1–3 | Inspect coverage, result metadata, time boundaries, and missing-data distinctions. |
@@ -722,6 +748,9 @@ dashboard:
 - **[WCAG 2.2]** *Web Content Accessibility Guidelines (WCAG) 2.2*. W3C Recommendation. <https://www.w3.org/TR/WCAG22/>
 - **[EXPERIMENTS]** [A/B Experiments Specification](/gh-aw/experimental/experiments-specification/)
 - **[OUTCOMES]** [Outcomes](/gh-aw/reference/outcomes/)
+- **[COWAN-2001]** Cowan, N. *The Magical Number 4 in Short-Term Memory: A Reconsideration of Mental Storage Capacity*. Behavioral and Brain Sciences 24(1), 87–114. <https://doi.org/10.1017/S0140525X01003922>
+- **[SEQ]** Sauro, J.; Dumas, J. S. *Comparison of Three One-Question, Post-Task Usability Questionnaires*. CHI 2009. <https://doi.org/10.1145/1518701.1518946>
+- **[NASA-TLX]** Hart, S. G.; Staveland, L. E. *Development of NASA-TLX (Task Load Index): Results of Empirical and Theoretical Research*. Human Mental Workload, 139–183. <https://doi.org/10.1016/S0166-4115(08)62386-9>
 
 ---
 
@@ -736,6 +765,7 @@ dashboard:
 - Defined the canonical post-aggregation row order for entity-grain and group-grain output rows, revised **DLS-AGG-008** and added **DLS-AGG-011**, aligned omitted and explicit `order-by` semantics in Section 11.2, updated **DLS-VIEW-010** and **DLS-VIEW-012**, and added grouped chart and grouped table compliance fixtures in Section 14.4.
 - Required presenters to render every GitHub-addressable entity as a link when its address is available.
 - Added `dashboard.github-url-base` so generated GitHub entity links default to GitHub.com and can target GitHub Enterprise deployments.
+- Added essential and supplemental view disclosure, a four-essential-view authoring bound, accessible presentation requirements, and SEQ and NASA-TLX user-research guidance.
 
 ---
 
@@ -833,6 +863,7 @@ dashboard:
 | `DLS-E010` | Invalid scope, filter, time range, aggregation, or aggregate-order reference |
 | `DLS-E011` | Invalid entity relationship or source grain |
 | `DLS-E012` | Missing required external provenance or data-state metadata; not an `empty` or `unavailable` runtime result |
+| `DLS-E013` | Invalid progressive-disclosure configuration or essential-view count |
 
 ### Appendix C: Invalid Examples (Informative)
 

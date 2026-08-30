@@ -105,6 +105,15 @@ main.dashboard-prototype { width: 100%; flex: 1; padding: 0 24px 40px; }
 .custom-view { min-width: 0; grid-column: span 12; }
 .custom-view[data-view-layout="half"] { grid-column: span 6; }
 .custom-view[data-view-layout="third"] { grid-column: span 4; }
+.view-disclosure { overflow: hidden; border: 1px solid var(--border); border-radius: 6px; background: var(--canvas-subtle); }
+.view-disclosure > summary { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 12px 14px; color: var(--fg); font-weight: 600; cursor: pointer; transition: background-color 120ms ease; }
+.view-disclosure > summary:hover { background: var(--neutral-muted); }
+.view-disclosure > summary::marker { color: var(--muted); }
+.view-disclosure[open] > summary { border-bottom: 1px solid var(--border); }
+.view-disclosure-hint { color: var(--muted); font-size: .75rem; font-weight: 400; }
+.view-disclosure[open] .view-disclosure-hint { font-size: 0; }
+.view-disclosure[open] .view-disclosure-hint::after { content: "Hide details"; font-size: .75rem; }
+.view-disclosure > .page-section { padding: 0 14px 14px; }
 .chart-widget { min-height: 180px; display: grid; place-items: center; margin: 12px 0; border: 1px solid var(--border); border-radius: 6px; background: var(--canvas-subtle); }
 .chart-widget svg { width: min(100%, 420px); max-height: 220px; overflow: visible; }
 .pie-chart-track { stroke: var(--border-muted); }
