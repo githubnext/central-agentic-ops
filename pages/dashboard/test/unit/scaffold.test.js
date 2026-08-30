@@ -13,4 +13,15 @@ describe('DLS-CONF-004 scaffold gates', () => {
     expect(preview.match(/"operational-value":/g)).toHaveLength(4);
     expect(preview.match(/"run-link":/g)?.length).toBeGreaterThanOrEqual(5);
   });
+
+  it('parity motion audit keeps report-style transitions and reduced-motion overrides', () => {
+    const styles = readFileSync(resolve('src/styles.js'), 'utf8');
+
+    expect(styles).toContain('transition: color 120ms ease;');
+    expect(styles).toContain('transition: background-color 120ms ease, color 120ms ease;');
+    expect(styles).toContain('transition: opacity 80ms linear;');
+    expect(styles).toContain('@media (prefers-reduced-motion: reduce)');
+    expect(styles).toContain('transition-duration: 0.01ms !important;');
+    expect(styles).toContain('.repository-link');
+  });
 });

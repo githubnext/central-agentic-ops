@@ -52,6 +52,7 @@
 - [ ] **Parity** — inventory the features of the existing dashboard in `dashboard/report/report.mjs`, record them in `PLAN.md` as a parity checklist, then express each one as YAML configuration plus data fixtures, closing the checklist incrementally.
   - [x] Overview structure: express the report's full-width control-plane health, paired wide/narrow attention and managed-workflow panels, and full-width execution/value trends as declarative JSON sections rendered by the generic presenter.
   - [x] Motion audit: port the report's 120ms interactive color/background transitions and 80ms chart-point tooltip fade; retain the existing repository-link transition, and disable nonessential motion for reduced-motion users. The report contains no keyframe animations, and its catalog disclosure transition has no renderer equivalent yet.
+  - [x] Motion audit verification: add automated parity coverage proving the retained 120ms navigation/link transitions, 80ms chart tooltip fade, repository-link transition, and reduced-motion override remain present in the generic stylesheet.
   - [x] Preview fixtures: provide multi-point, multi-series operational-value observations plus linked run and evidence records so the browser dashboard renders meaningful chart geometry and actionable links.
 
 ## Specification questions
@@ -89,6 +90,12 @@
 - Verified quality gates from `pages/dashboard/`: `npm install`, `npm run build`, `npm run typecheck` (required one immediate rerun after install because local type definitions were not linked yet), `npm run lint`, `npm test`, and `npx playwright test --config=playwright.config.mjs` all pass.
 - Marked the Security, privacy, accessibility milestone complete now that its implemented Section 13 slices are green end-to-end in build, unit, and browser verification.
 - Next milestone: Parity, continuing the report feature and presentation inventory closure work under the existing declarative and reusable-runtime constraints.
+
+### 2026-08-30 (parity motion audit verification slice)
+- Continued the Parity milestone with a narrow non-semantic verification increment against the already-implemented motion audit patterns derived from `dashboard/report/report.mjs`.
+- Added automated unit coverage in `test/unit/scaffold.test.js` proving the generic stylesheet still includes the retained 120ms color/background transitions, the 80ms chart-point tooltip fade, the repository-link transition, and the reduced-motion override that suppresses nonessential motion.
+- Re-read `dashboard/report/report.mjs` and kept the implementation conservative: no new runtime behavior or dashboard semantics were introduced because this slice only hardens parity evidence for existing generic styling primitives.
+- Next milestone: Parity, continuing the remaining report feature and presentation inventory closure work under the existing declarative and reusable-runtime constraints.
 
 ## Run log
 
