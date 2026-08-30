@@ -363,6 +363,84 @@
         }
       },
       {
+        "id": "packages",
+        "kind": "built-in",
+        "page": "packages",
+        "title": "Packages",
+        "description": "Activity from centrally managed packages.",
+        "definition": {
+          "data-state": {
+            "availability": true,
+            "completeness": true,
+            "freshness": true
+          },
+          "views": [
+            {
+              "id": "packages-inventory",
+              "title": "Package inventory",
+              "data": { "source": "workflows" },
+              "mark": "table",
+              "encoding": {
+                "columns": [
+                  { "field": "organization", "type": "nominal" },
+                  { "field": "repository", "type": "nominal" },
+                  { "field": "package", "type": "nominal" },
+                  { "field": "package-name", "type": "nominal" },
+                  { "field": "workflow", "type": "nominal" },
+                  { "field": "workflow-role", "type": "nominal" },
+                  { "field": "rollout-mode", "type": "nominal" },
+                  { "field": "max-ai-credits", "type": "quantitative" },
+                  { "field": "package-aic-allowance", "type": "quantitative" }
+                ]
+              }
+            },
+            {
+              "id": "packages-runs",
+              "title": "Package runs over time",
+              "data": { "source": "runs" },
+              "mark": "chart",
+              "chart": "line",
+              "encoding": {
+                "x": { "field": "started-at", "type": "temporal", "time-unit": "day" },
+                "y": { "field": "run", "type": "quantitative", "aggregate": "count" },
+                "color": { "field": "run-conclusion", "type": "nominal" }
+              }
+            },
+            {
+              "id": "packages-run-membership",
+              "title": "Package run membership",
+              "data": { "source": "runs" },
+              "mark": "table",
+              "encoding": {
+                "columns": [
+                  { "field": "organization", "type": "nominal" },
+                  { "field": "repository", "type": "nominal" },
+                  { "field": "workflow", "type": "nominal" },
+                  { "field": "rollout-mode", "type": "nominal" }
+                ]
+              }
+            },
+            {
+              "id": "packages-usage",
+              "title": "Package AIC utilization",
+              "data": { "source": "usage" },
+              "mark": "table",
+              "encoding": {
+                "columns": [
+                  { "field": "organization", "type": "nominal" },
+                  { "field": "repository", "type": "nominal" },
+                  { "field": "workflow", "type": "nominal" },
+                  { "field": "run", "type": "nominal" },
+                  { "field": "aic", "type": "quantitative" },
+                  { "field": "rollout-mode", "type": "nominal" },
+                  { "field": "observed-at", "type": "temporal" }
+                ]
+              }
+            }
+          ]
+        }
+      },
+      {
         "id": "workflows",
         "kind": "built-in",
         "page": "workflows",
