@@ -54,6 +54,115 @@ describe('presenter built-in and custom pages', () => {
     expect(topology?.textContent).toContain('safe outputs only');
   });
 
+  it('DLS-LINK-006 DLS-LINK-007 derives organization, repository, and workflow links from raw identity fields in the topology view', () => {
+    const document = {
+      languageVersion: '0.1.0',
+      dashboard: {
+        id: 'workflow-topology-links-dashboard',
+        title: 'Workflow Topology Links',
+        pages: [{ id: 'workflows', kind: /** @type {'built-in'} */ ('built-in'), page: 'workflows', title: 'Workflows' }]
+      }
+    };
+
+    const rendered = renderDashboard({
+      document,
+      sources: {
+        workflows: {
+          source: 'workflows',
+          rows: [
+            { organization: 'githubnext', repository: 'central-agentic-ops', package: 'dependabot', 'package-name': 'Dependabot', workflow: '.github/workflows/dependabot.yml', 'workflow-name': 'Dependabot', 'workflow-role': 'orchestrator', 'workflow-active': 'true', 'rollout-mode': 'live' },
+            { organization: 'github', repository: 'target-service', workflow: '.github/workflows/ci.yml', 'workflow-name': 'CI', 'workflow-role': 'standalone', 'workflow-active': 'true', 'rollout-mode': 'unknown' }
+          ],
+          metadata: {
+            'source-id': 'workflow-topology-links-fixture',
+            'source-kind': 'fixture',
+            'as-of': '2026-08-30T08:00:00Z',
+            'retrieved-at': '2026-08-30T08:01:00Z',
+            completeness: 'complete',
+            freshness: 'fresh',
+            availability: 'available'
+          }
+        }
+      }
+    });
+
+    const topology = rendered.querySelector('.workflow-topology');
+    const orchestratorLink = topology?.querySelector('[data-workflow-role="orchestrator"] a');
+    expect(orchestratorLink?.getAttribute('href')).toBe('https://github.com/githubnext/central-agentic-ops/blob/HEAD/.github/workflows/dependabot.yml');
+    const repositoryLink = topology?.querySelector('[data-repository="target-service"] a');
+    expect(repositoryLink?.getAttribute('href')).toBe('https://github.com/github/target-service');
+    const standaloneWorkflowLink = topology?.querySelector('[data-repository="target-service"] .standalone-workflow-icon + span a');
+    expect(standaloneWorkflowLink?.getAttribute('href')).toBe('https://github.com/github/target-service/blob/HEAD/.github/workflows/ci.yml');
+  });
+
+  it('DLS-LINK-006 DLS-LINK-007 renders derived entity links in table columns and honours a custom github-url-base plus explicit link overrides', () => {
+    const document = {
+      languageVersion: '0.1.0',
+      dashboard: {
+        id: 'entity-link-table-dashboard',
+        title: 'Entity Link Table',
+        'github-url-base': 'https://github.example.com',
+        pages: [
+          {
+            id: 'repositories',
+            kind: /** @type {'custom'} */ ('custom'),
+            title: 'Repositories',
+            views: [
+              {
+                id: 'repositories-table',
+                title: 'Repositories',
+                data: { source: 'repositories' },
+                mark: 'table',
+                encoding: {
+                  columns: [
+                    { field: 'organization' },
+                    { field: 'repository' }
+                  ]
+                }
+              }
+            ]
+          }
+        ]
+      }
+    };
+
+    const rendered = renderDashboard({
+      document,
+      sources: {
+        repositories: {
+          source: 'repositories',
+          rows: [
+            { organization: 'octo-org', repository: 'platform' },
+            {
+              organization: 'octo-org',
+              repository: 'overridden',
+              'repository-link': { relation: 'repository', href: 'https://example.com/custom', label: 'Custom link' }
+            }
+          ],
+          metadata: {
+            'source-id': 'repositories-fixture',
+            'source-kind': 'fixture',
+            'as-of': '2026-08-30T08:00:00Z',
+            'retrieved-at': '2026-08-30T08:01:00Z',
+            completeness: 'complete',
+            freshness: 'fresh',
+            availability: 'available'
+          }
+        }
+      }
+    });
+
+    const table = rendered.querySelector('table');
+    const links = [...(table?.querySelectorAll('tbody a') ?? [])];
+    const derivedOrganizationLink = links.find((link) => link.getAttribute('href') === 'https://github.example.com/octo-org');
+    expect(derivedOrganizationLink).toBeDefined();
+    const derivedRepositoryLink = links.find((link) => link.getAttribute('href') === 'https://github.example.com/octo-org/platform');
+    expect(derivedRepositoryLink).toBeDefined();
+    const overriddenRepositoryLink = links.find((link) => link.getAttribute('href') === 'https://example.com/custom');
+    expect(overriddenRepositoryLink).toBeDefined();
+    expect(links.some((link) => link.getAttribute('href') === 'https://github.example.com/octo-org/overridden')).toBe(false);
+  });
+
   it('DLS-PAGE-002 DLS-PAGE-014 renders the report-style operational overview, managed repository summary, managed packages, execution trends, and provenance data state deterministically', () => {
     /** @type {import('../../src/presenter.js').PresentationInput['document']} */
     const document = {

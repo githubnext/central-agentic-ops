@@ -42,12 +42,29 @@ import { renderOperationalOverview } from './components/operational-overview.js'
  */
 
 /**
- * @typedef {{ languageVersion: string, dashboard: { id: string, title: string, description?: string, defaults?: Record<string, unknown>, pages: Array<PresentableBuiltInPage | PresentableCustomPage> } }} PresentationDocument
+ * @typedef {{ id: string, title: string, description?: string, defaults?: Record<string, unknown>, pages: Array<PresentableBuiltInPage | PresentableCustomPage>, ['github-url-base']?: string }} PresentableDashboard
+ */
+
+/**
+ * @typedef {{ languageVersion: string, dashboard: PresentableDashboard }} PresentationDocument
  */
 
 /**
  * @typedef {{ document: PresentationDocument, sources: Record<string, LogicalSourceInput> }} PresentationInput
  */
+
+/**
+ * @typedef {'organization-link'|'repository-link'|'workflow-link'|'issue-link'|'pull-request-link'|'run-link'|'evidence-link'|'external-link'} LinkFieldName
+ */
+
+const DEFAULT_GITHUB_URL_BASE = 'https://github.com';
+
+/** @type {{ organization: 'organization-link', repository: 'repository-link', workflow: 'workflow-link' }} */
+const ENTITY_LINK_FIELDS = {
+  organization: 'organization-link',
+  repository: 'repository-link',
+  workflow: 'workflow-link'
+};
 
 
 /** @type {Record<string, PresentableCustomPage>} */
@@ -87,10 +104,14 @@ function getBuiltInPagePayload(page) {
  * @returns {HTMLElement}
  */
 export function renderDashboard(input) {
-  const { document, sources } = input;
+  const { document, sources: rawSources } = input;
   const title = document.dashboard.title;
   const description = document.dashboard.description;
   const pages = document.dashboard.pages;
+  const githubUrlBase = typeof document.dashboard['github-url-base'] === 'string' && document.dashboard['github-url-base'].length > 0
+    ? document.dashboard['github-url-base']
+    : DEFAULT_GITHUB_URL_BASE;
+  const sources = deriveEntityLinkSources(rawSources, githubUrlBase);
   const orgName = inferOrganizationName(sources) || 'GitHub';
 
   const styleEl = h('style', null, getPrimerStyles());
@@ -708,6 +729,8 @@ function renderPackageTopology(packageId, workflows) {
   const mode = String(orchestrator?.['rollout-mode'] ?? workflows[0]?.['rollout-mode'] ?? 'unknown');
   const active = workflows.every((row) => String(row['workflow-active']) === 'true');
   const complete = Boolean(orchestrator) && workers.length > 0;
+  const repositoryRow = orchestrator ?? workflows[0];
+  const repositoryLink = repositoryRow ? findLink(repositoryRow, 'repository-link') : null;
 
   return h(
     'article',
@@ -720,7 +743,7 @@ function renderPackageTopology(packageId, workflows) {
         'div',
         { className: 'package-identity' },
         h('h5', null, typeof packageName === 'string' ? packageName : titleCase(packageId)),
-        h('p', null, `${workers.length} worker${workers.length === 1 ? '' : 's'} · ${toText(orchestrator?.repository ?? workflows[0]?.repository)}`)
+        h('p', null, `${workers.length} worker${workers.length === 1 ? '' : 's'} · `, renderLinkedText(toText(repositoryRow?.repository), repositoryLink))
       ),
       h('span', { className: `mode-indicator mode-${mode}` }, mode),
       h('span', { className: `status ${active && complete ? 'status-success' : 'status-attention'}` }, active && complete ? 'Active' : 'Needs attention')
@@ -754,6 +777,7 @@ function renderPackageTopology(packageId, workflows) {
  * @returns {HTMLElement}
  */
 function renderWorkflowNode(row, role) {
+  const workflowLink = findLink(row, 'workflow-link');
   return h(
     'div',
     { className: `workflow-node workflow-node-${role}`, role: 'listitem', 'data-workflow-role': role },
@@ -761,7 +785,7 @@ function renderWorkflowNode(row, role) {
     h(
       'div',
       { className: 'workflow-node-copy' },
-      h('strong', null, toText(row['workflow-name'] ?? row.workflow)),
+      h('strong', null, renderLinkedText(toText(row['workflow-name'] ?? row.workflow), workflowLink)),
       h('code', null, toText(row.workflow)),
       h('small', null, role)
     )
@@ -794,7 +818,7 @@ function renderStandaloneWorkflows(rows) {
         'header',
         null,
         h('span', { className: 'repository-icon' }, octicon('repo')),
-        h('strong', null, repository),
+        h('strong', null, renderLinkedText(repository, findLink(workflows[0], 'repository-link'))),
         h('span', { className: 'workflow-count' }, `${workflows.length} workflow${workflows.length === 1 ? '' : 's'}`)
       ),
       h(
@@ -804,7 +828,7 @@ function renderStandaloneWorkflows(rows) {
           'li',
           null,
           h('span', { className: 'standalone-workflow-icon' }, octicon('workflow')),
-          h('span', null, h('strong', null, toText(workflow['workflow-name'] ?? workflow.workflow)), h('code', null, toText(workflow.workflow))),
+          h('span', null, h('strong', null, renderLinkedText(toText(workflow['workflow-name'] ?? workflow.workflow), findLink(workflow, 'workflow-link'))), h('code', null, toText(workflow.workflow))),
           h('span', { className: `mode-indicator mode-${toText(workflow['rollout-mode'])}` }, toText(workflow['rollout-mode'])),
           h('span', { className: `status ${String(workflow['workflow-active']) === 'true' ? 'status-success' : 'status-muted'}` }, String(workflow['workflow-active']) === 'true' ? 'Active' : 'Inactive')
         ))
@@ -868,7 +892,7 @@ function renderMetricView(pageId, title, view, sourceName, rows, metadata, conte
     ? view.encoding.href
     : null;
   const hrefField = typeof hrefDefinition?.field === 'string' ? hrefDefinition.field : null;
-  const link = hrefField ? findFirstAvailableLink(rows, /** @type {'external-link' | 'issue-link' | 'pull-request-link' | 'run-link' | 'evidence-link'} */ (hrefField)) : null;
+  const link = hrefField ? findFirstAvailableLink(rows, /** @type {LinkFieldName} */ (hrefField)) : null;
 
   const valueText = formatAggregateValue(rows, fieldName, aggregate, toText);
 
@@ -908,9 +932,9 @@ function renderTableView(pageId, title, view, sourceName, rows, metadata, contex
     { 'data-custom-row-key': `${pageId}-${title}-${rowIndex}` },
     ...columns.map((column, columnIndex) => {
       const outputField = typeof column.as === 'string' ? column.as : column.field;
-      const value = renderTableCellValue(column.field, row[outputField]);
+      const value = renderEntityAwareCellValue(column.field, row[outputField], row);
       if (columnIndex === 0 && hrefField) {
-        const link = findLink(row, /** @type {'external-link' | 'issue-link' | 'pull-request-link' | 'run-link' | 'evidence-link'} */ (hrefField));
+        const link = findLink(row, /** @type {LinkFieldName} */ (hrefField));
         return h('td', null, value, link ? ' ' : null, link ? renderExternalLink(link) : null);
       }
       return h('td', null, value);
@@ -1486,7 +1510,7 @@ function valuesEqualForFilter(actual, expected) {
 
 /**
  * @param {Array<Record<string, unknown>>} rows
- * @param {'external-link' | 'issue-link' | 'pull-request-link' | 'run-link' | 'evidence-link'} field
+ * @param {LinkFieldName} field
  * @returns {{ href: string, label: string } | null}
  */
 function findFirstAvailableLink(rows, field) {
@@ -1500,7 +1524,7 @@ function findFirstAvailableLink(rows, field) {
 }
 /**
  * @param {Record<string, unknown>} row
- * @param {'issue-link'|'pull-request-link'|'run-link'|'external-link'|'evidence-link'} field
+ * @param {LinkFieldName} field
  * @returns {{ href: string, label: string } | null}
  */
 function findLink(row, field) {
@@ -1517,6 +1541,75 @@ function findLink(row, field) {
     return null;
   }
   return { href: candidate.href, label: candidate.label };
+}
+
+/**
+ * Derives organization/repository/workflow GitHub links for every row that
+ * exposes sufficient GitHub identity but does not already carry an explicit
+ * relation-specific link field, so every GitHub-addressable entity can be
+ * rendered as a link (Section 9.2 DLS-LINK-006/DLS-LINK-007).
+ * @param {Record<string, LogicalSourceInput>} sources
+ * @param {string} githubUrlBase
+ * @returns {Record<string, LogicalSourceInput>}
+ */
+function deriveEntityLinkSources(sources, githubUrlBase) {
+  return Object.fromEntries(Object.entries(sources).map(([name, source]) => [
+    name,
+    {
+      ...source,
+      rows: Array.isArray(source?.rows) ? source.rows.map((row) => deriveEntityLinkRow(row, githubUrlBase)) : source?.rows
+    }
+  ]));
+}
+
+/**
+ * @param {Record<string, unknown>} row
+ * @param {string} githubUrlBase
+ * @returns {Record<string, unknown>}
+ */
+function deriveEntityLinkRow(row, githubUrlBase) {
+  const organization = trimmedString(row.organization);
+  const repository = trimmedString(row.repository);
+  const workflow = trimmedString(row.workflow);
+  // The `repository` field is documented as retaining its domain syntax (Section 9.2), so it may
+  // already be a fully-qualified `owner/repo` slug or just the bare repository name.
+  const repositorySlug = repository && repository.includes('/') ? repository : (organization && repository ? `${organization}/${repository}` : null);
+  /** @type {Record<string, unknown>} */
+  const derived = {};
+
+  if (organization && !findLink(row, 'organization-link')) {
+    derived['organization-link'] = {
+      relation: 'organization',
+      href: `${githubUrlBase}/${organization}`,
+      label: `View ${organization} on GitHub`
+    };
+  }
+  if (repositorySlug && !findLink(row, 'repository-link')) {
+    derived['repository-link'] = {
+      relation: 'repository',
+      href: `${githubUrlBase}/${repositorySlug}`,
+      label: `View ${repositorySlug} on GitHub`
+    };
+  }
+  if (repositorySlug && workflow && !findLink(row, 'workflow-link')) {
+    derived['workflow-link'] = {
+      relation: 'workflow',
+      href: `${githubUrlBase}/${repositorySlug}/blob/HEAD/${workflow}`,
+      label: `View ${workflow} on GitHub`
+    };
+  }
+
+  return Object.keys(derived).length > 0 ? { ...row, ...derived } : row;
+}
+
+/**
+ * @param {unknown} value
+ * @returns {string | null}
+ */
+function trimmedString(value) {
+  if (typeof value !== 'string') return null;
+  const trimmed = value.trim();
+  return trimmed.length > 0 ? trimmed : null;
 }
 
 /**
@@ -1539,6 +1632,38 @@ function renderExternalLink(link) {
     'aria-label': link.label
   }, link.label, octicon('external-link'));
 }
+
+/**
+ * Renders text as a GitHub link when a link is available, otherwise as plain text.
+ * @param {string} text
+ * @param {{ href: string, label: string } | null} link
+ * @returns {string | HTMLElement}
+ */
+function renderLinkedText(text, link) {
+  return link
+    ? h('a', { href: link.href, target: '_blank', rel: 'noopener noreferrer', 'aria-label': link.label }, text)
+    : text;
+}
+
+/**
+ * @param {string} field
+ * @param {unknown} value
+ * @param {Record<string, unknown>} row
+ * @returns {string | HTMLElement}
+ */
+function renderEntityAwareCellValue(field, value, row) {
+  const linkField = Object.prototype.hasOwnProperty.call(ENTITY_LINK_FIELDS, field)
+    ? ENTITY_LINK_FIELDS[/** @type {keyof typeof ENTITY_LINK_FIELDS} */ (field)]
+    : null;
+  if (linkField) {
+    const link = findLink(row, linkField);
+    if (link) {
+      return renderLinkedText(toText(value), link);
+    }
+  }
+  return renderTableCellValue(field, value);
+}
+
 
 /**
  * @param {HTMLElement} root
