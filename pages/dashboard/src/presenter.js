@@ -1101,6 +1101,7 @@ function renderChartView(pageId, title, view, sourceName, rows, metadata, contex
 
   const points = buildChartPoints(pageId, title, rows, x, y, color);
   const chartSeries = listChartSeries(points);
+  const pieSummary = chartType === 'pie' ? pieChartEntries(points) : null;
 
   return renderPageSection(pageId, title, [
     ...renderViewSectionChrome(sourceName, metadata, contextDetails),
@@ -1109,7 +1110,7 @@ function renderChartView(pageId, title, view, sourceName, rows, metadata, contex
       { className: 'chart-default', 'data-chart-default': chartDefault, 'data-chart-type': chartType },
       typeof view.chart === 'string' ? `Chart type: ${chartType}` : `Default chart type: ${chartDefault}`
     ),
-    ...(color
+    ...(color && chartType !== 'pie'
       ? [h(
         'p',
         { className: 'chart-legend-text', 'data-chart-legend': 'text' },
@@ -1117,6 +1118,7 @@ function renderChartView(pageId, title, view, sourceName, rows, metadata, contex
       ),
       renderChartLegend(chartSeries, chartType)]
       : []),
+    ...(pieSummary ? [renderPieLegend(pieSummary.entries, pieSummary.total)] : []),
     renderChartWidget(chartType, points, chartSeries),
     renderTableRegion({
       tableClassName: 'custom-chart-table',
@@ -1196,13 +1198,7 @@ function buildChartPoints(pageId, title, rows, x, y, color) {
  */
 function renderChartWidget(chartType, points, series) {
   if (chartType === 'pie') {
-    const totals = new Map();
-    for (const point of points) {
-      const category = point.x;
-      totals.set(category, (totals.get(category) ?? 0) + point.y);
-    }
-    const entries = [...totals.entries()].filter(([, value]) => value > 0);
-    const total = entries.reduce((sum, [, value]) => sum + value, 0);
+    const { entries, total } = pieChartEntries(points);
     let offset = 0;
     return h(
       'div',
@@ -1229,7 +1225,9 @@ function renderChartWidget(chartType, points, series) {
           }, h('title', null, `${label}: ${formatNumber(value)}`));
           offset += percent;
           return segment;
-        })
+        }),
+        h('text', { className: 'pie-chart-total-value', x: 21, y: 20, 'text-anchor': 'middle', 'aria-hidden': 'true' }, formatNumber(total)),
+        h('text', { className: 'pie-chart-total-label', x: 21, y: 25.5, 'text-anchor': 'middle', 'aria-hidden': 'true' }, 'total')
       )
     );
   }
@@ -1241,12 +1239,14 @@ function renderChartWidget(chartType, points, series) {
     const values = points.map((point) => toNumber(point.y));
     const finiteValues = values.filter(Number.isFinite);
     const maximum = Math.max(...finiteValues, 1);
+    const gridLines = [4, 21, 38].map((y) => h('line', { className: 'line-chart-grid', x1: 0, y1: y, x2: 100, y2: y }));
     return h(
       'div',
       { className: 'chart-widget line-chart-widget', 'data-chart-widget': 'line' },
       h(
         'svg',
         { viewBox: '0 0 100 42', role: 'img', 'aria-label': `Line chart with ${points.length} points` },
+        ...gridLines,
         h('line', { className: 'line-chart-axis', x1: 0, y1: 38, x2: 100, y2: 38 }),
         ...groupedSeries.flatMap(([seriesName, seriesPoints]) => {
           const seriesClassName = seriesClassNames.get(seriesName) ?? 'chart-series-1';
@@ -1288,7 +1288,15 @@ function renderChartWidget(chartType, points, series) {
             )))
           ];
         })
-      )
+      ),
+      xValues.length > 0
+        ? h(
+          'div',
+          { className: 'chart-axis', 'data-chart-axis': 'line' },
+          h('span', null, xValues[0]),
+          xValues.length > 1 ? h('span', null, xValues[xValues.length - 1]) : null
+        )
+        : null
     );
   }
 
@@ -1345,6 +1353,41 @@ function renderChartLegend(series, chartType) {
       null,
       h('i', { className: item.className, 'aria-hidden': 'true' }),
       h('span', null, item.name)
+    ))
+  );
+}
+
+/**
+ * @param {Array<{ x: string, y: number, color: string | null }>} points
+ * @returns {{ entries: Array<[string, number]>, total: number }}
+ */
+function pieChartEntries(points) {
+  const totals = new Map();
+  for (const point of points) {
+    const category = point.x;
+    totals.set(category, (totals.get(category) ?? 0) + point.y);
+  }
+  const entries = [...totals.entries()].filter(([, value]) => value > 0);
+  const total = entries.reduce((sum, [, value]) => sum + value, 0);
+  return { entries, total };
+}
+
+/**
+ * @param {Array<[string, number]>} entries
+ * @param {number} total
+ * @returns {HTMLElement}
+ */
+function renderPieLegend(entries, total) {
+  return h(
+    'ul',
+    { className: 'chart-legend chart-legend-pie', 'data-chart-legend': 'visual' },
+    entries.map(([label, value], index) => h(
+      'li',
+      null,
+      h('i', { className: `chart-series-${(index % 5) + 1}`, 'aria-hidden': 'true' }),
+      h('span', null, label),
+      h('strong', null, formatNumber(value)),
+      h('small', null, total > 0 ? `${((value / total) * 100).toFixed(1)}%` : '0%')
     ))
   );
 }
