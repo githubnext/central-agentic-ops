@@ -163,6 +163,71 @@ describe('presenter built-in and custom pages', () => {
     expect(links.some((link) => link.getAttribute('href') === 'https://github.example.com/octo-org/overridden')).toBe(false);
   });
 
+  it('DLS-VIEW-018 DLS-VIEW-019 DLS-VIEW-020 progressively discloses supplemental views in source order', () => {
+    const document = {
+      languageVersion: '0.1.0',
+      dashboard: {
+        id: 'progressive-disclosure-dashboard',
+        title: 'Progressive Disclosure',
+        pages: [
+          {
+            id: 'runs',
+            kind: /** @type {'custom'} */ ('custom'),
+            views: [
+              {
+                id: 'run-count',
+                title: 'Run count',
+                data: { source: 'runs' },
+                mark: 'metric',
+                encoding: { value: { field: 'run', aggregate: 'count' } }
+              },
+              {
+                id: 'completed-runs',
+                title: 'Completed runs',
+                disclosure: 'supplemental',
+                data: { source: 'runs', filters: { 'run-status': 'completed' } },
+                mark: 'metric',
+                encoding: { value: { field: 'run', aggregate: 'count' } }
+              }
+            ]
+          }
+        ]
+      }
+    };
+
+    const rendered = renderDashboard({
+      document,
+      sources: {
+        runs: {
+          source: 'runs',
+          rows: [
+            { run: '1', 'run-status': 'completed' },
+            { run: '2', 'run-status': 'queued' }
+          ],
+          metadata: {
+            'source-id': 'runs-fixture',
+            'source-kind': 'fixture',
+            'as-of': '2026-08-30T08:00:00Z',
+            'retrieved-at': '2026-08-30T08:01:00Z',
+            completeness: 'complete',
+            freshness: 'fresh',
+            availability: 'available'
+          }
+        }
+      }
+    });
+
+    const views = rendered.querySelectorAll('.runs-page > .data-state-summary + .custom-view-grid > .custom-view');
+    expect(views).toHaveLength(2);
+    expect(views[0]?.getAttribute('data-disclosure')).toBe('essential');
+    const supplemental = /** @type {HTMLDetailsElement} */ (views[1]);
+    expect(supplemental.tagName).toBe('DETAILS');
+    expect(supplemental.getAttribute('data-disclosure')).toBe('supplemental');
+    expect(supplemental.open).toBe(false);
+    expect(supplemental.querySelector('summary')?.textContent).toContain('Completed runs');
+    expect(supplemental.querySelector(':scope > .page-section')?.textContent).toContain('1');
+  });
+
   it('DLS-PAGE-002 DLS-PAGE-014 renders the report-style operational overview, managed repository summary, managed packages, execution trends, and provenance data state deterministically', () => {
     /** @type {import('../../src/presenter.js').PresentationInput['document']} */
     const document = {

@@ -69,6 +69,7 @@
             },
             {
               "id": "overview-repositories",
+              "disclosure": "supplemental",
               "title": "Repositories",
               "description": "Count of repositories managed by Central Agentic Ops.",
               "data": { "source": "repositories" },
@@ -80,6 +81,7 @@
             },
             {
               "id": "overview-runs",
+              "disclosure": "supplemental",
               "title": "Observed runs",
               "description": "Runs available in the current reporting window.",
               "data": { "source": "runs" },
@@ -105,6 +107,7 @@
             },
             {
               "id": "overview-usage",
+              "disclosure": "supplemental",
               "title": "AI Credit usage",
               "description": "Total AI Credits reported by available workflow runs.",
               "data": { "source": "usage" },
@@ -116,6 +119,7 @@
             },
             {
               "id": "overview-execution-health",
+              "disclosure": "supplemental",
               "title": "Execution health",
               "description": "Run volume grouped by conclusion.",
               "data": { "source": "runs" },
@@ -129,6 +133,7 @@
             },
             {
               "id": "overview-recent-runs",
+              "disclosure": "supplemental",
               "title": "Recent runs",
               "description": "Repository and workflow execution state in the current reporting window.",
               "data": { "source": "runs", "limit": 10 },
@@ -163,6 +168,7 @@
             },
             {
               "id": "overview-workflows",
+              "disclosure": "supplemental",
               "title": "Workflow inventory",
               "description": "Repository, active state, and rollout mode for each workflow.",
               "data": { "source": "workflows" },
@@ -193,6 +199,7 @@
             },
             {
               "id": "overview-operational-values",
+              "disclosure": "supplemental",
               "title": "Operational value timeline",
               "description": "Recorded operational value separated by definition.",
               "data": { "source": "operational-values" },
@@ -242,6 +249,7 @@
             },
             {
               "id": "organizations-workflows-source",
+              "disclosure": "supplemental",
               "data": { "source": "workflows" },
               "mark": "table",
               "encoding": {
@@ -252,6 +260,7 @@
             },
             {
               "id": "organizations-runs-source",
+              "disclosure": "supplemental",
               "data": { "source": "runs" },
               "mark": "metric",
               "encoding": {
@@ -260,6 +269,7 @@
             },
             {
               "id": "organizations-usage-source",
+              "disclosure": "supplemental",
               "data": { "source": "usage" },
               "mark": "metric",
               "encoding": {
@@ -314,6 +324,7 @@
             },
             {
               "id": "repositories-by-aic",
+              "disclosure": "supplemental",
               "title": "Repositories by AIC",
               "data": {
                 "source": "usage",
@@ -331,6 +342,7 @@
             },
             {
               "id": "repositories-by-operational-value",
+              "disclosure": "supplemental",
               "title": "Repositories by Operational Value",
               "data": {
                 "source": "operational-values",
@@ -387,6 +399,7 @@
             },
             {
               "id": "workflows-outcomes-source",
+              "disclosure": "supplemental",
               "data": { "source": "outcomes" },
               "mark": "metric",
               "encoding": {
@@ -395,6 +408,7 @@
             },
             {
               "id": "workflows-usage-source",
+              "disclosure": "supplemental",
               "data": { "source": "usage" },
               "mark": "metric",
               "encoding": {
@@ -502,6 +516,7 @@
             },
             {
               "id": "experiments-grader-observations-source",
+              "disclosure": "supplemental",
               "data": { "source": "grader-observations" },
               "mark": "metric",
               "encoding": {
@@ -510,6 +525,7 @@
             },
             {
               "id": "experiments-eval-observations-source",
+              "disclosure": "supplemental",
               "data": { "source": "eval-observations" },
               "mark": "metric",
               "encoding": {
@@ -526,6 +542,7 @@
             },
             {
               "id": "experiments-usage-source",
+              "disclosure": "supplemental",
               "data": { "source": "usage" },
               "mark": "metric",
               "encoding": {
@@ -557,6 +574,7 @@
           "views": [
             {
               "id": "graders-graders-source",
+              "disclosure": "supplemental",
               "data": { "source": "graders" },
               "mark": "table",
               "encoding": {
@@ -596,6 +614,7 @@
           "views": [
             {
               "id": "evals-evals-source",
+              "disclosure": "supplemental",
               "data": { "source": "evals" },
               "mark": "table",
               "encoding": {
@@ -696,6 +715,7 @@
             },
             {
               "id": "engines-models-usage-source",
+              "disclosure": "supplemental",
               "data": { "source": "usage" },
               "mark": "table",
               "encoding": {

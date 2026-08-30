@@ -48,6 +48,66 @@ describe('dashboard document validation', () => {
     }
   });
 
+  it('DLS-VIEW-016 DLS-VIEW-017 DLS-VAL-005 enforces canonical disclosure and at most four essential views', () => {
+    const overloaded = `language-version: "0.1.0"
+dashboard:
+  id: progressive-disclosure
+  title: Progressive Disclosure
+  pages:
+    - id: summary
+      kind: custom
+      views:
+        - id: metric-one
+          disclosure: essential
+          data: { source: runs }
+          mark: metric
+          encoding: { value: { field: run, aggregate: count } }
+        - id: metric-two
+          data: { source: runs }
+          mark: metric
+          encoding: { value: { field: run, aggregate: count } }
+        - id: metric-three
+          data: { source: runs }
+          mark: metric
+          encoding: { value: { field: run, aggregate: count } }
+        - id: metric-four
+          data: { source: runs }
+          mark: metric
+          encoding: { value: { field: run, aggregate: count } }
+        - id: metric-five
+          data: { source: runs }
+          mark: metric
+          encoding: { value: { field: run, aggregate: count } }
+`;
+
+    const rejected = validateDashboardDocument(overloaded);
+    expect(rejected.ok).toBe(false);
+    if (!rejected.ok) {
+      expect(rejected.errors).toContainEqual(expect.objectContaining({
+        code: 'DLS-E013',
+        path: '$.dashboard.pages[0].views'
+      }));
+    }
+
+    const disclosed = overloaded.replace(
+      '        - id: metric-five\n',
+      '        - id: metric-five\n          disclosure: supplemental\n'
+    );
+    expect(validateDashboardDocument(disclosed).ok).toBe(true);
+
+    const nonCanonical = validateDashboardDocument(disclosed.replace('disclosure: supplemental', 'disclosure: hidden'));
+    expect(nonCanonical.ok).toBe(false);
+    if (!nonCanonical.ok) {
+      expect(nonCanonical.errors).toContainEqual(expect.objectContaining({
+        code: 'DLS-E005',
+        path: '$.dashboard.pages[0].views[4].disclosure'
+      }));
+      expect(nonCanonical.errors).not.toContainEqual(expect.objectContaining({
+        code: 'DLS-E013'
+      }));
+    }
+  });
+
   it('DLS-DOC-002 DLS-DOC-003 DLS-DOC-004 accepts the minimal structural document shape', () => {
     const result = validateDashboardDocument(validDocument.replace(`
     - id: usage
