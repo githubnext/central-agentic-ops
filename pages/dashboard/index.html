@@ -64,9 +64,9 @@
         runs: {
           source: "runs",
           rows: [
-            { organization: "github", repository: "central-agentic-ops", workflow: ".github/workflows/daily.yml", run: "1001", "started-at": "2026-08-29T09:00:00Z", "run-status": "completed", "run-conclusion": "success", "rollout-mode": "live", engine: "gpt", "requested-model": "gpt-4o", "resolved-model": "gpt-4.1" },
-            { organization: "github", repository: "mona-tools", workflow: ".github/workflows/review.yml", run: "1002", "started-at": "2026-08-29T09:30:00Z", "run-status": "completed", "run-conclusion": "failure", "rollout-mode": "review", engine: "gpt", "requested-model": "gpt-4o-mini", "resolved-model": "gpt-4o-mini" },
-            { organization: "octo-org", repository: "octo-repo", workflow: ".github/workflows/nightly.yml", run: "2001", "started-at": "2026-08-29T08:00:00Z", "run-status": "in-progress", "run-conclusion": "unknown", "rollout-mode": "live", engine: "claude", "requested-model": "claude-3.5", "resolved-model": "claude-3.5" },
+            { organization: "github", repository: "central-agentic-ops", workflow: ".github/workflows/daily.yml", run: "1001", "started-at": "2026-08-29T09:00:00Z", "run-status": "completed", "run-conclusion": "success", "rollout-mode": "live", engine: "gpt", "requested-model": "gpt-4o", "resolved-model": "gpt-4.1", "run-link": { relation: "run", href: "https://github.com/githubnext/central-agentic-ops/actions/runs/1001", label: "View run 1001" } },
+            { organization: "github", repository: "mona-tools", workflow: ".github/workflows/review.yml", run: "1002", "started-at": "2026-08-29T09:30:00Z", "run-status": "completed", "run-conclusion": "failure", "rollout-mode": "review", engine: "gpt", "requested-model": "gpt-4o-mini", "resolved-model": "gpt-4o-mini", "run-link": { relation: "run", href: "https://github.com/githubnext/mona-tools/actions/runs/1002", label: "View run 1002" } },
+            { organization: "octo-org", repository: "octo-repo", workflow: ".github/workflows/nightly.yml", run: "2001", "started-at": "2026-08-29T08:00:00Z", "run-status": "in-progress", "run-conclusion": "unknown", "rollout-mode": "live", engine: "claude", "requested-model": "claude-3.5", "resolved-model": "claude-3.5", "run-link": { relation: "run", href: "https://github.com/octo-org/octo-repo/actions/runs/2001", label: "View run 2001" } },
           ],
           metadata: metadata("runs-fixture"),
         },
@@ -99,6 +99,7 @@
               repository: "mona-tools",
               workflow: ".github/workflows/review.yml",
               "observed-at": "2026-08-29T09:40:00Z",
+              "issue-link": { relation: "issue", href: "https://github.com/githubnext/mona-tools/issues/42", label: "View issue 42" },
             },
           ],
           metadata: metadata("findings-fixture"),
