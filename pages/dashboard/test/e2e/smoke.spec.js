@@ -805,6 +805,81 @@ test('DLS-SAFE-007 DLS-SAFE-008 keyboard navigation moves across labeled page se
   await expect(sections.nth(0)).toBeFocused();
 });
 
+test('declarative tables expose report-style facets and progressive catalog disclosure', async ({ page }) => {
+  const presenterModuleUrl = buildPresenterModuleUrl();
+
+  await page.setContent(`
+    <div id="root"></div>
+    <script type="module">
+      import { renderDashboard } from ${JSON.stringify(presenterModuleUrl)};
+
+      const rows = Array.from({ length: 30 }, (_, index) => ({
+        workflow: \`workflow-\${index + 1}\`,
+        'rollout-mode': index % 2 === 0 ? 'review' : 'live'
+      }));
+      document.querySelector('#root').append(renderDashboard({
+        document: {
+          languageVersion: '0.1.0',
+          dashboard: {
+            id: 'catalog-dashboard',
+            title: 'Catalog Dashboard',
+            pages: [{
+              id: 'catalog',
+              kind: 'custom',
+              title: 'Catalog',
+              views: [{
+                id: 'workflow-catalog',
+                title: 'Workflow catalog',
+                data: { source: 'workflows' },
+                mark: 'table',
+                encoding: {
+                  columns: [
+                    { field: 'workflow', type: 'nominal' },
+                    { field: 'rollout-mode', type: 'nominal', title: 'Mode' }
+                  ]
+                }
+              }]
+            }]
+          }
+        },
+        sources: {
+          workflows: {
+            source: 'workflows',
+            rows,
+            metadata: {
+              'source-id': 'workflow-catalog-fixture',
+              'source-kind': 'fixture',
+              'as-of': '2026-08-30T20:00:00Z',
+              'retrieved-at': '2026-08-30T20:01:00Z',
+              completeness: 'complete',
+              freshness: 'fresh',
+              availability: 'available'
+            }
+          }
+        }
+      }));
+    </script>
+  `);
+
+  const tableRows = page.locator('.custom-table tbody tr');
+  const visibleRows = page.locator('.custom-table tbody tr:visible');
+  await expect(tableRows).toHaveCount(30);
+  await expect(visibleRows).toHaveCount(25);
+  await expect(page.locator('.table-filter-result')).toHaveText('Showing 25 of 30 results');
+
+  await page.getByRole('button', { name: 'Show 25 more' }).click();
+  await expect(visibleRows).toHaveCount(30);
+
+  await page.locator('[data-table-facet="rollout-mode"]').selectOption('review');
+  await expect(visibleRows).toHaveCount(15);
+  await expect(page.locator('.table-filter-result')).toHaveText('Showing 15 of 15 results');
+
+  await page.getByRole('searchbox', { name: 'Filter Workflow catalog' }).fill('workflow-29');
+  await expect(visibleRows).toHaveCount(1);
+  await expect(visibleRows).toContainText('workflow-29');
+  await expect(page.locator('.table-filter-result')).toHaveText('Showing 1 of 1 result');
+});
+
 test('DLS-SAFE-004 runtime links with embedded credentials, ftp schemes, and blank labels are not exposed in browser output', async ({ page }) => {
   const presenterModuleUrl = buildPresenterModuleUrl();
 

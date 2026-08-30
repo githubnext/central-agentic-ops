@@ -903,6 +903,19 @@ function renderTableView(pageId, title, view, sourceName, rows, metadata, contex
     : null;
   const hrefField = typeof hrefDefinition?.field === 'string' ? hrefDefinition.field : null;
   const tableRows = prepareTableRows(rows, columns, view.data);
+  const bodyRows = tableRows.map((row, rowIndex) => h(
+    'tr',
+    { 'data-custom-row-key': `${pageId}-${title}-${rowIndex}` },
+    ...columns.map((column, columnIndex) => {
+      const outputField = typeof column.as === 'string' ? column.as : column.field;
+      const value = renderTableCellValue(column.field, row[outputField]);
+      if (columnIndex === 0 && hrefField) {
+        const link = findLink(row, /** @type {'external-link' | 'issue-link' | 'pull-request-link' | 'run-link' | 'evidence-link'} */ (hrefField));
+        return h('td', null, value, link ? ' ' : null, link ? renderExternalLink(link) : null);
+      }
+      return h('td', null, value);
+    })
+  ));
 
   return renderPageSection(pageId, title, [
     ...renderViewSectionChrome(sourceName, metadata, contextDetails),
@@ -912,21 +925,17 @@ function renderTableView(pageId, title, view, sourceName, rows, metadata, contex
       colSpan: Math.max(columns.length, 1),
       headCells: columns.map((column) => fieldTitle(column)),
       filterLabel: `Filter ${title}`,
-      bodyRows: tableRows.length > 0
-        ? tableRows.map((row, rowIndex) => h(
-          'tr',
-          { 'data-custom-row-key': `${pageId}-${title}-${rowIndex}` },
-          ...columns.map((column, columnIndex) => {
-            const outputField = typeof column.as === 'string' ? column.as : column.field;
-            const value = renderTableCellValue(column.field, row[outputField]);
-            if (columnIndex === 0 && hrefField) {
-              const link = findLink(row, /** @type {'external-link' | 'issue-link' | 'pull-request-link' | 'run-link' | 'evidence-link'} */ (hrefField));
-              return h('td', null, value, link ? ' ' : null, link ? renderExternalLink(link) : null);
-            }
-            return h('td', null, value);
-          })
-        ))
-        : []
+      filterId: typeof view.id === 'string' ? view.id : `${pageId}-table`,
+      filterFields: columns.flatMap((column, columnIndex) => (
+        ['nominal', 'ordinal'].includes(String(column.type))
+          ? [{
+            key: typeof column.as === 'string' ? column.as : column.field,
+            label: fieldTitle(column),
+            columnIndex
+          }]
+          : []
+      )),
+      bodyRows
     })
   ], headingTag);
 }
