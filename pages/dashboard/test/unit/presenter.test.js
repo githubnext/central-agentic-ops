@@ -460,7 +460,7 @@ describe('presenter built-in and custom pages', () => {
     expect(evalsPage?.textContent).toContain('Source: eval-observations');
   });
 
-  it('DLS-SAFE-007 DLS-SAFE-010 DLS-SAFE-003 renders non-empty accessible names and inert text labels while preserving safe external link attributes', () => {
+  it('DLS-SAFE-003 DLS-SAFE-004 DLS-SAFE-007 DLS-SAFE-010 renders non-empty accessible names and inert text labels while preserving only safe https external link attributes', () => {
     /** @type {import('../../src/presenter.js').PresentationInput['document']} */
     const document = {
       languageVersion: '0.1.0',
@@ -996,7 +996,7 @@ describe('presenter built-in and custom pages', () => {
     rendered.ownerDocument.defaultView?.history.replaceState(null, '', '/');
   });
 
-  it('renders accessible bars and rejects unsafe runtime links', () => {
+  it('DLS-SAFE-004 DLS-SAFE-008 DLS-SAFE-009 renders accessible bars and rejects unsafe runtime links', () => {
     const rendered = renderDashboard({
       document: {
         languageVersion: '0.1.0',
@@ -1055,5 +1055,67 @@ describe('presenter built-in and custom pages', () => {
     expect(rendered.querySelector('[data-chart-widget="bar"] rect')?.getAttribute('aria-label')).toContain('success');
     expect(rendered.querySelectorAll('.custom-table a')).toHaveLength(1);
     expect(rendered.querySelector('.custom-table a')?.textContent).toContain('Run 2');
+  });
+
+  it('DLS-SAFE-004 rejects runtime links with embedded credentials while preserving safe links', () => {
+    const rendered = renderDashboard({
+      document: {
+        languageVersion: '0.1.0',
+        dashboard: {
+          id: 'credential-link-dashboard',
+          title: 'Credential Link Dashboard',
+          pages: [{
+            id: 'credential-links',
+            kind: /** @type {'custom'} */ ('custom'),
+            views: [
+              {
+                id: 'credential-links-table',
+                title: 'Credential Links Table',
+                data: { source: 'runs' },
+                mark: 'table',
+                encoding: {
+                  columns: [{ field: 'run' }],
+                  href: { field: 'run-link' }
+                }
+              },
+              {
+                id: 'credential-links-metric',
+                title: 'Credential Links Metric',
+                data: { source: 'runs' },
+                mark: 'metric',
+                encoding: {
+                  value: { field: 'run', type: 'nominal', aggregate: 'count' },
+                  href: { field: 'run-link' }
+                }
+              }
+            ]
+          }]
+        }
+      },
+      sources: {
+        runs: {
+          source: 'runs',
+          rows: [
+            { run: '1', 'run-link': { href: 'https://user:secret@example.com/runs/1', label: 'Credentialed Run' } },
+            { run: '2', 'run-link': { href: 'https://example.com/runs/2', label: 'Run 2' } }
+          ],
+          metadata: {
+            'source-id': 'runs-fixture',
+            'source-kind': 'fixture',
+            'as-of': '2026-08-29T20:00:00Z',
+            'retrieved-at': '2026-08-29T20:01:00Z',
+            completeness: 'complete',
+            freshness: 'fresh',
+            availability: 'available'
+          }
+        }
+      }
+    });
+
+    const safeLinks = rendered.querySelectorAll('.custom-table a, .metric-link a');
+    expect(safeLinks).toHaveLength(2);
+    expect([...safeLinks].every((link) => !String(link.getAttribute('href')).includes('user:secret@'))).toBe(true);
+    expect(rendered.textContent).not.toContain('Credentialed Run');
+    expect(rendered.textContent).toContain('Run 2');
   });
 });

@@ -322,7 +322,7 @@ test('DLS-PAGE-009 DLS-PAGE-014 built-in evals page renders distinguishable defi
   await expect(page.locator('.evals-page')).toContainText('claude-3.7');
 });
 
-test('DLS-SAFE-007 DLS-SAFE-008 DLS-SAFE-010 built-in findings page exposes accessible names, labeled columns, textual data states, and labeled external links in browser', async ({ page }) => {
+test('DLS-SAFE-004 DLS-SAFE-007 DLS-SAFE-008 DLS-SAFE-010 built-in findings page exposes accessible names, labeled columns, textual data states, and only safe labeled external links in browser', async ({ page }) => {
   const presenterModuleUrl = buildPresenterModuleUrl();
 
   await page.setContent(`
@@ -768,4 +768,77 @@ test('DLS-SAFE-007 DLS-SAFE-008 keyboard navigation moves across labeled page se
   await expect(sections.nth(1)).toBeFocused();
   await page.keyboard.press('ArrowUp');
   await expect(sections.nth(0)).toBeFocused();
+});
+
+test('DLS-SAFE-004 runtime links with embedded credentials are not exposed in browser output', async ({ page }) => {
+  const presenterModuleUrl = buildPresenterModuleUrl();
+
+  await page.setContent(`
+    <div id="root"></div>
+    <script type="module">
+      import { renderDashboard } from ${JSON.stringify(presenterModuleUrl)};
+
+      const dashboardDocument = {
+        languageVersion: '0.1.0',
+        dashboard: {
+          id: 'credential-link-dashboard',
+          title: 'Credential Link Dashboard',
+          pages: [{
+            id: 'credential-links',
+            kind: 'custom',
+            title: 'Credential Links',
+            views: [
+              {
+                id: 'credential-links-table',
+                title: 'Credential Links Table',
+                data: { source: 'runs' },
+                mark: 'table',
+                encoding: {
+                  columns: [{ field: 'run' }],
+                  href: { field: 'run-link' }
+                }
+              },
+              {
+                id: 'credential-links-metric',
+                title: 'Credential Links Metric',
+                data: { source: 'runs' },
+                mark: 'metric',
+                encoding: {
+                  value: { field: 'run', type: 'nominal', aggregate: 'count' },
+                  href: { field: 'run-link' }
+                }
+              }
+            ]
+          }]
+        }
+      };
+
+      const sources = {
+        runs: {
+          source: 'runs',
+          rows: [
+            { run: '1', 'run-link': { href: 'https://user:secret@example.com/runs/1', label: 'Credentialed Run' } },
+            { run: '2', 'run-link': { href: 'https://example.com/runs/2', label: 'Run 2' } }
+          ],
+          metadata: {
+            'source-id': 'runs-fixture',
+            'source-kind': 'fixture',
+            'as-of': '2026-08-29T20:00:00Z',
+            'retrieved-at': '2026-08-29T20:01:00Z',
+            completeness: 'complete',
+            freshness: 'fresh',
+            availability: 'available'
+          }
+        }
+      };
+
+      document.querySelector('#root').append(renderDashboard({ document: dashboardDocument, sources }));
+    </script>
+  `);
+
+  await expect(page.getByRole('heading', { name: 'Credential Links', level: 2 })).toBeVisible();
+  await expect(page.locator('.custom-table a')).toHaveText('Run 2');
+  await expect(page.locator('.metric-link a')).toHaveText('Run 2');
+  await expect(page.locator('a[href*="user:secret@"]').first()).toHaveCount(0);
+  await expect(page.locator('body')).not.toContainText('Credentialed Run');
 });
