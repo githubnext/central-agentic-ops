@@ -11,6 +11,9 @@ import { h } from '../dom.js';
 const DEFAULT_PAGE_SIZE = 25;
 
 /**
+ * Renders a table inside a bounded-height scroll region. Column sorting is enabled
+ * by default whenever `filterLabel` is provided, and can be forced with `sortable`.
+ *
  * @param {{
  *   tableClassName: string,
  *   emptyMessage: string,
@@ -20,7 +23,8 @@ const DEFAULT_PAGE_SIZE = 25;
  *   filterLabel?: string,
  *   filterId?: string,
  *   filterFields?: TableFilterField[],
- *   pageSize?: number
+ *   pageSize?: number,
+ *   sortable?: boolean
  * }} options
  * @returns {HTMLElement}
  */
@@ -39,11 +43,13 @@ export function renderTableRegion(options) {
   const rowCount = getBodyRowCount(bodyRows);
   const hasRows = rowCount > 0;
   const facets = getTableFacets(bodyRows, filterFields, rowCount);
+  const sortable = options.sortable ?? Boolean(filterLabel);
+  const interactive = hasRows && Boolean(filterLabel);
 
   const region = h(
     'div',
     { className: 'table-region' },
-    hasRows && filterLabel
+    interactive
       ? h(
         'div',
         { className: 'table-filter' },
@@ -72,38 +78,120 @@ export function renderTableRegion(options) {
       )
       : null,
     h(
-      'table',
+      'div',
       {
-        className: tableClassName,
-        ...(tableClassName === 'custom-table' ? { 'data-custom-view-mark': 'table' } : {}),
-        ...(tableClassName === 'custom-chart-table' ? { 'data-custom-view-mark': 'chart' } : {})
+        className: 'table-scroll',
+        tabIndex: 0,
+        ...(filterLabel ? { role: 'region', 'aria-label': `${filterLabel} results` } : {})
       },
       h(
-        'thead',
-        null,
+        'table',
+        {
+          className: tableClassName,
+          ...(tableClassName === 'custom-table' ? { 'data-custom-view-mark': 'table' } : {}),
+          ...(tableClassName === 'custom-chart-table' ? { 'data-custom-view-mark': 'chart' } : {})
+        },
         h(
-          'tr',
+          'thead',
           null,
-          ...headCells.map((cell) => h('th', null, cell))
+          h(
+            'tr',
+            null,
+            ...headCells.map((cell, columnIndex) => (hasRows && sortable
+              ? h(
+                'th',
+                { scope: 'col', 'aria-sort': 'none' },
+                h(
+                  'button',
+                  {
+                    type: 'button',
+                    className: 'table-sort',
+                    'data-table-sort': String(columnIndex)
+                  },
+                  cell
+                )
+              )
+              : h('th', { scope: 'col' }, cell)))
+          )
+        ),
+        h(
+          'tbody',
+          null,
+          hasRows
+            ? bodyRows
+            : h('tr', null, h('td', { colSpan }, emptyMessage))
         )
-      ),
-      h(
-        'tbody',
-        null,
-        hasRows
-          ? bodyRows
-          : h('tr', null, h('td', { colSpan }, emptyMessage))
       )
     ),
-    hasRows && filterLabel
+    interactive
       ? h('button', { className: 'table-filter-more', type: 'button', 'data-table-more': '' }, `Show ${pageSize} more`)
       : null
   );
 
-  if (hasRows && filterLabel) {
-   enableTableFilter(region, { filterId, pageSize });
+  if (hasRows && sortable) {
+    enableTableSort(region);
+  }
+  if (interactive) {
+    enableTableFilter(region, { filterId, pageSize });
   }
   return region;
+}
+
+/**
+ * Enables click-to-sort on column headers, cycling ascending then descending.
+ *
+ * @param {HTMLElement} region
+ */
+function enableTableSort(region) {
+  const body = region.querySelector('tbody');
+  if (!(body instanceof HTMLTableSectionElement)) return;
+  const headers = [...region.querySelectorAll('th[aria-sort]')]
+    .filter((header) => header instanceof HTMLTableCellElement);
+
+  for (const header of headers) {
+    const control = header.querySelector('[data-table-sort]');
+    if (!(control instanceof HTMLButtonElement)) continue;
+    const columnIndex = Number(control.dataset.tableSort);
+    control.addEventListener('click', () => {
+      const direction = header.getAttribute('aria-sort') === 'ascending' ? 'descending' : 'ascending';
+      for (const other of headers) other.setAttribute('aria-sort', 'none');
+      header.setAttribute('aria-sort', direction);
+      const sorted = [...body.rows].sort((left, right) => compareCells(
+        cellText(left, columnIndex),
+        cellText(right, columnIndex)
+      ));
+      if (direction === 'descending') sorted.reverse();
+      for (const row of sorted) body.append(row);
+      region.dispatchEvent(new Event('table-sorted'));
+    });
+  }
+}
+
+/**
+ * @param {HTMLTableRowElement} row
+ * @param {number} columnIndex
+ * @returns {string}
+ */
+function cellText(row, columnIndex) {
+  return row.cells[columnIndex]?.textContent?.trim() ?? '';
+}
+
+/**
+ * @param {string} left
+ * @param {string} right
+ * @returns {number}
+ */
+function compareCells(left, right) {
+  if (left === right) return 0;
+  if (left === '') return 1;
+  if (right === '') return -1;
+  const leftNumber = Number(left.replace(/,/g, ''));
+  const rightNumber = Number(right.replace(/,/g, ''));
+  if (Number.isFinite(leftNumber) && Number.isFinite(rightNumber)) return leftNumber - rightNumber;
+  const leftDate = Date.parse(left);
+  const rightDate = Date.parse(right);
+  if (Number.isFinite(leftDate) && Number.isFinite(rightDate)) return leftDate - rightDate;
+  return left.localeCompare(right);
 }
 
 /**
@@ -116,7 +204,7 @@ function enableTableFilter(region, options) {
   const more = region.querySelector('[data-table-more]');
   const facets = [...region.querySelectorAll('[data-table-facet]')]
    .filter((facet) => facet instanceof HTMLSelectElement);
-  const rows = [...region.querySelectorAll('tbody > tr')]
+  const currentRows = () => [...region.querySelectorAll('tbody > tr')]
    .filter((row) => row instanceof HTMLTableRowElement);
   if (
    !(input instanceof HTMLInputElement)
@@ -144,7 +232,7 @@ function enableTableFilter(region, options) {
    const query = input.value.trim().toLocaleLowerCase('en');
    let matched = 0;
    let shown = 0;
-   for (const row of rows) {
+   for (const row of currentRows()) {
      const matchesSearch = query.length === 0
        || (row.textContent ?? '').toLocaleLowerCase('en').includes(query);
      const matchesFacets = facets.every((facet) => {
@@ -189,6 +277,7 @@ function enableTableFilter(region, options) {
    limit += options.pageSize;
    apply();
   });
+  region.addEventListener('table-sorted', () => apply());
   apply();
 }
 
