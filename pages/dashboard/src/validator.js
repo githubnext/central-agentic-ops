@@ -21,6 +21,7 @@ import {
   LINK_RELATION_VALUES,
   EVAL_RESULT_VALUES,
   FIELD_DEFINITION_KEYS,
+  FIELD_DISPLAY_VALUES,
   FIELD_TYPE_VALUES,
   FILTER_DIMENSION_VALUES,
   FINDING_SEVERITY_VALUES,
@@ -33,6 +34,7 @@ import {
   ORDER_BY_KEYS,
   ORDER_DIRECTION_VALUES,
   OUTCOME_STATE_VALUES,
+  PAGE_ICON_VALUES,
   PAGE_KIND_VALUES,
   ROOT_KEYS,
   ROLLOUT_MODE_VALUES,
@@ -51,6 +53,7 @@ import {
   VIEW_CHART_VALUES,
   VIEW_DISCLOSURE_VALUES,
   VIEW_ENCODING_KEYS,
+  VIEW_ELEMENT_VALUES,
   VIEW_KEYS,
   VIEW_LAYOUT_VALUES,
   VIEW_MARK_VALUES,
@@ -434,6 +437,16 @@ function validatePage(page, pageNode, path, pageIds, errors) {
 
   validateOptionalStringField(page.title, `${path}.title`, errors);
   validateOptionalStringField(page.description, `${path}.description`, errors);
+  if (page.icon !== undefined) {
+    validateStringField(page.icon, `${path}.icon`, true, errors);
+    if (typeof page.icon === 'string' && !PAGE_ICON_VALUES.includes(page.icon)) {
+      errors.push(createError(
+        ERROR_CODES.nonCanonicalVocabularyOrIdentifier,
+        'icon must use one canonical page icon value.',
+        `${path}.icon`
+      ));
+    }
+  }
 
   if (page.kind === 'built-in') {
     validateObjectKeys(pageNode, BUILT_IN_PAGE_KEYS, path, errors);
@@ -553,10 +566,80 @@ function validateBuiltInPageDefinition(pageName, definition, path, errors) {
     }
 
     const data = view.data;
-    if (!isPlainObject(data) || typeof data.source !== 'string') {
+    if (!isPlainObject(data)) {
       errors.push(createError(
         ERROR_CODES.missingOrInvalidRequiredField,
-        'built-in page definition view must contain a data mapping with one canonical source.',
+        'built-in page definition view must contain a data mapping.',
+        `${path}.definition.views[${index}].data`
+      ));
+      continue;
+    }
+
+    const viewPath = `${path}.definition.views[${index}]`;
+    if (view.element !== undefined && view.mark !== 'element') {
+      errors.push(createError(
+        ERROR_CODES.missingOrInvalidRequiredField,
+        'element is allowed only when mark is "element".',
+        `${viewPath}.element`
+      ));
+    }
+    if (view.mark === 'element') {
+      if (typeof view.element !== 'string' || !VIEW_ELEMENT_VALUES.includes(view.element)) {
+        errors.push(createError(
+          ERROR_CODES.nonCanonicalVocabularyOrIdentifier,
+          'element must use one canonical UI element value.',
+          `${viewPath}.element`
+        ));
+      }
+      if (!Array.isArray(data.sources) || data.sources.length === 0) {
+        errors.push(createError(
+          ERROR_CODES.missingOrInvalidRequiredField,
+          'element views must declare a non-empty data.sources sequence.',
+          `${viewPath}.data.sources`
+        ));
+        continue;
+      }
+      if (data.source !== undefined) {
+        errors.push(createError(
+          ERROR_CODES.missingOrInvalidRequiredField,
+          'element views must use data.sources instead of data.source.',
+          `${viewPath}.data.source`
+        ));
+      }
+      if (view.encoding !== undefined) {
+        errors.push(createError(
+          ERROR_CODES.missingOrInvalidRequiredField,
+          'element views must not declare encoding.',
+          `${viewPath}.encoding`
+        ));
+      }
+      const seenSources = new Set();
+      for (const sourceName of data.sources) {
+        if (typeof sourceName !== 'string' || !SOURCE_VALUES.includes(sourceName)) {
+          errors.push(createError(
+            ERROR_CODES.nonCanonicalVocabularyOrIdentifier,
+            'source must use one canonical Section 5.1 source name.',
+            `${viewPath}.data.sources`
+          ));
+          continue;
+        }
+        if (seenSources.has(sourceName)) {
+          errors.push(createError(
+            ERROR_CODES.missingOrInvalidRequiredField,
+            'sources must not contain duplicate source names.',
+            `${viewPath}.data.sources`
+          ));
+        }
+        seenSources.add(sourceName);
+        sourceFieldCoverage.set(sourceName, new Set(getBuiltInRequiredFields(pageName, sourceName)));
+      }
+      continue;
+    }
+
+    if (typeof data.source !== 'string') {
+      errors.push(createError(
+        ERROR_CODES.missingOrInvalidRequiredField,
+        'built-in page definition view must contain one canonical data.source.',
         `${path}.definition.views[${index}].data.source`
       ));
       continue;
@@ -887,6 +970,30 @@ function validateView(view, viewNode, path, viewIds, errors) {
     ));
   }
 
+  if (view.element !== undefined) {
+    validateStringField(view.element, `${path}.element`, true, errors);
+    if (typeof view.element === 'string' && !VIEW_ELEMENT_VALUES.includes(view.element)) {
+      errors.push(createError(
+        ERROR_CODES.nonCanonicalVocabularyOrIdentifier,
+        'element must use one canonical UI element value.',
+        `${path}.element`
+      ));
+    }
+    if (view.mark !== 'element') {
+      errors.push(createError(
+        ERROR_CODES.missingOrInvalidRequiredField,
+        'element is allowed only when mark is "element".',
+        `${path}.element`
+      ));
+    }
+  } else if (view.mark === 'element') {
+    errors.push(createError(
+      ERROR_CODES.missingOrInvalidRequiredField,
+      'element views must name one canonical UI element.',
+      `${path}.element`
+    ));
+  }
+
   if (view.chart !== undefined) {
     validateStringField(view.chart, `${path}.chart`, true, errors);
     if (typeof view.chart === 'string' && !VIEW_CHART_VALUES.includes(view.chart)) {
@@ -927,9 +1034,36 @@ function validateView(view, viewNode, path, viewIds, errors) {
   } else {
     const dataNode = getValueNodeByKey(viewNode, 'data');
     validateObjectKeys(dataNode, VIEW_DATA_KEYS, `${path}.data`, errors);
-    validateSource(view.data.source, `${path}.data.source`, errors);
-    if (typeof view.data.source === 'string' && SOURCE_VALUES.includes(view.data.source)) {
-      sourceName = view.data.source;
+    if (view.mark === 'element') {
+      validateSourceSequence(view.data.sources, `${path}.data.sources`, errors);
+      if (view.data.source !== undefined) {
+        errors.push(createError(
+          ERROR_CODES.missingOrInvalidRequiredField,
+          'element views must use data.sources instead of data.source.',
+          `${path}.data.source`
+        ));
+      }
+      for (const key of ['limit', 'order-by', 'source-metadata']) {
+        if (view.data[key] !== undefined) {
+          errors.push(createError(
+            ERROR_CODES.missingOrInvalidRequiredField,
+            `element views must not declare data.${key}.`,
+            `${path}.data.${key}`
+          ));
+        }
+      }
+    } else {
+      validateSource(view.data.source, `${path}.data.source`, errors);
+      if (typeof view.data.source === 'string' && SOURCE_VALUES.includes(view.data.source)) {
+        sourceName = view.data.source;
+      }
+      if (view.data.sources !== undefined) {
+        errors.push(createError(
+          ERROR_CODES.missingOrInvalidRequiredField,
+          'metric, table, and chart views must use data.source instead of data.sources.',
+          `${path}.data.sources`
+        ));
+      }
     }
     validateContext(dataNode, view.data, `${path}.data`, errors);
   }
@@ -999,6 +1133,36 @@ function validateSource(source, path, errors) {
       'source must use one canonical Section 5.1 source name.',
       path
     ));
+  }
+}
+
+/**
+ * @param {unknown} sources
+ * @param {string} path
+ * @param {ValidationError[]} errors
+ */
+function validateSourceSequence(sources, path, errors) {
+  if (!Array.isArray(sources) || sources.length === 0) {
+    errors.push(createError(
+      ERROR_CODES.missingOrInvalidRequiredField,
+      'sources must be a non-empty sequence of canonical source names.',
+      path
+    ));
+    return;
+  }
+  const seen = new Set();
+  for (const [index, source] of sources.entries()) {
+    validateSource(source, `${path}[${index}]`, errors);
+    if (typeof source === 'string') {
+      if (seen.has(source)) {
+        errors.push(createError(
+          ERROR_CODES.missingOrInvalidRequiredField,
+          'sources must not contain duplicate source names.',
+          `${path}[${index}]`
+        ));
+      }
+      seen.add(source);
+    }
   }
 }
 
@@ -1387,6 +1551,17 @@ function validateDatasetMetadata(dataNode, data, path, errors) {
  * @param {ValidationError[]} errors
  */
 function validateEncoding(encodingNode, encoding, mark, chart, sourceName, data, viewPath, errors) {
+  if (mark === 'element') {
+    if (encoding !== undefined) {
+      errors.push(createError(
+        ERROR_CODES.missingOrInvalidRequiredField,
+        'element views must not declare encoding.',
+        `${viewPath}.encoding`
+      ));
+    }
+    return;
+  }
+
   if (!isPlainObject(encoding)) {
     errors.push(createError(
       ERROR_CODES.missingOrInvalidRequiredField,
@@ -1401,6 +1576,18 @@ function validateEncoding(encodingNode, encoding, mark, chart, sourceName, data,
   /** @type {Map<string, string>} */
   const aggregateOutputIds = new Map();
   const markValue = typeof mark === 'string' ? mark : null;
+  const displayForbiddenChannels = markValue === 'table'
+    ? ['href']
+    : ['value', 'x', 'y', 'color', 'href'];
+  for (const channel of displayForbiddenChannels) {
+    if (isPlainObject(encoding[channel]) && encoding[channel].display !== undefined) {
+      errors.push(createError(
+        ERROR_CODES.missingOrInvalidRequiredField,
+        'display is allowed only on table column field definitions.',
+        `${viewPath}.encoding.${channel}.display`
+      ));
+    }
+  }
 
   if (markValue === 'metric') {
     validateMetricEncoding(encodingNode, encoding, sourceName, `${viewPath}.encoding`, aggregateOutputIds, errors);
@@ -1676,6 +1863,17 @@ function validateFieldDefinition(fieldNode, fieldDefinition, sourceName, path, a
         ERROR_CODES.nonCanonicalVocabularyOrIdentifier,
         'type must use one canonical field type.',
         `${path}.type`
+      ));
+    }
+  }
+
+  if (fieldDefinition.display !== undefined) {
+    validateStringField(fieldDefinition.display, `${path}.display`, true, errors);
+    if (typeof fieldDefinition.display === 'string' && !FIELD_DISPLAY_VALUES.includes(fieldDefinition.display)) {
+      errors.push(createError(
+        ERROR_CODES.nonCanonicalVocabularyOrIdentifier,
+        'display must use one canonical field display value.',
+        `${path}.display`
       ));
     }
   }

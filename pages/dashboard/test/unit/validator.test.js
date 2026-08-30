@@ -1943,6 +1943,85 @@ dashboard:
     expect(result.ok).toBe(true);
   });
 
+  it('DLS-VIEW-002 DLS-VIEW-008 DLS-VIEW-022 DLS-VIEW-023 accepts declarative UI elements, page icons, and field displays', () => {
+    const result = validateDashboardDocument(`language-version: "0.1.0"
+dashboard:
+  id: declarative-ui
+  title: Declarative UI
+  pages:
+    - id: operations
+      kind: custom
+      icon: workflow
+      views:
+        - id: topology
+          data:
+            sources: [workflows]
+          mark: element
+          element: workflow-topology
+        - id: runs
+          data:
+            source: runs
+          mark: table
+          encoding:
+            columns:
+              - field: run-conclusion
+                display: status
+`);
+
+    expect(result.ok).toBe(true);
+  });
+
+  it('DLS-VIEW-002 DLS-VIEW-008 DLS-VIEW-022 DLS-VIEW-023 rejects inferred or unknown UI declarations', () => {
+    const result = validateDashboardDocument(`language-version: "0.1.0"
+dashboard:
+  id: invalid-declarative-ui
+  title: Invalid Declarative UI
+  pages:
+    - id: operations
+      kind: custom
+      icon: rocket
+      views:
+        - id: topology
+          data:
+            source: workflows
+            limit: 1
+          mark: element
+          element: unknown-topology
+          encoding: {}
+        - id: runs
+          data:
+            sources: [runs]
+          mark: table
+          encoding:
+            columns:
+              - field: run-conclusion
+                display: badge
+        - id: run-count
+          data:
+            source: runs
+          mark: metric
+          encoding:
+            value:
+              field: run
+              aggregate: count
+              display: status
+`);
+
+    expect(result.ok).toBe(false);
+    if (!result.ok) {
+      expect(result.errors).toEqual(expect.arrayContaining([
+        expect.objectContaining({ code: 'DLS-E005', path: '$.dashboard.pages[0].icon' }),
+        expect.objectContaining({ code: 'DLS-E005', path: '$.dashboard.pages[0].views[0].element' }),
+        expect.objectContaining({ code: 'DLS-E003', path: '$.dashboard.pages[0].views[0].data.source' }),
+        expect.objectContaining({ code: 'DLS-E003', path: '$.dashboard.pages[0].views[0].data.limit' }),
+        expect.objectContaining({ code: 'DLS-E003', path: '$.dashboard.pages[0].views[0].encoding' }),
+        expect.objectContaining({ code: 'DLS-E003', path: '$.dashboard.pages[0].views[1].data.sources' }),
+        expect.objectContaining({ code: 'DLS-E005', path: '$.dashboard.pages[0].views[1].encoding.columns[0].display' }),
+        expect.objectContaining({ code: 'DLS-E003', path: '$.dashboard.pages[0].views[2].encoding.value.display' })
+      ]));
+    }
+  });
+
   it('DLS-VIEW-002 DLS-VIEW-003 DLS-VIEW-004 DLS-VIEW-005 reject unknown marks and invalid mark-channel combinations', () => {
     const result = validateDashboardDocument(`language-version: "0.1.0"
 dashboard:
