@@ -827,6 +827,14 @@ function renderTableView(pageId, title, view, sourceName, rows, metadata, contex
       emptyMessage: 'No rows available.',
       colSpan: Math.max(columns.length, 1),
       headCells: columns.map((column) => fieldTitle(column)),
+      summaryColumns: columns.map((column) => {
+        const outputField = typeof column.as === 'string' ? column.as : column.field;
+        return {
+          label: fieldTitle(column),
+          type: String(column.type ?? ''),
+          values: tableRows.map((row) => row[outputField])
+        };
+      }),
       filterLabel: `Filter ${title}`,
       filterId: typeof view.id === 'string' ? view.id : `${pageId}-table`,
       filterFields: columns.flatMap((column, columnIndex) => (
