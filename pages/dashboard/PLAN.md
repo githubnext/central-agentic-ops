@@ -37,7 +37,7 @@
   - [x] Add build, unit, and browser coverage proving `dashboard.json` renders every specification-defined built-in page and that no page depends on custom page-specific JavaScript.
   - [x] Specify the `repositories` inventory and its run-count, AIC, and per-definition operational-value rankings as separate declarative views with explicit descending ranking keys.
 - [ ] **Security, privacy, accessibility** — Section 13 including escaping, redaction, and keyboard and screen-reader behavior verified with Playwright.
-  - [x] Slice: `DLS-SAFE-003`, `DLS-SAFE-007`, `DLS-SAFE-008`, and `DLS-SAFE-010` presenter render for inert text escaping, non-empty accessible names, labeled table columns, textual data-state labels, and labeled external links.
+  - [x] Slice: `DLS-SAFE-003`, `DLS-SAFE-004`, `DLS-SAFE-007`, `DLS-SAFE-008`, and `DLS-SAFE-010` presenter render for inert text escaping, https-only safe link exposure, non-empty accessible names, labeled table columns, textual data-state labels, and labeled external links.
   - [x] Slice: `DLS-SAFE-007` and `DLS-SAFE-008` keyboard presenter behavior for focusable labeled sections with deterministic arrow-key traversal verified in unit and browser tests.
   - [x] Slice: `DLS-SAFE-005` and `DLS-VAL-004` validator rejection for secret-bearing provenance metadata with non-echoing error messages.
   - [x] Slice: `DLS-SAFE-006`, `DLS-VIEW-013`, `DLS-VIEW-014`, and `DLS-VIEW-015` presenter render for custom metric, table, and chart views with visible available/empty/unavailable state output, effective-context text, and non-fabricated per-row links constrained to provided source data.
@@ -73,6 +73,17 @@
 
 - 2026-08-28: `npm run typecheck`, `npm run lint`, and `npm test` can fail immediately after `npm install` if the runner has not linked local `node_modules/.bin` shims or installed the declared type packages yet; rerunning after installation from the package directory is currently required in this environment.
 - 2026-08-28: `npm run test:e2e` is currently blocked in this environment because the Playwright Chromium executable is not provisioned (`browserType.launch: Executable doesn't exist`). The workflow should prefer the built-in Playwright MCP browser tools until the package-level browser dependency is available.
+
+## Run log
+
+### 2026-08-30 (security safe-link coverage slice)
+- Continued the Security, privacy, accessibility milestone with a narrow `DLS-SAFE-004` presenter verification increment, using the existing conservative runtime link sanitizer rather than expanding semantics.
+- Extended `test/unit/presenter.test.js` and `test/e2e/smoke.spec.js` so Section 13 coverage now explicitly verifies that runtime links with embedded credentials are omitted from both custom table and custom metric rendering while safe HTTPS links remain exposed with their labels.
+- Tightened existing findings accessibility test names to record `DLS-SAFE-004` alongside the already-covered `DLS-SAFE-003`, `DLS-SAFE-007`, `DLS-SAFE-008`, and `DLS-SAFE-010` surfaces, matching the specification's safe-link handling requirement more directly.
+- Verified `pages/dashboard/` quality gates in this run: `npm install`, `npm run build`, `npm run typecheck`, `npm run lint`, `npm test`, and `npx playwright test --config=playwright.config.mjs` all pass.
+- Next milestone: Security, privacy, accessibility, continuing with the remaining Section 13 closure work and parity follow-up inventory once the milestone is complete.
+
+## Run log
 
 ## Run log
 
