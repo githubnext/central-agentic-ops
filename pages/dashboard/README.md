@@ -36,6 +36,8 @@ The overview now renders a report-style control-plane status banner, execution-h
 
 The Packages page renders centrally managed package utilization cards with retained-usage coverage and complete-attempt allowances, All/Review/Live mode filters, and a 30-day cumulative package-run trend.
 
+Named UI elements, navigation icons, and semantic table-cell treatments are declared in dashboard JSON. The presenter dispatches these declarations without inferring UI from page IDs, view IDs, source contents, or field names.
+
 The preview also mirrors the report's interactive transitions for navigation, linked records, and chart-point tooltips while respecting reduced-motion preferences. Its illustrative data includes multiple operational-value observations and linked runs, issues, pull requests, and evidence so chart and link states are visible without live inputs.
 
 The current compliance-suite slice adds machine-readable conformance result records, a passing Appendix A fixture, and failing Appendix C fixtures exercised through a small reusable compliance smoke harness.

@@ -17,7 +17,18 @@ describe('presenter built-in and custom pages', () => {
       dashboard: {
         id: 'workflow-topology-dashboard',
         title: 'Workflow Topology',
-        pages: [{ id: 'workflows', kind: /** @type {'built-in'} */ ('built-in'), page: 'workflows', title: 'Workflows' }]
+        pages: [{
+          id: 'operations',
+          kind: /** @type {'custom'} */ ('custom'),
+          title: 'Operations',
+          icon: 'workflow',
+          views: [{
+            id: 'topology',
+            data: { sources: ['workflows'] },
+            mark: 'element',
+            element: 'workflow-topology'
+          }]
+        }]
       }
     };
 
@@ -52,6 +63,7 @@ describe('presenter built-in and custom pages', () => {
     expect(topology?.querySelector('[data-package-id="dependabot"]')?.textContent).toContain('dispatches');
     expect(topology?.querySelector('[data-repository="target-service"]')?.textContent).toContain('CI');
     expect(topology?.textContent).toContain('safe outputs only');
+    expect(rendered.querySelector('[data-nav-page-id="operations"] .octicon-workflow')).not.toBeNull();
   });
 
   it('DLS-LINK-006 DLS-LINK-007 derives organization, repository, and workflow links from raw identity fields in the topology view', () => {
@@ -60,7 +72,17 @@ describe('presenter built-in and custom pages', () => {
       dashboard: {
         id: 'workflow-topology-links-dashboard',
         title: 'Workflow Topology Links',
-        pages: [{ id: 'workflows', kind: /** @type {'built-in'} */ ('built-in'), page: 'workflows', title: 'Workflows' }]
+        pages: [{
+          id: 'operations',
+          kind: /** @type {'custom'} */ ('custom'),
+          title: 'Operations',
+          views: [{
+            id: 'topology',
+            data: { sources: ['workflows'] },
+            mark: 'element',
+            element: 'workflow-topology'
+          }]
+        }]
       }
     };
 
@@ -408,8 +430,8 @@ describe('presenter built-in and custom pages', () => {
 
     const overviewPage = rendered.querySelector('[data-page-name="overview"]');
     expect(overviewPage?.getAttribute('data-page-kind')).toBe('custom');
-    expect(overviewPage?.querySelectorAll('.custom-view')).toHaveLength(2);
-    expect(overviewPage?.querySelectorAll('.layout-section')).toHaveLength(1);
+    expect(overviewPage?.querySelectorAll('.custom-view')).toHaveLength(3);
+    expect(overviewPage?.querySelectorAll('.layout-section')).toHaveLength(2);
     expect(overviewPage?.querySelector('[data-section-id="execution-trends"]')?.getAttribute('data-section-layout')).toBe('full');
     expect(overviewPage?.querySelector('.control-plane-status')?.classList.contains('control-plane-critical')).toBe(true);
     expect(overviewPage?.querySelector('.control-plane-vitals')?.textContent).toContain('33.3%');
@@ -428,7 +450,7 @@ describe('presenter built-in and custom pages', () => {
     expect(utilizationItem?.querySelector('.utilization-track span')?.getAttribute('style')).toBe('width: 100%;');
     expect(overviewPage?.textContent).toContain('Active workflows');
     expect(overviewPage?.textContent).toContain('Operational value timeline');
-    expect(overviewPage?.querySelector('.layout-section h3')?.textContent).toBe('Execution and value trends');
+    expect(overviewPage?.querySelector('[data-section-id="execution-trends"] h3')?.textContent).toBe('Execution and value trends');
     expect(rendered.querySelector('[data-state-axis="availability"]')?.textContent).toBe('available');
     expect(rendered.querySelector('[data-state-axis="completeness"]')?.textContent).toBe('partial');
     expect(rendered.querySelector('[data-state-axis="freshness"]')?.textContent).toBe('stale');
@@ -664,6 +686,7 @@ describe('presenter built-in and custom pages', () => {
     for (const page of pages) {
       expect(page.kind).toBe('built-in');
       expect(page.id).toBe(page.page);
+      expect(typeof page.icon).toBe('string');
       expect(page.definition?.['data-state']).toEqual({
         availability: true,
         completeness: true,
@@ -671,7 +694,10 @@ describe('presenter built-in and custom pages', () => {
       });
       expect(Array.isArray(page.definition?.views)).toBe(true);
       expect(page.definition.views.length).toBeGreaterThan(0);
-      expect(page.definition.views.every((/** @type {{ data?: { source?: unknown } }} */ view) => typeof view?.data?.source === 'string')).toBe(true);
+      expect(page.definition.views.every((/** @type {{ data?: { source?: unknown, sources?: unknown } }} */ view) => (
+        typeof view?.data?.source === 'string'
+        || (Array.isArray(view?.data?.sources) && view.data.sources.every((source) => typeof source === 'string'))
+      ))).toBe(true);
     }
 
     const repositoriesPage = pages.find((/** @type {{ page: string }} */ page) => page.page === 'repositories');
@@ -1682,9 +1708,9 @@ describe('presenter built-in and custom pages', () => {
               encoding: {
                 columns: [
                   { field: 'workflow', type: 'nominal' },
-                  { field: 'workflow-active', type: 'nominal' },
-                  { field: 'rollout-mode', type: 'nominal' },
-                  { field: 'run-conclusion', type: 'nominal' }
+                  { field: 'workflow-active', type: 'nominal', display: 'active-state' },
+                  { field: 'rollout-mode', type: 'nominal', display: 'mode' },
+                  { field: 'run-conclusion', type: 'nominal', display: 'status' }
                 ]
               }
             }]
