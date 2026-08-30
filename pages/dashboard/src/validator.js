@@ -45,8 +45,10 @@ import {
   BUILT_IN_PAGE_REQUIRED_FIELDS,
   TIME_UNIT_VALUES,
   VIEW_DATA_KEYS,
+  VIEW_CHART_VALUES,
   VIEW_ENCODING_KEYS,
   VIEW_KEYS,
+  VIEW_LAYOUT_VALUES,
   VIEW_MARK_VALUES,
   WORKFLOW_ACTIVE_VALUES
 } from './specification.js';
@@ -627,6 +629,35 @@ function validateView(view, viewNode, path, viewIds, errors) {
     ));
   }
 
+  if (view.chart !== undefined) {
+    validateStringField(view.chart, `${path}.chart`, true, errors);
+    if (typeof view.chart === 'string' && !VIEW_CHART_VALUES.includes(view.chart)) {
+      errors.push(createError(
+        ERROR_CODES.nonCanonicalVocabularyOrIdentifier,
+        'chart must use one canonical chart widget value.',
+        `${path}.chart`
+      ));
+    }
+    if (view.mark !== 'chart') {
+      errors.push(createError(
+        ERROR_CODES.invalidScopeFilterTimeAggregationOrOrderReference,
+        'chart is allowed only when mark is "chart".',
+        `${path}.chart`
+      ));
+    }
+  }
+
+  if (view.layout !== undefined) {
+    validateStringField(view.layout, `${path}.layout`, true, errors);
+    if (typeof view.layout === 'string' && !VIEW_LAYOUT_VALUES.includes(view.layout)) {
+      errors.push(createError(
+        ERROR_CODES.nonCanonicalVocabularyOrIdentifier,
+        'layout must use one canonical structural layout hint.',
+        `${path}.layout`
+      ));
+    }
+  }
+
   /** @type {string | null} */
   let sourceName = null;
   if (!isPlainObject(view.data)) {
@@ -647,7 +678,7 @@ function validateView(view, viewNode, path, viewIds, errors) {
 
   validateSemanticFieldLiterals(view.data, `${path}.data`, errors);
   validateDatasetMetadata(getValueNodeByKey(viewNode, 'data'), view.data, `${path}.data`, errors);
-  validateEncoding(getValueNodeByKey(viewNode, 'encoding'), view.encoding, view.mark, sourceName, view.data, path, errors);
+  validateEncoding(getValueNodeByKey(viewNode, 'encoding'), view.encoding, view.mark, view.chart, sourceName, view.data, path, errors);
 }
 
 /**
@@ -1044,12 +1075,13 @@ function validateDatasetMetadata(dataNode, data, path, errors) {
  * @param {unknown} encodingNode
  * @param {unknown} encoding
  * @param {unknown} mark
+ * @param {unknown} chart
  * @param {string | null} sourceName
  * @param {unknown} data
  * @param {string} viewPath
  * @param {ValidationError[]} errors
  */
-function validateEncoding(encodingNode, encoding, mark, sourceName, data, viewPath, errors) {
+function validateEncoding(encodingNode, encoding, mark, chart, sourceName, data, viewPath, errors) {
   if (!isPlainObject(encoding)) {
     errors.push(createError(
       ERROR_CODES.missingOrInvalidRequiredField,
@@ -1071,9 +1103,36 @@ function validateEncoding(encodingNode, encoding, mark, sourceName, data, viewPa
     validateTableEncoding(encodingNode, encoding, sourceName, `${viewPath}.encoding`, aggregateOutputIds, errors);
   } else if (markValue === 'chart') {
     validateChartEncoding(encodingNode, encoding, sourceName, `${viewPath}.encoding`, aggregateOutputIds, errors);
+    validateChartWidget(encoding, chart, viewPath, errors);
   }
 
   validateOrderByReferences(data, aggregateOutputIds, sourceName, viewPath, errors);
+}
+
+/**
+ * @param {Record<string, unknown>} encoding
+ * @param {unknown} chart
+ * @param {string} viewPath
+ * @param {ValidationError[]} errors
+ */
+function validateChartWidget(encoding, chart, viewPath, errors) {
+  if (chart === undefined) {
+    return;
+  }
+  if (chart === 'line' && isPlainObject(encoding.x) && encoding.x.type !== undefined && encoding.x.type !== 'temporal') {
+    errors.push(createError(
+      ERROR_CODES.invalidScopeFilterTimeAggregationOrOrderReference,
+      'line chart x encoding must be temporal when explicitly typed.',
+      `${viewPath}.encoding.x.type`
+    ));
+  }
+  if (chart === 'pie' && isPlainObject(encoding.x) && encoding.x.type !== undefined && !['nominal', 'ordinal'].includes(String(encoding.x.type))) {
+    errors.push(createError(
+      ERROR_CODES.invalidScopeFilterTimeAggregationOrOrderReference,
+      'pie chart x encoding must be nominal or ordinal when explicitly typed.',
+      `${viewPath}.encoding.x.type`
+    ));
+  }
 }
 
 /**
