@@ -413,6 +413,60 @@ dashboard:
     }
   });
 
+  it('DLS-PAGE-015 rejects a packages definition that omits usage coverage', () => {
+    const result = validateDashboardDocument(`language-version: "0.1.0"
+dashboard:
+  id: packages-built-in
+  title: Packages Built In
+  pages:
+    - id: packages
+      kind: built-in
+      page: packages
+      title: Packages
+      definition:
+        data-state:
+          availability: true
+          completeness: true
+          freshness: true
+        views:
+          - id: package-inventory
+            data:
+              source: workflows
+            mark: table
+            encoding:
+              columns:
+                - field: package
+                - field: package-name
+                - field: workflow
+                - field: workflow-role
+                - field: max-ai-credits
+                - field: package-aic-allowance
+                - field: package-worker-count
+                - field: inventory-ready
+                - field: rollout-mode
+          - id: package-runs
+            data:
+              source: runs
+            mark: table
+            encoding:
+              columns:
+                - field: workflow
+                - field: run
+                - field: started-at
+                - field: run-conclusion
+                - field: rollout-mode
+`);
+
+    expect(result.ok).toBe(false);
+    if (!result.ok) {
+      expect(result.errors).toContainEqual(expect.objectContaining({
+        code: 'DLS-E003',
+        path: '$.dashboard.pages[0].definition.views',
+        message: 'built-in page "packages" definition must include at least one view for source "usage".'
+      }));
+    }
+  });
+
   it('DLS-PAGE-001 DLS-PAGE-011 DLS-PAGE-014 accepts an explicit built-in page title when it matches the canonical title default', () => {
     const result = validateDashboardDocument(`language-version: "0.1.0"
 dashboard:

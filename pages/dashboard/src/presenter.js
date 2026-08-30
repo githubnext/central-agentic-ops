@@ -11,7 +11,7 @@ import { renderTableRegion } from './components/table-region.js';
 import { renderContextChrome, renderPageSection, renderViewSectionChrome } from './components/view-chrome.js';
 import { formatAggregateValue, formatNumber, toNumber } from './view-formatters.js';
 import { renderActiveStateBadge, renderModeBadge, renderStatusBadge } from './components/badge.js';
-import { renderOperationalOverview } from './components/operational-overview.js';
+import { renderOperationalOverview, renderPackagesView } from './components/operational-overview.js';
 
 /**
  * @typedef {{ availability: 'available'|'empty'|'unavailable', completeness: 'complete'|'partial'|'unknown', freshness: 'fresh'|'stale'|'unknown' }} DataState
@@ -325,20 +325,23 @@ function renderPage(page, sources) {
 
   if (page.kind === 'built-in') {
     const payload = getBuiltInPagePayload(page);
-    return renderCustomPage(payload, title, sources, page.page === 'overview');
+    const specializedView = page.page === 'overview'
+      ? 'operational-overview'
+      : page.page === 'packages' ? 'packages' : null;
+    return renderCustomPage(payload, title, sources, specializedView);
   }
 
-  return renderCustomPage(page, title, sources, false);
+  return renderCustomPage(page, title, sources, null);
 }
 
 /**
  * @param {PresentableCustomPage} page
  * @param {string} title
  * @param {Record<string, LogicalSourceInput>} sources
- * @param {boolean} useOperationalOverview
+ * @param {'operational-overview'|'packages'|null} specializedView
  * @returns {HTMLElement}
  */
-function renderCustomPage(page, title, sources, useOperationalOverview) {
+function renderCustomPage(page, title, sources, specializedView) {
   const views = Array.isArray(page.views) ? page.views : [];
   const sections = Array.isArray(page.sections) ? page.sections : [];
   /** @type {Map<string, LogicalSourceInput>} */
@@ -361,8 +364,10 @@ function renderCustomPage(page, title, sources, useOperationalOverview) {
     isPlainObject(view) && typeof view.id === 'string' ? view.id : `view-${index + 1}`,
     renderedViews[index]
   ]));
-  const renderedContent = useOperationalOverview && sections.length > 0
+  const renderedContent = specializedView === 'operational-overview' && sections.length > 0
     ? renderOverviewContent(sections, renderedViewsById, sources)
+    : specializedView === 'packages'
+      ? renderPackagesView(sources)
     : sections.length > 0
     ? h(
       'div',
@@ -383,7 +388,7 @@ function renderCustomPage(page, title, sources, useOperationalOverview) {
     h('h2', { tabIndex: -1 }, title),
     page.description ? h('p', { className: 'page-description' }, page.description) : null,
     ...(renderedViews.length > 0
-      ? useOperationalOverview
+      ? specializedView !== null
         ? [renderedContent, renderDataStateMetrics(summarizeDataState(pageSources))]
         : [renderDataStateMetrics(summarizeDataState(pageSources)), renderedContent]
       : [h('p', null, 'No custom views available.')])

@@ -69,6 +69,197 @@ export function renderOperationalOverview(sources) {
 }
 
 /**
+ * @param {Record<string, import('../presenter.js').LogicalSourceInput>} sources
+ * @returns {HTMLElement}
+ */
+export function renderPackagesView(sources) {
+  const workflows = rowsFor(sources, 'workflows');
+  const packages = summarizePackages(workflows);
+  const root = h('div', { className: 'packages-view' });
+
+  /** @param {'all'|'review'|'live'} mode */
+  const renderMode = (mode) => {
+    const usage = rowsFor(sources, 'usage').filter((row) => mode === 'all' || row['rollout-mode'] === mode);
+    const runs = rowsFor(sources, 'runs').filter((row) => mode === 'all' || row['rollout-mode'] === mode);
+    const modeLabel = mode === 'all' ? 'All' : titleCase(mode);
+    root.replaceChildren(
+      renderPackageModeTabs(mode, renderMode),
+      renderPackageAicUtilization(
+        packages,
+        summarizePackageAicUsage(workflows, usage),
+        sources.usage,
+        {
+          includeUnconfigured: true,
+          showAllowance: true,
+          summary: `Actual AI Credits against summed per-run limits for ${modeLabel.toLowerCase()} package runs retained from the last 24 hours.`
+        }
+      ),
+      renderPackageRunTrend(modeLabel, runs, sources.runs)
+    );
+  };
+
+  renderMode('all');
+  return root;
+}
+
+/**
+ * @param {'all'|'review'|'live'} selectedMode
+ * @param {(mode: 'all'|'review'|'live') => void} onSelect
+ * @returns {HTMLElement}
+ */
+function renderPackageModeTabs(selectedMode, onSelect) {
+  const tabs = /** @type {const} */ ([
+    ['all', 'All'],
+    ['review', 'Review'],
+    ['live', 'Live']
+  ]);
+  return h(
+    'nav',
+    { className: 'package-mode-tabs', 'aria-label': 'Filter package activity by mode' },
+    ...tabs.map(([mode, label]) => h(
+      'button',
+      {
+        type: 'button',
+        'aria-current': selectedMode === mode ? 'page' : undefined,
+        onclick: () => onSelect(mode)
+      },
+      label
+    ))
+  );
+}
+
+/**
+ * @param {string} modeLabel
+ * @param {Array<Record<string, unknown>>} runs
+ * @param {import('../presenter.js').LogicalSourceInput | undefined} source
+ * @returns {HTMLElement}
+ */
+function renderPackageRunTrend(modeLabel, runs, source) {
+  const asOf = latestRunTimestamp(runs, source);
+  const end = new Date(asOf);
+  end.setUTCHours(0, 0, 0, 0);
+  const days = Array.from({ length: 30 }, (_, index) => {
+    const day = new Date(end);
+    day.setUTCDate(end.getUTCDate() - (29 - index));
+    return day;
+  });
+  const dayIndex = new Map(days.map((day, index) => [day.toISOString().slice(0, 10), index]));
+  /** @type {Record<'successful'|'failed'|'cancelled', number[]>} */
+  const series = {
+    successful: Array(30).fill(0),
+    failed: Array(30).fill(0),
+    cancelled: Array(30).fill(0)
+  };
+  for (const run of runs) {
+    const index = dayIndex.get(String(run['started-at'] ?? '').slice(0, 10));
+    const status = packageRunStatus(run);
+    if (index !== undefined && status) series[status][index] += 1;
+  }
+  for (const values of Object.values(series)) {
+    for (let index = 1; index < values.length; index += 1) {
+      values[index] += values[index - 1];
+    }
+  }
+  const maximum = Math.max(1, ...Object.values(series).flat());
+  /** @param {number[]} values */
+  const points = (values) => values
+    .map((value, index) => `${58 + (index * 714 / 29)},${200 - (value * 150 / maximum)}`)
+    .join(' ');
+  const title = `${modeLabel} runs over time`;
+
+  return h(
+    'section',
+    { className: 'package-run-trend', 'aria-labelledby': 'package-run-trend-heading' },
+    h(
+      'header',
+      null,
+      h(
+        'div',
+        null,
+        h('h3', { id: 'package-run-trend-heading' }, title),
+        h('p', null, h('strong', null, formatNumber(runs.length)), h('span', null, `as of ${formatPackageDate(asOf)}`))
+      ),
+      h('span', { className: 'package-trend-group' }, 'Group by: ', h('strong', null, 'Status'))
+    ),
+    h(
+      'ul',
+      { className: 'package-trend-legend', 'aria-label': 'Run status series' },
+      h('li', null, h('i', { className: 'package-trend-successful' }), 'Successful'),
+      h('li', null, h('i', { className: 'package-trend-failed' }), 'Failed'),
+      h('li', null, h('i', { className: 'package-trend-cancelled' }), 'Cancelled')
+    ),
+    h(
+      'div',
+      { className: 'package-trend-chart' },
+      h(
+        'svg',
+        {
+          viewBox: '0 0 800 240',
+          preserveAspectRatio: 'xMinYMin meet',
+          role: 'img',
+          'aria-label': `${title}, cumulative successful, failed, and cancelled run counts over 30 days`
+        },
+        h('line', { x1: 58, y1: 50, x2: 772, y2: 50 }),
+        h('line', { x1: 58, y1: 125, x2: 772, y2: 125 }),
+        h('line', { x1: 58, y1: 200, x2: 772, y2: 200 }),
+        ...[58, 201, 344, 487, 630, 772].map((x) => h('line', { className: 'vertical-grid', x1: x, y1: 50, x2: x, y2: 200 })),
+        h('text', { x: 8, y: 54 }, String(maximum)),
+        h('text', { x: 8, y: 129 }, formatNumber(maximum / 2)),
+        h('text', { x: 8, y: 204 }, '0'),
+        h('polyline', { className: 'package-chart-successful', points: points(series.successful) }),
+        h('polyline', { className: 'package-chart-failed', points: points(series.failed) }),
+        h('polyline', { className: 'package-chart-cancelled', points: points(series.cancelled) })
+      ),
+      h(
+        'div',
+        { className: 'package-trend-axis' },
+        h('span', null, formatPackageDate(days[0].toISOString())),
+        h('span', null, formatPackageDate(days[29].toISOString()))
+      )
+    )
+  );
+}
+
+/**
+ * @param {Record<string, unknown>} run
+ * @returns {'successful'|'failed'|'cancelled'|null}
+ */
+function packageRunStatus(run) {
+  const conclusion = String(run['run-conclusion']);
+  if (conclusion === 'success') return 'successful';
+  if (FAILURE_CONCLUSIONS.has(conclusion)) return 'failed';
+  if (conclusion === 'cancelled') return 'cancelled';
+  return null;
+}
+
+/**
+ * @param {Array<Record<string, unknown>>} runs
+ * @param {import('../presenter.js').LogicalSourceInput | undefined} source
+ * @returns {string}
+ */
+function latestRunTimestamp(runs, source) {
+  const candidates = [
+    source?.metadata?.['as-of'],
+    source?.metadata?.['retrieved-at'],
+    ...runs.map((run) => run['started-at'])
+  ].filter((value) => typeof value === 'string' && Number.isFinite(Date.parse(value)))
+    .map(String);
+  return /** @type {string} */ (candidates.sort((left, right) => Date.parse(right) - Date.parse(left))[0] ?? new Date(0).toISOString());
+}
+
+/**
+ * @param {string} value
+ * @returns {string}
+ */
+function formatPackageDate(value) {
+  return new Intl.DateTimeFormat('en', {
+    dateStyle: 'medium',
+    timeStyle: 'short',
+    timeZone: 'UTC'
+  }).format(new Date(value));
+}
+
+/**
  * @param {{
  *   scope: string,
  *   packages: number,
@@ -294,15 +485,18 @@ function renderManagedPackages(packages) {
  * @param {ReturnType<typeof summarizePackages>} packages
  * @param {ReturnType<typeof summarizePackageAicUsage>} usageByPackage
  * @param {import('../presenter.js').LogicalSourceInput | undefined} usageSource
+ * @param {{ includeUnconfigured?: boolean, showAllowance?: boolean, summary?: string }} [options]
  * @returns {HTMLElement}
  */
-function renderPackageAicUtilization(packages, usageByPackage, usageSource) {
+function renderPackageAicUtilization(packages, usageByPackage, usageSource, options = {}) {
   const available = usageSource?.metadata?.availability !== 'unavailable';
   const complete = usageSource?.metadata?.completeness !== 'partial';
-  const eligiblePackages = packages.filter((entry) => typeof entry.allowance === 'number' && entry.allowance > 0);
-  const summary = available
+  const eligiblePackages = options.includeUnconfigured
+    ? packages
+    : packages.filter((entry) => typeof entry.allowance === 'number' && entry.allowance > 0);
+  const summary = options.summary ?? (available
     ? `Actual AI Credits against summed per-run limits for retained package runs.${complete ? '' : ' Partial usage coverage.'}`
-    : 'AI Credit usage artifacts are unavailable.';
+    : 'AI Credit usage artifacts are unavailable.');
 
   return h(
     'section',
@@ -318,7 +512,7 @@ function renderPackageAicUtilization(packages, usageByPackage, usageSource) {
       'div',
       { className: 'utilization-grid' },
       ...(eligiblePackages.length > 0
-        ? eligiblePackages.map((entry) => renderPackageUtilizationCard(entry, usageByPackage, available))
+        ? eligiblePackages.map((entry) => renderPackageUtilizationCard(entry, usageByPackage, available, options.showAllowance === true))
         : [h('p', { className: 'empty' }, 'No packages with a configured AIC allowance were observed.')])
     )
   );
@@ -328,13 +522,17 @@ function renderPackageAicUtilization(packages, usageByPackage, usageSource) {
  * @param {ReturnType<typeof summarizePackages>[number]} entry
  * @param {ReturnType<typeof summarizePackageAicUsage>} usageByPackage
  * @param {boolean} available
+ * @param {boolean} [showAllowance]
  * @returns {HTMLElement}
  */
-function renderPackageUtilizationCard(entry, usageByPackage, available) {
+function renderPackageUtilizationCard(entry, usageByPackage, available, showAllowance = false) {
   const used = usageByPackage.used.get(entry.id) ?? 0;
   const reportedRuns = usageByPackage.reportedRuns.get(entry.id) ?? 0;
-  const allowance = /** @type {number} */ (entry.allowance);
-  const ratio = available && allowance > 0 ? used / allowance : null;
+  const allowance = entry.allowance;
+  const numberFormatter = showAllowance ? formatPackageNumber : formatNumber;
+  const usedText = numberFormatter(used);
+  const allowanceText = typeof allowance === 'number' ? numberFormatter(allowance) : '—';
+  const ratio = available && reportedRuns > 0 && typeof allowance === 'number' && allowance > 0 ? used / allowance : null;
   const meterPercent = ratio === null ? 0 : Math.min(100, ratio * 100);
   const status = !available || ratio === null ? 'empty' : ratio >= 0.8 ? 'high' : ratio >= 0.5 ? 'medium' : 'low';
   const valueText = !available || ratio === null ? '—' : formatPercent(ratio);
@@ -342,10 +540,12 @@ function renderPackageUtilizationCard(entry, usageByPackage, available) {
     ? 'AI Credit usage artifacts are unavailable.'
     : reportedRuns === 0
       ? 'No completed runs in the retained window.'
-      : `${formatNumber(used)} of ${formatNumber(allowance)} AIC across ${formatNumber(reportedRuns)} reported run${reportedRuns === 1 ? '' : 's'}.`;
+      : typeof allowance !== 'number'
+        ? 'Package AIC allowance is unavailable.'
+        : `${usedText} of ${allowanceText} AIC across ${formatNumber(reportedRuns)} reported run${reportedRuns === 1 ? '' : 's'}.`;
   const ariaLabel = ratio === null
     ? `${entry.name}: no utilization available`
-    : `${entry.name}: ${formatNumber(used)} of ${formatNumber(allowance)} AI Credits used, ${formatPercent(ratio)}`;
+    : `${entry.name}: ${usedText} of ${allowanceText} AI Credits used, ${formatPercent(ratio)}`;
 
   return h(
     'article',
@@ -356,7 +556,10 @@ function renderPackageUtilizationCard(entry, usageByPackage, available) {
       { className: 'utilization-track', role: 'img', 'aria-label': ariaLabel },
       h('span', { style: `width: ${meterPercent.toFixed(2)}%` })
     ),
-    h('p', null, detail)
+    h('p', null, detail),
+    showAllowance
+      ? h('small', null, `${allowanceText} AIC allowance per complete package attempt`)
+      : null
   );
 }
 
@@ -584,6 +787,14 @@ function sourceWindowLabel(source) {
  */
 function formatPercent(value) {
   return new Intl.NumberFormat('en', { style: 'percent', maximumFractionDigits: 1 }).format(value);
+}
+
+/**
+ * @param {number} value
+ * @returns {string}
+ */
+function formatPackageNumber(value) {
+  return new Intl.NumberFormat('en', { maximumFractionDigits: 1 }).format(value);
 }
 
 /**

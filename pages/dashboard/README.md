@@ -24,7 +24,7 @@ The current aggregation slice adds conservative Section 7 and Section 11 field-d
 
 The latest provenance/freshness/data-states slice audited Section 8 and recorded a specification gap: required logical-source metadata is defined outside the dashboard YAML, but no Section 4.2 document vocabulary admits it yet. The validator therefore continues to reject attempted inline `source-metadata` keys conservatively rather than inventing undeclared YAML semantics.
 
-The current built-in-pages slice adds a conservative implementation-local built-in `definition.views` shape so Section 10 pages can declare custom-view-style source and field coverage without inventing presenter behavior beyond the specification's built-in page names and required-source catalog.
+The current built-in-pages slice adds a conservative implementation-local built-in `definition.views` shape so Section 10 pages can declare custom-view-style source and field coverage, including the Packages page's workflow, usage, and run contracts.
 
 The latest built-in-pages increment also adds a conservative implementation-local `definition.data-state` marker for `DLS-PAGE-014`, requiring declarative independent coverage of `availability`, `completeness`, and `freshness` on built-in pages.
 
@@ -33,6 +33,8 @@ The current built-in-pages slice extends Section 10 rendering for `runs`, adding
 The latest presenter slice updates the presentation layer to clone the style of the current JavaScript dashboard in CAO (`dashboard/report/report.mjs`), rendering dashboards that are GitHub brand-aligned using GitHub Primer CSS tokens, Octicons, sidebar navigation, responsive layout, status/mode badges, and reusable catalog controls with facets and progressive disclosure.
 
 The overview now renders a report-style control-plane status banner, execution-health bar, actionable attention list, managed-package cards, and a full-width trends row from canonical dashboard sources. Package allowance and inventory readiness are carried through the report source bridge when control-plane inventory is available.
+
+The Packages page renders report-aligned mode controls, package AIC utilization cards with explicit unavailable states, and cumulative run trends grouped by conclusion.
 
 The preview also mirrors the report's interactive transitions for navigation, linked records, and chart-point tooltips while respecting reduced-motion preferences. Its illustrative data includes multiple operational-value observations and linked runs, issues, pull requests, and evidence so chart and link states are visible without live inputs.
 

@@ -221,6 +221,34 @@ h3 { margin: 16px 0 8px; font-size: 1rem; font-weight: 600; }
 .utilization-high .utilization-track span { background: var(--danger); }
 .utilization-empty .utilization-track span { background: var(--muted); }
 .utilization-item p { min-height: 18px; margin: 0; color: var(--muted); font-size: .75rem; }
+.utilization-item small { display: block; margin-top: 4px; color: var(--muted); font-size: .6875rem; }
+.packages-view { display: grid; gap: 20px; }
+.package-mode-tabs { width: max-content; display: inline-flex; padding: 2px; border: 1px solid var(--border); border-radius: 6px; background: var(--canvas-subtle); }
+.package-mode-tabs button { min-width: 72px; min-height: 30px; display: grid; place-items: center; padding: 5px 12px; border: 0; border-radius: 4px; background: transparent; color: var(--muted); font: inherit; font-size: .75rem; font-weight: 600; cursor: pointer; }
+.package-mode-tabs button:hover { color: var(--fg); }
+.package-mode-tabs button[aria-current="page"] { background: var(--canvas); box-shadow: 0 0 0 1px var(--border), 0 1px 2px color-mix(in srgb, var(--fg) 10%, transparent); color: var(--fg); }
+.package-run-trend { overflow: hidden; border: 1px solid var(--border); border-radius: 6px; background: var(--canvas); }
+.package-run-trend > header { min-height: 72px; display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; padding: 14px 16px; border-bottom: 1px solid var(--border); }
+.package-run-trend > header h3 { margin: 0; font-size: 1rem; }
+.package-run-trend > header p { margin: 2px 0 0; color: var(--muted); font-size: .75rem; }
+.package-run-trend > header p strong { margin-right: 8px; color: var(--fg); font-size: 1.375rem; font-variant-numeric: tabular-nums; }
+.package-trend-group { display: inline-flex; align-items: center; gap: 6px; color: var(--muted); font-size: .75rem; }
+.package-trend-legend { display: flex; gap: 20px; margin: 0; padding: 10px 16px 0; color: var(--muted); font-size: .6875rem; list-style: none; }
+.package-trend-legend li { display: inline-flex; align-items: center; gap: 6px; }
+.package-trend-legend i { width: 18px; height: 0; border-top: 2px solid; }
+.package-trend-successful { border-color: var(--success) !important; }
+.package-trend-failed { border-color: var(--danger) !important; border-top-style: dashed !important; }
+.package-trend-cancelled { border-color: var(--cancelled) !important; border-top-style: dotted !important; }
+.package-trend-chart { overflow-x: auto; padding: 6px 18px 0; }
+.package-trend-chart svg { width: 100%; min-width: 760px; height: auto; overflow: visible; }
+.package-trend-chart line { stroke: var(--border-muted); stroke-width: 1; vector-effect: non-scaling-stroke; }
+.package-trend-chart .vertical-grid { stroke-dasharray: 2 2; }
+.package-trend-chart text { fill: var(--muted); font-size: .6875rem; }
+.package-trend-chart polyline { fill: none; stroke-width: 2; vector-effect: non-scaling-stroke; }
+.package-chart-successful { stroke: var(--success); }
+.package-chart-failed { stroke: var(--danger); stroke-dasharray: 8 5; }
+.package-chart-cancelled { stroke: var(--cancelled); stroke-dasharray: 8 4 2 4; }
+.package-trend-axis { display: flex; justify-content: space-between; padding: 0 30px 6px; color: var(--muted); font-size: .6875rem; }
 .overview-operations-grid { display: grid; grid-template-columns: minmax(0, 7fr) minmax(320px, 5fr); gap: 16px; align-items: start; }
 .attention-panel { overflow: hidden; border: 1px solid var(--border); border-radius: 6px; background: var(--canvas); }
 .attention-panel > header { min-height: 72px; display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 14px 16px; border-bottom: 1px solid var(--border); background: var(--canvas-subtle); }
@@ -356,6 +384,9 @@ footer { padding: 20px 24px; border-top: 1px solid var(--border); color: var(--m
   .execution-legend { display: none; }
   .overview-operations-grid { grid-template-columns: 1fr; }
   .managed-package-card dl { gap: 8px; }
+  .package-mode-tabs { width: 100%; overflow: hidden; }
+  .package-mode-tabs button { min-width: 0; flex: 1 1 0; padding-inline: 10px; }
+  .package-run-trend > header { align-items: flex-start; flex-direction: column; }
 }
 @media (max-width: 420px) {
   .data-state-summary, .metrics { grid-template-columns: 1fr; }

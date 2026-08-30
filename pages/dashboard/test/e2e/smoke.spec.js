@@ -56,7 +56,7 @@ function buildPresenterModuleUrl() {
   return `data:text/javascript;charset=utf-8,${encodeURIComponent(presenterSource)}`;
 }
 
-test('DLS-PAGE-002 DLS-PAGE-014 built-in overview page renders the report-style operational overview, managed repository summary, managed packages, execution trends, and provenance in browser', async ({ page }) => {
+test('DLS-PAGE-002 DLS-PAGE-014 DLS-PAGE-015 built-in overview and packages pages render report-style operational widgets in browser', async ({ page }) => {
   const presenterModuleUrl = buildPresenterModuleUrl();
 
   await page.setContent(`
@@ -89,6 +89,12 @@ test('DLS-PAGE-002 DLS-PAGE-014 built-in overview page renders the report-style 
                   { id: 'operational-values-source', data: { source: 'operational-values' } }
                 ]
               }
+            },
+            {
+              id: 'packages',
+              kind: 'built-in',
+              page: 'packages',
+              title: 'Packages'
             }
           ]
         }
@@ -253,10 +259,19 @@ test('DLS-PAGE-002 DLS-PAGE-014 built-in overview page renders the report-style 
   await expect(page.locator('.managed-package-card')).toHaveCount(1);
   await expect(page.locator('.managed-package-card')).toContainText('30');
   await expect(page.getByRole('heading', { name: 'Operational value timeline', level: 4 })).toBeVisible();
-  await expect(page.locator('[data-state-axis="availability"]')).toHaveText('available');
-  await expect(page.locator('[data-state-axis="completeness"]')).toHaveText('partial');
-  await expect(page.locator('[data-state-axis="freshness"]')).toHaveText('stale');
+  await expect(page.locator('.overview-page [data-state-axis="availability"]')).toHaveText('available');
+  await expect(page.locator('.overview-page [data-state-axis="completeness"]')).toHaveText('partial');
+  await expect(page.locator('.overview-page [data-state-axis="freshness"]')).toHaveText('stale');
   await expect(page.locator('[data-section-id="execution-trends"] .custom-view:last-child .custom-chart-table tbody tr')).toHaveCount(2);
+
+  await page.getByRole('link', { name: 'Packages', exact: true }).click();
+  await expect(page.getByRole('heading', { name: 'Packages', exact: true, level: 2 })).toBeVisible();
+  await expect(page.locator('.packages-page .utilization-item')).toHaveCount(1);
+  await expect(page.locator('.packages-page .package-trend-chart polyline')).toHaveCount(3);
+  await expect(page.getByRole('heading', { name: 'All runs over time', level: 3 })).toBeVisible();
+  await page.getByRole('button', { name: 'Review', exact: true }).click();
+  await expect(page.getByRole('heading', { name: 'Review runs over time', level: 3 })).toBeVisible();
+  await page.getByRole('link', { name: 'Overview', exact: true }).click();
 
   await page.setViewportSize({ width: 600, height: 900 });
   const attentionBox = await page.locator('.attention-panel').boundingBox();

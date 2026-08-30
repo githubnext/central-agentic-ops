@@ -351,6 +351,83 @@
         }
       },
       {
+        "id": "packages",
+        "kind": "built-in",
+        "page": "packages",
+        "title": "Packages",
+        "description": "Activity from centrally managed packages.",
+        "definition": {
+          "data-state": {
+            "availability": true,
+            "completeness": true,
+            "freshness": true
+          },
+          "views": [
+            {
+              "id": "packages-inventory",
+              "title": "Package AIC utilization",
+              "data": { "source": "workflows" },
+              "mark": "table",
+              "encoding": {
+                "columns": [
+                  { "field": "package", "type": "nominal" },
+                  { "field": "package-name", "type": "nominal" },
+                  { "field": "workflow", "type": "nominal" },
+                  { "field": "workflow-role", "type": "nominal" },
+                  { "field": "max-ai-credits", "type": "quantitative" },
+                  { "field": "package-aic-allowance", "type": "quantitative" },
+                  { "field": "package-worker-count", "type": "quantitative" },
+                  { "field": "inventory-ready", "type": "nominal" },
+                  { "field": "rollout-mode", "type": "nominal" }
+                ]
+              }
+            },
+            {
+              "id": "packages-usage",
+              "title": "Package AIC usage",
+              "data": { "source": "usage" },
+              "mark": "table",
+              "encoding": {
+                "columns": [
+                  { "field": "workflow", "type": "nominal" },
+                  { "field": "run", "type": "nominal" },
+                  { "field": "aic", "type": "quantitative" },
+                  { "field": "rollout-mode", "type": "nominal" },
+                  { "field": "observed-at", "type": "temporal" }
+                ]
+              }
+            },
+            {
+              "id": "packages-runs-over-time",
+              "title": "All runs over time",
+              "data": { "source": "runs" },
+              "mark": "chart",
+              "chart": "line",
+              "layout": "full",
+              "encoding": {
+                "x": { "field": "started-at", "type": "temporal", "time-unit": "day" },
+                "y": { "field": "run", "type": "quantitative", "aggregate": "count" },
+                "color": { "field": "run-conclusion", "type": "nominal" }
+              }
+            },
+            {
+              "id": "packages-run-context",
+              "title": "Package run context",
+              "data": { "source": "runs" },
+              "mark": "table",
+              "encoding": {
+                "columns": [
+                  { "field": "workflow", "type": "nominal" },
+                  { "field": "run", "type": "nominal" },
+                  { "field": "run-conclusion", "type": "nominal" },
+                  { "field": "rollout-mode", "type": "nominal" }
+                ]
+              }
+            }
+          ]
+        }
+      },
+      {
         "id": "workflows",
         "kind": "built-in",
         "page": "workflows",

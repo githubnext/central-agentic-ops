@@ -69,6 +69,8 @@ export const FILTER_DIMENSION_VALUES = [
   'organization',
   'repository',
   'workflow',
+  'package',
+  'workflow-role',
   'experiment',
   'variant',
   'workflow-active',
@@ -92,6 +94,7 @@ export const BUILT_IN_PAGE_VALUES = [
   'overview',
   'organizations',
   'repositories',
+  'packages',
   'workflows',
   'runs',
   'experiments',
@@ -113,6 +116,7 @@ export const BUILT_IN_PAGE_REQUIRED_SOURCES = {
   overview: ['repositories', 'workflows', 'runs', 'usage', 'findings', 'operational-values'],
   organizations: ['organizations', 'repositories', 'workflows', 'runs', 'usage'],
   repositories: ['repositories', 'runs', 'usage', 'operational-values'],
+  packages: ['workflows', 'runs', 'usage'],
   workflows: ['workflows', 'runs', 'outcomes', 'usage', 'findings', 'operational-values'],
   runs: ['runs', 'outcomes'],
   experiments: ['experiments', 'experiment-assignments', 'grader-observations', 'eval-observations', 'outcomes', 'usage', 'operational-values'],
@@ -145,6 +149,11 @@ export const BUILT_IN_PAGE_REQUIRED_FIELDS = {
     runs: ['run'],
     usage: ['aic'],
     'operational-values': ['operational-value', 'operational-value-definition']
+  },
+  packages: {
+    workflows: ['package', 'package-name', 'workflow', 'workflow-role', 'max-ai-credits', 'package-aic-allowance', 'package-worker-count', 'inventory-ready', 'rollout-mode'],
+    runs: ['workflow', 'run', 'started-at', 'run-conclusion', 'rollout-mode'],
+    usage: ['workflow', 'run', 'aic', 'rollout-mode', 'observed-at']
   },
   workflows: {
     workflows: ['workflow', 'workflow-active', 'rollout-mode'],
@@ -211,7 +220,7 @@ export const SOURCE_VALUES = [
 export const SOURCE_FIELDS = {
   organizations: ['organization', 'organization-name', 'observed-at', 'organization-link'],
   repositories: ['organization', 'repository', 'repository-name', 'rollout-mode', 'observed-at', 'organization-link', 'repository-link'],
-  workflows: ['organization', 'repository', 'workflow', 'workflow-name', 'workflow-active', 'rollout-mode', 'observed-at', 'organization-link', 'repository-link', 'workflow-link'],
+  workflows: ['organization', 'repository', 'workflow', 'workflow-name', 'workflow-active', 'rollout-mode', 'package', 'package-name', 'workflow-role', 'max-ai-credits', 'package-aic-allowance', 'package-worker-count', 'inventory-ready', 'observed-at', 'organization-link', 'repository-link', 'workflow-link'],
   runs: ['organization', 'repository', 'workflow', 'run', 'started-at', 'ended-at', 'run-status', 'run-conclusion', 'rollout-mode', 'engine', 'requested-model', 'resolved-model', 'organization-link', 'repository-link', 'workflow-link', 'run-link'],
   experiments: ['experiment', 'experiment-name', 'observed-at'],
   'experiment-assignments': ['organization', 'repository', 'workflow', 'run', 'experiment', 'variant', 'observed-at'],

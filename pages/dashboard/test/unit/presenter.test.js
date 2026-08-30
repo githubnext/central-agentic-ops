@@ -419,14 +419,85 @@ describe('presenter built-in and custom pages', () => {
     expect(utilizationPanel?.textContent).toContain('No packages with a configured AIC allowance were observed.');
   });
 
-  it('DLS-PAGE-001 DLS-PAGE-002 DLS-PAGE-003 DLS-PAGE-004 DLS-PAGE-005 DLS-PAGE-006 DLS-PAGE-007 DLS-PAGE-008 DLS-PAGE-009 DLS-PAGE-010 DLS-PAGE-011 DLS-PAGE-012 DLS-PAGE-013 DLS-PAGE-014 authoritative dashboard.json contains all 12 specification-defined built-in pages with declarative data-state and source coverage', () => {
+  it('DLS-PAGE-014 DLS-PAGE-015 renders package utilization, unavailable package states, mode filtering, and run trends deterministically', () => {
+    /** @type {import('../../src/presenter.js').PresentationInput['document']} */
+    const document = {
+      languageVersion: '0.1.0',
+      dashboard: {
+        id: 'packages-dashboard',
+        title: 'Packages Dashboard',
+        pages: [
+          {
+            id: 'packages',
+            kind: /** @type {'built-in'} */ ('built-in'),
+            page: 'packages',
+            title: 'Packages'
+          }
+        ]
+      }
+    };
+    const sourceMetadata = {
+      'source-id': 'packages-fixture',
+      'source-kind': 'fixture',
+      'as-of': '2026-08-29T20:33:00Z',
+      'retrieved-at': '2026-08-29T20:33:00Z',
+      completeness: /** @type {'complete'} */ ('complete'),
+      freshness: /** @type {'fresh'} */ ('fresh'),
+      availability: /** @type {'available'} */ ('available')
+    };
+    const rendered = renderDashboard({
+      document,
+      sources: {
+        workflows: {
+          source: 'workflows',
+          rows: [
+            { package: 'ambient-context', 'package-name': 'Ambient Context', workflow: '.github/workflows/ambient-context.md', 'workflow-role': 'orchestrator', 'workflow-active': 'true', 'rollout-mode': 'review', 'package-aic-allowance': 1050, 'package-worker-count': 2, 'inventory-ready': true },
+            { package: 'aw-maintenance', 'package-name': 'AW Maintenance', workflow: '.github/workflows/aw-maintenance.md', 'workflow-role': 'orchestrator', 'workflow-active': 'true', 'rollout-mode': 'review', 'package-aic-allowance': 1250, 'package-worker-count': 2, 'inventory-ready': true }
+          ],
+          metadata: sourceMetadata
+        },
+        usage: {
+          source: 'usage',
+          rows: [
+            { workflow: '.github/workflows/aw-maintenance.md', run: '1', aic: 23.9, 'rollout-mode': 'review', 'observed-at': '2026-08-29T10:00:00Z' }
+          ],
+          metadata: sourceMetadata
+        },
+        runs: {
+          source: 'runs',
+          rows: [
+            { workflow: '.github/workflows/aw-maintenance.md', run: '1', 'started-at': '2026-08-28T10:00:00Z', 'run-conclusion': 'success', 'rollout-mode': 'review' },
+            { workflow: '.github/workflows/aw-maintenance.md', run: '2', 'started-at': '2026-08-29T10:00:00Z', 'run-conclusion': 'failure', 'rollout-mode': 'live' }
+          ],
+          metadata: sourceMetadata
+        }
+      }
+    });
+
+    const packagesPage = rendered.querySelector('[data-page-name="packages"]');
+    expect(packagesPage?.querySelectorAll('.utilization-item')).toHaveLength(2);
+    expect(packagesPage?.querySelector('[data-package-id="ambient-context"]')?.textContent).toContain('No completed runs');
+    expect(packagesPage?.querySelector('[data-package-id="ambient-context"] strong')?.textContent).toBe('—');
+    expect(packagesPage?.querySelector('[data-package-id="aw-maintenance"]')?.textContent).toContain('23.9 of 1,250 AIC');
+    expect(packagesPage?.querySelectorAll('.package-trend-chart polyline')).toHaveLength(3);
+    expect(packagesPage?.querySelector('.package-run-trend h3')?.textContent).toBe('All runs over time');
+
+    const reviewTab = [...(packagesPage?.querySelectorAll('.package-mode-tabs button') ?? [])]
+      .find((button) => button.textContent === 'Review');
+    /** @type {HTMLButtonElement | undefined} */ (reviewTab)?.click();
+    expect(packagesPage?.querySelector('.package-run-trend h3')?.textContent).toBe('Review runs over time');
+    expect(packagesPage?.querySelector('.package-run-trend header p strong')?.textContent).toBe('1');
+  });
+
+  it('DLS-PAGE-001 DLS-PAGE-002 DLS-PAGE-003 DLS-PAGE-004 DLS-PAGE-005 DLS-PAGE-006 DLS-PAGE-007 DLS-PAGE-008 DLS-PAGE-009 DLS-PAGE-010 DLS-PAGE-011 DLS-PAGE-012 DLS-PAGE-013 DLS-PAGE-014 DLS-PAGE-015 authoritative dashboard.json contains all 13 specification-defined built-in pages with declarative data-state and source coverage', () => {
     const pages = authoritativeDashboardDocument.dashboard.pages;
     expect(Array.isArray(pages)).toBe(true);
-    expect(pages).toHaveLength(12);
+    expect(pages).toHaveLength(13);
     expect(pages.map((/** @type {{ page: string }} */ page) => page.page)).toEqual([
       'overview',
       'organizations',
       'repositories',
+      'packages',
       'workflows',
       'runs',
       'experiments',

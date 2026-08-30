@@ -15,7 +15,7 @@ sidebar:
 
 ## Abstract
 
-This specification defines a small, declarative, YAML-based language for describing dashboards about organizations, repositories, agentic workflows, runs, experiments, graders, evals, usage, findings, and operational value. A dashboard contains built-in pages or custom pages. Custom pages use a constrained Vega-inspired model composed of `source`, optional `data`, `mark`, and `encoding`. This specification defines intrinsic domain semantics, aggregation and filtering rules, provenance and freshness requirements, explicit unavailable-data states, links, conformance, and compliance tests. It does not define data retrieval, implementation architecture, or rendering technology.
+This specification defines a small, declarative, YAML-based language for describing dashboards about organizations, repositories, centrally managed packages, agentic workflows, runs, experiments, graders, evals, usage, findings, and operational value. A dashboard contains built-in pages or custom pages. Custom pages use a constrained Vega-inspired model composed of `source`, optional `data`, `mark`, and `encoding`. This specification defines intrinsic domain semantics, aggregation and filtering rules, provenance and freshness requirements, explicit unavailable-data states, links, conformance, and compliance tests. It does not define data retrieval, implementation architecture, or rendering technology.
 
 ## Status of This Document
 
@@ -225,7 +225,7 @@ The `source` vocabulary is closed in version 0.1.0.
 |---|---|---|
 | `organizations` | organization | `organization`, `organization-name`, `observed-at`, `organization-link` |
 | `repositories` | repository | `organization`, `repository`, `repository-name`, `rollout-mode`, `observed-at`, `organization-link`, `repository-link` |
-| `workflows` | workflow | `organization`, `repository`, `workflow`, `workflow-name`, `workflow-active`, `rollout-mode`, `observed-at`, `organization-link`, `repository-link`, `workflow-link` |
+| `workflows` | workflow | `organization`, `repository`, `workflow`, `workflow-name`, `workflow-active`, `rollout-mode`, optional package inventory fields (`package`, `package-name`, `workflow-role`, `max-ai-credits`, `package-aic-allowance`, `package-worker-count`, `inventory-ready`), `observed-at`, `organization-link`, `repository-link`, `workflow-link` |
 | `runs` | run | `organization`, `repository`, `workflow`, `run`, `started-at`, `ended-at`, `run-status`, `run-conclusion`, `rollout-mode`, `engine`, `requested-model`, `resolved-model`, `organization-link`, `repository-link`, `workflow-link`, `run-link` |
 | `experiments` | experiment | `experiment`, `experiment-name`, `observed-at` |
 | `experiment-assignments` | experiment assignment | scope IDs, `run`, `experiment`, `variant`, `observed-at` |
@@ -425,7 +425,7 @@ A finding is an observation with a stable finding ID, summary, status, severity,
 
 Allowed built-in page names are:
 
-`overview`, `organizations`, `repositories`, `workflows`, `runs`, `experiments`, `graders`, `evals`, `usage`, `engines-models`, `operational-value`, and `findings`.
+`overview`, `organizations`, `repositories`, `packages`, `workflows`, `runs`, `experiments`, `graders`, `evals`, `usage`, `engines-models`, `operational-value`, and `findings`.
 
 ### 10.2 Required Content
 
@@ -443,6 +443,7 @@ Allowed built-in page names are:
 - **DLS-PAGE-012:** The `operational-value` page **MUST** expose a time-ordered absolute-attainment series with definition, operational case, evaluator digest, subject, requested evidence time, effective evidence cutoff, maturity time and status, accepted evidence provenance, freshness, applicable experiment assignment, and separate baseline delta when available.
 - **DLS-PAGE-013:** The `findings` page **MUST** expose finding summary, severity, status, scope, time, provenance, and available issue, pull-request, and run links.
 - **DLS-PAGE-014:** Every built-in page **MUST** honor the dashboard scope, time, and filters and expose availability, completeness, and freshness independently.
+- **DLS-PAGE-015:** The `packages` page **MUST** expose rollout-mode filtering, package-level AIC utilization against the summed per-run allowance for retained runs, and run trends grouped by conclusion. Packages without completed runs or configured allowance data **MUST** remain visible with an explicit unavailable value.
 
 ---
 
@@ -570,7 +571,7 @@ In the table, “accept” means validation succeeds; “reject” means validat
 | DLS-AGG-001–011 | T-AGG-001 | 2 | Exercise allowed aggregates, compatibility, nulls, UTC buckets, ranking disclosure, and deterministic ties for entity-grain and group-grain outputs, including total-order rejection. |
 | DLS-DATA-001–008 | T-DATA-001 | 2 | Exercise required metadata, derivation traceability, and each distinct data state. |
 | DLS-LINK-001–007 | T-LINK-001 | 2 | Validate link shape, safety, provenance, available associations, absent associations, one-link-per-field cardinality, GitHub URL base resolution, and linked rendering of every GitHub-addressable entity. |
-| DLS-PAGE-001–014 | T-PAGE-001 | 3 | Evaluate each built-in fixture for required content, defaults, context, and data states. |
+| DLS-PAGE-001–015 | T-PAGE-001 | 3 | Evaluate each built-in fixture for required content, defaults, context, and data states. |
 | DLS-VIEW-001–006 | T-VIEW-001 | 3 | Validate custom structure and every allowed mark/channel combination. |
 | DLS-VIEW-007–014 | T-VIEW-002 | 3 | Validate fields, types, link-compatible `href`, time units, ordering, exclusions, operation order, exposed context, and link labels. |
 | DLS-VAL-001–004 | T-VAL-001 | 1–3 | Verify rejection, coded path-specific errors, semantic checks, and secret redaction. |

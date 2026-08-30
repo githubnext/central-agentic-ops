@@ -11,7 +11,7 @@
 - [x] **Provenance, freshness, data states** — Section 8 including unavailable, empty, partial, and stale states.
 - [x] **Links and findings** — Section 9 link objects and the `href` channel semantics.
 - [x] **Custom pages** — Section 11 metric, table, and chart views with the temporal line and bar defaults.
-- [x] **Built-in pages** — Section 10, all 12 pages fully specified by the authoritative `dashboard.json`, including their view and build/composition definitions, and visibly rendered by a minimal generic JavaScript runtime.
+- [x] **Built-in pages** — Section 10, all 13 pages fully specified by the authoritative `dashboard.json`, including their view and build/composition definitions, and visibly rendered by a minimal generic JavaScript runtime.
   - [x] Slice: `DLS-PAGE-001` built-in page title default validation.
   - [x] Slice: `DLS-PAGE-001` canonical explicit title validation for built-in pages.
   - [x] Slice: `DLS-PAGE-002` and `DLS-PAGE-006` conservative required-source validation for built-in page definitions.
@@ -31,7 +31,8 @@
   - [x] Slice: `DLS-PAGE-007` and `DLS-PAGE-014` presenter render for the `experiments` built-in page, exposing experiment definitions plus observed run-to-variant assignments, grader observations, eval observations, downstream outcomes, available usage AIC, operational value by definition, provenance, and independent data-state summaries without implying causation.
   - [x] Slice: `DLS-PAGE-008` and `DLS-PAGE-014` presenter render for the `graders` built-in page, keeping grader definitions and grader observations distinguishable while exposing observed subject, result, score when present, time, provenance, and independent data-state summaries.
   - [x] Slice: `DLS-PAGE-009` and `DLS-PAGE-014` presenter render for the `evals` built-in page, keeping eval definitions and eval observations distinguishable while exposing observed subject, `YES`/`NO`/`UNKNOWN` result, evaluation model when available, time, provenance, and independent data-state summaries.
-  - [x] Define `dashboard.json` as the single authoritative data-driven document containing all 12 built-in pages and every view and build/composition definition they require.
+  - [x] Slice: `DLS-PAGE-015` presenter render for the `packages` built-in page, exposing mode filtering, package-level AIC utilization including unavailable states, and cumulative run trends grouped by conclusion.
+  - [x] Define `dashboard.json` as the single authoritative data-driven document containing all 13 built-in pages and every view and build/composition definition they require.
   - [x] Refactor the built-in page dispatcher in `src/presenter.js` from a page-name `if` chain to a declarative renderer registry keyed by `dashboard.json` page names, reducing page-name dispatch while retaining the existing generic runtime and reusable primitives.
   - [x] Continue refactoring each built-in page body in `src/presenter.js` into its `.json` equivalent, removing the remaining page-specific rendering/build logic while retaining only the minimum generic JavaScript interpreter and reusable primitives.
   - [x] Add build, unit, and browser coverage proving `dashboard.json` renders every specification-defined built-in page and that no page depends on custom page-specific JavaScript.
@@ -102,6 +103,7 @@
 - `src/components/data-state.js` — presentation-only data-state metrics card grid for availability, completeness, and freshness.
 - `src/components/table-region.js` — presentation-only reusable table wrapper for repeated table-region markup, header rows, empty-state rows, and keyed body-row descriptors across built-in and custom tables.
 - `src/components/view-chrome.js` — presentation-only reusable page-section, titled-region, summary-list/summary-region, generic custom-view chrome paragraphs, custom-view source/metadata/context chrome, shared custom-view section chrome, and built-in provenance-section helpers.
+- `src/components/operational-overview.js` — report-aligned overview and packages widgets for control-plane health, package AIC utilization, mode filtering, and run trends.
 - `src/view-formatters.js` — presentation-only shared numeric and aggregate formatting helpers for custom metric and chart text output.
 
 ## Infrastructure blockers
@@ -110,6 +112,12 @@
 - 2026-08-28: `npm run test:e2e` is currently blocked in this environment because the Playwright Chromium executable is not provisioned (`browserType.launch: Executable doesn't exist`). The workflow should prefer the built-in Playwright MCP browser tools until the package-level browser dependency is available.
 
 ## Run log
+
+### 2026-08-30 (packages built-in view)
+- Added `packages` to the Dashboard Language built-in page contract with declarative workflow, usage, and run coverage in `dashboard.json`.
+- Extended the imported operational widget with report-aligned mode tabs, package utilization cards that retain unavailable packages, and cumulative run-status trends.
+- Added validator, deterministic presenter, and browser coverage for `DLS-PAGE-015`.
+- Next milestone: Parity, continuing with the remaining sectioned navigation and durable output presentation slices.
 
 ### 2026-08-30 (parity catalog-interaction slice)
 - Audited `dashboard/report/` presentation and producer-derived states into separate parity checklists so remaining work is explicit rather than inferred from the legacy generator.
