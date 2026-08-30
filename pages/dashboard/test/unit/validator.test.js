@@ -1,5 +1,8 @@
 import { describe, expect, it } from 'vitest';
+import { readFileSync } from 'node:fs';
 import { validateDashboardDocument } from '../../src/validator.js';
+
+const authoritativeDashboardSource = readFileSync(new URL('../../dashboard.json', import.meta.url), 'utf8');
 
 const validDocument = `language-version: "0.1.0"
 dashboard:
@@ -29,6 +32,22 @@ dashboard:
 `;
 
 describe('dashboard document validation', () => {
+  it('accepts the authoritative built-in overview section layout and rejects incomplete view placement', () => {
+    const accepted = validateDashboardDocument(authoritativeDashboardSource);
+    expect(accepted.ok).toBe(true);
+
+    const incomplete = JSON.parse(authoritativeDashboardSource);
+    incomplete.dashboard.pages[0].definition.sections[1].views = ['overview-workflows'];
+    const rejected = validateDashboardDocument(JSON.stringify(incomplete));
+    expect(rejected.ok).toBe(false);
+    if (!rejected.ok) {
+      expect(rejected.errors).toContainEqual(expect.objectContaining({
+        path: '$.dashboard.pages[0].definition.sections',
+        message: 'layout sections must reference every definition view exactly once and preserve view order.'
+      }));
+    }
+  });
+
   it('DLS-DOC-002 DLS-DOC-003 DLS-DOC-004 accepts the minimal structural document shape', () => {
     const result = validateDashboardDocument(validDocument.replace(`
     - id: usage

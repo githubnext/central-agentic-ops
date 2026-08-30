@@ -10,69 +10,166 @@
         "kind": "built-in",
         "page": "overview",
         "title": "Overview",
+        "description": "Managed workflow health, execution trends, and items requiring attention.",
         "definition": {
           "data-state": {
             "availability": true,
             "completeness": true,
             "freshness": true
           },
+          "sections": [
+            {
+              "id": "control-plane-health",
+              "title": "Control plane health",
+              "description": "Current workflow inventory, execution volume, failures, and AI Credit consumption.",
+              "layout": "full",
+              "views": [
+                "overview-active-workflows",
+                "overview-runs",
+                "overview-failed-runs",
+                "overview-usage",
+                "overview-execution-health"
+              ]
+            },
+            {
+              "id": "needs-attention",
+              "title": "Needs attention",
+              "description": "Recent findings with durable links for follow-up.",
+              "layout": "wide",
+              "views": ["overview-findings"]
+            },
+            {
+              "id": "managed-workflows",
+              "title": "Managed workflows",
+              "description": "Active state and rollout mode for repository-owned workflows.",
+              "layout": "narrow",
+              "views": ["overview-workflows"]
+            },
+            {
+              "id": "execution-trends",
+              "title": "Execution and value trends",
+              "description": "Run conclusions and operational value over time.",
+              "layout": "full",
+              "views": ["overview-run-trend", "overview-operational-values"]
+            }
+          ],
           "views": [
             {
-              "id": "overview-workflows-source",
-              "title": "Overview workflows source",
+              "id": "overview-active-workflows",
+              "title": "Active workflows",
+              "description": "Count of workflows currently active in the control plane.",
               "data": { "source": "workflows" },
-              "mark": "table",
+              "mark": "metric",
+              "layout": "third",
               "encoding": {
-                "columns": [
-                  { "field": "workflow", "type": "nominal" },
-                  { "field": "workflow-active", "type": "nominal" },
-                  { "field": "rollout-mode", "type": "nominal" }
-                ]
+                "value": { "field": "workflow", "type": "nominal", "aggregate": "distinct-count" }
               }
             },
             {
-              "id": "overview-runs-source",
-              "title": "Overview runs source",
+              "id": "overview-runs",
+              "title": "Observed runs",
+              "description": "Runs available in the current reporting window.",
               "data": { "source": "runs" },
-              "mark": "table",
+              "mark": "metric",
+              "layout": "third",
               "encoding": {
-                "columns": [
-                  { "field": "repository", "type": "nominal" },
-                  { "field": "workflow", "type": "nominal" },
-                  { "field": "run-status", "type": "nominal" },
-                  { "field": "run-conclusion", "type": "nominal" }
-                ]
+                "value": { "field": "run", "type": "nominal", "aggregate": "distinct-count" }
               }
             },
             {
-              "id": "overview-usage-source",
-              "title": "Overview usage source",
+              "id": "overview-failed-runs",
+              "title": "Failed runs",
+              "description": "Runs concluding in failure in the current reporting window.",
+              "data": {
+                "source": "runs",
+                "filters": { "run-conclusion": "failure" }
+              },
+              "mark": "metric",
+              "layout": "third",
+              "encoding": {
+                "value": { "field": "run", "type": "nominal", "aggregate": "distinct-count" }
+              }
+            },
+            {
+              "id": "overview-usage",
+              "title": "AI Credit usage",
+              "description": "Total AI Credits reported by available workflow runs.",
               "data": { "source": "usage" },
               "mark": "metric",
+              "layout": "third",
               "encoding": {
                 "value": { "field": "aic", "type": "quantitative", "aggregate": "sum" }
               }
             },
             {
-              "id": "overview-findings-source",
-              "title": "Overview findings source",
-              "data": { "source": "findings" },
+              "id": "overview-execution-health",
+              "title": "Execution health",
+              "description": "Run volume grouped by conclusion.",
+              "data": { "source": "runs" },
+              "mark": "chart",
+              "chart": "bar",
+              "layout": "full",
+              "encoding": {
+                "x": { "field": "run-conclusion", "type": "nominal" },
+                "y": { "field": "run", "type": "quantitative", "aggregate": "count" }
+              }
+            },
+            {
+              "id": "overview-findings",
+              "title": "Recent findings",
+              "description": "Latest operational findings and their durable GitHub records.",
+              "data": { "source": "findings", "limit": 10 },
               "mark": "table",
+              "layout": "full",
               "encoding": {
                 "columns": [
-                  { "field": "observed-at", "type": "temporal" },
-                  { "field": "issue-link", "type": "nominal" },
-                  { "field": "pull-request-link", "type": "nominal" },
-                  { "field": "run-link", "type": "nominal" }
+                  { "field": "observed-at", "type": "temporal", "title": "Observed" },
+                  { "field": "finding-summary", "type": "nominal", "title": "Finding" },
+                  { "field": "issue-link", "type": "nominal", "title": "Issue" },
+                  { "field": "pull-request-link", "type": "nominal", "title": "Pull request" },
+                  { "field": "run-link", "type": "nominal", "title": "Run" }
                 ],
                 "href": { "field": "issue-link", "type": "nominal" }
               }
             },
             {
-              "id": "overview-operational-values-source",
-              "title": "Overview operational values source",
+              "id": "overview-workflows",
+              "title": "Workflow inventory",
+              "description": "Repository, active state, and rollout mode for each workflow.",
+              "data": { "source": "workflows" },
+              "mark": "table",
+              "layout": "full",
+              "encoding": {
+                "columns": [
+                  { "field": "repository", "type": "nominal" },
+                  { "field": "workflow", "type": "nominal" },
+                  { "field": "workflow-active", "type": "nominal", "title": "Active" },
+                  { "field": "rollout-mode", "type": "nominal", "title": "Mode" }
+                ]
+              }
+            },
+            {
+              "id": "overview-run-trend",
+              "title": "Run conclusion trend",
+              "description": "Run conclusions over time.",
+              "data": { "source": "runs" },
+              "mark": "chart",
+              "chart": "line",
+              "layout": "half",
+              "encoding": {
+                "x": { "field": "started-at", "type": "temporal", "time-unit": "day" },
+                "y": { "field": "run", "type": "quantitative", "aggregate": "count" },
+                "color": { "field": "run-conclusion", "type": "nominal" }
+              }
+            },
+            {
+              "id": "overview-operational-values",
+              "title": "Operational value timeline",
+              "description": "Recorded operational value separated by definition.",
               "data": { "source": "operational-values" },
               "mark": "chart",
+              "chart": "line",
+              "layout": "half",
               "encoding": {
                 "x": { "field": "observed-at", "type": "temporal", "time-unit": "day" },
                 "y": { "field": "operational-value", "type": "quantitative" },

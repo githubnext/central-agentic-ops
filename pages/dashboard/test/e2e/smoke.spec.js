@@ -216,14 +216,16 @@ test('DLS-PAGE-002 DLS-PAGE-014 built-in overview page renders rollout-mode filt
   await expect(page.getByRole('heading', { name: 'Built In Overview Render' })).toBeVisible();
   await expect(page.getByRole('heading', { name: 'Overview', exact: true, level: 2 })).toBeVisible();
   await expect(page.locator('.overview-page')).toHaveAttribute('data-page-kind', 'custom');
-  await expect(page.locator('.overview-page .custom-view')).toHaveCount(5);
-  await expect(page.getByRole('heading', { name: 'Overview workflows source' })).toBeVisible();
-  await expect(page.getByRole('heading', { name: 'Overview operational values source' })).toBeVisible();
+  await expect(page.locator('.overview-page .custom-view')).toHaveCount(9);
+  await expect(page.locator('.overview-page .layout-section')).toHaveCount(4);
+  await expect(page.getByRole('heading', { name: 'Control plane health', level: 3 })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Active workflows', level: 4 })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Operational value timeline', level: 4 })).toBeVisible();
   await expect(page.locator('[data-state-axis="availability"]')).toHaveText('available');
   await expect(page.locator('[data-state-axis="completeness"]')).toHaveText('partial');
   await expect(page.locator('[data-state-axis="freshness"]')).toHaveText('stale');
   await expect(page.locator('.overview-page [data-metric-value="aic"]')).toHaveText('35');
-  await expect(page.locator('.overview-page .custom-chart-table tbody tr')).toHaveCount(2);
+  await expect(page.locator('[data-section-id="execution-trends"] .custom-view:last-child .custom-chart-table tbody tr')).toHaveCount(2);
   await expect(page.getByRole('link', { name: 'Issue 2' })).toBeVisible();
 });
 

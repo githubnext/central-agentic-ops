@@ -175,9 +175,16 @@ describe('presenter built-in and custom pages', () => {
 
     const overviewPage = rendered.querySelector('[data-page-name="overview"]');
     expect(overviewPage?.getAttribute('data-page-kind')).toBe('custom');
-    expect(overviewPage?.querySelectorAll('.custom-view')).toHaveLength(5);
-    expect(overviewPage?.textContent).toContain('Overview workflows source');
-    expect(overviewPage?.textContent).toContain('Overview operational values source');
+    expect(overviewPage?.querySelectorAll('.custom-view')).toHaveLength(9);
+    expect(overviewPage?.querySelectorAll('.layout-section')).toHaveLength(4);
+    expect(overviewPage?.querySelector('[data-section-id="control-plane-health"]')?.getAttribute('data-section-layout')).toBe('full');
+    expect(overviewPage?.querySelector('[data-section-id="needs-attention"]')?.getAttribute('data-section-layout')).toBe('wide');
+    expect(overviewPage?.querySelector('[data-section-id="managed-workflows"]')?.getAttribute('data-section-layout')).toBe('narrow');
+    expect(overviewPage?.querySelectorAll('.layout-section > .custom-view-grid')).toHaveLength(4);
+    expect(overviewPage?.textContent).toContain('Active workflows');
+    expect(overviewPage?.textContent).toContain('Operational value timeline');
+    expect(overviewPage?.querySelector('.layout-section h3')?.textContent).toBe('Control plane health');
+    expect(overviewPage?.querySelector('.layout-section .page-section h4')?.textContent).toBe('Active workflows');
     expect(rendered.querySelector('[data-state-axis="availability"]')?.textContent).toBe('available');
     expect(rendered.querySelector('[data-state-axis="completeness"]')?.textContent).toBe('partial');
     expect(rendered.querySelector('[data-state-axis="freshness"]')?.textContent).toBe('stale');
