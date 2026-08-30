@@ -8,7 +8,7 @@ import { octicon, agenticWorkflowMark } from './octicons.js';
 import { renderStatusBadge, renderModeBadge, renderActiveStateBadge } from './components/badge.js';
 import { renderDataStateMetrics } from './components/data-state.js';
 import { renderTableRegion } from './components/table-region.js';
-import { renderContextList, renderPageSection, renderProvenanceSection, renderSummaryRegion, renderViewHeader } from './components/view-chrome.js';
+import { renderContextList, renderPageSection, renderProvenanceSection, renderSummaryList, renderViewHeader } from './components/view-chrome.js';
 
 /**
  * @typedef {{ availability: 'available'|'empty'|'unavailable', completeness: 'complete'|'partial'|'unknown', freshness: 'fresh'|'stale'|'unknown' }} DataState
@@ -1482,15 +1482,6 @@ const BUILT_IN_PAGE_RENDERERS = {
     { source: 'findings', title: 'Findings', render: renderFindingsInventory }
   ]
 };
-
-/**
- * @param {Map<string, number>} counts
- * @param {string} className
- * @returns {HTMLElement}
- */
-function renderSummaryList(className, counts) {
-  return renderSummaryRegion('summary', 'Summary', className, counts).querySelector('ul') ?? h('ul', { className });
-}
 
 /**
  * @param {string} pageId

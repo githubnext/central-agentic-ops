@@ -59,7 +59,7 @@
 - `src/components/badge.js` — presentation-only Primer status, mode, and active-state badges.
 - `src/components/data-state.js` — presentation-only data-state metrics card grid for availability, completeness, and freshness.
 - `src/components/table-region.js` — presentation-only reusable table wrapper for repeated table-region markup, header rows, empty-state rows, and keyed body-row descriptors across built-in and custom tables.
-- `src/components/view-chrome.js` — presentation-only reusable page-section, titled-region, summary-region, custom-view source/metadata/context chrome, and built-in provenance-section helpers.
+- `src/components/view-chrome.js` — presentation-only reusable page-section, titled-region, summary-list/summary-region, custom-view source/metadata/context chrome, and built-in provenance-section helpers.
 
 ## Infrastructure blockers
 
@@ -67,6 +67,15 @@
 - 2026-08-28: `npm run test:e2e` is currently blocked in this environment because the Playwright Chromium executable is not provisioned (`browserType.launch: Executable doesn't exist`). The workflow should prefer the built-in Playwright MCP browser tools until the package-level browser dependency is available.
 
 ## Run log
+
+### 2026-08-30 (summary-list view-chrome refactor)
+
+- Re-inventoried repeated construction under `pages/dashboard/src/` and selected the highest remaining bounded helper slice: the repeated count-list `<ul><li>${name}: ${count}</li></ul>` assembly still centralized in `src/presenter.js` and reused across runs, findings, usage totals, and overview sections.
+- Extended `src/components/view-chrome.js` with presentation-only `renderSummaryList(listClassName, counts)` and rewired `renderSummaryRegion(...)` to compose it, then replaced every presenter call site previously routed through the local `renderSummaryList(...)` helper in `src/presenter.js`.
+- Collapsed duplicated summary-list call sites identified in `src/presenter.js`: runs status/conclusion/outcome counts, findings severity/status counts, usage totals, overview rollout-mode/workflow-active summaries, overview run status/conclusion summary blocks, repository/workflow rankings, and largest AIC spenders.
+- Added unit coverage in `test/unit/view-chrome.test.js` for the extracted summary-list helper plus the existing summary-region wrapper, including populated and empty inputs.
+- Proved unchanged behavior by keeping `npm run typecheck`, `npm run lint`, `npm test`, and `npx playwright test --config=playwright.config.mjs` green from `pages/dashboard/`, and by capturing the affected refactor diff at `/tmp/gh-aw/agent/summary-list-refactor.diff` to confirm the presenter change is limited to replacing the local list builder with the shared component helper.
+- Next candidates in the queue: extract the repeated overview summary-plus-trend region composition in `src/presenter.js`; extract the repeated definitions/observations dual-region composition for graders and evals; extract shared pure helpers for observation rollups such as subjects, score values, and model summaries.
 
 ### 2026-08-30 (built-in pages milestone closure verification)
 
