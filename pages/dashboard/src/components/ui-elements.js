@@ -17,13 +17,14 @@ import { renderWorkflowTopology } from './workflow-topology.js';
  * }} ElementRenderContext
  */
 
-/** @type {Map<string, (context: ElementRenderContext) => HTMLElement>} */
+/** @type {Map<string, (context: ElementRenderContext) => HTMLElement | null>} */
 const ELEMENT_RENDERERS = new Map([
   ['operational-overview', ({ sources }) => renderOperationalOverview(sources)],
   ['package-activity', ({ sources, pageId }) => renderPackagesView(sources, pageId)],
   ['workflow-topology', ({ pageId, title, sourceNames, sources, contextDetails, headingTag }) => {
     const sourceName = sourceNames[0];
     const source = sources[sourceName];
+    if (!source) return null;
     return renderWorkflowTopology(pageId, title, sourceName, source.rows, source.metadata, contextDetails, headingTag);
   }]
 ]);
