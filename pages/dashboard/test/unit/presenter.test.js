@@ -1223,6 +1223,13 @@ describe('presenter built-in and custom pages', () => {
     const rows = [...rendered.querySelectorAll('.custom-table tbody tr')];
     expect(rows).toHaveLength(2);
     expect(rows.map((row) => row.textContent)).toEqual(['charlie6', 'alpha5']);
+    const filter = /** @type {HTMLInputElement} */ (rendered.querySelector('.table-filter input'));
+    expect(filter).toBeTruthy();
+    expect(filter.closest('label')?.textContent).toContain('Filter Repository usage');
+    filter.value = 'alpha';
+    filter.dispatchEvent(new Event('input'));
+    expect(rows.map((row) => row.hasAttribute('hidden'))).toEqual([true, false]);
+    expect(rendered.querySelector('.table-filter-result')?.textContent).toBe('1 result');
     expect(rendered.querySelector('.freshness')?.textContent).toBe('Last updated Aug 30, 2026, 12:01 PM');
     expect(rendered.querySelector('.freshness')?.getAttribute('datetime')).toBe('2026-08-30T12:01:00Z');
   });

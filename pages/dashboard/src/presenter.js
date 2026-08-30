@@ -890,6 +890,7 @@ function renderTableView(pageId, title, view, sourceName, rows, metadata, contex
       emptyMessage: 'No rows available.',
       colSpan: Math.max(columns.length, 1),
       headCells: columns.map((column) => fieldTitle(column)),
+      filterLabel: `Filter ${title}`,
       bodyRows: tableRows.length > 0
         ? tableRows.map((row, rowIndex) => h(
           'tr',

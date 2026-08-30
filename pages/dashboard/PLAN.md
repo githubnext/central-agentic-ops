@@ -56,6 +56,7 @@
   - [x] Preview fixtures: provide multi-point, multi-series operational-value observations plus linked run and evidence records so the browser dashboard renders meaningful chart geometry and actionable links.
   - [x] Safe-link parity verification: harden automated coverage so credential-bearing, non-HTTPS, and blank-label runtime links are all omitted across reusable metric and table link surfaces while safe HTTPS links remain visible.
   - [x] Pages-level visual parity inventory: record the report-derived page-layout, Primer-style navigation, and footer/header presentation patterns already implemented by the generic renderer, without adding new semantics.
+  - [x] Catalog filtering: port the report's live text filtering and announced result counts into reusable custom-table controls, making the interaction available to declaratively configured built-in and custom pages.
 
 ## Specification questions
 
@@ -79,6 +80,13 @@
 - 2026-08-28: `npm run test:e2e` is currently blocked in this environment because the Playwright Chromium executable is not provisioned (`browserType.launch: Executable doesn't exist`). The workflow should prefer the built-in Playwright MCP browser tools until the package-level browser dependency is available.
 
 ## Run log
+
+### 2026-08-30 (parity table filtering slice)
+- Continued the Parity milestone with the report's interactive catalog-search pattern as a reusable renderer primitive rather than copying report-specific workflow, run, or dispatch logic.
+- Added accessible text filtering and live visible-result counts to populated declarative table views, with report-aligned control styling and no changes to dashboard-language semantics.
+- Added component, presenter, and browser coverage for case-insensitive filtering, row visibility, accessible labels, and singular/plural result announcements.
+- Verified `npm run build`, `npm run typecheck`, `npm run lint`, `npm test` (102 tests), and `npm run test:e2e` (7 browser tests) from `pages/dashboard/`.
+- Next milestone: Parity, continuing the remaining report feature and presentation inventory closure work under the existing declarative and reusable-runtime constraints.
 
 ### 2026-08-30 (parity visual inventory slice)
 - Continued the Parity milestone with a narrow documentation-and-verification increment derived from a fresh read of `dashboard/report/report.mjs`, keeping the implementation conservative and non-semantic.

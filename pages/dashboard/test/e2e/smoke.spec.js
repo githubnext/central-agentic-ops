@@ -231,6 +231,11 @@ test('DLS-PAGE-002 DLS-PAGE-014 built-in overview page renders rollout-mode filt
   await expect(page.locator('.overview-page [data-metric-value="aic"]')).toHaveText('35');
   await expect(page.locator('[data-section-id="execution-trends"] .custom-view:last-child .custom-chart-table tbody tr')).toHaveCount(2);
   await expect(page.getByRole('link', { name: 'Issue 2' })).toBeVisible();
+
+  const recentRuns = page.getByRole('heading', { name: 'Recent runs', level: 4 }).locator('..');
+  await recentRuns.getByRole('searchbox', { name: 'Filter Recent runs' }).fill('failure');
+  await expect(recentRuns.locator('tbody tr:visible')).toHaveCount(1);
+  await expect(recentRuns.locator('.table-filter-result')).toHaveText('1 result');
 });
 
 test('DLS-PAGE-009 DLS-PAGE-014 built-in evals page renders distinguishable definitions and observations, observed subject, YES/NO/UNKNOWN result, evaluation model when available, time, provenance, and independent data state in browser', async ({ page }) => {

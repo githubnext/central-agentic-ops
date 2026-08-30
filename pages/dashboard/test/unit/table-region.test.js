@@ -78,4 +78,28 @@ describe('renderTableRegion', () => {
     expect(rendered.querySelector('tbody')?.textContent).toContain('release-risk');
     expect(rendered.querySelector('tbody')?.textContent).not.toContain('No eval definitions available.');
   });
+
+  it('filters rows and announces the visible result count', () => {
+    const rendered = renderTableRegion({
+      tableClassName: 'custom-table',
+      emptyMessage: 'No runs available.',
+      colSpan: 2,
+      headCells: ['Repository', 'Status'],
+      filterLabel: 'Filter recent runs',
+      bodyRows: [
+        h('tr', null, h('td', null, 'alpha'), h('td', null, 'success')),
+        h('tr', null, h('td', null, 'bravo'), h('td', null, 'failure'))
+      ]
+    });
+
+    const input = /** @type {HTMLInputElement} */ (rendered.querySelector('[data-table-filter]'));
+    const rows = [...rendered.querySelectorAll('tbody tr')];
+    expect(rendered.querySelector('.table-filter-result')?.textContent).toBe('2 results');
+
+    input.value = 'failure';
+    input.dispatchEvent(new Event('input'));
+
+    expect(rows.map((row) => row.hasAttribute('hidden'))).toEqual([true, false]);
+    expect(rendered.querySelector('.table-filter-result')?.textContent).toBe('1 result');
+  });
 });
