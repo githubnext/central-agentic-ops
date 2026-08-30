@@ -31,6 +31,9 @@ function buildPresenterModuleUrl() {
     .replace("'../dom.js'", JSON.stringify(domModuleUrl));
   const viewChromeModuleUrl = `data:text/javascript;charset=utf-8,${encodeURIComponent(viewChromeSource)}`;
 
+  const viewFormattersSource = readFileSync(new URL('../../src/view-formatters.js', import.meta.url), 'utf8');
+  const viewFormattersModuleUrl = `data:text/javascript;charset=utf-8,${encodeURIComponent(viewFormattersSource)}`;
+
   const presenterSource = readFileSync(new URL('../../src/presenter.js', import.meta.url), 'utf8')
     .replace("'../dashboard.json'", JSON.stringify(dashboardModuleUrl))
     .replace("'./dom.js'", JSON.stringify(domModuleUrl))
@@ -39,7 +42,8 @@ function buildPresenterModuleUrl() {
     .replace("'./components/badge.js'", JSON.stringify(badgeModuleUrl))
     .replace("'./components/data-state.js'", JSON.stringify(dataStateModuleUrl))
     .replace("'./components/table-region.js'", JSON.stringify(tableRegionModuleUrl))
-    .replace("'./components/view-chrome.js'", JSON.stringify(viewChromeModuleUrl));
+    .replace("'./components/view-chrome.js'", JSON.stringify(viewChromeModuleUrl))
+    .replace("'./view-formatters.js'", JSON.stringify(viewFormattersModuleUrl));
 
   return `data:text/javascript;charset=utf-8,${encodeURIComponent(presenterSource)}`;
 }

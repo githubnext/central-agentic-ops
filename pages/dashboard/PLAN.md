@@ -69,6 +69,7 @@
 - `src/components/data-state.js` — presentation-only data-state metrics card grid for availability, completeness, and freshness.
 - `src/components/table-region.js` — presentation-only reusable table wrapper for repeated table-region markup, header rows, empty-state rows, and keyed body-row descriptors across built-in and custom tables.
 - `src/components/view-chrome.js` — presentation-only reusable page-section, titled-region, summary-list/summary-region, generic custom-view chrome paragraphs, custom-view source/metadata/context chrome, shared custom-view section chrome, and built-in provenance-section helpers.
+- `src/view-formatters.js` — presentation-only shared numeric and aggregate formatting helpers for custom metric and chart text output.
 
 ## Infrastructure blockers
 
@@ -76,6 +77,14 @@
 - 2026-08-28: `npm run test:e2e` is currently blocked in this environment because the Playwright Chromium executable is not provisioned (`browserType.launch: Executable doesn't exist`). The workflow should prefer the built-in Playwright MCP browser tools until the package-level browser dependency is available.
 
 ## Run log
+
+### 2026-08-30 (view-formatters helper refactor)
+
+- Re-inventoried repeated UI-adjacent helper construction under `pages/dashboard/src/` and selected the highest remaining bounded pure-helper slice: duplicated aggregate metric value formatting and shared numeric formatting in `src/presenter.js`, reused by custom metric rendering today and chart text equivalents indirectly through the same numeric formatter.
+- Extracted `src/view-formatters.js` with presentation-only `formatAggregateValue(...)`, `toNumber(...)`, and `formatNumber(...)`, then replaced every identified call site in `src/presenter.js` by collapsing the inline aggregate `count`/`distinct-count`/`sum`/`mean`/`min`/`max` branch inside `renderMetricView(...)` plus the shared `formatNumber(...)`/`toNumber(...)` usage consumed by chart-point labels and chart-series construction.
+- Added unit coverage in `test/unit/view-formatters.test.js` for populated, empty, missing-field, and non-numeric cases while preserving the existing `DLS-VIEW-013` requirement coverage for custom-view presentation semantics.
+- Proved unchanged behavior by keeping the presenter output contract intact for the affected custom metric and chart surfaces and by rerunning the `pages/dashboard/` quality gates after the extraction.
+- Next candidates in the queue: extract the repeated custom-view state-message plus affected-source/context composition in `src/presenter.js`; extract shared link-cell composition across custom metric and custom table views; extract shared chart-series grouping and textual legend helpers if upcoming feature slices add more chart variants.
 
 ### 2026-08-30 (compliance link-and-page fixture slice)
 
