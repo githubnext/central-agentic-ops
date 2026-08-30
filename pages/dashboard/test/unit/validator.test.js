@@ -174,6 +174,57 @@ dashboard:
     }
   });
 
+  it('DLS-DOC-012 accepts a safe owner/repo repository slug and rejects malformed or blank-scoped values with DLS-E003', () => {
+    const baseDocument = validDocument.replace(`
+    - id: usage
+      kind: built-in
+      page: usage
+      title: Usage`, '');
+
+    const withRepository = baseDocument.replace(
+      '  title: Agentic Operations\n',
+      '  title: Agentic Operations\n  repository: octo-org/agentic-operations\n'
+    );
+    const accepted = validateDashboardDocument(withRepository);
+    expect(accepted.ok).toBe(true);
+
+    const withoutOwner = baseDocument.replace(
+      '  title: Agentic Operations\n',
+      '  title: Agentic Operations\n  repository: agentic-operations\n'
+    );
+    const rejectedMissingOwner = validateDashboardDocument(withoutOwner);
+    expect(rejectedMissingOwner.ok).toBe(false);
+    if (!rejectedMissingOwner.ok) {
+      expect(rejectedMissingOwner.errors).toContainEqual(
+        expect.objectContaining({ code: 'DLS-E003', path: '$.dashboard.repository' })
+      );
+    }
+
+    const withBlank = baseDocument.replace(
+      '  title: Agentic Operations\n',
+      '  title: Agentic Operations\n  repository: ""\n'
+    );
+    const rejectedBlank = validateDashboardDocument(withBlank);
+    expect(rejectedBlank.ok).toBe(false);
+    if (!rejectedBlank.ok) {
+      expect(rejectedBlank.errors).toContainEqual(
+        expect.objectContaining({ code: 'DLS-E003', path: '$.dashboard.repository' })
+      );
+    }
+
+    const withCredentials = baseDocument.replace(
+      '  title: Agentic Operations\n',
+      '  title: Agentic Operations\n  repository: "octo-org/agentic-operations?token=abc"\n'
+    );
+    const rejectedCredentials = validateDashboardDocument(withCredentials);
+    expect(rejectedCredentials.ok).toBe(false);
+    if (!rejectedCredentials.ok) {
+      expect(rejectedCredentials.errors).toContainEqual(
+        expect.objectContaining({ code: 'DLS-E003', path: '$.dashboard.repository' })
+      );
+    }
+  });
+
   it('DLS-DOC-001 rejects multiple YAML documents with DLS-E002', () => {
     const result = validateDashboardDocument(`${validDocument}\n---\n${validDocument}`);
 

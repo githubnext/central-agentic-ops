@@ -44,7 +44,7 @@ import { renderPackagesView } from './components/packages-view.js';
  */
 
 /**
- * @typedef {{ id: string, title: string, description?: string, defaults?: Record<string, unknown>, pages: Array<PresentableBuiltInPage | PresentableCustomPage>, ['github-url-base']?: string }} PresentableDashboard
+ * @typedef {{ id: string, title: string, description?: string, defaults?: Record<string, unknown>, pages: Array<PresentableBuiltInPage | PresentableCustomPage>, ['github-url-base']?: string, repository?: string }} PresentableDashboard
  */
 
 /**
@@ -113,6 +113,9 @@ export function renderDashboard(input) {
   const githubUrlBase = typeof document.dashboard['github-url-base'] === 'string' && document.dashboard['github-url-base'].length > 0
     ? document.dashboard['github-url-base']
     : DEFAULT_GITHUB_URL_BASE;
+  const dashboardRepository = typeof document.dashboard.repository === 'string' && document.dashboard.repository.length > 0
+    ? document.dashboard.repository
+    : null;
   const sources = deriveEntityLinkSources(rawSources, githubUrlBase);
   const orgName = inferOrganizationName(sources) || 'GitHub';
 
@@ -120,7 +123,7 @@ export function renderDashboard(input) {
   const skipLink = h('a', { href: '#main-content', className: 'skip-link' }, 'Skip to main content');
 
   const sidebar = renderSidebar(pages, orgName);
-  const mainContent = renderMainContent(document, title, description, pages, sources, orgName);
+  const mainContent = renderMainContent(document, title, description, pages, sources, orgName, githubUrlBase, dashboardRepository);
 
   const root = h(
     'div',
@@ -231,10 +234,13 @@ function getPageIcon(page) {
  * @param {Array<PresentableBuiltInPage | PresentableCustomPage>} pages
  * @param {Record<string, LogicalSourceInput>} sources
  * @param {string} orgName
+ * @param {string} githubUrlBase
+ * @param {string | null} dashboardRepository
  * @returns {HTMLElement}
  */
-function renderMainContent(document, title, description, pages, sources, orgName) {
+function renderMainContent(document, title, description, pages, sources, orgName, githubUrlBase, dashboardRepository) {
   const latestRetrieval = latestRetrievedAt(sources);
+  const refreshDescription = 'Reload the dashboard to refresh cached data';
   return h(
     'div',
     { className: 'app-main' },
@@ -254,10 +260,28 @@ function renderMainContent(document, title, description, pages, sources, orgName
             : null,
           h(
             'button',
-            { type: 'button', className: 'refresh-button', onclick: () => window.location.reload() },
+            {
+              type: 'button',
+              className: 'refresh-button',
+              title: refreshDescription,
+              'aria-label': refreshDescription,
+              onclick: () => window.location.reload()
+            },
             octicon('sync'),
             h('span', null, 'Refresh')
-          )
+          ),
+          dashboardRepository
+            ? h(
+              'a',
+              {
+                className: 'repository-link',
+                href: `${githubUrlBase}/${dashboardRepository}`,
+                'aria-label': `View ${dashboardRepository} on GitHub`,
+                title: `View ${dashboardRepository} on GitHub`
+              },
+              octicon('mark-github')
+            )
+            : null
         )
       )
     ),

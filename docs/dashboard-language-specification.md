@@ -197,7 +197,7 @@ Language keys and enumerated values use canonical kebab-case. Human-readable tit
 | Mapping | Allowed keys |
 |---|---|
 | Root | `language-version`, `dashboard` |
-| `dashboard` | `id`, `title`, `description`, `github-url-base`, `defaults`, `pages` |
+| `dashboard` | `id`, `title`, `description`, `github-url-base`, `repository`, `defaults`, `pages` |
 | `defaults` | `scope`, `time`, `filters` |
 | Built-in page | `id`, `kind`, `page`, `title`, `description` |
 | Custom page | `id`, `kind`, `title`, `description`, `views` |
@@ -218,6 +218,7 @@ Language keys and enumerated values use canonical kebab-case. Human-readable tit
 - **DLS-DOC-009:** Every page **MUST** set `kind` to `built-in` or `custom` and satisfy the corresponding page shape in Sections 10 or 11.
 - **DLS-DOC-010:** Titles and descriptions **MUST** be strings; IDs, references, and timestamps **MUST NOT** rely on YAML implicit type coercion.
 - **DLS-DOC-011:** `github-url-base`, when present, **MUST** be an absolute HTTPS URL without credentials, query, or fragment. It identifies the GitHub web URL base used to resolve GitHub-addressable entity links and defaults to `https://github.com`.
+- **DLS-DOC-012:** `repository`, when present, **MUST** be a non-empty `owner/repo` slug identifying the GitHub repository hosting the dashboard. A presenter **MUST NOT** fabricate a report action toolbar's GitHub repository link when `repository` is absent.
 
 ---
 
@@ -576,6 +577,7 @@ Research should compare one through four essential views, record disclosure use,
 - **DLS-SAFE-008:** Metrics, charts, and time series **MUST** expose a textual value or tabular equivalent, and tables **MUST** expose labeled columns.
 - **DLS-SAFE-009:** Color **MUST NOT** be the only means of communicating a category, status, outcome, freshness, completeness, or severity.
 - **DLS-SAFE-010:** Every availability, completeness, and freshness value **MUST** have a distinct textual label, and each link **MUST** expose its non-empty label.
+- **DLS-SAFE-011:** A presenter's report action toolbar **MUST** expose a descriptive accessible name or description for its refresh control identifying what the control does, and **MUST** expose a non-empty accessible label for its GitHub repository link when `dashboard.repository` is present.
 
 ---
 
@@ -611,6 +613,7 @@ In the table, “accept” means validation succeeds; “reject” means validat
 | DLS-VAL-001–005 | T-VAL-001 | 1–3 | Verify rejection, coded path-specific errors, semantic checks, progressive-disclosure bounds, and secret redaction. |
 | DLS-SAFE-001–006 | T-SAFE-001 | 3 | Exercise safe YAML, inert content, sanitization, HTTPS links, secrets, and authorization boundaries. |
 | DLS-SAFE-007–010 | T-SAFE-002 | 3 | Inspect names, textual alternatives, labels, and non-color semantics. |
+| DLS-SAFE-011 | T-SAFE-003 | 3 | Inspect the report action toolbar's refresh control description and GitHub repository link label. |
 | DLS-TEST-001–003 | T-TEST-001 | 1–3 | Inspect coverage, result metadata, time boundaries, and missing-data distinctions. |
 
 
@@ -776,6 +779,7 @@ dashboard:
 - Added `dashboard.github-url-base` so generated GitHub entity links default to GitHub.com and can target GitHub Enterprise deployments.
 - Added essential and supplemental view disclosure, a four-essential-view authoring bound, accessible presentation requirements, and SEQ and NASA-TLX user-research guidance.
 - Added centrally managed package semantics and the `packages` built-in page for mode-filtered package AIC utilization and package-run trends.
+- Added `dashboard.repository` and **DLS-DOC-012** so a presenter's report action toolbar can expose a GitHub repository link, and added **DLS-SAFE-011** requiring a descriptive refresh control and a labeled repository link.
 
 ---
 
@@ -790,6 +794,7 @@ dashboard:
   title: Agentic Operations
   description: Workflow activity, usage, findings, and operational value.
   github-url-base: https://github.com
+  repository: octo-org/agentic-operations
   defaults:
     scope:
       organizations:

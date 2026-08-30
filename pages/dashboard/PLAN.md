@@ -71,7 +71,8 @@
 - [x] Operational overview health banner, execution-health bar, attention list, managed-package cards, and execution/value trends.
 - [x] Package-specific All/Review/Live mode tabs, package utilization cards, and 30-day cumulative run trends.
 - [x] Reusable table search, announced shown/matched counts, bounded nominal facets, URL-synchronized filter state, and 25-row progressive disclosure.
-- [ ] Section-labeled Attention/Investigate/Explore navigation and report actions for refresh and repository access.
+- [ ] Section-labeled Attention/Investigate/Explore navigation.
+- [x] Report actions for a descriptive refresh control and a GitHub repository link, driven by a new `dashboard.repository` configuration field.
 - [ ] Mode, package, repository, and workflow view tabs with configured-mode indicators.
 - [ ] Dense findings/outcomes indexes, category summaries, and durable output detail presentation.
 - [x] Package AI Credit utilization bars and threshold treatments.
@@ -114,6 +115,14 @@
 - 2026-08-28: `npm run test:e2e` is currently blocked in this environment because the Playwright Chromium executable is not provisioned (`browserType.launch: Executable doesn't exist`). The workflow should prefer the built-in Playwright MCP browser tools until the package-level browser dependency is available.
 
 ## Run log
+
+### 2026-08-30 (report actions refresh description and repository link slice)
+- Continued the Parity milestone by adding descriptive report actions matching `dashboard/report/report.mjs`'s `refreshLink`/`repositoryLink` chrome: the toolbar's Refresh control now exposes a descriptive `title`/`aria-label`, and a GitHub repository link icon renders beside it using the existing (previously unused) `.repository-link` styling.
+- Added a new optional `dashboard.repository` YAML key (`owner/repo` slug) so the presenter can resolve the report action toolbar's repository link without fabricating one when absent; documented it as **DLS-DOC-012** and added **DLS-SAFE-011** for the refresh description and repository link label, updating `docs/dashboard-language-specification.md`, `src/specification.js`, and `src/validator.js` accordingly.
+- Set `dashboard.repository` to `githubnext/central-agentic-ops` in the authoritative `dashboard.json`.
+- Added unit coverage in `test/unit/validator.test.js` for the new field and in `test/unit/presenter.test.js` for the rendered refresh description and repository link.
+- Verified `pages/dashboard/` quality gates: `npm run build`, `npm run typecheck`, `npm run lint`, and `npm test` all pass.
+- Next milestone: Parity, continuing the remaining report feature and presentation inventory closure work (Section-labeled Attention/Investigate/Explore navigation) under the existing declarative and reusable-runtime constraints.
 
 ### 2026-08-30 (link-content refactor)
 - Re-inventoried repeated UI construction under `pages/dashboard/src/` and selected the highest remaining bounded duplication slice with multiple active call sites: safe-link lookup plus external-link/value composition shared by custom metric and custom table rendering in `src/presenter.js`.

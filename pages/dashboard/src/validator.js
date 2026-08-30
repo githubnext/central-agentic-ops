@@ -363,6 +363,14 @@ function validateDashboard(dashboard, dashboardNode, errors) {
     ));
   }
 
+  if (dashboard.repository !== undefined && !isSafeRepositorySlug(dashboard.repository)) {
+    errors.push(createError(
+      ERROR_CODES.missingOrInvalidRequiredField,
+      'repository must be a non-empty owner/repo slug identifying the GitHub repository hosting the dashboard.',
+      '$.dashboard.repository'
+    ));
+  }
+
   if (dashboard.defaults !== undefined) {
     if (!isPlainObject(dashboard.defaults)) {
       errors.push(createError(
@@ -1972,6 +1980,16 @@ function isSafeGithubUrlBase(value) {
 
   const url = new URL(/** @type {string} */ (value));
   return url.search === '' && url.hash === '';
+}
+
+const REPOSITORY_SLUG_PATTERN = /^[A-Za-z0-9](?:[A-Za-z0-9._-]*[A-Za-z0-9])?\/[A-Za-z0-9](?:[A-Za-z0-9._-]*[A-Za-z0-9])?$/;
+
+/**
+ * @param {unknown} value
+ * @returns {value is string}
+ */
+function isSafeRepositorySlug(value) {
+  return typeof value === 'string' && REPOSITORY_SLUG_PATTERN.test(value) && !looksSensitive(value);
 }
 
 /**

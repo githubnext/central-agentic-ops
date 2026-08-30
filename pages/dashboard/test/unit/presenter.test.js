@@ -163,6 +163,46 @@ describe('presenter built-in and custom pages', () => {
     expect(links.some((link) => link.getAttribute('href') === 'https://github.example.com/octo-org/overridden')).toBe(false);
   });
 
+  it('DLS-SAFE-011 renders a descriptive refresh control and omits the GitHub repository link when repository is absent', () => {
+    const document = {
+      languageVersion: '0.1.0',
+      dashboard: {
+        id: 'no-repository-dashboard',
+        title: 'No Repository',
+        pages: [{ id: 'usage', kind: /** @type {'built-in'} */ ('built-in'), page: 'usage', title: 'Usage' }]
+      }
+    };
+
+    const rendered = renderDashboard({ document, sources: {} });
+
+    const refreshButton = rendered.querySelector('.refresh-button');
+    expect(refreshButton).not.toBeNull();
+    expect(refreshButton?.getAttribute('title')).toBeTruthy();
+    expect(refreshButton?.getAttribute('aria-label')).toBeTruthy();
+    expect(rendered.querySelector('.repository-link')).toBeNull();
+  });
+
+  it('DLS-DOC-012 DLS-SAFE-011 renders a labeled GitHub repository link resolved against a custom github-url-base', () => {
+    const document = {
+      languageVersion: '0.1.0',
+      dashboard: {
+        id: 'repository-dashboard',
+        title: 'Repository Dashboard',
+        'github-url-base': 'https://github.example.com',
+        repository: 'octo-org/agentic-operations',
+        pages: [{ id: 'usage', kind: /** @type {'built-in'} */ ('built-in'), page: 'usage', title: 'Usage' }]
+      }
+    };
+
+    const rendered = renderDashboard({ document, sources: {} });
+
+    const repositoryLink = rendered.querySelector('.repository-link');
+    expect(repositoryLink).not.toBeNull();
+    expect(repositoryLink?.getAttribute('href')).toBe('https://github.example.com/octo-org/agentic-operations');
+    expect(repositoryLink?.getAttribute('aria-label')).toBe('View octo-org/agentic-operations on GitHub');
+    expect(repositoryLink?.getAttribute('title')).toBe('View octo-org/agentic-operations on GitHub');
+  });
+
   it('DLS-VIEW-018 DLS-VIEW-019 DLS-VIEW-020 progressively discloses supplemental views in source order', () => {
     const document = {
       languageVersion: '0.1.0',
