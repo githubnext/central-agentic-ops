@@ -14,6 +14,7 @@ import { renderActiveStateBadge, renderModeBadge, renderStatusBadge } from './co
 import { findFirstLink, findLink, renderExternalLink, renderLinkedValueWithExternalLink } from './components/link-content.js';
 import { renderLinkedText, createEntityAwareCellRenderer } from './components/linked-text.js';
 import { renderUiElement } from './components/ui-elements.js';
+import { groupChartSeries, listChartSeries, pieChartEntries, renderChartLegend, renderPieLegend } from './components/chart-elements.js';
 
 /**
  * @typedef {{ availability: 'available'|'empty'|'unavailable', completeness: 'complete'|'partial'|'unknown', freshness: 'fresh'|'stale'|'unknown' }} DataState
@@ -1171,85 +1172,6 @@ function renderChartWidget(chartType, points, series, pieSummary = null) {
       })
     )
   );
-}
-
-/**
- * @param {Array<{ x: string, y: number, color: string | null }>} points
- * @returns {Array<{ name: string, className: string }>}
- */
-function listChartSeries(points) {
-  return groupChartSeries(points).map(([name], index) => ({
-    name,
-    className: `chart-series-${(index % 5) + 1}`
-  }));
-}
-
-/**
- * @param {Array<{ name: string, className: string }>} series
- * @param {string} chartType
- * @returns {HTMLElement}
- */
-function renderChartLegend(series, chartType) {
-  return h(
-    'ul',
-    { className: `chart-legend chart-legend-${chartType}`, 'data-chart-legend': 'visual' },
-    series.map((item) => h(
-      'li',
-      null,
-      h('i', { className: item.className, 'aria-hidden': 'true' }),
-      h('span', null, item.name)
-    ))
-  );
-}
-
-/**
- * @param {Array<{ x: string, y: number, color: string | null }>} points
- * @returns {{ entries: Array<[string, number]>, total: number }}
- */
-function pieChartEntries(points) {
-  const totals = new Map();
-  for (const point of points) {
-    const category = point.x;
-    totals.set(category, (totals.get(category) ?? 0) + point.y);
-  }
-  const entries = [...totals.entries()].filter(([, value]) => value > 0);
-  const total = entries.reduce((sum, [, value]) => sum + value, 0);
-  return { entries, total };
-}
-
-/**
- * @param {Array<[string, number]>} entries
- * @param {number} total
- * @returns {HTMLElement}
- */
-function renderPieLegend(entries, total) {
-  return h(
-    'ul',
-    { className: 'chart-legend chart-legend-pie', 'data-chart-legend': 'visual' },
-    entries.map(([label, value], index) => h(
-      'li',
-      null,
-      h('i', { className: `chart-series-${(index % 5) + 1}`, 'aria-hidden': 'true' }),
-      h('span', null, label),
-      h('strong', null, formatNumber(value)),
-      h('small', null, total > 0 ? `${((value / total) * 100).toFixed(1)}%` : '0%')
-    ))
-  );
-}
-
-/**
- * @param {Array<{ x: string, y: number, color: string | null }>} points
- * @returns {Array<[string, Array<{ x: string, y: number, color: string | null }>]>}
- */
-function groupChartSeries(points) {
-  const grouped = new Map();
-  for (const point of points) {
-    const name = point.color ?? 'value';
-    const series = grouped.get(name) ?? [];
-    series.push(point);
-    grouped.set(name, series);
-  }
-  return [...grouped.entries()].sort(([left], [right]) => left.localeCompare(right));
 }
 
 /**

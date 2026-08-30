@@ -108,6 +108,7 @@
 - `src/components/link-content.js` — presentation-only safe-link discovery and reusable external-link/value composition for custom metric and table views.
 - `src/components/linked-text.js` — presentation-only reusable text-as-link rendering for topology, chart, and entity-linked table cells plus a composable entity-aware table-cell renderer factory.
 - `src/components/packages-view.js` — report-style package mode tabs, AIC utilization cards, retained-coverage disclosure, complete-attempt allowances, and cumulative run trends.
+- `src/components/chart-elements.js` — presentation-only reusable chart legend and series helpers for custom chart views, including grouped series and pie-category summaries.
 - `src/view-formatters.js` — presentation-only shared numeric and aggregate formatting helpers for custom metric and chart text output.
 
 ## Infrastructure blockers
@@ -116,6 +117,13 @@
 - 2026-08-28: `npm run test:e2e` is currently blocked in this environment because the Playwright Chromium executable is not provisioned (`browserType.launch: Executable doesn't exist`). The workflow should prefer the built-in Playwright MCP browser tools until the package-level browser dependency is available.
 
 ## Run log
+
+### 2026-08-30 (chart-elements refactor)
+- Re-inventoried repeated UI construction under `pages/dashboard/src/` and selected the highest remaining bounded custom-chart slice: reusable visual legend and category-summary assembly in `src/presenter.js`, where grouped series, line/bar legends, and pie legends were still built inline for the chart view renderer.
+- Extracted `src/components/chart-elements.js` with presentation-only `groupChartSeries(...)`, `listChartSeries(...)`, `pieChartEntries(...)`, `renderChartLegend(...)`, and `renderPieLegend(...)`, then replaced every identified call site in `src/presenter.js` across `renderChartView(...)` and `renderChartWidget(...)`.
+- Added unit coverage in `test/unit/chart-elements.test.js` for deterministic grouping, visual legend rendering, pie-entry summarization, and zero-total legend fallback states while preserving the existing `DLS-SAFE-009` chart-category semantics already asserted by presenter and browser coverage.
+- Proved unchanged behavior by preserving the affected chart HTML contract in `src/presenter.js`, capturing the bounded refactor diff at `/tmp/gh-aw/agent/chart-elements-refactor.diff`, and running the package build, typecheck, lint, and unit-test gates. `npm run test:e2e` is currently failing in this environment due to existing browser assertions unrelated to this extraction, so no browser-only behavior change is claimed in this run.
+- Next candidates in the queue: extract the repeated definitions/observations dual-region composition in `src/presenter.js`; extract the repeated summary-plus-trend section composition in `src/presenter.js`; extract the next shared pure helpers around subject/provenance/count formatting in `src/presenter.js`.
 
 ### 2026-08-30 (report actions refresh description and repository link slice)
 - Continued the Parity milestone by adding descriptive report actions matching `dashboard/report/report.mjs`'s `refreshLink`/`repositoryLink` chrome: the toolbar's Refresh control now exposes a descriptive `title`/`aria-label`, and a GitHub repository link icon renders beside it using the existing (previously unused) `.repository-link` styling.
