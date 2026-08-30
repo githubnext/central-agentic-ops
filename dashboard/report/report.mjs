@@ -958,6 +958,13 @@ function dashboardWorkflowMode(workflow) {
   return bundle ? configuredModeFor(bundle) : "unknown";
 }
 
+function dashboardOutcomeState(state) {
+  if (state === "merged") return "accepted";
+  if (["open", "available", "published"].includes(state)) return "pending";
+  if (["closed", "complete"].includes(state)) return "lifecycle-close";
+  return "lifecycle";
+}
+
 function dashboardSource(name, rows, { available = true, complete = true, observedAt = [] } = {}) {
   const timestamps = observedAt.filter(Boolean).map((value) => new Date(value).getTime()).filter(Number.isFinite);
   return {
@@ -1034,7 +1041,7 @@ function dashboardLogicalSources() {
     workflow: record.workflowPath || record.workflow,
     run: record.correlationId || undefined,
     "safe-output": record.id,
-    "outcome-state": record.state,
+    "outcome-state": dashboardOutcomeState(record.state),
     "observed-at": record.updatedAt,
     ...(record.kind === "issue" ? { "issue-link": { relation: "issue", href: record.url, label: record.title } } : {}),
     ...(record.kind === "pull-request" ? { "pull-request-link": { relation: "pull-request", href: record.url, label: record.title } } : {}),
@@ -1062,8 +1069,8 @@ function dashboardLogicalSources() {
     "operational-value": record.value,
     "operational-value-definition": record.workflowId,
     "requested-evidence-at": record.observation.subject?.createdAt,
-    "evidence-cutoff": record.observation.evidenceAt,
-    "maturity-at": record.observation.evidenceAt,
+    "evidence-cutoff": record.observation.evidenceCutoff,
+    "maturity-at": record.observation.maturesAt,
     "maturity-status": record.observation.mature ? "matured" : "interim",
     "delta-from-baseline": record.deltaFromBaseline,
     "observed-at": record.observation.evidenceAt,
@@ -1072,10 +1079,10 @@ function dashboardLogicalSources() {
   const discoveryComplete = deployedInventory.discovery?.complete === true;
   const runHealthAvailable = deployedInventory.runHealth?.available === true;
   const runHealthComplete = deployedInventory.runHealth?.complete === true;
-  const usageAvailable = (aicUsage.repositories || []).some((entry) => entry.available === true);
+  const usageAvailable = aicUsage.available
+    ?? (aicUsage.repositories || []).every((entry) => entry.available === true);
   const usageComplete = usageAvailable && (aicUsage.repositories || []).every((entry) => entry.complete === true);
-  const valuesAvailable = operationalValues.records.length > 0;
-  const valuesComplete = valuesAvailable && operationalValues.records.every((record) => record.status === "pass");
+  const valuesComplete = operationalValues.records.every((record) => record.status === "pass");
   return {
     organizations: dashboardSource("organizations", organizationRows, { complete: discoveryComplete }),
     repositories: dashboardSource("repositories", repositoryRows, { complete: discoveryComplete }),
@@ -1096,7 +1103,6 @@ function dashboardLogicalSources() {
     }),
     findings: dashboardSource("findings", findingRows, { observedAt: findingRows.map((row) => row["observed-at"]) }),
     "operational-values": dashboardSource("operational-values", valueRows, {
-      available: valuesAvailable,
       complete: valuesComplete,
       observedAt: valueRows.map((row) => row["observed-at"]),
     }),

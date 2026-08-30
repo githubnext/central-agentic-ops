@@ -1621,7 +1621,7 @@ test("Dashboard renders one canonical authored workflow detail across repository
         baselineValue: 0.4,
         evaluatorDigest: "0123456789abcdef",
         runUrl: "https://github.com/acme/control/actions/runs/1",
-        observation: { evidenceAt: "2026-08-26T10:00:00Z", opportunityKey: "acme/service#1", mature: true, subject: { repository: "acme/service", createdAt: "2026-08-26T09:00:00Z" }, case: { targetRepo: "acme/service" } },
+        observation: { evidenceAt: "2026-08-26T10:00:00Z", evidenceCutoff: "2026-08-26T09:55:00Z", maturesAt: "2026-08-26T10:05:00Z", opportunityKey: "acme/service#1", mature: true, subject: { repository: "acme/service", createdAt: "2026-08-26T09:00:00Z" }, case: { targetRepo: "acme/service" } },
       }],
     });
     writeFileSync(mockFetchPath, `
@@ -1666,6 +1666,8 @@ globalThis.fetch = async (input) => {
     assert.equal(dashboardData.sources.usage.rows[0].aic, 12.5);
     assert.equal(dashboardData.sources.findings.rows.length, 2);
     assert.equal(dashboardData.sources["operational-values"].rows[0]["operational-value"], 0.8);
+    assert.equal(dashboardData.sources["operational-values"].rows[0]["evidence-cutoff"], "2026-08-26T09:55:00Z");
+    assert.equal(dashboardData.sources["operational-values"].rows[0]["maturity-at"], "2026-08-26T10:05:00Z");
     const dispatches = readFileSync(join(outputPath, "dispatches", "index.html"), "utf8");
     const catalog = readFileSync(join(outputPath, "workflows", "index.html"), "utf8");
     const repositories = readFileSync(join(outputPath, "repositories", "index.html"), "utf8");
