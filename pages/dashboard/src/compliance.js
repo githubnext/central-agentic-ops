@@ -362,6 +362,7 @@ export function runComplianceSmokeSuite() {
   const results = [];
 
   const appendixAValidation = validateDashboardDocument(appendixAFixture);
+  const appendixASources = createAppendixASources();
   results.push(createResult(
     'T-DOC-001',
     'DLS-DOC-001',
@@ -397,7 +398,7 @@ export function runComplianceSmokeSuite() {
   if (appendixAValidation.ok) {
     const element = renderDashboard({
       document: appendixAValidation.value,
-      sources: createAppendixASources()
+      sources: appendixASources
     });
     const summaryText = element.textContent || '';
     const exposesDataState = summaryText.includes('Availability') && summaryText.includes('Completeness') && summaryText.includes('Freshness');
@@ -407,10 +408,24 @@ export function runComplianceSmokeSuite() {
       exposesDataState,
       exposesDataState ? null : 'Rendered Appendix A fixture did not expose page or view source metadata and data-state text.'
     ));
+    results.push(...runPageComplianceChecks(appendixAValidation.value, appendixASources));
+    results.push(...runLinkComplianceChecks(appendixAValidation.value, appendixASources));
   } else {
     results.push(createResult(
       'T-DATA-001',
       'DLS-DATA-003',
+      false,
+      summarizeErrors(appendixAValidation.errors)
+    ));
+    results.push(createResult(
+      'T-PAGE-001',
+      'DLS-PAGE-014',
+      false,
+      summarizeErrors(appendixAValidation.errors)
+    ));
+    results.push(createResult(
+      'T-LINK-001',
+      'DLS-LINK-006',
       false,
       summarizeErrors(appendixAValidation.errors)
     ));
@@ -488,6 +503,47 @@ function runContextComplianceChecks() {
 }
 
 /**
+ * @param {import('./presenter.js').PresentationDocument} document
+ * @param {Record<string, import('./presenter.js').LogicalSourceInput>} sources
+ * @returns {ComplianceResult[]}
+ */
+function runPageComplianceChecks(document, sources) {
+  const rendered = renderDashboard({ document, sources });
+  const text = rendered.textContent || '';
+  const exposesAvailability = text.includes('Availability');
+  const exposesCompleteness = text.includes('Completeness');
+  const exposesFreshness = text.includes('Freshness');
+  const hasIndependentDataStates = exposesAvailability && exposesCompleteness && exposesFreshness;
+
+  return [createResult(
+    'T-PAGE-001',
+    'DLS-PAGE-014',
+    hasIndependentDataStates,
+    hasIndependentDataStates ? null : 'Rendered built-in fixture did not expose independent availability, completeness, and freshness text.'
+  )];
+}
+
+/**
+ * @param {import('./presenter.js').PresentationDocument} document
+ * @param {Record<string, import('./presenter.js').LogicalSourceInput>} sources
+ * @returns {ComplianceResult[]}
+ */
+function runLinkComplianceChecks(document, sources) {
+  const rendered = renderDashboard({ document, sources });
+  const text = rendered.textContent || '';
+  const hasRunReference = text.includes('Run 1001');
+  const hasPullRequestReference = text.includes('PR #12');
+  const passes = hasRunReference && hasPullRequestReference;
+
+  return [createResult(
+    'T-LINK-001',
+    'DLS-LINK-006',
+    passes,
+    passes ? null : 'Rendered fixture did not expose every available GitHub-addressable entity references when links were available.'
+  )];
+}
+
+/**
  * @param {string} requirementId
  * @returns {string}
  */
@@ -498,6 +554,12 @@ function requirementToTestId(requirementId) {
   }
   if (requirementId.startsWith('DLS-CTX-')) {
     return 'T-CTX-001';
+  }
+  if (requirementId.startsWith('DLS-LINK-')) {
+    return 'T-LINK-001';
+  }
+  if (requirementId.startsWith('DLS-PAGE-')) {
+    return 'T-PAGE-001';
   }
   if (requirementId.startsWith('DLS-VAL-')) {
     return 'T-VAL-001';
@@ -839,6 +901,11 @@ function createAppendixASources() {
           'finding-severity': 'medium',
           'finding-status': 'open',
           'observed-at': '2026-08-29T11:30:00Z',
+          'issue-link': {
+            relation: 'issue',
+            href: 'https://github.com/octo-org/platform/issues/7',
+            label: 'Issue #7'
+          },
           'pull-request-link': {
             relation: 'pull-request',
             href: 'https://github.com/octo-org/platform/pull/12',
