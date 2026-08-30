@@ -12,6 +12,7 @@ import { renderContextChrome, renderPageSection, renderViewSectionChrome } from 
 import { formatAggregateValue, formatNumber, toNumber } from './view-formatters.js';
 import { renderActiveStateBadge, renderModeBadge, renderStatusBadge } from './components/badge.js';
 import { renderOperationalOverview } from './components/operational-overview.js';
+import { findFirstLink, findLink, renderExternalLink, renderLinkedValueWithExternalLink } from './components/link-content.js';
 import { renderPackagesView } from './components/packages-view.js';
 
 /**
@@ -936,7 +937,7 @@ function renderMetricView(pageId, title, view, sourceName, rows, metadata, conte
     ? view.encoding.href
     : null;
   const hrefField = typeof hrefDefinition?.field === 'string' ? hrefDefinition.field : null;
-  const link = hrefField ? findFirstAvailableLink(rows, /** @type {LinkFieldName} */ (hrefField)) : null;
+  const link = hrefField ? findFirstLink(rows, /** @type {LinkFieldName} */ (hrefField)) : null;
 
   const valueText = formatAggregateValue(rows, fieldName, aggregate, toText);
 
@@ -979,7 +980,7 @@ function renderTableView(pageId, title, view, sourceName, rows, metadata, contex
       const value = renderEntityAwareCellValue(column.field, row[outputField], row);
       if (columnIndex === 0 && hrefField) {
         const link = findLink(row, /** @type {LinkFieldName} */ (hrefField));
-        return h('td', null, value, link ? ' ' : null, link ? renderExternalLink(link) : null);
+        return h('td', null, renderLinkedValueWithExternalLink(value, link));
       }
       return h('td', null, value);
     })
@@ -1596,40 +1597,6 @@ function valuesEqualForFilter(actual, expected) {
   return String(actual) === String(expected);
 }
 
-/**
- * @param {Array<Record<string, unknown>>} rows
- * @param {LinkFieldName} field
- * @returns {{ href: string, label: string } | null}
- */
-function findFirstAvailableLink(rows, field) {
-  for (const row of rows) {
-    const link = findLink(row, field);
-    if (link) {
-      return link;
-    }
-  }
-  return null;
-}
-/**
- * @param {Record<string, unknown>} row
- * @param {LinkFieldName} field
- * @returns {{ href: string, label: string } | null}
- */
-function findLink(row, field) {
-  const candidate = row[field];
-  if (!isPlainObject(candidate) || typeof candidate.href !== 'string' || typeof candidate.label !== 'string') {
-    return null;
-  }
-  try {
-    const url = new URL(candidate.href);
-    if (url.protocol !== 'https:' || url.username || url.password || candidate.label.trim().length === 0) {
-      return null;
-    }
-  } catch {
-    return null;
-  }
-  return { href: candidate.href, label: candidate.label };
-}
 
 /**
  * Derives organization/repository/workflow GitHub links for every row that
@@ -1707,19 +1674,6 @@ function trimmedString(value) {
  */
 function toText(value) {
   return value == null || value === '' ? 'unknown' : String(value);
-}
-
-/**
- * @param {{ href: string, label: string }} link
- * @returns {HTMLElement}
- */
-function renderExternalLink(link) {
-  return h('a', {
-    href: link.href,
-    target: '_blank',
-    rel: 'noopener noreferrer',
-    'aria-label': link.label
-  }, link.label, octicon('external-link'));
 }
 
 /**

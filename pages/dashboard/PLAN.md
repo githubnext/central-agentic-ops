@@ -104,6 +104,7 @@
 - `src/components/data-state.js` — presentation-only data-state metrics card grid for availability, completeness, and freshness.
 - `src/components/table-region.js` — presentation-only reusable table wrapper for repeated table-region markup, header rows, empty-state rows, and keyed body-row descriptors across built-in and custom tables.
 - `src/components/view-chrome.js` — presentation-only reusable page-section, titled-region, summary-list/summary-region, generic custom-view chrome paragraphs, custom-view source/metadata/context chrome, shared custom-view section chrome, and built-in provenance-section helpers.
+- `src/components/link-content.js` — presentation-only safe-link discovery and reusable external-link/value composition for custom metric and table views.
 - `src/components/packages-view.js` — report-style package mode tabs, AIC utilization cards, retained-coverage disclosure, complete-attempt allowances, and cumulative run trends.
 - `src/view-formatters.js` — presentation-only shared numeric and aggregate formatting helpers for custom metric and chart text output.
 
@@ -113,6 +114,13 @@
 - 2026-08-28: `npm run test:e2e` is currently blocked in this environment because the Playwright Chromium executable is not provisioned (`browserType.launch: Executable doesn't exist`). The workflow should prefer the built-in Playwright MCP browser tools until the package-level browser dependency is available.
 
 ## Run log
+
+### 2026-08-30 (link-content refactor)
+- Re-inventoried repeated UI construction under `pages/dashboard/src/` and selected the highest remaining bounded duplication slice with multiple active call sites: safe-link lookup plus external-link/value composition shared by custom metric and custom table rendering in `src/presenter.js`.
+- Extracted `src/components/link-content.js` with presentation-only `findLink(...)`, `findFirstLink(...)`, `renderExternalLink(...)`, and `renderLinkedValueWithExternalLink(...)`, then replaced every identified duplicated call site in `src/presenter.js` across `renderMetricView(...)`, `renderTableView(...)`, and entity-aware table-link composition.
+- Added unit coverage in `test/unit/link-content.test.js` for safe, credential-bearing, non-HTTPS, blank-label, missing, first-available, and linked-value rendering cases while preserving the existing `DLS-SAFE-004` and `DLS-SAFE-010` requirements already asserted by presenter coverage.
+- Proved unchanged behavior by capturing the affected refactor diff at `/tmp/gh-aw/agent/link-content-refactor.diff` and keeping `npm run build`, `npm run typecheck`, `npm run lint`, and `npm test` green from `pages/dashboard/`; `npm run test:e2e` remains red in this run due to existing browser failures unrelated to the extracted link helper, so no browser-only behavior change is claimed.
+- Next candidates in the queue: extract the repeated definitions/observations dual-region composition in `src/presenter.js`; extract the repeated summary-plus-trend section composition in `src/presenter.js`; extract the next shared pure helpers around subject/provenance/count formatting in `src/presenter.js`.
 
 ### 2026-08-30 (Packages built-in page)
 - Added the thirteenth built-in page, `packages`, to the dashboard language specification and authoritative `dashboard.json`.
