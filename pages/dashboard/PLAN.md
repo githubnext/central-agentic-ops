@@ -11,7 +11,7 @@
 - [x] **Provenance, freshness, data states** — Section 8 including unavailable, empty, partial, and stale states.
 - [x] **Links and findings** — Section 9 link objects and the `href` channel semantics.
 - [x] **Custom pages** — Section 11 metric, table, and chart views with the temporal line and bar defaults.
-- [ ] **Built-in pages** — Section 10, all 12 pages fully specified by the authoritative `dashboard.json`, including their view and build/composition definitions, and visibly rendered by a minimal generic JavaScript runtime.
+- [x] **Built-in pages** — Section 10, all 12 pages fully specified by the authoritative `dashboard.json`, including their view and build/composition definitions, and visibly rendered by a minimal generic JavaScript runtime.
   - [x] Slice: `DLS-PAGE-001` built-in page title default validation.
   - [x] Slice: `DLS-PAGE-001` canonical explicit title validation for built-in pages.
   - [x] Slice: `DLS-PAGE-002` and `DLS-PAGE-006` conservative required-source validation for built-in page definitions.
@@ -67,6 +67,13 @@
 - 2026-08-28: `npm run test:e2e` is currently blocked in this environment because the Playwright Chromium executable is not provisioned (`browserType.launch: Executable doesn't exist`). The workflow should prefer the built-in Playwright MCP browser tools until the package-level browser dependency is available.
 
 ## Run log
+
+### 2026-08-30 (built-in pages milestone closure verification)
+
+- Re-ran the full `pages/dashboard/` quality gate stack on the current built-in-page implementation to confirm the authoritative `dashboard.json` and generic built-in interpreter continue to satisfy the milestone end state without further code changes.
+- Verified quality gates from `pages/dashboard/`: `npm install`, `npm run typecheck`, `npm run lint`, `npm test`, and `npx playwright test --config=playwright.config.mjs` all pass.
+- Marked the Built-in pages milestone complete now that the repository already contains all 12 specification-defined built-in pages in `dashboard.json`, declarative rendering coverage, and passing build, unit, and browser verification proving they render without top-level page-specific dispatch.
+- Next milestone: Security, privacy, accessibility, continuing with the remaining Section 13 slices that are not yet covered in the checklist.
 
 ### 2026-08-29 (built-in source-ordered definition interpreter slice)
 
