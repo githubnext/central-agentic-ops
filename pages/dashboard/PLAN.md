@@ -58,6 +58,7 @@
   - [x] Pages-level visual parity inventory: record the report-derived page-layout, Primer-style navigation, and footer/header presentation patterns already implemented by the generic renderer, without adding new semantics.
   - [x] Catalog filtering: port the report's live text filtering and announced result counts into reusable custom-table controls, making the interaction available to declaratively configured built-in and custom pages.
   - [x] Chart-series legends: port the report's labeled trend legend into reusable generic custom-chart chrome for multi-series declarative charts while retaining explicit textual category semantics.
+  - [x] Operational overview: port the control-plane status banner, execution-health bar, attention list, and managed-package cards, including package allowance and inventory readiness source metadata.
 
 ## Specification questions
 
@@ -81,6 +82,11 @@
 - 2026-08-28: `npm run test:e2e` is currently blocked in this environment because the Playwright Chromium executable is not provisioned (`browserType.launch: Executable doesn't exist`). The workflow should prefer the built-in Playwright MCP browser tools until the package-level browser dependency is available.
 
 ## Run log
+
+### 2026-08-30 (operational overview parity slice)
+- Migrated the report-style operational status, execution-health, attention, and managed-package UX into the Dashboard Language overview while retaining the declarative execution and operational-value trends below it.
+- Extended the report source bridge with optional control-plane inventory metadata so package cards can display per-attempt AIC allowance and deterministic readiness without inferring either value from usage.
+- Added focused unit and browser coverage for critical health, attention signals, package state, responsive composition, and source enrichment.
 
 ### 2026-08-30 (parity chart-legend slice)
 - Continued the Parity milestone with a narrow renderer increment derived from the report's labeled execution-trend legend, keeping the change generic to existing custom chart semantics rather than adding new dashboard-language vocabulary.

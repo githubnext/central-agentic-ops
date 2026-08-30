@@ -11,6 +11,7 @@ import { renderTableRegion } from './components/table-region.js';
 import { renderContextChrome, renderPageSection, renderViewSectionChrome } from './components/view-chrome.js';
 import { formatAggregateValue, formatNumber, toNumber } from './view-formatters.js';
 import { renderActiveStateBadge, renderModeBadge, renderStatusBadge } from './components/badge.js';
+import { renderOperationalOverview } from './components/operational-overview.js';
 
 /**
  * @typedef {{ availability: 'available'|'empty'|'unavailable', completeness: 'complete'|'partial'|'unknown', freshness: 'fresh'|'stale'|'unknown' }} DataState
@@ -332,7 +333,9 @@ function renderCustomPage(page, title, sources) {
     isPlainObject(view) && typeof view.id === 'string' ? view.id : `view-${index + 1}`,
     renderedViews[index]
   ]));
-  const renderedContent = sections.length > 0
+  const renderedContent = page.id === 'overview' && sections.length > 0
+    ? renderOverviewContent(sections, renderedViewsById, sources)
+    : sections.length > 0
     ? h(
       'div',
       { className: 'page-layout-grid' },
@@ -351,10 +354,27 @@ function renderCustomPage(page, title, sources) {
     },
     h('h2', { tabIndex: -1 }, title),
     page.description ? h('p', { className: 'page-description' }, page.description) : null,
-    renderDataStateMetrics(summarizeDataState(pageSources)),
     ...(renderedViews.length > 0
-      ? [renderedContent]
+      ? page.id === 'overview'
+        ? [renderedContent, renderDataStateMetrics(summarizeDataState(pageSources))]
+        : [renderDataStateMetrics(summarizeDataState(pageSources)), renderedContent]
       : [h('p', null, 'No custom views available.')])
+  );
+}
+
+/**
+ * @param {PresentablePageSection[]} sections
+ * @param {Map<string, HTMLElement>} renderedViews
+ * @param {Record<string, LogicalSourceInput>} sources
+ * @returns {HTMLElement}
+ */
+function renderOverviewContent(sections, renderedViews, sources) {
+  const trends = sections.find((section) => section.id === 'execution-trends');
+  return h(
+    'div',
+    { className: 'overview-content' },
+    renderOperationalOverview(sources),
+    trends ? renderLayoutSection('overview', trends, renderedViews) : null
   );
 }
 

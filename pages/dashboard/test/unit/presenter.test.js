@@ -54,7 +54,7 @@ describe('presenter built-in and custom pages', () => {
     expect(topology?.textContent).toContain('safe outputs only');
   });
 
-  it('DLS-PAGE-002 DLS-PAGE-014 renders built-in overview page with rollout-mode filtering, workflow active-state inventory, run status and conclusion counts and trends, repository and workflow rankings, largest AIC spenders, recent linked findings, operational-value timeline, and provenance/freshness data state deterministically', () => {
+  it('DLS-PAGE-002 DLS-PAGE-014 renders the report-style operational overview, managed packages, execution trends, and provenance data state deterministically', () => {
     /** @type {import('../../src/presenter.js').PresentationInput['document']} */
     const document = {
       languageVersion: '0.1.0',
@@ -92,8 +92,8 @@ describe('presenter built-in and custom pages', () => {
         workflows: {
           source: 'workflows',
           rows: [
-            { organization: 'github', repository: 'central-agentic-ops', workflow: '.github/workflows/daily.yml', 'workflow-active': 'true', 'rollout-mode': 'live', 'observed-at': '2026-08-29T09:00:00Z' },
-            { organization: 'github', repository: 'central-agentic-ops', workflow: '.github/workflows/review.yml', 'workflow-active': 'false', 'rollout-mode': 'review', 'observed-at': '2026-08-29T09:05:00Z' }
+            { organization: 'github', repository: 'central-agentic-ops', package: 'daily-ops', 'package-name': 'Daily Ops', 'workflow-role': 'orchestrator', workflow: '.github/workflows/daily.yml', 'workflow-active': 'true', 'rollout-mode': 'live', 'max-ai-credits': 10, 'observed-at': '2026-08-29T09:00:00Z' },
+            { organization: 'github', repository: 'central-agentic-ops', package: 'daily-ops', 'package-name': 'Daily Ops', 'workflow-role': 'worker', workflow: '.github/workflows/review.yml', 'workflow-active': 'false', 'rollout-mode': 'review', 'max-ai-credits': 20, 'observed-at': '2026-08-29T09:05:00Z' }
           ],
           metadata: {
             'source-id': 'workflows-fixture',
@@ -218,20 +218,22 @@ describe('presenter built-in and custom pages', () => {
 
     const overviewPage = rendered.querySelector('[data-page-name="overview"]');
     expect(overviewPage?.getAttribute('data-page-kind')).toBe('custom');
-    expect(overviewPage?.querySelectorAll('.custom-view')).toHaveLength(10);
-    expect(overviewPage?.querySelectorAll('.layout-section')).toHaveLength(4);
-    expect(overviewPage?.querySelector('[data-section-id="control-plane-health"]')?.getAttribute('data-section-layout')).toBe('full');
-    expect(overviewPage?.querySelector('[data-section-id="needs-attention"]')?.getAttribute('data-section-layout')).toBe('wide');
-    expect(overviewPage?.querySelector('[data-section-id="managed-workflows"]')?.getAttribute('data-section-layout')).toBe('narrow');
-    expect(overviewPage?.querySelectorAll('.layout-section > .custom-view-grid')).toHaveLength(4);
+    expect(overviewPage?.querySelectorAll('.custom-view')).toHaveLength(2);
+    expect(overviewPage?.querySelectorAll('.layout-section')).toHaveLength(1);
+    expect(overviewPage?.querySelector('[data-section-id="execution-trends"]')?.getAttribute('data-section-layout')).toBe('full');
+    expect(overviewPage?.querySelector('.control-plane-status')?.classList.contains('control-plane-critical')).toBe(true);
+    expect(overviewPage?.querySelector('.control-plane-vitals')?.textContent).toContain('33.3%');
+    expect(overviewPage?.querySelector('.execution-track')?.getAttribute('aria-label')).toContain('1 failed');
+    expect(overviewPage?.querySelectorAll('.attention-item').length).toBeGreaterThanOrEqual(4);
+    expect(overviewPage?.querySelectorAll('.managed-package-card')).toHaveLength(1);
+    expect(overviewPage?.querySelector('.managed-package-card')?.textContent).toContain('30');
+    expect(overviewPage?.querySelector('.managed-package-card')?.textContent).toContain('Needs attention');
     expect(overviewPage?.textContent).toContain('Active workflows');
     expect(overviewPage?.textContent).toContain('Operational value timeline');
-    expect(overviewPage?.querySelector('.layout-section h3')?.textContent).toBe('Control plane health');
-    expect(overviewPage?.querySelector('.layout-section .page-section h4')?.textContent).toBe('Active workflows');
+    expect(overviewPage?.querySelector('.layout-section h3')?.textContent).toBe('Execution and value trends');
     expect(rendered.querySelector('[data-state-axis="availability"]')?.textContent).toBe('available');
     expect(rendered.querySelector('[data-state-axis="completeness"]')?.textContent).toBe('partial');
     expect(rendered.querySelector('[data-state-axis="freshness"]')?.textContent).toBe('stale');
-    expect(overviewPage?.querySelector('[data-metric-value="aic"]')?.textContent).toBe('35');
     expect(overviewPage?.querySelectorAll('[data-section-id="execution-trends"] .custom-view:last-child .custom-chart-table tbody tr')).toHaveLength(2);
   });
 
