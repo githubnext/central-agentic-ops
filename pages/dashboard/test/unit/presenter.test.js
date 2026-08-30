@@ -1166,4 +1166,119 @@ describe('presenter built-in and custom pages', () => {
     expect(rendered.textContent).not.toContain('FTP Run');
     expect(rendered.textContent).toContain('Run 4');
   });
+
+  it('DLS-AGG-008 DLS-VIEW-003 renders report-style aggregate rankings in declared order before applying limit', () => {
+    const rendered = renderDashboard({
+      document: {
+        languageVersion: '0.1.0',
+        dashboard: {
+          id: 'ranked-usage',
+          title: 'Ranked usage',
+          pages: [{
+            id: 'usage',
+            kind: /** @type {'custom'} */ ('custom'),
+            title: 'Usage',
+            views: [{
+              id: 'repository-usage',
+              title: 'Repository usage',
+              data: {
+                source: 'usage',
+                'order-by': [{ field: 'total-aic', direction: 'desc' }],
+                limit: 2
+              },
+              mark: 'table',
+              encoding: {
+                columns: [
+                  { field: 'repository', type: 'nominal' },
+                  { field: 'aic', type: 'quantitative', aggregate: 'sum', as: 'total-aic', title: 'Total AIC' }
+                ]
+              }
+            }]
+          }]
+        }
+      },
+      sources: {
+        usage: {
+          source: 'usage',
+          rows: [
+            { repository: 'charlie', aic: 2 },
+            { repository: 'alpha', aic: 4 },
+            { repository: 'bravo', aic: 3 },
+            { repository: 'charlie', aic: 4 },
+            { repository: 'alpha', aic: 1 }
+          ],
+          metadata: {
+            'source-id': 'aic-usage',
+            'source-kind': 'report-artifact',
+            'as-of': '2026-08-30T12:00:00Z',
+            'retrieved-at': '2026-08-30T12:01:00Z',
+            completeness: 'complete',
+            freshness: 'fresh',
+            availability: 'available'
+          }
+        }
+      }
+    });
+
+    const rows = [...rendered.querySelectorAll('.custom-table tbody tr')];
+    expect(rows).toHaveLength(2);
+    expect(rows.map((row) => row.textContent)).toEqual(['charlie6', 'alpha5']);
+    expect(rendered.querySelector('.freshness')?.textContent).toBe('Last updated Aug 30, 2026, 12:01 PM');
+    expect(rendered.querySelector('.freshness')?.getAttribute('datetime')).toBe('2026-08-30T12:01:00Z');
+  });
+
+  it('renders report-style semantic badges through the generic table presenter', () => {
+    const rendered = renderDashboard({
+      document: {
+        languageVersion: '0.1.0',
+        dashboard: {
+          id: 'workflow-status',
+          title: 'Workflow status',
+          pages: [{
+            id: 'workflows',
+            kind: /** @type {'custom'} */ ('custom'),
+            title: 'Workflows',
+            views: [{
+              id: 'workflow-statuses',
+              title: 'Workflow statuses',
+              data: { source: 'workflows' },
+              mark: 'table',
+              encoding: {
+                columns: [
+                  { field: 'workflow', type: 'nominal' },
+                  { field: 'workflow-active', type: 'nominal' },
+                  { field: 'rollout-mode', type: 'nominal' },
+                  { field: 'run-conclusion', type: 'nominal' }
+                ]
+              }
+            }]
+          }]
+        }
+      },
+      sources: {
+        workflows: {
+          source: 'workflows',
+          rows: [{
+            workflow: 'review',
+            'workflow-active': 'true',
+            'rollout-mode': 'review',
+            'run-conclusion': 'failure'
+          }],
+          metadata: {
+            'source-id': 'deployed-workflows',
+            'source-kind': 'report-artifact',
+            'as-of': '2026-08-30T12:00:00Z',
+            'retrieved-at': '2026-08-30T12:01:00Z',
+            completeness: 'complete',
+            freshness: 'fresh',
+            availability: 'available'
+          }
+        }
+      }
+    });
+
+    expect(rendered.querySelector('.custom-table .status-success')?.textContent).toBe('true');
+    expect(rendered.querySelector('.custom-table .mode-review')?.textContent).toBe('review');
+    expect(rendered.querySelector('.custom-table .status-danger')?.textContent).toBe('failure');
+  });
 });
