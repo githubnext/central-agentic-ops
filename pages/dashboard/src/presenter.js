@@ -60,6 +60,7 @@ import { renderPackagesView } from './components/packages-view.js';
  */
 
 const DEFAULT_GITHUB_URL_BASE = 'https://github.com';
+const REFRESH_CONTROL_DESCRIPTION = 'Reload the dashboard to refresh cached data';
 
 /** @type {{ organization: 'organization-link', repository: 'repository-link', workflow: 'workflow-link' }} */
 const ENTITY_LINK_FIELDS = {
@@ -240,7 +241,6 @@ function getPageIcon(page) {
  */
 function renderMainContent(document, title, description, pages, sources, orgName, githubUrlBase, dashboardRepository) {
   const latestRetrieval = latestRetrievedAt(sources);
-  const refreshDescription = 'Reload the dashboard to refresh cached data';
   return h(
     'div',
     { className: 'app-main' },
@@ -263,8 +263,8 @@ function renderMainContent(document, title, description, pages, sources, orgName
             {
               type: 'button',
               className: 'refresh-button',
-              title: refreshDescription,
-              'aria-label': refreshDescription,
+              title: REFRESH_CONTROL_DESCRIPTION,
+              'aria-label': REFRESH_CONTROL_DESCRIPTION,
               onclick: () => window.location.reload()
             },
             octicon('sync'),

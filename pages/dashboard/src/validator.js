@@ -1982,14 +1982,29 @@ function isSafeGithubUrlBase(value) {
   return url.search === '' && url.hash === '';
 }
 
-const REPOSITORY_SLUG_PATTERN = /^[A-Za-z0-9](?:[A-Za-z0-9._-]*[A-Za-z0-9])?\/[A-Za-z0-9](?:[A-Za-z0-9._-]*[A-Za-z0-9])?$/;
+const REPOSITORY_OWNER_PATTERN = /^[A-Za-z0-9](?:[A-Za-z0-9-]*[A-Za-z0-9])?$/;
+const REPOSITORY_NAME_PATTERN = /^[A-Za-z0-9._-]+$/;
 
 /**
  * @param {unknown} value
  * @returns {value is string}
  */
 function isSafeRepositorySlug(value) {
-  return typeof value === 'string' && REPOSITORY_SLUG_PATTERN.test(value) && !looksSensitive(value);
+  if (typeof value !== 'string' || looksSensitive(value)) {
+    return false;
+  }
+
+  const segments = value.split('/');
+  if (segments.length !== 2) {
+    return false;
+  }
+
+  const [owner, name] = segments;
+  return (
+    REPOSITORY_OWNER_PATTERN.test(owner) &&
+    REPOSITORY_NAME_PATTERN.test(name) &&
+    !name.includes('..')
+  );
 }
 
 /**

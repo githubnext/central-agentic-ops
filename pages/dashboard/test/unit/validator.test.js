@@ -223,6 +223,18 @@ dashboard:
         expect.objectContaining({ code: 'DLS-E003', path: '$.dashboard.repository' })
       );
     }
+
+    const withConsecutiveDots = baseDocument.replace(
+      '  title: Agentic Operations\n',
+      '  title: Agentic Operations\n  repository: "octo-org/agentic..operations"\n'
+    );
+    const rejectedConsecutiveDots = validateDashboardDocument(withConsecutiveDots);
+    expect(rejectedConsecutiveDots.ok).toBe(false);
+    if (!rejectedConsecutiveDots.ok) {
+      expect(rejectedConsecutiveDots.errors).toContainEqual(
+        expect.objectContaining({ code: 'DLS-E003', path: '$.dashboard.repository' })
+      );
+    }
   });
 
   it('DLS-DOC-001 rejects multiple YAML documents with DLS-E002', () => {
