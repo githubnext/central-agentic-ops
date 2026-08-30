@@ -156,7 +156,7 @@
           "views": [
             {
               "id": "repositories-repositories-source",
-              "title": "Repository Inventory",
+              "title": "Repository Inventory and Rankings",
               "data": { "source": "repositories" },
               "mark": "table",
               "encoding": {

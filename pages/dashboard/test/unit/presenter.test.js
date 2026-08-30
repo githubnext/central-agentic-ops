@@ -248,7 +248,7 @@ describe('presenter built-in and custom pages', () => {
     expect(repositoriesPage?.definition.views).toMatchObject([
       {
         id: 'repositories-repositories-source',
-        title: 'Repository Inventory',
+        title: 'Repository Inventory and Rankings',
         data: { source: 'repositories' }
       },
       {
