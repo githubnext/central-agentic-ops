@@ -357,7 +357,8 @@ function renderLayoutSection(pageId, section, renderedViews) {
     h(
       'div',
       { className: 'custom-view-grid' },
-      ...section.views.map((viewId) => renderedViews.get(viewId) ?? null)
+      ...section.views.map((viewId) => renderedViews.get(viewId)
+        ?? h('p', { className: 'empty', 'data-missing-view-id': viewId }, `View unavailable: ${viewId}`))
     )
   );
 }

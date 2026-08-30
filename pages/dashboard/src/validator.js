@@ -469,6 +469,7 @@ function validateBuiltInPageSections(sections, views, path, errors) {
     .filter((id) => typeof id === 'string');
   /** @type {string[]} */
   const referencedViewIds = [];
+  const referencedViewIdSet = new Set();
   const sectionIds = new Set();
 
   sections.forEach((section, index) => {
@@ -528,7 +529,7 @@ function validateBuiltInPageSections(sections, views, path, errors) {
         ));
         return;
       }
-      if (referencedViewIds.includes(viewId)) {
+      if (referencedViewIdSet.has(viewId)) {
         errors.push(createError(
           ERROR_CODES.missingOrInvalidRequiredField,
           'each definition view may appear in only one layout section.',
@@ -536,6 +537,7 @@ function validateBuiltInPageSections(sections, views, path, errors) {
         ));
       }
       referencedViewIds.push(viewId);
+      referencedViewIdSet.add(viewId);
     });
   });
 
