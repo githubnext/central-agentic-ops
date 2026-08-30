@@ -192,9 +192,13 @@
         },
       };
 
-      const liveSourcesResponse = await fetch("./sources.json");
-      if (liveSourcesResponse.ok) {
-        sources = await liveSourcesResponse.json();
+      try {
+        const liveSourcesResponse = await fetch("./sources.json");
+        if (liveSourcesResponse.ok) {
+          sources = await liveSourcesResponse.json();
+        }
+      } catch {
+        // Retain the illustrative fixture data when the generated report is unavailable.
       }
 
       document.querySelector("#root").append(renderDashboard({ document: dashboardDocument, sources }));

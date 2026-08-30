@@ -25,7 +25,7 @@ function repositoryParts(repository = "") {
 }
 
 function rolloutMode(value) {
-  const match = String(value || "").match(/(?:^|\s[·|:-]\s)(review|live)$/i);
+  const match = String(value || "").match(/(?:^|\s[·|:\-]\s)(review|live)$/i);
   return match?.[1]?.toLowerCase() || (["review", "live"].includes(value) ? value : "unknown");
 }
 
@@ -144,7 +144,7 @@ function usageRows(usage) {
 
 function recordLink(record, relation) {
   const expectedKind = relation === "issue" ? "issue" : "pull-request";
-  return record.kind === expectedKind ? link(relation, record.url, `View ${relation.replace("-", " ")}`) : undefined;
+  return record.kind === expectedKind ? link(relation, record.url, `View ${relation.replaceAll("-", " ")}`) : undefined;
 }
 
 function findingRows(records) {
