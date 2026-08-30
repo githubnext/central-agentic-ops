@@ -2,7 +2,12 @@
  * Registry for JSON-selected dashboard UI elements.
  */
 
-import { renderOperationalOverview } from './operational-overview.js';
+import {
+  renderAttentionPanelElement,
+  renderControlPlaneStatusElement,
+  renderManagedPackagesElement,
+  renderPackageAicUtilizationElement
+} from './overview-elements.js';
 import { renderPackagesView } from './packages-view.js';
 import { renderWorkflowTopology } from './workflow-topology.js';
 
@@ -19,7 +24,10 @@ import { renderWorkflowTopology } from './workflow-topology.js';
 
 /** @type {Map<string, (context: ElementRenderContext) => HTMLElement | null>} */
 const ELEMENT_RENDERERS = new Map([
-  ['operational-overview', ({ sources }) => renderOperationalOverview(sources)],
+  ['control-plane-status', ({ sources }) => renderControlPlaneStatusElement(sources)],
+  ['package-aic-utilization', ({ sources }) => renderPackageAicUtilizationElement(sources)],
+  ['attention-panel', ({ sources }) => renderAttentionPanelElement(sources)],
+  ['managed-packages', ({ sources }) => renderManagedPackagesElement(sources)],
   ['package-activity', ({ sources, pageId }) => renderPackagesView(sources, pageId)],
   ['workflow-topology', ({ pageId, title, sourceNames, sources, contextDetails, headingTag }) => {
     const sourceName = sourceNames[0];

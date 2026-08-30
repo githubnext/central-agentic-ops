@@ -1,5 +1,5 @@
 /**
- * Report-style operational overview composed from canonical dashboard sources.
+ * Report-style overview elements composed from canonical dashboard sources.
  */
 
 import { h } from '../dom.js';
@@ -14,28 +14,18 @@ const APPROVAL_CONCLUSIONS = new Set(['action-required']);
  * @param {Record<string, import('../renderer.js').LogicalSourceInput>} sources
  * @returns {HTMLElement}
  */
-export function renderOperationalOverview(sources) {
+export function renderControlPlaneStatusElement(sources) {
   const workflows = rowsFor(sources, 'workflows');
   const repositories = rowsFor(sources, 'repositories');
   const runs = rowsFor(sources, 'runs');
   const usage = rowsFor(sources, 'usage');
-  const findings = rowsFor(sources, 'findings');
   const packages = summarizePackages(workflows);
-  const packageAicUsage = summarizePackageAicUsage(workflows, usage);
   const health = summarizeRunHealth(runs);
   const repositoryCount = repositories.length > 0
     ? new Set(repositories.map(repositoryKey).filter(Boolean)).size
     : distinctRepositories(workflows, runs);
   const activeWorkflows = workflows.filter(isActiveWorkflow).length;
   const disabledWorkflows = workflows.filter((row) => String(row['workflow-active']) === 'false').length;
-  const attentionItems = buildAttentionItems({
-    sources,
-    runs,
-    findings,
-    packages,
-    disabledWorkflows,
-    health
-  });
   const scope = [...new Set(workflows
     .map((row) => String(row.organization ?? '').trim())
     .filter(Boolean))]
@@ -43,29 +33,58 @@ export function renderOperationalOverview(sources) {
     .join(' + ') || 'Configured repositories';
   const managedWorkers = packages.reduce((total, entry) => total + entry.workers, 0);
 
-  return h(
-    'div',
-    { className: 'operational-overview' },
-    renderControlPlaneStatus({
-      scope,
-      packages: packages.length,
-      managedWorkers,
-      activeWorkflows,
-      disabledWorkflows,
-      repositoryCount,
-      health,
-      runsSource: sources.runs,
-      usageSource: sources.usage,
-      usage
-    }),
-    renderPackageAicUtilization(packages, packageAicUsage, sources.usage),
-    h(
-      'div',
-      { className: 'overview-operations-grid' },
-      renderAttentionPanel(attentionItems),
-      renderManagedPackages(packages)
-    )
+  return renderControlPlaneStatus({
+    scope,
+    packages: packages.length,
+    managedWorkers,
+    activeWorkflows,
+    disabledWorkflows,
+    repositoryCount,
+    health,
+    runsSource: sources.runs,
+    usageSource: sources.usage,
+    usage
+  });
+}
+
+/**
+ * @param {Record<string, import('../renderer.js').LogicalSourceInput>} sources
+ * @returns {HTMLElement}
+ */
+export function renderPackageAicUtilizationElement(sources) {
+  const workflows = rowsFor(sources, 'workflows');
+  const packages = summarizePackages(workflows);
+  return renderPackageAicUtilization(
+    packages,
+    summarizePackageAicUsage(workflows, rowsFor(sources, 'usage')),
+    sources.usage
   );
+}
+
+/**
+ * @param {Record<string, import('../renderer.js').LogicalSourceInput>} sources
+ * @returns {HTMLElement}
+ */
+export function renderAttentionPanelElement(sources) {
+  const workflows = rowsFor(sources, 'workflows');
+  const runs = rowsFor(sources, 'runs');
+  const health = summarizeRunHealth(runs);
+  return renderAttentionPanel(buildAttentionItems({
+    sources,
+    runs,
+    findings: rowsFor(sources, 'findings'),
+    packages: summarizePackages(workflows),
+    disabledWorkflows: workflows.filter((row) => String(row['workflow-active']) === 'false').length,
+    health
+  }));
+}
+
+/**
+ * @param {Record<string, import('../renderer.js').LogicalSourceInput>} sources
+ * @returns {HTMLElement}
+ */
+export function renderManagedPackagesElement(sources) {
+  return renderManagedPackages(summarizePackages(rowsFor(sources, 'workflows')));
 }
 
 /**

@@ -480,7 +480,7 @@ Allowed encoding channels are `value`, `columns`, `x`, `y`, `color`, and `href`.
 
 Field `type` values are `nominal`, `ordinal`, `quantitative`, and `temporal`. When omitted, type defaults to the intrinsic field type. A field title defaults to its kebab-case field name with words capitalized.
 
-The optional table-column field `display` is `text`, `status`, `mode`, or `active-state` and defaults to `text`. It selects presentation independently from the field name. Named UI element values are `operational-overview`, `package-activity`, and `workflow-topology`; presenters dispatch these values without inferring behavior from page IDs, view IDs, or source contents.
+The optional table-column field `display` is `text`, `status`, `mode`, or `active-state` and defaults to `text`. It selects presentation independently from the field name. Named UI element values are `control-plane-status`, `package-aic-utilization`, `attention-panel`, `managed-packages`, `package-activity`, and `workflow-topology`; renderers dispatch these values without inferring behavior from page IDs, view IDs, or source contents. The four overview elements are independent views so documents can assemble and lay out the landing page through `views`, `sections`, and `layout`.
 
 A chart may set `chart` to `line`, `bar`, or `pie`. When `chart` is omitted, temporal `x` has a line time-series default and any other valid chart has a bar default. A line chart uses temporal `x`; a pie chart uses nominal or ordinal `x` for categories and quantitative `y` for values. These known widget types and defaults are semantic; this specification does not define visual styling.
 

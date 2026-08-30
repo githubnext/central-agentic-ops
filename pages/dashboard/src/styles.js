@@ -180,7 +180,6 @@ h3 { margin: 16px 0 8px; font-size: 1rem; font-weight: 600; }
 .summary-list, .run-status-counts, .run-conclusion-counts, .run-outcome-counts { list-style: none; margin: 0 0 16px; padding: 0; display: flex; flex-wrap: wrap; gap: 8px; }
 .summary-list li, .run-status-counts li, .run-conclusion-counts li, .run-outcome-counts li { display: inline-flex; align-items: center; gap: 6px; padding: 4px 10px; border: 1px solid var(--border); border-radius: 2em; background: var(--canvas-subtle); font-size: .75rem; font-weight: 600; }
 .overview-content { display: grid; gap: 24px; }
-.operational-overview { display: grid; gap: 16px; }
 .scope-kicker { color: var(--muted); font-size: .75rem; font-weight: 600; text-transform: uppercase; }
 .control-plane-status { overflow: hidden; border-radius: 6px; }
 .control-plane-status > header { min-height: 104px; display: flex; align-items: center; padding: 18px 20px; border: 1px solid var(--border); border-left-width: 4px; border-radius: 6px 6px 0 0; background: var(--canvas-subtle); }
@@ -289,7 +288,6 @@ h3 { margin: 16px 0 8px; font-size: 1rem; font-weight: 600; }
 .package-chart-point:focus-visible .package-point-hit { fill: color-mix(in srgb, var(--focus) 18%, transparent); stroke: var(--focus); stroke-width: 2; vector-effect: non-scaling-stroke; }
 .package-trend-axis { display: flex; justify-content: space-between; padding: 0 30px 8px; color: var(--muted); font-size: .6875rem; }
 .package-trend-coverage { margin: 0; padding: 0 16px 12px; color: var(--muted); font-size: .75rem; }
-.overview-operations-grid { display: grid; grid-template-columns: minmax(0, 7fr) minmax(320px, 5fr); gap: 16px; align-items: start; }
 .attention-panel { overflow: hidden; border: 1px solid var(--border); border-radius: 6px; background: var(--canvas); }
 .attention-panel > header { min-height: 72px; display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 14px 16px; border-bottom: 1px solid var(--border); background: var(--canvas-subtle); }
 .attention-panel > header h3, .managed-packages > header h3 { margin: 2px 0 0; font-size: 1.125rem; }
@@ -422,7 +420,6 @@ footer { padding: 20px 24px; border-top: 1px solid var(--border); color: var(--m
   .control-plane-vitals p { min-height: 0; }
   .execution-health-heading { align-items: flex-start; flex-direction: column; gap: 2px; }
   .execution-legend { display: none; }
-  .overview-operations-grid { grid-template-columns: 1fr; }
   .managed-package-card dl { gap: 8px; }
   .package-utilization-grid { grid-template-columns: 1fr; }
   .package-trend-panel > header { align-items: flex-start; flex-direction: column; }

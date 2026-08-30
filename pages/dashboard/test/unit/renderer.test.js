@@ -484,8 +484,16 @@ describe('renderer built-in and custom pages', () => {
 
     const overviewPage = rendered.querySelector('[data-page-name="overview"]');
     expect(overviewPage?.getAttribute('data-page-kind')).toBe('custom');
-    expect(overviewPage?.querySelectorAll('.custom-view')).toHaveLength(3);
+    expect(overviewPage?.querySelectorAll('.custom-view')).toHaveLength(6);
     expect(overviewPage?.querySelectorAll('.layout-section')).toHaveLength(2);
+    const landingElements = [...(overviewPage?.querySelectorAll('[data-section-id="control-plane-health"] > .custom-view-grid > .custom-view') ?? [])];
+    expect(landingElements.map((element) => element.firstElementChild?.className || element.classList[0])).toEqual([
+      'control-plane-status',
+      'package-aic-utilization',
+      'attention-panel',
+      'managed-packages'
+    ]);
+    expect(landingElements.map((element) => element.getAttribute('data-view-layout'))).toEqual(['full', 'full', 'half', 'half']);
     expect(overviewPage?.querySelector('[data-section-id="execution-trends"]')?.getAttribute('data-section-layout')).toBe('full');
     expect(overviewPage?.querySelector('.control-plane-status')?.classList.contains('control-plane-critical')).toBe(true);
     expect(overviewPage?.querySelector('.control-plane-vitals')?.textContent).toContain('33.3%');
@@ -1184,7 +1192,7 @@ describe('renderer built-in and custom pages', () => {
                 id: 'missing-element-source',
                 title: 'Missing Element Source',
                 mark: 'element',
-                element: 'operational-overview'
+                element: 'control-plane-status'
               }
             ]
           }

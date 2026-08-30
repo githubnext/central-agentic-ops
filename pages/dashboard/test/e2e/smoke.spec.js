@@ -34,12 +34,12 @@ function buildRendererModuleUrl() {
   const viewFormattersSource = readFileSync(new URL('../../src/view-formatters.js', import.meta.url), 'utf8');
   const viewFormattersModuleUrl = `data:text/javascript;charset=utf-8,${encodeURIComponent(viewFormattersSource)}`;
 
-  const operationalOverviewSource = readFileSync(new URL('../../src/components/operational-overview.js', import.meta.url), 'utf8')
+  const overviewElementsSource = readFileSync(new URL('../../src/components/overview-elements.js', import.meta.url), 'utf8')
     .replace("'../dom.js'", JSON.stringify(domModuleUrl))
     .replace("'../octicons.js'", JSON.stringify(octiconsModuleUrl))
     .replace("'./badge.js'", JSON.stringify(badgeModuleUrl))
     .replace("'../view-formatters.js'", JSON.stringify(viewFormattersModuleUrl));
-  const operationalOverviewModuleUrl = `data:text/javascript;charset=utf-8,${encodeURIComponent(operationalOverviewSource)}`;
+  const overviewElementsModuleUrl = `data:text/javascript;charset=utf-8,${encodeURIComponent(overviewElementsSource)}`;
 
   const packagesViewSource = readFileSync(new URL('../../src/components/packages-view.js', import.meta.url), 'utf8')
     .replace("'../dom.js'", JSON.stringify(domModuleUrl))
@@ -69,7 +69,7 @@ function buildRendererModuleUrl() {
   const chartElementsModuleUrl = `data:text/javascript;charset=utf-8,${encodeURIComponent(chartElementsSource)}`;
 
   const uiElementsSource = readFileSync(new URL('../../src/components/ui-elements.js', import.meta.url), 'utf8')
-    .replace("'./operational-overview.js'", JSON.stringify(operationalOverviewModuleUrl))
+    .replace("'./overview-elements.js'", JSON.stringify(overviewElementsModuleUrl))
     .replace("'./packages-view.js'", JSON.stringify(packagesViewModuleUrl))
     .replace("'./workflow-topology.js'", JSON.stringify(workflowTopologyModuleUrl));
   const uiElementsModuleUrl = `data:text/javascript;charset=utf-8,${encodeURIComponent(uiElementsSource)}`;
@@ -285,8 +285,14 @@ test('DLS-PAGE-002 DLS-PAGE-014 built-in overview page renders the report-style 
   await expect(page.locator('.nav-section-label')).toHaveText(['Attention']);
   await expect(page.getByRole('heading', { name: 'Overview', exact: true, level: 2 })).toBeVisible();
   await expect(page.locator('.overview-page')).toHaveAttribute('data-page-kind', 'custom');
-  await expect(page.locator('.overview-page .custom-view')).toHaveCount(3);
+  await expect(page.locator('.overview-page .custom-view')).toHaveCount(6);
   await expect(page.locator('.overview-page .layout-section')).toHaveCount(2);
+  const landingElements = page.locator('[data-section-id="control-plane-health"] > .custom-view-grid > .custom-view');
+  await expect(landingElements).toHaveCount(4);
+  await expect(landingElements.nth(0)).toHaveClass(/control-plane-status/);
+  await expect(landingElements.nth(1)).toHaveClass(/package-aic-utilization/);
+  await expect(landingElements.nth(2)).toHaveAttribute('data-view-layout', 'half');
+  await expect(landingElements.nth(3)).toHaveAttribute('data-view-layout', 'half');
   await expect(page.getByRole('heading', { name: 'Attention required', level: 3 })).toBeVisible();
   await expect(page.locator('.control-plane-status')).toHaveClass(/control-plane-critical/);
   await expect(page.locator('.control-plane-vitals')).toContainText('2 repositories');

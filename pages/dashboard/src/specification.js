@@ -16,7 +16,14 @@ export const CUSTOM_PAGE_KEYS = ['id', 'kind', 'title', 'description', 'icon', '
 export const VIEW_KEYS = ['id', 'title', 'description', 'data', 'mark', 'element', 'chart', 'layout', 'disclosure', 'encoding'];
 export const VIEW_DATA_KEYS = ['source', 'sources', 'scope', 'time', 'filters', 'limit', 'order-by', 'source-metadata'];
 export const VIEW_MARK_VALUES = ['metric', 'table', 'chart', 'element'];
-export const VIEW_ELEMENT_VALUES = ['operational-overview', 'package-activity', 'workflow-topology'];
+export const VIEW_ELEMENT_VALUES = [
+  'control-plane-status',
+  'package-aic-utilization',
+  'attention-panel',
+  'managed-packages',
+  'package-activity',
+  'workflow-topology'
+];
 export const VIEW_CHART_VALUES = ['bar', 'line', 'pie'];
 export const VIEW_LAYOUT_VALUES = ['full', 'half', 'third'];
 export const VIEW_DISCLOSURE_VALUES = ['essential', 'supplemental'];
