@@ -1984,6 +1984,7 @@ dashboard:
         - id: topology
           data:
             source: workflows
+            limit: 1
           mark: element
           element: unknown-topology
           encoding: {}
@@ -1995,6 +1996,15 @@ dashboard:
             columns:
               - field: run-conclusion
                 display: badge
+        - id: run-count
+          data:
+            source: runs
+          mark: metric
+          encoding:
+            value:
+              field: run
+              aggregate: count
+              display: status
 `);
 
     expect(result.ok).toBe(false);
@@ -2003,9 +2013,11 @@ dashboard:
         expect.objectContaining({ code: 'DLS-E005', path: '$.dashboard.pages[0].icon' }),
         expect.objectContaining({ code: 'DLS-E005', path: '$.dashboard.pages[0].views[0].element' }),
         expect.objectContaining({ code: 'DLS-E003', path: '$.dashboard.pages[0].views[0].data.source' }),
+        expect.objectContaining({ code: 'DLS-E003', path: '$.dashboard.pages[0].views[0].data.limit' }),
         expect.objectContaining({ code: 'DLS-E003', path: '$.dashboard.pages[0].views[0].encoding' }),
         expect.objectContaining({ code: 'DLS-E003', path: '$.dashboard.pages[0].views[1].data.sources' }),
-        expect.objectContaining({ code: 'DLS-E005', path: '$.dashboard.pages[0].views[1].encoding.columns[0].display' })
+        expect.objectContaining({ code: 'DLS-E005', path: '$.dashboard.pages[0].views[1].encoding.columns[0].display' }),
+        expect.objectContaining({ code: 'DLS-E003', path: '$.dashboard.pages[0].views[2].encoding.value.display' })
       ]));
     }
   });

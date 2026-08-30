@@ -575,8 +575,15 @@ function validateBuiltInPageDefinition(pageName, definition, path, errors) {
       continue;
     }
 
+    const viewPath = `${path}.definition.views[${index}]`;
+    if (view.element !== undefined && view.mark !== 'element') {
+      errors.push(createError(
+        ERROR_CODES.missingOrInvalidRequiredField,
+        'element is allowed only when mark is "element".',
+        `${viewPath}.element`
+      ));
+    }
     if (view.mark === 'element') {
-      const viewPath = `${path}.definition.views[${index}]`;
       if (typeof view.element !== 'string' || !VIEW_ELEMENT_VALUES.includes(view.element)) {
         errors.push(createError(
           ERROR_CODES.nonCanonicalVocabularyOrIdentifier,
@@ -592,6 +599,21 @@ function validateBuiltInPageDefinition(pageName, definition, path, errors) {
         ));
         continue;
       }
+      if (data.source !== undefined) {
+        errors.push(createError(
+          ERROR_CODES.missingOrInvalidRequiredField,
+          'element views must use data.sources instead of data.source.',
+          `${viewPath}.data.source`
+        ));
+      }
+      if (view.encoding !== undefined) {
+        errors.push(createError(
+          ERROR_CODES.missingOrInvalidRequiredField,
+          'element views must not declare encoding.',
+          `${viewPath}.encoding`
+        ));
+      }
+      const seenSources = new Set();
       for (const sourceName of data.sources) {
         if (typeof sourceName !== 'string' || !SOURCE_VALUES.includes(sourceName)) {
           errors.push(createError(
@@ -601,6 +623,14 @@ function validateBuiltInPageDefinition(pageName, definition, path, errors) {
           ));
           continue;
         }
+        if (seenSources.has(sourceName)) {
+          errors.push(createError(
+            ERROR_CODES.missingOrInvalidRequiredField,
+            'sources must not contain duplicate source names.',
+            `${viewPath}.data.sources`
+          ));
+        }
+        seenSources.add(sourceName);
         sourceFieldCoverage.set(sourceName, new Set(getBuiltInRequiredFields(pageName, sourceName)));
       }
       continue;
@@ -1012,6 +1042,15 @@ function validateView(view, viewNode, path, viewIds, errors) {
           'element views must use data.sources instead of data.source.',
           `${path}.data.source`
         ));
+      }
+      for (const key of ['limit', 'order-by', 'source-metadata']) {
+        if (view.data[key] !== undefined) {
+          errors.push(createError(
+            ERROR_CODES.missingOrInvalidRequiredField,
+            `element views must not declare data.${key}.`,
+            `${path}.data.${key}`
+          ));
+        }
       }
     } else {
       validateSource(view.data.source, `${path}.data.source`, errors);
@@ -1537,6 +1576,18 @@ function validateEncoding(encodingNode, encoding, mark, chart, sourceName, data,
   /** @type {Map<string, string>} */
   const aggregateOutputIds = new Map();
   const markValue = typeof mark === 'string' ? mark : null;
+  const displayForbiddenChannels = markValue === 'table'
+    ? ['href']
+    : ['value', 'x', 'y', 'color', 'href'];
+  for (const channel of displayForbiddenChannels) {
+    if (isPlainObject(encoding[channel]) && encoding[channel].display !== undefined) {
+      errors.push(createError(
+        ERROR_CODES.missingOrInvalidRequiredField,
+        'display is allowed only on table column field definitions.',
+        `${viewPath}.encoding.${channel}.display`
+      ));
+    }
+  }
 
   if (markValue === 'metric') {
     validateMetricEncoding(encodingNode, encoding, sourceName, `${viewPath}.encoding`, aggregateOutputIds, errors);

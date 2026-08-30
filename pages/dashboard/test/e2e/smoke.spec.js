@@ -268,8 +268,8 @@ test('DLS-PAGE-002 DLS-PAGE-014 built-in overview page renders the report-style 
   await expect(page.getByRole('heading', { name: 'Built In Overview Render' })).toBeVisible();
   await expect(page.getByRole('heading', { name: 'Overview', exact: true, level: 2 })).toBeVisible();
   await expect(page.locator('.overview-page')).toHaveAttribute('data-page-kind', 'custom');
-  await expect(page.locator('.overview-page .custom-view')).toHaveCount(2);
-  await expect(page.locator('.overview-page .layout-section')).toHaveCount(1);
+  await expect(page.locator('.overview-page .custom-view')).toHaveCount(3);
+  await expect(page.locator('.overview-page .layout-section')).toHaveCount(2);
   await expect(page.getByRole('heading', { name: 'Attention required', level: 3 })).toBeVisible();
   await expect(page.locator('.control-plane-status')).toHaveClass(/control-plane-critical/);
   await expect(page.locator('.control-plane-vitals')).toContainText('2 repositories');

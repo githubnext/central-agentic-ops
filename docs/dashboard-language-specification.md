@@ -475,7 +475,7 @@ Allowed encoding channels are `value`, `columns`, `x`, `y`, `color`, and `href`.
 
 Field `type` values are `nominal`, `ordinal`, `quantitative`, and `temporal`. When omitted, type defaults to the intrinsic field type. A field title defaults to its kebab-case field name with words capitalized.
 
-The optional field `display` is `text`, `status`, `mode`, or `active-state` and defaults to `text`. It selects presentation independently from the field name. Named UI element values are `operational-overview`, `package-activity`, and `workflow-topology`; presenters dispatch these values without inferring behavior from page IDs, view IDs, or source contents.
+The optional table-column field `display` is `text`, `status`, `mode`, or `active-state` and defaults to `text`. It selects presentation independently from the field name. Named UI element values are `operational-overview`, `package-activity`, and `workflow-topology`; presenters dispatch these values without inferring behavior from page IDs, view IDs, or source contents.
 
 A chart may set `chart` to `line`, `bar`, or `pie`. When `chart` is omitted, temporal `x` has a line time-series default and any other valid chart has a bar default. A line chart uses temporal `x`; a pie chart uses nominal or ordinal `x` for categories and quantitative `y` for values. These known widget types and defaults are semantic; this specification does not define visual styling.
 
@@ -483,11 +483,11 @@ A view may set the structural `layout` hint to `full`, `half`, or `third`. The v
 
 ### 11.2 Data Narrowing
 
-View `data` contains `source` for `metric`, `table`, and `chart`, or a non-empty unique `sources` sequence for `element`. It may also contain:
+View `data` contains `source` for `metric`, `table`, and `chart`, or a non-empty unique `sources` sequence for `element`. Every view may also contain:
 
 - `scope`, `time`, and `filters` as defined in Section 6;
-- `limit`, a positive integer; and
-- `order-by`, a non-empty sequence of mappings containing `field` and `direction`, where direction is `asc` or `desc`.
+- for `metric`, `table`, and `chart`, `limit`, a positive integer; and
+- for `metric`, `table`, and `chart`, `order-by`, a non-empty sequence of mappings containing `field` and `direction`, where direction is `asc` or `desc`.
 
 An omitted `data` inherits dashboard defaults. Omitted `limit` means no language-level limit. Omitted `order-by` uses the canonical post-aggregation row order defined in Section 7.4 starting directly from its tie-break steps: entity-grain rows order by canonical entity ID ascending, and group-grain rows order by their remaining unaggregated output dimensions, in encoding declaration order, ascending by canonical field value after time bucketing.
 
@@ -515,7 +515,7 @@ Disclosure changes presentation only. It does not change data processing, data s
 - **DLS-VIEW-005:** `chart` **MUST** encode `x` and quantitative `y`, **MAY** encode `color` and `href`, and **MUST NOT** encode `value` or `columns`. Its optional `chart` widget **MUST** be `line`, `bar`, or `pie`; `line` **MUST** use temporal `x`, while `pie` **MUST** use nominal or ordinal `x`.
 - **DLS-VIEW-006:** A `chart` with temporal `x` **MUST** use the line time-series default when its widget is omitted; any other valid `chart` **MUST** use the bar default. An optional `layout` hint **MUST** be `full`, `half`, or `third`, **MUST NOT** change source order, and **MAY** be collapsed by a presenter.
 - **DLS-VIEW-007:** An encoding field **MUST** exist in the selected source and its declared type **MUST** be compatible with its intrinsic type or aggregate output type; when the field is aggregated, the effective output identifier **MUST** be the explicit `as` value or the canonical `<aggregate>-<field>` name, and duplicate identifiers within a view **MUST** be rejected. An `href` field **MUST** have intrinsic type link.
-- **DLS-VIEW-008:** A field definition **MUST** contain `field` and **MAY** contain only `type`, `aggregate`, `time-unit`, `title`, `as`, and `display` in addition; `as` is valid only when `aggregate` is not `none`, and `display` **MUST** be `text`, `status`, `mode`, or `active-state`.
+- **DLS-VIEW-008:** A field definition **MUST** contain `field` and **MAY** contain only `type`, `aggregate`, `time-unit`, `title`, `as`, and `display` in addition; `as` is valid only when `aggregate` is not `none`. `display` is valid only on table columns and **MUST** be `text`, `status`, `mode`, or `active-state`.
 - **DLS-VIEW-009:** `time-unit` **MUST** be used only with a temporal field and **MUST** use an allowed value from Section 7.3.
 - **DLS-VIEW-010:** `data.limit` **MUST** be a positive integer, and `data.order-by.field` **MUST** reference either a source field valid at the post-aggregation output grain or one unique aggregate-output identifier. Ambiguous or invalid order references **MUST** be rejected with `DLS-E010`, and a group-grain output whose canonical post-aggregation row order cannot be totally resolved **MUST** be rejected with `DLS-E010` under **DLS-AGG-011**.
 - **DLS-VIEW-011:** A custom view **MUST NOT** contain scripts, joins, formulas, expressions, templates, plugins, or undeclared transforms.

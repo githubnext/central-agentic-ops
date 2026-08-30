@@ -17,16 +17,16 @@ import { renderWorkflowTopology } from './workflow-topology.js';
  * }} ElementRenderContext
  */
 
-/** @type {Record<string, (context: ElementRenderContext) => HTMLElement>} */
-const ELEMENT_RENDERERS = {
-  'operational-overview': ({ sources }) => renderOperationalOverview(sources),
-  'package-activity': ({ sources, pageId }) => renderPackagesView(sources, pageId),
-  'workflow-topology': ({ pageId, title, sourceNames, sources, contextDetails, headingTag }) => {
+/** @type {Map<string, (context: ElementRenderContext) => HTMLElement>} */
+const ELEMENT_RENDERERS = new Map([
+  ['operational-overview', ({ sources }) => renderOperationalOverview(sources)],
+  ['package-activity', ({ sources, pageId }) => renderPackagesView(sources, pageId)],
+  ['workflow-topology', ({ pageId, title, sourceNames, sources, contextDetails, headingTag }) => {
     const sourceName = sourceNames[0];
     const source = sources[sourceName];
     return renderWorkflowTopology(pageId, title, sourceName, source.rows, source.metadata, contextDetails, headingTag);
-  }
-};
+  }]
+]);
 
 /**
  * @param {string} name
@@ -34,5 +34,5 @@ const ELEMENT_RENDERERS = {
  * @returns {HTMLElement | null}
  */
 export function renderUiElement(name, context) {
-  return ELEMENT_RENDERERS[name]?.(context) ?? null;
+  return ELEMENT_RENDERERS.get(name)?.(context) ?? null;
 }
