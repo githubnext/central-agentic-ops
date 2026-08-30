@@ -635,6 +635,9 @@ test('DLS-VIEW-013 DLS-VIEW-014 DLS-VIEW-015 DLS-SAFE-006 custom views render av
                     color: {
                       field: 'run-conclusion',
                       type: 'nominal'
+                    },
+                    href: {
+                      field: 'run-link'
                     }
                   }
                 },
@@ -743,8 +746,18 @@ test('DLS-VIEW-013 DLS-VIEW-014 DLS-VIEW-015 DLS-SAFE-006 custom views render av
         runs: {
           source: 'runs',
           rows: [
-            { run: '1001', 'started-at': '2026-08-29T10:00:00Z', 'run-conclusion': 'success' },
-            { run: '1002', 'started-at': '2026-08-29T11:00:00Z', 'run-conclusion': 'failure' }
+            {
+              run: '1001',
+              'started-at': '2026-08-29T10:00:00Z',
+              'run-conclusion': 'success',
+              'run-link': { relation: 'run', href: 'https://github.com/github/central-agentic-ops/actions/runs/1001', label: 'Run 1001' }
+            },
+            {
+              run: '1002',
+              'started-at': '2026-08-29T11:00:00Z',
+              'run-conclusion': 'failure',
+              'run-link': { relation: 'run', href: 'https://github.com/github/central-agentic-ops/actions/runs/1002', label: 'Run 1002' }
+            }
           ],
           metadata: {
             'source-id': 'runs-fixture',
@@ -793,11 +806,16 @@ test('DLS-VIEW-013 DLS-VIEW-014 DLS-VIEW-015 DLS-SAFE-006 custom views render av
   await expect(tableSection).not.toContainText('Out of range finding');
 
   await expect(page.getByRole('heading', { name: 'Daily Runs' })).toBeVisible();
-  await expect(page.locator('[data-chart-default="line"]')).toHaveText('Default chart type: line');
-  await expect(page.locator('[data-chart-legend="text"]')).toHaveText('Color categories: failure, success');
+  await expect(page.locator('.chart-default')).toHaveCount(0);
+  await expect(page.locator('[data-chart-legend="text"]')).toHaveCount(0);
   await expect(page.locator('[data-chart-legend="visual"] li')).toHaveCount(2);
   await expect(page.locator('[data-chart-legend="visual"] li span')).toHaveText(['failure', 'success']);
   await expect(page.locator('.custom-chart-table tbody tr')).toHaveCount(2);
+  await expect(page.getByRole('link', { name: 'Run 1001' })).toHaveAttribute(
+    'href',
+    'https://github.com/github/central-agentic-ops/actions/runs/1001'
+  );
+  await expect(page.locator('.page-section').filter({ has: page.getByRole('heading', { name: 'Daily Runs' }) }).locator('.view-source')).toHaveCount(1);
 
   await expect(page.getByRole('heading', { name: 'Empty Usage' })).toBeVisible();
   await expect(page.locator('[data-view-availability="empty"]')).toHaveText('No observations matched the effective context.');
