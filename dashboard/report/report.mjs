@@ -280,6 +280,16 @@ function formatDate(value) {
   }).format(new Date(value));
 }
 
+function formatDuration(milliseconds) {
+  if (!Number.isFinite(milliseconds) || milliseconds < 0) return "Unavailable";
+  const seconds = Math.round(milliseconds / 1000);
+  if (seconds < 60) return `${seconds}s`;
+  const minutes = Math.round(seconds / 60);
+  if (minutes < 60) return `${minutes}m`;
+  const hours = Math.floor(minutes / 60);
+  return `${hours}h ${minutes % 60}m`;
+}
+
 function formatDay(value) {
   if (!value) return "Unknown";
   return new Intl.DateTimeFormat("en", { dateStyle: "medium", timeZone: "UTC" }).format(new Date(value));
@@ -543,10 +553,15 @@ function octiconSprite() {
 
 function layout({ title, description, content, nested = false, navigation = "", configuredMode = "", overviewMode = "", activeSection = "", activeBundle = "" }) {
   const root = nested ? "../" : "./";
-  const stylesheetLink = `<${"link"} rel="stylesheet" href="${root}styles.css">`;
+  const stylesheetLink = `<${"link"} rel="stylesheet" href="${root}styles.css?v=${encodeURIComponent(generatedAt)}">`;
   const packagesHref = `${root}packages/index.html`;
   const overviewCurrent = activeSection === "overview" ? ' aria-current="page"' : "";
+  const runtimeCurrent = activeSection === "runtime" ? ' aria-current="page"' : "";
   const dispatchesCurrent = activeSection === "dispatches" ? ' aria-current="page"' : "";
+  const securityCurrent = activeSection === "security" ? ' aria-current="page"' : "";
+  const valueCurrent = activeSection === "value" ? ' aria-current="page"' : "";
+  const costCurrent = activeSection === "cost" ? ' aria-current="page"' : "";
+  const workflowsCurrent = activeSection === "workflows" ? ' aria-current="page"' : "";
   const repositoriesCurrent = activeSection === "repositories" ? ' aria-current="page"' : "";
   const packagesCurrent = activeSection === "packages" || activeBundle ? ' aria-current="page"' : "";
   const freshness = `<time class="freshness" datetime="${escapeHtml(generatedAt)}">Last updated ${escapeHtml(formatDate(generatedAt))}</time>`;
@@ -572,8 +587,16 @@ function layout({ title, description, content, nested = false, navigation = "", 
     <aside class="org-sidebar" aria-label="Central Agentic Ops navigation">
       <a class="sidebar-brand" href="${root}">${agenticWorkflowMark()}<span>${escapeHtml(repo)}</span></a>
       <nav class="primary-nav" aria-label="Primary">
+        <span class="nav-section-label">Attention</span>
         <a href="${root}"${overviewCurrent}>${octicon("server")}<span>Overview</span></a>
+        <span class="nav-section-label">Investigate</span>
+        <a href="${root}runtime/"${runtimeCurrent}>${octicon("play")}<span>Runtime</span></a>
+        <a href="${root}security/"${securityCurrent}>${octicon("shield")}<span>Security</span></a>
+        <a href="${root}value/"${valueCurrent}>${octicon("beaker")}<span>Value</span></a>
+        <a href="${root}cost/"${costCurrent}>${octicon("meter")}<span>Cost</span></a>
+        <span class="nav-section-label">Explore</span>
         <a href="${root}dispatches/"${dispatchesCurrent}>${octicon("workflow")}<span>Dispatches</span></a>
+        <a href="${root}workflows/"${workflowsCurrent}>${octicon("codescan")}<span>Workflows</span></a>
         <a href="${root}repositories/"${repositoriesCurrent}>${octicon("repo")}<span>Repositories</span></a>
         <a href="${packagesHref}"${packagesCurrent}>${octicon("package")}<span>Packages</span></a>
       </nav>
@@ -1007,6 +1030,14 @@ function configuredDashboardScope() {
   ].map((value) => value.trim()).filter(Boolean))].sort();
   const repositoryScopeEnabled = deployedInventory.repositoryScope === "allowlist" || configuredRepositories.length > 0;
   if (repositoryScopeEnabled) {
+    if (configuredRepositories.length === 1) {
+      return {
+        label: configuredRepositories[0],
+        description: `the configured ${configuredRepositories[0]} repository`,
+        title: `Repository allowlist: ${configuredRepositories[0]}`,
+        repositories: configuredRepositories,
+      };
+    }
     const organizations = [...new Set(configuredRepositories.map((repositoryName) => repositoryName.split("/")[0]))].sort();
     const organizationList = organizations.length > 1
       ? `${organizations.slice(0, -1).join(", ")} and ${organizations.at(-1)}`
@@ -1032,24 +1063,60 @@ const dashboardScope = configuredDashboardScope();
 await writeFile(path.join(outputDirectory, "styles.css"), stylesheet());
 await Promise.all([
   mkdir(path.join(outputDirectory, "coverage"), { recursive: true }),
+  mkdir(path.join(outputDirectory, "cost"), { recursive: true }),
   mkdir(path.join(outputDirectory, "dispatches"), { recursive: true }),
   mkdir(path.join(outputDirectory, "repositories"), { recursive: true }),
   mkdir(path.join(outputDirectory, "runs"), { recursive: true }),
+  mkdir(path.join(outputDirectory, "runtime"), { recursive: true }),
+  mkdir(path.join(outputDirectory, "security"), { recursive: true }),
+  mkdir(path.join(outputDirectory, "value"), { recursive: true }),
   mkdir(path.join(outputDirectory, "workflows"), { recursive: true }),
 ]);
 await writeFile(path.join(outputDirectory, "index.html"), layout({
   title: "Overview",
-  description: "Managed packages, execution health, and items requiring attention.",
+  description: "Current operational attention across runtime, controls, value, episodes, cost, and evidence.",
   content: deployedWorkflowContent("overview"),
   activeSection: "overview",
 }));
+await writeFile(path.join(outputDirectory, "runtime", "index.html"), layout({
+  title: "Runtime & episodes",
+  description: `Execution failures, approval gates, and exact control-plane episode evidence for ${dashboardScope.description}.`,
+  content: `${workflowAttentionContent(canonicalWorkflows)}${observabilityEpisodesContent(canonicalWorkflows)}`,
+  nested: true,
+  navigation: '<nav aria-label="Report navigation"><div class="shell"><a href="../">Overview</a><span aria-current="page">Runtime & episodes</span></div></nav>',
+  activeSection: "runtime",
+}));
 await writeFile(path.join(outputDirectory, "dispatches", "index.html"), layout({
   title: "Dispatches",
-  description: `Package-worker dispatch activity retained from ${dashboardScope.description}.`,
+  description: `Workflow dispatch events retained from ${dashboardScope.description}.`,
   content: dispatchCatalogContent(canonicalWorkflows),
   nested: true,
   navigation: '<nav aria-label="Report navigation"><div class="shell"><a href="../">Overview</a><span aria-current="page">Dispatches</span></div></nav>',
   activeSection: "dispatches",
+}));
+await writeFile(path.join(outputDirectory, "security", "index.html"), layout({
+  title: "Security & data quality",
+  description: `Operational assurance, warning, and telemetry-integrity signals for ${dashboardScope.description}.`,
+  content: securityAttentionContent(canonicalWorkflows),
+  nested: true,
+  navigation: '<nav aria-label="Report navigation"><div class="shell"><a href="../">Overview</a><span aria-current="page">Security & data quality</span></div></nav>',
+  activeSection: "security",
+}));
+await writeFile(path.join(outputDirectory, "value", "index.html"), layout({
+  title: "Value & outcomes",
+  description: `Outcome, grader, maturity, AI Credit, and experiment-readiness evidence for ${dashboardScope.description}.`,
+  content: valueExperimentContent(),
+  nested: true,
+  navigation: '<nav aria-label="Report navigation"><div class="shell"><a href="../">Overview</a><span aria-current="page">Value & experiments</span></div></nav>',
+  activeSection: "value",
+}));
+await writeFile(path.join(outputDirectory, "cost", "index.html"), layout({
+  title: "Cost & efficiency",
+  description: `Measured AI Credit allocation and efficiency evidence for ${dashboardScope.description}.`,
+  content: costEfficiencyContent(canonicalWorkflows),
+  nested: true,
+  navigation: '<nav aria-label="Report navigation"><div class="shell"><a href="../">Overview</a><span aria-current="page">Cost & efficiency</span></div></nav>',
+  activeSection: "cost",
 }));
 await writeFile(path.join(outputDirectory, "repositories", "index.html"), layout({
   title: "Repositories",
@@ -1060,11 +1127,11 @@ await writeFile(path.join(outputDirectory, "repositories", "index.html"), layout
 }));
 await writeFile(path.join(outputDirectory, "workflows", "index.html"), layout({
   title: "Workflows",
-  description: `Search and inspect repository-owned GitHub Agentic Workflows across ${dashboardScope.description}.`,
+  description: `Inspect central package topology and repository-owned GitHub Agentic Workflows across ${dashboardScope.description}.`,
   content: deployedWorkflowContent("workflows"),
   nested: true,
   navigation: '<nav aria-label="Report navigation"><div class="shell"><a href="../repositories/">Repositories</a><span aria-current="page">All workflows</span></div></nav>',
-  activeSection: "repositories",
+  activeSection: "workflows",
 }));
 await Promise.all([
   ["all", "index.html", "Runs"],
@@ -1119,11 +1186,6 @@ function deployedWorkflowContent(view) {
   </tr>`;
   }).join("\n");
   const scope = overviewScopeContent(coverage, healthLabel, spend);
-  const controlPlane = controlPlaneStatusContent(workflows, coverage, repositories, health, healthLabel, spend);
-  const priorities = `<div class="overview-priority-grid">
-    ${attentionContent(workflows, repositories, health, spend)}
-    ${operationPortfolioContent()}
-  </div>`;
   const workflowCatalogHref = view === "repositories" ? "../workflows/" : "workflows/";
   const repositoryView = `${scope}
   ${contributionSpendContent(spend, repositoryLinkPrefix)}
@@ -1197,9 +1259,9 @@ function deployedWorkflowContent(view) {
   })();
   </script>`;
   if (view === "repositories") return repositoryView;
-  if (view === "workflows") return workflowCatalog;
+  if (view === "workflows") return `${workflowTopologyContent(workflows)}${workflowCatalog}`;
   if (view === "coverage") return coverageDiagnosticsContent(spend);
-  return `${controlPlane}${priorities}`;
+  return overviewObservabilityContent(workflows, health);
 }
 
 function overviewScopeContent(coverage, healthLabel, spend) {
@@ -1319,30 +1381,651 @@ function coverageDiagnostics(spend) {
   return diagnostics;
 }
 
-function attentionContent(workflows, repositories, health, spend) {
-  const disabled = workflows.filter((workflow) => workflow.state.startsWith("disabled"));
-  const failureRepositories = repositories.filter((entry) => entry.health.failed > 0);
-  const dataGaps = coverageDiagnostics(spend);
+function securityAttentionContent(workflows) {
+  const health = summarizeWorkflowHealth(workflows);
+  const inventoryGapCount = bundleDefinitions.reduce((total, bundle) => total + (bundle.compiled ? 0 : 1) + bundle.missingWorkers.length, 0);
+  const warningRecords = reportRecords.filter((record) => record.warning);
   const items = [];
-  if (health.failed > 0) items.push(`<li class="attention-action attention-critical"><a class="attention-item-link" href="runs/failed.html">${octicon("issue")}<div><strong>${formatCount(health.failed)} failed runs</strong><span>Across ${formatCount(failureRepositories.length)} repositor${failureRepositories.length === 1 ? "y" : "ies"} in the current window</span></div></a></li>`);
-  if (health.actionRequired > 0) items.push(`<li class="attention-action"><a class="attention-item-link" href="runs/action-required.html">${octicon("shield")}<div><strong>${formatCount(health.actionRequired)} run${health.actionRequired === 1 ? "" : "s"} awaiting approval</strong><span>A maintainer must approve execution in GitHub Actions</span></div></a></li>`);
-  if (disabled.length > 0) items.push(`<li class="attention-action"><a class="attention-item-link" href="workflows/?state=disabled">${octicon("eye")}<div><strong>${formatCount(disabled.length)} disabled workflows</strong><span>Repository-owned workflows not currently active</span></div></a></li>`);
-  if (dataGaps.length > 0) items.push(`<li class="attention-action"><a class="attention-item-link" href="coverage/">${octicon("codescan")}<div><strong>Coverage needs context</strong><span>${escapeHtml(dataGaps.map((gap) => gap.title.toLowerCase()).join("; "))}</span></div></a></li>`);
-  if (items.length === 0) items.push(`<li>${octicon("check-circle")}<div><strong>No immediate attention items</strong><span>No failures, approval-gated runs, disabled workflows, or coverage gaps observed</span></div></li>`);
-  return `<section class="attention-panel" aria-labelledby="attention-heading"><header><div><span class="scope-kicker">Act now</span><h2 id="attention-heading">Needs attention</h2></div><strong>${formatCount(items.length)}</strong></header><ul>${items.join("")}</ul></section>`;
+  for (const workflow of workflows.filter((candidate) => (candidate.runHealth?.actionRequired || 0) > 0)) {
+    items.push({
+      priority: 1,
+      count: workflow.runHealth.actionRequired,
+      className: "signal-action",
+      icon: "shield",
+      kind: "Approval gate",
+      title: workflow.name,
+      detail: `${formatCount(workflow.runHealth.actionRequired)} run${workflow.runHealth.actionRequired === 1 ? "" : "s"} require maintainer approval`,
+      evidence: "Execution control",
+      href: "../runs/action-required.html",
+    });
+  }
+  for (const bundle of bundleDefinitions.filter((candidate) => !candidate.compiled || candidate.missingWorkers.length > 0)) {
+    const count = (bundle.compiled ? 0 : 1) + bundle.missingWorkers.length;
+    items.push({
+      priority: 2,
+      count,
+      className: "signal-informational",
+      icon: "package",
+      kind: "Package integrity",
+      title: bundle.name,
+      detail: `${formatCount(count)} missing compiled or worker definition${count === 1 ? "" : "s"}`,
+      evidence: "Inventory gap",
+      href: `../packages/${bundle.id}.html`,
+    });
+  }
+  const warningsByWorkflow = new Map();
+  for (const record of warningRecords) {
+    const key = `${record.runtimeRepository}:${record.workflowPath || record.workflow}`;
+    const group = warningsByWorkflow.get(key) || { name: record.workflow, records: [] };
+    group.records.push(record);
+    warningsByWorkflow.set(key, group);
+  }
+  for (const group of warningsByWorkflow.values()) {
+    const latest = group.records.toSorted((left, right) => Date.parse(right.updatedAt || "") - Date.parse(left.updatedAt || ""))[0];
+    items.push({
+      priority: 3,
+      count: group.records.length,
+      className: "signal-warning",
+      icon: "alert",
+      kind: "Authored warning",
+      title: group.name,
+      detail: `${formatCount(group.records.length)} retained output${group.records.length === 1 ? " contains" : "s contain"} an explicit warning block`,
+      evidence: "Output content",
+      href: `../outcomes/${outcomePageName(latest.id)}.html`,
+    });
+  }
+  items.sort((left, right) => left.priority - right.priority || right.count - left.count || left.title.localeCompare(right.title));
+  const rows = items.map((item, index) => `<li class="${item.className}" data-signal-kind="${escapeHtml(item.kind.toLowerCase().replaceAll(" ", "-"))}"><a href="${escapeHtml(item.href)}"><span class="signal-rank" aria-hidden="true">${index + 1}</span><span class="signal-icon">${octicon(item.icon)}</span><span class="signal-copy"><span>${escapeHtml(item.kind)}</span><strong>${escapeHtml(item.title)}</strong><small>${escapeHtml(item.detail)}</small></span><span class="signal-evidence"><strong>${escapeHtml(item.evidence)}</strong><small>View evidence</small></span></a></li>`).join("");
+  return `<section class="domain-attention workflow-attention" aria-labelledby="security-attention-heading">
+    <div class="section-heading"><div><span class="scope-kicker">Operational assurance</span><h2 id="security-attention-heading">Needs attention</h2><p>Execution controls, package integrity, and explicit output warnings.</p></div><strong>${formatCount(items.length)} signal${items.length === 1 ? "" : "s"}</strong></div>
+    <dl class="domain-summary"><div><dt>Approval gates</dt><dd>${formatCount(health.actionRequired)}</dd></div><div><dt>Explicit warnings</dt><dd>${formatCount(warningRecords.length)}</dd></div><div><dt>Package integrity gaps</dt><dd>${formatCount(inventoryGapCount)}</dd></div><div><dt>Vulnerability findings</dt><dd>—</dd></div></dl>
+    <p class="domain-boundary-note">No vulnerability feed is retained. These are operational assurance signals, not vulnerability findings; generic run failures and collection gaps remain in their owning domains.</p>
+    <ol class="workflow-attention-list">${rows || `<li class="signal-clear"><span class="signal-icon">${octicon("check-circle")}</span><span class="signal-copy"><strong>No assurance signals require attention</strong><small>No failures, approvals, coverage gaps, inventory gaps, or explicit warnings were observed.</small></span></li>`}</ol>
+  </section>`;
 }
 
-function operationPortfolioContent() {
-  const cards = bundleDefinitions.map((bundle) => {
-    const mode = configuredModeFor(bundle);
-    const capacity = bundleCapacityWorkflows(bundle).reduce((total, workflow) => total + workflow.maxAiCredits, 0);
-    const warnings = (bundle.compiled ? 0 : 1) + bundle.missingWorkers.length;
-    return `<article class="operation-card">
-      <header><div>${octicon(bundle.id.includes("dependabot") ? "dependabot" : "meter")}<a href="packages/${escapeHtml(bundle.id)}.html">${escapeHtml(bundle.name)}</a></div>${modeIndicator(mode)}</header>
-      <dl><div><dt>Workers</dt><dd>${formatCount(bundle.workers.length)}</dd></div><div><dt>AIC allowance</dt><dd>${formatAic(capacity)}</dd></div><div><dt>Inventory</dt><dd class="${warnings ? "text-attention" : "text-success"}">${warnings ? `${warnings} warning${warnings === 1 ? "" : "s"}` : "Ready"}</dd></div></dl>
+function valueExperimentContent() {
+  const graderRecords = operationalValues.records || [];
+  const selectedRuns = Number.isFinite(operationalValues.selectedRuns) ? operationalValues.selectedRuns : graderRecords.length;
+  const observedRuns = Number.isFinite(operationalValues.observedRuns)
+    ? operationalValues.observedRuns
+    : graderRecords.filter((record) => record.observation).length;
+  const matureRecords = graderRecords.filter((record) => record.observation?.mature === true);
+  const immatureRecords = graderRecords.filter((record) => record.observation && record.observation.mature !== true);
+  const unavailableRecords = graderRecords.filter((record) => record.status !== "pass" || !record.observation || !Number.isFinite(record.value));
+  const comparable = [...valueObservations.values()].flat();
+  const meanValue = comparable.length > 0 ? comparable.reduce((total, record) => total + record.value, 0) / comparable.length : null;
+  const openOutputs = reportRecords.filter((record) => ["open", "available", "published"].includes(record.state));
+  const pendingRegrades = Number.isFinite(operationalValues.pendingRegrades)
+    ? operationalValues.pendingRegrades
+    : graderRecords.filter((record) => record.observation && record.observation.mature !== true && record.regradeError).length;
+  const usageRepositories = aicUsage.repositories || [];
+  const incompleteUsageRepositories = usageRepositories.filter((entry) => entry.available !== true || entry.complete !== true);
+  const items = [];
+  if (selectedRuns === 0) items.push({
+    priority: 1,
+    count: 1,
+    className: "signal-informational",
+    icon: "graph",
+    kind: "Missing grader data",
+    title: "No operational-value grader runs retained",
+    detail: "The current inventory selected no runs for operational-value grading.",
+    evidence: "Value unavailable",
+    href: "../workflows/",
+  });
+  else if (observedRuns < selectedRuns) items.push({
+    priority: 0,
+    count: selectedRuns - observedRuns,
+    className: "signal-critical",
+    icon: "issue",
+    kind: "Grader collection gap",
+    title: "Operational-value results are missing",
+    detail: `${formatCount(observedRuns)} of ${formatCount(selectedRuns)} selected runs produced retained grader observations`,
+    evidence: "Artifact gap",
+    href: "#grader-ledger-heading",
+  });
+  if (unavailableRecords.length > 0) items.push({
+    priority: 0,
+    count: unavailableRecords.length,
+    className: "signal-critical",
+    icon: "issue",
+    kind: "Grader unavailable",
+    title: "Operational-value results could not be used",
+    detail: `${formatCount(unavailableRecords.length)} grader record${unavailableRecords.length === 1 ? " is" : "s are"} unavailable, invalid, or missing an observation`,
+    evidence: "Grader status",
+    href: "#grader-ledger-heading",
+  });
+  if (immatureRecords.length > 0) items.push({
+    priority: 1,
+    count: immatureRecords.length,
+    className: "signal-action",
+    icon: "pulse",
+    kind: "Maturity pending",
+    title: "Outcome evidence is not mature",
+    detail: `${formatCount(immatureRecords.length)} observation${immatureRecords.length === 1 ? " has" : "s have"} not reached its maturity time`,
+    evidence: "Re-evaluation due",
+    href: "#grader-ledger-heading",
+  });
+  if (pendingRegrades > 0) items.push({
+    priority: 1,
+    count: pendingRegrades,
+    className: "signal-action",
+    icon: "play",
+    kind: "Regrade pending",
+    title: "Mature evidence needs re-evaluation",
+    detail: `${formatCount(pendingRegrades)} grader record${pendingRegrades === 1 ? "" : "s"} await deterministic replay`,
+    evidence: operationalValues.regradeAvailable === false ? "Replay unavailable" : "Replay queued",
+    href: "#grader-ledger-heading",
+  });
+  if (usageRepositories.length === 0 || incompleteUsageRepositories.length > 0) items.push({
+    priority: 2,
+    count: Math.max(1, incompleteUsageRepositories.length),
+    className: "signal-informational",
+    icon: "meter",
+    kind: "AIC coverage",
+    title: usageRepositories.length === 0 ? "AI Credit telemetry is unavailable" : "AI Credit telemetry is partial",
+    detail: usageRepositories.length === 0
+      ? "No repository usage coverage records were retained."
+      : `${formatCount(incompleteUsageRepositories.length)} of ${formatCount(usageRepositories.length)} repository coverage records are incomplete`,
+    evidence: "Usage gap",
+    href: "../coverage/",
+  });
+  if (openOutputs.length > 0) items.push({
+    priority: 3,
+    count: openOutputs.length,
+    className: "signal-warning",
+    icon: "issue-opened",
+    kind: "Open output",
+    title: "Durable outputs still need disposition",
+    detail: `${formatCount(openOutputs.length)} of ${formatCount(reportRecords.length)} retained outputs remain open or available`,
+    evidence: "Outcome pending",
+    href: `../outcomes/${outcomePageName(openOutputs[0].id)}.html`,
+  });
+  items.push({
+    priority: 4,
+    count: 1,
+    className: "signal-informational",
+    icon: "beaker",
+    kind: "Experiment readiness",
+    title: "Experiment assignments are not retained",
+    detail: "No authoritative experiment, variant, or assignment feed is available for comparison.",
+    evidence: "Comparison unavailable",
+    href: "#experiment-readiness-heading",
+  });
+  items.sort((left, right) => left.priority - right.priority || right.count - left.count || left.title.localeCompare(right.title));
+  const attentionRows = items.map((item, index) => `<li class="${item.className}" data-signal-kind="${escapeHtml(item.kind.toLowerCase().replaceAll(" ", "-"))}"><a href="${escapeHtml(item.href)}"><span class="signal-rank" aria-hidden="true">${index + 1}</span><span class="signal-icon">${octicon(item.icon)}</span><span class="signal-copy"><span>${escapeHtml(item.kind)}</span><strong>${escapeHtml(item.title)}</strong><small>${escapeHtml(item.detail)}</small></span><span class="signal-evidence"><strong>${escapeHtml(item.evidence)}</strong><small>View evidence</small></span></a></li>`).join("");
+  const valueRows = [...valueObservations.values()].flatMap((observations) => {
+    if (observations.length === 0) return [];
+    const definition = valueWorkflowDefinition(observations.at(-1));
+    const value = observations.reduce((total, record) => total + record.value, 0) / observations.length;
+    const baselines = observations.filter((record) => Number.isFinite(record.baselineValue));
+    const baseline = baselines.length > 0 ? baselines.reduce((total, record) => total + record.baselineValue, 0) / baselines.length : null;
+    const latest = observations.toSorted((left, right) => Date.parse(right.observation.evidenceAt || "") - Date.parse(left.observation.evidenceAt || ""))[0];
+    return [`<tr><th scope="row">${escapeHtml(definition.name)}</th><td>${formatCount(observations.length)}</td><td>${formatCount(observations.filter((record) => record.observation.mature).length)}</td><td>${formatAic(value)}</td><td>${baseline === null ? "—" : formatAic(baseline)}</td><td><time datetime="${escapeHtml(latest.observation.evidenceAt || "")}">${escapeHtml(formatDate(latest.observation.evidenceAt))}</time></td><td><a href="${escapeHtml(latest.runUrl)}">Run ${escapeHtml(latest.runId)}${octicon("external-link")}</a></td></tr>`];
+  }).join("");
+  const graderRows = graderRecords.toSorted((left, right) => Date.parse(right.observation?.evidenceAt || right.run?.createdAt || "") - Date.parse(left.observation?.evidenceAt || left.run?.createdAt || "")).map((record) => {
+    const maturity = !record.observation ? "Unavailable" : record.observation.mature ? "Mature" : "Interim";
+    const statusClassName = record.status === "pass" && Number.isFinite(record.value) ? "status-success" : record.status === "fail" || record.status === "error" ? "status-danger" : "status-attention";
+    return `<tr><th scope="row">${escapeHtml(record.workflowId || "Unknown workflow")}</th><td><span class="status ${statusClassName}">${escapeHtml(record.status || "unavailable")}</span></td><td>${escapeHtml(maturity)}</td><td>${Number.isFinite(record.value) ? formatAic(record.value) : "—"}</td><td>${Number.isFinite(record.baselineValue) ? formatAic(record.baselineValue) : "—"}</td><td>${Number.isFinite(record.deltaFromBaseline) ? formatAic(record.deltaFromBaseline) : "—"}</td><td><code>${record.evaluatorDigest ? escapeHtml(record.evaluatorDigest.slice(0, 12)) : "unavailable"}</code></td><td>${record.runUrl ? `<a href="${escapeHtml(record.runUrl)}">Run ${escapeHtml(record.runId)}${octicon("external-link")}</a>` : "Unavailable"}</td></tr>`;
+  }).join("");
+  return `<section class="domain-attention workflow-attention" aria-labelledby="value-attention-heading">
+    <div class="section-heading"><div><span class="scope-kicker">Outcome operations</span><h2 id="value-attention-heading">Needs attention</h2><p>Grader collection, maturity, re-evaluation, usage coverage, output disposition, and experiment readiness.</p></div><strong>${formatCount(items.length)} signal${items.length === 1 ? "" : "s"}</strong></div>
+    <dl class="domain-summary"><div><dt>Grader coverage</dt><dd>${formatCount(observedRuns)} / ${formatCount(selectedRuns)}</dd></div><div><dt>Mature evidence</dt><dd>${formatCount(matureRecords.length)}</dd></div><div><dt>Mean operational value</dt><dd>${meanValue === null ? "—" : formatAic(meanValue)}</dd></div><div><dt>Open outputs</dt><dd>${formatCount(openOutputs.length)}</dd></div></dl>
+    <p class="domain-boundary-note">Operational value is absolute attainment, not proof that a workflow caused an outcome. Missing and null grader results are not scored as zero.</p>
+    <ol class="workflow-attention-list">${attentionRows}</ol>
+  </section>
+  <section class="domain-report" aria-labelledby="operational-value-heading"><div class="section-heading"><div><span class="scope-kicker">Comparable evidence</span><h2 id="operational-value-heading">Operational value by workflow</h2><p>Latest evaluator version only; repeated runs for one opportunity are collapsed.</p></div><strong>${formatCount(comparable.length)} observations</strong></div><div class="table-region" role="region" aria-labelledby="operational-value-heading" tabindex="0"><table><thead><tr><th scope="col">Workflow</th><th scope="col">Opportunities</th><th scope="col">Mature</th><th scope="col">Value</th><th scope="col">Baseline</th><th scope="col">Latest evidence</th><th scope="col">Run</th></tr></thead><tbody>${valueRows || '<tr><td colspan="7">No comparable operational-value observations are available.</td></tr>'}</tbody></table></div></section>
+  <section class="domain-report" aria-labelledby="grader-ledger-heading"><div class="section-heading"><div><span class="scope-kicker">Raw collection state</span><h2 id="grader-ledger-heading">Grader ledger</h2><p>All retained operational-value grader records, including unavailable and interim results.</p></div><strong>${formatCount(graderRecords.length)} records</strong></div><div class="table-region" role="region" aria-labelledby="grader-ledger-heading" tabindex="0"><table><thead><tr><th scope="col">Workflow</th><th scope="col">Status</th><th scope="col">Maturity</th><th scope="col">Value</th><th scope="col">Baseline</th><th scope="col">Delta</th><th scope="col">Evaluator</th><th scope="col">Run</th></tr></thead><tbody>${graderRows || '<tr><td colspan="8">No operational-value grader records were retained.</td></tr>'}</tbody></table></div></section>
+  <section class="domain-readiness" aria-labelledby="experiment-readiness-heading"><div>${octicon("beaker")}<div><span class="scope-kicker">Evidence boundary</span><h2 id="experiment-readiness-heading">Experiment comparisons unavailable</h2></div></div><p>The report does not retain authoritative experiment definitions, variant assignments, or assignment-to-run links. It therefore does not infer control or treatment groups from workflow names, timestamps, models, or outcomes.</p></section>`;
+}
+
+function workflowRunLocator(runUrl = "") {
+  const match = String(runUrl).match(/^https:\/\/github\.com\/([^/]+\/[^/]+)\/actions\/runs\/(\d+)/i);
+  if (!match) return null;
+  return {
+    repository: match[1],
+    runId: Number(match[2]),
+    key: `${match[1].toLowerCase()}:${match[2]}`,
+  };
+}
+
+function workflowRunKey(repositoryName, runId) {
+  return `${String(repositoryName).toLowerCase()}:${runId}`;
+}
+
+function observedEpisodeModel(workflows) {
+  const runIndex = new Map();
+  const workerDispatches = [];
+  const roots = [];
+  for (const workflow of workflows) {
+    const role = workflowRole(workflow);
+    for (const run of workflow.runHealth?.runRecords || []) {
+      const observedRun = {
+        ...run,
+        repository: workflow.repository,
+        workflowName: workflow.name,
+        workflowPath: workflow.path,
+        role,
+      };
+      runIndex.set(workflowRunKey(workflow.repository, run.runId), observedRun);
+      if (role === "orchestrator") roots.push(observedRun);
+      if (role === "worker" && run.event === "workflow_dispatch") workerDispatches.push(observedRun);
+    }
+  }
+
+  const outputsByCorrelation = new Map();
+  for (const record of reportRecords) {
+    if (!record.correlationId) continue;
+    const outputs = outputsByCorrelation.get(record.correlationId) || [];
+    outputs.push(record);
+    outputsByCorrelation.set(record.correlationId, outputs);
+  }
+
+  const episodes = roots.map((rootRun) => {
+    const hasRunNumber = rootRun.runNumber !== undefined && rootRun.runNumber !== null && rootRun.runNumber !== "";
+    const correlationId = hasRunNumber ? `${rootRun.runId}-${rootRun.runNumber}` : "";
+    const outputs = [...(outputsByCorrelation.get(correlationId) || [])]
+      .sort((left, right) => Date.parse(left.createdAt || "") - Date.parse(right.createdAt || ""));
+    const packageName = workflowOperationMemberships(rootRun)[0] || rootRun.workflowName;
+    const attemptsByRun = new Map();
+    for (const output of outputs) {
+      const locator = workflowRunLocator(output.runUrl);
+      if (!locator) continue;
+      const observedRun = runIndex.get(locator.key);
+      const producerWorkflow = canonicalWorkflowByKey.get(valueWorkflowKey(output.runtimeRepository, output.workflowPath));
+      const producerRole = observedRun?.role || (producerWorkflow ? workflowRole(producerWorkflow) : "unknown");
+      if (producerRole !== "worker") continue;
+      const attempt = attemptsByRun.get(locator.key) || {
+        key: locator.key,
+        repository: locator.repository,
+        runId: locator.runId,
+        workflowName: observedRun?.workflowName || output.workflow,
+        workflowPath: observedRun?.workflowPath || output.workflowPath,
+        result: observedRun?.conclusion || output.conclusion || "unknown",
+        status: observedRun?.status || "unknown",
+        startedAt: observedRun?.startedAt || observedRun?.createdAt || output.createdAt,
+        updatedAt: observedRun?.updatedAt || output.updatedAt,
+        runAttempt: observedRun?.runAttempt,
+        observedRun: Boolean(observedRun),
+        outputs: [],
+      };
+      attempt.outputs.push(output);
+      attemptsByRun.set(locator.key, attempt);
+    }
+    const attempts = [...attemptsByRun.values()].map((attempt) => {
+      const targets = [...new Set(attempt.outputs.map((output) => output.repository).filter(Boolean))];
+      const measuredAic = attempt.outputs.filter((output) => Number.isFinite(output.aic)).map((output) => output.aic);
+      return {
+        ...attempt,
+        targets,
+        aic: measuredAic.length > 0 ? Math.max(...measuredAic) : null,
+        noAction: attempt.outputs.length > 0 && attempt.outputs.every((output) => output.kind === "noop"),
+      };
+    });
+    const targets = [...new Set(outputs.map((output) => output.repository).filter(Boolean))];
+    const endCandidates = [rootRun.updatedAt, ...attempts.filter((attempt) => attempt.observedRun).map((attempt) => attempt.updatedAt)]
+      .map((value) => Date.parse(value || "")).filter(Number.isFinite);
+    const startedAt = rootRun.startedAt || rootRun.createdAt;
+    const endAt = endCandidates.length > 0 ? new Date(Math.max(...endCandidates)).toISOString() : "";
+    const nonNoopOutputs = outputs.filter((output) => output.kind !== "noop").length;
+    return {
+      correlationId,
+      packageName,
+      rootRun,
+      outputs,
+      attempts,
+      targets,
+      nonNoopOutputs,
+      actionableAttempts: attempts.filter((attempt) => attempt.outputs.some((output) => output.kind !== "noop")).length,
+      noActionAttempts: attempts.filter((attempt) => attempt.noAction).length,
+      aic: attempts.reduce((total, attempt) => total + (attempt.aic || 0), 0),
+      startedAt,
+      endAt,
+      duration: endAt && startedAt ? Date.parse(endAt) - Date.parse(startedAt) : null,
+      evidence: !correlationId ? "Identity unavailable" : attempts.length > 0 ? "Correlated outputs" : outputs.length > 0 ? "Outputs only" : "Root only",
+    };
+  }).sort((left, right) => Date.parse(right.rootRun.createdAt || "") - Date.parse(left.rootRun.createdAt || ""));
+
+  const linkedDispatchKeys = new Set(episodes.flatMap((episode) => episode.attempts
+    .filter((attempt) => runIndex.get(attempt.key)?.event === "workflow_dispatch")
+    .map((attempt) => attempt.key)));
+  const attributedAttempts = episodes.flatMap((episode) => episode.attempts);
+  const repeatedPairs = new Map();
+  for (const episode of episodes) {
+    for (const attempt of episode.attempts) {
+      for (const target of attempt.targets) {
+        const pair = `${episode.packageName}\u0000${attempt.workflowPath || attempt.workflowName}\u0000${target}`;
+        repeatedPairs.set(pair, (repeatedPairs.get(pair) || 0) + 1);
+      }
+    }
+  }
+  return {
+    episodes,
+    workerDispatches,
+    attributedDispatches: linkedDispatchKeys.size,
+    unattributedDispatches: workerDispatches.filter((run) => !linkedDispatchKeys.has(workflowRunKey(run.repository, run.runId))),
+    attributedAttempts,
+    repeatedExecutions: [...repeatedPairs.values()].reduce((total, count) => total + Math.max(0, count - 1), 0),
+    noActionAttempts: attributedAttempts.filter((attempt) => attempt.noAction).length,
+  };
+}
+
+function episodeResultStatus(run) {
+  const result = run.conclusion || run.result;
+  if (["failure", "startup_failure", "timed_out"].includes(result)) return "status-danger";
+  if (result === "action_required") return "status-attention";
+  if (result === "success") return "status-success";
+  return "status-muted";
+}
+
+function overviewObservabilityContent(workflows, health) {
+  const model = observedEpisodeModel(workflows);
+  const rootFailures = model.episodes.filter((episode) => ["failure", "startup_failure", "timed_out"].includes(episode.rootRun.conclusion)).length;
+  const rootOnlyEpisodes = model.episodes.filter((episode) => episode.evidence === "Root only" || episode.evidence === "Identity unavailable").length;
+  const warningOutputs = reportRecords.filter((record) => record.warning).length;
+  const openOutputs = reportRecords.filter((record) => ["open", "available", "published"].includes(record.state)).length;
+  const repositoryNames = new Set([
+    ...workflows.map((workflow) => workflow.repository),
+    ...reportRecords.map((record) => record.repository),
+  ]);
+  const spend = contributionSpendFor(repositoryNames);
+  const dataGaps = coverageDiagnostics(spend);
+  const inventoryGaps = bundleDefinitions.reduce((total, bundle) => total + (bundle.compiled ? 0 : 1) + bundle.missingWorkers.length, 0);
+  const evidenceGaps = dataGaps.length + inventoryGaps + rootOnlyEpisodes + model.unattributedDispatches.length;
+  const selectedValueRuns = Number.isFinite(operationalValues.selectedRuns) ? operationalValues.selectedRuns : operationalValues.records.length;
+  const observedValueRuns = Number.isFinite(operationalValues.observedRuns)
+    ? operationalValues.observedRuns
+    : operationalValues.records.filter((record) => record.observation).length;
+  const comparableValues = [...valueObservations.values()].flat();
+  const meanValue = comparableValues.length > 0
+    ? comparableValues.reduce((total, record) => total + record.value, 0) / comparableValues.length
+    : null;
+  const valueAttentionRequired = observedValueRuns < selectedValueRuns
+    || operationalValues.records.some((record) => record.status !== "pass" || !record.observation || record.observation.mature !== true)
+    || openOutputs > 0;
+  const securitySignals = health.actionRequired + warningOutputs + inventoryGaps;
+  const domains = [
+    {
+      order: 0,
+      priority: health.failed > 0 ? 0 : health.actionRequired > 0 ? 1 : deployedInventory.runHealth?.available ? 2 : 3,
+      state: health.failed > 0 ? "Act now" : health.actionRequired > 0 ? "Investigate" : deployedInventory.runHealth?.available ? "Monitor" : "Unavailable",
+      className: health.failed > 0 ? "attention-domain-critical" : health.actionRequired > 0 ? "attention-domain-investigate" : deployedInventory.runHealth?.available ? "attention-domain-monitor" : "attention-domain-unavailable",
+      icon: health.failed > 0 ? "issue" : "check-circle",
+      label: "Runtime health",
+      value: deployedInventory.runHealth?.available ? `${formatCount(health.failed)} failed` : "Not observed",
+      detail: deployedInventory.runHealth?.available
+        ? `${formatCount(health.successful)} of ${formatCount(health.runs)} runs succeeded · ${formatCount(health.actionRequired)} approval gates`
+        : "Actions run telemetry is unavailable.",
+      href: "runtime/",
+    },
+    {
+      order: 1,
+      priority: health.actionRequired > 0 || warningOutputs > 0 ? 1 : 3,
+      state: health.actionRequired > 0 || warningOutputs > 0 ? "Investigate" : "Unavailable",
+      className: health.actionRequired > 0 || warningOutputs > 0 ? "attention-domain-investigate" : "attention-domain-unavailable",
+      icon: "shield",
+      label: "Security & controls",
+      value: `${formatCount(securitySignals)} signals`,
+      detail: `No vulnerability feed · ${formatCount(health.actionRequired)} approval gates · ${formatCount(warningOutputs)} explicit warnings · ${formatCount(inventoryGaps)} integrity gaps`,
+      href: "security/",
+    },
+    {
+      order: 3,
+      priority: rootFailures > 0 ? 0 : rootOnlyEpisodes > 0 || model.unattributedDispatches.length > 0 ? 1 : 2,
+      state: rootFailures > 0 ? "Act now" : rootOnlyEpisodes > 0 || model.unattributedDispatches.length > 0 ? "Investigate" : "Monitor",
+      className: rootFailures > 0 ? "attention-domain-critical" : rootOnlyEpisodes > 0 || model.unattributedDispatches.length > 0 ? "attention-domain-investigate" : "attention-domain-monitor",
+      icon: "workflow",
+      label: "Episodes & autonomy",
+      value: `${formatCount(model.episodes.length)} observed`,
+      detail: `${formatCount(model.attributedDispatches)} of ${formatCount(model.workerDispatches.length)} worker dispatches attributed · ${formatCount(rootFailures)} root failure${rootFailures === 1 ? "" : "s"}`,
+      href: "runtime/#episode-observatory-heading",
+    },
+    {
+      order: 2,
+      priority: valueAttentionRequired ? 1 : 3,
+      state: valueAttentionRequired ? "Investigate" : "Unavailable",
+      className: valueAttentionRequired ? "attention-domain-investigate" : "attention-domain-unavailable",
+      icon: "beaker",
+      label: "Value & outcomes",
+      value: "Threshold unavailable",
+      detail: `${formatCount(observedValueRuns)} of ${formatCount(selectedValueRuns)} grader observations${meanValue === null ? "" : ` · mean value ${formatAic(meanValue)}`} · ${formatCount(openOutputs)} open outputs`,
+      href: "value/",
+    },
+    {
+      order: 4,
+      priority: !spend.available || !spend.complete ? 1 : 3,
+      state: !spend.available || !spend.complete ? "Investigate" : "Unavailable",
+      className: !spend.available || !spend.complete ? "attention-domain-investigate" : "attention-domain-unavailable",
+      icon: "meter",
+      label: "Cost & efficiency",
+      value: spend.available ? `${formatAic(spend.total)} AIC` : "Not observed",
+      detail: spend.available
+        ? `${formatCount(spend.reportedRuns)} measured runs · monthly budget verdict unavailable`
+        : "AI Credit usage telemetry is unavailable.",
+      href: "cost/",
+    },
+    {
+      order: 5,
+      priority: evidenceGaps > 0 ? 1 : 2,
+      state: evidenceGaps > 0 ? "Investigate" : "Monitor",
+      className: evidenceGaps > 0 ? "attention-domain-investigate" : "attention-domain-monitor",
+      icon: "codescan",
+      label: "Evidence quality",
+      value: `${formatCount(evidenceGaps)} gaps`,
+      detail: `${formatCount(dataGaps.length + inventoryGaps)} collection or inventory gaps · ${formatCount(rootOnlyEpisodes + model.unattributedDispatches.length)} attribution gaps`,
+      href: "coverage/",
+    },
+  ].sort((left, right) => left.priority - right.priority || left.order - right.order);
+  const cardMarkup = domains.map((domain) => `<a class="attention-domain-card ${domain.className}" href="${escapeHtml(domain.href)}">
+    <header><span class="attention-domain-icon">${octicon(domain.icon)}</span><strong>${escapeHtml(domain.label)}</strong><span class="attention-domain-state">${escapeHtml(domain.state)}</span></header>
+    <span class="attention-domain-value">${escapeHtml(domain.value)}</span><p>${escapeHtml(domain.detail)}</p><footer>Open evidence${octicon("arrow-right")}</footer>
+  </a>`).join("");
+  return `<section class="overview-observability" aria-labelledby="overview-observability-heading">
+    <div class="section-heading"><div><span class="scope-kicker">Current decision window</span><h2 id="overview-observability-heading">Attention by domain</h2><p>Ordered by urgency. Each state names only what retained evidence and configured policy can support.</p></div></div>
+    <div class="attention-domain-grid">${cardMarkup}</div>
+    <p class="overview-method-note"><strong>State key:</strong> Act now is a direct failure; Investigate is a direct control, collection, or attribution signal; Monitor has observations without a direct signal; Unavailable means a required threshold or evidence feed is absent.</p>
+  </section>`;
+}
+
+function workflowAttentionContent(workflows, nested = true) {
+  const model = observedEpisodeModel(workflows);
+  const rootPath = nested ? "../" : "";
+  const signals = [];
+  const addSignal = (signal) => signals.push(signal);
+  for (const episode of model.episodes.filter((candidate) => ["failure", "startup_failure", "timed_out"].includes(candidate.rootRun.conclusion))) {
+    addSignal({
+      priority: 0,
+      count: 1,
+      className: "signal-critical",
+      icon: "issue",
+      kind: "Root failure",
+      title: `${episode.packageName} root episode failed`,
+      detail: `${episode.rootRun.displayTitle || `Run ${episode.rootRun.runId}`} · ${formatDuration(episode.duration)}`,
+      evidence: "1 failed root run",
+      href: `https://github.com/${episode.rootRun.repository}/actions/runs/${episode.rootRun.runId}`,
+      external: true,
+    });
+  }
+  for (const workflow of workflows.filter((candidate) => workflowRole(candidate) !== "orchestrator" && (candidate.runHealth?.failed || 0) > 0)) {
+    const failed = workflow.runHealth.failed;
+    const runs = workflow.runHealth.runs || 0;
+    addSignal({
+      priority: 0,
+      count: failed,
+      className: "signal-critical",
+      icon: "issue",
+      kind: "Run failures",
+      title: workflow.name,
+      detail: `${formatCount(failed)} of ${formatCount(runs)} retained runs failed`,
+      evidence: runs > 0 ? new Intl.NumberFormat("en", { style: "percent", maximumFractionDigits: 1 }).format(failed / runs) : "No denominator",
+      href: `${rootPath}repositories/${repositoryWorkflowPageName(workflow.repository, workflow.path)}-insights.html`,
+    });
+  }
+  for (const workflow of workflows.filter((candidate) => (candidate.runHealth?.actionRequired || 0) > 0)) {
+    const actionRequired = workflow.runHealth.actionRequired;
+    const runs = workflow.runHealth.runs || 0;
+    addSignal({
+      priority: 1,
+      count: actionRequired,
+      className: "signal-action",
+      icon: "shield",
+      kind: "Approval gate",
+      title: workflow.name,
+      detail: `${formatCount(actionRequired)} of ${formatCount(runs)} retained runs require approval`,
+      evidence: "Maintainer action",
+      href: `${rootPath}runs/action-required.html`,
+    });
+  }
+  if (model.unattributedDispatches.length > 0) {
+    addSignal({
+      priority: 2,
+      count: model.unattributedDispatches.length,
+      className: "signal-informational",
+      icon: "codescan",
+      kind: "Evidence gap",
+      title: "Worker attribution incomplete",
+      detail: `${formatCount(model.unattributedDispatches.length)} of ${formatCount(model.workerDispatches.length)} observed dispatches lack exact episode evidence`,
+      evidence: "Causality unknown",
+      href: "#episode-attribution-gap",
+    });
+  }
+  const rootOnlyEpisodes = model.episodes.filter((episode) => episode.evidence === "Root only" || episode.evidence === "Identity unavailable");
+  if (rootOnlyEpisodes.length > 0) {
+    addSignal({
+      priority: 2,
+      count: rootOnlyEpisodes.length,
+      className: "signal-informational",
+      icon: "codescan",
+      kind: "Evidence gap",
+      title: "Episode evidence stops at the root",
+      detail: `${formatCount(rootOnlyEpisodes.length)} of ${formatCount(model.episodes.length)} root episodes have no correlated worker attempt or output`,
+      evidence: "Outcome unavailable",
+      href: "#episode-observatory-heading",
+    });
+  }
+  signals.sort((left, right) => left.priority - right.priority || right.count - left.count || left.title.localeCompare(right.title));
+  const displayedSignals = signals.slice(0, 10);
+  const rows = displayedSignals.map((signal, index) => `<li class="${signal.className}" data-signal-kind="${escapeHtml(signal.kind.toLowerCase().replaceAll(" ", "-"))}">
+    <a href="${escapeHtml(signal.href)}"><span class="signal-rank" aria-hidden="true">${index + 1}</span><span class="signal-icon">${octicon(signal.icon)}</span><span class="signal-copy"><span>${escapeHtml(signal.kind)}</span><strong>${escapeHtml(signal.title)}</strong><small>${escapeHtml(signal.detail)}</small></span><span class="signal-evidence"><strong>${escapeHtml(signal.evidence)}</strong><small>View evidence${signal.external ? octicon("external-link") : ""}</small></span></a>
+  </li>`).join("");
+  return `<section class="workflow-attention" aria-labelledby="workflow-attention-heading">
+    <div class="section-heading"><div><span class="scope-kicker">Runtime triage</span><h2 id="workflow-attention-heading">Needs attention</h2><p>Ranked evidence from execution state and exact episode attribution. No composite score is used.</p></div><strong>${formatCount(signals.length)} signal${signals.length === 1 ? "" : "s"}</strong></div>
+    <div class="anomaly-readiness" role="note"><span>${octicon("pulse")}<strong>Statistical anomalies · not evaluated</strong></span><p>The current window does not provide a representative historical baseline. Direct evidence remains visible without inferred anomaly labels.</p></div>
+    <ol class="workflow-attention-list">${rows || `<li class="signal-clear"><span class="signal-icon">${octicon("check-circle")}</span><span class="signal-copy"><strong>No direct attention signals</strong><small>No failures, approval gates, evidence gaps, warning-bearing outputs, or open outcomes were observed.</small></span></li>`}</ol>
+    ${signals.length > displayedSignals.length ? `<p class="workflow-attention-note">Showing the 10 highest-priority of ${formatCount(signals.length)} direct signals.</p>` : ""}
+    <p class="workflow-attention-note">Order: failures, approval gates, then evidence gaps. Counts are not evidence of waste.</p>
+  </section>`;
+}
+
+function episodeExecutionMap(episode) {
+  const episodeStart = Date.parse(episode.startedAt || "");
+  const episodeEnd = Date.parse(episode.endAt || "");
+  const episodeDuration = episodeEnd - episodeStart;
+  if (!Number.isFinite(episodeDuration) || episodeDuration < 0) return `<div class="episode-waterfall episode-waterfall-unavailable"><strong>Execution shape unavailable</strong><span>Lifecycle timestamps were not retained for this episode.</span></div>`;
+  const lanes = [
+    { role: "root", label: episode.rootRun.workflowName, run: episode.rootRun },
+    ...episode.attempts.map((attempt) => ({ role: "worker", label: attempt.workflowName, run: attempt })),
+  ].flatMap((lane) => {
+    const startedAt = Date.parse(lane.run.startedAt || lane.run.createdAt || "");
+    const updatedAt = Date.parse(lane.run.updatedAt || lane.run.createdAt || "");
+    if (!Number.isFinite(startedAt) || !Number.isFinite(updatedAt)) return [];
+    const boundedStart = Math.max(episodeStart, Math.min(startedAt, episodeEnd));
+    const boundedEnd = Math.max(boundedStart, Math.min(updatedAt, episodeEnd));
+    const left = episodeDuration > 0 ? ((boundedStart - episodeStart) / episodeDuration) * 100 : 0;
+    const width = episodeDuration > 0 ? ((boundedEnd - boundedStart) / episodeDuration) * 100 : 100;
+    const result = lane.run.conclusion || lane.run.result || lane.run.status || "unknown";
+    const duration = boundedEnd - boundedStart;
+    return [{ ...lane, left, width, result, duration }];
+  });
+  const rows = lanes.map((lane) => `<li data-lane-role="${lane.role}">
+    <span class="episode-lane-label"><strong>${lane.role}</strong><small>${escapeHtml(lane.label)}</small></span>
+    <span class="episode-lane-track"><i class="${episodeResultStatus(lane.run)}" style="--lane-start:${lane.left.toFixed(3)}%;--lane-size:${lane.width.toFixed(3)}%" title="${escapeHtml(`${lane.role} · ${lane.label} · ${formatDuration(lane.duration)} · ${String(lane.result).replaceAll("_", " ")}`)}"></i></span>
+    <span class="episode-lane-result"><strong>${escapeHtml(formatDuration(lane.duration))}</strong><small>${escapeHtml(String(lane.result).replaceAll("_", " "))}</small></span>
+  </li>`).join("");
+  return `<div class="episode-waterfall">
+    <header><strong>Execution shape</strong><span>Observed intervals only · ${escapeHtml(formatDuration(episodeDuration))} total</span></header>
+    <ol>${rows}</ol>
+    <footer><span>Episode start</span><span>Aligned time</span><span>Episode end</span></footer>
+  </div>`;
+}
+
+function observabilityEpisodesContent(workflows) {
+  const model = observedEpisodeModel(workflows);
+  const displayedEpisodes = model.episodes.slice(0, 12);
+  const episodeRows = displayedEpisodes.map((episode) => {
+    const rootUrl = `https://github.com/${episode.rootRun.repository}/actions/runs/${episode.rootRun.runId}`;
+    const result = episode.rootRun.conclusion || episode.rootRun.status || "unknown";
+    const attempts = episode.attempts.map((attempt) => {
+      const target = attempt.targets.length > 0 ? attempt.targets.join(", ") : "Target unavailable";
+      const attemptLabel = attempt.runAttempt && attempt.runAttempt > 1 ? ` · attempt ${attempt.runAttempt}` : "";
+      return `<li><div><strong>${escapeHtml(attempt.workflowName)}</strong><span>${escapeHtml(target)}</span></div><span class="status ${episodeResultStatus(attempt)}">${escapeHtml(String(attempt.result).replaceAll("_", " "))}</span><a href="https://github.com/${escapeHtml(attempt.repository)}/actions/runs/${escapeHtml(attempt.runId)}">Run ${escapeHtml(attempt.runId)}${escapeHtml(attemptLabel)}${octicon("external-link")}</a></li>`;
+    }).join("");
+    return `<article class="episode-record">
+      <header><div><span class="scope-kicker">${escapeHtml(episode.packageName)}</span><h3><a href="${rootUrl}">${escapeHtml(episode.rootRun.displayTitle || `Run ${episode.rootRun.runId}`)}${octicon("external-link")}</a></h3><p><time datetime="${escapeHtml(episode.rootRun.createdAt || "")}">${escapeHtml(formatDate(episode.rootRun.createdAt))}</time>${episode.correlationId ? ` · correlation <code>${escapeHtml(episode.correlationId)}</code>` : ""}</p></div><span class="status ${episodeResultStatus(episode.rootRun)}">${escapeHtml(String(result).replaceAll("_", " "))}</span></header>
+      <dl class="episode-measures"><div><dt>Episode duration</dt><dd>${escapeHtml(formatDuration(episode.duration))}</dd></div><div><dt>Observed targets</dt><dd>${formatCount(episode.targets.length)}</dd></div><div><dt>Attributed workers</dt><dd>${formatCount(episode.attempts.length)}</dd></div><div><dt>Output yield</dt><dd>${formatCount(episode.actionableAttempts)} / ${formatCount(episode.attempts.length)}</dd></div><div><dt>Measured AIC</dt><dd>${episode.attempts.some((attempt) => attempt.aic !== null) ? formatAic(episode.aic) : "—"}</dd></div></dl>
+      ${episodeExecutionMap(episode)}
+      <div class="episode-execution"><strong>Correlated worker attempts</strong><ul>${attempts || "<li class=\"episode-empty\">No worker run is explicitly attributable from retained evidence.</li>"}</ul></div>
+      <footer><span>Evidence · ${escapeHtml(episode.evidence)}</span><span>${formatCount(episode.noActionAttempts)} no-action attempt${episode.noActionAttempts === 1 ? "" : "s"}</span></footer>
     </article>`;
   }).join("");
-  return `<section class="operation-portfolio" aria-labelledby="operation-portfolio-heading"><header><div><span class="scope-kicker">Control plane</span><h2 id="operation-portfolio-heading">Managed packages</h2></div></header><div class="operation-card-list">${cards || '<p class="empty">No managed packages discovered.</p>'}</div></section>`;
+  const unattributedRows = model.unattributedDispatches.slice(0, 20).map((run) => `<li><a href="https://github.com/${escapeHtml(run.repository)}/actions/runs/${escapeHtml(run.runId)}">${escapeHtml(run.displayTitle || `Run ${run.runId}`)}${octicon("external-link")}</a><span>${escapeHtml(run.workflowName)} · ${escapeHtml(String(run.conclusion || run.status || "unknown").replaceAll("_", " "))}</span></li>`).join("");
+  const coverage = deployedInventory.runHealth || {};
+  return `<section class="episode-observatory" aria-labelledby="episode-observatory-heading">
+    <div class="section-heading"><div><span class="scope-kicker">Observed behavior</span><h2 id="episode-observatory-heading">Execution episodes</h2><p>Root orchestrator runs joined to worker outcomes only through explicit control-plane correlation evidence.</p></div><strong>${coverage.complete ? "Complete" : "Partial"} ${formatCount(coverage.windowHours || 24)}h run window</strong></div>
+    <dl class="episode-vitals"><div><dt>Root episodes</dt><dd>${formatCount(model.episodes.length)}</dd><p>observed orchestrator runs</p></div><div><dt>Worker attribution</dt><dd>${formatCount(model.attributedDispatches)} / ${formatCount(model.workerDispatches.length)}</dd><p>correlated workflow dispatches</p></div><div><dt>Repeated coverage</dt><dd>${formatCount(model.repeatedExecutions)}</dd><p>extra package-worker-target attempts</p></div><div><dt>No-action attempts</dt><dd>${formatCount(model.noActionAttempts)} / ${formatCount(model.attributedAttempts.length)}</dd><p>correlated attempts with only no-op output</p></div></dl>
+    <p class="episode-method-note">Dispatch manifests are not retained, so attribution is partial by construction. Repeated coverage and no-action work are investigation signals, not proof of waste.</p>
+    <div class="episode-list">${episodeRows || '<p class="empty">No orchestrator runs were observed in the current run window.</p>'}</div>
+    <details class="episode-attribution-gap" id="episode-attribution-gap"><summary>${formatCount(model.unattributedDispatches.length)} worker dispatch${model.unattributedDispatches.length === 1 ? "" : "es"} lack episode evidence</summary><p>These runs have no retained safe output carrying an exact root correlation ID. They remain unattributed rather than being grouped by time or name.</p><ul>${unattributedRows || "<li>All observed worker dispatches with retained evidence are attributed.</li>"}</ul>${model.unattributedDispatches.length > 20 ? `<p>Showing 20 of ${formatCount(model.unattributedDispatches.length)} unattributed dispatches.</p>` : ""}</details>
+  </section>`;
+}
+
+function workflowTopologyContent(workflows) {
+  const standaloneByRepository = new Map();
+  for (const workflow of workflows.filter((candidate) => workflowRole(candidate) === "standalone")) {
+    const repositoryWorkflows = standaloneByRepository.get(workflow.repository) || [];
+    repositoryWorkflows.push(workflow);
+    standaloneByRepository.set(workflow.repository, repositoryWorkflows);
+  }
+  const managedWorkflowCount = bundleDefinitions.reduce((total, bundle) => total + bundle.workers.length + 1, 0);
+  const standaloneWorkflowCount = [...standaloneByRepository.values()].reduce((total, repositoryWorkflows) => total + repositoryWorkflows.length, 0);
+  const workflowNode = (workflow, role) => `<div class="workflow-topology-node workflow-topology-node-${role}" data-workflow-role="${role}">
+    ${octicon("workflow")}
+    <a href="../repositories/${escapeHtml(repositoryWorkflowPageName(workflow.repository, workflow.path))}.html"><span><strong>${escapeHtml(workflow.name)}</strong><small>${role}</small></span><code>${escapeHtml(authoredWorkflowPath(workflow.path))}</code></a>
+    <span class="status ${workflow.state === "active" ? "status-success" : workflow.state.startsWith("disabled") ? "status-attention" : "status-muted"}">${escapeHtml(workflow.state.replaceAll("_", " "))}</span>
+  </div>`;
+  const packageCards = bundleDefinitions.map((bundle) => {
+    const definitions = [
+      { name: bundle.name, path: bundle.workflow.replace(/\.md$/, ".lock.yml"), role: "orchestrator" },
+      ...bundle.workers.map((worker) => ({ name: worker.name, path: worker.lockPath, role: "worker" })),
+    ];
+    const packageWorkflows = definitions.map((definition) => canonicalWorkflowByKey.get(valueWorkflowKey(repository, definition.path)) || {
+      repository,
+      path: definition.path,
+      name: definition.name,
+      state: "unknown",
+      role: definition.role,
+    });
+    return `<article class="workflow-package-card">
+      <header><div>${octicon("package")}<div><h4><a href="../packages/${escapeHtml(bundle.id)}.html">${escapeHtml(bundle.name)}</a></h4><p>${formatCount(bundle.workers.length)} worker${bundle.workers.length === 1 ? "" : "s"} · ${escapeHtml(repository)}</p></div></div>${modeIndicator(configuredModeFor(bundle))}</header>
+      <div class="workflow-package-flow">
+        ${workflowNode(packageWorkflows[0], "orchestrator")}
+        <div class="workflow-dispatch-connector" aria-hidden="true"><span>dispatches</span><i></i></div>
+        <div class="workflow-worker-stack">${packageWorkflows.slice(1).map((workflow) => workflowNode(workflow, "worker")).join("") || '<p class="empty">No workers configured.</p>'}</div>
+      </div>
+    </article>`;
+  }).join("");
+  const repositoryCards = [...standaloneByRepository.entries()]
+    .sort(([left], [right]) => left.localeCompare(right))
+    .map(([repositoryName, repositoryWorkflows]) => `<article class="standalone-workflow-group">
+      <header>${octicon("repo")}<h4><a href="../repositories/${escapeHtml(repositoryPageName(repositoryName))}.html">${escapeHtml(repositoryName)}</a></h4><span>${formatCount(repositoryWorkflows.length)} workflow${repositoryWorkflows.length === 1 ? "" : "s"}</span></header>
+      <div>${repositoryWorkflows.sort((left, right) => left.name.localeCompare(right.name)).map((workflow) => workflowNode(workflow, "standalone")).join("")}</div>
+    </article>`).join("");
+  return `<section class="workflow-topology-overview" aria-labelledby="workflow-topology-heading">
+    <div class="section-heading"><div><span class="scope-kicker">Expected structure</span><h2 id="workflow-topology-heading">Definition topology</h2><p>Declared package relationships provide context for observed episodes; they do not assert that a dispatch occurred.</p></div><dl class="workflow-topology-counts"><div><dt>Packages</dt><dd>${formatCount(bundleDefinitions.length)}</dd></div><div><dt>Package workflows</dt><dd>${formatCount(managedWorkflowCount)}</dd></div><div><dt>Standalone workflows</dt><dd>${formatCount(standaloneWorkflowCount)}</dd></div></dl></div>
+    <section class="workflow-topology-plane" aria-labelledby="central-package-workflows-heading"><header><span>01</span><div><span class="scope-kicker">Central execution</span><h3 id="central-package-workflows-heading">Operation packages</h3><p>Each package has one orchestrator and one or more worker workflows in the control repository.</p></div></header><div class="workflow-package-list">${packageCards || '<p class="empty">No operation packages discovered.</p>'}</div></section>
+    <div class="workflow-output-boundary" role="separator" aria-label="Safe-output boundary"><strong>Safe outputs only</strong><i aria-hidden="true"></i></div>
+    <section class="workflow-topology-plane workflow-target-plane" aria-labelledby="standalone-workflows-heading"><header><span>02</span><div><span class="scope-kicker">Target repositories</span><h3 id="standalone-workflows-heading">Standalone workflows</h3><p>Repository-owned workflows run locally and do not belong to a central operation package.</p></div></header><div class="standalone-workflow-list">${repositoryCards || '<p class="empty">No standalone workflows discovered.</p>'}</div></section>
+  </section>`;
 }
 
 function repositoryHealthContent(repositories, available, repositoryLinkPrefix = "repositories/", workflowCatalogHref = "workflows/") {
@@ -1445,12 +2128,18 @@ function dispatchCatalogContent(workflows) {
   const failureConclusions = new Set(["failure", "startup_failure", "timed_out"]);
   const dispatches = workflows.flatMap((workflow) => {
     const packages = workflowOperationMemberships(workflow);
-    if (workflowRole(workflow) !== "worker" || packages.length === 0) return [];
+    const role = workflowRole(workflow);
+    const dispatchType = role === "worker" && packages.length > 0
+      ? "Package worker"
+      : role === "orchestrator" && packages.length > 0
+        ? "Package orchestrator"
+        : "Standalone workflow";
     return (workflow.runHealth?.runRecords || [])
       .filter((run) => run.event === "workflow_dispatch")
       .map((run) => ({
         ...run,
-        packageName: packages.join(", "),
+        packageName: packages.join(", ") || "Not packaged",
+        dispatchType,
         repository: workflow.repository,
         workflowName: workflow.name,
         workflowPath: workflow.path,
@@ -1472,21 +2161,21 @@ function dispatchCatalogContent(workflows) {
           ? "status-success"
           : "status-muted";
     const runTitle = dispatch.displayTitle || `Run ${dispatch.runId}`;
-    const searchText = `${runTitle} ${dispatch.packageName} ${dispatch.workflowName} ${dispatch.repository} ${statusLabel}`.toLowerCase();
-    return `<tr data-dispatch-row data-package="${escapeHtml(dispatch.packageName)}" data-search="${escapeHtml(searchText)}"><th scope="row"><a href="https://github.com/${escapeHtml(dispatch.repository)}/actions/runs/${escapeHtml(dispatch.runId)}"><time datetime="${escapeHtml(dispatch.createdAt || "")}">${escapeHtml(formatDate(dispatch.createdAt))}</time>${octicon("external-link")}</a></th><td>${escapeHtml(dispatch.packageName)}</td><td><a href="../repositories/${escapeHtml(repositoryWorkflowPageName(dispatch.repository, dispatch.workflowPath))}.html">${escapeHtml(dispatch.workflowName)}</a></td><td>${escapeHtml(runTitle)}</td><td><a href="../repositories/${escapeHtml(repositoryPageName(dispatch.repository))}.html">${escapeHtml(dispatch.repository)}</a></td><td><span class="status ${statusClassName}">${escapeHtml(statusLabel.replaceAll("_", " "))}</span></td></tr>`;
+    const searchText = `${runTitle} ${dispatch.dispatchType} ${dispatch.packageName} ${dispatch.workflowName} ${dispatch.repository} ${statusLabel}`.toLowerCase();
+    return `<tr data-dispatch-row data-package="${escapeHtml(dispatch.packageName)}" data-search="${escapeHtml(searchText)}"><th scope="row"><a href="https://github.com/${escapeHtml(dispatch.repository)}/actions/runs/${escapeHtml(dispatch.runId)}"><time datetime="${escapeHtml(dispatch.createdAt || "")}">${escapeHtml(formatDate(dispatch.createdAt))}</time>${octicon("external-link")}</a></th><td>${escapeHtml(dispatch.dispatchType)}</td><td>${escapeHtml(dispatch.packageName)}</td><td><a href="../repositories/${escapeHtml(repositoryWorkflowPageName(dispatch.repository, dispatch.workflowPath))}.html">${escapeHtml(dispatch.workflowName)}</a></td><td>${escapeHtml(runTitle)}</td><td><a href="../repositories/${escapeHtml(repositoryPageName(dispatch.repository))}.html">${escapeHtml(dispatch.repository)}</a></td><td><span class="status ${statusClassName}">${escapeHtml(statusLabel.replaceAll("_", " "))}</span></td></tr>`;
   }).join("\n");
   const health = deployedInventory.runHealth || {};
   const coverage = health.available
     ? `${health.complete ? "Complete" : "Partial"} ${health.windowHours || 24}-hour Actions run window.`
     : "Actions run data is unavailable.";
   return `<section class="dispatch-catalog" aria-labelledby="dispatch-catalog-heading">
-    <div class="section-heading"><div><span class="scope-kicker">Control-plane activity</span><h2 id="dispatch-catalog-heading">Package-worker dispatches</h2><p>Worker runs whose authoritative GitHub Actions trigger is <code>workflow_dispatch</code>, ordered newest first. ${escapeHtml(coverage)}</p></div><strong>${formatCount(dispatches.length)} dispatches</strong></div>
+    <div class="section-heading"><div><span class="scope-kicker">Actions activity</span><h2 id="dispatch-catalog-heading">Workflow dispatch events</h2><p>Runs whose authoritative GitHub Actions trigger is <code>workflow_dispatch</code>, ordered newest first. ${escapeHtml(coverage)}</p></div><strong>${formatCount(dispatches.length)} dispatches</strong></div>
     <div class="catalog-toolbar run-toolbar" aria-label="Dispatch filters">
       <label class="catalog-search"><span>Search dispatches</span><input id="dispatch-search" type="search" placeholder="Run, package, worker, status, or repository" autocomplete="off"></label>
       <label><span>Package</span><select id="dispatch-package"><option value="">All packages</option>${packageOptions}</select></label>
     </div>
     <p class="catalog-result run-result" id="dispatch-result" aria-live="polite"></p>
-    <div class="table-region" role="region" aria-labelledby="dispatch-catalog-heading" tabindex="0"><table><thead><tr><th scope="col">Started</th><th scope="col">Package</th><th scope="col">Worker</th><th scope="col">Run title</th><th scope="col">Runtime repository</th><th scope="col">Status</th></tr></thead><tbody>${rows || '<tr><td colspan="6">No package-worker dispatches were observed in the current run window.</td></tr>'}</tbody></table></div>
+    <div class="table-region" role="region" aria-labelledby="dispatch-catalog-heading" tabindex="0"><table><thead><tr><th scope="col">Started</th><th scope="col">Type</th><th scope="col">Package</th><th scope="col">Workflow</th><th scope="col">Run title</th><th scope="col">Runtime repository</th><th scope="col">Status</th></tr></thead><tbody>${rows || '<tr><td colspan="7">No workflow dispatch events were observed in the current run window.</td></tr>'}</tbody></table></div>
   </section>
   <script>
   (() => {
@@ -1646,6 +2335,58 @@ function contributionSpendContent(spend, repositoryLinkPrefix = "repositories/")
   const chartLabel = segments.map((entry) => `${entry.repository}: ${formatAic(entry.aiCredits)} AI Credits`).join(", ");
   const legend = segments.map((entry, index) => `<li><i style="background:${colors[index]}"></i><span>${entry.repository === "Other" ? "Other" : `<a href="${repositoryLinkPrefix}${escapeHtml(repositoryPageName(entry.repository))}.html">${escapeHtml(entry.repository)}</a>`}</span><strong>${formatAic(entry.aiCredits)}</strong><small>${new Intl.NumberFormat("en", { style: "percent", maximumFractionDigits: 1 }).format(entry.aiCredits / spend.total)}</small></li>`).join("\n");
   return `<section class="spend-panel" aria-labelledby="spend-heading"><div><h2 id="spend-heading">AI Credit usage by AW repository</h2><p>Read-only usage reported by AW runs, deduplicated by workflow run.</p></div><div class="spend-chart"><div class="spend-donut" role="img" aria-label="${escapeHtml(chartLabel)}" style="background:conic-gradient(${stops})"><span><strong>${formatAic(spend.total)}</strong><small>Total AIC</small></span></div><ol>${legend}</ol></div></section>`;
+}
+
+function costEfficiencyContent(workflows) {
+  const repositoryNames = new Set([
+    ...workflows.map((workflow) => workflow.repository),
+    ...reportRecords.map((record) => record.repository),
+  ]);
+  const spend = contributionSpendFor(repositoryNames);
+  const model = observedEpisodeModel(workflows);
+  const measuredEpisodes = model.episodes.filter((episode) => episode.attempts.some((attempt) => attempt.aic !== null));
+  const measuredEpisodeAic = measuredEpisodes.reduce((total, episode) => total + episode.aic, 0);
+  const outputAttempts = measuredEpisodes.reduce((total, episode) => total + episode.attempts.length, 0);
+  const actionableAttempts = measuredEpisodes.reduce((total, episode) => total + episode.actionableAttempts, 0);
+  const signals = [];
+  if (!spend.available || !spend.complete) signals.push({
+    className: "signal-informational",
+    icon: "codescan",
+    kind: "Usage coverage",
+    title: spend.available ? "AI Credit telemetry is partial" : "AI Credit telemetry is unavailable",
+    detail: spend.available
+      ? "Measured totals exclude runs whose usage artifacts were not collected."
+      : "No complete usage feed is available for the configured scope.",
+    evidence: spend.available ? "Partial evidence" : "Evidence unavailable",
+    href: "../coverage/",
+  });
+  signals.push({
+    className: "signal-informational",
+    icon: "meter",
+    kind: "Budget boundary",
+    title: "Budget status is unavailable",
+    detail: "Retained usage is not aligned to a complete monthly budget measurement window.",
+    evidence: "Threshold unavailable",
+    href: "#cost-boundaries-heading",
+  });
+  signals.push({
+    className: "signal-informational",
+    icon: "graph",
+    kind: "Anomaly boundary",
+    title: "Cost anomalies are not evaluated",
+    detail: "The retained window does not establish a representative historical usage baseline.",
+    evidence: "Baseline unavailable",
+    href: "#cost-boundaries-heading",
+  });
+  const signalRows = signals.map((signal, index) => `<li class="${signal.className}"><a href="${escapeHtml(signal.href)}"><span class="signal-rank" aria-hidden="true">${index + 1}</span><span class="signal-icon">${octicon(signal.icon)}</span><span class="signal-copy"><span>${escapeHtml(signal.kind)}</span><strong>${escapeHtml(signal.title)}</strong><small>${escapeHtml(signal.detail)}</small></span><span class="signal-evidence"><strong>${escapeHtml(signal.evidence)}</strong><small>View evidence</small></span></a></li>`).join("");
+  return `<section class="domain-attention workflow-attention" aria-labelledby="cost-attention-heading">
+    <div class="section-heading"><div><span class="scope-kicker">Resource operations</span><h2 id="cost-attention-heading">Measured usage</h2><p>Observed AI Credit allocation and episode efficiency without inferred budgets or anomalies.</p></div><strong>${formatCount(signals.length)} boundaries</strong></div>
+    <dl class="domain-summary"><div><dt>Measured AIC</dt><dd>${spend.available ? formatAic(spend.total) : "—"}</dd></div><div><dt>Measured runs</dt><dd>${spend.available ? formatCount(spend.reportedRuns) : "—"}</dd></div><div><dt>Measured episode AIC</dt><dd>${measuredEpisodes.length > 0 ? formatAic(measuredEpisodeAic) : "—"}</dd></div><div><dt>Episode output yield</dt><dd>${outputAttempts > 0 ? `${formatCount(actionableAttempts)} / ${formatCount(outputAttempts)}` : "—"}</dd></div></dl>
+    <p class="domain-boundary-note">AI Credit totals are allocation evidence, not monetary cost. Output yield is an investigation aid, not proof of efficiency or waste.</p>
+    <ol class="workflow-attention-list">${signalRows}</ol>
+  </section>
+  ${contributionSpendContent(spend, "../repositories/")}
+  <section class="domain-readiness" id="cost-boundaries-heading" aria-labelledby="cost-boundaries-title"><div>${octicon("meter")}<div><span class="scope-kicker">Evaluation boundary</span><h2 id="cost-boundaries-title">Budget and anomaly verdicts unavailable</h2></div></div><p>A budget verdict requires an applicable budget, matching time window, and complete measured usage. An anomaly verdict requires a qualified historical baseline and disclosed statistical rule.</p></section>`;
 }
 
 function repositoryWorkflowContent(repositoryName, workflows) {
@@ -2209,6 +2950,8 @@ footer a { min-height: 24px; display: inline-flex; align-items: center; }
 .sidebar-brand-mark { width: 24px; height: 24px; flex: 0 0 24px; overflow: visible; }
 .sidebar-brand > span { min-width: 0; overflow: hidden; text-overflow: ellipsis; }
 .primary-nav { display: flex; flex-direction: column; gap: 2px; }
+.nav-section-label { margin: 12px 8px 3px; color: var(--muted); font-size: .625rem; font-weight: 600; letter-spacing: 0; text-transform: uppercase; }
+.nav-section-label:first-child { margin-top: 0; }
 .primary-nav a, .nav-parent { min-height: 32px; display: flex; align-items: center; gap: 10px; position: relative; padding: 6px 8px; border-radius: 6px; color: var(--fg); font-weight: 500; text-decoration: none; }
 .primary-nav :is(a, .nav-parent) > .octicon { color: var(--muted); }
 .primary-nav a:hover { background: var(--neutral-muted); }
@@ -2356,38 +3099,6 @@ footer a { min-height: 24px; display: inline-flex; align-items: center; }
 .legend-approval { background: var(--attention); }
 .legend-running { background: var(--accent); }
 .legend-other { background: var(--muted); }
-.overview-priority-grid { display: grid; grid-template-columns: minmax(0, 1.15fr) minmax(320px, .85fr); align-items: stretch; gap: 16px; margin-bottom: 24px; }
-.attention-panel { min-width: 0; height: 100%; overflow: hidden; border: 1px solid var(--border); border-radius: 6px; background: var(--canvas); }
-.operation-portfolio { min-width: 0; height: 100%; }
-.attention-panel > header { min-height: 64px; display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 12px 14px; border-bottom: 1px solid var(--border); background: var(--canvas-subtle); }
-.operation-portfolio > header { min-height: 64px; display: flex; align-items: center; padding: 0 0 10px; }
-.attention-panel h2, .operation-portfolio h2 { margin: 1px 0 0; font-size: 1rem; }
-.attention-panel > header > strong { min-width: 24px; padding: 1px 7px; border-radius: 2em; background: var(--neutral-muted); font-size: .75rem; text-align: center; }
-.attention-panel ul { margin: 0; padding: 0; list-style: none; }
-.attention-panel li { min-height: 62px; display: grid; grid-template-columns: 18px minmax(0, 1fr) auto; align-items: center; gap: 10px; padding: 10px 14px; border-bottom: 1px solid var(--border-muted); }
-.attention-panel li:last-child { border-bottom: 0; }
-.attention-panel li.attention-action { display: block; padding: 0; }
-.attention-item-link { min-height: 61px; display: grid; grid-template-columns: 18px minmax(0, 1fr); align-items: center; gap: 10px; padding: 10px 14px; color: var(--fg); text-decoration: none; }
-.attention-item-link:hover { background: var(--canvas-subtle); text-decoration: none; }
-.attention-item-link:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
-.attention-panel li > .octicon, .attention-item-link > .octicon { color: var(--attention); }
-.attention-panel li.attention-critical > .octicon, .attention-critical .attention-item-link > .octicon { color: var(--danger); }
-.attention-panel li div { min-width: 0; }
-.attention-panel li strong, .attention-panel li span { display: block; }
-.attention-panel li span { margin-top: 1px; color: var(--muted); font-size: .75rem; }
-.operation-portfolio > header > a { font-size: .75rem; }
-.operation-card-list { display: grid; gap: 10px; }
-.operation-card { padding: 13px 14px; border: 1px solid var(--border); border-radius: 6px; background: var(--canvas); }
-.operation-card > header { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
-.operation-card > header > div { min-width: 0; display: flex; align-items: center; gap: 8px; }
-.operation-card > header a { overflow: hidden; color: var(--fg); font-weight: 600; text-decoration: none; text-overflow: ellipsis; white-space: nowrap; }
-.operation-card > header a:hover { text-decoration: underline; }
-.operation-card dl { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); margin: 12px 0; }
-.operation-card dl div { min-width: 0; padding-right: 10px; }
-.operation-card dt { color: var(--muted); font-size: .75rem; }
-.operation-card dd { margin: 2px 0 0; overflow: hidden; font-size: .75rem; font-weight: 600; text-overflow: ellipsis; white-space: nowrap; }
-.text-attention { color: var(--attention); }
-.text-success { color: var(--success); }
 .status-danger { border-color: color-mix(in srgb, var(--danger) 45%, var(--border)); background: color-mix(in srgb, var(--danger) 12%, var(--canvas)); color: var(--danger); }
 .repository-health { scroll-margin-top: 16px; }
 .repository-health table { min-width: 850px; }
@@ -2463,6 +3174,221 @@ footer a { min-height: 24px; display: inline-flex; align-items: center; }
 .workflow-identity { display: flex; align-items: center; justify-content: space-between; gap: 18px; margin: 0 0 16px; padding: 12px 14px; border: 1px solid var(--border); border-radius: 6px; background: var(--canvas-subtle); }
 .workflow-identity p { margin: 5px 0 0; color: var(--muted); }
 .workflow-identity > a { display: inline-flex; align-items: center; gap: 5px; white-space: nowrap; }
+.overview-observability { margin-bottom: 24px; }
+.overview-observability > .section-heading { align-items: end; }
+.attention-domain-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); overflow: hidden; border: 1px solid var(--border); border-radius: 6px; background: var(--border); gap: 1px; }
+.attention-domain-card { min-width: 0; min-height: 184px; display: grid; grid-template-rows: auto auto 1fr auto; gap: 12px; padding: 16px; border-top: 3px solid var(--muted); background: var(--canvas); color: var(--fg); text-decoration: none; }
+.attention-domain-card:hover { background: var(--canvas-subtle); text-decoration: none; }
+.attention-domain-card:focus-visible { z-index: 1; outline: 2px solid var(--focus); outline-offset: -2px; }
+.attention-domain-card > header { min-width: 0; display: grid; grid-template-columns: 22px minmax(0, 1fr) auto; align-items: center; gap: 8px; }
+.attention-domain-icon { width: 22px; height: 22px; display: grid; place-items: center; border-radius: 4px; background: var(--neutral-muted); color: var(--muted); }
+.attention-domain-icon .octicon { width: 14px; height: 14px; }
+.attention-domain-card > header > strong { overflow: hidden; font-size: .8125rem; text-overflow: ellipsis; white-space: nowrap; }
+.attention-domain-state { padding: 2px 6px; border: 1px solid currentColor; border-radius: 999px; color: var(--muted); font-size: .625rem; font-weight: 600; white-space: nowrap; }
+.attention-domain-value { font-size: 1.375rem; font-weight: 600; font-variant-numeric: tabular-nums; line-height: 1.2; }
+.attention-domain-card > p { margin: 0; color: var(--muted); font-size: .75rem; line-height: 1.45; }
+.attention-domain-card > footer { display: flex; align-items: center; justify-content: space-between; padding: 10px 0 0; border-top: 1px solid var(--border); color: var(--accent); font-size: .6875rem; font-weight: 600; }
+.attention-domain-critical { border-top-color: var(--danger); }
+.attention-domain-critical .attention-domain-icon, .attention-domain-critical .attention-domain-state { color: var(--danger); }
+.attention-domain-investigate { border-top-color: var(--attention); }
+.attention-domain-investigate .attention-domain-icon, .attention-domain-investigate .attention-domain-state { color: var(--attention); }
+.attention-domain-monitor { border-top-color: var(--success); }
+.attention-domain-monitor .attention-domain-icon, .attention-domain-monitor .attention-domain-state { color: var(--success); }
+.attention-domain-unavailable { border-top-color: var(--muted); }
+.overview-method-note { margin: 10px 0 0; color: var(--muted); font-size: .6875rem; }
+.overview-method-note strong { color: var(--fg); }
+.workflow-attention { margin-bottom: 32px; }
+.workflow-attention h2 { scroll-margin-top: 72px; }
+.workflow-attention > .section-heading { align-items: end; }
+.workflow-attention > .section-heading > strong { flex: none; font-variant-numeric: tabular-nums; }
+.domain-summary { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); margin: 0; overflow: hidden; border: 1px solid var(--border); border-radius: 6px 6px 0 0; background: var(--border); gap: 1px; }
+.domain-summary > div { min-width: 0; padding: 13px 15px; background: var(--canvas-subtle); }
+.domain-summary dt { color: var(--muted); font-size: .6875rem; font-weight: 600; text-transform: uppercase; }
+.domain-summary dd { margin: 2px 0 0; font-size: 1.25rem; font-weight: 600; font-variant-numeric: tabular-nums; }
+.domain-boundary-note { margin: 0; padding: 8px 15px; border: 1px solid var(--border); border-top: 0; color: var(--muted); font-size: .6875rem; }
+.domain-attention .workflow-attention-list { border-top: 0; }
+.domain-report { margin-top: 24px; }
+.domain-report .section-heading { align-items: end; }
+.domain-report .section-heading h2 { margin-bottom: 3px; font-size: 1.25rem; }
+.domain-report .section-heading p { margin: 0; color: var(--muted); }
+.domain-report table { min-width: 820px; }
+.domain-report code { font-size: .6875rem; }
+.domain-readiness { display: grid; grid-template-columns: minmax(240px, .55fr) minmax(0, 1fr); align-items: center; gap: 24px; margin-top: 24px; border-left: 4px solid var(--attention) !important; background: color-mix(in srgb, var(--attention) 5%, var(--canvas)) !important; }
+.domain-readiness > div { display: flex; align-items: center; gap: 12px; }
+.domain-readiness > div > .octicon { width: 28px; height: 28px; flex: none; color: var(--attention); }
+.domain-readiness h2 { margin: 1px 0 0; font-size: 1rem; }
+.domain-readiness p { margin: 0; color: var(--muted); font-size: .8125rem; }
+.anomaly-readiness { display: flex; align-items: center; justify-content: space-between; gap: 20px; padding: 10px 14px; border: 1px solid var(--border); border-radius: 6px 6px 0 0; background: var(--canvas-subtle); }
+.anomaly-readiness > span { display: inline-flex; flex: none; align-items: center; gap: 7px; font-size: .75rem; }
+.anomaly-readiness .octicon { color: var(--muted); }
+.anomaly-readiness p { margin: 0; color: var(--muted); font-size: .75rem; text-align: right; }
+.workflow-attention-list { margin: 0; padding: 0; border: 1px solid var(--border); border-top: 0; border-radius: 0 0 6px 6px; list-style: none; }
+.workflow-attention-list li { min-width: 0; border-top: 1px solid var(--border-muted); }
+.workflow-attention-list li:first-child { border-top: 0; }
+.workflow-attention-list a { min-height: 68px; display: grid; grid-template-columns: 24px 20px minmax(0, 1fr) minmax(150px, auto); align-items: center; gap: 10px; padding: 9px 14px; color: var(--fg); text-decoration: none; }
+.workflow-attention-list a:hover { background: var(--canvas-subtle); }
+.workflow-attention-list a:focus-visible { outline: 2px solid var(--focus); outline-offset: -2px; }
+.signal-rank { color: var(--muted); font-size: .6875rem; font-variant-numeric: tabular-nums; text-align: center; }
+.signal-icon { width: 20px; display: grid; place-items: center; color: var(--attention); }
+.signal-critical .signal-icon { color: var(--danger); }
+.signal-informational .signal-icon { color: var(--accent); }
+.signal-copy { min-width: 0; display: grid; }
+.signal-copy > span { color: var(--muted); font-size: .625rem; font-weight: 600; text-transform: uppercase; }
+.signal-copy > strong { overflow: hidden; font-size: .8125rem; text-overflow: ellipsis; white-space: nowrap; }
+.signal-copy > small { overflow: hidden; color: var(--muted); font-size: .75rem; text-overflow: ellipsis; white-space: nowrap; }
+.signal-evidence { min-width: 0; display: grid; justify-items: end; text-align: right; }
+.signal-evidence strong { font-size: .75rem; }
+.signal-evidence small { display: inline-flex; align-items: center; gap: 4px; color: var(--muted); font-size: .6875rem; }
+.signal-evidence .octicon { width: 12px; height: 12px; }
+.signal-clear { min-height: 68px; display: grid; grid-template-columns: 20px minmax(0, 1fr); align-items: center; gap: 10px; padding: 9px 14px; }
+.signal-clear .signal-icon { color: var(--success); }
+.workflow-attention-note { margin: 7px 0 0; color: var(--muted); font-size: .6875rem; }
+.episode-observatory { margin-bottom: 32px; }
+.episode-observatory > .section-heading { align-items: end; }
+.episode-vitals { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); margin: 0; border: 1px solid var(--border); border-radius: 6px 6px 0 0; background: var(--canvas-subtle); }
+.episode-vitals > div { min-width: 0; padding: 14px 16px; border-right: 1px solid var(--border); }
+.episode-vitals > div:last-child { border-right: 0; }
+.episode-vitals dt { color: var(--muted); font-size: .6875rem; font-weight: 600; text-transform: uppercase; }
+.episode-vitals dd { margin: 2px 0; font-size: 1.25rem; font-weight: 600; font-variant-numeric: tabular-nums; }
+.episode-vitals p { margin: 0; color: var(--muted); font-size: .6875rem; }
+.episode-method-note { margin: 0 0 12px; padding: 9px 16px; border: 1px solid var(--border); border-top: 0; border-radius: 0 0 6px 6px; color: var(--muted); font-size: .75rem; }
+.episode-list { display: grid; gap: 10px; }
+.episode-record { overflow: hidden; border: 1px solid var(--border); border-radius: 6px; background: var(--canvas); }
+.episode-record > header { display: flex; align-items: flex-start; justify-content: space-between; gap: 14px; padding: 13px 15px; border-bottom: 1px solid var(--border-muted); }
+.episode-record > header > div { min-width: 0; }
+.episode-record h3 { margin: 1px 0 2px; font-size: .9375rem; }
+.episode-record h3 a { display: inline-flex; align-items: center; gap: 5px; }
+.episode-record header p { margin: 0; color: var(--muted); font-size: .75rem; }
+.episode-record header code { color: var(--fg); }
+.episode-measures { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); margin: 0; border-bottom: 1px solid var(--border-muted); }
+.episode-measures > div { min-width: 0; padding: 10px 15px; border-right: 1px solid var(--border-muted); }
+.episode-measures > div:last-child { border-right: 0; }
+.episode-measures dt { color: var(--muted); font-size: .6875rem; }
+.episode-measures dd { margin: 2px 0 0; font-size: .875rem; font-weight: 600; font-variant-numeric: tabular-nums; }
+.episode-waterfall { padding: 11px 15px 9px; border-bottom: 1px solid var(--border-muted); background: var(--canvas-subtle); }
+.episode-waterfall > header, .episode-waterfall > footer { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.episode-waterfall > header { margin-bottom: 7px; font-size: .75rem; }
+.episode-waterfall > header span, .episode-waterfall > footer { color: var(--muted); font-size: .625rem; }
+.episode-waterfall ol { display: grid; gap: 5px; margin: 0; padding: 0; list-style: none; }
+.episode-waterfall li { min-width: 0; display: grid; grid-template-columns: minmax(110px, .65fr) minmax(180px, 1.35fr) minmax(76px, auto); align-items: center; gap: 10px; }
+.episode-lane-label, .episode-lane-result { min-width: 0; display: grid; }
+.episode-lane-label strong { color: var(--muted); font-size: .625rem; font-weight: 600; text-transform: uppercase; }
+.episode-lane-label small { overflow: hidden; font-size: .6875rem; text-overflow: ellipsis; white-space: nowrap; }
+.episode-lane-track { height: 12px; position: relative; overflow: hidden; border: 1px solid var(--border-muted); border-radius: 2px; background: var(--canvas); }
+.episode-lane-track i { width: max(var(--lane-size), 4px); max-width: calc(100% - var(--lane-start)); height: 100%; position: absolute; left: var(--lane-start); background: var(--muted); }
+.episode-lane-track i.status-success { background: var(--success); }
+.episode-lane-track i.status-danger { background: var(--danger); }
+.episode-lane-track i.status-attention { background: var(--attention); }
+.episode-lane-result { justify-items: end; font-variant-numeric: tabular-nums; }
+.episode-lane-result strong { font-size: .6875rem; }
+.episode-lane-result small { color: var(--muted); font-size: .625rem; }
+.episode-waterfall > footer { display: grid; grid-template-columns: 1fr 1fr 1fr; margin: 6px 86px 0 120px; }
+.episode-waterfall > footer span:nth-child(2) { text-align: center; }
+.episode-waterfall > footer span:last-child { text-align: right; }
+.episode-waterfall-unavailable { display: flex; align-items: center; gap: 8px; color: var(--muted); font-size: .75rem; }
+.episode-execution { padding: 11px 15px; }
+.episode-execution > strong { font-size: .75rem; }
+.episode-execution ul { margin: 7px 0 0; padding: 0; list-style: none; }
+.episode-execution li { min-height: 34px; display: grid; grid-template-columns: minmax(0, 1fr) auto minmax(100px, auto); align-items: center; gap: 12px; padding: 5px 0; border-top: 1px solid var(--border-muted); font-size: .75rem; }
+.episode-execution li > div { min-width: 0; display: grid; }
+.episode-execution li > div span { overflow: hidden; color: var(--muted); text-overflow: ellipsis; white-space: nowrap; }
+.episode-execution li > a { display: inline-flex; align-items: center; justify-content: flex-end; gap: 4px; white-space: nowrap; }
+.episode-execution .episode-empty { display: block; min-height: 0; color: var(--muted); }
+.episode-record > footer { display: flex; justify-content: space-between; gap: 12px; padding: 8px 15px; border-top: 1px solid var(--border-muted); background: var(--canvas-subtle); color: var(--muted); font-size: .6875rem; }
+.episode-attribution-gap { margin-top: 12px; border: 1px solid var(--border); border-radius: 6px; background: var(--canvas-subtle); }
+.episode-attribution-gap summary { padding: 10px 13px; font-size: .75rem; font-weight: 600; cursor: pointer; }
+.episode-attribution-gap > p { margin: 0; padding: 0 13px 10px; color: var(--muted); font-size: .75rem; }
+.episode-attribution-gap ul { margin: 0; padding: 0 13px 10px; list-style: none; }
+.episode-attribution-gap li { display: flex; justify-content: space-between; gap: 14px; padding: 6px 0; border-top: 1px solid var(--border-muted); font-size: .75rem; }
+.episode-attribution-gap li a { display: inline-flex; align-items: center; gap: 4px; }
+.episode-attribution-gap li span { color: var(--muted); text-align: right; }
+.workflow-topology-overview { container: workflow-topology / inline-size; margin-bottom: 24px; }
+.workflow-topology-overview > .section-heading { align-items: end; }
+.workflow-topology-counts { display: flex; flex: none; margin: 0; }
+.workflow-topology-counts > div { min-width: 94px; padding: 0 12px; border-left: 1px solid var(--border); }
+.workflow-topology-counts dt { color: var(--muted); font-size: .6875rem; font-weight: 600; text-transform: uppercase; }
+.workflow-topology-counts dd { margin: 1px 0 0; font-size: 1.125rem; font-weight: 600; font-variant-numeric: tabular-nums; }
+.workflow-topology-plane { padding: 18px; border: 1px solid var(--border); border-radius: 6px; background: var(--canvas-subtle); }
+.workflow-topology-plane > header { display: flex; align-items: flex-start; gap: 12px; margin-bottom: 16px; }
+.workflow-topology-plane > header > span { width: 28px; height: 28px; display: grid; flex: 0 0 28px; place-items: center; border: 1px solid var(--border); border-radius: 50%; color: var(--muted); font-size: .6875rem; font-weight: 700; }
+.workflow-topology-plane > header h3 { margin: 1px 0 2px; }
+.workflow-topology-plane > header p { margin: 0; color: var(--muted); font-size: .8125rem; }
+.workflow-package-list { display: grid; gap: 10px; }
+.workflow-package-card { overflow: hidden; border: 1px solid var(--border); border-radius: 6px; background: var(--canvas); }
+.workflow-package-card > header { min-height: 56px; display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 10px 12px; border-bottom: 1px solid var(--border-muted); }
+.workflow-package-card > header > div { min-width: 0; display: flex; align-items: center; gap: 10px; }
+.workflow-package-card > header .octicon { color: var(--accent); }
+.workflow-package-card h4, .standalone-workflow-group h4 { margin: 0; font-size: .875rem; }
+.workflow-package-card header p { margin: 1px 0 0; color: var(--muted); font-size: .75rem; }
+.workflow-package-flow { display: grid; grid-template-columns: minmax(0, 1fr); align-items: center; gap: 8px; padding: 12px; }
+.workflow-worker-stack { min-width: 0; display: grid; gap: 6px; }
+.workflow-topology-node { min-width: 0; min-height: 58px; display: grid; grid-template-columns: 18px minmax(0, 1fr) auto; align-items: center; gap: 8px; padding: 9px 10px; border-left: 3px solid var(--border); background: var(--canvas-subtle); }
+.workflow-topology-node-orchestrator { border-left-color: var(--accent); }
+.workflow-topology-node-worker { border-left-color: var(--success); }
+.workflow-topology-node .octicon { color: var(--muted); }
+.workflow-topology-node > a { min-width: 0; display: grid; text-decoration: none; }
+.workflow-topology-node > a > span { min-width: 0; display: flex; align-items: baseline; gap: 7px; }
+.workflow-topology-node > a small { flex: none; color: var(--muted); font-size: .6875rem; font-weight: 400; text-transform: capitalize; }
+.workflow-topology-node > a:hover strong { text-decoration: underline; }
+.workflow-topology-node code { min-width: 0; overflow: hidden; color: var(--muted); text-overflow: ellipsis; white-space: nowrap; }
+.workflow-dispatch-connector { min-height: 42px; display: grid; place-items: center; color: var(--muted); font-size: .6875rem; font-weight: 600; text-transform: uppercase; }
+.workflow-dispatch-connector i { width: 1px; height: 24px; position: relative; margin-top: 4px; background: var(--border); }
+.workflow-dispatch-connector i::after { content: ""; position: absolute; right: -4px; bottom: 0; border-width: 6px 4px 0; border-style: solid; border-color: var(--border) transparent transparent; }
+.workflow-output-boundary { min-height: 58px; display: grid; grid-template-columns: auto minmax(32px, 1fr); align-items: center; gap: 12px; padding: 0 18px; color: var(--muted); font-size: .6875rem; text-transform: uppercase; }
+.workflow-output-boundary i { height: 1px; position: relative; background: repeating-linear-gradient(90deg, var(--border) 0 6px, transparent 6px 11px); }
+.workflow-output-boundary i::after { content: ""; position: absolute; top: -4px; right: 0; border-width: 4px 0 4px 6px; border-style: solid; border-color: transparent transparent transparent var(--border); }
+.workflow-target-plane { background: var(--canvas); }
+.standalone-workflow-list { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 10px; }
+.standalone-workflow-group { min-width: 0; overflow: hidden; border: 1px solid var(--border); border-radius: 6px; background: var(--canvas-subtle); }
+.standalone-workflow-group > header { min-height: 48px; display: grid; grid-template-columns: 18px minmax(0, 1fr) auto; align-items: center; gap: 9px; padding: 9px 10px; border-bottom: 1px solid var(--border-muted); }
+.standalone-workflow-group > header .octicon { color: var(--accent); }
+.standalone-workflow-group > header > span { color: var(--muted); font-size: .6875rem; white-space: nowrap; }
+.standalone-workflow-group > div { display: grid; gap: 1px; }
+.standalone-workflow-group .workflow-topology-node { border-left: 0; }
+@container workflow-topology (min-width: 620px) {
+  .workflow-package-flow { grid-template-columns: minmax(180px, .9fr) minmax(64px, 90px) minmax(240px, 1.2fr); gap: 10px; }
+  .workflow-dispatch-connector { min-height: 0; }
+  .workflow-dispatch-connector i { width: 100%; height: 1px; margin-top: 6px; }
+  .workflow-dispatch-connector i::after { top: -4px; right: 0; bottom: auto; border-width: 4px 0 4px 6px; border-color: transparent transparent transparent var(--border); }
+}
+@container workflow-topology (max-width: 560px) {
+  .workflow-topology-overview > .section-heading { align-items: flex-start; flex-direction: column; }
+  .workflow-topology-counts { width: 100%; }
+  .workflow-topology-counts > div { min-width: 0; flex: 1; padding-inline: 8px; }
+  .workflow-topology-counts > div:first-child { padding-left: 0; border-left: 0; }
+  .workflow-topology-node > a > span { align-items: flex-start; flex-direction: column; gap: 0; }
+}
+@media (max-width: 760px) {
+  .overview-observability > .section-heading { align-items: flex-start; flex-direction: column; }
+  .attention-domain-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .domain-summary { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .domain-readiness { grid-template-columns: 1fr; gap: 10px; }
+  .workflow-attention > .section-heading, .anomaly-readiness { align-items: flex-start; flex-direction: column; }
+  .anomaly-readiness { gap: 4px; }
+  .anomaly-readiness p { text-align: left; }
+  .workflow-attention-list a { grid-template-columns: 20px minmax(0, 1fr); }
+  .signal-rank { display: none; }
+  .signal-copy { grid-column: 2; }
+  .signal-copy > strong, .signal-copy > small { overflow: visible; text-overflow: clip; white-space: normal; }
+  .signal-evidence { grid-column: 2; justify-items: start; text-align: left; }
+  .episode-observatory > .section-heading { align-items: flex-start; flex-direction: column; }
+  .episode-vitals { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .episode-vitals > div:nth-child(2) { border-right: 0; }
+  .episode-vitals > div:nth-child(-n + 2) { border-bottom: 1px solid var(--border); }
+  .episode-measures { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .episode-measures > div:nth-child(2n) { border-right: 0; }
+  .episode-measures > div { border-bottom: 1px solid var(--border-muted); }
+  .episode-measures > div:last-child { grid-column: 1 / -1; border-bottom: 0; }
+  .episode-waterfall li { grid-template-columns: minmax(0, 1fr) minmax(72px, auto); }
+  .episode-lane-track { grid-column: 1 / -1; grid-row: 2; }
+  .episode-waterfall > footer { margin: 6px 0 0; }
+  .episode-execution li { grid-template-columns: minmax(0, 1fr) auto; }
+  .episode-execution li > a { grid-column: 1 / -1; justify-content: flex-start; }
+}
+@media (max-width: 480px) {
+  .attention-domain-grid { grid-template-columns: minmax(0, 1fr); }
+  .attention-domain-card { min-height: 164px; }
+}
 .operation-workflow-map { margin-bottom: 20px; }
 .operation-workflow-map .section-heading { margin-bottom: 10px; }
 .operation-orchestrator, .operation-workflow-map li { min-width: 0; display: grid; grid-template-columns: max-content minmax(0, 1fr); align-items: center; gap: 10px; padding: 10px 12px; border: 1px solid var(--border); background: var(--canvas-subtle); }
@@ -2565,7 +3491,6 @@ footer a { min-height: 24px; display: inline-flex; align-items: center; }
   .scope-context > div:nth-child(2) { border-top: 1px solid var(--border); border-left: 0; }
   .scope-context > div:nth-child(3) { border-top: 1px solid var(--border); }
   .control-plane-vitals { grid-template-columns: repeat(3, minmax(0, 1fr)); }
-  .overview-priority-grid { grid-template-columns: 1fr; }
   .catalog-toolbar { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
 @media (max-width: 700px) {
@@ -2573,6 +3498,7 @@ footer a { min-height: 24px; display: inline-flex; align-items: center; }
   .org-sidebar { display: block; padding: 14px 12px 10px; border-right: 0; border-bottom: 1px solid var(--border); }
   .sidebar-brand { margin-bottom: 8px; font-size: 1rem; }
   .primary-nav { width: 100%; flex-direction: row; overflow-x: auto; }
+  .nav-section-label { display: none; }
   .primary-nav a { min-height: 44px; flex: none; }
   .overview-header { min-height: 0; padding: 24px 0 20px; }
   .toolbar { align-items: stretch; flex-wrap: wrap; }
@@ -2583,7 +3509,7 @@ footer a { min-height: 24px; display: inline-flex; align-items: center; }
   .deployed-summary .metrics, .repository-workflow-summary .metrics { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .spend-panel, .spend-chart { grid-template-columns: 1fr; }
   .spend-donut { margin: auto; }
-  .scope-context, .overview-priority-grid, .catalog-toolbar { grid-template-columns: 1fr; }
+  .scope-context, .catalog-toolbar { grid-template-columns: 1fr; }
   .scope-context > div { border-top: 1px solid var(--border); border-left: 0; }
   .scope-context > div:first-child { border-top: 0; }
   .control-plane-status > header { align-items: stretch; flex-direction: column; gap: 8px; padding: 12px; }
@@ -2596,8 +3522,6 @@ footer a { min-height: 24px; display: inline-flex; align-items: center; }
   .control-plane-vitals p { min-height: 0; white-space: normal; }
   .execution-health-heading { gap: 8px; }
   .execution-legend { display: none; }
-  .attention-panel li { grid-template-columns: 18px minmax(0, 1fr); }
-  .attention-panel li > a { grid-column: 2; }
   .catalog-toolbar :is(input, select) { min-height: 44px; }
   .app-main > nav .shell { flex-wrap: wrap; padding-inline: 16px; }
   .report-actions { margin-left: auto; }

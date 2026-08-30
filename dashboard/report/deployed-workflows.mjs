@@ -258,10 +258,14 @@ async function collectRunHealth(registryByRepository) {
           current.runIds.push(run.id);
           current.runRecords.push({
             runId: run.id,
+            runNumber: run.run_number,
+            runAttempt: run.run_attempt,
             event: run.event,
             conclusion: run.conclusion,
             status: run.status,
             createdAt: run.created_at,
+            startedAt: run.run_started_at,
+            updatedAt: run.updated_at,
             displayTitle: run.display_title,
           });
           current.runs += 1;
