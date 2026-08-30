@@ -552,6 +552,10 @@ function runLinkComplianceChecks(document, sources) {
     { label: 'PR #12', href: 'https://github.com/octo-org/platform/pull/12' },
     { label: 'Run 1001', href: 'https://github.com/octo-org/platform/actions/runs/1001' }
   ];
+  /**
+   * @param {string | null | undefined} text
+   * @returns {string}
+   */
   const normalizeAnchorText = (text) => String(text || '').replace(/\s+/g, ' ').trim();
   const missingLinks = expectedLinks.filter(({ label, href }) => {
     const anchor = anchorsByLabel.get(label)
