@@ -342,7 +342,6 @@ export function enableDashboardPageNavigation(root) {
     for (const page of pages) {
       const isActive = page.dataset.pageId === pageId;
       page.hidden = !isActive;
-      page.setAttribute('aria-hidden', String(!isActive));
     }
     for (const link of links) {
       const isActive = link.dataset.navPageId === pageId;
@@ -810,6 +809,11 @@ function renderChartWidget(chartType, points) {
 
   const maximum = Math.max(...points.map((point) => point.y), 1);
   const barWidth = points.length > 0 ? Math.min(14, 80 / points.length) : 14;
+  const seriesIndexes = new Map(
+    [...new Set(points.map((point) => point.color ?? 'value'))]
+      .sort((left, right) => left.localeCompare(right))
+      .map((name, index) => [name, index])
+  );
   return h(
     'div',
     { className: 'chart-widget bar-chart-widget', 'data-chart-widget': 'bar' },
@@ -821,7 +825,7 @@ function renderChartWidget(chartType, points) {
         const x = ((index + 0.5) / Math.max(points.length, 1)) * 100 - (barWidth / 2);
         const height = Math.max(1, (Math.max(0, point.y) / maximum) * 34);
         return h('rect', {
-          className: `bar-chart-bar chart-series-${(chartSeriesIndex(points, point) % 5) + 1}`,
+          className: `bar-chart-bar chart-series-${((seriesIndexes.get(point.color ?? 'value') ?? 0) % 5) + 1}`,
           x,
           y: 38 - height,
           width: barWidth,
@@ -848,17 +852,6 @@ function groupChartSeries(points) {
     grouped.set(name, series);
   }
   return [...grouped.entries()].sort(([left], [right]) => left.localeCompare(right));
-}
-
-/**
- * @param {Array<{ color: string | null }>} points
- * @param {{ color: string | null }} point
- * @returns {number}
- */
-function chartSeriesIndex(points, point) {
-  return [...new Set(points.map((candidate) => candidate.color ?? 'value'))]
-    .sort((left, right) => left.localeCompare(right))
-    .indexOf(point.color ?? 'value');
 }
 
 /**
