@@ -411,7 +411,9 @@ function summarizePackages(rows) {
           : allowances.length > 0 ? allowances.reduce((total, value) => total + value, 0) : null,
         ready: explicitReady.includes(false)
           ? false
-          : orchestrators.length === 1 && workers.length > 0 && packageRows.every(isActiveWorkflow)
+          : explicitReady.length > 0
+            ? true
+            : orchestrators.length === 1 && workers.length > 0 && packageRows.every(isActiveWorkflow)
       };
     })
     .sort((left, right) => left.name.localeCompare(right.name));
