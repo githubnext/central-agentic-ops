@@ -39,6 +39,12 @@ For this exception, validate manifest source/destination ownership, both action 
 
 ## Package Contract
 
+### Authority Boundary
+
+CAO controls whether and where the package may run; gh-aw controls how its workflows execute. CAO policy may deny or narrow a run, but it must not define or expand engines, models, per-run turns or AI Credit limits, tools, network access, permissions, generated jobs, authentication, or safe-output primitives. Keep those execution mechanics in each gh-aw source workflow, and never treat a declared gh-aw capability as rollout or target authority.
+
+The orchestrator is the rollout decision point and each worker is an independent enforcement point. Keep credentials out of dispatch inputs, require each worker to re-resolve current policy before model execution, and preserve the least-permissive intersection of the parent envelope, current CAO policy, credential reach, compiled gh-aw capabilities, and live target authority.
+
 ### Markdown Steering
 
 Every orchestrator and worker prompt must include this operation-level runtime import immediately after its closing frontmatter:
