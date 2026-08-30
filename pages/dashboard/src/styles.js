@@ -65,6 +65,8 @@ a:focus-visible, [tabindex]:focus-visible, button:focus-visible { outline: 2px s
 .sidebar-brand-mark { width: 24px; height: 24px; flex: 0 0 24px; overflow: visible; }
 .sidebar-brand > span { min-width: 0; overflow: hidden; text-overflow: ellipsis; }
 .primary-nav { display: flex; flex-direction: column; gap: 2px; }
+.nav-section-label { margin: 10px 8px 2px; color: var(--muted); font-size: .6875rem; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; }
+.nav-section-label:first-child { margin-top: 0; }
 .primary-nav a, .nav-parent { min-height: 32px; display: flex; align-items: center; gap: 10px; position: relative; padding: 6px 8px; border-radius: 6px; color: var(--fg); font-weight: 500; text-decoration: none; transition: background-color 120ms ease, color 120ms ease; }
 .primary-nav :is(a, .nav-parent) > .octicon { color: var(--muted); }
 .primary-nav a:hover { background: var(--neutral-muted); }

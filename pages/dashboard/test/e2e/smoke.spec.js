@@ -126,6 +126,9 @@ test('DLS-PAGE-002 DLS-PAGE-014 built-in overview page renders the report-style 
                 ]
               }
             }
+          ],
+          navigation: [
+            { label: 'Attention', pages: ['overview'] }
           ]
         }
       };
@@ -278,6 +281,8 @@ test('DLS-PAGE-002 DLS-PAGE-014 built-in overview page renders the report-style 
   `);
 
   await expect(page.getByRole('heading', { name: 'Built In Overview Render' })).toBeVisible();
+  await expect(page.locator('.nav-section-label')).toHaveCount(1);
+  await expect(page.locator('.nav-section-label')).toHaveText(['Attention']);
   await expect(page.getByRole('heading', { name: 'Overview', exact: true, level: 2 })).toBeVisible();
   await expect(page.locator('.overview-page')).toHaveAttribute('data-page-kind', 'custom');
   await expect(page.locator('.overview-page .custom-view')).toHaveCount(3);

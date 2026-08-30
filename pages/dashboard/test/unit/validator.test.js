@@ -48,6 +48,59 @@ describe('dashboard document validation', () => {
     }
   });
 
+  it('validates dashboard.navigation references declared pages exactly once', () => {
+    const withUnknownPage = JSON.parse(authoritativeDashboardSource);
+    withUnknownPage.dashboard.navigation[2].pages.push('does-not-exist');
+    const unknownPageResult = validateDashboardDocument(JSON.stringify(withUnknownPage));
+    expect(unknownPageResult.ok).toBe(false);
+    if (!unknownPageResult.ok) {
+      expect(unknownPageResult.errors).toContainEqual(expect.objectContaining({
+        message: 'navigation section page must reference a declared dashboard page id.'
+      }));
+    }
+
+    const withDuplicatePage = JSON.parse(authoritativeDashboardSource);
+    withDuplicatePage.dashboard.navigation[1].pages.push('overview');
+    const duplicatePageResult = validateDashboardDocument(JSON.stringify(withDuplicatePage));
+    expect(duplicatePageResult.ok).toBe(false);
+    if (!duplicatePageResult.ok) {
+      expect(duplicatePageResult.errors).toContainEqual(expect.objectContaining({
+        message: 'each dashboard page may appear in only one navigation section.'
+      }));
+    }
+
+    const withMissingCoverage = JSON.parse(authoritativeDashboardSource);
+    withMissingCoverage.dashboard.navigation[2].pages.pop();
+    const missingCoverageResult = validateDashboardDocument(JSON.stringify(withMissingCoverage));
+    expect(missingCoverageResult.ok).toBe(false);
+    if (!missingCoverageResult.ok) {
+      expect(missingCoverageResult.errors).toContainEqual(expect.objectContaining({
+        path: '$.dashboard.navigation',
+        message: 'navigation must reference every declared dashboard page exactly once.'
+      }));
+    }
+
+    const withUnknownKey = JSON.parse(authoritativeDashboardSource);
+    withUnknownKey.dashboard.navigation[0].icon = 'server';
+    const unknownKeyResult = validateDashboardDocument(JSON.stringify(withUnknownKey));
+    expect(unknownKeyResult.ok).toBe(false);
+    if (!unknownKeyResult.ok) {
+      expect(unknownKeyResult.errors).toContainEqual(expect.objectContaining({
+        path: '$.dashboard.navigation[0].icon'
+      }));
+    }
+
+    const withoutLabel = JSON.parse(authoritativeDashboardSource);
+    delete withoutLabel.dashboard.navigation[0].label;
+    const withoutLabelResult = validateDashboardDocument(JSON.stringify(withoutLabel));
+    expect(withoutLabelResult.ok).toBe(false);
+    if (!withoutLabelResult.ok) {
+      expect(withoutLabelResult.errors).toContainEqual(expect.objectContaining({
+        path: '$.dashboard.navigation[0].label'
+      }));
+    }
+  });
+
   it('DLS-VIEW-016 DLS-VIEW-017 DLS-VAL-005 enforces canonical disclosure and at most four essential views', () => {
     const overloaded = `language-version: "0.1.0"
 dashboard:
