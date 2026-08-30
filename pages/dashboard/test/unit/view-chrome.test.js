@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import { describe, expect, it } from 'vitest';
-import { renderContextList, renderPageSection, renderProvenanceList, renderProvenanceSection, renderSummaryList, renderSummaryRegion, renderTitledRegion, renderViewHeader } from '../../src/components/view-chrome.js';
+import { renderContextList, renderPageSection, renderProvenanceList, renderProvenanceSection, renderSummaryList, renderSummaryRegion, renderTitledRegion, renderViewChrome, renderViewHeader } from '../../src/components/view-chrome.js';
 
 describe('view chrome component helpers', () => {
   it('DLS-SAFE-007 renders focusable labeled page sections with deterministic heading ids', () => {
@@ -40,6 +40,24 @@ describe('view chrome component helpers', () => {
     expect(header[0]?.textContent).toBe('Source: usage');
     expect(header[1]?.className).toBe('view-metadata');
     expect(header[1]?.textContent).toBe('As of 2026-08-29T20:00:00Z • completeness complete • freshness fresh');
+  });
+
+  it('DLS-VIEW-013 renders reusable view chrome paragraphs for populated and empty metadata lines', () => {
+    const rendered = renderViewChrome([
+      'Source: usage',
+      'As of 2026-08-29T20:00:00Z • completeness complete • freshness fresh',
+      'Additional detail'
+    ]);
+    const empty = renderViewChrome([]);
+
+    expect(rendered).toHaveLength(3);
+    expect(rendered[0]?.className).toBe('view-source');
+    expect(rendered[0]?.textContent).toBe('Source: usage');
+    expect(rendered[1]?.className).toBe('view-metadata');
+    expect(rendered[1]?.textContent).toBe('As of 2026-08-29T20:00:00Z • completeness complete • freshness fresh');
+    expect(rendered[2]?.className).toBe('view-metadata');
+    expect(rendered[2]?.textContent).toBe('Additional detail');
+    expect(empty).toHaveLength(0);
   });
 
   it('DLS-VIEW-013 renders reusable custom-view context lists including empty input', () => {
