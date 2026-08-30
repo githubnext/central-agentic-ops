@@ -31,6 +31,9 @@ function buildPresenterModuleUrl() {
     .replace("'../dom.js'", JSON.stringify(domModuleUrl));
   const viewChromeModuleUrl = `data:text/javascript;charset=utf-8,${encodeURIComponent(viewChromeSource)}`;
 
+  const viewFormattersSource = readFileSync(new URL('../../src/view-formatters.js', import.meta.url), 'utf8');
+  const viewFormattersModuleUrl = `data:text/javascript;charset=utf-8,${encodeURIComponent(viewFormattersSource)}`;
+
   const presenterSource = readFileSync(new URL('../../src/presenter.js', import.meta.url), 'utf8')
     .replace("'../dashboard.json'", JSON.stringify(dashboardModuleUrl))
     .replace("'./dom.js'", JSON.stringify(domModuleUrl))
@@ -39,7 +42,8 @@ function buildPresenterModuleUrl() {
     .replace("'./components/badge.js'", JSON.stringify(badgeModuleUrl))
     .replace("'./components/data-state.js'", JSON.stringify(dataStateModuleUrl))
     .replace("'./components/table-region.js'", JSON.stringify(tableRegionModuleUrl))
-    .replace("'./components/view-chrome.js'", JSON.stringify(viewChromeModuleUrl));
+    .replace("'./components/view-chrome.js'", JSON.stringify(viewChromeModuleUrl))
+    .replace("'./view-formatters.js'", JSON.stringify(viewFormattersModuleUrl));
 
   return `data:text/javascript;charset=utf-8,${encodeURIComponent(presenterSource)}`;
 }
@@ -216,14 +220,16 @@ test('DLS-PAGE-002 DLS-PAGE-014 built-in overview page renders rollout-mode filt
   await expect(page.getByRole('heading', { name: 'Built In Overview Render' })).toBeVisible();
   await expect(page.getByRole('heading', { name: 'Overview', exact: true, level: 2 })).toBeVisible();
   await expect(page.locator('.overview-page')).toHaveAttribute('data-page-kind', 'custom');
-  await expect(page.locator('.overview-page .custom-view')).toHaveCount(5);
-  await expect(page.getByRole('heading', { name: 'Overview workflows source' })).toBeVisible();
-  await expect(page.getByRole('heading', { name: 'Overview operational values source' })).toBeVisible();
+  await expect(page.locator('.overview-page .custom-view')).toHaveCount(10);
+  await expect(page.locator('.overview-page .layout-section')).toHaveCount(4);
+  await expect(page.getByRole('heading', { name: 'Control plane health', level: 3 })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Active workflows', level: 4 })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Operational value timeline', level: 4 })).toBeVisible();
   await expect(page.locator('[data-state-axis="availability"]')).toHaveText('available');
   await expect(page.locator('[data-state-axis="completeness"]')).toHaveText('partial');
   await expect(page.locator('[data-state-axis="freshness"]')).toHaveText('stale');
   await expect(page.locator('.overview-page [data-metric-value="aic"]')).toHaveText('35');
-  await expect(page.locator('.overview-page .custom-chart-table tbody tr')).toHaveCount(2);
+  await expect(page.locator('[data-section-id="execution-trends"] .custom-view:last-child .custom-chart-table tbody tr')).toHaveCount(2);
   await expect(page.getByRole('link', { name: 'Issue 2' })).toBeVisible();
 });
 

@@ -49,6 +49,7 @@
   - [x] Slice: `T-PAGE-001` conservative machine-readable coverage for implemented built-in page defaults and data-state exposure via the Appendix A presenter fixture.
   - [x] Slice: `T-LINK-001` conservative machine-readable coverage for available finding issue, pull-request, and run associations rendered as anchored links in the Appendix A presenter fixture.
 - [ ] **Parity** — inventory the features of the existing dashboard in `dashboard/report/report.mjs`, record them in `PLAN.md` as a parity checklist, then express each one as YAML configuration plus data fixtures, closing the checklist incrementally.
+  - [x] Overview structure: express the report's full-width control-plane health, paired wide/narrow attention and managed-workflow panels, and full-width execution/value trends as declarative JSON sections rendered by the generic presenter.
   - [x] Motion audit: port the report's 120ms interactive color/background transitions and 80ms chart-point tooltip fade; retain the existing repository-link transition, and disable nonessential motion for reduced-motion users. The report contains no keyframe animations, and its catalog disclosure transition has no renderer equivalent yet.
   - [x] Preview fixtures: provide multi-point, multi-series operational-value observations plus linked run and evidence records so the browser dashboard renders meaningful chart geometry and actionable links.
 
@@ -66,6 +67,7 @@
 - `src/components/data-state.js` — presentation-only data-state metrics card grid for availability, completeness, and freshness.
 - `src/components/table-region.js` — presentation-only reusable table wrapper for repeated table-region markup, header rows, empty-state rows, and keyed body-row descriptors across built-in and custom tables.
 - `src/components/view-chrome.js` — presentation-only reusable page-section, titled-region, summary-list/summary-region, generic custom-view chrome paragraphs, custom-view source/metadata/context chrome, shared custom-view section chrome, and built-in provenance-section helpers.
+- `src/view-formatters.js` — presentation-only shared numeric and aggregate formatting helpers for custom metric and chart text output.
 
 ## Infrastructure blockers
 
@@ -74,12 +76,21 @@
 
 ## Run log
 
+### 2026-08-30 (view-formatters helper refactor)
+- Re-inventoried repeated UI-adjacent helper construction under `pages/dashboard/src/` and selected the highest remaining bounded pure-helper slice: duplicated aggregate metric value formatting and shared numeric formatting in `src/presenter.js`, reused by custom metric rendering today and chart text equivalents indirectly through the same numeric formatter.
+- Extracted `src/view-formatters.js` with presentation-only `formatAggregateValue(...)`, `toNumber(...)`, and `formatNumber(...)`, then replaced every identified call site in `src/presenter.js` by collapsing the inline aggregate `count`/`distinct-count`/`sum`/`mean`/`min`/`max` branch inside `renderMetricView(...)` plus the shared `formatNumber(...)`/`toNumber(...)` usage consumed by chart-point labels and chart-series construction.
+- Added unit coverage in `test/unit/view-formatters.test.js` for populated, empty, missing-field, and non-numeric cases while preserving the existing `DLS-VIEW-013` requirement coverage for custom-view presentation semantics.
+- Proved unchanged behavior by keeping the presenter output contract intact for the affected custom metric and chart surfaces and by rerunning the `pages/dashboard/` quality gates after the extraction.
+- Next candidates in the queue: extract the repeated custom-view state-message plus affected-source/context composition in `src/presenter.js`; extract shared link-cell composition across custom metric and custom table views; extract shared chart-series grouping and textual legend helpers if upcoming feature slices add more chart variants.
+
 ### 2026-08-30 (compliance suite milestone closure verification)
 
 - Re-ran the full `pages/dashboard/` quality gate stack on the current compliance implementation and confirmed the repository already contains the machine-readable Section 14 smoke harness, Appendix A passing fixture coverage, Appendix C failing fixture coverage, semantic/context checklist assertions, and conservative built-in page and link checks without requiring additional code changes.
 - Verified quality gates from `pages/dashboard/`: `npm install`, `npm run build`, `npm run typecheck`, `npm run lint`, `npm test`, and `npx playwright test --config=playwright.config.mjs` all pass.
 - Marked the Compliance suite milestone complete now that the compliance harness and tests are green end-to-end for the implemented conservative Section 14 slices.
 - Next milestone: Security, privacy, accessibility, continuing with the remaining Section 13 verification needed to close that milestone before parity follow-up work.
+
+### 2026-08-30 (compliance link-and-page fixture slice)
 
 ### 2026-08-30 (view-section-chrome refactor)
 
