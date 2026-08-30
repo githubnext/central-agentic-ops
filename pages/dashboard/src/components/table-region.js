@@ -5,17 +5,35 @@
 import { h } from '../dom.js';
 
 /**
- * @param {{ tableClassName: string, emptyMessage: string, colSpan: number, headCells: string[], bodyRows: unknown }} options
+ * @param {{ tableClassName: string, emptyMessage: string, colSpan: number, headCells: string[], bodyRows: unknown, filterLabel?: string }} options
  * @returns {HTMLElement}
  */
 export function renderTableRegion(options) {
-  const { tableClassName, emptyMessage, colSpan, headCells, bodyRows } = options;
+  const { tableClassName, emptyMessage, colSpan, headCells, bodyRows, filterLabel } = options;
   const rowCount = getBodyRowCount(bodyRows);
   const hasRows = rowCount > 0;
 
-  return h(
+  const region = h(
     'div',
     { className: 'table-region' },
+    hasRows && filterLabel
+      ? h(
+        'div',
+        { className: 'table-filter' },
+        h(
+          'label',
+          null,
+          h('span', null, filterLabel),
+          h('input', {
+            type: 'search',
+            placeholder: 'Filter rows',
+            'aria-label': filterLabel,
+            'data-table-filter': ''
+          })
+        ),
+        h('output', { className: 'table-filter-result', 'aria-live': 'polite' }, formatResultCount(rowCount))
+      )
+      : null,
     h(
       'table',
       {
@@ -41,6 +59,40 @@ export function renderTableRegion(options) {
       )
     )
   );
+
+  if (hasRows && filterLabel) {
+    enableTableFilter(region);
+  }
+  return region;
+}
+
+/**
+ * @param {HTMLElement} region
+ */
+function enableTableFilter(region) {
+  const input = region.querySelector('[data-table-filter]');
+  const output = region.querySelector('.table-filter-result');
+  const rows = [...region.querySelectorAll('tbody > tr')];
+  if (!(input instanceof HTMLInputElement) || !(output instanceof HTMLOutputElement)) return;
+
+  input.addEventListener('input', () => {
+    const query = input.value.trim().toLocaleLowerCase();
+    let visible = 0;
+    for (const row of rows) {
+      const matches = query.length === 0 || (row.textContent ?? '').toLocaleLowerCase().includes(query);
+      row.hidden = !matches;
+      if (matches) visible += 1;
+    }
+    output.textContent = formatResultCount(visible);
+  });
+}
+
+/**
+ * @param {number} count
+ * @returns {string}
+ */
+function formatResultCount(count) {
+  return `${count.toLocaleString('en')} ${count === 1 ? 'result' : 'results'}`;
 }
 
 /**
