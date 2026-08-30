@@ -89,7 +89,8 @@ const SVG_TAGS = new Set([
   'polyline',
   'polygon',
   'text',
-  'tspan'
+  'tspan',
+  'title'
 ]);
 
 /**

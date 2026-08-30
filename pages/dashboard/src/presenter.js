@@ -86,7 +86,7 @@ export function renderDashboard(input) {
   const sidebar = renderSidebar(document, pages, orgName);
   const mainContent = renderMainContent(document, title, description, pages, sources, orgName);
 
-  return h(
+  const root = h(
     'div',
     { className: 'dashboard-root' },
     styleEl,
@@ -98,6 +98,8 @@ export function renderDashboard(input) {
       mainContent
     )
   );
+  enableDashboardPageNavigation(root);
+  return root;
 }
 
 /**
@@ -282,6 +284,63 @@ function renderCustomPage(page, title, sources) {
     const sourceName = getViewSource(view);
     if (sourceName && sources[sourceName]) {
       pageSources.set(sourceName, sources[sourceName]);
+    }
+
+    /**
+     * Shows a single dashboard page and keeps sidebar state synchronized with the URL hash.
+     * @param {HTMLElement} root
+     */
+    export function enableDashboardPageNavigation(root) {
+      const pages = [...root.querySelectorAll('.dashboard-page')]
+        .filter((page) => page instanceof HTMLElement);
+      const links = [...root.querySelectorAll('[data-nav-page-id]')]
+        .filter((link) => link instanceof HTMLAnchorElement);
+      if (pages.length === 0 || links.length === 0) {
+        return;
+      }
+
+      const availableIds = new Set(pages.map((page) => page.dataset.pageId));
+      const pageIdFromHash = () => {
+        const hash = root.ownerDocument.defaultView?.location.hash ?? '';
+        if (!hash.startsWith('#page-')) return null;
+        const pageId = decodeURIComponent(hash.slice('#page-'.length));
+        return availableIds.has(pageId) ? pageId : null;
+      };
+      const activate = (pageId) => {
+        for (const page of pages) {
+          const isActive = page.dataset.pageId === pageId;
+          page.hidden = !isActive;
+          page.setAttribute('aria-hidden', String(!isActive));
+        }
+        for (const link of links) {
+          const isActive = link.dataset.navPageId === pageId;
+          link.classList.toggle('active', isActive);
+          if (isActive) {
+            link.setAttribute('aria-current', 'page');
+          } else {
+            link.removeAttribute('aria-current');
+          }
+        }
+      };
+
+      activate(pageIdFromHash() ?? pages[0].dataset.pageId ?? '');
+      root.addEventListener('click', (event) => {
+        if (!(event.target instanceof Element)) return;
+        const link = event.target.closest('[data-nav-page-id]');
+        if (!(link instanceof HTMLAnchorElement)) return;
+        event.preventDefault();
+        const pageId = link.dataset.navPageId;
+        if (!pageId || !availableIds.has(pageId)) return;
+        root.ownerDocument.defaultView?.history.pushState(null, '', link.href);
+        activate(pageId);
+        root.querySelector(`#page-${CSS.escape(pageId)}`)?.querySelector('h2')?.focus();
+      });
+
+      const defaultView = root.ownerDocument.defaultView;
+      defaultView?.addEventListener('hashchange', () => {
+        const pageId = pageIdFromHash();
+        if (pageId) activate(pageId);
+      });
     }
   }
   const renderedViews = views.map((view, index) => {
@@ -638,8 +697,10 @@ function renderChartWidget(chartType, points) {
             'stroke-dasharray': `${percent} ${100 - percent}`,
             'stroke-dashoffset': String(-offset),
             'data-chart-category': label,
+            tabIndex: 0,
+            role: 'img',
             'aria-label': `${label}: ${formatNumber(value)}`
-          });
+          }, h('title', null, `${label}: ${formatNumber(value)}`));
           offset += percent;
           return segment;
         })
@@ -648,14 +709,10 @@ function renderChartWidget(chartType, points) {
   }
 
   if (chartType === 'line') {
+    const series = groupChartSeries(points);
     const values = points.map((point) => toNumber(point.y));
     const finiteValues = values.filter(Number.isFinite);
     const maximum = Math.max(...finiteValues, 1);
-    const coordinates = values.map((value, index) => {
-      const x = values.length < 2 ? 50 : (index / (values.length - 1)) * 100;
-      const y = 38 - (Math.max(0, value) / maximum) * 34;
-      return `${x},${y}`;
-    }).join(' ');
     return h(
       'div',
       { className: 'chart-widget line-chart-widget', 'data-chart-widget': 'line' },
@@ -663,12 +720,93 @@ function renderChartWidget(chartType, points) {
         'svg',
         { viewBox: '0 0 100 42', role: 'img', 'aria-label': `Line chart with ${points.length} points` },
         h('line', { className: 'line-chart-axis', x1: 0, y1: 38, x2: 100, y2: 38 }),
-        h('polyline', { className: 'line-chart-series', points: coordinates, fill: 'none' })
+        ...series.flatMap(([seriesName, seriesPoints], seriesIndex) => {
+          const coordinates = seriesPoints.map((point, index) => {
+            const x = seriesPoints.length < 2 ? 50 : (index / (seriesPoints.length - 1)) * 100;
+            const y = 38 - (Math.max(0, point.y) / maximum) * 34;
+            return { point, x, y };
+          });
+          return [
+            h('polyline', {
+              className: `line-chart-series chart-series-${(seriesIndex % 5) + 1}`,
+              points: coordinates.map(({ x, y }) => `${x},${y}`).join(' '),
+              fill: 'none',
+              'data-chart-series': seriesName
+            }),
+            ...coordinates.map(({ point, x, y }) => h('circle', {
+              className: `line-chart-point chart-series-${(seriesIndex % 5) + 1}`,
+              cx: x,
+              cy: y,
+              r: 2.5,
+              tabIndex: 0,
+              role: 'img',
+              'aria-label': chartPointLabel(point)
+            }, h('title', null, chartPointLabel(point))))
+          ];
+        })
       )
     );
   }
 
-  return h('div', { className: 'chart-widget bar-chart-widget', 'data-chart-widget': 'bar' });
+  const maximum = Math.max(...points.map((point) => point.y), 1);
+  const barWidth = points.length > 0 ? Math.min(14, 80 / points.length) : 14;
+  return h(
+    'div',
+    { className: 'chart-widget bar-chart-widget', 'data-chart-widget': 'bar' },
+    h(
+      'svg',
+      { viewBox: '0 0 100 42', role: 'img', 'aria-label': `Bar chart with ${points.length} bars` },
+      h('line', { className: 'bar-chart-axis', x1: 0, y1: 38, x2: 100, y2: 38 }),
+      ...points.map((point, index) => {
+        const x = ((index + 0.5) / Math.max(points.length, 1)) * 100 - (barWidth / 2);
+        const height = Math.max(1, (Math.max(0, point.y) / maximum) * 34);
+        return h('rect', {
+          className: `bar-chart-bar chart-series-${(chartSeriesIndex(points, point) % 5) + 1}`,
+          x,
+          y: 38 - height,
+          width: barWidth,
+          height,
+          tabIndex: 0,
+          role: 'img',
+          'aria-label': chartPointLabel(point)
+        }, h('title', null, chartPointLabel(point)));
+      })
+    )
+  );
+}
+
+/**
+ * @param {Array<{ x: string, y: number, color: string | null }>} points
+ * @returns {Array<[string, Array<{ x: string, y: number, color: string | null }>]>}
+ */
+function groupChartSeries(points) {
+  const grouped = new Map();
+  for (const point of points) {
+    const name = point.color ?? 'value';
+    const series = grouped.get(name) ?? [];
+    series.push(point);
+    grouped.set(name, series);
+  }
+  return [...grouped.entries()].sort(([left], [right]) => left.localeCompare(right));
+}
+
+/**
+ * @param {Array<{ color: string | null }>} points
+ * @param {{ color: string | null }} point
+ * @returns {number}
+ */
+function chartSeriesIndex(points, point) {
+  return [...new Set(points.map((candidate) => candidate.color ?? 'value'))]
+    .sort((left, right) => left.localeCompare(right))
+    .indexOf(point.color ?? 'value');
+}
+
+/**
+ * @param {{ x: string, y: number, color: string | null }} point
+ * @returns {string}
+ */
+function chartPointLabel(point) {
+  return `${point.x}: ${formatNumber(point.y)}${point.color ? `, ${point.color}` : ''}`;
 }
 
 /**
@@ -706,6 +844,14 @@ function findLink(row, field) {
   if (!isPlainObject(candidate) || typeof candidate.href !== 'string' || typeof candidate.label !== 'string') {
     return null;
   }
+  try {
+    const url = new URL(candidate.href);
+    if (url.protocol !== 'https:' || url.username || url.password || candidate.label.trim().length === 0) {
+      return null;
+    }
+  } catch {
+    return null;
+  }
   return { href: candidate.href, label: candidate.label };
 }
 
@@ -727,7 +873,7 @@ function renderExternalLink(link) {
     target: '_blank',
     rel: 'noopener noreferrer',
     'aria-label': link.label
-  }, link.label);
+  }, link.label, octicon('external-link'));
 }
 
 /**

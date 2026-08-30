@@ -87,6 +87,7 @@ main.dashboard-prototype { width: min(1280px, 100%); flex: 1; margin: 0 auto; pa
 .title-area { display: flex; align-items: center; gap: 8px; }
 .dashboard-pages { display: flex; flex-direction: column; gap: 24px; }
 .dashboard-page { padding: 0; }
+.dashboard-page[hidden] { display: none; }
 .dashboard-page > h2 { margin: 0 0 14px; font-size: 1.25rem; font-weight: 600; }
 .custom-view-grid { display: grid; grid-template-columns: repeat(12, minmax(0, 1fr)); gap: 16px; }
 .custom-view { min-width: 0; grid-column: span 12; }
@@ -103,6 +104,22 @@ main.dashboard-prototype { width: min(1280px, 100%); flex: 1; margin: 0 auto; pa
 .chart-series-5 { stroke: var(--muted); }
 .line-chart-axis { stroke: var(--border); stroke-width: 1; }
 .line-chart-series { stroke: var(--accent); stroke-width: 2; vector-effect: non-scaling-stroke; }
+.line-chart-point { fill: var(--canvas); stroke-width: 2; vector-effect: non-scaling-stroke; }
+.bar-chart-axis { stroke: var(--border); stroke-width: 1; }
+.bar-chart-bar { fill: var(--accent); stroke: var(--canvas); stroke-width: .5; }
+.chart-widget [tabindex]:focus-visible { outline: none; stroke: var(--focus); stroke-width: 3; }
+.chart-widget .chart-series-1 { stroke: var(--success); }
+.chart-widget .chart-series-2 { stroke: var(--attention); }
+.chart-widget .chart-series-3 { stroke: var(--danger); }
+.chart-widget .chart-series-4 { stroke: var(--accent); }
+.chart-widget .chart-series-5 { stroke: var(--muted); }
+.bar-chart-bar.chart-series-1 { fill: var(--success); }
+.bar-chart-bar.chart-series-2 { fill: var(--attention); }
+.bar-chart-bar.chart-series-3 { fill: var(--danger); }
+.bar-chart-bar.chart-series-4 { fill: var(--accent); }
+.bar-chart-bar.chart-series-5 { fill: var(--muted); }
+.metric-link a, .custom-table a { display: inline-flex; align-items: center; gap: 4px; }
+.metric-link .octicon, .custom-table a .octicon { width: 12px; height: 12px; }
 h3 { margin: 16px 0 8px; font-size: 1rem; font-weight: 600; }
 .metrics { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; margin: 0 0 20px; overflow: visible; }
 .metrics div, .data-state-summary > div { min-width: 0; min-height: 90px; padding: 14px 16px; border: 1px solid var(--border); border-radius: 6px; background: var(--canvas-subtle); }
