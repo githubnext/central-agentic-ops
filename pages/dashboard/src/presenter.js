@@ -12,6 +12,7 @@ import { renderContextChrome, renderPageSection, renderViewSectionChrome } from 
 import { formatAggregateValue, formatNumber, toNumber } from './view-formatters.js';
 import { renderActiveStateBadge, renderModeBadge, renderStatusBadge } from './components/badge.js';
 import { findFirstLink, findLink, renderExternalLink, renderLinkedValueWithExternalLink } from './components/link-content.js';
+import { renderLinkedText, createEntityAwareCellRenderer } from './components/linked-text.js';
 import { renderUiElement } from './components/ui-elements.js';
 
 /**
@@ -638,7 +639,7 @@ function renderElementView(pageId, title, view, sources, contextDetails, heading
   const elementName = typeof view.element === 'string' ? view.element : '';
   const sourceNames = getViewSources(view);
   if (sourceNames.length === 0) {
-    return renderCustomViewState(pageId, title, null, 'unavailable', [...contextDetails, 'Unsupported UI element.'], headingTag);
+    return renderCustomViewState(pageId, title, null, 'unavailable', [...contextDetails, 'No sources declared for element view.'], headingTag);
   }
 
   const selectedSources = Object.fromEntries(sourceNames.flatMap((sourceName) => {
@@ -895,6 +896,8 @@ function renderTableCellValue(display, value) {
   if (display === 'status') return renderStatusBadge(value);
   return toText(value);
 }
+
+const renderEntityAwareCellValue = createEntityAwareCellRenderer(ENTITY_LINK_FIELDS, findLink, renderTableCellValue, toText);
 
 /**
  * @param {string} pageId
@@ -1446,38 +1449,6 @@ function trimmedString(value) {
  */
 function toText(value) {
   return value == null || value === '' ? 'unknown' : String(value);
-}
-
-/**
- * Renders text as a GitHub link when a link is available, otherwise as plain text.
- * @param {string} text
- * @param {{ href: string, label: string } | null} link
- * @returns {string | HTMLElement}
- */
-function renderLinkedText(text, link) {
-  return link
-    ? h('a', { href: link.href, target: '_blank', rel: 'noopener noreferrer', 'aria-label': link.label }, text)
-    : text;
-}
-
-/**
- * @param {TableField} column
- * @param {unknown} value
- * @param {Record<string, unknown>} row
- * @returns {string | HTMLElement}
- */
-function renderEntityAwareCellValue(column, value, row) {
-  const field = column.field;
-  const linkField = Object.prototype.hasOwnProperty.call(ENTITY_LINK_FIELDS, field)
-    ? ENTITY_LINK_FIELDS[/** @type {keyof typeof ENTITY_LINK_FIELDS} */ (field)]
-    : null;
-  if (linkField) {
-    const link = findLink(row, linkField);
-    if (link) {
-      return renderLinkedText(toText(value), link);
-    }
-  }
-  return renderTableCellValue(column.display, value);
 }
 
 

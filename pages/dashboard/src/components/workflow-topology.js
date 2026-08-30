@@ -5,6 +5,7 @@
 import { h } from '../dom.js';
 import { octicon } from '../octicons.js';
 import { findLink } from './link-content.js';
+import { renderLinkedText } from './linked-text.js';
 import { renderPageSection, renderViewSectionChrome } from './view-chrome.js';
 
 /**
@@ -238,17 +239,6 @@ function compareWorkflowRows(left, right) {
  */
 function toText(value) {
   return value == null || value === '' ? 'unknown' : String(value);
-}
-
-/**
- * @param {string} text
- * @param {{ href: string, label: string } | null} link
- * @returns {string | HTMLElement}
- */
-function renderLinkedText(text, link) {
-  return link
-    ? h('a', { href: link.href, target: '_blank', rel: 'noopener noreferrer', 'aria-label': link.label }, text)
-    : text;
 }
 
 /**
