@@ -56,7 +56,7 @@ function buildPresenterModuleUrl() {
   return `data:text/javascript;charset=utf-8,${encodeURIComponent(presenterSource)}`;
 }
 
-test('DLS-PAGE-002 DLS-PAGE-014 built-in overview page renders the report-style operational overview, managed packages, execution trends, and provenance in browser', async ({ page }) => {
+test('DLS-PAGE-002 DLS-PAGE-014 built-in overview page renders the report-style operational overview, managed repository summary, managed packages, execution trends, and provenance in browser', async ({ page }) => {
   const presenterModuleUrl = buildPresenterModuleUrl();
 
   await page.setContent(`
@@ -95,6 +95,22 @@ test('DLS-PAGE-002 DLS-PAGE-014 built-in overview page renders the report-style 
       };
 
       const sources = {
+        repositories: {
+          source: 'repositories',
+          rows: [
+            { organization: 'github', repository: 'central-agentic-ops' },
+            { organization: 'github', repository: 'dashboard-service' }
+          ],
+          metadata: {
+            'source-id': 'repositories-fixture',
+            'source-kind': 'fixture',
+            'as-of': '2026-08-29T20:00:00Z',
+            'retrieved-at': '2026-08-29T20:01:00Z',
+            completeness: 'complete',
+            freshness: 'fresh',
+            availability: 'available'
+          }
+        },
         workflows: {
           source: 'workflows',
           rows: [
@@ -232,6 +248,7 @@ test('DLS-PAGE-002 DLS-PAGE-014 built-in overview page renders the report-style 
   await expect(page.locator('.overview-page .layout-section')).toHaveCount(1);
   await expect(page.getByRole('heading', { name: 'Attention required', level: 3 })).toBeVisible();
   await expect(page.locator('.control-plane-status')).toHaveClass(/control-plane-critical/);
+  await expect(page.locator('.control-plane-vitals')).toContainText('2 repositories');
   await expect(page.locator('.attention-item')).toHaveCount(5);
   await expect(page.locator('.managed-package-card')).toHaveCount(1);
   await expect(page.locator('.managed-package-card')).toContainText('30');

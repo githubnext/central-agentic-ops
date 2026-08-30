@@ -16,12 +16,15 @@ const APPROVAL_CONCLUSIONS = new Set(['action-required']);
  */
 export function renderOperationalOverview(sources) {
   const workflows = rowsFor(sources, 'workflows');
+  const repositories = rowsFor(sources, 'repositories');
   const runs = rowsFor(sources, 'runs');
   const usage = rowsFor(sources, 'usage');
   const findings = rowsFor(sources, 'findings');
   const packages = summarizePackages(workflows);
   const health = summarizeRunHealth(runs);
-  const repositoryCount = distinctRepositories(workflows, runs);
+  const repositoryCount = repositories.length > 0
+    ? new Set(repositories.map(repositoryKey).filter(Boolean)).size
+    : distinctRepositories(workflows, runs);
   const activeWorkflows = workflows.filter(isActiveWorkflow).length;
   const disabledWorkflows = workflows.filter((row) => String(row['workflow-active']) === 'false').length;
   const attentionItems = buildAttentionItems({

@@ -54,7 +54,7 @@ describe('presenter built-in and custom pages', () => {
     expect(topology?.textContent).toContain('safe outputs only');
   });
 
-  it('DLS-PAGE-002 DLS-PAGE-014 renders the report-style operational overview, managed packages, execution trends, and provenance data state deterministically', () => {
+  it('DLS-PAGE-002 DLS-PAGE-014 renders the report-style operational overview, managed repository summary, managed packages, execution trends, and provenance data state deterministically', () => {
     /** @type {import('../../src/presenter.js').PresentationInput['document']} */
     const document = {
       languageVersion: '0.1.0',
@@ -89,6 +89,22 @@ describe('presenter built-in and custom pages', () => {
     const rendered = renderDashboard({
       document,
       sources: {
+        repositories: {
+          source: 'repositories',
+          rows: [
+            { organization: 'github', repository: 'central-agentic-ops' },
+            { organization: 'github', repository: 'dashboard-service' }
+          ],
+          metadata: {
+            'source-id': 'repositories-fixture',
+            'source-kind': 'fixture',
+            'as-of': '2026-08-29T20:00:00Z',
+            'retrieved-at': '2026-08-29T20:01:00Z',
+            completeness: 'complete',
+            freshness: 'fresh',
+            availability: 'available'
+          }
+        },
         workflows: {
           source: 'workflows',
           rows: [
@@ -223,6 +239,7 @@ describe('presenter built-in and custom pages', () => {
     expect(overviewPage?.querySelector('[data-section-id="execution-trends"]')?.getAttribute('data-section-layout')).toBe('full');
     expect(overviewPage?.querySelector('.control-plane-status')?.classList.contains('control-plane-critical')).toBe(true);
     expect(overviewPage?.querySelector('.control-plane-vitals')?.textContent).toContain('33.3%');
+    expect(overviewPage?.querySelector('.control-plane-vitals')?.textContent).toContain('2 repositories');
     expect(overviewPage?.querySelector('.execution-track')?.getAttribute('aria-label')).toContain('1 failed');
     expect(overviewPage?.querySelectorAll('.attention-item').length).toBeGreaterThanOrEqual(4);
     expect(overviewPage?.querySelectorAll('.managed-package-card')).toHaveLength(1);
