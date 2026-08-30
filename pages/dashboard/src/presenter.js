@@ -1119,7 +1119,7 @@ function renderChartView(pageId, title, view, sourceName, rows, metadata, contex
       renderChartLegend(chartSeries, chartType)]
       : []),
     ...(pieSummary ? [renderPieLegend(pieSummary.entries, pieSummary.total)] : []),
-    renderChartWidget(chartType, points, chartSeries),
+    renderChartWidget(chartType, points, chartSeries, pieSummary),
     renderTableRegion({
       tableClassName: 'custom-chart-table',
       emptyMessage: 'No points available.',
@@ -1194,11 +1194,12 @@ function buildChartPoints(pageId, title, rows, x, y, color) {
  * @param {string} chartType
  * @param {Array<{ x: string, y: number, color: string | null }>} points
  * @param {Array<{ name: string, className: string }>} series
+ * @param {{ entries: Array<[string, number]>, total: number } | null} [pieSummary]
  * @returns {HTMLElement}
  */
-function renderChartWidget(chartType, points, series) {
+function renderChartWidget(chartType, points, series, pieSummary = null) {
   if (chartType === 'pie') {
-    const { entries, total } = pieChartEntries(points);
+    const { entries, total } = pieSummary ?? pieChartEntries(points);
     let offset = 0;
     return h(
       'div',
