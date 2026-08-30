@@ -70,7 +70,7 @@
 - [x] Hash-addressable page navigation, active navigation state, keyboard section traversal, status/mode badges, workflow topology, safe external links, charts, legends, and point tooltips.
 - [x] Operational overview health banner, execution-health bar, attention list, managed-package cards, and execution/value trends.
 - [x] Package-specific All/Review/Live mode tabs, package utilization cards, and 30-day cumulative run trends.
-- [x] Reusable table search, announced shown/matched counts, bounded nominal facets, URL-synchronized filter state, and 25-row progressive disclosure.
+- [x] Reusable table search, announced shown/matched counts, bounded nominal facets, URL-synchronized filter state, 25-row progressive disclosure, bounded-height inner scrolling with sticky headers, and click-to-sort columns.
 - [x] Section-labeled Attention/Investigate/Explore navigation.
 - [x] Report actions for a descriptive refresh control and a GitHub repository link, driven by a new `dashboard.repository` configuration field.
 - [ ] Mode, package, repository, and workflow view tabs with configured-mode indicators.
@@ -117,6 +117,15 @@
 - 2026-08-28: `npm run test:e2e` is currently blocked in this environment because the Playwright Chromium executable is not provisioned (`browserType.launch: Executable doesn't exist`). The workflow should prefer the built-in Playwright MCP browser tools until the package-level browser dependency is available.
 
 ## Run log
+
+### 2026-08-30 (run list linking, bounded height, and column sorting)
+- Extended the reusable `renderTableRegion` component in `src/components/table-region.js` instead of adding a run-specific table: populated tables now render inside a focusable `.table-scroll` region and expose click-to-sort column headers with `aria-sort` state.
+- Added value-aware sort comparison (numeric, then temporal, then locale text) with empty cells ordered last, and re-applied search, facet, and progressive-disclosure state after each sort so pagination stays consistent.
+- Constrained table height to `60vh` with an inner scrollbar and sticky header row in `src/styles.js`, keeping the filter chrome and "show more" control outside the scrolling region.
+- Linked every workflow run by adding `encoding.href` with `run-link` to the `runs` and `workflows` run tables in `dashboard.json`, so each run cell renders as a safe external link.
+- Added component coverage for the scroll region, numeric/temporal sorting, `aria-sort` cycling, and sorted pagination in `test/unit/table-region.test.js`.
+- Verified `pages/dashboard/` quality gates: `npm test` (134 tests), `npm run test:e2e` (9 browser tests), `npm run lint`, `npm run typecheck`, and `npm run build` all pass.
+- Next milestone: Parity, continuing the remaining report feature and presentation inventory closure work under the existing declarative and reusable-runtime constraints.
 
 ### 2026-08-30 (data-driven sidebar navigation groups)
 - Addressed review feedback on the section-labeled navigation slice: navigation groups are now declared in `dashboard.json` under a new optional `dashboard.navigation` array of `{ label, pages }` sections instead of being hard-coded by page id in `src/presenter.js`.

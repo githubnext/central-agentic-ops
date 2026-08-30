@@ -309,6 +309,7 @@
               "data": { "source": "runs" },
               "mark": "table",
               "encoding": {
+                "href": { "field": "run-link", "type": "nominal" },
                 "columns": [
                   { "field": "run", "type": "nominal" },
                   { "field": "run-conclusion", "type": "nominal", "display": "status" }
@@ -370,6 +371,7 @@
               "data": { "source": "runs" },
               "mark": "table",
               "encoding": {
+                "href": { "field": "run-link", "type": "nominal" },
                 "columns": [
                   { "field": "run", "type": "nominal" },
                   { "field": "run-status", "type": "nominal", "display": "status" },

@@ -161,4 +161,82 @@ describe('renderTableRegion', () => {
 
     window.history.replaceState(null, '', '/');
   });
+
+  it('constrains height with an inner scroll container', () => {
+    const rendered = renderTableRegion({
+      tableClassName: 'custom-table',
+      emptyMessage: 'No runs available.',
+      colSpan: 1,
+      headCells: ['Run'],
+      filterLabel: 'Filter runs',
+      bodyRows: [h('tr', null, h('td', null, '1001'))]
+    });
+
+    const scroll = rendered.querySelector('.table-scroll');
+    expect(scroll?.getAttribute('role')).toBe('region');
+    expect(scroll?.getAttribute('aria-label')).toBe('Filter runs results');
+    expect(scroll?.getAttribute('tabindex')).toBe('0');
+    expect(scroll?.querySelector('table')).toBeTruthy();
+    expect(rendered.querySelector('.table-scroll .table-filter')).toBeNull();
+  });
+
+  it('sorts rows numerically and temporally when a column header is activated', () => {
+    const rendered = renderTableRegion({
+      tableClassName: 'custom-table',
+      emptyMessage: 'No runs available.',
+      colSpan: 2,
+      headCells: ['Run', 'Started at'],
+      filterLabel: 'Filter runs',
+      bodyRows: [
+        h('tr', null, h('td', null, '9'), h('td', null, '2026-08-27T10:00:00Z')),
+        h('tr', null, h('td', null, '10'), h('td', null, '2026-08-29T10:00:00Z')),
+        h('tr', null, h('td', null, '2'), h('td', null, '2026-08-28T10:00:00Z'))
+      ]
+    });
+
+    const headers = [...rendered.querySelectorAll('th[aria-sort]')];
+    const runSort = /** @type {HTMLButtonElement} */ (rendered.querySelector('[data-table-sort="0"]'));
+    const startedSort = /** @type {HTMLButtonElement} */ (rendered.querySelector('[data-table-sort="1"]'));
+    const runValues = () => [...rendered.querySelectorAll('tbody tr')]
+      .map((row) => /** @type {HTMLTableRowElement} */ (row).cells[0]?.textContent);
+
+    runSort.click();
+    expect(runValues()).toEqual(['2', '9', '10']);
+    expect(headers[0]?.getAttribute('aria-sort')).toBe('ascending');
+
+    runSort.click();
+    expect(runValues()).toEqual(['10', '9', '2']);
+    expect(headers[0]?.getAttribute('aria-sort')).toBe('descending');
+
+    startedSort.click();
+    expect(runValues()).toEqual(['9', '2', '10']);
+    expect(headers[0]?.getAttribute('aria-sort')).toBe('none');
+    expect(headers[1]?.getAttribute('aria-sort')).toBe('ascending');
+  });
+
+  it('keeps pagination consistent after sorting', () => {
+    const rows = Array.from({ length: 30 }, (_, index) => h(
+      'tr',
+      null,
+      h('td', null, String(index + 1))
+    ));
+    const rendered = renderTableRegion({
+      tableClassName: 'custom-table',
+      emptyMessage: 'No runs available.',
+      colSpan: 1,
+      headCells: ['Run'],
+      bodyRows: rows,
+      filterLabel: 'Filter runs'
+    });
+
+    const runSort = /** @type {HTMLButtonElement} */ (rendered.querySelector('[data-table-sort="0"]'));
+    runSort.click();
+    runSort.click();
+
+    const visible = [...rendered.querySelectorAll('tbody tr')]
+      .filter((row) => !(/** @type {HTMLTableRowElement} */ (row).hidden));
+    expect(visible).toHaveLength(25);
+    expect(visible[0]?.textContent).toBe('30');
+    expect(rendered.querySelector('.table-filter-result')?.textContent).toBe('Showing 25 of 30 results');
+  });
 });
