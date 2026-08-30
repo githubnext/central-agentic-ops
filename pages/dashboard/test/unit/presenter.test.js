@@ -241,6 +241,7 @@ describe('presenter built-in and custom pages', () => {
     expect(overviewPage?.querySelector('[data-section-id="managed-workflows"]')?.getAttribute('data-section-layout')).toBe('narrow');
     expect(overviewPage?.querySelectorAll('.layout-section > .custom-view-grid')).toHaveLength(4);
     expect(overviewPage?.textContent).toContain('Active workflows');
+    expect(overviewPage?.textContent).toContain('Repositories');
     expect(overviewPage?.querySelector('[data-metric-value="repository"]')?.textContent).toBe('2');
     expect(overviewPage?.textContent).toContain('Operational value timeline');
     expect(overviewPage?.querySelector('.layout-section h3')?.textContent).toBe('Control plane health');
