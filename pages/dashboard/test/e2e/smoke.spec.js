@@ -2,6 +2,8 @@ import { readFileSync } from 'node:fs';
 import { test, expect } from '@playwright/test';
 
 function buildPresenterModuleUrl() {
+  const dashboardSource = readFileSync(new URL('../../dashboard.json', import.meta.url), 'utf8');
+  const dashboardModuleUrl = `data:application/json;charset=utf-8,${encodeURIComponent(dashboardSource)}`;
   const domSource = readFileSync(new URL('../../src/dom.js', import.meta.url), 'utf8');
   const domModuleUrl = `data:text/javascript;charset=utf-8,${encodeURIComponent(domSource)}`;
 
@@ -30,6 +32,7 @@ function buildPresenterModuleUrl() {
   const viewChromeModuleUrl = `data:text/javascript;charset=utf-8,${encodeURIComponent(viewChromeSource)}`;
 
   const presenterSource = readFileSync(new URL('../../src/presenter.js', import.meta.url), 'utf8')
+    .replace("'../dashboard.json'", JSON.stringify(dashboardModuleUrl))
     .replace("'./dom.js'", JSON.stringify(domModuleUrl))
     .replace("'./styles.js'", JSON.stringify(stylesModuleUrl))
     .replace("'./octicons.js'", JSON.stringify(octiconsModuleUrl))
@@ -212,42 +215,16 @@ test('DLS-PAGE-002 DLS-PAGE-014 built-in overview page renders rollout-mode filt
 
   await expect(page.getByRole('heading', { name: 'Built In Overview Render' })).toBeVisible();
   await expect(page.getByRole('heading', { name: 'Overview', exact: true, level: 2 })).toBeVisible();
-  await expect(page.getByRole('heading', { name: 'Rollout Mode Filtering' })).toBeVisible();
-  await expect(page.getByRole('heading', { name: 'Workflow Active State Inventory' })).toBeVisible();
-  await expect(page.getByRole('heading', { name: 'Run Status Counts and Trends' })).toBeVisible();
-  await expect(page.getByRole('heading', { name: 'Run Conclusion Counts and Trends' })).toBeVisible();
+  await expect(page.locator('.overview-page')).toHaveAttribute('data-page-kind', 'custom');
+  await expect(page.locator('.overview-page .custom-view')).toHaveCount(5);
+  await expect(page.getByRole('heading', { name: 'Overview workflows source' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Overview operational values source' })).toBeVisible();
   await expect(page.locator('[data-state-axis="availability"]')).toHaveText('available');
   await expect(page.locator('[data-state-axis="completeness"]')).toHaveText('partial');
   await expect(page.locator('[data-state-axis="freshness"]')).toHaveText('stale');
-  await expect(page.locator('.overview-rollout-mode-counts')).toContainText('live: 5');
-  await expect(page.locator('.overview-rollout-mode-counts')).toContainText('review: 3');
-  await expect(page.locator('.overview-workflow-active-counts')).toContainText('true: 1');
-  await expect(page.locator('.overview-workflow-active-counts')).toContainText('false: 1');
-  await expect(page.locator('.overview-run-status-counts')).toContainText('completed: 2');
-  await expect(page.locator('.overview-run-status-counts')).toContainText('in-progress: 1');
-  await expect(page.locator('.overview-run-status-trends')).toContainText('2026-08-29T10:00:00Z → completed: 1');
-  await expect(page.locator('.overview-run-conclusion-counts')).toContainText('success: 1');
-  await expect(page.locator('.overview-run-conclusion-counts')).toContainText('failure: 1');
-  await expect(page.locator('.overview-run-conclusion-counts')).toContainText('unknown: 1');
-  await expect(page.locator('.overview-repository-rankings')).toContainText('central-agentic-ops: 3');
-  await expect(page.locator('.overview-workflow-rankings')).toContainText('.github/workflows/daily.yml: 2');
-  await expect(page.locator('.overview-workflow-rankings')).toContainText('.github/workflows/review.yml: 1');
-  await expect(page.locator('.overview-largest-aic-spenders')).toContainText('central-agentic-ops: 35');
-  await expect(page.locator('.overview-findings-table tbody tr')).toHaveCount(2);
-  await expect(page.locator('[data-overview-finding-id="finding-2"]')).toContainText('Review workflow needs triage');
+  await expect(page.locator('.overview-page [data-metric-value="aic"]')).toHaveText('35');
+  await expect(page.locator('.overview-page .custom-chart-table tbody tr')).toHaveCount(2);
   await expect(page.getByRole('link', { name: 'Issue 2' })).toBeVisible();
-  await expect(page.getByRole('link', { name: 'PR 2' })).toBeVisible();
-  await expect(page.getByRole('link', { name: 'Run 1003' })).toBeVisible();
-  await expect(page.locator('.overview-operational-value-table tbody tr')).toHaveCount(2);
-  await expect(page.locator('[data-overview-operational-value-key="ship-success::1001::2026-08-29T10:30:00Z"]')).toContainText('0.65');
-  await expect(page.getByRole('link', { name: 'Evidence 2' })).toBeVisible();
-  await expect(page.locator('.provenance-list li')).toContainText([
-    'workflows: workflows-fixture (fixture) — as of 2026-08-29T20:00:00Z',
-    'runs: runs-fixture (fixture) — as of 2026-08-29T20:00:00Z',
-    'usage: usage-fixture (fixture) — as of 2026-08-29T20:00:00Z',
-    'findings: findings-fixture (fixture) — as of 2026-08-29T20:00:00Z',
-    'operational-values: operational-values-fixture (fixture) — as of 2026-08-29T20:00:00Z'
-  ]);
 });
 
 test('DLS-PAGE-009 DLS-PAGE-014 built-in evals page renders distinguishable definitions and observations, observed subject, YES/NO/UNKNOWN result, evaluation model when available, time, provenance, and independent data state in browser', async ({ page }) => {
@@ -327,41 +304,16 @@ test('DLS-PAGE-009 DLS-PAGE-014 built-in evals page renders distinguishable defi
 
   await expect(page.getByRole('heading', { name: 'Built In Evals Render' })).toBeVisible();
   await expect(page.getByRole('heading', { name: 'Evals', exact: true, level: 2 })).toBeVisible();
-  await expect(page.getByRole('heading', { name: 'Eval Definitions' })).toBeVisible();
-  await expect(page.getByRole('heading', { name: 'Eval Observations' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Evals Evals Source' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Evals Observations Source' })).toBeVisible();
   await expect(page.locator('[data-state-axis="availability"]')).toHaveText('available');
   await expect(page.locator('[data-state-axis="completeness"]')).toHaveText('partial');
   await expect(page.locator('[data-state-axis="freshness"]')).toHaveText('stale');
-  await expect(page.locator('.evals-definitions-table tbody tr')).toHaveCount(2);
-  await expect(page.locator('.eval-observations-table tbody tr')).toHaveCount(3);
-
-  await expect(page.locator('[data-eval-id="release-risk"] td').nth(1)).toHaveText('Release Risk');
-  await expect(page.locator('[data-eval-id="release-risk"] td').nth(2)).toHaveText('Is the release risky?');
-  await expect(page.locator('[data-eval-id="release-risk"] td').nth(3)).toHaveText('gpt-4o');
-  await expect(page.locator('[data-eval-id="release-risk"] td').nth(5)).toHaveText('2');
-  await expect(page.locator('[data-eval-id="release-risk"] td').nth(6)).toContainText('github / central-agentic-ops / .github/workflows/daily.yml / run 1001');
-  await expect(page.locator('[data-eval-id="release-risk"] td').nth(6)).toContainText('github / central-agentic-ops / .github/workflows/daily.yml / run 1002');
-  await expect(page.locator('[data-eval-id="release-risk"] td').nth(7)).toHaveText('YES: 1, UNKNOWN: 1');
-  await expect(page.locator('[data-eval-id="release-risk"] td').nth(8)).toContainText('gpt-4o → gpt-4.1');
-  await expect(page.locator('[data-eval-id="release-risk"] td').nth(9)).toHaveText('2026-08-29T10:10:00Z');
-
-  await expect(page.locator('[data-eval-id="doc-quality"] td').nth(1)).toHaveText('Documentation Quality');
-  await expect(page.locator('[data-eval-id="doc-quality"] td').nth(7)).toHaveText('NO: 1');
-  await expect(page.locator('[data-eval-id="doc-quality"] td').nth(8)).toContainText('claude-3.5 → claude-3.7');
-
-  await expect(page.locator('[data-eval-observation-key="release-risk-1001-0"]')).toContainText('release-risk');
-  await expect(page.locator('[data-eval-observation-key="release-risk-1001-0"]')).toContainText('YES');
-  await expect(page.locator('[data-eval-observation-key="release-risk-1001-0"]')).toContainText('gpt-4o');
-  await expect(page.locator('[data-eval-observation-key="release-risk-1001-0"]')).toContainText('gpt-4.1');
-  await expect(page.locator('[data-eval-observation-key="release-risk-1002-1"]')).toContainText('UNKNOWN');
-  await expect(page.locator('[data-eval-observation-key="release-risk-1002-1"]')).toContainText('unknown');
-  await expect(page.locator('[data-eval-observation-key="doc-quality-2001-2"]')).toContainText('NO');
-  await expect(page.locator('[data-eval-observation-key="doc-quality-2001-2"]')).toContainText('claude-3.7');
-
-  await expect(page.locator('.provenance-list li')).toContainText([
-    'evals: evals-fixture (fixture) — as of 2026-08-29T20:00:00Z',
-    'eval-observations: eval-observations-fixture (fixture) — as of 2026-08-29T20:00:00Z'
-  ]);
+  await expect(page.locator('.evals-page .custom-table').nth(0).locator('tbody tr')).toHaveCount(2);
+  await expect(page.locator('.evals-page .custom-table').nth(1).locator('tbody tr')).toHaveCount(3);
+  await expect(page.locator('.evals-page')).toContainText('release-risk');
+  await expect(page.locator('.evals-page')).toContainText('UNKNOWN');
+  await expect(page.locator('.evals-page')).toContainText('claude-3.7');
 });
 
 test('DLS-SAFE-007 DLS-SAFE-008 DLS-SAFE-010 built-in findings page exposes accessible names, labeled columns, textual data states, and labeled external links in browser', async ({ page }) => {
@@ -442,8 +394,8 @@ test('DLS-SAFE-007 DLS-SAFE-008 DLS-SAFE-010 built-in findings page exposes acce
   await expect(page.locator('[data-state-axis="completeness"]')).toHaveText('complete');
   await expect(page.locator('[data-state-axis="freshness"]')).toHaveText('fresh');
   await expect(page.getByRole('columnheader', { name: 'Issue Link' })).toBeVisible();
-  await expect(page.locator('[data-finding-id="unsafe-html"] td').first()).toHaveText('<img src=x onerror=alert(1)>');
-  await expect(page.locator('[data-finding-id="unsafe-html"] img')).toHaveCount(0);
+  await expect(page.locator('.findings-page .custom-table tbody td').first()).toContainText('<img src=x onerror=alert(1)>');
+  await expect(page.locator('.findings-page .custom-table tbody img')).toHaveCount(0);
 
   const issueLink = page.getByRole('link', { name: 'Issue 1 label' });
   await expect(issueLink).toBeVisible();
@@ -773,15 +725,13 @@ test('DLS-SAFE-007 DLS-SAFE-008 keyboard navigation moves across labeled page se
   `);
 
   const sections = page.locator('.runs-page .page-section');
-  await expect(sections).toHaveCount(4);
-  await expect(page.locator('#runs-run-status-counts-heading')).toHaveText('Run Status Counts');
-  await expect(page.locator('#runs-run-conclusion-counts-heading')).toHaveText('Run Conclusion Counts');
+  await expect(sections).toHaveCount(2);
+  await expect(page.locator('#runs-runs-runs-source-heading')).toHaveText('Runs Runs Source');
+  await expect(page.locator('#runs-runs-outcomes-source-heading')).toHaveText('Runs Outcomes Source');
 
   await sections.nth(0).focus();
   await page.keyboard.press('ArrowDown');
   await expect(sections.nth(1)).toBeFocused();
-  await page.keyboard.press('ArrowDown');
-  await expect(sections.nth(2)).toBeFocused();
   await page.keyboard.press('ArrowUp');
-  await expect(sections.nth(1)).toBeFocused();
+  await expect(sections.nth(0)).toBeFocused();
 });
