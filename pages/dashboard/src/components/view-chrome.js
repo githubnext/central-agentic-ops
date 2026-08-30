@@ -69,6 +69,14 @@ export function renderContextList(details) {
 }
 
 /**
+ * @param {string[]} contextDetails
+ * @returns {HTMLElement[]}
+ */
+export function renderContextChrome(contextDetails) {
+  return [renderContextList(contextDetails)];
+}
+
+/**
  * @param {string} sourceName
  * @param {{ 'as-of': string, completeness: string, freshness: string }} metadata
  * @returns {HTMLElement[]}
@@ -86,6 +94,16 @@ export function renderViewHeader(sourceName, metadata) {
  */
 export function renderViewChrome(lines) {
   return lines.map((line, index) => h('p', { className: index === 0 ? 'view-source' : 'view-metadata' }, line));
+}
+
+/**
+ * @param {string} sourceName
+ * @param {{ 'as-of': string, completeness: string, freshness: string }} metadata
+ * @param {string[]} contextDetails
+ * @returns {HTMLElement[]}
+ */
+export function renderViewSectionChrome(sourceName, metadata, contextDetails) {
+  return [...renderViewHeader(sourceName, metadata), ...renderContextChrome(contextDetails)];
 }
 
 /**

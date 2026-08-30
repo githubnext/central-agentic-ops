@@ -8,7 +8,7 @@ import { getPrimerStyles } from './styles.js';
 import { octicon, agenticWorkflowMark } from './octicons.js';
 import { renderDataStateMetrics } from './components/data-state.js';
 import { renderTableRegion } from './components/table-region.js';
-import { renderContextList, renderPageSection, renderViewHeader } from './components/view-chrome.js';
+import { renderContextChrome, renderPageSection, renderViewSectionChrome } from './components/view-chrome.js';
 
 /**
  * @typedef {{ availability: 'available'|'empty'|'unavailable', completeness: 'complete'|'partial'|'unknown', freshness: 'fresh'|'stale'|'unknown' }} DataState
@@ -510,7 +510,7 @@ function renderCustomViewState(pageId, title, sourceName, availability, contextD
   if (sourceName) {
     content.push(h('p', { className: 'view-source' }, `Affected source: ${sourceName}`));
   }
-  content.push(renderContextList(contextDetails));
+  content.push(...renderContextChrome(contextDetails));
   return renderPageSection(pageId, title, content);
 }
 
@@ -562,13 +562,12 @@ function renderMetricView(pageId, title, view, sourceName, rows, metadata, conte
 
   /** @type {HTMLElement[]} */
   const content = [
-    ...renderViewHeader(sourceName, metadata),
+    ...renderViewSectionChrome(sourceName, metadata, contextDetails),
     h('p', { className: 'metric-value', 'data-metric-value': fieldName ?? 'unknown' }, valueText)
   ];
   if (link) {
     content.push(h('p', { className: 'metric-link' }, renderExternalLink(link)));
   }
-  content.push(renderContextList(contextDetails));
   return renderPageSection(pageId, title, content);
 }
 
@@ -592,7 +591,7 @@ function renderTableView(pageId, title, view, sourceName, rows, metadata, contex
   const hrefField = typeof hrefDefinition?.field === 'string' ? hrefDefinition.field : null;
 
   return renderPageSection(pageId, title, [
-    ...renderViewHeader(sourceName, metadata),
+    ...renderViewSectionChrome(sourceName, metadata, contextDetails),
     renderTableRegion({
       tableClassName: 'custom-table',
       emptyMessage: 'No rows available.',
@@ -612,8 +611,7 @@ function renderTableView(pageId, title, view, sourceName, rows, metadata, contex
           })
         ))
         : []
-    }),
-    renderContextList(contextDetails)
+    })
   ]);
 }
 
@@ -641,7 +639,7 @@ function renderChartView(pageId, title, view, sourceName, rows, metadata, contex
     : [];
 
   return renderPageSection(pageId, title, [
-    ...renderViewHeader(sourceName, metadata),
+    ...renderViewSectionChrome(sourceName, metadata, contextDetails),
     h(
       'p',
       { className: 'chart-default', 'data-chart-default': chartDefault, 'data-chart-type': chartType },
@@ -669,8 +667,7 @@ function renderChartView(pageId, title, view, sourceName, rows, metadata, contex
           color ? h('td', null, point.color ?? 'unknown') : null
         ))
         : []
-    }),
-    renderContextList(contextDetails)
+    })
   ]);
 }
 
