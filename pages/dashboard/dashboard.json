@@ -3,7 +3,7 @@
   "dashboard": {
     "id": "central-agentic-ops-dashboard",
     "title": "Central Agentic Ops Dashboard",
-    "description": "Authoritative declarative dashboard document for all specification-defined built-in pages in the presenter prototype.",
+    "description": "Authoritative declarative dashboard document for all specification-defined built-in pages in the renderer prototype.",
     "repository": "githubnext/central-agentic-ops",
     "pages": [
       {
@@ -12,6 +12,7 @@
         "page": "overview",
         "title": "Overview",
         "icon": "server",
+        "class-name": "overview-page",
         "description": "Managed packages, execution health, and items requiring attention.",
         "definition": {
           "data-state": {
@@ -235,6 +236,7 @@
         "page": "packages",
         "title": "Packages",
         "icon": "package",
+        "class-name": "packages-page",
         "description": "Activity from centrally managed packages.",
         "definition": {
           "data-state": {

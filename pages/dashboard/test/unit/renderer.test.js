@@ -3,14 +3,14 @@ import { describe, expect, it } from 'vitest';
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { dirname, resolve } from 'node:path';
-import { renderDashboard, enableDashboardKeyboardNavigation } from '../../src/presenter.js';
+import { renderDashboard, enableDashboardKeyboardNavigation } from '../../src/renderer.js';
 
 const fixtureDirectory = dirname(fileURLToPath(import.meta.url));
 const authoritativeDashboardDocument = JSON.parse(
   readFileSync(resolve(fixtureDirectory, '../../dashboard.json'), 'utf8')
 );
 
-describe('presenter built-in and custom pages', () => {
+describe('renderer built-in and custom pages', () => {
   it('renders central operation packages as orchestrator-to-worker topology and keeps standalone target workflows separate', () => {
     const document = {
       languageVersion: '0.1.0',
@@ -235,6 +235,8 @@ describe('presenter built-in and custom pages', () => {
     expect(labels).toEqual(['Attention', 'Investigate', 'Explore']);
     expect(rendered.querySelector('[data-nav-page-id="overview"]')?.previousElementSibling?.textContent).toBe('Attention');
     expect(rendered.querySelector('[data-nav-page-id="runs"]')?.previousElementSibling?.textContent).toBe('Investigate');
+    expect(rendered.querySelector('[data-page-id="overview"]')?.classList.contains('overview-page')).toBe(true);
+    expect(rendered.querySelector('[data-page-id="organizations"]')?.classList.contains('organizations-page')).toBe(false);
   });
 
   it('DLS-VIEW-018 DLS-VIEW-019 DLS-VIEW-020 progressively discloses supplemental views in source order', () => {
@@ -303,7 +305,7 @@ describe('presenter built-in and custom pages', () => {
   });
 
   it('DLS-PAGE-002 DLS-PAGE-014 renders the report-style operational overview, managed repository summary, managed packages, execution trends, and provenance data state deterministically', () => {
-    /** @type {import('../../src/presenter.js').PresentationInput['document']} */
+    /** @type {import('../../src/renderer.js').PresentationInput['document']} */
     const document = {
       languageVersion: '0.1.0',
       dashboard: {
@@ -510,7 +512,7 @@ describe('presenter built-in and custom pages', () => {
   });
 
   it('DLS-PAGE-002 renders the package AIC utilization panel empty state when no package has a configured allowance and no usage source is available', () => {
-    /** @type {import('../../src/presenter.js').PresentationInput['document']} */
+    /** @type {import('../../src/renderer.js').PresentationInput['document']} */
     const document = {
       languageVersion: '0.1.0',
       dashboard: {
@@ -806,7 +808,7 @@ describe('presenter built-in and custom pages', () => {
   });
 
   it('DLS-PAGE-002 DLS-PAGE-006 DLS-PAGE-008 DLS-PAGE-009 DLS-PAGE-010 DLS-PAGE-011 DLS-PAGE-012 DLS-PAGE-013 DLS-PAGE-014 renders built-in sections in authoritative dashboard.json view order grouped by declared source instead of hard-coded section index positions', () => {
-    /** @type {import('../../src/presenter.js').PresentationInput['document']} */
+    /** @type {import('../../src/renderer.js').PresentationInput['document']} */
     const document = {
       languageVersion: '0.1.0',
       dashboard: {
@@ -897,7 +899,7 @@ describe('presenter built-in and custom pages', () => {
   });
 
   it('DLS-PAGE-009 DLS-PAGE-014 renders built-in evals page with distinguishable definitions and observations, observed subject, YES/NO/UNKNOWN result, evaluation model when available, time, provenance, and independent data state deterministically', () => {
-    /** @type {import('../../src/presenter.js').PresentationInput['document']} */
+    /** @type {import('../../src/renderer.js').PresentationInput['document']} */
     const document = {
       languageVersion: '0.1.0',
       dashboard: {
@@ -989,7 +991,7 @@ describe('presenter built-in and custom pages', () => {
   });
 
   it('DLS-SAFE-003 DLS-SAFE-004 DLS-SAFE-007 DLS-SAFE-010 renders non-empty accessible names and inert text labels while preserving only safe https external link attributes', () => {
-    /** @type {import('../../src/presenter.js').PresentationInput['document']} */
+    /** @type {import('../../src/renderer.js').PresentationInput['document']} */
     const document = {
       languageVersion: '0.1.0',
       dashboard: {
@@ -1068,7 +1070,7 @@ describe('presenter built-in and custom pages', () => {
   });
 
   it('DLS-VIEW-013 DLS-VIEW-014 DLS-VIEW-015 DLS-SAFE-006 renders custom views with available, empty, and unavailable states while exposing only context-permitted observations and links', () => {
-    /** @type {import('../../src/presenter.js').PresentationInput['document']} */
+    /** @type {import('../../src/renderer.js').PresentationInput['document']} */
     const document = {
       languageVersion: '0.1.0',
       dashboard: {
@@ -1347,7 +1349,7 @@ describe('presenter built-in and custom pages', () => {
   });
 
   it('DLS-SAFE-007 DLS-SAFE-008 enables keyboard navigation across labeled page sections without relying on color alone', () => {
-    /** @type {import('../../src/presenter.js').PresentationInput['document']} */
+    /** @type {import('../../src/renderer.js').PresentationInput['document']} */
     const dashboardDocument = {
       languageVersion: '0.1.0',
       dashboard: {

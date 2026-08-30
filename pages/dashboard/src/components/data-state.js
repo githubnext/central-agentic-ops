@@ -6,7 +6,7 @@ import { h } from '../dom.js';
 import { renderStatusBadge } from './badge.js';
 
 /**
- * @typedef {import("../presenter.js").DataState} EffectiveDataState
+ * @typedef {import("../renderer.js").DataState} EffectiveDataState
  */
 
 /**

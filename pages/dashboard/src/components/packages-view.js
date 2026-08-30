@@ -10,7 +10,7 @@ const FAILURE_CONCLUSIONS = new Set(['failure', 'startup-failure', 'timed-out'])
 const DAY_IN_MILLISECONDS = 86_400_000;
 
 /**
- * @param {Record<string, import('../presenter.js').LogicalSourceInput>} sources
+ * @param {Record<string, import('../renderer.js').LogicalSourceInput>} sources
  * @param {string} [pageId]
  * @returns {HTMLElement}
  */
@@ -88,7 +88,7 @@ export function renderPackagesView(sources, pageId = 'packages') {
 }
 
 /**
- * @param {Record<string, import('../presenter.js').LogicalSourceInput>} sources
+ * @param {Record<string, import('../renderer.js').LogicalSourceInput>} sources
  * @param {string} mode
  * @param {string} headingId
  * @returns {HTMLElement}
@@ -197,7 +197,7 @@ function renderUtilizationCard(entry, utilization, available, completeness) {
 }
 
 /**
- * @param {Record<string, import('../presenter.js').LogicalSourceInput>} sources
+ * @param {Record<string, import('../renderer.js').LogicalSourceInput>} sources
  * @param {string} mode
  * @param {string} headingId
  * @returns {HTMLElement}
@@ -453,7 +453,7 @@ function summarizeUtilization(packages, usage, mode) {
 }
 
 /**
- * @param {import('../presenter.js').LogicalSourceInput | undefined} source
+ * @param {import('../renderer.js').LogicalSourceInput | undefined} source
  * @param {Array<Record<string, unknown>>} runs
  * @returns {Date[]}
  */
@@ -489,7 +489,7 @@ function trendPoints(values, maximum) {
 }
 
 /**
- * @param {import('../presenter.js').SourceMetadata | undefined} metadata
+ * @param {import('../renderer.js').SourceMetadata | undefined} metadata
  * @returns {string}
  */
 function sourceWindowLabel(metadata) {
@@ -503,7 +503,7 @@ function sourceWindowLabel(metadata) {
 }
 
 /**
- * @param {Record<string, import('../presenter.js').LogicalSourceInput>} sources
+ * @param {Record<string, import('../renderer.js').LogicalSourceInput>} sources
  * @param {string} name
  * @returns {Array<Record<string, unknown>>}
  */

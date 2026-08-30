@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import { describe, expect, it } from 'vitest';
-import { renderDashboard } from '../../src/presenter.js';
+import { renderDashboard } from '../../src/renderer.js';
 
 describe('linked text refactor behavior preservation', () => {
   it('preserves workflow-topology and derived-link rendering for affected call sites', () => {

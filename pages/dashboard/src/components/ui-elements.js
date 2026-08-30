@@ -11,7 +11,7 @@ import { renderWorkflowTopology } from './workflow-topology.js';
  *   pageId: string,
  *   title: string,
  *   sourceNames: string[],
- *   sources: Record<string, import('../presenter.js').LogicalSourceInput>,
+ *   sources: Record<string, import('../renderer.js').LogicalSourceInput>,
  *   contextDetails: string[],
  *   headingTag: 'h3'|'h4'
  * }} ElementRenderContext

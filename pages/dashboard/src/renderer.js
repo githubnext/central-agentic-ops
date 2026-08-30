@@ -1,5 +1,5 @@
 /**
- * Presenter for JSON-driven dashboard pages using GitHub Primer styling and elements.
+ * Renderer for JSON-driven dashboard pages using GitHub Primer styling and elements.
  */
 
 import builtInDashboard from '../dashboard.json' with { type: 'json' };
@@ -33,11 +33,11 @@ import { groupChartSeries, listChartSeries, pieChartEntries, renderChartLegend, 
  */
 
 /**
- * @typedef {{ id: string, kind: 'built-in', page: string, title?: string, description?: string, icon?: string, definition?: { views?: Array<unknown>, sections?: PresentablePageSection[], ['data-state']?: Record<string, boolean> } }} PresentableBuiltInPage
+ * @typedef {{ id: string, kind: 'built-in', page: string, title?: string, description?: string, icon?: string, ['class-name']?: string, definition?: { views?: Array<unknown>, sections?: PresentablePageSection[], ['data-state']?: Record<string, boolean> } }} PresentableBuiltInPage
  */
 
 /**
- * @typedef {{ id: string, kind: 'custom', title?: string, description?: string, icon?: string, views: unknown[], sections?: PresentablePageSection[] }} PresentableCustomPage
+ * @typedef {{ id: string, kind: 'custom', title?: string, description?: string, icon?: string, ['class-name']?: string, views: unknown[], sections?: PresentablePageSection[] }} PresentableCustomPage
  */
 
 /**
@@ -84,6 +84,7 @@ const BUILT_IN_PAGE_PAYLOADS = /** @type {Record<string, PresentableCustomPage>}
       kind: 'custom',
       title: page.title,
       description: 'description' in page ? page.description : undefined,
+      'class-name': 'class-name' in page ? page['class-name'] : undefined,
       views: page.definition.views,
       sections: page.definition.sections
     }
@@ -102,6 +103,7 @@ function getBuiltInPagePayload(page) {
     kind: 'custom',
     title: page.title ?? payload?.title,
     description: page.description ?? payload?.description,
+    'class-name': page['class-name'] ?? payload?.['class-name'],
     views: payload?.views ?? [],
     sections: payload?.sections
   };
@@ -424,11 +426,14 @@ function renderCustomPage(page, title, sources) {
       ...sections.map((section) => renderLayoutSection(page.id, section, renderedViewsById))
     )
     : h('div', { className: 'custom-view-grid' }, ...renderedViews);
+  const pageClassName = typeof page['class-name'] === 'string' && page['class-name'].length > 0
+    ? ` ${page['class-name']}`
+    : '';
 
   return h(
     'section',
     {
-      className: `dashboard-page ${page.id}-page`,
+      className: `dashboard-page${pageClassName}`,
       id: `page-${page.id}`,
       'data-page-kind': 'custom',
       'data-page-name': page.id,

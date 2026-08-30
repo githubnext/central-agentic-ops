@@ -10,8 +10,8 @@ export const ROOT_KEYS = ['language-version', 'dashboard'];
 export const DASHBOARD_KEYS = ['id', 'title', 'description', 'defaults', 'pages', 'github-url-base', 'repository', 'navigation'];
 export const DEFAULTS_KEYS = ['scope', 'time', 'filters'];
 export const NAVIGATION_SECTION_KEYS = ['label', 'pages'];
-export const BUILT_IN_PAGE_KEYS = ['id', 'kind', 'page', 'title', 'description', 'icon', 'definition'];
-export const CUSTOM_PAGE_KEYS = ['id', 'kind', 'title', 'description', 'icon', 'views'];
+export const BUILT_IN_PAGE_KEYS = ['id', 'kind', 'page', 'title', 'description', 'icon', 'class-name', 'definition'];
+export const CUSTOM_PAGE_KEYS = ['id', 'kind', 'title', 'description', 'icon', 'class-name', 'views'];
 
 export const VIEW_KEYS = ['id', 'title', 'description', 'data', 'mark', 'element', 'chart', 'layout', 'disclosure', 'encoding'];
 export const VIEW_DATA_KEYS = ['source', 'sources', 'scope', 'time', 'filters', 'limit', 'order-by', 'source-metadata'];

@@ -111,7 +111,7 @@ Rank candidates by how much future feature work they unlock, and prefer the high
 
 - The same DOM shape assembled more than once (cards, metric grids, tables, chart text equivalents, summary lists, link lists, empty and unavailable states, section headers, sidebars, filter and context strips).
 - Near-duplicates that differ only in labels, field accessors, or ordering, which generalize behind a small parameter object.
-- Long page render functions in `src/presenter.js` that inline markup a built-in or custom page could compose instead.
+- Long page render functions in `src/renderer.js` that inline markup a built-in or custom page could compose instead.
 - Repeated non-visual helpers around formatting, sorting, counting, grouping, label derivation, and safe text handling, which belong in a shared module rather than a component.
 - Component APIs that have accumulated boolean flags or page-specific branches and should be split into smaller composable components.
 

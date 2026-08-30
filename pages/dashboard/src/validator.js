@@ -520,6 +520,9 @@ function validatePage(page, pageNode, path, pageIds, errors) {
 
   validateOptionalStringField(page.title, `${path}.title`, errors);
   validateOptionalStringField(page.description, `${path}.description`, errors);
+  if (page['class-name'] !== undefined) {
+    validateRequiredIdentifier(page['class-name'], `${path}.class-name`, 'page class name', errors);
+  }
   if (page.icon !== undefined) {
     validateStringField(page.icon, `${path}.icon`, true, errors);
     if (typeof page.icon === 'string' && !PAGE_ICON_VALUES.includes(page.icon)) {
