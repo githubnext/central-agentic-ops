@@ -57,6 +57,7 @@ permissions:
   issues: read
   pull-requests: read
   security-events: read
+  secret-scanning-alerts: read
   vulnerability-alerts: read
 
 engine:

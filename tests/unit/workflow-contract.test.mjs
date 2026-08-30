@@ -904,6 +904,7 @@ test("Advisory preserves UK AI guidance and human-review boundaries", () => {
   assert.match(worker, /repository_metadata/);
   assert.match(worker, /visibility: repositoryData\.visibility/);
   assert.match(worker, /open_dependabot_alerts/);
+  assert.match(worker, /secret-scanning-alerts: read/);
   assert.match(worker, /dependency_automation/);
   assert.match(worker, /security_policy/);
   assert.match(worker, /age_days: ageDays\(alert\.created_at\)/);
