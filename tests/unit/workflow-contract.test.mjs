@@ -616,7 +616,8 @@ test("orchestrators emit dedicated bounded dispatcher telemetry", () => {
   const packageSkill = readFileSync(join(root, ".github", "skills", "create-ops-package", "SKILL.md"), "utf8");
 
   assert.match(control, /post-steps:[\s\S]*?Emit control-plane dispatcher telemetry/);
-  assert.match(control, /github\.aw\.import-inputs\.role == 'orchestrator'/);
+  assert.match(control, /CONTROL_ROLE: \$\{\{ github\.aw\.import-inputs\.role \}\}/);
+  assert.match(control, /process\.env\.CONTROL_ROLE !== 'orchestrator'/);
   assert.match(control, /otlp\.logSpan\('central-agentic-ops\.dispatcher'/);
   assert.match(control, /central_agentic_ops\.dispatcher\.dispatch_requested_count/);
   assert.match(control, /central_agentic_ops\.dispatcher\.target_count/);
@@ -814,6 +815,35 @@ test("blank manual reviews target the control repository before discovery", () =
     control,
     /target_repo: \$\{\{ github\.event\.inputs\.target_repo \|\| \(github\.event_name == 'workflow_dispatch' && env\.GH_AW_SAFE_OUTPUT_MODE == 'review' && github\.repository\) \|\| '' \}\}/,
   );
+});
+
+test("import inputs resolve at compile time instead of leaking into lock files", () => {
+  for (const name of readdirSync(join(workflowsDirectory, "shared"))) {
+    if (!name.endsWith(".md")) continue;
+    for (const reference of workflow(join("shared", name)).match(/\$\{\{[^}]*github\.aw\.import-inputs[^}]*\}\}/g) ?? []) {
+      assert.match(
+        reference,
+        /^\$\{\{ github\.aw\.import-inputs\.[a-z_]+ \}\}$/,
+        `shared/${name} must reference import inputs as standalone expressions so the compiler substitutes them: ${reference}`,
+      );
+    }
+  }
+
+  for (const name of readdirSync(workflowsDirectory)) {
+    if (!name.endsWith(".lock.yml")) continue;
+    assert.doesNotMatch(workflow(name), /github\.aw\.import-inputs/, `${name} kept an unresolved import input`);
+  }
+});
+
+test("orchestrator review runs default safe outputs to the control repository", () => {
+  const control = workflow("shared/control.md");
+  const precompute = workflow("shared/control-precompute.md");
+
+  assert.match(
+    control,
+    /safe_output_repo: \$\{\{ github\.event\.inputs\.safe_output_repo \|\| env\.REVIEW_OUTPUT_REPO \|\| github\.repository \}\}/,
+  );
+  assert.match(precompute, /! repository_equal "\$SAFE_OUTPUT_REPO" "\$CENTRAL_REPO"/);
 });
 
 test("orchestrators dispatch workers only through safe-output tools", () => {

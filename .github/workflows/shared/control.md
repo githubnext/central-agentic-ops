@@ -39,7 +39,7 @@ imports:
       requested_max_repos: ${{ github.event.inputs.max_repos || '' }}
       requested_rollout_percent: ${{ github.event.inputs.rollout_percent || '' }}
       dispatch_max: "${{ github.aw.import-inputs.dispatch_max }}"
-      safe_output_repo: ${{ github.event.inputs.safe_output_repo || (github.aw.import-inputs.role == 'orchestrator' && github.repository) || '' }}
+      safe_output_repo: ${{ github.event.inputs.safe_output_repo || env.REVIEW_OUTPUT_REPO || github.repository }}
       correlation_id: ${{ github.event.inputs.correlation_id || '' }}
       central_repo: ${{ github.event.inputs.central_repo || '' }}
       control_plane_run_url: ${{ github.event.inputs.control_plane_run_url || '' }}
@@ -48,13 +48,19 @@ imports:
 
 post-steps:
   - name: Emit control-plane dispatcher telemetry
-    if: ${{ always() && github.aw.import-inputs.role == 'orchestrator' }}
+    if: ${{ always() }}
     continue-on-error: true
     uses: actions/github-script@v9.0.0
+    env:
+      CONTROL_ROLE: ${{ github.aw.import-inputs.role }}
     with:
       script: |
         const fs = require('fs');
         const otlp = require('/tmp/gh-aw/actions/otlp.cjs');
+
+        if (process.env.CONTROL_ROLE !== 'orchestrator') {
+          return;
+        }
 
         function readJson(file, fallback) {
           try {
