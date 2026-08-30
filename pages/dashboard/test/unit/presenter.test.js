@@ -11,6 +11,49 @@ const authoritativeDashboardDocument = JSON.parse(
 );
 
 describe('presenter built-in and custom pages', () => {
+  it('renders central operation packages as orchestrator-to-worker topology and keeps standalone target workflows separate', () => {
+    const document = {
+      languageVersion: '0.1.0',
+      dashboard: {
+        id: 'workflow-topology-dashboard',
+        title: 'Workflow Topology',
+        pages: [{ id: 'workflows', kind: /** @type {'built-in'} */ ('built-in'), page: 'workflows', title: 'Workflows' }]
+      }
+    };
+
+    const rendered = renderDashboard({
+      document,
+      sources: {
+        workflows: {
+          source: 'workflows',
+          rows: [
+            { repository: 'central-agentic-ops', package: 'dependabot', 'package-name': 'Dependabot', workflow: '.github/workflows/dependabot.yml', 'workflow-name': 'Dependabot', 'workflow-role': 'orchestrator', 'workflow-active': 'true', 'rollout-mode': 'live' },
+            { repository: 'central-agentic-ops', package: 'dependabot', 'package-name': 'Dependabot', workflow: '.github/workflows/dependabot-release-train-updater.yml', 'workflow-name': 'Release Train Updater', 'workflow-role': 'worker', 'workflow-active': 'true', 'rollout-mode': 'live' },
+            { repository: 'target-service', workflow: '.github/workflows/ci.yml', 'workflow-name': 'CI', 'workflow-role': 'standalone', 'workflow-active': 'true', 'rollout-mode': 'unknown' }
+          ],
+          metadata: {
+            'source-id': 'workflow-topology-fixture',
+            'source-kind': 'fixture',
+            'as-of': '2026-08-30T08:00:00Z',
+            'retrieved-at': '2026-08-30T08:01:00Z',
+            completeness: 'complete',
+            freshness: 'fresh',
+            availability: 'available'
+          }
+        }
+      }
+    });
+
+    const topology = rendered.querySelector('.workflow-topology');
+    expect(topology).not.toBeNull();
+    expect(topology?.querySelectorAll('[data-package-id="dependabot"]')).toHaveLength(1);
+    expect(topology?.querySelectorAll('[data-workflow-role="orchestrator"]')).toHaveLength(1);
+    expect(topology?.querySelectorAll('[data-workflow-role="worker"]')).toHaveLength(1);
+    expect(topology?.querySelector('[data-package-id="dependabot"]')?.textContent).toContain('dispatches');
+    expect(topology?.querySelector('[data-repository="target-service"]')?.textContent).toContain('CI');
+    expect(topology?.textContent).toContain('safe outputs only');
+  });
+
   it('DLS-PAGE-002 DLS-PAGE-014 renders built-in overview page with rollout-mode filtering, workflow active-state inventory, run status and conclusion counts and trends, repository and workflow rankings, largest AIC spenders, recent linked findings, operational-value timeline, and provenance/freshness data state deterministically', () => {
     /** @type {import('../../src/presenter.js').PresentationInput['document']} */
     const document = {

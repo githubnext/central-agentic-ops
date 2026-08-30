@@ -1,13 +1,13 @@
 <!doctype html>
 <html lang="en">
   <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Central Agentic Ops — Dashboard Language Renderer Preview</title>
     <meta
       name="description"
       content="Live browser preview of the Dashboard Language Renderer built-in pages, rendered from illustrative fixture data."
-    />
+    >
   </head>
   <body>
     <div id="root"></div>
@@ -55,9 +55,21 @@
         workflows: {
           source: "workflows",
           rows: [
-            { organization: "github", repository: "central-agentic-ops", workflow: ".github/workflows/daily.yml", "workflow-name": "Daily", "workflow-active": "true", "rollout-mode": "live", "observed-at": "2026-08-29T10:00:00Z" },
-            { organization: "github", repository: "mona-tools", workflow: ".github/workflows/review.yml", "workflow-name": "Review", "workflow-active": "false", "rollout-mode": "review", "observed-at": "2026-08-29T10:00:00Z" },
-            { organization: "octo-org", repository: "octo-repo", workflow: ".github/workflows/nightly.yml", "workflow-name": "Nightly", "workflow-active": "true", "rollout-mode": "live", "observed-at": "2026-08-29T10:00:00Z" },
+            { organization: "githubnext", repository: "central-agentic-ops", package: "dependabot", "package-name": "Dependabot", "workflow-role": "orchestrator", workflow: ".github/workflows/dependabot.md", "workflow-name": "Repository selector", "workflow-active": "true", "rollout-mode": "live", "observed-at": "2026-08-29T10:00:00Z" },
+            { organization: "githubnext", repository: "central-agentic-ops", package: "dependabot", "package-name": "Dependabot", "workflow-role": "worker", workflow: ".github/workflows/dependabot-release-train-updater.md", "workflow-name": "Release train updater", "workflow-active": "true", "rollout-mode": "live", "observed-at": "2026-08-29T10:00:00Z" },
+            { organization: "githubnext", repository: "central-agentic-ops", package: "ambient-context", "package-name": "Ambient Context", "workflow-role": "orchestrator", workflow: ".github/workflows/ambient-context.md", "workflow-name": "Repository selector", "workflow-active": "true", "rollout-mode": "review", "observed-at": "2026-08-29T10:00:00Z" },
+            { organization: "githubnext", repository: "central-agentic-ops", package: "ambient-context", "package-name": "Ambient Context", "workflow-role": "worker", workflow: ".github/workflows/ambient-context-agents-md-curator.md", "workflow-name": "AGENTS.md curator", "workflow-active": "true", "rollout-mode": "review", "observed-at": "2026-08-29T10:00:00Z" },
+            { organization: "githubnext", repository: "central-agentic-ops", package: "ambient-context", "package-name": "Ambient Context", "workflow-role": "worker", workflow: ".github/workflows/ambient-context-skills-curator.md", "workflow-name": "Skills curator", "workflow-active": "true", "rollout-mode": "review", "observed-at": "2026-08-29T10:00:00Z" },
+            { organization: "githubnext", repository: "central-agentic-ops", package: "eu-cra-compliance", "package-name": "EU CRA Advisor", "workflow-role": "orchestrator", workflow: ".github/workflows/eu-cra-compliance.md", "workflow-name": "Repository selector", "workflow-active": "true", "rollout-mode": "review", "observed-at": "2026-08-29T10:00:00Z" },
+            { organization: "githubnext", repository: "central-agentic-ops", package: "eu-cra-compliance", "package-name": "EU CRA Advisor", "workflow-role": "worker", workflow: ".github/workflows/eu-cra-compliance-scope-classifier.md", "workflow-name": "Scope classifier", "workflow-active": "true", "rollout-mode": "review", "observed-at": "2026-08-29T10:00:00Z" },
+            { organization: "githubnext", repository: "central-agentic-ops", package: "eu-cra-compliance", "package-name": "EU CRA Advisor", "workflow-role": "worker", workflow: ".github/workflows/eu-cra-compliance-security-requirements-auditor.md", "workflow-name": "Security requirements", "workflow-active": "true", "rollout-mode": "review", "observed-at": "2026-08-29T10:00:00Z" },
+            { organization: "githubnext", repository: "central-agentic-ops", package: "eu-cra-compliance", "package-name": "EU CRA Advisor", "workflow-role": "worker", workflow: ".github/workflows/eu-cra-compliance-supply-chain-sbom-auditor.md", "workflow-name": "Supply chain and SBOM", "workflow-active": "true", "rollout-mode": "review", "observed-at": "2026-08-29T10:00:00Z" },
+            { organization: "githubnext", repository: "central-agentic-ops", package: "eu-cra-compliance", "package-name": "EU CRA Advisor", "workflow-role": "worker", workflow: ".github/workflows/eu-cra-compliance-vulnerability-handling-auditor.md", "workflow-name": "Vulnerability handling", "workflow-active": "true", "rollout-mode": "review", "observed-at": "2026-08-29T10:00:00Z" },
+            { organization: "githubnext", repository: "central-agentic-ops", package: "eu-cra-compliance", "package-name": "EU CRA Advisor", "workflow-role": "worker", workflow: ".github/workflows/eu-cra-compliance-article-14-reporting-readiness.md", "workflow-name": "Article 14 readiness", "workflow-active": "true", "rollout-mode": "review", "observed-at": "2026-08-29T10:00:00Z" },
+            { organization: "githubnext", repository: "central-agentic-ops", package: "eu-cra-compliance", "package-name": "EU CRA Advisor", "workflow-role": "worker", workflow: ".github/workflows/eu-cra-compliance-conformity-release-evidence.md", "workflow-name": "Conformity and release", "workflow-active": "true", "rollout-mode": "review", "observed-at": "2026-08-29T10:00:00Z" },
+            { organization: "github", repository: "mona-tools", "workflow-role": "standalone", workflow: ".github/workflows/ci.yml", "workflow-name": "Build and test", "workflow-active": "true", "rollout-mode": "live", "observed-at": "2026-08-29T10:00:00Z" },
+            { organization: "github", repository: "mona-tools", "workflow-role": "standalone", workflow: ".github/workflows/codeql.yml", "workflow-name": "CodeQL", "workflow-active": "true", "rollout-mode": "live", "observed-at": "2026-08-29T10:00:00Z" },
+            { organization: "octo-org", repository: "octo-repo", "workflow-role": "standalone", workflow: ".github/workflows/release.yml", "workflow-name": "Release", "workflow-active": "false", "rollout-mode": "review", "observed-at": "2026-08-29T10:00:00Z" },
           ],
           metadata: metadata("workflows-fixture"),
         },

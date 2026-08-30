@@ -1592,10 +1592,10 @@ test("Dashboard renders one canonical authored workflow detail across repository
       bundles: [{ repository: "acme/control", name: "Optimization", workflows: [{ lockPath: orchestratorPath }] }],
       workflows: [
         { repository: "acme/control", visibility: "public", path: orchestratorPath, name: "Optimization", state: "active", htmlUrl: "https://github.com/acme/control/blob/main/.github/workflows/operation.md?plain=1", updatedAt: "2026-08-26T10:00:00Z", role: "orchestrator", runHealth: { runs: 1, successful: 1, failed: 0, cancelled: 0, skipped: 0, pending: 0, other: 0, runRecords: [
-          { runId: 5, event: "workflow_dispatch", conclusion: "success", status: "completed", createdAt: "2026-08-26T11:00:00Z", displayTitle: "Optimization manual run" },
+          { runId: 5, runNumber: 77, runAttempt: 1, event: "workflow_dispatch", conclusion: "success", status: "completed", createdAt: "2026-08-26T07:55:00Z", startedAt: "2026-08-26T08:00:00Z", updatedAt: "2026-08-26T08:05:00Z", displayTitle: "Optimization manual run" },
         ] } },
         { repository: "acme/control", visibility: "public", path: workerPath, name: "Credit optimizer", state: "active", htmlUrl: "https://github.com/acme/control/blob/main/.github/workflows/worker.md?plain=1", updatedAt: "2026-08-26T10:00:00Z", role: "worker", runHealth: { runs: 4, successful: 1, failed: 1, actionRequired: 1, cancelled: 0, skipped: 0, pending: 1, other: 0, runRecords: [
-          { runId: 1, event: "workflow_dispatch", conclusion: "success", status: "completed", createdAt: "2026-08-26T08:00:00Z", displayTitle: "Credit optimizer success" },
+          { runId: 1, runNumber: 78, runAttempt: 1, event: "workflow_dispatch", conclusion: "success", status: "completed", createdAt: "2026-08-26T08:00:00Z", startedAt: "2026-08-26T08:01:00Z", updatedAt: "2026-08-26T08:30:00Z", displayTitle: "Credit optimizer success" },
           { runId: 2, event: "workflow_dispatch", conclusion: "failure", status: "completed", createdAt: "2026-08-26T09:00:00Z", displayTitle: "Credit optimizer failure" },
           { runId: 3, event: "schedule", conclusion: null, status: "in_progress", createdAt: "2026-08-26T10:00:00Z", displayTitle: "Credit optimizer running" },
           { runId: 4, event: "workflow_dispatch", conclusion: "action_required", status: "completed", createdAt: "2026-08-26T10:30:00Z", displayTitle: "Credit optimizer approval" },
@@ -1623,15 +1623,15 @@ test("Dashboard renders one canonical authored workflow detail across repository
       }],
     });
     writeFileSync(mockFetchPath, `
-const issue = (number, title, workflow, runId) => ({
-  number, title, body: \`### \${workflow}\\n\\ntarget repository: \\\`acme/service\\\`\\n\\nGenerated from [\${workflow}](https://github.com/acme/control/actions/runs/\${runId})\`,
+const issue = (number, title, workflow, runId, correlation = "") => ({
+  number, title, body: \`### \${workflow}\\n\\ntarget repository: \\\`acme/service\\\`\\n\\nGenerated from [\${workflow}](https://github.com/acme/control/actions/runs/\${runId}) · 12.5 AIC\` + (correlation ? \`\\n\\n<!-- cao:correlation=\${correlation} -->\` : ""),
   body_html: \`<p>\${title}</p>\`, state: "open", html_url: \`https://github.com/acme/control/issues/\${number}\`,
   url: \`https://api.github.com/repos/acme/control/issues/\${number}\`, created_at: "2026-08-26T10:00:00Z", updated_at: "2026-08-26T10:00:00Z",
 });
 globalThis.fetch = async (input) => {
   const pathname = new URL(input).pathname;
   let body;
-  if (pathname === "/repos/acme/control/issues") body = [issue(1, "Worker report", "Credit optimizer", 1), issue(2, "Orchestrator report", "Optimization", 2)];
+  if (pathname === "/repos/acme/control/issues") body = [issue(1, "Worker report", "Credit optimizer", 1, "5-77"), issue(2, "Orchestrator report", "Optimization", 2)];
   else if (pathname.endsWith("/issues")) body = [];
   else if (pathname.endsWith("/issues/comments")) body = [];
   else if (pathname.endsWith("/actions/artifacts")) body = { artifacts: [] };
@@ -1657,7 +1657,11 @@ globalThis.fetch = async (input) => {
     });
 
     const overview = readFileSync(join(outputPath, "index.html"), "utf8");
+    const runtime = readFileSync(join(outputPath, "runtime", "index.html"), "utf8");
     const dispatches = readFileSync(join(outputPath, "dispatches", "index.html"), "utf8");
+    const security = readFileSync(join(outputPath, "security", "index.html"), "utf8");
+    const value = readFileSync(join(outputPath, "value", "index.html"), "utf8");
+    const cost = readFileSync(join(outputPath, "cost", "index.html"), "utf8");
     const catalog = readFileSync(join(outputPath, "workflows", "index.html"), "utf8");
     const repositories = readFileSync(join(outputPath, "repositories", "index.html"), "utf8");
     const repositoryWorkflows = readFileSync(join(outputPath, "repositories", "acme-control.html"), "utf8");
@@ -1675,41 +1679,119 @@ globalThis.fetch = async (input) => {
     assert.match(overview, /<title>Overview \| control<\/title>/);
     assert.match(overview, /class="refresh-control" href="https:\/\/github\.com\/acme\/control\/actions\/workflows\/dashboard\.yml">Refresh<\/a>/);
     assert.match(overview, /class="sidebar-brand"[^>]*>[\s\S]*?<span>control<\/span>/);
-    assert.match(overview, /<span>Overview<\/span>[\s\S]*?<span>Repositories<\/span>[\s\S]*?<span>Packages<\/span>/);
+    assert.match(overview, /<span class="nav-section-label">Attention<\/span>[\s\S]*?<span>Overview<\/span>[\s\S]*?<span class="nav-section-label">Investigate<\/span>[\s\S]*?<span>Runtime<\/span>[\s\S]*?<span>Security<\/span>[\s\S]*?<span>Value<\/span>[\s\S]*?<span>Cost<\/span>[\s\S]*?<span class="nav-section-label">Explore<\/span>[\s\S]*?<span>Dispatches<\/span>[\s\S]*?<span>Workflows<\/span>[\s\S]*?<span>Repositories<\/span>[\s\S]*?<span>Packages<\/span>/);
+    assert.match(overview, /href="\.\/runtime\/"[\s\S]*?<span>Runtime<\/span>/);
+    assert.match(overview, /href="\.\/security\/"[\s\S]*?<span>Security<\/span>/);
+    assert.match(overview, /href="\.\/value\/"[\s\S]*?<span>Value<\/span>/);
+    assert.match(overview, /href="\.\/cost\/"[\s\S]*?<span>Cost<\/span>/);
     assert.match(overview, /href="\.\/dispatches\/"[\s\S]*?<span>Dispatches<\/span>/);
     assert.doesNotMatch(overview, /class="nav-children"/);
     assert.doesNotMatch(overview, /class="attention-link"/);
-    assert.match(overview, /class="attention-panel"/);
-    assert.match(overview, /href="runs\/failed\.html"[\s\S]*?1 failed runs/);
-    assert.match(overview, /href="runs\/action-required\.html"[\s\S]*?1 run awaiting approval/);
-    assert.match(overview, /href="workflows\/\?state=disabled"[\s\S]*?1 disabled workflows/);
+    assert.match(overview, /id="overview-observability-heading">Attention by domain/);
+    assert.equal(overview.match(/class="attention-domain-card /g)?.length, 6);
+    assert.match(overview, /class="attention-domain-card attention-domain-critical" href="runtime\/"[\s\S]*?Runtime health[\s\S]*?Act now[\s\S]*?1 failed[\s\S]*?2 of 5 runs succeeded · 1 approval gates/);
+    assert.match(overview, /href="runtime\/#episode-observatory-heading"[\s\S]*?Episodes &amp; autonomy[\s\S]*?Investigate[\s\S]*?1 observed[\s\S]*?1 of 3 worker dispatches attributed/);
+    assert.match(overview, /href="security\/"[\s\S]*?Security &amp; controls[\s\S]*?Investigate[\s\S]*?1 signals[\s\S]*?No vulnerability feed/);
+    assert.match(overview, /href="value\/"[\s\S]*?Value &amp; outcomes[\s\S]*?Investigate[\s\S]*?Threshold unavailable[\s\S]*?1 of 1 grader observations/);
+    assert.match(overview, /href="cost\/"[\s\S]*?Cost &amp; efficiency[\s\S]*?Unavailable[\s\S]*?12\.5 AIC[\s\S]*?monthly budget verdict unavailable/);
+    assert.match(overview, /href="coverage\/"[\s\S]*?Evidence quality[\s\S]*?Investigate[\s\S]*?3 gaps/);
+    assert.match(overview, /Act now is a direct failure; Investigate is a direct control, collection, or attribution signal/);
+    assert.doesNotMatch(overview, /class="workflow-attention"|class="episode-observatory"|class="control-plane-status"|class="attention-panel"|class="operation-card-list"/);
+    assert.doesNotMatch(overview, /class="overview-outcome-plot"|id="overview-outcome-heading"/);
     assert.doesNotMatch(overview, /href="runs\/in-progress\.html"|runs in progress|in progress/i);
-    assert.match(overview, /href="coverage\/"[\s\S]*?Coverage needs context/);
-    assert.match(overview, /href="runs\/">View all runs<\/a>/);
     assert.doesNotMatch(overview, />View activity<\/a>/);
-    assert.match(overview, /class="operation-card-list"/);
     assert.match(dispatches, /<title>Dispatches \| control<\/title>/);
-    assert.match(dispatches, /Package-worker dispatches/);
+    assert.match(dispatches, /Workflow dispatch events/);
     assert.match(dispatches, /Complete 24-hour Actions run window/);
-    assert.match(dispatches, /3 dispatches/);
+    assert.match(dispatches, /4 dispatches/);
+    assert.match(dispatches, /Package orchestrator/);
+    assert.match(dispatches, /Package worker/);
     assert.match(dispatches, /Credit optimizer success/);
     assert.match(dispatches, /Credit optimizer failure/);
     assert.match(dispatches, /Credit optimizer approval/);
+    assert.match(dispatches, /Optimization manual run/);
     assert.ok(dispatches.indexOf("Credit optimizer approval") < dispatches.indexOf("Credit optimizer failure"));
     assert.ok(dispatches.indexOf("Credit optimizer failure") < dispatches.indexOf("Credit optimizer success"));
+    assert.ok(dispatches.indexOf("Credit optimizer success") < dispatches.indexOf("Optimization manual run"));
     assert.match(dispatches, /data-package="Optimization"/);
     assert.match(dispatches, /github\.com\/acme\/control\/actions\/runs\/2/);
     assert.match(dispatches, /id="dispatch-search"/);
     assert.match(dispatches, /id="dispatch-package"/);
     assert.match(dispatches, /new URLSearchParams\(window\.location\.search\)/);
-    assert.doesNotMatch(dispatches, /Credit optimizer running|Optimization manual run/);
+    assert.doesNotMatch(dispatches, /Credit optimizer running/);
+    assert.match(runtime, /<title>Runtime &amp; episodes \| control<\/title>/);
+    assert.match(runtime, /aria-current="page"[^>]*>[\s\S]*?<span>Runtime<\/span>/);
+    assert.match(runtime, /id="workflow-attention-heading">Needs attention/);
+    assert.match(runtime, /href="\.\.\/repositories\/acme-control--workflow--worker-insights\.html"[\s\S]*?1 of 4 retained runs failed/);
+    assert.match(runtime, /href="\.\.\/runs\/action-required\.html"[\s\S]*?1 of 4 retained runs require approval/);
+    assert.match(runtime, /Statistical anomalies · not evaluated/);
+    assert.match(runtime, /data-signal-kind="run-failures"[\s\S]*?Credit optimizer[\s\S]*?1 of 4 retained runs failed[\s\S]*?25%/);
+    assert.match(runtime, /data-signal-kind="approval-gate"[\s\S]*?Credit optimizer[\s\S]*?1 of 4 retained runs require approval[\s\S]*?Maintainer action/);
+    assert.match(runtime, /data-signal-kind="evidence-gap"[\s\S]*?Worker attribution incomplete[\s\S]*?2 of 3 observed dispatches lack exact episode evidence/);
+    assert.match(runtime, /Order: failures, approval gates, then evidence gaps/);
+    assert.match(runtime, /id="episode-observatory-heading">Execution episodes/);
+    assert.match(runtime, /<dt>Worker attribution<\/dt><dd>1 \/ 3<\/dd>/);
+    assert.match(runtime, /correlation <code>5-77<\/code>/);
+    assert.match(runtime, /<dt>Output yield<\/dt><dd>1 \/ 1<\/dd>/);
+    assert.match(runtime, /<dt>Measured AIC<\/dt><dd>12\.5<\/dd>/);
+    assert.match(runtime, /class="episode-waterfall"[\s\S]*?Observed intervals only · 30m total/);
+    assert.match(runtime, /data-lane-role="root"[\s\S]*?Optimization[\s\S]*?5m[\s\S]*?success/);
+    assert.match(runtime, /data-lane-role="worker"[\s\S]*?Credit optimizer[\s\S]*?29m[\s\S]*?success/);
+    assert.match(runtime, /Evidence · Correlated outputs/);
+    assert.match(runtime, /2 worker dispatches lack episode evidence/);
+    assert.match(security, /<title>Security &amp; data quality \| control<\/title>/);
+    assert.match(security, /aria-current="page"[^>]*>[\s\S]*?<span>Security<\/span>/);
+    assert.match(security, /id="security-attention-heading">Needs attention/);
+    assert.match(security, /<dt>Approval gates<\/dt><dd>1<\/dd>/);
+    assert.match(security, /<dt>Explicit warnings<\/dt><dd>0<\/dd>/);
+    assert.match(security, /<dt>Package integrity gaps<\/dt><dd>0<\/dd>/);
+    assert.match(security, /<dt>Vulnerability findings<\/dt><dd>—<\/dd>/);
+    assert.match(security, /data-signal-kind="approval-gate"[\s\S]*?1 run require maintainer approval/);
+    assert.doesNotMatch(security, /data-signal-kind="execution-failure"|data-signal-kind="missing-data"/);
+    assert.match(security, /No vulnerability feed is retained/);
+    assert.match(value, /<title>Value &amp; outcomes \| control<\/title>/);
+    assert.match(value, /aria-current="page"[^>]*>[\s\S]*?<span>Value<\/span>/);
+    assert.match(value, /id="value-attention-heading">Needs attention/);
+    assert.match(value, /<dt>Grader coverage<\/dt><dd>1 \/ 1<\/dd>/);
+    assert.match(value, /<dt>Mature evidence<\/dt><dd>1<\/dd>/);
+    assert.match(value, /<dt>Mean operational value<\/dt><dd>0\.8<\/dd>/);
+    assert.match(value, /<dt>Open outputs<\/dt><dd>2<\/dd>/);
+    assert.match(value, /data-signal-kind="open-output"[\s\S]*?2 of 2 retained outputs remain open or available/);
+    assert.match(value, /data-signal-kind="experiment-readiness"[\s\S]*?Experiment assignments are not retained/);
+    assert.match(value, /Operational value is absolute attainment, not proof that a workflow caused an outcome/);
+    assert.match(value, /id="operational-value-heading">Operational value by workflow/);
+    assert.match(value, /Credit optimizer[\s\S]*?<td>1<\/td><td>1<\/td><td>0\.8<\/td><td>0\.4<\/td>/);
+    assert.match(value, /id="grader-ledger-heading">Grader ledger/);
+    assert.match(value, /<code>0123456789ab<\/code>/);
+    assert.match(value, /id="experiment-readiness-heading">Experiment comparisons unavailable/);
+    assert.match(value, /does not infer control or treatment groups/);
+    assert.match(cost, /<title>Cost &amp; efficiency \| control<\/title>/);
+    assert.match(cost, /aria-current="page"[^>]*>[\s\S]*?<span>Cost<\/span>/);
+    assert.match(cost, /id="cost-attention-heading">Measured usage/);
+    assert.match(cost, /<dt>Measured AIC<\/dt><dd>12\.5<\/dd>/);
+    assert.match(cost, /<dt>Measured runs<\/dt><dd>1<\/dd>/);
+    assert.match(cost, /<dt>Measured episode AIC<\/dt><dd>12\.5<\/dd>/);
+    assert.match(cost, /<dt>Episode output yield<\/dt><dd>1 \/ 1<\/dd>/);
+    assert.match(cost, /Budget status is unavailable/);
+    assert.match(cost, /Cost anomalies are not evaluated/);
+    assert.match(cost, /id="spend-heading">AI Credit usage by AW repository/);
+    assert.match(cost, /Budget and anomaly verdicts unavailable/);
+    assert.match(cost, /AI Credit totals are allocation evidence, not monetary cost/);
     assert.match(catalog, /\.github\/workflows\/worker\.md/);
     assert.match(catalog, /\.github\/workflows\/local-audit\.md/);
     assert.match(catalog, /new URLSearchParams\(window\.location\.search\)/);
     assert.match(catalog, /setInitialValue\(state, "state"\)/);
     assert.match(catalog, /window\.history\.replaceState/);
+    assert.match(catalog, /across the configured acme\/service repository/);
+    assert.match(catalog, /id="workflow-topology-heading">Definition topology/);
+    assert.match(catalog, /id="central-package-workflows-heading">Operation packages/);
+    assert.match(catalog, /class="workflow-package-card"[\s\S]*?Optimization[\s\S]*?orchestrator[\s\S]*?Credit optimizer[\s\S]*?worker/);
+    assert.match(catalog, /aria-label="Safe-output boundary"/);
+    assert.match(catalog, /class="standalone-workflow-group"[\s\S]*?acme\/service[\s\S]*?Local audit[\s\S]*?standalone/);
+    assert.ok(catalog.indexOf('class="workflow-topology-overview"') < catalog.indexOf('id="workflow-catalog"'));
+    assert.doesNotMatch(catalog, /class="workflow-attention"|class="episode-observatory"/);
     assert.doesNotMatch(catalog, /\.lock\.yml/);
-    assert.doesNotMatch(catalog, /<nav class="primary-nav"[\s\S]*?<span>Workflows<\/span>/);
+    assert.match(catalog, /aria-current="page"[^>]*>[\s\S]*?<span>Workflows<\/span>/);
     assert.match(repositories, /href="\.\.\/workflows\/">Search all workflows<\/a>/);
     assert.match(repositories, /href="\.\.\/runs\/failed\.html\?repository=acme%2Fcontrol">Needs attention<\/a>/);
     assert.match(repositories, /href="\.\.\/workflows\/\?repository=acme%2Fservice&amp;state=disabled">Disabled workflows<\/a>/);
