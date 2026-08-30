@@ -87,12 +87,16 @@ function inventoryWorkflowDetails(inventory = {}) {
     }
   }
   for (const bundle of inventory.bundles || []) {
+    const workers = bundle.workers || [];
     const ready = bundle.compiled === true
       && (bundle.missingWorkers || []).length === 0
-      && (bundle.workers || []).every((worker) => worker.compiled !== false);
+      && workers.every((worker) => worker.compiled !== false);
+    const packageAllowance = [bundle.maxAiCredits, ...workers.map((worker) => worker.maxAiCredits)]
+      .filter((value) => Number.isFinite(value) && value > 0)
+      .reduce((total, value) => total + value, 0);
     const packageWorkflows = [
       { sourcePath: bundle.workflow, lockPath: bundle.workflow?.replace(/\.md$/, ".lock.yml"), maxAiCredits: bundle.maxAiCredits },
-      ...(bundle.workers || []),
+      ...workers,
     ];
     for (const workflow of packageWorkflows) {
       for (const workflowPath of [workflow.sourcePath, workflow.lockPath].filter(Boolean)) {
@@ -100,6 +104,8 @@ function inventoryWorkflowDetails(inventory = {}) {
           ...details.get(workflowPath),
           maxAiCredits: workflow.maxAiCredits ?? details.get(workflowPath)?.maxAiCredits,
           inventoryReady: ready,
+          packageAllowance: packageAllowance > 0 ? packageAllowance : null,
+          packageWorkerCount: workers.length,
         });
       }
     }
@@ -119,6 +125,8 @@ function workflowRows(deployed, generatedAt, inventory) {
       ...names,
       ...(membership ? { package: membership.id, "package-name": membership.name } : {}),
       ...(Number.isFinite(details?.maxAiCredits) ? { "max-ai-credits": details.maxAiCredits } : {}),
+      ...(Number.isFinite(details?.packageAllowance) ? { "package-aic-allowance": details.packageAllowance } : {}),
+      ...(Number.isFinite(details?.packageWorkerCount) ? { "package-worker-count": details.packageWorkerCount } : {}),
       ...(typeof details?.inventoryReady === "boolean" ? { "inventory-ready": details.inventoryReady } : {}),
       "workflow-role": workflow.role || (membership ? "worker" : "standalone"),
       workflow: workflow.path?.replace(/\.lock\.yml$/, ".md") || "",

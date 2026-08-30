@@ -246,7 +246,7 @@ test('DLS-PAGE-002 DLS-PAGE-014 built-in overview page renders the report-style 
   const packagesBox = await page.locator('.managed-packages').boundingBox();
   expect(attentionBox).not.toBeNull();
   expect(packagesBox).not.toBeNull();
-  expect(packagesBox.y).toBeGreaterThan(attentionBox.y);
+  expect(packagesBox?.y).toBeGreaterThan(attentionBox?.y ?? 0);
 });
 
 test('DLS-PAGE-009 DLS-PAGE-014 built-in evals page renders distinguishable definitions and observations, observed subject, YES/NO/UNKNOWN result, evaluation model when available, time, provenance, and independent data state in browser', async ({ page }) => {

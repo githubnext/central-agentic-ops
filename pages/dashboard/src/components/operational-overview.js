@@ -398,13 +398,17 @@ function summarizePackages(rows) {
       const allowances = packageRows
         .map((row) => Number(row['max-ai-credits']))
         .filter((value) => Number.isFinite(value) && value > 0);
+      const packageAllowance = Number(packageRows.find((row) => Number.isFinite(Number(row['package-aic-allowance'])))?.['package-aic-allowance']);
+      const packageWorkerCount = Number(packageRows.find((row) => Number.isFinite(Number(row['package-worker-count'])))?.['package-worker-count']);
       const explicitReady = packageRows.map((row) => row['inventory-ready']).filter((value) => typeof value === 'boolean');
       return {
         id,
         name: String(packageRows.find((row) => typeof row['package-name'] === 'string')?.['package-name'] ?? titleCase(id)),
-        workers: workers.length,
+        workers: Number.isFinite(packageWorkerCount) ? packageWorkerCount : workers.length,
         mode: String(orchestrators[0]?.['rollout-mode'] ?? packageRows[0]?.['rollout-mode'] ?? 'unknown'),
-        allowance: allowances.length > 0 ? allowances.reduce((total, value) => total + value, 0) : null,
+        allowance: Number.isFinite(packageAllowance)
+          ? packageAllowance
+          : allowances.length > 0 ? allowances.reduce((total, value) => total + value, 0) : null,
         ready: explicitReady.includes(false)
           ? false
           : orchestrators.length === 1 && workers.length > 0 && packageRows.every(isActiveWorkflow)

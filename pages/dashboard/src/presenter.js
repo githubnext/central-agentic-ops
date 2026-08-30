@@ -298,19 +298,20 @@ function renderPage(page, sources) {
 
   if (page.kind === 'built-in') {
     const payload = getBuiltInPagePayload(page);
-    return renderCustomPage(payload, title, sources);
+    return renderCustomPage(payload, title, sources, page.page === 'overview');
   }
 
-  return renderCustomPage(page, title, sources);
+  return renderCustomPage(page, title, sources, false);
 }
 
 /**
  * @param {PresentableCustomPage} page
  * @param {string} title
  * @param {Record<string, LogicalSourceInput>} sources
+ * @param {boolean} useOperationalOverview
  * @returns {HTMLElement}
  */
-function renderCustomPage(page, title, sources) {
+function renderCustomPage(page, title, sources, useOperationalOverview) {
   const views = Array.isArray(page.views) ? page.views : [];
   const sections = Array.isArray(page.sections) ? page.sections : [];
   /** @type {Map<string, LogicalSourceInput>} */
@@ -333,7 +334,7 @@ function renderCustomPage(page, title, sources) {
     isPlainObject(view) && typeof view.id === 'string' ? view.id : `view-${index + 1}`,
     renderedViews[index]
   ]));
-  const renderedContent = page.id === 'overview' && sections.length > 0
+  const renderedContent = useOperationalOverview && sections.length > 0
     ? renderOverviewContent(sections, renderedViewsById, sources)
     : sections.length > 0
     ? h(
@@ -355,7 +356,7 @@ function renderCustomPage(page, title, sources) {
     h('h2', { tabIndex: -1 }, title),
     page.description ? h('p', { className: 'page-description' }, page.description) : null,
     ...(renderedViews.length > 0
-      ? page.id === 'overview'
+      ? useOperationalOverview
         ? [renderedContent, renderDataStateMetrics(summarizeDataState(pageSources))]
         : [renderDataStateMetrics(summarizeDataState(pageSources)), renderedContent]
       : [h('p', null, 'No custom views available.')])
