@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { readFileSync } from 'node:fs';
-import { validateDashboardDocument } from '../../src/validator.js';
+import { validateDashboardDocument, validateLogicalSources } from '../../src/validator.js';
 
 const authoritativeDashboardSource = readFileSync(`${process.cwd()}/dashboard.json`, 'utf8');
 
@@ -1541,6 +1541,73 @@ dashboard:
       expect(rejected.errors).toEqual([
         expect.objectContaining({ code: 'DLS-E005', path: '$.dashboard.pages[0].views[0].data.filters.workflow-role[1]' })
       ]);
+    }
+  });
+
+  it('DLS-SEM-022 DLS-SEM-023 validates package membership and configured allowances in logical workflow sources', () => {
+    const accepted = validateLogicalSources({
+      workflows: {
+        rows: [
+          {
+            organization: 'octo-org',
+            repository: 'platform',
+            package: 'daily-ops',
+            workflow: 'orchestrator.yml',
+            'workflow-role': 'orchestrator',
+            'max-ai-credits': 100,
+            'package-aic-allowance': 250
+          },
+          {
+            organization: 'octo-org',
+            repository: 'platform',
+            package: 'daily-ops',
+            workflow: 'worker.yml',
+            'workflow-role': 'worker',
+            'max-ai-credits': 150,
+            'package-aic-allowance': 250
+          },
+          {
+            organization: 'octo-org',
+            repository: 'target-service',
+            workflow: 'ci.yml',
+            'workflow-role': 'standalone'
+          }
+        ]
+      }
+    });
+
+    expect(accepted.ok).toBe(true);
+
+    const rejected = validateLogicalSources({
+      workflows: {
+        rows: [
+          { workflow: 'worker.yml', 'workflow-role': 'worker' },
+          { package: 'invalid', workflow: 'standalone.yml', 'workflow-role': 'standalone' },
+          {
+            package: 'negative',
+            workflow: 'negative.yml',
+            'workflow-role': 'orchestrator',
+            'max-ai-credits': -1
+          },
+          {
+            package: 'mismatch',
+            workflow: 'mismatch.yml',
+            'workflow-role': 'orchestrator',
+            'max-ai-credits': 100,
+            'package-aic-allowance': 99
+          }
+        ]
+      }
+    });
+
+    expect(rejected.ok).toBe(false);
+    if (!rejected.ok) {
+      expect(rejected.errors).toEqual(expect.arrayContaining([
+        expect.objectContaining({ code: 'DLS-E011', path: '$.sources.workflows.rows[0].package' }),
+        expect.objectContaining({ code: 'DLS-E011', path: '$.sources.workflows.rows[1].package' }),
+        expect.objectContaining({ code: 'DLS-E011', path: '$.sources.workflows.rows[2].max-ai-credits' }),
+        expect.objectContaining({ code: 'DLS-E011', path: '$.sources.workflows.rows[3].package-aic-allowance' })
+      ]));
     }
   });
 

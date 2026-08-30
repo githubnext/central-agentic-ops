@@ -382,6 +382,8 @@
               "mark": "table",
               "encoding": {
                 "columns": [
+                  { "field": "organization", "type": "nominal" },
+                  { "field": "repository", "type": "nominal" },
                   { "field": "package", "type": "nominal" },
                   { "field": "package-name", "type": "nominal" },
                   { "field": "workflow", "type": "nominal" },
@@ -411,6 +413,8 @@
               "mark": "table",
               "encoding": {
                 "columns": [
+                  { "field": "organization", "type": "nominal" },
+                  { "field": "repository", "type": "nominal" },
                   { "field": "workflow", "type": "nominal" },
                   { "field": "rollout-mode", "type": "nominal" }
                 ]
@@ -423,6 +427,8 @@
               "mark": "table",
               "encoding": {
                 "columns": [
+                  { "field": "organization", "type": "nominal" },
+                  { "field": "repository", "type": "nominal" },
                   { "field": "workflow", "type": "nominal" },
                   { "field": "run", "type": "nominal" },
                   { "field": "aic", "type": "quantitative" },

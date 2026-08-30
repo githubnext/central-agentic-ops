@@ -2,7 +2,7 @@
  * Compliance fixtures and machine-readable conformance helpers for the dashboard validator and presenter.
  */
 
-import { validateDashboardDocument } from './validator.js';
+import { validateDashboardDocument, validateLogicalSources } from './validator.js';
 import { renderDashboard } from './presenter.js';
 
 export const IMPLEMENTATION_VERSION = '0.1.0-prototype';
@@ -447,6 +447,8 @@ export function runComplianceSmokeSuite() {
  */
 function runSemanticComplianceChecks() {
   const validDocument = validateDashboardDocument(semanticFoundationsFixture);
+  const semanticSources = createSemanticFixtureSources();
+  const validSources = validateLogicalSources(semanticSources);
   const semanticAcceptanceRequirements = [
     'DLS-SEM-001',
     'DLS-SEM-002',
@@ -474,7 +476,7 @@ function runSemanticComplianceChecks() {
   ));
 
   const presenterElement = validDocument.ok
-    ? renderDashboard({ document: validDocument.value, sources: createSemanticFixtureSources() })
+    ? renderDashboard({ document: validDocument.value, sources: semanticSources })
     : null;
   const presenterText = presenterElement?.textContent || '';
   const hasNonCausationStatement = presenterText.includes('without implying causation');
@@ -483,6 +485,59 @@ function runSemanticComplianceChecks() {
     'DLS-SEM-014',
     hasNonCausationStatement,
     hasNonCausationStatement ? null : 'Presenter output did not include the required non-causation statement for experiments.'
+  ));
+
+  const invalidMembership = validateLogicalSources({
+    workflows: {
+      rows: [
+        { workflow: 'orchestrator.yml', 'workflow-role': 'orchestrator' },
+        { workflow: 'standalone.yml', 'workflow-role': 'standalone', package: 'invalid-package' }
+      ]
+    }
+  });
+  const packageMembershipCovered = validSources.ok && !invalidMembership.ok;
+  results.push(createResult(
+    'T-SEM-003',
+    'DLS-SEM-022',
+    packageMembershipCovered,
+    packageMembershipCovered ? null : 'Package workflow role and membership fixtures did not produce the expected acceptance and rejection results.'
+  ));
+
+  const invalidNegativeAllowance = validateLogicalSources({
+    workflows: {
+      rows: [
+        {
+          organization: 'octo-org',
+          repository: 'platform',
+          package: 'daily-ops',
+          workflow: 'orchestrator.yml',
+          'workflow-role': 'orchestrator',
+          'max-ai-credits': -1
+        }
+      ]
+    }
+  });
+  const invalidMismatchedAllowance = validateLogicalSources({
+    workflows: {
+      rows: [
+        {
+          organization: 'octo-org',
+          repository: 'platform',
+          package: 'daily-ops',
+          workflow: 'orchestrator.yml',
+          'workflow-role': 'orchestrator',
+          'max-ai-credits': 100,
+          'package-aic-allowance': 99
+        }
+      ]
+    }
+  });
+  const packageAllowanceCovered = validSources.ok && !invalidNegativeAllowance.ok && !invalidMismatchedAllowance.ok;
+  results.push(createResult(
+    'T-SEM-003',
+    'DLS-SEM-023',
+    packageAllowanceCovered,
+    packageAllowanceCovered ? null : 'Package allowance fixtures did not produce the expected non-negative and summed-limit validation results.'
   ));
 
   return results;
@@ -986,6 +1041,44 @@ function createAppendixASources() {
  */
 function createSemanticFixtureSources() {
   return {
+    workflows: {
+      source: 'workflows',
+      metadata: {
+        'source-id': 'workflows-source',
+        'source-kind': 'fixture',
+        'as-of': '2026-08-29T12:00:00Z',
+        'retrieved-at': '2026-08-29T12:05:00Z',
+        availability: 'available',
+        completeness: 'complete',
+        freshness: 'fresh'
+      },
+      rows: [
+        {
+          organization: 'octo-org',
+          repository: 'platform',
+          package: 'daily-ops',
+          workflow: '.github/workflows/daily-ops.yml',
+          'workflow-role': 'orchestrator',
+          'max-ai-credits': 100,
+          'package-aic-allowance': 250
+        },
+        {
+          organization: 'octo-org',
+          repository: 'platform',
+          package: 'daily-ops',
+          workflow: '.github/workflows/daily-ops-worker.yml',
+          'workflow-role': 'worker',
+          'max-ai-credits': 150,
+          'package-aic-allowance': 250
+        },
+        {
+          organization: 'octo-org',
+          repository: 'target-service',
+          workflow: '.github/workflows/ci.yml',
+          'workflow-role': 'standalone'
+        }
+      ]
+    },
     experiments: {
       source: 'experiments',
       metadata: {

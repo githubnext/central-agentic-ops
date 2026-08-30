@@ -153,9 +153,9 @@ export const BUILT_IN_PAGE_REQUIRED_FIELDS = {
     'operational-values': ['operational-value', 'operational-value-definition']
   },
   packages: {
-    workflows: ['package', 'package-name', 'workflow', 'workflow-role', 'rollout-mode', 'max-ai-credits', 'package-aic-allowance'],
-    runs: ['workflow', 'run', 'started-at', 'run-conclusion', 'rollout-mode'],
-    usage: ['workflow', 'run', 'aic', 'rollout-mode', 'observed-at']
+    workflows: ['organization', 'repository', 'package', 'package-name', 'workflow', 'workflow-role', 'rollout-mode', 'max-ai-credits', 'package-aic-allowance'],
+    runs: ['organization', 'repository', 'workflow', 'run', 'started-at', 'run-conclusion', 'rollout-mode'],
+    usage: ['organization', 'repository', 'workflow', 'run', 'aic', 'rollout-mode', 'observed-at']
   },
   workflows: {
     workflows: ['workflow', 'workflow-active', 'rollout-mode'],
@@ -303,6 +303,7 @@ export const ERROR_CODES = {
   nonCanonicalVocabularyOrIdentifier: 'DLS-E005',
   invalidLinkReference: 'DLS-E009',
   invalidScopeFilterTimeAggregationOrOrderReference: 'DLS-E010',
+  invalidEntityRelationshipOrSourceGrain: 'DLS-E011',
   missingRequiredProvenanceOrDataStateMetadata: 'DLS-E012',
   invalidProgressiveDisclosureConfiguration: 'DLS-E013'
 };

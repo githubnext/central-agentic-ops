@@ -346,9 +346,14 @@ test('DLS-PAGE-014 DLS-PAGE-015 built-in packages page renders report-style mode
   await expect(page.getByRole('tab', { name: 'All' })).toHaveAttribute('aria-selected', 'true');
   await expect(page.locator('.package-utilization-card')).toHaveCount(2);
   await expect(page.locator('[data-package-id="aw-maintenance"]')).toContainText('9.6%');
-  await expect(page.locator('[data-package-id="ambient-context"]')).toContainText('No completed runs');
+  await expect(page.locator('[data-package-id="ambient-context"]')).toContainText('No AIC usage was reported');
   await expect(page.getByRole('heading', { name: 'All runs over time', level: 3 })).toBeVisible();
   await expect(page.locator('.package-chart-point')).toHaveCount(30);
+
+  await page.getByRole('tab', { name: 'All' }).focus();
+  await page.keyboard.press('ArrowRight');
+  await expect(page.getByRole('tab', { name: 'Review' })).toHaveAttribute('aria-selected', 'true');
+  await expect(page.getByRole('tab', { name: 'Review' })).toBeFocused();
 
   await page.getByRole('tab', { name: 'Live' }).click();
   await expect(page.getByRole('tab', { name: 'Live' })).toHaveAttribute('aria-selected', 'true');

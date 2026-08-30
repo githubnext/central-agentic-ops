@@ -19,9 +19,25 @@ export function renderPackagesView(sources, pageId = 'packages') {
   const tabByMode = new Map();
   const panelId = `${pageId}-mode-panel`;
   const content = h('div', { className: 'packages-mode-content', id: panelId, role: 'tabpanel' });
+  /**
+   * @param {string} mode
+   * @param {boolean} [focus]
+   */
+  const selectMode = (mode, focus = false) => {
+    if (mode !== selectedMode) {
+      selectedMode = mode;
+      renderMode();
+    }
+    if (focus) tabByMode.get(mode)?.focus();
+  };
   const tabs = h(
     'div',
-    { className: 'package-mode-tabs', role: 'tablist', 'aria-label': 'Filter package activity by mode' },
+    {
+      className: 'package-mode-tabs',
+      role: 'tablist',
+      'aria-label': 'Filter package activity by mode',
+      'aria-orientation': 'horizontal'
+    },
     ...MODES.map((mode) => {
       const tab = h(
         'button',
@@ -33,10 +49,19 @@ export function renderPackagesView(sources, pageId = 'packages') {
           'aria-selected': mode === selectedMode ? 'true' : 'false',
           tabIndex: mode === selectedMode ? 0 : -1,
           dataset: { packageMode: mode },
-          onclick: () => {
-            if (mode === selectedMode) return;
-            selectedMode = mode;
-            renderMode();
+          onclick: () => selectMode(mode),
+          onkeydown: (/** @type {KeyboardEvent} */ event) => {
+            const key = event.key;
+            const currentIndex = MODES.indexOf(mode);
+            let nextIndex = null;
+            if (key === 'ArrowRight' || key === 'ArrowDown') nextIndex = (currentIndex + 1) % MODES.length;
+            if (key === 'ArrowLeft' || key === 'ArrowUp') nextIndex = (currentIndex - 1 + MODES.length) % MODES.length;
+            if (key === 'Home') nextIndex = 0;
+            if (key === 'End') nextIndex = MODES.length - 1;
+            if (nextIndex !== null) {
+              event.preventDefault();
+              selectMode(MODES[nextIndex], true);
+            }
           }
         },
         titleCase(mode)
@@ -75,7 +100,7 @@ function renderPackageUtilization(sources, mode, headingId) {
   const utilization = summarizeUtilization(packages, usage, mode);
   const usageMetadata = sources.usage?.metadata;
   const available = Boolean(sources.usage) && usageMetadata?.availability !== 'unavailable';
-  const complete = usageMetadata?.completeness === 'complete';
+  const completeness = usageMetadata?.completeness ?? 'unknown';
   const windowLabel = sourceWindowLabel(usageMetadata);
   const modeLabel = mode === 'all' ? 'all' : mode;
 
@@ -98,7 +123,7 @@ function renderPackageUtilization(sources, mode, headingId) {
       'div',
       { className: 'package-utilization-grid' },
       ...(packages.length > 0
-        ? packages.map((entry) => renderUtilizationCard(entry, utilization.get(entry.id), available, complete))
+        ? packages.map((entry) => renderUtilizationCard(entry, utilization.get(entry.key), available, completeness))
         : [h('p', { className: 'empty' }, 'No centrally managed packages were observed.')])
     )
   );
@@ -108,10 +133,10 @@ function renderPackageUtilization(sources, mode, headingId) {
  * @param {ReturnType<typeof summarizePackages>[number]} entry
  * @param {{ used: number, allowed: number, reportedRuns: number } | undefined} utilization
  * @param {boolean} available
- * @param {boolean} complete
+ * @param {string} completeness
  * @returns {HTMLElement}
  */
-function renderUtilizationCard(entry, utilization, available, complete) {
+function renderUtilizationCard(entry, utilization, available, completeness) {
   const used = utilization?.used ?? 0;
   const allowed = utilization?.allowed ?? 0;
   const reportedRuns = utilization?.reportedRuns ?? 0;
@@ -121,20 +146,38 @@ function renderUtilizationCard(entry, utilization, available, complete) {
   const detail = !available
     ? 'AI Credit usage artifacts are unavailable.'
     : reportedRuns === 0
-      ? 'No completed runs in the retained window.'
+      ? 'No AIC usage was reported in the retained window.'
       : `${formatAic(used)} of ${formatAic(allowed)} AIC across ${formatNumber(reportedRuns)} reported run${reportedRuns === 1 ? '' : 's'}.`;
-  const coverage = available && !complete ? ' Partial usage coverage.' : '';
+  const coverage = !available
+    ? ''
+    : completeness === 'partial'
+      ? ' Partial usage coverage.'
+      : completeness === 'unknown' ? ' Usage coverage is unknown.' : '';
   const ariaLabel = ratio === null
     ? `${entry.name}: no utilization available`
     : `${entry.name}: ${formatAic(used)} of ${formatAic(allowed)} AI Credits used, ${formatPercent(ratio)}`;
+  const scopeLabel = [entry.organization, entry.repository].filter(Boolean).join('/');
 
   return h(
     'article',
-    { className: `package-utilization-card utilization-${status}`, dataset: { packageId: entry.id } },
+    {
+      className: `package-utilization-card utilization-${status}`,
+      dataset: {
+        packageId: entry.id,
+        packageKey: entry.key,
+        packageOrganization: entry.organization,
+        packageRepository: entry.repository
+      }
+    },
     h(
       'header',
       null,
-      h('strong', null, entry.name),
+      h(
+        'span',
+        { className: 'package-utilization-identity' },
+        h('strong', null, entry.name),
+        scopeLabel ? h('small', null, scopeLabel) : null
+      ),
       h('span', { className: 'package-utilization-value' }, ratio === null ? '—' : formatPercent(ratio))
     ),
     h(
@@ -161,13 +204,22 @@ function renderUtilizationCard(entry, utilization, available, complete) {
  */
 function renderRunTrend(sources, mode, headingId) {
   const workflows = rowsFor(sources, 'workflows');
+  const runsSource = sources.runs;
+  const modeLabel = titleCase(mode);
+  const heading = `${modeLabel} runs over time`;
+  if (!runsSource || runsSource.metadata?.availability === 'unavailable') {
+    return renderUnavailableRunTrend(heading, headingId, 'Package run data is unavailable.');
+  }
   const packageWorkflows = new Set(workflows
-    .filter((row) => typeof row.package === 'string' && row.package.length > 0)
-    .map((row) => String(row.workflow)));
+    .filter(isPackageWorkflow)
+    .map((row) => scopedEntityKey(row, 'workflow')));
   const allRuns = rowsFor(sources, 'runs')
-    .filter((row) => packageWorkflows.has(String(row.workflow)))
+    .filter((row) => packageWorkflows.has(scopedEntityKey(row, 'workflow')))
     .filter((row) => mode === 'all' || row['rollout-mode'] === mode);
   const trendDays = buildTrendDays(sources.runs, allRuns);
+  if (trendDays.length === 0) {
+    return renderUnavailableRunTrend(heading, headingId, 'Package run trend is unavailable because no reporting date was provided.');
+  }
   const windowStart = trendDays[0]?.getTime() ?? Number.NEGATIVE_INFINITY;
   const windowEnd = (trendDays.at(-1)?.getTime() ?? Number.POSITIVE_INFINITY) + DAY_IN_MILLISECONDS;
   const runs = allRuns.filter((row) => {
@@ -180,9 +232,10 @@ function renderRunTrend(sources, mode, headingId) {
     cancelled: cumulativeCounts(trendDays, runs.filter((row) => row['run-conclusion'] === 'cancelled'))
   };
   const maximum = Math.max(1, ...series.successful, ...series.failed, ...series.cancelled);
-  const modeLabel = titleCase(mode);
-  const heading = `${modeLabel} runs over time`;
   const chartDescription = `Daily cumulative successful, failed, and cancelled ${modeLabel.toLowerCase()} package run counts.`;
+  const coverage = runsSource.metadata?.completeness === 'partial'
+    ? 'Partial run coverage.'
+    : runsSource.metadata?.completeness === 'unknown' ? 'Run coverage is unknown.' : null;
 
   return h(
     'section',
@@ -240,7 +293,23 @@ function renderRunTrend(sources, mode, headingId) {
         h('span', null, formatDate(trendDays[0], true)),
         h('span', null, formatDate(trendDays.at(-1), true))
       )
-    )
+    ),
+    coverage ? h('p', { className: 'package-trend-coverage' }, coverage) : null
+  );
+}
+
+/**
+ * @param {string} heading
+ * @param {string} headingId
+ * @param {string} message
+ * @returns {HTMLElement}
+ */
+function renderUnavailableRunTrend(heading, headingId, message) {
+  return h(
+    'section',
+    { className: 'package-trend-panel', 'aria-labelledby': headingId },
+    h('header', null, h('div', null, h('h3', { id: headingId }, heading))),
+    h('p', { className: 'empty' }, message)
   );
 }
 
@@ -316,25 +385,27 @@ function summarizePackages(workflows) {
   /** @type {Map<string, Array<Record<string, unknown>>>} */
   const grouped = new Map();
   for (const row of workflows) {
-    if (typeof row.package !== 'string' || row.package.length === 0) continue;
-    const rows = grouped.get(row.package) ?? [];
+    if (!isPackageWorkflow(row)) continue;
+    const packageKey = scopedEntityKey(row, 'package');
+    const rows = grouped.get(packageKey) ?? [];
     rows.push(row);
-    grouped.set(row.package, rows);
+    grouped.set(packageKey, rows);
   }
-  return [...grouped.entries()].map(([id, rows]) => {
-    const explicitAllowance = Number(rows.find((row) => Number.isFinite(Number(row['package-aic-allowance'])))?.['package-aic-allowance']);
+  return [...grouped.entries()].map(([key, rows]) => {
+    const firstRow = rows[0] ?? {};
     const uniqueWorkflowAllowances = new Map(rows
-      .filter((row) => typeof row.workflow === 'string' && Number.isFinite(Number(row['max-ai-credits'])))
-      .map((row) => [String(row.workflow), Number(row['max-ai-credits'])]));
+      .filter((row) => typeof row.workflow === 'string' && isNonNegativeNumber(row['max-ai-credits']))
+      .map((row) => [scopedEntityKey(row, 'workflow'), /** @type {number} */ (row['max-ai-credits'])]));
     const summedAllowance = [...uniqueWorkflowAllowances.values()]
-      .filter((value) => value > 0)
       .reduce((total, value) => total + value, 0);
+    const id = String(firstRow.package);
     return {
+      key,
       id,
       name: String(rows.find((row) => typeof row['package-name'] === 'string')?.['package-name'] ?? titleCase(id)),
-      completeAttemptAllowance: Number.isFinite(explicitAllowance) && explicitAllowance > 0
-        ? explicitAllowance
-        : summedAllowance > 0 ? summedAllowance : null,
+      organization: String(firstRow.organization ?? ''),
+      repository: String(firstRow.repository ?? ''),
+      completeAttemptAllowance: uniqueWorkflowAllowances.size > 0 ? summedAllowance : null,
       workflows: rows
     };
   }).sort((left, right) => left.name.localeCompare(right.name));
@@ -348,21 +419,21 @@ function summarizePackages(workflows) {
  */
 function summarizeUtilization(packages, usage, mode) {
   const workflowDetails = new Map(packages.flatMap((entry) => entry.workflows.map((row) => [
-    String(row.workflow),
-    { packageId: entry.id, allowance: Number(row['max-ai-credits']) }
+    scopedEntityKey(row, 'workflow'),
+    { packageKey: entry.key, allowance: Number(row['max-ai-credits']) }
   ])));
-  /** @type {Map<string, { packageId: string, used: number, allowance: number }>} */
+  /** @type {Map<string, { packageKey: string, used: number, allowance: number }>} */
   const runs = new Map();
   for (const row of usage) {
     if (mode !== 'all' && row['rollout-mode'] !== mode) continue;
-    const details = workflowDetails.get(String(row.workflow));
+    const details = workflowDetails.get(scopedEntityKey(row, 'workflow'));
     const aic = Number(row.aic);
     if (!details || !Number.isFinite(aic) || aic < 0) continue;
     const runId = String(row.run ?? row.invocation ?? '');
     if (!runId) continue;
-    const key = `${details.packageId}:${runId}`;
+    const key = JSON.stringify([details.packageKey, scopedEntityKey(row, row.run == null ? 'invocation' : 'run')]);
     const run = runs.get(key) ?? {
-      packageId: details.packageId,
+      packageKey: details.packageKey,
       used: 0,
       allowance: Number.isFinite(details.allowance) && details.allowance > 0 ? details.allowance : 0
     };
@@ -372,11 +443,11 @@ function summarizeUtilization(packages, usage, mode) {
   /** @type {Map<string, { used: number, allowed: number, reportedRuns: number }>} */
   const totals = new Map();
   for (const run of runs.values()) {
-    const total = totals.get(run.packageId) ?? { used: 0, allowed: 0, reportedRuns: 0 };
+    const total = totals.get(run.packageKey) ?? { used: 0, allowed: 0, reportedRuns: 0 };
     total.used += run.used;
     total.allowed += run.allowance;
     total.reportedRuns += 1;
-    totals.set(run.packageId, total);
+    totals.set(run.packageKey, total);
   }
   return totals;
 }
@@ -389,7 +460,9 @@ function summarizeUtilization(packages, usage, mode) {
 function buildTrendDays(source, runs) {
   const metadataDate = Date.parse(String(source?.metadata?.['as-of'] ?? source?.metadata?.['retrieved-at'] ?? ''));
   const latestRunDate = Math.max(...runs.map((row) => Date.parse(String(row['started-at'] ?? ''))).filter(Number.isFinite));
-  const end = new Date(Number.isFinite(metadataDate) ? metadataDate : Number.isFinite(latestRunDate) ? latestRunDate : 0);
+  const endTimestamp = Number.isFinite(metadataDate) ? metadataDate : latestRunDate;
+  if (!Number.isFinite(endTimestamp)) return [];
+  const end = new Date(endTimestamp);
   end.setUTCHours(0, 0, 0, 0);
   return Array.from({ length: 30 }, (_, index) => new Date(end.getTime() - ((29 - index) * DAY_IN_MILLISECONDS)));
 }
@@ -436,6 +509,37 @@ function sourceWindowLabel(metadata) {
  */
 function rowsFor(sources, name) {
   return Array.isArray(sources[name]?.rows) ? sources[name].rows : [];
+}
+
+/**
+ * @param {Record<string, unknown>} row
+ * @returns {boolean}
+ */
+function isPackageWorkflow(row) {
+  return typeof row.package === 'string'
+    && row.package.length > 0
+    && (row['workflow-role'] === 'orchestrator' || row['workflow-role'] === 'worker');
+}
+
+/**
+ * @param {Record<string, unknown>} row
+ * @param {string} field
+ * @returns {string}
+ */
+function scopedEntityKey(row, field) {
+  return JSON.stringify([
+    String(row.organization ?? ''),
+    String(row.repository ?? ''),
+    String(row[field] ?? '')
+  ]);
+}
+
+/**
+ * @param {unknown} value
+ * @returns {value is number}
+ */
+function isNonNegativeNumber(value) {
+  return typeof value === 'number' && Number.isFinite(value) && value >= 0;
 }
 
 /**
