@@ -55,6 +55,7 @@
   - [x] Motion audit verification: add automated parity coverage proving the retained 120ms navigation/link transitions, 80ms chart tooltip fade, repository-link transition, and reduced-motion override remain present in the generic stylesheet.
   - [x] Preview fixtures: provide multi-point, multi-series operational-value observations plus linked run and evidence records so the browser dashboard renders meaningful chart geometry and actionable links.
   - [x] Safe-link parity verification: harden automated coverage so credential-bearing, non-HTTPS, and blank-label runtime links are all omitted across reusable metric and table link surfaces while safe HTTPS links remain visible.
+  - [x] Pages-level visual parity inventory: record the report-derived page-layout, Primer-style navigation, and footer/header presentation patterns already implemented by the generic renderer, without adding new semantics.
 
 ## Specification questions
 
@@ -78,6 +79,12 @@
 - 2026-08-28: `npm run test:e2e` is currently blocked in this environment because the Playwright Chromium executable is not provisioned (`browserType.launch: Executable doesn't exist`). The workflow should prefer the built-in Playwright MCP browser tools until the package-level browser dependency is available.
 
 ## Run log
+
+### 2026-08-30 (parity visual inventory slice)
+- Continued the Parity milestone with a narrow documentation-and-verification increment derived from a fresh read of `dashboard/report/report.mjs`, keeping the implementation conservative and non-semantic.
+- Recorded the currently matched report presentation patterns directly in `PLAN.md`: responsive overview section structure, Primer-style sidebar and breadcrumb navigation, report-style header/footer chrome, retained interactive transitions, and reusable safe link surfaces already rendered by the generic presenter.
+- Verified the implementation evidence for that inventory without code changes by rerunning `pages/dashboard/` quality gates: `npm install`, `npm run build`, `npm run typecheck`, `npm run lint`, `npm test`, and `npx playwright test --config=playwright.config.mjs` all pass.
+- Next milestone: Parity, continuing the remaining report feature and presentation inventory closure work under the existing declarative and reusable-runtime constraints.
 
 ### 2026-08-30 (security safe-link coverage slice)
 - Continued the Security, privacy, accessibility milestone with a narrow `DLS-SAFE-004` presenter verification increment, using the existing conservative runtime link sanitizer rather than expanding semantics.
