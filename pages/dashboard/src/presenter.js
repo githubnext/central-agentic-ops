@@ -9,6 +9,7 @@ import { octicon, agenticWorkflowMark } from './octicons.js';
 import { renderDataStateMetrics } from './components/data-state.js';
 import { renderTableRegion } from './components/table-region.js';
 import { renderContextChrome, renderPageSection, renderViewSectionChrome } from './components/view-chrome.js';
+import { formatAggregateValue, formatNumber, toNumber } from './view-formatters.js';
 
 /**
  * @typedef {{ availability: 'available'|'empty'|'unavailable', completeness: 'complete'|'partial'|'unknown', freshness: 'fresh'|'stale'|'unknown' }} DataState
@@ -536,29 +537,7 @@ function renderMetricView(pageId, title, view, sourceName, rows, metadata, conte
   const hrefField = typeof hrefDefinition?.field === 'string' ? hrefDefinition.field : null;
   const link = hrefField ? findFirstAvailableLink(rows, /** @type {'external-link' | 'issue-link' | 'pull-request-link' | 'run-link' | 'evidence-link'} */ (hrefField)) : null;
 
-  let valueText = 'Unavailable';
-  if (fieldName) {
-    if (aggregate === 'count') {
-      valueText = String(rows.filter((row) => row[fieldName] != null && row[fieldName] !== '').length);
-    } else if (aggregate === 'distinct-count') {
-      valueText = String(new Set(rows.map((row) => toText(row[fieldName]))).size);
-    } else if (aggregate === 'sum') {
-      valueText = formatNumber(rows.reduce((total, row) => total + toNumber(row[fieldName]), 0));
-    } else if (aggregate === 'mean') {
-      const numericValues = rows.map((row) => toNumber(row[fieldName])).filter((value) => Number.isFinite(value));
-      valueText = numericValues.length > 0
-        ? formatNumber(numericValues.reduce((total, value) => total + value, 0) / numericValues.length)
-        : 'Unavailable';
-    } else if (aggregate === 'min') {
-      const numericValues = rows.map((row) => toNumber(row[fieldName])).filter((value) => Number.isFinite(value));
-      valueText = numericValues.length > 0 ? formatNumber(Math.min(...numericValues)) : 'Unavailable';
-    } else if (aggregate === 'max') {
-      const numericValues = rows.map((row) => toNumber(row[fieldName])).filter((value) => Number.isFinite(value));
-      valueText = numericValues.length > 0 ? formatNumber(Math.max(...numericValues)) : 'Unavailable';
-    } else {
-      valueText = rows.length > 0 ? toText(rows[0][fieldName]) : 'Unavailable';
-    }
-  }
+  const valueText = formatAggregateValue(rows, fieldName, aggregate, toText);
 
   /** @type {HTMLElement[]} */
   const content = [
@@ -1095,22 +1074,6 @@ export function enableDashboardKeyboardNavigation(root) {
       nextSection.focus();
     });
   }
-}
-
-/**
- * @param {unknown} value
- * @returns {number}
- */
-function toNumber(value) {
-  return typeof value === 'number' && Number.isFinite(value) ? value : 0;
-}
-
-/**
- * @param {number} value
- * @returns {string}
- */
-function formatNumber(value) {
-  return Number.isInteger(value) ? String(value) : value.toFixed(2);
 }
 
 /**
