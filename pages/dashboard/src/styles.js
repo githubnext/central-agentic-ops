@@ -227,12 +227,15 @@ h3 { margin: 16px 0 8px; font-size: 1rem; font-weight: 600; }
 .overview-content > .layout-section { padding: 0; border: 0; background: transparent; }
 .overview-content > .layout-section > .layout-section-header { margin: 0 0 12px; padding-top: 20px; border-top: 1px solid var(--border); }
 .table-region { overflow-x: auto; border: 1px solid var(--border); border-radius: 6px; margin: 12px 0 20px; background: var(--canvas); }
-.table-filter { min-width: 600px; display: flex; align-items: end; gap: 16px; padding: 10px 14px; border-bottom: 1px solid var(--border); background: var(--canvas-subtle); }
-.table-filter label { min-width: 240px; flex: 1; }
+.table-filter { min-width: 600px; display: flex; flex-wrap: wrap; align-items: end; gap: 10px 16px; padding: 10px 14px; border-bottom: 1px solid var(--border); background: var(--canvas-subtle); }
+.table-filter label { min-width: 160px; flex: 0 1 220px; }
+.table-filter label:first-child { min-width: 240px; flex-grow: 1; }
 .table-filter label > span { display: block; margin-bottom: 4px; color: var(--muted); font-size: .6875rem; font-weight: 600; }
-.table-filter input { width: 100%; min-height: 34px; padding: 5px 9px; border: 1px solid var(--border); border-radius: 6px; background: var(--canvas); color: var(--fg); font: inherit; }
-.table-filter input:focus-visible { outline: 2px solid var(--focus); outline-offset: -1px; }
+.table-filter :is(input, select) { width: 100%; min-height: 34px; padding: 5px 9px; border: 1px solid var(--border); border-radius: 6px; background: var(--canvas); color: var(--fg); font: inherit; }
+.table-filter :is(input, select):focus-visible { outline: 2px solid var(--focus); outline-offset: -1px; }
 .table-filter-result { flex: none; padding-bottom: 7px; color: var(--muted); font-size: .75rem; }
+.table-filter-more { min-height: 32px; margin: 10px 14px; padding: 5px 12px; border: 1px solid var(--border); border-radius: 6px; background: var(--canvas-subtle); color: var(--fg); font: inherit; font-size: .75rem; font-weight: 600; cursor: pointer; }
+.table-filter-more:hover { background: var(--neutral-muted); }
 table { width: 100%; min-width: 600px; border-collapse: collapse; font-size: .875rem; }
 caption { padding: 10px 14px; border-bottom: 1px solid var(--border); background: var(--canvas-subtle); color: var(--muted); text-align: left; font-weight: 600; font-size: .8125rem; }
 th, td { padding: 10px 14px; border-bottom: 1px solid var(--border-muted); text-align: left; font-variant-numeric: tabular-nums; }

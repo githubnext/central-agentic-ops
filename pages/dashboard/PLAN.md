@@ -59,6 +59,34 @@
   - [x] Catalog filtering: port the report's live text filtering and announced result counts into reusable custom-table controls, making the interaction available to declaratively configured built-in and custom pages.
   - [x] Chart-series legends: port the report's labeled trend legend into reusable generic custom-chart chrome for multi-series declarative charts while retaining explicit textual category semantics.
   - [x] Operational overview: port the control-plane status banner, execution-health bar, attention list, and managed-package cards, including package allowance and inventory readiness source metadata.
+  - [x] Catalog interaction parity: derive bounded nominal facets from declared table columns, synchronize each table's search and facet state through namespaced URL parameters, and progressively disclose matching rows in groups of 25.
+
+### Parity inventory
+
+#### Report presentation and interaction
+
+- [x] Primer color tokens, light/dark modes, responsive shell, sidebar, breadcrumb, header, footer, print treatment, reduced motion, increased contrast, and forced colors.
+- [x] Hash-addressable page navigation, active navigation state, keyboard section traversal, status/mode badges, workflow topology, safe external links, charts, legends, and point tooltips.
+- [x] Operational overview health banner, execution-health bar, attention list, managed-package cards, and execution/value trends.
+- [x] Reusable table search, announced shown/matched counts, bounded nominal facets, URL-synchronized filter state, and 25-row progressive disclosure.
+- [ ] Section-labeled Attention/Investigate/Explore navigation and report actions for refresh and repository access.
+- [ ] Mode, package, repository, and workflow view tabs with configured-mode indicators.
+- [ ] Dense findings/outcomes indexes, category summaries, and durable output detail presentation.
+- [ ] Package AI Credit utilization bars and threshold treatments.
+- [ ] Specialized run and dispatch catalog chrome beyond the reusable table controls.
+- [ ] Export JSON and static report-control toolbar presentation.
+
+#### Producer-derived data semantics
+
+- [x] Independent source availability, completeness, freshness, retrieval time, and empty/unavailable states.
+- [x] Run-window status and conclusion counts, linked run records, and partial/unavailable telemetry.
+- [x] AI Credit availability/completeness, raw measures, per-run attribution, and package allowance.
+- [x] Inventory package membership, orchestrator/worker topology, active state, rollout mode, and deterministic readiness.
+- [x] Operational-value attainment, definition, evidence cutoff/link, maturity status, and baseline delta.
+- [ ] Discovery coverage detail including public/private/unknown visibility and organization repository totals.
+- [ ] Dispatch-event identity and package/standalone dispatch attribution.
+- [ ] Episode correlation, control transition, and exact execution-map evidence.
+- [ ] Durable output warning, report-kind, lifecycle, and full report-body detail semantics.
 
 ## Specification questions
 
@@ -82,6 +110,13 @@
 - 2026-08-28: `npm run test:e2e` is currently blocked in this environment because the Playwright Chromium executable is not provisioned (`browserType.launch: Executable doesn't exist`). The workflow should prefer the built-in Playwright MCP browser tools until the package-level browser dependency is available.
 
 ## Run log
+
+### 2026-08-30 (parity catalog-interaction slice)
+- Audited `dashboard/report/` presentation and producer-derived states into separate parity checklists so remaining work is explicit rather than inferred from the legacy generator.
+- Extended the reusable table primitive with deterministic facets for bounded nominal columns, namespaced URL state, announced shown/matched counts, and report-aligned 25-row progressive disclosure without adding page-specific rendering.
+- Added focused component and browser coverage for facet derivation, combined filtering, URL synchronization, pagination reset, and disclosure.
+- Verified `npm run build`, `npm run typecheck`, `npm run lint`, `npm test` (103 tests), and `npm run test:e2e` (8 browser tests) from `pages/dashboard/`.
+- Next milestone: Parity, with sectioned navigation/report actions or dense findings/outcomes presentation as the highest-value remaining presentation slices.
 
 ### 2026-08-30 (operational overview parity slice)
 - Migrated the report-style operational status, execution-health, attention, and managed-package UX into the Dashboard Language overview while retaining the declarative execution and operational-value trends below it.

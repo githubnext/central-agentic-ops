@@ -94,12 +94,51 @@ describe('renderTableRegion', () => {
 
     const input = /** @type {HTMLInputElement} */ (rendered.querySelector('[data-table-filter]'));
     const rows = [...rendered.querySelectorAll('tbody tr')];
-    expect(rendered.querySelector('.table-filter-result')?.textContent).toBe('2 results');
+    expect(rendered.querySelector('.table-filter-result')?.textContent).toBe('Showing 2 of 2 results');
 
     input.value = 'failure';
     input.dispatchEvent(new Event('input'));
 
     expect(rows.map((row) => row.hasAttribute('hidden'))).toEqual([true, false]);
-    expect(rendered.querySelector('.table-filter-result')?.textContent).toBe('1 result');
+    expect(rendered.querySelector('.table-filter-result')?.textContent).toBe('Showing 1 of 1 result');
+  });
+
+  it('ports report-style facets, URL state, and progressive disclosure generically', () => {
+    const rows = Array.from({ length: 30 }, (_, index) => h(
+      'tr',
+      null,
+      h('td', null, `workflow-${index + 1}`),
+      h('td', null, index % 2 === 0 ? 'review' : 'live')
+    ));
+    const rendered = renderTableRegion({
+      tableClassName: 'custom-table',
+      emptyMessage: 'No workflows.',
+      colSpan: 2,
+      headCells: ['Workflow', 'Mode'],
+      bodyRows: rows,
+      filterLabel: 'Filter workflows',
+      filterId: 'workflow-catalog',
+      filterFields: [{ key: 'mode', label: 'Mode', columnIndex: 1 }]
+    });
+    document.body.append(rendered);
+
+    const mode = /** @type {HTMLSelectElement} */ (rendered.querySelector('[data-table-facet="mode"]'));
+    const more = /** @type {HTMLButtonElement} */ (rendered.querySelector('[data-table-more]'));
+    expect([...mode.options].map((option) => option.value)).toEqual(['', 'live', 'review']);
+    expect(rows.filter((row) => !row.hidden)).toHaveLength(25);
+    expect(rendered.querySelector('.table-filter-result')?.textContent).toBe('Showing 25 of 30 results');
+    expect(more.hidden).toBe(false);
+
+    more.click();
+    expect(rows.filter((row) => !row.hidden)).toHaveLength(30);
+    expect(more.hidden).toBe(true);
+
+    mode.value = 'review';
+    mode.dispatchEvent(new Event('input'));
+    expect(rows.filter((row) => !row.hidden)).toHaveLength(15);
+    expect(rendered.querySelector('.table-filter-result')?.textContent).toBe('Showing 15 of 15 results');
+    expect(window.location.search).toContain('workflow-catalog.mode=review');
+
+    window.history.replaceState(null, '', '/');
   });
 });
