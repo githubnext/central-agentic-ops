@@ -639,7 +639,7 @@ function renderElementView(pageId, title, view, sources, contextDetails, heading
   const elementName = typeof view.element === 'string' ? view.element : '';
   const sourceNames = getViewSources(view);
   if (sourceNames.length === 0) {
-    return renderCustomViewState(pageId, title, null, 'unavailable', [...contextDetails, 'Unsupported UI element.'], headingTag);
+    return renderCustomViewState(pageId, title, null, 'unavailable', [...contextDetails, 'No sources declared for element view.'], headingTag);
   }
 
   const selectedSources = Object.fromEntries(sourceNames.flatMap((sourceName) => {

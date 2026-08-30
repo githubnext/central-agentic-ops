@@ -1125,6 +1125,12 @@ describe('presenter built-in and custom pages', () => {
                     { field: 'finding-summary' }
                   ]
                 }
+              },
+              {
+                id: 'missing-element-source',
+                title: 'Missing Element Source',
+                mark: 'element',
+                element: 'operational-overview'
               }
             ]
           }
@@ -1282,6 +1288,10 @@ describe('presenter built-in and custom pages', () => {
     const unavailableSection = [...rendered.querySelectorAll('.page-section')].find((section) => section.textContent?.includes('Missing Source'));
     expect(unavailableSection?.querySelector('[data-view-availability="unavailable"]')?.textContent).toBe('This view is unavailable.');
     expect(unavailableSection?.textContent).toContain('Source unavailable: missing-source');
+
+    const missingElementSourceSection = [...rendered.querySelectorAll('.page-section')].find((section) => section.textContent?.includes('Missing Element Source'));
+    expect(missingElementSourceSection?.querySelector('[data-view-availability="unavailable"]')?.textContent).toBe('This view is unavailable.');
+    expect(missingElementSourceSection?.textContent).toContain('No sources declared for element view.');
   });
 
   it('DLS-SAFE-007 DLS-SAFE-008 enables keyboard navigation across labeled page sections without relying on color alone', () => {
