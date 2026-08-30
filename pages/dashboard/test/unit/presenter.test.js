@@ -936,6 +936,6 @@ describe('presenter built-in and custom pages', () => {
     expect(rendered.querySelectorAll('.custom-view-grid > [data-view-layout="half"]')).toHaveLength(2);
     expect(rendered.querySelector('[data-chart-widget="line"] polyline')?.getAttribute('points')).not.toBe('');
     expect(rendered.querySelectorAll('[data-chart-widget="pie"] [data-chart-category]')).toHaveLength(2);
-    expect(rendered.querySelector('[data-chart-widget="pie"]')?.getAttribute('aria-label')).toBeNull();
+    expect(rendered.querySelector('[data-chart-widget="pie"] svg')?.getAttribute('aria-label')).toContain('Pie chart:');
   });
 });

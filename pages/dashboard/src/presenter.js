@@ -1697,7 +1697,7 @@ function renderChartWidget(chartType, points) {
     const totals = new Map();
     for (const point of points) {
       const category = point.x;
-      totals.set(category, (totals.get(category) ?? 0) + toNumber(point.y));
+      totals.set(category, (totals.get(category) ?? 0) + point.y);
     }
     const entries = [...totals.entries()].filter(([, value]) => value > 0);
     const total = entries.reduce((sum, [, value]) => sum + value, 0);
@@ -1712,7 +1712,7 @@ function renderChartWidget(chartType, points) {
         ...entries.map(([label, value], index) => {
           const percent = total > 0 ? (value / total) * 100 : 0;
           const segment = h('circle', {
-            className: `pie-chart-segment chart-series-${index % 8}`,
+            className: `pie-chart-segment chart-series-${(index % 5) + 1}`,
             cx: 21,
             cy: 21,
             r: 15.9155,
