@@ -82,9 +82,7 @@ describe('view chrome component helpers', () => {
     expect(populated[0]?.querySelectorAll('li')).toHaveLength(2);
     expect(populated[0]?.textContent).toContain('Source: usage');
     expect(populated[0]?.textContent).toContain('Filters: {"status":"open"}');
-    expect(empty).toHaveLength(1);
-    expect(empty[0]?.className).toBe('view-context');
-    expect(empty[0]?.querySelectorAll('li')).toHaveLength(0);
+    expect(empty).toHaveLength(0);
   });
 
   it('DLS-VIEW-013 renders reusable view section chrome for shared header plus context composition', () => {

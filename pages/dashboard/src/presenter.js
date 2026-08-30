@@ -598,7 +598,7 @@ function renderCustomView(pageId, view, index, sources, headingTag = 'h3') {
     return renderCustomViewState(pageId, title, sourceName, 'unavailable', [`Source unavailable: ${sourceName}`], headingTag);
   }
 
-  const contextDetails = [`Source: ${sourceName}`];
+  const contextDetails = [];
   if (isPlainObject(view.data?.scope) && Object.keys(view.data.scope).length > 0) {
     contextDetails.push(`Scope: ${JSON.stringify(view.data.scope)}`);
   }
@@ -1137,27 +1137,18 @@ function renderChartView(pageId, title, view, sourceName, rows, metadata, contex
   const x = isPlainObject(encoding?.x) && typeof encoding.x.field === 'string' ? encoding.x : null;
   const y = isPlainObject(encoding?.y) && typeof encoding.y.field === 'string' ? encoding.y : null;
   const color = isPlainObject(encoding?.color) && typeof encoding.color.field === 'string' ? encoding.color : null;
+  const href = isPlainObject(encoding?.href) && typeof encoding.href.field === 'string' ? encoding.href : null;
   const chartDefault = x?.type === 'temporal' ? 'line' : 'bar';
   const chartType = typeof view.chart === 'string' ? view.chart : chartDefault;
 
-  const points = buildChartPoints(pageId, title, rows, x, y, color);
+  const points = buildChartPoints(pageId, title, rows, x, y, color, href?.field ?? null);
   const chartSeries = listChartSeries(points);
   const pieSummary = chartType === 'pie' ? pieChartEntries(points) : null;
 
   return renderPageSection(pageId, title, [
     ...renderViewSectionChrome(sourceName, metadata, contextDetails),
-    h(
-      'p',
-      { className: 'chart-default', 'data-chart-default': chartDefault, 'data-chart-type': chartType },
-      typeof view.chart === 'string' ? `Chart type: ${chartType}` : `Default chart type: ${chartDefault}`
-    ),
     ...(color && chartType !== 'pie'
-      ? [h(
-        'p',
-        { className: 'chart-legend-text', 'data-chart-legend': 'text' },
-        `Color categories: ${chartSeries.length > 0 ? chartSeries.map((series) => series.name).join(', ') : 'unknown'}`
-      ),
-      renderChartLegend(chartSeries, chartType)]
+      ? [renderChartLegend(chartSeries, chartType)]
       : []),
     ...(pieSummary ? [renderPieLegend(pieSummary.entries, pieSummary.total)] : []),
     renderChartWidget(chartType, points, chartSeries, pieSummary),
@@ -1170,7 +1161,7 @@ function renderChartView(pageId, title, view, sourceName, rows, metadata, contex
         ? points.map((point) => h(
           'tr',
           { 'data-custom-point-key': point.key },
-          h('td', null, point.x),
+          h('td', null, renderLinkedText(point.x, point.link)),
           h('td', null, point.y),
           color ? h('td', null, point.color ?? 'unknown') : null
         ))
@@ -1186,27 +1177,31 @@ function renderChartView(pageId, title, view, sourceName, rows, metadata, contex
  * @param {Record<string, any> | null} x
  * @param {Record<string, any> | null} y
  * @param {Record<string, any> | null} color
- * @returns {Array<{ key: string, x: string, y: number, color: string | null }>}
+ * @param {string | null} hrefField
+ * @returns {Array<{ key: string, x: string, y: number, color: string | null, link: { href: string, label: string } | null }>}
  */
-function buildChartPoints(pageId, title, rows, x, y, color) {
+function buildChartPoints(pageId, title, rows, x, y, color, hrefField) {
   const aggregate = typeof y?.aggregate === 'string' ? y.aggregate : null;
   if (!aggregate) {
     return rows.map((row, rowIndex) => ({
       key: `${pageId}-${title}-${rowIndex}`,
       x: x ? toText(row[x.field]) : 'unknown',
       y: y ? toNumber(row[y.field]) : 0,
-      color: color ? toText(row[color.field]) : null
+      color: color ? toText(row[color.field]) : null,
+      link: hrefField ? findLink(row, /** @type {LinkFieldName} */ (hrefField)) : null
     }));
   }
 
-  /** @type {Map<string, { x: string, color: string | null, values: unknown[] }>} */
+  /** @type {Map<string, { x: string, color: string | null, values: unknown[], links: Array<{ href: string, label: string }> }>} */
   const groups = new Map();
   for (const row of rows) {
     const xValue = x ? toText(row[x.field]) : 'unknown';
     const colorValue = color ? toText(row[color.field]) : null;
     const key = JSON.stringify([xValue, colorValue]);
-    const group = groups.get(key) ?? { x: xValue, color: colorValue, values: [] };
+    const group = groups.get(key) ?? { x: xValue, color: colorValue, values: [], links: [] };
     group.values.push(y ? row[y.field] : null);
+    const link = hrefField ? findLink(row, /** @type {LinkFieldName} */ (hrefField)) : null;
+    if (link) group.links.push(link);
     groups.set(key, group);
   }
   return [...groups.values()].map((group, index) => {
@@ -1227,7 +1222,13 @@ function buildChartPoints(pageId, title, rows, x, y, color) {
     } else if (aggregate === 'max') {
       value = numericValues.length > 0 ? Math.max(...numericValues) : 0;
     }
-    return { key: `${pageId}-${title}-${index}`, x: group.x, y: value, color: group.color };
+    return {
+      key: `${pageId}-${title}-${index}`,
+      x: group.x,
+      y: value,
+      color: group.color,
+      link: group.values.length === 1 && group.links.length === 1 ? group.links[0] : null
+    };
   });
 }
 

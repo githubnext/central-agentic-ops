@@ -74,7 +74,7 @@ export function renderContextList(details) {
  * @returns {HTMLElement[]}
  */
 export function renderContextChrome(contextDetails) {
-  return [renderContextList(contextDetails)];
+  return contextDetails.length > 0 ? [renderContextList(contextDetails)] : [];
 }
 
 /**

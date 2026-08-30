@@ -185,6 +185,7 @@
             },
             {
               "id": "overview-run-trend",
+              "disclosure": "supplemental",
               "title": "Run conclusion trend",
               "description": "Run conclusions over time.",
               "data": { "source": "runs" },
@@ -194,7 +195,8 @@
               "encoding": {
                 "x": { "field": "started-at", "type": "temporal", "time-unit": "day" },
                 "y": { "field": "run", "type": "quantitative", "aggregate": "count" },
-                "color": { "field": "run-conclusion", "type": "nominal" }
+                "color": { "field": "run-conclusion", "type": "nominal" },
+                "href": { "field": "run-link", "type": "nominal" }
               }
             },
             {

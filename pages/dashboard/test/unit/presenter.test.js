@@ -908,6 +908,9 @@ describe('presenter built-in and custom pages', () => {
                   color: {
                     field: 'run-conclusion',
                     type: 'nominal'
+                  },
+                  href: {
+                    field: 'run-link'
                   }
                 }
               },
@@ -1018,8 +1021,18 @@ describe('presenter built-in and custom pages', () => {
         runs: {
           source: 'runs',
           rows: [
-            { run: '1001', 'started-at': '2026-08-29T10:00:00Z', 'run-conclusion': 'success' },
-            { run: '1002', 'started-at': '2026-08-29T11:00:00Z', 'run-conclusion': 'failure' }
+            {
+              run: '1001',
+              'started-at': '2026-08-29T10:00:00Z',
+              'run-conclusion': 'success',
+              'run-link': { relation: 'run', href: 'https://github.com/github/central-agentic-ops/actions/runs/1001', label: 'Run 1001' }
+            },
+            {
+              run: '1002',
+              'started-at': '2026-08-29T11:00:00Z',
+              'run-conclusion': 'failure',
+              'run-link': { relation: 'run', href: 'https://github.com/github/central-agentic-ops/actions/runs/1002', label: 'Run 1002' }
+            }
           ],
           metadata: {
             'source-id': 'runs-fixture',
@@ -1068,11 +1081,15 @@ describe('presenter built-in and custom pages', () => {
 
     const chartSection = [...rendered.querySelectorAll('.page-section')].find((section) => section.textContent?.includes('Daily Runs'));
     const chartLegendLabels = chartSection ? [...chartSection.querySelectorAll('[data-chart-legend="visual"] li span')] : [];
-    expect(chartSection?.querySelector('[data-chart-default="line"]')?.textContent).toContain('Default chart type: line');
-    expect(chartSection?.querySelector('[data-chart-legend="text"]')?.textContent).toBe('Color categories: failure, success');
+    expect(chartSection?.querySelector('.chart-default')).toBeNull();
+    expect(chartSection?.querySelector('[data-chart-legend="text"]')).toBeNull();
     expect(chartSection?.querySelectorAll('[data-chart-legend="visual"] li')).toHaveLength(2);
     expect(chartLegendLabels.map((item) => item.textContent)).toEqual(['failure', 'success']);
     expect(chartSection?.querySelectorAll('.custom-chart-table tbody tr')).toHaveLength(2);
+    const chartLink = chartSection?.querySelector('.custom-chart-table tbody a');
+    expect(chartLink?.getAttribute('href')).toBe('https://github.com/github/central-agentic-ops/actions/runs/1001');
+    expect(chartLink?.getAttribute('aria-label')).toBe('Run 1001');
+    expect(chartSection?.querySelectorAll('.view-source')).toHaveLength(1);
 
     const emptySection = [...rendered.querySelectorAll('.page-section')].find((section) => section.textContent?.includes('Empty Usage'));
     expect(emptySection?.querySelector('[data-view-availability="empty"]')?.textContent).toBe('No observations matched the effective context.');
