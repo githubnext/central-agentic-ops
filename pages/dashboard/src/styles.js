@@ -318,6 +318,14 @@ h3 { margin: 16px 0 8px; font-size: 1rem; font-weight: 600; }
 .overview-content > .layout-section { padding: 0; border: 0; background: transparent; }
 .overview-content > .layout-section > .layout-section-header { margin: 0 0 12px; padding-top: 20px; border-top: 1px solid var(--border); }
 .table-region { overflow-x: auto; border: 1px solid var(--border); border-radius: 6px; margin: 12px 0 20px; background: var(--canvas); }
+.table-scroll { max-height: 60vh; overflow: auto; overscroll-behavior: contain; }
+.table-scroll:focus-visible { outline: 2px solid var(--focus); outline-offset: -2px; }
+.table-scroll thead th { position: sticky; top: 0; z-index: 1; }
+.table-sort { display: inline-flex; align-items: center; gap: 4px; width: 100%; padding: 0; border: 0; background: none; color: inherit; font: inherit; text-align: left; cursor: pointer; }
+.table-sort::after { content: "↕"; color: var(--muted); font-size: .6875rem; opacity: .5; }
+.table-sort:hover { color: var(--fg); }
+th[aria-sort="ascending"] .table-sort::after { content: "↑"; opacity: 1; }
+th[aria-sort="descending"] .table-sort::after { content: "↓"; opacity: 1; }
 .table-filter { min-width: 600px; display: flex; flex-wrap: wrap; align-items: end; gap: 10px 16px; padding: 10px 14px; border-bottom: 1px solid var(--border); background: var(--canvas-subtle); }
 .table-filter label { min-width: 160px; flex: 0 1 220px; }
 .table-filter label:first-child { min-width: 240px; flex-grow: 1; }
