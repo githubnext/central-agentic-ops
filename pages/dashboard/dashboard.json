@@ -64,7 +64,8 @@
                   { "field": "issue-link", "type": "nominal" },
                   { "field": "pull-request-link", "type": "nominal" },
                   { "field": "run-link", "type": "nominal" }
-                ]
+                ],
+                "href": { "field": "issue-link", "type": "nominal" }
               }
             },
             {
@@ -315,6 +316,7 @@
         "kind": "built-in",
         "page": "experiments",
         "title": "Experiments",
+        "description": "Observed associations are presented without implying causation.",
         "definition": {
           "data-state": {
             "availability": true,
@@ -619,7 +621,8 @@
                   { "field": "issue-link", "type": "nominal" },
                   { "field": "pull-request-link", "type": "nominal" },
                   { "field": "run-link", "type": "nominal" }
-                ]
+                ],
+                "href": { "field": "issue-link", "type": "nominal" }
               }
             }
           ]

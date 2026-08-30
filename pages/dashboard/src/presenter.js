@@ -6,6 +6,7 @@ import builtInDashboard from '../dashboard.json' with { type: 'json' };
 import { h } from './dom.js';
 import { getPrimerStyles } from './styles.js';
 import { octicon, agenticWorkflowMark } from './octicons.js';
+import { renderDataStateMetrics } from './components/data-state.js';
 import { renderTableRegion } from './components/table-region.js';
 import { renderContextList, renderPageSection, renderViewHeader } from './components/view-chrome.js';
 
@@ -39,18 +40,18 @@ import { renderContextList, renderPageSection, renderViewHeader } from './compon
 
 
 /** @type {Record<string, PresentableCustomPage>} */
-const BUILT_IN_PAGE_PAYLOADS = Object.fromEntries(
+const BUILT_IN_PAGE_PAYLOADS = /** @type {Record<string, PresentableCustomPage>} */ (Object.fromEntries(
   builtInDashboard.dashboard.pages.map((page) => [
     page.page,
     {
       id: page.id,
       kind: 'custom',
       title: page.title,
-      description: page.description,
+      description: 'description' in page ? page.description : undefined,
       views: page.definition.views
     }
   ])
-);
+));
 
 /**
  * @param {PresentableBuiltInPage} page
@@ -275,6 +276,14 @@ function renderPage(page, sources) {
  */
 function renderCustomPage(page, title, sources) {
   const views = Array.isArray(page.views) ? page.views : [];
+  /** @type {Map<string, LogicalSourceInput>} */
+  const pageSources = new Map();
+  for (const view of views) {
+    const sourceName = getViewSource(view);
+    if (sourceName && sources[sourceName]) {
+      pageSources.set(sourceName, sources[sourceName]);
+    }
+  }
   const renderedViews = views.map((view, index) => {
     const rendered = renderCustomView(page.id, view, index, sources);
     const layout = isPlainObject(view) && typeof view.layout === 'string' ? view.layout : 'full';
@@ -285,12 +294,64 @@ function renderCustomPage(page, title, sources) {
 
   return h(
     'section',
-    { className: 'dashboard-page', id: `page-${page.id}`, 'data-page-kind': 'custom', 'data-page-id': page.id },
+    {
+      className: `dashboard-page ${page.id}-page`,
+      id: `page-${page.id}`,
+      'data-page-kind': 'custom',
+      'data-page-name': page.id,
+      'data-page-id': page.id
+    },
     h('h2', null, title),
+    page.description ? h('p', { className: 'page-description' }, page.description) : null,
+    renderDataStateMetrics(summarizeDataState(pageSources)),
     ...(renderedViews.length > 0
       ? [h('div', { className: 'custom-view-grid' }, ...renderedViews)]
       : [h('p', null, 'No custom views available.')])
   );
+}
+
+/**
+ * @param {unknown} view
+ * @returns {string | null}
+ */
+function getViewSource(view) {
+  if (!isPlainObject(view) || !isPlainObject(view.data) || typeof view.data.source !== 'string') {
+    return null;
+  }
+  return view.data.source;
+}
+
+/**
+ * @param {Array<Record<string, unknown>>} rows
+ * @returns {DataState['availability']}
+ */
+function inferAvailability(rows) {
+  return rows.length > 0 ? 'available' : 'empty';
+}
+
+/**
+ * @param {Map<string, LogicalSourceInput>} pageSources
+ * @returns {DataState}
+ */
+function summarizeDataState(pageSources) {
+  const metadata = [...pageSources.values()].map((source) => source.metadata);
+  return {
+    availability: metadata.some((value) => (value.availability ?? 'available') === 'unavailable')
+      ? 'unavailable'
+      : metadata.length === 0 || metadata.every((value) => value.availability === 'empty')
+        ? 'empty'
+        : 'available',
+    completeness: metadata.some((value) => value.completeness === 'partial')
+      ? 'partial'
+      : metadata.length > 0 && metadata.every((value) => value.completeness === 'complete')
+        ? 'complete'
+        : 'unknown',
+    freshness: metadata.some((value) => value.freshness === 'stale')
+      ? 'stale'
+      : metadata.length > 0 && metadata.every((value) => value.freshness === 'fresh')
+        ? 'fresh'
+        : 'unknown'
+  };
 }
 
 /**
@@ -468,7 +529,7 @@ function renderTableView(pageId, title, view, sourceName, rows, metadata, contex
             const value = toText(row[column.field]);
             if (columnIndex === 0 && hrefField) {
               const link = findLink(row, /** @type {'external-link' | 'issue-link' | 'pull-request-link' | 'run-link' | 'evidence-link'} */ (hrefField));
-              return h('td', null, link ? renderExternalLink(link) : value);
+              return h('td', null, value, link ? ' ' : null, link ? renderExternalLink(link) : null);
             }
             return h('td', null, value);
           })
@@ -655,14 +716,6 @@ function toText(value) {
 }
 
 /**
- * @param {{ href: string, label: string } | null} link
- * @returns {string | HTMLElement}
- */
-function renderLinkCell(link) {
-  return link ? renderExternalLink(link) : 'Unavailable';
-}
-
-/**
  * @param {{ href: string, label: string }} link
  * @returns {HTMLElement}
  */
@@ -708,6 +761,19 @@ export function enableDashboardKeyboardNavigation(root) {
 function toNumber(value) {
   return typeof value === 'number' && Number.isFinite(value) ? value : 0;
 }
+
+/**
+ * @param {number} value
+ * @returns {string}
+ */
+function formatNumber(value) {
+  return Number.isInteger(value) ? String(value) : value.toFixed(2);
+}
+
+/**
+ * @param {string} value
+ * @returns {string}
+ */
 function titleCase(value) {
   return value
     .split('-')
@@ -718,7 +784,7 @@ function titleCase(value) {
 
 /**
  * @param {unknown} value
- * @returns {string}
+ * @returns {value is Record<string, any>}
  */
 function isPlainObject(value) {
   return typeof value === 'object' && value !== null && !Array.isArray(value);

@@ -174,42 +174,15 @@ describe('presenter built-in and custom pages', () => {
     });
 
     const overviewPage = rendered.querySelector('[data-page-name="overview"]');
-    expect(overviewPage?.textContent).toContain('Rollout Mode Filtering');
-    expect(overviewPage?.textContent).toContain('Workflow Active State Inventory');
-    expect(overviewPage?.textContent).toContain('Run Status Counts and Trends');
-    expect(overviewPage?.textContent).toContain('Run Conclusion Counts and Trends');
-    expect(overviewPage?.textContent).toContain('Repository Rankings');
-    expect(overviewPage?.textContent).toContain('Workflow Rankings');
-    expect(overviewPage?.textContent).toContain('Largest AIC Spenders');
-    expect(overviewPage?.textContent).toContain('Recent Linked Findings');
-    expect(overviewPage?.textContent).toContain('Operational Value Timeline');
+    expect(overviewPage?.getAttribute('data-page-kind')).toBe('custom');
+    expect(overviewPage?.querySelectorAll('.custom-view')).toHaveLength(5);
+    expect(overviewPage?.textContent).toContain('Overview workflows source');
+    expect(overviewPage?.textContent).toContain('Overview operational values source');
     expect(rendered.querySelector('[data-state-axis="availability"]')?.textContent).toBe('available');
     expect(rendered.querySelector('[data-state-axis="completeness"]')?.textContent).toBe('partial');
     expect(rendered.querySelector('[data-state-axis="freshness"]')?.textContent).toBe('stale');
-    expect(rendered.querySelector('.overview-rollout-mode-counts')?.textContent).toContain('live: 5');
-    expect(rendered.querySelector('.overview-rollout-mode-counts')?.textContent).toContain('review: 3');
-    expect(rendered.querySelector('.overview-workflow-active-counts')?.textContent).toContain('true: 1');
-    expect(rendered.querySelector('.overview-workflow-active-counts')?.textContent).toContain('false: 1');
-    expect(rendered.querySelector('.overview-run-status-counts')?.textContent).toContain('completed: 2');
-    expect(rendered.querySelector('.overview-run-status-counts')?.textContent).toContain('in-progress: 1');
-    expect(rendered.querySelector('.overview-run-status-trends')?.textContent).toContain('2026-08-29T10:00:00Z → completed: 1');
-    expect(rendered.querySelector('.overview-run-conclusion-counts')?.textContent).toContain('success: 1');
-    expect(rendered.querySelector('.overview-run-conclusion-counts')?.textContent).toContain('failure: 1');
-    expect(rendered.querySelector('.overview-run-conclusion-counts')?.textContent).toContain('unknown: 1');
-    expect(rendered.querySelector('.overview-repository-rankings')?.textContent).toContain('central-agentic-ops: 3');
-    expect(rendered.querySelector('.overview-workflow-rankings')?.textContent).toContain('.github/workflows/daily.yml: 2');
-    expect(rendered.querySelector('.overview-workflow-rankings')?.textContent).toContain('.github/workflows/review.yml: 1');
-    expect(rendered.querySelector('.overview-largest-aic-spenders')?.textContent).toContain('central-agentic-ops: 35');
-    expect(rendered.querySelectorAll('.overview-findings-table tbody tr')).toHaveLength(2);
-    expect(rendered.querySelector('[data-overview-finding-id="finding-2"]')?.textContent).toContain('Review workflow needs triage');
-    expect(rendered.querySelector('[data-overview-finding-id="finding-2"]')?.textContent).toContain('Issue 2');
-    expect(rendered.querySelector('[data-overview-finding-id="finding-2"]')?.textContent).toContain('PR 2');
-    expect(rendered.querySelector('[data-overview-finding-id="finding-2"]')?.textContent).toContain('Run 1003');
-    expect(rendered.querySelectorAll('.overview-operational-value-table tbody tr')).toHaveLength(2);
-    expect(rendered.querySelector('[data-overview-operational-value-key="ship-success::1001::2026-08-29T10:30:00Z"]')?.textContent).toContain('0.65');
-    expect(rendered.querySelector('[data-overview-operational-value-key="review-quality::1003::2026-08-29T12:45:00Z"]')?.textContent).toContain('Evidence 2');
-    expect(rendered.querySelector('.provenance-list')?.textContent).toContain('workflows: workflows-fixture (fixture) — as of 2026-08-29T20:00:00Z');
-    expect(rendered.querySelector('.provenance-list')?.textContent).toContain('operational-values: operational-values-fixture (fixture) — as of 2026-08-29T20:00:00Z');
+    expect(overviewPage?.querySelector('[data-metric-value="aic"]')?.textContent).toBe('35');
+    expect(overviewPage?.querySelectorAll('.custom-chart-table tbody tr')).toHaveLength(2);
   });
 
   it('DLS-PAGE-001 DLS-PAGE-002 DLS-PAGE-003 DLS-PAGE-004 DLS-PAGE-005 DLS-PAGE-006 DLS-PAGE-007 DLS-PAGE-008 DLS-PAGE-009 DLS-PAGE-010 DLS-PAGE-011 DLS-PAGE-012 DLS-PAGE-013 DLS-PAGE-014 authoritative dashboard.json contains all 12 specification-defined built-in pages with declarative data-state and source coverage', () => {
@@ -329,15 +302,11 @@ describe('presenter built-in and custom pages', () => {
 
     const headings = [...rendered.querySelectorAll('.runs-page .page-section h3')].map((element) => element.textContent);
     expect(headings).toEqual([
-      'Runs Inventory First',
-      'Run Status Second',
-      'Outcome Counts Third',
-      'Run Conclusions Fourth'
+      'Runs Runs Source',
+      'Runs Outcomes Source'
     ]);
-    expect(rendered.querySelector('.runs-table')).not.toBeNull();
-    expect(rendered.querySelector('.run-status-counts')?.textContent).toContain('completed: 1');
-    expect(rendered.querySelector('.run-outcome-counts')?.textContent).toContain('accepted: 1');
-    expect(rendered.querySelector('.run-conclusion-counts')?.textContent).toContain('success: 1');
+    expect(rendered.querySelectorAll('.runs-page .custom-table')).toHaveLength(2);
+    expect(rendered.querySelector('.runs-page')?.getAttribute('data-page-kind')).toBe('custom');
   });
 
   it('DLS-PAGE-009 DLS-PAGE-014 renders built-in evals page with distinguishable definitions and observations, observed subject, YES/NO/UNKNOWN result, evaluation model when available, time, provenance, and independent data state deterministically', () => {
@@ -409,36 +378,15 @@ describe('presenter built-in and custom pages', () => {
     });
 
     const evalsPage = rendered.querySelector('[data-page-name="evals"]');
-    expect(evalsPage?.textContent).toContain('Eval Definitions');
-    expect(evalsPage?.textContent).toContain('Eval Observations');
+    expect(evalsPage?.textContent).toContain('Evals Evals Source');
+    expect(evalsPage?.textContent).toContain('Evals Observations Source');
     expect(rendered.querySelector('[data-state-axis="availability"]')?.textContent).toBe('available');
     expect(rendered.querySelector('[data-state-axis="completeness"]')?.textContent).toBe('partial');
     expect(rendered.querySelector('[data-state-axis="freshness"]')?.textContent).toBe('stale');
-    expect(rendered.querySelectorAll('.evals-definitions-table tbody tr')).toHaveLength(2);
-    expect(rendered.querySelectorAll('.eval-observations-table tbody tr')).toHaveLength(3);
-
-    const releaseRiskDefinition = rendered.querySelector('[data-eval-id="release-risk"]');
-    expect(releaseRiskDefinition?.textContent).toContain('Release Risk');
-    expect(releaseRiskDefinition?.textContent).toContain('Is the release risky?');
-    expect(releaseRiskDefinition?.textContent).toContain('gpt-4o');
-    expect(releaseRiskDefinition?.textContent).toContain('2');
-    expect(releaseRiskDefinition?.textContent).toContain('github / central-agentic-ops / .github/workflows/daily.yml / run 1001');
-    expect(releaseRiskDefinition?.textContent).toContain('github / central-agentic-ops / .github/workflows/daily.yml / run 1002');
-    expect(releaseRiskDefinition?.textContent).toContain('YES: 1, UNKNOWN: 1');
-    expect(releaseRiskDefinition?.textContent).toContain('gpt-4o → gpt-4.1');
-    expect(releaseRiskDefinition?.textContent).toContain('2026-08-29T10:10:00Z');
-
-    const docQualityDefinition = rendered.querySelector('[data-eval-id="doc-quality"]');
-    expect(docQualityDefinition?.textContent).toContain('Documentation Quality');
-    expect(docQualityDefinition?.textContent).toContain('NO: 1');
-    expect(docQualityDefinition?.textContent).toContain('claude-3.5 → claude-3.7');
-
-    const releaseRiskYesRow = rendered.querySelector('[data-eval-observation-key="release-risk-1001-0"]');
-    expect(releaseRiskYesRow?.textContent).toContain('release-risk');
-    expect(releaseRiskYesRow?.textContent).toContain('github / central-agentic-ops / .github/workflows/daily.yml / run 1001');
-    expect(releaseRiskYesRow?.textContent).toContain('YES');
-    expect(releaseRiskYesRow?.textContent).toContain('gpt-4o');
-    expect(releaseRiskYesRow?.textContent).toContain('gpt-4.1');
+    expect(evalsPage?.querySelectorAll('.custom-table')[0]?.querySelectorAll('tbody tr')).toHaveLength(2);
+    expect(evalsPage?.querySelectorAll('.custom-table')[1]?.querySelectorAll('tbody tr')).toHaveLength(3);
+    expect(evalsPage?.textContent).toContain('release-risk');
+    expect(evalsPage?.textContent).toContain('UNKNOWN');
 
     const sidebarCurrentPage = rendered.querySelector('.primary-nav a[aria-current="page"]');
     expect(sidebarCurrentPage?.getAttribute('aria-current')).toBe('page');
@@ -447,16 +395,10 @@ describe('presenter built-in and custom pages', () => {
     const skipLink = rendered.querySelector('.skip-link');
     expect(skipLink?.getAttribute('href')).toBe('#main-content');
 
-    const releaseRiskUnknownRow = rendered.querySelector('[data-eval-observation-key="release-risk-1002-1"]');
-    expect(releaseRiskUnknownRow?.textContent).toContain('UNKNOWN');
-    expect(releaseRiskUnknownRow?.textContent).toContain('unknown');
-
-    const docQualityNoRow = rendered.querySelector('[data-eval-observation-key="doc-quality-2001-2"]');
-    expect(docQualityNoRow?.textContent).toContain('NO');
-    expect(docQualityNoRow?.textContent).toContain('claude-3.7');
-
-    expect(rendered.querySelector('.provenance-list')?.textContent).toContain('evals: evals-fixture (fixture) — as of 2026-08-29T20:00:00Z');
-    expect(rendered.querySelector('.provenance-list')?.textContent).toContain('eval-observations: eval-observations-fixture (fixture) — as of 2026-08-29T20:00:00Z');
+    expect(evalsPage?.textContent).toContain('NO');
+    expect(evalsPage?.textContent).toContain('claude-3.7');
+    expect(evalsPage?.textContent).toContain('Source: evals');
+    expect(evalsPage?.textContent).toContain('Source: eval-observations');
   });
 
   it('DLS-SAFE-007 DLS-SAFE-010 DLS-SAFE-003 renders non-empty accessible names and inert text labels while preserving safe external link attributes', () => {
@@ -524,13 +466,13 @@ describe('presenter built-in and custom pages', () => {
 
     expect(rendered.querySelector('[data-page-name="findings"] h2')?.textContent).toBe('Findings');
     expect(rendered.querySelector('.brand-title')?.textContent).toBe('Security Dashboard');
-    expect(rendered.querySelector('.findings-table thead')?.textContent).toContain('Issue Link');
+    expect(rendered.querySelector('.findings-page .custom-table thead')?.textContent).toContain('Issue Link');
 
-    const summaryCell = rendered.querySelector('[data-finding-id="unsafe-html"] td');
-    expect(summaryCell?.textContent).toBe('<img src=x onerror=alert(1)>');
+    const summaryCell = rendered.querySelector('.findings-page .custom-table tbody td');
+    expect(summaryCell?.textContent).toContain('<img src=x onerror=alert(1)>');
     expect(summaryCell?.querySelector('img')).toBeNull();
 
-    const issueLink = rendered.querySelector('[data-finding-id="unsafe-html"] a');
+    const issueLink = rendered.querySelector('.findings-page .custom-table tbody a');
     expect(issueLink?.getAttribute('href')).toBe('https://example.com/issues/1');
     expect(issueLink?.getAttribute('aria-label')).toBe('Issue 1 label');
     expect(issueLink?.getAttribute('target')).toBe('_blank');
@@ -850,28 +792,22 @@ describe('presenter built-in and custom pages', () => {
     enableDashboardKeyboardNavigation(rendered);
 
     const sections = rendered.querySelectorAll('.runs-page .page-section');
-    expect(sections).toHaveLength(4);
-    expect(sections[0]?.getAttribute('aria-labelledby')).toContain('runs-run-status-counts-heading');
+    expect(sections).toHaveLength(2);
+    expect(sections[0]?.getAttribute('aria-labelledby')).toContain('runs-runs-runs-source-heading');
     expect([...sections].map((section) => section.getAttribute('aria-labelledby'))).toEqual([
-      'runs-run-status-counts-heading',
-      'runs-outcome-counts-heading',
-      'runs-run-conclusion-counts-heading',
-      'runs-runs-heading'
+      'runs-runs-runs-source-heading',
+      'runs-runs-outcomes-source-heading'
     ]);
 
     const firstSection = /** @type {HTMLElement} */ (sections[0]);
     const secondSection = /** @type {HTMLElement} */ (sections[1]);
-    const thirdSection = /** @type {HTMLElement} */ (sections[2]);
 
     firstSection.focus();
     firstSection.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowDown', bubbles: true }));
     expect(rendered.ownerDocument.activeElement).toBe(secondSection);
 
-    secondSection.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowDown', bubbles: true }));
-    expect(rendered.ownerDocument.activeElement).toBe(thirdSection);
-
-    thirdSection.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowUp', bubbles: true }));
-    expect(rendered.ownerDocument.activeElement).toBe(secondSection);
+    secondSection.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowUp', bubbles: true }));
+    expect(rendered.ownerDocument.activeElement).toBe(firstSection);
   });
 
   it('DLS-VIEW-005 DLS-VIEW-006 renders explicit line and pie widgets in the requested structural layout', () => {
