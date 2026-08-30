@@ -35,6 +35,7 @@
   - [x] Refactor the built-in page dispatcher in `src/presenter.js` from a page-name `if` chain to a declarative renderer registry keyed by `dashboard.json` page names, reducing page-name dispatch while retaining the existing generic runtime and reusable primitives.
   - [x] Continue refactoring each built-in page body in `src/presenter.js` into its `.json` equivalent, removing the remaining page-specific rendering/build logic while retaining only the minimum generic JavaScript interpreter and reusable primitives.
   - [x] Add build, unit, and browser coverage proving `dashboard.json` renders every specification-defined built-in page and that no page depends on custom page-specific JavaScript.
+  - [x] Specify the `repositories` inventory and its run-count, AIC, and per-definition operational-value rankings as separate declarative views with explicit descending ranking keys.
 - [ ] **Security, privacy, accessibility** — Section 13 including escaping, redaction, and keyboard and screen-reader behavior verified with Playwright.
   - [x] Slice: `DLS-SAFE-003`, `DLS-SAFE-007`, `DLS-SAFE-008`, and `DLS-SAFE-010` presenter render for inert text escaping, non-empty accessible names, labeled table columns, textual data-state labels, and labeled external links.
   - [x] Slice: `DLS-SAFE-007` and `DLS-SAFE-008` keyboard presenter behavior for focusable labeled sections with deterministic arrow-key traversal verified in unit and browser tests.
@@ -67,6 +68,13 @@
 - 2026-08-28: `npm run test:e2e` is currently blocked in this environment because the Playwright Chromium executable is not provisioned (`browserType.launch: Executable doesn't exist`). The workflow should prefer the built-in Playwright MCP browser tools until the package-level browser dependency is available.
 
 ## Run log
+
+### 2026-08-30 (repositories ranking-definition slice)
+
+- Continued the Built-in pages milestone by replacing the `repositories` page's source-coverage placeholders with separate declarative inventory, run-count ranking, AIC ranking, and operational-value ranking views.
+- Made each ranking's aggregate output identifier and descending order explicit while retaining `operational-value-definition` in the operational-value output grain so distinct definitions are never combined.
+- Added focused unit assertions that keep the authoritative `dashboard.json` repository ranking contract deterministic and auditable.
+- Next milestone: Security, privacy, accessibility, continuing with the remaining Section 13 slices that are not yet covered in the checklist.
 
 ### 2026-08-30 (summary-list view-chrome refactor)
 
