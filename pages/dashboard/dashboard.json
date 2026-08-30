@@ -28,7 +28,8 @@
                 "overview-runs",
                 "overview-failed-runs",
                 "overview-usage",
-                "overview-execution-health"
+                "overview-execution-health",
+                "overview-recent-runs"
               ]
             },
             {
@@ -112,6 +113,22 @@
               "encoding": {
                 "x": { "field": "run-conclusion", "type": "nominal" },
                 "y": { "field": "run", "type": "quantitative", "aggregate": "count" }
+              }
+            },
+            {
+              "id": "overview-recent-runs",
+              "title": "Recent runs",
+              "description": "Repository and workflow execution state in the current reporting window.",
+              "data": { "source": "runs", "limit": 10 },
+              "mark": "table",
+              "layout": "full",
+              "encoding": {
+                "columns": [
+                  { "field": "repository", "type": "nominal" },
+                  { "field": "workflow", "type": "nominal" },
+                  { "field": "run-status", "type": "nominal", "title": "Status" },
+                  { "field": "run-conclusion", "type": "nominal", "title": "Conclusion" }
+                ]
               }
             },
             {

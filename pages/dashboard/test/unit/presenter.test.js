@@ -175,7 +175,7 @@ describe('presenter built-in and custom pages', () => {
 
     const overviewPage = rendered.querySelector('[data-page-name="overview"]');
     expect(overviewPage?.getAttribute('data-page-kind')).toBe('custom');
-    expect(overviewPage?.querySelectorAll('.custom-view')).toHaveLength(9);
+    expect(overviewPage?.querySelectorAll('.custom-view')).toHaveLength(10);
     expect(overviewPage?.querySelectorAll('.layout-section')).toHaveLength(4);
     expect(overviewPage?.querySelector('[data-section-id="control-plane-health"]')?.getAttribute('data-section-layout')).toBe('full');
     expect(overviewPage?.querySelector('[data-section-id="needs-attention"]')?.getAttribute('data-section-layout')).toBe('wide');
@@ -189,7 +189,7 @@ describe('presenter built-in and custom pages', () => {
     expect(rendered.querySelector('[data-state-axis="completeness"]')?.textContent).toBe('partial');
     expect(rendered.querySelector('[data-state-axis="freshness"]')?.textContent).toBe('stale');
     expect(overviewPage?.querySelector('[data-metric-value="aic"]')?.textContent).toBe('35');
-    expect(overviewPage?.querySelectorAll('.custom-chart-table tbody tr')).toHaveLength(2);
+    expect(overviewPage?.querySelectorAll('[data-section-id="execution-trends"] .custom-view:last-child .custom-chart-table tbody tr')).toHaveLength(2);
   });
 
   it('DLS-PAGE-001 DLS-PAGE-002 DLS-PAGE-003 DLS-PAGE-004 DLS-PAGE-005 DLS-PAGE-006 DLS-PAGE-007 DLS-PAGE-008 DLS-PAGE-009 DLS-PAGE-010 DLS-PAGE-011 DLS-PAGE-012 DLS-PAGE-013 DLS-PAGE-014 authoritative dashboard.json contains all 12 specification-defined built-in pages with declarative data-state and source coverage', () => {

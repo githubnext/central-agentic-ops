@@ -479,6 +479,7 @@ function summarizeDataState(pageSources) {
  * @param {unknown} view
  * @param {number} index
  * @param {Record<string, LogicalSourceInput>} sources
+ * @param {'h3'|'h4'} [headingTag]
  * @returns {HTMLElement}
  */
 function renderCustomView(pageId, view, index, sources, headingTag = 'h3') {
@@ -545,6 +546,7 @@ function renderCustomView(pageId, view, index, sources, headingTag = 'h3') {
  * @param {string | null} sourceName
  * @param {'available'|'empty'|'unavailable'} availability
  * @param {string[]} contextDetails
+ * @param {'h3'|'h4'} [headingTag]
  * @returns {HTMLElement}
  */
 function renderCustomViewState(pageId, title, sourceName, availability, contextDetails, headingTag = 'h3') {
@@ -571,6 +573,7 @@ function renderCustomViewState(pageId, title, sourceName, availability, contextD
  * @param {Array<Record<string, unknown>>} rows
  * @param {SourceMetadata} metadata
  * @param {string[]} contextDetails
+ * @param {'h3'|'h4'} [headingTag]
  * @returns {HTMLElement}
  */
 function renderMetricView(pageId, title, view, sourceName, rows, metadata, contextDetails, headingTag = 'h3') {
@@ -628,6 +631,7 @@ function renderMetricView(pageId, title, view, sourceName, rows, metadata, conte
  * @param {Array<Record<string, unknown>>} rows
  * @param {SourceMetadata} metadata
  * @param {string[]} contextDetails
+ * @param {'h3'|'h4'} [headingTag]
  * @returns {HTMLElement}
  */
 function renderTableView(pageId, title, view, sourceName, rows, metadata, contextDetails, headingTag = 'h3') {
@@ -672,6 +676,7 @@ function renderTableView(pageId, title, view, sourceName, rows, metadata, contex
  * @param {Array<Record<string, unknown>>} rows
  * @param {SourceMetadata} metadata
  * @param {string[]} contextDetails
+ * @param {'h3'|'h4'} [headingTag]
  * @returns {HTMLElement}
  */
 function renderChartView(pageId, title, view, sourceName, rows, metadata, contextDetails, headingTag = 'h3') {

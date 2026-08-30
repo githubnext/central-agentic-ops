@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { readFileSync } from 'node:fs';
 import { validateDashboardDocument } from '../../src/validator.js';
 
-const authoritativeDashboardSource = readFileSync(new URL('../../dashboard.json', import.meta.url), 'utf8');
+const authoritativeDashboardSource = readFileSync(`${process.cwd()}/dashboard.json`, 'utf8');
 
 const validDocument = `language-version: "0.1.0"
 dashboard:
