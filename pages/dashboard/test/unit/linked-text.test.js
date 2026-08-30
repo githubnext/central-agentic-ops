@@ -23,7 +23,7 @@ describe('linked text helpers', () => {
     const renderEntityAwareCellValue = createEntityAwareCellRenderer(
       { organization: 'organization-link', repository: 'repository-link' },
       (row, field) => /** @type {{ href: string, label: string } | null} */ (row[field] ?? null),
-      (field, value) => `${field}:${String(value)}`,
+      (display, value) => `${String(display ?? 'text')}:${String(value)}`,
       (value) => value == null ? 'unknown' : String(value)
     );
 
@@ -44,7 +44,7 @@ describe('linked text helpers', () => {
     expect(linkedRepository).toBeInstanceOf(HTMLElement);
     expect(linkedRepository.textContent).toBe('central-agentic-ops');
     expect(linkedRepository.getAttribute('href')).toBe('https://github.com/githubnext/central-agentic-ops');
-    expect(plainStatus).toBe('run-status:completed');
-    expect(plainRepository).toBe('repository:central-agentic-ops');
+    expect(plainStatus).toBe('text:completed');
+    expect(plainRepository).toBe('text:central-agentic-ops');
   });
 });

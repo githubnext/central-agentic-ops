@@ -32,7 +32,7 @@ export function createEntityAwareCellRenderer(entityLinkFields, findLink, render
    */
   return function renderEntityAwareCellValue(column, value, row) {
     const field = typeof column === 'string' ? column : column.field;
-    const display = typeof column === 'string' ? column : column.display;
+    const display = typeof column === 'string' ? undefined : column.display;
     const linkField = Object.prototype.hasOwnProperty.call(entityLinkFields, field)
       ? entityLinkFields[/** @type {keyof typeof entityLinkFields} */ (field)]
       : null;
