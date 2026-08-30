@@ -454,8 +454,6 @@ function renderCustomView(pageId, view, index, sources) {
     return renderCustomViewState(pageId, title, sourceName, 'unavailable', [`Source unavailable: ${sourceName}`]);
   }
 
-  const state = sourceInput.metadata?.availability ?? inferAvailability(sourceInput.rows);
-  const metadata = sourceInput.metadata;
   const contextDetails = [`Source: ${sourceName}`];
   if (isPlainObject(view.data?.scope) && Object.keys(view.data.scope).length > 0) {
     contextDetails.push(`Scope: ${JSON.stringify(view.data.scope)}`);
@@ -467,18 +465,26 @@ function renderCustomView(pageId, view, index, sources) {
     contextDetails.push(`Filters: ${JSON.stringify(view.data.filters)}`);
   }
 
+  const filteredRows = filterRowsForView(sourceInput.rows, view.data);
+  const metadata = sourceInput.metadata;
+  const state = sourceInput.metadata?.availability ?? inferAvailability(filteredRows);
+
   if (state !== 'available') {
     return renderCustomViewState(pageId, title, sourceName, state, contextDetails);
   }
 
+  if (filteredRows.length === 0) {
+    return renderCustomViewState(pageId, title, sourceName, 'empty', contextDetails);
+  }
+
   if (view.mark === 'metric') {
-    return renderMetricView(pageId, title, view, sourceName, sourceInput.rows, metadata, contextDetails);
+    return renderMetricView(pageId, title, view, sourceName, filteredRows, metadata, contextDetails);
   }
   if (view.mark === 'table') {
-    return renderTableView(pageId, title, view, sourceName, sourceInput.rows, metadata, contextDetails);
+    return renderTableView(pageId, title, view, sourceName, filteredRows, metadata, contextDetails);
   }
   if (view.mark === 'chart') {
-    return renderChartView(pageId, title, view, sourceName, sourceInput.rows, metadata, contextDetails);
+    return renderChartView(pageId, title, view, sourceName, filteredRows, metadata, contextDetails);
   }
 
   return renderCustomViewState(pageId, title, sourceName, 'unavailable', [...contextDetails, 'Unsupported view mark.']);
@@ -885,6 +891,131 @@ function fieldTitle(fieldDefinition) {
     return fieldDefinition.title;
   }
   return typeof fieldDefinition.field === 'string' ? titleCase(fieldDefinition.field) : 'Field';
+}
+
+/**
+ * @param {Array<Record<string, unknown>>} rows
+ * @param {Record<string, unknown> | undefined} dataConfig
+ * @returns {Array<Record<string, unknown>>}
+ */
+function filterRowsForView(rows, dataConfig) {
+  if (!Array.isArray(rows)) {
+    return [];
+  }
+
+  let filteredRows = rows;
+  if (isPlainObject(dataConfig?.scope)) {
+    filteredRows = filteredRows.filter((row) => rowMatchesScope(row, /** @type {Record<string, unknown>} */ (dataConfig.scope)));
+  }
+  if (isPlainObject(dataConfig?.time)) {
+    filteredRows = filteredRows.filter((row) => rowMatchesTime(row, /** @type {Record<string, unknown>} */ (dataConfig.time)));
+  }
+  if (isPlainObject(dataConfig?.filters)) {
+    filteredRows = filteredRows.filter((row) => rowMatchesFilters(row, /** @type {Record<string, unknown>} */ (dataConfig.filters)));
+  }
+  return filteredRows;
+}
+
+/**
+ * @param {Record<string, unknown>} row
+ * @param {Record<string, unknown>} scope
+ * @returns {boolean}
+ */
+function rowMatchesScope(row, scope) {
+  const scopeToField = {
+    organizations: 'organization',
+    repositories: 'repository',
+    workflows: 'workflow'
+  };
+
+  for (const [scopeKey, fieldName] of Object.entries(scopeToField)) {
+    const allowed = scope[scopeKey];
+    if (!Array.isArray(allowed) || allowed.length === 0) {
+      continue;
+    }
+    const value = row[fieldName];
+    if (typeof value !== 'string' || !allowed.includes(value)) {
+      return false;
+    }
+  }
+  return true;
+}
+
+/**
+ * @param {Record<string, unknown>} row
+ * @param {Record<string, unknown>} time
+ * @returns {boolean}
+ */
+function rowMatchesTime(row, time) {
+  const observedField = pickRowTimeField(row);
+  if (!observedField) {
+    return false;
+  }
+
+  const rowInstant = Date.parse(String(row[observedField]));
+  if (!Number.isFinite(rowInstant)) {
+    return false;
+  }
+
+  const start = typeof time.start === 'string' ? Date.parse(time.start) : Number.NaN;
+  const end = typeof time.end === 'string' ? Date.parse(time.end) : Number.NaN;
+  if (Number.isFinite(start) && rowInstant < start) {
+    return false;
+  }
+  if (Number.isFinite(end) && rowInstant >= end) {
+    return false;
+  }
+  return true;
+}
+
+/**
+ * @param {Record<string, unknown>} row
+ * @returns {string | null}
+ */
+function pickRowTimeField(row) {
+  if (typeof row['observed-at'] === 'string') {
+    return 'observed-at';
+  }
+  if (typeof row['started-at'] === 'string') {
+    return 'started-at';
+  }
+  if (typeof row['ended-at'] === 'string') {
+    return 'ended-at';
+  }
+  return null;
+}
+
+/**
+ * @param {Record<string, unknown>} row
+ * @param {Record<string, unknown>} filters
+ * @returns {boolean}
+ */
+function rowMatchesFilters(row, filters) {
+  for (const [fieldName, expected] of Object.entries(filters)) {
+    const value = row[fieldName];
+    if (Array.isArray(expected)) {
+      if (!expected.some((candidate) => valuesEqualForFilter(value, candidate))) {
+        return false;
+      }
+      continue;
+    }
+    if (!valuesEqualForFilter(value, expected)) {
+      return false;
+    }
+  }
+  return true;
+}
+
+/**
+ * @param {unknown} actual
+ * @param {unknown} expected
+ * @returns {boolean}
+ */
+function valuesEqualForFilter(actual, expected) {
+  if (actual == null) {
+    return expected === 'unknown';
+  }
+  return String(actual) === String(expected);
 }
 
 /**

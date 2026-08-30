@@ -42,7 +42,7 @@ describe('view chrome component helpers', () => {
     expect(header[1]?.textContent).toBe('As of 2026-08-29T20:00:00Z • completeness complete • freshness fresh');
   });
 
-  it('DLS-VIEW-013 renders reusable view chrome paragraphs for populated and empty metadata lines', () => {
+  it('renders reusable view chrome paragraphs for populated and empty metadata lines', () => {
     const rendered = renderViewChrome([
       'Source: usage',
       'As of 2026-08-29T20:00:00Z • completeness complete • freshness fresh',
