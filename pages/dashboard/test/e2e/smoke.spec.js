@@ -34,6 +34,13 @@ function buildPresenterModuleUrl() {
   const viewFormattersSource = readFileSync(new URL('../../src/view-formatters.js', import.meta.url), 'utf8');
   const viewFormattersModuleUrl = `data:text/javascript;charset=utf-8,${encodeURIComponent(viewFormattersSource)}`;
 
+  const operationalOverviewSource = readFileSync(new URL('../../src/components/operational-overview.js', import.meta.url), 'utf8')
+    .replace("'../dom.js'", JSON.stringify(domModuleUrl))
+    .replace("'../octicons.js'", JSON.stringify(octiconsModuleUrl))
+    .replace("'./badge.js'", JSON.stringify(badgeModuleUrl))
+    .replace("'../view-formatters.js'", JSON.stringify(viewFormattersModuleUrl));
+  const operationalOverviewModuleUrl = `data:text/javascript;charset=utf-8,${encodeURIComponent(operationalOverviewSource)}`;
+
   const presenterSource = readFileSync(new URL('../../src/presenter.js', import.meta.url), 'utf8')
     .replace("'../dashboard.json'", JSON.stringify(dashboardModuleUrl))
     .replace("'./dom.js'", JSON.stringify(domModuleUrl))
@@ -43,12 +50,13 @@ function buildPresenterModuleUrl() {
     .replace("'./components/data-state.js'", JSON.stringify(dataStateModuleUrl))
     .replace("'./components/table-region.js'", JSON.stringify(tableRegionModuleUrl))
     .replace("'./components/view-chrome.js'", JSON.stringify(viewChromeModuleUrl))
+    .replace("'./components/operational-overview.js'", JSON.stringify(operationalOverviewModuleUrl))
     .replace("'./view-formatters.js'", JSON.stringify(viewFormattersModuleUrl));
 
   return `data:text/javascript;charset=utf-8,${encodeURIComponent(presenterSource)}`;
 }
 
-test('DLS-PAGE-002 DLS-PAGE-014 built-in overview page renders repository count, rollout-mode filtering, workflow active-state inventory, run status and conclusion counts and trends, repository/workflow rankings, largest AIC spenders, linked findings, operational-value timeline, and provenance/freshness in browser', async ({ page }) => {
+test('DLS-PAGE-002 DLS-PAGE-014 built-in overview page renders the report-style operational overview, managed repository summary, managed packages, execution trends, and provenance in browser', async ({ page }) => {
   const presenterModuleUrl = buildPresenterModuleUrl();
 
   await page.setContent(`
@@ -106,8 +114,8 @@ test('DLS-PAGE-002 DLS-PAGE-014 built-in overview page renders repository count,
         workflows: {
           source: 'workflows',
           rows: [
-            { organization: 'github', repository: 'central-agentic-ops', workflow: '.github/workflows/daily.yml', 'workflow-active': 'true', 'rollout-mode': 'live', 'observed-at': '2026-08-29T09:00:00Z' },
-            { organization: 'github', repository: 'central-agentic-ops', workflow: '.github/workflows/review.yml', 'workflow-active': 'false', 'rollout-mode': 'review', 'observed-at': '2026-08-29T09:05:00Z' }
+            { organization: 'github', repository: 'central-agentic-ops', package: 'daily-ops', 'package-name': 'Daily Ops', 'workflow-role': 'orchestrator', workflow: '.github/workflows/daily.yml', 'workflow-active': 'true', 'rollout-mode': 'live', 'max-ai-credits': 10, 'observed-at': '2026-08-29T09:00:00Z' },
+            { organization: 'github', repository: 'central-agentic-ops', package: 'daily-ops', 'package-name': 'Daily Ops', 'workflow-role': 'worker', workflow: '.github/workflows/review.yml', 'workflow-active': 'false', 'rollout-mode': 'review', 'max-ai-credits': 20, 'observed-at': '2026-08-29T09:05:00Z' }
           ],
           metadata: {
             'source-id': 'workflows-fixture',
@@ -236,23 +244,26 @@ test('DLS-PAGE-002 DLS-PAGE-014 built-in overview page renders repository count,
   await expect(page.getByRole('heading', { name: 'Built In Overview Render' })).toBeVisible();
   await expect(page.getByRole('heading', { name: 'Overview', exact: true, level: 2 })).toBeVisible();
   await expect(page.locator('.overview-page')).toHaveAttribute('data-page-kind', 'custom');
-  await expect(page.locator('.overview-page .custom-view')).toHaveCount(11);
-  await expect(page.locator('.overview-page .layout-section')).toHaveCount(4);
-  await expect(page.getByRole('heading', { name: 'Control plane health', level: 3 })).toBeVisible();
-  await expect(page.getByRole('heading', { name: 'Active workflows', level: 4 })).toBeVisible();
+  await expect(page.locator('.overview-page .custom-view')).toHaveCount(2);
+  await expect(page.locator('.overview-page .layout-section')).toHaveCount(1);
+  await expect(page.getByRole('heading', { name: 'Attention required', level: 3 })).toBeVisible();
+  await expect(page.locator('.control-plane-status')).toHaveClass(/control-plane-critical/);
+  await expect(page.locator('.control-plane-vitals')).toContainText('2 repositories');
+  await expect(page.locator('.attention-item')).toHaveCount(5);
+  await expect(page.locator('.managed-package-card')).toHaveCount(1);
+  await expect(page.locator('.managed-package-card')).toContainText('30');
   await expect(page.getByRole('heading', { name: 'Operational value timeline', level: 4 })).toBeVisible();
   await expect(page.locator('[data-state-axis="availability"]')).toHaveText('available');
   await expect(page.locator('[data-state-axis="completeness"]')).toHaveText('partial');
   await expect(page.locator('[data-state-axis="freshness"]')).toHaveText('stale');
-  await expect(page.locator('.overview-page [data-metric-value="aic"]')).toHaveText('35');
-  await expect(page.locator('.overview-page [data-metric-value="repository"]')).toHaveText('2');
   await expect(page.locator('[data-section-id="execution-trends"] .custom-view:last-child .custom-chart-table tbody tr')).toHaveCount(2);
-  await expect(page.getByRole('link', { name: 'Issue 2' })).toBeVisible();
 
-  const recentRuns = page.getByRole('heading', { name: 'Recent runs', level: 4 }).locator('..');
-  await recentRuns.getByRole('searchbox', { name: 'Filter Recent runs' }).fill('failure');
-  await expect(recentRuns.locator('tbody tr:visible')).toHaveCount(1);
-  await expect(recentRuns.locator('.table-filter-result')).toHaveText('1 result');
+  await page.setViewportSize({ width: 600, height: 900 });
+  const attentionBox = await page.locator('.attention-panel').boundingBox();
+  const packagesBox = await page.locator('.managed-packages').boundingBox();
+  expect(attentionBox).not.toBeNull();
+  expect(packagesBox).not.toBeNull();
+  expect(packagesBox?.y).toBeGreaterThan(attentionBox?.y ?? 0);
 });
 
 test('DLS-PAGE-009 DLS-PAGE-014 built-in evals page renders distinguishable definitions and observations, observed subject, YES/NO/UNKNOWN result, evaluation model when available, time, provenance, and independent data state in browser', async ({ page }) => {

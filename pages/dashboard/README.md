@@ -32,7 +32,7 @@ The current built-in-pages slice extends Section 10 rendering for `runs`, adding
 
 The latest presenter slice updates the presentation layer to clone the style of the current JavaScript dashboard in CAO (`dashboard/report/report.mjs`), rendering dashboards that are GitHub brand-aligned using GitHub Primer CSS tokens, Octicons, sidebar navigation, responsive layout, and status/mode badges.
 
-The overview definition now also declares report-style full, wide, and narrow sections. The generic presenter renders those sections as a responsive control-plane health row, paired attention and workflow panels, and a full-width trends row without page-specific JavaScript.
+The overview now renders a report-style control-plane status banner, execution-health bar, actionable attention list, managed-package cards, and a full-width trends row from canonical dashboard sources. Package allowance and inventory readiness are carried through the report source bridge when control-plane inventory is available.
 
 The preview also mirrors the report's interactive transitions for navigation, linked records, and chart-point tooltips while respecting reduced-motion preferences. Its illustrative data includes multiple operational-value observations and linked runs, issues, pull requests, and evidence so chart and link states are visible without live inputs.
 

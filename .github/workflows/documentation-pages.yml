@@ -170,6 +170,7 @@ jobs:
           REPORT_AIC_USAGE: ${{ runner.temp }}/aic-usage.json
           REPORT_DASHBOARD_SOURCES: dist/ymao/sources.json
           REPORT_DEPLOYED_WORKFLOWS: ${{ runner.temp }}/deployed-workflows.json
+          REPORT_INVENTORY: ${{ runner.temp }}/control-plane-inventory.json
           REPORT_OPERATIONAL_VALUES: ${{ runner.temp }}/operational-values.json
           REPORT_RECORDS: dist/cao/records.json
         run: node dashboard/report/dashboard-language-sources.mjs

@@ -10,7 +10,7 @@
         "kind": "built-in",
         "page": "overview",
         "title": "Overview",
-        "description": "Managed workflow health, execution trends, and items requiring attention.",
+        "description": "Managed packages, execution health, and items requiring attention.",
         "definition": {
           "data-state": {
             "availability": true,
