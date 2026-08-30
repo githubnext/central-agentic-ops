@@ -12,6 +12,7 @@
         "page": "overview",
         "title": "Overview",
         "icon": "server",
+        "class-name": "overview-page",
         "description": "Managed packages, execution health, and items requiring attention.",
         "definition": {
           "data-state": {
@@ -25,7 +26,12 @@
               "title": "Control plane health",
               "description": "Current workflow inventory, execution volume, failures, and AI Credit consumption.",
               "layout": "full",
-              "views": ["overview-operational-summary"]
+              "views": [
+                "overview-control-plane-status",
+                "overview-package-aic-utilization",
+                "overview-attention-panel",
+                "overview-managed-packages"
+              ]
             },
             {
               "id": "execution-trends",
@@ -37,14 +43,38 @@
           ],
           "views": [
             {
-              "id": "overview-operational-summary",
-              "title": "Control plane health",
+              "id": "overview-control-plane-status",
+              "title": "Control plane status",
               "data": {
-                "sources": ["repositories", "workflows", "runs", "usage", "findings", "operational-values"]
+                "sources": ["repositories", "workflows", "runs", "usage"]
               },
               "mark": "element",
-              "element": "operational-overview",
+              "element": "control-plane-status",
               "layout": "full"
+            },
+            {
+              "id": "overview-package-aic-utilization",
+              "title": "Package AIC utilization",
+              "data": { "sources": ["workflows", "usage"] },
+              "mark": "element",
+              "element": "package-aic-utilization",
+              "layout": "full"
+            },
+            {
+              "id": "overview-attention-panel",
+              "title": "Needs attention",
+              "data": { "sources": ["workflows", "runs", "usage", "findings"] },
+              "mark": "element",
+              "element": "attention-panel",
+              "layout": "half"
+            },
+            {
+              "id": "overview-managed-packages",
+              "title": "Managed packages",
+              "data": { "sources": ["workflows"] },
+              "mark": "element",
+              "element": "managed-packages",
+              "layout": "half"
             },
             {
               "id": "overview-run-trend",
@@ -235,6 +265,7 @@
         "page": "packages",
         "title": "Packages",
         "icon": "package",
+        "class-name": "packages-page",
         "description": "Activity from centrally managed packages.",
         "definition": {
           "data-state": {

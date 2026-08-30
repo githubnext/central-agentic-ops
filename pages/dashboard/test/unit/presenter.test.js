@@ -235,6 +235,8 @@ describe('presenter built-in and custom pages', () => {
     expect(labels).toEqual(['Attention', 'Investigate', 'Explore']);
     expect(rendered.querySelector('[data-nav-page-id="overview"]')?.previousElementSibling?.textContent).toBe('Attention');
     expect(rendered.querySelector('[data-nav-page-id="runs"]')?.previousElementSibling?.textContent).toBe('Investigate');
+    expect(rendered.querySelector('[data-page-id="overview"]')?.classList.contains('overview-page')).toBe(true);
+    expect(rendered.querySelector('[data-page-id="organizations"]')?.classList.contains('organizations-page')).toBe(false);
   });
 
   it('DLS-VIEW-018 DLS-VIEW-019 DLS-VIEW-020 progressively discloses supplemental views in source order', () => {
@@ -291,7 +293,7 @@ describe('presenter built-in and custom pages', () => {
       }
     });
 
-    const views = rendered.querySelectorAll('.runs-page > .data-state-summary + .custom-view-grid > .custom-view');
+    const views = rendered.querySelectorAll('[data-page-id="runs"] > .data-state-summary + .custom-view-grid > .custom-view');
     expect(views).toHaveLength(2);
     expect(views[0]?.getAttribute('data-disclosure')).toBe('essential');
     const supplemental = /** @type {HTMLDetailsElement} */ (views[1]);
@@ -482,8 +484,16 @@ describe('presenter built-in and custom pages', () => {
 
     const overviewPage = rendered.querySelector('[data-page-name="overview"]');
     expect(overviewPage?.getAttribute('data-page-kind')).toBe('custom');
-    expect(overviewPage?.querySelectorAll('.custom-view')).toHaveLength(3);
+    expect(overviewPage?.querySelectorAll('.custom-view')).toHaveLength(6);
     expect(overviewPage?.querySelectorAll('.layout-section')).toHaveLength(2);
+    const landingElements = [...(overviewPage?.querySelectorAll('[data-section-id="control-plane-health"] > .custom-view-grid > .custom-view') ?? [])];
+    expect(landingElements.map((element) => element.firstElementChild?.className || element.classList[0])).toEqual([
+      'control-plane-status',
+      'package-aic-utilization',
+      'attention-panel',
+      'managed-packages'
+    ]);
+    expect(landingElements.map((element) => element.getAttribute('data-view-layout'))).toEqual(['full', 'full', 'half', 'half']);
     expect(overviewPage?.querySelector('[data-section-id="execution-trends"]')?.getAttribute('data-section-layout')).toBe('full');
     expect(overviewPage?.querySelector('.control-plane-status')?.classList.contains('control-plane-critical')).toBe(true);
     expect(overviewPage?.querySelector('.control-plane-vitals')?.textContent).toContain('33.3%');
@@ -887,13 +897,13 @@ describe('presenter built-in and custom pages', () => {
       }
     });
 
-    const headings = [...rendered.querySelectorAll('.runs-page .page-section h3')].map((element) => element.textContent);
+    const headings = [...rendered.querySelectorAll('[data-page-id="runs"] .page-section h3')].map((element) => element.textContent);
     expect(headings).toEqual([
       'Runs Runs Source',
       'Runs Outcomes Source'
     ]);
-    expect(rendered.querySelectorAll('.runs-page .custom-table')).toHaveLength(2);
-    expect(rendered.querySelector('.runs-page')?.getAttribute('data-page-kind')).toBe('custom');
+    expect(rendered.querySelectorAll('[data-page-id="runs"] .custom-table')).toHaveLength(2);
+    expect(rendered.querySelector('[data-page-id="runs"]')?.getAttribute('data-page-kind')).toBe('custom');
   });
 
   it('DLS-PAGE-009 DLS-PAGE-014 renders built-in evals page with distinguishable definitions and observations, observed subject, YES/NO/UNKNOWN result, evaluation model when available, time, provenance, and independent data state deterministically', () => {
@@ -1053,13 +1063,13 @@ describe('presenter built-in and custom pages', () => {
 
     expect(rendered.querySelector('[data-page-name="findings"] h2')?.textContent).toBe('Findings');
     expect(rendered.querySelector('.sidebar-brand > span')?.textContent).toBe('github');
-    expect(rendered.querySelector('.findings-page .custom-table thead')?.textContent).toContain('Issue Link');
+    expect(rendered.querySelector('[data-page-id="findings"] .custom-table thead')?.textContent).toContain('Issue Link');
 
-    const summaryCell = rendered.querySelector('.findings-page .custom-table tbody td');
+    const summaryCell = rendered.querySelector('[data-page-id="findings"] .custom-table tbody td');
     expect(summaryCell?.textContent).toContain('<img src=x onerror=alert(1)>');
     expect(summaryCell?.querySelector('img')).toBeNull();
 
-    const issueLink = rendered.querySelector('.findings-page .custom-table tbody a');
+    const issueLink = rendered.querySelector('[data-page-id="findings"] .custom-table tbody a');
     expect(issueLink?.getAttribute('href')).toBe('https://example.com/issues/1');
     expect(issueLink?.getAttribute('aria-label')).toBe('Issue 1 label');
     expect(issueLink?.getAttribute('target')).toBe('_blank');
@@ -1182,7 +1192,7 @@ describe('presenter built-in and custom pages', () => {
                 id: 'missing-element-source',
                 title: 'Missing Element Source',
                 mark: 'element',
-                element: 'operational-overview'
+                element: 'control-plane-status'
               }
             ]
           }
@@ -1434,7 +1444,7 @@ describe('presenter built-in and custom pages', () => {
     rendered.ownerDocument.body.append(rendered);
     enableDashboardKeyboardNavigation(rendered);
 
-    const sections = rendered.querySelectorAll('.runs-page .page-section');
+    const sections = rendered.querySelectorAll('[data-page-id="runs"] .page-section');
     expect(sections).toHaveLength(2);
     expect(sections[0]?.getAttribute('aria-labelledby')).toContain('runs-runs-runs-source-heading');
     expect([...sections].map((section) => section.getAttribute('aria-labelledby'))).toEqual([

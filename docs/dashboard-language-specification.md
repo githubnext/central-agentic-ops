@@ -199,8 +199,8 @@ Language keys and enumerated values use canonical kebab-case. Human-readable tit
 | Root | `language-version`, `dashboard` |
 | `dashboard` | `id`, `title`, `description`, `github-url-base`, `repository`, `defaults`, `pages` |
 | `defaults` | `scope`, `time`, `filters` |
-| Built-in page | `id`, `kind`, `page`, `title`, `description`, `icon`, `definition` |
-| Custom page | `id`, `kind`, `title`, `description`, `icon`, `views` |
+| Built-in page | `id`, `kind`, `page`, `title`, `description`, `icon`, `class-name`, `definition` |
+| Custom page | `id`, `kind`, `title`, `description`, `icon`, `class-name`, `views` |
 | View | `id`, `title`, `description`, `data`, `mark`, `element`, `chart`, `layout`, `disclosure`, `encoding` |
 | View `data` | `source` or `sources`, `scope`, `time`, `filters`, `limit`, `order-by` |
 | Field definition | `field`, `type`, `aggregate`, `time-unit`, `title`, `as` (only when `aggregate` is not `none`), `display` |
@@ -431,6 +431,7 @@ A finding is an observation with a stable finding ID, summary, status, severity,
   page: runs
   title: Runs
   icon: play
+  class-name: runs-page
 ```
 
 Allowed built-in page names are:
@@ -438,6 +439,8 @@ Allowed built-in page names are:
 `overview`, `organizations`, `repositories`, `packages`, `workflows`, `runs`, `experiments`, `graders`, `evals`, `usage`, `engines-models`, `operational-value`, and `findings`.
 
 The optional page `icon` is one of `server`, `workflow`, `play`, `repo`, `package`, `issue`, or `graph`. It controls navigation presentation without changing page semantics and defaults to `server`.
+
+The optional page `class-name` is a canonical identifier that a renderer adds to the page container. It lets a document opt into page-specific presentation without requiring the renderer to infer styling from a page ID or built-in page name.
 
 ### 10.2 Required Content
 
@@ -456,6 +459,7 @@ The optional page `icon` is one of `server`, `workflow`, `play`, `repo`, `packag
 - **DLS-PAGE-013:** The `findings` page **MUST** expose finding summary, severity, status, scope, time, provenance, and available issue, pull-request, and run links.
 - **DLS-PAGE-014:** Every built-in page **MUST** honor the dashboard scope, time, and filters and expose availability, completeness, and freshness independently.
 - **DLS-PAGE-015:** The `packages` page **MUST** expose centrally managed package inventory, rollout-mode filtering, actual package AIC against summed per-run limits without treating missing usage as zero, the complete-attempt AIC allowance, retained usage coverage, and time-ordered successful, failed, and cancelled package-run trends.
+- **DLS-PAGE-016:** When `class-name` is present, it **MUST** be a canonical identifier and a renderer **MUST** add it to the page container without deriving additional CSS class names from `id` or `page`.
 
 ---
 
@@ -476,7 +480,7 @@ Allowed encoding channels are `value`, `columns`, `x`, `y`, `color`, and `href`.
 
 Field `type` values are `nominal`, `ordinal`, `quantitative`, and `temporal`. When omitted, type defaults to the intrinsic field type. A field title defaults to its kebab-case field name with words capitalized.
 
-The optional table-column field `display` is `text`, `status`, `mode`, or `active-state` and defaults to `text`. It selects presentation independently from the field name. Named UI element values are `operational-overview`, `package-activity`, and `workflow-topology`; presenters dispatch these values without inferring behavior from page IDs, view IDs, or source contents.
+The optional table-column field `display` is `text`, `status`, `mode`, or `active-state` and defaults to `text`. It selects presentation independently from the field name. Named UI element values are `control-plane-status`, `package-aic-utilization`, `attention-panel`, `managed-packages`, `package-activity`, and `workflow-topology`; renderers dispatch these values without inferring behavior from page IDs, view IDs, or source contents. The four overview elements are independent views so documents can assemble and lay out the landing page through `views`, `sections`, and `layout`.
 
 A chart may set `chart` to `line`, `bar`, or `pie`. When `chart` is omitted, temporal `x` has a line time-series default and any other valid chart has a bar default. A line chart uses temporal `x`; a pie chart uses nominal or ordinal `x` for categories and quantitative `y` for values. These known widget types and defaults are semantic; this specification does not define visual styling.
 
