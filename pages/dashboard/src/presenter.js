@@ -11,9 +11,9 @@ import { renderTableRegion } from './components/table-region.js';
 import { renderContextChrome, renderPageSection, renderViewSectionChrome } from './components/view-chrome.js';
 import { formatAggregateValue, formatNumber, toNumber } from './view-formatters.js';
 import { renderActiveStateBadge, renderModeBadge, renderStatusBadge } from './components/badge.js';
-import { renderOperationalOverview } from './components/operational-overview.js';
 import { findFirstLink, findLink, renderExternalLink, renderLinkedValueWithExternalLink } from './components/link-content.js';
-import { renderPackagesView } from './components/packages-view.js';
+import { renderLinkedText, createEntityAwareCellRenderer } from './components/linked-text.js';
+import { renderUiElement } from './components/ui-elements.js';
 
 /**
  * @typedef {{ availability: 'available'|'empty'|'unavailable', completeness: 'complete'|'partial'|'unknown', freshness: 'fresh'|'stale'|'unknown' }} DataState
@@ -32,15 +32,15 @@ import { renderPackagesView } from './components/packages-view.js';
  */
 
 /**
- * @typedef {{ id: string, kind: 'built-in', page: string, title?: string, description?: string, definition?: { views?: Array<unknown>, sections?: PresentablePageSection[], ['data-state']?: Record<string, boolean> } }} PresentableBuiltInPage
+ * @typedef {{ id: string, kind: 'built-in', page: string, title?: string, description?: string, icon?: string, definition?: { views?: Array<unknown>, sections?: PresentablePageSection[], ['data-state']?: Record<string, boolean> } }} PresentableBuiltInPage
  */
 
 /**
- * @typedef {{ id: string, kind: 'custom', title?: string, description?: string, views: unknown[], sections?: PresentablePageSection[] }} PresentableCustomPage
+ * @typedef {{ id: string, kind: 'custom', title?: string, description?: string, icon?: string, views: unknown[], sections?: PresentablePageSection[] }} PresentableCustomPage
  */
 
 /**
- * @typedef {{ field: string, aggregate?: string, as?: string, direction?: string } & Record<string, unknown>} TableField
+ * @typedef {{ field: string, aggregate?: string, as?: string, direction?: string, display?: string } & Record<string, unknown>} TableField
  */
 
 /**
@@ -212,20 +212,7 @@ function renderNavItem(page, isActive) {
  * @returns {string}
  */
 function getPageIcon(page) {
-  if (page.kind === 'built-in') {
-    if (page.page === 'workflows') return 'workflow';
-    if (page.page === 'runs') return 'play';
-    if (page.page === 'tasks') return 'issue';
-    if (page.page === 'repositories') return 'repo';
-  }
-  const id = page.id.toLowerCase();
-  if (id.includes('workflow')) return 'workflow';
-  if (id.includes('run')) return 'play';
-  if (id.includes('metric') || id.includes('usage')) return 'graph';
-  if (id.includes('task') || id.includes('issue')) return 'issue';
-  if (id.includes('repo')) return 'repo';
-  if (id.includes('package')) return 'package';
-  return 'server';
+  return typeof page.icon === 'string' ? page.icon : 'server';
 }
 
 /**
@@ -351,30 +338,29 @@ function renderPage(page, sources) {
 
   if (page.kind === 'built-in') {
     const payload = getBuiltInPagePayload(page);
-    return renderCustomPage(payload, title, sources, page.page);
+    return renderCustomPage(payload, title, sources);
   }
 
-  return renderCustomPage(page, title, sources, null);
+  return renderCustomPage(page, title, sources);
 }
 
 /**
  * @param {PresentableCustomPage} page
  * @param {string} title
  * @param {Record<string, LogicalSourceInput>} sources
- * @param {string | null} builtInPage
  * @returns {HTMLElement}
  */
-function renderCustomPage(page, title, sources, builtInPage) {
+function renderCustomPage(page, title, sources) {
   const views = Array.isArray(page.views) ? page.views : [];
   const sections = Array.isArray(page.sections) ? page.sections : [];
   /** @type {Map<string, LogicalSourceInput>} */
   const pageSources = new Map();
   for (const view of views) {
-    const sourceName = getViewSource(view);
-    if (sourceName && sources[sourceName]) {
-      pageSources.set(sourceName, sources[sourceName]);
+    for (const sourceName of getViewSources(view)) {
+      if (sources[sourceName]) {
+        pageSources.set(sourceName, sources[sourceName]);
+      }
     }
-
   }
   const renderedViews = views.map((view, index) => {
     const rendered = renderCustomView(page.id, view, index, sources, sections.length > 0 ? 'h4' : 'h3');
@@ -409,11 +395,7 @@ function renderCustomPage(page, title, sources, builtInPage) {
     isPlainObject(view) && typeof view.id === 'string' ? view.id : `view-${index + 1}`,
     renderedViews[index]
   ]));
-  const renderedContent = builtInPage === 'overview' && sections.length > 0
-    ? renderOverviewContent(sections, renderedViewsById, sources)
-    : builtInPage === 'packages'
-      ? renderPackagesView(sources, page.id)
-    : sections.length > 0
+  const renderedContent = sections.length > 0
     ? h(
       'div',
       { className: 'page-layout-grid' },
@@ -433,26 +415,8 @@ function renderCustomPage(page, title, sources, builtInPage) {
     h('h2', { tabIndex: -1 }, title),
     page.description ? h('p', { className: 'page-description' }, page.description) : null,
     ...(renderedViews.length > 0
-      ? builtInPage === 'overview' || builtInPage === 'packages'
-        ? [renderedContent, renderDataStateMetrics(summarizeDataState(pageSources))]
-        : [renderDataStateMetrics(summarizeDataState(pageSources)), renderedContent]
+      ? [renderDataStateMetrics(summarizeDataState(pageSources)), renderedContent]
       : [h('p', null, 'No custom views available.')])
-  );
-}
-
-/**
- * @param {PresentablePageSection[]} sections
- * @param {Map<string, HTMLElement>} renderedViews
- * @param {Record<string, LogicalSourceInput>} sources
- * @returns {HTMLElement}
- */
-function renderOverviewContent(sections, renderedViews, sources) {
-  const trends = sections.find((section) => section.id === 'execution-trends');
-  return h(
-    'div',
-    { className: 'overview-content' },
-    renderOperationalOverview(sources),
-    trends ? renderLayoutSection('overview', trends, renderedViews) : null
   );
 }
 
@@ -556,13 +520,16 @@ export function enableDashboardPageNavigation(root) {
 
 /**
  * @param {unknown} view
- * @returns {string | null}
+ * @returns {string[]}
  */
-function getViewSource(view) {
-  if (!isPlainObject(view) || !isPlainObject(view.data) || typeof view.data.source !== 'string') {
-    return null;
+function getViewSources(view) {
+  if (!isPlainObject(view) || !isPlainObject(view.data)) {
+    return [];
   }
-  return view.data.source;
+  if (Array.isArray(view.data.sources)) {
+    return view.data.sources.filter((source) => typeof source === 'string');
+  }
+  return typeof view.data.source === 'string' ? [view.data.source] : [];
 }
 
 /**
@@ -616,16 +583,6 @@ function renderCustomView(pageId, view, index, sources, headingTag = 'h3') {
 
   const title = getViewTitle(view, index);
 
-  const sourceName = getViewSource(view);
-  if (!sourceName) {
-    return renderCustomViewState(pageId, title, null, 'unavailable', ['Source unavailable.'], headingTag);
-  }
-
-  const sourceInput = sources[sourceName];
-  if (!sourceInput || !Array.isArray(sourceInput.rows)) {
-    return renderCustomViewState(pageId, title, sourceName, 'unavailable', [`Source unavailable: ${sourceName}`], headingTag);
-  }
-
   const contextDetails = [];
   if (isPlainObject(view.data?.scope) && Object.keys(view.data.scope).length > 0) {
     contextDetails.push(`Scope: ${JSON.stringify(view.data.scope)}`);
@@ -635,6 +592,20 @@ function renderCustomView(pageId, view, index, sources, headingTag = 'h3') {
   }
   if (isPlainObject(view.data?.filters) && Object.keys(view.data.filters).length > 0) {
     contextDetails.push(`Filters: ${JSON.stringify(view.data.filters)}`);
+  }
+
+  if (view.mark === 'element') {
+    return renderElementView(pageId, title, view, sources, contextDetails, headingTag);
+  }
+
+  const sourceName = getViewSources(view)[0] ?? null;
+  if (!sourceName) {
+    return renderCustomViewState(pageId, title, null, 'unavailable', ['Source unavailable.'], headingTag);
+  }
+
+  const sourceInput = sources[sourceName];
+  if (!sourceInput || !Array.isArray(sourceInput.rows)) {
+    return renderCustomViewState(pageId, title, sourceName, 'unavailable', [`Source unavailable: ${sourceName}`], headingTag);
   }
 
   const filteredRows = filterRowsForView(sourceInput.rows, view.data);
@@ -651,9 +622,6 @@ function renderCustomView(pageId, view, index, sources, headingTag = 'h3') {
 
   if (view.mark === 'metric') {
     return renderMetricView(pageId, title, view, sourceName, filteredRows, metadata, contextDetails, headingTag);
-  }
-  if (pageId === 'workflows' && sourceName === 'workflows' && filteredRows.some(hasWorkflowTopology)) {
-    return renderWorkflowTopologyView(pageId, title, sourceName, filteredRows, metadata, contextDetails, headingTag);
   }
   if (view.mark === 'table') {
     return renderTableView(pageId, title, view, sourceName, filteredRows, metadata, contextDetails, headingTag);
@@ -683,236 +651,51 @@ function getViewTitle(view, index) {
 }
 
 /**
- * @param {Record<string, unknown>} row
- * @returns {boolean}
- */
-function hasWorkflowTopology(row) {
-  return ['orchestrator', 'worker', 'standalone'].includes(String(row['workflow-role']));
-}
-
-/**
  * @param {string} pageId
  * @param {string} title
- * @param {string} sourceName
- * @param {Array<Record<string, unknown>>} rows
- * @param {SourceMetadata} metadata
+ * @param {Record<string, unknown>} view
+ * @param {Record<string, LogicalSourceInput>} sources
  * @param {string[]} contextDetails
- * @param {'h3'|'h4'} [headingTag]
+ * @param {'h3'|'h4'} headingTag
  * @returns {HTMLElement}
  */
-function renderWorkflowTopologyView(pageId, title, sourceName, rows, metadata, contextDetails, headingTag = 'h3') {
-  const packageRows = rows.filter((row) => row['workflow-role'] !== 'standalone' && typeof row.package === 'string');
-  const standaloneRows = rows.filter((row) => row['workflow-role'] === 'standalone');
-  /** @type {Map<string, Array<Record<string, unknown>>>} */
-  const groupedPackages = new Map();
-  for (const row of packageRows) {
-    const packageId = String(row.package);
-    const packageWorkflows = groupedPackages.get(packageId) ?? [];
-    packageWorkflows.push(row);
-    groupedPackages.set(packageId, packageWorkflows);
+function renderElementView(pageId, title, view, sources, contextDetails, headingTag) {
+  const elementName = typeof view.element === 'string' ? view.element : '';
+  const sourceNames = getViewSources(view);
+  if (sourceNames.length === 0) {
+    return renderCustomViewState(pageId, title, null, 'unavailable', [...contextDetails, 'No sources declared for element view.'], headingTag);
   }
 
-  const packages = [...groupedPackages.entries()].sort(([left], [right]) => left.localeCompare(right));
-  return renderPageSection(pageId, title, [
-    ...renderViewSectionChrome(sourceName, metadata, contextDetails),
-    h(
-      'dl',
-      { className: 'workflow-topology-summary', 'aria-label': 'Workflow topology summary' },
-      renderTopologyMetric('Packages', packages.length),
-      renderTopologyMetric('Central workflows', packageRows.length),
-      renderTopologyMetric('Standalone workflows', standaloneRows.length)
-    ),
-    h(
-      'div',
-      { className: 'workflow-topology' },
-      h(
-        'section',
-        { className: 'topology-plane', 'aria-labelledby': `${pageId}-control-plane-heading` },
-        h(
-          'header',
-          { className: 'topology-plane-header' },
-          h('span', { className: 'topology-step', 'aria-hidden': 'true' }, '01'),
-          h(
-            'div',
-            null,
-            h('p', { className: 'topology-kicker' }, 'Central execution'),
-            h('h4', { id: `${pageId}-control-plane-heading` }, 'Operation packages'),
-            h('p', null, 'Each package runs in the control plane as one orchestrator steering one or more workers.')
-          )
-        ),
-        h(
-          'div',
-          { className: 'package-topology-list' },
-          ...(packages.length > 0
-            ? packages.map(([packageId, workflows]) => renderPackageTopology(packageId, workflows))
-            : [h('p', { className: 'empty' }, 'No operation packages observed.')])
-        )
-      ),
-      h(
-        'div',
-        { className: 'topology-boundary', role: 'separator', 'aria-label': 'Control-plane execution boundary' },
-        h('span', null, 'safe outputs only'),
-        h('i', { 'aria-hidden': 'true' })
-      ),
-      h(
-        'section',
-        { className: 'topology-plane target-plane', 'aria-labelledby': `${pageId}-target-plane-heading` },
-        h(
-          'header',
-          { className: 'topology-plane-header' },
-          h('span', { className: 'topology-step', 'aria-hidden': 'true' }, '02'),
-          h(
-            'div',
-            null,
-            h('p', { className: 'topology-kicker' }, 'Target repositories'),
-            h('h4', { id: `${pageId}-target-plane-heading` }, 'Standalone workflows'),
-            h('p', null, 'Repository-owned workflows run locally and are not part of a central operation package.')
-          )
-        ),
-        renderStandaloneWorkflows(standaloneRows)
-      )
-    )
-  ], headingTag);
-}
+  const selectedSources = Object.fromEntries(sourceNames.flatMap((sourceName) => {
+    const source = sources[sourceName];
+    return source && Array.isArray(source.rows)
+      ? [[sourceName, { ...source, rows: filterRowsForView(source.rows, isPlainObject(view.data) ? view.data : undefined) }]]
+      : [];
+  }));
 
-/**
- * @param {string} label
- * @param {number} value
- * @returns {HTMLElement}
- */
-function renderTopologyMetric(label, value) {
-  return h('div', null, h('dt', null, label), h('dd', null, String(value)));
-}
-
-/**
- * @param {string} packageId
- * @param {Array<Record<string, unknown>>} workflows
- * @returns {HTMLElement}
- */
-function renderPackageTopology(packageId, workflows) {
-  const orchestrator = workflows.find((row) => row['workflow-role'] === 'orchestrator');
-  const workers = workflows
-    .filter((row) => row['workflow-role'] === 'worker')
-    .sort(compareWorkflowRows);
-  const packageName = workflows.find((row) => typeof row['package-name'] === 'string')?.['package-name'];
-  const mode = String(orchestrator?.['rollout-mode'] ?? workflows[0]?.['rollout-mode'] ?? 'unknown');
-  const active = workflows.every((row) => String(row['workflow-active']) === 'true');
-  const complete = Boolean(orchestrator) && workers.length > 0;
-  const repositoryRow = orchestrator ?? workflows[0];
-  const repositoryLink = repositoryRow ? findLink(repositoryRow, 'repository-link') : null;
-
-  return h(
-    'article',
-    { className: 'package-topology', 'data-package-id': packageId },
-    h(
-      'header',
-      { className: 'package-topology-header' },
-      h('span', { className: 'package-icon' }, octicon('package')),
-      h(
-        'div',
-        { className: 'package-identity' },
-        h('h5', null, typeof packageName === 'string' ? packageName : titleCase(packageId)),
-        h('p', null, `${workers.length} worker${workers.length === 1 ? '' : 's'} · `, renderLinkedText(toText(repositoryRow?.repository), repositoryLink))
-      ),
-      h('span', { className: `mode-indicator mode-${mode}` }, mode),
-      h('span', { className: `status ${active && complete ? 'status-success' : 'status-attention'}` }, active && complete ? 'Active' : 'Needs attention')
-    ),
-    h(
-      'div',
-      { className: 'package-flow' },
-      orchestrator
-        ? renderWorkflowNode(orchestrator, 'orchestrator')
-        : h('div', { className: 'workflow-node workflow-node-missing' }, h('strong', null, 'Orchestrator missing')),
-      h(
-        'div',
-        { className: 'package-dispatch', 'aria-hidden': 'true' },
-        h('span', null, 'dispatches'),
-        h('i')
-      ),
-      h(
-        'div',
-        { className: 'worker-stack', role: 'list', 'aria-label': `${packageName ?? titleCase(packageId)} workers` },
-        ...(workers.length > 0
-          ? workers.map((worker) => renderWorkflowNode(worker, 'worker'))
-          : [h('div', { className: 'workflow-node workflow-node-missing' }, h('strong', null, 'No workers observed'))])
-      )
-    )
-  );
-}
-
-/**
- * @param {Record<string, unknown>} row
- * @param {'orchestrator'|'worker'} role
- * @returns {HTMLElement}
- */
-function renderWorkflowNode(row, role) {
-  const workflowLink = findLink(row, 'workflow-link');
-  return h(
-    'div',
-    { className: `workflow-node workflow-node-${role}`, role: 'listitem', 'data-workflow-role': role },
-    h('span', { className: 'workflow-node-icon' }, octicon('workflow')),
-    h(
-      'div',
-      { className: 'workflow-node-copy' },
-      h('strong', null, renderLinkedText(toText(row['workflow-name'] ?? row.workflow), workflowLink)),
-      h('code', null, toText(row.workflow)),
-      h('small', null, role)
-    )
-  );
-}
-
-/**
- * @param {Array<Record<string, unknown>>} rows
- * @returns {HTMLElement}
- */
-function renderStandaloneWorkflows(rows) {
-  if (rows.length === 0) {
-    return h('p', { className: 'empty' }, 'No standalone workflows observed.');
+  if (sourceNames.length === 1) {
+    const sourceName = sourceNames[0];
+    const source = selectedSources[sourceName];
+    if (!source) {
+      return renderCustomViewState(pageId, title, sourceName, 'unavailable', contextDetails, headingTag);
+    }
+    const state = source.metadata?.availability ?? inferAvailability(source.rows);
+    if (state !== 'available') {
+      return renderCustomViewState(pageId, title, sourceName, state, contextDetails, headingTag);
+    }
+    if (source.rows.length === 0) {
+      return renderCustomViewState(pageId, title, sourceName, 'empty', contextDetails, headingTag);
+    }
   }
-  /** @type {Map<string, Array<Record<string, unknown>>>} */
-  const byRepository = new Map();
-  for (const row of [...rows].sort(compareWorkflowRows)) {
-    const repository = toText(row.repository);
-    const repositoryRows = byRepository.get(repository) ?? [];
-    repositoryRows.push(row);
-    byRepository.set(repository, repositoryRows);
-  }
-  return h(
-    'div',
-    { className: 'standalone-repository-list' },
-    ...[...byRepository.entries()].map(([repository, workflows]) => h(
-      'article',
-      { className: 'standalone-repository', 'data-repository': repository },
-      h(
-        'header',
-        null,
-        h('span', { className: 'repository-icon' }, octicon('repo')),
-        h('strong', null, renderLinkedText(repository, findLink(workflows[0], 'repository-link'))),
-        h('span', { className: 'workflow-count' }, `${workflows.length} workflow${workflows.length === 1 ? '' : 's'}`)
-      ),
-      h(
-        'ul',
-        null,
-        ...workflows.map((workflow) => h(
-          'li',
-          null,
-          h('span', { className: 'standalone-workflow-icon' }, octicon('workflow')),
-          h('span', null, h('strong', null, renderLinkedText(toText(workflow['workflow-name'] ?? workflow.workflow), findLink(workflow, 'workflow-link'))), h('code', null, toText(workflow.workflow))),
-          h('span', { className: `mode-indicator mode-${toText(workflow['rollout-mode'])}` }, toText(workflow['rollout-mode'])),
-          h('span', { className: `status ${String(workflow['workflow-active']) === 'true' ? 'status-success' : 'status-muted'}` }, String(workflow['workflow-active']) === 'true' ? 'Active' : 'Inactive')
-        ))
-      )
-    ))
-  );
-}
 
-/**
- * @param {Record<string, unknown>} left
- * @param {Record<string, unknown>} right
- * @returns {number}
- */
-function compareWorkflowRows(left, right) {
-  return toText(left['workflow-name'] ?? left.workflow).localeCompare(toText(right['workflow-name'] ?? right.workflow));
+  return renderUiElement(elementName, {
+    pageId,
+    title,
+    sourceNames,
+    sources: selectedSources,
+    contextDetails,
+    headingTag
+  }) ?? renderCustomViewState(pageId, title, null, 'unavailable', [...contextDetails, 'Unsupported UI element.'], headingTag);
 }
 
 /**
@@ -1001,7 +784,7 @@ function renderTableView(pageId, title, view, sourceName, rows, metadata, contex
     { 'data-custom-row-key': `${pageId}-${title}-${rowIndex}` },
     ...columns.map((column, columnIndex) => {
       const outputField = typeof column.as === 'string' ? column.as : column.field;
-      const value = renderEntityAwareCellValue(column.field, row[outputField], row);
+      const value = renderEntityAwareCellValue(column, row[outputField], row);
       if (columnIndex === 0 && hrefField) {
         const link = findLink(row, /** @type {LinkFieldName} */ (hrefField));
         return h('td', null, renderLinkedValueWithExternalLink(value, link));
@@ -1127,27 +910,18 @@ function compareTableValues(left, right) {
 }
 
 /**
- * @param {string} field
+ * @param {unknown} display
  * @param {unknown} value
  * @returns {string | HTMLElement}
  */
-function renderTableCellValue(field, value) {
-  if (field === 'rollout-mode') return renderModeBadge(value);
-  if (field === 'workflow-active') return renderActiveStateBadge(value);
-  if ([
-    'run-status',
-    'run-conclusion',
-    'outcome-state',
-    'finding-severity',
-    'finding-status',
-    'grader-status',
-    'eval-result',
-    'maturity-status'
-  ].includes(field)) {
-    return renderStatusBadge(value);
-  }
+function renderTableCellValue(display, value) {
+  if (display === 'mode') return renderModeBadge(value);
+  if (display === 'active-state') return renderActiveStateBadge(value);
+  if (display === 'status') return renderStatusBadge(value);
   return toText(value);
 }
+
+const renderEntityAwareCellValue = createEntityAwareCellRenderer(ENTITY_LINK_FIELDS, findLink, renderTableCellValue, toText);
 
 /**
  * @param {string} pageId
@@ -1699,37 +1473,6 @@ function trimmedString(value) {
  */
 function toText(value) {
   return value == null || value === '' ? 'unknown' : String(value);
-}
-
-/**
- * Renders text as a GitHub link when a link is available, otherwise as plain text.
- * @param {string} text
- * @param {{ href: string, label: string } | null} link
- * @returns {string | HTMLElement}
- */
-function renderLinkedText(text, link) {
-  return link
-    ? h('a', { href: link.href, target: '_blank', rel: 'noopener noreferrer', 'aria-label': link.label }, text)
-    : text;
-}
-
-/**
- * @param {string} field
- * @param {unknown} value
- * @param {Record<string, unknown>} row
- * @returns {string | HTMLElement}
- */
-function renderEntityAwareCellValue(field, value, row) {
-  const linkField = Object.prototype.hasOwnProperty.call(ENTITY_LINK_FIELDS, field)
-    ? ENTITY_LINK_FIELDS[/** @type {keyof typeof ENTITY_LINK_FIELDS} */ (field)]
-    : null;
-  if (linkField) {
-    const link = findLink(row, linkField);
-    if (link) {
-      return renderLinkedText(toText(value), link);
-    }
-  }
-  return renderTableCellValue(field, value);
 }
 
 

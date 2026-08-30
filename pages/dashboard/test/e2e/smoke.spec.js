@@ -51,6 +51,24 @@ function buildPresenterModuleUrl() {
     .replace("'../octicons.js'", JSON.stringify(octiconsModuleUrl));
   const linkContentModuleUrl = `data:text/javascript;charset=utf-8,${encodeURIComponent(linkContentSource)}`;
 
+  const linkedTextSource = readFileSync(new URL('../../src/components/linked-text.js', import.meta.url), 'utf8')
+    .replace("'../dom.js'", JSON.stringify(domModuleUrl));
+  const linkedTextModuleUrl = `data:text/javascript;charset=utf-8,${encodeURIComponent(linkedTextSource)}`;
+
+  const workflowTopologySource = readFileSync(new URL('../../src/components/workflow-topology.js', import.meta.url), 'utf8')
+    .replace("'../dom.js'", JSON.stringify(domModuleUrl))
+    .replace("'../octicons.js'", JSON.stringify(octiconsModuleUrl))
+    .replace("'./link-content.js'", JSON.stringify(linkContentModuleUrl))
+    .replace("'./linked-text.js'", JSON.stringify(linkedTextModuleUrl))
+    .replace("'./view-chrome.js'", JSON.stringify(viewChromeModuleUrl));
+  const workflowTopologyModuleUrl = `data:text/javascript;charset=utf-8,${encodeURIComponent(workflowTopologySource)}`;
+
+  const uiElementsSource = readFileSync(new URL('../../src/components/ui-elements.js', import.meta.url), 'utf8')
+    .replace("'./operational-overview.js'", JSON.stringify(operationalOverviewModuleUrl))
+    .replace("'./packages-view.js'", JSON.stringify(packagesViewModuleUrl))
+    .replace("'./workflow-topology.js'", JSON.stringify(workflowTopologyModuleUrl));
+  const uiElementsModuleUrl = `data:text/javascript;charset=utf-8,${encodeURIComponent(uiElementsSource)}`;
+
   const presenterSource = readFileSync(new URL('../../src/presenter.js', import.meta.url), 'utf8')
     .replace("'../dashboard.json'", JSON.stringify(dashboardModuleUrl))
     .replace("'./dom.js'", JSON.stringify(domModuleUrl))
@@ -60,9 +78,9 @@ function buildPresenterModuleUrl() {
     .replace("'./components/data-state.js'", JSON.stringify(dataStateModuleUrl))
     .replace("'./components/table-region.js'", JSON.stringify(tableRegionModuleUrl))
     .replace("'./components/view-chrome.js'", JSON.stringify(viewChromeModuleUrl))
-    .replace("'./components/operational-overview.js'", JSON.stringify(operationalOverviewModuleUrl))
-    .replace("'./components/packages-view.js'", JSON.stringify(packagesViewModuleUrl))
     .replace("'./components/link-content.js'", JSON.stringify(linkContentModuleUrl))
+    .replace("'./components/linked-text.js'", JSON.stringify(linkedTextModuleUrl))
+    .replace("'./components/ui-elements.js'", JSON.stringify(uiElementsModuleUrl))
     .replace("'./view-formatters.js'", JSON.stringify(viewFormattersModuleUrl));
 
   return `data:text/javascript;charset=utf-8,${encodeURIComponent(presenterSource)}`;
@@ -256,8 +274,8 @@ test('DLS-PAGE-002 DLS-PAGE-014 built-in overview page renders the report-style 
   await expect(page.getByRole('heading', { name: 'Built In Overview Render' })).toBeVisible();
   await expect(page.getByRole('heading', { name: 'Overview', exact: true, level: 2 })).toBeVisible();
   await expect(page.locator('.overview-page')).toHaveAttribute('data-page-kind', 'custom');
-  await expect(page.locator('.overview-page .custom-view')).toHaveCount(2);
-  await expect(page.locator('.overview-page .layout-section')).toHaveCount(1);
+  await expect(page.locator('.overview-page .custom-view')).toHaveCount(3);
+  await expect(page.locator('.overview-page .layout-section')).toHaveCount(2);
   await expect(page.getByRole('heading', { name: 'Attention required', level: 3 })).toBeVisible();
   await expect(page.locator('.control-plane-status')).toHaveClass(/control-plane-critical/);
   await expect(page.locator('.control-plane-vitals')).toContainText('2 repositories');

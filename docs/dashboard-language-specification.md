@@ -15,7 +15,7 @@ sidebar:
 
 ## Abstract
 
-This specification defines a small, declarative, YAML-based language for describing dashboards about organizations, repositories, centrally managed packages, agentic workflows, runs, experiments, graders, evals, usage, findings, and operational value. A dashboard contains built-in pages or custom pages. Custom pages use a constrained Vega-inspired model composed of `source`, optional `data`, `mark`, and `encoding`. This specification defines intrinsic domain semantics, aggregation and filtering rules, provenance and freshness requirements, explicit unavailable-data states, links, conformance, and compliance tests. It does not define data retrieval, implementation architecture, or rendering technology.
+This specification defines a small, declarative, YAML-based language for describing dashboards about organizations, repositories, centrally managed packages, agentic workflows, runs, experiments, graders, evals, usage, findings, and operational value. A dashboard contains built-in pages or custom pages. Custom pages use a constrained Vega-inspired model composed of `data`, `mark`, and mark-specific configuration. This specification defines intrinsic domain semantics, aggregation and filtering rules, provenance and freshness requirements, explicit unavailable-data states, links, conformance, and compliance tests. It does not define data retrieval, implementation architecture, or rendering technology.
 
 ## Status of This Document
 
@@ -199,11 +199,11 @@ Language keys and enumerated values use canonical kebab-case. Human-readable tit
 | Root | `language-version`, `dashboard` |
 | `dashboard` | `id`, `title`, `description`, `github-url-base`, `repository`, `defaults`, `pages` |
 | `defaults` | `scope`, `time`, `filters` |
-| Built-in page | `id`, `kind`, `page`, `title`, `description` |
-| Custom page | `id`, `kind`, `title`, `description`, `views` |
-| View | `id`, `title`, `description`, `data`, `mark`, `chart`, `layout`, `disclosure`, `encoding` |
-| View `data` | `source`, `scope`, `time`, `filters`, `limit`, `order-by` |
-| Field definition | `field`, `type`, `aggregate`, `time-unit`, `title`, `as` (only when `aggregate` is not `none`) |
+| Built-in page | `id`, `kind`, `page`, `title`, `description`, `icon`, `definition` |
+| Custom page | `id`, `kind`, `title`, `description`, `icon`, `views` |
+| View | `id`, `title`, `description`, `data`, `mark`, `element`, `chart`, `layout`, `disclosure`, `encoding` |
+| View `data` | `source` or `sources`, `scope`, `time`, `filters`, `limit`, `order-by` |
+| Field definition | `field`, `type`, `aggregate`, `time-unit`, `title`, `as` (only when `aggregate` is not `none`), `display` |
 
 ### 4.3 Normative Document Requirements
 
@@ -257,7 +257,7 @@ A package groups one orchestrator and one or more workers that execute centrally
 
 ### 5.4 Normative Source Requirements
 
-- **DLS-SEM-017:** A custom view `data.source` **MUST** name exactly one source from Section 5.1.
+- **DLS-SEM-017:** A `metric`, `table`, or `chart` view `data.source` **MUST** name exactly one source from Section 5.1. An `element` view `data.sources` **MUST** name one or more unique sources from Section 5.1.
 - **DLS-SEM-018:** Each logical source **MUST** preserve the grain declared in Section 5.1; duplicated observations **MUST** retain distinct observation identifiers in provenance.
 - **DLS-SEM-019:** A `usage` row **MUST** represent one model invocation and **MUST NOT** repeat invocation-level AIC across token-class rows.
 - **DLS-SEM-020:** Grader values, eval results, AIC, each raw-token measure, outcome states, and operational value **MUST** remain separately named throughout filtering, aggregation, and presentation.
@@ -430,11 +430,14 @@ A finding is an observation with a stable finding ID, summary, status, severity,
   kind: built-in
   page: runs
   title: Runs
+  icon: play
 ```
 
 Allowed built-in page names are:
 
 `overview`, `organizations`, `repositories`, `packages`, `workflows`, `runs`, `experiments`, `graders`, `evals`, `usage`, `engines-models`, `operational-value`, and `findings`.
+
+The optional page `icon` is one of `server`, `workflow`, `play`, `repo`, `package`, `issue`, or `graph`. It controls navigation presentation without changing page semantics and defaults to `server`.
 
 ### 10.2 Required Content
 
@@ -460,17 +463,20 @@ Allowed built-in page names are:
 
 ### 11.1 Syntax and View Classes
 
-A custom page contains a non-empty `views` sequence. Each view has one `data` mapping, one mark, and one encoding.
+A custom page contains a non-empty `views` sequence. Each view has one `data` mapping and one mark. Data marks use an `encoding`; named UI elements use `element`.
 
 | Semantic view | `mark` values | Required encoding |
 |---|---|---|
 | Metric | `metric` | `value` |
 | Table | `table` | `columns` |
 | Chart | `chart` | `x`, `y` |
+| Named UI element | `element` | no encoding; one `element` name |
 
 Allowed encoding channels are `value`, `columns`, `x`, `y`, `color`, and `href`. `columns` is a non-empty sequence of field definitions; other channels contain one field definition. The `href` channel references a link-typed source field and does not select from multiple links.
 
 Field `type` values are `nominal`, `ordinal`, `quantitative`, and `temporal`. When omitted, type defaults to the intrinsic field type. A field title defaults to its kebab-case field name with words capitalized.
+
+The optional table-column field `display` is `text`, `status`, `mode`, or `active-state` and defaults to `text`. It selects presentation independently from the field name. Named UI element values are `operational-overview`, `package-activity`, and `workflow-topology`; presenters dispatch these values without inferring behavior from page IDs, view IDs, or source contents.
 
 A chart may set `chart` to `line`, `bar`, or `pie`. When `chart` is omitted, temporal `x` has a line time-series default and any other valid chart has a bar default. A line chart uses temporal `x`; a pie chart uses nominal or ordinal `x` for categories and quantitative `y` for values. These known widget types and defaults are semantic; this specification does not define visual styling.
 
@@ -478,11 +484,11 @@ A view may set the structural `layout` hint to `full`, `half`, or `third`. The v
 
 ### 11.2 Data Narrowing
 
-View `data` contains `source` and may also contain:
+View `data` contains `source` for `metric`, `table`, and `chart`, or a non-empty unique `sources` sequence for `element`. Every view may also contain:
 
 - `scope`, `time`, and `filters` as defined in Section 6;
-- `limit`, a positive integer; and
-- `order-by`, a non-empty sequence of mappings containing `field` and `direction`, where direction is `asc` or `desc`.
+- for `metric`, `table`, and `chart`, `limit`, a positive integer; and
+- for `metric`, `table`, and `chart`, `order-by`, a non-empty sequence of mappings containing `field` and `direction`, where direction is `asc` or `desc`.
 
 An omitted `data` inherits dashboard defaults. Omitted `limit` means no language-level limit. Omitted `order-by` uses the canonical post-aggregation row order defined in Section 7.4 starting directly from its tie-break steps: entity-grain rows order by canonical entity ID ascending, and group-grain rows order by their remaining unaggregated output dimensions, in encoding declaration order, ascending by canonical field value after time bucketing.
 
@@ -504,19 +510,19 @@ Disclosure changes presentation only. It does not change data processing, data s
 ### 11.4 Normative Custom-View Requirements
 
 - **DLS-VIEW-001:** A custom page **MUST** contain `id`, `kind: custom`, and a non-empty `views` sequence; an omitted title **MUST** default from its page ID.
-- **DLS-VIEW-002:** Every view **MUST** contain a unique `id`, a `data` mapping with one canonical `source`, one allowed `mark`, and an `encoding` mapping.
+- **DLS-VIEW-002:** Every view **MUST** contain a unique `id`, a `data` mapping, and one allowed `mark`. A `metric`, `table`, or `chart` view **MUST** contain one canonical `data.source` and an `encoding` mapping. An `element` view **MUST** contain one or more unique canonical `data.sources`, one allowed `element`, and no `encoding`.
 - **DLS-VIEW-003:** `metric` **MUST** encode exactly one `value` field and **MAY** encode `href`; it **MUST NOT** encode chart or table channels.
 - **DLS-VIEW-004:** `table` **MUST** encode non-empty `columns` and **MAY** encode `href`; it **MUST NOT** encode `value`, `x`, `y`, or `color`.
 - **DLS-VIEW-005:** `chart` **MUST** encode `x` and quantitative `y`, **MAY** encode `color` and `href`, and **MUST NOT** encode `value` or `columns`. Its optional `chart` widget **MUST** be `line`, `bar`, or `pie`; `line` **MUST** use temporal `x`, while `pie` **MUST** use nominal or ordinal `x`.
 - **DLS-VIEW-006:** A `chart` with temporal `x` **MUST** use the line time-series default when its widget is omitted; any other valid `chart` **MUST** use the bar default. An optional `layout` hint **MUST** be `full`, `half`, or `third`, **MUST NOT** change source order, and **MAY** be collapsed by a presenter.
 - **DLS-VIEW-007:** An encoding field **MUST** exist in the selected source and its declared type **MUST** be compatible with its intrinsic type or aggregate output type; when the field is aggregated, the effective output identifier **MUST** be the explicit `as` value or the canonical `<aggregate>-<field>` name, and duplicate identifiers within a view **MUST** be rejected. An `href` field **MUST** have intrinsic type link.
-- **DLS-VIEW-008:** A field definition **MUST** contain `field` and **MAY** contain only `type`, `aggregate`, `time-unit`, `title`, and `as` in addition; `as` is valid only when `aggregate` is not `none`.
+- **DLS-VIEW-008:** A field definition **MUST** contain `field` and **MAY** contain only `type`, `aggregate`, `time-unit`, `title`, `as`, and `display` in addition; `as` is valid only when `aggregate` is not `none`. `display` is valid only on table columns and **MUST** be `text`, `status`, `mode`, or `active-state`.
 - **DLS-VIEW-009:** `time-unit` **MUST** be used only with a temporal field and **MUST** use an allowed value from Section 7.3.
 - **DLS-VIEW-010:** `data.limit` **MUST** be a positive integer, and `data.order-by.field` **MUST** reference either a source field valid at the post-aggregation output grain or one unique aggregate-output identifier. Ambiguous or invalid order references **MUST** be rejected with `DLS-E010`, and a group-grain output whose canonical post-aggregation row order cannot be totally resolved **MUST** be rejected with `DLS-E010` under **DLS-AGG-011**.
 - **DLS-VIEW-011:** A custom view **MUST NOT** contain scripts, joins, formulas, expressions, templates, plugins, or undeclared transforms.
 - **DLS-VIEW-012:** A custom view **MUST** apply defaults, filtering, aggregation, ordering, and limiting in the order defined by Sections 6, 7, and 11.2, and ordering **MUST** use the resolved output identifier before applying `limit` and then the canonical post-aggregation row order from **DLS-AGG-008**, using the same algorithm whether `order-by` is explicit or omitted. A `chart`'s series and a `table`'s rows **MUST** inherit this canonical post-aggregation row order without constraining visual styling beyond the mark defaults in **DLS-VIEW-006**.
-- **DLS-VIEW-013:** Before mark-specific rendering, a custom view **MUST** determine and expose exactly one view-level availability state of `available`, `empty`, or `unavailable`, together with its source provenance, freshness, completeness, effective scope, effective time range, and effective filters. An `empty` or `unavailable` state **MUST NOT** make the view invalid or cause the presenter to omit it; its textual state output **MUST** identify the affected source, effective scope, time range, and filters.
-- **DLS-VIEW-014:** Under `empty`, a `metric` **MUST** render an absent aggregate value, except that `count` and `distinct-count` **MUST** render zero; a `table` **MUST** render zero rows; and a `chart` **MUST** render zero points. Under `unavailable`, a `metric` **MUST** render no numeric value and a `table` or `chart` **MUST** render no rows or points. A presenter **MUST NOT** synthesize placeholder observations, zero-valued non-count aggregates, or links for either state.
+- **DLS-VIEW-013:** Before mark-specific rendering, a custom view **MUST** determine and expose exactly one view-level availability state of `available`, `empty`, or `unavailable`, together with its source provenance, freshness, completeness, effective scope, effective time range, and effective filters. An `empty` or `unavailable` state **MUST NOT** make the view invalid or cause the presenter to omit it; its textual state output **MUST** identify the affected source or sources, effective scope, time range, and filters.
+- **DLS-VIEW-014:** Under `empty`, a `metric` **MUST** render an absent aggregate value, except that `count` and `distinct-count` **MUST** render zero; a `table` **MUST** render zero rows; and a `chart` **MUST** render zero points. Under `unavailable`, a `metric` **MUST** render no numeric value and a `table` or `chart` **MUST** render no rows or points. An `element` **MUST** preserve each declared source's data state. A presenter **MUST NOT** synthesize placeholder observations, zero-valued non-count aggregates, or links for either state.
 - **DLS-VIEW-015:** A presenter rendering `href` **MUST** use the referenced link object's `href` as the navigation target and **MUST** expose the link object's `label` as the accessible link label. If the referenced link field is absent for a datum, including every resulting datum, the datum and view **MUST** remain valid and **MUST** render without links.
 - **DLS-VIEW-016:** `disclosure`, when present, **MUST** be exactly `essential` or `supplemental`; an omitted value **MUST** default to `essential`.
 - **DLS-VIEW-017:** A page containing one or more views with `disclosure` **MUST** have at least one and no more than four effective essential views. Declarative built-in view definitions and custom page views use the same count. Section references **MUST NOT** be counted as additional views.
@@ -524,6 +530,8 @@ Disclosure changes presentation only. It does not change data processing, data s
 - **DLS-VIEW-019:** Supplemental views **MUST** remain discoverable and operable and **MUST NOT** be silently omitted. Disclosure controls and views **MUST** preserve document source order in reading and focus order.
 - **DLS-VIEW-020:** A disclosure control **MUST** expose the controlled view's accessible name and expanded state. Collapsed content **MUST** be excluded from sequential focus navigation and the accessibility tree.
 - **DLS-VIEW-021:** Disclosure state **MUST NOT** alter filtering, aggregation, ordering, limiting, provenance, freshness, completeness, availability, links, required built-in content, or semantic output.
+- **DLS-VIEW-022:** An `element` mark **MUST** name exactly one supported UI element and **MUST** render only from its declared `data.sources`. A presenter **MUST NOT** select an element from page IDs, view IDs, source names, or source contents.
+- **DLS-VIEW-023:** A presenter **MUST** select a field's `status`, `mode`, or `active-state` treatment only from its `display` value and **MUST NOT** infer that treatment from the field name.
 
 ---
 
