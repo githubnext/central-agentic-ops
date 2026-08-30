@@ -69,7 +69,7 @@
             },
             {
               "id": "overview-repositories",
-              "title": "Managed repositories",
+              "title": "Repositories",
               "description": "Count of repositories managed by Central Agentic Ops.",
               "data": { "source": "repositories" },
               "mark": "metric",
