@@ -27,7 +27,7 @@ describe('DLS-CONF-004 scaffold gates', () => {
 
   it('keeps the JSON dashboard shell aligned with report HTML and CSS output', () => {
     const report = readFileSync(resolve('../../dashboard/report/report.mjs'), 'utf8');
-    const renderer = readFileSync(resolve('src/renderer.js'), 'utf8');
+    const presenter = readFileSync(resolve('src/presenter.js'), 'utf8');
     const styles = readFileSync(resolve('src/styles.js'), 'utf8');
 
     for (const shellClass of [
@@ -41,7 +41,7 @@ describe('DLS-CONF-004 scaffold gates', () => {
       'report-body'
     ]) {
       expect(report).toContain(`class="${shellClass}`);
-      expect(renderer).toContain(`className: '${shellClass}`);
+      expect(presenter).toContain(`className: '${shellClass}`);
     }
 
     for (const sharedRule of [

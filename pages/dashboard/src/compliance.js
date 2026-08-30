@@ -3,7 +3,7 @@
  */
 
 import { validateDashboardDocument, validateLogicalSources } from './validator.js';
-import { renderDashboard } from './renderer.js';
+import { renderDashboard } from './presenter.js';
 
 export const IMPLEMENTATION_VERSION = '0.1.0-prototype';
 
@@ -566,8 +566,8 @@ function runContextComplianceChecks() {
 }
 
 /**
- * @param {import('./renderer.js').PresentationDocument} document
- * @param {Record<string, import('./renderer.js').LogicalSourceInput>} sources
+ * @param {import('./presenter.js').PresentationDocument} document
+ * @param {Record<string, import('./presenter.js').LogicalSourceInput>} sources
  * @returns {ComplianceResult[]}
  */
 function runPageComplianceChecks(document, sources) {
@@ -597,8 +597,8 @@ function runPageComplianceChecks(document, sources) {
 }
 
 /**
- * @param {import('./renderer.js').PresentationDocument} document
- * @param {Record<string, import('./renderer.js').LogicalSourceInput>} sources
+ * @param {import('./presenter.js').PresentationDocument} document
+ * @param {Record<string, import('./presenter.js').LogicalSourceInput>} sources
  * @returns {ComplianceResult[]}
  */
 function runLinkComplianceChecks(document, sources) {
@@ -896,7 +896,7 @@ dashboard:
 `;
 
 /**
- * @returns {Record<string, import('./renderer.js').LogicalSourceInput>}
+ * @returns {Record<string, import('./presenter.js').LogicalSourceInput>}
  */
 function createAppendixASources() {
   return {
@@ -1037,7 +1037,7 @@ function createAppendixASources() {
 }
 
 /**
- * @returns {Record<string, import('./renderer.js').LogicalSourceInput>}
+ * @returns {Record<string, import('./presenter.js').LogicalSourceInput>}
  */
 function createSemanticFixtureSources() {
   return {

@@ -13,7 +13,7 @@ import { renderPageSection, renderViewSectionChrome } from './view-chrome.js';
  * @param {string} title
  * @param {string} sourceName
  * @param {Array<Record<string, unknown>>} rows
- * @param {import('../renderer.js').SourceMetadata} metadata
+ * @param {import('../presenter.js').SourceMetadata} metadata
  * @param {string[]} contextDetails
  * @param {'h3'|'h4'} [headingTag]
  * @returns {HTMLElement}

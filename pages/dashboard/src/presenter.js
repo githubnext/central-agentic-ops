@@ -1,5 +1,5 @@
 /**
- * Renderer for JSON-driven dashboard pages using GitHub Primer styling and elements.
+ * Presenter for JSON-driven dashboard pages using GitHub Primer styling and elements.
  */
 
 import builtInDashboard from '../dashboard.json' with { type: 'json' };

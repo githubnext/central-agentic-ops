@@ -1,7 +1,7 @@
 import { readFileSync } from 'node:fs';
 import { test, expect } from '@playwright/test';
 
-function buildRendererModuleUrl() {
+function buildPresenterModuleUrl() {
   const dashboardSource = readFileSync(new URL('../../dashboard.json', import.meta.url), 'utf8');
   const dashboardModuleUrl = `data:application/json;charset=utf-8,${encodeURIComponent(dashboardSource)}`;
   const domSource = readFileSync(new URL('../../src/dom.js', import.meta.url), 'utf8');
@@ -74,7 +74,7 @@ function buildRendererModuleUrl() {
     .replace("'./workflow-topology.js'", JSON.stringify(workflowTopologyModuleUrl));
   const uiElementsModuleUrl = `data:text/javascript;charset=utf-8,${encodeURIComponent(uiElementsSource)}`;
 
-  const rendererSource = readFileSync(new URL('../../src/renderer.js', import.meta.url), 'utf8')
+  const presenterSource = readFileSync(new URL('../../src/presenter.js', import.meta.url), 'utf8')
     .replace("'../dashboard.json'", JSON.stringify(dashboardModuleUrl))
     .replace("'./dom.js'", JSON.stringify(domModuleUrl))
     .replace("'./styles.js'", JSON.stringify(stylesModuleUrl))
@@ -89,16 +89,16 @@ function buildRendererModuleUrl() {
     .replace("'./components/ui-elements.js'", JSON.stringify(uiElementsModuleUrl))
     .replace("'./view-formatters.js'", JSON.stringify(viewFormattersModuleUrl));
 
-  return `data:text/javascript;charset=utf-8,${encodeURIComponent(rendererSource)}`;
+  return `data:text/javascript;charset=utf-8,${encodeURIComponent(presenterSource)}`;
 }
 
 test('DLS-PAGE-002 DLS-PAGE-014 built-in overview page renders the report-style operational overview, managed repository summary, managed packages, execution trends, and provenance in browser', async ({ page }) => {
-  const rendererModuleUrl = buildRendererModuleUrl();
+  const presenterModuleUrl = buildPresenterModuleUrl();
 
   await page.setContent(`
     <div id="root"></div>
     <script type="module">
-      import { renderDashboard } from ${JSON.stringify(rendererModuleUrl)};
+      import { renderDashboard } from ${JSON.stringify(presenterModuleUrl)};
 
       const dashboardDocument = {
         languageVersion: '0.1.0',
@@ -315,12 +315,12 @@ test('DLS-PAGE-002 DLS-PAGE-014 built-in overview page renders the report-style 
 });
 
 test('DLS-PAGE-014 DLS-PAGE-015 built-in packages page renders report-style mode filters, AIC utilization, and run trends in browser', async ({ page }) => {
-  const rendererModuleUrl = buildRendererModuleUrl();
+  const presenterModuleUrl = buildPresenterModuleUrl();
 
   await page.setContent(`
     <div id="root"></div>
     <script type="module">
-      import { renderDashboard } from ${JSON.stringify(rendererModuleUrl)};
+      import { renderDashboard } from ${JSON.stringify(presenterModuleUrl)};
 
       const metadata = {
         'source-id': 'packages-fixture',
@@ -410,12 +410,12 @@ test('DLS-PAGE-014 DLS-PAGE-015 built-in packages page renders report-style mode
 });
 
 test('DLS-PAGE-009 DLS-PAGE-014 built-in evals page renders distinguishable definitions and observations, observed subject, YES/NO/UNKNOWN result, evaluation model when available, time, provenance, and independent data state in browser', async ({ page }) => {
-  const rendererModuleUrl = buildRendererModuleUrl();
+  const presenterModuleUrl = buildPresenterModuleUrl();
 
   await page.setContent(`
     <div id="root"></div>
     <script type="module">
-      import { renderDashboard } from ${JSON.stringify(rendererModuleUrl)};
+      import { renderDashboard } from ${JSON.stringify(presenterModuleUrl)};
 
       const dashboardDocument = {
         languageVersion: '0.1.0',
@@ -500,12 +500,12 @@ test('DLS-PAGE-009 DLS-PAGE-014 built-in evals page renders distinguishable defi
 });
 
 test('DLS-SAFE-004 DLS-SAFE-007 DLS-SAFE-008 DLS-SAFE-010 built-in findings page exposes accessible names, labeled columns, textual data states, and only safe labeled external links in browser', async ({ page }) => {
-  const rendererModuleUrl = buildRendererModuleUrl();
+  const presenterModuleUrl = buildPresenterModuleUrl();
 
   await page.setContent(`
     <div id="root"></div>
     <script type="module">
-      import { renderDashboard } from ${JSON.stringify(rendererModuleUrl)};
+      import { renderDashboard } from ${JSON.stringify(presenterModuleUrl)};
 
       const dashboardDocument = {
         languageVersion: '0.1.0',
@@ -588,12 +588,12 @@ test('DLS-SAFE-004 DLS-SAFE-007 DLS-SAFE-008 DLS-SAFE-010 built-in findings page
 });
 
 test('DLS-VIEW-013 DLS-VIEW-014 DLS-VIEW-015 DLS-SAFE-006 custom views render available, empty, and unavailable states with only context-permitted observations in browser', async ({ page }) => {
-  const rendererModuleUrl = buildRendererModuleUrl();
+  const presenterModuleUrl = buildPresenterModuleUrl();
 
   await page.setContent(`
     <div id="root"></div>
     <script type="module">
-      import { renderDashboard } from ${JSON.stringify(rendererModuleUrl)};
+      import { renderDashboard } from ${JSON.stringify(presenterModuleUrl)};
 
       const dashboardDocument = {
         languageVersion: '0.1.0',
@@ -864,12 +864,12 @@ test('DLS-VIEW-013 DLS-VIEW-014 DLS-VIEW-015 DLS-SAFE-006 custom views render av
 });
 
 test('DLS-SAFE-007 DLS-SAFE-008 keyboard navigation moves across labeled page sections in browser', async ({ page }) => {
-  const rendererModuleUrl = buildRendererModuleUrl();
+  const presenterModuleUrl = buildPresenterModuleUrl();
 
   await page.setContent(`
     <div id="root"></div>
     <script type="module">
-      import { renderDashboard, enableDashboardKeyboardNavigation } from ${JSON.stringify(rendererModuleUrl)};
+      import { renderDashboard, enableDashboardKeyboardNavigation } from ${JSON.stringify(presenterModuleUrl)};
 
       const dashboardDocument = {
         languageVersion: '0.1.0',
@@ -968,12 +968,12 @@ test('DLS-SAFE-007 DLS-SAFE-008 keyboard navigation moves across labeled page se
 });
 
 test('declarative tables expose report-style facets and progressive catalog disclosure', async ({ page }) => {
-  const rendererModuleUrl = buildRendererModuleUrl();
+  const presenterModuleUrl = buildPresenterModuleUrl();
 
   await page.setContent(`
     <div id="root"></div>
     <script type="module">
-      import { renderDashboard } from ${JSON.stringify(rendererModuleUrl)};
+      import { renderDashboard } from ${JSON.stringify(presenterModuleUrl)};
 
       const rows = Array.from({ length: 30 }, (_, index) => ({
         workflow: \`workflow-\${index + 1}\`,
@@ -1043,12 +1043,12 @@ test('declarative tables expose report-style facets and progressive catalog disc
 });
 
 test('DLS-SAFE-004 runtime links with embedded credentials, ftp schemes, and blank labels are not exposed in browser output', async ({ page }) => {
-  const rendererModuleUrl = buildRendererModuleUrl();
+  const presenterModuleUrl = buildPresenterModuleUrl();
 
   await page.setContent(`
     <div id="root"></div>
     <script type="module">
-      import { renderDashboard } from ${JSON.stringify(rendererModuleUrl)};
+      import { renderDashboard } from ${JSON.stringify(presenterModuleUrl)};
 
       const dashboardDocument = {
         languageVersion: '0.1.0',

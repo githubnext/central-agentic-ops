@@ -11,7 +11,7 @@ const FAILURE_CONCLUSIONS = new Set(['failure', 'startup-failure', 'timed-out'])
 const APPROVAL_CONCLUSIONS = new Set(['action-required']);
 
 /**
- * @param {Record<string, import('../renderer.js').LogicalSourceInput>} sources
+ * @param {Record<string, import('../presenter.js').LogicalSourceInput>} sources
  * @returns {HTMLElement}
  */
 export function renderControlPlaneStatusElement(sources) {
@@ -48,7 +48,7 @@ export function renderControlPlaneStatusElement(sources) {
 }
 
 /**
- * @param {Record<string, import('../renderer.js').LogicalSourceInput>} sources
+ * @param {Record<string, import('../presenter.js').LogicalSourceInput>} sources
  * @returns {HTMLElement}
  */
 export function renderPackageAicUtilizationElement(sources) {
@@ -62,7 +62,7 @@ export function renderPackageAicUtilizationElement(sources) {
 }
 
 /**
- * @param {Record<string, import('../renderer.js').LogicalSourceInput>} sources
+ * @param {Record<string, import('../presenter.js').LogicalSourceInput>} sources
  * @returns {HTMLElement}
  */
 export function renderAttentionPanelElement(sources) {
@@ -80,7 +80,7 @@ export function renderAttentionPanelElement(sources) {
 }
 
 /**
- * @param {Record<string, import('../renderer.js').LogicalSourceInput>} sources
+ * @param {Record<string, import('../presenter.js').LogicalSourceInput>} sources
  * @returns {HTMLElement}
  */
 export function renderManagedPackagesElement(sources) {
@@ -96,8 +96,8 @@ export function renderManagedPackagesElement(sources) {
  *   disabledWorkflows: number,
  *   repositoryCount: number,
  *   health: ReturnType<typeof summarizeRunHealth>,
- *   runsSource?: import('../renderer.js').LogicalSourceInput,
- *   usageSource?: import('../renderer.js').LogicalSourceInput,
+ *   runsSource?: import('../presenter.js').LogicalSourceInput,
+ *   usageSource?: import('../presenter.js').LogicalSourceInput,
  *   usage: Array<Record<string, unknown>>
  * }} summary
  * @returns {HTMLElement}
@@ -312,7 +312,7 @@ function renderManagedPackages(packages) {
  * utilization bars and threshold treatments").
  * @param {ReturnType<typeof summarizePackages>} packages
  * @param {ReturnType<typeof summarizePackageAicUsage>} usageByPackage
- * @param {import('../renderer.js').LogicalSourceInput | undefined} usageSource
+ * @param {import('../presenter.js').LogicalSourceInput | undefined} usageSource
  * @returns {HTMLElement}
  */
 function renderPackageAicUtilization(packages, usageByPackage, usageSource) {
@@ -425,7 +425,7 @@ function renderPackageDetail(label, value, className = '') {
 
 /**
  * @param {{
- *   sources: Record<string, import('../renderer.js').LogicalSourceInput>,
+ *   sources: Record<string, import('../presenter.js').LogicalSourceInput>,
  *   runs: Array<Record<string, unknown>>,
  *   findings: Array<Record<string, unknown>>,
  *   packages: ReturnType<typeof summarizePackages>,
@@ -552,7 +552,7 @@ function summarizePackages(rows) {
 }
 
 /**
- * @param {Record<string, import('../renderer.js').LogicalSourceInput>} sources
+ * @param {Record<string, import('../presenter.js').LogicalSourceInput>} sources
  * @param {string} name
  * @returns {Array<Record<string, unknown>>}
  */
@@ -588,7 +588,7 @@ function distinctRepositories(...collections) {
 }
 
 /**
- * @param {import('../renderer.js').LogicalSourceInput | undefined} source
+ * @param {import('../presenter.js').LogicalSourceInput | undefined} source
  * @returns {string}
  */
 function sourceWindowLabel(source) {
