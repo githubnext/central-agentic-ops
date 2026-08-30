@@ -252,6 +252,7 @@ test('DLS-PAGE-002 DLS-PAGE-014 built-in overview page renders the report-style 
   await expect(page.locator('.attention-item')).toHaveCount(5);
   await expect(page.locator('.managed-package-card')).toHaveCount(1);
   await expect(page.locator('.managed-package-card')).toContainText('30');
+  await page.locator('summary').filter({ hasText: 'Operational value timeline' }).click();
   await expect(page.getByRole('heading', { name: 'Operational value timeline', level: 4 })).toBeVisible();
   await expect(page.locator('[data-state-axis="availability"]')).toHaveText('available');
   await expect(page.locator('[data-state-axis="completeness"]')).toHaveText('partial');
@@ -343,6 +344,7 @@ test('DLS-PAGE-009 DLS-PAGE-014 built-in evals page renders distinguishable defi
 
   await expect(page.getByRole('heading', { name: 'Built In Evals Render' })).toBeVisible();
   await expect(page.getByRole('heading', { name: 'Evals', exact: true, level: 2 })).toBeVisible();
+  await page.locator('summary').filter({ hasText: 'Evals Evals Source' }).click();
   await expect(page.getByRole('heading', { name: 'Evals Evals Source' })).toBeVisible();
   await expect(page.getByRole('heading', { name: 'Evals Observations Source' })).toBeVisible();
   await expect(page.locator('[data-state-axis="availability"]')).toHaveText('available');
