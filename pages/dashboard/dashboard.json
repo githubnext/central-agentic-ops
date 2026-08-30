@@ -10,6 +10,7 @@
         "kind": "built-in",
         "page": "overview",
         "title": "Overview",
+        "icon": "server",
         "description": "Managed packages, execution health, and items requiring attention.",
         "definition": {
           "data-state": {
@@ -23,29 +24,7 @@
               "title": "Control plane health",
               "description": "Current workflow inventory, execution volume, failures, and AI Credit consumption.",
               "layout": "full",
-              "views": [
-                "overview-active-workflows",
-                "overview-repositories",
-                "overview-runs",
-                "overview-failed-runs",
-                "overview-usage",
-                "overview-execution-health",
-                "overview-recent-runs"
-              ]
-            },
-            {
-              "id": "needs-attention",
-              "title": "Needs attention",
-              "description": "Recent findings with durable links for follow-up.",
-              "layout": "wide",
-              "views": ["overview-findings"]
-            },
-            {
-              "id": "managed-workflows",
-              "title": "Managed workflows",
-              "description": "Active state and rollout mode for repository-owned workflows.",
-              "layout": "narrow",
-              "views": ["overview-workflows"]
+              "views": ["overview-operational-summary"]
             },
             {
               "id": "execution-trends",
@@ -57,131 +36,14 @@
           ],
           "views": [
             {
-              "id": "overview-active-workflows",
-              "title": "Active workflows",
-              "description": "Count of workflows currently active in the control plane.",
-              "data": { "source": "workflows" },
-              "mark": "metric",
-              "layout": "third",
-              "encoding": {
-                "value": { "field": "workflow", "type": "nominal", "aggregate": "distinct-count" }
-              }
-            },
-            {
-              "id": "overview-repositories",
-              "disclosure": "supplemental",
-              "title": "Repositories",
-              "description": "Count of repositories managed by Central Agentic Ops.",
-              "data": { "source": "repositories" },
-              "mark": "metric",
-              "layout": "third",
-              "encoding": {
-                "value": { "field": "repository", "type": "nominal", "aggregate": "distinct-count" }
-              }
-            },
-            {
-              "id": "overview-runs",
-              "disclosure": "supplemental",
-              "title": "Observed runs",
-              "description": "Runs available in the current reporting window.",
-              "data": { "source": "runs" },
-              "mark": "metric",
-              "layout": "third",
-              "encoding": {
-                "value": { "field": "run", "type": "nominal", "aggregate": "distinct-count" }
-              }
-            },
-            {
-              "id": "overview-failed-runs",
-              "title": "Failed runs",
-              "description": "Runs concluding in failure in the current reporting window.",
+              "id": "overview-operational-summary",
+              "title": "Control plane health",
               "data": {
-                "source": "runs",
-                "filters": { "run-conclusion": "failure" }
+                "sources": ["repositories", "workflows", "runs", "usage", "findings", "operational-values"]
               },
-              "mark": "metric",
-              "layout": "third",
-              "encoding": {
-                "value": { "field": "run", "type": "nominal", "aggregate": "distinct-count" }
-              }
-            },
-            {
-              "id": "overview-usage",
-              "disclosure": "supplemental",
-              "title": "AI Credit usage",
-              "description": "Total AI Credits reported by available workflow runs.",
-              "data": { "source": "usage" },
-              "mark": "metric",
-              "layout": "third",
-              "encoding": {
-                "value": { "field": "aic", "type": "quantitative", "aggregate": "sum" }
-              }
-            },
-            {
-              "id": "overview-execution-health",
-              "disclosure": "supplemental",
-              "title": "Execution health",
-              "description": "Run volume grouped by conclusion.",
-              "data": { "source": "runs" },
-              "mark": "chart",
-              "chart": "bar",
-              "layout": "full",
-              "encoding": {
-                "x": { "field": "run-conclusion", "type": "nominal" },
-                "y": { "field": "run", "type": "quantitative", "aggregate": "count" }
-              }
-            },
-            {
-              "id": "overview-recent-runs",
-              "disclosure": "supplemental",
-              "title": "Recent runs",
-              "description": "Repository and workflow execution state in the current reporting window.",
-              "data": { "source": "runs", "limit": 10 },
-              "mark": "table",
-              "layout": "full",
-              "encoding": {
-                "columns": [
-                  { "field": "repository", "type": "nominal" },
-                  { "field": "workflow", "type": "nominal" },
-                  { "field": "run-status", "type": "nominal", "title": "Status" },
-                  { "field": "run-conclusion", "type": "nominal", "title": "Conclusion" }
-                ]
-              }
-            },
-            {
-              "id": "overview-findings",
-              "title": "Recent findings",
-              "description": "Latest operational findings and their durable GitHub records.",
-              "data": { "source": "findings", "limit": 10 },
-              "mark": "table",
-              "layout": "full",
-              "encoding": {
-                "columns": [
-                  { "field": "observed-at", "type": "temporal", "title": "Observed" },
-                  { "field": "finding-summary", "type": "nominal", "title": "Finding" },
-                  { "field": "issue-link", "type": "nominal", "title": "Issue" },
-                  { "field": "pull-request-link", "type": "nominal", "title": "Pull request" },
-                  { "field": "run-link", "type": "nominal", "title": "Run" }
-                ],
-                "href": { "field": "issue-link", "type": "nominal" }
-              }
-            },
-            {
-              "id": "overview-workflows",
-              "disclosure": "supplemental",
-              "title": "Workflow inventory",
-              "description": "Repository, active state, and rollout mode for each workflow.",
-              "data": { "source": "workflows" },
-              "mark": "table",
-              "layout": "full",
-              "encoding": {
-                "columns": [
-                  { "field": "repository", "type": "nominal" },
-                  { "field": "workflow", "type": "nominal" },
-                  { "field": "workflow-active", "type": "nominal", "title": "Active" },
-                  { "field": "rollout-mode", "type": "nominal", "title": "Mode" }
-                ]
-              }
+              "mark": "element",
+              "element": "operational-overview",
+              "layout": "full"
             },
             {
               "id": "overview-run-trend",
@@ -222,6 +84,7 @@
         "kind": "built-in",
         "page": "organizations",
         "title": "Organizations",
+        "icon": "server",
         "definition": {
           "data-state": {
             "availability": true,
@@ -286,6 +149,7 @@
         "kind": "built-in",
         "page": "repositories",
         "title": "Repositories",
+        "icon": "repo",
         "definition": {
           "data-state": {
             "availability": true,
@@ -303,7 +167,7 @@
                   { "field": "repository", "type": "nominal" },
                   { "field": "repository-name", "type": "nominal" },
                   { "field": "organization", "type": "nominal" },
-                  { "field": "rollout-mode", "type": "nominal" }
+                  { "field": "rollout-mode", "type": "nominal", "display": "mode" }
                 ]
               }
             },
@@ -369,6 +233,7 @@
         "kind": "built-in",
         "page": "packages",
         "title": "Packages",
+        "icon": "package",
         "description": "Activity from centrally managed packages.",
         "definition": {
           "data-state": {
@@ -378,66 +243,11 @@
           },
           "views": [
             {
-              "id": "packages-inventory",
-              "title": "Package inventory",
-              "data": { "source": "workflows" },
-              "mark": "table",
-              "encoding": {
-                "columns": [
-                  { "field": "organization", "type": "nominal" },
-                  { "field": "repository", "type": "nominal" },
-                  { "field": "package", "type": "nominal" },
-                  { "field": "package-name", "type": "nominal" },
-                  { "field": "workflow", "type": "nominal" },
-                  { "field": "workflow-role", "type": "nominal" },
-                  { "field": "rollout-mode", "type": "nominal" },
-                  { "field": "max-ai-credits", "type": "quantitative" },
-                  { "field": "package-aic-allowance", "type": "quantitative" }
-                ]
-              }
-            },
-            {
-              "id": "packages-runs",
-              "title": "Package runs over time",
-              "data": { "source": "runs" },
-              "mark": "chart",
-              "chart": "line",
-              "encoding": {
-                "x": { "field": "started-at", "type": "temporal", "time-unit": "day" },
-                "y": { "field": "run", "type": "quantitative", "aggregate": "count" },
-                "color": { "field": "run-conclusion", "type": "nominal" }
-              }
-            },
-            {
-              "id": "packages-run-membership",
-              "title": "Package run membership",
-              "data": { "source": "runs" },
-              "mark": "table",
-              "encoding": {
-                "columns": [
-                  { "field": "organization", "type": "nominal" },
-                  { "field": "repository", "type": "nominal" },
-                  { "field": "workflow", "type": "nominal" },
-                  { "field": "rollout-mode", "type": "nominal" }
-                ]
-              }
-            },
-            {
-              "id": "packages-usage",
-              "title": "Package AIC utilization",
-              "data": { "source": "usage" },
-              "mark": "table",
-              "encoding": {
-                "columns": [
-                  { "field": "organization", "type": "nominal" },
-                  { "field": "repository", "type": "nominal" },
-                  { "field": "workflow", "type": "nominal" },
-                  { "field": "run", "type": "nominal" },
-                  { "field": "aic", "type": "quantitative" },
-                  { "field": "rollout-mode", "type": "nominal" },
-                  { "field": "observed-at", "type": "temporal" }
-                ]
-              }
+              "id": "packages-activity",
+              "title": "Package activity",
+              "data": { "sources": ["workflows", "runs", "usage"] },
+              "mark": "element",
+              "element": "package-activity"
             }
           ]
         }
@@ -447,6 +257,7 @@
         "kind": "built-in",
         "page": "workflows",
         "title": "Workflows",
+        "icon": "workflow",
         "definition": {
           "data-state": {
             "availability": true,
@@ -456,15 +267,10 @@
           "views": [
             {
               "id": "workflows-workflows-source",
-              "data": { "source": "workflows" },
-              "mark": "table",
-              "encoding": {
-                "columns": [
-                  { "field": "workflow", "type": "nominal" },
-                  { "field": "workflow-active", "type": "nominal" },
-                  { "field": "rollout-mode", "type": "nominal" }
-                ]
-              }
+              "title": "Workflow topology",
+              "data": { "sources": ["workflows"] },
+              "mark": "element",
+              "element": "workflow-topology"
             },
             {
               "id": "workflows-runs-source",
@@ -473,7 +279,7 @@
               "encoding": {
                 "columns": [
                   { "field": "run", "type": "nominal" },
-                  { "field": "run-conclusion", "type": "nominal" }
+                  { "field": "run-conclusion", "type": "nominal", "display": "status" }
                 ]
               }
             },
@@ -519,6 +325,7 @@
         "kind": "built-in",
         "page": "runs",
         "title": "Runs",
+        "icon": "play",
         "definition": {
           "data-state": {
             "availability": true,
@@ -533,12 +340,12 @@
               "encoding": {
                 "columns": [
                   { "field": "run", "type": "nominal" },
-                  { "field": "run-status", "type": "nominal" },
-                  { "field": "run-conclusion", "type": "nominal" },
+                  { "field": "run-status", "type": "nominal", "display": "status" },
+                  { "field": "run-conclusion", "type": "nominal", "display": "status" },
                   { "field": "organization", "type": "nominal" },
                   { "field": "repository", "type": "nominal" },
                   { "field": "workflow", "type": "nominal" },
-                  { "field": "rollout-mode", "type": "nominal" },
+                  { "field": "rollout-mode", "type": "nominal", "display": "mode" },
                   { "field": "engine", "type": "nominal" },
                   { "field": "requested-model", "type": "nominal" },
                   { "field": "resolved-model", "type": "nominal" },
@@ -565,6 +372,7 @@
         "kind": "built-in",
         "page": "experiments",
         "title": "Experiments",
+        "icon": "server",
         "description": "Observed associations are presented without implying causation.",
         "definition": {
           "data-state": {
@@ -645,6 +453,7 @@
         "kind": "built-in",
         "page": "graders",
         "title": "Graders",
+        "icon": "server",
         "definition": {
           "data-state": {
             "availability": true,
@@ -672,7 +481,7 @@
                   { "field": "grader", "type": "nominal" },
                   { "field": "run", "type": "nominal" },
                   { "field": "value", "type": "quantitative" },
-                  { "field": "status", "type": "nominal" },
+                  { "field": "status", "type": "nominal", "display": "status" },
                   { "field": "observed-at", "type": "temporal" }
                 ]
               }
@@ -685,6 +494,7 @@
         "kind": "built-in",
         "page": "evals",
         "title": "Evals",
+        "icon": "server",
         "definition": {
           "data-state": {
             "availability": true,
@@ -711,7 +521,7 @@
                 "columns": [
                   { "field": "eval", "type": "nominal" },
                   { "field": "run", "type": "nominal" },
-                  { "field": "eval-result", "type": "nominal" },
+                  { "field": "eval-result", "type": "nominal", "display": "status" },
                   { "field": "requested-model", "type": "nominal" },
                   { "field": "resolved-model", "type": "nominal" },
                   { "field": "observed-at", "type": "temporal" }
@@ -726,6 +536,7 @@
         "kind": "built-in",
         "page": "usage",
         "title": "Usage",
+        "icon": "graph",
         "definition": {
           "data-state": {
             "availability": true,
@@ -751,7 +562,7 @@
                   { "field": "organization", "type": "nominal" },
                   { "field": "repository", "type": "nominal" },
                   { "field": "workflow", "type": "nominal" },
-                  { "field": "rollout-mode", "type": "nominal" },
+                  { "field": "rollout-mode", "type": "nominal", "display": "mode" },
                   { "field": "observed-at", "type": "temporal" }
                 ]
               }
@@ -764,6 +575,7 @@
         "kind": "built-in",
         "page": "engines-models",
         "title": "Engines Models",
+        "icon": "server",
         "definition": {
           "data-state": {
             "availability": true,
@@ -781,7 +593,7 @@
                   { "field": "requested-model", "type": "nominal" },
                   { "field": "resolved-model", "type": "nominal" },
                   { "field": "run", "type": "nominal" },
-                  { "field": "run-conclusion", "type": "nominal" }
+                  { "field": "run-conclusion", "type": "nominal", "display": "status" }
                 ]
               }
             },
@@ -817,6 +629,7 @@
         "kind": "built-in",
         "page": "operational-value",
         "title": "Operational Value",
+        "icon": "server",
         "definition": {
           "data-state": {
             "availability": true,
@@ -838,7 +651,7 @@
                   { "field": "requested-evidence-at", "type": "temporal" },
                   { "field": "evidence-cutoff", "type": "temporal" },
                   { "field": "maturity-at", "type": "temporal" },
-                  { "field": "maturity-status", "type": "nominal" },
+                  { "field": "maturity-status", "type": "nominal", "display": "status" },
                   { "field": "evidence-link", "type": "nominal" },
                   { "field": "experiment", "type": "nominal" },
                   { "field": "delta-from-baseline", "type": "quantitative" }
@@ -853,6 +666,7 @@
         "kind": "built-in",
         "page": "findings",
         "title": "Findings",
+        "icon": "server",
         "definition": {
           "data-state": {
             "availability": true,
@@ -867,8 +681,8 @@
               "encoding": {
                 "columns": [
                   { "field": "finding-summary", "type": "nominal" },
-                  { "field": "finding-severity", "type": "nominal" },
-                  { "field": "finding-status", "type": "nominal" },
+                  { "field": "finding-severity", "type": "nominal", "display": "status" },
+                  { "field": "finding-status", "type": "nominal", "display": "status" },
                   { "field": "organization", "type": "nominal" },
                   { "field": "repository", "type": "nominal" },
                   { "field": "workflow", "type": "nominal" },
