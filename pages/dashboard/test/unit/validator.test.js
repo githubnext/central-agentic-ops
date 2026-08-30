@@ -606,6 +606,38 @@ dashboard:
     }
   });
 
+  it('DLS-PAGE-015 rejects a packages built-in page without declarative built-in source definitions with DLS-E003', () => {
+    const result = validateDashboardDocument(`language-version: "0.1.0"
+dashboard:
+  id: packages-page
+  title: Packages Page
+  pages:
+    - id: packages
+      kind: built-in
+      page: packages
+`);
+
+    expect(result.ok).toBe(false);
+    if (!result.ok) {
+      expect(result.errors).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({
+            code: 'DLS-E003',
+            message: 'built-in page "packages" requires declarative definitions for source "workflows".'
+          }),
+          expect.objectContaining({
+            code: 'DLS-E003',
+            message: 'built-in page "packages" requires declarative definitions for source "runs".'
+          }),
+          expect.objectContaining({
+            code: 'DLS-E003',
+            message: 'built-in page "packages" requires declarative definitions for source "usage".'
+          })
+        ])
+      );
+    }
+  });
+
   it('DLS-PAGE-006 DLS-PAGE-014 rejects a runs built-in page definition that omits required run fields and run links with DLS-E003', () => {
     const result = validateDashboardDocument(`language-version: "0.1.0"
 dashboard:
@@ -1452,6 +1484,62 @@ dashboard:
     if (!rejected.ok) {
       expect(rejected.errors).toEqual([
         expect.objectContaining({ code: 'DLS-E005', path: '$.dashboard.pages[0].views[0].data.filters.rollout-mode[1]' })
+      ]);
+    }
+  });
+
+  it('DLS-SEM-022 accepts workflow-role canonical values and rejects unknown roles', () => {
+    const accepted = validateDashboardDocument(`language-version: "0.1.0"
+dashboard:
+  id: workflow-role-filter
+  title: Workflow Role Filter
+  pages:
+    - id: custom-page
+      kind: custom
+      views:
+        - id: workflows-view
+          data:
+            source: workflows
+            filters:
+              workflow-role:
+                - orchestrator
+                - worker
+                - standalone
+          mark: metric
+          encoding:
+            value:
+              field: workflow
+              aggregate: count
+`);
+
+    expect(accepted.ok).toBe(true);
+
+    const rejected = validateDashboardDocument(`language-version: "0.1.0"
+dashboard:
+  id: invalid-workflow-role
+  title: Invalid Workflow Role
+  pages:
+    - id: custom-page
+      kind: custom
+      views:
+        - id: workflows-view
+          data:
+            source: workflows
+            filters:
+              workflow-role:
+                - orchestrator
+                - controller
+          mark: metric
+          encoding:
+            value:
+              field: workflow
+              aggregate: count
+`);
+
+    expect(rejected.ok).toBe(false);
+    if (!rejected.ok) {
+      expect(rejected.errors).toEqual([
+        expect.objectContaining({ code: 'DLS-E005', path: '$.dashboard.pages[0].views[0].data.filters.workflow-role[1]' })
       ]);
     }
   });

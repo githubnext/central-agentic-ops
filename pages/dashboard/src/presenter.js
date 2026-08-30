@@ -12,13 +12,14 @@ import { renderContextChrome, renderPageSection, renderViewSectionChrome } from 
 import { formatAggregateValue, formatNumber, toNumber } from './view-formatters.js';
 import { renderActiveStateBadge, renderModeBadge, renderStatusBadge } from './components/badge.js';
 import { renderOperationalOverview } from './components/operational-overview.js';
+import { renderPackagesView } from './components/packages-view.js';
 
 /**
  * @typedef {{ availability: 'available'|'empty'|'unavailable', completeness: 'complete'|'partial'|'unknown', freshness: 'fresh'|'stale'|'unknown' }} DataState
  */
 
 /**
- * @typedef {{ 'source-id': string, 'source-kind': string, 'as-of': string, 'retrieved-at': string, completeness: DataState['completeness'], freshness: DataState['freshness'], availability?: DataState['availability'] }} SourceMetadata
+ * @typedef {{ 'source-id': string, 'source-kind': string, 'as-of': string, 'retrieved-at': string, 'coverage-start'?: string, 'coverage-end'?: string, completeness: DataState['completeness'], freshness: DataState['freshness'], availability?: DataState['availability'] }} SourceMetadata
  */
 
 /**
@@ -325,20 +326,20 @@ function renderPage(page, sources) {
 
   if (page.kind === 'built-in') {
     const payload = getBuiltInPagePayload(page);
-    return renderCustomPage(payload, title, sources, page.page === 'overview');
+    return renderCustomPage(payload, title, sources, page.page);
   }
 
-  return renderCustomPage(page, title, sources, false);
+  return renderCustomPage(page, title, sources, null);
 }
 
 /**
  * @param {PresentableCustomPage} page
  * @param {string} title
  * @param {Record<string, LogicalSourceInput>} sources
- * @param {boolean} useOperationalOverview
+ * @param {string | null} builtInPage
  * @returns {HTMLElement}
  */
-function renderCustomPage(page, title, sources, useOperationalOverview) {
+function renderCustomPage(page, title, sources, builtInPage) {
   const views = Array.isArray(page.views) ? page.views : [];
   const sections = Array.isArray(page.sections) ? page.sections : [];
   /** @type {Map<string, LogicalSourceInput>} */
@@ -383,8 +384,10 @@ function renderCustomPage(page, title, sources, useOperationalOverview) {
     isPlainObject(view) && typeof view.id === 'string' ? view.id : `view-${index + 1}`,
     renderedViews[index]
   ]));
-  const renderedContent = useOperationalOverview && sections.length > 0
+  const renderedContent = builtInPage === 'overview' && sections.length > 0
     ? renderOverviewContent(sections, renderedViewsById, sources)
+    : builtInPage === 'packages'
+      ? renderPackagesView(sources, page.id)
     : sections.length > 0
     ? h(
       'div',
@@ -405,7 +408,7 @@ function renderCustomPage(page, title, sources, useOperationalOverview) {
     h('h2', { tabIndex: -1 }, title),
     page.description ? h('p', { className: 'page-description' }, page.description) : null,
     ...(renderedViews.length > 0
-      ? useOperationalOverview
+      ? builtInPage === 'overview' || builtInPage === 'packages'
         ? [renderedContent, renderDataStateMetrics(summarizeDataState(pageSources))]
         : [renderDataStateMetrics(summarizeDataState(pageSources)), renderedContent]
       : [h('p', null, 'No custom views available.')])

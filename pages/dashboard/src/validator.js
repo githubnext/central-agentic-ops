@@ -54,7 +54,8 @@ import {
   VIEW_KEYS,
   VIEW_LAYOUT_VALUES,
   VIEW_MARK_VALUES,
-  WORKFLOW_ACTIVE_VALUES
+  WORKFLOW_ACTIVE_VALUES,
+  WORKFLOW_ROLE_VALUES
 } from './specification.js';
 
 /**
@@ -1881,6 +1882,7 @@ function looksSensitive(value) {
 const SEMANTIC_FILTER_VALUE_SETS = {
   'rollout-mode': ROLLOUT_MODE_VALUES,
   'workflow-active': WORKFLOW_ACTIVE_VALUES,
+  'workflow-role': WORKFLOW_ROLE_VALUES,
   'run-status': RUN_STATUS_VALUES,
   'run-conclusion': RUN_CONCLUSION_VALUES,
   status: GRADER_STATUS_VALUES,

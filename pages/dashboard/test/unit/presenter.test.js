@@ -484,14 +484,96 @@ describe('presenter built-in and custom pages', () => {
     expect(utilizationPanel?.textContent).toContain('No packages with a configured AIC allowance were observed.');
   });
 
-  it('DLS-PAGE-001 DLS-PAGE-002 DLS-PAGE-003 DLS-PAGE-004 DLS-PAGE-005 DLS-PAGE-006 DLS-PAGE-007 DLS-PAGE-008 DLS-PAGE-009 DLS-PAGE-010 DLS-PAGE-011 DLS-PAGE-012 DLS-PAGE-013 DLS-PAGE-014 authoritative dashboard.json contains all 12 specification-defined built-in pages with declarative data-state and source coverage', () => {
+  it('DLS-PAGE-014 DLS-PAGE-015 renders mode-filtered package AIC utilization and package-run trends', () => {
+    const document = {
+      languageVersion: '0.1.0',
+      dashboard: {
+        id: 'packages-dashboard',
+        title: 'Packages Dashboard',
+        pages: [{
+          id: 'packages',
+          kind: /** @type {'built-in'} */ ('built-in'),
+          page: 'packages',
+          title: 'Packages',
+          description: 'Activity from centrally managed packages.',
+          definition: {
+            'data-state': { availability: true, completeness: true, freshness: true },
+            views: [
+              { id: 'package-workflows', data: { source: 'workflows' } },
+              { id: 'package-runs', data: { source: 'runs' } },
+              { id: 'package-usage', data: { source: 'usage' } }
+            ]
+          }
+        }]
+      }
+    };
+    const metadata = {
+      'source-id': 'packages-fixture',
+      'source-kind': 'fixture',
+      'as-of': '2026-08-29T20:00:00Z',
+      'retrieved-at': '2026-08-29T20:01:00Z',
+      completeness: /** @type {'complete'} */ ('complete'),
+      freshness: /** @type {'fresh'} */ ('fresh'),
+      availability: /** @type {'available'} */ ('available')
+    };
+    const rendered = renderDashboard({
+      document,
+      sources: {
+        workflows: {
+          source: 'workflows',
+          rows: [
+            { package: 'daily-ops', 'package-name': 'Daily Ops', workflow: '.github/workflows/daily.md', 'workflow-role': 'orchestrator', 'rollout-mode': 'review', 'max-ai-credits': 100, 'package-aic-allowance': 250 },
+            { package: 'daily-ops', 'package-name': 'Daily Ops', workflow: '.github/workflows/daily-worker.md', 'workflow-role': 'worker', 'rollout-mode': 'review', 'max-ai-credits': 150, 'package-aic-allowance': 250 },
+            { package: 'empty-ops', 'package-name': 'Empty Ops', workflow: '.github/workflows/empty.md', 'workflow-role': 'orchestrator', 'rollout-mode': 'live', 'max-ai-credits': 80 }
+          ],
+          metadata
+        },
+        runs: {
+          source: 'runs',
+          rows: [
+            { workflow: '.github/workflows/daily.md', run: '1', 'started-at': '2026-08-28T10:00:00Z', 'run-conclusion': 'success', 'rollout-mode': 'review' },
+            { workflow: '.github/workflows/daily-worker.md', run: '2', 'started-at': '2026-08-29T10:00:00Z', 'run-conclusion': 'failure', 'rollout-mode': 'live' },
+            { workflow: '.github/workflows/unmanaged.md', run: '3', 'started-at': '2026-08-29T11:00:00Z', 'run-conclusion': 'cancelled', 'rollout-mode': 'review' }
+          ],
+          metadata
+        },
+        usage: {
+          source: 'usage',
+          rows: [
+            { workflow: '.github/workflows/daily.md', run: '1', invocation: 'a', aic: 4, 'rollout-mode': 'review' },
+            { workflow: '.github/workflows/daily.md', run: '1', invocation: 'b', aic: 6, 'rollout-mode': 'review' },
+            { workflow: '.github/workflows/daily-worker.md', run: '2', invocation: 'c', aic: 30, 'rollout-mode': 'live' }
+          ],
+          metadata: { ...metadata, completeness: /** @type {'partial'} */ ('partial') }
+        }
+      }
+    });
+
+    const packagesPage = rendered.querySelector('[data-page-name="packages"]');
+    expect(packagesPage?.querySelectorAll('.package-utilization-card')).toHaveLength(2);
+    expect(packagesPage?.querySelector('[data-package-id="daily-ops"]')?.textContent).toContain('40 of 250 AIC across 2 reported runs');
+    expect(packagesPage?.querySelector('[data-package-id="daily-ops"]')?.textContent).toContain('16%');
+    expect(packagesPage?.querySelector('[data-package-id="empty-ops"]')?.textContent).toContain('No completed runs');
+    expect(packagesPage?.querySelector('.package-trend-panel header')?.textContent).toContain('2as of');
+    expect(packagesPage?.querySelector('.package-utilization')?.textContent).toContain('Partial usage coverage.');
+    expect(packagesPage?.querySelector('[data-state-axis="completeness"]')?.textContent).toBe('partial');
+
+    const reviewTab = /** @type {HTMLButtonElement | null} */ (packagesPage?.querySelector('[data-package-mode="review"]') ?? null);
+    reviewTab?.click();
+    expect(reviewTab?.getAttribute('aria-selected')).toBe('true');
+    expect(packagesPage?.querySelector('[data-package-id="daily-ops"]')?.textContent).toContain('10 of 100 AIC across 1 reported run');
+    expect(packagesPage?.querySelector('.package-trend-panel header')?.textContent).toContain('Review runs over time1');
+  });
+
+  it('DLS-PAGE-001 DLS-PAGE-002 DLS-PAGE-003 DLS-PAGE-004 DLS-PAGE-005 DLS-PAGE-006 DLS-PAGE-007 DLS-PAGE-008 DLS-PAGE-009 DLS-PAGE-010 DLS-PAGE-011 DLS-PAGE-012 DLS-PAGE-013 DLS-PAGE-014 DLS-PAGE-015 authoritative dashboard.json contains all 13 specification-defined built-in pages with declarative data-state and source coverage', () => {
     const pages = authoritativeDashboardDocument.dashboard.pages;
     expect(Array.isArray(pages)).toBe(true);
-    expect(pages).toHaveLength(12);
+    expect(pages).toHaveLength(13);
     expect(pages.map((/** @type {{ page: string }} */ page) => page.page)).toEqual([
       'overview',
       'organizations',
       'repositories',
+      'packages',
       'workflows',
       'runs',
       'experiments',
