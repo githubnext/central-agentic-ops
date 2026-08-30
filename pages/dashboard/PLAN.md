@@ -57,6 +57,7 @@
   - [x] Safe-link parity verification: harden automated coverage so credential-bearing, non-HTTPS, and blank-label runtime links are all omitted across reusable metric and table link surfaces while safe HTTPS links remain visible.
   - [x] Pages-level visual parity inventory: record the report-derived page-layout, Primer-style navigation, and footer/header presentation patterns already implemented by the generic renderer, without adding new semantics.
   - [x] Catalog filtering: port the report's live text filtering and announced result counts into reusable custom-table controls, making the interaction available to declaratively configured built-in and custom pages.
+  - [x] Chart-series legends: port the report's labeled trend legend into reusable generic custom-chart chrome for multi-series declarative charts while retaining explicit textual category semantics.
 
 ## Specification questions
 
@@ -80,6 +81,13 @@
 - 2026-08-28: `npm run test:e2e` is currently blocked in this environment because the Playwright Chromium executable is not provisioned (`browserType.launch: Executable doesn't exist`). The workflow should prefer the built-in Playwright MCP browser tools until the package-level browser dependency is available.
 
 ## Run log
+
+### 2026-08-30 (parity chart-legend slice)
+- Continued the Parity milestone with a narrow renderer increment derived from the report's labeled execution-trend legend, keeping the change generic to existing custom chart semantics rather than adding new dashboard-language vocabulary.
+- Re-read `dashboard/report/report.mjs` and inventoried the still-unported visual series-legend pattern used by the legacy trend panel; then updated `src/presenter.js` and `src/styles.js` so multi-series declarative chart views with `encoding.color` now render a reusable visual legend sourced from shared chart-series grouping alongside the existing textual category line.
+- Extended `test/unit/presenter.test.js` and `test/e2e/smoke.spec.js` to verify deterministic legend labels, chart-type-specific legend chrome, and unchanged chart/table rendering for the affected custom chart surfaces.
+- Verified `npm install`, `npm run build`, `npm run typecheck`, `npm run lint`, `npm test` (102 tests), and `npx playwright test --config=playwright.config.mjs` (7 browser tests) all pass from `pages/dashboard/`.
+- Next candidates in the queue: extract shared link-cell composition across custom metric and custom table views; extract the remaining custom-view state-message plus affected-source/context composition in `src/presenter.js`; continue parity inventory for any additional report interaction chrome still missing after the chart legend port.
 
 ### 2026-08-30 (parity table filtering slice)
 - Continued the Parity milestone with the report's interactive catalog-search pattern as a reusable renderer primitive rather than copying report-specific workflow, run, or dispatch logic.

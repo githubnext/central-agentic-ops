@@ -1046,9 +1046,7 @@ function renderChartView(pageId, title, view, sourceName, rows, metadata, contex
   const chartType = typeof view.chart === 'string' ? view.chart : chartDefault;
 
   const points = buildChartPoints(pageId, title, rows, x, y, color);
-  const colorCategories = color
-    ? [...new Set(points.map((point) => point.color ?? 'unknown'))].sort((left, right) => left.localeCompare(right))
-    : [];
+  const chartSeries = listChartSeries(points);
 
   return renderPageSection(pageId, title, [
     ...renderViewSectionChrome(sourceName, metadata, contextDetails),
@@ -1061,10 +1059,11 @@ function renderChartView(pageId, title, view, sourceName, rows, metadata, contex
       ? [h(
         'p',
         { className: 'chart-legend-text', 'data-chart-legend': 'text' },
-        `Color categories: ${colorCategories.length > 0 ? colorCategories.join(', ') : 'unknown'}`
-      )]
+        `Color categories: ${chartSeries.length > 0 ? chartSeries.map((series) => series.name).join(', ') : 'unknown'}`
+      ),
+      renderChartLegend(chartSeries, chartType)]
       : []),
-    renderChartWidget(chartType, points),
+    renderChartWidget(chartType, points, chartSeries),
     renderTableRegion({
       tableClassName: 'custom-chart-table',
       emptyMessage: 'No points available.',
@@ -1138,9 +1137,10 @@ function buildChartPoints(pageId, title, rows, x, y, color) {
 /**
  * @param {string} chartType
  * @param {Array<{ x: string, y: number, color: string | null }>} points
+ * @param {Array<{ name: string, className: string }>} series
  * @returns {HTMLElement}
  */
-function renderChartWidget(chartType, points) {
+function renderChartWidget(chartType, points, series) {
   if (chartType === 'pie') {
     const totals = new Map();
     for (const point of points) {
@@ -1181,7 +1181,8 @@ function renderChartWidget(chartType, points) {
   }
 
   if (chartType === 'line') {
-    const series = groupChartSeries(points);
+    const groupedSeries = groupChartSeries(points);
+    const seriesClassNames = new Map(series.map((item) => [item.name, item.className]));
     const xValues = [...new Set(points.map((point) => point.x))];
     const values = points.map((point) => toNumber(point.y));
     const finiteValues = values.filter(Number.isFinite);
@@ -1193,7 +1194,8 @@ function renderChartWidget(chartType, points) {
         'svg',
         { viewBox: '0 0 100 42', role: 'img', 'aria-label': `Line chart with ${points.length} points` },
         h('line', { className: 'line-chart-axis', x1: 0, y1: 38, x2: 100, y2: 38 }),
-        ...series.flatMap(([seriesName, seriesPoints], seriesIndex) => {
+        ...groupedSeries.flatMap(([seriesName, seriesPoints]) => {
+          const seriesClassName = seriesClassNames.get(seriesName) ?? 'chart-series-1';
           const coordinates = seriesPoints.map((point) => {
             const xIndex = xValues.indexOf(point.x);
             const x = xValues.length < 2 ? 50 : (xIndex / (xValues.length - 1)) * 100;
@@ -1202,7 +1204,7 @@ function renderChartWidget(chartType, points) {
           });
           return [
             h('polyline', {
-              className: `line-chart-series chart-series-${(seriesIndex % 5) + 1}`,
+              className: `line-chart-series ${seriesClassName}`,
               points: coordinates.map(({ x, y }) => `${x},${y}`).join(' '),
               fill: 'none',
               'data-chart-series': seriesName
@@ -1215,7 +1217,7 @@ function renderChartWidget(chartType, points) {
             },
             h('title', null, chartPointLabel(point)),
             h('circle', {
-              className: `line-chart-point chart-series-${(seriesIndex % 5) + 1}`,
+              className: `line-chart-point ${seriesClassName}`,
               cx: x,
               cy: y,
               r: 2.5
@@ -1238,11 +1240,7 @@ function renderChartWidget(chartType, points) {
 
   const maximum = Math.max(...points.map((point) => point.y), 1);
   const barWidth = points.length > 0 ? Math.min(14, 80 / points.length) : 14;
-  const seriesIndexes = new Map(
-    [...new Set(points.map((point) => point.color ?? 'value'))]
-      .sort((left, right) => left.localeCompare(right))
-      .map((name, index) => [name, index])
-  );
+  const seriesClassNames = new Map(series.map((item) => [item.name, item.className]));
   return h(
     'div',
     { className: 'chart-widget bar-chart-widget', 'data-chart-widget': 'bar' },
@@ -1254,7 +1252,7 @@ function renderChartWidget(chartType, points) {
         const x = ((index + 0.5) / Math.max(points.length, 1)) * 100 - (barWidth / 2);
         const height = Math.max(1, (Math.max(0, point.y) / maximum) * 34);
         return h('rect', {
-          className: `bar-chart-bar chart-series-${((seriesIndexes.get(point.color ?? 'value') ?? 0) % 5) + 1}`,
+          className: `bar-chart-bar ${seriesClassNames.get(point.color ?? 'value') ?? 'chart-series-1'}`,
           x,
           y: 38 - height,
           width: barWidth,
@@ -1265,6 +1263,35 @@ function renderChartWidget(chartType, points) {
         }, h('title', null, chartPointLabel(point)));
       })
     )
+  );
+}
+
+/**
+ * @param {Array<{ x: string, y: number, color: string | null }>} points
+ * @returns {Array<{ name: string, className: string }>}
+ */
+function listChartSeries(points) {
+  return groupChartSeries(points).map(([name], index) => ({
+    name,
+    className: `chart-series-${(index % 5) + 1}`
+  }));
+}
+
+/**
+ * @param {Array<{ name: string, className: string }>} series
+ * @param {string} chartType
+ * @returns {HTMLElement}
+ */
+function renderChartLegend(series, chartType) {
+  return h(
+    'ul',
+    { className: `chart-legend chart-legend-${chartType}`, 'data-chart-legend': 'visual' },
+    series.map((item) => h(
+      'li',
+      null,
+      h('i', { className: item.className, 'aria-hidden': 'true' }),
+      h('span', null, item.name)
+    ))
   );
 }
 
