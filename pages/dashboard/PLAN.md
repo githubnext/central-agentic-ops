@@ -72,7 +72,7 @@
 - [ ] Section-labeled Attention/Investigate/Explore navigation and report actions for refresh and repository access.
 - [ ] Mode, package, repository, and workflow view tabs with configured-mode indicators.
 - [ ] Dense findings/outcomes indexes, category summaries, and durable output detail presentation.
-- [ ] Package AI Credit utilization bars and threshold treatments.
+- [x] Package AI Credit utilization bars and threshold treatments.
 - [ ] Specialized run and dispatch catalog chrome beyond the reusable table controls.
 - [ ] Export JSON and static report-control toolbar presentation.
 
@@ -167,6 +167,14 @@
 - Expanded `test/unit/presenter.test.js` and `test/e2e/smoke.spec.js` so `DLS-SAFE-004` coverage now proves credential-bearing links, non-HTTPS `ftp:` links, and blank-label links are all omitted across both custom table and custom metric link surfaces while safe HTTPS links remain visible.
 - Re-read the report reference and kept this slice presentation-aligned but non-semantic: no renderer code or declarative dashboard composition changed because the existing generic runtime already satisfied the conservative behavior.
 - Verified `pages/dashboard/` quality gates in this run: `npm install`, `npm run build`, `npm run typecheck` (rerun once per environment guidance), `npm run lint`, `npm test`, and `npx playwright test --config=playwright.config.mjs` all pass.
+- Next milestone: Parity, continuing the remaining report feature and presentation inventory closure work under the existing declarative and reusable-runtime constraints.
+
+### 2026-08-30 (package AIC utilization parity slice)
+- Continued the Parity milestone by porting the report's `bundleUtilizationPanel` AI Credit utilization UX from `dashboard/report/report.mjs` into `pages/dashboard`, closing the "Package AI Credit utilization bars and threshold treatments" checklist item.
+- Added `summarizePackageAicUsage(...)` and `renderPackageAicUtilization(...)` to `src/components/operational-overview.js`, joining `usage` rows to their owning package through the workflow path already recorded on `workflows` rows, then rendering a per-package meter bar with low/medium/high/empty threshold coloring, a formatted percentage, and a used-of-allowed detail line, matching the report's widget shape and thresholds (`>=80%` high, `>=50%` medium, otherwise low, unavailable/no-allowance as empty).
+- Wired the new panel into `renderOperationalOverview(...)` between the control-plane status banner and the attention/managed-packages grid, and extended `src/styles.js` with report-derived `.package-aic-utilization`/`.utilization-*` rules reusing existing Primer color tokens.
+- Extended `test/unit/presenter.test.js` with utilization-bar assertions on the existing overview fixture (percentage, threshold class, detail text, accessible label, meter width) and a new empty-state test for packages without a configured AIC allowance.
+- Verified `pages/dashboard/` quality gates in this run: `npm install`, `npm run build`, `npm run typecheck`, `npm run lint`, `npm test` (107 tests), and `npx playwright test --config=playwright.config.mjs` (8 browser tests) all pass.
 - Next milestone: Parity, continuing the remaining report feature and presentation inventory closure work under the existing declarative and reusable-runtime constraints.
 
 ## Run log

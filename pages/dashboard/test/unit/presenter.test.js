@@ -354,6 +354,13 @@ describe('presenter built-in and custom pages', () => {
     expect(overviewPage?.querySelectorAll('.managed-package-card')).toHaveLength(1);
     expect(overviewPage?.querySelector('.managed-package-card')?.textContent).toContain('30');
     expect(overviewPage?.querySelector('.managed-package-card')?.textContent).toContain('Needs attention');
+    expect(overviewPage?.querySelectorAll('.package-aic-utilization .utilization-item')).toHaveLength(1);
+    const utilizationItem = overviewPage?.querySelector('.package-aic-utilization .utilization-item');
+    expect(utilizationItem?.classList.contains('utilization-high')).toBe(true);
+    expect(utilizationItem?.textContent).toContain('116.7%');
+    expect(utilizationItem?.textContent).toContain('35 of 30 AIC across 3 reported runs.');
+    expect(utilizationItem?.querySelector('.utilization-track')?.getAttribute('aria-label')).toContain('35 of 30 AI Credits used, 116.7%');
+    expect(utilizationItem?.querySelector('.utilization-track span')?.getAttribute('style')).toBe('width: 100%;');
     expect(overviewPage?.textContent).toContain('Active workflows');
     expect(overviewPage?.textContent).toContain('Operational value timeline');
     expect(overviewPage?.querySelector('.layout-section h3')?.textContent).toBe('Execution and value trends');
@@ -361,6 +368,55 @@ describe('presenter built-in and custom pages', () => {
     expect(rendered.querySelector('[data-state-axis="completeness"]')?.textContent).toBe('partial');
     expect(rendered.querySelector('[data-state-axis="freshness"]')?.textContent).toBe('stale');
     expect(overviewPage?.querySelectorAll('[data-section-id="execution-trends"] .custom-view:last-child .custom-chart-table tbody tr')).toHaveLength(2);
+  });
+
+  it('DLS-PAGE-002 renders the package AIC utilization panel empty state when no package has a configured allowance and no usage source is available', () => {
+    /** @type {import('../../src/presenter.js').PresentationInput['document']} */
+    const document = {
+      languageVersion: '0.1.0',
+      dashboard: {
+        id: 'overview-no-allowance-dashboard',
+        title: 'Overview Dashboard',
+        pages: [
+          {
+            id: 'overview',
+            kind: /** @type {'built-in'} */ ('built-in'),
+            page: 'overview',
+            title: 'Overview',
+            definition: {
+              'data-state': { availability: true, completeness: true, freshness: true },
+              views: [{ id: 'workflows-source', data: { source: 'workflows' } }]
+            }
+          }
+        ]
+      }
+    };
+
+    const rendered = renderDashboard({
+      document,
+      sources: {
+        workflows: {
+          source: 'workflows',
+          rows: [
+            { organization: 'github', repository: 'central-agentic-ops', package: 'daily-ops', 'package-name': 'Daily Ops', 'workflow-role': 'orchestrator', workflow: '.github/workflows/daily.yml', 'workflow-active': 'true', 'rollout-mode': 'live' }
+          ],
+          metadata: {
+            'source-id': 'workflows-fixture',
+            'source-kind': 'fixture',
+            'as-of': '2026-08-29T20:00:00Z',
+            'retrieved-at': '2026-08-29T20:01:00Z',
+            completeness: 'complete',
+            freshness: 'fresh',
+            availability: 'available'
+          }
+        }
+      }
+    });
+
+    const overviewPage = rendered.querySelector('[data-page-name="overview"]');
+    const utilizationPanel = overviewPage?.querySelector('.package-aic-utilization');
+    expect(utilizationPanel?.querySelectorAll('.utilization-item')).toHaveLength(0);
+    expect(utilizationPanel?.textContent).toContain('No packages with a configured AIC allowance were observed.');
   });
 
   it('DLS-PAGE-001 DLS-PAGE-002 DLS-PAGE-003 DLS-PAGE-004 DLS-PAGE-005 DLS-PAGE-006 DLS-PAGE-007 DLS-PAGE-008 DLS-PAGE-009 DLS-PAGE-010 DLS-PAGE-011 DLS-PAGE-012 DLS-PAGE-013 DLS-PAGE-014 authoritative dashboard.json contains all 12 specification-defined built-in pages with declarative data-state and source coverage', () => {
