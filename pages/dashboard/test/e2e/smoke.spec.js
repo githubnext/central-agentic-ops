@@ -63,6 +63,11 @@ function buildPresenterModuleUrl() {
     .replace("'./view-chrome.js'", JSON.stringify(viewChromeModuleUrl));
   const workflowTopologyModuleUrl = `data:text/javascript;charset=utf-8,${encodeURIComponent(workflowTopologySource)}`;
 
+  const chartElementsSource = readFileSync(new URL('../../src/components/chart-elements.js', import.meta.url), 'utf8')
+    .replace("'../dom.js'", JSON.stringify(domModuleUrl))
+    .replace("'../view-formatters.js'", JSON.stringify(viewFormattersModuleUrl));
+  const chartElementsModuleUrl = `data:text/javascript;charset=utf-8,${encodeURIComponent(chartElementsSource)}`;
+
   const uiElementsSource = readFileSync(new URL('../../src/components/ui-elements.js', import.meta.url), 'utf8')
     .replace("'./operational-overview.js'", JSON.stringify(operationalOverviewModuleUrl))
     .replace("'./packages-view.js'", JSON.stringify(packagesViewModuleUrl))
@@ -80,6 +85,7 @@ function buildPresenterModuleUrl() {
     .replace("'./components/view-chrome.js'", JSON.stringify(viewChromeModuleUrl))
     .replace("'./components/link-content.js'", JSON.stringify(linkContentModuleUrl))
     .replace("'./components/linked-text.js'", JSON.stringify(linkedTextModuleUrl))
+    .replace("'./components/chart-elements.js'", JSON.stringify(chartElementsModuleUrl))
     .replace("'./components/ui-elements.js'", JSON.stringify(uiElementsModuleUrl))
     .replace("'./view-formatters.js'", JSON.stringify(viewFormattersModuleUrl));
 
