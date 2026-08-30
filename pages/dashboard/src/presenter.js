@@ -10,6 +10,7 @@ import { renderDataStateMetrics } from './components/data-state.js';
 import { renderTableRegion } from './components/table-region.js';
 import { renderContextChrome, renderPageSection, renderViewSectionChrome } from './components/view-chrome.js';
 import { formatAggregateValue, formatNumber, toNumber } from './view-formatters.js';
+import { renderActiveStateBadge, renderModeBadge, renderStatusBadge } from './components/badge.js';
 
 /**
  * @typedef {{ availability: 'available'|'empty'|'unavailable', completeness: 'complete'|'partial'|'unknown', freshness: 'fresh'|'stale'|'unknown' }} DataState
@@ -205,6 +206,7 @@ function getPageIcon(page) {
  * @returns {HTMLElement}
  */
 function renderMainContent(document, title, description, pages, sources, orgName) {
+  const latestRetrieval = latestRetrievedAt(sources);
   return h(
     'div',
     { className: 'app-main' },
@@ -215,7 +217,14 @@ function renderMainContent(document, title, description, pages, sources, orgName
         'div',
         { className: 'shell' },
         h('a', { href: '#/' }, orgName),
-        h('a', { href: '#/dashboard' }, title)
+        h('a', { href: '#/dashboard' }, title),
+        latestRetrieval
+          ? h(
+            'div',
+            { className: 'report-actions' },
+            h('time', { className: 'freshness', dateTime: latestRetrieval }, `Last updated ${formatReportDate(latestRetrieval)}`)
+          )
+          : null
       )
     ),
     h(
@@ -247,6 +256,29 @@ function renderMainContent(document, title, description, pages, sources, orgName
       'Generated deterministically from dashboard data.'
     )
   );
+}
+
+/**
+ * @param {Record<string, LogicalSourceInput>} sources
+ * @returns {string | null}
+ */
+function latestRetrievedAt(sources) {
+  return Object.values(sources)
+    .map((source) => source?.metadata?.['retrieved-at'])
+    .filter((value) => typeof value === 'string' && Number.isFinite(Date.parse(value)))
+    .sort((left, right) => Date.parse(right) - Date.parse(left))[0] ?? null;
+}
+
+/**
+ * @param {string} value
+ * @returns {string}
+ */
+function formatReportDate(value) {
+  return new Intl.DateTimeFormat('en', {
+    dateStyle: 'medium',
+    timeStyle: 'short',
+    timeZone: 'UTC'
+  }).format(new Date(value));
 }
 
 /**
@@ -845,6 +877,7 @@ function renderTableView(pageId, title, view, sourceName, rows, metadata, contex
     ? view.encoding.href
     : null;
   const hrefField = typeof hrefDefinition?.field === 'string' ? hrefDefinition.field : null;
+  const tableRows = prepareTableRows(rows, columns, view.data);
 
   return renderPageSection(pageId, title, [
     ...renderViewSectionChrome(sourceName, metadata, contextDetails),
@@ -853,12 +886,12 @@ function renderTableView(pageId, title, view, sourceName, rows, metadata, contex
       emptyMessage: 'No rows available.',
       colSpan: Math.max(columns.length, 1),
       headCells: columns.map((column) => fieldTitle(column)),
-      bodyRows: rows.length > 0
-        ? rows.map((row, rowIndex) => h(
+      bodyRows: tableRows.length > 0
+        ? tableRows.map((row, rowIndex) => h(
           'tr',
           { 'data-custom-row-key': `${pageId}-${title}-${rowIndex}` },
           ...columns.map((column, columnIndex) => {
-            const value = toText(row[column.field]);
+            const value = renderTableCellValue(column.field, row[column.field]);
             if (columnIndex === 0 && hrefField) {
               const link = findLink(row, /** @type {'external-link' | 'issue-link' | 'pull-request-link' | 'run-link' | 'evidence-link'} */ (hrefField));
               return h('td', null, value, link ? ' ' : null, link ? renderExternalLink(link) : null);
@@ -869,6 +902,124 @@ function renderTableView(pageId, title, view, sourceName, rows, metadata, contex
         : []
     })
   ], headingTag);
+}
+
+/**
+ * @param {Array<Record<string, unknown>>} rows
+ * @param {Array<Record<string, unknown>>} columns
+ * @param {unknown} dataConfig
+ * @returns {Array<Record<string, unknown>>}
+ */
+function prepareTableRows(rows, columns, dataConfig) {
+  const aggregateColumns = columns.filter((column) => typeof column.aggregate === 'string');
+  let prepared = aggregateColumns.length > 0 ? aggregateTableRows(rows, columns) : [...rows];
+  const orderBy = isPlainObject(dataConfig) && Array.isArray(dataConfig['order-by'])
+    ? dataConfig['order-by'].filter((item) => isPlainObject(item) && typeof item.field === 'string')
+    : [];
+  if (orderBy.length > 0) {
+    prepared.sort((left, right) => compareOrderedRows(left, right, orderBy, columns));
+  }
+  const limit = isPlainObject(dataConfig) && Number.isInteger(dataConfig.limit) && dataConfig.limit > 0
+    ? dataConfig.limit
+    : null;
+  return limit === null ? prepared : prepared.slice(0, limit);
+}
+
+/**
+ * @param {Array<Record<string, unknown>>} rows
+ * @param {Array<Record<string, unknown>>} columns
+ * @returns {Array<Record<string, unknown>>}
+ */
+function aggregateTableRows(rows, columns) {
+  const dimensions = columns.filter((column) => typeof column.aggregate !== 'string');
+  /** @type {Map<string, Array<Record<string, unknown>>>} */
+  const groups = new Map();
+  for (const row of rows) {
+    const key = JSON.stringify(dimensions.map((column) => row[column.field]));
+    const group = groups.get(key) ?? [];
+    group.push(row);
+    groups.set(key, group);
+  }
+  return [...groups.values()].map((group) => {
+    const output = Object.fromEntries(dimensions.map((column) => [column.field, group[0]?.[column.field]]));
+    for (const column of columns.filter((candidate) => typeof candidate.aggregate === 'string')) {
+      const outputField = typeof column.as === 'string' ? column.as : column.field;
+      output[outputField] = aggregateTableValue(group, column.field, column.aggregate);
+      if (outputField !== column.field) output[column.field] = output[outputField];
+    }
+    return output;
+  });
+}
+
+/**
+ * @param {Array<Record<string, unknown>>} rows
+ * @param {string} field
+ * @param {unknown} aggregate
+ * @returns {number | string}
+ */
+function aggregateTableValue(rows, field, aggregate) {
+  const present = rows.map((row) => row[field]).filter((value) => value != null && value !== '');
+  if (aggregate === 'count') return present.length;
+  if (aggregate === 'distinct-count') return new Set(present.map(toText)).size;
+  const values = present.map(toNumber);
+  if (aggregate === 'sum') return values.reduce((total, value) => total + value, 0);
+  if (aggregate === 'mean') return values.length > 0 ? values.reduce((total, value) => total + value, 0) / values.length : 'Unavailable';
+  if (aggregate === 'min') return values.length > 0 ? Math.min(...values) : 'Unavailable';
+  if (aggregate === 'max') return values.length > 0 ? Math.max(...values) : 'Unavailable';
+  return present[0] == null ? 'Unavailable' : toText(present[0]);
+}
+
+/**
+ * @param {Record<string, unknown>} left
+ * @param {Record<string, unknown>} right
+ * @param {Array<Record<string, unknown>>} orderBy
+ * @param {Array<Record<string, unknown>>} columns
+ * @returns {number}
+ */
+function compareOrderedRows(left, right, orderBy, columns) {
+  for (const ordering of orderBy) {
+    const comparison = compareTableValues(left[ordering.field], right[ordering.field]);
+    if (comparison !== 0) return ordering.direction === 'desc' ? -comparison : comparison;
+  }
+  for (const column of columns.filter((candidate) => typeof candidate.aggregate !== 'string')) {
+    const comparison = compareTableValues(left[column.field], right[column.field]);
+    if (comparison !== 0) return comparison;
+  }
+  return 0;
+}
+
+/**
+ * @param {unknown} left
+ * @param {unknown} right
+ * @returns {number}
+ */
+function compareTableValues(left, right) {
+  if (typeof left === 'number' && typeof right === 'number') return left - right;
+  return toText(left).localeCompare(toText(right));
+}
+
+/**
+ * @param {string} field
+ * @param {unknown} value
+ * @returns {string | HTMLElement}
+ */
+function renderTableCellValue(field, value) {
+  if (field === 'rollout-mode') return renderModeBadge(value);
+  if (field === 'workflow-active') return renderActiveStateBadge(value);
+  if ([
+    'run-status',
+    'run-conclusion',
+    'outcome-state',
+    'finding-severity',
+    'finding-status',
+    'grader-status',
+    'eval-result',
+    'maturity-status'
+  ].includes(field)) {
+    return renderStatusBadge(value);
+  }
+  const link = findLink({ [field]: value }, /** @type {'external-link' | 'issue-link' | 'pull-request-link' | 'run-link' | 'evidence-link'} */ (field));
+  return link ? renderExternalLink(link) : toText(value);
 }
 
 /**
