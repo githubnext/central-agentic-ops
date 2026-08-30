@@ -6,6 +6,16 @@ Treat top-level Central Agentic Ops packages as operational packages by default.
 
 The `dashboard/` package is the deterministic exception. It contains conventional GitHub Actions workflows and report resources, not an orchestrator or workers. Never fold it into an operational package or the root `aw.yml` includes, and never package the separate dashboard-language prototype under `pages/dashboard/`.
 
+## CAO and gh-aw authority
+
+Central Agentic Ops governs **whether and where** an installed operation may run: package and worker enablement, eligible owners and repositories, target consent, review/live ceilings, inventory partitioning, rollout, and monthly package admission.
+
+gh-aw governs **how** an authorized workflow executes: engines and models, per-run turns and AI Credit limits, tools, network access, permissions, generated job topology, authentication mechanics, and safe-output primitives and execution.
+
+Treat this as a one-way boundary. CAO may deny a run or narrow its scope, but it must never grant or expand a gh-aw capability. Do not add engine settings, per-run limits, tools, permissions, credentials, jobs, or safe-output primitives to `.github/central-agentic-ops.json` or its resolver. Conversely, gh-aw execution capability never grants CAO rollout or target authority. Target consent, CAO policy, credential reach, dispatch narrowing, and the compiled gh-aw workflow are cumulative boundaries; none substitutes for another.
+
+Orchestrators select and dispatch within the resolved rollout envelope; they do not perform target work. Workers enforce one dispatched target, resolve current policy before model execution, and do not discover repositories, dispatch downstream work, escalate mode, or accept credentials in the dispatch envelope.
+
 ## Dashboard contract
 
 - Install with `gh aw add githubnext/central-agentic-ops/dashboard@<release>`.

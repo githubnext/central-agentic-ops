@@ -32,19 +32,20 @@ The supported control-plane credentials are:
 
 | Priority | Credential | Configuration |
 | --- | --- | --- |
-| 1 | GitHub App | Repository secrets `GH_AW_GITHUB_APP_ID` and `GH_AW_GITHUB_APP_PRIVATE_KEY` |
-| 2 | Fine-grained PAT | Repository secret `GH_AW_GITHUB_TOKEN` |
+| 1 | GitHub App | Protected `central-agentic-ops` environment secrets `GH_AW_GITHUB_APP_ID` and `GH_AW_GITHUB_APP_PRIVATE_KEY` |
+| 2 | Fine-grained PAT | Protected `central-agentic-ops` environment secret `GH_AW_GITHUB_TOKEN` |
 | 3 | Workflow token | Repository-provided `GITHUB_TOKEN` for operations it can authorize |
 
 The GitHub App is preferred because it provides short-lived installation tokens, repository-scoped installation access, and centrally reviewable permissions. `ignore-if-missing: true` makes App configuration optional, allowing PAT-only installations.
 
-Configure the App ID and private key as repository secrets:
+Configure the App ID and private key as protected environment secrets:
 
 ```bash
 CONTROL_REPO="acme/central-agentic-ops"
 
-printf '%s' '<github-app-id>' | gh secret set GH_AW_GITHUB_APP_ID --repo "$CONTROL_REPO"
+printf '%s' '<github-app-id>' | gh secret set GH_AW_GITHUB_APP_ID --env central-agentic-ops --repo "$CONTROL_REPO"
 gh secret set GH_AW_GITHUB_APP_PRIVATE_KEY \
+	--env central-agentic-ops \
 	--repo "$CONTROL_REPO" \
 	< github-app-private-key.pem
 ```
@@ -72,7 +73,7 @@ The workflow token is scoped to the repository containing the workflow. Public c
 
 ## Credential Boundary
 
-- Credentials live only in the private control-plane repository's secrets.
+- Credentials live only in the private control-plane repository's protected `central-agentic-ops` environment secrets.
 - worker workflows receive repository names and routing policy, never credentials.
 - Each Orchestrator and worker workflow run resolves its own token through imported shared control.
 - Tokens must not appear in prompts, logs, safe outputs, Repo Memory, review bundles, or correlation metadata.
@@ -98,7 +99,7 @@ A package-only installation should narrow these permissions to that package's wo
 Example PAT fallback configuration:
 
 ```bash
-gh secret set GH_AW_GITHUB_TOKEN --repo "acme/central-agentic-ops"
+gh secret set GH_AW_GITHUB_TOKEN --env central-agentic-ops --repo "acme/central-agentic-ops"
 ```
 
 The GitHub CLI prompts for the token without echoing it. Do not include the token directly in the command.
