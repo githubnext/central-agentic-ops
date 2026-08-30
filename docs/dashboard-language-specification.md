@@ -176,6 +176,7 @@ language-version: "0.1.0"
 dashboard:
   id: example-dashboard
   title: Example Dashboard
+  github-url-base: https://github.com
   defaults:
     scope: {}
     time: {}
@@ -190,7 +191,7 @@ Language keys and enumerated values use canonical kebab-case. Human-readable tit
 | Mapping | Allowed keys |
 |---|---|
 | Root | `language-version`, `dashboard` |
-| `dashboard` | `id`, `title`, `description`, `defaults`, `pages` |
+| `dashboard` | `id`, `title`, `description`, `github-url-base`, `defaults`, `pages` |
 | `defaults` | `scope`, `time`, `filters` |
 | Built-in page | `id`, `kind`, `page`, `title`, `description` |
 | Custom page | `id`, `kind`, `title`, `description`, `views` |
@@ -210,6 +211,7 @@ Language keys and enumerated values use canonical kebab-case. Human-readable tit
 - **DLS-DOC-008:** `defaults`, when present, **MUST** be a mapping containing only `scope`, `time`, and `filters`.
 - **DLS-DOC-009:** Every page **MUST** set `kind` to `built-in` or `custom` and satisfy the corresponding page shape in Sections 10 or 11.
 - **DLS-DOC-010:** Titles and descriptions **MUST** be strings; IDs, references, and timestamps **MUST NOT** rely on YAML implicit type coercion.
+- **DLS-DOC-011:** `github-url-base`, when present, **MUST** be an absolute HTTPS URL without credentials, query, or fragment. It identifies the GitHub web URL base used to resolve GitHub-addressable entity links and defaults to `https://github.com`.
 
 ---
 
@@ -394,6 +396,8 @@ Data quality has three independent axes:
 
 A link has `relation`, `href`, and `label`. Allowed relations are `organization`, `repository`, `workflow`, `run`, `issue`, `pull-request`, `evidence`, and `external`. When a relation-specific link field from Section 5.1 is present on a source row, it contains exactly one link object whose `relation` matches the field name.
 
+`dashboard.github-url-base` selects the GitHub web URL base for GitHub-addressable entity links. A deployment that omits it uses `https://github.com`; an enterprise deployment sets it to its GitHub Enterprise web URL base. A presenter **MUST** resolve generated GitHub links against that base, rather than assuming GitHub.com.
+
 A finding is an observation with a stable finding ID, summary, status, severity, observation time, provenance, applicable scope, and zero or more relation-specific link fields. Finding status uses `open`, `resolved`, `dismissed`, or `unknown`. Severity uses `critical`, `high`, `medium`, `low`, `informational`, or `unknown`.
 
 ### 9.2 Normative Link Requirements
@@ -404,6 +408,7 @@ A finding is an observation with a stable finding ID, summary, status, severity,
 - **DLS-LINK-004:** A finding, outcome, or operational-value observation without an available link association **MUST** remain valid and **MUST NOT** contain a fabricated link.
 - **DLS-LINK-005:** A relation-specific link field, when present, **MUST** contain exactly one Section 9.1 link object and **MUST NOT** contain a sequence, mapping of multiple relations, or scalar URL.
 - **DLS-LINK-006:** A presenter **MUST** render every GitHub-addressable entity exposed in the user experience as a link to that entity when its address is available. This requirement applies wherever the entity is rendered, including identifiers, names, and labels in metrics, tables, charts, rankings, filters, and detail views. A presenter **MUST NOT** fabricate a link when an entity address is unavailable.
+- **DLS-LINK-007:** A presenter **MUST**, wherever sufficient GitHub identity is available, resolve and render organizations, repositories, workflows, runs, issues, and pull requests as links to their GitHub web views. It **MUST** use `dashboard.github-url-base` when configured, or `https://github.com` otherwise. A presenter **MUST NOT** infer a link when the entity identity is insufficient or ambiguous.
 
 ---
 
@@ -557,14 +562,14 @@ In the table, “accept” means validation succeeds; “reject” means validat
 | Requirement | Test ID | Level | Procedure and expected outcome |
 |---|---|---:|---|
 | DLS-CONF-001–005 | T-CONF-001 | 1–3 | Inspect full and partial claims; verify labels, coverage, results, and enumerated gaps. |
-| DLS-DOC-001–010 | T-DOC-001 | 1 | Apply positive and negative syntax, root, version, identity, vocabulary, defaults, page-shape, and scalar-type fixtures. |
+| DLS-DOC-001–011 | T-DOC-001 | 1 | Apply positive and negative syntax, root, version, identity, vocabulary, GitHub URL base, defaults, page-shape, and scalar-type fixtures. |
 | DLS-SEM-001–007 | T-SEM-001 | 2 | Validate entity ancestry, active state, run status, run conclusion, and explicit experiment assignments. |
 | DLS-SEM-008–016 | T-SEM-002 | 2 | Distinguish grader, eval, tokens, AIC, run conclusions, outcomes, engine/models, and value; reject causal labeling. |
 | DLS-SEM-017–021 | T-SEM-003 | 2 | Validate source vocabulary, grain, token classes, rollout modes, and distinct measure names. |
 | DLS-CTX-001–008 | T-CTX-001 | 2 | Exercise ancestry, boundary times, Boolean filter rules, inheritance, rollout mode, unknown, and operation order. |
 | DLS-AGG-001–011 | T-AGG-001 | 2 | Exercise allowed aggregates, compatibility, nulls, UTC buckets, ranking disclosure, and deterministic ties for entity-grain and group-grain outputs, including total-order rejection. |
 | DLS-DATA-001–008 | T-DATA-001 | 2 | Exercise required metadata, derivation traceability, and each distinct data state. |
-| DLS-LINK-001–006 | T-LINK-001 | 2 | Validate link shape, safety, provenance, available associations, absent associations, one-link-per-field cardinality, and linked rendering of every GitHub-addressable entity. |
+| DLS-LINK-001–007 | T-LINK-001 | 2 | Validate link shape, safety, provenance, available associations, absent associations, one-link-per-field cardinality, GitHub URL base resolution, and linked rendering of every GitHub-addressable entity. |
 | DLS-PAGE-001–014 | T-PAGE-001 | 3 | Evaluate each built-in fixture for required content, defaults, context, and data states. |
 | DLS-VIEW-001–006 | T-VIEW-001 | 3 | Validate custom structure and every allowed mark/channel combination. |
 | DLS-VIEW-007–014 | T-VIEW-002 | 3 | Validate fields, types, link-compatible `href`, time units, ordering, exclusions, operation order, exposed context, and link labels. |
@@ -730,6 +735,7 @@ dashboard:
 - Added provenance, freshness, data states, links, safety requirements, and compliance tests.
 - Defined the canonical post-aggregation row order for entity-grain and group-grain output rows, revised **DLS-AGG-008** and added **DLS-AGG-011**, aligned omitted and explicit `order-by` semantics in Section 11.2, updated **DLS-VIEW-010** and **DLS-VIEW-012**, and added grouped chart and grouped table compliance fixtures in Section 14.4.
 - Required presenters to render every GitHub-addressable entity as a link when its address is available.
+- Added `dashboard.github-url-base` so generated GitHub entity links default to GitHub.com and can target GitHub Enterprise deployments.
 
 ---
 
@@ -743,6 +749,7 @@ dashboard:
   id: agentic-operations
   title: Agentic Operations
   description: Workflow activity, usage, findings, and operational value.
+  github-url-base: https://github.com
   defaults:
     scope:
       organizations:
