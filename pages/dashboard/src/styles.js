@@ -72,15 +72,18 @@ a:focus-visible, [tabindex]:focus-visible, button:focus-visible { outline: 2px s
 .primary-nav a[aria-current="page"]::before { content: ""; width: 3px; position: absolute; top: 5px; bottom: 5px; left: -16px; border-radius: 0 4px 4px 0; background: var(--accent); }
 .app-main { min-width: 0; display: flex; flex-direction: column; }
 .app-main > nav { border-bottom: 1px solid var(--border); }
-.app-main > nav .shell { display: flex; align-items: center; gap: 8px; max-width: 1280px; margin: auto; padding: 10px 24px; }
+.app-main > nav .shell { display: flex; align-items: center; gap: 8px; width: 100%; padding: 10px 24px; }
 .app-main > nav .shell > a { min-height: 24px; display: inline-flex; align-items: center; }
 .app-main > nav .shell > * + *:not(.report-actions)::before { content: "/"; margin-right: 8px; color: var(--muted); }
 .report-actions { margin-left: auto; display: flex; align-items: center; gap: 10px; }
 .freshness { max-width: none; flex: none; display: flex; align-items: center; gap: 8px; color: var(--muted); font-size: .75rem; white-space: nowrap; }
+.refresh-button { display: inline-flex; align-items: center; gap: 6px; min-height: 28px; padding: 3px 12px; border: 1px solid var(--border); border-radius: 6px; background: var(--canvas-subtle); color: var(--fg); font: inherit; font-size: .75rem; font-weight: 500; cursor: pointer; transition: background-color 120ms ease; }
+.refresh-button:hover { background: var(--neutral-muted); }
+.refresh-button .octicon { width: 14px; height: 14px; }
 .repository-link { width: 28px; height: 28px; display: grid; flex: 0 0 28px; place-items: center; border-radius: 6px; color: var(--muted); text-decoration: none; transition: background-color 120ms ease, color 120ms ease; }
 .repository-link:hover { background: var(--neutral-muted); color: var(--fg); }
 .repository-link .octicon { width: 18px; height: 18px; }
-main.dashboard-prototype { width: min(1280px, 100%); flex: 1; margin: 0 auto; padding: 0 20px 40px; }
+main.dashboard-prototype { width: 100%; flex: 1; padding: 0 24px 40px; }
 .overview-header { min-height: 88px; display: flex; align-items: flex-start; justify-content: space-between; gap: 32px; padding: 18px 0 14px; }
 .overview-header h1 { margin: 0; font-size: 1.5rem; line-height: 1.25; }
 .overview-header .lede { margin: 3px 0 0; font-size: .875rem; }
