@@ -2075,4 +2075,81 @@ dashboard:
       }
     }
   });
+
+  it('DLS-VIEW-005 DLS-VIEW-006 accepts explicit line and pie chart widgets with structural layout hints', () => {
+    const result = validateDashboardDocument(`language-version: "0.1.0"
+dashboard:
+  id: chart-widgets
+  title: Chart Widgets
+  pages:
+    - id: charts
+      kind: custom
+      views:
+        - id: run-trend
+          data:
+            source: runs
+          mark: chart
+          chart: line
+          layout: half
+          encoding:
+            x:
+              field: started-at
+              type: temporal
+              time-unit: day
+            y:
+              field: run
+              type: quantitative
+              aggregate: count
+        - id: conclusions
+          data:
+            source: runs
+          mark: chart
+          chart: pie
+          layout: half
+          encoding:
+            x:
+              field: run-conclusion
+              type: nominal
+            y:
+              field: run
+              type: quantitative
+              aggregate: count
+`);
+
+    expect(result.ok).toBe(true);
+  });
+
+  it('DLS-VIEW-005 DLS-VIEW-006 rejects incompatible chart widgets and unknown layout hints', () => {
+    const result = validateDashboardDocument(`language-version: "0.1.0"
+dashboard:
+  id: invalid-chart-widgets
+  title: Invalid Chart Widgets
+  pages:
+    - id: charts
+      kind: custom
+      views:
+        - id: invalid-pie
+          data:
+            source: runs
+          mark: chart
+          chart: pie
+          layout: wide
+          encoding:
+            x:
+              field: started-at
+              type: temporal
+            y:
+              field: run
+              type: quantitative
+              aggregate: count
+`);
+
+    expect(result.ok).toBe(false);
+    if (!result.ok) {
+      expect(result.errors).toEqual(expect.arrayContaining([
+        expect.objectContaining({ code: 'DLS-E005', path: '$.dashboard.pages[0].views[0].layout' }),
+        expect.objectContaining({ code: 'DLS-E010', path: '$.dashboard.pages[0].views[0].encoding.x.type' })
+      ]));
+    }
+  });
 });

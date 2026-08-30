@@ -11,7 +11,7 @@
 - [x] **Provenance, freshness, data states** — Section 8 including unavailable, empty, partial, and stale states.
 - [x] **Links and findings** — Section 9 link objects and the `href` channel semantics.
 - [x] **Custom pages** — Section 11 metric, table, and chart views with the temporal line and bar defaults.
-- [ ] **Built-in pages** — Section 10, all 12 pages fully specified by the authoritative `dashboard.json`, including their view and build/composition definitions, and visibly rendered by a minimal generic JavaScript runtime.
+- [x] **Built-in pages** — Section 10, all 12 pages fully specified by the authoritative `dashboard.json`, including their view and build/composition definitions, and visibly rendered by a minimal generic JavaScript runtime.
   - [x] Slice: `DLS-PAGE-001` built-in page title default validation.
   - [x] Slice: `DLS-PAGE-001` canonical explicit title validation for built-in pages.
   - [x] Slice: `DLS-PAGE-002` and `DLS-PAGE-006` conservative required-source validation for built-in page definitions.
@@ -60,7 +60,7 @@
 - `src/components/badge.js` — presentation-only Primer status, mode, and active-state badges.
 - `src/components/data-state.js` — presentation-only data-state metrics card grid for availability, completeness, and freshness.
 - `src/components/table-region.js` — presentation-only reusable table wrapper for repeated table-region markup, header rows, empty-state rows, and keyed body-row descriptors across built-in and custom tables.
-- `src/components/view-chrome.js` — presentation-only reusable page-section, titled-region, summary-region, custom-view source/metadata/context chrome, and built-in provenance-section helpers.
+- `src/components/view-chrome.js` — presentation-only reusable page-section, titled-region, summary-list/summary-region, custom-view source/metadata/context chrome, and built-in provenance-section helpers.
 
 ## Infrastructure blockers
 
@@ -74,7 +74,31 @@
 - Continued the Built-in pages milestone by replacing the `repositories` page's source-coverage placeholders with separate declarative inventory, run-count ranking, AIC ranking, and operational-value ranking views.
 - Made each ranking's aggregate output identifier and descending order explicit while retaining `operational-value-definition` in the operational-value output grain so distinct definitions are never combined.
 - Added focused unit assertions that keep the authoritative `dashboard.json` repository ranking contract deterministic and auditable.
-- Next milestone: Built-in pages, continuing to move the remaining built-in composition assumptions from `src/presenter.js` into the authoritative declarative definitions.
+- Next milestone: Security, privacy, accessibility, continuing with the remaining Section 13 slices that are not yet covered in the checklist.
+
+### 2026-08-30 (summary-list view-chrome refactor)
+
+- Re-inventoried repeated construction under `pages/dashboard/src/` and selected the highest remaining bounded helper slice: the repeated count-list `<ul><li>${name}: ${count}</li></ul>` assembly still centralized in `src/presenter.js` and reused across runs, findings, usage totals, and overview sections.
+- Extended `src/components/view-chrome.js` with presentation-only `renderSummaryList(listClassName, counts)` and rewired `renderSummaryRegion(...)` to compose it, then replaced every presenter call site previously routed through the local `renderSummaryList(...)` helper in `src/presenter.js`.
+- Collapsed duplicated summary-list call sites identified in `src/presenter.js`: runs status/conclusion/outcome counts, findings severity/status counts, usage totals, overview rollout-mode/workflow-active summaries, overview run status/conclusion summary blocks, repository/workflow rankings, and largest AIC spenders.
+- Added unit coverage in `test/unit/view-chrome.test.js` for the extracted summary-list helper plus the existing summary-region wrapper, including populated and empty inputs.
+- Proved unchanged behavior by keeping `npm run typecheck`, `npm run lint`, `npm test`, and `npx playwright test --config=playwright.config.mjs` green from `pages/dashboard/`, and by capturing the affected refactor diff at `/tmp/gh-aw/agent/summary-list-refactor.diff` to confirm the presenter change is limited to replacing the local list builder with the shared component helper.
+- Next candidates in the queue: extract the repeated overview summary-plus-trend region composition in `src/presenter.js`; extract the repeated definitions/observations dual-region composition for graders and evals; extract shared pure helpers for observation rollups such as subjects, score values, and model summaries.
+
+### 2026-08-30 (built-in pages milestone closure verification)
+
+- Re-ran the full `pages/dashboard/` quality gate stack on the current built-in-page implementation to confirm the authoritative `dashboard.json` and generic built-in interpreter continue to satisfy the milestone end state without further code changes.
+- Verified quality gates from `pages/dashboard/`: `npm install`, `npm run typecheck`, `npm run lint`, `npm test`, and `npx playwright test --config=playwright.config.mjs` all pass.
+- Marked the Built-in pages milestone complete now that the repository already contains all 12 specification-defined built-in pages in `dashboard.json`, declarative rendering coverage, and passing build, unit, and browser verification proving they render without top-level page-specific dispatch.
+- Next milestone: Security, privacy, accessibility, continuing with the remaining Section 13 slices that are not yet covered in the checklist.
+
+### 2026-08-29 (built-in source-ordered definition interpreter slice)
+
+- Continued the Built-in pages milestone with a bounded presenter increment that removes the remaining dependence on hard-coded built-in section index positions when mapping `definition.views` to rendered built-in sections.
+- Updated `src/presenter.js` so `renderBuiltInPageFromDefinition(...)` now matches built-in section renderers by declared view `data.source`, consuming repeated source-backed sections in view order and falling back conservatively to any remaining declared sections.
+- Added focused unit coverage in `test/unit/presenter.test.js` proving a built-in `runs` page can reorder repeated `runs` and `outcomes` views declaratively while preserving the correct rendered section bodies and titles.
+- Verified quality gates from `pages/dashboard/`: `npm install`, `npm run typecheck`, `npm run lint`, `npm test`, and `npx playwright test --config=playwright.config.mjs` all pass.
+- Next milestone: Built-in pages, with the remaining gap now narrowed to replacing implementation-local source-to-section assumptions with a more fully generic built-in composition vocabulary if and when the specification defines one.
 
 ### 2026-08-29 (built-in definition-interpreter slice)
 

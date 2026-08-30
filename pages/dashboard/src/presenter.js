@@ -8,7 +8,7 @@ import { octicon, agenticWorkflowMark } from './octicons.js';
 import { renderStatusBadge, renderModeBadge, renderActiveStateBadge } from './components/badge.js';
 import { renderDataStateMetrics } from './components/data-state.js';
 import { renderTableRegion } from './components/table-region.js';
-import { renderContextList, renderPageSection, renderProvenanceSection, renderSummaryRegion, renderViewHeader } from './components/view-chrome.js';
+import { renderContextList, renderPageSection, renderProvenanceSection, renderSummaryList, renderViewHeader } from './components/view-chrome.js';
 
 /**
  * @typedef {{ availability: 'available'|'empty'|'unavailable', completeness: 'complete'|'partial'|'unknown', freshness: 'fresh'|'stale'|'unknown' }} DataState
@@ -244,14 +244,20 @@ function renderPage(page, sources) {
  */
 function renderCustomPage(page, title, sources) {
   const views = Array.isArray(page.views) ? page.views : [];
-  const renderedViews = views.map((view, index) => renderCustomView(page.id, view, index, sources));
+  const renderedViews = views.map((view, index) => {
+    const rendered = renderCustomView(page.id, view, index, sources);
+    const layout = isPlainObject(view) && typeof view.layout === 'string' ? view.layout : 'full';
+    rendered.classList.add('custom-view');
+    rendered.setAttribute('data-view-layout', layout);
+    return rendered;
+  });
 
   return h(
     'section',
     { className: 'dashboard-page', id: `page-${page.id}`, 'data-page-kind': 'custom', 'data-page-id': page.id },
     h('h2', null, title),
     ...(renderedViews.length > 0
-      ? renderedViews
+      ? [h('div', { className: 'custom-view-grid' }, ...renderedViews)]
       : [h('p', null, 'No custom views available.')])
   );
 }
@@ -1377,14 +1383,48 @@ function getViewSource(view) {
  * @returns {HTMLElement}
  */
 function renderBuiltInPageFromDefinition(pageId, sectionDefinitions, viewDefinitions, pageSources) {
-  const renderedSections = sectionDefinitions.map((sectionDefinition, index) => {
-    const matchingView = viewDefinitions[index];
-    const viewTitle = isPlainObject(matchingView) && typeof matchingView.title === 'string' && matchingView.title.length > 0
-      ? matchingView.title
+  const sectionsBySource = new Map();
+  for (const sectionDefinition of sectionDefinitions) {
+    const existing = sectionsBySource.get(sectionDefinition.source) ?? [];
+    existing.push(sectionDefinition);
+    sectionsBySource.set(sectionDefinition.source, existing);
+  }
+
+  /** @type {Map<string, number>} */
+  const consumedCountsBySource = new Map();
+  /** @type {Array<HTMLElement>} */
+  const renderedSections = [];
+
+  for (const viewDefinition of viewDefinitions) {
+    if (!isPlainObject(viewDefinition)) {
+      continue;
+    }
+    const sourceName = getViewSource(viewDefinition);
+    if (!sourceName) {
+      continue;
+    }
+    const sourceSections = /** @type {Array<{ source: string, title: string, render: (pageSources: Map<string, LogicalSourceInput>) => HTMLElement }>} */ (sectionsBySource.get(sourceName) ?? []);
+    const consumedCount = consumedCountsBySource.get(sourceName) ?? 0;
+    const sectionDefinition = sourceSections[consumedCount];
+    if (!sectionDefinition) {
+      continue;
+    }
+
+    consumedCountsBySource.set(sourceName, consumedCount + 1);
+    const viewTitle = typeof viewDefinition.title === 'string' && viewDefinition.title.length > 0
+      ? viewDefinition.title
       : sectionDefinition.title;
-    const content = sectionDefinition.render(pageSources);
-    return renderPageSection(pageId, viewTitle, [content]);
-  });
+    renderedSections.push(renderPageSection(pageId, viewTitle, [sectionDefinition.render(pageSources)]));
+  }
+
+  for (const sectionDefinition of sectionDefinitions) {
+    const consumedCount = consumedCountsBySource.get(sectionDefinition.source) ?? 0;
+    const sourceSections = /** @type {Array<{ source: string, title: string, render: (pageSources: Map<string, LogicalSourceInput>) => HTMLElement }>} */ (sectionsBySource.get(sectionDefinition.source) ?? []);
+    const sourceIndex = sourceSections.indexOf(sectionDefinition);
+    if (sourceIndex >= consumedCount) {
+      renderedSections.push(renderPageSection(pageId, sectionDefinition.title, [sectionDefinition.render(pageSources)]));
+    }
+  }
 
   return h(
     'div',
@@ -1448,15 +1488,6 @@ const BUILT_IN_PAGE_RENDERERS = {
     { source: 'findings', title: 'Findings', render: renderFindingsInventory }
   ]
 };
-
-/**
- * @param {Map<string, number>} counts
- * @param {string} className
- * @returns {HTMLElement}
- */
-function renderSummaryList(className, counts) {
-  return renderSummaryRegion('summary', 'Summary', className, counts).querySelector('ul') ?? h('ul', { className });
-}
 
 /**
  * @param {string} pageId
@@ -1601,11 +1632,12 @@ function renderChartView(pageId, title, view, sourceName, rows, metadata, contex
   const y = isPlainObject(encoding?.y) && typeof encoding.y.field === 'string' ? encoding.y : null;
   const color = isPlainObject(encoding?.color) && typeof encoding.color.field === 'string' ? encoding.color : null;
   const chartDefault = x?.type === 'temporal' ? 'line' : 'bar';
+  const chartType = typeof view.chart === 'string' ? view.chart : chartDefault;
 
   const points = rows.map((row, rowIndex) => ({
     key: `${pageId}-${title}-${rowIndex}`,
     x: x ? toText(row[x.field]) : 'unknown',
-    y: y ? (typeof y.aggregate === 'string' && y.aggregate === 'count' ? '1' : toText(row[y.field])) : 'unknown',
+    y: y ? (typeof y.aggregate === 'string' && y.aggregate === 'count' ? 1 : toNumber(row[y.field])) : 0,
     color: color ? toText(row[color.field]) : null
   }));
   const colorCategories = color
@@ -1614,7 +1646,11 @@ function renderChartView(pageId, title, view, sourceName, rows, metadata, contex
 
   return renderPageSection(pageId, title, [
     ...renderViewHeader(sourceName, metadata),
-    h('p', { className: 'chart-default', 'data-chart-default': chartDefault }, `Default chart type: ${chartDefault}`),
+    h(
+      'p',
+      { className: 'chart-default', 'data-chart-default': chartDefault, 'data-chart-type': chartType },
+      typeof view.chart === 'string' ? `Chart type: ${chartType}` : `Default chart type: ${chartDefault}`
+    ),
     ...(color
       ? [h(
         'p',
@@ -1622,6 +1658,7 @@ function renderChartView(pageId, title, view, sourceName, rows, metadata, contex
         `Color categories: ${colorCategories.length > 0 ? colorCategories.join(', ') : 'unknown'}`
       )]
       : []),
+    renderChartWidget(chartType, points),
     renderTableRegion({
       tableClassName: 'custom-chart-table',
       emptyMessage: 'No points available.',
@@ -1639,6 +1676,73 @@ function renderChartView(pageId, title, view, sourceName, rows, metadata, contex
     }),
     renderContextList(contextDetails)
   ]);
+}
+
+/**
+ * @param {string} chartType
+ * @param {Array<{ x: string, y: number, color: string | null }>} points
+ * @returns {HTMLElement}
+ */
+function renderChartWidget(chartType, points) {
+  if (chartType === 'pie') {
+    const totals = new Map();
+    for (const point of points) {
+      const category = point.x;
+      totals.set(category, (totals.get(category) ?? 0) + point.y);
+    }
+    const entries = [...totals.entries()].filter(([, value]) => value > 0);
+    const total = entries.reduce((sum, [, value]) => sum + value, 0);
+    let offset = 0;
+    return h(
+      'div',
+      { className: 'chart-widget pie-chart-widget', 'data-chart-widget': 'pie' },
+      h(
+        'svg',
+        { viewBox: '0 0 42 42', role: 'img', 'aria-label': `Pie chart: ${entries.map(([label, value]) => `${label} ${formatNumber(value)}`).join(', ') || 'no data'}` },
+        h('circle', { className: 'pie-chart-track', cx: 21, cy: 21, r: 15.9155, fill: 'none', 'stroke-width': 8 }),
+        ...entries.map(([label, value], index) => {
+          const percent = total > 0 ? (value / total) * 100 : 0;
+          const segment = h('circle', {
+            className: `pie-chart-segment chart-series-${(index % 5) + 1}`,
+            cx: 21,
+            cy: 21,
+            r: 15.9155,
+            fill: 'none',
+            'stroke-width': 8,
+            'stroke-dasharray': `${percent} ${100 - percent}`,
+            'stroke-dashoffset': String(-offset),
+            'data-chart-category': label,
+            'aria-label': `${label}: ${formatNumber(value)}`
+          });
+          offset += percent;
+          return segment;
+        })
+      )
+    );
+  }
+
+  if (chartType === 'line') {
+    const values = points.map((point) => toNumber(point.y));
+    const finiteValues = values.filter(Number.isFinite);
+    const maximum = Math.max(...finiteValues, 1);
+    const coordinates = values.map((value, index) => {
+      const x = values.length < 2 ? 50 : (index / (values.length - 1)) * 100;
+      const y = 38 - (Math.max(0, value) / maximum) * 34;
+      return `${x},${y}`;
+    }).join(' ');
+    return h(
+      'div',
+      { className: 'chart-widget line-chart-widget', 'data-chart-widget': 'line' },
+      h(
+        'svg',
+        { viewBox: '0 0 100 42', role: 'img', 'aria-label': `Line chart with ${points.length} points` },
+        h('line', { className: 'line-chart-axis', x1: 0, y1: 38, x2: 100, y2: 38 }),
+        h('polyline', { className: 'line-chart-series', points: coordinates, fill: 'none' })
+      )
+    );
+  }
+
+  return h('div', { className: 'chart-widget bar-chart-widget', 'data-chart-widget': 'bar' });
 }
 
 /**
