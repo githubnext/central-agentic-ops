@@ -148,13 +148,16 @@ describe('renderTableRegion', () => {
       emptyMessage: 'No runs available.',
       colSpan: 1,
       headCells: ['Run'],
+      filterLabel: 'Filter runs',
       bodyRows: [h('tr', null, h('td', null, '1001'))]
     });
 
     const scroll = rendered.querySelector('.table-scroll');
     expect(scroll?.getAttribute('role')).toBe('region');
+    expect(scroll?.getAttribute('aria-label')).toBe('Filter runs results');
     expect(scroll?.getAttribute('tabindex')).toBe('0');
     expect(scroll?.querySelector('table')).toBeTruthy();
+    expect(rendered.querySelector('.table-scroll .table-filter')).toBeNull();
   });
 
   it('sorts rows numerically and temporally when a column header is activated', () => {

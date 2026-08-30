@@ -11,6 +11,9 @@ import { h } from '../dom.js';
 const DEFAULT_PAGE_SIZE = 25;
 
 /**
+ * Renders a table inside a bounded-height scroll region. Column sorting is enabled
+ * by default whenever `filterLabel` is provided, and can be forced with `sortable`.
+ *
  * @param {{
  *   tableClassName: string,
  *   emptyMessage: string,
@@ -76,7 +79,11 @@ export function renderTableRegion(options) {
       : null,
     h(
       'div',
-      { className: 'table-scroll', tabIndex: 0, role: 'region', 'aria-label': filterLabel ? `${filterLabel} results` : 'Table' },
+      {
+        className: 'table-scroll',
+        tabIndex: 0,
+        ...(filterLabel ? { role: 'region', 'aria-label': `${filterLabel} results` } : {})
+      },
       h(
         'table',
         {
@@ -140,7 +147,6 @@ function enableTableSort(region) {
   if (!(body instanceof HTMLTableSectionElement)) return;
   const headers = [...region.querySelectorAll('th[aria-sort]')]
     .filter((header) => header instanceof HTMLTableCellElement);
-  const originalRows = [...body.rows];
 
   for (const header of headers) {
     const control = header.querySelector('[data-table-sort]');
@@ -150,7 +156,7 @@ function enableTableSort(region) {
       const direction = header.getAttribute('aria-sort') === 'ascending' ? 'descending' : 'ascending';
       for (const other of headers) other.setAttribute('aria-sort', 'none');
       header.setAttribute('aria-sort', direction);
-      const sorted = [...originalRows].sort((left, right) => compareCells(
+      const sorted = [...body.rows].sort((left, right) => compareCells(
         cellText(left, columnIndex),
         cellText(right, columnIndex)
       ));
