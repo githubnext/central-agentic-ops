@@ -770,7 +770,7 @@ test('DLS-SAFE-007 DLS-SAFE-008 keyboard navigation moves across labeled page se
   await expect(sections.nth(0)).toBeFocused();
 });
 
-test('DLS-SAFE-004 runtime links with embedded credentials are not exposed in browser output', async ({ page }) => {
+test('DLS-SAFE-004 runtime links with embedded credentials, ftp schemes, and blank labels are not exposed in browser output', async ({ page }) => {
   const presenterModuleUrl = buildPresenterModuleUrl();
 
   await page.setContent(`
@@ -818,7 +818,9 @@ test('DLS-SAFE-004 runtime links with embedded credentials are not exposed in br
           source: 'runs',
           rows: [
             { run: '1', 'run-link': { href: 'https://user:secret@example.com/runs/1', label: 'Credentialed Run' } },
-            { run: '2', 'run-link': { href: 'https://example.com/runs/2', label: 'Run 2' } }
+            { run: '2', 'run-link': { href: 'ftp://example.com/runs/2', label: 'FTP Run' } },
+            { run: '3', 'run-link': { href: 'https://example.com/runs/3', label: '   ' } },
+            { run: '4', 'run-link': { href: 'https://example.com/runs/4', label: 'Run 4' } }
           ],
           metadata: {
             'source-id': 'runs-fixture',
@@ -837,8 +839,10 @@ test('DLS-SAFE-004 runtime links with embedded credentials are not exposed in br
   `);
 
   await expect(page.getByRole('heading', { name: 'Credential Links', level: 2 })).toBeVisible();
-  await expect(page.locator('.custom-table a')).toHaveText('Run 2');
-  await expect(page.locator('.metric-link a')).toHaveText('Run 2');
+  await expect(page.locator('.custom-table a')).toHaveText('Run 4');
+  await expect(page.locator('.metric-link a')).toHaveText('Run 4');
   await expect(page.locator('a[href*="user:secret@"]').first()).toHaveCount(0);
+  await expect(page.locator('a[href^="ftp:"]').first()).toHaveCount(0);
   await expect(page.locator('body')).not.toContainText('Credentialed Run');
+  await expect(page.locator('body')).not.toContainText('FTP Run');
 });

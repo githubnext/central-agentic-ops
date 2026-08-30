@@ -1057,7 +1057,7 @@ describe('presenter built-in and custom pages', () => {
     expect(rendered.querySelector('.custom-table a')?.textContent).toContain('Run 2');
   });
 
-  it('DLS-SAFE-004 rejects runtime links with embedded credentials while preserving safe links', () => {
+  it('DLS-SAFE-004 rejects runtime links with embedded credentials, ftp schemes, and blank labels while preserving safe links', () => {
     const rendered = renderDashboard({
       document: {
         languageVersion: '0.1.0',
@@ -1097,7 +1097,9 @@ describe('presenter built-in and custom pages', () => {
           source: 'runs',
           rows: [
             { run: '1', 'run-link': { href: 'https://user:secret@example.com/runs/1', label: 'Credentialed Run' } },
-            { run: '2', 'run-link': { href: 'https://example.com/runs/2', label: 'Run 2' } }
+            { run: '2', 'run-link': { href: 'ftp://example.com/runs/2', label: 'FTP Run' } },
+            { run: '3', 'run-link': { href: 'https://example.com/runs/3', label: '   ' } },
+            { run: '4', 'run-link': { href: 'https://example.com/runs/4', label: 'Run 4' } }
           ],
           metadata: {
             'source-id': 'runs-fixture',
@@ -1114,8 +1116,11 @@ describe('presenter built-in and custom pages', () => {
 
     const safeLinks = rendered.querySelectorAll('.custom-table a, .metric-link a');
     expect(safeLinks).toHaveLength(2);
+    expect([...safeLinks].every((link) => link.textContent === 'Run 4')).toBe(true);
     expect([...safeLinks].every((link) => !String(link.getAttribute('href')).includes('user:secret@'))).toBe(true);
+    expect([...safeLinks].every((link) => String(link.getAttribute('href')).startsWith('https://example.com/runs/4'))).toBe(true);
     expect(rendered.textContent).not.toContain('Credentialed Run');
-    expect(rendered.textContent).toContain('Run 2');
+    expect(rendered.textContent).not.toContain('FTP Run');
+    expect(rendered.textContent).toContain('Run 4');
   });
 });
