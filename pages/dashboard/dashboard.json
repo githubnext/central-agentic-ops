@@ -698,6 +698,30 @@
           ]
         }
       }
+    ],
+    "navigation": [
+      {
+        "label": "Attention",
+        "pages": ["overview"]
+      },
+      {
+        "label": "Investigate",
+        "pages": ["runs", "findings", "operational-value"]
+      },
+      {
+        "label": "Explore",
+        "pages": [
+          "organizations",
+          "repositories",
+          "packages",
+          "workflows",
+          "experiments",
+          "graders",
+          "evals",
+          "usage",
+          "engines-models"
+        ]
+      }
     ]
   }
 }

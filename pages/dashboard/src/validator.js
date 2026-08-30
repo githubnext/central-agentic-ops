@@ -30,6 +30,7 @@ import {
   IDENTIFIER_PATTERN,
   LANGUAGE_VERSION,
   MAX_ESSENTIAL_VIEWS_PER_PAGE,
+  NAVIGATION_SECTION_KEYS,
   NON_ADDITIVE_MEASURE_FIELDS,
   ORDER_BY_KEYS,
   ORDER_DIRECTION_VALUES,
@@ -407,6 +408,80 @@ function validateDashboard(dashboard, dashboardNode, errors) {
   dashboard.pages.forEach((page, index) => {
     validatePage(page, getSequenceItemNode(getValueNodeByKey(dashboardNode, 'pages'), index), `$.dashboard.pages[${index}]`, pageIds, errors);
   });
+
+  if (dashboard.navigation !== undefined) {
+    validateNavigation(dashboard.navigation, getValueNodeByKey(dashboardNode, 'navigation'), pageIds, errors);
+  }
+}
+
+/**
+ * @param {unknown} navigation
+ * @param {unknown} navigationNode
+ * @param {Set<string>} pageIds
+ * @param {ValidationError[]} errors
+ */
+function validateNavigation(navigation, navigationNode, pageIds, errors) {
+  const path = '$.dashboard.navigation';
+  if (!Array.isArray(navigation) || navigation.length === 0) {
+    errors.push(createError(
+      ERROR_CODES.missingOrInvalidRequiredField,
+      'navigation must be a non-empty sequence of sidebar sections.',
+      path
+    ));
+    return;
+  }
+
+  /** @type {Set<string>} */
+  const referencedPageIds = new Set();
+  navigation.forEach((section, index) => {
+    const sectionPath = `${path}[${index}]`;
+    const sectionNode = getSequenceItemNode(navigationNode, index);
+    if (!isPlainObject(section)) {
+      errors.push(createError(ERROR_CODES.missingOrInvalidRequiredField, 'navigation section must be a mapping.', sectionPath));
+      return;
+    }
+
+    validateObjectKeys(sectionNode, NAVIGATION_SECTION_KEYS, sectionPath, errors);
+    validateStringField(section.label, `${sectionPath}.label`, true, errors);
+
+    if (!Array.isArray(section.pages) || section.pages.length === 0) {
+      errors.push(createError(
+        ERROR_CODES.missingOrInvalidRequiredField,
+        'navigation section pages must reference at least one declared page id.',
+        `${sectionPath}.pages`
+      ));
+      return;
+    }
+
+    section.pages.forEach((pageId, pageIndex) => {
+      const pageIdPath = `${sectionPath}.pages[${pageIndex}]`;
+      if (typeof pageId !== 'string' || !pageIds.has(pageId)) {
+        errors.push(createError(
+          ERROR_CODES.missingOrInvalidRequiredField,
+          'navigation section page must reference a declared dashboard page id.',
+          pageIdPath
+        ));
+        return;
+      }
+      if (referencedPageIds.has(pageId)) {
+        errors.push(createError(
+          ERROR_CODES.missingOrInvalidRequiredField,
+          'each dashboard page may appear in only one navigation section.',
+          pageIdPath
+        ));
+      }
+      referencedPageIds.add(pageId);
+    });
+  });
+
+  const missingPageIds = [...pageIds].filter((pageId) => !referencedPageIds.has(pageId));
+  if (missingPageIds.length > 0) {
+    errors.push(createError(
+      ERROR_CODES.missingOrInvalidRequiredField,
+      'navigation must reference every declared dashboard page exactly once.',
+      path
+    ));
+  }
 }
 
 /**

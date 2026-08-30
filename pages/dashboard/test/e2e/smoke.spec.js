@@ -120,6 +120,9 @@ test('DLS-PAGE-002 DLS-PAGE-014 built-in overview page renders the report-style 
                 ]
               }
             }
+          ],
+          navigation: [
+            { label: 'Attention', pages: ['overview'] }
           ]
         }
       };

@@ -117,6 +117,15 @@
 
 ## Run log
 
+### 2026-08-30 (data-driven sidebar navigation groups)
+- Addressed review feedback on the section-labeled navigation slice: navigation groups are now declared in `dashboard.json` under a new optional `dashboard.navigation` array of `{ label, pages }` sections instead of being hard-coded by page id in `src/presenter.js`.
+- Added `DASHBOARD_KEYS`'s `navigation` entry and `NAVIGATION_SECTION_KEYS` to `src/specification.js`, and added `validateNavigation` to `src/validator.js`: navigation sections must use only `label`/`pages` keys, `label` must be a non-empty string, and `pages` must reference declared page ids, each exactly once across all sections.
+- Updated `src/presenter.js`'s `renderSidebar` to read `dashboard.navigation` and resolve each section's page ids against the rendered pages, falling back to a single unlabeled group when `navigation` is omitted (preserving prior generic behavior for documents that do not opt in).
+- Set the authoritative `Attention`/`Investigate`/`Explore` groups in `dashboard.json`'s new `navigation` array, and added the same grouping to the overview-only fixture in `test/e2e/smoke.spec.js`.
+- Added unit coverage in `test/unit/validator.test.js` for unknown-page, duplicate-page, missing-coverage, unknown-key, and missing-label navigation validation failures.
+- Verified `pages/dashboard/` quality gates: `npm run build`, `npm run typecheck`, `npm run lint`, `npm test`, and `npx playwright test --config=playwright.config.mjs` all pass.
+- Next milestone: Parity, continuing the remaining report feature and presentation inventory closure work (mode/package/repository/workflow tabs with configured-mode indicators) under the existing declarative and reusable-runtime constraints.
+
 ### 2026-08-30 (section-labeled navigation parity slice)
 - Continued the Parity milestone with a narrow presenter-and-style increment derived from the report sidebar structure in `dashboard/report/report.mjs`, keeping the change generic and limited to navigation chrome.
 - Updated `src/presenter.js` to group sidebar page links into labeled `Attention`, `Investigate`, and `Explore` sections without introducing page-specific rendering bodies, and added matching generic `.nav-section-label` styling in `src/styles.js`.

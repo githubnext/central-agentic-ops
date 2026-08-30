@@ -44,7 +44,11 @@ import { renderUiElement } from './components/ui-elements.js';
  */
 
 /**
- * @typedef {{ id: string, title: string, description?: string, defaults?: Record<string, unknown>, pages: Array<PresentableBuiltInPage | PresentableCustomPage>, ['github-url-base']?: string, repository?: string }} PresentableDashboard
+ * @typedef {{ label?: string, pages?: string[] }} PresentableNavigationSection
+ */
+
+/**
+ * @typedef {{ id: string, title: string, description?: string, defaults?: Record<string, unknown>, pages: Array<PresentableBuiltInPage | PresentableCustomPage>, ['github-url-base']?: string, repository?: string, navigation?: PresentableNavigationSection[] }} PresentableDashboard
  */
 
 /**
@@ -123,7 +127,7 @@ export function renderDashboard(input) {
   const styleEl = h('style', null, getPrimerStyles());
   const skipLink = h('a', { href: '#main-content', className: 'skip-link' }, 'Skip to main content');
 
-  const sidebar = renderSidebar(pages, orgName);
+  const sidebar = renderSidebar(pages, orgName, document.dashboard.navigation);
   const mainContent = renderMainContent(document, title, description, pages, sources, orgName, githubUrlBase, dashboardRepository);
 
   const root = h(
@@ -162,24 +166,22 @@ function inferOrganizationName(sources) {
 /**
  * @param {Array<PresentableBuiltInPage | PresentableCustomPage>} pages
  * @param {string} orgName
+ * @param {PresentableNavigationSection[] | undefined} navigation
  * @returns {HTMLElement}
  */
-function renderSidebar(pages, orgName) {
+function renderSidebar(pages, orgName, navigation) {
   const firstPageId = pages[0]?.id;
-  const navigationSections = [
-    {
-      label: 'Attention',
-      pages: pages.filter((page) => page.id === 'overview')
-    },
-    {
-      label: 'Investigate',
-      pages: pages.filter((page) => ['runs', 'findings', 'operational-value'].includes(page.id))
-    },
-    {
-      label: 'Explore',
-      pages: pages.filter((page) => !['overview', 'runs', 'findings', 'operational-value'].includes(page.id))
-    }
-  ].filter((section) => section.pages.length > 0);
+  const pagesById = new Map(pages.map((page) => [page.id, page]));
+  const navigationSections = Array.isArray(navigation) && navigation.length > 0
+    ? navigation
+      .map((section) => ({
+        label: section?.label,
+        pages: (Array.isArray(section?.pages) ? section.pages : [])
+          .map((pageId) => pagesById.get(pageId))
+          .filter((page) => page !== undefined)
+      }))
+      .filter((section) => section.pages.length > 0)
+    : [{ label: undefined, pages }];
   return h(
     'aside',
     { className: 'org-sidebar', 'aria-label': 'Central Agentic Ops navigation' },
@@ -193,8 +195,10 @@ function renderSidebar(pages, orgName) {
       'nav',
       { className: 'primary-nav', 'aria-label': 'Primary' },
       navigationSections.flatMap((section) => [
-        h('span', { className: 'nav-section-label' }, section.label),
-        ...section.pages.map((page, index) => renderNavItem(page, firstPageId === page.id && index === 0))
+        ...(typeof section.label === 'string' && section.label.length > 0
+          ? [h('span', { className: 'nav-section-label' }, section.label)]
+          : []),
+        ...section.pages.map((page) => renderNavItem(page, page.id === firstPageId))
       ])
     )
   );
