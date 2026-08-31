@@ -399,11 +399,6 @@ h3 { margin: 16px 0 8px; font-size: 1rem; font-weight: 600; }
 .workflow-attention-list a, .workflow-attention-static { min-height: 68px; display: grid; grid-template-columns: 24px 20px minmax(0, 1fr) minmax(150px, auto); align-items: center; gap: 10px; padding: 9px 14px; color: var(--fg); text-decoration: none; }
 .workflow-attention-list a:hover { background: var(--canvas-subtle); }
 .workflow-attention-note { margin: 7px 0 0; color: var(--muted); font-size: .6875rem; }
-.readiness-note { display: grid; grid-template-columns: minmax(240px, .55fr) minmax(0, 1fr); align-items: center; gap: 24px; padding: 12px 16px; border-left: 4px solid var(--attention); background: color-mix(in srgb, var(--attention) 5%, var(--canvas)); }
-.readiness-note > div { display: flex; align-items: center; gap: 12px; }
-.readiness-note > div > .octicon { width: 28px; height: 28px; flex: none; color: var(--attention); }
-.readiness-note :is(h3, h4) { margin: 1px 0 0; font-size: 1rem; }
-.readiness-note p { margin: 0; color: var(--muted); font-size: .8125rem; }
 .episode-observatory { margin-bottom: 32px; }
 .episode-vitals { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); margin: 0; border: 1px solid var(--border); border-radius: 6px 6px 0 0; background: var(--canvas-subtle); }
 .episode-vitals > div { min-width: 0; padding: 14px 16px; border-right: 1px solid var(--border); }
@@ -894,7 +889,6 @@ footer { padding: 20px 24px; border-top: 1px solid var(--border); color: var(--m
   .overview-observability > .section-heading { align-items: flex-start; flex-direction: column; }
   .attention-domain-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .workflow-attention > .section-heading, .episode-observatory > .section-heading, .anomaly-readiness { align-items: flex-start; flex-direction: column; }
-  .readiness-note { grid-template-columns: 1fr; gap: 10px; }
   .anomaly-readiness { gap: 4px; }
   .anomaly-readiness p { text-align: left; }
   .workflow-attention-list a, .workflow-attention-static { grid-template-columns: 20px minmax(0, 1fr); }

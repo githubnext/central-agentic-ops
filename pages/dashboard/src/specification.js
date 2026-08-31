@@ -42,8 +42,7 @@ export const VIEW_ELEMENT_VALUES = [
   'outcome-detail',
   'execution-signal-list',
   'execution-episodes',
-  'workflow-topology',
-  'readiness-note'
+  'workflow-topology'
 ];
 export const VIEW_CHART_VALUES = ['bar', 'line', 'pie'];
 export const VIEW_LAYOUT_VALUES = ['full', 'half', 'third'];
@@ -291,8 +290,8 @@ export const SOURCE_FIELDS = {
   'value-workflows': ['organization', 'repository', 'workflow', 'run', 'operational-value-definition', 'opportunities', 'mature-observations', 'mean-operational-value', 'mean-baseline', 'observed-at', 'evidence-link', 'run-link', 'organization-link', 'repository-link', 'workflow-link'],
   'cost-summary': ['label', 'value'],
   'cost-signals': ['priority', 'count', 'tone', 'icon', 'kind', 'title', 'detail', 'evidence', 'action', 'navigation-page'],
-  'cost-readiness': ['tone', 'icon', 'kicker', 'title', 'detail'],
-  'experiment-readiness': ['tone', 'icon', 'kicker', 'title', 'detail']
+  'cost-readiness': ['priority', 'count', 'tone', 'icon', 'kind', 'title', 'detail', 'evidence', 'action'],
+  'experiment-readiness': ['priority', 'count', 'tone', 'icon', 'kind', 'title', 'detail', 'evidence', 'action']
 };
 
 export const ROLLOUT_MODE_VALUES = ['review', 'live', 'unknown'];

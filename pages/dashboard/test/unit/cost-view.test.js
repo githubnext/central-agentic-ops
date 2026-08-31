@@ -79,7 +79,9 @@ describe('Cost and efficiency dashboard view', () => {
     expect(summary?.textContent).toContain('Episode output yield—');
     expect(page?.textContent).toContain('allocation evidence, not monetary cost');
 
-    const signals = [...(page?.querySelectorAll('.signal-list .signal-item') ?? [])];
+    const evidenceBoundaries = [...(page?.querySelectorAll('.signal-list-region') ?? [])]
+      .find((region) => region.textContent?.includes('Usage coverage'));
+    const signals = [...(evidenceBoundaries?.querySelectorAll('.signal-item') ?? [])];
     expect(signals).toHaveLength(3);
     expect(signals.map((signal) => signal.querySelector('.signal-copy > span')?.textContent)).toEqual([
       'Usage coverage',
@@ -91,8 +93,11 @@ describe('Cost and efficiency dashboard view', () => {
 
     expect(page?.querySelectorAll('[data-chart-widget="pie"] [data-chart-category]')).toHaveLength(2);
     expect(page?.querySelector('.pie-chart-total-value')?.textContent).toBe('9');
-    expect(page?.querySelector('.readiness-note')?.textContent).toContain('Budget and anomaly verdicts unavailable');
-    expect(page?.querySelector('.readiness-note')?.textContent).toContain('qualified historical baseline');
+    expect(page?.querySelectorAll('.signal-list-region')).toHaveLength(2);
+    const boundary = [...(page?.querySelectorAll('.signal-list-region') ?? [])]
+      .find((region) => region.textContent?.includes('Budget and anomaly verdicts unavailable'));
+    expect(boundary?.textContent).toContain('qualified historical baseline');
+    expect(boundary?.textContent).toContain('Threshold unavailable');
   });
 
   it('does not report a telemetry coverage boundary for a complete usage source', () => {
@@ -111,7 +116,9 @@ describe('Cost and efficiency dashboard view', () => {
     });
 
     const page = rendered.querySelector('[data-page-id="cost"]');
-    const signals = [...(page?.querySelectorAll('.signal-list .signal-item') ?? [])];
+    const evidenceBoundaries = [...(page?.querySelectorAll('.signal-list-region') ?? [])]
+      .find((region) => region.textContent?.includes('Budget boundary'));
+    const signals = [...(evidenceBoundaries?.querySelectorAll('.signal-item') ?? [])];
     expect(signals).toHaveLength(2);
     expect(page?.textContent).not.toContain('AI Credit telemetry is partial');
     expect(page?.querySelector('.summary-grid')?.textContent).toContain('Measured AIC2');
