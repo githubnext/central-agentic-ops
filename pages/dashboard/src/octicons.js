@@ -4,7 +4,7 @@
 
 import { h } from './dom.js';
 
-const OCTICONS_URL = './src/octicons.svg';
+const OCTICONS_URL = new URL('./octicons.svg', import.meta.url).href;
 
 /**
  * @param {string} name
