@@ -107,6 +107,12 @@ describe('Runtime dashboard view', () => {
     const unavailableMeasures = [...rendered.querySelectorAll('.episode-measures > div')]
       .filter((node) => ['Observed targets', 'Attributed workers', 'Output yield'].includes(node.querySelector('dt')?.textContent ?? ''));
     expect(unavailableMeasures.map((node) => node.querySelector('dd')?.textContent)).toEqual(['—', '—', '—']);
+    const executionShape = rendered.querySelector('.episode-waterfall:not(.episode-waterfall-unavailable)');
+    expect(executionShape?.querySelector('header')?.textContent).toBe('Execution shapeObserved intervals only · 5m 0s total');
+    expect(executionShape?.querySelector('[data-lane-role="root"]')?.textContent).toBe('rootDependabot5m 0saction required');
+    expect(executionShape?.querySelector('.episode-lane-track i')?.classList.contains('status-attention')).toBe(true);
+    expect(executionShape?.querySelector('.episode-lane-track i')?.getAttribute('style')).toContain('--lane-size: 100%');
+    expect(executionShape?.querySelector('footer')?.textContent).toBe('Episode startAligned timeEpisode end');
     expect(rendered.querySelector('.episode-record footer')?.textContent).toContain('No-action attempts unavailable');
     expect(rendered.querySelector('.episode-attribution-gap')?.textContent).toContain('1 worker dispatch lacks episode evidence');
   });
