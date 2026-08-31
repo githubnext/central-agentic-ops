@@ -345,6 +345,18 @@ h3 { margin: 16px 0 8px; font-size: 1rem; font-weight: 600; }
 .managed-package-card dd { margin: 2px 0 0; overflow: hidden; font-size: .875rem; font-weight: 600; text-overflow: ellipsis; white-space: nowrap; }
 .managed-package-card .inventory-ready { color: var(--success); }
 .managed-package-card .inventory-attention { color: var(--attention); }
+.dispatch-catalog { margin-top: 20px; }
+.dispatch-heading { display: flex; align-items: flex-start; justify-content: space-between; gap: 24px; }
+.dispatch-heading h3, .dispatch-heading h4 { margin: 4px 0 6px; font-size: 1.25rem; }
+.dispatch-heading p { margin: 0; color: var(--muted); }
+.dispatch-heading > strong { color: var(--muted); white-space: nowrap; }
+.dispatch-toolbar { display: grid; grid-template-columns: minmax(280px, 3fr) minmax(180px, 2fr); gap: 16px; margin-top: 18px; }
+.dispatch-toolbar label > span { display: block; margin-bottom: 4px; color: var(--muted); font-size: .6875rem; font-weight: 600; }
+.dispatch-toolbar :is(input, select) { width: 100%; min-height: 34px; padding: 5px 9px; border: 1px solid var(--border); border-radius: 6px; background: var(--canvas); color: var(--fg); font: inherit; }
+.dispatch-toolbar :is(input, select):focus-visible { outline: 2px solid var(--focus); outline-offset: -1px; }
+.dispatch-result { display: block; margin-top: 10px; color: var(--muted); font-size: .8125rem; }
+.dispatch-table-region { margin-top: 10px; }
+.dispatch-table tbody td[colspan] { color: var(--fg); }
 .overview-content > .layout-section { padding: 0; border: 0; background: transparent; }
 .overview-content > .layout-section > .layout-section-header { margin: 0 0 12px; padding-top: 20px; border-top: 1px solid var(--border); }
 .table-region { overflow-x: auto; border: 1px solid var(--border); border-radius: 6px; margin: 12px 0 20px; background: var(--canvas); }
@@ -478,6 +490,8 @@ footer { padding: 20px 24px; border-top: 1px solid var(--border); color: var(--m
   .execution-health-heading { align-items: flex-start; flex-direction: column; gap: 2px; }
   .execution-legend { display: none; }
   .managed-package-card dl { gap: 8px; }
+  .dispatch-heading { flex-direction: column; gap: 8px; }
+  .dispatch-toolbar { grid-template-columns: 1fr; }
   .package-utilization-grid { grid-template-columns: 1fr; }
   .package-trend-panel > header { align-items: flex-start; flex-direction: column; }
 }

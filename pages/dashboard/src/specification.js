@@ -23,6 +23,7 @@ export const VIEW_ELEMENT_VALUES = [
   'attention-list',
   'record-cards',
   'package-activity',
+  'dispatch-catalog',
   'workflow-topology'
 ];
 export const VIEW_CHART_VALUES = ['bar', 'line', 'pie'];
@@ -241,7 +242,7 @@ export const SOURCE_FIELDS = {
   organizations: ['organization', 'organization-name', 'observed-at', 'organization-link'],
   repositories: ['organization', 'repository', 'repository-name', 'rollout-mode', 'observed-at', 'organization-link', 'repository-link'],
   workflows: ['organization', 'repository', 'package', 'package-name', 'workflow', 'workflow-name', 'workflow-role', 'workflow-active', 'rollout-mode', 'max-ai-credits', 'package-aic-allowance', 'package-worker-count', 'inventory-ready', 'observed-at', 'organization-link', 'repository-link', 'workflow-link'],
-  runs: ['organization', 'repository', 'workflow', 'run', 'started-at', 'ended-at', 'run-status', 'run-conclusion', 'rollout-mode', 'engine', 'requested-model', 'resolved-model', 'organization-link', 'repository-link', 'workflow-link', 'run-link'],
+  runs: ['organization', 'repository', 'workflow', 'run', 'run-title', 'event', 'started-at', 'ended-at', 'run-status', 'run-conclusion', 'rollout-mode', 'engine', 'requested-model', 'resolved-model', 'organization-link', 'repository-link', 'workflow-link', 'run-link'],
   experiments: ['experiment', 'experiment-name', 'observed-at'],
   'experiment-assignments': ['organization', 'repository', 'workflow', 'run', 'experiment', 'variant', 'observed-at'],
   graders: ['grader', 'grader-name', 'observed-at'],
