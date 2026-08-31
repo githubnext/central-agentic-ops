@@ -16,6 +16,7 @@ import { renderWorkflowTopology } from './workflow-topology.js';
 import { renderExecutionEpisodes, renderExecutionSignalList } from './execution-elements.js';
 import { renderSectionHeading } from './ui-primitives.js';
 import { renderRepositoryActivity, renderRepositoryAicUsage, renderRepositoryScope } from './repositories-view.js';
+import { renderWorkflowRuntime } from './workflow-runtime.js';
 
 /**
  * @typedef {{
@@ -48,6 +49,7 @@ const ELEMENT_RENDERERS = new Map([
   ['repository-aic-usage', renderRepositoryAicUsage],
   ['repository-activity', renderRepositoryActivity],
   ['repository-workflows', renderRepositoryWorkflows],
+  ['workflow-runtime', renderWorkflowRuntime],
   ['outcome-detail', renderOutcomeDetail],
   ['execution-signal-list', renderExecutionSignalList],
   ['execution-episodes', renderExecutionEpisodes],
@@ -61,7 +63,7 @@ const ELEMENT_RENDERERS = new Map([
   }]
 ]);
 
-const EMPTY_AWARE_ELEMENTS = new Set(['status-summary', 'meter-list', 'attention-list', 'record-cards', 'summary-grid', 'signal-list', 'package-detail', 'dispatch-catalog', 'repository-scope', 'repository-aic-usage', 'repository-activity', 'repository-workflows', 'outcome-detail', 'execution-signal-list', 'execution-episodes', 'metric-signal-summary', 'readiness-note']);
+const EMPTY_AWARE_ELEMENTS = new Set(['status-summary', 'meter-list', 'attention-list', 'record-cards', 'summary-grid', 'signal-list', 'package-detail', 'dispatch-catalog', 'repository-scope', 'repository-aic-usage', 'repository-activity', 'repository-workflows', 'workflow-runtime', 'outcome-detail', 'execution-signal-list', 'execution-episodes', 'metric-signal-summary', 'readiness-note']);
 
 /**
  * @param {string} name
