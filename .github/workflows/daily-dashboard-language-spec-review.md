@@ -107,6 +107,8 @@ Never modify, move, or delete the existing dashboard package under `dashboard/`.
 
 Read `pages/dashboard/PLAN.md`, `pages/dashboard/dashboard.json`, and all relevant modules under `pages/dashboard/src/` before selecting work. Also inspect the relevant modules under `dashboard/report/` to preserve user-visible semantics including metrics, tables, filters, rankings, links, utilization indicators, pie and donut charts, and multi-series temporal line charts.
 
+Use targeted searches and bounded line-range reads; do not load whole large files or reread the specification. Keep each edit call small and single-purpose.
+
 Inventory concrete remaining hard-coded view construction, including:
 
 - branches or registries keyed by a built-in page or view identifier;
@@ -136,9 +138,8 @@ Run every quality gate from `pages/dashboard/`: `npm run build`, `npm run typech
 
 Publish exactly one safe output:
 
-- Do not finish with only a narrative summary; invoke exactly one safe-output tool before ending the run.
 - Call `create-pull-request` when one bounded, tested declarative refactor is complete.
 - Create exactly one issue only when a specific normative contradiction or policy decision prevents a safe implementation. Write it as a W3C Working Draft recommendation using `###` headings only, affected requirement IDs, observed ambiguity, precise RFC 2119 language, renderer and validator consequences, and concise acceptance criteria.
-- Call `noop` when no actionable hard-coded view remains, the optional focus is already declarative, evidence is insufficient, or neither of the other outcomes can be published safely. Explain what was inspected and why no pull request or issue was created.
+- Call `noop` when no actionable hard-coded view remains, the optional focus is already declarative, or evidence is insufficient.
 
 In a pull request body, name the migrated view, the removed hard-coded branch or composition, the JSON vocabulary and shared UI primitives used, specification requirement IDs affected, validation results, and the next candidate. Do not claim broader parity or conformance than the tests demonstrate.
