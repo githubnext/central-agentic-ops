@@ -505,7 +505,7 @@ function buildDomainAttentionRows(input) {
           detail: runTelemetryAvailable
             ? `${formatCount(input.health.successful)} of ${formatCount(input.health.total)} runs succeeded · ${formatCount(input.health.approval)} approval gates`
             : 'Actions run telemetry is unavailable.',
-          href: '#page-runs'
+          href: '#page-runtime'
         }),
         domainRow({
           order: 1,
@@ -515,7 +515,7 @@ function buildDomainAttentionRows(input) {
           domain: 'Security & controls',
           value: `${formatCount(securitySignals)} signals`,
           detail: `No vulnerability feed · ${formatCount(input.health.approval)} approval gates · ${formatCount(warningOutputs)} explicit warnings · ${formatCount(inventoryGaps)} integrity gaps`,
-          href: '#page-findings'
+          href: '#page-security'
         }),
         domainRow({
           order: 3,
@@ -525,7 +525,7 @@ function buildDomainAttentionRows(input) {
           domain: 'Episodes & autonomy',
           value: `${formatCount(rootRuns.length)} observed`,
           detail: `0 of 0 worker dispatches attributed · ${formatCount(rootFailures)} root failure${rootFailures === 1 ? '' : 's'}`,
-          href: '#page-runs'
+          href: '#page-runtime?section=runtime-execution-episodes'
         }),
         domainRow({
           order: 2,

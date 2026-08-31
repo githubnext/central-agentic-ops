@@ -828,7 +828,14 @@ describe('presenter built-in and custom pages', () => {
     expect(cards[4]?.textContent).toContain('Threshold unavailable');
     expect(cards[5]?.textContent).toContain('35 AIC');
     expect(cards[5]?.textContent).toContain('Monitor');
-    expect(cards[5]?.getAttribute('href')).toBe('#page-cost');
+    expect(cards.map((card) => card.getAttribute('href'))).toEqual([
+      '#page-runtime',
+      '#page-runtime?section=runtime-execution-episodes',
+      '#page-security',
+      '#page-findings',
+      '#page-operational-value',
+      '#page-cost'
+    ]);
     expect(cards.every((card) => card.textContent?.includes('Open evidence'))).toBe(true);
     expect(overviewPage?.querySelector('.overview-method-note')?.textContent).toContain('State key:');
     expect(/** @type {HTMLElement | null} */ (rendered.querySelector('.data-state-summary'))?.hidden).toBe(true);

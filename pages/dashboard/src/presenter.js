@@ -589,6 +589,11 @@ export function enableDashboardPageNavigation(root) {
         detail: { parameter: routeParameter, value: routeValue }
       }));
     }
+    const sectionId = parameters.get('section')?.trim();
+    const section = sectionId ? root.ownerDocument.getElementById(sectionId) : null;
+    if (section && page?.contains(section)) {
+      section.scrollIntoView?.();
+    }
   };
 
   const initialRoute = routeFromHash();
