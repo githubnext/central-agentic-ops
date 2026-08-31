@@ -44,6 +44,11 @@ imports:
       worker: ai-credit-optimizer
   - uses: shared/target-checkout-read-org-token.md
 
+engine:
+  id: copilot
+  env:
+    COPILOT_GITHUB_TOKEN: ${{ secrets.COPILOT_GITHUB_TOKEN || github.token }}
+
 permissions:
   contents: read
   actions: read

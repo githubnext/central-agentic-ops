@@ -62,6 +62,11 @@ imports:
       worker: release-train-updater
   - uses: shared/review-bundle.md
 
+engine:
+  id: copilot
+  env:
+    COPILOT_GITHUB_TOKEN: ${{ secrets.COPILOT_GITHUB_TOKEN || github.token }}
+
 permissions:
   contents: read
   actions: read

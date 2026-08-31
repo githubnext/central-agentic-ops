@@ -34,6 +34,19 @@ Can GITHUB_TOKEN satisfy this bounded self-review or public-only review?
 Choose a GitHub App unless the built-in token fully covers the bounded run. GitHub Apps use short-lived, installation-scoped tokens, are independent of an individual user's continued access, and scale across approved repository and organization installations.
 :::
 
+## Copilot Engine Authentication
+
+Copilot inference authentication is separate from GitHub API and target-repository authentication. Prefer organization billing through the workflow's `copilot-requests: write` permission. When centralized organization billing is unavailable, use a user-owned fine-grained PAT stored as the control repository's `COPILOT_GITHUB_TOKEN` Actions secret.
+
+The Copilot PAT must use the user's personal account as its resource owner, grant the account permission **Copilot Requests: Read**, and belong to a user with an active Copilot license. Inference is attributed to and limited by that user's Copilot entitlement. Obtain explicit consent because the token is user-bound, longer-lived than the workflow token, and requires manual rotation and revocation.
+
+Root CAO workflows resolve Copilot inference credentials in this order:
+
+1. `COPILOT_GITHUB_TOKEN`, when configured.
+2. The built-in workflow token, when organization billing is available.
+
+Do not use a classic PAT, OAuth token, GitHub App installation token, `GH_AW_GITHUB_TOKEN`, or a target-access PAT as `COPILOT_GITHUB_TOKEN`. Those credentials serve different authorization boundaries.
+
 ## Policy
 
 Authentication is defined once in `.github/workflows/shared/control.md` and inherited by Orchestrator and worker workflows. Workflow-local GitHub App blocks should not be added unless a future Agentic Workflow has a documented isolation requirement that shared control cannot satisfy.

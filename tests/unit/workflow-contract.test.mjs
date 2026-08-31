@@ -449,6 +449,33 @@ test("compiled workflow locks are not ignored", () => {
   }
 });
 
+test("root CAO workflows support Copilot PAT and organization billing", () => {
+  const rootPackageWorkflowIds = [
+    "ambient-context-agents-md-curator",
+    "ambient-context-skills-curator",
+    "ambient-context",
+    "aw-failures-investigator",
+    "aw-maintenance-upgrade",
+    "aw-maintenance",
+    "dependabot-release-train-updater",
+    "dependabot",
+    "optimization-ai-credit-auditor",
+    "optimization-ai-credit-optimizer",
+    "optimization",
+  ];
+  const tokenExpression = /COPILOT_GITHUB_TOKEN: \$\{\{ secrets\.COPILOT_GITHUB_TOKEN \|\| github\.token \}\}/;
+
+  for (const workflowId of rootPackageWorkflowIds) {
+    const source = workflow(`${workflowId}.md`);
+    const lock = workflow(`${workflowId}.lock.yml`);
+
+    assert.match(source, tokenExpression, `${workflowId}.md must prefer the Copilot PAT`);
+    assert.match(lock, tokenExpression, `${workflowId}.lock.yml must preserve Copilot PAT precedence`);
+    assert.match(source, /copilot-requests: write/, `${workflowId}.md must retain organization billing fallback`);
+    assert.match(lock, /#   - COPILOT_GITHUB_TOKEN/, `${workflowId}.lock.yml must declare the Copilot PAT secret`);
+  }
+});
+
 test("compiled workflow expressions do not contain HTML-escaped operators", () => {
   const lockNames = readdirSync(workflowsDirectory).filter((name) => name.endsWith(".lock.yml"));
 
@@ -1457,6 +1484,15 @@ test("README routes zero-to-CAO requests to the setup skill", () => {
   assert.doesNotMatch(setupSkill, /gh aw add-wizard/);
   assert.match(setupSkill, /Run `gh aw version`\. Compare it with `min-version` in the root CAO `aw\.yml`/);
   assert.match(setupSkill, /Do not require the catalog maintainer's current local version when the package supports an older release/);
+  assert.match(setupSkill, /gh api orgs\/<organization>\/copilot\/billing/);
+  assert.match(setupSkill, /organization billing through `copilot-requests: write`[\s\S]*?fine-grained PAT as `COPILOT_GITHUB_TOKEN`/);
+  assert.match(setupSkill, /`total_seats: 0`[\s\S]*?HTTP 403/);
+  assert.match(setupSkill, /resource owner is the user's personal account[\s\S]*?\*\*Copilot Requests\*\* is \*\*Read\*\*[\s\S]*?active Copilot license/);
+  assert.match(setupSkill, /never place it in chat or a command argument/);
+  assert.match(setupSkill, /GitHub App or `GH_AW_GITHUB_TOKEN` for target access does not authenticate Copilot inference/);
+  assert.match(setupSkill, /gh secret set COPILOT_GITHUB_TOKEN --repo "<organization>\/<control-repository>"/);
+  assert.match(setupSkill, /A configured `COPILOT_GITHUB_TOKEN` takes precedence for inference[\s\S]*?fall back to the built-in workflow token/);
+  assert.match(setupSkill, /Do not replace `auto` with an explicit model/);
   assert.match(setupSkill, /one immutable source identity keeps repeated package dependencies consistent/);
   assert.match(setupSkill, /package cannot install this file because it is consumer-owned rollout policy/);
   assert.match(setupSkill, /"allowed-owners": \["<target-owner>"\]/);

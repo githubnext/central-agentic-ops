@@ -53,6 +53,11 @@ imports:
       role: worker
       worker: upgrade
 
+engine:
+  id: copilot
+  env:
+    COPILOT_GITHUB_TOKEN: ${{ secrets.COPILOT_GITHUB_TOKEN || github.token }}
+
 permissions:
   contents: read
   actions: read

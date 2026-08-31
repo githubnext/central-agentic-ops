@@ -16,6 +16,7 @@ Create a new Central Agentic Ops control plane and prove it safely with one revi
 - Install the root CAO package from one full commit SHA. Resolve a reviewed release or the current default branch once before installation so every package dependency uses the same immutable source identity.
 - Keep rollout policy only in `.github/central-agentic-ops.json`. Do not create `CENTRAL_AGENTIC_OPS_*` variables or another policy channel.
 - Keep credentials out of files, chat, command arguments, and workflow inputs. Have the user enter secrets directly through GitHub or an interactive terminal prompt.
+- Choose Copilot engine authentication independently from target-repository authentication. Prefer organization billing through `copilot-requests: write`; when centralized billing is unavailable, offer a user-owned fine-grained PAT as `COPILOT_GITHUB_TOKEN` after explicit consent. A GitHub App or `GH_AW_GITHUB_TOKEN` for target access does not authenticate Copilot inference.
 - Ask the user which repository the first run should target. Offer the control repository as the safe default, but accept another existing `owner/repository` after validating its visibility, access, output exposure, and authentication profile.
 - Keep the first run at `max_repos=1`, `rollout_percent=100`, and `safe_output_mode=review`. Keep review outputs in the control repository and never offer `live` during setup.
 - Do not report success until the run and its review-routing boundary have been verified.
@@ -42,6 +43,16 @@ Do not place private target evidence in a public control repository. If the sele
 4. Confirm prerequisites without changing repositories:
    - Run `gh auth status` and ensure the authenticated account can create repositories and workflows in the organization.
    - Run `gh aw version`. Compare it with `min-version` in the root CAO `aw.yml`; upgrade `github/gh-aw` only when the installed version is older. Do not require the catalog maintainer's current local version when the package supports an older release.
+  - Determine how the root package's default Copilot workflow engine will authenticate:
+
+    ```bash
+    gh api orgs/<organization>/copilot/billing \
+      --jq '{seat_management_setting, total_seats: .seat_breakdown.total}'
+    ```
+
+    Use organization billing only with API evidence of an active entitlement or explicit confirmation from an organization administrator when the billing endpoint is inaccessible. Treat `total_seats: 0` with `seat_management_setting: unconfigured` as unavailable: the workflow token can still receive `copilot-requests: write`, but Copilot model-catalog authorization fails with HTTP 403 before the agent starts. Do not replace `auto` with an explicit model to hide that failure.
+
+    When organization billing is unavailable, offer the supported `COPILOT_GITHUB_TOKEN` fallback and obtain explicit consent before configuring it. Require a fine-grained PAT whose resource owner is the user's personal account, whose account permission **Copilot Requests** is **Read**, and whose owner has an active Copilot license. Store it only as the control repository's `COPILOT_GITHUB_TOKEN` Actions secret through an interactive hidden prompt; never place it in chat or a command argument. Do not use a classic PAT, OAuth token, GitHub App token, `GH_AW_GITHUB_TOKEN`, or target-access PAT for Copilot inference. Explain that inference is attributed to and limited by the PAT owner's Copilot entitlement and that the user owns rotation and revocation.
   - Run `gh aw doctor --repo <organization>/<control-repository> --dir .` only from an attached checkout of an existing repository. Run `gh aw --help` before creating a repository or clone. If the extension is unavailable, install `github/gh-aw`, then rerun the check.
    - Check whether the proposed control repository already exists. Reuse it only with the user's agreement; record its visibility and never delete, overwrite, empty, or change its visibility implicitly.
 5. Create and clone the control repository with the chosen `--public` or `--private` visibility when it does not exist. Perform every remaining file and Git operation inside that clone, not inside this catalog checkout. Confirm the active Git remote is the intended control repository, then run `gh aw doctor --repo <organization>/<control-repository> --dir .` before installing CAO.
@@ -54,6 +65,16 @@ Do not place private target evidence in a public control repository. If the sele
     ```
 
     A reviewed release tag may replace `main` when resolving `cao_ref`. Do not pass an unresolved branch or omit the ref: one immutable source identity keeps repeated package dependencies consistent and records a reproducible installation. Do not use `add-wizard`: root `aw.yml` has no bootstrap `config`, and authentication depends on later target scope. Do not author replacement workflows or run `gh aw compile` after installation unless a Markdown workflow was subsequently edited. Never edit generated `.lock.yml` files directly.
+
+    If the user selected PAT-based Copilot inference, configure it after installation through the GitHub CLI's hidden interactive prompt:
+
+    ```bash
+    gh secret set COPILOT_GITHUB_TOKEN --repo "<organization>/<control-repository>"
+    gh secret list --repo "<organization>/<control-repository>" --json name \
+      --jq 'map(select(.name == "COPILOT_GITHUB_TOKEN")) | length == 1'
+    ```
+
+    Have the user enter the token directly into the terminal prompt; do not supply `--body`, redirect a file the user did not choose, or handle the token in chat. A configured `COPILOT_GITHUB_TOKEN` takes precedence for inference in the installed CAO workflows; when it is absent, they fall back to the built-in workflow token and require organization billing.
 7. Create `.github/central-agentic-ops.json`. The package cannot install this file because it is consumer-owned rollout policy. Start with the exact selected target and enable only the Dependabot worker:
 
    ```json
@@ -95,6 +116,7 @@ Do not place private target evidence in a public control repository. If the sele
 Stop before installation or execution and explain the blocker when:
 
 - the authenticated account lacks required organization or workflow access;
+- neither organization-billed Copilot inference nor a consented, validated `COPILOT_GITHUB_TOKEN` is available;
 - the selected target does not exist, cannot be accessed, requires credentials that were not configured, or would expose non-public evidence through a public control repository;
 - the existing repository contains conflicting files that the user has not approved replacing;
 - root package installation fails; or
