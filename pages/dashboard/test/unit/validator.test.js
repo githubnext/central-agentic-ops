@@ -2372,6 +2372,75 @@ dashboard:
     }
   });
 
+  it('DLS-UNIT-001 DLS-UNIT-002 accepts declared units referenced by field definitions', () => {
+    const result = validateDashboardDocument(`language-version: "0.1.0"
+dashboard:
+  id: unit-dashboard
+  title: Unit Dashboard
+  units:
+    aic:
+      name: AI Credits
+      symbol: AIC
+      significant: 1
+  pages:
+    - id: summary
+      kind: custom
+      views:
+        - id: total-aic
+          data:
+            source: usage
+          mark: metric
+          encoding:
+            value:
+              field: aic
+              type: quantitative
+              aggregate: sum
+              unit: aic
+`);
+
+    expect(result.ok).toBe(true);
+  });
+
+  it('DLS-UNIT-001 DLS-UNIT-002 rejects malformed unit definitions and unknown references', () => {
+    const result = validateDashboardDocument(`language-version: "0.1.0"
+dashboard:
+  id: invalid-unit-dashboard
+  title: Invalid Unit Dashboard
+  units:
+    bad_unit:
+      name: ""
+      symbol: 7
+      significant: 0
+      extra: true
+  pages:
+    - id: summary
+      kind: custom
+      views:
+        - id: total-aic
+          data:
+            source: usage
+          mark: metric
+          encoding:
+            value:
+              field: aic
+              type: quantitative
+              aggregate: sum
+              unit: missing
+`);
+
+    expect(result.ok).toBe(false);
+    if (!result.ok) {
+      expect(result.errors).toEqual(expect.arrayContaining([
+        expect.objectContaining({ code: 'DLS-E005', path: '$.dashboard.units.bad_unit' }),
+        expect.objectContaining({ code: 'DLS-E004', path: '$.dashboard.units.bad_unit.extra' }),
+        expect.objectContaining({ code: 'DLS-E003', path: '$.dashboard.units.bad_unit.name' }),
+        expect.objectContaining({ code: 'DLS-E003', path: '$.dashboard.units.bad_unit.symbol' }),
+        expect.objectContaining({ code: 'DLS-E003', path: '$.dashboard.units.bad_unit.significant' }),
+        expect.objectContaining({ code: 'DLS-E010', path: '$.dashboard.pages[0].views[0].encoding.value.unit' })
+      ]));
+    }
+  });
+
   it('DLS-LINK-001 DLS-LINK-005 DLS-VIEW-007 DLS-VIEW-014 accept relation-specific href fields and reject non-link href fields with DLS-E009', () => {
     const accepted = validateDashboardDocument(`language-version: "0.1.0"
 dashboard:

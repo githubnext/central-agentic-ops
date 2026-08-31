@@ -12,26 +12,33 @@ const metadata = {
 };
 
 describe('data view renderer', () => {
-  it('renders the metric helper selected by the JSON mark', () => {
+  it('renders a unit-bearing metric selected by the JSON mark', () => {
     const rendered = renderDataView('metric', {
       pageId: 'overview',
-      title: 'Run count',
+      title: 'AI Credits',
       view: {
         mark: 'metric',
-        encoding: { value: { field: 'run', aggregate: 'count' } }
+        encoding: { value: { field: 'aic', aggregate: 'sum', unit: 'aic' } }
       },
-      sourceName: 'runs',
-      rows: [{ run: '1' }, { run: '2' }],
+      sourceName: 'usage',
+      rows: [{ aic: 1 }, { aic: 2 }],
       metadata,
       contextDetails: [],
       headingTag: 'h3',
+      units: {
+        aic: {
+          name: 'AI Credits',
+          symbol: 'AIC',
+          significant: 1
+        }
+      },
       prepareTableRows: () => [],
       buildChartPoints: () => [],
       prepareChartPoints: () => [],
       toText: String
     });
 
-    expect(rendered?.querySelector('[data-metric-value="run"]')?.textContent).toBe('2');
+    expect(rendered?.querySelector('[data-metric-value="aic"]')?.textContent).toBe('3 AIC');
   });
 
   it('returns null for an unsupported JSON mark', () => {

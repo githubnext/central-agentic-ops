@@ -76,9 +76,10 @@ export function pieChartEntries(points) {
  * @param {Array<[string, number]>} entries
  * @param {number} total
  * @param {Map<string, { href: string, label: string }>} [links]
+ * @param {{ name: string, symbol: string, significant: number } | null} [unit]
  * @returns {HTMLElement}
  */
-export function renderPieLegend(entries, total, links = new Map()) {
+export function renderPieLegend(entries, total, links = new Map(), unit = null) {
   return h(
     'ul',
     { className: 'chart-legend chart-legend-pie', 'data-chart-legend': 'visual' },
@@ -98,7 +99,7 @@ export function renderPieLegend(entries, total, links = new Map()) {
           }, label)
           : label
       ),
-      h('strong', null, formatNumber(value)),
+      h('strong', null, formatNumber(value, unit)),
       h('small', null, total > 0 ? `${((value / total) * 100).toFixed(1)}%` : '0%')
     ))
   );
@@ -111,9 +112,10 @@ export function renderPieLegend(entries, total, links = new Map()) {
  * @param {ChartSeriesDescriptor[]} series
  * @param {{ entries: Array<[string, number]>, total: number } | null} [pieSummary]
  * @param {string} [totalLabel]
+ * @param {{ name: string, symbol: string, significant: number } | null} [unit]
  * @returns {HTMLElement}
  */
-export function renderChartWidget(chartType, points, series, pieSummary = null, totalLabel = 'Total') {
+export function renderChartWidget(chartType, points, series, pieSummary = null, totalLabel = 'Total', unit = null) {
   if (chartType === 'pie') {
     const { entries, total } = pieSummary ?? pieChartEntries(points);
     let offset = 0;
@@ -122,7 +124,7 @@ export function renderChartWidget(chartType, points, series, pieSummary = null, 
       { className: 'chart-widget pie-chart-widget', 'data-chart-widget': 'pie' },
       h(
         'svg',
-        { viewBox: '0 0 42 42', role: 'img', 'aria-label': `Pie chart: ${entries.map(([label, value]) => `${label} ${formatNumber(value)}`).join(', ') || 'no data'}` },
+        { viewBox: '0 0 42 42', role: 'img', 'aria-label': `Pie chart: ${entries.map(([label, value]) => `${label} ${formatNumber(value, unit)}`).join(', ') || 'no data'}` },
         h('circle', { className: 'pie-chart-track', cx: 21, cy: 21, r: 15.9155, fill: 'none', 'stroke-width': 8 }),
         ...entries.map(([label, value], index) => {
           const percent = total > 0 ? (value / total) * 100 : 0;
@@ -138,12 +140,12 @@ export function renderChartWidget(chartType, points, series, pieSummary = null, 
             'data-chart-category': label,
             tabIndex: 0,
             role: 'img',
-            'aria-label': `${label}: ${formatNumber(value)}`
-          }, h('title', null, `${label}: ${formatNumber(value)}`));
+            'aria-label': `${label}: ${formatNumber(value, unit)}`
+          }, h('title', null, `${label}: ${formatNumber(value, unit)}`));
           offset += percent;
           return segment;
         }),
-        h('text', { className: 'pie-chart-total-value', x: 21, y: 20, 'text-anchor': 'middle', 'aria-hidden': 'true' }, formatNumber(total)),
+        h('text', { className: 'pie-chart-total-value', x: 21, y: 20, 'text-anchor': 'middle', 'aria-hidden': 'true' }, formatNumber(total, unit)),
         h('text', { className: 'pie-chart-total-label', x: 21, y: 25.5, 'text-anchor': 'middle', 'aria-hidden': 'true' }, totalLabel)
       )
     );
@@ -184,9 +186,9 @@ export function renderChartWidget(chartType, points, series, pieSummary = null, 
               className: 'chart-point',
               tabIndex: 0,
               role: 'img',
-              'aria-label': chartPointLabel(point)
+              'aria-label': chartPointLabel(point, unit)
             },
-            h('title', null, chartPointLabel(point)),
+            h('title', null, chartPointLabel(point, unit)),
             h('circle', {
               className: `line-chart-point ${seriesClassName}`,
               cx: x,
@@ -201,7 +203,7 @@ export function renderChartWidget(chartType, points, series, pieSummary = null, 
                 'aria-hidden': 'true'
               },
               h('rect', { width: 42, height: 9, rx: 2 }),
-              h('text', { x: 3, y: 6 }, chartPointLabel(point))
+              h('text', { x: 3, y: 6 }, chartPointLabel(point, unit))
             )))
           ];
         })
@@ -239,8 +241,8 @@ export function renderChartWidget(chartType, points, series, pieSummary = null, 
           height,
           tabIndex: 0,
           role: 'img',
-          'aria-label': chartPointLabel(point)
-        }, h('title', null, chartPointLabel(point)));
+          'aria-label': chartPointLabel(point, unit)
+        }, h('title', null, chartPointLabel(point, unit)));
       })
     )
   );
@@ -248,8 +250,9 @@ export function renderChartWidget(chartType, points, series, pieSummary = null, 
 
 /**
  * @param {{ x: string, y: number, color: string | null }} point
+ * @param {{ name: string, symbol: string, significant: number } | null} [unit]
  * @returns {string}
  */
-function chartPointLabel(point) {
-  return `${point.x}: ${formatNumber(point.y)}${point.color ? `, ${point.color}` : ''}`;
+function chartPointLabel(point, unit = null) {
+  return `${point.x}: ${formatNumber(point.y, unit)}${point.color ? `, ${point.color}` : ''}`;
 }

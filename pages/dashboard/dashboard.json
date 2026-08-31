@@ -5,6 +5,13 @@
     "title": "Central Agentic Ops Dashboard",
     "description": "Authoritative declarative dashboard document for all specification-defined built-in pages in the presenter prototype.",
     "repository": "githubnext/central-agentic-ops",
+    "units": {
+      "aic": {
+        "name": "AI Credits",
+        "symbol": "AIC",
+        "significant": 1
+      }
+    },
     "pages": [
       {
         "id": "overview",
@@ -254,7 +261,8 @@
                 "value": {
                   "field": "aic",
                   "type": "quantitative",
-                  "aggregate": "sum"
+                  "aggregate": "sum",
+                  "unit": "aic"
                 }
               }
             }
@@ -288,7 +296,7 @@
               "chart": "pie",
               "encoding": {
                 "x": { "field": "repository", "type": "nominal", "title": "Repository" },
-                "y": { "field": "aic", "type": "quantitative", "aggregate": "sum", "as": "total-aic", "title": "Total AIC" },
+                "y": { "field": "aic", "type": "quantitative", "aggregate": "sum", "as": "total-aic", "title": "Total AIC", "unit": "aic" },
                 "href": { "field": "repository-link" }
               }
             },
@@ -490,7 +498,8 @@
                 "value": {
                   "field": "aic",
                   "type": "quantitative",
-                  "aggregate": "sum"
+                  "aggregate": "sum",
+                  "unit": "aic"
                 }
               }
             },
@@ -725,7 +734,8 @@
                 "value": {
                   "field": "aic",
                   "type": "quantitative",
-                  "aggregate": "sum"
+                  "aggregate": "sum",
+                  "unit": "aic"
                 }
               }
             },
@@ -921,7 +931,8 @@
                   },
                   {
                     "field": "aic",
-                    "type": "quantitative"
+                    "type": "quantitative",
+                    "unit": "aic"
                   },
                   {
                     "field": "engine",
@@ -1052,7 +1063,8 @@
                   },
                   {
                     "field": "aic",
-                    "type": "quantitative"
+                    "type": "quantitative",
+                    "unit": "aic"
                   }
                 ]
               }
