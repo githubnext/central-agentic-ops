@@ -125,11 +125,12 @@ function buildOverviewVitals(input) {
   const { sources, packages, health, workflows, repositories } = input;
   const hasRunTelemetry = sources.runs?.metadata?.availability !== 'unavailable';
   const disabledWorkflows = workflows.filter((row) => String(row['workflow-active']) === 'false').length;
+  const managedWorkers = packages.reduce((total, entry) => total + entry.workers, 0);
   const repositoryCount = repositories.length > 0
     ? new Set(repositories.map(repositoryKey).filter(Boolean)).size
     : distinctRepositories(workflows, rowsFor(sources, 'runs'));
   return [
-    { label: 'Managed packages', value: packages.length, detail: `${packages.reduce((total, entry) => total + entry.workers, 0)} worker workflow${packages.reduce((total, entry) => total + entry.workers, 0) === 1 ? '' : 's'}` },
+    { label: 'Managed packages', value: packages.length, detail: `${managedWorkers} worker workflow${managedWorkers === 1 ? '' : 's'}` },
     { label: 'Active workflows', value: workflows.filter(isActiveWorkflow).length, detail: `${disabledWorkflows} disabled · ${repositoryCount} repositories` },
     { label: 'Runs · 24h', value: hasRunTelemetry ? health.total : '—', detail: sourceWindowLabel(sources.runs) },
     {

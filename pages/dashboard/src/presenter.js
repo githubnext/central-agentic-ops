@@ -13,7 +13,7 @@ import { formatAggregateValue, formatNumber, toNumber } from './view-formatters.
 import { renderActiveStateBadge, renderModeBadge, renderStatusBadge } from './components/badge.js';
 import { findFirstLink, findLink, renderExternalLink, renderLinkedValueWithExternalLink } from './components/link-content.js';
 import { renderLinkedText, createEntityAwareCellRenderer } from './components/linked-text.js';
-import { renderUiElement } from './components/ui-elements.js';
+import { elementHandlesEmptyRows, renderUiElement } from './components/ui-elements.js';
 import { groupChartSeries, listChartSeries, pieChartEntries, renderChartLegend, renderPieLegend } from './components/chart-elements.js';
 import { deriveOverviewSources } from './overview-data.js';
 
@@ -710,6 +710,9 @@ function renderElementView(pageId, title, view, sources, contextDetails, heading
     const state = source.metadata?.availability ?? inferAvailability(source.rows);
     if (state !== 'available') {
       return renderCustomViewState(pageId, title, sourceName, state, contextDetails, headingTag);
+    }
+    if (source.rows.length === 0 && !elementHandlesEmptyRows(elementName)) {
+      return renderCustomViewState(pageId, title, sourceName, 'empty', contextDetails, headingTag);
     }
   }
 

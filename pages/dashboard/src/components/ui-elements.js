@@ -36,6 +36,8 @@ const ELEMENT_RENDERERS = new Map([
   }]
 ]);
 
+const EMPTY_AWARE_ELEMENTS = new Set(['status-summary', 'meter-list', 'attention-list', 'record-cards']);
+
 /**
  * @param {string} name
  * @param {ElementRenderContext} context
@@ -43,6 +45,14 @@ const ELEMENT_RENDERERS = new Map([
  */
 export function renderUiElement(name, context) {
   return ELEMENT_RENDERERS.get(name)?.(context) ?? null;
+}
+
+/**
+ * @param {string} name
+ * @returns {boolean}
+ */
+export function elementHandlesEmptyRows(name) {
+  return EMPTY_AWARE_ELEMENTS.has(name);
 }
 
 /**
