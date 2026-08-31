@@ -78,8 +78,7 @@ export function renderPackagesView(sources, pageId = 'packages') {
     }
     content.setAttribute('aria-labelledby', `${pageId}-${selectedMode}-tab`);
     content.replaceChildren(
-      renderPackageUtilization(sources, selectedMode, `${pageId}-utilization-heading`),
-      renderPackageSummary(sources, selectedMode, `${pageId}-summary-heading`)
+      renderPackageUtilization(sources, selectedMode, `${pageId}-utilization-heading`)
     );
     content.dispatchEvent(new CustomEvent('package-mode-change', {
       bubbles: true,
@@ -264,6 +263,34 @@ function updateLatestActivity(summary, ...values) {
  */
 function matchesMode(row, mode) {
   return mode === 'all' || row['rollout-mode'] === mode;
+}
+
+/**
+ * @param {Record<string, import('../presenter.js').LogicalSourceInput>} sources
+ * @param {string} [pageId]
+ * @returns {HTMLElement}
+ */
+export function renderPackageSummaryView(sources, pageId = 'packages') {
+  let selectedMode = 'all';
+  const content = h('div', { className: 'packages-mode-content' });
+  const controller = new AbortController();
+  const renderMode = () => {
+    content.replaceChildren(renderPackageSummary(sources, selectedMode, `${pageId}-summary-heading`));
+  };
+  content.ownerDocument.addEventListener('package-mode-change', (event) => {
+    if (!(event instanceof CustomEvent) || event.detail?.pageId !== pageId) return;
+    selectedMode = event.detail.mode;
+    renderMode();
+  }, { signal: controller.signal });
+  const observer = new MutationObserver(() => {
+    if (!content.isConnected) {
+      controller.abort();
+      observer.disconnect();
+    }
+  });
+  observer.observe(content.ownerDocument, { childList: true, subtree: true });
+  renderMode();
+  return content;
 }
 
 /**

@@ -556,6 +556,20 @@
               },
               "mark": "element",
               "element": "package-run-trend"
+            },
+            {
+              "id": "packages-summary",
+              "title": "Package summary",
+              "data": {
+                "sources": [
+                  "workflows",
+                  "runs",
+                  "usage",
+                  "findings"
+                ]
+              },
+              "mark": "element",
+              "element": "package-summary"
             }
           ]
         }
