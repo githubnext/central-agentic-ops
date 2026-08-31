@@ -14,6 +14,7 @@ import { elementHandlesEmptyRows, renderUiElement } from './components/ui-elemen
 import { renderDataView } from './components/data-view.js';
 import { renderFilterBar } from './components/filter-bar.js';
 import { deriveOverviewSources } from './overview-data.js';
+import { deriveRepositorySources } from './repository-data.js';
 import { deriveRuntimeSources } from './runtime-data.js';
 
 /**
@@ -125,7 +126,7 @@ export function renderDashboard(input) {
     : null;
   const sources = deriveWorkflowDashboardLinks(
     deriveRepositoryDashboardLinks(
-      deriveRuntimeSources(deriveOverviewSources(deriveEntityLinkSources(rawSources, githubUrlBase))),
+      deriveRuntimeSources(deriveRepositorySources(deriveOverviewSources(deriveEntityLinkSources(rawSources, githubUrlBase)))),
       pages
     ),
     pages

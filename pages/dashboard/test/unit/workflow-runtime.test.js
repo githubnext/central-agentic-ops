@@ -86,9 +86,9 @@ describe('renderWorkflowRuntime', () => {
     selectWorkflow(rendered);
 
     expect(rendered.dataset.workflow).toBe('githubnext/central-agentic-ops:.github/workflows/multi-device-docs-tester.md');
-    expect(rendered.querySelector('.repository-tabs')?.textContent).toBe('ReportsInsights');
+    expect(rendered.querySelector('.repository-tabs')?.textContent).toBe('InsightsReports');
     expect(rendered.querySelector('.repository-tabs [aria-current="page"]')?.textContent).toBe('Insights');
-    expect(rendered.querySelector('.repository-tabs a')?.getAttribute('href')).toBe(
+    expect(rendered.querySelector('.repository-tabs a:last-child')?.getAttribute('href')).toBe(
       '#page-workflow-detail?workflow=githubnext%2Fcentral-agentic-ops%3A.github%2Fworkflows%2Fmulti-device-docs-tester.md'
     );
     expect(rendered.querySelector('.workflow-identity')?.textContent).toContain('Standalone');

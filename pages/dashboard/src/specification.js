@@ -35,7 +35,6 @@ export const VIEW_ELEMENT_VALUES = [
   'package-detail',
   'package-reports',
   'repository-scope',
-  'repository-activity',
   'repository-workflows',
   'workflow-detail',
   'workflow-runtime',
@@ -266,7 +265,8 @@ export const SOURCE_VALUES = [
   'cost-readiness',
   'experiment-readiness',
   'runtime-signals',
-  'dispatches'
+  'dispatches',
+  'repository-activity'
 ];
 
 export const SOURCE_FIELDS = {
@@ -296,7 +296,8 @@ export const SOURCE_FIELDS = {
   'cost-readiness': ['priority', 'count', 'tone', 'icon', 'kind', 'title', 'detail', 'evidence', 'action'],
   'experiment-readiness': ['priority', 'count', 'tone', 'icon', 'kind', 'title', 'detail', 'evidence', 'action'],
   'runtime-signals': ['priority', 'count', 'tone', 'icon', 'kind', 'title', 'detail', 'evidence', 'action', 'navigation-href'],
-  dispatches: ['started-at', 'dispatch-type', 'package-name', 'workflow-name', 'run-title', 'runtime-repository', 'status', 'run-link']
+  dispatches: ['started-at', 'dispatch-type', 'package-name', 'workflow-name', 'run-title', 'runtime-repository', 'status', 'run-link'],
+  'repository-activity': ['repository', 'workflows', 'reports', 'evaluated-workflows', 'runs', 'failure-summary', 'aic', 'status', 'repository-link']
 };
 
 export const ROLLOUT_MODE_VALUES = ['review', 'live', 'unknown'];
@@ -335,7 +336,8 @@ export const SOURCE_ENTITY_IDENTIFIER_FIELDS = {
   usage: ['invocation'],
   outcomes: ['safe-output'],
   findings: ['finding'],
-  'operational-values': ['operational-value-definition', 'operational-case', 'run']
+  'operational-values': ['operational-value-definition', 'operational-case', 'run'],
+  'repository-activity': ['repository']
 };
 
 export const TEMPORAL_FIELD_NAMES = [

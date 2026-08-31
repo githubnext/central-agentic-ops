@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { readFileSync } from 'node:fs';
-import { renderRepositoryActivity, renderRepositoryScope, summarizeRepositories } from '../../src/components/repositories-view.js';
+import { renderRepositoryScope } from '../../src/components/repositories-view.js';
+import { deriveRepositorySources, summarizeRepositories } from '../../src/repository-data.js';
 
 const dashboard = JSON.parse(readFileSync(`${process.cwd()}/dashboard.json`, 'utf8'));
 
@@ -87,15 +88,28 @@ describe('repositories view', () => {
     });
     expect(summaries[2]).toMatchObject({
       disabled: 1,
-      reports: 1,
-      evaluatedWorkflows: 1
+      reports: 1
     });
+    expect(summaries[2].evaluatedWorkflowKeys.size).toBe(1);
 
-    const rendered = renderRepositoryActivity(context());
-    expect(rendered.querySelector('[data-repository="octo/failing"]')?.textContent).toContain('50%');
-    expect(rendered.querySelector('[data-repository="octo/failing"] .status-danger')?.textContent).toBe('Needs attention');
-    expect(rendered.querySelector('[data-repository="octo/active"] .status-success')?.textContent).toBe('No failures observed');
-    expect(rendered.querySelector('[data-repository="octo/quiet"] .status-attention')?.textContent).toBe('Disabled workflows');
+    const activity = deriveRepositorySources(sources())['repository-activity'];
+    expect(activity.rows).toEqual([
+      expect.objectContaining({
+        repository: 'octo/failing',
+        workflows: 2,
+        runs: 2,
+        'failure-summary': '50% · 1 failed',
+        status: 'Needs attention'
+      }),
+      expect.objectContaining({
+        repository: 'octo/active',
+        status: 'No failures observed'
+      }),
+      expect.objectContaining({
+        repository: 'octo/quiet',
+        status: 'Disabled workflows'
+      })
+    ]);
   });
 
   it('renders the configured scope and declares AI Credit usage as a generic chart', () => {
@@ -106,6 +120,9 @@ describe('repositories view', () => {
     );
     const usage = repositoriesPage.definition.views.find(
       (/** @type {{ id: string }} */ view) => view.id === 'repositories-by-aic'
+    );
+    const activity = repositoriesPage.definition.views.find(
+      (/** @type {{ id: string }} */ view) => view.id === 'repositories-activity'
     );
 
     expect(scope.textContent).toContain('Repository scope · 3 configured');
@@ -121,7 +138,24 @@ describe('repositories view', () => {
         href: { field: 'repository-link' }
       }
     });
-    expect(renderRepositoryActivity(viewContext).querySelector('[data-repository="octo/failing"]')?.textContent).not.toContain('12 AIC');
+    expect(activity).toMatchObject({
+      data: { source: 'repository-activity' },
+      mark: 'table',
+      controls: 'static',
+      encoding: {
+        columns: [
+          { field: 'repository' },
+          { field: 'workflows' },
+          { field: 'reports' },
+          { field: 'evaluated-workflows' },
+          { field: 'runs' },
+          { field: 'failure-summary' },
+          { field: 'aic' },
+          { field: 'status', display: 'status' }
+        ],
+        href: { field: 'repository-link' }
+      }
+    });
   });
 
   it('keeps unavailable run and usage evidence explicit', () => {
@@ -129,7 +163,9 @@ describe('repositories view', () => {
     viewContext.sources.runs.metadata = { ...metadata, availability: 'unavailable', completeness: 'unknown' };
     viewContext.sources.usage.metadata = { ...metadata, availability: 'unavailable', completeness: 'unknown' };
     expect(renderRepositoryScope(viewContext).textContent).toContain('Actions run data unavailable');
-    expect(renderRepositoryScope(viewContext).textContent).toContain('Actions run data unavailable');
-    expect(renderRepositoryActivity(viewContext).textContent).toContain('Unavailable');
+    expect(deriveRepositorySources(viewContext.sources)['repository-activity'].rows[0]).toMatchObject({
+      runs: null,
+      'failure-summary': 'Unavailable'
+    });
   });
 });
