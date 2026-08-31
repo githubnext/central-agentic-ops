@@ -807,6 +807,7 @@ test("shared control keeps manual and scheduled routing event-scoped", () => {
   }
   assert.match(control, /requested_mode: \$\{\{ github\.event\.inputs\.safe_output_mode \|\| '' \}\}/);
   assert.match(control, /safe_output_repo: \$\{\{ github\.event\.inputs\.safe_output_repo/);
+  assert.doesNotMatch(precompute, /^      SAFE_OUTPUT_REPO:/m);
   assert.doesNotMatch(control, /review_repo/);
   assert.match(control, /requested_rollout_percent: \$\{\{ github\.event\.inputs\.rollout_percent \|\| '' \}\}/);
   assert.match(control, /select no more than `effective_max_repos` repositories/);
@@ -1445,9 +1446,10 @@ test("README routes zero-to-CAO requests to the setup skill", () => {
   assert.ok(existsSync(setupSkillPath));
   assert.match(setupSkill, /^---\nname: setup-central-agentic-ops\n/);
   assert.match(setupSkill, /safe_output_mode=review/);
-  assert.match(setupSkill, /Always target the control repository itself for the first run/);
-  assert.match(setupSkill, /target_repo="<organization>\/<control-repository>"/);
-  assert.doesNotMatch(setupSkill, /first (?:low-risk )?target repository/);
+  assert.match(setupSkill, /Ask which repository the first review run should target/);
+  assert.match(setupSkill, /Offer `<organization>\/<control-repository>` as the default/);
+  assert.match(setupSkill, /target_repo="<target-owner>\/<target-repository>"/);
+  assert.doesNotMatch(setupSkill, /Always target the control repository itself for the first run/);
   assert.match(setupSkill, /cao_ref=\$\(gh api repos\/githubnext\/central-agentic-ops\/commits\/main/);
   assert.match(setupSkill, /\[\[ "\$cao_ref" =~ \^\[0-9a-fA-F\]\{40,64\}\$ \]\]/);
   assert.match(setupSkill, /gh aw add "githubnext\/central-agentic-ops@\$\{cao_ref\}"/);
@@ -1457,14 +1459,16 @@ test("README routes zero-to-CAO requests to the setup skill", () => {
   assert.match(setupSkill, /Do not require the catalog maintainer's current local version when the package supports an older release/);
   assert.match(setupSkill, /one immutable source identity keeps repeated package dependencies consistent/);
   assert.match(setupSkill, /package cannot install this file because it is consumer-owned rollout policy/);
-  assert.match(setupSkill, /"allowed-repositories": \["<organization>\/<control-repository>"\]/);
+  assert.match(setupSkill, /"allowed-owners": \["<target-owner>"\]/);
+  assert.match(setupSkill, /"allowed-repositories": \["<target-owner>\/<target-repository>"\]/);
   assert.match(setupSkill, /"dependabot"[\s\S]*?"release-train-updater"/);
   assert.match(setupSkill, /Public and private control repositories are supported/);
   assert.match(setupSkill, /policy, workflow runs, operational metadata, and review safe outputs are public/);
   assert.doesNotMatch(setupSkill, /the control repository is public;/);
-  assert.match(setupSkill, /Control-repository visibility does not determine later target access/);
-  assert.match(setupSkill, /initial self-review uses the control repository's `GITHUB_TOKEN`/);
-  assert.match(setupSkill, /recommend a least-privilege GitHub App/);
+  assert.match(setupSkill, /Control-repository visibility does not determine target access/);
+  assert.match(setupSkill, /use `GITHUB_TOKEN` for control-repository self-review or an exact public target in `review`/);
+  assert.match(setupSkill, /require a least-privilege GitHub App before running against a private or internal target/);
+  assert.match(setupSkill, /Do not place private target evidence in a public control repository/);
   assert.match(setupSkill, /offer a fine-grained PAT only when an App cannot be obtained[\s\S]*?user explicitly consents/);
   assert.match(setupSkill, /A PAT cannot grant access the user does not already have/);
   assert.match(setupSkill, /Never configure it as the user's control plane/);

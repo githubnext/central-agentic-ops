@@ -137,7 +137,6 @@ steps:
       WORKER: ${{ github.aw.import-inputs.worker }}
       TARGET_REPO: ${{ github.aw.import-inputs.target_repo }}
       DISPATCH_MAX: ${{ github.aw.import-inputs.dispatch_max }}
-      SAFE_OUTPUT_REPO: ${{ github.aw.import-inputs.safe_output_repo }}
       CORRELATION_ID: ${{ github.aw.import-inputs.correlation_id }}
       CENTRAL_REPO: ${{ github.aw.import-inputs.central_repo }}
       CONTROL_PLANE_RUN_URL: ${{ github.aw.import-inputs.control_plane_run_url }}
