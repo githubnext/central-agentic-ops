@@ -626,7 +626,8 @@ describe('presenter built-in and custom pages', () => {
       'Maturity pending',
       'AIC coverage',
       'Open output',
-      'Experiment readiness'
+      'Experiment readiness',
+      'Evidence boundary'
     ]);
     expect(signals[3]?.querySelector('a')?.getAttribute('href')).toBe('https://github.com/githubnext/central-agentic-ops/issues/1');
     expect(signals[4]?.querySelector('a')?.getAttribute('href')).toBe('#page-experiments');

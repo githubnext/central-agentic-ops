@@ -79,7 +79,9 @@ describe('Cost and efficiency dashboard view', () => {
     expect(summary?.textContent).toContain('Episode output yield—');
     expect(page?.textContent).toContain('allocation evidence, not monetary cost');
 
-    const signals = [...(page?.querySelectorAll('.signal-list .signal-item') ?? [])];
+    const evidenceBoundaries = [...(page?.querySelectorAll('.signal-list-region') ?? [])]
+      .find((region) => region.textContent?.includes('Usage coverage'));
+    const signals = [...(evidenceBoundaries?.querySelectorAll('.signal-item') ?? [])];
     expect(signals).toHaveLength(3);
     expect(signals.map((signal) => signal.querySelector('.signal-copy > span')?.textContent)).toEqual([
       'Usage coverage',
@@ -114,7 +116,9 @@ describe('Cost and efficiency dashboard view', () => {
     });
 
     const page = rendered.querySelector('[data-page-id="cost"]');
-    const signals = [...(page?.querySelectorAll('.signal-list .signal-item') ?? [])];
+    const evidenceBoundaries = [...(page?.querySelectorAll('.signal-list-region') ?? [])]
+      .find((region) => region.textContent?.includes('Budget boundary'));
+    const signals = [...(evidenceBoundaries?.querySelectorAll('.signal-item') ?? [])];
     expect(signals).toHaveLength(2);
     expect(page?.textContent).not.toContain('AI Credit telemetry is partial');
     expect(page?.querySelector('.summary-grid')?.textContent).toContain('Measured AIC2');
