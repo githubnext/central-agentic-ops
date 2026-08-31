@@ -97,6 +97,6 @@ describe('chart element helpers', () => {
     expect(pie.getAttribute('data-chart-widget')).toBe('pie');
     expect(pie.querySelectorAll('.pie-chart-segment')).toHaveLength(2);
     expect(unitPie.querySelector('.pie-chart-segment')?.getAttribute('aria-label')).toBe('2026-08-29: 3 AIC');
-    expect(unitPie.querySelector('.pie-chart-total-value')?.textContent).toBe('4 AIC');
+    expect(unitPie.querySelector('.pie-chart-total-value')?.textContent).toBe('4');
   });
 });

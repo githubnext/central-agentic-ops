@@ -81,7 +81,7 @@ describe('Cost and efficiency dashboard view', () => {
     expect(signals[0]?.querySelector('a')?.getAttribute('href')).toBe('#page-usage');
 
     expect(page?.querySelectorAll('[data-chart-widget="pie"] [data-chart-category]')).toHaveLength(2);
-    expect(page?.querySelector('.pie-chart-total-value')?.textContent).toBe('9 AIC');
+    expect(page?.querySelector('.pie-chart-total-value')?.textContent).toBe('9');
     expect(page?.querySelector('.readiness-note')?.textContent).toContain('Budget and anomaly verdicts unavailable');
     expect(page?.querySelector('.readiness-note')?.textContent).toContain('qualified historical baseline');
   });
