@@ -766,54 +766,13 @@ describe('presenter built-in and custom pages', () => {
     const repositoriesPage = pages.find((/** @type {{ page: string }} */ page) => page.page === 'repositories');
     expect(repositoriesPage?.definition.views).toMatchObject([
       {
-        id: 'repositories-by-aic',
-        title: 'AI Credit usage by AW repository',
-        description: 'Read-only usage reported by AW runs, grouped by repository.',
+        id: 'repositories-activity',
+        title: 'Repository activity',
         data: {
-          source: 'usage',
-          'order-by': [{ field: 'total-aic', direction: 'desc' }]
+          sources: ['repositories', 'workflows', 'runs', 'outcomes', 'usage', 'operational-values']
         },
-        mark: 'chart',
-        chart: 'pie',
-        encoding: {
-          x: { field: 'repository', title: 'Repository' },
-          y: { field: 'aic', aggregate: 'sum', as: 'total-aic', title: 'Total AIC' },
-          href: { field: 'repository-link' }
-        }
-      },
-      {
-        id: 'repositories-repositories-source',
-        title: 'Repository Inventory and Rankings',
-        data: { source: 'repositories' }
-      },
-      {
-        id: 'repositories-by-run-count',
-        title: 'Repositories by Run Count',
-        data: {
-          source: 'runs',
-          'order-by': [{ field: 'run-count', direction: 'desc' }]
-        },
-        encoding: {
-          columns: [
-            { field: 'repository' },
-            { field: 'run', aggregate: 'distinct-count', as: 'run-count' }
-          ]
-        }
-      },
-      {
-        id: 'repositories-by-operational-value',
-        title: 'Repositories by Operational Value',
-        data: {
-          source: 'operational-values',
-          'order-by': [{ field: 'mean-operational-value', direction: 'desc' }]
-        },
-        encoding: {
-          columns: [
-            { field: 'repository' },
-            { field: 'operational-value-definition' },
-            { field: 'operational-value', aggregate: 'mean', as: 'mean-operational-value' }
-          ]
-        }
+        mark: 'element',
+        element: 'repository-activity'
       }
     ]);
   });

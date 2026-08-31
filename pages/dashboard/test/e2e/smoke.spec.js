@@ -73,15 +73,6 @@ function buildPresenterModuleUrl() {
     .replace("'./run-classification.js'", JSON.stringify(runClassificationModuleUrl));
   const packagesViewModuleUrl = `data:text/javascript;charset=utf-8,${encodeURIComponent(packagesViewSource)}`;
 
-  const repositoriesViewSource = readFileSync(new URL('../../src/components/repositories-view.js', import.meta.url), 'utf8')
-    .replace("'../dom.js'", JSON.stringify(domModuleUrl))
-    .replace("'../view-formatters.js'", JSON.stringify(viewFormattersModuleUrl))
-    .replace("'./link-content.js'", JSON.stringify(linkContentModuleUrl))
-    .replace("'./run-classification.js'", JSON.stringify(runClassificationModuleUrl))
-    .replace("'./chart-elements.js'", JSON.stringify(chartElementsModuleUrl))
-    .replace("'./table-region.js'", JSON.stringify(tableRegionModuleUrl));
-  const repositoriesViewModuleUrl = `data:text/javascript;charset=utf-8,${encodeURIComponent(repositoriesViewSource)}`;
-
   const linkContentSource = readFileSync(new URL('../../src/components/link-content.js', import.meta.url), 'utf8')
     .replace("'../dom.js'", JSON.stringify(domModuleUrl))
     .replace("'../octicons.js'", JSON.stringify(octiconsModuleUrl));
@@ -110,6 +101,15 @@ function buildPresenterModuleUrl() {
     .replace("'./link-content.js'", JSON.stringify(linkContentModuleUrl))
     .replace("'./linked-text.js'", JSON.stringify(linkedTextModuleUrl));
   const dispatchCatalogModuleUrl = `data:text/javascript;charset=utf-8,${encodeURIComponent(dispatchCatalogSource)}`;
+
+  const repositoriesViewSource = readFileSync(new URL('../../src/components/repositories-view.js', import.meta.url), 'utf8')
+    .replace("'../dom.js'", JSON.stringify(domModuleUrl))
+    .replace("'../view-formatters.js'", JSON.stringify(viewFormattersModuleUrl))
+    .replace("'./link-content.js'", JSON.stringify(linkContentModuleUrl))
+    .replace("'./run-classification.js'", JSON.stringify(runClassificationModuleUrl))
+    .replace("'./chart-elements.js'", JSON.stringify(chartElementsModuleUrl))
+    .replace("'./table-region.js'", JSON.stringify(tableRegionModuleUrl));
+  const repositoriesViewModuleUrl = `data:text/javascript;charset=utf-8,${encodeURIComponent(repositoriesViewSource)}`;
 
   const uiElementsSource = readFileSync(new URL('../../src/components/ui-elements.js', import.meta.url), 'utf8')
     .replace("'../dom.js'", JSON.stringify(domModuleUrl))
