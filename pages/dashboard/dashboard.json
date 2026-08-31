@@ -343,7 +343,8 @@
                 "sources": [
                   "repositories",
                   "runs",
-                  "usage"
+                  "usage",
+                  "operational-values"
                 ]
               },
               "mark": "element",

@@ -10,6 +10,7 @@ describe('table cell display helper', () => {
     const mode = renderCellDisplay('mode', 'live', toText);
     const activeState = renderCellDisplay('active-state', 'true', toText);
     const status = renderCellDisplay('status', 'failure', toText);
+    const repositoryStatus = renderCellDisplay('status', 'Needs attention', toText);
     const graderPass = renderCellDisplay('grader-status', 'pass', toText);
     const graderUnavailable = renderCellDisplay('grader-status', 'unavailable', toText);
 
@@ -19,6 +20,7 @@ describe('table cell display helper', () => {
     expect(/** @type {HTMLElement} */ (activeState).className).toBe('status status-success');
     expect(status).toBeInstanceOf(HTMLElement);
     expect(/** @type {HTMLElement} */ (status).className).toBe('status status-danger');
+    expect(/** @type {HTMLElement} */ (repositoryStatus).className).toBe('status status-danger');
     expect(/** @type {HTMLElement} */ (graderPass).className).toBe('status status-success');
     expect(/** @type {HTMLElement} */ (graderUnavailable).className).toBe('status status-attention');
     expect(renderCellDisplay('label', 'matured', toText)).toBe('Mature');

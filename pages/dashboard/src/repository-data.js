@@ -168,6 +168,7 @@ function combinedMetadata(sources) {
   const metadata = ['repositories', 'workflows', 'runs', 'outcomes', 'usage', 'operational-values']
     .map((name) => sources[name]?.metadata)
     .filter((value) => value !== undefined);
+  /** @param {'as-of'|'retrieved-at'} field */
   const latest = (field) => metadata
     .map((value) => value?.[field])
     .filter((value) => typeof value === 'string' && Number.isFinite(Date.parse(value)))

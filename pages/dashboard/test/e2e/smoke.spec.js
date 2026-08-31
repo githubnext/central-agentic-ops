@@ -223,6 +223,9 @@ function buildPresenterModuleUrl() {
     .replace("'./components/attention-rules.js'", JSON.stringify(attentionRulesModuleUrl));
   const overviewDataModuleUrl = `data:text/javascript;charset=utf-8,${encodeURIComponent(overviewDataSource)}`;
 
+  const repositoryDataSource = readFileSync(new URL('../../src/repository-data.js', import.meta.url), 'utf8');
+  const repositoryDataModuleUrl = `data:text/javascript;charset=utf-8,${encodeURIComponent(repositoryDataSource)}`;
+
   const presenterSource = readFileSync(new URL('../../src/presenter.js', import.meta.url), 'utf8')
     .replace("'../dashboard.json'", JSON.stringify(dashboardModuleUrl))
     .replace("'./dom.js'", JSON.stringify(domModuleUrl))
@@ -239,6 +242,7 @@ function buildPresenterModuleUrl() {
     .replace("'./components/data-view.js'", JSON.stringify(dataViewModuleUrl))
     .replace("'./components/filter-bar.js'", JSON.stringify(filterBarModuleUrl))
     .replace("'./overview-data.js'", JSON.stringify(overviewDataModuleUrl))
+    .replace("'./repository-data.js'", JSON.stringify(repositoryDataModuleUrl))
     .replace("'./runtime-data.js'", JSON.stringify(runtimeDataModuleUrl))
     .replace("'./view-formatters.js'", JSON.stringify(viewFormattersModuleUrl));
 

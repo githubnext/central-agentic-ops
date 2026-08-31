@@ -1216,7 +1216,7 @@ describe('presenter built-in and custom pages', () => {
       {
         id: 'repository-scope',
         title: 'Repository scope',
-        data: { sources: ['repositories', 'runs', 'usage'] },
+        data: { sources: ['repositories', 'runs', 'usage', 'operational-values'] },
         mark: 'element',
         element: 'repository-scope'
       },
@@ -1246,11 +1246,24 @@ describe('presenter built-in and custom pages', () => {
       {
         id: 'repositories-activity',
         title: 'Activity by repository',
-        data: {
-          sources: ['repositories', 'workflows', 'runs', 'outcomes', 'usage', 'operational-values']
-        },
-        mark: 'element',
-        element: 'repository-activity'
+        description: 'Repository-local execution health and all attributed package or local-workflow outcomes.',
+        data: { source: 'repository-activity' },
+        mark: 'table',
+        controls: 'static',
+        'empty-message': 'No repositories discovered.',
+        encoding: {
+          columns: [
+            { field: 'repository', type: 'nominal', title: 'Repository' },
+            { field: 'workflows', type: 'quantitative', title: 'Local AWs' },
+            { field: 'reports', type: 'quantitative', title: 'Reports' },
+            { field: 'evaluated-workflows', type: 'quantitative', title: 'Evaluated AWs' },
+            { field: 'runs', type: 'quantitative', title: 'Local runs' },
+            { field: 'failure-summary', type: 'nominal', title: 'Failure rate' },
+            { field: 'aic', type: 'quantitative', title: 'Local AIC' },
+            { field: 'status', type: 'nominal', title: 'Status', display: 'status' }
+          ],
+          href: { field: 'repository-link', type: 'nominal' }
+        }
       }
     ]);
   });
