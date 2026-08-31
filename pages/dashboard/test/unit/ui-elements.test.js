@@ -40,8 +40,13 @@ describe('UI elements', () => {
     const rendered = renderUiElement('context-summary', {
       pageId: 'repositories',
       title: 'Repository scope',
-      sourceNames: ['repository-summary'],
+      sourceNames: ['repositories', 'repository-summary'],
       sources: {
+        repositories: {
+          source: 'repositories',
+          rows: [{ repository: 'octo/one' }],
+          metadata
+        },
         'repository-summary': {
           source: 'repository-summary',
           rows: [
