@@ -549,11 +549,13 @@ tbody tr:hover { background: var(--canvas-subtle); }
 .mode-review { border-color: color-mix(in srgb, var(--attention) 45%, var(--border)); background: var(--attention-muted); color: var(--attention); }
 .mode-indicator { min-height: 22px; display: inline-flex; flex: none; align-items: center; gap: 5px; padding: 1px 7px; border: 1px solid var(--border); border-radius: 2em; font-size: .6875rem; font-weight: 600; text-transform: none; white-space: nowrap; }
 .mode-indicator .octicon { width: 13px; height: 13px; flex-basis: 13px; }
-.workflow-topology-summary { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 1px; margin: 14px 0 0; overflow: hidden; border: 1px solid var(--border); border-radius: 6px; background: var(--border); }
-.workflow-topology-summary > div { min-width: 0; padding: 12px 14px; background: var(--canvas-subtle); }
+.workflow-topology-overview { container: workflow-topology / inline-size; margin-bottom: 24px; }
+.workflow-topology-overview > .section-heading { align-items: end; }
+.workflow-topology-summary { display: flex; flex: none; margin: 0; }
+.workflow-topology-summary > div { min-width: 94px; padding: 0 12px; border-left: 1px solid var(--border); }
 .workflow-topology-summary dt { color: var(--muted); font-size: .6875rem; font-weight: 600; text-transform: uppercase; }
-.workflow-topology-summary dd { margin: 2px 0 0; font-size: 1.25rem; font-weight: 600; font-variant-numeric: tabular-nums; }
-.workflow-topology { container: workflow-topology / inline-size; margin-top: 16px; }
+.workflow-topology-summary dd { margin: 1px 0 0; font-size: 1.125rem; font-weight: 600; font-variant-numeric: tabular-nums; }
+.workflow-topology { margin-top: 0; }
 .topology-plane { padding: 18px; border: 1px solid var(--border); border-radius: 6px; background: var(--canvas-subtle); }
 .topology-plane-header { display: flex; align-items: flex-start; gap: 12px; margin-bottom: 16px; }
 .topology-plane-header > div { min-width: 0; }
@@ -609,6 +611,12 @@ footer { padding: 20px 24px; border-top: 1px solid var(--border); color: var(--m
   .package-dispatch i { width: 1px; height: 24px; margin-top: 4px; }
   .package-dispatch i::after { top: auto; right: -4px; bottom: 0; border-width: 6px 4px 0; border-color: var(--border) transparent transparent; }
 }
+@container workflow-topology (max-width: 560px) {
+  .workflow-topology-overview > .section-heading { align-items: flex-start; flex-direction: column; }
+  .workflow-topology-summary { width: 100%; }
+  .workflow-topology-summary > div { min-width: 0; flex: 1; padding-inline: 8px; }
+  .workflow-topology-summary > div:first-child { padding-left: 0; border-left: 0; }
+}
 @media (max-width: 700px) {
   .app-shell { display: block; }
   .org-sidebar { display: block; padding: 14px 12px 10px; border-right: 0; border-bottom: 1px solid var(--border); }
@@ -663,7 +671,6 @@ footer { padding: 20px 24px; border-top: 1px solid var(--border); color: var(--m
   .data-state-summary, .metrics { grid-template-columns: 1fr; }
   .summary-grid { grid-template-columns: 1fr; }
   .pie-chart-layout { grid-template-columns: 1fr; }
-  .workflow-topology-summary { grid-template-columns: 1fr; }
   .package-topology-header { grid-template-columns: 28px minmax(0, 1fr); }
   .package-topology-header > :is(.mode-indicator, .status) { grid-column: auto; }
   .standalone-repository-list { grid-template-columns: minmax(0, 1fr); }

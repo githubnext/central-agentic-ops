@@ -45,11 +45,11 @@ const ELEMENT_RENDERERS = new Map([
   ['execution-episodes', renderExecutionEpisodes],
   ['metric-signal-summary', renderMetricSignalSummaryElement],
   ['readiness-note', renderReadinessNoteElement],
-  ['workflow-topology', ({ pageId, title, sourceNames, sources, contextDetails, headingTag }) => {
+  ['workflow-topology', ({ pageId, title, description, sourceNames, sources, headingTag }) => {
     const sourceName = sourceNames[0];
     const source = sources[sourceName];
     if (!source) return null;
-    return renderWorkflowTopology(pageId, title, sourceName, source.rows, source.metadata, contextDetails, headingTag);
+    return renderWorkflowTopology(pageId, title, description, source.rows, headingTag);
   }]
 ]);
 
