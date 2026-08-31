@@ -18,6 +18,8 @@ includes:
   - .github/workflows/optimization-ai-credit-optimizer.md
   - .github/workflows/optimization.md
 resources:
+  - source: .github/aw/AGENTS.md
+    destination: .github/aw/AGENTS.md
   - source: .github/aw/instructions.md
     destination: .github/aw/instructions.md
   - source: .github/scripts/control-policy/resolve.mjs
