@@ -337,6 +337,19 @@ table { width: 100%; min-width: 600px; border-collapse: collapse; font-size: .87
 caption { padding: 10px 14px; border-bottom: 1px solid var(--border); background: var(--canvas-subtle); color: var(--muted); text-align: left; font-weight: 600; font-size: .8125rem; }
 th, td { padding: 10px 14px; border-bottom: 1px solid var(--border-muted); text-align: left; font-variant-numeric: tabular-nums; }
 thead th { background: var(--canvas-subtle); color: var(--muted); font-size: .75rem; font-weight: 600; border-bottom: 1px solid var(--border); white-space: nowrap; }
+.table-summary-row th { min-width: 150px; padding-block: 8px; vertical-align: top; white-space: normal; }
+.table-summary-categories { display: grid; gap: 2px; margin: 0; padding: 0; list-style: none; font-weight: 400; }
+.table-summary-categories li { display: flex; min-width: 0; justify-content: space-between; gap: 8px; }
+.table-summary-categories li span { overflow: hidden; color: var(--fg); text-overflow: ellipsis; white-space: nowrap; }
+.table-summary-categories strong, .table-summary-boolean strong { color: var(--fg); font-weight: 600; }
+.table-summary-quantitative { display: grid; gap: 6px; }
+.table-summary-histogram { width: 100%; height: 32px; overflow: visible; }
+.table-summary-histogram rect { fill: var(--accent); opacity: .75; }
+.table-summary-quantitative dl { display: grid; gap: 2px; margin: 0; }
+.table-summary-quantitative dl div { display: flex; justify-content: space-between; gap: 8px; }
+.table-summary-quantitative dt { font-weight: 400; }
+.table-summary-quantitative dd { margin: 0; color: var(--fg); font-weight: 600; }
+.table-summary-empty { font-weight: 400; font-style: italic; }
 tbody tr:last-child > * { border-bottom: 0; }
 tbody tr:hover { background: var(--canvas-subtle); }
 .kind, .status, .mode-badge, .workflow-badge { display: inline-flex; align-items: center; min-height: 20px; padding: 0 7px; border: 1px solid var(--border); border-radius: 2em; color: var(--muted); font-size: .6875rem; font-weight: 600; text-transform: capitalize; white-space: nowrap; }

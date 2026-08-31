@@ -3,6 +3,7 @@
  */
 
 import { h } from '../dom.js';
+import { renderTableSummaryRow } from './table-summary.js';
 
 /**
  * @typedef {{ key: string, label: string, columnIndex: number }} TableFilterField
@@ -19,6 +20,7 @@ const DEFAULT_PAGE_SIZE = 25;
  *   emptyMessage: string,
  *   colSpan: number,
  *   headCells: string[],
+ *   summaryColumns?: import('./table-summary.js').TableSummaryColumn[],
  *   bodyRows: unknown,
  *   filterLabel?: string,
  *   filterId?: string,
@@ -34,6 +36,7 @@ export function renderTableRegion(options) {
     emptyMessage,
     colSpan,
     headCells,
+    summaryColumns = [],
     bodyRows,
     filterLabel,
     filterId,
@@ -112,7 +115,8 @@ export function renderTableRegion(options) {
                 )
               )
               : h('th', { scope: 'col' }, cell)))
-          )
+          ),
+          summaryColumns.length > 0 ? renderTableSummaryRow(summaryColumns) : null
         ),
         h(
           'tbody',
