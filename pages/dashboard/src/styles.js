@@ -282,21 +282,6 @@ h3 { margin: 16px 0 8px; font-size: 1rem; font-weight: 600; }
 .workflow-attention-list li:first-child { border-top: 0; }
 .workflow-attention-list a, .workflow-attention-static { min-height: 68px; display: grid; grid-template-columns: 24px 20px minmax(0, 1fr) minmax(150px, auto); align-items: center; gap: 10px; padding: 9px 14px; color: var(--fg); text-decoration: none; }
 .workflow-attention-list a:hover { background: var(--canvas-subtle); }
-.signal-rank { color: var(--muted); font-size: .6875rem; font-variant-numeric: tabular-nums; text-align: center; }
-.signal-icon { width: 20px; display: grid; place-items: center; color: var(--attention); }
-.signal-critical .signal-icon { color: var(--danger); }
-.signal-informational .signal-icon { color: var(--accent); }
-.signal-copy { min-width: 0; display: grid; }
-.signal-copy > span { color: var(--muted); font-size: .625rem; font-weight: 600; text-transform: uppercase; }
-.signal-copy > strong, .signal-copy > small { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.signal-copy > strong { font-size: .8125rem; }
-.signal-copy > small { color: var(--muted); font-size: .75rem; }
-.signal-evidence { min-width: 0; display: grid; justify-items: end; text-align: right; }
-.signal-evidence strong { font-size: .75rem; }
-.signal-evidence small { display: inline-flex; align-items: center; gap: 4px; color: var(--muted); font-size: .6875rem; }
-.signal-evidence .octicon { width: 12px; height: 12px; }
-.signal-clear { min-height: 68px; display: grid; grid-template-columns: 20px minmax(0, 1fr); align-items: center; gap: 10px; padding: 9px 14px; }
-.signal-clear .signal-icon { color: var(--success); }
 .workflow-attention-note { margin: 7px 0 0; color: var(--muted); font-size: .6875rem; }
 .episode-observatory { margin-bottom: 32px; }
 .episode-vitals { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); margin: 0; border: 1px solid var(--border); border-radius: 6px 6px 0 0; background: var(--canvas-subtle); }
@@ -466,6 +451,7 @@ h3 { margin: 16px 0 8px; font-size: 1rem; font-weight: 600; }
 .signal-item > a:focus-visible { outline: 2px solid var(--focus); outline-offset: -2px; }
 .signal-rank { color: var(--muted); font-size: .6875rem; font-variant-numeric: tabular-nums; text-align: center; }
 .signal-icon { width: 20px; display: grid; place-items: center; color: var(--attention); }
+.signal-critical .signal-icon { color: var(--danger); }
 .signal-informational .signal-icon { color: var(--accent); }
 .signal-copy { min-width: 0; display: grid; }
 .signal-copy > span { color: var(--muted); font-size: .625rem; font-weight: 600; text-transform: uppercase; }
@@ -474,7 +460,8 @@ h3 { margin: 16px 0 8px; font-size: 1rem; font-weight: 600; }
 .signal-copy > small { color: var(--muted); font-size: .75rem; }
 .signal-evidence { min-width: 0; display: grid; justify-items: end; text-align: right; }
 .signal-evidence strong { font-size: .75rem; }
-.signal-evidence small { color: var(--muted); font-size: .6875rem; }
+.signal-evidence small { display: inline-flex; align-items: center; gap: 4px; color: var(--muted); font-size: .6875rem; }
+.signal-evidence .octicon { width: 12px; height: 12px; }
 .signal-clear { min-height: 68px; display: grid; grid-template-columns: 20px minmax(0, 1fr); align-items: center; gap: 10px; padding: 9px 14px; }
 .signal-clear .signal-icon { color: var(--success); }
 .managed-packages > header { min-height: 72px; padding: 10px 0; }
