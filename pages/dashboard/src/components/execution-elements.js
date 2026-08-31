@@ -72,7 +72,7 @@ export function renderSignalList(context) {
       icon: 'codescan',
       kind: 'Evidence gap',
       title: 'Worker attribution incomplete',
-      detail: `${formatCount(model.workerRuns.length)} of ${formatCount(model.workerRuns.length)} observed dispatches lack exact episode evidence`,
+      detail: `${formatCount(model.workerRuns.length)} observed dispatches lack exact episode evidence`,
       evidence: 'Causality unknown',
       href: '#runtime-episode-attribution-gap'
     });
@@ -86,7 +86,7 @@ export function renderSignalList(context) {
       icon: 'codescan',
       kind: 'Evidence gap',
       title: 'Episode evidence stops at the root',
-      detail: `${formatCount(model.episodes.length)} of ${formatCount(model.episodes.length)} root episodes have no correlated worker attempt or output`,
+      detail: `${formatCount(model.episodes.length)} root episodes have no correlated worker attempt or output`,
       evidence: 'Outcome unavailable',
       href: '#runtime-execution-episodes'
     });
@@ -178,9 +178,6 @@ export function renderExecutionEpisodes(context) {
   );
 }
 
-/**
- * @param {import('./ui-elements.js').ElementRenderContext} context
- */
 /**
  * @param {import('./ui-elements.js').ElementRenderContext} context
  */
