@@ -72,7 +72,10 @@ describe('Cost and efficiency dashboard view', () => {
       sources: {
         usage: {
           source: 'usage',
-          rows: [],
+          rows: [
+            { organization: 'githubnext', repository: 'central-agentic-ops', workflow: '.github/workflows/daily.md', invocation: 'shared-id', aic: 1 },
+            { organization: 'octo-org', repository: 'service', workflow: '.github/workflows/daily.md', invocation: 'shared-id', aic: 1 }
+          ],
           metadata: { ...metadata, completeness: /** @type {'complete'} */ ('complete') }
         }
       }
@@ -82,6 +85,7 @@ describe('Cost and efficiency dashboard view', () => {
     const signals = [...(page?.querySelectorAll('.workflow-attention-list .signal-item') ?? [])];
     expect(signals).toHaveLength(2);
     expect(page?.textContent).not.toContain('AI Credit telemetry is partial');
-    expect(page?.querySelector('.domain-summary')?.textContent).toContain('Measured AIC0');
+    expect(page?.querySelector('.domain-summary')?.textContent).toContain('Measured AIC2');
+    expect(page?.querySelector('.domain-summary')?.textContent).toContain('Measured runs2');
   });
 });

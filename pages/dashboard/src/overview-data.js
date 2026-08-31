@@ -589,8 +589,10 @@ function sourceIsAvailable(source) {
  */
 function usageRunKey(row) {
   const run = String(row.run ?? '').trim();
-  if (run) return `${repositoryKey(row)}:${String(row.workflow ?? '')}:${run}`;
-  return String(row.invocation ?? '').trim();
+  const context = `${repositoryKey(row)}:${String(row.workflow ?? '')}`;
+  if (run) return `${context}:${run}`;
+  const invocation = String(row.invocation ?? '').trim();
+  return invocation ? `${context}:${invocation}` : '';
 }
 
 /**
