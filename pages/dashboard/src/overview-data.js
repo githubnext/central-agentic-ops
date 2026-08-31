@@ -245,8 +245,8 @@ function buildDomainAttentionRows(input) {
         }),
         domainRow({
           order: 1,
-          priority: input.health.approval > 0 || warningOutputs > 0 ? 1 : 3,
-          state: input.health.approval > 0 || warningOutputs > 0 ? 'Investigate' : 'Unavailable',
+          priority: input.health.approval > 0 || warningOutputs > 0 || inventoryGaps > 0 ? 1 : 3,
+          state: input.health.approval > 0 || warningOutputs > 0 || inventoryGaps > 0 ? 'Investigate' : 'Unavailable',
           icon: 'shield',
           domain: 'Security & controls',
           value: `${formatCount(securitySignals)} signals`,
