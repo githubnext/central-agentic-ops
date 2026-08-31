@@ -275,6 +275,8 @@
         "page": "repositories",
         "title": "Repositories",
         "icon": "repo",
+        "class-name": "repositories-page",
+        "description": "Repository-owned workflow health and AI Credit usage across configured repositories.",
         "definition": {
           "data-state": {
             "availability": true,
@@ -283,112 +285,20 @@
           },
           "views": [
             {
-              "id": "repositories-by-aic",
-              "title": "AI Credit usage by AW repository",
-              "description": "Read-only usage reported by AW runs, grouped by repository.",
+              "id": "repositories-activity",
+              "title": "Repository activity",
               "data": {
-                "source": "usage",
-                "order-by": [
-                  { "field": "total-aic", "direction": "desc" }
+                "sources": [
+                  "repositories",
+                  "workflows",
+                  "runs",
+                  "outcomes",
+                  "usage",
+                  "operational-values"
                 ]
               },
-              "mark": "chart",
-              "chart": "pie",
-              "encoding": {
-                "x": { "field": "repository", "type": "nominal", "title": "Repository" },
-                "y": { "field": "aic", "type": "quantitative", "aggregate": "sum", "as": "total-aic", "title": "Total AIC", "unit": "aic" },
-                "href": { "field": "repository-link" }
-              }
-            },
-            {
-              "id": "repositories-repositories-source",
-              "title": "Repository Inventory and Rankings",
-              "data": {
-                "source": "repositories"
-              },
-              "mark": "table",
-              "encoding": {
-                "columns": [
-                  {
-                    "field": "repository",
-                    "type": "nominal"
-                  },
-                  {
-                    "field": "repository-name",
-                    "type": "nominal"
-                  },
-                  {
-                    "field": "organization",
-                    "type": "nominal"
-                  },
-                  {
-                    "field": "rollout-mode",
-                    "type": "nominal",
-                    "display": "mode"
-                  }
-                ]
-              }
-            },
-            {
-              "id": "repositories-by-run-count",
-              "title": "Repositories by Run Count",
-              "data": {
-                "source": "runs",
-                "order-by": [
-                  {
-                    "field": "run-count",
-                    "direction": "desc"
-                  }
-                ]
-              },
-              "mark": "table",
-              "encoding": {
-                "columns": [
-                  {
-                    "field": "repository",
-                    "type": "nominal"
-                  },
-                  {
-                    "field": "run",
-                    "type": "nominal",
-                    "aggregate": "distinct-count",
-                    "as": "run-count"
-                  }
-                ]
-              }
-            },
-            {
-              "id": "repositories-by-operational-value",
-              "disclosure": "supplemental",
-              "title": "Repositories by Operational Value",
-              "data": {
-                "source": "operational-values",
-                "order-by": [
-                  {
-                    "field": "mean-operational-value",
-                    "direction": "desc"
-                  }
-                ]
-              },
-              "mark": "table",
-              "encoding": {
-                "columns": [
-                  {
-                    "field": "repository",
-                    "type": "nominal"
-                  },
-                  {
-                    "field": "operational-value-definition",
-                    "type": "nominal"
-                  },
-                  {
-                    "field": "operational-value",
-                    "type": "quantitative",
-                    "aggregate": "mean",
-                    "as": "mean-operational-value"
-                  }
-                ]
-              }
+              "mark": "element",
+              "element": "repository-activity"
             }
           ]
         }

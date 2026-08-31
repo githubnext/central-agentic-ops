@@ -73,6 +73,15 @@ function buildPresenterModuleUrl() {
     .replace("'./run-classification.js'", JSON.stringify(runClassificationModuleUrl));
   const packagesViewModuleUrl = `data:text/javascript;charset=utf-8,${encodeURIComponent(packagesViewSource)}`;
 
+  const repositoriesViewSource = readFileSync(new URL('../../src/components/repositories-view.js', import.meta.url), 'utf8')
+    .replace("'../dom.js'", JSON.stringify(domModuleUrl))
+    .replace("'../view-formatters.js'", JSON.stringify(viewFormattersModuleUrl))
+    .replace("'./link-content.js'", JSON.stringify(linkContentModuleUrl))
+    .replace("'./run-classification.js'", JSON.stringify(runClassificationModuleUrl))
+    .replace("'./chart-elements.js'", JSON.stringify(chartElementsModuleUrl))
+    .replace("'./table-region.js'", JSON.stringify(tableRegionModuleUrl));
+  const repositoriesViewModuleUrl = `data:text/javascript;charset=utf-8,${encodeURIComponent(repositoriesViewSource)}`;
+
   const linkContentSource = readFileSync(new URL('../../src/components/link-content.js', import.meta.url), 'utf8')
     .replace("'../dom.js'", JSON.stringify(domModuleUrl))
     .replace("'../octicons.js'", JSON.stringify(octiconsModuleUrl));
@@ -108,6 +117,7 @@ function buildPresenterModuleUrl() {
     .replace("'../view-formatters.js'", JSON.stringify(viewFormattersModuleUrl))
     .replace("'./badge.js'", JSON.stringify(badgeModuleUrl))
     .replace("'./packages-view.js'", JSON.stringify(packagesViewModuleUrl))
+    .replace("'./repositories-view.js'", JSON.stringify(repositoriesViewModuleUrl))
     .replace("'./workflow-topology.js'", JSON.stringify(workflowTopologyModuleUrl))
     .replace("'./dispatch-catalog.js'", JSON.stringify(dispatchCatalogModuleUrl));
   const uiElementsModuleUrl = `data:text/javascript;charset=utf-8,${encodeURIComponent(uiElementsSource)}`;

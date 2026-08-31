@@ -24,6 +24,7 @@ export const VIEW_ELEMENT_VALUES = [
   'record-cards',
   'package-activity',
   'package-run-trend',
+  'repository-activity',
   'dispatch-catalog',
   'workflow-topology'
 ];

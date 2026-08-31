@@ -320,6 +320,50 @@ h3 { margin: 16px 0 8px; font-size: 1rem; font-weight: 600; }
 .package-chart-point:focus-visible .package-point-hit { fill: color-mix(in srgb, var(--focus) 18%, transparent); stroke: var(--focus); stroke-width: 2; vector-effect: non-scaling-stroke; }
 .package-trend-axis { display: flex; justify-content: space-between; padding: 0 30px 8px; color: var(--muted); font-size: .6875rem; }
 .package-trend-coverage { margin: 0; padding: 0 16px 12px; color: var(--muted); font-size: .75rem; }
+.repositories-view { display: grid; gap: 36px; }
+.repository-scope-context { display: grid; grid-template-columns: minmax(0, 2.5fr) minmax(220px, 1.3fr) minmax(180px, 1fr); overflow: hidden; border: 1px solid var(--border); border-radius: 6px; background: var(--canvas-subtle); }
+.repository-scope-context > div { min-width: 0; padding: 10px 14px; border-left: 1px solid var(--border); }
+.repository-scope-context > div:first-child { border-left: 0; }
+.repository-scope-context span, .repository-scope-context strong { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.repository-scope-context span { color: var(--muted); font-size: .75rem; font-weight: 600; text-transform: uppercase; }
+.repository-scope-context strong { margin-top: 2px; font-size: .8125rem; }
+.repository-scope-set { display: flex; flex-wrap: wrap; row-gap: 2px; margin: 4px 0 0; padding: 0; list-style: none; }
+.repository-scope-set li { display: inline-flex; align-items: center; }
+.repository-scope-set li:not(:last-child)::after { content: "·"; margin: 0 7px; color: var(--muted); }
+.repository-scope-set code { padding: 0; background: transparent; color: var(--fg); font-size: .75rem; white-space: nowrap; }
+.repository-aic-panel { display: grid; grid-template-columns: minmax(190px, .65fr) minmax(0, 1.35fr); align-items: center; gap: 24px; padding: 20px 24px; border: 1px solid var(--border); border-radius: 6px; }
+.repository-aic-panel h3 { margin: 0 0 4px; font-size: 1.25rem; }
+.repository-aic-panel > div:first-child > p { margin: 0; color: var(--muted); }
+.repository-aic-chart { min-width: 0; display: grid; grid-template-columns: 180px minmax(0, 1fr); align-items: center; gap: 20px; }
+.repository-aic-chart .chart-widget { min-height: 180px; margin: 0; border: 0; background: transparent; }
+.repository-aic-chart .chart-widget svg { width: 180px; height: 180px; max-height: none; }
+.repository-aic-chart .chart-legend-pie { display: block; margin: 0; }
+.repository-aic-chart .chart-legend-pie li { min-height: 30px; display: grid; grid-template-columns: 10px minmax(0, 1fr) auto 54px; gap: 9px; border-bottom: 1px solid var(--border-muted); }
+.repository-aic-chart .chart-legend-pie li:last-child { border-bottom: 0; }
+.repository-aic-chart .chart-legend-pie i { width: 9px; height: 9px; border-radius: 2px; }
+.repository-aic-chart .chart-legend-pie strong, .repository-aic-chart .chart-legend-pie small { font-variant-numeric: tabular-nums; text-align: right; }
+.repository-aic-chart .pie-chart-widget .chart-series-1 { stroke: var(--accent); }
+.repository-aic-chart .pie-chart-widget .chart-series-2 { stroke: var(--success); }
+.repository-aic-chart .pie-chart-widget .chart-series-3 { stroke: var(--attention); }
+.repository-aic-chart .pie-chart-widget .chart-series-4 { stroke: var(--danger); }
+.repository-aic-chart .pie-chart-widget .chart-series-5 { stroke: var(--purple); }
+.repository-aic-chart .pie-chart-widget .chart-series-6 { stroke: var(--muted); }
+.repository-aic-chart .chart-legend i.chart-series-1 { background: var(--accent); }
+.repository-aic-chart .chart-legend i.chart-series-2 { background: var(--success); }
+.repository-aic-chart .chart-legend i.chart-series-3 { background: var(--attention); }
+.repository-aic-chart .chart-legend i.chart-series-4 { background: var(--danger); }
+.repository-aic-chart .chart-legend i.chart-series-5 { background: var(--purple); }
+.repository-aic-chart .chart-legend i.chart-series-6 { background: var(--muted); }
+.repository-section-heading { display: flex; align-items: flex-start; justify-content: space-between; gap: 24px; margin-bottom: 12px; }
+.repository-section-heading h3 { margin: 2px 0 3px; font-size: 1.25rem; }
+.repository-section-heading p { margin: 0; color: var(--muted); }
+.repository-section-heading > span { color: var(--muted); white-space: nowrap; }
+.repository-activity .table-region { margin-bottom: 0; }
+.repository-activity-table tbody th { white-space: nowrap; }
+.repository-activity-table tbody :is(th, td) { padding-block: 14px; }
+.repository-failure-rate { display: grid; line-height: 1.3; }
+.repository-failure-rate strong { font-size: .875rem; }
+.repository-failure-rate span { color: var(--muted); font-size: .75rem; }
 .attention-panel { overflow: hidden; border: 1px solid var(--border); border-radius: 6px; background: var(--canvas); }
 .attention-panel > header { min-height: 72px; display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 14px 16px; border-bottom: 1px solid var(--border); background: var(--canvas-subtle); }
 .attention-panel > header h3, .managed-packages > header h3 { margin: 2px 0 0; font-size: 1.125rem; }
@@ -467,7 +511,12 @@ footer { padding: 20px 24px; border-top: 1px solid var(--border); color: var(--m
   .package-dispatch i::after { top: auto; right: -4px; bottom: 0; border-width: 6px 4px 0; border-color: var(--border) transparent transparent; }
 }
 @media (max-width: 700px) {
-  .app-shell { display: block; }
+  .app-shell { display: block;     .repository-scope-context, .repository-aic-panel, .repository-aic-chart { grid-template-columns: 1fr; }
+    .repository-scope-context > div { border-top: 1px solid var(--border); border-left: 0; }
+    .repository-scope-context > div:first-child { border-top: 0; }
+    .repository-aic-chart .pie-chart-widget { margin: auto; }
+    .repository-section-heading { align-items: flex-start; flex-direction: column; gap: 8px; }
+  }
   .org-sidebar { display: block; padding: 14px 12px 10px; border-right: 0; border-bottom: 1px solid var(--border); }
   .sidebar-brand { margin-bottom: 8px; font-size: 1rem; }
   .primary-nav { width: 100%; flex-direction: row; overflow-x: auto; }
