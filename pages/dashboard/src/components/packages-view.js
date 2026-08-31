@@ -206,7 +206,8 @@ function summarizePackageActivity(packages, sources, mode) {
       const run = runDetails.get(runKey);
       const packageKey = run?.packageKey ?? workflowDetails.get(scopedEntityKey(row, 'workflow'));
       const summary = packageKey ? summaries.get(packageKey) : null;
-      if (!summary || (mode !== 'all' && run?.mode !== mode)) continue;
+      const findingMode = run?.mode ?? String(row['rollout-mode'] ?? 'unknown');
+      if (!summary || (mode !== 'all' && findingMode !== mode)) continue;
       updateLatestActivity(summary, row['observed-at']);
       if (row['finding-kind'] !== 'authored-warning' || !run || warningRuns.has(runKey)) continue;
       warningRuns.add(runKey);

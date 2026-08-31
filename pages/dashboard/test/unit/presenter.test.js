@@ -867,8 +867,12 @@ describe('presenter built-in and custom pages', () => {
     expect(packagesPage?.querySelector('.package-summary-heading')?.textContent).toContain('All output by package');
     const packageSummaryRows = [...(packagesPage?.querySelectorAll('.package-summary-table tbody tr') ?? [])];
     expect(packageSummaryRows).toHaveLength(2);
-    expect(packageSummaryRows[0]?.textContent).toContain('Daily Ops2111240Aug 29, 2026, 10:06 AM');
-    expect(packageSummaryRows[1]?.textContent).toContain('Empty Ops000000No activity yet');
+    expect([...packageSummaryRows[0]?.children ?? []].map((cell) => cell.textContent)).toEqual([
+      'Daily Ops', '2', '1', '1', '1', '2', '40', 'Aug 29, 2026, 10:06 AM'
+    ]);
+    expect([...packageSummaryRows[1]?.children ?? []].map((cell) => cell.textContent)).toEqual([
+      'Empty Ops', '0', '0', '0', '0', '0', '0', 'No activity yet'
+    ]);
     expect(packagesPage?.querySelector('.package-trend-panel header')?.textContent).toContain('2as of');
     expect(packagesPage?.querySelector('.package-utilization')?.textContent).toContain('Partial usage coverage.');
     expect(/** @type {HTMLElement | null} */ (packagesPage?.querySelector('.data-state-summary'))?.hidden).toBe(true);
@@ -881,7 +885,10 @@ describe('presenter built-in and custom pages', () => {
     expect(reviewTab?.getAttribute('aria-selected')).toBe('true');
     expect(globalThis.document.activeElement).toBe(reviewTab);
     expect(packagesPage?.querySelector('[data-package-id="daily-ops"]')?.textContent).toContain('10 of 100 AIC across 1 reported run');
-    expect(packagesPage?.querySelector('.package-summary-table tbody tr')?.textContent).toContain('Daily Ops1100210Aug 28, 2026, 10:00 AM');
+    const reviewSummaryCells = packagesPage?.querySelector('.package-summary-table tbody tr')?.children ?? [];
+    expect([...reviewSummaryCells].map((cell) => cell.textContent)).toEqual([
+      'Daily Ops', '1', '1', '0', '0', '2', '10', 'Aug 28, 2026, 10:00 AM'
+    ]);
     expect(packagesPage?.querySelector('.package-trend-panel header')?.textContent).toContain('Review runs over time1');
     rendered.remove();
   });
