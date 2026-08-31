@@ -383,10 +383,10 @@ h3 { margin: 16px 0 8px; font-size: 1rem; font-weight: 600; }
 .repository-aic-chart .chart-legend i.chart-series-4 { background: var(--danger); }
 .repository-aic-chart .chart-legend i.chart-series-5 { background: var(--purple); }
 .repository-aic-chart .chart-legend i.chart-series-6 { background: var(--muted); }
-.repository-section-heading { display: flex; align-items: flex-start; justify-content: space-between; gap: 24px; margin-bottom: 12px; }
-.repository-section-heading h3 { margin: 2px 0 3px; font-size: 1.25rem; }
-.repository-section-heading p { margin: 0; color: var(--muted); }
-.repository-section-heading > span { color: var(--muted); white-space: nowrap; }
+.repository-activity-heading { display: flex; align-items: flex-start; justify-content: space-between; gap: 24px; margin-bottom: 12px; }
+.repository-activity-heading h3 { margin: 2px 0 3px; font-size: 1.25rem; }
+.repository-activity-heading p { margin: 0; color: var(--muted); }
+.repository-activity-heading > span { color: var(--muted); white-space: nowrap; }
 .repository-activity .table-region { margin-bottom: 0; }
 .repository-activity-table tbody th { white-space: nowrap; }
 .repository-activity-table tbody :is(th, td) { padding-block: 14px; }
@@ -540,12 +540,12 @@ footer { padding: 20px 24px; border-top: 1px solid var(--border); color: var(--m
   .package-dispatch i::after { top: auto; right: -4px; bottom: 0; border-width: 6px 4px 0; border-color: var(--border) transparent transparent; }
 }
 @media (max-width: 700px) {
-  .app-shell { display: block;     .repository-scope-context, .repository-aic-panel, .repository-aic-chart { grid-template-columns: 1fr; }
-    .repository-scope-context > div { border-top: 1px solid var(--border); border-left: 0; }
-    .repository-scope-context > div:first-child { border-top: 0; }
-    .repository-aic-chart .pie-chart-widget { margin: auto; }
-    .repository-section-heading { align-items: flex-start; flex-direction: column; gap: 8px; }
-  }
+  .app-shell { display: block; }
+  .repository-scope-context, .repository-aic-panel, .repository-aic-chart { grid-template-columns: 1fr; }
+  .repository-scope-context > div { border-top: 1px solid var(--border); border-left: 0; }
+  .repository-scope-context > div:first-child { border-top: 0; }
+  .repository-aic-chart .pie-chart-widget { margin: auto; }
+  .repository-activity-heading { align-items: flex-start; flex-direction: column; gap: 8px; }
   .org-sidebar { display: block; padding: 14px 12px 10px; border-right: 0; border-bottom: 1px solid var(--border); }
   .sidebar-brand { margin-bottom: 8px; font-size: 1rem; }
   .primary-nav { width: 100%; flex-direction: row; overflow-x: auto; }

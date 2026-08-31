@@ -98,7 +98,10 @@ function renderAicDistribution(sources, summaries, headingId) {
     y: Number(aiCredits),
     color: null
   }));
-  const links = new Map(leading.map((entry) => [entry.repository, repositoryDetailLink(entry.repository)]));
+  const links = new Map(leading.flatMap((entry) => {
+    const link = repositoryNavigationLink(entry);
+    return link ? [[entry.repository, link]] : [];
+  }));
 
   return h(
     'section',
@@ -167,7 +170,7 @@ function renderRepositoryActivity(sources, summaries, headingId) {
     { className: 'repository-activity', 'aria-labelledby': headingId },
     h(
       'div',
-      { className: 'repository-section-heading' },
+      { className: 'repository-activity-heading' },
       h(
         'div',
         null,
@@ -190,22 +193,28 @@ function renderRepositoryActivity(sources, summaries, headingId) {
  * @param {RepositorySummary} summary
  */
 function renderRepositoryLink(summary) {
-  const link = repositoryDetailLink(summary.repository);
+  const link = repositoryNavigationLink(summary);
+  if (!link) return summary.repository;
+  const internal = link.href.startsWith('#');
   return h('a', {
     href: link.href,
     'aria-label': link.label,
-    dataset: { navPageId: 'repository-detail' }
+    ...(internal
+      ? { dataset: { navPageId: 'repository-detail' } }
+      : { target: '_blank', rel: 'noopener noreferrer' })
   }, summary.repository);
 }
 
 /**
- * @param {string} repository
+ * @param {RepositorySummary} summary
  */
-function repositoryDetailLink(repository) {
-  return {
-    href: `#page-repository-detail?repository=${encodeURIComponent(repository)}`,
-    label: `View ${repository}`
-  };
+function repositoryNavigationLink(summary) {
+  return summary.repository.includes('/')
+    ? {
+      href: `#page-repository-detail?repository=${encodeURIComponent(summary.repository)}`,
+      label: `View ${summary.repository}`
+    }
+    : summary.link;
 }
 
 /**
