@@ -21,8 +21,13 @@ function buildPresenterModuleUrl() {
     .replace("'../dom.js'", JSON.stringify(domModuleUrl));
   const badgeModuleUrl = `data:text/javascript;charset=utf-8,${encodeURIComponent(badgeSource)}`;
 
-  const viewChromeSource = readFileSync(new URL('../../src/components/view-chrome.js', import.meta.url), 'utf8')
+  const uiPrimitivesSource = readFileSync(new URL('../../src/components/ui-primitives.js', import.meta.url), 'utf8')
     .replace("'../dom.js'", JSON.stringify(domModuleUrl));
+  const uiPrimitivesModuleUrl = `data:text/javascript;charset=utf-8,${encodeURIComponent(uiPrimitivesSource)}`;
+
+  const viewChromeSource = readFileSync(new URL('../../src/components/view-chrome.js', import.meta.url), 'utf8')
+    .replace("'../dom.js'", JSON.stringify(domModuleUrl))
+    .replace("'./ui-primitives.js'", JSON.stringify(uiPrimitivesModuleUrl));
   const viewChromeModuleUrl = `data:text/javascript;charset=utf-8,${encodeURIComponent(viewChromeSource)}`;
 
   const dataStateSource = readFileSync(new URL('../../src/components/data-state.js', import.meta.url), 'utf8')
@@ -96,10 +101,6 @@ function buildPresenterModuleUrl() {
   const linkedTextSource = readFileSync(new URL('../../src/components/linked-text.js', import.meta.url), 'utf8')
     .replace("'../dom.js'", JSON.stringify(domModuleUrl));
   const linkedTextModuleUrl = `data:text/javascript;charset=utf-8,${encodeURIComponent(linkedTextSource)}`;
-
-  const uiPrimitivesSource = readFileSync(new URL('../../src/components/ui-primitives.js', import.meta.url), 'utf8')
-    .replace("'../dom.js'", JSON.stringify(domModuleUrl));
-  const uiPrimitivesModuleUrl = `data:text/javascript;charset=utf-8,${encodeURIComponent(uiPrimitivesSource)}`;
 
   const packageDetailSource = readFileSync(new URL('../../src/components/package-detail.js', import.meta.url), 'utf8')
     .replace("'../dom.js'", JSON.stringify(domModuleUrl))
@@ -179,13 +180,16 @@ function buildPresenterModuleUrl() {
     .replace("'./view-chrome.js'", JSON.stringify(viewChromeModuleUrl));
   const outcomeDetailModuleUrl = `data:text/javascript;charset=utf-8,${encodeURIComponent(outcomeDetailSource)}`;
 
+  const runtimeDataSource = readFileSync(new URL('../../src/runtime-data.js', import.meta.url), 'utf8')
+    .replace("'./components/count-formatters.js'", JSON.stringify(countFormattersModuleUrl));
+  const runtimeDataModuleUrl = `data:text/javascript;charset=utf-8,${encodeURIComponent(runtimeDataSource)}`;
+
   const executionElementsSource = readFileSync(new URL('../../src/components/execution-elements.js', import.meta.url), 'utf8')
     .replace("'../dom.js'", JSON.stringify(domModuleUrl))
-    .replace("'../octicons.js'", JSON.stringify(octiconsModuleUrl))
     .replace("'./badge.js'", JSON.stringify(badgeModuleUrl))
     .replace("'./count-formatters.js'", JSON.stringify(countFormattersModuleUrl))
-    .replace("'./link-content.js'", JSON.stringify(linkContentModuleUrl))
-    .replace("'./ui-primitives.js'", JSON.stringify(uiPrimitivesModuleUrl));
+    .replace("'./ui-primitives.js'", JSON.stringify(uiPrimitivesModuleUrl))
+    .replace("'../runtime-data.js'", JSON.stringify(runtimeDataModuleUrl));
   const executionElementsModuleUrl = `data:text/javascript;charset=utf-8,${encodeURIComponent(executionElementsSource)}`;
 
   const uiElementsSource = readFileSync(new URL('../../src/components/ui-elements.js', import.meta.url), 'utf8')
@@ -241,6 +245,7 @@ function buildPresenterModuleUrl() {
     .replace("'./components/data-view.js'", JSON.stringify(dataViewModuleUrl))
     .replace("'./components/filter-bar.js'", JSON.stringify(filterBarModuleUrl))
     .replace("'./overview-data.js'", JSON.stringify(overviewDataModuleUrl))
+    .replace("'./runtime-data.js'", JSON.stringify(runtimeDataModuleUrl))
     .replace("'./view-formatters.js'", JSON.stringify(viewFormattersModuleUrl));
 
   return `data:text/javascript;charset=utf-8,${encodeURIComponent(presenterSource)}`;

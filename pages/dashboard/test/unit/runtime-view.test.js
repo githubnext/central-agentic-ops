@@ -41,7 +41,7 @@ describe('Runtime dashboard view', () => {
     )).toEqual([
       {
         id: 'runtime-needs-attention',
-        element: 'execution-signal-list'
+        element: 'signal-list'
       },
       {
         id: 'runtime-execution-episodes',
@@ -61,7 +61,7 @@ describe('Runtime dashboard view', () => {
           kind: /** @type {'custom'} */ ('custom'),
           title: 'Runtime',
           views: [
-            { id: 'attention', title: 'Needs attention', data: { sources: ['workflows', 'runs', 'outcomes', 'findings'] }, mark: 'element', element: 'execution-signal-list' },
+            { id: 'attention', title: 'Needs attention', data: { sources: ['runtime-signals'] }, mark: 'element', element: 'signal-list' },
             { id: 'episodes', title: 'Execution episodes', data: { sources: ['workflows', 'runs', 'outcomes', 'usage'] }, mark: 'element', element: 'execution-episodes' }
           ]
         }]
@@ -92,19 +92,19 @@ describe('Runtime dashboard view', () => {
     const rendered = renderDashboard({ document, sources });
 
     expect(rendered.querySelector('[data-nav-page-id="runtime"]')).not.toBeNull();
-    const attention = rendered.querySelector('.workflow-attention')?.textContent;
+    const attention = rendered.querySelector('.signal-list-region')?.textContent;
     expect(attention).toContain('Approval gate');
     expect(attention).toContain('Run failures');
     expect(attention).toContain('1 worker dispatch lacks episode evidence');
     expect(attention).toContain('1 root episode has no correlated worker attempt or output');
     expect(rendered.querySelector('.signal-critical .signal-icon use')?.getAttribute('href')).toContain('#octicon-issue-opened');
-    expect([...rendered.querySelectorAll('.workflow-attention-list > li > a')].map((link) => link.getAttribute('href'))).toEqual([
+    expect([...rendered.querySelectorAll('.signal-list > li > a')].map((link) => link.getAttribute('href'))).toEqual([
       '#page-workflow-detail?workflow=githubnext%2Fcentral-agentic-ops%3A.github%2Fworkflows%2Fdependabot-worker.md',
       '#page-workflow-detail?workflow=githubnext%2Fcentral-agentic-ops%3A.github%2Fworkflows%2Fdependabot.md',
       '#runtime-execution-episodes',
       '#runtime-episode-attribution-gap'
     ]);
-    expect(rendered.querySelector('.workflow-attention-list a[target]')).toBeNull();
+    expect(rendered.querySelector('.signal-list a[target]')).toBeNull();
     expect(rendered.querySelector('.episode-vitals')?.textContent).toContain('0 / 1');
     const repeatedCoverage = [...rendered.querySelectorAll('.episode-vitals > div')]
       .find((node) => node.querySelector('dt')?.textContent === 'Repeated coverage');
@@ -129,6 +129,6 @@ describe('Runtime dashboard view', () => {
     expect(rendered.querySelector('.episode-attribution-gap li a')?.getAttribute('href')).toBe(
       '#page-workflow-detail?workflow=githubnext%2Fcentral-agentic-ops%3A.github%2Fworkflows%2Fdependabot-worker.md'
     );
-    expect(rendered.querySelector('.workflow-attention a[href^="http"], .episode-observatory a[href^="http"]')).toBeNull();
+    expect(rendered.querySelector('.signal-list-region a[href^="http"], .episode-observatory a[href^="http"]')).toBeNull();
   });
 });

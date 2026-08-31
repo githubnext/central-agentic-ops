@@ -14,7 +14,7 @@ import { renderRepositoryWorkflows } from './repository-workflows.js';
 import { renderWorkflowDetail } from './workflow-detail.js';
 import { renderOutcomeDetail } from './outcome-detail.js';
 import { renderWorkflowTopology } from './workflow-topology.js';
-import { renderExecutionEpisodes, renderExecutionSignalList } from './execution-elements.js';
+import { renderExecutionEpisodes } from './execution-elements.js';
 import { renderSectionHeading } from './ui-primitives.js';
 import { renderDefinitionList } from './view-chrome.js';
 import { renderRepositoryActivity, renderRepositoryScope } from './repositories-view.js';
@@ -54,7 +54,6 @@ const ELEMENT_RENDERERS = new Map([
   ['workflow-detail', renderWorkflowDetail],
   ['workflow-runtime', renderWorkflowRuntime],
   ['outcome-detail', renderOutcomeDetail],
-  ['execution-signal-list', renderExecutionSignalList],
   ['execution-episodes', renderExecutionEpisodes],
   ['workflow-topology', ({ pageId, title, description, sourceNames, sources, headingTag }) => {
     const sourceName = sourceNames[0];
@@ -64,7 +63,7 @@ const ELEMENT_RENDERERS = new Map([
   }]
 ]);
 
-const EMPTY_AWARE_ELEMENTS = new Set(['status-summary', 'meter-list', 'attention-list', 'record-cards', 'summary-grid', 'signal-list', 'package-detail', 'package-reports', 'dispatch-catalog', 'repository-scope', 'repository-activity', 'repository-workflows', 'workflow-detail', 'workflow-runtime', 'outcome-detail', 'execution-signal-list', 'execution-episodes']);
+const EMPTY_AWARE_ELEMENTS = new Set(['status-summary', 'meter-list', 'attention-list', 'record-cards', 'summary-grid', 'signal-list', 'package-detail', 'package-reports', 'dispatch-catalog', 'repository-scope', 'repository-activity', 'repository-workflows', 'workflow-detail', 'workflow-runtime', 'outcome-detail', 'execution-episodes']);
 
 /**
  * @param {string} name
@@ -313,6 +312,7 @@ function renderSignalListElement(context) {
  */
 function renderSignal(row, index) {
   const link = findLink(row, 'run-link') ?? findLink(row, 'external-link');
+  const navigationHref = safeNavigationHref(row['navigation-href']);
   const navigationPage = stringValue(row['navigation-page']);
   const content = [
     h('span', { className: 'signal-rank', 'aria-hidden': 'true' }, String(index + 1)),
@@ -338,7 +338,21 @@ function renderSignal(row, index) {
   if (navigationPage) {
     return h('li', { className }, h('a', { href: `#page-${navigationPage}`, dataset: { navPageId: navigationPage } }, ...content));
   }
+  if (navigationHref) {
+    return h('li', { className }, h('a', { href: navigationHref }, ...content));
+  }
   return h('li', { className }, h('div', null, ...content));
+}
+
+/** @param {unknown} value */
+function safeNavigationHref(value) {
+  if (typeof value !== 'string' || !value.startsWith('#')) return null;
+  try {
+    const url = new URL(value, 'https://dashboard.invalid/');
+    return url.origin === 'https://dashboard.invalid' && url.hash === value ? value : null;
+  } catch {
+    return null;
+  }
 }
 
 /**

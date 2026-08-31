@@ -3,6 +3,7 @@
  */
 
 import { h } from '../dom.js';
+import { renderSectionHeading } from './ui-primitives.js';
 
 /**
  * @param {string} pageId
@@ -220,9 +221,42 @@ export function renderTitledBodySection(headingId, heading, body, options = {}) 
 }
 
 /**
+ * @param {string} pageId
+ * @param {{ id: string, title?: string, description?: string, layout: 'full'|'wide'|'narrow', views: string[], ['count-source']?: string, ['count-label']?: string }} section
+ * @param {number | null} count
+ * @returns {HTMLElement}
+ */
+export function renderLayoutSectionChrome(pageId, section, count) {
+  const title = section.title ?? titleCase(section.id);
+  const headingId = `${pageId}-${section.id}-layout-heading`;
+  const sectionHeading = renderSectionHeading({
+    kicker: titleCase(section.id),
+    id: headingId,
+    title,
+    description: section.description
+  });
+  return h(
+    'header',
+    { className: 'layout-section-header' },
+    sectionHeading,
+    count !== null && section['count-label']
+      ? h('strong', null, `${count.toLocaleString('en')} ${section['count-label']}`)
+      : null
+  );
+}
+
+/**
  * @param {string} value
  * @returns {string}
  */
 function slugifyText(value) {
   return value.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '') || 'section';
+}
+
+/**
+ * @param {string} value
+ * @returns {string}
+ */
+function titleCase(value) {
+  return value.replaceAll('-', ' ').replace(/\b\w/g, (letter) => letter.toUpperCase());
 }

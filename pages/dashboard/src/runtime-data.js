@@ -1,0 +1,258 @@
+/**
+ * Derived runtime sources for JSON-selected dashboard elements.
+ */
+
+import { formatCount, formatCountNoun } from './components/count-formatters.js';
+
+const FAILURE_CONCLUSIONS = new Set(['failure', 'startup-failure', 'timed-out']);
+
+/** @typedef {Record<string, unknown>} Row */
+/** @typedef {{ run: Row, workflow?: Row, packageName: string, duration: number | null }} ExecutionEpisode */
+/** @typedef {{ workflows: Map<string, Row>, runs: Row[], runsByWorkflow: Map<string, Row[]>, workerRuns: Row[], attributedWorkerRuns: Row[], unattributedWorkerRuns: Row[], nonRootRuns: Row[], episodes: ExecutionEpisode[], unattributedEpisodes: ExecutionEpisode[] }} ExecutionModel */
+
+/**
+ * @param {Record<string, import('./presenter.js').LogicalSourceInput>} sources
+ * @returns {Record<string, import('./presenter.js').LogicalSourceInput>}
+ */
+export function deriveRuntimeSources(sources) {
+  const model = buildExecutionModel(sources);
+  const signals = [];
+
+  for (const episode of model.episodes.filter((candidate) => FAILURE_CONCLUSIONS.has(text(candidate.run['run-conclusion'])))) {
+    signals.push({
+      priority: 0,
+      count: 1,
+      tone: 'critical',
+      icon: 'issue-opened',
+      kind: 'Root failure',
+      title: `${episode.packageName} root episode failed`,
+      detail: `${runTitle(episode.run, episode.workflow)} · ${formatDuration(episode.duration)}`,
+      evidence: '1 failed root run',
+      action: 'View evidence',
+      'navigation-href': packageOrWorkflowHref(episode.workflow, episode.run)
+    });
+  }
+
+  for (const [workflowKey, runs] of groupRuns(model.nonRootRuns.filter((run) => FAILURE_CONCLUSIONS.has(text(run['run-conclusion']))))) {
+    const workflow = model.workflows.get(workflowKey);
+    const retained = model.runsByWorkflow.get(workflowKey)?.length ?? runs.length;
+    signals.push({
+      priority: 0,
+      count: runs.length,
+      tone: 'critical',
+      icon: 'issue-opened',
+      kind: 'Run failures',
+      title: workflowName(workflow, runs[0]),
+      detail: `${formatCount(runs.length)} of ${formatCount(retained)} retained runs failed`,
+      evidence: retained > 0 ? formatPercent(runs.length / retained) : 'No denominator',
+      action: 'View evidence',
+      'navigation-href': workflowHref(workflow, runs[0])
+    });
+  }
+
+  for (const [workflowKey, runs] of groupRuns(model.runs.filter((run) => text(run['run-conclusion']) === 'action-required'))) {
+    const workflow = model.workflows.get(workflowKey);
+    const retained = model.runsByWorkflow.get(workflowKey)?.length ?? runs.length;
+    signals.push({
+      priority: 1,
+      count: runs.length,
+      tone: 'action',
+      icon: 'shield',
+      kind: 'Approval gate',
+      title: workflowName(workflow, runs[0]),
+      detail: `${formatCount(runs.length)} of ${formatCount(retained)} retained runs require approval`,
+      evidence: 'Maintainer action',
+      action: 'View evidence',
+      'navigation-href': workflowHref(workflow, runs[0])
+    });
+  }
+
+  if (model.unattributedWorkerRuns.length > 0) {
+    signals.push({
+      priority: 2,
+      count: model.unattributedWorkerRuns.length,
+      tone: 'informational',
+      icon: 'codescan',
+      kind: 'Evidence gap',
+      title: 'Worker attribution incomplete',
+      detail: workerDispatchEvidenceGap(model.unattributedWorkerRuns.length),
+      evidence: 'Causality unknown',
+      action: 'View evidence',
+      'navigation-href': '#runtime-episode-attribution-gap'
+    });
+  }
+
+  if (model.unattributedEpisodes.length > 0) {
+    signals.push({
+      priority: 2,
+      count: model.unattributedEpisodes.length,
+      tone: 'informational',
+      icon: 'codescan',
+      kind: 'Evidence gap',
+      title: 'Episode evidence stops at the root',
+      detail: `${formatCountNoun(model.unattributedEpisodes.length, 'root episode has', 'root episodes have')} no correlated worker attempt or output`,
+      evidence: 'Outcome unavailable',
+      action: 'View evidence',
+      'navigation-href': '#runtime-execution-episodes'
+    });
+  }
+
+  signals.push({
+    priority: 3,
+    count: 1,
+    tone: 'informational',
+    icon: 'pulse',
+    kind: 'Evaluation boundary',
+    title: 'Statistical anomalies not evaluated',
+    detail: 'The current window does not provide a representative historical baseline. Direct evidence remains visible without inferred anomaly labels.',
+    evidence: 'Baseline unavailable',
+    action: 'Review evidence'
+  });
+
+  signals.sort((left, right) => left.priority - right.priority || right.count - left.count || left.title.localeCompare(right.title));
+  return {
+    ...sources,
+    'runtime-signals': {
+      source: 'runtime-signals',
+      rows: signals.slice(0, 10),
+      metadata: combinedMetadata(sources)
+    }
+  };
+}
+
+/**
+ * @param {Record<string, import('./presenter.js').LogicalSourceInput>} sources
+ * @returns {ExecutionModel}
+ */
+export function buildExecutionModel(sources) {
+  const workflowRows = rowsFor(sources, 'workflows');
+  const runs = rowsFor(sources, 'runs');
+  const workflows = new Map(workflowRows.map((workflow) => [runKey(workflow), workflow]));
+  const runsByWorkflow = groupRuns(runs);
+  const rootRuns = runs.filter((run) => text(workflows.get(runKey(run))?.['workflow-role']) === 'orchestrator');
+  const workerRuns = runs.filter((run) => text(workflows.get(runKey(run))?.['workflow-role']) === 'worker');
+  const episodes = rootRuns
+    .map((run) => {
+      const workflow = workflows.get(runKey(run));
+      return {
+        run,
+        workflow,
+        packageName: text(workflow?.['package-name']) || workflowName(workflow, run),
+        duration: durationBetween(run['started-at'], run['ended-at'])
+      };
+    })
+    .sort((left, right) => Date.parse(text(right.run['started-at'])) - Date.parse(text(left.run['started-at'])));
+
+  return {
+    workflows,
+    runs,
+    runsByWorkflow,
+    workerRuns,
+    attributedWorkerRuns: [],
+    unattributedWorkerRuns: workerRuns,
+    nonRootRuns: runs.filter((run) => text(workflows.get(runKey(run))?.['workflow-role']) !== 'orchestrator'),
+    episodes,
+    unattributedEpisodes: episodes
+  };
+}
+
+/** @param {Array<Record<string, unknown>>} rows */
+export function groupRuns(rows) {
+  /** @type {Map<string, Row[]>} */
+  const groups = new Map();
+  for (const run of rows) {
+    const key = runKey(run);
+    const group = groups.get(key) ?? [];
+    group.push(run);
+    groups.set(key, group);
+  }
+  return groups;
+}
+
+/** @param {Row} run @param {Row | undefined} workflow */
+export function runTitle(run, workflow) {
+  return text(run['run-title']) || `Run ${text(run.run) || workflowName(workflow, run)}`;
+}
+
+/** @param {Row | undefined} workflow @param {Row | undefined} run */
+export function workflowName(workflow, run) {
+  return text(workflow?.['workflow-name']) || text(run?.workflow) || 'Unknown workflow';
+}
+
+/** @param {Row | undefined} workflow @param {Row} run */
+export function packageOrWorkflowHref(workflow, run) {
+  const packageId = text(workflow?.package);
+  return packageId ? `#page-package-detail?package=${encodeURIComponent(packageId)}` : workflowHref(workflow, run);
+}
+
+/** @param {Row | undefined} workflow @param {Row} run */
+export function workflowHref(workflow, run) {
+  const identity = workflow ?? run;
+  const repository = text(identity['runtime-repository']) || text(identity.repository);
+  const qualifiedRepository = repository.includes('/') ? repository : `${text(identity.organization)}/${repository}`.replace(/^\/|\/$/g, '');
+  const workflowPath = text(identity.workflow);
+  return qualifiedRepository && workflowPath
+    ? `#page-workflow-detail?workflow=${encodeURIComponent(`${qualifiedRepository}:${workflowPath}`)}`
+    : null;
+}
+
+/** @param {unknown} start @param {unknown} end */
+export function durationBetween(start, end) {
+  const duration = Date.parse(text(end)) - Date.parse(text(start));
+  return Number.isFinite(duration) && duration >= 0 ? duration : null;
+}
+
+/** @param {number | null} duration */
+export function formatDuration(duration) {
+  if (!Number.isFinite(duration)) return '—';
+  const seconds = Math.max(0, Math.round(Number(duration) / 1000));
+  if (seconds < 60) return `${seconds}s`;
+  const minutes = Math.floor(seconds / 60);
+  if (minutes < 60) return `${minutes}m ${seconds % 60}s`;
+  return `${Math.floor(minutes / 60)}h ${minutes % 60}m`;
+}
+
+/** @param {number} count */
+export function workerDispatchEvidenceGap(count) {
+  return `${formatCountNoun(count, 'worker dispatch lacks', 'worker dispatches lack')} episode evidence`;
+}
+
+/** @param {unknown} value */
+export function text(value) {
+  return value == null ? '' : String(value);
+}
+
+/** @param {Row} row */
+export function runKey(row) {
+  return `${text(row.organization).toLowerCase()}/${text(row.repository).toLowerCase()}:${text(row.workflow)}`;
+}
+
+/**
+ * @param {Record<string, import('./presenter.js').LogicalSourceInput>} sources
+ * @param {string} name
+ * @returns {Row[]}
+ */
+function rowsFor(sources, name) {
+  return Array.isArray(sources[name]?.rows) ? sources[name].rows : [];
+}
+
+/** @param {number} value */
+function formatPercent(value) {
+  return new Intl.NumberFormat('en', { style: 'percent', maximumFractionDigits: 1 }).format(value);
+}
+
+/**
+ * @param {Record<string, import('./presenter.js').LogicalSourceInput>} sources
+ * @returns {import('./presenter.js').SourceMetadata}
+ */
+function combinedMetadata(sources) {
+  return sources.runs?.metadata ?? sources.workflows?.metadata ?? {
+    'source-id': 'runtime-derived',
+    'source-kind': 'derived',
+    'as-of': new Date(0).toISOString(),
+    'retrieved-at': new Date(0).toISOString(),
+    completeness: 'unknown',
+    freshness: 'unknown',
+    availability: 'unavailable'
+  };
+}

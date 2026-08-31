@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import { describe, expect, it } from 'vitest';
-import { customViewAvailabilityMessage, renderContextChrome, renderContextList, renderCustomViewStateDetails, renderDefinitionList, renderDefinitionListRows, renderMetadataSection, renderPageSection, renderProvenanceList, renderProvenanceSection, renderSummaryList, renderSummaryRegion, renderTitledBodySection, renderTitledRegion, renderViewChrome, renderViewHeader, renderViewSectionChrome } from '../../src/components/view-chrome.js';
+import { customViewAvailabilityMessage, renderContextChrome, renderContextList, renderCustomViewStateDetails, renderDefinitionList, renderDefinitionListRows, renderLayoutSectionChrome, renderMetadataSection, renderPageSection, renderProvenanceList, renderProvenanceSection, renderSummaryList, renderSummaryRegion, renderTitledBodySection, renderTitledRegion, renderViewChrome, renderViewHeader, renderViewSectionChrome } from '../../src/components/view-chrome.js';
 
 describe('view chrome component helpers', () => {
   it('DLS-SAFE-007 renders focusable labeled page sections with deterministic heading ids', () => {
@@ -236,5 +236,23 @@ describe('view chrome component helpers', () => {
     expect(plain.querySelector('h3')?.textContent).toBe('Workflow observations');
     expect(plain.querySelector('h3')?.hasAttribute('id')).toBe(false);
     expect(plain.textContent).toContain('Body');
+  });
+
+  it('renders layout section headers through the shared section-heading helper', () => {
+    const header = renderLayoutSectionChrome('packages', {
+      id: 'run-trend',
+      title: 'Package run trend',
+      description: 'Thirty-day retained package run totals.',
+      layout: 'full',
+      views: ['packages-run-trend'],
+      'count-label': 'records'
+    }, 12);
+
+    expect(header.className).toBe('layout-section-header');
+    expect(header.querySelector('.section-heading .scope-kicker')?.textContent).toBe('Run Trend');
+    expect(header.querySelector('h3')?.id).toBe('packages-run-trend-layout-heading');
+    expect(header.querySelector('h3')?.textContent).toBe('Package run trend');
+    expect(header.querySelector('.section-heading p')?.textContent).toBe('Thirty-day retained package run totals.');
+    expect(header.querySelector('.layout-section-header > strong')?.textContent).toBe('12 records');
   });
 });

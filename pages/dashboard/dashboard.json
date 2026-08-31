@@ -746,14 +746,11 @@
             "description": "Ranked evidence from execution state and exact episode attribution. No composite score is used.",
             "data": {
               "sources": [
-                "workflows",
-                "runs",
-                "outcomes",
-                "findings"
+                "runtime-signals"
               ]
             },
             "mark": "element",
-            "element": "execution-signal-list",
+            "element": "signal-list",
             "layout": "full"
           },
           {
