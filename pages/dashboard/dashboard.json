@@ -498,6 +498,32 @@
         ]
       },
       {
+        "id": "package-reports",
+        "kind": "custom",
+        "title": "Package",
+        "description": "Durable reports produced by this package.",
+        "icon": "package",
+        "class-name": "package-reports-page",
+        "route": {
+          "hash-query-parameter": "package"
+        },
+        "views": [
+          {
+            "id": "package-reports",
+            "title": "Reports",
+            "data": {
+              "sources": [
+                "workflows",
+                "outcomes"
+              ]
+            },
+            "mark": "element",
+            "element": "package-reports",
+            "layout": "full"
+          }
+        ]
+      },
+      {
         "id": "workflows",
         "kind": "built-in",
         "page": "workflows",
