@@ -249,6 +249,9 @@ export const SOURCE_VALUES = [
   'overview-package-utilization',
   'security-summary',
   'security-signals',
+  'value-summary',
+  'value-signals',
+  'value-workflows',
   'cost-summary',
   'cost-signals',
   'cost-readiness'
@@ -272,6 +275,9 @@ export const SOURCE_FIELDS = {
   'overview-attention-domains': ['domain', 'state', 'tone', 'icon', 'value', 'detail', 'href', 'priority', 'order'],
   'security-summary': ['label', 'value'],
   'security-signals': ['priority', 'count', 'tone', 'icon', 'kind', 'title', 'detail', 'evidence', 'action', 'navigation-page', 'run-link', 'external-link'],
+  'value-summary': ['label', 'value'],
+  'value-signals': ['priority', 'count', 'tone', 'icon', 'kind', 'title', 'detail', 'evidence', 'action', 'navigation-page', 'run-link', 'external-link'],
+  'value-workflows': ['organization', 'repository', 'workflow', 'operational-value-definition', 'opportunities', 'mature-observations', 'mean-operational-value', 'mean-baseline', 'observed-at', 'evidence-link', 'organization-link', 'repository-link', 'workflow-link'],
   'cost-summary': ['label', 'value', 'kicker', 'collection-label', 'note'],
   'cost-signals': ['priority', 'count', 'tone', 'icon', 'kind', 'title', 'detail', 'evidence', 'action', 'navigation-page'],
   'cost-readiness': ['tone', 'icon', 'kicker', 'title', 'detail']

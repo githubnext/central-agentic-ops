@@ -24,6 +24,7 @@ export function deriveOverviewSources(sources) {
   const overviewMetadata = createOverviewMetadata(sources);
   const packageUsage = summarizePackageAicUsage(workflows, usage);
   const securitySignals = buildSecuritySignals({ workflows, runs, findings });
+  const valueSignals = buildValueSignals({ sources, operationalValues, outcomes });
   const costSignals = buildCostSignals(sources.usage);
 
   return {
@@ -90,6 +91,21 @@ export function deriveOverviewSources(sources) {
     'security-signals': {
       source: 'security-signals',
       rows: securitySignals,
+      metadata: overviewMetadata
+    },
+    'value-summary': {
+      source: 'value-summary',
+      rows: buildValueSummary(operationalValues, outcomes),
+      metadata: overviewMetadata
+    },
+    'value-signals': {
+      source: 'value-signals',
+      rows: valueSignals,
+      metadata: overviewMetadata
+    },
+    'value-workflows': {
+      source: 'value-workflows',
+      rows: buildValueWorkflowRows(operationalValues),
       metadata: overviewMetadata
     },
     'cost-summary': {
@@ -188,6 +204,219 @@ function buildCostSignals(usageSource) {
       'navigation-page': 'cost'
     }
   ];
+}
+
+/**
+ * @param {Array<Record<string, unknown>>} operationalValues
+ * @param {Array<Record<string, unknown>>} outcomes
+ */
+function buildValueSummary(operationalValues, outcomes) {
+  const values = operationalValues
+    .map((row) => row['operational-value'])
+    .filter(isFiniteNumber);
+  const mean = values.length > 0
+    ? values.reduce((total, value) => total + value, 0) / values.length
+    : null;
+  return [
+    { label: 'Grader observations', value: operationalValues.length },
+    { label: 'Mature evidence', value: operationalValues.filter((row) => String(row['maturity-status']) === 'matured').length },
+    { label: 'Mean operational value', value: mean === null ? '—' : formatPercent(mean) },
+    { label: 'Pending outcomes', value: outcomes.filter((row) => String(row['outcome-state']) === 'pending').length }
+  ];
+}
+
+/**
+ * @param {{
+ *   sources: Record<string, import('./presenter.js').LogicalSourceInput>,
+ *   operationalValues: Array<Record<string, unknown>>,
+ *   outcomes: Array<Record<string, unknown>>
+ * }} input
+ */
+function buildValueSignals(input) {
+  const signals = [];
+  const valueMetadata = input.sources['operational-values']?.metadata;
+  if (valueMetadata?.availability !== 'available') {
+    signals.push({
+      priority: 0,
+      count: 1,
+      tone: 'critical',
+      icon: 'graph',
+      kind: 'Missing grader data',
+      title: 'Operational-value telemetry is unavailable',
+      detail: 'No available operational-value source was retained.',
+      evidence: 'Value unavailable',
+      action: 'Review workflows',
+      'navigation-page': 'workflows'
+    });
+  } else if (input.operationalValues.length === 0) {
+    signals.push({
+      priority: 1,
+      count: 1,
+      tone: 'informational',
+      icon: 'graph',
+      kind: 'Missing grader data',
+      title: 'No operational-value observations retained',
+      detail: 'The available source contains no operational-value observations.',
+      evidence: 'Value unavailable',
+      action: 'Review workflows',
+      'navigation-page': 'workflows'
+    });
+  } else if (valueMetadata.completeness !== 'complete') {
+    signals.push({
+      priority: 0,
+      count: 1,
+      tone: 'critical',
+      icon: 'issue',
+      kind: 'Grader collection gap',
+      title: 'Operational-value coverage is incomplete',
+      detail: 'The retained operational-value source reports partial or unknown completeness.',
+      evidence: 'Artifact gap',
+      action: 'Review observations'
+    });
+  }
+
+  const interim = input.operationalValues.filter((row) => String(row['maturity-status']) !== 'matured');
+  if (interim.length > 0) {
+    signals.push({
+      priority: 1,
+      count: interim.length,
+      tone: 'action',
+      icon: 'play',
+      kind: 'Maturity pending',
+      title: 'Outcome evidence is not mature',
+      detail: `${formatNumber(interim.length)} observation${interim.length === 1 ? ' has not reached its' : 's have not reached their'} maturity time`,
+      evidence: 'Re-evaluation due',
+      action: 'Review observations'
+    });
+  }
+
+  const usageMetadata = input.sources.usage?.metadata;
+  if (usageMetadata?.availability !== 'available' || usageMetadata.completeness !== 'complete') {
+    const unavailable = usageMetadata?.availability !== 'available';
+    signals.push({
+      priority: 2,
+      count: 1,
+      tone: 'informational',
+      icon: 'meter',
+      kind: 'AIC coverage',
+      title: unavailable ? 'AI Credit telemetry is unavailable' : 'AI Credit telemetry is partial',
+      detail: unavailable
+        ? 'No available usage source was retained.'
+        : 'The retained usage source reports partial or unknown completeness.',
+      evidence: 'Usage gap',
+      action: 'Review usage',
+      'navigation-page': 'usage'
+    });
+  }
+
+  const pendingOutcomes = input.outcomes.filter((row) => String(row['outcome-state']) === 'pending');
+  if (pendingOutcomes.length > 0) {
+    const latest = latestRow(pendingOutcomes);
+    signals.push({
+      priority: 3,
+      count: pendingOutcomes.length,
+      tone: 'warning',
+      icon: 'issue',
+      kind: 'Open output',
+      title: 'Durable outputs still need disposition',
+      detail: `${formatNumber(pendingOutcomes.length)} retained output${pendingOutcomes.length === 1 ? ' remains' : 's remain'} pending`,
+      evidence: 'Outcome pending',
+      action: 'View evidence',
+      'run-link': latest?.['run-link'],
+      'external-link': latest?.['external-link']
+    });
+  }
+
+  const experimentsAvailable = input.sources.experiments?.metadata?.availability === 'available'
+    && rowsFor(input.sources, 'experiments').length > 0
+    && input.sources['experiment-assignments']?.metadata?.availability === 'available'
+    && rowsFor(input.sources, 'experiment-assignments').length > 0;
+  if (!experimentsAvailable) {
+    signals.push({
+      priority: 4,
+      count: 1,
+      tone: 'informational',
+      icon: 'graph',
+      kind: 'Experiment readiness',
+      title: 'Experiment comparisons are unavailable',
+      detail: 'No authoritative experiment definitions and assignment-to-run links are available for comparison.',
+      evidence: 'Comparison unavailable',
+      action: 'Review experiments',
+      'navigation-page': 'experiments'
+    });
+  }
+
+  return signals.sort((left, right) => left.priority - right.priority || right.count - left.count || left.title.localeCompare(right.title));
+}
+
+/**
+ * @param {Array<Record<string, unknown>>} operationalValues
+ */
+function buildValueWorkflowRows(operationalValues) {
+  return groupRows(operationalValues, (row) => [
+    row.organization,
+    row.repository,
+    row.workflow || row['operational-value-definition']
+  ].map(String).join(':')).flatMap(([, rows]) => {
+    const valid = rows.filter((row) => (
+      typeof row['operational-value'] === 'number'
+      && Number.isFinite(row['operational-value'])
+      && typeof row['evaluator-digest'] === 'string'
+      && row['evaluator-digest'].length > 0
+      && typeof row['operational-case'] === 'string'
+      && row['operational-case'].length > 0
+    ));
+    const latestEvaluator = valid
+      .toSorted((left, right) => evidenceAssignmentTime(right) - evidenceAssignmentTime(left))[0]?.['evaluator-digest'];
+    if (!latestEvaluator) return [];
+
+    const opportunities = new Map();
+    for (const row of valid.filter((candidate) => candidate['evaluator-digest'] === latestEvaluator)) {
+      const key = `${String(row.organization)}/${String(row.repository)}:${String(row['operational-case'])}`;
+      const existing = opportunities.get(key);
+      if (!existing || rowTimestamp(row) >= rowTimestamp(existing)) opportunities.set(key, row);
+    }
+    const comparable = [...opportunities.values()];
+    if (comparable.length === 0) return [];
+
+    const latest = /** @type {Record<string, unknown>} */ (latestRow(comparable));
+    const values = comparable.map((row) => /** @type {number} */ (row['operational-value']));
+    const baselines = comparable.flatMap((row) => (
+      typeof row['delta-from-baseline'] === 'number' && Number.isFinite(row['delta-from-baseline'])
+        ? [/** @type {number} */ (row['operational-value']) - row['delta-from-baseline']]
+        : []
+    ));
+    return [{
+      organization: latest.organization,
+      repository: latest.repository,
+      workflow: latest.workflow || latest['operational-value-definition'],
+      'operational-value-definition': latest['operational-value-definition'],
+      opportunities: comparable.length,
+      'mature-observations': comparable.filter((row) => String(row['maturity-status']) === 'matured').length,
+      'mean-operational-value': roundMetric(values.reduce((total, value) => total + value, 0) / values.length),
+      'mean-baseline': baselines.length > 0
+        ? roundMetric(baselines.reduce((total, value) => total + value, 0) / baselines.length)
+        : null,
+      'observed-at': latest['observed-at'],
+      'evidence-link': latest['evidence-link']
+    }];
+  }).sort((left, right) => Number(right['mean-operational-value']) - Number(left['mean-operational-value']));
+}
+
+/**
+ * @param {Record<string, unknown>} row
+ */
+function evidenceAssignmentTime(row) {
+  const timestamp = Date.parse(String(row['requested-evidence-at'] ?? row['observed-at'] ?? ''));
+  return Number.isFinite(timestamp) ? timestamp : 0;
+}
+
+/**
+ * @param {unknown} value
+ * @returns {value is number}
+ */
+function isFiniteNumber(value) {
+  return typeof value === 'number' && Number.isFinite(value);
 }
 
 /**
@@ -315,9 +544,23 @@ function domainRow(row) {
 /**
  * @param {number} value
  */
+function roundMetric(value) {
+  return Math.round(value * 1000) / 1000;
+}
+
+/**
+ * @param {number} value
+ */
 function formatCount(value) {
       return new Intl.NumberFormat('en-US', { maximumFractionDigits: 0 }).format(value);
     }
+
+/**
+ * @param {number} value
+ */
+function formatAic(value) {
+      return new Intl.NumberFormat('en-US', { maximumFractionDigits: 1 }).format(value);
+}
 
 /**
  * @param {{ runs: Array<Record<string, unknown>>, workflows: Array<Record<string, unknown>>, findings: Array<Record<string, unknown>> }} input
@@ -705,24 +948,6 @@ function repositoryKey(row) {
 }
 
 /**
- * @param {...Array<Record<string, unknown>>} collections
- * @returns {number}
- */
-function distinctRepositories(...collections) {
-  return new Set(collections.flat().map(repositoryKey).filter(Boolean)).size;
-}
-
-/**
- * @param {import('./presenter.js').LogicalSourceInput | undefined} source
- * @returns {string}
- */
-function sourceWindowLabel(source) {
-  if (!source || source.metadata?.availability === 'unavailable') return 'Actions run data unavailable';
-  const state = source.metadata?.completeness === 'complete' ? 'Complete' : 'Partial';
-  return `${state} 24-hour Actions run window`;
-}
-
-/**
  * @param {import('./presenter.js').LogicalSourceInput | undefined} source
  */
 function sourceIsAvailable(source) {
@@ -741,10 +966,21 @@ function usageRunKey(row) {
 }
 
 /**
- * @param {number} value
+ * @param {...Array<Record<string, unknown>>} collections
+ * @returns {number}
  */
-function formatAic(value) {
-  return new Intl.NumberFormat('en', { maximumFractionDigits: 1 }).format(value);
+function distinctRepositories(...collections) {
+  return new Set(collections.flat().map(repositoryKey).filter(Boolean)).size;
+}
+
+/**
+ * @param {import('./presenter.js').LogicalSourceInput | undefined} source
+ * @returns {string}
+ */
+function sourceWindowLabel(source) {
+  if (!source || source.metadata?.availability === 'unavailable') return 'Actions run data unavailable';
+  const state = source.metadata?.completeness === 'complete' ? 'Complete' : 'Partial';
+  return `${state} 24-hour Actions run window`;
 }
 
 /**

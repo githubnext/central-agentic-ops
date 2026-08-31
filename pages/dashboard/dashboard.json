@@ -3,7 +3,7 @@
   "dashboard": {
     "id": "central-agentic-ops-dashboard",
     "title": "Central Agentic Ops Dashboard",
-    "description": "Authoritative declarative dashboard document for all specification-defined built-in pages in the presenter prototype.",
+    "description": "Authoritative declarative dashboard document for built-in and custom pages in the presenter prototype.",
     "repository": "githubnext/central-agentic-ops",
     "units": {
       "aic": {
@@ -1170,79 +1170,178 @@
       },
       {
         "id": "operational-value",
-        "kind": "built-in",
-        "page": "operational-value",
-        "title": "Operational Value",
-        "icon": "server",
-        "definition": {
-          "data-state": {
-            "availability": true,
-            "completeness": true,
-            "freshness": true
+        "kind": "custom",
+        "title": "Value & outcomes",
+        "icon": "graph",
+        "class-name": "value-page",
+        "description": "Outcome, grader, maturity, AI Credit, and experiment-readiness evidence for the configured repositories.",
+        "sections": [
+          {
+            "id": "outcome-operations",
+            "title": "Needs attention",
+            "description": "Grader maturity, usage coverage, output disposition, and experiment readiness.",
+            "layout": "full",
+            "views": [
+              "value-summary",
+              "value-signals"
+            ]
           },
-          "views": [
-            {
-              "id": "operational-value-source",
-              "data": {
-                "source": "operational-values"
-              },
-              "mark": "table",
-              "encoding": {
-                "columns": [
-                  {
-                    "field": "observed-at",
-                    "type": "temporal"
-                  },
-                  {
-                    "field": "operational-value",
-                    "type": "quantitative"
-                  },
-                  {
-                    "field": "operational-value-definition",
-                    "type": "nominal"
-                  },
-                  {
-                    "field": "operational-case",
-                    "type": "nominal"
-                  },
-                  {
-                    "field": "evaluator-digest",
-                    "type": "nominal"
-                  },
-                  {
-                    "field": "requested-evidence-at",
-                    "type": "temporal"
-                  },
-                  {
-                    "field": "evidence-cutoff",
-                    "type": "temporal"
-                  },
-                  {
-                    "field": "maturity-at",
-                    "type": "temporal"
-                  },
-                  {
-                    "field": "maturity-status",
-                    "type": "nominal",
-                    "display": "status"
-                  },
-                  {
-                    "field": "evidence-link",
-                    "type": "nominal"
-                  },
-                  {
-                    "field": "experiment",
-                    "type": "nominal"
-                  },
-                  {
-                    "field": "delta-from-baseline",
-                    "type": "quantitative"
-                  }
-                ]
+          {
+            "id": "comparable-evidence",
+            "title": "Operational value by workflow",
+            "description": "Latest evaluator versions only; repeated runs for one opportunity are collapsed.",
+            "layout": "full",
+            "views": [
+              "operational-value-by-workflow"
+            ]
+          },
+          {
+            "id": "raw-collection-state",
+            "title": "Grader ledger",
+            "description": "Retained operational-value observations, including interim evidence.",
+            "layout": "full",
+            "views": [
+              "operational-value-ledger"
+            ]
+          }
+        ],
+        "views": [
+          {
+            "id": "value-summary",
+            "title": "Outcome summary",
+            "data": {
+              "sources": [
+                "value-summary"
+              ]
+            },
+            "mark": "element",
+            "element": "summary-grid",
+            "layout": "full"
+          },
+          {
+            "id": "value-signals",
+            "title": "Outcome signals",
+            "description": "Operational value is absolute attainment, not proof that a workflow caused an outcome. Missing and null grader results are not scored as zero.",
+            "data": {
+              "sources": [
+                "value-signals"
+              ]
+            },
+            "mark": "element",
+            "element": "signal-list",
+            "layout": "full"
+          },
+          {
+            "id": "operational-value-by-workflow",
+            "title": "Comparable observations",
+            "data": {
+              "source": "value-workflows"
+            },
+            "mark": "table",
+            "layout": "full",
+            "encoding": {
+              "columns": [
+                {
+                  "field": "workflow",
+                  "type": "nominal",
+                  "title": "Workflow"
+                },
+                {
+                  "field": "operational-value-definition",
+                  "type": "nominal",
+                  "title": "Definition"
+                },
+                {
+                  "field": "opportunities",
+                  "type": "quantitative",
+                  "title": "Opportunities"
+                },
+                {
+                  "field": "mature-observations",
+                  "type": "quantitative",
+                  "title": "Mature"
+                },
+                {
+                  "field": "mean-operational-value",
+                  "type": "quantitative",
+                  "title": "Value"
+                },
+                {
+                  "field": "mean-baseline",
+                  "type": "quantitative",
+                  "title": "Baseline"
+                },
+                {
+                  "field": "observed-at",
+                  "type": "temporal",
+                  "title": "Latest evidence"
+                }
+              ],
+              "href": {
+                "field": "evidence-link",
+                "type": "nominal"
               }
             }
-          ]
-        }
+          },
+          {
+            "id": "operational-value-ledger",
+            "title": "Collected observations",
+            "data": {
+              "source": "operational-values"
+            },
+            "mark": "table",
+            "layout": "full",
+            "encoding": {
+              "columns": [
+                {
+                  "field": "workflow",
+                  "type": "nominal",
+                  "title": "Workflow"
+                },
+                {
+                  "field": "operational-value-definition",
+                  "type": "nominal",
+                  "title": "Definition"
+                },
+                {
+                  "field": "operational-case",
+                  "type": "nominal",
+                  "title": "Opportunity"
+                },
+                {
+                  "field": "operational-value",
+                  "type": "quantitative",
+                  "title": "Value"
+                },
+                {
+                  "field": "maturity-status",
+                  "type": "nominal",
+                  "display": "status",
+                  "title": "Maturity"
+                },
+                {
+                  "field": "delta-from-baseline",
+                  "type": "quantitative",
+                  "title": "Baseline delta"
+                },
+                {
+                  "field": "evaluator-digest",
+                  "type": "nominal",
+                  "title": "Evaluator"
+                },
+                {
+                  "field": "observed-at",
+                  "type": "temporal",
+                  "title": "Observed"
+                }
+              ],
+              "href": {
+                "field": "evidence-link",
+                "type": "nominal"
+              }
+            }
+          }
+        ]
       },
       {
         "id": "findings",
