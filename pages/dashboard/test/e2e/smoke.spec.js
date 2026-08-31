@@ -1355,6 +1355,19 @@ test('workflow page template follows its JSON-declared route and renders attribu
                 mark: 'element',
                 element: 'workflow-detail'
               }]
+            },
+            {
+              id: 'outcome-detail',
+              kind: 'custom',
+              title: 'Outcome',
+              route: { 'hash-query-parameter': 'outcome' },
+              views: [{
+                id: 'outcome-record',
+                title: 'Outcome',
+                data: { sources: ['outcomes'] },
+                mark: 'element',
+                element: 'outcome-detail'
+              }]
             }
           ]
         }
@@ -1378,9 +1391,11 @@ test('workflow page template follows its JSON-declared route and renders attribu
           source: 'outcomes',
           metadata,
           rows: [{
-            organization: 'githubnext',
-            repository: 'central-agentic-ops',
+            organization: 'customer',
+            repository: 'target',
+            'runtime-repository': 'githubnext/central-agentic-ops',
             workflow: '.github/workflows/ambient-context.md',
+            'workflow-name': 'Ambient Context',
             'safe-output': 'report-1',
             'outcome-title': 'Debug ambient context workflow failure',
             'outcome-summary': 'Investigated the reported workflow failure.',
@@ -1402,6 +1417,12 @@ test('workflow page template follows its JSON-declared route and renders attribu
   await expect(page.locator('.workflow-reports')).toContainText('Debug ambient context workflow failure');
   await expect(page.locator('.workflow-report-row .status-success')).toHaveText('Closed');
   await expect(page.locator('.workflow-report-row .mode-review')).toHaveText('Review');
+  await page.locator('.workflow-report-title a').click();
+  await expect(page.getByRole('heading', { level: 1 })).toHaveText('Debug ambient context workflow failure');
+  await expect(page.locator('.outcome-meta a', { hasText: 'Ambient Context' })).toHaveAttribute(
+    'href',
+    '#page-workflow-detail?workflow=githubnext%2Fcentral-agentic-ops%3A.github%2Fworkflows%2Fambient-context.md'
+  );
 });
 
 test('outcome page template follows its JSON-declared hash query route in browser', async ({ page }) => {

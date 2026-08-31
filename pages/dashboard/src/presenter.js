@@ -1328,14 +1328,15 @@ function deriveWorkflowDashboardLink(row, pageId) {
   const repository = trimmedString(row.repository);
   const workflow = trimmedString(row.workflow);
   const repositorySlug = repository && repository.includes('/') ? repository : (organization && repository ? `${organization}/${repository}` : null);
+  const workflowRepositorySlug = repositorySlugValue(row['runtime-repository']) ?? repositorySlug;
   const workflowLink = row['workflow-link'];
-  if (!repositorySlug || !workflow || !isPlainObject(workflowLink)) return row;
+  if (!workflowRepositorySlug || !workflow || !isPlainObject(workflowLink)) return row;
 
   return {
     ...row,
     'workflow-link': {
       ...workflowLink,
-      'dashboard-href': `#page-${encodeURIComponent(pageId)}?workflow=${encodeURIComponent(`${repositorySlug}:${workflow}`)}`,
+      'dashboard-href': `#page-${encodeURIComponent(pageId)}?workflow=${encodeURIComponent(`${workflowRepositorySlug}:${workflow}`)}`,
       'dashboard-label': `View ${trimmedString(row['workflow-name']) ?? workflow} workflow dashboard`
     }
   };
@@ -1375,6 +1376,7 @@ function deriveEntityLinkRow(row, githubUrlBase) {
   // The `repository` field is documented as retaining its domain syntax (Section 9.2), so it may
   // already be a fully-qualified `owner/repo` slug or just the bare repository name.
   const repositorySlug = repository && repository.includes('/') ? repository : (organization && repository ? `${organization}/${repository}` : null);
+  const workflowRepositorySlug = repositorySlugValue(row['runtime-repository']) ?? repositorySlug;
   /** @type {Record<string, unknown>} */
   const derived = {};
 
@@ -1392,11 +1394,11 @@ function deriveEntityLinkRow(row, githubUrlBase) {
       label: `View ${repositorySlug} on GitHub`
     };
   }
-  if (repositorySlug && workflow && !findLink(row, 'workflow-link')) {
+  if (workflowRepositorySlug && workflow && !findLink(row, 'workflow-link')) {
     const workflowPath = workflow.replace(/^\/+/, '');
     derived['workflow-link'] = {
       relation: 'workflow',
-      href: `${githubUrlBase}/${repositorySlug}/blob/HEAD/${workflowPath}`,
+      href: `${githubUrlBase}/${workflowRepositorySlug}/blob/HEAD/${workflowPath}`,
       label: `View ${workflow} on GitHub`
     };
   }
@@ -1412,6 +1414,14 @@ function trimmedString(value) {
   if (typeof value !== 'string') return null;
   const trimmed = value.trim();
   return trimmed.length > 0 ? trimmed : null;
+}
+
+/** @param {unknown} value */
+function repositorySlugValue(value) {
+  const repository = trimmedString(value);
+  return repository && /^[A-Za-z0-9](?:[A-Za-z0-9.-]{0,98}[A-Za-z0-9])?\/[A-Za-z0-9_.-]{1,100}$/.test(repository)
+    ? repository
+    : null;
 }
 
 /**
