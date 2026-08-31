@@ -143,9 +143,9 @@ function renderRepositoryWorkflowContent(context, repository, workflows) {
 function renderRepositoryTabs(pageId, repository) {
   const repositoryQuery = repository ? `?repository=${encodeURIComponent(repository)}` : '';
   const tabs = [
+    ['Insights', 'graph', `#page-operational-value${repositoryQuery}`, false],
     ['Workflows', 'workflow', `#page-${pageId}${repositoryQuery}`, true],
-    ['Reports', 'issue', `#page-findings${repositoryQuery}`, false],
-    ['Insights', 'graph', `#page-operational-value${repositoryQuery}`, false]
+    ['Reports', 'issue', `#page-findings${repositoryQuery}`, false]
   ];
   return h(
     'nav',

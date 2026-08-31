@@ -95,8 +95,8 @@ function renderWorkflowContent(context, route, workflow, reports) {
 function renderWorkflowTabs(pageId, route) {
   const workflowQuery = `?workflow=${encodeURIComponent(routeValueFor(route))}`;
   const tabs = [
-    ['Reports', 'issue', `#page-${pageId}${workflowQuery}`, true],
-    ['Insights', 'graph', `#page-workflow-runtime${workflowQuery}`, false]
+    ['Insights', 'graph', `#page-workflow-runtime${workflowQuery}`, false],
+    ['Reports', 'issue', `#page-${pageId}${workflowQuery}`, true]
   ];
   return h(
     'nav',

@@ -92,15 +92,15 @@ function renderWorkflowTabs(pageId, repository, workflow, workflowName) {
     { className: 'repository-tabs', 'aria-label': `${workflowName} views` },
     h(
       'a',
-      { href: `#page-workflow-detail?workflow=${encodeURIComponent(route)}` },
-      octicon('issue'),
-      h('span', null, 'Reports')
-    ),
-    h(
-      'a',
       { href: `#page-${pageId}?workflow=${encodeURIComponent(route)}`, 'aria-current': 'page' },
       octicon('graph'),
       h('span', null, 'Insights')
+    ),
+    h(
+      'a',
+      { href: `#page-workflow-detail?workflow=${encodeURIComponent(route)}` },
+      octicon('issue'),
+      h('span', null, 'Reports')
     )
   );
 }
