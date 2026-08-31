@@ -82,9 +82,13 @@ function buildPresenterModuleUrl() {
     .replace("'../dom.js'", JSON.stringify(domModuleUrl));
   const linkedTextModuleUrl = `data:text/javascript;charset=utf-8,${encodeURIComponent(linkedTextSource)}`;
 
+  const countFormattersSource = readFileSync(new URL('../../src/components/count-formatters.js', import.meta.url), 'utf8');
+  const countFormattersModuleUrl = `data:text/javascript;charset=utf-8,${encodeURIComponent(countFormattersSource)}`;
+
   const workflowTopologySource = readFileSync(new URL('../../src/components/workflow-topology.js', import.meta.url), 'utf8')
     .replace("'../dom.js'", JSON.stringify(domModuleUrl))
     .replace("'../octicons.js'", JSON.stringify(octiconsModuleUrl))
+    .replace("'./count-formatters.js'", JSON.stringify(countFormattersModuleUrl))
     .replace("'./link-content.js'", JSON.stringify(linkContentModuleUrl))
     .replace("'./linked-text.js'", JSON.stringify(linkedTextModuleUrl))
     .replace("'./view-chrome.js'", JSON.stringify(viewChromeModuleUrl));
@@ -106,6 +110,7 @@ function buildPresenterModuleUrl() {
     .replace("'../dom.js'", JSON.stringify(domModuleUrl))
     .replace("'../octicons.js'", JSON.stringify(octiconsModuleUrl))
     .replace("'./badge.js'", JSON.stringify(badgeModuleUrl))
+    .replace("'./count-formatters.js'", JSON.stringify(countFormattersModuleUrl))
     .replace("'./link-content.js'", JSON.stringify(linkContentModuleUrl))
     .replace("'./linked-text.js'", JSON.stringify(linkedTextModuleUrl));
   const repositoryWorkflowsModuleUrl = `data:text/javascript;charset=utf-8,${encodeURIComponent(repositoryWorkflowsSource)}`;
@@ -114,6 +119,7 @@ function buildPresenterModuleUrl() {
     .replace("'../dom.js'", JSON.stringify(domModuleUrl))
     .replace("'../octicons.js'", JSON.stringify(octiconsModuleUrl))
     .replace("'./badge.js'", JSON.stringify(badgeModuleUrl))
+    .replace("'./count-formatters.js'", JSON.stringify(countFormattersModuleUrl))
     .replace("'./link-content.js'", JSON.stringify(linkContentModuleUrl));
   const executionElementsModuleUrl = `data:text/javascript;charset=utf-8,${encodeURIComponent(executionElementsSource)}`;
 

@@ -5,6 +5,7 @@
 import { h } from '../dom.js';
 import { octicon } from '../octicons.js';
 import { renderStatusBadge } from './badge.js';
+import { formatCount, formatCountNoun } from './count-formatters.js';
 import { findLink } from './link-content.js';
 
 const FAILURE_CONCLUSIONS = new Set(['failure', 'startup-failure', 'timed-out']);
@@ -86,7 +87,7 @@ export function renderExecutionSignalList(context) {
       icon: 'codescan',
       kind: 'Evidence gap',
       title: 'Episode evidence stops at the root',
-      detail: `${formatCount(model.unattributedEpisodes.length)} root episode${model.unattributedEpisodes.length === 1 ? ' has' : 's have'} no correlated worker attempt or output`,
+      detail: `${formatCountNoun(model.unattributedEpisodes.length, 'root episode has', 'root episodes have')} no correlated worker attempt or output`,
       evidence: 'Outcome unavailable',
       href: '#runtime-execution-episodes'
     });
@@ -97,7 +98,7 @@ export function renderExecutionSignalList(context) {
   return h(
     'section',
     { className: 'workflow-attention', 'aria-labelledby': 'runtime-needs-attention' },
-    sectionHeading('Runtime triage', 'runtime-needs-attention', context.title, context.description, `${formatCount(signals.length)} signal${signals.length === 1 ? '' : 's'}`),
+    sectionHeading('Runtime triage', 'runtime-needs-attention', context.title, context.description, formatCountNoun(signals.length, 'signal', 'signals')),
     h(
       'div',
       { className: 'anomaly-readiness', role: 'note' },
@@ -397,10 +398,6 @@ function formatDate(value) {
 /**
  * @param {unknown} value
  */
-function formatCount(value) {
-  return new Intl.NumberFormat('en').format(Number(value) || 0);
-}
-
 /**
  * @param {number} value
  */
@@ -412,7 +409,7 @@ function formatPercent(value) {
  * @param {number} count
  */
 function workerDispatchEvidenceGap(count) {
-  return `${formatCount(count)} worker dispatch${count === 1 ? ' lacks' : 'es lack'} episode evidence`;
+  return `${formatCountNoun(count, 'worker dispatch lacks', 'worker dispatches lack')} episode evidence`;
 }
 
 /**

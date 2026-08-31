@@ -4,6 +4,7 @@
 
 import { h } from '../dom.js';
 import { octicon } from '../octicons.js';
+import { formatCountNoun } from './count-formatters.js';
 import { findLink } from './link-content.js';
 import { renderLinkedText } from './linked-text.js';
 import { renderPageSection, renderViewSectionChrome } from './view-chrome.js';
@@ -130,7 +131,7 @@ function renderPackageTopology(packageId, workflows) {
         'div',
         { className: 'package-identity' },
         h('h5', null, typeof packageName === 'string' ? packageName : titleCase(packageId)),
-        h('p', null, `${workers.length} worker${workers.length === 1 ? '' : 's'} · `, renderLinkedText(toText(repositoryRow?.repository), repositoryLink))
+        h('p', null, `${formatCountNoun(workers.length, 'worker', 'workers')} · `, renderLinkedText(toText(repositoryRow?.repository), repositoryLink))
       ),
       h('span', { className: `mode-indicator mode-${mode}` }, mode),
       h('span', { className: `status ${active && complete ? 'status-success' : 'status-attention'}` }, active && complete ? 'Active' : 'Needs attention')
@@ -206,7 +207,7 @@ function renderStandaloneWorkflows(rows) {
         null,
         h('span', { className: 'repository-icon' }, octicon('repo')),
         h('strong', null, renderLinkedText(repository, findLink(workflows[0], 'repository-link'))),
-        h('span', { className: 'workflow-count' }, `${workflows.length} workflow${workflows.length === 1 ? '' : 's'}`)
+        h('span', { className: 'workflow-count' }, formatCountNoun(workflows.length, 'workflow', 'workflows'))
       ),
       h(
         'ul',

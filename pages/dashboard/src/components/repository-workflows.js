@@ -5,6 +5,7 @@
 import { h } from '../dom.js';
 import { octicon } from '../octicons.js';
 import { renderStatusBadge } from './badge.js';
+import { formatCountNoun } from './count-formatters.js';
 import { findLink } from './link-content.js';
 import { renderLinkedText } from './linked-text.js';
 
@@ -90,7 +91,7 @@ function renderRepositoryWorkflowContent(context, repository, workflows) {
             h('code', null, '.github/workflows/*.md'),
             ' workflows with managed-package membership shown as metadata. Latest registration update: ',
             latest ? formatDay(latest) : 'unknown',
-            `. ${disabled.toLocaleString('en')} disabled.`
+            `. ${formatCountNoun(disabled, 'disabled', 'disabled')}.`
           )
         ),
         actionsHref
