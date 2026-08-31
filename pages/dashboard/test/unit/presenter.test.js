@@ -229,6 +229,7 @@ describe('presenter built-in and custom pages', () => {
     expect(repositoryLink?.getAttribute('href')).toBe('https://github.example.com/octo-org/agentic-operations');
     expect(repositoryLink?.getAttribute('aria-label')).toBe('View octo-org/agentic-operations on GitHub');
     expect(repositoryLink?.getAttribute('title')).toBe('View octo-org/agentic-operations on GitHub');
+    expect(rendered.querySelector('.sidebar-brand > span')?.textContent).toBe('agentic-operations');
   });
 
   it('renders section-labeled Attention Investigate Explore navigation groups in the sidebar', () => {
