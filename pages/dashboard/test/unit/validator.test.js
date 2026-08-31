@@ -123,12 +123,23 @@ describe('dashboard document validation', () => {
     }
   });
 
-  it('DLS-VIEW-026 accepts a custom page hash query route and rejects malformed route declarations', () => {
+  it('DLS-VIEW-026 accepts custom page route and navigation allocation and rejects malformed declarations', () => {
     const document = JSON.parse(authoritativeDashboardSource);
     const repositoryPageIndex = document.dashboard.pages.findIndex((/** @type {{ id: string }} */ page) => page.id === 'repository-detail');
     const repositoryPage = document.dashboard.pages[repositoryPageIndex];
     expect(repositoryPage.route).toEqual({ 'hash-query-parameter': 'repository' });
     expect(validateDashboardDocument(JSON.stringify(document)).ok).toBe(true);
+    repositoryPage.route = { 'navigation-page': 'repositories' };
+    expect(validateDashboardDocument(JSON.stringify(document)).ok).toBe(true);
+    repositoryPage.route = { 'navigation-page': 'missing-page' };
+    const missingNavigationPage = validateDashboardDocument(JSON.stringify(document));
+    expect(missingNavigationPage.ok).toBe(false);
+    if (!missingNavigationPage.ok) {
+      expect(missingNavigationPage.errors).toContainEqual(expect.objectContaining({
+        code: 'DLS-E003',
+        path: `$.dashboard.pages[${repositoryPageIndex}].route.navigation-page`
+      }));
+    }
 
     repositoryPage.route = { 'hash-query-parameter': 'Repository Name' };
     const malformed = validateDashboardDocument(JSON.stringify(document));
@@ -156,7 +167,8 @@ describe('dashboard document validation', () => {
     if (!missingParameter.ok) {
       expect(missingParameter.errors).toContainEqual(expect.objectContaining({
         code: 'DLS-E003',
-        path: `$.dashboard.pages[${repositoryPageIndex}].route.hash-query-parameter`
+        path: `$.dashboard.pages[${repositoryPageIndex}].route`,
+        message: 'route must declare hash-query-parameter or navigation-page.'
       }));
     }
 

@@ -5,9 +5,8 @@
 import { h } from '../dom.js';
 import { octicon } from '../octicons.js';
 import { formatNumber } from '../view-formatters.js';
-import { renderModeBadge } from './badge.js';
 import { findLink } from './link-content.js';
-import { renderPackagesView, renderPackageRunTrend } from './packages-view.js';
+import { renderPackagesView } from './packages-view.js';
 import { renderPackageDetail as renderPackageDetailElement, renderPackageReports } from './package-detail.js';
 import { renderRepositoryWorkflows } from './repository-workflows.js';
 import { renderWorkflowDetail } from './workflow-detail.js';
@@ -34,17 +33,11 @@ import { renderWorkflowRuntime } from './workflow-runtime.js';
 
 /** @type {Map<string, (context: ElementRenderContext) => HTMLElement | null>} */
 const ELEMENT_RENDERERS = new Map([
-  ['status-summary', renderStatusSummaryElement],
-  ['meter-list', renderMeterListElement],
-  ['attention-list', renderAttentionListElement],
   ['domain-attention', renderDomainAttentionElement],
-  ['record-cards', renderRecordCardsElement],
   ['summary-grid', renderSummaryGridElement],
   ['context-summary', renderContextSummaryElement],
   ['signal-list', renderSignalListElement],
-  ['coverage-diagnostics', renderCoverageDiagnosticsElement],
   ['package-activity', ({ sources, pageId }) => renderPackagesView(sources, pageId)],
-  ['package-run-trend', ({ sources, pageId }) => renderPackageRunTrend(sources, pageId)],
   ['package-detail', renderPackageDetailElement],
   ['package-reports', renderPackageReports],
   ['repository-workflows', renderRepositoryWorkflows],
@@ -60,7 +53,7 @@ const ELEMENT_RENDERERS = new Map([
   }]
 ]);
 
-const EMPTY_AWARE_ELEMENTS = new Set(['status-summary', 'meter-list', 'attention-list', 'record-cards', 'summary-grid', 'context-summary', 'signal-list', 'coverage-diagnostics', 'package-detail', 'package-reports', 'repository-workflows', 'workflow-detail', 'workflow-runtime', 'outcome-detail', 'execution-episodes']);
+const EMPTY_AWARE_ELEMENTS = new Set(['summary-grid', 'context-summary', 'signal-list', 'package-detail', 'package-reports', 'repository-workflows', 'workflow-detail', 'workflow-runtime', 'outcome-detail', 'execution-episodes']);
 
 /**
  * @param {string} name
@@ -77,107 +70,6 @@ export function renderUiElement(name, context) {
  */
 export function elementHandlesEmptyRows(name) {
   return EMPTY_AWARE_ELEMENTS.has(name);
-}
-
-/**
- * @param {ElementRenderContext} context
- */
-function renderStatusSummaryElement(context) {
-  const status = firstRow(context, 'overview-status');
-  const vitals = rowsFor(context, 'overview-vitals');
-  const segments = rowsFor(context, 'overview-execution-health');
-  if (!status) return null;
-  const headingId = `${context.pageId}-${slugify(context.title)}-heading`;
-  return h(
-    'section',
-    {
-      className: `control-plane-status ${stringValue(status['status-class'])}`,
-      'aria-labelledby': headingId
-    },
-    h(
-      'header',
-      null,
-      h(
-        'div',
-        { className: 'control-plane-heading' },
-        h('span', { className: 'control-plane-state-icon' }, octicon(stringValue(status['status-icon']) || 'issue')),
-        h(
-          'div',
-          null,
-          h('span', { className: 'scope-kicker' }, `Control plane · ${stringValue(status.scope)}`),
-          h('h3', { id: headingId }, stringValue(status['status-label']) || context.title),
-          h('p', null, stringValue(status['status-copy']))
-        )
-      )
-    ),
-    h(
-      'dl',
-      { className: 'control-plane-vitals' },
-      ...vitals.map((row) => renderVital(stringValue(row.label), stringValue(row.value), stringValue(row.detail), stringValue(row.className)))
-    ),
-    renderExecutionHealth(segments, stringValue(status['coverage-label']))
-  );
-}
-
-/**
- * @param {ElementRenderContext} context
- */
-function renderMeterListElement(context) {
-  const rows = rowsFor(context, 'overview-package-utilization');
-  const headingId = `${context.pageId}-${slugify(context.title)}-heading`;
-  return h(
-    'section',
-    { className: 'package-aic-utilization', 'aria-labelledby': headingId },
-    h(
-      'header',
-      null,
-      h('span', { className: 'scope-kicker' }, 'Control plane'),
-      h('h3', { id: headingId }, context.title),
-      context.description ? h('p', null, context.description) : null
-    ),
-    h(
-      'div',
-      { className: 'utilization-grid' },
-      ...(rows.length > 0
-        ? rows.map(renderMeterItem)
-        : [h('p', { className: 'empty' }, 'No packages with a configured AIC allowance were observed.')])
-    )
-  );
-}
-
-/**
- * @param {ElementRenderContext} context
- */
-function renderAttentionListElement(context) {
-  const rows = rowsFor(context, 'overview-attention');
-  const headingId = `${context.pageId}-${slugify(context.title)}-heading`;
-  return h(
-    'section',
-    { className: 'attention-panel', 'aria-labelledby': headingId },
-    h(
-      'header',
-      null,
-      h('div', null, h('span', { className: 'scope-kicker' }, 'Act now'), h('h3', { id: headingId }, context.title)),
-      h('span', { className: 'attention-count', 'aria-label': `${rows.length} attention items` }, String(rows.length))
-    ),
-    h(
-      'ul',
-      { className: 'attention-list' },
-      ...(rows.length > 0
-        ? rows.map((row) => h(
-          'li',
-          { className: `attention-item attention-${stringValue(row.tone)}` },
-          h('span', { className: 'attention-icon' }, octicon(stringValue(row.icon) || 'issue')),
-          h('div', null, h('strong', null, stringValue(row.title)), h('p', null, stringValue(row.detail)))
-        ))
-        : [h(
-          'li',
-          { className: 'attention-item attention-success' },
-          h('span', { className: 'attention-icon' }, octicon('check-circle')),
-          h('div', null, h('strong', null, 'No immediate action required'), h('p', null, 'No failures, approval gates, disabled workflows, or coverage gaps were observed.'))
-        )])
-    )
-  );
 }
 
 /**
@@ -226,50 +118,7 @@ function renderDomainAttentionElement(context) {
   );
 }
 
-/**
- * @param {ElementRenderContext} context
- */
-function renderRecordCardsElement(context) {
-  const rows = rowsFor(context, 'overview-managed-packages');
-  const headingId = `${context.pageId}-${slugify(context.title)}-heading`;
-  return h(
-    'section',
-    { className: 'managed-packages', 'aria-labelledby': headingId },
-    h(
-      'header',
-      null,
-      h('span', { className: 'scope-kicker' }, 'Control plane'),
-      h('h3', { id: headingId }, context.title)
-    ),
-    h(
-      'div',
-      { className: 'managed-package-list' },
-      ...(rows.length > 0
-        ? rows.map((row) => h(
-          'article',
-          { className: 'managed-package-card', dataset: { packageId: stringValue(row.package) } },
-          h(
-            'header',
-            null,
-            h('div', null, h('span', { className: 'managed-package-icon' }, octicon('package')), h('h4', null, stringValue(row.title))),
-            renderModeBadge(row.mode)
-          ),
-          h(
-            'dl',
-            null,
-            renderPackageDetail('Workers', row.workers),
-            renderPackageDetail('AIC allowance', formatOptionalNumber(row['aic-allowance'])),
-            renderPackageDetail('Inventory', row.inventory, stringValue(row['inventory-state']))
-          )
-        ))
-        : [h('p', { className: 'empty' }, 'No managed packages observed.')])
-    )
-  );
-}
-
-/**
- * @param {ElementRenderContext} context
- */
+/** @param {ElementRenderContext} context */
 function renderSummaryGridElement(context) {
   const rows = rowsFor(context, context.sourceNames[0]).map((row) => ({
     label: stringValue(row.label),
@@ -319,74 +168,7 @@ function renderContextSummaryValue(row) {
   });
 }
 
-/**
- * @param {ElementRenderContext} context
- */
-function renderCoverageDiagnosticsElement(context) {
-  const rows = rowsFor(context, 'coverage-diagnostics');
-  const headingId = `${context.pageId}-coverage-diagnostics-heading`;
-  const root = h(
-    'section',
-    {
-      className: 'coverage-diagnostics',
-      'aria-labelledby': headingId,
-      'data-route-view': ''
-    },
-    renderSectionHeading({
-      kicker: 'Data quality',
-      id: headingId,
-      title: context.title,
-      description: context.description,
-      summary: `${rows.length.toLocaleString('en')} ${rows.length === 1 ? 'gap' : 'gaps'}`,
-      headingTag: 'h2'
-    }),
-    h(
-      'div',
-      { className: 'table-region table-region-static' },
-      h(
-        'div',
-        {
-          className: 'table-scroll',
-          role: 'region',
-          'aria-labelledby': headingId,
-          tabIndex: 0
-        },
-        h(
-          'table',
-          { className: 'coverage-diagnostics-table' },
-          h('thead', null, h('tr', null, h('th', { scope: 'col' }, 'Signal'), h('th', { scope: 'col' }, 'Effect'))),
-          h(
-            'tbody',
-            null,
-            ...(rows.length > 0
-              ? rows.map((row) => h(
-                'tr',
-                null,
-                h('th', { scope: 'row' }, stringValue(row.title)),
-                h('td', null, stringValue(row.effect))
-              ))
-              : [h('tr', null, h('td', { colSpan: 2 }, 'No reporting coverage gaps detected.'))])
-          )
-        )
-      )
-    )
-  );
-  root.addEventListener('dashboard-route-change', () => {
-    root.dispatchEvent(new CustomEvent('dashboard-route-allocation', {
-      bubbles: true,
-      detail: {
-        title: 'Coverage diagnostics',
-        navigationPage: 'overview',
-        breadcrumbs: [{ label: 'Overview', href: '#page-overview' }]
-      }
-    }));
-  });
-  return root;
-}
-
-/**
- * @param {ElementRenderContext} context
- */
+/** @param {ElementRenderContext} context */
 function renderSignalListElement(context) {
   const rows = rowsFor(context, context.sourceNames[0]);
   return h(
@@ -459,95 +241,11 @@ function safeNavigationHref(value) {
 }
 
 /**
- * @param {Record<string, unknown>} row
- */
-function renderMeterItem(row) {
-  const percent = Number(row['meter-percent']);
-  const meterPercent = Number.isFinite(percent) ? Math.min(100, Math.max(0, percent)) : 0;
-  return h(
-    'article',
-    { className: `utilization-item utilization-${stringValue(row.status)}`, dataset: { packageId: stringValue(row.package) } },
-    h('header', null, h('span', null, stringValue(row.title)), h('strong', null, stringValue(row.value))),
-    h(
-      'div',
-      { className: 'utilization-track', role: 'img', 'aria-label': stringValue(row['aria-label']) },
-      h('span', { style: `width: ${meterPercent.toFixed(2).replace(/\.00$/, '')}%;` })
-    ),
-    h('p', null, stringValue(row.detail))
-  );
-}
-
-/**
- * @param {string} label
- * @param {unknown} value
- * @param {string} detail
- * @param {string} className
- */
-function renderVital(label, value, detail, className = '') {
-  return h('div', { className }, h('dt', null, label), h('dd', null, String(value)), h('p', null, detail));
-}
-
-/**
- * @param {Array<Record<string, unknown>>} segments
- * @param {string} coverage
- */
-function renderExecutionHealth(segments, coverage) {
-  const total = Number(segments[0]?.total ?? 0);
-  const ariaLabel = segments.map((row) => `${row.value} ${row.label}`).join(', ');
-  return h(
-    'div',
-    { className: 'execution-health' },
-    h(
-      'div',
-      { className: 'execution-health-heading' },
-      h('strong', null, '24-hour execution health'),
-      h('span', null, coverage, ' · ', h('a', { href: '#page-runs', dataset: { navPageId: 'runs' } }, 'View all runs'))
-    ),
-    h(
-      'div',
-      { className: 'execution-track', role: 'img', 'aria-label': ariaLabel },
-      ...segments.map((row) => h('span', {
-        className: stringValue(row.className),
-        style: `width: ${total > 0 ? (Number(row.value) / total * 100).toFixed(3) : '0'}%`
-      }))
-    ),
-    h(
-      'ul',
-      { className: 'execution-legend' },
-      ...segments.map((row) => h(
-        'li',
-        null,
-        h('span', { className: stringValue(row.className).replace('execution-', 'legend-') }),
-        titleCase(stringValue(row.label)),
-        h('strong', null, String(row.value))
-      ))
-    )
-  );
-}
-
-/**
  * @param {ElementRenderContext} context
  * @param {string} sourceName
  */
 function rowsFor(context, sourceName) {
   return Array.isArray(context.sources[sourceName]?.rows) ? context.sources[sourceName].rows : [];
-}
-
-/**
- * @param {ElementRenderContext} context
- * @param {string} sourceName
- */
-function firstRow(context, sourceName) {
-  return rowsFor(context, sourceName)[0] ?? null;
-}
-
-/**
- * @param {string} label
- * @param {unknown} value
- * @param {string} [className]
- */
-function renderPackageDetail(label, value, className = '') {
-  return h('div', null, h('dt', null, label), h('dd', { className }, String(value)));
 }
 
 /**
@@ -558,26 +256,10 @@ function stringValue(value) {
 }
 
 /**
- * @param {unknown} value
- */
-function formatOptionalNumber(value) {
-  return typeof value === 'number' && Number.isFinite(value) ? formatNumber(value) : '—';
-}
-
-/**
  * @param {string} value
  */
 function slugify(value) {
   return value.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || 'element';
-}
-
-/**
- * @param {string} value
- */
-function titleCase(value) {
-  return value
-    .replaceAll('-', ' ')
-    .replace(/\b\w/g, (letter) => letter.toUpperCase());
 }
 
 /**
