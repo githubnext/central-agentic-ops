@@ -97,7 +97,7 @@ import {
  */
 
 /**
- * @typedef {{ id: string, kind: 'custom', title?: string, description?: string, views: unknown[], sections?: PageSection[] }} CustomPage
+ * @typedef {{ id: string, kind: 'custom', title?: string, description?: string, route?: { 'hash-query-parameter': string }, views: unknown[], sections?: PageSection[] }} CustomPage
  */
 
 /**
