@@ -2,6 +2,11 @@
   "schemaVersion": 1,
   "examples": [
     {
+      "id": "deployment-drift-remediation",
+      "metadata": "examples/deployment-drift-remediation.json",
+      "dashboard": "examples/deployment-drift-remediation.dashboard.yml"
+    },
+    {
       "id": "documentation-completeness-check",
       "metadata": "examples/documentation-completeness-check.json",
       "dashboard": "examples/documentation-completeness-check.dashboard.yml"
