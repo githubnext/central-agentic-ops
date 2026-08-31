@@ -709,6 +709,8 @@ describe('presenter built-in and custom pages', () => {
     expect(packagesPage?.querySelectorAll('.package-utilization-card')).toHaveLength(2);
     expect(alphaCard?.textContent).toContain('10 of 100 AIC');
     expect(betaCard?.textContent).toContain('20 of 200 AIC');
+    expect(alphaCard?.querySelector('a')?.getAttribute('href')).toBe('https://github.com/octo-org/alpha');
+    expect(betaCard?.querySelector('a')?.getAttribute('href')).toBe('https://github.com/octo-org/beta');
     expect(betaCard?.textContent).not.toContain('999');
     expect(packagesPage?.querySelector('.package-utilization')?.textContent).toContain('Usage coverage is unknown.');
 

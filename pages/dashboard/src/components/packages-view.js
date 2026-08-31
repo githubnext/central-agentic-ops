@@ -4,6 +4,8 @@
 
 import { h } from '../dom.js';
 import { formatNumber } from '../view-formatters.js';
+import { findLink } from './link-content.js';
+import { renderLinkedText } from './linked-text.js';
 
 const MODES = ['all', 'review', 'live'];
 const FAILURE_CONCLUSIONS = new Set(['failure', 'startup-failure', 'timed-out']);
@@ -176,7 +178,7 @@ function renderUtilizationCard(entry, utilization, available, completeness) {
         'span',
         { className: 'package-utilization-identity' },
         h('strong', null, entry.name),
-        scopeLabel ? h('small', null, scopeLabel) : null
+        scopeLabel ? h('small', null, renderLinkedText(scopeLabel, entry.repositoryLink)) : null
       ),
       h('span', { className: 'package-utilization-value' }, ratio === null ? '—' : formatPercent(ratio))
     ),
@@ -405,6 +407,7 @@ function summarizePackages(workflows) {
       name: String(rows.find((row) => typeof row['package-name'] === 'string')?.['package-name'] ?? titleCase(id)),
       organization: String(firstRow.organization ?? ''),
       repository: String(firstRow.repository ?? ''),
+      repositoryLink: findLink(firstRow, 'repository-link'),
       completeAttemptAllowance: uniqueWorkflowAllowances.size > 0 ? summedAllowance : null,
       workflows: rows
     };
