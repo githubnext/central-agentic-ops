@@ -1,0 +1,145 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Dashboard comparison</title>
+    <style>
+      :root {
+        color-scheme: light dark;
+        font-family: ui-sans-serif, system-ui, sans-serif;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        display: grid;
+        grid-template-rows: auto 1fr;
+        min-width: 40rem;
+        min-height: 100vh;
+        margin: 0;
+        background: Canvas;
+        color: CanvasText;
+      }
+
+      header {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        padding: 0.75rem 1rem;
+        border-bottom: 1px solid color-mix(in srgb, CanvasText 20%, transparent);
+      }
+
+      h1 {
+        margin: 0;
+        font-size: 1rem;
+      }
+
+      label {
+        margin-left: auto;
+        font-weight: 600;
+      }
+
+      select {
+        min-width: 12rem;
+        padding: 0.4rem;
+        font: inherit;
+      }
+
+      main {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        min-height: 0;
+      }
+
+      section {
+        display: grid;
+        grid-template-rows: auto 1fr;
+        min-width: 0;
+      }
+
+      section + section {
+        border-left: 1px solid color-mix(in srgb, CanvasText 20%, transparent);
+      }
+
+      h2 {
+        margin: 0;
+        padding: 0.5rem 1rem;
+        border-bottom: 1px solid color-mix(in srgb, CanvasText 20%, transparent);
+        font-size: 0.875rem;
+      }
+
+      iframe {
+        width: 100%;
+        height: 100%;
+        min-height: 40rem;
+        border: 0;
+        background: Canvas;
+      }
+    </style>
+  </head>
+  <body>
+    <header>
+      <h1>Dashboard comparison</h1>
+      <label for="page">Page</label>
+      <select id="page">
+        <option value="overview">Overview</option>
+        <option value="runtime">Runtime &amp; episodes</option>
+        <option value="dispatches">Dispatches</option>
+        <option value="security">Security &amp; data quality</option>
+        <option value="operational-value">Value &amp; outcomes</option>
+        <option value="cost">Cost &amp; efficiency</option>
+        <option value="repositories">Repositories</option>
+        <option value="packages">Packages</option>
+        <option value="workflows">Workflows</option>
+        <option value="runs">Runs</option>
+      </select>
+    </header>
+    <main>
+      <section>
+        <h2>Current dashboard (/cao)</h2>
+        <iframe id="cao" title="Current dashboard"></iframe>
+      </section>
+      <section>
+        <h2>Dashboard Language Renderer (/ymao)</h2>
+        <iframe id="ymao" title="Dashboard Language renderer"></iframe>
+      </section>
+    </main>
+    <script>
+      const caoPaths = {
+        overview: "",
+        runtime: "runtime/",
+        dispatches: "dispatches/",
+        security: "security/",
+        "operational-value": "value/",
+        cost: "cost/",
+        repositories: "repositories/",
+        packages: "packages/",
+        workflows: "workflows/",
+        runs: "runs/",
+      };
+
+      const pageSelect = document.querySelector("#page");
+      const caoFrame = document.querySelector("#cao");
+      const ymaoFrame = document.querySelector("#ymao");
+
+      function showPage(page, updateUrl = false) {
+        const selectedPage = Object.hasOwn(caoPaths, page) ? page : "overview";
+        pageSelect.value = selectedPage;
+        caoFrame.src = `./cao/${caoPaths[selectedPage]}`;
+        ymaoFrame.src = `./ymao/#page-${selectedPage}`;
+
+        if (updateUrl) {
+          const url = new URL(window.location.href);
+          url.searchParams.set("page", selectedPage);
+          window.history.replaceState(null, "", url);
+        }
+      }
+
+      pageSelect.addEventListener("change", () => showPage(pageSelect.value, true));
+      showPage(new URLSearchParams(window.location.search).get("page"));
+    </script>
+  </body>
+</html>
