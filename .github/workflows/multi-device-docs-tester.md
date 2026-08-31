@@ -268,7 +268,7 @@ No manual server cleanup is required. The server process will be cleaned up auto
 
 ## Summary
 
-Always finish with exactly one `create_issue` or `noop` result. An `upload_artifact` request containing captured screenshots may precede that final result output.
+Always finish with exactly one result safe output: one `create_issue` or `noop`. An `upload_artifact` request containing captured screenshots may precede that final result output.
 
 ### Output Format
 

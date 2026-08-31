@@ -1186,6 +1186,7 @@ test("multi-device docs tester runs daily and covers browser and appearance comp
   assert.match(source, /colorScheme: "dark"/);
   assert.match(source, /currentSrc/);
   assert.doesNotMatch(source, /create-check-run:|create_check_run|action_required/);
+  assert.match(source, /create-issue:/);
   assert.match(source, /multi-device-docs\/screenshots/);
 });
 
