@@ -5,21 +5,14 @@ name: Multi-Device Docs Tester
 description: Tests documentation responsiveness and rendering across device sizes, browser engines, and color schemes
 on:
   schedule: daily
-  workflow_dispatch:
-    inputs:
-      devices:
-        description: 'Device types to test (comma-separated: mobile,tablet,desktop)'
-        required: false
-        default: 'mobile,tablet,desktop'
 concurrency:
-  group: "${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}"
+  group: "${{ github.workflow }}"
   cancel-in-progress: true
   job-discriminator: "${{ github.run_id }}"
 permissions:
   contents: read
   copilot-requests: write
   issues: read
-  pull-requests: read
 
 tracker-id: multi-device-docs-tester
 strict: true
@@ -29,8 +22,6 @@ runtimes:
     version: "24"
 tools:
   cli-proxy: true
-  github:
-    mode: gh-proxy
   timeout: 120  # Multi-device runs include preview startup and Playwright tests
   playwright:
     mode: cli
@@ -129,7 +120,7 @@ features:
   gh-aw-detection: true
 evals:
   - id: device_tests_completed
-    question: Did the agent test the documentation site across the requested device form factors?
+    question: Did the agent test the documentation site across every required device form factor?
   - id: compatibility_matrix_completed
     question: Did the agent test both Chrome and WebKit in light and dark color schemes?
   - id: results_reported
@@ -146,18 +137,18 @@ You are a documentation testing specialist. Your task is to comprehensively test
 
 - Repository: ${{ github.repository }}
 - Triggered by: @${{ github.actor }}
-- Devices to test: ${{ inputs.devices || 'mobile,tablet,desktop' }}
+- Devices to test: mobile, tablet, and desktop
 - Browser engines to test: Chrome and WebKit
 - Color schemes to test: light and dark
 - Working directory: ${{ github.workspace }}
 
-For scheduled and manual runs, call `noop` if all tests pass or testing is blocked, and `create_issue` if documentation problems are found. If screenshots were captured, call `upload_artifact` before the final result output.
+Call `noop` if all tests pass or testing is blocked, and `create_issue` if documentation problems are found. If screenshots were captured, call `upload_artifact` before the final result output.
 
 Playwright is available through `playwright-cli`. Use `${{ github.workspace }}/.playwright/cli.config.json` for Chrome and `${{ github.workspace }}/.playwright/webkit.config.json` for WebKit. Inspect `.playwright/preflight-chrome.log`, `.playwright/preflight-webkit.log`, and `.playwright/webkit-install.log` before testing. Report installation or browser startup errors as infrastructure blockers rather than documentation regressions.
 
 ## Your Mission
 
-Discover how this repository builds and previews its documentation, start the preview server, and test layout responsiveness, accessibility, interactive elements, and visual rendering across the requested device classes, browser engines, and color schemes. Use one named browser session per engine and reuse it for that engine's complete matrix.
+Discover how this repository builds and previews its documentation, start the preview server, and test layout responsiveness, accessibility, interactive elements, and visual rendering across all required device classes, browser engines, and color schemes. Use one named browser session per engine and reuse it for that engine's complete matrix.
 
 ## Step 1: Discover and Start the Documentation Site
 
@@ -174,13 +165,13 @@ If the repository does not define enough information to build and preview its do
 
 ## Step 2: Compatibility Matrix
 
-Test these device types based on input `${{ inputs.devices }}`:
+Test all of these device types:
 
 **Mobile:** iPhone 12 (390x844), iPhone 12 Pro Max (428x926), Pixel 5 (393x851), Galaxy S21 (360x800)
 **Tablet:** iPad (768x1024), iPad Pro 11 (834x1194), iPad Pro 12.9 (1024x1366)
 **Desktop:** HD (1366x768), FHD (1920x1080), 4K (2560x1440)
 
-Test every requested viewport in both Chrome and WebKit, first with `colorScheme: "light"` and then with `colorScheme: "dark"`. WebKit is a Safari compatibility signal, not proof of behavior on physical iOS hardware; describe it accurately in reports.
+Test every viewport in both Chrome and WebKit, first with `colorScheme: "light"` and then with `colorScheme: "dark"`. WebKit is a Safari compatibility signal, not proof of behavior on physical iOS hardware; describe it accurately in reports.
 
 ## Step 3: Run Browser Tests
 
@@ -197,7 +188,7 @@ for PREFLIGHT_LOG in "${{ github.workspace }}"/.playwright/preflight-*.log; do
 done
 ```
 
-For each browser, color scheme, and requested viewport:
+For each browser, color scheme, and viewport:
 
 - navigate with `waitUntil: 'domcontentloaded'` and a 30-second timeout;
 - verify the page has a title, one visible main-content region, and no horizontal document overflow;
@@ -217,7 +208,7 @@ Organize findings as critical, warning, or passed. Report only reproducible docu
 
 ## Step 5: Report Results
 
-### Scheduled or Manual Runs With NO Issues Found
+### Scheduled Runs With NO Issues Found
 
 Call `noop` to log completion:
 
@@ -229,7 +220,7 @@ Call `noop` to log completion:
 }
 ```
 
-### Scheduled or Manual Runs With Issues Found
+### Scheduled Runs With Issues Found
 
 Create one issue titled "Multi-Device Docs Testing Report - [Date]" with:
 

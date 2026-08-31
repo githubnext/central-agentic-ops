@@ -2,7 +2,7 @@
 
 Use this as a lookup from configuration to verified behavior. Examples assume 25 discovered repositories. `-` means unset or not applicable. Statuses are `🟢 Pass` and `🔴 Fail`.
 
-Run dependency-free contract tests with `npm run test:unit`. Run the networked clean-room package and failure-injection tests with `npm run test:integration`; package tests require gh-aw and public GitHub access. Run synthetic enterprise scale tests with `npm run test:load`. `npm test` runs unit and integration tests, while `npm run check` adds load tests and compilation. Use `npm run compile:locks` when updating tracked lock files. CI sets `CENTRAL_AGENTIC_OPS_PACKAGE_SOURCE` to the exact commit under test so package installation validates pull-request contents rather than only the default branch.
+Run dependency-free contract tests with `npm run test:unit`. Run local failure-injection tests with `npm run test:integration`. Run the authenticated clean-room package tests with `npm run test:package-lifecycle`; they require gh-aw, `GH_TOKEN`, and public GitHub access. Run synthetic enterprise scale tests with `npm run test:load`. `npm test` runs unit and local integration tests, while `npm run check` adds load tests, visual checks, compilation, and documentation builds. Use `npm run compile:locks` when updating tracked lock files. CI runs package lifecycle tests in a separate job and sets `CENTRAL_AGENTIC_OPS_PACKAGE_SOURCE` to the exact commit under test so package installation validates pull-request contents rather than only the default branch.
 
 The automated suite checks source `.md` contracts, ops-value interfaces, smoke-workflow safety, generated workflows, and `gh aw add`/`gh aw update` package behavior. It does not execute agentic workflows or spend AI Credits; the manual `Review smoke` Actions workflow performs that opt-in runtime check.
 
@@ -11,7 +11,8 @@ The automated suite checks source `.md` contracts, ops-value interfaces, smoke-w
 | Layer | Location | Command | Coverage |
 | --- | --- | --- | --- |
 | Unit | `tests/unit/` | `npm run test:unit` | Policy matrices, workflow contracts, safety limits, generated settings, and package manifest structure. |
-| Integration | `tests/integration/` | `npm run test:integration` | Clean-room `gh aw add`/`update` behavior and fail-closed execution of the actual control precompute shell. |
+| Integration | `tests/integration/control-failure.test.mjs` | `npm run test:integration` | Fail-closed execution of the actual control precompute shell. |
+| Package lifecycle | `tests/integration/package-lifecycle.test.mjs` | `npm run test:package-lifecycle` | Authenticated clean-room `gh aw add`/`update` behavior. |
 | Load | `tests/load/` | `npm run test:load` | Actual pagination, deterministic batching, and admission logic over 100,000 synthetic repositories, including bounded API failure. |
 | Compilation | Source workflows | `npm run compile` | All agentic workflow sources compile without emitting repository artifacts; unit contracts reject HTML-escaped operators in tracked expressions. |
 | Runtime review | `.github/workflows/review-smoke.yml` | Manual Actions dispatch | One bounded target and its workers complete; outputs route to a private review repository and target refs and issues remain unchanged. |
