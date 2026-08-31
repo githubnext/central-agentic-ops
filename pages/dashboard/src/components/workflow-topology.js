@@ -8,6 +8,7 @@ import { formatCountNoun } from './count-formatters.js';
 import { findLink } from './link-content.js';
 import { renderLinkedText } from './linked-text.js';
 
+/** @type {Record<string, string>} */
 const MODE_ICONS = { review: 'beaker', live: 'rocket' };
 
 /**
