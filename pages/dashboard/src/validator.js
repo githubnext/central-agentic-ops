@@ -570,14 +570,6 @@ function validateNavigation(navigation, navigationNode, pageIds, errors) {
     });
   });
 
-  const missingPageIds = [...pageIds].filter((pageId) => !referencedPageIds.has(pageId));
-  if (missingPageIds.length > 0) {
-    errors.push(createError(
-      ERROR_CODES.missingOrInvalidRequiredField,
-      'navigation must reference every declared dashboard page exactly once.',
-      path
-    ));
-  }
 }
 
 /**

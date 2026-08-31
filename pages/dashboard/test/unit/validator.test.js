@@ -177,16 +177,12 @@ describe('dashboard document validation', () => {
       }));
     }
 
-    const withMissingCoverage = JSON.parse(authoritativeDashboardSource);
-    withMissingCoverage.dashboard.navigation[2].pages.pop();
-    const missingCoverageResult = validateDashboardDocument(JSON.stringify(withMissingCoverage));
-    expect(missingCoverageResult.ok).toBe(false);
-    if (!missingCoverageResult.ok) {
-      expect(missingCoverageResult.errors).toContainEqual(expect.objectContaining({
-        path: '$.dashboard.navigation',
-        message: 'navigation must reference every declared dashboard page exactly once.'
-      }));
-    }
+    const withPartialCoverage = JSON.parse(authoritativeDashboardSource);
+    withPartialCoverage.dashboard.navigation[2].pages.pop();
+    expect(validateDashboardDocument(JSON.stringify(withPartialCoverage))).toEqual({
+      ok: true,
+      value: withPartialCoverage
+    });
 
     const withUnknownKey = JSON.parse(authoritativeDashboardSource);
     withUnknownKey.dashboard.navigation[0].icon = 'server';

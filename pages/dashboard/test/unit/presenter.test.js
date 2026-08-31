@@ -225,7 +225,7 @@ describe('presenter built-in and custom pages', () => {
     expect(repositoryLink?.getAttribute('title')).toBe('View octo-org/agentic-operations on GitHub');
   });
 
-  it('renders section-labeled Attention Investigate Explore navigation groups in the sidebar', () => {
+  it('renders the CAO Attention Investigate Explore navigation in the sidebar', () => {
     const rendered = renderDashboard({
       document: authoritativeDashboardDocument,
       sources: {}
@@ -233,8 +233,23 @@ describe('presenter built-in and custom pages', () => {
 
     const labels = [...rendered.querySelectorAll('.nav-section-label')].map((node) => node.textContent?.trim());
     expect(labels).toEqual(['Attention', 'Investigate', 'Explore']);
+    expect([...rendered.querySelectorAll('.primary-nav a')].map((node) => node.textContent?.trim())).toEqual([
+      'Overview',
+      'Runtime',
+      'Security',
+      'Value',
+      'Cost',
+      'Dispatches',
+      'Workflows',
+      'Repositories',
+      'Packages'
+    ]);
     expect(rendered.querySelector('[data-nav-page-id="overview"]')?.previousElementSibling?.textContent).toBe('Attention');
     expect(rendered.querySelector('[data-nav-page-id="runs"]')?.previousElementSibling?.textContent).toBe('Investigate');
+    expect(rendered.querySelector('[data-nav-page-id="graders"]')).toBeNull();
+    expect(rendered.querySelector('[data-nav-page-id="engines-models"]')).toBeNull();
+    expect(rendered.querySelector('[data-page-id="graders"]')).not.toBeNull();
+    expect(rendered.querySelector('[data-page-id="engines-models"]')).not.toBeNull();
     expect(rendered.querySelector('[data-page-id="overview"]')?.classList.contains('overview-page')).toBe(true);
     expect(rendered.querySelector('[data-page-id="organizations"]')?.classList.contains('organizations-page')).toBe(false);
   });

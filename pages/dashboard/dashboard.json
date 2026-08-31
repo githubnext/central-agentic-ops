@@ -575,7 +575,7 @@
         "id": "runs",
         "kind": "built-in",
         "page": "runs",
-        "title": "Runs",
+        "title": "Runtime",
         "icon": "play",
         "definition": {
           "data-state": {
@@ -695,7 +695,7 @@
         "id": "experiments",
         "kind": "built-in",
         "page": "experiments",
-        "title": "Experiments",
+        "title": "Value",
         "icon": "server",
         "description": "Observed associations are presented without implying causation.",
         "definition": {
@@ -952,7 +952,7 @@
         "id": "usage",
         "kind": "built-in",
         "page": "usage",
-        "title": "Usage",
+        "title": "Cost",
         "icon": "graph",
         "definition": {
           "data-state": {
@@ -1212,8 +1212,8 @@
         "id": "findings",
         "kind": "built-in",
         "page": "findings",
-        "title": "Findings",
-        "icon": "server",
+        "title": "Security",
+        "icon": "issue",
         "definition": {
           "data-state": {
             "availability": true,
@@ -1293,24 +1293,18 @@
         "label": "Investigate",
         "pages": [
           "runs",
-          "dispatches",
           "findings",
-          "operational-value"
+          "experiments",
+          "usage"
         ]
       },
       {
         "label": "Explore",
         "pages": [
-          "organizations",
-          "repositories",
-          "repository-detail",
-          "packages",
+          "dispatches",
           "workflows",
-          "experiments",
-          "graders",
-          "evals",
-          "usage",
-          "engines-models"
+          "repositories",
+          "packages"
         ]
       }
     ]
