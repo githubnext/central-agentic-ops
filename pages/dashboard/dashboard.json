@@ -575,7 +575,7 @@
         "id": "runs",
         "kind": "built-in",
         "page": "runs",
-        "title": "Runtime",
+        "title": "Runs",
         "icon": "play",
         "definition": {
           "data-state": {
@@ -695,7 +695,7 @@
         "id": "experiments",
         "kind": "built-in",
         "page": "experiments",
-        "title": "Value",
+        "title": "Experiments",
         "icon": "server",
         "description": "Observed associations are presented without implying causation.",
         "definition": {
@@ -952,7 +952,7 @@
         "id": "usage",
         "kind": "built-in",
         "page": "usage",
-        "title": "Cost",
+        "title": "Usage",
         "icon": "graph",
         "definition": {
           "data-state": {
@@ -1212,7 +1212,7 @@
         "id": "findings",
         "kind": "built-in",
         "page": "findings",
-        "title": "Security",
+        "title": "Findings",
         "icon": "issue",
         "definition": {
           "data-state": {
@@ -1292,10 +1292,22 @@
       {
         "label": "Investigate",
         "pages": [
-          "runs",
-          "findings",
-          "experiments",
-          "usage"
+          {
+            "page": "runs",
+            "title": "Runtime"
+          },
+          {
+            "page": "findings",
+            "title": "Security"
+          },
+          {
+            "page": "experiments",
+            "title": "Value"
+          },
+          {
+            "page": "usage",
+            "title": "Cost"
+          }
         ]
       },
       {

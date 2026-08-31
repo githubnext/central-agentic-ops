@@ -29,6 +29,7 @@ import {
   LANGUAGE_VERSION,
   MAX_ESSENTIAL_VIEWS_PER_PAGE,
   NAVIGATION_SECTION_KEYS,
+  NAVIGATION_PAGE_KEYS,
   NON_ADDITIVE_MEASURE_FIELDS,
   ORDER_BY_KEYS,
   ORDER_DIRECTION_VALUES,
@@ -549,8 +550,19 @@ function validateNavigation(navigation, navigationNode, pageIds, errors) {
       return;
     }
 
-    section.pages.forEach((pageId, pageIndex) => {
+    section.pages.forEach((pageReference, pageIndex) => {
       const pageIdPath = `${sectionPath}.pages[${pageIndex}]`;
+      const pageReferenceNode = getSequenceItemNode(getValueNodeByKey(sectionNode, 'pages'), pageIndex);
+      if (isPlainObject(pageReference)) {
+        validateObjectKeys(pageReferenceNode, NAVIGATION_PAGE_KEYS, pageIdPath, errors);
+        validateStringField(pageReference.page, `${pageIdPath}.page`, true, errors);
+        if (pageReference.title !== undefined) {
+          validateStringField(pageReference.title, `${pageIdPath}.title`, true, errors);
+        }
+      }
+      const pageId = typeof pageReference === 'string'
+        ? pageReference
+        : isPlainObject(pageReference) ? pageReference.page : undefined;
       if (typeof pageId !== 'string' || !pageIds.has(pageId)) {
         errors.push(createError(
           ERROR_CODES.missingOrInvalidRequiredField,

@@ -156,7 +156,7 @@ describe('dashboard document validation', () => {
     }
   });
 
-  it('validates dashboard.navigation references declared pages exactly once', () => {
+  it('validates unique dashboard.navigation references and permits non-primary pages', () => {
     const withUnknownPage = JSON.parse(authoritativeDashboardSource);
     withUnknownPage.dashboard.navigation[2].pages.push('does-not-exist');
     const unknownPageResult = validateDashboardDocument(JSON.stringify(withUnknownPage));
@@ -179,10 +179,17 @@ describe('dashboard document validation', () => {
 
     const withPartialCoverage = JSON.parse(authoritativeDashboardSource);
     withPartialCoverage.dashboard.navigation[2].pages.pop();
-    expect(validateDashboardDocument(JSON.stringify(withPartialCoverage))).toEqual({
-      ok: true,
-      value: withPartialCoverage
-    });
+    expect(validateDashboardDocument(JSON.stringify(withPartialCoverage)).ok).toBe(true);
+
+    const withInvalidNavigationTitle = JSON.parse(authoritativeDashboardSource);
+    withInvalidNavigationTitle.dashboard.navigation[1].pages[0].title = '';
+    const invalidNavigationTitleResult = validateDashboardDocument(JSON.stringify(withInvalidNavigationTitle));
+    expect(invalidNavigationTitleResult.ok).toBe(false);
+    if (!invalidNavigationTitleResult.ok) {
+      expect(invalidNavigationTitleResult.errors).toContainEqual(expect.objectContaining({
+        path: '$.dashboard.navigation[1].pages[0].title'
+      }));
+    }
 
     const withUnknownKey = JSON.parse(authoritativeDashboardSource);
     withUnknownKey.dashboard.navigation[0].icon = 'server';

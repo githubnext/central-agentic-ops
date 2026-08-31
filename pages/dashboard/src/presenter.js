@@ -43,7 +43,11 @@ import { deriveOverviewSources } from './overview-data.js';
  */
 
 /**
- * @typedef {{ label?: string, pages?: string[] }} PresentableNavigationSection
+ * @typedef {{ page: string, title?: string }} PresentableNavigationPage
+ */
+
+/**
+ * @typedef {{ label?: string, pages?: Array<string | PresentableNavigationPage> }} PresentableNavigationSection
  */
 
 /**
@@ -171,11 +175,15 @@ function renderSidebar(pages, orgName, navigation) {
       .map((section) => ({
         label: section?.label,
         pages: (Array.isArray(section?.pages) ? section.pages : [])
-          .map((pageId) => pagesById.get(pageId))
-          .filter((page) => page !== undefined)
+          .map((reference) => {
+            const pageId = typeof reference === 'string' ? reference : reference?.page;
+            const page = pagesById.get(pageId);
+            return page ? { page, title: typeof reference === 'string' ? undefined : reference.title } : undefined;
+          })
+          .filter((entry) => entry !== undefined)
       }))
       .filter((section) => section.pages.length > 0)
-    : [{ label: undefined, pages }];
+    : [{ label: undefined, pages: pages.map((page) => ({ page, title: undefined })) }];
   return h(
     'aside',
     { className: 'org-sidebar', 'aria-label': 'Central Agentic Ops navigation' },
@@ -192,7 +200,7 @@ function renderSidebar(pages, orgName, navigation) {
         ...(typeof section.label === 'string' && section.label.length > 0
           ? [h('span', { className: 'nav-section-label' }, section.label)]
           : []),
-        ...section.pages.map((page) => renderNavItem(page, page.id === firstPageId))
+        ...section.pages.map((entry) => renderNavItem(entry.page, entry.page.id === firstPageId, entry.title))
       ])
     )
   );
@@ -201,11 +209,14 @@ function renderSidebar(pages, orgName, navigation) {
 /**
  * @param {PresentableBuiltInPage | PresentableCustomPage} page
  * @param {boolean} isActive
+ * @param {string | undefined} titleOverride
  * @returns {HTMLElement}
  */
-function renderNavItem(page, isActive) {
+function renderNavItem(page, isActive, titleOverride) {
   const iconName = getPageIcon(page);
-  const title = typeof page.title === 'string' && page.title.length > 0
+  const title = typeof titleOverride === 'string' && titleOverride.length > 0
+    ? titleOverride
+    : typeof page.title === 'string' && page.title.length > 0
     ? page.title
     : titleCase(page.id);
 
