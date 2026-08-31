@@ -17,6 +17,7 @@ describe('DLS-CONF-004 scaffold gates', () => {
   it('parity motion audit keeps report-style transitions and reduced-motion overrides', () => {
     const styles = readFileSync(resolve('src/styles.js'), 'utf8');
 
+    expect(styles).toContain('.lede { color: var(--muted); }');
     expect(styles).toContain('.pie-chart-total-value { fill: var(--fg); font-size: 5px;');
     expect(styles).toContain('transition: color 120ms ease;');
     expect(styles).toContain('transition: background-color 120ms ease, color 120ms ease;');

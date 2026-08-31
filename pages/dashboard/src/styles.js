@@ -88,6 +88,7 @@ a:focus-visible, [tabindex]:focus-visible, button:focus-visible { outline: 2px s
 .repository-link:hover { background: var(--neutral-muted); color: var(--fg); }
 .repository-link .octicon { width: 18px; height: 18px; }
 main.dashboard-prototype { width: 100%; flex: 1; padding: 0 24px 40px; }
+.lede { color: var(--muted); }
 .overview-header { min-height: 88px; display: flex; align-items: flex-start; justify-content: space-between; gap: 32px; padding: 18px 0 14px; }
 .overview-header h1 { margin: 0; font-size: 1.5rem; line-height: 1.25; }
 .overview-header .lede { margin: 3px 0 0; font-size: .875rem; }
