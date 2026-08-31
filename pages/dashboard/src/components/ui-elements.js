@@ -6,8 +6,8 @@ import { h } from '../dom.js';
 import { octicon } from '../octicons.js';
 import { formatNumber } from '../view-formatters.js';
 import { renderModeBadge } from './badge.js';
+import { renderPackagesView, renderPackageRunTrend } from './packages-view.js';
 import { renderDispatchCatalog } from './dispatch-catalog.js';
-import { renderPackagesView } from './packages-view.js';
 import { renderWorkflowTopology } from './workflow-topology.js';
 
 /**
@@ -29,6 +29,7 @@ const ELEMENT_RENDERERS = new Map([
   ['attention-list', renderAttentionListElement],
   ['record-cards', renderRecordCardsElement],
   ['package-activity', ({ sources, pageId }) => renderPackagesView(sources, pageId)],
+  ['package-run-trend', ({ sources, pageId }) => renderPackageRunTrend(sources, pageId)],
   ['dispatch-catalog', renderDispatchCatalog],
   ['workflow-topology', ({ pageId, title, sourceNames, sources, contextDetails, headingTag }) => {
     const sourceName = sourceNames[0];
