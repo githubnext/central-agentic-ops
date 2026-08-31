@@ -53,7 +53,8 @@ describe('repositories view', () => {
       ]),
       outcomes: source('outcomes', [
         { organization: 'octo-org', repository: 'alpha', workflow: '.github/workflows/one.md', 'safe-output': 'report-1' },
-        { organization: 'octo-org', repository: 'alpha', workflow: '.github/workflows/two.md', 'safe-output': 'report-2' }
+        { organization: 'octo-org', repository: 'alpha', workflow: '.github/workflows/two.md', 'safe-output': 'report-2' },
+        { organization: 'octo-org', repository: 'unconfigured', workflow: '.github/workflows/report.md', 'safe-output': 'report-3' }
       ]),
       usage: source('usage', [
         ...repositories.map((repository, index) => ({
@@ -65,7 +66,8 @@ describe('repositories view', () => {
           aic: 60 - index * 10
         })),
         { organization: 'octo-org', repository: 'alpha', run: '1', invocation: 'usage-1', aic: 60 },
-        { organization: 'octo-org', repository: 'unconfigured', run: '7', invocation: 'usage-7', aic: 5 }
+        { organization: 'octo-org', repository: 'unconfigured', run: '7', invocation: 'usage-7', aic: 5 },
+        { organization: 'octo-org', repository: 'telemetry-only', run: '8', invocation: 'usage-8', aic: 1000 }
       ], { completeness: 'partial' }),
       'operational-values': source('operational-values', [
         { organization: 'octo-org', repository: 'alpha', workflow: '.github/workflows/one.md', 'operational-value': 0.8 },

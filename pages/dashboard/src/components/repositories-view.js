@@ -25,7 +25,7 @@ export function renderRepositoriesView(sources, pageId = 'repositories') {
   return h(
     'div',
     { className: 'repositories-view' },
-    renderScopeContext(sources, [...new Set(scope)]),
+    renderScopeContext(sources, [...new Set(scope)], summaries),
     renderAicDistribution(sources, summaries, `${pageId}-aic-heading`),
     renderRepositoryActivity(sources, summaries, `${pageId}-activity-heading`)
   );
@@ -34,12 +34,15 @@ export function renderRepositoriesView(sources, pageId = 'repositories') {
 /**
  * @param {Record<string, import('../presenter.js').LogicalSourceInput>} sources
  * @param {string[]} repositories
+ * @param {RepositorySummary[]} summaries
  */
-function renderScopeContext(sources, repositories) {
+function renderScopeContext(sources, repositories, summaries) {
   const runsMetadata = sources.runs?.metadata;
   const usageMetadata = sources.usage?.metadata;
   const usageAvailable = Boolean(sources.usage) && usageMetadata?.availability !== 'unavailable';
-  const artifacts = distinctUsageArtifacts(rowsFor(sources, 'usage'));
+  const includedRepositories = new Set(summaries.map((summary) => summary.repository));
+  const artifacts = distinctUsageArtifacts(rowsFor(sources, 'usage')
+    .filter((row) => includedRepositories.has(repositoryKey(row))));
 
   return h(
     'section',
@@ -294,7 +297,7 @@ function summarizeRepositories(sources) {
   }
   const runsByRepository = new Map();
   for (const row of rowsFor(sources, 'runs')) {
-    const summary = ensureSummary(summaries, row);
+    const summary = summaries.get(repositoryKey(row));
     if (!summary) continue;
     const runKey = scopedRecordKey(row, 'run');
     const repositoryRuns = runsByRepository.get(summary.repository) ?? new Map();
@@ -307,7 +310,7 @@ function summarizeRepositories(sources) {
     summary.approvalRequired = summary.runs.filter((row) => isApprovalConclusion(row['run-conclusion'])).length;
   }
   for (const row of deduplicateUsageRows(rowsFor(sources, 'usage'))) {
-    const summary = ensureSummary(summaries, row);
+    const summary = summaries.get(repositoryKey(row));
     const aic = Number(row.aic);
     if (summary && Number.isFinite(aic)) summary.aiCredits += aic;
   }
