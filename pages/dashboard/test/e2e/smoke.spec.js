@@ -837,6 +837,7 @@ test('DLS-SAFE-004 DLS-SAFE-007 DLS-SAFE-008 DLS-SAFE-010 built-in findings page
   const presenterModuleUrl = buildPresenterModuleUrl();
 
   await page.setContent(`
+    <a id="plain-external-link" href="https://example.com/docs">External documentation</a>
     <div id="root"></div>
     <script type="module">
       import { renderDashboard } from ${JSON.stringify(presenterModuleUrl)};
@@ -846,6 +847,7 @@ test('DLS-SAFE-004 DLS-SAFE-007 DLS-SAFE-008 DLS-SAFE-010 built-in findings page
         dashboard: {
           id: 'security-dashboard',
           title: 'Security Dashboard',
+          repository: 'githubnext/central-agentic-ops',
           pages: [
             {
               id: 'findings',
@@ -916,6 +918,13 @@ test('DLS-SAFE-004 DLS-SAFE-007 DLS-SAFE-008 DLS-SAFE-010 built-in findings page
   await expect(issueLink).toHaveAttribute('href', 'https://example.com/issues/1');
   await expect(issueLink).toHaveAttribute('target', '_blank');
   await expect(issueLink).toHaveAttribute('rel', 'noopener noreferrer');
+
+  const externalLinkMask = await page.locator('#plain-external-link').evaluate((link) => getComputedStyle(link, '::after').maskImage);
+  const refreshMask = await page.locator('.refresh-button').evaluate((button) => getComputedStyle(button, '::after').maskImage);
+  const repositoryLinkMask = await page.locator('.repository-link').evaluate((link) => getComputedStyle(link, '::after').maskImage);
+  expect(externalLinkMask).not.toBe('none');
+  expect(refreshMask).toBe('none');
+  expect(repositoryLinkMask).toBe('none');
 });
 
 test('DLS-VIEW-013 DLS-VIEW-014 DLS-VIEW-015 DLS-SAFE-006 custom views render available, empty, and unavailable states with only context-permitted observations in browser', async ({ page }) => {
