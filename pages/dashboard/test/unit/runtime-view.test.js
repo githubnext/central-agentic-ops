@@ -113,7 +113,7 @@ describe('Runtime dashboard view', () => {
     expect(executionShape?.querySelector('.episode-lane-track i')?.classList.contains('status-attention')).toBe(true);
     expect(executionShape?.querySelector('.episode-lane-track i')?.getAttribute('style')).toContain('--lane-size: 100%');
     expect(executionShape?.querySelector('footer')?.textContent).toBe('Episode startAligned timeEpisode end');
-    expect(rendered.querySelector('.episode-record footer')?.textContent).toContain('No-action attempts unavailable');
+    expect(rendered.querySelector('.episode-record > footer')?.textContent).toContain('No-action attempts unavailable');
     expect(rendered.querySelector('.episode-attribution-gap')?.textContent).toContain('1 worker dispatch lacks episode evidence');
   });
 });
