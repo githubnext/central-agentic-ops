@@ -80,6 +80,17 @@ function buildPresenterModuleUrl() {
     .replace("'./workflow-topology.js'", JSON.stringify(workflowTopologyModuleUrl));
   const uiElementsModuleUrl = `data:text/javascript;charset=utf-8,${encodeURIComponent(uiElementsSource)}`;
 
+  const dataViewSource = readFileSync(new URL('../../src/components/data-view.js', import.meta.url), 'utf8')
+    .replace("'../dom.js'", JSON.stringify(domModuleUrl))
+    .replace("'../view-formatters.js'", JSON.stringify(viewFormattersModuleUrl))
+    .replace("'./badge.js'", JSON.stringify(badgeModuleUrl))
+    .replace("'./chart-elements.js'", JSON.stringify(chartElementsModuleUrl))
+    .replace("'./link-content.js'", JSON.stringify(linkContentModuleUrl))
+    .replace("'./linked-text.js'", JSON.stringify(linkedTextModuleUrl))
+    .replace("'./table-region.js'", JSON.stringify(tableRegionModuleUrl))
+    .replace("'./view-chrome.js'", JSON.stringify(viewChromeModuleUrl));
+  const dataViewModuleUrl = `data:text/javascript;charset=utf-8,${encodeURIComponent(dataViewSource)}`;
+
   const overviewDataSource = readFileSync(new URL('../../src/overview-data.js', import.meta.url), 'utf8')
     .replace("'./view-formatters.js'", JSON.stringify(viewFormattersModuleUrl));
   const overviewDataModuleUrl = `data:text/javascript;charset=utf-8,${encodeURIComponent(overviewDataSource)}`;
@@ -97,6 +108,7 @@ function buildPresenterModuleUrl() {
     .replace("'./components/linked-text.js'", JSON.stringify(linkedTextModuleUrl))
     .replace("'./components/chart-elements.js'", JSON.stringify(chartElementsModuleUrl))
     .replace("'./components/ui-elements.js'", JSON.stringify(uiElementsModuleUrl))
+    .replace("'./components/data-view.js'", JSON.stringify(dataViewModuleUrl))
     .replace("'./overview-data.js'", JSON.stringify(overviewDataModuleUrl))
     .replace("'./view-formatters.js'", JSON.stringify(viewFormattersModuleUrl));
 

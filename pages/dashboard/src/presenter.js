@@ -7,14 +7,11 @@ import { h } from './dom.js';
 import { getPrimerStyles } from './styles.js';
 import { octicon, agenticWorkflowMark } from './octicons.js';
 import { renderDataStateMetrics } from './components/data-state.js';
-import { renderTableRegion } from './components/table-region.js';
-import { customViewAvailabilityMessage, renderCustomViewStateDetails, renderPageSection, renderViewSectionChrome } from './components/view-chrome.js';
-import { formatAggregateValue, toNumber } from './view-formatters.js';
-import { renderActiveStateBadge, renderModeBadge, renderStatusBadge } from './components/badge.js';
-import { findFirstLink, findLink, renderExternalLink, renderLinkedValueWithExternalLink } from './components/link-content.js';
-import { renderLinkedText, createEntityAwareCellRenderer } from './components/linked-text.js';
+import { customViewAvailabilityMessage, renderCustomViewStateDetails, renderPageSection } from './components/view-chrome.js';
+import { toNumber } from './view-formatters.js';
+import { findLink } from './components/link-content.js';
 import { elementHandlesEmptyRows, renderUiElement } from './components/ui-elements.js';
-import { listChartSeries, pieChartEntries, renderChartLegend, renderPieLegend, renderChartWidget } from './components/chart-elements.js';
+import { renderDataView } from './components/data-view.js';
 import { deriveOverviewSources } from './overview-data.js';
 
 /**
@@ -67,14 +64,6 @@ import { deriveOverviewSources } from './overview-data.js';
 
 const DEFAULT_GITHUB_URL_BASE = 'https://github.com';
 const REFRESH_CONTROL_DESCRIPTION = 'Reload the dashboard to refresh cached data';
-
-/** @type {{ organization: 'organization-link', repository: 'repository-link', workflow: 'workflow-link' }} */
-const ENTITY_LINK_FIELDS = {
-  organization: 'organization-link',
-  repository: 'repository-link',
-  workflow: 'workflow-link'
-};
-
 
 /** @type {Record<string, PresentableCustomPage>} */
 const BUILT_IN_PAGE_PAYLOADS = /** @type {Record<string, PresentableCustomPage>} */ (Object.fromEntries(
@@ -648,15 +637,21 @@ function renderCustomView(pageId, view, index, sources, headingTag = 'h3') {
     return renderCustomViewState(pageId, title, sourceName, 'empty', contextDetails, headingTag);
   }
 
-  if (view.mark === 'metric') {
-    return renderMetricView(pageId, title, view, sourceName, filteredRows, metadata, contextDetails, headingTag);
-  }
-  if (view.mark === 'table') {
-    return renderTableView(pageId, title, view, sourceName, filteredRows, metadata, contextDetails, headingTag);
-  }
-  if (view.mark === 'chart') {
-    return renderChartView(pageId, title, view, sourceName, filteredRows, metadata, contextDetails, headingTag);
-  }
+  const rendered = renderDataView(typeof view.mark === 'string' ? view.mark : '', {
+    pageId,
+    title,
+    view,
+    sourceName,
+    rows: filteredRows,
+    metadata,
+    contextDetails,
+    headingTag,
+    prepareTableRows,
+    buildChartPoints,
+    prepareChartPoints,
+    toText
+  });
+  if (rendered) return rendered;
 
   return renderCustomViewState(pageId, title, sourceName, 'unavailable', [...contextDetails, 'Unsupported view mark.'], headingTag);
 }
@@ -754,97 +749,6 @@ function renderCustomViewState(pageId, title, sourceName, availability, contextD
  * @param {'h3'|'h4'} [headingTag]
  * @returns {HTMLElement}
  */
-function renderMetricView(pageId, title, view, sourceName, rows, metadata, contextDetails, headingTag = 'h3') {
-  const valueDefinition = isPlainObject(view.encoding) && isPlainObject(view.encoding.value)
-    ? view.encoding.value
-    : null;
-  const fieldName = typeof valueDefinition?.field === 'string' ? valueDefinition.field : null;
-  const aggregate = typeof valueDefinition?.aggregate === 'string' ? valueDefinition.aggregate : 'none';
-  const hrefDefinition = isPlainObject(view.encoding) && isPlainObject(view.encoding.href)
-    ? view.encoding.href
-    : null;
-  const hrefField = typeof hrefDefinition?.field === 'string' ? hrefDefinition.field : null;
-  const link = hrefField ? findFirstLink(rows, /** @type {LinkFieldName} */ (hrefField)) : null;
-
-  const valueText = formatAggregateValue(rows, fieldName, aggregate, toText);
-
-  /** @type {HTMLElement[]} */
-  const content = [
-    ...renderViewSectionChrome(sourceName, metadata, contextDetails),
-    h('p', { className: 'metric-value', 'data-metric-value': fieldName ?? 'unknown' }, valueText)
-  ];
-  if (link) {
-    content.push(h('p', { className: 'metric-link' }, renderExternalLink(link)));
-  }
-  return renderPageSection(pageId, title, content, headingTag);
-}
-
-/**
- * @param {string} pageId
- * @param {string} title
- * @param {Record<string, unknown>} view
- * @param {string} sourceName
- * @param {Array<Record<string, unknown>>} rows
- * @param {SourceMetadata} metadata
- * @param {string[]} contextDetails
- * @param {'h3'|'h4'} [headingTag]
- * @returns {HTMLElement}
- */
-function renderTableView(pageId, title, view, sourceName, rows, metadata, contextDetails, headingTag = 'h3') {
-  const columns = /** @type {TableField[]} */ (isPlainObject(view.encoding) && Array.isArray(view.encoding.columns)
-    ? view.encoding.columns.filter((column) => isPlainObject(column) && typeof column.field === 'string')
-    : []);
-  const hrefDefinition = isPlainObject(view.encoding) && isPlainObject(view.encoding.href)
-    ? view.encoding.href
-    : null;
-  const hrefField = typeof hrefDefinition?.field === 'string' ? hrefDefinition.field : null;
-  const tableRows = prepareTableRows(rows, columns, view.data);
-  const bodyRows = tableRows.map((row, rowIndex) => h(
-    'tr',
-    { 'data-custom-row-key': `${pageId}-${title}-${rowIndex}` },
-    ...columns.map((column, columnIndex) => {
-      const outputField = typeof column.as === 'string' ? column.as : column.field;
-      const value = renderEntityAwareCellValue(column, row[outputField], row);
-      if (columnIndex === 0 && hrefField) {
-        const link = findLink(row, /** @type {LinkFieldName} */ (hrefField));
-        return h('td', null, renderLinkedValueWithExternalLink(value, link));
-      }
-      return h('td', null, value);
-    })
-  ));
-
-  return renderPageSection(pageId, title, [
-    ...renderViewSectionChrome(sourceName, metadata, contextDetails),
-    renderTableRegion({
-      tableClassName: 'custom-table',
-      emptyMessage: 'No rows available.',
-      colSpan: Math.max(columns.length, 1),
-      headCells: columns.map((column) => fieldTitle(column)),
-      summaryColumns: columns.map((column) => {
-        const outputField = typeof column.as === 'string' ? column.as : column.field;
-        return {
-          field: outputField,
-          label: fieldTitle(column),
-          type: String(column.type ?? ''),
-          values: tableRows.map((row) => row[outputField])
-        };
-      }),
-      filterLabel: `Filter ${title}`,
-      filterId: typeof view.id === 'string' ? view.id : `${pageId}-table`,
-      filterFields: columns.flatMap((column, columnIndex) => (
-        ['nominal', 'ordinal'].includes(String(column.type))
-          ? [{
-            key: typeof column.as === 'string' ? column.as : column.field,
-            label: fieldTitle(column),
-            columnIndex
-          }]
-          : []
-      )),
-      bodyRows
-    })
-  ], headingTag);
-}
-
 /**
  * @param {Array<Record<string, unknown>>} rows
  * @param {TableField[]} columns
@@ -943,84 +847,6 @@ function compareTableValues(left, right) {
  * @param {unknown} value
  * @returns {string | HTMLElement}
  */
-function renderTableCellValue(display, value) {
-  if (display === 'mode') return renderModeBadge(value);
-  if (display === 'active-state') return renderActiveStateBadge(value);
-  if (display === 'status') return renderStatusBadge(value);
-  return toText(value);
-}
-
-const renderEntityAwareCellValue = createEntityAwareCellRenderer(ENTITY_LINK_FIELDS, findLink, renderTableCellValue, toText);
-
-/**
- * @param {string} pageId
- * @param {string} title
- * @param {Record<string, unknown>} view
- * @param {string} sourceName
- * @param {Array<Record<string, unknown>>} rows
- * @param {SourceMetadata} metadata
- * @param {string[]} contextDetails
- * @param {'h3'|'h4'} [headingTag]
- * @returns {HTMLElement}
- */
-function renderChartView(pageId, title, view, sourceName, rows, metadata, contextDetails, headingTag = 'h3') {
-  const encoding = isPlainObject(view.encoding) ? view.encoding : null;
-  const x = isPlainObject(encoding?.x) && typeof encoding.x.field === 'string' ? encoding.x : null;
-  const y = isPlainObject(encoding?.y) && typeof encoding.y.field === 'string' ? encoding.y : null;
-  const color = isPlainObject(encoding?.color) && typeof encoding.color.field === 'string' ? encoding.color : null;
-  const href = isPlainObject(encoding?.href) && typeof encoding.href.field === 'string' ? encoding.href : null;
-  const chartDefault = x?.type === 'temporal' ? 'line' : 'bar';
-  const chartType = typeof view.chart === 'string' ? view.chart : chartDefault;
-
-  const points = prepareChartPoints(
-    buildChartPoints(pageId, title, rows, x, y, color, href?.field ?? null),
-    x,
-    y,
-    color,
-    view.data
-  );
-  const chartSeries = listChartSeries(points);
-  const pieSummary = chartType === 'pie' ? pieChartEntries(points) : null;
-  const description = typeof view.description === 'string' && view.description.length > 0
-    ? h('p', { className: 'view-description' }, view.description)
-    : null;
-  const chartWidget = renderChartWidget(chartType, points, chartSeries, pieSummary, y ? fieldTitle(y) : 'Total');
-  const table = renderTableRegion({
-    tableClassName: 'custom-chart-table',
-    emptyMessage: 'No points available.',
-    colSpan: color ? 3 : 2,
-    headCells: [x ? fieldTitle(x) : 'X', y ? fieldTitle(y) : 'Y', ...(color ? [fieldTitle(color)] : [])],
-    bodyRows: points.length > 0
-      ? points.map((point) => h(
-        'tr',
-        { 'data-custom-point-key': point.key },
-        h('td', null, renderLinkedText(point.x, point.link)),
-        h('td', null, point.y),
-        color ? h('td', null, point.color ?? 'unknown') : null
-      ))
-      : []
-  });
-
-  const section = renderPageSection(pageId, title, [
-    ...(description ? [description] : []),
-    ...renderViewSectionChrome(sourceName, metadata, contextDetails),
-    ...(color && chartType !== 'pie'
-      ? [renderChartLegend(chartSeries, chartType)]
-      : []),
-    ...(pieSummary
-      ? [h(
-        'div',
-        { className: 'pie-chart-layout' },
-        chartWidget,
-        renderPieLegend(pieSummary.entries, pieSummary.total, chartCategoryLinks(points))
-      )]
-      : [chartWidget]),
-    table
-  ], headingTag);
-  section.classList.add('chart-view', `chart-view-${chartType}`);
-  return section;
-}
-
 /**
  * @param {string} pageId
  * @param {string} title
@@ -1137,41 +963,6 @@ function chartPointOutputValue(point, field, x, y, color) {
  * @param {Array<{ x: string, link: { href: string, label: string } | null }>} points
  * @returns {Map<string, { href: string, label: string }>}
  */
-function chartCategoryLinks(points) {
-  const links = new Map();
-  const ambiguous = new Set();
-  for (const point of points) {
-    if (!point.link || ambiguous.has(point.x)) continue;
-    const existing = links.get(point.x);
-    if (existing && existing.href !== point.link.href) {
-      links.delete(point.x);
-      ambiguous.add(point.x);
-    } else {
-      links.set(point.x, point.link);
-    }
-  }
-  return links;
-}
-
-/**
- * @param {string} chartType
- * @param {Array<{ x: string, y: number, color: string | null }>} points
- * @param {Array<{ name: string, className: string }>} series
- * @param {{ entries: Array<[string, number]>, total: number } | null} [pieSummary]
- * @param {string} [totalLabel]
- * @returns {HTMLElement}
- */
-/**
- * @param {Record<string, unknown>} fieldDefinition
- * @returns {string}
- */
-function fieldTitle(fieldDefinition) {
-  if (typeof fieldDefinition.title === 'string' && fieldDefinition.title.length > 0) {
-    return fieldDefinition.title;
-  }
-  return typeof fieldDefinition.field === 'string' ? titleCase(fieldDefinition.field) : 'Field';
-}
-
 /**
  * @param {Array<Record<string, unknown>>} rows
  * @param {Record<string, unknown> | undefined} dataConfig
