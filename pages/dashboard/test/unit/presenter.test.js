@@ -1209,54 +1209,28 @@ describe('presenter built-in and custom pages', () => {
     const repositoriesPage = pages.find((/** @type {{ page: string }} */ page) => page.page === 'repositories');
     expect(repositoriesPage?.definition.views).toMatchObject([
       {
+        id: 'repository-scope',
+        title: 'Repository scope',
+        data: { sources: ['repositories', 'runs', 'usage'] },
+        mark: 'element',
+        element: 'repository-scope'
+      },
+      {
         id: 'repositories-by-aic',
         title: 'AI Credit usage by AW repository',
-        description: 'Read-only usage reported by AW runs, grouped by repository.',
-        data: {
-          source: 'usage',
-          'order-by': [{ field: 'total-aic', direction: 'desc' }]
-        },
-        mark: 'chart',
-        chart: 'pie',
-        encoding: {
-          x: { field: 'repository', title: 'Repository' },
-          y: { field: 'aic', aggregate: 'sum', as: 'total-aic', title: 'Total AIC' },
-          href: { field: 'repository-link' }
-        }
+        description: 'Read-only usage reported by AW runs, deduplicated by workflow run.',
+        data: { sources: ['usage', 'repositories'] },
+        mark: 'element',
+        element: 'repository-aic-usage'
       },
       {
-        id: 'repositories-repositories-source',
-        title: 'Repository Inventory and Rankings',
-        data: { source: 'repositories' }
-      },
-      {
-        id: 'repositories-by-run-count',
-        title: 'Repositories by Run Count',
+        id: 'repositories-activity',
+        title: 'Activity by repository',
         data: {
-          source: 'runs',
-          'order-by': [{ field: 'run-count', direction: 'desc' }]
+          sources: ['repositories', 'workflows', 'runs', 'outcomes', 'usage', 'operational-values']
         },
-        encoding: {
-          columns: [
-            { field: 'repository' },
-            { field: 'run', aggregate: 'distinct-count', as: 'run-count' }
-          ]
-        }
-      },
-      {
-        id: 'repositories-by-operational-value',
-        title: 'Repositories by Operational Value',
-        data: {
-          source: 'operational-values',
-          'order-by': [{ field: 'mean-operational-value', direction: 'desc' }]
-        },
-        encoding: {
-          columns: [
-            { field: 'repository' },
-            { field: 'operational-value-definition' },
-            { field: 'operational-value', aggregate: 'mean', as: 'mean-operational-value' }
-          ]
-        }
+        mark: 'element',
+        element: 'repository-activity'
       }
     ]);
   });

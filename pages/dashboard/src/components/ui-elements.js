@@ -16,6 +16,7 @@ import { renderWorkflowTopology } from './workflow-topology.js';
 import { renderExecutionEpisodes, renderExecutionSignalList } from './execution-elements.js';
 import { renderSectionHeading } from './ui-primitives.js';
 import { renderDefinitionList } from './view-chrome.js';
+import { renderRepositoryActivity, renderRepositoryAicUsage, renderRepositoryScope } from './repositories-view.js';
 
 /**
  * @typedef {{
@@ -44,6 +45,9 @@ const ELEMENT_RENDERERS = new Map([
   ['package-run-trend', ({ sources, pageId }) => renderPackageRunTrend(sources, pageId)],
   ['package-detail', renderPackageDetailElement],
   ['dispatch-catalog', renderDispatchCatalog],
+  ['repository-scope', renderRepositoryScope],
+  ['repository-aic-usage', renderRepositoryAicUsage],
+  ['repository-activity', renderRepositoryActivity],
   ['repository-workflows', renderRepositoryWorkflows],
   ['outcome-detail', renderOutcomeDetail],
   ['execution-signal-list', renderExecutionSignalList],
@@ -58,7 +62,7 @@ const ELEMENT_RENDERERS = new Map([
   }]
 ]);
 
-const EMPTY_AWARE_ELEMENTS = new Set(['status-summary', 'meter-list', 'attention-list', 'record-cards', 'summary-grid', 'signal-list', 'package-detail', 'dispatch-catalog', 'repository-workflows', 'outcome-detail', 'execution-signal-list', 'execution-episodes', 'metric-signal-summary', 'readiness-note']);
+const EMPTY_AWARE_ELEMENTS = new Set(['status-summary', 'meter-list', 'attention-list', 'record-cards', 'summary-grid', 'signal-list', 'package-detail', 'dispatch-catalog', 'repository-scope', 'repository-aic-usage', 'repository-activity', 'repository-workflows', 'outcome-detail', 'execution-signal-list', 'execution-episodes', 'metric-signal-summary', 'readiness-note']);
 
 /**
  * @param {string} name

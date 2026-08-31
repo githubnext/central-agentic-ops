@@ -429,11 +429,47 @@ test("deterministic workflows pin third-party actions by commit SHA", () => {
   }
 });
 
+test("workflow contracts isolate authenticated package lifecycle checks", () => {
+  const packageScripts = JSON.parse(readFileSync(join(root, "package.json"), "utf8")).scripts;
+  assert.match(packageScripts["test:integration"], /control-failure\.test\.mjs/);
+  assert.doesNotMatch(packageScripts["test:integration"], /package-lifecycle/);
+  assert.match(packageScripts["test:package-lifecycle"], /package-lifecycle\.test\.mjs/);
+  assert.doesNotMatch(packageScripts.test, /package-lifecycle/);
+
+  const source = workflow("workflow-contracts.yml");
+  const jobs = generatedJobs(source);
+  const contracts = jobs.get("test")?.block ?? "";
+  const packageLifecycle = jobs.get("package-lifecycle")?.block ?? "";
+
+  assert.match(source, /pull_request:\n    paths-ignore:\n      - \.github\/workflows\/cid\.yml\n      - pages\/dashboard\/\*\*/);
+  assert.match(source, /push:\n    branches: \[main\]\n    paths-ignore:\n      - \.github\/workflows\/cid\.yml\n      - pages\/dashboard\/\*\*/);
+  assert.match(contracts, /npm run check/);
+  assert.doesNotMatch(contracts, /GH_TOKEN|CENTRAL_AGENTIC_OPS_PACKAGE_SOURCE|test:package-lifecycle/);
+  assert.match(packageLifecycle, /GH_TOKEN: \$\{\{ github\.token \}\}/);
+  assert.match(packageLifecycle, /CENTRAL_AGENTIC_OPS_PACKAGE_SOURCE:/);
+  assert.match(packageLifecycle, /npm run test:package-lifecycle/);
+});
+
 test("package manifests exclude repository-only tests", () => {
   for (const relativePath of ["aw.yml", join("advisory", "aw.yml"), join("ambient-context", "aw.yml"), join("aw-maintenance", "aw.yml"), join("dashboard", "aw.yml"), join("dependabot", "aw.yml"), join("eu-cra-compliance", "aw.yml"), join("optimization", "aw.yml")]) {
     const manifest = readFileSync(join(root, relativePath), "utf8");
     assert.doesNotMatch(manifest, /(?:review-smoke|enterprise-canary|enterprise-stress|tests\/e2e|\.github\/aw\/e2e)/, relativePath);
   }
+});
+
+test("root package provides default control-repository agent context", () => {
+  const rootManifest = readFileSync(join(root, "aw.yml"), "utf8");
+  const agents = readFileSync(join(root, "AGENTS.md"), "utf8");
+  const setupSkill = readFileSync(join(root, ".github", "skills", "setup-central-agentic-ops", "SKILL.md"), "utf8");
+
+  assert.match(rootManifest, /source: AGENTS\.md\n\s+destination: \.github\/aw\/default-AGENTS\.md/);
+  assert.match(rootManifest, /type: handoff\n\s+message: If this repository has no root AGENTS\.md, copy \.github\/aw\/default-AGENTS\.md to AGENTS\.md/);
+  assert.match(agents, /Catalog source:[\s\S]*never configure this repository as a control plane/);
+  assert.match(agents, /Control repository:[\s\S]*explicitly enrolled remote repositories/);
+  assert.match(agents, /`review` is the default mode/);
+  assert.match(agents, /Never edit them directly; change their Markdown sources and run `gh aw compile`/);
+  assert.match(setupSkill, /no root `AGENTS\.md`[\s\S]*create `AGENTS\.md` with exactly that content/);
+  assert.match(setupSkill, /preserve it unchanged unless the user explicitly approves a merge/);
 });
 
 test("root package directly includes grader-backed workers for dependency packaging", () => {
@@ -1150,18 +1186,21 @@ test("SVG visual audit covers every tracked SVG in both color schemes", () => {
   assert.match(source, /Never claim success if any manifest entry was skipped/);
 });
 
-test("multi-device docs tester covers scheduled browser and appearance compatibility", () => {
+test("multi-device docs tester runs daily and covers browser and appearance compatibility", () => {
   const source = workflow("multi-device-docs-tester.md");
+  const compiled = workflow("multi-device-docs-tester.lock.yml");
 
   assert.match(source, /schedule: daily/);
-  assert.doesNotMatch(source, /pull_request:/);
+  assert.doesNotMatch(source, /pull_request:|workflow_dispatch:|inputs\.devices/);
+  assert.match(compiled, /cron: "\d+ \d+ \* \* \*"  # Friendly format: daily \(scattered\)/);
+  assert.doesNotMatch(compiled, /^  pull_request:/m);
   assert.match(source, /playwright@1\.63\.0-alpha-2026-08-05 install --with-deps webkit/);
   assert.match(source, /^      cat > "\$EXPR_GITHUB_WORKSPACE\/\.playwright\/webkit\.config\.json" <<'EOF'\n      \{\}\n      EOF$/m);
   assert.match(source, /for BROWSER in chrome webkit/);
   assert.match(source, /colorScheme: "light"/);
   assert.match(source, /colorScheme: "dark"/);
   assert.match(source, /currentSrc/);
-  assert.doesNotMatch(source, /create-check-run:/);
+  assert.doesNotMatch(source, /create-check-run:|create_check_run|action_required/);
   assert.match(source, /create-issue:/);
   assert.match(source, /multi-device-docs\/screenshots/);
 });
@@ -1198,11 +1237,21 @@ test("docs diagram generator creates one validated theme-aware SVG pair", () => 
   assert.match(source, /Call `noop`/);
 });
 
-test("daily dashboard review uses the GitHub Copilot Pi engine", () => {
+test("daily dashboard review delivers bounded declarative refactors with the GitHub Copilot Pi engine", () => {
   const source = workflow("daily-dashboard-language-spec-review.md");
 
-  assert.match(source, /permissions:\n\s+contents: read\n\s+copilot-requests: write\n\s+issues: read/);
+  assert.match(source, /^intent: Reduce page-specific dashboard code/m);
+  assert.match(source, /permissions:\n\s+contents: read\n\s+copilot-requests: write\n\s+issues: read\n\s+pull-requests: read/);
   assert.match(source, /engine:\n\s+id: pi\n\s+model: copilot\/gpt-5\.4/);
+  assert.match(source, /skip-if-match: "is:pr is:open label:dashboard-language-renderer"/);
+  assert.match(source, /create-pull-request:\n\s+title-prefix: "\[dashboard-language\] "/);
+  assert.match(source, /allowed-files:\n\s+- "docs\/dashboard-language-specification\.md"\n\s+- "pages\/dashboard\/\*\*"/);
+  assert.match(source, /playwright:\n\s+mode: cli\n\s+version: "0\.1\.18"/);
+  assert.match(source, /Read `pages\/dashboard\/PLAN\.md`, `pages\/dashboard\/dashboard\.json`/);
+  assert.match(source, /branches or registries keyed by a built-in page or view identifier/);
+  assert.match(source, /Components must not branch on page or view identity/);
+  assert.match(source, /Run every quality gate from `pages\/dashboard\/`/);
+  assert.match(source, /Publish exactly one safe output/);
   assert.doesNotMatch(source, /engine: codex/);
   assert.doesNotMatch(source, /runtime:\s+docker-sbx/);
 });
@@ -1524,7 +1573,7 @@ test("README routes zero-to-CAO requests to the setup skill", () => {
   assert.match(setupSkill, /What do you want CAO to do with the catalog operations installed by the root package/);
   assert.match(setupSkill, /immutable root package installs its core catalog workflows as one unit/);
   assert.match(setupSkill, /Do you also want to create an operation package of your own/);
-  assert.match(setupSkill, /plan an explicit handoff to `.github\/skills\/create-ops-package\/SKILL\.md` after step 11/);
+  assert.match(setupSkill, /plan an explicit handoff to `.github\/skills\/create-ops-package\/SKILL\.md` after step 13/);
   assert.match(setupSkill, /never silently default them to Dependabot/);
   assert.match(createPackageSkill, /When invoked from `.github\/skills\/setup-central-agentic-ops\/SKILL\.md`/);
   assert.match(createPackageSkill, /accept the recorded desired outcome and target-repository description/);
@@ -1671,6 +1720,10 @@ test("Documentation Pages embeds this repository's control-plane report", () => 
   assert.match(workflowSource, /actions: read/);
   assert.match(workflowSource, /issues: read/);
   assert.match(workflowSource, /pull-requests: read/);
+  assert.match(workflowSource, /github\/gh-aw-actions\/setup-cli@bc8c008a419c5b7a29df6f5641edd35fd1c6ea85 # v0\.87\.10/);
+  assert.match(workflowSource, /version: v0\.87\.10/);
+  assert.match(workflowSource, /ref: ff62cdbec36230acbae869ddb28806e8eca01ea1 # v0\.87\.10/);
+  assert.match(workflowSource, /main\.version=v0\.87\.10/);
   assert.match(workflowSource, /Restore AI Credit usage cache/);
   assert.match(workflowSource, /REPORT_AIC_CACHE: \.cache\/documentation-pages-aic/);
   assert.match(workflowSource, /Save AI Credit usage cache/);

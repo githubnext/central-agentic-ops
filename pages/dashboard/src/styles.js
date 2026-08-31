@@ -251,6 +251,32 @@ h3 { margin: 16px 0 8px; font-size: 1rem; font-weight: 600; }
 .repository-workflow-badges { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 5px; }
 .repository-workflow-badges > span { padding: 1px 7px; border: 1px solid var(--border); border-radius: 2em; color: var(--muted); font-size: .6875rem; font-weight: 600; }
 .repository-workflow-table td { white-space: nowrap; }
+.repositories-page .custom-view-grid { display: block; }
+.repository-scope-summary { display: grid; grid-template-columns: 1.6fr 1.1fr .9fr; margin: 0 0 24px; overflow: hidden; border: 1px solid var(--border); border-radius: 6px; background: var(--canvas-subtle); }
+.repository-scope-summary > div { min-width: 0; padding: 11px 14px; border-left: 1px solid var(--border); }
+.repository-scope-summary > div:first-child { border-left: 0; }
+.repository-scope-summary dt { overflow: hidden; color: var(--muted); font-size: .6875rem; font-weight: 600; text-overflow: ellipsis; text-transform: uppercase; white-space: nowrap; }
+.repository-scope-summary dd { margin: 2px 0 0; overflow: hidden; font-size: .75rem; font-weight: 600; text-overflow: ellipsis; white-space: nowrap; }
+.repository-spend-panel { min-height: 236px; display: grid; grid-template-columns: minmax(220px, .75fr) minmax(0, 1.25fr); align-items: center; gap: 20px; margin-bottom: 28px; padding: 20px 24px; border: 1px solid var(--border); border-radius: 6px; }
+.repository-spend-panel h3 { margin: 0; font-size: 1.25rem; }
+.repository-spend-panel > div > p { margin: 3px 0 0; color: var(--muted); }
+.repository-spend-chart { min-width: 0; display: grid; grid-template-columns: 180px minmax(0, 1fr); align-items: center; gap: 20px; }
+.repository-spend-chart .chart-widget { min-height: 180px; margin: 0; border: 0; background: transparent; }
+.repository-spend-chart .chart-widget svg { width: 180px; height: 180px; max-height: none; }
+.repository-spend-chart .chart-legend-pie { display: block; margin: 0; }
+.repository-spend-chart .chart-legend-pie li { min-height: 30px; display: grid; grid-template-columns: 10px minmax(0, 1fr) auto 54px; gap: 9px; border-bottom: 1px solid var(--border-muted); }
+.repository-spend-chart .chart-legend-pie li:last-child { border-bottom: 0; }
+.repository-spend-chart .chart-legend-pie i { width: 9px; height: 9px; border-radius: 2px; }
+.repository-spend-chart .chart-legend-pie strong, .repository-spend-chart .chart-legend-pie small { font-variant-numeric: tabular-nums; text-align: right; }
+.repository-spend-chart .pie-chart-widget .chart-series-1 { stroke: var(--accent); }
+.repository-spend-chart .chart-legend i.chart-series-1 { background: var(--accent); }
+.repository-health { margin-bottom: 24px; }
+.repository-health .section-heading { align-items: end; }
+.repository-health .section-heading > span { flex: none; color: var(--muted); font-size: .75rem; }
+.repository-health-table th:first-child { font-weight: 600; }
+.repository-health-table td { white-space: nowrap; }
+.failure-rate { display: flex; flex-direction: column; }
+.failure-rate span { color: var(--muted); font-size: .6875rem; }
 .overview-content { display: grid; gap: 24px; }
 .scope-kicker { color: var(--muted); font-size: .75rem; font-weight: 600; text-transform: uppercase; }
 .section-heading { display: flex; align-items: flex-start; justify-content: space-between; gap: 24px; margin-bottom: 12px; }
@@ -722,6 +748,12 @@ footer { padding: 20px 24px; border-top: 1px solid var(--border); color: var(--m
   .repository-metrics { grid-template-columns: 1fr; }
   .repository-section-heading { display: block; }
   .repository-section-heading > a { margin-top: 10px; }
+  .repository-scope-summary { grid-template-columns: 1fr; }
+  .repository-scope-summary > div { border-top: 1px solid var(--border); border-left: 0; }
+  .repository-scope-summary > div:first-child { border-top: 0; }
+  .repository-spend-panel { grid-template-columns: 1fr; }
+  .repository-spend-chart { grid-template-columns: 180px minmax(0, 1fr); }
+  .repository-health .section-heading { align-items: flex-start; flex-direction: column; }
   .outcome-view { grid-template-columns: 1fr; }
   .outcome-meta { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0 20px; }
   .chart-view-pie { grid-template-columns: 1fr; }
@@ -767,6 +799,7 @@ footer { padding: 20px 24px; border-top: 1px solid var(--border); color: var(--m
 @media (max-width: 420px) {
   .data-state-summary, .metrics { grid-template-columns: 1fr; }
   .summary-grid { grid-template-columns: 1fr; }
+  .repository-spend-chart { grid-template-columns: 1fr; }
   .pie-chart-layout { grid-template-columns: 1fr; }
   .package-topology-header { grid-template-columns: 28px minmax(0, 1fr); }
   .package-topology-header > :is(.mode-indicator, .status) { grid-column: auto; }

@@ -5,6 +5,8 @@ config:
   - type: copilot-auth
     secret: COPILOT_GITHUB_TOKEN
     strategy: prompt-if-actions-auth-unavailable
+  - type: handoff
+    message: If this repository has no root AGENTS.md, copy .github/aw/default-AGENTS.md to AGENTS.md. Preserve existing root agent instructions for explicit review.
 includes:
   - .github/workflows/ambient-context-agents-md-curator.md
   - .github/workflows/ambient-context-skills-curator.md
@@ -18,6 +20,8 @@ includes:
   - .github/workflows/optimization-ai-credit-optimizer.md
   - .github/workflows/optimization.md
 resources:
+  - source: AGENTS.md
+    destination: .github/aw/default-AGENTS.md
   - source: .github/aw/instructions.md
     destination: .github/aw/instructions.md
   - source: .github/scripts/control-policy/resolve.mjs

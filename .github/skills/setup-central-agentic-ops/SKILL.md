@@ -14,6 +14,7 @@ Create a new Central Agentic Ops control plane and prove it safely with one revi
 - Public and private control repositories are supported. Preserve an existing repository's visibility; for a new repository, use the visibility the user chooses.
 - In a public control repository, policy, workflow runs, operational metadata, and review safe outputs are public. State that exposure before creation and never place confidential target information in those outputs.
 - Install the root CAO package from one full commit SHA. Resolve a reviewed release or the current default branch once before installation so every package dependency uses the same immutable source identity.
+- The root package installs `.github/aw/default-AGENTS.md` as package-owned source for control-repository ambient context. If the control repository has no root `AGENTS.md`, materialize that source as `AGENTS.md`; never overwrite or merge into existing agent instructions without the user's approval.
 - Keep rollout policy only in `.github/central-agentic-ops.json`. Do not create `CENTRAL_AGENTIC_OPS_*` variables or another policy channel.
 - Keep credentials out of files, chat, command arguments, and workflow inputs. Have the user enter secrets directly through GitHub or an interactive terminal prompt.
 - Choose Copilot engine authentication independently from target-repository authentication. Prefer organization billing through `copilot-requests: write`; when centralized billing is unavailable, offer a user-owned fine-grained PAT as `COPILOT_GITHUB_TOKEN` after explicit consent. A GitHub App or `GH_AW_GITHUB_TOKEN` for target access does not authenticate Copilot inference.
@@ -57,7 +58,7 @@ Do not leave angle-bracket placeholders in authored files or pass placeholders t
 2. Determine the GitHub organization and control repository name. If the repository exists, detect and preserve its visibility. If it does not exist, ask whether to create it as `public` or `private`; do not assume either.
 3. Ask these two package questions separately before choosing the first target. Use a multi-select question followed by a yes/no question when an interactive question tool is available:
   - **Catalog operations:** Ask, "What do you want CAO to do with the catalog operations installed by the root package?" Present the current package display names and outcome-focused descriptions from their manifests and READMEs, allow more than one answer, and include `Not sure yet`. Explain that the immutable root package installs its core catalog workflows as one unit; this answer controls initial enablement and onboarding, not partial rewriting of the package. If the user selects more than one operation, ask which one should prove setup first. Inspect that orchestrator's dispatch list and ask which worker to enable when it has more than one. Record the exact `initial-package`, `initial-worker`, and `initial-orchestrator`; never silently default them to Dependabot.
-  - **Custom operation:** Ask, "Do you also want to create an operation package of your own?" If yes, ask for a short description of the desired outcome and target repositories, record it without expanding setup scope, and plan an explicit handoff to `.github/skills/create-ops-package/SKILL.md` after step 11. If no catalog operation is selected, explain that one installed operation is required for the bounded setup proof and ask the user to choose one; `Not sure yet` must not silently enable a package.
+  - **Custom operation:** Ask, "Do you also want to create an operation package of your own?" If yes, ask for a short description of the desired outcome and target repositories, record it without expanding setup scope, and plan an explicit handoff to `.github/skills/create-ops-package/SKILL.md` after step 13. If no catalog operation is selected, explain that one installed operation is required for the bounded setup proof and ask the user to choose one; `Not sure yet` must not silently enable a package.
 4. Ask which repository the first review run should target unless the user already supplied one. Offer `<organization>/<control-repository>` as the default and accept an alternate exact `owner/repository`. For an alternate target:
   - verify that it exists, record its visibility and owner, and confirm the authenticated user can access it;
   - explain that review outputs, run metadata, and target identifiers will be stored with the control repository's visibility;
@@ -97,7 +98,9 @@ Do not leave angle-bracket placeholders in authored files or pass placeholders t
 
     Verify the resulting installed profile before committing: organization mode must add `copilot-requests: write` to every installed Copilot orchestrator and worker; PAT mode must leave that permission absent and declare `COPILOT_GITHUB_TOKEN` in every corresponding generated lock. Stop if the installation mixes both profiles. Do not author replacement workflows or run `gh aw compile` after installation unless a Markdown workflow was subsequently edited. Never edit generated `.lock.yml` files directly.
 
-8. Write `.github/central-agentic-ops.json` with a file-editing tool. The package cannot install this file because it is consumer-owned rollout policy, and `add-wizard` does not create it. If the file already exists, parse and review it first; do not replace or broaden it without the user's approval. For a new control plane, write exactly this template and enable only the selected first-proof worker:
+8. Confirm `.github/aw/default-AGENTS.md` was installed. If the repository has no root `AGENTS.md`, read the installed template and create `AGENTS.md` with exactly that content using a file-editing tool. If root `AGENTS.md` already exists, preserve it unchanged unless the user explicitly approves a merge; the packaged file remains the reference default and package updates must not overwrite consumer-owned ambient context.
+
+9. Write `.github/central-agentic-ops.json` with a file-editing tool. The package cannot install this file because it is consumer-owned rollout policy, and `add-wizard` does not create it. If the file already exists, parse and review it first; do not replace or broaden it without the user's approval. For a new control plane, write exactly this template and enable only the selected first-proof worker:
 
    ```json
    {
@@ -130,8 +133,8 @@ Do not leave angle-bracket placeholders in authored files or pass placeholders t
     if (/<[^>]+>/.test(source)) throw new Error('unresolved policy placeholder');
     NODE
     ```
-9. Review the installed and authored files and commit `.github` atomically so `github.workflow_sha` identifies one workflow-and-policy revision. Push the control repository's default branch. Do not include credentials or unrelated files in the commit.
-10. Run the selected installed orchestrator in review mode against the selected target, with review outputs remaining in the control repository:
+10. Review the installed and authored files and commit `.github` and the newly materialized `AGENTS.md`, when present, atomically so `github.workflow_sha` identifies one workflow-and-policy revision. Push the control repository's default branch. Do not include credentials or unrelated files in the commit.
+11. Run the selected installed orchestrator in review mode against the selected target, with review outputs remaining in the control repository:
 
     ```bash
     gh aw run <orchestrator-workflow> --ref <default-branch> \
@@ -141,8 +144,8 @@ Do not leave angle-bracket placeholders in authored files or pass placeholders t
        --raw-field safe_output_mode="review"
     ```
 
-11. Watch the orchestrator to completion and inspect its correlated worker run. Verify that exactly the selected target was selected, no more than one worker was dispatched, the effective mode was `review`, and every write was a declared review safe output in the control repository rather than a live target effect. A no-op or incomplete worker result is successful when these boundaries hold and its inaccessible evidence is identified.
-12. Report the control repository and visibility, selected catalog operation and worker, selected target and visibility, authentication profile, installed CAO source reference, policy path, run URLs, and verification result. Treat other selected catalog operations, broader enrollment, or `live` promotion as separate follow-up work. If the user chose to create a custom operation, now load and follow `.github/skills/create-ops-package/SKILL.md`, carrying forward the recorded outcome and target-repository description; keep package authoring separate from the proven setup commit and run.
+12. Watch the orchestrator to completion and inspect its correlated worker run. Verify that exactly the selected target was selected, no more than one worker was dispatched, the effective mode was `review`, and every write was a declared review safe output in the control repository rather than a live target effect. A no-op or incomplete worker result is successful when these boundaries hold and its inaccessible evidence is identified.
+13. Report the control repository and visibility, selected catalog operation and worker, selected target and visibility, authentication profile, installed CAO source reference, agent-instructions path, policy path, run URLs, and verification result. Treat other selected catalog operations, broader enrollment, or `live` promotion as separate follow-up work. If the user chose to create a custom operation, now load and follow `.github/skills/create-ops-package/SKILL.md`, carrying forward the recorded outcome and target-repository description; keep package authoring separate from the proven setup commit and run.
 
 ## Stop Conditions
 
@@ -151,6 +154,7 @@ Stop before installation or execution and explain the blocker when:
 - the authenticated account lacks required organization or workflow access;
 - neither organization-billed Copilot inference nor a consented, validated `COPILOT_GITHUB_TOKEN` is available;
 - the selected immutable CAO ref does not contain the root `copilot-auth` config action;
+- the installed root package does not contain `.github/aw/default-AGENTS.md`;
 - the selected target does not exist, cannot be accessed, requires credentials that were not configured, or would expose non-public evidence through a public control repository;
 - the existing repository contains conflicting files that the user has not approved replacing;
 - root package installation fails; or
