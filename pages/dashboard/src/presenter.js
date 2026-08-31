@@ -971,33 +971,53 @@ function renderChartView(pageId, title, view, sourceName, rows, metadata, contex
   const chartDefault = x?.type === 'temporal' ? 'line' : 'bar';
   const chartType = typeof view.chart === 'string' ? view.chart : chartDefault;
 
-  const points = buildChartPoints(pageId, title, rows, x, y, color, href?.field ?? null);
+  const points = prepareChartPoints(
+    buildChartPoints(pageId, title, rows, x, y, color, href?.field ?? null),
+    x,
+    y,
+    color,
+    view.data
+  );
   const chartSeries = listChartSeries(points);
   const pieSummary = chartType === 'pie' ? pieChartEntries(points) : null;
+  const description = typeof view.description === 'string' && view.description.length > 0
+    ? h('p', { className: 'view-description' }, view.description)
+    : null;
+  const chartWidget = renderChartWidget(chartType, points, chartSeries, pieSummary, y ? fieldTitle(y) : 'Total');
+  const table = renderTableRegion({
+    tableClassName: 'custom-chart-table',
+    emptyMessage: 'No points available.',
+    colSpan: color ? 3 : 2,
+    headCells: [x ? fieldTitle(x) : 'X', y ? fieldTitle(y) : 'Y', ...(color ? [fieldTitle(color)] : [])],
+    bodyRows: points.length > 0
+      ? points.map((point) => h(
+        'tr',
+        { 'data-custom-point-key': point.key },
+        h('td', null, renderLinkedText(point.x, point.link)),
+        h('td', null, point.y),
+        color ? h('td', null, point.color ?? 'unknown') : null
+      ))
+      : []
+  });
 
-  return renderPageSection(pageId, title, [
+  const section = renderPageSection(pageId, title, [
+    ...(description ? [description] : []),
     ...renderViewSectionChrome(sourceName, metadata, contextDetails),
     ...(color && chartType !== 'pie'
       ? [renderChartLegend(chartSeries, chartType)]
       : []),
-    ...(pieSummary ? [renderPieLegend(pieSummary.entries, pieSummary.total)] : []),
-    renderChartWidget(chartType, points, chartSeries, pieSummary),
-    renderTableRegion({
-      tableClassName: 'custom-chart-table',
-      emptyMessage: 'No points available.',
-      colSpan: color ? 3 : 2,
-      headCells: [x ? fieldTitle(x) : 'X', y ? fieldTitle(y) : 'Y', ...(color ? [fieldTitle(color)] : [])],
-      bodyRows: points.length > 0
-        ? points.map((point) => h(
-          'tr',
-          { 'data-custom-point-key': point.key },
-          h('td', null, renderLinkedText(point.x, point.link)),
-          h('td', null, point.y),
-          color ? h('td', null, point.color ?? 'unknown') : null
-        ))
-        : []
-    })
+    ...(pieSummary
+      ? [h(
+        'div',
+        { className: 'pie-chart-layout' },
+        chartWidget,
+        renderPieLegend(pieSummary.entries, pieSummary.total, chartCategoryLinks(points))
+      )]
+      : [chartWidget]),
+    table
   ], headingTag);
+  section.classList.add('chart-view', `chart-view-${chartType}`);
+  return section;
 }
 
 /**
@@ -1052,14 +1072,84 @@ function buildChartPoints(pageId, title, rows, x, y, color, hrefField) {
     } else if (aggregate === 'max') {
       value = numericValues.length > 0 ? Math.max(...numericValues) : 0;
     }
+    const distinctLinks = new Map(group.links.map((link) => [link.href, link]));
     return {
       key: `${pageId}-${title}-${index}`,
       x: group.x,
       y: value,
       color: group.color,
-      link: group.values.length === 1 && group.links.length === 1 ? group.links[0] : null
+      link: distinctLinks.size === 1 ? distinctLinks.values().next().value ?? null : null
     };
   });
+}
+
+/**
+ * Applies declarative chart ordering and limiting after aggregation.
+ * @param {Array<{ key: string, x: string, y: number, color: string | null, link: { href: string, label: string } | null }>} points
+ * @param {Record<string, any> | null} x
+ * @param {Record<string, any> | null} y
+ * @param {Record<string, any> | null} color
+ * @param {unknown} dataConfig
+ * @returns {Array<{ key: string, x: string, y: number, color: string | null, link: { href: string, label: string } | null }>}
+ */
+function prepareChartPoints(points, x, y, color, dataConfig) {
+  const prepared = [...points];
+  const orderBy = isPlainObject(dataConfig) && Array.isArray(dataConfig['order-by'])
+    ? dataConfig['order-by'].filter((item) => isPlainObject(item) && typeof item.field === 'string')
+    : [];
+  prepared.sort((left, right) => {
+    for (const item of orderBy) {
+      const comparison = compareTableValues(
+        chartPointOutputValue(left, item.field, x, y, color),
+        chartPointOutputValue(right, item.field, x, y, color)
+      );
+      if (comparison !== 0) return item.direction === 'desc' ? -comparison : comparison;
+    }
+    const xComparison = left.x.localeCompare(right.x);
+    return xComparison !== 0 ? xComparison : String(left.color ?? '').localeCompare(String(right.color ?? ''));
+  });
+  const limit = isPlainObject(dataConfig) && Number.isInteger(dataConfig.limit) && dataConfig.limit > 0
+    ? dataConfig.limit
+    : null;
+  return limit === null ? prepared : prepared.slice(0, limit);
+}
+
+/**
+ * @param {{ x: string, y: number, color: string | null }} point
+ * @param {string} field
+ * @param {Record<string, any> | null} x
+ * @param {Record<string, any> | null} y
+ * @param {Record<string, any> | null} color
+ * @returns {string | number | null}
+ */
+function chartPointOutputValue(point, field, x, y, color) {
+  if (field === x?.field || field === x?.as) return point.x;
+  const yOutput = typeof y?.as === 'string'
+    ? y.as
+    : typeof y?.aggregate === 'string' ? `${y.aggregate}-${y.field}` : y?.field;
+  if (field === y?.field || field === yOutput) return point.y;
+  if (field === color?.field || field === color?.as) return point.color;
+  return null;
+}
+
+/**
+ * @param {Array<{ x: string, link: { href: string, label: string } | null }>} points
+ * @returns {Map<string, { href: string, label: string }>}
+ */
+function chartCategoryLinks(points) {
+  const links = new Map();
+  const ambiguous = new Set();
+  for (const point of points) {
+    if (!point.link || ambiguous.has(point.x)) continue;
+    const existing = links.get(point.x);
+    if (existing && existing.href !== point.link.href) {
+      links.delete(point.x);
+      ambiguous.add(point.x);
+    } else {
+      links.set(point.x, point.link);
+    }
+  }
+  return links;
 }
 
 /**
@@ -1067,9 +1157,10 @@ function buildChartPoints(pageId, title, rows, x, y, color, hrefField) {
  * @param {Array<{ x: string, y: number, color: string | null }>} points
  * @param {Array<{ name: string, className: string }>} series
  * @param {{ entries: Array<[string, number]>, total: number } | null} [pieSummary]
+ * @param {string} [totalLabel]
  * @returns {HTMLElement}
  */
-function renderChartWidget(chartType, points, series, pieSummary = null) {
+function renderChartWidget(chartType, points, series, pieSummary = null, totalLabel = 'Total') {
   if (chartType === 'pie') {
     const { entries, total } = pieSummary ?? pieChartEntries(points);
     let offset = 0;
@@ -1083,7 +1174,7 @@ function renderChartWidget(chartType, points, series, pieSummary = null) {
         ...entries.map(([label, value], index) => {
           const percent = total > 0 ? (value / total) * 100 : 0;
           const segment = h('circle', {
-            className: `pie-chart-segment chart-series-${(index % 5) + 1}`,
+            className: `pie-chart-segment chart-series-${(index % 6) + 1}`,
             cx: 21,
             cy: 21,
             r: 15.9155,
@@ -1100,7 +1191,7 @@ function renderChartWidget(chartType, points, series, pieSummary = null) {
           return segment;
         }),
         h('text', { className: 'pie-chart-total-value', x: 21, y: 20, 'text-anchor': 'middle', 'aria-hidden': 'true' }, formatNumber(total)),
-        h('text', { className: 'pie-chart-total-label', x: 21, y: 25.5, 'text-anchor': 'middle', 'aria-hidden': 'true' }, 'total')
+        h('text', { className: 'pie-chart-total-label', x: 21, y: 25.5, 'text-anchor': 'middle', 'aria-hidden': 'true' }, totalLabel)
       )
     );
   }

@@ -51,10 +51,14 @@ describe('chart element helpers', () => {
   });
 
   it('DLS-SAFE-009 renders reusable pie legends including zero-total fallback percentages', () => {
+    const links = new Map([['open', {
+      href: 'https://github.com/octo-org/open',
+      label: 'View octo-org/open on GitHub'
+    }]]);
     const populated = renderPieLegend([
       ['open', 3],
       ['closed', 2]
-    ], 5);
+    ], 5, links);
     const empty = renderPieLegend([], 0);
 
     expect(populated.className).toBe('chart-legend chart-legend-pie');
@@ -62,6 +66,8 @@ describe('chart element helpers', () => {
     expect(populated.textContent).toContain('open');
     expect(populated.textContent).toContain('3');
     expect(populated.textContent).toContain('60.0%');
+    expect(populated.querySelector('a')?.getAttribute('href')).toBe('https://github.com/octo-org/open');
+    expect(populated.querySelector('a')?.getAttribute('aria-label')).toBe('View octo-org/open on GitHub');
     expect(empty.querySelectorAll('li')).toHaveLength(0);
   });
 });

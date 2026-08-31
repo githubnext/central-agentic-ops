@@ -35,7 +35,7 @@ export function groupChartSeries(points) {
 export function listChartSeries(points) {
   return groupChartSeries(points).map(([name], index) => ({
     name,
-    className: `chart-series-${(index % 5) + 1}`
+    className: `chart-series-${(index % 6) + 1}`
   }));
 }
 
@@ -75,17 +75,29 @@ export function pieChartEntries(points) {
 /**
  * @param {Array<[string, number]>} entries
  * @param {number} total
+ * @param {Map<string, { href: string, label: string }>} [links]
  * @returns {HTMLElement}
  */
-export function renderPieLegend(entries, total) {
+export function renderPieLegend(entries, total, links = new Map()) {
   return h(
     'ul',
     { className: 'chart-legend chart-legend-pie', 'data-chart-legend': 'visual' },
     entries.map(([label, value], index) => h(
       'li',
       null,
-      h('i', { className: `chart-series-${(index % 5) + 1}`, 'aria-hidden': 'true' }),
-      h('span', null, label),
+      h('i', { className: `chart-series-${(index % 6) + 1}`, 'aria-hidden': 'true' }),
+      h(
+        'span',
+        null,
+        links.has(label)
+          ? h('a', {
+            href: links.get(label)?.href,
+            target: '_blank',
+            rel: 'noopener noreferrer',
+            'aria-label': links.get(label)?.label
+          }, label)
+          : label
+      ),
       h('strong', null, formatNumber(value)),
       h('small', null, total > 0 ? `${((value / total) * 100).toFixed(1)}%` : '0%')
     ))

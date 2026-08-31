@@ -275,6 +275,24 @@
           },
           "views": [
             {
+              "id": "repositories-by-aic",
+              "title": "AI Credit usage by AW repository",
+              "description": "Read-only usage reported by AW runs, grouped by repository.",
+              "data": {
+                "source": "usage",
+                "order-by": [
+                  { "field": "total-aic", "direction": "desc" }
+                ]
+              },
+              "mark": "chart",
+              "chart": "pie",
+              "encoding": {
+                "x": { "field": "repository", "type": "nominal", "title": "Repository" },
+                "y": { "field": "aic", "type": "quantitative", "aggregate": "sum", "as": "total-aic", "title": "Total AIC" },
+                "href": { "field": "repository-link" }
+              }
+            },
+            {
               "id": "repositories-repositories-source",
               "title": "Repository Inventory and Rankings",
               "data": {
@@ -327,35 +345,6 @@
                     "type": "nominal",
                     "aggregate": "distinct-count",
                     "as": "run-count"
-                  }
-                ]
-              }
-            },
-            {
-              "id": "repositories-by-aic",
-              "disclosure": "supplemental",
-              "title": "Repositories by AIC",
-              "data": {
-                "source": "usage",
-                "order-by": [
-                  {
-                    "field": "total-aic",
-                    "direction": "desc"
-                  }
-                ]
-              },
-              "mark": "table",
-              "encoding": {
-                "columns": [
-                  {
-                    "field": "repository",
-                    "type": "nominal"
-                  },
-                  {
-                    "field": "aic",
-                    "type": "quantitative",
-                    "aggregate": "sum",
-                    "as": "total-aic"
                   }
                 ]
               }

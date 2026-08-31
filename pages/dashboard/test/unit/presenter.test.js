@@ -765,6 +765,22 @@ describe('presenter built-in and custom pages', () => {
     const repositoriesPage = pages.find((/** @type {{ page: string }} */ page) => page.page === 'repositories');
     expect(repositoriesPage?.definition.views).toMatchObject([
       {
+        id: 'repositories-by-aic',
+        title: 'AI Credit usage by AW repository',
+        description: 'Read-only usage reported by AW runs, grouped by repository.',
+        data: {
+          source: 'usage',
+          'order-by': [{ field: 'total-aic', direction: 'desc' }]
+        },
+        mark: 'chart',
+        chart: 'pie',
+        encoding: {
+          x: { field: 'repository', title: 'Repository' },
+          y: { field: 'aic', aggregate: 'sum', as: 'total-aic', title: 'Total AIC' },
+          href: { field: 'repository-link' }
+        }
+      },
+      {
         id: 'repositories-repositories-source',
         title: 'Repository Inventory and Rankings',
         data: { source: 'repositories' }
@@ -780,20 +796,6 @@ describe('presenter built-in and custom pages', () => {
           columns: [
             { field: 'repository' },
             { field: 'run', aggregate: 'distinct-count', as: 'run-count' }
-          ]
-        }
-      },
-      {
-        id: 'repositories-by-aic',
-        title: 'Repositories by AIC',
-        data: {
-          source: 'usage',
-          'order-by': [{ field: 'total-aic', direction: 'desc' }]
-        },
-        encoding: {
-          columns: [
-            { field: 'repository' },
-            { field: 'aic', aggregate: 'sum', as: 'total-aic' }
           ]
         }
       },
@@ -1489,6 +1491,7 @@ describe('presenter built-in and custom pages', () => {
               {
                 id: 'conclusions',
                 title: 'Conclusions',
+                description: 'Run conclusions grouped across the selected window.',
                 data: { source: 'runs' },
                 mark: 'chart',
                 chart: 'pie',
@@ -1506,8 +1509,8 @@ describe('presenter built-in and custom pages', () => {
         runs: {
           source: 'runs',
           rows: [
-            { run: '1', 'started-at': '2026-08-28T00:00:00Z', 'run-conclusion': 'success' },
-            { run: '2', 'started-at': '2026-08-29T00:00:00Z', 'run-conclusion': 'failure' }
+            { organization: 'octo-org', repository: 'repo', run: '1', 'started-at': '2026-08-28T00:00:00Z', 'run-conclusion': 'success' },
+            { organization: 'octo-org', repository: 'repo', run: '2', 'started-at': '2026-08-29T00:00:00Z', 'run-conclusion': 'failure' }
           ],
           metadata: {
             'source-id': 'runs-fixture',
@@ -1529,6 +1532,8 @@ describe('presenter built-in and custom pages', () => {
     expect(rendered.querySelector('[data-chart-widget="line"] .point-tooltip')?.getAttribute('aria-hidden')).toBe('true');
     expect(rendered.querySelectorAll('[data-chart-widget="pie"] [data-chart-category]')).toHaveLength(2);
     expect(rendered.querySelector('[data-chart-widget="pie"] svg')?.getAttribute('aria-label')).toContain('Pie chart:');
+    expect(rendered.querySelector('.chart-view-pie .view-description')?.textContent).toContain('Run conclusions grouped');
+    expect(rendered.querySelector('.chart-view-pie .pie-chart-layout')).not.toBeNull();
   });
 
   it('shows one hash-addressable page at a time and updates active navigation without scrolling', () => {
@@ -1620,7 +1625,7 @@ describe('presenter built-in and custom pages', () => {
     });
 
     expect(rendered.querySelectorAll('[data-chart-widget="bar"] rect[role="img"]')).toHaveLength(2);
-    expect(rendered.querySelector('[data-chart-widget="bar"] rect')?.getAttribute('aria-label')).toContain('success');
+    expect(rendered.querySelector('[data-chart-widget="bar"] rect')?.getAttribute('aria-label')).toContain('failure');
     expect(rendered.querySelector('[data-chart-legend="visual"]')?.getAttribute('class')).toContain('chart-legend-bar');
     expect([...rendered.querySelectorAll('[data-chart-legend="visual"] li span')].map((item) => item.textContent)).toEqual(['failure', 'success']);
     expect(rendered.querySelectorAll('.custom-table a')).toHaveLength(1);
