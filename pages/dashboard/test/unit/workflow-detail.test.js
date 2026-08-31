@@ -112,13 +112,21 @@ describe('renderWorkflowDetail', () => {
     expect(rendered.querySelector('.workflow-badge-package')?.getAttribute('href')).toBe('#page-package-detail?package=ambient-context');
     expect(rendered.querySelector('.workflow-identity > a')?.getAttribute('href')).toContain('/ambient-context.md');
     expect(rendered.querySelector('.workflow-reports-header')?.textContent).toContain('1 Open1 Resolved');
-    expect([...rendered.querySelectorAll('.workflow-report-copy h3')].map((heading) => heading.textContent)).toEqual([
+    expect([...rendered.querySelectorAll('.workflow-report-title')].map((heading) => heading.textContent)).toEqual([
       'Open report',
       'Closed report'
     ]);
     expect(rendered.querySelector('.workflow-report-copy a')?.getAttribute('href')).toBe('#page-outcome-detail?outcome=report-open');
     expect(rendered.querySelector('.workflow-report-row:last-child .status-success')?.textContent).toBe('Closed');
     expect(rendered.textContent).not.toContain('Other report');
+    const filter = rendered.querySelector('.workflow-reports-search input');
+    expect(filter).toBeInstanceOf(HTMLInputElement);
+    if (filter instanceof HTMLInputElement) {
+      filter.value = 'closed';
+      filter.dispatchEvent(new Event('input'));
+    }
+    expect(rendered.querySelectorAll('.workflow-report-row')).toHaveLength(1);
+    expect(rendered.querySelector('.workflow-reports-header')?.textContent).toContain('0 Open1 Resolved');
     expect(allocation).toHaveBeenCalledOnce();
     expect(allocation.mock.calls[0][0].detail).toEqual({
       title: 'Ambient Context',

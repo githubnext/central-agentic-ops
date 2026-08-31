@@ -125,7 +125,7 @@ function renderOutcome(outcome) {
           'p',
           null,
           workflowLink
-            ? h('a', { href: workflowLink.href, target: '_blank', rel: 'noopener noreferrer' }, workflowName)
+            ? renderExternalLink({ ...workflowLink, label: workflowName })
             : workflowName
         )
       ),

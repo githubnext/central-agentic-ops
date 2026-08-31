@@ -157,42 +157,82 @@ function renderWorkflowIdentity(workflow) {
 
 /** @param {Array<Record<string, unknown>>} reports */
 function renderWorkflowReports(reports) {
-  const open = reports.filter((report) => ['open', 'available', 'published'].includes(text(report['outcome-status']).toLowerCase())).length;
-  const resolved = reports.length - open;
-  return h(
+  const summary = h('div');
+  const body = h('tbody');
+  const input = h('input', {
+    type: 'search',
+    placeholder: 'Filter reports',
+    'aria-label': 'Filter reports',
+    oninput: (/** @type {Event} */ event) => {
+      const query = event.currentTarget instanceof HTMLInputElement
+        ? event.currentTarget.value
+        : '';
+      renderRows(query);
+    }
+  });
+  const section = h(
     'section',
     { className: 'workflow-reports', 'aria-labelledby': 'workflow-reports-heading' },
     h(
       'div',
-      { className: 'workflow-reports-search', 'aria-hidden': 'true' },
+      { className: 'workflow-reports-search' },
       octicon('issue'),
-      h('span', null, 'Filter reports')
+      input
     ),
     h(
       'div',
       { className: 'workflow-reports-header' },
       h('h2', { id: 'workflow-reports-heading' }, 'Reports'),
+      summary
+    ),
+    h(
+      'div',
+      { className: 'workflow-report-table-region', role: 'region', 'aria-labelledby': 'workflow-reports-heading', tabIndex: 0 },
       h(
-        'div',
-        null,
-        h('strong', null, String(open)),
-        ' Open',
-        h('span', null, h('strong', null, String(resolved)), ' Resolved')
+        'table',
+        { className: 'workflow-report-table' },
+        h(
+          'thead',
+          null,
+          h('tr', null, ...['Report', 'Status', 'Mode', 'Type', 'Updated'].map((label) => h('th', { scope: 'col' }, label)))
+        ),
+        body
       )
-    ),
-    h(
-      'div',
-      { className: 'workflow-report-columns', 'aria-hidden': 'true' },
-      ...['Report', 'Status', 'Mode', 'Type', 'Updated'].map((label) => h('span', null, label))
-    ),
-    h(
-      'div',
-      { className: 'workflow-report-rows' },
-      ...(reports.length > 0
-        ? reports.map(renderWorkflowReport)
-        : [h('p', { className: 'empty' }, 'No reports have been attributed to this workflow.')])
     )
   );
+
+  /** @param {string} query */
+  function renderRows(query) {
+    const normalized = query.trim().toLowerCase();
+    const filtered = normalized
+      ? reports.filter((report) => searchableReportText(report).includes(normalized))
+      : reports;
+    const statuses = filtered.map((report) => text(report['outcome-status']).toLowerCase());
+    const open = statuses.filter((status) => ['open', 'available', 'published'].includes(status)).length;
+    const resolved = statuses.filter((status) => ['closed', 'resolved'].includes(status)).length;
+    const other = filtered.length - open - resolved;
+    const summaryChildren = [
+      h('strong', null, String(open)),
+      ' Open',
+      h('span', null, h('strong', null, String(resolved)), ' Resolved')
+    ];
+    if (other > 0) summaryChildren.push(h('span', null, h('strong', null, String(other)), ' Other'));
+    summary.replaceChildren(...summaryChildren);
+    body.replaceChildren(...(filtered.length > 0
+      ? filtered.map(renderWorkflowReport)
+      : [h(
+        'tr',
+        null,
+        h(
+          'td',
+          { colSpan: 5, className: 'empty' },
+          reports.length > 0 ? 'No reports match this filter.' : 'No reports have been attributed to this workflow.'
+        )
+      )]));
+  }
+
+  renderRows('');
+  return section;
 }
 
 /** @param {Record<string, unknown>} report */
@@ -208,26 +248,46 @@ function renderWorkflowReport(report) {
     ? h('a', { href: `#page-outcome-detail?outcome=${encodeURIComponent(outcomeId)}`, title }, title)
     : title;
   return h(
-    'article',
+    'tr',
     { className: 'workflow-report-row' },
     h(
-      'div',
-      { className: 'workflow-report-icon', 'aria-hidden': 'true' },
-      octicon(kind === 'noop' ? 'check-circle' : 'issue')
+      'th',
+      { scope: 'row' },
+      h(
+        'div',
+        { className: 'workflow-report-primary' },
+        h(
+          'span',
+          { className: 'workflow-report-icon', 'aria-hidden': 'true' },
+          octicon(kind === 'noop' ? 'check-circle' : 'issue')
+        ),
+        h(
+          'span',
+          { className: 'workflow-report-copy' },
+          h('span', { className: 'workflow-report-title' }, titleContent),
+          h('span', { className: 'workflow-report-summary', title: summary }, summary)
+        )
+      )
     ),
-    h(
-      'div',
-      { className: 'workflow-report-copy' },
-      h('h3', null, titleContent),
-      h('p', { title: summary }, summary)
-    ),
-    renderStatusBadge(status),
-    renderModeBadge(mode),
-    h('span', { className: 'kind' }, titleCase(kind)),
+    h('td', null, renderStatusBadge(status)),
+    h('td', null, renderModeBadge(mode)),
+    h('td', null, h('span', { className: 'kind' }, titleCase(kind))),
     updatedAt
-      ? h('time', { dateTime: updatedAt }, formatUtcDateTime(updatedAt))
-      : h('span', { className: 'workflow-report-time' }, 'Unknown')
+      ? h('td', null, h('time', { dateTime: updatedAt }, formatUtcDateTime(updatedAt)))
+      : h('td', { className: 'workflow-report-time' }, 'Unknown')
   );
+}
+
+/** @param {Record<string, unknown>} report */
+function searchableReportText(report) {
+  return [
+    report['outcome-title'],
+    report['outcome-summary'],
+    report['outcome-category'],
+    report['outcome-status'],
+    report['outcome-state'],
+    report['rollout-mode']
+  ].map(text).join(' ').toLowerCase();
 }
 
 /** @param {unknown} value */

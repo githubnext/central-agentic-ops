@@ -2322,6 +2322,7 @@ describe('presenter built-in and custom pages', () => {
     expect(repositoryView?.textContent).toContain('Other');
     expect(repositoryView?.textContent).not.toContain('Review');
     expect(rendered.querySelector('#page-title')?.textContent).toBe('other-org/other-repo');
+    expect(document.activeElement).toBe(rendered.querySelector('#page-title'));
     rendered.remove();
     window.history.replaceState(null, '', '/');
   });
