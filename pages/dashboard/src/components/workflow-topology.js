@@ -8,6 +8,8 @@ import { formatCountNoun } from './count-formatters.js';
 import { findLink } from './link-content.js';
 import { renderLinkedText } from './linked-text.js';
 
+const MODE_ICONS = { review: 'beaker', live: 'rocket' };
+
 /**
  * @param {string} pageId
  * @param {string} title
@@ -147,7 +149,7 @@ function renderPackageTopology(packageId, workflows) {
         h('h5', null, typeof packageName === 'string' ? packageName : titleCase(packageId)),
         h('p', null, `${formatCountNoun(workers.length, 'worker', 'workers')} · `, renderLinkedText(toText(repositoryRow?.repository), repositoryLink))
       ),
-      h('span', { className: `mode-indicator mode-${mode}` }, mode),
+      renderModeIndicator(mode),
       h('span', { className: `status ${active && complete ? 'status-success' : 'status-attention'}` }, active && complete ? 'Active' : 'Needs attention')
     ),
     h(
@@ -231,11 +233,25 @@ function renderStandaloneWorkflows(rows) {
           null,
           h('span', { className: 'standalone-workflow-icon' }, octicon('workflow')),
           h('span', null, h('strong', null, renderLinkedText(toText(workflow['workflow-name'] ?? workflow.workflow), findLink(workflow, 'workflow-link'))), h('code', null, toText(workflow.workflow))),
-          h('span', { className: `mode-indicator mode-${toText(workflow['rollout-mode'])}` }, toText(workflow['rollout-mode'])),
+          renderModeIndicator(toText(workflow['rollout-mode'])),
           h('span', { className: `status ${String(workflow['workflow-active']) === 'true' ? 'status-success' : 'status-muted'}` }, String(workflow['workflow-active']) === 'true' ? 'Active' : 'Inactive')
         ))
       )
     ))
+  );
+}
+
+/**
+ * @param {string} mode
+ * @returns {HTMLElement}
+ */
+function renderModeIndicator(mode) {
+  const icon = MODE_ICONS[mode];
+  return h(
+    'span',
+    { className: `mode-indicator mode-${mode}` },
+    icon ? octicon(icon) : null,
+    mode
   );
 }
 
