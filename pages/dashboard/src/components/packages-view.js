@@ -98,6 +98,7 @@ export function renderPackagesView(sources, pageId = 'packages') {
 export function renderPackageRunTrend(sources, pageId = 'packages') {
   let selectedMode = 'all';
   const content = h('div', { className: 'packages-mode-content' });
+  const controller = new AbortController();
   const renderMode = () => {
     content.replaceChildren(renderRunTrend(sources, selectedMode, `${pageId}-trend-heading`));
   };
@@ -105,7 +106,14 @@ export function renderPackageRunTrend(sources, pageId = 'packages') {
     if (!(event instanceof CustomEvent) || event.detail?.pageId !== pageId) return;
     selectedMode = event.detail.mode;
     renderMode();
+  }, { signal: controller.signal });
+  const observer = new MutationObserver(() => {
+    if (!content.isConnected) {
+      controller.abort();
+      observer.disconnect();
+    }
   });
+  observer.observe(content.ownerDocument, { childList: true, subtree: true });
   renderMode();
   return content;
 }
