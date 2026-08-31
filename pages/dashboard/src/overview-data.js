@@ -644,18 +644,24 @@ function buildSecuritySignals(input) {
         'navigation-page': 'packages'
       })),
     ...groupRows(input.findings.filter(isAuthoredWarning), findingWorkflowKey)
-      .map(([workflow, rows]) => ({
-        priority: 3,
-        count: rows.length,
-        tone: 'warning',
-        icon: 'issue',
-        kind: 'Authored warning',
-        title: workflowNames.get(workflow) ?? String(rows[0]?.['finding-summary'] ?? workflow),
-        detail: `${formatNumber(rows.length)} retained output${rows.length === 1 ? ' contains' : 's contain'} an explicit warning block`,
-        evidence: 'Output content',
-        action: 'View evidence',
-        'external-link': latestRow(rows)?.['external-link']
-      }))
+      .map(([workflow, rows]) => {
+        const latest = latestRow(rows);
+        const outcomeId = String(latest?.finding ?? '');
+        return {
+          priority: 3,
+          count: rows.length,
+          tone: 'warning',
+          icon: 'issue',
+          kind: 'Authored warning',
+          title: workflowNames.get(workflow) ?? String(rows[0]?.['finding-summary'] ?? workflow),
+          detail: `${formatNumber(rows.length)} retained output${rows.length === 1 ? ' contains' : 's contain'} an explicit warning block`,
+          evidence: 'Output content',
+          action: 'View evidence',
+          ...(outcomeId
+            ? { 'navigation-href': `#page-outcome-detail?outcome=${encodeURIComponent(outcomeId)}` }
+            : { 'external-link': latest?.['external-link'] })
+        };
+      })
   ];
   return signals.sort((left, right) => left.priority - right.priority || right.count - left.count || left.title.localeCompare(right.title));
 }
