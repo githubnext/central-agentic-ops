@@ -2,18 +2,64 @@
 private: true
 emoji: "📊"
 name: Daily Dashboard Language Specification Review
-description: Compares dashboard requirements and current report semantics with the Dashboard Language Specification.
+description: Reviews the Dashboard Language Specification and incrementally replaces hard-coded prototype views with declarative JSON and reusable UI elements.
+intent: Reduce page-specific dashboard code by expressing user-visible views through the Dashboard Language and reusable, configuration-driven UI primitives.
 on:
   schedule: daily
+  skip-if-match: "is:pr is:open label:dashboard-language-renderer"
   workflow_dispatch:
+    inputs:
+      focus:
+        description: "Optional specification section, page, view, or component family to inspect"
+        required: false
+        type: string
 permissions:
   contents: read
   copilot-requests: write
   issues: read
+  pull-requests: read
 engine:
   id: pi
   model: copilot/gpt-5.4
+tracker-id: daily-dashboard-language-spec-review
+max-turns: 500
+max-ai-credits: 1000
+concurrency:
+  group: "${{ github.workflow }}"
+  cancel-in-progress: false
+  job-discriminator: "${{ github.run_id }}"
+checkout:
+  fetch: ["*"]
+  fetch-depth: 0
+runtimes:
+  node:
+    version: "24"
+network:
+  allowed:
+    - defaults
+    - node
+    - chrome
+    - playwright
+tools:
+  cli-proxy: true
+  github:
+    mode: gh-proxy
+    toolsets: [default]
+  timeout: 300
+  playwright:
+    mode: cli
+    version: "0.1.18"
+  bash:
+    - "*"
 safe-outputs:
+  create-pull-request:
+    title-prefix: "[dashboard-language] "
+    labels: [dashboard-language-renderer, ai-generated]
+    draft: true
+    if-no-changes: warn
+    allowed-files:
+      - "docs/dashboard-language-specification.md"
+      - "pages/dashboard/**"
   create-issue:
     title-prefix: "[dashboard-language-spec] "
     labels: [cookie]
@@ -22,77 +68,76 @@ safe-outputs:
     max: 1
     expires: 7d
   noop:
-timeout-minutes: 20
+timeout-minutes: 60
 strict: true
 evals:
-  - id: dashboard-personas-simulated
-    question: Did the agent assess representative dashboard requirements from multiple user profiles?
-  - id: yaml-renderability-assessed
-    question: Did the agent determine whether Dashboard Language YAML can express the current report semantics, including its pie, donut, and line charts?
-  - id: actionable-recommendation-published
-    question: Did the agent create a W3C-style recommendation issue for actionable specification gaps, or report a no-op?
+ - id: implementation-inspected
+   question: Did the agent inspect dashboard.json and the JavaScript under pages/dashboard to identify concrete page-specific view or UI construction?
+ - id: declarative-refactor-delivered
+   question: Did the agent move one bounded hard-coded view increment into Dashboard Language JSON and reusable custom-view UI primitives?
+ - id: language-and-implementation-aligned
+   question: Did the agent update the specification, validator, presenter, and tests together when new declarative vocabulary was required?
+ - id: quality-gates-executed
+   question: Did the agent run the dashboard build, type checking, lint, unit tests, and browser checks?
+ - id: bounded-safe-output
+   question: Did the agent create one focused pull request, create one recommendation issue only when blocked on a normative decision, or report a no-op when no actionable candidate remained?
 ---
 
 # Daily Dashboard Language Specification Review
 
-You are a specification reviewer for the Dashboard Language Specification.
+You are a specification reviewer and refactoring engineer for the Dashboard Language Specification and its prototype. Each run delivers at most one bounded increment that replaces page-specific view code with declarative JSON and reusable custom-view UI elements.
+
+## Context
+
+- Repository: ${{ github.repository }}
+- Specification: `docs/dashboard-language-specification.md`
+- Current report reference: `dashboard/report/report.mjs` and its sibling modules
+- Prototype implementation: `pages/dashboard/`
+- Declarative dashboard document: `pages/dashboard/dashboard.json`
+- Incremental plan: `pages/dashboard/PLAN.md`
+- Optional focus for this run: ${{ inputs.focus }}
 
 ## Scope
 
-Review `docs/dashboard-language-specification.md` against the current report implementation in `dashboard/report/report.mjs`. Treat the report as evidence of current user-visible requirements, not as a normative implementation model. Assess the language as an implementable contract for any conforming renderer.
+Review `docs/dashboard-language-specification.md` against both the current report implementation under `dashboard/report/` and the prototype under `pages/dashboard/`. Treat the report as evidence of current user-visible requirements, not as a normative implementation model. Treat the specification as the renderer contract and `pages/dashboard/dashboard.json` as the prototype's authoritative declarative document.
 
-## Inspect the current report
+Never modify, move, or delete the existing dashboard package under `dashboard/`. Write only to `docs/dashboard-language-specification.md` and `pages/dashboard/`. Never add a runtime dependency, weaken a test, invent unspecified semantics, or replace a specialized view with a less expressive generic rendering.
 
-Read `dashboard/report/report.mjs` before assessing the specification. Inventory the semantics of its user-visible views, including metrics, tables, filters, rankings, links, utilization indicators, pie and donut charts, and multi-series temporal line charts.
+## Inspect the implementation
 
-For every observed view, determine whether a minimal valid Dashboard Language YAML document can express its source grain, filtering, aggregation, grouping or series, mark, encoding, ordering or limiting, data state, and accessibility semantics. Explicitly test:
+Read `pages/dashboard/PLAN.md`, `pages/dashboard/dashboard.json`, and all relevant modules under `pages/dashboard/src/` before selecting work. Also inspect the relevant modules under `dashboard/report/` to preserve user-visible semantics including metrics, tables, filters, rankings, links, utilization indicators, pie and donut charts, and multi-series temporal line charts.
 
-- pie and donut part-to-whole views, including grouped segments, totals, legends, and top-N plus "Other";
-- line views, including temporal axes, multiple categorical series, cumulative counts, baselines, and maturity or interim distinctions; and
-- the semantic information conveyed by labels, legends, links, focusable values, and textual alternatives.
+Inventory concrete remaining hard-coded view construction, including:
 
-Classify each observed requirement as fully supported, partially supported, or missing. Cite the relevant specification requirement IDs and, for partial or missing support, identify the exact vocabulary or normative behavior needed. Do not demand parity with incidental CSS, SVG geometry, pixel styling, or implementation architecture.
+- branches or registries keyed by a built-in page or view identifier;
+- JavaScript that fixes a page's fields, labels, ordering, layout, filtering, or composition;
+- named element renderers used by only one page when the same result can be composed from common custom-view elements; and
+- repeated DOM or interaction patterns that should be a dashboard-agnostic component under `pages/dashboard/src/components/`.
 
-## Simulate dashboard requirements
+Do not classify generic interpretation, validation, formatting, source derivation, or reusable presentation primitives as hard-coded merely because they are implemented in JavaScript.
 
-Derive realistic dashboard requirements for each of these user profiles:
+## Select one increment
 
-1. Backend Engineer
-2. Frontend Developer
-3. DevOps Engineer
-4. QA Tester
-5. Product Manager
-6. Program Manager
-7. Designer
-8. Legal / Compliance
-9. Information Worker
+Choose the highest-value candidate that fits in one run, honoring the optional focus. Prefer a view that can already be represented by the language. Move its page-specific fields and composition into `dashboard.json`, then render it through existing generic custom-view marks and common UI elements.
 
-For every profile, formulate one concise dashboard need that requires a concrete page, view, data source, filter, aggregation, link, data state, or accessibility behavior. Test each need against the specification's YAML vocabulary and normative requirements.
+When the candidate requires a missing reusable presentation primitive, add the smallest dashboard-agnostic component and make it selectable through declarative custom-view configuration. Components must not branch on page or view identity.
 
-## Assess renderability
+When the language cannot express a required semantic, make the smallest coherent language increment: update the normative specification, validator, `dashboard.json`, generic presenter or component, fixtures, and requirement-named tests together. Do not add implementation-local JSON vocabulary without documenting its portable semantics.
 
-For every simulated and observed implementation requirement, determine whether a conforming presenter can turn a valid YAML document into an unambiguous, usable rendered dashboard without inventing semantics. Check whether the specification concretely defines:
+For the selected view, verify that the declarative document defines source grain, filtering, aggregation, grouping or series, mark or element, encoding, ordering or limiting, data state, links, and accessibility semantics without renderer guesses. Preserve visible behavior, accessible names, safe-link handling, empty and unavailable states, and deterministic output.
 
-- the intended page and view type;
-- source grain, fields, filtering, time scope, ordering, and aggregation;
-- visual encoding and display behavior;
-- unavailable, empty, freshness, provenance, link, privacy, and accessibility states; and
-- validation errors when the requirement cannot be represented.
+## Validate and publish
 
-Do not treat an implementation-specific workaround, an unstated default, or a renderer guess as sufficient expressiveness. Do not propose arbitrary scripts, expressions, joins, formulas, themes, or rendering architecture that the specification explicitly excludes.
+Add or update tests that prove the selected view is declared in JSON, is rendered by generic code, and no longer depends on page-specific JavaScript. Update `PLAN.md` with the completed migration and next candidates.
+
+Run every quality gate from `pages/dashboard/`: `npm run build`, `npm run typecheck`, `npm run lint`, `npm test`, and `npm run test:e2e`. Do not publish when a code-controlled gate fails. Record an infrastructure-only browser blocker in `PLAN.md` and the pull request body.
 
 ## Decision
 
-Create exactly one issue only when there is a specific, actionable gap, contradiction, ambiguity, or missing normative requirement that prevents a profile's or observed report requirement from being expressed or rendered deterministically. Consolidate related findings. Do not report cosmetic wording changes or speculative features.
+Publish exactly one safe output:
 
-Write the issue as a W3C Working Draft recommendation:
+- Call `create-pull-request` when one bounded, tested declarative refactor is complete.
+- Create exactly one issue only when a specific normative contradiction or policy decision prevents a safe implementation. Write it as a W3C Working Draft recommendation using `###` headings only, affected requirement IDs, observed ambiguity, precise RFC 2119 language, renderer and validator consequences, and concise acceptance criteria.
+- Call `noop` when no actionable hard-coded view remains, the optional focus is already declarative, or evidence is insufficient.
 
-- use `###` headings only;
-- identify affected requirement IDs and sections;
-- distinguish observed ambiguity from the proposed normative change;
-- use RFC 2119 terms precisely for proposed requirements;
-- include a minimal YAML example only when it clarifies the gap;
-- state renderer and validator consequences; and
-- list concise acceptance criteria.
-
-If no actionable gap exists, call `noop` and name the simulated profiles and observed report views and why the specification was expressive enough.
+In a pull request body, name the migrated view, the removed hard-coded branch or composition, the JSON vocabulary and shared UI primitives used, specification requirement IDs affected, validation results, and the next candidate. Do not claim broader parity or conformance than the tests demonstrate.

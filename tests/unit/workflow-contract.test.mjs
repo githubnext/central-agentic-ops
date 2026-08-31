@@ -1222,11 +1222,21 @@ test("docs diagram generator creates one validated theme-aware SVG pair", () => 
   assert.match(source, /Call `noop`/);
 });
 
-test("daily dashboard review uses the GitHub Copilot Pi engine", () => {
+test("daily dashboard review delivers bounded declarative refactors with the GitHub Copilot Pi engine", () => {
   const source = workflow("daily-dashboard-language-spec-review.md");
 
-  assert.match(source, /permissions:\n\s+contents: read\n\s+copilot-requests: write\n\s+issues: read/);
+  assert.match(source, /^intent: Reduce page-specific dashboard code/m);
+  assert.match(source, /permissions:\n\s+contents: read\n\s+copilot-requests: write\n\s+issues: read\n\s+pull-requests: read/);
   assert.match(source, /engine:\n\s+id: pi\n\s+model: copilot\/gpt-5\.4/);
+  assert.match(source, /skip-if-match: "is:pr is:open label:dashboard-language-renderer"/);
+  assert.match(source, /create-pull-request:\n\s+title-prefix: "\[dashboard-language\] "/);
+  assert.match(source, /allowed-files:\n\s+- "docs\/dashboard-language-specification\.md"\n\s+- "pages\/dashboard\/\*\*"/);
+  assert.match(source, /playwright:\n\s+mode: cli\n\s+version: "0\.1\.18"/);
+  assert.match(source, /Read `pages\/dashboard\/PLAN\.md`, `pages\/dashboard\/dashboard\.json`/);
+  assert.match(source, /branches or registries keyed by a built-in page or view identifier/);
+  assert.match(source, /Components must not branch on page or view identity/);
+  assert.match(source, /Run every quality gate from `pages\/dashboard\/`/);
+  assert.match(source, /Publish exactly one safe output/);
   assert.doesNotMatch(source, /engine: codex/);
   assert.doesNotMatch(source, /runtime:\s+docker-sbx/);
 });
