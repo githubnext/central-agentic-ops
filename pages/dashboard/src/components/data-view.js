@@ -3,7 +3,7 @@
  */
 
 import { h } from '../dom.js';
-import { formatAggregateValue } from '../view-formatters.js';
+import { formatAggregateValue, formatNumber } from '../view-formatters.js';
 import { renderCellDisplay } from './cell-display.js';
 import { listChartSeries, pieChartEntries, renderChartLegend, renderPieLegend, renderChartWidget } from './chart-elements.js';
 import { findFirstLink, findLink, renderExternalLink, renderLinkedValueWithExternalLink } from './link-content.js';
@@ -32,6 +32,7 @@ const ENTITY_LINK_FIELDS = {
  *   metadata: import('../presenter.js').SourceMetadata,
  *   contextDetails: string[],
  *   headingTag: 'h3'|'h4',
+ *   units?: Record<string, { name: string, symbol: string, significant: number }>,
  *   prepareTableRows: (rows: Array<Record<string, unknown>>, columns: TableField[], data: unknown) => Array<Record<string, unknown>>,
  *   buildChartPoints: (pageId: string, title: string, rows: Array<Record<string, unknown>>, x: Record<string, any> | null, y: Record<string, any> | null, color: Record<string, any> | null, hrefField: string | null) => Array<{ key: string, x: string, y: number, color: string | null, link: { href: string, label: string } | null }>,
  *   prepareChartPoints: (points: Array<{ key: string, x: string, y: number, color: string | null, link: { href: string, label: string } | null }>, x: Record<string, any> | null, y: Record<string, any> | null, color: Record<string, any> | null, data: unknown) => Array<{ key: string, x: string, y: number, color: string | null, link: { href: string, label: string } | null }>,
@@ -58,7 +59,7 @@ export function renderDataView(mark, context) {
 
 /** @param {DataViewContext} context */
 function renderMetricView(context) {
-  const { pageId, title, view, sourceName, rows, metadata, contextDetails, headingTag, toText } = context;
+  const { pageId, title, view, sourceName, rows, metadata, contextDetails, headingTag, toText, units = {} } = context;
   const valueDefinition = isPlainObject(view.encoding) && isPlainObject(view.encoding.value)
     ? view.encoding.value
     : null;
@@ -69,7 +70,7 @@ function renderMetricView(context) {
     : null;
   const hrefField = typeof hrefDefinition?.field === 'string' ? hrefDefinition.field : null;
   const link = hrefField ? findFirstLink(rows, hrefField) : null;
-  const valueText = formatAggregateValue(rows, fieldName, aggregate, toText);
+  const valueText = formatAggregateValue(rows, fieldName, aggregate, toText, fieldUnit(valueDefinition, units));
   const content = [
     ...renderViewSectionChrome(sourceName, metadata, contextDetails),
     h('p', { className: 'metric-value', 'data-metric-value': fieldName ?? 'unknown' }, valueText)
@@ -82,7 +83,7 @@ function renderMetricView(context) {
 
 /** @param {DataViewContext} context */
 function renderTableView(context) {
-  const { pageId, title, view, sourceName, rows, metadata, contextDetails, headingTag, prepareTableRows, toText } = context;
+  const { pageId, title, view, sourceName, rows, metadata, contextDetails, headingTag, prepareTableRows, toText, units = {} } = context;
   const columns = /** @type {TableField[]} */ (isPlainObject(view.encoding) && Array.isArray(view.encoding.columns)
     ? view.encoding.columns.filter((column) => isPlainObject(column) && typeof column.field === 'string')
     : []);
@@ -94,7 +95,7 @@ function renderTableView(context) {
   const renderCellValue = createEntityAwareCellRenderer(
     ENTITY_LINK_FIELDS,
     findLink,
-    (display, value) => renderCellDisplay(display, value, toText),
+    (display, value, column) => renderCellDisplay(display, value, toText, fieldUnit(column, units)),
     toText
   );
   const bodyRows = tableRows.map((row, rowIndex) => h(
@@ -159,7 +160,14 @@ function renderChartView(context) {
   const description = typeof view.description === 'string' && view.description.length > 0
     ? h('p', { className: 'view-description' }, view.description)
     : null;
-  const chartWidget = renderChartWidget(chartType, points, chartSeries, pieSummary, y ? fieldTitle(y) : 'Total');
+  const chartWidget = renderChartWidget(
+    chartType,
+    points,
+    chartSeries,
+    pieSummary,
+    y ? fieldTitle(y) : 'Total',
+    y ? fieldUnit(y, context.units ?? {}) : null
+  );
   const table = renderTableRegion({
     tableClassName: 'custom-chart-table',
     emptyMessage: 'No points available.',
@@ -169,7 +177,7 @@ function renderChartView(context) {
       'tr',
       { 'data-custom-point-key': point.key },
       h('td', null, renderLinkedText(point.x, point.link)),
-      h('td', null, point.y),
+      h('td', null, y ? formatNumber(point.y, fieldUnit(y, context.units ?? {})) : point.y),
       color ? h('td', null, point.color ?? 'unknown') : null
     ))
   });
@@ -179,7 +187,12 @@ function renderChartView(context) {
     ...renderViewSectionChrome(sourceName, metadata, contextDetails),
     ...(color && chartType !== 'pie' ? [renderChartLegend(chartSeries, chartType)] : []),
     ...(pieSummary
-      ? [h('div', { className: 'pie-chart-layout' }, chartWidget, renderPieLegend(pieSummary.entries, pieSummary.total, chartCategoryLinks(points)))]
+      ? [h('div', { className: 'pie-chart-layout' }, chartWidget, renderPieLegend(
+          pieSummary.entries,
+          pieSummary.total,
+          chartCategoryLinks(points),
+          y ? fieldUnit(y, context.units ?? {}) : null
+        ))]
       : [chartWidget]),
     table
   ], headingTag);
@@ -193,6 +206,17 @@ function fieldTitle(fieldDefinition) {
     return fieldDefinition.title;
   }
   return typeof fieldDefinition.field === 'string' ? titleCase(fieldDefinition.field) : 'Field';
+}
+
+/**
+ * @param {Record<string, unknown> | null} fieldDefinition
+ * @param {Record<string, { name: string, symbol: string, significant: number }>} units
+ * @returns {{ name: string, symbol: string, significant: number } | null}
+ */
+function fieldUnit(fieldDefinition, units) {
+  return fieldDefinition && typeof fieldDefinition.unit === 'string'
+    ? units[fieldDefinition.unit] ?? null
+    : null;
 }
 
 /** @param {Array<{ x: string, link: { href: string, label: string } | null }>} points */
