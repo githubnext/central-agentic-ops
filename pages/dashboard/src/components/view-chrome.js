@@ -192,6 +192,35 @@ export function renderMetadataSection(title, content, headingTag = 'h2') {
 }
 
 /**
+ * @param {string} headingId
+ * @param {string} heading
+ * @param {Node[]} body
+ * @param {{
+ *   sectionClassName?: string,
+ *   headingTag?: 'h2'|'h3'|'h4',
+ *   bodyClassName?: string,
+ *   bodyAttributes?: Record<string, unknown>
+ * }} [options]
+ * @returns {HTMLElement}
+ */
+export function renderTitledBodySection(headingId, heading, body, options = {}) {
+  const {
+    sectionClassName,
+    headingTag = 'h3',
+    bodyClassName,
+    bodyAttributes = {}
+  } = options;
+  const bodyProps = bodyClassName ? { ...bodyAttributes, className: bodyClassName } : bodyAttributes;
+  const headingProps = headingId ? { id: headingId } : null;
+  return h(
+    'section',
+    sectionClassName ? { className: sectionClassName } : null,
+    h(headingTag, headingProps, heading),
+    h('div', bodyProps, ...body)
+  );
+}
+
+/**
  * @param {string} pageId
  * @param {{ id: string, title?: string, description?: string, layout: 'full'|'wide'|'narrow', views: string[], ['count-source']?: string, ['count-label']?: string }} section
  * @param {number | null} count

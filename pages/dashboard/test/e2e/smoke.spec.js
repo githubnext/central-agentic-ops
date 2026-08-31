@@ -155,7 +155,8 @@ function buildPresenterModuleUrl() {
     .replace("'./chart-elements.js'", JSON.stringify(chartElementsModuleUrl))
     .replace("'./link-content.js'", JSON.stringify(linkContentModuleUrl))
     .replace("'./run-classification.js'", JSON.stringify(runClassificationModuleUrl))
-    .replace("'./ui-primitives.js'", JSON.stringify(uiPrimitivesModuleUrl));
+    .replace("'./ui-primitives.js'", JSON.stringify(uiPrimitivesModuleUrl))
+    .replace("'./view-chrome.js'", JSON.stringify(viewChromeModuleUrl));
   const workflowRuntimeModuleUrl = `data:text/javascript;charset=utf-8,${encodeURIComponent(workflowRuntimeSource)}`;
 
   const repositoriesViewSource = readFileSync(new URL('../../src/components/repositories-view.js', import.meta.url), 'utf8')
@@ -627,7 +628,7 @@ test('DLS-PAGE-014 DLS-PAGE-015 built-in packages page renders report-style mode
   await expect(page.getByRole('heading', { name: 'Ambient Context', level: 1 })).toBeVisible();
   await expect(page.locator('[data-page-mode]')).toHaveText('Review');
   await expect(page.locator('[data-nav-page-id="packages"]')).toHaveAttribute('aria-current', 'page');
-  await expect(page.getByRole('navigation', { name: 'Ambient Context views' })).toContainText('WorkflowsReportsInsights');
+  await expect(page.getByRole('navigation', { name: 'Ambient Context views' })).toContainText('InsightsWorkflowsReports');
   await expect(page.getByRole('heading', { name: 'Orchestrator and workers', level: 3 })).toBeVisible();
   await expect(page.locator('[data-workflow-role="orchestrator"]')).toHaveCount(1);
   await expect(page.locator('[data-workflow-role="worker"]')).toHaveCount(1);
@@ -1563,7 +1564,7 @@ test('workflow runtime route renders JSON-declared workflow insights', async ({ 
   `);
 
   await expect(page.getByRole('heading', { name: 'Multi-Device Docs Tester', level: 1 })).toBeVisible();
-  await expect(page.getByRole('navigation', { name: 'Multi-Device Docs Tester views' })).toContainText('ReportsInsights');
+  await expect(page.getByRole('navigation', { name: 'Multi-Device Docs Tester views' })).toContainText('InsightsReports');
   await expect(page.getByRole('link', { name: 'Reports' })).toHaveAttribute('href', /#page-workflow-detail\?workflow=/);
   await expect(page.locator('.workflow-runtime-metrics')).toContainText('1');
   await expect(page.locator('.workflow-runtime-metrics')).toContainText('962.7 AIC');

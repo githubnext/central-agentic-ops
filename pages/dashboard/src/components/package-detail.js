@@ -99,9 +99,9 @@ function renderPackageContent(context, packageId, workflows) {
 function renderPackageTabs(packageId, packageName, selectedView) {
   const packageQuery = `?package=${encodeURIComponent(packageId)}`;
   const tabs = [
+    ['insights', 'Insights', 'graph', `#page-operational-value${packageQuery}`],
     ['workflows', 'Workflows', 'workflow', `#page-package-detail${packageQuery}`],
-    ['reports', 'Reports', 'issue', `#page-package-reports${packageQuery}`],
-    ['insights', 'Insights', 'graph', `#page-operational-value${packageQuery}`]
+    ['reports', 'Reports', 'issue', `#page-package-reports${packageQuery}`]
   ];
   return h(
     'nav',

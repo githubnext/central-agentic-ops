@@ -85,7 +85,7 @@ describe('renderRepositoryWorkflows', () => {
     ]));
 
     expect(rendered.dataset.repository).toBe('github/gh-aw');
-    expect(rendered.querySelector('.repository-tabs')?.textContent).toBe('WorkflowsReportsInsights');
+    expect(rendered.querySelector('.repository-tabs')?.textContent).toBe('InsightsWorkflowsReports');
     expect(rendered.querySelector('.repository-tabs [aria-current="page"]')?.textContent).toBe('Workflows');
     expect(rendered.querySelector('.repository-metrics')?.textContent).toContain('2');
     expect(rendered.querySelector('.repository-status-pie')?.getAttribute('aria-label')).toBe('Workflow status: 1 active, 1 disabled, 0 unknown');

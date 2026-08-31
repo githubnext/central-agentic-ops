@@ -10,6 +10,7 @@ import { listChartSeries, renderChartWidget, renderPieLegend } from './chart-ele
 import { findLink, renderExternalLink } from './link-content.js';
 import { isApprovalConclusion, isFailureConclusion } from './run-classification.js';
 import { formatUtcDateTime } from './ui-primitives.js';
+import { renderTitledBodySection } from './view-chrome.js';
 
 /**
  * @param {import('./ui-elements.js').ElementRenderContext} context
@@ -92,15 +93,15 @@ function renderWorkflowTabs(pageId, repository, workflow, workflowName) {
     { className: 'repository-tabs', 'aria-label': `${workflowName} views` },
     h(
       'a',
-      { href: `#page-workflow-detail?workflow=${encodeURIComponent(route)}` },
-      octicon('issue'),
-      h('span', null, 'Reports')
-    ),
-    h(
-      'a',
       { href: `#page-${pageId}?workflow=${encodeURIComponent(route)}`, 'aria-current': 'page' },
       octicon('graph'),
       h('span', null, 'Insights')
+    ),
+    h(
+      'a',
+      { href: `#page-workflow-detail?workflow=${encodeURIComponent(route)}` },
+      octicon('issue'),
+      h('span', null, 'Reports')
     )
   );
 }
@@ -290,12 +291,16 @@ function renderValueReport(workflowName, repository, workflowPath, observations,
       h(
         'div',
         { className: 'value-details' },
-        h(
-          'section',
-          null,
-          h('h3', null, 'Workflow observations'),
-          h('p', null, 'Missing, failed, and null grader results are excluded rather than scored as zero.'),
-          renderObservationTable(observations)
+        renderTitledBodySection(
+          '',
+          'Workflow observations',
+          [
+            h('p', null, 'Missing, failed, and null grader results are excluded rather than scored as zero.'),
+            renderObservationTable(observations)
+          ],
+          {
+            headingTag: 'h3'
+          }
         )
       )
     )

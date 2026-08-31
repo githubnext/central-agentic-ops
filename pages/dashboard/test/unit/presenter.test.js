@@ -2331,7 +2331,7 @@ describe('presenter built-in and custom pages', () => {
     expect(repositoryView?.textContent).not.toContain('Other');
     expect(rendered.querySelector('#page-title')?.textContent).toBe('octo-org/octo-repo');
     expect(rendered.querySelector('[data-breadcrumb-page]')?.textContent).toBe('octo-org/octo-repo');
-    expect(rendered.querySelector('.repository-tabs a')?.getAttribute('href')).toBe('#page-repository-detail?repository=octo-org%2Focto-repo');
+    expect(rendered.querySelector('.repository-tabs [aria-current="page"]')?.getAttribute('href')).toBe('#page-repository-detail?repository=octo-org%2Focto-repo');
     expect(rendered.querySelector('.repository-workflow-table tbody th > a')?.getAttribute('href')).toBe('#page-workflow-detail?workflow=octo-org%2Focto-repo%3A.github%2Fworkflows%2Freview.md');
     expect(rendered.querySelector('.repository-workflow-source')?.getAttribute('href')).toBe('#page-workflow-detail?workflow=octo-org%2Focto-repo%3A.github%2Fworkflows%2Freview.md');
     expect(rendered.querySelector('.repository-workflow-source')?.getAttribute('target')).toBeNull();
