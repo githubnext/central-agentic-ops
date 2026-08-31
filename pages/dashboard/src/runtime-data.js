@@ -3,6 +3,7 @@
  */
 
 import { formatCount, formatCountNoun } from './components/count-formatters.js';
+import dispatchTypeClassification from './components/dispatch-type-classification.json' with { type: 'json' };
 
 const FAILURE_CONCLUSIONS = new Set(['failure', 'startup-failure', 'timed-out']);
 
@@ -17,6 +18,7 @@ const FAILURE_CONCLUSIONS = new Set(['failure', 'startup-failure', 'timed-out'])
 export function deriveRuntimeSources(sources) {
   const model = buildExecutionModel(sources);
   const signals = [];
+  const dispatches = deriveDispatches(model);
 
   for (const episode of model.episodes.filter((candidate) => FAILURE_CONCLUSIONS.has(text(candidate.run['run-conclusion'])))) {
     signals.push({
@@ -116,8 +118,47 @@ export function deriveRuntimeSources(sources) {
       source: 'runtime-signals',
       rows: signals.slice(0, 10),
       metadata: combinedMetadata(sources)
+    },
+    dispatches: {
+      source: 'dispatches',
+      rows: dispatches,
+      metadata: combinedMetadata(sources)
     }
   };
+}
+
+/**
+ * @param {ExecutionModel} model
+ * @returns {Row[]}
+ */
+function deriveDispatches(model) {
+  return model.runs
+    .filter((run) => text(run.event) === 'workflow_dispatch')
+    .flatMap((run) => {
+      const workflow = model.workflows.get(runKey(run));
+      if (!workflow) return [];
+      const packaged = Boolean(text(workflow.package));
+      const role = text(workflow['workflow-role']);
+      const classification = dispatchTypeClassification.find((rule) => (
+        rule.packaged === packaged && (rule.role === role || rule.role === '*')
+      ));
+      const conclusion = text(run['run-conclusion']);
+      const status = conclusion && conclusion !== 'unknown'
+        ? conclusion
+        : text(run['run-status']) || 'unknown';
+      const repository = text(run.repository) || 'Unknown';
+      return [{
+        'started-at': run['started-at'],
+        'dispatch-type': classification?.label ?? 'Standalone workflow',
+        'package-name': text(workflow['package-name']) || text(workflow.package) || 'Not packaged',
+        'workflow-name': workflowName(workflow, run),
+        'run-title': runTitle(run, workflow),
+        'runtime-repository': text(run.organization) ? `${text(run.organization)}/${repository}` : repository,
+        status,
+        'run-link': run['run-link']
+      }];
+    })
+    .sort((left, right) => Date.parse(text(right['started-at'])) - Date.parse(text(left['started-at'])));
 }
 
 /**

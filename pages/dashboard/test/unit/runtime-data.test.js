@@ -44,4 +44,35 @@ describe('runtime data', () => {
     );
     expect(sources['runtime-signals'].metadata).toBe(metadata);
   });
+
+  it('derives JSON-classified workflow_dispatch rows independently from presentation', () => {
+    const sources = deriveRuntimeSources({
+      workflows: {
+        source: 'workflows',
+        rows: [
+          { organization: 'githubnext', repository: 'control', workflow: 'worker.yml', 'workflow-name': 'Dependency updater', 'workflow-role': 'worker', package: 'dependabot', 'package-name': 'Dependabot' },
+          { organization: 'githubnext', repository: 'control', workflow: 'root.yml', 'workflow-name': 'Dependency orchestrator', 'workflow-role': 'orchestrator', package: 'dependabot' },
+          { organization: 'githubnext', repository: 'control', workflow: 'standalone.yml', 'workflow-name': 'Standalone task', 'workflow-role': 'standalone' }
+        ],
+        metadata
+      },
+      runs: {
+        source: 'runs',
+        rows: [
+          { organization: 'githubnext', repository: 'control', workflow: 'worker.yml', run: '3', event: 'workflow_dispatch', 'run-title': 'Update dependencies', 'started-at': '2026-08-30T07:00:00Z', 'run-conclusion': 'action-required', 'run-link': { relation: 'run', href: 'https://github.com/githubnext/control/actions/runs/3', label: 'Run 3' } },
+          { organization: 'githubnext', repository: 'control', workflow: 'root.yml', run: '2', event: 'workflow_dispatch', 'run-conclusion': 'success' },
+          { organization: 'githubnext', repository: 'control', workflow: 'standalone.yml', run: '1', event: 'workflow_dispatch', 'run-status': 'in-progress' },
+          { organization: 'githubnext', repository: 'control', workflow: 'worker.yml', run: '0', event: 'schedule', 'run-conclusion': 'failure' }
+        ],
+        metadata
+      }
+    });
+
+    expect(sources.dispatches.rows).toEqual([
+      expect.objectContaining({ 'dispatch-type': 'Package worker', 'package-name': 'Dependabot', 'run-title': 'Update dependencies', status: 'action-required' }),
+      expect.objectContaining({ 'dispatch-type': 'Package orchestrator', 'package-name': 'dependabot', 'run-title': 'Run 2', status: 'success' }),
+      expect.objectContaining({ 'dispatch-type': 'Standalone workflow', 'package-name': 'Not packaged', 'runtime-repository': 'githubnext/control', status: 'in-progress' })
+    ]);
+    expect(sources.dispatches.metadata).toBe(metadata);
+  });
 });
