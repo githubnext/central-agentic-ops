@@ -80,11 +80,13 @@ export function deriveOverviewSources(sources) {
         .map((entry) => buildPackageUtilizationRow(entry, packageUsage, sources.usage)),
       metadata: overviewMetadata
     }
+  };
+}
 
-    /**
-     * @param {{ sources: Record<string, import('./presenter.js').LogicalSourceInput>, workflows: Array<Record<string, unknown>>, runs: Array<Record<string, unknown>>, usage: Array<Record<string, unknown>>, outcomes: Array<Record<string, unknown>>, findings: Array<Record<string, unknown>>, operationalValues: Array<Record<string, unknown>>, health: ReturnType<typeof summarizeRunHealth> }} input
-     */
-    function buildDomainAttentionRows(input) {
+/**
+ * @param {{ sources: Record<string, import('./presenter.js').LogicalSourceInput>, workflows: Array<Record<string, unknown>>, runs: Array<Record<string, unknown>>, usage: Array<Record<string, unknown>>, outcomes: Array<Record<string, unknown>>, findings: Array<Record<string, unknown>>, operationalValues: Array<Record<string, unknown>>, health: ReturnType<typeof summarizeRunHealth> }} input
+ */
+function buildDomainAttentionRows(input) {
       const runTelemetryAvailable = input.sources.runs?.metadata?.availability === 'available';
       const warningOutputs = input.findings.filter((row) =>
         String(row['finding-status']) === 'open'
@@ -96,12 +98,7 @@ export function deriveOverviewSources(sources) {
         .filter((row) => String(row['workflow-role']) === 'orchestrator')
         .map((row) => String(row.workflow ?? ''))
         .filter(Boolean));
-      const workerPaths = new Set(input.workflows
-        .filter((row) => String(row['workflow-role']) === 'worker')
-        .map((row) => String(row.workflow ?? ''))
-        .filter(Boolean));
       const rootRuns = input.runs.filter((row) => orchestratorPaths.has(String(row.workflow ?? '')));
-      const workerRuns = input.runs.filter((row) => workerPaths.has(String(row.workflow ?? '')));
       const rootFailures = rootRuns.filter((row) => isFailureConclusion(row['run-conclusion'])).length;
       const selectedValueRuns = new Set(input.operationalValues
         .map((row) => String(row.run ?? ''))
@@ -109,7 +106,9 @@ export function deriveOverviewSources(sources) {
       const valueAttentionRequired = openOutputs > 0
         || input.operationalValues.some((row) => row['maturity-status'] && row['maturity-status'] !== 'matured')
         || input.sources['operational-values']?.metadata?.completeness === 'partial';
-      const measuredUsage = input.usage.filter((row) => Number.isFinite(Number(row.aic)));
+      const measuredUsage = input.usage.filter((row) =>
+        row.aic !== null && row.aic !== undefined && row.aic !== '' && Number.isFinite(Number(row.aic))
+      );
       const measuredRuns = new Set(measuredUsage.map((row) => String(row.run ?? '')).filter(Boolean)).size;
       const usageAvailable = input.sources.usage?.metadata?.availability === 'available';
       const usageComplete = input.sources.usage?.metadata?.completeness === 'complete';
@@ -120,7 +119,7 @@ export function deriveOverviewSources(sources) {
           || metadata.completeness !== 'complete'
           || metadata.freshness !== 'fresh';
       }).length + inventoryGaps;
-      const attributionGaps = rootRuns.length + workerRuns.length;
+      const attributionGaps = rootRuns.length;
       const evidenceGaps = collectionGaps + attributionGaps;
       const securitySignals = input.health.approval + warningOutputs + inventoryGaps;
 
@@ -154,7 +153,7 @@ export function deriveOverviewSources(sources) {
           icon: 'workflow',
           domain: 'Episodes & autonomy',
           value: `${formatCount(rootRuns.length)} observed`,
-          detail: `0 of ${formatCount(workerRuns.length)} worker dispatches attributed · ${formatCount(rootFailures)} root failure${rootFailures === 1 ? '' : 's'}`,
+          detail: `0 of 0 worker dispatches attributed · ${formatCount(rootFailures)} root failure${rootFailures === 1 ? '' : 's'}`,
           href: '#page-runs'
         }),
         domainRow({
@@ -169,8 +168,8 @@ export function deriveOverviewSources(sources) {
         }),
         domainRow({
           order: 4,
-          priority: !usageAvailable || !usageComplete ? 1 : 3,
-          state: !usageAvailable || !usageComplete ? 'Investigate' : 'Unavailable',
+          priority: usageAvailable && !usageComplete ? 1 : 3,
+          state: !usageAvailable ? 'Unavailable' : !usageComplete ? 'Investigate' : 'Unavailable',
           icon: 'meter',
           domain: 'Cost & efficiency',
           value: usageAvailable ? `${formatAic(usageTotal)} AIC` : 'Not observed',
@@ -192,10 +191,10 @@ export function deriveOverviewSources(sources) {
       ].sort((left, right) => Number(left.priority) - Number(right.priority) || Number(left.order) - Number(right.order));
     }
 
-    /**
-     * @param {{ order: number, priority: number, state: string, icon: string, domain: string, value: string, detail: string, href: string }} row
-     */
-    function domainRow(row) {
+/**
+ * @param {{ order: number, priority: number, state: string, icon: string, domain: string, value: string, detail: string, href: string }} row
+ */
+function domainRow(row) {
       return {
         ...row,
         tone: row.state === 'Act now'
@@ -206,20 +205,18 @@ export function deriveOverviewSources(sources) {
       };
     }
 
-    /**
-     * @param {number} value
-     */
-    function formatCount(value) {
+/**
+ * @param {number} value
+ */
+function formatCount(value) {
       return new Intl.NumberFormat('en-US', { maximumFractionDigits: 0 }).format(value);
     }
 
-    /**
-     * @param {number} value
-     */
-    function formatAic(value) {
+/**
+ * @param {number} value
+ */
+function formatAic(value) {
       return new Intl.NumberFormat('en-US', { maximumFractionDigits: 1 }).format(value);
-    }
-  };
 }
 
 /**

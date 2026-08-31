@@ -78,7 +78,7 @@ const BUILT_IN_PAGE_PAYLOADS = /** @type {Record<string, PresentableCustomPage>}
         description: 'description' in page ? page.description : undefined,
         'class-name': 'class-name' in page ? page['class-name'] : undefined,
         views: page.definition?.views ?? [],
-        sections: page.definition?.sections
+        sections: page.definition && 'sections' in page.definition ? page.definition.sections : undefined
       }
     ])
 ));
