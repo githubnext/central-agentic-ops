@@ -825,8 +825,9 @@ describe('presenter built-in and custom pages', () => {
             {
               finding: 'finding-2',
               'finding-summary': 'Review workflow needs triage',
+              'finding-kind': 'authored-warning',
               'finding-severity': 'medium',
-              'finding-status': 'open',
+              'finding-status': 'unknown',
               organization: 'github',
               repository: 'central-agentic-ops',
               workflow: '.github/workflows/review.yml',
@@ -838,8 +839,9 @@ describe('presenter built-in and custom pages', () => {
             {
               finding: 'finding-1',
               'finding-summary': 'Daily workflow regression',
+              'finding-kind': 'authored-warning',
               'finding-severity': 'high',
-              'finding-status': 'open',
+              'finding-status': 'unknown',
               organization: 'github',
               repository: 'central-agentic-ops',
               workflow: '.github/workflows/daily.yml',
