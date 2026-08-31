@@ -48,6 +48,54 @@ describe('dashboard document validation', () => {
     }
   });
 
+  it('DLS-VIEW-024 validates custom page section layout and complete ordered view placement', () => {
+    const document = {
+      'language-version': '0.1.0',
+      dashboard: {
+        id: 'sectioned-dashboard',
+        title: 'Sectioned Dashboard',
+        pages: [{
+          id: 'summary',
+          kind: 'custom',
+          views: [
+            {
+              id: 'run-count',
+              data: { source: 'runs' },
+              mark: 'metric',
+              encoding: { value: { field: 'run', aggregate: 'count' } }
+            },
+            {
+              id: 'usage-total',
+              data: { source: 'usage' },
+              mark: 'metric',
+              encoding: { value: { field: 'aic', aggregate: 'sum' } }
+            }
+          ],
+          sections: [
+            { id: 'headline', layout: 'wide', views: ['run-count'] },
+            { id: 'details', title: 'Usage details', layout: 'narrow', views: ['usage-total'] }
+          ]
+        }]
+      }
+    };
+
+    expect(validateDashboardDocument(JSON.stringify(document)).ok).toBe(true);
+
+    document.dashboard.pages[0].sections[1].views = ['run-count'];
+    const rejected = validateDashboardDocument(JSON.stringify(document));
+    expect(rejected.ok).toBe(false);
+    if (!rejected.ok) {
+      expect(rejected.errors).toContainEqual(expect.objectContaining({
+        path: '$.dashboard.pages[0].sections[1].views[0]',
+        message: 'each page view may appear in only one layout section.'
+      }));
+      expect(rejected.errors).toContainEqual(expect.objectContaining({
+        path: '$.dashboard.pages[0].sections',
+        message: 'layout sections must reference every page view exactly once and preserve view order.'
+      }));
+    }
+  });
+
   it('validates dashboard.navigation references declared pages exactly once', () => {
     const withUnknownPage = JSON.parse(authoritativeDashboardSource);
     withUnknownPage.dashboard.navigation[2].pages.push('does-not-exist');
