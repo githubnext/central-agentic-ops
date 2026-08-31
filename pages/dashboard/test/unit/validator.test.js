@@ -173,7 +173,7 @@ describe('dashboard document validation', () => {
     expect(missingCoverageResult.ok).toBe(true);
 
     const withInvalidNavigationLabel = JSON.parse(authoritativeDashboardSource);
-    withInvalidNavigationLabel.dashboard.pages[0]['navigation-label'] = '';
+    withInvalidNavigationLabel.dashboard.pages[0]['navigation-label'] = 42;
     const invalidNavigationLabelResult = validateDashboardDocument(JSON.stringify(withInvalidNavigationLabel));
     expect(invalidNavigationLabelResult.ok).toBe(false);
     if (!invalidNavigationLabelResult.ok) {

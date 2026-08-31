@@ -31,7 +31,7 @@ describe('Runtime dashboard view', () => {
     expect(runtimePage).toMatchObject({
       id: 'runtime',
       kind: 'custom',
-      title: 'Runtime'
+      title: 'Runtime & episodes'
     });
     expect(runtimePage.views.map(
       (/** @type {{ id: string, element: string }} */ view) => ({

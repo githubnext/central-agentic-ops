@@ -429,7 +429,7 @@ describe('presenter built-in and custom pages', () => {
     const dashboardPage = authoritativeDashboardDocument.dashboard.pages.find((/** @type {{ id: string }} */ candidate) => candidate.id === 'operational-value');
     expect(dashboardPage).toMatchObject({ kind: 'custom', title: 'Value & outcomes' });
     expect(dashboardPage).not.toHaveProperty('page');
-    expect(rendered.querySelector('[data-nav-page-id="operational-value"] .octicon-graph')).not.toBeNull();
+    expect(rendered.querySelector('[data-nav-page-id="operational-value"] .octicon-beaker')).not.toBeNull();
     expect(page?.querySelector('.summary-grid')?.textContent).toContain('Grader observations4');
     expect(page?.querySelector('.summary-grid')?.textContent).toContain('Mature evidence3');
     expect(page?.querySelector('.summary-grid')?.textContent).toContain('Mean operational value50%');
