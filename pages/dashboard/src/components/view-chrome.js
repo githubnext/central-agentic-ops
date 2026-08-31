@@ -75,16 +75,20 @@ export function renderContextList(details) {
  * @returns {HTMLElement}
  */
 export function renderDefinitionList(className, rows) {
-  return h(
-    'dl',
-    { className },
-    ...rows.map((row) => h(
-      'div',
-      null,
-      h('dt', null, String(row.label ?? '')),
-      h('dd', null, String(row.value ?? ''))
-    ))
-  );
+  return h('dl', { className }, ...renderDefinitionListRows(rows));
+}
+
+/**
+ * @param {Array<Record<string, unknown>>} rows
+ * @returns {HTMLElement[]}
+ */
+export function renderDefinitionListRows(rows) {
+  return rows.map((row) => h(
+    'div',
+    null,
+    h('dt', null, String(row.label ?? '')),
+    h('dd', null, String(row.value ?? ''))
+  ));
 }
 
 /**

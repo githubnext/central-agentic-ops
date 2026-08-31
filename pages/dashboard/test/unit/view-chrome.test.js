@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import { describe, expect, it } from 'vitest';
-import { customViewAvailabilityMessage, renderContextChrome, renderContextList, renderCustomViewStateDetails, renderDefinitionList, renderPageSection, renderProvenanceList, renderProvenanceSection, renderSummaryList, renderSummaryRegion, renderTitledRegion, renderViewChrome, renderViewHeader, renderViewSectionChrome } from '../../src/components/view-chrome.js';
+import { customViewAvailabilityMessage, renderContextChrome, renderContextList, renderCustomViewStateDetails, renderDefinitionList, renderDefinitionListRows, renderPageSection, renderProvenanceList, renderProvenanceSection, renderSummaryList, renderSummaryRegion, renderTitledRegion, renderViewChrome, renderViewHeader, renderViewSectionChrome } from '../../src/components/view-chrome.js';
 
 describe('view chrome component helpers', () => {
   it('DLS-SAFE-007 renders focusable labeled page sections with deterministic heading ids', () => {
@@ -113,7 +113,21 @@ describe('view chrome component helpers', () => {
     expect(withoutSource).toHaveLength(0);
   });
 
-  it('renders reusable definition lists for summary-style key/value grids including empty input', () => {
+  it('renders reusable definition-list rows for summary-style key/value grids including empty input', () => {
+    const populated = renderDefinitionListRows([
+      { label: 'Approval gates', value: '2' },
+      { label: 'Explicit warnings', value: '1' }
+    ]);
+    const empty = renderDefinitionListRows([]);
+
+    expect(populated).toHaveLength(2);
+    expect(populated[0]?.tagName).toBe('DIV');
+    expect(populated[0]?.textContent).toContain('Approval gates2');
+    expect(populated[1]?.textContent).toContain('Explicit warnings1');
+    expect(empty).toHaveLength(0);
+  });
+
+  it('renders reusable definition lists around the shared definition-list rows', () => {
     const populated = renderDefinitionList('summary-grid', [
       { label: 'Approval gates', value: '2' },
       { label: 'Explicit warnings', value: '1' }

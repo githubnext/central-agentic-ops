@@ -114,7 +114,7 @@
 - `src/components/data-state.js` — presentation-only data-state metrics card grid for availability, completeness, and freshness.
 - `src/components/table-region.js` — presentation-only reusable table wrapper for repeated table-region markup, header rows, empty-state rows, and keyed body-row descriptors across built-in and custom tables.
 - `src/components/summary-copy.js` — presentation-only shared singular/plural summary-count copy for repeated item-count text surfaces.
-- `src/components/view-chrome.js` — presentation-only reusable page-section, titled-region, summary-list/summary-region, summary-style definition-list, generic custom-view chrome paragraphs, custom-view source/metadata/context chrome, shared custom-view section chrome, custom-view state-message/details helpers, and built-in provenance-section helpers.
+- `src/components/view-chrome.js` — presentation-only reusable page-section, titled-region, summary-list/summary-region, summary-style definition-list and definition-list rows, generic custom-view chrome paragraphs, custom-view source/metadata/context chrome, shared custom-view section chrome, custom-view state-message/details helpers, and built-in provenance-section helpers.
 - `src/components/ui-primitives.js` — presentation-only shared section-heading, vital-stat, and UTC date-time helpers for repeated dashboard component chrome.
 - `src/components/count-formatters.js` — presentation-only shared count and singular/plural text helpers for repeated dashboard status, workflow, and signal copy.
 - `src/components/link-content.js` — presentation-only safe-link discovery and reusable external-link/value composition for custom metric and table views.
@@ -130,6 +130,14 @@
 - 2026-08-31: `npx playwright test --config=playwright.config.mjs` launches in this environment, but the current browser suite is already red on the checked-out baseline: page-level headings, skip-link visibility, route-driven repository views, keyboard section counts, and declarative table row visibility are not found across 9 existing `test/e2e/smoke.spec.js` assertions. This run did not change browser-only behavior, so the failures are recorded as a pre-existing gate blocker rather than fixed here.
 
 ## Run log
+
+### 2026-08-31 (definition-list rows helper refactor)
+- Re-inventoried repeated UI construction under `pages/dashboard/src/` and selected the highest safe bounded DOM slice still duplicated after the prior definition-list extraction: repeated `<div><dt>label</dt><dd>value</dd></div>` rows in `src/components/view-chrome.js` and `src/components/table-summary.js` quantitative summaries.
+- Extracted `renderDefinitionListRows(...)` into `src/components/view-chrome.js` with a presentation-only API driven by plain `{ label, value }` rows, then replaced every identified duplicate call site by reusing it from `renderDefinitionList(...)` and `src/components/table-summary.js`'s quantitative summary renderer.
+- Added unit coverage in `test/unit/view-chrome.test.js` for populated and empty row arrays, while preserving existing `test/unit/table-summary.test.js` assertions that lock the affected quantitative summary text contract (`Mean2`, `Median2`, and `Standard deviation1` / `N/A`).
+- Proved unchanged behavior by preserving the existing rendered text and DOM contract already asserted across `test/unit/view-chrome.test.js`, `test/unit/table-summary.test.js`, and presenter-level summary-grid coverage such as `Approval gates2`, `Explicit warnings1`, and `Mean operational value50%`.
+- Verified `pages/dashboard/` quality gates in this run: `npm install`, `npm run build`, `npm run typecheck`, `npm run lint`, and `npm test` all pass. Playwright was not rerun for this bounded helper extraction because no browser-only behavior changed; the current browser-suite status remains tracked separately in `PLAN.md` infrastructure blockers.
+- Next candidates in the queue: extract the repeated definitions/observations dual-region composition in `src/presenter.js`; extract the repeated summary-plus-trend section composition in `src/presenter.js`; extract the next shared pure helpers around subject/provenance/count formatting in `src/presenter.js`.
 
 ### 2026-08-31 (definition-list helper refactor)
 - Re-inventoried repeated UI construction under `pages/dashboard/src/` and selected the highest safe bounded DOM slice still duplicated in active components: repeated `<dl><div><dt>label</dt><dd>value</dd></div></dl>` assembly in `src/components/ui-elements.js` for both `summary-grid` and `metric-signal-summary`/`domain-summary` surfaces.

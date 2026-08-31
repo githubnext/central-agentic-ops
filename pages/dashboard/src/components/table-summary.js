@@ -5,6 +5,7 @@
 import { h } from '../dom.js';
 import { renderHistogram } from './histogram.js';
 import { formatSummaryCount } from './summary-copy.js';
+import { renderDefinitionListRows } from './view-chrome.js';
 
 const RUN_SUMMARY_FIELDS = new Set(['run', 'run-link']);
 const RUN_SUMMARY_LABELS = new Set(['run', 'run link', 'workflow run', 'workflow runs']);
@@ -145,14 +146,11 @@ function renderQuantitativeSummary(label, values) {
     h(
       'dl',
       null,
-      h('div', null, h('dt', null, 'Mean'), h('dd', null, formatStatistic(mean))),
-      h('div', null, h('dt', null, 'Median'), h('dd', null, formatStatistic(median))),
-      h(
-        'div',
-        null,
-        h('dt', null, 'Standard deviation'),
-        h('dd', null, deviation === null ? 'N/A' : formatStatistic(deviation))
-      )
+      ...renderDefinitionListRows([
+        { label: 'Mean', value: formatStatistic(mean) },
+        { label: 'Median', value: formatStatistic(median) },
+        { label: 'Standard deviation', value: deviation === null ? 'N/A' : formatStatistic(deviation) }
+      ])
     )
   );
 }
