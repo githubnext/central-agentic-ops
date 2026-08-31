@@ -71,6 +71,7 @@ import { deriveRuntimeSources } from './runtime-data.js';
 
 const DEFAULT_GITHUB_URL_BASE = 'https://github.com';
 const REFRESH_CONTROL_DESCRIPTION = 'Reload the dashboard to refresh cached data';
+const REFRESH_WORKFLOW_DESCRIPTION = 'Open the dashboard workflow on GitHub Actions';
 
 /** @type {Record<string, PresentableCustomPage>} */
 const BUILT_IN_PAGE_PAYLOADS = /** @type {Record<string, PresentableCustomPage>} */ (Object.fromEntries(
@@ -282,18 +283,30 @@ function renderMainContent(document, title, pages, sources, orgName, githubUrlBa
           latestRetrieval
             ? h('time', { className: 'freshness', dateTime: latestRetrieval }, `Last updated ${formatReportDate(latestRetrieval)}`)
             : null,
-          h(
-            'button',
-            {
-              type: 'button',
-              className: 'refresh-button',
-              title: REFRESH_CONTROL_DESCRIPTION,
-              'aria-label': REFRESH_CONTROL_DESCRIPTION,
-              onclick: () => window.location.reload()
-            },
-            octicon('sync'),
-            h('span', null, 'Refresh')
-          ),
+          dashboardRepository
+            ? h(
+              'a',
+              {
+                className: 'refresh-button',
+                href: `${githubUrlBase}/${dashboardRepository}/actions/workflows/dashboard.yml`,
+                title: REFRESH_WORKFLOW_DESCRIPTION,
+                'aria-label': REFRESH_WORKFLOW_DESCRIPTION
+              },
+              octicon('sync'),
+              h('span', null, 'Refresh')
+            )
+            : h(
+              'button',
+              {
+                type: 'button',
+                className: 'refresh-button',
+                title: REFRESH_CONTROL_DESCRIPTION,
+                'aria-label': REFRESH_CONTROL_DESCRIPTION,
+                onclick: () => window.location.reload()
+              },
+              octicon('sync'),
+              h('span', null, 'Refresh')
+            ),
           dashboardRepository
             ? h(
               'a',

@@ -208,6 +208,7 @@ describe('presenter built-in and custom pages', () => {
 
     const refreshButton = rendered.querySelector('.refresh-button');
     expect(refreshButton).not.toBeNull();
+    expect(refreshButton?.tagName).toBe('BUTTON');
     expect(refreshButton?.getAttribute('title')).toBeTruthy();
     expect(refreshButton?.getAttribute('aria-label')).toBeTruthy();
     expect(rendered.querySelector('.repository-link')).toBeNull();
@@ -227,6 +228,11 @@ describe('presenter built-in and custom pages', () => {
 
     const rendered = renderDashboard({ document, sources: {} });
 
+    const refreshLink = rendered.querySelector('.refresh-button');
+    expect(refreshLink?.tagName).toBe('A');
+    expect(refreshLink?.getAttribute('href')).toBe('https://github.example.com/octo-org/agentic-operations/actions/workflows/dashboard.yml');
+    expect(refreshLink?.getAttribute('aria-label')).toBe('Open the dashboard workflow on GitHub Actions');
+    expect(refreshLink?.getAttribute('title')).toBe('Open the dashboard workflow on GitHub Actions');
     const repositoryLink = rendered.querySelector('.repository-link');
     expect(repositoryLink).not.toBeNull();
     expect(repositoryLink?.getAttribute('href')).toBe('https://github.example.com/octo-org/agentic-operations');
