@@ -97,6 +97,7 @@ describe('Runtime dashboard view', () => {
     expect(attention).toContain('Run failures');
     expect(attention).toContain('1 worker dispatch lacks episode evidence');
     expect(attention).toContain('1 root episode has no correlated worker attempt or output');
+    expect(rendered.querySelector('.signal-critical .signal-icon use')?.getAttribute('href')).toContain('#octicon-issue-opened');
     expect(rendered.querySelector('.episode-vitals')?.textContent).toContain('0 / 1');
     const repeatedCoverage = [...rendered.querySelectorAll('.episode-vitals > div')]
       .find((node) => node.querySelector('dt')?.textContent === 'Repeated coverage');
