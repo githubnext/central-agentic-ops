@@ -5,8 +5,11 @@
 import { h } from '../dom.js';
 import { renderHistogram } from './histogram.js';
 
+const RUN_SUMMARY_FIELDS = new Set(['run', 'run-link']);
+const RUN_SUMMARY_LABELS = new Set(['run', 'run link', 'workflow run', 'workflow runs']);
+
 /**
- * @typedef {{ label: string, type?: string, values: unknown[] }} TableSummaryColumn
+ * @typedef {{ field?: string, label: string, type?: string, values: unknown[] }} TableSummaryColumn
  */
 
 /**
@@ -49,7 +52,41 @@ function renderColumnSummary(column) {
       .filter(Number.isFinite);
     return renderQuantitativeSummary(column.label, numericValues);
   }
+  if (shouldRenderCountSummary(column, values)) {
+    return renderCountSummary(values.length);
+  }
   return renderCategoricalSummary(values);
+}
+
+/**
+ * @param {TableSummaryColumn} column
+ * @param {unknown[]} values
+ * @returns {boolean}
+ */
+function shouldRenderCountSummary(column, values) {
+  const type = String(column.type ?? '');
+  if (!['nominal', 'ordinal', 'temporal'].includes(type)) {
+    return true;
+  }
+  if (values.some((value) => typeof value === 'object')) {
+    return true;
+  }
+  const field = String(column.field ?? '').toLocaleLowerCase('en');
+  const label = column.label.toLocaleLowerCase('en');
+  return RUN_SUMMARY_FIELDS.has(field) || RUN_SUMMARY_LABELS.has(label);
+}
+
+/**
+ * @param {number} count
+ * @returns {HTMLElement}
+ */
+function renderCountSummary(count) {
+  return h(
+    'div',
+    { className: 'table-summary-count' },
+    h('strong', null, count.toLocaleString('en')),
+    h('span', null, ` ${count === 1 ? 'item' : 'items'}`)
+  );
 }
 
 /**

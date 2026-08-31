@@ -373,7 +373,8 @@ thead th { background: var(--canvas-subtle); color: var(--muted); font-size: .75
 .table-summary-categories { display: grid; gap: 2px; margin: 0; padding: 0; list-style: none; font-weight: 400; }
 .table-summary-categories li { display: flex; min-width: 0; justify-content: space-between; gap: 8px; }
 .table-summary-categories li span { overflow: hidden; color: var(--fg); text-overflow: ellipsis; white-space: nowrap; }
-.table-summary-categories strong, .table-summary-boolean strong { color: var(--fg); font-weight: 600; }
+.table-summary-categories strong, .table-summary-boolean strong, .table-summary-count strong { color: var(--fg); font-weight: 600; }
+.table-summary-count { font-weight: 400; }
 .table-summary-quantitative { display: grid; gap: 6px; }
 .table-summary-histogram { width: 100%; height: 32px; overflow: visible; }
 .table-summary-histogram rect { fill: var(--accent); opacity: .75; }

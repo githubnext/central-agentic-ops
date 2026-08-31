@@ -823,6 +823,7 @@ function renderTableView(pageId, title, view, sourceName, rows, metadata, contex
       summaryColumns: columns.map((column) => {
         const outputField = typeof column.as === 'string' ? column.as : column.field;
         return {
+          field: outputField,
           label: fieldTitle(column),
           type: String(column.type ?? ''),
           values: tableRows.map((row) => row[outputField])

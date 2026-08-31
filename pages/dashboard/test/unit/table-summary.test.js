@@ -47,4 +47,37 @@ describe('renderTableSummaryRow', () => {
 
     expect(rendered.textContent).toBe('66.7% true');
   });
+
+  it('summarizes unknown column types by item count', () => {
+    const rendered = renderTableSummaryRow([{
+      label: 'Unknown',
+      values: ['alpha', 'bravo', 'charlie', null]
+    }]);
+
+    expect(rendered.querySelector('.table-summary-count')?.textContent).toBe('3 items');
+    expect(rendered.querySelector('.table-summary-categories')).toBeNull();
+  });
+
+  it('summarizes run-like columns and object values by item count', () => {
+    const rendered = renderTableSummaryRow([
+      {
+        field: 'run',
+        label: 'Run',
+        type: 'nominal',
+        values: ['1001', '1002']
+      },
+      {
+        field: 'run-link',
+        label: 'Run Link',
+        type: 'nominal',
+        values: [{ href: 'https://example.com/runs/1', label: 'Run 1' }]
+      }
+    ]);
+
+    expect([...rendered.querySelectorAll('.table-summary-count')].map((node) => node.textContent)).toEqual([
+      '2 items',
+      '1 item'
+    ]);
+    expect(rendered.textContent).not.toContain('[object Object]');
+  });
 });
