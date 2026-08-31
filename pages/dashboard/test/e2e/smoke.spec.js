@@ -101,6 +101,14 @@ function buildPresenterModuleUrl() {
     .replace("'../octicons.js'", JSON.stringify(octiconsModuleUrl));
   const linkContentModuleUrl = `data:text/javascript;charset=utf-8,${encodeURIComponent(linkContentSource)}`;
 
+  const reportListSource = readFileSync(new URL('../../src/components/report-list.js', import.meta.url), 'utf8')
+    .replace("'../dom.js'", JSON.stringify(domModuleUrl))
+    .replace("'../octicons.js'", JSON.stringify(octiconsModuleUrl))
+    .replace("'./badge.js'", JSON.stringify(badgeModuleUrl))
+    .replace("'./link-content.js'", JSON.stringify(linkContentModuleUrl))
+    .replace("'./ui-primitives.js'", JSON.stringify(uiPrimitivesModuleUrl));
+  const reportListModuleUrl = `data:text/javascript;charset=utf-8,${encodeURIComponent(reportListSource)}`;
+
   const linkedTextSource = readFileSync(new URL('../../src/components/linked-text.js', import.meta.url), 'utf8')
     .replace("'../dom.js'", JSON.stringify(domModuleUrl));
   const linkedTextModuleUrl = `data:text/javascript;charset=utf-8,${encodeURIComponent(linkedTextSource)}`;
@@ -108,7 +116,7 @@ function buildPresenterModuleUrl() {
   const packageDetailSource = readFileSync(new URL('../../src/components/package-detail.js', import.meta.url), 'utf8')
     .replace("'../dom.js'", JSON.stringify(domModuleUrl))
     .replace("'../octicons.js'", JSON.stringify(octiconsModuleUrl))
-    .replace("'./badge.js'", JSON.stringify(badgeModuleUrl))
+    .replace("'./report-list.js'", JSON.stringify(reportListModuleUrl))
     .replace("'./link-content.js'", JSON.stringify(linkContentModuleUrl))
     .replace("'./ui-primitives.js'", JSON.stringify(uiPrimitivesModuleUrl));
   const packageDetailModuleUrl = `data:text/javascript;charset=utf-8,${encodeURIComponent(packageDetailSource)}`;
@@ -143,9 +151,8 @@ function buildPresenterModuleUrl() {
   const workflowDetailSource = readFileSync(new URL('../../src/components/workflow-detail.js', import.meta.url), 'utf8')
     .replace("'../dom.js'", JSON.stringify(domModuleUrl))
     .replace("'../octicons.js'", JSON.stringify(octiconsModuleUrl))
-    .replace("'./badge.js'", JSON.stringify(badgeModuleUrl))
     .replace("'./link-content.js'", JSON.stringify(linkContentModuleUrl))
-    .replace("'./ui-primitives.js'", JSON.stringify(uiPrimitivesModuleUrl));
+    .replace("'./report-list.js'", JSON.stringify(reportListModuleUrl));
   const workflowDetailModuleUrl = `data:text/javascript;charset=utf-8,${encodeURIComponent(workflowDetailSource)}`;
   const workflowRuntimeSource = readFileSync(new URL('../../src/components/workflow-runtime.js', import.meta.url), 'utf8')
     .replace("'../dom.js'", JSON.stringify(domModuleUrl))
