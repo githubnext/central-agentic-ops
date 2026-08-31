@@ -64,29 +64,29 @@ export function renderSignalList(context) {
     });
   }
 
-  if (model.workerRuns.length > 0) {
+  if (model.unattributedWorkerRuns.length > 0) {
     signals.push({
       priority: 2,
-      count: model.workerRuns.length,
+      count: model.unattributedWorkerRuns.length,
       className: 'signal-informational',
       icon: 'codescan',
       kind: 'Evidence gap',
       title: 'Worker attribution incomplete',
-      detail: `${formatCount(model.workerRuns.length)} observed dispatches lack exact episode evidence`,
+      detail: workerDispatchEvidenceGap(model.unattributedWorkerRuns.length),
       evidence: 'Causality unknown',
       href: '#runtime-episode-attribution-gap'
     });
   }
 
-  if (model.episodes.length > 0) {
+  if (model.unattributedEpisodes.length > 0) {
     signals.push({
       priority: 2,
-      count: model.episodes.length,
+      count: model.unattributedEpisodes.length,
       className: 'signal-informational',
       icon: 'codescan',
       kind: 'Evidence gap',
       title: 'Episode evidence stops at the root',
-      detail: `${formatCount(model.episodes.length)} root episodes have no correlated worker attempt or output`,
+      detail: `${formatCount(model.unattributedEpisodes.length)} root episode${model.unattributedEpisodes.length === 1 ? ' has' : 's have'} no correlated worker attempt or output`,
       evidence: 'Outcome unavailable',
       href: '#runtime-execution-episodes'
     });
@@ -142,9 +142,9 @@ export function renderExecutionEpisodes(context) {
       'dl',
       { className: 'episode-vitals' },
       vital('Root episodes', model.episodes.length, 'observed orchestrator runs'),
-      vital('Worker attribution', `0 / ${formatCount(model.workerRuns.length)}`, 'correlated workflow dispatches'),
-      vital('Repeated coverage', 0, 'extra package-worker-target attempts'),
-      vital('No-action attempts', `0 / 0`, 'correlated attempts with only no-op output')
+      vital('Worker attribution', `0 / ${formatCount(model.unattributedWorkerRuns.length)}`, 'correlated workflow dispatches'),
+      vital('Repeated coverage', '—', 'requires exact episode attribution'),
+      vital('No-action attempts', '—', 'requires correlated attempt output')
     ),
     h('p', { className: 'episode-method-note' }, 'Dispatch manifests are not retained, so attribution is partial by construction. Repeated coverage and no-action work are investigation signals, not proof of waste.'),
     h(
@@ -157,13 +157,13 @@ export function renderExecutionEpisodes(context) {
     h(
       'details',
       { className: 'episode-attribution-gap', id: 'runtime-episode-attribution-gap' },
-      h('summary', null, `${formatCount(model.workerRuns.length)} worker dispatch${model.workerRuns.length === 1 ? '' : 'es'} lack episode evidence`),
+      h('summary', null, workerDispatchEvidenceGap(model.unattributedWorkerRuns.length)),
       h('p', null, 'These runs have no retained safe output carrying an exact root correlation ID. They remain unattributed rather than being grouped by time or name.'),
       h(
         'ul',
         null,
-        ...(model.workerRuns.length > 0
-          ? model.workerRuns.slice(0, 20).map((run) => {
+        ...(model.unattributedWorkerRuns.length > 0
+          ? model.unattributedWorkerRuns.slice(0, 20).map((run) => {
             const workflow = model.workflows.get(runKey(run));
             return h(
               'li',
@@ -188,23 +188,28 @@ function executionModel(context) {
   const runsByWorkflow = groupRuns(runs);
   const rootRuns = runs.filter((run) => text(workflows.get(runKey(run))?.['workflow-role']) === 'orchestrator');
   const workerRuns = runs.filter((run) => text(workflows.get(runKey(run))?.['workflow-role']) === 'worker');
+  const episodes = rootRuns
+    .map((run) => {
+      const workflow = workflows.get(runKey(run));
+      return {
+        run,
+        workflow,
+        packageName: text(workflow?.['package-name']) || workflowName(workflow, run),
+        duration: durationBetween(run['started-at'], run['ended-at'])
+      };
+    })
+    .sort((left, right) => Date.parse(text(right.run['started-at'])) - Date.parse(text(left.run['started-at'])));
+
+  // Current sources retain no correlation IDs, so observed roots and workers remain explicitly unattributed.
   return {
     workflows,
     runs,
     runsByWorkflow,
     workerRuns,
+    unattributedWorkerRuns: workerRuns,
     nonRootRuns: runs.filter((run) => text(workflows.get(runKey(run))?.['workflow-role']) !== 'orchestrator'),
-    episodes: rootRuns
-      .map((run) => {
-        const workflow = workflows.get(runKey(run));
-        return {
-          run,
-          workflow,
-          packageName: text(workflow?.['package-name']) || workflowName(workflow, run),
-          duration: durationBetween(run['started-at'], run['ended-at'])
-        };
-      })
-      .sort((left, right) => Date.parse(text(right.run['started-at'])) - Date.parse(text(left.run['started-at'])))
+    episodes,
+    unattributedEpisodes: episodes
   };
 }
 
@@ -400,6 +405,13 @@ function formatCount(value) {
  */
 function formatPercent(value) {
   return new Intl.NumberFormat('en', { style: 'percent', maximumFractionDigits: 1 }).format(value);
+}
+
+/**
+ * @param {number} count
+ */
+function workerDispatchEvidenceGap(count) {
+  return `${formatCount(count)} worker dispatch${count === 1 ? ' lacks' : 'es lack'} episode evidence`;
 }
 
 /**

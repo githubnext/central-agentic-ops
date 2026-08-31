@@ -57,11 +57,15 @@ describe('Runtime dashboard view', () => {
     const rendered = renderDashboard({ document, sources });
 
     expect(rendered.querySelector('[data-nav-page-id="runtime"]')).not.toBeNull();
-    expect(rendered.querySelector('.workflow-attention')?.textContent).toContain('Approval gate');
-    expect(rendered.querySelector('.workflow-attention')?.textContent).toContain('Run failures');
+    const attention = rendered.querySelector('.workflow-attention')?.textContent;
+    expect(attention).toContain('Approval gate');
+    expect(attention).toContain('Run failures');
+    expect(attention).toContain('1 worker dispatch lacks episode evidence');
+    expect(attention).toContain('1 root episode has no correlated worker attempt or output');
     expect(rendered.querySelector('.episode-vitals')?.textContent).toContain('0 / 1');
+    expect(rendered.querySelector('.episode-vitals')?.textContent).toContain('Repeated coverage—requires exact episode attribution');
     expect(rendered.querySelectorAll('.episode-record')).toHaveLength(1);
     expect(rendered.querySelector('.episode-record')?.textContent).toContain('Dependabot review');
-    expect(rendered.querySelector('.episode-attribution-gap')?.textContent).toContain('1 worker dispatch lack episode evidence');
+    expect(rendered.querySelector('.episode-attribution-gap')?.textContent).toContain('1 worker dispatch lacks episode evidence');
   });
 });
