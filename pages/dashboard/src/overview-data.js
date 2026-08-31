@@ -24,7 +24,7 @@ export function deriveOverviewSources(sources) {
   const disabledWorkflows = workflows.filter((row) => String(row['workflow-active']) === 'false').length;
   const overviewMetadata = createOverviewMetadata(sources);
   const packageUsage = summarizePackageAicUsage(workflows, usage);
-  const securitySignals = buildSecuritySignals({ workflows, runs, findings });
+  const securitySignals = buildSecuritySignals({ workflows, runs, findings, outcomes });
   const valueSignals = buildValueSignals({ sources, graderObservations, operationalValues, outcomes });
   const costSignals = buildCostSignals(sources.usage);
 
@@ -612,10 +612,11 @@ function buildSecuritySummary(input) {
 }
 
 /**
- * @param {{ workflows: Array<Record<string, unknown>>, runs: Array<Record<string, unknown>>, findings: Array<Record<string, unknown>> }} input
+ * @param {{ workflows: Array<Record<string, unknown>>, runs: Array<Record<string, unknown>>, findings: Array<Record<string, unknown>>, outcomes: Array<Record<string, unknown>> }} input
  */
 function buildSecuritySignals(input) {
   const workflowNames = new Map(input.workflows.map((row) => [String(row.workflow ?? ''), String(row['workflow-name'] ?? row.workflow ?? 'Unknown workflow')]));
+  const outcomeIds = new Set(input.outcomes.map((row) => String(row['safe-output'] ?? '')).filter(Boolean));
   const signals = [
     ...groupRows(input.runs.filter((row) => String(row['run-conclusion']) === 'action-required'), (row) => String(row.workflow ?? ''))
       .map(([workflow, rows]) => ({
@@ -644,18 +645,24 @@ function buildSecuritySignals(input) {
         'navigation-page': 'packages'
       })),
     ...groupRows(input.findings.filter(isAuthoredWarning), findingWorkflowKey)
-      .map(([workflow, rows]) => ({
-        priority: 3,
-        count: rows.length,
-        tone: 'warning',
-        icon: 'issue',
-        kind: 'Authored warning',
-        title: workflowNames.get(workflow) ?? String(rows[0]?.['finding-summary'] ?? workflow),
-        detail: `${formatNumber(rows.length)} retained output${rows.length === 1 ? ' contains' : 's contain'} an explicit warning block`,
-        evidence: 'Output content',
-        action: 'View evidence',
-        'external-link': latestRow(rows)?.['external-link']
-      }))
+      .map(([workflow, rows]) => {
+        const latest = latestRow(rows);
+        const outcomeId = String(latest?.finding ?? '');
+        return {
+          priority: 3,
+          count: rows.length,
+          tone: 'warning',
+          icon: 'issue',
+          kind: 'Authored warning',
+          title: workflowNames.get(workflow) ?? String(rows[0]?.['finding-summary'] ?? workflow),
+          detail: `${formatNumber(rows.length)} retained output${rows.length === 1 ? ' contains' : 's contain'} an explicit warning block`,
+          evidence: 'Output content',
+          action: 'View evidence',
+          ...(outcomeIds.has(outcomeId)
+            ? { 'navigation-href': `#page-outcome-detail?outcome=${encodeURIComponent(outcomeId)}` }
+            : { 'external-link': latest?.['external-link'] })
+        };
+      })
   ];
   return signals.sort((left, right) => left.priority - right.priority || right.count - left.count || left.title.localeCompare(right.title));
 }

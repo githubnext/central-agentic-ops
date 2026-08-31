@@ -406,6 +406,14 @@ describe('presenter built-in and custom pages', () => {
             'external-link': { relation: 'external', href: 'https://github.com/githubnext/central-agentic-ops/issues/1', label: 'View warning output' }
           }],
           metadata
+        },
+        outcomes: {
+          source: 'outcomes',
+          rows: [{
+            'safe-output': 'warning-1',
+            'outcome-title': 'Release warning'
+          }],
+          metadata
         }
       }
     });
@@ -429,7 +437,7 @@ describe('presenter built-in and custom pages', () => {
     expect(signals[0]?.querySelector('a')?.getAttribute('href')).toContain('/actions/runs/102');
     expect(signals[1]?.querySelector('a')?.getAttribute('href')).toBe('#page-packages');
     expect(signals[1]?.textContent).toContain('View package');
-    expect(signals[2]?.querySelector('a')?.getAttribute('href')).toContain('/issues/1');
+    expect(signals[2]?.querySelector('a')?.getAttribute('href')).toBe('#page-outcome-detail?outcome=warning-1');
     expect(page?.textContent).toContain('No vulnerability feed is retained.');
   });
 
