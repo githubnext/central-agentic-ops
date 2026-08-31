@@ -7,37 +7,41 @@
  * @param {string | null} fieldName
  * @param {string} aggregate
  * @param {(value: unknown) => string} toText
+ * @param {{ name: string, symbol: string, significant: number } | null} [unit]
  * @returns {string}
  */
-export function formatAggregateValue(rows, fieldName, aggregate, toText) {
+export function formatAggregateValue(rows, fieldName, aggregate, toText, unit = null) {
   if (!fieldName) {
     return 'Unavailable';
   }
 
   if (aggregate === 'count') {
-    return String(rows.filter((row) => row[fieldName] != null && row[fieldName] !== '').length);
+    return formatNumber(rows.filter((row) => row[fieldName] != null && row[fieldName] !== '').length, unit);
   }
   if (aggregate === 'distinct-count') {
-    return String(new Set(rows.map((row) => toText(row[fieldName]))).size);
+    return formatNumber(new Set(rows.map((row) => toText(row[fieldName]))).size, unit);
   }
   if (aggregate === 'sum') {
-    return formatNumber(rows.reduce((total, row) => total + toNumber(row[fieldName]), 0));
+    return formatNumber(rows.reduce((total, row) => total + toNumber(row[fieldName]), 0), unit);
   }
   if (aggregate === 'mean') {
     const numericValues = rows.map((row) => toNumber(row[fieldName])).filter((value) => Number.isFinite(value));
     return numericValues.length > 0
-      ? formatNumber(numericValues.reduce((total, value) => total + value, 0) / numericValues.length)
+      ? formatNumber(numericValues.reduce((total, value) => total + value, 0) / numericValues.length, unit)
       : 'Unavailable';
   }
   if (aggregate === 'min') {
     const numericValues = rows.map((row) => toNumber(row[fieldName])).filter((value) => Number.isFinite(value));
-    return numericValues.length > 0 ? formatNumber(Math.min(...numericValues)) : 'Unavailable';
+    return numericValues.length > 0 ? formatNumber(Math.min(...numericValues), unit) : 'Unavailable';
   }
   if (aggregate === 'max') {
     const numericValues = rows.map((row) => toNumber(row[fieldName])).filter((value) => Number.isFinite(value));
-    return numericValues.length > 0 ? formatNumber(Math.max(...numericValues)) : 'Unavailable';
+    return numericValues.length > 0 ? formatNumber(Math.max(...numericValues), unit) : 'Unavailable';
   }
-  return rows.length > 0 ? toText(rows[0][fieldName]) : 'Unavailable';
+  const value = rows[0]?.[fieldName];
+  return rows.length > 0 && unit && typeof value === 'number' && Number.isFinite(value)
+    ? formatNumber(value, unit)
+    : rows.length > 0 ? toText(value) : 'Unavailable';
 }
 
 /**
@@ -50,10 +54,26 @@ export function toNumber(value) {
 
 /**
  * @param {number} value
+ * @param {{ name: string, symbol: string, significant: number } | null} [unit]
  * @returns {string}
  */
-export function formatNumber(value) {
+export function formatNumber(value, unit = null) {
+  if (unit && Number.isFinite(unit.significant) && unit.significant > 0) {
+    const quotient = value / unit.significant;
+    const rounded = Math.sign(quotient) * Math.round(Math.abs(quotient)) * unit.significant;
+    return `${rounded.toFixed(fractionDigits(unit.significant))} ${unit.symbol}`;
+  }
   return Number.isInteger(value) ? String(value) : value.toFixed(2);
+}
+
+/**
+ * @param {number} value
+ * @returns {number}
+ */
+function fractionDigits(value) {
+  const [mantissa, exponentText = '0'] = value.toString().toLowerCase().split('e');
+  const fractionLength = mantissa.split('.')[1]?.length ?? 0;
+  return Math.min(100, Math.max(0, fractionLength - Number(exponentText)));
 }
 
 const TEMPLATE_TOKEN_PATTERN = /\{\{([a-zA-Z0-9_-]+)(?::(suffix|word):([^:}]*):([^:}]*))?\}\}/g;

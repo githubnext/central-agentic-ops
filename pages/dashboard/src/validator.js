@@ -47,6 +47,7 @@ import {
   SOURCE_VALUES,
   TEMPORAL_FIELD_NAMES,
   TIME_KEYS,
+  UNIT_DEFINITION_KEYS,
   BUILT_IN_PAGE_REQUIRED_SOURCES,
   BUILT_IN_PAGE_REQUIRED_FIELDS,
   TIME_UNIT_VALUES,
@@ -75,7 +76,11 @@ import {
  */
 
 /**
- * @typedef {{ id: string, title: string, description?: string, defaults?: DashboardDefaults, pages: Array<BuiltInPage | CustomPage> }} DashboardConfig
+ * @typedef {{ id: string, title: string, description?: string, defaults?: DashboardDefaults, units?: Record<string, UnitDefinition>, pages: Array<BuiltInPage | CustomPage> }} DashboardConfig
+ */
+
+/**
+ * @typedef {{ name: string, symbol: string, significant: number }} UnitDefinition
  */
 
 /**
@@ -398,6 +403,8 @@ function validateDashboard(dashboard, dashboardNode, errors) {
     }
   }
 
+  const unitIds = validateUnits(dashboard.units, getValueNodeByKey(dashboardNode, 'units'), errors);
+
   if (!Array.isArray(dashboard.pages) || dashboard.pages.length === 0) {
     errors.push(createError(
       ERROR_CODES.missingOrInvalidRequiredField,
@@ -412,9 +419,93 @@ function validateDashboard(dashboard, dashboardNode, errors) {
   dashboard.pages.forEach((page, index) => {
     validatePage(page, getSequenceItemNode(getValueNodeByKey(dashboardNode, 'pages'), index), `$.dashboard.pages[${index}]`, pageIds, errors);
   });
+  validateUnitReferences(dashboard.pages, unitIds, errors);
 
   if (dashboard.navigation !== undefined) {
     validateNavigation(dashboard.navigation, getValueNodeByKey(dashboardNode, 'navigation'), pageIds, errors);
+  }
+
+  /**
+   * @param {unknown} units
+   * @param {unknown} unitsNode
+   * @param {ValidationError[]} errors
+   * @returns {Set<string>}
+   */
+  function validateUnits(units, unitsNode, errors) {
+    const unitIds = new Set();
+    if (units === undefined) return unitIds;
+    if (!isPlainObject(units) || Object.keys(units).length === 0) {
+      errors.push(createError(
+        ERROR_CODES.missingOrInvalidRequiredField,
+        'units must be a non-empty mapping of unit identifiers to definitions.',
+        '$.dashboard.units'
+      ));
+      return unitIds;
+    }
+
+    for (const [unitId, definition] of Object.entries(units)) {
+      const path = `$.dashboard.units.${unitId}`;
+      if (!IDENTIFIER_PATTERN.test(unitId)) {
+        errors.push(createError(
+          ERROR_CODES.nonCanonicalVocabularyOrIdentifier,
+          'unit identifiers must use canonical kebab-case.',
+          path
+        ));
+      } else {
+        unitIds.add(unitId);
+      }
+      if (!isPlainObject(definition)) {
+        errors.push(createError(ERROR_CODES.missingOrInvalidRequiredField, 'unit definitions must be mappings.', path));
+        continue;
+      }
+
+      validateObjectKeys(getValueNodeByKey(unitsNode, unitId), UNIT_DEFINITION_KEYS, path, errors);
+      validateStringField(definition.name, `${path}.name`, true, errors);
+      validateStringField(definition.symbol, `${path}.symbol`, true, errors);
+      if (typeof definition.significant !== 'number' || !Number.isFinite(definition.significant) || definition.significant <= 0) {
+        errors.push(createError(
+          ERROR_CODES.missingOrInvalidRequiredField,
+          'unit significant must be a finite positive number.',
+          `${path}.significant`
+        ));
+      }
+    }
+    return unitIds;
+  }
+
+  /**
+   * @param {unknown[]} pages
+   * @param {Set<string>} unitIds
+   * @param {ValidationError[]} errors
+   */
+  function validateUnitReferences(pages, unitIds, errors) {
+    pages.forEach((page, pageIndex) => {
+      if (!isPlainObject(page)) return;
+      const views = page.kind === 'built-in' && isPlainObject(page.definition)
+        ? page.definition.views
+        : page.views;
+      if (!Array.isArray(views)) return;
+      const viewsPath = page.kind === 'built-in'
+        ? `$.dashboard.pages[${pageIndex}].definition.views`
+        : `$.dashboard.pages[${pageIndex}].views`;
+      views.forEach((view, viewIndex) => {
+        if (!isPlainObject(view) || !isPlainObject(view.encoding)) return;
+        for (const [channel, value] of Object.entries(view.encoding)) {
+          const definitions = channel === 'columns' && Array.isArray(value) ? value : [value];
+          definitions.forEach((definition, definitionIndex) => {
+            if (!isPlainObject(definition) || definition.unit === undefined) return;
+            const path = `${viewsPath}[${viewIndex}].encoding.${channel}${channel === 'columns' ? `[${definitionIndex}]` : ''}.unit`;
+            if (typeof definition.unit === 'string' && !unitIds.has(definition.unit)) {
+              errors.push(createError(
+                ERROR_CODES.invalidScopeFilterTimeAggregationOrOrderReference,
+                'unit must reference a unit declared by dashboard.units.',
+                path
+              ));
+            }
+          });
+        }
+      });
+    });
   }
 }
 
@@ -1942,6 +2033,9 @@ function validateFieldDefinition(fieldNode, fieldDefinition, sourceName, path, a
   validateObjectKeys(fieldNode, FIELD_DEFINITION_KEYS, path, errors);
   validateStringField(fieldDefinition.field, `${path}.field`, true, errors);
   validateOptionalStringField(fieldDefinition.title, `${path}.title`, errors);
+  if (fieldDefinition.unit !== undefined) {
+    validateStringField(fieldDefinition.unit, `${path}.unit`, true, errors);
+  }
 
   const aggregate = fieldDefinition.aggregate ?? 'none';
   if (fieldDefinition.aggregate !== undefined) {

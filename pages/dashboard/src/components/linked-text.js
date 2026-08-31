@@ -19,7 +19,7 @@ export function renderLinkedText(text, link) {
 /**
  * @param {Record<string, string>} entityLinkFields
  * @param {(row: Record<string, unknown>, field: string) => { href: string, label: string } | null} findLink
- * @param {(display: unknown, value: unknown) => string | HTMLElement} renderTableCellValue
+ * @param {(display: unknown, value: unknown, column: string | { field: string, display?: unknown }) => string | HTMLElement} renderTableCellValue
  * @param {(value: unknown) => string} toText
  * @returns {(column: string | { field: string, display?: unknown }, value: unknown, row: Record<string, unknown>) => string | HTMLElement}
  */
@@ -42,6 +42,6 @@ export function createEntityAwareCellRenderer(entityLinkFields, findLink, render
         return renderLinkedText(toText(value), link);
       }
     }
-    return renderTableCellValue(display, value);
+    return renderTableCellValue(display, value, column);
   };
 }

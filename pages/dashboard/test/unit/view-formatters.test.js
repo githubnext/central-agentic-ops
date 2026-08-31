@@ -40,6 +40,14 @@ describe('view formatter helpers', () => {
     expect(toNumber('12')).toBe(0);
     expect(formatNumber(2)).toBe('2');
     expect(formatNumber(2.5)).toBe('2.50');
+    expect(formatNumber(2.5, { name: 'AI Credits', symbol: 'AIC', significant: 1 })).toBe('3 AIC');
+    expect(formatNumber(-2.5, { name: 'AI Credits', symbol: 'AIC', significant: 1 })).toBe('-3 AIC');
+    expect(formatNumber(1.24, { name: 'Dollars', symbol: 'USD', significant: 0.01 })).toBe('1.24 USD');
+    expect(formatAggregateValue(rowsWithUnit(), 'aic', 'sum', toText, {
+      name: 'AI Credits',
+      symbol: 'AIC',
+      significant: 1
+    })).toBe('3 AIC');
   });
 
   it('renders JSON-configured copy templates with plain, suffix, and word substitutions', () => {
@@ -50,6 +58,10 @@ describe('view formatter helpers', () => {
     expect(renderTemplate('{{count}} run{{count:suffix::s}} {{status:word:is:are}} pending', { count: 2, status: 2 })).toBe('2 runs are pending');
     expect(renderTemplate('{{missing}} unavailable', {})).toBe(' unavailable');
   });
+
+  function rowsWithUnit() {
+    return [{ aic: 1.4 }, { aic: 1.2 }];
+  }
 
   it('resolves an ordered, JSON-configured threshold list to a status label', () => {
     const thresholds = [
