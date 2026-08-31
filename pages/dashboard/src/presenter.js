@@ -13,8 +13,9 @@ import { formatAggregateValue, formatNumber, toNumber } from './view-formatters.
 import { renderActiveStateBadge, renderModeBadge, renderStatusBadge } from './components/badge.js';
 import { findFirstLink, findLink, renderExternalLink, renderLinkedValueWithExternalLink } from './components/link-content.js';
 import { renderLinkedText, createEntityAwareCellRenderer } from './components/linked-text.js';
-import { renderUiElement } from './components/ui-elements.js';
+import { elementHandlesEmptyRows, renderUiElement } from './components/ui-elements.js';
 import { groupChartSeries, listChartSeries, pieChartEntries, renderChartLegend, renderPieLegend } from './components/chart-elements.js';
+import { deriveOverviewSources } from './overview-data.js';
 
 /**
  * @typedef {{ availability: 'available'|'empty'|'unavailable', completeness: 'complete'|'partial'|'unknown', freshness: 'fresh'|'stale'|'unknown' }} DataState
@@ -124,7 +125,7 @@ export function renderDashboard(input) {
   const dashboardRepository = typeof document.dashboard.repository === 'string' && document.dashboard.repository.length > 0
     ? document.dashboard.repository
     : null;
-  const sources = deriveEntityLinkSources(rawSources, githubUrlBase);
+  const sources = deriveOverviewSources(deriveEntityLinkSources(rawSources, githubUrlBase));
   const orgName = inferOrganizationName(sources) || 'GitHub';
 
   const styleEl = h('style', null, getPrimerStyles());
@@ -710,7 +711,7 @@ function renderElementView(pageId, title, view, sources, contextDetails, heading
     if (state !== 'available') {
       return renderCustomViewState(pageId, title, sourceName, state, contextDetails, headingTag);
     }
-    if (source.rows.length === 0) {
+    if (source.rows.length === 0 && !elementHandlesEmptyRows(elementName)) {
       return renderCustomViewState(pageId, title, sourceName, 'empty', contextDetails, headingTag);
     }
   }
@@ -718,6 +719,7 @@ function renderElementView(pageId, title, view, sources, contextDetails, heading
   return renderUiElement(elementName, {
     pageId,
     title,
+    description: typeof view.description === 'string' ? view.description : undefined,
     sourceNames,
     sources: selectedSources,
     contextDetails,

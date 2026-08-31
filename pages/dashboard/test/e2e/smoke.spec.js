@@ -44,25 +44,6 @@ function buildPresenterModuleUrl() {
   const viewFormattersSource = readFileSync(new URL('../../src/view-formatters.js', import.meta.url), 'utf8');
   const viewFormattersModuleUrl = `data:text/javascript;charset=utf-8,${encodeURIComponent(viewFormattersSource)}`;
 
-  const runConclusionClassificationSource = readFileSync(new URL('../../src/components/run-conclusion-classification.json', import.meta.url), 'utf8');
-  const runConclusionClassificationModuleUrl = `data:application/json;charset=utf-8,${encodeURIComponent(runConclusionClassificationSource)}`;
-
-  const packageAicUtilizationThresholdsSource = readFileSync(new URL('../../src/components/package-aic-utilization-thresholds.json', import.meta.url), 'utf8');
-  const packageAicUtilizationThresholdsModuleUrl = `data:application/json;charset=utf-8,${encodeURIComponent(packageAicUtilizationThresholdsSource)}`;
-
-  const attentionRulesSource = readFileSync(new URL('../../src/components/attention-rules.json', import.meta.url), 'utf8');
-  const attentionRulesModuleUrl = `data:application/json;charset=utf-8,${encodeURIComponent(attentionRulesSource)}`;
-
-  const overviewElementsSource = readFileSync(new URL('../../src/components/overview-elements.js', import.meta.url), 'utf8')
-    .replace("'../dom.js'", JSON.stringify(domModuleUrl))
-    .replace("'../octicons.js'", JSON.stringify(octiconsModuleUrl))
-    .replace("'./badge.js'", JSON.stringify(badgeModuleUrl))
-    .replace("'../view-formatters.js'", JSON.stringify(viewFormattersModuleUrl))
-    .replace("'./run-conclusion-classification.json'", JSON.stringify(runConclusionClassificationModuleUrl))
-    .replace("'./package-aic-utilization-thresholds.json'", JSON.stringify(packageAicUtilizationThresholdsModuleUrl))
-    .replace("'./attention-rules.json'", JSON.stringify(attentionRulesModuleUrl));
-  const overviewElementsModuleUrl = `data:text/javascript;charset=utf-8,${encodeURIComponent(overviewElementsSource)}`;
-
   const packagesViewSource = readFileSync(new URL('../../src/components/packages-view.js', import.meta.url), 'utf8')
     .replace("'../dom.js'", JSON.stringify(domModuleUrl))
     .replace("'../view-formatters.js'", JSON.stringify(viewFormattersModuleUrl));
@@ -91,10 +72,17 @@ function buildPresenterModuleUrl() {
   const chartElementsModuleUrl = `data:text/javascript;charset=utf-8,${encodeURIComponent(chartElementsSource)}`;
 
   const uiElementsSource = readFileSync(new URL('../../src/components/ui-elements.js', import.meta.url), 'utf8')
-    .replace("'./overview-elements.js'", JSON.stringify(overviewElementsModuleUrl))
+    .replace("'../dom.js'", JSON.stringify(domModuleUrl))
+    .replace("'../octicons.js'", JSON.stringify(octiconsModuleUrl))
+    .replace("'../view-formatters.js'", JSON.stringify(viewFormattersModuleUrl))
+    .replace("'./badge.js'", JSON.stringify(badgeModuleUrl))
     .replace("'./packages-view.js'", JSON.stringify(packagesViewModuleUrl))
     .replace("'./workflow-topology.js'", JSON.stringify(workflowTopologyModuleUrl));
   const uiElementsModuleUrl = `data:text/javascript;charset=utf-8,${encodeURIComponent(uiElementsSource)}`;
+
+  const overviewDataSource = readFileSync(new URL('../../src/overview-data.js', import.meta.url), 'utf8')
+    .replace("'./view-formatters.js'", JSON.stringify(viewFormattersModuleUrl));
+  const overviewDataModuleUrl = `data:text/javascript;charset=utf-8,${encodeURIComponent(overviewDataSource)}`;
 
   const presenterSource = readFileSync(new URL('../../src/presenter.js', import.meta.url), 'utf8')
     .replace("'../dashboard.json'", JSON.stringify(dashboardModuleUrl))
@@ -109,6 +97,7 @@ function buildPresenterModuleUrl() {
     .replace("'./components/linked-text.js'", JSON.stringify(linkedTextModuleUrl))
     .replace("'./components/chart-elements.js'", JSON.stringify(chartElementsModuleUrl))
     .replace("'./components/ui-elements.js'", JSON.stringify(uiElementsModuleUrl))
+    .replace("'./overview-data.js'", JSON.stringify(overviewDataModuleUrl))
     .replace("'./view-formatters.js'", JSON.stringify(viewFormattersModuleUrl));
 
   return `data:text/javascript;charset=utf-8,${encodeURIComponent(presenterSource)}`;

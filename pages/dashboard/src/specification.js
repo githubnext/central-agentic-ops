@@ -17,10 +17,10 @@ export const VIEW_KEYS = ['id', 'title', 'description', 'data', 'mark', 'element
 export const VIEW_DATA_KEYS = ['source', 'sources', 'scope', 'time', 'filters', 'limit', 'order-by', 'source-metadata'];
 export const VIEW_MARK_VALUES = ['metric', 'table', 'chart', 'element'];
 export const VIEW_ELEMENT_VALUES = [
-  'control-plane-status',
-  'package-aic-utilization',
-  'attention-panel',
-  'managed-packages',
+  'status-summary',
+  'meter-list',
+  'attention-list',
+  'record-cards',
   'package-activity',
   'workflow-topology'
 ];
@@ -227,7 +227,13 @@ export const SOURCE_VALUES = [
   'usage',
   'outcomes',
   'findings',
-  'operational-values'
+  'operational-values',
+  'overview-status',
+  'overview-vitals',
+  'overview-execution-health',
+  'overview-attention',
+  'overview-managed-packages',
+  'overview-package-utilization'
 ];
 
 export const SOURCE_FIELDS = {
