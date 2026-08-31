@@ -234,9 +234,76 @@ describe('presenter built-in and custom pages', () => {
     const labels = [...rendered.querySelectorAll('.nav-section-label')].map((node) => node.textContent?.trim());
     expect(labels).toEqual(['Attention', 'Investigate', 'Explore']);
     expect(rendered.querySelector('[data-nav-page-id="overview"]')?.previousElementSibling?.textContent).toBe('Attention');
-    expect(rendered.querySelector('[data-nav-page-id="runs"]')?.previousElementSibling?.textContent).toBe('Investigate');
+    expect(rendered.querySelector('[data-nav-page-id="runtime"]')?.previousElementSibling?.textContent).toBe('Investigate');
     expect(rendered.querySelector('[data-page-id="overview"]')?.classList.contains('overview-page')).toBe(true);
     expect(rendered.querySelector('[data-page-id="organizations"]')?.classList.contains('organizations-page')).toBe(false);
+  });
+
+  it('renders the custom JSON-composed Security page from reusable summary and signal primitives', () => {
+    const metadata = {
+      'source-id': 'security-fixture',
+      'source-kind': 'fixture',
+      'as-of': '2026-08-31T05:00:00Z',
+      'retrieved-at': '2026-08-31T05:01:00Z',
+      completeness: /** @type {'complete'} */ ('complete'),
+      freshness: /** @type {'fresh'} */ ('fresh'),
+      availability: /** @type {'available'} */ ('available')
+    };
+    const rendered = renderDashboard({
+      document: authoritativeDashboardDocument,
+      sources: {
+        workflows: {
+          source: 'workflows',
+          rows: [
+            { workflow: '.github/workflows/daily.md', 'workflow-name': 'Daily operations', package: 'daily', 'package-name': 'Daily', 'inventory-ready': true },
+            { workflow: '.github/workflows/release.md', 'workflow-name': 'Release updater', package: 'release', 'package-name': 'Release', 'inventory-ready': false }
+          ],
+          metadata
+        },
+        runs: {
+          source: 'runs',
+          rows: [
+            { workflow: '.github/workflows/daily.md', run: '101', 'run-conclusion': 'action-required', 'started-at': '2026-08-31T04:00:00Z', 'run-link': { relation: 'run', href: 'https://github.com/githubnext/central-agentic-ops/actions/runs/101', label: 'View run 101' } },
+            { workflow: '.github/workflows/daily.md', run: '102', 'run-conclusion': 'action-required', 'started-at': '2026-08-31T05:00:00Z', 'run-link': { relation: 'run', href: 'https://github.com/githubnext/central-agentic-ops/actions/runs/102', label: 'View run 102' } }
+          ],
+          metadata
+        },
+        findings: {
+          source: 'findings',
+          rows: [{
+            workflow: '.github/workflows/release.md',
+            finding: 'warning-1',
+            'finding-kind': 'authored-warning',
+            'finding-summary': 'Release warning',
+            'observed-at': '2026-08-31T05:00:00Z',
+            'external-link': { relation: 'external', href: 'https://github.com/githubnext/central-agentic-ops/issues/1', label: 'View warning output' }
+          }],
+          metadata
+        }
+      }
+    });
+
+    const page = rendered.querySelector('[data-page-id="security"]');
+    const dashboardPage = authoritativeDashboardDocument.dashboard.pages.find((/** @type {{ id: string }} */ candidate) => candidate.id === 'security');
+    expect(dashboardPage).toMatchObject({ kind: 'custom' });
+    expect(dashboardPage).not.toHaveProperty('page');
+    expect(rendered.querySelector('[data-nav-page-id="security"] .octicon-shield')).not.toBeNull();
+    expect(page?.querySelector('.summary-grid')?.textContent).toContain('Approval gates2');
+    expect(page?.querySelector('.summary-grid')?.textContent).toContain('Explicit warnings1');
+    expect(page?.querySelector('.summary-grid')?.textContent).toContain('Package integrity gaps1');
+    expect(page?.querySelector('.summary-grid')?.textContent).toContain('Vulnerability findings—');
+    const signals = [...(page?.querySelectorAll('.signal-item') ?? [])];
+    expect(signals.map((signal) => signal.querySelector('.signal-copy > span')?.textContent)).toEqual([
+      'Approval gate',
+      'Package integrity',
+      'Authored warning'
+    ]);
+    expect(signals[0]?.textContent).toContain('2 runs require maintainer approval');
+    expect(signals[0]?.querySelector('a')?.getAttribute('href')).toContain('/actions/runs/102');
+    expect(signals[1]?.querySelector('a')?.getAttribute('href')).toBe('#page-packages');
+    expect(signals[1]?.textContent).toContain('View package');
+    expect(signals[2]?.querySelector('a')?.getAttribute('href')).toContain('/issues/1');
+    expect(page?.textContent).toContain('No vulnerability feed is retained.');
   });
 
   it('DLS-VIEW-018 DLS-VIEW-019 DLS-VIEW-020 progressively discloses supplemental views in source order', () => {

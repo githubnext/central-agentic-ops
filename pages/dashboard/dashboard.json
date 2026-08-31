@@ -52,6 +52,53 @@
         }
       },
       {
+        "id": "security",
+        "kind": "custom",
+        "title": "Security & data quality",
+        "icon": "shield",
+        "class-name": "security-page",
+        "description": "Operational assurance, warning, and telemetry-integrity signals for the configured githubnext/central-agentic-ops repository.",
+        "sections": [
+          {
+            "id": "operational-assurance",
+            "title": "Needs attention",
+            "description": "Execution controls, package integrity, and explicit output warnings.",
+            "layout": "full",
+            "views": [
+              "security-summary",
+              "security-signals"
+            ]
+          }
+        ],
+        "views": [
+          {
+            "id": "security-summary",
+            "title": "Assurance summary",
+            "data": {
+              "sources": [
+                "security-summary"
+              ]
+            },
+            "mark": "element",
+            "element": "summary-grid",
+            "layout": "full"
+          },
+          {
+            "id": "security-signals",
+            "title": "Assurance signals",
+            "description": "No vulnerability feed is retained. These are operational assurance signals, not vulnerability findings; generic run failures and collection gaps remain in their owning domains.",
+            "data": {
+              "sources": [
+                "security-signals"
+              ]
+            },
+            "mark": "element",
+            "element": "signal-list",
+            "layout": "full"
+          }
+        ]
+      },
+      {
         "id": "organizations",
         "kind": "built-in",
         "page": "organizations",
@@ -445,6 +492,48 @@
             }
           ]
         }
+      },
+      {
+        "id": "runtime",
+        "kind": "custom",
+        "title": "Runtime",
+        "icon": "play",
+        "class-name": "runtime-page",
+        "description": "Execution failures, approval gates, and exact control-plane episode evidence.",
+        "views": [
+          {
+            "id": "runtime-needs-attention",
+            "title": "Needs attention",
+            "description": "Ranked evidence from execution state and exact episode attribution. No composite score is used.",
+            "data": {
+              "sources": [
+                "workflows",
+                "runs",
+                "outcomes",
+                "findings"
+              ]
+            },
+            "mark": "element",
+            "element": "execution-signal-list",
+            "layout": "full"
+          },
+          {
+            "id": "runtime-execution-episodes",
+            "title": "Execution episodes",
+            "description": "Root orchestrator runs joined to worker outcomes only through explicit control-plane correlation evidence.",
+            "data": {
+              "sources": [
+                "workflows",
+                "runs",
+                "outcomes",
+                "usage"
+              ]
+            },
+            "mark": "element",
+            "element": "execution-episodes",
+            "layout": "full"
+          }
+        ]
       },
       {
         "id": "runs",
@@ -1167,7 +1256,9 @@
       {
         "label": "Investigate",
         "pages": [
+          "runtime",
           "runs",
+          "security",
           "dispatches",
           "findings",
           "operational-value"
