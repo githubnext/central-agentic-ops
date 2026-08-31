@@ -308,8 +308,7 @@ function isContextSummaryRow(row) {
  */
 function renderContextSummaryValue(row) {
   if (!Array.isArray(row.items)) return [stringValue(row.value)];
-  return row.items.flatMap((item, index) => {
-    if (!isPlainObject(item)) return [];
+  return row.items.filter(isPlainObject).flatMap((item, index) => {
     const label = stringValue(item.label);
     const href = safeNavigationHref(item['navigation-href']);
     return [
@@ -515,7 +514,10 @@ function titleCase(value) {
     .replace(/\b\w/g, (letter) => letter.toUpperCase());
 }
 
-/** @param {unknown} value */
+/**
+ * @param {unknown} value
+ * @returns {value is Record<string, unknown>}
+ */
 function isPlainObject(value) {
   return typeof value === 'object' && value !== null && !Array.isArray(value);
 }

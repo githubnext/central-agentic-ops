@@ -53,6 +53,7 @@ describe('UI elements', () => {
             {
               label: 'Repositories',
               items: [
+                null,
                 { label: 'octo/one', 'navigation-href': '#page-repository-detail?repository=octo%2Fone' },
                 { label: 'unsafe', 'navigation-href': 'javascript:alert(1)' }
               ]
@@ -67,7 +68,7 @@ describe('UI elements', () => {
     });
 
     expect(rendered?.getAttribute('aria-label')).toBe('Repository scope');
-    expect(rendered?.textContent).toContain('Repositoriesocto/one, unsafe');
+    expect(rendered?.querySelector('dd')?.textContent).toBe('octo/one, unsafe');
     expect(rendered?.textContent).toContain('Run windowComplete 24-hour window');
     expect(rendered?.querySelectorAll('a')).toHaveLength(1);
     expect(rendered?.querySelector('a')?.getAttribute('href')).toBe('#page-repository-detail?repository=octo%2Fone');
