@@ -258,7 +258,8 @@ export const SOURCE_VALUES = [
   'value-workflows',
   'cost-summary',
   'cost-signals',
-  'cost-readiness'
+  'cost-readiness',
+  'experiment-readiness'
 ];
 
 export const SOURCE_FIELDS = {
@@ -284,7 +285,8 @@ export const SOURCE_FIELDS = {
   'value-workflows': ['organization', 'repository', 'workflow', 'run', 'operational-value-definition', 'opportunities', 'mature-observations', 'mean-operational-value', 'mean-baseline', 'observed-at', 'evidence-link', 'run-link', 'organization-link', 'repository-link', 'workflow-link'],
   'cost-summary': ['label', 'value', 'kicker', 'collection-label', 'note'],
   'cost-signals': ['priority', 'count', 'tone', 'icon', 'kind', 'title', 'detail', 'evidence', 'action', 'navigation-page'],
-  'cost-readiness': ['tone', 'icon', 'kicker', 'title', 'detail']
+  'cost-readiness': ['tone', 'icon', 'kicker', 'title', 'detail'],
+  'experiment-readiness': ['tone', 'icon', 'kicker', 'title', 'detail']
 };
 
 export const ROLLOUT_MODE_VALUES = ['review', 'live', 'unknown'];

@@ -22,6 +22,11 @@
       "dashboard": "examples/issue-label-policy-enforcement.dashboard.yml"
     },
     {
+      "id": "pull-request-size-policy-enforcement",
+      "metadata": "examples/pull-request-size-policy-enforcement.json",
+      "dashboard": "examples/pull-request-size-policy-enforcement.dashboard.yml"
+    },
+    {
       "id": "release-notes-completeness-check",
       "metadata": "examples/release-notes-completeness-check.json",
       "dashboard": "examples/release-notes-completeness-check.dashboard.yml"

@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import { describe, expect, it } from 'vitest';
-import { findFirstLink, findLink, renderExternalLink, renderLinkedValueWithExternalLink } from '../../src/components/link-content.js';
+import { findFirstLink, findLink, renderExternalLink, renderLinkedValueWithExternalLink, renderWorkflowRunLink } from '../../src/components/link-content.js';
 
 describe('link content helpers', () => {
   it('DLS-SAFE-004 finds only safe https links with non-empty labels', () => {
@@ -41,5 +41,21 @@ describe('link content helpers', () => {
     expect(linkedValue[1]).toBe(' ');
     expect(linkedValue[2]).toBeInstanceOf(HTMLElement);
     expect(plainValue).toBe('Summary');
+  });
+
+  it('renders workflow run labels as safe external links with a plain-text fallback', () => {
+    const linked = /** @type {HTMLElement} */ (renderWorkflowRunLink({
+      'run-link': {
+        href: 'https://github.com/githubnext/central-agentic-ops/actions/runs/42',
+        label: 'Run 42'
+      }
+    }, '42'));
+
+    expect(linked.getAttribute('href')).toBe('https://github.com/githubnext/central-agentic-ops/actions/runs/42');
+    expect(linked.getAttribute('target')).toBe('_blank');
+    expect(linked.getAttribute('rel')).toBe('noopener noreferrer');
+    expect(linked.getAttribute('aria-label')).toBe('Run 42');
+    expect(linked.textContent).toBe('42');
+    expect(renderWorkflowRunLink({}, 'Unavailable')).toBe('Unavailable');
   });
 });
