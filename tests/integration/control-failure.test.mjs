@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { spawnSync } from "node:child_process";
-import { chmodSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { chmodSync, copyFileSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import test from "node:test";
@@ -46,6 +46,12 @@ function runPrecompute(overrides = {}, ghScript = "printf 'true\\n'", policy = c
   const gh = join(directory, "gh");
   const githubEnvironment = join(directory, "github-env");
   const safeOutputs = join(directory, "safe-outputs.jsonl");
+  const resolverDirectory = join(directory, ".github", "aw", "control-policy");
+  mkdirSync(resolverDirectory, { recursive: true });
+  copyFileSync(
+    join(root, ".github", "scripts", "control-policy", "resolve.mjs"),
+    join(resolverDirectory, "resolve.mjs"),
+  );
   writeFileSync(gh, `#!/bin/sh
 case "$*" in
   *repos/acme/control/contents/.github/central-agentic-ops.json*)
@@ -61,7 +67,7 @@ ${ghScript}
 
   try {
     return spawnSync("bash", ["-c", script], {
-      cwd: root,
+      cwd: directory,
       encoding: "utf8",
       env: controlEnvironment({
         PATH: `${directory}:${process.env.PATH}`,
@@ -174,14 +180,14 @@ test("control precompute writes a complete review worker envelope", () => {
 });
 
 test("control precompute rejects an inaccessible review destination", () => {
-  const result = runPrecompute({}, "exit 1");
+  const result = runPrecompute({ SAFE_OUTPUT_REPO: "acme/review" }, "exit 1");
 
   assert.notEqual(result.status, 0);
   assert.match(result.stderr, /review safe_output_repo must be accessible/);
 });
 
-test("control precompute accepts a public central review destination", () => {
-  const result = runPrecompute({}, "printf 'false\\n'");
+test("control precompute accepts central self-review without repository metadata", () => {
+  const result = runPrecompute({}, "exit 1");
 
   assert.equal(result.status, 0, result.stderr);
 });

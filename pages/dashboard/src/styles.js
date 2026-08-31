@@ -589,6 +589,33 @@ tbody tr:hover { background: var(--canvas-subtle); }
 .status-muted { background: var(--neutral-muted); }
 .mode-live { border-color: color-mix(in srgb, var(--success) 45%, var(--border)); background: var(--success-muted); color: var(--success); }
 .mode-review { border-color: color-mix(in srgb, var(--attention) 45%, var(--border)); background: var(--attention-muted); color: var(--attention); }
+.outcome-view { display: grid; grid-template-columns: minmax(0, 1fr) 250px; align-items: start; gap: 24px; }
+.discussion-post { min-width: 0; overflow: hidden; border: 1px solid var(--border); border-radius: 6px; }
+.discussion-post > header { min-height: 56px; display: flex; align-items: center; gap: 10px; padding: 10px 16px; border-bottom: 1px solid var(--border); background: var(--canvas-subtle); }
+.discussion-post > header p { margin: 1px 0 0; color: var(--muted); font-size: .75rem; }
+.post-avatar { width: 32px; height: 32px; display: grid; flex: 0 0 32px; place-items: center; border-radius: 50%; background: var(--fg); color: var(--canvas); }
+.markdown-body { padding: 24px 28px 32px; overflow-wrap: anywhere; font-size: .9375rem; }
+.markdown-body > :first-child { margin-top: 0; }
+.markdown-body > :last-child { margin-bottom: 0; }
+.markdown-body h1, .markdown-body h2 { margin: 24px 0 16px; padding-bottom: 8px; border-bottom: 1px solid var(--border-muted); line-height: 1.25; }
+.markdown-body h1 { font-size: 1.5rem; }
+.markdown-body h2 { font-size: 1.25rem; }
+.markdown-body h3 { margin: 20px 0 10px; font-size: 1.0625rem; }
+.markdown-body p, .markdown-body ul, .markdown-body ol, .markdown-body blockquote, .markdown-body pre, .markdown-body table { margin-block: 0 16px; }
+.markdown-body li + li { margin-top: 4px; }
+.markdown-body blockquote { margin-inline: 0; padding: 0 16px; border-left: 4px solid var(--border); color: var(--muted); }
+.markdown-body pre { max-width: 100%; overflow: auto; padding: 14px 16px; border-radius: 6px; background: var(--canvas-inset); }
+.markdown-body pre code { padding: 0; background: transparent; }
+.markdown-body img { max-width: 100%; height: auto; }
+.markdown-body table { display: block; max-width: 100%; overflow-x: auto; border-spacing: 0; }
+.markdown-body table th, .markdown-body table td { padding: 6px 12px; border: 1px solid var(--border); }
+.markdown-body .task-list-item { list-style: none; }
+.markdown-body input[type="checkbox"] { margin-right: 6px; }
+.outcome-meta section { padding: 14px 0; border-bottom: 1px solid var(--border); }
+.outcome-meta section:first-child { padding-top: 0; }
+.outcome-meta h2 { margin: 0 0 8px; color: var(--muted); font-size: .75rem; }
+.outcome-meta p { margin: 0; overflow-wrap: anywhere; }
+.outcome-meta a { display: inline-flex; align-items: center; gap: 5px; }
 .mode-indicator { min-height: 22px; display: inline-flex; flex: none; align-items: center; gap: 5px; padding: 1px 7px; border: 1px solid var(--border); border-radius: 2em; font-size: .6875rem; font-weight: 600; text-transform: none; white-space: nowrap; }
 .mode-indicator .octicon { width: 13px; height: 13px; flex-basis: 13px; }
 .workflow-topology-overview { container: workflow-topology / inline-size; margin-bottom: 24px; }
@@ -678,6 +705,8 @@ footer { padding: 20px 24px; border-top: 1px solid var(--border); color: var(--m
   .repository-metrics { grid-template-columns: 1fr; }
   .repository-section-heading { display: block; }
   .repository-section-heading > a { margin-top: 10px; }
+  .outcome-view { grid-template-columns: 1fr; }
+  .outcome-meta { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0 20px; }
   .chart-view-pie { grid-template-columns: 1fr; }
   .pie-chart-layout { grid-column: 1; grid-row: auto; }
   .chart-view-pie > .view-source, .chart-view-pie > .view-metadata, .chart-view-pie > .view-context { grid-column: 1; }
@@ -727,6 +756,8 @@ footer { padding: 20px 24px; border-top: 1px solid var(--border); color: var(--m
   .standalone-repository li > :is(.mode-indicator, .status) { grid-column: 2; justify-self: start; }
   .attention-domain-grid { grid-template-columns: minmax(0, 1fr); }
   .attention-domain-card { min-height: 164px; }
+  .outcome-meta { grid-template-columns: 1fr; }
+  .markdown-body { padding: 20px 16px 24px; }
 }
 @media (prefers-reduced-motion: reduce) {
   html { scroll-behavior: auto; }

@@ -8,6 +8,10 @@ argument-hint: "Describe the agentic strategy, target repositories, and desired 
 
 Turn an operational idea into a complete package of GitHub Agentic Workflows. An operational package always contains one orchestrator and at least one worker. Never finish an operational package with a standalone workflow. The deterministic dashboard follows the explicit add-on exception below.
 
+## Setup Handoff
+
+When invoked from `.github/skills/setup-central-agentic-ops/SKILL.md`, accept the recorded desired outcome and target-repository description as the starting package contract. Do not repeat the custom-package yes/no question or restart control-plane setup. Ask only for unresolved package decisions, work in a CAO package-authoring checkout, and keep package authoring separate from the already proven control-repository setup commit and run.
+
 ## Procedure
 
 1. Load `.github/skills/agentic-workflows/SKILL.md` and follow its creation guidance alongside this repository-specific contract.

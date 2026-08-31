@@ -45,6 +45,7 @@ describe('renderDispatchCatalog', () => {
     ]));
 
     expect(rendered.querySelectorAll('[data-dispatch-row]')).toHaveLength(3);
+    expect(rendered.querySelector('tbody th')?.textContent).toContain('Aug 30, 2026, 7:00 AM');
     expect(rendered.textContent).toContain('Dependency updater');
     expect(rendered.textContent).toContain('Package worker');
     expect(rendered.textContent).toContain('Package orchestrator');

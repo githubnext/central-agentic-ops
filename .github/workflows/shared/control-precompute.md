@@ -70,7 +70,7 @@ steps:
       out=/tmp/gh-aw/agent/control-precompute.json
       policy_file=/tmp/gh-aw/agent/central-agentic-ops.json
       effective_file=/tmp/gh-aw/agent/effective-policy.json
-      resolver=.github/scripts/control-policy/resolve.mjs
+      resolver=.github/aw/control-policy/resolve.mjs
 
       if ! [[ "$WORKFLOW_SHA" =~ ^[0-9a-fA-F]{40,64}$ ]]; then
         echo "github.workflow_sha must be an exact commit SHA" >&2
@@ -137,7 +137,6 @@ steps:
       WORKER: ${{ github.aw.import-inputs.worker }}
       TARGET_REPO: ${{ github.aw.import-inputs.target_repo }}
       DISPATCH_MAX: ${{ github.aw.import-inputs.dispatch_max }}
-      SAFE_OUTPUT_REPO: ${{ github.aw.import-inputs.safe_output_repo }}
       CORRELATION_ID: ${{ github.aw.import-inputs.correlation_id }}
       CENTRAL_REPO: ${{ github.aw.import-inputs.central_repo }}
       CONTROL_PLANE_RUN_URL: ${{ github.aw.import-inputs.control_plane_run_url }}
@@ -149,7 +148,7 @@ steps:
       [ "$ROLE" != "orchestrator" ] || WORKER=""
       mkdir -p /tmp/gh-aw/agent
       OUT=/tmp/gh-aw/agent/control-precompute.json
-      RESOLVER=.github/scripts/control-policy/resolve.mjs
+      RESOLVER=.github/aw/control-policy/resolve.mjs
 
       write_worker_precompute() {
         jq -n \
@@ -283,11 +282,14 @@ steps:
           ! repository_equal "$SAFE_OUTPUT_REPO" "$CENTRAL_REPO"; then
           echo "review safe_output_repo must differ from target_repo" >&2; exit 1;
         fi
+        if repository_equal "$SAFE_OUTPUT_REPO" "$CENTRAL_REPO"; then
+          return
+        fi
         if ! is_private=$(gh api "repos/$SAFE_OUTPUT_REPO" --jq '.private'); then
           echo "review safe_output_repo must be accessible" >&2
           exit 1
         fi
-        if [ "$is_private" != "true" ] && ! repository_equal "$SAFE_OUTPUT_REPO" "$CENTRAL_REPO"; then
+        if [ "$is_private" != "true" ]; then
           echo "non-central review safe_output_repo must be private" >&2
           exit 1
         fi

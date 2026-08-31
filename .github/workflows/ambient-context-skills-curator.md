@@ -56,7 +56,6 @@ permissions:
   contents: read
   actions: read
   pull-requests: read
-  copilot-requests: write
 
 strict: true
 

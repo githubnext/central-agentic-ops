@@ -136,3 +136,61 @@ test("dashboard source bridge retains unavailable grader records separately from
     ],
   );
 });
+
+test("dashboard source bridge carries outcome detail content and presentation metadata", () => {
+  const sources = buildDashboardLanguageSources({
+    deployed: {
+      generatedAt: "2026-08-31T12:00:00Z",
+      discovery: { complete: true },
+      runHealth: { available: true, complete: true },
+      bundles: [],
+      workflows: [],
+    },
+    usage: { available: true, complete: true, runs: [] },
+    operationalValues: { records: [] },
+    report: {
+      generatedAt: "2026-08-31T12:00:00Z",
+      records: [{
+        id: "outcome-1",
+        repository: "githubnext/central-agentic-ops",
+        workflowPath: ".github/workflows/daily.lock.yml",
+        workflow: "Daily review",
+        mode: "live",
+        kind: "pull-request",
+        state: "closed",
+        title: "Parity verification sweep",
+        summary: "All checks passed.",
+        bodyHtml: "<h2>Summary</h2><p>All checks passed.</p>",
+        createdAt: "2026-08-31T10:00:00Z",
+        updatedAt: "2026-08-31T11:00:00Z",
+        url: "https://github.com/githubnext/central-agentic-ops/pull/1",
+        runUrl: "https://github.com/githubnext/central-agentic-ops/actions/runs/1",
+      }],
+    },
+  });
+
+  assert.deepEqual(
+    {
+      workflow: sources.outcomes.rows[0].workflow,
+      workflowName: sources.outcomes.rows[0]["workflow-name"],
+      title: sources.outcomes.rows[0]["outcome-title"],
+      summary: sources.outcomes.rows[0]["outcome-summary"],
+      bodyHtml: sources.outcomes.rows[0]["outcome-body-html"],
+      category: sources.outcomes.rows[0]["outcome-category"],
+      status: sources.outcomes.rows[0]["outcome-status"],
+      mode: sources.outcomes.rows[0]["rollout-mode"],
+      publishedAt: sources.outcomes.rows[0]["published-at"],
+    },
+    {
+      workflow: ".github/workflows/daily.md",
+      workflowName: "Daily review",
+      title: "Parity verification sweep",
+      summary: "All checks passed.",
+      bodyHtml: "<h2>Summary</h2><p>All checks passed.</p>",
+      category: "pull-request",
+      status: "closed",
+      mode: "live",
+      publishedAt: "2026-08-31T10:00:00Z",
+    },
+  );
+});
