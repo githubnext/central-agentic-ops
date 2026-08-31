@@ -492,8 +492,11 @@ function renderLayoutSection(pageId, section, renderedViews) {
     h(
       'header',
       { className: 'layout-section-header' },
-      h('h3', { id: headingId }, title),
-      section.description ? h('p', null, section.description) : null
+      h('div', null,
+        h('span', { className: 'scope-kicker' }, titleCase(section.id)),
+        h('h3', { id: headingId }, title),
+        section.description ? h('p', null, section.description) : null
+      ),
     ),
     h(
       'div',
@@ -695,11 +698,11 @@ function renderCustomView(pageId, view, index, sources, units, headingTag = 'h3'
   const metadata = sourceInput.metadata;
   const state = sourceInput.metadata?.availability ?? inferAvailability(filteredRows);
 
-  if (state !== 'available') {
+  if (state !== 'available' && !(state === 'empty' && view.mark === 'table')) {
     return renderCustomViewState(pageId, title, sourceName, state, contextDetails, headingTag);
   }
 
-  if (filteredRows.length === 0) {
+  if (filteredRows.length === 0 && view.mark !== 'table') {
     return renderCustomViewState(pageId, title, sourceName, 'empty', contextDetails, headingTag);
   }
 

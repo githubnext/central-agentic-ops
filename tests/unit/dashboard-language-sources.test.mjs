@@ -57,3 +57,74 @@ test("dashboard source bridge carries package allowance and inventory readiness 
     },
   );
 });
+
+test("dashboard source bridge retains unavailable grader records separately from value observations", () => {
+  const sources = buildDashboardLanguageSources({
+    deployed: {
+      generatedAt: "2026-08-31T12:00:00Z",
+      discovery: { complete: true },
+      runHealth: { available: true, complete: true },
+      bundles: [],
+      workflows: [],
+    },
+    usage: { available: true, complete: true, runs: [] },
+    operationalValues: {
+      records: [
+        {
+          workflowId: "daily-value",
+          workflowPath: ".github/workflows/daily-value.lock.yml",
+          runId: 42,
+          runUrl: "https://github.com/githubnext/central-agentic-ops/actions/runs/42",
+          status: "pass",
+          value: 0.8,
+          baselineValue: 0.5,
+          deltaFromBaseline: 0.3,
+          evaluatorDigest: "1234567890abcdef",
+          observation: {
+            evidenceAt: "2026-08-31T10:00:00Z",
+            opportunityKey: "githubnext/central-agentic-ops#42",
+            mature: false,
+            case: { targetRepo: "githubnext/central-agentic-ops" },
+          },
+        },
+        {
+          workflowId: "missing-value",
+          workflowPath: ".github/workflows/missing-value.lock.yml",
+          status: "unavailable",
+        },
+      ],
+    },
+    report: { generatedAt: "2026-08-31T12:00:00Z", records: [] },
+  });
+
+  assert.equal(sources["operational-values"].rows.length, 1);
+  assert.equal(sources["grader-observations"].rows.length, 2);
+  assert.deepEqual(
+    sources["grader-observations"].rows.map((row) => ({
+      grader: row.grader,
+      status: row.status,
+      maturity: row["maturity-status"],
+      baseline: row["baseline-value"],
+      run: row.run,
+      runHref: row["run-link"]?.href,
+    })),
+    [
+      {
+        grader: "daily-value",
+        status: "pass",
+        maturity: "interim",
+        baseline: 0.5,
+        run: "42",
+        runHref: "https://github.com/githubnext/central-agentic-ops/actions/runs/42",
+      },
+      {
+        grader: "missing-value",
+        status: "unavailable",
+        maturity: "unavailable",
+        baseline: undefined,
+        run: "Unavailable",
+        runHref: undefined,
+      },
+    ],
+  );
+});

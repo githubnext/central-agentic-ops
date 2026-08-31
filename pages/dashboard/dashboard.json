@@ -1202,7 +1202,7 @@
           {
             "id": "raw-collection-state",
             "title": "Grader ledger",
-            "description": "Retained operational-value observations, including interim evidence.",
+            "description": "All retained operational-value grader records, including unavailable and interim results.",
             "layout": "full",
             "views": [
               "operational-value-ledger"
@@ -1242,18 +1242,15 @@
               "source": "value-workflows"
             },
             "mark": "table",
+            "controls": "static",
+            "empty-message": "No comparable operational-value observations are available.",
             "layout": "full",
             "encoding": {
               "columns": [
                 {
-                  "field": "workflow",
-                  "type": "nominal",
-                  "title": "Workflow"
-                },
-                {
                   "field": "operational-value-definition",
                   "type": "nominal",
-                  "title": "Definition"
+                  "title": "Workflow"
                 },
                 {
                   "field": "opportunities",
@@ -1279,70 +1276,71 @@
                   "field": "observed-at",
                   "type": "temporal",
                   "title": "Latest evidence"
+                },
+                {
+                  "field": "run",
+                  "type": "nominal",
+                  "title": "Run"
                 }
-              ],
-              "href": {
-                "field": "evidence-link",
-                "type": "nominal"
-              }
+              ]
             }
           },
           {
             "id": "operational-value-ledger",
             "title": "Collected observations",
             "data": {
-              "source": "operational-values"
+              "source": "grader-observations"
             },
             "mark": "table",
+            "controls": "static",
+            "empty-message": "No operational-value grader records were retained.",
             "layout": "full",
             "encoding": {
               "columns": [
                 {
-                  "field": "workflow",
+                  "field": "grader",
                   "type": "nominal",
                   "title": "Workflow"
                 },
                 {
-                  "field": "operational-value-definition",
+                  "field": "status",
                   "type": "nominal",
-                  "title": "Definition"
-                },
-                {
-                  "field": "operational-case",
-                  "type": "nominal",
-                  "title": "Opportunity"
-                },
-                {
-                  "field": "operational-value",
-                  "type": "quantitative",
-                  "title": "Value"
+                  "display": "grader-status",
+                  "title": "Status"
                 },
                 {
                   "field": "maturity-status",
                   "type": "nominal",
-                  "display": "status",
+                  "display": "label",
                   "title": "Maturity"
+                },
+                {
+                  "field": "value",
+                  "type": "quantitative",
+                  "title": "Value"
+                },
+                {
+                  "field": "baseline-value",
+                  "type": "quantitative",
+                  "title": "Baseline"
                 },
                 {
                   "field": "delta-from-baseline",
                   "type": "quantitative",
-                  "title": "Baseline delta"
+                  "title": "Delta"
                 },
                 {
                   "field": "evaluator-digest",
                   "type": "nominal",
+                  "display": "digest",
                   "title": "Evaluator"
                 },
                 {
-                  "field": "observed-at",
-                  "type": "temporal",
-                  "title": "Observed"
+                  "field": "run",
+                  "type": "nominal",
+                  "title": "Run"
                 }
-              ],
-              "href": {
-                "field": "evidence-link",
-                "type": "nominal"
-              }
+              ]
             }
           }
         ]

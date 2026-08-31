@@ -204,7 +204,7 @@ Language keys and enumerated values use canonical kebab-case. Human-readable tit
 | Built-in page | `id`, `kind`, `page`, `title`, `navigation-label`, `description`, `icon`, `class-name`, `definition` |
 | Custom page | `id`, `kind`, `title`, `navigation-label`, `description`, `icon`, `class-name`, `route`, `views`, `sections` |
 | Custom page `route` | `hash-query-parameter` |
-| View | `id`, `title`, `description`, `data`, `mark`, `element`, `chart`, `layout`, `disclosure`, `encoding` |
+| View | `id`, `title`, `description`, `data`, `mark`, `element`, `chart`, `layout`, `disclosure`, `controls`, `empty-message`, `encoding` |
 | View `data` | `source` or `sources`, `scope`, `time`, `filters`, `limit`, `order-by` |
 | Field definition | `field`, `type`, `aggregate`, `time-unit`, `title`, `as` (only when `aggregate` is not `none`), `display`, `unit` |
 
@@ -241,13 +241,13 @@ The `source` vocabulary is closed in version 0.1.0.
 | `experiments` | experiment | `experiment`, `experiment-name`, `observed-at` |
 | `experiment-assignments` | experiment assignment | scope IDs, `run`, `experiment`, `variant`, `observed-at` |
 | `graders` | grader definition | `grader`, `grader-name`, `observed-at` |
-| `grader-observations` | grader observation | scope IDs, `run`, `experiment`, `grader`, `value`, `status`, `rollout-mode`, `observed-at` |
+| `grader-observations` | grader observation | scope IDs, `run`, `experiment`, `grader`, `value`, `status`, `rollout-mode`, `maturity-status`, `baseline-value`, `delta-from-baseline`, `evaluator-digest`, `observed-at`, `run-link` |
 | `evals` | eval definition | `eval`, `eval-name`, `eval-question`, `requested-model`, `observed-at` |
 | `eval-observations` | eval observation | scope IDs, `run`, `experiment`, `eval`, `eval-result`, `requested-model`, `resolved-model`, `rollout-mode`, `observed-at` |
 | `usage` | model invocation | scope IDs, `run`, `invocation`, `engine`, `requested-model`, `resolved-model`, `rollout-mode`, `input-tokens`, `output-tokens`, `cache-read-tokens`, `cache-write-tokens`, `reasoning-tokens`, `aic`, `observed-at`, `organization-link`, `repository-link`, `workflow-link`, `run-link` |
 | `outcomes` | safe-output outcome observation | scope IDs, `run`, `safe-output`, `outcome-state`, `evidence-strength`, `observed-at`, `issue-link`, `pull-request-link`, `run-link`, `external-link`, `organization-link`, `repository-link`, `workflow-link` |
 | `findings` | finding | scope IDs, `run`, `finding`, `finding-severity`, `finding-status`, `finding-summary`, `observed-at`, `issue-link`, `pull-request-link`, `run-link`, `external-link`, `organization-link`, `repository-link`, `workflow-link` |
-| `operational-values` | value observation | scope IDs, `run`, `experiment`, `operational-case`, `evaluator-digest`, `rollout-mode`, `operational-value`, `operational-value-definition`, `requested-evidence-at`, `evidence-cutoff`, `maturity-at`, `maturity-status`, `delta-from-baseline`, `observed-at`, `evidence-link`, `organization-link`, `repository-link`, `workflow-link`, `run-link` |
+| `operational-values` | value observation | scope IDs, `run`, `experiment`, `operational-case`, `evaluator-digest`, `rollout-mode`, `operational-value`, `operational-value-definition`, `requested-evidence-at`, `evidence-cutoff`, `maturity-at`, `maturity-status`, `baseline-value`, `delta-from-baseline`, `observed-at`, `evidence-link`, `organization-link`, `repository-link`, `workflow-link`, `run-link` |
 
 “Scope IDs” means the applicable `organization`, `repository`, and `workflow` fields. Fields that do not apply to an observation are absent rather than fabricated. Link-bearing source fields are relation-specific optional fields whose intrinsic type is one Section 9.1 link object. `organization-link`, `repository-link`, `workflow-link`, `issue-link`, `pull-request-link`, `run-link`, `evidence-link`, and `external-link` correspond to the `organization`, `repository`, `workflow`, `issue`, `pull-request`, `run`, `evidence`, and `external` link relations, respectively; a source row MUST NOT encode multiple link relations inside one field.
 
@@ -528,11 +528,13 @@ Allowed encoding channels are `value`, `columns`, `x`, `y`, `color`, and `href`.
 
 Field `type` values are `nominal`, `ordinal`, `quantitative`, and `temporal`. When omitted, type defaults to the intrinsic field type. A field title defaults to its kebab-case field name with words capitalized. A field may reference one dashboard unit through `unit`; the unit applies to metric, table, and chart value presentation.
 
-The optional table-column field `display` is `text`, `status`, `mode`, or `active-state` and defaults to `text`. It selects presentation independently from the field name. Named UI element values are `status-summary`, `meter-list`, `attention-list`, `domain-attention`, `record-cards`, `package-activity`, `dispatch-catalog`, `repository-workflows`, and `workflow-topology`; renderers dispatch these values without inferring behavior from page IDs, view IDs, or source contents. The overview domain-attention element keeps its six operational domains distinct while the remaining elements can be independently assembled through `views`, `sections`, and `layout`.
+The optional table-column field `display` is `text`, `status`, `grader-status`, `mode`, `active-state`, `label`, or `digest` and defaults to `text`. It selects presentation independently from the field name. Named UI element values are `status-summary`, `meter-list`, `attention-list`, `domain-attention`, `record-cards`, `package-activity`, `dispatch-catalog`, `repository-workflows`, and `workflow-topology`; renderers dispatch these values without inferring behavior from page IDs, view IDs, or source contents. The overview domain-attention element keeps its six operational domains distinct while the remaining elements can be independently assembled through `views`, `sections`, and `layout`.
 
 A chart may set `chart` to `line`, `bar`, or `pie`. When `chart` is omitted, temporal `x` has a line time-series default and any other valid chart has a bar default. A line chart uses temporal `x`; a pie chart uses nominal or ordinal `x` for categories and quantitative `y` for values. These known widget types and defaults are semantic; this specification does not define visual styling.
 
 A view may set the structural `layout` hint to `full`, `half`, or `third`. The values describe the preferred share of an available row, not fixed dimensions. Presenters **MAY** collapse every hint to `full` when space, accessibility, or output media requires it; source order remains the reading and focus order.
+
+A table view may set `controls` to `interactive` or `static`; an omitted value defaults to `interactive`. Interactive tables may expose filtering, sorting, summaries, and progressive row disclosure. Static tables expose all rows in source order without those controls. A table may set `empty-message` to a non-empty textual description shown inside its zero-row table body.
 
 ### 11.2 Data Narrowing
 
@@ -588,6 +590,7 @@ Disclosure changes presentation only. It does not change data processing, data s
 - **DLS-VIEW-025:** A presenter **MUST** apply a field's referenced unit consistently to metric values, table cells, chart value labels, chart data tables, and accessible chart labels.
 - **DLS-VIEW-026:** A custom page `route`, when present, **MUST** be a mapping containing exactly `hash-query-parameter`, whose value **MUST** be a canonical identifier. Built-in pages **MUST NOT** declare `route`.
 - **DLS-VIEW-027:** A presenter **MUST** resolve a custom page route from `#page-<page-id>?<parameter>=<value>`. It **MUST** use a non-empty decoded, trimmed route value as the page title and final breadcrumb label and supply it as an opaque binding to route-aware named elements; a missing or empty value **MUST** preserve the declared title and supply an empty binding. The value **MUST** be treated only as text and **MUST NOT** be interpreted as markup, code, a URI, or a general-purpose content template.
+- **DLS-VIEW-028:** Table `controls`, when present, **MUST** be `interactive` or `static`; an omitted value **MUST** default to `interactive`. A static table **MUST** expose every effective row without filter, sort, summary, pagination, or nested-scroll controls. `empty-message`, when present, **MUST** be non-empty text and **MUST** appear only inside a zero-row table body.
 
 ---
 

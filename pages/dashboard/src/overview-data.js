@@ -17,6 +17,7 @@ export function deriveOverviewSources(sources) {
   const usage = rowsFor(sources, 'usage');
   const outcomes = rowsFor(sources, 'outcomes');
   const findings = rowsFor(sources, 'findings');
+  const graderObservations = rowsFor(sources, 'grader-observations');
   const operationalValues = rowsFor(sources, 'operational-values');
   const packages = summarizePackages(workflows);
   const health = summarizeRunHealth(runs);
@@ -24,7 +25,7 @@ export function deriveOverviewSources(sources) {
   const overviewMetadata = createOverviewMetadata(sources);
   const packageUsage = summarizePackageAicUsage(workflows, usage);
   const securitySignals = buildSecuritySignals({ workflows, runs, findings });
-  const valueSignals = buildValueSignals({ sources, operationalValues, outcomes });
+  const valueSignals = buildValueSignals({ sources, graderObservations, operationalValues, outcomes });
   const costSignals = buildCostSignals(sources.usage);
 
   return {
@@ -95,7 +96,7 @@ export function deriveOverviewSources(sources) {
     },
     'value-summary': {
       source: 'value-summary',
-      rows: buildValueSummary(operationalValues, outcomes),
+      rows: buildValueSummary(graderObservations, operationalValues, outcomes),
       metadata: overviewMetadata
     },
     'value-signals': {
@@ -207,10 +208,11 @@ function buildCostSignals(usageSource) {
 }
 
 /**
+ * @param {Array<Record<string, unknown>>} graderObservations
  * @param {Array<Record<string, unknown>>} operationalValues
  * @param {Array<Record<string, unknown>>} outcomes
  */
-function buildValueSummary(operationalValues, outcomes) {
+function buildValueSummary(graderObservations, operationalValues, outcomes) {
   const values = operationalValues
     .map((row) => row['operational-value'])
     .filter(isFiniteNumber);
@@ -218,16 +220,17 @@ function buildValueSummary(operationalValues, outcomes) {
     ? values.reduce((total, value) => total + value, 0) / values.length
     : null;
   return [
-    { label: 'Grader observations', value: operationalValues.length },
+    { label: 'Grader coverage', value: `${operationalValues.length} / ${graderObservations.length}` },
     { label: 'Mature evidence', value: operationalValues.filter((row) => String(row['maturity-status']) === 'matured').length },
     { label: 'Mean operational value', value: mean === null ? '—' : formatPercent(mean) },
-    { label: 'Pending outcomes', value: outcomes.filter((row) => String(row['outcome-state']) === 'pending').length }
+    { label: 'Open outputs', value: outcomes.filter((row) => String(row['outcome-state']) === 'pending').length }
   ];
 }
 
 /**
  * @param {{
  *   sources: Record<string, import('./presenter.js').LogicalSourceInput>,
+ *   graderObservations: Array<Record<string, unknown>>,
  *   operationalValues: Array<Record<string, unknown>>,
  *   outcomes: Array<Record<string, unknown>>
  * }} input
@@ -248,7 +251,7 @@ function buildValueSignals(input) {
       action: 'Review workflows',
       'navigation-page': 'workflows'
     });
-  } else if (input.operationalValues.length === 0) {
+  } else if (input.operationalValues.length === 0 && input.graderObservations.length === 0) {
     signals.push({
       priority: 1,
       count: 1,
@@ -271,6 +274,23 @@ function buildValueSignals(input) {
       title: 'Operational-value coverage is incomplete',
       detail: 'The retained operational-value source reports partial or unknown completeness.',
       evidence: 'Artifact gap',
+      action: 'Review observations'
+    });
+  }
+
+  const unavailable = input.graderObservations.filter((row) => (
+    String(row.status) !== 'pass' || !isFiniteNumber(row.value)
+  ));
+  if (unavailable.length > 0) {
+    signals.push({
+      priority: 0,
+      count: unavailable.length,
+      tone: 'critical',
+      icon: 'issue',
+      kind: 'Grader unavailable',
+      title: 'Operational-value results could not be used',
+      detail: `${formatNumber(unavailable.length)} grader record${unavailable.length === 1 ? ' is' : 's are'} unavailable, invalid, or missing an observation`,
+      evidence: 'Grader status',
       action: 'Review observations'
     });
   }
@@ -397,8 +417,9 @@ function buildValueWorkflowRows(operationalValues) {
       'mean-baseline': baselines.length > 0
         ? roundMetric(baselines.reduce((total, value) => total + value, 0) / baselines.length)
         : null,
+      run: latest.run,
       'observed-at': latest['observed-at'],
-      'evidence-link': latest['evidence-link']
+      'run-link': latest['run-link'] || latest['evidence-link']
     }];
   }).sort((left, right) => Number(right['mean-operational-value']) - Number(left['mean-operational-value']));
 }

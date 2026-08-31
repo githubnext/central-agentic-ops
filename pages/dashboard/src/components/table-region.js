@@ -17,6 +17,7 @@ const DEFAULT_PAGE_SIZE = 25;
  *
  * @param {{
  *   tableClassName: string,
+ *   regionClassName?: string,
  *   emptyMessage: string,
  *   colSpan: number,
  *   headCells: string[],
@@ -33,6 +34,7 @@ const DEFAULT_PAGE_SIZE = 25;
 export function renderTableRegion(options) {
   const {
     tableClassName,
+    regionClassName,
     emptyMessage,
     colSpan,
     headCells,
@@ -51,7 +53,7 @@ export function renderTableRegion(options) {
 
   const region = h(
     'div',
-    { className: 'table-region' },
+    { className: `table-region${regionClassName ? ` ${regionClassName}` : ''}` },
     interactive
       ? h(
         'div',
