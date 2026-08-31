@@ -505,7 +505,7 @@ function buildDomainAttentionRows(input) {
         domainRow({
           order: 4,
           priority: usageAvailable && !usageComplete ? 1 : 3,
-          state: !usageAvailable ? 'Unavailable' : !usageComplete ? 'Investigate' : 'Unavailable',
+          state: !usageAvailable ? 'Unavailable' : !usageComplete ? 'Investigate' : 'Monitor',
           icon: 'meter',
           domain: 'Cost & efficiency',
           value: usageAvailable ? `${formatAic(usageTotal)} AIC` : 'Not observed',
