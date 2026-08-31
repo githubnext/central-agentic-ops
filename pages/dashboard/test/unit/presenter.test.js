@@ -1074,9 +1074,11 @@ describe('presenter built-in and custom pages', () => {
     expect(packagesPage?.querySelector('[data-package-id="empty-ops"]')?.textContent).toContain('No AIC usage was reported');
     expect(packagesPage?.querySelector('[data-package-id="daily-ops"] .package-utilization-identity a')?.getAttribute('href')).toBe('#page-package-detail?package=daily-ops');
     expect(packagesPage?.querySelector('.package-summary-heading')?.textContent).toContain('All output by package');
-    expect(packagesPage?.querySelector('.package-trend-panel')?.compareDocumentPosition(
-      packagesPage.querySelector('.package-summary')
-    ) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    const packageTrend = packagesPage?.querySelector('.package-trend-panel') ?? null;
+    const packageSummary = packagesPage?.querySelector('.package-summary') ?? null;
+    expect(packageTrend && packageSummary
+      ? packageTrend.compareDocumentPosition(packageSummary) & Node.DOCUMENT_POSITION_FOLLOWING
+      : 0).toBeTruthy();
     const packageSummaryRows = [...(packagesPage?.querySelectorAll('.package-summary-table tbody tr') ?? [])];
     expect(packageSummaryRows).toHaveLength(2);
     expect(packageSummaryRows[0]?.querySelector('th a')?.getAttribute('href')).toBe('#page-package-detail?package=daily-ops');
