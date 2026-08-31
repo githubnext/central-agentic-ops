@@ -21,6 +21,7 @@ export function primerStylesheet() {
   --success-muted: #12261e;
   --danger: #f85149;
   --cancelled: #8c959f;
+  --purple: #a371f7;
   --attention: #d29922;
   --attention-muted: #272115;
   --neutral-muted: #6e768166;
@@ -42,6 +43,7 @@ export function primerStylesheet() {
     --success-muted: #dafbe1;
     --danger: #cf222e;
     --cancelled: #656d76;
+    --purple: #8250df;
     --attention: #9a6700;
     --attention-muted: #fff8c5;
     --neutral-muted: #afb8c133;
@@ -134,6 +136,7 @@ main.dashboard-prototype { width: 100%; flex: 1; padding: 0 24px 40px; }
 .chart-series-3 { stroke: var(--danger); }
 .chart-series-4 { stroke: var(--accent); }
 .chart-series-5 { stroke: var(--muted); }
+.chart-series-6 { stroke: var(--purple); }
 .line-chart-axis { stroke: var(--border); stroke-width: 1; }
 .line-chart-grid { stroke: var(--border-muted); stroke-width: .5; stroke-dasharray: 2 2; }
 .line-chart-series { stroke: var(--accent); stroke-width: 2; vector-effect: non-scaling-stroke; }
@@ -152,16 +155,45 @@ main.dashboard-prototype { width: 100%; flex: 1; padding: 0 24px 40px; }
 .chart-widget .chart-series-3 { stroke: var(--danger); }
 .chart-widget .chart-series-4 { stroke: var(--accent); }
 .chart-widget .chart-series-5 { stroke: var(--muted); }
+.chart-widget .chart-series-6 { stroke: var(--purple); }
 .bar-chart-bar.chart-series-1 { fill: var(--success); }
 .bar-chart-bar.chart-series-2 { fill: var(--attention); }
 .bar-chart-bar.chart-series-3 { fill: var(--danger); }
 .bar-chart-bar.chart-series-4 { fill: var(--accent); }
 .bar-chart-bar.chart-series-5 { fill: var(--muted); }
+.bar-chart-bar.chart-series-6 { fill: var(--purple); }
 .chart-legend i.chart-series-1 { border-color: var(--success); color: var(--success); }
 .chart-legend i.chart-series-2 { border-color: var(--attention); color: var(--attention); }
 .chart-legend i.chart-series-3 { border-color: var(--danger); color: var(--danger); }
 .chart-legend i.chart-series-4 { border-color: var(--accent); color: var(--accent); }
 .chart-legend i.chart-series-5 { border-color: var(--muted); color: var(--muted); }
+.chart-legend i.chart-series-6 { border-color: var(--purple); color: var(--purple); }
+.view-description { margin: 3px 0 0; color: var(--muted); }
+.chart-view-pie { display: grid; grid-template-columns: minmax(190px, .65fr) minmax(0, 1.35fr); align-items: center; gap: 4px 24px; padding: 20px 24px; border: 1px solid var(--border); border-radius: 6px; }
+.chart-view-pie > h3, .chart-view-pie > h4 { align-self: end; margin: 0; font-size: 1.25rem; }
+.chart-view-pie > .view-description { align-self: start; }
+.chart-view-pie > .view-source, .chart-view-pie > .view-metadata, .chart-view-pie > .view-context { grid-column: 1; margin: 0; font-size: .6875rem; }
+.pie-chart-layout { min-width: 0; display: grid; grid-column: 2; grid-row: 1 / span 6; grid-template-columns: 180px minmax(0, 1fr); align-items: center; gap: 20px; }
+.pie-chart-layout .chart-widget { min-height: 180px; margin: 0; border: 0; background: transparent; }
+.pie-chart-layout .chart-widget svg { width: 180px; height: 180px; max-height: none; }
+.pie-chart-layout .chart-legend-pie { display: block; margin: 0; }
+.pie-chart-layout .chart-legend-pie li { min-height: 30px; display: grid; grid-template-columns: 10px minmax(0, 1fr) auto 54px; gap: 9px; border-bottom: 1px solid var(--border-muted); }
+.pie-chart-layout .chart-legend-pie li:last-child { border-bottom: 0; }
+.pie-chart-layout .chart-legend-pie i { width: 9px; height: 9px; border-radius: 2px; }
+.pie-chart-layout .chart-legend-pie strong, .pie-chart-layout .chart-legend-pie small { font-variant-numeric: tabular-nums; text-align: right; }
+.chart-view-pie > .table-region { grid-column: 1 / -1; margin-top: 12px; }
+.chart-view-pie .pie-chart-widget .chart-series-1 { stroke: var(--accent); }
+.chart-view-pie .pie-chart-widget .chart-series-2 { stroke: var(--success); }
+.chart-view-pie .pie-chart-widget .chart-series-3 { stroke: var(--attention); }
+.chart-view-pie .pie-chart-widget .chart-series-4 { stroke: var(--danger); }
+.chart-view-pie .pie-chart-widget .chart-series-5 { stroke: var(--purple); }
+.chart-view-pie .pie-chart-widget .chart-series-6 { stroke: var(--muted); }
+.chart-view-pie .chart-legend i.chart-series-1 { background: var(--accent); }
+.chart-view-pie .chart-legend i.chart-series-2 { background: var(--success); }
+.chart-view-pie .chart-legend i.chart-series-3 { background: var(--attention); }
+.chart-view-pie .chart-legend i.chart-series-4 { background: var(--danger); }
+.chart-view-pie .chart-legend i.chart-series-5 { background: var(--purple); }
+.chart-view-pie .chart-legend i.chart-series-6 { background: var(--muted); }
 .metric-link a, .custom-table a { display: inline-flex; align-items: center; gap: 4px; border-radius: 4px; transition: background-color 120ms ease, color 120ms ease; }
 .metric-link a:hover, .custom-table a:hover { background: var(--neutral-muted); }
 .metric-link .octicon, .custom-table a .octicon { width: 12px; height: 12px; }
@@ -432,6 +464,9 @@ footer { padding: 20px 24px; border-top: 1px solid var(--border); color: var(--m
   .data-state-summary, .metrics { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .layout-section[data-section-layout="wide"], .layout-section[data-section-layout="narrow"] { grid-column: span 12; }
   .custom-view[data-view-layout="half"], .custom-view[data-view-layout="third"] { grid-column: span 12; }
+  .chart-view-pie { grid-template-columns: 1fr; }
+  .pie-chart-layout { grid-column: 1; grid-row: auto; }
+  .chart-view-pie > .view-source, .chart-view-pie > .view-metadata, .chart-view-pie > .view-context { grid-column: 1; }
   .control-plane-status > header { min-height: 0; padding: 14px; }
   .control-plane-heading { align-items: flex-start; }
   .control-plane-heading .scope-kicker { display: none; }
@@ -447,6 +482,7 @@ footer { padding: 20px 24px; border-top: 1px solid var(--border); color: var(--m
 }
 @media (max-width: 420px) {
   .data-state-summary, .metrics { grid-template-columns: 1fr; }
+  .pie-chart-layout { grid-template-columns: 1fr; }
   .workflow-topology-summary { grid-template-columns: 1fr; }
   .package-topology-header { grid-template-columns: 28px minmax(0, 1fr); }
   .package-topology-header > :is(.mode-indicator, .status) { grid-column: auto; }

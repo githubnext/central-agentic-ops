@@ -792,6 +792,7 @@ dashboard:
 - Added essential and supplemental view disclosure, a four-essential-view authoring bound, accessible presentation requirements, and SEQ and NASA-TLX user-research guidance.
 - Added centrally managed package semantics and the `packages` built-in page for mode-filtered package AIC utilization and package-run trends.
 - Added `dashboard.repository` and **DLS-DOC-012** so a presenter's report action toolbar can expose a GitHub repository link, and added **DLS-SAFE-011** requiring a descriptive refresh control and a labeled repository link.
+- Updated the complete example to declare repository AIC distribution as a linked, ordered pie chart.
 
 ---
 
@@ -859,19 +860,22 @@ dashboard:
           title: Largest AIC Spenders
           data:
             source: usage
-            limit: 10
             order-by:
               - field: sum-aic
                 direction: desc
-          mark: table
+          mark: chart
+          chart: pie
           encoding:
-            columns:
-              - field: repository
-                type: nominal
-              - field: aic
-                type: quantitative
-                aggregate: sum
-                as: sum-aic
+            x:
+              field: repository
+              type: nominal
+            y:
+              field: aic
+              type: quantitative
+              aggregate: sum
+              as: sum-aic
+            href:
+              field: repository-link
 ```
 
 ### Appendix B: Error Codes (Normative)
