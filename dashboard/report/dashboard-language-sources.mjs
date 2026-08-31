@@ -153,6 +153,8 @@ function runRows(deployed) {
         ...names,
         workflow: workflow.path?.replace(/\.lock\.yml$/, ".md") || "",
         run: String(run.runId),
+        event: run.event || "unknown",
+        "run-title": run.displayTitle || `Run ${run.runId}`,
         "started-at": run.startedAt || run.createdAt,
         "ended-at": run.status === "completed" ? run.updatedAt : undefined,
         "run-status": run.status === "in_progress" ? "in-progress" : run.status || "unknown",

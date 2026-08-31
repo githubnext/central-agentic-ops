@@ -740,11 +740,11 @@
         "title": "Dispatches",
         "icon": "workflow",
         "class-name": "dispatches-page",
-        "description": "Package-worker dispatch activity retained from configured repositories.",
+        "description": "Workflow dispatch events retained from configured repositories.",
         "views": [
           {
             "id": "package-worker-dispatches",
-            "title": "Package-worker dispatches",
+            "title": "Workflow dispatch events",
             "data": {
               "sources": [
                 "runs",

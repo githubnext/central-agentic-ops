@@ -16,7 +16,7 @@ const metadata = {
 function context(runs) {
   return {
     pageId: 'dispatches',
-    title: 'Package-worker dispatches',
+    title: 'Workflow dispatch events',
     sourceNames: ['runs', 'workflows'],
     contextDetails: [],
     headingTag: /** @type {'h3'} */ ('h3'),
@@ -26,7 +26,8 @@ function context(runs) {
         metadata,
         rows: [
           { organization: 'githubnext', repository: 'control', package: 'dependabot', 'package-name': 'Dependabot', workflow: '.github/workflows/worker.yml', 'workflow-name': 'Dependency updater', 'workflow-role': 'worker' },
-          { organization: 'githubnext', repository: 'control', package: 'dependabot', workflow: '.github/workflows/orchestrator.yml', 'workflow-role': 'orchestrator' }
+          { organization: 'githubnext', repository: 'control', package: 'dependabot', 'package-name': 'Dependabot', workflow: '.github/workflows/orchestrator.yml', 'workflow-name': 'Dependency orchestrator', 'workflow-role': 'orchestrator' },
+          { organization: 'githubnext', repository: 'control', workflow: '.github/workflows/standalone.yml', 'workflow-name': 'Standalone task', 'workflow-role': 'standalone' }
         ]
       },
       runs: { source: 'runs', metadata, rows: runs }
@@ -35,18 +36,23 @@ function context(runs) {
 }
 
 describe('renderDispatchCatalog', () => {
-  it('retains only authoritative package-worker workflow_dispatch runs', () => {
+  it('retains all authoritative workflow_dispatch runs', () => {
     const rendered = renderDispatchCatalog(context([
       { organization: 'githubnext', repository: 'control', workflow: '.github/workflows/worker.yml', run: '102', event: 'workflow_dispatch', 'run-title': 'Update dependencies', 'started-at': '2026-08-30T07:00:00Z', 'run-conclusion': 'action-required' },
       { organization: 'githubnext', repository: 'control', workflow: '.github/workflows/worker.yml', run: '101', event: 'schedule', 'started-at': '2026-08-30T06:00:00Z', 'run-conclusion': 'success' },
-      { organization: 'githubnext', repository: 'control', workflow: '.github/workflows/orchestrator.yml', run: '100', event: 'workflow_dispatch', 'started-at': '2026-08-30T05:00:00Z', 'run-conclusion': 'success' }
+      { organization: 'githubnext', repository: 'control', workflow: '.github/workflows/orchestrator.yml', run: '100', event: 'workflow_dispatch', 'started-at': '2026-08-30T05:00:00Z', 'run-conclusion': 'success' },
+      { organization: 'githubnext', repository: 'control', workflow: '.github/workflows/standalone.yml', run: '99', event: 'workflow_dispatch', 'started-at': '2026-08-30T04:00:00Z', 'run-conclusion': 'success' }
     ]));
 
-    expect(rendered.querySelectorAll('[data-dispatch-row]')).toHaveLength(1);
+    expect(rendered.querySelectorAll('[data-dispatch-row]')).toHaveLength(3);
     expect(rendered.textContent).toContain('Dependency updater');
+    expect(rendered.textContent).toContain('Package worker');
+    expect(rendered.textContent).toContain('Package orchestrator');
+    expect(rendered.textContent).toContain('Standalone workflow');
+    expect(rendered.textContent).toContain('Not packaged');
     expect(rendered.textContent).toContain('Update dependencies');
     expect(rendered.querySelector('.status-attention')).not.toBeNull();
-    expect(rendered.querySelector('.dispatch-result')?.textContent).toBe('1 of 1 dispatches');
+    expect(rendered.querySelector('.dispatch-result')?.textContent).toBe('3 of 3 dispatches');
   });
 
   it('keeps filters and the reference empty state visible with no dispatches', () => {
@@ -54,7 +60,7 @@ describe('renderDispatchCatalog', () => {
 
     expect(rendered.querySelector('input[type="search"]')).not.toBeNull();
     expect(rendered.querySelector('select')?.textContent).toContain('All packages');
-    expect(rendered.querySelector('tbody td')?.textContent).toBe('No package-worker dispatches were observed in the current run window.');
+    expect(rendered.querySelector('tbody td')?.textContent).toBe('No workflow dispatch events were observed in the current run window.');
     expect(rendered.querySelector('.dispatch-result')?.textContent).toBe('0 of 0 dispatches');
   });
 

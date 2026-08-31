@@ -1,5 +1,5 @@
 /**
- * Package-worker workflow_dispatch catalog.
+ * workflow_dispatch catalog.
  */
 
 import { h } from '../dom.js';
@@ -12,7 +12,7 @@ import { renderLinkedText } from './linked-text.js';
  * @returns {HTMLElement}
  */
 export function renderDispatchCatalog(context) {
-  const dispatches = packageWorkerDispatches(
+  const dispatches = workflowDispatches(
     rowsFor(context.sources, 'runs'),
     rowsFor(context.sources, 'workflows')
   );
@@ -41,7 +41,7 @@ export function renderDispatchCatalog(context) {
       h(
         'thead',
         null,
-        h('tr', null, ...['Started', 'Package', 'Worker', 'Run title', 'Runtime repository', 'Status']
+        h('tr', null,                   ...['Started', 'Type', 'Package', 'Workflow', 'Run title', 'Runtime repository', 'Status']
           .map((label) => h('th', { scope: 'col' }, label)))
       ),
       h(
@@ -49,7 +49,7 @@ export function renderDispatchCatalog(context) {
         null,
         ...(bodyRows.length > 0
           ? bodyRows
-          : [h('tr', null, h('td', { colSpan: 6 }, 'No package-worker dispatches were observed in the current run window.'))])
+          : [h('tr', null, h('td', { colSpan: 7 }, 'No workflow dispatch events were observed in the current run window.'))])
       )
     )
   );
@@ -62,12 +62,12 @@ export function renderDispatchCatalog(context) {
       h(
         'div',
         null,
-        h('span', { className: 'scope-kicker' }, 'Control-plane activity'),
+        h('span', { className: 'scope-kicker' }, 'Actions activity'),
         h(context.headingTag, { id: headingId }, context.title),
         h(
           'p',
           null,
-          'Worker runs whose authoritative GitHub Actions trigger is ',
+          'Runs whose authoritative GitHub Actions trigger is ',
           h('code', null, 'workflow_dispatch'),
           ', ordered newest first. ',
           coverageLabel(context.sources.runs)
@@ -93,24 +93,32 @@ export function renderDispatchCatalog(context) {
  * @param {Array<Record<string, unknown>>} runs
  * @param {Array<Record<string, unknown>>} workflows
  */
-function packageWorkerDispatches(runs, workflows) {
-  const workers = new Map(workflows
-    .filter((row) => row['workflow-role'] === 'worker' && nonEmptyString(row.package))
-    .map((row) => [workflowKey(row), row]));
+function workflowDispatches(runs, workflows) {
+  const workflowsByKey = new Map(workflows.map((row) => [workflowKey(row), row]));
 
   return runs
     .filter((run) => run.event === 'workflow_dispatch')
     .flatMap((run) => {
-      const worker = workers.get(workflowKey(run));
-      if (!worker) return [];
+      const workflow = workflowsByKey.get(workflowKey(run));
+      if (!workflow) return [];
       const conclusion = nonEmptyString(run['run-conclusion']) ? String(run['run-conclusion']) : '';
       const status = conclusion && conclusion !== 'unknown'
         ? conclusion
         : nonEmptyString(run['run-status']) ? String(run['run-status']) : 'unknown';
+      const hasPackage = nonEmptyString(workflow.package);
+      const packageName = nonEmptyString(workflow['package-name'])
+        ? String(workflow['package-name'])
+        : hasPackage ? String(workflow.package) : 'Not packaged';
+      const role = String(workflow['workflow-role'] ?? '');
       return [{
         run,
-        packageName: String(worker['package-name'] ?? worker.package),
-        workerName: String(worker['workflow-name'] ?? worker.workflow),
+        dispatchType: role === 'worker' && hasPackage
+          ? 'Package worker'
+          : role === 'orchestrator' && hasPackage
+            ? 'Package orchestrator'
+            : 'Standalone workflow',
+        packageName,
+        workflowName: String(workflow['workflow-name'] ?? workflow.workflow),
         runTitle: String(run['run-title'] ?? `Run ${run.run ?? 'unknown'}`),
         repository: repositoryName(run),
         status
@@ -119,7 +127,7 @@ function packageWorkerDispatches(runs, workflows) {
     .sort((left, right) => Date.parse(String(right.run['started-at'] ?? '')) - Date.parse(String(left.run['started-at'] ?? '')));
 }
 
-/** @param {ReturnType<typeof packageWorkerDispatches>[number]} dispatch @returns {HTMLTableRowElement} */
+/** @param {ReturnType<typeof workflowDispatches>[number]} dispatch @returns {HTMLTableRowElement} */
 function renderDispatchRow(dispatch) {
   const startedAt = String(dispatch.run['started-at'] ?? '');
   const started = Number.isFinite(Date.parse(startedAt)) ? formatDate(startedAt) : 'Unknown';
@@ -130,16 +138,18 @@ function renderDispatchRow(dispatch) {
       'data-package': dispatch.packageName,
       'data-search': [
         dispatch.run.run,
+        dispatch.dispatchType,
         dispatch.packageName,
-        dispatch.workerName,
+        dispatch.workflowName,
         dispatch.runTitle,
         dispatch.repository,
         dispatch.status
       ].join(' ').toLocaleLowerCase('en')
     },
     h('th', { scope: 'row' }, renderLinkedText(started, findLink(dispatch.run, 'run-link'))),
+    h('td', null, dispatch.dispatchType),
     h('td', null, dispatch.packageName),
-    h('td', null, dispatch.workerName),
+    h('td', null, dispatch.workflowName),
     h('td', null, dispatch.runTitle),
     h('td', null, dispatch.repository),
     h('td', null, renderStatusBadge(dispatch.status))

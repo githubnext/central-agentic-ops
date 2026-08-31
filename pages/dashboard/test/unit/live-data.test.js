@@ -41,6 +41,7 @@ describe("live Dashboard Language sources", () => {
               runId: 42,
               status: "completed",
               conclusion: "action_required",
+              event: "workflow_dispatch",
               startedAt: "2026-08-30T10:00:00Z",
               updatedAt: "2026-08-30T10:05:00Z",
               displayTitle: "Dependabot · review",
@@ -137,6 +138,8 @@ describe("live Dashboard Language sources", () => {
       });
       expect(sources.runs.rows[0]).toMatchObject({
         run: "42",
+        event: "workflow_dispatch",
+        "run-title": "Dependabot · review",
         "run-status": "completed",
         "run-conclusion": "action-required",
         "rollout-mode": "review",
