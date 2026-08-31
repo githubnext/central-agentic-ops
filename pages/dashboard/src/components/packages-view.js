@@ -4,9 +4,9 @@
 
 import { h } from '../dom.js';
 import { formatNumber } from '../view-formatters.js';
+import { classifyUtilizationRatio, isFailureConclusion } from './run-classification.js';
 
 const MODES = ['all', 'review', 'live'];
-const FAILURE_CONCLUSIONS = new Set(['failure', 'startup-failure', 'timed-out']);
 const DAY_IN_MILLISECONDS = 86_400_000;
 
 /**
@@ -142,7 +142,7 @@ function renderUtilizationCard(entry, utilization, available, completeness) {
   const reportedRuns = utilization?.reportedRuns ?? 0;
   const ratio = available && allowed > 0 ? used / allowed : null;
   const meterPercent = ratio === null ? 0 : Math.min(100, ratio * 100);
-  const status = ratio === null ? 'empty' : ratio >= 0.8 ? 'high' : ratio >= 0.5 ? 'medium' : 'low';
+  const status = ratio === null ? 'empty' : classifyUtilizationRatio(ratio);
   const detail = !available
     ? 'AI Credit usage artifacts are unavailable.'
     : reportedRuns === 0
@@ -228,7 +228,7 @@ function renderRunTrend(sources, mode, headingId) {
   });
   const series = {
     successful: cumulativeCounts(trendDays, runs.filter((row) => row['run-conclusion'] === 'success')),
-    failed: cumulativeCounts(trendDays, runs.filter((row) => FAILURE_CONCLUSIONS.has(String(row['run-conclusion'])))),
+    failed: cumulativeCounts(trendDays, runs.filter((row) => isFailureConclusion(row['run-conclusion']))),
     cancelled: cumulativeCounts(trendDays, runs.filter((row) => row['run-conclusion'] === 'cancelled'))
   };
   const maximum = Math.max(1, ...series.successful, ...series.failed, ...series.cancelled);
