@@ -62,6 +62,88 @@
           "max-ai-credits": 180
         }
       ]
+    },
+    "runs": {
+      "rows": [
+        {
+          "workflow": "workflow-permission-drift-remediation",
+          "run": "permission-review-101"
+        },
+        {
+          "workflow": "workflow-permission-drift-remediation",
+          "run": "permission-review-102"
+        },
+        {
+          "workflow": "workflow-permission-drift-remediation",
+          "run": "permission-review-103"
+        }
+      ]
+    },
+    "findings": {
+      "rows": [
+        {
+          "workflow": "workflow-permission-drift-remediation",
+          "finding": "permission-drift-101",
+          "finding-status": "open"
+        },
+        {
+          "workflow": "workflow-permission-drift-remediation",
+          "finding": "permission-drift-102",
+          "finding-status": "resolved"
+        },
+        {
+          "workflow": "workflow-permission-drift-remediation",
+          "finding": "permission-drift-103",
+          "finding-status": "dismissed"
+        }
+      ]
+    },
+    "outcomes": {
+      "rows": [
+        {
+          "workflow": "workflow-permission-drift-remediation",
+          "safe-output": "permission-remediation-101",
+          "outcome-state": "pending"
+        },
+        {
+          "workflow": "workflow-permission-drift-remediation",
+          "safe-output": "permission-remediation-102",
+          "outcome-state": "accepted"
+        },
+        {
+          "workflow": "workflow-permission-drift-remediation",
+          "safe-output": "permission-remediation-103",
+          "outcome-state": "rejected"
+        }
+      ]
+    },
+    "operational-values": {
+      "rows": [
+        {
+          "workflow": "workflow-permission-drift-remediation",
+          "run": "permission-review-101",
+          "operational-case": "permission-review-101",
+          "operational-value-definition": "resolved-supported-permission-drift-findings",
+          "operational-value": 0.25,
+          "observed-at": "2026-06-01T00:00:00Z"
+        },
+        {
+          "workflow": "workflow-permission-drift-remediation",
+          "run": "permission-review-102",
+          "operational-case": "permission-review-102",
+          "operational-value-definition": "resolved-supported-permission-drift-findings",
+          "operational-value": 0.5,
+          "observed-at": "2026-07-01T00:00:00Z"
+        },
+        {
+          "workflow": "workflow-permission-drift-remediation",
+          "run": "permission-review-103",
+          "operational-case": "permission-review-103",
+          "operational-value-definition": "resolved-supported-permission-drift-findings",
+          "operational-value": 0.75,
+          "observed-at": "2026-08-01T00:00:00Z"
+        }
+      ]
     }
   },
   "dashboard": "workflow-permission-drift-remediation.dashboard.yml"
