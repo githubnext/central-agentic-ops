@@ -10,7 +10,7 @@ import { renderDataStateMetrics } from './components/data-state.js';
 import { renderTableRegion } from './components/table-region.js';
 import { customViewAvailabilityMessage, renderCustomViewStateDetails, renderPageSection, renderViewSectionChrome } from './components/view-chrome.js';
 import { formatAggregateValue, toNumber } from './view-formatters.js';
-import { renderActiveStateBadge, renderModeBadge, renderStatusBadge } from './components/badge.js';
+import { renderCellDisplay } from './components/cell-display.js';
 import { findFirstLink, findLink, renderExternalLink, renderLinkedValueWithExternalLink } from './components/link-content.js';
 import { renderLinkedText, createEntityAwareCellRenderer } from './components/linked-text.js';
 import { elementHandlesEmptyRows, renderUiElement } from './components/ui-elements.js';
@@ -938,19 +938,12 @@ function compareTableValues(left, right) {
   return toText(left).localeCompare(toText(right));
 }
 
-/**
- * @param {unknown} display
- * @param {unknown} value
- * @returns {string | HTMLElement}
- */
-function renderTableCellValue(display, value) {
-  if (display === 'mode') return renderModeBadge(value);
-  if (display === 'active-state') return renderActiveStateBadge(value);
-  if (display === 'status') return renderStatusBadge(value);
-  return toText(value);
-}
-
-const renderEntityAwareCellValue = createEntityAwareCellRenderer(ENTITY_LINK_FIELDS, findLink, renderTableCellValue, toText);
+const renderEntityAwareCellValue = createEntityAwareCellRenderer(
+  ENTITY_LINK_FIELDS,
+  findLink,
+  (display, value) => renderCellDisplay(display, value, toText),
+  toText
+);
 
 /**
  * @param {string} pageId
