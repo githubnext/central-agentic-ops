@@ -101,8 +101,8 @@ describe('Runtime dashboard view', () => {
     expect([...rendered.querySelectorAll('.workflow-attention-list > li > a')].map((link) => link.getAttribute('href'))).toEqual([
       '#page-workflow-detail?workflow=githubnext%2Fcentral-agentic-ops%3A.github%2Fworkflows%2Fdependabot-worker.md',
       '#page-workflow-detail?workflow=githubnext%2Fcentral-agentic-ops%3A.github%2Fworkflows%2Fdependabot.md',
-      '#runtime-episode-attribution-gap',
-      '#runtime-execution-episodes'
+      '#runtime-execution-episodes',
+      '#runtime-episode-attribution-gap'
     ]);
     expect(rendered.querySelector('.workflow-attention-list a[target]')).toBeNull();
     expect(rendered.querySelector('.episode-vitals')?.textContent).toContain('0 / 1');
