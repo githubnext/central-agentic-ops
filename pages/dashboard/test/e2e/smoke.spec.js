@@ -564,7 +564,13 @@ test('DLS-PAGE-017 renders a responsive JSON-configured filter bar and page-sour
   expect(exportPayload).toMatchObject({
     page: 'cost',
     filters: ['mode:review', 'mode:live'],
-    sources: { usage: { source: 'usage' } }
+    sources: {
+      usage: {
+        source: 'usage',
+        rows: [{ invocation: 'usage-1', aic: 2 }],
+        metadata: { 'source-id': 'usage-fixture' }
+      }
+    }
   });
 
   await page.setViewportSize({ width: 400, height: 900 });

@@ -473,7 +473,7 @@ The optional page `navigation-label` provides a concise sidebar label when the p
 
 The optional page `class-name` is a canonical identifier that a renderer adds to the page container. It lets a document opt into page-specific presentation without requiring the renderer to infer styling from a page ID or built-in page name.
 
-The optional page `filter-bar` is a presentation widget shared by built-in and custom pages. Its required `filters` sequence contains unique `field:value` tokens in display order. The optional `time-range` is a non-empty human-readable label, and optional Boolean `export` enables a JSON download containing the page identifier, configured filters, and declared page sources.
+The optional page `filter-bar` is a presentation widget shared by built-in and custom pages. Its required `filters` sequence contains unique `field:value` tokens in display order. The optional `time-range` is a non-empty human-readable label, and optional Boolean `export` enables a JSON download containing the page identifier, configured filters, and complete logical-source inputs declared by the page, including their rows and metadata.
 
 ### 10.2 Required Content
 
@@ -493,7 +493,7 @@ The optional page `filter-bar` is a presentation widget shared by built-in and c
 - **DLS-PAGE-014:** Every built-in page **MUST** honor the dashboard scope, time, and filters and expose availability, completeness, and freshness independently.
 - **DLS-PAGE-015:** The `packages` page **MUST** expose centrally managed package inventory, rollout-mode filtering, actual package AIC against summed per-run limits without treating missing usage as zero, the complete-attempt AIC allowance, retained usage coverage, and time-ordered successful, failed, and cancelled package-run trends.
 - **DLS-PAGE-016:** When `class-name` is present, it **MUST** be a canonical identifier and a renderer **MUST** add it to the page container without deriving additional CSS class names from `id` or `page`.
-- **DLS-PAGE-017:** When `filter-bar` is present, it **MUST** contain a non-empty sequence of unique canonical `field:value` filter tokens, **MAY** contain a non-empty `time-range` string and Boolean `export`, and **MUST** be rendered before the page views. An enabled export **MUST** contain only the page identifier, configured filter tokens, and sources declared by that page.
+- **DLS-PAGE-017:** When `filter-bar` is present, it **MUST** contain a non-empty sequence of unique canonical `field:value` filter tokens, **MAY** contain a non-empty `time-range` string and Boolean `export`, and **MUST** be rendered before the page views. An enabled export **MUST** contain only the page identifier, configured filter tokens, and complete logical-source inputs declared by that page.
 
 ---
 

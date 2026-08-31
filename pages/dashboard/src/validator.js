@@ -676,8 +676,9 @@ function validatePageFilterBar(filterBar, filterBarNode, path, errors) {
           'filter-bar filters must be unique.',
           filterPath
         ));
+      } else {
+        seen.add(filter);
       }
-      seen.add(filter);
     });
   }
 

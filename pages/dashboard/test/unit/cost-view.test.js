@@ -53,7 +53,13 @@ describe('Cost and efficiency dashboard view', () => {
       page: 'cost',
       filters: ['mode:review', 'mode:live'],
       sources: {
-        usage: { source: 'usage' }
+        usage: {
+          source: 'usage',
+          rows: expect.arrayContaining([
+            expect.objectContaining({ invocation: 'usage-1', aic: 3.5 })
+          ]),
+          metadata: expect.objectContaining({ 'source-id': 'cost-fixture' })
+        }
       }
     });
 
