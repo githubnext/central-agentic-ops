@@ -71,7 +71,6 @@ permissions:
   vulnerability-alerts: read
   pull-requests: read
   issues: read
-  copilot-requests: write
 
 strict: true
 
