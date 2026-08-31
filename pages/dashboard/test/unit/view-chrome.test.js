@@ -13,6 +13,7 @@ describe('view chrome component helpers', () => {
     expect(section.querySelector('h3')?.textContent).toBe('Run Status Counts');
   });
 
+
   it('DLS-PAGE-014 renders provenance list items and the conservative empty fallback', () => {
     const populated = renderProvenanceList([
       {

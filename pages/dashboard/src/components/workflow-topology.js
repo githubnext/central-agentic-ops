@@ -7,6 +7,7 @@ import { octicon } from '../octicons.js';
 import { formatCountNoun } from './count-formatters.js';
 import { findLink } from './link-content.js';
 import { renderLinkedText } from './linked-text.js';
+import { renderDefinitionListRows } from './view-chrome.js';
 
 /** @type {Record<string, string>} */
 const MODE_ICONS = { review: 'beaker', live: 'rocket' };
@@ -53,9 +54,11 @@ export function renderWorkflowTopology(pageId, title, description, rows, heading
       h(
         'dl',
         { className: 'workflow-topology-summary', 'aria-label': 'Workflow topology summary' },
-        renderTopologyMetric('Packages', packages.length),
-        renderTopologyMetric('Package workflows', packageRows.length),
-        renderTopologyMetric('Standalone workflows', standaloneRows.length)
+        ...renderDefinitionListRows([
+          { label: 'Packages', value: String(packages.length) },
+          { label: 'Package workflows', value: String(packageRows.length) },
+          { label: 'Standalone workflows', value: String(standaloneRows.length) }
+        ])
       )
     ),
     h(
@@ -109,15 +112,6 @@ export function renderWorkflowTopology(pageId, title, description, rows, heading
       )
     )
   );
-}
-
-/**
- * @param {string} label
- * @param {number} value
- * @returns {HTMLElement}
- */
-function renderTopologyMetric(label, value) {
-  return h('div', null, h('dt', null, label), h('dd', null, String(value)));
 }
 
 /**

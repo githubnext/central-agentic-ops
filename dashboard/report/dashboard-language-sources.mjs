@@ -236,6 +236,7 @@ function findingRows(records) {
 function outcomeRows(records) {
   return records.map((record) => ({
     ...repositoryParts(record.repository),
+    "runtime-repository": record.runtimeRepository || record.repository,
     ...(record.bundle ? { package: record.bundle } : {}),
     workflow: record.workflowPath?.replace(/\.lock\.yml$/, ".md") || record.workflow || "",
     "workflow-name": record.workflow || record.workflowPath?.replace(/\.lock\.yml$/, ".md") || "Unknown workflow",
