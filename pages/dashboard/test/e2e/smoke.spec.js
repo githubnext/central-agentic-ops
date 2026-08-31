@@ -231,6 +231,20 @@ test('DLS-PAGE-002 DLS-PAGE-014 built-in overview page renders the report-style 
                   { id: 'operational-values-source', data: { source: 'operational-values' } }
                 ]
               }
+            },
+            {
+              id: 'runtime',
+              kind: 'custom',
+              title: 'Runtime & episodes',
+              views: [
+                {
+                  id: 'runtime-execution-episodes',
+                  title: 'Execution episodes',
+                  data: { sources: ['workflows', 'runs', 'outcomes', 'usage'] },
+                  mark: 'element',
+                  element: 'execution-episodes'
+                }
+              ]
             }
           ],
           navigation: [
@@ -406,8 +420,16 @@ test('DLS-PAGE-002 DLS-PAGE-014 built-in overview page renders the report-style 
   await expect(cards.first()).toHaveClass(/attention-domain-critical/);
   await expect(cards.first()).toContainText('1 failed');
   await expect(cards.nth(1)).toContainText('2 observed');
+  expect(await cards.evaluateAll((links) => links.map((link) => link.getAttribute('href')))).toEqual([
+    '#page-runtime',
+    '#page-runtime?section=runtime-execution-episodes',
+    '#page-security',
+    '#page-findings',
+    '#page-operational-value',
+    '#page-cost'
+  ]);
   await expect(page.locator('.overview-method-note')).toContainText('State key:');
-  await expect(page.locator('.data-state-summary')).toBeHidden();
+  await expect(page.locator('[data-page-id="overview"] .data-state-summary')).toBeHidden();
 
   await page.setViewportSize({ width: 400, height: 900 });
   const firstCardBox = await cards.first().boundingBox();
@@ -415,6 +437,11 @@ test('DLS-PAGE-002 DLS-PAGE-014 built-in overview page renders the report-style 
   expect(firstCardBox).not.toBeNull();
   expect(secondCardBox).not.toBeNull();
   expect(secondCardBox?.y).toBeGreaterThan(firstCardBox?.y ?? 0);
+
+  await cards.nth(1).click();
+  await expect(page).toHaveURL(/#page-runtime\?section=runtime-execution-episodes$/);
+  await expect(page.locator('[data-page-id="runtime"]')).toBeVisible();
+  await expect(page.locator('#runtime-execution-episodes')).toBeInViewport();
 });
 
 test('DLS-PAGE-014 DLS-PAGE-015 built-in packages page renders report-style mode filters, AIC utilization, and run trends in browser', async ({ page }) => {
@@ -1432,7 +1459,7 @@ test('DLS-SAFE-004 runtime links with embedded credentials, ftp schemes, and bla
   `);
 
   await expect(page.getByRole('heading', { name: 'Credential Links', level: 1 })).toBeVisible();
-  await expect(page.locator('.custom-table a')).toHaveText('Run 4');
+  await expect(page.locator('.custom-table a')).toHaveText('4');
   await expect(page.locator('.metric-link a')).toHaveText('Run 4');
   await expect(page.locator('a[href*="user:secret@"]').first()).toHaveCount(0);
   await expect(page.locator('a[href^="ftp:"]').first()).toHaveCount(0);

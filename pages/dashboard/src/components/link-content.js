@@ -59,6 +59,25 @@ export function renderExternalLink(link) {
 }
 
 /**
+ * Renders a workflow run label as a link when the row includes a safe run link.
+ * @param {Record<string, unknown>} row
+ * @param {string} label
+ * @param {unknown} [trailingContent] Optional content appended to the linked label.
+ * @returns {string | HTMLElement}
+ */
+export function renderWorkflowRunLink(row, label, trailingContent) {
+  const link = findLink(row, 'run-link');
+  return link
+    ? h('a', {
+        href: link.href,
+        target: '_blank',
+        rel: 'noopener noreferrer',
+        'aria-label': link.label
+      }, label, trailingContent)
+    : label;
+}
+
+/**
  * @param {string | HTMLElement} value
  * @param {SafeLink | null} link
  * @returns {string | HTMLElement | Array<string | HTMLElement | null>}

@@ -129,6 +129,17 @@ export function deriveOverviewSources(sources) {
         detail: 'A budget verdict requires an applicable budget, matching time window, and complete measured usage. An anomaly verdict requires a qualified historical baseline and disclosed statistical rule.'
       }],
       metadata: overviewMetadata
+    },
+    'experiment-readiness': {
+      source: 'experiment-readiness',
+      rows: [{
+        tone: 'attention',
+        icon: 'beaker',
+        kicker: 'Evidence boundary',
+        title: 'Experiment comparisons unavailable',
+        detail: 'The report does not retain authoritative experiment definitions, variant assignments, or assignment-to-run links. It therefore does not infer control or treatment groups from workflow names, timestamps, models, or outcomes.'
+      }],
+      metadata: overviewMetadata
     }
   };
 }
@@ -494,7 +505,7 @@ function buildDomainAttentionRows(input) {
           detail: runTelemetryAvailable
             ? `${formatCount(input.health.successful)} of ${formatCount(input.health.total)} runs succeeded · ${formatCount(input.health.approval)} approval gates`
             : 'Actions run telemetry is unavailable.',
-          href: '#page-runs'
+          href: '#page-runtime'
         }),
         domainRow({
           order: 1,
@@ -504,7 +515,7 @@ function buildDomainAttentionRows(input) {
           domain: 'Security & controls',
           value: `${formatCount(securitySignals)} signals`,
           detail: `No vulnerability feed · ${formatCount(input.health.approval)} approval gates · ${formatCount(warningOutputs)} explicit warnings · ${formatCount(inventoryGaps)} integrity gaps`,
-          href: '#page-findings'
+          href: '#page-security'
         }),
         domainRow({
           order: 3,
@@ -514,7 +525,7 @@ function buildDomainAttentionRows(input) {
           domain: 'Episodes & autonomy',
           value: `${formatCount(rootRuns.length)} observed`,
           detail: `0 of 0 worker dispatches attributed · ${formatCount(rootFailures)} root failure${rootFailures === 1 ? '' : 's'}`,
-          href: '#page-runs'
+          href: '#page-runtime?section=runtime-execution-episodes'
         }),
         domainRow({
           order: 2,

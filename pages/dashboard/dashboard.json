@@ -1279,7 +1279,8 @@
             "count-source": "grader-observations",
             "count-label": "records",
             "views": [
-              "operational-value-ledger"
+              "operational-value-ledger",
+              "experiment-evidence-boundary"
             ]
           }
         ],
@@ -1416,6 +1417,18 @@
                 }
               ]
             }
+          },
+          {
+            "id": "experiment-evidence-boundary",
+            "title": "Experiment evidence boundary",
+            "data": {
+              "sources": [
+                "experiment-readiness"
+              ]
+            },
+            "mark": "element",
+            "element": "readiness-note",
+            "layout": "full"
           }
         ]
       },

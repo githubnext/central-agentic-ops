@@ -229,6 +229,7 @@ describe('presenter built-in and custom pages', () => {
     expect(repositoryLink?.getAttribute('href')).toBe('https://github.example.com/octo-org/agentic-operations');
     expect(repositoryLink?.getAttribute('aria-label')).toBe('View octo-org/agentic-operations on GitHub');
     expect(repositoryLink?.getAttribute('title')).toBe('View octo-org/agentic-operations on GitHub');
+    expect(rendered.querySelector('.sidebar-brand > span')?.textContent).toBe('agentic-operations');
   });
 
   it('renders section-labeled Attention Investigate Explore navigation groups in the sidebar', () => {
@@ -553,6 +554,11 @@ describe('presenter built-in and custom pages', () => {
     expect(tables[1]?.querySelector('a[aria-label="View run 103"]')?.getAttribute('href')).toContain('/actions/runs/103');
     expect(page?.querySelectorAll('.table-filter')).toHaveLength(0);
     expect(page?.textContent).toContain('not proof that a workflow caused an outcome');
+    const experimentBoundary = page?.querySelector('.readiness-note');
+    expect(experimentBoundary?.querySelector('.scope-kicker')?.textContent).toBe('Evidence boundary');
+    expect(experimentBoundary?.querySelector('.octicon-beaker')).not.toBeNull();
+    expect(experimentBoundary?.textContent).toContain('Experiment comparisons unavailable');
+    expect(experimentBoundary?.textContent).toContain('does not infer control or treatment groups');
   });
 
   it('DLS-VIEW-018 DLS-VIEW-019 DLS-VIEW-020 progressively discloses supplemental views in source order', () => {
@@ -822,7 +828,14 @@ describe('presenter built-in and custom pages', () => {
     expect(cards[4]?.textContent).toContain('Threshold unavailable');
     expect(cards[5]?.textContent).toContain('35 AIC');
     expect(cards[5]?.textContent).toContain('Monitor');
-    expect(cards[5]?.getAttribute('href')).toBe('#page-cost');
+    expect(cards.map((card) => card.getAttribute('href'))).toEqual([
+      '#page-runtime',
+      '#page-runtime?section=runtime-execution-episodes',
+      '#page-security',
+      '#page-findings',
+      '#page-operational-value',
+      '#page-cost'
+    ]);
     expect(cards.every((card) => card.textContent?.includes('Open evidence'))).toBe(true);
     expect(overviewPage?.querySelector('.overview-method-note')?.textContent).toContain('State key:');
     expect(/** @type {HTMLElement | null} */ (rendered.querySelector('.data-state-summary'))?.hidden).toBe(true);
@@ -1970,7 +1983,7 @@ describe('presenter built-in and custom pages', () => {
     expect(rendered.querySelector('[data-chart-legend="visual"]')?.getAttribute('class')).toContain('chart-legend-bar');
     expect([...rendered.querySelectorAll('[data-chart-legend="visual"] li span')].map((item) => item.textContent)).toEqual(['failure', 'success']);
     expect(rendered.querySelectorAll('.custom-table a')).toHaveLength(1);
-    expect(rendered.querySelector('.custom-table a')?.textContent).toContain('Run 2');
+    expect(rendered.querySelector('.custom-table a')?.textContent).toBe('2');
   });
 
   it('DLS-SAFE-004 rejects runtime links with embedded credentials, ftp schemes, and blank labels while preserving safe links', () => {
@@ -2032,7 +2045,7 @@ describe('presenter built-in and custom pages', () => {
 
     const safeLinks = rendered.querySelectorAll('.custom-table a, .metric-link a');
     expect(safeLinks).toHaveLength(2);
-    expect([...safeLinks].every((link) => link.textContent === 'Run 4')).toBe(true);
+    expect([...safeLinks].map((link) => link.textContent)).toEqual(['4', 'Run 4']);
     expect([...safeLinks].every((link) => !String(link.getAttribute('href')).includes('user:secret@'))).toBe(true);
     expect([...safeLinks].every((link) => String(link.getAttribute('href')).startsWith('https://example.com/runs/4'))).toBe(true);
     expect(rendered.textContent).not.toContain('Credentialed Run');

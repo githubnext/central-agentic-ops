@@ -43,6 +43,14 @@ function link(relation, href, label) {
     : undefined;
 }
 
+function workflowRunUrl(repository, runId) {
+  const parts = String(repository || "").split("/");
+  const id = String(runId ?? "");
+  return parts.length === 2 && parts.every(Boolean) && /^\d+$/.test(id)
+    ? `https://github.com/${parts[0]}/${parts[1]}/actions/runs/${id}`
+    : undefined;
+}
+
 function sourceMetadata(name, generatedAt, available, complete) {
   return {
     "source-id": `central-agentic-ops-${name}`,
@@ -189,6 +197,7 @@ function usageRows(usage) {
     "reasoning-tokens": null,
     aic: run.aic,
     "observed-at": run.createdAt || usage.generatedAt,
+    "run-link": link("run", workflowRunUrl(run.repository, run.runId), `Run ${run.runId}`),
   }));
 }
 
@@ -286,7 +295,11 @@ function operationalValueGraderRows(values) {
       "delta-from-baseline": record.deltaFromBaseline,
       "evaluator-digest": record.evaluatorDigest || "",
       "observed-at": record.observation?.evidenceAt || record.run?.createdAt,
-      "run-link": link("run", record.runUrl, `Run ${record.runId}`),
+      "run-link": link(
+        "run",
+        record.runUrl || workflowRunUrl(record.repository, record.runId),
+        `Run ${record.runId}`,
+      ),
     };
   });
 }

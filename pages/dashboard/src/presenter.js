@@ -124,11 +124,12 @@ export function renderDashboard(input) {
     : null;
   const sources = deriveOverviewSources(deriveEntityLinkSources(rawSources, githubUrlBase));
   const orgName = inferOrganizationName(sources) || 'GitHub';
+  const sidebarTitle = dashboardRepository?.split('/').at(-1) || orgName;
 
   const styleEl = h('style', null, getPrimerStyles());
   const skipLink = h('a', { href: '#main-content', className: 'skip-link' }, 'Skip to main content');
 
-  const sidebar = renderSidebar(pages, orgName, document.dashboard.navigation);
+  const sidebar = renderSidebar(pages, sidebarTitle, document.dashboard.navigation);
   const mainContent = renderMainContent(document, title, pages, sources, orgName, githubUrlBase, dashboardRepository);
 
   const root = h(
@@ -166,11 +167,11 @@ function inferOrganizationName(sources) {
 
 /**
  * @param {Array<PresentableBuiltInPage | PresentableCustomPage>} pages
- * @param {string} orgName
+ * @param {string} title
  * @param {PresentableNavigationSection[] | undefined} navigation
  * @returns {HTMLElement}
  */
-function renderSidebar(pages, orgName, navigation) {
+function renderSidebar(pages, title, navigation) {
   const firstPageId = pages[0]?.id;
   const pagesById = new Map(pages.map((page) => [page.id, page]));
   const navigationSections = Array.isArray(navigation) && navigation.length > 0
@@ -190,7 +191,7 @@ function renderSidebar(pages, orgName, navigation) {
       'a',
       { className: 'sidebar-brand', href: firstPageId ? `#page-${firstPageId}` : '#main-content' },
       agenticWorkflowMark(),
-      h('span', null, orgName)
+      h('span', null, title)
     ),
     h(
       'nav',
@@ -603,6 +604,11 @@ export function enableDashboardPageNavigation(root) {
       routeView.dispatchEvent(new CustomEvent('dashboard-route-change', {
         detail: { parameter: routeParameter, value: routeValue }
       }));
+    }
+    const sectionId = parameters.get('section')?.trim();
+    const section = sectionId ? root.ownerDocument.getElementById(sectionId) : null;
+    if (section && page?.contains(section)) {
+      section.scrollIntoView?.();
     }
   };
 
