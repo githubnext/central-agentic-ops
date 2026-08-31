@@ -5,15 +5,6 @@ name: Multi-Device Docs Tester
 description: Tests documentation responsiveness and rendering across device sizes, browser engines, and color schemes
 on:
   schedule: daily
-  pull_request:
-    types: [opened, synchronize, reopened, ready_for_review]
-    paths:
-      - "docs/**"
-      - "public/**"
-      - "astro.config.mjs"
-      - "package.json"
-      - "package-lock.json"
-      - ".github/workflows/multi-device-docs-tester.md"
   workflow_dispatch:
     inputs:
       devices:
@@ -55,8 +46,6 @@ safe-outputs:
       - "/tmp/gh-aw/agent/multi-device-docs/screenshots/**"
     defaults:
       if-no-files: ignore
-  create-check-run:
-    name: "Multi-Device Docs Test Result"
   create-issue:
     title-prefix: "[multi-device-docs] "
     close-older-issues: true
@@ -162,7 +151,7 @@ You are a documentation testing specialist. Your task is to comprehensively test
 - Color schemes to test: light and dark
 - Working directory: ${{ github.workspace }}
 
-For pull requests, call `create_check_run` as your last action: use `success` when every matrix entry passes, `failure` for reproducible documentation defects, and `action_required` when any required entry is blocked or incomplete. For scheduled and manual runs, call `noop` if all tests pass or testing is blocked, and `create_issue` if documentation problems are found. If screenshots were captured, call `upload_artifact` before the final result output.
+For scheduled and manual runs, call `noop` if all tests pass or testing is blocked, and `create_issue` if documentation problems are found. If screenshots were captured, call `upload_artifact` before the final result output.
 
 Playwright is available through `playwright-cli`. Use `${{ github.workspace }}/.playwright/cli.config.json` for Chrome and `${{ github.workspace }}/.playwright/webkit.config.json` for WebKit. Inspect `.playwright/preflight-chrome.log`, `.playwright/preflight-webkit.log`, and `.playwright/webkit-install.log` before testing. Report installation or browser startup errors as infrastructure blockers rather than documentation regressions.
 
@@ -228,10 +217,6 @@ Organize findings as critical, warning, or passed. Report only reproducible docu
 
 ## Step 5: Report Results
 
-### Pull Request Runs
-
-Call `create_check_run` with a concise matrix table grouped by browser and color scheme. Include screenshots in an artifact first. Use `failure` for confirmed defects, `success` only when all required combinations pass, and `action_required` for incomplete coverage or infrastructure blockers.
-
 ### Scheduled or Manual Runs With NO Issues Found
 
 Call `noop` to log completion:
@@ -292,7 +277,7 @@ No manual server cleanup is required. The server process will be cleaned up auto
 
 ## Summary
 
-Always finish with exactly one result safe output: `create_check_run` for pull requests, or one `create_issue`/`noop` for scheduled and manual runs. An `upload_artifact` request containing captured screenshots may precede that final result output.
+Always finish with exactly one result safe output: one `create_issue` or `noop`. An `upload_artifact` request containing captured screenshots may precede that final result output.
 
 ### Output Format
 
