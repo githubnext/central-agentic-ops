@@ -118,6 +118,13 @@
 
 ## Run log
 
+### 2026-08-31 (parity verification sweep)
+- Re-read `pages/dashboard/PLAN.md`, `pages/dashboard/dashboard.json`, and the report reference in `dashboard/report/report.mjs` to select the next Parity increment conservatively.
+- Audited the remaining parity checklist against the current renderer and confirmed this run should be verification-only rather than introducing new semantics without a tighter specification-backed data contract.
+- Re-ran the full `pages/dashboard/` quality gate stack on the current implementation: `npm install`, `npm run build`, `npm test`, `npm run lint`, `npm run typecheck`, and `npx playwright test --config=playwright.config.mjs` all pass.
+- Recorded the current green verification state without changing runtime behavior, keeping the next implementation target focused on the remaining configured-mode tab and dense catalog parity slices.
+- Next milestone: Parity, continuing the remaining checklist items for configured-mode view tabs, dense findings/outcomes presentation, specialized run/dispatch catalog chrome, and outstanding producer-derived semantics.
+
 ### 2026-08-30 (run list linking, bounded height, and column sorting)
 - Extended the reusable `renderTableRegion` component in `src/components/table-region.js` instead of adding a run-specific table: populated tables now render inside a focusable `.table-scroll` region and expose click-to-sort column headers with `aria-sort` state.
 - Added value-aware sort comparison (numeric, then temporal, then locale text) with empty cells ordered last, and re-applied search, facet, and progressive-disclosure state after each sort so pagination stays consistent.
