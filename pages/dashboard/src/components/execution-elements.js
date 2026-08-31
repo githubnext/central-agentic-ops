@@ -271,9 +271,9 @@ function renderEpisode(episode) {
       'dl',
       { className: 'episode-measures' },
       vital('Episode duration', formatDuration(episode.duration)),
-      vital('Observed targets', 0),
-      vital('Attributed workers', 0),
-      vital('Output yield', '0 / 0'),
+      vital('Observed targets', '—'),
+      vital('Attributed workers', '—'),
+      vital('Output yield', '—'),
       vital('Measured AIC', '—')
     ),
     h(
@@ -283,7 +283,7 @@ function renderEpisode(episode) {
       h('span', null, 'Exact worker correlation evidence was not retained for this episode.')
     ),
     h('div', { className: 'episode-execution' }, h('strong', null, 'Correlated worker attempts'), h('ul', null, h('li', { className: 'episode-empty' }, 'No worker run is explicitly attributable from retained evidence.'))),
-    h('footer', null, h('span', null, 'Evidence · Root only'), h('span', null, '0 no-action attempts'))
+    h('footer', null, h('span', null, 'Evidence · Root only'), h('span', null, 'No-action attempts unavailable'))
   );
 }
 

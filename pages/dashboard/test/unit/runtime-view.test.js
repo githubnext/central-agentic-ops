@@ -69,6 +69,10 @@ describe('Runtime dashboard view', () => {
     expect(repeatedCoverage?.querySelector('p')?.textContent).toBe('requires exact episode attribution');
     expect(rendered.querySelectorAll('.episode-record')).toHaveLength(1);
     expect(rendered.querySelector('.episode-record')?.textContent).toContain('Dependabot review');
+    const unavailableMeasures = [...rendered.querySelectorAll('.episode-measures > div')]
+      .filter((node) => ['Observed targets', 'Attributed workers', 'Output yield'].includes(node.querySelector('dt')?.textContent ?? ''));
+    expect(unavailableMeasures.map((node) => node.querySelector('dd')?.textContent)).toEqual(['—', '—', '—']);
+    expect(rendered.querySelector('.episode-record footer')?.textContent).toContain('No-action attempts unavailable');
     expect(rendered.querySelector('.episode-attribution-gap')?.textContent).toContain('1 worker dispatch lacks episode evidence');
   });
 });
