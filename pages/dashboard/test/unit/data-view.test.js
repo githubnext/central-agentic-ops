@@ -44,4 +44,50 @@ describe('data view renderer', () => {
   it('returns null for an unsupported JSON mark', () => {
     expect(renderDataView('unsupported', /** @type {any} */ ({}))).toBeNull();
   });
+
+  it('renders workflow run IDs as links whenever a safe run link is available', () => {
+    const context = {
+      pageId: 'values',
+      title: 'Grader ledger',
+      view: {
+        mark: 'table',
+        controls: 'static',
+        encoding: { columns: [{ field: 'grader' }, { field: 'run' }] }
+      },
+      sourceName: 'grader-observations',
+      rows: [{
+        grader: 'daily-value',
+        run: '42',
+        'run-link': {
+          href: 'https://github.com/githubnext/central-agentic-ops/actions/runs/42',
+          label: 'Run 42'
+        }
+      }],
+      metadata,
+      contextDetails: [],
+      headingTag: /** @type {'h3'} */ ('h3'),
+      prepareTableRows: (/** @type {Array<Record<string, unknown>>} */ rows) => rows,
+      buildChartPoints: () => [],
+      prepareChartPoints: () => [],
+      toText: String
+    };
+    const rendered = renderDataView('table', context);
+
+    const runLink = rendered?.querySelector('tbody td:nth-child(2) a');
+    expect(runLink?.textContent).toBe('42');
+    expect(runLink?.getAttribute('href')).toBe('https://github.com/githubnext/central-agentic-ops/actions/runs/42');
+
+    const linkedFirstColumn = renderDataView('table', {
+      ...context,
+      view: {
+        ...context.view,
+        encoding: {
+          href: { field: 'run-link' },
+          columns: [{ field: 'run' }, { field: 'grader' }]
+        }
+      }
+    });
+    expect(linkedFirstColumn?.querySelectorAll('tbody td:first-child a')).toHaveLength(1);
+    expect(linkedFirstColumn?.querySelector('tbody td:first-child a')?.textContent).toBe('42');
+  });
 });

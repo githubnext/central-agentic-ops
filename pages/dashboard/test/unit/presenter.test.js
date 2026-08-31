@@ -1971,7 +1971,7 @@ describe('presenter built-in and custom pages', () => {
     expect(rendered.querySelector('[data-chart-legend="visual"]')?.getAttribute('class')).toContain('chart-legend-bar');
     expect([...rendered.querySelectorAll('[data-chart-legend="visual"] li span')].map((item) => item.textContent)).toEqual(['failure', 'success']);
     expect(rendered.querySelectorAll('.custom-table a')).toHaveLength(1);
-    expect(rendered.querySelector('.custom-table a')?.textContent).toContain('Run 2');
+    expect(rendered.querySelector('.custom-table a')?.textContent).toBe('2');
   });
 
   it('DLS-SAFE-004 rejects runtime links with embedded credentials, ftp schemes, and blank labels while preserving safe links', () => {
@@ -2033,7 +2033,7 @@ describe('presenter built-in and custom pages', () => {
 
     const safeLinks = rendered.querySelectorAll('.custom-table a, .metric-link a');
     expect(safeLinks).toHaveLength(2);
-    expect([...safeLinks].every((link) => link.textContent === 'Run 4')).toBe(true);
+    expect([...safeLinks].map((link) => link.textContent)).toEqual(['4', 'Run 4']);
     expect([...safeLinks].every((link) => !String(link.getAttribute('href')).includes('user:secret@'))).toBe(true);
     expect([...safeLinks].every((link) => String(link.getAttribute('href')).startsWith('https://example.com/runs/4'))).toBe(true);
     expect(rendered.textContent).not.toContain('Credentialed Run');

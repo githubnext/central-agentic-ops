@@ -96,6 +96,8 @@ test("dashboard source bridge retains unavailable grader records separately from
         {
           workflowId: "missing-value",
           workflowPath: ".github/workflows/missing-value.lock.yml",
+          repository: "githubnext/central-agentic-ops",
+          runId: 43,
           status: "unavailable",
         },
       ],
@@ -128,8 +130,8 @@ test("dashboard source bridge retains unavailable grader records separately from
         status: "unavailable",
         maturity: "unavailable",
         baseline: undefined,
-        run: "Unavailable",
-        runHref: undefined,
+        run: "43",
+        runHref: "https://github.com/githubnext/central-agentic-ops/actions/runs/43",
       },
     ],
   );
