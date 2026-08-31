@@ -16,7 +16,6 @@ import { renderWorkflowTopology } from './workflow-topology.js';
 import { renderExecutionEpisodes } from './execution-elements.js';
 import { renderSectionHeading } from './ui-primitives.js';
 import { renderDefinitionList } from './view-chrome.js';
-import { renderRepositoryScope } from './repositories-view.js';
 import { renderWorkflowRuntime } from './workflow-runtime.js';
 
 /**
@@ -41,13 +40,13 @@ const ELEMENT_RENDERERS = new Map([
   ['domain-attention', renderDomainAttentionElement],
   ['record-cards', renderRecordCardsElement],
   ['summary-grid', renderSummaryGridElement],
+  ['context-summary', renderContextSummaryElement],
   ['signal-list', renderSignalListElement],
   ['coverage-diagnostics', renderCoverageDiagnosticsElement],
   ['package-activity', ({ sources, pageId }) => renderPackagesView(sources, pageId)],
   ['package-run-trend', ({ sources, pageId }) => renderPackageRunTrend(sources, pageId)],
   ['package-detail', renderPackageDetailElement],
   ['package-reports', renderPackageReports],
-  ['repository-scope', renderRepositoryScope],
   ['repository-workflows', renderRepositoryWorkflows],
   ['workflow-detail', renderWorkflowDetail],
   ['workflow-runtime', renderWorkflowRuntime],
@@ -61,7 +60,7 @@ const ELEMENT_RENDERERS = new Map([
   }]
 ]);
 
-const EMPTY_AWARE_ELEMENTS = new Set(['status-summary', 'meter-list', 'attention-list', 'record-cards', 'summary-grid', 'signal-list', 'coverage-diagnostics', 'package-detail', 'package-reports', 'repository-scope', 'repository-workflows', 'workflow-detail', 'workflow-runtime', 'outcome-detail', 'execution-episodes']);
+const EMPTY_AWARE_ELEMENTS = new Set(['status-summary', 'meter-list', 'attention-list', 'record-cards', 'summary-grid', 'context-summary', 'signal-list', 'coverage-diagnostics', 'package-detail', 'package-reports', 'repository-workflows', 'workflow-detail', 'workflow-runtime', 'outcome-detail', 'execution-episodes']);
 
 /**
  * @param {string} name
@@ -277,6 +276,47 @@ function renderSummaryGridElement(context) {
     value: stringValue(row.value)
   }));
   return renderDefinitionList('summary-grid', rows);
+}
+
+/**
+ * @param {ElementRenderContext} context
+ */
+function renderContextSummaryElement(context) {
+  const rows = context.sourceNames
+    .flatMap((sourceName) => rowsFor(context, sourceName))
+    .filter(isContextSummaryRow);
+  return h(
+    'dl',
+    { className: 'context-summary', 'aria-label': context.title },
+    ...rows.map((row) => h(
+      'div',
+      null,
+      h('dt', null, stringValue(row.label)),
+      h('dd', null, ...renderContextSummaryValue(row))
+    ))
+  );
+}
+
+/** @param {Record<string, unknown>} row */
+function isContextSummaryRow(row) {
+  return typeof row.label === 'string'
+    && (['string', 'number', 'boolean'].includes(typeof row.value) || Array.isArray(row.items));
+}
+
+/**
+ * @param {Record<string, unknown>} row
+ * @returns {Array<string | HTMLElement | null>}
+ */
+function renderContextSummaryValue(row) {
+  if (!Array.isArray(row.items)) return [stringValue(row.value)];
+  return row.items.filter(isPlainObject).flatMap((item, index) => {
+    const label = stringValue(item.label);
+    const href = safeNavigationHref(item['navigation-href']);
+    return [
+      index > 0 ? ', ' : null,
+      href ? h('a', { href }, label) : label
+    ];
+  });
 }
 
 /**
@@ -538,4 +578,12 @@ function titleCase(value) {
   return value
     .replaceAll('-', ' ')
     .replace(/\b\w/g, (letter) => letter.toUpperCase());
+}
+
+/**
+ * @param {unknown} value
+ * @returns {value is Record<string, unknown>}
+ */
+function isPlainObject(value) {
+  return typeof value === 'object' && value !== null && !Array.isArray(value);
 }

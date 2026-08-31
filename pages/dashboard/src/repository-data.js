@@ -29,6 +29,11 @@ export function deriveRepositorySources(sources) {
 
   return {
     ...sources,
+    'repository-summary': {
+      source: 'repository-summary',
+      rows: buildRepositorySummaryRows(sources),
+      metadata: combinedMetadata(sources, ['repositories', 'runs', 'usage'])
+    },
     'repository-activity': {
       source: 'repository-activity',
       rows: summaries.map((summary) => ({
@@ -46,9 +51,41 @@ export function deriveRepositorySources(sources) {
         status: repositoryStatus(summary),
         ...(summary.repositoryLink ? { 'repository-link': summary.repositoryLink } : {})
       })),
-      metadata: combinedMetadata(sources)
+      metadata: combinedMetadata(sources, ['repositories', 'workflows', 'runs', 'outcomes', 'usage', 'operational-values'])
     }
   };
+}
+
+/**
+ * @param {Record<string, import('./presenter.js').LogicalSourceInput>} sources
+ * @returns {Array<Record<string, unknown>>}
+ */
+function buildRepositorySummaryRows(sources) {
+  const repositories = [...new Set((sources.repositories?.rows ?? [])
+    .map(qualifiedRepository)
+    .filter(Boolean))]
+    .sort((left, right) => left.localeCompare(right));
+  const runs = sources.runs;
+  const usage = sources.usage;
+  const windowHours = coverageHours(runs?.metadata);
+  const runWindow = runs?.metadata?.availability === 'unavailable'
+    ? 'Actions run data unavailable'
+    : `${titleCase(runs?.metadata?.completeness ?? 'unknown')}${windowHours ? ` ${windowHours}-hour` : ''} Actions run window`;
+  const usageCoverage = usage?.metadata?.availability === 'unavailable'
+    ? 'Usage data unavailable'
+    : `${formatCount(usage?.rows.length ?? 0)} artifacts · ${usage?.metadata?.completeness ?? 'unknown'}`;
+
+  return [
+    {
+      label: `Repository scope · ${formatCount(repositories.length)} configured`,
+      items: repositories.map((repository) => ({
+        label: repository,
+        'navigation-href': `#page-repository-detail?repository=${encodeURIComponent(repository)}`
+      }))
+    },
+    { label: 'Run window', value: runWindow },
+    { label: 'AIC coverage', value: usageCoverage }
+  ];
 }
 
 /**
@@ -162,12 +199,28 @@ function formatPercent(value) {
   return new Intl.NumberFormat('en', { style: 'percent', maximumFractionDigits: 1 }).format(value);
 }
 
+/** @param {import('./presenter.js').SourceMetadata | undefined} metadata */
+function coverageHours(metadata) {
+  const start = Date.parse(metadata?.['coverage-start'] ?? '');
+  const end = Date.parse(metadata?.['coverage-end'] ?? '');
+  if (!Number.isFinite(start) || !Number.isFinite(end) || end <= start) return null;
+  const hours = (end - start) / 3_600_000;
+  return Number.isInteger(hours) ? hours : null;
+}
+
+/** @param {unknown} value */
+function titleCase(value) {
+  const text = String(value);
+  return text.length > 0 ? text[0].toUpperCase() + text.slice(1) : text;
+}
+
 /**
  * @param {Record<string, import('./presenter.js').LogicalSourceInput>} sources
+ * @param {string[]} sourceNames
  * @returns {import('./presenter.js').SourceMetadata}
  */
-function combinedMetadata(sources) {
-  const metadata = ['repositories', 'workflows', 'runs', 'outcomes', 'usage', 'operational-values']
+function combinedMetadata(sources, sourceNames) {
+  const metadata = sourceNames
     .map((name) => sources[name]?.metadata)
     .filter((value) => value !== undefined);
   /** @param {'as-of'|'retrieved-at'} field */

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { readFileSync } from 'node:fs';
-import { renderRepositoryScope } from '../../src/components/repositories-view.js';
+import { renderUiElement } from '../../src/components/ui-elements.js';
 import { deriveRepositorySources, summarizeRepositories } from '../../src/repository-data.js';
 
 const dashboard = JSON.parse(readFileSync(`${process.cwd()}/dashboard.json`, 'utf8'));
@@ -59,13 +59,14 @@ function sources() {
   };
 }
 
-function context() {
+function context(sourceInputs = sources()) {
+  const derivedSources = deriveRepositorySources(sourceInputs);
   return {
     pageId: 'repositories',
     title: 'Repositories',
     description: 'Repository health.',
-    sourceNames: ['repositories', 'workflows', 'runs', 'outcomes', 'usage', 'operational-values'],
-    sources: sources(),
+    sourceNames: ['repository-summary'],
+    sources: derivedSources,
     contextDetails: [],
     headingTag: /** @type {'h3'} */ ('h3')
   };
@@ -112,11 +113,14 @@ describe('repositories view', () => {
     ]);
   });
 
-  it('renders the configured scope and declares AI Credit usage as a generic chart', () => {
+  it('derives the configured scope and renders it through the reusable context summary', () => {
     const viewContext = context();
-    const scope = renderRepositoryScope(viewContext);
+    const scope = /** @type {HTMLElement} */ (renderUiElement('context-summary', viewContext));
     const repositoriesPage = dashboard.dashboard.pages.find(
       (/** @type {{ id: string }} */ page) => page.id === 'repositories'
+    );
+    const summary = repositoriesPage.definition.views.find(
+      (/** @type {{ id: string }} */ view) => view.id === 'repository-scope'
     );
     const usage = repositoriesPage.definition.views.find(
       (/** @type {{ id: string }} */ view) => view.id === 'repositories-by-aic'
@@ -128,6 +132,18 @@ describe('repositories view', () => {
     expect(scope.textContent).toContain('Repository scope · 3 configured');
     expect(scope.textContent).toContain('Complete 24-hour Actions run window');
     expect(scope.textContent).toContain('3 artifacts · partial');
+    expect([...scope.querySelectorAll('a')].map((link) => link.getAttribute('href'))).toEqual([
+      '#page-repository-detail?repository=octo%2Factive',
+      '#page-repository-detail?repository=octo%2Ffailing',
+      '#page-repository-detail?repository=octo%2Fquiet'
+    ]);
+    expect(summary).toMatchObject({
+      data: {
+        sources: ['repository-summary', 'repositories', 'runs', 'usage', 'operational-values']
+      },
+      mark: 'element',
+      element: 'context-summary'
+    });
     expect(usage).toMatchObject({
       data: { source: 'usage' },
       mark: 'chart',
@@ -159,11 +175,14 @@ describe('repositories view', () => {
   });
 
   it('keeps unavailable run and usage evidence explicit', () => {
-    const viewContext = context();
-    viewContext.sources.runs.metadata = { ...metadata, availability: 'unavailable', completeness: 'unknown' };
-    viewContext.sources.usage.metadata = { ...metadata, availability: 'unavailable', completeness: 'unknown' };
-    expect(renderRepositoryScope(viewContext).textContent).toContain('Actions run data unavailable');
-    expect(deriveRepositorySources(viewContext.sources)['repository-activity'].rows[0]).toMatchObject({
+    const sourceInputs = sources();
+    sourceInputs.runs.metadata = { ...metadata, availability: 'unavailable', completeness: 'unknown' };
+    sourceInputs.usage.metadata = { ...metadata, availability: 'unavailable', completeness: 'unknown' };
+    const derived = deriveRepositorySources(sourceInputs);
+    const scope = /** @type {HTMLElement} */ (renderUiElement('context-summary', context(sourceInputs)));
+    expect(scope.textContent).toContain('Actions run data unavailable');
+    expect(scope.textContent).toContain('Usage data unavailable');
+    expect(derived['repository-activity'].rows[0]).toMatchObject({
       runs: null,
       'failure-summary': 'Unavailable'
     });
