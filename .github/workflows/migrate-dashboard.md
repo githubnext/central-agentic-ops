@@ -72,6 +72,8 @@ pre-agent-steps:
 
       npm ci --prefix pages/dashboard --ignore-scripts
       npm --prefix pages/dashboard run build
+      test -f "$EVIDENCE/legacy-site/index.html"
+      test -f public/ymao/index.html
 
   - name: Start dashboard servers outside the agent
     run: |
