@@ -17,6 +17,8 @@ const ENTITY_LINK_FIELDS = {
   repository: 'repository-link',
   workflow: 'workflow-link'
 };
+const RUN_FIELD = 'run';
+const RUN_LINK_FIELD = 'run-link';
 
 /**
  * @typedef {{ field: string, aggregate?: string, as?: string, direction?: string, display?: string } & Record<string, unknown>} TableField
@@ -115,11 +117,11 @@ function renderTableView(context) {
     { 'data-custom-row-key': `${pageId}-${title}-${rowIndex}` },
     ...columns.map((column, columnIndex) => {
       const outputField = typeof column.as === 'string' ? column.as : column.field;
-      const value = column.field === 'run' && !column.aggregate
+      const value = column.field === RUN_FIELD && !column.aggregate
         ? renderWorkflowRunLink(row, toText(row[outputField]))
         : renderCellValue(column, row[outputField], row);
       if (columnIndex === 0 && hrefField) {
-        if (column.field === 'run' && hrefField === 'run-link') {
+        if (column.field === RUN_FIELD && hrefField === RUN_LINK_FIELD) {
           return h('td', null, value);
         }
         return h('td', null, renderLinkedValueWithExternalLink(value, findLink(row, hrefField)));
