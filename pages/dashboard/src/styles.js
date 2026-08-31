@@ -361,8 +361,8 @@ h3 { margin: 16px 0 8px; font-size: 1rem; font-weight: 600; }
 .attention-success .attention-icon { color: var(--success); }
 .attention-item strong { font-size: .875rem; }
 .attention-item p { margin: 2px 0 0; color: var(--muted); font-size: .8125rem; }
-.security-page .layout-section { padding: 0; border: 0; background: transparent; }
-.security-page .layout-section-header h3 { font-size: 1.25rem; }
+:is(.security-page, .value-page) .layout-section { padding: 0; border: 0; background: transparent; }
+:is(.security-page, .value-page) .layout-section-header h3 { font-size: 1.25rem; }
 .summary-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 1px; margin: 0; overflow: hidden; border: 1px solid var(--border); border-radius: 6px 6px 0 0; background: var(--border); }
 .summary-grid > div { min-width: 0; padding: 13px 15px; background: var(--canvas-subtle); }
 .summary-grid dt { color: var(--muted); font-size: .6875rem; font-weight: 600; text-transform: uppercase; }
