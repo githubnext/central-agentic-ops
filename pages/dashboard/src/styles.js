@@ -274,6 +274,17 @@ h3 { margin: 16px 0 8px; font-size: 1rem; font-weight: 600; }
 .signal-clear { min-height: 68px; display: grid; grid-template-columns: 20px minmax(0, 1fr); align-items: center; gap: 10px; padding: 9px 14px; }
 .signal-clear .signal-icon { color: var(--success); }
 .workflow-attention-note { margin: 7px 0 0; color: var(--muted); font-size: .6875rem; }
+.domain-summary { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); margin: 0; overflow: hidden; border: 1px solid var(--border); border-radius: 6px 6px 0 0; background: var(--border); gap: 1px; }
+.domain-summary > div { min-width: 0; padding: 13px 15px; background: var(--canvas-subtle); }
+.domain-summary dt { color: var(--muted); font-size: .6875rem; font-weight: 600; text-transform: uppercase; }
+.domain-summary dd { margin: 2px 0 0; font-size: 1.25rem; font-weight: 600; font-variant-numeric: tabular-nums; }
+.domain-boundary-note { margin: 0; padding: 8px 15px; border: 1px solid var(--border); border-top: 0; color: var(--muted); font-size: .6875rem; }
+.domain-attention .workflow-attention-list { border-top: 0; }
+.readiness-note { display: grid; grid-template-columns: minmax(240px, .55fr) minmax(0, 1fr); align-items: center; gap: 24px; padding: 12px 16px; border-left: 4px solid var(--attention); background: color-mix(in srgb, var(--attention) 5%, var(--canvas)); }
+.readiness-note > div { display: flex; align-items: center; gap: 12px; }
+.readiness-note > div > .octicon { width: 28px; height: 28px; flex: none; color: var(--attention); }
+.readiness-note :is(h3, h4) { margin: 1px 0 0; font-size: 1rem; }
+.readiness-note p { margin: 0; color: var(--muted); font-size: .8125rem; }
 .episode-observatory { margin-bottom: 32px; }
 .episode-vitals { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); margin: 0; border: 1px solid var(--border); border-radius: 6px 6px 0 0; background: var(--canvas-subtle); }
 .episode-vitals > div { min-width: 0; padding: 14px 16px; border-right: 1px solid var(--border); }
@@ -625,6 +636,8 @@ footer { padding: 20px 24px; border-top: 1px solid var(--border); color: var(--m
   .package-utilization-grid { grid-template-columns: 1fr; }
   .package-trend-panel > header { align-items: flex-start; flex-direction: column; }
   .workflow-attention > .section-heading, .episode-observatory > .section-heading, .anomaly-readiness { align-items: flex-start; flex-direction: column; }
+  .domain-summary { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .readiness-note { grid-template-columns: 1fr; gap: 10px; }
   .anomaly-readiness { gap: 4px; }
   .anomaly-readiness p { text-align: left; }
   .workflow-attention-list a, .workflow-attention-static { grid-template-columns: 20px minmax(0, 1fr); }

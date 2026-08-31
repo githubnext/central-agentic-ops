@@ -736,6 +736,78 @@
               }
             },
             {
+              "id": "cost",
+              "kind": "custom",
+              "title": "Cost & efficiency",
+              "icon": "meter",
+              "class-name": "cost-page",
+              "description": "Measured AI Credit allocation and efficiency evidence for the configured githubnext/central-agentic-ops repository.",
+              "views": [
+                {
+                  "id": "cost-measured-usage",
+                  "title": "Measured usage",
+                  "description": "Observed AI Credit allocation and episode efficiency without inferred budgets or anomalies.",
+                  "data": {
+                    "sources": [
+                      "cost-summary",
+                      "cost-signals"
+                    ]
+                  },
+                  "mark": "element",
+                  "element": "metric-signal-summary",
+                  "layout": "full"
+                },
+                {
+                  "id": "cost-by-repository",
+                  "title": "AI Credit usage by AW repository",
+                  "description": "Read-only usage reported by AW runs, deduplicated by workflow run.",
+                  "data": {
+                    "source": "usage",
+                    "order-by": [
+                      {
+                        "field": "total-aic",
+                        "direction": "desc"
+                      }
+                    ]
+                  },
+                  "mark": "chart",
+                  "chart": "pie",
+                  "layout": "full",
+                  "encoding": {
+                    "x": {
+                      "field": "repository",
+                      "type": "nominal",
+                      "title": "Repository"
+                    },
+                    "y": {
+                      "field": "aic",
+                      "type": "quantitative",
+                      "aggregate": "sum",
+                      "as": "total-aic",
+                      "title": "Total AIC",
+                      "unit": "aic"
+                    },
+                    "href": {
+                      "field": "repository-link",
+                      "type": "nominal"
+                    }
+                  }
+                },
+                {
+                  "id": "cost-evaluation-boundary",
+                  "title": "Evaluation boundary",
+                  "data": {
+                    "sources": [
+                      "cost-readiness"
+                    ]
+                  },
+                  "mark": "element",
+                  "element": "readiness-note",
+                  "layout": "full"
+                }
+              ]
+            },
+            {
               "id": "runs-outcomes-source",
               "data": {
                 "source": "outcomes"
@@ -1382,6 +1454,7 @@
         "label": "Investigate",
         "pages": [
           "runtime",
+          "cost",
           "runs",
           "security",
           "dispatches",

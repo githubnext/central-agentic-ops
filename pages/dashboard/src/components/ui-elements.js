@@ -41,6 +41,8 @@ const ELEMENT_RENDERERS = new Map([
   ['repository-workflows', renderRepositoryWorkflows],
   ['execution-signal-list', renderExecutionSignalList],
   ['execution-episodes', renderExecutionEpisodes],
+  ['metric-signal-summary', renderMetricSignalSummaryElement],
+  ['readiness-note', renderReadinessNoteElement],
   ['workflow-topology', ({ pageId, title, sourceNames, sources, contextDetails, headingTag }) => {
     const sourceName = sourceNames[0];
     const source = sources[sourceName];
@@ -49,7 +51,7 @@ const ELEMENT_RENDERERS = new Map([
   }]
 ]);
 
-const EMPTY_AWARE_ELEMENTS = new Set(['status-summary', 'meter-list', 'attention-list', 'record-cards', 'summary-grid', 'signal-list', 'dispatch-catalog', 'repository-workflows', 'execution-signal-list', 'execution-episodes']);
+const EMPTY_AWARE_ELEMENTS = new Set(['status-summary', 'meter-list', 'attention-list', 'record-cards', 'summary-grid', 'signal-list', 'dispatch-catalog', 'repository-workflows', 'execution-signal-list', 'execution-episodes', 'metric-signal-summary', 'readiness-note']);
 
 /**
  * @param {string} name
@@ -249,6 +251,87 @@ function renderSignalListElement(context) {
           h('span', { className: 'signal-copy' }, h('strong', null, 'No signals require attention'))
         )])
     )
+  );
+}
+
+/**
+ * @param {ElementRenderContext} context
+ */
+function renderMetricSignalSummaryElement(context) {
+  const metrics = rowsFor(context, context.sourceNames[0]);
+  const signals = rowsFor(context, context.sourceNames[1]);
+  const headingId = `${context.pageId}-${slugify(context.title)}-heading`;
+  const firstMetric = metrics[0] ?? {};
+  const collectionLabel = stringValue(firstMetric['collection-label']) || 'signals';
+  return h(
+    'section',
+    { className: 'domain-attention workflow-attention', 'aria-labelledby': headingId },
+    h(
+      'div',
+      { className: 'section-heading' },
+      h(
+        'div',
+        null,
+        h('span', { className: 'scope-kicker' }, stringValue(firstMetric.kicker)),
+        h(context.headingTag, { id: headingId }, context.title),
+        context.description ? h('p', null, context.description) : null
+      ),
+      h('strong', null, `${formatNumber(signals.length)} ${collectionLabel}`)
+    ),
+    h(
+      'dl',
+      { className: 'domain-summary' },
+      ...metrics.map((row) => h(
+        'div',
+        null,
+        h('dt', null, stringValue(row.label)),
+        h('dd', null, stringValue(row.value))
+      ))
+    ),
+    stringValue(firstMetric.note)
+      ? h('p', { className: 'domain-boundary-note' }, stringValue(firstMetric.note))
+      : null,
+    h(
+      'ol',
+      { className: 'workflow-attention-list' },
+      ...(signals.length > 0
+        ? signals.map((row, index) => renderSignal(row, index))
+        : [h(
+          'li',
+          { className: 'signal-clear' },
+          h('span', { className: 'signal-icon' }, octicon('check-circle')),
+          h('span', { className: 'signal-copy' }, h('strong', null, 'No evidence boundaries observed'))
+        )])
+    )
+  );
+}
+
+/**
+ * @param {ElementRenderContext} context
+ */
+function renderReadinessNoteElement(context) {
+  const row = firstRow(context, context.sourceNames[0]);
+  if (!row) return null;
+  const headingId = `${context.pageId}-${slugify(context.title)}-heading`;
+  return h(
+    'section',
+    {
+      className: `readiness-note readiness-${stringValue(row.tone) || 'attention'}`,
+      'aria-labelledby': headingId,
+      role: 'note'
+    },
+    h(
+      'div',
+      null,
+      octicon(stringValue(row.icon) || 'issue'),
+      h(
+        'div',
+        null,
+        h('span', { className: 'scope-kicker' }, stringValue(row.kicker)),
+        h(context.headingTag, { id: headingId }, stringValue(row.title) || context.title)
+      )
+    ),
+    h('p', null, stringValue(row.detail))
   );
 }
 

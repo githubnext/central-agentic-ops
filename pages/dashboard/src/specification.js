@@ -31,7 +31,9 @@ export const VIEW_ELEMENT_VALUES = [
   'repository-workflows',
   'execution-signal-list',
   'execution-episodes',
-  'workflow-topology'
+  'workflow-topology',
+  'metric-signal-summary',
+  'readiness-note'
 ];
 export const VIEW_CHART_VALUES = ['bar', 'line', 'pie'];
 export const VIEW_LAYOUT_VALUES = ['full', 'half', 'third'];
@@ -110,7 +112,7 @@ export const FILTER_DIMENSION_VALUES = [
 ];
 
 export const PAGE_KIND_VALUES = ['built-in', 'custom'];
-export const PAGE_ICON_VALUES = ['server', 'workflow', 'play', 'repo', 'package', 'issue', 'graph', 'shield'];
+export const PAGE_ICON_VALUES = ['server', 'workflow', 'play', 'repo', 'package', 'issue', 'graph', 'shield', 'meter'];
 
 export const BUILT_IN_PAGE_VALUES = [
   'overview',
@@ -244,7 +246,10 @@ export const SOURCE_VALUES = [
   'overview-managed-packages',
   'overview-package-utilization',
   'security-summary',
-  'security-signals'
+  'security-signals',
+  'cost-summary',
+  'cost-signals',
+  'cost-readiness'
 ];
 
 export const SOURCE_FIELDS = {
@@ -263,7 +268,10 @@ export const SOURCE_FIELDS = {
   findings: ['organization', 'repository', 'workflow', 'run', 'finding', 'finding-kind', 'finding-severity', 'finding-status', 'finding-summary', 'observed-at', 'issue-link', 'pull-request-link', 'run-link', 'external-link', 'organization-link', 'repository-link', 'workflow-link'],
   'operational-values': ['organization', 'repository', 'workflow', 'run', 'experiment', 'operational-case', 'evaluator-digest', 'rollout-mode', 'operational-value', 'operational-value-definition', 'requested-evidence-at', 'evidence-cutoff', 'maturity-at', 'maturity-status', 'delta-from-baseline', 'observed-at', 'evidence-link', 'organization-link', 'repository-link', 'workflow-link', 'run-link'],
   'security-summary': ['label', 'value'],
-  'security-signals': ['priority', 'count', 'tone', 'icon', 'kind', 'title', 'detail', 'evidence', 'action', 'navigation-page', 'run-link', 'external-link']
+  'security-signals': ['priority', 'count', 'tone', 'icon', 'kind', 'title', 'detail', 'evidence', 'action', 'navigation-page', 'run-link', 'external-link'],
+  'cost-summary': ['label', 'value', 'kicker', 'collection-label', 'note'],
+  'cost-signals': ['priority', 'count', 'tone', 'icon', 'kind', 'title', 'detail', 'evidence', 'action', 'navigation-page'],
+  'cost-readiness': ['tone', 'icon', 'kicker', 'title', 'detail']
 };
 
 export const ROLLOUT_MODE_VALUES = ['review', 'live', 'unknown'];
