@@ -7,6 +7,7 @@ import { octicon } from '../octicons.js';
 import { formatNumber } from '../view-formatters.js';
 import { renderModeBadge } from './badge.js';
 import { renderPackagesView, renderPackageRunTrend } from './packages-view.js';
+import { renderDispatchCatalog } from './dispatch-catalog.js';
 import { renderWorkflowTopology } from './workflow-topology.js';
 
 /**
@@ -29,6 +30,7 @@ const ELEMENT_RENDERERS = new Map([
   ['record-cards', renderRecordCardsElement],
   ['package-activity', ({ sources, pageId }) => renderPackagesView(sources, pageId)],
   ['package-run-trend', ({ sources, pageId }) => renderPackageRunTrend(sources, pageId)],
+  ['dispatch-catalog', renderDispatchCatalog],
   ['workflow-topology', ({ pageId, title, sourceNames, sources, contextDetails, headingTag }) => {
     const sourceName = sourceNames[0];
     const source = sources[sourceName];
@@ -37,7 +39,7 @@ const ELEMENT_RENDERERS = new Map([
   }]
 ]);
 
-const EMPTY_AWARE_ELEMENTS = new Set(['status-summary', 'meter-list', 'attention-list', 'record-cards']);
+const EMPTY_AWARE_ELEMENTS = new Set(['status-summary', 'meter-list', 'attention-list', 'record-cards', 'dispatch-catalog']);
 
 /**
  * @param {string} name

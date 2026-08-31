@@ -95,13 +95,21 @@ function buildPresenterModuleUrl() {
     .replace("'../view-formatters.js'", JSON.stringify(viewFormattersModuleUrl));
   const chartElementsModuleUrl = `data:text/javascript;charset=utf-8,${encodeURIComponent(chartElementsSource)}`;
 
+  const dispatchCatalogSource = readFileSync(new URL('../../src/components/dispatch-catalog.js', import.meta.url), 'utf8')
+    .replace("'../dom.js'", JSON.stringify(domModuleUrl))
+    .replace("'./badge.js'", JSON.stringify(badgeModuleUrl))
+    .replace("'./link-content.js'", JSON.stringify(linkContentModuleUrl))
+    .replace("'./linked-text.js'", JSON.stringify(linkedTextModuleUrl));
+  const dispatchCatalogModuleUrl = `data:text/javascript;charset=utf-8,${encodeURIComponent(dispatchCatalogSource)}`;
+
   const uiElementsSource = readFileSync(new URL('../../src/components/ui-elements.js', import.meta.url), 'utf8')
     .replace("'../dom.js'", JSON.stringify(domModuleUrl))
     .replace("'../octicons.js'", JSON.stringify(octiconsModuleUrl))
     .replace("'../view-formatters.js'", JSON.stringify(viewFormattersModuleUrl))
     .replace("'./badge.js'", JSON.stringify(badgeModuleUrl))
     .replace("'./packages-view.js'", JSON.stringify(packagesViewModuleUrl))
-    .replace("'./workflow-topology.js'", JSON.stringify(workflowTopologyModuleUrl));
+    .replace("'./workflow-topology.js'", JSON.stringify(workflowTopologyModuleUrl))
+    .replace("'./dispatch-catalog.js'", JSON.stringify(dispatchCatalogModuleUrl));
   const uiElementsModuleUrl = `data:text/javascript;charset=utf-8,${encodeURIComponent(uiElementsSource)}`;
 
   const dataViewSource = readFileSync(new URL('../../src/components/data-view.js', import.meta.url), 'utf8')
@@ -329,10 +337,9 @@ test('DLS-PAGE-002 DLS-PAGE-014 built-in overview page renders the report-style 
     </script>
   `);
 
-  await expect(page.getByRole('heading', { name: 'Built In Overview Render' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Overview', exact: true, level: 1 })).toBeVisible();
   await expect(page.locator('.nav-section-label')).toHaveCount(1);
   await expect(page.locator('.nav-section-label')).toHaveText(['Attention']);
-  await expect(page.getByRole('heading', { name: 'Overview', exact: true, level: 2 })).toBeVisible();
   await expect(page.locator('.overview-page')).toHaveAttribute('data-page-kind', 'custom');
   await expect(page.locator('.overview-page .custom-view')).toHaveCount(6);
   await expect(page.locator('.overview-page .layout-section')).toHaveCount(2);
@@ -350,9 +357,7 @@ test('DLS-PAGE-002 DLS-PAGE-014 built-in overview page renders the report-style 
   await expect(page.locator('.managed-package-card')).toContainText('30');
   await page.locator('summary').filter({ hasText: 'Operational value timeline' }).click();
   await expect(page.getByRole('heading', { name: 'Operational value timeline', level: 4 })).toBeVisible();
-  await expect(page.locator('[data-state-axis="availability"]')).toHaveText('available');
-  await expect(page.locator('[data-state-axis="completeness"]')).toHaveText('partial');
-  await expect(page.locator('[data-state-axis="freshness"]')).toHaveText('stale');
+  await expect(page.locator('.data-state-summary')).toBeHidden();
   await expect(page.locator('[data-section-id="execution-trends"] .custom-view:last-child .custom-chart-table tbody tr')).toHaveCount(2);
 
   await page.setViewportSize({ width: 600, height: 900 });
@@ -433,7 +438,7 @@ test('DLS-PAGE-014 DLS-PAGE-015 built-in packages page renders report-style mode
     </script>
   `);
 
-  await expect(page.getByRole('heading', { name: 'Packages', level: 2 })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Packages', level: 1 })).toBeVisible();
   await expect(page.getByRole('tab', { name: 'All' })).toHaveAttribute('aria-selected', 'true');
   await expect(page.locator('.package-utilization-card')).toHaveCount(2);
   await expect(page.locator('[data-package-id="aw-maintenance"]')).toContainText('9.6%');
@@ -534,14 +539,11 @@ test('DLS-PAGE-009 DLS-PAGE-014 built-in evals page renders distinguishable defi
     </script>
   `);
 
-  await expect(page.getByRole('heading', { name: 'Built In Evals Render' })).toBeVisible();
-  await expect(page.getByRole('heading', { name: 'Evals', exact: true, level: 2 })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Evals', exact: true, level: 1 })).toBeVisible();
   await page.locator('summary').filter({ hasText: 'Evals Evals Source' }).click();
   await expect(page.getByRole('heading', { name: 'Evals Evals Source' })).toBeVisible();
   await expect(page.getByRole('heading', { name: 'Evals Observations Source' })).toBeVisible();
-  await expect(page.locator('[data-state-axis="availability"]')).toHaveText('available');
-  await expect(page.locator('[data-state-axis="completeness"]')).toHaveText('partial');
-  await expect(page.locator('[data-state-axis="freshness"]')).toHaveText('stale');
+  await expect(page.locator('.data-state-summary')).toBeHidden();
   await expect(page.locator('[data-page-id="evals"] .custom-table').nth(0).locator('tbody tr')).toHaveCount(2);
   await expect(page.locator('[data-page-id="evals"] .custom-table').nth(1).locator('tbody tr')).toHaveCount(3);
   await expect(page.locator('[data-page-id="evals"]')).toContainText('release-risk');
@@ -621,11 +623,8 @@ test('DLS-SAFE-004 DLS-SAFE-007 DLS-SAFE-008 DLS-SAFE-010 built-in findings page
 
   await expect(page.getByRole('link', { name: 'Skip to main content' })).toBeVisible();
   await expect(page.getByRole('navigation', { name: 'Primary' })).toBeVisible();
-  await expect(page.getByRole('heading', { name: 'Security Dashboard' })).toBeVisible();
-  await expect(page.getByRole('heading', { name: 'Findings', exact: true, level: 2 })).toBeVisible();
-  await expect(page.locator('[data-state-axis="availability"]')).toHaveText('available');
-  await expect(page.locator('[data-state-axis="completeness"]')).toHaveText('complete');
-  await expect(page.locator('[data-state-axis="freshness"]')).toHaveText('fresh');
+  await expect(page.getByRole('heading', { name: 'Findings', exact: true, level: 1 })).toBeVisible();
+  await expect(page.locator('.data-state-summary')).toBeHidden();
   await expect(page.getByRole('columnheader', { name: 'Issue Link' })).toBeVisible();
   await expect(page.locator('[data-page-id="findings"] .custom-table tbody td').first()).toContainText('<img src=x onerror=alert(1)>');
   await expect(page.locator('[data-page-id="findings"] .custom-table tbody img')).toHaveCount(0);
@@ -873,8 +872,7 @@ test('DLS-VIEW-013 DLS-VIEW-014 DLS-VIEW-015 DLS-SAFE-006 custom views render av
     </script>
   `);
 
-  await expect(page.getByRole('heading', { name: 'Custom Dashboard' })).toBeVisible();
-  await expect(page.getByRole('heading', { name: 'Custom Views', exact: true, level: 2 })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Custom Views', exact: true, level: 1 })).toBeVisible();
   await expect(page.getByRole('heading', { name: 'Total AI Credits' })).toBeVisible();
   await expect(page.locator('[data-metric-value="aic"]')).toHaveText('5');
   const metricSection = page.locator('.page-section').filter({ has: page.getByRole('heading', { name: 'Total AI Credits' }) });
@@ -1160,7 +1158,7 @@ test('DLS-SAFE-004 runtime links with embedded credentials, ftp schemes, and bla
     </script>
   `);
 
-  await expect(page.getByRole('heading', { name: 'Credential Links', level: 2 })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Credential Links', level: 1 })).toBeVisible();
   await expect(page.locator('.custom-table a')).toHaveText('Run 4');
   await expect(page.locator('.metric-link a')).toHaveText('Run 4');
   await expect(page.locator('a[href*="user:secret@"]').first()).toHaveCount(0);

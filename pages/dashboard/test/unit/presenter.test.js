@@ -293,7 +293,7 @@ describe('presenter built-in and custom pages', () => {
       }
     });
 
-    const views = rendered.querySelectorAll('[data-page-id="runs"] > .data-state-summary + .custom-view-grid > .custom-view');
+    const views = rendered.querySelectorAll('[data-page-id="runs"] > .custom-view-grid > .custom-view');
     expect(views).toHaveLength(2);
     expect(views[0]?.getAttribute('data-disclosure')).toBe('essential');
     const supplemental = /** @type {HTMLDetailsElement} */ (views[1]);
@@ -513,9 +513,7 @@ describe('presenter built-in and custom pages', () => {
     expect(overviewPage?.textContent).toContain('Active workflows');
     expect(overviewPage?.textContent).toContain('Operational value timeline');
     expect(overviewPage?.querySelector('[data-section-id="execution-trends"] h3')?.textContent).toBe('Execution and value trends');
-    expect(rendered.querySelector('[data-state-axis="availability"]')?.textContent).toBe('available');
-    expect(rendered.querySelector('[data-state-axis="completeness"]')?.textContent).toBe('partial');
-    expect(rendered.querySelector('[data-state-axis="freshness"]')?.textContent).toBe('stale');
+    expect(/** @type {HTMLElement | null} */ (rendered.querySelector('.data-state-summary'))?.hidden).toBe(true);
     expect(overviewPage?.querySelectorAll('[data-section-id="execution-trends"] .custom-view:last-child .custom-chart-table tbody tr')).toHaveLength(2);
   });
 
@@ -641,7 +639,7 @@ describe('presenter built-in and custom pages', () => {
     expect(packagesPage?.querySelector('[data-package-id="empty-ops"]')?.textContent).toContain('No AIC usage was reported');
     expect(packagesPage?.querySelector('.package-trend-panel header')?.textContent).toContain('2as of');
     expect(packagesPage?.querySelector('.package-utilization')?.textContent).toContain('Partial usage coverage.');
-    expect(packagesPage?.querySelector('[data-state-axis="completeness"]')?.textContent).toBe('partial');
+    expect(/** @type {HTMLElement | null} */ (packagesPage?.querySelector('.data-state-summary'))?.hidden).toBe(true);
 
     const allTab = /** @type {HTMLButtonElement | null} */ (packagesPage?.querySelector('[data-package-mode="all"]') ?? null);
     const reviewTab = /** @type {HTMLButtonElement | null} */ (packagesPage?.querySelector('[data-package-mode="review"]') ?? null);
@@ -727,7 +725,9 @@ describe('presenter built-in and custom pages', () => {
   });
 
   it('DLS-PAGE-001 DLS-PAGE-002 DLS-PAGE-003 DLS-PAGE-004 DLS-PAGE-005 DLS-PAGE-006 DLS-PAGE-007 DLS-PAGE-008 DLS-PAGE-009 DLS-PAGE-010 DLS-PAGE-011 DLS-PAGE-012 DLS-PAGE-013 DLS-PAGE-014 DLS-PAGE-015 authoritative dashboard.json contains all 13 specification-defined built-in pages with declarative data-state and source coverage', () => {
-    const pages = authoritativeDashboardDocument.dashboard.pages;
+    const pages = authoritativeDashboardDocument.dashboard.pages.filter(
+      (/** @type {{ kind: string }} */ page) => page.kind === 'built-in'
+    );
     expect(Array.isArray(pages)).toBe(true);
     expect(pages).toHaveLength(13);
     expect(pages.map((/** @type {{ page: string }} */ page) => page.page)).toEqual([
@@ -980,9 +980,7 @@ describe('presenter built-in and custom pages', () => {
     const evalsPage = rendered.querySelector('[data-page-name="evals"]');
     expect(evalsPage?.textContent).toContain('Evals Evals Source');
     expect(evalsPage?.textContent).toContain('Evals Observations Source');
-    expect(rendered.querySelector('[data-state-axis="availability"]')?.textContent).toBe('available');
-    expect(rendered.querySelector('[data-state-axis="completeness"]')?.textContent).toBe('partial');
-    expect(rendered.querySelector('[data-state-axis="freshness"]')?.textContent).toBe('stale');
+    expect(/** @type {HTMLElement | null} */ (rendered.querySelector('.data-state-summary'))?.hidden).toBe(true);
     expect(evalsPage?.querySelectorAll('.custom-table')[0]?.querySelectorAll('tbody tr')).toHaveLength(2);
     expect(evalsPage?.querySelectorAll('.custom-table')[1]?.querySelectorAll('tbody tr')).toHaveLength(3);
     expect(evalsPage?.textContent).toContain('release-risk');
@@ -1064,7 +1062,7 @@ describe('presenter built-in and custom pages', () => {
       }
     });
 
-    expect(rendered.querySelector('[data-page-name="findings"] h2')?.textContent).toBe('Findings');
+    expect(rendered.querySelector('#page-title')?.textContent).toBe('Findings');
     expect(rendered.querySelector('.sidebar-brand > span')?.textContent).toBe('github');
     expect(rendered.querySelector('[data-page-id="findings"] .custom-table thead')?.textContent).toContain('Issue Link');
 
@@ -1315,8 +1313,7 @@ describe('presenter built-in and custom pages', () => {
       }
     });
 
-    const customPage = rendered.querySelector('[data-page-kind="custom"]');
-    expect(customPage?.querySelector('h2')?.textContent).toBe('Custom Views');
+    expect(rendered.querySelector('#page-title')?.textContent).toBe('Custom Views');
 
     const metricSection = [...rendered.querySelectorAll('.page-section')].find((section) => section.textContent?.includes('Total AI Credits'));
     expect(metricSection?.querySelector('[data-metric-value="aic"]')?.textContent).toBe('5');
@@ -1545,8 +1542,8 @@ describe('presenter built-in and custom pages', () => {
           id: 'page-navigation',
           title: 'Page Navigation',
           pages: [
-            { id: 'first', kind: /** @type {'custom'} */ ('custom'), title: 'First', views: [] },
-            { id: 'second', kind: /** @type {'custom'} */ ('custom'), title: 'Second', views: [] }
+            { id: 'first', kind: /** @type {'custom'} */ ('custom'), title: 'First', description: 'First page description', views: [] },
+            { id: 'second', kind: /** @type {'custom'} */ ('custom'), title: 'Second', description: 'Second page description', views: [] }
           ]
         }
       },
@@ -1559,6 +1556,9 @@ describe('presenter built-in and custom pages', () => {
     const secondLink = /** @type {HTMLAnchorElement} */ (rendered.querySelector('[data-nav-page-id="second"]'));
     expect(first.hidden).toBe(false);
     expect(second.hidden).toBe(true);
+    expect(rendered.querySelector('#page-title')?.textContent).toBe('First');
+    expect(rendered.querySelector('[data-breadcrumb-page]')?.textContent).toBe('First');
+    expect(rendered.querySelector('[data-page-description]')?.textContent).toBe('First page description');
 
     secondLink.click();
 
@@ -1566,7 +1566,10 @@ describe('presenter built-in and custom pages', () => {
     expect(second.hidden).toBe(false);
     expect(secondLink.getAttribute('aria-current')).toBe('page');
     expect(rendered.ownerDocument.defaultView?.location.hash).toBe('#page-second');
-    expect(rendered.ownerDocument.activeElement).toBe(second.querySelector('h2'));
+    expect(rendered.querySelector('#page-title')?.textContent).toBe('Second');
+    expect(rendered.querySelector('[data-breadcrumb-page]')?.textContent).toBe('Second');
+    expect(rendered.querySelector('[data-page-description]')?.textContent).toBe('Second page description');
+    expect(rendered.ownerDocument.activeElement).toBe(rendered.querySelector('#page-title'));
     rendered.ownerDocument.defaultView?.history.replaceState(null, '', '/');
   });
 

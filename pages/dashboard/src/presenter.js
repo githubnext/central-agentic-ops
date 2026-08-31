@@ -67,18 +67,20 @@ const REFRESH_CONTROL_DESCRIPTION = 'Reload the dashboard to refresh cached data
 
 /** @type {Record<string, PresentableCustomPage>} */
 const BUILT_IN_PAGE_PAYLOADS = /** @type {Record<string, PresentableCustomPage>} */ (Object.fromEntries(
-  builtInDashboard.dashboard.pages.map((page) => [
-    page.page,
-    {
-      id: page.id,
-      kind: 'custom',
-      title: page.title,
-      description: 'description' in page ? page.description : undefined,
-      'class-name': 'class-name' in page ? page['class-name'] : undefined,
-      views: page.definition?.views ?? [],
-      sections: page.definition?.sections
-    }
-  ])
+  builtInDashboard.dashboard.pages
+    .filter((page) => page.kind === 'built-in')
+    .map((page) => [
+      page.page,
+      {
+        id: page.id,
+        kind: 'custom',
+        title: page.title,
+        description: 'description' in page ? page.description : undefined,
+        'class-name': 'class-name' in page ? page['class-name'] : undefined,
+        views: page.definition?.views ?? [],
+        sections: page.definition?.sections
+      }
+    ])
 ));
 
 /**
@@ -106,7 +108,6 @@ function getBuiltInPagePayload(page) {
 export function renderDashboard(input) {
   const { document, sources: rawSources } = input;
   const title = document.dashboard.title;
-  const description = document.dashboard.description;
   const pages = document.dashboard.pages;
   const githubUrlBase = typeof document.dashboard['github-url-base'] === 'string' && document.dashboard['github-url-base'].length > 0
     ? document.dashboard['github-url-base']
@@ -121,7 +122,7 @@ export function renderDashboard(input) {
   const skipLink = h('a', { href: '#main-content', className: 'skip-link' }, 'Skip to main content');
 
   const sidebar = renderSidebar(pages, orgName, document.dashboard.navigation);
-  const mainContent = renderMainContent(document, title, description, pages, sources, orgName, githubUrlBase, dashboardRepository);
+  const mainContent = renderMainContent(document, title, pages, sources, orgName, githubUrlBase, dashboardRepository);
 
   const root = h(
     'div',
@@ -232,7 +233,6 @@ function getPageIcon(page) {
 /**
  * @param {PresentationDocument} document
  * @param {string} title
- * @param {string | undefined} description
  * @param {Array<PresentableBuiltInPage | PresentableCustomPage>} pages
  * @param {Record<string, LogicalSourceInput>} sources
  * @param {string} orgName
@@ -240,7 +240,10 @@ function getPageIcon(page) {
  * @param {string | null} dashboardRepository
  * @returns {HTMLElement}
  */
-function renderMainContent(document, title, description, pages, sources, orgName, githubUrlBase, dashboardRepository) {
+function renderMainContent(document, title, pages, sources, orgName, githubUrlBase, dashboardRepository) {
+  const initialPage = pages[0];
+  const initialPageTitle = initialPage ? getPageTitle(initialPage) : '';
+  const initialPageDescription = initialPage?.description;
   const latestRetrieval = latestRetrievedAt(sources);
   const units = isPlainObject(document.dashboard.units) ? document.dashboard.units : {};
   return h(
@@ -254,6 +257,7 @@ function renderMainContent(document, title, description, pages, sources, orgName
         { className: 'shell' },
         h('a', { href: '#/' }, orgName),
         h('a', { href: '#/dashboard' }, title),
+        h('span', { 'data-breadcrumb-page': '' }, initialPageTitle),
         h(
           'div',
           { className: 'report-actions' },
@@ -296,8 +300,12 @@ function renderMainContent(document, title, description, pages, sources, orgName
         h(
           'div',
           null,
-          h('div', { className: 'title-area' }, h('h1', { id: 'page-title' }, title)),
-          description ? h('p', { className: 'lede' }, description) : null
+          h('div', { className: 'title-area' }, h('h1', { id: 'page-title', tabIndex: -1 }, initialPageTitle)),
+          h(
+            'p',
+            { className: 'lede', 'data-page-description': '', hidden: !initialPageDescription },
+            initialPageDescription ?? ''
+          )
         )
       ),
       h(
@@ -348,9 +356,7 @@ function formatReportDate(value) {
  * @returns {HTMLElement}
  */
 function renderPage(page, sources, units) {
-  const title = typeof page.title === 'string' && page.title.length > 0
-    ? page.title
-    : titleCase(page.id);
+  const title = getPageTitle(page);
 
   if (page.kind === 'built-in') {
     const payload = getBuiltInPagePayload(page);
@@ -430,14 +436,34 @@ function renderCustomPage(page, title, sources, units) {
       id: `page-${page.id}`,
       'data-page-kind': 'custom',
       'data-page-name': page.id,
-      'data-page-id': page.id
+      'data-page-id': page.id,
+      'data-page-title': title,
+      'data-page-description': page.description ?? ''
     },
-    h('h2', { tabIndex: -1 }, title),
-    page.description ? h('p', { className: 'page-description' }, page.description) : null,
     ...(renderedViews.length > 0
-      ? [renderDataStateMetrics(summarizeDataState(pageSources)), renderedContent]
+      ? [renderHiddenDataStateMetrics(summarizeDataState(pageSources)), renderedContent]
       : [h('p', null, 'No custom views available.')])
   );
+}
+
+/**
+ * @param {PresentableBuiltInPage | PresentableCustomPage} page
+ * @returns {string}
+ */
+function getPageTitle(page) {
+  return typeof page.title === 'string' && page.title.length > 0
+    ? page.title
+    : titleCase(page.id);
+}
+
+/**
+ * @param {DataState} effectiveState
+ * @returns {HTMLElement}
+ */
+function renderHiddenDataStateMetrics(effectiveState) {
+  const metrics = renderDataStateMetrics(effectiveState);
+  metrics.hidden = true;
+  return metrics;
 }
 
 /**
@@ -481,6 +507,9 @@ export function enableDashboardPageNavigation(root) {
     .filter((page) => page instanceof HTMLElement);
   const links = [...root.querySelectorAll('[data-nav-page-id]')]
     .filter((link) => link instanceof HTMLAnchorElement);
+  const breadcrumbPage = root.querySelector('[data-breadcrumb-page]');
+  const pageTitle = root.querySelector('#page-title');
+  const pageDescription = root.querySelector('.overview-header [data-page-description]');
   if (pages.length === 0 || links.length === 0) {
     return;
   }
@@ -511,6 +540,15 @@ export function enableDashboardPageNavigation(root) {
         link.removeAttribute('aria-current');
       }
     }
+    const page = pages.find((candidate) => candidate.dataset.pageId === pageId);
+    const title = page?.dataset.pageTitle ?? '';
+    const description = page?.dataset.pageDescription ?? '';
+    if (breadcrumbPage) breadcrumbPage.textContent = title;
+    if (pageTitle) pageTitle.textContent = title;
+    if (pageDescription) {
+      pageDescription.textContent = description;
+      pageDescription.toggleAttribute('hidden', description.length === 0);
+    }
   };
 
   activate(pageIdFromHash() ?? pages[0].dataset.pageId ?? '');
@@ -523,7 +561,7 @@ export function enableDashboardPageNavigation(root) {
     if (!pageId || !availableIds.has(pageId)) return;
     root.ownerDocument.defaultView?.history.pushState(null, '', link.href);
     activate(pageId);
-    pages.find((page) => page.dataset.pageId === pageId)?.querySelector('h2')?.focus();
+    if (pageTitle instanceof HTMLElement) pageTitle.focus();
   });
 
   const defaultView = root.ownerDocument.defaultView;
