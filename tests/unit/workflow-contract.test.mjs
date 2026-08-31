@@ -1346,14 +1346,23 @@ test("daily dashboard component refactorer extracts reusable components in place
 
 test("dashboard CI runs the package quality gates", () => {
   const source = workflow("cid.yml");
+  const jobs = generatedJobs(source);
+  const lintUnit = jobs.get("lint-unit");
+  const playwrightIntegration = jobs.get("playwright-integration");
 
   assert.match(source, /pages\/dashboard\/\*\*/);
   assert.match(source, /working-directory: pages\/dashboard/);
   assert.match(source, /cache-dependency-path: pages\/dashboard\/package-lock\.json/);
-  assert.match(source, /npx playwright install --with-deps chromium/);
-  for (const command of ["npm run typecheck", "npm run lint", "npm test", "npm run test:e2e"]) {
-    assert.match(source, new RegExp(`run: ${command.replaceAll(".", "\\.")}`));
+  assert.deepEqual([...jobs.keys()], ["lint-unit", "playwright-integration"]);
+  assert.deepEqual(lintUnit.needs, []);
+  assert.deepEqual(playwrightIntegration.needs, []);
+  for (const command of ["npm run typecheck", "npm run lint", "npm test"]) {
+    assert.match(lintUnit.block, new RegExp(`run: ${command.replaceAll(".", "\\.")}`));
   }
+  assert.doesNotMatch(lintUnit.block, /playwright|test:e2e/i);
+  assert.match(playwrightIntegration.block, /npx playwright install --with-deps chromium/);
+  assert.match(playwrightIntegration.block, /run: npm run test:e2e/);
+  assert.doesNotMatch(playwrightIntegration.block, /run: npm (?:run (?:typecheck|lint)|test)$/m);
 });
 
 test("daily dashboard review lock file does not require docker-sbx secrets", () => {
