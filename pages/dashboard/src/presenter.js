@@ -122,8 +122,11 @@ export function renderDashboard(input) {
   const dashboardRepository = typeof document.dashboard.repository === 'string' && document.dashboard.repository.length > 0
     ? document.dashboard.repository
     : null;
-  const sources = deriveRepositoryDashboardLinks(
-    deriveOverviewSources(deriveEntityLinkSources(rawSources, githubUrlBase)),
+  const sources = deriveWorkflowDashboardLinks(
+    deriveRepositoryDashboardLinks(
+      deriveOverviewSources(deriveEntityLinkSources(rawSources, githubUrlBase)),
+      pages
+    ),
     pages
   );
   const orgName = inferOrganizationName(sources) || 'GitHub';
@@ -268,8 +271,8 @@ function renderMainContent(document, title, pages, sources, orgName, githubUrlBa
       h(
         'div',
         { className: 'shell' },
-        h('a', { href: '#/' }, orgName),
-        h('a', { href: '#/dashboard' }, title),
+        h('a', { href: '#/', 'data-breadcrumb-root': '' }, orgName),
+        h('a', { href: '#/dashboard', 'data-breadcrumb-dashboard': '' }, title),
         h('span', { 'data-breadcrumb-page': '' }, initialPageTitle),
         h(
           'div',
@@ -540,9 +543,15 @@ export function enableDashboardPageNavigation(root) {
   const links = [...root.querySelectorAll('[data-nav-page-id]')]
     .filter((link) => link instanceof HTMLAnchorElement);
   const breadcrumbPage = root.querySelector('[data-breadcrumb-page]');
+  const breadcrumbRoot = root.querySelector('[data-breadcrumb-root]');
+  const breadcrumbDashboard = root.querySelector('[data-breadcrumb-dashboard]');
   const pageTitle = root.querySelector('#page-title');
   const pageDescription = root.querySelector('.overview-header [data-page-description]');
   const pageMode = root.querySelector('[data-page-mode]');
+  const defaultBreadcrumbs = [breadcrumbRoot, breadcrumbDashboard].map((link) => ({
+    label: link?.textContent ?? '',
+    href: link instanceof HTMLAnchorElement ? link.getAttribute('href') ?? '' : ''
+  }));
   if (pages.length === 0 || links.length === 0) {
     return;
   }
@@ -556,6 +565,13 @@ export function enableDashboardPageNavigation(root) {
     if (title) {
       if (breadcrumbPage) breadcrumbPage.textContent = title;
       if (pageTitle) pageTitle.textContent = title;
+    }
+    const breadcrumbs = Array.isArray(event.detail?.breadcrumbs) ? event.detail.breadcrumbs : [];
+    for (const [index, link] of [breadcrumbRoot, breadcrumbDashboard].entries()) {
+      const breadcrumb = breadcrumbs[index];
+      if (!(link instanceof HTMLAnchorElement) || !breadcrumb || typeof breadcrumb.label !== 'string' || typeof breadcrumb.href !== 'string' || !breadcrumb.href.startsWith('#page-')) continue;
+      link.textContent = breadcrumb.label;
+      link.href = breadcrumb.href;
     }
     if (pageDescription && description) {
       pageDescription.textContent = description;
@@ -595,6 +611,11 @@ export function enableDashboardPageNavigation(root) {
    * @param {URLSearchParams} [parameters]
    */
   const activate = (pageId, parameters = new URLSearchParams()) => {
+    for (const [index, link] of [breadcrumbRoot, breadcrumbDashboard].entries()) {
+      if (!(link instanceof HTMLAnchorElement)) continue;
+      link.textContent = defaultBreadcrumbs[index].label;
+      link.setAttribute('href', defaultBreadcrumbs[index].href);
+    }
     for (const page of pages) {
       const isActive = page.dataset.pageId === pageId;
       page.hidden = !isActive;
@@ -1268,6 +1289,51 @@ function deriveRepositoryDashboardLinks(sources, pages) {
       rows: Array.isArray(source?.rows)
         ? source.rows.map((row) => deriveRepositoryDashboardLink(row, detailPage.id))
         : source?.rows
+    }
+
+    /**
+     * Adds presentation-only workflow routes while retaining the canonical
+     * authored workflow link for explicit source controls.
+     * @param {Record<string, LogicalSourceInput>} sources
+     * @param {Array<PresentableBuiltInPage | PresentableCustomPage>} pages
+     * @returns {Record<string, LogicalSourceInput>}
+     */
+    function deriveWorkflowDashboardLinks(sources, pages) {
+      const detailPage = pages.find((page) => page.kind === 'custom' && page.route?.['hash-query-parameter'] === 'workflow');
+      if (!detailPage) return sources;
+
+      return Object.fromEntries(Object.entries(sources).map(([name, source]) => [
+        name,
+        {
+          ...source,
+          rows: Array.isArray(source?.rows)
+            ? source.rows.map((row) => deriveWorkflowDashboardLink(row, detailPage.id))
+            : source?.rows
+        }
+      ]));
+    }
+
+    /**
+     * @param {Record<string, unknown>} row
+     * @param {string} pageId
+     * @returns {Record<string, unknown>}
+     */
+    function deriveWorkflowDashboardLink(row, pageId) {
+      const organization = trimmedString(row.organization);
+      const repository = trimmedString(row.repository);
+      const workflow = trimmedString(row.workflow);
+      const repositorySlug = repository && repository.includes('/') ? repository : (organization && repository ? `${organization}/${repository}` : null);
+      const workflowLink = row['workflow-link'];
+      if (!repositorySlug || !workflow || !isPlainObject(workflowLink)) return row;
+
+      return {
+        ...row,
+        'workflow-link': {
+          ...workflowLink,
+          'dashboard-href': `#page-${encodeURIComponent(pageId)}?workflow=${encodeURIComponent(`${repositorySlug}:${workflow}`)}`,
+          'dashboard-label': `View ${trimmedString(row['workflow-name']) ?? workflow} workflow dashboard`
+        }
+      };
     }
   ]));
 }

@@ -13,7 +13,7 @@ export function renderStatusBadge(status) {
   const normalized = text.toLowerCase();
   let statusClass = 'status-muted';
 
-  if (['success', 'completed', 'active', 'true', 'fresh', 'available', 'complete', 'accepted', 'matured'].includes(normalized)) {
+  if (['success', 'completed', 'active', 'true', 'fresh', 'available', 'complete', 'accepted', 'matured', 'closed', 'resolved'].includes(normalized)) {
     statusClass = 'status-success';
   } else if (['in-progress', 'running', 'pending', 'review', 'partial', 'stale', 'attention', 'warning', 'action-required', 'interim'].includes(normalized)) {
     statusClass = 'status-attention';

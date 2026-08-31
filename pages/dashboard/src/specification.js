@@ -37,6 +37,7 @@ export const VIEW_ELEMENT_VALUES = [
   'repository-aic-usage',
   'repository-activity',
   'repository-workflows',
+  'workflow-detail',
   'outcome-detail',
   'execution-signal-list',
   'execution-episodes',
