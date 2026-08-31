@@ -16,7 +16,6 @@ import { renderWorkflowTopology } from './workflow-topology.js';
 import { renderExecutionEpisodes } from './execution-elements.js';
 import { renderSectionHeading } from './ui-primitives.js';
 import { renderDefinitionList } from './view-chrome.js';
-import { renderRepositoryScope } from './repositories-view.js';
 import { renderWorkflowRuntime } from './workflow-runtime.js';
 
 /**
@@ -41,12 +40,12 @@ const ELEMENT_RENDERERS = new Map([
   ['domain-attention', renderDomainAttentionElement],
   ['record-cards', renderRecordCardsElement],
   ['summary-grid', renderSummaryGridElement],
+  ['context-summary', renderContextSummaryElement],
   ['signal-list', renderSignalListElement],
   ['package-activity', ({ sources, pageId }) => renderPackagesView(sources, pageId)],
   ['package-run-trend', ({ sources, pageId }) => renderPackageRunTrend(sources, pageId)],
   ['package-detail', renderPackageDetailElement],
   ['package-reports', renderPackageReports],
-  ['repository-scope', renderRepositoryScope],
   ['repository-workflows', renderRepositoryWorkflows],
   ['workflow-detail', renderWorkflowDetail],
   ['workflow-runtime', renderWorkflowRuntime],
@@ -60,7 +59,7 @@ const ELEMENT_RENDERERS = new Map([
   }]
 ]);
 
-const EMPTY_AWARE_ELEMENTS = new Set(['status-summary', 'meter-list', 'attention-list', 'record-cards', 'summary-grid', 'signal-list', 'package-detail', 'package-reports', 'repository-scope', 'repository-workflows', 'workflow-detail', 'workflow-runtime', 'outcome-detail', 'execution-episodes']);
+const EMPTY_AWARE_ELEMENTS = new Set(['status-summary', 'meter-list', 'attention-list', 'record-cards', 'summary-grid', 'context-summary', 'signal-list', 'package-detail', 'package-reports', 'repository-workflows', 'workflow-detail', 'workflow-runtime', 'outcome-detail', 'execution-episodes']);
 
 /**
  * @param {string} name
@@ -281,6 +280,40 @@ function renderSummaryGridElement(context) {
 /**
  * @param {ElementRenderContext} context
  */
+function renderContextSummaryElement(context) {
+  const rows = rowsFor(context, context.sourceNames[0]);
+  return h(
+    'dl',
+    { className: 'context-summary', 'aria-label': context.title },
+    ...rows.map((row) => h(
+      'div',
+      null,
+      h('dt', null, stringValue(row.label)),
+      h('dd', null, ...renderContextSummaryValue(row))
+    ))
+  );
+}
+
+/**
+ * @param {Record<string, unknown>} row
+ * @returns {Array<string | HTMLElement | null>}
+ */
+function renderContextSummaryValue(row) {
+  if (!Array.isArray(row.items)) return [stringValue(row.value)];
+  return row.items.flatMap((item, index) => {
+    if (!isPlainObject(item)) return [];
+    const label = stringValue(item.label);
+    const href = safeNavigationHref(item['navigation-href']);
+    return [
+      index > 0 ? ', ' : null,
+      href ? h('a', { href }, label) : label
+    ];
+  });
+}
+
+/**
+ * @param {ElementRenderContext} context
+ */
 function renderSignalListElement(context) {
   const rows = rowsFor(context, context.sourceNames[0]);
   return h(
@@ -472,4 +505,9 @@ function titleCase(value) {
   return value
     .replaceAll('-', ' ')
     .replace(/\b\w/g, (letter) => letter.toUpperCase());
+}
+
+/** @param {unknown} value */
+function isPlainObject(value) {
+  return typeof value === 'object' && value !== null && !Array.isArray(value);
 }

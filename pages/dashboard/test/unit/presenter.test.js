@@ -1216,9 +1216,9 @@ describe('presenter built-in and custom pages', () => {
       {
         id: 'repository-scope',
         title: 'Repository scope',
-        data: { sources: ['repositories', 'runs', 'usage', 'operational-values'] },
+        data: { sources: ['repository-summary', 'repositories', 'runs', 'usage', 'operational-values'] },
         mark: 'element',
-        element: 'repository-scope'
+        element: 'context-summary'
       },
       {
         id: 'repositories-by-aic',

@@ -28,12 +28,12 @@ export const VIEW_ELEMENT_VALUES = [
   'domain-attention',
   'record-cards',
   'summary-grid',
+  'context-summary',
   'signal-list',
   'package-activity',
   'package-run-trend',
   'package-detail',
   'package-reports',
-  'repository-scope',
   'repository-workflows',
   'workflow-detail',
   'workflow-runtime',
@@ -264,6 +264,7 @@ export const SOURCE_VALUES = [
   'experiment-readiness',
   'runtime-signals',
   'dispatches',
+  'repository-summary',
   'repository-activity'
 ];
 
@@ -294,6 +295,7 @@ export const SOURCE_FIELDS = {
   'experiment-readiness': ['priority', 'count', 'tone', 'icon', 'kind', 'title', 'detail', 'evidence', 'action'],
   'runtime-signals': ['priority', 'count', 'tone', 'icon', 'kind', 'title', 'detail', 'evidence', 'action', 'navigation-href'],
   dispatches: ['started-at', 'dispatch-type', 'package-name', 'workflow-name', 'run-title', 'runtime-repository', 'status', 'run-link'],
+  'repository-summary': ['label', 'value', 'items'],
   'repository-activity': ['repository', 'workflows', 'reports', 'evaluated-workflows', 'runs', 'failure-summary', 'aic', 'status', 'repository-link']
 };
 
@@ -334,6 +336,7 @@ export const SOURCE_ENTITY_IDENTIFIER_FIELDS = {
   outcomes: ['safe-output'],
   findings: ['finding'],
   'operational-values': ['operational-value-definition', 'operational-case', 'run'],
+  'repository-summary': ['label'],
   'repository-activity': ['repository']
 };
 

@@ -344,11 +344,11 @@ h3 { margin: 16px 0 8px; font-size: 1rem; font-weight: 600; }
 .value-empty h3 { margin: 16px 0 5px; font-size: 1.125rem; }
 .value-empty p { max-width: 620px; margin: 0; color: var(--muted); }
 .repositories-page .custom-view-grid { display: block; }
-.repository-scope-summary { display: grid; grid-template-columns: minmax(0, 2.5fr) minmax(220px, 1.3fr) minmax(180px, 1fr); margin: 0 0 24px; overflow: hidden; border: 1px solid var(--border); border-radius: 6px; background: var(--canvas-subtle); }
-.repository-scope-summary > div { min-width: 0; padding: 10px 14px; border-left: 1px solid var(--border); }
-.repository-scope-summary > div:first-child { border-left: 0; }
-.repository-scope-summary dt { overflow: hidden; color: var(--muted); font-size: .75rem; font-weight: 600; text-overflow: ellipsis; text-transform: uppercase; white-space: nowrap; }
-.repository-scope-summary dd { margin: 2px 0 0; overflow: hidden; font-size: .8125rem; font-weight: 600; text-overflow: ellipsis; white-space: nowrap; }
+.context-summary { display: grid; grid-template-columns: minmax(0, 2.5fr) minmax(220px, 1.3fr) minmax(180px, 1fr); margin: 0 0 24px; overflow: hidden; border: 1px solid var(--border); border-radius: 6px; background: var(--canvas-subtle); }
+.context-summary > div { min-width: 0; padding: 10px 14px; border-left: 1px solid var(--border); }
+.context-summary > div:first-child { border-left: 0; }
+.context-summary dt { overflow: hidden; color: var(--muted); font-size: .75rem; font-weight: 600; text-overflow: ellipsis; text-transform: uppercase; white-space: nowrap; }
+.context-summary dd { margin: 2px 0 0; overflow: hidden; font-size: .8125rem; font-weight: 600; text-overflow: ellipsis; white-space: nowrap; }
 .repository-health { margin-bottom: 24px; }
 .repository-health .section-heading { align-items: end; }
 .repository-health .section-heading > span { flex: none; color: var(--muted); font-size: .75rem; }
@@ -837,9 +837,9 @@ footer { padding: 20px 24px; border-top: 1px solid var(--border); color: var(--m
   .value-chart > dl { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .repository-section-heading { display: block; }
   .repository-section-heading > a { margin-top: 10px; }
-  .repository-scope-summary { grid-template-columns: 1fr; }
-  .repository-scope-summary > div { border-top: 1px solid var(--border); border-left: 0; }
-  .repository-scope-summary > div:first-child { border-top: 0; }
+  .context-summary { grid-template-columns: 1fr; }
+  .context-summary > div { border-top: 1px solid var(--border); border-left: 0; }
+  .context-summary > div:first-child { border-top: 0; }
   .repository-health .section-heading { align-items: flex-start; flex-direction: column; }
   .outcome-view { grid-template-columns: 1fr; }
   .outcome-meta { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0 20px; }

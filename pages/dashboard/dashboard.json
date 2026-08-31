@@ -341,6 +341,7 @@
               "title": "Repository scope",
               "data": {
                 "sources": [
+                  "repository-summary",
                   "repositories",
                   "runs",
                   "usage",
@@ -348,7 +349,7 @@
                 ]
               },
               "mark": "element",
-              "element": "repository-scope"
+              "element": "context-summary"
             },
             {
               "id": "repositories-by-aic",
