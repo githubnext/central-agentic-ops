@@ -159,6 +159,7 @@ function renderUtilizationCard(entry, utilization, available, completeness) {
     ? `${entry.name}: no utilization available`
     : `${entry.name}: ${formatAic(used)} of ${formatAic(allowed)} AI Credits used, ${formatPercent(ratio)}`;
   const scopeLabel = [entry.organization, entry.repository].filter(Boolean).join('/');
+  const repositoryLabel = scopeLabel || entry.repository || entry.name;
 
   return h(
     'article',
@@ -178,7 +179,7 @@ function renderUtilizationCard(entry, utilization, available, completeness) {
         'span',
         { className: 'package-utilization-identity' },
         h('strong', null, entry.name),
-        scopeLabel ? h('small', null, renderLinkedText(scopeLabel, entry.repositoryLink)) : null
+        repositoryLabel ? h('small', null, renderLinkedText(repositoryLabel, entry.repositoryLink)) : null
       ),
       h('span', { className: 'package-utilization-value' }, ratio === null ? '—' : formatPercent(ratio))
     ),
