@@ -12,14 +12,15 @@ import { h } from '../dom.js';
  * @returns {HTMLElement}
  */
 export function renderPageSection(pageId, title, content, headingTag = 'h3') {
+  const headingId = `${pageId}-${slugifyText(title)}-heading`;
   return h(
     'section',
     {
       className: 'page-section',
       tabIndex: 0,
-      'aria-labelledby': `${pageId}-${slugifyText(title)}-heading`
+      'aria-labelledby': headingId
     },
-    h(headingTag, { id: `${pageId}-${slugifyText(title)}-heading` }, title),
+    h(headingTag, { id: headingId }, title),
     ...content
   );
 }
