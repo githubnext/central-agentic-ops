@@ -108,6 +108,32 @@ export function renderViewSectionChrome(sourceName, metadata, contextDetails) {
 }
 
 /**
+ * @param {'available'|'empty'|'unavailable'} availability
+ * @returns {string}
+ */
+export function customViewAvailabilityMessage(availability) {
+  return availability === 'available'
+    ? 'Data available.'
+    : availability === 'empty'
+      ? 'No observations matched the effective context.'
+      : 'This view is unavailable.';
+}
+
+/**
+ * @param {string | null} sourceName
+ * @param {string[]} contextDetails
+ * @returns {HTMLElement[]}
+ */
+export function renderCustomViewStateDetails(sourceName, contextDetails) {
+  const details = [];
+  if (sourceName) {
+    details.push(h('p', { className: 'view-source' }, `Affected source: ${sourceName}`));
+  }
+  details.push(...renderContextChrome(contextDetails));
+  return details;
+}
+
+/**
  * @param {Array<{ sourceName: string, sourceId: string, sourceKind: string, asOf: string }>} items
  * @returns {HTMLElement}
  */

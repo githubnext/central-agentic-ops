@@ -8,7 +8,7 @@ import { getPrimerStyles } from './styles.js';
 import { octicon, agenticWorkflowMark } from './octicons.js';
 import { renderDataStateMetrics } from './components/data-state.js';
 import { renderTableRegion } from './components/table-region.js';
-import { renderContextChrome, renderPageSection, renderViewSectionChrome } from './components/view-chrome.js';
+import { customViewAvailabilityMessage, renderCustomViewStateDetails, renderPageSection, renderViewSectionChrome } from './components/view-chrome.js';
 import { formatAggregateValue, formatNumber, toNumber } from './view-formatters.js';
 import { renderActiveStateBadge, renderModeBadge, renderStatusBadge } from './components/badge.js';
 import { findFirstLink, findLink, renderExternalLink, renderLinkedValueWithExternalLink } from './components/link-content.js';
@@ -735,19 +735,10 @@ function renderElementView(pageId, title, view, sources, contextDetails, heading
  * @returns {HTMLElement}
  */
 function renderCustomViewState(pageId, title, sourceName, availability, contextDetails, headingTag = 'h3') {
-  /** @type {HTMLElement[]} */
-  const content = [
-    h('p', { 'data-view-availability': availability }, availability === 'available'
-      ? 'Data available.'
-      : availability === 'empty'
-        ? 'No observations matched the effective context.'
-        : 'This view is unavailable.')
-  ];
-  if (sourceName) {
-    content.push(h('p', { className: 'view-source' }, `Affected source: ${sourceName}`));
-  }
-  content.push(...renderContextChrome(contextDetails));
-  return renderPageSection(pageId, title, content, headingTag);
+  return renderPageSection(pageId, title, [
+    h('p', { 'data-view-availability': availability }, customViewAvailabilityMessage(availability)),
+    ...renderCustomViewStateDetails(sourceName, contextDetails)
+  ], headingTag);
 }
 
 /**

@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import { describe, expect, it } from 'vitest';
-import { renderContextChrome, renderContextList, renderPageSection, renderProvenanceList, renderProvenanceSection, renderSummaryList, renderSummaryRegion, renderTitledRegion, renderViewChrome, renderViewHeader, renderViewSectionChrome } from '../../src/components/view-chrome.js';
+import { customViewAvailabilityMessage, renderContextChrome, renderContextList, renderCustomViewStateDetails, renderPageSection, renderProvenanceList, renderProvenanceSection, renderSummaryList, renderSummaryRegion, renderTitledRegion, renderViewChrome, renderViewHeader, renderViewSectionChrome } from '../../src/components/view-chrome.js';
 
 describe('view chrome component helpers', () => {
   it('DLS-SAFE-007 renders focusable labeled page sections with deterministic heading ids', () => {
@@ -103,6 +103,22 @@ describe('view chrome component helpers', () => {
     expect(chrome[1]?.textContent).toBe('As of 2026-08-29T20:00:00Z • completeness complete • freshness fresh');
     expect(chrome[2]?.className).toBe('view-context');
     expect(chrome[2]?.textContent).toContain('Scope: {"organization":"github"}');
+  });
+
+  it('DLS-VIEW-013 renders reusable custom-view availability messages and affected-source details', () => {
+    expect(customViewAvailabilityMessage('available')).toBe('Data available.');
+    expect(customViewAvailabilityMessage('empty')).toBe('No observations matched the effective context.');
+    expect(customViewAvailabilityMessage('unavailable')).toBe('This view is unavailable.');
+
+    const withSource = renderCustomViewStateDetails('usage', ['Filters: {"status":"open"}']);
+    const withoutSource = renderCustomViewStateDetails(null, []);
+
+    expect(withSource).toHaveLength(2);
+    expect(withSource[0]?.className).toBe('view-source');
+    expect(withSource[0]?.textContent).toBe('Affected source: usage');
+    expect(withSource[1]?.className).toBe('view-context');
+    expect(withSource[1]?.textContent).toContain('Filters: {"status":"open"}');
+    expect(withoutSource).toHaveLength(0);
   });
 
   it('DLS-SAFE-007 wraps single-content titled regions with the shared page-section markup', () => {
