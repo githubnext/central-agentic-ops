@@ -67,18 +67,20 @@ const REFRESH_CONTROL_DESCRIPTION = 'Reload the dashboard to refresh cached data
 
 /** @type {Record<string, PresentableCustomPage>} */
 const BUILT_IN_PAGE_PAYLOADS = /** @type {Record<string, PresentableCustomPage>} */ (Object.fromEntries(
-  builtInDashboard.dashboard.pages.map((page) => [
-    page.page,
-    {
-      id: page.id,
-      kind: 'custom',
-      title: page.title,
-      description: 'description' in page ? page.description : undefined,
-      'class-name': 'class-name' in page ? page['class-name'] : undefined,
-      views: page.definition.views,
-      sections: page.definition.sections
-    }
-  ])
+  builtInDashboard.dashboard.pages
+    .filter((page) => page.kind === 'built-in')
+    .map((page) => [
+      page.page,
+      {
+        id: page.id,
+        kind: 'custom',
+        title: page.title,
+        description: 'description' in page ? page.description : undefined,
+        'class-name': 'class-name' in page ? page['class-name'] : undefined,
+        views: page.definition?.views,
+        sections: page.definition?.sections
+      }
+    ])
 ));
 
 /**

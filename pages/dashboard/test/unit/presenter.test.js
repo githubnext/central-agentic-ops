@@ -726,7 +726,9 @@ describe('presenter built-in and custom pages', () => {
   });
 
   it('DLS-PAGE-001 DLS-PAGE-002 DLS-PAGE-003 DLS-PAGE-004 DLS-PAGE-005 DLS-PAGE-006 DLS-PAGE-007 DLS-PAGE-008 DLS-PAGE-009 DLS-PAGE-010 DLS-PAGE-011 DLS-PAGE-012 DLS-PAGE-013 DLS-PAGE-014 DLS-PAGE-015 authoritative dashboard.json contains all 13 specification-defined built-in pages with declarative data-state and source coverage', () => {
-    const pages = authoritativeDashboardDocument.dashboard.pages;
+    const pages = authoritativeDashboardDocument.dashboard.pages.filter(
+      (/** @type {{ kind: string }} */ page) => page.kind === 'built-in'
+    );
     expect(Array.isArray(pages)).toBe(true);
     expect(pages).toHaveLength(13);
     expect(pages.map((/** @type {{ page: string }} */ page) => page.page)).toEqual([
