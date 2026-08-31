@@ -7,7 +7,7 @@ import { h } from './dom.js';
 import { getPrimerStyles } from './styles.js';
 import { octicon, agenticWorkflowMark } from './octicons.js';
 import { renderDataStateMetrics } from './components/data-state.js';
-import { customViewAvailabilityMessage, renderCustomViewStateDetails, renderPageSection } from './components/view-chrome.js';
+import { customViewAvailabilityMessage, renderCustomViewStateDetails, renderLayoutSectionChrome, renderPageSection } from './components/view-chrome.js';
 import { toNumber } from './view-formatters.js';
 import { findLink } from './components/link-content.js';
 import { elementHandlesEmptyRows, renderUiElement } from './components/ui-elements.js';
@@ -500,7 +500,6 @@ function renderHiddenDataStateMetrics(effectiveState) {
  * @returns {HTMLElement}
  */
 function renderLayoutSection(pageId, section, renderedViews, sources) {
-  const title = section.title ?? titleCase(section.id);
   const headingId = `${pageId}-${section.id}-layout-heading`;
   const countSource = section['count-source'] ? sources[section['count-source']] : null;
   const count = Array.isArray(countSource?.rows) ? countSource.rows.length : null;
@@ -512,18 +511,7 @@ function renderLayoutSection(pageId, section, renderedViews, sources) {
       'data-section-layout': section.layout,
       'aria-labelledby': headingId
     },
-    h(
-      'header',
-      { className: 'layout-section-header' },
-      h('div', null,
-        h('span', { className: 'scope-kicker' }, titleCase(section.id)),
-        h('h3', { id: headingId }, title),
-        section.description ? h('p', null, section.description) : null
-      ),
-      count !== null && section['count-label']
-        ? h('strong', null, `${count.toLocaleString('en')} ${section['count-label']}`)
-        : null,
-    ),
+    renderLayoutSectionChrome(pageId, section, count),
     h(
       'div',
       { className: 'custom-view-grid' },
