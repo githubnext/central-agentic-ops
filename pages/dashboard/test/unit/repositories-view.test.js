@@ -103,8 +103,23 @@ describe('repositories view', () => {
     expect(scope.textContent).toContain('Repository scope · 3 configured');
     expect(scope.textContent).toContain('Complete 24-hour Actions run window');
     expect(scope.textContent).toContain('3 artifacts · partial');
-    expect(usage.querySelector('[data-chart-widget="pie"] svg')?.getAttribute('aria-label')).toContain('octo/failing 12 AIC');
+    expect(usage.querySelector('.repository-spend-donut')?.getAttribute('aria-label')).toContain('octo/failing: 12 AI Credits');
     expect(usage.textContent).toContain('octo/active');
+    expect(usage.textContent).not.toContain('12 AIC');
+    expect(renderRepositoryActivity(viewContext).querySelector('[data-repository="octo/failing"]')?.textContent).not.toContain('12 AIC');
+  });
+
+  it('formats AI Credit values like the original report', () => {
+    const viewContext = context();
+    viewContext.sources.usage.rows = [
+      { organization: 'octo', repository: 'failing', run: '1', aic: 3890.84 }
+    ];
+
+    const usage = renderRepositoryAicUsage(viewContext);
+
+    expect(usage.querySelector('.repository-spend-donut strong')?.textContent).toBe('3,890.8');
+    expect(usage.querySelector('.repository-spend-chart li strong')?.textContent).toBe('3,890.8');
+    expect(usage.querySelector('.repository-spend-chart li small')?.textContent).toBe('100%');
   });
 
   it('keeps unavailable run and usage evidence explicit', () => {
