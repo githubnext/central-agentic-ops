@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import { buildDashboardLanguageSources } from "../../dashboard/report/dashboard-language-sources.mjs";
 
-test("dashboard source bridge carries package allowance and inventory readiness into workflow rows", () => {
+test("dashboard source bridge carries package memberships, allowance, and inventory readiness into workflow rows", () => {
   const workflowPath = ".github/workflows/package.lock.yml";
   const sources = buildDashboardLanguageSources({
     deployed: {
@@ -12,6 +12,11 @@ test("dashboard source bridge carries package allowance and inventory readiness 
       bundles: [{
         repository: "githubnext/central-agentic-ops",
         name: "Package",
+        workflows: [{ lockPath: workflowPath }],
+      }, {
+        repository: "githubnext/central-agentic-ops",
+        path: "shared/aw.yml",
+        name: "Shared",
         workflows: [{ lockPath: workflowPath }],
       }],
       workflows: [{
@@ -46,6 +51,7 @@ test("dashboard source bridge carries package allowance and inventory readiness 
     {
       package: sources.workflows.rows[0].package,
       packageName: sources.workflows.rows[0]["package-name"],
+      packageMemberships: sources.workflows.rows[0]["package-memberships"],
       maxAiCredits: sources.workflows.rows[0]["max-ai-credits"],
       packageAllowance: sources.workflows.rows[0]["package-aic-allowance"],
       packageWorkerCount: sources.workflows.rows[0]["package-worker-count"],
@@ -53,8 +59,12 @@ test("dashboard source bridge carries package allowance and inventory readiness 
       rolloutMode: sources.workflows.rows[0]["rollout-mode"],
     },
     {
-      package: "Package",
-      packageName: "Package",
+      package: "shared",
+      packageName: "Shared",
+      packageMemberships: [
+        { id: "Package", name: "Package" },
+        { id: "shared", name: "Shared" },
+      ],
       maxAiCredits: 500,
       packageAllowance: 500,
       packageWorkerCount: 0,
