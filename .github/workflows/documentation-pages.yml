@@ -168,6 +168,7 @@ jobs:
       - name: Build Dashboard Language report sources
         env:
           REPORT_AIC_USAGE: ${{ runner.temp }}/aic-usage.json
+          REPORT_CONTROL_SETTINGS: ${{ runner.temp }}/control-settings.json
           REPORT_DASHBOARD_SOURCES: dist/ymao/sources.json
           REPORT_DEPLOYED_WORKFLOWS: ${{ runner.temp }}/deployed-workflows.json
           REPORT_INVENTORY: ${{ runner.temp }}/control-plane-inventory.json

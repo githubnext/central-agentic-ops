@@ -106,6 +106,11 @@ describe("live Dashboard Language sources", () => {
           workers: [],
         }],
       },
+      controlSettings: {
+        packages: {
+          dependabot: { mode: "review" },
+        },
+      },
     };
     for (const [name, value] of Object.entries(inputs)) {
       writeFileSync(join(temporaryDirectory, `${name}.json`), JSON.stringify(value));
@@ -122,6 +127,7 @@ describe("live Dashboard Language sources", () => {
           REPORT_OPERATIONAL_VALUES: join(temporaryDirectory, "operationalValues.json"),
           REPORT_RECORDS: join(temporaryDirectory, "report.json"),
           REPORT_INVENTORY: join(temporaryDirectory, "inventory.json"),
+          REPORT_CONTROL_SETTINGS: join(temporaryDirectory, "controlSettings.json"),
           REPORT_DASHBOARD_SOURCES: output,
         },
       });
