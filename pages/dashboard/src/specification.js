@@ -35,7 +35,6 @@ export const VIEW_ELEMENT_VALUES = [
   'package-reports',
   'dispatch-catalog',
   'repository-scope',
-  'repository-aic-usage',
   'repository-activity',
   'repository-workflows',
   'workflow-runtime',

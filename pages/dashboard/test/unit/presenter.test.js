@@ -1220,9 +1220,24 @@ describe('presenter built-in and custom pages', () => {
         id: 'repositories-by-aic',
         title: 'AI Credit usage by AW repository',
         description: 'Read-only usage reported by AW runs, deduplicated by workflow run.',
-        data: { sources: ['usage', 'repositories'] },
-        mark: 'element',
-        element: 'repository-aic-usage'
+        data: {
+          source: 'usage',
+          'order-by': [{ field: 'total-aic', direction: 'desc' }]
+        },
+        mark: 'chart',
+        chart: 'pie',
+        encoding: {
+          x: { field: 'repository', type: 'nominal', title: 'Repository' },
+          y: {
+            field: 'aic',
+            type: 'quantitative',
+            aggregate: 'sum',
+            as: 'total-aic',
+            title: 'Total AIC',
+            unit: 'aic'
+          },
+          href: { field: 'repository-link', type: 'nominal' }
+        }
       },
       {
         id: 'repositories-activity',

@@ -1,5 +1,8 @@
 import { describe, expect, it } from 'vitest';
-import { renderRepositoryActivity, renderRepositoryAicUsage, renderRepositoryScope, summarizeRepositories } from '../../src/components/repositories-view.js';
+import { readFileSync } from 'node:fs';
+import { renderRepositoryActivity, renderRepositoryScope, summarizeRepositories } from '../../src/components/repositories-view.js';
+
+const dashboard = JSON.parse(readFileSync(`${process.cwd()}/dashboard.json`, 'utf8'));
 
 /** @type {import('../../src/presenter.js').SourceMetadata} */
 const metadata = {
@@ -95,40 +98,38 @@ describe('repositories view', () => {
     expect(rendered.querySelector('[data-repository="octo/quiet"] .status-attention')?.textContent).toBe('Disabled workflows');
   });
 
-  it('renders the configured scope and CAO-style AI Credit summary', () => {
+  it('renders the configured scope and declares AI Credit usage as a generic chart', () => {
     const viewContext = context();
     const scope = renderRepositoryScope(viewContext);
-    const usage = renderRepositoryAicUsage(viewContext);
+    const repositoriesPage = dashboard.dashboard.pages.find(
+      (/** @type {{ id: string }} */ page) => page.id === 'repositories'
+    );
+    const usage = repositoriesPage.definition.views.find(
+      (/** @type {{ id: string }} */ view) => view.id === 'repositories-by-aic'
+    );
 
     expect(scope.textContent).toContain('Repository scope · 3 configured');
     expect(scope.textContent).toContain('Complete 24-hour Actions run window');
     expect(scope.textContent).toContain('3 artifacts · partial');
-    expect(usage.querySelector('.repository-spend-donut')?.getAttribute('aria-label')).toContain('octo/failing: 12 AI Credits');
-    expect(usage.textContent).toContain('octo/active');
-    expect(usage.textContent).not.toContain('12 AIC');
+    expect(usage).toMatchObject({
+      data: { source: 'usage' },
+      mark: 'chart',
+      chart: 'pie',
+      encoding: {
+        x: { field: 'repository' },
+        y: { field: 'aic', aggregate: 'sum', as: 'total-aic', unit: 'aic' },
+        href: { field: 'repository-link' }
+      }
+    });
     expect(renderRepositoryActivity(viewContext).querySelector('[data-repository="octo/failing"]')?.textContent).not.toContain('12 AIC');
-  });
-
-  it('formats AI Credit values like the original report', () => {
-    const viewContext = context();
-    viewContext.sources.usage.rows = [
-      { organization: 'octo', repository: 'failing', run: '1', aic: 3890.84 }
-    ];
-
-    const usage = renderRepositoryAicUsage(viewContext);
-
-    expect(usage.querySelector('.repository-spend-donut strong')?.textContent).toBe('3,890.8');
-    expect(usage.querySelector('.repository-spend-chart li strong')?.textContent).toBe('3,890.8');
-    expect(usage.querySelector('.repository-spend-chart li small')?.textContent).toBe('100%');
   });
 
   it('keeps unavailable run and usage evidence explicit', () => {
     const viewContext = context();
     viewContext.sources.runs.metadata = { ...metadata, availability: 'unavailable', completeness: 'unknown' };
     viewContext.sources.usage.metadata = { ...metadata, availability: 'unavailable', completeness: 'unknown' };
-
     expect(renderRepositoryScope(viewContext).textContent).toContain('Actions run data unavailable');
-    expect(renderRepositoryAicUsage(viewContext).textContent).toContain('AI Credit usage data is unavailable.');
+    expect(renderRepositoryScope(viewContext).textContent).toContain('Actions run data unavailable');
     expect(renderRepositoryActivity(viewContext).textContent).toContain('Unavailable');
   });
 });

@@ -6,7 +6,6 @@ import { h } from '../dom.js';
 import { renderTableRegion } from './table-region.js';
 
 const FAILURE_CONCLUSIONS = new Set(['failure', 'startup-failure', 'timed-out']);
-const SPEND_COLORS = ['#4493f8', '#3fb950', '#d29922', '#f85149', '#a371f7', '#8c959f'];
 
 /**
  * @typedef {{
@@ -59,38 +58,6 @@ export function renderRepositoryScope(context) {
     ),
     h('div', null, h('dt', null, 'Run window'), h('dd', null, runWindow)),
     h('div', null, h('dt', null, 'AIC coverage'), h('dd', null, coverage))
-  );
-}
-
-/**
- * @param {import('./ui-elements.js').ElementRenderContext} context
- * @returns {HTMLElement}
- */
-export function renderRepositoryAicUsage(context) {
-  const usage = context.sources.usage;
-  const headingId = `${context.pageId}-repository-aic-heading`;
-  const totals = sumByRepository(usage?.rows ?? [], 'aic');
-  const leading = totals.slice(0, 5);
-  const other = totals.slice(5).reduce((total, entry) => total + entry.value, 0);
-  /** @type {Array<[string, number]>} */
-  const entries = (other > 0 ? [...leading, { repository: 'Other', value: other }] : leading)
-    .map((entry) => [entry.repository, entry.value]);
-  const total = entries.reduce((sum, [, value]) => sum + value, 0);
-
-  return h(
-    'section',
-    { className: 'repository-spend-panel', 'aria-labelledby': headingId },
-    h(
-      'div',
-      null,
-      h(context.headingTag, { id: headingId }, context.title),
-      context.description ? h('p', null, context.description) : null
-    ),
-    usage?.metadata?.availability === 'unavailable'
-      ? h('p', { className: 'empty' }, 'AI Credit usage data is unavailable.')
-      : total <= 0
-        ? h('p', { className: 'empty' }, 'Reported AW runs consumed 0 AI Credits.')
-        : renderRepositorySpendChart(entries, total)
   );
 }
 
@@ -151,53 +118,6 @@ export function renderRepositoryActivity(context) {
       headCells: ['Repository', 'Local AWs', 'Reports', 'Evaluated AWs', 'Local runs', 'Failure rate', 'Local AIC', 'Status'],
       bodyRows: rows
     })
-  );
-}
-
-/**
- * @param {Array<[string, number]>} entries
- * @param {number} total
- */
-function renderRepositorySpendChart(entries, total) {
-  let offset = 0;
-  const stops = entries.map(([, value], index) => {
-    const start = offset;
-    offset += value / total * 100;
-    return `${SPEND_COLORS[index]} ${start.toFixed(3)}% ${offset.toFixed(3)}%`;
-  }).join(', ');
-  const chartLabel = entries.map(([repository, value]) => `${repository}: ${formatAic(value)} AI Credits`).join(', ');
-
-  return h(
-    'div',
-    { className: 'repository-spend-chart' },
-    h(
-      'div',
-      {
-        className: 'repository-spend-donut',
-        role: 'img',
-        'aria-label': chartLabel,
-        style: `background: conic-gradient(${stops})`
-      },
-      h('span', null, h('strong', null, formatAic(total)), h('small', null, 'Total AIC'))
-    ),
-    h(
-      'ol',
-      null,
-      entries.map(([repository, value], index) => h(
-        'li',
-        null,
-        h('i', { style: `background: ${SPEND_COLORS[index]}`, 'aria-hidden': 'true' }),
-        h(
-          'span',
-          null,
-          repository === 'Other'
-            ? repository
-            : h('a', { href: repositoryDetailHref(repository), 'aria-label': `View ${repository}` }, repository)
-        ),
-        h('strong', null, formatAic(value)),
-        h('small', null, formatPercent(value / total))
-      ))
-    )
   );
 }
 
@@ -299,24 +219,6 @@ function status(label, tone) {
 /** @param {import('./ui-elements.js').ElementRenderContext} context */
 function repositoryNames(context) {
   return summarizeRepositories(context.sources).map((summary) => summary.repository).sort((left, right) => left.localeCompare(right));
-}
-
-/**
- * @param {Array<Record<string, unknown>>} rows
- * @param {string} field
- */
-function sumByRepository(rows, field) {
-  const totals = new Map();
-  for (const row of rows) {
-    const repository = qualifiedRepository(row);
-    const value = row[field];
-    if (!repository || !Number.isFinite(value)) continue;
-    totals.set(repository, (totals.get(repository) ?? 0) + Number(value));
-  }
-  return [...totals.entries()]
-    .map(([repository, value]) => ({ repository, value }))
-    .filter((entry) => entry.value > 0)
-    .sort((left, right) => right.value - left.value || left.repository.localeCompare(right.repository));
 }
 
 /** @param {Record<string, unknown>} row */
