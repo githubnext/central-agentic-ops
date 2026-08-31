@@ -5,6 +5,7 @@ import test from "node:test";
 import createAnimationData, { createMobileAnimationData } from "../../docs/assets/control-plane-dispatch.animation.mjs";
 
 const hero = readFileSync("docs/components/HierarchyHero.astro", "utf8");
+const wizard = readFileSync("docs/components/OpsWizard.astro", "utf8");
 
 function decodeAsset(asset) {
   return decodeURIComponent(asset.p.slice(asset.p.indexOf(",") + 1));
@@ -51,4 +52,11 @@ test("landing animations reinitialize after a color-scheme change", () => {
   assert.match(hero, /colorScheme\.addEventListener\("change", handleColorSchemeChange\)/);
   assert.match(hero, /colorScheme as MediaQueryList.*\.addListener\(handleColorSchemeChange\)/);
   assert.match(hero, /handleColorSchemeChange\(\) \{\s+destroyHierarchyAnimations\(\);\s+initializeHierarchyAnimations\(\);/);
+});
+
+test("landing wizard prompt references the raw setup skill", () => {
+  assert.match(
+    wizard,
+    /https:\/\/raw\.githubusercontent\.com\/githubnext\/central-agentic-ops\/main\/\.github\/skills\/setup-central-agentic-ops\/SKILL\.md/,
+  );
 });
