@@ -603,6 +603,7 @@ footer { padding: 20px 24px; border-top: 1px solid var(--border); color: var(--m
   .org-sidebar { display: block; padding: 14px 12px 10px; border-right: 0; border-bottom: 1px solid var(--border); }
   .sidebar-brand { margin-bottom: 8px; font-size: 1rem; }
   .primary-nav { width: 100%; flex-direction: row; overflow-x: auto; }
+  .nav-section-label { display: none; }
   .primary-nav a { min-height: 44px; flex: none; }
   .overview-header { min-height: 0; padding: 24px 0 20px; flex-direction: column; gap: 12px; }
   main.dashboard-prototype { padding: 0 14px 28px; }
