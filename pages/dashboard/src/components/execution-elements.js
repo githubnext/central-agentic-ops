@@ -278,15 +278,85 @@ function renderEpisode(episode) {
       renderVitalStat('Output yield', '—'),
       renderVitalStat('Measured AIC', '—')
     ),
-    h(
-      'div',
-      { className: 'episode-waterfall episode-waterfall-unavailable' },
-      h('strong', null, 'Execution shape unavailable'),
-      h('span', null, 'Exact worker correlation evidence was not retained for this episode.')
-    ),
+    renderEpisodeExecutionMap(episode),
     h('div', { className: 'episode-execution' }, h('strong', null, 'Correlated worker attempts'), h('ul', null, h('li', { className: 'episode-empty' }, 'No worker run is explicitly attributable from retained evidence.'))),
     h('footer', null, h('span', null, 'Evidence · Root only'), h('span', null, 'No-action attempts unavailable'))
   );
+}
+
+/**
+ * @param {{ run: Row, workflow?: Row, duration: number | null }} episode
+ */
+function renderEpisodeExecutionMap(episode) {
+  const startedAt = Date.parse(text(episode.run['started-at']));
+  const endedAt = Date.parse(text(episode.run['ended-at']));
+  if (!Number.isFinite(startedAt) || !Number.isFinite(endedAt) || endedAt < startedAt) {
+    return h(
+      'div',
+      { className: 'episode-waterfall episode-waterfall-unavailable' },
+      h('strong', null, 'Execution shape unavailable'),
+      h('span', null, 'Lifecycle timestamps were not retained for this episode.')
+    );
+  }
+
+  const result = text(episode.run['run-conclusion']) || text(episode.run['run-status']) || 'unknown';
+  const duration = endedAt - startedAt;
+  return h(
+    'div',
+    { className: 'episode-waterfall' },
+    h(
+      'header',
+      null,
+      h('strong', null, 'Execution shape'),
+      h('span', null, `Observed intervals only · ${formatDuration(duration)} total`)
+    ),
+    h(
+      'ol',
+      null,
+      h(
+        'li',
+        { dataset: { laneRole: 'root' } },
+        h(
+          'span',
+          { className: 'episode-lane-label' },
+          h('strong', null, 'root'),
+          h('small', null, workflowName(episode.workflow, episode.run))
+        ),
+        h(
+          'span',
+          { className: 'episode-lane-track' },
+          h('i', {
+            className: episodeStatusClass(result),
+            style: '--lane-start:0%;--lane-size:100%',
+            title: `root · ${workflowName(episode.workflow, episode.run)} · ${formatDuration(duration)} · ${result.replaceAll('-', ' ')}`
+          })
+        ),
+        h(
+          'span',
+          { className: 'episode-lane-result' },
+          h('strong', null, formatDuration(duration)),
+          h('small', null, result.replaceAll('-', ' '))
+        )
+      )
+    ),
+    h(
+      'footer',
+      null,
+      h('span', null, 'Episode start'),
+      h('span', null, 'Aligned time'),
+      h('span', null, 'Episode end')
+    )
+  );
+}
+
+/**
+ * @param {string} result
+ */
+function episodeStatusClass(result) {
+  if (FAILURE_CONCLUSIONS.has(result)) return 'status-danger';
+  if (result === 'action-required') return 'status-attention';
+  if (result === 'success') return 'status-success';
+  return 'status-muted';
 }
 
 /**
