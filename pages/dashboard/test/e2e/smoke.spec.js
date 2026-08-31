@@ -141,6 +141,17 @@ function buildPresenterModuleUrl() {
     .replace("'./ui-primitives.js'", JSON.stringify(uiPrimitivesModuleUrl));
   const repositoryWorkflowsModuleUrl = `data:text/javascript;charset=utf-8,${encodeURIComponent(repositoryWorkflowsSource)}`;
 
+  const workflowRuntimeSource = readFileSync(new URL('../../src/components/workflow-runtime.js', import.meta.url), 'utf8')
+    .replace("'../dom.js'", JSON.stringify(domModuleUrl))
+    .replace("'../octicons.js'", JSON.stringify(octiconsModuleUrl))
+    .replace("'../view-formatters.js'", JSON.stringify(viewFormattersModuleUrl))
+    .replace("'./badge.js'", JSON.stringify(badgeModuleUrl))
+    .replace("'./chart-elements.js'", JSON.stringify(chartElementsModuleUrl))
+    .replace("'./link-content.js'", JSON.stringify(linkContentModuleUrl))
+    .replace("'./run-classification.js'", JSON.stringify(runClassificationModuleUrl))
+    .replace("'./ui-primitives.js'", JSON.stringify(uiPrimitivesModuleUrl));
+  const workflowRuntimeModuleUrl = `data:text/javascript;charset=utf-8,${encodeURIComponent(workflowRuntimeSource)}`;
+
   const repositoriesViewSource = readFileSync(new URL('../../src/components/repositories-view.js', import.meta.url), 'utf8')
     .replace("'../dom.js'", JSON.stringify(domModuleUrl))
     .replace("'./chart-elements.js'", JSON.stringify(chartElementsModuleUrl))
@@ -174,6 +185,7 @@ function buildPresenterModuleUrl() {
     .replace("'./repositories-view.js'", JSON.stringify(repositoriesViewModuleUrl))
     .replace("'./package-detail.js'", JSON.stringify(packageDetailModuleUrl))
     .replace("'./repository-workflows.js'", JSON.stringify(repositoryWorkflowsModuleUrl))
+    .replace("'./workflow-runtime.js'", JSON.stringify(workflowRuntimeModuleUrl))
     .replace("'./outcome-detail.js'", JSON.stringify(outcomeDetailModuleUrl))
     .replace("'./execution-elements.js'", JSON.stringify(executionElementsModuleUrl))
     .replace("'./ui-primitives.js'", JSON.stringify(uiPrimitivesModuleUrl))
@@ -1295,6 +1307,121 @@ test('repository page template follows its JSON-declared hash query route in bro
   await expect(page.getByRole('heading', { level: 1 })).toHaveText('other-org/other-repo');
   await expect(page.locator('.repository-workflow-table')).toContainText('Other');
   await expect(page.locator('.repository-workflow-table')).not.toContainText('Review');
+});
+
+test('workflow runtime route renders JSON-declared workflow insights from repository navigation', async ({ page }) => {
+  const presenterModuleUrl = buildPresenterModuleUrl();
+  await page.goto('about:blank#page-repository-detail?repository=githubnext%2Fcentral-agentic-ops');
+  await page.setContent(`
+    <div id="root"></div>
+    <script type="module">
+      import { renderDashboard } from ${JSON.stringify(presenterModuleUrl)};
+      const metadata = {
+        'source-id': 'workflow-runtime-fixture',
+        'source-kind': 'fixture',
+        'as-of': '2026-08-31T19:00:00Z',
+        'retrieved-at': '2026-08-31T19:01:00Z',
+        'coverage-start': '2026-08-30T19:00:00Z',
+        'coverage-end': '2026-08-31T19:00:00Z',
+        completeness: 'complete',
+        freshness: 'fresh',
+        availability: 'available'
+      };
+      const workflow = '.github/workflows/multi-device-docs-tester.md';
+      const dashboardDocument = {
+        languageVersion: '0.1.0',
+        dashboard: {
+          id: 'workflow-runtime-route',
+          title: 'Workflow runtime route',
+          pages: [
+            {
+              id: 'repository-detail',
+              kind: 'custom',
+              title: 'Repository',
+              route: { 'hash-query-parameter': 'repository' },
+              views: [{
+                id: 'repository-workflows',
+                title: 'Agentic workflows',
+                data: { sources: ['workflows'] },
+                mark: 'element',
+                element: 'repository-workflows'
+              }]
+            },
+            {
+              id: 'workflow-runtime',
+              kind: 'custom',
+              title: 'Workflow runtime',
+              route: { 'hash-query-parameter': 'workflow' },
+              views: [{
+                id: 'workflow-runtime',
+                title: 'Workflow runtime',
+                data: { sources: ['workflows', 'runs', 'usage', 'operational-values'] },
+                mark: 'element',
+                element: 'workflow-runtime'
+              }]
+            }
+          ]
+        }
+      };
+      const sources = {
+        workflows: {
+          source: 'workflows',
+          metadata,
+          rows: [{
+            organization: 'githubnext',
+            repository: 'central-agentic-ops',
+            workflow,
+            'workflow-name': 'Multi-Device Docs Tester',
+            'workflow-role': 'standalone',
+            'workflow-active': 'true',
+            'rollout-mode': 'review'
+          }]
+        },
+        runs: {
+          source: 'runs',
+          metadata,
+          rows: [{
+            organization: 'githubnext',
+            repository: 'central-agentic-ops',
+            workflow,
+            run: '45',
+            'run-status': 'completed',
+            'run-conclusion': 'success'
+          }]
+        },
+        usage: {
+          source: 'usage',
+          metadata: { ...metadata, completeness: 'partial' },
+          rows: [{
+            organization: 'githubnext',
+            repository: 'central-agentic-ops',
+            workflow,
+            run: '45',
+            aic: 962.7
+          }]
+        },
+        'operational-values': {
+          source: 'operational-values',
+          metadata,
+          rows: []
+        }
+      };
+      document.querySelector('#root').append(renderDashboard({ document: dashboardDocument, sources }));
+    </script>
+  `);
+
+  const workflowLink = page.locator('.repository-workflow-table tbody th > a').first();
+  await expect(workflowLink).toHaveAttribute('href', /#page-workflow-runtime\?workflow=/);
+  await workflowLink.click();
+
+  await expect(page).toHaveURL(/#page-workflow-runtime\?workflow=/);
+  await expect(page.getByRole('heading', { name: 'Multi-Device Docs Tester', level: 1 })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Multi-Device Docs Tester', level: 1 })).toBeFocused();
+  await expect(page.getByRole('navigation', { name: 'Multi-Device Docs Tester views' })).toContainText('ReportsInsights');
+  await expect(page.locator('.workflow-runtime-metrics')).toContainText('1');
+  await expect(page.locator('.workflow-runtime-metrics')).toContainText('962.7 AIC');
+  await expect(page.getByRole('heading', { name: 'No workflow observations yet' })).toBeVisible();
+  await expect(page.locator('[data-nav-page-id="workflow-runtime"]')).toHaveAttribute('aria-current', 'page');
 });
 
 test('outcome page template follows its JSON-declared hash query route in browser', async ({ page }) => {

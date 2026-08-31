@@ -36,6 +36,8 @@ The overview now renders a report-style six-domain attention grid from canonical
 
 The Packages page renders centrally managed package utilization cards with retained-usage coverage and complete-attempt allowances, All/Review/Live mode filters, and a 30-day cumulative package-run trend.
 
+Repository and package workflow links open a JSON-declared runtime view with workflow-scoped run health, registration, AI Credit usage, and operational-value evidence.
+
 Named UI elements, navigation icons, and semantic table-cell treatments are declared in dashboard JSON. The presenter dispatches these declarations without inferring UI from page IDs, view IDs, source contents, or field names.
 
 Pages may also declare a JSON-configured `filter-bar` with ordered filter tokens, a time-range label, and a page-source JSON export.
