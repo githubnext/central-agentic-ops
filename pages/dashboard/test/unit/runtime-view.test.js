@@ -1,10 +1,13 @@
 // @vitest-environment jsdom
 import { readFileSync } from 'node:fs';
+import { dirname, resolve } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
 import { renderDashboard } from '../../src/presenter.js';
 
+const fixtureDirectory = dirname(fileURLToPath(import.meta.url));
 const authoritativeDashboard = JSON.parse(
-  readFileSync(new URL('../../dashboard.json', import.meta.url), 'utf8')
+  readFileSync(resolve(fixtureDirectory, '../../dashboard.json'), 'utf8')
 );
 
 const metadata = {
@@ -22,7 +25,7 @@ const metadata = {
 describe('Runtime dashboard view', () => {
   it('keeps Runtime and its execution views in the authoritative dashboard.json', () => {
     const runtimePage = authoritativeDashboard.dashboard.pages.find(
-      (page) => page.id === 'runtime'
+      (/** @type {{ id: string }} */ page) => page.id === 'runtime'
     );
 
     expect(runtimePage).toMatchObject({
