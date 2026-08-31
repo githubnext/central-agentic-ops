@@ -228,12 +228,20 @@ function outcomeRows(records) {
   return records.map((record) => ({
     ...repositoryParts(record.repository),
     workflow: record.workflowPath?.replace(/\.lock\.yml$/, ".md") || record.workflow || "",
+    "workflow-name": record.workflow || record.workflowPath?.replace(/\.lock\.yml$/, ".md") || "Unknown workflow",
     run: String(record.runUrl?.match(/\/runs\/(\d+)/)?.[1] || ""),
     "safe-output": record.id,
+    "outcome-title": record.title || record.id,
+    "outcome-summary": record.summary || "",
+    "outcome-body-html": record.bodyHtml || "",
+    "outcome-category": record.kind || "unknown",
+    "outcome-status": record.state || "unknown",
     "outcome-state": record.state === "closed"
       ? "lifecycle-close"
       : record.kind === "noop" ? "ignored" : "pending",
     "evidence-strength": record.kind === "review-bundle" ? "proposal" : "durable",
+    "rollout-mode": rolloutMode(record.mode),
+    "published-at": record.createdAt,
     "observed-at": record.updatedAt || record.createdAt,
     "issue-link": recordLink(record, "issue"),
     "pull-request-link": recordLink(record, "pull-request"),

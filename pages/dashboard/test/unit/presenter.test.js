@@ -38,9 +38,9 @@ describe('presenter built-in and custom pages', () => {
         workflows: {
           source: 'workflows',
           rows: [
-            { repository: 'central-agentic-ops', package: 'dependabot', 'package-name': 'Dependabot', workflow: '.github/workflows/dependabot.yml', 'workflow-name': 'Dependabot', 'workflow-role': 'orchestrator', 'workflow-active': 'true', 'rollout-mode': 'live' },
-            { repository: 'central-agentic-ops', package: 'dependabot', 'package-name': 'Dependabot', workflow: '.github/workflows/dependabot-release-train-updater.yml', 'workflow-name': 'Release Train Updater', 'workflow-role': 'worker', 'workflow-active': 'true', 'rollout-mode': 'live' },
-            { repository: 'target-service', workflow: '.github/workflows/ci.yml', 'workflow-name': 'CI', 'workflow-role': 'standalone', 'workflow-active': 'true', 'rollout-mode': 'unknown' }
+            { repository: 'central-agentic-ops', package: 'dependabot', 'package-name': 'Dependabot', workflow: '.github/workflows/dependabot.yml', 'workflow-name': 'Dependabot', 'workflow-role': 'orchestrator', 'workflow-active': 'true', 'rollout-mode': 'review' },
+            { repository: 'central-agentic-ops', package: 'dependabot', 'package-name': 'Dependabot', workflow: '.github/workflows/dependabot-release-train-updater.yml', 'workflow-name': 'Release Train Updater', 'workflow-role': 'worker', 'workflow-active': 'true', 'rollout-mode': 'review' },
+            { repository: 'target-service', workflow: '.github/workflows/ci.yml', 'workflow-name': 'CI', 'workflow-role': 'standalone', 'workflow-active': 'true', 'rollout-mode': 'live' }
           ],
           metadata: {
             'source-id': 'workflow-topology-fixture',
@@ -67,6 +67,8 @@ describe('presenter built-in and custom pages', () => {
     expect(topology?.querySelectorAll('[data-workflow-role="worker"]')).toHaveLength(1);
     expect(topology?.querySelector('[data-package-id="dependabot"]')?.textContent).toContain('dispatches');
     expect(topology?.querySelector('[data-repository="target-service"]')?.textContent).toContain('CI');
+    expect(topology?.querySelector('[data-package-id="dependabot"] .mode-review .octicon-beaker')).not.toBeNull();
+    expect(topology?.querySelector('[data-repository="target-service"] .mode-live .octicon-rocket')).not.toBeNull();
     expect(topology?.textContent).toContain('safe outputs only');
     const rocket = rendered.querySelector('[data-nav-page-id="operations"] .octicon-rocket');
     expect(rocket?.querySelector('use')?.getAttribute('href')).toMatch(/\/src\/octicons\.svg#octicon-rocket$/);
