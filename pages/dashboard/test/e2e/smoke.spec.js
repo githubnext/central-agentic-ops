@@ -1356,7 +1356,7 @@ test('DLS-SAFE-004 runtime links with embedded credentials, ftp schemes, and bla
   `);
 
   await expect(page.getByRole('heading', { name: 'Credential Links', level: 1 })).toBeVisible();
-  await expect(page.locator('.custom-table a')).toHaveText('Run 4');
+  await expect(page.locator('.custom-table a')).toHaveText('4');
   await expect(page.locator('.metric-link a')).toHaveText('Run 4');
   await expect(page.locator('a[href*="user:secret@"]').first()).toHaveCount(0);
   await expect(page.locator('a[href^="ftp:"]').first()).toHaveCount(0);
