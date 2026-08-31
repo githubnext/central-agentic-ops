@@ -12,6 +12,7 @@ describe("live Dashboard Language sources", () => {
     expect(preview).toContain("sources = await liveSourcesResponse.json()");
     expect(preview).toContain('has("fixtures")');
     expect(preview).toContain("throw new Error(`Unable to load sources.json:");
+    expect(preview).toContain("Unable to load live dashboard data:");
     expect(preview).not.toContain("Retain the illustrative fixture data");
   });
 

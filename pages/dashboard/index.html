@@ -201,11 +201,18 @@
 
       let sources = fixtureSources;
       if (!new URLSearchParams(window.location.search).has("fixtures")) {
-        const liveSourcesResponse = await fetch("./sources.json");
-        if (!liveSourcesResponse.ok) {
-          throw new Error(`Unable to load sources.json: ${liveSourcesResponse.status}`);
+        try {
+          const liveSourcesResponse = await fetch("./sources.json");
+          if (!liveSourcesResponse.ok) {
+            throw new Error(`Unable to load sources.json: ${liveSourcesResponse.status}`);
+          }
+          sources = await liveSourcesResponse.json();
+        } catch (error) {
+          const message = error instanceof Error ? error.message : String(error);
+          const failure = new Error(`Unable to load live dashboard data: ${message}`, { cause: error });
+          document.querySelector("#root").textContent = failure.message;
+          throw failure;
         }
-        sources = await liveSourcesResponse.json();
       }
 
       document.querySelector("#root").append(renderDashboard({ document: dashboardDocument, sources }));
