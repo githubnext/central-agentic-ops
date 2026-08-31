@@ -371,8 +371,9 @@ test('DLS-PAGE-002 DLS-PAGE-014 built-in overview page renders the report-style 
             {
               finding: 'finding-2',
               'finding-summary': 'Review workflow needs triage',
+              'finding-kind': 'authored-warning',
               'finding-severity': 'medium',
-              'finding-status': 'open',
+              'finding-status': 'unknown',
               organization: 'github',
               repository: 'central-agentic-ops',
               workflow: '.github/workflows/review.yml',
@@ -384,8 +385,9 @@ test('DLS-PAGE-002 DLS-PAGE-014 built-in overview page renders the report-style 
             {
               finding: 'finding-1',
               'finding-summary': 'Daily workflow regression',
+              'finding-kind': 'authored-warning',
               'finding-severity': 'high',
-              'finding-status': 'open',
+              'finding-status': 'unknown',
               organization: 'github',
               repository: 'central-agentic-ops',
               workflow: '.github/workflows/daily.yml',
@@ -465,6 +467,8 @@ test('DLS-PAGE-002 DLS-PAGE-014 built-in overview page renders the report-style 
   await expect(cards.first()).toHaveClass(/attention-domain-critical/);
   await expect(cards.first()).toContainText('1 failed');
   await expect(cards.nth(1)).toContainText('2 observed');
+  await expect(cards.nth(2)).toContainText('2 signals');
+  await expect(cards.nth(2)).toHaveClass(/attention-domain-investigate/);
   expect(await cards.evaluateAll((links) => links.map((link) => link.getAttribute('href')))).toEqual([
     '#page-runtime',
     '#page-runtime?section=runtime-execution-episodes',
