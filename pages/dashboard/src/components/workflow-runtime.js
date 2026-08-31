@@ -10,6 +10,7 @@ import { listChartSeries, renderChartWidget, renderPieLegend } from './chart-ele
 import { findLink, renderExternalLink } from './link-content.js';
 import { isApprovalConclusion, isFailureConclusion } from './run-classification.js';
 import { formatUtcDateTime } from './ui-primitives.js';
+import { renderTitledBodySection } from './view-chrome.js';
 
 /**
  * @param {import('./ui-elements.js').ElementRenderContext} context
@@ -290,12 +291,16 @@ function renderValueReport(workflowName, repository, workflowPath, observations,
       h(
         'div',
         { className: 'value-details' },
-        h(
-          'section',
-          null,
-          h('h3', null, 'Workflow observations'),
-          h('p', null, 'Missing, failed, and null grader results are excluded rather than scored as zero.'),
-          renderObservationTable(observations)
+        renderTitledBodySection(
+          '',
+          'Workflow observations',
+          [
+            h('p', null, 'Missing, failed, and null grader results are excluded rather than scored as zero.'),
+            renderObservationTable(observations)
+          ],
+          {
+            headingTag: 'h3'
+          }
         )
       )
     )

@@ -116,7 +116,7 @@
 - `src/components/data-state.js` — presentation-only data-state metrics card grid for availability, completeness, and freshness.
 - `src/components/table-region.js` — presentation-only reusable table wrapper for repeated table-region markup, header rows, empty-state rows, and keyed body-row descriptors across built-in and custom tables.
 - `src/components/summary-copy.js` — presentation-only shared singular/plural summary-count copy for repeated item-count text surfaces.
-- `src/components/view-chrome.js` — presentation-only reusable page-section, titled-region, metadata-section, summary-list/summary-region, summary-style definition-list and definition-list rows, generic custom-view chrome paragraphs, custom-view source/metadata/context chrome, shared custom-view section chrome, custom-view state-message/details helpers, and built-in provenance-section helpers.
+- `src/components/view-chrome.js` — presentation-only reusable page-section, titled-region, metadata-section, titled body-section, summary-list/summary-region, summary-style definition-list and definition-list rows, generic custom-view chrome paragraphs, custom-view source/metadata/context chrome, shared custom-view section chrome, custom-view state-message/details helpers, and built-in provenance-section helpers.
 - `src/components/workflow-topology.js` — topology overview section for package and standalone workflow structure, now reusing shared definition-list rows for its summary metrics.
 - `src/components/ui-primitives.js` — presentation-only shared section-heading, vital-stat, and UTC date-time helpers for repeated dashboard component chrome, including optional summary-free heading shells.
 - `src/components/count-formatters.js` — presentation-only shared count and singular/plural text helpers for repeated dashboard status, workflow, and signal copy.
@@ -134,6 +134,14 @@
 
 ## Run log
 
+### 2026-08-31 (workflow runtime titled body section refactor)
+- Re-inventoried repeated UI construction under `pages/dashboard/src/` and selected the next bounded presentation-only DOM slice from the queue: repeated titled body-section assembly (`<section><h3>…</h3><div>…</div></section>`) in `src/components/workflow-runtime.js`, aligned with the existing shared section-chrome family in `src/components/view-chrome.js`.
+- Extracted `renderTitledBodySection(...)` into `src/components/view-chrome.js` with a minimal composable API for optional section/body classes, optional body attributes, and configurable heading levels, then replaced every identified duplicate call site in `src/components/workflow-runtime.js`.
+- Collapsed the local workflow observations section assembly inside the value-details disclosure so the workflow runtime view now reuses shared titled body-section chrome without changing heading text, explanatory copy, DOM text, table labels, or class names on the surrounding disclosure.
+- Added unit coverage in `test/unit/view-chrome.test.js` for populated and plain titled body sections, including optional heading ids and body attributes, while preserving the existing `test/unit/workflow-runtime.test.js` assertions that lock the affected workflow observations heading, evidence table, links, and empty/unavailable states.
+- Proved unchanged behavior by capturing the bounded refactor diff at `/tmp/gh-aw/agent/workflow-runtime-titled-body-section.diff` and by keeping the existing workflow-runtime unit assertions green for the affected disclosure content and evidence table rendering.
+- Verified `pages/dashboard/` quality gates in this run: `npm install`, `npm run build`, `npm run typecheck`, `npm run lint`, `npm test`, and `npx playwright test --config=playwright.config.mjs --reporter=line` all pass. The browser suite initially failed 13 smoke assertions because `test/e2e/smoke.spec.js`'s `buildPresenterModuleUrl()` inlines every presenter module import as a `data:` URL and the new `./view-chrome.js` import in `src/components/workflow-runtime.js` was left unresolved; adding that replacement to the workflow-runtime module chain restored the green browser gate.
+- Next candidates in the queue: extract the repeated definitions/observations dual-region composition in `src/presenter.js`; extract the repeated summary-plus-trend section composition in `src/presenter.js`; extract the next shared pure helpers around subject/provenance/count formatting in `src/presenter.js`.
 ### 2026-08-31 (declarative dispatch catalog migration)
 
 - Investigated the remaining JSON-selected JavaScript views and selected the dispatch catalog as a bounded migration because its dedicated renderer duplicated the shared table, status, link, search, facet, sort, and empty-state primitives.

@@ -155,7 +155,8 @@ function buildPresenterModuleUrl() {
     .replace("'./chart-elements.js'", JSON.stringify(chartElementsModuleUrl))
     .replace("'./link-content.js'", JSON.stringify(linkContentModuleUrl))
     .replace("'./run-classification.js'", JSON.stringify(runClassificationModuleUrl))
-    .replace("'./ui-primitives.js'", JSON.stringify(uiPrimitivesModuleUrl));
+    .replace("'./ui-primitives.js'", JSON.stringify(uiPrimitivesModuleUrl))
+    .replace("'./view-chrome.js'", JSON.stringify(viewChromeModuleUrl));
   const workflowRuntimeModuleUrl = `data:text/javascript;charset=utf-8,${encodeURIComponent(workflowRuntimeSource)}`;
 
   const repositoriesViewSource = readFileSync(new URL('../../src/components/repositories-view.js', import.meta.url), 'utf8')
