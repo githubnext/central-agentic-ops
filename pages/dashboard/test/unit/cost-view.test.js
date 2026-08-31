@@ -91,8 +91,11 @@ describe('Cost and efficiency dashboard view', () => {
 
     expect(page?.querySelectorAll('[data-chart-widget="pie"] [data-chart-category]')).toHaveLength(2);
     expect(page?.querySelector('.pie-chart-total-value')?.textContent).toBe('9');
-    expect(page?.querySelector('.readiness-note')?.textContent).toContain('Budget and anomaly verdicts unavailable');
-    expect(page?.querySelector('.readiness-note')?.textContent).toContain('qualified historical baseline');
+    expect(page?.querySelectorAll('.signal-list-region')).toHaveLength(2);
+    const boundary = [...(page?.querySelectorAll('.signal-list-region') ?? [])]
+      .find((region) => region.textContent?.includes('Budget and anomaly verdicts unavailable'));
+    expect(boundary?.textContent).toContain('qualified historical baseline');
+    expect(boundary?.textContent).toContain('Threshold unavailable');
   });
 
   it('does not report a telemetry coverage boundary for a complete usage source', () => {

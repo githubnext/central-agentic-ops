@@ -56,7 +56,6 @@ const ELEMENT_RENDERERS = new Map([
   ['outcome-detail', renderOutcomeDetail],
   ['execution-signal-list', renderExecutionSignalList],
   ['execution-episodes', renderExecutionEpisodes],
-  ['readiness-note', renderReadinessNoteElement],
   ['workflow-topology', ({ pageId, title, description, sourceNames, sources, headingTag }) => {
     const sourceName = sourceNames[0];
     const source = sources[sourceName];
@@ -65,7 +64,7 @@ const ELEMENT_RENDERERS = new Map([
   }]
 ]);
 
-const EMPTY_AWARE_ELEMENTS = new Set(['status-summary', 'meter-list', 'attention-list', 'record-cards', 'summary-grid', 'signal-list', 'package-detail', 'package-reports', 'dispatch-catalog', 'repository-scope', 'repository-activity', 'repository-workflows', 'workflow-detail', 'workflow-runtime', 'outcome-detail', 'execution-signal-list', 'execution-episodes', 'readiness-note']);
+const EMPTY_AWARE_ELEMENTS = new Set(['status-summary', 'meter-list', 'attention-list', 'record-cards', 'summary-grid', 'signal-list', 'package-detail', 'package-reports', 'dispatch-catalog', 'repository-scope', 'repository-activity', 'repository-workflows', 'workflow-detail', 'workflow-runtime', 'outcome-detail', 'execution-signal-list', 'execution-episodes']);
 
 /**
  * @param {string} name
@@ -305,34 +304,6 @@ function renderSignalListElement(context) {
           h('span', { className: 'signal-copy' }, h('strong', null, 'No signals require attention'))
         )])
     )
-  );
-}
-
-/**
- * @param {ElementRenderContext} context
- */
-function renderReadinessNoteElement(context) {
-  const row = firstRow(context, context.sourceNames[0]);
-  if (!row) return null;
-  const headingId = `${context.pageId}-${slugify(context.title)}-heading`;
-  return h(
-    'section',
-    {
-      className: `readiness-note readiness-${stringValue(row.tone) || 'attention'}`,
-      'aria-labelledby': headingId
-    },
-    h(
-      'div',
-      null,
-      octicon(stringValue(row.icon) || 'issue'),
-      h(
-        'div',
-        null,
-        h('span', { className: 'scope-kicker' }, stringValue(row.kicker)),
-        h(context.headingTag, { id: headingId }, stringValue(row.title) || context.title)
-      )
-    ),
-    h('p', null, stringValue(row.detail))
   );
 }
 

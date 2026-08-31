@@ -167,7 +167,7 @@
               ]
             },
             "mark": "element",
-            "element": "readiness-note",
+            "element": "signal-list",
             "layout": "full"
           }
         ]
@@ -1531,7 +1531,7 @@
               ]
             },
             "mark": "element",
-            "element": "readiness-note",
+            "element": "signal-list",
             "layout": "full"
           }
         ]
