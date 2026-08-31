@@ -657,6 +657,8 @@ test("public read-only operation uses the built-in token without widening access
 });
 
 test("authentication prefers an optional GitHub App and retains bounded fallbacks", () => {
+  const authentication = readFileSync(join(root, "docs", "authentication.md"), "utf8");
+  const bootstrap = readFileSync(join(root, "docs", "bootstrap-configuration.md"), "utf8");
   const control = workflow("shared/control.md");
   const precompute = workflow("shared/control-precompute.md");
 
@@ -665,6 +667,14 @@ test("authentication prefers an optional GitHub App and retains bounded fallback
   assert.match(control, /ignore-if-missing: true/);
   assert.doesNotMatch(control, /repositories: \["\*"\]/);
   assert.match(precompute, /steps\.github-mcp-app-token\.outputs\.token \|\| secrets\.GH_AW_GITHUB_TOKEN \|\| secrets\.GITHUB_TOKEN/);
+  assert.match(authentication, /runtime availability precedence, not permission to choose a PAT silently/);
+  assert.match(authentication, /A PAT is not a substitute for repository or organization access/);
+  assert.match(authentication, /A fine-grained PAT cannot access multiple organizations at once/);
+  assert.match(authentication, /including the Checks API/);
+  assert.match(authentication, /Obtain explicit confirmation to proceed/);
+  assert.match(authentication, /presence of an existing PAT secret, is not consent/);
+  assert.match(bootstrap, /Prefer the built-in token when it is sufficient, then a GitHub App/);
+  assert.match(bootstrap, /explicitly consented to the fallback/);
 });
 
 test("live workers require target-owned package authority before agent execution", () => {
@@ -1423,6 +1433,38 @@ test("Agent customizations preserve the deterministic dashboard exception", () =
   assert.match(repositoryInstructions, /Keep `dashboard\/dashboard-build\.yml` reusable through `workflow_call`/);
   assert.match(repositoryInstructions, /existing Pages site, retain one Pages artifact uploader and deployer/);
   assert.match(repositoryInstructions, /must not add a schedule or another enable variable/);
+});
+
+test("README routes zero-to-CAO requests to the setup skill", () => {
+  const readme = readFileSync(join(root, "README.md"), "utf8");
+  const setupSkillPath = join(root, ".github", "skills", "setup-central-agentic-ops", "SKILL.md");
+  const setupSkill = readFileSync(setupSkillPath, "utf8");
+  const readmeEntry = ".github/skills/setup-central-agentic-ops/SKILL.md";
+
+  assert.ok(readme.split("\n").slice(0, 20).some((line) => line.includes(readmeEntry)));
+  assert.ok(existsSync(setupSkillPath));
+  assert.match(setupSkill, /^---\nname: setup-central-agentic-ops\n/);
+  assert.match(setupSkill, /safe_output_mode=review/);
+  assert.match(setupSkill, /Always target the control repository itself for the first run/);
+  assert.match(setupSkill, /target_repo="<organization>\/<control-repository>"/);
+  assert.doesNotMatch(setupSkill, /first (?:low-risk )?target repository/);
+  assert.match(setupSkill, /gh aw add githubnext\/central-agentic-ops/);
+  assert.doesNotMatch(setupSkill, /gh aw add-wizard/);
+  assert.match(setupSkill, /Run `gh aw version`\. Compare it with `min-version` in the root CAO `aw\.yml`/);
+  assert.match(setupSkill, /Do not require the catalog maintainer's current local version when the package supports an older release/);
+  assert.match(setupSkill, /The unpinned command above intentionally installs the current default branch/);
+  assert.match(setupSkill, /package cannot install this file because it is consumer-owned rollout policy/);
+  assert.match(setupSkill, /"allowed-repositories": \["<organization>\/<control-repository>"\]/);
+  assert.match(setupSkill, /"dependabot"[\s\S]*?"release-train-updater"/);
+  assert.match(setupSkill, /Public and private control repositories are supported/);
+  assert.match(setupSkill, /policy, workflow runs, operational metadata, and review safe outputs are public/);
+  assert.doesNotMatch(setupSkill, /the control repository is public;/);
+  assert.match(setupSkill, /Control-repository visibility does not determine later target access/);
+  assert.match(setupSkill, /initial self-review uses the control repository's `GITHUB_TOKEN`/);
+  assert.match(setupSkill, /recommend a least-privilege GitHub App/);
+  assert.match(setupSkill, /offer a fine-grained PAT only when an App cannot be obtained[\s\S]*?user explicitly consents/);
+  assert.match(setupSkill, /A PAT cannot grant access the user does not already have/);
+  assert.match(setupSkill, /Never configure it as the user's control plane/);
 });
 
 test("Dashboard package supports embedded and explicit standalone deployment", () => {

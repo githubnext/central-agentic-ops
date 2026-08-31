@@ -3,7 +3,10 @@
 > [!NOTE]
 > **Research prototype:** Features and interfaces may change as the project evolves.
 
-Run trusted agentic operations across your repository fleet from one private control plane.
+> [!TIP]
+> **Agent setup router:** When asked to create, bootstrap, initialize, or set up a Central Agentic Ops control plane, load and follow [the setup skill](.github/skills/setup-central-agentic-ops/SKILL.md). Do not configure this catalog repository as the control plane.
+
+Run trusted agentic operations across your repository fleet from one central control plane.
 
 Central Agentic Ops packages reusable orchestrators and focused workers so platform teams can automate repository operations without copying workflows into every repository.
 

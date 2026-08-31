@@ -3,25 +3,35 @@ title: Configure Authentication
 description: Choose and configure least-privilege GitHub App, fine-grained PAT, or built-in workflow-token access.
 ---
 
-Configure authentication for the repositories each operation needs to access. Prefer a GitHub App for private or cross-repository use; use a fine-grained PAT when an App is not practical; use the built-in workflow token only for the bounded cases described below.
+Choose the least-powerful authentication profile that can satisfy the effective target scope, package API requirements, mode, and review destination. Control-repository visibility does not determine target access. Use the built-in workflow token for the bounded cases below, prefer a GitHub App for long-lived cross-repository operation, and treat a fine-grained personal access token (PAT) as a consented fallback with additional eligibility limits.
 
 Package maintainers can optionally turn these settings into a guided `gh aw add-wizard` flow with [`aw.yml` bootstrap configuration](bootstrap-configuration.md).
 
 | Your use case | Credential |
 | --- | --- |
-| Private or internal targets, alternate review repositories, or live writes | GitHub App preferred; fine-grained PAT supported |
-| Public targets with review outputs kept in the control repository | Built-in token only when its repository permissions authorize the output |
+| Self-review against the control repository | Built-in `GITHUB_TOKEN` |
+| Public targets in `review`, with outputs kept in the control repository | Built-in `GITHUB_TOKEN`, subject to cross-repository API limits |
+| Private or internal targets, alternate review repositories, or cross-repository live writes | GitHub App |
+| GitHub App installation is unavailable and the exact scope is PAT-compatible | Fine-grained PAT, only after informed consent |
 
 ```text
-Does the run need a private target, cross-repository data, or live writes?
+Can GITHUB_TOKEN satisfy this bounded self-review or public-only review?
 	|
-	+-- yes --> GitHub App (preferred) or fine-grained PAT
+	+-- yes --> built-in GITHUB_TOKEN
 	|
-	+-- no ---> Public target reviewed in the control repository --> built-in GITHUB_TOKEN
+	+-- no ---> Can a GitHub App be installed for every required organization?
+	             |
+	             +-- yes --> GitHub App
+	             |
+	             +-- no ---> Is one fine-grained PAT eligible for the exact scope and APIs?
+	                          |
+	                          +-- yes --> explain tradeoffs, obtain consent, then configure PAT
+	                          |
+	                          +-- no ---> stop, narrow or split the scope, or request owner help
 ```
 
 :::tip[Default to a GitHub App]
-Choose a GitHub App unless you are deliberately validating the public read-only profile. Its short-lived tokens and installation-scoped repository access make review and revocation easier.
+Choose a GitHub App unless the built-in token fully covers the bounded run. GitHub Apps use short-lived, installation-scoped tokens, are independent of an individual user's continued access, and scale across approved repository and organization installations.
 :::
 
 ## Policy
@@ -36,7 +46,7 @@ The supported control-plane credentials are:
 | 2 | Fine-grained PAT | Protected `central-agentic-ops` environment secret `GH_AW_GITHUB_TOKEN` |
 | 3 | Workflow token | Repository-provided `GITHUB_TOKEN` for operations it can authorize |
 
-The GitHub App is preferred because it provides short-lived installation tokens, repository-scoped installation access, and centrally reviewable permissions. `ignore-if-missing: true` makes App configuration optional, allowing PAT-only installations.
+This is runtime availability precedence, not permission to choose a PAT silently. `ignore-if-missing: true` makes the App optional: when an App token is unavailable, shared control falls through to `GH_AW_GITHUB_TOKEN`, then `GITHUB_TOKEN`. The runtime cannot determine why a PAT secret exists or record informed consent. Setup must choose and validate the authentication profile before a run; if App authentication is intended, verify both App secrets rather than relying on fallback behavior.
 
 Configure the App ID and private key as protected environment secrets:
 
@@ -52,11 +62,27 @@ gh secret set GH_AW_GITHUB_APP_PRIVATE_KEY \
 
 The private key command reads the key from a local file without placing it in shell history.
 
-When manual workflow steps need `GH_TOKEN`, they select the imported App token first, then `GH_AW_GITHUB_TOKEN`, then `GITHUB_TOKEN`. Missing, incomplete, or invalid credentials must not be copied into dispatch inputs or persisted in artifacts.
+When manual workflow steps need `GH_TOKEN`, they select the imported App token first when available, then `GH_AW_GITHUB_TOKEN`, then `GITHUB_TOKEN`. Missing, incomplete, or invalid credentials must not be copied into dispatch inputs or persisted in artifacts.
+
+## Fine-Grained PAT Fallback
+
+A PAT is not a substitute for repository or organization access. It can only exercise access already held by the user who created it, and it becomes unusable when that user loses the underlying access. Lack of organization-owner permission to install an App does not by itself make a PAT viable.
+
+Before offering a PAT fallback, verify all of these conditions:
+
+1. The user can select the target organization as the PAT resource owner and already has the required access to every enrolled repository.
+2. Organization and enterprise policy permits fine-grained PATs, and any required organization approval can be obtained before the first run.
+3. All repositories covered by the token have one resource owner. A fine-grained PAT cannot access multiple organizations at once; with CAO's single `GH_AW_GITHUB_TOKEN` fallback, a multi-organization scope requires a GitHub App, narrower control planes, or separate credential architecture.
+4. Every API required by the installed package supports fine-grained PATs. Fine-grained PATs do not currently support every endpoint, including the Checks API; do not replace a required App with a classic PAT to work around an endpoint gap.
+5. The PAT can be limited to the exact enrolled repositories, package-required permissions, and an explicit expiration and rotation owner.
+
+If any condition fails, stop and recommend obtaining a GitHub App installation, narrowing or splitting the scope, or involving an organization owner. Do not present a PAT as an access bypass.
+
+Before selecting, configuring, validating, or using a PAT, explain that it is user-bound, longer-lived than an App installation token, limited to one resource owner, subject to organization policy and endpoint gaps, and dependent on manual rotation and revocation. Obtain explicit confirmation to proceed. Inability to use an App, or the presence of an existing PAT secret, is not consent.
 
 ## Public Read-Only Profile
 
-An App or PAT is not required for a bounded `review` run when every target repository is public and outputs remain in the private control repository. GitHub Actions automatically provides `GITHUB_TOKEN`; the workflows use it for control-repository workflow discovery, public checkout, and review outputs authorized in the control repository. This is built-in-token operation, not anonymous or credential-free operation.
+An App or PAT is not required for a bounded `review` run when every target repository is public and outputs remain in the current control repository. GitHub Actions automatically provides `GITHUB_TOKEN`; the workflows use it for control-repository workflow discovery, public checkout, and review outputs authorized in the control repository. This is built-in-token operation, not anonymous or credential-free operation.
 
 :::caution[Public does not mean fully readable]
 The built-in token may check out public code, but it does not automatically gain access to another repository's Actions logs, security data, issues, pull requests, or write APIs.
@@ -73,7 +99,7 @@ The workflow token is scoped to the repository containing the workflow. Public c
 
 ## Credential Boundary
 
-- Credentials live only in the private control-plane repository's protected `central-agentic-ops` environment secrets.
+- Credentials live only in the control-plane repository's protected `central-agentic-ops` environment secrets.
 - worker workflows receive repository names and routing policy, never credentials.
 - Each Orchestrator and worker workflow run resolves its own token through imported shared control.
 - Tokens must not appear in prompts, logs, safe outputs, Repo Memory, review bundles, or correlation metadata.
@@ -131,8 +157,10 @@ Stopping an operation does not revoke its credential. Disable affected runs and 
 Before promotion, verify:
 
 - App-only authentication when an App is configured;
-- PAT-only authentication when the App is intentionally absent;
+- PAT-only authentication only when the App is intentionally absent, the fallback is eligible, and the operator explicitly consented;
 - expected precedence when both are configured;
 - target repository coverage;
+- organization PAT policy, approval state, resource-owner scope, expiration, and required API compatibility when using a PAT;
 - read operations for repository and workflow discovery;
-- a review output in the intended private repository without credential material.
+- a review output in the intended control repository without credential material;
+- authentication-profile review whenever target scope, package API requirements, mode, or review destination changes.

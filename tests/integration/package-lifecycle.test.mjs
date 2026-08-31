@@ -69,6 +69,7 @@ const expectedFiles = [
   ".github/aw/instructions.md",
   ".github/skills/agentic-workflows/SKILL.md",
   ".github/skills/create-ops-package/SKILL.md",
+  ".github/skills/setup-central-agentic-ops/SKILL.md",
   ".github/workflows/ambient-context-agents-md-curator.md",
   ".github/workflows/ambient-context-skills-curator.md",
   ".github/workflows/ambient-context.md",

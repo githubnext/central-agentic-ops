@@ -11,6 +11,8 @@ gh aw add-wizard githubnext/central-agentic-ops/dependabot@<catalog-release>
 
 The current Central Agentic Ops manifests do not declare `config:`. Keep setup opt-in while the feature is experimental so normal package installation remains unchanged.
 
+Choose the authentication profile in [Configure Authentication](authentication.md) before collecting secrets. Prefer the built-in token when it is sufficient, then a GitHub App. Include or request a PAT only after verifying that the exact scope and package APIs are eligible and the user has explicitly consented to the fallback.
+
 :::caution[Bootstrap is not policy]
 Persistent scope, inventory, package, worker, mode, rollout, and budget settings belong only in `.github/central-agentic-ops.json`. Do not add `CENTRAL_AGENTIC_OPS_*` repository variables to an installer profile.
 :::
@@ -38,19 +40,19 @@ config:
   - type: repo-secret
     name: GH_AW_GITHUB_TOKEN
     prompt: Fine-grained PAT fallback
-    description: Limit the token to enrolled repositories and package-required permissions.
+    description: Use only after App-first review and explicit PAT fallback consent; limit access to eligible enrolled repositories and package-required permissions.
     optional: true
   - type: handoff
     message: Commit .github/central-agentic-ops.json, then run one reviewed operation against one repository.
 ```
 
-Supply either both App secrets or the PAT secret before an operational run. The installer cannot verify an App installation or PAT repository scope, so validate access in `review` before enabling `live`.
+Supply both App secrets for the preferred credentialed profile. Use the PAT secret only after the documented eligibility and consent checks. The installer cannot verify an App installation, PAT approval, repository scope, API compatibility, or consent, so validate access in `review` before enabling `live`.
 
 The dedicated `github-app` bootstrap action stores its client ID as a repository variable. Do not use that action while Central Agentic Ops intentionally consumes a secret-only App pair.
 
-## Fine-Grained PAT Profile
+## Consented Fine-Grained PAT Profile
 
-A PAT-only package can use the smaller profile:
+A PAT-only package can use the smaller profile only when a GitHub App installation cannot be obtained and the exact scope passes the documented PAT eligibility checks:
 
 ```yaml title="aw.yml"
 config:
@@ -64,7 +66,7 @@ config:
     message: Commit .github/central-agentic-ops.json, then run one reviewed operation against one repository.
 ```
 
-Create the PAT before running the wizard. Select only the control and target repositories needed by the package, then grant only the permissions in [Configure Authentication](authentication.md#permissions). Do not use a classic PAT or organization-wide token as a shortcut.
+Before running the wizard, explain the PAT tradeoffs and obtain explicit consent. Then create a fine-grained PAT with one eligible resource owner, an expiration, only the control and target repositories needed by the package, and only the permissions in [Configure Authentication](authentication.md#permissions). Do not use a classic PAT or organization-wide token as a shortcut.
 
 The [public read-only profile](authentication.md#public-read-only-profile) needs no App or PAT bootstrap when all targets are public and review outputs stay in the control repository.
 
