@@ -103,7 +103,7 @@ export function deriveOverviewSources(sources) {
 function buildValueSummary(operationalValues, outcomes) {
   const values = operationalValues
     .map((row) => row['operational-value'])
-    .filter((value) => typeof value === 'number' && Number.isFinite(value));
+    .filter(isFiniteNumber);
   const mean = values.length > 0
     ? values.reduce((total, value) => total + value, 0) / values.length
     : null;
@@ -283,9 +283,9 @@ function buildValueWorkflowRows(operationalValues) {
       'operational-value-definition': latest['operational-value-definition'],
       opportunities: comparable.length,
       'mature-observations': comparable.filter((row) => String(row['maturity-status']) === 'matured').length,
-      'mean-operational-value': values.reduce((total, value) => total + value, 0) / values.length,
+      'mean-operational-value': roundMetric(values.reduce((total, value) => total + value, 0) / values.length),
       'mean-baseline': baselines.length > 0
-        ? baselines.reduce((total, value) => total + value, 0) / baselines.length
+        ? roundMetric(baselines.reduce((total, value) => total + value, 0) / baselines.length)
         : null,
       'observed-at': latest['observed-at'],
       'evidence-link': latest['evidence-link']
@@ -299,6 +299,21 @@ function buildValueWorkflowRows(operationalValues) {
 function evidenceAssignmentTime(row) {
   const timestamp = Date.parse(String(row['requested-evidence-at'] ?? row['observed-at'] ?? ''));
   return Number.isFinite(timestamp) ? timestamp : 0;
+}
+
+/**
+ * @param {unknown} value
+ * @returns {value is number}
+ */
+function isFiniteNumber(value) {
+  return typeof value === 'number' && Number.isFinite(value);
+}
+
+/**
+ * @param {number} value
+ */
+function roundMetric(value) {
+  return Math.round(value * 1000) / 1000;
 }
 
 /**

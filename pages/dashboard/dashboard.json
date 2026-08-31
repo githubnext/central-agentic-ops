@@ -3,7 +3,7 @@
   "dashboard": {
     "id": "central-agentic-ops-dashboard",
     "title": "Central Agentic Ops Dashboard",
-    "description": "Authoritative declarative dashboard document for all specification-defined built-in pages in the presenter prototype.",
+    "description": "Authoritative declarative dashboard document for built-in and custom pages in the presenter prototype.",
     "repository": "githubnext/central-agentic-ops",
     "units": {
       "aic": {
@@ -1246,13 +1246,7 @@
             "id": "operational-value-by-workflow",
             "title": "Comparable observations",
             "data": {
-              "source": "value-workflows",
-              "order-by": [
-                {
-                  "field": "mean-operational-value",
-                  "direction": "desc"
-                }
-              ]
+              "source": "value-workflows"
             },
             "mark": "table",
             "layout": "full",
@@ -1304,13 +1298,7 @@
             "id": "operational-value-ledger",
             "title": "Collected observations",
             "data": {
-              "source": "operational-values",
-              "order-by": [
-                {
-                  "field": "observed-at",
-                  "direction": "desc"
-                }
-              ]
+              "source": "operational-values"
             },
             "mark": "table",
             "layout": "full",
