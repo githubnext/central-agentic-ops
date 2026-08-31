@@ -106,6 +106,7 @@ function buildSecuritySignals(input) {
         title: workflowNames.get(workflow) ?? workflow,
         detail: `${formatNumber(rows.length)} run${rows.length === 1 ? ' requires' : 's require'} maintainer approval`,
         evidence: 'Execution control',
+        action: 'View evidence',
         'run-link': latestRow(rows)?.['run-link']
       })),
     ...groupRows(input.workflows.filter((row) => row['inventory-ready'] === false), (row) => String(row.package ?? row.workflow ?? ''))
@@ -118,6 +119,7 @@ function buildSecuritySignals(input) {
         title: String(rows[0]?.['package-name'] ?? rows[0]?.['workflow-name'] ?? key),
         detail: `${formatNumber(rows.length)} workflow definition${rows.length === 1 ? '' : 's'} failed inventory readiness checks`,
         evidence: 'Inventory gap',
+        action: 'View package',
         'navigation-page': 'packages'
       })),
     ...groupRows(input.findings.filter(isAuthoredWarning), findingWorkflowKey)
@@ -130,6 +132,7 @@ function buildSecuritySignals(input) {
         title: workflowNames.get(workflow) ?? String(rows[0]?.['finding-summary'] ?? workflow),
         detail: `${formatNumber(rows.length)} retained output${rows.length === 1 ? ' contains' : 's contain'} an explicit warning block`,
         evidence: 'Output content',
+        action: 'View evidence',
         'external-link': latestRow(rows)?.['external-link']
       }))
   ];
@@ -170,7 +173,15 @@ function groupRows(rows, keyFor) {
  * @param {Array<Record<string, unknown>>} rows
  */
 function latestRow(rows) {
-  return rows.toSorted((left, right) => Date.parse(String(right['observed-at'] ?? right['started-at'] ?? '')) - Date.parse(String(left['observed-at'] ?? left['started-at'] ?? '')))[0];
+  return rows.toSorted((left, right) => rowTimestamp(right) - rowTimestamp(left))[0];
+}
+
+/**
+ * @param {Record<string, unknown>} row
+ */
+function rowTimestamp(row) {
+  const timestamp = Date.parse(String(row['observed-at'] ?? row['started-at'] ?? ''));
+  return Number.isFinite(timestamp) ? timestamp : 0;
 }
 
 /**

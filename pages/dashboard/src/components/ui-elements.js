@@ -270,7 +270,7 @@ function renderSignal(row, index) {
       'span',
       { className: 'signal-evidence' },
       h('strong', null, stringValue(row.evidence)),
-      h('small', null, 'View evidence')
+      h('small', null, stringValue(row.action) || 'View details')
     )
   ];
   const className = `signal-item signal-${stringValue(row.tone) || 'informational'}`;

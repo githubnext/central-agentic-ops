@@ -301,6 +301,7 @@ describe('presenter built-in and custom pages', () => {
     expect(signals[0]?.textContent).toContain('2 runs require maintainer approval');
     expect(signals[0]?.querySelector('a')?.getAttribute('href')).toContain('/actions/runs/102');
     expect(signals[1]?.querySelector('a')?.getAttribute('href')).toBe('#page-packages');
+    expect(signals[1]?.textContent).toContain('View package');
     expect(signals[2]?.querySelector('a')?.getAttribute('href')).toContain('/issues/1');
     expect(page?.textContent).toContain('No vulnerability feed is retained.');
   });
