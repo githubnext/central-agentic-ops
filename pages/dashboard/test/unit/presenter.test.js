@@ -484,6 +484,8 @@ describe('presenter built-in and custom pages', () => {
 
     const overviewPage = rendered.querySelector('[data-page-name="overview"]');
     expect(overviewPage?.getAttribute('data-page-kind')).toBe('custom');
+    expect(overviewPage?.querySelector('.page-description')).toBeNull();
+    expect(overviewPage?.querySelector('.data-state-summary')).toBeNull();
     expect(overviewPage?.querySelectorAll('.custom-view')).toHaveLength(6);
     expect(overviewPage?.querySelectorAll('.layout-section')).toHaveLength(2);
     const landingElements = [...(overviewPage?.querySelectorAll('[data-section-id="control-plane-health"] > .custom-view-grid > .custom-view') ?? [])];
@@ -513,9 +515,6 @@ describe('presenter built-in and custom pages', () => {
     expect(overviewPage?.textContent).toContain('Active workflows');
     expect(overviewPage?.textContent).toContain('Operational value timeline');
     expect(overviewPage?.querySelector('[data-section-id="execution-trends"] h3')?.textContent).toBe('Execution and value trends');
-    expect(rendered.querySelector('[data-state-axis="availability"]')?.textContent).toBe('available');
-    expect(rendered.querySelector('[data-state-axis="completeness"]')?.textContent).toBe('partial');
-    expect(rendered.querySelector('[data-state-axis="freshness"]')?.textContent).toBe('stale');
     expect(overviewPage?.querySelectorAll('[data-section-id="execution-trends"] .custom-view:last-child .custom-chart-table tbody tr')).toHaveLength(2);
   });
 

@@ -370,6 +370,7 @@ function renderPage(page, sources, units) {
 function renderCustomPage(page, title, sources, units) {
   const views = Array.isArray(page.views) ? page.views : [];
   const sections = Array.isArray(page.sections) ? page.sections : [];
+  const isOverviewPage = page.id === 'overview';
   /** @type {Map<string, LogicalSourceInput>} */
   const pageSources = new Map();
   for (const view of views) {
@@ -433,9 +434,9 @@ function renderCustomPage(page, title, sources, units) {
       'data-page-id': page.id
     },
     h('h2', { tabIndex: -1 }, title),
-    page.description ? h('p', { className: 'page-description' }, page.description) : null,
+    !isOverviewPage && page.description ? h('p', { className: 'page-description' }, page.description) : null,
     ...(renderedViews.length > 0
-      ? [renderDataStateMetrics(summarizeDataState(pageSources)), renderedContent]
+      ? [...(!isOverviewPage ? [renderDataStateMetrics(summarizeDataState(pageSources))] : []), renderedContent]
       : [h('p', null, 'No custom views available.')])
   );
 }

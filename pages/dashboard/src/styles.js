@@ -206,7 +206,6 @@ h3 { margin: 16px 0 8px; font-size: 1rem; font-weight: 600; }
 .data-state-summary dd[data-state-axis="availability"],
 .data-state-summary dd[data-state-axis="completeness"],
 .data-state-summary dd[data-state-axis="freshness"] { color: var(--fg); }
-.overview-page > .page-description, .overview-page > .data-state-summary { display: none; }
 .summary-cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 14px; margin-bottom: 20px; }
 .summary-card { padding: 14px 16px; border: 1px solid var(--border); border-radius: 6px; background: var(--canvas-subtle); }
 .summary-card h4 { margin: 0 0 8px; font-size: .875rem; color: var(--muted); font-weight: 600; text-transform: uppercase; }

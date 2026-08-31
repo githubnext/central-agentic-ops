@@ -335,8 +335,8 @@ test('DLS-PAGE-002 DLS-PAGE-014 built-in overview page renders the report-style 
   await expect(page.locator('.nav-section-label')).toHaveText(['Attention']);
   await expect(page.getByRole('heading', { name: 'Overview', exact: true, level: 2 })).toBeVisible();
   await expect(page.locator('.overview-page')).toHaveAttribute('data-page-kind', 'custom');
-  await expect(page.locator('.overview-page > .page-description')).toBeHidden();
-  await expect(page.locator('.overview-page > .data-state-summary')).toBeHidden();
+  await expect(page.locator('.overview-page > .page-description')).toHaveCount(0);
+  await expect(page.locator('.overview-page > .data-state-summary')).toHaveCount(0);
   await expect(page.locator('.overview-page .custom-view')).toHaveCount(6);
   await expect(page.locator('.overview-page .layout-section')).toHaveCount(2);
   const landingElements = page.locator('[data-section-id="control-plane-health"] > .custom-view-grid > .custom-view');
@@ -353,9 +353,6 @@ test('DLS-PAGE-002 DLS-PAGE-014 built-in overview page renders the report-style 
   await expect(page.locator('.managed-package-card')).toContainText('30');
   await page.locator('summary').filter({ hasText: 'Operational value timeline' }).click();
   await expect(page.getByRole('heading', { name: 'Operational value timeline', level: 4 })).toBeVisible();
-  await expect(page.locator('[data-state-axis="availability"]')).toHaveText('available');
-  await expect(page.locator('[data-state-axis="completeness"]')).toHaveText('partial');
-  await expect(page.locator('[data-state-axis="freshness"]')).toHaveText('stale');
   await expect(page.locator('[data-section-id="execution-trends"] .custom-view:last-child .custom-chart-table tbody tr')).toHaveCount(2);
 
   await page.setViewportSize({ width: 600, height: 900 });
