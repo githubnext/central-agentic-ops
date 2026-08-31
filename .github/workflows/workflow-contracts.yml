@@ -28,7 +28,7 @@ jobs:
       - name: Run release gate
         env:
           CENTRAL_AGENTIC_OPS_PACKAGE_SOURCE: ${{ github.repository }}@${{ github.sha }}
-          GH_TOKEN: ${{ github.token }}
+          GH_TOKEN: ${{ secrets.GH_AW_GITHUB_TOKEN || github.token }}
         run: npm run check
       - name: Check patch formatting
         run: git diff --check
