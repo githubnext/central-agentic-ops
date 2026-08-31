@@ -1,6 +1,11 @@
 // @vitest-environment jsdom
+import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 import { renderDashboard } from '../../src/presenter.js';
+
+const authoritativeDashboard = JSON.parse(
+  readFileSync(new URL('../../dashboard.json', import.meta.url), 'utf8')
+);
 
 const metadata = {
   'source-id': 'runtime-fixture',
@@ -15,6 +20,28 @@ const metadata = {
 };
 
 describe('Runtime dashboard view', () => {
+  it('keeps Runtime and its execution views in the authoritative dashboard.json', () => {
+    const runtimePage = authoritativeDashboard.dashboard.pages.find(
+      (page) => page.id === 'runtime'
+    );
+
+    expect(runtimePage).toMatchObject({
+      id: 'runtime',
+      kind: 'custom',
+      title: 'Runtime',
+      views: [
+        {
+          id: 'runtime-needs-attention',
+          element: 'execution-signal-list'
+        },
+        {
+          id: 'runtime-execution-episodes',
+          element: 'execution-episodes'
+        }
+      ]
+    });
+  });
+
   it('renders declarative triage signals and root-only execution episodes', () => {
     const document = {
       languageVersion: '0.1.0',
