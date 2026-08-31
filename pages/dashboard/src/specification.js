@@ -22,6 +22,7 @@ export const VIEW_ELEMENT_VALUES = [
   'status-summary',
   'meter-list',
   'attention-list',
+  'domain-attention',
   'record-cards',
   'summary-grid',
   'signal-list',
@@ -241,6 +242,7 @@ export const SOURCE_VALUES = [
   'overview-vitals',
   'overview-execution-health',
   'overview-attention',
+  'overview-attention-domains',
   'overview-managed-packages',
   'overview-package-utilization',
   'security-summary',
@@ -262,6 +264,7 @@ export const SOURCE_FIELDS = {
   outcomes: ['organization', 'repository', 'workflow', 'run', 'safe-output', 'outcome-state', 'evidence-strength', 'observed-at', 'issue-link', 'pull-request-link', 'run-link', 'external-link', 'organization-link', 'repository-link', 'workflow-link'],
   findings: ['organization', 'repository', 'workflow', 'run', 'finding', 'finding-kind', 'finding-severity', 'finding-status', 'finding-summary', 'observed-at', 'issue-link', 'pull-request-link', 'run-link', 'external-link', 'organization-link', 'repository-link', 'workflow-link'],
   'operational-values': ['organization', 'repository', 'workflow', 'run', 'experiment', 'operational-case', 'evaluator-digest', 'rollout-mode', 'operational-value', 'operational-value-definition', 'requested-evidence-at', 'evidence-cutoff', 'maturity-at', 'maturity-status', 'delta-from-baseline', 'observed-at', 'evidence-link', 'organization-link', 'repository-link', 'workflow-link', 'run-link'],
+  'overview-attention-domains': ['domain', 'state', 'tone', 'icon', 'value', 'detail', 'href', 'priority', 'order'],
   'security-summary': ['label', 'value'],
   'security-signals': ['priority', 'count', 'tone', 'icon', 'kind', 'title', 'detail', 'evidence', 'action', 'navigation-page', 'run-link', 'external-link']
 };

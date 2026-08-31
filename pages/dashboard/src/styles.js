@@ -244,8 +244,32 @@ h3 { margin: 16px 0 8px; font-size: 1rem; font-weight: 600; }
 .overview-content { display: grid; gap: 24px; }
 .scope-kicker { color: var(--muted); font-size: .75rem; font-weight: 600; text-transform: uppercase; }
 .section-heading { display: flex; align-items: flex-start; justify-content: space-between; gap: 24px; margin-bottom: 12px; }
-.section-heading h3 { margin: 1px 0 3px; font-size: 1.25rem; }
+.section-heading h2 { margin: 0 0 3px; font-size: 1.25rem; }
 .section-heading p { margin: 0; color: var(--muted); }
+.overview-observability { margin-bottom: 24px; }
+.overview-observability > .section-heading { align-items: end; }
+.attention-domain-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); overflow: hidden; border: 1px solid var(--border); border-radius: 6px; background: var(--border); gap: 1px; }
+.attention-domain-card { min-width: 0; min-height: 184px; display: grid; grid-template-rows: auto auto 1fr auto; gap: 12px; padding: 16px; border-top: 3px solid var(--muted); background: var(--canvas); color: var(--fg); text-decoration: none; }
+.attention-domain-card:hover { background: var(--canvas-subtle); text-decoration: none; }
+.attention-domain-card:focus-visible { z-index: 1; outline: 2px solid var(--focus); outline-offset: -2px; }
+.attention-domain-card > header { min-width: 0; display: grid; grid-template-columns: 22px minmax(0, 1fr) auto; align-items: center; gap: 8px; }
+.attention-domain-icon { width: 22px; height: 22px; display: grid; place-items: center; border-radius: 4px; background: var(--neutral-muted); color: var(--muted); }
+.attention-domain-icon .octicon { width: 14px; height: 14px; }
+.attention-domain-card > header > strong { overflow: hidden; font-size: .8125rem; text-overflow: ellipsis; white-space: nowrap; }
+.attention-domain-state { padding: 2px 6px; border: 1px solid currentColor; border-radius: 999px; color: var(--muted); font-size: .625rem; font-weight: 600; white-space: nowrap; }
+.attention-domain-value { font-size: 1.375rem; font-weight: 600; font-variant-numeric: tabular-nums; line-height: 1.2; }
+.attention-domain-card > p { margin: 0; color: var(--muted); font-size: .75rem; line-height: 1.45; }
+.attention-domain-card > footer { display: flex; align-items: center; justify-content: space-between; padding: 10px 0 0; border-top: 1px solid var(--border); color: var(--accent); font-size: .6875rem; font-weight: 600; }
+.attention-domain-critical { border-top-color: var(--danger); }
+.attention-domain-critical .attention-domain-icon, .attention-domain-critical .attention-domain-state { color: var(--danger); }
+.attention-domain-investigate { border-top-color: var(--attention); }
+.attention-domain-investigate .attention-domain-icon, .attention-domain-investigate .attention-domain-state { color: var(--attention); }
+.attention-domain-monitor { border-top-color: var(--success); }
+.attention-domain-monitor .attention-domain-icon, .attention-domain-monitor .attention-domain-state { color: var(--success); }
+.attention-domain-unavailable { border-top-color: var(--muted); }
+.overview-method-note { margin: 10px 0 0; color: var(--muted); font-size: .6875rem; }
+.overview-method-note strong { color: var(--fg); }
+.section-heading h3 { margin: 1px 0 3px; font-size: 1.25rem; }
 .workflow-attention { margin-bottom: 32px; }
 .workflow-attention > .section-heading, .episode-observatory > .section-heading { align-items: end; }
 .workflow-attention > .section-heading > strong, .episode-observatory > .section-heading > strong { flex: none; font-variant-numeric: tabular-nums; }
@@ -258,21 +282,6 @@ h3 { margin: 16px 0 8px; font-size: 1rem; font-weight: 600; }
 .workflow-attention-list li:first-child { border-top: 0; }
 .workflow-attention-list a, .workflow-attention-static { min-height: 68px; display: grid; grid-template-columns: 24px 20px minmax(0, 1fr) minmax(150px, auto); align-items: center; gap: 10px; padding: 9px 14px; color: var(--fg); text-decoration: none; }
 .workflow-attention-list a:hover { background: var(--canvas-subtle); }
-.signal-rank { color: var(--muted); font-size: .6875rem; font-variant-numeric: tabular-nums; text-align: center; }
-.signal-icon { width: 20px; display: grid; place-items: center; color: var(--attention); }
-.signal-critical .signal-icon { color: var(--danger); }
-.signal-informational .signal-icon { color: var(--accent); }
-.signal-copy { min-width: 0; display: grid; }
-.signal-copy > span { color: var(--muted); font-size: .625rem; font-weight: 600; text-transform: uppercase; }
-.signal-copy > strong, .signal-copy > small { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.signal-copy > strong { font-size: .8125rem; }
-.signal-copy > small { color: var(--muted); font-size: .75rem; }
-.signal-evidence { min-width: 0; display: grid; justify-items: end; text-align: right; }
-.signal-evidence strong { font-size: .75rem; }
-.signal-evidence small { display: inline-flex; align-items: center; gap: 4px; color: var(--muted); font-size: .6875rem; }
-.signal-evidence .octicon { width: 12px; height: 12px; }
-.signal-clear { min-height: 68px; display: grid; grid-template-columns: 20px minmax(0, 1fr); align-items: center; gap: 10px; padding: 9px 14px; }
-.signal-clear .signal-icon { color: var(--success); }
 .workflow-attention-note { margin: 7px 0 0; color: var(--muted); font-size: .6875rem; }
 .episode-observatory { margin-bottom: 32px; }
 .episode-vitals { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); margin: 0; border: 1px solid var(--border); border-radius: 6px 6px 0 0; background: var(--canvas-subtle); }
@@ -442,6 +451,7 @@ h3 { margin: 16px 0 8px; font-size: 1rem; font-weight: 600; }
 .signal-item > a:focus-visible { outline: 2px solid var(--focus); outline-offset: -2px; }
 .signal-rank { color: var(--muted); font-size: .6875rem; font-variant-numeric: tabular-nums; text-align: center; }
 .signal-icon { width: 20px; display: grid; place-items: center; color: var(--attention); }
+.signal-critical .signal-icon { color: var(--danger); }
 .signal-informational .signal-icon { color: var(--accent); }
 .signal-copy { min-width: 0; display: grid; }
 .signal-copy > span { color: var(--muted); font-size: .625rem; font-weight: 600; text-transform: uppercase; }
@@ -450,7 +460,8 @@ h3 { margin: 16px 0 8px; font-size: 1rem; font-weight: 600; }
 .signal-copy > small { color: var(--muted); font-size: .75rem; }
 .signal-evidence { min-width: 0; display: grid; justify-items: end; text-align: right; }
 .signal-evidence strong { font-size: .75rem; }
-.signal-evidence small { color: var(--muted); font-size: .6875rem; }
+.signal-evidence small { display: inline-flex; align-items: center; gap: 4px; color: var(--muted); font-size: .6875rem; }
+.signal-evidence .octicon { width: 12px; height: 12px; }
 .signal-clear { min-height: 68px; display: grid; grid-template-columns: 20px minmax(0, 1fr); align-items: center; gap: 10px; padding: 9px 14px; }
 .signal-clear .signal-icon { color: var(--success); }
 .managed-packages > header { min-height: 72px; padding: 10px 0; }
@@ -624,6 +635,8 @@ footer { padding: 20px 24px; border-top: 1px solid var(--border); color: var(--m
   .dispatch-toolbar { grid-template-columns: 1fr; }
   .package-utilization-grid { grid-template-columns: 1fr; }
   .package-trend-panel > header { align-items: flex-start; flex-direction: column; }
+  .overview-observability > .section-heading { align-items: flex-start; flex-direction: column; }
+  .attention-domain-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .workflow-attention > .section-heading, .episode-observatory > .section-heading, .anomaly-readiness { align-items: flex-start; flex-direction: column; }
   .anomaly-readiness { gap: 4px; }
   .anomaly-readiness p { text-align: left; }
@@ -642,6 +655,8 @@ footer { padding: 20px 24px; border-top: 1px solid var(--border); color: var(--m
   .standalone-repository-list { grid-template-columns: minmax(0, 1fr); }
   .standalone-repository li { grid-template-columns: 24px minmax(0, 1fr); }
   .standalone-repository li > :is(.mode-indicator, .status) { grid-column: 2; justify-self: start; }
+  .attention-domain-grid { grid-template-columns: minmax(0, 1fr); }
+  .attention-domain-card { min-height: 164px; }
 }
 @media (prefers-reduced-motion: reduce) {
   html { scroll-behavior: auto; }

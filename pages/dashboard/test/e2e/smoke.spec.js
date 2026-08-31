@@ -167,7 +167,7 @@ function buildPresenterModuleUrl() {
   return `data:text/javascript;charset=utf-8,${encodeURIComponent(presenterSource)}`;
 }
 
-test('DLS-PAGE-002 DLS-PAGE-014 built-in overview page renders the report-style operational overview, managed repository summary, managed packages, execution trends, and provenance in browser', async ({ page }) => {
+test('DLS-PAGE-002 DLS-PAGE-014 built-in overview page renders the report-style six-domain operational overview in browser', async ({ page }) => {
   const presenterModuleUrl = buildPresenterModuleUrl();
 
   await page.setContent(`
@@ -359,31 +359,31 @@ test('DLS-PAGE-002 DLS-PAGE-014 built-in overview page renders the report-style 
   await expect(page.locator('.nav-section-label')).toHaveCount(1);
   await expect(page.locator('.nav-section-label')).toHaveText(['Attention']);
   await expect(page.locator('.overview-page')).toHaveAttribute('data-page-kind', 'custom');
-  await expect(page.locator('.overview-page .custom-view')).toHaveCount(6);
-  await expect(page.locator('.overview-page .layout-section')).toHaveCount(2);
-  const landingElements = page.locator('[data-section-id="control-plane-health"] > .custom-view-grid > .custom-view');
-  await expect(landingElements).toHaveCount(4);
-  await expect(landingElements.nth(0)).toHaveClass(/control-plane-status/);
-  await expect(landingElements.nth(1)).toHaveClass(/package-aic-utilization/);
-  await expect(landingElements.nth(2)).toHaveAttribute('data-view-layout', 'half');
-  await expect(landingElements.nth(3)).toHaveAttribute('data-view-layout', 'half');
-  await expect(page.getByRole('heading', { name: 'Attention required', level: 3 })).toBeVisible();
-  await expect(page.locator('.control-plane-status')).toHaveClass(/control-plane-critical/);
-  await expect(page.locator('.control-plane-vitals')).toContainText('2 repositories');
-  await expect(page.locator('.attention-item')).toHaveCount(5);
-  await expect(page.locator('.managed-package-card')).toHaveCount(1);
-  await expect(page.locator('.managed-package-card')).toContainText('30');
-  await page.locator('summary').filter({ hasText: 'Operational value timeline' }).click();
-  await expect(page.getByRole('heading', { name: 'Operational value timeline', level: 4 })).toBeVisible();
+  await expect(page.locator('.overview-page .custom-view')).toHaveCount(1);
+  await expect(page.locator('.overview-page .layout-section')).toHaveCount(0);
+  await expect(page.getByRole('heading', { name: 'Attention by domain', level: 2 })).toBeVisible();
+  const cards = page.locator('.attention-domain-card');
+  await expect(cards).toHaveCount(6);
+  await expect(cards.locator('header strong')).toHaveText([
+    'Runtime health',
+    'Episodes & autonomy',
+    'Security & controls',
+    'Evidence quality',
+    'Value & outcomes',
+    'Cost & efficiency'
+  ]);
+  await expect(cards.first()).toHaveClass(/attention-domain-critical/);
+  await expect(cards.first()).toContainText('1 failed');
+  await expect(cards.nth(1)).toContainText('2 observed');
+  await expect(page.locator('.overview-method-note')).toContainText('State key:');
   await expect(page.locator('.data-state-summary')).toBeHidden();
-  await expect(page.locator('[data-section-id="execution-trends"] .custom-view:last-child .custom-chart-table tbody tr')).toHaveCount(2);
 
-  await page.setViewportSize({ width: 600, height: 900 });
-  const attentionBox = await page.locator('.attention-panel').boundingBox();
-  const packagesBox = await page.locator('.managed-packages').boundingBox();
-  expect(attentionBox).not.toBeNull();
-  expect(packagesBox).not.toBeNull();
-  expect(packagesBox?.y).toBeGreaterThan(attentionBox?.y ?? 0);
+  await page.setViewportSize({ width: 400, height: 900 });
+  const firstCardBox = await cards.first().boundingBox();
+  const secondCardBox = await cards.nth(1).boundingBox();
+  expect(firstCardBox).not.toBeNull();
+  expect(secondCardBox).not.toBeNull();
+  expect(secondCardBox?.y).toBeGreaterThan(firstCardBox?.y ?? 0);
 });
 
 test('DLS-PAGE-014 DLS-PAGE-015 built-in packages page renders report-style mode filters, AIC utilization, and run trends in browser', async ({ page }) => {
