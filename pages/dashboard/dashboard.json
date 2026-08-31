@@ -38,7 +38,10 @@
               "title": "Execution and value trends",
               "description": "Run conclusions and operational value over time.",
               "layout": "full",
-              "views": ["overview-run-trend", "overview-operational-values"]
+              "views": [
+                "overview-run-trend",
+                "overview-operational-values"
+              ]
             }
           ],
           "views": [
@@ -46,34 +49,62 @@
               "id": "overview-control-plane-status",
               "title": "Control plane status",
               "data": {
-                "sources": ["repositories", "workflows", "runs", "usage"]
+                "sources": [
+                  "repositories",
+                  "workflows",
+                  "runs",
+                  "usage",
+                  "overview-status",
+                  "overview-vitals",
+                  "overview-execution-health"
+                ]
               },
               "mark": "element",
-              "element": "control-plane-status",
+              "element": "status-summary",
               "layout": "full"
             },
             {
               "id": "overview-package-aic-utilization",
               "title": "Package AIC utilization",
-              "data": { "sources": ["workflows", "usage"] },
+              "data": {
+                "sources": [
+                  "workflows",
+                  "usage",
+                  "overview-package-utilization"
+                ]
+              },
               "mark": "element",
-              "element": "package-aic-utilization",
-              "layout": "full"
+              "element": "meter-list",
+              "layout": "full",
+              "description": "Actual AI Credits against summed per-run limits for retained package runs."
             },
             {
               "id": "overview-attention-panel",
               "title": "Needs attention",
-              "data": { "sources": ["workflows", "runs", "usage", "findings"] },
+              "data": {
+                "sources": [
+                  "workflows",
+                  "runs",
+                  "usage",
+                  "findings",
+                  "overview-attention"
+                ]
+              },
               "mark": "element",
-              "element": "attention-panel",
+              "element": "attention-list",
               "layout": "half"
             },
             {
               "id": "overview-managed-packages",
               "title": "Managed packages",
-              "data": { "sources": ["workflows"] },
+              "data": {
+                "sources": [
+                  "workflows",
+                  "overview-managed-packages"
+                ]
+              },
               "mark": "element",
-              "element": "managed-packages",
+              "element": "record-cards",
               "layout": "half"
             },
             {
@@ -81,15 +112,31 @@
               "disclosure": "supplemental",
               "title": "Run conclusion trend",
               "description": "Run conclusions over time.",
-              "data": { "source": "runs" },
+              "data": {
+                "source": "runs"
+              },
               "mark": "chart",
               "chart": "line",
               "layout": "half",
               "encoding": {
-                "x": { "field": "started-at", "type": "temporal", "time-unit": "day" },
-                "y": { "field": "run", "type": "quantitative", "aggregate": "count" },
-                "color": { "field": "run-conclusion", "type": "nominal" },
-                "href": { "field": "run-link", "type": "nominal" }
+                "x": {
+                  "field": "started-at",
+                  "type": "temporal",
+                  "time-unit": "day"
+                },
+                "y": {
+                  "field": "run",
+                  "type": "quantitative",
+                  "aggregate": "count"
+                },
+                "color": {
+                  "field": "run-conclusion",
+                  "type": "nominal"
+                },
+                "href": {
+                  "field": "run-link",
+                  "type": "nominal"
+                }
               }
             },
             {
@@ -97,14 +144,26 @@
               "disclosure": "supplemental",
               "title": "Operational value timeline",
               "description": "Recorded operational value separated by definition.",
-              "data": { "source": "operational-values" },
+              "data": {
+                "source": "operational-values"
+              },
               "mark": "chart",
               "chart": "line",
               "layout": "half",
               "encoding": {
-                "x": { "field": "observed-at", "type": "temporal", "time-unit": "day" },
-                "y": { "field": "operational-value", "type": "quantitative" },
-                "color": { "field": "operational-value-definition", "type": "nominal" }
+                "x": {
+                  "field": "observed-at",
+                  "type": "temporal",
+                  "time-unit": "day"
+                },
+                "y": {
+                  "field": "operational-value",
+                  "type": "quantitative"
+                },
+                "color": {
+                  "field": "operational-value-definition",
+                  "type": "nominal"
+                }
               }
             }
           ]
@@ -125,51 +184,78 @@
           "views": [
             {
               "id": "organizations-organizations-source",
-              "data": { "source": "organizations" },
+              "data": {
+                "source": "organizations"
+              },
               "mark": "table",
               "encoding": {
                 "columns": [
-                  { "field": "organization", "type": "nominal" }
+                  {
+                    "field": "organization",
+                    "type": "nominal"
+                  }
                 ]
               }
             },
             {
               "id": "organizations-repositories-source",
-              "data": { "source": "repositories" },
+              "data": {
+                "source": "repositories"
+              },
               "mark": "table",
               "encoding": {
                 "columns": [
-                  { "field": "repository", "type": "nominal" }
+                  {
+                    "field": "repository",
+                    "type": "nominal"
+                  }
                 ]
               }
             },
             {
               "id": "organizations-workflows-source",
               "disclosure": "supplemental",
-              "data": { "source": "workflows" },
+              "data": {
+                "source": "workflows"
+              },
               "mark": "table",
               "encoding": {
                 "columns": [
-                  { "field": "workflow", "type": "nominal" }
+                  {
+                    "field": "workflow",
+                    "type": "nominal"
+                  }
                 ]
               }
             },
             {
               "id": "organizations-runs-source",
               "disclosure": "supplemental",
-              "data": { "source": "runs" },
+              "data": {
+                "source": "runs"
+              },
               "mark": "metric",
               "encoding": {
-                "value": { "field": "run", "type": "nominal", "aggregate": "distinct-count" }
+                "value": {
+                  "field": "run",
+                  "type": "nominal",
+                  "aggregate": "distinct-count"
+                }
               }
             },
             {
               "id": "organizations-usage-source",
               "disclosure": "supplemental",
-              "data": { "source": "usage" },
+              "data": {
+                "source": "usage"
+              },
               "mark": "metric",
               "encoding": {
-                "value": { "field": "aic", "type": "quantitative", "aggregate": "sum" }
+                "value": {
+                  "field": "aic",
+                  "type": "quantitative",
+                  "aggregate": "sum"
+                }
               }
             }
           ]
@@ -191,14 +277,29 @@
             {
               "id": "repositories-repositories-source",
               "title": "Repository Inventory and Rankings",
-              "data": { "source": "repositories" },
+              "data": {
+                "source": "repositories"
+              },
               "mark": "table",
               "encoding": {
                 "columns": [
-                  { "field": "repository", "type": "nominal" },
-                  { "field": "repository-name", "type": "nominal" },
-                  { "field": "organization", "type": "nominal" },
-                  { "field": "rollout-mode", "type": "nominal", "display": "mode" }
+                  {
+                    "field": "repository",
+                    "type": "nominal"
+                  },
+                  {
+                    "field": "repository-name",
+                    "type": "nominal"
+                  },
+                  {
+                    "field": "organization",
+                    "type": "nominal"
+                  },
+                  {
+                    "field": "rollout-mode",
+                    "type": "nominal",
+                    "display": "mode"
+                  }
                 ]
               }
             },
@@ -208,14 +309,25 @@
               "data": {
                 "source": "runs",
                 "order-by": [
-                  { "field": "run-count", "direction": "desc" }
+                  {
+                    "field": "run-count",
+                    "direction": "desc"
+                  }
                 ]
               },
               "mark": "table",
               "encoding": {
                 "columns": [
-                  { "field": "repository", "type": "nominal" },
-                  { "field": "run", "type": "nominal", "aggregate": "distinct-count", "as": "run-count" }
+                  {
+                    "field": "repository",
+                    "type": "nominal"
+                  },
+                  {
+                    "field": "run",
+                    "type": "nominal",
+                    "aggregate": "distinct-count",
+                    "as": "run-count"
+                  }
                 ]
               }
             },
@@ -226,14 +338,25 @@
               "data": {
                 "source": "usage",
                 "order-by": [
-                  { "field": "total-aic", "direction": "desc" }
+                  {
+                    "field": "total-aic",
+                    "direction": "desc"
+                  }
                 ]
               },
               "mark": "table",
               "encoding": {
                 "columns": [
-                  { "field": "repository", "type": "nominal" },
-                  { "field": "aic", "type": "quantitative", "aggregate": "sum", "as": "total-aic" }
+                  {
+                    "field": "repository",
+                    "type": "nominal"
+                  },
+                  {
+                    "field": "aic",
+                    "type": "quantitative",
+                    "aggregate": "sum",
+                    "as": "total-aic"
+                  }
                 ]
               }
             },
@@ -244,15 +367,29 @@
               "data": {
                 "source": "operational-values",
                 "order-by": [
-                  { "field": "mean-operational-value", "direction": "desc" }
+                  {
+                    "field": "mean-operational-value",
+                    "direction": "desc"
+                  }
                 ]
               },
               "mark": "table",
               "encoding": {
                 "columns": [
-                  { "field": "repository", "type": "nominal" },
-                  { "field": "operational-value-definition", "type": "nominal" },
-                  { "field": "operational-value", "type": "quantitative", "aggregate": "mean", "as": "mean-operational-value" }
+                  {
+                    "field": "repository",
+                    "type": "nominal"
+                  },
+                  {
+                    "field": "operational-value-definition",
+                    "type": "nominal"
+                  },
+                  {
+                    "field": "operational-value",
+                    "type": "quantitative",
+                    "aggregate": "mean",
+                    "as": "mean-operational-value"
+                  }
                 ]
               }
             }
@@ -277,7 +414,13 @@
             {
               "id": "packages-activity",
               "title": "Package activity",
-              "data": { "sources": ["workflows", "runs", "usage"] },
+              "data": {
+                "sources": [
+                  "workflows",
+                  "runs",
+                  "usage"
+                ]
+              },
               "mark": "element",
               "element": "package-activity"
             }
@@ -300,54 +443,94 @@
             {
               "id": "workflows-workflows-source",
               "title": "Workflow topology",
-              "data": { "sources": ["workflows"] },
+              "data": {
+                "sources": [
+                  "workflows"
+                ]
+              },
               "mark": "element",
               "element": "workflow-topology"
             },
             {
               "id": "workflows-runs-source",
-              "data": { "source": "runs" },
+              "data": {
+                "source": "runs"
+              },
               "mark": "table",
               "encoding": {
-                "href": { "field": "run-link", "type": "nominal" },
+                "href": {
+                  "field": "run-link",
+                  "type": "nominal"
+                },
                 "columns": [
-                  { "field": "run", "type": "nominal" },
-                  { "field": "run-conclusion", "type": "nominal", "display": "status" }
+                  {
+                    "field": "run",
+                    "type": "nominal"
+                  },
+                  {
+                    "field": "run-conclusion",
+                    "type": "nominal",
+                    "display": "status"
+                  }
                 ]
               }
             },
             {
               "id": "workflows-outcomes-source",
               "disclosure": "supplemental",
-              "data": { "source": "outcomes" },
+              "data": {
+                "source": "outcomes"
+              },
               "mark": "metric",
               "encoding": {
-                "value": { "field": "outcome-state", "type": "nominal", "aggregate": "count" }
+                "value": {
+                  "field": "outcome-state",
+                  "type": "nominal",
+                  "aggregate": "count"
+                }
               }
             },
             {
               "id": "workflows-usage-source",
               "disclosure": "supplemental",
-              "data": { "source": "usage" },
+              "data": {
+                "source": "usage"
+              },
               "mark": "metric",
               "encoding": {
-                "value": { "field": "aic", "type": "quantitative", "aggregate": "sum" }
+                "value": {
+                  "field": "aic",
+                  "type": "quantitative",
+                  "aggregate": "sum"
+                }
               }
             },
             {
               "id": "workflows-findings-source",
-              "data": { "source": "findings" },
+              "data": {
+                "source": "findings"
+              },
               "mark": "metric",
               "encoding": {
-                "value": { "field": "finding", "type": "nominal", "aggregate": "count" }
+                "value": {
+                  "field": "finding",
+                  "type": "nominal",
+                  "aggregate": "count"
+                }
               }
             },
             {
               "id": "workflows-operational-values-source",
-              "data": { "source": "operational-values" },
+              "data": {
+                "source": "operational-values"
+              },
               "mark": "metric",
               "encoding": {
-                "value": { "field": "operational-value", "type": "quantitative", "aggregate": "count" }
+                "value": {
+                  "field": "operational-value",
+                  "type": "quantitative",
+                  "aggregate": "count"
+                }
               }
             }
           ]
@@ -368,33 +551,82 @@
           "views": [
             {
               "id": "runs-runs-source",
-              "data": { "source": "runs" },
+              "data": {
+                "source": "runs"
+              },
               "mark": "table",
               "encoding": {
-                "href": { "field": "run-link", "type": "nominal" },
+                "href": {
+                  "field": "run-link",
+                  "type": "nominal"
+                },
                 "columns": [
-                  { "field": "run", "type": "nominal" },
-                  { "field": "run-status", "type": "nominal", "display": "status" },
-                  { "field": "run-conclusion", "type": "nominal", "display": "status" },
-                  { "field": "organization", "type": "nominal" },
-                  { "field": "repository", "type": "nominal" },
-                  { "field": "workflow", "type": "nominal" },
-                  { "field": "rollout-mode", "type": "nominal", "display": "mode" },
-                  { "field": "engine", "type": "nominal" },
-                  { "field": "requested-model", "type": "nominal" },
-                  { "field": "resolved-model", "type": "nominal" },
-                  { "field": "started-at", "type": "temporal" }
+                  {
+                    "field": "run",
+                    "type": "nominal"
+                  },
+                  {
+                    "field": "run-status",
+                    "type": "nominal",
+                    "display": "status"
+                  },
+                  {
+                    "field": "run-conclusion",
+                    "type": "nominal",
+                    "display": "status"
+                  },
+                  {
+                    "field": "organization",
+                    "type": "nominal"
+                  },
+                  {
+                    "field": "repository",
+                    "type": "nominal"
+                  },
+                  {
+                    "field": "workflow",
+                    "type": "nominal"
+                  },
+                  {
+                    "field": "rollout-mode",
+                    "type": "nominal",
+                    "display": "mode"
+                  },
+                  {
+                    "field": "engine",
+                    "type": "nominal"
+                  },
+                  {
+                    "field": "requested-model",
+                    "type": "nominal"
+                  },
+                  {
+                    "field": "resolved-model",
+                    "type": "nominal"
+                  },
+                  {
+                    "field": "started-at",
+                    "type": "temporal"
+                  }
                 ]
               }
             },
             {
               "id": "runs-outcomes-source",
-              "data": { "source": "outcomes" },
+              "data": {
+                "source": "outcomes"
+              },
               "mark": "table",
               "encoding": {
-                "href": { "field": "run-link", "type": "nominal" },
+                "href": {
+                  "field": "run-link",
+                  "type": "nominal"
+                },
                 "columns": [
-                  { "field": "run-link", "type": "nominal" }
+                  {
+                    "field": "run-link",
+                    "type": "nominal"
+                  }
                 ]
               }
             }
@@ -417,66 +649,109 @@
           "views": [
             {
               "id": "experiments-experiments-source",
-              "data": { "source": "experiments" },
+              "data": {
+                "source": "experiments"
+              },
               "mark": "table",
               "encoding": {
                 "columns": [
-                  { "field": "experiment", "type": "nominal" }
+                  {
+                    "field": "experiment",
+                    "type": "nominal"
+                  }
                 ]
               }
             },
             {
               "id": "experiments-assignments-source",
-              "data": { "source": "experiment-assignments" },
+              "data": {
+                "source": "experiment-assignments"
+              },
               "mark": "table",
               "encoding": {
                 "columns": [
-                  { "field": "run", "type": "nominal" },
-                  { "field": "variant", "type": "nominal" }
+                  {
+                    "field": "run",
+                    "type": "nominal"
+                  },
+                  {
+                    "field": "variant",
+                    "type": "nominal"
+                  }
                 ]
               }
             },
             {
               "id": "experiments-grader-observations-source",
               "disclosure": "supplemental",
-              "data": { "source": "grader-observations" },
+              "data": {
+                "source": "grader-observations"
+              },
               "mark": "metric",
               "encoding": {
-                "value": { "field": "grader", "type": "nominal", "aggregate": "count" }
+                "value": {
+                  "field": "grader",
+                  "type": "nominal",
+                  "aggregate": "count"
+                }
               }
             },
             {
               "id": "experiments-eval-observations-source",
               "disclosure": "supplemental",
-              "data": { "source": "eval-observations" },
+              "data": {
+                "source": "eval-observations"
+              },
               "mark": "metric",
               "encoding": {
-                "value": { "field": "eval", "type": "nominal", "aggregate": "count" }
+                "value": {
+                  "field": "eval",
+                  "type": "nominal",
+                  "aggregate": "count"
+                }
               }
             },
             {
               "id": "experiments-outcomes-source",
-              "data": { "source": "outcomes" },
+              "data": {
+                "source": "outcomes"
+              },
               "mark": "metric",
               "encoding": {
-                "value": { "field": "outcome-state", "type": "nominal", "aggregate": "count" }
+                "value": {
+                  "field": "outcome-state",
+                  "type": "nominal",
+                  "aggregate": "count"
+                }
               }
             },
             {
               "id": "experiments-usage-source",
               "disclosure": "supplemental",
-              "data": { "source": "usage" },
+              "data": {
+                "source": "usage"
+              },
               "mark": "metric",
               "encoding": {
-                "value": { "field": "aic", "type": "quantitative", "aggregate": "sum" }
+                "value": {
+                  "field": "aic",
+                  "type": "quantitative",
+                  "aggregate": "sum"
+                }
               }
             },
             {
               "id": "experiments-operational-values-source",
-              "data": { "source": "operational-values" },
+              "data": {
+                "source": "operational-values"
+              },
               "mark": "metric",
               "encoding": {
-                "value": { "field": "operational-value", "type": "quantitative", "aggregate": "count" }
+                "value": {
+                  "field": "operational-value",
+                  "type": "quantitative",
+                  "aggregate": "count"
+                }
               }
             }
           ]
@@ -498,25 +773,48 @@
             {
               "id": "graders-graders-source",
               "disclosure": "supplemental",
-              "data": { "source": "graders" },
+              "data": {
+                "source": "graders"
+              },
               "mark": "table",
               "encoding": {
                 "columns": [
-                  { "field": "grader", "type": "nominal" }
+                  {
+                    "field": "grader",
+                    "type": "nominal"
+                  }
                 ]
               }
             },
             {
               "id": "graders-observations-source",
-              "data": { "source": "grader-observations" },
+              "data": {
+                "source": "grader-observations"
+              },
               "mark": "table",
               "encoding": {
                 "columns": [
-                  { "field": "grader", "type": "nominal" },
-                  { "field": "run", "type": "nominal" },
-                  { "field": "value", "type": "quantitative" },
-                  { "field": "status", "type": "nominal", "display": "status" },
-                  { "field": "observed-at", "type": "temporal" }
+                  {
+                    "field": "grader",
+                    "type": "nominal"
+                  },
+                  {
+                    "field": "run",
+                    "type": "nominal"
+                  },
+                  {
+                    "field": "value",
+                    "type": "quantitative"
+                  },
+                  {
+                    "field": "status",
+                    "type": "nominal",
+                    "display": "status"
+                  },
+                  {
+                    "field": "observed-at",
+                    "type": "temporal"
+                  }
                 ]
               }
             }
@@ -539,26 +837,52 @@
             {
               "id": "evals-evals-source",
               "disclosure": "supplemental",
-              "data": { "source": "evals" },
+              "data": {
+                "source": "evals"
+              },
               "mark": "table",
               "encoding": {
                 "columns": [
-                  { "field": "eval", "type": "nominal" }
+                  {
+                    "field": "eval",
+                    "type": "nominal"
+                  }
                 ]
               }
             },
             {
               "id": "evals-observations-source",
-              "data": { "source": "eval-observations" },
+              "data": {
+                "source": "eval-observations"
+              },
               "mark": "table",
               "encoding": {
                 "columns": [
-                  { "field": "eval", "type": "nominal" },
-                  { "field": "run", "type": "nominal" },
-                  { "field": "eval-result", "type": "nominal", "display": "status" },
-                  { "field": "requested-model", "type": "nominal" },
-                  { "field": "resolved-model", "type": "nominal" },
-                  { "field": "observed-at", "type": "temporal" }
+                  {
+                    "field": "eval",
+                    "type": "nominal"
+                  },
+                  {
+                    "field": "run",
+                    "type": "nominal"
+                  },
+                  {
+                    "field": "eval-result",
+                    "type": "nominal",
+                    "display": "status"
+                  },
+                  {
+                    "field": "requested-model",
+                    "type": "nominal"
+                  },
+                  {
+                    "field": "resolved-model",
+                    "type": "nominal"
+                  },
+                  {
+                    "field": "observed-at",
+                    "type": "temporal"
+                  }
                 ]
               }
             }
@@ -580,24 +904,69 @@
           "views": [
             {
               "id": "usage-usage-source",
-              "data": { "source": "usage" },
+              "data": {
+                "source": "usage"
+              },
               "mark": "table",
               "encoding": {
                 "columns": [
-                  { "field": "input-tokens", "type": "quantitative" },
-                  { "field": "output-tokens", "type": "quantitative" },
-                  { "field": "cache-read-tokens", "type": "quantitative" },
-                  { "field": "cache-write-tokens", "type": "quantitative" },
-                  { "field": "reasoning-tokens", "type": "quantitative" },
-                  { "field": "aic", "type": "quantitative" },
-                  { "field": "engine", "type": "nominal" },
-                  { "field": "requested-model", "type": "nominal" },
-                  { "field": "resolved-model", "type": "nominal" },
-                  { "field": "organization", "type": "nominal" },
-                  { "field": "repository", "type": "nominal" },
-                  { "field": "workflow", "type": "nominal" },
-                  { "field": "rollout-mode", "type": "nominal", "display": "mode" },
-                  { "field": "observed-at", "type": "temporal" }
+                  {
+                    "field": "input-tokens",
+                    "type": "quantitative"
+                  },
+                  {
+                    "field": "output-tokens",
+                    "type": "quantitative"
+                  },
+                  {
+                    "field": "cache-read-tokens",
+                    "type": "quantitative"
+                  },
+                  {
+                    "field": "cache-write-tokens",
+                    "type": "quantitative"
+                  },
+                  {
+                    "field": "reasoning-tokens",
+                    "type": "quantitative"
+                  },
+                  {
+                    "field": "aic",
+                    "type": "quantitative"
+                  },
+                  {
+                    "field": "engine",
+                    "type": "nominal"
+                  },
+                  {
+                    "field": "requested-model",
+                    "type": "nominal"
+                  },
+                  {
+                    "field": "resolved-model",
+                    "type": "nominal"
+                  },
+                  {
+                    "field": "organization",
+                    "type": "nominal"
+                  },
+                  {
+                    "field": "repository",
+                    "type": "nominal"
+                  },
+                  {
+                    "field": "workflow",
+                    "type": "nominal"
+                  },
+                  {
+                    "field": "rollout-mode",
+                    "type": "nominal",
+                    "display": "mode"
+                  },
+                  {
+                    "field": "observed-at",
+                    "type": "temporal"
+                  }
                 ]
               }
             }
@@ -619,39 +988,83 @@
           "views": [
             {
               "id": "engines-models-runs-source",
-              "data": { "source": "runs" },
+              "data": {
+                "source": "runs"
+              },
               "mark": "table",
               "encoding": {
                 "columns": [
-                  { "field": "engine", "type": "nominal" },
-                  { "field": "requested-model", "type": "nominal" },
-                  { "field": "resolved-model", "type": "nominal" },
-                  { "field": "run", "type": "nominal" },
-                  { "field": "run-conclusion", "type": "nominal", "display": "status" }
+                  {
+                    "field": "engine",
+                    "type": "nominal"
+                  },
+                  {
+                    "field": "requested-model",
+                    "type": "nominal"
+                  },
+                  {
+                    "field": "resolved-model",
+                    "type": "nominal"
+                  },
+                  {
+                    "field": "run",
+                    "type": "nominal"
+                  },
+                  {
+                    "field": "run-conclusion",
+                    "type": "nominal",
+                    "display": "status"
+                  }
                 ]
               }
             },
             {
               "id": "engines-models-outcomes-source",
-              "data": { "source": "outcomes" },
+              "data": {
+                "source": "outcomes"
+              },
               "mark": "metric",
               "encoding": {
-                "value": { "field": "outcome-state", "type": "nominal", "aggregate": "count" }
+                "value": {
+                  "field": "outcome-state",
+                  "type": "nominal",
+                  "aggregate": "count"
+                }
               }
             },
             {
               "id": "engines-models-usage-source",
               "disclosure": "supplemental",
-              "data": { "source": "usage" },
+              "data": {
+                "source": "usage"
+              },
               "mark": "table",
               "encoding": {
                 "columns": [
-                  { "field": "input-tokens", "type": "quantitative" },
-                  { "field": "output-tokens", "type": "quantitative" },
-                  { "field": "cache-read-tokens", "type": "quantitative" },
-                  { "field": "cache-write-tokens", "type": "quantitative" },
-                  { "field": "reasoning-tokens", "type": "quantitative" },
-                  { "field": "aic", "type": "quantitative" }
+                  {
+                    "field": "input-tokens",
+                    "type": "quantitative"
+                  },
+                  {
+                    "field": "output-tokens",
+                    "type": "quantitative"
+                  },
+                  {
+                    "field": "cache-read-tokens",
+                    "type": "quantitative"
+                  },
+                  {
+                    "field": "cache-write-tokens",
+                    "type": "quantitative"
+                  },
+                  {
+                    "field": "reasoning-tokens",
+                    "type": "quantitative"
+                  },
+                  {
+                    "field": "aic",
+                    "type": "quantitative"
+                  }
                 ]
               }
             }
@@ -673,22 +1086,61 @@
           "views": [
             {
               "id": "operational-value-source",
-              "data": { "source": "operational-values" },
+              "data": {
+                "source": "operational-values"
+              },
               "mark": "table",
               "encoding": {
                 "columns": [
-                  { "field": "observed-at", "type": "temporal" },
-                  { "field": "operational-value", "type": "quantitative" },
-                  { "field": "operational-value-definition", "type": "nominal" },
-                  { "field": "operational-case", "type": "nominal" },
-                  { "field": "evaluator-digest", "type": "nominal" },
-                  { "field": "requested-evidence-at", "type": "temporal" },
-                  { "field": "evidence-cutoff", "type": "temporal" },
-                  { "field": "maturity-at", "type": "temporal" },
-                  { "field": "maturity-status", "type": "nominal", "display": "status" },
-                  { "field": "evidence-link", "type": "nominal" },
-                  { "field": "experiment", "type": "nominal" },
-                  { "field": "delta-from-baseline", "type": "quantitative" }
+                  {
+                    "field": "observed-at",
+                    "type": "temporal"
+                  },
+                  {
+                    "field": "operational-value",
+                    "type": "quantitative"
+                  },
+                  {
+                    "field": "operational-value-definition",
+                    "type": "nominal"
+                  },
+                  {
+                    "field": "operational-case",
+                    "type": "nominal"
+                  },
+                  {
+                    "field": "evaluator-digest",
+                    "type": "nominal"
+                  },
+                  {
+                    "field": "requested-evidence-at",
+                    "type": "temporal"
+                  },
+                  {
+                    "field": "evidence-cutoff",
+                    "type": "temporal"
+                  },
+                  {
+                    "field": "maturity-at",
+                    "type": "temporal"
+                  },
+                  {
+                    "field": "maturity-status",
+                    "type": "nominal",
+                    "display": "status"
+                  },
+                  {
+                    "field": "evidence-link",
+                    "type": "nominal"
+                  },
+                  {
+                    "field": "experiment",
+                    "type": "nominal"
+                  },
+                  {
+                    "field": "delta-from-baseline",
+                    "type": "quantitative"
+                  }
                 ]
               }
             }
@@ -710,22 +1162,59 @@
           "views": [
             {
               "id": "findings-source",
-              "data": { "source": "findings" },
+              "data": {
+                "source": "findings"
+              },
               "mark": "table",
               "encoding": {
                 "columns": [
-                  { "field": "finding-summary", "type": "nominal" },
-                  { "field": "finding-severity", "type": "nominal", "display": "status" },
-                  { "field": "finding-status", "type": "nominal", "display": "status" },
-                  { "field": "organization", "type": "nominal" },
-                  { "field": "repository", "type": "nominal" },
-                  { "field": "workflow", "type": "nominal" },
-                  { "field": "observed-at", "type": "temporal" },
-                  { "field": "issue-link", "type": "nominal" },
-                  { "field": "pull-request-link", "type": "nominal" },
-                  { "field": "run-link", "type": "nominal" }
+                  {
+                    "field": "finding-summary",
+                    "type": "nominal"
+                  },
+                  {
+                    "field": "finding-severity",
+                    "type": "nominal",
+                    "display": "status"
+                  },
+                  {
+                    "field": "finding-status",
+                    "type": "nominal",
+                    "display": "status"
+                  },
+                  {
+                    "field": "organization",
+                    "type": "nominal"
+                  },
+                  {
+                    "field": "repository",
+                    "type": "nominal"
+                  },
+                  {
+                    "field": "workflow",
+                    "type": "nominal"
+                  },
+                  {
+                    "field": "observed-at",
+                    "type": "temporal"
+                  },
+                  {
+                    "field": "issue-link",
+                    "type": "nominal"
+                  },
+                  {
+                    "field": "pull-request-link",
+                    "type": "nominal"
+                  },
+                  {
+                    "field": "run-link",
+                    "type": "nominal"
+                  }
                 ],
-                "href": { "field": "issue-link", "type": "nominal" }
+                "href": {
+                  "field": "issue-link",
+                  "type": "nominal"
+                }
               }
             }
           ]
@@ -735,11 +1224,17 @@
     "navigation": [
       {
         "label": "Attention",
-        "pages": ["overview"]
+        "pages": [
+          "overview"
+        ]
       },
       {
         "label": "Investigate",
-        "pages": ["runs", "findings", "operational-value"]
+        "pages": [
+          "runs",
+          "findings",
+          "operational-value"
+        ]
       },
       {
         "label": "Explore",
