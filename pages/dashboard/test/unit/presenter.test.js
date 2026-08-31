@@ -406,6 +406,14 @@ describe('presenter built-in and custom pages', () => {
             'external-link': { relation: 'external', href: 'https://github.com/githubnext/central-agentic-ops/issues/1', label: 'View warning output' }
           }],
           metadata
+        },
+        outcomes: {
+          source: 'outcomes',
+          rows: [{
+            'safe-output': 'warning-1',
+            'outcome-title': 'Release warning'
+          }],
+          metadata
         }
       }
     });
