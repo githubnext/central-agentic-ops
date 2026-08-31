@@ -463,6 +463,7 @@
         "page": "workflows",
         "title": "Workflows",
         "icon": "codescan",
+        "description": "Inspect central package topology and repository-owned GitHub Agentic Workflows across the configured githubnext/central-agentic-ops repository.",
         "definition": {
           "data-state": {
             "availability": true,
@@ -472,7 +473,8 @@
           "views": [
             {
               "id": "workflows-workflows-source",
-              "title": "Workflow topology",
+              "title": "Definition topology",
+              "description": "Declared package relationships provide context for observed episodes; they do not assert that a dispatch occurred.",
               "data": {
                 "sources": [
                   "workflows"

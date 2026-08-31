@@ -56,7 +56,12 @@ describe('presenter built-in and custom pages', () => {
     });
 
     const topology = rendered.querySelector('.workflow-topology');
+    const topologyHeader = rendered.querySelector('.workflow-topology-overview > .section-heading');
     expect(topology).not.toBeNull();
+    expect(topologyHeader?.querySelector('.scope-kicker')?.textContent).toBe('Expected structure');
+    expect(topologyHeader?.querySelector('h3')?.textContent).toBe('Topology');
+    expect(topologyHeader?.querySelector('.workflow-topology-summary')?.textContent).toBe('Packages1Package workflows2Standalone workflows1');
+    expect(rendered.querySelector('.workflow-topology-overview .view-source')).toBeNull();
     expect(topology?.querySelectorAll('[data-package-id="dependabot"]')).toHaveLength(1);
     expect(topology?.querySelectorAll('[data-workflow-role="orchestrator"]')).toHaveLength(1);
     expect(topology?.querySelectorAll('[data-workflow-role="worker"]')).toHaveLength(1);
