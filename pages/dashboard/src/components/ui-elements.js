@@ -30,6 +30,7 @@ const ELEMENT_RENDERERS = new Map([
   ['status-summary', renderStatusSummaryElement],
   ['meter-list', renderMeterListElement],
   ['attention-list', renderAttentionListElement],
+  ['domain-attention', renderDomainAttentionElement],
   ['record-cards', renderRecordCardsElement],
   ['package-activity', ({ sources, pageId }) => renderPackagesView(sources, pageId)],
   ['package-run-trend', ({ sources, pageId }) => renderPackageRunTrend(sources, pageId)],
@@ -159,6 +160,56 @@ function renderAttentionListElement(context) {
           h('span', { className: 'attention-icon' }, octicon('check-circle')),
           h('div', null, h('strong', null, 'No immediate action required'), h('p', null, 'No failures, approval gates, disabled workflows, or coverage gaps were observed.'))
         )])
+    )
+  );
+}
+
+/**
+ * @param {ElementRenderContext} context
+ */
+function renderDomainAttentionElement(context) {
+  const rows = rowsFor(context, 'overview-attention-domains');
+  const headingId = `${context.pageId}-${slugify(context.title)}-heading`;
+  return h(
+    'section',
+    { className: 'overview-observability', 'aria-labelledby': headingId },
+    h(
+      'div',
+      { className: 'section-heading' },
+      h(
+        'div',
+        null,
+        h('span', { className: 'scope-kicker' }, 'Current decision window'),
+        h('h2', { id: headingId }, context.title),
+        context.description ? h('p', null, context.description) : null
+      )
+    ),
+    h(
+      'div',
+      { className: 'attention-domain-grid' },
+      ...rows.map((row) => h(
+        'a',
+        {
+          className: `attention-domain-card attention-domain-${stringValue(row.tone)}`,
+          href: stringValue(row.href)
+        },
+        h(
+          'header',
+          null,
+          h('span', { className: 'attention-domain-icon' }, octicon(stringValue(row.icon))),
+          h('strong', null, stringValue(row.domain)),
+          h('span', { className: 'attention-domain-state' }, stringValue(row.state))
+        ),
+        h('span', { className: 'attention-domain-value' }, stringValue(row.value)),
+        h('p', null, stringValue(row.detail)),
+        h('footer', null, 'Open evidence')
+      ))
+    ),
+    h(
+      'p',
+      { className: 'overview-method-note' },
+      h('strong', null, 'State key:'),
+      ' Act now is a direct failure; Investigate is a direct control, collection, or attribution signal; Monitor has observations without a direct signal; Unavailable means a required threshold or evidence feed is absent.'
     )
   );
 }

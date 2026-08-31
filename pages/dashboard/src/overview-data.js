@@ -15,6 +15,9 @@ export function deriveOverviewSources(sources) {
   const repositories = rowsFor(sources, 'repositories');
   const runs = rowsFor(sources, 'runs');
   const usage = rowsFor(sources, 'usage');
+  const outcomes = rowsFor(sources, 'outcomes');
+  const findings = rowsFor(sources, 'findings');
+  const operationalValues = rowsFor(sources, 'operational-values');
   const packages = summarizePackages(workflows);
   const health = summarizeRunHealth(runs);
   const disabledWorkflows = workflows.filter((row) => String(row['workflow-active']) === 'false').length;
@@ -43,6 +46,20 @@ export function deriveOverviewSources(sources) {
       rows: buildAttentionRows({ sources, runs, findings: rowsFor(sources, 'findings'), packages, disabledWorkflows, health }),
       metadata: overviewMetadata
     },
+    'overview-attention-domains': {
+      source: 'overview-attention-domains',
+      rows: buildDomainAttentionRows({
+        sources,
+        workflows,
+        runs,
+        usage,
+        outcomes,
+        findings,
+        operationalValues,
+        health
+      }),
+      metadata: overviewMetadata
+    },
     'overview-managed-packages': {
       source: 'overview-managed-packages',
       rows: packages.map((entry) => ({
@@ -62,6 +79,145 @@ export function deriveOverviewSources(sources) {
         .filter((entry) => typeof entry.allowance === 'number' && entry.allowance > 0)
         .map((entry) => buildPackageUtilizationRow(entry, packageUsage, sources.usage)),
       metadata: overviewMetadata
+    }
+
+    /**
+     * @param {{ sources: Record<string, import('./presenter.js').LogicalSourceInput>, workflows: Array<Record<string, unknown>>, runs: Array<Record<string, unknown>>, usage: Array<Record<string, unknown>>, outcomes: Array<Record<string, unknown>>, findings: Array<Record<string, unknown>>, operationalValues: Array<Record<string, unknown>>, health: ReturnType<typeof summarizeRunHealth> }} input
+     */
+    function buildDomainAttentionRows(input) {
+      const runTelemetryAvailable = input.sources.runs?.metadata?.availability === 'available';
+      const warningOutputs = input.findings.filter((row) =>
+        String(row['finding-status']) === 'open'
+        && !['informational', 'unknown'].includes(String(row['finding-severity']))
+      ).length;
+      const inventoryGaps = input.workflows.filter((row) => row['inventory-ready'] === false).length;
+      const openOutputs = input.outcomes.filter((row) => String(row['outcome-state']) === 'pending').length;
+      const orchestratorPaths = new Set(input.workflows
+        .filter((row) => String(row['workflow-role']) === 'orchestrator')
+        .map((row) => String(row.workflow ?? ''))
+        .filter(Boolean));
+      const workerPaths = new Set(input.workflows
+        .filter((row) => String(row['workflow-role']) === 'worker')
+        .map((row) => String(row.workflow ?? ''))
+        .filter(Boolean));
+      const rootRuns = input.runs.filter((row) => orchestratorPaths.has(String(row.workflow ?? '')));
+      const workerRuns = input.runs.filter((row) => workerPaths.has(String(row.workflow ?? '')));
+      const rootFailures = rootRuns.filter((row) => isFailureConclusion(row['run-conclusion'])).length;
+      const selectedValueRuns = new Set(input.operationalValues
+        .map((row) => String(row.run ?? ''))
+        .filter(Boolean)).size || input.operationalValues.length;
+      const valueAttentionRequired = openOutputs > 0
+        || input.operationalValues.some((row) => row['maturity-status'] && row['maturity-status'] !== 'matured')
+        || input.sources['operational-values']?.metadata?.completeness === 'partial';
+      const measuredUsage = input.usage.filter((row) => Number.isFinite(Number(row.aic)));
+      const measuredRuns = new Set(measuredUsage.map((row) => String(row.run ?? '')).filter(Boolean)).size;
+      const usageAvailable = input.sources.usage?.metadata?.availability === 'available';
+      const usageComplete = input.sources.usage?.metadata?.completeness === 'complete';
+      const usageTotal = measuredUsage.reduce((total, row) => total + Number(row.aic), 0);
+      const collectionGaps = ['workflows', 'runs', 'usage'].filter((name) => {
+        const metadata = input.sources[name]?.metadata;
+        return metadata?.availability !== 'available'
+          || metadata.completeness !== 'complete'
+          || metadata.freshness !== 'fresh';
+      }).length + inventoryGaps;
+      const attributionGaps = rootRuns.length + workerRuns.length;
+      const evidenceGaps = collectionGaps + attributionGaps;
+      const securitySignals = input.health.approval + warningOutputs + inventoryGaps;
+
+      return [
+        domainRow({
+          order: 0,
+          priority: input.health.failed > 0 ? 0 : input.health.approval > 0 ? 1 : runTelemetryAvailable ? 2 : 3,
+          state: input.health.failed > 0 ? 'Act now' : input.health.approval > 0 ? 'Investigate' : runTelemetryAvailable ? 'Monitor' : 'Unavailable',
+          icon: input.health.failed > 0 ? 'issue' : 'check-circle',
+          domain: 'Runtime health',
+          value: runTelemetryAvailable ? `${formatCount(input.health.failed)} failed` : 'Not observed',
+          detail: runTelemetryAvailable
+            ? `${formatCount(input.health.successful)} of ${formatCount(input.health.total)} runs succeeded · ${formatCount(input.health.approval)} approval gates`
+            : 'Actions run telemetry is unavailable.',
+          href: '#page-runs'
+        }),
+        domainRow({
+          order: 1,
+          priority: input.health.approval > 0 || warningOutputs > 0 ? 1 : 3,
+          state: input.health.approval > 0 || warningOutputs > 0 ? 'Investigate' : 'Unavailable',
+          icon: 'shield',
+          domain: 'Security & controls',
+          value: `${formatCount(securitySignals)} signals`,
+          detail: `No vulnerability feed · ${formatCount(input.health.approval)} approval gates · ${formatCount(warningOutputs)} explicit warnings · ${formatCount(inventoryGaps)} integrity gaps`,
+          href: '#page-findings'
+        }),
+        domainRow({
+          order: 3,
+          priority: rootFailures > 0 ? 0 : attributionGaps > 0 ? 1 : 2,
+          state: rootFailures > 0 ? 'Act now' : attributionGaps > 0 ? 'Investigate' : 'Monitor',
+          icon: 'workflow',
+          domain: 'Episodes & autonomy',
+          value: `${formatCount(rootRuns.length)} observed`,
+          detail: `0 of ${formatCount(workerRuns.length)} worker dispatches attributed · ${formatCount(rootFailures)} root failure${rootFailures === 1 ? '' : 's'}`,
+          href: '#page-runs'
+        }),
+        domainRow({
+          order: 2,
+          priority: valueAttentionRequired ? 1 : 3,
+          state: valueAttentionRequired ? 'Investigate' : 'Unavailable',
+          icon: 'beaker',
+          domain: 'Value & outcomes',
+          value: 'Threshold unavailable',
+          detail: `${formatCount(input.operationalValues.length)} of ${formatCount(selectedValueRuns)} grader observations · ${formatCount(openOutputs)} open outputs`,
+          href: '#page-operational-value'
+        }),
+        domainRow({
+          order: 4,
+          priority: !usageAvailable || !usageComplete ? 1 : 3,
+          state: !usageAvailable || !usageComplete ? 'Investigate' : 'Unavailable',
+          icon: 'meter',
+          domain: 'Cost & efficiency',
+          value: usageAvailable ? `${formatAic(usageTotal)} AIC` : 'Not observed',
+          detail: usageAvailable
+            ? `${formatCount(measuredRuns)} measured runs · monthly budget verdict unavailable`
+            : 'AI Credit usage telemetry is unavailable.',
+          href: '#page-usage'
+        }),
+        domainRow({
+          order: 5,
+          priority: evidenceGaps > 0 ? 1 : 2,
+          state: evidenceGaps > 0 ? 'Investigate' : 'Monitor',
+          icon: 'codescan',
+          domain: 'Evidence quality',
+          value: `${formatCount(evidenceGaps)} gaps`,
+          detail: `${formatCount(collectionGaps)} collection or inventory gaps · ${formatCount(attributionGaps)} attribution gaps`,
+          href: '#page-findings'
+        })
+      ].sort((left, right) => Number(left.priority) - Number(right.priority) || Number(left.order) - Number(right.order));
+    }
+
+    /**
+     * @param {{ order: number, priority: number, state: string, icon: string, domain: string, value: string, detail: string, href: string }} row
+     */
+    function domainRow(row) {
+      return {
+        ...row,
+        tone: row.state === 'Act now'
+          ? 'critical'
+          : row.state === 'Investigate'
+            ? 'investigate'
+            : row.state === 'Monitor' ? 'monitor' : 'unavailable'
+      };
+    }
+
+    /**
+     * @param {number} value
+     */
+    function formatCount(value) {
+      return new Intl.NumberFormat('en-US', { maximumFractionDigits: 0 }).format(value);
+    }
+
+    /**
+     * @param {number} value
+     */
+    function formatAic(value) {
+      return new Intl.NumberFormat('en-US', { maximumFractionDigits: 1 }).format(value);
     }
   };
 }

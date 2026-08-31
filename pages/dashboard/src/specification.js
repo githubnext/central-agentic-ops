@@ -22,6 +22,7 @@ export const VIEW_ELEMENT_VALUES = [
   'status-summary',
   'meter-list',
   'attention-list',
+  'domain-attention',
   'record-cards',
   'package-activity',
   'package-run-trend',
@@ -237,6 +238,7 @@ export const SOURCE_VALUES = [
   'overview-vitals',
   'overview-execution-health',
   'overview-attention',
+  'overview-attention-domains',
   'overview-managed-packages',
   'overview-package-utilization'
 ];
@@ -255,7 +257,8 @@ export const SOURCE_FIELDS = {
   usage: ['organization', 'repository', 'workflow', 'run', 'invocation', 'engine', 'requested-model', 'resolved-model', 'rollout-mode', 'input-tokens', 'output-tokens', 'cache-read-tokens', 'cache-write-tokens', 'reasoning-tokens', 'aic', 'observed-at', 'organization-link', 'repository-link', 'workflow-link', 'run-link'],
   outcomes: ['organization', 'repository', 'workflow', 'run', 'safe-output', 'outcome-state', 'evidence-strength', 'observed-at', 'issue-link', 'pull-request-link', 'run-link', 'external-link', 'organization-link', 'repository-link', 'workflow-link'],
   findings: ['organization', 'repository', 'workflow', 'run', 'finding', 'finding-severity', 'finding-status', 'finding-summary', 'observed-at', 'issue-link', 'pull-request-link', 'run-link', 'external-link', 'organization-link', 'repository-link', 'workflow-link'],
-  'operational-values': ['organization', 'repository', 'workflow', 'run', 'experiment', 'operational-case', 'evaluator-digest', 'rollout-mode', 'operational-value', 'operational-value-definition', 'requested-evidence-at', 'evidence-cutoff', 'maturity-at', 'maturity-status', 'delta-from-baseline', 'observed-at', 'evidence-link', 'organization-link', 'repository-link', 'workflow-link', 'run-link']
+  'operational-values': ['organization', 'repository', 'workflow', 'run', 'experiment', 'operational-case', 'evaluator-digest', 'rollout-mode', 'operational-value', 'operational-value-definition', 'requested-evidence-at', 'evidence-cutoff', 'maturity-at', 'maturity-status', 'delta-from-baseline', 'observed-at', 'evidence-link', 'organization-link', 'repository-link', 'workflow-link', 'run-link'],
+  'overview-attention-domains': ['domain', 'state', 'tone', 'icon', 'value', 'detail', 'href', 'priority', 'order']
 };
 
 export const ROLLOUT_MODE_VALUES = ['review', 'live', 'unknown'];
