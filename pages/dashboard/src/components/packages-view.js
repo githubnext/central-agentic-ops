@@ -78,13 +78,36 @@ export function renderPackagesView(sources, pageId = 'packages') {
     }
     content.setAttribute('aria-labelledby', `${pageId}-${selectedMode}-tab`);
     content.replaceChildren(
-      renderPackageUtilization(sources, selectedMode, `${pageId}-utilization-heading`),
-      renderRunTrend(sources, selectedMode, `${pageId}-trend-heading`)
+      renderPackageUtilization(sources, selectedMode, `${pageId}-utilization-heading`)
     );
+    content.dispatchEvent(new CustomEvent('package-mode-change', {
+      bubbles: true,
+      detail: { pageId, mode: selectedMode }
+    }));
   };
 
   renderMode();
   return h('div', { className: 'packages-view' }, tabs, content);
+}
+
+/**
+ * @param {Record<string, import('../presenter.js').LogicalSourceInput>} sources
+ * @param {string} [pageId]
+ * @returns {HTMLElement}
+ */
+export function renderPackageRunTrend(sources, pageId = 'packages') {
+  let selectedMode = 'all';
+  const content = h('div', { className: 'packages-mode-content' });
+  const renderMode = () => {
+    content.replaceChildren(renderRunTrend(sources, selectedMode, `${pageId}-trend-heading`));
+  };
+  content.ownerDocument.addEventListener('package-mode-change', (event) => {
+    if (!(event instanceof CustomEvent) || event.detail?.pageId !== pageId) return;
+    selectedMode = event.detail.mode;
+    renderMode();
+  });
+  renderMode();
+  return content;
 }
 
 /**

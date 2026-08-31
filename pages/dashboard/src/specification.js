@@ -23,6 +23,7 @@ export const VIEW_ELEMENT_VALUES = [
   'attention-list',
   'record-cards',
   'package-activity',
+  'package-run-trend',
   'workflow-topology'
 ];
 export const VIEW_CHART_VALUES = ['bar', 'line', 'pie'];

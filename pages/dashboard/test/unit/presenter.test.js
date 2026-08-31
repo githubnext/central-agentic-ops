@@ -585,7 +585,8 @@ describe('presenter built-in and custom pages', () => {
             views: [
               { id: 'package-workflows', data: { source: 'workflows' } },
               { id: 'package-runs', data: { source: 'runs' } },
-              { id: 'package-usage', data: { source: 'usage' } }
+              { id: 'package-usage', data: { source: 'usage' } },
+              { id: 'package-trend', mark: 'element', element: 'package-run-trend', data: { sources: ['workflows', 'runs'] } }
             ]
           }
         }]
