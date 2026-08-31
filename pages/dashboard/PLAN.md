@@ -114,7 +114,7 @@
 - `src/components/data-state.js` — presentation-only data-state metrics card grid for availability, completeness, and freshness.
 - `src/components/table-region.js` — presentation-only reusable table wrapper for repeated table-region markup, header rows, empty-state rows, and keyed body-row descriptors across built-in and custom tables.
 - `src/components/summary-copy.js` — presentation-only shared singular/plural summary-count copy for repeated item-count text surfaces.
-- `src/components/view-chrome.js` — presentation-only reusable page-section, titled-region, summary-list/summary-region, summary-style definition-list and definition-list rows, generic custom-view chrome paragraphs, custom-view source/metadata/context chrome, shared custom-view section chrome, custom-view state-message/details helpers, and built-in provenance-section helpers.
+- `src/components/view-chrome.js` — presentation-only reusable page-section, titled-region, metadata-section, summary-list/summary-region, summary-style definition-list and definition-list rows, generic custom-view chrome paragraphs, custom-view source/metadata/context chrome, shared custom-view section chrome, custom-view state-message/details helpers, and built-in provenance-section helpers.
 - `src/components/workflow-topology.js` — topology overview section for package and standalone workflow structure, now reusing shared definition-list rows for its summary metrics.
 - `src/components/ui-primitives.js` — presentation-only shared section-heading, vital-stat, and UTC date-time helpers for repeated dashboard component chrome, including optional summary-free heading shells.
 - `src/components/count-formatters.js` — presentation-only shared count and singular/plural text helpers for repeated dashboard status, workflow, and signal copy.
@@ -131,6 +131,15 @@
 - 2026-08-31: `npx playwright test --config=playwright.config.mjs` launches in this environment, but the current browser suite is already red on the checked-out baseline: page-level headings, skip-link visibility, route-driven repository views, keyboard section counts, and declarative table row visibility are not found across 9 existing `test/e2e/smoke.spec.js` assertions. This run did not change browser-only behavior, so the failures are recorded as a pre-existing gate blocker rather than fixed here.
 
 ## Run log
+
+### 2026-08-31 (metadata-section helper refactor)
+- Re-inventoried repeated UI construction under `pages/dashboard/src/` and selected the next bounded presentation-only DOM slice from the queue: repeated titled metadata `<section><h2>…</h2>…</section>` assembly in `src/components/outcome-detail.js`, with the same section-chrome family already housed in `src/components/view-chrome.js`.
+- Extracted `renderMetadataSection(...)` into `src/components/view-chrome.js` with a minimal composable API for section title, content node, and optional heading tag, then replaced every identified duplicate call site in `src/components/outcome-detail.js`.
+- Collapsed the local outcome-detail metadata-section helper so the outcome sidebar now reuses shared section chrome without changing heading text, link labels, DOM text, or class names.
+- Added unit coverage in `test/unit/view-chrome.test.js` for default and custom heading levels while preserving the existing `test/unit/outcome-detail.test.js` assertions that lock the affected metadata headings, badges, links, and sanitized Markdown behavior.
+- Proved unchanged behavior by rendering the affected outcome-detail route fixture through `pages/dashboard/scripts/check-outcome-detail-render.mjs` after the refactor and confirming the refactor was structural-only, while the existing outcome-detail unit assertions remained unchanged and green.
+- Verified `pages/dashboard/` quality gates in this run: `npm install`, `npm run build`, `npm run typecheck`, `npm run lint`, and `npm test` all pass. Playwright was not rerun for this bounded helper extraction because no browser-only behavior changed; the current browser-gate status remains tracked in `PLAN.md` infrastructure blockers.
+- Next candidates in the queue: extract the repeated definitions/observations dual-region composition in `src/presenter.js`; extract the repeated summary-plus-trend section composition in `src/presenter.js`; extract the next shared pure helpers around subject/provenance/count formatting in `src/presenter.js`.
 
 ### 2026-08-31 (section-heading shell refactor)
 - Re-inventoried repeated UI construction under `pages/dashboard/src/` and selected the next bounded presentation-only DOM slice from the queue: repeated `.section-heading` shells in `src/components/package-detail.js`, `src/components/repositories-view.js`, plus the existing shared call sites in `src/components/execution-elements.js` and `src/components/ui-elements.js`.
