@@ -544,18 +544,6 @@
               },
               "mark": "element",
               "element": "package-activity"
-            },
-            {
-              "id": "packages-run-trend",
-              "title": "Package run trend",
-              "data": {
-                "sources": [
-                  "workflows",
-                  "runs"
-                ]
-              },
-              "mark": "element",
-              "element": "package-run-trend"
             }
           ]
         }
