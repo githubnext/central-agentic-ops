@@ -140,6 +140,14 @@
         "icon": "shield",
         "class-name": "security-page",
         "description": "Operational assurance, warning, and telemetry-integrity signals for the configured githubnext/central-agentic-ops repository.",
+        "filter-bar": {
+          "filters": [
+            "mode:review",
+            "mode:live"
+          ],
+          "time-range": "All recorded",
+          "export": true
+        },
         "sections": [
           {
             "id": "operational-assurance",
@@ -586,6 +594,14 @@
         "icon": "play",
         "class-name": "runtime-page",
         "description": "Execution failures, approval gates, and exact control-plane episode evidence.",
+        "filter-bar": {
+          "filters": [
+            "mode:review",
+            "mode:live"
+          ],
+          "time-range": "All recorded",
+          "export": true
+        },
         "views": [
           {
             "id": "runtime-needs-attention",
@@ -1190,6 +1206,14 @@
         "icon": "beaker",
         "class-name": "value-page",
         "description": "Outcome, grader, maturity, AI Credit, and experiment-readiness evidence for the configured repositories.",
+        "filter-bar": {
+          "filters": [
+            "mode:review",
+            "mode:live"
+          ],
+          "time-range": "All recorded",
+          "export": true
+        },
         "sections": [
           {
             "id": "outcome-operations",

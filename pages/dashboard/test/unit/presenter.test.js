@@ -257,6 +257,21 @@ describe('presenter built-in and custom pages', () => {
     expect(rendered.querySelector('[data-page-id="organizations"]')?.classList.contains('organizations-page')).toBe(false);
   });
 
+  it('renders filter bars for the Runtime, Security, and Value pages', () => {
+    const rendered = renderDashboard({
+      document: authoritativeDashboardDocument,
+      sources: {}
+    });
+
+    for (const pageId of ['runtime', 'security', 'operational-value']) {
+      const filterBar = rendered.querySelector(`[data-page-id="${pageId}"] .filter-bar`);
+      expect(filterBar?.querySelector('.filter-control code')?.textContent).toBe('mode:review mode:live');
+      expect(filterBar?.querySelector('.count-badge')?.textContent).toBe('2');
+      expect(filterBar?.querySelector('.scope-period')?.textContent).toBe('All recorded');
+      expect(filterBar?.querySelector('.export-control')?.getAttribute('download')).toBe(`${pageId}.json`);
+    }
+  });
+
   it('renders the custom JSON-composed Security page from reusable summary and signal primitives', () => {
     const metadata = {
       'source-id': 'security-fixture',
