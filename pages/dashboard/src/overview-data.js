@@ -25,6 +25,7 @@ export function deriveOverviewSources(sources) {
   const packageUsage = summarizePackageAicUsage(workflows, usage);
   const securitySignals = buildSecuritySignals({ workflows, runs, findings });
   const valueSignals = buildValueSignals({ sources, operationalValues, outcomes });
+  const costSignals = buildCostSignals(sources.usage);
 
   return {
     ...sources,
@@ -106,8 +107,103 @@ export function deriveOverviewSources(sources) {
       source: 'value-workflows',
       rows: buildValueWorkflowRows(operationalValues),
       metadata: overviewMetadata
+    },
+    'cost-summary': {
+      source: 'cost-summary',
+      rows: buildCostSummary(sources.usage),
+      metadata: overviewMetadata
+    },
+    'cost-signals': {
+      source: 'cost-signals',
+      rows: costSignals,
+      metadata: overviewMetadata
+    },
+    'cost-readiness': {
+      source: 'cost-readiness',
+      rows: [{
+        tone: 'attention',
+        icon: 'meter',
+        kicker: 'Evaluation boundary',
+        title: 'Budget and anomaly verdicts unavailable',
+        detail: 'A budget verdict requires an applicable budget, matching time window, and complete measured usage. An anomaly verdict requires a qualified historical baseline and disclosed statistical rule.'
+      }],
+      metadata: overviewMetadata
     }
   };
+}
+
+/**
+ * @param {import('./presenter.js').LogicalSourceInput | undefined} usageSource
+ */
+function buildCostSummary(usageSource) {
+  const available = sourceIsAvailable(usageSource);
+  const measuredRows = (usageSource?.rows ?? []).filter((row) => Number.isFinite(Number(row.aic)) && Number(row.aic) >= 0);
+  const measuredAic = measuredRows.reduce((total, row) => total + Number(row.aic), 0);
+  const measuredRuns = new Set(measuredRows.map((row) => usageRunKey(row)).filter(Boolean)).size;
+  return [
+    {
+      label: 'Measured AIC',
+      value: available ? formatAic(measuredAic) : '—',
+      kicker: 'Resource operations',
+      'collection-label': 'boundaries',
+      note: 'AI Credit totals are allocation evidence, not monetary cost. Output yield is an investigation aid, not proof of efficiency or waste.'
+    },
+    { label: 'Measured runs', value: available ? formatNumber(measuredRuns) : '—' },
+    { label: 'Measured episode AIC', value: '—' },
+    { label: 'Episode output yield', value: '—' }
+  ];
+}
+
+/**
+ * @param {import('./presenter.js').LogicalSourceInput | undefined} usageSource
+ */
+function buildCostSignals(usageSource) {
+  const available = sourceIsAvailable(usageSource);
+  const complete = available && usageSource?.metadata?.completeness === 'complete';
+  const signals = [];
+  if (!available || !complete) {
+    signals.push({
+      priority: 1,
+      count: 1,
+      tone: 'informational',
+      icon: 'codescan',
+      kind: 'Usage coverage',
+      title: available ? 'AI Credit telemetry is partial' : 'AI Credit telemetry is unavailable',
+      detail: available
+        ? 'Measured totals exclude runs whose usage artifacts were not collected.'
+        : 'No complete usage feed is available for the configured scope.',
+      evidence: available ? 'Partial evidence' : 'Evidence unavailable',
+      action: 'View evidence',
+      'navigation-page': 'usage'
+    });
+  }
+  return [
+    ...signals,
+    {
+      priority: 2,
+      count: 1,
+      tone: 'informational',
+      icon: 'meter',
+      kind: 'Budget boundary',
+      title: 'Budget status is unavailable',
+      detail: 'Retained usage is not aligned to a complete monthly budget measurement window.',
+      evidence: 'Threshold unavailable',
+      action: 'View evidence',
+      'navigation-page': 'cost'
+    },
+    {
+      priority: 3,
+      count: 1,
+      tone: 'informational',
+      icon: 'graph',
+      kind: 'Anomaly boundary',
+      title: 'Cost anomalies are not evaluated',
+      detail: 'The retained window does not establish a representative historical usage baseline.',
+      evidence: 'Baseline unavailable',
+      action: 'View evidence',
+      'navigation-page': 'cost'
+    }
+  ];
 }
 
 /**
@@ -349,7 +445,7 @@ function buildDomainAttentionRows(input) {
       const measuredUsage = input.usage.filter((row) =>
         row.aic !== null && row.aic !== undefined && row.aic !== '' && Number.isFinite(Number(row.aic))
       );
-      const measuredRuns = new Set(measuredUsage.map((row) => String(row.run ?? '')).filter(Boolean)).size;
+      const measuredRuns = new Set(measuredUsage.map((row) => usageRunKey(row)).filter(Boolean)).size;
       const usageAvailable = input.sources.usage?.metadata?.availability === 'available';
       const usageComplete = input.sources.usage?.metadata?.completeness === 'complete';
       const usageTotal = measuredUsage.reduce((total, row) => total + Number(row.aic), 0);
@@ -378,8 +474,8 @@ function buildDomainAttentionRows(input) {
         }),
         domainRow({
           order: 1,
-          priority: input.health.approval > 0 || warningOutputs > 0 ? 1 : 3,
-          state: input.health.approval > 0 || warningOutputs > 0 ? 'Investigate' : 'Unavailable',
+          priority: input.health.approval > 0 || warningOutputs > 0 || inventoryGaps > 0 ? 1 : 3,
+          state: input.health.approval > 0 || warningOutputs > 0 || inventoryGaps > 0 ? 'Investigate' : 'Unavailable',
           icon: 'shield',
           domain: 'Security & controls',
           value: `${formatCount(securitySignals)} signals`,
@@ -409,14 +505,14 @@ function buildDomainAttentionRows(input) {
         domainRow({
           order: 4,
           priority: usageAvailable && !usageComplete ? 1 : 3,
-          state: !usageAvailable ? 'Unavailable' : !usageComplete ? 'Investigate' : 'Unavailable',
+          state: !usageAvailable ? 'Unavailable' : !usageComplete ? 'Investigate' : 'Monitor',
           icon: 'meter',
           domain: 'Cost & efficiency',
           value: usageAvailable ? `${formatAic(usageTotal)} AIC` : 'Not observed',
           detail: usageAvailable
             ? `${formatCount(measuredRuns)} measured runs · monthly budget verdict unavailable`
             : 'AI Credit usage telemetry is unavailable.',
-          href: '#page-usage'
+          href: '#page-cost'
         }),
         domainRow({
           order: 5,
@@ -849,6 +945,24 @@ function repositoryKey(row) {
   if (!repository) return '';
   const organization = String(row.organization ?? '').trim();
   return organization ? `${organization}/${repository}` : repository;
+}
+
+/**
+ * @param {import('./presenter.js').LogicalSourceInput | undefined} source
+ */
+function sourceIsAvailable(source) {
+  return Boolean(source && Array.isArray(source.rows) && source.metadata?.availability !== 'unavailable');
+}
+
+/**
+ * @param {Record<string, unknown>} row
+ */
+function usageRunKey(row) {
+  const run = String(row.run ?? '').trim();
+  const context = `${repositoryKey(row)}:${String(row.workflow ?? '')}`;
+  if (run) return `${context}:${run}`;
+  const invocation = String(row.invocation ?? '').trim();
+  return invocation ? `${context}:${invocation}` : '';
 }
 
 /**

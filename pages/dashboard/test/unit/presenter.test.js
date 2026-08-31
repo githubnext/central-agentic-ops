@@ -710,6 +710,8 @@ describe('presenter built-in and custom pages', () => {
     expect(cards[3]?.textContent).toContain('3 gaps');
     expect(cards[4]?.textContent).toContain('Threshold unavailable');
     expect(cards[5]?.textContent).toContain('35 AIC');
+    expect(cards[5]?.textContent).toContain('Monitor');
+    expect(cards[5]?.getAttribute('href')).toBe('#page-cost');
     expect(cards.every((card) => card.textContent?.includes('Open evidence'))).toBe(true);
     expect(overviewPage?.querySelector('.overview-method-note')?.textContent).toContain('State key:');
     expect(/** @type {HTMLElement | null} */ (rendered.querySelector('.data-state-summary'))?.hidden).toBe(true);
