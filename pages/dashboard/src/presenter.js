@@ -1306,13 +1306,16 @@ function deriveRepositoryDashboardLinks(sources, pages) {
 function deriveWorkflowDashboardLinks(sources, pages) {
   const detailPage = pages.find((page) => page.kind === 'custom' && page.route?.['hash-query-parameter'] === 'workflow');
   if (!detailPage) return sources;
+  const knownWorkflows = new Set((sources.workflows?.rows ?? [])
+    .map(workflowDashboardIdentity)
+    .filter((identity) => identity !== null));
 
   return Object.fromEntries(Object.entries(sources).map(([name, source]) => [
     name,
     {
       ...source,
       rows: Array.isArray(source?.rows)
-        ? source.rows.map((row) => deriveWorkflowDashboardLink(row, detailPage.id))
+        ? source.rows.map((row) => deriveWorkflowDashboardLink(row, detailPage.id, knownWorkflows))
         : source?.rows
     }
   ]));
@@ -1321,23 +1324,20 @@ function deriveWorkflowDashboardLinks(sources, pages) {
 /**
  * @param {Record<string, unknown>} row
  * @param {string} pageId
+ * @param {Set<string>} knownWorkflows
  * @returns {Record<string, unknown>}
  */
-function deriveWorkflowDashboardLink(row, pageId) {
-  const organization = trimmedString(row.organization);
-  const repository = trimmedString(row.repository);
-  const workflow = trimmedString(row.workflow);
-  const repositorySlug = repository && repository.includes('/') ? repository : (organization && repository ? `${organization}/${repository}` : null);
-  const workflowRepositorySlug = repositorySlugValue(row['runtime-repository']) ?? repositorySlug;
+function deriveWorkflowDashboardLink(row, pageId, knownWorkflows) {
+  const identity = workflowDashboardIdentity(row);
   const workflowLink = row['workflow-link'];
-  if (!workflowRepositorySlug || !workflow || !isPlainObject(workflowLink)) return row;
+  if (!identity || !knownWorkflows.has(identity) || !isPlainObject(workflowLink)) return row;
 
   return {
     ...row,
     'workflow-link': {
       ...workflowLink,
-      'dashboard-href': `#page-${encodeURIComponent(pageId)}?workflow=${encodeURIComponent(`${workflowRepositorySlug}:${workflow}`)}`,
-      'dashboard-label': `View ${trimmedString(row['workflow-name']) ?? workflow} workflow dashboard`
+      'dashboard-href': `#page-${encodeURIComponent(pageId)}?workflow=${encodeURIComponent(identity)}`,
+      'dashboard-label': `View ${trimmedString(row['workflow-name']) ?? trimmedString(row.workflow)} workflow dashboard`
     }
   };
 }
@@ -1422,6 +1422,16 @@ function repositorySlugValue(value) {
   return repository && /^[A-Za-z0-9](?:[A-Za-z0-9.-]{0,98}[A-Za-z0-9])?\/[A-Za-z0-9_.-]{1,100}$/.test(repository)
     ? repository
     : null;
+}
+
+/** @param {Record<string, unknown>} row */
+function workflowDashboardIdentity(row) {
+  const organization = trimmedString(row.organization);
+  const repository = trimmedString(row.repository);
+  const repositorySlug = repository && repository.includes('/') ? repository : (organization && repository ? `${organization}/${repository}` : null);
+  const workflowRepositorySlug = repositorySlugValue(row['runtime-repository']) ?? repositorySlug;
+  const workflow = trimmedString(row.workflow);
+  return workflowRepositorySlug && workflow ? `${workflowRepositorySlug}:${workflow}` : null;
 }
 
 /**
