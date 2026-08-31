@@ -118,6 +118,13 @@
 
 ## Run log
 
+### 2026-08-31 (parity verification sweep)
+- Re-read `pages/dashboard/PLAN.md`, `pages/dashboard/dashboard.json`, and the report reference in `dashboard/report/report.mjs` to select the next Parity increment conservatively.
+- Audited the remaining parity checklist against the current renderer and confirmed this run should be verification-only rather than introducing new semantics without a tighter specification-backed data contract.
+- Re-ran the full `pages/dashboard/` quality gate stack on the current implementation: `npm install`, `npm run build`, `npm test`, `npm run lint`, `npm run typecheck`, and `npx playwright test --config=playwright.config.mjs` all pass.
+- Recorded the current green verification state without changing runtime behavior, keeping the next implementation target focused on the remaining configured-mode tab and dense catalog parity slices.
+- Next milestone: Parity, continuing the remaining checklist items for configured-mode view tabs, dense findings/outcomes presentation, specialized run/dispatch catalog chrome, and outstanding producer-derived semantics.
+
 ### 2026-08-31 (custom-view state chrome refactor)
 - Re-inventoried repeated UI construction under `pages/dashboard/src/` and selected the highest remaining bounded custom-view chrome slice: inline custom-view state-message and affected-source/context assembly in `src/presenter.js`, shared by unavailable and empty custom metric, table, chart, and element views via `renderCustomViewState(...)` alongside the existing populated-state `renderViewSectionChrome(...)` helper.
 - Extended `src/components/view-chrome.js` with presentation-only `customViewAvailabilityMessage(...)` and `renderCustomViewStateDetails(...)`, then replaced the duplicated inline availability-text branch and affected-source/context assembly in `src/presenter.js`'s `renderCustomViewState(...)`.
