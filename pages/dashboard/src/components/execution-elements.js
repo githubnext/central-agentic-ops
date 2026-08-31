@@ -9,11 +9,13 @@ import { findLink } from './link-content.js';
 
 const FAILURE_CONCLUSIONS = new Set(['failure', 'startup-failure', 'timed-out']);
 
+/** @typedef {Record<string, unknown>} Row */
+
 /**
  * @param {import('./ui-elements.js').ElementRenderContext} context
  */
-export function renderRuntimeAttention(context) {
-  const model = runtimeModel(context);
+export function renderSignalList(context) {
+  const model = executionModel(context);
   const signals = [];
 
   for (const episode of model.episodes.filter((candidate) => FAILURE_CONCLUSIONS.has(text(candidate.run['run-conclusion'])))) {
@@ -122,8 +124,8 @@ export function renderRuntimeAttention(context) {
 /**
  * @param {import('./ui-elements.js').ElementRenderContext} context
  */
-export function renderRuntimeEpisodes(context) {
-  const model = runtimeModel(context);
+export function renderExecutionEpisodes(context) {
+  const model = executionModel(context);
   const runsMetadata = context.sources.runs?.metadata;
   const windowHours = coverageHours(runsMetadata?.['coverage-start'], runsMetadata?.['coverage-end']);
   return h(
@@ -179,7 +181,10 @@ export function renderRuntimeEpisodes(context) {
 /**
  * @param {import('./ui-elements.js').ElementRenderContext} context
  */
-function runtimeModel(context) {
+/**
+ * @param {import('./ui-elements.js').ElementRenderContext} context
+ */
+function executionModel(context) {
   const workflowRows = rowsFor(context, 'workflows');
   const runs = rowsFor(context, 'runs');
   const workflows = new Map(workflowRows.map((workflow) => [runKey(workflow), workflow]));
@@ -207,10 +212,11 @@ function runtimeModel(context) {
 }
 
 /**
- * @param {Map<string, Record<string, unknown>[]> | Record<string, unknown>[]} rows
+ * @param {Row[]} rows
+ * @returns {Map<string, Row[]>}
  */
 function groupRuns(rows) {
-  if (rows instanceof Map) return rows;
+  /** @type {Map<string, Row[]>} */
   const groups = new Map();
   for (const run of rows) {
     const key = runKey(run);
@@ -278,6 +284,13 @@ function renderEpisode(episode) {
   );
 }
 
+/**
+ * @param {string} kicker
+ * @param {string} id
+ * @param {string} title
+ * @param {string | undefined} description
+ * @param {string} summary
+ */
 function sectionHeading(kicker, id, title, description, summary) {
   return h(
     'div',
@@ -287,10 +300,19 @@ function sectionHeading(kicker, id, title, description, summary) {
   );
 }
 
+/**
+ * @param {string} label
+ * @param {unknown} value
+ * @param {string} [detail]
+ */
 function vital(label, value, detail) {
   return h('div', null, h('dt', null, label), h('dd', null, String(value)), detail ? h('p', null, detail) : null);
 }
 
+/**
+ * @param {Row} run
+ * @param {string} label
+ */
 function renderRunLink(run, label) {
   const link = findLink(run, 'run-link');
   return link
@@ -298,32 +320,59 @@ function renderRunLink(run, label) {
     : h('span', null, label);
 }
 
+/**
+ * @param {Row} run
+ * @param {Row | undefined} workflow
+ */
 function runTitle(run, workflow) {
   return text(run['run-title']) || `Run ${text(run.run) || workflowName(workflow, run)}`;
 }
 
+/**
+ * @param {Row | undefined} workflow
+ * @param {Row | undefined} run
+ */
 function workflowName(workflow, run) {
   return text(workflow?.['workflow-name']) || text(run?.workflow) || 'Unknown workflow';
 }
 
+/**
+ * @param {Row} row
+ */
 function runKey(row) {
   return `${text(row.organization).toLowerCase()}/${text(row.repository).toLowerCase()}:${text(row.workflow)}`;
 }
 
+/**
+ * @param {import('./ui-elements.js').ElementRenderContext} context
+ * @param {string} sourceName
+ * @returns {Row[]}
+ */
 function rowsFor(context, sourceName) {
   return Array.isArray(context.sources[sourceName]?.rows) ? context.sources[sourceName].rows : [];
 }
 
+/**
+ * @param {unknown} start
+ * @param {unknown} end
+ */
 function durationBetween(start, end) {
   const duration = Date.parse(text(end)) - Date.parse(text(start));
   return Number.isFinite(duration) && duration >= 0 ? duration : null;
 }
 
+/**
+ * @param {unknown} start
+ * @param {unknown} end
+ */
 function coverageHours(start, end) {
   const duration = durationBetween(start, end);
   return duration === null ? 24 : Math.max(1, Math.round(duration / 3_600_000));
 }
 
+/**
+ * @param {number | null} duration
+ */
 function formatDuration(duration) {
   if (!Number.isFinite(duration)) return '—';
   const seconds = Math.max(0, Math.round(Number(duration) / 1000));
@@ -333,20 +382,32 @@ function formatDuration(duration) {
   return `${Math.floor(minutes / 60)}h ${minutes % 60}m`;
 }
 
+/**
+ * @param {unknown} value
+ */
 function formatDate(value) {
   const parsed = Date.parse(text(value));
   if (!Number.isFinite(parsed)) return 'Time unavailable';
   return new Intl.DateTimeFormat('en', { dateStyle: 'medium', timeStyle: 'short', timeZone: 'UTC' }).format(new Date(parsed));
 }
 
+/**
+ * @param {unknown} value
+ */
 function formatCount(value) {
   return new Intl.NumberFormat('en').format(Number(value) || 0);
 }
 
+/**
+ * @param {number} value
+ */
 function formatPercent(value) {
   return new Intl.NumberFormat('en', { style: 'percent', maximumFractionDigits: 1 }).format(value);
 }
 
+/**
+ * @param {unknown} value
+ */
 function text(value) {
   return value == null ? '' : String(value);
 }

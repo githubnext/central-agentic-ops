@@ -26,8 +26,8 @@ describe('Runtime dashboard view', () => {
           kind: /** @type {'custom'} */ ('custom'),
           title: 'Runtime',
           views: [
-            { id: 'attention', title: 'Needs attention', data: { sources: ['workflows', 'runs', 'outcomes', 'findings'] }, mark: 'element', element: 'runtime-attention' },
-            { id: 'episodes', title: 'Execution episodes', data: { sources: ['workflows', 'runs', 'outcomes', 'usage'] }, mark: 'element', element: 'runtime-episodes' }
+            { id: 'attention', title: 'Needs attention', data: { sources: ['workflows', 'runs', 'outcomes', 'findings'] }, mark: 'element', element: 'signal-list' },
+            { id: 'episodes', title: 'Execution episodes', data: { sources: ['workflows', 'runs', 'outcomes', 'usage'] }, mark: 'element', element: 'execution-episodes' }
           ]
         }]
       }

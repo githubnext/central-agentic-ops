@@ -110,12 +110,12 @@ function buildPresenterModuleUrl() {
     .replace("'./linked-text.js'", JSON.stringify(linkedTextModuleUrl));
   const repositoryWorkflowsModuleUrl = `data:text/javascript;charset=utf-8,${encodeURIComponent(repositoryWorkflowsSource)}`;
 
-  const runtimeViewSource = readFileSync(new URL('../../src/components/runtime-view.js', import.meta.url), 'utf8')
+  const executionElementsSource = readFileSync(new URL('../../src/components/execution-elements.js', import.meta.url), 'utf8')
     .replace("'../dom.js'", JSON.stringify(domModuleUrl))
     .replace("'../octicons.js'", JSON.stringify(octiconsModuleUrl))
     .replace("'./badge.js'", JSON.stringify(badgeModuleUrl))
     .replace("'./link-content.js'", JSON.stringify(linkContentModuleUrl));
-  const runtimeViewModuleUrl = `data:text/javascript;charset=utf-8,${encodeURIComponent(runtimeViewSource)}`;
+  const executionElementsModuleUrl = `data:text/javascript;charset=utf-8,${encodeURIComponent(executionElementsSource)}`;
 
   const uiElementsSource = readFileSync(new URL('../../src/components/ui-elements.js', import.meta.url), 'utf8')
     .replace("'../dom.js'", JSON.stringify(domModuleUrl))
@@ -124,7 +124,7 @@ function buildPresenterModuleUrl() {
     .replace("'./badge.js'", JSON.stringify(badgeModuleUrl))
     .replace("'./packages-view.js'", JSON.stringify(packagesViewModuleUrl))
     .replace("'./repository-workflows.js'", JSON.stringify(repositoryWorkflowsModuleUrl))
-    .replace("'./runtime-view.js'", JSON.stringify(runtimeViewModuleUrl))
+    .replace("'./execution-elements.js'", JSON.stringify(executionElementsModuleUrl))
     .replace("'./workflow-topology.js'", JSON.stringify(workflowTopologyModuleUrl))
     .replace("'./dispatch-catalog.js'", JSON.stringify(dispatchCatalogModuleUrl));
   const uiElementsModuleUrl = `data:text/javascript;charset=utf-8,${encodeURIComponent(uiElementsSource)}`;

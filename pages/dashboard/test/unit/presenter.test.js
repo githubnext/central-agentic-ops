@@ -234,7 +234,7 @@ describe('presenter built-in and custom pages', () => {
     const labels = [...rendered.querySelectorAll('.nav-section-label')].map((node) => node.textContent?.trim());
     expect(labels).toEqual(['Attention', 'Investigate', 'Explore']);
     expect(rendered.querySelector('[data-nav-page-id="overview"]')?.previousElementSibling?.textContent).toBe('Attention');
-    expect(rendered.querySelector('[data-nav-page-id="runs"]')?.previousElementSibling?.textContent).toBe('Investigate');
+    expect(rendered.querySelector('[data-nav-page-id="runtime"]')?.previousElementSibling?.textContent).toBe('Investigate');
     expect(rendered.querySelector('[data-page-id="overview"]')?.classList.contains('overview-page')).toBe(true);
     expect(rendered.querySelector('[data-page-id="organizations"]')?.classList.contains('organizations-page')).toBe(false);
   });

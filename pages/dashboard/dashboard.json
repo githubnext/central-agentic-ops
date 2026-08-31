@@ -592,7 +592,7 @@
               ]
             },
             "mark": "element",
-            "element": "runtime-attention",
+            "element": "signal-list",
             "layout": "full"
           },
           {
@@ -608,7 +608,7 @@
               ]
             },
             "mark": "element",
-            "element": "runtime-episodes",
+            "element": "execution-episodes",
             "layout": "full"
           }
         ]
