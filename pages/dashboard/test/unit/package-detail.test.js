@@ -109,7 +109,7 @@ describe('renderPackageDetail', () => {
     }));
 
     expect(rendered.dataset.package).toBe('ambient-context');
-    expect(rendered.querySelector('.package-tabs')?.textContent).toBe('WorkflowsReportsInsights');
+    expect(rendered.querySelector('.package-tabs')?.textContent).toBe('InsightsWorkflowsReports');
     expect(rendered.querySelector('.package-tabs [aria-current="page"]')?.getAttribute('href')).toBe('#page-package-detail?package=ambient-context');
     expect(rendered.querySelector('h3')?.textContent).toBe('Orchestrator and workers');
     expect(rendered.querySelectorAll('[data-workflow-role="orchestrator"]')).toHaveLength(1);
