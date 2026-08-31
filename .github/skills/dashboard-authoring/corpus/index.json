@@ -2,6 +2,11 @@
   "schemaVersion": 1,
   "examples": [
     {
+      "id": "branch-protection-bypass-remediation",
+      "metadata": "examples/branch-protection-bypass-remediation.json",
+      "dashboard": "examples/branch-protection-bypass-remediation.dashboard.yml"
+    },
+    {
       "id": "deployment-drift-remediation",
       "metadata": "examples/deployment-drift-remediation.json",
       "dashboard": "examples/deployment-drift-remediation.dashboard.yml"
