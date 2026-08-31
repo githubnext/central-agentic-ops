@@ -472,7 +472,7 @@ test('DLS-PAGE-002 DLS-PAGE-014 built-in overview page renders the report-style 
     '#page-runtime',
     '#page-runtime?section=runtime-execution-episodes',
     '#page-security',
-    '#page-findings',
+    '#page-coverage',
     '#page-operational-value',
     '#page-cost'
   ]);
@@ -526,8 +526,7 @@ test('DLS-PAGE-014 DLS-PAGE-015 built-in packages page renders report-style mode
                 views: [
                   { id: 'package-workflows', data: { source: 'workflows' } },
                   { id: 'package-runs', data: { source: 'runs' } },
-                  { id: 'package-usage', data: { source: 'usage' } },
-                  { id: 'package-trend', mark: 'element', element: 'package-run-trend', data: { sources: ['workflows', 'runs'] } }
+                  { id: 'package-usage', data: { source: 'usage' } }
                 ]
               }
             },
@@ -612,6 +611,7 @@ test('DLS-PAGE-014 DLS-PAGE-015 built-in packages page renders report-style mode
   await expect(page.locator('[data-package-id="aw-maintenance"]')).toContainText('9.6%');
   await expect(page.locator('[data-package-id="ambient-context"]')).toContainText('No AIC usage was reported');
   await expect(page.getByRole('heading', { name: 'All output by package', level: 3 })).toBeVisible();
+  await expect(page.locator('.package-trend-panel + .package-summary')).toBeVisible();
   const awMaintenanceSummary = page.locator('.package-summary-table tbody tr').filter({ hasText: 'AW Maintenance' });
   await expect(awMaintenanceSummary).toContainText('AW Maintenance');
   await expect(awMaintenanceSummary.locator('td')).toHaveText(['2', '1', '1', '1', '1', '23.9', 'Aug 29, 2026, 10:05 AM']);

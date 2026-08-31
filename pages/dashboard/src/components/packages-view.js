@@ -79,6 +79,7 @@ export function renderPackagesView(sources, pageId = 'packages') {
     content.setAttribute('aria-labelledby', `${pageId}-${selectedMode}-tab`);
     content.replaceChildren(
       renderPackageUtilization(sources, selectedMode, `${pageId}-utilization-heading`),
+      renderRunTrend(sources, selectedMode, `${pageId}-trend-heading`),
       renderPackageSummary(sources, selectedMode, `${pageId}-summary-heading`)
     );
     content.dispatchEvent(new CustomEvent('package-mode-change', {

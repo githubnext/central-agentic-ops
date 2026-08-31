@@ -208,6 +208,7 @@ describe('presenter built-in and custom pages', () => {
 
     const refreshButton = rendered.querySelector('.refresh-button');
     expect(refreshButton).not.toBeNull();
+    expect(refreshButton?.tagName).toBe('BUTTON');
     expect(refreshButton?.getAttribute('title')).toBeTruthy();
     expect(refreshButton?.getAttribute('aria-label')).toBeTruthy();
     expect(rendered.querySelector('.repository-link')).toBeNull();
@@ -227,6 +228,11 @@ describe('presenter built-in and custom pages', () => {
 
     const rendered = renderDashboard({ document, sources: {} });
 
+    const refreshLink = rendered.querySelector('.refresh-button');
+    expect(refreshLink?.tagName).toBe('A');
+    expect(refreshLink?.getAttribute('href')).toBe('https://github.example.com/octo-org/agentic-operations/actions/workflows/dashboard.yml');
+    expect(refreshLink?.getAttribute('aria-label')).toBe('Open the dashboard workflow on GitHub Actions');
+    expect(refreshLink?.getAttribute('title')).toBe('Open the dashboard workflow on GitHub Actions');
     const repositoryLink = rendered.querySelector('.repository-link');
     expect(repositoryLink).not.toBeNull();
     expect(repositoryLink?.getAttribute('href')).toBe('https://github.example.com/octo-org/agentic-operations');
@@ -406,6 +412,14 @@ describe('presenter built-in and custom pages', () => {
             'external-link': { relation: 'external', href: 'https://github.com/githubnext/central-agentic-ops/issues/1', label: 'View warning output' }
           }],
           metadata
+        },
+        outcomes: {
+          source: 'outcomes',
+          rows: [{
+            'safe-output': 'warning-1',
+            'outcome-title': 'Release warning'
+          }],
+          metadata
         }
       }
     });
@@ -429,7 +443,7 @@ describe('presenter built-in and custom pages', () => {
     expect(signals[0]?.querySelector('a')?.getAttribute('href')).toContain('/actions/runs/102');
     expect(signals[1]?.querySelector('a')?.getAttribute('href')).toBe('#page-packages');
     expect(signals[1]?.textContent).toContain('View package');
-    expect(signals[2]?.querySelector('a')?.getAttribute('href')).toContain('/issues/1');
+    expect(signals[2]?.querySelector('a')?.getAttribute('href')).toBe('#page-outcome-detail?outcome=warning-1');
     expect(page?.textContent).toContain('No vulnerability feed is retained.');
   });
 
@@ -928,7 +942,7 @@ describe('presenter built-in and custom pages', () => {
       '#page-runtime',
       '#page-runtime?section=runtime-execution-episodes',
       '#page-security',
-      '#page-findings',
+      '#page-coverage',
       '#page-operational-value',
       '#page-cost'
     ]);
@@ -1009,8 +1023,7 @@ describe('presenter built-in and custom pages', () => {
             views: [
               { id: 'package-workflows', data: { source: 'workflows' } },
               { id: 'package-runs', data: { source: 'runs' } },
-              { id: 'package-usage', data: { source: 'usage' } },
-              { id: 'package-trend', mark: 'element', element: 'package-run-trend', data: { sources: ['workflows', 'runs'] } }
+              { id: 'package-usage', data: { source: 'usage' } }
             ]
           }
         }]
@@ -1073,6 +1086,7 @@ describe('presenter built-in and custom pages', () => {
     expect(packagesPage?.querySelector('[data-package-id="empty-ops"]')?.textContent).toContain('No AIC usage was reported');
     expect(packagesPage?.querySelector('[data-package-id="daily-ops"] .package-utilization-identity a')?.getAttribute('href')).toBe('#page-package-detail?package=daily-ops');
     expect(packagesPage?.querySelector('.package-summary-heading')?.textContent).toContain('All output by package');
+    expect(packagesPage?.querySelector('.package-trend-panel + .package-summary')).not.toBeNull();
     const packageSummaryRows = [...(packagesPage?.querySelectorAll('.package-summary-table tbody tr') ?? [])];
     expect(packageSummaryRows).toHaveLength(2);
     expect(packageSummaryRows[0]?.querySelector('th a')?.getAttribute('href')).toBe('#page-package-detail?package=daily-ops');
@@ -2021,6 +2035,55 @@ describe('presenter built-in and custom pages', () => {
     expect(rendered.querySelector('[data-page-description]')?.textContent).toBe('Second page description');
     expect(rendered.ownerDocument.activeElement).toBe(rendered.querySelector('#page-title'));
     rendered.ownerDocument.defaultView?.history.replaceState(null, '', '/');
+  });
+
+  it('opens coverage diagnostics as an Overview subpage with canonical breadcrumbs', () => {
+    const rendered = renderDashboard({
+      document: authoritativeDashboardDocument,
+      sources: {
+        'coverage-diagnostics': {
+          source: 'coverage-diagnostics',
+          rows: [
+            {
+              title: 'Private repository discovery is off',
+              effect: 'Private repositories are excluded from workflow inventory and run-health totals.'
+            },
+            {
+              title: 'AIC telemetry is partial',
+              effect: 'AI Credit totals exclude runs whose usage artifacts could not be collected.'
+            }
+          ],
+          metadata: {
+            'source-id': 'coverage-diagnostics-fixture',
+            'source-kind': 'fixture',
+            'as-of': '2026-08-31T22:00:00Z',
+            'retrieved-at': '2026-08-31T22:01:00Z',
+            completeness: 'complete',
+            freshness: 'fresh',
+            availability: 'available'
+          }
+        }
+      }
+    });
+    rendered.ownerDocument.body.append(rendered);
+    const window = rendered.ownerDocument.defaultView;
+
+    window?.history.replaceState(null, '', '/#page-coverage');
+    window?.dispatchEvent(new HashChangeEvent('hashchange'));
+
+    expect(/** @type {HTMLElement | null} */ (rendered.querySelector('#page-coverage'))?.hidden).toBe(false);
+    expect(rendered.querySelector('#page-title')?.textContent).toBe('Coverage diagnostics');
+    expect(rendered.querySelector('[data-page-description]')?.textContent).toBe(
+      'Reporting coverage gaps for the configured githubnext/central-agentic-ops repository.'
+    );
+    expect(rendered.querySelector('[data-breadcrumb-root]')?.textContent).toBe('Overview');
+    expect(/** @type {HTMLElement | null} */ (rendered.querySelector('[data-breadcrumb-dashboard]'))?.hidden).toBe(true);
+    expect(rendered.querySelector('[data-breadcrumb-page]')?.textContent).toBe('Coverage diagnostics');
+    expect(rendered.querySelector('[data-nav-page-id="overview"]')?.getAttribute('aria-current')).toBe('page');
+    expect(rendered.querySelectorAll('[data-nav-page-id="coverage"]')).toHaveLength(0);
+    expect(rendered.querySelectorAll('.coverage-diagnostics tbody tr')).toHaveLength(2);
+
+    window?.history.replaceState(null, '', '/');
   });
 
   it('DLS-SAFE-004 DLS-SAFE-008 DLS-SAFE-009 renders accessible bars, visual chart legends, and rejects unsafe runtime links', () => {
