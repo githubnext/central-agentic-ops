@@ -31,6 +31,12 @@ export function renderRepositoryWorkflows(context) {
     const content = renderRepositoryWorkflowContent(context, repository, workflows);
     root.dataset.repository = repository;
     root.replaceChildren(...content.childNodes);
+    if (repository) {
+      root.dispatchEvent(new CustomEvent('dashboard-route-allocation', {
+        bubbles: true,
+        detail: { title: repository, navigationPage: 'repositories' }
+      }));
+    }
   };
   root.addEventListener('dashboard-route-change', (event) => {
     if (!(event instanceof CustomEvent) || event.detail?.parameter !== context.routeParameter) return;
@@ -209,6 +215,8 @@ function renderWorkflowStatusMetric(workflows) {
 function renderWorkflowRow(workflow) {
   const observedAt = String(workflow['observed-at'] ?? '');
   const link = findLink(workflow, 'workflow-link');
+  const role = workflowRole(workflow);
+  const memberships = workflowPackageMemberships(workflow);
   return /** @type {HTMLTableRowElement} */ (h(
     'tr',
     null,
@@ -222,10 +230,15 @@ function renderWorkflowRow(workflow) {
       h(
         'span',
         { className: 'repository-workflow-badges' },
-        ...(workflow.package
-          ? [h('a', { href: `#page-package-detail?package=${encodeURIComponent(String(workflow.package))}` }, String(workflow['package-name'] ?? workflow.package))]
-          : []),
-        h('span', null, titleCase(String(workflow['workflow-role'] ?? 'unknown')))
+        h('span', { className: `workflow-badge workflow-badge-${role}` }, titleCase(role)),
+        ...memberships.map((membership) => h(
+          'a',
+          {
+            className: 'workflow-badge workflow-badge-operation',
+            href: `#page-package-detail?package=${encodeURIComponent(membership.id)}`
+          },
+          `Package · ${membership.name}`
+        ))
       )
     ),
     h('td', null, renderStatusBadge(workflowState(workflow))),
@@ -278,6 +291,29 @@ function workflowState(workflow) {
   if (String(workflow['workflow-active']) === 'true') return 'Active';
   if (String(workflow['workflow-active']) === 'false') return 'Disabled';
   return 'Unknown';
+}
+
+/** @param {Record<string, unknown>} workflow @returns {'orchestrator'|'worker'|'standalone'|'unknown'} */
+function workflowRole(workflow) {
+  const role = String(workflow['workflow-role'] ?? 'unknown').toLowerCase();
+  return role === 'orchestrator' || role === 'worker' || role === 'standalone' ? role : 'unknown';
+}
+
+/** @param {Record<string, unknown>} workflow */
+function workflowPackageMemberships(workflow) {
+  const memberships = Array.isArray(workflow['package-memberships'])
+    ? workflow['package-memberships']
+    : workflow.package
+      ? [{ id: workflow.package, name: workflow['package-name'] ?? workflow.package }]
+      : [];
+  const unique = new Map();
+  for (const membership of memberships) {
+    if (!membership || typeof membership !== 'object' || Array.isArray(membership)) continue;
+    const id = String(membership.id ?? '').trim();
+    const name = String(membership.name ?? '').trim();
+    if (id && name) unique.set(id, { id, name });
+  }
+  return [...unique.values()].sort((left, right) => left.name.localeCompare(right.name));
 }
 
 /** @param {string} value */

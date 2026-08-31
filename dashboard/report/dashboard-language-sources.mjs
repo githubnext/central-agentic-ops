@@ -75,10 +75,17 @@ function packageMemberships(deployed) {
   const memberships = new Map();
   for (const bundle of deployed.bundles || []) {
     for (const workflow of bundle.workflows || []) {
-      memberships.set(`${bundle.repository}:${workflow.lockPath}`, {
+      const key = `${bundle.repository}:${workflow.lockPath}`;
+      const membership = {
         id: bundle.path?.replace(/\/aw\.yml$|^aw\.yml$/g, "") || bundle.name,
         name: bundle.name,
-      });
+      };
+      const workflowMemberships = memberships.get(key) || [];
+      if (!workflowMemberships.some((candidate) => candidate.id === membership.id)) {
+        workflowMemberships.push(membership);
+        workflowMemberships.sort((left, right) => left.name.localeCompare(right.name));
+        memberships.set(key, workflowMemberships);
+      }
     }
   }
   return memberships;
@@ -130,12 +137,14 @@ function workflowRows(deployed, generatedAt, inventory, controlSettings) {
   const inventoryDetails = inventoryWorkflowDetails(inventory, controlSettings);
   return (deployed.workflows || []).map((workflow) => {
     const names = repositoryParts(workflow.repository);
-    const membership = memberships.get(`${workflow.repository}:${workflow.path}`);
+    const workflowMemberships = memberships.get(`${workflow.repository}:${workflow.path}`) || [];
+    const membership = workflowMemberships.at(-1);
     const details = inventoryDetails.get(workflow.path);
     const recentMode = rolloutMode(workflow.runHealth?.runRecords?.[0]?.displayTitle);
     return {
       ...names,
       ...(membership ? { package: membership.id, "package-name": membership.name } : {}),
+      ...(workflowMemberships.length > 0 ? { "package-memberships": workflowMemberships } : {}),
       ...(Number.isFinite(details?.maxAiCredits) ? { "max-ai-credits": details.maxAiCredits } : {}),
       ...(Number.isFinite(details?.packageAllowance) ? { "package-aic-allowance": details.packageAllowance } : {}),
       ...(Number.isFinite(details?.packageWorkerCount) ? { "package-worker-count": details.packageWorkerCount } : {}),
@@ -228,6 +237,7 @@ function outcomeRows(records) {
   return records.map((record) => ({
     ...repositoryParts(record.repository),
     "runtime-repository": record.runtimeRepository || record.repository,
+    ...(record.bundle ? { package: record.bundle } : {}),
     workflow: record.workflowPath?.replace(/\.lock\.yml$/, ".md") || record.workflow || "",
     "workflow-name": record.workflow || record.workflowPath?.replace(/\.lock\.yml$/, ".md") || "Unknown workflow",
     run: String(record.runUrl?.match(/\/runs\/(\d+)/)?.[1] || ""),

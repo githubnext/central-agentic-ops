@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import { buildDashboardLanguageSources } from "../../dashboard/report/dashboard-language-sources.mjs";
 
-test("dashboard source bridge carries package allowance and inventory readiness into workflow rows", () => {
+test("dashboard source bridge carries package memberships, allowance, and inventory readiness into workflow rows", () => {
   const workflowPath = ".github/workflows/package.lock.yml";
   const sources = buildDashboardLanguageSources({
     deployed: {
@@ -12,6 +12,11 @@ test("dashboard source bridge carries package allowance and inventory readiness 
       bundles: [{
         repository: "githubnext/central-agentic-ops",
         name: "Package",
+        workflows: [{ lockPath: workflowPath }],
+      }, {
+        repository: "githubnext/central-agentic-ops",
+        path: "shared/aw.yml",
+        name: "Shared",
         workflows: [{ lockPath: workflowPath }],
       }],
       workflows: [{
@@ -46,6 +51,7 @@ test("dashboard source bridge carries package allowance and inventory readiness 
     {
       package: sources.workflows.rows[0].package,
       packageName: sources.workflows.rows[0]["package-name"],
+      packageMemberships: sources.workflows.rows[0]["package-memberships"],
       maxAiCredits: sources.workflows.rows[0]["max-ai-credits"],
       packageAllowance: sources.workflows.rows[0]["package-aic-allowance"],
       packageWorkerCount: sources.workflows.rows[0]["package-worker-count"],
@@ -53,8 +59,12 @@ test("dashboard source bridge carries package allowance and inventory readiness 
       rolloutMode: sources.workflows.rows[0]["rollout-mode"],
     },
     {
-      package: "Package",
-      packageName: "Package",
+      package: "shared",
+      packageName: "Shared",
+      packageMemberships: [
+        { id: "Package", name: "Package" },
+        { id: "shared", name: "Shared" },
+      ],
       maxAiCredits: 500,
       packageAllowance: 500,
       packageWorkerCount: 0,
@@ -152,6 +162,7 @@ test("dashboard source bridge carries outcome detail content and presentation me
       generatedAt: "2026-08-31T12:00:00Z",
       records: [{
         id: "outcome-1",
+        bundle: "daily",
         repository: "githubnext/central-agentic-ops",
         runtimeRepository: "githubnext/control-plane",
         workflowPath: ".github/workflows/daily.lock.yml",
@@ -174,6 +185,7 @@ test("dashboard source bridge carries outcome detail content and presentation me
     {
       workflow: sources.outcomes.rows[0].workflow,
       runtimeRepository: sources.outcomes.rows[0]["runtime-repository"],
+      package: sources.outcomes.rows[0].package,
       workflowName: sources.outcomes.rows[0]["workflow-name"],
       title: sources.outcomes.rows[0]["outcome-title"],
       summary: sources.outcomes.rows[0]["outcome-summary"],
@@ -186,6 +198,7 @@ test("dashboard source bridge carries outcome detail content and presentation me
     {
       workflow: ".github/workflows/daily.md",
       runtimeRepository: "githubnext/control-plane",
+      package: "daily",
       workflowName: "Daily review",
       title: "Parity verification sweep",
       summary: "All checks passed.",
