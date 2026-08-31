@@ -69,7 +69,7 @@ This specification does not cover:
 
 - arbitrary scripts, joins, formulas, expressions, or content templates;
 - plugins, themes, renderer details, or implementation architecture;
-- deployment routing, fetching, authentication, caching, or storage;
+- deployment-level routing, fetching, authentication, caching, or storage;
 - campaign or experiment management; or
 - causal inference.
 
