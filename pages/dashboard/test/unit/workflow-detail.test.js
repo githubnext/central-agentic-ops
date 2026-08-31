@@ -60,8 +60,9 @@ function context() {
         metadata,
         rows: [
           {
-            organization: 'githubnext',
-            repository: 'central-agentic-ops',
+            organization: 'customer',
+            repository: 'target',
+            'runtime-repository': 'githubnext/central-agentic-ops',
             workflow: '.github/workflows/ambient-context.md',
             'safe-output': 'report-closed',
             'outcome-title': 'Closed report',

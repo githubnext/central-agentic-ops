@@ -153,6 +153,7 @@ test("dashboard source bridge carries outcome detail content and presentation me
       records: [{
         id: "outcome-1",
         repository: "githubnext/central-agentic-ops",
+        runtimeRepository: "githubnext/control-plane",
         workflowPath: ".github/workflows/daily.lock.yml",
         workflow: "Daily review",
         mode: "live",
@@ -172,6 +173,7 @@ test("dashboard source bridge carries outcome detail content and presentation me
   assert.deepEqual(
     {
       workflow: sources.outcomes.rows[0].workflow,
+      runtimeRepository: sources.outcomes.rows[0]["runtime-repository"],
       workflowName: sources.outcomes.rows[0]["workflow-name"],
       title: sources.outcomes.rows[0]["outcome-title"],
       summary: sources.outcomes.rows[0]["outcome-summary"],
@@ -183,6 +185,7 @@ test("dashboard source bridge carries outcome detail content and presentation me
     },
     {
       workflow: ".github/workflows/daily.md",
+      runtimeRepository: "githubnext/control-plane",
       workflowName: "Daily review",
       title: "Parity verification sweep",
       summary: "All checks passed.",

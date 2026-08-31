@@ -33,7 +33,7 @@ export function renderWorkflowDetail(context) {
     const reports = workflow
       ? outcomes
         .filter((outcome) => (
-          qualifiedRepository(outcome).toLowerCase() === route?.repository.toLowerCase()
+          runtimeRepository(outcome).toLowerCase() === route?.repository.toLowerCase()
           && text(outcome.workflow) === route?.workflow
         ))
         .sort((left, right) => timestamp(right) - timestamp(left))
@@ -316,6 +316,11 @@ function qualifiedRepository(row) {
   if (repository.includes('/')) return repository;
   const organization = text(row.organization);
   return organization && repository ? `${organization}/${repository}` : repository;
+}
+
+/** @param {Record<string, unknown>} outcome */
+function runtimeRepository(outcome) {
+  return text(outcome['runtime-repository']) || qualifiedRepository(outcome);
 }
 
 /** @param {Record<string, unknown>} workflow */
