@@ -59,7 +59,8 @@ export function toNumber(value) {
  */
 export function formatNumber(value, unit = null) {
   if (unit && Number.isFinite(unit.significant) && unit.significant > 0) {
-    const rounded = Math.round(value / unit.significant) * unit.significant;
+    const quotient = value / unit.significant;
+    const rounded = Math.sign(quotient) * Math.round(Math.abs(quotient)) * unit.significant;
     return `${rounded.toFixed(fractionDigits(unit.significant))} ${unit.symbol}`;
   }
   return Number.isInteger(value) ? String(value) : value.toFixed(2);
@@ -72,7 +73,7 @@ export function formatNumber(value, unit = null) {
 function fractionDigits(value) {
   const [mantissa, exponentText = '0'] = value.toString().toLowerCase().split('e');
   const fractionLength = mantissa.split('.')[1]?.length ?? 0;
-  return Math.max(0, fractionLength - Number(exponentText));
+  return Math.min(100, Math.max(0, fractionLength - Number(exponentText)));
 }
 
 const TEMPLATE_TOKEN_PATTERN = /\{\{([a-zA-Z0-9_-]+)(?::(suffix|word):([^:}]*):([^:}]*))?\}\}/g;

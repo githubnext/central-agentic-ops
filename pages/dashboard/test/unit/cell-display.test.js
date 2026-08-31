@@ -19,5 +19,10 @@ describe('table cell display helper', () => {
     expect(/** @type {HTMLElement} */ (status).className).toBe('status status-danger');
     expect(renderCellDisplay(undefined, 'plain', toText)).toBe('plain');
     expect(renderCellDisplay('unsupported', null, toText)).toBe('unknown');
+    expect(renderCellDisplay(undefined, 2.5, toText, {
+      name: 'AI Credits',
+      symbol: 'AIC',
+      significant: 1
+    })).toBe('3 AIC');
   });
 });

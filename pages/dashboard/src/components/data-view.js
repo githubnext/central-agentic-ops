@@ -209,12 +209,12 @@ function fieldTitle(fieldDefinition) {
 }
 
 /**
- * @param {Record<string, unknown> | null} fieldDefinition
+ * @param {unknown} fieldDefinition
  * @param {Record<string, { name: string, symbol: string, significant: number }>} units
  * @returns {{ name: string, symbol: string, significant: number } | null}
  */
 function fieldUnit(fieldDefinition, units) {
-  return fieldDefinition && typeof fieldDefinition.unit === 'string'
+  return isPlainObject(fieldDefinition) && typeof fieldDefinition.unit === 'string'
     ? units[fieldDefinition.unit] ?? null
     : null;
 }

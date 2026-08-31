@@ -451,9 +451,9 @@ function validateDashboard(dashboard, dashboardNode, errors) {
           'unit identifiers must use canonical kebab-case.',
           path
         ));
-        continue;
+      } else {
+        unitIds.add(unitId);
       }
-      unitIds.add(unitId);
       if (!isPlainObject(definition)) {
         errors.push(createError(ERROR_CODES.missingOrInvalidRequiredField, 'unit definitions must be mappings.', path));
         continue;

@@ -81,6 +81,11 @@ describe('chart element helpers', () => {
     const bar = renderChartWidget('bar', [...points, { x: 'invalid', y: Number.NaN, color: null }], series);
     const line = renderChartWidget('line', points, series);
     const pie = renderChartWidget('pie', points, series);
+    const unitPie = renderChartWidget('pie', points, series, null, 'Total', {
+      name: 'AI Credits',
+      symbol: 'AIC',
+      significant: 1
+    });
     const chartHeight = String(38 - 4);
 
     expect(bar.getAttribute('data-chart-widget')).toBe('bar');
@@ -91,5 +96,7 @@ describe('chart element helpers', () => {
     expect(line.querySelectorAll('.line-chart-series')).toHaveLength(2);
     expect(pie.getAttribute('data-chart-widget')).toBe('pie');
     expect(pie.querySelectorAll('.pie-chart-segment')).toHaveLength(2);
+    expect(unitPie.querySelector('.pie-chart-segment')?.getAttribute('aria-label')).toBe('2026-08-29: 3 AIC');
+    expect(unitPie.querySelector('.pie-chart-total-value')?.textContent).toBe('4 AIC');
   });
 });
