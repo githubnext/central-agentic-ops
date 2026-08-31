@@ -87,7 +87,11 @@ import {
  */
 
 /**
- * @typedef {{ id: string, kind: 'custom', title?: string, description?: string, views: unknown[], sections?: unknown[] }} CustomPage
+ * @typedef {{ id: string, title?: string, description?: string, layout: 'full'|'wide'|'narrow', views: string[] }} PageSection
+ */
+
+/**
+ * @typedef {{ id: string, kind: 'custom', title?: string, description?: string, views: unknown[], sections?: PageSection[] }} CustomPage
  */
 
 /**
