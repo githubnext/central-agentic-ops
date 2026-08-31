@@ -444,7 +444,8 @@
                 "sources": [
                   "workflows",
                   "runs",
-                  "usage"
+                  "usage",
+                  "findings"
                 ]
               },
               "mark": "element",

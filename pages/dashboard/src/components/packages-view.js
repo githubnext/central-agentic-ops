@@ -78,7 +78,8 @@ export function renderPackagesView(sources, pageId = 'packages') {
     }
     content.setAttribute('aria-labelledby', `${pageId}-${selectedMode}-tab`);
     content.replaceChildren(
-      renderPackageUtilization(sources, selectedMode, `${pageId}-utilization-heading`)
+      renderPackageUtilization(sources, selectedMode, `${pageId}-utilization-heading`),
+      renderPackageSummary(sources, selectedMode, `${pageId}-summary-heading`)
     );
     content.dispatchEvent(new CustomEvent('package-mode-change', {
       bubbles: true,
@@ -88,6 +89,181 @@ export function renderPackagesView(sources, pageId = 'packages') {
 
   renderMode();
   return h('div', { className: 'packages-view' }, tabs, content);
+}
+
+/**
+ * @param {Record<string, import('../presenter.js').LogicalSourceInput>} sources
+ * @param {string} mode
+ * @param {string} headingId
+ * @returns {HTMLElement}
+ */
+function renderPackageSummary(sources, mode, headingId) {
+  const packages = summarizePackages(rowsFor(sources, 'workflows'));
+  const summaries = summarizePackageActivity(packages, sources, mode);
+  const modeLabel = titleCase(mode);
+
+  return h(
+    'section',
+    { className: 'package-summary', 'aria-labelledby': headingId },
+    h(
+      'header',
+      { className: 'package-summary-heading' },
+      h('h3', { id: headingId }, `${modeLabel} output by package`),
+      h('p', null, 'Durable outputs and inventory health for each control-plane package.')
+    ),
+    h(
+      'div',
+      { className: 'table-region', role: 'region', 'aria-labelledby': `${headingId}-caption`, tabIndex: 0 },
+      h(
+        'table',
+        { className: 'package-summary-table' },
+        h('caption', { id: `${headingId}-caption` }, `${modeLabel} package summary`),
+        h(
+          'thead',
+          null,
+          h(
+            'tr',
+            null,
+            ...['Package', 'Runs', 'Successful', 'Failed', 'Run warnings', 'Inventory warnings', 'AIC', 'Latest activity']
+              .map((label) => h('th', { scope: 'col' }, label))
+          )
+        ),
+        h(
+          'tbody',
+          null,
+          ...(packages.length > 0
+            ? packages.map((entry) => renderPackageSummaryRow(entry, summaries.get(entry.key)))
+            : [h('tr', null, h('td', { colSpan: 8 }, 'No packages discovered.'))])
+        )
+      )
+    )
+  );
+}
+
+/**
+ * @param {ReturnType<typeof summarizePackages>[number]} entry
+ * @param {{ runs: number, successful: number, failed: number, warnings: number | null, inventoryWarnings: number | null, aic: number | null, latestActivity: Date | null } | undefined} summary
+ * @returns {HTMLTableRowElement}
+ */
+function renderPackageSummaryRow(entry, summary) {
+  return /** @type {HTMLTableRowElement} */ (h(
+    'tr',
+    { dataset: { packageSummaryKey: entry.key } },
+    h('th', { scope: 'row' }, entry.name),
+    h('td', null, formatNumber(summary?.runs ?? 0)),
+    h('td', null, formatNumber(summary?.successful ?? 0)),
+    h('td', null, formatNumber(summary?.failed ?? 0)),
+    h('td', null, summary?.warnings === null || summary?.warnings === undefined ? '—' : formatNumber(summary.warnings)),
+    h('td', null, summary?.inventoryWarnings === null || summary?.inventoryWarnings === undefined ? '—' : formatNumber(summary.inventoryWarnings)),
+    h('td', null, summary?.aic === null || summary?.aic === undefined ? '—' : formatAic(summary.aic)),
+    h('td', null, summary?.latestActivity ? formatDate(summary.latestActivity) : 'No activity yet')
+  ));
+}
+
+/**
+ * @param {ReturnType<typeof summarizePackages>} packages
+ * @param {Record<string, import('../presenter.js').LogicalSourceInput>} sources
+ * @param {string} mode
+ */
+function summarizePackageActivity(packages, sources, mode) {
+  const workflowDetails = new Map(packages.flatMap((entry) => entry.workflows.map((row) => [
+    scopedEntityKey(row, 'workflow'),
+    entry.key
+  ])));
+  const runsAvailable = Boolean(sources.runs) && sources.runs?.metadata?.availability !== 'unavailable';
+  const findingsAvailable = Boolean(sources.findings) && sources.findings?.metadata?.availability !== 'unavailable';
+  const usageAvailable = Boolean(sources.usage) && sources.usage?.metadata?.availability !== 'unavailable';
+  const runDetails = new Map();
+  const summaries = new Map(packages.map((entry) => [entry.key, {
+    runs: 0,
+    successful: 0,
+    failed: 0,
+    warnings: findingsAvailable ? 0 : null,
+    inventoryWarnings: packageInventoryWarnings(entry),
+    aic: usageAvailable ? 0 : null,
+    latestActivity: null
+  }]));
+
+  if (runsAvailable) {
+    for (const row of rowsFor(sources, 'runs')) {
+      if (!matchesMode(row, mode)) continue;
+      const packageKey = workflowDetails.get(scopedEntityKey(row, 'workflow'));
+      const runKey = scopedEntityKey(row, 'run');
+      const summary = packageKey ? summaries.get(packageKey) : null;
+      if (!summary || runDetails.has(runKey)) continue;
+      runDetails.set(runKey, { packageKey, mode: String(row['rollout-mode'] ?? 'unknown') });
+      summary.runs += 1;
+      if (String(row['run-conclusion']) === 'success') summary.successful += 1;
+      if (isFailureConclusion(row['run-conclusion'])) summary.failed += 1;
+      updateLatestActivity(summary, row['ended-at'], row['started-at']);
+    }
+  }
+
+  if (findingsAvailable) {
+    const warningRuns = new Set();
+    for (const row of rowsFor(sources, 'findings')) {
+      const runKey = scopedEntityKey(row, 'run');
+      const run = runDetails.get(runKey);
+      const packageKey = run?.packageKey ?? workflowDetails.get(scopedEntityKey(row, 'workflow'));
+      const summary = packageKey ? summaries.get(packageKey) : null;
+      const findingMode = run?.mode ?? String(row['rollout-mode'] ?? 'unknown');
+      if (!summary || (mode !== 'all' && findingMode !== mode)) continue;
+      updateLatestActivity(summary, row['observed-at']);
+      if (row['finding-kind'] !== 'authored-warning' || !run || warningRuns.has(runKey)) continue;
+      warningRuns.add(runKey);
+      summary.warnings = (summary.warnings ?? 0) + 1;
+    }
+  }
+
+  if (usageAvailable) {
+    for (const row of rowsFor(sources, 'usage')) {
+      const packageKey = workflowDetails.get(scopedEntityKey(row, 'workflow'));
+      const summary = packageKey ? summaries.get(packageKey) : null;
+      if (!summary || !matchesMode(row, mode)) continue;
+      const aic = Number(row.aic);
+      if (Number.isFinite(aic) && aic >= 0) summary.aic = (summary.aic ?? 0) + aic;
+      updateLatestActivity(summary, row['observed-at']);
+    }
+  }
+
+  return summaries;
+}
+
+/**
+ * @param {ReturnType<typeof summarizePackages>[number]} entry
+ * @returns {number | null}
+ */
+function packageInventoryWarnings(entry) {
+  const explicitCount = entry.workflows
+    .map((row) => Number(row['package-inventory-warnings']))
+    .find(Number.isFinite);
+  if (explicitCount !== undefined) return Math.max(0, explicitCount);
+  const readiness = entry.workflows
+    .map((row) => row['inventory-ready'])
+    .filter((value) => typeof value === 'boolean');
+  if (readiness.includes(false)) return 1;
+  return readiness.length > 0 ? 0 : null;
+}
+
+/**
+ * @param {{ latestActivity: Date | null }} summary
+ * @param {...unknown} values
+ */
+function updateLatestActivity(summary, ...values) {
+  const timestamp = Math.max(...values
+    .map((value) => Date.parse(String(value ?? '')))
+    .filter(Number.isFinite));
+  if (Number.isFinite(timestamp) && (!summary.latestActivity || timestamp > summary.latestActivity.getTime())) {
+    summary.latestActivity = new Date(timestamp);
+  }
+}
+
+/**
+ * @param {Record<string, unknown>} row
+ * @param {string} mode
+ */
+function matchesMode(row, mode) {
+  return mode === 'all' || row['rollout-mode'] === mode;
 }
 
 /**

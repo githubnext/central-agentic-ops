@@ -237,7 +237,7 @@ The `source` vocabulary is closed in version 0.1.0.
 |---|---|---|
 | `organizations` | organization | `organization`, `organization-name`, `observed-at`, `organization-link` |
 | `repositories` | repository | `organization`, `repository`, `repository-name`, `rollout-mode`, `observed-at`, `organization-link`, `repository-link` |
-| `workflows` | workflow | `organization`, `repository`, optional `package` and `package-name`, `workflow`, `workflow-name`, `workflow-role`, `workflow-active`, `rollout-mode`, `max-ai-credits`, `package-aic-allowance`, `package-worker-count`, `inventory-ready`, `observed-at`, `organization-link`, `repository-link`, `workflow-link` |
+| `workflows` | workflow | `organization`, `repository`, optional `package` and `package-name`, `workflow`, `workflow-name`, `workflow-role`, `workflow-active`, `rollout-mode`, `max-ai-credits`, `package-aic-allowance`, `package-worker-count`, `package-inventory-warnings`, `inventory-ready`, `observed-at`, `organization-link`, `repository-link`, `workflow-link` |
 | `runs` | run | `organization`, `repository`, `workflow`, `run`, `started-at`, `ended-at`, `run-status`, `run-conclusion`, `rollout-mode`, `engine`, `requested-model`, `resolved-model`, `organization-link`, `repository-link`, `workflow-link`, `run-link` |
 | `experiments` | experiment | `experiment`, `experiment-name`, `observed-at` |
 | `experiment-assignments` | experiment assignment | scope IDs, `run`, `experiment`, `variant`, `observed-at` |
@@ -258,7 +258,7 @@ The canonical raw-token measures are `input-tokens`, `output-tokens`, `cache-rea
 
 ### 5.3 Packages, Graders, Evals, and Operational Value
 
-A package groups one orchestrator and one or more workers that execute centrally managed operations. `max-ai-credits` is the configured per-run limit for one workflow; `package-aic-allowance` is the sum of those limits for one complete package attempt and is not actual usage. A grader applies a named grading criterion and produces a deterministic grader observation. An eval is a binary evaluation question and produces a `yes`, `no`, or `unknown` observation; it may use an AI model. Operational value is a separate absolute-attainment observation with an evidence cutoff and maturity time. These concepts are not interchangeable.
+A package groups one orchestrator and one or more workers that execute centrally managed operations. `max-ai-credits` is the configured per-run limit for one workflow; `package-aic-allowance` is the sum of those limits for one complete package attempt and is not actual usage. `package-inventory-warnings` is the package-level count of missing compiled orchestration and declared worker inventory. A grader applies a named grading criterion and produces a deterministic grader observation. An eval is a binary evaluation question and produces a `yes`, `no`, or `unknown` observation; it may use an AI model. Operational value is a separate absolute-attainment observation with an evidence cutoff and maturity time. These concepts are not interchangeable.
 
 ### 5.4 Normative Source Requirements
 

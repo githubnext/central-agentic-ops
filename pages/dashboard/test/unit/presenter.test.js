@@ -829,9 +829,9 @@ describe('presenter built-in and custom pages', () => {
         workflows: {
           source: 'workflows',
           rows: [
-            { package: 'daily-ops', 'package-name': 'Daily Ops', workflow: '.github/workflows/daily.md', 'workflow-role': 'orchestrator', 'rollout-mode': 'review', 'max-ai-credits': 100, 'package-aic-allowance': 250 },
-            { package: 'daily-ops', 'package-name': 'Daily Ops', workflow: '.github/workflows/daily-worker.md', 'workflow-role': 'worker', 'rollout-mode': 'review', 'max-ai-credits': 150, 'package-aic-allowance': 250 },
-            { package: 'empty-ops', 'package-name': 'Empty Ops', workflow: '.github/workflows/empty.md', 'workflow-role': 'orchestrator', 'rollout-mode': 'live', 'max-ai-credits': 80 }
+            { package: 'daily-ops', 'package-name': 'Daily Ops', workflow: '.github/workflows/daily.md', 'workflow-role': 'orchestrator', 'rollout-mode': 'review', 'max-ai-credits': 100, 'package-aic-allowance': 250, 'package-inventory-warnings': 2 },
+            { package: 'daily-ops', 'package-name': 'Daily Ops', workflow: '.github/workflows/daily-worker.md', 'workflow-role': 'worker', 'rollout-mode': 'review', 'max-ai-credits': 150, 'package-aic-allowance': 250, 'package-inventory-warnings': 2 },
+            { package: 'empty-ops', 'package-name': 'Empty Ops', workflow: '.github/workflows/empty.md', 'workflow-role': 'orchestrator', 'rollout-mode': 'live', 'max-ai-credits': 80, 'inventory-ready': true }
           ],
           metadata
         },
@@ -852,6 +852,14 @@ describe('presenter built-in and custom pages', () => {
             { workflow: '.github/workflows/daily-worker.md', run: '2', invocation: 'c', aic: 30, 'rollout-mode': 'live' }
           ],
           metadata: { ...metadata, completeness: /** @type {'partial'} */ ('partial') }
+        },
+        findings: {
+          source: 'findings',
+          rows: [
+            { workflow: '.github/workflows/daily-worker.md', run: '2', finding: 'warning-1', 'finding-kind': 'authored-warning', 'observed-at': '2026-08-29T10:05:00Z' },
+            { workflow: '.github/workflows/daily-worker.md', run: '2', finding: 'warning-2', 'finding-kind': 'authored-warning', 'observed-at': '2026-08-29T10:06:00Z' }
+          ],
+          metadata
         }
       }
     });
@@ -861,6 +869,15 @@ describe('presenter built-in and custom pages', () => {
     expect(packagesPage?.querySelector('[data-package-id="daily-ops"]')?.textContent).toContain('40 of 250 AIC across 2 reported runs');
     expect(packagesPage?.querySelector('[data-package-id="daily-ops"]')?.textContent).toContain('16%');
     expect(packagesPage?.querySelector('[data-package-id="empty-ops"]')?.textContent).toContain('No AIC usage was reported');
+    expect(packagesPage?.querySelector('.package-summary-heading')?.textContent).toContain('All output by package');
+    const packageSummaryRows = [...(packagesPage?.querySelectorAll('.package-summary-table tbody tr') ?? [])];
+    expect(packageSummaryRows).toHaveLength(2);
+    expect([...packageSummaryRows[0]?.children ?? []].map((cell) => cell.textContent)).toEqual([
+      'Daily Ops', '2', '1', '1', '1', '2', '40', 'Aug 29, 2026, 10:06 AM'
+    ]);
+    expect([...packageSummaryRows[1]?.children ?? []].map((cell) => cell.textContent)).toEqual([
+      'Empty Ops', '0', '0', '0', '0', '0', '0', 'No activity yet'
+    ]);
     expect(packagesPage?.querySelector('.package-trend-panel header')?.textContent).toContain('2as of');
     expect(packagesPage?.querySelector('.package-utilization')?.textContent).toContain('Partial usage coverage.');
     expect(/** @type {HTMLElement | null} */ (packagesPage?.querySelector('.data-state-summary'))?.hidden).toBe(true);
@@ -873,6 +890,10 @@ describe('presenter built-in and custom pages', () => {
     expect(reviewTab?.getAttribute('aria-selected')).toBe('true');
     expect(globalThis.document.activeElement).toBe(reviewTab);
     expect(packagesPage?.querySelector('[data-package-id="daily-ops"]')?.textContent).toContain('10 of 100 AIC across 1 reported run');
+    const reviewSummaryCells = packagesPage?.querySelector('.package-summary-table tbody tr')?.children ?? [];
+    expect([...reviewSummaryCells].map((cell) => cell.textContent)).toEqual([
+      'Daily Ops', '1', '1', '0', '0', '2', '10', 'Aug 28, 2026, 10:00 AM'
+    ]);
     expect(packagesPage?.querySelector('.package-trend-panel header')?.textContent).toContain('Review runs over time1');
     rendered.remove();
   });
