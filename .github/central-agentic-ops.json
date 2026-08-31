@@ -4,28 +4,33 @@
   "control-plane": {
     "packages": {
       "advisory": {
+        "icon": "eye",
         "workers": {
           "uk-ai-operational-resilience": {}
         }
       },
       "ambient-context": {
+        "icon": "workflow",
         "workers": {
           "agents-md-curator": {},
           "skills-curator": {}
         }
       },
       "aw-maintenance": {
+        "icon": "settings",
         "workers": {
           "failures-investigator": {},
           "upgrade": {}
         }
       },
       "dependabot": {
+        "icon": "dependabot",
         "workers": {
           "release-train-updater": {}
         }
       },
       "eu-cra-compliance": {
+        "icon": "shield",
         "workers": {
           "scope-classifier": {},
           "security-requirements-auditor": {},
@@ -36,6 +41,7 @@
         }
       },
       "optimization": {
+        "icon": "meter",
         "workers": {
           "ai-credit-auditor": {},
           "ai-credit-optimizer": {}

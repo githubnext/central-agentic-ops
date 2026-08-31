@@ -116,12 +116,39 @@ test("control policy exposes scope and publishing defaults to deterministic add-
         "max-repositories": 8,
         "rollout-percent": 100,
         "monthly-ai-credit-budget": 0,
+        icon: null,
       },
     },
     publishing_enabled: false,
     publishing_control_repositories: ["acme/control"],
     publishing_reviewers: [],
   });
+});
+
+test("control policy validates and exposes a package octicon", () => {
+  const policyWithIcon = JSON.stringify({
+    $schema: schema.$id,
+    version: 1,
+    "control-plane": {
+      packages: { dependabot: { icon: "dependabot" } },
+    },
+  });
+  const policyWithInvalidIcon = JSON.stringify({
+    version: 1,
+    "control-plane": {
+      packages: { dependabot: { icon: "not-a-real-icon" } },
+    },
+  });
+
+  assert.equal(validate(policyWithIcon).status, 0, validate(policyWithIcon).stderr);
+  const invalidResult = validate(policyWithInvalidIcon);
+  assert.notEqual(invalidResult.status, 0);
+  assert.match(invalidResult.stderr, /control-plane\.packages\.dependabot\.icon must be one of/);
+
+  assert.equal(
+    controlSettings(parsePolicy(policyWithIcon), "acme/control").packages.dependabot.icon,
+    "dependabot",
+  );
 });
 
 test("control policy disables packages and workers by absence", () => {

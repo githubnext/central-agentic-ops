@@ -49,6 +49,14 @@
       "type": "integer",
       "minimum": 0
     },
+    "octicon": {
+      "type": "string",
+      "enum": [
+        "mark-github", "code", "repo", "server", "issue", "pull-request", "play", "eye",
+        "shield", "meter", "graph", "codescan", "dependabot", "key", "beaker", "rocket",
+        "workflow", "settings", "check-circle", "package", "external-link"
+      ]
+    },
     "workerPolicy": {
       "type": "object",
       "additionalProperties": false,
@@ -64,7 +72,8 @@
         "mode": { "$ref": "#/$defs/mode" },
         "max-repositories": { "$ref": "#/$defs/maxRepositories" },
         "rollout-percent": { "$ref": "#/$defs/rolloutPercent" },
-        "monthly-ai-credit-budget": { "$ref": "#/$defs/monthlyAiCreditBudget" }
+        "monthly-ai-credit-budget": { "$ref": "#/$defs/monthlyAiCreditBudget" },
+        "icon": { "$ref": "#/$defs/octicon" }
       }
     },
     "advisoryWorkers": {
