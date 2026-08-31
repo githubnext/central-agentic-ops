@@ -368,6 +368,34 @@
         ]
       },
       {
+        "id": "workflow-runtime",
+        "kind": "custom",
+        "title": "Workflow runtime",
+        "description": "Run health, AI Credit usage, and operational value for this authored workflow.",
+        "icon": "play",
+        "class-name": "workflow-runtime-page",
+        "route": {
+          "hash-query-parameter": "workflow"
+        },
+        "views": [
+          {
+            "id": "workflow-runtime-insights",
+            "title": "Workflow runtime",
+            "data": {
+              "sources": [
+                "workflows",
+                "runs",
+                "usage",
+                "operational-values"
+              ]
+            },
+            "mark": "element",
+            "element": "workflow-runtime",
+            "layout": "full"
+          }
+        ]
+      },
+      {
         "id": "outcome-detail",
         "kind": "custom",
         "title": "Outcome",

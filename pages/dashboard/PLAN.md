@@ -114,7 +114,7 @@
 - `src/components/data-state.js` — presentation-only data-state metrics card grid for availability, completeness, and freshness.
 - `src/components/table-region.js` — presentation-only reusable table wrapper for repeated table-region markup, header rows, empty-state rows, and keyed body-row descriptors across built-in and custom tables.
 - `src/components/summary-copy.js` — presentation-only shared singular/plural summary-count copy for repeated item-count text surfaces.
-- `src/components/view-chrome.js` — presentation-only reusable page-section, titled-region, summary-list/summary-region, generic custom-view chrome paragraphs, custom-view source/metadata/context chrome, shared custom-view section chrome, custom-view state-message/details helpers, and built-in provenance-section helpers.
+- `src/components/view-chrome.js` — presentation-only reusable page-section, titled-region, summary-list/summary-region, summary-style definition-list, generic custom-view chrome paragraphs, custom-view source/metadata/context chrome, shared custom-view section chrome, custom-view state-message/details helpers, and built-in provenance-section helpers.
 - `src/components/ui-primitives.js` — presentation-only shared section-heading, vital-stat, and UTC date-time helpers for repeated dashboard component chrome.
 - `src/components/count-formatters.js` — presentation-only shared count and singular/plural text helpers for repeated dashboard status, workflow, and signal copy.
 - `src/components/link-content.js` — presentation-only safe-link discovery and reusable external-link/value composition for custom metric and table views.
@@ -130,6 +130,14 @@
 - 2026-08-31: `npx playwright test --config=playwright.config.mjs` launches in this environment, but the current browser suite is already red on the checked-out baseline: page-level headings, skip-link visibility, route-driven repository views, keyboard section counts, and declarative table row visibility are not found across 9 existing `test/e2e/smoke.spec.js` assertions. This run did not change browser-only behavior, so the failures are recorded as a pre-existing gate blocker rather than fixed here.
 
 ## Run log
+
+### 2026-08-31 (definition-list helper refactor)
+- Re-inventoried repeated UI construction under `pages/dashboard/src/` and selected the highest safe bounded DOM slice still duplicated in active components: repeated `<dl><div><dt>label</dt><dd>value</dd></div></dl>` assembly in `src/components/ui-elements.js` for both `summary-grid` and `metric-signal-summary`/`domain-summary` surfaces.
+- Extracted `renderDefinitionList(...)` into `src/components/view-chrome.js` with a presentation-only API driven by plain `{ label, value }` rows and a caller-supplied class name, then replaced every identified duplicate call site in `src/components/ui-elements.js`.
+- Added unit coverage in `test/unit/view-chrome.test.js` for populated and empty definition-list states, while preserving existing presenter assertions that already lock the affected dashboard DOM text such as `Approval gates2`, `Explicit warnings1`, `Grader coverage4 / 5`, and `Open outputs1`.
+- Proved unchanged behavior by rendering the affected `metric-signal-summary` and `summary-grid` elements through a jsdom harness and confirming the same outer HTML structure and text content contract (`<dl class="domain-summary">…</dl>` and `<dl class="summary-grid">…</dl>`).
+- Verified `pages/dashboard/` quality gates in this run: `npm install`, `npm run build`, `npm run typecheck`, `npm run lint`, and `npm test` all pass. Playwright was not rerun for this bounded component-helper extraction because no browser-only behavior changed, and the existing browser-gate status remains tracked separately in `PLAN.md` infrastructure blockers.
+- Next candidates in the queue: extract the repeated summary-count copy in `src/components/dispatch-catalog.js` and `src/components/ui-elements.js`; extract the repeated definitions/observations dual-region composition in `src/presenter.js`; extract the repeated summary-plus-trend section composition in `src/presenter.js`.
 
 ### 2026-08-31 (summary-copy helper refactor)
 - Re-inventoried repeated UI construction under `pages/dashboard/src/` and selected the highest safe bounded helper slice still duplicated in active code: item-count summary copy using singular/plural branching in `src/components/table-summary.js`, with the same count-summary surface already present conceptually in other dashboard status helpers.

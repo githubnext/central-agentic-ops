@@ -15,7 +15,9 @@ import { renderOutcomeDetail } from './outcome-detail.js';
 import { renderWorkflowTopology } from './workflow-topology.js';
 import { renderExecutionEpisodes, renderExecutionSignalList } from './execution-elements.js';
 import { renderSectionHeading } from './ui-primitives.js';
+import { renderDefinitionList } from './view-chrome.js';
 import { renderRepositoryActivity, renderRepositoryAicUsage, renderRepositoryScope } from './repositories-view.js';
+import { renderWorkflowRuntime } from './workflow-runtime.js';
 
 /**
  * @typedef {{
@@ -49,6 +51,7 @@ const ELEMENT_RENDERERS = new Map([
   ['repository-aic-usage', renderRepositoryAicUsage],
   ['repository-activity', renderRepositoryActivity],
   ['repository-workflows', renderRepositoryWorkflows],
+  ['workflow-runtime', renderWorkflowRuntime],
   ['outcome-detail', renderOutcomeDetail],
   ['execution-signal-list', renderExecutionSignalList],
   ['execution-episodes', renderExecutionEpisodes],
@@ -62,7 +65,7 @@ const ELEMENT_RENDERERS = new Map([
   }]
 ]);
 
-const EMPTY_AWARE_ELEMENTS = new Set(['status-summary', 'meter-list', 'attention-list', 'record-cards', 'summary-grid', 'signal-list', 'package-detail', 'package-reports', 'dispatch-catalog', 'repository-scope', 'repository-aic-usage', 'repository-activity', 'repository-workflows', 'outcome-detail', 'execution-signal-list', 'execution-episodes', 'metric-signal-summary', 'readiness-note']);
+const EMPTY_AWARE_ELEMENTS = new Set(['status-summary', 'meter-list', 'attention-list', 'record-cards', 'summary-grid', 'signal-list', 'package-detail', 'package-reports', 'dispatch-catalog', 'repository-scope', 'repository-aic-usage', 'repository-activity', 'repository-workflows', 'workflow-runtime', 'outcome-detail', 'execution-signal-list', 'execution-episodes', 'metric-signal-summary', 'readiness-note']);
 
 /**
  * @param {string} name
@@ -267,17 +270,11 @@ function renderRecordCardsElement(context) {
  * @param {ElementRenderContext} context
  */
 function renderSummaryGridElement(context) {
-  const rows = rowsFor(context, context.sourceNames[0]);
-  return h(
-    'dl',
-    { className: 'summary-grid' },
-    ...rows.map((row) => h(
-      'div',
-      null,
-      h('dt', null, stringValue(row.label)),
-      h('dd', null, stringValue(row.value))
-    ))
-  );
+  const rows = rowsFor(context, context.sourceNames[0]).map((row) => ({
+    label: stringValue(row.label),
+    value: stringValue(row.value)
+  }));
+  return renderDefinitionList('summary-grid', rows);
 }
 
 /**
@@ -318,16 +315,10 @@ function renderMetricSignalSummaryElement(context) {
     'section',
     { className: 'domain-attention workflow-attention', 'aria-labelledby': headingId },
     renderSectionHeading(stringValue(firstMetric.kicker), headingId, context.title, context.description, `${formatNumber(signals.length)} ${collectionLabel}`, context.headingTag),
-    h(
-      'dl',
-      { className: 'domain-summary' },
-      ...metrics.map((row) => h(
-        'div',
-        null,
-        h('dt', null, stringValue(row.label)),
-        h('dd', null, stringValue(row.value))
-      ))
-    ),
+    renderDefinitionList('domain-summary', metrics.map((row) => ({
+      label: stringValue(row.label),
+      value: stringValue(row.value)
+    }))),
     stringValue(firstMetric.note)
       ? h('p', { className: 'domain-boundary-note' }, stringValue(firstMetric.note))
       : null,

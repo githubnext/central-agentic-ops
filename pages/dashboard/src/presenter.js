@@ -122,8 +122,11 @@ export function renderDashboard(input) {
   const dashboardRepository = typeof document.dashboard.repository === 'string' && document.dashboard.repository.length > 0
     ? document.dashboard.repository
     : null;
-  const sources = deriveRepositoryDashboardLinks(
-    deriveOverviewSources(deriveEntityLinkSources(rawSources, githubUrlBase)),
+  const sources = deriveWorkflowDashboardLinks(
+    deriveRepositoryDashboardLinks(
+      deriveOverviewSources(deriveEntityLinkSources(rawSources, githubUrlBase)),
+      pages
+    ),
     pages
   );
   const orgName = inferOrganizationName(sources) || 'GitHub';
@@ -645,7 +648,10 @@ export function enableDashboardPageNavigation(root) {
       return;
     }
     const route = routeFromHash();
-    if (route) activate(route.pageId, route.parameters);
+    if (route) {
+      activate(route.pageId, route.parameters);
+      if (pageTitle instanceof HTMLElement) pageTitle.focus();
+    }
   };
   defaultView?.addEventListener('hashchange', onHashChange);
 }
@@ -1270,6 +1276,51 @@ function deriveRepositoryDashboardLinks(sources, pages) {
         : source?.rows
     }
   ]));
+}
+
+/**
+ * Adds presentation-only workflow runtime routes while retaining authored-source links.
+ * @param {Record<string, LogicalSourceInput>} sources
+ * @param {Array<PresentableBuiltInPage | PresentableCustomPage>} pages
+ * @returns {Record<string, LogicalSourceInput>}
+ */
+function deriveWorkflowDashboardLinks(sources, pages) {
+  const detailPage = pages.find((page) => page.kind === 'custom' && page.route?.['hash-query-parameter'] === 'workflow');
+  if (!detailPage) return sources;
+
+  return Object.fromEntries(Object.entries(sources).map(([name, source]) => [
+    name,
+    {
+      ...source,
+      rows: Array.isArray(source?.rows)
+        ? source.rows.map((row) => deriveWorkflowDashboardLink(row, detailPage.id))
+        : source?.rows
+    }
+  ]));
+}
+
+/**
+ * @param {Record<string, unknown>} row
+ * @param {string} pageId
+ * @returns {Record<string, unknown>}
+ */
+function deriveWorkflowDashboardLink(row, pageId) {
+  const organization = trimmedString(row.organization);
+  const repository = trimmedString(row.repository);
+  const workflow = trimmedString(row.workflow);
+  const repositorySlug = repository && repository.includes('/') ? repository : (organization && repository ? `${organization}/${repository}` : null);
+  const workflowLink = row['workflow-link'];
+  if (!repositorySlug || !workflow || !isPlainObject(workflowLink)) return row;
+  const route = `${repositorySlug}:${workflow}`;
+
+  return {
+    ...row,
+    'workflow-link': {
+      ...workflowLink,
+      'dashboard-href': `#page-${encodeURIComponent(pageId)}?workflow=${encodeURIComponent(route)}`,
+      'dashboard-label': `View ${workflow} runtime dashboard`
+    }
+  };
 }
 
 /**
