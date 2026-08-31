@@ -42,19 +42,16 @@ describe('view chrome component helpers', () => {
 
   it('renders reusable view chrome paragraphs for populated and empty metadata lines', () => {
     const rendered = renderViewChrome([
-      'Source: usage',
       'As of 2026-08-29T20:00:00Z • completeness complete • freshness fresh',
       'Additional detail'
     ]);
     const empty = renderViewChrome([]);
 
-    expect(rendered).toHaveLength(3);
+    expect(rendered).toHaveLength(2);
     expect(rendered[0]?.className).toBe('view-metadata');
-    expect(rendered[0]?.textContent).toBe('Source: usage');
+    expect(rendered[0]?.textContent).toBe('As of 2026-08-29T20:00:00Z • completeness complete • freshness fresh');
     expect(rendered[1]?.className).toBe('view-metadata');
-    expect(rendered[1]?.textContent).toBe('As of 2026-08-29T20:00:00Z • completeness complete • freshness fresh');
-    expect(rendered[2]?.className).toBe('view-metadata');
-    expect(rendered[2]?.textContent).toBe('Additional detail');
+    expect(rendered[1]?.textContent).toBe('Additional detail');
     expect(empty).toHaveLength(0);
   });
 
