@@ -115,12 +115,17 @@ function buildPresenterModuleUrl() {
     .replace("'./linked-text.js'", JSON.stringify(linkedTextModuleUrl));
   const repositoryWorkflowsModuleUrl = `data:text/javascript;charset=utf-8,${encodeURIComponent(repositoryWorkflowsSource)}`;
 
+  const uiPrimitivesSource = readFileSync(new URL('../../src/components/ui-primitives.js', import.meta.url), 'utf8')
+    .replace("'../dom.js'", JSON.stringify(domModuleUrl));
+  const uiPrimitivesModuleUrl = `data:text/javascript;charset=utf-8,${encodeURIComponent(uiPrimitivesSource)}`;
+
   const executionElementsSource = readFileSync(new URL('../../src/components/execution-elements.js', import.meta.url), 'utf8')
     .replace("'../dom.js'", JSON.stringify(domModuleUrl))
     .replace("'../octicons.js'", JSON.stringify(octiconsModuleUrl))
     .replace("'./badge.js'", JSON.stringify(badgeModuleUrl))
     .replace("'./count-formatters.js'", JSON.stringify(countFormattersModuleUrl))
-    .replace("'./link-content.js'", JSON.stringify(linkContentModuleUrl));
+    .replace("'./link-content.js'", JSON.stringify(linkContentModuleUrl))
+    .replace("'./ui-primitives.js'", JSON.stringify(uiPrimitivesModuleUrl));
   const executionElementsModuleUrl = `data:text/javascript;charset=utf-8,${encodeURIComponent(executionElementsSource)}`;
 
   const uiElementsSource = readFileSync(new URL('../../src/components/ui-elements.js', import.meta.url), 'utf8')
@@ -132,6 +137,7 @@ function buildPresenterModuleUrl() {
     .replace("'./packages-view.js'", JSON.stringify(packagesViewModuleUrl))
     .replace("'./repository-workflows.js'", JSON.stringify(repositoryWorkflowsModuleUrl))
     .replace("'./execution-elements.js'", JSON.stringify(executionElementsModuleUrl))
+    .replace("'./ui-primitives.js'", JSON.stringify(uiPrimitivesModuleUrl))
     .replace("'./workflow-topology.js'", JSON.stringify(workflowTopologyModuleUrl))
     .replace("'./dispatch-catalog.js'", JSON.stringify(dispatchCatalogModuleUrl));
   const uiElementsModuleUrl = `data:text/javascript;charset=utf-8,${encodeURIComponent(uiElementsSource)}`;
