@@ -424,7 +424,15 @@ function validateDashboard(dashboard, dashboardNode, errors) {
   });
   dashboard.pages.forEach((page, index) => {
     if (!isPlainObject(page) || !isPlainObject(page.route) || typeof page.route['navigation-page'] !== 'string') return;
-    if (!pageIds.has(page.route['navigation-page'])) {
+    const navigationPage = page.route['navigation-page'];
+    if (!IDENTIFIER_PATTERN.test(navigationPage)) return;
+    if (navigationPage === page.id) {
+      errors.push(createError(
+        ERROR_CODES.missingOrInvalidRequiredField,
+        'route navigation-page must reference a different dashboard page.',
+        `$.dashboard.pages[${index}].route.navigation-page`
+      ));
+    } else if (!pageIds.has(navigationPage)) {
       errors.push(createError(
         ERROR_CODES.missingOrInvalidRequiredField,
         'route navigation-page must reference a declared dashboard page id.',

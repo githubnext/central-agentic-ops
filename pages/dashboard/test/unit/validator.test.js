@@ -140,6 +140,15 @@ describe('dashboard document validation', () => {
         path: `$.dashboard.pages[${repositoryPageIndex}].route.navigation-page`
       }));
     }
+    repositoryPage.route = { 'navigation-page': 'repository-detail' };
+    const selfNavigationPage = validateDashboardDocument(JSON.stringify(document));
+    expect(selfNavigationPage.ok).toBe(false);
+    if (!selfNavigationPage.ok) {
+      expect(selfNavigationPage.errors).toContainEqual(expect.objectContaining({
+        code: 'DLS-E003',
+        message: 'route navigation-page must reference a different dashboard page.'
+      }));
+    }
 
     repositoryPage.route = { 'hash-query-parameter': 'Repository Name' };
     const malformed = validateDashboardDocument(JSON.stringify(document));
