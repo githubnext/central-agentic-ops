@@ -122,7 +122,7 @@ main.dashboard-prototype { width: 100%; flex: 1; padding: 0 24px 40px; }
 .chart-widget svg { width: min(100%, 420px); max-height: 220px; overflow: visible; }
 .pie-chart-track { stroke: var(--border-muted); }
 .pie-chart-segment { transform: rotate(-90deg); transform-origin: center; stroke: var(--accent); }
-.pie-chart-total-value { fill: var(--fg); font-size: 6px; font-weight: 700; }
+.pie-chart-total-value { fill: var(--fg); font-size: 5px; font-weight: 700; }
 .pie-chart-total-label { fill: var(--muted); font-size: 2.75px; text-transform: uppercase; letter-spacing: .04em; }
 .chart-legend { display: flex; flex-wrap: wrap; gap: 12px; margin: 8px 0 12px; padding: 0; list-style: none; color: var(--muted); font-size: .75rem; }
 .chart-legend li { display: inline-flex; align-items: center; gap: 6px; }
