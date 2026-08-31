@@ -667,6 +667,12 @@
 - Added component-level coverage proving one generic helper renders each supported chart mark.
 - Next milestone: continue reducing remaining presenter-only generic rendering primitives when a reusable component boundary is identified.
 
+### 2026-08-31 (generic table cell display slice)
+
+- Moved JSON-selected `mode`, `active-state`, and `status` table cell rendering from `src/presenter.js` to `src/components/cell-display.js`.
+- Added component-level coverage proving the declarative `encoding.columns[].display` vocabulary renders through one generic helper with a plain-text fallback.
+- Next milestone: continue reducing remaining presenter-only generic rendering primitives when a reusable component boundary is identified.
+
 ### 2026-08-28 (built-in pages title-default slice)
 
 - Started the Built-in pages milestone with a narrow Section 10 validation increment for `DLS-PAGE-001`.
