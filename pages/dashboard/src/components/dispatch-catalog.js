@@ -6,6 +6,7 @@ import { h } from '../dom.js';
 import { renderStatusBadge } from './badge.js';
 import { findLink } from './link-content.js';
 import { renderLinkedText } from './linked-text.js';
+import { formatUtcDateTime } from './ui-primitives.js';
 
 /**
  * @param {import('./ui-elements.js').ElementRenderContext} context
@@ -130,7 +131,7 @@ function workflowDispatches(runs, workflows) {
 /** @param {ReturnType<typeof workflowDispatches>[number]} dispatch @returns {HTMLTableRowElement} */
 function renderDispatchRow(dispatch) {
   const startedAt = String(dispatch.run['started-at'] ?? '');
-  const started = Number.isFinite(Date.parse(startedAt)) ? formatDate(startedAt) : 'Unknown';
+  const started = Number.isFinite(Date.parse(startedAt)) ? formatUtcDateTime(startedAt) : 'Unknown';
   const row = /** @type {HTMLTableRowElement} */ (h(
     'tr',
     {
@@ -223,15 +224,6 @@ function repositoryName(row) {
 /** @param {unknown} value */
 function nonEmptyString(value) {
   return typeof value === 'string' && value.length > 0;
-}
-
-/** @param {string} value */
-function formatDate(value) {
-  return new Intl.DateTimeFormat('en', {
-    dateStyle: 'medium',
-    timeStyle: 'short',
-    timeZone: 'UTC'
-  }).format(new Date(value));
 }
 
 /** @param {import('../presenter.js').LogicalSourceInput | undefined} source */

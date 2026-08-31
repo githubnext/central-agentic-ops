@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { spawnSync } from "node:child_process";
-import { chmodSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { chmodSync, copyFileSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { delimiter, join } from "node:path";
 import test from "node:test";
@@ -71,12 +71,18 @@ function runPrecompute(overrides = {}, policy = controlPolicy({
   const logPath = join(temporaryDirectory, "gh.log");
   const githubEnvironment = join(temporaryDirectory, "github-env");
   const safeOutputs = join(temporaryDirectory, "safe-outputs.jsonl");
+  const resolverDirectory = join(temporaryDirectory, ".github", "aw", "control-policy");
+  mkdirSync(resolverDirectory, { recursive: true });
+  copyFileSync(
+    join(root, ".github", "scripts", "control-policy", "resolve.mjs"),
+    join(resolverDirectory, "resolve.mjs"),
+  );
   mockGh(temporaryDirectory);
   writeFileSync(githubEnvironment, "");
   writeFileSync(safeOutputs, "");
 
   const result = spawnSync("bash", ["-c", script], {
-    cwd: root,
+    cwd: temporaryDirectory,
     encoding: "utf8",
     env: controlEnvironment({
       ROLE: "orchestrator",
