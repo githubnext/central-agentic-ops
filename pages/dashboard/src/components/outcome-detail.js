@@ -220,7 +220,7 @@ function copySafeAttributes(source, target) {
     target.setAttribute('open', '');
   } else if (source.tagName === 'TH') {
     const scope = source.getAttribute('scope');
-    if (scope === 'row' || scope === 'col') target.setAttribute('scope', scope);
+    if (['row', 'col', 'rowgroup', 'colgroup'].includes(scope ?? '')) target.setAttribute('scope', scope ?? '');
   }
 
   if (source.tagName === 'TD' || source.tagName === 'TH') {

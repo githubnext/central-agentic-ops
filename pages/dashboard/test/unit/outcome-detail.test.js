@@ -29,7 +29,7 @@ function context() {
           'safe-output': 'outcome-1',
           'outcome-title': 'Parity verification sweep',
           'outcome-summary': 'Summary fallback',
-          'outcome-body-html': '<h2>Summary</h2><ul><li>Passed</li></ul><script>window.bad = true</script><a href="javascript:alert(1)" onclick="alert(1)">unsafe</a>',
+          'outcome-body-html': '<h2>Summary</h2><ul><li>Passed</li></ul><table><thead><tr><th scope="colgroup">Checks</th></tr></thead></table><script>window.bad = true</script><a href="javascript:alert(1)" onclick="alert(1)">unsafe</a>',
           'outcome-category': 'pull-request',
           'outcome-status': 'closed',
           'outcome-state': 'lifecycle-close',
@@ -55,10 +55,11 @@ describe('outcome detail', () => {
     }));
 
     expect(rendered.dataset.outcome).toBe('outcome-1');
-    expect(rendered.querySelector('.markdown-body')?.textContent).toContain('SummaryPassedunsafe');
+    expect(rendered.querySelector('.markdown-body')?.textContent).toContain('SummaryPassedChecksunsafe');
     expect(rendered.querySelector('.markdown-body script')).toBeNull();
     expect(rendered.querySelector('.markdown-body a')?.hasAttribute('href')).toBe(false);
     expect(rendered.querySelector('.markdown-body a')?.hasAttribute('onclick')).toBe(false);
+    expect(rendered.querySelector('.markdown-body th')?.getAttribute('scope')).toBe('colgroup');
     expect(rendered.querySelector('.status')?.textContent).toBe('Closed');
     expect(rendered.querySelector('.mode-badge')?.textContent).toBe('Live');
     expect(rendered.querySelector('.outcome-meta')?.textContent).toContain('Pull Request');
