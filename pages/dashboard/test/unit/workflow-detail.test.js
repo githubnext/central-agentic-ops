@@ -46,6 +46,12 @@ function context() {
             repository: 'repository',
             workflow: '.github/workflows/other.md',
             'workflow-name': 'Other'
+          },
+          {
+            organization: 'githubnext',
+            repository: 'central-agentic-ops',
+            workflow: '.github/workflows/release@prod.md',
+            'workflow-name': 'Release production'
           }
         ]
       },
@@ -108,6 +114,7 @@ describe('renderWorkflowDetail', () => {
     expect(rendered.dataset.workflow).toBe('githubnext/central-agentic-ops:.github/workflows/ambient-context.md');
     expect(rendered.querySelector('.workflow-tabs')?.textContent).toBe('ReportsInsights');
     expect(rendered.querySelector('.workflow-tabs [aria-current="page"]')?.textContent).toBe('Reports');
+    expect(rendered.querySelector('.workflow-tabs a:last-child')?.getAttribute('href')).toBe('#page-operational-value');
     expect(rendered.querySelector('.workflow-identity')?.textContent).toContain('Orchestrator');
     expect(rendered.querySelector('.workflow-badge-package')?.getAttribute('href')).toBe('#page-package-detail?package=ambient-context');
     expect(rendered.querySelector('.workflow-identity > a')?.getAttribute('href')).toContain('/ambient-context.md');
@@ -127,6 +134,7 @@ describe('renderWorkflowDetail', () => {
     }
     expect(rendered.querySelectorAll('.workflow-report-row')).toHaveLength(1);
     expect(rendered.querySelector('.workflow-reports-header')?.textContent).toContain('0 Open1 Resolved');
+    expect(rendered.querySelector('.workflow-reports-header > div')?.getAttribute('aria-live')).toBe('polite');
     expect(allocation).toHaveBeenCalledOnce();
     expect(allocation.mock.calls[0][0].detail).toEqual({
       title: 'Ambient Context',
@@ -158,5 +166,13 @@ describe('renderWorkflowDetail', () => {
       }
     }));
     expect(rendered.textContent).toBe('Workflow not found.');
+
+    rendered.dispatchEvent(new CustomEvent('dashboard-route-change', {
+      detail: {
+        parameter: 'workflow',
+        value: 'githubnext/central-agentic-ops:.github/workflows/release@prod.md'
+      }
+    }));
+    expect(rendered.textContent).toContain('.github/workflows/release@prod.md');
   });
 });

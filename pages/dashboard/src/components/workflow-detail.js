@@ -96,7 +96,7 @@ function renderWorkflowTabs(pageId, route) {
   const workflowQuery = `?workflow=${encodeURIComponent(routeValueFor(route))}`;
   const tabs = [
     ['Reports', 'issue', `#page-${pageId}${workflowQuery}`, true],
-    ['Insights', 'graph', `#page-operational-value${workflowQuery}`, false]
+    ['Insights', 'graph', '#page-operational-value', false]
   ];
   return h(
     'nav',
@@ -157,7 +157,7 @@ function renderWorkflowIdentity(workflow) {
 
 /** @param {Array<Record<string, unknown>>} reports */
 function renderWorkflowReports(reports) {
-  const summary = h('div');
+  const summary = h('div', { 'aria-live': 'polite', 'aria-atomic': 'true' });
   const body = h('tbody');
   const input = h('input', {
     type: 'search',
@@ -212,6 +212,7 @@ function renderWorkflowReports(reports) {
     const resolved = statuses.filter((status) => ['closed', 'resolved'].includes(status)).length;
     const other = filtered.length - open - resolved;
     const summaryChildren = [
+      h('span', { className: 'workflow-filter-announcement' }, `${filtered.length} report${filtered.length === 1 ? '' : 's'} shown. `),
       h('strong', null, String(open)),
       ' Open',
       h('span', null, h('strong', null, String(resolved)), ' Resolved')
@@ -298,7 +299,9 @@ function parseWorkflowRoute(value) {
   const repository = value.slice(0, separator);
   const workflow = value.slice(separator + 1);
   if (!/^[A-Za-z0-9](?:[A-Za-z0-9.-]{0,98}[A-Za-z0-9])?\/[A-Za-z0-9_.-]{1,100}$/.test(repository)) return null;
-  if (!/^\.github\/workflows\/[A-Za-z0-9_.-]+\.md$/.test(workflow)) return null;
+  if (!workflow.startsWith('.github/workflows/') || !workflow.endsWith('.md')) return null;
+  if ([...workflow].some((character) => character.charCodeAt(0) <= 31 || character.charCodeAt(0) === 127)) return null;
+  if (workflow.split('/').some((segment) => segment === '' || segment === '.' || segment === '..')) return null;
   return { repository, workflow };
 }
 

@@ -264,6 +264,7 @@ h3 { margin: 16px 0 8px; font-size: 1rem; font-weight: 600; }
 .workflow-reports-header h2 { margin: 0; font-size: 1.25rem; }
 .workflow-reports-header > div { color: var(--muted); }
 .workflow-reports-header > div span { margin-left: 20px; }
+.workflow-filter-announcement { width: 1px; height: 1px; position: absolute; overflow: hidden; margin: -1px; padding: 0; border: 0; clip: rect(0 0 0 0); white-space: nowrap; }
 .workflow-report-table-region { overflow-x: auto; border-top: 1px solid var(--border); }
 .workflow-report-table { min-width: 760px; }
 .workflow-report-table thead th { background: var(--canvas); }
