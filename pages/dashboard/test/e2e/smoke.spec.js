@@ -387,6 +387,91 @@ test('DLS-PAGE-002 DLS-PAGE-014 built-in overview page renders the report-style 
   expect(packagesBox?.y).toBeGreaterThan(attentionBox?.y ?? 0);
 });
 
+test('built-in repositories page renders the report-style activity view and links to repository detail', async ({ page }) => {
+  const presenterModuleUrl = buildPresenterModuleUrl();
+
+  await page.setContent(`
+    <div id="root"></div>
+    <script type="module">
+      import { renderDashboard } from ${JSON.stringify(presenterModuleUrl)};
+      const metadata = {
+        'source-id': 'repository-browser-fixture',
+        'source-kind': 'fixture',
+        'as-of': '2026-08-29T20:00:00Z',
+        'retrieved-at': '2026-08-29T20:01:00Z',
+        'coverage-start': '2026-08-28T20:00:00Z',
+        'coverage-end': '2026-08-29T20:00:00Z',
+        completeness: 'complete',
+        freshness: 'fresh',
+        availability: 'available'
+      };
+      const source = (name, rows, overrides = {}) => ({
+        source: name,
+        rows,
+        metadata: { ...metadata, ...overrides }
+      });
+      const documentModel = {
+        languageVersion: '0.1.0',
+        dashboard: {
+          id: 'repositories-browser',
+          title: 'Repositories browser',
+          pages: [
+            { id: 'repositories', kind: 'built-in', page: 'repositories', title: 'Repositories' },
+            {
+              id: 'repository-detail',
+              kind: 'custom',
+              title: 'Repository',
+              route: { 'hash-query-parameter': 'repository' },
+              views: [{
+                id: 'repository-workflows',
+                title: 'Agentic workflows',
+                data: { sources: ['workflows'] },
+                mark: 'element',
+                element: 'repository-workflows'
+              }]
+            }
+          ]
+        }
+      };
+      const sources = {
+        repositories: source('repositories', [
+          { organization: 'octo-org', repository: 'alpha' },
+          { organization: 'octo-org', repository: 'beta' }
+        ]),
+        workflows: source('workflows', [
+          { organization: 'octo-org', repository: 'alpha', workflow: '.github/workflows/one.md', 'workflow-name': 'One', 'workflow-role': 'standalone', 'workflow-active': 'true', 'observed-at': '2026-08-29T10:00:00Z' }
+        ]),
+        runs: source('runs', [
+          { organization: 'octo-org', repository: 'alpha', run: '1', 'run-conclusion': 'failure' },
+          { organization: 'octo-org', repository: 'beta', run: '2', 'run-conclusion': 'success' }
+        ]),
+        outcomes: source('outcomes', [
+          { organization: 'octo-org', repository: 'alpha', workflow: '.github/workflows/one.md', 'safe-output': 'report-1' }
+        ]),
+        usage: source('usage', [
+          { organization: 'octo-org', repository: 'alpha', run: '1', invocation: 'usage-1', aic: 12.5 },
+          { organization: 'octo-org', repository: 'beta', run: '2', invocation: 'usage-2', aic: 7.5 }
+        ], { completeness: 'partial' }),
+        'operational-values': source('operational-values', [
+          { organization: 'octo-org', repository: 'alpha', workflow: '.github/workflows/one.md', 'operational-value': 0.8 }
+        ])
+      };
+      document.querySelector('#root').append(renderDashboard({ document: documentModel, sources }));
+    </script>
+  `);
+
+  await expect(page.locator('.repository-scope-context')).toContainText('Repository scope · 2 configured');
+  await expect(page.locator('.repository-scope-context')).toContainText('2 artifacts · partial');
+  await expect(page.locator('.repository-aic-panel .pie-chart-segment')).toHaveCount(2);
+  await expect(page.locator('.repository-activity-table tbody tr')).toHaveCount(2);
+  await expect(page.locator('[data-repository="octo-org/alpha"]')).toContainText('Needs attention');
+
+  await page.locator('[data-repository="octo-org/alpha"] th a').click();
+  await expect(page).toHaveURL(/#page-repository-detail\?repository=octo-org%2Falpha$/);
+  await expect(page.getByRole('heading', { name: 'octo-org/alpha', level: 1 })).toBeVisible();
+  await expect(page.locator('.repository-workflow-table')).toContainText('One');
+});
+
 test('DLS-PAGE-014 DLS-PAGE-015 built-in packages page renders report-style mode filters, AIC utilization, and run trends in browser', async ({ page }) => {
   const presenterModuleUrl = buildPresenterModuleUrl();
 

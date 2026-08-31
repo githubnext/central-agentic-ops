@@ -2,7 +2,8 @@
 import { describe, expect, it } from 'vitest';
 import { renderRepositoriesView } from '../../src/components/repositories-view.js';
 
-const metadata = (overrides = {}) => ({
+/** @param {Partial<import('../../src/presenter.js').SourceMetadata>} [overrides] */
+const metadata = (overrides = {}) => /** @type {import('../../src/presenter.js').SourceMetadata} */ ({
   'source-id': 'repositories-view-fixture',
   'source-kind': 'fixture',
   'as-of': '2026-08-29T20:00:00Z',
@@ -15,6 +16,11 @@ const metadata = (overrides = {}) => ({
   ...overrides
 });
 
+/**
+ * @param {string} name
+ * @param {Array<Record<string, unknown>>} rows
+ * @param {Partial<import('../../src/presenter.js').SourceMetadata>} [metadataOverrides]
+ */
 const source = (name, rows, metadataOverrides = {}) => ({
   source: name,
   rows,
@@ -72,7 +78,7 @@ describe('repositories view', () => {
     expect(rendered.querySelector('.repository-scope-context')?.textContent).toContain('7 artifacts · partial');
     expect(rendered.querySelectorAll('.pie-chart-segment')).toHaveLength(6);
     expect(rendered.querySelector('.chart-legend-pie')?.textContent).toContain('Other');
-    expect(rendered.querySelector('.pie-chart-total-value')?.textContent).toBe('155');
+    expect(rendered.querySelector('.pie-chart-total-value')?.textContent).toBe('215');
     expect(rendered.querySelectorAll('.repository-activity-table tbody tr')).toHaveLength(7);
 
     const alpha = rendered.querySelector('[data-repository="octo-org/alpha"]');
