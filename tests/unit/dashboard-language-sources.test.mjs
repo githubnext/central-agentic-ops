@@ -74,6 +74,42 @@ test("dashboard source bridge carries package memberships, allowance, and invent
   );
 });
 
+test("dashboard source bridge carries canonical coverage diagnostics", () => {
+  const input = {
+    deployed: {
+      generatedAt: "2026-08-31T12:00:00Z",
+      includePrivate: false,
+      discovery: { complete: true },
+      runHealth: { available: true, complete: true },
+      bundles: [],
+      workflows: [],
+    },
+    usage: { available: true, complete: false, runs: [] },
+    operationalValues: { records: [] },
+    report: { generatedAt: "2026-08-31T12:00:00Z", records: [] },
+  };
+
+  const sources = buildDashboardLanguageSources(input);
+  assert.deepEqual(sources["coverage-diagnostics"].rows, [
+    {
+      title: "Private repository discovery is off",
+      effect: "Private repositories are excluded from workflow inventory and run-health totals.",
+    },
+    {
+      title: "AIC telemetry is partial",
+      effect: "AI Credit totals exclude runs whose usage artifacts could not be collected.",
+    },
+  ]);
+  assert.deepEqual(
+    buildDashboardLanguageSources({
+      ...input,
+      deployed: { ...input.deployed, includePrivate: true },
+      usage: { ...input.usage, complete: true },
+    })["coverage-diagnostics"].rows,
+    [],
+  );
+});
+
 test("dashboard source bridge retains unavailable grader records separately from value observations", () => {
   const sources = buildDashboardLanguageSources({
     deployed: {

@@ -14,6 +14,7 @@ const sourceNames = [
   "evals",
   "eval-observations",
   "usage",
+  "coverage-diagnostics",
   "outcomes",
   "findings",
   "operational-values",
@@ -69,6 +70,31 @@ function source(name, rows, generatedAt, available = true, complete = true) {
     rows,
     metadata: sourceMetadata(name, generatedAt, available, complete),
   };
+}
+
+function coverageDiagnosticRows(deployed, usage) {
+  const diagnostics = [];
+  if (!deployed.includePrivate) diagnostics.push({
+    title: "Private repository discovery is off",
+    effect: "Private repositories are excluded from workflow inventory and run-health totals.",
+  });
+  if (!deployed.runHealth?.available) diagnostics.push({
+    title: "Run telemetry is unavailable",
+    effect: "Run status and failure counts cannot be determined.",
+  });
+  else if (!deployed.runHealth.complete) diagnostics.push({
+    title: "Run telemetry is partial",
+    effect: "Run status totals cover only the Actions data returned within the configured audit limit.",
+  });
+  if (!usage.available) diagnostics.push({
+    title: "AIC telemetry is unavailable",
+    effect: "AI Credit totals cannot be calculated from the retained usage artifacts.",
+  });
+  else if (!usage.complete) diagnostics.push({
+    title: "AIC telemetry is partial",
+    effect: "AI Credit totals exclude runs whose usage artifacts could not be collected.",
+  });
+  return diagnostics;
 }
 
 function packageMemberships(deployed) {
@@ -357,6 +383,11 @@ export function buildDashboardLanguageSources({ deployed, usage, operationalValu
     ).toISOString();
   }
   sources.usage = source("usage", usageRows(usage), generatedAt, usageAvailable, usageComplete);
+  sources["coverage-diagnostics"] = source(
+    "coverage-diagnostics",
+    coverageDiagnosticRows(deployed, usage),
+    generatedAt,
+  );
   sources.outcomes = source("outcomes", outcomeRows(records), generatedAt);
   sources.findings = source("findings", findingRows(records), generatedAt);
   sources["grader-observations"] = source("grader-observations", graderObservations, generatedAt, valueAvailable, true);

@@ -928,7 +928,7 @@ describe('presenter built-in and custom pages', () => {
       '#page-runtime',
       '#page-runtime?section=runtime-execution-episodes',
       '#page-security',
-      '#page-findings',
+      '#page-coverage',
       '#page-operational-value',
       '#page-cost'
     ]);
@@ -2021,6 +2021,55 @@ describe('presenter built-in and custom pages', () => {
     expect(rendered.querySelector('[data-page-description]')?.textContent).toBe('Second page description');
     expect(rendered.ownerDocument.activeElement).toBe(rendered.querySelector('#page-title'));
     rendered.ownerDocument.defaultView?.history.replaceState(null, '', '/');
+  });
+
+  it('opens coverage diagnostics as an Overview subpage with canonical breadcrumbs', () => {
+    const rendered = renderDashboard({
+      document: authoritativeDashboardDocument,
+      sources: {
+        'coverage-diagnostics': {
+          source: 'coverage-diagnostics',
+          rows: [
+            {
+              title: 'Private repository discovery is off',
+              effect: 'Private repositories are excluded from workflow inventory and run-health totals.'
+            },
+            {
+              title: 'AIC telemetry is partial',
+              effect: 'AI Credit totals exclude runs whose usage artifacts could not be collected.'
+            }
+          ],
+          metadata: {
+            'source-id': 'coverage-diagnostics-fixture',
+            'source-kind': 'fixture',
+            'as-of': '2026-08-31T22:00:00Z',
+            'retrieved-at': '2026-08-31T22:01:00Z',
+            completeness: 'complete',
+            freshness: 'fresh',
+            availability: 'available'
+          }
+        }
+      }
+    });
+    rendered.ownerDocument.body.append(rendered);
+    const window = rendered.ownerDocument.defaultView;
+
+    window?.history.replaceState(null, '', '/#page-coverage');
+    window?.dispatchEvent(new HashChangeEvent('hashchange'));
+
+    expect(/** @type {HTMLElement | null} */ (rendered.querySelector('#page-coverage'))?.hidden).toBe(false);
+    expect(rendered.querySelector('#page-title')?.textContent).toBe('Coverage diagnostics');
+    expect(rendered.querySelector('[data-page-description]')?.textContent).toBe(
+      'Reporting coverage gaps for the configured githubnext/central-agentic-ops repository.'
+    );
+    expect(rendered.querySelector('[data-breadcrumb-root]')?.textContent).toBe('Overview');
+    expect(/** @type {HTMLElement | null} */ (rendered.querySelector('[data-breadcrumb-dashboard]'))?.hidden).toBe(true);
+    expect(rendered.querySelector('[data-breadcrumb-page]')?.textContent).toBe('Coverage diagnostics');
+    expect(rendered.querySelector('[data-nav-page-id="overview"]')?.getAttribute('aria-current')).toBe('page');
+    expect(rendered.querySelectorAll('[data-nav-page-id="coverage"]')).toHaveLength(0);
+    expect(rendered.querySelectorAll('.coverage-diagnostics tbody tr')).toHaveLength(2);
+
+    window?.history.replaceState(null, '', '/');
   });
 
   it('DLS-SAFE-004 DLS-SAFE-008 DLS-SAFE-009 renders accessible bars, visual chart legends, and rejects unsafe runtime links', () => {

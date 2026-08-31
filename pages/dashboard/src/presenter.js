@@ -556,10 +556,16 @@ export function enableDashboardPageNavigation(root) {
       if (breadcrumbPage) breadcrumbPage.textContent = title;
       if (pageTitle) pageTitle.textContent = title;
     }
-    const breadcrumbs = Array.isArray(event.detail?.breadcrumbs) ? event.detail.breadcrumbs : [];
+    const hasAllocatedBreadcrumbs = Array.isArray(event.detail?.breadcrumbs);
+    const breadcrumbs = hasAllocatedBreadcrumbs ? event.detail.breadcrumbs : [];
     for (const [index, link] of [breadcrumbRoot, breadcrumbDashboard].entries()) {
       const breadcrumb = breadcrumbs[index];
-      if (!(link instanceof HTMLAnchorElement) || !breadcrumb || typeof breadcrumb.label !== 'string' || typeof breadcrumb.href !== 'string' || !breadcrumb.href.startsWith('#page-')) continue;
+      if (!(link instanceof HTMLAnchorElement)) continue;
+      if (!breadcrumb || typeof breadcrumb.label !== 'string' || typeof breadcrumb.href !== 'string' || !breadcrumb.href.startsWith('#page-')) {
+        if (hasAllocatedBreadcrumbs) link.hidden = true;
+        continue;
+      }
+      link.hidden = false;
       link.textContent = breadcrumb.label;
       link.href = breadcrumb.href;
     }
@@ -603,6 +609,7 @@ export function enableDashboardPageNavigation(root) {
   const activate = (pageId, parameters = new URLSearchParams()) => {
     for (const [index, link] of [breadcrumbRoot, breadcrumbDashboard].entries()) {
       if (!(link instanceof HTMLAnchorElement)) continue;
+      link.hidden = false;
       link.textContent = defaultBreadcrumbs[index].label;
       link.setAttribute('href', defaultBreadcrumbs[index].href);
     }

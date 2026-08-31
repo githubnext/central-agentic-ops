@@ -480,7 +480,7 @@ test('DLS-PAGE-002 DLS-PAGE-014 built-in overview page renders the report-style 
     '#page-runtime',
     '#page-runtime?section=runtime-execution-episodes',
     '#page-security',
-    '#page-findings',
+    '#page-coverage',
     '#page-operational-value',
     '#page-cost'
   ]);

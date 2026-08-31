@@ -1679,6 +1679,28 @@
             }
           ]
         }
+      },
+      {
+        "id": "coverage",
+        "kind": "custom",
+        "title": "Coverage diagnostics",
+        "class-name": "coverage-page",
+        "description": "Reporting coverage gaps for the configured githubnext/central-agentic-ops repository.",
+        "views": [
+          {
+            "id": "coverage-diagnostics",
+            "title": "Coverage diagnostics",
+            "description": "Signals that limit what this dashboard can claim about the configured scope.",
+            "data": {
+              "sources": [
+                "coverage-diagnostics"
+              ]
+            },
+            "mark": "element",
+            "element": "coverage-diagnostics",
+            "layout": "full"
+          }
+        ]
       }
     ],
     "navigation": [
