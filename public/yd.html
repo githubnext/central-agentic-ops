@@ -1,0 +1,189 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Dashboard Language examples</title>
+    <meta
+      name="description"
+      content="Rendered examples from the Dashboard Language authoring corpus."
+    >
+    <style>
+      :root {
+        color-scheme: light dark;
+        font-family: ui-sans-serif, system-ui, sans-serif;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        min-width: 20rem;
+        min-height: 100vh;
+        margin: 0;
+        background: Canvas;
+        color: CanvasText;
+      }
+
+      .gallery-controls {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 0.75rem;
+        padding: 0.75rem 1rem;
+        border-bottom: 1px solid color-mix(in srgb, CanvasText 20%, transparent);
+      }
+
+      .gallery-controls h1 {
+        margin: 0;
+        font-size: 1rem;
+      }
+
+      .gallery-controls label {
+        margin-left: auto;
+        font-weight: 600;
+      }
+
+      .gallery-controls select {
+        max-width: 100%;
+        padding: 0.4rem;
+        font: inherit;
+      }
+
+      .gallery-status {
+        margin: 2rem auto;
+        padding: 0 1rem;
+        max-width: 60rem;
+      }
+
+      @media (max-width: 40rem) {
+        .gallery-controls {
+          align-items: stretch;
+          flex-direction: column;
+        }
+
+        .gallery-controls label {
+          margin-left: 0;
+        }
+      }
+    </style>
+    <script type="importmap">
+      {
+        "imports": {
+          "yaml": "https://esm.sh/yaml@2.9.0"
+        }
+      }
+    </script>
+  </head>
+  <body>
+    <header class="gallery-controls">
+      <h1>Dashboard Language examples</h1>
+      <label for="example">Example</label>
+      <select id="example" disabled>
+        <option>Loading examples…</option>
+      </select>
+    </header>
+    <main id="dashboard" aria-live="polite">
+      <p class="gallery-status">Loading dashboard examples…</p>
+    </main>
+    <script type="module">
+      import { renderDashboard } from "./ymao/src/presenter.js";
+      import { validateDashboardDocument } from "./ymao/src/validator.js";
+
+      const corpusUrl = new URL(
+        "https://raw.githubusercontent.com/githubnext/central-agentic-ops/main/.github/skills/dashboard-authoring/corpus/"
+      );
+      const exampleSelect = document.querySelector("#example");
+      const dashboardRoot = document.querySelector("#dashboard");
+
+      function corpusFileUrl(path) {
+        const url = new URL(path, corpusUrl);
+        if (url.origin !== corpusUrl.origin || !url.pathname.startsWith(corpusUrl.pathname)) {
+          throw new Error(`Invalid corpus path: ${path}`);
+        }
+        return url;
+      }
+
+      async function fetchJson(url) {
+        const response = await fetch(url);
+        if (!response.ok) {
+          throw new Error(`Unable to load ${url}: ${response.status}`);
+        }
+        return response.json();
+      }
+
+      async function fetchText(url) {
+        const response = await fetch(url);
+        if (!response.ok) {
+          throw new Error(`Unable to load ${url}: ${response.status}`);
+        }
+        return response.text();
+      }
+
+      function showStatus(message) {
+        const status = document.createElement("p");
+        status.className = "gallery-status";
+        status.textContent = message;
+        dashboardRoot.replaceChildren(status);
+      }
+
+      async function loadExample(entry) {
+        const [metadata, dashboardSource] = await Promise.all([
+          fetchJson(corpusFileUrl(entry.metadata)),
+          fetchText(corpusFileUrl(entry.dashboard)),
+        ]);
+        const dashboard = validateDashboardDocument(dashboardSource);
+        if (!dashboard.ok) {
+          const details = dashboard.errors
+            .map((error) => `${error.code} at ${error.path}: ${error.message}`)
+            .join("; ");
+          throw new Error(`Invalid dashboard for ${entry.id}: ${details}`);
+        }
+        return { entry, metadata, document: dashboard.value };
+      }
+
+      function showExample(example, updateUrl = false) {
+        exampleSelect.value = example.entry.id;
+        dashboardRoot.replaceChildren(renderDashboard({
+          document: example.document,
+          sources: example.metadata.logicalSources ?? {},
+        }));
+
+        if (updateUrl) {
+          const url = new URL(window.location.href);
+          url.searchParams.set("example", example.entry.id);
+          window.history.replaceState(null, "", url);
+        }
+      }
+
+      try {
+        const index = await fetchJson(corpusFileUrl("index.json"));
+        if (!Array.isArray(index.examples) || index.examples.length === 0) {
+          throw new Error("The dashboard corpus index contains no examples.");
+        }
+
+        const examples = await Promise.all(index.examples.map(loadExample));
+        exampleSelect.replaceChildren(...examples.map((example) => {
+          const option = document.createElement("option");
+          option.value = example.entry.id;
+          option.textContent = example.metadata.task?.name ?? example.entry.id;
+          return option;
+        }));
+        exampleSelect.disabled = false;
+
+        const requestedId = new URLSearchParams(window.location.search).get("example");
+        const initialExample = examples.find((example) => example.entry.id === requestedId) ?? examples[0];
+        showExample(initialExample);
+        exampleSelect.addEventListener("change", () => {
+          const example = examples.find((candidate) => candidate.entry.id === exampleSelect.value);
+          if (example) showExample(example, true);
+        });
+      } catch (error) {
+        const message = error instanceof Error ? error.message : String(error);
+        showStatus(`Unable to load dashboard examples: ${message}`);
+        console.error(error);
+      }
+    </script>
+  </body>
+</html>
