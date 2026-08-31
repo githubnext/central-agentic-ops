@@ -397,6 +397,14 @@ test('DLS-PAGE-002 DLS-PAGE-014 built-in overview page renders the report-style 
   await expect(cards.first()).toHaveClass(/attention-domain-critical/);
   await expect(cards.first()).toContainText('1 failed');
   await expect(cards.nth(1)).toContainText('2 observed');
+  expect(await cards.evaluateAll((links) => links.map((link) => link.getAttribute('href')))).toEqual([
+    '#page-runtime',
+    '#page-runtime?section=runtime-execution-episodes',
+    '#page-security',
+    '#page-findings',
+    '#page-operational-value',
+    '#page-cost'
+  ]);
   await expect(page.locator('.overview-method-note')).toContainText('State key:');
   await expect(page.locator('.data-state-summary')).toBeHidden();
 
@@ -406,6 +414,11 @@ test('DLS-PAGE-002 DLS-PAGE-014 built-in overview page renders the report-style 
   expect(firstCardBox).not.toBeNull();
   expect(secondCardBox).not.toBeNull();
   expect(secondCardBox?.y).toBeGreaterThan(firstCardBox?.y ?? 0);
+
+  await cards.nth(1).click();
+  await expect(page).toHaveURL(/#page-runtime\?section=runtime-execution-episodes$/);
+  await expect(page.locator('[data-page-id="runtime"]')).toBeVisible();
+  await expect(page.locator('#runtime-execution-episodes')).toBeInViewport();
 });
 
 test('DLS-PAGE-014 DLS-PAGE-015 built-in packages page renders report-style mode filters, AIC utilization, and run trends in browser', async ({ page }) => {
