@@ -30,9 +30,14 @@ function buildPresenterModuleUrl() {
     .replace("'../dom.js'", JSON.stringify(domModuleUrl));
   const histogramModuleUrl = `data:text/javascript;charset=utf-8,${encodeURIComponent(histogramSource)}`;
 
+  const summaryCopySource = readFileSync(new URL('../../src/components/summary-copy.js', import.meta.url), 'utf8')
+    .replace("'../dom.js'", JSON.stringify(domModuleUrl));
+  const summaryCopyModuleUrl = `data:text/javascript;charset=utf-8,${encodeURIComponent(summaryCopySource)}`;
+
   const tableSummarySource = readFileSync(new URL('../../src/components/table-summary.js', import.meta.url), 'utf8')
     .replace("'../dom.js'", JSON.stringify(domModuleUrl))
-    .replace("'./histogram.js'", JSON.stringify(histogramModuleUrl));
+    .replace("'./histogram.js'", JSON.stringify(histogramModuleUrl))
+    .replace("'./summary-copy.js'", JSON.stringify(summaryCopyModuleUrl));
   const tableSummaryModuleUrl = `data:text/javascript;charset=utf-8,${encodeURIComponent(tableSummarySource)}`;
 
   const tableRegionSource = readFileSync(new URL('../../src/components/table-region.js', import.meta.url), 'utf8')
