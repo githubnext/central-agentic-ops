@@ -5,10 +5,13 @@
 import { h } from '../dom.js';
 import { octicon } from '../octicons.js';
 import { renderModeBadge } from './badge.js';
-import { formatNumber } from '../view-formatters.js';
+import { formatNumber, renderTemplate, resolveThresholdStatus } from '../view-formatters.js';
+import runConclusionClassification from './run-conclusion-classification.json' with { type: 'json' };
+import packageAicUtilizationThresholds from './package-aic-utilization-thresholds.json' with { type: 'json' };
+import attentionRules from './attention-rules.json' with { type: 'json' };
 
-const FAILURE_CONCLUSIONS = new Set(['failure', 'startup-failure', 'timed-out']);
-const APPROVAL_CONCLUSIONS = new Set(['action-required']);
+const FAILURE_CONCLUSIONS = new Set(runConclusionClassification.failure);
+const APPROVAL_CONCLUSIONS = new Set(runConclusionClassification.approval);
 
 /**
  * @param {Record<string, import('../presenter.js').LogicalSourceInput>} sources
@@ -355,7 +358,7 @@ function renderPackageUtilizationCard(entry, usageByPackage, available) {
   const allowance = /** @type {number} */ (entry.allowance);
   const ratio = available && allowance > 0 ? used / allowance : null;
   const meterPercent = ratio === null ? 0 : Math.min(100, ratio * 100);
-  const status = !available || ratio === null ? 'empty' : ratio >= 0.8 ? 'high' : ratio >= 0.5 ? 'medium' : 'low';
+  const status = !available || ratio === null ? 'empty' : resolveThresholdStatus(ratio, packageAicUtilizationThresholds);
   const valueText = !available || ratio === null ? '—' : formatPercent(ratio);
   const detail = !available
     ? 'AI Credit usage artifacts are unavailable.'
@@ -434,65 +437,46 @@ function renderPackageDetail(label, value, className = '') {
  * }} input
  */
 function buildAttentionItems(input) {
-  /** @type {Array<{ icon: string, tone: string, title: string, detail: string }>} */
-  const items = [];
-  if (input.health.failed > 0) {
-    const failedRepositories = new Set(input.health.failedRows.map(repositoryKey).filter(Boolean)).size;
-    items.push({
-      icon: 'issue',
-      tone: 'danger',
-      title: `${input.health.failed} failed run${input.health.failed === 1 ? '' : 's'}`,
-      detail: `Across ${failedRepositories} repositor${failedRepositories === 1 ? 'y' : 'ies'} in the current window`
-    });
-  }
-  if (input.health.approval > 0) {
-    items.push({
-      icon: 'shield',
-      tone: 'attention',
-      title: `${input.health.approval} run${input.health.approval === 1 ? '' : 's'} awaiting approval`,
-      detail: 'A maintainer must approve execution in GitHub Actions'
-    });
-  }
-  if (input.disabledWorkflows > 0) {
-    items.push({
-      icon: 'eye',
-      tone: 'attention',
-      title: `${input.disabledWorkflows} disabled workflow${input.disabledWorkflows === 1 ? '' : 's'}`,
-      detail: 'Repository-owned workflows not currently active'
-    });
-  }
-  const packageGaps = input.packages.filter((entry) => !entry.ready).length;
-  if (packageGaps > 0) {
-    items.push({
-      icon: 'package',
-      tone: 'attention',
-      title: `${packageGaps} package inventory gap${packageGaps === 1 ? '' : 's'}`,
-      detail: 'An orchestrator, worker, or active workflow is missing'
-    });
-  }
-  const openFindings = input.findings.filter((row) => String(row['finding-status']) === 'open').length;
-  if (openFindings > 0) {
-    items.push({
-      icon: 'issue',
-      tone: 'attention',
-      title: `${openFindings} open finding${openFindings === 1 ? '' : 's'}`,
-      detail: 'Durable operational findings are ready for follow-up'
-    });
-  }
-  const coverageGaps = ['workflows', 'runs', 'usage'].filter((name) => {
-    const metadata = input.sources[name]?.metadata;
-    return metadata?.availability !== 'available' || metadata.completeness !== 'complete' || metadata.freshness !== 'fresh';
-  });
-  if (coverageGaps.length > 0) {
-    items.push({
-      icon: 'meter',
-      tone: 'attention',
-      title: 'Coverage needs context',
-      detail: `${coverageGaps.join(', ')} telemetry is partial, stale, or unavailable`
-    });
-  }
-  return items;
+  return attentionRules
+    .map((rule) => {
+      const values = ATTENTION_METRIC_PROVIDERS[rule.metric]?.(input);
+      if (!values || !(Number(values.count) > 0)) {
+        return null;
+      }
+      return {
+        icon: rule.icon,
+        tone: rule.tone,
+        title: renderTemplate(rule.title, values),
+        detail: renderTemplate(rule.detail, values)
+      };
+    })
+    .filter((item) => item !== null);
 }
+
+/**
+ * Named providers resolving the JSON-configured attention rules' `metric` reference to a
+ * `{ count, ...templateValues }` object. Each provider derives its values from already
+ * summarized dashboard data, keeping the attention panel's copy, ordering, icons, and tones
+ * fully data-driven via `attention-rules.json`.
+ * @type {Record<string, (input: Parameters<typeof buildAttentionItems>[0]) => { count: number } & Record<string, unknown>>}
+ */
+const ATTENTION_METRIC_PROVIDERS = {
+  'runs-failed': (input) => ({
+    count: input.health.failed,
+    repositories: new Set(input.health.failedRows.map(repositoryKey).filter(Boolean)).size
+  }),
+  'runs-approval': (input) => ({ count: input.health.approval }),
+  'disabled-workflows': (input) => ({ count: input.disabledWorkflows }),
+  'package-gaps': (input) => ({ count: input.packages.filter((entry) => !entry.ready).length }),
+  'open-findings': (input) => ({ count: input.findings.filter((row) => String(row['finding-status']) === 'open').length }),
+  'coverage-gaps': (input) => {
+    const coverageGaps = ['workflows', 'runs', 'usage'].filter((name) => {
+      const metadata = input.sources[name]?.metadata;
+      return metadata?.availability !== 'available' || metadata.completeness !== 'complete' || metadata.freshness !== 'fresh';
+    });
+    return { count: coverageGaps.length, list: coverageGaps.join(', ') };
+  }
+};
 
 /**
  * @param {Array<Record<string, unknown>>} rows
