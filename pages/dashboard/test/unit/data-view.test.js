@@ -65,8 +65,8 @@ describe('data view renderer', () => {
       }],
       metadata,
       contextDetails: [],
-      headingTag: 'h3',
-      prepareTableRows: (rows) => rows,
+      headingTag: /** @type {'h3'} */ ('h3'),
+      prepareTableRows: (/** @type {Array<Record<string, unknown>>} */ rows) => rows,
       buildChartPoints: () => [],
       prepareChartPoints: () => [],
       toText: String
