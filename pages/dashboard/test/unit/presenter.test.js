@@ -1823,4 +1823,55 @@ describe('presenter built-in and custom pages', () => {
     expect(rendered.querySelector('.custom-table .mode-review')?.textContent).toBe('review');
     expect(rendered.querySelector('.custom-table .status-danger')?.textContent).toBe('failure');
   });
+
+  it('renders a JSON-selected repository workflow view with declarative repository scope', () => {
+    const rendered = renderDashboard({
+      document: {
+        languageVersion: '0.1.0',
+        dashboard: {
+          id: 'repository-detail-dashboard',
+          title: 'Repository detail',
+          pages: [{
+            id: 'octo-repo',
+            kind: /** @type {'custom'} */ ('custom'),
+            title: 'octo-org/octo-repo',
+            views: [{
+              id: 'repository-workflows',
+              title: 'Agentic workflows',
+              data: {
+                sources: ['workflows'],
+                scope: { repositories: ['octo-repo'] }
+              },
+              mark: 'element',
+              element: 'repository-workflows'
+            }]
+          }]
+        }
+      },
+      sources: {
+        workflows: {
+          source: 'workflows',
+          rows: [
+            { organization: 'octo-org', repository: 'octo-repo', workflow: '.github/workflows/review.md', 'workflow-name': 'Review', 'workflow-role': 'standalone', 'workflow-active': 'true', 'observed-at': '2026-08-29T10:00:00Z' },
+            { organization: 'other-org', repository: 'other-repo', workflow: '.github/workflows/other.md', 'workflow-name': 'Other', 'workflow-role': 'standalone', 'workflow-active': 'true', 'observed-at': '2026-08-29T10:00:00Z' }
+          ],
+          metadata: {
+            'source-id': 'workflows-fixture',
+            'source-kind': 'fixture',
+            'as-of': '2026-08-29T20:00:00Z',
+            'retrieved-at': '2026-08-29T20:01:00Z',
+            completeness: 'complete',
+            freshness: 'fresh',
+            availability: 'available'
+          }
+        }
+      }
+    });
+
+    const repositoryView = rendered.querySelector('.repository-view');
+    expect(repositoryView?.getAttribute('data-repository')).toBe('octo-org/octo-repo');
+    expect(repositoryView?.textContent).toContain('Review');
+    expect(repositoryView?.textContent).not.toContain('Other');
+    expect(rendered.querySelector('#page-title')?.textContent).toBe('octo-org/octo-repo');
+  });
 });

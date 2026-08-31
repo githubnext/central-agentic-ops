@@ -24,6 +24,7 @@ export const VIEW_ELEMENT_VALUES = [
   'record-cards',
   'package-activity',
   'dispatch-catalog',
+  'repository-workflows',
   'workflow-topology'
 ];
 export const VIEW_CHART_VALUES = ['bar', 'line', 'pie'];
