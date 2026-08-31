@@ -18,6 +18,7 @@ export function deriveOverviewSources(sources) {
   const usage = rowsFor(sources, 'usage');
   const packages = summarizePackages(workflows);
   const health = summarizeRunHealth(runs);
+  const disabledWorkflows = workflows.filter((row) => String(row['workflow-active']) === 'false').length;
   const overviewMetadata = createOverviewMetadata(sources);
   const packageUsage = summarizePackageAicUsage(workflows, usage);
 
@@ -25,12 +26,12 @@ export function deriveOverviewSources(sources) {
     ...sources,
     'overview-status': {
       source: 'overview-status',
-      rows: [buildOverviewStatusRow({ sources, workflows, repositories, runs, usage, packages, health })],
+      rows: [buildOverviewStatusRow({ sources, workflows, repositories, runs, usage, packages, health, disabledWorkflows })],
       metadata: overviewMetadata
     },
     'overview-vitals': {
       source: 'overview-vitals',
-      rows: buildOverviewVitals({ sources, usage, packages, health, workflows, repositories }),
+      rows: buildOverviewVitals({ sources, packages, health, workflows, repositories, runs }),
       metadata: overviewMetadata
     },
     'overview-execution-health': {
@@ -40,7 +41,7 @@ export function deriveOverviewSources(sources) {
     },
     'overview-attention': {
       source: 'overview-attention',
-      rows: buildAttentionRows({ sources, runs, findings: rowsFor(sources, 'findings'), packages, disabledWorkflows: workflows.filter((row) => String(row['workflow-active']) === 'false').length, health }),
+      rows: buildAttentionRows({ sources, runs, findings: rowsFor(sources, 'findings'), packages, disabledWorkflows, health }),
       metadata: overviewMetadata
     },
     'overview-managed-packages': {
@@ -67,12 +68,11 @@ export function deriveOverviewSources(sources) {
 }
 
 /**
- * @param {{ sources: Record<string, import('./presenter.js').LogicalSourceInput>, workflows: Array<Record<string, unknown>>, repositories: Array<Record<string, unknown>>, runs: Array<Record<string, unknown>>, usage: Array<Record<string, unknown>>, packages: ReturnType<typeof summarizePackages>, health: ReturnType<typeof summarizeRunHealth> }} input
+ * @param {{ sources: Record<string, import('./presenter.js').LogicalSourceInput>, workflows: Array<Record<string, unknown>>, repositories: Array<Record<string, unknown>>, runs: Array<Record<string, unknown>>, usage: Array<Record<string, unknown>>, packages: ReturnType<typeof summarizePackages>, health: ReturnType<typeof summarizeRunHealth>, disabledWorkflows: number }} input
  */
 function buildOverviewStatusRow(input) {
-  const { sources, workflows, repositories, runs, usage, packages, health } = input;
+  const { sources, workflows, repositories, runs, usage, packages, health, disabledWorkflows } = input;
   const hasRunTelemetry = sources.runs?.metadata?.availability !== 'unavailable';
-  const disabledWorkflows = workflows.filter((row) => String(row['workflow-active']) === 'false').length;
   const repositoryCount = repositories.length > 0
     ? new Set(repositories.map(repositoryKey).filter(Boolean)).size
     : distinctRepositories(workflows, runs);
@@ -119,16 +119,16 @@ function buildOverviewStatusRow(input) {
 }
 
 /**
- * @param {{ sources: Record<string, import('./presenter.js').LogicalSourceInput>, usage: Array<Record<string, unknown>>, packages: ReturnType<typeof summarizePackages>, health: ReturnType<typeof summarizeRunHealth>, workflows: Array<Record<string, unknown>>, repositories: Array<Record<string, unknown>> }} input
+ * @param {{ sources: Record<string, import('./presenter.js').LogicalSourceInput>, packages: ReturnType<typeof summarizePackages>, health: ReturnType<typeof summarizeRunHealth>, workflows: Array<Record<string, unknown>>, repositories: Array<Record<string, unknown>>, runs: Array<Record<string, unknown>> }} input
  */
 function buildOverviewVitals(input) {
-  const { sources, packages, health, workflows, repositories } = input;
+  const { sources, packages, health, workflows, repositories, runs } = input;
   const hasRunTelemetry = sources.runs?.metadata?.availability !== 'unavailable';
   const disabledWorkflows = workflows.filter((row) => String(row['workflow-active']) === 'false').length;
   const managedWorkers = packages.reduce((total, entry) => total + entry.workers, 0);
   const repositoryCount = repositories.length > 0
     ? new Set(repositories.map(repositoryKey).filter(Boolean)).size
-    : distinctRepositories(workflows, rowsFor(sources, 'runs'));
+    : distinctRepositories(workflows, runs);
   return [
     { label: 'Managed packages', value: packages.length, detail: `${managedWorkers} worker workflow${managedWorkers === 1 ? '' : 's'}` },
     { label: 'Active workflows', value: workflows.filter(isActiveWorkflow).length, detail: `${disabledWorkflows} disabled · ${repositoryCount} repositories` },
