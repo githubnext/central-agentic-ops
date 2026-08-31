@@ -335,6 +335,10 @@ function renderReportRow(outcome, showMode) {
       ? h('a', { href: sourceLink.href, title, target: '_blank', rel: 'noopener noreferrer' }, title)
       : h('span', { title }, title);
   const statusBadge = renderStatusBadge(status);
+  if (status.toLowerCase() === 'available') {
+    statusBadge.classList.remove('status-success');
+    statusBadge.classList.add('status-attention');
+  }
   statusBadge.setAttribute('aria-label', `Status: ${status}`);
   const modeBadge = renderModeBadge(mode);
   modeBadge.setAttribute('aria-label', `Mode: ${mode}`);
