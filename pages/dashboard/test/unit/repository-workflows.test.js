@@ -44,8 +44,20 @@ describe('renderRepositoryWorkflows', () => {
         'workflow-role': 'worker',
         'workflow-active': 'false',
         'observed-at': '2026-08-29T10:00:00Z',
-        'repository-link': { relation: 'repository', href: 'https://github.com/github/gh-aw', label: 'View github/gh-aw' },
-        'workflow-link': { relation: 'workflow', href: 'https://github.com/github/gh-aw/blob/HEAD/.github/workflows/upgrade.md', label: 'View Upgrade' }
+        'repository-link': {
+          relation: 'repository',
+          href: 'https://github.com/github/gh-aw',
+          label: 'View github/gh-aw',
+          'dashboard-href': '#page-repository-detail?repository=github%2Fgh-aw',
+          'dashboard-label': 'View github/gh-aw repository dashboard'
+        },
+        'workflow-link': {
+          relation: 'workflow',
+          href: 'https://github.com/github/gh-aw/blob/HEAD/.github/workflows/upgrade.md',
+          label: 'View Upgrade',
+          'dashboard-href': '#page-workflow-detail?workflow=github%2Fgh-aw%3A.github%2Fworkflows%2Fupgrade.md',
+          'dashboard-label': 'View Upgrade workflow dashboard'
+        }
       },
       {
         organization: 'github',
@@ -55,8 +67,20 @@ describe('renderRepositoryWorkflows', () => {
         'workflow-role': 'standalone',
         'workflow-active': 'true',
         'observed-at': '2026-08-28T10:00:00Z',
-        'repository-link': { relation: 'repository', href: 'https://github.com/github/gh-aw', label: 'View github/gh-aw' },
-        'workflow-link': { relation: 'workflow', href: 'https://github.com/github/gh-aw/blob/HEAD/.github/workflows/failure-investigator.md', label: 'View Failure Investigator' }
+        'repository-link': {
+          relation: 'repository',
+          href: 'https://github.com/github/gh-aw',
+          label: 'View github/gh-aw',
+          'dashboard-href': '#page-repository-detail?repository=github%2Fgh-aw',
+          'dashboard-label': 'View github/gh-aw repository dashboard'
+        },
+        'workflow-link': {
+          relation: 'workflow',
+          href: 'https://github.com/github/gh-aw/blob/HEAD/.github/workflows/failure-investigator.md',
+          label: 'View Failure Investigator',
+          'dashboard-href': '#page-workflow-detail?workflow=github%2Fgh-aw%3A.github%2Fworkflows%2Ffailure-investigator.md',
+          'dashboard-label': 'View Failure Investigator workflow dashboard'
+        }
       }
     ]));
 
@@ -80,6 +104,10 @@ describe('renderRepositoryWorkflows', () => {
     expect([...rendered.querySelectorAll('.repository-workflow-badges a')].map((badge) => badge.getAttribute('href'))).toEqual([
       '#page-package-detail?package=maintenance',
       '#page-package-detail?package=platform'
+    ]);
+    expect([...rendered.querySelectorAll('.repository-workflow-source')].map((link) => link.getAttribute('href'))).toEqual([
+      '#page-workflow-detail?workflow=github%2Fgh-aw%3A.github%2Fworkflows%2Ffailure-investigator.md',
+      '#page-workflow-detail?workflow=github%2Fgh-aw%3A.github%2Fworkflows%2Fupgrade.md'
     ]);
     expect(rendered.textContent).toContain('Latest registration update: Aug 29, 2026, 10:00 AM. 1 disabled.');
   });

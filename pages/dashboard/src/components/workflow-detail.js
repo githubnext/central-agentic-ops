@@ -5,7 +5,7 @@
 import { h } from '../dom.js';
 import { octicon } from '../octicons.js';
 import { renderModeBadge, renderStatusBadge } from './badge.js';
-import { findLink } from './link-content.js';
+import { findLink, renderExternalLink } from './link-content.js';
 import { formatUtcDateTime } from './ui-primitives.js';
 
 /**
@@ -113,7 +113,6 @@ function renderWorkflowTabs(pageId, route) {
 /** @param {Record<string, unknown>} workflow */
 function renderWorkflowIdentity(workflow) {
   const link = findLink(workflow, 'workflow-link');
-  const externalHref = link?.externalHref ?? link?.href;
   const packageId = text(workflow.package);
   const packageName = text(workflow['package-name']) || titleCase(packageId);
   const role = text(workflow['workflow-role']) || 'unknown';
@@ -140,18 +139,7 @@ function renderWorkflowIdentity(workflow) {
       ),
       h('p', null, h('code', null, text(workflow.workflow)))
     ),
-    externalHref
-      ? h(
-        'a',
-        {
-          href: externalHref,
-          target: '_blank',
-          rel: 'noopener noreferrer'
-        },
-        'View authored workflow',
-        octicon('external-link')
-      )
-      : null
+    link ? renderExternalLink(link) : null
   );
 }
 
