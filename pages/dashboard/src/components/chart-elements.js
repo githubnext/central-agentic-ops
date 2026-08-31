@@ -85,6 +85,7 @@ export function renderPieLegend(entries, total, links = new Map(), unit = null) 
     { className: 'chart-legend chart-legend-pie', 'data-chart-legend': 'visual' },
     entries.map(([label, value], index) => {
       const link = links.get(label);
+      const external = link ? !link.href.startsWith('#') : false;
       return h(
         'li',
         null,
@@ -95,8 +96,8 @@ export function renderPieLegend(entries, total, links = new Map(), unit = null) 
           link
           ? h('a', {
               href: link.href,
-              target: link.href.startsWith('#') ? undefined : '_blank',
-              rel: link.href.startsWith('#') ? undefined : 'noopener noreferrer',
+            target: external ? '_blank' : undefined,
+            rel: external ? 'noopener noreferrer' : undefined,
               'aria-label': link.label
             }, label)
             : label
