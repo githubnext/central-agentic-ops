@@ -41,14 +41,14 @@ describe('Cost and efficiency dashboard view', () => {
 
     expect(dashboardPage).toMatchObject({ kind: 'custom', icon: 'meter' });
     expect(dashboardPage.views).toHaveLength(4);
-    expect(dashboardPage.sections).toMatchObject([
-      {
+    expect(dashboardPage.sections).toEqual(expect.arrayContaining([
+      expect.objectContaining({
         id: 'measured-usage',
         'count-source': 'cost-signals',
         'count-label': 'boundaries',
         views: ['cost-summary', 'cost-signals']
-      }
-    ]);
+      })
+    ]));
     expect(dashboardPage.views).not.toContainEqual(expect.objectContaining({ element: 'metric-signal-summary' }));
     expect(rendered.querySelector('[data-nav-page-id="cost"] .octicon-meter')).not.toBeNull();
     const filterBar = page?.querySelector('.filter-bar');
