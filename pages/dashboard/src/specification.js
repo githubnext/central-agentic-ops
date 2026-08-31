@@ -11,7 +11,7 @@ export const DASHBOARD_KEYS = ['id', 'title', 'description', 'defaults', 'pages'
 export const DEFAULTS_KEYS = ['scope', 'time', 'filters'];
 export const NAVIGATION_SECTION_KEYS = ['label', 'pages'];
 export const BUILT_IN_PAGE_KEYS = ['id', 'kind', 'page', 'title', 'description', 'icon', 'class-name', 'definition'];
-export const CUSTOM_PAGE_KEYS = ['id', 'kind', 'title', 'description', 'icon', 'class-name', 'views'];
+export const CUSTOM_PAGE_KEYS = ['id', 'kind', 'title', 'description', 'icon', 'class-name', 'views', 'sections'];
 
 export const VIEW_KEYS = ['id', 'title', 'description', 'data', 'mark', 'element', 'chart', 'layout', 'disclosure', 'encoding'];
 export const VIEW_DATA_KEYS = ['source', 'sources', 'scope', 'time', 'filters', 'limit', 'order-by', 'source-metadata'];
@@ -122,8 +122,8 @@ export const BUILT_IN_PAGE_VALUES = [
 export const BUILT_IN_PAGE_DEFINITION_KEYS = ['views', 'sections', 'data-state'];
 
 export const BUILT_IN_PAGE_DATA_STATE_KEYS = ['availability', 'completeness', 'freshness'];
-export const BUILT_IN_PAGE_SECTION_KEYS = ['id', 'title', 'description', 'layout', 'views'];
-export const BUILT_IN_PAGE_SECTION_LAYOUT_VALUES = ['full', 'wide', 'narrow'];
+export const PAGE_SECTION_KEYS = ['id', 'title', 'description', 'layout', 'views'];
+export const PAGE_SECTION_LAYOUT_VALUES = ['full', 'wide', 'narrow'];
 
 export const BUILT_IN_PAGE_REQUIRED_SOURCES = {
   overview: ['repositories', 'workflows', 'runs', 'usage', 'findings', 'operational-values'],

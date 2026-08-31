@@ -469,6 +469,8 @@ The optional page `class-name` is a canonical identifier that a renderer adds to
 
 A custom page contains a non-empty `views` sequence. Each view has one `data` mapping and one mark. Data marks use an `encoding`; named UI elements use `element`.
 
+A custom page may also contain a non-empty `sections` sequence that groups its views for presentation. Each section contains a unique canonical `id`, optional `title` and `description`, one `layout` value of `full`, `wide`, or `narrow`, and a non-empty `views` sequence. Section view references must name every view on the page exactly once and preserve view declaration order. An omitted section title defaults from its section ID.
+
 | Semantic view | `mark` values | Required encoding |
 |---|---|---|
 | Metric | `metric` | `value` |
@@ -480,7 +482,7 @@ Allowed encoding channels are `value`, `columns`, `x`, `y`, `color`, and `href`.
 
 Field `type` values are `nominal`, `ordinal`, `quantitative`, and `temporal`. When omitted, type defaults to the intrinsic field type. A field title defaults to its kebab-case field name with words capitalized.
 
-The optional table-column field `display` is `text`, `status`, `mode`, or `active-state` and defaults to `text`. It selects presentation independently from the field name. Named UI element values are `control-plane-status`, `package-aic-utilization`, `attention-panel`, `managed-packages`, `package-activity`, and `workflow-topology`; renderers dispatch these values without inferring behavior from page IDs, view IDs, or source contents. The four overview elements are independent views so documents can assemble and lay out the landing page through `views`, `sections`, and `layout`.
+The optional table-column field `display` is `text`, `status`, `mode`, or `active-state` and defaults to `text`. It selects presentation independently from the field name. Named UI element values are `status-summary`, `meter-list`, `attention-list`, `record-cards`, `package-activity`, and `workflow-topology`; renderers dispatch these values without inferring behavior from page IDs, view IDs, or source contents. The four overview elements are independent views so documents can assemble and lay out the landing page through `views`, `sections`, and `layout`.
 
 A chart may set `chart` to `line`, `bar`, or `pie`. When `chart` is omitted, temporal `x` has a line time-series default and any other valid chart has a bar default. A line chart uses temporal `x`; a pie chart uses nominal or ordinal `x` for categories and quantitative `y` for values. These known widget types and defaults are semantic; this specification does not define visual styling.
 
@@ -536,6 +538,7 @@ Disclosure changes presentation only. It does not change data processing, data s
 - **DLS-VIEW-021:** Disclosure state **MUST NOT** alter filtering, aggregation, ordering, limiting, provenance, freshness, completeness, availability, links, required built-in content, or semantic output.
 - **DLS-VIEW-022:** An `element` mark **MUST** name exactly one supported UI element and **MUST** render only from its declared `data.sources`. A presenter **MUST NOT** select an element from page IDs, view IDs, source names, or source contents.
 - **DLS-VIEW-023:** A presenter **MUST** select a field's `status`, `mode`, or `active-state` treatment only from its `display` value and **MUST NOT** infer that treatment from the field name.
+- **DLS-VIEW-024:** A custom page `sections` sequence, when present, **MUST** be non-empty. Every section **MUST** have a unique canonical `id`, one `layout` value of `full`, `wide`, or `narrow`, and a non-empty `views` sequence. Sections **MUST** reference every page view exactly once and preserve view declaration order; an omitted section title **MUST** default from its section ID.
 
 ---
 
@@ -622,6 +625,7 @@ In the table, “accept” means validation succeeds; “reject” means validat
 | DLS-VIEW-001–006 | T-VIEW-001 | 3 | Validate custom structure and every allowed mark/channel combination. |
 | DLS-VIEW-007–015 | T-VIEW-002 | 3 | Validate fields, types, link-compatible `href`, time units, ordering, exclusions, operation order, exposed context, and link labels. |
 | DLS-VIEW-016–021 | T-VIEW-003 | 3 | Validate disclosure vocabulary, one-to-four essential views, initial collapsed state, accessible controls, source order, and unchanged semantic output. |
+| DLS-VIEW-022–024 | T-VIEW-004 | 3 | Validate named element dispatch, explicit field display treatments, and complete ordered custom-page section layouts. |
 | DLS-VAL-001–005 | T-VAL-001 | 1–3 | Verify rejection, coded path-specific errors, semantic checks, progressive-disclosure bounds, and secret redaction. |
 | DLS-SAFE-001–006 | T-SAFE-001 | 3 | Exercise safe YAML, inert content, sanitization, HTTPS links, secrets, and authorization boundaries. |
 | DLS-SAFE-007–010 | T-SAFE-002 | 3 | Inspect names, textual alternatives, labels, and non-color semantics. |

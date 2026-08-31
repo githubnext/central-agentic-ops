@@ -12,8 +12,6 @@ import {
   DATASET_METADATA_KEYS,
   BUILT_IN_PAGE_DATA_STATE_KEYS,
   BUILT_IN_PAGE_DEFINITION_KEYS,
-  BUILT_IN_PAGE_SECTION_KEYS,
-  BUILT_IN_PAGE_SECTION_LAYOUT_VALUES,
   DEFAULTS_KEYS,
   ERROR_CODES,
   LINK_FIELD_NAMES,
@@ -37,6 +35,8 @@ import {
   OUTCOME_STATE_VALUES,
   PAGE_ICON_VALUES,
   PAGE_KIND_VALUES,
+  PAGE_SECTION_KEYS,
+  PAGE_SECTION_LAYOUT_VALUES,
   ROOT_KEYS,
   ROLLOUT_MODE_VALUES,
   RUN_CONCLUSION_VALUES,
@@ -87,7 +87,11 @@ import {
  */
 
 /**
- * @typedef {{ id: string, kind: 'custom', title?: string, description?: string, views: unknown[] }} CustomPage
+ * @typedef {{ id: string, title?: string, description?: string, layout: 'full'|'wide'|'narrow', views: string[] }} PageSection
+ */
+
+/**
+ * @typedef {{ id: string, kind: 'custom', title?: string, description?: string, views: unknown[], sections?: PageSection[] }} CustomPage
  */
 
 /**
@@ -636,7 +640,14 @@ function validateBuiltInPageDefinition(pageName, definition, path, errors) {
     return;
   }
 
-  validateBuiltInPageSections(definition.sections, definition.views, path, errors);
+  validatePageSections(
+    definition.sections,
+    definition.views,
+    `${path}.definition.sections`,
+    'built-in page definition',
+    'definition view',
+    errors
+  );
   validateProgressiveDisclosure(definition.views, `${path}.definition.views`, errors);
 
   /** @type {Map<string, Set<string>>} */
@@ -765,16 +776,17 @@ function validateBuiltInPageDefinition(pageName, definition, path, errors) {
 /**
  * @param {unknown} sections
  * @param {unknown[]} views
- * @param {string} path
+ * @param {string} sectionsPath
+ * @param {string} ownerLabel
+ * @param {string} viewLabel
  * @param {ValidationError[]} errors
  */
-function validateBuiltInPageSections(sections, views, path, errors) {
+function validatePageSections(sections, views, sectionsPath, ownerLabel, viewLabel, errors) {
   if (sections === undefined) return;
-  const sectionsPath = `${path}.definition.sections`;
   if (!Array.isArray(sections) || sections.length === 0) {
     errors.push(createError(
       ERROR_CODES.missingOrInvalidRequiredField,
-      'built-in page definition sections must be a non-empty sequence.',
+      `${ownerLabel} sections must be a non-empty sequence.`,
       sectionsPath
     ));
     return;
@@ -800,7 +812,7 @@ function validateBuiltInPageSections(sections, views, path, errors) {
       return;
     }
     for (const key of Object.keys(section)) {
-      if (!BUILT_IN_PAGE_SECTION_KEYS.includes(key)) {
+      if (!PAGE_SECTION_KEYS.includes(key)) {
         errors.push(createError(
           ERROR_CODES.unknownOrDuplicateKey,
           `Unknown key "${key}" is not allowed at ${sectionPath}.`,
@@ -821,7 +833,7 @@ function validateBuiltInPageSections(sections, views, path, errors) {
     }
     validateOptionalStringField(section.title, `${sectionPath}.title`, errors);
     validateOptionalStringField(section.description, `${sectionPath}.description`, errors);
-    if (typeof section.layout !== 'string' || !BUILT_IN_PAGE_SECTION_LAYOUT_VALUES.includes(section.layout)) {
+    if (typeof section.layout !== 'string' || !PAGE_SECTION_LAYOUT_VALUES.includes(section.layout)) {
       errors.push(createError(
         ERROR_CODES.nonCanonicalVocabularyOrIdentifier,
         'layout section must use one canonical full, wide, or narrow layout value.',
@@ -841,7 +853,7 @@ function validateBuiltInPageSections(sections, views, path, errors) {
       if (typeof viewId !== 'string' || !declaredViewIds.includes(viewId)) {
         errors.push(createError(
           ERROR_CODES.missingOrInvalidRequiredField,
-          'layout section view must reference a declared definition view id.',
+          `layout section view must reference a declared ${viewLabel} id.`,
           viewPath
         ));
         return;
@@ -849,7 +861,7 @@ function validateBuiltInPageSections(sections, views, path, errors) {
       if (referencedViewIdSet.has(viewId)) {
         errors.push(createError(
           ERROR_CODES.missingOrInvalidRequiredField,
-          'each definition view may appear in only one layout section.',
+          `each ${viewLabel} may appear in only one layout section.`,
           viewPath
         ));
       }
@@ -861,7 +873,7 @@ function validateBuiltInPageSections(sections, views, path, errors) {
   if (declaredViewIds.join('\0') !== referencedViewIds.join('\0')) {
     errors.push(createError(
       ERROR_CODES.missingOrInvalidRequiredField,
-      'layout sections must reference every definition view exactly once and preserve view order.',
+      `layout sections must reference every ${viewLabel} exactly once and preserve view order.`,
       sectionsPath
     ));
   }
@@ -1004,6 +1016,7 @@ function validateCustomPage(page, pageNode, path, errors) {
     );
   });
   validateProgressiveDisclosure(page.views, `${path}.views`, errors);
+  validatePageSections(page.sections, page.views, `${path}.sections`, 'custom page', 'page view', errors);
 }
 
 /**
