@@ -11,6 +11,7 @@ import { renderPackagesView, renderPackageRunTrend } from './packages-view.js';
 import { renderDispatchCatalog } from './dispatch-catalog.js';
 import { renderRepositoryWorkflows } from './repository-workflows.js';
 import { renderWorkflowTopology } from './workflow-topology.js';
+import { renderExecutionEpisodes, renderExecutionSignalList } from './execution-elements.js';
 
 /**
  * @typedef {{
@@ -38,6 +39,8 @@ const ELEMENT_RENDERERS = new Map([
   ['package-run-trend', ({ sources, pageId }) => renderPackageRunTrend(sources, pageId)],
   ['dispatch-catalog', renderDispatchCatalog],
   ['repository-workflows', renderRepositoryWorkflows],
+  ['execution-signal-list', renderExecutionSignalList],
+  ['execution-episodes', renderExecutionEpisodes],
   ['workflow-topology', ({ pageId, title, sourceNames, sources, contextDetails, headingTag }) => {
     const sourceName = sourceNames[0];
     const source = sources[sourceName];
@@ -46,7 +49,7 @@ const ELEMENT_RENDERERS = new Map([
   }]
 ]);
 
-const EMPTY_AWARE_ELEMENTS = new Set(['status-summary', 'meter-list', 'attention-list', 'record-cards', 'summary-grid', 'signal-list', 'dispatch-catalog', 'repository-workflows']);
+const EMPTY_AWARE_ELEMENTS = new Set(['status-summary', 'meter-list', 'attention-list', 'record-cards', 'summary-grid', 'signal-list', 'dispatch-catalog', 'repository-workflows', 'execution-signal-list', 'execution-episodes']);
 
 /**
  * @param {string} name

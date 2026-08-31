@@ -619,6 +619,48 @@
         }
       },
       {
+        "id": "runtime",
+        "kind": "custom",
+        "title": "Runtime",
+        "icon": "play",
+        "class-name": "runtime-page",
+        "description": "Execution failures, approval gates, and exact control-plane episode evidence.",
+        "views": [
+          {
+            "id": "runtime-needs-attention",
+            "title": "Needs attention",
+            "description": "Ranked evidence from execution state and exact episode attribution. No composite score is used.",
+            "data": {
+              "sources": [
+                "workflows",
+                "runs",
+                "outcomes",
+                "findings"
+              ]
+            },
+            "mark": "element",
+            "element": "execution-signal-list",
+            "layout": "full"
+          },
+          {
+            "id": "runtime-execution-episodes",
+            "title": "Execution episodes",
+            "description": "Root orchestrator runs joined to worker outcomes only through explicit control-plane correlation evidence.",
+            "data": {
+              "sources": [
+                "workflows",
+                "runs",
+                "outcomes",
+                "usage"
+              ]
+            },
+            "mark": "element",
+            "element": "execution-episodes",
+            "layout": "full"
+          }
+        ]
+      },
+      {
         "id": "runs",
         "kind": "built-in",
         "page": "runs",
@@ -1339,6 +1381,7 @@
       {
         "label": "Investigate",
         "pages": [
+          "runtime",
           "runs",
           "security",
           "dispatches",

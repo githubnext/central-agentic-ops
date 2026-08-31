@@ -29,6 +29,8 @@ export const VIEW_ELEMENT_VALUES = [
   'package-run-trend',
   'dispatch-catalog',
   'repository-workflows',
+  'execution-signal-list',
+  'execution-episodes',
   'workflow-topology'
 ];
 export const VIEW_CHART_VALUES = ['bar', 'line', 'pie'];
