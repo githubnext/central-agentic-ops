@@ -89,9 +89,12 @@ export function renderTemplate(template, values) {
  */
 export function resolveThresholdStatus(ratio, thresholds) {
   for (const threshold of thresholds) {
-    if (typeof threshold.max !== 'number' || ratio < threshold.max) {
+    if (typeof threshold.max !== 'number') {
+      return threshold.status;
+    }
+    if (ratio < threshold.max) {
       return threshold.status;
     }
   }
-  return thresholds[thresholds.length - 1]?.status ?? 'unknown';
+  return 'unknown';
 }

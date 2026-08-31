@@ -427,6 +427,38 @@ function renderPackageDetail(label, value, className = '') {
 }
 
 /**
+ * Named providers resolving the JSON-configured attention rules' `metric` reference to a
+ * `{ count, ...templateValues }` object. Each provider derives its values from already
+ * summarized dashboard data, keeping the attention panel's copy, ordering, icons, and tones
+ * fully data-driven via `attention-rules.json`.
+ * @type {Record<string, (input: {
+ *   sources: Record<string, import('../presenter.js').LogicalSourceInput>,
+ *   runs: Array<Record<string, unknown>>,
+ *   findings: Array<Record<string, unknown>>,
+ *   packages: ReturnType<typeof summarizePackages>,
+ *   disabledWorkflows: number,
+ *   health: ReturnType<typeof summarizeRunHealth>
+ * }) => { count: number } & Record<string, unknown>>}
+ */
+const ATTENTION_METRIC_PROVIDERS = {
+  'runs-failed': (input) => ({
+    count: input.health.failed,
+    repositories: new Set(input.health.failedRows.map(repositoryKey).filter(Boolean)).size
+  }),
+  'runs-approval': (input) => ({ count: input.health.approval }),
+  'disabled-workflows': (input) => ({ count: input.disabledWorkflows }),
+  'package-gaps': (input) => ({ count: input.packages.filter((entry) => !entry.ready).length }),
+  'open-findings': (input) => ({ count: input.findings.filter((row) => String(row['finding-status']) === 'open').length }),
+  'coverage-gaps': (input) => {
+    const coverageGaps = ['workflows', 'runs', 'usage'].filter((name) => {
+      const metadata = input.sources[name]?.metadata;
+      return metadata?.availability !== 'available' || metadata.completeness !== 'complete' || metadata.freshness !== 'fresh';
+    });
+    return { count: coverageGaps.length, list: coverageGaps.join(', ') };
+  }
+};
+
+/**
  * @param {{
  *   sources: Record<string, import('../presenter.js').LogicalSourceInput>,
  *   runs: Array<Record<string, unknown>>,
@@ -453,30 +485,6 @@ function buildAttentionItems(input) {
     .filter((item) => item !== null);
 }
 
-/**
- * Named providers resolving the JSON-configured attention rules' `metric` reference to a
- * `{ count, ...templateValues }` object. Each provider derives its values from already
- * summarized dashboard data, keeping the attention panel's copy, ordering, icons, and tones
- * fully data-driven via `attention-rules.json`.
- * @type {Record<string, (input: Parameters<typeof buildAttentionItems>[0]) => { count: number } & Record<string, unknown>>}
- */
-const ATTENTION_METRIC_PROVIDERS = {
-  'runs-failed': (input) => ({
-    count: input.health.failed,
-    repositories: new Set(input.health.failedRows.map(repositoryKey).filter(Boolean)).size
-  }),
-  'runs-approval': (input) => ({ count: input.health.approval }),
-  'disabled-workflows': (input) => ({ count: input.disabledWorkflows }),
-  'package-gaps': (input) => ({ count: input.packages.filter((entry) => !entry.ready).length }),
-  'open-findings': (input) => ({ count: input.findings.filter((row) => String(row['finding-status']) === 'open').length }),
-  'coverage-gaps': (input) => {
-    const coverageGaps = ['workflows', 'runs', 'usage'].filter((name) => {
-      const metadata = input.sources[name]?.metadata;
-      return metadata?.availability !== 'available' || metadata.completeness !== 'complete' || metadata.freshness !== 'fresh';
-    });
-    return { count: coverageGaps.length, list: coverageGaps.join(', ') };
-  }
-};
 
 /**
  * @param {Array<Record<string, unknown>>} rows
