@@ -6,6 +6,7 @@ import { h } from '../dom.js';
 import { octicon } from '../octicons.js';
 import { formatNumber } from '../view-formatters.js';
 import { renderModeBadge } from './badge.js';
+import { findLink } from './link-content.js';
 import { renderPackagesView, renderPackageRunTrend } from './packages-view.js';
 import { renderDispatchCatalog } from './dispatch-catalog.js';
 import { renderRepositoryWorkflows } from './repository-workflows.js';
@@ -31,6 +32,8 @@ const ELEMENT_RENDERERS = new Map([
   ['meter-list', renderMeterListElement],
   ['attention-list', renderAttentionListElement],
   ['record-cards', renderRecordCardsElement],
+  ['summary-grid', renderSummaryGridElement],
+  ['signal-list', renderSignalListElement],
   ['package-activity', ({ sources, pageId }) => renderPackagesView(sources, pageId)],
   ['package-run-trend', ({ sources, pageId }) => renderPackageRunTrend(sources, pageId)],
   ['dispatch-catalog', renderDispatchCatalog],
@@ -43,7 +46,7 @@ const ELEMENT_RENDERERS = new Map([
   }]
 ]);
 
-const EMPTY_AWARE_ELEMENTS = new Set(['status-summary', 'meter-list', 'attention-list', 'record-cards', 'dispatch-catalog', 'repository-workflows']);
+const EMPTY_AWARE_ELEMENTS = new Set(['status-summary', 'meter-list', 'attention-list', 'record-cards', 'summary-grid', 'signal-list', 'dispatch-catalog', 'repository-workflows']);
 
 /**
  * @param {string} name
@@ -202,6 +205,82 @@ function renderRecordCardsElement(context) {
         : [h('p', { className: 'empty' }, 'No managed packages observed.')])
     )
   );
+}
+
+/**
+ * @param {ElementRenderContext} context
+ */
+function renderSummaryGridElement(context) {
+  const rows = rowsFor(context, context.sourceNames[0]);
+  return h(
+    'dl',
+    { className: 'summary-grid' },
+    ...rows.map((row) => h(
+      'div',
+      null,
+      h('dt', null, stringValue(row.label)),
+      h('dd', null, stringValue(row.value))
+    ))
+  );
+}
+
+/**
+ * @param {ElementRenderContext} context
+ */
+function renderSignalListElement(context) {
+  const rows = rowsFor(context, context.sourceNames[0]);
+  return h(
+    'div',
+    { className: 'signal-list-region' },
+    h('p', { className: 'signal-count' }, `${formatNumber(rows.length)} signal${rows.length === 1 ? '' : 's'}`),
+    context.description ? h('p', { className: 'signal-boundary-note' }, context.description) : null,
+    h(
+      'ol',
+      { className: 'signal-list' },
+      ...(rows.length > 0
+        ? rows.map((row, index) => renderSignal(row, index))
+        : [h(
+          'li',
+          { className: 'signal-clear' },
+          h('span', { className: 'signal-icon' }, octicon('check-circle')),
+          h('span', { className: 'signal-copy' }, h('strong', null, 'No signals require attention'))
+        )])
+    )
+  );
+}
+
+/**
+ * @param {Record<string, unknown>} row
+ * @param {number} index
+ */
+function renderSignal(row, index) {
+  const link = findLink(row, 'run-link') ?? findLink(row, 'external-link');
+  const navigationPage = stringValue(row['navigation-page']);
+  const content = [
+    h('span', { className: 'signal-rank', 'aria-hidden': 'true' }, String(index + 1)),
+    h('span', { className: 'signal-icon' }, octicon(stringValue(row.icon) || 'issue')),
+    h(
+      'span',
+      { className: 'signal-copy' },
+      h('span', null, stringValue(row.kind)),
+      h('strong', null, stringValue(row.title)),
+      h('small', null, stringValue(row.detail))
+    ),
+    h(
+      'span',
+      { className: 'signal-evidence' },
+      h('strong', null, stringValue(row.evidence)),
+      h('small', null, 'View evidence')
+    )
+  ];
+  const className = `signal-item signal-${stringValue(row.tone) || 'informational'}`;
+  if (link) {
+    return h('li', { className }, h('a', { href: link.href, 'aria-label': link.label }, ...content));
+  }
+  if (navigationPage) {
+    return h('li', { className }, h('a', { href: `#page-${navigationPage}`, dataset: { navPageId: navigationPage } }, ...content));
+  }
+  return h('li', { className }, h('div', null, ...content));
 }
 
 /**

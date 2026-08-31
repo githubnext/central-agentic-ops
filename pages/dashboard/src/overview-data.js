@@ -15,11 +15,13 @@ export function deriveOverviewSources(sources) {
   const repositories = rowsFor(sources, 'repositories');
   const runs = rowsFor(sources, 'runs');
   const usage = rowsFor(sources, 'usage');
+  const findings = rowsFor(sources, 'findings');
   const packages = summarizePackages(workflows);
   const health = summarizeRunHealth(runs);
   const disabledWorkflows = workflows.filter((row) => String(row['workflow-active']) === 'false').length;
   const overviewMetadata = createOverviewMetadata(sources);
   const packageUsage = summarizePackageAicUsage(workflows, usage);
+  const securitySignals = buildSecuritySignals({ workflows, runs, findings });
 
   return {
     ...sources,
@@ -62,8 +64,113 @@ export function deriveOverviewSources(sources) {
         .filter((entry) => typeof entry.allowance === 'number' && entry.allowance > 0)
         .map((entry) => buildPackageUtilizationRow(entry, packageUsage, sources.usage)),
       metadata: overviewMetadata
+    },
+    'security-summary': {
+      source: 'security-summary',
+      rows: buildSecuritySummary({ runs, workflows, findings }),
+      metadata: overviewMetadata
+    },
+    'security-signals': {
+      source: 'security-signals',
+      rows: securitySignals,
+      metadata: overviewMetadata
     }
   };
+}
+
+/**
+ * @param {{ runs: Array<Record<string, unknown>>, workflows: Array<Record<string, unknown>>, findings: Array<Record<string, unknown>> }} input
+ */
+function buildSecuritySummary(input) {
+  return [
+    { label: 'Approval gates', value: input.runs.filter((row) => String(row['run-conclusion']) === 'action-required').length },
+    { label: 'Explicit warnings', value: input.findings.filter(isAuthoredWarning).length },
+    { label: 'Package integrity gaps', value: input.workflows.filter((row) => row['inventory-ready'] === false).length },
+    { label: 'Vulnerability findings', value: '—' }
+  ];
+}
+
+/**
+ * @param {{ workflows: Array<Record<string, unknown>>, runs: Array<Record<string, unknown>>, findings: Array<Record<string, unknown>> }} input
+ */
+function buildSecuritySignals(input) {
+  const workflowNames = new Map(input.workflows.map((row) => [String(row.workflow ?? ''), String(row['workflow-name'] ?? row.workflow ?? 'Unknown workflow')]));
+  const signals = [
+    ...groupRows(input.runs.filter((row) => String(row['run-conclusion']) === 'action-required'), (row) => String(row.workflow ?? ''))
+      .map(([workflow, rows]) => ({
+        priority: 1,
+        count: rows.length,
+        tone: 'action',
+        icon: 'shield',
+        kind: 'Approval gate',
+        title: workflowNames.get(workflow) ?? workflow,
+        detail: `${formatNumber(rows.length)} run${rows.length === 1 ? '' : 's'} require maintainer approval`,
+        evidence: 'Execution control',
+        'run-link': latestRow(rows)?.['run-link']
+      })),
+    ...groupRows(input.workflows.filter((row) => row['inventory-ready'] === false), (row) => String(row.package ?? row.workflow ?? ''))
+      .map(([key, rows]) => ({
+        priority: 2,
+        count: rows.length,
+        tone: 'informational',
+        icon: 'package',
+        kind: 'Package integrity',
+        title: String(rows[0]?.['package-name'] ?? rows[0]?.['workflow-name'] ?? key),
+        detail: `${formatNumber(rows.length)} workflow definition${rows.length === 1 ? '' : 's'} failed inventory readiness checks`,
+        evidence: 'Inventory gap',
+        'navigation-page': 'packages'
+      })),
+    ...groupRows(input.findings.filter(isAuthoredWarning), findingWorkflowKey)
+      .map(([workflow, rows]) => ({
+        priority: 3,
+        count: rows.length,
+        tone: 'warning',
+        icon: 'issue',
+        kind: 'Authored warning',
+        title: workflowNames.get(workflow) ?? String(rows[0]?.['finding-summary'] ?? workflow),
+        detail: `${formatNumber(rows.length)} retained output${rows.length === 1 ? ' contains' : 's contain'} an explicit warning block`,
+        evidence: 'Output content',
+        'external-link': latestRow(rows)?.['external-link']
+      }))
+  ];
+  return signals.sort((left, right) => left.priority - right.priority || right.count - left.count || left.title.localeCompare(right.title));
+}
+
+/**
+ * @param {Record<string, unknown>} row
+ */
+function isAuthoredWarning(row) {
+  return String(row['finding-kind']) === 'authored-warning';
+}
+
+/**
+ * @param {Record<string, unknown>} row
+ */
+function findingWorkflowKey(row) {
+  return String(row.workflow ?? '');
+}
+
+/**
+ * @param {Array<Record<string, unknown>>} rows
+ * @param {(row: Record<string, unknown>) => string} keyFor
+ */
+function groupRows(rows, keyFor) {
+  /** @type {Map<string, Array<Record<string, unknown>>>} */
+  const groups = new Map();
+  for (const row of rows) {
+    const key = keyFor(row);
+    const group = groups.get(key) ?? [];
+    group.push(row);
+    groups.set(key, group);
+  }
+  return [...groups.entries()];
+}
+
+/**
+ * @param {Array<Record<string, unknown>>} rows
+ */
+function latestRow(rows) {
+  return rows.toSorted((left, right) => Date.parse(String(right['observed-at'] ?? right['started-at'] ?? '')) - Date.parse(String(left['observed-at'] ?? left['started-at'] ?? '')))[0];
 }
 
 /**
