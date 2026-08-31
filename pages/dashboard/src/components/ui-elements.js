@@ -42,6 +42,7 @@ const ELEMENT_RENDERERS = new Map([
   ['record-cards', renderRecordCardsElement],
   ['summary-grid', renderSummaryGridElement],
   ['signal-list', renderSignalListElement],
+  ['coverage-diagnostics', renderCoverageDiagnosticsElement],
   ['package-activity', ({ sources, pageId }) => renderPackagesView(sources, pageId)],
   ['package-run-trend', ({ sources, pageId }) => renderPackageRunTrend(sources, pageId)],
   ['package-detail', renderPackageDetailElement],
@@ -61,7 +62,7 @@ const ELEMENT_RENDERERS = new Map([
   }]
 ]);
 
-const EMPTY_AWARE_ELEMENTS = new Set(['status-summary', 'meter-list', 'attention-list', 'record-cards', 'summary-grid', 'signal-list', 'package-detail', 'package-reports', 'repository-scope', 'repository-activity', 'repository-workflows', 'workflow-detail', 'workflow-runtime', 'outcome-detail', 'execution-episodes']);
+const EMPTY_AWARE_ELEMENTS = new Set(['status-summary', 'meter-list', 'attention-list', 'record-cards', 'summary-grid', 'signal-list', 'coverage-diagnostics', 'package-detail', 'package-reports', 'repository-scope', 'repository-activity', 'repository-workflows', 'workflow-detail', 'workflow-runtime', 'outcome-detail', 'execution-episodes']);
 
 /**
  * @param {string} name
@@ -277,6 +278,71 @@ function renderSummaryGridElement(context) {
     value: stringValue(row.value)
   }));
   return renderDefinitionList('summary-grid', rows);
+}
+
+/**
+ * @param {ElementRenderContext} context
+ */
+function renderCoverageDiagnosticsElement(context) {
+  const rows = rowsFor(context, 'coverage-diagnostics');
+  const headingId = `${context.pageId}-coverage-diagnostics-heading`;
+  const root = h(
+    'section',
+    {
+      className: 'coverage-diagnostics',
+      'aria-labelledby': headingId,
+      'data-route-view': ''
+    },
+    renderSectionHeading({
+      kicker: 'Data quality',
+      id: headingId,
+      title: context.title,
+      description: context.description,
+      summary: `${rows.length.toLocaleString('en')} ${rows.length === 1 ? 'gap' : 'gaps'}`,
+      headingTag: 'h2'
+    }),
+    h(
+      'div',
+      { className: 'table-region table-region-static' },
+      h(
+        'div',
+        {
+          className: 'table-scroll',
+          role: 'region',
+          'aria-labelledby': headingId,
+          tabIndex: 0
+        },
+        h(
+          'table',
+          { className: 'coverage-diagnostics-table' },
+          h('thead', null, h('tr', null, h('th', { scope: 'col' }, 'Signal'), h('th', { scope: 'col' }, 'Effect'))),
+          h(
+            'tbody',
+            null,
+            ...(rows.length > 0
+              ? rows.map((row) => h(
+                'tr',
+                null,
+                h('th', { scope: 'row' }, stringValue(row.title)),
+                h('td', null, stringValue(row.effect))
+              ))
+              : [h('tr', null, h('td', { colSpan: 2 }, 'No reporting coverage gaps detected.'))])
+          )
+        )
+      )
+    )
+  );
+  root.addEventListener('dashboard-route-change', () => {
+    root.dispatchEvent(new CustomEvent('dashboard-route-allocation', {
+      bubbles: true,
+      detail: {
+        title: 'Coverage diagnostics',
+        navigationPage: 'overview',
+        breadcrumbs: [{ label: 'Overview', href: '#page-overview' }]
+      }
+    }));
+  });
+  return root;
 }
 
 /**

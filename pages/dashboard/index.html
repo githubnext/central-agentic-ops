@@ -109,6 +109,14 @@
           ],
           metadata: metadata("usage-fixture", { completeness: "partial", "coverage-start": "2026-08-28T19:00:00Z", "coverage-end": "2026-08-29T19:00:00Z" }),
         },
+        "coverage-diagnostics": {
+          source: "coverage-diagnostics",
+          rows: [
+            { title: "Private repository discovery is off", effect: "Private repositories are excluded from workflow inventory and run-health totals." },
+            { title: "AIC telemetry is partial", effect: "AI Credit totals exclude runs whose usage artifacts could not be collected." },
+          ],
+          metadata: metadata("coverage-diagnostics-fixture"),
+        },
         findings: {
           source: "findings",
           rows: [

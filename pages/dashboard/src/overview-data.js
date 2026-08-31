@@ -559,7 +559,7 @@ function buildDomainAttentionRows(input) {
           domain: 'Evidence quality',
           value: `${formatCount(evidenceGaps)} gaps`,
           detail: `${formatCount(collectionGaps)} collection or inventory gaps · ${formatCount(attributionGaps)} attribution gaps`,
-          href: '#page-findings'
+          href: '#page-coverage'
         })
       ].sort((left, right) => Number(left.priority) - Number(right.priority) || Number(left.order) - Number(right.order));
     }

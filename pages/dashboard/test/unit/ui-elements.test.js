@@ -35,4 +35,38 @@ describe('UI elements', () => {
     expect(rendered?.querySelector('a')?.getAttribute('href')).toBe('#runtime-evidence');
     expect(rendered?.querySelectorAll('a')).toHaveLength(1);
   });
+
+  it('renders populated and empty coverage diagnostics accessibly', () => {
+    const context = {
+      pageId: 'coverage',
+      title: 'Coverage diagnostics',
+      description: 'Signals that limit what this dashboard can claim about the configured scope.',
+      sourceNames: ['coverage-diagnostics'],
+      sources: {
+        'coverage-diagnostics': {
+          source: 'coverage-diagnostics',
+          rows: [
+            { title: 'Private repository discovery is off', effect: 'Private repositories are excluded.' },
+            { title: 'AIC telemetry is partial', effect: 'Some usage artifacts were not collected.' }
+          ],
+          metadata
+        }
+      },
+      contextDetails: [],
+      headingTag: /** @type {'h3'} */ ('h3')
+    };
+
+    const rendered = renderUiElement('coverage-diagnostics', context);
+    expect(rendered?.querySelector('.scope-kicker')?.textContent).toBe('Data quality');
+    expect(rendered?.querySelector('.section-heading strong')?.textContent).toBe('2 gaps');
+    expect(rendered?.querySelectorAll('tbody tr')).toHaveLength(2);
+    expect(rendered?.querySelector('tbody th')?.getAttribute('scope')).toBe('row');
+    expect(rendered?.querySelector('[role="region"]')?.getAttribute('aria-labelledby')).toBe('coverage-coverage-diagnostics-heading');
+
+    context.sources['coverage-diagnostics'].rows = [];
+    const empty = renderUiElement('coverage-diagnostics', context);
+    expect(empty?.querySelector('.section-heading strong')?.textContent).toBe('0 gaps');
+    expect(empty?.querySelector('tbody td')?.textContent).toBe('No reporting coverage gaps detected.');
+    expect(empty?.querySelector('tbody td')?.getAttribute('colspan')).toBe('2');
+  });
 });
