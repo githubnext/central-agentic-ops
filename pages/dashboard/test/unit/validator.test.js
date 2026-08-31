@@ -2207,7 +2207,7 @@ dashboard:
   pages:
     - id: operations
       kind: custom
-      icon: workflow
+      icon: rocket
       views:
         - id: topology
           data:
@@ -2235,7 +2235,7 @@ dashboard:
   pages:
     - id: operations
       kind: custom
-      icon: rocket
+      icon: not-an-octicon
       views:
         - id: topology
           data:
