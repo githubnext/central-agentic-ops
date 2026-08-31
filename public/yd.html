@@ -121,11 +121,17 @@
         return response.text();
       }
 
+      function clearDashboard() {
+        dashboardRoot.replaceChildren();
+        window.dispatchEvent(new HashChangeEvent("hashchange"));
+      }
+
       function showStatus(message) {
         const status = document.createElement("p");
         status.className = "gallery-status";
         status.textContent = message;
-        dashboardRoot.replaceChildren(status);
+        clearDashboard();
+        dashboardRoot.append(status);
       }
 
       async function loadExample(entry) {
@@ -145,7 +151,8 @@
 
       function showExample(example, updateUrl = false) {
         exampleSelect.value = example.entry.id;
-        dashboardRoot.replaceChildren(renderDashboard({
+        clearDashboard();
+        dashboardRoot.append(renderDashboard({
           document: example.document,
           sources: example.metadata.logicalSources ?? {},
         }));
