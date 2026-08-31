@@ -457,6 +457,21 @@ test("package manifests exclude repository-only tests", () => {
   }
 });
 
+test("root package provides default control-repository agent context", () => {
+  const rootManifest = readFileSync(join(root, "aw.yml"), "utf8");
+  const agents = readFileSync(join(root, "AGENTS.md"), "utf8");
+  const setupSkill = readFileSync(join(root, ".github", "skills", "setup-central-agentic-ops", "SKILL.md"), "utf8");
+
+  assert.match(rootManifest, /source: AGENTS\.md\n\s+destination: \.github\/aw\/default-AGENTS\.md/);
+  assert.match(rootManifest, /type: handoff\n\s+message: If this repository has no root AGENTS\.md, copy \.github\/aw\/default-AGENTS\.md to AGENTS\.md/);
+  assert.match(agents, /Catalog source:[\s\S]*never configure this repository as a control plane/);
+  assert.match(agents, /Control repository:[\s\S]*explicitly enrolled remote repositories/);
+  assert.match(agents, /`review` is the default mode/);
+  assert.match(agents, /Never edit them directly; change their Markdown sources and run `gh aw compile`/);
+  assert.match(setupSkill, /no root `AGENTS\.md`[\s\S]*create `AGENTS\.md` with exactly that content/);
+  assert.match(setupSkill, /preserve it unchanged unless the user explicitly approves a merge/);
+});
+
 test("root package directly includes grader-backed workers for dependency packaging", () => {
   const rootManifest = readFileSync(join(root, "aw.yml"), "utf8");
   const importedWorkerIds = [
