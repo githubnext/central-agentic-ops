@@ -3,11 +3,10 @@
  */
 
 import { h } from '../dom.js';
-import { renderChartWidget, renderPieLegend } from './chart-elements.js';
 import { renderTableRegion } from './table-region.js';
 
-const AIC_UNIT = { name: 'AI Credits', symbol: 'AIC', significant: 1 };
 const FAILURE_CONCLUSIONS = new Set(['failure', 'startup-failure', 'timed-out']);
+const SPEND_COLORS = ['#4493f8', '#3fb950', '#d29922', '#f85149', '#a371f7', '#8c959f'];
 
 /**
  * @typedef {{
@@ -76,12 +75,7 @@ export function renderRepositoryAicUsage(context) {
   /** @type {Array<[string, number]>} */
   const entries = (other > 0 ? [...leading, { repository: 'Other', value: other }] : leading)
     .map((entry) => [entry.repository, entry.value]);
-  const points = entries.map(([repository, value]) => ({ x: repository, y: value, color: null }));
   const total = entries.reduce((sum, [, value]) => sum + value, 0);
-  const links = new Map(leading.map(({ repository }) => [
-    repository,
-    { href: repositoryDetailHref(repository), label: `View ${repository}` }
-  ]));
 
   return h(
     'section',
@@ -96,12 +90,7 @@ export function renderRepositoryAicUsage(context) {
       ? h('p', { className: 'empty' }, 'AI Credit usage data is unavailable.')
       : total <= 0
         ? h('p', { className: 'empty' }, 'Reported AW runs consumed 0 AI Credits.')
-        : h(
-          'div',
-          { className: 'repository-spend-chart' },
-          renderChartWidget('pie', points, [], { entries, total }, 'Total AIC', AIC_UNIT),
-          renderPieLegend(entries, total, links, AIC_UNIT)
-        )
+        : renderRepositorySpendChart(entries, total)
   );
 }
 
@@ -130,7 +119,7 @@ export function renderRepositoryActivity(context) {
         h('span', null, summary.runsAvailable ? `${formatCount(summary.failed)} failed` : 'Unavailable')
       )
     ),
-    h('td', null, `${formatAic(summary.aic)} AIC`),
+    h('td', null, formatAic(summary.aic)),
     h('td', null, renderRepositoryStatus(summary))
   ));
 
@@ -162,6 +151,53 @@ export function renderRepositoryActivity(context) {
       headCells: ['Repository', 'Local AWs', 'Reports', 'Evaluated AWs', 'Local runs', 'Failure rate', 'Local AIC', 'Status'],
       bodyRows: rows
     })
+  );
+}
+
+/**
+ * @param {Array<[string, number]>} entries
+ * @param {number} total
+ */
+function renderRepositorySpendChart(entries, total) {
+  let offset = 0;
+  const stops = entries.map(([, value], index) => {
+    const start = offset;
+    offset += value / total * 100;
+    return `${SPEND_COLORS[index]} ${start.toFixed(3)}% ${offset.toFixed(3)}%`;
+  }).join(', ');
+  const chartLabel = entries.map(([repository, value]) => `${repository}: ${formatAic(value)} AI Credits`).join(', ');
+
+  return h(
+    'div',
+    { className: 'repository-spend-chart' },
+    h(
+      'div',
+      {
+        className: 'repository-spend-donut',
+        role: 'img',
+        'aria-label': chartLabel,
+        style: `background: conic-gradient(${stops})`
+      },
+      h('span', null, h('strong', null, formatAic(total)), h('small', null, 'Total AIC'))
+    ),
+    h(
+      'ol',
+      null,
+      entries.map(([repository, value], index) => h(
+        'li',
+        null,
+        h('i', { style: `background: ${SPEND_COLORS[index]}`, 'aria-hidden': 'true' }),
+        h(
+          'span',
+          null,
+          repository === 'Other'
+            ? repository
+            : h('a', { href: repositoryDetailHref(repository), 'aria-label': `View ${repository}` }, repository)
+        ),
+        h('strong', null, formatAic(value)),
+        h('small', null, formatPercent(value / total))
+      ))
+    )
   );
 }
 
