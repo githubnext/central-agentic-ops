@@ -181,6 +181,16 @@ export function renderProvenanceSection(pageId, items) {
 }
 
 /**
+ * @param {string} title
+ * @param {Node} content
+ * @param {'h2'|'h3'|'h4'} [headingTag]
+ * @returns {HTMLElement}
+ */
+export function renderMetadataSection(title, content, headingTag = 'h2') {
+  return h('section', null, h(headingTag, null, title), content);
+}
+
+/**
  * @param {string} value
  * @returns {string}
  */

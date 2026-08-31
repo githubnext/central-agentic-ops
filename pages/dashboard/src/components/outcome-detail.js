@@ -7,6 +7,7 @@ import { octicon } from '../octicons.js';
 import { renderModeBadge, renderStatusBadge } from './badge.js';
 import { findLink, renderExternalLink } from './link-content.js';
 import { formatUtcDateTime } from './ui-primitives.js';
+import { renderMetadataSection } from './view-chrome.js';
 
 const ALLOWED_MARKDOWN_TAGS = new Set([
   'A', 'BLOCKQUOTE', 'BR', 'CODE', 'DEL', 'DETAILS', 'DIV', 'EM',
@@ -142,15 +143,6 @@ function renderOutcome(outcome) {
       )
     )
   );
-}
-
-/**
- * @param {string} title
- * @param {Node} content
- * @returns {HTMLElement}
- */
-function renderMetadataSection(title, content) {
-  return h('section', null, h('h2', null, title), content);
 }
 
 /**

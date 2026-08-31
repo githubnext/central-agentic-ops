@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import { describe, expect, it } from 'vitest';
-import { customViewAvailabilityMessage, renderContextChrome, renderContextList, renderCustomViewStateDetails, renderDefinitionList, renderDefinitionListRows, renderPageSection, renderProvenanceList, renderProvenanceSection, renderSummaryList, renderSummaryRegion, renderTitledRegion, renderViewChrome, renderViewHeader, renderViewSectionChrome } from '../../src/components/view-chrome.js';
+import { customViewAvailabilityMessage, renderContextChrome, renderContextList, renderCustomViewStateDetails, renderDefinitionList, renderDefinitionListRows, renderMetadataSection, renderPageSection, renderProvenanceList, renderProvenanceSection, renderSummaryList, renderSummaryRegion, renderTitledRegion, renderViewChrome, renderViewHeader, renderViewSectionChrome } from '../../src/components/view-chrome.js';
 
 describe('view chrome component helpers', () => {
   it('DLS-SAFE-007 renders focusable labeled page sections with deterministic heading ids', () => {
@@ -198,5 +198,17 @@ describe('view chrome component helpers', () => {
     expect(section.querySelector('h3')?.textContent).toBe('Provenance');
     expect(section.getAttribute('aria-labelledby')).toBe('evals-provenance-heading');
     expect(section.querySelector('.provenance-list')?.textContent).toContain('evals: evals-fixture (fixture) — as of 2026-08-29T20:00:00Z');
+  });
+
+  it('renders metadata sections with configurable heading levels', () => {
+    const defaultHeading = renderMetadataSection('Status', document.createElement('p'));
+    defaultHeading.querySelector('p')?.append('Closed');
+    const customHeading = renderMetadataSection('Workflow', document.createElement('p'), 'h3');
+    customHeading.querySelector('p')?.append('Daily review');
+
+    expect(defaultHeading.querySelector('h2')?.textContent).toBe('Status');
+    expect(defaultHeading.textContent).toContain('Closed');
+    expect(customHeading.querySelector('h3')?.textContent).toBe('Workflow');
+    expect(customHeading.textContent).toContain('Daily review');
   });
 });
