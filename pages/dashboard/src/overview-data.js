@@ -129,6 +129,17 @@ export function deriveOverviewSources(sources) {
         detail: 'A budget verdict requires an applicable budget, matching time window, and complete measured usage. An anomaly verdict requires a qualified historical baseline and disclosed statistical rule.'
       }],
       metadata: overviewMetadata
+    },
+    'experiment-readiness': {
+      source: 'experiment-readiness',
+      rows: [{
+        tone: 'attention',
+        icon: 'beaker',
+        kicker: 'Evidence boundary',
+        title: 'Experiment comparisons unavailable',
+        detail: 'The report does not retain authoritative experiment definitions, variant assignments, or assignment-to-run links. It therefore does not infer control or treatment groups from workflow names, timestamps, models, or outcomes.'
+      }],
+      metadata: overviewMetadata
     }
   };
 }
