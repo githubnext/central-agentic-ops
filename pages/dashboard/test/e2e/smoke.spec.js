@@ -108,11 +108,16 @@ function buildPresenterModuleUrl() {
     .replace("'../view-formatters.js'", JSON.stringify(viewFormattersModuleUrl));
   const chartElementsModuleUrl = `data:text/javascript;charset=utf-8,${encodeURIComponent(chartElementsSource)}`;
 
+  const uiPrimitivesSource = readFileSync(new URL('../../src/components/ui-primitives.js', import.meta.url), 'utf8')
+    .replace("'../dom.js'", JSON.stringify(domModuleUrl));
+  const uiPrimitivesModuleUrl = `data:text/javascript;charset=utf-8,${encodeURIComponent(uiPrimitivesSource)}`;
+
   const dispatchCatalogSource = readFileSync(new URL('../../src/components/dispatch-catalog.js', import.meta.url), 'utf8')
     .replace("'../dom.js'", JSON.stringify(domModuleUrl))
     .replace("'./badge.js'", JSON.stringify(badgeModuleUrl))
     .replace("'./link-content.js'", JSON.stringify(linkContentModuleUrl))
-    .replace("'./linked-text.js'", JSON.stringify(linkedTextModuleUrl));
+    .replace("'./linked-text.js'", JSON.stringify(linkedTextModuleUrl))
+    .replace("'./ui-primitives.js'", JSON.stringify(uiPrimitivesModuleUrl));
   const dispatchCatalogModuleUrl = `data:text/javascript;charset=utf-8,${encodeURIComponent(dispatchCatalogSource)}`;
 
   const repositoryWorkflowsSource = readFileSync(new URL('../../src/components/repository-workflows.js', import.meta.url), 'utf8')
@@ -121,12 +126,9 @@ function buildPresenterModuleUrl() {
     .replace("'./badge.js'", JSON.stringify(badgeModuleUrl))
     .replace("'./count-formatters.js'", JSON.stringify(countFormattersModuleUrl))
     .replace("'./link-content.js'", JSON.stringify(linkContentModuleUrl))
-    .replace("'./linked-text.js'", JSON.stringify(linkedTextModuleUrl));
+    .replace("'./linked-text.js'", JSON.stringify(linkedTextModuleUrl))
+    .replace("'./ui-primitives.js'", JSON.stringify(uiPrimitivesModuleUrl));
   const repositoryWorkflowsModuleUrl = `data:text/javascript;charset=utf-8,${encodeURIComponent(repositoryWorkflowsSource)}`;
-
-  const uiPrimitivesSource = readFileSync(new URL('../../src/components/ui-primitives.js', import.meta.url), 'utf8')
-    .replace("'../dom.js'", JSON.stringify(domModuleUrl));
-  const uiPrimitivesModuleUrl = `data:text/javascript;charset=utf-8,${encodeURIComponent(uiPrimitivesSource)}`;
 
   const executionElementsSource = readFileSync(new URL('../../src/components/execution-elements.js', import.meta.url), 'utf8')
     .replace("'../dom.js'", JSON.stringify(domModuleUrl))

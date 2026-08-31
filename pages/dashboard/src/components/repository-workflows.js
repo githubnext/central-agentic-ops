@@ -8,6 +8,7 @@ import { renderStatusBadge } from './badge.js';
 import { formatCountNoun } from './count-formatters.js';
 import { findLink } from './link-content.js';
 import { renderLinkedText } from './linked-text.js';
+import { formatUtcDateTime } from './ui-primitives.js';
 
 /**
  * @param {import('./ui-elements.js').ElementRenderContext} context
@@ -90,7 +91,7 @@ function renderRepositoryWorkflowContent(context, repository, workflows) {
             'Authored ',
             h('code', null, '.github/workflows/*.md'),
             ' workflows with managed-package membership shown as metadata. Latest registration update: ',
-            latest ? formatDay(latest) : 'unknown',
+            latest ? formatUtcDateTime(latest) : 'unknown',
             `. ${formatCountNoun(disabled, 'disabled', 'disabled')}.`
           )
         ),
@@ -228,7 +229,7 @@ function renderWorkflowRow(workflow) {
       'td',
       null,
       observedAt && Number.isFinite(Date.parse(observedAt))
-        ? h('time', { dateTime: observedAt }, formatDay(observedAt))
+        ? h('time', { dateTime: observedAt }, formatUtcDateTime(observedAt))
         : 'Unknown'
     )
   ));
@@ -273,11 +274,6 @@ function workflowState(workflow) {
   if (String(workflow['workflow-active']) === 'true') return 'Active';
   if (String(workflow['workflow-active']) === 'false') return 'Disabled';
   return 'Unknown';
-}
-
-/** @param {string} value */
-function formatDay(value) {
-  return new Intl.DateTimeFormat('en', { dateStyle: 'medium', timeZone: 'UTC' }).format(new Date(value));
 }
 
 /** @param {string} value */

@@ -67,7 +67,7 @@ describe('renderRepositoryWorkflows', () => {
       'Upgrade.github/workflows/upgrade.mdMaintenanceWorker'
     ]);
     expect([...rendered.querySelectorAll('tbody td:first-of-type')].map((cell) => cell.textContent)).toEqual(['Active', 'Disabled']);
-    expect(rendered.textContent).toContain('Latest registration update: Aug 29, 2026. 1 disabled.');
+    expect(rendered.textContent).toContain('Latest registration update: Aug 29, 2026, 10:00 AM. 1 disabled.');
   });
 
   it('keeps the summary and empty inventory visible when no workflows are observed', () => {
