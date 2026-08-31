@@ -10,6 +10,7 @@ import { findLink } from './link-content.js';
 import { renderPackagesView, renderPackageRunTrend } from './packages-view.js';
 import { renderDispatchCatalog } from './dispatch-catalog.js';
 import { renderRepositoryWorkflows } from './repository-workflows.js';
+import { renderOutcomeDetail } from './outcome-detail.js';
 import { renderWorkflowTopology } from './workflow-topology.js';
 import { renderExecutionEpisodes, renderExecutionSignalList } from './execution-elements.js';
 import { renderSectionHeading } from './ui-primitives.js';
@@ -41,6 +42,7 @@ const ELEMENT_RENDERERS = new Map([
   ['package-run-trend', ({ sources, pageId }) => renderPackageRunTrend(sources, pageId)],
   ['dispatch-catalog', renderDispatchCatalog],
   ['repository-workflows', renderRepositoryWorkflows],
+  ['outcome-detail', renderOutcomeDetail],
   ['execution-signal-list', renderExecutionSignalList],
   ['execution-episodes', renderExecutionEpisodes],
   ['metric-signal-summary', renderMetricSignalSummaryElement],
@@ -53,7 +55,7 @@ const ELEMENT_RENDERERS = new Map([
   }]
 ]);
 
-const EMPTY_AWARE_ELEMENTS = new Set(['status-summary', 'meter-list', 'attention-list', 'record-cards', 'summary-grid', 'signal-list', 'dispatch-catalog', 'repository-workflows', 'execution-signal-list', 'execution-episodes', 'metric-signal-summary', 'readiness-note']);
+const EMPTY_AWARE_ELEMENTS = new Set(['status-summary', 'meter-list', 'attention-list', 'record-cards', 'summary-grid', 'signal-list', 'dispatch-catalog', 'repository-workflows', 'outcome-detail', 'execution-signal-list', 'execution-episodes', 'metric-signal-summary', 'readiness-note']);
 
 /**
  * @param {string} name
