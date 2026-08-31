@@ -25,6 +25,19 @@ export function renderStatusBadge(status) {
 }
 
 /**
+ * @param {unknown} status
+ * @returns {HTMLElement}
+ */
+export function renderGraderStatusBadge(status) {
+  const text = status == null || status === '' ? 'unavailable' : String(status);
+  const normalized = text.toLowerCase();
+  const statusClass = normalized === 'pass'
+    ? 'status-success'
+    : ['fail', 'error'].includes(normalized) ? 'status-danger' : 'status-attention';
+  return h('span', { className: `status ${statusClass}` }, text);
+}
+
+/**
  * @param {unknown} mode
  * @returns {HTMLElement}
  */

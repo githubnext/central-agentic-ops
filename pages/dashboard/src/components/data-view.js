@@ -11,11 +11,12 @@ import { createEntityAwareCellRenderer, renderLinkedText } from './linked-text.j
 import { renderTableRegion } from './table-region.js';
 import { renderPageSection, renderViewSectionChrome } from './view-chrome.js';
 
-/** @type {{ organization: 'organization-link', repository: 'repository-link', workflow: 'workflow-link' }} */
+/** @type {{ organization: 'organization-link', repository: 'repository-link', workflow: 'workflow-link', run: 'run-link' }} */
 const ENTITY_LINK_FIELDS = {
   organization: 'organization-link',
   repository: 'repository-link',
-  workflow: 'workflow-link'
+  workflow: 'workflow-link',
+  run: 'run-link'
 };
 
 /**
@@ -93,9 +94,21 @@ function renderTableView(context) {
   const hrefField = typeof hrefDefinition?.field === 'string' ? hrefDefinition.field : null;
   const tableRows = prepareTableRows(rows, columns, view.data);
   const renderCellValue = createEntityAwareCellRenderer(
-    ENTITY_LINK_FIELDS,
+    hrefField
+      ? {
+          organization: ENTITY_LINK_FIELDS.organization,
+          repository: ENTITY_LINK_FIELDS.repository,
+          workflow: ENTITY_LINK_FIELDS.workflow
+        }
+      : ENTITY_LINK_FIELDS,
     findLink,
-    (display, value, column) => renderCellDisplay(display, value, toText, fieldUnit(column, units)),
+    (display, value, column) => renderCellDisplay(
+      display,
+      value,
+      toText,
+      fieldUnit(column, units),
+      typeof column === 'string' ? undefined : column.type
+    ),
     toText
   );
   const bodyRows = tableRows.map((row, rowIndex) => h(
@@ -111,14 +124,16 @@ function renderTableView(context) {
     })
   ));
 
+  const interactive = view.controls !== 'static';
   return renderPageSection(pageId, title, [
     ...renderViewSectionChrome(sourceName, metadata, contextDetails),
     renderTableRegion({
       tableClassName: 'custom-table',
-      emptyMessage: 'No rows available.',
+      regionClassName: interactive ? undefined : 'table-region-static',
+      emptyMessage: typeof view['empty-message'] === 'string' ? view['empty-message'] : 'No rows available.',
       colSpan: Math.max(columns.length, 1),
       headCells: columns.map(fieldTitle),
-      summaryColumns: columns.map((column) => {
+      summaryColumns: interactive ? columns.map((column) => {
         const outputField = typeof column.as === 'string' ? column.as : column.field;
         return {
           field: outputField,
@@ -126,15 +141,16 @@ function renderTableView(context) {
           type: String(column.type ?? ''),
           values: tableRows.map((row) => row[outputField])
         };
-      }),
-      filterLabel: `Filter ${title}`,
+      }) : [],
+      filterLabel: interactive ? `Filter ${title}` : undefined,
       filterId: typeof view.id === 'string' ? view.id : `${pageId}-table`,
       filterFields: columns.flatMap((column, columnIndex) => (
         ['nominal', 'ordinal'].includes(String(column.type))
           ? [{ key: typeof column.as === 'string' ? column.as : column.field, label: fieldTitle(column), columnIndex }]
           : []
       )),
-      bodyRows
+      bodyRows,
+      sortable: interactive
     })
   ], headingTag);
 }

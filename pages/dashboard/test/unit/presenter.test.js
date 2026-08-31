@@ -340,6 +340,12 @@ describe('presenter built-in and custom pages', () => {
       href: `https://github.com/githubnext/central-agentic-ops/actions/runs/${run}`,
       label: `View run ${run}`
     });
+    /** @param {string} run */
+    const runLink = (run) => ({
+      relation: 'run',
+      href: `https://github.com/githubnext/central-agentic-ops/actions/runs/${run}`,
+      label: `View run ${run}`
+    });
     const rendered = renderDashboard({
       document: authoritativeDashboardDocument,
       sources: {
@@ -409,6 +415,66 @@ describe('presenter built-in and custom pages', () => {
           ],
           metadata
         },
+        'grader-observations': {
+          source: 'grader-observations',
+          rows: [
+            {
+              grader: 'daily-value',
+              run: '100',
+              status: 'pass',
+              value: 0.2,
+              'maturity-status': 'matured',
+              'baseline-value': 0.2,
+              'delta-from-baseline': 0,
+              'evaluator-digest': 'sha256:old',
+              'run-link': runLink('100')
+            },
+            {
+              grader: 'daily-value',
+              run: '101',
+              status: 'pass',
+              value: 0.8,
+              'maturity-status': 'matured',
+              'baseline-value': 0.7,
+              'delta-from-baseline': 0.1,
+              'evaluator-digest': 'sha256:current',
+              'run-link': runLink('101')
+            },
+            {
+              grader: 'daily-value',
+              run: '102',
+              status: 'pass',
+              value: 0.6,
+              'maturity-status': 'matured',
+              'baseline-value': 0.55,
+              'delta-from-baseline': 0.05,
+              'evaluator-digest': 'sha256:current',
+              'run-link': runLink('102')
+            },
+            {
+              grader: 'review-value',
+              run: '103',
+              status: 'pass',
+              value: 0.4,
+              'maturity-status': 'interim',
+              'baseline-value': null,
+              'delta-from-baseline': null,
+              'evaluator-digest': 'sha256:review',
+              'run-link': runLink('103')
+            },
+            {
+              grader: 'missing-value',
+              run: 'Unavailable',
+              status: 'unavailable',
+              value: null,
+              'maturity-status': 'unavailable',
+              'baseline-value': null,
+              'delta-from-baseline': null,
+              'evaluator-digest': ''
+            }
+          ],
+          metadata
+        },
         outcomes: {
           source: 'outcomes',
           rows: [
@@ -435,30 +501,41 @@ describe('presenter built-in and custom pages', () => {
     expect(dashboardPage).toMatchObject({ kind: 'custom', title: 'Value & outcomes' });
     expect(dashboardPage).not.toHaveProperty('page');
     expect(rendered.querySelector('[data-nav-page-id="operational-value"] .octicon-beaker')).not.toBeNull();
-    expect(page?.querySelector('.summary-grid')?.textContent).toContain('Grader observations4');
+    expect(page?.querySelector('.summary-grid')?.textContent).toContain('Grader coverage4 / 5');
     expect(page?.querySelector('.summary-grid')?.textContent).toContain('Mature evidence3');
     expect(page?.querySelector('.summary-grid')?.textContent).toContain('Mean operational value50%');
-    expect(page?.querySelector('.summary-grid')?.textContent).toContain('Pending outcomes1');
+    expect(page?.querySelector('.summary-grid')?.textContent).toContain('Open outputs1');
+    expect([...(page?.querySelectorAll('.layout-section-header > strong') ?? [])].map((node) => node.textContent)).toEqual([
+      '5 signals',
+      '2 observations',
+      '5 records'
+    ]);
 
     const signals = [...(page?.querySelectorAll('.signal-item') ?? [])];
     expect(signals.map((signal) => signal.querySelector('.signal-copy > span')?.textContent)).toEqual([
+      'Grader unavailable',
       'Maturity pending',
       'AIC coverage',
       'Open output',
       'Experiment readiness'
     ]);
-    expect(signals[2]?.querySelector('a')?.getAttribute('href')).toBe('https://github.com/githubnext/central-agentic-ops/issues/1');
-    expect(signals[3]?.querySelector('a')?.getAttribute('href')).toBe('#page-experiments');
+    expect(signals[3]?.querySelector('a')?.getAttribute('href')).toBe('https://github.com/githubnext/central-agentic-ops/issues/1');
+    expect(signals[4]?.querySelector('a')?.getAttribute('href')).toBe('#page-experiments');
 
     const tables = page?.querySelectorAll('.custom-table') ?? [];
     expect(tables).toHaveLength(2);
     expect(tables[0]?.querySelectorAll('tbody tr')).toHaveLength(2);
-    expect(tables[0]?.textContent).toContain('.github/workflows/daily.md');
+    expect(tables[0]?.textContent).toContain('daily-value');
     expect(tables[0]?.textContent).toContain('0.7');
-    expect(tables[1]?.querySelectorAll('tbody tr')).toHaveLength(4);
-    expect(tables[1]?.querySelector('.status-success')?.textContent).toBe('matured');
-    expect(tables[1]?.querySelector('.status-attention')?.textContent).toBe('interim');
+    expect(tables[1]?.querySelectorAll('tbody tr')).toHaveLength(5);
+    expect(tables[1]?.querySelector('.status-success')?.textContent).toBe('pass');
+    expect(tables[1]?.querySelector('.status-attention')?.textContent).toBe('unavailable');
+    expect(tables[1]?.textContent).toContain('Mature');
+    expect(tables[1]?.textContent).toContain('Interim');
+    expect(tables[1]?.textContent).toContain('—');
+    expect(tables[1]?.textContent).toContain('sha256:curre');
     expect(tables[1]?.querySelector('a[aria-label="View run 103"]')?.getAttribute('href')).toContain('/actions/runs/103');
+    expect(page?.querySelectorAll('.table-filter')).toHaveLength(0);
     expect(page?.textContent).toContain('not proof that a workflow caused an outcome');
   });
 

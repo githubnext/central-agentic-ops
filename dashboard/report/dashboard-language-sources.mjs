@@ -246,9 +246,35 @@ function operationalValueRows(values) {
       "evidence-cutoff": record.observation.evidenceAt,
       "maturity-at": record.observation.maturesAt || record.observation.evidenceAt,
       "maturity-status": record.observation.mature ? "matured" : "interim",
+      "baseline-value": record.baselineValue,
       "delta-from-baseline": record.deltaFromBaseline,
       "observed-at": record.observation.evidenceAt,
       "evidence-link": link("evidence", record.runUrl, `View run ${record.runId}`),
+      "run-link": link("run", record.runUrl, `Run ${record.runId}`),
+    };
+  });
+}
+
+function operationalValueGraderRows(values) {
+  return (values.records || []).map((record) => {
+    const target = record.observation?.case?.targetRepo
+      || record.observation?.subject?.repository
+      || record.repository;
+    return {
+      ...repositoryParts(target),
+      workflow: record.workflowPath?.replace(/\.lock\.yml$/, ".md") || record.workflowId || "",
+      run: record.runId == null ? "Unavailable" : String(record.runId),
+      grader: record.workflowId || "Unknown workflow",
+      status: record.status || "unavailable",
+      value: record.value,
+      "maturity-status": !record.observation
+        ? "unavailable"
+        : record.observation.mature ? "matured" : "interim",
+      "baseline-value": record.baselineValue,
+      "delta-from-baseline": record.deltaFromBaseline,
+      "evaluator-digest": record.evaluatorDigest || "",
+      "observed-at": record.observation?.evidenceAt || record.run?.createdAt,
+      "run-link": link("run", record.runUrl, `Run ${record.runId}`),
     };
   });
 }
@@ -259,6 +285,7 @@ export function buildDashboardLanguageSources({ deployed, usage, operationalValu
   const runs = runRows(deployed);
   const records = report.records || [];
   const values = operationalValueRows(operationalValues);
+  const graderObservations = operationalValueGraderRows(operationalValues);
   const repositories = new Map();
   for (const row of [...workflows, ...runs, ...findingRows(records), ...values]) {
     if (!row.organization || !row.repository) continue;
@@ -290,6 +317,7 @@ export function buildDashboardLanguageSources({ deployed, usage, operationalValu
   sources.usage = source("usage", usageRows(usage), generatedAt, usageAvailable, usageComplete);
   sources.outcomes = source("outcomes", outcomeRows(records), generatedAt);
   sources.findings = source("findings", findingRows(records), generatedAt);
+  sources["grader-observations"] = source("grader-observations", graderObservations, generatedAt, valueAvailable, true);
   sources["operational-values"] = source("operational-values", values, generatedAt, valueAvailable, true);
   return sources;
 }

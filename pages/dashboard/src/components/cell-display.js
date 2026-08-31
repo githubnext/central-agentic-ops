@@ -2,7 +2,8 @@
  * Generic renderer for JSON-selected table cell displays.
  */
 
-import { renderActiveStateBadge, renderModeBadge, renderStatusBadge } from './badge.js';
+import { h } from '../dom.js';
+import { renderActiveStateBadge, renderGraderStatusBadge, renderModeBadge, renderStatusBadge } from './badge.js';
 import { formatNumber } from '../view-formatters.js';
 
 /**
@@ -10,12 +11,25 @@ import { formatNumber } from '../view-formatters.js';
  * @param {unknown} value
  * @param {(value: unknown) => string} toText
  * @param {{ name: string, symbol: string, significant: number } | null} [unit]
+ * @param {unknown} [type]
  * @returns {string | HTMLElement}
  */
-export function renderCellDisplay(display, value, toText, unit = null) {
+export function renderCellDisplay(display, value, toText, unit = null, type) {
   if (display === 'mode') return renderModeBadge(value);
   if (display === 'active-state') return renderActiveStateBadge(value);
   if (display === 'status') return renderStatusBadge(value);
+  if (display === 'grader-status') return renderGraderStatusBadge(value);
+  if (display === 'label') return formatLabel(value);
+  if (display === 'digest') return h('code', null, value == null || value === '' ? 'unavailable' : String(value).slice(0, 12));
+  if (type === 'quantitative' && (value == null || value === '' || !Number.isFinite(Number(value)))) return '—';
   if (unit && typeof value === 'number' && Number.isFinite(value)) return formatNumber(value, unit);
   return toText(value);
+}
+
+/** @param {unknown} value */
+function formatLabel(value) {
+  const text = value == null || value === '' ? 'unavailable' : String(value);
+  const normalized = text.toLowerCase();
+  if (normalized === 'matured') return 'Mature';
+  return `${normalized.charAt(0).toUpperCase()}${normalized.slice(1)}`;
 }

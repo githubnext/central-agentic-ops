@@ -16,7 +16,7 @@ export const CUSTOM_PAGE_KEYS = ['id', 'kind', 'title', 'navigation-label', 'des
 export const PAGE_ROUTE_KEYS = ['hash-query-parameter'];
 export const PAGE_FILTER_BAR_KEYS = ['filters', 'time-range', 'export'];
 
-export const VIEW_KEYS = ['id', 'title', 'description', 'data', 'mark', 'element', 'chart', 'layout', 'disclosure', 'encoding'];
+export const VIEW_KEYS = ['id', 'title', 'description', 'data', 'mark', 'element', 'chart', 'layout', 'disclosure', 'controls', 'empty-message', 'encoding'];
 export const VIEW_DATA_KEYS = ['source', 'sources', 'scope', 'time', 'filters', 'limit', 'order-by', 'source-metadata'];
 export const VIEW_MARK_VALUES = ['metric', 'table', 'chart', 'element'];
 export const VIEW_ELEMENT_VALUES = [
@@ -40,11 +40,12 @@ export const VIEW_ELEMENT_VALUES = [
 export const VIEW_CHART_VALUES = ['bar', 'line', 'pie'];
 export const VIEW_LAYOUT_VALUES = ['full', 'half', 'third'];
 export const VIEW_DISCLOSURE_VALUES = ['essential', 'supplemental'];
+export const VIEW_CONTROL_VALUES = ['interactive', 'static'];
 export const MAX_ESSENTIAL_VIEWS_PER_PAGE = 4;
 export const VIEW_ENCODING_KEYS = ['value', 'columns', 'x', 'y', 'color', 'href'];
 export const FIELD_DEFINITION_KEYS = ['field', 'type', 'aggregate', 'time-unit', 'title', 'as', 'display', 'unit'];
 export const FIELD_TYPE_VALUES = ['nominal', 'ordinal', 'quantitative', 'temporal'];
-export const FIELD_DISPLAY_VALUES = ['text', 'status', 'mode', 'active-state'];
+export const FIELD_DISPLAY_VALUES = ['text', 'status', 'grader-status', 'mode', 'active-state', 'label', 'digest'];
 export const AGGREGATE_VALUES = ['count', 'distinct-count', 'sum', 'mean', 'min', 'max', 'none'];
 export const TIME_UNIT_VALUES = ['hour', 'day', 'week', 'month'];
 export const LINK_RELATION_VALUES = [
@@ -135,7 +136,7 @@ export const BUILT_IN_PAGE_VALUES = [
 export const BUILT_IN_PAGE_DEFINITION_KEYS = ['views', 'sections', 'data-state'];
 
 export const BUILT_IN_PAGE_DATA_STATE_KEYS = ['availability', 'completeness', 'freshness'];
-export const PAGE_SECTION_KEYS = ['id', 'title', 'description', 'layout', 'views'];
+export const PAGE_SECTION_KEYS = ['id', 'title', 'description', 'layout', 'views', 'count-source', 'count-label'];
 export const PAGE_SECTION_LAYOUT_VALUES = ['full', 'wide', 'narrow'];
 
 export const BUILT_IN_PAGE_REQUIRED_SOURCES = {
@@ -266,19 +267,19 @@ export const SOURCE_FIELDS = {
   experiments: ['experiment', 'experiment-name', 'observed-at'],
   'experiment-assignments': ['organization', 'repository', 'workflow', 'run', 'experiment', 'variant', 'observed-at'],
   graders: ['grader', 'grader-name', 'observed-at'],
-  'grader-observations': ['organization', 'repository', 'workflow', 'run', 'experiment', 'grader', 'value', 'status', 'rollout-mode', 'observed-at'],
+  'grader-observations': ['organization', 'repository', 'workflow', 'run', 'experiment', 'grader', 'value', 'status', 'rollout-mode', 'maturity-status', 'baseline-value', 'delta-from-baseline', 'evaluator-digest', 'observed-at', 'run-link'],
   evals: ['eval', 'eval-name', 'eval-question', 'requested-model', 'observed-at'],
   'eval-observations': ['organization', 'repository', 'workflow', 'run', 'experiment', 'eval', 'eval-result', 'requested-model', 'resolved-model', 'rollout-mode', 'observed-at'],
   usage: ['organization', 'repository', 'workflow', 'run', 'invocation', 'engine', 'requested-model', 'resolved-model', 'rollout-mode', 'input-tokens', 'output-tokens', 'cache-read-tokens', 'cache-write-tokens', 'reasoning-tokens', 'aic', 'observed-at', 'organization-link', 'repository-link', 'workflow-link', 'run-link'],
   outcomes: ['organization', 'repository', 'workflow', 'run', 'safe-output', 'outcome-state', 'evidence-strength', 'observed-at', 'issue-link', 'pull-request-link', 'run-link', 'external-link', 'organization-link', 'repository-link', 'workflow-link'],
   findings: ['organization', 'repository', 'workflow', 'run', 'finding', 'finding-kind', 'finding-severity', 'finding-status', 'finding-summary', 'observed-at', 'issue-link', 'pull-request-link', 'run-link', 'external-link', 'organization-link', 'repository-link', 'workflow-link'],
-  'operational-values': ['organization', 'repository', 'workflow', 'run', 'experiment', 'operational-case', 'evaluator-digest', 'rollout-mode', 'operational-value', 'operational-value-definition', 'requested-evidence-at', 'evidence-cutoff', 'maturity-at', 'maturity-status', 'delta-from-baseline', 'observed-at', 'evidence-link', 'organization-link', 'repository-link', 'workflow-link', 'run-link'],
+  'operational-values': ['organization', 'repository', 'workflow', 'run', 'experiment', 'operational-case', 'evaluator-digest', 'rollout-mode', 'operational-value', 'operational-value-definition', 'requested-evidence-at', 'evidence-cutoff', 'maturity-at', 'maturity-status', 'baseline-value', 'delta-from-baseline', 'observed-at', 'evidence-link', 'organization-link', 'repository-link', 'workflow-link', 'run-link'],
   'overview-attention-domains': ['domain', 'state', 'tone', 'icon', 'value', 'detail', 'href', 'priority', 'order'],
   'security-summary': ['label', 'value'],
   'security-signals': ['priority', 'count', 'tone', 'icon', 'kind', 'title', 'detail', 'evidence', 'action', 'navigation-page', 'run-link', 'external-link'],
   'value-summary': ['label', 'value'],
   'value-signals': ['priority', 'count', 'tone', 'icon', 'kind', 'title', 'detail', 'evidence', 'action', 'navigation-page', 'run-link', 'external-link'],
-  'value-workflows': ['organization', 'repository', 'workflow', 'operational-value-definition', 'opportunities', 'mature-observations', 'mean-operational-value', 'mean-baseline', 'observed-at', 'evidence-link', 'organization-link', 'repository-link', 'workflow-link'],
+  'value-workflows': ['organization', 'repository', 'workflow', 'run', 'operational-value-definition', 'opportunities', 'mature-observations', 'mean-operational-value', 'mean-baseline', 'observed-at', 'evidence-link', 'run-link', 'organization-link', 'repository-link', 'workflow-link'],
   'cost-summary': ['label', 'value', 'kicker', 'collection-label', 'note'],
   'cost-signals': ['priority', 'count', 'tone', 'icon', 'kind', 'title', 'detail', 'evidence', 'action', 'navigation-page'],
   'cost-readiness': ['tone', 'icon', 'kicker', 'title', 'detail']

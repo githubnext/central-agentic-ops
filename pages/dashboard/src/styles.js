@@ -462,7 +462,13 @@ h3 { margin: 16px 0 8px; font-size: 1rem; font-weight: 600; }
 .attention-item strong { font-size: .875rem; }
 .attention-item p { margin: 2px 0 0; color: var(--muted); font-size: .8125rem; }
 :is(.security-page, .value-page) .layout-section { padding: 0; border: 0; background: transparent; }
-:is(.security-page, .value-page) .layout-section-header h3 { font-size: 1.25rem; }
+:is(.security-page, .value-page) .layout-section-header { display: flex; align-items: end; justify-content: space-between; gap: 24px; }
+:is(.security-page, .value-page) .layout-section-header h3 { margin: 2px 0 0; font-size: 1.25rem; }
+:is(.security-page, .value-page) .layout-section-header > strong { flex: none; color: var(--muted); font-size: .75rem; }
+:is(.security-page, .value-page) .layout-section .page-section > h4,
+:is(.security-page, .value-page) .layout-section .view-source,
+:is(.security-page, .value-page) .layout-section .view-metadata { position: absolute; width: 1px; height: 1px; padding: 0; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0; }
+:is(.security-page, .value-page) .layout-section .table-region { margin-top: 0; }
 .summary-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 1px; margin: 0; overflow: hidden; border: 1px solid var(--border); border-radius: 6px 6px 0 0; background: var(--border); }
 .summary-grid > div { min-width: 0; padding: 13px 15px; background: var(--canvas-subtle); }
 .summary-grid dt { color: var(--muted); font-size: .6875rem; font-weight: 600; text-transform: uppercase; }
@@ -519,6 +525,7 @@ h3 { margin: 16px 0 8px; font-size: 1rem; font-weight: 600; }
 .overview-content > .layout-section > .layout-section-header { margin: 0 0 12px; padding-top: 20px; border-top: 1px solid var(--border); }
 .table-region { overflow-x: auto; border: 1px solid var(--border); border-radius: 6px; margin: 12px 0 20px; background: var(--canvas); }
 .table-scroll { max-height: 60vh; overflow: auto; overscroll-behavior: contain; }
+.table-region-static .table-scroll { max-height: none; }
 .table-scroll:focus-visible { outline: 2px solid var(--focus); outline-offset: -2px; }
 .table-scroll thead th { position: sticky; top: 0; z-index: 1; }
 .table-sort { display: inline-flex; align-items: center; gap: 4px; width: 100%; padding: 0; border: 0; background: none; color: inherit; font: inherit; text-align: left; cursor: pointer; }

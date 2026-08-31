@@ -55,6 +55,7 @@ import {
   TIME_UNIT_VALUES,
   VIEW_DATA_KEYS,
   VIEW_CHART_VALUES,
+  VIEW_CONTROL_VALUES,
   VIEW_DISCLOSURE_VALUES,
   VIEW_ENCODING_KEYS,
   VIEW_ELEMENT_VALUES,
@@ -974,6 +975,10 @@ function validatePageSections(sections, views, sectionsPath, ownerLabel, viewLab
     }
     validateOptionalStringField(section.title, `${sectionPath}.title`, errors);
     validateOptionalStringField(section.description, `${sectionPath}.description`, errors);
+    if (section['count-source'] !== undefined || section['count-label'] !== undefined) {
+      validateSource(section['count-source'], `${sectionPath}.count-source`, errors);
+      validateStringField(section['count-label'], `${sectionPath}.count-label`, true, errors);
+    }
     if (typeof section.layout !== 'string' || !PAGE_SECTION_LAYOUT_VALUES.includes(section.layout)) {
       errors.push(createError(
         ERROR_CODES.nonCanonicalVocabularyOrIdentifier,
@@ -1219,6 +1224,35 @@ function validateView(view, viewNode, path, viewIds, errors) {
 
   validateOptionalStringField(view.title, `${path}.title`, errors);
   validateOptionalStringField(view.description, `${path}.description`, errors);
+  if (view['empty-message'] !== undefined) {
+    validateStringField(view['empty-message'], `${path}.empty-message`, true, errors);
+  }
+
+  if (view.controls !== undefined) {
+    validateStringField(view.controls, `${path}.controls`, true, errors);
+    if (typeof view.controls === 'string' && !VIEW_CONTROL_VALUES.includes(view.controls)) {
+      errors.push(createError(
+        ERROR_CODES.nonCanonicalVocabularyOrIdentifier,
+        'controls must use one canonical interactive or static value.',
+        `${path}.controls`
+      ));
+    }
+    if (view.mark !== 'table') {
+      errors.push(createError(
+        ERROR_CODES.missingOrInvalidRequiredField,
+        'controls is allowed only when mark is "table".',
+        `${path}.controls`
+      ));
+    }
+  }
+
+  if (view['empty-message'] !== undefined && view.mark !== 'table') {
+    errors.push(createError(
+      ERROR_CODES.missingOrInvalidRequiredField,
+      'empty-message is allowed only when mark is "table".',
+      `${path}.empty-message`
+    ));
+  }
 
   validateStringField(view.mark, `${path}.mark`, true, errors);
   if (typeof view.mark === 'string' && !VIEW_MARK_VALUES.includes(view.mark)) {
