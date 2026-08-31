@@ -191,6 +191,18 @@ describe('dashboard document validation', () => {
       }));
     }
 
+    const withInvalidNavigationPage = JSON.parse(authoritativeDashboardSource);
+    withInvalidNavigationPage.dashboard.navigation[1].pages[0].page = null;
+    const invalidNavigationPageResult = validateDashboardDocument(JSON.stringify(withInvalidNavigationPage));
+    expect(invalidNavigationPageResult.ok).toBe(false);
+    if (!invalidNavigationPageResult.ok) {
+      expect(invalidNavigationPageResult.errors.filter(
+        (error) => error.path.startsWith('$.dashboard.navigation[1].pages[0]')
+      )).toEqual([
+        expect.objectContaining({ path: '$.dashboard.navigation[1].pages[0].page' })
+      ]);
+    }
+
     const withUnknownKey = JSON.parse(authoritativeDashboardSource);
     withUnknownKey.dashboard.navigation[0].icon = 'server';
     const unknownKeyResult = validateDashboardDocument(JSON.stringify(withUnknownKey));

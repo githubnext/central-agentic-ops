@@ -553,17 +553,28 @@ function validateNavigation(navigation, navigationNode, pageIds, errors) {
     section.pages.forEach((pageReference, pageIndex) => {
       const pageIdPath = `${sectionPath}.pages[${pageIndex}]`;
       const pageReferenceNode = getSequenceItemNode(getValueNodeByKey(sectionNode, 'pages'), pageIndex);
+      let pageId;
       if (isPlainObject(pageReference)) {
         validateObjectKeys(pageReferenceNode, NAVIGATION_PAGE_KEYS, pageIdPath, errors);
         validateStringField(pageReference.page, `${pageIdPath}.page`, true, errors);
         if (pageReference.title !== undefined) {
           validateStringField(pageReference.title, `${pageIdPath}.title`, true, errors);
         }
+        if (typeof pageReference.page !== 'string' || pageReference.page.trim().length === 0) {
+          return;
+        }
+        pageId = pageReference.page;
+      } else if (typeof pageReference === 'string') {
+        pageId = pageReference;
+      } else {
+        errors.push(createError(
+          ERROR_CODES.missingOrInvalidRequiredField,
+          'navigation section page must be a page id or navigation page mapping.',
+          pageIdPath
+        ));
+        return;
       }
-      const pageId = typeof pageReference === 'string'
-        ? pageReference
-        : isPlainObject(pageReference) ? pageReference.page : undefined;
-      if (typeof pageId !== 'string' || !pageIds.has(pageId)) {
+      if (!pageIds.has(pageId)) {
         errors.push(createError(
           ERROR_CODES.missingOrInvalidRequiredField,
           'navigation section page must reference a declared dashboard page id.',
