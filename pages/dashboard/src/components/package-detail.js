@@ -127,6 +127,7 @@ function renderPackageTabs(packageId, packageName, selectedView) {
 export function renderPackageReports(context) {
   const allWorkflows = rowsFor(context.sources, 'workflows');
   const allOutcomes = rowsFor(context.sources, 'outcomes');
+  const workflowsUnavailable = context.sources.workflows?.metadata?.availability === 'unavailable';
   const root = h('div', {
     className: 'package-reports',
     'data-route-view': '',
@@ -140,7 +141,9 @@ export function renderPackageReports(context) {
       .filter((workflow) => packageId && String(workflow.package).toLowerCase() === packageId.toLowerCase())
       .sort(comparePackageWorkflows);
     root.dataset.package = packageId;
-    root.replaceChildren(packageId && workflows.length > 0
+    root.replaceChildren(workflowsUnavailable
+      ? h('p', { className: 'empty' }, 'Package data is unavailable.')
+      : packageId && workflows.length > 0
       ? renderPackageReportsContent(context, packageId, workflows, allOutcomes)
       : h('p', { className: 'empty' }, packageId ? 'Package not found.' : 'Select a package to view its reports.'));
 
@@ -258,8 +261,9 @@ function renderPackageReportsContent(context, packageId, workflows, outcomes) {
  * @param {unknown} availability
  */
 function renderReportList(outcomes, showMode, availability) {
-  const openStates = new Set(['open', 'available', 'published']);
-  const open = outcomes.filter((outcome) => openStates.has(String(outcome['outcome-status']).toLowerCase())).length;
+  const resolvedStates = new Set(['closed', 'merged', 'resolved', 'complete', 'completed']);
+  const resolved = outcomes.filter((outcome) => resolvedStates.has(reportStatus(outcome).toLowerCase())).length;
+  const open = outcomes.length - resolved;
   const rows = outcomes.map((outcome) => renderReportRow(outcome, showMode));
   const search = /** @type {HTMLInputElement} */ (h('input', {
     type: 'search',
@@ -290,7 +294,7 @@ function renderReportList(outcomes, showMode, availability) {
         null,
         h('strong', null, String(open)),
         ' Open',
-        h('span', null, h('strong', null, String(outcomes.length - open)), ' Resolved')
+        h('span', null, h('strong', null, String(resolved)), ' Resolved')
       )
     ),
     h(
@@ -318,7 +322,7 @@ function renderReportRow(outcome, showMode) {
   const id = String(outcome['safe-output'] ?? '');
   const title = String(outcome['outcome-title'] ?? id ?? 'Untitled report') || 'Untitled report';
   const summary = String(outcome['outcome-summary'] ?? 'No report summary was provided.');
-  const status = titleCase(String(outcome['outcome-status'] ?? outcome['outcome-state'] ?? 'unknown'));
+  const status = titleCase(reportStatus(outcome));
   const mode = titleCase(String(outcome['rollout-mode'] ?? 'unknown'));
   const kind = titleCase(String(outcome['outcome-category'] ?? 'unknown'));
   const observedAt = String(outcome['observed-at'] ?? '');
@@ -330,6 +334,10 @@ function renderReportRow(outcome, showMode) {
     : sourceLink
       ? h('a', { href: sourceLink.href, title, target: '_blank', rel: 'noopener noreferrer' }, title)
       : h('span', { title }, title);
+  const statusBadge = renderStatusBadge(status);
+  statusBadge.setAttribute('aria-label', `Status: ${status}`);
+  const modeBadge = renderModeBadge(mode);
+  modeBadge.setAttribute('aria-label', `Mode: ${mode}`);
 
   return h(
     'article',
@@ -341,10 +349,10 @@ function renderReportRow(outcome, showMode) {
       h('h3', null, titleLink),
       h('p', { title: summary }, summary)
     ),
-    renderStatusBadge(status),
-    showMode ? renderModeBadge(mode) : null,
-    h('span', { className: 'kind' }, kind),
-    h('time', { dateTime: observedAt }, formatUtcDateTime(observedAt))
+    statusBadge,
+    showMode ? modeBadge : null,
+    h('span', { className: 'kind', 'aria-label': `Type: ${kind}` }, kind),
+    h('time', { dateTime: observedAt, 'aria-label': `Updated: ${formatUtcDateTime(observedAt)}` }, formatUtcDateTime(observedAt))
   );
 }
 
@@ -354,11 +362,23 @@ function renderReportRow(outcome, showMode) {
  * @param {Array<Record<string, unknown>>} workflows
  */
 function outcomeBelongsToPackage(outcome, packageId, workflows) {
-  if (String(outcome.package ?? '').toLowerCase() === packageId.toLowerCase()) return true;
-  const workflowPaths = new Set(workflows.map((workflow) => normalizeWorkflowIdentity(workflow.workflow)).filter(Boolean));
-  const workflowNames = new Set(workflows.map((workflow) => normalizeWorkflowIdentity(workflow['workflow-name'])).filter(Boolean));
-  return workflowPaths.has(normalizeWorkflowIdentity(outcome.workflow))
-    || workflowNames.has(normalizeWorkflowIdentity(outcome['workflow-name']));
+  const attributedPackage = String(outcome.package ?? '').trim();
+  if (attributedPackage) return attributedPackage.toLowerCase() === packageId.toLowerCase();
+  return workflows.some((workflow) => sameWorkflowScope(outcome, workflow)
+    && (
+      normalizeWorkflowIdentity(workflow.workflow) === normalizeWorkflowIdentity(outcome.workflow)
+      || normalizeWorkflowIdentity(workflow['workflow-name']) === normalizeWorkflowIdentity(outcome['workflow-name'])
+    ));
+}
+
+/** @param {Record<string, unknown>} outcome @param {Record<string, unknown>} workflow */
+function sameWorkflowScope(outcome, workflow) {
+  const outcomeRepository = String(outcome.repository ?? '').trim().toLowerCase();
+  const workflowRepository = String(workflow.repository ?? '').trim().toLowerCase();
+  const outcomeOrganization = String(outcome.organization ?? '').trim().toLowerCase();
+  const workflowOrganization = String(workflow.organization ?? '').trim().toLowerCase();
+  return (!outcomeRepository || !workflowRepository || outcomeRepository === workflowRepository)
+    && (!outcomeOrganization || !workflowOrganization || outcomeOrganization === workflowOrganization);
 }
 
 /** @param {unknown} value */
@@ -370,6 +390,11 @@ function normalizeWorkflowIdentity(value) {
 function reportTimestamp(outcome) {
   const timestamp = Date.parse(String(outcome['observed-at'] ?? outcome['published-at'] ?? ''));
   return Number.isFinite(timestamp) ? timestamp : 0;
+}
+
+/** @param {Record<string, unknown>} outcome */
+function reportStatus(outcome) {
+  return String(outcome['outcome-status'] ?? outcome['outcome-state'] ?? 'unknown');
 }
 
 /** @param {string} selectedMode @param {string} configuredMode */

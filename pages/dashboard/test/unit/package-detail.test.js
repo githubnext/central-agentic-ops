@@ -42,18 +42,19 @@ const workflows = [
 
 const outcomes = [
   {
+    package: 'ambient-context',
     workflow: '.github/workflows/ambient-context.md',
     'workflow-name': 'Ambient Context',
     'safe-output': 'ambient-issue-1',
     'outcome-title': 'Review ambient context proposal',
     'outcome-summary': 'A review proposal is ready.',
     'outcome-category': 'issue',
-    'outcome-status': 'open',
     'outcome-state': 'pending',
     'rollout-mode': 'review',
     'observed-at': '2026-08-31T17:00:00Z'
   },
   {
+    package: 'ambient-context',
     workflow: '.github/workflows/ambient-context-agents-md-curator.md',
     'workflow-name': 'Ambient Context / AGENTS.md Curator',
     'safe-output': 'ambient-pr-2',
@@ -66,7 +67,8 @@ const outcomes = [
     'observed-at': '2026-08-30T16:00:00Z'
   },
   {
-    workflow: '.github/workflows/other.md',
+    package: 'other',
+    workflow: '.github/workflows/ambient-context.md',
     'workflow-name': 'Other',
     'safe-output': 'other-1',
     'outcome-title': 'Other package report',
@@ -199,6 +201,24 @@ describe('renderPackageDetail', () => {
         detail: { parameter: 'package', value: 'missing' }
       }));
       expect(rendered.textContent).toBe('Package not found.');
+
+      const unavailableContext = context();
+      const unavailable = renderPackageReports({
+        ...unavailableContext,
+        pageId: 'package-reports',
+        sources: {
+          ...unavailableContext.sources,
+          workflows: {
+            ...unavailableContext.sources.workflows,
+            metadata: { ...metadata, availability: /** @type {'unavailable'} */ ('unavailable') },
+            rows: []
+          }
+        }
+      });
+      unavailable.dispatchEvent(new CustomEvent('dashboard-route-change', {
+        detail: { parameter: 'package', value: 'ambient-context' }
+      }));
+      expect(unavailable.textContent).toBe('Package data is unavailable.');
     });
   });
 
