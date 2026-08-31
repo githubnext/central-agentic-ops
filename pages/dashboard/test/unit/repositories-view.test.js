@@ -39,13 +39,14 @@ function sources() {
       { organization: 'octo', repository: 'failing', run: '1', 'run-conclusion': 'failure' },
       { organization: 'octo', repository: 'failing', run: '2', 'run-conclusion': 'success' },
       { organization: 'octo', repository: 'active', run: '3', 'run-conclusion': 'success' }
-    ]),
+    ], { 'coverage-start': '2026-08-30T18:00:00Z', 'coverage-end': '2026-08-31T18:00:00Z' }),
     outcomes: source('outcomes', [
       { organization: 'octo', repository: 'quiet', 'safe-output': 'report-1' }
     ]),
     usage: source('usage', [
       { organization: 'octo', repository: 'failing', run: '1', aic: 12 },
-      { organization: 'octo', repository: 'active', run: '3', aic: 8 }
+      { organization: 'octo', repository: 'active', run: '3', aic: 8 },
+      { organization: 'octo', repository: 'usage-only', run: '4', aic: 100 }
     ], { completeness: 'partial' }),
     'operational-values': source('operational-values', [
       { organization: 'octo', repository: 'quiet', workflow: 'four', 'operational-value': 0.8, 'evaluator-digest': 'sha256:1' },
@@ -100,8 +101,8 @@ describe('repositories view', () => {
     const usage = renderRepositoryAicUsage(viewContext);
 
     expect(scope.textContent).toContain('Repository scope · 3 configured');
-    expect(scope.textContent).toContain('Complete Actions run window');
-    expect(scope.textContent).toContain('2 artifacts · partial');
+    expect(scope.textContent).toContain('Complete 24-hour Actions run window');
+    expect(scope.textContent).toContain('3 artifacts · partial');
     expect(usage.querySelector('[data-chart-widget="pie"] svg')?.getAttribute('aria-label')).toContain('octo/failing 12 AIC');
     expect(usage.textContent).toContain('octo/active');
   });

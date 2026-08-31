@@ -34,9 +34,10 @@ export function renderRepositoryScope(context) {
   const runs = context.sources.runs;
   const usage = context.sources.usage;
   const runAvailability = runs?.metadata?.availability;
+  const windowHours = coverageHours(runs?.metadata);
   const runWindow = runAvailability === 'unavailable'
     ? 'Actions run data unavailable'
-    : `${titleCase(runs?.metadata?.completeness ?? 'unknown')} Actions run window`;
+    : `${titleCase(runs?.metadata?.completeness ?? 'unknown')}${windowHours ? ` ${windowHours}-hour` : ''} Actions run window`;
   const coverage = usage?.metadata?.availability === 'unavailable'
     ? 'Usage data unavailable'
     : `${formatCount(usage?.rows.length ?? 0)} artifacts · ${usage?.metadata?.completeness ?? 'unknown'}`;
@@ -129,7 +130,7 @@ export function renderRepositoryActivity(context) {
         h('span', null, summary.runsAvailable ? `${formatCount(summary.failed)} failed` : 'Unavailable')
       )
     ),
-    h('td', null, `${formatCount(summary.aic)} AIC`),
+    h('td', null, `${formatAic(summary.aic)} AIC`),
     h('td', null, renderRepositoryStatus(summary))
   ));
 
@@ -226,7 +227,7 @@ export function summarizeRepositories(sources) {
     if (conclusion === 'action-required') summary.actionRequired += 1;
   }
   for (const row of sources.usage?.rows ?? []) {
-    const summary = ensure(qualifiedRepository(row));
+    const summary = summaries.get(qualifiedRepository(row));
     if (summary && Number.isFinite(row.aic)) summary.aic += Number(row.aic);
   }
 
@@ -261,8 +262,7 @@ function status(label, tone) {
 
 /** @param {import('./ui-elements.js').ElementRenderContext} context */
 function repositoryNames(context) {
-  return [...new Set((context.sources.repositories?.rows ?? []).map(qualifiedRepository).filter(Boolean))]
-    .sort((left, right) => left.localeCompare(right));
+  return summarizeRepositories(context.sources).map((summary) => summary.repository).sort((left, right) => left.localeCompare(right));
 }
 
 /**
@@ -303,8 +303,22 @@ function formatCount(value) {
 }
 
 /** @param {number} value */
+function formatAic(value) {
+  return new Intl.NumberFormat('en', { maximumFractionDigits: 1 }).format(value);
+}
+
+/** @param {number} value */
 function formatPercent(value) {
   return new Intl.NumberFormat('en', { style: 'percent', maximumFractionDigits: 1 }).format(value);
+}
+
+/** @param {import('../presenter.js').SourceMetadata | undefined} metadata */
+function coverageHours(metadata) {
+  const start = Date.parse(metadata?.['coverage-start'] ?? '');
+  const end = Date.parse(metadata?.['coverage-end'] ?? '');
+  if (!Number.isFinite(start) || !Number.isFinite(end) || end <= start) return null;
+  const hours = (end - start) / 3_600_000;
+  return Number.isInteger(hours) ? hours : null;
 }
 
 /** @param {unknown} value */

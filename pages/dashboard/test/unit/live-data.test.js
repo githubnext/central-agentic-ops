@@ -22,7 +22,7 @@ describe("live Dashboard Language sources", () => {
       deployed: {
         generatedAt: "2026-08-30T12:00:00Z",
         discovery: { complete: true },
-        runHealth: { available: true, complete: true },
+        runHealth: { available: true, complete: true, windowHours: 24 },
         bundles: [{
           repository: "githubnext/central-agentic-ops",
           path: "dependabot/aw.yml",
@@ -149,6 +149,10 @@ describe("live Dashboard Language sources", () => {
         "run-status": "completed",
         "run-conclusion": "action-required",
         "rollout-mode": "review",
+      });
+      expect(sources.runs.metadata).toMatchObject({
+        "coverage-start": "2026-08-29T12:00:00.000Z",
+        "coverage-end": "2026-08-30T12:00:00Z",
       });
       expect(sources.usage.rows[0]).toMatchObject({ run: "42", aic: 2.5 });
       expect(sources.findings.rows[0]).toMatchObject({
