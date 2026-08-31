@@ -500,6 +500,80 @@ test('DLS-PAGE-014 DLS-PAGE-015 built-in packages page renders report-style mode
   expect(secondCard?.y).toBeGreaterThan(firstCard?.y ?? 0);
 });
 
+test('DLS-PAGE-017 renders a responsive JSON-configured filter bar and page-source export', async ({ page }) => {
+  const presenterModuleUrl = buildPresenterModuleUrl();
+
+  await page.setContent(`
+    <div id="root"></div>
+    <script type="module">
+      import { renderDashboard } from ${JSON.stringify(presenterModuleUrl)};
+
+      const dashboardDocument = {
+        languageVersion: '0.1.0',
+        dashboard: {
+          id: 'filter-bar-render',
+          title: 'Central Agentic Ops',
+          pages: [{
+            id: 'cost',
+            kind: 'custom',
+            title: 'Cost & efficiency',
+            'filter-bar': {
+              filters: ['mode:review', 'mode:live'],
+              'time-range': 'All recorded',
+              export: true
+            },
+            views: [{
+              id: 'usage-count',
+              data: { source: 'usage' },
+              mark: 'metric',
+              encoding: { value: { field: 'invocation', aggregate: 'count' } }
+            }]
+          }]
+        }
+      };
+      const sources = {
+        usage: {
+          source: 'usage',
+          rows: [{ invocation: 'usage-1', aic: 2 }],
+          metadata: {
+            'source-id': 'usage-fixture',
+            'source-kind': 'fixture',
+            'as-of': '2026-08-31T16:00:00Z',
+            'retrieved-at': '2026-08-31T16:01:00Z',
+            completeness: 'complete',
+            freshness: 'fresh',
+            availability: 'available'
+          }
+        }
+      };
+
+      document.querySelector('#root').append(renderDashboard({ document: dashboardDocument, sources }));
+    </script>
+  `);
+
+  const filterBar = page.getByLabel('Dashboard filters');
+  await expect(filterBar).toBeVisible();
+  await expect(filterBar.getByLabel('Current filters')).toContainText('Filter2mode:review mode:live');
+  await expect(filterBar.getByText('All recorded')).toBeVisible();
+  const exportLink = filterBar.getByRole('link', { name: 'Export JSON' });
+  await expect(exportLink).toHaveAttribute('download', 'cost.json');
+  const exportPayload = await exportLink.evaluate((link) => {
+    const href = link.getAttribute('href') ?? '';
+    return JSON.parse(decodeURIComponent(href.slice(href.indexOf(',') + 1)));
+  });
+  expect(exportPayload).toMatchObject({
+    page: 'cost',
+    filters: ['mode:review', 'mode:live'],
+    sources: { usage: { source: 'usage' } }
+  });
+
+  await page.setViewportSize({ width: 400, height: 900 });
+  const filterControlBox = await filterBar.locator('.filter-control').boundingBox();
+  const timeRangeBox = await filterBar.locator('.scope-period').boundingBox();
+  expect(filterControlBox).not.toBeNull();
+  expect(timeRangeBox?.y).toBeGreaterThan(filterControlBox?.y ?? 0);
+});
+
 test('DLS-PAGE-009 DLS-PAGE-014 built-in evals page renders distinguishable definitions and observations, observed subject, YES/NO/UNKNOWN result, evaluation model when available, time, provenance, and independent data state in browser', async ({ page }) => {
   const presenterModuleUrl = buildPresenterModuleUrl();
 

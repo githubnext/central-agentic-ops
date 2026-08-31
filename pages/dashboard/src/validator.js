@@ -681,7 +681,9 @@ function validatePageFilterBar(filterBar, filterBarNode, path, errors) {
     });
   }
 
-  validateOptionalStringField(filterBar['time-range'], `${path}.time-range`, errors);
+  if (filterBar['time-range'] !== undefined) {
+    validateStringField(filterBar['time-range'], `${path}.time-range`, true, errors);
+  }
   if (filterBar.export !== undefined && typeof filterBar.export !== 'boolean') {
     errors.push(createError(
       ERROR_CODES.missingOrInvalidRequiredField,

@@ -44,6 +44,7 @@ describe('dashboard document validation', () => {
     const invalidTokens = JSON.parse(authoritativeDashboardSource);
     const costPage = invalidTokens.dashboard.pages.find((/** @type {{ id: string }} */ page) => page.id === 'cost');
     costPage['filter-bar'].filters = ['mode:review', 'mode:review', 'invalid token'];
+    costPage['filter-bar']['time-range'] = '';
     costPage['filter-bar'].export = 'yes';
     costPage['filter-bar'].unknown = true;
 
@@ -58,6 +59,10 @@ describe('dashboard document validation', () => {
       expect(rejected.errors).toContainEqual(expect.objectContaining({
         code: 'DLS-E005',
         path: '$.dashboard.pages[1].filter-bar.filters[2]'
+      }));
+      expect(rejected.errors).toContainEqual(expect.objectContaining({
+        code: 'DLS-E003',
+        path: '$.dashboard.pages[1].filter-bar.time-range'
       }));
       expect(rejected.errors).toContainEqual(expect.objectContaining({
         code: 'DLS-E003',
