@@ -35,6 +35,10 @@ describe('renderRepositoryWorkflows', () => {
         repository: 'gh-aw',
         package: 'maintenance',
         'package-name': 'Maintenance',
+        'package-memberships': [
+          { id: 'platform', name: 'Platform' },
+          { id: 'maintenance', name: 'Maintenance' }
+        ],
         workflow: '.github/workflows/upgrade.md',
         'workflow-name': 'Upgrade',
         'workflow-role': 'worker',
@@ -64,10 +68,19 @@ describe('renderRepositoryWorkflows', () => {
     expect(rendered.querySelector('.repository-section-heading > a')?.getAttribute('href')).toBe('https://github.com/github/gh-aw/actions');
     expect([...rendered.querySelectorAll('tbody th')].map((cell) => cell.textContent)).toEqual([
       'Failure Investigator.github/workflows/failure-investigator.mdStandalone',
-      'Upgrade.github/workflows/upgrade.mdMaintenanceWorker'
+      'Upgrade.github/workflows/upgrade.mdWorkerPackage · MaintenancePackage · Platform'
     ]);
     expect([...rendered.querySelectorAll('tbody td:first-of-type')].map((cell) => cell.textContent)).toEqual(['Active', 'Disabled']);
-    expect(rendered.querySelector('.repository-workflow-badges a')?.getAttribute('href')).toBe('#page-package-detail?package=maintenance');
+    expect([...rendered.querySelectorAll('.repository-workflow-badges .workflow-badge')].map((badge) => badge.textContent)).toEqual([
+      'Standalone',
+      'Worker',
+      'Package · Maintenance',
+      'Package · Platform'
+    ]);
+    expect([...rendered.querySelectorAll('.repository-workflow-badges a')].map((badge) => badge.getAttribute('href'))).toEqual([
+      '#page-package-detail?package=maintenance',
+      '#page-package-detail?package=platform'
+    ]);
     expect(rendered.textContent).toContain('Latest registration update: Aug 29, 2026, 10:00 AM. 1 disabled.');
   });
 
@@ -91,6 +104,10 @@ describe('renderRepositoryWorkflows', () => {
       routeParameter: 'repository'
     };
     const rendered = renderRepositoryWorkflows(routedContext);
+    let allocation;
+    rendered.addEventListener('dashboard-route-allocation', (event) => {
+      allocation = event.detail;
+    });
     expect(rendered.querySelectorAll('tbody tr')).toHaveLength(1);
     expect(rendered.querySelector('tbody')?.textContent).not.toContain('One');
     expect(rendered.querySelector('tbody')?.textContent).not.toContain('Two');
@@ -100,6 +117,7 @@ describe('renderRepositoryWorkflows', () => {
     }));
 
     expect(rendered.dataset.repository).toBe('octo-org/octo-repo');
+    expect(allocation).toEqual({ title: 'octo-org/octo-repo', navigationPage: 'repositories' });
     expect(rendered.querySelector('tbody')?.textContent).toContain('Two');
     expect(rendered.querySelector('tbody')?.textContent).not.toContain('One');
   });

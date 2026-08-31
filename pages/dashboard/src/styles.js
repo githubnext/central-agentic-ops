@@ -227,12 +227,13 @@ h3 { margin: 16px 0 8px; font-size: 1rem; font-weight: 600; }
 .repository-tabs a > .octicon { color: var(--muted); }
 .repository-tabs a:hover { background: var(--canvas-subtle); }
 .repository-tabs a[aria-current="page"]::after { content: ""; height: 2px; position: absolute; right: 8px; bottom: -1px; left: 8px; background: var(--danger); }
-.repository-workflow-summary { max-width: 890px; margin-bottom: 28px; }
-.repository-metrics { display: grid; grid-template-columns: minmax(220px, .55fr) minmax(420px, 1.45fr); gap: 16px; margin: 0; }
+.repository-workflow-summary { margin-bottom: 28px; }
+.repository-metrics { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 14px; margin: 0; }
 .repository-metrics > div { min-width: 0; min-height: 168px; padding: 20px 24px; border: 1px solid var(--border); border-radius: 6px; }
 .repository-metrics dt { font-size: 1rem; font-weight: 600; }
 .repository-metrics dd { margin: 8px 0 0; font-size: 1.75rem; font-weight: 600; font-variant-numeric: tabular-nums; }
 .repository-metrics p { margin: 4px 0 0; color: var(--muted); }
+.repository-workflow-status { grid-column: span 2; }
 .repository-workflow-status dd { display: flex; align-items: center; gap: 14px; }
 .repository-status-pie { width: 76px; height: 76px; flex: 0 0 76px; border-radius: 50%; }
 .repository-status-total { display: flex; flex-direction: column; line-height: 1.15; text-transform: uppercase; }
@@ -249,7 +250,8 @@ h3 { margin: 16px 0 8px; font-size: 1rem; font-weight: 600; }
 .repository-workflow-table tbody th > a, .repository-workflow-table tbody th code { display: block; width: fit-content; }
 .repository-workflow-source { margin-top: 3px; color: var(--muted); text-decoration: none; }
 .repository-workflow-badges { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 5px; }
-.repository-workflow-badges > span { padding: 1px 7px; border: 1px solid var(--border); border-radius: 2em; color: var(--muted); font-size: .6875rem; font-weight: 600; }
+.repository-workflow-badges .workflow-badge { text-decoration: none; }
+.workflow-badge-operation, .workflow-badge-orchestrator { border-color: var(--accent); color: var(--accent); }
 .repository-workflow-table td { white-space: nowrap; }
 .workflow-runtime-content { max-width: 100%; }
 .workflow-identity { display: flex; align-items: center; justify-content: space-between; gap: 24px; margin-bottom: 24px; }
@@ -793,6 +795,9 @@ footer { padding: 20px 24px; border-top: 1px solid var(--border); color: var(--m
   .workflow-topology-summary > div { min-width: 0; flex: 1; padding-inline: 8px; }
   .workflow-topology-summary > div:first-child { padding-left: 0; border-left: 0; }
 }
+@media (min-width: 701px) and (max-width: 900px) {
+  .repository-metrics { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+}
 @media (max-width: 700px) {
   .app-shell { display: block; }
   .org-sidebar { display: block; padding: 14px 12px 10px; border-right: 0; border-bottom: 1px solid var(--border); }
@@ -810,6 +815,7 @@ footer { padding: 20px 24px; border-top: 1px solid var(--border); color: var(--m
   .layout-section[data-section-layout="wide"], .layout-section[data-section-layout="narrow"] { grid-column: span 12; }
   .custom-view[data-view-layout="half"], .custom-view[data-view-layout="third"] { grid-column: span 12; }
   .repository-metrics { grid-template-columns: 1fr; }
+  .repository-workflow-status { grid-column: auto; }
   .workflow-runtime-metrics { grid-template-columns: 1fr; }
   .workflow-identity { align-items: flex-start; flex-direction: column; gap: 10px; }
   .value-chart > dl { grid-template-columns: repeat(2, minmax(0, 1fr)); }
