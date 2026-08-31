@@ -55,6 +55,7 @@
         "id": "cost",
         "kind": "custom",
         "title": "Cost & efficiency",
+        "navigation-label": "Cost",
         "icon": "meter",
         "class-name": "cost-page",
         "description": "Measured AI Credit allocation and efficiency evidence for the configured githubnext/central-agentic-ops repository.",
@@ -127,6 +128,7 @@
         "id": "security",
         "kind": "custom",
         "title": "Security & data quality",
+        "navigation-label": "Security",
         "icon": "shield",
         "class-name": "security-page",
         "description": "Operational assurance, warning, and telemetry-integrity signals for the configured githubnext/central-agentic-ops repository.",
@@ -460,7 +462,7 @@
         "kind": "built-in",
         "page": "workflows",
         "title": "Workflows",
-        "icon": "workflow",
+        "icon": "codescan",
         "definition": {
           "data-state": {
             "availability": true,
@@ -568,7 +570,8 @@
       {
         "id": "runtime",
         "kind": "custom",
-        "title": "Runtime",
+        "title": "Runtime & episodes",
+        "navigation-label": "Runtime",
         "icon": "play",
         "class-name": "runtime-page",
         "description": "Execution failures, approval gates, and exact control-plane episode evidence.",
@@ -708,7 +711,7 @@
         "id": "dispatches",
         "kind": "custom",
         "title": "Dispatches",
-        "icon": "play",
+        "icon": "workflow",
         "class-name": "dispatches-page",
         "description": "Package-worker dispatch activity retained from configured repositories.",
         "views": [
@@ -1172,7 +1175,8 @@
         "id": "operational-value",
         "kind": "custom",
         "title": "Value & outcomes",
-        "icon": "graph",
+        "navigation-label": "Value",
+        "icon": "beaker",
         "class-name": "value-page",
         "description": "Outcome, grader, maturity, AI Credit, and experiment-readiness evidence for the configured repositories.",
         "sections": [
@@ -1428,27 +1432,18 @@
         "label": "Investigate",
         "pages": [
           "runtime",
-          "cost",
-          "runs",
           "security",
-          "dispatches",
-          "findings",
-          "operational-value"
+          "operational-value",
+          "cost"
         ]
       },
       {
         "label": "Explore",
         "pages": [
-          "organizations",
-          "repositories",
-          "repository-detail",
-          "packages",
+          "dispatches",
           "workflows",
-          "experiments",
-          "graders",
-          "evals",
-          "usage",
-          "engines-models"
+          "repositories",
+          "packages"
         ]
       }
     ]

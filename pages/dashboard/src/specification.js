@@ -11,8 +11,8 @@ export const DASHBOARD_KEYS = ['id', 'title', 'description', 'defaults', 'units'
 export const DEFAULTS_KEYS = ['scope', 'time', 'filters'];
 export const UNIT_DEFINITION_KEYS = ['name', 'symbol', 'significant'];
 export const NAVIGATION_SECTION_KEYS = ['label', 'pages'];
-export const BUILT_IN_PAGE_KEYS = ['id', 'kind', 'page', 'title', 'description', 'icon', 'class-name', 'definition'];
-export const CUSTOM_PAGE_KEYS = ['id', 'kind', 'title', 'description', 'icon', 'class-name', 'route', 'views', 'sections'];
+export const BUILT_IN_PAGE_KEYS = ['id', 'kind', 'page', 'title', 'navigation-label', 'description', 'icon', 'class-name', 'definition'];
+export const CUSTOM_PAGE_KEYS = ['id', 'kind', 'title', 'navigation-label', 'description', 'icon', 'class-name', 'route', 'views', 'sections'];
 export const PAGE_ROUTE_KEYS = ['hash-query-parameter'];
 
 export const VIEW_KEYS = ['id', 'title', 'description', 'data', 'mark', 'element', 'chart', 'layout', 'disclosure', 'encoding'];
@@ -113,7 +113,7 @@ export const FILTER_DIMENSION_VALUES = [
 ];
 
 export const PAGE_KIND_VALUES = ['built-in', 'custom'];
-export const PAGE_ICON_VALUES = ['server', 'workflow', 'play', 'repo', 'package', 'issue', 'graph', 'shield', 'meter'];
+export const PAGE_ICON_VALUES = ['server', 'workflow', 'play', 'repo', 'package', 'issue', 'graph', 'shield', 'meter', 'beaker', 'codescan'];
 
 export const BUILT_IN_PAGE_VALUES = [
   'overview',

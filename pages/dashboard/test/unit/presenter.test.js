@@ -235,6 +235,19 @@ describe('presenter built-in and custom pages', () => {
     expect(labels).toEqual(['Attention', 'Investigate', 'Explore']);
     expect(rendered.querySelector('[data-nav-page-id="overview"]')?.previousElementSibling?.textContent).toBe('Attention');
     expect(rendered.querySelector('[data-nav-page-id="runtime"]')?.previousElementSibling?.textContent).toBe('Investigate');
+    expect([...rendered.querySelectorAll('.nav-label')].map((node) => node.textContent)).toEqual([
+      'Overview',
+      'Runtime',
+      'Security',
+      'Value',
+      'Cost',
+      'Dispatches',
+      'Workflows',
+      'Repositories',
+      'Packages'
+    ]);
+    expect(rendered.querySelector('[data-nav-page-id="runs"]')).toBeNull();
+    expect(rendered.querySelector('[data-nav-page-id="findings"]')).toBeNull();
     expect(rendered.querySelector('[data-page-id="overview"]')?.classList.contains('overview-page')).toBe(true);
     expect(rendered.querySelector('[data-page-id="organizations"]')?.classList.contains('organizations-page')).toBe(false);
   });
@@ -416,7 +429,7 @@ describe('presenter built-in and custom pages', () => {
     const dashboardPage = authoritativeDashboardDocument.dashboard.pages.find((/** @type {{ id: string }} */ candidate) => candidate.id === 'operational-value');
     expect(dashboardPage).toMatchObject({ kind: 'custom', title: 'Value & outcomes' });
     expect(dashboardPage).not.toHaveProperty('page');
-    expect(rendered.querySelector('[data-nav-page-id="operational-value"] .octicon-graph')).not.toBeNull();
+    expect(rendered.querySelector('[data-nav-page-id="operational-value"] .octicon-beaker')).not.toBeNull();
     expect(page?.querySelector('.summary-grid')?.textContent).toContain('Grader observations4');
     expect(page?.querySelector('.summary-grid')?.textContent).toContain('Mature evidence3');
     expect(page?.querySelector('.summary-grid')?.textContent).toContain('Mean operational value50%');

@@ -201,8 +201,8 @@ Language keys and enumerated values use canonical kebab-case. Human-readable tit
 | `dashboard` | `id`, `title`, `description`, `github-url-base`, `repository`, `defaults`, `units`, `pages`, `navigation` |
 | `defaults` | `scope`, `time`, `filters` |
 | Unit definition | `name`, `symbol`, `significant` |
-| Built-in page | `id`, `kind`, `page`, `title`, `description`, `icon`, `class-name`, `definition` |
-| Custom page | `id`, `kind`, `title`, `description`, `icon`, `class-name`, `route`, `views`, `sections` |
+| Built-in page | `id`, `kind`, `page`, `title`, `navigation-label`, `description`, `icon`, `class-name`, `definition` |
+| Custom page | `id`, `kind`, `title`, `navigation-label`, `description`, `icon`, `class-name`, `route`, `views`, `sections` |
 | Custom page `route` | `hash-query-parameter` |
 | View | `id`, `title`, `description`, `data`, `mark`, `element`, `chart`, `layout`, `disclosure`, `encoding` |
 | View `data` | `source` or `sources`, `scope`, `time`, `filters`, `limit`, `order-by` |
@@ -460,7 +460,9 @@ Allowed built-in page names are:
 
 `overview`, `organizations`, `repositories`, `packages`, `workflows`, `runs`, `experiments`, `graders`, `evals`, `usage`, `engines-models`, `operational-value`, and `findings`.
 
-The optional page `icon` is one of `server`, `workflow`, `play`, `repo`, `package`, `issue`, or `graph`. It controls navigation presentation without changing page semantics and defaults to `server`.
+The optional page `icon` is one of `server`, `workflow`, `play`, `repo`, `package`, `issue`, `graph`, `shield`, `meter`, `beaker`, or `codescan`. It controls navigation presentation without changing page semantics and defaults to `server`.
+
+The optional page `navigation-label` provides a concise sidebar label when the page title is more descriptive. A dashboard `navigation` section may reference a focused subset of declared pages; omitted pages remain available as deep-link destinations.
 
 The optional page `class-name` is a canonical identifier that a renderer adds to the page container. It lets a document opt into page-specific presentation without requiring the renderer to infer styling from a page ID or built-in page name.
 
