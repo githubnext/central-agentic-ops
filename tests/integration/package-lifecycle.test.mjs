@@ -67,6 +67,7 @@ const dashboardExpectedFiles = [
 const expectedFiles = [
   ".github/agents/agentic-workflows.md",
   ".github/aw/instructions.md",
+  ".github/aw/control-policy/resolve.mjs",
   ".github/skills/agentic-workflows/SKILL.md",
   ".github/skills/create-ops-package/SKILL.md",
   ".github/skills/setup-central-agentic-ops/SKILL.md",
@@ -142,6 +143,7 @@ function assertCorePackage(consumer) {
   assert.deepEqual(
     installedManifest.files.map(({ destination }) => destination).sort(),
     [
+      ".github/aw/control-policy/resolve.mjs",
       ".github/aw/instructions.md",
       ".github/graders/aw-failures-investigator-operational-value.sh",
       ".github/workflows/ambient-context.md",

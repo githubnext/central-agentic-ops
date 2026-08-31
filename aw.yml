@@ -10,3 +10,5 @@ includes:
 resources:
   - source: .github/aw/instructions.md
     destination: .github/aw/instructions.md
+  - source: .github/scripts/control-policy/resolve.mjs
+    destination: .github/aw/control-policy/resolve.mjs

@@ -1448,11 +1448,14 @@ test("README routes zero-to-CAO requests to the setup skill", () => {
   assert.match(setupSkill, /Always target the control repository itself for the first run/);
   assert.match(setupSkill, /target_repo="<organization>\/<control-repository>"/);
   assert.doesNotMatch(setupSkill, /first (?:low-risk )?target repository/);
-  assert.match(setupSkill, /gh aw add githubnext\/central-agentic-ops/);
+  assert.match(setupSkill, /cao_ref=\$\(gh api repos\/githubnext\/central-agentic-ops\/commits\/main/);
+  assert.match(setupSkill, /\[\[ "\$cao_ref" =~ \^\[0-9a-fA-F\]\{40,64\}\$ \]\]/);
+  assert.match(setupSkill, /gh aw add "githubnext\/central-agentic-ops@\$\{cao_ref\}"/);
+  assert.match(setupSkill, /gh aw doctor --repo <organization>\/<control-repository> --dir \./);
   assert.doesNotMatch(setupSkill, /gh aw add-wizard/);
   assert.match(setupSkill, /Run `gh aw version`\. Compare it with `min-version` in the root CAO `aw\.yml`/);
   assert.match(setupSkill, /Do not require the catalog maintainer's current local version when the package supports an older release/);
-  assert.match(setupSkill, /The unpinned command above intentionally installs the current default branch/);
+  assert.match(setupSkill, /one immutable source identity keeps repeated package dependencies consistent/);
   assert.match(setupSkill, /package cannot install this file because it is consumer-owned rollout policy/);
   assert.match(setupSkill, /"allowed-repositories": \["<organization>\/<control-repository>"\]/);
   assert.match(setupSkill, /"dependabot"[\s\S]*?"release-train-updater"/);

@@ -70,7 +70,7 @@ steps:
       out=/tmp/gh-aw/agent/control-precompute.json
       policy_file=/tmp/gh-aw/agent/central-agentic-ops.json
       effective_file=/tmp/gh-aw/agent/effective-policy.json
-      resolver=.github/scripts/control-policy/resolve.mjs
+      resolver=.github/aw/control-policy/resolve.mjs
 
       if ! [[ "$WORKFLOW_SHA" =~ ^[0-9a-fA-F]{40,64}$ ]]; then
         echo "github.workflow_sha must be an exact commit SHA" >&2
@@ -149,7 +149,7 @@ steps:
       [ "$ROLE" != "orchestrator" ] || WORKER=""
       mkdir -p /tmp/gh-aw/agent
       OUT=/tmp/gh-aw/agent/control-precompute.json
-      RESOLVER=.github/scripts/control-policy/resolve.mjs
+      RESOLVER=.github/aw/control-policy/resolve.mjs
 
       write_worker_precompute() {
         jq -n \
