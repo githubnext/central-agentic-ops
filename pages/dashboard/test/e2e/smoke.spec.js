@@ -18,6 +18,10 @@ function buildPresenterModuleUrl() {
     .replace("'../dom.js'", JSON.stringify(domModuleUrl));
   const badgeModuleUrl = `data:text/javascript;charset=utf-8,${encodeURIComponent(badgeSource)}`;
 
+  const cellDisplaySource = readFileSync(new URL('../../src/components/cell-display.js', import.meta.url), 'utf8')
+    .replace("'./badge.js'", JSON.stringify(badgeModuleUrl));
+  const cellDisplayModuleUrl = `data:text/javascript;charset=utf-8,${encodeURIComponent(cellDisplaySource)}`;
+
   const dataStateSource = readFileSync(new URL('../../src/components/data-state.js', import.meta.url), 'utf8')
     .replace("'../dom.js'", JSON.stringify(domModuleUrl))
     .replace("'./badge.js'", JSON.stringify(badgeModuleUrl));
@@ -83,7 +87,7 @@ function buildPresenterModuleUrl() {
   const dataViewSource = readFileSync(new URL('../../src/components/data-view.js', import.meta.url), 'utf8')
     .replace("'../dom.js'", JSON.stringify(domModuleUrl))
     .replace("'../view-formatters.js'", JSON.stringify(viewFormattersModuleUrl))
-    .replace("'./badge.js'", JSON.stringify(badgeModuleUrl))
+    .replace("'./cell-display.js'", JSON.stringify(cellDisplayModuleUrl))
     .replace("'./chart-elements.js'", JSON.stringify(chartElementsModuleUrl))
     .replace("'./link-content.js'", JSON.stringify(linkContentModuleUrl))
     .replace("'./linked-text.js'", JSON.stringify(linkedTextModuleUrl))
@@ -100,7 +104,7 @@ function buildPresenterModuleUrl() {
     .replace("'./dom.js'", JSON.stringify(domModuleUrl))
     .replace("'./styles.js'", JSON.stringify(stylesModuleUrl))
     .replace("'./octicons.js'", JSON.stringify(octiconsModuleUrl))
-    .replace("'./components/badge.js'", JSON.stringify(badgeModuleUrl))
+    .replace("'./components/cell-display.js'", JSON.stringify(cellDisplayModuleUrl))
     .replace("'./components/data-state.js'", JSON.stringify(dataStateModuleUrl))
     .replace("'./components/table-region.js'", JSON.stringify(tableRegionModuleUrl))
     .replace("'./components/view-chrome.js'", JSON.stringify(viewChromeModuleUrl))

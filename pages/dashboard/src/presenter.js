@@ -843,11 +843,6 @@ function compareTableValues(left, right) {
 }
 
 /**
- * @param {unknown} display
- * @param {unknown} value
- * @returns {string | HTMLElement}
- */
-/**
  * @param {string} pageId
  * @param {string} title
  * @param {Array<Record<string, unknown>>} rows

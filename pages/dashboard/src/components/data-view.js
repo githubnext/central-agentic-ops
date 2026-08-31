@@ -4,7 +4,7 @@
 
 import { h } from '../dom.js';
 import { formatAggregateValue } from '../view-formatters.js';
-import { renderActiveStateBadge, renderModeBadge, renderStatusBadge } from './badge.js';
+import { renderCellDisplay } from './cell-display.js';
 import { listChartSeries, pieChartEntries, renderChartLegend, renderPieLegend, renderChartWidget } from './chart-elements.js';
 import { findFirstLink, findLink, renderExternalLink, renderLinkedValueWithExternalLink } from './link-content.js';
 import { createEntityAwareCellRenderer, renderLinkedText } from './linked-text.js';
@@ -94,7 +94,7 @@ function renderTableView(context) {
   const renderCellValue = createEntityAwareCellRenderer(
     ENTITY_LINK_FIELDS,
     findLink,
-    (display, value) => renderTableCellValue(display, value, toText),
+    (display, value) => renderCellDisplay(display, value, toText),
     toText
   );
   const bodyRows = tableRows.map((row, rowIndex) => h(
@@ -185,14 +185,6 @@ function renderChartView(context) {
   ], headingTag);
   section.classList.add('chart-view', `chart-view-${chartType}`);
   return section;
-}
-
-/** @param {unknown} display @param {unknown} value @param {(value: unknown) => string} toText */
-function renderTableCellValue(display, value, toText) {
-  if (display === 'mode') return renderModeBadge(value);
-  if (display === 'active-state') return renderActiveStateBadge(value);
-  if (display === 'status') return renderStatusBadge(value);
-  return toText(value);
 }
 
 /** @param {Record<string, unknown>} fieldDefinition */
