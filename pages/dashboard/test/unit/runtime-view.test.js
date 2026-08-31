@@ -63,7 +63,10 @@ describe('Runtime dashboard view', () => {
     expect(attention).toContain('1 worker dispatch lacks episode evidence');
     expect(attention).toContain('1 root episode has no correlated worker attempt or output');
     expect(rendered.querySelector('.episode-vitals')?.textContent).toContain('0 / 1');
-    expect(rendered.querySelector('.episode-vitals')?.textContent).toContain('Repeated coverage—requires exact episode attribution');
+    const repeatedCoverage = [...rendered.querySelectorAll('.episode-vitals > div')]
+      .find((node) => node.querySelector('dt')?.textContent === 'Repeated coverage');
+    expect(repeatedCoverage?.querySelector('dd')?.textContent).toBe('—');
+    expect(repeatedCoverage?.querySelector('p')?.textContent).toBe('requires exact episode attribution');
     expect(rendered.querySelectorAll('.episode-record')).toHaveLength(1);
     expect(rendered.querySelector('.episode-record')?.textContent).toContain('Dependabot review');
     expect(rendered.querySelector('.episode-attribution-gap')?.textContent).toContain('1 worker dispatch lacks episode evidence');

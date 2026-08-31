@@ -142,7 +142,7 @@ export function renderExecutionEpisodes(context) {
       'dl',
       { className: 'episode-vitals' },
       vital('Root episodes', model.episodes.length, 'observed orchestrator runs'),
-      vital('Worker attribution', `0 / ${formatCount(model.unattributedWorkerRuns.length)}`, 'correlated workflow dispatches'),
+      vital('Worker attribution', `${formatCount(model.attributedWorkerRuns.length)} / ${formatCount(model.workerRuns.length)}`, 'correlated workflow dispatches'),
       vital('Repeated coverage', '—', 'requires exact episode attribution'),
       vital('No-action attempts', '—', 'requires correlated attempt output')
     ),
@@ -206,6 +206,7 @@ function executionModel(context) {
     runs,
     runsByWorkflow,
     workerRuns,
+    attributedWorkerRuns: [],
     unattributedWorkerRuns: workerRuns,
     nonRootRuns: runs.filter((run) => text(workflows.get(runKey(run))?.['workflow-role']) !== 'orchestrator'),
     episodes,
