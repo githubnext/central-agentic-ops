@@ -36,7 +36,12 @@ const CONTROL_KEYS = ["scope", "inventory", "defaults", "packages", "publishing"
 const SCOPE_KEYS = ["allowed-owners", "allowed-repositories"];
 const INVENTORY_KEYS = ["max-scan-repositories", "cell-count", "cell-index", "batch-size", "batch-index"];
 const DEFAULT_KEYS = ["mode", "max-repositories", "rollout-percent", "monthly-ai-credit-budget"];
-const PACKAGE_KEYS = ["enabled", ...DEFAULT_KEYS, "workers"];
+const OCTICONS = [
+  "mark-github", "code", "repo", "server", "issue", "pull-request", "play", "eye",
+  "shield", "meter", "graph", "codescan", "dependabot", "key", "beaker", "rocket",
+  "workflow", "settings", "check-circle", "package", "external-link",
+];
+const PACKAGE_KEYS = ["enabled", ...DEFAULT_KEYS, "icon", "workers"];
 const WORKER_KEYS = ["enabled", "max-mode"];
 const PUBLISHING_KEYS = ["enabled", "control-repositories", "reviewers"];
 const TARGET_AUTHORITY_KEYS = ["packages"];
@@ -216,6 +221,7 @@ function validatePackages(packages) {
     assertMapping(packagePolicy, path);
     assertKeys(packagePolicy, PACKAGE_KEYS, path);
     if ("enabled" in packagePolicy) assertBoolean(packagePolicy.enabled, `${path}.enabled`);
+    if ("icon" in packagePolicy) assertOcticon(packagePolicy.icon, `${path}.icon`);
     validateDefaults(pick(packagePolicy, DEFAULT_KEYS), path);
     if (!("workers" in packagePolicy)) continue;
 
@@ -371,6 +377,7 @@ export function controlSettings(document, controlRepository) {
     enabled: policy.enabled ?? true,
     ...defaults,
     ...pick(policy, DEFAULT_KEYS),
+    icon: policy.icon ?? null,
   }]));
   return {
     allowed_owners: scope["allowed-owners"] ?? [controlRepository.split("/", 1)[0]],
@@ -411,6 +418,12 @@ function assertMapping(value, path) {
 
 function assertBoolean(value, path) {
   if (value !== true && value !== false) throw new PolicyError(`${path} must be a Boolean`);
+}
+
+function assertOcticon(value, path) {
+  if (typeof value !== "string" || !OCTICONS.includes(value)) {
+    throw new PolicyError(`${path} must be one of: ${OCTICONS.join(", ")}`);
+  }
 }
 
 function assertInteger(value, path, minimum, maximum = undefined) {

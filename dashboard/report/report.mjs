@@ -508,6 +508,10 @@ function configuredModeFor(bundle) {
   return normalizeMode(mode) === "unknown" ? "review" : normalizeMode(mode);
 }
 
+function packageIcon(bundle) {
+  return controlSettings.packages?.[bundle.controlPackage]?.icon || "package";
+}
+
 function modeIndicator(mode) {
   const icons = { review: "beaker", live: "rocket" };
   const label = `${mode[0].toUpperCase()}${mode.slice(1)}`;
@@ -883,7 +887,7 @@ function bundleUtilizationPanel(mode) {
       ? `${bundle.name}: no utilization available`
       : `${bundle.name}: ${formatAic(utilization.used)} of ${formatAic(utilization.allowed)} AI Credits used, ${formatAic(ratioPercent)} percent`;
     return `<article class="bundle-utilization-item utilization-${status}">
-      <header><a href="${bundle.id}.html">${escapeHtml(bundle.name)}</a><strong>${escapeHtml(value)}</strong></header>
+      <header><a href="${bundle.id}.html">${octicon(packageIcon(bundle))}<span>${escapeHtml(bundle.name)}</span></a><strong>${escapeHtml(value)}</strong></header>
       <div class="utilization-track" role="img" aria-label="${escapeHtml(aria)}"><span style="width:${meterPercent.toFixed(2)}%"></span></div>
       <p>${escapeHtml(detail)}${escapeHtml(coverageNote)}</p>
       <small>${formatAic(utilization.completeAttemptAllowance)} AIC allowance per complete package attempt</small>
@@ -901,7 +905,7 @@ function overviewTable(mode, modeRecords) {
     const latest = bundleRecords[0];
     const runs = summarizeRuns(bundleRecords);
     const inventoryWarnings = (bundle.compiled ? 0 : 1) + bundle.missingWorkers.length;
-    return `<tr><th scope="row"><a href="${bundle.id}.html">${escapeHtml(bundle.name)}</a></th><td>${runs.total}</td><td>${runs.successful}</td><td>${runs.failed}</td><td>${runs.warnings}</td><td>${inventoryWarnings}</td><td>${formatAic(runs.aic)}</td><td>${escapeHtml(latest ? formatDate(latest.updatedAt) : "No outputs yet")}</td></tr>`;
+    return `<tr><th scope="row"><a href="${bundle.id}.html">${octicon(packageIcon(bundle))}<span>${escapeHtml(bundle.name)}</span></a></th><td>${runs.total}</td><td>${runs.successful}</td><td>${runs.failed}</td><td>${runs.warnings}</td><td>${inventoryWarnings}</td><td>${formatAic(runs.aic)}</td><td>${escapeHtml(latest ? formatDate(latest.updatedAt) : "No outputs yet")}</td></tr>`;
   }).join("\n");
   return `<section class="impact-analysis" aria-labelledby="packages-heading">
   <h2 id="packages-heading">${modeLabels[mode]} output by package</h2>
@@ -2006,7 +2010,7 @@ function workflowTopologyContent(workflows) {
       role: definition.role,
     });
     return `<article class="workflow-package-card">
-      <header><div>${octicon("package")}<div><h4><a href="../packages/${escapeHtml(bundle.id)}.html">${escapeHtml(bundle.name)}</a></h4><p>${formatCount(bundle.workers.length)} worker${bundle.workers.length === 1 ? "" : "s"} · ${escapeHtml(repository)}</p></div></div>${modeIndicator(configuredModeFor(bundle))}</header>
+      <header><div>${octicon(packageIcon(bundle))}<div><h4><a href="../packages/${escapeHtml(bundle.id)}.html">${escapeHtml(bundle.name)}</a></h4><p>${formatCount(bundle.workers.length)} worker${bundle.workers.length === 1 ? "" : "s"} · ${escapeHtml(repository)}</p></div></div>${modeIndicator(configuredModeFor(bundle))}</header>
       <div class="workflow-package-flow">
         ${workflowNode(packageWorkflows[0], "orchestrator")}
         <div class="workflow-dispatch-connector" aria-hidden="true"><span>dispatches</span><i></i></div>
@@ -2629,7 +2633,7 @@ function valueReportContent(worker, observations) {
 
 await mkdir(path.join(outputDirectory, "insights", "assets"), { recursive: true });
 for (const bundle of bundleDefinitions) {
-  const navigation = `<nav aria-label="Report navigation"><div class="shell"><a href="../packages/">Packages</a><span aria-current="page">${escapeHtml(bundle.name)}</span></div></nav>`;
+  const navigation = `<nav aria-label="Report navigation"><div class="shell"><a href="../packages/">Packages</a><span aria-current="page">${octicon(packageIcon(bundle))}<span>${escapeHtml(bundle.name)}</span></span></div></nav>`;
   const sections = [];
   for (const worker of bundle.workers) {
     const workflowPath = worker.lockPath || `.github/workflows/${worker.id}.lock.yml`;
@@ -2664,7 +2668,7 @@ for (const mode of ["all", "review", "live"]) {
 }
 for (const bundle of bundleDefinitions) {
   const bundleRecords = reportRecords.filter((record) => record.bundle === bundle.id);
-  const navigation = `<nav aria-label="Report navigation"><div class="shell"><a href="index.html">Packages</a><span aria-current="page">${escapeHtml(bundle.name)}</span></div></nav>`;
+  const navigation = `<nav aria-label="Report navigation"><div class="shell"><a href="index.html">Packages</a><span aria-current="page">${octicon(packageIcon(bundle))}<span>${escapeHtml(bundle.name)}</span></span></div></nav>`;
   const configuredMode = configuredModeFor(bundle);
   await writeFile(path.join(outputDirectory, "packages", `${bundle.id}.html`), layout({
     title: bundle.name,
@@ -2827,6 +2831,7 @@ a:focus-visible, [tabindex]:focus-visible { outline: 2px solid var(--focus); out
 .control-content > nav { border-bottom: 1px solid var(--border); background: var(--canvas); }
 .control-content > nav .shell { display: flex; gap: 8px; max-width: 1280px; margin: auto; padding: 10px 24px; }
 .control-content > nav .shell > * + *::before { content: "/"; margin-right: 8px; color: var(--muted); }
+.control-content > nav .shell [aria-current="page"] { display: inline-flex; align-items: center; gap: 6px; }
 main { width: min(1280px, 100%); flex: 1; margin: 0 auto; padding: 0 20px 40px; }
 .intro { min-height: 136px; display: flex; align-items: center; justify-content: space-between; gap: 32px; padding: 24px 0; border-bottom: 1px solid var(--border); }
 .page-header-content { min-width: 0; }
@@ -3462,7 +3467,7 @@ footer a { min-height: 24px; display: inline-flex; align-items: center; }
 .bundle-utilization-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; }
 .bundle-utilization-item { min-width: 0; padding: 14px 16px; border: 1px solid var(--border); border-radius: 6px; background: var(--canvas); }
 .bundle-utilization-item header { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; }
-.bundle-utilization-item header a { color: var(--fg); font-weight: 600; text-decoration: none; }
+.bundle-utilization-item header a { color: var(--fg); font-weight: 600; text-decoration: none; display: inline-flex; align-items: center; gap: 6px; }
 .bundle-utilization-item header a:hover { text-decoration: underline; }
 .bundle-utilization-item header strong { font-size: 1.25rem; font-variant-numeric: tabular-nums; }
 .utilization-track { height: 8px; margin: 12px 0 8px; overflow: hidden; border-radius: 4px; background: var(--canvas-subtle); box-shadow: inset 0 0 0 1px var(--border); }
@@ -3474,6 +3479,7 @@ footer a { min-height: 24px; display: inline-flex; align-items: center; }
 .bundle-utilization-item small { display: block; margin-top: 4px; color: var(--muted); font-size: .6875rem; }
 .impact-analysis > h2 { margin-bottom: 2px; font-size: 1.25rem; }
 .impact-analysis > p { margin: 0 0 10px; color: var(--muted); }
+.impact-analysis th[scope="row"] a { display: inline-flex; align-items: center; gap: 6px; }
 .impact-tabs { display: flex; border-bottom: 1px solid var(--border); }
 .impact-tabs a { position: relative; padding: 8px 13px; color: var(--fg); font-size: .75rem; font-weight: 600; text-decoration: none; }
 .impact-tabs a[aria-current="page"]::after { content: ""; height: 2px; position: absolute; right: 8px; bottom: -1px; left: 8px; background: #f78166; }
