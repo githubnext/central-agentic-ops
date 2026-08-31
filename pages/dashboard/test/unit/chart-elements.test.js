@@ -81,10 +81,11 @@ describe('chart element helpers', () => {
     const bar = renderChartWidget('bar', [...points, { x: 'invalid', y: Number.NaN, color: null }], series);
     const line = renderChartWidget('line', points, series);
     const pie = renderChartWidget('pie', points, series);
+    const chartHeight = String(38 - 4);
 
     expect(bar.getAttribute('data-chart-widget')).toBe('bar');
     expect(bar.querySelectorAll('.bar-chart-bar')).toHaveLength(3);
-    expect(bar.querySelector('.bar-chart-bar')?.getAttribute('height')).toBe('34');
+    expect(bar.querySelector('.bar-chart-bar')?.getAttribute('height')).toBe(chartHeight);
     expect(bar.querySelector('.bar-chart-bar:last-child')?.getAttribute('height')).toBe('1');
     expect(line.getAttribute('data-chart-widget')).toBe('line');
     expect(line.querySelectorAll('.line-chart-series')).toHaveLength(2);

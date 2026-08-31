@@ -217,7 +217,7 @@ export function renderChartWidget(chartType, points, series, pieSummary = null, 
     );
   }
 
-  const finiteValues = points.map((point) => point.y).filter(Number.isFinite);
+  const finiteValues = points.map((point) => toNumber(point.y)).filter(Number.isFinite);
   const maximum = Math.max(...finiteValues, 1);
   const barWidth = points.length > 0 ? Math.min(14, 80 / points.length) : 14;
   const seriesClassNames = new Map(series.map((item) => [item.name, item.className]));
