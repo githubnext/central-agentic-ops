@@ -457,6 +457,23 @@ h3 { margin: 16px 0 8px; font-size: 1rem; font-weight: 600; }
 .package-summary .table-region { margin-bottom: 0; }
 .package-summary-table { min-width: 920px; }
 .package-summary-table tbody th { font-weight: 600; white-space: nowrap; }
+.package-tabs { display: flex; gap: 4px; margin-bottom: 20px; border-bottom: 1px solid var(--border); }
+.package-tabs a { display: inline-flex; align-items: center; gap: 8px; position: relative; padding: 10px 14px 12px; color: var(--fg); font-weight: 600; text-decoration: none; }
+.package-tabs a > .octicon { color: var(--muted); }
+.package-tabs a:hover { background: var(--canvas-subtle); }
+.package-tabs a[aria-current="page"]::after { content: ""; height: 2px; position: absolute; right: 8px; bottom: -1px; left: 8px; background: var(--danger); }
+.operation-workflow-map { margin-bottom: 20px; }
+.operation-workflow-map .section-heading { margin-bottom: 10px; }
+.operation-orchestrator, .operation-workflow-map li { min-width: 0; display: grid; grid-template-columns: max-content minmax(0, 1fr); align-items: center; gap: 10px; padding: 10px 12px; border: 1px solid var(--border); background: var(--canvas-subtle); }
+.operation-orchestrator { border-radius: 6px 6px 0 0; }
+.operation-workflow-map ul { margin: 0 0 0 28px; padding: 0; list-style: none; }
+.operation-workflow-map li { border-top: 0; }
+.operation-workflow-map li:last-child { border-radius: 0 0 6px 6px; }
+.operation-workflow-map :is(a, .operation-workflow-identity) { min-width: 0; display: grid; grid-template-columns: minmax(0, 1fr) minmax(180px, .8fr); gap: 12px; align-items: center; text-decoration: none; }
+.operation-workflow-map a:hover strong { text-decoration: underline; }
+.operation-workflow-map code { overflow: hidden; color: var(--muted); font-size: .75rem; text-overflow: ellipsis; white-space: nowrap; }
+.workflow-badge-orchestrator { border-color: var(--accent); color: var(--accent); }
+.workflow-badge-worker { border-color: var(--success); color: var(--success); }
 .package-trend-panel { overflow: hidden; border: 1px solid var(--border); border-radius: 6px; background: var(--canvas); }
 .package-trend-panel > header { min-height: 72px; display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; padding: 14px 16px; border-bottom: 1px solid var(--border); }
 .package-trend-panel > header h3 { margin: 0; font-size: 1rem; }
@@ -761,6 +778,8 @@ footer { padding: 20px 24px; border-top: 1px solid var(--border); color: var(--m
   .dispatch-heading { flex-direction: column; gap: 8px; }
   .dispatch-toolbar { grid-template-columns: 1fr; }
   .package-utilization-grid { grid-template-columns: 1fr; }
+  .operation-workflow-map ul { margin-left: 12px; }
+  .operation-workflow-map :is(a, .operation-workflow-identity) { grid-template-columns: 1fr; gap: 2px; }
   .package-trend-panel > header { align-items: flex-start; flex-direction: column; }
   .overview-observability > .section-heading { align-items: flex-start; flex-direction: column; }
   .attention-domain-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }

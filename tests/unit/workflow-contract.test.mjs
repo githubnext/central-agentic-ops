@@ -429,6 +429,27 @@ test("deterministic workflows pin third-party actions by commit SHA", () => {
   }
 });
 
+test("workflow contracts isolate authenticated package lifecycle checks", () => {
+  const packageScripts = JSON.parse(readFileSync(join(root, "package.json"), "utf8")).scripts;
+  assert.match(packageScripts["test:integration"], /control-failure\.test\.mjs/);
+  assert.doesNotMatch(packageScripts["test:integration"], /package-lifecycle/);
+  assert.match(packageScripts["test:package-lifecycle"], /package-lifecycle\.test\.mjs/);
+  assert.doesNotMatch(packageScripts.test, /package-lifecycle/);
+
+  const source = workflow("workflow-contracts.yml");
+  const jobs = generatedJobs(source);
+  const contracts = jobs.get("test")?.block ?? "";
+  const packageLifecycle = jobs.get("package-lifecycle")?.block ?? "";
+
+  assert.match(source, /pull_request:\n    paths-ignore:\n      - \.github\/workflows\/cid\.yml\n      - pages\/dashboard\/\*\*/);
+  assert.match(source, /push:\n    branches: \[main\]\n    paths-ignore:\n      - \.github\/workflows\/cid\.yml\n      - pages\/dashboard\/\*\*/);
+  assert.match(contracts, /npm run check/);
+  assert.doesNotMatch(contracts, /GH_TOKEN|CENTRAL_AGENTIC_OPS_PACKAGE_SOURCE|test:package-lifecycle/);
+  assert.match(packageLifecycle, /GH_TOKEN: \$\{\{ github\.token \}\}/);
+  assert.match(packageLifecycle, /CENTRAL_AGENTIC_OPS_PACKAGE_SOURCE:/);
+  assert.match(packageLifecycle, /npm run test:package-lifecycle/);
+});
+
 test("package manifests exclude repository-only tests", () => {
   for (const relativePath of ["aw.yml", join("advisory", "aw.yml"), join("ambient-context", "aw.yml"), join("aw-maintenance", "aw.yml"), join("dashboard", "aw.yml"), join("dependabot", "aw.yml"), join("eu-cra-compliance", "aw.yml"), join("optimization", "aw.yml")]) {
     const manifest = readFileSync(join(root, relativePath), "utf8");
@@ -1150,18 +1171,21 @@ test("SVG visual audit covers every tracked SVG in both color schemes", () => {
   assert.match(source, /Never claim success if any manifest entry was skipped/);
 });
 
-test("multi-device docs tester covers scheduled browser and appearance compatibility", () => {
+test("multi-device docs tester runs daily and covers browser and appearance compatibility", () => {
   const source = workflow("multi-device-docs-tester.md");
+  const compiled = workflow("multi-device-docs-tester.lock.yml");
 
   assert.match(source, /schedule: daily/);
-  assert.doesNotMatch(source, /pull_request:/);
+  assert.doesNotMatch(source, /pull_request:|workflow_dispatch:|inputs\.devices/);
+  assert.match(compiled, /cron: "\d+ \d+ \* \* \*"  # Friendly format: daily \(scattered\)/);
+  assert.doesNotMatch(compiled, /^  pull_request:/m);
   assert.match(source, /playwright@1\.63\.0-alpha-2026-08-05 install --with-deps webkit/);
   assert.match(source, /^      cat > "\$EXPR_GITHUB_WORKSPACE\/\.playwright\/webkit\.config\.json" <<'EOF'\n      \{\}\n      EOF$/m);
   assert.match(source, /for BROWSER in chrome webkit/);
   assert.match(source, /colorScheme: "light"/);
   assert.match(source, /colorScheme: "dark"/);
   assert.match(source, /currentSrc/);
-  assert.doesNotMatch(source, /create-check-run:/);
+  assert.doesNotMatch(source, /create-check-run:|create_check_run|action_required/);
   assert.match(source, /create-issue:/);
   assert.match(source, /multi-device-docs\/screenshots/);
 });
@@ -1671,6 +1695,10 @@ test("Documentation Pages embeds this repository's control-plane report", () => 
   assert.match(workflowSource, /actions: read/);
   assert.match(workflowSource, /issues: read/);
   assert.match(workflowSource, /pull-requests: read/);
+  assert.match(workflowSource, /github\/gh-aw-actions\/setup-cli@bc8c008a419c5b7a29df6f5641edd35fd1c6ea85 # v0\.87\.10/);
+  assert.match(workflowSource, /version: v0\.87\.10/);
+  assert.match(workflowSource, /ref: ff62cdbec36230acbae869ddb28806e8eca01ea1 # v0\.87\.10/);
+  assert.match(workflowSource, /main\.version=v0\.87\.10/);
   assert.match(workflowSource, /Restore AI Credit usage cache/);
   assert.match(workflowSource, /REPORT_AIC_CACHE: \.cache\/documentation-pages-aic/);
   assert.match(workflowSource, /Save AI Credit usage cache/);

@@ -11,8 +11,14 @@ import { h } from '../dom.js';
  * @returns {string | HTMLElement}
  */
 export function renderLinkedText(text, link) {
+  const external = link ? !link.href.startsWith('#') : false;
   return link
-    ? h('a', { href: link.href, target: '_blank', rel: 'noopener noreferrer', 'aria-label': link.label }, text)
+    ? h('a', {
+        href: link.href,
+        target: external ? '_blank' : undefined,
+        rel: external ? 'noopener noreferrer' : undefined,
+        'aria-label': link.label
+      }, text)
     : text;
 }
 

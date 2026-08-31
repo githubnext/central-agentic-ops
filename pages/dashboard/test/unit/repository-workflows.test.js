@@ -67,6 +67,7 @@ describe('renderRepositoryWorkflows', () => {
       'Upgrade.github/workflows/upgrade.mdMaintenanceWorker'
     ]);
     expect([...rendered.querySelectorAll('tbody td:first-of-type')].map((cell) => cell.textContent)).toEqual(['Active', 'Disabled']);
+    expect(rendered.querySelector('.repository-workflow-badges a')?.getAttribute('href')).toBe('#page-package-detail?package=maintenance');
     expect(rendered.textContent).toContain('Latest registration update: Aug 29, 2026, 10:00 AM. 1 disabled.');
   });
 

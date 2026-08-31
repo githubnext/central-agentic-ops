@@ -28,35 +28,30 @@ describe('view chrome component helpers', () => {
     expect(empty.textContent).toContain('No source provenance available for this page.');
   });
 
-  it('DLS-VIEW-013 renders reusable source and metadata chrome for custom views', () => {
-    const header = renderViewHeader('usage', {
+  it('DLS-VIEW-013 renders reusable metadata chrome for custom views', () => {
+    const header = renderViewHeader({
       'as-of': '2026-08-29T20:00:00Z',
       completeness: 'complete',
       freshness: 'fresh'
     });
 
-    expect(header).toHaveLength(2);
-    expect(header[0]?.className).toBe('view-source');
-    expect(header[0]?.textContent).toBe('Source: usage');
-    expect(header[1]?.className).toBe('view-metadata');
-    expect(header[1]?.textContent).toBe('As of 2026-08-29T20:00:00Z • completeness complete • freshness fresh');
+    expect(header).toHaveLength(1);
+    expect(header[0]?.className).toBe('view-metadata');
+    expect(header[0]?.textContent).toBe('As of 2026-08-29T20:00:00Z • completeness complete • freshness fresh');
   });
 
   it('renders reusable view chrome paragraphs for populated and empty metadata lines', () => {
     const rendered = renderViewChrome([
-      'Source: usage',
       'As of 2026-08-29T20:00:00Z • completeness complete • freshness fresh',
       'Additional detail'
     ]);
     const empty = renderViewChrome([]);
 
-    expect(rendered).toHaveLength(3);
-    expect(rendered[0]?.className).toBe('view-source');
-    expect(rendered[0]?.textContent).toBe('Source: usage');
+    expect(rendered).toHaveLength(2);
+    expect(rendered[0]?.className).toBe('view-metadata');
+    expect(rendered[0]?.textContent).toBe('As of 2026-08-29T20:00:00Z • completeness complete • freshness fresh');
     expect(rendered[1]?.className).toBe('view-metadata');
-    expect(rendered[1]?.textContent).toBe('As of 2026-08-29T20:00:00Z • completeness complete • freshness fresh');
-    expect(rendered[2]?.className).toBe('view-metadata');
-    expect(rendered[2]?.textContent).toBe('Additional detail');
+    expect(rendered[1]?.textContent).toBe('Additional detail');
     expect(empty).toHaveLength(0);
   });
 
@@ -87,7 +82,6 @@ describe('view chrome component helpers', () => {
 
   it('DLS-VIEW-013 renders reusable view section chrome for shared header plus context composition', () => {
     const chrome = renderViewSectionChrome(
-      'usage',
       {
         'as-of': '2026-08-29T20:00:00Z',
         completeness: 'complete',
@@ -96,13 +90,11 @@ describe('view chrome component helpers', () => {
       ['Source: usage', 'Scope: {"organization":"github"}']
     );
 
-    expect(chrome).toHaveLength(3);
-    expect(chrome[0]?.className).toBe('view-source');
-    expect(chrome[0]?.textContent).toBe('Source: usage');
-    expect(chrome[1]?.className).toBe('view-metadata');
-    expect(chrome[1]?.textContent).toBe('As of 2026-08-29T20:00:00Z • completeness complete • freshness fresh');
-    expect(chrome[2]?.className).toBe('view-context');
-    expect(chrome[2]?.textContent).toContain('Scope: {"organization":"github"}');
+    expect(chrome).toHaveLength(2);
+    expect(chrome[0]?.className).toBe('view-metadata');
+    expect(chrome[0]?.textContent).toBe('As of 2026-08-29T20:00:00Z • completeness complete • freshness fresh');
+    expect(chrome[1]?.className).toBe('view-context');
+    expect(chrome[1]?.textContent).toContain('Scope: {"organization":"github"}');
   });
 
   it('DLS-VIEW-013 renders reusable custom-view availability messages and affected-source details', () => {

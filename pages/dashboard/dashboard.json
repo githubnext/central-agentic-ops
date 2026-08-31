@@ -445,6 +445,31 @@
         }
       },
       {
+        "id": "package-detail",
+        "kind": "custom",
+        "title": "Package",
+        "description": "Orchestrator and worker workflows in this package.",
+        "icon": "package",
+        "class-name": "package-detail-page",
+        "route": {
+          "hash-query-parameter": "package"
+        },
+        "views": [
+          {
+            "id": "package-workflows",
+            "title": "Orchestrator and workers",
+            "data": {
+              "sources": [
+                "workflows"
+              ]
+            },
+            "mark": "element",
+            "element": "package-detail",
+            "layout": "full"
+          }
+        ]
+      },
+      {
         "id": "workflows",
         "kind": "built-in",
         "page": "workflows",

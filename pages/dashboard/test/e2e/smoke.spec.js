@@ -30,9 +30,14 @@ function buildPresenterModuleUrl() {
     .replace("'../dom.js'", JSON.stringify(domModuleUrl));
   const histogramModuleUrl = `data:text/javascript;charset=utf-8,${encodeURIComponent(histogramSource)}`;
 
+  const summaryCopySource = readFileSync(new URL('../../src/components/summary-copy.js', import.meta.url), 'utf8')
+    .replace("'../dom.js'", JSON.stringify(domModuleUrl));
+  const summaryCopyModuleUrl = `data:text/javascript;charset=utf-8,${encodeURIComponent(summaryCopySource)}`;
+
   const tableSummarySource = readFileSync(new URL('../../src/components/table-summary.js', import.meta.url), 'utf8')
     .replace("'../dom.js'", JSON.stringify(domModuleUrl))
-    .replace("'./histogram.js'", JSON.stringify(histogramModuleUrl));
+    .replace("'./histogram.js'", JSON.stringify(histogramModuleUrl))
+    .replace("'./summary-copy.js'", JSON.stringify(summaryCopyModuleUrl));
   const tableSummaryModuleUrl = `data:text/javascript;charset=utf-8,${encodeURIComponent(tableSummarySource)}`;
 
   const tableRegionSource = readFileSync(new URL('../../src/components/table-region.js', import.meta.url), 'utf8')
@@ -90,6 +95,12 @@ function buildPresenterModuleUrl() {
   const linkedTextSource = readFileSync(new URL('../../src/components/linked-text.js', import.meta.url), 'utf8')
     .replace("'../dom.js'", JSON.stringify(domModuleUrl));
   const linkedTextModuleUrl = `data:text/javascript;charset=utf-8,${encodeURIComponent(linkedTextSource)}`;
+
+  const packageDetailSource = readFileSync(new URL('../../src/components/package-detail.js', import.meta.url), 'utf8')
+    .replace("'../dom.js'", JSON.stringify(domModuleUrl))
+    .replace("'../octicons.js'", JSON.stringify(octiconsModuleUrl))
+    .replace("'./link-content.js'", JSON.stringify(linkContentModuleUrl));
+  const packageDetailModuleUrl = `data:text/javascript;charset=utf-8,${encodeURIComponent(packageDetailSource)}`;
 
   const countFormattersSource = readFileSync(new URL('../../src/components/count-formatters.js', import.meta.url), 'utf8');
   const countFormattersModuleUrl = `data:text/javascript;charset=utf-8,${encodeURIComponent(countFormattersSource)}`;
@@ -161,6 +172,7 @@ function buildPresenterModuleUrl() {
     .replace("'./link-content.js'", JSON.stringify(linkContentModuleUrl))
     .replace("'./packages-view.js'", JSON.stringify(packagesViewModuleUrl))
     .replace("'./repositories-view.js'", JSON.stringify(repositoriesViewModuleUrl))
+    .replace("'./package-detail.js'", JSON.stringify(packageDetailModuleUrl))
     .replace("'./repository-workflows.js'", JSON.stringify(repositoryWorkflowsModuleUrl))
     .replace("'./outcome-detail.js'", JSON.stringify(outcomeDetailModuleUrl))
     .replace("'./execution-elements.js'", JSON.stringify(executionElementsModuleUrl))
@@ -475,29 +487,45 @@ test('DLS-PAGE-014 DLS-PAGE-015 built-in packages page renders report-style mode
         dashboard: {
           id: 'packages-render',
           title: 'Central Agentic Ops',
-          pages: [{
-            id: 'packages',
-            kind: 'built-in',
-            page: 'packages',
-            title: 'Packages',
-            description: 'Activity from centrally managed packages.',
-            definition: {
-              'data-state': { availability: true, completeness: true, freshness: true },
-              views: [
-                { id: 'package-workflows', data: { source: 'workflows' } },
-                { id: 'package-runs', data: { source: 'runs' } },
-                { id: 'package-usage', data: { source: 'usage' } },
-                { id: 'package-trend', mark: 'element', element: 'package-run-trend', data: { sources: ['workflows', 'runs'] } }
-              ]
+          pages: [
+            {
+              id: 'packages',
+              kind: 'built-in',
+              page: 'packages',
+              title: 'Packages',
+              description: 'Activity from centrally managed packages.',
+              definition: {
+                'data-state': { availability: true, completeness: true, freshness: true },
+                views: [
+                  { id: 'package-workflows', data: { source: 'workflows' } },
+                  { id: 'package-runs', data: { source: 'runs' } },
+                  { id: 'package-usage', data: { source: 'usage' } },
+                  { id: 'package-trend', mark: 'element', element: 'package-run-trend', data: { sources: ['workflows', 'runs'] } }
+                ]
+              }
+            },
+            {
+              id: 'package-detail',
+              kind: 'custom',
+              title: 'Package',
+              route: { 'hash-query-parameter': 'package' },
+              views: [{
+                id: 'package-detail',
+                title: 'Orchestrator and workers',
+                data: { sources: ['workflows'] },
+                mark: 'element',
+                element: 'package-detail'
+              }]
             }
-          }]
+          ]
         }
       };
       const sources = {
         workflows: {
           source: 'workflows',
           rows: [
-            { package: 'ambient-context', 'package-name': 'Ambient Context', workflow: '.github/workflows/ambient-context.md', 'workflow-role': 'orchestrator', 'rollout-mode': 'review', 'max-ai-credits': 250, 'package-aic-allowance': 1050, 'package-inventory-warnings': 0 },
+            { package: 'ambient-context', 'package-name': 'Ambient Context', workflow: '.github/workflows/ambient-context.md', 'workflow-name': 'Ambient Context', 'workflow-role': 'orchestrator', 'rollout-mode': 'review', 'max-ai-credits': 250, 'package-aic-allowance': 1050, 'package-inventory-warnings': 0 },
+            { package: 'ambient-context', 'package-name': 'Ambient Context', workflow: '.github/workflows/ambient-context-worker.md', 'workflow-name': 'Ambient Context Worker', 'workflow-role': 'worker', 'rollout-mode': 'review', 'max-ai-credits': 800, 'package-aic-allowance': 1050, 'package-inventory-warnings': 0 },
             { package: 'aw-maintenance', 'package-name': 'AW Maintenance', workflow: '.github/workflows/aw-maintenance.md', 'workflow-role': 'orchestrator', 'rollout-mode': 'review', 'max-ai-credits': 250, 'package-aic-allowance': 1250, 'package-inventory-warnings': 1 }
           ],
           metadata
@@ -541,7 +569,19 @@ test('DLS-PAGE-014 DLS-PAGE-015 built-in packages page renders report-style mode
   await expect(awMaintenanceSummary.locator('td')).toHaveText(['2', '1', '1', '1', '1', '23.9', 'Aug 29, 2026, 10:05 AM']);
   await expect(page.getByRole('heading', { name: 'All runs over time', level: 3 })).toBeVisible();
   await expect(page.locator('.package-chart-point')).toHaveCount(30);
+  await expect(page.locator('[data-package-id="ambient-context"] a')).toHaveAttribute('href', '#page-package-detail?package=ambient-context');
 
+  await page.locator('[data-package-id="ambient-context"] a').click();
+  await expect(page).toHaveURL(/#page-package-detail\?package=ambient-context$/);
+  await expect(page.getByRole('heading', { name: 'Ambient Context', level: 1 })).toBeVisible();
+  await expect(page.locator('[data-page-mode]')).toHaveText('Review');
+  await expect(page.locator('[data-nav-page-id="packages"]')).toHaveAttribute('aria-current', 'page');
+  await expect(page.getByRole('navigation', { name: 'Ambient Context views' })).toContainText('WorkflowsReportsInsights');
+  await expect(page.getByRole('heading', { name: 'Orchestrator and workers', level: 3 })).toBeVisible();
+  await expect(page.locator('[data-workflow-role="orchestrator"]')).toHaveCount(1);
+  await expect(page.locator('[data-workflow-role="worker"]')).toHaveCount(1);
+
+  await page.locator('[data-nav-page-id="packages"]').click();
   await page.getByRole('tab', { name: 'All' }).focus();
   await page.keyboard.press('ArrowRight');
   await expect(page.getByRole('tab', { name: 'Review' })).toHaveAttribute('aria-selected', 'true');
@@ -1053,7 +1093,7 @@ test('DLS-VIEW-013 DLS-VIEW-014 DLS-VIEW-015 DLS-SAFE-006 custom views render av
   await expect(page.getByRole('heading', { name: 'Total AI Credits' })).toBeVisible();
   await expect(page.locator('[data-metric-value="aic"]')).toHaveText('5');
   const metricSection = page.locator('.page-section').filter({ has: page.getByRole('heading', { name: 'Total AI Credits' }) });
-  await expect(metricSection).toContainText('Source: usage');
+  await expect(metricSection).not.toContainText('Source: usage');
   await expect(metricSection).toContainText('Filters: {"rollout-mode":["review","live"]}');
 
   await expect(page.getByRole('heading', { name: 'Findings Table' })).toBeVisible();
@@ -1075,7 +1115,7 @@ test('DLS-VIEW-013 DLS-VIEW-014 DLS-VIEW-015 DLS-SAFE-006 custom views render av
     'href',
     'https://github.com/github/central-agentic-ops/actions/runs/1001'
   );
-  await expect(page.locator('.page-section').filter({ has: page.getByRole('heading', { name: 'Daily Runs' }) }).locator('.view-source')).toHaveCount(1);
+  await expect(page.locator('.page-section').filter({ has: page.getByRole('heading', { name: 'Daily Runs' }) }).locator('.view-source')).toHaveCount(0);
 
   await expect(page.getByRole('heading', { name: 'Empty Usage' })).toBeVisible();
   await expect(page.locator('[data-view-availability="empty"]')).toHaveText('No observations matched the effective context.');

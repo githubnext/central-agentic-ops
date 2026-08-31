@@ -147,7 +147,7 @@ function renderPackageTopology(packageId, workflows) {
       h(
         'div',
         { className: 'package-identity' },
-        h('h5', null, typeof packageName === 'string' ? packageName : titleCase(packageId)),
+        h('h5', null, h('a', { href: `#page-package-detail?package=${encodeURIComponent(packageId)}` }, typeof packageName === 'string' ? packageName : titleCase(packageId))),
         h('p', null, `${formatCountNoun(workers.length, 'worker', 'workers')} · `, renderLinkedText(toText(repositoryRow?.repository), repositoryLink))
       ),
       renderModeIndicator(mode),

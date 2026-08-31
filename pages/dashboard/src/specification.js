@@ -31,6 +31,7 @@ export const VIEW_ELEMENT_VALUES = [
   'signal-list',
   'package-activity',
   'package-run-trend',
+  'package-detail',
   'dispatch-catalog',
   'repository-scope',
   'repository-aic-usage',
