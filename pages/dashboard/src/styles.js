@@ -212,6 +212,35 @@ h3 { margin: 16px 0 8px; font-size: 1rem; font-weight: 600; }
 .summary-card h4 { margin: 0 0 8px; font-size: .875rem; color: var(--muted); font-weight: 600; text-transform: uppercase; }
 .summary-list, .run-status-counts, .run-conclusion-counts, .run-outcome-counts { list-style: none; margin: 0 0 16px; padding: 0; display: flex; flex-wrap: wrap; gap: 8px; }
 .summary-list li, .run-status-counts li, .run-conclusion-counts li, .run-outcome-counts li { display: inline-flex; align-items: center; gap: 6px; padding: 4px 10px; border: 1px solid var(--border); border-radius: 2em; background: var(--canvas-subtle); font-size: .75rem; font-weight: 600; }
+.repository-tabs { display: flex; gap: 4px; margin-bottom: 24px; border-bottom: 1px solid var(--border); }
+.repository-tabs a { display: inline-flex; align-items: center; gap: 8px; position: relative; padding: 10px 14px 12px; color: var(--fg); font-weight: 600; text-decoration: none; }
+.repository-tabs a > .octicon { color: var(--muted); }
+.repository-tabs a:hover { background: var(--canvas-subtle); }
+.repository-tabs a[aria-current="page"]::after { content: ""; height: 2px; position: absolute; right: 8px; bottom: -1px; left: 8px; background: var(--danger); }
+.repository-workflow-summary { max-width: 890px; margin-bottom: 28px; }
+.repository-metrics { display: grid; grid-template-columns: minmax(220px, .55fr) minmax(420px, 1.45fr); gap: 16px; margin: 0; }
+.repository-metrics > div { min-width: 0; min-height: 168px; padding: 20px 24px; border: 1px solid var(--border); border-radius: 6px; }
+.repository-metrics dt { font-size: 1rem; font-weight: 600; }
+.repository-metrics dd { margin: 8px 0 0; font-size: 1.75rem; font-weight: 600; font-variant-numeric: tabular-nums; }
+.repository-metrics p { margin: 4px 0 0; color: var(--muted); }
+.repository-workflow-status dd { display: flex; align-items: center; gap: 14px; }
+.repository-status-pie { width: 76px; height: 76px; flex: 0 0 76px; border-radius: 50%; }
+.repository-status-total { display: flex; flex-direction: column; line-height: 1.15; text-transform: uppercase; }
+.repository-status-total strong { font-size: 1.75rem; }
+.repository-status-total small { color: var(--muted); font-size: .6875rem; font-weight: 600; letter-spacing: .04em; }
+.repository-workflow-status ul { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px 18px; margin: 10px 0 0; padding: 0; list-style: none; color: var(--muted); }
+.repository-workflow-status li { display: grid; grid-template-columns: 10px minmax(0, 1fr) auto; align-items: center; gap: 7px; }
+.repository-workflow-status li i { width: 9px; height: 9px; border-radius: 50%; }
+.repository-workflow-status li strong { color: var(--fg); font-variant-numeric: tabular-nums; }
+.repository-section-heading { display: flex; align-items: flex-start; justify-content: space-between; gap: 24px; margin-bottom: 12px; }
+.repository-section-heading h3, .repository-section-heading h4 { margin: 0 0 3px; font-size: 1.25rem; }
+.repository-section-heading p { margin: 0; color: var(--muted); }
+.repository-section-heading > a { display: inline-flex; align-items: center; gap: 5px; flex: none; }
+.repository-workflow-table tbody th > a, .repository-workflow-table tbody th code { display: block; width: fit-content; }
+.repository-workflow-source { margin-top: 3px; color: var(--muted); text-decoration: none; }
+.repository-workflow-badges { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 5px; }
+.repository-workflow-badges > span { padding: 1px 7px; border: 1px solid var(--border); border-radius: 2em; color: var(--muted); font-size: .6875rem; font-weight: 600; }
+.repository-workflow-table td { white-space: nowrap; }
 .overview-content { display: grid; gap: 24px; }
 .scope-kicker { color: var(--muted); font-size: .75rem; font-weight: 600; text-transform: uppercase; }
 .control-plane-status { overflow: hidden; border-radius: 6px; }
@@ -526,6 +555,9 @@ footer { padding: 20px 24px; border-top: 1px solid var(--border); color: var(--m
   .data-state-summary, .metrics { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .layout-section[data-section-layout="wide"], .layout-section[data-section-layout="narrow"] { grid-column: span 12; }
   .custom-view[data-view-layout="half"], .custom-view[data-view-layout="third"] { grid-column: span 12; }
+  .repository-metrics { grid-template-columns: 1fr; }
+  .repository-section-heading { display: block; }
+  .repository-section-heading > a { margin-top: 10px; }
   .chart-view-pie { grid-template-columns: 1fr; }
   .pie-chart-layout { grid-column: 1; grid-row: auto; }
   .chart-view-pie > .view-source, .chart-view-pie > .view-metadata, .chart-view-pie > .view-context { grid-column: 1; }

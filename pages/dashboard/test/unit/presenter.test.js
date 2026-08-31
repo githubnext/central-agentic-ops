@@ -1783,4 +1783,69 @@ describe('presenter built-in and custom pages', () => {
     expect(rendered.querySelector('.custom-table .mode-review')?.textContent).toBe('review');
     expect(rendered.querySelector('.custom-table .status-danger')?.textContent).toBe('failure');
   });
+
+  it('routes and reallocates a JSON-selected repository workflow view from a hash query argument', () => {
+    window.history.replaceState(null, '', '/#page-repository-detail?repository=octo-org%2Focto-repo');
+    const rendered = renderDashboard({
+      document: {
+        languageVersion: '0.1.0',
+        dashboard: {
+          id: 'repository-detail-dashboard',
+          title: 'Repository detail',
+          pages: [{
+            id: 'repository-detail',
+            kind: /** @type {'custom'} */ ('custom'),
+            title: 'Repository',
+            route: { 'hash-query-parameter': 'repository' },
+            views: [{
+              id: 'repository-workflows',
+              title: 'Agentic workflows',
+              data: {
+                sources: ['workflows']
+              },
+              mark: 'element',
+              element: 'repository-workflows'
+            }]
+          }]
+        }
+      },
+      sources: {
+        workflows: {
+          source: 'workflows',
+          rows: [
+            { organization: 'octo-org', repository: 'octo-repo', workflow: '.github/workflows/review.md', 'workflow-name': 'Review', 'workflow-role': 'standalone', 'workflow-active': 'true', 'observed-at': '2026-08-29T10:00:00Z' },
+            { organization: 'other-org', repository: 'other-repo', workflow: '.github/workflows/other.md', 'workflow-name': 'Other', 'workflow-role': 'standalone', 'workflow-active': 'true', 'observed-at': '2026-08-29T10:00:00Z' }
+          ],
+          metadata: {
+            'source-id': 'workflows-fixture',
+            'source-kind': 'fixture',
+            'as-of': '2026-08-29T20:00:00Z',
+            'retrieved-at': '2026-08-29T20:01:00Z',
+            completeness: 'complete',
+            freshness: 'fresh',
+            availability: 'available'
+          }
+        }
+      }
+    });
+    document.body.append(rendered);
+
+    const repositoryView = rendered.querySelector('.repository-view');
+    expect(repositoryView?.getAttribute('data-repository')).toBe('octo-org/octo-repo');
+    expect(repositoryView?.textContent).toContain('Review');
+    expect(repositoryView?.textContent).not.toContain('Other');
+    expect(rendered.querySelector('#page-title')?.textContent).toBe('octo-org/octo-repo');
+    expect(rendered.querySelector('[data-breadcrumb-page]')?.textContent).toBe('octo-org/octo-repo');
+    expect(rendered.querySelector('.repository-tabs a')?.getAttribute('href')).toBe('#page-repository-detail?repository=octo-org%2Focto-repo');
+
+    window.history.replaceState(null, '', '/#page-repository-detail?repository=other-org%2Fother-repo');
+    window.dispatchEvent(new Event('hashchange'));
+
+    expect(repositoryView?.getAttribute('data-repository')).toBe('other-org/other-repo');
+    expect(repositoryView?.textContent).toContain('Other');
+    expect(repositoryView?.textContent).not.toContain('Review');
+    expect(rendered.querySelector('#page-title')?.textContent).toBe('other-org/other-repo');
+    rendered.remove();
+    window.history.replaceState(null, '', '/');
+  });
 });

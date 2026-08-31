@@ -98,7 +98,7 @@ function renderAicDistribution(sources, summaries, headingId) {
     y: Number(aiCredits),
     color: null
   }));
-  const links = new Map(leading.flatMap((entry) => entry.link ? [[entry.repository, entry.link]] : []));
+  const links = new Map(leading.map((entry) => [entry.repository, repositoryDetailLink(entry.repository)]));
 
   return h(
     'section',
@@ -190,9 +190,22 @@ function renderRepositoryActivity(sources, summaries, headingId) {
  * @param {RepositorySummary} summary
  */
 function renderRepositoryLink(summary) {
-  return summary.link
-    ? h('a', { href: summary.link.href, target: '_blank', rel: 'noopener noreferrer', 'aria-label': summary.link.label }, summary.repository)
-    : summary.repository;
+  const link = repositoryDetailLink(summary.repository);
+  return h('a', {
+    href: link.href,
+    'aria-label': link.label,
+    dataset: { navPageId: 'repository-detail' }
+  }, summary.repository);
+}
+
+/**
+ * @param {string} repository
+ */
+function repositoryDetailLink(repository) {
+  return {
+    href: `#page-repository-detail?repository=${encodeURIComponent(repository)}`,
+    label: `View ${repository}`
+  };
 }
 
 /**

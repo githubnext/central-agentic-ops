@@ -81,7 +81,8 @@ describe('repositories view', () => {
     expect(alpha?.textContent).toContain('50%');
     expect(alpha?.textContent).toContain('60');
     expect(alpha?.textContent).toContain('Needs attention');
-    expect(alpha?.querySelector('th a')?.getAttribute('href')).toBe('https://github.com/octo-org/alpha');
+    expect(alpha?.querySelector('th a')?.getAttribute('href')).toBe('#page-repository-detail?repository=octo-org%2Falpha');
+    expect(alpha?.querySelector('th a')?.getAttribute('data-nav-page-id')).toBe('repository-detail');
 
     const beta = rendered.querySelector('[data-repository="octo-org/beta"]');
     expect(beta?.textContent).toContain('Approval required');
