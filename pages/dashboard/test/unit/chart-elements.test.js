@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import { describe, expect, it } from 'vitest';
-import { groupChartSeries, listChartSeries, pieChartEntries, renderChartLegend, renderPieLegend } from '../../src/components/chart-elements.js';
+import { groupChartSeries, listChartSeries, pieChartEntries, renderChartLegend, renderChartWidget, renderPieLegend } from '../../src/components/chart-elements.js';
 
 describe('chart element helpers', () => {
   it('DLS-SAFE-009 groups chart series deterministically and lists reusable class names', () => {
@@ -69,5 +69,24 @@ describe('chart element helpers', () => {
     expect(populated.querySelector('a')?.getAttribute('href')).toBe('https://github.com/octo-org/open');
     expect(populated.querySelector('a')?.getAttribute('aria-label')).toBe('View octo-org/open on GitHub');
     expect(empty.querySelectorAll('li')).toHaveLength(0);
+  });
+
+  it('DLS-VIEW-005 DLS-VIEW-006 DLS-VIEW-007 renders JSON-selected chart marks through one generic helper', () => {
+    const points = [
+      { x: '2026-08-29', y: 3, color: 'success' },
+      { x: '2026-08-30', y: 1, color: 'failure' }
+    ];
+    const series = listChartSeries(points);
+
+    const bar = renderChartWidget('bar', points, series);
+    const line = renderChartWidget('line', points, series);
+    const pie = renderChartWidget('pie', points, series);
+
+    expect(bar.getAttribute('data-chart-widget')).toBe('bar');
+    expect(bar.querySelectorAll('.bar-chart-bar')).toHaveLength(2);
+    expect(line.getAttribute('data-chart-widget')).toBe('line');
+    expect(line.querySelectorAll('.line-chart-series')).toHaveLength(2);
+    expect(pie.getAttribute('data-chart-widget')).toBe('pie');
+    expect(pie.querySelectorAll('.pie-chart-segment')).toHaveLength(2);
   });
 });
