@@ -46,7 +46,7 @@ function context() {
 }
 
 describe('outcome detail', () => {
-  it('allocates a routed outcome and renders reusable metadata and sanitized Markdown', () => {
+  it('DLS-SAFE-012 allocates a routed outcome and renders reusable metadata and sanitized Markdown', () => {
     const allocation = vi.fn();
     const rendered = renderOutcomeDetail(context());
     rendered.addEventListener('dashboard-route-allocation', allocation);

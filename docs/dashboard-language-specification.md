@@ -247,7 +247,7 @@ The `source` vocabulary is closed in version 0.1.0.
 | `evals` | eval definition | `eval`, `eval-name`, `eval-question`, `requested-model`, `observed-at` |
 | `eval-observations` | eval observation | scope IDs, `run`, `experiment`, `eval`, `eval-result`, `requested-model`, `resolved-model`, `rollout-mode`, `observed-at` |
 | `usage` | model invocation | scope IDs, `run`, `invocation`, `engine`, `requested-model`, `resolved-model`, `rollout-mode`, `input-tokens`, `output-tokens`, `cache-read-tokens`, `cache-write-tokens`, `reasoning-tokens`, `aic`, `observed-at`, `organization-link`, `repository-link`, `workflow-link`, `run-link` |
-| `outcomes` | safe-output outcome observation | scope IDs, `run`, `safe-output`, `outcome-title`, `outcome-summary`, `outcome-body-html`, `outcome-category`, `outcome-status`, `outcome-state`, `evidence-strength`, `rollout-mode`, `published-at`, `observed-at`, `issue-link`, `pull-request-link`, `run-link`, `external-link`, `organization-link`, `repository-link`, `workflow-link` |
+| `outcomes` | safe-output outcome observation | scope IDs, `workflow-name`, `run`, `safe-output`, `outcome-title`, `outcome-summary`, `outcome-body-html`, `outcome-category`, `outcome-status`, `outcome-state`, `evidence-strength`, `rollout-mode`, `published-at`, `observed-at`, `issue-link`, `pull-request-link`, `run-link`, `external-link`, `organization-link`, `repository-link`, `workflow-link` |
 | `findings` | finding | scope IDs, `run`, `finding`, `finding-severity`, `finding-status`, `finding-summary`, `observed-at`, `issue-link`, `pull-request-link`, `run-link`, `external-link`, `organization-link`, `repository-link`, `workflow-link` |
 | `operational-values` | value observation | scope IDs, `run`, `experiment`, `operational-case`, `evaluator-digest`, `rollout-mode`, `operational-value`, `operational-value-definition`, `requested-evidence-at`, `evidence-cutoff`, `maturity-at`, `maturity-status`, `baseline-value`, `delta-from-baseline`, `observed-at`, `evidence-link`, `organization-link`, `repository-link`, `workflow-link`, `run-link` |
 
@@ -526,7 +526,7 @@ A custom page may declare one constrained route binding:
 
 The route selects the page through `#page-<page-id>?<parameter>=<value>`, with the page ID and query components percent-encoded as defined by URI syntax. For `#page-repository-detail?repository=github%2Fgh-aw`, the decoded, trimmed route value is `github/gh-aw`. A non-empty route value allocates that custom-page instance: the presenter uses it as the page title and final breadcrumb label and supplies it as an opaque route binding to route-aware named elements. A missing or empty value leaves the declared page title in place and supplies an empty binding.
 
-This binding is constrained templating, not general string interpolation. A presenter treats the value as text, never as markup or executable content, and does not substitute it into arbitrary document fields. A named element may apply stricter domain validation before using the value for filtering or links.
+This binding is constrained templating, not general string interpolation. A presenter treats the value as text, never as markup or executable content, and does not substitute it into arbitrary document fields. A named element may apply stricter domain validation before using the value for filtering or links. A route-aware named element may replace the provisional route-value title and description with human-readable text from its selected declared-source row; the presenter must apply the same text-only treatment to that allocation.
 
 | Semantic view | `mark` values | Required encoding |
 |---|---|---|
@@ -600,7 +600,7 @@ Disclosure changes presentation only. It does not change data processing, data s
 - **DLS-VIEW-024:** A custom page `sections` sequence, when present, **MUST** be non-empty. Every section **MUST** have a unique canonical `id`, one `layout` value of `full`, `wide`, or `narrow`, and a non-empty `views` sequence. Sections **MUST** reference every page view exactly once and preserve view declaration order; an omitted section title **MUST** default from its section ID. `count-source` and non-empty `count-label`, when used, **MUST** appear together and expose that source's effective row count without changing view data.
 - **DLS-VIEW-025:** A presenter **MUST** apply a field's referenced unit consistently to metric values, table cells, chart value labels, chart data tables, and accessible chart labels.
 - **DLS-VIEW-026:** A custom page `route`, when present, **MUST** be a mapping containing exactly `hash-query-parameter`, whose value **MUST** be a canonical identifier. Built-in pages **MUST NOT** declare `route`.
-- **DLS-VIEW-027:** A presenter **MUST** resolve a custom page route from `#page-<page-id>?<parameter>=<value>`. It **MUST** use a non-empty decoded, trimmed route value as the page title and final breadcrumb label and supply it as an opaque binding to route-aware named elements; a missing or empty value **MUST** preserve the declared title and supply an empty binding. The value **MUST** be treated only as text and **MUST NOT** be interpreted as markup, code, a URI, or a general-purpose content template.
+- **DLS-VIEW-027:** A presenter **MUST** resolve a custom page route from `#page-<page-id>?<parameter>=<value>`. It **MUST** use a non-empty decoded, trimmed route value as the provisional page title and final breadcrumb label and supply it as an opaque binding to route-aware named elements; a missing or empty value **MUST** preserve the declared title and supply an empty binding. A route-aware named element **MAY** replace that provisional title and description with human-readable text from its selected declared-source row. Route and allocated values **MUST** be treated only as text and **MUST NOT** be interpreted as markup, code, a URI, or a general-purpose content template.
 - **DLS-VIEW-028:** Table `controls`, when present, **MUST** be `interactive` or `static`; an omitted value **MUST** default to `interactive`. A static table **MUST** expose every effective row without filter, sort, summary, pagination, or nested-scroll controls. `empty-message`, when present, **MUST** be non-empty text and **MUST** appear only inside a zero-row table body.
 
 ---
@@ -656,6 +656,7 @@ Research should compare one through four essential views, record disclosure use,
 - **DLS-SAFE-009:** Color **MUST NOT** be the only means of communicating a category, status, outcome, freshness, completeness, or severity.
 - **DLS-SAFE-010:** Every availability, completeness, and freshness value **MUST** have a distinct textual label, and each link **MUST** expose its non-empty label.
 - **DLS-SAFE-011:** A presenter's report action toolbar **MUST** expose a descriptive accessible name or description for its refresh control identifying what the control does, and **MUST** expose a non-empty accessible label for its GitHub repository link when `dashboard.repository` is present.
+- **DLS-SAFE-012:** A presenter that renders `outcome-body-html` **MUST** rebuild it through a context-appropriate element and attribute allowlist, discard executable or embedded content, and apply **DLS-SAFE-004** to retained links and images.
 
 ---
 
@@ -690,7 +691,7 @@ In the table, “accept” means validation succeeds; “reject” means validat
 | DLS-VIEW-016–021 | T-VIEW-003 | 3 | Validate disclosure vocabulary, one-to-four essential views, initial collapsed state, accessible controls, source order, and unchanged semantic output. |
 | DLS-VIEW-022–024 | T-VIEW-004 | 3 | Validate named element dispatch, explicit field display treatments, and complete ordered custom-page section layouts. |
 | DLS-VAL-001–005 | T-VAL-001 | 1–3 | Verify rejection, coded path-specific errors, semantic checks, progressive-disclosure bounds, and secret redaction. |
-| DLS-SAFE-001–006 | T-SAFE-001 | 3 | Exercise safe YAML, inert content, sanitization, HTTPS links, secrets, and authorization boundaries. |
+| DLS-SAFE-001–006, DLS-SAFE-012 | T-SAFE-001 | 3 | Exercise safe YAML, inert content, outcome-HTML allowlisting, HTTPS links, secrets, and authorization boundaries. |
 | DLS-SAFE-007–010 | T-SAFE-002 | 3 | Inspect names, textual alternatives, labels, and non-color semantics. |
 | DLS-SAFE-011 | T-SAFE-003 | 3 | Inspect the report action toolbar's refresh control description and GitHub repository link label. |
 | DLS-TEST-001–003 | T-TEST-001 | 1–3 | Inspect coverage, result metadata, time boundaries, and missing-data distinctions. |
@@ -860,6 +861,7 @@ dashboard:
 - Added centrally managed package semantics and the `packages` built-in page for mode-filtered package AIC utilization and package-run trends.
 - Added `dashboard.repository` and **DLS-DOC-012** so a presenter's report action toolbar can expose a GitHub repository link, and added **DLS-SAFE-011** requiring a descriptive refresh control and a labeled repository link.
 - Added constrained custom-page hash-query routing and route-bound templating through **DLS-VIEW-026** and **DLS-VIEW-027**.
+- Added route-aware human-readable title allocation and allowlisted `outcome-body-html` presentation through **DLS-SAFE-012**.
 - Updated the complete example to declare repository AIC distribution as a linked, ordered pie chart.
 
 ---
