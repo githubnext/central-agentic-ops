@@ -5,6 +5,9 @@
 import { h } from '../dom.js';
 import { renderHistogram } from './histogram.js';
 
+const RUN_SUMMARY_FIELDS = new Set(['run', 'run-link']);
+const RUN_SUMMARY_LABELS = new Set(['run', 'run link', 'workflow run', 'workflow runs']);
+
 /**
  * @typedef {{ field?: string, label: string, type?: string, values: unknown[] }} TableSummaryColumn
  */
@@ -70,12 +73,7 @@ function shouldRenderCountSummary(column, values) {
   }
   const field = String(column.field ?? '').toLocaleLowerCase('en');
   const label = column.label.toLocaleLowerCase('en');
-  return field === 'run'
-    || field === 'run-link'
-    || label === 'run'
-    || label === 'run link'
-    || label === 'workflow run'
-    || label === 'workflow runs';
+  return RUN_SUMMARY_FIELDS.has(field) || RUN_SUMMARY_LABELS.has(label);
 }
 
 /**
