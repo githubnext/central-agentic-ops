@@ -222,6 +222,20 @@ test('DLS-PAGE-002 DLS-PAGE-014 built-in overview page renders the report-style 
                   { id: 'operational-values-source', data: { source: 'operational-values' } }
                 ]
               }
+            },
+            {
+              id: 'runtime',
+              kind: 'custom',
+              title: 'Runtime & episodes',
+              views: [
+                {
+                  id: 'runtime-execution-episodes',
+                  title: 'Execution episodes',
+                  data: { sources: ['workflows', 'runs', 'outcomes', 'usage'] },
+                  mark: 'element',
+                  element: 'execution-episodes'
+                }
+              ]
             }
           ],
           navigation: [
@@ -406,7 +420,7 @@ test('DLS-PAGE-002 DLS-PAGE-014 built-in overview page renders the report-style 
     '#page-cost'
   ]);
   await expect(page.locator('.overview-method-note')).toContainText('State key:');
-  await expect(page.locator('.data-state-summary')).toBeHidden();
+  await expect(page.locator('[data-page-id="overview"] .data-state-summary')).toBeHidden();
 
   await page.setViewportSize({ width: 400, height: 900 });
   const firstCardBox = await cards.first().boundingBox();
