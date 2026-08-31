@@ -389,17 +389,60 @@
               "title": "Activity by repository",
               "description": "Repository-local execution health and all attributed package or local-workflow outcomes.",
               "data": {
-                "sources": [
-                  "repositories",
-                  "workflows",
-                  "runs",
-                  "outcomes",
-                  "usage",
-                  "operational-values"
-                ]
+                "source": "repository-activity"
               },
-              "mark": "element",
-              "element": "repository-activity"
+              "mark": "table",
+              "controls": "static",
+              "empty-message": "No repositories discovered.",
+              "encoding": {
+                "columns": [
+                  {
+                    "field": "repository",
+                    "type": "nominal",
+                    "title": "Repository"
+                  },
+                  {
+                    "field": "workflows",
+                    "type": "quantitative",
+                    "title": "Local AWs"
+                  },
+                  {
+                    "field": "reports",
+                    "type": "quantitative",
+                    "title": "Reports"
+                  },
+                  {
+                    "field": "evaluated-workflows",
+                    "type": "quantitative",
+                    "title": "Evaluated AWs"
+                  },
+                  {
+                    "field": "runs",
+                    "type": "quantitative",
+                    "title": "Local runs"
+                  },
+                  {
+                    "field": "failure-summary",
+                    "type": "nominal",
+                    "title": "Failure rate"
+                  },
+                  {
+                    "field": "aic",
+                    "type": "quantitative",
+                    "title": "Local AIC"
+                  },
+                  {
+                    "field": "status",
+                    "type": "nominal",
+                    "title": "Status",
+                    "display": "status"
+                  }
+                ],
+                "href": {
+                  "field": "repository-link",
+                  "type": "nominal"
+                }
+              }
             }
           ]
         }
