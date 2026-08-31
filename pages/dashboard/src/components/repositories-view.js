@@ -275,10 +275,7 @@ function statusLink(label, className, pageId) {
 function summarizeRepositories(sources) {
   /** @type {Map<string, RepositorySummary>} */
   const summaries = new Map();
-  const sourceNames = ['repositories', 'workflows', 'runs', 'outcomes', 'usage', 'operational-values'];
-  for (const sourceName of sourceNames) {
-    for (const row of rowsFor(sources, sourceName)) ensureSummary(summaries, row);
-  }
+  for (const row of rowsFor(sources, 'repositories')) ensureSummary(summaries, row);
   for (const row of rowsFor(sources, 'workflows')) {
     const summary = ensureSummary(summaries, row);
     if (!summary) continue;

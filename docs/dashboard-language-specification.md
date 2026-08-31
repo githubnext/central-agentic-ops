@@ -844,7 +844,7 @@ dashboard:
 - Added centrally managed package semantics and the `packages` built-in page for mode-filtered package AIC utilization and package-run trends.
 - Added `dashboard.repository` and **DLS-DOC-012** so a presenter's report action toolbar can expose a GitHub repository link, and added **DLS-SAFE-011** requiring a descriptive refresh control and a labeled repository link.
 - Added constrained custom-page hash-query routing and route-bound templating through **DLS-VIEW-026** and **DLS-VIEW-027**.
-- Updated the complete example to declare repository AIC distribution as a linked, ordered pie chart.
+- Replaced separate repositories-page views with a unified `repository-activity` element for scope, AIC distribution, and activity summaries.
 
 ---
 
