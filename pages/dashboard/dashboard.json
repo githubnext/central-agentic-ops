@@ -189,6 +189,24 @@
           },
           "views": [
             {
+              "id": "repositories-by-aic",
+              "title": "AI Credit usage by AW repository",
+              "description": "Read-only usage reported by AW runs, grouped by repository.",
+              "data": {
+                "source": "usage",
+                "order-by": [
+                  { "field": "total-aic", "direction": "desc" }
+                ]
+              },
+              "mark": "chart",
+              "chart": "pie",
+              "encoding": {
+                "x": { "field": "repository", "type": "nominal", "title": "Repository" },
+                "y": { "field": "aic", "type": "quantitative", "aggregate": "sum", "as": "total-aic", "title": "Total AIC" },
+                "href": { "field": "repository-link" }
+              }
+            },
+            {
               "id": "repositories-repositories-source",
               "title": "Repository Inventory and Rankings",
               "data": { "source": "repositories" },
@@ -217,24 +235,6 @@
                   { "field": "repository", "type": "nominal" },
                   { "field": "run", "type": "nominal", "aggregate": "distinct-count", "as": "run-count" }
                 ]
-              }
-            },
-            {
-              "id": "repositories-by-aic",
-              "title": "AI Credit usage by AW repository",
-              "description": "Read-only usage reported by AW runs, grouped by repository.",
-              "data": {
-                "source": "usage",
-                "order-by": [
-                  { "field": "total-aic", "direction": "desc" }
-                ]
-              },
-              "mark": "chart",
-              "chart": "pie",
-              "encoding": {
-                "x": { "field": "repository", "type": "nominal", "title": "Repository" },
-                "y": { "field": "aic", "type": "quantitative", "aggregate": "sum", "as": "total-aic", "title": "Total AIC" },
-                "href": { "field": "repository-link" }
               }
             },
             {

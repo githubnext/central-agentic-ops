@@ -765,6 +765,22 @@ describe('presenter built-in and custom pages', () => {
     const repositoriesPage = pages.find((/** @type {{ page: string }} */ page) => page.page === 'repositories');
     expect(repositoriesPage?.definition.views).toMatchObject([
       {
+        id: 'repositories-by-aic',
+        title: 'AI Credit usage by AW repository',
+        description: 'Read-only usage reported by AW runs, grouped by repository.',
+        data: {
+          source: 'usage',
+          'order-by': [{ field: 'total-aic', direction: 'desc' }]
+        },
+        mark: 'chart',
+        chart: 'pie',
+        encoding: {
+          x: { field: 'repository', title: 'Repository' },
+          y: { field: 'aic', aggregate: 'sum', as: 'total-aic', title: 'Total AIC' },
+          href: { field: 'repository-link' }
+        }
+      },
+      {
         id: 'repositories-repositories-source',
         title: 'Repository Inventory and Rankings',
         data: { source: 'repositories' }
@@ -781,22 +797,6 @@ describe('presenter built-in and custom pages', () => {
             { field: 'repository' },
             { field: 'run', aggregate: 'distinct-count', as: 'run-count' }
           ]
-        }
-      },
-      {
-        id: 'repositories-by-aic',
-        title: 'AI Credit usage by AW repository',
-        description: 'Read-only usage reported by AW runs, grouped by repository.',
-        data: {
-          source: 'usage',
-          'order-by': [{ field: 'total-aic', direction: 'desc' }]
-        },
-        mark: 'chart',
-        chart: 'pie',
-        encoding: {
-          x: { field: 'repository', title: 'Repository' },
-          y: { field: 'aic', aggregate: 'sum', as: 'total-aic', title: 'Total AIC' },
-          href: { field: 'repository-link' }
         }
       },
       {
@@ -1625,7 +1625,7 @@ describe('presenter built-in and custom pages', () => {
     });
 
     expect(rendered.querySelectorAll('[data-chart-widget="bar"] rect[role="img"]')).toHaveLength(2);
-    expect(rendered.querySelector('[data-chart-widget="bar"] rect')?.getAttribute('aria-label')).toContain('success');
+    expect(rendered.querySelector('[data-chart-widget="bar"] rect')?.getAttribute('aria-label')).toContain('failure');
     expect(rendered.querySelector('[data-chart-legend="visual"]')?.getAttribute('class')).toContain('chart-legend-bar');
     expect([...rendered.querySelectorAll('[data-chart-legend="visual"] li span')].map((item) => item.textContent)).toEqual(['failure', 'success']);
     expect(rendered.querySelectorAll('.custom-table a')).toHaveLength(1);
