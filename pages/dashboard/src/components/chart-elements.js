@@ -217,7 +217,8 @@ export function renderChartWidget(chartType, points, series, pieSummary = null, 
     );
   }
 
-  const maximum = Math.max(...points.map((point) => point.y), 1);
+  const values = points.map((point) => toNumber(point.y));
+  const maximum = Math.max(...values, 1);
   const barWidth = points.length > 0 ? Math.min(14, 80 / points.length) : 14;
   const seriesClassNames = new Map(series.map((item) => [item.name, item.className]));
   return h(
@@ -229,7 +230,7 @@ export function renderChartWidget(chartType, points, series, pieSummary = null, 
       h('line', { className: 'bar-chart-axis', x1: 0, y1: 38, x2: 100, y2: 38 }),
       ...points.map((point, index) => {
         const x = ((index + 0.5) / Math.max(points.length, 1)) * 100 - (barWidth / 2);
-        const height = Math.max(1, (Math.max(0, point.y) / maximum) * 34);
+        const height = Math.max(1, (Math.max(0, toNumber(point.y)) / maximum) * 34);
         return h('rect', {
           className: `bar-chart-bar ${seriesClassNames.get(point.color ?? 'value') ?? 'chart-series-1'}`,
           x,
