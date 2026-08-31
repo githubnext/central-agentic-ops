@@ -178,7 +178,7 @@ function renderRecordCardsElement(context) {
             'dl',
             null,
             renderPackageDetail('Workers', row.workers),
-            renderPackageDetail('AIC allowance', row['aic-allowance'] === null ? '—' : formatNumber(row['aic-allowance'])),
+            renderPackageDetail('AIC allowance', formatOptionalNumber(row['aic-allowance'])),
             renderPackageDetail('Inventory', row.inventory, stringValue(row['inventory-state']))
           )
         ))
@@ -209,6 +209,7 @@ function renderMeterItem(row) {
 /**
  * @param {string} label
  * @param {unknown} value
+ * @param {string} detail
  * @param {string} className
  */
 function renderVital(label, value, detail, className = '') {
@@ -283,6 +284,13 @@ function renderPackageDetail(label, value, className = '') {
  */
 function stringValue(value) {
   return value == null ? '' : String(value);
+}
+
+/**
+ * @param {unknown} value
+ */
+function formatOptionalNumber(value) {
+  return typeof value === 'number' && Number.isFinite(value) ? formatNumber(value) : '—';
 }
 
 /**

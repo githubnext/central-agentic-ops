@@ -122,7 +122,7 @@ function buildOverviewStatusRow(input) {
  * @param {{ sources: Record<string, import('./presenter.js').LogicalSourceInput>, usage: Array<Record<string, unknown>>, packages: ReturnType<typeof summarizePackages>, health: ReturnType<typeof summarizeRunHealth>, workflows: Array<Record<string, unknown>>, repositories: Array<Record<string, unknown>> }} input
  */
 function buildOverviewVitals(input) {
-  const { sources, usage, packages, health, workflows, repositories } = input;
+  const { sources, packages, health, workflows, repositories } = input;
   const hasRunTelemetry = sources.runs?.metadata?.availability !== 'unavailable';
   const disabledWorkflows = workflows.filter((row) => String(row['workflow-active']) === 'false').length;
   const repositoryCount = repositories.length > 0
