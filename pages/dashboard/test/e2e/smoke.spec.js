@@ -48,9 +48,28 @@ function buildPresenterModuleUrl() {
   const viewFormattersSource = readFileSync(new URL('../../src/view-formatters.js', import.meta.url), 'utf8');
   const viewFormattersModuleUrl = `data:text/javascript;charset=utf-8,${encodeURIComponent(viewFormattersSource)}`;
 
+  const runClassificationRuleSource = readFileSync(new URL('../../src/components/run-conclusion-classification.json', import.meta.url), 'utf8');
+  const runClassificationRuleUrl = `data:application/json;charset=utf-8,${encodeURIComponent(runClassificationRuleSource)}`;
+
+  const utilizationThresholdsSource = readFileSync(new URL('../../src/components/package-aic-utilization-thresholds.json', import.meta.url), 'utf8');
+  const utilizationThresholdsUrl = `data:application/json;charset=utf-8,${encodeURIComponent(utilizationThresholdsSource)}`;
+
+  const runClassificationSource = readFileSync(new URL('../../src/components/run-classification.js', import.meta.url), 'utf8')
+    .replace("'./run-conclusion-classification.json'", JSON.stringify(runClassificationRuleUrl))
+    .replace("'./package-aic-utilization-thresholds.json'", JSON.stringify(utilizationThresholdsUrl));
+  const runClassificationModuleUrl = `data:text/javascript;charset=utf-8,${encodeURIComponent(runClassificationSource)}`;
+
+  const attentionRulesJsonSource = readFileSync(new URL('../../src/components/attention-rules.json', import.meta.url), 'utf8');
+  const attentionRulesJsonUrl = `data:application/json;charset=utf-8,${encodeURIComponent(attentionRulesJsonSource)}`;
+
+  const attentionRulesSource = readFileSync(new URL('../../src/components/attention-rules.js', import.meta.url), 'utf8')
+    .replace("'./attention-rules.json'", JSON.stringify(attentionRulesJsonUrl));
+  const attentionRulesModuleUrl = `data:text/javascript;charset=utf-8,${encodeURIComponent(attentionRulesSource)}`;
+
   const packagesViewSource = readFileSync(new URL('../../src/components/packages-view.js', import.meta.url), 'utf8')
     .replace("'../dom.js'", JSON.stringify(domModuleUrl))
-    .replace("'../view-formatters.js'", JSON.stringify(viewFormattersModuleUrl));
+    .replace("'../view-formatters.js'", JSON.stringify(viewFormattersModuleUrl))
+    .replace("'./run-classification.js'", JSON.stringify(runClassificationModuleUrl));
   const packagesViewModuleUrl = `data:text/javascript;charset=utf-8,${encodeURIComponent(packagesViewSource)}`;
 
   const linkContentSource = readFileSync(new URL('../../src/components/link-content.js', import.meta.url), 'utf8')
@@ -96,7 +115,9 @@ function buildPresenterModuleUrl() {
   const dataViewModuleUrl = `data:text/javascript;charset=utf-8,${encodeURIComponent(dataViewSource)}`;
 
   const overviewDataSource = readFileSync(new URL('../../src/overview-data.js', import.meta.url), 'utf8')
-    .replace("'./view-formatters.js'", JSON.stringify(viewFormattersModuleUrl));
+    .replace("'./view-formatters.js'", JSON.stringify(viewFormattersModuleUrl))
+    .replace("'./components/run-classification.js'", JSON.stringify(runClassificationModuleUrl))
+    .replace("'./components/attention-rules.js'", JSON.stringify(attentionRulesModuleUrl));
   const overviewDataModuleUrl = `data:text/javascript;charset=utf-8,${encodeURIComponent(overviewDataSource)}`;
 
   const presenterSource = readFileSync(new URL('../../src/presenter.js', import.meta.url), 'utf8')

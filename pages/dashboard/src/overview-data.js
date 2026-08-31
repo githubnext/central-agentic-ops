@@ -3,9 +3,8 @@
  */
 
 import { formatNumber } from './view-formatters.js';
-
-const FAILURE_CONCLUSIONS = new Set(['failure', 'startup-failure', 'timed-out']);
-const APPROVAL_CONCLUSIONS = new Set(['action-required']);
+import { classifyUtilizationRatio, isApprovalConclusion, isFailureConclusion } from './components/run-classification.js';
+import { buildAttentionItems } from './components/attention-rules.js';
 
 /**
  * @param {Record<string, import('./presenter.js').LogicalSourceInput>} sources
@@ -158,34 +157,21 @@ function buildExecutionHealthRows(health) {
  * @param {{ sources: Record<string, import('./presenter.js').LogicalSourceInput>, runs: Array<Record<string, unknown>>, findings: Array<Record<string, unknown>>, packages: ReturnType<typeof summarizePackages>, disabledWorkflows: number, health: ReturnType<typeof summarizeRunHealth> }} input
  */
 function buildAttentionRows(input) {
-  /** @type {Array<Record<string, unknown>>} */
-  const items = [];
-  if (input.health.failed > 0) {
-    const failedRepositories = new Set(input.health.failedRows.map(repositoryKey).filter(Boolean)).size;
-    items.push({ icon: 'issue', tone: 'danger', title: `${input.health.failed} failed run${input.health.failed === 1 ? '' : 's'}`, detail: `Across ${failedRepositories} repositor${failedRepositories === 1 ? 'y' : 'ies'} in the current window` });
-  }
-  if (input.health.approval > 0) {
-    items.push({ icon: 'shield', tone: 'attention', title: `${input.health.approval} run${input.health.approval === 1 ? '' : 's'} awaiting approval`, detail: 'A maintainer must approve execution in GitHub Actions' });
-  }
-  if (input.disabledWorkflows > 0) {
-    items.push({ icon: 'eye', tone: 'attention', title: `${input.disabledWorkflows} disabled workflow${input.disabledWorkflows === 1 ? '' : 's'}`, detail: 'Repository-owned workflows not currently active' });
-  }
+  const failedRepositories = new Set(input.health.failedRows.map(repositoryKey).filter(Boolean)).size;
   const packageGaps = input.packages.filter((entry) => !entry.ready).length;
-  if (packageGaps > 0) {
-    items.push({ icon: 'package', tone: 'attention', title: `${packageGaps} package inventory gap${packageGaps === 1 ? '' : 's'}`, detail: 'An orchestrator, worker, or active workflow is missing' });
-  }
   const openFindings = input.findings.filter((row) => String(row['finding-status']) === 'open').length;
-  if (openFindings > 0) {
-    items.push({ icon: 'issue', tone: 'attention', title: `${openFindings} open finding${openFindings === 1 ? '' : 's'}`, detail: 'Durable operational findings are ready for follow-up' });
-  }
   const coverageGaps = ['workflows', 'runs', 'usage'].filter((name) => {
     const metadata = input.sources[name]?.metadata;
     return metadata?.availability !== 'available' || metadata.completeness !== 'complete' || metadata.freshness !== 'fresh';
   });
-  if (coverageGaps.length > 0) {
-    items.push({ icon: 'meter', tone: 'attention', title: 'Coverage needs context', detail: `${coverageGaps.join(', ')} telemetry is partial, stale, or unavailable` });
-  }
-  return items;
+  return buildAttentionItems({
+    'runs-failed': { count: input.health.failed, repositories: failedRepositories },
+    'runs-approval': { count: input.health.approval },
+    'disabled-workflows': { count: input.disabledWorkflows },
+    'package-gaps': { count: packageGaps },
+    'open-findings': { count: openFindings },
+    'coverage-gaps': { count: coverageGaps.length, list: coverageGaps.join(', ') }
+  });
 }
 
 /**
@@ -200,7 +186,7 @@ function buildPackageUtilizationRow(entry, usageByPackage, usageSource) {
   const allowance = /** @type {number} */ (entry.allowance);
   const ratio = available && allowance > 0 ? used / allowance : null;
   const meterPercent = ratio === null ? 0 : Math.min(100, ratio * 100);
-  const status = !available || ratio === null ? 'empty' : ratio >= 0.8 ? 'high' : ratio >= 0.5 ? 'medium' : 'low';
+  const status = !available || ratio === null ? 'empty' : classifyUtilizationRatio(ratio);
   return {
     package: entry.id,
     title: entry.name,
@@ -253,8 +239,8 @@ function summarizePackageAicUsage(workflows, usage) {
  * @param {Array<Record<string, unknown>>} rows
  */
 function summarizeRunHealth(rows) {
-  const failedRows = rows.filter((row) => FAILURE_CONCLUSIONS.has(String(row['run-conclusion'])));
-  const approval = rows.filter((row) => APPROVAL_CONCLUSIONS.has(String(row['run-conclusion']))).length;
+  const failedRows = rows.filter((row) => isFailureConclusion(row['run-conclusion']));
+  const approval = rows.filter((row) => isApprovalConclusion(row['run-conclusion'])).length;
   const successful = rows.filter((row) => String(row['run-conclusion']) === 'success').length;
   return {
     total: rows.length,
