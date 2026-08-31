@@ -282,8 +282,8 @@ function renderSummaryGridElement(context) {
  */
 function renderContextSummaryElement(context) {
   const rows = context.sourceNames
-    .map((sourceName) => rowsFor(context, sourceName))
-    .find((sourceRows) => sourceRows.length > 0 && sourceRows.every(isContextSummaryRow)) ?? [];
+    .flatMap((sourceName) => rowsFor(context, sourceName))
+    .filter(isContextSummaryRow);
   return h(
     'dl',
     { className: 'context-summary', 'aria-label': context.title },
@@ -298,7 +298,8 @@ function renderContextSummaryElement(context) {
 
 /** @param {Record<string, unknown>} row */
 function isContextSummaryRow(row) {
-  return typeof row.label === 'string' && (row.value !== undefined || Array.isArray(row.items));
+  return typeof row.label === 'string'
+    && (['string', 'number', 'boolean'].includes(typeof row.value) || Array.isArray(row.items));
 }
 
 /**
