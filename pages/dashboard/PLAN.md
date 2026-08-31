@@ -106,6 +106,7 @@
 - `src/components/data-state.js` — presentation-only data-state metrics card grid for availability, completeness, and freshness.
 - `src/components/table-region.js` — presentation-only reusable table wrapper for repeated table-region markup, header rows, empty-state rows, and keyed body-row descriptors across built-in and custom tables.
 - `src/components/view-chrome.js` — presentation-only reusable page-section, titled-region, summary-list/summary-region, generic custom-view chrome paragraphs, custom-view source/metadata/context chrome, shared custom-view section chrome, custom-view state-message/details helpers, and built-in provenance-section helpers.
+- `src/components/count-formatters.js` — presentation-only shared count and singular/plural text helpers for repeated dashboard status, workflow, and signal copy.
 - `src/components/link-content.js` — presentation-only safe-link discovery and reusable external-link/value composition for custom metric and table views.
 - `src/components/linked-text.js` — presentation-only reusable text-as-link rendering for topology, chart, and entity-linked table cells plus a composable entity-aware table-cell renderer factory.
 - `src/components/packages-view.js` — report-style package mode tabs, AIC utilization cards, retained-coverage disclosure, complete-attempt allowances, and cumulative run trends.
@@ -116,8 +117,16 @@
 
 - 2026-08-28: `npm run typecheck`, `npm run lint`, and `npm test` can fail immediately after `npm install` if the runner has not linked local `node_modules/.bin` shims or installed the declared type packages yet; rerunning after installation from the package directory is currently required in this environment.
 - 2026-08-28: `npm run test:e2e` is currently blocked in this environment because the Playwright Chromium executable is not provisioned (`browserType.launch: Executable doesn't exist`). The workflow should prefer the built-in Playwright MCP browser tools until the package-level browser dependency is available.
+- 2026-08-31: `npx playwright test --config=playwright.config.mjs` launches in this environment, but the current browser suite is already red on the checked-out baseline: page-level headings, skip-link visibility, route-driven repository views, keyboard section counts, and declarative table row visibility are not found across 9 existing `test/e2e/smoke.spec.js` assertions. This run did not change browser-only behavior, so the failures are recorded as a pre-existing gate blocker rather than fixed here.
 
 ## Run log
+
+### 2026-08-31 (count-formatters helper refactor)
+- Re-inventoried repeated UI construction under `pages/dashboard/src/` and selected the highest remaining bounded pure-helper slice: repeated count-plus-pluralization copy in `src/components/execution-elements.js`, `src/components/workflow-topology.js`, and `src/components/repository-workflows.js` for signals, worker dispatch evidence gaps, root-episode summaries, worker counts, workflow counts, and disabled-workflow text.
+- Extracted `src/components/count-formatters.js` with presentation-only `formatCount(...)` and `formatCountNoun(...)`, then replaced every identified call site in those three component modules.
+- Added unit coverage in `test/unit/count-formatters.test.js` for numeric, missing, singular, and plural inputs while preserving existing runtime and repository-view assertions.
+- Proved unchanged behavior by keeping the affected text output identical in `test/unit/runtime-view.test.js` and `test/unit/repository-workflows.test.js`, and by rerunning the package build, lint, typecheck, and unit-test gates after the extraction.
+- Next candidates in the queue: extract the repeated section-heading and vital-stat composition shared by `src/components/execution-elements.js` and `src/components/ui-elements.js`; extract the repeated date/title/text helpers duplicated across dashboard components; extract the next shared pure helpers around chart/table aggregation text in `src/presenter.js` and `src/components/table-summary.js`.
 
 ### 2026-08-31 (parity verification sweep)
 - Re-read `pages/dashboard/PLAN.md`, `pages/dashboard/dashboard.json`, and the report reference in `dashboard/report/report.mjs` to select the next Parity increment conservatively.
