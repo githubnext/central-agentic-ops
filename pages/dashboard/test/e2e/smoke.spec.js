@@ -160,6 +160,7 @@ test('DLS-PAGE-002 DLS-PAGE-014 built-in overview page renders the report-style 
               kind: 'built-in',
               page: 'overview',
               title: 'Overview',
+              description: 'Managed packages, execution health, and items requiring attention.',
               definition: {
                 'data-state': {
                   availability: true,
@@ -334,6 +335,8 @@ test('DLS-PAGE-002 DLS-PAGE-014 built-in overview page renders the report-style 
   await expect(page.locator('.nav-section-label')).toHaveText(['Attention']);
   await expect(page.getByRole('heading', { name: 'Overview', exact: true, level: 2 })).toBeVisible();
   await expect(page.locator('.overview-page')).toHaveAttribute('data-page-kind', 'custom');
+  await expect(page.locator('.overview-page > .page-description')).toBeHidden();
+  await expect(page.locator('.overview-page > .data-state-summary')).toBeHidden();
   await expect(page.locator('.overview-page .custom-view')).toHaveCount(6);
   await expect(page.locator('.overview-page .layout-section')).toHaveCount(2);
   const landingElements = page.locator('[data-section-id="control-plane-health"] > .custom-view-grid > .custom-view');
