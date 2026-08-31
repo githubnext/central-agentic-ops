@@ -452,7 +452,7 @@ h3 { margin: 16px 0 8px; font-size: 1rem; font-weight: 600; }
 :is(.security-page, .value-page) .layout-section-header > strong { flex: none; color: var(--muted); font-size: .75rem; }
 :is(.security-page, .value-page) .layout-section .page-section > h4,
 :is(.security-page, .value-page) .layout-section .view-source,
-:is(.security-page, .value-page) .layout-section .view-metadata { display: none; }
+:is(.security-page, .value-page) .layout-section .view-metadata { position: absolute; width: 1px; height: 1px; padding: 0; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0; }
 :is(.security-page, .value-page) .layout-section .table-region { margin-top: 0; }
 .summary-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 1px; margin: 0; overflow: hidden; border: 1px solid var(--border); border-radius: 6px 6px 0 0; background: var(--border); }
 .summary-grid > div { min-width: 0; padding: 13px 15px; background: var(--canvas-subtle); }

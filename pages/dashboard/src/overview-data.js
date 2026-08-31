@@ -213,6 +213,7 @@ function buildCostSignals(usageSource) {
  * @param {Array<Record<string, unknown>>} outcomes
  */
 function buildValueSummary(graderObservations, operationalValues, outcomes) {
+  const selected = Math.max(graderObservations.length, operationalValues.length);
   const values = operationalValues
     .map((row) => row['operational-value'])
     .filter(isFiniteNumber);
@@ -220,7 +221,7 @@ function buildValueSummary(graderObservations, operationalValues, outcomes) {
     ? values.reduce((total, value) => total + value, 0) / values.length
     : null;
   return [
-    { label: 'Grader coverage', value: `${operationalValues.length} / ${graderObservations.length}` },
+    { label: 'Grader coverage', value: `${operationalValues.length} / ${selected}` },
     { label: 'Mature evidence', value: operationalValues.filter((row) => String(row['maturity-status']) === 'matured').length },
     { label: 'Mean operational value', value: mean === null ? '—' : formatPercent(mean) },
     { label: 'Open outputs', value: outcomes.filter((row) => String(row['outcome-state']) === 'pending').length }
