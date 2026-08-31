@@ -37,6 +37,7 @@
   - [x] Continue refactoring each built-in page body in `src/presenter.js` into its `.json` equivalent, removing the remaining page-specific rendering/build logic while retaining only the minimum generic JavaScript interpreter and reusable primitives.
   - [x] Add build, unit, and browser coverage proving `dashboard.json` renders every specification-defined built-in page and that no page depends on custom page-specific JavaScript.
   - [x] Specify the `repositories` inventory and its run-count, AIC, and per-definition operational-value rankings as separate declarative views with explicit descending ranking keys.
+  - [x] Extract JSON-selected bar, line, and pie chart widget DOM rendering from `src/presenter.js` into the reusable generic chart helper.
 - [x] **Security, privacy, accessibility** — Section 13 including escaping, redaction, and keyboard and screen-reader behavior verified with Playwright.
   - [x] Slice: `DLS-SAFE-003`, `DLS-SAFE-004`, `DLS-SAFE-007`, `DLS-SAFE-008`, and `DLS-SAFE-010` presenter render for inert text escaping, https-only safe link exposure, non-empty accessible names, labeled table columns, textual data-state labels, and labeled external links.
   - [x] Slice: `DLS-SAFE-007` and `DLS-SAFE-008` keyboard presenter behavior for focusable labeled sections with deterministic arrow-key traversal verified in unit and browser tests.
@@ -659,6 +660,12 @@
 - Next milestone: Built-in pages, next slice for declarative built-in page definitions.
 
 ## Run log
+
+### 2026-08-31 (generic chart widget slice)
+
+- Moved reusable bar, line, and pie chart widget DOM rendering from `src/presenter.js` to `src/components/chart-elements.js`; `dashboard.json` continues to select the chart mark declaratively.
+- Added component-level coverage proving one generic helper renders each supported chart mark.
+- Next milestone: continue reducing remaining presenter-only generic rendering primitives when a reusable component boundary is identified.
 
 ### 2026-08-28 (built-in pages title-default slice)
 
