@@ -113,11 +113,11 @@ function renderPackageSummary(sources, mode, headingId) {
     ),
     h(
       'div',
-      { className: 'table-region', role: 'region', 'aria-labelledby': headingId, tabIndex: 0 },
+      { className: 'table-region', role: 'region', 'aria-labelledby': `${headingId}-caption`, tabIndex: 0 },
       h(
         'table',
         { className: 'package-summary-table' },
-        h('caption', null, `${modeLabel} package summary`),
+        h('caption', { id: `${headingId}-caption` }, `${modeLabel} package summary`),
         h(
           'thead',
           null,
