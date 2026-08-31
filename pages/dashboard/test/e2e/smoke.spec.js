@@ -130,6 +130,12 @@ function buildPresenterModuleUrl() {
     .replace("'./ui-primitives.js'", JSON.stringify(uiPrimitivesModuleUrl));
   const repositoryWorkflowsModuleUrl = `data:text/javascript;charset=utf-8,${encodeURIComponent(repositoryWorkflowsSource)}`;
 
+  const repositoriesViewSource = readFileSync(new URL('../../src/components/repositories-view.js', import.meta.url), 'utf8')
+    .replace("'../dom.js'", JSON.stringify(domModuleUrl))
+    .replace("'./chart-elements.js'", JSON.stringify(chartElementsModuleUrl))
+    .replace("'./table-region.js'", JSON.stringify(tableRegionModuleUrl));
+  const repositoriesViewModuleUrl = `data:text/javascript;charset=utf-8,${encodeURIComponent(repositoriesViewSource)}`;
+
   const outcomeDetailSource = readFileSync(new URL('../../src/components/outcome-detail.js', import.meta.url), 'utf8')
     .replace("'../dom.js'", JSON.stringify(domModuleUrl))
     .replace("'../octicons.js'", JSON.stringify(octiconsModuleUrl))
@@ -154,6 +160,7 @@ function buildPresenterModuleUrl() {
     .replace("'./badge.js'", JSON.stringify(badgeModuleUrl))
     .replace("'./link-content.js'", JSON.stringify(linkContentModuleUrl))
     .replace("'./packages-view.js'", JSON.stringify(packagesViewModuleUrl))
+    .replace("'./repositories-view.js'", JSON.stringify(repositoriesViewModuleUrl))
     .replace("'./repository-workflows.js'", JSON.stringify(repositoryWorkflowsModuleUrl))
     .replace("'./outcome-detail.js'", JSON.stringify(outcomeDetailModuleUrl))
     .replace("'./execution-elements.js'", JSON.stringify(executionElementsModuleUrl))

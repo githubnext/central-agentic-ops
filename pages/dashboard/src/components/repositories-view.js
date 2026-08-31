@@ -1,0 +1,314 @@
+/**
+ * CAO-aligned repository scope, usage, and activity views.
+ */
+
+import { h } from '../dom.js';
+import { renderChartWidget, renderPieLegend } from './chart-elements.js';
+import { renderTableRegion } from './table-region.js';
+
+const AIC_UNIT = { name: 'AI Credits', symbol: 'AIC', significant: 1 };
+const FAILURE_CONCLUSIONS = new Set(['failure', 'startup-failure', 'timed-out']);
+
+/**
+ * @typedef {{
+ *   repository: string,
+ *   workflows: number,
+ *   disabled: number,
+ *   reports: number,
+ *   evaluatedWorkflowKeys?: Set<string>,
+ *   evaluatedWorkflows: number,
+ *   runs: number,
+ *   failed: number,
+ *   actionRequired: number,
+ *   aic: number,
+ *   runsAvailable: boolean
+ * }} RepositorySummary
+ */
+
+/**
+ * @param {import('./ui-elements.js').ElementRenderContext} context
+ * @returns {HTMLElement}
+ */
+export function renderRepositoryScope(context) {
+  const repositories = repositoryNames(context);
+  const runs = context.sources.runs;
+  const usage = context.sources.usage;
+  const runAvailability = runs?.metadata?.availability;
+  const runWindow = runAvailability === 'unavailable'
+    ? 'Actions run data unavailable'
+    : `${titleCase(runs?.metadata?.completeness ?? 'unknown')} Actions run window`;
+  const coverage = usage?.metadata?.availability === 'unavailable'
+    ? 'Usage data unavailable'
+    : `${formatCount(usage?.rows.length ?? 0)} artifacts · ${usage?.metadata?.completeness ?? 'unknown'}`;
+
+  return h(
+    'dl',
+    { className: 'repository-scope-summary', 'aria-label': context.title },
+    h(
+      'div',
+      null,
+      h('dt', null, `Repository scope · ${formatCount(repositories.length)} configured`),
+      h(
+        'dd',
+        null,
+        ...repositories.flatMap((repository, index) => [
+          index > 0 ? ', ' : null,
+          h('a', { href: repositoryDetailHref(repository) }, repository)
+        ])
+      )
+    ),
+    h('div', null, h('dt', null, 'Run window'), h('dd', null, runWindow)),
+    h('div', null, h('dt', null, 'AIC coverage'), h('dd', null, coverage))
+  );
+}
+
+/**
+ * @param {import('./ui-elements.js').ElementRenderContext} context
+ * @returns {HTMLElement}
+ */
+export function renderRepositoryAicUsage(context) {
+  const usage = context.sources.usage;
+  const headingId = `${context.pageId}-repository-aic-heading`;
+  const totals = sumByRepository(usage?.rows ?? [], 'aic');
+  const leading = totals.slice(0, 5);
+  const other = totals.slice(5).reduce((total, entry) => total + entry.value, 0);
+  /** @type {Array<[string, number]>} */
+  const entries = (other > 0 ? [...leading, { repository: 'Other', value: other }] : leading)
+    .map((entry) => [entry.repository, entry.value]);
+  const points = entries.map(([repository, value]) => ({ x: repository, y: value, color: null }));
+  const total = entries.reduce((sum, [, value]) => sum + value, 0);
+  const links = new Map(leading.map(({ repository }) => [
+    repository,
+    { href: repositoryDetailHref(repository), label: `View ${repository}` }
+  ]));
+
+  return h(
+    'section',
+    { className: 'repository-spend-panel', 'aria-labelledby': headingId },
+    h(
+      'div',
+      null,
+      h(context.headingTag, { id: headingId }, context.title),
+      context.description ? h('p', null, context.description) : null
+    ),
+    usage?.metadata?.availability === 'unavailable'
+      ? h('p', { className: 'empty' }, 'AI Credit usage data is unavailable.')
+      : total <= 0
+        ? h('p', { className: 'empty' }, 'Reported AW runs consumed 0 AI Credits.')
+        : h(
+          'div',
+          { className: 'repository-spend-chart' },
+          renderChartWidget('pie', points, [], { entries, total }, 'Total AIC', AIC_UNIT),
+          renderPieLegend(entries, total, links, AIC_UNIT)
+        )
+  );
+}
+
+/**
+ * @param {import('./ui-elements.js').ElementRenderContext} context
+ * @returns {HTMLElement}
+ */
+export function renderRepositoryActivity(context) {
+  const summaries = summarizeRepositories(context.sources);
+  const headingId = `${context.pageId}-repository-activity-heading`;
+  const rows = summaries.map((summary) => h(
+    'tr',
+    { 'data-repository': summary.repository },
+    h('th', { scope: 'row' }, h('a', { href: repositoryDetailHref(summary.repository) }, summary.repository)),
+    h('td', null, formatCount(summary.workflows)),
+    h('td', null, formatCount(summary.reports)),
+    h('td', null, formatCount(summary.evaluatedWorkflows)),
+    h('td', null, summary.runsAvailable ? formatCount(summary.runs) : '—'),
+    h(
+      'td',
+      null,
+      h(
+        'div',
+        { className: 'failure-rate' },
+        h('strong', null, summary.runsAvailable && summary.runs > 0 ? formatPercent(summary.failed / summary.runs) : '—'),
+        h('span', null, summary.runsAvailable ? `${formatCount(summary.failed)} failed` : 'Unavailable')
+      )
+    ),
+    h('td', null, `${formatCount(summary.aic)} AIC`),
+    h('td', null, renderRepositoryStatus(summary))
+  ));
+
+  return h(
+    'section',
+    { className: 'repository-health', 'aria-labelledby': headingId },
+    h(
+      'div',
+      { className: 'section-heading' },
+      h(
+        'div',
+        null,
+        h('span', { className: 'scope-kicker' }, 'Repository view'),
+        h(context.headingTag, { id: headingId }, context.title),
+        context.description ? h('p', null, context.description) : null
+      ),
+      h(
+        'span',
+        null,
+        `${formatCount(summaries.length)} repositories · `,
+        h('a', { href: '#page-workflows' }, 'Search all workflows')
+      )
+    ),
+    renderTableRegion({
+      tableClassName: 'repository-health-table',
+      regionClassName: 'table-region-static',
+      emptyMessage: 'No repositories discovered.',
+      colSpan: 8,
+      headCells: ['Repository', 'Local AWs', 'Reports', 'Evaluated AWs', 'Local runs', 'Failure rate', 'Local AIC', 'Status'],
+      bodyRows: rows
+    })
+  );
+}
+
+/**
+ * @param {Record<string, import('../presenter.js').LogicalSourceInput>} sources
+ */
+export function summarizeRepositories(sources) {
+  /** @type {Map<string, RepositorySummary>} */
+  const summaries = new Map();
+  const runsAvailable = sources.runs?.metadata?.availability !== 'unavailable';
+  /** @param {string} repository */
+  const ensure = (repository) => {
+    if (!repository) return null;
+    if (!summaries.has(repository)) {
+      summaries.set(repository, {
+        repository,
+        workflows: 0,
+        disabled: 0,
+        reports: 0,
+        evaluatedWorkflowKeys: new Set(),
+        evaluatedWorkflows: 0,
+        runs: 0,
+        failed: 0,
+        actionRequired: 0,
+        aic: 0,
+        runsAvailable
+      });
+    }
+    return summaries.get(repository);
+  };
+
+  for (const row of sources.repositories?.rows ?? []) ensure(qualifiedRepository(row));
+  for (const row of sources.workflows?.rows ?? []) {
+    const summary = ensure(qualifiedRepository(row));
+    if (!summary) continue;
+    summary.workflows += 1;
+    if (String(row['workflow-active']) === 'false') summary.disabled += 1;
+  }
+  for (const row of sources.outcomes?.rows ?? []) {
+    const summary = ensure(qualifiedRepository(row));
+    if (summary) summary.reports += 1;
+  }
+  for (const row of sources['operational-values']?.rows ?? []) {
+    const summary = ensure(qualifiedRepository(row));
+    if (!summary || !Number.isFinite(row['operational-value']) || !row.workflow || !row['evaluator-digest']) continue;
+    summary.evaluatedWorkflowKeys?.add(String(row.workflow));
+  }
+
+  const runs = new Map();
+  for (const row of sources.runs?.rows ?? []) {
+    const repository = qualifiedRepository(row);
+    const run = String(row.run ?? '');
+    if (!repository || !run) continue;
+    runs.set(`${repository}:${run}`, row);
+    ensure(repository);
+  }
+  for (const row of runs.values()) {
+    const summary = ensure(qualifiedRepository(row));
+    if (!summary) continue;
+    summary.runs += 1;
+    const conclusion = String(row['run-conclusion'] ?? 'unknown');
+    if (FAILURE_CONCLUSIONS.has(conclusion)) summary.failed += 1;
+    if (conclusion === 'action-required') summary.actionRequired += 1;
+  }
+  for (const row of sources.usage?.rows ?? []) {
+    const summary = ensure(qualifiedRepository(row));
+    if (summary && Number.isFinite(row.aic)) summary.aic += Number(row.aic);
+  }
+
+  for (const summary of summaries.values()) {
+    summary.evaluatedWorkflows = summary.evaluatedWorkflowKeys?.size ?? 0;
+    delete summary.evaluatedWorkflowKeys;
+  }
+  return [...summaries.values()].sort((left, right) => (
+    right.failed - left.failed
+    || right.runs - left.runs
+    || left.repository.localeCompare(right.repository)
+  ));
+}
+
+/** @param {RepositorySummary} summary */
+function renderRepositoryStatus(summary) {
+  if (summary.failed > 0) return status('Needs attention', 'danger');
+  if (summary.actionRequired > 0) return status('Approval required', 'attention');
+  if (summary.runs > 0) return status('No failures observed', 'success');
+  if (summary.disabled > 0) return status('Disabled workflows', 'attention');
+  if (summary.reports > 0 || summary.evaluatedWorkflows > 0) return status('Outcomes observed', 'success');
+  return status('No recent activity', 'muted');
+}
+
+/**
+ * @param {string} label
+ * @param {'danger'|'attention'|'success'|'muted'} tone
+ */
+function status(label, tone) {
+  return h('span', { className: `status status-${tone}` }, label);
+}
+
+/** @param {import('./ui-elements.js').ElementRenderContext} context */
+function repositoryNames(context) {
+  return [...new Set((context.sources.repositories?.rows ?? []).map(qualifiedRepository).filter(Boolean))]
+    .sort((left, right) => left.localeCompare(right));
+}
+
+/**
+ * @param {Array<Record<string, unknown>>} rows
+ * @param {string} field
+ */
+function sumByRepository(rows, field) {
+  const totals = new Map();
+  for (const row of rows) {
+    const repository = qualifiedRepository(row);
+    const value = row[field];
+    if (!repository || !Number.isFinite(value)) continue;
+    totals.set(repository, (totals.get(repository) ?? 0) + Number(value));
+  }
+  return [...totals.entries()]
+    .map(([repository, value]) => ({ repository, value }))
+    .filter((entry) => entry.value > 0)
+    .sort((left, right) => right.value - left.value || left.repository.localeCompare(right.repository));
+}
+
+/** @param {Record<string, unknown>} row */
+function qualifiedRepository(row) {
+  const repository = String(row.repository ?? '').trim();
+  if (!repository) return '';
+  if (repository.includes('/')) return repository;
+  const organization = String(row.organization ?? '').trim();
+  return organization ? `${organization}/${repository}` : repository;
+}
+
+/** @param {string} repository */
+function repositoryDetailHref(repository) {
+  return `#page-repository-detail?repository=${encodeURIComponent(repository)}`;
+}
+
+/** @param {number} value */
+function formatCount(value) {
+  return new Intl.NumberFormat('en').format(value);
+}
+
+/** @param {number} value */
+function formatPercent(value) {
+  return new Intl.NumberFormat('en', { style: 'percent', maximumFractionDigits: 1 }).format(value);
+}
+
+/** @param {unknown} value */
+function titleCase(value) {
+  const text = String(value);
+  return text.length > 0 ? text[0].toUpperCase() + text.slice(1) : text;
+}
