@@ -371,7 +371,7 @@ describe('presenter built-in and custom pages', () => {
     expect(supplemental.querySelector(':scope > .page-section')?.textContent).toContain('1');
   });
 
-  it('DLS-PAGE-002 DLS-PAGE-014 renders the report-style operational overview, managed repository summary, managed packages, execution trends, and provenance data state deterministically', () => {
+  it('DLS-PAGE-002 DLS-PAGE-014 renders the report-style six-domain operational overview deterministically', () => {
     /** @type {import('../../src/presenter.js').PresentationInput['document']} */
     const document = {
       languageVersion: '0.1.0',
@@ -551,40 +551,33 @@ describe('presenter built-in and custom pages', () => {
 
     const overviewPage = rendered.querySelector('[data-page-name="overview"]');
     expect(overviewPage?.getAttribute('data-page-kind')).toBe('custom');
-    expect(overviewPage?.querySelectorAll('.custom-view')).toHaveLength(6);
-    expect(overviewPage?.querySelectorAll('.layout-section')).toHaveLength(2);
-    const landingElements = [...(overviewPage?.querySelectorAll('[data-section-id="control-plane-health"] > .custom-view-grid > .custom-view') ?? [])];
-    expect(landingElements.map((element) => element.firstElementChild?.className || element.classList[0])).toEqual([
-      'control-plane-status',
-      'package-aic-utilization',
-      'attention-panel',
-      'managed-packages'
+    expect(overviewPage?.querySelectorAll('.custom-view')).toHaveLength(1);
+    expect(overviewPage?.querySelectorAll('.layout-section')).toHaveLength(0);
+    expect(overviewPage?.querySelector('.overview-observability h2')?.textContent).toBe('Attention by domain');
+    const cards = [...(overviewPage?.querySelectorAll('.attention-domain-card') ?? [])];
+    expect(cards).toHaveLength(6);
+    expect(cards.map((card) => card.querySelector('header strong')?.textContent)).toEqual([
+      'Runtime health',
+      'Episodes & autonomy',
+      'Security & controls',
+      'Evidence quality',
+      'Value & outcomes',
+      'Cost & efficiency'
     ]);
-    expect(landingElements.map((element) => element.getAttribute('data-view-layout'))).toEqual(['full', 'full', 'half', 'half']);
-    expect(overviewPage?.querySelector('[data-section-id="execution-trends"]')?.getAttribute('data-section-layout')).toBe('full');
-    expect(overviewPage?.querySelector('.control-plane-status')?.classList.contains('control-plane-critical')).toBe(true);
-    expect(overviewPage?.querySelector('.control-plane-vitals')?.textContent).toContain('33.3%');
-    expect(overviewPage?.querySelector('.control-plane-vitals')?.textContent).toContain('2 repositories');
-    expect(overviewPage?.querySelector('.execution-track')?.getAttribute('aria-label')).toContain('1 failed');
-    expect(overviewPage?.querySelectorAll('.attention-item').length).toBeGreaterThanOrEqual(4);
-    expect(overviewPage?.querySelectorAll('.managed-package-card')).toHaveLength(1);
-    expect(overviewPage?.querySelector('.managed-package-card')?.textContent).toContain('30');
-    expect(overviewPage?.querySelector('.managed-package-card')?.textContent).toContain('Needs attention');
-    expect(overviewPage?.querySelectorAll('.package-aic-utilization .utilization-item')).toHaveLength(1);
-    const utilizationItem = overviewPage?.querySelector('.package-aic-utilization .utilization-item');
-    expect(utilizationItem?.classList.contains('utilization-high')).toBe(true);
-    expect(utilizationItem?.textContent).toContain('116.7%');
-    expect(utilizationItem?.textContent).toContain('35 of 30 AIC across 3 reported runs.');
-    expect(utilizationItem?.querySelector('.utilization-track')?.getAttribute('aria-label')).toContain('35 of 30 AI Credits used, 116.7%');
-    expect(utilizationItem?.querySelector('.utilization-track span')?.getAttribute('style')).toBe('width: 100%;');
-    expect(overviewPage?.textContent).toContain('Active workflows');
-    expect(overviewPage?.textContent).toContain('Operational value timeline');
-    expect(overviewPage?.querySelector('[data-section-id="execution-trends"] h3')?.textContent).toBe('Execution and value trends');
+    expect(cards[0]?.classList.contains('attention-domain-critical')).toBe(true);
+    expect(cards[0]?.textContent).toContain('1 failed');
+    expect(cards[1]?.classList.contains('attention-domain-critical')).toBe(true);
+    expect(cards[1]?.textContent).toContain('2 observed');
+    expect(cards[2]?.textContent).toContain('2 signals');
+    expect(cards[3]?.textContent).toContain('3 gaps');
+    expect(cards[4]?.textContent).toContain('Threshold unavailable');
+    expect(cards[5]?.textContent).toContain('35 AIC');
+    expect(cards.every((card) => card.textContent?.includes('Open evidence'))).toBe(true);
+    expect(overviewPage?.querySelector('.overview-method-note')?.textContent).toContain('State key:');
     expect(/** @type {HTMLElement | null} */ (rendered.querySelector('.data-state-summary'))?.hidden).toBe(true);
-    expect(overviewPage?.querySelectorAll('[data-section-id="execution-trends"] .custom-view:last-child .custom-chart-table tbody tr')).toHaveLength(2);
   });
 
-  it('DLS-PAGE-002 renders the package AIC utilization panel empty state when no package has a configured allowance and no usage source is available', () => {
+  it('DLS-PAGE-002 keeps unavailable prerequisites visible in the domain overview', () => {
     /** @type {import('../../src/presenter.js').PresentationInput['document']} */
     const document = {
       languageVersion: '0.1.0',
@@ -628,9 +621,15 @@ describe('presenter built-in and custom pages', () => {
     });
 
     const overviewPage = rendered.querySelector('[data-page-name="overview"]');
-    const utilizationPanel = overviewPage?.querySelector('.package-aic-utilization');
-    expect(utilizationPanel?.querySelectorAll('.utilization-item')).toHaveLength(0);
-    expect(utilizationPanel?.textContent).toContain('No packages with a configured AIC allowance were observed.');
+    const cards = [...(overviewPage?.querySelectorAll('.attention-domain-card') ?? [])];
+    expect(cards).toHaveLength(6);
+    const runtimeCard = cards.find((card) => card.textContent?.includes('Runtime health'));
+    const valueCard = cards.find((card) => card.textContent?.includes('Value & outcomes'));
+    const evidenceCard = cards.find((card) => card.textContent?.includes('Evidence quality'));
+    expect(runtimeCard?.textContent).toContain('Unavailable');
+    expect(runtimeCard?.textContent).toContain('Not observed');
+    expect(valueCard?.textContent).toContain('Threshold unavailable');
+    expect(evidenceCard?.textContent).toContain('2 gaps');
   });
 
   it('DLS-PAGE-014 DLS-PAGE-015 renders mode-filtered package AIC utilization and package-run trends', () => {
