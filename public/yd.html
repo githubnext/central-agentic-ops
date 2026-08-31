@@ -149,19 +149,13 @@
         return { entry, metadata, document: dashboard.value };
       }
 
-      function showExample(example, updateUrl = false) {
+      function showExample(example) {
         exampleSelect.value = example.entry.id;
         clearDashboard();
         dashboardRoot.append(renderDashboard({
           document: example.document,
           sources: example.metadata.logicalSources ?? {},
         }));
-
-        if (updateUrl) {
-          const url = new URL(window.location.href);
-          url.searchParams.set("example", example.entry.id);
-          window.history.replaceState(null, "", url);
-        }
       }
 
       try {
@@ -184,7 +178,10 @@
         showExample(initialExample);
         exampleSelect.addEventListener("change", () => {
           const example = examples.find((candidate) => candidate.entry.id === exampleSelect.value);
-          if (example) showExample(example, true);
+          if (!example) return;
+          const url = new URL(window.location.href);
+          url.searchParams.set("example", example.entry.id);
+          window.location.assign(url);
         });
       } catch (error) {
         const message = error instanceof Error ? error.message : String(error);
