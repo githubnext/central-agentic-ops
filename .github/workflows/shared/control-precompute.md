@@ -283,11 +283,14 @@ steps:
           ! repository_equal "$SAFE_OUTPUT_REPO" "$CENTRAL_REPO"; then
           echo "review safe_output_repo must differ from target_repo" >&2; exit 1;
         fi
+        if repository_equal "$SAFE_OUTPUT_REPO" "$CENTRAL_REPO"; then
+          return
+        fi
         if ! is_private=$(gh api "repos/$SAFE_OUTPUT_REPO" --jq '.private'); then
           echo "review safe_output_repo must be accessible" >&2
           exit 1
         fi
-        if [ "$is_private" != "true" ] && ! repository_equal "$SAFE_OUTPUT_REPO" "$CENTRAL_REPO"; then
+        if [ "$is_private" != "true" ]; then
           echo "non-central review safe_output_repo must be private" >&2
           exit 1
         fi

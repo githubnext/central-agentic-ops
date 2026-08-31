@@ -779,9 +779,9 @@ test("review destinations allow control self-review and isolate other targets", 
   assert.match(precompute, /repository_equal "\$SAFE_OUTPUT_REPO" "\$TARGET_REPO" && \\\n+          ! repository_equal "\$SAFE_OUTPUT_REPO" "\$CENTRAL_REPO"/);
   assert.match(precompute, /review safe_output_repo must differ from target_repo/);
   assert.match(precompute, /live worker safe_output_repo must equal target_repo/);
+  assert.match(precompute, /repository_equal "\$SAFE_OUTPUT_REPO" "\$CENTRAL_REPO"; then\n\s+return/);
   assert.match(precompute, /gh api "repos\/\$SAFE_OUTPUT_REPO" --jq '\.private'/);
   assert.match(precompute, /review safe_output_repo must be accessible/);
-  assert.match(precompute, /! repository_equal "\$SAFE_OUTPUT_REPO" "\$CENTRAL_REPO"/);
   assert.match(precompute, /non-central review safe_output_repo must be private/);
 });
 
