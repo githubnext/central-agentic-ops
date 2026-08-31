@@ -104,7 +104,7 @@
 - `src/components/badge.js` — presentation-only Primer status, mode, and active-state badges.
 - `src/components/data-state.js` — presentation-only data-state metrics card grid for availability, completeness, and freshness.
 - `src/components/table-region.js` — presentation-only reusable table wrapper for repeated table-region markup, header rows, empty-state rows, and keyed body-row descriptors across built-in and custom tables.
-- `src/components/view-chrome.js` — presentation-only reusable page-section, titled-region, summary-list/summary-region, generic custom-view chrome paragraphs, custom-view source/metadata/context chrome, shared custom-view section chrome, and built-in provenance-section helpers.
+- `src/components/view-chrome.js` — presentation-only reusable page-section, titled-region, summary-list/summary-region, generic custom-view chrome paragraphs, custom-view source/metadata/context chrome, shared custom-view section chrome, custom-view state-message/details helpers, and built-in provenance-section helpers.
 - `src/components/link-content.js` — presentation-only safe-link discovery and reusable external-link/value composition for custom metric and table views.
 - `src/components/linked-text.js` — presentation-only reusable text-as-link rendering for topology, chart, and entity-linked table cells plus a composable entity-aware table-cell renderer factory.
 - `src/components/packages-view.js` — report-style package mode tabs, AIC utilization cards, retained-coverage disclosure, complete-attempt allowances, and cumulative run trends.
@@ -117,6 +117,13 @@
 - 2026-08-28: `npm run test:e2e` is currently blocked in this environment because the Playwright Chromium executable is not provisioned (`browserType.launch: Executable doesn't exist`). The workflow should prefer the built-in Playwright MCP browser tools until the package-level browser dependency is available.
 
 ## Run log
+
+### 2026-08-31 (custom-view state chrome refactor)
+- Re-inventoried repeated UI construction under `pages/dashboard/src/` and selected the highest remaining bounded custom-view chrome slice: inline custom-view state-message and affected-source/context assembly in `src/presenter.js`, shared by unavailable and empty custom metric, table, chart, and element views via `renderCustomViewState(...)` alongside the existing populated-state `renderViewSectionChrome(...)` helper.
+- Extended `src/components/view-chrome.js` with presentation-only `customViewAvailabilityMessage(...)` and `renderCustomViewStateDetails(...)`, then replaced the duplicated inline availability-text branch and affected-source/context assembly in `src/presenter.js`'s `renderCustomViewState(...)`.
+- Added unit coverage in `test/unit/view-chrome.test.js` for all custom-view availability messages plus affected-source/context detail rendering, including missing-source and empty-context inputs while preserving the existing `DLS-VIEW-013` assertions.
+- Proved unchanged behavior by capturing the bounded refactor diff at `/tmp/gh-aw/agent/custom-view-state-refactor.diff` and rerunning `pages/dashboard/` quality gates: `npm run build`, `npm run typecheck`, `npm run lint`, `npm test` (142 tests), and `npx playwright test --config=playwright.config.mjs` (9 browser tests) all pass after `npm install`.
+- Next candidates in the queue: extract the repeated definitions/observations dual-region composition in `src/presenter.js`; extract the repeated summary-plus-trend section composition in `src/presenter.js`; extract the next shared pure helpers around subject/provenance/count formatting in `src/presenter.js`.
 
 ### 2026-08-30 (run list linking, bounded height, and column sorting)
 - Extended the reusable `renderTableRegion` component in `src/components/table-region.js` instead of adding a run-specific table: populated tables now render inside a focusable `.table-scroll` region and expose click-to-sort column headers with `aria-sort` state.
