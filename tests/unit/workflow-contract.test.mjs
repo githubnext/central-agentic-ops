@@ -1162,6 +1162,26 @@ test("CAO dashboard reviewer checks successful documentation deployments", () =>
   assert.doesNotMatch(source, /^\s+(create-pull-request|add-comment|create-discussion|push-to-pull-request-branch):/m);
 });
 
+test("dashboard migration workflow prepares exhaustive browser evidence outside the agent", () => {
+  const source = workflow("migrate-dashboard.md");
+
+  assert.match(source, /^intent: Identify every evidence-backed UX gap/m);
+  assert.match(source, /schedule: daily/);
+  assert.match(source, /skip-if-match: "is:pr is:open label:migrate-dashboard"/);
+  assert.match(source, /playwright:\n\s+mode: cli\n\s+version: "0\.1\.18"/);
+  assert.match(source, /Start dashboard servers outside the agent/);
+  assert.match(source, /python3 -m http\.server 4173/);
+  assert.match(source, /python3 -m http\.server 4174/);
+  assert.match(source, /Capture every page outside the agent with Playwright CLI/);
+  assert.match(source, /fullPage: true/);
+  assert.match(source, /legacy-pages\.txt/);
+  assert.match(source, /next-pages\.txt/);
+  assert.match(source, /EXPR_RUN_NUMBER %/);
+  assert.match(source, /Do not start a server, invoke Playwright, rebuild either dashboard, or recapture evidence/);
+  assert.match(source, /allowed-files:\n\s+- "pages\/dashboard\/PLAN\.md"/);
+  assert.doesNotMatch(source, /allowed-files:\n(?:\s+- .*\n)*\s+- "(?!pages\/dashboard\/PLAN\.md)/);
+});
+
 test("daily dashboard renderer builds incrementally inside its own directory", () => {
   const source = workflow("daily-dashboard-language-renderer.md");
 
