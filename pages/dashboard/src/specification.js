@@ -32,6 +32,7 @@ export const VIEW_ELEMENT_VALUES = [
   'package-activity',
   'package-run-trend',
   'package-detail',
+  'package-reports',
   'dispatch-catalog',
   'repository-scope',
   'repository-aic-usage',

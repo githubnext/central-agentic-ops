@@ -13,9 +13,9 @@ export function renderStatusBadge(status) {
   const normalized = text.toLowerCase();
   let statusClass = 'status-muted';
 
-  if (['success', 'completed', 'active', 'true', 'fresh', 'available', 'complete', 'accepted', 'matured'].includes(normalized)) {
+  if (['success', 'completed', 'active', 'true', 'fresh', 'complete', 'accepted', 'matured', 'closed', 'merged', 'resolved'].includes(normalized)) {
     statusClass = 'status-success';
-  } else if (['in-progress', 'running', 'pending', 'review', 'partial', 'stale', 'attention', 'warning', 'action-required', 'interim'].includes(normalized)) {
+  } else if (['in-progress', 'running', 'pending', 'review', 'partial', 'stale', 'attention', 'warning', 'action-required', 'interim', 'open', 'available', 'published'].includes(normalized)) {
     statusClass = 'status-attention';
   } else if (['failure', 'failed', 'rejected', 'danger', 'unavailable', 'critical', 'timed-out', 'startup-failure'].includes(normalized)) {
     statusClass = 'status-danger';

@@ -96,10 +96,16 @@ function buildPresenterModuleUrl() {
     .replace("'../dom.js'", JSON.stringify(domModuleUrl));
   const linkedTextModuleUrl = `data:text/javascript;charset=utf-8,${encodeURIComponent(linkedTextSource)}`;
 
+  const uiPrimitivesSource = readFileSync(new URL('../../src/components/ui-primitives.js', import.meta.url), 'utf8')
+    .replace("'../dom.js'", JSON.stringify(domModuleUrl));
+  const uiPrimitivesModuleUrl = `data:text/javascript;charset=utf-8,${encodeURIComponent(uiPrimitivesSource)}`;
+
   const packageDetailSource = readFileSync(new URL('../../src/components/package-detail.js', import.meta.url), 'utf8')
     .replace("'../dom.js'", JSON.stringify(domModuleUrl))
     .replace("'../octicons.js'", JSON.stringify(octiconsModuleUrl))
-    .replace("'./link-content.js'", JSON.stringify(linkContentModuleUrl));
+    .replace("'./badge.js'", JSON.stringify(badgeModuleUrl))
+    .replace("'./link-content.js'", JSON.stringify(linkContentModuleUrl))
+    .replace("'./ui-primitives.js'", JSON.stringify(uiPrimitivesModuleUrl));
   const packageDetailModuleUrl = `data:text/javascript;charset=utf-8,${encodeURIComponent(packageDetailSource)}`;
 
   const countFormattersSource = readFileSync(new URL('../../src/components/count-formatters.js', import.meta.url), 'utf8');
@@ -118,10 +124,6 @@ function buildPresenterModuleUrl() {
     .replace("'../dom.js'", JSON.stringify(domModuleUrl))
     .replace("'../view-formatters.js'", JSON.stringify(viewFormattersModuleUrl));
   const chartElementsModuleUrl = `data:text/javascript;charset=utf-8,${encodeURIComponent(chartElementsSource)}`;
-
-  const uiPrimitivesSource = readFileSync(new URL('../../src/components/ui-primitives.js', import.meta.url), 'utf8')
-    .replace("'../dom.js'", JSON.stringify(domModuleUrl));
-  const uiPrimitivesModuleUrl = `data:text/javascript;charset=utf-8,${encodeURIComponent(uiPrimitivesSource)}`;
 
   const dispatchCatalogSource = readFileSync(new URL('../../src/components/dispatch-catalog.js', import.meta.url), 'utf8')
     .replace("'../dom.js'", JSON.stringify(domModuleUrl))
@@ -516,6 +518,19 @@ test('DLS-PAGE-014 DLS-PAGE-015 built-in packages page renders report-style mode
                 mark: 'element',
                 element: 'package-detail'
               }]
+            },
+            {
+              id: 'package-reports',
+              kind: 'custom',
+              title: 'Package',
+              route: { 'hash-query-parameter': 'package' },
+              views: [{
+                id: 'package-reports',
+                title: 'Reports',
+                data: { sources: ['workflows', 'outcomes'] },
+                mark: 'element',
+                element: 'package-reports'
+              }]
             }
           ]
         }
@@ -551,6 +566,14 @@ test('DLS-PAGE-014 DLS-PAGE-015 built-in packages page renders report-style mode
             { workflow: '.github/workflows/aw-maintenance.md', run: '2', finding: 'warning-1', 'finding-kind': 'authored-warning', 'observed-at': '2026-08-29T10:05:00Z' }
           ],
           metadata
+        },
+        outcomes: {
+          source: 'outcomes',
+          rows: [
+            { workflow: '.github/workflows/ambient-context.md', 'workflow-name': 'Ambient Context', 'safe-output': 'ambient-review', 'outcome-title': 'Review ambient context proposal', 'outcome-summary': 'A review proposal is ready.', 'outcome-category': 'issue', 'outcome-status': 'open', 'outcome-state': 'pending', 'rollout-mode': 'review', 'observed-at': '2026-08-29T18:05:00Z' },
+            { workflow: '.github/workflows/ambient-context-worker.md', 'workflow-name': 'Ambient Context Worker', 'safe-output': 'ambient-live', 'outcome-title': 'Reconcile ambient context', 'outcome-summary': 'Updated durable guidance.', 'outcome-category': 'pull-request', 'outcome-status': 'closed', 'outcome-state': 'lifecycle-close', 'rollout-mode': 'live', 'observed-at': '2026-08-28T18:05:00Z' }
+          ],
+          metadata
         }
       };
 
@@ -580,6 +603,15 @@ test('DLS-PAGE-014 DLS-PAGE-015 built-in packages page renders report-style mode
   await expect(page.getByRole('heading', { name: 'Orchestrator and workers', level: 3 })).toBeVisible();
   await expect(page.locator('[data-workflow-role="orchestrator"]')).toHaveCount(1);
   await expect(page.locator('[data-workflow-role="worker"]')).toHaveCount(1);
+
+  await page.getByRole('navigation', { name: 'Ambient Context views' }).getByRole('link', { name: 'Reports' }).click();
+  await expect(page).toHaveURL(/#page-package-reports\?package=ambient-context$/);
+  await expect(page.getByRole('heading', { name: 'Reports', level: 2 })).toBeVisible();
+  await expect(page.locator('.package-report-row')).toHaveCount(2);
+  await expect(page.locator('.package-report-header')).toContainText('1 Open1 Resolved');
+  await page.getByRole('tab', { name: 'Live' }).click();
+  await expect(page.locator('.package-report-row')).toHaveCount(1);
+  await expect(page.locator('.package-report-row')).toContainText('Reconcile ambient context');
 
   await page.locator('[data-nav-page-id="packages"]').click();
   await page.getByRole('tab', { name: 'All' }).focus();
