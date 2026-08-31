@@ -31,18 +31,23 @@ describe('Runtime dashboard view', () => {
     expect(runtimePage).toMatchObject({
       id: 'runtime',
       kind: 'custom',
-      title: 'Runtime',
-      views: [
-        {
-          id: 'runtime-needs-attention',
-          element: 'execution-signal-list'
-        },
-        {
-          id: 'runtime-execution-episodes',
-          element: 'execution-episodes'
-        }
-      ]
+      title: 'Runtime'
     });
+    expect(runtimePage.views.map(
+      (/** @type {{ id: string, element: string }} */ view) => ({
+        id: view.id,
+        element: view.element
+      })
+    )).toEqual([
+      {
+        id: 'runtime-needs-attention',
+        element: 'execution-signal-list'
+      },
+      {
+        id: 'runtime-execution-episodes',
+        element: 'execution-episodes'
+      }
+    ]);
   });
 
   it('renders declarative triage signals and root-only execution episodes', () => {
