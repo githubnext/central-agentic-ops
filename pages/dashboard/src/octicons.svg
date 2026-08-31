@@ -2,6 +2,9 @@
 Primer Octicons 19.33.0
 https://github.com/primer/octicons
 
+To update, unpack a new @primer/octicons release, regenerate this sprite and
+octicon-names.json from build/data.json, then update the version and license below.
+
 MIT License
 
 Copyright (c) 2026 GitHub Inc.
