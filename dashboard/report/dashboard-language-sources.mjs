@@ -76,7 +76,7 @@ function packageMemberships(deployed) {
   return memberships;
 }
 
-function inventoryWorkflowDetails(inventory = {}) {
+function inventoryWorkflowDetails(inventory = {}, controlSettings = {}) {
   const details = new Map();
   for (const workflow of inventory.workflows || []) {
     for (const workflowPath of [workflow.sourcePath, workflow.lockPath].filter(Boolean)) {
@@ -87,6 +87,7 @@ function inventoryWorkflowDetails(inventory = {}) {
     }
   }
   for (const bundle of inventory.bundles || []) {
+    const configuredMode = rolloutMode(controlSettings.packages?.[bundle.controlPackage]?.mode);
     const workers = bundle.workers || [];
     const ready = bundle.compiled === true
       && (bundle.missingWorkers || []).length === 0
@@ -108,6 +109,7 @@ function inventoryWorkflowDetails(inventory = {}) {
           packageInventoryWarnings: inventoryWarnings,
           packageAllowance: packageAllowance > 0 ? packageAllowance : null,
           packageWorkerCount: workers.length,
+          ...(configuredMode !== "unknown" ? { configuredMode } : {}),
         });
       }
     }
@@ -115,9 +117,9 @@ function inventoryWorkflowDetails(inventory = {}) {
   return details;
 }
 
-function workflowRows(deployed, generatedAt, inventory) {
+function workflowRows(deployed, generatedAt, inventory, controlSettings) {
   const memberships = packageMemberships(deployed);
-  const inventoryDetails = inventoryWorkflowDetails(inventory);
+  const inventoryDetails = inventoryWorkflowDetails(inventory, controlSettings);
   return (deployed.workflows || []).map((workflow) => {
     const names = repositoryParts(workflow.repository);
     const membership = memberships.get(`${workflow.repository}:${workflow.path}`);
@@ -137,7 +139,7 @@ function workflowRows(deployed, generatedAt, inventory) {
       "workflow-active": workflow.state === "active"
         ? "true"
         : String(workflow.state).startsWith("disabled") ? "false" : "unknown",
-      "rollout-mode": recentMode,
+      "rollout-mode": details?.configuredMode || recentMode,
       "observed-at": workflow.updatedAt || generatedAt,
     };
   });
@@ -281,9 +283,9 @@ function operationalValueGraderRows(values) {
   });
 }
 
-export function buildDashboardLanguageSources({ deployed, usage, operationalValues, report, inventory = {} }) {
+export function buildDashboardLanguageSources({ deployed, usage, operationalValues, report, inventory = {}, controlSettings = {} }) {
   const generatedAt = report.generatedAt || deployed.generatedAt || new Date().toISOString();
-  const workflows = workflowRows(deployed, generatedAt, inventory);
+  const workflows = workflowRows(deployed, generatedAt, inventory, controlSettings);
   const runs = runRows(deployed);
   const records = report.records || [];
   const values = operationalValueRows(operationalValues);
@@ -330,15 +332,16 @@ async function main() {
   const operationalValuesPath = process.env.REPORT_OPERATIONAL_VALUES;
   const reportPath = process.env.REPORT_RECORDS;
   const inventoryPath = process.env.REPORT_INVENTORY;
+  const controlSettingsPath = process.env.REPORT_CONTROL_SETTINGS;
   const outputPath = process.env.REPORT_DASHBOARD_SOURCES;
-  if (!deployedPath || !usagePath || !operationalValuesPath || !reportPath || !outputPath) {
-    throw new Error("REPORT_DEPLOYED_WORKFLOWS, REPORT_AIC_USAGE, REPORT_OPERATIONAL_VALUES, REPORT_RECORDS, and REPORT_DASHBOARD_SOURCES are required");
+  if (!deployedPath || !usagePath || !operationalValuesPath || !reportPath || !inventoryPath || !controlSettingsPath || !outputPath) {
+    throw new Error("REPORT_DEPLOYED_WORKFLOWS, REPORT_AIC_USAGE, REPORT_OPERATIONAL_VALUES, REPORT_RECORDS, REPORT_INVENTORY, REPORT_CONTROL_SETTINGS, and REPORT_DASHBOARD_SOURCES are required");
   }
-  const [deployed, usage, operationalValues, report] = await Promise.all(
-    [deployedPath, usagePath, operationalValuesPath, reportPath].map(async (file) => JSON.parse(await readFile(file, "utf8"))),
+  const [deployed, usage, operationalValues, report, inventory, controlSettings] = await Promise.all(
+    [deployedPath, usagePath, operationalValuesPath, reportPath, inventoryPath, controlSettingsPath]
+      .map(async (file) => JSON.parse(await readFile(file, "utf8"))),
   );
-  const inventory = inventoryPath ? JSON.parse(await readFile(inventoryPath, "utf8")) : {};
-  const sources = buildDashboardLanguageSources({ deployed, usage, operationalValues, report, inventory });
+  const sources = buildDashboardLanguageSources({ deployed, usage, operationalValues, report, inventory, controlSettings });
   await mkdir(path.dirname(outputPath), { recursive: true });
   await writeFile(outputPath, `${JSON.stringify(sources, null, 2)}\n`);
 }

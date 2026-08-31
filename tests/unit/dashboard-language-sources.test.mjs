@@ -30,11 +30,15 @@ test("dashboard source bridge carries package allowance and inventory readiness 
       workflows: [{ lockPath: workflowPath, maxAiCredits: 500, compiled: true }],
       bundles: [{
         workflow: ".github/workflows/package.md",
+        controlPackage: "package",
         maxAiCredits: 500,
         compiled: true,
         missingWorkers: [],
         workers: [],
       }],
+    },
+    controlSettings: {
+      packages: { package: { mode: "review" } },
     },
   });
 
@@ -46,6 +50,7 @@ test("dashboard source bridge carries package allowance and inventory readiness 
       packageAllowance: sources.workflows.rows[0]["package-aic-allowance"],
       packageWorkerCount: sources.workflows.rows[0]["package-worker-count"],
       inventoryReady: sources.workflows.rows[0]["inventory-ready"],
+      rolloutMode: sources.workflows.rows[0]["rollout-mode"],
     },
     {
       package: "Package",
@@ -54,6 +59,7 @@ test("dashboard source bridge carries package allowance and inventory readiness 
       packageAllowance: 500,
       packageWorkerCount: 0,
       inventoryReady: true,
+      rolloutMode: "review",
     },
   );
 });
