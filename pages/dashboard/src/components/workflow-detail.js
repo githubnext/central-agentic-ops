@@ -40,7 +40,7 @@ export function renderWorkflowDetail(context) {
       : [];
 
     root.dataset.workflow = routeValueFor(route);
-    root.replaceChildren(workflow
+    root.replaceChildren(workflow && route
       ? renderWorkflowContent(context, route, workflow, reports)
       : h('p', { className: 'empty' }, route ? 'Workflow not found.' : 'Select a workflow to view its reports.'));
 

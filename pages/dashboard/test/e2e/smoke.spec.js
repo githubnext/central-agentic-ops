@@ -141,6 +141,14 @@ function buildPresenterModuleUrl() {
     .replace("'./ui-primitives.js'", JSON.stringify(uiPrimitivesModuleUrl));
   const repositoryWorkflowsModuleUrl = `data:text/javascript;charset=utf-8,${encodeURIComponent(repositoryWorkflowsSource)}`;
 
+  const workflowDetailSource = readFileSync(new URL('../../src/components/workflow-detail.js', import.meta.url), 'utf8')
+    .replace("'../dom.js'", JSON.stringify(domModuleUrl))
+    .replace("'../octicons.js'", JSON.stringify(octiconsModuleUrl))
+    .replace("'./badge.js'", JSON.stringify(badgeModuleUrl))
+    .replace("'./link-content.js'", JSON.stringify(linkContentModuleUrl))
+    .replace("'./ui-primitives.js'", JSON.stringify(uiPrimitivesModuleUrl));
+  const workflowDetailModuleUrl = `data:text/javascript;charset=utf-8,${encodeURIComponent(workflowDetailSource)}`;
+
   const repositoriesViewSource = readFileSync(new URL('../../src/components/repositories-view.js', import.meta.url), 'utf8')
     .replace("'../dom.js'", JSON.stringify(domModuleUrl))
     .replace("'./chart-elements.js'", JSON.stringify(chartElementsModuleUrl))
@@ -174,6 +182,7 @@ function buildPresenterModuleUrl() {
     .replace("'./repositories-view.js'", JSON.stringify(repositoriesViewModuleUrl))
     .replace("'./package-detail.js'", JSON.stringify(packageDetailModuleUrl))
     .replace("'./repository-workflows.js'", JSON.stringify(repositoryWorkflowsModuleUrl))
+    .replace("'./workflow-detail.js'", JSON.stringify(workflowDetailModuleUrl))
     .replace("'./outcome-detail.js'", JSON.stringify(outcomeDetailModuleUrl))
     .replace("'./execution-elements.js'", JSON.stringify(executionElementsModuleUrl))
     .replace("'./ui-primitives.js'", JSON.stringify(uiPrimitivesModuleUrl))
@@ -1295,6 +1304,104 @@ test('repository page template follows its JSON-declared hash query route in bro
   await expect(page.getByRole('heading', { level: 1 })).toHaveText('other-org/other-repo');
   await expect(page.locator('.repository-workflow-table')).toContainText('Other');
   await expect(page.locator('.repository-workflow-table')).not.toContainText('Review');
+});
+
+test('workflow page template follows its JSON-declared route and renders attributed reports', async ({ page }) => {
+  const presenterModuleUrl = buildPresenterModuleUrl();
+  await page.goto('about:blank#page-workflow-detail?workflow=githubnext%2Fcentral-agentic-ops%3A.github%2Fworkflows%2Fambient-context.md');
+  await page.setContent(`
+    <div id="root"></div>
+    <script type="module">
+      import { renderDashboard } from ${JSON.stringify(presenterModuleUrl)};
+      const metadata = {
+        'source-id': 'workflow-fixture',
+        'source-kind': 'fixture',
+        'as-of': '2026-08-31T20:00:00Z',
+        'retrieved-at': '2026-08-31T20:01:00Z',
+        completeness: 'complete',
+        freshness: 'fresh',
+        availability: 'available'
+      };
+      const dashboardDocument = {
+        languageVersion: '0.1.0',
+        dashboard: {
+          id: 'workflow-route',
+          title: 'Central Agentic Ops',
+          repository: 'githubnext/central-agentic-ops',
+          pages: [
+            {
+              id: 'repositories',
+              kind: 'custom',
+              title: 'Repositories',
+              views: []
+            },
+            {
+              id: 'repository-detail',
+              kind: 'custom',
+              title: 'Repository',
+              route: { 'hash-query-parameter': 'repository' },
+              views: []
+            },
+            {
+              id: 'workflow-detail',
+              kind: 'custom',
+              title: 'Workflow',
+              description: 'Workflow reports.',
+              route: { 'hash-query-parameter': 'workflow' },
+              views: [{
+                id: 'workflow-reports',
+                title: 'Workflow reports',
+                data: { sources: ['workflows', 'outcomes'] },
+                mark: 'element',
+                element: 'workflow-detail'
+              }]
+            }
+          ]
+        }
+      };
+      const sources = {
+        workflows: {
+          source: 'workflows',
+          metadata,
+          rows: [{
+            organization: 'githubnext',
+            repository: 'central-agentic-ops',
+            package: 'ambient-context',
+            'package-name': 'Ambient Context',
+            workflow: '.github/workflows/ambient-context.md',
+            'workflow-name': 'Ambient Context',
+            'workflow-role': 'orchestrator',
+            'rollout-mode': 'review'
+          }]
+        },
+        outcomes: {
+          source: 'outcomes',
+          metadata,
+          rows: [{
+            organization: 'githubnext',
+            repository: 'central-agentic-ops',
+            workflow: '.github/workflows/ambient-context.md',
+            'safe-output': 'report-1',
+            'outcome-title': 'Debug ambient context workflow failure',
+            'outcome-summary': 'Investigated the reported workflow failure.',
+            'outcome-category': 'pull-request',
+            'outcome-status': 'closed',
+            'rollout-mode': 'review',
+            'observed-at': '2026-08-31T19:00:00Z'
+          }]
+        }
+      };
+      document.querySelector('#root').append(renderDashboard({ document: dashboardDocument, sources }));
+    </script>
+  `);
+
+  await expect(page.getByRole('heading', { level: 1 })).toHaveText('Ambient Context');
+  await expect(page.locator('[data-breadcrumb-root]')).toHaveText('Repositories');
+  await expect(page.locator('[data-breadcrumb-dashboard]')).toHaveText('githubnext/central-agentic-ops');
+  await expect(page.locator('.workflow-identity')).toContainText('.github/workflows/ambient-context.md');
+  await expect(page.locator('.workflow-reports')).toContainText('Debug ambient context workflow failure');
+  await expect(page.locator('.workflow-report-row .status-success')).toHaveText('Closed');
+  await expect(page.locator('.workflow-report-row .mode-review')).toHaveText('Review');
 });
 
 test('outcome page template follows its JSON-declared hash query route in browser', async ({ page }) => {

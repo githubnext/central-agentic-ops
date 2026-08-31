@@ -1290,52 +1290,52 @@ function deriveRepositoryDashboardLinks(sources, pages) {
         ? source.rows.map((row) => deriveRepositoryDashboardLink(row, detailPage.id))
         : source?.rows
     }
+  ]));
+}
 
-    /**
-     * Adds presentation-only workflow routes while retaining the canonical
-     * authored workflow link for explicit source controls.
-     * @param {Record<string, LogicalSourceInput>} sources
-     * @param {Array<PresentableBuiltInPage | PresentableCustomPage>} pages
-     * @returns {Record<string, LogicalSourceInput>}
-     */
-    function deriveWorkflowDashboardLinks(sources, pages) {
-      const detailPage = pages.find((page) => page.kind === 'custom' && page.route?.['hash-query-parameter'] === 'workflow');
-      if (!detailPage) return sources;
+/**
+ * Adds presentation-only workflow routes while retaining the canonical
+ * authored workflow link for explicit source controls.
+ * @param {Record<string, LogicalSourceInput>} sources
+ * @param {Array<PresentableBuiltInPage | PresentableCustomPage>} pages
+ * @returns {Record<string, LogicalSourceInput>}
+ */
+function deriveWorkflowDashboardLinks(sources, pages) {
+  const detailPage = pages.find((page) => page.kind === 'custom' && page.route?.['hash-query-parameter'] === 'workflow');
+  if (!detailPage) return sources;
 
-      return Object.fromEntries(Object.entries(sources).map(([name, source]) => [
-        name,
-        {
-          ...source,
-          rows: Array.isArray(source?.rows)
-            ? source.rows.map((row) => deriveWorkflowDashboardLink(row, detailPage.id))
-            : source?.rows
-        }
-      ]));
-    }
-
-    /**
-     * @param {Record<string, unknown>} row
-     * @param {string} pageId
-     * @returns {Record<string, unknown>}
-     */
-    function deriveWorkflowDashboardLink(row, pageId) {
-      const organization = trimmedString(row.organization);
-      const repository = trimmedString(row.repository);
-      const workflow = trimmedString(row.workflow);
-      const repositorySlug = repository && repository.includes('/') ? repository : (organization && repository ? `${organization}/${repository}` : null);
-      const workflowLink = row['workflow-link'];
-      if (!repositorySlug || !workflow || !isPlainObject(workflowLink)) return row;
-
-      return {
-        ...row,
-        'workflow-link': {
-          ...workflowLink,
-          'dashboard-href': `#page-${encodeURIComponent(pageId)}?workflow=${encodeURIComponent(`${repositorySlug}:${workflow}`)}`,
-          'dashboard-label': `View ${trimmedString(row['workflow-name']) ?? workflow} workflow dashboard`
-        }
-      };
+  return Object.fromEntries(Object.entries(sources).map(([name, source]) => [
+    name,
+    {
+      ...source,
+      rows: Array.isArray(source?.rows)
+        ? source.rows.map((row) => deriveWorkflowDashboardLink(row, detailPage.id))
+        : source?.rows
     }
   ]));
+}
+
+/**
+ * @param {Record<string, unknown>} row
+ * @param {string} pageId
+ * @returns {Record<string, unknown>}
+ */
+function deriveWorkflowDashboardLink(row, pageId) {
+  const organization = trimmedString(row.organization);
+  const repository = trimmedString(row.repository);
+  const workflow = trimmedString(row.workflow);
+  const repositorySlug = repository && repository.includes('/') ? repository : (organization && repository ? `${organization}/${repository}` : null);
+  const workflowLink = row['workflow-link'];
+  if (!repositorySlug || !workflow || !isPlainObject(workflowLink)) return row;
+
+  return {
+    ...row,
+    'workflow-link': {
+      ...workflowLink,
+      'dashboard-href': `#page-${encodeURIComponent(pageId)}?workflow=${encodeURIComponent(`${repositorySlug}:${workflow}`)}`,
+      'dashboard-label': `View ${trimmedString(row['workflow-name']) ?? workflow} workflow dashboard`
+    }
+  };
 }
 
 /**
