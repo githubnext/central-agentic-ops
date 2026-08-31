@@ -27,7 +27,7 @@ import { deriveOverviewSources } from './overview-data.js';
  */
 
 /**
- * @typedef {{ id: string, title?: string, description?: string, layout: 'full'|'wide'|'narrow', views: string[] }} PresentablePageSection
+ * @typedef {{ id: string, title?: string, description?: string, layout: 'full'|'wide'|'narrow', views: string[], ['count-source']?: string, ['count-label']?: string }} PresentablePageSection
  */
 
 /**
@@ -427,7 +427,7 @@ function renderCustomPage(page, title, sources, units) {
     ? h(
       'div',
       { className: 'page-layout-grid' },
-      ...sections.map((section) => renderLayoutSection(page.id, section, renderedViewsById))
+      ...sections.map((section) => renderLayoutSection(page.id, section, renderedViewsById, sources))
     )
     : h('div', { className: 'custom-view-grid' }, ...renderedViews);
   const pageClassName = typeof page['class-name'] === 'string' && page['class-name'].length > 0
@@ -476,11 +476,14 @@ function renderHiddenDataStateMetrics(effectiveState) {
  * @param {string} pageId
  * @param {PresentablePageSection} section
  * @param {Map<string, HTMLElement>} renderedViews
+ * @param {Record<string, LogicalSourceInput>} sources
  * @returns {HTMLElement}
  */
-function renderLayoutSection(pageId, section, renderedViews) {
+function renderLayoutSection(pageId, section, renderedViews, sources) {
   const title = section.title ?? titleCase(section.id);
   const headingId = `${pageId}-${section.id}-layout-heading`;
+  const countSource = section['count-source'] ? sources[section['count-source']] : null;
+  const count = Array.isArray(countSource?.rows) ? countSource.rows.length : null;
   return h(
     'section',
     {
@@ -497,6 +500,9 @@ function renderLayoutSection(pageId, section, renderedViews) {
         h('h3', { id: headingId }, title),
         section.description ? h('p', null, section.description) : null
       ),
+      count !== null && section['count-label']
+        ? h('strong', null, `${count.toLocaleString('en')} ${section['count-label']}`)
+        : null,
     ),
     h(
       'div',

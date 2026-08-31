@@ -919,6 +919,10 @@ function validatePageSections(sections, views, sectionsPath, ownerLabel, viewLab
     }
     validateOptionalStringField(section.title, `${sectionPath}.title`, errors);
     validateOptionalStringField(section.description, `${sectionPath}.description`, errors);
+    if (section['count-source'] !== undefined || section['count-label'] !== undefined) {
+      validateSource(section['count-source'], `${sectionPath}.count-source`, errors);
+      validateStringField(section['count-label'], `${sectionPath}.count-label`, true, errors);
+    }
     if (typeof section.layout !== 'string' || !PAGE_SECTION_LAYOUT_VALUES.includes(section.layout)) {
       errors.push(createError(
         ERROR_CODES.nonCanonicalVocabularyOrIdentifier,

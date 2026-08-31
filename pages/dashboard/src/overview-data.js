@@ -279,7 +279,9 @@ function buildValueSignals(input) {
   }
 
   const unavailable = input.graderObservations.filter((row) => (
-    String(row.status) !== 'pass' || !isFiniteNumber(row.value)
+    String(row.status) !== 'pass'
+    || String(row['maturity-status']) === 'unavailable'
+    || !isFiniteNumber(row.value)
   ));
   if (unavailable.length > 0) {
     signals.push({

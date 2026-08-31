@@ -449,6 +449,7 @@ h3 { margin: 16px 0 8px; font-size: 1rem; font-weight: 600; }
 :is(.security-page, .value-page) .layout-section { padding: 0; border: 0; background: transparent; }
 :is(.security-page, .value-page) .layout-section-header { display: flex; align-items: end; justify-content: space-between; gap: 24px; }
 :is(.security-page, .value-page) .layout-section-header h3 { margin: 2px 0 0; font-size: 1.25rem; }
+:is(.security-page, .value-page) .layout-section-header > strong { flex: none; color: var(--muted); font-size: .75rem; }
 :is(.security-page, .value-page) .layout-section .page-section > h4,
 :is(.security-page, .value-page) .layout-section .view-source,
 :is(.security-page, .value-page) .layout-section .view-metadata { display: none; }

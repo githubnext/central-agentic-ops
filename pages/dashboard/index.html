@@ -24,6 +24,11 @@
         availability: "available",
         ...overrides,
       });
+      const runLink = (run) => ({
+        relation: "run",
+        href: `https://github.com/githubnext/central-agentic-ops/actions/runs/${run}`,
+        label: `Run ${run}`,
+      });
 
       const dashboardSchema = await fetch("./dashboard.json").then((response) => {
         if (!response.ok) throw new Error(`Unable to load dashboard.json: ${response.status}`);
@@ -123,6 +128,17 @@
           ],
           metadata: metadata("findings-fixture"),
         },
+        "grader-observations": {
+          source: "grader-observations",
+          rows: [
+            { grader: "issue-resolution-rate", run: "1001", status: "pass", value: 0.82, "maturity-status": "matured", "baseline-value": 0.77, "delta-from-baseline": 0.05, "evaluator-digest": "sha256:abc123", "observed-at": "2026-08-29T09:10:00Z", "run-link": runLink("1001") },
+            { grader: "issue-resolution-rate", run: "998", status: "pass", value: 0.58, "maturity-status": "matured", "baseline-value": 0.61, "delta-from-baseline": -0.03, "evaluator-digest": "sha256:def456", "observed-at": "2026-08-27T09:10:00Z", "run-link": runLink("998") },
+            { grader: "issue-resolution-rate", run: "999", status: "pass", value: 0.71, "maturity-status": "matured", "baseline-value": 0.69, "delta-from-baseline": 0.02, "evaluator-digest": "sha256:ghi789", "observed-at": "2026-08-28T09:10:00Z", "run-link": runLink("999") },
+            { grader: "review-quality", run: "1002", status: "pass", value: 0.76, "maturity-status": "interim", "baseline-value": 0.72, "delta-from-baseline": 0.04, "evaluator-digest": "sha256:jkl012", "observed-at": "2026-08-29T10:10:00Z", "run-link": runLink("1002") },
+            { grader: "missing-value", run: "Unavailable", status: "unavailable", value: null, "maturity-status": "unavailable", "baseline-value": null, "delta-from-baseline": null, "evaluator-digest": "" },
+          ],
+          metadata: metadata("grader-observations-fixture"),
+        },
         "operational-values": {
           source: "operational-values",
           rows: [
@@ -142,6 +158,7 @@
               "maturity-status": "matured",
               "delta-from-baseline": 0.05,
               "evidence-link": { relation: "evidence", href: "https://github.com/githubnext/central-agentic-ops/issues/201", label: "View evidence issue 201" },
+              "run-link": runLink("1001"),
             },
             {
               "observed-at": "2026-08-27T09:10:00Z",
@@ -159,6 +176,7 @@
               "maturity-status": "matured",
               "delta-from-baseline": -0.03,
               "evidence-link": { relation: "evidence", href: "https://github.com/githubnext/central-agentic-ops/issues/198", label: "View evidence issue 198" },
+              "run-link": runLink("998"),
             },
             {
               "observed-at": "2026-08-28T09:10:00Z",
@@ -176,6 +194,7 @@
               "maturity-status": "matured",
               "delta-from-baseline": 0.02,
               "evidence-link": { relation: "evidence", href: "https://github.com/githubnext/central-agentic-ops/issues/199", label: "View evidence issue 199" },
+              "run-link": runLink("999"),
             },
             {
               "observed-at": "2026-08-29T10:10:00Z",
@@ -193,6 +212,7 @@
               "maturity-status": "interim",
               "delta-from-baseline": 0.04,
               "evidence-link": { relation: "evidence", href: "https://github.com/githubnext/mona-tools/pull/43", label: "View evidence pull request 43" },
+              "run-link": runLink("1002"),
             },
           ],
           metadata: metadata("operational-values-fixture"),

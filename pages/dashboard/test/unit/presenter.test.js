@@ -500,6 +500,11 @@ describe('presenter built-in and custom pages', () => {
     expect(page?.querySelector('.summary-grid')?.textContent).toContain('Mature evidence3');
     expect(page?.querySelector('.summary-grid')?.textContent).toContain('Mean operational value50%');
     expect(page?.querySelector('.summary-grid')?.textContent).toContain('Open outputs1');
+    expect([...(page?.querySelectorAll('.layout-section-header > strong') ?? [])].map((node) => node.textContent)).toEqual([
+      '5 signals',
+      '2 observations',
+      '5 records'
+    ]);
 
     const signals = [...(page?.querySelectorAll('.signal-item') ?? [])];
     expect(signals.map((signal) => signal.querySelector('.signal-copy > span')?.textContent)).toEqual([

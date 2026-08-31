@@ -203,6 +203,7 @@ Language keys and enumerated values use canonical kebab-case. Human-readable tit
 | Unit definition | `name`, `symbol`, `significant` |
 | Built-in page | `id`, `kind`, `page`, `title`, `navigation-label`, `description`, `icon`, `class-name`, `definition` |
 | Custom page | `id`, `kind`, `title`, `navigation-label`, `description`, `icon`, `class-name`, `route`, `views`, `sections` |
+| Page section | `id`, `title`, `description`, `layout`, `views`, `count-source`, `count-label` |
 | Custom page `route` | `hash-query-parameter` |
 | View | `id`, `title`, `description`, `data`, `mark`, `element`, `chart`, `layout`, `disclosure`, `controls`, `empty-message`, `encoding` |
 | View `data` | `source` or `sources`, `scope`, `time`, `filters`, `limit`, `order-by` |
@@ -493,7 +494,7 @@ The optional page `class-name` is a canonical identifier that a renderer adds to
 
 A custom page contains a non-empty `views` sequence. Each view has one `data` mapping and one mark. Data marks use an `encoding`; named UI elements use `element`.
 
-A custom page may also contain a non-empty `sections` sequence that groups its views for presentation. Each section contains a unique canonical `id`, optional `title` and `description`, one `layout` value of `full`, `wide`, or `narrow`, and a non-empty `views` sequence. Section view references must name every view on the page exactly once and preserve view declaration order. An omitted section title defaults from its section ID.
+A custom page may also contain a non-empty `sections` sequence that groups its views for presentation. Each section contains a unique canonical `id`, optional `title` and `description`, one `layout` value of `full`, `wide`, or `narrow`, and a non-empty `views` sequence. Section view references must name every view on the page exactly once and preserve view declaration order. An omitted section title defaults from its section ID. A section may pair `count-source` with a non-empty `count-label` to expose the effective source row count in its heading.
 
 #### 11.1.1 Route-Bound Page Templates
 
@@ -586,7 +587,7 @@ Disclosure changes presentation only. It does not change data processing, data s
 - **DLS-VIEW-021:** Disclosure state **MUST NOT** alter filtering, aggregation, ordering, limiting, provenance, freshness, completeness, availability, links, required built-in content, or semantic output.
 - **DLS-VIEW-022:** An `element` mark **MUST** name exactly one supported UI element and **MUST** render only from its declared `data.sources`. A presenter **MUST NOT** select an element from page IDs, view IDs, source names, or source contents.
 - **DLS-VIEW-023:** A presenter **MUST** select a field's `status`, `mode`, or `active-state` treatment only from its `display` value and **MUST NOT** infer that treatment from the field name.
-- **DLS-VIEW-024:** A custom page `sections` sequence, when present, **MUST** be non-empty. Every section **MUST** have a unique canonical `id`, one `layout` value of `full`, `wide`, or `narrow`, and a non-empty `views` sequence. Sections **MUST** reference every page view exactly once and preserve view declaration order; an omitted section title **MUST** default from its section ID.
+- **DLS-VIEW-024:** A custom page `sections` sequence, when present, **MUST** be non-empty. Every section **MUST** have a unique canonical `id`, one `layout` value of `full`, `wide`, or `narrow`, and a non-empty `views` sequence. Sections **MUST** reference every page view exactly once and preserve view declaration order; an omitted section title **MUST** default from its section ID. `count-source` and non-empty `count-label`, when used, **MUST** appear together and expose that source's effective row count without changing view data.
 - **DLS-VIEW-025:** A presenter **MUST** apply a field's referenced unit consistently to metric values, table cells, chart value labels, chart data tables, and accessible chart labels.
 - **DLS-VIEW-026:** A custom page `route`, when present, **MUST** be a mapping containing exactly `hash-query-parameter`, whose value **MUST** be a canonical identifier. Built-in pages **MUST NOT** declare `route`.
 - **DLS-VIEW-027:** A presenter **MUST** resolve a custom page route from `#page-<page-id>?<parameter>=<value>`. It **MUST** use a non-empty decoded, trimmed route value as the page title and final breadcrumb label and supply it as an opaque binding to route-aware named elements; a missing or empty value **MUST** preserve the declared title and supply an empty binding. The value **MUST** be treated only as text and **MUST NOT** be interpreted as markup, code, a URI, or a general-purpose content template.

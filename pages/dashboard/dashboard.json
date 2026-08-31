@@ -1185,6 +1185,8 @@
             "title": "Needs attention",
             "description": "Grader maturity, usage coverage, output disposition, and experiment readiness.",
             "layout": "full",
+            "count-source": "value-signals",
+            "count-label": "signals",
             "views": [
               "value-summary",
               "value-signals"
@@ -1195,6 +1197,8 @@
             "title": "Operational value by workflow",
             "description": "Latest evaluator versions only; repeated runs for one opportunity are collapsed.",
             "layout": "full",
+            "count-source": "value-workflows",
+            "count-label": "observations",
             "views": [
               "operational-value-by-workflow"
             ]
@@ -1204,6 +1208,8 @@
             "title": "Grader ledger",
             "description": "All retained operational-value grader records, including unavailable and interim results.",
             "layout": "full",
+            "count-source": "grader-observations",
+            "count-label": "records",
             "views": [
               "operational-value-ledger"
             ]
