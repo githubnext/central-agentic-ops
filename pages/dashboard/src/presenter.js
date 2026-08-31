@@ -1304,7 +1304,7 @@ function deriveRepositoryDashboardLinks(sources, pages) {
  * @returns {Record<string, LogicalSourceInput>}
  */
 function deriveWorkflowDashboardLinks(sources, pages) {
-  const detailPage = pages.find((page) => page.kind === 'custom' && page.route?.['hash-query-parameter'] === 'workflow');
+  const detailPage = pages.find((page) => page.kind === 'custom' && page.id === 'workflow-detail');
   if (!detailPage) return sources;
   const knownWorkflows = new Set((sources.workflows?.rows ?? [])
     .map(workflowDashboardIdentity)

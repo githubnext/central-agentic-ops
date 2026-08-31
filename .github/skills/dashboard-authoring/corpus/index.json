@@ -35,6 +35,11 @@
       "id": "stale-documentation-remediation",
       "metadata": "examples/stale-documentation-remediation.json",
       "dashboard": "examples/stale-documentation-remediation.dashboard.yml"
+    },
+    {
+      "id": "workflow-permission-drift-remediation",
+      "metadata": "examples/workflow-permission-drift-remediation.json",
+      "dashboard": "examples/workflow-permission-drift-remediation.dashboard.yml"
     }
   ]
 }

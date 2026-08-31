@@ -115,7 +115,9 @@ describe('renderWorkflowDetail', () => {
     expect(rendered.dataset.workflow).toBe('githubnext/central-agentic-ops:.github/workflows/ambient-context.md');
     expect(rendered.querySelector('.workflow-tabs')?.textContent).toBe('ReportsInsights');
     expect(rendered.querySelector('.workflow-tabs [aria-current="page"]')?.textContent).toBe('Reports');
-    expect(rendered.querySelector('.workflow-tabs a:last-child')?.getAttribute('href')).toBe('#page-operational-value');
+    expect(rendered.querySelector('.workflow-tabs a:last-child')?.getAttribute('href')).toBe(
+      '#page-workflow-runtime?workflow=githubnext%2Fcentral-agentic-ops%3A.github%2Fworkflows%2Fambient-context.md'
+    );
     expect(rendered.querySelector('.workflow-identity')?.textContent).toContain('Orchestrator');
     expect(rendered.querySelector('.workflow-badge-package')?.getAttribute('href')).toBe('#page-package-detail?package=ambient-context');
     expect(rendered.querySelector('.workflow-identity > a')?.getAttribute('href')).toContain('/ambient-context.md');

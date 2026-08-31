@@ -107,6 +107,8 @@ Never modify, move, or delete the existing dashboard package under `dashboard/`.
 
 Read `pages/dashboard/PLAN.md`, `pages/dashboard/dashboard.json`, and all relevant modules under `pages/dashboard/src/` before selecting work. Also inspect the relevant modules under `dashboard/report/` to preserve user-visible semantics including metrics, tables, filters, rankings, links, utilization indicators, pie and donut charts, and multi-series temporal line charts.
 
+Use targeted searches and bounded line-range reads; do not load whole large files or reread the specification. Keep each edit call small and single-purpose.
+
 Inventory concrete remaining hard-coded view construction, including:
 
 - branches or registries keyed by a built-in page or view identifier;

@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import { describe, expect, it } from 'vitest';
-import { customViewAvailabilityMessage, renderContextChrome, renderContextList, renderCustomViewStateDetails, renderPageSection, renderProvenanceList, renderProvenanceSection, renderSummaryList, renderSummaryRegion, renderTitledRegion, renderViewChrome, renderViewHeader, renderViewSectionChrome } from '../../src/components/view-chrome.js';
+import { customViewAvailabilityMessage, renderContextChrome, renderContextList, renderCustomViewStateDetails, renderDefinitionList, renderPageSection, renderProvenanceList, renderProvenanceSection, renderSummaryList, renderSummaryRegion, renderTitledRegion, renderViewChrome, renderViewHeader, renderViewSectionChrome } from '../../src/components/view-chrome.js';
 
 describe('view chrome component helpers', () => {
   it('DLS-SAFE-007 renders focusable labeled page sections with deterministic heading ids', () => {
@@ -111,6 +111,22 @@ describe('view chrome component helpers', () => {
     expect(withSource[1]?.className).toBe('view-context');
     expect(withSource[1]?.textContent).toContain('Filters: {"status":"open"}');
     expect(withoutSource).toHaveLength(0);
+  });
+
+  it('renders reusable definition lists for summary-style key/value grids including empty input', () => {
+    const populated = renderDefinitionList('summary-grid', [
+      { label: 'Approval gates', value: '2' },
+      { label: 'Explicit warnings', value: '1' }
+    ]);
+    const empty = renderDefinitionList('domain-summary', []);
+
+    expect(populated.className).toBe('summary-grid');
+    expect(populated.querySelectorAll('div')).toHaveLength(2);
+    expect(populated.textContent).toContain('Approval gates2');
+    expect(populated.textContent).toContain('Explicit warnings1');
+    expect(empty.className).toBe('domain-summary');
+    expect(empty.querySelectorAll('div')).toHaveLength(0);
+    expect(empty.textContent).toBe('');
   });
 
   it('DLS-SAFE-007 wraps single-content titled regions with the shared page-section markup', () => {

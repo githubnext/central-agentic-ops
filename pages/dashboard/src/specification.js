@@ -38,6 +38,7 @@ export const VIEW_ELEMENT_VALUES = [
   'repository-activity',
   'repository-workflows',
   'workflow-detail',
+  'workflow-runtime',
   'outcome-detail',
   'execution-signal-list',
   'execution-episodes',
