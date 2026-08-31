@@ -1824,7 +1824,8 @@ describe('presenter built-in and custom pages', () => {
     expect(rendered.querySelector('.custom-table .status-danger')?.textContent).toBe('failure');
   });
 
-  it('renders a JSON-selected repository workflow view with declarative repository scope', () => {
+  it('routes and reallocates a JSON-selected repository workflow view from a hash query argument', () => {
+    window.history.replaceState(null, '', '/#page-repository-detail?repository=octo-org%2Focto-repo');
     const rendered = renderDashboard({
       document: {
         languageVersion: '0.1.0',
@@ -1832,15 +1833,15 @@ describe('presenter built-in and custom pages', () => {
           id: 'repository-detail-dashboard',
           title: 'Repository detail',
           pages: [{
-            id: 'octo-repo',
+            id: 'repository-detail',
             kind: /** @type {'custom'} */ ('custom'),
-            title: 'octo-org/octo-repo',
+            title: 'Repository',
+            route: { 'hash-query-parameter': 'repository' },
             views: [{
               id: 'repository-workflows',
               title: 'Agentic workflows',
               data: {
-                sources: ['workflows'],
-                scope: { repositories: ['octo-repo'] }
+                sources: ['workflows']
               },
               mark: 'element',
               element: 'repository-workflows'
@@ -1867,11 +1868,24 @@ describe('presenter built-in and custom pages', () => {
         }
       }
     });
+    document.body.append(rendered);
 
     const repositoryView = rendered.querySelector('.repository-view');
     expect(repositoryView?.getAttribute('data-repository')).toBe('octo-org/octo-repo');
     expect(repositoryView?.textContent).toContain('Review');
     expect(repositoryView?.textContent).not.toContain('Other');
     expect(rendered.querySelector('#page-title')?.textContent).toBe('octo-org/octo-repo');
+    expect(rendered.querySelector('[data-breadcrumb-page]')?.textContent).toBe('octo-org/octo-repo');
+    expect(rendered.querySelector('.repository-tabs a')?.getAttribute('href')).toBe('#page-repository-detail?repository=octo-org%2Focto-repo');
+
+    window.history.replaceState(null, '', '/#page-repository-detail?repository=other-org%2Fother-repo');
+    window.dispatchEvent(new Event('hashchange'));
+
+    expect(repositoryView?.getAttribute('data-repository')).toBe('other-org/other-repo');
+    expect(repositoryView?.textContent).toContain('Other');
+    expect(repositoryView?.textContent).not.toContain('Review');
+    expect(rendered.querySelector('#page-title')?.textContent).toBe('other-org/other-repo');
+    rendered.remove();
+    window.history.replaceState(null, '', '/');
   });
 });

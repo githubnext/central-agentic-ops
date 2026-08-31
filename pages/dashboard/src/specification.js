@@ -12,7 +12,8 @@ export const DEFAULTS_KEYS = ['scope', 'time', 'filters'];
 export const UNIT_DEFINITION_KEYS = ['name', 'symbol', 'significant'];
 export const NAVIGATION_SECTION_KEYS = ['label', 'pages'];
 export const BUILT_IN_PAGE_KEYS = ['id', 'kind', 'page', 'title', 'description', 'icon', 'class-name', 'definition'];
-export const CUSTOM_PAGE_KEYS = ['id', 'kind', 'title', 'description', 'icon', 'class-name', 'views', 'sections'];
+export const CUSTOM_PAGE_KEYS = ['id', 'kind', 'title', 'description', 'icon', 'class-name', 'route', 'views', 'sections'];
+export const PAGE_ROUTE_KEYS = ['hash-query-parameter'];
 
 export const VIEW_KEYS = ['id', 'title', 'description', 'data', 'mark', 'element', 'chart', 'layout', 'disclosure', 'encoding'];
 export const VIEW_DATA_KEYS = ['source', 'sources', 'scope', 'time', 'filters', 'limit', 'order-by', 'source-metadata'];

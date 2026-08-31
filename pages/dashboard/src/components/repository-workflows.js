@@ -13,12 +13,37 @@ import { renderLinkedText } from './linked-text.js';
  * @returns {HTMLElement}
  */
 export function renderRepositoryWorkflows(context) {
-  const workflows = rowsFor(context.sources, 'workflows')
-    .slice()
-    .sort((left, right) => workflowName(left).localeCompare(workflowName(right)));
-  const repository = repositoryName(workflows[0])
-    || firstScopedRepository(context.scope)
-    || 'Repository';
+  const allWorkflows = rowsFor(context.sources, 'workflows');
+  const root = h('div', {
+    className: 'repository-view',
+    'data-route-view': '',
+    'data-route-parameter': context.routeParameter
+  });
+  /** @param {unknown} routeValue */
+  const render = (routeValue) => {
+    const repository = normalizeRepositoryRoute(routeValue)
+      || firstScopedRepository(context.scope);
+    const workflows = allWorkflows
+      .filter((workflow) => repository && repositoryName(workflow).toLowerCase() === repository.toLowerCase())
+      .sort((left, right) => workflowName(left).localeCompare(workflowName(right)));
+    const content = renderRepositoryWorkflowContent(context, repository, workflows);
+    root.dataset.repository = repository;
+    root.replaceChildren(...content.childNodes);
+  };
+  root.addEventListener('dashboard-route-change', (event) => {
+    if (!(event instanceof CustomEvent) || event.detail?.parameter !== context.routeParameter) return;
+    render(event.detail.value);
+  });
+  render('');
+  return root;
+}
+
+/**
+ * @param {import('./ui-elements.js').ElementRenderContext} context
+ * @param {string} repository
+ * @param {Array<Record<string, unknown>>} workflows
+ */
+function renderRepositoryWorkflowContent(context, repository, workflows) {
   const headingId = `${context.pageId}-repository-workflows-heading`;
   const latest = workflows
     .map((workflow) => String(workflow['observed-at'] ?? ''))
@@ -30,7 +55,7 @@ export function renderRepositoryWorkflows(context) {
 
   return h(
     'div',
-    { className: 'repository-view', dataset: { repository } },
+    { className: 'repository-view-content' },
     renderRepositoryTabs(context.pageId, repository),
     h(
       'section',
@@ -106,10 +131,11 @@ export function renderRepositoryWorkflows(context) {
  * @param {string} repository
  */
 function renderRepositoryTabs(pageId, repository) {
+  const repositoryQuery = repository ? `?repository=${encodeURIComponent(repository)}` : '';
   const tabs = [
-    ['Workflows', 'workflow', `#page-${pageId}`, true],
-    ['Reports', 'issue', '#page-findings', false],
-    ['Insights', 'graph', '#page-operational-value', false]
+    ['Workflows', 'workflow', `#page-${pageId}${repositoryQuery}`, true],
+    ['Reports', 'issue', `#page-findings${repositoryQuery}`, false],
+    ['Insights', 'graph', `#page-operational-value${repositoryQuery}`, false]
   ];
   return h(
     'nav',
@@ -224,6 +250,15 @@ function firstScopedRepository(scope) {
   const repositories = scope?.repositories;
   return Array.isArray(repositories) && typeof repositories[0] === 'string'
     ? repositories[0]
+    : '';
+}
+
+/** @param {unknown} value */
+function normalizeRepositoryRoute(value) {
+  if (typeof value !== 'string') return '';
+  const repository = value.trim();
+  return /^[A-Za-z0-9](?:[A-Za-z0-9.-]{0,98}[A-Za-z0-9])?\/[A-Za-z0-9_.-]{1,100}$/.test(repository)
+    ? repository
     : '';
 }
 

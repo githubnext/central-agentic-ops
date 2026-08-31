@@ -20,6 +20,7 @@ import { renderWorkflowTopology } from './workflow-topology.js';
  *   sources: Record<string, import('../presenter.js').LogicalSourceInput>,
  *   contextDetails: string[],
  *   scope?: Record<string, unknown>,
+ *   routeParameter?: string,
  *   headingTag: 'h3'|'h4'
  * }} ElementRenderContext
  */

@@ -79,4 +79,27 @@ describe('renderRepositoryWorkflows', () => {
     expect(rendered.querySelector('tbody td')?.textContent).toBe('No authored Agentic Workflows were observed for this repository.');
     expect(rendered.querySelector('.repository-section-heading > a')).toBeNull();
   });
+
+  it('reallocates the view when its declared route parameter changes', () => {
+    const routedContext = {
+      ...context([
+        { organization: 'github', repository: 'gh-aw', workflow: 'one.md', 'workflow-name': 'One', 'workflow-active': 'true' },
+        { organization: 'octo-org', repository: 'octo-repo', workflow: 'two.md', 'workflow-name': 'Two', 'workflow-active': 'true' }
+      ]),
+      scope: undefined,
+      routeParameter: 'repository'
+    };
+    const rendered = renderRepositoryWorkflows(routedContext);
+    expect(rendered.querySelectorAll('tbody tr')).toHaveLength(1);
+    expect(rendered.querySelector('tbody')?.textContent).not.toContain('One');
+    expect(rendered.querySelector('tbody')?.textContent).not.toContain('Two');
+
+    rendered.dispatchEvent(new CustomEvent('dashboard-route-change', {
+      detail: { parameter: 'repository', value: 'octo-org/octo-repo' }
+    }));
+
+    expect(rendered.dataset.repository).toBe('octo-org/octo-repo');
+    expect(rendered.querySelector('tbody')?.textContent).toContain('Two');
+    expect(rendered.querySelector('tbody')?.textContent).not.toContain('One');
+  });
 });

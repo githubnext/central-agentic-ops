@@ -1023,6 +1023,71 @@ test('DLS-SAFE-007 DLS-SAFE-008 keyboard navigation moves across labeled page se
   await expect(sections.nth(0)).toBeFocused();
 });
 
+test('repository page template follows its JSON-declared hash query route in browser', async ({ page }) => {
+  const presenterModuleUrl = buildPresenterModuleUrl();
+  await page.goto('about:blank#page-repository-detail?repository=octo-org%2Focto-repo');
+  await page.setContent(`
+    <div id="root"></div>
+    <script type="module">
+      import { renderDashboard } from ${JSON.stringify(presenterModuleUrl)};
+      const metadata = {
+        'source-id': 'workflows-fixture',
+        'source-kind': 'fixture',
+        'as-of': '2026-08-30T08:00:00Z',
+        'retrieved-at': '2026-08-30T08:01:00Z',
+        completeness: 'complete',
+        freshness: 'fresh',
+        availability: 'available'
+      };
+      const dashboardDocument = {
+        languageVersion: '0.1.0',
+        dashboard: {
+          id: 'repository-route',
+          title: 'Repository route',
+          pages: [{
+            id: 'repository-detail',
+            kind: 'custom',
+            title: 'Repository',
+            description: 'Repository workflows.',
+            route: { 'hash-query-parameter': 'repository' },
+            views: [{
+              id: 'repository-workflows',
+              title: 'Agentic workflows',
+              data: { sources: ['workflows'] },
+              mark: 'element',
+              element: 'repository-workflows'
+            }]
+          }]
+        }
+      };
+      const sources = {
+        workflows: {
+          source: 'workflows',
+          metadata,
+          rows: [
+            { organization: 'octo-org', repository: 'octo-repo', workflow: 'review.md', 'workflow-name': 'Review', 'workflow-active': 'true' },
+            { organization: 'other-org', repository: 'other-repo', workflow: 'other.md', 'workflow-name': 'Other', 'workflow-active': 'true' }
+          ]
+        }
+      };
+      document.querySelector('#root').append(renderDashboard({ document: dashboardDocument, sources }));
+    </script>
+  `);
+
+  await expect(page.getByRole('heading', { level: 1 })).toHaveText('octo-org/octo-repo');
+  await expect(page.locator('.repository-view')).toHaveAttribute('data-repository', 'octo-org/octo-repo');
+  await expect(page.locator('.repository-workflow-table')).toContainText('Review');
+  await expect(page.locator('.repository-workflow-table')).not.toContainText('Other');
+
+  await page.evaluate(() => {
+    window.location.hash = '#page-repository-detail?repository=other-org%2Fother-repo';
+  });
+
+  await expect(page.getByRole('heading', { level: 1 })).toHaveText('other-org/other-repo');
+  await expect(page.locator('.repository-workflow-table')).toContainText('Other');
+  await expect(page.locator('.repository-workflow-table')).not.toContainText('Review');
+});
+
 test('declarative tables expose report-style facets and progressive catalog disclosure', async ({ page }) => {
   const presenterModuleUrl = buildPresenterModuleUrl();
 

@@ -35,7 +35,7 @@ import { deriveOverviewSources } from './overview-data.js';
  */
 
 /**
- * @typedef {{ id: string, kind: 'custom', title?: string, description?: string, icon?: string, ['class-name']?: string, views: unknown[], sections?: PresentablePageSection[] }} PresentableCustomPage
+ * @typedef {{ id: string, kind: 'custom', title?: string, description?: string, icon?: string, ['class-name']?: string, route?: { ['hash-query-parameter']?: string }, views: unknown[], sections?: PresentablePageSection[] }} PresentableCustomPage
  */
 
 /**
@@ -376,6 +376,9 @@ function renderPage(page, sources, units) {
 function renderCustomPage(page, title, sources, units) {
   const views = Array.isArray(page.views) ? page.views : [];
   const sections = Array.isArray(page.sections) ? page.sections : [];
+  const routeParameter = typeof page.route?.['hash-query-parameter'] === 'string'
+    ? page.route['hash-query-parameter']
+    : undefined;
   /** @type {Map<string, LogicalSourceInput>} */
   const pageSources = new Map();
   for (const view of views) {
@@ -386,7 +389,7 @@ function renderCustomPage(page, title, sources, units) {
     }
   }
   const renderedViews = views.map((view, index) => {
-    const rendered = renderCustomView(page.id, view, index, sources, units, sections.length > 0 ? 'h4' : 'h3');
+    const rendered = renderCustomView(page.id, view, index, sources, units, sections.length > 0 ? 'h4' : 'h3', routeParameter);
     const layout = isPlainObject(view) && typeof view.layout === 'string' ? view.layout : 'full';
     const disclosure = isPlainObject(view) && view.disclosure === 'supplemental' ? 'supplemental' : 'essential';
     rendered.classList.add('custom-view');
@@ -438,7 +441,8 @@ function renderCustomPage(page, title, sources, units) {
       'data-page-name': page.id,
       'data-page-id': page.id,
       'data-page-title': title,
-      'data-page-description': page.description ?? ''
+      'data-page-description': page.description ?? '',
+      'data-route-parameter': routeParameter
     },
     ...(renderedViews.length > 0
       ? [renderHiddenDataStateMetrics(summarizeDataState(pageSources)), renderedContent]
@@ -515,18 +519,27 @@ export function enableDashboardPageNavigation(root) {
   }
 
   const availableIds = new Set(pages.map((page) => page.dataset.pageId));
-  const pageIdFromHash = () => {
+  const routeFromHash = () => {
     const hash = root.ownerDocument.defaultView?.location.hash ?? '';
     if (!hash.startsWith('#page-')) return null;
     try {
-      const pageId = decodeURIComponent(hash.slice('#page-'.length));
-      return availableIds.has(pageId) ? pageId : null;
+      const route = hash.slice('#page-'.length);
+      const queryIndex = route.indexOf('?');
+      const pageId = decodeURIComponent(queryIndex === -1 ? route : route.slice(0, queryIndex));
+      if (!availableIds.has(pageId)) return null;
+      return {
+        pageId,
+        parameters: new URLSearchParams(queryIndex === -1 ? '' : route.slice(queryIndex + 1))
+      };
     } catch {
       return null;
     }
   };
-  /** @param {string} pageId */
-  const activate = (pageId) => {
+  /**
+   * @param {string} pageId
+   * @param {URLSearchParams} [parameters]
+   */
+  const activate = (pageId, parameters = new URLSearchParams()) => {
     for (const page of pages) {
       const isActive = page.dataset.pageId === pageId;
       page.hidden = !isActive;
@@ -541,7 +554,9 @@ export function enableDashboardPageNavigation(root) {
       }
     }
     const page = pages.find((candidate) => candidate.dataset.pageId === pageId);
-    const title = page?.dataset.pageTitle ?? '';
+    const routeParameter = page?.dataset.routeParameter;
+    const routeValue = routeParameter ? parameters.get(routeParameter)?.trim() ?? '' : '';
+    const title = routeValue || page?.dataset.pageTitle || '';
     const description = page?.dataset.pageDescription ?? '';
     if (breadcrumbPage) breadcrumbPage.textContent = title;
     if (pageTitle) pageTitle.textContent = title;
@@ -549,9 +564,15 @@ export function enableDashboardPageNavigation(root) {
       pageDescription.textContent = description;
       pageDescription.toggleAttribute('hidden', description.length === 0);
     }
+    for (const routeView of page?.querySelectorAll('[data-route-view]') ?? []) {
+      routeView.dispatchEvent(new CustomEvent('dashboard-route-change', {
+        detail: { parameter: routeParameter, value: routeValue }
+      }));
+    }
   };
 
-  activate(pageIdFromHash() ?? pages[0].dataset.pageId ?? '');
+  const initialRoute = routeFromHash();
+  activate(initialRoute?.pageId ?? pages[0].dataset.pageId ?? '', initialRoute?.parameters);
   root.addEventListener('click', (event) => {
     if (!(event.target instanceof Element)) return;
     const link = event.target.closest('[data-nav-page-id]');
@@ -560,7 +581,7 @@ export function enableDashboardPageNavigation(root) {
     const pageId = link.dataset.navPageId;
     if (!pageId || !availableIds.has(pageId)) return;
     root.ownerDocument.defaultView?.history.pushState(null, '', link.href);
-    activate(pageId);
+    activate(pageId, routeFromHash()?.parameters);
     if (pageTitle instanceof HTMLElement) pageTitle.focus();
   });
 
@@ -570,8 +591,8 @@ export function enableDashboardPageNavigation(root) {
       defaultView?.removeEventListener('hashchange', onHashChange);
       return;
     }
-    const pageId = pageIdFromHash();
-    if (pageId) activate(pageId);
+    const route = routeFromHash();
+    if (route) activate(route.pageId, route.parameters);
   };
   defaultView?.addEventListener('hashchange', onHashChange);
 }
@@ -632,9 +653,10 @@ function summarizeDataState(pageSources) {
  * @param {Record<string, LogicalSourceInput>} sources
  * @param {Record<string, { name: string, symbol: string, significant: number }>} units
  * @param {'h3'|'h4'} [headingTag]
+ * @param {string} [routeParameter]
  * @returns {HTMLElement}
  */
-function renderCustomView(pageId, view, index, sources, units, headingTag = 'h3') {
+function renderCustomView(pageId, view, index, sources, units, headingTag = 'h3', routeParameter) {
   const fallbackTitle = `View ${index + 1}`;
   if (!isPlainObject(view)) {
     return renderCustomViewState(pageId, fallbackTitle, null, 'unavailable', ['Invalid custom view definition.'], headingTag);
@@ -654,7 +676,7 @@ function renderCustomView(pageId, view, index, sources, units, headingTag = 'h3'
   }
 
   if (view.mark === 'element') {
-    return renderElementView(pageId, title, view, sources, contextDetails, headingTag);
+    return renderElementView(pageId, title, view, sources, contextDetails, headingTag, routeParameter);
   }
 
   const sourceName = getViewSources(view)[0] ?? null;
@@ -723,9 +745,10 @@ function getViewTitle(view, index) {
  * @param {Record<string, LogicalSourceInput>} sources
  * @param {string[]} contextDetails
  * @param {'h3'|'h4'} headingTag
+ * @param {string} [routeParameter]
  * @returns {HTMLElement}
  */
-function renderElementView(pageId, title, view, sources, contextDetails, headingTag) {
+function renderElementView(pageId, title, view, sources, contextDetails, headingTag, routeParameter) {
   const elementName = typeof view.element === 'string' ? view.element : '';
   const sourceNames = getViewSources(view);
   const viewData = isPlainObject(view.data) ? view.data : undefined;
@@ -763,6 +786,7 @@ function renderElementView(pageId, title, view, sources, contextDetails, heading
     sources: selectedSources,
     contextDetails,
     scope: isPlainObject(viewData?.scope) ? viewData.scope : undefined,
+    routeParameter,
     headingTag
   }) ?? renderCustomViewState(pageId, title, null, 'unavailable', [...contextDetails, 'Unsupported UI element.'], headingTag);
 }

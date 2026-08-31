@@ -396,10 +396,13 @@
       {
         "id": "repository-detail",
         "kind": "custom",
-        "title": "githubnext/central-agentic-ops",
+        "title": "Repository",
         "description": "Authored GitHub Agentic Workflows owned by this repository.",
         "icon": "repo",
         "class-name": "repository-detail-page",
+        "route": {
+          "hash-query-parameter": "repository"
+        },
         "views": [
           {
             "id": "repository-authored-workflows",
@@ -407,12 +410,7 @@
             "data": {
               "sources": [
                 "workflows"
-              ],
-              "scope": {
-                "repositories": [
-                  "central-agentic-ops"
-                ]
-              }
+              ]
             },
             "mark": "element",
             "element": "repository-workflows",

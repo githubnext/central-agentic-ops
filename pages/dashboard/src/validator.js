@@ -33,6 +33,7 @@ import {
   ORDER_BY_KEYS,
   ORDER_DIRECTION_VALUES,
   OUTCOME_STATE_VALUES,
+  PAGE_ROUTE_KEYS,
   PAGE_ICON_VALUES,
   PAGE_KIND_VALUES,
   PAGE_SECTION_KEYS,
@@ -1083,6 +1084,25 @@ function validateCustomPage(page, pageNode, path, errors) {
       'custom page title default requires a canonical page id.',
       `${path}.id`
     ));
+  }
+
+  if (page.route !== undefined) {
+    const routePath = `${path}.route`;
+    if (!isPlainObject(page.route)) {
+      errors.push(createError(
+        ERROR_CODES.missingOrInvalidRequiredField,
+        'route must be a mapping.',
+        routePath
+      ));
+    } else {
+      validateObjectKeys(getValueNodeByKey(pageNode, 'route'), PAGE_ROUTE_KEYS, routePath, errors);
+      validateRequiredIdentifier(
+        page.route['hash-query-parameter'],
+        `${routePath}.hash-query-parameter`,
+        'route hash query parameter',
+        errors
+      );
+    }
   }
 
   if (!Array.isArray(page.views) || page.views.length === 0) {
