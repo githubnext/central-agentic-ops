@@ -47,7 +47,7 @@ import { deriveOverviewSources } from './overview-data.js';
  */
 
 /**
- * @typedef {{ id: string, title: string, description?: string, defaults?: Record<string, unknown>, pages: Array<PresentableBuiltInPage | PresentableCustomPage>, ['github-url-base']?: string, repository?: string, navigation?: PresentableNavigationSection[] }} PresentableDashboard
+ * @typedef {{ id: string, title: string, description?: string, defaults?: Record<string, unknown>, units?: Record<string, { name: string, symbol: string, significant: number }>, pages: Array<PresentableBuiltInPage | PresentableCustomPage>, ['github-url-base']?: string, repository?: string, navigation?: PresentableNavigationSection[] }} PresentableDashboard
  */
 
 /**
@@ -242,6 +242,7 @@ function getPageIcon(page) {
  */
 function renderMainContent(document, title, description, pages, sources, orgName, githubUrlBase, dashboardRepository) {
   const latestRetrieval = latestRetrievedAt(sources);
+  const units = isPlainObject(document.dashboard.units) ? document.dashboard.units : {};
   return h(
     'div',
     { className: 'app-main' },
@@ -305,7 +306,7 @@ function renderMainContent(document, title, description, pages, sources, orgName
         h(
           'div',
           { className: 'dashboard-pages' },
-          pages.map((page) => renderPage(page, sources))
+          pages.map((page) => renderPage(page, sources, units))
         )
       )
     ),
@@ -343,28 +344,30 @@ function formatReportDate(value) {
 /**
  * @param {PresentableBuiltInPage | PresentableCustomPage} page
  * @param {Record<string, LogicalSourceInput>} sources
+ * @param {Record<string, { name: string, symbol: string, significant: number }>} units
  * @returns {HTMLElement}
  */
-function renderPage(page, sources) {
+function renderPage(page, sources, units) {
   const title = typeof page.title === 'string' && page.title.length > 0
     ? page.title
     : titleCase(page.id);
 
   if (page.kind === 'built-in') {
     const payload = getBuiltInPagePayload(page);
-    return renderCustomPage(payload, title, sources);
+    return renderCustomPage(payload, title, sources, units);
   }
 
-  return renderCustomPage(page, title, sources);
+  return renderCustomPage(page, title, sources, units);
 }
 
 /**
  * @param {PresentableCustomPage} page
  * @param {string} title
  * @param {Record<string, LogicalSourceInput>} sources
+ * @param {Record<string, { name: string, symbol: string, significant: number }>} units
  * @returns {HTMLElement}
  */
-function renderCustomPage(page, title, sources) {
+function renderCustomPage(page, title, sources, units) {
   const views = Array.isArray(page.views) ? page.views : [];
   const sections = Array.isArray(page.sections) ? page.sections : [];
   /** @type {Map<string, LogicalSourceInput>} */
@@ -377,7 +380,7 @@ function renderCustomPage(page, title, sources) {
     }
   }
   const renderedViews = views.map((view, index) => {
-    const rendered = renderCustomView(page.id, view, index, sources, sections.length > 0 ? 'h4' : 'h3');
+    const rendered = renderCustomView(page.id, view, index, sources, units, sections.length > 0 ? 'h4' : 'h3');
     const layout = isPlainObject(view) && typeof view.layout === 'string' ? view.layout : 'full';
     const disclosure = isPlainObject(view) && view.disclosure === 'supplemental' ? 'supplemental' : 'essential';
     rendered.classList.add('custom-view');
@@ -589,10 +592,11 @@ function summarizeDataState(pageSources) {
  * @param {unknown} view
  * @param {number} index
  * @param {Record<string, LogicalSourceInput>} sources
+ * @param {Record<string, { name: string, symbol: string, significant: number }>} units
  * @param {'h3'|'h4'} [headingTag]
  * @returns {HTMLElement}
  */
-function renderCustomView(pageId, view, index, sources, headingTag = 'h3') {
+function renderCustomView(pageId, view, index, sources, units, headingTag = 'h3') {
   const fallbackTitle = `View ${index + 1}`;
   if (!isPlainObject(view)) {
     return renderCustomViewState(pageId, fallbackTitle, null, 'unavailable', ['Invalid custom view definition.'], headingTag);
@@ -646,6 +650,7 @@ function renderCustomView(pageId, view, index, sources, headingTag = 'h3') {
     metadata,
     contextDetails,
     headingTag,
+    units,
     prepareTableRows,
     buildChartPoints,
     prepareChartPoints,

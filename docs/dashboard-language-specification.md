@@ -197,13 +197,14 @@ Language keys and enumerated values use canonical kebab-case. Human-readable tit
 | Mapping | Allowed keys |
 |---|---|
 | Root | `language-version`, `dashboard` |
-| `dashboard` | `id`, `title`, `description`, `github-url-base`, `repository`, `defaults`, `pages` |
+| `dashboard` | `id`, `title`, `description`, `github-url-base`, `repository`, `defaults`, `units`, `pages`, `navigation` |
 | `defaults` | `scope`, `time`, `filters` |
+| Unit definition | `name`, `symbol`, `significant` |
 | Built-in page | `id`, `kind`, `page`, `title`, `description`, `icon`, `class-name`, `definition` |
-| Custom page | `id`, `kind`, `title`, `description`, `icon`, `class-name`, `views` |
+| Custom page | `id`, `kind`, `title`, `description`, `icon`, `class-name`, `views`, `sections` |
 | View | `id`, `title`, `description`, `data`, `mark`, `element`, `chart`, `layout`, `disclosure`, `encoding` |
 | View `data` | `source` or `sources`, `scope`, `time`, `filters`, `limit`, `order-by` |
-| Field definition | `field`, `type`, `aggregate`, `time-unit`, `title`, `as` (only when `aggregate` is not `none`), `display` |
+| Field definition | `field`, `type`, `aggregate`, `time-unit`, `title`, `as` (only when `aggregate` is not `none`), `display`, `unit` |
 
 ### 4.3 Normative Document Requirements
 
@@ -219,6 +220,7 @@ Language keys and enumerated values use canonical kebab-case. Human-readable tit
 - **DLS-DOC-010:** Titles and descriptions **MUST** be strings; IDs, references, and timestamps **MUST NOT** rely on YAML implicit type coercion.
 - **DLS-DOC-011:** `github-url-base`, when present, **MUST** be an absolute HTTPS URL without credentials, query, or fragment. It identifies the GitHub web URL base used to resolve GitHub-addressable entity links and defaults to `https://github.com`.
 - **DLS-DOC-012:** `repository`, when present, **MUST** be a non-empty `owner/repo` slug identifying the GitHub repository hosting the dashboard. A presenter **MUST NOT** fabricate a report action toolbar's GitHub repository link when `repository` is absent.
+- **DLS-DOC-013:** `units`, when present, **MUST** be a non-empty mapping keyed by unique canonical identifiers. Each value **MUST** contain exactly the non-empty string `name`, the non-empty string `symbol`, and the finite positive number `significant`.
 
 ---
 
@@ -318,6 +320,24 @@ Canonical dimensions include entity IDs, `package`, `workflow-role`, `variant`, 
 | `operational-value` | Absolute attainment under a named definition | Non-additive by default |
 
 Entity counts are obtained with `count` or `distinct-count`; they are not stored measures.
+
+### 7.2.1 Units
+
+A dashboard may declare reusable units in `dashboard.units`. A field definition selects one declared unit by setting `unit` to its identifier. The unit `name` is its human-readable name, `symbol` is the compact label appended to presented values, and `significant` is the smallest presentation increment. Presenters round a unit-bearing value to the nearest multiple of `significant`, with halfway cases rounded away from zero, without changing the value used for filtering, aggregation, or ordering. The decimal places implied by `significant` are retained. For example:
+
+```yaml
+units:
+  aic:
+    name: AI Credits
+    symbol: AIC
+    significant: 1
+```
+
+The AIC definition uses a significance of `1` because one AI Credit is the integral accounting unit worth one cent; AIC values are presented without a decimal fraction.
+
+- **DLS-UNIT-001:** A field `unit`, when present, **MUST** reference exactly one unit declared by `dashboard.units`.
+- **DLS-UNIT-002:** Unit formatting **MUST** affect presentation only and **MUST NOT** change filtering, aggregation, ordering, limiting, source data, or provenance.
+- **DLS-UNIT-003:** A presenter **MUST** append the declared `symbol` to a unit-bearing value and round it to the nearest multiple of `significant`, with halfway cases rounded away from zero.
 
 ### 7.3 Aggregates
 
@@ -480,7 +500,7 @@ A custom page may also contain a non-empty `sections` sequence that groups its v
 
 Allowed encoding channels are `value`, `columns`, `x`, `y`, `color`, and `href`. `columns` is a non-empty sequence of field definitions; other channels contain one field definition. The `href` channel references a link-typed source field and does not select from multiple links.
 
-Field `type` values are `nominal`, `ordinal`, `quantitative`, and `temporal`. When omitted, type defaults to the intrinsic field type. A field title defaults to its kebab-case field name with words capitalized.
+Field `type` values are `nominal`, `ordinal`, `quantitative`, and `temporal`. When omitted, type defaults to the intrinsic field type. A field title defaults to its kebab-case field name with words capitalized. A field may reference one dashboard unit through `unit`; the unit applies to metric, table, and chart value presentation.
 
 The optional table-column field `display` is `text`, `status`, `mode`, or `active-state` and defaults to `text`. It selects presentation independently from the field name. Named UI element values are `status-summary`, `meter-list`, `attention-list`, `record-cards`, `package-activity`, and `workflow-topology`; renderers dispatch these values without inferring behavior from page IDs, view IDs, or source contents. The four overview elements are independent views so documents can assemble and lay out the landing page through `views`, `sections`, and `layout`.
 
@@ -522,7 +542,7 @@ Disclosure changes presentation only. It does not change data processing, data s
 - **DLS-VIEW-005:** `chart` **MUST** encode `x` and quantitative `y`, **MAY** encode `color` and `href`, and **MUST NOT** encode `value` or `columns`. Its optional `chart` widget **MUST** be `line`, `bar`, or `pie`; `line` **MUST** use temporal `x`, while `pie` **MUST** use nominal or ordinal `x`.
 - **DLS-VIEW-006:** A `chart` with temporal `x` **MUST** use the line time-series default when its widget is omitted; any other valid `chart` **MUST** use the bar default. An optional `layout` hint **MUST** be `full`, `half`, or `third`, **MUST NOT** change source order, and **MAY** be collapsed by a presenter.
 - **DLS-VIEW-007:** An encoding field **MUST** exist in the selected source and its declared type **MUST** be compatible with its intrinsic type or aggregate output type; when the field is aggregated, the effective output identifier **MUST** be the explicit `as` value or the canonical `<aggregate>-<field>` name, and duplicate identifiers within a view **MUST** be rejected. An `href` field **MUST** have intrinsic type link.
-- **DLS-VIEW-008:** A field definition **MUST** contain `field` and **MAY** contain only `type`, `aggregate`, `time-unit`, `title`, `as`, and `display` in addition; `as` is valid only when `aggregate` is not `none`. `display` is valid only on table columns and **MUST** be `text`, `status`, `mode`, or `active-state`.
+- **DLS-VIEW-008:** A field definition **MUST** contain `field` and **MAY** contain only `type`, `aggregate`, `time-unit`, `title`, `as`, `display`, and `unit` in addition; `as` is valid only when `aggregate` is not `none`. `display` is valid only on table columns and **MUST** be `text`, `status`, `mode`, or `active-state`.
 - **DLS-VIEW-009:** `time-unit` **MUST** be used only with a temporal field and **MUST** use an allowed value from Section 7.3.
 - **DLS-VIEW-010:** `data.limit` **MUST** be a positive integer, and `data.order-by.field` **MUST** reference either a source field valid at the post-aggregation output grain or one unique aggregate-output identifier. Ambiguous or invalid order references **MUST** be rejected with `DLS-E010`, and a group-grain output whose canonical post-aggregation row order cannot be totally resolved **MUST** be rejected with `DLS-E010` under **DLS-AGG-011**.
 - **DLS-VIEW-011:** A custom view **MUST NOT** contain scripts, joins, formulas, expressions, templates, plugins, or undeclared transforms.
@@ -539,6 +559,7 @@ Disclosure changes presentation only. It does not change data processing, data s
 - **DLS-VIEW-022:** An `element` mark **MUST** name exactly one supported UI element and **MUST** render only from its declared `data.sources`. A presenter **MUST NOT** select an element from page IDs, view IDs, source names, or source contents.
 - **DLS-VIEW-023:** A presenter **MUST** select a field's `status`, `mode`, or `active-state` treatment only from its `display` value and **MUST NOT** infer that treatment from the field name.
 - **DLS-VIEW-024:** A custom page `sections` sequence, when present, **MUST** be non-empty. Every section **MUST** have a unique canonical `id`, one `layout` value of `full`, `wide`, or `narrow`, and a non-empty `views` sequence. Sections **MUST** reference every page view exactly once and preserve view declaration order; an omitted section title **MUST** default from its section ID.
+- **DLS-VIEW-025:** A presenter **MUST** apply a field's referenced unit consistently to metric values, table cells, chart value labels, chart data tables, and accessible chart labels.
 
 ---
 
@@ -623,7 +644,7 @@ In the table, “accept” means validation succeeds; “reject” means validat
 | DLS-LINK-001–007 | T-LINK-001 | 2 | Validate link shape, safety, provenance, available associations, absent associations, one-link-per-field cardinality, GitHub URL base resolution, and linked rendering of every GitHub-addressable entity. |
 | DLS-PAGE-001–015 | T-PAGE-001 | 3 | Evaluate each built-in fixture for required content, defaults, context, and data states. |
 | DLS-VIEW-001–006 | T-VIEW-001 | 3 | Validate custom structure and every allowed mark/channel combination. |
-| DLS-VIEW-007–015 | T-VIEW-002 | 3 | Validate fields, types, link-compatible `href`, time units, ordering, exclusions, operation order, exposed context, and link labels. |
+| DLS-VIEW-007–015, DLS-VIEW-025, DLS-UNIT-001–003 | T-VIEW-002 | 3 | Validate fields, types, link-compatible `href`, units, time units, ordering, exclusions, operation order, exposed context, and link labels. |
 | DLS-VIEW-016–021 | T-VIEW-003 | 3 | Validate disclosure vocabulary, one-to-four essential views, initial collapsed state, accessible controls, source order, and unchanged semantic output. |
 | DLS-VIEW-022–024 | T-VIEW-004 | 3 | Validate named element dispatch, explicit field display treatments, and complete ordered custom-page section layouts. |
 | DLS-VAL-001–005 | T-VAL-001 | 1–3 | Verify rejection, coded path-specific errors, semantic checks, progressive-disclosure bounds, and secret redaction. |
@@ -822,6 +843,11 @@ dashboard:
       rollout-mode:
         - review
         - live
+  units:
+    aic:
+      name: AI Credits
+      symbol: AIC
+      significant: 1
   pages:
     - id: overview
       kind: built-in
@@ -843,6 +869,7 @@ dashboard:
               field: aic
               type: quantitative
               aggregate: sum
+              unit: aic
         - id: daily-runs
           title: Daily Runs
           data:
