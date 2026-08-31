@@ -5,11 +5,14 @@ import { join, resolve } from "node:path";
 import { describe, expect, it } from "vitest";
 
 describe("live Dashboard Language sources", () => {
-  it("loads generated sources in the browser preview when they are available", () => {
+  it("loads generated sources by default and requires an explicit fixture opt-in", () => {
     const preview = readFileSync(resolve("index.html"), "utf8");
 
     expect(preview).toContain('fetch("./sources.json")');
     expect(preview).toContain("sources = await liveSourcesResponse.json()");
+    expect(preview).toContain('has("fixtures")');
+    expect(preview).toContain("throw new Error(`Unable to load sources.json:");
+    expect(preview).not.toContain("Retain the illustrative fixture data");
   });
 
   it("maps the operations report inputs into canonical logical sources", () => {
