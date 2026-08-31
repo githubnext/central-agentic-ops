@@ -368,6 +368,32 @@
         ]
       },
       {
+        "id": "workflow-detail",
+        "kind": "custom",
+        "title": "Workflow",
+        "description": "Durable reports produced by this authored GitHub Agentic Workflow.",
+        "icon": "workflow",
+        "class-name": "workflow-detail-page",
+        "route": {
+          "hash-query-parameter": "workflow"
+        },
+        "views": [
+          {
+            "id": "workflow-reports",
+            "title": "Workflow reports",
+            "data": {
+              "sources": [
+                "workflows",
+                "outcomes"
+              ]
+            },
+            "mark": "element",
+            "element": "workflow-detail",
+            "layout": "full"
+          }
+        ]
+      },
+      {
         "id": "workflow-runtime",
         "kind": "custom",
         "title": "Workflow runtime",

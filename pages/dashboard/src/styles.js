@@ -253,10 +253,37 @@ h3 { margin: 16px 0 8px; font-size: 1rem; font-weight: 600; }
 .repository-workflow-badges .workflow-badge { text-decoration: none; }
 .workflow-badge-operation, .workflow-badge-orchestrator { border-color: var(--accent); color: var(--accent); }
 .repository-workflow-table td { white-space: nowrap; }
-.workflow-runtime-content { max-width: 100%; }
 .workflow-identity { display: flex; align-items: center; justify-content: space-between; gap: 24px; margin-bottom: 24px; }
 .workflow-identity p { margin: 7px 0 0; }
 .workflow-identity > a { display: inline-flex; align-items: center; gap: 5px; flex: none; }
+.workflow-badges { display: flex; flex-wrap: wrap; gap: 5px; }
+.workflow-badge-package { border-color: var(--accent); background: var(--accent-muted); color: var(--accent); text-decoration: none; }
+.workflow-reports { overflow: hidden; border: 1px solid var(--border); border-radius: 6px; background: var(--canvas); }
+.workflow-reports-search { min-height: 56px; display: flex; align-items: center; gap: 8px; margin: 12px 20px; padding: 6px 14px; border: 1px solid var(--border); border-radius: 6px; color: var(--muted); }
+.workflow-reports-search:focus-within { outline: 2px solid var(--focus); outline-offset: -2px; }
+.workflow-reports-search input { min-width: 0; flex: 1; border: 0; outline: 0; background: transparent; color: var(--fg); font: inherit; }
+.workflow-reports-search input::placeholder { color: var(--muted); opacity: 1; }
+.workflow-reports-header { min-height: 64px; display: flex; align-items: center; justify-content: space-between; padding: 10px 22px; border-top: 1px solid var(--border); background: var(--canvas-subtle); }
+.workflow-reports-header h2 { margin: 0; font-size: 1.25rem; }
+.workflow-reports-header > div { color: var(--muted); }
+.workflow-reports-header > div span { margin-left: 20px; }
+.workflow-filter-announcement { width: 1px; height: 1px; position: absolute; overflow: hidden; margin: -1px; padding: 0; border: 0; clip: rect(0 0 0 0); white-space: nowrap; }
+.workflow-report-table-region { overflow-x: auto; border-top: 1px solid var(--border); }
+.workflow-report-table { min-width: 760px; }
+.workflow-report-table thead th { background: var(--canvas); }
+.workflow-report-table :is(th, td) { padding: 10px 14px; }
+.workflow-report-table th:first-child { width: 100%; }
+.workflow-report-table tbody th { min-width: 280px; font-weight: 400; }
+.workflow-report-table tbody td { white-space: nowrap; }
+.workflow-report-primary { min-width: 0; display: grid; grid-template-columns: 40px minmax(0, 1fr); align-items: center; gap: 12px; }
+.workflow-report-icon { width: 40px; height: 40px; display: grid; place-items: center; border: 1px solid var(--border); border-radius: 6px; color: var(--muted); }
+.workflow-report-icon .octicon { width: 18px; height: 18px; }
+.workflow-report-copy { min-width: 0; display: grid; }
+.workflow-report-title { overflow: hidden; font-weight: 600; text-overflow: ellipsis; white-space: nowrap; }
+.workflow-report-title a { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.workflow-report-summary { margin-top: 3px; overflow: hidden; color: var(--muted); text-overflow: ellipsis; white-space: nowrap; }
+.workflow-report-table time, .workflow-report-time { color: var(--muted); }
+.workflow-runtime-content { max-width: 100%; }
 .workflow-runtime-summary { max-width: 920px; }
 .workflow-runtime-metrics { display: grid; grid-template-columns: minmax(360px, 1.7fr) repeat(2, minmax(180px, 1fr)); gap: 14px; margin: 0; }
 .workflow-runtime-metrics > div { min-width: 0; min-height: 184px; padding: 20px 22px; border: 1px solid var(--border); border-radius: 6px; }
@@ -894,6 +921,7 @@ footer { padding: 20px 24px; border-top: 1px solid var(--border); color: var(--m
   .anomaly-readiness p { text-align: left; }
   .workflow-attention-list a, .workflow-attention-static { grid-template-columns: 20px minmax(0, 1fr); }
   .signal-rank, .signal-evidence { display: none; }
+  .workflow-identity { align-items: flex-start; flex-direction: column; }
   .episode-vitals { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .episode-measures { grid-template-columns: 1fr 1fr; }
   .episode-waterfall li { grid-template-columns: minmax(0, 1fr) minmax(72px, auto); }

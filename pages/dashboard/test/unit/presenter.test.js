@@ -2251,21 +2251,38 @@ describe('presenter built-in and custom pages', () => {
         dashboard: {
           id: 'repository-detail-dashboard',
           title: 'Repository detail',
-          pages: [{
-            id: 'repository-detail',
-            kind: /** @type {'custom'} */ ('custom'),
-            title: 'Repository',
-            route: { 'hash-query-parameter': 'repository' },
-            views: [{
-              id: 'repository-workflows',
-              title: 'Agentic workflows',
-              data: {
-                sources: ['workflows']
-              },
-              mark: 'element',
-              element: 'repository-workflows'
-            }]
-          }]
+          pages: [
+            {
+              id: 'repository-detail',
+              kind: /** @type {'custom'} */ ('custom'),
+              title: 'Repository',
+              route: { 'hash-query-parameter': 'repository' },
+              views: [{
+                id: 'repository-workflows',
+                title: 'Agentic workflows',
+                data: {
+                  sources: ['workflows']
+                },
+                mark: 'element',
+                element: 'repository-workflows'
+              }]
+            },
+            {
+              id: 'workflow-detail',
+              kind: /** @type {'custom'} */ ('custom'),
+              title: 'Workflow',
+              route: { 'hash-query-parameter': 'workflow' },
+              views: [{
+                id: 'workflow-reports',
+                title: 'Workflow reports',
+                data: {
+                  sources: ['workflows', 'outcomes']
+                },
+                mark: 'element',
+                element: 'workflow-detail'
+              }]
+            }
+          ]
         }
       },
       sources: {
@@ -2296,6 +2313,8 @@ describe('presenter built-in and custom pages', () => {
     expect(rendered.querySelector('#page-title')?.textContent).toBe('octo-org/octo-repo');
     expect(rendered.querySelector('[data-breadcrumb-page]')?.textContent).toBe('octo-org/octo-repo');
     expect(rendered.querySelector('.repository-tabs a')?.getAttribute('href')).toBe('#page-repository-detail?repository=octo-org%2Focto-repo');
+    expect(rendered.querySelector('.repository-workflow-table tbody th > a')?.getAttribute('href')).toBe('#page-workflow-detail?workflow=octo-org%2Focto-repo%3A.github%2Fworkflows%2Freview.md');
+    expect(rendered.querySelector('.repository-workflow-source')?.getAttribute('href')).toBe('https://github.com/octo-org/octo-repo/blob/HEAD/.github/workflows/review.md');
 
     window.history.replaceState(null, '', '/#page-repository-detail?repository=other-org%2Fother-repo');
     window.dispatchEvent(new Event('hashchange'));
@@ -2304,6 +2323,7 @@ describe('presenter built-in and custom pages', () => {
     expect(repositoryView?.textContent).toContain('Other');
     expect(repositoryView?.textContent).not.toContain('Review');
     expect(rendered.querySelector('#page-title')?.textContent).toBe('other-org/other-repo');
+    expect(document.activeElement).toBe(rendered.querySelector('#page-title'));
     rendered.remove();
     window.history.replaceState(null, '', '/');
   });

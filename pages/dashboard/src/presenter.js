@@ -271,8 +271,8 @@ function renderMainContent(document, title, pages, sources, orgName, githubUrlBa
       h(
         'div',
         { className: 'shell' },
-        h('a', { href: '#/' }, orgName),
-        h('a', { href: '#/dashboard' }, title),
+        h('a', { href: '#/', 'data-breadcrumb-root': '' }, orgName),
+        h('a', { href: '#/dashboard', 'data-breadcrumb-dashboard': '' }, title),
         h('span', { 'data-breadcrumb-page': '' }, initialPageTitle),
         h(
           'div',
@@ -543,9 +543,15 @@ export function enableDashboardPageNavigation(root) {
   const links = [...root.querySelectorAll('[data-nav-page-id]')]
     .filter((link) => link instanceof HTMLAnchorElement);
   const breadcrumbPage = root.querySelector('[data-breadcrumb-page]');
+  const breadcrumbRoot = root.querySelector('[data-breadcrumb-root]');
+  const breadcrumbDashboard = root.querySelector('[data-breadcrumb-dashboard]');
   const pageTitle = root.querySelector('#page-title');
   const pageDescription = root.querySelector('.overview-header [data-page-description]');
   const pageMode = root.querySelector('[data-page-mode]');
+  const defaultBreadcrumbs = [breadcrumbRoot, breadcrumbDashboard].map((link) => ({
+    label: link?.textContent ?? '',
+    href: link instanceof HTMLAnchorElement ? link.getAttribute('href') ?? '' : ''
+  }));
   if (pages.length === 0 || links.length === 0) {
     return;
   }
@@ -559,6 +565,13 @@ export function enableDashboardPageNavigation(root) {
     if (title) {
       if (breadcrumbPage) breadcrumbPage.textContent = title;
       if (pageTitle) pageTitle.textContent = title;
+    }
+    const breadcrumbs = Array.isArray(event.detail?.breadcrumbs) ? event.detail.breadcrumbs : [];
+    for (const [index, link] of [breadcrumbRoot, breadcrumbDashboard].entries()) {
+      const breadcrumb = breadcrumbs[index];
+      if (!(link instanceof HTMLAnchorElement) || !breadcrumb || typeof breadcrumb.label !== 'string' || typeof breadcrumb.href !== 'string' || !breadcrumb.href.startsWith('#page-')) continue;
+      link.textContent = breadcrumb.label;
+      link.href = breadcrumb.href;
     }
     if (pageDescription && description) {
       pageDescription.textContent = description;
@@ -598,6 +611,11 @@ export function enableDashboardPageNavigation(root) {
    * @param {URLSearchParams} [parameters]
    */
   const activate = (pageId, parameters = new URLSearchParams()) => {
+    for (const [index, link] of [breadcrumbRoot, breadcrumbDashboard].entries()) {
+      if (!(link instanceof HTMLAnchorElement)) continue;
+      link.textContent = defaultBreadcrumbs[index].label;
+      link.setAttribute('href', defaultBreadcrumbs[index].href);
+    }
     for (const page of pages) {
       const isActive = page.dataset.pageId === pageId;
       page.hidden = !isActive;
@@ -1279,21 +1297,25 @@ function deriveRepositoryDashboardLinks(sources, pages) {
 }
 
 /**
- * Adds presentation-only workflow runtime routes while retaining authored-source links.
+ * Adds presentation-only workflow routes while retaining the canonical
+ * authored workflow link for explicit source controls.
  * @param {Record<string, LogicalSourceInput>} sources
  * @param {Array<PresentableBuiltInPage | PresentableCustomPage>} pages
  * @returns {Record<string, LogicalSourceInput>}
  */
 function deriveWorkflowDashboardLinks(sources, pages) {
-  const detailPage = pages.find((page) => page.kind === 'custom' && page.route?.['hash-query-parameter'] === 'workflow');
+  const detailPage = pages.find((page) => page.kind === 'custom' && page.id === 'workflow-detail');
   if (!detailPage) return sources;
+  const knownWorkflows = new Set((sources.workflows?.rows ?? [])
+    .map(workflowDashboardIdentity)
+    .filter((identity) => identity !== null));
 
   return Object.fromEntries(Object.entries(sources).map(([name, source]) => [
     name,
     {
       ...source,
       rows: Array.isArray(source?.rows)
-        ? source.rows.map((row) => deriveWorkflowDashboardLink(row, detailPage.id))
+        ? source.rows.map((row) => deriveWorkflowDashboardLink(row, detailPage.id, knownWorkflows))
         : source?.rows
     }
   ]));
@@ -1302,23 +1324,20 @@ function deriveWorkflowDashboardLinks(sources, pages) {
 /**
  * @param {Record<string, unknown>} row
  * @param {string} pageId
+ * @param {Set<string>} knownWorkflows
  * @returns {Record<string, unknown>}
  */
-function deriveWorkflowDashboardLink(row, pageId) {
-  const organization = trimmedString(row.organization);
-  const repository = trimmedString(row.repository);
-  const workflow = trimmedString(row.workflow);
-  const repositorySlug = repository && repository.includes('/') ? repository : (organization && repository ? `${organization}/${repository}` : null);
+function deriveWorkflowDashboardLink(row, pageId, knownWorkflows) {
+  const identity = workflowDashboardIdentity(row);
   const workflowLink = row['workflow-link'];
-  if (!repositorySlug || !workflow || !isPlainObject(workflowLink)) return row;
-  const route = `${repositorySlug}:${workflow}`;
+  if (!identity || !knownWorkflows.has(identity) || !isPlainObject(workflowLink)) return row;
 
   return {
     ...row,
     'workflow-link': {
       ...workflowLink,
-      'dashboard-href': `#page-${encodeURIComponent(pageId)}?workflow=${encodeURIComponent(route)}`,
-      'dashboard-label': `View ${workflow} runtime dashboard`
+      'dashboard-href': `#page-${encodeURIComponent(pageId)}?workflow=${encodeURIComponent(identity)}`,
+      'dashboard-label': `View ${trimmedString(row['workflow-name']) ?? trimmedString(row.workflow)} workflow dashboard`
     }
   };
 }
@@ -1357,6 +1376,7 @@ function deriveEntityLinkRow(row, githubUrlBase) {
   // The `repository` field is documented as retaining its domain syntax (Section 9.2), so it may
   // already be a fully-qualified `owner/repo` slug or just the bare repository name.
   const repositorySlug = repository && repository.includes('/') ? repository : (organization && repository ? `${organization}/${repository}` : null);
+  const workflowRepositorySlug = repositorySlugValue(row['runtime-repository']) ?? repositorySlug;
   /** @type {Record<string, unknown>} */
   const derived = {};
 
@@ -1374,11 +1394,11 @@ function deriveEntityLinkRow(row, githubUrlBase) {
       label: `View ${repositorySlug} on GitHub`
     };
   }
-  if (repositorySlug && workflow && !findLink(row, 'workflow-link')) {
+  if (workflowRepositorySlug && workflow && !findLink(row, 'workflow-link')) {
     const workflowPath = workflow.replace(/^\/+/, '');
     derived['workflow-link'] = {
       relation: 'workflow',
-      href: `${githubUrlBase}/${repositorySlug}/blob/HEAD/${workflowPath}`,
+      href: `${githubUrlBase}/${workflowRepositorySlug}/blob/HEAD/${workflowPath}`,
       label: `View ${workflow} on GitHub`
     };
   }
@@ -1394,6 +1414,24 @@ function trimmedString(value) {
   if (typeof value !== 'string') return null;
   const trimmed = value.trim();
   return trimmed.length > 0 ? trimmed : null;
+}
+
+/** @param {unknown} value */
+function repositorySlugValue(value) {
+  const repository = trimmedString(value);
+  return repository && /^[A-Za-z0-9](?:[A-Za-z0-9.-]{0,98}[A-Za-z0-9])?\/[A-Za-z0-9_.-]{1,100}$/.test(repository)
+    ? repository
+    : null;
+}
+
+/** @param {Record<string, unknown>} row */
+function workflowDashboardIdentity(row) {
+  const organization = trimmedString(row.organization);
+  const repository = trimmedString(row.repository);
+  const repositorySlug = repository && repository.includes('/') ? repository : (organization && repository ? `${organization}/${repository}` : null);
+  const workflowRepositorySlug = repositorySlugValue(row['runtime-repository']) ?? repositorySlug;
+  const workflow = trimmedString(row.workflow);
+  return workflowRepositorySlug && workflow ? `${workflowRepositorySlug}:${workflow}` : null;
 }
 
 /**

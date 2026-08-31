@@ -225,7 +225,7 @@ function renderWorkflowRow(workflow) {
       { scope: 'row' },
       renderLinkedText(workflowName(workflow), link),
       link
-        ? h('a', { className: 'repository-workflow-source', href: link.href }, h('code', null, String(workflow.workflow ?? '')))
+        ? h('a', { className: 'repository-workflow-source', href: link.externalHref ?? link.href }, h('code', null, String(workflow.workflow ?? '')))
         : h('code', { className: 'repository-workflow-source' }, String(workflow.workflow ?? '')),
       h(
         'span',
