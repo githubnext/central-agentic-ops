@@ -12,6 +12,7 @@ import { renderDispatchCatalog } from './dispatch-catalog.js';
 import { renderRepositoryWorkflows } from './repository-workflows.js';
 import { renderWorkflowTopology } from './workflow-topology.js';
 import { renderExecutionEpisodes, renderExecutionSignalList } from './execution-elements.js';
+import { renderSectionHeading } from './ui-primitives.js';
 
 /**
  * @typedef {{
@@ -181,17 +182,7 @@ function renderDomainAttentionElement(context) {
   return h(
     'section',
     { className: 'overview-observability', 'aria-labelledby': headingId },
-    h(
-      'div',
-      { className: 'section-heading' },
-      h(
-        'div',
-        null,
-        h('span', { className: 'scope-kicker' }, 'Current decision window'),
-        h('h2', { id: headingId }, context.title),
-        context.description ? h('p', null, context.description) : null
-      )
-    ),
+    renderSectionHeading('Current decision window', headingId, context.title, context.description, '', 'h2'),
     h(
       'div',
       { className: 'attention-domain-grid' },
@@ -317,18 +308,7 @@ function renderMetricSignalSummaryElement(context) {
   return h(
     'section',
     { className: 'domain-attention workflow-attention', 'aria-labelledby': headingId },
-    h(
-      'div',
-      { className: 'section-heading' },
-      h(
-        'div',
-        null,
-        h('span', { className: 'scope-kicker' }, stringValue(firstMetric.kicker)),
-        h(context.headingTag, { id: headingId }, context.title),
-        context.description ? h('p', null, context.description) : null
-      ),
-      h('strong', null, `${formatNumber(signals.length)} ${collectionLabel}`)
-    ),
+    renderSectionHeading(stringValue(firstMetric.kicker), headingId, context.title, context.description, `${formatNumber(signals.length)} ${collectionLabel}`, context.headingTag),
     h(
       'dl',
       { className: 'domain-summary' },

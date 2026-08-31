@@ -7,6 +7,7 @@ import { octicon } from '../octicons.js';
 import { renderStatusBadge } from './badge.js';
 import { formatCount, formatCountNoun } from './count-formatters.js';
 import { findLink } from './link-content.js';
+import { formatUtcDateTime, renderSectionHeading, renderVitalStat } from './ui-primitives.js';
 
 const FAILURE_CONCLUSIONS = new Set(['failure', 'startup-failure', 'timed-out']);
 
@@ -98,7 +99,7 @@ export function renderExecutionSignalList(context) {
   return h(
     'section',
     { className: 'workflow-attention', 'aria-labelledby': 'runtime-needs-attention' },
-    sectionHeading('Runtime triage', 'runtime-needs-attention', context.title, context.description, formatCountNoun(signals.length, 'signal', 'signals')),
+    renderSectionHeading('Runtime triage', 'runtime-needs-attention', context.title, context.description, formatCountNoun(signals.length, 'signal', 'signals')),
     h(
       'div',
       { className: 'anomaly-readiness', role: 'note' },
@@ -132,7 +133,7 @@ export function renderExecutionEpisodes(context) {
   return h(
     'section',
     { className: 'episode-observatory', id: 'runtime-execution-episodes', 'aria-labelledby': 'runtime-execution-episodes-heading' },
-    sectionHeading(
+    renderSectionHeading(
       'Observed behavior',
       'runtime-execution-episodes-heading',
       context.title,
@@ -142,10 +143,10 @@ export function renderExecutionEpisodes(context) {
     h(
       'dl',
       { className: 'episode-vitals' },
-      vital('Root episodes', model.episodes.length, 'observed orchestrator runs'),
-      vital('Worker attribution', `${formatCount(model.attributedWorkerRuns.length)} / ${formatCount(model.workerRuns.length)}`, 'correlated workflow dispatches'),
-      vital('Repeated coverage', '—', 'requires exact episode attribution'),
-      vital('No-action attempts', '—', 'requires correlated attempt output')
+      renderVitalStat('Root episodes', model.episodes.length, 'observed orchestrator runs'),
+      renderVitalStat('Worker attribution', `${formatCount(model.attributedWorkerRuns.length)} / ${formatCount(model.workerRuns.length)}`, 'correlated workflow dispatches'),
+      renderVitalStat('Repeated coverage', '—', 'requires exact episode attribution'),
+      renderVitalStat('No-action attempts', '—', 'requires correlated attempt output')
     ),
     h('p', { className: 'episode-method-note' }, 'Dispatch manifests are not retained, so attribution is partial by construction. Repeated coverage and no-action work are investigation signals, not proof of waste.'),
     h(
@@ -264,18 +265,18 @@ function renderEpisode(episode) {
         null,
         h('span', { className: 'scope-kicker' }, episode.packageName),
         h('h3', null, renderRunLink(episode.run, runTitle(episode.run, episode.workflow))),
-        h('p', null, h('time', { dateTime: text(episode.run['started-at']) }, formatDate(episode.run['started-at'])))
+        h('p', null, h('time', { dateTime: text(episode.run['started-at']) }, formatUtcDateTime(episode.run['started-at'])))
       ),
       renderStatusBadge(result)
     ),
     h(
       'dl',
       { className: 'episode-measures' },
-      vital('Episode duration', formatDuration(episode.duration)),
-      vital('Observed targets', '—'),
-      vital('Attributed workers', '—'),
-      vital('Output yield', '—'),
-      vital('Measured AIC', '—')
+      renderVitalStat('Episode duration', formatDuration(episode.duration)),
+      renderVitalStat('Observed targets', '—'),
+      renderVitalStat('Attributed workers', '—'),
+      renderVitalStat('Output yield', '—'),
+      renderVitalStat('Measured AIC', '—')
     ),
     h(
       'div',
@@ -286,31 +287,6 @@ function renderEpisode(episode) {
     h('div', { className: 'episode-execution' }, h('strong', null, 'Correlated worker attempts'), h('ul', null, h('li', { className: 'episode-empty' }, 'No worker run is explicitly attributable from retained evidence.'))),
     h('footer', null, h('span', null, 'Evidence · Root only'), h('span', null, 'No-action attempts unavailable'))
   );
-}
-
-/**
- * @param {string} kicker
- * @param {string} id
- * @param {string} title
- * @param {string | undefined} description
- * @param {string} summary
- */
-function sectionHeading(kicker, id, title, description, summary) {
-  return h(
-    'div',
-    { className: 'section-heading' },
-    h('div', null, h('span', { className: 'scope-kicker' }, kicker), h('h3', { id }, title), description ? h('p', null, description) : null),
-    h('strong', null, summary)
-  );
-}
-
-/**
- * @param {string} label
- * @param {unknown} value
- * @param {string} [detail]
- */
-function vital(label, value, detail) {
-  return h('div', null, h('dt', null, label), h('dd', null, String(value)), detail ? h('p', null, detail) : null);
 }
 
 /**
@@ -384,15 +360,6 @@ function formatDuration(duration) {
   const minutes = Math.floor(seconds / 60);
   if (minutes < 60) return `${minutes}m ${seconds % 60}s`;
   return `${Math.floor(minutes / 60)}h ${minutes % 60}m`;
-}
-
-/**
- * @param {unknown} value
- */
-function formatDate(value) {
-  const parsed = Date.parse(text(value));
-  if (!Number.isFinite(parsed)) return 'Time unavailable';
-  return new Intl.DateTimeFormat('en', { dateStyle: 'medium', timeStyle: 'short', timeZone: 'UTC' }).format(new Date(parsed));
 }
 
 /**
