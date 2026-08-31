@@ -6,7 +6,7 @@ import { h } from '../dom.js';
 import { octicon } from '../octicons.js';
 import { renderModeBadge, renderStatusBadge } from './badge.js';
 import { findLink } from './link-content.js';
-import { formatUtcDateTime } from './ui-primitives.js';
+import { formatUtcDateTime, renderSectionHeading } from './ui-primitives.js';
 
 /**
  * @param {import('./ui-elements.js').ElementRenderContext} context
@@ -71,16 +71,12 @@ function renderPackageContent(context, packageId, workflows) {
     h(
       'section',
       { className: 'operation-workflow-map', 'aria-labelledby': headingId },
-      h(
-        'div',
-        { className: 'section-heading' },
-        h(
-          'div',
-          null,
-          h('span', { className: 'scope-kicker' }, 'Workflow topology'),
-          h(context.headingTag, { id: headingId }, context.title)
-        )
-      ),
+      renderSectionHeading({
+        kicker: 'Workflow topology',
+        id: headingId,
+        title: context.title,
+        headingTag: context.headingTag
+      }),
       orchestrator
         ? renderWorkflowNode(orchestrator, 'orchestrator', 'div')
         : h('div', { className: 'operation-orchestrator empty' }, 'No orchestrator workflow configured.'),

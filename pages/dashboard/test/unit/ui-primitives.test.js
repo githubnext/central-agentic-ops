@@ -4,7 +4,14 @@ import { formatUtcDateTime, renderSectionHeading, renderVitalStat } from '../../
 
 describe('ui primitives', () => {
   it('renders shared section-heading markup with configurable heading levels', () => {
-    const rendered = renderSectionHeading('Current decision window', 'overview-heading', 'Overview', 'Daily status', '3 signals', 'h2');
+    const rendered = renderSectionHeading({
+      kicker: 'Current decision window',
+      id: 'overview-heading',
+      title: 'Overview',
+      description: 'Daily status',
+      summary: '3 signals',
+      headingTag: 'h2'
+    });
 
     expect(rendered.className).toBe('section-heading');
     expect(rendered.querySelector('.scope-kicker')?.textContent).toBe('Current decision window');
@@ -12,6 +19,17 @@ describe('ui primitives', () => {
     expect(rendered.querySelector('h2')?.textContent).toBe('Overview');
     expect(rendered.querySelector('p')?.textContent).toBe('Daily status');
     expect(rendered.querySelector('strong')?.textContent).toBe('3 signals');
+  });
+
+  it('omits the summary node when no summary is provided', () => {
+    const rendered = renderSectionHeading({
+      kicker: 'Workflow topology',
+      id: 'topology-heading',
+      title: 'Orchestrator and workers'
+    });
+
+    expect(rendered.querySelector('h3')?.textContent).toBe('Orchestrator and workers');
+    expect(rendered.querySelector('strong')).toBeNull();
   });
 
   it('renders shared vital stats with and without detail text', () => {

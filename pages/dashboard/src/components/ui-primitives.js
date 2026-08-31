@@ -5,15 +5,28 @@
 import { h } from '../dom.js';
 
 /**
- * @param {string} kicker
- * @param {string} id
- * @param {string} title
- * @param {string | undefined} description
- * @param {string} summary
- * @param {'h2'|'h3'|'h4'} [headingTag]
+ * @typedef {{
+ *   kicker: string,
+ *   id: string,
+ *   title: string,
+ *   description?: string,
+ *   summary?: string,
+ *   headingTag?: 'h2'|'h3'|'h4'
+ * }} SectionHeadingOptions
+ */
+
+/**
+ * @param {SectionHeadingOptions} options
  * @returns {HTMLElement}
  */
-export function renderSectionHeading(kicker, id, title, description, summary, headingTag = 'h3') {
+export function renderSectionHeading({
+  kicker,
+  id,
+  title,
+  description,
+  summary,
+  headingTag = 'h3'
+}) {
   return h(
     'div',
     { className: 'section-heading' },
@@ -24,7 +37,7 @@ export function renderSectionHeading(kicker, id, title, description, summary, he
       h(headingTag, { id }, title),
       description ? h('p', null, description) : null
     ),
-    h('strong', null, summary)
+    summary ? h('strong', null, summary) : null
   );
 }
 

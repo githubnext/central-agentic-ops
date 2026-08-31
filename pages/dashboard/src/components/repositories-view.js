@@ -4,6 +4,7 @@
 
 import { h } from '../dom.js';
 import { renderTableRegion } from './table-region.js';
+import { renderSectionHeading } from './ui-primitives.js';
 
 const FAILURE_CONCLUSIONS = new Set(['failure', 'startup-failure', 'timed-out']);
 const SPEND_COLORS = ['#4493f8', '#3fb950', '#d29922', '#f85149', '#a371f7', '#8c959f'];
@@ -126,23 +127,14 @@ export function renderRepositoryActivity(context) {
   return h(
     'section',
     { className: 'repository-health', 'aria-labelledby': headingId },
-    h(
-      'div',
-      { className: 'section-heading' },
-      h(
-        'div',
-        null,
-        h('span', { className: 'scope-kicker' }, 'Repository view'),
-        h(context.headingTag, { id: headingId }, context.title),
-        context.description ? h('p', null, context.description) : null
-      ),
-      h(
-        'span',
-        null,
-        `${formatCount(summaries.length)} repositories · `,
-        h('a', { href: '#page-workflows' }, 'Search all workflows')
-      )
-    ),
+    renderSectionHeading({
+      kicker: 'Repository view',
+      id: headingId,
+      title: context.title,
+      description: context.description,
+      summary: `${formatCount(summaries.length)} repositories · Search all workflows`,
+      headingTag: context.headingTag
+    }),
     renderTableRegion({
       tableClassName: 'repository-health-table',
       regionClassName: 'table-region-static',
