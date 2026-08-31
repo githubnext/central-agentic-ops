@@ -40,10 +40,14 @@ Copilot inference authentication is separate from GitHub API and target-reposito
 
 The Copilot PAT must use the user's personal account as its resource owner, grant the account permission **Copilot Requests: Read**, and belong to a user with an active Copilot license. Inference is attributed to and limited by that user's Copilot entitlement. Obtain explicit consent because the token is user-bound, longer-lived than the workflow token, and requires manual rotation and revocation.
 
-Root CAO workflows resolve Copilot inference credentials in this order:
+The root CAO manifest delegates one exclusive install-time choice to `gh aw add-wizard`:
 
-1. `COPILOT_GITHUB_TOKEN`, when configured.
-2. The built-in workflow token, when organization billing is available.
+1. When organization billing is available, select the recommended organization profile. The wizard adds `copilot-requests: write` to every installed Copilot orchestrator and worker before compiling it. Generated jobs use the built-in workflow token, and the wizard does not request `COPILOT_GITHUB_TOKEN`.
+2. When organization billing is unavailable, select the PAT profile only after explaining the boundary and obtaining consent. The wizard leaves `copilot-requests: write` absent, collects `COPILOT_GITHUB_TOKEN` through a hidden prompt, and compiles the workflows to use that secret.
+
+If the billing check is inconclusive, do not report organization billing as available. Use it only after confirmation from an organization administrator; otherwise offer the PAT profile. Verify all installed Copilot workflows use the selected profile before committing them. A workflow must not combine `copilot-requests: write` with a PAT-first expression or use runtime token precedence.
+
+The catalog's root workflow sources remain authentication-neutral so the wizard can apply this choice consistently. Plain `gh aw add` does not run the guided configuration and is not the root CAO setup path.
 
 Do not use a classic PAT, OAuth token, GitHub App installation token, `GH_AW_GITHUB_TOKEN`, or a target-access PAT as `COPILOT_GITHUB_TOKEN`. Those credentials serve different authorization boundaries.
 

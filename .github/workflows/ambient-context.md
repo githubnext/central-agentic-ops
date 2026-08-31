@@ -48,17 +48,11 @@ imports:
       orchestrator_credits: "250"
       worker_credits_per_target: "800"
 
-engine:
-  id: copilot
-  env:
-    COPILOT_GITHUB_TOKEN: ${{ secrets.COPILOT_GITHUB_TOKEN || github.token }}
-
 permissions:
   contents: read
   actions: read
   issues: read
   pull-requests: read
-  copilot-requests: write
 
 strict: true
 

@@ -52,17 +52,11 @@ imports:
       role: worker
       worker: agents-md-curator
 
-engine:
-  id: copilot
-  env:
-    COPILOT_GITHUB_TOKEN: ${{ secrets.COPILOT_GITHUB_TOKEN || github.token }}
-
 permissions:
   contents: read
   actions: read
   issues: read
   pull-requests: read
-  copilot-requests: write
 
 strict: true
 

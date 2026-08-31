@@ -52,16 +52,10 @@ imports:
       role: worker
       worker: skills-curator
 
-engine:
-  id: copilot
-  env:
-    COPILOT_GITHUB_TOKEN: ${{ secrets.COPILOT_GITHUB_TOKEN || github.token }}
-
 permissions:
   contents: read
   actions: read
   pull-requests: read
-  copilot-requests: write
 
 strict: true
 
