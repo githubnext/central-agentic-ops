@@ -115,6 +115,7 @@
 - `src/components/table-region.js` — presentation-only reusable table wrapper for repeated table-region markup, header rows, empty-state rows, and keyed body-row descriptors across built-in and custom tables.
 - `src/components/summary-copy.js` — presentation-only shared singular/plural summary-count copy for repeated item-count text surfaces.
 - `src/components/view-chrome.js` — presentation-only reusable page-section, titled-region, summary-list/summary-region, summary-style definition-list and definition-list rows, generic custom-view chrome paragraphs, custom-view source/metadata/context chrome, shared custom-view section chrome, custom-view state-message/details helpers, and built-in provenance-section helpers.
+- `src/components/workflow-topology.js` — topology overview section for package and standalone workflow structure, now reusing shared definition-list rows for its summary metrics.
 - `src/components/ui-primitives.js` — presentation-only shared section-heading, vital-stat, and UTC date-time helpers for repeated dashboard component chrome.
 - `src/components/count-formatters.js` — presentation-only shared count and singular/plural text helpers for repeated dashboard status, workflow, and signal copy.
 - `src/components/link-content.js` — presentation-only safe-link discovery and reusable external-link/value composition for custom metric and table views.
@@ -130,6 +131,14 @@
 - 2026-08-31: `npx playwright test --config=playwright.config.mjs` launches in this environment, but the current browser suite is already red on the checked-out baseline: page-level headings, skip-link visibility, route-driven repository views, keyboard section counts, and declarative table row visibility are not found across 9 existing `test/e2e/smoke.spec.js` assertions. This run did not change browser-only behavior, so the failures are recorded as a pre-existing gate blocker rather than fixed here.
 
 ## Run log
+
+### 2026-08-31 (workflow-topology summary rows refactor)
+- Re-inventoried repeated UI construction under `pages/dashboard/src/` and selected the next bounded presentation-only DOM slice with multiple safe call sites: repeated definition-list row assembly in `src/components/workflow-topology.js`'s topology summary and the shared helper already used by `src/components/view-chrome.js` and `src/components/table-summary.js`.
+- Reused `renderDefinitionListRows(...)` from `src/components/view-chrome.js` inside `src/components/workflow-topology.js`, collapsing the topology summary's local `<div><dt>…</dt><dd>…</dd></div>` construction into the shared helper without changing copy, classes, heading structure, or surrounding layout.
+- Added unit coverage in `test/unit/view-chrome.test.js` for the shared row helper's section contract already relied on by callers, and kept the existing presenter topology assertion green for `Expected structure`, `Topology`, and `Packages1Package workflows2Standalone workflows1`.
+- Proved unchanged behavior by preserving the existing topology DOM/text assertions in `test/unit/presenter.test.js` and by capturing the bounded refactor diff at `/tmp/gh-aw/agent/workflow-topology-refactor.diff` for the affected files.
+- Verified `pages/dashboard/` quality gates in this run: `npm install`, `npm run build`, `npm run typecheck`, `npm run lint`, and `npm test` all pass. Playwright was not rerun for this bounded helper reuse because no browser-only behavior changed; the current browser-gate status remains tracked in `PLAN.md` infrastructure blockers.
+- Next candidates in the queue: extract the repeated section-heading shell in `src/components/package-detail.js` and `src/components/repositories-view.js`; extract the repeated definitions/observations dual-region composition in `src/presenter.js`; extract the repeated summary-plus-trend section composition in `src/presenter.js`.
 
 ### 2026-08-31 (definition-list rows helper refactor)
 - Re-inventoried repeated UI construction under `pages/dashboard/src/` and selected the highest safe bounded DOM slice still duplicated after the prior definition-list extraction: repeated `<div><dt>label</dt><dd>value</dd></div>` rows in `src/components/view-chrome.js` and `src/components/table-summary.js` quantitative summaries.
