@@ -33,7 +33,6 @@ export const VIEW_ELEMENT_VALUES = [
   'package-run-trend',
   'package-detail',
   'package-reports',
-  'dispatch-catalog',
   'repository-scope',
   'repository-activity',
   'repository-workflows',
@@ -264,7 +263,8 @@ export const SOURCE_VALUES = [
   'cost-signals',
   'cost-readiness',
   'experiment-readiness',
-  'runtime-signals'
+  'runtime-signals',
+  'dispatches'
 ];
 
 export const SOURCE_FIELDS = {
@@ -292,7 +292,8 @@ export const SOURCE_FIELDS = {
   'cost-signals': ['priority', 'count', 'tone', 'icon', 'kind', 'title', 'detail', 'evidence', 'action', 'navigation-page'],
   'cost-readiness': ['priority', 'count', 'tone', 'icon', 'kind', 'title', 'detail', 'evidence', 'action'],
   'experiment-readiness': ['priority', 'count', 'tone', 'icon', 'kind', 'title', 'detail', 'evidence', 'action'],
-  'runtime-signals': ['priority', 'count', 'tone', 'icon', 'kind', 'title', 'detail', 'evidence', 'action', 'navigation-href']
+  'runtime-signals': ['priority', 'count', 'tone', 'icon', 'kind', 'title', 'detail', 'evidence', 'action', 'navigation-href'],
+  dispatches: ['started-at', 'dispatch-type', 'package-name', 'workflow-name', 'run-title', 'runtime-repository', 'status', 'run-link']
 };
 
 export const ROLLOUT_MODE_VALUES = ['review', 'live', 'unknown'];

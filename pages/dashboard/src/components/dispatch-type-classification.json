@@ -1,0 +1,17 @@
+[
+  {
+    "role": "worker",
+    "packaged": true,
+    "label": "Package worker"
+  },
+  {
+    "role": "orchestrator",
+    "packaged": true,
+    "label": "Package orchestrator"
+  },
+  {
+    "role": "*",
+    "packaged": false,
+    "label": "Standalone workflow"
+  }
+]

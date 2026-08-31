@@ -9,7 +9,6 @@ import { renderModeBadge } from './badge.js';
 import { findLink } from './link-content.js';
 import { renderPackagesView, renderPackageRunTrend } from './packages-view.js';
 import { renderPackageDetail as renderPackageDetailElement, renderPackageReports } from './package-detail.js';
-import { renderDispatchCatalog } from './dispatch-catalog.js';
 import { renderRepositoryWorkflows } from './repository-workflows.js';
 import { renderWorkflowDetail } from './workflow-detail.js';
 import { renderOutcomeDetail } from './outcome-detail.js';
@@ -47,7 +46,6 @@ const ELEMENT_RENDERERS = new Map([
   ['package-run-trend', ({ sources, pageId }) => renderPackageRunTrend(sources, pageId)],
   ['package-detail', renderPackageDetailElement],
   ['package-reports', renderPackageReports],
-  ['dispatch-catalog', renderDispatchCatalog],
   ['repository-scope', renderRepositoryScope],
   ['repository-activity', renderRepositoryActivity],
   ['repository-workflows', renderRepositoryWorkflows],
@@ -63,7 +61,7 @@ const ELEMENT_RENDERERS = new Map([
   }]
 ]);
 
-const EMPTY_AWARE_ELEMENTS = new Set(['status-summary', 'meter-list', 'attention-list', 'record-cards', 'summary-grid', 'signal-list', 'package-detail', 'package-reports', 'dispatch-catalog', 'repository-scope', 'repository-activity', 'repository-workflows', 'workflow-detail', 'workflow-runtime', 'outcome-detail', 'execution-episodes']);
+const EMPTY_AWARE_ELEMENTS = new Set(['status-summary', 'meter-list', 'attention-list', 'record-cards', 'summary-grid', 'signal-list', 'package-detail', 'package-reports', 'repository-scope', 'repository-activity', 'repository-workflows', 'workflow-detail', 'workflow-runtime', 'outcome-detail', 'execution-episodes']);
 
 /**
  * @param {string} name
