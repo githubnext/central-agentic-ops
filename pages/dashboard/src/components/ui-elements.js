@@ -71,7 +71,7 @@ function renderStatusSummaryElement(context) {
           'div',
           null,
           h('span', { className: 'scope-kicker' }, `Control plane · ${stringValue(status.scope)}`),
-          h(context.headingTag, { id: headingId }, stringValue(status['status-label']) || context.title),
+          h('h3', { id: headingId }, stringValue(status['status-label']) || context.title),
           h('p', null, stringValue(status['status-copy']))
         )
       )
@@ -98,7 +98,7 @@ function renderMeterListElement(context) {
       'header',
       null,
       h('span', { className: 'scope-kicker' }, 'Control plane'),
-      h(context.headingTag, { id: headingId }, context.title),
+      h('h3', { id: headingId }, context.title),
       context.description ? h('p', null, context.description) : null
     ),
     h(
@@ -123,7 +123,7 @@ function renderAttentionListElement(context) {
     h(
       'header',
       null,
-      h('div', null, h('span', { className: 'scope-kicker' }, 'Act now'), h(context.headingTag, { id: headingId }, context.title)),
+      h('div', null, h('span', { className: 'scope-kicker' }, 'Act now'), h('h3', { id: headingId }, context.title)),
       h('span', { className: 'attention-count', 'aria-label': `${rows.length} attention items` }, String(rows.length))
     ),
     h(
@@ -159,7 +159,7 @@ function renderRecordCardsElement(context) {
       'header',
       null,
       h('span', { className: 'scope-kicker' }, 'Control plane'),
-      h(context.headingTag, { id: headingId }, context.title)
+      h('h3', { id: headingId }, context.title)
     ),
     h(
       'div',
