@@ -104,7 +104,7 @@ function buildSecuritySignals(input) {
         icon: 'shield',
         kind: 'Approval gate',
         title: workflowNames.get(workflow) ?? workflow,
-        detail: `${formatNumber(rows.length)} run${rows.length === 1 ? '' : 's'} require maintainer approval`,
+        detail: `${formatNumber(rows.length)} run${rows.length === 1 ? ' requires' : 's require'} maintainer approval`,
         evidence: 'Execution control',
         'run-link': latestRow(rows)?.['run-link']
       })),

@@ -284,7 +284,7 @@ describe('presenter built-in and custom pages', () => {
     });
 
     const page = rendered.querySelector('[data-page-id="security"]');
-    const dashboardPage = authoritativeDashboardDocument.dashboard.pages.find((candidate) => candidate.id === 'security');
+    const dashboardPage = authoritativeDashboardDocument.dashboard.pages.find((/** @type {{ id: string }} */ candidate) => candidate.id === 'security');
     expect(dashboardPage).toMatchObject({ kind: 'custom' });
     expect(dashboardPage).not.toHaveProperty('page');
     expect(rendered.querySelector('[data-nav-page-id="security"] .octicon-shield')).not.toBeNull();

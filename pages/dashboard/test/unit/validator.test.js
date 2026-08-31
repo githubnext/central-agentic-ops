@@ -98,7 +98,8 @@ describe('dashboard document validation', () => {
 
   it('DLS-VIEW-026 accepts a custom page hash query route and rejects malformed route declarations', () => {
     const document = JSON.parse(authoritativeDashboardSource);
-    const repositoryPage = document.dashboard.pages.find((/** @type {{ id: string }} */ page) => page.id === 'repository-detail');
+    const repositoryPageIndex = document.dashboard.pages.findIndex((/** @type {{ id: string }} */ page) => page.id === 'repository-detail');
+    const repositoryPage = document.dashboard.pages[repositoryPageIndex];
     expect(repositoryPage.route).toEqual({ 'hash-query-parameter': 'repository' });
     expect(validateDashboardDocument(JSON.stringify(document)).ok).toBe(true);
 
@@ -108,7 +109,7 @@ describe('dashboard document validation', () => {
     if (!malformed.ok) {
       expect(malformed.errors).toContainEqual(expect.objectContaining({
         code: 'DLS-E005',
-        path: '$.dashboard.pages[3].route.hash-query-parameter'
+        path: `$.dashboard.pages[${repositoryPageIndex}].route.hash-query-parameter`
       }));
     }
 
@@ -118,7 +119,7 @@ describe('dashboard document validation', () => {
     if (!unknownKey.ok) {
       expect(unknownKey.errors).toContainEqual(expect.objectContaining({
         code: 'DLS-E004',
-        path: '$.dashboard.pages[3].route.parameter'
+        path: `$.dashboard.pages[${repositoryPageIndex}].route.parameter`
       }));
     }
 
@@ -128,7 +129,7 @@ describe('dashboard document validation', () => {
     if (!missingParameter.ok) {
       expect(missingParameter.errors).toContainEqual(expect.objectContaining({
         code: 'DLS-E003',
-        path: '$.dashboard.pages[3].route.hash-query-parameter'
+        path: `$.dashboard.pages[${repositoryPageIndex}].route.hash-query-parameter`
       }));
     }
 
@@ -138,7 +139,7 @@ describe('dashboard document validation', () => {
     if (!invalidShape.ok) {
       expect(invalidShape.errors).toContainEqual(expect.objectContaining({
         code: 'DLS-E003',
-        path: '$.dashboard.pages[3].route',
+        path: `$.dashboard.pages[${repositoryPageIndex}].route`,
         message: 'route must be a mapping.'
       }));
     }

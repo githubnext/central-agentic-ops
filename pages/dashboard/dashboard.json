@@ -200,7 +200,9 @@
             "id": "security-summary",
             "title": "Assurance summary",
             "data": {
-              "source": "security-summary"
+              "sources": [
+                "security-summary"
+              ]
             },
             "mark": "element",
             "element": "summary-grid",
@@ -211,7 +213,9 @@
             "title": "Assurance signals",
             "description": "No vulnerability feed is retained. These are operational assurance signals, not vulnerability findings; generic run failures and collection gaps remain in their owning domains.",
             "data": {
-              "source": "security-signals"
+              "sources": [
+                "security-signals"
+              ]
             },
             "mark": "element",
             "element": "signal-list",
