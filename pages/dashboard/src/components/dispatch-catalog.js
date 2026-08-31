@@ -41,7 +41,7 @@ export function renderDispatchCatalog(context) {
       h(
         'thead',
         null,
-        h('tr', null,         ...['Started', 'Type', 'Package', 'Workflow', 'Run title', 'Runtime repository', 'Status']
+        h('tr', null,                   ...['Started', 'Type', 'Package', 'Workflow', 'Run title', 'Runtime repository', 'Status']
           .map((label) => h('th', { scope: 'col' }, label)))
       ),
       h(
@@ -105,15 +105,16 @@ function workflowDispatches(runs, workflows) {
       const status = conclusion && conclusion !== 'unknown'
         ? conclusion
         : nonEmptyString(run['run-status']) ? String(run['run-status']) : 'unknown';
+      const hasPackage = nonEmptyString(workflow.package);
       const packageName = nonEmptyString(workflow['package-name'])
         ? String(workflow['package-name'])
-        : nonEmptyString(workflow.package) ? String(workflow.package) : 'Not packaged';
+        : hasPackage ? String(workflow.package) : 'Not packaged';
       const role = String(workflow['workflow-role'] ?? '');
       return [{
         run,
-        dispatchType: role === 'worker' && packageName !== 'Not packaged'
+        dispatchType: role === 'worker' && hasPackage
           ? 'Package worker'
-          : role === 'orchestrator' && packageName !== 'Not packaged'
+          : role === 'orchestrator' && hasPackage
             ? 'Package orchestrator'
             : 'Standalone workflow',
         packageName,
