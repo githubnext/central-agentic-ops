@@ -66,6 +66,7 @@ describe('presenter built-in and custom pages', () => {
     expect(topology?.querySelectorAll('[data-workflow-role="orchestrator"]')).toHaveLength(1);
     expect(topology?.querySelectorAll('[data-workflow-role="worker"]')).toHaveLength(1);
     expect(topology?.querySelector('[data-package-id="dependabot"]')?.textContent).toContain('dispatches');
+    expect(topology?.querySelector('[data-package-id="dependabot"] .package-identity a')?.getAttribute('href')).toBe('#page-package-detail?package=dependabot');
     expect(topology?.querySelector('[data-repository="target-service"]')?.textContent).toContain('CI');
     expect(topology?.querySelector('[data-package-id="dependabot"] .mode-review .octicon-beaker')).not.toBeNull();
     expect(topology?.querySelector('[data-repository="target-service"] .mode-live .octicon-rocket')).not.toBeNull();
@@ -977,9 +978,11 @@ describe('presenter built-in and custom pages', () => {
     expect(packagesPage?.querySelector('[data-package-id="daily-ops"]')?.textContent).toContain('40 of 250 AIC across 2 reported runs');
     expect(packagesPage?.querySelector('[data-package-id="daily-ops"]')?.textContent).toContain('16%');
     expect(packagesPage?.querySelector('[data-package-id="empty-ops"]')?.textContent).toContain('No AIC usage was reported');
+    expect(packagesPage?.querySelector('[data-package-id="daily-ops"] .package-utilization-identity a')?.getAttribute('href')).toBe('#page-package-detail?package=daily-ops');
     expect(packagesPage?.querySelector('.package-summary-heading')?.textContent).toContain('All output by package');
     const packageSummaryRows = [...(packagesPage?.querySelectorAll('.package-summary-table tbody tr') ?? [])];
     expect(packageSummaryRows).toHaveLength(2);
+    expect(packageSummaryRows[0]?.querySelector('th a')?.getAttribute('href')).toBe('#page-package-detail?package=daily-ops');
     expect([...packageSummaryRows[0]?.children ?? []].map((cell) => cell.textContent)).toEqual([
       'Daily Ops', '2', '1', '1', '1', '2', '40', 'Aug 29, 2026, 10:06 AM'
     ]);

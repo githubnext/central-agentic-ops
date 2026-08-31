@@ -310,7 +310,12 @@ function renderMainContent(document, title, pages, sources, orgName, githubUrlBa
         h(
           'div',
           null,
-          h('div', { className: 'title-area' }, h('h1', { id: 'page-title', tabIndex: -1 }, initialPageTitle)),
+          h(
+            'div',
+            { className: 'title-area' },
+            h('h1', { id: 'page-title', tabIndex: -1 }, initialPageTitle),
+            h('span', { className: 'mode-indicator', 'data-page-mode': '', hidden: true })
+          ),
           h(
             'p',
             { className: 'lede', 'data-page-description': '', hidden: !initialPageDescription },
@@ -534,6 +539,7 @@ export function enableDashboardPageNavigation(root) {
   const breadcrumbPage = root.querySelector('[data-breadcrumb-page]');
   const pageTitle = root.querySelector('#page-title');
   const pageDescription = root.querySelector('.overview-header [data-page-description]');
+  const pageMode = root.querySelector('[data-page-mode]');
   if (pages.length === 0 || links.length === 0) {
     return;
   }
@@ -551,6 +557,16 @@ export function enableDashboardPageNavigation(root) {
     if (pageDescription && description) {
       pageDescription.textContent = description;
       pageDescription.removeAttribute('hidden');
+    }
+    const mode = event.detail?.mode === 'review' || event.detail?.mode === 'live'
+      ? event.detail.mode
+      : '';
+    renderPageMode(pageMode, mode);
+    const navigationPage = typeof event.detail?.navigationPage === 'string'
+      ? event.detail.navigationPage
+      : '';
+    if (navigationPage && availableIds.has(navigationPage)) {
+      updateNavigationLinks(links, navigationPage);
     }
   });
 
@@ -580,15 +596,7 @@ export function enableDashboardPageNavigation(root) {
       const isActive = page.dataset.pageId === pageId;
       page.hidden = !isActive;
     }
-    for (const link of links) {
-      const isActive = link.dataset.navPageId === pageId;
-      link.classList.toggle('active', isActive);
-      if (isActive) {
-        link.setAttribute('aria-current', 'page');
-      } else {
-        link.removeAttribute('aria-current');
-      }
-    }
+    updateNavigationLinks(links, pageId);
     const page = pages.find((candidate) => candidate.dataset.pageId === pageId);
     const routeParameter = page?.dataset.routeParameter;
     const routeValue = routeParameter ? parameters.get(routeParameter)?.trim() ?? '' : '';
@@ -600,6 +608,7 @@ export function enableDashboardPageNavigation(root) {
       pageDescription.textContent = description;
       pageDescription.toggleAttribute('hidden', description.length === 0);
     }
+    renderPageMode(pageMode, '');
     for (const routeView of page?.querySelectorAll('[data-route-view]') ?? []) {
       routeView.dispatchEvent(new CustomEvent('dashboard-route-change', {
         detail: { parameter: routeParameter, value: routeValue }
@@ -636,6 +645,31 @@ export function enableDashboardPageNavigation(root) {
     if (route) activate(route.pageId, route.parameters);
   };
   defaultView?.addEventListener('hashchange', onHashChange);
+}
+
+/**
+ * @param {HTMLAnchorElement[]} links
+ * @param {string} pageId
+ */
+function updateNavigationLinks(links, pageId) {
+  for (const link of links) {
+    const isActive = link.dataset.navPageId === pageId;
+    link.classList.toggle('active', isActive);
+    if (isActive) link.setAttribute('aria-current', 'page');
+    else link.removeAttribute('aria-current');
+  }
+}
+
+/**
+ * @param {Element | null} pageMode
+ * @param {string} mode
+ */
+function renderPageMode(pageMode, mode) {
+  if (!(pageMode instanceof HTMLElement)) return;
+  pageMode.replaceChildren();
+  pageMode.className = `mode-indicator${mode ? ` mode-${mode}` : ''}`;
+  pageMode.hidden = !mode;
+  if (mode) pageMode.append(octicon(mode === 'review' ? 'beaker' : 'rocket'), titleCase(mode));
 }
 
 /**

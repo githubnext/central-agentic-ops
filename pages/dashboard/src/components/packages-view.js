@@ -149,7 +149,7 @@ function renderPackageSummaryRow(entry, summary) {
   return /** @type {HTMLTableRowElement} */ (h(
     'tr',
     { dataset: { packageSummaryKey: entry.key } },
-    h('th', { scope: 'row' }, entry.name),
+    h('th', { scope: 'row' }, h('a', { href: packageDetailHref(entry.id) }, entry.name)),
     h('td', null, formatNumber(summary?.runs ?? 0)),
     h('td', null, formatNumber(summary?.successful ?? 0)),
     h('td', null, formatNumber(summary?.failed ?? 0)),
@@ -382,7 +382,7 @@ function renderUtilizationCard(entry, utilization, available, completeness) {
       h(
         'span',
         { className: 'package-utilization-identity' },
-        h('strong', null, entry.name),
+        h('a', { href: packageDetailHref(entry.id) }, h('strong', null, entry.name)),
         scopeLabel ? h('small', null, scopeLabel) : null
       ),
       h('span', { className: 'package-utilization-value' }, ratio === null ? '—' : formatPercent(ratio))
@@ -598,6 +598,7 @@ function summarizePackages(workflows) {
     rows.push(row);
     grouped.set(packageKey, rows);
   }
+
   return [...grouped.entries()].map(([key, rows]) => {
     const firstRow = rows[0] ?? {};
     const uniqueWorkflowAllowances = new Map(rows
@@ -616,6 +617,11 @@ function summarizePackages(workflows) {
       workflows: rows
     };
   }).sort((left, right) => left.name.localeCompare(right.name));
+}
+
+/** @param {string} packageId */
+function packageDetailHref(packageId) {
+  return `#page-package-detail?package=${encodeURIComponent(packageId)}`;
 }
 
 /**

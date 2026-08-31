@@ -1,0 +1,110 @@
+// @vitest-environment jsdom
+import { describe, expect, it } from 'vitest';
+import { renderPackageDetail } from '../../src/components/package-detail.js';
+
+const metadata = {
+  'source-id': 'fixture',
+  'source-kind': 'fixture',
+  'as-of': '2026-08-31T18:00:00Z',
+  'retrieved-at': '2026-08-31T18:01:00Z',
+  completeness: /** @type {'complete'} */ ('complete'),
+  freshness: /** @type {'fresh'} */ ('fresh'),
+  availability: /** @type {'available'} */ ('available')
+};
+
+const workflows = [
+  {
+    package: 'ambient-context',
+    'package-name': 'Ambient Context',
+    workflow: '.github/workflows/ambient-context.md',
+    'workflow-name': 'Ambient Context',
+    'workflow-role': 'orchestrator',
+    'rollout-mode': 'review',
+    'workflow-link': { relation: 'workflow', href: 'https://github.com/githubnext/central-agentic-ops/blob/HEAD/.github/workflows/ambient-context.md', label: 'View Ambient Context' }
+  },
+  {
+    package: 'ambient-context',
+    'package-name': 'Ambient Context',
+    workflow: '.github/workflows/ambient-context-agents-md-curator.md',
+    'workflow-name': 'Ambient Context / AGENTS.md Curator',
+    'workflow-role': 'worker',
+    'rollout-mode': 'review'
+  },
+  {
+    package: 'other',
+    'package-name': 'Other',
+    workflow: '.github/workflows/other.md',
+    'workflow-name': 'Other',
+    'workflow-role': 'orchestrator',
+    'rollout-mode': 'live'
+  }
+];
+
+function context() {
+  return {
+    pageId: 'package-detail',
+    title: 'Orchestrator and workers',
+    sourceNames: ['workflows'],
+    contextDetails: [],
+    routeParameter: 'package',
+    headingTag: /** @type {'h3'} */ ('h3'),
+    sources: {
+      workflows: { source: 'workflows', metadata, rows: workflows }
+    }
+  };
+}
+
+describe('renderPackageDetail', () => {
+  it('renders the selected package topology and package tabs', () => {
+    const rendered = renderPackageDetail(context());
+    rendered.dispatchEvent(new CustomEvent('dashboard-route-change', {
+      detail: { parameter: 'package', value: 'ambient-context' }
+    }));
+
+    expect(rendered.dataset.package).toBe('ambient-context');
+    expect(rendered.querySelector('.package-tabs')?.textContent).toBe('WorkflowsReportsInsights');
+    expect(rendered.querySelector('.package-tabs [aria-current="page"]')?.getAttribute('href')).toBe('#page-package-detail?package=ambient-context');
+    expect(rendered.querySelector('h3')?.textContent).toBe('Orchestrator and workers');
+    expect(rendered.querySelectorAll('[data-workflow-role="orchestrator"]')).toHaveLength(1);
+    expect(rendered.querySelectorAll('[data-workflow-role="worker"]')).toHaveLength(1);
+    expect(rendered.textContent).toContain('Ambient Context / AGENTS.md Curator');
+    expect(rendered.textContent).not.toContain('Other');
+    expect(rendered.querySelector('[data-workflow-role="orchestrator"] a')?.getAttribute('href')).toContain('/ambient-context.md');
+  });
+
+  it('reallocates package title, description, mode, and parent navigation', () => {
+    const host = document.createElement('div');
+    const rendered = renderPackageDetail(context());
+    host.append(rendered);
+    let detail;
+    host.addEventListener('dashboard-route-allocation', (event) => {
+      if (event instanceof CustomEvent) detail = event.detail;
+    });
+
+    rendered.dispatchEvent(new CustomEvent('dashboard-route-change', {
+      detail: { parameter: 'package', value: 'ambient-context' }
+    }));
+
+    expect(detail).toEqual({
+      title: 'Ambient Context',
+      description: 'Orchestrator and worker workflows in the Ambient Context package.',
+      mode: 'review',
+      navigationPage: 'packages'
+    });
+  });
+
+  it('renders explicit empty states for missing and invalid package routes', () => {
+    const rendered = renderPackageDetail(context());
+    expect(rendered.textContent).toBe('Select a package to view its workflows.');
+
+    rendered.dispatchEvent(new CustomEvent('dashboard-route-change', {
+      detail: { parameter: 'package', value: '<invalid>' }
+    }));
+    expect(rendered.textContent).toBe('Select a package to view its workflows.');
+
+    rendered.dispatchEvent(new CustomEvent('dashboard-route-change', {
+      detail: { parameter: 'package', value: 'missing' }
+    }));
+    expect(rendered.textContent).toBe('Package not found.');
+  });
+});

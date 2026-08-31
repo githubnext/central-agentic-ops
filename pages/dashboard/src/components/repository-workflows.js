@@ -220,7 +220,9 @@ function renderWorkflowRow(workflow) {
       h(
         'span',
         { className: 'repository-workflow-badges' },
-        ...(workflow.package ? [h('span', null, String(workflow['package-name'] ?? workflow.package))] : []),
+        ...(workflow.package
+          ? [h('a', { href: `#page-package-detail?package=${encodeURIComponent(String(workflow.package))}` }, String(workflow['package-name'] ?? workflow.package))]
+          : []),
         h('span', null, titleCase(String(workflow['workflow-role'] ?? 'unknown')))
       )
     ),
