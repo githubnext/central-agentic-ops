@@ -37,6 +37,39 @@ describe('dashboard document validation', () => {
     expect(accepted.ok).toBe(true);
   });
 
+  it('DLS-PAGE-017 validates JSON-configured page filter bars', () => {
+    const accepted = validateDashboardDocument(authoritativeDashboardSource);
+    expect(accepted.ok).toBe(true);
+
+    const invalidTokens = JSON.parse(authoritativeDashboardSource);
+    const costPage = invalidTokens.dashboard.pages.find((/** @type {{ id: string }} */ page) => page.id === 'cost');
+    costPage['filter-bar'].filters = ['mode:review', 'mode:review', 'invalid token'];
+    costPage['filter-bar'].export = 'yes';
+    costPage['filter-bar'].unknown = true;
+
+    const rejected = validateDashboardDocument(JSON.stringify(invalidTokens));
+    expect(rejected.ok).toBe(false);
+    if (!rejected.ok) {
+      expect(rejected.errors).toContainEqual(expect.objectContaining({
+        code: 'DLS-E003',
+        path: '$.dashboard.pages[1].filter-bar.filters[1]',
+        message: 'filter-bar filters must be unique.'
+      }));
+      expect(rejected.errors).toContainEqual(expect.objectContaining({
+        code: 'DLS-E005',
+        path: '$.dashboard.pages[1].filter-bar.filters[2]'
+      }));
+      expect(rejected.errors).toContainEqual(expect.objectContaining({
+        code: 'DLS-E003',
+        path: '$.dashboard.pages[1].filter-bar.export'
+      }));
+      expect(rejected.errors).toContainEqual(expect.objectContaining({
+        code: 'DLS-E004',
+        path: '$.dashboard.pages[1].filter-bar.unknown'
+      }));
+    }
+  });
+
   it('DLS-VIEW-024 validates custom page section layout and complete ordered view placement', () => {
     const document = {
       'language-version': '0.1.0',

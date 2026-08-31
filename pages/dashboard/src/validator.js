@@ -33,6 +33,7 @@ import {
   ORDER_BY_KEYS,
   ORDER_DIRECTION_VALUES,
   OUTCOME_STATE_VALUES,
+  PAGE_FILTER_BAR_KEYS,
   PAGE_ROUTE_KEYS,
   PAGE_ICON_VALUES,
   PAGE_KIND_VALUES,
@@ -622,6 +623,7 @@ function validatePage(page, pageNode, path, pageIds, errors) {
       ));
     }
   }
+  validatePageFilterBar(page['filter-bar'], getValueNodeByKey(pageNode, 'filter-bar'), `${path}.filter-bar`, errors);
 
   if (page.kind === 'built-in') {
     validateObjectKeys(pageNode, BUILT_IN_PAGE_KEYS, path, errors);
@@ -636,6 +638,57 @@ function validatePage(page, pageNode, path, pageIds, errors) {
   }
 
   validateObjectKeys(pageNode, [...BUILT_IN_PAGE_KEYS, ...CUSTOM_PAGE_KEYS], path, errors);
+}
+
+/**
+ * @param {unknown} filterBar
+ * @param {unknown} filterBarNode
+ * @param {string} path
+ * @param {ValidationError[]} errors
+ */
+function validatePageFilterBar(filterBar, filterBarNode, path, errors) {
+  if (filterBar === undefined) return;
+  if (!isPlainObject(filterBar)) {
+    errors.push(createError(ERROR_CODES.missingOrInvalidRequiredField, 'filter-bar must be a mapping.', path));
+    return;
+  }
+
+  validateObjectKeys(filterBarNode, PAGE_FILTER_BAR_KEYS, path, errors);
+  if (!Array.isArray(filterBar.filters) || filterBar.filters.length === 0) {
+    errors.push(createError(
+      ERROR_CODES.missingOrInvalidRequiredField,
+      'filter-bar filters must be a non-empty sequence of filter tokens.',
+      `${path}.filters`
+    ));
+  } else {
+    const seen = new Set();
+    filterBar.filters.forEach((filter, index) => {
+      const filterPath = `${path}.filters[${index}]`;
+      if (typeof filter !== 'string' || !/^[a-z][a-z0-9-]*:[^\s:]+$/.test(filter)) {
+        errors.push(createError(
+          ERROR_CODES.nonCanonicalVocabularyOrIdentifier,
+          'filter-bar filters must use canonical field:value tokens.',
+          filterPath
+        ));
+      } else if (seen.has(filter)) {
+        errors.push(createError(
+          ERROR_CODES.missingOrInvalidRequiredField,
+          'filter-bar filters must be unique.',
+          filterPath
+        ));
+      }
+      seen.add(filter);
+    });
+  }
+
+  validateOptionalStringField(filterBar['time-range'], `${path}.time-range`, errors);
+  if (filterBar.export !== undefined && typeof filterBar.export !== 'boolean') {
+    errors.push(createError(
+      ERROR_CODES.missingOrInvalidRequiredField,
+      'filter-bar export must be a boolean.',
+      `${path}.export`
+    ));
+  }
 }
 
 /**

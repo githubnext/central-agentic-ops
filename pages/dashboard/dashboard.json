@@ -59,6 +59,14 @@
         "icon": "meter",
         "class-name": "cost-page",
         "description": "Measured AI Credit allocation and efficiency evidence for the configured githubnext/central-agentic-ops repository.",
+        "filter-bar": {
+          "filters": [
+            "mode:review",
+            "mode:live"
+          ],
+          "time-range": "All recorded",
+          "export": true
+        },
         "views": [
           {
             "id": "cost-measured-usage",

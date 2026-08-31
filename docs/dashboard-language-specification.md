@@ -201,8 +201,9 @@ Language keys and enumerated values use canonical kebab-case. Human-readable tit
 | `dashboard` | `id`, `title`, `description`, `github-url-base`, `repository`, `defaults`, `units`, `pages`, `navigation` |
 | `defaults` | `scope`, `time`, `filters` |
 | Unit definition | `name`, `symbol`, `significant` |
-| Built-in page | `id`, `kind`, `page`, `title`, `navigation-label`, `description`, `icon`, `class-name`, `definition` |
-| Custom page | `id`, `kind`, `title`, `navigation-label`, `description`, `icon`, `class-name`, `route`, `views`, `sections` |
+| Built-in page | `id`, `kind`, `page`, `title`, `navigation-label`, `description`, `icon`, `class-name`, `filter-bar`, `definition` |
+| Custom page | `id`, `kind`, `title`, `navigation-label`, `description`, `icon`, `class-name`, `filter-bar`, `route`, `views`, `sections` |
+| Page `filter-bar` | `filters`, `time-range`, `export` |
 | Custom page `route` | `hash-query-parameter` |
 | View | `id`, `title`, `description`, `data`, `mark`, `element`, `chart`, `layout`, `disclosure`, `encoding` |
 | View `data` | `source` or `sources`, `scope`, `time`, `filters`, `limit`, `order-by` |
@@ -454,6 +455,12 @@ A finding is an observation with a stable finding ID, summary, status, severity,
   title: Runs
   icon: play
   class-name: runs-page
+  filter-bar:
+    filters:
+      - mode:review
+      - mode:live
+    time-range: All recorded
+    export: true
 ```
 
 Allowed built-in page names are:
@@ -465,6 +472,8 @@ The optional page `icon` is one of `server`, `workflow`, `play`, `repo`, `packag
 The optional page `navigation-label` provides a concise sidebar label when the page title is more descriptive. A dashboard `navigation` section may reference a focused subset of declared pages; omitted pages remain available as deep-link destinations.
 
 The optional page `class-name` is a canonical identifier that a renderer adds to the page container. It lets a document opt into page-specific presentation without requiring the renderer to infer styling from a page ID or built-in page name.
+
+The optional page `filter-bar` is a presentation widget shared by built-in and custom pages. Its required `filters` sequence contains unique `field:value` tokens in display order. The optional `time-range` is a non-empty human-readable label, and optional Boolean `export` enables a JSON download containing the page identifier, configured filters, and declared page sources.
 
 ### 10.2 Required Content
 
@@ -484,6 +493,7 @@ The optional page `class-name` is a canonical identifier that a renderer adds to
 - **DLS-PAGE-014:** Every built-in page **MUST** honor the dashboard scope, time, and filters and expose availability, completeness, and freshness independently.
 - **DLS-PAGE-015:** The `packages` page **MUST** expose centrally managed package inventory, rollout-mode filtering, actual package AIC against summed per-run limits without treating missing usage as zero, the complete-attempt AIC allowance, retained usage coverage, and time-ordered successful, failed, and cancelled package-run trends.
 - **DLS-PAGE-016:** When `class-name` is present, it **MUST** be a canonical identifier and a renderer **MUST** add it to the page container without deriving additional CSS class names from `id` or `page`.
+- **DLS-PAGE-017:** When `filter-bar` is present, it **MUST** contain a non-empty sequence of unique canonical `field:value` filter tokens, **MAY** contain a non-empty `time-range` string and Boolean `export`, and **MUST** be rendered before the page views. An enabled export **MUST** contain only the page identifier, configured filter tokens, and sources declared by that page.
 
 ---
 
@@ -670,7 +680,7 @@ In the table, “accept” means validation succeeds; “reject” means validat
 | DLS-AGG-001–011 | T-AGG-001 | 2 | Exercise allowed aggregates, compatibility, nulls, UTC buckets, ranking disclosure, and deterministic ties for entity-grain and group-grain outputs, including total-order rejection. |
 | DLS-DATA-001–008 | T-DATA-001 | 2 | Exercise required metadata, derivation traceability, and each distinct data state. |
 | DLS-LINK-001–007 | T-LINK-001 | 2 | Validate link shape, safety, provenance, available associations, absent associations, one-link-per-field cardinality, GitHub URL base resolution, and linked rendering of every GitHub-addressable entity. |
-| DLS-PAGE-001–015 | T-PAGE-001 | 3 | Evaluate each built-in fixture for required content, defaults, context, and data states. |
+| DLS-PAGE-001–017 | T-PAGE-001 | 3 | Evaluate each built-in fixture for required content, defaults, context, data states, page classes, and filter-bar configuration. |
 | DLS-VIEW-001–006 | T-VIEW-001 | 3 | Validate custom structure and every allowed mark/channel combination. |
 | DLS-VIEW-007–015, DLS-VIEW-025, DLS-UNIT-001–003 | T-VIEW-002 | 3 | Validate fields, types, link-compatible `href`, units, time units, ordering, exclusions, operation order, exposed context, and link labels. |
 | DLS-VIEW-016–021 | T-VIEW-003 | 3 | Validate disclosure vocabulary, one-to-four essential views, initial collapsed state, accessible controls, source order, and unchanged semantic output. |
