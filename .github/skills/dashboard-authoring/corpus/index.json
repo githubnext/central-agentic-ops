@@ -2,6 +2,11 @@
   "schemaVersion": 1,
   "examples": [
     {
+      "id": "documentation-completeness-check",
+      "metadata": "examples/documentation-completeness-check.json",
+      "dashboard": "examples/documentation-completeness-check.dashboard.yml"
+    },
+    {
       "id": "stale-documentation-remediation",
       "metadata": "examples/stale-documentation-remediation.json",
       "dashboard": "examples/stale-documentation-remediation.dashboard.yml"
