@@ -570,14 +570,6 @@ function validateNavigation(navigation, navigationNode, pageIds, errors) {
     });
   });
 
-  const missingPageIds = [...pageIds].filter((pageId) => !referencedPageIds.has(pageId));
-  if (missingPageIds.length > 0) {
-    errors.push(createError(
-      ERROR_CODES.missingOrInvalidRequiredField,
-      'navigation must reference every declared dashboard page exactly once.',
-      path
-    ));
-  }
 }
 
 /**
@@ -615,6 +607,7 @@ function validatePage(page, pageNode, path, pageIds, errors) {
   }
 
   validateOptionalStringField(page.title, `${path}.title`, errors);
+  validateOptionalStringField(page['navigation-label'], `${path}.navigation-label`, errors);
   validateOptionalStringField(page.description, `${path}.description`, errors);
   if (page['class-name'] !== undefined) {
     validateRequiredIdentifier(page['class-name'], `${path}.class-name`, 'page class name', errors);

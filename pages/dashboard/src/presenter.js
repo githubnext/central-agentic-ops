@@ -31,11 +31,11 @@ import { deriveOverviewSources } from './overview-data.js';
  */
 
 /**
- * @typedef {{ id: string, kind: 'built-in', page: string, title?: string, description?: string, icon?: string, ['class-name']?: string, definition?: { views?: Array<unknown>, sections?: PresentablePageSection[], ['data-state']?: Record<string, boolean> } }} PresentableBuiltInPage
+ * @typedef {{ id: string, kind: 'built-in', page: string, title?: string, ['navigation-label']?: string, description?: string, icon?: string, ['class-name']?: string, definition?: { views?: Array<unknown>, sections?: PresentablePageSection[], ['data-state']?: Record<string, boolean> } }} PresentableBuiltInPage
  */
 
 /**
- * @typedef {{ id: string, kind: 'custom', title?: string, description?: string, icon?: string, ['class-name']?: string, route?: { ['hash-query-parameter']?: string }, views: unknown[], sections?: PresentablePageSection[] }} PresentableCustomPage
+ * @typedef {{ id: string, kind: 'custom', title?: string, ['navigation-label']?: string, description?: string, icon?: string, ['class-name']?: string, route?: { ['hash-query-parameter']?: string }, views: unknown[], sections?: PresentablePageSection[] }} PresentableCustomPage
  */
 
 /**
@@ -205,9 +205,11 @@ function renderSidebar(pages, orgName, navigation) {
  */
 function renderNavItem(page, isActive) {
   const iconName = getPageIcon(page);
-  const title = typeof page.title === 'string' && page.title.length > 0
-    ? page.title
-    : titleCase(page.id);
+  const title = typeof page['navigation-label'] === 'string' && page['navigation-label'].length > 0
+    ? page['navigation-label']
+    : typeof page.title === 'string' && page.title.length > 0
+      ? page.title
+      : titleCase(page.id);
 
   return h(
     'a',

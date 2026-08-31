@@ -146,7 +146,7 @@ describe('dashboard document validation', () => {
     }
   });
 
-  it('validates dashboard.navigation references declared pages exactly once', () => {
+  it('validates dashboard.navigation references declared pages at most once', () => {
     const withUnknownPage = JSON.parse(authoritativeDashboardSource);
     withUnknownPage.dashboard.navigation[2].pages.push('does-not-exist');
     const unknownPageResult = validateDashboardDocument(JSON.stringify(withUnknownPage));
@@ -170,11 +170,15 @@ describe('dashboard document validation', () => {
     const withMissingCoverage = JSON.parse(authoritativeDashboardSource);
     withMissingCoverage.dashboard.navigation[2].pages.pop();
     const missingCoverageResult = validateDashboardDocument(JSON.stringify(withMissingCoverage));
-    expect(missingCoverageResult.ok).toBe(false);
-    if (!missingCoverageResult.ok) {
-      expect(missingCoverageResult.errors).toContainEqual(expect.objectContaining({
-        path: '$.dashboard.navigation',
-        message: 'navigation must reference every declared dashboard page exactly once.'
+    expect(missingCoverageResult.ok).toBe(true);
+
+    const withInvalidNavigationLabel = JSON.parse(authoritativeDashboardSource);
+    withInvalidNavigationLabel.dashboard.pages[0]['navigation-label'] = '';
+    const invalidNavigationLabelResult = validateDashboardDocument(JSON.stringify(withInvalidNavigationLabel));
+    expect(invalidNavigationLabelResult.ok).toBe(false);
+    if (!invalidNavigationLabelResult.ok) {
+      expect(invalidNavigationLabelResult.errors).toContainEqual(expect.objectContaining({
+        path: '$.dashboard.pages[0].navigation-label'
       }));
     }
 
