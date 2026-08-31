@@ -11,9 +11,10 @@ export const DASHBOARD_KEYS = ['id', 'title', 'description', 'defaults', 'units'
 export const DEFAULTS_KEYS = ['scope', 'time', 'filters'];
 export const UNIT_DEFINITION_KEYS = ['name', 'symbol', 'significant'];
 export const NAVIGATION_SECTION_KEYS = ['label', 'pages'];
-export const BUILT_IN_PAGE_KEYS = ['id', 'kind', 'page', 'title', 'navigation-label', 'description', 'icon', 'class-name', 'definition'];
-export const CUSTOM_PAGE_KEYS = ['id', 'kind', 'title', 'navigation-label', 'description', 'icon', 'class-name', 'route', 'views', 'sections'];
+export const BUILT_IN_PAGE_KEYS = ['id', 'kind', 'page', 'title', 'navigation-label', 'description', 'icon', 'class-name', 'filter-bar', 'definition'];
+export const CUSTOM_PAGE_KEYS = ['id', 'kind', 'title', 'navigation-label', 'description', 'icon', 'class-name', 'filter-bar', 'route', 'views', 'sections'];
 export const PAGE_ROUTE_KEYS = ['hash-query-parameter'];
+export const PAGE_FILTER_BAR_KEYS = ['filters', 'time-range', 'export'];
 
 export const VIEW_KEYS = ['id', 'title', 'description', 'data', 'mark', 'element', 'chart', 'layout', 'disclosure', 'controls', 'empty-message', 'encoding'];
 export const VIEW_DATA_KEYS = ['source', 'sources', 'scope', 'time', 'filters', 'limit', 'order-by', 'source-metadata'];
@@ -261,7 +262,7 @@ export const SOURCE_VALUES = [
 export const SOURCE_FIELDS = {
   organizations: ['organization', 'organization-name', 'observed-at', 'organization-link'],
   repositories: ['organization', 'repository', 'repository-name', 'rollout-mode', 'observed-at', 'organization-link', 'repository-link'],
-  workflows: ['organization', 'repository', 'package', 'package-name', 'workflow', 'workflow-name', 'workflow-role', 'workflow-active', 'rollout-mode', 'max-ai-credits', 'package-aic-allowance', 'package-worker-count', 'inventory-ready', 'observed-at', 'organization-link', 'repository-link', 'workflow-link'],
+  workflows: ['organization', 'repository', 'package', 'package-name', 'workflow', 'workflow-name', 'workflow-role', 'workflow-active', 'rollout-mode', 'max-ai-credits', 'package-aic-allowance', 'package-worker-count', 'package-inventory-warnings', 'inventory-ready', 'observed-at', 'organization-link', 'repository-link', 'workflow-link'],
   runs: ['organization', 'repository', 'workflow', 'run', 'run-title', 'event', 'started-at', 'ended-at', 'run-status', 'run-conclusion', 'rollout-mode', 'engine', 'requested-model', 'resolved-model', 'organization-link', 'repository-link', 'workflow-link', 'run-link'],
   experiments: ['experiment', 'experiment-name', 'observed-at'],
   'experiment-assignments': ['organization', 'repository', 'workflow', 'run', 'experiment', 'variant', 'observed-at'],

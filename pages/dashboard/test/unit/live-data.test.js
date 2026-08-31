@@ -5,11 +5,15 @@ import { join, resolve } from "node:path";
 import { describe, expect, it } from "vitest";
 
 describe("live Dashboard Language sources", () => {
-  it("loads generated sources in the browser preview when they are available", () => {
+  it("loads generated sources by default and requires an explicit fixture opt-in", () => {
     const preview = readFileSync(resolve("index.html"), "utf8");
 
     expect(preview).toContain('fetch("./sources.json")');
     expect(preview).toContain("sources = await liveSourcesResponse.json()");
+    expect(preview).toContain('has("fixtures")');
+    expect(preview).toContain("throw new Error(`Unable to load sources.json:");
+    expect(preview).toContain("Unable to load live dashboard data:");
+    expect(preview).not.toContain("Retain the illustrative fixture data");
   });
 
   it("maps the operations report inputs into canonical logical sources", () => {
@@ -93,6 +97,15 @@ describe("live Dashboard Language sources", () => {
           warning: true,
         }],
       },
+      inventory: {
+        workflows: [],
+        bundles: [{
+          workflow: ".github/workflows/dependabot.md",
+          compiled: false,
+          missingWorkers: ["dependabot-worker"],
+          workers: [],
+        }],
+      },
     };
     for (const [name, value] of Object.entries(inputs)) {
       writeFileSync(join(temporaryDirectory, `${name}.json`), JSON.stringify(value));
@@ -108,6 +121,7 @@ describe("live Dashboard Language sources", () => {
           REPORT_AIC_USAGE: join(temporaryDirectory, "usage.json"),
           REPORT_OPERATIONAL_VALUES: join(temporaryDirectory, "operationalValues.json"),
           REPORT_RECORDS: join(temporaryDirectory, "report.json"),
+          REPORT_INVENTORY: join(temporaryDirectory, "inventory.json"),
           REPORT_DASHBOARD_SOURCES: output,
         },
       });
@@ -117,6 +131,7 @@ describe("live Dashboard Language sources", () => {
         organization: "githubnext",
         repository: "central-agentic-ops",
         package: "dependabot",
+        "package-inventory-warnings": 2,
         "workflow-active": "true",
         "rollout-mode": "review",
       });

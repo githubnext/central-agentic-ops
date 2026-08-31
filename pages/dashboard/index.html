@@ -39,7 +39,7 @@
         dashboard: dashboardSchema.dashboard,
       };
 
-      let sources = {
+      const fixtureSources = {
         organizations: {
           source: "organizations",
           rows: [
@@ -219,13 +219,20 @@
         },
       };
 
-      try {
-        const liveSourcesResponse = await fetch("./sources.json");
-        if (liveSourcesResponse.ok) {
+      let sources = fixtureSources;
+      if (!new URLSearchParams(window.location.search).has("fixtures")) {
+        try {
+          const liveSourcesResponse = await fetch("./sources.json");
+          if (!liveSourcesResponse.ok) {
+            throw new Error(`Unable to load sources.json: ${liveSourcesResponse.status}`);
+          }
           sources = await liveSourcesResponse.json();
+        } catch (error) {
+          const message = error instanceof Error ? error.message : String(error);
+          const failure = new Error(`Unable to load live dashboard data: ${message}`, { cause: error });
+          document.querySelector("#root").textContent = failure.message;
+          throw failure;
         }
-      } catch {
-        // Retain the illustrative fixture data when the generated report is unavailable.
       }
 
       document.querySelector("#root").append(renderDashboard({ document: dashboardDocument, sources }));

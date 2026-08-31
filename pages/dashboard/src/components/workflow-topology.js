@@ -7,19 +7,16 @@ import { octicon } from '../octicons.js';
 import { formatCountNoun } from './count-formatters.js';
 import { findLink } from './link-content.js';
 import { renderLinkedText } from './linked-text.js';
-import { renderPageSection, renderViewSectionChrome } from './view-chrome.js';
 
 /**
  * @param {string} pageId
  * @param {string} title
- * @param {string} sourceName
+ * @param {string | undefined} description
  * @param {Array<Record<string, unknown>>} rows
- * @param {import('../presenter.js').SourceMetadata} metadata
- * @param {string[]} contextDetails
  * @param {'h3'|'h4'} [headingTag]
  * @returns {HTMLElement}
  */
-export function renderWorkflowTopology(pageId, title, sourceName, rows, metadata, contextDetails, headingTag = 'h3') {
+export function renderWorkflowTopology(pageId, title, description, rows, headingTag = 'h3') {
   const packageRows = rows.filter((row) => row['workflow-role'] !== 'standalone' && typeof row.package === 'string');
   const standaloneRows = rows.filter((row) => row['workflow-role'] === 'standalone');
   /** @type {Map<string, Array<Record<string, unknown>>>} */
@@ -32,14 +29,31 @@ export function renderWorkflowTopology(pageId, title, sourceName, rows, metadata
   }
 
   const packages = [...groupedPackages.entries()].sort(([left], [right]) => left.localeCompare(right));
-  return renderPageSection(pageId, title, [
-    ...renderViewSectionChrome(sourceName, metadata, contextDetails),
+  const headingId = `${pageId}-workflow-topology-heading`;
+  return h(
+    'section',
+    {
+      className: 'page-section workflow-topology-overview',
+      tabIndex: 0,
+      'aria-labelledby': headingId
+    },
     h(
-      'dl',
-      { className: 'workflow-topology-summary', 'aria-label': 'Workflow topology summary' },
-      renderTopologyMetric('Packages', packages.length),
-      renderTopologyMetric('Central workflows', packageRows.length),
-      renderTopologyMetric('Standalone workflows', standaloneRows.length)
+      'div',
+      { className: 'section-heading' },
+      h(
+        'div',
+        null,
+        h('span', { className: 'scope-kicker' }, 'Expected structure'),
+        h(headingTag, { id: headingId }, title),
+        description ? h('p', null, description) : null
+      ),
+      h(
+        'dl',
+        { className: 'workflow-topology-summary', 'aria-label': 'Workflow topology summary' },
+        renderTopologyMetric('Packages', packages.length),
+        renderTopologyMetric('Package workflows', packageRows.length),
+        renderTopologyMetric('Standalone workflows', standaloneRows.length)
+      )
     ),
     h(
       'div',
@@ -91,7 +105,7 @@ export function renderWorkflowTopology(pageId, title, sourceName, rows, metadata
         renderStandaloneWorkflows(standaloneRows)
       )
     )
-  ], headingTag);
+  );
 }
 
 /**

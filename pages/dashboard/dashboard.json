@@ -59,6 +59,14 @@
         "icon": "meter",
         "class-name": "cost-page",
         "description": "Measured AI Credit allocation and efficiency evidence for the configured githubnext/central-agentic-ops repository.",
+        "filter-bar": {
+          "filters": [
+            "mode:review",
+            "mode:live"
+          ],
+          "time-range": "All recorded",
+          "export": true
+        },
         "views": [
           {
             "id": "cost-measured-usage",
@@ -436,7 +444,8 @@
                 "sources": [
                   "workflows",
                   "runs",
-                  "usage"
+                  "usage",
+                  "findings"
                 ]
               },
               "mark": "element",
@@ -463,6 +472,7 @@
         "page": "workflows",
         "title": "Workflows",
         "icon": "codescan",
+        "description": "Inspect central package topology and repository-owned GitHub Agentic Workflows across the configured githubnext/central-agentic-ops repository.",
         "definition": {
           "data-state": {
             "availability": true,
@@ -472,7 +482,8 @@
           "views": [
             {
               "id": "workflows-workflows-source",
-              "title": "Workflow topology",
+              "title": "Definition topology",
+              "description": "Declared package relationships provide context for observed episodes; they do not assert that a dispatch occurred.",
               "data": {
                 "sources": [
                   "workflows"

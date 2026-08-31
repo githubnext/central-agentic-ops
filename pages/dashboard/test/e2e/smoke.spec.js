@@ -74,6 +74,11 @@ function buildPresenterModuleUrl() {
     .replace("'./run-classification.js'", JSON.stringify(runClassificationModuleUrl));
   const packagesViewModuleUrl = `data:text/javascript;charset=utf-8,${encodeURIComponent(packagesViewSource)}`;
 
+  const filterBarSource = readFileSync(new URL('../../src/components/filter-bar.js', import.meta.url), 'utf8')
+    .replace("'../dom.js'", JSON.stringify(domModuleUrl))
+    .replace("'../octicons.js'", JSON.stringify(octiconsModuleUrl));
+  const filterBarModuleUrl = `data:text/javascript;charset=utf-8,${encodeURIComponent(filterBarSource)}`;
+
   const linkContentSource = readFileSync(new URL('../../src/components/link-content.js', import.meta.url), 'utf8')
     .replace("'../dom.js'", JSON.stringify(domModuleUrl))
     .replace("'../octicons.js'", JSON.stringify(octiconsModuleUrl));
@@ -174,6 +179,7 @@ function buildPresenterModuleUrl() {
     .replace("'./components/chart-elements.js'", JSON.stringify(chartElementsModuleUrl))
     .replace("'./components/ui-elements.js'", JSON.stringify(uiElementsModuleUrl))
     .replace("'./components/data-view.js'", JSON.stringify(dataViewModuleUrl))
+    .replace("'./components/filter-bar.js'", JSON.stringify(filterBarModuleUrl))
     .replace("'./overview-data.js'", JSON.stringify(overviewDataModuleUrl))
     .replace("'./view-formatters.js'", JSON.stringify(viewFormattersModuleUrl));
 
@@ -443,8 +449,8 @@ test('DLS-PAGE-014 DLS-PAGE-015 built-in packages page renders report-style mode
         workflows: {
           source: 'workflows',
           rows: [
-            { package: 'ambient-context', 'package-name': 'Ambient Context', workflow: '.github/workflows/ambient-context.md', 'workflow-role': 'orchestrator', 'rollout-mode': 'review', 'max-ai-credits': 250, 'package-aic-allowance': 1050 },
-            { package: 'aw-maintenance', 'package-name': 'AW Maintenance', workflow: '.github/workflows/aw-maintenance.md', 'workflow-role': 'orchestrator', 'rollout-mode': 'review', 'max-ai-credits': 250, 'package-aic-allowance': 1250 }
+            { package: 'ambient-context', 'package-name': 'Ambient Context', workflow: '.github/workflows/ambient-context.md', 'workflow-role': 'orchestrator', 'rollout-mode': 'review', 'max-ai-credits': 250, 'package-aic-allowance': 1050, 'package-inventory-warnings': 0 },
+            { package: 'aw-maintenance', 'package-name': 'AW Maintenance', workflow: '.github/workflows/aw-maintenance.md', 'workflow-role': 'orchestrator', 'rollout-mode': 'review', 'max-ai-credits': 250, 'package-aic-allowance': 1250, 'package-inventory-warnings': 1 }
           ],
           metadata
         },
@@ -462,6 +468,13 @@ test('DLS-PAGE-014 DLS-PAGE-015 built-in packages page renders report-style mode
             { workflow: '.github/workflows/aw-maintenance.md', run: '1', invocation: 'a', aic: 23.9, 'rollout-mode': 'review' }
           ],
           metadata: { ...metadata, completeness: 'partial' }
+        },
+        findings: {
+          source: 'findings',
+          rows: [
+            { workflow: '.github/workflows/aw-maintenance.md', run: '2', finding: 'warning-1', 'finding-kind': 'authored-warning', 'observed-at': '2026-08-29T10:05:00Z' }
+          ],
+          metadata
         }
       };
 
@@ -474,12 +487,17 @@ test('DLS-PAGE-014 DLS-PAGE-015 built-in packages page renders report-style mode
   await expect(page.locator('.package-utilization-card')).toHaveCount(2);
   await expect(page.locator('[data-package-id="aw-maintenance"]')).toContainText('9.6%');
   await expect(page.locator('[data-package-id="ambient-context"]')).toContainText('No AIC usage was reported');
+  await expect(page.getByRole('heading', { name: 'All output by package', level: 3 })).toBeVisible();
+  const awMaintenanceSummary = page.locator('.package-summary-table tbody tr').filter({ hasText: 'AW Maintenance' });
+  await expect(awMaintenanceSummary).toContainText('AW Maintenance');
+  await expect(awMaintenanceSummary.locator('td')).toHaveText(['2', '1', '1', '1', '1', '23.9', 'Aug 29, 2026, 10:05 AM']);
   await expect(page.getByRole('heading', { name: 'All runs over time', level: 3 })).toBeVisible();
   await expect(page.locator('.package-chart-point')).toHaveCount(30);
 
   await page.getByRole('tab', { name: 'All' }).focus();
   await page.keyboard.press('ArrowRight');
   await expect(page.getByRole('tab', { name: 'Review' })).toHaveAttribute('aria-selected', 'true');
+  await expect(awMaintenanceSummary.locator('td')).toHaveText(['1', '1', '0', '0', '1', '23.9', 'Aug 28, 2026, 10:00 AM']);
   await expect(page.getByRole('tab', { name: 'Review' })).toBeFocused();
 
   await page.getByRole('tab', { name: 'Live' }).click();
@@ -493,6 +511,86 @@ test('DLS-PAGE-014 DLS-PAGE-015 built-in packages page renders report-style mode
   const secondCard = await cards.nth(1).boundingBox();
   expect(firstCard).not.toBeNull();
   expect(secondCard?.y).toBeGreaterThan(firstCard?.y ?? 0);
+});
+
+test('DLS-PAGE-017 renders a responsive JSON-configured filter bar and page-source export', async ({ page }) => {
+  const presenterModuleUrl = buildPresenterModuleUrl();
+
+  await page.setContent(`
+    <div id="root"></div>
+    <script type="module">
+      import { renderDashboard } from ${JSON.stringify(presenterModuleUrl)};
+
+      const dashboardDocument = {
+        languageVersion: '0.1.0',
+        dashboard: {
+          id: 'filter-bar-render',
+          title: 'Central Agentic Ops',
+          pages: [{
+            id: 'cost',
+            kind: 'custom',
+            title: 'Cost & efficiency',
+            'filter-bar': {
+              filters: ['mode:review', 'mode:live'],
+              'time-range': 'All recorded',
+              export: true
+            },
+            views: [{
+              id: 'usage-count',
+              data: { source: 'usage' },
+              mark: 'metric',
+              encoding: { value: { field: 'invocation', aggregate: 'count' } }
+            }]
+          }]
+        }
+      };
+      const sources = {
+        usage: {
+          source: 'usage',
+          rows: [{ invocation: 'usage-1', aic: 2 }],
+          metadata: {
+            'source-id': 'usage-fixture',
+            'source-kind': 'fixture',
+            'as-of': '2026-08-31T16:00:00Z',
+            'retrieved-at': '2026-08-31T16:01:00Z',
+            completeness: 'complete',
+            freshness: 'fresh',
+            availability: 'available'
+          }
+        }
+      };
+
+      document.querySelector('#root').append(renderDashboard({ document: dashboardDocument, sources }));
+    </script>
+  `);
+
+  const filterBar = page.getByLabel('Dashboard filters');
+  await expect(filterBar).toBeVisible();
+  await expect(filterBar.getByLabel('Current filters')).toContainText('Filter2mode:review mode:live');
+  await expect(filterBar.getByText('All recorded')).toBeVisible();
+  const exportLink = filterBar.getByRole('link', { name: 'Export JSON' });
+  await expect(exportLink).toHaveAttribute('download', 'cost.json');
+  const exportPayload = await exportLink.evaluate((link) => {
+    const href = link.getAttribute('href') ?? '';
+    return JSON.parse(decodeURIComponent(href.slice(href.indexOf(',') + 1)));
+  });
+  expect(exportPayload).toMatchObject({
+    page: 'cost',
+    filters: ['mode:review', 'mode:live'],
+    sources: {
+      usage: {
+        source: 'usage',
+        rows: [{ invocation: 'usage-1', aic: 2 }],
+        metadata: { 'source-id': 'usage-fixture' }
+      }
+    }
+  });
+
+  await page.setViewportSize({ width: 400, height: 900 });
+  const filterControlBox = await filterBar.locator('.filter-control').boundingBox();
+  const timeRangeBox = await filterBar.locator('.scope-period').boundingBox();
+  expect(filterControlBox).not.toBeNull();
+  expect(timeRangeBox?.y).toBeGreaterThan(filterControlBox?.y ?? 0);
 });
 
 test('DLS-PAGE-009 DLS-PAGE-014 built-in evals page renders distinguishable definitions and observations, observed subject, YES/NO/UNKNOWN result, evaluation model when available, time, provenance, and independent data state in browser', async ({ page }) => {

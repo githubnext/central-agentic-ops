@@ -12,6 +12,7 @@ import { toNumber } from './view-formatters.js';
 import { findLink } from './components/link-content.js';
 import { elementHandlesEmptyRows, renderUiElement } from './components/ui-elements.js';
 import { renderDataView } from './components/data-view.js';
+import { renderFilterBar } from './components/filter-bar.js';
 import { deriveOverviewSources } from './overview-data.js';
 
 /**
@@ -31,11 +32,15 @@ import { deriveOverviewSources } from './overview-data.js';
  */
 
 /**
- * @typedef {{ id: string, kind: 'built-in', page: string, title?: string, ['navigation-label']?: string, description?: string, icon?: string, ['class-name']?: string, definition?: { views?: Array<unknown>, sections?: PresentablePageSection[], ['data-state']?: Record<string, boolean> } }} PresentableBuiltInPage
+ * @typedef {{ filters: string[], ['time-range']?: string, export?: boolean }} PresentableFilterBar
  */
 
 /**
- * @typedef {{ id: string, kind: 'custom', title?: string, ['navigation-label']?: string, description?: string, icon?: string, ['class-name']?: string, route?: { ['hash-query-parameter']?: string }, views: unknown[], sections?: PresentablePageSection[] }} PresentableCustomPage
+ * @typedef {{ id: string, kind: 'built-in', page: string, title?: string, ['navigation-label']?: string, description?: string, icon?: string, ['class-name']?: string, ['filter-bar']?: PresentableFilterBar, definition?: { views?: Array<unknown>, sections?: PresentablePageSection[], ['data-state']?: Record<string, boolean> } }} PresentableBuiltInPage
+ */
+
+/**
+ * @typedef {{ id: string, kind: 'custom', title?: string, ['navigation-label']?: string, description?: string, icon?: string, ['class-name']?: string, ['filter-bar']?: PresentableFilterBar, route?: { ['hash-query-parameter']?: string }, views: unknown[], sections?: PresentablePageSection[] }} PresentableCustomPage
  */
 
 /**
@@ -77,6 +82,7 @@ const BUILT_IN_PAGE_PAYLOADS = /** @type {Record<string, PresentableCustomPage>}
         title: page.title,
         description: 'description' in page ? page.description : undefined,
         'class-name': 'class-name' in page ? page['class-name'] : undefined,
+        'filter-bar': 'filter-bar' in page ? page['filter-bar'] : undefined,
         views: page.definition?.views ?? [],
         sections: page.definition && 'sections' in page.definition ? page.definition.sections : undefined
       }
@@ -96,6 +102,7 @@ function getBuiltInPagePayload(page) {
     title: page.title ?? payload?.title,
     description: page.description ?? payload?.description,
     'class-name': page['class-name'] ?? payload?.['class-name'],
+    'filter-bar': page['filter-bar'] ?? payload?.['filter-bar'],
     views: payload?.views ?? [],
     sections: payload?.sections
   };
@@ -446,6 +453,7 @@ function renderCustomPage(page, title, sources, units) {
       'data-page-description': page.description ?? '',
       'data-route-parameter': routeParameter
     },
+    page['filter-bar'] ? renderFilterBar(page.id, page['filter-bar'], pageSources) : null,
     ...(renderedViews.length > 0
       ? [renderHiddenDataStateMetrics(summarizeDataState(pageSources)), renderedContent]
       : [h('p', null, 'No custom views available.')])

@@ -38,8 +38,10 @@ The Packages page renders centrally managed package utilization cards with retai
 
 Named UI elements, navigation icons, and semantic table-cell treatments are declared in dashboard JSON. The presenter dispatches these declarations without inferring UI from page IDs, view IDs, source contents, or field names.
 
+Pages may also declare a JSON-configured `filter-bar` with ordered filter tokens, a time-range label, and a page-source JSON export.
+
 The Value & outcomes page composes the shared summary grid and signal list with generic tables for comparable operational-value observations and the retained grader ledger.
 
-The preview also mirrors the report's interactive transitions for navigation, linked records, and chart-point tooltips while respecting reduced-motion preferences. Its illustrative data includes multiple operational-value observations and linked runs, issues, pull requests, and evidence so chart and link states are visible without live inputs.
+The preview also mirrors the report's interactive transitions for navigation, linked records, and chart-point tooltips while respecting reduced-motion preferences. It loads generated `sources.json` data by default so deployed `/ymao` views stay aligned with `/cao`. Add `?fixtures` when opening the renderer to explicitly use illustrative data with multiple operational-value observations and linked runs, issues, pull requests, and evidence.
 
 The current compliance-suite slice adds machine-readable conformance result records, a passing Appendix A fixture, and failing Appendix C fixtures exercised through a small reusable compliance smoke harness.
