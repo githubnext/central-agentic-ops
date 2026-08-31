@@ -82,6 +82,9 @@ function buildPresenterModuleUrl() {
     .replace("'./attention-rules.json'", JSON.stringify(attentionRulesJsonUrl));
   const attentionRulesModuleUrl = `data:text/javascript;charset=utf-8,${encodeURIComponent(attentionRulesSource)}`;
 
+  const dispatchTypeClassificationSource = readFileSync(new URL('../../src/components/dispatch-type-classification.json', import.meta.url), 'utf8');
+  const dispatchTypeClassificationUrl = `data:application/json;charset=utf-8,${encodeURIComponent(dispatchTypeClassificationSource)}`;
+
   const packagesViewSource = readFileSync(new URL('../../src/components/packages-view.js', import.meta.url), 'utf8')
     .replace("'../dom.js'", JSON.stringify(domModuleUrl))
     .replace("'../view-formatters.js'", JSON.stringify(viewFormattersModuleUrl))
@@ -126,14 +129,6 @@ function buildPresenterModuleUrl() {
     .replace("'../dom.js'", JSON.stringify(domModuleUrl))
     .replace("'../view-formatters.js'", JSON.stringify(viewFormattersModuleUrl));
   const chartElementsModuleUrl = `data:text/javascript;charset=utf-8,${encodeURIComponent(chartElementsSource)}`;
-
-  const dispatchCatalogSource = readFileSync(new URL('../../src/components/dispatch-catalog.js', import.meta.url), 'utf8')
-    .replace("'../dom.js'", JSON.stringify(domModuleUrl))
-    .replace("'./badge.js'", JSON.stringify(badgeModuleUrl))
-    .replace("'./link-content.js'", JSON.stringify(linkContentModuleUrl))
-    .replace("'./linked-text.js'", JSON.stringify(linkedTextModuleUrl))
-    .replace("'./ui-primitives.js'", JSON.stringify(uiPrimitivesModuleUrl));
-  const dispatchCatalogModuleUrl = `data:text/javascript;charset=utf-8,${encodeURIComponent(dispatchCatalogSource)}`;
 
   const repositoryWorkflowsSource = readFileSync(new URL('../../src/components/repository-workflows.js', import.meta.url), 'utf8')
     .replace("'../dom.js'", JSON.stringify(domModuleUrl))
@@ -180,7 +175,8 @@ function buildPresenterModuleUrl() {
   const outcomeDetailModuleUrl = `data:text/javascript;charset=utf-8,${encodeURIComponent(outcomeDetailSource)}`;
 
   const runtimeDataSource = readFileSync(new URL('../../src/runtime-data.js', import.meta.url), 'utf8')
-    .replace("'./components/count-formatters.js'", JSON.stringify(countFormattersModuleUrl));
+    .replace("'./components/count-formatters.js'", JSON.stringify(countFormattersModuleUrl))
+    .replace("'./components/dispatch-type-classification.json'", JSON.stringify(dispatchTypeClassificationUrl));
   const runtimeDataModuleUrl = `data:text/javascript;charset=utf-8,${encodeURIComponent(runtimeDataSource)}`;
 
   const executionElementsSource = readFileSync(new URL('../../src/components/execution-elements.js', import.meta.url), 'utf8')
@@ -207,8 +203,7 @@ function buildPresenterModuleUrl() {
     .replace("'./execution-elements.js'", JSON.stringify(executionElementsModuleUrl))
     .replace("'./ui-primitives.js'", JSON.stringify(uiPrimitivesModuleUrl))
     .replace("'./view-chrome.js'", JSON.stringify(viewChromeModuleUrl))
-    .replace("'./workflow-topology.js'", JSON.stringify(workflowTopologyModuleUrl))
-    .replace("'./dispatch-catalog.js'", JSON.stringify(dispatchCatalogModuleUrl));
+    .replace("'./workflow-topology.js'", JSON.stringify(workflowTopologyModuleUrl));
   const uiElementsModuleUrl = `data:text/javascript;charset=utf-8,${encodeURIComponent(uiElementsSource)}`;
 
   const dataViewSource = readFileSync(new URL('../../src/components/data-view.js', import.meta.url), 'utf8')
