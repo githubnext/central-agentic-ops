@@ -14,7 +14,7 @@ const FAILURE_CONCLUSIONS = new Set(['failure', 'startup-failure', 'timed-out'])
 /**
  * @param {import('./ui-elements.js').ElementRenderContext} context
  */
-export function renderSignalList(context) {
+export function renderExecutionSignalList(context) {
   const model = executionModel(context);
   const signals = [];
 

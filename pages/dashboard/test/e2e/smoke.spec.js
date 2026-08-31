@@ -122,6 +122,7 @@ function buildPresenterModuleUrl() {
     .replace("'../octicons.js'", JSON.stringify(octiconsModuleUrl))
     .replace("'../view-formatters.js'", JSON.stringify(viewFormattersModuleUrl))
     .replace("'./badge.js'", JSON.stringify(badgeModuleUrl))
+    .replace("'./link-content.js'", JSON.stringify(linkContentModuleUrl))
     .replace("'./packages-view.js'", JSON.stringify(packagesViewModuleUrl))
     .replace("'./repository-workflows.js'", JSON.stringify(repositoryWorkflowsModuleUrl))
     .replace("'./execution-elements.js'", JSON.stringify(executionElementsModuleUrl))

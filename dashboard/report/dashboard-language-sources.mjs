@@ -196,6 +196,7 @@ function findingRows(records) {
     workflow: record.workflowPath?.replace(/\.lock\.yml$/, ".md") || record.workflow || "",
     run: String(record.runUrl?.match(/\/runs\/(\d+)/)?.[1] || ""),
     finding: record.id,
+    "finding-kind": record.warning ? "authored-warning" : "record",
     "finding-severity": record.warning ? "medium" : "informational",
     "finding-status": record.state === "open" ? "open" : record.state === "closed" ? "resolved" : "unknown",
     "finding-summary": record.summary || record.title,

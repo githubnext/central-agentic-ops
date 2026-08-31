@@ -23,11 +23,13 @@ export const VIEW_ELEMENT_VALUES = [
   'meter-list',
   'attention-list',
   'record-cards',
+  'summary-grid',
+  'signal-list',
   'package-activity',
   'package-run-trend',
   'dispatch-catalog',
   'repository-workflows',
-  'signal-list',
+  'execution-signal-list',
   'execution-episodes',
   'workflow-topology'
 ];
@@ -108,7 +110,7 @@ export const FILTER_DIMENSION_VALUES = [
 ];
 
 export const PAGE_KIND_VALUES = ['built-in', 'custom'];
-export const PAGE_ICON_VALUES = ['server', 'workflow', 'play', 'repo', 'package', 'issue', 'graph'];
+export const PAGE_ICON_VALUES = ['server', 'workflow', 'play', 'repo', 'package', 'issue', 'graph', 'shield'];
 
 export const BUILT_IN_PAGE_VALUES = [
   'overview',
@@ -240,7 +242,9 @@ export const SOURCE_VALUES = [
   'overview-execution-health',
   'overview-attention',
   'overview-managed-packages',
-  'overview-package-utilization'
+  'overview-package-utilization',
+  'security-summary',
+  'security-signals'
 ];
 
 export const SOURCE_FIELDS = {
@@ -256,8 +260,10 @@ export const SOURCE_FIELDS = {
   'eval-observations': ['organization', 'repository', 'workflow', 'run', 'experiment', 'eval', 'eval-result', 'requested-model', 'resolved-model', 'rollout-mode', 'observed-at'],
   usage: ['organization', 'repository', 'workflow', 'run', 'invocation', 'engine', 'requested-model', 'resolved-model', 'rollout-mode', 'input-tokens', 'output-tokens', 'cache-read-tokens', 'cache-write-tokens', 'reasoning-tokens', 'aic', 'observed-at', 'organization-link', 'repository-link', 'workflow-link', 'run-link'],
   outcomes: ['organization', 'repository', 'workflow', 'run', 'safe-output', 'outcome-state', 'evidence-strength', 'observed-at', 'issue-link', 'pull-request-link', 'run-link', 'external-link', 'organization-link', 'repository-link', 'workflow-link'],
-  findings: ['organization', 'repository', 'workflow', 'run', 'finding', 'finding-severity', 'finding-status', 'finding-summary', 'observed-at', 'issue-link', 'pull-request-link', 'run-link', 'external-link', 'organization-link', 'repository-link', 'workflow-link'],
-  'operational-values': ['organization', 'repository', 'workflow', 'run', 'experiment', 'operational-case', 'evaluator-digest', 'rollout-mode', 'operational-value', 'operational-value-definition', 'requested-evidence-at', 'evidence-cutoff', 'maturity-at', 'maturity-status', 'delta-from-baseline', 'observed-at', 'evidence-link', 'organization-link', 'repository-link', 'workflow-link', 'run-link']
+  findings: ['organization', 'repository', 'workflow', 'run', 'finding', 'finding-kind', 'finding-severity', 'finding-status', 'finding-summary', 'observed-at', 'issue-link', 'pull-request-link', 'run-link', 'external-link', 'organization-link', 'repository-link', 'workflow-link'],
+  'operational-values': ['organization', 'repository', 'workflow', 'run', 'experiment', 'operational-case', 'evaluator-digest', 'rollout-mode', 'operational-value', 'operational-value-definition', 'requested-evidence-at', 'evidence-cutoff', 'maturity-at', 'maturity-status', 'delta-from-baseline', 'observed-at', 'evidence-link', 'organization-link', 'repository-link', 'workflow-link', 'run-link'],
+  'security-summary': ['label', 'value'],
+  'security-signals': ['priority', 'count', 'tone', 'icon', 'kind', 'title', 'detail', 'evidence', 'action', 'navigation-page', 'run-link', 'external-link']
 };
 
 export const ROLLOUT_MODE_VALUES = ['review', 'live', 'unknown'];

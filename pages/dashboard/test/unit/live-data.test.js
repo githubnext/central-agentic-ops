@@ -129,6 +129,7 @@ describe("live Dashboard Language sources", () => {
       expect(sources.usage.rows[0]).toMatchObject({ run: "42", aic: 2.5 });
       expect(sources.findings.rows[0]).toMatchObject({
         finding: "githubnext/central-agentic-ops-issue-1",
+        "finding-kind": "authored-warning",
         "finding-severity": "medium",
         "finding-status": "open",
       });

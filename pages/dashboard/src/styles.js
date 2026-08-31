@@ -426,6 +426,33 @@ h3 { margin: 16px 0 8px; font-size: 1rem; font-weight: 600; }
 .attention-success .attention-icon { color: var(--success); }
 .attention-item strong { font-size: .875rem; }
 .attention-item p { margin: 2px 0 0; color: var(--muted); font-size: .8125rem; }
+.security-page .layout-section { padding: 0; border: 0; background: transparent; }
+.security-page .layout-section-header h3 { font-size: 1.25rem; }
+.summary-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 1px; margin: 0; overflow: hidden; border: 1px solid var(--border); border-radius: 6px 6px 0 0; background: var(--border); }
+.summary-grid > div { min-width: 0; padding: 13px 15px; background: var(--canvas-subtle); }
+.summary-grid dt { color: var(--muted); font-size: .6875rem; font-weight: 600; text-transform: uppercase; }
+.summary-grid dd { margin: 2px 0 0; font-size: 1.25rem; font-weight: 600; font-variant-numeric: tabular-nums; }
+.signal-list-region { position: relative; }
+.signal-count { position: absolute; right: 0; bottom: calc(100% + 34px); margin: 0; color: var(--muted); font-size: .75rem; font-weight: 600; }
+.signal-boundary-note { margin: 0; padding: 8px 15px; border: 1px solid var(--border); border-top: 0; color: var(--muted); font-size: .6875rem; }
+.signal-list { margin: 0; padding: 0; overflow: hidden; border: 1px solid var(--border); border-top: 0; border-radius: 0 0 6px 6px; list-style: none; }
+.signal-list > li + li { border-top: 1px solid var(--border-muted); }
+.signal-item > :is(a, div) { min-height: 68px; display: grid; grid-template-columns: 24px 20px minmax(0, 1fr) minmax(150px, auto); align-items: center; gap: 10px; padding: 9px 14px; color: var(--fg); text-decoration: none; }
+.signal-item > a:hover { background: var(--canvas-subtle); }
+.signal-item > a:focus-visible { outline: 2px solid var(--focus); outline-offset: -2px; }
+.signal-rank { color: var(--muted); font-size: .6875rem; font-variant-numeric: tabular-nums; text-align: center; }
+.signal-icon { width: 20px; display: grid; place-items: center; color: var(--attention); }
+.signal-informational .signal-icon { color: var(--accent); }
+.signal-copy { min-width: 0; display: grid; }
+.signal-copy > span { color: var(--muted); font-size: .625rem; font-weight: 600; text-transform: uppercase; }
+.signal-copy > strong, .signal-copy > small { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.signal-copy > strong { font-size: .8125rem; }
+.signal-copy > small { color: var(--muted); font-size: .75rem; }
+.signal-evidence { min-width: 0; display: grid; justify-items: end; text-align: right; }
+.signal-evidence strong { font-size: .75rem; }
+.signal-evidence small { color: var(--muted); font-size: .6875rem; }
+.signal-clear { min-height: 68px; display: grid; grid-template-columns: 20px minmax(0, 1fr); align-items: center; gap: 10px; padding: 9px 14px; }
+.signal-clear .signal-icon { color: var(--success); }
 .managed-packages > header { min-height: 72px; padding: 10px 0; }
 .managed-package-list { display: grid; gap: 10px; }
 .managed-package-card { overflow: hidden; border: 1px solid var(--border); border-radius: 6px; background: var(--canvas); }
@@ -582,6 +609,12 @@ footer { padding: 20px 24px; border-top: 1px solid var(--border); color: var(--m
   .control-plane-heading .scope-kicker { display: none; }
   .control-plane-heading p { font-size: .75rem; }
   .control-plane-vitals { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .summary-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .signal-item > :is(a, div) { grid-template-columns: 20px minmax(0, 1fr); }
+  .signal-rank { display: none; }
+  .signal-copy { grid-column: 2; }
+  .signal-copy > strong, .signal-copy > small { overflow: visible; white-space: normal; }
+  .signal-evidence { grid-column: 2; justify-items: start; text-align: left; }
   .control-plane-vitals > div { padding: 10px 12px; }
   .control-plane-vitals p { min-height: 0; }
   .execution-health-heading { align-items: flex-start; flex-direction: column; gap: 2px; }
@@ -601,6 +634,7 @@ footer { padding: 20px 24px; border-top: 1px solid var(--border); color: var(--m
 }
 @media (max-width: 420px) {
   .data-state-summary, .metrics { grid-template-columns: 1fr; }
+  .summary-grid { grid-template-columns: 1fr; }
   .pie-chart-layout { grid-template-columns: 1fr; }
   .workflow-topology-summary { grid-template-columns: 1fr; }
   .package-topology-header { grid-template-columns: 28px minmax(0, 1fr); }
