@@ -456,10 +456,7 @@ function isFiniteNumber(value) {
  */
 function buildDomainAttentionRows(input) {
       const runTelemetryAvailable = input.sources.runs?.metadata?.availability === 'available';
-      const warningOutputs = input.findings.filter((row) =>
-        String(row['finding-status']) === 'open'
-        && !['informational', 'unknown'].includes(String(row['finding-severity']))
-      ).length;
+      const warningOutputs = input.findings.filter(isAuthoredWarning).length;
       const inventoryGaps = input.workflows.filter((row) => row['inventory-ready'] === false).length;
       const openOutputs = input.outcomes.filter((row) => String(row['outcome-state']) === 'pending').length;
       const orchestratorPaths = new Set(input.workflows

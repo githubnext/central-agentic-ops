@@ -194,7 +194,13 @@ function renderDomainAttentionElement(context) {
   return h(
     'section',
     { className: 'overview-observability', 'aria-labelledby': headingId },
-    renderSectionHeading('Current decision window', headingId, context.title, context.description, '', 'h2'),
+    renderSectionHeading({
+      kicker: 'Current decision window',
+      id: headingId,
+      title: context.title,
+      description: context.description,
+      headingTag: 'h2'
+    }),
     h(
       'div',
       { className: 'attention-domain-grid' },
