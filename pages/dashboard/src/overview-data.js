@@ -174,7 +174,7 @@ function buildValueSignals(input) {
       icon: 'play',
       kind: 'Maturity pending',
       title: 'Outcome evidence is not mature',
-      detail: `${formatNumber(interim.length)} observation${interim.length === 1 ? ' has' : 's have'} not reached its maturity time`,
+      detail: `${formatNumber(interim.length)} observation${interim.length === 1 ? ' has not reached its' : 's have not reached their'} maturity time`,
       evidence: 'Re-evaluation due',
       action: 'Review observations'
     });
