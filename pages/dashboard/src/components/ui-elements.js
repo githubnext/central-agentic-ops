@@ -8,6 +8,7 @@ import { formatNumber } from '../view-formatters.js';
 import { renderModeBadge } from './badge.js';
 import { renderPackagesView, renderPackageRunTrend } from './packages-view.js';
 import { renderDispatchCatalog } from './dispatch-catalog.js';
+import { renderRepositoryWorkflows } from './repository-workflows.js';
 import { renderWorkflowTopology } from './workflow-topology.js';
 
 /**
@@ -18,6 +19,8 @@ import { renderWorkflowTopology } from './workflow-topology.js';
  *   sourceNames: string[],
  *   sources: Record<string, import('../presenter.js').LogicalSourceInput>,
  *   contextDetails: string[],
+ *   scope?: Record<string, unknown>,
+ *   routeParameter?: string,
  *   headingTag: 'h3'|'h4'
  * }} ElementRenderContext
  */
@@ -31,6 +34,7 @@ const ELEMENT_RENDERERS = new Map([
   ['package-activity', ({ sources, pageId }) => renderPackagesView(sources, pageId)],
   ['package-run-trend', ({ sources, pageId }) => renderPackageRunTrend(sources, pageId)],
   ['dispatch-catalog', renderDispatchCatalog],
+  ['repository-workflows', renderRepositoryWorkflows],
   ['workflow-topology', ({ pageId, title, sourceNames, sources, contextDetails, headingTag }) => {
     const sourceName = sourceNames[0];
     const source = sources[sourceName];
@@ -39,7 +43,7 @@ const ELEMENT_RENDERERS = new Map([
   }]
 ]);
 
-const EMPTY_AWARE_ELEMENTS = new Set(['status-summary', 'meter-list', 'attention-list', 'record-cards', 'dispatch-catalog']);
+const EMPTY_AWARE_ELEMENTS = new Set(['status-summary', 'meter-list', 'attention-list', 'record-cards', 'dispatch-catalog', 'repository-workflows']);
 
 /**
  * @param {string} name

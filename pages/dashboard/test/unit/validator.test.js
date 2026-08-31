@@ -96,6 +96,66 @@ describe('dashboard document validation', () => {
     }
   });
 
+  it('DLS-VIEW-026 accepts a custom page hash query route and rejects malformed route declarations', () => {
+    const document = JSON.parse(authoritativeDashboardSource);
+    const repositoryPage = document.dashboard.pages.find((/** @type {{ id: string }} */ page) => page.id === 'repository-detail');
+    expect(repositoryPage.route).toEqual({ 'hash-query-parameter': 'repository' });
+    expect(validateDashboardDocument(JSON.stringify(document)).ok).toBe(true);
+
+    repositoryPage.route = { 'hash-query-parameter': 'Repository Name' };
+    const malformed = validateDashboardDocument(JSON.stringify(document));
+    expect(malformed.ok).toBe(false);
+    if (!malformed.ok) {
+      expect(malformed.errors).toContainEqual(expect.objectContaining({
+        code: 'DLS-E005',
+        path: '$.dashboard.pages[3].route.hash-query-parameter'
+      }));
+    }
+
+    repositoryPage.route = { parameter: 'repository' };
+    const unknownKey = validateDashboardDocument(JSON.stringify(document));
+    expect(unknownKey.ok).toBe(false);
+    if (!unknownKey.ok) {
+      expect(unknownKey.errors).toContainEqual(expect.objectContaining({
+        code: 'DLS-E004',
+        path: '$.dashboard.pages[3].route.parameter'
+      }));
+    }
+
+    repositoryPage.route = {};
+    const missingParameter = validateDashboardDocument(JSON.stringify(document));
+    expect(missingParameter.ok).toBe(false);
+    if (!missingParameter.ok) {
+      expect(missingParameter.errors).toContainEqual(expect.objectContaining({
+        code: 'DLS-E003',
+        path: '$.dashboard.pages[3].route.hash-query-parameter'
+      }));
+    }
+
+    repositoryPage.route = 'repository';
+    const invalidShape = validateDashboardDocument(JSON.stringify(document));
+    expect(invalidShape.ok).toBe(false);
+    if (!invalidShape.ok) {
+      expect(invalidShape.errors).toContainEqual(expect.objectContaining({
+        code: 'DLS-E003',
+        path: '$.dashboard.pages[3].route',
+        message: 'route must be a mapping.'
+      }));
+    }
+
+    repositoryPage.route = { 'hash-query-parameter': 'repository' };
+    const builtInPage = document.dashboard.pages.find((/** @type {{ kind: string }} */ page) => page.kind === 'built-in');
+    builtInPage.route = { 'hash-query-parameter': 'repository' };
+    const builtInRoute = validateDashboardDocument(JSON.stringify(document));
+    expect(builtInRoute.ok).toBe(false);
+    if (!builtInRoute.ok) {
+      expect(builtInRoute.errors).toContainEqual(expect.objectContaining({
+        code: 'DLS-E004',
+        path: '$.dashboard.pages[0].route'
+      }));
+    }
+  });
+
   it('validates dashboard.navigation references declared pages exactly once', () => {
     const withUnknownPage = JSON.parse(authoritativeDashboardSource);
     withUnknownPage.dashboard.navigation[2].pages.push('does-not-exist');

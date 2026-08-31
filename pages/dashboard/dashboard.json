@@ -394,6 +394,31 @@
         }
       },
       {
+        "id": "repository-detail",
+        "kind": "custom",
+        "title": "Repository",
+        "description": "Authored GitHub Agentic Workflows owned by this repository.",
+        "icon": "repo",
+        "class-name": "repository-detail-page",
+        "route": {
+          "hash-query-parameter": "repository"
+        },
+        "views": [
+          {
+            "id": "repository-authored-workflows",
+            "title": "Agentic workflows",
+            "data": {
+              "sources": [
+                "workflows"
+              ]
+            },
+            "mark": "element",
+            "element": "repository-workflows",
+            "layout": "full"
+          }
+        ]
+      },
+      {
         "id": "packages",
         "kind": "built-in",
         "page": "packages",
@@ -1278,6 +1303,7 @@
         "pages": [
           "organizations",
           "repositories",
+          "repository-detail",
           "packages",
           "workflows",
           "experiments",

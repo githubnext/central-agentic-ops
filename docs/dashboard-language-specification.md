@@ -15,7 +15,7 @@ sidebar:
 
 ## Abstract
 
-This specification defines a small, declarative, YAML-based language for describing dashboards about organizations, repositories, centrally managed packages, agentic workflows, runs, experiments, graders, evals, usage, findings, and operational value. A dashboard contains built-in pages or custom pages. Custom pages use a constrained Vega-inspired model composed of `data`, `mark`, and mark-specific configuration. This specification defines intrinsic domain semantics, aggregation and filtering rules, provenance and freshness requirements, explicit unavailable-data states, links, conformance, and compliance tests. It does not define data retrieval, implementation architecture, or rendering technology.
+This specification defines a small, declarative, YAML-based language for describing dashboards about organizations, repositories, centrally managed packages, agentic workflows, runs, experiments, graders, evals, usage, findings, and operational value. A dashboard contains built-in pages or custom pages. Custom pages use a constrained Vega-inspired model composed of `data`, `mark`, and mark-specific configuration. This specification defines intrinsic domain semantics, aggregation and filtering rules, route-bound custom-page allocation, provenance and freshness requirements, explicit unavailable-data states, links, conformance, and compliance tests. It does not define data retrieval, implementation architecture, or rendering technology.
 
 ## Status of This Document
 
@@ -51,7 +51,7 @@ Sections containing numbered requirements are normative. Examples, notes, ration
 
 ### 1.1 Purpose
 
-The Dashboard Language provides a portable vocabulary for defining what an agentic-operations dashboard communicates without prescribing how data is fetched, stored, cached, routed, or rendered.
+The Dashboard Language provides a portable vocabulary for defining what an agentic-operations dashboard communicates without prescribing how data is fetched, stored, cached, deployed, or rendered.
 
 ### 1.2 Scope
 
@@ -61,14 +61,15 @@ This specification covers:
 - built-in and custom dashboard pages;
 - intrinsic agentic-operations entities and observations;
 - dimensions, measures, aggregation, scope, time, and filters;
+- constrained hash-query routing for custom pages;
 - provenance, freshness, missing-data semantics, and links; and
 - validation, conformance, and compliance testing.
 
 This specification does not cover:
 
-- arbitrary scripts, joins, formulas, expressions, or templates;
+- arbitrary scripts, joins, formulas, expressions, or content templates;
 - plugins, themes, renderer details, or implementation architecture;
-- deployment, routing, fetching, authentication, caching, or storage;
+- deployment-level routing, fetching, authentication, caching, or storage;
 - campaign or experiment management; or
 - causal inference.
 
@@ -201,7 +202,8 @@ Language keys and enumerated values use canonical kebab-case. Human-readable tit
 | `defaults` | `scope`, `time`, `filters` |
 | Unit definition | `name`, `symbol`, `significant` |
 | Built-in page | `id`, `kind`, `page`, `title`, `description`, `icon`, `class-name`, `definition` |
-| Custom page | `id`, `kind`, `title`, `description`, `icon`, `class-name`, `views`, `sections` |
+| Custom page | `id`, `kind`, `title`, `description`, `icon`, `class-name`, `route`, `views`, `sections` |
+| Custom page `route` | `hash-query-parameter` |
 | View | `id`, `title`, `description`, `data`, `mark`, `element`, `chart`, `layout`, `disclosure`, `encoding` |
 | View `data` | `source` or `sources`, `scope`, `time`, `filters`, `limit`, `order-by` |
 | Field definition | `field`, `type`, `aggregate`, `time-unit`, `title`, `as` (only when `aggregate` is not `none`), `display`, `unit` |
@@ -491,6 +493,28 @@ A custom page contains a non-empty `views` sequence. Each view has one `data` ma
 
 A custom page may also contain a non-empty `sections` sequence that groups its views for presentation. Each section contains a unique canonical `id`, optional `title` and `description`, one `layout` value of `full`, `wide`, or `narrow`, and a non-empty `views` sequence. Section view references must name every view on the page exactly once and preserve view declaration order. An omitted section title defaults from its section ID.
 
+#### 11.1.1 Route-Bound Page Templates
+
+A custom page may declare one constrained route binding:
+
+```yaml
+- id: repository-detail
+  kind: custom
+  title: Repository
+  route:
+    hash-query-parameter: repository
+  views:
+    - id: repository-authored-workflows
+      data:
+        sources: [workflows]
+      mark: element
+      element: repository-workflows
+```
+
+The route selects the page through `#page-<page-id>?<parameter>=<value>`, with the page ID and query components percent-encoded as defined by URI syntax. For `#page-repository-detail?repository=github%2Fgh-aw`, the decoded, trimmed route value is `github/gh-aw`. A non-empty route value allocates that custom-page instance: the presenter uses it as the page title and final breadcrumb label and supplies it as an opaque route binding to route-aware named elements. A missing or empty value leaves the declared page title in place and supplies an empty binding.
+
+This binding is constrained templating, not general string interpolation. A presenter treats the value as text, never as markup or executable content, and does not substitute it into arbitrary document fields. A named element may apply stricter domain validation before using the value for filtering or links.
+
 | Semantic view | `mark` values | Required encoding |
 |---|---|---|
 | Metric | `metric` | `value` |
@@ -502,7 +526,7 @@ Allowed encoding channels are `value`, `columns`, `x`, `y`, `color`, and `href`.
 
 Field `type` values are `nominal`, `ordinal`, `quantitative`, and `temporal`. When omitted, type defaults to the intrinsic field type. A field title defaults to its kebab-case field name with words capitalized. A field may reference one dashboard unit through `unit`; the unit applies to metric, table, and chart value presentation.
 
-The optional table-column field `display` is `text`, `status`, `mode`, or `active-state` and defaults to `text`. It selects presentation independently from the field name. Named UI element values are `status-summary`, `meter-list`, `attention-list`, `record-cards`, `package-activity`, and `workflow-topology`; renderers dispatch these values without inferring behavior from page IDs, view IDs, or source contents. The four overview elements are independent views so documents can assemble and lay out the landing page through `views`, `sections`, and `layout`.
+The optional table-column field `display` is `text`, `status`, `mode`, or `active-state` and defaults to `text`. It selects presentation independently from the field name. Named UI element values are `status-summary`, `meter-list`, `attention-list`, `record-cards`, `package-activity`, `dispatch-catalog`, `repository-workflows`, and `workflow-topology`; renderers dispatch these values without inferring behavior from page IDs, view IDs, or source contents. The four overview elements are independent views so documents can assemble and lay out the landing page through `views`, `sections`, and `layout`.
 
 A chart may set `chart` to `line`, `bar`, or `pie`. When `chart` is omitted, temporal `x` has a line time-series default and any other valid chart has a bar default. A line chart uses temporal `x`; a pie chart uses nominal or ordinal `x` for categories and quantitative `y` for values. These known widget types and defaults are semantic; this specification does not define visual styling.
 
@@ -560,6 +584,8 @@ Disclosure changes presentation only. It does not change data processing, data s
 - **DLS-VIEW-023:** A presenter **MUST** select a field's `status`, `mode`, or `active-state` treatment only from its `display` value and **MUST NOT** infer that treatment from the field name.
 - **DLS-VIEW-024:** A custom page `sections` sequence, when present, **MUST** be non-empty. Every section **MUST** have a unique canonical `id`, one `layout` value of `full`, `wide`, or `narrow`, and a non-empty `views` sequence. Sections **MUST** reference every page view exactly once and preserve view declaration order; an omitted section title **MUST** default from its section ID.
 - **DLS-VIEW-025:** A presenter **MUST** apply a field's referenced unit consistently to metric values, table cells, chart value labels, chart data tables, and accessible chart labels.
+- **DLS-VIEW-026:** A custom page `route`, when present, **MUST** be a mapping containing exactly `hash-query-parameter`, whose value **MUST** be a canonical identifier. Built-in pages **MUST NOT** declare `route`.
+- **DLS-VIEW-027:** A presenter **MUST** resolve a custom page route from `#page-<page-id>?<parameter>=<value>`. It **MUST** use a non-empty decoded, trimmed route value as the page title and final breadcrumb label and supply it as an opaque binding to route-aware named elements; a missing or empty value **MUST** preserve the declared title and supply an empty binding. The value **MUST** be treated only as text and **MUST NOT** be interpreted as markup, code, a URI, or a general-purpose content template.
 
 ---
 
@@ -817,6 +843,7 @@ dashboard:
 - Added essential and supplemental view disclosure, a four-essential-view authoring bound, accessible presentation requirements, and SEQ and NASA-TLX user-research guidance.
 - Added centrally managed package semantics and the `packages` built-in page for mode-filtered package AIC utilization and package-run trends.
 - Added `dashboard.repository` and **DLS-DOC-012** so a presenter's report action toolbar can expose a GitHub repository link, and added **DLS-SAFE-011** requiring a descriptive refresh control and a labeled repository link.
+- Added constrained custom-page hash-query routing and route-bound templating through **DLS-VIEW-026** and **DLS-VIEW-027**.
 - Updated the complete example to declare repository AIC distribution as a linked, ordered pie chart.
 
 ---
