@@ -12,6 +12,11 @@
       "dashboard": "examples/documentation-completeness-check.dashboard.yml"
     },
     {
+      "id": "issue-label-policy-enforcement",
+      "metadata": "examples/issue-label-policy-enforcement.json",
+      "dashboard": "examples/issue-label-policy-enforcement.dashboard.yml"
+    },
+    {
       "id": "stale-documentation-remediation",
       "metadata": "examples/stale-documentation-remediation.json",
       "dashboard": "examples/stale-documentation-remediation.dashboard.yml"
