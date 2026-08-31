@@ -91,7 +91,12 @@ function renderTableView(context) {
     : null;
   const hrefField = typeof hrefDefinition?.field === 'string' ? hrefDefinition.field : null;
   const tableRows = prepareTableRows(rows, columns, view.data);
-  const renderCellValue = createEntityAwareCellRenderer(ENTITY_LINK_FIELDS, findLink, renderTableCellValue, toText);
+  const renderCellValue = createEntityAwareCellRenderer(
+    ENTITY_LINK_FIELDS,
+    findLink,
+    (display, value) => renderTableCellValue(display, value, toText),
+    toText
+  );
   const bodyRows = tableRows.map((row, rowIndex) => h(
     'tr',
     { 'data-custom-row-key': `${pageId}-${title}-${rowIndex}` },
@@ -182,12 +187,12 @@ function renderChartView(context) {
   return section;
 }
 
-/** @param {unknown} display @param {unknown} value */
-function renderTableCellValue(display, value) {
+/** @param {unknown} display @param {unknown} value @param {(value: unknown) => string} toText */
+function renderTableCellValue(display, value, toText) {
   if (display === 'mode') return renderModeBadge(value);
   if (display === 'active-state') return renderActiveStateBadge(value);
   if (display === 'status') return renderStatusBadge(value);
-  return value == null || value === '' ? 'unknown' : String(value);
+  return toText(value);
 }
 
 /** @param {Record<string, unknown>} fieldDefinition */
