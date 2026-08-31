@@ -339,6 +339,12 @@ export function buildDashboardLanguageSources({ deployed, usage, operationalValu
   sources.repositories = source("repositories", [...repositories.values()], generatedAt, discoveryAvailable, deployed.discovery?.complete === true);
   sources.workflows = source("workflows", workflows, generatedAt, discoveryAvailable, deployed.discovery?.complete === true);
   sources.runs = source("runs", runs, generatedAt, runAvailable, runComplete);
+  if (Number.isFinite(deployed.runHealth?.windowHours) && deployed.runHealth.windowHours > 0) {
+    sources.runs.metadata["coverage-end"] = generatedAt;
+    sources.runs.metadata["coverage-start"] = new Date(
+      Date.parse(generatedAt) - deployed.runHealth.windowHours * 3_600_000,
+    ).toISOString();
+  }
   sources.usage = source("usage", usageRows(usage), generatedAt, usageAvailable, usageComplete);
   sources.outcomes = source("outcomes", outcomeRows(records), generatedAt);
   sources.findings = source("findings", findingRows(records), generatedAt);
