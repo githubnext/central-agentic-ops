@@ -113,6 +113,7 @@
 - `src/components/badge.js` — presentation-only Primer status, mode, and active-state badges.
 - `src/components/data-state.js` — presentation-only data-state metrics card grid for availability, completeness, and freshness.
 - `src/components/table-region.js` — presentation-only reusable table wrapper for repeated table-region markup, header rows, empty-state rows, and keyed body-row descriptors across built-in and custom tables.
+- `src/components/summary-copy.js` — presentation-only shared singular/plural summary-count copy for repeated item-count text surfaces.
 - `src/components/view-chrome.js` — presentation-only reusable page-section, titled-region, summary-list/summary-region, generic custom-view chrome paragraphs, custom-view source/metadata/context chrome, shared custom-view section chrome, custom-view state-message/details helpers, and built-in provenance-section helpers.
 - `src/components/ui-primitives.js` — presentation-only shared section-heading, vital-stat, and UTC date-time helpers for repeated dashboard component chrome.
 - `src/components/count-formatters.js` — presentation-only shared count and singular/plural text helpers for repeated dashboard status, workflow, and signal copy.
@@ -129,6 +130,14 @@
 - 2026-08-31: `npx playwright test --config=playwright.config.mjs` launches in this environment, but the current browser suite is already red on the checked-out baseline: page-level headings, skip-link visibility, route-driven repository views, keyboard section counts, and declarative table row visibility are not found across 9 existing `test/e2e/smoke.spec.js` assertions. This run did not change browser-only behavior, so the failures are recorded as a pre-existing gate blocker rather than fixed here.
 
 ## Run log
+
+### 2026-08-31 (summary-copy helper refactor)
+- Re-inventoried repeated UI construction under `pages/dashboard/src/` and selected the highest safe bounded helper slice still duplicated in active code: item-count summary copy using singular/plural branching in `src/components/table-summary.js`, with the same count-summary surface already present conceptually in other dashboard status helpers.
+- Extracted `src/components/summary-copy.js` with presentation-only `formatSummaryCount(...)`, then replaced every identified duplicated call site in `src/components/table-summary.js`.
+- Added unit coverage in `test/unit/summary-copy.test.js` for singular, plural, and custom-noun count summaries, and kept `test/unit/table-summary.test.js` assertions unchanged to preserve the existing rendered text contract.
+- Proved unchanged behavior by rerunning the affected table-summary unit coverage and preserving the rendered `3 items`, `2 items`, and `1 item` output already asserted in `test/unit/table-summary.test.js`.
+- Verified `pages/dashboard/` quality gates in this run: `npm install`, `npm run build`, `npm run typecheck`, `npm run lint`, and `npm test` all pass. Browser checks remain tracked separately in `PLAN.md` infrastructure blockers because this bounded helper extraction did not change browser-only behavior.
+- Next candidates in the queue: extract the remaining duplicated UTC date formatter in `src/components/dispatch-catalog.js` and `src/components/repository-workflows.js`; extract the repeated definitions/observations dual-region composition in `src/presenter.js`; extract the repeated summary-plus-trend section composition in `src/presenter.js`.
 
 ### 2026-08-31 (ui-primitives helper refactor)
 - Re-inventoried repeated UI construction under `pages/dashboard/src/` and selected the highest remaining bounded presentation-only helper slice: duplicated `.section-heading` and `dl` vital-stat DOM assembly in `src/components/execution-elements.js` and `src/components/ui-elements.js`, plus the matching UTC date-time formatter duplicated in `src/components/execution-elements.js` and `src/components/dispatch-catalog.js`.

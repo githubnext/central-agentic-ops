@@ -4,6 +4,7 @@
 
 import { h } from '../dom.js';
 import { renderHistogram } from './histogram.js';
+import { formatSummaryCount } from './summary-copy.js';
 
 const RUN_SUMMARY_FIELDS = new Set(['run', 'run-link']);
 const RUN_SUMMARY_LABELS = new Set(['run', 'run link', 'workflow run', 'workflow runs']);
@@ -84,8 +85,7 @@ function renderCountSummary(count) {
   return h(
     'div',
     { className: 'table-summary-count' },
-    h('strong', null, count.toLocaleString('en')),
-    h('span', null, ` ${count === 1 ? 'item' : 'items'}`)
+    formatSummaryCount(count)
   );
 }
 
