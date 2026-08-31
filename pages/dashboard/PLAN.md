@@ -75,6 +75,7 @@ Evidence paths below are relative to:
 - `src/components/link-content.js` — safe-link discovery and external-link/value composition.
 - `src/components/linked-text.js` — linked text and entity-aware table-cell rendering.
 - `src/components/packages-view.js` — package mode tabs, utilization, coverage, allowances, and trends.
+- `src/components/report-list.js` — shared durable-report list/table rendering, filtering, counts, and empty states for package and workflow views.
 - `src/components/summary-copy.js` — shared summary-count copy.
 - `src/components/table-region.js` — reusable table regions, headers, bodies, and empty states.
 - `src/components/ui-primitives.js` — section headings, vital statistics, and UTC date-time presentation.
@@ -86,6 +87,26 @@ Evidence paths below are relative to:
 
 - Local quality commands may need one rerun after installation while package binaries and type declarations are linked.
 - Browser checks require a provisioned Playwright Chromium executable; otherwise use the built-in browser tools and treat startup failure as infrastructure-only.
+- This run did not complete a browser snapshot comparison because only shell tools were available in-session; unit assertions were used for affected-page output preservation instead.
 - The checked-out baseline has nine existing browser assertion failures involving page headings, skip-link visibility, route-driven repository views, keyboard section counts, and declarative table row visibility.
+
+## 2026-08-31 run entry
+
+- Extraction: `src/components/report-list.js` for durable-report rendering shared by package and workflow detail views.
+- Duplication evidence and call sites collapsed:
+  - `src/components/package-detail.js` duplicated report filtering, summary counting, row rendering, and empty-state handling for package reports.
+  - `src/components/workflow-detail.js` duplicated the same durable-report concerns for workflow reports with a table-shaped container.
+- Behavior-preservation evidence:
+  - Preserved package report card DOM text, class names, links, mode/status badges, and empty messages through the existing `package-detail` assertions.
+  - Preserved workflow report table DOM text, class names, links, summary counts, and empty messages through the existing `workflow-detail` assertions.
+  - Added focused unit coverage in `test/unit/report-list.test.js` for package-card and workflow-table shapes, filter no-match state, unavailable/empty fallbacks, and external-link fallback when no safe-output id exists.
+- Quality gates and proof:
+  - Rendered-output proof for affected pages is covered by unchanged package/workflow unit assertions before and after replacement of both call sites with the shared renderer.
+  - Ran `npm install`, `npm run typecheck`, `npm run lint`, `npm test`, and `node ./scripts/build.mjs` from `pages/dashboard/`; all passed.
+  - Browser snapshot comparison remained blocked in-session because Playwright browser tools were not exposed here.
+- Next candidates:
+  - Shared tablist controller extracted from `src/components/packages-view.js` and `src/components/package-detail.js`.
+  - Shared report/repository navigation tabs across `src/components/package-detail.js`, `src/components/workflow-detail.js`, and `src/components/repository-workflows.js`.
+  - Shared static table-section wrapper across `src/components/packages-view.js`, `src/components/repository-workflows.js`, and `src/components/ui-elements.js` coverage diagnostics.
 
 Run-by-run history was removed during compaction; milestones, unresolved questions, current inventory, blockers, and actionable parity work remain above.

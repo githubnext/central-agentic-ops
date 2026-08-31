@@ -4,9 +4,9 @@
 
 import { h } from '../dom.js';
 import { octicon } from '../octicons.js';
-import { renderModeBadge, renderStatusBadge } from './badge.js';
+import { renderReportList as renderSharedReportList } from './report-list.js';
 import { findLink } from './link-content.js';
-import { formatUtcDateTime, renderSectionHeading } from './ui-primitives.js';
+import { renderSectionHeading } from './ui-primitives.js';
 
 /**
  * @param {import('./ui-elements.js').ElementRenderContext} context
@@ -257,103 +257,45 @@ function renderPackageReportsContent(context, packageId, workflows, outcomes) {
  * @param {unknown} availability
  */
 function renderReportList(outcomes, showMode, availability) {
-  const resolvedStates = new Set(['closed', 'merged', 'resolved', 'complete', 'completed']);
-  const resolved = outcomes.filter((outcome) => resolvedStates.has(reportStatus(outcome).toLowerCase())).length;
-  const open = outcomes.length - resolved;
-  const rows = outcomes.map((outcome) => renderReportRow(outcome, showMode));
-  const search = /** @type {HTMLInputElement} */ (h('input', {
-    type: 'search',
-    placeholder: 'Filter reports',
-    'aria-label': 'Filter reports',
-    disabled: rows.length === 0
-  }));
-  search.addEventListener('input', () => {
-    const query = search.value.trim().toLocaleLowerCase('en');
-    for (const row of rows) {
-      row.hidden = query.length > 0 && !(row.textContent ?? '').toLocaleLowerCase('en').includes(query);
-    }
-  });
-  const emptyMessage = availability === 'unavailable'
-    ? 'Package report data is unavailable.'
-    : 'No reports have been recorded for this mode.';
-
-  return h(
-    'section',
-    { className: `package-report-list${showMode ? ' package-report-list-with-mode' : ''}`, 'aria-labelledby': 'package-reports-heading' },
-    h('label', { className: 'package-report-search' }, octicon('issue'), search),
-    h(
-      'div',
-      { className: 'package-report-header' },
-      h('h2', { id: 'package-reports-heading' }, 'Reports'),
+  return renderSharedReportList(outcomes, {
+    rowClassName: 'package-report-row',
+    showMode,
+    headingId: 'package-reports-heading',
+    headingText: 'Reports',
+    filterLabel: 'Filter reports',
+    emptyMessage: availability === 'unavailable'
+      ? 'Package report data is unavailable.'
+      : 'No reports have been recorded for this mode.',
+    noMatchMessage: 'No reports match this filter.',
+    countOpenStatuses: ['open', 'available', 'published', 'pending', 'unknown'],
+    countResolvedStatuses: ['closed', 'merged', 'resolved', 'complete', 'completed'],
+    renderContainer: ({ search, summary, content }) => h(
+      'section',
+      { className: `package-report-list${showMode ? ' package-report-list-with-mode' : ''}`, 'aria-labelledby': 'package-reports-heading' },
+      h('label', { className: 'package-report-search' }, octicon('issue'), search),
       h(
         'div',
-        null,
-        h('strong', null, String(open)),
-        ' Open',
-        h('span', null, h('strong', null, String(resolved)), ' Resolved')
-      )
+        { className: 'package-report-header' },
+        h('h2', { id: 'package-reports-heading' }, 'Reports'),
+        summary
+      ),
+      h(
+        'div',
+        { className: 'package-report-columns', 'aria-hidden': 'true' },
+        h('span', null, 'Report'),
+        h('span', null, 'Status'),
+        showMode ? h('span', null, 'Mode') : null,
+        h('span', null, 'Type'),
+        h('span', null, 'Updated')
+      ),
+      content
     ),
-    h(
-      'div',
-      { className: 'package-report-columns', 'aria-hidden': 'true' },
-      h('span', null, 'Report'),
-      h('span', null, 'Status'),
-      showMode ? h('span', null, 'Mode') : null,
-      h('span', null, 'Type'),
-      h('span', null, 'Updated')
-    ),
-    h(
+    renderContent: (rows, emptyMessage) => h(
       'div',
       { className: 'package-report-rows' },
       ...(rows.length > 0 ? rows : [h('p', { className: 'empty' }, emptyMessage)])
     )
-  );
-}
-
-/**
- * @param {Record<string, unknown>} outcome
- * @param {boolean} showMode
- */
-function renderReportRow(outcome, showMode) {
-  const id = String(outcome['safe-output'] ?? '');
-  const title = String(outcome['outcome-title'] ?? id ?? 'Untitled report') || 'Untitled report';
-  const summary = String(outcome['outcome-summary'] ?? 'No report summary was provided.');
-  const status = titleCase(reportStatus(outcome));
-  const mode = titleCase(String(outcome['rollout-mode'] ?? 'unknown'));
-  const kind = titleCase(String(outcome['outcome-category'] ?? 'unknown'));
-  const observedAt = String(outcome['observed-at'] ?? '');
-  const sourceLink = findLink(outcome, 'external-link')
-    ?? findLink(outcome, 'issue-link')
-    ?? findLink(outcome, 'pull-request-link');
-  const titleLink = id
-    ? h('a', { href: `#page-outcome-detail?outcome=${encodeURIComponent(id)}`, title }, title)
-    : sourceLink
-      ? h('a', { href: sourceLink.href, title, target: '_blank', rel: 'noopener noreferrer' }, title)
-      : h('span', { title }, title);
-  const statusBadge = renderStatusBadge(status);
-  if (status.toLowerCase() === 'available') {
-    statusBadge.classList.remove('status-success');
-    statusBadge.classList.add('status-attention');
-  }
-  statusBadge.setAttribute('aria-label', `Status: ${status}`);
-  const modeBadge = renderModeBadge(mode);
-  modeBadge.setAttribute('aria-label', `Mode: ${mode}`);
-
-  return h(
-    'article',
-    { className: 'package-report-row', dataset: { reportId: id } },
-    h('div', { className: 'package-report-icon', 'aria-hidden': 'true' }, octicon(kind === 'Noop' ? 'check-circle' : 'issue')),
-    h(
-      'div',
-      { className: 'package-report-copy' },
-      h('h3', null, titleLink),
-      h('p', { title: summary }, summary)
-    ),
-    statusBadge,
-    showMode ? modeBadge : null,
-    h('span', { className: 'kind', 'aria-label': `Type: ${kind}` }, kind),
-    h('time', { dateTime: observedAt, 'aria-label': `Updated: ${formatUtcDateTime(observedAt)}` }, formatUtcDateTime(observedAt))
-  );
+  });
 }
 
 /**
@@ -390,11 +332,6 @@ function normalizeWorkflowIdentity(value) {
 function reportTimestamp(outcome) {
   const timestamp = Date.parse(String(outcome['observed-at'] ?? outcome['published-at'] ?? ''));
   return Number.isFinite(timestamp) ? timestamp : 0;
-}
-
-/** @param {Record<string, unknown>} outcome */
-function reportStatus(outcome) {
-  return String(outcome['outcome-status'] ?? outcome['outcome-state'] ?? 'unknown');
 }
 
 /** @param {string} selectedMode @param {string} configuredMode */

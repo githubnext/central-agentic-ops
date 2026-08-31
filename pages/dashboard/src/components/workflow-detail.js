@@ -4,9 +4,8 @@
 
 import { h } from '../dom.js';
 import { octicon } from '../octicons.js';
-import { renderModeBadge, renderStatusBadge } from './badge.js';
 import { findLink, renderExternalLink } from './link-content.js';
-import { formatUtcDateTime } from './ui-primitives.js';
+import { renderReportList as renderSharedReportList } from './report-list.js';
 
 /**
  * @param {import('./ui-elements.js').ElementRenderContext} context
@@ -145,138 +144,57 @@ function renderWorkflowIdentity(workflow) {
 
 /** @param {Array<Record<string, unknown>>} reports */
 function renderWorkflowReports(reports) {
-  const summary = h('div', { 'aria-live': 'polite', 'aria-atomic': 'true' });
-  const body = h('tbody');
-  const input = h('input', {
-    type: 'search',
-    placeholder: 'Filter reports',
-    'aria-label': 'Filter reports',
-    oninput: (/** @type {Event} */ event) => {
-      const query = event.currentTarget instanceof HTMLInputElement
-        ? event.currentTarget.value
-        : '';
-      renderRows(query);
-    }
-  });
-  const section = h(
-    'section',
-    { className: 'workflow-reports', 'aria-labelledby': 'workflow-reports-heading' },
-    h(
-      'div',
-      { className: 'workflow-reports-search' },
-      octicon('issue'),
-      input
-    ),
-    h(
-      'div',
-      { className: 'workflow-reports-header' },
-      h('h2', { id: 'workflow-reports-heading' }, 'Reports'),
-      summary
-    ),
-    h(
-      'div',
-      { className: 'workflow-report-table-region', role: 'region', 'aria-labelledby': 'workflow-reports-heading', tabIndex: 0 },
-      h(
-        'table',
-        { className: 'workflow-report-table' },
-        h(
-          'thead',
-          null,
-          h('tr', null, ...['Report', 'Status', 'Mode', 'Type', 'Updated'].map((label) => h('th', { scope: 'col' }, label)))
-        ),
-        body
-      )
-    )
-  );
-
-  /** @param {string} query */
-  function renderRows(query) {
-    const normalized = query.trim().toLowerCase();
-    const filtered = normalized
-      ? reports.filter((report) => searchableReportText(report).includes(normalized))
-      : reports;
-    const statuses = filtered.map((report) => text(report['outcome-status']).toLowerCase());
-    const open = statuses.filter((status) => ['open', 'available', 'published'].includes(status)).length;
-    const resolved = statuses.filter((status) => ['closed', 'resolved'].includes(status)).length;
-    const other = filtered.length - open - resolved;
-    const summaryChildren = [
-      h('span', { className: 'workflow-filter-announcement' }, `${filtered.length} report${filtered.length === 1 ? '' : 's'} shown. `),
-      h('strong', null, String(open)),
-      ' Open',
-      h('span', null, h('strong', null, String(resolved)), ' Resolved')
-    ];
-    if (other > 0) summaryChildren.push(h('span', null, h('strong', null, String(other)), ' Other'));
-    summary.replaceChildren(...summaryChildren);
-    body.replaceChildren(...(filtered.length > 0
-      ? filtered.map(renderWorkflowReport)
-      : [h(
-        'tr',
-        null,
-        h(
-          'td',
-          { colSpan: 5, className: 'empty' },
-          reports.length > 0 ? 'No reports match this filter.' : 'No reports have been attributed to this workflow.'
-        )
-      )]));
-  }
-
-  renderRows('');
-  return section;
-}
-
-/** @param {Record<string, unknown>} report */
-function renderWorkflowReport(report) {
-  const outcomeId = text(report['safe-output']);
-  const title = text(report['outcome-title']) || outcomeId || 'Untitled report';
-  const summary = text(report['outcome-summary']) || 'No report summary was provided.';
-  const kind = text(report['outcome-category']) || 'unknown';
-  const status = titleCase(text(report['outcome-status']) || text(report['outcome-state']) || 'unknown');
-  const mode = titleCase(text(report['rollout-mode']) || 'unknown');
-  const updatedAt = text(report['observed-at']) || text(report['published-at']);
-  const titleContent = outcomeId
-    ? h('a', { href: `#page-outcome-detail?outcome=${encodeURIComponent(outcomeId)}`, title }, title)
-    : title;
-  return h(
-    'tr',
-    { className: 'workflow-report-row' },
-    h(
-      'th',
-      { scope: 'row' },
+  return renderSharedReportList(reports, {
+    rowClassName: 'workflow-report-row',
+    itemTag: 'tr',
+    showMode: true,
+    titleClassName: 'workflow-report-title',
+    summaryClassName: 'workflow-report-copy',
+    headingId: 'workflow-reports-heading',
+    headingText: 'Reports',
+    filterLabel: 'Filter reports',
+    emptyMessage: 'No reports have been attributed to this workflow.',
+    noMatchMessage: 'No reports match this filter.',
+    countOpenStatuses: ['open', 'available', 'published'],
+    countResolvedStatuses: ['closed', 'resolved'],
+    renderContainer: ({ search, summary, content }) => h(
+      'section',
+      { className: 'workflow-reports', 'aria-labelledby': 'workflow-reports-heading' },
       h(
         'div',
-        { className: 'workflow-report-primary' },
+        { className: 'workflow-reports-search' },
+        octicon('issue'),
+        search
+      ),
+      h(
+        'div',
+        { className: 'workflow-reports-header' },
+        h('h2', { id: 'workflow-reports-heading' }, 'Reports'),
+        summary
+      ),
+      h(
+        'div',
+        { className: 'workflow-report-table-region', role: 'region', 'aria-labelledby': 'workflow-reports-heading', tabIndex: 0 },
         h(
-          'span',
-          { className: 'workflow-report-icon', 'aria-hidden': 'true' },
-          octicon(kind === 'noop' ? 'check-circle' : 'issue')
-        ),
-        h(
-          'span',
-          { className: 'workflow-report-copy' },
-          h('span', { className: 'workflow-report-title' }, titleContent),
-          h('span', { className: 'workflow-report-summary', title: summary }, summary)
+          'table',
+          { className: 'workflow-report-table' },
+          h(
+            'thead',
+            null,
+            h('tr', null, ...['Report', 'Status', 'Mode', 'Type', 'Updated'].map((label) => h('th', { scope: 'col' }, label)))
+          ),
+          content
         )
       )
     ),
-    h('td', null, renderStatusBadge(status)),
-    h('td', null, renderModeBadge(mode)),
-    h('td', null, h('span', { className: 'kind' }, titleCase(kind))),
-    updatedAt
-      ? h('td', null, h('time', { dateTime: updatedAt }, formatUtcDateTime(updatedAt)))
-      : h('td', { className: 'workflow-report-time' }, 'Unknown')
-  );
-}
-
-/** @param {Record<string, unknown>} report */
-function searchableReportText(report) {
-  return [
-    report['outcome-title'],
-    report['outcome-summary'],
-    report['outcome-category'],
-    report['outcome-status'],
-    report['outcome-state'],
-    report['rollout-mode']
-  ].map(text).join(' ').toLowerCase();
+    renderContent: (rows, emptyMessage) => h(
+      'tbody',
+      null,
+      ...(rows.length > 0
+        ? rows
+        : [h('tr', null, h('td', { colSpan: 5, className: 'empty' }, emptyMessage))])
+    )
+  });
 }
 
 /** @param {unknown} value */
