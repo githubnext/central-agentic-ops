@@ -1252,6 +1252,7 @@ test("daily dashboard review delivers bounded declarative refactors with the Git
   assert.match(source, /Components must not branch on page or view identity/);
   assert.match(source, /Run every quality gate from `pages\/dashboard\/`/);
   assert.match(source, /Publish exactly one safe output/);
+  assert.match(source, /Do not finish with only a narrative summary; invoke exactly one safe-output tool before ending the run/);
   assert.doesNotMatch(source, /engine: codex/);
   assert.doesNotMatch(source, /runtime:\s+docker-sbx/);
 });
