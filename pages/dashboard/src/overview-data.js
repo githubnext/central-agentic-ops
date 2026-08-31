@@ -321,8 +321,12 @@ function createOverviewMetadata(sources) {
     'source-kind': 'derived',
     'as-of': latest,
     'retrieved-at': latest,
-    completeness: sourceMetadata.some((metadata) => metadata.completeness === 'partial') ? 'partial' : 'complete',
-    freshness: sourceMetadata.some((metadata) => metadata.freshness === 'stale') ? 'stale' : 'fresh',
+    completeness: sourceMetadata.some((metadata) => metadata.completeness === 'partial')
+      ? 'partial'
+      : sourceMetadata.length > 0 && sourceMetadata.every((metadata) => metadata.completeness === 'complete') ? 'complete' : 'unknown',
+    freshness: sourceMetadata.some((metadata) => metadata.freshness === 'stale')
+      ? 'stale'
+      : sourceMetadata.length > 0 && sourceMetadata.every((metadata) => metadata.freshness === 'fresh') ? 'fresh' : 'unknown',
     availability: 'available'
   };
 }
@@ -368,8 +372,8 @@ function distinctRepositories(...collections) {
  * @returns {string}
  */
 function sourceWindowLabel(source) {
-  if (!source || source.metadata.availability === 'unavailable') return 'Actions run data unavailable';
-  const state = source.metadata.completeness === 'complete' ? 'Complete' : 'Partial';
+  if (!source || source.metadata?.availability === 'unavailable') return 'Actions run data unavailable';
+  const state = source.metadata?.completeness === 'complete' ? 'Complete' : 'Partial';
   return `${state} 24-hour Actions run window`;
 }
 
