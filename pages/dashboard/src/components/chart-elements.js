@@ -83,25 +83,29 @@ export function renderPieLegend(entries, total, links = new Map(), unit = null) 
   return h(
     'ul',
     { className: 'chart-legend chart-legend-pie', 'data-chart-legend': 'visual' },
-    entries.map(([label, value], index) => h(
-      'li',
-      null,
-      h('i', { className: `chart-series-${(index % 6) + 1}`, 'aria-hidden': 'true' }),
-      h(
-        'span',
+    entries.map(([label, value], index) => {
+      const link = links.get(label);
+      const external = link ? !link.href.startsWith('#') : false;
+      return h(
+        'li',
         null,
-        links.has(label)
+        h('i', { className: `chart-series-${(index % 6) + 1}`, 'aria-hidden': 'true' }),
+        h(
+          'span',
+          null,
+          link
           ? h('a', {
-            href: links.get(label)?.href,
-            target: '_blank',
-            rel: 'noopener noreferrer',
-            'aria-label': links.get(label)?.label
-          }, label)
-          : label
-      ),
-      h('strong', null, formatNumber(value, unit)),
-      h('small', null, total > 0 ? `${((value / total) * 100).toFixed(1)}%` : '0%')
-    ))
+              href: link.href,
+            target: external ? '_blank' : undefined,
+            rel: external ? 'noopener noreferrer' : undefined,
+              'aria-label': link.label
+            }, label)
+            : label
+        ),
+        h('strong', null, formatNumber(value, unit)),
+        h('small', null, total > 0 ? `${((value / total) * 100).toFixed(1)}%` : '0%')
+      );
+    })
   );
 }
 
