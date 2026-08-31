@@ -201,6 +201,7 @@ h3 { margin: 16px 0 8px; font-size: 1rem; font-weight: 600; }
 .metrics { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; margin: 0 0 20px; overflow: visible; }
 .metrics div, .data-state-summary > div { min-width: 0; min-height: 90px; padding: 14px 16px; border: 1px solid var(--border); border-radius: 6px; background: var(--canvas-subtle); }
 .data-state-summary { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; margin: 0 0 20px; }
+.data-state-summary[hidden] { display: none; }
 .data-state-summary dt, .metrics dt { color: var(--muted); font-size: .75rem; font-weight: 600; text-transform: uppercase; margin: 0; }
 .data-state-summary dd, .metrics dd { margin: 4px 0 0; font-size: 1.375rem; font-weight: 600; font-variant-numeric: tabular-nums; text-transform: capitalize; }
 .data-state-summary dd[data-state-axis="availability"],
@@ -263,7 +264,6 @@ h3 { margin: 16px 0 8px; font-size: 1rem; font-weight: 600; }
 .utilization-high .utilization-track span { background: var(--danger); }
 .utilization-empty .utilization-track span { background: var(--muted); }
 .utilization-item p { min-height: 18px; margin: 0; color: var(--muted); font-size: .75rem; }
-.packages-page > .page-description { margin: -10px 0 0; color: var(--muted); font-size: .875rem; }
 .packages-view { display: grid; gap: 28px; margin-top: 36px; }
 .package-mode-tabs { width: min(100%, 264px); display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); padding: 2px; border: 1px solid var(--border); border-radius: 6px; background: var(--canvas-subtle); }
 .package-mode-tabs button { min-height: 34px; padding: 5px 12px; border: 0; border-radius: 5px; background: transparent; color: var(--muted); font: inherit; font-size: .75rem; font-weight: 600; cursor: pointer; }
