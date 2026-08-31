@@ -431,6 +431,39 @@
         ]
       },
       {
+        "id": "outcome-detail",
+        "kind": "custom",
+        "title": "Outcome",
+        "description": "Published safe-output outcome details and provenance.",
+        "icon": "issue",
+        "class-name": "outcome-detail-page",
+        "route": {
+          "hash-query-parameter": "outcome"
+        },
+        "filter-bar": {
+          "filters": [
+            "mode:review",
+            "mode:live"
+          ],
+          "time-range": "All recorded",
+          "export": true
+        },
+        "views": [
+          {
+            "id": "outcome-record",
+            "title": "Outcome",
+            "data": {
+              "sources": [
+                "outcomes"
+              ]
+            },
+            "mark": "element",
+            "element": "outcome-detail",
+            "layout": "full"
+          }
+        ]
+      },
+      {
         "id": "packages",
         "kind": "built-in",
         "page": "packages",

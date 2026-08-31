@@ -537,6 +537,22 @@ export function enableDashboardPageNavigation(root) {
     return;
   }
 
+  root.addEventListener('dashboard-route-allocation', (event) => {
+    if (!(event instanceof CustomEvent) || !(event.target instanceof Element)) return;
+    const page = event.target.closest('.dashboard-page');
+    if (!(page instanceof HTMLElement) || page.hidden) return;
+    const title = typeof event.detail?.title === 'string' ? event.detail.title.trim() : '';
+    const description = typeof event.detail?.description === 'string' ? event.detail.description.trim() : '';
+    if (title) {
+      if (breadcrumbPage) breadcrumbPage.textContent = title;
+      if (pageTitle) pageTitle.textContent = title;
+    }
+    if (pageDescription && description) {
+      pageDescription.textContent = description;
+      pageDescription.removeAttribute('hidden');
+    }
+  });
+
   const availableIds = new Set(pages.map((page) => page.dataset.pageId));
   const routeFromHash = () => {
     const hash = root.ownerDocument.defaultView?.location.hash ?? '';
