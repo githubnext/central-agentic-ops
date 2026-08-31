@@ -16,7 +16,9 @@ export function renderRepositoryWorkflows(context) {
   const workflows = rowsFor(context.sources, 'workflows')
     .slice()
     .sort((left, right) => workflowName(left).localeCompare(workflowName(right)));
-  const repository = repositoryName(workflows[0]);
+  const repository = repositoryName(workflows[0])
+    || firstScopedRepository(context.scope)
+    || 'Repository';
   const headingId = `${context.pageId}-repository-workflows-heading`;
   const latest = workflows
     .map((workflow) => String(workflow['observed-at'] ?? ''))
@@ -184,7 +186,9 @@ function renderWorkflowRow(workflow) {
       'th',
       { scope: 'row' },
       renderLinkedText(workflowName(workflow), link),
-      h('a', { className: 'repository-workflow-source', href: link?.href }, h('code', null, String(workflow.workflow ?? ''))),
+      link
+        ? h('a', { className: 'repository-workflow-source', href: link.href }, h('code', null, String(workflow.workflow ?? '')))
+        : h('code', { className: 'repository-workflow-source' }, String(workflow.workflow ?? '')),
       h(
         'span',
         { className: 'repository-workflow-badges' },
@@ -213,6 +217,14 @@ function repositoryName(workflow) {
   if (!workflow) return '';
   const owner = typeof workflow.organization === 'string' && workflow.organization ? `${workflow.organization}/` : '';
   return `${owner}${String(workflow.repository ?? '')}`;
+}
+
+/** @param {Record<string, unknown> | undefined} scope */
+function firstScopedRepository(scope) {
+  const repositories = scope?.repositories;
+  return Array.isArray(repositories) && typeof repositories[0] === 'string'
+    ? repositories[0]
+    : '';
 }
 
 /** @param {Record<string, unknown>} workflow */

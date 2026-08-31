@@ -728,6 +728,7 @@ function getViewTitle(view, index) {
 function renderElementView(pageId, title, view, sources, contextDetails, headingTag) {
   const elementName = typeof view.element === 'string' ? view.element : '';
   const sourceNames = getViewSources(view);
+  const viewData = isPlainObject(view.data) ? view.data : undefined;
   if (sourceNames.length === 0) {
     return renderCustomViewState(pageId, title, null, 'unavailable', [...contextDetails, 'No sources declared for element view.'], headingTag);
   }
@@ -735,7 +736,7 @@ function renderElementView(pageId, title, view, sources, contextDetails, heading
   const selectedSources = Object.fromEntries(sourceNames.flatMap((sourceName) => {
     const source = sources[sourceName];
     return source && Array.isArray(source.rows)
-      ? [[sourceName, { ...source, rows: filterRowsForView(source.rows, isPlainObject(view.data) ? view.data : undefined) }]]
+      ? [[sourceName, { ...source, rows: filterRowsForView(source.rows, viewData) }]]
       : [];
   }));
 
@@ -761,6 +762,7 @@ function renderElementView(pageId, title, view, sources, contextDetails, heading
     sourceNames,
     sources: selectedSources,
     contextDetails,
+    scope: isPlainObject(viewData?.scope) ? viewData.scope : undefined,
     headingTag
   }) ?? renderCustomViewState(pageId, title, null, 'unavailable', [...contextDetails, 'Unsupported UI element.'], headingTag);
 }

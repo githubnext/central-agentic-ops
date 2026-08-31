@@ -19,6 +19,7 @@ function context(workflows) {
     title: 'Agentic workflows',
     sourceNames: ['workflows'],
     contextDetails: [],
+    scope: { repositories: ['github/gh-aw'] },
     headingTag: /** @type {'h3'} */ ('h3'),
     sources: {
       workflows: { source: 'workflows', metadata, rows: workflows }
@@ -72,6 +73,8 @@ describe('renderRepositoryWorkflows', () => {
   it('keeps the summary and empty inventory visible when no workflows are observed', () => {
     const rendered = renderRepositoryWorkflows(context([]));
 
+    expect(rendered.dataset.repository).toBe('github/gh-aw');
+    expect(rendered.querySelector('.repository-tabs')?.getAttribute('aria-label')).toBe('github/gh-aw views');
     expect(rendered.querySelector('.repository-status-pie')?.getAttribute('aria-label')).toBe('Workflow status: 0 active, 0 disabled, 0 unknown');
     expect(rendered.querySelector('tbody td')?.textContent).toBe('No authored Agentic Workflows were observed for this repository.');
     expect(rendered.querySelector('.repository-section-heading > a')).toBeNull();

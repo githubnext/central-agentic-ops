@@ -216,7 +216,7 @@ h3 { margin: 16px 0 8px; font-size: 1rem; font-weight: 600; }
 .repository-tabs a { display: inline-flex; align-items: center; gap: 8px; position: relative; padding: 10px 14px 12px; color: var(--fg); font-weight: 600; text-decoration: none; }
 .repository-tabs a > .octicon { color: var(--muted); }
 .repository-tabs a:hover { background: var(--canvas-subtle); }
-.repository-tabs a[aria-current="page"]::after { content: ""; height: 2px; position: absolute; right: 8px; bottom: -1px; left: 8px; background: #f78166; }
+.repository-tabs a[aria-current="page"]::after { content: ""; height: 2px; position: absolute; right: 8px; bottom: -1px; left: 8px; background: var(--danger); }
 .repository-workflow-summary { max-width: 890px; margin-bottom: 28px; }
 .repository-metrics { display: grid; grid-template-columns: minmax(220px, .55fr) minmax(420px, 1.45fr); gap: 16px; margin: 0; }
 .repository-metrics > div { min-width: 0; min-height: 168px; padding: 20px 24px; border: 1px solid var(--border); border-radius: 6px; }
