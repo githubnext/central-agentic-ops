@@ -7,7 +7,7 @@ import { octicon } from '../octicons.js';
 import { formatNumber } from '../view-formatters.js';
 import { renderModeBadge } from './badge.js';
 import { findLink } from './link-content.js';
-import { renderPackagesView, renderPackageRunTrend, renderPackageSummaryView } from './packages-view.js';
+import { renderPackagesView, renderPackageRunTrend } from './packages-view.js';
 import { renderPackageDetail as renderPackageDetailElement, renderPackageReports } from './package-detail.js';
 import { renderRepositoryWorkflows } from './repository-workflows.js';
 import { renderWorkflowDetail } from './workflow-detail.js';
@@ -44,7 +44,6 @@ const ELEMENT_RENDERERS = new Map([
   ['signal-list', renderSignalListElement],
   ['package-activity', ({ sources, pageId }) => renderPackagesView(sources, pageId)],
   ['package-run-trend', ({ sources, pageId }) => renderPackageRunTrend(sources, pageId)],
-  ['package-summary', ({ sources, pageId }) => renderPackageSummaryView(sources, pageId)],
   ['package-detail', renderPackageDetailElement],
   ['package-reports', renderPackageReports],
   ['repository-scope', renderRepositoryScope],
