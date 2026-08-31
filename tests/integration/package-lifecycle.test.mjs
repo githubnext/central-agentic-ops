@@ -14,8 +14,6 @@ import test from "node:test";
 
 const packageSource = process.env.CENTRAL_AGENTIC_OPS_PACKAGE_SOURCE
   || "githubnext/central-agentic-ops@main";
-const updateSource = process.env.CENTRAL_AGENTIC_OPS_UPDATE_SOURCE
-  || "githubnext/central-agentic-ops@main";
 function focusedPackageSource(slug, source = packageSource) {
   const separator = source.lastIndexOf("@");
   assert.notEqual(separator, -1, "package source must include a ref");
@@ -24,6 +22,7 @@ function focusedPackageSource(slug, source = packageSource) {
 const advisoryPackageSource = focusedPackageSource("advisory");
 const craPackageSource = focusedPackageSource("eu-cra-compliance");
 const dashboardPackageSource = focusedPackageSource("dashboard");
+const dependabotUpdateSource = focusedPackageSource("dependabot");
 const advisoryExpectedFiles = [
   ".github/aw/advisory/implementation-status.md",
   ".github/workflows/advisory-package-maintainer.md",
@@ -64,33 +63,6 @@ const dashboardExpectedFiles = [
   ".github/workflows/dashboard.yml",
 ];
 
-const expectedFiles = [
-  ".github/agents/agentic-workflows.md",
-  ".github/aw/instructions.md",
-  ".github/aw/control-policy/resolve.mjs",
-  ".github/graders/ambient-context-agents-md-curator-operational-value.sh",
-  ".github/graders/dependabot-release-train-updater-operational-value.sh",
-  ".github/graders/optimization-ai-credit-auditor-operational-value.sh",
-  ".github/graders/optimization-ai-credit-optimizer-operational-value.sh",
-  ".github/skills/agentic-workflows/SKILL.md",
-  ".github/skills/create-ops-package/SKILL.md",
-  ".github/skills/setup-central-agentic-ops/SKILL.md",
-  ".github/workflows/ambient-context-agents-md-curator.md",
-  ".github/workflows/ambient-context-skills-curator.md",
-  ".github/workflows/ambient-context.md",
-  ".github/workflows/aw-failures-investigator.md",
-  ".github/workflows/aw-maintenance-upgrade.md",
-  ".github/workflows/aw-maintenance.md",
-  ".github/workflows/dependabot-release-train-updater.md",
-  ".github/workflows/dependabot.md",
-  ".github/workflows/optimization-ai-credit-auditor.md",
-  ".github/workflows/optimization-ai-credit-optimizer.md",
-  ".github/workflows/optimization.md",
-  ".github/workflows/shared/control-precompute.md",
-  ".github/workflows/shared/control.md",
-  ".github/workflows/shared/review-bundle.md",
-  ".github/workflows/shared/target-checkout-read-org-token.md",
-];
 const repositoryOnlyFiles = [
   ".github/aw/e2e/run-canary.sh",
   ".github/aw/e2e/run-stress.sh",
@@ -133,58 +105,19 @@ function installPackage(source) {
   }
 }
 
-function assertCorePackage(consumer) {
-  for (const relativePath of expectedFiles) {
-    assert.ok(existsSync(join(consumer, relativePath)), `gh aw add omitted ${relativePath}`);
-  }
-
-  const packageManifests = readdirSync(join(consumer, ".github", "aw", "packages"));
-  assert.equal(packageManifests.length, 1, "expected one installed package manifest");
-  const installedManifest = JSON.parse(readFileSync(
-    join(consumer, ".github", "aw", "packages", packageManifests[0]),
-    "utf8",
-  ));
-  assert.deepEqual(
-    installedManifest.files.map(({ destination }) => destination).sort(),
-    [
-      ".github/aw/control-policy/resolve.mjs",
-      ".github/aw/instructions.md",
-      ".github/graders/ambient-context-agents-md-curator-operational-value.sh",
-      ".github/graders/aw-failures-investigator-operational-value.sh",
-      ".github/graders/dependabot-release-train-updater-operational-value.sh",
-      ".github/graders/optimization-ai-credit-auditor-operational-value.sh",
-      ".github/graders/optimization-ai-credit-optimizer-operational-value.sh",
-      ".github/workflows/ambient-context-agents-md-curator.md",
-      ".github/workflows/ambient-context-skills-curator.md",
-      ".github/workflows/ambient-context.md",
-      ".github/workflows/aw-failures-investigator.md",
-      ".github/workflows/aw-maintenance-upgrade.md",
-      ".github/workflows/aw-maintenance.md",
-      ".github/workflows/dependabot-release-train-updater.md",
-      ".github/workflows/dependabot.md",
-      ".github/workflows/optimization-ai-credit-auditor.md",
-      ".github/workflows/optimization-ai-credit-optimizer.md",
-      ".github/workflows/optimization.md",
-    ],
-    "installed package manifest does not match the core package",
-  );
-
-  for (const relativePath of repositoryOnlyFiles) {
-    assert.ok(!existsSync(join(consumer, relativePath)), `package installed repository-only test asset ${relativePath}`);
-  }
-  assert.ok(!existsSync(join(consumer, ".github", "workflows", "ops-pages.yml")));
-  assert.ok(!existsSync(join(consumer, ".github", "ops-values")));
-  assert.ok(!existsSync(join(consumer, ".github", "workflows", "uk-ai-advisory.md")));
-  assert.ok(!existsSync(join(consumer, ".github", "aw", "advisory", "implementation-status.md")));
-  assert.ok(!existsSync(join(consumer, ".github", "workflows", "eu-cra-compliance.md")));
-  assert.ok(!existsSync(join(consumer, ".github", "aw", "eu-cra-compliance", "implementation-status.md")));
-}
-
-test("gh aw add installs the core package file contract", { timeout: 180_000 }, () => {
-  const consumer = installPackage(packageSource);
-
+test("gh aw add requires guided setup for the root package", { timeout: 180_000 }, () => {
+  const consumer = mkdtempSync(join(tmpdir(), "central-agentic-ops-package-"));
   try {
-    assertCorePackage(consumer);
+    run("git", ["init", "--quiet"], consumer);
+    assert.throws(
+      () => run("gh", ["aw", "add", packageSource, "--force", "--no-security-scanner"], consumer),
+      (error) => {
+        assert.match(error.stderr, /declares aw\.yml config/);
+        assert.ok(error.stderr.includes(`gh aw add-wizard ${packageSource}`));
+        return true;
+      },
+    );
+    assert.ok(!existsSync(join(consumer, ".github")), "rejected root install must not leave partial files");
   } finally {
     rmSync(consumer, { recursive: true, force: true });
   }
@@ -338,7 +271,7 @@ test("gh aw add --force restores dashboard workflows and report modules", { time
 });
 
 test("gh aw update replaces workflows and restores package-owned assets", { timeout: 180_000 }, () => {
-  const consumer = installPackage(updateSource);
+  const consumer = installPackage(dependabotUpdateSource);
 
   try {
     const orchestratorPath = join(consumer, ".github", "workflows", "dependabot.md");
@@ -346,9 +279,9 @@ test("gh aw update replaces workflows and restores package-owned assets", { time
     writeFileSync(orchestratorPath, `${orchestrator}\n# local integration-test change\n`);
 
     const removedFiles = [
-      ".github/agents/agentic-workflows.md",
-      ".github/skills/create-ops-package/SKILL.md",
+      ".github/workflows/dependabot-release-train-updater.md",
       ".github/workflows/shared/control-precompute.md",
+      ".github/workflows/shared/control.md",
     ];
     for (const relativePath of removedFiles) {
       rmSync(join(consumer, relativePath));
