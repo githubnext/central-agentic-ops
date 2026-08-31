@@ -632,6 +632,29 @@
         }
       },
       {
+        "id": "dispatches",
+        "kind": "custom",
+        "title": "Dispatches",
+        "icon": "play",
+        "class-name": "dispatches-page",
+        "description": "Package-worker dispatch activity retained from configured repositories.",
+        "views": [
+          {
+            "id": "package-worker-dispatches",
+            "title": "Package-worker dispatches",
+            "data": {
+              "sources": [
+                "runs",
+                "workflows"
+              ]
+            },
+            "mark": "element",
+            "element": "dispatch-catalog",
+            "layout": "full"
+          }
+        ]
+      },
+      {
         "id": "experiments",
         "kind": "built-in",
         "page": "experiments",
@@ -1233,6 +1256,7 @@
         "label": "Investigate",
         "pages": [
           "runs",
+          "dispatches",
           "findings",
           "operational-value"
         ]

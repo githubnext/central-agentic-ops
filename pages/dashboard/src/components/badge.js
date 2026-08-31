@@ -15,9 +15,9 @@ export function renderStatusBadge(status) {
 
   if (['success', 'completed', 'active', 'true', 'fresh', 'available', 'complete', 'accepted'].includes(normalized)) {
     statusClass = 'status-success';
-  } else if (['in-progress', 'running', 'pending', 'review', 'partial', 'stale', 'attention', 'warning'].includes(normalized)) {
+  } else if (['in-progress', 'running', 'pending', 'review', 'partial', 'stale', 'attention', 'warning', 'action-required'].includes(normalized)) {
     statusClass = 'status-attention';
-  } else if (['failure', 'failed', 'rejected', 'danger', 'unavailable', 'critical'].includes(normalized)) {
+  } else if (['failure', 'failed', 'rejected', 'danger', 'unavailable', 'critical', 'timed-out', 'startup-failure'].includes(normalized)) {
     statusClass = 'status-danger';
   }
 
