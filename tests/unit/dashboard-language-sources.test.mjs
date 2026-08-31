@@ -59,7 +59,7 @@ test("dashboard source bridge carries package memberships, allowance, and invent
       rolloutMode: sources.workflows.rows[0]["rollout-mode"],
     },
     {
-      package: "Package",
+      package: "shared",
       packageName: "Shared",
       packageMemberships: [
         { id: "Package", name: "Package" },

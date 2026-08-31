@@ -106,7 +106,7 @@ describe('renderRepositoryWorkflows', () => {
     const rendered = renderRepositoryWorkflows(routedContext);
     let allocation;
     rendered.addEventListener('dashboard-route-allocation', (event) => {
-      allocation = event.detail;
+      if (event instanceof CustomEvent) allocation = event.detail;
     });
     expect(rendered.querySelectorAll('tbody tr')).toHaveLength(1);
     expect(rendered.querySelector('tbody')?.textContent).not.toContain('One');

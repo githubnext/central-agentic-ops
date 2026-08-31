@@ -319,6 +319,7 @@ describe('presenter built-in and custom pages', () => {
     expect(rendered.querySelector('[data-page-id="repository-detail"]')?.hasAttribute('hidden')).toBe(false);
     expect(rendered.querySelector('.repository-view')?.getAttribute('data-repository')).toBe('octo-org/platform');
     expect(rendered.querySelector('.repository-section-heading > a')?.getAttribute('href')).toBe('https://github.com/octo-org/platform/actions');
+    expect(rendered.querySelector('[data-nav-page-id="repositories"]')?.getAttribute('aria-current')).toBe('page');
     rendered.remove();
     window.history.replaceState(null, '', '/');
   });
