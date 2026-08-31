@@ -64,7 +64,7 @@ export function renderExternalLink(link) {
     target: external ? '_blank' : undefined,
     rel: external ? 'noopener noreferrer' : undefined,
     'aria-label': link.label
-  }, link.label, octicon('external-link'));
+  }, link.label, ...(external ? [octicon('external-link')] : []));
 }
 
 /**

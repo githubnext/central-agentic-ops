@@ -42,6 +42,7 @@ describe('link content helpers', () => {
     const anchor = renderExternalLink(/** @type {NonNullable<typeof link>} */ (link));
     expect(anchor.getAttribute('target')).toBeNull();
     expect(anchor.getAttribute('rel')).toBeNull();
+    expect(anchor.querySelector('.octicon-external-link')).toBeNull();
   });
 
   it('DLS-SAFE-010 renders labeled external links and optional linked value content', () => {
