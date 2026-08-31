@@ -20,6 +20,8 @@ config:
 
 The root workflow sources are authentication-neutral. During installation, the action offers organization billing first when available. That selection adds `copilot-requests: write` to every installed Copilot workflow before compilation and uses the built-in workflow token. If organization billing is unavailable, offer the PAT selection only after explicit consent; it leaves that permission absent, collects `COPILOT_GITHUB_TOKEN` through a hidden prompt, and compiles the workflows to use only that secret.
 
+The root package also installs `.github/aw/default-AGENTS.md`. gh-aw package resources cannot own files outside `.github/`, and its bootstrap registry has no file-copy action, so `add-wizard` ends with a handoff explaining how to create root `AGENTS.md`. The CAO setup skill materializes the template only when that file is absent. Existing root agent instructions are consumer-owned and must be reviewed rather than overwritten. Package updates refresh the reference template without replacing the materialized file.
+
 This source transformation is bootstrap configuration, not runtime precedence. Verify the installed workflows use exactly one profile. Do not hand-edit generated `.lock.yml` files or combine a PAT-first token expression with `copilot-requests: write`.
 
 Choose Copilot inference authentication independently from target-repository authentication in [Configure Authentication](authentication.md). The root `copilot-auth` action handles only inference. Configure a GitHub App or a separately consented `GH_AW_GITHUB_TOKEN` when the selected target scope requires it.
