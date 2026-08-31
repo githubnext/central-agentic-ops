@@ -648,7 +648,10 @@ export function enableDashboardPageNavigation(root) {
       return;
     }
     const route = routeFromHash();
-    if (route) activate(route.pageId, route.parameters);
+    if (route) {
+      activate(route.pageId, route.parameters);
+      if (pageTitle instanceof HTMLElement) pageTitle.focus();
+    }
   };
   defaultView?.addEventListener('hashchange', onHashChange);
 }

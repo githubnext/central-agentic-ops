@@ -1416,6 +1416,7 @@ test('workflow runtime route renders JSON-declared workflow insights from reposi
 
   await expect(page).toHaveURL(/#page-workflow-runtime\?workflow=/);
   await expect(page.getByRole('heading', { name: 'Multi-Device Docs Tester', level: 1 })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Multi-Device Docs Tester', level: 1 })).toBeFocused();
   await expect(page.getByRole('navigation', { name: 'Multi-Device Docs Tester views' })).toContainText('ReportsInsights');
   await expect(page.locator('.workflow-runtime-metrics')).toContainText('1');
   await expect(page.locator('.workflow-runtime-metrics')).toContainText('962.7 AIC');

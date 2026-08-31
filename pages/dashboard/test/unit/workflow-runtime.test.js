@@ -29,6 +29,10 @@ const workflow = {
   }
 };
 
+/**
+ * @param {Record<string, import('../../src/presenter.js').LogicalSourceInput>} [overrides]
+ * @returns {import('../../src/components/ui-elements.js').ElementRenderContext}
+ */
 function context(overrides = {}) {
   return {
     pageId: 'workflow-runtime',
@@ -103,13 +107,39 @@ describe('renderWorkflowRuntime', () => {
           organization: 'githubnext',
           repository: 'central-agentic-ops',
           workflow: workflow.workflow,
+          run: '0',
+          'operational-value': 0.4,
+          'operational-case': 'docs-run-1',
+          'maturity-status': 'matured',
+          'evaluator-digest': 'sha256:old',
+          'requested-evidence-at': '2026-08-31T17:00:00Z',
+          'observed-at': '2026-08-31T17:00:00Z'
+        },
+        {
+          organization: 'githubnext',
+          repository: 'central-agentic-ops',
+          workflow: workflow.workflow,
           run: '1',
           'operational-value': 0.75,
           'operational-case': 'docs-run-1',
           'maturity-status': 'matured',
           'evaluator-digest': 'sha256:abcdefghijk',
-          'observed-at': '2026-08-31T18:00:00Z',
-          'run-link': { relation: 'run', href: 'https://github.com/githubnext/central-agentic-ops/actions/runs/1', label: 'Run 1' }
+          'requested-evidence-at': '2026-08-31T18:00:00Z',
+          'observed-at': '2026-08-31T18:00:00Z'
+        },
+        {
+          organization: 'githubnext',
+          repository: 'central-agentic-ops',
+          workflow: workflow.workflow,
+          run: '2',
+          'operational-value': 0.8,
+          'operational-case': 'docs-run-1',
+          'maturity-status': 'matured',
+          'evaluator-digest': 'sha256:abcdefghijk',
+          'requested-evidence-at': '2026-08-31T18:00:00Z',
+          'observed-at': '2026-08-31T19:00:00Z',
+          'run-link': { relation: 'run', href: 'https://github.com/githubnext/central-agentic-ops/actions/runs/2', label: 'Run 2' },
+          'evidence-link': { relation: 'evidence', href: 'https://github.com/githubnext/central-agentic-ops/issues/1', label: 'Evidence 1' }
         }
       ]
     };
@@ -117,10 +147,30 @@ describe('renderWorkflowRuntime', () => {
     selectWorkflow(rendered);
 
     expect(rendered.querySelector('.value-report-empty')).toBeNull();
-    expect(rendered.querySelector('.value-score')?.textContent).toContain('75%');
-    expect(rendered.querySelector('.value-chart')?.textContent).toContain('Mature average75%');
+    expect(rendered.querySelector('.value-score')?.textContent).toContain('80%');
+    expect(rendered.querySelector('.value-chart')?.textContent).toContain('Mature average80%');
+    expect(rendered.querySelector('.value-chart')?.textContent).toContain('Opportunities1');
     expect(rendered.querySelector('.value-details tbody')?.textContent).toContain('docs-run-1');
-    expect(rendered.querySelector('.value-details tbody a')?.getAttribute('href')).toContain('/actions/runs/1');
+    expect(rendered.querySelectorAll('.value-details tbody tr')).toHaveLength(1);
+    expect([...rendered.querySelectorAll('.value-details tbody a')].map((link) => link.getAttribute('href'))).toEqual([
+      'https://github.com/githubnext/central-agentic-ops/actions/runs/2',
+      'https://github.com/githubnext/central-agentic-ops/issues/1'
+    ]);
+  });
+
+  it('distinguishes unavailable operational-value evidence from an observed empty result', () => {
+    const sources = context().sources;
+    sources['operational-values'] = {
+      source: 'operational-values',
+      metadata: { ...completeMetadata, availability: /** @type {'unavailable'} */ ('unavailable') },
+      rows: /** @type {Array<Record<string, unknown>>} */ ([])
+    };
+    const rendered = renderWorkflowRuntime(context(sources));
+    selectWorkflow(rendered);
+
+    expect(rendered.querySelector('.value-report-empty')?.textContent).toContain('Unavailable');
+    expect(rendered.querySelector('.value-report-empty')?.textContent).toContain('Operational-value evidence unavailable');
+    expect(rendered.querySelector('.value-report-empty')?.textContent).not.toContain('No workflow observations yet');
   });
 
   it('reallocates page chrome and fails closed for invalid or missing routes', () => {

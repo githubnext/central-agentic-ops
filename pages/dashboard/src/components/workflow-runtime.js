@@ -65,9 +65,9 @@ function renderWorkflowRuntimeContent(context, workflow) {
   const workflowName = text(workflow['workflow-name']) || workflowPath || 'Unknown workflow';
   const runs = matchingRows(context, 'runs', repository, workflowPath);
   const usage = matchingRows(context, 'usage', repository, workflowPath);
-  const observations = matchingRows(context, 'operational-values', repository, workflowPath)
-    .filter((row) => Number.isFinite(Number(row['operational-value'])))
-    .sort((left, right) => rowTime(left) - rowTime(right));
+  const observations = comparableObservations(
+    matchingRows(context, 'operational-values', repository, workflowPath)
+  );
 
   return h(
     'div',
@@ -75,7 +75,7 @@ function renderWorkflowRuntimeContent(context, workflow) {
     renderWorkflowTabs(context.pageId, repository, workflowPath, workflowName),
     renderWorkflowIdentity(workflow),
     renderRuntimeMetrics(context, workflow, runs, usage),
-    renderValueReport(workflowName, repository, workflowPath, observations)
+    renderValueReport(workflowName, repository, workflowPath, observations, context.sources['operational-values']?.metadata)
   );
 }
 
@@ -214,10 +214,12 @@ function renderSimpleMetric(label, value, detail) {
  * @param {string} repository
  * @param {string} workflowPath
  * @param {Array<Record<string, unknown>>} observations
+ * @param {import('../presenter.js').SourceMetadata | undefined} metadata
  */
-function renderValueReport(workflowName, repository, workflowPath, observations) {
+function renderValueReport(workflowName, repository, workflowPath, observations, metadata) {
   const headingId = `workflow-${slugify(workflowRouteValue(repository, workflowPath))}-value-heading`;
   if (observations.length === 0) {
+    const unavailable = metadata?.availability === 'unavailable';
     return h(
       'section',
       { className: 'value-report value-report-empty', 'aria-labelledby': headingId },
@@ -225,14 +227,16 @@ function renderValueReport(workflowName, repository, workflowPath, observations)
         'header',
         null,
         h('div', null, h('h2', { id: headingId }, workflowName), h('p', null, `${repository} - ${workflowPath}`)),
-        renderStatusBadge('Not evaluated')
+        renderStatusBadge(unavailable ? 'Unavailable' : 'Not evaluated')
       ),
       h(
         'div',
         { className: 'value-empty' },
         octicon('graph'),
-        h('h3', null, 'No workflow observations yet'),
-        h('p', null, 'Operational value will appear after this workflow publishes a valid ', h('code', null, 'grader_results.json'), '.')
+        h('h3', null, unavailable ? 'Operational-value evidence unavailable' : 'No workflow observations yet'),
+        unavailable
+          ? h('p', null, 'Operational-value collection was unavailable for this dashboard refresh.')
+          : h('p', null, 'Operational value will appear after this workflow publishes a valid ', h('code', null, 'grader_results.json'), '.')
       ),
       h('div', { className: 'value-details-unavailable' }, 'Run evidence unavailable')
     );
@@ -314,20 +318,52 @@ function renderObservationTable(observations) {
         'tbody',
         null,
         ...[...observations].reverse().map((row) => {
-          const link = findLink(row, 'run-link') ?? findLink(row, 'evidence-link');
+          const runLink = findLink(row, 'run-link');
+          const evidenceLink = findLink(row, 'evidence-link');
           const observed = formatObservationDate(row['observed-at']);
           return h(
             'tr',
             null,
-            h('th', { scope: 'row' }, link ? h('a', { href: link.href, 'aria-label': link.label }, observed) : observed),
+            h('th', { scope: 'row' }, runLink ? h('a', { href: runLink.href, 'aria-label': runLink.label }, observed) : observed),
             h('td', null, text(row['operational-case']) || 'unknown'),
             h('td', null, formatPercent(row['operational-value'])),
-            h('td', null, renderStatusBadge(text(row['maturity-status']) === 'matured' ? 'Mature' : 'As of run'))
+            h(
+              'td',
+              null,
+              renderStatusBadge(text(row['maturity-status']) === 'matured' ? 'Mature' : 'As of run'),
+              evidenceLink ? h('span', null, ' ', renderExternalLink(evidenceLink)) : null
+            )
           );
         })
       )
     )
   );
+}
+
+/** @param {Array<Record<string, unknown>>} observations */
+function comparableObservations(observations) {
+  const valid = observations.filter((row) => (
+    Number.isFinite(Number(row['operational-value']))
+    && text(row['evaluator-digest'])
+    && text(row['operational-case'])
+  ));
+  const latestEvaluator = valid
+    .toSorted((left, right) => evidenceAssignmentTime(right) - evidenceAssignmentTime(left))[0]?.['evaluator-digest'];
+  if (!latestEvaluator) return [];
+
+  const opportunities = new Map();
+  for (const row of valid.filter((candidate) => candidate['evaluator-digest'] === latestEvaluator)) {
+    const key = `${qualifiedRepository(row)}:${text(row['operational-case'])}`;
+    const existing = opportunities.get(key);
+    if (!existing || rowTime(row) >= rowTime(existing)) opportunities.set(key, row);
+  }
+  return [...opportunities.values()].sort((left, right) => rowTime(left) - rowTime(right));
+}
+
+/** @param {Record<string, unknown>} row */
+function evidenceAssignmentTime(row) {
+  const value = Date.parse(text(row['requested-evidence-at'] ?? row['observed-at']));
+  return Number.isFinite(value) ? value : 0;
 }
 
 /** @param {Array<Record<string, unknown>>} runs */
