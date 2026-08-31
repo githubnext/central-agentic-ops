@@ -116,7 +116,7 @@
 - `src/components/summary-copy.js` — presentation-only shared singular/plural summary-count copy for repeated item-count text surfaces.
 - `src/components/view-chrome.js` — presentation-only reusable page-section, titled-region, summary-list/summary-region, summary-style definition-list and definition-list rows, generic custom-view chrome paragraphs, custom-view source/metadata/context chrome, shared custom-view section chrome, custom-view state-message/details helpers, and built-in provenance-section helpers.
 - `src/components/workflow-topology.js` — topology overview section for package and standalone workflow structure, now reusing shared definition-list rows for its summary metrics.
-- `src/components/ui-primitives.js` — presentation-only shared section-heading, vital-stat, and UTC date-time helpers for repeated dashboard component chrome.
+- `src/components/ui-primitives.js` — presentation-only shared section-heading, vital-stat, and UTC date-time helpers for repeated dashboard component chrome, including optional summary-free heading shells.
 - `src/components/count-formatters.js` — presentation-only shared count and singular/plural text helpers for repeated dashboard status, workflow, and signal copy.
 - `src/components/link-content.js` — presentation-only safe-link discovery and reusable external-link/value composition for custom metric and table views.
 - `src/components/linked-text.js` — presentation-only reusable text-as-link rendering for topology, chart, and entity-linked table cells plus a composable entity-aware table-cell renderer factory.
@@ -131,6 +131,15 @@
 - 2026-08-31: `npx playwright test --config=playwright.config.mjs` launches in this environment, but the current browser suite is already red on the checked-out baseline: page-level headings, skip-link visibility, route-driven repository views, keyboard section counts, and declarative table row visibility are not found across 9 existing `test/e2e/smoke.spec.js` assertions. This run did not change browser-only behavior, so the failures are recorded as a pre-existing gate blocker rather than fixed here.
 
 ## Run log
+
+### 2026-08-31 (section-heading shell refactor)
+- Re-inventoried repeated UI construction under `pages/dashboard/src/` and selected the next bounded presentation-only DOM slice from the queue: repeated `.section-heading` shells in `src/components/package-detail.js`, `src/components/repositories-view.js`, plus the existing shared call sites in `src/components/execution-elements.js` and `src/components/ui-elements.js`.
+- Generalized `src/components/ui-primitives.js` `renderSectionHeading(...)` to a minimal options object with optional summary support, then replaced every identified call site so the shared helper now renders both summary-bearing and summary-free section headers without changing classes, headings, or visible copy.
+- Collapsed the duplicated package topology and repository activity heading assembly in `src/components/package-detail.js` and `src/components/repositories-view.js`, and updated all existing callers to the same composable API.
+- Added unit coverage in `test/unit/ui-primitives.test.js` for summary omission while preserving the existing `package-detail`, `repositories-view`, runtime, and presenter assertions that lock the affected heading text and structure.
+- Proved unchanged behavior by keeping the affected unit suites green and capturing the bounded refactor diff at `/tmp/gh-aw/agent/section-heading-refactor.diff` for the touched files.
+- Verified `pages/dashboard/` quality gates in this run: `npm install`, `npm run build`, `npm run typecheck`, `npm run lint`, and `npm test` all pass. Playwright was not rerun for this bounded presentation-only helper extraction because no browser-only behavior changed; the current browser-gate status remains tracked in `PLAN.md` infrastructure blockers.
+- Next candidates in the queue: extract the repeated definitions/observations dual-region composition in `src/presenter.js`; extract the repeated summary-plus-trend section composition in `src/presenter.js`; extract the next shared pure helpers around subject/provenance/count formatting in `src/presenter.js`.
 
 ### 2026-08-31 (workflow-topology summary rows refactor)
 - Re-inventoried repeated UI construction under `pages/dashboard/src/` and selected the next bounded presentation-only DOM slice with multiple safe call sites: repeated definition-list row assembly in `src/components/workflow-topology.js`'s topology summary and the shared helper already used by `src/components/view-chrome.js` and `src/components/table-summary.js`.

@@ -195,7 +195,13 @@ function renderDomainAttentionElement(context) {
   return h(
     'section',
     { className: 'overview-observability', 'aria-labelledby': headingId },
-    renderSectionHeading('Current decision window', headingId, context.title, context.description, '', 'h2'),
+    renderSectionHeading({
+      kicker: 'Current decision window',
+      id: headingId,
+      title: context.title,
+      description: context.description,
+      headingTag: 'h2'
+    }),
     h(
       'div',
       { className: 'attention-domain-grid' },
@@ -315,7 +321,14 @@ function renderMetricSignalSummaryElement(context) {
   return h(
     'section',
     { className: 'domain-attention workflow-attention', 'aria-labelledby': headingId },
-    renderSectionHeading(stringValue(firstMetric.kicker), headingId, context.title, context.description, `${formatNumber(signals.length)} ${collectionLabel}`, context.headingTag),
+    renderSectionHeading({
+      kicker: stringValue(firstMetric.kicker),
+      id: headingId,
+      title: context.title,
+      description: context.description,
+      summary: `${formatNumber(signals.length)} ${collectionLabel}`,
+      headingTag: context.headingTag
+    }),
     renderDefinitionList('domain-summary', metrics.map((row) => ({
       label: stringValue(row.label),
       value: stringValue(row.value)

@@ -99,7 +99,13 @@ export function renderExecutionSignalList(context) {
   return h(
     'section',
     { className: 'workflow-attention', 'aria-labelledby': 'runtime-needs-attention' },
-    renderSectionHeading('Runtime triage', 'runtime-needs-attention', context.title, context.description, formatCountNoun(signals.length, 'signal', 'signals')),
+    renderSectionHeading({
+      kicker: 'Runtime triage',
+      id: 'runtime-needs-attention',
+      title: context.title,
+      description: context.description,
+      summary: formatCountNoun(signals.length, 'signal', 'signals')
+    }),
     h(
       'div',
       { className: 'anomaly-readiness', role: 'note' },
@@ -133,13 +139,13 @@ export function renderExecutionEpisodes(context) {
   return h(
     'section',
     { className: 'episode-observatory', id: 'runtime-execution-episodes', 'aria-labelledby': 'runtime-execution-episodes-heading' },
-    renderSectionHeading(
-      'Observed behavior',
-      'runtime-execution-episodes-heading',
-      context.title,
-      context.description,
-      `${runsMetadata?.completeness === 'complete' ? 'Complete' : 'Partial'} ${formatCount(windowHours)}h run window`
-    ),
+    renderSectionHeading({
+      kicker: 'Observed behavior',
+      id: 'runtime-execution-episodes-heading',
+      title: context.title,
+      description: context.description,
+      summary: `${runsMetadata?.completeness === 'complete' ? 'Complete' : 'Partial'} ${formatCount(windowHours)}h run window`
+    }),
     h(
       'dl',
       { className: 'episode-vitals' },
