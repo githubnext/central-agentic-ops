@@ -115,7 +115,7 @@ describe('repositories view', () => {
 
   it('derives the configured scope and renders it through the reusable context summary', () => {
     const viewContext = context();
-    const scope = renderUiElement('context-summary', viewContext);
+    const scope = /** @type {HTMLElement} */ (renderUiElement('context-summary', viewContext));
     const repositoriesPage = dashboard.dashboard.pages.find(
       (/** @type {{ id: string }} */ page) => page.id === 'repositories'
     );
@@ -179,7 +179,7 @@ describe('repositories view', () => {
     sourceInputs.runs.metadata = { ...metadata, availability: 'unavailable', completeness: 'unknown' };
     sourceInputs.usage.metadata = { ...metadata, availability: 'unavailable', completeness: 'unknown' };
     const derived = deriveRepositorySources(sourceInputs);
-    const scope = renderUiElement('context-summary', context(sourceInputs));
+    const scope = /** @type {HTMLElement} */ (renderUiElement('context-summary', context(sourceInputs)));
     expect(scope.textContent).toContain('Actions run data unavailable');
     expect(scope.textContent).toContain('Usage data unavailable');
     expect(derived['repository-activity'].rows[0]).toMatchObject({
