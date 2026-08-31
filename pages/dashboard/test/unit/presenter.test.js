@@ -306,6 +306,144 @@ describe('presenter built-in and custom pages', () => {
     expect(page?.textContent).toContain('No vulnerability feed is retained.');
   });
 
+  it('renders the custom JSON-composed Value page from shared summary, signal, and table elements', () => {
+    const metadata = {
+      'source-id': 'value-fixture',
+      'source-kind': 'fixture',
+      'as-of': '2026-08-31T05:00:00Z',
+      'retrieved-at': '2026-08-31T05:01:00Z',
+      completeness: /** @type {'complete'} */ ('complete'),
+      freshness: /** @type {'fresh'} */ ('fresh'),
+      availability: /** @type {'available'} */ ('available')
+    };
+    /** @param {string} run */
+    const evidenceLink = (run) => ({
+      relation: 'evidence',
+      href: `https://github.com/githubnext/central-agentic-ops/actions/runs/${run}`,
+      label: `View run ${run}`
+    });
+    const rendered = renderDashboard({
+      document: authoritativeDashboardDocument,
+      sources: {
+        'operational-values': {
+          source: 'operational-values',
+          rows: [
+            {
+              organization: 'githubnext',
+              repository: 'central-agentic-ops',
+              workflow: '.github/workflows/daily.md',
+              run: '100',
+              'operational-value': 0.2,
+              'operational-value-definition': 'daily-value',
+              'operational-case': 'triage',
+              'evaluator-digest': 'sha256:old',
+              'requested-evidence-at': '2026-08-27T05:00:00Z',
+              'observed-at': '2026-08-27T05:10:00Z',
+              'maturity-status': 'matured',
+              'delta-from-baseline': 0,
+              'evidence-link': evidenceLink('100')
+            },
+            {
+              organization: 'githubnext',
+              repository: 'central-agentic-ops',
+              workflow: '.github/workflows/daily.md',
+              run: '101',
+              'operational-value': 0.8,
+              'operational-value-definition': 'daily-value',
+              'operational-case': 'triage',
+              'evaluator-digest': 'sha256:current',
+              'requested-evidence-at': '2026-08-29T05:00:00Z',
+              'observed-at': '2026-08-29T05:10:00Z',
+              'maturity-status': 'matured',
+              'delta-from-baseline': 0.1,
+              'evidence-link': evidenceLink('101')
+            },
+            {
+              organization: 'githubnext',
+              repository: 'central-agentic-ops',
+              workflow: '.github/workflows/daily.md',
+              run: '102',
+              'operational-value': 0.6,
+              'operational-value-definition': 'daily-value',
+              'operational-case': 'release',
+              'evaluator-digest': 'sha256:current',
+              'requested-evidence-at': '2026-08-29T05:00:00Z',
+              'observed-at': '2026-08-30T05:10:00Z',
+              'maturity-status': 'matured',
+              'delta-from-baseline': 0.05,
+              'evidence-link': evidenceLink('102')
+            },
+            {
+              organization: 'githubnext',
+              repository: 'central-agentic-ops',
+              workflow: '.github/workflows/review.md',
+              run: '103',
+              'operational-value': 0.4,
+              'operational-value-definition': 'review-value',
+              'operational-case': 'review',
+              'evaluator-digest': 'sha256:review',
+              'requested-evidence-at': '2026-08-31T04:00:00Z',
+              'observed-at': '2026-08-31T04:10:00Z',
+              'maturity-status': 'interim',
+              'delta-from-baseline': null,
+              'evidence-link': evidenceLink('103')
+            }
+          ],
+          metadata
+        },
+        outcomes: {
+          source: 'outcomes',
+          rows: [
+            {
+              'safe-output': 'outcome-1',
+              'outcome-state': 'pending',
+              'observed-at': '2026-08-31T04:15:00Z',
+              'external-link': { relation: 'external', href: 'https://github.com/githubnext/central-agentic-ops/issues/1', label: 'View pending output' }
+            },
+            { 'safe-output': 'outcome-2', 'outcome-state': 'accepted', 'observed-at': '2026-08-30T04:15:00Z' }
+          ],
+          metadata
+        },
+        usage: {
+          source: 'usage',
+          rows: [],
+          metadata: { ...metadata, completeness: /** @type {'partial'} */ ('partial') }
+        }
+      }
+    });
+
+    const page = rendered.querySelector('[data-page-id="operational-value"]');
+    const dashboardPage = authoritativeDashboardDocument.dashboard.pages.find((/** @type {{ id: string }} */ candidate) => candidate.id === 'operational-value');
+    expect(dashboardPage).toMatchObject({ kind: 'custom', title: 'Value & outcomes' });
+    expect(dashboardPage).not.toHaveProperty('page');
+    expect(rendered.querySelector('[data-nav-page-id="operational-value"] .octicon-graph')).not.toBeNull();
+    expect(page?.querySelector('.summary-grid')?.textContent).toContain('Grader observations4');
+    expect(page?.querySelector('.summary-grid')?.textContent).toContain('Mature evidence3');
+    expect(page?.querySelector('.summary-grid')?.textContent).toContain('Mean operational value50%');
+    expect(page?.querySelector('.summary-grid')?.textContent).toContain('Pending outcomes1');
+
+    const signals = [...(page?.querySelectorAll('.signal-item') ?? [])];
+    expect(signals.map((signal) => signal.querySelector('.signal-copy > span')?.textContent)).toEqual([
+      'Maturity pending',
+      'AIC coverage',
+      'Open output',
+      'Experiment readiness'
+    ]);
+    expect(signals[2]?.querySelector('a')?.getAttribute('href')).toBe('https://github.com/githubnext/central-agentic-ops/issues/1');
+    expect(signals[3]?.querySelector('a')?.getAttribute('href')).toBe('#page-experiments');
+
+    const tables = page?.querySelectorAll('.custom-table') ?? [];
+    expect(tables).toHaveLength(2);
+    expect(tables[0]?.querySelectorAll('tbody tr')).toHaveLength(2);
+    expect(tables[0]?.textContent).toContain('.github/workflows/daily.md');
+    expect(tables[0]?.textContent).toContain('0.7');
+    expect(tables[1]?.querySelectorAll('tbody tr')).toHaveLength(4);
+    expect(tables[1]?.querySelector('.status-success')?.textContent).toBe('matured');
+    expect(tables[1]?.querySelector('.status-attention')?.textContent).toBe('interim');
+    expect(tables[1]?.querySelector('a[aria-label="View run 103"]')?.getAttribute('href')).toContain('/actions/runs/103');
+    expect(page?.textContent).toContain('not proof that a workflow caused an outcome');
+  });
+
   it('DLS-VIEW-018 DLS-VIEW-019 DLS-VIEW-020 progressively discloses supplemental views in source order', () => {
     const document = {
       languageVersion: '0.1.0',
@@ -790,12 +928,12 @@ describe('presenter built-in and custom pages', () => {
     expect(unavailablePackagesPage?.querySelector('.package-trend-panel')?.textContent).toContain('Package run data is unavailable.');
   });
 
-  it('DLS-PAGE-001 DLS-PAGE-002 DLS-PAGE-003 DLS-PAGE-004 DLS-PAGE-005 DLS-PAGE-006 DLS-PAGE-007 DLS-PAGE-008 DLS-PAGE-009 DLS-PAGE-010 DLS-PAGE-011 DLS-PAGE-012 DLS-PAGE-013 DLS-PAGE-014 DLS-PAGE-015 authoritative dashboard.json contains all 13 specification-defined built-in pages with declarative data-state and source coverage', () => {
+  it('DLS-PAGE-001 DLS-PAGE-002 DLS-PAGE-003 DLS-PAGE-004 DLS-PAGE-005 DLS-PAGE-006 DLS-PAGE-007 DLS-PAGE-008 DLS-PAGE-009 DLS-PAGE-010 DLS-PAGE-011 DLS-PAGE-012 DLS-PAGE-013 DLS-PAGE-014 DLS-PAGE-015 authoritative dashboard.json keeps the remaining built-in pages declarative', () => {
     const pages = authoritativeDashboardDocument.dashboard.pages.filter(
       (/** @type {{ kind: string }} */ page) => page.kind === 'built-in'
     );
     expect(Array.isArray(pages)).toBe(true);
-    expect(pages).toHaveLength(13);
+    expect(pages).toHaveLength(12);
     expect(pages.map((/** @type {{ page: string }} */ page) => page.page)).toEqual([
       'overview',
       'organizations',
@@ -808,7 +946,6 @@ describe('presenter built-in and custom pages', () => {
       'evals',
       'usage',
       'engines-models',
-      'operational-value',
       'findings'
     ]);
 

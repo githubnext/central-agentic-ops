@@ -246,7 +246,10 @@ export const SOURCE_VALUES = [
   'overview-managed-packages',
   'overview-package-utilization',
   'security-summary',
-  'security-signals'
+  'security-signals',
+  'value-summary',
+  'value-signals',
+  'value-workflows'
 ];
 
 export const SOURCE_FIELDS = {
@@ -266,7 +269,10 @@ export const SOURCE_FIELDS = {
   'operational-values': ['organization', 'repository', 'workflow', 'run', 'experiment', 'operational-case', 'evaluator-digest', 'rollout-mode', 'operational-value', 'operational-value-definition', 'requested-evidence-at', 'evidence-cutoff', 'maturity-at', 'maturity-status', 'delta-from-baseline', 'observed-at', 'evidence-link', 'organization-link', 'repository-link', 'workflow-link', 'run-link'],
   'overview-attention-domains': ['domain', 'state', 'tone', 'icon', 'value', 'detail', 'href', 'priority', 'order'],
   'security-summary': ['label', 'value'],
-  'security-signals': ['priority', 'count', 'tone', 'icon', 'kind', 'title', 'detail', 'evidence', 'action', 'navigation-page', 'run-link', 'external-link']
+  'security-signals': ['priority', 'count', 'tone', 'icon', 'kind', 'title', 'detail', 'evidence', 'action', 'navigation-page', 'run-link', 'external-link'],
+  'value-summary': ['label', 'value'],
+  'value-signals': ['priority', 'count', 'tone', 'icon', 'kind', 'title', 'detail', 'evidence', 'action', 'navigation-page', 'run-link', 'external-link'],
+  'value-workflows': ['organization', 'repository', 'workflow', 'operational-value-definition', 'opportunities', 'mature-observations', 'mean-operational-value', 'mean-baseline', 'observed-at', 'evidence-link', 'organization-link', 'repository-link', 'workflow-link']
 };
 
 export const ROLLOUT_MODE_VALUES = ['review', 'live', 'unknown'];
