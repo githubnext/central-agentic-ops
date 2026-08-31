@@ -122,7 +122,10 @@ export function renderDashboard(input) {
   const dashboardRepository = typeof document.dashboard.repository === 'string' && document.dashboard.repository.length > 0
     ? document.dashboard.repository
     : null;
-  const sources = deriveOverviewSources(deriveEntityLinkSources(rawSources, githubUrlBase));
+  const sources = deriveRepositoryDashboardLinks(
+    deriveOverviewSources(deriveEntityLinkSources(rawSources, githubUrlBase)),
+    pages
+  );
   const orgName = inferOrganizationName(sources) || 'GitHub';
   const sidebarTitle = dashboardRepository?.split('/').at(-1) || orgName;
 
@@ -1211,6 +1214,50 @@ function deriveEntityLinkSources(sources, githubUrlBase) {
       rows: Array.isArray(source?.rows) ? source.rows.map((row) => deriveEntityLinkRow(row, githubUrlBase)) : source?.rows
     }
   ]));
+}
+
+/**
+ * Adds presentation-only repository routes while retaining the canonical
+ * external link for repository-scoped GitHub controls.
+ * @param {Record<string, LogicalSourceInput>} sources
+ * @param {Array<PresentableBuiltInPage | PresentableCustomPage>} pages
+ * @returns {Record<string, LogicalSourceInput>}
+ */
+function deriveRepositoryDashboardLinks(sources, pages) {
+  const detailPage = pages.find((page) => page.kind === 'custom' && page.route?.['hash-query-parameter'] === 'repository');
+  if (!detailPage) return sources;
+
+  return Object.fromEntries(Object.entries(sources).map(([name, source]) => [
+    name,
+    {
+      ...source,
+      rows: Array.isArray(source?.rows)
+        ? source.rows.map((row) => deriveRepositoryDashboardLink(row, detailPage.id))
+        : source?.rows
+    }
+  ]));
+}
+
+/**
+ * @param {Record<string, unknown>} row
+ * @param {string} pageId
+ * @returns {Record<string, unknown>}
+ */
+function deriveRepositoryDashboardLink(row, pageId) {
+  const organization = trimmedString(row.organization);
+  const repository = trimmedString(row.repository);
+  const repositorySlug = repository && repository.includes('/') ? repository : (organization && repository ? `${organization}/${repository}` : null);
+  const repositoryLink = row['repository-link'];
+  if (!repositorySlug || !isPlainObject(repositoryLink)) return row;
+
+  return {
+    ...row,
+    'repository-link': {
+      ...repositoryLink,
+      'dashboard-href': `#page-${encodeURIComponent(pageId)}?repository=${encodeURIComponent(repositorySlug)}`,
+      'dashboard-label': `View ${repositorySlug} repository dashboard`
+    }
+  };
 }
 
 /**

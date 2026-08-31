@@ -6,7 +6,7 @@ import { h } from '../dom.js';
 import { octicon } from '../octicons.js';
 
 /**
- * @typedef {{ href: string, label: string }} SafeLink
+ * @typedef {{ href: string, label: string, externalHref?: string }} SafeLink
  */
 
 /**
@@ -42,7 +42,15 @@ export function findLink(row, field) {
   } catch {
     return null;
   }
-  return { href: candidate.href, label: candidate.label };
+  const dashboardHref = typeof candidate['dashboard-href'] === 'string' && candidate['dashboard-href'].startsWith('#page-')
+    ? candidate['dashboard-href']
+    : null;
+  const dashboardLabel = typeof candidate['dashboard-label'] === 'string' && candidate['dashboard-label'].trim().length > 0
+    ? candidate['dashboard-label']
+    : candidate.label;
+  return dashboardHref
+    ? { href: dashboardHref, label: dashboardLabel, externalHref: candidate.href }
+    : { href: candidate.href, label: candidate.label };
 }
 
 /**
@@ -50,10 +58,11 @@ export function findLink(row, field) {
  * @returns {HTMLElement}
  */
 export function renderExternalLink(link) {
+  const external = !link.href.startsWith('#');
   return h('a', {
     href: link.href,
-    target: '_blank',
-    rel: 'noopener noreferrer',
+    target: external ? '_blank' : undefined,
+    rel: external ? 'noopener noreferrer' : undefined,
     'aria-label': link.label
   }, link.label, octicon('external-link'));
 }

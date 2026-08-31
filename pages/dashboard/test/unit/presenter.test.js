@@ -234,6 +234,94 @@ describe('presenter built-in and custom pages', () => {
     expect(rendered.querySelector('.sidebar-brand > span')?.textContent).toBe('agentic-operations');
   });
 
+  it('routes repository entity links to the repository detail view while retaining GitHub Actions links', () => {
+    window.history.replaceState(null, '', '/#page-repositories');
+    const rendered = renderDashboard({
+      document: {
+        languageVersion: '0.1.0',
+        dashboard: {
+          id: 'repository-routing-dashboard',
+          title: 'Repository routing',
+          pages: [
+            {
+              id: 'repositories',
+              kind: /** @type {'custom'} */ ('custom'),
+              title: 'Repositories',
+              views: [{
+                id: 'repository-list',
+                title: 'Repositories',
+                data: { source: 'repositories' },
+                mark: 'table',
+                encoding: { columns: [{ field: 'repository' }] }
+              }]
+            },
+            {
+              id: 'repository-detail',
+              kind: /** @type {'custom'} */ ('custom'),
+              title: 'Repository',
+              route: { 'hash-query-parameter': 'repository' },
+              views: [{
+                id: 'repository-workflows',
+                title: 'Agentic workflows',
+                data: { sources: ['workflows'] },
+                mark: 'element',
+                element: 'repository-workflows'
+              }]
+            }
+          ]
+        }
+      },
+      sources: {
+        repositories: {
+          source: 'repositories',
+          rows: [{ organization: 'octo-org', repository: 'platform' }],
+          metadata: {
+            'source-id': 'repositories-fixture',
+            'source-kind': 'fixture',
+            'as-of': '2026-08-30T08:00:00Z',
+            'retrieved-at': '2026-08-30T08:01:00Z',
+            completeness: 'complete',
+            freshness: 'fresh',
+            availability: 'available'
+          }
+        },
+        workflows: {
+          source: 'workflows',
+          rows: [{
+            organization: 'octo-org',
+            repository: 'platform',
+            workflow: '.github/workflows/review.md',
+            'workflow-name': 'Review',
+            'workflow-active': 'true'
+          }],
+          metadata: {
+            'source-id': 'workflows-fixture',
+            'source-kind': 'fixture',
+            'as-of': '2026-08-30T08:00:00Z',
+            'retrieved-at': '2026-08-30T08:01:00Z',
+            completeness: 'complete',
+            freshness: 'fresh',
+            availability: 'available'
+          }
+        }
+      }
+    });
+    document.body.append(rendered);
+
+    const repositoryLink = rendered.querySelector('[data-page-id="repositories"] tbody a');
+    expect(repositoryLink?.getAttribute('href')).toBe('#page-repository-detail?repository=octo-org%2Fplatform');
+    expect(repositoryLink?.getAttribute('target')).toBeNull();
+
+    window.history.replaceState(null, '', `/${repositoryLink?.getAttribute('href')}`);
+    window.dispatchEvent(new Event('hashchange'));
+
+    expect(rendered.querySelector('[data-page-id="repository-detail"]')?.hasAttribute('hidden')).toBe(false);
+    expect(rendered.querySelector('.repository-view')?.getAttribute('data-repository')).toBe('octo-org/platform');
+    expect(rendered.querySelector('.repository-section-heading > a')?.getAttribute('href')).toBe('https://github.com/octo-org/platform/actions');
+    rendered.remove();
+    window.history.replaceState(null, '', '/');
+  });
+
   it('renders section-labeled Attention Investigate Explore navigation groups in the sidebar', () => {
     const rendered = renderDashboard({
       document: authoritativeDashboardDocument,

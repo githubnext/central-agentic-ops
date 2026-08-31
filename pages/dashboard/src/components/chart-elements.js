@@ -93,8 +93,8 @@ export function renderPieLegend(entries, total, links = new Map(), unit = null) 
         links.has(label)
           ? h('a', {
             href: links.get(label)?.href,
-            target: '_blank',
-            rel: 'noopener noreferrer',
+            target: links.get(label)?.href.startsWith('#') ? undefined : '_blank',
+            rel: links.get(label)?.href.startsWith('#') ? undefined : 'noopener noreferrer',
             'aria-label': links.get(label)?.label
           }, label)
           : label

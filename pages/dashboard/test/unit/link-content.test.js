@@ -24,6 +24,26 @@ describe('link content helpers', () => {
     expect(link).toEqual({ href: 'https://example.com/run/4', label: 'Run 4' });
   });
 
+  it('uses a presentation-only dashboard route while retaining the external repository href', () => {
+    const link = findLink({
+      'repository-link': {
+        href: 'https://github.com/octo-org/platform',
+        label: 'View octo-org/platform on GitHub',
+        'dashboard-href': '#page-repository-detail?repository=octo-org%2Fplatform',
+        'dashboard-label': 'View octo-org/platform repository dashboard'
+      }
+    }, 'repository-link');
+
+    expect(link).toEqual({
+      href: '#page-repository-detail?repository=octo-org%2Fplatform',
+      label: 'View octo-org/platform repository dashboard',
+      externalHref: 'https://github.com/octo-org/platform'
+    });
+    const anchor = renderExternalLink(/** @type {NonNullable<typeof link>} */ (link));
+    expect(anchor.getAttribute('target')).toBeNull();
+    expect(anchor.getAttribute('rel')).toBeNull();
+  });
+
   it('DLS-SAFE-010 renders labeled external links and optional linked value content', () => {
     const link = { href: 'https://example.com/run/4', label: 'Run 4' };
     const anchor = renderExternalLink(link);
