@@ -396,6 +396,12 @@ h3 { margin: 16px 0 8px; font-size: 1rem; font-weight: 600; }
 .package-utilization-value { flex: none; font-size: 1.25rem; font-weight: 600; font-variant-numeric: tabular-nums; }
 .package-utilization-card p { min-height: 18px; margin: 0; color: var(--muted); font-size: .75rem; }
 .package-utilization-card small { display: block; margin-top: 4px; color: var(--muted); font-size: .6875rem; }
+.package-summary-heading { margin-bottom: 10px; }
+.package-summary-heading h3 { margin: 0 0 2px; font-size: 1.25rem; }
+.package-summary-heading p { margin: 0; color: var(--muted); }
+.package-summary .table-region { margin-bottom: 0; }
+.package-summary-table { min-width: 920px; }
+.package-summary-table tbody th { font-weight: 600; white-space: nowrap; }
 .package-trend-panel { overflow: hidden; border: 1px solid var(--border); border-radius: 6px; background: var(--canvas); }
 .package-trend-panel > header { min-height: 72px; display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; padding: 14px 16px; border-bottom: 1px solid var(--border); }
 .package-trend-panel > header h3 { margin: 0; font-size: 1rem; }

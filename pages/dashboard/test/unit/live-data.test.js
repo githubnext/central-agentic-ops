@@ -93,6 +93,15 @@ describe("live Dashboard Language sources", () => {
           warning: true,
         }],
       },
+      inventory: {
+        workflows: [],
+        bundles: [{
+          workflow: ".github/workflows/dependabot.md",
+          compiled: false,
+          missingWorkers: ["dependabot-worker"],
+          workers: [],
+        }],
+      },
     };
     for (const [name, value] of Object.entries(inputs)) {
       writeFileSync(join(temporaryDirectory, `${name}.json`), JSON.stringify(value));
@@ -108,6 +117,7 @@ describe("live Dashboard Language sources", () => {
           REPORT_AIC_USAGE: join(temporaryDirectory, "usage.json"),
           REPORT_OPERATIONAL_VALUES: join(temporaryDirectory, "operationalValues.json"),
           REPORT_RECORDS: join(temporaryDirectory, "report.json"),
+          REPORT_INVENTORY: join(temporaryDirectory, "inventory.json"),
           REPORT_DASHBOARD_SOURCES: output,
         },
       });
@@ -117,6 +127,7 @@ describe("live Dashboard Language sources", () => {
         organization: "githubnext",
         repository: "central-agentic-ops",
         package: "dependabot",
+        "package-inventory-warnings": 2,
         "workflow-active": "true",
         "rollout-mode": "review",
       });
