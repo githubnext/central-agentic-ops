@@ -106,6 +106,7 @@
 - `src/components/data-state.js` — presentation-only data-state metrics card grid for availability, completeness, and freshness.
 - `src/components/table-region.js` — presentation-only reusable table wrapper for repeated table-region markup, header rows, empty-state rows, and keyed body-row descriptors across built-in and custom tables.
 - `src/components/view-chrome.js` — presentation-only reusable page-section, titled-region, summary-list/summary-region, generic custom-view chrome paragraphs, custom-view source/metadata/context chrome, shared custom-view section chrome, custom-view state-message/details helpers, and built-in provenance-section helpers.
+- `src/components/ui-primitives.js` — presentation-only shared section-heading, vital-stat, and UTC date-time helpers for repeated dashboard component chrome.
 - `src/components/count-formatters.js` — presentation-only shared count and singular/plural text helpers for repeated dashboard status, workflow, and signal copy.
 - `src/components/link-content.js` — presentation-only safe-link discovery and reusable external-link/value composition for custom metric and table views.
 - `src/components/linked-text.js` — presentation-only reusable text-as-link rendering for topology, chart, and entity-linked table cells plus a composable entity-aware table-cell renderer factory.
@@ -120,6 +121,14 @@
 - 2026-08-31: `npx playwright test --config=playwright.config.mjs` launches in this environment, but the current browser suite is already red on the checked-out baseline: page-level headings, skip-link visibility, route-driven repository views, keyboard section counts, and declarative table row visibility are not found across 9 existing `test/e2e/smoke.spec.js` assertions. This run did not change browser-only behavior, so the failures are recorded as a pre-existing gate blocker rather than fixed here.
 
 ## Run log
+
+### 2026-08-31 (ui-primitives helper refactor)
+- Re-inventoried repeated UI construction under `pages/dashboard/src/` and selected the highest remaining bounded presentation-only helper slice: duplicated `.section-heading` and `dl` vital-stat DOM assembly in `src/components/execution-elements.js` and `src/components/ui-elements.js`, plus the matching UTC date-time formatter duplicated in `src/components/execution-elements.js` and `src/components/dispatch-catalog.js`.
+- Extracted `src/components/ui-primitives.js` with presentation-only `renderSectionHeading(...)`, `renderVitalStat(...)`, and `formatUtcDateTime(...)`, then replaced every identified call site in `src/components/execution-elements.js` and `src/components/ui-elements.js`.
+- Added unit coverage in `test/unit/ui-primitives.test.js` for heading levels, summaries, vital-detail omission, and UTC date fallback states while preserving existing `DLS-VIEW-005`-adjacent runtime and repository view assertions.
+- Proved unchanged behavior by keeping `test/unit/runtime-view.test.js` and `test/unit/repository-workflows.test.js` green, and by diffing the affected runtime page HTML before and after the refactor: the only observed difference was trailing newline output from the local comparison harness, with no DOM markup changes in the compared sections.
+- Verified `pages/dashboard/` quality gates in this run: `npm install`, `npm run build`, `npm run typecheck`, `npm run lint`, and `npm test` all pass. Browser checks were not rerun because this bounded helper extraction did not change browser-only behavior, and the existing Playwright gate remains tracked in `PLAN.md` infrastructure blockers.
+- Next candidates in the queue: replace the remaining duplicated UTC date formatter in `src/components/dispatch-catalog.js` and `src/components/repository-workflows.js`; extract the repeated count/percentage summary copy in `src/components/table-summary.js` and `src/components/ui-elements.js`; extract the repeated definitions/observations dual-region composition in `src/presenter.js`.
 
 ### 2026-08-31 (count-formatters helper refactor)
 - Re-inventoried repeated UI construction under `pages/dashboard/src/` and selected the highest remaining bounded pure-helper slice: repeated count-plus-pluralization copy in `src/components/execution-elements.js`, `src/components/workflow-topology.js`, and `src/components/repository-workflows.js` for signals, worker dispatch evidence gaps, root-episode summaries, worker counts, workflow counts, and disabled-workflow text.
