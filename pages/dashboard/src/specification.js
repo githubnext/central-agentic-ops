@@ -40,7 +40,6 @@ export const VIEW_ELEMENT_VALUES = [
   'workflow-detail',
   'workflow-runtime',
   'outcome-detail',
-  'execution-signal-list',
   'execution-episodes',
   'workflow-topology'
 ];
@@ -264,7 +263,8 @@ export const SOURCE_VALUES = [
   'cost-summary',
   'cost-signals',
   'cost-readiness',
-  'experiment-readiness'
+  'experiment-readiness',
+  'runtime-signals'
 ];
 
 export const SOURCE_FIELDS = {
@@ -291,7 +291,8 @@ export const SOURCE_FIELDS = {
   'cost-summary': ['label', 'value'],
   'cost-signals': ['priority', 'count', 'tone', 'icon', 'kind', 'title', 'detail', 'evidence', 'action', 'navigation-page'],
   'cost-readiness': ['priority', 'count', 'tone', 'icon', 'kind', 'title', 'detail', 'evidence', 'action'],
-  'experiment-readiness': ['priority', 'count', 'tone', 'icon', 'kind', 'title', 'detail', 'evidence', 'action']
+  'experiment-readiness': ['priority', 'count', 'tone', 'icon', 'kind', 'title', 'detail', 'evidence', 'action'],
+  'runtime-signals': ['priority', 'count', 'tone', 'icon', 'kind', 'title', 'detail', 'evidence', 'action', 'navigation-href']
 };
 
 export const ROLLOUT_MODE_VALUES = ['review', 'live', 'unknown'];
