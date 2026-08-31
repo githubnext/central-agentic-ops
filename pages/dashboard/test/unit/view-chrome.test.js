@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import { describe, expect, it } from 'vitest';
-import { customViewAvailabilityMessage, renderContextChrome, renderContextList, renderCustomViewStateDetails, renderDefinitionList, renderDefinitionListRows, renderMetadataSection, renderPageSection, renderProvenanceList, renderProvenanceSection, renderSummaryList, renderSummaryRegion, renderTitledRegion, renderViewChrome, renderViewHeader, renderViewSectionChrome } from '../../src/components/view-chrome.js';
+import { customViewAvailabilityMessage, renderContextChrome, renderContextList, renderCustomViewStateDetails, renderDefinitionList, renderDefinitionListRows, renderMetadataSection, renderPageSection, renderProvenanceList, renderProvenanceSection, renderSummaryList, renderSummaryRegion, renderTitledBodySection, renderTitledRegion, renderViewChrome, renderViewHeader, renderViewSectionChrome } from '../../src/components/view-chrome.js';
 
 describe('view chrome component helpers', () => {
   it('DLS-SAFE-007 renders focusable labeled page sections with deterministic heading ids', () => {
@@ -210,5 +210,31 @@ describe('view chrome component helpers', () => {
     expect(defaultHeading.textContent).toContain('Closed');
     expect(customHeading.querySelector('h3')?.textContent).toBe('Workflow');
     expect(customHeading.textContent).toContain('Daily review');
+  });
+
+  it('renders titled body sections with optional section and body chrome', () => {
+    const populated = renderTitledBodySection(
+      'workflow-observations-heading',
+      'Workflow observations',
+      [document.createElement('p'), document.createElement('table')],
+      {
+        sectionClassName: 'value-details-section',
+        headingTag: 'h4',
+        bodyClassName: 'value-details-body',
+        bodyAttributes: { role: 'group', 'aria-label': 'Observation details' }
+      }
+    );
+    populated.querySelector('p')?.append('Missing, failed, and null grader results are excluded rather than scored as zero.');
+    const plain = renderTitledBodySection('', 'Workflow observations', [document.createElement('p')]);
+    plain.querySelector('p')?.append('Body');
+
+    expect(populated.className).toBe('value-details-section');
+    expect(populated.querySelector('h4')?.id).toBe('workflow-observations-heading');
+    expect(populated.querySelector('.value-details-body')?.getAttribute('role')).toBe('group');
+    expect(populated.querySelector('.value-details-body')?.getAttribute('aria-label')).toBe('Observation details');
+    expect(populated.querySelector('.value-details-body')?.querySelectorAll('p, table')).toHaveLength(2);
+    expect(plain.querySelector('h3')?.textContent).toBe('Workflow observations');
+    expect(plain.querySelector('h3')?.hasAttribute('id')).toBe(false);
+    expect(plain.textContent).toContain('Body');
   });
 });
