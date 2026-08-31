@@ -70,6 +70,24 @@ export function renderContextList(details) {
 }
 
 /**
+ * @param {string} className
+ * @param {Array<Record<string, unknown>>} rows
+ * @returns {HTMLElement}
+ */
+export function renderDefinitionList(className, rows) {
+  return h(
+    'dl',
+    { className },
+    ...rows.map((row) => h(
+      'div',
+      null,
+      h('dt', null, String(row.label ?? '')),
+      h('dd', null, String(row.value ?? ''))
+    ))
+  );
+}
+
+/**
  * @param {string[]} contextDetails
  * @returns {HTMLElement[]}
  */

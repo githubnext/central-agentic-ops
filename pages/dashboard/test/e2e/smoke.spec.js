@@ -189,6 +189,7 @@ function buildPresenterModuleUrl() {
     .replace("'./outcome-detail.js'", JSON.stringify(outcomeDetailModuleUrl))
     .replace("'./execution-elements.js'", JSON.stringify(executionElementsModuleUrl))
     .replace("'./ui-primitives.js'", JSON.stringify(uiPrimitivesModuleUrl))
+    .replace("'./view-chrome.js'", JSON.stringify(viewChromeModuleUrl))
     .replace("'./workflow-topology.js'", JSON.stringify(workflowTopologyModuleUrl))
     .replace("'./dispatch-catalog.js'", JSON.stringify(dispatchCatalogModuleUrl));
   const uiElementsModuleUrl = `data:text/javascript;charset=utf-8,${encodeURIComponent(uiElementsSource)}`;
