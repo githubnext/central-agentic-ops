@@ -1492,12 +1492,22 @@ test("README routes zero-to-CAO requests to the setup skill", () => {
   const readme = readFileSync(join(root, "README.md"), "utf8");
   const setupSkillPath = join(root, ".github", "skills", "setup-central-agentic-ops", "SKILL.md");
   const setupSkill = readFileSync(setupSkillPath, "utf8");
+  const createPackageSkill = readFileSync(join(root, ".github", "skills", "create-ops-package", "SKILL.md"), "utf8");
   const readmeEntry = ".github/skills/setup-central-agentic-ops/SKILL.md";
 
   assert.ok(readme.split("\n").slice(0, 20).some((line) => line.includes(readmeEntry)));
   assert.ok(existsSync(setupSkillPath));
   assert.match(setupSkill, /^---\nname: setup-central-agentic-ops\n/);
   assert.match(setupSkill, /safe_output_mode=review/);
+  assert.match(setupSkill, /Ask these two package questions separately/);
+  assert.match(setupSkill, /What do you want CAO to do with the catalog operations installed by the root package/);
+  assert.match(setupSkill, /immutable root package installs its core catalog workflows as one unit/);
+  assert.match(setupSkill, /Do you also want to create an operation package of your own/);
+  assert.match(setupSkill, /plan an explicit handoff to `.github\/skills\/create-ops-package\/SKILL\.md` after step 11/);
+  assert.match(setupSkill, /never silently default them to Dependabot/);
+  assert.match(createPackageSkill, /When invoked from `.github\/skills\/setup-central-agentic-ops\/SKILL\.md`/);
+  assert.match(createPackageSkill, /accept the recorded desired outcome and target-repository description/);
+  assert.match(createPackageSkill, /Do not repeat the custom-package yes\/no question or restart control-plane setup/);
   assert.match(setupSkill, /Ask which repository the first review run should target/);
   assert.match(setupSkill, /Offer `<organization>\/<control-repository>` as the default/);
   assert.match(setupSkill, /target_repo="<target-owner>\/<target-repository>"/);
@@ -1529,7 +1539,9 @@ test("README routes zero-to-CAO requests to the setup skill", () => {
   assert.ok(policyTemplate, "setup skill must contain a JSON policy template");
   const initialPolicy = JSON.parse(policyTemplate
     .replaceAll("<target-owner>", "acme")
-    .replaceAll("<target-repository>", "service"));
+    .replaceAll("<target-repository>", "service")
+    .replaceAll("<package-slug>", "dependabot")
+    .replaceAll("<worker-slug>", "release-train-updater"));
   assert.deepEqual(initialPolicy, {
     version: 1,
     "control-plane": {
@@ -1548,7 +1560,8 @@ test("README routes zero-to-CAO requests to the setup skill", () => {
   });
   assert.match(setupSkill, /"allowed-owners": \["<target-owner>"\]/);
   assert.match(setupSkill, /"allowed-repositories": \["<target-owner>\/<target-repository>"\]/);
-  assert.match(setupSkill, /"dependabot"[\s\S]*?"release-train-updater"/);
+  assert.match(setupSkill, /"<package-slug>"[\s\S]*?"<worker-slug>"/);
+  assert.match(setupSkill, /gh aw run <orchestrator-workflow>/);
   assert.match(setupSkill, /Public and private control repositories are supported/);
   assert.match(setupSkill, /policy, workflow runs, operational metadata, and review safe outputs are public/);
   assert.doesNotMatch(setupSkill, /the control repository is public;/);
