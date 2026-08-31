@@ -92,6 +92,15 @@ main.dashboard-prototype { width: 100%; flex: 1; padding: 0 24px 40px; }
 .overview-header h1 { margin: 0; font-size: 1.5rem; line-height: 1.25; }
 .overview-header .lede { margin: 3px 0 0; font-size: .875rem; }
 .title-area { display: flex; align-items: center; gap: 8px; }
+.toolbar { display: flex; align-items: center; gap: 8px; margin-bottom: 16px; }
+.filter-control { min-width: 240px; min-height: 30px; display: flex; flex: 1; align-items: stretch; position: relative; border: 1px solid var(--border); border-radius: 6px; background: var(--canvas); font-size: .75rem; }
+.scope-label, .scope-period, .export-control, .search-control { display: inline-flex; align-items: center; gap: 7px; padding: 4px 12px; }
+.scope-label { border-right: 1px solid var(--border); }
+.count-badge { min-width: 20px; padding: 0 6px; border-radius: 2em; background: var(--neutral-muted); font-size: .6875rem; text-align: center; }
+.filter-control code { min-width: 0; flex: 1; padding: 5px 12px; overflow: hidden; background: transparent; color: var(--accent); text-overflow: ellipsis; white-space: nowrap; }
+.search-control { padding-inline: 9px; border-left: 1px solid var(--border); color: var(--muted); }
+.scope-period, .export-control { min-height: 30px; border: 1px solid var(--border); border-radius: 6px; background: var(--canvas-subtle); color: var(--fg); font-size: .75rem; font-weight: 600; text-decoration: none; white-space: nowrap; }
+.export-control:hover { background: var(--neutral-muted); text-decoration: none; }
 .dashboard-pages { display: flex; flex-direction: column; gap: 24px; }
 .dashboard-page { padding: 0; }
 .dashboard-page[hidden] { display: none; }
@@ -625,6 +634,10 @@ footer { padding: 20px 24px; border-top: 1px solid var(--border); color: var(--m
   .nav-section-label { display: none; }
   .primary-nav a { min-height: 44px; flex: none; }
   .overview-header { min-height: 0; padding: 24px 0 20px; flex-direction: column; gap: 12px; }
+  .toolbar { align-items: stretch; flex-wrap: wrap; }
+  .filter-control { flex-basis: 100%; }
+  .scope-period, .export-control { min-height: 44px; }
+  .scope-period { flex: 1; justify-content: center; }
   main.dashboard-prototype { padding: 0 14px 28px; }
   .data-state-summary, .metrics { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .layout-section[data-section-layout="wide"], .layout-section[data-section-layout="narrow"] { grid-column: span 12; }

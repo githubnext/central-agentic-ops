@@ -42,6 +42,26 @@ describe('Cost and efficiency dashboard view', () => {
     expect(dashboardPage).toMatchObject({ kind: 'custom', icon: 'meter' });
     expect(dashboardPage.views).toHaveLength(3);
     expect(rendered.querySelector('[data-nav-page-id="cost"] .octicon-meter')).not.toBeNull();
+    const filterBar = page?.querySelector('.filter-bar');
+    expect(filterBar?.querySelector('.filter-control code')?.textContent).toBe('mode:review mode:live');
+    expect(filterBar?.querySelector('.count-badge')?.textContent).toBe('2');
+    expect(filterBar?.querySelector('.scope-period')?.textContent).toBe('All recorded');
+    const exportLink = filterBar?.querySelector('.export-control');
+    expect(exportLink?.getAttribute('download')).toBe('cost.json');
+    const exportPayload = JSON.parse(decodeURIComponent(exportLink?.getAttribute('href')?.split(',')[1] ?? ''));
+    expect(exportPayload).toMatchObject({
+      page: 'cost',
+      filters: ['mode:review', 'mode:live'],
+      sources: {
+        usage: {
+          source: 'usage',
+          rows: expect.arrayContaining([
+            expect.objectContaining({ invocation: 'usage-1', aic: 3.5 })
+          ]),
+          metadata: expect.objectContaining({ 'source-id': 'cost-fixture' })
+        }
+      }
+    });
 
     const summary = page?.querySelector('.domain-summary');
     expect(summary?.textContent).toContain('Measured AIC9');
