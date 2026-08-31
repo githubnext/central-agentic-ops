@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { formatAggregateValue, formatNumber, toNumber } from '../../src/view-formatters.js';
+import { formatAggregateValue, formatNumber, renderTemplate, resolveThresholdStatus, toNumber } from '../../src/view-formatters.js';
 
 /**
  * @param {unknown} value
@@ -40,5 +40,28 @@ describe('view formatter helpers', () => {
     expect(toNumber('12')).toBe(0);
     expect(formatNumber(2)).toBe('2');
     expect(formatNumber(2.5)).toBe('2.50');
+  });
+
+  it('renders JSON-configured copy templates with plain, suffix, and word substitutions', () => {
+    expect(renderTemplate('{{count}} failed run{{count:suffix::s}}', { count: 1 })).toBe('1 failed run');
+    expect(renderTemplate('{{count}} failed run{{count:suffix::s}}', { count: 3 })).toBe('3 failed runs');
+    expect(renderTemplate('Across {{repositories}} repositor{{repositories:suffix:y:ies}}', { repositories: 1 })).toBe('Across 1 repository');
+    expect(renderTemplate('Across {{repositories}} repositor{{repositories:suffix:y:ies}}', { repositories: 3 })).toBe('Across 3 repositories');
+    expect(renderTemplate('{{count}} run{{count:suffix::s}} {{status:word:is:are}} pending', { count: 2, status: 2 })).toBe('2 runs are pending');
+    expect(renderTemplate('{{missing}} unavailable', {})).toBe(' unavailable');
+  });
+
+  it('resolves an ordered, JSON-configured threshold list to a status label', () => {
+    const thresholds = [
+      { max: 0.5, status: 'low' },
+      { max: 0.8, status: 'medium' },
+      { status: 'high' }
+    ];
+
+    expect(resolveThresholdStatus(0.2, thresholds)).toBe('low');
+    expect(resolveThresholdStatus(0.5, thresholds)).toBe('medium');
+    expect(resolveThresholdStatus(0.79, thresholds)).toBe('medium');
+    expect(resolveThresholdStatus(0.8, thresholds)).toBe('high');
+    expect(resolveThresholdStatus(5, thresholds)).toBe('high');
   });
 });
