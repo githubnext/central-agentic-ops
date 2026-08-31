@@ -55,13 +55,14 @@ export function toNumber(value) {
 /**
  * @param {number} value
  * @param {{ name: string, symbol: string, significant: number } | null} [unit]
+ * @param {boolean} [includeUnit]
  * @returns {string}
  */
-export function formatNumber(value, unit = null) {
+export function formatNumber(value, unit = null, includeUnit = true) {
   if (unit && Number.isFinite(unit.significant) && unit.significant > 0) {
     const quotient = value / unit.significant;
     const rounded = Math.sign(quotient) * Math.round(Math.abs(quotient)) * unit.significant;
-    return `${rounded.toFixed(fractionDigits(unit.significant))} ${unit.symbol}`;
+    return `${rounded.toFixed(fractionDigits(unit.significant))}${includeUnit ? ` ${unit.symbol}` : ''}`;
   }
   return Number.isInteger(value) ? String(value) : value.toFixed(2);
 }
