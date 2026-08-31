@@ -2,8 +2,14 @@ name: Workflow contracts
 
 on:
   pull_request:
+    paths-ignore:
+      - .github/workflows/cid.yml
+      - pages/dashboard/**
   push:
     branches: [main]
+    paths-ignore:
+      - .github/workflows/cid.yml
+      - pages/dashboard/**
   workflow_dispatch:
 
 permissions:
@@ -25,10 +31,25 @@ jobs:
         uses: github/gh-aw-actions/setup-cli@bc8c008a419c5b7a29df6f5641edd35fd1c6ea85 # v0.87.10
         with:
           version: v0.87.10
-      - name: Run release gate
-        env:
-          CENTRAL_AGENTIC_OPS_PACKAGE_SOURCE: ${{ github.repository }}@${{ github.sha }}
-          GH_TOKEN: ${{ github.token }}
+      - name: Run contract suite
         run: npm run check
       - name: Check patch formatting
         run: git diff --check
+
+  package-lifecycle:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: 24
+      - name: Install gh-aw
+        uses: github/gh-aw-actions/setup-cli@bc8c008a419c5b7a29df6f5641edd35fd1c6ea85 # v0.87.10
+        with:
+          version: v0.87.10
+      - name: Run package lifecycle integration
+        env:
+          CENTRAL_AGENTIC_OPS_PACKAGE_SOURCE: ${{ github.repository }}@${{ github.sha }}
+          GH_TOKEN: ${{ github.token }}
+        run: npm run test:package-lifecycle
