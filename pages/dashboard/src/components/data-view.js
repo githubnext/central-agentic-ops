@@ -61,7 +61,7 @@ export function renderDataView(mark, context) {
 
 /** @param {DataViewContext} context */
 function renderMetricView(context) {
-  const { pageId, title, view, sourceName, rows, metadata, contextDetails, headingTag, toText, units = {} } = context;
+  const { pageId, title, view, rows, metadata, contextDetails, headingTag, toText, units = {} } = context;
   const valueDefinition = isPlainObject(view.encoding) && isPlainObject(view.encoding.value)
     ? view.encoding.value
     : null;
@@ -74,7 +74,7 @@ function renderMetricView(context) {
   const link = hrefField ? findFirstLink(rows, hrefField) : null;
   const valueText = formatAggregateValue(rows, fieldName, aggregate, toText, fieldUnit(valueDefinition, units));
   const content = [
-    ...renderViewSectionChrome(sourceName, metadata, contextDetails),
+    ...renderViewSectionChrome(metadata, contextDetails),
     h('p', { className: 'metric-value', 'data-metric-value': fieldName ?? 'unknown' }, valueText)
   ];
   if (link) {
@@ -85,7 +85,7 @@ function renderMetricView(context) {
 
 /** @param {DataViewContext} context */
 function renderTableView(context) {
-  const { pageId, title, view, sourceName, rows, metadata, contextDetails, headingTag, prepareTableRows, toText, units = {} } = context;
+  const { pageId, title, view, rows, metadata, contextDetails, headingTag, prepareTableRows, toText, units = {} } = context;
   const columns = /** @type {TableField[]} */ (isPlainObject(view.encoding) && Array.isArray(view.encoding.columns)
     ? view.encoding.columns.filter((column) => isPlainObject(column) && typeof column.field === 'string')
     : []);
@@ -132,7 +132,7 @@ function renderTableView(context) {
 
   const interactive = view.controls !== 'static';
   return renderPageSection(pageId, title, [
-    ...renderViewSectionChrome(sourceName, metadata, contextDetails),
+    ...renderViewSectionChrome(metadata, contextDetails),
     renderTableRegion({
       tableClassName: 'custom-table',
       regionClassName: interactive ? undefined : 'table-region-static',
@@ -163,7 +163,7 @@ function renderTableView(context) {
 
 /** @param {DataViewContext} context */
 function renderChartView(context) {
-  const { pageId, title, view, sourceName, rows, metadata, contextDetails, headingTag, buildChartPoints, prepareChartPoints } = context;
+  const { pageId, title, view, rows, metadata, contextDetails, headingTag, buildChartPoints, prepareChartPoints } = context;
   const encoding = isPlainObject(view.encoding) ? view.encoding : null;
   const x = isPlainObject(encoding?.x) && typeof encoding.x.field === 'string' ? encoding.x : null;
   const y = isPlainObject(encoding?.y) && typeof encoding.y.field === 'string' ? encoding.y : null;
@@ -206,7 +206,7 @@ function renderChartView(context) {
 
   const section = renderPageSection(pageId, title, [
     ...(description ? [description] : []),
-    ...renderViewSectionChrome(sourceName, metadata, contextDetails),
+    ...renderViewSectionChrome(metadata, contextDetails),
     ...(color && chartType !== 'pie' ? [renderChartLegend(chartSeries, chartType)] : []),
     ...(pieSummary
       ? [h('div', { className: 'pie-chart-layout' }, chartWidget, renderPieLegend(
