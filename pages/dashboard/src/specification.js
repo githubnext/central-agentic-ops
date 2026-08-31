@@ -2,6 +2,8 @@
  * Dashboard Language Specification constants used by the validator.
  */
 
+import octiconNames from './octicon-names.json' with { type: 'json' };
+
 export const LANGUAGE_VERSION = '0.1.0';
 
 export const IDENTIFIER_PATTERN = /^[a-z][a-z0-9]*(?:-[a-z0-9]+)*$/;
@@ -115,7 +117,7 @@ export const FILTER_DIMENSION_VALUES = [
 ];
 
 export const PAGE_KIND_VALUES = ['built-in', 'custom'];
-export const PAGE_ICON_VALUES = ['server', 'workflow', 'play', 'repo', 'package', 'issue', 'graph', 'shield', 'meter', 'beaker', 'codescan'];
+export const PAGE_ICON_VALUES = octiconNames;
 
 export const BUILT_IN_PAGE_VALUES = [
   'overview',

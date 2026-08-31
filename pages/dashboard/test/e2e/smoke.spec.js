@@ -10,8 +10,11 @@ function buildPresenterModuleUrl() {
   const stylesSource = readFileSync(new URL('../../src/styles.js', import.meta.url), 'utf8');
   const stylesModuleUrl = `data:text/javascript;charset=utf-8,${encodeURIComponent(stylesSource)}`;
 
+  const octiconsSprite = readFileSync(new URL('../../src/octicons.svg', import.meta.url), 'utf8');
+  const octiconsSpriteUrl = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(octiconsSprite)}`;
   const octiconsSource = readFileSync(new URL('../../src/octicons.js', import.meta.url), 'utf8')
-    .replace("'./dom.js'", JSON.stringify(domModuleUrl));
+    .replace("'./dom.js'", JSON.stringify(domModuleUrl))
+    .replace("'./octicons.svg'", JSON.stringify(octiconsSpriteUrl));
   const octiconsModuleUrl = `data:text/javascript;charset=utf-8,${encodeURIComponent(octiconsSource)}`;
 
   const badgeSource = readFileSync(new URL('../../src/components/badge.js', import.meta.url), 'utf8')

@@ -21,7 +21,7 @@ describe('presenter built-in and custom pages', () => {
           id: 'operations',
           kind: /** @type {'custom'} */ ('custom'),
           title: 'Operations',
-          icon: 'workflow',
+          icon: 'rocket',
           views: [{
             id: 'topology',
             data: { sources: ['workflows'] },
@@ -68,7 +68,8 @@ describe('presenter built-in and custom pages', () => {
     expect(topology?.querySelector('[data-package-id="dependabot"]')?.textContent).toContain('dispatches');
     expect(topology?.querySelector('[data-repository="target-service"]')?.textContent).toContain('CI');
     expect(topology?.textContent).toContain('safe outputs only');
-    expect(rendered.querySelector('[data-nav-page-id="operations"] .octicon-workflow')).not.toBeNull();
+    const rocket = rendered.querySelector('[data-nav-page-id="operations"] .octicon-rocket');
+    expect(rocket?.querySelector('use')?.getAttribute('href')).toMatch(/\/src\/octicons\.svg#octicon-rocket$/);
   });
 
   it('DLS-LINK-006 DLS-LINK-007 derives organization, repository, and workflow links from raw identity fields in the topology view', () => {
