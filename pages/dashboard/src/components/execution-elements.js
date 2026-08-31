@@ -6,7 +6,6 @@ import { h } from '../dom.js';
 import { octicon } from '../octicons.js';
 import { renderStatusBadge } from './badge.js';
 import { formatCount, formatCountNoun } from './count-formatters.js';
-import { findLink, renderWorkflowRunLink } from './link-content.js';
 import { formatUtcDateTime, renderSectionHeading, renderVitalStat } from './ui-primitives.js';
 
 const FAILURE_CONCLUSIONS = new Set(['failure', 'startup-failure', 'timed-out']);
@@ -30,7 +29,7 @@ export function renderExecutionSignalList(context) {
       title: `${episode.packageName} root episode failed`,
       detail: `${runTitle(episode.run, episode.workflow)} · ${formatDuration(episode.duration)}`,
       evidence: '1 failed root run',
-      link: findLink(episode.run, 'run-link')
+      href: packageOrWorkflowHref(episode.workflow, episode.run)
     });
   }
 
@@ -46,7 +45,7 @@ export function renderExecutionSignalList(context) {
       title: workflowName(workflow, runs[0]),
       detail: `${formatCount(runs.length)} of ${formatCount(retained)} retained runs failed`,
       evidence: retained > 0 ? formatPercent(runs.length / retained) : 'No denominator',
-      link: findLink(runs[0], 'run-link')
+      href: workflowHref(workflow, runs[0])
     });
   }
 
@@ -62,7 +61,7 @@ export function renderExecutionSignalList(context) {
       title: workflowName(workflow, runs[0]),
       detail: `${formatCount(runs.length)} of ${formatCount(retained)} retained runs require approval`,
       evidence: 'Maintainer action',
-      link: findLink(runs[0], 'run-link')
+      href: workflowHref(workflow, runs[0])
     });
   }
 
@@ -176,7 +175,7 @@ export function renderExecutionEpisodes(context) {
             return h(
               'li',
               null,
-              renderWorkflowRunLink(run, runTitle(run, workflow), octicon('external-link')),
+              renderInternalLink(workflowHref(workflow, run), runTitle(run, workflow)),
               h('span', null, `${workflowName(workflow, run)} · ${text(run['run-conclusion']) || text(run['run-status']) || 'unknown'}`)
             );
           })
@@ -239,7 +238,7 @@ function groupRuns(rows) {
 }
 
 /**
- * @param {{ className: string, icon: string, kind: string, title: string, detail: string, evidence: string, link?: { href: string, label: string } | null, href?: string }} signal
+ * @param {{ className: string, icon: string, kind: string, title: string, detail: string, evidence: string, href?: string | null }} signal
  * @param {number} index
  */
 function renderSignal(signal, index) {
@@ -247,11 +246,10 @@ function renderSignal(signal, index) {
     h('span', { className: 'signal-rank', 'aria-hidden': 'true' }, String(index + 1)),
     h('span', { className: 'signal-icon' }, octicon(signal.icon)),
     h('span', { className: 'signal-copy' }, h('span', null, signal.kind), h('strong', null, signal.title), h('small', null, signal.detail)),
-    h('span', { className: 'signal-evidence' }, h('strong', null, signal.evidence), h('small', null, 'View evidence', signal.link ? octicon('external-link') : null))
+    h('span', { className: 'signal-evidence' }, h('strong', null, signal.evidence), h('small', null, 'View evidence'))
   ];
-  const href = signal.link?.href ?? signal.href;
-  return h('li', { className: signal.className, 'data-signal-kind': signal.kind.toLowerCase().replaceAll(' ', '-') }, href
-    ? h('a', { href, ...(signal.link ? { target: '_blank', rel: 'noopener noreferrer', 'aria-label': signal.link.label } : {}) }, ...content)
+  return h('li', { className: signal.className, 'data-signal-kind': signal.kind.toLowerCase().replaceAll(' ', '-') }, signal.href
+    ? h('a', { href: signal.href }, ...content)
     : h('span', { className: 'workflow-attention-static' }, ...content));
 }
 
@@ -270,7 +268,7 @@ function renderEpisode(episode) {
         'div',
         null,
         h('span', { className: 'scope-kicker' }, episode.packageName),
-        h('h3', null, renderWorkflowRunLink(episode.run, runTitle(episode.run, episode.workflow), octicon('external-link'))),
+        h('h3', null, renderInternalLink(packageOrWorkflowHref(episode.workflow, episode.run), runTitle(episode.run, episode.workflow))),
         h('p', null, h('time', { dateTime: text(episode.run['started-at']) }, formatUtcDateTime(episode.run['started-at'])))
       ),
       renderStatusBadge(result)
@@ -379,6 +377,41 @@ function runTitle(run, workflow) {
  */
 function workflowName(workflow, run) {
   return text(workflow?.['workflow-name']) || text(run?.workflow) || 'Unknown workflow';
+}
+
+/**
+ * @param {Row | undefined} workflow
+ * @param {Row} run
+ */
+function packageOrWorkflowHref(workflow, run) {
+  const packageId = text(workflow?.package);
+  return packageId
+    ? `#page-package-detail?package=${encodeURIComponent(packageId)}`
+    : workflowHref(workflow, run);
+}
+
+/**
+ * @param {Row | undefined} workflow
+ * @param {Row} run
+ */
+function workflowHref(workflow, run) {
+  const identity = workflow ?? run;
+  const repository = text(identity['runtime-repository']) || text(identity.repository);
+  const qualifiedRepository = repository.includes('/')
+    ? repository
+    : `${text(identity.organization)}/${repository}`.replace(/^\/|\/$/g, '');
+  const workflowPath = text(identity.workflow);
+  return qualifiedRepository && workflowPath
+    ? `#page-workflow-detail?workflow=${encodeURIComponent(`${qualifiedRepository}:${workflowPath}`)}`
+    : null;
+}
+
+/**
+ * @param {string | null} href
+ * @param {string} label
+ */
+function renderInternalLink(href, label) {
+  return href ? h('a', { href }, label) : label;
 }
 
 /**

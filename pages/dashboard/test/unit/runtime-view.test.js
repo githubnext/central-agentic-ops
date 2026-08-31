@@ -98,6 +98,13 @@ describe('Runtime dashboard view', () => {
     expect(attention).toContain('1 worker dispatch lacks episode evidence');
     expect(attention).toContain('1 root episode has no correlated worker attempt or output');
     expect(rendered.querySelector('.signal-critical .signal-icon use')?.getAttribute('href')).toContain('#octicon-issue-opened');
+    expect([...rendered.querySelectorAll('.workflow-attention-list > li > a')].map((link) => link.getAttribute('href'))).toEqual([
+      '#page-workflow-detail?workflow=githubnext%2Fcentral-agentic-ops%3A.github%2Fworkflows%2Fdependabot-worker.md',
+      '#page-workflow-detail?workflow=githubnext%2Fcentral-agentic-ops%3A.github%2Fworkflows%2Fdependabot.md',
+      '#runtime-execution-episodes',
+      '#runtime-episode-attribution-gap'
+    ]);
+    expect(rendered.querySelector('.workflow-attention-list a[target]')).toBeNull();
     expect(rendered.querySelector('.episode-vitals')?.textContent).toContain('0 / 1');
     const repeatedCoverage = [...rendered.querySelectorAll('.episode-vitals > div')]
       .find((node) => node.querySelector('dt')?.textContent === 'Repeated coverage');
@@ -105,6 +112,9 @@ describe('Runtime dashboard view', () => {
     expect(repeatedCoverage?.querySelector('p')?.textContent).toBe('requires exact episode attribution');
     expect(rendered.querySelectorAll('.episode-record')).toHaveLength(1);
     expect(rendered.querySelector('.episode-record')?.textContent).toContain('Dependabot review');
+    expect(rendered.querySelector('.episode-record h3 a')?.getAttribute('href')).toBe(
+      '#page-package-detail?package=dependabot'
+    );
     const unavailableMeasures = [...rendered.querySelectorAll('.episode-measures > div')]
       .filter((node) => ['Observed targets', 'Attributed workers', 'Output yield'].includes(node.querySelector('dt')?.textContent ?? ''));
     expect(unavailableMeasures.map((node) => node.querySelector('dd')?.textContent)).toEqual(['—', '—', '—']);
@@ -116,5 +126,9 @@ describe('Runtime dashboard view', () => {
     expect(executionShape?.querySelector('footer')?.textContent).toBe('Episode startAligned timeEpisode end');
     expect(rendered.querySelector('.episode-record > footer')?.textContent).toContain('No-action attempts unavailable');
     expect(rendered.querySelector('.episode-attribution-gap')?.textContent).toContain('1 worker dispatch lacks episode evidence');
+    expect(rendered.querySelector('.episode-attribution-gap li a')?.getAttribute('href')).toBe(
+      '#page-workflow-detail?workflow=githubnext%2Fcentral-agentic-ops%3A.github%2Fworkflows%2Fdependabot-worker.md'
+    );
+    expect(rendered.querySelector('.workflow-attention a[href^="http"], .episode-observatory a[href^="http"]')).toBeNull();
   });
 });
