@@ -20,158 +20,33 @@
         "title": "Overview",
         "icon": "server",
         "class-name": "overview-page",
-        "description": "Managed packages, execution health, and items requiring attention.",
+        "description": "Current operational attention across runtime, controls, value, episodes, cost, and evidence.",
         "definition": {
           "data-state": {
             "availability": true,
             "completeness": true,
             "freshness": true
           },
-          "sections": [
-            {
-              "id": "control-plane-health",
-              "title": "Control plane health",
-              "description": "Current workflow inventory, execution volume, failures, and AI Credit consumption.",
-              "layout": "full",
-              "views": [
-                "overview-control-plane-status",
-                "overview-package-aic-utilization",
-                "overview-attention-panel",
-                "overview-managed-packages"
-              ]
-            },
-            {
-              "id": "execution-trends",
-              "title": "Execution and value trends",
-              "description": "Run conclusions and operational value over time.",
-              "layout": "full",
-              "views": [
-                "overview-run-trend",
-                "overview-operational-values"
-              ]
-            }
-          ],
           "views": [
             {
-              "id": "overview-control-plane-status",
-              "title": "Control plane status",
+              "id": "overview-attention-domains",
+              "title": "Attention by domain",
+              "description": "Ordered by urgency. Each state names only what retained evidence and configured policy can support.",
               "data": {
                 "sources": [
                   "repositories",
                   "workflows",
                   "runs",
                   "usage",
-                  "overview-status",
-                  "overview-vitals",
-                  "overview-execution-health"
-                ]
-              },
-              "mark": "element",
-              "element": "status-summary",
-              "layout": "full"
-            },
-            {
-              "id": "overview-package-aic-utilization",
-              "title": "Package AIC utilization",
-              "data": {
-                "sources": [
-                  "workflows",
-                  "usage",
-                  "overview-package-utilization"
-                ]
-              },
-              "mark": "element",
-              "element": "meter-list",
-              "layout": "full",
-              "description": "Actual AI Credits against summed per-run limits for retained package runs."
-            },
-            {
-              "id": "overview-attention-panel",
-              "title": "Needs attention",
-              "data": {
-                "sources": [
-                  "workflows",
-                  "runs",
-                  "usage",
+                  "outcomes",
                   "findings",
-                  "overview-attention"
+                  "operational-values",
+                  "overview-attention-domains"
                 ]
               },
               "mark": "element",
-              "element": "attention-list",
-              "layout": "half"
-            },
-            {
-              "id": "overview-managed-packages",
-              "title": "Managed packages",
-              "data": {
-                "sources": [
-                  "workflows",
-                  "overview-managed-packages"
-                ]
-              },
-              "mark": "element",
-              "element": "record-cards",
-              "layout": "half"
-            },
-            {
-              "id": "overview-run-trend",
-              "disclosure": "supplemental",
-              "title": "Run conclusion trend",
-              "description": "Run conclusions over time.",
-              "data": {
-                "source": "runs"
-              },
-              "mark": "chart",
-              "chart": "line",
-              "layout": "half",
-              "encoding": {
-                "x": {
-                  "field": "started-at",
-                  "type": "temporal",
-                  "time-unit": "day"
-                },
-                "y": {
-                  "field": "run",
-                  "type": "quantitative",
-                  "aggregate": "count"
-                },
-                "color": {
-                  "field": "run-conclusion",
-                  "type": "nominal"
-                },
-                "href": {
-                  "field": "run-link",
-                  "type": "nominal"
-                }
-              }
-            },
-            {
-              "id": "overview-operational-values",
-              "disclosure": "supplemental",
-              "title": "Operational value timeline",
-              "description": "Recorded operational value separated by definition.",
-              "data": {
-                "source": "operational-values"
-              },
-              "mark": "chart",
-              "chart": "line",
-              "layout": "half",
-              "encoding": {
-                "x": {
-                  "field": "observed-at",
-                  "type": "temporal",
-                  "time-unit": "day"
-                },
-                "y": {
-                  "field": "operational-value",
-                  "type": "quantitative"
-                },
-                "color": {
-                  "field": "operational-value-definition",
-                  "type": "nominal"
-                }
-              }
+              "element": "domain-attention",
+              "layout": "full"
             }
           ]
         }
@@ -617,6 +492,48 @@
             }
           ]
         }
+      },
+      {
+        "id": "runtime",
+        "kind": "custom",
+        "title": "Runtime",
+        "icon": "play",
+        "class-name": "runtime-page",
+        "description": "Execution failures, approval gates, and exact control-plane episode evidence.",
+        "views": [
+          {
+            "id": "runtime-needs-attention",
+            "title": "Needs attention",
+            "description": "Ranked evidence from execution state and exact episode attribution. No composite score is used.",
+            "data": {
+              "sources": [
+                "workflows",
+                "runs",
+                "outcomes",
+                "findings"
+              ]
+            },
+            "mark": "element",
+            "element": "execution-signal-list",
+            "layout": "full"
+          },
+          {
+            "id": "runtime-execution-episodes",
+            "title": "Execution episodes",
+            "description": "Root orchestrator runs joined to worker outcomes only through explicit control-plane correlation evidence.",
+            "data": {
+              "sources": [
+                "workflows",
+                "runs",
+                "outcomes",
+                "usage"
+              ]
+            },
+            "mark": "element",
+            "element": "execution-episodes",
+            "layout": "full"
+          }
+        ]
       },
       {
         "id": "runs",
@@ -1438,6 +1355,7 @@
       {
         "label": "Investigate",
         "pages": [
+          "runtime",
           "runs",
           "security",
           "dispatches",

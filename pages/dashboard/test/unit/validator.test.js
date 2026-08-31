@@ -32,20 +32,9 @@ dashboard:
 `;
 
 describe('dashboard document validation', () => {
-  it('accepts the authoritative built-in overview section layout and rejects incomplete view placement', () => {
+  it('accepts the authoritative built-in overview view definition', () => {
     const accepted = validateDashboardDocument(authoritativeDashboardSource);
     expect(accepted.ok).toBe(true);
-
-    const incomplete = JSON.parse(authoritativeDashboardSource);
-    incomplete.dashboard.pages[0].definition.sections[1].views = ['overview-workflows'];
-    const rejected = validateDashboardDocument(JSON.stringify(incomplete));
-    expect(rejected.ok).toBe(false);
-    if (!rejected.ok) {
-      expect(rejected.errors).toContainEqual(expect.objectContaining({
-        path: '$.dashboard.pages[0].definition.sections',
-        message: 'layout sections must reference every definition view exactly once and preserve view order.'
-      }));
-    }
   });
 
   it('DLS-VIEW-024 validates custom page section layout and complete ordered view placement', () => {
