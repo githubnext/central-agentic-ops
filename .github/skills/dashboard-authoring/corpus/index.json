@@ -1,0 +1,10 @@
+{
+  "schemaVersion": 1,
+  "examples": [
+    {
+      "id": "stale-documentation-remediation",
+      "metadata": "examples/stale-documentation-remediation.json",
+      "dashboard": "examples/stale-documentation-remediation.dashboard.yml"
+    }
+  ]
+}

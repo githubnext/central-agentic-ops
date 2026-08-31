@@ -1183,6 +1183,19 @@ test("daily dashboard renderer builds incrementally inside its own directory", (
   assert.match(source, /The build must prove that `dashboard\.json` produces all 12 built-in pages without page-specific JavaScript/);
 });
 
+test("dashboard authoring corpus workflow generates only validated training examples", () => {
+  const source = workflow("dashboard-authoring-corpus.md");
+
+  assert.match(source, /^intent: Improve model reliability/m);
+  assert.match(source, /^skills:\n\s+- \.github\/skills\/dashboard-authoring$/m);
+  assert.match(source, /npm ci --prefix pages\/dashboard --ignore-scripts/);
+  assert.match(source, /npm --prefix pages\/dashboard run validate:corpus/);
+  assert.match(source, /Scope every view to the synthetic workflow with a `workflow` filter/);
+  assert.match(source, /Use an attainment-only baseline with null value and cutoff/);
+  assert.match(source, /create-pull-request:[\s\S]*?allowed-files:\n\s+- "\.github\/skills\/dashboard-authoring\/corpus\/index\.json"\n\s+- "\.github\/skills\/dashboard-authoring\/corpus\/examples\/\*\.json"\n\s+- "\.github\/skills\/dashboard-authoring\/corpus\/examples\/\*\.dashboard\.yml"/);
+  assert.doesNotMatch(source, /allowed-files:\n(?:\s+- .*\n)*\s+- "(?!\.github\/skills\/dashboard-authoring\/corpus\/)/);
+});
+
 test("daily dashboard component refactorer extracts reusable components in place", () => {
   const source = workflow("daily-dashboard-component-refactorer.md");
 
@@ -1266,6 +1279,7 @@ test("clean-room compilation emits the expected GitHub Actions settings", { time
       "accessibility-expert.lock.yml",
       "advisory-package-maintainer.lock.yml",
       "cao-dashboard-review.lock.yml",
+      "dashboard-authoring-corpus.lock.yml",
       "daily-dashboard-component-refactorer.lock.yml",
       "daily-dashboard-language-renderer.lock.yml",
       "daily-dashboard-language-spec-review.lock.yml",
