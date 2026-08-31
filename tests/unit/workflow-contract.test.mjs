@@ -1171,19 +1171,21 @@ test("SVG visual audit covers every tracked SVG in both color schemes", () => {
   assert.match(source, /Never claim success if any manifest entry was skipped/);
 });
 
-test("multi-device docs tester covers PR browser and appearance compatibility", () => {
+test("multi-device docs tester runs daily and covers browser and appearance compatibility", () => {
   const source = workflow("multi-device-docs-tester.md");
+  const compiled = workflow("multi-device-docs-tester.lock.yml");
 
-  assert.match(source, /pull_request:/);
-  assert.match(source, /- "docs\/\*\*"/);
+  assert.match(source, /schedule: daily/);
+  assert.doesNotMatch(source, /pull_request:|workflow_dispatch:|inputs\.devices/);
+  assert.match(compiled, /cron: "\d+ \d+ \* \* \*"  # Friendly format: daily \(scattered\)/);
+  assert.doesNotMatch(compiled, /^  pull_request:/m);
   assert.match(source, /playwright@1\.63\.0-alpha-2026-08-05 install --with-deps webkit/);
   assert.match(source, /^      cat > "\$EXPR_GITHUB_WORKSPACE\/\.playwright\/webkit\.config\.json" <<'EOF'\n      \{\}\n      EOF$/m);
   assert.match(source, /for BROWSER in chrome webkit/);
   assert.match(source, /colorScheme: "light"/);
   assert.match(source, /colorScheme: "dark"/);
   assert.match(source, /currentSrc/);
-  assert.match(source, /create-check-run:/);
-  assert.match(source, /action_required/);
+  assert.doesNotMatch(source, /create-check-run:|create_check_run|action_required/);
   assert.match(source, /multi-device-docs\/screenshots/);
 });
 
