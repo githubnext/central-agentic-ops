@@ -40,7 +40,16 @@ describe('Cost and efficiency dashboard view', () => {
     );
 
     expect(dashboardPage).toMatchObject({ kind: 'custom', icon: 'meter' });
-    expect(dashboardPage.views).toHaveLength(3);
+    expect(dashboardPage.views).toHaveLength(4);
+    expect(dashboardPage.sections).toMatchObject([
+      {
+        id: 'measured-usage',
+        'count-source': 'cost-signals',
+        'count-label': 'boundaries',
+        views: ['cost-summary', 'cost-signals']
+      }
+    ]);
+    expect(dashboardPage.views).not.toContainEqual(expect.objectContaining({ element: 'metric-signal-summary' }));
     expect(rendered.querySelector('[data-nav-page-id="cost"] .octicon-meter')).not.toBeNull();
     const filterBar = page?.querySelector('.filter-bar');
     expect(filterBar?.querySelector('.filter-control code')?.textContent).toBe('mode:review mode:live');
@@ -63,14 +72,14 @@ describe('Cost and efficiency dashboard view', () => {
       }
     });
 
-    const summary = page?.querySelector('.domain-summary');
+    const summary = page?.querySelector('.summary-grid');
     expect(summary?.textContent).toContain('Measured AIC9');
     expect(summary?.textContent).toContain('Measured runs2');
     expect(summary?.textContent).toContain('Measured episode AIC—');
     expect(summary?.textContent).toContain('Episode output yield—');
-    expect(page?.querySelector('.domain-boundary-note')?.textContent).toContain('allocation evidence, not monetary cost');
+    expect(page?.textContent).toContain('allocation evidence, not monetary cost');
 
-    const signals = [...(page?.querySelectorAll('.workflow-attention-list .signal-item') ?? [])];
+    const signals = [...(page?.querySelectorAll('.signal-list .signal-item') ?? [])];
     expect(signals).toHaveLength(3);
     expect(signals.map((signal) => signal.querySelector('.signal-copy > span')?.textContent)).toEqual([
       'Usage coverage',
@@ -102,10 +111,10 @@ describe('Cost and efficiency dashboard view', () => {
     });
 
     const page = rendered.querySelector('[data-page-id="cost"]');
-    const signals = [...(page?.querySelectorAll('.workflow-attention-list .signal-item') ?? [])];
+    const signals = [...(page?.querySelectorAll('.signal-list .signal-item') ?? [])];
     expect(signals).toHaveLength(2);
     expect(page?.textContent).not.toContain('AI Credit telemetry is partial');
-    expect(page?.querySelector('.domain-summary')?.textContent).toContain('Measured AIC2');
-    expect(page?.querySelector('.domain-summary')?.textContent).toContain('Measured runs2');
+    expect(page?.querySelector('.summary-grid')?.textContent).toContain('Measured AIC2');
+    expect(page?.querySelector('.summary-grid')?.textContent).toContain('Measured runs2');
   });
 });

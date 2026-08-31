@@ -56,7 +56,6 @@ const ELEMENT_RENDERERS = new Map([
   ['outcome-detail', renderOutcomeDetail],
   ['execution-signal-list', renderExecutionSignalList],
   ['execution-episodes', renderExecutionEpisodes],
-  ['metric-signal-summary', renderMetricSignalSummaryElement],
   ['readiness-note', renderReadinessNoteElement],
   ['workflow-topology', ({ pageId, title, description, sourceNames, sources, headingTag }) => {
     const sourceName = sourceNames[0];
@@ -66,7 +65,7 @@ const ELEMENT_RENDERERS = new Map([
   }]
 ]);
 
-const EMPTY_AWARE_ELEMENTS = new Set(['status-summary', 'meter-list', 'attention-list', 'record-cards', 'summary-grid', 'signal-list', 'package-detail', 'package-reports', 'dispatch-catalog', 'repository-scope', 'repository-activity', 'repository-workflows', 'workflow-detail', 'workflow-runtime', 'outcome-detail', 'execution-signal-list', 'execution-episodes', 'metric-signal-summary', 'readiness-note']);
+const EMPTY_AWARE_ELEMENTS = new Set(['status-summary', 'meter-list', 'attention-list', 'record-cards', 'summary-grid', 'signal-list', 'package-detail', 'package-reports', 'dispatch-catalog', 'repository-scope', 'repository-activity', 'repository-workflows', 'workflow-detail', 'workflow-runtime', 'outcome-detail', 'execution-signal-list', 'execution-episodes', 'readiness-note']);
 
 /**
  * @param {string} name
@@ -298,41 +297,6 @@ function renderSignalListElement(context) {
           { className: 'signal-clear' },
           h('span', { className: 'signal-icon' }, octicon('check-circle')),
           h('span', { className: 'signal-copy' }, h('strong', null, 'No signals require attention'))
-        )])
-    )
-  );
-}
-
-/**
- * @param {ElementRenderContext} context
- */
-function renderMetricSignalSummaryElement(context) {
-  const metrics = rowsFor(context, context.sourceNames[0]);
-  const signals = rowsFor(context, context.sourceNames[1]);
-  const headingId = `${context.pageId}-${slugify(context.title)}-heading`;
-  const firstMetric = metrics[0] ?? {};
-  const collectionLabel = stringValue(firstMetric['collection-label']) || 'signals';
-  return h(
-    'section',
-    { className: 'domain-attention workflow-attention', 'aria-labelledby': headingId },
-    renderSectionHeading(stringValue(firstMetric.kicker), headingId, context.title, context.description, `${formatNumber(signals.length)} ${collectionLabel}`, context.headingTag),
-    renderDefinitionList('domain-summary', metrics.map((row) => ({
-      label: stringValue(row.label),
-      value: stringValue(row.value)
-    }))),
-    stringValue(firstMetric.note)
-      ? h('p', { className: 'domain-boundary-note' }, stringValue(firstMetric.note))
-      : null,
-    h(
-      'ol',
-      { className: 'workflow-attention-list' },
-      ...(signals.length > 0
-        ? signals.map((row, index) => renderSignal(row, index))
-        : [h(
-          'li',
-          { className: 'signal-clear' },
-          h('span', { className: 'signal-icon' }, octicon('check-circle')),
-          h('span', { className: 'signal-copy' }, h('strong', null, 'No evidence boundaries observed'))
         )])
     )
   );

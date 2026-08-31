@@ -155,10 +155,7 @@ function buildCostSummary(usageSource) {
   return [
     {
       label: 'Measured AIC',
-      value: available ? formatAic(measuredAic) : '—',
-      kicker: 'Resource operations',
-      'collection-label': 'boundaries',
-      note: 'AI Credit totals are allocation evidence, not monetary cost. Output yield is an investigation aid, not proof of efficiency or waste.'
+      value: available ? formatAic(measuredAic) : '—'
     },
     { label: 'Measured runs', value: available ? formatNumber(measuredRuns) : '—' },
     { label: 'Measured episode AIC', value: '—' },

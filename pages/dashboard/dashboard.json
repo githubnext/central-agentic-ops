@@ -67,19 +67,59 @@
           "time-range": "All recorded",
           "export": true
         },
+        "sections": [
+          {
+            "id": "measured-usage",
+            "title": "Measured usage",
+            "description": "Observed AI Credit allocation and episode efficiency without inferred budgets or anomalies. AI Credit totals are allocation evidence, not monetary cost. Output yield is an investigation aid, not proof of efficiency or waste.",
+            "layout": "full",
+            "count-source": "cost-signals",
+            "count-label": "boundaries",
+            "views": [
+              "cost-summary",
+              "cost-signals"
+            ]
+          },
+          {
+            "id": "repository-allocation",
+            "title": "Repository allocation",
+            "layout": "full",
+            "views": [
+              "cost-by-repository"
+            ]
+          },
+          {
+            "id": "evaluation-boundary",
+            "title": "Evaluation boundary",
+            "layout": "full",
+            "views": [
+              "cost-evaluation-boundary"
+            ]
+          }
+        ],
         "views": [
           {
-            "id": "cost-measured-usage",
-            "title": "Measured usage",
-            "description": "Observed AI Credit allocation and episode efficiency without inferred budgets or anomalies.",
+            "id": "cost-summary",
+            "title": "Usage summary",
             "data": {
               "sources": [
-                "cost-summary",
+                "cost-summary"
+              ]
+            },
+            "mark": "element",
+            "element": "summary-grid",
+            "layout": "full"
+          },
+          {
+            "id": "cost-signals",
+            "title": "Evidence boundaries",
+            "data": {
+              "sources": [
                 "cost-signals"
               ]
             },
             "mark": "element",
-            "element": "metric-signal-summary",
+            "element": "signal-list",
             "layout": "full"
           },
           {

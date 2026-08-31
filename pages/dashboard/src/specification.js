@@ -43,7 +43,6 @@ export const VIEW_ELEMENT_VALUES = [
   'execution-signal-list',
   'execution-episodes',
   'workflow-topology',
-  'metric-signal-summary',
   'readiness-note'
 ];
 export const VIEW_CHART_VALUES = ['bar', 'line', 'pie'];
@@ -290,7 +289,7 @@ export const SOURCE_FIELDS = {
   'value-summary': ['label', 'value'],
   'value-signals': ['priority', 'count', 'tone', 'icon', 'kind', 'title', 'detail', 'evidence', 'action', 'navigation-page', 'run-link', 'external-link'],
   'value-workflows': ['organization', 'repository', 'workflow', 'run', 'operational-value-definition', 'opportunities', 'mature-observations', 'mean-operational-value', 'mean-baseline', 'observed-at', 'evidence-link', 'run-link', 'organization-link', 'repository-link', 'workflow-link'],
-  'cost-summary': ['label', 'value', 'kicker', 'collection-label', 'note'],
+  'cost-summary': ['label', 'value'],
   'cost-signals': ['priority', 'count', 'tone', 'icon', 'kind', 'title', 'detail', 'evidence', 'action', 'navigation-page'],
   'cost-readiness': ['tone', 'icon', 'kicker', 'title', 'detail'],
   'experiment-readiness': ['tone', 'icon', 'kicker', 'title', 'detail']
