@@ -120,7 +120,9 @@ export function summarizeRepositories(sources) {
     if (conclusion === 'action-required') summary.actionRequired += 1;
   }
   for (const row of sources.usage?.rows ?? []) {
-    const summary = summaries.get(qualifiedRepository(row));
+    const repository = qualifiedRepository(row);
+    if (!repository) continue;
+    const summary = summaries.get(repository);
     if (summary && Number.isFinite(row.aic)) summary.aic += Number(row.aic);
   }
 
