@@ -554,6 +554,11 @@ describe('presenter built-in and custom pages', () => {
     expect(tables[1]?.querySelector('a[aria-label="View run 103"]')?.getAttribute('href')).toContain('/actions/runs/103');
     expect(page?.querySelectorAll('.table-filter')).toHaveLength(0);
     expect(page?.textContent).toContain('not proof that a workflow caused an outcome');
+    const experimentBoundary = page?.querySelector('.readiness-note');
+    expect(experimentBoundary?.querySelector('.scope-kicker')?.textContent).toBe('Evidence boundary');
+    expect(experimentBoundary?.querySelector('.octicon-beaker')).not.toBeNull();
+    expect(experimentBoundary?.textContent).toContain('Experiment comparisons unavailable');
+    expect(experimentBoundary?.textContent).toContain('does not infer control or treatment groups');
   });
 
   it('DLS-VIEW-018 DLS-VIEW-019 DLS-VIEW-020 progressively discloses supplemental views in source order', () => {
