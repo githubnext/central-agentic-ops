@@ -16,7 +16,7 @@ import { renderWorkflowTopology } from './workflow-topology.js';
 import { renderExecutionEpisodes } from './execution-elements.js';
 import { renderSectionHeading } from './ui-primitives.js';
 import { renderDefinitionList } from './view-chrome.js';
-import { renderRepositoryActivity, renderRepositoryScope } from './repositories-view.js';
+import { renderRepositoryScope } from './repositories-view.js';
 import { renderWorkflowRuntime } from './workflow-runtime.js';
 
 /**
@@ -47,7 +47,6 @@ const ELEMENT_RENDERERS = new Map([
   ['package-detail', renderPackageDetailElement],
   ['package-reports', renderPackageReports],
   ['repository-scope', renderRepositoryScope],
-  ['repository-activity', renderRepositoryActivity],
   ['repository-workflows', renderRepositoryWorkflows],
   ['workflow-detail', renderWorkflowDetail],
   ['workflow-runtime', renderWorkflowRuntime],
@@ -61,7 +60,7 @@ const ELEMENT_RENDERERS = new Map([
   }]
 ]);
 
-const EMPTY_AWARE_ELEMENTS = new Set(['status-summary', 'meter-list', 'attention-list', 'record-cards', 'summary-grid', 'signal-list', 'package-detail', 'package-reports', 'repository-scope', 'repository-activity', 'repository-workflows', 'workflow-detail', 'workflow-runtime', 'outcome-detail', 'execution-episodes']);
+const EMPTY_AWARE_ELEMENTS = new Set(['status-summary', 'meter-list', 'attention-list', 'record-cards', 'summary-grid', 'signal-list', 'package-detail', 'package-reports', 'repository-scope', 'repository-workflows', 'workflow-detail', 'workflow-runtime', 'outcome-detail', 'execution-episodes']);
 
 /**
  * @param {string} name
