@@ -6,7 +6,7 @@ import { h } from '../dom.js';
 import { octicon } from '../octicons.js';
 import { renderStatusBadge } from './badge.js';
 import { formatCount, formatCountNoun } from './count-formatters.js';
-import { findLink } from './link-content.js';
+import { findLink, renderWorkflowRunLink } from './link-content.js';
 import { formatUtcDateTime, renderSectionHeading, renderVitalStat } from './ui-primitives.js';
 
 const FAILURE_CONCLUSIONS = new Set(['failure', 'startup-failure', 'timed-out']);
@@ -170,7 +170,7 @@ export function renderExecutionEpisodes(context) {
             return h(
               'li',
               null,
-              renderRunLink(run, runTitle(run, workflow)),
+              renderWorkflowRunLink(run, runTitle(run, workflow), octicon('external-link')),
               h('span', null, `${workflowName(workflow, run)} · ${text(run['run-conclusion']) || text(run['run-status']) || 'unknown'}`)
             );
           })
@@ -264,7 +264,7 @@ function renderEpisode(episode) {
         'div',
         null,
         h('span', { className: 'scope-kicker' }, episode.packageName),
-        h('h3', null, renderRunLink(episode.run, runTitle(episode.run, episode.workflow))),
+        h('h3', null, renderWorkflowRunLink(episode.run, runTitle(episode.run, episode.workflow), octicon('external-link'))),
         h('p', null, h('time', { dateTime: text(episode.run['started-at']) }, formatUtcDateTime(episode.run['started-at'])))
       ),
       renderStatusBadge(result)
@@ -287,17 +287,6 @@ function renderEpisode(episode) {
     h('div', { className: 'episode-execution' }, h('strong', null, 'Correlated worker attempts'), h('ul', null, h('li', { className: 'episode-empty' }, 'No worker run is explicitly attributable from retained evidence.'))),
     h('footer', null, h('span', null, 'Evidence · Root only'), h('span', null, 'No-action attempts unavailable'))
   );
-}
-
-/**
- * @param {Row} run
- * @param {string} label
- */
-function renderRunLink(run, label) {
-  const link = findLink(run, 'run-link');
-  return link
-    ? h('a', { href: link.href, target: '_blank', rel: 'noopener noreferrer', 'aria-label': link.label }, label, octicon('external-link'))
-    : h('span', null, label);
 }
 
 /**

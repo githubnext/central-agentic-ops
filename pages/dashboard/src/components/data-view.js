@@ -6,17 +6,16 @@ import { h } from '../dom.js';
 import { formatAggregateValue, formatNumber } from '../view-formatters.js';
 import { renderCellDisplay } from './cell-display.js';
 import { listChartSeries, pieChartEntries, renderChartLegend, renderPieLegend, renderChartWidget } from './chart-elements.js';
-import { findFirstLink, findLink, renderExternalLink, renderLinkedValueWithExternalLink } from './link-content.js';
+import { findFirstLink, findLink, renderExternalLink, renderLinkedValueWithExternalLink, renderWorkflowRunLink } from './link-content.js';
 import { createEntityAwareCellRenderer, renderLinkedText } from './linked-text.js';
 import { renderTableRegion } from './table-region.js';
 import { renderPageSection, renderViewSectionChrome } from './view-chrome.js';
 
-/** @type {{ organization: 'organization-link', repository: 'repository-link', workflow: 'workflow-link', run: 'run-link' }} */
+/** @type {{ organization: 'organization-link', repository: 'repository-link', workflow: 'workflow-link' }} */
 const ENTITY_LINK_FIELDS = {
   organization: 'organization-link',
   repository: 'repository-link',
-  workflow: 'workflow-link',
-  run: 'run-link'
+  workflow: 'workflow-link'
 };
 
 /**
@@ -116,8 +115,13 @@ function renderTableView(context) {
     { 'data-custom-row-key': `${pageId}-${title}-${rowIndex}` },
     ...columns.map((column, columnIndex) => {
       const outputField = typeof column.as === 'string' ? column.as : column.field;
-      const value = renderCellValue(column, row[outputField], row);
+      const value = column.field === 'run' && !column.aggregate
+        ? renderWorkflowRunLink(row, toText(row[outputField]))
+        : renderCellValue(column, row[outputField], row);
       if (columnIndex === 0 && hrefField) {
+        if (column.field === 'run' && hrefField === 'run-link') {
+          return h('td', null, value);
+        }
         return h('td', null, renderLinkedValueWithExternalLink(value, findLink(row, hrefField)));
       }
       return h('td', null, value);
