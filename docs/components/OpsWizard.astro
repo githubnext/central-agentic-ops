@@ -197,6 +197,8 @@ const agents = [
 <script>
   const CATALOG = "githubnext/central-agentic-ops";
   const CATALOG_REF = "main";
+  const SETUP_SKILL_URL =
+    "https://raw.githubusercontent.com/githubnext/central-agentic-ops/main/.github/skills/setup-central-agentic-ops/SKILL.md";
   const PACKAGE_WORKERS: Record<string, string[]> = {
     advisory: ["uk-ai-operational-resilience"],
     "ambient-context": ["agents-md-curator", "skills-curator"],
@@ -295,6 +297,8 @@ const agents = [
 
     return [
       `# Set up Central Agentic Ops: ${operationName}`,
+      "",
+      `Follow the Central Agentic Ops setup skill at ${SETUP_SKILL_URL}. Read it before taking any setup action, then use it to complete this request.`,
       "",
       `Act as my operations engineer. Set up a private GitHub control plane repository at \`${controlRepo}\` that runs the ${isCustom ? "custom operation described below" : `"${operationName}" operation`} from the Central Agentic Ops catalog (https://github.com/${CATALOG}). The control plane holds the workflows and credentials; target repositories never receive copies of them.`,
       "",
