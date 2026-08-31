@@ -78,13 +78,11 @@ export function renderContextChrome(contextDetails) {
 }
 
 /**
- * @param {string} sourceName
  * @param {{ 'as-of': string, completeness: string, freshness: string }} metadata
  * @returns {HTMLElement[]}
  */
-export function renderViewHeader(sourceName, metadata) {
+export function renderViewHeader(metadata) {
   return renderViewChrome([
-    `Source: ${sourceName}`,
     `As of ${metadata['as-of']} • completeness ${metadata.completeness} • freshness ${metadata.freshness}`
   ]);
 }
@@ -94,17 +92,16 @@ export function renderViewHeader(sourceName, metadata) {
  * @returns {HTMLElement[]}
  */
 export function renderViewChrome(lines) {
-  return lines.map((line, index) => h('p', { className: index === 0 ? 'view-source' : 'view-metadata' }, line));
+  return lines.map((line) => h('p', { className: 'view-metadata' }, line));
 }
 
 /**
- * @param {string} sourceName
  * @param {{ 'as-of': string, completeness: string, freshness: string }} metadata
  * @param {string[]} contextDetails
  * @returns {HTMLElement[]}
  */
-export function renderViewSectionChrome(sourceName, metadata, contextDetails) {
-  return [...renderViewHeader(sourceName, metadata), ...renderContextChrome(contextDetails)];
+export function renderViewSectionChrome(metadata, contextDetails) {
+  return [...renderViewHeader(metadata), ...renderContextChrome(contextDetails)];
 }
 
 /**

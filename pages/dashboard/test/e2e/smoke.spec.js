@@ -30,9 +30,14 @@ function buildPresenterModuleUrl() {
     .replace("'../dom.js'", JSON.stringify(domModuleUrl));
   const histogramModuleUrl = `data:text/javascript;charset=utf-8,${encodeURIComponent(histogramSource)}`;
 
+  const summaryCopySource = readFileSync(new URL('../../src/components/summary-copy.js', import.meta.url), 'utf8')
+    .replace("'../dom.js'", JSON.stringify(domModuleUrl));
+  const summaryCopyModuleUrl = `data:text/javascript;charset=utf-8,${encodeURIComponent(summaryCopySource)}`;
+
   const tableSummarySource = readFileSync(new URL('../../src/components/table-summary.js', import.meta.url), 'utf8')
     .replace("'../dom.js'", JSON.stringify(domModuleUrl))
-    .replace("'./histogram.js'", JSON.stringify(histogramModuleUrl));
+    .replace("'./histogram.js'", JSON.stringify(histogramModuleUrl))
+    .replace("'./summary-copy.js'", JSON.stringify(summaryCopyModuleUrl));
   const tableSummaryModuleUrl = `data:text/javascript;charset=utf-8,${encodeURIComponent(tableSummarySource)}`;
 
   const tableRegionSource = readFileSync(new URL('../../src/components/table-region.js', import.meta.url), 'utf8')
@@ -1081,7 +1086,7 @@ test('DLS-VIEW-013 DLS-VIEW-014 DLS-VIEW-015 DLS-SAFE-006 custom views render av
   await expect(page.getByRole('heading', { name: 'Total AI Credits' })).toBeVisible();
   await expect(page.locator('[data-metric-value="aic"]')).toHaveText('5');
   const metricSection = page.locator('.page-section').filter({ has: page.getByRole('heading', { name: 'Total AI Credits' }) });
-  await expect(metricSection).toContainText('Source: usage');
+  await expect(metricSection).not.toContainText('Source: usage');
   await expect(metricSection).toContainText('Filters: {"rollout-mode":["review","live"]}');
 
   await expect(page.getByRole('heading', { name: 'Findings Table' })).toBeVisible();
@@ -1103,7 +1108,7 @@ test('DLS-VIEW-013 DLS-VIEW-014 DLS-VIEW-015 DLS-SAFE-006 custom views render av
     'href',
     'https://github.com/github/central-agentic-ops/actions/runs/1001'
   );
-  await expect(page.locator('.page-section').filter({ has: page.getByRole('heading', { name: 'Daily Runs' }) }).locator('.view-source')).toHaveCount(1);
+  await expect(page.locator('.page-section').filter({ has: page.getByRole('heading', { name: 'Daily Runs' }) }).locator('.view-source')).toHaveCount(0);
 
   await expect(page.getByRole('heading', { name: 'Empty Usage' })).toBeVisible();
   await expect(page.locator('[data-view-availability="empty"]')).toHaveText('No observations matched the effective context.');

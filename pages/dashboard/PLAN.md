@@ -113,6 +113,7 @@
 - `src/components/badge.js` — presentation-only Primer status, mode, and active-state badges.
 - `src/components/data-state.js` — presentation-only data-state metrics card grid for availability, completeness, and freshness.
 - `src/components/table-region.js` — presentation-only reusable table wrapper for repeated table-region markup, header rows, empty-state rows, and keyed body-row descriptors across built-in and custom tables.
+- `src/components/summary-copy.js` — presentation-only shared singular/plural summary-count copy for repeated item-count text surfaces.
 - `src/components/view-chrome.js` — presentation-only reusable page-section, titled-region, summary-list/summary-region, generic custom-view chrome paragraphs, custom-view source/metadata/context chrome, shared custom-view section chrome, custom-view state-message/details helpers, and built-in provenance-section helpers.
 - `src/components/ui-primitives.js` — presentation-only shared section-heading, vital-stat, and UTC date-time helpers for repeated dashboard component chrome.
 - `src/components/count-formatters.js` — presentation-only shared count and singular/plural text helpers for repeated dashboard status, workflow, and signal copy.
@@ -130,6 +131,13 @@
 
 ## Run log
 
+### 2026-08-31 (summary-copy helper refactor)
+- Re-inventoried repeated UI construction under `pages/dashboard/src/` and selected the highest safe bounded helper slice still duplicated in active code: item-count summary copy using singular/plural branching in `src/components/table-summary.js`, with the same count-summary surface already present conceptually in other dashboard status helpers.
+- Extracted `src/components/summary-copy.js` with presentation-only `formatSummaryCount(...)`, then replaced every identified duplicated call site in `src/components/table-summary.js`.
+- Added unit coverage in `test/unit/summary-copy.test.js` for singular, plural, and custom-noun count summaries, and kept `test/unit/table-summary.test.js` assertions unchanged to preserve the existing rendered text contract.
+- Proved unchanged behavior by rerunning the affected table-summary unit coverage and preserving the rendered `3 items`, `2 items`, and `1 item` output already asserted in `test/unit/table-summary.test.js`.
+- Verified `pages/dashboard/` quality gates in this run: `npm install`, `npm run build`, `npm run typecheck`, `npm run lint`, and `npm test` all pass. Browser checks remain tracked separately in `PLAN.md` infrastructure blockers because this bounded helper extraction did not change browser-only behavior.
+- Next candidates in the queue: extract the remaining duplicated UTC date formatter in `src/components/dispatch-catalog.js` and `src/components/repository-workflows.js`; extract the repeated definitions/observations dual-region composition in `src/presenter.js`; extract the repeated summary-plus-trend section composition in `src/presenter.js`.
 ### 2026-08-31 (UTC date helper reuse)
 - Re-inventoried repeated presentation-only date formatting under `pages/dashboard/src/` and selected the next bounded parity-safe helper slice: duplicated UTC timestamp formatting in `src/components/dispatch-catalog.js` and `src/components/repository-workflows.js` after the initial `ui-primitives` extraction.
 - Reused `src/components/ui-primitives.js`'s existing `formatUtcDateTime(...)` helper in both components and removed the remaining local formatter functions, keeping all rendering declarative and page-agnostic.

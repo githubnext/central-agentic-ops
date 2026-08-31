@@ -53,7 +53,9 @@ function renderRepositoryWorkflowContent(context, repository, workflows) {
     .sort((left, right) => Date.parse(right) - Date.parse(left))[0];
   const disabled = workflows.filter((workflow) => workflowState(workflow) === 'Disabled').length;
   const repositoryLink = findLink(workflows[0] ?? {}, 'repository-link');
-  const actionsHref = repositoryLink ? `${repositoryLink.href.replace(/\/+$/, '')}/actions` : null;
+  const actionsHref = repositoryLink
+    ? `${(repositoryLink.externalHref ?? repositoryLink.href).replace(/\/+$/, '')}/actions`
+    : null;
 
   return h(
     'div',

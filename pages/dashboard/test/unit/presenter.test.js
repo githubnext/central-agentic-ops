@@ -235,6 +235,94 @@ describe('presenter built-in and custom pages', () => {
     expect(rendered.querySelector('.sidebar-brand > span')?.textContent).toBe('agentic-operations');
   });
 
+  it('routes repository entity links to the repository detail view while retaining GitHub Actions links', () => {
+    window.history.replaceState(null, '', '/#page-repositories');
+    const rendered = renderDashboard({
+      document: {
+        languageVersion: '0.1.0',
+        dashboard: {
+          id: 'repository-routing-dashboard',
+          title: 'Repository routing',
+          pages: [
+            {
+              id: 'repositories',
+              kind: /** @type {'custom'} */ ('custom'),
+              title: 'Repositories',
+              views: [{
+                id: 'repository-list',
+                title: 'Repositories',
+                data: { source: 'repositories' },
+                mark: 'table',
+                encoding: { columns: [{ field: 'repository' }] }
+              }]
+            },
+            {
+              id: 'repository-detail',
+              kind: /** @type {'custom'} */ ('custom'),
+              title: 'Repository',
+              route: { 'hash-query-parameter': 'repository' },
+              views: [{
+                id: 'repository-workflows',
+                title: 'Agentic workflows',
+                data: { sources: ['workflows'] },
+                mark: 'element',
+                element: 'repository-workflows'
+              }]
+            }
+          ]
+        }
+      },
+      sources: {
+        repositories: {
+          source: 'repositories',
+          rows: [{ organization: 'octo-org', repository: 'platform' }],
+          metadata: {
+            'source-id': 'repositories-fixture',
+            'source-kind': 'fixture',
+            'as-of': '2026-08-30T08:00:00Z',
+            'retrieved-at': '2026-08-30T08:01:00Z',
+            completeness: 'complete',
+            freshness: 'fresh',
+            availability: 'available'
+          }
+        },
+        workflows: {
+          source: 'workflows',
+          rows: [{
+            organization: 'octo-org',
+            repository: 'platform',
+            workflow: '.github/workflows/review.md',
+            'workflow-name': 'Review',
+            'workflow-active': 'true'
+          }],
+          metadata: {
+            'source-id': 'workflows-fixture',
+            'source-kind': 'fixture',
+            'as-of': '2026-08-30T08:00:00Z',
+            'retrieved-at': '2026-08-30T08:01:00Z',
+            completeness: 'complete',
+            freshness: 'fresh',
+            availability: 'available'
+          }
+        }
+      }
+    });
+    document.body.append(rendered);
+
+    const repositoryLink = rendered.querySelector('[data-page-id="repositories"] tbody a');
+    expect(repositoryLink?.getAttribute('href')).toBe('#page-repository-detail?repository=octo-org%2Fplatform');
+    expect(repositoryLink?.getAttribute('target')).toBeNull();
+
+    window.history.replaceState(null, '', `/${repositoryLink?.getAttribute('href')}`);
+    window.dispatchEvent(new Event('hashchange'));
+
+    expect(rendered.querySelector('[data-page-id="repository-detail"]')?.hasAttribute('hidden')).toBe(false);
+    expect(rendered.querySelector('.repository-view')?.getAttribute('data-repository')).toBe('octo-org/platform');
+    expect(rendered.querySelector('.repository-section-heading > a')?.getAttribute('href')).toBe('https://github.com/octo-org/platform/actions');
+    rendered.remove();
+    window.history.replaceState(null, '', '/');
+  });
+
   it('renders section-labeled Attention Investigate Explore navigation groups in the sidebar', () => {
     const rendered = renderDashboard({
       document: authoritativeDashboardDocument,
@@ -1350,8 +1438,8 @@ describe('presenter built-in and custom pages', () => {
 
     expect(evalsPage?.textContent).toContain('NO');
     expect(evalsPage?.textContent).toContain('claude-3.7');
-    expect(evalsPage?.textContent).toContain('Source: evals');
-    expect(evalsPage?.textContent).toContain('Source: eval-observations');
+    expect(evalsPage?.textContent).not.toContain('Source: evals');
+    expect(evalsPage?.textContent).not.toContain('Source: eval-observations');
   });
 
   it('DLS-SAFE-003 DLS-SAFE-004 DLS-SAFE-007 DLS-SAFE-010 renders non-empty accessible names and inert text labels while preserving only safe https external link attributes', () => {
@@ -1672,7 +1760,7 @@ describe('presenter built-in and custom pages', () => {
 
     const metricSection = [...rendered.querySelectorAll('.page-section')].find((section) => section.textContent?.includes('Total AI Credits'));
     expect(metricSection?.querySelector('[data-metric-value="aic"]')?.textContent).toBe('5');
-    expect(metricSection?.textContent).toContain('Source: usage');
+    expect(metricSection?.textContent).not.toContain('Source: usage');
     expect(metricSection?.textContent).toContain('Filters: {"rollout-mode":["review","live"]}');
 
     const tableSection = [...rendered.querySelectorAll('.page-section')].find((section) => section.textContent?.includes('Findings Table'));
@@ -1696,7 +1784,7 @@ describe('presenter built-in and custom pages', () => {
     const chartLink = chartSection?.querySelector('.custom-chart-table tbody a');
     expect(chartLink?.getAttribute('href')).toBe('https://github.com/github/central-agentic-ops/actions/runs/1001');
     expect(chartLink?.getAttribute('aria-label')).toBe('Run 1001');
-    expect(chartSection?.querySelectorAll('.view-source')).toHaveLength(1);
+    expect(chartSection?.querySelectorAll('.view-source')).toHaveLength(0);
 
     const emptySection = [...rendered.querySelectorAll('.page-section')].find((section) => section.textContent?.includes('Empty Usage'));
     expect(emptySection?.querySelector('[data-view-availability="empty"]')?.textContent).toBe('No observations matched the effective context.');
