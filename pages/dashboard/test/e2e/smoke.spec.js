@@ -128,6 +128,14 @@ function buildPresenterModuleUrl() {
     .replace("'../dom.js'", JSON.stringify(domModuleUrl));
   const uiPrimitivesModuleUrl = `data:text/javascript;charset=utf-8,${encodeURIComponent(uiPrimitivesSource)}`;
 
+  const outcomeDetailSource = readFileSync(new URL('../../src/components/outcome-detail.js', import.meta.url), 'utf8')
+    .replace("'../dom.js'", JSON.stringify(domModuleUrl))
+    .replace("'../octicons.js'", JSON.stringify(octiconsModuleUrl))
+    .replace("'./badge.js'", JSON.stringify(badgeModuleUrl))
+    .replace("'./link-content.js'", JSON.stringify(linkContentModuleUrl))
+    .replace("'./ui-primitives.js'", JSON.stringify(uiPrimitivesModuleUrl));
+  const outcomeDetailModuleUrl = `data:text/javascript;charset=utf-8,${encodeURIComponent(outcomeDetailSource)}`;
+
   const executionElementsSource = readFileSync(new URL('../../src/components/execution-elements.js', import.meta.url), 'utf8')
     .replace("'../dom.js'", JSON.stringify(domModuleUrl))
     .replace("'../octicons.js'", JSON.stringify(octiconsModuleUrl))
@@ -145,6 +153,7 @@ function buildPresenterModuleUrl() {
     .replace("'./link-content.js'", JSON.stringify(linkContentModuleUrl))
     .replace("'./packages-view.js'", JSON.stringify(packagesViewModuleUrl))
     .replace("'./repository-workflows.js'", JSON.stringify(repositoryWorkflowsModuleUrl))
+    .replace("'./outcome-detail.js'", JSON.stringify(outcomeDetailModuleUrl))
     .replace("'./execution-elements.js'", JSON.stringify(executionElementsModuleUrl))
     .replace("'./ui-primitives.js'", JSON.stringify(uiPrimitivesModuleUrl))
     .replace("'./workflow-topology.js'", JSON.stringify(workflowTopologyModuleUrl))
@@ -1210,6 +1219,73 @@ test('repository page template follows its JSON-declared hash query route in bro
   await expect(page.getByRole('heading', { level: 1 })).toHaveText('other-org/other-repo');
   await expect(page.locator('.repository-workflow-table')).toContainText('Other');
   await expect(page.locator('.repository-workflow-table')).not.toContainText('Review');
+});
+
+test('outcome page template follows its JSON-declared hash query route in browser', async ({ page }) => {
+  const presenterModuleUrl = buildPresenterModuleUrl();
+  await page.goto('about:blank#page-outcome-detail?outcome=outcome-1');
+  await page.setContent(`
+    <div id="root"></div>
+    <script type="module">
+      import { renderDashboard } from ${JSON.stringify(presenterModuleUrl)};
+      const metadata = {
+        'source-id': 'outcomes-fixture',
+        'source-kind': 'fixture',
+        'as-of': '2026-08-31T08:00:00Z',
+        'retrieved-at': '2026-08-31T08:01:00Z',
+        completeness: 'complete',
+        freshness: 'fresh',
+        availability: 'available'
+      };
+      const dashboardDocument = {
+        languageVersion: '0.1.0',
+        dashboard: {
+          id: 'outcome-route',
+          title: 'Outcome route',
+          pages: [{
+            id: 'outcome-detail',
+            kind: 'custom',
+            title: 'Outcome',
+            description: 'Outcome details.',
+            route: { 'hash-query-parameter': 'outcome' },
+            views: [{
+              id: 'outcome-record',
+              title: 'Outcome',
+              data: { sources: ['outcomes'] },
+              mark: 'element',
+              element: 'outcome-detail'
+            }]
+          }]
+        }
+      };
+      const sources = {
+        outcomes: {
+          source: 'outcomes',
+          metadata,
+          rows: [{
+            workflow: '.github/workflows/daily.md',
+            'workflow-name': 'Daily review',
+            'safe-output': 'outcome-1',
+            'outcome-title': 'Parity verification sweep',
+            'outcome-body-html': '<h2>Summary</h2><p>All checks passed.</p>',
+            'outcome-category': 'pull-request',
+            'outcome-status': 'closed',
+            'outcome-state': 'lifecycle-close',
+            'rollout-mode': 'live',
+            'published-at': '2026-08-31T01:26:00Z',
+            'observed-at': '2026-08-31T01:49:00Z'
+          }]
+        }
+      };
+      document.querySelector('#root').append(renderDashboard({ document: dashboardDocument, sources }));
+    </script>
+  `);
+
+  await expect(page.getByRole('heading', { level: 1 })).toHaveText('Parity verification sweep');
+  await expect(page.locator('.overview-header [data-page-description]')).toHaveText('Daily review · Pull Request · Closed');
+  await expect(page.locator('.outcome-detail')).toHaveAttribute('data-outcome', 'outcome-1');
+  await expect(page.locator('.discussion-post')).toContainText('All checks passed.');
+  await expect(page.locator('.outcome-meta')).toContainText('Live');
 });
 
 test('declarative tables expose report-style facets and progressive catalog disclosure', async ({ page }) => {

@@ -1,0 +1,83 @@
+import { describe, expect, it, vi } from 'vitest';
+import { renderOutcomeDetail } from '../../src/components/outcome-detail.js';
+
+const metadata = {
+  'source-id': 'outcomes-fixture',
+  'source-kind': 'fixture',
+  'as-of': '2026-08-31T17:00:00Z',
+  'retrieved-at': '2026-08-31T17:00:00Z',
+  completeness: /** @type {'complete'} */ ('complete'),
+  freshness: /** @type {'fresh'} */ ('fresh'),
+  availability: /** @type {'available'} */ ('available')
+};
+
+function context() {
+  return {
+    pageId: 'outcome-detail',
+    title: 'Outcome',
+    sourceNames: ['outcomes'],
+    contextDetails: [],
+    routeParameter: 'outcome',
+    headingTag: /** @type {'h3'} */ ('h3'),
+    sources: {
+      outcomes: {
+        source: 'outcomes',
+        metadata,
+        rows: [{
+          workflow: '.github/workflows/daily.md',
+          'workflow-name': 'Daily review',
+          'safe-output': 'outcome-1',
+          'outcome-title': 'Parity verification sweep',
+          'outcome-summary': 'Summary fallback',
+          'outcome-body-html': '<h2>Summary</h2><ul><li>Passed</li></ul><script>window.bad = true</script><a href="javascript:alert(1)" onclick="alert(1)">unsafe</a>',
+          'outcome-category': 'pull-request',
+          'outcome-status': 'closed',
+          'outcome-state': 'lifecycle-close',
+          'rollout-mode': 'live',
+          'published-at': '2026-08-31T01:26:00Z',
+          'observed-at': '2026-08-31T01:49:00Z',
+          'workflow-link': { relation: 'workflow', href: 'https://github.com/octo/repo/blob/main/daily.md', label: 'View workflow' },
+          'external-link': { relation: 'external', href: 'https://github.com/octo/repo/pull/1', label: 'View output' },
+          'run-link': { relation: 'run', href: 'https://github.com/octo/repo/actions/runs/1', label: 'View run' }
+        }]
+      }
+    }
+  };
+}
+
+describe('outcome detail', () => {
+  it('allocates a routed outcome and renders reusable metadata and sanitized Markdown', () => {
+    const allocation = vi.fn();
+    const rendered = renderOutcomeDetail(context());
+    rendered.addEventListener('dashboard-route-allocation', allocation);
+    rendered.dispatchEvent(new CustomEvent('dashboard-route-change', {
+      detail: { parameter: 'outcome', value: 'outcome-1' }
+    }));
+
+    expect(rendered.dataset.outcome).toBe('outcome-1');
+    expect(rendered.querySelector('.markdown-body')?.textContent).toContain('SummaryPassedunsafe');
+    expect(rendered.querySelector('.markdown-body script')).toBeNull();
+    expect(rendered.querySelector('.markdown-body a')?.hasAttribute('href')).toBe(false);
+    expect(rendered.querySelector('.markdown-body a')?.hasAttribute('onclick')).toBe(false);
+    expect(rendered.querySelector('.status')?.textContent).toBe('Closed');
+    expect(rendered.querySelector('.mode-badge')?.textContent).toBe('Live');
+    expect(rendered.querySelector('.outcome-meta')?.textContent).toContain('Pull Request');
+    expect(rendered.querySelector('.outcome-meta')?.textContent).toContain('Daily review');
+    expect(rendered.querySelectorAll('.outcome-meta a')).toHaveLength(3);
+    expect(allocation).toHaveBeenCalledWith(expect.objectContaining({
+      detail: {
+        title: 'Parity verification sweep',
+        description: 'Daily review · Pull Request · Closed'
+      }
+    }));
+  });
+
+  it('renders an explicit empty state for an unknown outcome', () => {
+    const rendered = renderOutcomeDetail(context());
+    rendered.dispatchEvent(new CustomEvent('dashboard-route-change', {
+      detail: { parameter: 'outcome', value: 'missing' }
+    }));
+
+    expect(rendered.textContent).toBe('Outcome not found.');
+  });
+});

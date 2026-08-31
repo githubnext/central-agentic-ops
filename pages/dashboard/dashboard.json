@@ -435,7 +435,7 @@
         "kind": "custom",
         "title": "Outcome",
         "description": "Published safe-output outcome details and provenance.",
-        "icon": "issue",
+        "icon": "issue-opened",
         "class-name": "outcome-detail-page",
         "route": {
           "hash-query-parameter": "outcome"

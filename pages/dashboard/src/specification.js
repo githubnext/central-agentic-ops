@@ -333,8 +333,8 @@ export const TEMPORAL_FIELD_NAMES = [
   'ended-at',
   'requested-evidence-at',
   'evidence-cutoff',
-  'maturity-at'
-  ,'published-at'
+  'maturity-at',
+  'published-at'
 ];
 
 export const ADDITIVE_MEASURE_FIELDS = [
