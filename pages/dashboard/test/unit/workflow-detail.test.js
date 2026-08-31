@@ -120,7 +120,10 @@ describe('renderWorkflowDetail', () => {
     );
     expect(rendered.querySelector('.workflow-identity')?.textContent).toContain('Orchestrator');
     expect(rendered.querySelector('.workflow-badge-package')?.getAttribute('href')).toBe('#page-package-detail?package=ambient-context');
-    expect(rendered.querySelector('.workflow-identity > a')?.getAttribute('href')).toContain('/ambient-context.md');
+    expect(rendered.querySelector('.workflow-identity > a')?.getAttribute('href')).toBe(
+      '#page-workflow-detail?workflow=githubnext%2Fcentral-agentic-ops%3A.github%2Fworkflows%2Fambient-context.md'
+    );
+    expect(rendered.querySelector('.workflow-identity > a')?.getAttribute('target')).toBeNull();
     expect(rendered.querySelector('.workflow-reports-header')?.textContent).toContain('1 Open1 Resolved');
     expect([...rendered.querySelectorAll('.workflow-report-title')].map((heading) => heading.textContent)).toEqual([
       'Open report',

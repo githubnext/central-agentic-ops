@@ -108,9 +108,6 @@ function renderWorkflowTabs(pageId, repository, workflow, workflowName) {
 /** @param {Record<string, unknown>} workflow */
 function renderWorkflowIdentity(workflow) {
   const link = findLink(workflow, 'workflow-link');
-  const externalLink = link?.externalHref
-    ? { href: link.externalHref, label: `View ${text(workflow.workflow)} on GitHub` }
-    : link;
   const role = text(workflow['workflow-role']) || 'unknown';
   return h(
     'section',
@@ -128,7 +125,7 @@ function renderWorkflowIdentity(workflow) {
       ),
       h('p', null, h('code', null, text(workflow.workflow)))
     ),
-    externalLink ? renderExternalLink({ ...externalLink, label: 'View authored workflow' }) : null
+    link ? renderExternalLink(link) : null
   );
 }
 
