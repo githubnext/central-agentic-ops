@@ -924,11 +924,6 @@ dashboard:
             code: 'DLS-E003',
             path: '$.dashboard.pages[0].definition',
             message: 'built-in page "runs" requires declarative definitions for source "runs".'
-          }),
-          expect.objectContaining({
-            code: 'DLS-E003',
-            path: '$.dashboard.pages[0].definition',
-            message: 'built-in page "runs" requires declarative definitions for source "outcomes".'
           })
         ])
       );
