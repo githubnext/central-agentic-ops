@@ -843,35 +843,6 @@ function renderCustomView(pageId, view, index, sources, units, headingTag = 'h3'
     return renderCustomViewState(pageId, title, null, 'unavailable', ['Source unavailable.'], headingTag);
   }
 
-  /**
-   * @param {string} pageId
-   * @param {Record<string, unknown>} view
-   * @param {string} title
-   * @param {'h3'|'h4'} headingTag
-   * @returns {HTMLElement}
-   */
-  function renderCalloutView(pageId, view, title, headingTag) {
-    const definition = isPlainObject(view.callout) ? view.callout : {};
-    const viewId = typeof view.id === 'string' ? view.id : 'callout';
-    const headingId = `${pageId}-${viewId}-callout-heading`;
-    return h(
-      'aside',
-      { className: 'dashboard-callout', role: 'note', 'aria-labelledby': headingId },
-      h(
-        'div',
-        { className: 'dashboard-callout-heading' },
-        octicon(typeof definition.icon === 'string' ? definition.icon : 'info'),
-        h(
-          'div',
-          null,
-          h('span', { className: 'scope-kicker' }, typeof definition.label === 'string' ? definition.label : 'Note'),
-          h(headingTag, { id: headingId }, title)
-        )
-      ),
-      h('p', null, typeof view.description === 'string' ? view.description : '')
-    );
-  }
-
   const sourceInput = sources[sourceName];
   if (!sourceInput || !Array.isArray(sourceInput.rows)) {
     return renderCustomViewState(pageId, title, sourceName, 'unavailable', [`Source unavailable: ${sourceName}`], headingTag);
@@ -907,6 +878,35 @@ function renderCustomView(pageId, view, index, sources, units, headingTag = 'h3'
   if (rendered) return rendered;
 
   return renderCustomViewState(pageId, title, sourceName, 'unavailable', [...contextDetails, 'Unsupported view mark.'], headingTag);
+}
+
+/**
+ * @param {string} pageId
+ * @param {Record<string, unknown>} view
+ * @param {string} title
+ * @param {'h3'|'h4'} headingTag
+ * @returns {HTMLElement}
+ */
+function renderCalloutView(pageId, view, title, headingTag) {
+  const definition = isPlainObject(view.callout) ? view.callout : {};
+  const viewId = typeof view.id === 'string' ? view.id : 'callout';
+  const headingId = `${pageId}-${viewId}-callout-heading`;
+  return h(
+    'aside',
+    { className: 'dashboard-callout', role: 'note', 'aria-labelledby': headingId },
+    h(
+      'div',
+      { className: 'dashboard-callout-heading' },
+      octicon(typeof definition.icon === 'string' ? definition.icon : 'info'),
+      h(
+        'div',
+        null,
+        h('span', { className: 'scope-kicker' }, typeof definition.label === 'string' ? definition.label : 'Note'),
+        h(headingTag, { id: headingId }, title)
+      )
+    ),
+    h('p', null, typeof view.description === 'string' ? view.description : '')
+  );
 }
 
 /**
