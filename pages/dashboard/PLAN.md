@@ -81,7 +81,7 @@ Evidence paths below are relative to:
 - `src/components/tab-nav.js` — shared linked and interactive tab navigation with roving tabindex keyboard support.
 - `src/components/ui-primitives.js` — section headings, vital statistics, and UTC date-time presentation.
 - `src/components/view-chrome.js` — reusable section, metadata, summary, context, state, and provenance chrome.
-- `src/components/workflow-topology.js` — package and standalone workflow topology.
+- `src/workflow-data.js` — package and standalone workflow inventory sources for declarative topology views.
 - `src/view-formatters.js` — numeric and aggregate value formatting.
 
 ## Infrastructure blockers
@@ -120,5 +120,13 @@ Evidence paths below are relative to:
 - JSON-shaped data: `runtime-data.js` now emits `runtime-episode-summary`, `runtime-episodes`, and `runtime-attribution-gaps` logical sources from retained run evidence.
 - Reusable presentation: removed the specialized `execution-elements.js` renderer and its styles; runtime episodes now use shared summary, table, badge, filtering, sorting, empty-state, and link behavior.
 - Preserved evidence boundaries: root-only attribution, unavailable repeated coverage, exact-correlation gaps, run status, timing, duration, and run evidence remain explicit.
+
+## 2026-09-01 workflow topology entry
+
+- Investigation: selected workflow topology as a bounded JavaScript-only view that could be expressed through existing Dashboard Language elements.
+- Declarative specification: replaced the `workflow-topology` element in `dashboard.json` with one summary grid and generic tables for package and repository-owned workflows.
+- JSON-shaped data: `workflow-data.js` now emits topology summary, packaged-workflow, and standalone-workflow logical sources from retained workflow inventory.
+- Reusable presentation: removed the specialized topology renderer and styles; shared summary, table, link, badge, filtering, sorting, and empty-state components now own presentation.
+- Preserved evidence boundaries: the views describe declared workflow relationships and explicitly avoid claiming that a dispatch occurred.
 
 Run-by-run history was removed during compaction; milestones, unresolved questions, current inventory, blockers, and actionable parity work remain above.

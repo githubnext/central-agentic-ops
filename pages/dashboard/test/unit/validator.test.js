@@ -2230,11 +2230,11 @@ dashboard:
       kind: custom
       icon: rocket
       views:
-        - id: topology
+        - id: summary
           data:
             sources: [workflows]
           mark: element
-          element: workflow-topology
+          element: summary-grid
         - id: runs
           data:
             source: runs

@@ -650,7 +650,7 @@
         "page": "workflows",
         "title": "Workflows",
         "icon": "codescan",
-        "description": "Inspect central package topology and repository-owned GitHub Agentic Workflows across the configured githubnext/central-agentic-ops repository.",
+        "description": "Inspect declared central package and repository-owned workflow relationships. This inventory does not assert that a dispatch occurred.",
         "definition": {
           "data-state": {
             "availability": true,
@@ -664,11 +664,13 @@
               "description": "Declared workflow relationships describe expected structure; they do not assert that a dispatch occurred.",
               "data": {
                 "sources": [
-                  "workflow-topology-summary"
+                  "workflow-topology-summary",
+                  "workflows"
                 ]
               },
               "mark": "element",
-              "element": "summary-grid"
+              "element": "summary-grid",
+              "disclosure": "supplemental"
             },
             {
               "id": "packaged-workflows",
@@ -742,10 +744,6 @@
               "mark": "table",
               "empty-message": "No standalone workflows observed.",
               "encoding": {
-                "href": {
-                  "field": "workflow-link",
-                  "type": "nominal"
-                },
                 "columns": [
                   {
                     "field": "workflow",
@@ -774,6 +772,7 @@
             },
             {
               "id": "workflows-runs-source",
+              "disclosure": "supplemental",
               "data": {
                 "source": "runs"
               },
