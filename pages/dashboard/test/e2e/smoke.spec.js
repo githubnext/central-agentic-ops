@@ -550,6 +550,12 @@ test('DLS-PAGE-014 DLS-PAGE-015 built-in packages page renders report-style mode
               }
             },
             {
+              id: 'operational-value',
+              kind: 'custom',
+              title: 'Value & outcomes',
+              views: []
+            },
+            {
               id: 'package-detail',
               kind: 'custom',
               title: 'Package',
@@ -636,10 +642,15 @@ test('DLS-PAGE-014 DLS-PAGE-015 built-in packages page renders report-style mode
   await expect(awMaintenanceSummary.locator('td')).toHaveText(['2', '1', '1', '1', '1', '23.9', 'Aug 29, 2026, 10:05 AM']);
   await expect(page.getByRole('heading', { name: 'All runs over time', level: 3 })).toBeVisible();
   await expect(page.locator('.package-chart-point')).toHaveCount(30);
-  await expect(page.locator('[data-package-id="ambient-context"] a')).toHaveAttribute('href', '#page-package-detail?package=ambient-context');
+  await expect(page.locator('[data-package-id="ambient-context"] a')).toHaveAttribute('href', '#page-operational-value?package=ambient-context');
 
   await page.locator('[data-package-id="ambient-context"] a').click();
-  await expect(page).toHaveURL(/#page-package-detail\?package=ambient-context$/);
+  await expect(page).toHaveURL(/#page-operational-value\?package=ambient-context$/);
+  await expect(page.getByRole('heading', { name: 'Value & outcomes', level: 1 })).toBeVisible();
+
+  await page.evaluate(() => {
+    window.location.hash = '#page-package-detail?package=ambient-context';
+  });
   await expect(page.getByRole('heading', { name: 'Ambient Context', level: 1 })).toBeVisible();
   await expect(page.locator('[data-page-mode]')).toHaveText('Review');
   await expect(page.locator('[data-nav-page-id="packages"]')).toHaveAttribute('aria-current', 'page');
@@ -1419,6 +1430,13 @@ test('workflow page template follows its JSON-declared route and renders attribu
               views: []
             },
             {
+              id: 'workflow-runtime',
+              kind: 'custom',
+              title: 'Workflow runtime',
+              route: { 'hash-query-parameter': 'workflow' },
+              views: []
+            },
+            {
               id: 'workflow-detail',
               kind: 'custom',
               title: 'Workflow',
@@ -1497,7 +1515,7 @@ test('workflow page template follows its JSON-declared route and renders attribu
   await expect(page.getByRole('heading', { level: 1 })).toHaveText('Debug ambient context workflow failure');
   await expect(page.locator('.outcome-meta a', { hasText: 'Ambient Context' })).toHaveAttribute(
     'href',
-    '#page-workflow-detail?workflow=githubnext%2Fcentral-agentic-ops%3A.github%2Fworkflows%2Fambient-context.md'
+    '#page-workflow-runtime?workflow=githubnext%2Fcentral-agentic-ops%3A.github%2Fworkflows%2Fambient-context.md'
   );
 });
 

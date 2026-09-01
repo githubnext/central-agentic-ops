@@ -40,7 +40,7 @@ function context() {
             relation: 'workflow',
             href: 'https://github.com/octo/repo/blob/main/daily.md',
             label: 'View workflow',
-            'dashboard-href': '#page-workflow-detail?workflow=octo%2Frepo%3A.github%2Fworkflows%2Fdaily.md',
+            'dashboard-href': '#page-workflow-runtime?workflow=octo%2Frepo%3A.github%2Fworkflows%2Fdaily.md',
             'dashboard-label': 'View workflow dashboard'
           },
           'external-link': { relation: 'external', href: 'https://github.com/octo/repo/pull/1', label: 'View output' },
@@ -71,7 +71,7 @@ describe('outcome detail', () => {
     expect(rendered.querySelector('.outcome-meta')?.textContent).toContain('Pull Request');
     expect(rendered.querySelector('.outcome-meta')?.textContent).toContain('Daily review');
     expect(rendered.querySelectorAll('.outcome-meta a')).toHaveLength(3);
-    expect(rendered.querySelector('.outcome-meta a[href^="#page-workflow-detail"]')?.hasAttribute('target')).toBe(false);
+    expect(rendered.querySelector('.outcome-meta a[href^="#page-workflow-runtime"]')?.hasAttribute('target')).toBe(false);
     expect(allocation).toHaveBeenCalledWith(expect.objectContaining({
       detail: {
         title: 'Parity verification sweep',

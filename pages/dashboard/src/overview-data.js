@@ -191,7 +191,7 @@ function buildCostSignals(usageSource) {
         : 'No complete usage feed is available for the configured scope.',
       evidence: available ? 'Partial evidence' : 'Evidence unavailable',
       action: 'View evidence',
-      'navigation-page': 'usage'
+      'navigation-page': 'coverage'
     });
   }
   return [

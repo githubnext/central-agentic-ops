@@ -41,7 +41,7 @@ function context() {
               relation: 'workflow',
               href: 'https://github.com/githubnext/central-agentic-ops/blob/HEAD/.github/workflows/ambient-context.md',
               label: 'View Ambient Context',
-              'dashboard-href': '#page-workflow-detail?workflow=githubnext%2Fcentral-agentic-ops%3A.github%2Fworkflows%2Fambient-context.md',
+              'dashboard-href': '#page-workflow-runtime?workflow=githubnext%2Fcentral-agentic-ops%3A.github%2Fworkflows%2Fambient-context.md',
               'dashboard-label': 'View Ambient Context workflow dashboard'
             }
           },
@@ -128,8 +128,8 @@ describe('renderWorkflowDetail', () => {
       'Package · Central Agentic Ops'
     ]);
     expect([...rendered.querySelectorAll('.workflow-badges a')].map((badge) => badge.getAttribute('href'))).toEqual([
-      '#page-package-detail?package=ambient-context',
-      '#page-package-detail?package=central-agentic-ops'
+      '#page-operational-value?package=ambient-context',
+      '#page-operational-value?package=central-agentic-ops'
     ]);
     expect(rendered.querySelector('.workflow-identity > a')?.getAttribute('href')).toBe(
       'https://github.com/githubnext/central-agentic-ops/blob/HEAD/.github/workflows/ambient-context.md'
