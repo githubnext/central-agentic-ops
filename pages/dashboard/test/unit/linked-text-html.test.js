@@ -19,9 +19,9 @@ describe('linked text refactor behavior preservation', () => {
             views: []
           },
           {
-            id: 'workflow-detail',
+            id: 'workflow-runtime',
             kind: /** @type {'custom'} */ ('custom'),
-            title: 'Workflow',
+            title: 'Workflow runtime',
             route: { 'hash-query-parameter': 'workflow' },
             views: []
           }
