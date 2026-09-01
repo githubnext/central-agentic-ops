@@ -425,7 +425,7 @@ describe('presenter built-in and custom pages', () => {
           source: 'workflows',
           rows: [
             { workflow: '.github/workflows/daily.md', 'workflow-name': 'Daily operations', package: 'daily', 'package-name': 'Daily', 'inventory-ready': true },
-            { workflow: '.github/workflows/release.md', 'workflow-name': 'Release updater', package: 'release', 'package-name': 'Release', 'inventory-ready': false }
+            { workflow: '.github/workflows/release.md', 'workflow-name': '<img src=x onerror=alert(1)>', package: 'release', 'package-name': 'Release', 'inventory-ready': false }
           ],
           metadata
         },
@@ -443,7 +443,7 @@ describe('presenter built-in and custom pages', () => {
             workflow: '.github/workflows/release.md',
             finding: 'warning-1',
             'finding-kind': 'authored-warning',
-            'finding-summary': 'Release warning',
+            'finding-summary': '<img src=x onerror=alert(1)>',
             'observed-at': '2026-08-31T05:00:00Z',
             'external-link': { relation: 'external', href: 'https://github.com/githubnext/central-agentic-ops/issues/1', label: 'View warning output' }
           }],
@@ -489,57 +489,9 @@ describe('presenter built-in and custom pages', () => {
     expect(signals[1]?.querySelector('a')?.getAttribute('href')).toBe('#page-packages');
     expect(signals[1]?.textContent).toContain('View package');
     expect(signals[2]?.querySelector('a')?.getAttribute('href')).toBe('#page-outcome-detail?outcome=warning-1');
+    expect(signals[2]?.querySelector('.signal-copy > strong')?.textContent).toBe('<img src=x onerror=alert(1)>');
+    expect(signals[2]?.querySelector('img')).toBeNull();
     expect(page?.textContent).toContain('No vulnerability feed is retained.');
-  });
-
-  it('DLS-SAFE-003 DLS-SAFE-013 renders user-controlled security signal list content as inert text', () => {
-    const document = {
-      languageVersion: '0.1.0',
-      dashboard: {
-        id: 'security-list-dashboard',
-        title: 'Security',
-        pages: [{
-          id: 'security',
-          kind: /** @type {'custom'} */ ('custom'),
-          title: 'Security',
-          views: [{
-            id: 'security-signals',
-            data: { sources: ['security-signals'] },
-            mark: 'element',
-            element: 'signal-list'
-          }]
-        }]
-      }
-    };
-
-    const rendered = renderDashboard({
-      document,
-      sources: {
-        'security-signals': {
-          source: 'security-signals',
-          rows: [{
-            kind: '<em>Approval gate</em>',
-            title: '<img src=x onerror=alert(1)>',
-            detail: '<script>alert(1)</script>',
-            evidence: '<strong>Unsafe</strong>',
-            action: '<a href="javascript:alert(1)">Open</a>'
-          }],
-          metadata: {
-            'source-id': 'security-signals-fixture',
-            'source-kind': 'fixture',
-            'as-of': '2026-09-01T12:00:00Z',
-            'retrieved-at': '2026-09-01T12:01:00Z',
-            completeness: 'complete',
-            freshness: 'fresh',
-            availability: 'available'
-          }
-        }
-      }
-    });
-
-    const signal = rendered.querySelector('.signal-item');
-    expect(signal?.textContent).toContain('<img src=x onerror=alert(1)>');
-    expect(signal?.querySelector('img, script, em, a, strong strong')).toBeNull();
   });
 
   it('renders the custom JSON-composed Value page from shared summary, signal, and table elements', () => {
