@@ -690,74 +690,12 @@ tbody tr:hover { background: var(--canvas-subtle); }
 .outcome-meta a { display: inline-flex; align-items: center; gap: 5px; }
 .mode-indicator { min-height: 22px; display: inline-flex; flex: none; align-items: center; gap: 5px; padding: 1px 7px; border: 1px solid var(--border); border-radius: 2em; font-size: .6875rem; font-weight: 600; text-transform: none; white-space: nowrap; }
 .mode-indicator .octicon { width: 13px; height: 13px; flex-basis: 13px; }
-.workflow-topology-overview { container: workflow-topology / inline-size; margin-bottom: 24px; }
-.workflow-topology-overview > .section-heading { align-items: end; }
-.workflow-topology-summary { display: flex; flex: none; margin: 0; }
-.workflow-topology-summary > div { min-width: 94px; padding: 0 12px; border-left: 1px solid var(--border); }
-.workflow-topology-summary dt { color: var(--muted); font-size: .6875rem; font-weight: 600; text-transform: uppercase; }
-.workflow-topology-summary dd { margin: 1px 0 0; font-size: 1.125rem; font-weight: 600; font-variant-numeric: tabular-nums; }
-.workflow-topology { margin-top: 0; }
-.topology-plane { padding: 18px; border: 1px solid var(--border); border-radius: 6px; background: var(--canvas-subtle); }
-.topology-plane-header { display: flex; align-items: flex-start; gap: 12px; margin-bottom: 16px; }
-.topology-plane-header > div { min-width: 0; }
-.topology-plane-header h4 { margin: 1px 0 2px; font-size: 1rem; }
-.topology-plane-header p { margin: 0; color: var(--muted); font-size: .8125rem; }
-.topology-kicker { font-size: .6875rem !important; font-weight: 600; text-transform: uppercase; }
-.topology-step { width: 28px; height: 28px; display: grid; flex: 0 0 28px; place-items: center; border: 1px solid var(--border); border-radius: 50%; color: var(--muted); font-size: .6875rem; font-weight: 700; font-variant-numeric: tabular-nums; }
-.package-topology-list { display: grid; gap: 10px; }
-.package-topology { min-width: 0; overflow: hidden; border: 1px solid var(--border); border-radius: 6px; background: var(--canvas); }
-.package-topology-header { min-height: 56px; display: grid; grid-template-columns: 28px minmax(0, 1fr) auto auto; align-items: center; gap: 10px; padding: 10px 12px; border-bottom: 1px solid var(--border-muted); }
-.package-icon, .repository-icon { width: 28px; height: 28px; display: grid; place-items: center; border: 1px solid var(--border); border-radius: 6px; color: var(--accent); background: var(--accent-muted); }
-.package-identity { min-width: 0; }
-.package-identity h5 { margin: 0; overflow-wrap: anywhere; font-size: .875rem; }
-.package-identity p { margin: 1px 0 0; overflow-wrap: anywhere; color: var(--muted); font-size: .75rem; }
-.package-flow { display: grid; grid-template-columns: minmax(0, .9fr) 90px minmax(0, 1.2fr); align-items: center; gap: 10px; padding: 12px; }
-.workflow-node { min-width: 0; min-height: 58px; display: flex; align-items: center; gap: 10px; padding: 9px 10px; border-left: 3px solid var(--border); background: var(--canvas-subtle); }
-.workflow-node-orchestrator { border-left-color: var(--accent); }
-.workflow-node-worker { border-left-color: var(--success); }
-.workflow-node-missing { border-left-color: var(--attention); color: var(--attention); }
-.workflow-node-icon, .standalone-workflow-icon { width: 24px; height: 24px; display: grid; flex: 0 0 24px; place-items: center; color: var(--muted); }
-.workflow-node-copy { min-width: 0; display: grid; grid-template-columns: minmax(0, 1fr) auto; column-gap: 8px; align-items: baseline; }
-.workflow-node-copy strong { min-width: 0; overflow-wrap: anywhere; }
-.workflow-node-copy code { grid-column: 1 / -1; min-width: 0; overflow: hidden; color: var(--muted); text-overflow: ellipsis; white-space: nowrap; }
-.workflow-node-copy small { grid-column: 2; grid-row: 1; color: var(--muted); font-size: .6875rem; text-transform: capitalize; }
-.worker-stack { min-width: 0; display: grid; gap: 6px; }
-.package-dispatch { min-width: 0; display: grid; place-items: center; color: var(--muted); font-size: .6875rem; font-weight: 600; text-transform: uppercase; }
-.package-dispatch i { width: 100%; height: 1px; position: relative; margin-top: 6px; background: var(--border); }
-.package-dispatch i::after { content: ""; position: absolute; top: -4px; right: 0; border-width: 4px 0 4px 6px; border-style: solid; border-color: transparent transparent transparent var(--border); }
-.topology-boundary { min-height: 58px; display: grid; grid-template-columns: auto minmax(32px, 1fr); align-items: center; gap: 12px; padding: 0 18px; color: var(--muted); font-size: .6875rem; font-weight: 600; text-transform: uppercase; }
-.topology-boundary i { height: 1px; position: relative; background: repeating-linear-gradient(90deg, var(--border) 0 6px, transparent 6px 11px); }
-.topology-boundary i::after { content: ""; position: absolute; top: -4px; right: 0; border-width: 4px 0 4px 6px; border-style: solid; border-color: transparent transparent transparent var(--border); }
-.target-plane { background: var(--canvas); }
-.standalone-repository-list { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 10px; }
-.standalone-repository { min-width: 0; border: 1px solid var(--border); border-radius: 6px; background: var(--canvas-subtle); }
-.standalone-repository > header { min-height: 48px; display: flex; align-items: center; gap: 9px; padding: 9px 10px; border-bottom: 1px solid var(--border-muted); }
-.standalone-repository > header strong { min-width: 0; overflow-wrap: anywhere; }
-.standalone-repository .workflow-count { margin-left: auto; color: var(--muted); font-size: .6875rem; white-space: nowrap; }
-.standalone-repository ul { list-style: none; margin: 0; padding: 0; }
-.standalone-repository li { min-width: 0; display: grid; grid-template-columns: 24px minmax(0, 1fr) auto auto; align-items: center; gap: 8px; padding: 9px 10px; }
-.standalone-repository li + li { border-top: 1px solid var(--border-muted); }
-.standalone-repository li > span:nth-child(2) { min-width: 0; display: grid; }
-.standalone-repository li strong { overflow-wrap: anywhere; }
-.standalone-repository li code { min-width: 0; overflow: hidden; color: var(--muted); text-overflow: ellipsis; white-space: nowrap; }
 .provenance-section { margin-top: 24px; padding-top: 16px; border-top: 1px solid var(--border-muted); }
 .provenance-list { margin: 8px 0 0; padding-left: 20px; color: var(--muted); font-size: .8125rem; }
 .provenance-list li + li { margin-top: 4px; }
 code { padding: 2px 4px; border-radius: 4px; background: var(--neutral-muted); font: .75rem ui-monospace, SFMono-Regular, Consolas, monospace; }
 footer { padding: 20px 24px; border-top: 1px solid var(--border); color: var(--muted); font-size: .75rem; }
 .empty, .page-placeholder { margin: 0; padding: 28px 16px; color: var(--muted); text-align: center; }
-@container workflow-topology (max-width: 700px) {
-  .package-flow { grid-template-columns: 1fr; }
-  .package-dispatch { min-height: 42px; }
-  .package-dispatch i { width: 1px; height: 24px; margin-top: 4px; }
-  .package-dispatch i::after { top: auto; right: -4px; bottom: 0; border-width: 6px 4px 0; border-color: var(--border) transparent transparent; }
-}
-@container workflow-topology (max-width: 560px) {
-  .workflow-topology-overview > .section-heading { align-items: flex-start; flex-direction: column; }
-  .workflow-topology-summary { width: 100%; }
-  .workflow-topology-summary > div { min-width: 0; flex: 1; padding-inline: 8px; }
-  .workflow-topology-summary > div:first-child { padding-left: 0; border-left: 0; }
-}
 @media (min-width: 701px) and (max-width: 900px) {
   .repository-metrics { grid-template-columns: repeat(3, minmax(0, 1fr)); }
 }
@@ -833,11 +771,6 @@ footer { padding: 20px 24px; border-top: 1px solid var(--border); color: var(--m
   .workflow-run-health > .chart-legend, .value-chart > dl { grid-template-columns: 1fr; }
   .summary-grid { grid-template-columns: 1fr; }
   .pie-chart-layout { grid-template-columns: 1fr; }
-  .package-topology-header { grid-template-columns: 28px minmax(0, 1fr); }
-  .package-topology-header > :is(.mode-indicator, .status) { grid-column: auto; }
-  .standalone-repository-list { grid-template-columns: minmax(0, 1fr); }
-  .standalone-repository li { grid-template-columns: 24px minmax(0, 1fr); }
-  .standalone-repository li > :is(.mode-indicator, .status) { grid-column: 2; justify-self: start; }
   .attention-domain-grid { grid-template-columns: minmax(0, 1fr); }
   .attention-domain-card { min-height: 164px; }
   .outcome-meta { grid-template-columns: 1fr; }

@@ -11,23 +11,18 @@ const authoritativeDashboardDocument = JSON.parse(
 );
 
 describe('presenter built-in and custom pages', () => {
-  it('renders central operation packages as orchestrator-to-worker topology and keeps standalone target workflows separate', () => {
+  it('renders JSON-declared package and standalone workflow inventory with a topology summary', () => {
     const document = {
       languageVersion: '0.1.0',
       dashboard: {
         id: 'workflow-topology-dashboard',
         title: 'Workflow Topology',
         pages: [{
-          id: 'operations',
-          kind: /** @type {'custom'} */ ('custom'),
-          title: 'Operations',
-          icon: 'rocket',
-          views: [{
-            id: 'topology',
-            data: { sources: ['workflows'] },
-            mark: 'element',
-            element: 'workflow-topology'
-          }]
+          id: 'workflows',
+          kind: /** @type {'built-in'} */ ('built-in'),
+          page: 'workflows',
+          title: 'Workflows',
+          icon: 'rocket'
         }]
       }
     };
@@ -38,9 +33,9 @@ describe('presenter built-in and custom pages', () => {
         workflows: {
           source: 'workflows',
           rows: [
-            { repository: 'central-agentic-ops', package: 'dependabot', 'package-name': 'Dependabot', workflow: '.github/workflows/dependabot.yml', 'workflow-name': 'Dependabot', 'workflow-role': 'orchestrator', 'workflow-active': 'true', 'rollout-mode': 'review' },
-            { repository: 'central-agentic-ops', package: 'dependabot', 'package-name': 'Dependabot', workflow: '.github/workflows/dependabot-release-train-updater.yml', 'workflow-name': 'Release Train Updater', 'workflow-role': 'worker', 'workflow-active': 'true', 'rollout-mode': 'review' },
-            { repository: 'target-service', workflow: '.github/workflows/ci.yml', 'workflow-name': 'CI', 'workflow-role': 'standalone', 'workflow-active': 'true', 'rollout-mode': 'live' }
+            { organization: 'githubnext', repository: 'central-agentic-ops', package: 'dependabot', 'package-name': 'Dependabot', workflow: '.github/workflows/dependabot.yml', 'workflow-name': 'Dependabot', 'workflow-role': 'orchestrator', 'workflow-active': 'true', 'rollout-mode': 'review' },
+            { organization: 'githubnext', repository: 'central-agentic-ops', package: 'dependabot', 'package-name': 'Dependabot', workflow: '.github/workflows/dependabot-release-train-updater.yml', 'workflow-name': 'Release Train Updater', 'workflow-role': 'worker', 'workflow-active': 'true', 'rollout-mode': 'review' },
+            { organization: 'github', repository: 'target-service', workflow: '.github/workflows/ci.yml', 'workflow-name': 'CI', 'workflow-role': 'standalone', 'workflow-active': 'true', 'rollout-mode': 'live' }
           ],
           metadata: {
             'source-id': 'workflow-topology-fixture',
@@ -55,23 +50,17 @@ describe('presenter built-in and custom pages', () => {
       }
     });
 
-    const topology = rendered.querySelector('.workflow-topology');
-    const topologyHeader = rendered.querySelector('.workflow-topology-overview > .section-heading');
-    expect(topology).not.toBeNull();
-    expect(topologyHeader?.querySelector('.scope-kicker')?.textContent).toBe('Expected structure');
-    expect(topologyHeader?.querySelector('h3')?.textContent).toBe('Topology');
-    expect(topologyHeader?.querySelector('.workflow-topology-summary')?.textContent).toBe('Packages1Package workflows2Standalone workflows1');
-    expect(rendered.querySelector('.workflow-topology-overview .view-source')).toBeNull();
-    expect(topology?.querySelectorAll('[data-package-id="dependabot"]')).toHaveLength(1);
-    expect(topology?.querySelectorAll('[data-workflow-role="orchestrator"]')).toHaveLength(1);
-    expect(topology?.querySelectorAll('[data-workflow-role="worker"]')).toHaveLength(1);
-    expect(topology?.querySelector('[data-package-id="dependabot"]')?.textContent).toContain('dispatches');
-    expect(topology?.querySelector('[data-package-id="dependabot"] .package-identity a')?.getAttribute('href')).toBe('#page-operational-value?package=dependabot');
-    expect(topology?.querySelector('[data-repository="target-service"]')?.textContent).toContain('CI');
-    expect(topology?.querySelector('[data-package-id="dependabot"] .mode-review .octicon-beaker')).not.toBeNull();
-    expect(topology?.querySelector('[data-repository="target-service"] .mode-live .octicon-rocket')).not.toBeNull();
-    expect(topology?.textContent).toContain('safe outputs only');
-    const rocket = rendered.querySelector('[data-nav-page-id="operations"] .octicon-rocket');
+    const page = rendered.querySelector('[data-page-name="workflows"]');
+    expect(page?.querySelector('.summary-grid')?.textContent).toBe('Packages1Package workflows2Standalone workflows1');
+    expect(page?.getAttribute('data-page-description')).toContain('does not assert that a dispatch occurred');
+    expect(page?.querySelector('#workflows-operation-package-workflows-heading + .view-metadata')).not.toBeNull();
+    expect(page?.querySelector('#workflows-operation-package-workflows-heading')?.parentElement?.parentElement?.textContent).toContain('dependabot.yml');
+    expect(page?.querySelector('#workflows-operation-package-workflows-heading')?.parentElement?.parentElement?.textContent).toContain('release-train-updater.yml');
+    expect(page?.querySelector('#workflows-repository-owned-workflows-heading')?.parentElement?.parentElement?.textContent).toContain('ci.yml');
+    expect(page?.querySelector('.mode-review')).not.toBeNull();
+    expect(page?.querySelector('.mode-live')).not.toBeNull();
+    expect(page?.querySelector('.status-success')).not.toBeNull();
+    const rocket = rendered.querySelector('[data-nav-page-id="workflows"] .octicon-rocket');
     expect(rocket?.querySelector('use')?.getAttribute('href')).toMatch(/\/src\/octicons\.svg#octicon-rocket$/);
   });
 
@@ -81,17 +70,28 @@ describe('presenter built-in and custom pages', () => {
       dashboard: {
         id: 'workflow-topology-links-dashboard',
         title: 'Workflow Topology Links',
-        pages: [{
-          id: 'operations',
-          kind: /** @type {'custom'} */ ('custom'),
-          title: 'Operations',
-          views: [{
-            id: 'topology',
-            data: { sources: ['workflows'] },
-            mark: 'element',
-            element: 'workflow-topology'
-          }]
-        }]
+        pages: [
+          {
+            id: 'workflows',
+            kind: /** @type {'built-in'} */ ('built-in'),
+            page: 'workflows',
+            title: 'Workflows'
+          },
+          {
+            id: 'repository-detail',
+            kind: /** @type {'custom'} */ ('custom'),
+            title: 'Repository',
+            route: { 'hash-query-parameter': 'repository' },
+            views: []
+          },
+          {
+            id: 'workflow-runtime',
+            kind: /** @type {'custom'} */ ('custom'),
+            title: 'Workflow runtime',
+            route: { 'hash-query-parameter': 'workflow' },
+            views: []
+          }
+        ]
       }
     };
 
@@ -117,13 +117,12 @@ describe('presenter built-in and custom pages', () => {
       }
     });
 
-    const topology = rendered.querySelector('.workflow-topology');
-    const orchestratorLink = topology?.querySelector('[data-workflow-role="orchestrator"] a');
-    expect(orchestratorLink?.getAttribute('href')).toBe('https://github.com/githubnext/central-agentic-ops/blob/HEAD/.github/workflows/dependabot.yml');
-    const repositoryLink = topology?.querySelector('[data-repository="target-service"] a');
-    expect(repositoryLink?.getAttribute('href')).toBe('https://github.com/github/target-service');
-    const standaloneWorkflowLink = topology?.querySelector('[data-repository="target-service"] .standalone-workflow-icon + span a');
-    expect(standaloneWorkflowLink?.getAttribute('href')).toBe('https://github.com/github/target-service/blob/HEAD/.github/workflows/ci.yml');
+    const links = [...rendered.querySelectorAll('[data-page-name="workflows"] table a')]
+      .map((link) => link.getAttribute('href'));
+    expect(links).toContain('#page-operational-value?package=dependabot');
+    expect(links).toContain('#page-workflow-runtime?workflow=githubnext%2Fcentral-agentic-ops%3A.github%2Fworkflows%2Fdependabot.yml');
+    expect(links).toContain('#page-workflow-runtime?workflow=github%2Ftarget-service%3A.github%2Fworkflows%2Fci.yml');
+    expect(links).toContain('#page-repository-detail?repository=github%2Ftarget-service');
   });
 
   it('DLS-LINK-006 DLS-LINK-007 renders derived entity links in table columns and honours a custom github-url-base plus explicit link overrides', () => {
@@ -2378,21 +2377,6 @@ describe('presenter built-in and custom pages', () => {
               title: 'Workflow runtime',
               route: { 'hash-query-parameter': 'workflow' },
               views: []
-            },
-            {
-              id: 'workflow-detail',
-              kind: /** @type {'custom'} */ ('custom'),
-              title: 'Workflow',
-              route: { 'hash-query-parameter': 'workflow' },
-              views: [{
-                id: 'workflow-reports',
-                title: 'Workflow reports',
-                data: {
-                  sources: ['workflows', 'outcomes']
-                },
-                mark: 'element',
-                element: 'workflow-detail'
-              }]
             }
           ]
         }

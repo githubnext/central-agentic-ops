@@ -1,5 +1,5 @@
 /**
- * Shared workflow identity presentation.
+ * Shared workflow identity strip.
  */
 
 import { h } from '../dom.js';
@@ -8,8 +8,11 @@ import { findLink, renderExternalLink } from './link-content.js';
 /** @param {Record<string, unknown>} workflow */
 export function renderWorkflowIdentity(workflow) {
   const link = findLink(workflow, 'workflow-link');
-  const role = text(workflow['workflow-role']) || 'unknown';
+  const role = workflowRole(workflow);
   const memberships = workflowPackageMemberships(workflow);
+  const sourceLink = link
+    ? { href: link.externalHref ?? link.href, label: 'View authored workflow' }
+    : null;
   return h(
     'section',
     { className: 'workflow-identity', 'aria-label': 'Workflow identity' },
@@ -31,11 +34,16 @@ export function renderWorkflowIdentity(workflow) {
       ),
       h('p', null, h('code', null, text(workflow.workflow)))
     ),
-    link ? renderExternalLink({
-      href: link.externalHref ?? link.href,
-      label: 'View authored workflow'
-    }) : null
+    sourceLink ? renderExternalLink(sourceLink) : null
   );
+}
+
+/** @param {Record<string, unknown>} workflow */
+function workflowRole(workflow) {
+  const role = text(workflow['workflow-role']).toLowerCase();
+  return ['orchestrator', 'worker', 'standalone'].includes(role)
+    ? role
+    : workflowPackageMemberships(workflow).length > 0 ? 'operation' : 'unknown';
 }
 
 /** @param {Record<string, unknown>} workflow */
