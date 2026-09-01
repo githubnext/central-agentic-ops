@@ -28,6 +28,10 @@ describe('table cell display helper', () => {
     expect(/** @type {HTMLElement} */ (renderCellDisplay('digest', '1234567890abcdef', toText)).textContent).toBe('1234567890ab');
     expect(renderCellDisplay(undefined, 'plain', toText)).toBe('plain');
     expect(renderCellDisplay('unsupported', null, toText)).toBe('unknown');
+    const temporal = /** @type {HTMLElement} */ (renderCellDisplay(undefined, '2026-08-30T07:00:00Z', toText, null, 'temporal'));
+    expect(temporal.tagName).toBe('TIME');
+    expect(temporal.getAttribute('datetime')).toBe('2026-08-30T07:00:00Z');
+    expect(temporal.textContent).toBe('Aug 30, 2026, 7:00 AM');
     expect(renderCellDisplay(undefined, 2.5, toText, {
       name: 'AI Credits',
       symbol: 'AIC',

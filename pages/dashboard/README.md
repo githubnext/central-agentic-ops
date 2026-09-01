@@ -48,7 +48,7 @@ Runtime triage is likewise declared as JSON: pure runtime data derivation emits 
 
 Workflow topology is declared as JSON-backed summary and table views over derived package and standalone workflow sources, using shared links, badges, filtering, sorting, and empty states.
 
-The workflow-dispatch catalog is also declarative: JSON-classified runtime rows feed the `dispatch-catalog` element rendered through the shared table, status, link, search, facet, sort, and empty-state primitives.
+The workflow-dispatch catalog is also declarative: JSON-classified runtime rows feed a generic table specification rendered through the shared temporal cell, status, link, search, facet, sort, and empty-state primitives.
 
 Coverage diagnostics are declared as a static JSON table over the logical coverage source. Their Overview parent navigation is route metadata rather than component-owned behavior.
 

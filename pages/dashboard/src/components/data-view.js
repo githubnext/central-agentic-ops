@@ -97,13 +97,7 @@ function renderTableView(context) {
   const hrefField = typeof hrefDefinition?.field === 'string' ? hrefDefinition.field : null;
   const tableRows = prepareTableRows(rows, columns, view.data);
   const renderCellValue = createEntityAwareCellRenderer(
-    hrefField
-      ? {
-          organization: ENTITY_LINK_FIELDS.organization,
-          repository: ENTITY_LINK_FIELDS.repository,
-          workflow: ENTITY_LINK_FIELDS.workflow
-        }
-      : ENTITY_LINK_FIELDS,
+    ENTITY_LINK_FIELDS,
     findLink,
     (display, value, column) => renderCellDisplay(
       display,

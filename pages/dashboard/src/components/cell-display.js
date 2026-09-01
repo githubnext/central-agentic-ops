@@ -5,6 +5,7 @@
 import { h } from '../dom.js';
 import { renderActiveStateBadge, renderGraderStatusBadge, renderModeBadge, renderStatusBadge } from './badge.js';
 import { formatNumber } from '../view-formatters.js';
+import { formatUtcDateTime } from './ui-primitives.js';
 
 /**
  * @param {unknown} display
@@ -22,6 +23,9 @@ export function renderCellDisplay(display, value, toText, unit = null, type) {
   if (display === 'label') return formatLabel(value);
   if (display === 'digest') return h('code', null, value == null || value === '' ? 'unavailable' : String(value).slice(0, 12));
   if (type === 'quantitative' && (value == null || value === '' || !Number.isFinite(Number(value)))) return '—';
+  if (type === 'temporal' && typeof value === 'string' && Number.isFinite(Date.parse(value))) {
+    return h('time', { dateTime: value }, formatUtcDateTime(value));
+  }
   if (unit && typeof value === 'number' && Number.isFinite(value)) return formatNumber(value, unit);
   return toText(value);
 }

@@ -61,7 +61,8 @@ function buildPresenterModuleUrl() {
   const cellDisplaySource = readFileSync(new URL('../../src/components/cell-display.js', import.meta.url), 'utf8')
     .replace("'../dom.js'", JSON.stringify(domModuleUrl))
     .replace("'./badge.js'", JSON.stringify(badgeModuleUrl))
-    .replace("'../view-formatters.js'", JSON.stringify(viewFormattersModuleUrl));
+    .replace("'../view-formatters.js'", JSON.stringify(viewFormattersModuleUrl))
+    .replace("'./ui-primitives.js'", JSON.stringify(uiPrimitivesModuleUrl));
   const cellDisplayModuleUrl = `data:text/javascript;charset=utf-8,${encodeURIComponent(cellDisplaySource)}`;
 
   const runClassificationRuleSource = readFileSync(new URL('../../src/components/run-conclusion-classification.json', import.meta.url), 'utf8');
