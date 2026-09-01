@@ -139,7 +139,7 @@ export const BUILT_IN_PAGE_REQUIRED_SOURCES = {
   overview: ['repositories', 'workflows', 'runs', 'usage', 'findings', 'operational-values'],
   organizations: ['organizations', 'repositories', 'workflows', 'runs', 'usage'],
   repositories: ['repositories', 'runs', 'usage', 'operational-values'],
-  packages: ['workflows', 'runs', 'usage'],
+  packages: ['workflows', 'runs', 'outcomes', 'usage'],
   workflows: ['workflows', 'runs', 'outcomes', 'usage', 'findings', 'operational-values'],
   runs: ['runs', 'outcomes'],
   experiments: ['experiments', 'experiment-assignments', 'grader-observations', 'eval-observations', 'outcomes', 'usage', 'operational-values'],
@@ -176,6 +176,7 @@ export const BUILT_IN_PAGE_REQUIRED_FIELDS = {
   packages: {
     workflows: ['organization', 'repository', 'package', 'package-name', 'workflow', 'workflow-role', 'rollout-mode', 'max-ai-credits', 'package-aic-allowance'],
     runs: ['organization', 'repository', 'workflow', 'run', 'started-at', 'run-conclusion', 'rollout-mode'],
+    outcomes: ['package', 'runtime-repository', 'run', 'run-conclusion', 'rollout-mode', 'published-at', 'observed-at', 'run-link'],
     usage: ['organization', 'repository', 'workflow', 'run', 'aic', 'rollout-mode', 'observed-at']
   },
   workflows: {
@@ -288,7 +289,7 @@ export const SOURCE_FIELDS = {
   'runtime-episode-summary': ['label', 'value'],
   'runtime-episodes': ['run', 'run-title', 'package', 'workflow', 'started-at', 'duration', 'status', 'attribution', 'run-link'],
   'runtime-attribution-gaps': ['run', 'run-title', 'workflow', 'status', 'evidence', 'run-link'],
-  outcomes: ['organization', 'repository', 'package', 'runtime-repository', 'workflow', 'workflow-name', 'run', 'safe-output', 'outcome-title', 'outcome-summary', 'outcome-body-html', 'outcome-category', 'outcome-status', 'outcome-state', 'evidence-strength', 'rollout-mode', 'published-at', 'observed-at', 'issue-link', 'pull-request-link', 'run-link', 'external-link', 'organization-link', 'repository-link', 'workflow-link'],
+  outcomes: ['organization', 'repository', 'package', 'runtime-repository', 'workflow', 'workflow-name', 'run', 'run-conclusion', 'safe-output', 'outcome-title', 'outcome-summary', 'outcome-body-html', 'outcome-category', 'outcome-status', 'outcome-state', 'evidence-strength', 'rollout-mode', 'published-at', 'observed-at', 'issue-link', 'pull-request-link', 'run-link', 'external-link', 'organization-link', 'repository-link', 'workflow-link'],
   findings: ['organization', 'repository', 'workflow', 'run', 'finding', 'finding-kind', 'finding-severity', 'finding-status', 'finding-summary', 'observed-at', 'issue-link', 'pull-request-link', 'run-link', 'external-link', 'organization-link', 'repository-link', 'workflow-link'],
   'operational-values': ['organization', 'repository', 'workflow', 'run', 'experiment', 'operational-case', 'evaluator-digest', 'rollout-mode', 'operational-value', 'operational-value-definition', 'requested-evidence-at', 'evidence-cutoff', 'maturity-at', 'maturity-status', 'baseline-value', 'delta-from-baseline', 'observed-at', 'evidence-link', 'organization-link', 'repository-link', 'workflow-link', 'run-link'],
   'overview-attention-domains': ['domain', 'state', 'tone', 'icon', 'value', 'detail', 'href', 'priority', 'order'],

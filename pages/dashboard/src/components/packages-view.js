@@ -144,9 +144,9 @@ function summarizePackageActivity(packages, sources, mode) {
     scopedEntityKey(row, 'workflow'),
     entry.key
   ])));
-  const runsAvailable = Boolean(sources.runs) && sources.runs?.metadata?.availability !== 'unavailable';
   const findingsAvailable = Boolean(sources.findings) && sources.findings?.metadata?.availability !== 'unavailable';
   const usageAvailable = Boolean(sources.usage) && sources.usage?.metadata?.availability !== 'unavailable';
+  const activity = packageActivityRuns(packages, sources, mode);
   const runDetails = new Map();
   const summaries = new Map(packages.map((entry) => [entry.key, {
     runs: 0,
@@ -158,25 +158,22 @@ function summarizePackageActivity(packages, sources, mode) {
     latestActivity: null
   }]));
 
-  if (runsAvailable) {
-    for (const row of rowsFor(sources, 'runs')) {
-      if (!matchesMode(row, mode)) continue;
-      const packageKey = workflowDetails.get(scopedEntityKey(row, 'workflow'));
-      const runKey = scopedEntityKey(row, 'run');
-      const summary = packageKey ? summaries.get(packageKey) : null;
-      if (!summary || runDetails.has(runKey)) continue;
-      runDetails.set(runKey, { packageKey, mode: String(row['rollout-mode'] ?? 'unknown') });
-      summary.runs += 1;
-      if (String(row['run-conclusion']) === 'success') summary.successful += 1;
-      if (isFailureConclusion(row['run-conclusion'])) summary.failed += 1;
-      updateLatestActivity(summary, row['ended-at'], row['started-at']);
-    }
+  for (const row of activity.rows) {
+    const packageKey = String(row.packageKey);
+    const runKey = String(row.runKey);
+    const summary = summaries.get(packageKey);
+    if (!summary || runDetails.has(runKey)) continue;
+    runDetails.set(runKey, { packageKey, mode: String(row['rollout-mode'] ?? 'unknown') });
+    summary.runs += 1;
+    if (String(row['run-conclusion']) === 'success') summary.successful += 1;
+    if (isFailureConclusion(row['run-conclusion'])) summary.failed += 1;
+    updateLatestActivity(summary, row['ended-at'], row['started-at']);
   }
 
   if (findingsAvailable) {
     const warningRuns = new Set();
     for (const row of rowsFor(sources, 'findings')) {
-      const runKey = scopedEntityKey(row, 'run');
+      const runKey = runIdentity(row);
       const run = runDetails.get(runKey);
       const packageKey = run?.packageKey ?? workflowDetails.get(scopedEntityKey(row, 'workflow'));
       const summary = packageKey ? summaries.get(packageKey) : null;
@@ -238,6 +235,107 @@ function updateLatestActivity(summary, ...values) {
  */
 function matchesMode(row, mode) {
   return mode === 'all' || row['rollout-mode'] === mode;
+}
+
+/**
+ * Prefer durable-output run evidence, which is retained for the package report
+ * window, over the shorter Actions inventory window.
+ *
+ * @param {ReturnType<typeof summarizePackages>} packages
+ * @param {Record<string, import('../presenter.js').LogicalSourceInput>} sources
+ * @param {string} mode
+ */
+function packageActivityRuns(packages, sources, mode) {
+  const outcomesAvailable = Boolean(sources.outcomes)
+    && sources.outcomes?.metadata?.availability !== 'unavailable';
+  const source = outcomesAvailable ? sources.outcomes : sources.runs;
+  const rows = outcomesAvailable ? rowsFor(sources, 'outcomes') : rowsFor(sources, 'runs');
+  const windowStart = outcomesAvailable ? outcomeWindowStart(source) : Number.NEGATIVE_INFINITY;
+  const workflowPackages = new Map(packages.flatMap((entry) => entry.workflows.map((row) => [
+    scopedEntityKey(row, 'workflow'),
+    entry.key
+  ])));
+  const runs = new Map();
+
+  for (const row of rows) {
+    const rolloutMode = String(row['rollout-mode'] ?? 'unknown');
+    if (!matchesMode(row, mode) || (outcomesAvailable && !['review', 'live'].includes(rolloutMode))) continue;
+    const publishedAt = Date.parse(String(row['published-at'] ?? ''));
+    if (outcomesAvailable && (!Number.isFinite(publishedAt) || publishedAt < windowStart)) continue;
+    const packageKey = outcomesAvailable
+      ? packageKeyForOutcome(row, packages)
+      : workflowPackages.get(scopedEntityKey(row, 'workflow'));
+    const runKey = runIdentity(row);
+    if (!packageKey || !runKey) continue;
+    const startedAt = outcomesAvailable ? row['published-at'] : row['started-at'];
+    const endedAt = outcomesAvailable ? row['observed-at'] : row['ended-at'];
+    const existing = runs.get(runKey);
+    if (!existing) {
+      runs.set(runKey, {
+        packageKey,
+        runKey,
+        'rollout-mode': rolloutMode,
+        'run-conclusion': row['run-conclusion'],
+        'started-at': startedAt,
+        'ended-at': endedAt
+      });
+      continue;
+    }
+    if (existing['run-conclusion'] === 'unknown' && row['run-conclusion'] !== 'unknown') {
+      existing['run-conclusion'] = row['run-conclusion'];
+    }
+    existing['started-at'] = earlierDate(existing['started-at'], startedAt);
+    existing['ended-at'] = laterDate(existing['ended-at'], endedAt);
+  }
+
+  return { rows: [...runs.values()], source };
+}
+
+/** @param {import('../presenter.js').LogicalSourceInput | undefined} source */
+function outcomeWindowStart(source) {
+  const asOf = Date.parse(String(source?.metadata?.['as-of'] ?? source?.metadata?.['retrieved-at'] ?? ''));
+  if (!Number.isFinite(asOf)) return Number.NEGATIVE_INFINITY;
+  const start = new Date(asOf);
+  start.setUTCHours(0, 0, 0, 0);
+  return start.getTime() - (29 * DAY_IN_MILLISECONDS);
+}
+
+/**
+ * @param {Record<string, unknown>} row
+ * @param {ReturnType<typeof summarizePackages>} packages
+ */
+function packageKeyForOutcome(row, packages) {
+  const packageId = String(row.package ?? '').toLowerCase();
+  if (!packageId) return null;
+  const candidates = packages.filter((entry) => entry.id.toLowerCase() === packageId);
+  const runtimeRepository = String(row['runtime-repository'] ?? '').toLowerCase();
+  const scoped = candidates.find((entry) => (
+    [entry.organization, entry.repository].filter(Boolean).join('/').toLowerCase() === runtimeRepository
+  ));
+  return scoped?.key ?? (candidates.length === 1 ? candidates[0].key : null);
+}
+
+/** @param {Record<string, unknown>} row */
+function runIdentity(row) {
+  const runLink = row['run-link'];
+  if (runLink && typeof runLink === 'object' && 'href' in runLink && typeof runLink.href === 'string') return runLink.href;
+  const run = String(row.run ?? '');
+  if (!run) return '';
+  const repository = String(row['runtime-repository'] ?? '')
+    || [row.organization, row.repository].filter(Boolean).join('/');
+  return JSON.stringify([repository, run]);
+}
+
+/** @param {unknown} left @param {unknown} right */
+function earlierDate(left, right) {
+  const values = [left, right].filter((value) => Number.isFinite(Date.parse(String(value ?? ''))));
+  return values.sort((a, b) => Date.parse(String(a)) - Date.parse(String(b)))[0];
+}
+
+/** @param {unknown} left @param {unknown} right */
+function laterDate(left, right) {
+  const values = [left, right].filter((value) => Number.isFinite(Date.parse(String(value ?? ''))));
+  return values.sort((a, b) => Date.parse(String(b)) - Date.parse(String(a)))[0];
 }
 
 /**
@@ -356,20 +454,16 @@ function renderUtilizationCard(entry, utilization, available, completeness) {
  * @returns {HTMLElement}
  */
 function renderRunTrend(sources, mode, headingId) {
-  const workflows = rowsFor(sources, 'workflows');
-  const runsSource = sources.runs;
+  const packages = summarizePackages(rowsFor(sources, 'workflows'));
+  const activity = packageActivityRuns(packages, sources, mode);
+  const runsSource = activity.source;
   const modeLabel = titleCase(mode);
   const heading = `${modeLabel} runs over time`;
   if (!runsSource || runsSource.metadata?.availability === 'unavailable') {
     return renderUnavailableRunTrend(heading, headingId, 'Package run data is unavailable.');
   }
-  const packageWorkflows = new Set(workflows
-    .filter(isPackageWorkflow)
-    .map((row) => scopedEntityKey(row, 'workflow')));
-  const allRuns = rowsFor(sources, 'runs')
-    .filter((row) => packageWorkflows.has(scopedEntityKey(row, 'workflow')))
-    .filter((row) => mode === 'all' || row['rollout-mode'] === mode);
-  const trendDays = buildTrendDays(sources.runs, allRuns);
+  const allRuns = activity.rows;
+  const trendDays = buildTrendDays(runsSource, allRuns);
   if (trendDays.length === 0) {
     return renderUnavailableRunTrend(heading, headingId, 'Package run trend is unavailable because no reporting date was provided.');
   }
