@@ -100,7 +100,8 @@ function renderWorkflowTabs(pageId, repository, workflow, workflowName) {
     ariaLabel: `${workflowName} views`,
     tabs: [
       { label: 'Insights', icon: 'graph', href: `#page-${pageId}?workflow=${encodeURIComponent(route)}`, current: true },
-      { label: 'Reports', icon: 'issue', href: `#page-workflow-detail?workflow=${encodeURIComponent(route)}` }
+      { label: 'Reports', icon: 'issue', href: `#page-workflow-detail?workflow=${encodeURIComponent(route)}` },
+      { label: 'Runs', icon: 'play', href: `#page-workflow-runs?workflow=${encodeURIComponent(route)}` }
     ]
   });
 }
