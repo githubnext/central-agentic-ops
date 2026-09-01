@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import { describe, expect, it } from 'vitest';
-import { findFirstLink, findLink, renderExternalLink, renderLinkedValueWithExternalLink, renderWorkflowRunLink } from '../../src/components/link-content.js';
+import { findFirstLink, findLink, renderExternalLink, renderLinkedValueWithExternalLink, renderOutcomeLink, renderWorkflowRunLink } from '../../src/components/link-content.js';
 
 describe('link content helpers', () => {
   it('DLS-SAFE-004 finds only safe https links with non-empty labels', () => {
@@ -78,5 +78,13 @@ describe('link content helpers', () => {
     expect(linked.getAttribute('aria-label')).toBe('Run 42');
     expect(linked.textContent).toBe('42');
     expect(renderWorkflowRunLink({}, 'Unavailable')).toBe('Unavailable');
+  });
+
+  it('renders durable-output titles as encoded dashboard links with a plain-text fallback', () => {
+    const linked = /** @type {HTMLElement} */ (renderOutcomeLink({ 'safe-output': 'issue/42' }, 'Issue 42'));
+
+    expect(linked.getAttribute('href')).toBe('#page-outcome-detail?outcome=issue%2F42');
+    expect(linked.textContent).toBe('Issue 42');
+    expect(renderOutcomeLink({}, 'Unavailable')).toBe('Unavailable');
   });
 });

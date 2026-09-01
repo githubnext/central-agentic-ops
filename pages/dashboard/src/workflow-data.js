@@ -10,6 +10,7 @@
  */
 export function deriveWorkflowSources(sources) {
   const workflows = Array.isArray(sources.workflows?.rows) ? sources.workflows.rows : [];
+  const outcomes = Array.isArray(sources.outcomes?.rows) ? sources.outcomes.rows : [];
   const packaged = workflows
     .filter((row) => row['workflow-role'] !== 'standalone' && text(row.package))
     .map(derivePackagedWorkflow)
@@ -41,7 +42,49 @@ export function deriveWorkflowSources(sources) {
       source: 'standalone-workflows',
       rows: standalone,
       metadata
+    },
+    'workflow-reports': {
+      source: 'workflow-reports',
+      rows: outcomes.flatMap((row) => {
+        const report = deriveWorkflowReport(row);
+        return report ? [report] : [];
+      }).sort(compareWorkflowReports),
+      metadata: sources.outcomes?.metadata ?? unavailableMetadata()
     }
+  };
+}
+
+/** @param {Row} row @returns {Row | null} */
+function deriveWorkflowReport(row) {
+  const repository = text(row['runtime-repository']) || qualifiedRepository(row);
+  const workflow = text(row.workflow);
+  const safeOutput = text(row['safe-output']);
+  if (!repository || repository.toLowerCase() === 'unknown' || !workflow) return null;
+  const sourceLink = ['external-link', 'issue-link', 'pull-request-link', 'run-link']
+    .map((field) => row[field])
+    .find(isPlainObject);
+  return {
+    'workflow-route': `${repository}:${workflow}`,
+    'safe-output': safeOutput,
+    'outcome-title': text(row['outcome-title']) || safeOutput || 'Untitled report',
+    'outcome-summary': text(row['outcome-summary']) || 'No report summary was provided.',
+    'outcome-status': text(row['outcome-status']) || text(row['outcome-state']) || 'unknown',
+    'rollout-mode': text(row['rollout-mode']) || 'unknown',
+    'outcome-category': text(row['outcome-category']) || 'unknown',
+    'observed-at': row['observed-at'] ?? row['published-at'],
+    ...(sourceLink
+      ? {
+          'external-link': {
+            ...sourceLink,
+            ...(safeOutput
+              ? {
+                  'dashboard-href': `#page-outcome-detail?outcome=${encodeURIComponent(safeOutput)}`,
+                  'dashboard-label': `View ${text(row['outcome-title']) || safeOutput}`
+                }
+              : {})
+          }
+        }
+      : {})
   };
 }
 
@@ -96,6 +139,18 @@ function comparePackagedWorkflows(left, right) {
 function compareStandaloneWorkflows(left, right) {
   return text(left.repository).localeCompare(text(right.repository))
     || text(left['workflow-name']).localeCompare(text(right['workflow-name']));
+}
+
+/** @param {Row} left @param {Row} right */
+function compareWorkflowReports(left, right) {
+  return derivedReportTime(right) - derivedReportTime(left)
+    || text(left['outcome-title']).localeCompare(text(right['outcome-title']));
+}
+
+/** @param {Row} row */
+function derivedReportTime(row) {
+  const value = Date.parse(text(row['observed-at']));
+  return Number.isFinite(value) ? value : 0;
 }
 
 /** @param {unknown} role */

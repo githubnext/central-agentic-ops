@@ -1434,13 +1434,30 @@ test('workflow page template follows its JSON-declared route and renders attribu
               title: 'Workflow',
               description: 'Workflow reports.',
               route: { 'hash-query-parameter': 'workflow' },
-              views: [{
-                id: 'workflow-reports',
-                title: 'Workflow reports',
-                data: { sources: ['workflows', 'outcomes'] },
-                mark: 'element',
-                element: 'workflow-detail'
-              }]
+              views: [
+                {
+                  id: 'workflow-reports',
+                  title: 'Workflow reports',
+                  data: { sources: ['workflows'] },
+                  mark: 'element',
+                  element: 'workflow-detail'
+                },
+                {
+                  id: 'workflow-report-table',
+                  title: 'Reports',
+                  data: { source: 'workflow-reports', 'route-field': 'workflow-route' },
+                  mark: 'table',
+                  encoding: {
+                    columns: [
+                      { field: 'outcome-title', type: 'nominal', title: 'Report', display: 'outcome-link' },
+                      { field: 'outcome-status', type: 'nominal', title: 'Status', display: 'status' },
+                      { field: 'rollout-mode', type: 'nominal', title: 'Mode', display: 'mode' },
+                      { field: 'outcome-category', type: 'nominal', title: 'Type' },
+                      { field: 'observed-at', type: 'temporal', title: 'Updated' }
+                    ]
+                  }
+                }
+              ]
             },
             {
               id: 'outcome-detail',
@@ -1500,10 +1517,10 @@ test('workflow page template follows its JSON-declared route and renders attribu
   await expect(page.locator('[data-breadcrumb-root]')).toHaveText('Repositories');
   await expect(page.locator('[data-breadcrumb-dashboard]')).toHaveText('githubnext/central-agentic-ops');
   await expect(page.locator('.workflow-identity')).toContainText('.github/workflows/ambient-context.md');
-  await expect(page.locator('.workflow-reports')).toContainText('Debug ambient context workflow failure');
-  await expect(page.locator('.workflow-report-row .status-success')).toHaveText('Closed');
-  await expect(page.locator('.workflow-report-row .mode-review')).toHaveText('Review');
-  await page.locator('.workflow-report-title a').click();
+  await expect(page.locator('.custom-table')).toContainText('Debug ambient context workflow failure');
+  await expect(page.locator('.custom-table .status-success')).toHaveText('closed');
+  await expect(page.locator('.custom-table .mode-review')).toHaveText('review');
+  await page.locator('.custom-table tbody a').first().click();
   await expect(page.getByRole('heading', { level: 1 })).toHaveText('Debug ambient context workflow failure');
   await expect(page.locator('.outcome-meta a', { hasText: 'Ambient Context' })).toHaveAttribute(
     'href',
