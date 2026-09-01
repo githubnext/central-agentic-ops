@@ -20,7 +20,7 @@ export function renderDispatchCatalog(context) {
   const rows = source?.rows ?? [];
   const headingId = `${context.pageId}-dispatch-catalog-heading`;
   const table = renderTableRegion({
-    tableClassName: 'custom-table',
+    tableClassName: 'dispatch-table',
     regionClassName: 'dispatch-table-region table-region-static',
     emptyMessage: 'No workflow dispatch events were observed in the current run window.',
     colSpan: 7,
@@ -88,9 +88,10 @@ function renderDispatchRow(row) {
 
 /** @param {unknown} value */
 function statusLabel(value) {
-  const normalized = text(value).toLowerCase().replaceAll('_', '-');
+  const label = text(value);
+  const normalized = label.toLowerCase().replaceAll('_', '-');
   if (normalized === 'action-required') return 'Approval required';
-  return text(value).replaceAll('_', ' ').replaceAll('-', ' ');
+  return label.replaceAll('_', ' ').replaceAll('-', ' ');
 }
 
 /** @param {unknown} value */

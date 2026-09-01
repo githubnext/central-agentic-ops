@@ -60,6 +60,7 @@ describe('declarative dispatch view', () => {
     ]);
     expect(rendered.textContent).toContain('Package worker');
     expect(rendered.textContent).toContain('Update dependencies');
+    expect(rendered.querySelector('table')?.className).toBe('dispatch-table');
     expect(rendered.querySelector('.status-attention')).not.toBeNull();
     expect(rendered.querySelector('.table-summary-row')).toBeNull();
     expect(rendered.querySelector('input[type="search"]')?.getAttribute('placeholder')).toBe('Run, package, worker, status, or repository');
