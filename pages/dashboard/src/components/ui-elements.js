@@ -13,6 +13,7 @@ import { renderOutcomeDetail } from './outcome-detail.js';
 import { renderSectionHeading } from './ui-primitives.js';
 import { renderDefinitionList } from './view-chrome.js';
 import { renderWorkflowRuntime } from './workflow-runtime.js';
+import { renderAnomalyReadiness } from './anomaly-readiness.js';
 
 /**
  * @typedef {{
@@ -34,6 +35,7 @@ const ELEMENT_RENDERERS = new Map([
   ['domain-attention', renderDomainAttentionElement],
   ['summary-grid', renderSummaryGridElement],
   ['context-summary', renderContextSummaryElement],
+  ['anomaly-readiness', renderAnomalyReadinessElement],
   ['signal-list', renderSignalListElement],
   ['package-activity', ({ sources, pageId }) => renderPackagesView(sources, pageId)],
   ['package-detail', (context) => renderPackageNavigation(context, 'workflows')],
@@ -134,6 +136,11 @@ function renderContextSummaryElement(context) {
       h('dd', null, ...renderContextSummaryValue(row))
     ))
   );
+}
+
+/** @param {ElementRenderContext} context */
+function renderAnomalyReadinessElement(context) {
+  return renderAnomalyReadiness(rowsFor(context, context.sourceNames[0])[0] ?? {});
 }
 
 /** @param {Record<string, unknown>} row */

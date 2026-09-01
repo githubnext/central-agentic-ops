@@ -38,7 +38,7 @@ describe('Runtime dashboard view', () => {
           title: 'Needs attention',
           'count-source': 'runtime-signals',
           'count-label': 'signals',
-          views: ['runtime-needs-attention']
+          views: ['runtime-anomaly-readiness', 'runtime-needs-attention']
         },
         {
           id: 'observed-behavior',
@@ -58,6 +58,11 @@ describe('Runtime dashboard view', () => {
         element: view.element
       })
     )).toEqual([
+      {
+        id: 'runtime-anomaly-readiness',
+        mark: 'element',
+        element: 'anomaly-readiness'
+      },
       {
         id: 'runtime-needs-attention',
         mark: 'element',
@@ -173,6 +178,9 @@ describe('Runtime dashboard view', () => {
     const runtimePage = rendered.querySelector('[data-page-id="runtime"]');
     expect(runtimePage?.querySelector('[data-section-id="runtime-triage"] .scope-kicker')?.textContent).toBe('Runtime Triage');
     expect(runtimePage?.querySelector('[data-section-id="runtime-triage"] .layout-section-header h3')?.textContent).toBe('Needs attention');
+    expect(runtimePage?.querySelector('.anomaly-readiness')?.getAttribute('role')).toBe('note');
+    expect(runtimePage?.querySelector('.anomaly-readiness')?.textContent).toContain('Statistical anomalies · not evaluated');
+    expect(runtimePage?.querySelector('.anomaly-readiness .octicon-pulse')).not.toBeNull();
     const attention = rendered.querySelector('.signal-list-region')?.textContent;
     expect(attention).toContain('Approval gate');
     expect(attention).toContain('Run failures');

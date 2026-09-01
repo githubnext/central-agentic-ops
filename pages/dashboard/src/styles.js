@@ -368,6 +368,7 @@ h3 { margin: 16px 0 8px; font-size: 1rem; font-weight: 600; }
 .workflow-attention { margin-bottom: 32px; }
 .workflow-attention > .section-heading { align-items: end; }
 .workflow-attention > .section-heading > strong { flex: none; font-variant-numeric: tabular-nums; }
+.runtime-page [data-section-id="runtime-triage"] .custom-view-grid { gap: 0; }
 .anomaly-readiness { display: flex; align-items: center; justify-content: space-between; gap: 20px; padding: 10px 14px; border: 1px solid var(--border); border-radius: 6px 6px 0 0; background: var(--canvas-subtle); }
 .anomaly-readiness > span { display: inline-flex; flex: none; align-items: center; gap: 7px; font-size: .75rem; }
 .anomaly-readiness .octicon { color: var(--muted); }
