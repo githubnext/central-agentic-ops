@@ -3,6 +3,7 @@
  */
 
 import { h } from '../dom.js';
+import { processRows } from '../data-processor.js';
 import { renderTableSummaryRow } from './table-summary.js';
 
 /**
@@ -159,6 +160,7 @@ function enableTableSort(region) {
   if (!(body instanceof HTMLTableSectionElement)) return;
   const headers = [...region.querySelectorAll('th[aria-sort]')]
     .filter((header) => header instanceof HTMLTableCellElement);
+  let revision = 0;
 
   for (const header of headers) {
     const control = header.querySelector('[data-table-sort]');
@@ -166,15 +168,19 @@ function enableTableSort(region) {
     const columnIndex = Number(control.dataset.tableSort);
     control.addEventListener('click', () => {
       const direction = header.getAttribute('aria-sort') === 'ascending' ? 'descending' : 'ascending';
+      const requestRevision = ++revision;
       for (const other of headers) other.setAttribute('aria-sort', 'none');
       header.setAttribute('aria-sort', direction);
-      const sorted = [...body.rows].sort((left, right) => compareCells(
-        cellText(left, columnIndex),
-        cellText(right, columnIndex)
-      ));
-      if (direction === 'descending') sorted.reverse();
-      for (const row of sorted) body.append(row);
-      region.dispatchEvent(new Event('table-sorted'));
+      const rows = [...body.rows];
+      const result = processRows(
+        rows.map((row, index) => ({ index, value: cellText(row, columnIndex) })),
+        [{ op: 'arrange', by: [{ field: 'value', direction: direction === 'descending' ? 'desc' : 'asc' }] }]
+      );
+      applyProcessed(result, (processed) => {
+        if (requestRevision !== revision) return;
+        for (const item of processed) body.append(rows[Number(item.index)]);
+        region.dispatchEvent(new Event('table-sorted'));
+      });
     });
   }
 }
@@ -193,19 +199,6 @@ function cellText(row, columnIndex) {
  * @param {string} right
  * @returns {number}
  */
-function compareCells(left, right) {
-  if (left === right) return 0;
-  if (left === '') return 1;
-  if (right === '') return -1;
-  const leftNumber = Number(left.replace(/,/g, ''));
-  const rightNumber = Number(right.replace(/,/g, ''));
-  if (Number.isFinite(leftNumber) && Number.isFinite(rightNumber)) return leftNumber - rightNumber;
-  const leftDate = Date.parse(left);
-  const rightDate = Date.parse(right);
-  if (Number.isFinite(leftDate) && Number.isFinite(rightDate)) return leftDate - rightDate;
-  return left.localeCompare(right);
-}
-
 /**
  * @param {HTMLElement} region
  * @param {{ filterId?: string, pageSize: number, resultNoun?: string, resultNounPlural?: string }} options
@@ -239,27 +232,35 @@ function enableTableFilter(region, options) {
   }
 
   let limit = options.pageSize;
+  let revision = 0;
   const apply = (reset = false) => {
    if (reset) limit = options.pageSize;
    const query = input.value.trim().toLocaleLowerCase('en');
-   let matched = 0;
-   let shown = 0;
-   for (const row of currentRows()) {
-     const matchesSearch = query.length === 0
-       || (row.textContent ?? '').toLocaleLowerCase('en').includes(query);
-     const matchesFacets = facets.every((facet) => {
-       const columnIndex = Number(facet.dataset.tableColumnIndex);
-       const cellValue = row.cells[columnIndex]?.textContent?.trim() ?? '';
-       return facet.value === '' || cellValue === facet.value;
-     });
-     const matches = matchesSearch && matchesFacets;
-     if (matches) matched += 1;
-     const visible = matches && shown < limit;
-     row.hidden = !visible;
-     if (visible) shown += 1;
-   }
-   output.textContent = formatResultCount(shown, matched, options.resultNoun, options.resultNounPlural);
-   more.hidden = shown >= matched;
+   const rows = currentRows();
+   const requestRevision = ++revision;
+   const predicates = facets
+     .filter((facet) => facet.value !== '')
+     .map((facet) => ({ field: `column-${facet.dataset.tableColumnIndex}`, equals: facet.value }));
+   const result = processRows(
+     rows.map((row, index) => ({
+       index,
+       search: row.textContent ?? '',
+       ...Object.fromEntries([...row.cells].map((cell, columnIndex) => [`column-${columnIndex}`, cell.textContent?.trim() ?? '']))
+     })),
+     [{ op: 'filter', search: { fields: ['search'], query }, predicates }]
+   );
+   applyProcessed(result, (processed) => {
+     if (requestRevision !== revision) return;
+     const matchedIndexes = new Set(processed.map((item) => Number(item.index)));
+     let shown = 0;
+     for (const [index, row] of rows.entries()) {
+       const visible = matchedIndexes.has(index) && shown < limit;
+       row.hidden = !visible;
+       if (visible) shown += 1;
+     }
+     output.textContent = formatResultCount(shown, processed.length, options.resultNoun, options.resultNounPlural);
+     more.hidden = shown >= processed.length;
+   });
   };
 
   const syncUrl = () => {
@@ -291,6 +292,19 @@ function enableTableFilter(region, options) {
   });
   region.addEventListener('table-sorted', () => apply());
   apply();
+}
+
+/**
+ * Handles the synchronous fallback and asynchronous worker result uniformly.
+ * @param {Array<Record<string, unknown>>|Promise<Array<Record<string, unknown>>>} result
+ * @param {(rows: Array<Record<string, unknown>>) => void} apply
+ */
+function applyProcessed(result, apply) {
+  if (result instanceof Promise) {
+   result.then(apply).catch(() => {});
+  } else {
+   apply(result);
+  }
 }
 
 /**
