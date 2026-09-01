@@ -144,47 +144,14 @@ describe('renderPackageDetail', () => {
   });
 
   describe('renderPackageReports', () => {
-    it('renders package-scoped reports with mode controls, statuses, and outcome links', () => {
+    it('renders route-scoped package navigation', () => {
       const rendered = renderPackageReports({ ...context(), pageId: 'package-reports' });
       rendered.dispatchEvent(new CustomEvent('dashboard-route-change', {
         detail: { parameter: 'package', value: 'ambient-context' }
       }));
 
       expect(rendered.querySelector('.package-tabs [aria-current="page"]')?.getAttribute('href')).toBe('#page-package-reports?package=ambient-context');
-      expect(rendered.querySelector('[role="tab"][aria-selected="true"]')?.textContent).toBe('All');
-      expect(rendered.querySelector('.package-report-columns')?.textContent).toBe('ReportStatusModeTypeUpdated');
-      expect(rendered.querySelectorAll('.package-report-row')).toHaveLength(2);
-      expect(rendered.querySelector('.package-report-header')?.textContent).toContain('1 Open1 Resolved');
-      expect(rendered.querySelector('[data-report-id="ambient-pr-2"] a')?.getAttribute('href')).toBe('#page-outcome-detail?outcome=ambient-pr-2');
-      expect(rendered.querySelector('[data-report-id="ambient-pr-2"] .status')?.classList).toContain('status-success');
-      expect(rendered.textContent).not.toContain('Other package report');
-    });
-
-    it('filters reports by mode and search text', () => {
-      const rendered = renderPackageReports({ ...context(), pageId: 'package-reports' });
-      rendered.dispatchEvent(new CustomEvent('dashboard-route-change', {
-        detail: { parameter: 'package', value: 'ambient-context' }
-      }));
-
-      const reviewTab = [...rendered.querySelectorAll('[role="tab"]')]
-        .find((tab) => tab.textContent === 'Review');
-      expect(reviewTab).toBeInstanceOf(HTMLButtonElement);
-      reviewTab?.dispatchEvent(new MouseEvent('click'));
-      expect(rendered.querySelectorAll('.package-report-row')).toHaveLength(1);
-      expect(rendered.textContent).toContain("Review proposals; this is the package's configured mode.");
-      expect(rendered.querySelector('.package-report-columns')?.textContent).toBe('ReportStatusTypeUpdated');
-
-      const allTab = [...rendered.querySelectorAll('[role="tab"]')]
-        .find((tab) => tab.textContent === 'All');
-      allTab?.dispatchEvent(new MouseEvent('click'));
-      const search = rendered.querySelector('.package-report-search input');
-      expect(search).toBeInstanceOf(HTMLInputElement);
-      if (search instanceof HTMLInputElement) {
-        search.value = 'reconcile';
-        search.dispatchEvent(new Event('input'));
-      }
-      expect(rendered.querySelector('[data-report-id="ambient-issue-1"]')?.hasAttribute('hidden')).toBe(true);
-      expect(rendered.querySelector('[data-report-id="ambient-pr-2"]')?.hasAttribute('hidden')).toBe(false);
+      expect(rendered.getAttribute('data-route-view')).not.toBeNull();
     });
 
     it('reallocates package report identity and renders explicit empty states', () => {

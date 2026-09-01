@@ -48,7 +48,15 @@ export function deriveWorkflowSources(sources) {
       rows: outcomes.flatMap((row) => {
         const report = deriveWorkflowReport(row);
         return report ? [report] : [];
-      }).sort(compareWorkflowReports),
+      }).sort(compareReports),
+      metadata: sources.outcomes?.metadata ?? unavailableMetadata()
+    },
+    'package-reports': {
+      source: 'package-reports',
+      rows: outcomes.flatMap((row) => {
+        const report = derivePackageReport(row, workflows);
+        return report ? [report] : [];
+      }).sort(compareReports),
       metadata: sources.outcomes?.metadata ?? unavailableMetadata()
     }
   };
@@ -58,13 +66,31 @@ export function deriveWorkflowSources(sources) {
 function deriveWorkflowReport(row) {
   const repository = text(row['runtime-repository']) || qualifiedRepository(row);
   const workflow = text(row.workflow);
-  const safeOutput = text(row['safe-output']);
   if (!repository || repository.toLowerCase() === 'unknown' || !workflow) return null;
+  return {
+    'workflow-route': `${repository}:${workflow}`,
+    ...deriveReport(row)
+  };
+}
+
+/** @param {Row} row @param {Row[]} workflows @returns {Row | null} */
+function derivePackageReport(row, workflows) {
+  const packageId = attributedPackage(row, workflows);
+  if (!packageId) return null;
+  const report = deriveReport(row);
+  return {
+    package: packageId,
+    ...report
+  };
+}
+
+/** @param {Row} row */
+function deriveReport(row) {
+  const safeOutput = text(row['safe-output']);
   const sourceLink = ['issue-link', 'pull-request-link', 'run-link', 'external-link']
     .map((field) => row[field])
     .find(isPlainObject);
   return {
-    'workflow-route': `${repository}:${workflow}`,
     'safe-output': safeOutput,
     'outcome-title': text(row['outcome-title']) || safeOutput || 'Untitled report',
     'outcome-summary': text(row['outcome-summary']) || 'No report summary was provided.',
@@ -87,6 +113,33 @@ function deriveWorkflowReport(row) {
         }
       : {})
   };
+}
+
+/** @param {Row} outcome @param {Row[]} workflows */
+function attributedPackage(outcome, workflows) {
+  const explicitPackage = text(outcome.package);
+  if (explicitPackage) return explicitPackage;
+  const workflow = workflows.find((candidate) => sameWorkflowScope(outcome, candidate)
+    && (
+      normalizeWorkflowIdentity(candidate.workflow) === normalizeWorkflowIdentity(outcome.workflow)
+      || normalizeWorkflowIdentity(candidate['workflow-name']) === normalizeWorkflowIdentity(outcome['workflow-name'])
+    ));
+  return text(workflow?.package);
+}
+
+/** @param {Row} outcome @param {Row} workflow */
+function sameWorkflowScope(outcome, workflow) {
+  const outcomeRepository = text(outcome.repository).toLowerCase();
+  const workflowRepository = text(workflow.repository).toLowerCase();
+  const outcomeOrganization = text(outcome.organization).toLowerCase();
+  const workflowOrganization = text(workflow.organization).toLowerCase();
+  return (!outcomeRepository || !workflowRepository || outcomeRepository === workflowRepository)
+    && (!outcomeOrganization || !workflowOrganization || outcomeOrganization === workflowOrganization);
+}
+
+/** @param {unknown} value */
+function normalizeWorkflowIdentity(value) {
+  return text(value).toLowerCase().replace(/\.lock\.yml$/, '.md');
 }
 
 /** @param {Row} row */
@@ -143,7 +196,7 @@ function compareStandaloneWorkflows(left, right) {
 }
 
 /** @param {Row} left @param {Row} right */
-function compareWorkflowReports(left, right) {
+function compareReports(left, right) {
   return derivedReportTime(right) - derivedReportTime(left)
     || text(left['outcome-title']).localeCompare(text(right['outcome-title']));
 }

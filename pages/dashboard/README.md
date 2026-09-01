@@ -50,6 +50,8 @@ Workflow topology is declared as JSON-backed summary and table views over derive
 
 The workflow-dispatch catalog is also declarative: JSON-classified runtime rows feed a generic table specification rendered through the shared temporal cell, status, link, search, facet, sort, and empty-state primitives.
 
+Package reports are route-keyed JSON data rendered by a JSON-defined generic table with shared outcome links, badges, filtering, faceting, sorting, and empty states.
+
 Coverage diagnostics are declared as a static JSON table over the logical coverage source. Their Overview parent navigation is route metadata rather than component-owned behavior.
 
 The preview also mirrors the report's interactive transitions for navigation, linked records, and chart-point tooltips while respecting reduced-motion preferences. It loads generated `sources.json` data by default so deployed `/ymao` views stay aligned with `/cao`. Add `?fixtures` when opening the renderer to explicitly use illustrative data with multiple operational-value observations and linked runs, issues, pull requests, and evidence.
