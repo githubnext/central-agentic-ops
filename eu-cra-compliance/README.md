@@ -39,12 +39,24 @@ Configure the shared GitHub App or PAT described in the [authentication guide](.
 		"packages": {
 			"eu-cra-compliance": {
 				"workers": {
-					"scope-classifier": {},
-					"security-requirements-auditor": {},
-					"supply-chain-sbom-auditor": {},
-					"vulnerability-handling-auditor": {},
-					"article-14-reporting-readiness": {},
-					"conformity-release-evidence": {}
+					"scope-classifier": {
+						"workflow": "eu-cra-compliance-scope-classifier"
+					},
+					"security-requirements-auditor": {
+						"workflow": "eu-cra-compliance-security-requirements-auditor"
+					},
+					"supply-chain-sbom-auditor": {
+						"workflow": "eu-cra-compliance-supply-chain-sbom-auditor"
+					},
+					"vulnerability-handling-auditor": {
+						"workflow": "eu-cra-compliance-vulnerability-handling-auditor"
+					},
+					"article-14-reporting-readiness": {
+						"workflow": "eu-cra-compliance-article-14-reporting-readiness"
+					},
+					"conformity-release-evidence": {
+						"workflow": "eu-cra-compliance-conformity-release-evidence"
+					}
 				}
 			}
 		}

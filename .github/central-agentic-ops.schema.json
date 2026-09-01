@@ -60,7 +60,12 @@
     "workerPolicy": {
       "type": "object",
       "additionalProperties": false,
+      "required": ["workflow"],
       "properties": {
+        "workflow": {
+          "type": "string",
+          "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$"
+        },
         "enabled": { "type": "boolean" },
         "max-mode": { "$ref": "#/$defs/mode" }
       }
@@ -86,128 +91,23 @@
           "type": "object",
           "propertyNames": { "$ref": "#/$defs/repository" },
           "additionalProperties": { "$ref": "#/$defs/targetPolicy" }
+        },
+        "workers": {
+          "type": "object",
+          "propertyNames": {
+            "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$"
+          },
+          "additionalProperties": { "$ref": "#/$defs/workerPolicy" }
         }
-      }
-    },
-    "advisoryWorkers": {
-      "type": "object",
-      "additionalProperties": false,
-      "properties": {
-        "uk-ai-operational-resilience": { "$ref": "#/$defs/workerPolicy" }
-      }
-    },
-    "ambientContextWorkers": {
-      "type": "object",
-      "additionalProperties": false,
-      "properties": {
-        "agents-md-curator": { "$ref": "#/$defs/workerPolicy" },
-        "skills-curator": { "$ref": "#/$defs/workerPolicy" }
-      }
-    },
-    "awMaintenanceWorkers": {
-      "type": "object",
-      "additionalProperties": false,
-      "properties": {
-        "failures-investigator": { "$ref": "#/$defs/workerPolicy" },
-        "upgrade": { "$ref": "#/$defs/workerPolicy" }
-      }
-    },
-    "dependabotWorkers": {
-      "type": "object",
-      "additionalProperties": false,
-      "properties": {
-        "release-train-updater": { "$ref": "#/$defs/workerPolicy" }
-      }
-    },
-    "euCraComplianceWorkers": {
-      "type": "object",
-      "additionalProperties": false,
-      "properties": {
-        "scope-classifier": { "$ref": "#/$defs/workerPolicy" },
-        "security-requirements-auditor": { "$ref": "#/$defs/workerPolicy" },
-        "supply-chain-sbom-auditor": { "$ref": "#/$defs/workerPolicy" },
-        "vulnerability-handling-auditor": { "$ref": "#/$defs/workerPolicy" },
-        "article-14-reporting-readiness": { "$ref": "#/$defs/workerPolicy" },
-        "conformity-release-evidence": { "$ref": "#/$defs/workerPolicy" }
-      }
-    },
-    "optimizationWorkers": {
-      "type": "object",
-      "additionalProperties": false,
-      "properties": {
-        "ai-credit-auditor": { "$ref": "#/$defs/workerPolicy" },
-        "ai-credit-optimizer": { "$ref": "#/$defs/workerPolicy" }
-      }
-    },
-    "selfCareWorkers": {
-      "type": "object",
-      "additionalProperties": false,
-      "properties": {
-        "accessibility-checker": { "$ref": "#/$defs/workerPolicy" },
-        "primer-brand-checker": { "$ref": "#/$defs/workerPolicy" }
-      }
-    },
-    "advisoryPackage": {
-      "allOf": [
-        { "$ref": "#/$defs/packagePolicy" },
-        { "properties": { "workers": { "$ref": "#/$defs/advisoryWorkers" } } }
-      ],
-      "unevaluatedProperties": false
-    },
-    "ambientContextPackage": {
-      "allOf": [
-        { "$ref": "#/$defs/packagePolicy" },
-        { "properties": { "workers": { "$ref": "#/$defs/ambientContextWorkers" } } }
-      ],
-      "unevaluatedProperties": false
-    },
-    "awMaintenancePackage": {
-      "allOf": [
-        { "$ref": "#/$defs/packagePolicy" },
-        { "properties": { "workers": { "$ref": "#/$defs/awMaintenanceWorkers" } } }
-      ],
-      "unevaluatedProperties": false
-    },
-    "dependabotPackage": {
-      "allOf": [
-        { "$ref": "#/$defs/packagePolicy" },
-        { "properties": { "workers": { "$ref": "#/$defs/dependabotWorkers" } } }
-      ],
-      "unevaluatedProperties": false
-    },
-    "euCraCompliancePackage": {
-      "allOf": [
-        { "$ref": "#/$defs/packagePolicy" },
-        { "properties": { "workers": { "$ref": "#/$defs/euCraComplianceWorkers" } } }
-      ],
-      "unevaluatedProperties": false
-    },
-    "optimizationPackage": {
-      "allOf": [
-        { "$ref": "#/$defs/packagePolicy" },
-        { "properties": { "workers": { "$ref": "#/$defs/optimizationWorkers" } } }
-      ],
-      "unevaluatedProperties": false
-    },
-    "selfCarePackage": {
-      "allOf": [
-        { "$ref": "#/$defs/packagePolicy" },
-        { "properties": { "workers": { "$ref": "#/$defs/selfCareWorkers" } } }
-      ],
-      "unevaluatedProperties": false
+      },
+      "additionalProperties": false
     },
     "controlPackages": {
       "type": "object",
-      "additionalProperties": false,
-      "properties": {
-        "advisory": { "$ref": "#/$defs/advisoryPackage" },
-        "ambient-context": { "$ref": "#/$defs/ambientContextPackage" },
-        "aw-maintenance": { "$ref": "#/$defs/awMaintenancePackage" },
-        "dependabot": { "$ref": "#/$defs/dependabotPackage" },
-        "eu-cra-compliance": { "$ref": "#/$defs/euCraCompliancePackage" },
-        "optimization": { "$ref": "#/$defs/optimizationPackage" },
-        "self-care": { "$ref": "#/$defs/selfCarePackage" }
-      }
+      "propertyNames": {
+        "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$"
+      },
+      "additionalProperties": { "$ref": "#/$defs/packagePolicy" }
     },
     "scope": {
       "type": "object",
@@ -293,16 +193,10 @@
     },
     "targetPackages": {
       "type": "object",
-      "additionalProperties": false,
-      "properties": {
-        "advisory": { "$ref": "#/$defs/targetPackage" },
-        "ambient-context": { "$ref": "#/$defs/targetPackage" },
-        "aw-maintenance": { "$ref": "#/$defs/targetPackage" },
-        "dependabot": { "$ref": "#/$defs/targetPackage" },
-        "eu-cra-compliance": { "$ref": "#/$defs/targetPackage" },
-        "optimization": { "$ref": "#/$defs/targetPackage" },
-        "self-care": { "$ref": "#/$defs/targetPackage" }
-      }
+      "propertyNames": {
+        "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$"
+      },
+      "additionalProperties": { "$ref": "#/$defs/targetPackage" }
     },
     "targetAuthority": {
       "type": "object",

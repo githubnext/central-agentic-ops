@@ -49,7 +49,9 @@ Declare Dependabot in `.github/central-agentic-ops.json`:
 		"packages": {
 			"dependabot": {
 				"workers": {
-					"release-train-updater": {}
+					"release-train-updater": {
+						"workflow": "dependabot-release-train-updater"
+					}
 				}
 			}
 		}

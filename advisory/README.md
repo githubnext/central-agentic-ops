@@ -34,7 +34,9 @@ Configure the shared GitHub App or PAT described in the [authentication guide](.
 		"packages": {
 			"advisory": {
 				"workers": {
-					"uk-ai-operational-resilience": {}
+					"uk-ai-operational-resilience": {
+						"workflow": "advisory-uk-ai-operational-resilience"
+					}
 				}
 			}
 		}

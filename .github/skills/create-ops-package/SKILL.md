@@ -68,7 +68,7 @@ Create `.github/workflows/<package>.md` with:
 - a schedule when the operation is periodic, plus `workflow_dispatch`
 - the standard dispatch inputs: `target_repo`, `safe_output_repo`, `max_repos`, `rollout_percent`, and `safe_output_mode` with `review` and `live` choices, defaulting to `review`
 - `shared/control.md` imported with a static `package` slug, `role: orchestrator`, and request-only narrowing inputs
-- the package and every worker added to the closed `PACKAGES` map in `.github/scripts/control-policy/resolve.mjs` and declared in `.github/central-agentic-ops.json`; never add package policy variables or compatibility fallbacks
+- the package and every worker declared in `.github/central-agentic-ops.json`, with each worker's exact `workflow` slug recorded there; the resolver must load this catalog from policy rather than hard-code package identities
 - least-privilege permissions, explicit tools/network configuration, `strict: true`, and a bounded `max-ai-credits`
 - `safe-outputs.dispatch-workflow.workflows` listing every worker slug and a `max` consistent with `max_repos` and worker count
 - a prompt headed with the package display name and containing `Discovery`, `Workers`, and `Completion` sections

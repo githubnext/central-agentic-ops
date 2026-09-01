@@ -100,11 +100,12 @@ This provides an immediate worker kill switch: disable the generated worker work
 
 ## Worker Ceilings
 
-Installed package workers inherit package policy automatically. Add worker-specific configuration only when a worker has a materially different blast radius, permission set, maturity timeline, or operational owner. The controls are:
+Declare each installed package worker and its exact workflow slug in package policy. Add optional worker-specific controls only when a worker has a materially different blast radius, permission set, maturity timeline, or operational owner. The controls are:
 
 | Control | Purpose | Default |
 | --- | --- | --- |
-| `enabled` | Explicitly excludes or re-enables a worker workflow for dispatch | `true` for installed package workers |
+| `workflow` | Declares the exact workflow slug dispatched for this worker | Required |
+| `enabled` | Explicitly excludes or re-enables a worker workflow for dispatch | `true` |
 | `max-mode` | Optionally caps the most permissive mode a worker workflow can execute | Inherits the resolved package or exact-target mode |
 | worker workflow limit | Caps worker workflow-specific volume or resource use | Existing Agentic Workflow limit |
 
@@ -135,7 +136,10 @@ Example: Optimization can be live while `optimization-ai-credit-optimizer` remai
 		"packages": {
 			"optimization": {
 				"workers": {
-					"ai-credit-optimizer": { "max-mode": "review" }
+					"ai-credit-optimizer": {
+						"workflow": "optimization-ai-credit-optimizer",
+						"max-mode": "review"
+					}
 				}
 			}
 		}

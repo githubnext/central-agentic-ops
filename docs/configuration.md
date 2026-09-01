@@ -22,7 +22,13 @@ This minimal policy enables the installed Dependabot package and its workers in 
       "allowed-owners": ["acme"]
     },
     "packages": {
-      "dependabot": {}
+      "dependabot": {
+        "workers": {
+          "release-train-updater": {
+            "workflow": "dependabot-release-train-updater"
+          }
+        }
+      }
     }
   }
 }
@@ -47,7 +53,7 @@ The schema defaults are:
 | `control-plane.defaults.monthly-ai-credit-budget` | `0` | Non-negative integer AIC; `0` disables tuning |
 | `control-plane.packages.<package>.targets.<owner/repository>.mode` | Package mode | `review` or `live` |
 
-Each entry under `control-plane.packages` may override the defaults with `enabled`, `mode`, `max-repositories`, `rollout-percent`, and `monthly-ai-credit-budget`. Its optional `targets` map assigns a different mode to an exact repository while unmatched repositories retain the package mode. Every package target must remain inside the global allowed owners and, when present, the global repository allowlist. Declaring a package enables the workers shipped by that installed package. Add `workers` only for exceptions: `enabled: false` disables one worker and `max-mode` narrows one worker's mode. Package and worker names are closed to the catalog identifiers documented in the [Control Policy Specification](control-policy-specification.md).
+Each entry under `control-plane.packages` may override the defaults with `enabled`, `mode`, `max-repositories`, `rollout-percent`, and `monthly-ai-credit-budget`. Its optional `targets` map assigns a different mode to an exact repository while unmatched repositories retain the package mode. Every package target must remain inside the global allowed owners and, when present, the global repository allowlist. The `workers` map is the package's workflow catalog: every worker entry requires its exact `workflow` slug, may set `enabled: false` to disable that worker, and may set `max-mode` to narrow its mode. Package and worker names are lowercase kebab-case identifiers loaded directly from this policy.
 
 For example, this policy keeps Dependabot in review across its scope while promoting one exact target to live:
 
@@ -68,6 +74,11 @@ For example, this policy keeps Dependabot in review across its scope while promo
         "targets": {
           "acme/example-service": {
             "mode": "live"
+          }
+        },
+        "workers": {
+          "release-train-updater": {
+            "workflow": "dependabot-release-train-updater"
           }
         }
       }

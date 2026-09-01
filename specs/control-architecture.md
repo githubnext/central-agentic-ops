@@ -200,7 +200,7 @@ The orchestrator is the rollout decision point. Each worker is an independent en
 
 **CAO-CFG-003:** The document MUST contain at least one of `control-plane` or `target-authority` and MUST conform to `.github/central-agentic-ops.schema.json`, based on JSON Schema Draft 2020-12.
 
-**CAO-CFG-004:** Unknown properties, duplicate object keys, unsupported package or worker identifiers, and GitHub Actions expressions MUST be rejected.
+**CAO-CFG-004:** Unknown properties, duplicate object keys, malformed package, worker, or workflow identifiers, and GitHub Actions expressions MUST be rejected.
 
 **CAO-CFG-005:** Implementations MUST NOT read `CENTRAL_AGENTIC_OPS_*` Actions variables as policy defaults, overrides, aliases, or compatibility fallbacks.
 
@@ -217,7 +217,7 @@ A control repository uses `control-plane`. A target repository uses `target-auth
 | `scope` | Eligible owners and optional repository restriction | Resolver safe defaults |
 | `inventory` | Scan, cell, and batch ceilings | Schema defaults |
 | `defaults` | Mode, repository, rollout, and monthly admission defaults | Schema defaults |
-| `packages` | Explicit package declarations and optional worker exceptions | Undeclared packages are disabled; installed package workers are enabled |
+| `packages` | Explicit package and worker workflow declarations | Undeclared packages and workers are disabled |
 | `publishing` | Deterministic reviewed-output publication | Disabled |
 
 `allowed-owners` and `allowed-repositories` are cumulative when both are non-empty. Wildcards MUST NOT be accepted in version 1.
@@ -241,7 +241,7 @@ Inventory partitioning MUST be deterministic for the same inventory and effectiv
 
 `monthly-ai-credit-budget` MUST NOT replace, raise, or reinterpret gh-aw `max-ai-credits` or `max-turns`. When the value is positive, the orchestrator MUST read unique month-to-date AI Credit usage for the package orchestrator and workers, reserve the orchestrator's declared maximum, and admit only complete worker sets that fit the remaining budget. The budget-derived target cap MUST be intersected with all repository, rollout, and dispatch caps. Unreadable or invalid usage evidence MUST set the budget target cap to zero and prevent dispatch; it MUST NOT be estimated. A value of `0` disables monthly admission without changing native gh-aw per-run limits.
 
-An absent package is disabled. A declared package enables every worker shipped by its installed immutable package. The optional `workers` map contains exceptions only: `enabled: false` disables one installed worker, and an explicit `max-mode` may only narrow the resolved package or exact-target mode. Unknown package or worker identities remain invalid.
+An absent package is disabled. A package's `workers` map declares its worker identities and exact workflow slugs; undeclared workers are disabled. Every worker requires `workflow`, defaults to enabled, may set `enabled: false`, and may set `max-mode` only to narrow the resolved package or exact-target mode. Package, worker, and workflow identifiers use lowercase kebab-case, and workflow identities must be unique within a package.
 
 ### 5.4 Target Authority
 
@@ -395,7 +395,13 @@ The effective record SHOULD contain only identifiers and provenance required for
       "allowed-repositories": ["acme/payments-api"]
     },
     "packages": {
-      "dependabot": {}
+      "dependabot": {
+        "workers": {
+          "release-train-updater": {
+            "workflow": "dependabot-release-train-updater"
+          }
+        }
+      }
     }
   }
 }
