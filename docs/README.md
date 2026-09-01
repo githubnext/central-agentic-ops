@@ -17,7 +17,7 @@ hero:
       variant: secondary
       icon: right-arrow
     - text: View our dashboard
-      link: https://githubnext.github.io/central-agentic-ops/cao/
+      link: https://githubnext.github.io/gh-aw-central-agentic-ops/
       variant: secondary
       icon: right-arrow
       attrs:
