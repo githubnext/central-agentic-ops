@@ -265,7 +265,7 @@ A package groups one orchestrator and one or more workers that execute centrally
 
 ### 5.4 Normative Source Requirements
 
-- **DLS-SEM-017:** A `metric`, `table`, or `chart` view `data.source` **MUST** name exactly one source from Section 5.1. An `element` view `data.sources` **MUST** name one or more unique sources from Section 5.1.
+- **DLS-SEM-017:** A `metric`, `table`, or `chart` view `data.source` **MUST** name exactly one source from Section 5.1. An `element` view `data.sources` **MUST** name one or more unique sources from Section 5.1. An optional `data.route-field` **MUST** name one field from `data.source`.
 - **DLS-SEM-018:** Each logical source **MUST** preserve the grain declared in Section 5.1; duplicated observations **MUST** retain distinct observation identifiers in provenance.
 - **DLS-SEM-019:** A `usage` row **MUST** represent one model invocation and **MUST NOT** repeat invocation-level AIC across token-class rows.
 - **DLS-SEM-020:** Grader values, eval results, AIC, each raw-token measure, outcome states, and operational value **MUST** remain separately named throughout filtering, aggregation, and presentation.
@@ -606,6 +606,7 @@ Disclosure changes presentation only. It does not change data processing, data s
 - **DLS-VIEW-026:** A custom page `route`, when present, **MUST** be a mapping containing `hash-query-parameter`, `navigation-page`, or both. Each present value **MUST** be a canonical identifier. `navigation-page` **MUST** reference a different declared dashboard page. Built-in pages **MUST NOT** declare `route`.
 - **DLS-VIEW-027:** A presenter **MUST** resolve a custom page route from `#page-<page-id>?<parameter>=<value>`. It **MUST** use a non-empty decoded, trimmed route value as the provisional page title and final breadcrumb label and supply it as an opaque binding to route-aware named elements; a missing or empty value **MUST** preserve the declared title and supply an empty binding. When `navigation-page` is present, the presenter **MUST** expose that page as the current navigation item and parent breadcrumb. A route-aware named element **MAY** replace that provisional title and description with human-readable text from its selected declared-source row. Route and allocated values **MUST** be treated only as text and **MUST NOT** be interpreted as markup, code, a URI, or a general-purpose content template.
 - **DLS-VIEW-028:** Table `controls`, when present, **MUST** be `interactive` or `static`; an omitted value **MUST** default to `interactive`. A static table **MUST** expose every effective row without filter, sort, summary, pagination, or nested-scroll controls. `empty-message`, when present, **MUST** be non-empty text and **MUST** appear only inside a zero-row table body.
+- **DLS-VIEW-029:** A `metric`, `table`, or `chart` on a routed custom page **MAY** declare `data.route-field`. The field **MUST** exist in `data.source`. The presenter **MUST** retain only rows whose field value exactly matches the decoded route value, using case-insensitive text comparison, before the processing order in Section 11.2. A missing route value **MUST** produce an empty effective row set. `element` views **MUST NOT** declare `data.route-field`.
 
 ---
 

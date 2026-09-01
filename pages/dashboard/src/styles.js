@@ -230,32 +230,7 @@ h3 { margin: 16px 0 8px; font-size: 1rem; font-weight: 600; }
 .repository-tabs a > .octicon { color: var(--muted); }
 .repository-tabs a:hover { background: var(--canvas-subtle); }
 .repository-tabs a[aria-current="page"]::after { content: ""; height: 2px; position: absolute; right: 8px; bottom: -1px; left: 8px; background: var(--danger); }
-.repository-workflow-summary { margin-bottom: 28px; }
-.repository-metrics { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 14px; margin: 0; }
-.repository-metrics > div { min-width: 0; min-height: 168px; padding: 20px 24px; border: 1px solid var(--border); border-radius: 6px; }
-.repository-metrics dt { font-size: 1rem; font-weight: 600; }
-.repository-metrics dd { margin: 8px 0 0; font-size: 1.75rem; font-weight: 600; font-variant-numeric: tabular-nums; }
-.repository-metrics p { margin: 4px 0 0; color: var(--muted); }
-.repository-workflow-status { grid-column: span 2; }
-.repository-workflow-status dd { display: flex; align-items: center; gap: 14px; }
-.repository-status-pie { width: 76px; height: 76px; flex: 0 0 76px; border-radius: 50%; }
-.repository-status-total { display: flex; flex-direction: column; line-height: 1.15; text-transform: uppercase; }
-.repository-status-total strong { font-size: 1.75rem; }
-.repository-status-total small { color: var(--muted); font-size: .6875rem; font-weight: 600; letter-spacing: .04em; }
-.repository-workflow-status ul { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px 18px; margin: 10px 0 0; padding: 0; list-style: none; color: var(--muted); }
-.repository-workflow-status li { display: grid; grid-template-columns: 10px minmax(0, 1fr) auto; align-items: center; gap: 7px; }
-.repository-workflow-status li i { width: 9px; height: 9px; border-radius: 50%; }
-.repository-workflow-status li strong { color: var(--fg); font-variant-numeric: tabular-nums; }
-.repository-section-heading { display: flex; align-items: flex-start; justify-content: space-between; gap: 24px; margin-bottom: 12px; }
-.repository-section-heading h3, .repository-section-heading h4 { margin: 0 0 3px; font-size: 1.25rem; }
-.repository-section-heading p { margin: 0; color: var(--muted); }
-.repository-section-heading > a { display: inline-flex; align-items: center; gap: 5px; flex: none; }
-.repository-workflow-table tbody th > a, .repository-workflow-table tbody th code { display: block; width: fit-content; }
-.repository-workflow-source { margin-top: 3px; color: var(--muted); text-decoration: none; }
-.repository-workflow-badges { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 5px; }
-.repository-workflow-badges .workflow-badge { text-decoration: none; }
 .workflow-badge-operation, .workflow-badge-orchestrator { border-color: var(--accent); color: var(--accent); }
-.repository-workflow-table td { white-space: nowrap; }
 .workflow-identity { display: flex; align-items: center; justify-content: space-between; gap: 24px; margin-bottom: 24px; }
 .workflow-identity p { margin: 7px 0 0; }
 .workflow-identity > a { display: inline-flex; align-items: center; gap: 5px; flex: none; }
@@ -697,7 +672,6 @@ code { padding: 2px 4px; border-radius: 4px; background: var(--neutral-muted); f
 footer { padding: 20px 24px; border-top: 1px solid var(--border); color: var(--muted); font-size: .75rem; }
 .empty, .page-placeholder { margin: 0; padding: 28px 16px; color: var(--muted); text-align: center; }
 @media (min-width: 701px) and (max-width: 900px) {
-  .repository-metrics { grid-template-columns: repeat(3, minmax(0, 1fr)); }
 }
 @media (max-width: 700px) {
   .app-shell { display: block; }
@@ -715,13 +689,9 @@ footer { padding: 20px 24px; border-top: 1px solid var(--border); color: var(--m
   .data-state-summary, .metrics { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .layout-section[data-section-layout="wide"], .layout-section[data-section-layout="narrow"] { grid-column: span 12; }
   .custom-view[data-view-layout="half"], .custom-view[data-view-layout="third"] { grid-column: span 12; }
-  .repository-metrics { grid-template-columns: 1fr; }
-  .repository-workflow-status { grid-column: auto; }
   .workflow-runtime-metrics { grid-template-columns: 1fr; }
   .workflow-identity { align-items: flex-start; flex-direction: column; gap: 10px; }
   .value-chart > dl { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-  .repository-section-heading { display: block; }
-  .repository-section-heading > a { margin-top: 10px; }
   .context-summary { grid-template-columns: 1fr; }
   .context-summary > div { border-top: 1px solid var(--border); border-left: 0; }
   .context-summary > div:first-child { border-top: 0; }

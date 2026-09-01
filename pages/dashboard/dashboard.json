@@ -457,19 +457,100 @@
         "icon": "repo",
         "class-name": "repository-detail-page",
         "route": {
-          "hash-query-parameter": "repository"
+          "hash-query-parameter": "repository",
+          "navigation-page": "repositories"
         },
         "views": [
           {
+            "id": "repository-workflow-count",
+            "title": "Authored Agentic Workflows",
+            "description": "One canonical identity per authored .github/workflows/*.md source.",
+            "data": {
+              "source": "repository-detail-summary",
+              "route-field": "repository"
+            },
+            "mark": "metric",
+            "encoding": {
+              "value": {
+                "field": "workflows",
+                "type": "quantitative"
+              },
+              "href": {
+                "field": "external-link",
+                "type": "nominal"
+              }
+            },
+            "layout": "third"
+          },
+          {
+            "id": "repository-workflow-status",
+            "title": "Workflow registration status",
+            "description": "Current GitHub Actions registration state for authored workflows.",
+            "data": {
+              "source": "repository-workflow-status",
+              "route-field": "repository"
+            },
+            "mark": "chart",
+            "chart": "pie",
+            "encoding": {
+              "x": {
+                "field": "status",
+                "type": "nominal",
+                "title": "Status"
+              },
+              "y": {
+                "field": "workflows",
+                "type": "quantitative",
+                "title": "Workflows"
+              }
+            },
+            "layout": "half"
+          },
+          {
             "id": "repository-authored-workflows",
             "title": "Agentic workflows",
+            "description": "Authored workflows with managed-package membership shown as data.",
             "data": {
-              "sources": [
-                "workflows"
-              ]
+              "source": "repository-workflows",
+              "route-field": "repository"
             },
-            "mark": "element",
-            "element": "repository-workflows",
+            "mark": "table",
+            "controls": "static",
+            "empty-message": "No authored Agentic Workflows were observed for this repository.",
+            "encoding": {
+              "columns": [
+                {
+                  "field": "workflow-name",
+                  "type": "nominal",
+                  "title": "Workflow"
+                },
+                {
+                  "field": "workflow-role",
+                  "type": "nominal",
+                  "title": "Role"
+                },
+                {
+                  "field": "package-name",
+                  "type": "nominal",
+                  "title": "Package"
+                },
+                {
+                  "field": "workflow-active",
+                  "type": "nominal",
+                  "title": "State",
+                  "display": "active-state"
+                },
+                {
+                  "field": "observed-at",
+                  "type": "temporal",
+                  "title": "Updated"
+                }
+              ],
+              "href": {
+                "field": "workflow-link",
+                "type": "nominal"
+              }
+            },
             "layout": "full"
           }
         ]

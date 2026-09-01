@@ -141,18 +141,6 @@ function buildPresenterModuleUrl() {
     .replace("'../dom.js'", JSON.stringify(domModuleUrl));
   const workflowBadgesModuleUrl = `data:text/javascript;charset=utf-8,${encodeURIComponent(workflowBadgesSource)}`;
 
-  const repositoryWorkflowsSource = readFileSync(new URL('../../src/components/repository-workflows.js', import.meta.url), 'utf8')
-    .replace("'../dom.js'", JSON.stringify(domModuleUrl))
-    .replace("'../octicons.js'", JSON.stringify(octiconsModuleUrl))
-    .replace("'./badge.js'", JSON.stringify(badgeModuleUrl))
-    .replace("'./count-formatters.js'", JSON.stringify(countFormattersModuleUrl))
-    .replace("'./link-content.js'", JSON.stringify(linkContentModuleUrl))
-    .replace("'./linked-text.js'", JSON.stringify(linkedTextModuleUrl))
-    .replace("'./ui-primitives.js'", JSON.stringify(uiPrimitivesModuleUrl))
-    .replace("'./tab-nav.js'", JSON.stringify(tabNavModuleUrl))
-    .replace("'./workflow-badges.js'", JSON.stringify(workflowBadgesModuleUrl));
-  const repositoryWorkflowsModuleUrl = `data:text/javascript;charset=utf-8,${encodeURIComponent(repositoryWorkflowsSource)}`;
-
   const workflowIdentitySource = readFileSync(new URL('../../src/components/workflow-identity.js', import.meta.url), 'utf8')
     .replace("'../dom.js'", JSON.stringify(domModuleUrl))
     .replace("'./link-content.js'", JSON.stringify(linkContentModuleUrl))
@@ -201,7 +189,6 @@ function buildPresenterModuleUrl() {
     .replace("'./link-content.js'", JSON.stringify(linkContentModuleUrl))
     .replace("'./packages-view.js'", JSON.stringify(packagesViewModuleUrl))
     .replace("'./package-detail.js'", JSON.stringify(packageDetailModuleUrl))
-    .replace("'./repository-workflows.js'", JSON.stringify(repositoryWorkflowsModuleUrl))
     .replace("'./workflow-detail.js'", JSON.stringify(workflowDetailModuleUrl))
     .replace("'./workflow-runtime.js'", JSON.stringify(workflowRuntimeModuleUrl))
     .replace("'./outcome-detail.js'", JSON.stringify(outcomeDetailModuleUrl))
@@ -1358,9 +1345,15 @@ test('repository page template follows its JSON-declared hash query route in bro
             views: [{
               id: 'repository-workflows',
               title: 'Agentic workflows',
-              data: { sources: ['workflows'] },
-              mark: 'element',
-              element: 'repository-workflows'
+              data: { source: 'repository-workflows', 'route-field': 'repository' },
+              mark: 'table',
+              controls: 'static',
+              encoding: {
+                columns: [
+                  { field: 'workflow-name', type: 'nominal', title: 'Workflow' },
+                  { field: 'workflow-active', type: 'nominal', title: 'State', display: 'active-state' }
+                ]
+              }
             }]
           }]
         }
@@ -1380,17 +1373,16 @@ test('repository page template follows its JSON-declared hash query route in bro
   `);
 
   await expect(page.getByRole('heading', { level: 1 })).toHaveText('octo-org/octo-repo');
-  await expect(page.locator('.repository-view')).toHaveAttribute('data-repository', 'octo-org/octo-repo');
-  await expect(page.locator('.repository-workflow-table')).toContainText('Review');
-  await expect(page.locator('.repository-workflow-table')).not.toContainText('Other');
+  await expect(page.locator('[data-route-view] .custom-table')).toContainText('Review');
+  await expect(page.locator('[data-route-view] .custom-table')).not.toContainText('Other');
 
   await page.evaluate(() => {
     window.location.hash = '#page-repository-detail?repository=other-org%2Fother-repo';
   });
 
   await expect(page.getByRole('heading', { level: 1 })).toHaveText('other-org/other-repo');
-  await expect(page.locator('.repository-workflow-table')).toContainText('Other');
-  await expect(page.locator('.repository-workflow-table')).not.toContainText('Review');
+  await expect(page.locator('[data-route-view] .custom-table')).toContainText('Other');
+  await expect(page.locator('[data-route-view] .custom-table')).not.toContainText('Review');
 });
 
 test('workflow page template follows its JSON-declared route and renders attributed reports', async ({ page }) => {

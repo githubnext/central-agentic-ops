@@ -26,6 +26,8 @@ const FAILURE_CONCLUSIONS = new Set(['failure', 'startup-failure', 'timed-out'])
 export function deriveRepositorySources(sources) {
   const runsAvailable = sources.runs?.metadata?.availability !== 'unavailable';
   const summaries = summarizeRepositories(sources);
+  const repositoryWorkflows = buildRepositoryWorkflowRows(sources.workflows?.rows ?? []);
+  const workflowMetadata = sources.workflows?.metadata ?? unavailableMetadata();
 
   return {
     ...sources,
@@ -52,8 +54,83 @@ export function deriveRepositorySources(sources) {
         ...(summary.repositoryLink ? { 'repository-link': summary.repositoryLink } : {})
       })),
       metadata: combinedMetadata(sources, ['repositories', 'workflows', 'runs', 'outcomes', 'usage', 'operational-values'])
+    },
+    'repository-detail-summary': {
+      source: 'repository-detail-summary',
+      rows: buildRepositoryDetailSummaryRows(repositoryWorkflows),
+      metadata: workflowMetadata
+    },
+    'repository-workflow-status': {
+      source: 'repository-workflow-status',
+      rows: buildRepositoryWorkflowStatusRows(repositoryWorkflows),
+      metadata: workflowMetadata
+    },
+    'repository-workflows': {
+      source: 'repository-workflows',
+      rows: repositoryWorkflows,
+      metadata: workflowMetadata
     }
   };
+}
+
+/** @param {Array<Record<string, unknown>>} workflows */
+function buildRepositoryWorkflowRows(workflows) {
+  return workflows
+    .map((workflow) => ({
+      repository: qualifiedRepository(workflow),
+      workflow: String(workflow.workflow ?? ''),
+      'workflow-name': String(workflow['workflow-name'] ?? workflow.workflow ?? ''),
+      'workflow-role': titleCase(workflow['workflow-role'] ?? 'unknown'),
+      'package-name': String(workflow['package-name'] ?? ''),
+      'workflow-active': String(workflow['workflow-active'] ?? 'unknown'),
+      'observed-at': workflow['observed-at'],
+      ...(workflow['workflow-link'] ? { 'workflow-link': workflow['workflow-link'] } : {})
+    }))
+    .filter((workflow) => workflow.repository && workflow.workflow)
+    .sort((left, right) => left.repository.localeCompare(right.repository)
+      || left['workflow-name'].localeCompare(right['workflow-name']));
+}
+
+/** @param {Array<Record<string, unknown>>} workflows */
+function buildRepositoryDetailSummaryRows(workflows) {
+  /** @type {Map<string, Array<Record<string, unknown>>>} */
+  const grouped = new Map();
+  for (const workflow of workflows) {
+    const repository = String(workflow.repository);
+    grouped.set(repository, [...(grouped.get(repository) ?? []), workflow]);
+  }
+  return [...grouped].map(([repository, rows]) => {
+    const latestUpdate = rows
+      .map((/** @type {Record<string, unknown>} */ row) => String(row['observed-at'] ?? ''))
+      .filter((/** @type {string} */ value) => Number.isFinite(Date.parse(value)))
+      .sort((/** @type {string} */ left, /** @type {string} */ right) => Date.parse(right) - Date.parse(left))[0];
+    return {
+      repository,
+      workflows: rows.length,
+      ...(latestUpdate ? { 'latest-update': latestUpdate } : {}),
+      'external-link': {
+        relation: 'external',
+        href: `https://github.com/${repository}/actions`,
+        label: `View ${repository} Actions`
+      }
+    };
+  });
+}
+
+/** @param {Array<Record<string, unknown>>} workflows */
+function buildRepositoryWorkflowStatusRows(workflows) {
+  const counts = new Map();
+  for (const workflow of workflows) {
+    const repository = String(workflow.repository);
+    const status = workflow['workflow-active'] === 'true'
+      ? 'Active'
+      : workflow['workflow-active'] === 'false'
+        ? 'Disabled'
+        : 'Unknown';
+    const key = `${repository}\0${status}`;
+    counts.set(key, { repository, status, workflows: Number(counts.get(key)?.workflows ?? 0) + 1 });
+  }
+  return [...counts.values()];
 }
 
 /**
@@ -211,7 +288,24 @@ function coverageHours(metadata) {
 /** @param {unknown} value */
 function titleCase(value) {
   const text = String(value);
-  return text.length > 0 ? text[0].toUpperCase() + text.slice(1) : text;
+  return text
+    .split(/[-_]/)
+    .filter(Boolean)
+    .map((part) => `${part[0].toUpperCase()}${part.slice(1)}`)
+    .join(' ');
+}
+
+/** @returns {import('./presenter.js').SourceMetadata} */
+function unavailableMetadata() {
+  return {
+    'source-id': 'repository-detail-derived',
+    'source-kind': 'derived',
+    'as-of': new Date(0).toISOString(),
+    'retrieved-at': new Date(0).toISOString(),
+    completeness: 'unknown',
+    freshness: 'unknown',
+    availability: 'unavailable'
+  };
 }
 
 /**

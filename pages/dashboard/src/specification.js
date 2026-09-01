@@ -19,7 +19,7 @@ export const PAGE_ROUTE_KEYS = ['hash-query-parameter', 'navigation-page'];
 export const PAGE_FILTER_BAR_KEYS = ['filters', 'time-range', 'export'];
 
 export const VIEW_KEYS = ['id', 'title', 'description', 'data', 'mark', 'element', 'chart', 'layout', 'disclosure', 'controls', 'empty-message', 'encoding'];
-export const VIEW_DATA_KEYS = ['source', 'sources', 'scope', 'time', 'filters', 'limit', 'order-by', 'source-metadata'];
+export const VIEW_DATA_KEYS = ['source', 'sources', 'scope', 'time', 'filters', 'route-field', 'limit', 'order-by', 'source-metadata'];
 export const VIEW_MARK_VALUES = ['metric', 'table', 'chart', 'element'];
 export const VIEW_ELEMENT_VALUES = [
   'domain-attention',
@@ -29,7 +29,6 @@ export const VIEW_ELEMENT_VALUES = [
   'package-activity',
   'package-detail',
   'package-reports',
-  'repository-workflows',
   'workflow-detail',
   'workflow-runtime',
   'outcome-detail'
@@ -265,7 +264,10 @@ export const SOURCE_VALUES = [
   'runtime-signals',
   'dispatches',
   'repository-summary',
-  'repository-activity'
+  'repository-activity',
+  'repository-detail-summary',
+  'repository-workflow-status',
+  'repository-workflows'
 ];
 
 export const SOURCE_FIELDS = {
@@ -301,6 +303,9 @@ export const SOURCE_FIELDS = {
   dispatches: ['started-at', 'dispatch-type', 'package-name', 'workflow-name', 'run-title', 'runtime-repository', 'status', 'run-link'],
   'repository-summary': ['label', 'value', 'items'],
   'repository-activity': ['repository', 'workflows', 'reports', 'evaluated-workflows', 'runs', 'failure-summary', 'aic', 'status', 'repository-link'],
+  'repository-detail-summary': ['repository', 'workflows', 'latest-update', 'external-link'],
+  'repository-workflow-status': ['repository', 'status', 'workflows'],
+  'repository-workflows': ['repository', 'workflow', 'workflow-name', 'workflow-role', 'package-name', 'workflow-active', 'observed-at', 'workflow-link'],
   'workflow-topology-summary': ['label', 'value'],
   'packaged-workflows': ['package', 'package-name', 'repository', 'workflow', 'workflow-name', 'workflow-role', 'rollout-mode', 'workflow-active', 'package-link', 'repository-link', 'workflow-link'],
   'standalone-workflows': ['repository', 'workflow', 'workflow-name', 'rollout-mode', 'workflow-active', 'repository-link', 'workflow-link']
@@ -347,7 +352,10 @@ export const SOURCE_ENTITY_IDENTIFIER_FIELDS = {
   findings: ['finding'],
   'operational-values': ['operational-value-definition', 'operational-case', 'run'],
   'repository-summary': ['label'],
-  'repository-activity': ['repository']
+  'repository-activity': ['repository'],
+  'repository-detail-summary': ['repository'],
+  'repository-workflow-status': ['repository', 'status'],
+  'repository-workflows': ['repository', 'workflow']
 };
 
 export const TEMPORAL_FIELD_NAMES = [

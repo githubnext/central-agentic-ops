@@ -8,7 +8,6 @@ import { formatNumber } from '../view-formatters.js';
 import { findLink } from './link-content.js';
 import { renderPackagesView } from './packages-view.js';
 import { renderPackageDetail as renderPackageDetailElement, renderPackageReports } from './package-detail.js';
-import { renderRepositoryWorkflows } from './repository-workflows.js';
 import { renderWorkflowDetail } from './workflow-detail.js';
 import { renderOutcomeDetail } from './outcome-detail.js';
 import { renderSectionHeading } from './ui-primitives.js';
@@ -38,13 +37,12 @@ const ELEMENT_RENDERERS = new Map([
   ['package-activity', ({ sources, pageId }) => renderPackagesView(sources, pageId)],
   ['package-detail', renderPackageDetailElement],
   ['package-reports', renderPackageReports],
-  ['repository-workflows', renderRepositoryWorkflows],
   ['workflow-detail', renderWorkflowDetail],
   ['workflow-runtime', renderWorkflowRuntime],
   ['outcome-detail', renderOutcomeDetail]
 ]);
 
-const EMPTY_AWARE_ELEMENTS = new Set(['summary-grid', 'context-summary', 'signal-list', 'package-detail', 'package-reports', 'repository-workflows', 'workflow-detail', 'workflow-runtime', 'outcome-detail']);
+const EMPTY_AWARE_ELEMENTS = new Set(['summary-grid', 'context-summary', 'signal-list', 'package-detail', 'package-reports', 'workflow-detail', 'workflow-runtime', 'outcome-detail']);
 
 /**
  * @param {string} name
