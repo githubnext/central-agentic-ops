@@ -25,6 +25,23 @@ function indexedDbWithValue(initialValue) {
   return { indexedDB, database, objectStore, close, value: () => value };
 }
 
+function blockedIndexedDb() {
+  return /** @type {IDBFactory} */ (/** @type {unknown} */ ({
+    open: () => {
+      const request = /** @type {any} */ ({
+        error: null,
+        result: undefined,
+        onsuccess: null,
+        onerror: null,
+        onupgradeneeded: null,
+        onblocked: null
+      });
+      queueMicrotask(() => request.onblocked?.());
+      return request;
+    }
+  }));
+}
+
 /** @param {() => unknown} readValue */
 function requestFor(readValue) {
   const request = /** @type {any} */ ({
@@ -46,6 +63,12 @@ describe('dashboard source cache', () => {
   it('returns null when IndexedDB is unavailable', async () => {
     await expect(readCachedSources(undefined, '/cao/sources.json')).resolves.toBeNull();
     await expect(writeCachedSources(undefined, '/cao/sources.json', {})).resolves.toBeUndefined();
+  });
+
+  it('rejects instead of stalling when opening the cache is blocked', async () => {
+    await expect(readCachedSources(blockedIndexedDb(), '/cao/sources.json')).rejects.toThrow(
+      'Opening the dashboard source cache was blocked'
+    );
   });
 
   it('reads and closes a cached source document', async () => {

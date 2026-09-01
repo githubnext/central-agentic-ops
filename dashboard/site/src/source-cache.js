@@ -21,14 +21,27 @@ async function openSourcesDatabase(indexedDB) {
   if (!indexedDB) return null;
 
   const request = indexedDB.open(DATABASE_NAME, DATABASE_VERSION);
-  request.onupgradeneeded = () => {
-    const database = request.result;
-    if (!database.objectStoreNames.contains(STORE_NAME)) {
-      database.createObjectStore(STORE_NAME);
-    }
-  };
-  request.onblocked = () => request.onerror?.(new Event('error'));
-  return /** @type {Promise<IDBDatabase>} */ (requestResult(request));
+  return new Promise((resolve, reject) => {
+    let blocked = false;
+    request.onupgradeneeded = () => {
+      const database = request.result;
+      if (!database.objectStoreNames.contains(STORE_NAME)) {
+        database.createObjectStore(STORE_NAME);
+      }
+    };
+    request.onsuccess = () => {
+      if (blocked) {
+        request.result.close();
+      } else {
+        resolve(request.result);
+      }
+    };
+    request.onerror = () => reject(request.error ?? new Error('Unable to open the dashboard source cache'));
+    request.onblocked = () => {
+      blocked = true;
+      reject(new Error('Opening the dashboard source cache was blocked'));
+    };
+  });
 }
 
 /**
