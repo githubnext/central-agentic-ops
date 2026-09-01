@@ -165,4 +165,12 @@ Evidence paths below are relative to:
 - Reusable presentation: generic metric, chart, table, link, badge, empty-state, and route-aware data-view behavior now own repository detail presentation.
 - Preserved evidence boundaries: authored workflow identity, registration state, package attribution, observation time, workflow links, and the repository Actions link remain explicit.
 
+## 2026-09-01 workflow reports entry
+
+- Investigation: selected workflow reports as the smallest remaining route-scoped JavaScript-only catalog that could use generic Dashboard Language marks.
+- Declarative specification: split workflow identity chrome from a JSON-defined report table with route binding, columns, displays, links, sorting, filtering, and empty-state copy.
+- JSON-shaped data: `workflow-data.js` now emits route-keyed `workflow-reports` rows from retained durable-output evidence.
+- Reusable presentation: the shared table, status badge, mode badge, temporal cell, filter, sorting, summary, empty-state, and safe-link components now own report presentation.
+- Preserved evidence boundaries: only reports attributed to the selected runtime repository and authored workflow are shown, and details remain linked through retained source evidence.
+
 Run-by-run history was removed during compaction; milestones, unresolved questions, current inventory, blockers, and actionable parity work remain above.
