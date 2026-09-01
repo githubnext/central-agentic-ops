@@ -3,9 +3,11 @@ import { readFileSync } from "node:fs";
 import test from "node:test";
 
 import createAnimationData, { createMobileAnimationData } from "../../docs/assets/control-plane-dispatch.animation.mjs";
+import { selectConfiguredOperations } from "../../docs/lib/configured-operations.mjs";
 
 const hero = readFileSync("docs/components/HierarchyHero.astro", "utf8");
 const wizard = readFileSync("docs/components/OpsWizard.astro", "utf8");
+const catalog = readFileSync("docs/lib/catalog.ts", "utf8");
 
 function decodeAsset(asset) {
   return decodeURIComponent(asset.p.slice(asset.p.indexOf(",") + 1));
@@ -58,5 +60,36 @@ test("landing wizard prompt references the raw setup skill", () => {
   assert.match(
     wizard,
     /https:\/\/raw\.githubusercontent\.com\/githubnext\/central-agentic-ops\/main\/\.github\/skills\/setup-central-agentic-ops\/SKILL\.md/,
+  );
+});
+
+test("landing wizard operations come from the checked-in control policy", () => {
+  assert.match(catalog, /import controlPolicy from "\.\.\/\.\.\/\.github\/central-agentic-ops\.json"/);
+  assert.match(catalog, /selectConfiguredOperations\(controlPolicy, catalogEntries\)/);
+  assert.match(wizard, /configuredOperationEntries as operations/);
+  assert.doesNotMatch(wizard, /operation\.slug === "dependabot"/);
+});
+
+test("configured wizard operations follow policy package order", () => {
+  const first = { slug: "first" };
+  const second = { slug: "second" };
+  const policy = { "control-plane": { packages: { second: {}, first: {} } } };
+
+  assert.deepEqual(selectConfiguredOperations(policy, [first, second]), [second, first]);
+});
+
+test("configured wizard operations require a package map", () => {
+  assert.throws(
+    () => selectConfiguredOperations({}, []),
+    /must define control-plane\.packages as an object/,
+  );
+});
+
+test("configured wizard operations require a matching catalog manifest", () => {
+  const policy = { "control-plane": { packages: { missing: {} } } };
+
+  assert.throws(
+    () => selectConfiguredOperations(policy, []),
+    /Configured package missing must have a catalog manifest/,
   );
 });

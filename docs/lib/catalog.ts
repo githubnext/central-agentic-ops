@@ -1,5 +1,7 @@
 import type { MarkdownInstance } from "astro";
 import { parse } from "yaml";
+import controlPolicy from "../../.github/central-agentic-ops.json";
+import { selectConfiguredOperations } from "./configured-operations.mjs";
 
 type PackageReadme = MarkdownInstance<Record<string, unknown>>;
 
@@ -78,3 +80,5 @@ export const catalogEntries: CatalogEntry[] = Object.entries(manifests)
     const advisoryRank = (entry: CatalogEntry) => /advisor(y|ies)?/i.test(entry.name) ? 1 : 0;
     return advisoryRank(left) - advisoryRank(right) || left.name.localeCompare(right.name);
   });
+
+export const configuredOperationEntries = selectConfiguredOperations(controlPolicy, catalogEntries);

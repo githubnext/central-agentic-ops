@@ -1,8 +1,7 @@
 ---
-import { catalogEntries as operations } from "../lib/catalog";
+import { configuredOperationEntries as operations } from "../lib/catalog";
 
-// The quickstart walks through Dependabot, so preselect it when the catalog ships it.
-const defaultOperation = operations.find((operation) => operation.slug === "dependabot")?.slug ?? operations[0]?.slug;
+const defaultOperation = operations[0]?.slug;
 
 const agents = [
   {
