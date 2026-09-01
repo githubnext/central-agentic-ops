@@ -168,6 +168,7 @@ function deriveEpisodeSummary(model, runsMetadata) {
  * @returns {Row[]}
  */
 function deriveEpisodes(model) {
+  // Exact root-to-worker correlation is not retained, so every episode intentionally reports root-only evidence.
   return model.episodes.slice(0, 12).map((episode) => ({
     run: episode.run.run,
     'run-title': runTitle(episode.run, episode.workflow),
