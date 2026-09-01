@@ -104,7 +104,7 @@ describe('Runtime dashboard view', () => {
               layout: /** @type {'full'} */ ('full'),
               'count-source': 'runtime-signals',
               'count-label': 'signals',
-              views: ['attention']
+              views: ['anomaly-readiness', 'attention']
             },
             {
               id: 'observed-behavior',
@@ -114,6 +114,7 @@ describe('Runtime dashboard view', () => {
             }
           ],
           views: [
+            { id: 'anomaly-readiness', title: 'Statistical anomaly readiness', data: { source: 'runtime-anomaly-readiness' }, mark: 'element', element: 'anomaly-readiness' },
             { id: 'attention', title: 'Needs attention', data: { sources: ['runtime-signals'] }, mark: 'element', element: 'signal-list' },
             { id: 'summary', title: 'Execution episodes', data: { source: 'runtime-episode-summary' }, mark: 'element', element: 'summary-grid' },
             {
