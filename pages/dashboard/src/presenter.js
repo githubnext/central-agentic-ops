@@ -897,7 +897,7 @@ function renderElementView(pageId, title, view, sources, contextDetails, heading
       return renderCustomViewState(pageId, title, sourceName, 'unavailable', contextDetails, headingTag);
     }
     const state = source.metadata?.availability ?? inferAvailability(source.rows);
-    if (state !== 'available') {
+    if (state !== 'available' && !(state === 'empty' && elementHandlesEmptyRows(elementName))) {
       return renderCustomViewState(pageId, title, sourceName, state, contextDetails, headingTag);
     }
     if (source.rows.length === 0 && !elementHandlesEmptyRows(elementName)) {

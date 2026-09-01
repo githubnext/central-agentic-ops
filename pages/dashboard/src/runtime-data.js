@@ -228,7 +228,12 @@ function deriveDispatches(model) {
         'run-title': runTitle(run, workflow),
         'runtime-repository': text(run.organization) ? `${text(run.organization)}/${repository}` : repository,
         status,
-        'run-link': run['run-link']
+        organization: run.organization,
+        repository: run.repository,
+        workflow: run.workflow,
+        'run-link': run['run-link'],
+        'repository-link': run['repository-link'],
+        'workflow-link': workflow['workflow-link'] ?? run['workflow-link']
       }];
     })
     .sort((left, right) => Date.parse(text(right['started-at'])) - Date.parse(text(left['started-at'])));

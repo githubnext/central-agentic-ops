@@ -33,6 +33,7 @@ export const VIEW_ELEMENT_VALUES = [
   'workflow-detail',
   'workflow-runtime',
   'outcome-detail',
+  'dispatch-catalog',
   'workflow-topology'
 ];
 export const VIEW_CHART_VALUES = ['bar', 'line', 'pie'];

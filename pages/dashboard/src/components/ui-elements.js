@@ -12,6 +12,7 @@ import { renderRepositoryWorkflows } from './repository-workflows.js';
 import { renderWorkflowDetail } from './workflow-detail.js';
 import { renderOutcomeDetail } from './outcome-detail.js';
 import { renderWorkflowTopology } from './workflow-topology.js';
+import { renderDispatchCatalog } from './dispatch-catalog.js';
 import { renderSectionHeading } from './ui-primitives.js';
 import { renderDefinitionList } from './view-chrome.js';
 import { renderWorkflowRuntime } from './workflow-runtime.js';
@@ -43,6 +44,7 @@ const ELEMENT_RENDERERS = new Map([
   ['workflow-detail', renderWorkflowDetail],
   ['workflow-runtime', renderWorkflowRuntime],
   ['outcome-detail', renderOutcomeDetail],
+  ['dispatch-catalog', renderDispatchCatalog],
   ['workflow-topology', ({ pageId, title, description, sourceNames, sources, headingTag }) => {
     const sourceName = sourceNames[0];
     const source = sources[sourceName];
@@ -51,7 +53,7 @@ const ELEMENT_RENDERERS = new Map([
   }]
 ]);
 
-const EMPTY_AWARE_ELEMENTS = new Set(['summary-grid', 'context-summary', 'signal-list', 'package-detail', 'package-reports', 'repository-workflows', 'workflow-detail', 'workflow-runtime', 'outcome-detail']);
+const EMPTY_AWARE_ELEMENTS = new Set(['summary-grid', 'context-summary', 'signal-list', 'package-detail', 'package-reports', 'repository-workflows', 'workflow-detail', 'workflow-runtime', 'outcome-detail', 'dispatch-catalog']);
 
 /**
  * @param {string} name
