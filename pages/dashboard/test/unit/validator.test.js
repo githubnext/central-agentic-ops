@@ -1037,11 +1037,6 @@ dashboard:
             code: 'DLS-E003',
             path: '$.dashboard.pages[0].definition.views',
             message: 'built-in page "runs" definition must expose field "started-at" for source "runs".'
-          }),
-          expect.objectContaining({
-            code: 'DLS-E003',
-            path: '$.dashboard.pages[0].definition.views',
-            message: 'built-in page "runs" definition must include at least one view for source "outcomes".'
           })
         ])
       );

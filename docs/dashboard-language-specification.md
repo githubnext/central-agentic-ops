@@ -486,7 +486,7 @@ The optional page `filter-bar` is a presentation widget shared by built-in and c
 - **DLS-PAGE-003:** The `organizations` page **MUST** expose organization inventory, repository count, workflow count, run count, available usage measures, and data state by organization.
 - **DLS-PAGE-004:** The `repositories` page **MUST** expose repository inventory and rankings by run count, AIC, and available operational value without combining different operational-value definitions.
 - **DLS-PAGE-005:** The `workflows` page **MUST** expose workflow inventory, active state, rollout mode, run count, run conclusions, downstream outcome counts, available usage, findings, and operational value.
-- **DLS-PAGE-006:** The `runs` page **MUST** expose run status trends and counts, terminal conclusions, downstream outcome observations when available, scope, rollout mode, engine, requested model, resolved model, time, and run links.
+- **DLS-PAGE-006:** The `runs` page **MUST** expose run status trends and counts, terminal conclusions, scope, rollout mode, engine, requested model, resolved model, time, and run links.
 - **DLS-PAGE-007:** The `experiments` page **MUST** expose experiment definitions and observed run-to-variant assignments, grader observations, eval observations, outcomes, usage, and operational value without claiming causation.
 - **DLS-PAGE-008:** The `graders` page **MUST** keep grader definitions and grader observations distinguishable and expose observed subject, result, score when present, time, and provenance.
 - **DLS-PAGE-009:** The `evals` page **MUST** keep eval definitions and eval observations distinguishable and expose observed subject, `YES`, `NO`, or `UNKNOWN` result, evaluation model when available, time, and provenance.
