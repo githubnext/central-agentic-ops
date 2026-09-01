@@ -6,7 +6,7 @@ import { h } from '../dom.js';
 import { formatAggregateValue, formatNumber } from '../view-formatters.js';
 import { renderCellDisplay } from './cell-display.js';
 import { listChartSeries, pieChartEntries, renderChartLegend, renderPieLegend, renderChartWidget } from './chart-elements.js';
-import { findFirstLink, findLink, renderExternalLink, renderLinkedValueWithExternalLink, renderOutcomeLink, renderWorkflowRunLink } from './link-content.js';
+import { findFirstLink, findLink, renderExternalLink, renderLinkedValue, renderOutcomeLink, renderWorkflowRunLink } from './link-content.js';
 import { createEntityAwareCellRenderer, renderLinkedText } from './linked-text.js';
 import { renderTableRegion } from './table-region.js';
 import { renderPageSection, renderViewSectionChrome } from './view-chrome.js';
@@ -124,7 +124,7 @@ function renderTableView(context) {
         if (column.field === RUN_FIELD && hrefField === RUN_LINK_FIELD) {
           return h('td', null, value);
         }
-        return h('td', null, renderLinkedValueWithExternalLink(value, findLink(row, hrefField)));
+        return h('td', null, renderLinkedValue(value, findLink(row, hrefField)));
       }
       return h('td', null, value);
     })

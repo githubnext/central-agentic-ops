@@ -126,10 +126,18 @@ export function renderOutcomeLink(row, label) {
 /**
  * @param {string | HTMLElement} value
  * @param {SafeLink | null} link
- * @returns {string | HTMLElement | Array<string | HTMLElement | null>}
+ * @returns {string | HTMLElement}
  */
-export function renderLinkedValueWithExternalLink(value, link) {
-  return link ? [value, ' ', renderExternalLink(link)] : value;
+export function renderLinkedValue(value, link) {
+  const external = link ? !link.href.startsWith('#') : false;
+  return link
+    ? h('a', {
+        href: link.href,
+        target: external ? '_blank' : undefined,
+        rel: external ? 'noopener noreferrer' : undefined,
+        'aria-label': link.label
+      }, value)
+    : value;
 }
 
 /**
