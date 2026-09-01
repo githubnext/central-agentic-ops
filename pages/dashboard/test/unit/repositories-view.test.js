@@ -166,7 +166,7 @@ describe('repositories view', () => {
           { field: 'evaluated-workflows' },
           { field: 'runs' },
           { field: 'failure-summary' },
-          { field: 'aic' },
+          { field: 'aic', unit: 'aic' },
           { field: 'status', display: 'status' }
         ],
         href: { field: 'repository-link' }

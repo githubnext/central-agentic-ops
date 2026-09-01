@@ -198,6 +198,7 @@ test("dashboard source bridge carries outcome detail content and presentation me
       generatedAt: "2026-08-31T12:00:00Z",
       records: [{
         id: "outcome-1",
+        number: 1,
         bundle: "daily",
         repository: "githubnext/central-agentic-ops",
         runtimeRepository: "githubnext/control-plane",
@@ -224,6 +225,7 @@ test("dashboard source bridge carries outcome detail content and presentation me
       package: sources.outcomes.rows[0].package,
       workflowName: sources.outcomes.rows[0]["workflow-name"],
       title: sources.outcomes.rows[0]["outcome-title"],
+      number: sources.outcomes.rows[0]["outcome-number"],
       summary: sources.outcomes.rows[0]["outcome-summary"],
       bodyHtml: sources.outcomes.rows[0]["outcome-body-html"],
       category: sources.outcomes.rows[0]["outcome-category"],
@@ -237,6 +239,7 @@ test("dashboard source bridge carries outcome detail content and presentation me
       package: "daily",
       workflowName: "Daily review",
       title: "Parity verification sweep",
+      number: 1,
       summary: "All checks passed.",
       bodyHtml: "<h2>Summary</h2><p>All checks passed.</p>",
       category: "pull-request",

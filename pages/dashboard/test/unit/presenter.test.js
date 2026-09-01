@@ -1275,7 +1275,7 @@ describe('presenter built-in and custom pages', () => {
             { field: 'evaluated-workflows', type: 'quantitative', title: 'Evaluated AWs' },
             { field: 'runs', type: 'quantitative', title: 'Local runs' },
             { field: 'failure-summary', type: 'nominal', title: 'Failure rate' },
-            { field: 'aic', type: 'quantitative', title: 'Local AIC' },
+            { field: 'aic', type: 'quantitative', title: 'Local AIC', unit: 'aic' },
             { field: 'status', type: 'nominal', title: 'Status', display: 'status' }
           ],
           href: { field: 'repository-link', type: 'nominal' }
@@ -2025,6 +2025,22 @@ describe('presenter built-in and custom pages', () => {
     expect(rendered.querySelector('#page-title')?.textContent).toBe('First');
     expect(rendered.querySelector('[data-breadcrumb-page]')?.textContent).toBe('First');
     expect(rendered.querySelector('[data-page-description]')?.textContent).toBe('First page description');
+    first.dispatchEvent(new CustomEvent('dashboard-route-allocation', {
+      bubbles: true,
+      detail: {
+        title: 'Linked issue',
+        titleLink: {
+          href: 'https://github.com/octo/repo/issues/42',
+          label: '#42'
+        }
+      }
+    }));
+    const titleLink = /** @type {HTMLAnchorElement} */ (rendered.querySelector('[data-page-title-link]'));
+    expect(titleLink.hidden).toBe(false);
+    expect(titleLink.textContent).toBe('#42');
+    expect(titleLink.getAttribute('href')).toBe('https://github.com/octo/repo/issues/42');
+    expect(titleLink.getAttribute('target')).toBe('_blank');
+    expect(titleLink.getAttribute('rel')).toBe('noopener noreferrer');
 
     secondLink.click();
 
@@ -2035,6 +2051,8 @@ describe('presenter built-in and custom pages', () => {
     expect(rendered.querySelector('#page-title')?.textContent).toBe('Second');
     expect(rendered.querySelector('[data-breadcrumb-page]')?.textContent).toBe('Second');
     expect(rendered.querySelector('[data-page-description]')?.textContent).toBe('Second page description');
+    expect(titleLink.hidden).toBe(true);
+    expect(titleLink.hasAttribute('href')).toBe(false);
     expect(rendered.ownerDocument.activeElement).toBe(rendered.querySelector('#page-title'));
     rendered.ownerDocument.defaultView?.history.replaceState(null, '', '/');
   });

@@ -18,8 +18,9 @@ export const CUSTOM_PAGE_KEYS = ['id', 'kind', 'title', 'navigation-label', 'des
 export const PAGE_ROUTE_KEYS = ['hash-query-parameter', 'navigation-page'];
 export const PAGE_FILTER_BAR_KEYS = ['filters', 'time-range', 'export'];
 
-export const VIEW_KEYS = ['id', 'title', 'description', 'data', 'mark', 'element', 'chart', 'layout', 'disclosure', 'controls', 'column-summaries', 'empty-message', 'encoding'];
+export const VIEW_KEYS = ['id', 'title', 'description', 'data', 'mark', 'element', 'chart', 'layout', 'disclosure', 'controls', 'column-summaries', 'empty-message', 'title-link', 'encoding'];
 export const VIEW_DATA_KEYS = ['source', 'sources', 'scope', 'time', 'filters', 'route-field', 'limit', 'order-by', 'source-metadata'];
+export const VIEW_TITLE_LINK_KEYS = ['href-field', 'identifier-field'];
 export const VIEW_MARK_VALUES = ['metric', 'table', 'chart', 'element'];
 export const VIEW_ELEMENT_VALUES = [
   'domain-attention',
@@ -268,7 +269,8 @@ export const SOURCE_VALUES = [
   'repository-detail-summary',
   'repository-workflow-status',
   'repository-workflows',
-  'workflow-reports'
+  'workflow-reports',
+  'package-reports'
 ];
 
 export const SOURCE_FIELDS = {
@@ -287,7 +289,7 @@ export const SOURCE_FIELDS = {
   'runtime-episode-summary': ['label', 'value'],
   'runtime-episodes': ['run', 'run-title', 'package', 'workflow', 'started-at', 'duration', 'status', 'attribution', 'run-link'],
   'runtime-attribution-gaps': ['run', 'run-title', 'workflow', 'status', 'evidence', 'run-link'],
-  outcomes: ['organization', 'repository', 'package', 'runtime-repository', 'workflow', 'workflow-name', 'run', 'safe-output', 'outcome-title', 'outcome-summary', 'outcome-body-html', 'outcome-category', 'outcome-status', 'outcome-state', 'evidence-strength', 'rollout-mode', 'published-at', 'observed-at', 'issue-link', 'pull-request-link', 'run-link', 'external-link', 'organization-link', 'repository-link', 'workflow-link'],
+  outcomes: ['organization', 'repository', 'package', 'runtime-repository', 'workflow', 'workflow-name', 'run', 'safe-output', 'outcome-number', 'outcome-title', 'outcome-summary', 'outcome-body-html', 'outcome-category', 'outcome-status', 'outcome-state', 'evidence-strength', 'rollout-mode', 'published-at', 'observed-at', 'issue-link', 'pull-request-link', 'run-link', 'external-link', 'organization-link', 'repository-link', 'workflow-link'],
   findings: ['organization', 'repository', 'workflow', 'run', 'finding', 'finding-kind', 'finding-severity', 'finding-status', 'finding-summary', 'observed-at', 'issue-link', 'pull-request-link', 'run-link', 'external-link', 'organization-link', 'repository-link', 'workflow-link'],
   'operational-values': ['organization', 'repository', 'workflow', 'run', 'experiment', 'operational-case', 'evaluator-digest', 'rollout-mode', 'operational-value', 'operational-value-definition', 'requested-evidence-at', 'evidence-cutoff', 'maturity-at', 'maturity-status', 'baseline-value', 'delta-from-baseline', 'observed-at', 'evidence-link', 'organization-link', 'repository-link', 'workflow-link', 'run-link'],
   'overview-attention-domains': ['domain', 'state', 'tone', 'icon', 'value', 'detail', 'href', 'priority', 'order'],
@@ -308,6 +310,7 @@ export const SOURCE_FIELDS = {
   'repository-workflow-status': ['repository', 'status', 'workflows'],
   'repository-workflows': ['repository', 'workflow', 'workflow-name', 'workflow-role', 'package-name', 'workflow-active', 'observed-at', 'workflow-link'],
   'workflow-reports': ['workflow-route', 'safe-output', 'outcome-title', 'outcome-summary', 'outcome-status', 'rollout-mode', 'outcome-category', 'observed-at', 'external-link'],
+  'package-reports': ['package', 'safe-output', 'outcome-title', 'outcome-summary', 'outcome-status', 'rollout-mode', 'outcome-category', 'observed-at', 'external-link'],
   'workflow-topology-summary': ['label', 'value'],
   'packaged-workflows': ['package', 'package-name', 'repository', 'workflow', 'workflow-name', 'workflow-role', 'rollout-mode', 'workflow-active', 'package-link', 'repository-link', 'workflow-link'],
   'standalone-workflows': ['repository', 'workflow', 'workflow-name', 'rollout-mode', 'workflow-active', 'repository-link', 'workflow-link']
@@ -358,7 +361,8 @@ export const SOURCE_ENTITY_IDENTIFIER_FIELDS = {
   'repository-detail-summary': ['repository'],
   'repository-workflow-status': ['repository', 'status'],
   'repository-workflows': ['repository', 'workflow'],
-  'workflow-reports': ['workflow-route', 'safe-output']
+  'workflow-reports': ['workflow-route', 'safe-output'],
+  'package-reports': ['package', 'safe-output']
 };
 
 export const TEMPORAL_FIELD_NAMES = [

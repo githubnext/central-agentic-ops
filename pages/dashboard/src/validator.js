@@ -62,6 +62,7 @@ import {
   VIEW_KEYS,
   VIEW_LAYOUT_VALUES,
   VIEW_MARK_VALUES,
+  VIEW_TITLE_LINK_KEYS,
   WORKFLOW_ACTIVE_VALUES,
   WORKFLOW_ROLE_VALUES
 } from './specification.js';
@@ -1306,6 +1307,15 @@ function validateView(view, viewNode, path, viewIds, errors) {
     ));
   }
 
+  validateTitleLink(
+    view['title-link'],
+    getValueNodeByKey(viewNode, 'title-link'),
+    view.mark,
+    view.data,
+    `${path}.title-link`,
+    errors
+  );
+
   validateStringField(view.mark, `${path}.mark`, true, errors);
   if (typeof view.mark === 'string' && !VIEW_MARK_VALUES.includes(view.mark)) {
     errors.push(createError(
@@ -1430,6 +1440,63 @@ function validateView(view, viewNode, path, viewIds, errors) {
   validateSemanticFieldLiterals(view.data, `${path}.data`, errors);
   validateDatasetMetadata(getValueNodeByKey(viewNode, 'data'), view.data, `${path}.data`, errors);
   validateEncoding(getValueNodeByKey(viewNode, 'encoding'), view.encoding, view.mark, view.chart, sourceName, view.data, path, errors);
+}
+
+/**
+ * @param {unknown} titleLink
+ * @param {unknown} titleLinkNode
+ * @param {unknown} mark
+ * @param {unknown} data
+ * @param {string} path
+ * @param {ValidationError[]} errors
+ */
+function validateTitleLink(titleLink, titleLinkNode, mark, data, path, errors) {
+  if (titleLink === undefined) return;
+  if (!isPlainObject(titleLink)) {
+    errors.push(createError(ERROR_CODES.missingOrInvalidRequiredField, 'title-link must be a mapping.', path));
+    return;
+  }
+  validateObjectKeys(titleLinkNode, VIEW_TITLE_LINK_KEYS, path, errors);
+  validateStringField(titleLink['href-field'], `${path}.href-field`, true, errors);
+  validateStringField(titleLink['identifier-field'], `${path}.identifier-field`, true, errors);
+  if (mark !== 'element') {
+    errors.push(createError(
+      ERROR_CODES.missingOrInvalidRequiredField,
+      'title-link is allowed only when mark is "element".',
+      path
+    ));
+    return;
+  }
+  if (!isPlainObject(data) || !Array.isArray(data.sources)) return;
+  const hrefField = titleLink['href-field'];
+  const identifierField = titleLink['identifier-field'];
+  if (typeof hrefField === 'string' && !LINK_FIELD_NAMES.includes(hrefField)) {
+    errors.push(createError(
+      ERROR_CODES.invalidLinkReference,
+      'title-link href-field must name a relation-specific link field.',
+      `${path}.href-field`
+    ));
+  }
+  if (typeof identifierField === 'string' && LINK_FIELD_NAMES.includes(identifierField)) {
+    errors.push(createError(
+      ERROR_CODES.invalidScopeFilterTimeAggregationOrOrderReference,
+      'title-link identifier-field must name a scalar source field.',
+      `${path}.identifier-field`
+    ));
+  }
+  if (typeof hrefField !== 'string' || typeof identifierField !== 'string') return;
+  const hasCompatibleSource = data.sources.some((sourceName) => (
+    typeof sourceName === 'string'
+    && SOURCE_FIELDS[/** @type {keyof typeof SOURCE_FIELDS} */ (sourceName)]?.includes(hrefField)
+    && SOURCE_FIELDS[/** @type {keyof typeof SOURCE_FIELDS} */ (sourceName)]?.includes(identifierField)
+  ));
+  if (!hasCompatibleSource) {
+    errors.push(createError(
+      ERROR_CODES.invalidLinkReference,
+      'title-link fields must be declared by the same selected source.',
+      path
+    ));
+  }
 }
 
 /**
