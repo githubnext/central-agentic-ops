@@ -39,9 +39,13 @@ jobs:
         run: npm test
 
   playwright-integration:
-    name: Playwright integration tests
+    name: Playwright integration tests (${{ matrix.shard }})
     runs-on: ubuntu-latest
     timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: [1/2, 2/2]
     defaults:
       run:
         working-directory: pages/dashboard
@@ -57,4 +61,4 @@ jobs:
       - name: Install Chromium
         run: npx playwright install --with-deps chromium
       - name: End-to-end tests
-        run: npm run test:e2e
+        run: npm run test:e2e -- --shard=${{ matrix.shard }}
