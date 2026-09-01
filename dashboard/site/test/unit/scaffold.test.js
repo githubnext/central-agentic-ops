@@ -54,4 +54,11 @@ describe('DLS-CONF-004 scaffold gates', () => {
       expect(styles).toContain(sharedRule);
     }
   });
+
+  it('systematically ellipsizes security signal titles at every viewport size', () => {
+    const styles = readFileSync(resolve('src/styles.js'), 'utf8');
+
+    expect(styles).toContain('.signal-copy > strong, .signal-copy > small { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }');
+    expect(styles).not.toContain('.signal-copy > strong, .signal-copy > small { overflow: visible; white-space: normal; }');
+  });
 });

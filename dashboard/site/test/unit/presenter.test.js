@@ -492,6 +492,56 @@ describe('presenter built-in and custom pages', () => {
     expect(page?.textContent).toContain('No vulnerability feed is retained.');
   });
 
+  it('DLS-SAFE-003 DLS-SAFE-013 renders user-controlled security signal list content as inert text', () => {
+    const document = {
+      languageVersion: '0.1.0',
+      dashboard: {
+        id: 'security-list-dashboard',
+        title: 'Security',
+        pages: [{
+          id: 'security',
+          kind: /** @type {'custom'} */ ('custom'),
+          title: 'Security',
+          views: [{
+            id: 'security-signals',
+            data: { sources: ['security-signals'] },
+            mark: 'element',
+            element: 'signal-list'
+          }]
+        }]
+      }
+    };
+
+    const rendered = renderDashboard({
+      document,
+      sources: {
+        'security-signals': {
+          source: 'security-signals',
+          rows: [{
+            kind: '<em>Approval gate</em>',
+            title: '<img src=x onerror=alert(1)>',
+            detail: '<script>alert(1)</script>',
+            evidence: '<strong>Unsafe</strong>',
+            action: '<a href="javascript:alert(1)">Open</a>'
+          }],
+          metadata: {
+            'source-id': 'security-signals-fixture',
+            'source-kind': 'fixture',
+            'as-of': '2026-09-01T12:00:00Z',
+            'retrieved-at': '2026-09-01T12:01:00Z',
+            completeness: 'complete',
+            freshness: 'fresh',
+            availability: 'available'
+          }
+        }
+      }
+    });
+
+    const signal = rendered.querySelector('.signal-item');
+    expect(signal?.textContent).toContain('<img src=x onerror=alert(1)>');
+    expect(signal?.querySelector('img, script, em, a, strong strong')).toBeNull();
+  });
+
   it('renders the custom JSON-composed Value page from shared summary, signal, and table elements', () => {
     const metadata = {
       'source-id': 'value-fixture',
