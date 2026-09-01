@@ -73,8 +73,9 @@ a:focus-visible, [tabindex]:focus-visible, button:focus-visible { outline: 2px s
 .sidebar-toggle { width: 28px; height: 28px; display: grid; flex: 0 0 28px; place-items: center; padding: 0; border: 0; border-radius: 6px; background: transparent; color: var(--muted); cursor: pointer; }
 .sidebar-toggle:hover { background: var(--neutral-muted); color: var(--fg); }
 .sidebar-collapsed { grid-template-columns: 64px minmax(0, 1fr); }
-.sidebar-collapsed .org-sidebar { padding-inline: 8px; }
+.sidebar-collapsed .org-sidebar { padding-inline: 8px 7px; }
 .sidebar-collapsed .sidebar-header { gap: 0; margin-left: 0; }
+.sidebar-collapsed .sidebar-toggle { width: 24px; flex-basis: 24px; }
 .sidebar-collapsed .sidebar-brand > span, .sidebar-collapsed .nav-label, .sidebar-collapsed .nav-section-label { display: none; }
 .sidebar-collapsed .primary-nav a { justify-content: center; gap: 0; padding-inline: 6px; }
 .sidebar-collapsed .primary-nav a[aria-current="page"]::before { left: -8px; }
