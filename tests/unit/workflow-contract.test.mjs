@@ -1243,26 +1243,6 @@ test("docs diagram generator creates one validated theme-aware SVG pair", () => 
   assert.match(source, /Call `noop`/);
 });
 
-test("daily dashboard review delivers bounded declarative refactors with the GitHub Copilot Pi engine", () => {
-  const source = workflow("daily-dashboard-language-spec-review.md");
-
-  assert.match(source, /^intent: Reduce page-specific dashboard code/m);
-  assert.match(source, /permissions:\n\s+contents: read\n\s+copilot-requests: write\n\s+issues: read\n\s+pull-requests: read/);
-  assert.match(source, /engine:\n\s+id: pi\n\s+model: copilot\/gpt-5\.4/);
-  assert.match(source, /skip-if-match: "is:pr is:open label:dashboard-language-renderer"/);
-  assert.match(source, /create-pull-request:\n\s+title-prefix: "\[dashboard-language\] "/);
-  assert.match(source, /allowed-files:\n\s+- "docs\/dashboard-language-specification\.md"\n\s+- "dashboard\/site\/\*\*"/);
-  assert.match(source, /playwright:\n\s+mode: cli\n\s+version: "0\.1\.18"/);
-  assert.match(source, /Read `dashboard\/site\/PLAN\.md`, `dashboard\/site\/dashboard\.json`/);
-  assert.match(source, /branches or registries keyed by a built-in page or view identifier/);
-  assert.match(source, /Components must not branch on page or view identity/);
-  assert.match(source, /Run every quality gate from `dashboard\/site\/`/);
-  assert.match(source, /Publish exactly one safe output/);
-  assert.match(source, /Use targeted searches and bounded line-range reads; do not load whole large files or reread the specification/);
-  assert.doesNotMatch(source, /engine: codex/);
-  assert.doesNotMatch(source, /runtime:\s+docker-sbx/);
-});
-
 test("CAO dashboard reviewer checks successful documentation deployments", () => {
   const source = workflow("cao-dashboard-review.md");
 
@@ -1281,27 +1261,6 @@ test("CAO dashboard reviewer checks successful documentation deployments", () =>
   assert.doesNotMatch(source, /^\s+(create-pull-request|add-comment|create-discussion|push-to-pull-request-branch):/m);
 });
 
-test("daily dashboard renderer builds incrementally inside its own directory", () => {
-  const source = workflow("daily-dashboard-language-renderer.md");
-
-  assert.match(source, /^model: copilot\/gpt-5\.4$/m);
-  assert.match(source, /engine:\n\s+id: pi/);
-  assert.match(source, /^timeout-minutes: 60$/m);
-  assert.match(source, /^max-turns: 500$/m);
-  assert.match(source, /playwright:\n\s+mode: mcp/);
-  assert.match(source, /create-pull-request:[\s\S]*?allowed-files:\n\s+- "dashboard\/site\/\*\*"/);
-  assert.match(source, /skip-if-match: "is:pr is:open label:dashboard-language-renderer"/);
-  assert.doesNotMatch(source, /push-to-pull-request-branch:/);
-  assert.match(source, /dashboard\/site\/PLAN\.md/);
-  assert.doesNotMatch(source, /allowed-files:\n(?:\s+- .*\n)*\s+- "(?!dashboard\/site\/)/);
-  assert.match(source, /Never modify, move, or delete collectors, report adapters, package manifests, or workflow builders/);
-  assert.match(source, /`dashboard\/site\/dashboard\.json` the single authoritative, data-driven document for all 12 specification-defined built-in pages/);
-  assert.match(source, /including every view and build definition/);
-  assert.match(source, /Use the minimum amount of custom JavaScript/);
-  assert.match(source, /refactor it into the equivalent declarative JSON/);
-  assert.match(source, /The build must prove that `dashboard\.json` produces all 12 built-in pages without page-specific JavaScript/);
-});
-
 test("dashboard authoring corpus workflow generates only validated training examples", () => {
   const source = workflow("dashboard-authoring-corpus.md");
 
@@ -1309,25 +1268,12 @@ test("dashboard authoring corpus workflow generates only validated training exam
   assert.match(source, /^skills:\n\s+- \.github\/skills\/dashboard-authoring$/m);
   assert.match(source, /npm ci --prefix dashboard\/site --ignore-scripts/);
   assert.match(source, /npm --prefix dashboard\/site run validate:corpus/);
+  assert.match(source, /one YAML 1\.2 data model/);
+  assert.match(source, /production `dashboard\.json` is a strict JSON serialization of that same grammar, not a separate schema/);
   assert.match(source, /Scope every view to the synthetic workflow with a `workflow` filter/);
   assert.match(source, /Use an attainment-only baseline with null value and cutoff/);
   assert.match(source, /create-pull-request:[\s\S]*?allowed-files:\n\s+- "\.github\/skills\/dashboard-authoring\/corpus\/index\.json"\n\s+- "\.github\/skills\/dashboard-authoring\/corpus\/examples\/\*\.json"\n\s+- "\.github\/skills\/dashboard-authoring\/corpus\/examples\/\*\.dashboard\.yml"/);
   assert.doesNotMatch(source, /allowed-files:\n(?:\s+- .*\n)*\s+- "(?!\.github\/skills\/dashboard-authoring\/corpus\/)/);
-});
-
-test("daily dashboard component refactorer extracts reusable components in place", () => {
-  const source = workflow("daily-dashboard-component-refactorer.md");
-
-  assert.match(source, /^model: copilot\/gpt-5\.4$/m);
-  assert.match(source, /engine:\n\s+id: pi/);
-  assert.match(source, /playwright:\n\s+mode: mcp/);
-  assert.match(source, /skip-if-match: "is:pr is:open label:dashboard-component-refactor"/);
-  assert.match(source, /create-pull-request:[\s\S]*?allowed-files:\n\s+- "dashboard\/site\/\*\*"/);
-  assert.doesNotMatch(source, /allowed-files:\n(?:\s+- .*\n)*\s+- "(?!dashboard\/site\/)/);
-  assert.doesNotMatch(source, /push-to-pull-request-branch:/);
-  assert.match(source, /dashboard\/site\/src\/components\//);
-  assert.match(source, /Never modify collectors, report adapters, package manifests, workflow builders/);
-  assert.match(source, /Never weaken, skip, or delete an existing test/);
 });
 
 test("dashboard CI runs the package quality gates", () => {
@@ -1349,14 +1295,6 @@ test("dashboard CI runs the package quality gates", () => {
   assert.match(playwrightIntegration.block, /npx playwright install --with-deps chromium/);
   assert.match(playwrightIntegration.block, /run: npm run test:e2e/);
   assert.doesNotMatch(playwrightIntegration.block, /run: npm (?:run (?:typecheck|lint)|test)$/m);
-});
-
-test("daily dashboard review lock file does not require docker-sbx secrets", () => {
-  const lock = workflow("daily-dashboard-language-spec-review.lock.yml");
-
-  assert.doesNotMatch(lock, /docker-sbx/);
-  assert.doesNotMatch(lock, /DOCKER_PAT/);
-  assert.doesNotMatch(lock, /DOCKER_USERNAME/);
 });
 
 test("clean-room compilation emits the expected GitHub Actions settings", { timeout: 120_000 }, () => {
@@ -1408,9 +1346,6 @@ test("clean-room compilation emits the expected GitHub Actions settings", { time
       "advisory-package-maintainer.lock.yml",
       "cao-dashboard-review.lock.yml",
       "dashboard-authoring-corpus.lock.yml",
-      "daily-dashboard-component-refactorer.lock.yml",
-      "daily-dashboard-language-renderer.lock.yml",
-      "daily-dashboard-language-spec-review.lock.yml",
       "multi-device-docs-tester.lock.yml",
       "eu-cra-compliance-package-maintainer.lock.yml",
       "docs-explanatory-diagrams.lock.yml",
