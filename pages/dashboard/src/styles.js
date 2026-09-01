@@ -642,6 +642,9 @@ code { padding: 2px 4px; border-radius: 4px; background: var(--neutral-muted); f
 footer { padding: 20px 24px; border-top: 1px solid var(--border); color: var(--muted); font-size: .75rem; }
 .empty, .page-placeholder { margin: 0; padding: 28px 16px; color: var(--muted); text-align: center; }
 @media (min-width: 701px) and (max-width: 900px) {
+  .chart-view-pie { grid-template-columns: 1fr; }
+  .pie-chart-layout { grid-column: 1; grid-row: auto; }
+  .chart-view-pie > .view-source, .chart-view-pie > .view-metadata, .chart-view-pie > .view-context { grid-column: 1; }
 }
 @media (max-width: 700px) {
   .app-shell { display: block; }
