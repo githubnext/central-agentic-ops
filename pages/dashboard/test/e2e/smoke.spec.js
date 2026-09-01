@@ -117,9 +117,6 @@ function buildPresenterModuleUrl() {
   const routeStateModuleUrl = `data:text/javascript;charset=utf-8,${encodeURIComponent(routeStateSource)}`;
 
   const packageDetailSource = readFileSync(new URL('../../src/components/package-detail.js', import.meta.url), 'utf8')
-    .replace("'../dom.js'", JSON.stringify(domModuleUrl))
-    .replace("'./link-content.js'", JSON.stringify(linkContentModuleUrl))
-    .replace("'./ui-primitives.js'", JSON.stringify(uiPrimitivesModuleUrl))
     .replace("'./tab-nav.js'", JSON.stringify(tabNavModuleUrl))
     .replace("'./route-state.js'", JSON.stringify(routeStateModuleUrl));
   const packageDetailModuleUrl = `data:text/javascript;charset=utf-8,${encodeURIComponent(packageDetailSource)}`;
@@ -546,13 +543,31 @@ test('DLS-PAGE-014 DLS-PAGE-015 built-in packages page renders report-style mode
               kind: 'custom',
               title: 'Package',
               route: { 'hash-query-parameter': 'package' },
-              views: [{
-                id: 'package-detail',
-                title: 'Orchestrator and workers',
-                data: { sources: ['workflows'] },
-                mark: 'element',
-                element: 'package-detail'
-              }]
+              views: [
+                {
+                  id: 'package-workflow-navigation',
+                  title: 'Package workflows',
+                  data: { sources: ['workflows'] },
+                  mark: 'element',
+                  element: 'package-detail'
+                },
+                {
+                  id: 'package-workflow-table',
+                  title: 'Orchestrator and workers',
+                  data: { source: 'packaged-workflows', 'route-field': 'package' },
+                  mark: 'table',
+                  controls: 'interactive',
+                  encoding: {
+                    columns: [
+                      { field: 'workflow-role', type: 'ordinal', title: 'Role', display: 'label' },
+                      { field: 'workflow-name', type: 'nominal', title: 'Workflow' },
+                      { field: 'workflow', type: 'nominal', title: 'Definition' },
+                      { field: 'rollout-mode', type: 'nominal', title: 'Mode', display: 'mode' },
+                      { field: 'workflow-active', type: 'nominal', title: 'Registration', display: 'active-state' }
+                    ]
+                  }
+                }
+              ]
             },
             {
               id: 'package-reports',
@@ -660,8 +675,9 @@ test('DLS-PAGE-014 DLS-PAGE-015 built-in packages page renders report-style mode
   await expect(page.locator('[data-nav-page-id="packages"]')).toHaveAttribute('aria-current', 'page');
   await expect(page.getByRole('navigation', { name: 'Ambient Context views' })).toContainText('InsightsWorkflowsReports');
   await expect(page.getByRole('heading', { name: 'Orchestrator and workers', level: 3 })).toBeVisible();
-  await expect(page.locator('[data-workflow-role="orchestrator"]')).toHaveCount(1);
-  await expect(page.locator('[data-workflow-role="worker"]')).toHaveCount(1);
+  await expect(page.locator('.custom-table tbody tr')).toHaveCount(2);
+  await expect(page.locator('.custom-table tbody tr').first()).toContainText('OrchestratorAmbient Context');
+  await expect(page.locator('.custom-table tbody tr').nth(1)).toContainText('WorkerAmbient Context Worker');
 
   await page.getByRole('navigation', { name: 'Ambient Context views' }).getByRole('link', { name: 'Reports' }).click();
   await expect(page).toHaveURL(/#page-package-reports\?package=ambient-context$/);
