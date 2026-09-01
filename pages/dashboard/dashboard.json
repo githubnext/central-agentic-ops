@@ -1325,25 +1325,6 @@
                   }
                 ]
               }
-            },
-            {
-              "id": "runs-outcomes-source",
-              "data": {
-                "source": "outcomes"
-              },
-              "mark": "table",
-              "encoding": {
-                "href": {
-                  "field": "run-link",
-                  "type": "nominal"
-                },
-                "columns": [
-                  {
-                    "field": "run-link",
-                    "type": "nominal"
-                  }
-                ]
-              }
             }
           ]
         }

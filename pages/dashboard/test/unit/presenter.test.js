@@ -1280,6 +1280,9 @@ describe('presenter built-in and custom pages', () => {
       ))).toBe(true);
     }
 
+    const runsPage = pages.find((/** @type {{ page: string }} */ page) => page.page === 'runs');
+    expect(runsPage?.definition.views.map((/** @type {{ data: { source: string } }} */ view) => view.data.source)).toEqual(['runs']);
+
     const repositoriesPage = pages.find((/** @type {{ page: string }} */ page) => page.page === 'repositories');
     expect(repositoriesPage?.definition.views).toMatchObject([
       {
