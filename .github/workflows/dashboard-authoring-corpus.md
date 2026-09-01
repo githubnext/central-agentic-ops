@@ -65,6 +65,8 @@ evals:
     question: Did the agent define a direct attainment metric, accepted evidence, maturation, zero, missing, and baseline rules without fabricating observed results?
   - id: dashboard-task-specific
     question: Did every dashboard view support operating the synthetic workflow and scope its source data to that workflow?
+  - id: shared-grammar-used
+    question: Did the YAML example use the same Dashboard Language grammar and semantics as the production strict JSON serialization, without format-specific vocabulary?
   - id: corpus-validated
     question: Did the agent run the deterministic corpus validator successfully before creating a pull request?
 ---
@@ -98,7 +100,7 @@ Use an attainment-only baseline with null value and cutoff. Synthetic tasks have
 
 ## Infer the dashboard
 
-Create a Dashboard Language document for the synthetic workflow. Use only canonical sources and fields defined by the specification. Scope every view to the synthetic workflow with a `workflow` filter. Include only views that help an operator understand activation, execution, required effects, actionable exceptions, or operational-value attainment.
+Create a YAML serialization of a Dashboard Language document for the synthetic workflow. Dashboard Language has one YAML 1.2 data model; production `dashboard.json` is a strict JSON serialization of that same grammar, not a separate schema. Use the same canonical kebab-case vocabulary, types, defaults, and semantics in both forms. Use only canonical sources and fields defined by the specification. Scope every view to the synthetic workflow with a `workflow` filter. Include only views that help an operator understand activation, execution, required effects, actionable exceptions, or operational-value attainment.
 
 Keep the dashboard compact and deterministic. Do not add implementation-specific scripts, invented sources, measured values, or prose that claims the workflow has run.
 
