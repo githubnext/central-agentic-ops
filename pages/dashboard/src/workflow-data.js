@@ -106,8 +106,10 @@ function roleOrder(role) {
 /** @param {Row} row */
 function qualifiedRepository(row) {
   const repository = text(row.repository);
+  if (!repository) return 'unknown';
   if (repository.includes('/')) return repository;
-  return `${text(row.organization)}/${repository}`.replace(/^\/|\/$/g, '') || 'unknown';
+  const organization = text(row.organization);
+  return organization ? `${organization}/${repository}` : repository;
 }
 
 /** @param {string} value */

@@ -51,6 +51,25 @@ describe('deriveWorkflowSources', () => {
     ]);
     expect(sources['packaged-workflows'].metadata).toBe(metadata);
   });
+
+  it('does not present a bare organization as a qualified repository', () => {
+    const sources = deriveWorkflowSources({
+      workflows: {
+        source: 'workflows',
+        metadata,
+        rows: [workflow({
+          package: undefined,
+          'package-name': undefined,
+          repository: '',
+          workflow: 'local.md',
+          'workflow-name': 'Local',
+          'workflow-role': 'standalone'
+        })]
+      }
+    });
+
+    expect(sources['standalone-workflows'].rows[0].repository).toBe('unknown');
+  });
 });
 
 /** @param {Record<string, unknown>} overrides */
