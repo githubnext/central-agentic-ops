@@ -1968,3 +1968,40 @@ test('DLS-SAFE-004 runtime links with embedded credentials, ftp schemes, and bla
   await expect(page.locator('body')).not.toContainText('Credentialed Run');
   await expect(page.locator('body')).not.toContainText('FTP Run');
 });
+
+test('desktop navigation collapses to an icon rail and expands back to text', async ({ page }) => {
+  const presenterModuleUrl = buildPresenterModuleUrl();
+  await page.setViewportSize({ width: 1200, height: 800 });
+  await page.setContent(`
+    <div id="root"></div>
+    <script type="module">
+      import { renderDashboard } from ${JSON.stringify(presenterModuleUrl)};
+      document.querySelector('#root').append(renderDashboard({
+        document: {
+          languageVersion: '0.1.0',
+          dashboard: {
+            id: 'sidebar-toggle-dashboard',
+            title: 'Sidebar Toggle',
+            pages: [
+              { id: 'overview', kind: 'custom', title: 'Overview', icon: 'home', views: [] },
+              { id: 'runs', kind: 'custom', title: 'Runs', icon: 'play', views: [] }
+            ]
+          }
+        },
+        sources: {}
+      }));
+    </script>
+  `);
+
+  const toggle = page.getByRole('button', { name: 'Collapse navigation' });
+  await expect(page.locator('.app-shell')).toHaveCSS('grid-template-columns', '232px 968px');
+  await toggle.click();
+
+  await expect(page.locator('.app-shell')).toHaveClass(/sidebar-collapsed/);
+  await expect(page.getByRole('button', { name: 'Expand navigation' })).toHaveAttribute('aria-expanded', 'false');
+  await expect(page.locator('.nav-label').first()).toBeHidden();
+
+  await page.getByRole('button', { name: 'Expand navigation' }).click();
+  await expect(page.locator('.app-shell')).not.toHaveClass(/sidebar-collapsed/);
+  await expect(page.locator('.nav-label').first()).toBeVisible();
+});
