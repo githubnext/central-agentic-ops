@@ -31,7 +31,25 @@ describe('Runtime dashboard view', () => {
     expect(runtimePage).toMatchObject({
       id: 'runtime',
       kind: 'custom',
-      title: 'Runtime & episodes'
+      title: 'Runtime & episodes',
+      sections: [
+        {
+          id: 'runtime-triage',
+          title: 'Needs attention',
+          'count-source': 'runtime-signals',
+          'count-label': 'signals',
+          views: ['runtime-needs-attention']
+        },
+        {
+          id: 'observed-behavior',
+          title: 'Execution episodes',
+          views: [
+            'runtime-episode-summary',
+            'runtime-execution-episodes',
+            'runtime-episode-attribution-gap'
+          ]
+        }
+      ]
     });
     expect(runtimePage.views.map(
       (/** @type {{ id: string, mark: string, element?: string }} */ view) => ({
@@ -73,6 +91,23 @@ describe('Runtime dashboard view', () => {
           id: 'runtime',
           kind: /** @type {'custom'} */ ('custom'),
           title: 'Runtime',
+          sections: [
+            {
+              id: 'runtime-triage',
+              title: 'Needs attention',
+              description: 'Ranked execution evidence.',
+              layout: /** @type {'full'} */ ('full'),
+              'count-source': 'runtime-signals',
+              'count-label': 'signals',
+              views: ['attention']
+            },
+            {
+              id: 'observed-behavior',
+              title: 'Execution episodes',
+              layout: /** @type {'full'} */ ('full'),
+              views: ['summary', 'episodes', 'gaps']
+            }
+          ],
           views: [
             { id: 'attention', title: 'Needs attention', data: { sources: ['runtime-signals'] }, mark: 'element', element: 'signal-list' },
             { id: 'summary', title: 'Execution episodes', data: { source: 'runtime-episode-summary' }, mark: 'element', element: 'summary-grid' },
@@ -135,6 +170,9 @@ describe('Runtime dashboard view', () => {
     const rendered = renderDashboard({ document, sources });
 
     expect(rendered.querySelector('[data-nav-page-id="runtime"]')).not.toBeNull();
+    const runtimePage = rendered.querySelector('[data-page-id="runtime"]');
+    expect(runtimePage?.querySelector('[data-section-id="runtime-triage"] .scope-kicker')?.textContent).toBe('Runtime Triage');
+    expect(runtimePage?.querySelector('[data-section-id="runtime-triage"] .layout-section-header h3')?.textContent).toBe('Needs attention');
     const attention = rendered.querySelector('.signal-list-region')?.textContent;
     expect(attention).toContain('Approval gate');
     expect(attention).toContain('Run failures');

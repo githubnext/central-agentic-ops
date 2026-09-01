@@ -1090,11 +1090,34 @@
           "time-range": "All recorded",
           "export": true
         },
+        "sections": [
+          {
+            "id": "runtime-triage",
+            "title": "Needs attention",
+            "description": "Ranked evidence from execution state and exact episode attribution. No composite score is used.",
+            "layout": "full",
+            "count-source": "runtime-signals",
+            "count-label": "signals",
+            "views": [
+              "runtime-needs-attention"
+            ]
+          },
+          {
+            "id": "observed-behavior",
+            "title": "Execution episodes",
+            "description": "Root orchestrator runs joined to worker outcomes only through explicit control-plane correlation evidence.",
+            "layout": "full",
+            "views": [
+              "runtime-episode-summary",
+              "runtime-execution-episodes",
+              "runtime-episode-attribution-gap"
+            ]
+          }
+        ],
         "views": [
           {
             "id": "runtime-needs-attention",
             "title": "Needs attention",
-            "description": "Ranked evidence from execution state and exact episode attribution. No composite score is used.",
             "data": {
               "sources": [
                 "runtime-signals"
@@ -1107,7 +1130,6 @@
           {
             "id": "runtime-episode-summary",
             "title": "Execution episodes",
-            "description": "Root orchestrator runs joined to worker outcomes only through explicit control-plane correlation evidence.",
             "data": {
               "sources": [
                 "runtime-episode-summary"

@@ -494,6 +494,74 @@ test('DLS-PAGE-002 DLS-PAGE-014 built-in overview page renders the report-style 
   await expect(page.locator('#runtime-observed-root-episodes-heading')).toBeInViewport();
 });
 
+test('built-in repositories page keeps repository scope above the run metadata', async ({ page }) => {
+  const presenterModuleUrl = buildPresenterModuleUrl();
+  await page.setViewportSize({ width: 1000, height: 900 });
+
+  await page.setContent(`
+    <div id="root"></div>
+    <script type="module">
+      import { renderDashboard } from ${JSON.stringify(presenterModuleUrl)};
+
+      const metadata = {
+        'source-id': 'repositories-layout-fixture',
+        'source-kind': 'fixture',
+        'as-of': '2026-09-01T03:00:00Z',
+        'retrieved-at': '2026-09-01T03:01:00Z',
+        'coverage-start': '2026-08-31T03:00:00Z',
+        'coverage-end': '2026-09-01T03:00:00Z',
+        completeness: 'complete',
+        freshness: 'fresh',
+        availability: 'available'
+      };
+      const emptySource = (source) => ({ source, rows: [], metadata });
+      const sources = {
+        repositories: {
+          source: 'repositories',
+          rows: [{ organization: 'githubnext', repository: 'central-agentic-ops' }],
+          metadata
+        },
+        runs: emptySource('runs'),
+        usage: emptySource('usage'),
+        workflows: emptySource('workflows'),
+        outcomes: emptySource('outcomes'),
+        'operational-values': emptySource('operational-values')
+      };
+      const dashboardDocument = {
+        languageVersion: '0.1.0',
+        dashboard: {
+          id: 'repositories-layout',
+          title: 'Repositories Layout',
+          pages: [
+            {
+              id: 'repositories',
+              kind: 'built-in',
+              page: 'repositories',
+              title: 'Repositories'
+            }
+          ],
+          navigation: [{ label: 'Explore', pages: ['repositories'] }]
+        }
+      };
+
+      document.querySelector('#root').append(renderDashboard({ document: dashboardDocument, sources }));
+    </script>
+  `);
+
+  const cells = page.locator('.context-summary > div');
+  await expect(cells).toHaveCount(3);
+  const boxes = await cells.evaluateAll((elements) => elements.map((element) => {
+    const { x, y, width } = element.getBoundingClientRect();
+    return { x, y, width };
+  }));
+
+  expect(boxes[1].y).toBeGreaterThan(boxes[0].y);
+  expect(boxes[2].y).toBe(boxes[1].y);
+  expect(boxes[2].x).toBeGreaterThan(boxes[1].x);
+  expect(boxes[0].x).toBeCloseTo(boxes[1].x, 0);
+  expect(boxes[0].x + boxes[0].width).toBeCloseTo(boxes[2].x + boxes[2].width, 0);
+});
+
 test('DLS-PAGE-014 DLS-PAGE-015 built-in packages page renders report-style mode filters, AIC utilization, and run trends in browser', async ({ page }) => {
   const presenterModuleUrl = buildPresenterModuleUrl();
 
