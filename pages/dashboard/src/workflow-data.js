@@ -143,12 +143,12 @@ function compareStandaloneWorkflows(left, right) {
 
 /** @param {Row} left @param {Row} right */
 function compareWorkflowReports(left, right) {
-  return rowTime(right) - rowTime(left)
+  return derivedReportTime(right) - derivedReportTime(left)
     || text(left['outcome-title']).localeCompare(text(right['outcome-title']));
 }
 
 /** @param {Row} row */
-function rowTime(row) {
+function derivedReportTime(row) {
   const value = Date.parse(text(row['observed-at']));
   return Number.isFinite(value) ? value : 0;
 }
