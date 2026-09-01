@@ -1316,8 +1316,7 @@ function validateView(view, viewNode, path, viewIds, errors) {
         'table must be a boolean.',
         `${path}.table`
       ));
-    }
-    if (view.mark !== 'chart') {
+    } else if (view.mark !== 'chart') {
       errors.push(createError(
         ERROR_CODES.missingOrInvalidRequiredField,
         'table is allowed only when mark is "chart".',
