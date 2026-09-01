@@ -108,7 +108,8 @@ function buildPresenterModuleUrl() {
     .replace("'../view-formatters.js'", JSON.stringify(viewFormattersModuleUrl))
     .replace("'./run-classification.js'", JSON.stringify(runClassificationModuleUrl))
     .replace("'./tab-nav.js'", JSON.stringify(tabNavModuleUrl))
-    .replace("'./count-formatters.js'", JSON.stringify(countFormattersModuleUrl));
+    .replace("'./count-formatters.js'", JSON.stringify(countFormattersModuleUrl))
+    .replace("'./ui-primitives.js'", JSON.stringify(uiPrimitivesModuleUrl));
   const packagesViewModuleUrl = `data:text/javascript;charset=utf-8,${encodeURIComponent(packagesViewSource)}`;
 
   const filterBarSource = readFileSync(new URL('../../src/components/filter-bar.js', import.meta.url), 'utf8')

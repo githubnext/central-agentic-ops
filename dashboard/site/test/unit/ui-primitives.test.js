@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import { describe, expect, it } from 'vitest';
-import { formatUtcDateTime, renderSectionHeading, renderVitalStat } from '../../src/components/ui-primitives.js';
+import { coverageWindowHours, formatUtcDateTime, renderSectionHeading, renderVitalStat } from '../../src/components/ui-primitives.js';
 
 describe('ui primitives', () => {
   it('renders shared section-heading markup with configurable heading levels', () => {
@@ -47,5 +47,12 @@ describe('ui primitives', () => {
   it('formats UTC date-time text and preserves the unavailable fallback', () => {
     expect(formatUtcDateTime('2026-08-30T10:00:00Z')).toBe('Aug 30, 2026, 10:00 AM');
     expect(formatUtcDateTime('not-a-date')).toBe('Time unavailable');
+  });
+
+  it('computes whole-hour coverage windows and rejects invalid or non-increasing bounds', () => {
+    expect(coverageWindowHours({ 'coverage-start': '2026-08-30T00:00:00Z', 'coverage-end': '2026-08-30T05:00:00Z' })).toBe(5);
+    expect(coverageWindowHours({ 'coverage-start': '2026-08-30T05:00:00Z', 'coverage-end': '2026-08-30T00:00:00Z' })).toBeNull();
+    expect(coverageWindowHours({ 'coverage-start': 'not-a-date', 'coverage-end': '2026-08-30T05:00:00Z' })).toBeNull();
+    expect(coverageWindowHours(undefined)).toBeNull();
   });
 });

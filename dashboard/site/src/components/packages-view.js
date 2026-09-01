@@ -6,6 +6,7 @@ import { h } from '../dom.js';
 import { formatNumber } from '../view-formatters.js';
 import { titleCase } from './count-formatters.js';
 import { classifyUtilizationRatio, isFailureConclusion } from './run-classification.js';
+import { coverageWindowHours } from './ui-primitives.js';
 import { renderInteractiveTabs, updateInteractiveTabSelection } from './tab-nav.js';
 
 const MODES = ['all', 'review', 'live'];
@@ -748,10 +749,8 @@ function trendPoints(values, maximum) {
  * @returns {string}
  */
 function sourceWindowLabel(metadata) {
-  const start = Date.parse(String(metadata?.['coverage-start'] ?? ''));
-  const end = Date.parse(String(metadata?.['coverage-end'] ?? ''));
-  if (Number.isFinite(start) && Number.isFinite(end) && end > start) {
-    const hours = Math.round((end - start) / 3_600_000);
+  const hours = coverageWindowHours(metadata);
+  if (hours != null) {
     return `the last ${formatNumber(hours)} hour${hours === 1 ? '' : 's'}`;
   }
   return 'the retained usage window';
