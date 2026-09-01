@@ -6,6 +6,7 @@ import createAnimationData, { createMobileAnimationData } from "../../docs/asset
 
 const hero = readFileSync("docs/components/HierarchyHero.astro", "utf8");
 const wizard = readFileSync("docs/components/OpsWizard.astro", "utf8");
+const catalog = readFileSync("docs/lib/catalog.ts", "utf8");
 
 function decodeAsset(asset) {
   return decodeURIComponent(asset.p.slice(asset.p.indexOf(",") + 1));
@@ -59,4 +60,11 @@ test("landing wizard prompt references the raw setup skill", () => {
     wizard,
     /https:\/\/raw\.githubusercontent\.com\/githubnext\/central-agentic-ops\/main\/\.github\/skills\/setup-central-agentic-ops\/SKILL\.md/,
   );
+});
+
+test("landing wizard operations come from the checked-in control policy", () => {
+  assert.match(catalog, /import controlPolicy from "\.\.\/\.\.\/\.github\/central-agentic-ops\.json"/);
+  assert.match(catalog, /Object\.keys\(controlPolicy\["control-plane"\]\.packages\)/);
+  assert.match(wizard, /configuredOperationEntries as operations/);
+  assert.doesNotMatch(wizard, /operation\.slug === "dependabot"/);
 });

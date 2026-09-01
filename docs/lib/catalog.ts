@@ -1,5 +1,6 @@
 import type { MarkdownInstance } from "astro";
 import { parse } from "yaml";
+import controlPolicy from "../../.github/central-agentic-ops.json";
 
 type PackageReadme = MarkdownInstance<Record<string, unknown>>;
 
@@ -78,3 +79,11 @@ export const catalogEntries: CatalogEntry[] = Object.entries(manifests)
     const advisoryRank = (entry: CatalogEntry) => /advisor(y|ies)?/i.test(entry.name) ? 1 : 0;
     return advisoryRank(left) - advisoryRank(right) || left.name.localeCompare(right.name);
   });
+
+const catalogEntriesBySlug = new Map(catalogEntries.map((entry) => [entry.slug, entry]));
+
+export const configuredOperationEntries = Object.keys(controlPolicy["control-plane"].packages).map((slug) => {
+  const entry = catalogEntriesBySlug.get(slug);
+  if (!entry) throw new Error(`Configured package ${slug} must have a catalog manifest`);
+  return entry;
+});
