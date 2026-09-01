@@ -55,9 +55,6 @@ jobs:
       - name: Configure Pages
         uses: actions/configure-pages@983d7736d9b0ae728b81ab479565c72886d7745b # v5
 
-      - name: Build documentation
-        run: npm run docs:build
-
       - name: Extract control-plane inventory
         env:
           REPORT_INVENTORY: ${{ runner.temp }}/control-plane-inventory.json
