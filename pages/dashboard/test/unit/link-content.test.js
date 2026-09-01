@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import { describe, expect, it } from 'vitest';
-import { findFirstLink, findLink, renderExternalLink, renderLinkedValueWithExternalLink, renderWorkflowRunLink } from '../../src/components/link-content.js';
+import { findFirstLink, findLink, renderExternalLink, renderLinkedValueWithExternalLink, renderOutcomeLink, renderWorkflowRunLink, resolveTitleLink } from '../../src/components/link-content.js';
 
 describe('link content helpers', () => {
   it('DLS-SAFE-004 finds only safe https links with non-empty labels', () => {
@@ -78,5 +78,34 @@ describe('link content helpers', () => {
     expect(linked.getAttribute('aria-label')).toBe('Run 42');
     expect(linked.textContent).toBe('42');
     expect(renderWorkflowRunLink({}, 'Unavailable')).toBe('Unavailable');
+  });
+
+  it('resolves a JSON-configured compact title link for issue and run identifiers', () => {
+    const row = {
+      run: '42',
+      'run-link': {
+        href: 'https://github.com/githubnext/central-agentic-ops/actions/runs/42',
+        label: 'Run 42'
+      }
+    };
+    expect(resolveTitleLink(row, {
+      'href-field': 'run-link',
+      'identifier-field': 'run'
+    })).toEqual({
+      href: 'https://github.com/githubnext/central-agentic-ops/actions/runs/42',
+      label: '#42'
+    });
+    expect(resolveTitleLink(row, {
+      'href-field': 'run-link',
+      'identifier-field': 'missing'
+    })).toBeNull();
+  });
+
+  it('renders durable-output titles as encoded dashboard links with a plain-text fallback', () => {
+    const linked = /** @type {HTMLElement} */ (renderOutcomeLink({ 'safe-output': 'issue/42' }, 'Issue 42'));
+
+    expect(linked.getAttribute('href')).toBe('#page-outcome-detail?outcome=issue%2F42');
+    expect(linked.textContent).toBe('Issue 42');
+    expect(renderOutcomeLink({}, 'Unavailable')).toBe('Unavailable');
   });
 });

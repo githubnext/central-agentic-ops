@@ -38,6 +38,34 @@ describe('renderTableSummaryRow', () => {
     expect(rendered.textContent).toContain('Standard deviationN/A');
   });
 
+  it('summarizes temporal values by start, stop, and duration', () => {
+    const rendered = renderTableSummaryRow([{
+      label: 'Started',
+      type: 'temporal',
+      values: [
+        '2026-08-31T14:25:55Z',
+        '2026-08-31T13:25:23Z',
+        'invalid',
+        '2026-08-30T12:00:00Z'
+      ]
+    }]);
+
+    expect(rendered.textContent).toContain('StartAug 30, 2026, 12:00 PM');
+    expect(rendered.textContent).toContain('StopAug 31, 2026, 2:25 PM');
+    expect(rendered.textContent).toContain('Duration1d 2h');
+    expect(rendered.querySelector('.table-summary-categories')).toBeNull();
+  });
+
+  it('reports unavailable temporal values without treating them as categories', () => {
+    const rendered = renderTableSummaryRow([{
+      label: 'Started',
+      type: 'temporal',
+      values: ['invalid']
+    }]);
+
+    expect(rendered.textContent).toBe('No timestamps');
+  });
+
   it('auto-detects boolean values and summarizes their true percentage', () => {
     const rendered = renderTableSummaryRow([{
       label: 'Ready',

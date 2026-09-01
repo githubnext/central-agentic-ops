@@ -5,9 +5,10 @@
 import { h } from '../dom.js';
 import { octicon } from '../octicons.js';
 import { renderModeBadge, renderStatusBadge } from './badge.js';
-import { findLink, renderExternalLink } from './link-content.js';
+import { findLink, renderExternalLink, resolveTitleLink } from './link-content.js';
 import { formatUtcDateTime } from './ui-primitives.js';
 import { renderMetadataSection } from './view-chrome.js';
+import { createRouteView } from './route-empty-state.js';
 
 const ALLOWED_MARKDOWN_TAGS = new Set([
   'A', 'BLOCKQUOTE', 'BR', 'CODE', 'DEL', 'DETAILS', 'DIV', 'EM',
@@ -37,37 +38,29 @@ const ALLOWED_MARKDOWN_CLASSES = new Set([
  */
 export function renderOutcomeDetail(context) {
   const outcomes = rowsFor(context.sources, 'outcomes');
-  const root = h('div', {
-    className: 'outcome-detail',
-    'data-route-view': '',
-    'data-route-parameter': context.routeParameter
-  });
-
-  /** @param {unknown} routeValue */
-  const render = (routeValue) => {
-    const outcomeId = typeof routeValue === 'string' ? routeValue.trim() : '';
-    const outcome = outcomes.find((row) => String(row['safe-output']) === outcomeId);
-    root.dataset.outcome = outcomeId;
-    root.replaceChildren(outcome
-      ? renderOutcome(outcome)
-      : h('p', { className: 'empty' }, outcomeId ? 'Outcome not found.' : 'Select an outcome to view its details.'));
-
-    if (outcome) {
+  const root = createRouteView({
+    rootClassName: 'outcome-detail',
+    routeParameter: context.routeParameter,
+    datasetKey: 'outcome',
+    selectMessage: 'Select an outcome to view its details.',
+    notFoundMessage: 'Outcome not found.',
+    renderMatched: (routeValue) => {
+      const outcomeId = routeValue.trim();
+      const outcome = outcomes.find((row) => String(row['safe-output']) === outcomeId);
+      if (!outcome) {
+        return null;
+      }
       root.dispatchEvent(new CustomEvent('dashboard-route-allocation', {
         bubbles: true,
         detail: {
           title: text(outcome['outcome-title']) || outcomeId,
-          description: outcomeDescription(outcome)
+          description: outcomeDescription(outcome),
+          titleLink: resolveTitleLink(outcome, context.titleLink)
         }
       }));
+      return renderOutcome(outcome);
     }
-  };
-
-  root.addEventListener('dashboard-route-change', (event) => {
-    if (!(event instanceof CustomEvent) || event.detail?.parameter !== context.routeParameter) return;
-    render(event.detail.value);
   });
-  render('');
   return root;
 }
 

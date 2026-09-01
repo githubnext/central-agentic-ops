@@ -166,7 +166,7 @@ describe('repositories view', () => {
           { field: 'evaluated-workflows' },
           { field: 'runs' },
           { field: 'failure-summary' },
-          { field: 'aic' },
+          { field: 'aic', unit: 'aic' },
           { field: 'status', display: 'status' }
         ],
         href: { field: 'repository-link' }
@@ -186,5 +186,42 @@ describe('repositories view', () => {
       runs: null,
       'failure-summary': 'Unavailable'
     });
+  });
+
+  it('derives route-scoped repository detail data for generic views', () => {
+    const sourceInputs = sources();
+    sourceInputs.workflows.rows[0] = {
+      ...sourceInputs.workflows.rows[0],
+      workflow: '.github/workflows/one.md',
+      'workflow-name': 'One',
+      'workflow-role': 'worker',
+      'package-name': 'Maintenance',
+      'observed-at': '2026-08-31T17:00:00Z',
+      'workflow-link': {
+        relation: 'workflow',
+        href: 'https://github.com/octo/failing/blob/HEAD/.github/workflows/one.md',
+        label: 'View One'
+      }
+    };
+
+    const derived = deriveRepositorySources(sourceInputs);
+
+    expect(derived['repository-detail-summary'].rows).toContainEqual(expect.objectContaining({
+      repository: 'octo/failing',
+      workflows: 2,
+      'latest-update': '2026-08-31T17:00:00Z',
+      'external-link': expect.objectContaining({ href: 'https://github.com/octo/failing/actions' })
+    }));
+    expect(derived['repository-workflow-status'].rows).toEqual(expect.arrayContaining([
+      { repository: 'octo/failing', status: 'Active', workflows: 2 },
+      { repository: 'octo/quiet', status: 'Disabled', workflows: 1 }
+    ]));
+    expect(derived['repository-workflows'].rows).toContainEqual(expect.objectContaining({
+      repository: 'octo/failing',
+      workflow: '.github/workflows/one.md',
+      'workflow-name': 'One',
+      'workflow-role': 'Worker',
+      'package-name': 'Maintenance'
+    }));
   });
 });

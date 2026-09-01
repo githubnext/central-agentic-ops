@@ -58,6 +58,12 @@ function renderColumnSummary(column) {
       .filter(Number.isFinite);
     return renderQuantitativeSummary(column.label, numericValues);
   }
+  if (column.type === 'temporal') {
+    const timestamps = values
+      .map((value) => Date.parse(String(value)))
+      .filter(Number.isFinite);
+    return renderTemporalSummary(timestamps);
+  }
   if (shouldRenderCountSummary(column)) {
     return renderCountSummary(values.length);
   }
@@ -156,6 +162,54 @@ function renderQuantitativeSummary(label, values) {
       ])
     )
   );
+}
+
+/**
+ * @param {number[]} timestamps
+ * @returns {HTMLElement}
+ */
+function renderTemporalSummary(timestamps) {
+  if (timestamps.length === 0) {
+    return h('span', { className: 'table-summary-empty' }, 'No timestamps');
+  }
+  const start = Math.min(...timestamps);
+  const stop = Math.max(...timestamps);
+  return h(
+    'dl',
+    { className: 'table-summary-temporal' },
+    ...renderDefinitionListRows([
+      { label: 'Start', value: formatTimestamp(start) },
+      { label: 'Stop', value: formatTimestamp(stop) },
+      { label: 'Duration', value: formatDuration(stop - start) }
+    ])
+  );
+}
+
+/**
+ * @param {number} timestamp
+ * @returns {string}
+ */
+function formatTimestamp(timestamp) {
+  return new Intl.DateTimeFormat('en', {
+    dateStyle: 'medium',
+    timeStyle: 'short',
+    timeZone: 'UTC'
+  }).format(new Date(timestamp));
+}
+
+/**
+ * @param {number} duration
+ * @returns {string}
+ */
+function formatDuration(duration) {
+  const seconds = Math.max(0, Math.round(duration / 1000));
+  if (seconds < 60) return `${seconds}s`;
+  const minutes = Math.floor(seconds / 60);
+  if (minutes < 60) return `${minutes}m ${seconds % 60}s`;
+  const hours = Math.floor(minutes / 60);
+  if (hours < 24) return `${hours}h ${minutes % 60}m`;
+  const days = Math.floor(hours / 24);
+  return `${days}d ${hours % 24}h`;
 }
 
 /**

@@ -37,6 +37,11 @@
       "dashboard": "examples/release-notes-completeness-check.dashboard.yml"
     },
     {
+      "id": "security-advisory-triage-enforcement",
+      "metadata": "examples/security-advisory-triage-enforcement.json",
+      "dashboard": "examples/security-advisory-triage-enforcement.dashboard.yml"
+    },
+    {
       "id": "stale-documentation-remediation",
       "metadata": "examples/stale-documentation-remediation.json",
       "dashboard": "examples/stale-documentation-remediation.dashboard.yml"

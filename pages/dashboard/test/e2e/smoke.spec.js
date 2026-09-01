@@ -108,25 +108,17 @@ function buildPresenterModuleUrl() {
     .replace("'../octicons.js'", JSON.stringify(octiconsModuleUrl));
   const linkContentModuleUrl = `data:text/javascript;charset=utf-8,${encodeURIComponent(linkContentSource)}`;
 
-  const reportListSource = readFileSync(new URL('../../src/components/report-list.js', import.meta.url), 'utf8')
-    .replace("'../dom.js'", JSON.stringify(domModuleUrl))
-    .replace("'../octicons.js'", JSON.stringify(octiconsModuleUrl))
-    .replace("'./badge.js'", JSON.stringify(badgeModuleUrl))
-    .replace("'./link-content.js'", JSON.stringify(linkContentModuleUrl))
-    .replace("'./ui-primitives.js'", JSON.stringify(uiPrimitivesModuleUrl));
-  const reportListModuleUrl = `data:text/javascript;charset=utf-8,${encodeURIComponent(reportListSource)}`;
-
   const linkedTextSource = readFileSync(new URL('../../src/components/linked-text.js', import.meta.url), 'utf8')
     .replace("'../dom.js'", JSON.stringify(domModuleUrl));
   const linkedTextModuleUrl = `data:text/javascript;charset=utf-8,${encodeURIComponent(linkedTextSource)}`;
 
+  const routeStateSource = readFileSync(new URL('../../src/components/route-empty-state.js', import.meta.url), 'utf8')
+    .replace("'../dom.js'", JSON.stringify(domModuleUrl));
+  const routeStateModuleUrl = `data:text/javascript;charset=utf-8,${encodeURIComponent(routeStateSource)}`;
+
   const packageDetailSource = readFileSync(new URL('../../src/components/package-detail.js', import.meta.url), 'utf8')
-    .replace("'../dom.js'", JSON.stringify(domModuleUrl))
-    .replace("'../octicons.js'", JSON.stringify(octiconsModuleUrl))
-    .replace("'./report-list.js'", JSON.stringify(reportListModuleUrl))
-    .replace("'./link-content.js'", JSON.stringify(linkContentModuleUrl))
-    .replace("'./ui-primitives.js'", JSON.stringify(uiPrimitivesModuleUrl))
-    .replace("'./tab-nav.js'", JSON.stringify(tabNavModuleUrl));
+    .replace("'./tab-nav.js'", JSON.stringify(tabNavModuleUrl))
+    .replace("'./route-empty-state.js'", JSON.stringify(routeStateModuleUrl));
   const packageDetailModuleUrl = `data:text/javascript;charset=utf-8,${encodeURIComponent(packageDetailSource)}`;
 
   const countFormattersSource = readFileSync(new URL('../../src/components/count-formatters.js', import.meta.url), 'utf8');
@@ -141,18 +133,6 @@ function buildPresenterModuleUrl() {
     .replace("'../dom.js'", JSON.stringify(domModuleUrl));
   const workflowBadgesModuleUrl = `data:text/javascript;charset=utf-8,${encodeURIComponent(workflowBadgesSource)}`;
 
-  const repositoryWorkflowsSource = readFileSync(new URL('../../src/components/repository-workflows.js', import.meta.url), 'utf8')
-    .replace("'../dom.js'", JSON.stringify(domModuleUrl))
-    .replace("'../octicons.js'", JSON.stringify(octiconsModuleUrl))
-    .replace("'./badge.js'", JSON.stringify(badgeModuleUrl))
-    .replace("'./count-formatters.js'", JSON.stringify(countFormattersModuleUrl))
-    .replace("'./link-content.js'", JSON.stringify(linkContentModuleUrl))
-    .replace("'./linked-text.js'", JSON.stringify(linkedTextModuleUrl))
-    .replace("'./ui-primitives.js'", JSON.stringify(uiPrimitivesModuleUrl))
-    .replace("'./tab-nav.js'", JSON.stringify(tabNavModuleUrl))
-    .replace("'./workflow-badges.js'", JSON.stringify(workflowBadgesModuleUrl));
-  const repositoryWorkflowsModuleUrl = `data:text/javascript;charset=utf-8,${encodeURIComponent(repositoryWorkflowsSource)}`;
-
   const workflowIdentitySource = readFileSync(new URL('../../src/components/workflow-identity.js', import.meta.url), 'utf8')
     .replace("'../dom.js'", JSON.stringify(domModuleUrl))
     .replace("'./link-content.js'", JSON.stringify(linkContentModuleUrl))
@@ -162,9 +142,9 @@ function buildPresenterModuleUrl() {
   const workflowDetailSource = readFileSync(new URL('../../src/components/workflow-detail.js', import.meta.url), 'utf8')
     .replace("'../dom.js'", JSON.stringify(domModuleUrl))
     .replace("'../octicons.js'", JSON.stringify(octiconsModuleUrl))
-    .replace("'./report-list.js'", JSON.stringify(reportListModuleUrl))
     .replace("'./tab-nav.js'", JSON.stringify(tabNavModuleUrl))
-    .replace("'./workflow-identity.js'", JSON.stringify(workflowIdentityModuleUrl));
+    .replace("'./workflow-identity.js'", JSON.stringify(workflowIdentityModuleUrl))
+    .replace("'./route-empty-state.js'", JSON.stringify(routeStateModuleUrl));
   const workflowDetailModuleUrl = `data:text/javascript;charset=utf-8,${encodeURIComponent(workflowDetailSource)}`;
   const workflowRuntimeSource = readFileSync(new URL('../../src/components/workflow-runtime.js', import.meta.url), 'utf8')
     .replace("'../dom.js'", JSON.stringify(domModuleUrl))
@@ -176,7 +156,9 @@ function buildPresenterModuleUrl() {
     .replace("'./run-classification.js'", JSON.stringify(runClassificationModuleUrl))
     .replace("'./ui-primitives.js'", JSON.stringify(uiPrimitivesModuleUrl))
     .replace("'./view-chrome.js'", JSON.stringify(viewChromeModuleUrl))
-    .replace("'./workflow-identity.js'", JSON.stringify(workflowIdentityModuleUrl));
+    .replace("'./workflow-identity.js'", JSON.stringify(workflowIdentityModuleUrl))
+    .replace("'./tab-nav.js'", JSON.stringify(tabNavModuleUrl))
+    .replace("'./route-empty-state.js'", JSON.stringify(routeStateModuleUrl));
   const workflowRuntimeModuleUrl = `data:text/javascript;charset=utf-8,${encodeURIComponent(workflowRuntimeSource)}`;
 
   const outcomeDetailSource = readFileSync(new URL('../../src/components/outcome-detail.js', import.meta.url), 'utf8')
@@ -185,13 +167,19 @@ function buildPresenterModuleUrl() {
     .replace("'./badge.js'", JSON.stringify(badgeModuleUrl))
     .replace("'./link-content.js'", JSON.stringify(linkContentModuleUrl))
     .replace("'./ui-primitives.js'", JSON.stringify(uiPrimitivesModuleUrl))
-    .replace("'./view-chrome.js'", JSON.stringify(viewChromeModuleUrl));
+    .replace("'./view-chrome.js'", JSON.stringify(viewChromeModuleUrl))
+    .replace("'./route-empty-state.js'", JSON.stringify(routeStateModuleUrl));
   const outcomeDetailModuleUrl = `data:text/javascript;charset=utf-8,${encodeURIComponent(outcomeDetailSource)}`;
 
   const runtimeDataSource = readFileSync(new URL('../../src/runtime-data.js', import.meta.url), 'utf8')
     .replace("'./components/count-formatters.js'", JSON.stringify(countFormattersModuleUrl))
     .replace("'./components/dispatch-type-classification.json'", JSON.stringify(dispatchTypeClassificationUrl));
   const runtimeDataModuleUrl = `data:text/javascript;charset=utf-8,${encodeURIComponent(runtimeDataSource)}`;
+
+  const anomalyReadinessSource = readFileSync(new URL('../../src/components/anomaly-readiness.js', import.meta.url), 'utf8')
+    .replace("'../dom.js'", JSON.stringify(domModuleUrl))
+    .replace("'../octicons.js'", JSON.stringify(octiconsModuleUrl));
+  const anomalyReadinessModuleUrl = `data:text/javascript;charset=utf-8,${encodeURIComponent(anomalyReadinessSource)}`;
 
   const uiElementsSource = readFileSync(new URL('../../src/components/ui-elements.js', import.meta.url), 'utf8')
     .replace("'../dom.js'", JSON.stringify(domModuleUrl))
@@ -201,12 +189,12 @@ function buildPresenterModuleUrl() {
     .replace("'./link-content.js'", JSON.stringify(linkContentModuleUrl))
     .replace("'./packages-view.js'", JSON.stringify(packagesViewModuleUrl))
     .replace("'./package-detail.js'", JSON.stringify(packageDetailModuleUrl))
-    .replace("'./repository-workflows.js'", JSON.stringify(repositoryWorkflowsModuleUrl))
     .replace("'./workflow-detail.js'", JSON.stringify(workflowDetailModuleUrl))
     .replace("'./workflow-runtime.js'", JSON.stringify(workflowRuntimeModuleUrl))
     .replace("'./outcome-detail.js'", JSON.stringify(outcomeDetailModuleUrl))
     .replace("'./ui-primitives.js'", JSON.stringify(uiPrimitivesModuleUrl))
-    .replace("'./view-chrome.js'", JSON.stringify(viewChromeModuleUrl));
+    .replace("'./view-chrome.js'", JSON.stringify(viewChromeModuleUrl))
+    .replace("'./anomaly-readiness.js'", JSON.stringify(anomalyReadinessModuleUrl));
   const uiElementsModuleUrl = `data:text/javascript;charset=utf-8,${encodeURIComponent(uiElementsSource)}`;
 
   const dataViewSource = readFileSync(new URL('../../src/components/data-view.js', import.meta.url), 'utf8')
@@ -466,6 +454,7 @@ test('DLS-PAGE-002 DLS-PAGE-014 built-in overview page renders the report-style 
   `);
 
   await expect(page.getByRole('heading', { name: 'Overview', exact: true, level: 1 })).toBeVisible();
+  await expect(page.locator('[data-page-mode]')).toBeHidden();
   await expect(page.locator('.nav-section-label')).toHaveCount(1);
   await expect(page.locator('.nav-section-label')).toHaveText(['Attention']);
   await expect(page.locator('.overview-page')).toHaveAttribute('data-page-kind', 'custom');
@@ -509,6 +498,152 @@ test('DLS-PAGE-002 DLS-PAGE-014 built-in overview page renders the report-style 
   await expect(page).toHaveURL(/#page-runtime\?section=runtime-observed-root-episodes-heading$/);
   await expect(page.locator('[data-page-id="runtime"]')).toBeVisible();
   await expect(page.locator('#runtime-observed-root-episodes-heading')).toBeInViewport();
+});
+
+test('built-in repositories page keeps repository scope above the run metadata', async ({ page }) => {
+  const presenterModuleUrl = buildPresenterModuleUrl();
+  await page.setViewportSize({ width: 1000, height: 900 });
+
+  await page.setContent(`
+    <div id="root"></div>
+    <script type="module">
+      import { renderDashboard } from ${JSON.stringify(presenterModuleUrl)};
+
+      const metadata = {
+        'source-id': 'repositories-layout-fixture',
+        'source-kind': 'fixture',
+        'as-of': '2026-09-01T03:00:00Z',
+        'retrieved-at': '2026-09-01T03:01:00Z',
+        'coverage-start': '2026-08-31T03:00:00Z',
+        'coverage-end': '2026-09-01T03:00:00Z',
+        completeness: 'complete',
+        freshness: 'fresh',
+        availability: 'available'
+      };
+      const emptySource = (source) => ({ source, rows: [], metadata });
+      const sources = {
+        repositories: {
+          source: 'repositories',
+          rows: [{ organization: 'githubnext', repository: 'central-agentic-ops' }],
+          metadata
+        },
+        runs: emptySource('runs'),
+        usage: emptySource('usage'),
+        workflows: emptySource('workflows'),
+        outcomes: emptySource('outcomes'),
+        'operational-values': emptySource('operational-values')
+      };
+      const dashboardDocument = {
+        languageVersion: '0.1.0',
+        dashboard: {
+          id: 'repositories-layout',
+          title: 'Repositories Layout',
+          pages: [
+            {
+              id: 'repositories',
+              kind: 'built-in',
+              page: 'repositories',
+              title: 'Repositories'
+            }
+          ],
+          navigation: [{ label: 'Explore', pages: ['repositories'] }]
+        }
+      };
+
+      document.querySelector('#root').append(renderDashboard({ document: dashboardDocument, sources }));
+    </script>
+  `);
+
+  const cells = page.locator('.context-summary > div');
+  await expect(cells).toHaveCount(3);
+  const boxes = await cells.evaluateAll((elements) => elements.map((element) => {
+    const { x, y, width } = element.getBoundingClientRect();
+    return { x, y, width };
+  }));
+
+  expect(boxes[1].y).toBeGreaterThan(boxes[0].y);
+  expect(boxes[2].y).toBe(boxes[1].y);
+  expect(boxes[2].x).toBeGreaterThan(boxes[1].x);
+  expect(boxes[0].x).toBeCloseTo(boxes[1].x, 0);
+  expect(boxes[0].x + boxes[0].width).toBeCloseTo(boxes[2].x + boxes[2].width, 0);
+});
+
+test('pie charts match the report layout at medium viewport widths', async ({ page }) => {
+  const presenterModuleUrl = buildPresenterModuleUrl();
+  await page.setViewportSize({ width: 800, height: 900 });
+
+  await page.setContent(`
+    <div id="root"></div>
+    <script type="module">
+      import { renderDashboard } from ${JSON.stringify(presenterModuleUrl)};
+
+      const dashboardDocument = {
+        languageVersion: '0.1.0',
+        dashboard: {
+          id: 'pie-layout',
+          title: 'Pie Layout',
+          pages: [{
+            id: 'cost',
+            kind: 'custom',
+            title: 'Cost',
+            views: [{
+              id: 'repository-allocation',
+              title: 'AI Credit usage by AW repository',
+              description: 'Read-only usage reported by AW runs.',
+              data: { source: 'usage' },
+              mark: 'chart',
+              chart: 'pie',
+              encoding: {
+                x: { field: 'repository', type: 'nominal', title: 'Repository' },
+                y: { field: 'aic', type: 'quantitative', aggregate: 'sum', title: 'Total AIC' }
+              }
+            }]
+          }],
+          navigation: [{ label: 'Investigate', pages: ['cost'] }]
+        }
+      };
+      const sources = {
+        usage: {
+          source: 'usage',
+          rows: [
+            { repository: 'central-agentic-ops', aic: 5 },
+            { repository: 'service', aic: 3 }
+          ],
+          metadata: {
+            'source-id': 'pie-layout-fixture',
+            'source-kind': 'fixture',
+            'as-of': '2026-09-01T03:00:00Z',
+            'retrieved-at': '2026-09-01T03:01:00Z',
+            completeness: 'complete',
+            freshness: 'fresh',
+            availability: 'available'
+          }
+        }
+      };
+
+      document.querySelector('#root').append(renderDashboard({ document: dashboardDocument, sources }));
+    </script>
+  `);
+
+  const heading = page.getByRole('heading', { name: 'AI Credit usage by AW repository' });
+  const description = page.locator('.chart-view-pie > .view-description');
+  const layout = page.locator('.pie-chart-layout');
+  const chart = layout.locator('.pie-chart-widget');
+  const legend = layout.locator('.chart-legend-pie');
+  const [headingBox, descriptionBox, layoutBox, chartBox, legendBox] = await Promise.all(
+    [heading, description, layout, chart, legend].map((locator) => locator.boundingBox())
+  );
+
+  expect(headingBox).not.toBeNull();
+  expect(descriptionBox).not.toBeNull();
+  expect(layoutBox).not.toBeNull();
+  expect(chartBox).not.toBeNull();
+  expect(legendBox).not.toBeNull();
+  expect(layoutBox?.x).toBeCloseTo(headingBox?.x ?? 0, 0);
+  expect(layoutBox?.y).toBeGreaterThan((descriptionBox?.y ?? 0) + (descriptionBox?.height ?? 0));
+  expect(legendBox?.x).toBeGreaterThan((chartBox?.x ?? 0) + (chartBox?.width ?? 0));
+  expect((legendBox?.y ?? 0) + (legendBox?.height ?? 0) / 2)
+    .toBeCloseTo((chartBox?.y ?? 0) + (chartBox?.height ?? 0) / 2, 0);
 });
 
 test('DLS-PAGE-014 DLS-PAGE-015 built-in packages page renders report-style mode filters, AIC utilization, and run trends in browser', async ({ page }) => {
@@ -560,26 +695,62 @@ test('DLS-PAGE-014 DLS-PAGE-015 built-in packages page renders report-style mode
               kind: 'custom',
               title: 'Package',
               route: { 'hash-query-parameter': 'package' },
-              views: [{
-                id: 'package-detail',
-                title: 'Orchestrator and workers',
-                data: { sources: ['workflows'] },
-                mark: 'element',
-                element: 'package-detail'
-              }]
+              views: [
+                {
+                  id: 'package-workflow-navigation',
+                  title: 'Package workflows',
+                  data: { sources: ['workflows'] },
+                  mark: 'element',
+                  element: 'package-detail'
+                },
+                {
+                  id: 'package-workflow-table',
+                  title: 'Orchestrator and workers',
+                  data: { source: 'packaged-workflows', 'route-field': 'package' },
+                  mark: 'table',
+                  controls: 'interactive',
+                  encoding: {
+                    columns: [
+                      { field: 'workflow-role', type: 'ordinal', title: 'Role', display: 'label' },
+                      { field: 'workflow-name', type: 'nominal', title: 'Workflow' },
+                      { field: 'workflow', type: 'nominal', title: 'Definition' },
+                      { field: 'rollout-mode', type: 'nominal', title: 'Mode', display: 'mode' },
+                      { field: 'workflow-active', type: 'nominal', title: 'Registration', display: 'active-state' }
+                    ]
+                  }
+                }
+              ]
             },
             {
               id: 'package-reports',
               kind: 'custom',
               title: 'Package',
               route: { 'hash-query-parameter': 'package' },
-              views: [{
-                id: 'package-reports',
-                title: 'Reports',
-                data: { sources: ['workflows', 'outcomes'] },
-                mark: 'element',
-                element: 'package-reports'
-              }]
+              views: [
+                {
+                  id: 'package-report-navigation',
+                  title: 'Package reports',
+                  data: { sources: ['workflows'] },
+                  mark: 'element',
+                  element: 'package-reports'
+                },
+                {
+                  id: 'package-report-table',
+                  title: 'Reports',
+                  data: { source: 'package-reports', 'route-field': 'package' },
+                  mark: 'table',
+                  controls: 'interactive',
+                  encoding: {
+                    columns: [
+                      { field: 'outcome-title', type: 'nominal', title: 'Report', display: 'outcome-link' },
+                      { field: 'outcome-status', type: 'nominal', title: 'Status', display: 'status' },
+                      { field: 'rollout-mode', type: 'nominal', title: 'Mode', display: 'mode' },
+                      { field: 'outcome-category', type: 'nominal', title: 'Type' },
+                      { field: 'observed-at', type: 'temporal', title: 'Updated' }
+                    ]
+                  }
+                }
+              ]
             }
           ]
         }
@@ -619,8 +790,10 @@ test('DLS-PAGE-014 DLS-PAGE-015 built-in packages page renders report-style mode
         outcomes: {
           source: 'outcomes',
           rows: [
-            { package: 'ambient-context', workflow: '.github/workflows/ambient-context.md', 'workflow-name': 'Ambient Context', 'safe-output': 'ambient-review', 'outcome-title': 'Review ambient context proposal', 'outcome-summary': 'A review proposal is ready.', 'outcome-category': 'issue', 'outcome-status': 'open', 'outcome-state': 'pending', 'rollout-mode': 'review', 'observed-at': '2026-08-29T18:05:00Z' },
-            { package: 'ambient-context', workflow: '.github/workflows/ambient-context-worker.md', 'workflow-name': 'Ambient Context Worker', 'safe-output': 'ambient-live', 'outcome-title': 'Reconcile ambient context', 'outcome-summary': 'Updated durable guidance.', 'outcome-category': 'pull-request', 'outcome-status': 'closed', 'outcome-state': 'lifecycle-close', 'rollout-mode': 'live', 'observed-at': '2026-08-28T18:05:00Z' }
+            { package: 'ambient-context', workflow: '.github/workflows/ambient-context.md', 'workflow-name': 'Ambient Context', run: '3', 'run-conclusion': 'success', 'safe-output': 'ambient-review', 'outcome-title': 'Review ambient context proposal', 'outcome-summary': 'A review proposal is ready.', 'outcome-category': 'issue', 'outcome-status': 'open', 'outcome-state': 'pending', 'rollout-mode': 'review', 'published-at': '2026-08-29T18:00:00Z', 'observed-at': '2026-08-29T18:05:00Z' },
+            { package: 'ambient-context', workflow: '.github/workflows/ambient-context-worker.md', 'workflow-name': 'Ambient Context Worker', run: '4', 'run-conclusion': 'success', 'safe-output': 'ambient-live', 'outcome-title': 'Reconcile ambient context', 'outcome-summary': 'Updated durable guidance.', 'outcome-category': 'pull-request', 'outcome-status': 'closed', 'outcome-state': 'lifecycle-close', 'rollout-mode': 'live', 'published-at': '2026-08-28T18:00:00Z', 'observed-at': '2026-08-28T18:05:00Z' },
+            { package: 'aw-maintenance', workflow: '.github/workflows/aw-maintenance.md', run: '1', 'run-conclusion': 'success', 'safe-output': 'maintenance-review', 'rollout-mode': 'review', 'published-at': '2026-08-28T10:00:00Z', 'observed-at': '2026-08-28T10:00:00Z' },
+            { package: 'aw-maintenance', workflow: '.github/workflows/aw-maintenance.md', run: '2', 'run-conclusion': 'failure', 'safe-output': 'maintenance-live', 'rollout-mode': 'live', 'published-at': '2026-08-29T10:00:00Z', 'observed-at': '2026-08-29T10:00:00Z' }
           ],
           metadata
         }
@@ -656,17 +829,19 @@ test('DLS-PAGE-014 DLS-PAGE-015 built-in packages page renders report-style mode
   await expect(page.locator('[data-nav-page-id="packages"]')).toHaveAttribute('aria-current', 'page');
   await expect(page.getByRole('navigation', { name: 'Ambient Context views' })).toContainText('InsightsWorkflowsReports');
   await expect(page.getByRole('heading', { name: 'Orchestrator and workers', level: 3 })).toBeVisible();
-  await expect(page.locator('[data-workflow-role="orchestrator"]')).toHaveCount(1);
-  await expect(page.locator('[data-workflow-role="worker"]')).toHaveCount(1);
+  const packageWorkflowRows = page.locator('[data-page-id="package-detail"] .custom-table tbody tr');
+  await expect(packageWorkflowRows).toHaveCount(2);
+  await expect(packageWorkflowRows.first()).toContainText('OrchestratorAmbient Context');
+  await expect(packageWorkflowRows.nth(1)).toContainText('WorkerAmbient Context Worker');
 
   await page.getByRole('navigation', { name: 'Ambient Context views' }).getByRole('link', { name: 'Reports' }).click();
   await expect(page).toHaveURL(/#page-package-reports\?package=ambient-context$/);
-  await expect(page.getByRole('heading', { name: 'Reports', level: 2 })).toBeVisible();
-  await expect(page.locator('.package-report-row')).toHaveCount(2);
-  await expect(page.locator('.package-report-header')).toContainText('1 Open1 Resolved');
-  await page.getByRole('tab', { name: 'Live' }).click();
-  await expect(page.locator('.package-report-row')).toHaveCount(1);
-  await expect(page.locator('.package-report-row')).toContainText('Reconcile ambient context');
+  await expect(page.getByRole('heading', { name: 'Reports', level: 3 })).toBeVisible();
+  const packageReportRows = page.locator('[data-page-id="package-reports"] .custom-table tbody tr');
+  await expect(packageReportRows).toHaveCount(2);
+  await page.getByRole('searchbox', { name: 'Filter Reports' }).fill('Reconcile');
+  await expect(packageReportRows.filter({ visible: true })).toHaveCount(1);
+  await expect(packageReportRows.filter({ visible: true })).toContainText('Reconcile ambient context');
 
   await page.locator('[data-nav-page-id="packages"]').click();
   await page.getByRole('tab', { name: 'All' }).focus();
@@ -678,7 +853,7 @@ test('DLS-PAGE-014 DLS-PAGE-015 built-in packages page renders report-style mode
   await page.getByRole('tab', { name: 'Live' }).click();
   await expect(page.getByRole('tab', { name: 'Live' })).toHaveAttribute('aria-selected', 'true');
   await expect(page.getByRole('heading', { name: 'Live runs over time', level: 3 })).toBeVisible();
-  await expect(page.locator('.package-trend-panel header')).toContainText('1as of');
+  await expect(page.locator('.package-trend-panel header')).toContainText('2as of');
 
   await page.setViewportSize({ width: 600, height: 900 });
   const cards = page.locator('.package-utilization-card');
@@ -1358,9 +1533,15 @@ test('repository page template follows its JSON-declared hash query route in bro
             views: [{
               id: 'repository-workflows',
               title: 'Agentic workflows',
-              data: { sources: ['workflows'] },
-              mark: 'element',
-              element: 'repository-workflows'
+              data: { source: 'repository-workflows', 'route-field': 'repository' },
+              mark: 'table',
+              controls: 'static',
+              encoding: {
+                columns: [
+                  { field: 'workflow-name', type: 'nominal', title: 'Workflow' },
+                  { field: 'workflow-active', type: 'nominal', title: 'State', display: 'active-state' }
+                ]
+              }
             }]
           }]
         }
@@ -1380,17 +1561,16 @@ test('repository page template follows its JSON-declared hash query route in bro
   `);
 
   await expect(page.getByRole('heading', { level: 1 })).toHaveText('octo-org/octo-repo');
-  await expect(page.locator('.repository-view')).toHaveAttribute('data-repository', 'octo-org/octo-repo');
-  await expect(page.locator('.repository-workflow-table')).toContainText('Review');
-  await expect(page.locator('.repository-workflow-table')).not.toContainText('Other');
+  await expect(page.locator('[data-route-view] .custom-table')).toContainText('Review');
+  await expect(page.locator('[data-route-view] .custom-table')).not.toContainText('Other');
 
   await page.evaluate(() => {
     window.location.hash = '#page-repository-detail?repository=other-org%2Fother-repo';
   });
 
   await expect(page.getByRole('heading', { level: 1 })).toHaveText('other-org/other-repo');
-  await expect(page.locator('.repository-workflow-table')).toContainText('Other');
-  await expect(page.locator('.repository-workflow-table')).not.toContainText('Review');
+  await expect(page.locator('[data-route-view] .custom-table')).toContainText('Other');
+  await expect(page.locator('[data-route-view] .custom-table')).not.toContainText('Review');
 });
 
 test('workflow page template follows its JSON-declared route and renders attributed reports', async ({ page }) => {
@@ -1442,13 +1622,30 @@ test('workflow page template follows its JSON-declared route and renders attribu
               title: 'Workflow',
               description: 'Workflow reports.',
               route: { 'hash-query-parameter': 'workflow' },
-              views: [{
-                id: 'workflow-reports',
-                title: 'Workflow reports',
-                data: { sources: ['workflows', 'outcomes'] },
-                mark: 'element',
-                element: 'workflow-detail'
-              }]
+              views: [
+                {
+                  id: 'workflow-reports',
+                  title: 'Workflow reports',
+                  data: { sources: ['workflows'] },
+                  mark: 'element',
+                  element: 'workflow-detail'
+                },
+                {
+                  id: 'workflow-report-table',
+                  title: 'Reports',
+                  data: { source: 'workflow-reports', 'route-field': 'workflow-route' },
+                  mark: 'table',
+                  encoding: {
+                    columns: [
+                      { field: 'outcome-title', type: 'nominal', title: 'Report', display: 'outcome-link' },
+                      { field: 'outcome-status', type: 'nominal', title: 'Status', display: 'status' },
+                      { field: 'rollout-mode', type: 'nominal', title: 'Mode', display: 'mode' },
+                      { field: 'outcome-category', type: 'nominal', title: 'Type' },
+                      { field: 'observed-at', type: 'temporal', title: 'Updated' }
+                    ]
+                  }
+                }
+              ]
             },
             {
               id: 'outcome-detail',
@@ -1508,10 +1705,10 @@ test('workflow page template follows its JSON-declared route and renders attribu
   await expect(page.locator('[data-breadcrumb-root]')).toHaveText('Repositories');
   await expect(page.locator('[data-breadcrumb-dashboard]')).toHaveText('githubnext/central-agentic-ops');
   await expect(page.locator('.workflow-identity')).toContainText('.github/workflows/ambient-context.md');
-  await expect(page.locator('.workflow-reports')).toContainText('Debug ambient context workflow failure');
-  await expect(page.locator('.workflow-report-row .status-success')).toHaveText('Closed');
-  await expect(page.locator('.workflow-report-row .mode-review')).toHaveText('Review');
-  await page.locator('.workflow-report-title a').click();
+  await expect(page.locator('.custom-table')).toContainText('Debug ambient context workflow failure');
+  await expect(page.locator('.custom-table .status-success')).toHaveText('closed');
+  await expect(page.locator('.custom-table .mode-review')).toHaveText('review');
+  await page.locator('.custom-table tbody a').first().click();
   await expect(page.getByRole('heading', { level: 1 })).toHaveText('Debug ambient context workflow failure');
   await expect(page.locator('.outcome-meta a', { hasText: 'Ambient Context' })).toHaveAttribute(
     'href',
@@ -1659,6 +1856,7 @@ test('outcome page template follows its JSON-declared hash query route in browse
               id: 'outcome-record',
               title: 'Outcome',
               data: { sources: ['outcomes'] },
+              'title-link': { 'href-field': 'external-link', 'identifier-field': 'outcome-number' },
               mark: 'element',
               element: 'outcome-detail'
             }]
@@ -1673,6 +1871,7 @@ test('outcome page template follows its JSON-declared hash query route in browse
             workflow: '.github/workflows/daily.md',
             'workflow-name': 'Daily review',
             'safe-output': 'outcome-1',
+            'outcome-number': 403,
             'outcome-title': 'Parity verification sweep',
             'outcome-body-html': '<h2>Summary</h2><p>All checks passed.</p>',
             'outcome-category': 'pull-request',
@@ -1680,7 +1879,12 @@ test('outcome page template follows its JSON-declared hash query route in browse
             'outcome-state': 'lifecycle-close',
             'rollout-mode': 'live',
             'published-at': '2026-08-31T01:26:00Z',
-            'observed-at': '2026-08-31T01:49:00Z'
+            'observed-at': '2026-08-31T01:49:00Z',
+            'external-link': {
+              relation: 'external',
+              href: 'https://github.com/githubnext/central-agentic-ops/issues/403',
+              label: 'View output'
+            }
           }]
         }
       };
@@ -1689,6 +1893,8 @@ test('outcome page template follows its JSON-declared hash query route in browse
   `);
 
   await expect(page.getByRole('heading', { level: 1 })).toHaveText('Parity verification sweep');
+  await expect(page.locator('[data-page-title-link]')).toHaveText('#403');
+  await expect(page.locator('[data-page-title-link]')).toHaveAttribute('href', 'https://github.com/githubnext/central-agentic-ops/issues/403');
   await expect(page.locator('.overview-header [data-page-description]')).toHaveText('Daily review · Pull Request · Closed');
   await expect(page.locator('.outcome-detail')).toHaveAttribute('data-outcome', 'outcome-1');
   await expect(page.locator('.discussion-post')).toContainText('All checks passed.');
@@ -1845,4 +2051,42 @@ test('DLS-SAFE-004 runtime links with embedded credentials, ftp schemes, and bla
   await expect(page.locator('a[href^="ftp:"]').first()).toHaveCount(0);
   await expect(page.locator('body')).not.toContainText('Credentialed Run');
   await expect(page.locator('body')).not.toContainText('FTP Run');
+});
+
+test('desktop navigation collapses to an icon rail and expands back to text', async ({ page }) => {
+  const presenterModuleUrl = buildPresenterModuleUrl();
+  await page.setViewportSize({ width: 1200, height: 800 });
+  await page.setContent(`
+    <div id="root"></div>
+    <script type="module">
+      import { renderDashboard } from ${JSON.stringify(presenterModuleUrl)};
+      document.querySelector('#root').append(renderDashboard({
+        document: {
+          languageVersion: '0.1.0',
+          dashboard: {
+            id: 'sidebar-toggle-dashboard',
+            title: 'Sidebar Toggle',
+            pages: [
+              { id: 'overview', kind: 'custom', title: 'Overview', icon: 'home', views: [] },
+              { id: 'runs', kind: 'custom', title: 'Runs', icon: 'play', views: [] }
+            ]
+          }
+        },
+        sources: {}
+      }));
+    </script>
+  `);
+
+  const toggle = page.getByRole('button', { name: 'Collapse navigation' });
+  await expect(page.locator('.org-sidebar')).toHaveCSS('width', '232px');
+  await toggle.click();
+
+  await expect(page.locator('.app-shell')).toHaveClass(/sidebar-collapsed/);
+  await expect(page.locator('.org-sidebar')).toHaveCSS('width', '64px');
+  await expect(page.getByRole('button', { name: 'Expand navigation' })).toHaveAttribute('aria-expanded', 'false');
+  await expect(page.locator('.nav-label').first()).toBeHidden();
+
+  await page.getByRole('button', { name: 'Expand navigation' }).click();
+  await expect(page.locator('.app-shell')).not.toHaveClass(/sidebar-collapsed/);
+  await expect(page.locator('.nav-label').first()).toBeVisible();
 });

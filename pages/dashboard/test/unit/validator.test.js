@@ -127,7 +127,7 @@ describe('dashboard document validation', () => {
     const document = JSON.parse(authoritativeDashboardSource);
     const repositoryPageIndex = document.dashboard.pages.findIndex((/** @type {{ id: string }} */ page) => page.id === 'repository-detail');
     const repositoryPage = document.dashboard.pages[repositoryPageIndex];
-    expect(repositoryPage.route).toEqual({ 'hash-query-parameter': 'repository' });
+    expect(repositoryPage.route).toEqual({ 'hash-query-parameter': 'repository', 'navigation-page': 'repositories' });
     expect(validateDashboardDocument(JSON.stringify(document)).ok).toBe(true);
     repositoryPage.route = { 'navigation-page': 'repositories' };
     expect(validateDashboardDocument(JSON.stringify(document)).ok).toBe(true);
@@ -201,6 +201,58 @@ describe('dashboard document validation', () => {
       expect(builtInRoute.errors).toContainEqual(expect.objectContaining({
         code: 'DLS-E004',
         path: '$.dashboard.pages[0].route'
+      }));
+    }
+  });
+
+  it('DLS-VIEW-029 validates route fields against the selected logical source', () => {
+    const document = JSON.parse(authoritativeDashboardSource);
+    const repositoryPageIndex = document.dashboard.pages.findIndex((/** @type {{ id: string }} */ page) => page.id === 'repository-detail');
+    const repositoryPage = document.dashboard.pages[repositoryPageIndex];
+    expect(repositoryPage.views.every((/** @type {{ data: { 'route-field'?: string } }} */ view) => view.data['route-field'] === 'repository')).toBe(true);
+
+    repositoryPage.views[0].data['route-field'] = 'missing-field';
+    const invalid = validateDashboardDocument(JSON.stringify(document));
+
+    expect(invalid.ok).toBe(false);
+    if (!invalid.ok) {
+      expect(invalid.errors).toContainEqual(expect.objectContaining({
+        code: 'DLS-E010',
+        path: `$.dashboard.pages[${repositoryPageIndex}].views[0].data.route-field`
+      }));
+    }
+  });
+
+  it('DLS-VIEW-030 validates JSON-configured title links against one selected source', () => {
+    const document = JSON.parse(authoritativeDashboardSource);
+    const outcomePage = document.dashboard.pages.find((/** @type {{ id: string }} */ page) => page.id === 'outcome-detail');
+    const outcomeView = outcomePage.views[0];
+    expect(outcomeView['title-link']).toEqual({
+      'href-field': 'external-link',
+      'identifier-field': 'outcome-number'
+    });
+    expect(validateDashboardDocument(JSON.stringify(document)).ok).toBe(true);
+
+    outcomeView['title-link'] = {
+      'href-field': 'run-link',
+      'identifier-field': 'run'
+    };
+    expect(validateDashboardDocument(JSON.stringify(document)).ok).toBe(true);
+
+    outcomeView['title-link'] = {
+      'href-field': 'outcome-title',
+      'identifier-field': 'external-link'
+    };
+    const invalid = validateDashboardDocument(JSON.stringify(document));
+    expect(invalid.ok).toBe(false);
+    if (!invalid.ok) {
+      expect(invalid.errors).toContainEqual(expect.objectContaining({
+        code: 'DLS-E009',
+        path: expect.stringMatching(/\.title-link\.href-field$/)
+      }));
+      expect(invalid.errors).toContainEqual(expect.objectContaining({
+        code: 'DLS-E010',
+        path: expect.stringMatching(/\.title-link\.identifier-field$/)
       }));
     }
   });
@@ -2099,6 +2151,54 @@ dashboard:
 `);
 
     expect(result.ok).toBe(true);
+  });
+
+  it('DLS-VIEW-028 validates the table column-summaries option', () => {
+    const valid = validateDashboardDocument(`language-version: "0.1.0"
+dashboard:
+  id: valid-column-summaries
+  title: Valid Column Summaries
+  pages:
+    - id: custom-page
+      kind: custom
+      views:
+        - id: table-view
+          data:
+            source: runs
+          mark: table
+          column-summaries: false
+          encoding:
+            columns:
+              - field: run
+`);
+    const invalid = validateDashboardDocument(`language-version: "0.1.0"
+dashboard:
+  id: invalid-column-summaries
+  title: Invalid Column Summaries
+  pages:
+    - id: custom-page
+      kind: custom
+      views:
+        - id: metric-view
+          data:
+            source: runs
+          mark: metric
+          column-summaries: disabled
+          encoding:
+            value:
+              field: run
+              aggregate: count
+`);
+
+    expect(valid.ok).toBe(true);
+    expect(invalid.ok).toBe(false);
+    if (!invalid.ok) {
+      expect(invalid.errors).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({ code: 'DLS-E003', path: '$.dashboard.pages[0].views[0].column-summaries' })
+        ])
+      );
+    }
   });
 
   it('DLS-SEM-004 DLS-SEM-005 DLS-SEM-006 DLS-SEM-008 DLS-SEM-009 DLS-SEM-015 reject non-canonical intrinsic enumerations in filters', () => {

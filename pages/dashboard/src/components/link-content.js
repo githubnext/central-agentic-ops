@@ -87,6 +87,43 @@ export function renderWorkflowRunLink(row, label, trailingContent) {
 }
 
 /**
+ * Resolves a compact #identifier link from JSON-selected row fields.
+ * @param {Record<string, unknown>} row
+ * @param {unknown} config
+ * @returns {SafeLink | null}
+ */
+export function resolveTitleLink(row, config) {
+  if (!isPlainObject(config)) return null;
+  const hrefField = config['href-field'];
+  const identifierField = config['identifier-field'];
+  if (typeof hrefField !== 'string' || typeof identifierField !== 'string') return null;
+  const link = findLink(row, hrefField);
+  const value = row[identifierField];
+  const identifier = typeof value === 'string' || typeof value === 'number' ? String(value).trim() : '';
+  if (!link || identifier.length === 0 || identifier.length > 100) return null;
+  return {
+    href: link.externalHref ?? link.href,
+    label: `#${identifier}`
+  };
+}
+
+/**
+ * Renders a durable-output title as an internal detail link.
+ * @param {Record<string, unknown>} row
+ * @param {string} label
+ * @returns {string | HTMLElement}
+ */
+export function renderOutcomeLink(row, label) {
+  const outcomeId = typeof row['safe-output'] === 'string' ? row['safe-output'].trim() : '';
+  return outcomeId && outcomeId.length <= 700
+    ? h('a', {
+        href: `#page-outcome-detail?outcome=${encodeURIComponent(outcomeId)}`,
+        title: label
+      }, label)
+    : label;
+}
+
+/**
  * @param {string | HTMLElement} value
  * @param {SafeLink | null} link
  * @returns {string | HTMLElement | Array<string | HTMLElement | null>}

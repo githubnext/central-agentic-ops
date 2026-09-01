@@ -75,7 +75,7 @@ Evidence paths below are relative to:
 - `src/components/link-content.js` — safe-link discovery and external-link/value composition.
 - `src/components/linked-text.js` — linked text and entity-aware table-cell rendering.
 - `src/components/packages-view.js` — package mode tabs, utilization, coverage, allowances, and trends.
-- `src/components/report-list.js` — shared durable-report list/table rendering, filtering, counts, and empty states for package and workflow views.
+- `src/components/route-empty-state.js` — shared route-scoped select, not-found, and unavailable state rendering.
 - `src/components/summary-copy.js` — shared summary-count copy.
 - `src/components/table-region.js` — reusable table regions, headers, bodies, and empty states.
 - `src/components/tab-nav.js` — shared linked and interactive tab navigation with roving tabindex keyboard support.
@@ -156,5 +156,37 @@ Evidence paths below are relative to:
   - Shared route-scoped empty/unavailable state helper across `src/components/package-detail.js`, `src/components/workflow-detail.js`, and `src/components/repository-workflows.js`.
   - Shared static table-section wrapper across `src/components/packages-view.js`, `src/components/repository-workflows.js`, and report/table custom views.
   - Shared repository/package/workflow tab-and-identity chrome across `src/components/package-detail.js`, `src/components/workflow-detail.js`, and `src/components/repository-workflows.js`.
+
+## 2026-09-01 repository detail entry
+
+- Investigation: selected the repository workflow inventory as the smallest remaining route-scoped JavaScript-only view that could be expressed with generic marks.
+- Declarative specification: replaced the `repository-workflows` element in `dashboard.json` with a metric, status chart, and workflow table bound by `data.route-field`.
+- JSON-shaped data: `repository-data.js` now emits repository detail summary, workflow status, and workflow inventory logical sources.
+- Reusable presentation: generic metric, chart, table, link, badge, empty-state, and route-aware data-view behavior now own repository detail presentation.
+- Preserved evidence boundaries: authored workflow identity, registration state, package attribution, observation time, workflow links, and the repository Actions link remain explicit.
+
+## 2026-09-01 workflow reports entry
+
+- Investigation: selected workflow reports as the smallest remaining route-scoped JavaScript-only catalog that could use generic Dashboard Language marks.
+- Declarative specification: split workflow identity chrome from a JSON-defined report table with route binding, columns, displays, links, sorting, filtering, and empty-state copy.
+- JSON-shaped data: `workflow-data.js` now emits route-keyed `workflow-reports` rows from retained durable-output evidence.
+- Reusable presentation: the shared table, status badge, mode badge, temporal cell, filter, sorting, summary, empty-state, and durable-output link components now own report presentation.
+- Preserved evidence boundaries: only reports attributed to the selected runtime repository and authored workflow are shown, and details remain linked through retained source evidence.
+
+## 2026-09-01 package reports entry
+
+- Investigation: selected package reports as a remaining route-scoped JavaScript catalog that could reuse the generic table mark.
+- Declarative specification: split package navigation chrome from a JSON-defined report table with route binding, columns, displays, links, sorting, filtering, and empty-state copy.
+- JSON-shaped data: `workflow-data.js` now emits package-keyed report rows from explicit package attribution or matching retained workflow inventory.
+- Reusable presentation: removed the specialized report-list renderer and styles; shared table, status badge, mode badge, temporal cell, filter, facet, sorting, summary, empty-state, and durable-output link components now own report presentation.
+- Preserved evidence boundaries: unattributed outcomes remain excluded, explicit package attribution takes precedence, and matching fallback requires workflow identity within the retained repository and organization scope.
+
+## 2026-09-01 package workflow topology entry
+
+- Investigation: selected package workflow topology as a remaining route-scoped JavaScript view that could reuse an existing derived logical source and generic table mark.
+- Declarative specification: split package navigation chrome from a JSON-defined workflow table with route binding, columns, links, badges, filtering, sorting, and empty-state copy.
+- JSON-shaped data: reused the package-keyed `packaged-workflows` source derived from retained workflow inventory without duplicating a second package topology source.
+- Reusable presentation: consolidated package workflow and report tabs, route allocation, and unavailable states into one package-navigation component; shared table and cell components now own topology presentation.
+- Preserved evidence boundaries: the view reports authored orchestrator and worker relationships, registration, and rollout mode without asserting dispatch or execution.
 
 Run-by-run history was removed during compaction; milestones, unresolved questions, current inventory, blockers, and actionable parity work remain above.

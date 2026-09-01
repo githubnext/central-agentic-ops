@@ -102,7 +102,7 @@ function context() {
 }
 
 describe('renderWorkflowDetail', () => {
-  it('renders the selected workflow identity and attributed reports', () => {
+  it('renders the selected workflow identity and report navigation', () => {
     const host = document.createElement('div');
     const allocation = vi.fn();
     host.addEventListener('dashboard-route-allocation', allocation);
@@ -136,23 +136,7 @@ describe('renderWorkflowDetail', () => {
     );
     expect(rendered.querySelector('.workflow-identity > a')?.textContent).toBe('View authored workflow');
     expect(rendered.querySelector('.workflow-identity > a')?.getAttribute('target')).toBe('_blank');
-    expect(rendered.querySelector('.workflow-reports-header')?.textContent).toContain('1 Open1 Resolved');
-    expect([...rendered.querySelectorAll('.workflow-report-title')].map((heading) => heading.textContent)).toEqual([
-      'Open report',
-      'Closed report'
-    ]);
-    expect(rendered.querySelector('.workflow-report-copy a')?.getAttribute('href')).toBe('#page-outcome-detail?outcome=report-open');
-    expect(rendered.querySelector('.workflow-report-row:last-child .status-success')?.textContent).toBe('Closed');
-    expect(rendered.textContent).not.toContain('Other report');
-    const filter = rendered.querySelector('.workflow-reports-search input');
-    expect(filter).toBeInstanceOf(HTMLInputElement);
-    if (filter instanceof HTMLInputElement) {
-      filter.value = 'closed';
-      filter.dispatchEvent(new Event('input'));
-    }
-    expect(rendered.querySelectorAll('.workflow-report-row')).toHaveLength(1);
-    expect(rendered.querySelector('.workflow-reports-header')?.textContent).toContain('0 Open1 Resolved');
-    expect(rendered.querySelector('.workflow-reports-header > div')?.getAttribute('aria-live')).toBe('polite');
+    expect(rendered.textContent).not.toContain('Open report');
     expect(allocation).toHaveBeenCalledOnce();
     expect(allocation.mock.calls[0][0].detail).toEqual({
       title: 'Ambient Context',

@@ -70,6 +70,123 @@ describe('deriveWorkflowSources', () => {
 
     expect(sources['standalone-workflows'].rows[0].repository).toBe('unknown');
   });
+
+  it('omits report rows without a known runtime repository', () => {
+    const sources = deriveWorkflowSources({
+      outcomes: {
+        source: 'outcomes',
+        metadata,
+        rows: [{ 'runtime-repository': 'unknown', workflow: '.github/workflows/dependabot.md' }]
+      }
+    });
+
+    expect(sources['workflow-reports'].rows).toEqual([]);
+  });
+
+  it('emits route-keyed report rows with dashboard detail links', () => {
+    const sources = deriveWorkflowSources({
+      outcomes: {
+        source: 'outcomes',
+        metadata,
+        rows: [
+          {
+            organization: 'githubnext',
+            repository: 'control',
+            workflow: '.github/workflows/dependabot.md',
+            'safe-output': 'issue-2',
+            'outcome-title': 'Newer report',
+            'outcome-status': 'open',
+            'rollout-mode': 'review',
+            'outcome-category': 'issue',
+            'observed-at': '2026-09-01T00:00:00Z',
+            'issue-link': {
+              relation: 'issue',
+              href: 'https://github.com/githubnext/control/issues/2',
+              label: 'View issue 2'
+            },
+            'external-link': {
+              relation: 'external',
+              href: 'https://example.com/report',
+              label: 'View external report'
+            }
+          },
+          {
+            repository: 'target',
+            'runtime-repository': 'githubnext/control',
+            workflow: '.github/workflows/dependabot.md',
+            'safe-output': 'issue-1',
+            'outcome-title': 'Older report',
+            'outcome-state': 'accepted',
+            'published-at': '2026-08-31T00:00:00Z',
+            'run-link': {
+              relation: 'run',
+              href: 'https://github.com/githubnext/control/actions/runs/1',
+              label: 'View run 1'
+            }
+          }
+        ]
+      }
+    });
+
+    expect(sources['workflow-reports'].rows.map((row) => row['outcome-title'])).toEqual([
+      'Newer report',
+      'Older report'
+    ]);
+    expect(sources['workflow-reports'].rows[0]).toEqual(expect.objectContaining({
+      'workflow-route': 'githubnext/control:.github/workflows/dependabot.md',
+      'outcome-status': 'open',
+      'rollout-mode': 'review'
+    }));
+    expect(sources['workflow-reports'].rows[0]['external-link']).toEqual(expect.objectContaining({
+      href: 'https://github.com/githubnext/control/issues/2',
+      relation: 'external',
+      'dashboard-href': '#page-outcome-detail?outcome=issue-2'
+    }));
+    expect(sources['workflow-reports'].metadata).toBe(metadata);
+  });
+
+  it('emits package-keyed report rows using explicit and workflow-derived attribution', () => {
+    const sources = deriveWorkflowSources({
+      workflows: {
+        source: 'workflows',
+        metadata,
+        rows: [workflow({
+          workflow: '.github/workflows/dependabot.md',
+          'workflow-name': 'Dependabot'
+        })]
+      },
+      outcomes: {
+        source: 'outcomes',
+        metadata,
+        rows: [
+          {
+            package: 'ambient-context',
+            'safe-output': 'issue-2',
+            'outcome-title': 'Explicit package report',
+            'observed-at': '2026-09-01T00:00:00Z'
+          },
+          {
+            organization: 'githubnext',
+            repository: 'control',
+            workflow: '.github/workflows/dependabot.lock.yml',
+            'safe-output': 'issue-1',
+            'outcome-title': 'Derived package report',
+            'observed-at': '2026-08-31T00:00:00Z'
+          },
+          {
+            workflow: '.github/workflows/unknown.md',
+            'outcome-title': 'Unattributed report'
+          }
+        ]
+      }
+    });
+
+    expect(sources['package-reports'].rows).toEqual([
+      expect.objectContaining({ package: 'ambient-context', 'outcome-title': 'Explicit package report' }),
+      expect.objectContaining({ package: 'dependabot', 'outcome-title': 'Derived package report' })
+    ]);
+    expect(sources['package-reports'].metadata).toBe(metadata);
+  });
 });
 
 /** @param {Record<string, unknown>} overrides */

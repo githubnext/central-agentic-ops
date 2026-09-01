@@ -4,16 +4,15 @@
 
 import { h } from '../dom.js';
 import { octicon } from '../octicons.js';
-import { formatNumber } from '../view-formatters.js';
 import { findLink } from './link-content.js';
 import { renderPackagesView } from './packages-view.js';
-import { renderPackageDetail as renderPackageDetailElement, renderPackageReports } from './package-detail.js';
-import { renderRepositoryWorkflows } from './repository-workflows.js';
+import { renderPackageNavigation } from './package-detail.js';
 import { renderWorkflowDetail } from './workflow-detail.js';
 import { renderOutcomeDetail } from './outcome-detail.js';
 import { renderSectionHeading } from './ui-primitives.js';
 import { renderDefinitionList } from './view-chrome.js';
 import { renderWorkflowRuntime } from './workflow-runtime.js';
+import { renderAnomalyReadiness } from './anomaly-readiness.js';
 
 /**
  * @typedef {{
@@ -25,6 +24,7 @@ import { renderWorkflowRuntime } from './workflow-runtime.js';
  *   contextDetails: string[],
  *   scope?: Record<string, unknown>,
  *   routeParameter?: string,
+ *   titleLink?: Record<string, unknown>,
  *   headingTag: 'h3'|'h4'
  * }} ElementRenderContext
  */
@@ -34,17 +34,17 @@ const ELEMENT_RENDERERS = new Map([
   ['domain-attention', renderDomainAttentionElement],
   ['summary-grid', renderSummaryGridElement],
   ['context-summary', renderContextSummaryElement],
+  ['anomaly-readiness', renderAnomalyReadinessElement],
   ['signal-list', renderSignalListElement],
   ['package-activity', ({ sources, pageId }) => renderPackagesView(sources, pageId)],
-  ['package-detail', renderPackageDetailElement],
-  ['package-reports', renderPackageReports],
-  ['repository-workflows', renderRepositoryWorkflows],
+  ['package-detail', (context) => renderPackageNavigation(context, 'workflows')],
+  ['package-reports', (context) => renderPackageNavigation(context, 'reports')],
   ['workflow-detail', renderWorkflowDetail],
   ['workflow-runtime', renderWorkflowRuntime],
   ['outcome-detail', renderOutcomeDetail]
 ]);
 
-const EMPTY_AWARE_ELEMENTS = new Set(['summary-grid', 'context-summary', 'signal-list', 'package-detail', 'package-reports', 'repository-workflows', 'workflow-detail', 'workflow-runtime', 'outcome-detail']);
+const EMPTY_AWARE_ELEMENTS = new Set(['summary-grid', 'context-summary', 'signal-list', 'package-detail', 'package-reports', 'workflow-detail', 'workflow-runtime', 'outcome-detail']);
 
 /**
  * @param {string} name
@@ -137,6 +137,13 @@ function renderContextSummaryElement(context) {
   );
 }
 
+/** @param {ElementRenderContext} context */
+function renderAnomalyReadinessElement(context) {
+  const sourceName = context.sourceNames[0];
+  const row = sourceName ? rowsFor(context, sourceName)[0] : undefined;
+  return row ? renderAnomalyReadiness(row) : null;
+}
+
 /** @param {Record<string, unknown>} row */
 function isContextSummaryRow(row) {
   return typeof row.label === 'string'
@@ -165,7 +172,6 @@ function renderSignalListElement(context) {
   return h(
     'div',
     { className: 'signal-list-region' },
-    h('p', { className: 'signal-count' }, `${formatNumber(rows.length)} signal${rows.length === 1 ? '' : 's'}`),
     context.description ? h('p', { className: 'signal-boundary-note' }, context.description) : null,
     h(
       'ol',

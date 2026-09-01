@@ -265,13 +265,16 @@ describe('presenter built-in and custom pages', () => {
               id: 'repository-detail',
               kind: /** @type {'custom'} */ ('custom'),
               title: 'Repository',
-              route: { 'hash-query-parameter': 'repository' },
+              route: { 'hash-query-parameter': 'repository', 'navigation-page': 'repositories' },
               views: [{
-                id: 'repository-workflows',
-                title: 'Agentic workflows',
-                data: { sources: ['workflows'] },
-                mark: 'element',
-                element: 'repository-workflows'
+                id: 'repository-workflow-count',
+                title: 'Authored workflows',
+                data: { source: 'repository-detail-summary', 'route-field': 'repository' },
+                mark: 'metric',
+                encoding: {
+                  value: { field: 'workflows', type: 'quantitative' },
+                  href: { field: 'external-link', type: 'nominal' }
+                }
               }]
             }
           ]
@@ -322,8 +325,8 @@ describe('presenter built-in and custom pages', () => {
     window.dispatchEvent(new Event('hashchange'));
 
     expect(rendered.querySelector('[data-page-id="repository-detail"]')?.hasAttribute('hidden')).toBe(false);
-    expect(rendered.querySelector('.repository-view')?.getAttribute('data-repository')).toBe('octo-org/platform');
-    expect(rendered.querySelector('.repository-section-heading > a')?.getAttribute('href')).toBe('https://github.com/octo-org/platform/actions');
+    expect(rendered.querySelector('[data-page-id="repository-detail"] [data-route-view] .metric-value')?.textContent).toBe('1');
+    expect(rendered.querySelector('[data-page-id="repository-detail"] [data-route-view] .metric-link a')?.getAttribute('href')).toBe('https://github.com/octo-org/platform/actions');
     expect(rendered.querySelector('[data-nav-page-id="repositories"]')?.getAttribute('aria-current')).toBe('page');
     rendered.remove();
     window.history.replaceState(null, '', '/');
@@ -354,6 +357,40 @@ describe('presenter built-in and custom pages', () => {
     expect(rendered.querySelector('[data-nav-page-id="findings"]')).toBeNull();
     expect(rendered.querySelector('[data-page-id="overview"]')?.classList.contains('overview-page')).toBe(true);
     expect(rendered.querySelector('[data-page-id="organizations"]')?.classList.contains('organizations-page')).toBe(false);
+  });
+
+  it('collapses the sidebar to icons and restores the persisted display mode', () => {
+    localStorage.clear();
+    try {
+      const rendered = renderDashboard({
+        document: authoritativeDashboardDocument,
+        sources: {}
+      });
+      const toggle = /** @type {HTMLButtonElement | null} */ (rendered.querySelector('.sidebar-toggle'));
+      const shell = rendered.querySelector('.app-shell');
+      const overviewLink = rendered.querySelector('[data-nav-page-id="overview"]');
+
+      expect(toggle?.getAttribute('aria-label')).toBe('Collapse navigation');
+      expect(toggle?.getAttribute('aria-expanded')).toBe('true');
+      expect(overviewLink?.getAttribute('title')).toBe('Overview');
+
+      toggle?.click();
+
+      expect(shell?.classList.contains('sidebar-collapsed')).toBe(true);
+      expect(toggle?.getAttribute('aria-label')).toBe('Expand navigation');
+      expect(toggle?.getAttribute('aria-expanded')).toBe('false');
+      expect(toggle?.querySelector('.octicon-sidebar-expand')).not.toBeNull();
+      expect(localStorage.getItem('central-agentic-ops.dashboard.sidebar-collapsed')).toBe('true');
+
+      const restored = renderDashboard({
+        document: authoritativeDashboardDocument,
+        sources: {}
+      });
+      expect(restored.querySelector('.app-shell')?.classList.contains('sidebar-collapsed')).toBe(true);
+      expect(restored.querySelector('.sidebar-toggle')?.getAttribute('aria-label')).toBe('Expand navigation');
+    } finally {
+      localStorage.clear();
+    }
   });
 
   it('renders filter bars for the Runtime, Security, and Value pages', () => {
@@ -427,7 +464,16 @@ describe('presenter built-in and custom pages', () => {
     const dashboardPage = authoritativeDashboardDocument.dashboard.pages.find((/** @type {{ id: string }} */ candidate) => candidate.id === 'security');
     expect(dashboardPage).toMatchObject({ kind: 'custom' });
     expect(dashboardPage).not.toHaveProperty('page');
+    expect(dashboardPage.sections).toEqual(expect.arrayContaining([
+      expect.objectContaining({
+        id: 'operational-assurance',
+        'count-source': 'security-signals',
+        'count-label': 'signals'
+      })
+    ]));
     expect(rendered.querySelector('[data-nav-page-id="security"] .octicon-shield')).not.toBeNull();
+    expect(page?.querySelector('.layout-section-header > strong')?.textContent).toBe('3 signals');
+    expect(page?.querySelector('.signal-count')).toBeNull();
     expect(page?.querySelector('.summary-grid')?.textContent).toContain('Approval gates2');
     expect(page?.querySelector('.summary-grid')?.textContent).toContain('Explicit warnings1');
     expect(page?.querySelector('.summary-grid')?.textContent).toContain('Package integrity gaps1');
@@ -1022,6 +1068,7 @@ describe('presenter built-in and custom pages', () => {
             views: [
               { id: 'package-workflows', data: { source: 'workflows' } },
               { id: 'package-runs', data: { source: 'runs' } },
+              { id: 'package-outcomes', data: { source: 'outcomes' } },
               { id: 'package-usage', data: { source: 'usage' } }
             ]
           }
@@ -1053,8 +1100,17 @@ describe('presenter built-in and custom pages', () => {
           source: 'runs',
           rows: [
             { workflow: '.github/workflows/daily.md', run: '1', 'started-at': '2026-08-28T10:00:00Z', 'run-conclusion': 'success', 'rollout-mode': 'review' },
-            { workflow: '.github/workflows/daily-worker.md', run: '2', 'started-at': '2026-08-29T10:00:00Z', 'run-conclusion': 'failure', 'rollout-mode': 'live' },
             { workflow: '.github/workflows/unmanaged.md', run: '3', 'started-at': '2026-08-29T11:00:00Z', 'run-conclusion': 'cancelled', 'rollout-mode': 'review' }
+          ],
+          metadata
+        },
+        outcomes: {
+          source: 'outcomes',
+          rows: [
+            { package: 'daily-ops', run: '1', 'run-conclusion': 'success', 'rollout-mode': 'review', 'published-at': '2026-08-28T10:00:00Z', 'observed-at': '2026-08-28T10:00:00Z' },
+            { package: 'daily-ops', run: '2', 'rollout-mode': 'live', 'published-at': '2026-08-29T10:00:00Z', 'observed-at': '2026-08-29T10:05:00Z' },
+            { package: 'daily-ops', run: '2', 'run-conclusion': 'failure', 'rollout-mode': 'live', 'published-at': '2026-08-29T10:00:00Z', 'observed-at': '2026-08-29T10:06:00Z' },
+            { package: 'daily-ops', run: 'old', 'run-conclusion': 'success', 'rollout-mode': 'review', 'published-at': '2026-07-01T10:00:00Z', 'observed-at': '2026-07-01T10:00:00Z' }
           ],
           metadata
         },
@@ -1272,7 +1328,7 @@ describe('presenter built-in and custom pages', () => {
             { field: 'evaluated-workflows', type: 'quantitative', title: 'Evaluated AWs' },
             { field: 'runs', type: 'quantitative', title: 'Local runs' },
             { field: 'failure-summary', type: 'nominal', title: 'Failure rate' },
-            { field: 'aic', type: 'quantitative', title: 'Local AIC' },
+            { field: 'aic', type: 'quantitative', title: 'Local AIC', unit: 'aic' },
             { field: 'status', type: 'nominal', title: 'Status', display: 'status' }
           ],
           href: { field: 'repository-link', type: 'nominal' }
@@ -2022,6 +2078,22 @@ describe('presenter built-in and custom pages', () => {
     expect(rendered.querySelector('#page-title')?.textContent).toBe('First');
     expect(rendered.querySelector('[data-breadcrumb-page]')?.textContent).toBe('First');
     expect(rendered.querySelector('[data-page-description]')?.textContent).toBe('First page description');
+    first.dispatchEvent(new CustomEvent('dashboard-route-allocation', {
+      bubbles: true,
+      detail: {
+        title: 'Linked issue',
+        titleLink: {
+          href: 'https://github.com/octo/repo/issues/42',
+          label: '#42'
+        }
+      }
+    }));
+    const titleLink = /** @type {HTMLAnchorElement} */ (rendered.querySelector('[data-page-title-link]'));
+    expect(titleLink.hidden).toBe(false);
+    expect(titleLink.textContent).toBe('#42');
+    expect(titleLink.getAttribute('href')).toBe('https://github.com/octo/repo/issues/42');
+    expect(titleLink.getAttribute('target')).toBe('_blank');
+    expect(titleLink.getAttribute('rel')).toBe('noopener noreferrer');
 
     secondLink.click();
 
@@ -2032,6 +2104,8 @@ describe('presenter built-in and custom pages', () => {
     expect(rendered.querySelector('#page-title')?.textContent).toBe('Second');
     expect(rendered.querySelector('[data-breadcrumb-page]')?.textContent).toBe('Second');
     expect(rendered.querySelector('[data-page-description]')?.textContent).toBe('Second page description');
+    expect(titleLink.hidden).toBe(true);
+    expect(titleLink.hasAttribute('href')).toBe(false);
     expect(rendered.ownerDocument.activeElement).toBe(rendered.querySelector('#page-title'));
     rendered.ownerDocument.defaultView?.history.replaceState(null, '', '/');
   });
@@ -2365,10 +2439,18 @@ describe('presenter built-in and custom pages', () => {
                 id: 'repository-workflows',
                 title: 'Agentic workflows',
                 data: {
-                  sources: ['workflows']
+                  source: 'repository-workflows',
+                  'route-field': 'repository'
                 },
-                mark: 'element',
-                element: 'repository-workflows'
+                mark: 'table',
+                controls: 'static',
+                encoding: {
+                  columns: [
+                    { field: 'workflow-name', type: 'nominal', title: 'Workflow' },
+                    { field: 'workflow-active', type: 'nominal', title: 'State', display: 'active-state' }
+                  ],
+                  href: { field: 'workflow-link', type: 'nominal' }
+                }
               }]
             },
             {
@@ -2402,21 +2484,17 @@ describe('presenter built-in and custom pages', () => {
     });
     document.body.append(rendered);
 
-    const repositoryView = rendered.querySelector('.repository-view');
-    expect(repositoryView?.getAttribute('data-repository')).toBe('octo-org/octo-repo');
+    const repositoryView = rendered.querySelector('[data-route-view]');
     expect(repositoryView?.textContent).toContain('Review');
     expect(repositoryView?.textContent).not.toContain('Other');
     expect(rendered.querySelector('#page-title')?.textContent).toBe('octo-org/octo-repo');
     expect(rendered.querySelector('[data-breadcrumb-page]')?.textContent).toBe('octo-org/octo-repo');
-    expect(rendered.querySelector('.repository-tabs [aria-current="page"]')?.getAttribute('href')).toBe('#page-repository-detail?repository=octo-org%2Focto-repo');
-    expect(rendered.querySelector('.repository-workflow-table tbody th > a')?.getAttribute('href')).toBe('#page-workflow-runtime?workflow=octo-org%2Focto-repo%3A.github%2Fworkflows%2Freview.md');
-    expect(rendered.querySelector('.repository-workflow-source')?.getAttribute('href')).toBe('#page-workflow-runtime?workflow=octo-org%2Focto-repo%3A.github%2Fworkflows%2Freview.md');
-    expect(rendered.querySelector('.repository-workflow-source')?.getAttribute('target')).toBeNull();
+    expect(repositoryView?.querySelector('tbody a')?.getAttribute('href')).toBe('#page-workflow-runtime?workflow=octo-org%2Focto-repo%3A.github%2Fworkflows%2Freview.md');
+    expect(repositoryView?.querySelector('tbody a')?.getAttribute('target')).toBeNull();
 
     window.history.replaceState(null, '', '/#page-repository-detail?repository=other-org%2Fother-repo');
     window.dispatchEvent(new Event('hashchange'));
 
-    expect(repositoryView?.getAttribute('data-repository')).toBe('other-org/other-repo');
     expect(repositoryView?.textContent).toContain('Other');
     expect(repositoryView?.textContent).not.toContain('Review');
     expect(rendered.querySelector('#page-title')?.textContent).toBe('other-org/other-repo');

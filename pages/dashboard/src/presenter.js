@@ -73,6 +73,7 @@ import { deriveWorkflowSources } from './workflow-data.js';
 const DEFAULT_GITHUB_URL_BASE = 'https://github.com';
 const REFRESH_CONTROL_DESCRIPTION = 'Reload the dashboard to refresh cached data';
 const REFRESH_WORKFLOW_DESCRIPTION = 'Open the dashboard workflow on GitHub Actions';
+const SIDEBAR_COLLAPSED_STORAGE_KEY = 'central-agentic-ops.dashboard.sidebar-collapsed';
 
 /** @type {Record<string, PresentableCustomPage>} */
 const BUILT_IN_PAGE_PAYLOADS = /** @type {Record<string, PresentableCustomPage>} */ (Object.fromEntries(
@@ -142,18 +143,20 @@ export function renderDashboard(input) {
   const sidebar = renderSidebar(pages, sidebarTitle, document.dashboard.navigation);
   const mainContent = renderMainContent(document, title, pages, sources, orgName, githubUrlBase, dashboardRepository);
 
+  const appShell = h(
+    'div',
+    { className: 'app-shell' },
+    sidebar,
+    mainContent
+  );
   const root = h(
     'div',
     { className: 'dashboard-root' },
     styleEl,
     skipLink,
-    h(
-      'div',
-      { className: 'app-shell' },
-      sidebar,
-      mainContent
-    )
+    appShell
   );
+  enableSidebarToggle(root);
   enableDashboardPageNavigation(root);
   return root;
 }
@@ -198,10 +201,25 @@ function renderSidebar(pages, title, navigation) {
     'aside',
     { className: 'org-sidebar', 'aria-label': 'Central Agentic Ops navigation' },
     h(
-      'a',
-      { className: 'sidebar-brand', href: firstPageId ? `#page-${firstPageId}` : '#main-content' },
-      agenticWorkflowMark(),
-      h('span', null, title)
+      'div',
+      { className: 'sidebar-header' },
+      h(
+        'a',
+        { className: 'sidebar-brand', href: firstPageId ? `#page-${firstPageId}` : '#main-content', title },
+        agenticWorkflowMark(),
+        h('span', null, title)
+      ),
+      h(
+        'button',
+        {
+          className: 'sidebar-toggle',
+          type: 'button',
+          'aria-label': 'Collapse navigation',
+          'aria-expanded': 'true',
+          title: 'Collapse navigation'
+        },
+        octicon('sidebar-collapse')
+      )
     ),
     h(
       'nav',
@@ -235,11 +253,51 @@ function renderNavItem(page, isActive) {
       href: `#page-${page.id}`,
       className: `nav-item${isActive ? ' active' : ''}`,
       'aria-current': isActive ? 'page' : undefined,
+      'aria-label': title,
+      title,
       'data-nav-page-id': page.id
     },
     octicon(iconName),
     h('span', { className: 'nav-label' }, title)
   );
+}
+
+/**
+ * Restores and persists the desktop sidebar display mode.
+ * @param {HTMLElement} root
+ */
+function enableSidebarToggle(root) {
+  const appShell = root.querySelector('.app-shell');
+  const toggle = root.querySelector('.sidebar-toggle');
+  if (!(appShell instanceof HTMLElement) || !(toggle instanceof HTMLButtonElement)) return;
+
+  /** @param {boolean} collapsed */
+  const setCollapsed = (collapsed) => {
+    appShell.classList.toggle('sidebar-collapsed', collapsed);
+    const label = collapsed ? 'Expand navigation' : 'Collapse navigation';
+    toggle.setAttribute('aria-label', label);
+    toggle.setAttribute('aria-expanded', String(!collapsed));
+    toggle.setAttribute('title', label);
+    toggle.replaceChildren(octicon(collapsed ? 'sidebar-expand' : 'sidebar-collapse'));
+  };
+
+  let collapsed = false;
+  try {
+    collapsed = globalThis.localStorage?.getItem(SIDEBAR_COLLAPSED_STORAGE_KEY) === 'true';
+  } catch {
+    // Storage can be unavailable in embedded or privacy-restricted contexts.
+  }
+  setCollapsed(collapsed);
+
+  toggle.addEventListener('click', () => {
+    collapsed = !collapsed;
+    setCollapsed(collapsed);
+    try {
+      globalThis.localStorage?.setItem(SIDEBAR_COLLAPSED_STORAGE_KEY, String(collapsed));
+    } catch {
+      // The display mode still works for the current page when storage is unavailable.
+    }
+  });
 }
 
 /**
@@ -336,6 +394,7 @@ function renderMainContent(document, title, pages, sources, orgName, githubUrlBa
             'div',
             { className: 'title-area' },
             h('h1', { id: 'page-title', tabIndex: -1 }, initialPageTitle),
+            h('a', { className: 'title-link', 'data-page-title-link': '', hidden: true }),
             h('span', { className: 'mode-indicator', 'data-page-mode': '', hidden: true })
           ),
           h(
@@ -554,6 +613,7 @@ export function enableDashboardPageNavigation(root) {
   const breadcrumbRoot = root.querySelector('[data-breadcrumb-root]');
   const breadcrumbDashboard = root.querySelector('[data-breadcrumb-dashboard]');
   const pageTitle = root.querySelector('#page-title');
+  const pageTitleLink = root.querySelector('[data-page-title-link]');
   const pageDescription = root.querySelector('.overview-header [data-page-description]');
   const pageMode = root.querySelector('[data-page-mode]');
   const defaultBreadcrumbs = [breadcrumbRoot, breadcrumbDashboard].map((link) => ({
@@ -574,6 +634,7 @@ export function enableDashboardPageNavigation(root) {
       if (breadcrumbPage) breadcrumbPage.textContent = title;
       if (pageTitle) pageTitle.textContent = title;
     }
+    renderPageTitleLink(pageTitleLink, event.detail?.titleLink);
     const hasAllocatedBreadcrumbs = Array.isArray(event.detail?.breadcrumbs);
     const breadcrumbs = hasAllocatedBreadcrumbs ? event.detail.breadcrumbs : [];
     for (const [index, link] of [breadcrumbRoot, breadcrumbDashboard].entries()) {
@@ -654,6 +715,7 @@ export function enableDashboardPageNavigation(root) {
     const description = page?.dataset.pageDescription ?? '';
     if (breadcrumbPage) breadcrumbPage.textContent = title;
     if (pageTitle) pageTitle.textContent = title;
+    renderPageTitleLink(pageTitleLink, null);
     if (pageDescription) {
       pageDescription.textContent = description;
       pageDescription.toggleAttribute('hidden', description.length === 0);
@@ -792,10 +854,20 @@ function renderCustomView(pageId, view, index, sources, units, headingTag = 'h3'
 
   const title = getViewTitle(view, index);
 
+  if (
+    routeParameter
+    && isPlainObject(view.data)
+    && typeof view.data['route-field'] === 'string'
+    && view.mark !== 'element'
+  ) {
+    return renderRouteScopedDataView(pageId, view, index, sources, units, headingTag, routeParameter);
+  }
+
   const contextDetails = [];
   if (isPlainObject(view.data?.scope) && Object.keys(view.data.scope).length > 0) {
     contextDetails.push(`Scope: ${JSON.stringify(view.data.scope)}`);
   }
+
   if (isPlainObject(view.data?.time) && Object.keys(view.data.time).length > 0) {
     contextDetails.push(`Time: ${JSON.stringify(view.data.time)}`);
   }
@@ -847,6 +919,48 @@ function renderCustomView(pageId, view, index, sources, units, headingTag = 'h3'
   if (rendered) return rendered;
 
   return renderCustomViewState(pageId, title, sourceName, 'unavailable', [...contextDetails, 'Unsupported view mark.'], headingTag);
+}
+
+/**
+ * @param {string} pageId
+ * @param {Record<string, any>} view
+ * @param {number} index
+ * @param {Record<string, LogicalSourceInput>} sources
+ * @param {Record<string, { name: string, symbol: string, significant: number }>} units
+ * @param {'h3'|'h4'} headingTag
+ * @param {string} routeParameter
+ */
+function renderRouteScopedDataView(pageId, view, index, sources, units, headingTag, routeParameter) {
+  const sourceName = typeof view.data?.source === 'string' ? view.data.source : '';
+  const routeField = String(view.data?.['route-field'] ?? '');
+  const root = h('div', { 'data-route-view': '', 'data-route-parameter': routeParameter });
+  const data = { ...view.data };
+  delete data['route-field'];
+  const scopedView = { ...view, data };
+  /** @param {unknown} routeValue */
+  const render = (routeValue) => {
+    const selected = typeof routeValue === 'string' ? routeValue.trim() : '';
+    const source = sources[sourceName];
+    const scopedSources = source && Array.isArray(source.rows)
+      ? {
+          ...sources,
+          [sourceName]: {
+            ...source,
+            rows: source.rows.filter((row) => (
+              selected.length > 0
+              && String(row[routeField] ?? '').toLowerCase() === selected.toLowerCase()
+            ))
+          }
+        }
+      : sources;
+    root.replaceChildren(renderCustomView(pageId, scopedView, index, scopedSources, units, headingTag));
+  };
+  root.addEventListener('dashboard-route-change', (event) => {
+    if (!(event instanceof CustomEvent) || event.detail?.parameter !== routeParameter) return;
+    render(event.detail.value);
+  });
+  render('');
+  return root;
 }
 
 /**
@@ -914,9 +1028,34 @@ function renderElementView(pageId, title, view, sources, contextDetails, heading
     sources: selectedSources,
     contextDetails,
     scope: isPlainObject(viewData?.scope) ? viewData.scope : undefined,
+    titleLink: isPlainObject(view['title-link']) ? view['title-link'] : undefined,
     routeParameter,
     headingTag
   }) ?? renderCustomViewState(pageId, title, null, 'unavailable', [...contextDetails, 'Unsupported UI element.'], headingTag);
+}
+
+/**
+ * @param {Element | null} target
+ * @param {unknown} candidate
+ */
+function renderPageTitleLink(target, candidate) {
+  if (!(target instanceof HTMLAnchorElement)) return;
+  const link = findLink({ link: candidate }, 'link');
+  if (!link || link.href.startsWith('#')) {
+    target.hidden = true;
+    target.removeAttribute('href');
+    target.removeAttribute('target');
+    target.removeAttribute('rel');
+    target.removeAttribute('aria-label');
+    target.textContent = '';
+    return;
+  }
+  target.hidden = false;
+  target.href = link.href;
+  target.target = '_blank';
+  target.rel = 'noopener noreferrer';
+  target.setAttribute('aria-label', `View ${link.label} on GitHub`);
+  target.textContent = link.label;
 }
 
 /**

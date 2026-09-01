@@ -12,29 +12,28 @@ import { isApprovalConclusion, isFailureConclusion } from './run-classification.
 import { formatUtcDateTime } from './ui-primitives.js';
 import { renderTitledBodySection } from './view-chrome.js';
 import { renderWorkflowIdentity } from './workflow-identity.js';
+import { renderLinkTabs } from './tab-nav.js';
+import { createRouteView } from './route-empty-state.js';
 
 /**
  * @param {import('./ui-elements.js').ElementRenderContext} context
  * @returns {HTMLElement}
  */
 export function renderWorkflowRuntime(context) {
-  const root = h('div', {
-    className: 'workflow-runtime',
-    'data-route-view': '',
-    'data-route-parameter': context.routeParameter
-  });
-
-  /** @param {unknown} routeValue */
-  const render = (routeValue) => {
-    const identity = parseWorkflowRoute(routeValue);
-    const workflow = rowsFor(context.sources, 'workflows')
-      .find((candidate) => identity && matchesWorkflow(candidate, identity.repository, identity.workflow));
-    root.dataset.workflow = identity ? `${identity.repository}:${identity.workflow}` : '';
-    root.replaceChildren(workflow
-      ? renderWorkflowRuntimeContent(context, workflow)
-      : h('p', { className: 'empty' }, identity ? 'Workflow not found.' : 'Select a workflow to inspect its runtime.'));
-
-    if (workflow) {
+  const root = createRouteView({
+    rootClassName: 'workflow-runtime',
+    routeParameter: context.routeParameter,
+    datasetKey: 'workflow',
+    selectMessage: 'Select a workflow to inspect its runtime.',
+    notFoundMessage: 'Workflow not found.',
+    hasSelection: (routeValue) => parseWorkflowRoute(routeValue) !== null,
+    renderMatched: (routeValue) => {
+      const identity = parseWorkflowRoute(routeValue);
+      const workflow = rowsFor(context.sources, 'workflows')
+        .find((candidate) => identity && matchesWorkflow(candidate, identity.repository, identity.workflow));
+      if (!workflow || !identity) {
+        return null;
+      }
       const repository = qualifiedRepository(workflow);
       const workflowName = text(workflow['workflow-name']) || text(workflow.workflow) || 'Unknown workflow';
       root.dispatchEvent(new CustomEvent('dashboard-route-allocation', {
@@ -46,14 +45,9 @@ export function renderWorkflowRuntime(context) {
           navigationPage: workflow.package ? 'packages' : 'repositories'
         }
       }));
+      return renderWorkflowRuntimeContent(context, workflow);
     }
-  };
-
-  root.addEventListener('dashboard-route-change', (event) => {
-    if (!(event instanceof CustomEvent) || event.detail?.parameter !== context.routeParameter) return;
-    render(event.detail.value);
   });
-  render('');
   return root;
 }
 
@@ -89,22 +83,14 @@ function renderWorkflowRuntimeContent(context, workflow) {
  */
 function renderWorkflowTabs(pageId, repository, workflow, workflowName) {
   const route = workflowRouteValue(repository, workflow);
-  return h(
-    'nav',
-    { className: 'repository-tabs', 'aria-label': `${workflowName} views` },
-    h(
-      'a',
-      { href: `#page-${pageId}?workflow=${encodeURIComponent(route)}`, 'aria-current': 'page' },
-      octicon('graph'),
-      h('span', null, 'Insights')
-    ),
-    h(
-      'a',
-      { href: `#page-workflow-detail?workflow=${encodeURIComponent(route)}` },
-      octicon('issue'),
-      h('span', null, 'Reports')
-    )
-  );
+  return renderLinkTabs({
+    className: 'repository-tabs',
+    ariaLabel: `${workflowName} views`,
+    tabs: [
+      { label: 'Insights', icon: 'graph', href: `#page-${pageId}?workflow=${encodeURIComponent(route)}`, current: true },
+      { label: 'Reports', icon: 'issue', href: `#page-workflow-detail?workflow=${encodeURIComponent(route)}` }
+    ]
+  });
 }
 
 /**

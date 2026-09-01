@@ -18,6 +18,10 @@ function context() {
     sourceNames: ['outcomes'],
     contextDetails: [],
     routeParameter: 'outcome',
+    titleLink: {
+      'href-field': 'external-link',
+      'identifier-field': 'outcome-number'
+    },
     headingTag: /** @type {'h3'} */ ('h3'),
     sources: {
       outcomes: {
@@ -27,6 +31,7 @@ function context() {
           workflow: '.github/workflows/daily.md',
           'workflow-name': 'Daily review',
           'safe-output': 'outcome-1',
+          'outcome-number': 1,
           'outcome-title': 'Parity verification sweep',
           'outcome-summary': 'Summary fallback',
           'outcome-body-html': '<h2>Summary</h2><ul><li>Passed</li></ul><table><thead><tr><th scope="colgroup">Checks</th></tr></thead></table><script>window.bad = true</script><a href="javascript:alert(1)" onclick="alert(1)">unsafe</a>',
@@ -75,7 +80,11 @@ describe('outcome detail', () => {
     expect(allocation).toHaveBeenCalledWith(expect.objectContaining({
       detail: {
         title: 'Parity verification sweep',
-        description: 'Daily review · Pull Request · Closed'
+        description: 'Daily review · Pull Request · Closed',
+        titleLink: {
+          href: 'https://github.com/octo/repo/pull/1',
+          label: '#1'
+        }
       }
     }));
   });

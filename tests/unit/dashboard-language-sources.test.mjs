@@ -11,12 +11,13 @@ test("dashboard source bridge carries package memberships, allowance, and invent
       runHealth: { available: true, complete: true },
       bundles: [{
         repository: "githubnext/central-agentic-ops",
-        name: "Package",
+        path: "aw.yml",
+        name: "Central Agentic Ops",
         workflows: [{ lockPath: workflowPath }],
       }, {
         repository: "githubnext/central-agentic-ops",
-        path: "shared/aw.yml",
-        name: "Shared",
+        path: "ambient-context/aw.yml",
+        name: "Ambient Context",
         workflows: [{ lockPath: workflowPath }],
       }],
       workflows: [{
@@ -30,12 +31,26 @@ test("dashboard source bridge carries package memberships, allowance, and invent
     },
     usage: { available: true, complete: true, runs: [] },
     operationalValues: { records: [] },
-    report: { generatedAt: "2026-08-30T12:00:00Z", records: [] },
+    report: {
+      generatedAt: "2026-08-30T12:00:00Z",
+      records: [{
+        id: "ambient-context-output",
+        bundle: "ambient-context",
+        repository: "githubnext/target",
+        runtimeRepository: "githubnext/central-agentic-ops",
+        workflowPath,
+        runUrl: "https://github.com/githubnext/central-agentic-ops/actions/runs/42",
+        conclusion: "failure",
+        mode: "review",
+      }],
+    },
     inventory: {
       workflows: [{ lockPath: workflowPath, maxAiCredits: 500, compiled: true }],
       bundles: [{
+        id: "ambient-context",
+        name: "Ambient Context",
         workflow: ".github/workflows/package.md",
-        controlPackage: "package",
+        controlPackage: "ambient-context",
         maxAiCredits: 500,
         compiled: true,
         missingWorkers: [],
@@ -43,7 +58,7 @@ test("dashboard source bridge carries package memberships, allowance, and invent
       }],
     },
     controlSettings: {
-      packages: { package: { mode: "review" } },
+      packages: { "ambient-context": { mode: "review" } },
     },
   });
 
@@ -59,11 +74,10 @@ test("dashboard source bridge carries package memberships, allowance, and invent
       rolloutMode: sources.workflows.rows[0]["rollout-mode"],
     },
     {
-      package: "shared",
-      packageName: "Shared",
+      package: "ambient-context",
+      packageName: "Ambient Context",
       packageMemberships: [
-        { id: "Package", name: "Package" },
-        { id: "shared", name: "Shared" },
+        { id: "ambient-context", name: "Ambient Context" },
       ],
       maxAiCredits: 500,
       packageAllowance: 500,
@@ -72,6 +86,7 @@ test("dashboard source bridge carries package memberships, allowance, and invent
       rolloutMode: "review",
     },
   );
+  assert.equal(sources.outcomes.rows[0]["run-conclusion"], "failure");
 });
 
 test("dashboard source bridge carries canonical coverage diagnostics", () => {
@@ -198,6 +213,7 @@ test("dashboard source bridge carries outcome detail content and presentation me
       generatedAt: "2026-08-31T12:00:00Z",
       records: [{
         id: "outcome-1",
+        number: 1,
         bundle: "daily",
         repository: "githubnext/central-agentic-ops",
         runtimeRepository: "githubnext/control-plane",
@@ -224,6 +240,7 @@ test("dashboard source bridge carries outcome detail content and presentation me
       package: sources.outcomes.rows[0].package,
       workflowName: sources.outcomes.rows[0]["workflow-name"],
       title: sources.outcomes.rows[0]["outcome-title"],
+      number: sources.outcomes.rows[0]["outcome-number"],
       summary: sources.outcomes.rows[0]["outcome-summary"],
       bodyHtml: sources.outcomes.rows[0]["outcome-body-html"],
       category: sources.outcomes.rows[0]["outcome-category"],
@@ -237,6 +254,7 @@ test("dashboard source bridge carries outcome detail content and presentation me
       package: "daily",
       workflowName: "Daily review",
       title: "Parity verification sweep",
+      number: 1,
       summary: "All checks passed.",
       bodyHtml: "<h2>Summary</h2><p>All checks passed.</p>",
       category: "pull-request",
