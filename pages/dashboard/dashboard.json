@@ -1886,7 +1886,14 @@
             "count-source": "grader-observations",
             "count-label": "records",
             "views": [
-              "operational-value-ledger",
+              "operational-value-ledger"
+            ]
+          },
+          {
+            "id": "experiment-evidence-boundary",
+            "title": "Evidence boundary",
+            "layout": "full",
+            "views": [
               "experiment-evidence-boundary"
             ]
           }
