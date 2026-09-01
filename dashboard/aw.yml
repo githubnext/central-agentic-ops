@@ -31,6 +31,8 @@ resources:
     destination: .github/aw/dashboard/report/compose-dashboard-documents.mjs
   - source: site/index.html
     destination: .github/aw/dashboard/site/index.html
+  - source: site/favicon.svg
+    destination: .github/aw/dashboard/site/favicon.svg
   - source: site/dashboard.json
     destination: .github/aw/dashboard/site/dashboard.json
   - source: site/src/data-operations.js

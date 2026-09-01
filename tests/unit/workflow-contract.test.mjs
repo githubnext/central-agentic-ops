@@ -1781,6 +1781,7 @@ test("Dashboard package supports embedded and explicit standalone deployment", (
   assert.doesNotMatch(operationalValues, /90 \* 24 \* 60 \* 60 \* 1000/);
   assert.doesNotMatch(operationalValues, /const workerIds = new Set/);
   assert.match(dashboardManifest, /source: site\/index\.html\n\s+destination: \.github\/aw\/dashboard\/site\/index\.html/);
+  assert.match(dashboardManifest, /source: site\/favicon\.svg\n\s+destination: \.github\/aw\/dashboard\/site\/favicon\.svg/);
   assert.match(dashboardManifest, /source: site\/dashboard\.json\n\s+destination: \.github\/aw\/dashboard\/site\/dashboard\.json/);
   assert.match(dashboardManifest, /source: site\/src\/presenter\.js\n\s+destination: \.github\/aw\/dashboard\/site\/src\/presenter\.js/);
   for (const assetName of ["data-operations.js", "data-processor.js", "data-worker.js"]) {

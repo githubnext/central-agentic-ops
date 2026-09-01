@@ -14,6 +14,15 @@ describe('DLS-CONF-004 scaffold gates', () => {
     expect(preview.match(/"run-link":/g)?.length).toBeGreaterThanOrEqual(5);
   });
 
+  it('uses the GitHub Agentic Workflows favicon', () => {
+    const preview = readFileSync(resolve('index.html'), 'utf8');
+    const favicon = readFileSync(resolve('favicon.svg'), 'utf8');
+    const agenticWorkflowsFavicon = readFileSync(resolve('../../public/favicon.svg'), 'utf8');
+
+    expect(preview).toContain('<link rel="icon" href="./favicon.svg" type="image/svg+xml">');
+    expect(favicon).toBe(agenticWorkflowsFavicon);
+  });
+
   it('parity motion audit keeps report-style transitions and reduced-motion overrides', () => {
     const styles = readFileSync(resolve('src/styles.js'), 'utf8');
 
