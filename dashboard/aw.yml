@@ -23,8 +23,6 @@ resources:
     destination: .github/aw/dashboard/report/records.mjs
   - source: report/dashboard-language-sources.mjs
     destination: .github/aw/dashboard/report/dashboard-language-sources.mjs
-  - source: report/redirects.mjs
-    destination: .github/aw/dashboard/report/redirects.mjs
   - source: site/index.html
     destination: .github/aw/dashboard/site/index.html
   - source: site/dashboard.json

@@ -10,7 +10,6 @@ The reusable dashboard builder copies this directory to its configured `site-pat
 2. `dashboard/report/records.mjs` normalizes durable issues, pull requests, comments, review artifacts, and run attribution into `records.json`.
 3. `dashboard/report/dashboard-language-sources.mjs` adapts collector and record data into `sources.json`.
 4. This renderer validates `dashboard.json` and `sources.json`, then renders all configured pages and route-scoped details.
-5. `dashboard/report/redirects.mjs` preserves legacy deep links by redirecting them to equivalent hash routes.
 
 `sources.json` is the default deployed input. Add `?fixtures` locally to use the illustrative fixture data.
 

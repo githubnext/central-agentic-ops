@@ -100,7 +100,7 @@ The orchestrator is scheduled weekly. Ambient context should not be rewritten mo
 
 ## Operational Value
 
-The `AGENTS.md` curator registers a frozen schema-version 4 operational-value evaluator at [`.github/graders/ambient-context-agents-md-curator-operational-value.sh`](../.github/graders/ambient-context-agents-md-curator-operational-value.sh).
+The `AGENTS.md` curator registers a frozen schema-version 4 operational-value evaluator at [`.github/graders/ambient-context-agents-md-curator-operational-value.sh`](https://github.com/githubnext/central-agentic-ops/blob/main/.github/graders/ambient-context-agents-md-curator-operational-value.sh).
 
 The package exists to make agents cheaper to run for the same delivered outcome, so the evaluator measures exactly that rather than counting issues. A run attains value (`1`) only when its proposal was applied and the target got cheaper without getting worse:
 

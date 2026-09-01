@@ -1583,7 +1583,7 @@ test("Dashboard package supports embedded and explicit standalone deployment", (
   const aicUsage = readFileSync(join(root, "dashboard", "report", "aic-usage.mjs"), "utf8");
   const deployedWorkflows = readFileSync(join(root, "dashboard", "report", "deployed-workflows.mjs"), "utf8");
   const operationalValues = readFileSync(join(root, "dashboard", "report", "operational-values.mjs"), "utf8");
-  const reportAssets = ["aic-usage.mjs", "dashboard-language-sources.mjs", "deployed-workflows.mjs", "inventory.mjs", "operational-values.mjs", "records.mjs", "redirects.mjs"];
+  const reportAssets = ["aic-usage.mjs", "dashboard-language-sources.mjs", "deployed-workflows.mjs", "inventory.mjs", "operational-values.mjs", "records.mjs"];
 
   assert.doesNotMatch(rootManifest, /dashboard\/dashboard|dashboard-build/);
   assert.match(dashboardManifest, /name: Central Agentic Ops Dashboard/);
@@ -1595,7 +1595,8 @@ test("Dashboard package supports embedded and explicit standalone deployment", (
   assert.match(buildWorkflow, /cp -R \.github\/aw\/dashboard\/site\/\. "\$REPORT_OUTPUT\/"/);
   assert.match(buildWorkflow, /REPORT_RECORDS: \$\{\{ runner\.temp \}\}\/dashboard-records\.json/);
   assert.match(buildWorkflow, /REPORT_DASHBOARD_SOURCES: \$\{\{ runner\.temp \}\}\/central-agentic-ops-dashboard\/\$\{\{ inputs\.site-path \}\}\/sources\.json/);
-  assert.match(buildWorkflow, /node \.github\/aw\/dashboard\/report\/redirects\.mjs/);
+  assert.doesNotMatch(dashboardManifest, /redirects\.mjs/);
+  assert.doesNotMatch(buildWorkflow, /legacy dashboard redirects|redirects\.mjs/);
   assert.match(buildWorkflow, /site-path must not be absolute, traverse directories, or end with '\/'/);
   assert.match(buildWorkflow, /actions\/upload-artifact@[0-9a-f]{40}/);
   assert.doesNotMatch(buildWorkflow, /actions\/(?:configure-pages|upload-pages-artifact|deploy-pages)@/);
@@ -1658,7 +1659,7 @@ test("Documentation Pages embeds this repository's control-plane report", () => 
   assert.match(workflowSource, /run: node dashboard\/report\/records\.mjs/);
   assert.match(workflowSource, /REPORT_RECORDS: dist\/cao\/records\.json/);
   assert.match(workflowSource, /REPORT_DASHBOARD_SOURCES: dist\/cao\/sources\.json/);
-  assert.match(workflowSource, /run: node dashboard\/report\/redirects\.mjs/);
+  assert.doesNotMatch(workflowSource, /legacy dashboard redirects|redirects\.mjs/);
   assert.doesNotMatch(workflowSource, /report\/report\.mjs/);
   assert.match(workflowSource, /path: dist/);
   assert.doesNotMatch(workflowSource, /REPORT_INCLUDE_PRIVATE:\s*true/);

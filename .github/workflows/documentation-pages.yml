@@ -173,12 +173,6 @@ jobs:
           REPORT_RECORDS: dist/cao/records.json
         run: node dashboard/report/dashboard-language-sources.mjs
 
-      - name: Add legacy dashboard redirects
-        env:
-          REPORT_DASHBOARD_SOURCES: dist/cao/sources.json
-          REPORT_OUTPUT: dist/cao
-        run: node dashboard/report/redirects.mjs
-
       - name: Upload Pages artifact
         uses: actions/upload-pages-artifact@7b1f4a764d45c48632c6b24a0339c27f5614fb0b # v4
         with:
