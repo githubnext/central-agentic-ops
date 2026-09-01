@@ -121,16 +121,21 @@ function renderTableView(context) {
           : column.display === 'outcome-link'
             ? renderOutcomeLink(row, toText(row[outputField]))
             : renderCellValue(column, row[outputField], row);
-      const cellValue = column.display === 'outcome-link'
-        ? h('span', { className: 'table-output-evidence' }, value)
-        : value;
+      /** @param {string | HTMLElement} content */
+      const constrainOutputEvidence = (content) => column.display === 'outcome-link'
+        ? h('span', { className: 'table-output-evidence' }, content)
+        : content;
       if (columnIndex === 0 && hrefField) {
         if (column.field === RUN_FIELD && hrefField === RUN_LINK_FIELD) {
-          return h('td', null, cellValue);
+          return h('td', null, constrainOutputEvidence(value));
         }
-        return h('td', null, renderLinkedValue(cellValue, findLink(row, hrefField)));
+        const linkedValue = renderLinkedValue(
+          column.display === 'outcome-link' ? toText(row[outputField]) : value,
+          findLink(row, hrefField)
+        );
+        return h('td', null, constrainOutputEvidence(linkedValue));
       }
-      return h('td', null, cellValue);
+      return h('td', null, constrainOutputEvidence(value));
     })
   ));
 

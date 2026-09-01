@@ -140,5 +140,33 @@ describe('data view renderer', () => {
     const output = rendered?.querySelector('.table-output-evidence');
     expect(output?.textContent).toBe(evidence);
     expect(output?.querySelector('a')?.getAttribute('title')).toBe(evidence);
+
+    const externallyLinked = renderDataView('table', {
+      pageId: 'security',
+      title: 'Output assurance records',
+      view: {
+        mark: 'table',
+        encoding: {
+          href: { field: 'evidence-link' },
+          columns: [{ field: 'finding-summary', type: 'nominal', display: 'outcome-link' }]
+        }
+      },
+      sourceName: 'findings',
+      rows: [{
+        'finding-summary': evidence,
+        'safe-output': 'output-42',
+        'evidence-link': { href: 'https://example.com/evidence/42', label: 'Evidence 42' }
+      }],
+      metadata,
+      contextDetails: [],
+      headingTag: 'h3',
+      prepareTableRows: (rows) => rows,
+      buildChartPoints: () => [],
+      prepareChartPoints: () => [],
+      toText: String
+    });
+    const externalOutput = externallyLinked?.querySelector('.table-output-evidence');
+    expect(externalOutput?.querySelectorAll('a')).toHaveLength(1);
+    expect(externalOutput?.querySelector('a')?.getAttribute('href')).toBe('https://example.com/evidence/42');
   });
 });
