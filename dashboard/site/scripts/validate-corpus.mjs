@@ -5,7 +5,7 @@ import { validateDashboardDocument, validateLogicalSources } from "../src/valida
 
 const corpusDirectory = resolve(
   process.cwd(),
-  process.argv[2] || "../../.github/skills/dashboard-authoring/corpus",
+  process.argv[2] || "../../.github/skills/generate-dashboard-ir/corpus",
 );
 const examplesDirectory = resolve(corpusDirectory, "examples");
 const index = JSON.parse(await readFile(resolve(corpusDirectory, "index.json"), "utf8"));
@@ -102,4 +102,4 @@ assert.deepEqual(
   "corpus index must reference every example file exactly once",
 );
 
-console.log(`Validated ${index.examples.length} dashboard-authoring corpus example(s).`);
+console.log(`Validated ${index.examples.length} generate-dashboard-ir corpus example(s).`);

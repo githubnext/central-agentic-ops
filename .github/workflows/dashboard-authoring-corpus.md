@@ -50,9 +50,9 @@ safe-outputs:
     draft: true
     if-no-changes: warn
     allowed-files:
-      - ".github/skills/dashboard-authoring/corpus/index.json"
-      - ".github/skills/dashboard-authoring/corpus/examples/*.json"
-      - ".github/skills/dashboard-authoring/corpus/examples/*.dashboard.yml"
+      - ".github/skills/generate-dashboard-ir/corpus/index.json"
+      - ".github/skills/generate-dashboard-ir/corpus/examples/*.json"
+      - ".github/skills/generate-dashboard-ir/corpus/examples/*.dashboard.yml"
   noop:
 features:
   gh-aw-detection: true
@@ -74,15 +74,15 @@ evals:
 
 # Dashboard Authoring Corpus
 
-Grow the dashboard-authoring skill's corpus by one validated example. Use the installed `dashboard-authoring` skill for the corpus procedure and the installed `generate-dashboard-ir` skill to generate the Dashboard Language document. Treat the Dashboard Language specification and validator as authoritative.
+Grow the generate-dashboard-ir skill's corpus by one validated example. Use the installed `dashboard-authoring` skill to define the workflow intent and operational-value contract, then use the installed `generate-dashboard-ir` skill for corpus creation and Dashboard Language generation. Treat the Dashboard Language specification and validator as authoritative.
 
 ## Context
 
 - Repository: `${{ github.repository }}`
 - Optional focus: `${{ inputs.focus }}`
-- Corpus skill: `.github/skills/dashboard-authoring/SKILL.md`
+- Intent skill: `.github/skills/dashboard-authoring/SKILL.md`
 - Dashboard IR skill: `.github/skills/generate-dashboard-ir/SKILL.md`
-- Corpus index: `.github/skills/dashboard-authoring/corpus/index.json`
+- Corpus index: `.github/skills/generate-dashboard-ir/corpus/index.json`
 - Specification: `docs/dashboard-language-specification.md`
 - Validator: `dashboard/site/src/validator.js`
 

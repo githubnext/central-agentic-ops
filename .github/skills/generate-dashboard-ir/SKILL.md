@@ -26,7 +26,7 @@ Produce one complete Dashboard Language YAML document that:
 
 - represents the user's intent;
 - conforms to the provided specification;
-- passes `validate.js`;
+- passes the provided validator entry point;
 - contains only supported Dashboard Language vocabulary;
 - contains no unresolved placeholders or speculative fields.
 
@@ -47,3 +47,15 @@ Produce one complete Dashboard Language YAML document that:
 9. Run the provided validator entry point against the complete document. Repair every reported error and rerun validation until it passes. If the intent cannot be represented with supported vocabulary, report that constraint instead of inventing syntax.
 
 Return only the validated complete Dashboard Language YAML document unless the user explicitly requests an explanation.
+
+## Corpus procedure
+
+When the working context requests a training-corpus example:
+
+1. Read `corpus/index.json` first and open only examples relevant to the candidate task. Reject a duplicate intent, opportunity, metric, or view composition.
+2. Add one metadata JSON file and its paired `.dashboard.yml` file under `corpus/examples/`, then add the entry to `corpus/index.json` in ascending `id` order.
+3. Record the synthetic task, intent conditions, frozen design-time operational-value contract, logical-source fixture, and relative dashboard path in metadata. Keep only Dashboard Language vocabulary in the dashboard file.
+4. Do not claim observed attainment, fabricate repository evidence, or create an operational-value grader. Use `attainment-only` unless immutable pre-adoption evidence supports a comparable baseline.
+5. Run `npm --prefix dashboard/site run validate:corpus` from the repository root. Keep only candidates that pass dashboard-document and logical-source validation.
+
+Corpus examples use `.dashboard.yml`; production dashboards may use strict JSON in `.json` files. Both serialize the same YAML 1.2 data model with the same canonical kebab-case vocabulary, types, defaults, validation rules, and semantics.
