@@ -3,7 +3,7 @@
  */
 
 import { h } from '../dom.js';
-import { formatNumber, formatPercent as formatRatioPercent } from '../view-formatters.js';
+import { formatNumber, formatPercent } from '../view-formatters.js';
 import { titleCase } from './count-formatters.js';
 import { classifyUtilizationRatio, isFailureConclusion } from './run-classification.js';
 import { coverageWindowHours } from './ui-primitives.js';
@@ -802,14 +802,6 @@ function isNonNegativeNumber(value) {
  */
 function formatAic(value) {
   return new Intl.NumberFormat('en', { maximumFractionDigits: 1 }).format(value);
-}
-
-/**
- * @param {number} value
- * @returns {string}
- */
-function formatPercent(value) {
-  return formatRatioPercent(value);
 }
 
 /**
