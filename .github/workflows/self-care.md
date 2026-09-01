@@ -11,7 +11,7 @@ concurrency:
   cancel-in-progress: true
 
 on:
-  schedule: daily
+  schedule: every 20 minutes
   workflow_dispatch:
     inputs:
       target_repo:
