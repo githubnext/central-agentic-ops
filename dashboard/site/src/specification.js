@@ -271,6 +271,7 @@ export const SOURCE_VALUES = [
   'repository-activity',
   'repository-detail-summary',
   'repository-workflow-status',
+  'repository-workflow-usage',
   'repository-workflows',
   'workflow-reports',
   'package-reports'
@@ -311,6 +312,7 @@ export const SOURCE_FIELDS = {
   'repository-activity': ['repository', 'workflows', 'reports', 'evaluated-workflows', 'runs', 'failure-summary', 'aic', 'status', 'repository-link'],
   'repository-detail-summary': ['repository', 'workflows', 'latest-update', 'external-link'],
   'repository-workflow-status': ['repository', 'status', 'workflows'],
+  'repository-workflow-usage': ['repository', 'workflow', 'invocation', 'aic', 'workflow-link'],
   'repository-workflows': ['repository', 'workflow', 'workflow-name', 'workflow-role', 'package-name', 'rollout-mode', 'workflow-active', 'observed-at', 'workflow-link'],
   'workflow-reports': ['workflow-route', 'safe-output', 'outcome-title', 'outcome-summary', 'outcome-status', 'rollout-mode', 'outcome-category', 'observed-at', 'external-link'],
   'package-reports': ['package', 'safe-output', 'outcome-title', 'outcome-summary', 'outcome-status', 'rollout-mode', 'outcome-category', 'observed-at', 'external-link'],
@@ -364,6 +366,7 @@ export const SOURCE_ENTITY_IDENTIFIER_FIELDS = {
   'repository-activity': ['repository'],
   'repository-detail-summary': ['repository'],
   'repository-workflow-status': ['repository', 'status'],
+  'repository-workflow-usage': ['invocation'],
   'repository-workflows': ['repository', 'workflow'],
   'workflow-reports': ['workflow-route', 'safe-output'],
   'package-reports': ['package', 'safe-output']
