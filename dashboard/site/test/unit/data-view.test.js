@@ -168,5 +168,6 @@ describe('data view renderer', () => {
     const externalOutput = externallyLinked?.querySelector('.table-output-evidence');
     expect(externalOutput?.querySelectorAll('a')).toHaveLength(1);
     expect(externalOutput?.querySelector('a')?.getAttribute('href')).toBe('https://example.com/evidence/42');
+    expect(externalOutput?.querySelector('a')?.getAttribute('title')).toBe(evidence);
   });
 });

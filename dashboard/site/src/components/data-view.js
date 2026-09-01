@@ -129,10 +129,14 @@ function renderTableView(context) {
         if (column.field === RUN_FIELD && hrefField === RUN_LINK_FIELD) {
           return h('td', null, constrainOutputEvidence(value));
         }
+        const outputEvidenceText = toText(row[outputField]);
         const linkedValue = renderLinkedValue(
-          column.display === 'outcome-link' ? toText(row[outputField]) : value,
+          column.display === 'outcome-link' ? outputEvidenceText : value,
           findLink(row, hrefField)
         );
+        if (column.display === 'outcome-link' && linkedValue instanceof HTMLElement) {
+          linkedValue.title = outputEvidenceText;
+        }
         return h('td', null, constrainOutputEvidence(linkedValue));
       }
       return h('td', null, constrainOutputEvidence(value));
