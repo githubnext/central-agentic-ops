@@ -37,7 +37,7 @@ function context() {
               relation: 'workflow',
               href: 'https://github.com/githubnext/central-agentic-ops/blob/HEAD/.github/workflows/ambient-context.md',
               label: 'View Ambient Context',
-              'dashboard-href': '#page-workflow-detail?workflow=githubnext%2Fcentral-agentic-ops%3A.github%2Fworkflows%2Fambient-context.md',
+              'dashboard-href': '#page-workflow-runtime?workflow=githubnext%2Fcentral-agentic-ops%3A.github%2Fworkflows%2Fambient-context.md',
               'dashboard-label': 'View Ambient Context workflow dashboard'
             }
           },
@@ -119,9 +119,9 @@ describe('renderWorkflowDetail', () => {
       '#page-workflow-runtime?workflow=githubnext%2Fcentral-agentic-ops%3A.github%2Fworkflows%2Fambient-context.md'
     );
     expect(rendered.querySelector('.workflow-identity')?.textContent).toContain('Orchestrator');
-    expect(rendered.querySelector('.workflow-badge-package')?.getAttribute('href')).toBe('#page-package-detail?package=ambient-context');
+    expect(rendered.querySelector('.workflow-badge-package')?.getAttribute('href')).toBe('#page-operational-value?package=ambient-context');
     expect(rendered.querySelector('.workflow-identity > a')?.getAttribute('href')).toBe(
-      '#page-workflow-detail?workflow=githubnext%2Fcentral-agentic-ops%3A.github%2Fworkflows%2Fambient-context.md'
+      '#page-workflow-runtime?workflow=githubnext%2Fcentral-agentic-ops%3A.github%2Fworkflows%2Fambient-context.md'
     );
     expect(rendered.querySelector('.workflow-identity > a')?.getAttribute('target')).toBeNull();
     expect(rendered.querySelector('.workflow-reports-header')?.textContent).toContain('1 Open1 Resolved');

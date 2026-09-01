@@ -40,7 +40,7 @@ describe('runtime data', () => {
       'Evaluation boundary'
     ]);
     expect(sources['runtime-signals'].rows[0]['navigation-href']).toBe(
-      '#page-workflow-detail?workflow=githubnext%2Fcentral-agentic-ops%3A.github%2Fworkflows%2Fworker.md'
+      '#page-workflow-runtime?workflow=githubnext%2Fcentral-agentic-ops%3A.github%2Fworkflows%2Fworker.md'
     );
     expect(sources['runtime-signals'].metadata).toBe(metadata);
   });
