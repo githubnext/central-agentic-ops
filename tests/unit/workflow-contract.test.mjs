@@ -1373,6 +1373,9 @@ test("dashboard CI runs the package quality gates", () => {
     assert.match(lintUnit.block, new RegExp(`run: ${command.replaceAll(".", "\\.")}`));
   }
   assert.doesNotMatch(lintUnit.block, /playwright|test:e2e/i);
+  assert.match(playwrightIntegration.block, /uses: actions\/cache@/);
+  assert.match(playwrightIntegration.block, /path: ~\/\.cache\/ms-playwright/);
+  assert.match(playwrightIntegration.block, /hashFiles\('dashboard\/site\/package-lock\.json'\)/);
   assert.match(playwrightIntegration.block, /npx playwright install --with-deps chromium/);
   assert.match(playwrightIntegration.block, /run: npm run test:e2e/);
   assert.doesNotMatch(playwrightIntegration.block, /run: npm (?:run (?:typecheck|lint)|test)$/m);
