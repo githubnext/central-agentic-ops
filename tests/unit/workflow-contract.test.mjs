@@ -1313,6 +1313,12 @@ test("CAO dashboard reviewer checks successful documentation deployments", () =>
   assert.doesNotMatch(source, /^\s+(create-pull-request|add-comment|create-discussion|push-to-pull-request-branch):/m);
 });
 
+test("code improvement permits top-level and nested dashboard JavaScript sources", () => {
+  const source = workflow("code-improvement.md");
+
+  assert.match(source, /allowed-files:\n\s+- "dashboard\/site\/src\/\*\.js"\n\s+- "dashboard\/site\/src\/\*\*\/\*\.js"\n\s+- "dashboard\/site\/test\/\*\*\/\*\.js"/);
+});
+
 test("dashboard authoring corpus workflow generates only validated training examples", () => {
   const source = workflow("dashboard-authoring-corpus.md");
   const dashboardIrSkill = readFileSync(
