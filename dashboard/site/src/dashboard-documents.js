@@ -3,7 +3,7 @@
  *
  * @template {object} T
  * @param {T} primary
- * @param {T[]} additions
+ * @param {...T} additions
  * @returns {T}
  */
 export function composeDashboardDocuments(primary, ...additions) {
