@@ -11,12 +11,17 @@
 export function deriveWorkflowSources(sources) {
   const workflows = Array.isArray(sources.workflows?.rows) ? sources.workflows.rows : [];
   const outcomes = Array.isArray(sources.outcomes?.rows) ? sources.outcomes.rows : [];
+  /** @param {Row} row */
+  const isPackaged = (row) => row['workflow-role'] !== 'standalone' && Boolean(text(row.package));
   const packaged = workflows
-    .filter((row) => row['workflow-role'] !== 'standalone' && text(row.package))
+    .filter(isPackaged)
     .map(derivePackagedWorkflow)
     .sort(comparePackagedWorkflows);
+  // Every row not captured above (including rows with an unrecognized or
+  // missing workflow-role) is repository-owned; the two buckets must
+  // together account for every row so no workflow is silently dropped.
   const standalone = workflows
-    .filter((row) => row['workflow-role'] === 'standalone')
+    .filter((row) => !isPackaged(row))
     .map(deriveStandaloneWorkflow)
     .sort(compareStandaloneWorkflows);
   const packages = new Set(packaged.map((row) => text(row.package)));
@@ -159,7 +164,7 @@ function derivePackagedWorkflow(row) {
       ? {
           'package-link': {
             ...repositoryLink,
-            'dashboard-href': `#page-operational-value?package=${encodeURIComponent(packageId)}`,
+            'dashboard-href': `#page-package-insights?package=${encodeURIComponent(packageId)}`,
             'dashboard-label': `View ${text(row['package-name']) || titleCase(packageId)} package dashboard`
           }
         }

@@ -129,8 +129,8 @@ describe('renderWorkflowDetail', () => {
       'Package · Central Agentic Ops'
     ]);
     expect([...rendered.querySelectorAll('.workflow-identity .workflow-badge-operation')].map((badge) => badge.getAttribute('href'))).toEqual([
-      '#page-operational-value?package=ambient-context',
-      '#page-operational-value?package=central-agentic-ops'
+      '#page-package-insights?package=ambient-context',
+      '#page-package-insights?package=central-agentic-ops'
     ]);
     expect(rendered.querySelector('.workflow-identity > a')?.getAttribute('href')).toBe(
       'https://github.com/githubnext/central-agentic-ops/blob/HEAD/.github/workflows/ambient-context.md'

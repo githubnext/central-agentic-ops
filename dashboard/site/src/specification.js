@@ -30,6 +30,7 @@ export const VIEW_ELEMENT_VALUES = [
   'anomaly-readiness',
   'signal-list',
   'package-activity',
+  'package-insights',
   'package-detail',
   'package-reports',
   'workflow-detail',

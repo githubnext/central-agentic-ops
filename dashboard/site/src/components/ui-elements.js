@@ -37,6 +37,7 @@ const ELEMENT_RENDERERS = new Map([
   ['anomaly-readiness', renderAnomalyReadinessElement],
   ['signal-list', renderSignalListElement],
   ['package-activity', ({ sources, pageId }) => renderPackagesView(sources, pageId)],
+  ['package-insights', (context) => renderPackageNavigation(context, 'insights')],
   ['package-detail', (context) => renderPackageNavigation(context, 'workflows')],
   ['package-reports', (context) => renderPackageNavigation(context, 'reports')],
   ['workflow-detail', renderWorkflowDetail],
@@ -44,7 +45,7 @@ const ELEMENT_RENDERERS = new Map([
   ['outcome-detail', renderOutcomeDetail]
 ]);
 
-const EMPTY_AWARE_ELEMENTS = new Set(['summary-grid', 'context-summary', 'signal-list', 'package-detail', 'package-reports', 'workflow-detail', 'workflow-runtime', 'outcome-detail']);
+const EMPTY_AWARE_ELEMENTS = new Set(['summary-grid', 'context-summary', 'signal-list', 'package-insights', 'package-detail', 'package-reports', 'workflow-detail', 'workflow-runtime', 'outcome-detail']);
 
 /**
  * @param {string} name

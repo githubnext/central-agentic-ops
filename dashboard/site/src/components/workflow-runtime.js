@@ -9,7 +9,7 @@ import { renderStatusBadge } from './badge.js';
 import { renderChartLegend, renderChartWidget, renderPieLegend } from './chart-elements.js';
 import { findLink, renderExternalLink } from './link-content.js';
 import { isApprovalConclusion, isFailureConclusion } from './run-classification.js';
-import { formatUtcDateTime } from './ui-primitives.js';
+import { formatUtcDateTime, renderVitalStat } from './ui-primitives.js';
 import { renderTitledBodySection } from './view-chrome.js';
 import { renderWorkflowIdentity } from './workflow-identity.js';
 import { renderLinkTabs } from './tab-nav.js';
@@ -62,9 +62,6 @@ function renderWorkflowRuntimeContent(context, workflow) {
   const workflowName = text(workflow['workflow-name']) || workflowPath || 'Unknown workflow';
   const runs = matchingRows(context, 'runs', repository, workflowPath);
   const usage = matchingRows(context, 'usage', repository, workflowPath);
-  const observations = latestEvaluatorObservations(
-    matchingRows(context, 'operational-values', repository, workflowPath)
-  );
 
   return h(
     'div',
@@ -72,8 +69,22 @@ function renderWorkflowRuntimeContent(context, workflow) {
     renderWorkflowTabs(context.pageId, repository, workflowPath, workflowName),
     renderWorkflowIdentity(workflow),
     renderRuntimeMetrics(context, workflow, runs, usage),
-    renderValueReport(workflowName, repository, workflowPath, observations, context.sources['operational-values']?.metadata)
+    renderWorkflowValueReport(context, workflow)
   );
+}
+
+/**
+ * @param {import('./ui-elements.js').ElementRenderContext} context
+ * @param {Record<string, unknown>} workflow
+ */
+export function renderWorkflowValueReport(context, workflow) {
+  const repository = qualifiedRepository(workflow);
+  const workflowPath = text(workflow.workflow);
+  const workflowName = text(workflow['workflow-name']) || workflowPath || 'Unknown workflow';
+  const observations = latestEvaluatorObservations(
+    matchingRows(context, 'operational-values', repository, workflowPath)
+  );
+  return renderValueReport(workflowName, repository, workflowPath, observations, context.sources['operational-values']?.metadata);
 }
 
 /**
@@ -119,8 +130,8 @@ function renderRuntimeMetrics(context, workflow, runs, usage) {
       'dl',
       { className: 'workflow-runtime-metrics' },
       renderRunHealthMetric(health, healthAvailable, coverageLabel(runMetadata), recentMetricLabel('Run health', runMetadata)),
-      renderSimpleMetric('Registration', registration, 'Current GitHub Actions state'),
-      renderSimpleMetric(
+      renderVitalStat('Registration', registration, 'Current GitHub Actions state'),
+      renderVitalStat(
         recentMetricLabel('AI Credits', usageMetadata),
         usageAvailable && usageMeasured ? formatNumber(usageTotal, { name: 'AI Credits', symbol: 'AIC', significant: 0.1 }) : '—',
         usageAvailable
@@ -173,11 +184,6 @@ function renderRunHealthMetric(health, available, coverage, label) {
     renderPieLegend(/** @type {Array<[string, number]>} */ (entries), health.total),
     h('p', null, coverage)
   );
-}
-
-/** @param {string} label @param {string} value @param {string} detail */
-function renderSimpleMetric(label, value, detail) {
-  return h('div', null, h('dt', null, label), h('dd', null, value), h('p', null, detail));
 }
 
 /**
@@ -274,20 +280,23 @@ function renderValueReport(workflowName, repository, workflowPath, observations,
 function renderValueHistory(observations) {
   const diagnostics = diagnosticSeries(observations);
   const weekly = weeklyAttainment(observations);
+  const outcomeSeries = diagnostics.length > 0 ? diagnostics : primaryChangeSeries(weekly);
   const sections = [];
-  if (diagnostics.length > 0) {
+  if (outcomeSeries.length > 0) {
     sections.push(h(
       'section',
       { className: 'value-history-panel value-outcomes', 'aria-labelledby': 'value-outcomes-heading' },
       h('header', null,
         h('h3', { id: 'value-outcomes-heading' }, 'Outcome change from first observation'),
-        h('p', null, 'Positive values mean improvement according to each diagnostic direction.')
+        h('p', null, diagnostics.length > 0
+          ? 'Positive values mean improvement according to each diagnostic direction.'
+          : 'Positive values mean higher primary operational attainment.')
       ),
-      renderDiagnosticChart(diagnostics),
+      renderOutcomeChangeChart(outcomeSeries),
       h(
         'ul',
         { className: 'chart-legend value-diagnostic-legend' },
-        diagnostics.map((series, index) => h(
+        outcomeSeries.map((series, index) => h(
           'li',
           null,
           h('i', { className: `chart-series-${(index % 6) + 1}`, 'aria-hidden': 'true' }),
@@ -320,8 +329,20 @@ function renderValueHistory(observations) {
   return h('div', { className: 'value-history' }, sections);
 }
 
+/** @param {Array<{ weekStart: string, value: number }>} weekly */
+function primaryChangeSeries(weekly) {
+  if (weekly.length === 0) return [];
+  const first = weekly[0].value;
+  const points = weekly.map((week) => ({ weekStart: week.weekStart, change: week.value - first }));
+  return [{
+    name: 'Primary operational value',
+    points,
+    latestChange: points.at(-1)?.change ?? 0
+  }];
+}
+
 /** @param {Array<{ name: string, points: Array<{ weekStart: string, change: number }>, latestChange: number }>} series */
-function renderDiagnosticChart(series) {
+function renderOutcomeChangeChart(series) {
   const allWeeks = [...new Set(series.flatMap((item) => item.points.map((point) => point.weekStart)))].sort();
   const maximumChange = Math.max(0.1, ...series.flatMap((item) => item.points.map((point) => Math.abs(point.change))));
   const extent = Math.min(1, Math.ceil(maximumChange * 10) / 10);
@@ -335,7 +356,7 @@ function renderDiagnosticChart(series) {
     { className: 'diagnostic-chart', 'data-chart-widget': 'diagnostic-change' },
     h(
       'svg',
-      { viewBox: '0 0 100 46', role: 'img', 'aria-label': `Diagnostic outcome change: ${series.map((item) => `${item.name} ${formatPointChange(item.latestChange)}`).join(', ')}` },
+      { viewBox: '0 0 100 46', role: 'img', 'aria-label': `Outcome change: ${series.map((item) => `${item.name} ${formatPointChange(item.latestChange)}`).join(', ')}` },
       h('rect', { className: 'diagnostic-gain-zone', x: 10, y: 4, width: 88, height: 17 }),
       h('rect', { className: 'diagnostic-loss-zone', x: 10, y: 21, width: 88, height: 17 }),
       ...grid.flatMap((change) => {

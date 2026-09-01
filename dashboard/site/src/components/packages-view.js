@@ -662,7 +662,7 @@ function summarizePackages(workflows) {
 
 /** @param {string} packageId */
 function packageInsightsHref(packageId) {
-  return `#page-operational-value?package=${encodeURIComponent(packageId)}`;
+  return `#page-package-insights?package=${encodeURIComponent(packageId)}`;
 }
 
 /**

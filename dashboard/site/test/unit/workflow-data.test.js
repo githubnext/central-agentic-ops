@@ -44,12 +44,43 @@ describe('deriveWorkflowSources', () => {
       workflow: 'root.md'
     }));
     expect(sources['packaged-workflows'].rows[0]['package-link']).toEqual(expect.objectContaining({
-      'dashboard-href': '#page-operational-value?package=dependabot'
+      'dashboard-href': '#page-package-insights?package=dependabot'
     }));
     expect(sources['standalone-workflows'].rows).toEqual([
       expect.objectContaining({ repository: 'githubnext/target', workflow: 'local.md' })
     ]);
     expect(sources['packaged-workflows'].metadata).toBe(metadata);
+  });
+
+  it('still surfaces repository-owned rows whose workflow-role is missing or unrecognized', () => {
+    const sources = deriveWorkflowSources({
+      workflows: {
+        source: 'workflows',
+        metadata,
+        rows: [
+          workflow({
+            package: undefined,
+            'package-name': undefined,
+            repository: 'target',
+            workflow: 'unknown-role.md',
+            'workflow-name': 'Unknown Role',
+            'workflow-role': 'unknown'
+          }),
+          workflow({
+            package: undefined,
+            'package-name': undefined,
+            repository: 'target',
+            workflow: 'no-role.md',
+            'workflow-name': 'No Role'
+          })
+        ]
+      }
+    });
+
+    expect(sources['standalone-workflows'].rows.map((row) => row.workflow)).toEqual(
+      expect.arrayContaining(['unknown-role.md', 'no-role.md'])
+    );
+    expect(sources['packaged-workflows'].rows).toEqual([]);
   });
 
   it('does not present a bare organization as a qualified repository', () => {

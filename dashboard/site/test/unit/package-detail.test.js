@@ -31,6 +31,8 @@ const workflows = [
   {
     package: 'ambient-context',
     'package-name': 'Ambient Context',
+    organization: 'githubnext',
+    repository: 'central-agentic-ops',
     workflow: '.github/workflows/ambient-context-agents-md-curator.md',
     'workflow-name': 'Ambient Context / AGENTS.md Curator',
     'workflow-role': 'worker',
@@ -43,6 +45,45 @@ const workflows = [
     'workflow-name': 'Other',
     'workflow-role': 'orchestrator',
     'rollout-mode': 'live'
+  }
+];
+
+const operationalValues = [
+  {
+    organization: 'githubnext',
+    repository: 'central-agentic-ops',
+    workflow: '.github/workflows/ambient-context-agents-md-curator.md',
+    run: '100',
+    'operational-value': 0.5,
+    'operational-case': 'repository:github/example',
+    'evaluator-digest': 'sha256:current',
+    'requested-evidence-at': '2026-08-17T18:00:00Z',
+    'observed-at': '2026-08-24T18:00:00Z',
+    'maturity-status': 'matured'
+  },
+  {
+    organization: 'githubnext',
+    repository: 'central-agentic-ops',
+    workflow: '.github/workflows/ambient-context-agents-md-curator.md',
+    run: '101',
+    'operational-value': 0.75,
+    'operational-case': 'repository:github/example-2',
+    'evaluator-digest': 'sha256:current',
+    'requested-evidence-at': '2026-08-24T18:00:00Z',
+    'observed-at': '2026-08-31T18:00:00Z',
+    'maturity-status': 'matured'
+  },
+  {
+    organization: 'githubnext',
+    repository: 'central-agentic-ops',
+    workflow: '.github/workflows/other.md',
+    run: '102',
+    'operational-value': 1,
+    'operational-case': 'repository:github/other',
+    'evaluator-digest': 'sha256:other',
+    'requested-evidence-at': '2026-08-24T18:00:00Z',
+    'observed-at': '2026-08-31T18:00:00Z',
+    'maturity-status': 'matured'
   }
 ];
 
@@ -96,12 +137,33 @@ function context() {
     headingTag: /** @type {'h3'} */ ('h3'),
     sources: {
       workflows: { source: 'workflows', metadata, rows: workflows },
-      outcomes: { source: 'outcomes', metadata, rows: outcomes }
+      outcomes: { source: 'outcomes', metadata, rows: outcomes },
+      'operational-values': { source: 'operational-values', metadata, rows: operationalValues }
     }
   };
 }
 
 describe('renderPackageNavigation', () => {
+  it('renders weekly operational-value plots for only the selected package workers', () => {
+    const rendered = renderPackageNavigation({
+      ...context(),
+      pageId: 'package-insights',
+      sourceNames: ['workflows', 'operational-values']
+    }, 'insights');
+    rendered.dispatchEvent(new CustomEvent('dashboard-route-change', {
+      detail: { parameter: 'package', value: 'ambient-context' }
+    }));
+
+    expect(rendered.querySelector('.package-tabs [aria-current="page"]')?.getAttribute('href')).toBe('#page-package-insights?package=ambient-context');
+    expect(rendered.querySelector('.value-report h2')?.textContent).toBe('Ambient Context / AGENTS.md Curator');
+    expect(rendered.querySelector('.value-score')?.textContent).toContain('75%');
+    expect(rendered.querySelector('.value-outcomes')?.textContent).toContain('Outcome change from first observation');
+    expect(rendered.querySelector('.value-outcomes')?.textContent).toContain('Primary operational value+25.0 pts');
+    expect(rendered.querySelector('.value-attainment')?.textContent).toContain('Weekly operational attainment');
+    expect(rendered.querySelector('.value-attainment .primary-weekly')).not.toBeNull();
+    expect(rendered.textContent).not.toContain('github/other');
+  });
+
   it('renders reusable navigation for the selected package workflow view', () => {
     const rendered = renderPackageNavigation(context(), 'workflows');
     rendered.dispatchEvent(new CustomEvent('dashboard-route-change', {

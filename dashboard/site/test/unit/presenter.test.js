@@ -126,7 +126,7 @@ describe('presenter built-in and custom pages', () => {
 
     const links = [...rendered.querySelectorAll('[data-page-name="workflows"] table a')]
       .map((link) => link.getAttribute('href'));
-    expect(links).toContain('#page-operational-value?package=dependabot');
+    expect(links).toContain('#page-package-insights?package=dependabot');
     expect(links).toContain('#page-workflow-runtime?workflow=githubnext%2Fcentral-agentic-ops%3A.github%2Fworkflows%2Fdependabot.yml');
     expect(links).toContain('#page-workflow-runtime?workflow=github%2Ftarget-service%3A.github%2Fworkflows%2Fci.yml');
     expect(links).toContain('#page-repository-detail?repository=github%2Ftarget-service');
@@ -1155,12 +1155,12 @@ describe('presenter built-in and custom pages', () => {
     expect(packagesPage?.querySelector('[data-package-id="daily-ops"]')?.textContent).toContain('40 of 250 AIC across 2 reported runs');
     expect(packagesPage?.querySelector('[data-package-id="daily-ops"]')?.textContent).toContain('16%');
     expect(packagesPage?.querySelector('[data-package-id="empty-ops"]')?.textContent).toContain('No AIC usage was reported');
-    expect(packagesPage?.querySelector('[data-package-id="daily-ops"] .package-utilization-identity a')?.getAttribute('href')).toBe('#page-operational-value?package=daily-ops');
+    expect(packagesPage?.querySelector('[data-package-id="daily-ops"] .package-utilization-identity a')?.getAttribute('href')).toBe('#page-package-insights?package=daily-ops');
     expect(packagesPage?.querySelector('.package-summary-heading')?.textContent).toContain('All output by package');
     expect(packagesPage?.querySelector('.package-trend-panel + .package-summary')).not.toBeNull();
     const packageSummaryRows = [...(packagesPage?.querySelectorAll('.package-summary-table tbody tr') ?? [])];
     expect(packageSummaryRows).toHaveLength(2);
-    expect(packageSummaryRows[0]?.querySelector('th a')?.getAttribute('href')).toBe('#page-operational-value?package=daily-ops');
+    expect(packageSummaryRows[0]?.querySelector('th a')?.getAttribute('href')).toBe('#page-package-insights?package=daily-ops');
     expect([...packageSummaryRows[0]?.children ?? []].map((cell) => cell.textContent)).toEqual([
       'Daily Ops', '2', '1', '1', '1', '2', '40', 'Aug 29, 2026, 10:06 AM'
     ]);

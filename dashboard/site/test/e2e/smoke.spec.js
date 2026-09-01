@@ -50,8 +50,16 @@ function buildPresenterModuleUrl() {
     .replace("'./view-chrome.js'", JSON.stringify(viewChromeModuleUrl));
   const tableSummaryModuleUrl = `data:text/javascript;charset=utf-8,${encodeURIComponent(tableSummarySource)}`;
 
+  const dataOperationsSource = readFileSync(new URL('../../src/data-operations.js', import.meta.url), 'utf8');
+  const dataOperationsModuleUrl = `data:text/javascript;charset=utf-8,${encodeURIComponent(dataOperationsSource)}`;
+
+  const dataProcessorSource = readFileSync(new URL('../../src/data-processor.js', import.meta.url), 'utf8')
+    .replace("'./data-operations.js'", JSON.stringify(dataOperationsModuleUrl));
+  const dataProcessorModuleUrl = `data:text/javascript;charset=utf-8,${encodeURIComponent(dataProcessorSource)}`;
+
   const tableRegionSource = readFileSync(new URL('../../src/components/table-region.js', import.meta.url), 'utf8')
     .replace("'../dom.js'", JSON.stringify(domModuleUrl))
+    .replace("'../data-processor.js'", JSON.stringify(dataProcessorModuleUrl))
     .replace("'./table-summary.js'", JSON.stringify(tableSummaryModuleUrl));
   const tableRegionModuleUrl = `data:text/javascript;charset=utf-8,${encodeURIComponent(tableRegionSource)}`;
 
@@ -116,11 +124,6 @@ function buildPresenterModuleUrl() {
     .replace("'../dom.js'", JSON.stringify(domModuleUrl));
   const routeStateModuleUrl = `data:text/javascript;charset=utf-8,${encodeURIComponent(routeStateSource)}`;
 
-  const packageDetailSource = readFileSync(new URL('../../src/components/package-detail.js', import.meta.url), 'utf8')
-    .replace("'./tab-nav.js'", JSON.stringify(tabNavModuleUrl))
-    .replace("'./route-empty-state.js'", JSON.stringify(routeStateModuleUrl));
-  const packageDetailModuleUrl = `data:text/javascript;charset=utf-8,${encodeURIComponent(packageDetailSource)}`;
-
   const countFormattersSource = readFileSync(new URL('../../src/components/count-formatters.js', import.meta.url), 'utf8');
   const countFormattersModuleUrl = `data:text/javascript;charset=utf-8,${encodeURIComponent(countFormattersSource)}`;
 
@@ -165,6 +168,12 @@ function buildPresenterModuleUrl() {
     .replace("'./route-empty-state.js'", JSON.stringify(routeStateModuleUrl))
     .replace("'./workflow-route.js'", JSON.stringify(workflowRouteModuleUrl));
   const workflowRuntimeModuleUrl = `data:text/javascript;charset=utf-8,${encodeURIComponent(workflowRuntimeSource)}`;
+  const packageDetailSource = readFileSync(new URL('../../src/components/package-detail.js', import.meta.url), 'utf8')
+    .replace("'../dom.js'", JSON.stringify(domModuleUrl))
+    .replace("'./tab-nav.js'", JSON.stringify(tabNavModuleUrl))
+    .replace("'./route-empty-state.js'", JSON.stringify(routeStateModuleUrl))
+    .replace("'./workflow-runtime.js'", JSON.stringify(workflowRuntimeModuleUrl));
+  const packageDetailModuleUrl = `data:text/javascript;charset=utf-8,${encodeURIComponent(packageDetailSource)}`;
 
   const outcomeDetailSource = readFileSync(new URL('../../src/components/outcome-detail.js', import.meta.url), 'utf8')
     .replace("'../dom.js'", JSON.stringify(domModuleUrl))
@@ -696,6 +705,21 @@ test('DLS-PAGE-014 DLS-PAGE-015 built-in packages page renders report-style mode
               views: []
             },
             {
+              id: 'package-insights',
+              kind: 'custom',
+              title: 'Package',
+              route: { 'hash-query-parameter': 'package' },
+              views: [
+                {
+                  id: 'package-operational-value',
+                  title: 'Package operational value',
+                  data: { sources: ['workflows', 'operational-values'] },
+                  mark: 'element',
+                  element: 'package-insights'
+                }
+              ]
+            },
+            {
               id: 'package-detail',
               kind: 'custom',
               title: 'Package',
@@ -801,6 +825,11 @@ test('DLS-PAGE-014 DLS-PAGE-015 built-in packages page renders report-style mode
             { package: 'aw-maintenance', workflow: '.github/workflows/aw-maintenance.md', run: '2', 'run-conclusion': 'failure', 'safe-output': 'maintenance-live', 'rollout-mode': 'live', 'published-at': '2026-08-29T10:00:00Z', 'observed-at': '2026-08-29T10:00:00Z' }
           ],
           metadata
+        },
+        'operational-values': {
+          source: 'operational-values',
+          rows: [],
+          metadata
         }
       };
 
@@ -820,11 +849,12 @@ test('DLS-PAGE-014 DLS-PAGE-015 built-in packages page renders report-style mode
   await expect(awMaintenanceSummary.locator('td')).toHaveText(['2', '1', '1', '1', '1', '23.9', 'Aug 29, 2026, 10:05 AM']);
   await expect(page.getByRole('heading', { name: 'All runs over time', level: 3 })).toBeVisible();
   await expect(page.locator('.package-chart-point')).toHaveCount(30);
-  await expect(page.locator('[data-package-id="ambient-context"] a')).toHaveAttribute('href', '#page-operational-value?package=ambient-context');
+  await expect(page.locator('[data-package-id="ambient-context"] a')).toHaveAttribute('href', '#page-package-insights?package=ambient-context');
 
   await page.locator('[data-package-id="ambient-context"] a').click();
-  await expect(page).toHaveURL(/#page-operational-value\?package=ambient-context$/);
-  await expect(page.getByRole('heading', { name: 'Value & outcomes', level: 1 })).toBeVisible();
+  await expect(page).toHaveURL(/#page-package-insights\?package=ambient-context$/);
+  await expect(page.getByRole('heading', { name: 'Ambient Context', level: 1 })).toBeVisible();
+  await expect(page.getByText('No workflow observations yet')).toBeVisible();
 
   await page.evaluate(() => {
     window.location.hash = '#page-package-detail?package=ambient-context';

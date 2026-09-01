@@ -301,7 +301,7 @@ export function workflowName(workflow, run) {
 /** @param {Row | undefined} workflow @param {Row} run */
 export function packageOrWorkflowHref(workflow, run) {
   const packageId = text(workflow?.package);
-  return packageId ? `#page-operational-value?package=${encodeURIComponent(packageId)}` : workflowHref(workflow, run);
+  return packageId ? `#page-package-insights?package=${encodeURIComponent(packageId)}` : workflowHref(workflow, run);
 }
 
 /** @param {Row | undefined} workflow @param {Row} run */

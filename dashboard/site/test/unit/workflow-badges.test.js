@@ -21,8 +21,8 @@ describe('workflow-badges', () => {
       'Package · Central Agentic Ops'
     ]);
     expect([...element.querySelectorAll('a')].map((badge) => badge.getAttribute('href'))).toEqual([
-      '#page-operational-value?package=ambient-context',
-      '#page-operational-value?package=central-agentic-ops'
+      '#page-package-insights?package=ambient-context',
+      '#page-package-insights?package=central-agentic-ops'
     ]);
   });
 
