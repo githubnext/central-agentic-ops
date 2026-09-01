@@ -4,7 +4,7 @@
 
 import { h } from '../dom.js';
 import { octicon } from '../octicons.js';
-import { formatNumber } from '../view-formatters.js';
+import { formatNumber, formatPercent as formatRatioPercent } from '../view-formatters.js';
 import { renderStatusBadge } from './badge.js';
 import { renderChartLegend, renderChartWidget, renderPieLegend } from './chart-elements.js';
 import { findLink, renderExternalLink } from './link-content.js';
@@ -647,9 +647,7 @@ function formatObservationDate(value) {
 /** @param {unknown} value */
 function formatPercent(value) {
   const numeric = value == null || value === '' ? Number.NaN : Number(value);
-  return Number.isFinite(numeric)
-    ? new Intl.NumberFormat('en', { style: 'percent', maximumFractionDigits: 1 }).format(numeric)
-    : 'Not observed';
+  return Number.isFinite(numeric) ? formatRatioPercent(numeric) : 'Not observed';
 }
 
 /** @param {unknown} value */
