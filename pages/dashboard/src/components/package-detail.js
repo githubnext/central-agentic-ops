@@ -3,7 +3,7 @@
  */
 
 import { renderLinkTabs } from './tab-nav.js';
-import { createRouteView } from './route-state.js';
+import { createRouteView } from './route-empty-state.js';
 
 /**
  * @param {import('./ui-elements.js').ElementRenderContext} context
