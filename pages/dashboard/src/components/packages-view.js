@@ -275,7 +275,7 @@ function packageActivityRuns(packages, sources, mode) {
         packageKey,
         runKey,
         'rollout-mode': rolloutMode,
-        'run-conclusion': row['run-conclusion'],
+        'run-conclusion': String(row['run-conclusion'] ?? 'unknown'),
         'started-at': startedAt,
         'ended-at': endedAt
       });
@@ -329,13 +329,13 @@ function runIdentity(row) {
 /** @param {unknown} left @param {unknown} right */
 function earlierDate(left, right) {
   const values = [left, right].filter((value) => Number.isFinite(Date.parse(String(value ?? ''))));
-  return values.sort((a, b) => Date.parse(String(a)) - Date.parse(String(b)))[0];
+  return values.sort((a, b) => Date.parse(String(a)) - Date.parse(String(b)))[0] ?? left ?? right;
 }
 
 /** @param {unknown} left @param {unknown} right */
 function laterDate(left, right) {
   const values = [left, right].filter((value) => Number.isFinite(Date.parse(String(value ?? ''))));
-  return values.sort((a, b) => Date.parse(String(b)) - Date.parse(String(a)))[0];
+  return values.sort((a, b) => Date.parse(String(b)) - Date.parse(String(a)))[0] ?? left ?? right;
 }
 
 /**
