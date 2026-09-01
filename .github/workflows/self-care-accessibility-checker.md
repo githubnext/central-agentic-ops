@@ -97,11 +97,13 @@ safe-outputs:
 
 pre-agent-steps:
   - name: Install documentation dependencies
+    if: ${{ inputs.target_repo == 'githubnext/central-agentic-ops' && (inputs.safe_output_mode || 'review') == 'live' }}
     run: timeout 10m npm ci --ignore-scripts
-    working-directory: .
   - name: Build documentation
+    if: ${{ inputs.target_repo == 'githubnext/central-agentic-ops' && (inputs.safe_output_mode || 'review') == 'live' }}
     run: timeout 10m npm run docs:build
   - name: Fetch the axe-core accessibility engine
+    if: ${{ inputs.target_repo == 'githubnext/central-agentic-ops' && (inputs.safe_output_mode || 'review') == 'live' }}
     env:
       EXPR_GITHUB_WORKSPACE: ${{ github.workspace }}
     run: |
@@ -113,6 +115,7 @@ pre-agent-steps:
       mv package/axe.min.js axe.min.js
       rm -rf package axe-core-4.13.0.tgz
   - name: Configure Playwright CLI launch options
+    if: ${{ inputs.target_repo == 'githubnext/central-agentic-ops' && (inputs.safe_output_mode || 'review') == 'live' }}
     env:
       EXPR_GITHUB_WORKSPACE: ${{ github.workspace }}
     run: |
@@ -128,6 +131,7 @@ pre-agent-steps:
       }
       EOF
   - name: Playwright browser launch preflight
+    if: ${{ inputs.target_repo == 'githubnext/central-agentic-ops' && (inputs.safe_output_mode || 'review') == 'live' }}
     env:
       EXPR_GITHUB_WORKSPACE: ${{ github.workspace }}
     run: |
@@ -155,7 +159,7 @@ evals:
 
 # SelfCare Accessibility Checker
 
-Read `/tmp/gh-aw/agent/control-precompute.json` first. This worker is authorized only when `target_repo` is exactly `githubnext/central-agentic-ops` and `safe_output_mode` is `live`. If either condition is false, call `noop` once with the denied scope and stop without auditing or publishing findings.
+Read `/tmp/gh-aw/agent/control-precompute.json` first. This worker is authorized only when its precomputed `target_repo` is exactly `githubnext/central-agentic-ops` and its precomputed `safe_output_mode` is `live`. If either condition is false, call `noop` once with the denied scope and stop without auditing or publishing findings.
 
 You are an accessibility specialist. Audit this repository's web interface — the Astro documentation site — for accessibility barriers, and publish one prioritized report issue.
 

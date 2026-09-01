@@ -1280,6 +1280,7 @@ test("multi-device docs tester runs daily and covers browser and appearance comp
 
 test("SelfCare accessibility checker audits the served docs site with axe-core evidence", () => {
   const source = workflow("self-care-accessibility-checker.md");
+  const liveGuard = "if: ${{ inputs.target_repo == 'githubnext/central-agentic-ops' && (inputs.safe_output_mode || 'review') == 'live' }}";
 
   assert.match(source, /^name: "SelfCare \/ Accessibility Checker"$/m);
   assert.match(source, /workflow_dispatch:/);
@@ -1295,12 +1296,14 @@ test("SelfCare accessibility checker audits the served docs site with axe-core e
   assert.match(source, /prefers-reduced-motion/);
   assert.match(source, /create-issue:\n\s+target-repo:.*\n\s+title-prefix: "\[accessibility\] "/);
   assert.match(source, /close-older-key: self-care-accessibility-checker/);
+  assert.equal(source.split(liveGuard).length - 1, 5);
   assert.doesNotMatch(source, /^\s+(create-pull-request|add-comment|create-discussion|push-to-pull-request-branch):/m);
 });
 
 test("SelfCare Primer brand checker audits the dashboard against retrieved guidance", () => {
   const source = workflow("self-care-primer-brand-checker.md");
   const compiled = workflow("self-care-primer-brand-checker.lock.yml");
+  const liveGuard = "if: ${{ inputs.target_repo == 'githubnext/central-agentic-ops' && (inputs.safe_output_mode || 'review') == 'live' }}";
 
   assert.match(source, /^name: "SelfCare \/ Primer Brand Checker"$/m);
   assert.match(source, /package: self-care/);
@@ -1314,6 +1317,7 @@ test("SelfCare Primer brand checker audits the dashboard against retrieved guida
   assert.match(source, /npm --prefix dashboard\/site run test:e2e/);
   assert.match(source, /create-pull-request:\n\s+target-repo:.*\n\s+title-prefix: "Primer branding: "\n\s+draft: true/);
   assert.match(source, /If the audit finds no meaningful deviations, call `noop` once/);
+  assert.equal(source.split(liveGuard).length - 1, 1);
   assert.match(compiled, /\\"noop\\":\{\\"max\\":1,\\"report-as-issue\\":\\"false\\"\}/);
 });
 
