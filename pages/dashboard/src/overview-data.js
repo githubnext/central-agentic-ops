@@ -118,36 +118,6 @@ export function deriveOverviewSources(sources) {
       source: 'cost-signals',
       rows: costSignals,
       metadata: overviewMetadata
-    },
-    'cost-readiness': {
-      source: 'cost-readiness',
-      rows: [{
-        priority: 1,
-        count: 1,
-        tone: 'informational',
-        icon: 'meter',
-        kind: 'Evaluation boundary',
-        title: 'Budget and anomaly verdicts unavailable',
-        detail: 'A budget verdict requires an applicable budget, matching time window, and complete measured usage. An anomaly verdict requires a qualified historical baseline and disclosed statistical rule.',
-        evidence: 'Threshold unavailable',
-        action: 'Review evidence'
-      }],
-      metadata: overviewMetadata
-    },
-    'experiment-readiness': {
-      source: 'experiment-readiness',
-      rows: [{
-        priority: 1,
-        count: 1,
-        tone: 'informational',
-        icon: 'beaker',
-        kind: 'Evidence boundary',
-        title: 'Experiment comparisons unavailable',
-        detail: 'The report does not retain authoritative experiment definitions, variant assignments, or assignment-to-run links. It therefore does not infer control or treatment groups from workflow names, timestamps, models, or outcomes.',
-        evidence: 'Comparison unavailable',
-        action: 'Review evidence'
-      }],
-      metadata: overviewMetadata
     }
   };
 }

@@ -521,6 +521,11 @@ h3 { margin: 16px 0 8px; font-size: 1rem; font-weight: 600; }
 .summary-grid > div { min-width: 0; padding: 13px 15px; background: var(--canvas-subtle); }
 .summary-grid dt { color: var(--muted); font-size: .6875rem; font-weight: 600; text-transform: uppercase; }
 .summary-grid dd { margin: 2px 0 0; font-size: 1.25rem; font-weight: 600; font-variant-numeric: tabular-nums; }
+.dashboard-callout { display: grid; grid-template-columns: minmax(240px, .55fr) minmax(0, 1fr); align-items: center; gap: 24px; padding: 16px; overflow: hidden; border: 1px solid var(--border); border-left: 4px solid var(--attention); border-radius: 6px; background: color-mix(in srgb, var(--attention) 5%, var(--canvas)); }
+.dashboard-callout-heading { display: flex; align-items: center; gap: 12px; }
+.dashboard-callout-heading > .octicon { width: 28px; height: 28px; flex: none; color: var(--attention); }
+.dashboard-callout h3, .dashboard-callout h4 { margin: 1px 0 0; font-size: 1rem; }
+.dashboard-callout p { margin: 0; color: var(--muted); font-size: .8125rem; }
 .signal-list-region { position: relative; }
 .signal-count { position: absolute; right: 0; bottom: calc(100% + 34px); margin: 0; color: var(--muted); font-size: .75rem; font-weight: 600; }
 .signal-boundary-note { margin: 0; padding: 8px 15px; border: 1px solid var(--border); border-top: 0; color: var(--muted); font-size: .6875rem; }
@@ -677,6 +682,7 @@ footer { padding: 20px 24px; border-top: 1px solid var(--border); color: var(--m
   .control-plane-heading p { font-size: .75rem; }
   .control-plane-vitals { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .summary-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .dashboard-callout { grid-template-columns: 1fr; gap: 10px; }
   .signal-item > :is(a, div) { grid-template-columns: 20px minmax(0, 1fr); }
   .signal-rank { display: none; }
   .signal-copy { grid-column: 2; }

@@ -414,6 +414,12 @@ function renderPage(page, sources, units) {
 function renderCustomPage(page, title, sources, units) {
   const views = Array.isArray(page.views) ? page.views : [];
   const sections = Array.isArray(page.sections) ? page.sections : [];
+  const standaloneCalloutViewIds = new Set(sections.flatMap((section) => {
+    if (!Array.isArray(section.views) || section.views.length !== 1) return [];
+    const viewId = section.views[0];
+    const view = views.find((candidate) => isPlainObject(candidate) && candidate.id === viewId);
+    return isPlainObject(view) && view.mark === 'callout' ? [viewId] : [];
+  }));
   const routeParameter = typeof page.route?.['hash-query-parameter'] === 'string'
     ? page.route['hash-query-parameter']
     : undefined;
@@ -430,7 +436,9 @@ function renderCustomPage(page, title, sources, units) {
     }
   }
   const renderedViews = views.map((view, index) => {
-    const rendered = renderCustomView(page.id, view, index, sources, units, sections.length > 0 ? 'h4' : 'h3', routeParameter);
+    const viewId = isPlainObject(view) && typeof view.id === 'string' ? view.id : '';
+    const headingTag = sections.length > 0 && !standaloneCalloutViewIds.has(viewId) ? 'h4' : 'h3';
+    const rendered = renderCustomView(page.id, view, index, sources, units, headingTag, routeParameter);
     const layout = isPlainObject(view) && typeof view.layout === 'string' ? view.layout : 'full';
     const disclosure = isPlainObject(view) && view.disclosure === 'supplemental' ? 'supplemental' : 'essential';
     rendered.classList.add('custom-view');
@@ -524,6 +532,13 @@ function renderLayoutSection(pageId, section, renderedViews, sources) {
   const headingId = `${pageId}-${section.id}-layout-heading`;
   const countSource = section['count-source'] ? sources[section['count-source']] : null;
   const count = Array.isArray(countSource?.rows) ? countSource.rows.length : null;
+  const sectionViews = section.views.map((viewId) => renderedViews.get(viewId)
+    ?? h('p', { className: 'empty', 'data-missing-view-id': viewId }, `View unavailable: ${viewId}`));
+  if (sectionViews.length === 1 && sectionViews[0].classList.contains('dashboard-callout')) {
+    sectionViews[0].setAttribute('data-section-id', section.id);
+    sectionViews[0].setAttribute('data-section-layout', section.layout);
+    return sectionViews[0];
+  }
   return h(
     'section',
     {
@@ -536,8 +551,7 @@ function renderLayoutSection(pageId, section, renderedViews, sources) {
     h(
       'div',
       { className: 'custom-view-grid' },
-      ...section.views.map((viewId) => renderedViews.get(viewId)
-        ?? h('p', { className: 'empty', 'data-missing-view-id': viewId }, `View unavailable: ${viewId}`))
+      ...sectionViews
     )
   );
 }
@@ -820,10 +834,42 @@ function renderCustomView(pageId, view, index, sources, units, headingTag = 'h3'
   if (view.mark === 'element') {
     return renderElementView(pageId, title, view, sources, contextDetails, headingTag, routeParameter);
   }
+  if (view.mark === 'callout') {
+    return renderCalloutView(pageId, view, title, headingTag);
+  }
 
   const sourceName = getViewSources(view)[0] ?? null;
   if (!sourceName) {
     return renderCustomViewState(pageId, title, null, 'unavailable', ['Source unavailable.'], headingTag);
+  }
+
+  /**
+   * @param {string} pageId
+   * @param {Record<string, unknown>} view
+   * @param {string} title
+   * @param {'h3'|'h4'} headingTag
+   * @returns {HTMLElement}
+   */
+  function renderCalloutView(pageId, view, title, headingTag) {
+    const definition = isPlainObject(view.callout) ? view.callout : {};
+    const viewId = typeof view.id === 'string' ? view.id : 'callout';
+    const headingId = `${pageId}-${viewId}-callout-heading`;
+    return h(
+      'aside',
+      { className: 'dashboard-callout', role: 'note', 'aria-labelledby': headingId },
+      h(
+        'div',
+        { className: 'dashboard-callout-heading' },
+        octicon(typeof definition.icon === 'string' ? definition.icon : 'info'),
+        h(
+          'div',
+          null,
+          h('span', { className: 'scope-kicker' }, typeof definition.label === 'string' ? definition.label : 'Note'),
+          h(headingTag, { id: headingId }, title)
+        )
+      ),
+      h('p', null, typeof view.description === 'string' ? view.description : '')
+    );
   }
 
   const sourceInput = sources[sourceName];

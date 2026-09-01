@@ -18,10 +18,11 @@ export const CUSTOM_PAGE_KEYS = ['id', 'kind', 'title', 'navigation-label', 'des
 export const PAGE_ROUTE_KEYS = ['hash-query-parameter', 'navigation-page'];
 export const PAGE_FILTER_BAR_KEYS = ['filters', 'time-range', 'export'];
 
-export const VIEW_KEYS = ['id', 'title', 'description', 'data', 'mark', 'element', 'chart', 'layout', 'disclosure', 'controls', 'column-summaries', 'empty-message', 'title-link', 'encoding'];
+export const VIEW_KEYS = ['id', 'title', 'description', 'data', 'mark', 'element', 'callout', 'chart', 'layout', 'disclosure', 'controls', 'column-summaries', 'empty-message', 'title-link', 'encoding'];
 export const VIEW_DATA_KEYS = ['source', 'sources', 'scope', 'time', 'filters', 'route-field', 'limit', 'order-by', 'source-metadata'];
 export const VIEW_TITLE_LINK_KEYS = ['href-field', 'identifier-field'];
-export const VIEW_MARK_VALUES = ['metric', 'table', 'chart', 'element'];
+export const CALLOUT_KEYS = ['label', 'icon'];
+export const VIEW_MARK_VALUES = ['metric', 'table', 'chart', 'element', 'callout'];
 export const VIEW_ELEMENT_VALUES = [
   'domain-attention',
   'summary-grid',
@@ -261,8 +262,6 @@ export const SOURCE_VALUES = [
   'value-workflows',
   'cost-summary',
   'cost-signals',
-  'cost-readiness',
-  'experiment-readiness',
   'runtime-signals',
   'dispatches',
   'repository-summary',
@@ -301,8 +300,6 @@ export const SOURCE_FIELDS = {
   'value-workflows': ['organization', 'repository', 'workflow', 'run', 'operational-value-definition', 'opportunities', 'mature-observations', 'mean-operational-value', 'mean-baseline', 'observed-at', 'evidence-link', 'run-link', 'organization-link', 'repository-link', 'workflow-link'],
   'cost-summary': ['label', 'value'],
   'cost-signals': ['priority', 'count', 'tone', 'icon', 'kind', 'title', 'detail', 'evidence', 'action', 'navigation-page'],
-  'cost-readiness': ['priority', 'count', 'tone', 'icon', 'kind', 'title', 'detail', 'evidence', 'action'],
-  'experiment-readiness': ['priority', 'count', 'tone', 'icon', 'kind', 'title', 'detail', 'evidence', 'action'],
   'runtime-signals': ['priority', 'count', 'tone', 'icon', 'kind', 'title', 'detail', 'evidence', 'action', 'navigation-href'],
   dispatches: ['started-at', 'dispatch-type', 'package-name', 'workflow-name', 'run-title', 'runtime-repository', 'status', 'run-link'],
   'repository-summary': ['label', 'value', 'items'],
