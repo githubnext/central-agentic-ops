@@ -63,7 +63,8 @@ Use the same package slug and steering file for the orchestrator and all of its 
 
 Create `.github/workflows/<package>.md` with:
 
-- `name` set to the exact package display name, with no `/` suffix, and a run name that includes target and safe-output mode
+- `name` set to the exact package display name, with no `/` suffix
+- an event-aware `run-name`: scheduled runs use the literal `<Package Name> · scheduled` because target and mode are resolved after run creation; `workflow_dispatch` runs include the submitted target and requested safe-output mode, defaulting missing values to `github.repository` and `review`; never display unresolved placeholders such as `auto` or `mode`
 - a schedule when the operation is periodic, plus `workflow_dispatch`
 - the standard dispatch inputs: `target_repo`, `safe_output_repo`, `max_repos`, `rollout_percent`, and `safe_output_mode` with `review` and `live` choices, defaulting to `review`
 - `shared/control.md` imported with a static `package` slug, `role: orchestrator`, and request-only narrowing inputs
@@ -144,7 +145,7 @@ Measure operational value per worker because workers have independently dispatch
 Before finishing:
 
 1. Confirm there is exactly one new orchestrator and at least one worker.
-2. Confirm the orchestrator `name` is exactly `<Package Name>` and every worker `name` is exactly `<Package Name> / <Worker Name>`.
+2. Confirm the orchestrator `name` is exactly `<Package Name>`, every worker `name` is exactly `<Package Name> / <Worker Name>`, and the orchestrator `run-name` distinguishes scheduled runs from manual target-and-mode runs without unresolved placeholders.
 3. Confirm the orchestrator dispatch list exactly matches the new worker stems.
 4. Confirm each worker accepts the complete standard envelope and imports `shared/control.md` as `worker`.
 5. Confirm the orchestrator imports `shared/control.md` with static package identity, reads policy only through the shared JSON resolver, and defaults safely to review mode.
