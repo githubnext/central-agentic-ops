@@ -1309,6 +1309,22 @@ function validateView(view, viewNode, path, viewIds, errors) {
     }
   }
 
+  if (view.table !== undefined) {
+    if (typeof view.table !== 'boolean') {
+      errors.push(createError(
+        ERROR_CODES.missingOrInvalidRequiredField,
+        'table must be a boolean.',
+        `${path}.table`
+      ));
+    } else if (view.mark !== 'chart') {
+      errors.push(createError(
+        ERROR_CODES.missingOrInvalidRequiredField,
+        'table is allowed only when mark is "chart".',
+        `${path}.table`
+      ));
+    }
+  }
+
   if (view['empty-message'] !== undefined && view.mark !== 'table') {
     errors.push(createError(
       ERROR_CODES.missingOrInvalidRequiredField,

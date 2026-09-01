@@ -206,7 +206,7 @@ Language keys and enumerated values use canonical kebab-case. Human-readable tit
 | Page `filter-bar` | `filters`, `time-range`, `export` |
 | Page section | `id`, `title`, `description`, `layout`, `views`, `count-source`, `count-label` |
 | Custom page `route` | `hash-query-parameter`, `navigation-page` |
-| View | `id`, `title`, `description`, `data`, `mark`, `element`, `chart`, `layout`, `disclosure`, `controls`, `empty-message`, `title-link`, `encoding` |
+| View | `id`, `title`, `description`, `data`, `mark`, `element`, `chart`, `table`, `layout`, `disclosure`, `controls`, `empty-message`, `title-link`, `encoding` |
 | View `data` | `source` or `sources`, `scope`, `time`, `filters`, `limit`, `order-by` |
 | View `title-link` | `href-field`, `identifier-field` |
 | Field definition | `field`, `type`, `aggregate`, `time-unit`, `title`, `as` (only when `aggregate` is not `none`), `display`, `unit` |
@@ -589,7 +589,7 @@ Callout views declare static explanatory content rather than logical-source obse
 
 The optional table-column field `display` is `text`, `status`, `grader-status`, `mode`, `active-state`, `label`, or `digest` and defaults to `text`. It selects presentation independently from the field name. Named UI element values include `domain-attention`, `summary-grid`, `context-summary`, `signal-list`, `package-activity`, `package-detail`, `package-reports`, `repository-workflows`, `workflow-detail`, `workflow-runtime`, `outcome-detail`, and `dispatch-catalog`; renderers dispatch these values without inferring behavior from page IDs, view IDs, or source contents. The overview domain-attention element keeps its six operational domains distinct while the remaining elements can be independently assembled through `views`, `sections`, and `layout`.
 
-A chart may set `chart` to `line`, `bar`, or `pie`. When `chart` is omitted, temporal `x` has a line time-series default and any other valid chart has a bar default. A line chart uses temporal `x`; a pie chart uses nominal or ordinal `x` for categories and quantitative `y` for values. These known widget types and defaults are semantic; this specification does not define visual styling.
+A chart may set `chart` to `line`, `bar`, or `pie`. When `chart` is omitted, temporal `x` has a line time-series default and any other valid chart has a bar default. A line chart uses temporal `x`; a pie chart uses nominal or ordinal `x` for categories and quantitative `y` for values. A chart may set Boolean `table` to `false` to omit its companion data table; an omitted or `true` value includes the table. These known widget types and defaults are semantic; this specification does not define visual styling.
 
 A view may set the structural `layout` hint to `full`, `half`, or `third`. The values describe the preferred share of an available row, not fixed dimensions. Presenters **MAY** collapse every hint to `full` when space, accessibility, or output media requires it; source order remains the reading and focus order.
 
@@ -652,6 +652,7 @@ Disclosure changes presentation only. It does not change data processing, data s
 - **DLS-VIEW-028:** Table `controls`, when present, **MUST** be `interactive` or `static`; an omitted value **MUST** default to `interactive`. A static table **MUST** expose every effective row without filter, sort, summary, pagination, or nested-scroll controls. `column-summaries`, when present, **MUST** be Boolean and controls whether an interactive table renders its column-summary row; an omitted value **MUST** default to `true`. A temporal column summary **MUST** expose the earliest valid timestamp as Start, the latest valid timestamp as Stop, and their elapsed Duration instead of treating timestamps as categorical values. `empty-message`, when present, **MUST** be non-empty text and **MUST** appear only inside a zero-row table body.
 - **DLS-VIEW-029:** A `metric`, `table`, or `chart` on a routed custom page **MAY** declare `data.route-field`. The field **MUST** exist in `data.source`. The presenter **MUST** retain only rows whose field value exactly matches the decoded route value, using case-insensitive text comparison, before the processing order in Section 11.2. A missing route value **MUST** produce an empty effective row set. `element` views **MUST NOT** declare `data.route-field`.
 - **DLS-VIEW-030:** An `element` view **MAY** declare `title-link` with exactly one `href-field` and one `identifier-field` declared by the same selected source. `href-field` **MUST** name a relation-specific link field and `identifier-field` **MUST** name a scalar field. When a route-aware element allocates a title with both runtime values present, the presenter **MUST** render a sibling link labeled `#<identifier>` using the link object's safe HTTPS target; absent or invalid values **MUST** leave the title-link hidden. Other marks **MUST NOT** declare `title-link`.
+- **DLS-VIEW-031:** A `chart` view **MAY** declare Boolean `table`; `false` **MUST** omit the companion data table, while an omitted or `true` value **MUST** include it. Other marks **MUST NOT** declare `table`.
 
 ---
 
@@ -740,7 +741,7 @@ In the table, “accept” means validation succeeds; “reject” means validat
 | DLS-VIEW-001–006 | T-VIEW-001 | 3 | Validate custom structure and every allowed mark/channel combination. |
 | DLS-VIEW-007–015, DLS-VIEW-025, DLS-UNIT-001–003 | T-VIEW-002 | 3 | Validate fields, types, link-compatible `href`, units, time units, ordering, exclusions, operation order, exposed context, and link labels. |
 | DLS-VIEW-016–021 | T-VIEW-003 | 3 | Validate disclosure vocabulary, one-to-four essential views, initial collapsed state, accessible controls, source order, and unchanged semantic output. |
-| DLS-VIEW-022–024, DLS-VIEW-026–030 | T-VIEW-004 | 3 | Validate named element dispatch, explicit field display treatments, complete ordered custom-page section layouts, route allocation, and title links. |
+| DLS-VIEW-022–024, DLS-VIEW-026–031 | T-VIEW-004 | 3 | Validate named element dispatch, explicit field display treatments, complete ordered custom-page section layouts, route allocation, title links, and optional chart data tables. |
 | DLS-VAL-001–005 | T-VAL-001 | 1–3 | Verify rejection, coded path-specific errors, semantic checks, progressive-disclosure bounds, and secret redaction. |
 | DLS-SAFE-001–006, DLS-SAFE-012 | T-SAFE-001 | 3 | Exercise safe YAML, inert content, outcome-HTML allowlisting, HTTPS links, secrets, and authorization boundaries. |
 | DLS-SAFE-007–010 | T-SAFE-002 | 3 | Inspect names, textual alternatives, labels, and non-color semantics. |

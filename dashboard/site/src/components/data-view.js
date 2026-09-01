@@ -204,7 +204,7 @@ function renderChartView(context) {
     y ? fieldTitle(y) : 'Total',
     y ? fieldUnit(y, context.units ?? {}) : null
   );
-  const table = renderTableRegion({
+  const table = view.table === false ? null : renderTableRegion({
     tableClassName: 'custom-chart-table',
     emptyMessage: 'No points available.',
     colSpan: color ? 3 : 2,
@@ -234,13 +234,13 @@ function renderChartView(context) {
   const section = renderPageSection(
     pageId,
     title,
-    chartType === 'pie' ? chartContent : [...chartContent, table],
+    chartType === 'pie' ? chartContent : [...chartContent, ...(table ? [table] : [])],
     headingTag
   );
   if (chartType === 'pie') {
     section.append(
       h('div', { className: 'pie-chart-card' }, ...Array.from(section.children)),
-      table
+      ...(table ? [table] : [])
     );
   }
   section.classList.add('chart-view', `chart-view-${chartType}`);

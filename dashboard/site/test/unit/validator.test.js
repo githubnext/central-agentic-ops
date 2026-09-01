@@ -2253,6 +2253,58 @@ dashboard:
     }
   });
 
+  it('DLS-VIEW-031 validates the chart table option', () => {
+    const valid = validateDashboardDocument(`language-version: "0.1.0"
+dashboard:
+  id: valid-chart-table
+  title: Valid Chart Table
+  pages:
+    - id: custom-page
+      kind: custom
+      views:
+        - id: chart-view
+          data:
+            source: usage
+          mark: chart
+          chart: pie
+          table: false
+          encoding:
+            x:
+              field: repository
+            y:
+              field: aic
+              aggregate: sum
+`);
+    const invalid = validateDashboardDocument(`language-version: "0.1.0"
+dashboard:
+  id: invalid-chart-table
+  title: Invalid Chart Table
+  pages:
+    - id: custom-page
+      kind: custom
+      views:
+        - id: metric-view
+          data:
+            source: usage
+          mark: metric
+          table: hidden
+          encoding:
+            value:
+              field: aic
+              aggregate: sum
+`);
+
+    expect(valid.ok).toBe(true);
+    expect(invalid.ok).toBe(false);
+    if (!invalid.ok) {
+      expect(invalid.errors).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({ code: 'DLS-E003', path: '$.dashboard.pages[0].views[0].table' })
+        ])
+      );
+    }
+  });
+
   it('DLS-SEM-004 DLS-SEM-005 DLS-SEM-006 DLS-SEM-008 DLS-SEM-009 DLS-SEM-015 reject non-canonical intrinsic enumerations in filters', () => {
     const result = validateDashboardDocument(`language-version: "0.1.0"
 dashboard:
