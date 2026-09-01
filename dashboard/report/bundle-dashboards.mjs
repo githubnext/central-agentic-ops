@@ -3,17 +3,7 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { composeDashboardDocuments } from "./compose-dashboard-documents.mjs";
 
-/**
- * @typedef {{
- *   "language-version": string,
- *   dashboard: {
- *     pages: Array<Record<string, unknown>>,
- *     navigation?: Array<{ label: string, pages: string[] }>,
- *     [key: string]: unknown
- *   },
- *   [key: string]: unknown
- * }} DashboardDocument
- */
+/** @typedef {import("./compose-dashboard-documents.mjs").DashboardDocument} DashboardDocument */
 
 /**
  * @param {unknown} value
