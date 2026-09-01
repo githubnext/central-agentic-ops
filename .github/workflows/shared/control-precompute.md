@@ -380,8 +380,9 @@ steps:
             next
           }
           in_dispatch && /^    workflows:[[:space:]]*$/ { in_workflows = 1; next }
+          in_workflows && /^    - / { sub(/^    - /, ""); print; next }
           in_workflows && /^      - / { sub(/^      - /, ""); print; next }
-          in_workflows && $0 !~ /^      - / { in_workflows = 0 }
+          in_workflows { in_workflows = 0 }
         ' $A/control-source.md \
           | jq -R -s 'split("\n") | map(gsub("^\\s+|\\s+$"; "") | gsub("^\\\"|\\\"$"; "") | select(length > 0))'
       }
