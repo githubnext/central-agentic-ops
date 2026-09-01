@@ -112,13 +112,13 @@ function buildPresenterModuleUrl() {
     .replace("'../dom.js'", JSON.stringify(domModuleUrl));
   const linkedTextModuleUrl = `data:text/javascript;charset=utf-8,${encodeURIComponent(linkedTextSource)}`;
 
-  const routeStateSource = readFileSync(new URL('../../src/components/route-state.js', import.meta.url), 'utf8')
+  const routeStateSource = readFileSync(new URL('../../src/components/route-empty-state.js', import.meta.url), 'utf8')
     .replace("'../dom.js'", JSON.stringify(domModuleUrl));
   const routeStateModuleUrl = `data:text/javascript;charset=utf-8,${encodeURIComponent(routeStateSource)}`;
 
   const packageDetailSource = readFileSync(new URL('../../src/components/package-detail.js', import.meta.url), 'utf8')
     .replace("'./tab-nav.js'", JSON.stringify(tabNavModuleUrl))
-    .replace("'./route-state.js'", JSON.stringify(routeStateModuleUrl));
+    .replace("'./route-empty-state.js'", JSON.stringify(routeStateModuleUrl));
   const packageDetailModuleUrl = `data:text/javascript;charset=utf-8,${encodeURIComponent(packageDetailSource)}`;
 
   const countFormattersSource = readFileSync(new URL('../../src/components/count-formatters.js', import.meta.url), 'utf8');
@@ -144,7 +144,7 @@ function buildPresenterModuleUrl() {
     .replace("'../octicons.js'", JSON.stringify(octiconsModuleUrl))
     .replace("'./tab-nav.js'", JSON.stringify(tabNavModuleUrl))
     .replace("'./workflow-identity.js'", JSON.stringify(workflowIdentityModuleUrl))
-    .replace("'./route-state.js'", JSON.stringify(routeStateModuleUrl));
+    .replace("'./route-empty-state.js'", JSON.stringify(routeStateModuleUrl));
   const workflowDetailModuleUrl = `data:text/javascript;charset=utf-8,${encodeURIComponent(workflowDetailSource)}`;
   const workflowRuntimeSource = readFileSync(new URL('../../src/components/workflow-runtime.js', import.meta.url), 'utf8')
     .replace("'../dom.js'", JSON.stringify(domModuleUrl))
@@ -158,7 +158,7 @@ function buildPresenterModuleUrl() {
     .replace("'./view-chrome.js'", JSON.stringify(viewChromeModuleUrl))
     .replace("'./workflow-identity.js'", JSON.stringify(workflowIdentityModuleUrl))
     .replace("'./tab-nav.js'", JSON.stringify(tabNavModuleUrl))
-    .replace("'./route-state.js'", JSON.stringify(routeStateModuleUrl));
+    .replace("'./route-empty-state.js'", JSON.stringify(routeStateModuleUrl));
   const workflowRuntimeModuleUrl = `data:text/javascript;charset=utf-8,${encodeURIComponent(workflowRuntimeSource)}`;
 
   const outcomeDetailSource = readFileSync(new URL('../../src/components/outcome-detail.js', import.meta.url), 'utf8')
@@ -168,7 +168,7 @@ function buildPresenterModuleUrl() {
     .replace("'./link-content.js'", JSON.stringify(linkContentModuleUrl))
     .replace("'./ui-primitives.js'", JSON.stringify(uiPrimitivesModuleUrl))
     .replace("'./view-chrome.js'", JSON.stringify(viewChromeModuleUrl))
-    .replace("'./route-state.js'", JSON.stringify(routeStateModuleUrl));
+    .replace("'./route-empty-state.js'", JSON.stringify(routeStateModuleUrl));
   const outcomeDetailModuleUrl = `data:text/javascript;charset=utf-8,${encodeURIComponent(outcomeDetailSource)}`;
 
   const runtimeDataSource = readFileSync(new URL('../../src/runtime-data.js', import.meta.url), 'utf8')
