@@ -3,6 +3,8 @@
  */
 
 import { h } from '../dom.js';
+import { octicon } from '../octicons.js';
+import { renderStatusBadge } from './badge.js';
 import { renderSectionHeading } from './ui-primitives.js';
 import { titleCase } from './count-formatters.js';
 
@@ -107,9 +109,28 @@ export function renderContextChrome(contextDetails) {
  * @returns {HTMLElement[]}
  */
 export function renderViewHeader(metadata) {
-  return renderViewChrome([
-    `As of ${metadata['as-of']} • completeness ${metadata.completeness} • freshness ${metadata.freshness}`
-  ]);
+  return [h(
+    'dl',
+    { className: 'view-metadata view-metadata-summary', role: 'group', 'aria-label': 'Data status' },
+    h(
+      'div',
+      null,
+      h('dt', null, octicon('clock'), 'As of'),
+      h('dd', null, h('time', { dateTime: metadata['as-of'] }, metadata['as-of']))
+    ),
+    h(
+      'div',
+      null,
+      h('dt', null, octicon('checklist'), 'Completeness'),
+      h('dd', null, renderStatusBadge(metadata.completeness))
+    ),
+    h(
+      'div',
+      null,
+      h('dt', null, octicon('pulse'), 'Freshness'),
+      h('dd', null, renderStatusBadge(metadata.freshness))
+    )
+  )];
 }
 
 /**
@@ -253,5 +274,3 @@ export function renderLayoutSectionChrome(pageId, section, count) {
 function slugifyText(value) {
   return value.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '') || 'section';
 }
-
-
