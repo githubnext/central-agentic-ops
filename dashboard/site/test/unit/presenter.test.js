@@ -4,7 +4,7 @@ import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { dirname, resolve } from 'node:path';
 import { renderDashboard, enableDashboardKeyboardNavigation } from '../../src/presenter.js';
-import { composeDashboardDocuments } from '../../../report/bundle-dashboards.mjs';
+import { composeDashboardDocuments } from '../../../report/compose-dashboard-documents.mjs';
 
 const fixtureDirectory = dirname(fileURLToPath(import.meta.url));
 const builtInDashboardDocument = JSON.parse(

@@ -58,6 +58,7 @@ describe('dashboard document validation', () => {
     expect(documents).toHaveLength(packagePageIds.length);
     for (const pageId of packagePageIds) {
       const document = documents.find((candidate) => candidate.dashboard.pages[0].id === pageId);
+      if (!document) throw new Error(`Missing package dashboard page ${pageId}`);
       const page = document.dashboard.pages[0];
       expect(document.dashboard.navigation).toEqual([{ label: 'Package operations', pages: [pageId] }]);
       expect(page).toMatchObject({ kind: 'custom' });
