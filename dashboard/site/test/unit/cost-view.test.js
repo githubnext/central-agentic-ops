@@ -100,8 +100,9 @@ describe('Cost and efficiency dashboard view', () => {
     const pieChartView = page?.querySelector('.chart-view-pie');
     const pieChartCard = pieChartView?.querySelector('.pie-chart-card');
     const repositoryTable = pieChartView?.querySelector('.custom-chart-table');
+    const repositoryTableRegion = repositoryTable?.closest('.table-region');
     expect(pieChartCard).not.toBeNull();
-    expect(repositoryTable?.parentElement).toBe(pieChartView);
+    expect(repositoryTableRegion?.parentElement).toBe(pieChartView);
     expect(pieChartCard?.contains(repositoryTable ?? null)).toBe(false);
     expect(page?.querySelectorAll('.signal-list-region')).toHaveLength(1);
     const boundary = page?.querySelector('.dashboard-callout');
