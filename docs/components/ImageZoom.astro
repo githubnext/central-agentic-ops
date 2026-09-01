@@ -28,12 +28,9 @@ import { Icon } from "@astrojs/starlight/components";
 
     const openDialog = (source: HTMLImageElement) => {
       const description = source.alt.trim();
-      const declaredWidth = Number.parseFloat(source.getAttribute("width") || "0");
-      const zoomWidth = Math.max(declaredWidth, source.naturalWidth, source.clientWidth);
       triggerToRestore = source;
       preview.src = source.currentSrc || source.src;
       preview.alt = description;
-      preview.style.width = `${zoomWidth}px`;
       caption.textContent = description;
       caption.hidden = description.length === 0;
       viewport.scrollTo(0, 0);
@@ -71,7 +68,6 @@ import { Icon } from "@astrojs/starlight/components";
     });
     dialog.addEventListener("close", () => {
       preview.removeAttribute("src");
-      preview.style.removeProperty("width");
       triggerToRestore?.focus();
       triggerToRestore = null;
     });
@@ -179,10 +175,10 @@ import { Icon } from "@astrojs/starlight/components";
 
   .image-zoom-viewport img {
     display: block;
-    width: auto;
+    width: 100%;
     max-width: none;
-    height: auto;
-    margin: 0 auto;
+    height: 100%;
+    object-fit: contain;
     background: var(--sl-color-bg);
   }
 
