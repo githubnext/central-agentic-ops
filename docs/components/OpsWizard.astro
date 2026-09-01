@@ -199,22 +199,6 @@ const agents = [
   const CATALOG_REF = "main";
   const SETUP_SKILL_URL =
     "https://raw.githubusercontent.com/githubnext/central-agentic-ops/main/.github/skills/setup-central-agentic-ops/SKILL.md";
-  const PACKAGE_WORKERS: Record<string, string[]> = {
-    advisory: ["uk-ai-operational-resilience"],
-    "ambient-context": ["agents-md-curator", "skills-curator"],
-    "aw-maintenance": ["failures-investigator", "upgrade"],
-    dependabot: ["release-train-updater"],
-    "eu-cra-compliance": [
-      "scope-classifier",
-      "security-requirements-auditor",
-      "supply-chain-sbom-auditor",
-      "vulnerability-handling-auditor",
-      "article-14-reporting-readiness",
-      "conformity-release-evidence",
-    ],
-    optimization: ["ai-credit-auditor", "ai-credit-optimizer"],
-  };
-
   function selected(form: HTMLFormElement, name: string): HTMLInputElement | null {
     return form.querySelector<HTMLInputElement>(`input[name="${name}"]:checked`);
   }
@@ -240,9 +224,7 @@ const agents = [
           "control-plane": {
             scope: { "allowed-owners": [owner] },
             packages: {
-              [operation.value]: {
-                workers: Object.fromEntries(PACKAGE_WORKERS[operation.value].map((worker) => [worker, {}])),
-              },
+              [operation.value]: {},
             },
           },
         }, null, 2)

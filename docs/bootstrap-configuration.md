@@ -90,7 +90,7 @@ Before publishing or changing a package with `config:`:
 1. Run `npm run compile`.
 2. Install the package by pinned release or commit into a disposable private control repository.
 3. Confirm existing secrets are detected and left unchanged when the wizard is rerun, and confirm the selected Copilot auth profile is applied to every installed Copilot workflow.
-4. Commit a valid `.github/central-agentic-ops.json` declaring the package and workers.
+4. Commit a valid `.github/central-agentic-ops.json` declaring the package; add worker entries only for exceptions.
 5. Review the App or PAT repository selection and permissions.
 6. Run one explicit target with `max_repos` set to `1` and `safe_output_mode` set to `review`.
 

@@ -133,7 +133,7 @@ Invalid caps, out-of-scope owners, and incomplete control facts stop before work
 | 🟢 Pass | Duplicate workflow display names | Workers resolve only by exact generated path; analytics group by workflow path. |
 | 🟢 Pass | Enterprise and organization planes target the same repository | Independent provenance, policy, credentials, and kill switches are preserved. |
 | 🟢 Pass | Direct worker dispatch | Target and safe-output owners still pass the trusted allowlist. |
-| 🟢 Pass | Worker ceiling omitted | Worker remains enabled but review-only. |
+| 🟢 Pass | Worker ceiling omitted | Worker remains enabled and inherits the resolved package or exact-target mode. |
 | 🟢 Pass | Review destination is public or inaccessible | Rejected before agent execution. |
 | 🟢 Pass | Aggregate AI Credit request exceeds `1100` default | Repository selection is reduced to fit the shared cap. |
 | 🟢 Pass | Public targets without an App or PAT | Built-in `GITHUB_TOKEN` supports bounded review runs in the control repository; private access, alternate review repositories, and live target writes remain prohibited. |

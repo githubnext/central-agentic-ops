@@ -86,13 +86,13 @@ The package installs:
 3. shared authentication, routing, and fail-closed controls;
 4. generated `.lock.yml` workflows that GitHub Actions executes.
 
-The installed operation is runnable after its package and worker are declared in the control policy.
+The installed operation is runnable after its package is declared in the control policy. Its installed workers are enabled unless the policy names a worker exception.
 
 Do not edit generated `.lock.yml` files directly. Update their Markdown sources and regenerate them with `gh aw compile`.
 
 ### Step 4 - Set the first-run boundary
 
-Create `.github/central-agentic-ops.json` with the target owner, package, and worker. The omitted package settings default to `review`, one repository, and 100 percent rollout:
+Create `.github/central-agentic-ops.json` with the target owner and package. The omitted package settings default to `review`, one repository, and 100 percent rollout:
 
 ```json title=".github/central-agentic-ops.json"
 {
@@ -102,11 +102,7 @@ Create `.github/central-agentic-ops.json` with the target owner, package, and wo
 			"allowed-owners": ["acme"]
 		},
 		"packages": {
-			"dependabot": {
-				"workers": {
-					"release-train-updater": {}
-				}
-			}
+			"dependabot": {}
 		}
 	}
 }

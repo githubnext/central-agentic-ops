@@ -217,7 +217,7 @@ A control repository uses `control-plane`. A target repository uses `target-auth
 | `scope` | Eligible owners and optional repository restriction | Resolver safe defaults |
 | `inventory` | Scan, cell, and batch ceilings | Schema defaults |
 | `defaults` | Mode, repository, rollout, and monthly admission defaults | Schema defaults |
-| `packages` | Explicit package and worker declarations | Undeclared entries are disabled |
+| `packages` | Explicit package declarations and optional worker exceptions | Undeclared packages are disabled; installed package workers are enabled |
 | `publishing` | Deterministic reviewed-output publication | Disabled |
 
 `allowed-owners` and `allowed-repositories` are cumulative when both are non-empty. Wildcards MUST NOT be accepted in version 1.
@@ -241,7 +241,7 @@ Inventory partitioning MUST be deterministic for the same inventory and effectiv
 
 `monthly-ai-credit-budget` MUST NOT replace, raise, or reinterpret gh-aw `max-ai-credits` or `max-turns`. When the value is positive, the orchestrator MUST read unique month-to-date AI Credit usage for the package orchestrator and workers, reserve the orchestrator's declared maximum, and admit only complete worker sets that fit the remaining budget. The budget-derived target cap MUST be intersected with all repository, rollout, and dispatch caps. Unreadable or invalid usage evidence MUST set the budget target cap to zero and prevent dispatch; it MUST NOT be estimated. A value of `0` disables monthly admission without changing native gh-aw per-run limits.
 
-An absent package or worker is disabled. A present package or worker defaults `enabled` to `true`; a worker without `max-mode` defaults to `review`.
+An absent package is disabled. A declared package enables every worker shipped by its installed immutable package. The optional `workers` map contains exceptions only: `enabled: false` disables one installed worker, and an explicit `max-mode` may only narrow the resolved package or exact-target mode. Unknown package or worker identities remain invalid.
 
 ### 5.4 Target Authority
 
@@ -258,7 +258,7 @@ Review mode does not require target authority because it cannot mutate the targe
 Persistent values resolve in this order:
 
 ```text
-schema defaults < control-plane.defaults < package policy < worker ceiling
+schema defaults < control-plane.defaults < package policy < exact target policy < optional worker ceiling
 ```
 
 Dispatch values are intersected with the persistent result. They are requests and MUST NOT become persistent authority.
@@ -395,11 +395,7 @@ The effective record SHOULD contain only identifiers and provenance required for
       "allowed-repositories": ["acme/payments-api"]
     },
     "packages": {
-      "dependabot": {
-        "workers": {
-          "release-train-updater": {}
-        }
-      }
+      "dependabot": {}
     }
   }
 }
@@ -447,11 +443,10 @@ The following stable `reason` values are produced by the version 1 policy resolv
 
 | Reason | Meaning | Required behavior |
 | --- | --- | --- |
-| `authorized` | The package and, where applicable, worker passed initial policy resolution | Continue remaining authorization checks |
+| `authorized` | The package and, where applicable, installed worker passed initial policy resolution | Continue remaining authorization checks |
 | `control-plane-absent` | The document contains no control-plane policy | Deny and emit native `noop` |
 | `package-undeclared` | The requested package is absent | Deny and emit native `noop` |
 | `package-disabled` | The requested package is explicitly disabled | Deny and emit native `noop` |
-| `worker-undeclared` | The requested worker is absent from the package | Deny and emit native `noop` |
 | `worker-disabled` | The requested worker is explicitly disabled | Deny and emit native `noop` |
 
 Invalid JSON, schema violations, unknown static identities, widening requests, unavailable required evidence, and target-authority integrity failures are fatal policy errors. A conforming implementation MUST fail before model invocation for these errors. It SHOULD report a stable, non-secret diagnostic, but this specification does not standardize exception message text.

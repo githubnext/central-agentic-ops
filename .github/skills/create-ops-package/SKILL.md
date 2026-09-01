@@ -47,7 +47,7 @@ For this exception, validate manifest source/destination ownership, both action 
 
 CAO controls whether and where the package may run; gh-aw controls how its workflows execute. CAO policy may deny or narrow a run, but it must not define or expand engines, models, per-run turns or AI Credit limits, tools, network access, permissions, generated jobs, authentication, or safe-output primitives. Keep those execution mechanics in each gh-aw source workflow, and never treat a declared gh-aw capability as rollout or target authority.
 
-The orchestrator is the rollout decision point and each worker is an independent enforcement point. Keep credentials out of dispatch inputs, require each worker to re-resolve current policy before model execution, and preserve the least-permissive intersection of the parent envelope, current CAO policy, credential reach, compiled gh-aw capabilities, and live target authority.
+The orchestrator is the rollout decision point and each worker is an independent enforcement point. Package mode is the default for unmatched repositories; an exact entry under the package's `targets` map may assign a different mode within global scope. Workers inherit the resolved mode unless an explicit `max-mode` narrows it. Keep credentials out of dispatch inputs, require each worker to re-resolve its exact target policy before model execution, and preserve the least-permissive intersection of the parent envelope, current CAO policy, any explicit worker mode ceiling, credential reach, compiled gh-aw capabilities, and live target authority.
 
 ### Markdown Steering
 
