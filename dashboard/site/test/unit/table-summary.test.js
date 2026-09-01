@@ -95,6 +95,17 @@ describe('renderTableSummaryRow', () => {
     expect(rendered.querySelector('.table-summary-cell')?.textContent).toBe('');
   });
 
+  it('leaves the summary empty for report link columns', () => {
+    const rendered = renderTableSummaryRow([{
+      label: 'Report',
+      type: 'nominal',
+      display: 'outcome-link',
+      values: ['First report', 'Second report']
+    }]);
+
+    expect(rendered.querySelector('.table-summary-cell')?.textContent).toBe('');
+  });
+
   it('summarizes run-like columns and object values by item count', () => {
     const rendered = renderTableSummaryRow([
       {

@@ -145,6 +145,7 @@ function renderTableView(context) {
           field: outputField,
           label: fieldTitle(column),
           type: String(column.type ?? ''),
+          display: typeof column.display === 'string' ? column.display : undefined,
           values: tableRows.map((row) => row[outputField])
         };
       }) : [],
