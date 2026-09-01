@@ -33,10 +33,16 @@
         label: `Run ${run}`,
       });
 
-      const dashboardSchema = await fetch("./dashboard.json").then((response) => {
-        if (!response.ok) throw new Error(`Unable to load dashboard.json: ${response.status}`);
-        return response.json();
-      });
+      const loadingProgress = startLoadingProgress(document);
+      const dashboardSchema = await fetch("./dashboard.json")
+        .then((response) => {
+          if (!response.ok) throw new Error(`Unable to load dashboard.json: ${response.status}`);
+          return response.json();
+        })
+        .catch((error) => {
+          loadingProgress.complete();
+          throw error;
+        });
       const dashboardDocument = {
         languageVersion: dashboardSchema["language-version"],
         dashboard: dashboardSchema.dashboard,
@@ -335,8 +341,8 @@
 
       if (new URLSearchParams(window.location.search).has("fixtures")) {
         renderSources(fixtureSources);
+        loadingProgress.complete();
       } else {
-        const loadingProgress = startLoadingProgress(document);
         let dashboard = renderSources({}, "loading");
         const cacheKey = new URL("./sources.json", window.location.href).href;
         const liveSourcesPromise = fetch("./sources.json").then(async (response) => {

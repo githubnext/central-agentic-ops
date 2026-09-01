@@ -14,7 +14,7 @@ describe('loading progress', () => {
     vi.spyOn(Math, 'random').mockReturnValue(0.5);
 
     startLoadingProgress(document);
-    const bar = document.querySelector('.loading-progress');
+    const bar = /** @type {HTMLElement | null} */ (document.querySelector('.loading-progress'));
     const positions = [];
 
     for (let index = 0; index < 20; index += 1) {
@@ -30,7 +30,7 @@ describe('loading progress', () => {
   it('finishes once and removes the bar after its completion transition', () => {
     vi.useFakeTimers();
     const progress = startLoadingProgress(document);
-    const bar = document.querySelector('.loading-progress');
+    const bar = /** @type {HTMLElement | null} */ (document.querySelector('.loading-progress'));
 
     progress.complete();
     progress.complete();
