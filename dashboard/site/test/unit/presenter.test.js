@@ -1616,7 +1616,7 @@ describe('presenter built-in and custom pages', () => {
     expect(issueLink?.getAttribute('aria-label')).toBe('Issue 1 label');
     expect(issueLink?.getAttribute('target')).toBe('_blank');
     expect(issueLink?.getAttribute('rel')).toBe('noopener noreferrer');
-    expect(issueLink?.textContent).toBe('Issue 1 label');
+    expect(issueLink?.textContent).toBe('<img src=x onerror=alert(1)>');
   });
 
   it('DLS-VIEW-013 DLS-VIEW-014 DLS-VIEW-015 DLS-SAFE-006 renders custom views with available, empty, and unavailable states while exposing only context-permitted observations and links', () => {
@@ -1865,7 +1865,7 @@ describe('presenter built-in and custom pages', () => {
     const tableRows = tableSection ? tableSection.querySelectorAll('.custom-table tbody tr') : null;
     expect(tableRows).toHaveLength(1);
     const linkedCell = tableRows?.[0]?.querySelector('a');
-    expect(linkedCell?.textContent).toBe('PR 1');
+    expect(linkedCell?.textContent).toBe('Unsafe dependency');
     expect(linkedCell?.getAttribute('aria-label')).toBe('PR 1');
     expect(tableSection?.textContent).toContain('Scope: {"repositories":["central-agentic-ops"]}');
     expect(tableSection?.textContent).toContain('Time: {"start":"2026-08-29T00:00:00Z","end":"2026-08-30T00:00:00Z"}');

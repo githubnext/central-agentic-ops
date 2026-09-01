@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import { describe, expect, it } from 'vitest';
-import { findFirstLink, findLink, renderExternalLink, renderLinkedValueWithExternalLink, renderOutcomeLink, renderWorkflowRunLink, resolveTitleLink } from '../../src/components/link-content.js';
+import { findFirstLink, findLink, renderExternalLink, renderLinkedValue, renderOutcomeLink, renderWorkflowRunLink, resolveTitleLink } from '../../src/components/link-content.js';
 
 describe('link content helpers', () => {
   it('DLS-SAFE-004 finds only safe https links with non-empty labels', () => {
@@ -48,19 +48,18 @@ describe('link content helpers', () => {
   it('DLS-SAFE-010 renders labeled external links and optional linked value content', () => {
     const link = { href: 'https://example.com/run/4', label: 'Run 4' };
     const anchor = renderExternalLink(link);
-    const linkedValue = /** @type {Array<string | HTMLElement | null>} */ (renderLinkedValueWithExternalLink('Summary', link));
-    const plainValue = renderLinkedValueWithExternalLink('Summary', null);
+    const linkedValue = /** @type {HTMLElement} */ (renderLinkedValue('Summary', link));
+    const plainValue = renderLinkedValue('Summary', null);
 
     expect(anchor.getAttribute('href')).toBe('https://example.com/run/4');
     expect(anchor.getAttribute('target')).toBe('_blank');
     expect(anchor.getAttribute('rel')).toBe('noopener noreferrer');
     expect(anchor.getAttribute('aria-label')).toBe('Run 4');
     expect(anchor.textContent).toContain('Run 4');
-    expect(Array.isArray(linkedValue)).toBe(true);
-    expect(linkedValue).toHaveLength(3);
-    expect(linkedValue[0]).toBe('Summary');
-    expect(linkedValue[1]).toBe(' ');
-    expect(linkedValue[2]).toBeInstanceOf(HTMLElement);
+    expect(linkedValue).toBeInstanceOf(HTMLElement);
+    expect(linkedValue.textContent).toBe('Summary');
+    expect(linkedValue.getAttribute('href')).toBe('https://example.com/run/4');
+    expect(linkedValue.getAttribute('aria-label')).toBe('Run 4');
     expect(plainValue).toBe('Summary');
   });
 
