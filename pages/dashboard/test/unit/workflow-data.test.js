@@ -103,6 +103,11 @@ describe('deriveWorkflowSources', () => {
               relation: 'issue',
               href: 'https://github.com/githubnext/control/issues/2',
               label: 'View issue 2'
+            },
+            'external-link': {
+              relation: 'external',
+              href: 'https://example.com/report',
+              label: 'View external report'
             }
           },
           {

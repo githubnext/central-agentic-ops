@@ -60,7 +60,7 @@ function deriveWorkflowReport(row) {
   const workflow = text(row.workflow);
   const safeOutput = text(row['safe-output']);
   if (!repository || repository.toLowerCase() === 'unknown' || !workflow) return null;
-  const sourceLink = ['external-link', 'issue-link', 'pull-request-link', 'run-link']
+  const sourceLink = ['issue-link', 'pull-request-link', 'run-link', 'external-link']
     .map((field) => row[field])
     .find(isPlainObject);
   return {
