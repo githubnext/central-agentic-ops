@@ -6,14 +6,20 @@ import { dirname, resolve } from 'node:path';
 import { renderDashboard, enableDashboardKeyboardNavigation } from '../../src/presenter.js';
 
 const fixtureDirectory = dirname(fileURLToPath(import.meta.url));
-const authoritativeDashboardDocument = JSON.parse(
+const builtInDashboardDocument = JSON.parse(
   readFileSync(resolve(fixtureDirectory, '../../dashboard.json'), 'utf8')
 );
 const packageDashboardDocument = JSON.parse(
   readFileSync(resolve(fixtureDirectory, '../../package-dashboards.json'), 'utf8')
 );
-authoritativeDashboardDocument.dashboard.pages.push(...packageDashboardDocument.dashboard.pages);
-authoritativeDashboardDocument.dashboard.navigation.push(...packageDashboardDocument.dashboard.navigation);
+const authoritativeDashboardDocument = {
+  ...builtInDashboardDocument,
+  dashboard: {
+    ...builtInDashboardDocument.dashboard,
+    pages: [...builtInDashboardDocument.dashboard.pages, ...packageDashboardDocument.dashboard.pages],
+    navigation: [...builtInDashboardDocument.dashboard.navigation, ...packageDashboardDocument.dashboard.navigation]
+  }
+};
 
 describe('presenter built-in and custom pages', () => {
   it('renders JSON-declared package and standalone workflow inventory with a topology summary', () => {
