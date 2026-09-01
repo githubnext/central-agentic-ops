@@ -6,6 +6,7 @@ import { h } from '../dom.js';
 import { findLink } from './link-content.js';
 import { renderSectionHeading } from './ui-primitives.js';
 import { renderLinkTabs } from './tab-nav.js';
+import { createRouteView } from './route-state.js';
 
 /**
  * @param {import('./ui-elements.js').ElementRenderContext} context
@@ -13,24 +14,21 @@ import { renderLinkTabs } from './tab-nav.js';
  */
 export function renderPackageDetail(context) {
   const allWorkflows = rowsFor(context.sources, 'workflows');
-  const root = h('div', {
-    className: 'package-detail',
-    'data-route-view': '',
-    'data-route-parameter': context.routeParameter
-  });
-
-  /** @param {unknown} routeValue */
-  const render = (routeValue) => {
-    const packageId = normalizePackageRoute(routeValue);
-    const workflows = allWorkflows
-      .filter((workflow) => packageId && String(workflow.package).toLowerCase() === packageId.toLowerCase())
-      .sort(comparePackageWorkflows);
-    root.dataset.package = packageId;
-    root.replaceChildren(packageId && workflows.length > 0
-      ? renderPackageContent(context, packageId, workflows)
-      : h('p', { className: 'empty' }, packageId ? 'Package not found.' : 'Select a package to view its workflows.'));
-
-    if (workflows.length > 0) {
+  const root = createRouteView({
+    rootClassName: 'package-detail',
+    routeParameter: context.routeParameter,
+    datasetKey: 'package',
+    selectMessage: 'Select a package to view its workflows.',
+    notFoundMessage: 'Package not found.',
+    hasSelection: (routeValue) => normalizePackageRoute(routeValue).length > 0,
+    renderMatched: (routeValue) => {
+      const packageId = normalizePackageRoute(routeValue);
+      const workflows = allWorkflows
+        .filter((workflow) => packageId && String(workflow.package).toLowerCase() === packageId.toLowerCase())
+        .sort(comparePackageWorkflows);
+      if (workflows.length === 0) {
+        return null;
+      }
       const packageName = nameForPackage(packageId, workflows);
       root.dispatchEvent(new CustomEvent('dashboard-route-allocation', {
         bubbles: true,
@@ -41,14 +39,9 @@ export function renderPackageDetail(context) {
           navigationPage: 'packages'
         }
       }));
+      return renderPackageContent(context, packageId, workflows);
     }
-  };
-
-  root.addEventListener('dashboard-route-change', (event) => {
-    if (!(event instanceof CustomEvent) || event.detail?.parameter !== context.routeParameter) return;
-    render(event.detail.value);
   });
-  render('');
   return root;
 }
 
@@ -115,27 +108,23 @@ function renderPackageTabs(packageId, packageName, selectedView) {
  */
 export function renderPackageReports(context) {
   const allWorkflows = rowsFor(context.sources, 'workflows');
-  const workflowsUnavailable = context.sources.workflows?.metadata?.availability === 'unavailable';
-  const root = h('div', {
-    className: 'package-reports',
-    'data-route-view': '',
-    'data-route-parameter': context.routeParameter
-  });
-
-  /** @param {unknown} routeValue */
-  const render = (routeValue) => {
-    const packageId = normalizePackageRoute(routeValue);
-    const workflows = allWorkflows
-      .filter((workflow) => packageId && String(workflow.package).toLowerCase() === packageId.toLowerCase())
-      .sort(comparePackageWorkflows);
-    root.dataset.package = packageId;
-    root.replaceChildren(workflowsUnavailable
-      ? h('p', { className: 'empty' }, 'Package data is unavailable.')
-      : packageId && workflows.length > 0
-      ? renderPackageTabs(packageId, nameForPackage(packageId, workflows), 'reports')
-      : h('p', { className: 'empty' }, packageId ? 'Package not found.' : 'Select a package to view its reports.'));
-
-    if (workflows.length > 0) {
+  const root = createRouteView({
+    rootClassName: 'package-reports',
+    routeParameter: context.routeParameter,
+    datasetKey: 'package',
+    selectMessage: 'Select a package to view its reports.',
+    notFoundMessage: 'Package not found.',
+    unavailableMessage: 'Package data is unavailable.',
+    isUnavailable: () => context.sources.workflows?.metadata?.availability === 'unavailable',
+    hasSelection: (routeValue) => normalizePackageRoute(routeValue).length > 0,
+    renderMatched: (routeValue) => {
+      const packageId = normalizePackageRoute(routeValue);
+      const workflows = allWorkflows
+        .filter((workflow) => packageId && String(workflow.package).toLowerCase() === packageId.toLowerCase())
+        .sort(comparePackageWorkflows);
+      if (workflows.length === 0) {
+        return null;
+      }
       const packageName = nameForPackage(packageId, workflows);
       root.dispatchEvent(new CustomEvent('dashboard-route-allocation', {
         bubbles: true,
@@ -146,14 +135,9 @@ export function renderPackageReports(context) {
           navigationPage: 'packages'
         }
       }));
+      return renderPackageTabs(packageId, packageName, 'reports');
     }
-  };
-
-  root.addEventListener('dashboard-route-change', (event) => {
-    if (!(event instanceof CustomEvent) || event.detail?.parameter !== context.routeParameter) return;
-    render(event.detail.value);
   });
-  render('');
   return root;
 }
 

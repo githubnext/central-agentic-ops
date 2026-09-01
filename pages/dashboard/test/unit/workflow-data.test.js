@@ -103,6 +103,11 @@ describe('deriveWorkflowSources', () => {
               relation: 'issue',
               href: 'https://github.com/githubnext/control/issues/2',
               label: 'View issue 2'
+            },
+            'external-link': {
+              relation: 'external',
+              href: 'https://example.com/report',
+              label: 'View external report'
             }
           },
           {
@@ -134,6 +139,7 @@ describe('deriveWorkflowSources', () => {
     }));
     expect(sources['workflow-reports'].rows[0]['external-link']).toEqual(expect.objectContaining({
       href: 'https://github.com/githubnext/control/issues/2',
+      relation: 'external',
       'dashboard-href': '#page-outcome-detail?outcome=issue-2'
     }));
     expect(sources['workflow-reports'].metadata).toBe(metadata);

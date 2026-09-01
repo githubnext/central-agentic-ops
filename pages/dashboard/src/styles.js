@@ -639,6 +639,7 @@ tbody tr:hover { background: var(--canvas-subtle); }
 .outcome-meta p { margin: 0; overflow-wrap: anywhere; }
 .outcome-meta a { display: inline-flex; align-items: center; gap: 5px; }
 .mode-indicator { min-height: 22px; display: inline-flex; flex: none; align-items: center; gap: 5px; padding: 1px 7px; border: 1px solid var(--border); border-radius: 2em; font-size: .6875rem; font-weight: 600; text-transform: none; white-space: nowrap; }
+.mode-indicator[hidden] { display: none; }
 .mode-indicator .octicon { width: 13px; height: 13px; flex-basis: 13px; }
 .provenance-section { margin-top: 24px; padding-top: 16px; border-top: 1px solid var(--border-muted); }
 .provenance-list { margin: 8px 0 0; padding-left: 20px; color: var(--muted); font-size: .8125rem; }

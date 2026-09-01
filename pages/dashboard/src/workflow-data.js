@@ -87,7 +87,7 @@ function derivePackageReport(row, workflows) {
 /** @param {Row} row */
 function deriveReport(row) {
   const safeOutput = text(row['safe-output']);
-  const sourceLink = ['external-link', 'issue-link', 'pull-request-link', 'run-link']
+  const sourceLink = ['issue-link', 'pull-request-link', 'run-link', 'external-link']
     .map((field) => row[field])
     .find(isPlainObject);
   return {
@@ -102,6 +102,7 @@ function deriveReport(row) {
       ? {
           'external-link': {
             ...sourceLink,
+            relation: 'external',
             ...(safeOutput
               ? {
                   'dashboard-href': `#page-outcome-detail?outcome=${encodeURIComponent(safeOutput)}`,
