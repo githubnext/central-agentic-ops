@@ -9,8 +9,8 @@ import {
   recordsFromOperationalValueReport,
 } from "./operational-value-history.mjs";
 
-function downloadAgentArtifact(repository, runId, destination) {
-  return runCommand("gh", ["run", "download", String(runId), "--repo", repository, "--name", "agent", "--dir", destination]);
+function downloadUsageArtifact(repository, runId, destination) {
+  return runCommand("gh", ["run", "download", String(runId), "--repo", repository, "--name", "usage", "--dir", destination]);
 }
 
 function runCommand(command, args, options = {}) {
@@ -262,7 +262,7 @@ async function regradeRecord(record, evidenceAt, checkout) {
       const destination = path.join(temporaryRoot, `${selected.repository.replace("/", "-")}-${selected.runId}`);
       await mkdir(destination, { recursive: true });
       try {
-        await downloadAgentArtifact(selected.repository, selected.runId, destination);
+        await downloadUsageArtifact(selected.repository, selected.runId, destination);
         const resultsPath = await findResultsFile(destination);
         if (!resultsPath) return { ...selected, status: "unavailable", reason: "grader results not found" };
         const artifact = JSON.parse(await readFile(resultsPath, "utf8"));

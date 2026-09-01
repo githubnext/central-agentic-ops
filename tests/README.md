@@ -156,7 +156,7 @@ Compilation checks prove the source policy reaches the generated GitHub Actions 
 | 🟢 Pass | All worker workflow safe outputs | Review/live routing vocabulary checked. |
 | 🟢 Pass | All generated package workflows | Emitted activation gates, transitive job dependencies, review isolation, live authority, output binding, and removed-mode settings checked in a clean-room compile. |
 | 🟢 Pass | Core catalog package | Installs no dashboard workflow, renderer, or Pages permission surface. |
-| 🟢 Pass | Operational value | Schema-v4 evaluators are registered by workers and the dashboard consumes actual `grader_results.json` observations. |
+| 🟢 Pass | Operational value | Schema-v4 evaluators are registered by workers and the dashboard consumes actual `grader_results.json` observations from compact `usage` artifacts. |
 | 🟢 Pass | Dashboard package | Reusable builds mount under a relative path; standalone deployment remains manual, access-controlled, and separate from the root package. |
 | 🟢 Pass | Grader package transport | gh-aw installs and restores referenced `.github/graders/*.sh` files in clean package consumers. |
 
