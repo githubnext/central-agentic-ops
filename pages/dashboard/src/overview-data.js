@@ -527,7 +527,7 @@ function buildDomainAttentionRows(input) {
           domain: 'Episodes & autonomy',
           value: `${formatCount(rootRuns.length)} observed`,
           detail: `0 of 0 worker dispatches attributed · ${formatCount(rootFailures)} root failure${rootFailures === 1 ? '' : 's'}`,
-          href: '#page-runtime?section=runtime-execution-episodes'
+          href: '#page-runtime?section=runtime-observed-root-episodes-heading'
         }),
         domainRow({
           order: 2,

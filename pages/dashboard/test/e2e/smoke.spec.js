@@ -85,10 +85,16 @@ function buildPresenterModuleUrl() {
   const dispatchTypeClassificationSource = readFileSync(new URL('../../src/components/dispatch-type-classification.json', import.meta.url), 'utf8');
   const dispatchTypeClassificationUrl = `data:application/json;charset=utf-8,${encodeURIComponent(dispatchTypeClassificationSource)}`;
 
+  const tabNavSource = readFileSync(new URL('../../src/components/tab-nav.js', import.meta.url), 'utf8')
+    .replace("'../dom.js'", JSON.stringify(domModuleUrl))
+    .replace("'../octicons.js'", JSON.stringify(octiconsModuleUrl));
+  const tabNavModuleUrl = `data:text/javascript;charset=utf-8,${encodeURIComponent(tabNavSource)}`;
+
   const packagesViewSource = readFileSync(new URL('../../src/components/packages-view.js', import.meta.url), 'utf8')
     .replace("'../dom.js'", JSON.stringify(domModuleUrl))
     .replace("'../view-formatters.js'", JSON.stringify(viewFormattersModuleUrl))
-    .replace("'./run-classification.js'", JSON.stringify(runClassificationModuleUrl));
+    .replace("'./run-classification.js'", JSON.stringify(runClassificationModuleUrl))
+    .replace("'./tab-nav.js'", JSON.stringify(tabNavModuleUrl));
   const packagesViewModuleUrl = `data:text/javascript;charset=utf-8,${encodeURIComponent(packagesViewSource)}`;
 
   const filterBarSource = readFileSync(new URL('../../src/components/filter-bar.js', import.meta.url), 'utf8')
@@ -118,7 +124,8 @@ function buildPresenterModuleUrl() {
     .replace("'../octicons.js'", JSON.stringify(octiconsModuleUrl))
     .replace("'./report-list.js'", JSON.stringify(reportListModuleUrl))
     .replace("'./link-content.js'", JSON.stringify(linkContentModuleUrl))
-    .replace("'./ui-primitives.js'", JSON.stringify(uiPrimitivesModuleUrl));
+    .replace("'./ui-primitives.js'", JSON.stringify(uiPrimitivesModuleUrl))
+    .replace("'./tab-nav.js'", JSON.stringify(tabNavModuleUrl));
   const packageDetailModuleUrl = `data:text/javascript;charset=utf-8,${encodeURIComponent(packageDetailSource)}`;
 
   const countFormattersSource = readFileSync(new URL('../../src/components/count-formatters.js', import.meta.url), 'utf8');
@@ -145,14 +152,16 @@ function buildPresenterModuleUrl() {
     .replace("'./count-formatters.js'", JSON.stringify(countFormattersModuleUrl))
     .replace("'./link-content.js'", JSON.stringify(linkContentModuleUrl))
     .replace("'./linked-text.js'", JSON.stringify(linkedTextModuleUrl))
-    .replace("'./ui-primitives.js'", JSON.stringify(uiPrimitivesModuleUrl));
+    .replace("'./ui-primitives.js'", JSON.stringify(uiPrimitivesModuleUrl))
+    .replace("'./tab-nav.js'", JSON.stringify(tabNavModuleUrl));
   const repositoryWorkflowsModuleUrl = `data:text/javascript;charset=utf-8,${encodeURIComponent(repositoryWorkflowsSource)}`;
 
   const workflowDetailSource = readFileSync(new URL('../../src/components/workflow-detail.js', import.meta.url), 'utf8')
     .replace("'../dom.js'", JSON.stringify(domModuleUrl))
     .replace("'../octicons.js'", JSON.stringify(octiconsModuleUrl))
     .replace("'./link-content.js'", JSON.stringify(linkContentModuleUrl))
-    .replace("'./report-list.js'", JSON.stringify(reportListModuleUrl));
+    .replace("'./report-list.js'", JSON.stringify(reportListModuleUrl))
+    .replace("'./tab-nav.js'", JSON.stringify(tabNavModuleUrl));
   const workflowDetailModuleUrl = `data:text/javascript;charset=utf-8,${encodeURIComponent(workflowDetailSource)}`;
   const workflowRuntimeSource = readFileSync(new URL('../../src/components/workflow-runtime.js', import.meta.url), 'utf8')
     .replace("'../dom.js'", JSON.stringify(domModuleUrl))
@@ -180,14 +189,6 @@ function buildPresenterModuleUrl() {
     .replace("'./components/dispatch-type-classification.json'", JSON.stringify(dispatchTypeClassificationUrl));
   const runtimeDataModuleUrl = `data:text/javascript;charset=utf-8,${encodeURIComponent(runtimeDataSource)}`;
 
-  const executionElementsSource = readFileSync(new URL('../../src/components/execution-elements.js', import.meta.url), 'utf8')
-    .replace("'../dom.js'", JSON.stringify(domModuleUrl))
-    .replace("'./badge.js'", JSON.stringify(badgeModuleUrl))
-    .replace("'./count-formatters.js'", JSON.stringify(countFormattersModuleUrl))
-    .replace("'./ui-primitives.js'", JSON.stringify(uiPrimitivesModuleUrl))
-    .replace("'../runtime-data.js'", JSON.stringify(runtimeDataModuleUrl));
-  const executionElementsModuleUrl = `data:text/javascript;charset=utf-8,${encodeURIComponent(executionElementsSource)}`;
-
   const uiElementsSource = readFileSync(new URL('../../src/components/ui-elements.js', import.meta.url), 'utf8')
     .replace("'../dom.js'", JSON.stringify(domModuleUrl))
     .replace("'../octicons.js'", JSON.stringify(octiconsModuleUrl))
@@ -200,7 +201,6 @@ function buildPresenterModuleUrl() {
     .replace("'./workflow-detail.js'", JSON.stringify(workflowDetailModuleUrl))
     .replace("'./workflow-runtime.js'", JSON.stringify(workflowRuntimeModuleUrl))
     .replace("'./outcome-detail.js'", JSON.stringify(outcomeDetailModuleUrl))
-    .replace("'./execution-elements.js'", JSON.stringify(executionElementsModuleUrl))
     .replace("'./ui-primitives.js'", JSON.stringify(uiPrimitivesModuleUrl))
     .replace("'./view-chrome.js'", JSON.stringify(viewChromeModuleUrl))
     .replace("'./workflow-topology.js'", JSON.stringify(workflowTopologyModuleUrl));
@@ -290,10 +290,15 @@ test('DLS-PAGE-002 DLS-PAGE-014 built-in overview page renders the report-style 
               views: [
                 {
                   id: 'runtime-execution-episodes',
-                  title: 'Execution episodes',
-                  data: { sources: ['workflows', 'runs', 'outcomes', 'usage'] },
-                  mark: 'element',
-                  element: 'execution-episodes'
+                  title: 'Observed root episodes',
+                  data: { source: 'runtime-episodes' },
+                  mark: 'table',
+                  encoding: {
+                    columns: [
+                      { field: 'run', title: 'Run' },
+                      { field: 'status', title: 'Result', display: 'status' }
+                    ]
+                  }
                 }
               ]
             }
@@ -477,7 +482,7 @@ test('DLS-PAGE-002 DLS-PAGE-014 built-in overview page renders the report-style 
   await expect(cards.nth(2)).toHaveClass(/attention-domain-investigate/);
   expect(await cards.evaluateAll((links) => links.map((link) => link.getAttribute('href')))).toEqual([
     '#page-runtime',
-    '#page-runtime?section=runtime-execution-episodes',
+    '#page-runtime?section=runtime-observed-root-episodes-heading',
     '#page-security',
     '#page-coverage',
     '#page-operational-value',
@@ -494,9 +499,9 @@ test('DLS-PAGE-002 DLS-PAGE-014 built-in overview page renders the report-style 
   expect(secondCardBox?.y).toBeGreaterThan(firstCardBox?.y ?? 0);
 
   await cards.nth(1).click();
-  await expect(page).toHaveURL(/#page-runtime\?section=runtime-execution-episodes$/);
+  await expect(page).toHaveURL(/#page-runtime\?section=runtime-observed-root-episodes-heading$/);
   await expect(page.locator('[data-page-id="runtime"]')).toBeVisible();
-  await expect(page.locator('#runtime-execution-episodes')).toBeInViewport();
+  await expect(page.locator('#runtime-observed-root-episodes-heading')).toBeInViewport();
 });
 
 test('DLS-PAGE-014 DLS-PAGE-015 built-in packages page renders report-style mode filters, AIC utilization, and run trends in browser', async ({ page }) => {

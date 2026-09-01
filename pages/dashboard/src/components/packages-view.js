@@ -5,6 +5,7 @@
 import { h } from '../dom.js';
 import { formatNumber } from '../view-formatters.js';
 import { classifyUtilizationRatio, isFailureConclusion } from './run-classification.js';
+import { renderInteractiveTabs, updateInteractiveTabSelection } from './tab-nav.js';
 
 const MODES = ['all', 'review', 'live'];
 const DAY_IN_MILLISECONDS = 86_400_000;
@@ -16,7 +17,6 @@ const DAY_IN_MILLISECONDS = 86_400_000;
  */
 export function renderPackagesView(sources, pageId = 'packages') {
   let selectedMode = 'all';
-  const tabByMode = new Map();
   const panelId = `${pageId}-mode-panel`;
   const content = h('div', { className: 'packages-mode-content', id: panelId, role: 'tabpanel' });
   /**
@@ -28,54 +28,27 @@ export function renderPackagesView(sources, pageId = 'packages') {
       selectedMode = mode;
       renderMode();
     }
-    if (focus) tabByMode.get(mode)?.focus();
+    if (focus) {
+      /** @type {HTMLButtonElement | null} */
+      const activeTab = tabs.querySelector(`[role="tab"][data-tab-value="${mode}"]`);
+      activeTab?.focus();
+    }
   };
-  const tabs = h(
-    'div',
-    {
-      className: 'package-mode-tabs',
-      role: 'tablist',
-      'aria-label': 'Filter package activity by mode',
-      'aria-orientation': 'horizontal'
-    },
-    ...MODES.map((mode) => {
-      const tab = h(
-        'button',
-        {
-          type: 'button',
-          role: 'tab',
-          id: `${pageId}-${mode}-tab`,
-          'aria-controls': panelId,
-          'aria-selected': mode === selectedMode ? 'true' : 'false',
-          tabIndex: mode === selectedMode ? 0 : -1,
-          dataset: { packageMode: mode },
-          onclick: () => selectMode(mode),
-          onkeydown: (/** @type {KeyboardEvent} */ event) => {
-            const key = event.key;
-            const currentIndex = MODES.indexOf(mode);
-            let nextIndex = null;
-            if (key === 'ArrowRight' || key === 'ArrowDown') nextIndex = (currentIndex + 1) % MODES.length;
-            if (key === 'ArrowLeft' || key === 'ArrowUp') nextIndex = (currentIndex - 1 + MODES.length) % MODES.length;
-            if (key === 'Home') nextIndex = 0;
-            if (key === 'End') nextIndex = MODES.length - 1;
-            if (nextIndex !== null) {
-              event.preventDefault();
-              selectMode(MODES[nextIndex], true);
-            }
-          }
-        },
-        titleCase(mode)
-      );
-      tabByMode.set(mode, tab);
-      return tab;
-    })
-  );
+  const tabs = renderInteractiveTabs({
+    className: 'package-mode-tabs',
+    ariaLabel: 'Filter package activity by mode',
+    panelId,
+    onSelect: selectMode,
+    tabs: MODES.map((mode) => ({
+      label: titleCase(mode),
+      value: mode,
+      selected: mode === selectedMode,
+      dataset: { packageMode: mode }
+    }))
+  });
 
   const renderMode = () => {
-    for (const [mode, tab] of tabByMode) {
-      tab.setAttribute('aria-selected', mode === selectedMode ? 'true' : 'false');
-      tab.tabIndex = mode === selectedMode ? 0 : -1;
-    }
+    updateInteractiveTabSelection(tabs, selectedMode);
     content.setAttribute('aria-labelledby', `${pageId}-${selectedMode}-tab`);
     content.replaceChildren(
       renderPackageUtilization(sources, selectedMode, `${pageId}-utilization-heading`),

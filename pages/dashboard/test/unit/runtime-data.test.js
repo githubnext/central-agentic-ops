@@ -43,6 +43,28 @@ describe('runtime data', () => {
       '#page-workflow-runtime?workflow=githubnext%2Fcentral-agentic-ops%3A.github%2Fworkflows%2Fworker.md'
     );
     expect(sources['runtime-signals'].metadata).toBe(metadata);
+    expect(sources['runtime-episode-summary'].rows).toEqual([
+      { label: 'Root episodes', value: '1' },
+      { label: 'Worker attribution', value: '0 / 1' },
+      { label: 'Run window', value: 'Complete 24h' },
+      { label: 'Repeated coverage', value: 'Unavailable' }
+    ]);
+    expect(sources['runtime-episodes'].rows).toEqual([
+      expect.objectContaining({
+        run: '1',
+        workflow: 'Root',
+        status: 'action-required',
+        attribution: 'Root only'
+      })
+    ]);
+    expect(sources['runtime-attribution-gaps'].rows).toEqual([
+      expect.objectContaining({
+        run: '2',
+        workflow: 'Worker',
+        status: 'failure',
+        evidence: 'No retained root correlation ID'
+      })
+    ]);
   });
 
   it('derives JSON-classified workflow_dispatch rows independently from presentation', () => {

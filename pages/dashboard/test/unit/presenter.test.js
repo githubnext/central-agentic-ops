@@ -940,7 +940,7 @@ describe('presenter built-in and custom pages', () => {
     expect(cards[5]?.textContent).toContain('Monitor');
     expect(cards.map((card) => card.getAttribute('href'))).toEqual([
       '#page-runtime',
-      '#page-runtime?section=runtime-execution-episodes',
+      '#page-runtime?section=runtime-observed-root-episodes-heading',
       '#page-security',
       '#page-coverage',
       '#page-operational-value',

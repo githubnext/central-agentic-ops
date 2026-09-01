@@ -19,6 +19,9 @@ export function deriveRuntimeSources(sources) {
   const model = buildExecutionModel(sources);
   const signals = [];
   const dispatches = deriveDispatches(model);
+  const episodeSummary = deriveEpisodeSummary(model, sources.runs?.metadata);
+  const episodes = deriveEpisodes(model);
+  const attributionGaps = deriveAttributionGaps(model);
 
   for (const episode of model.episodes.filter((candidate) => FAILURE_CONCLUSIONS.has(text(candidate.run['run-conclusion'])))) {
     signals.push({
@@ -80,7 +83,7 @@ export function deriveRuntimeSources(sources) {
       detail: workerDispatchEvidenceGap(model.unattributedWorkerRuns.length),
       evidence: 'Causality unknown',
       action: 'View evidence',
-      'navigation-href': '#runtime-episode-attribution-gap'
+      'navigation-href': '#page-runtime?section=runtime-worker-attribution-gaps-heading'
     });
   }
 
@@ -95,7 +98,7 @@ export function deriveRuntimeSources(sources) {
       detail: `${formatCountNoun(model.unattributedEpisodes.length, 'root episode has', 'root episodes have')} no correlated worker attempt or output`,
       evidence: 'Outcome unavailable',
       action: 'View evidence',
-      'navigation-href': '#runtime-execution-episodes'
+      'navigation-href': '#page-runtime?section=runtime-observed-root-episodes-heading'
     });
   }
 
@@ -123,8 +126,78 @@ export function deriveRuntimeSources(sources) {
       source: 'dispatches',
       rows: dispatches,
       metadata: combinedMetadata(sources)
+    },
+    'runtime-episode-summary': {
+      source: 'runtime-episode-summary',
+      rows: episodeSummary,
+      metadata: combinedMetadata(sources)
+    },
+    'runtime-episodes': {
+      source: 'runtime-episodes',
+      rows: episodes,
+      metadata: combinedMetadata(sources)
+    },
+    'runtime-attribution-gaps': {
+      source: 'runtime-attribution-gaps',
+      rows: attributionGaps,
+      metadata: combinedMetadata(sources)
     }
   };
+}
+
+/**
+ * @param {ExecutionModel} model
+ * @param {import('./presenter.js').SourceMetadata | undefined} runsMetadata
+ * @returns {Row[]}
+ */
+function deriveEpisodeSummary(model, runsMetadata) {
+  const windowHours = coverageHours(runsMetadata?.['coverage-start'], runsMetadata?.['coverage-end']);
+  return [
+    { label: 'Root episodes', value: formatCount(model.episodes.length) },
+    {
+      label: 'Worker attribution',
+      value: `${formatCount(model.attributedWorkerRuns.length)} / ${formatCount(model.workerRuns.length)}`
+    },
+    { label: 'Run window', value: `${runsMetadata?.completeness === 'complete' ? 'Complete' : 'Partial'} ${formatCount(windowHours)}h` },
+    { label: 'Repeated coverage', value: 'Unavailable' }
+  ];
+}
+
+/**
+ * @param {ExecutionModel} model
+ * @returns {Row[]}
+ */
+function deriveEpisodes(model) {
+  // Exact root-to-worker correlation is not retained, so every episode intentionally reports root-only evidence.
+  return model.episodes.slice(0, 12).map((episode) => ({
+    run: episode.run.run,
+    'run-title': runTitle(episode.run, episode.workflow),
+    package: episode.packageName,
+    workflow: workflowName(episode.workflow, episode.run),
+    'started-at': episode.run['started-at'],
+    duration: formatDuration(episode.duration),
+    status: text(episode.run['run-conclusion']) || text(episode.run['run-status']) || 'unknown',
+    attribution: 'Root only',
+    'run-link': episode.run['run-link']
+  }));
+}
+
+/**
+ * @param {ExecutionModel} model
+ * @returns {Row[]}
+ */
+function deriveAttributionGaps(model) {
+  return model.unattributedWorkerRuns.slice(0, 20).map((run) => {
+    const workflow = model.workflows.get(runKey(run));
+    return {
+      run: run.run,
+      'run-title': runTitle(run, workflow),
+      workflow: workflowName(workflow, run),
+      status: text(run['run-conclusion']) || text(run['run-status']) || 'unknown',
+      evidence: 'No retained root correlation ID',
+      'run-link': run['run-link']
+    };
+  });
 }
 
 /**
@@ -256,6 +329,12 @@ export function formatDuration(duration) {
 /** @param {number} count */
 export function workerDispatchEvidenceGap(count) {
   return `${formatCountNoun(count, 'worker dispatch lacks', 'worker dispatches lack')} episode evidence`;
+}
+
+/** @param {unknown} start @param {unknown} end */
+function coverageHours(start, end) {
+  const duration = durationBetween(start, end);
+  return duration === null ? 24 : Math.max(1, Math.round(duration / 3_600_000));
 }
 
 /** @param {unknown} value */

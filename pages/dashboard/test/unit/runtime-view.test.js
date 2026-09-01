@@ -34,23 +34,36 @@ describe('Runtime dashboard view', () => {
       title: 'Runtime & episodes'
     });
     expect(runtimePage.views.map(
-      (/** @type {{ id: string, element: string }} */ view) => ({
+      (/** @type {{ id: string, mark: string, element?: string }} */ view) => ({
         id: view.id,
+        mark: view.mark,
         element: view.element
       })
     )).toEqual([
       {
         id: 'runtime-needs-attention',
+        mark: 'element',
         element: 'signal-list'
       },
       {
+        id: 'runtime-episode-summary',
+        mark: 'element',
+        element: 'summary-grid'
+      },
+      {
         id: 'runtime-execution-episodes',
-        element: 'execution-episodes'
+        mark: 'table',
+        element: undefined
+      },
+      {
+        id: 'runtime-episode-attribution-gap',
+        mark: 'table',
+        element: undefined
       }
     ]);
   });
 
-  it('renders declarative triage signals and root-only execution episodes', () => {
+  it('renders declarative triage signals, episode summary, and episode tables', () => {
     const document = {
       languageVersion: '0.1.0',
       dashboard: {
@@ -62,7 +75,37 @@ describe('Runtime dashboard view', () => {
           title: 'Runtime',
           views: [
             { id: 'attention', title: 'Needs attention', data: { sources: ['runtime-signals'] }, mark: 'element', element: 'signal-list' },
-            { id: 'episodes', title: 'Execution episodes', data: { sources: ['workflows', 'runs', 'outcomes', 'usage'] }, mark: 'element', element: 'execution-episodes' }
+            { id: 'summary', title: 'Execution episodes', data: { source: 'runtime-episode-summary' }, mark: 'element', element: 'summary-grid' },
+            {
+              id: 'episodes',
+              title: 'Observed root episodes',
+              data: { source: 'runtime-episodes' },
+              mark: 'table',
+              encoding: {
+                columns: [
+                  { field: 'run', title: 'Run' },
+                  { field: 'package', title: 'Package' },
+                  { field: 'workflow', title: 'Workflow' },
+                  { field: 'duration', title: 'Duration' },
+                  { field: 'status', title: 'Result', display: 'status' },
+                  { field: 'attribution', title: 'Evidence' }
+                ]
+              }
+            },
+            {
+              id: 'gaps',
+              title: 'Worker attribution gaps',
+              data: { source: 'runtime-attribution-gaps' },
+              mark: 'table',
+              encoding: {
+                columns: [
+                  { field: 'run', title: 'Run' },
+                  { field: 'workflow', title: 'Workflow' },
+                  { field: 'status', title: 'Result', display: 'status' },
+                  { field: 'evidence', title: 'Evidence gap' }
+                ]
+              }
+            }
           ]
         }]
       }
@@ -101,34 +144,15 @@ describe('Runtime dashboard view', () => {
     expect([...rendered.querySelectorAll('.signal-list > li > a')].map((link) => link.getAttribute('href'))).toEqual([
       '#page-workflow-runtime?workflow=githubnext%2Fcentral-agentic-ops%3A.github%2Fworkflows%2Fdependabot-worker.md',
       '#page-workflow-runtime?workflow=githubnext%2Fcentral-agentic-ops%3A.github%2Fworkflows%2Fdependabot.md',
-      '#runtime-execution-episodes',
-      '#runtime-episode-attribution-gap'
+      '#page-runtime?section=runtime-observed-root-episodes-heading',
+      '#page-runtime?section=runtime-worker-attribution-gaps-heading'
     ]);
     expect(rendered.querySelector('.signal-list a[target]')).toBeNull();
-    expect(rendered.querySelector('.episode-vitals')?.textContent).toContain('0 / 1');
-    const repeatedCoverage = [...rendered.querySelectorAll('.episode-vitals > div')]
-      .find((node) => node.querySelector('dt')?.textContent === 'Repeated coverage');
-    expect(repeatedCoverage?.querySelector('dd')?.textContent).toBe('—');
-    expect(repeatedCoverage?.querySelector('p')?.textContent).toBe('requires exact episode attribution');
-    expect(rendered.querySelectorAll('.episode-record')).toHaveLength(1);
-    expect(rendered.querySelector('.episode-record')?.textContent).toContain('Dependabot review');
-    expect(rendered.querySelector('.episode-record h3 a')?.getAttribute('href')).toBe(
-      '#page-operational-value?package=dependabot'
-    );
-    const unavailableMeasures = [...rendered.querySelectorAll('.episode-measures > div')]
-      .filter((node) => ['Observed targets', 'Attributed workers', 'Output yield'].includes(node.querySelector('dt')?.textContent ?? ''));
-    expect(unavailableMeasures.map((node) => node.querySelector('dd')?.textContent)).toEqual(['—', '—', '—']);
-    const executionShape = rendered.querySelector('.episode-waterfall:not(.episode-waterfall-unavailable)');
-    expect(executionShape?.querySelector('header')?.textContent).toBe('Execution shapeObserved intervals only · 5m 0s total');
-    expect(executionShape?.querySelector('[data-lane-role="root"]')?.textContent).toBe('rootDependabot5m 0saction required');
-    expect(executionShape?.querySelector('.episode-lane-track i')?.classList.contains('status-attention')).toBe(true);
-    expect(executionShape?.querySelector('.episode-lane-track i')?.getAttribute('style')).toContain('--lane-size: 100%');
-    expect(executionShape?.querySelector('footer')?.textContent).toBe('Episode startAligned timeEpisode end');
-    expect(rendered.querySelector('.episode-record > footer')?.textContent).toContain('No-action attempts unavailable');
-    expect(rendered.querySelector('.episode-attribution-gap')?.textContent).toContain('1 worker dispatch lacks episode evidence');
-    expect(rendered.querySelector('.episode-attribution-gap li a')?.getAttribute('href')).toBe(
-      '#page-workflow-runtime?workflow=githubnext%2Fcentral-agentic-ops%3A.github%2Fworkflows%2Fdependabot-worker.md'
-    );
-    expect(rendered.querySelector('.signal-list-region a[href^="http"], .episode-observatory a[href^="http"]')).toBeNull();
+    expect(rendered.querySelector('.summary-grid')?.textContent).toContain('Worker attribution0 / 1');
+    expect(rendered.querySelector('.summary-grid')?.textContent).toContain('Repeated coverageUnavailable');
+    const tables = rendered.querySelectorAll('.custom-table');
+    expect(tables).toHaveLength(2);
+    expect(tables[0]?.textContent).toContain('10DependabotDependabot5m 0saction-requiredRoot only');
+    expect(tables[1]?.textContent).toContain('11Dependabot workerfailureNo retained root correlation ID');
   });
 });
