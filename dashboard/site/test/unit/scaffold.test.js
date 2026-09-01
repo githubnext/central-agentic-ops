@@ -27,6 +27,13 @@ describe('DLS-CONF-004 scaffold gates', () => {
     expect(styles).toContain('.repository-link');
   });
 
+  it('keeps declared font sizes on mobile Safari', () => {
+    const styles = readFileSync(resolve('src/styles.js'), 'utf8');
+
+    expect(styles).toContain('-webkit-text-size-adjust: 100%;');
+    expect(styles).toContain('text-size-adjust: 100%;');
+  });
+
   it('keeps the JSON dashboard shell aligned with its shared component styles', () => {
     const presenter = readFileSync(resolve('src/presenter.js'), 'utf8');
     const styles = readFileSync(resolve('src/styles.js'), 'utf8');
