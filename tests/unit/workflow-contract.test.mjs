@@ -1173,6 +1173,7 @@ test("workers reject disabled, malformed, or over-ceiling dispatches before exec
 
 test("SVG visual audit covers every tracked SVG in both color schemes", () => {
   const source = workflow("svg-visual-audit.md");
+  const compiled = workflow("svg-visual-audit.lock.yml");
 
   assert.match(source, /git ls-files '\*\.svg'/);
   assert.match(source, /colorScheme: "light"/);
@@ -1183,6 +1184,11 @@ test("SVG visual audit covers every tracked SVG in both color schemes", () => {
   assert.match(source, /upload-artifact:/);
   assert.match(source, /http:\/\/host\.docker\.internal:4321\//);
   assert.match(source, /- host\.docker\.internal/);
+  for (const proxyVariable of ["NO_PROXY", "no_proxy"]) {
+    const proxyBypass = new RegExp(`${proxyVariable}: ["']?host\\.docker\\.internal,localhost,127\\.0\\.0\\.1`);
+    assert.match(source, proxyBypass);
+    assert.match(compiled, proxyBypass);
+  }
   assert.match(source, /Never claim success if any manifest entry was skipped/);
 });
 
