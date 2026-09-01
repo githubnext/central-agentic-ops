@@ -2377,21 +2377,6 @@ describe('presenter built-in and custom pages', () => {
               title: 'Workflow runtime',
               route: { 'hash-query-parameter': 'workflow' },
               views: []
-            },
-            {
-              id: 'workflow-detail',
-              kind: /** @type {'custom'} */ ('custom'),
-              title: 'Workflow',
-              route: { 'hash-query-parameter': 'workflow' },
-              views: [{
-                id: 'workflow-reports',
-                title: 'Workflow reports',
-                data: {
-                  sources: ['workflows', 'outcomes']
-                },
-                mark: 'element',
-                element: 'workflow-detail'
-              }]
             }
           ]
         }
