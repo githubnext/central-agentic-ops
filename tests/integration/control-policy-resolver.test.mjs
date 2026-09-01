@@ -24,6 +24,9 @@ function policy() {
         "batch-size": 50,
         "batch-index": 0,
       },
+      web: {
+        favicon: "https://example.com/favicon.svg",
+      },
       defaults: {
         mode: "review",
         "max-repositories": 10,
@@ -179,6 +182,18 @@ const policyViolations = [
   ["negative batch indexes", (value) => {
     value["control-plane"].inventory["batch-index"] = -1;
   }, "control-plane.inventory.batch-index must be an integer in >= 0"],
+  ["non-mapping web settings", (value) => {
+    value["control-plane"].web = [];
+  }, "control-plane.web must be a mapping"],
+  ["unknown web settings", (value) => {
+    value["control-plane"].web.unexpected = true;
+  }, "unknown key control-plane.web.unexpected"],
+  ["insecure favicon URLs", (value) => {
+    value["control-plane"].web.favicon = "http://example.com/favicon.svg";
+  }, "control-plane.web.favicon must be an absolute HTTPS URL or ./ relative path"],
+  ["favicon paths with traversal", (value) => {
+    value["control-plane"].web.favicon = "./assets/../favicon.svg";
+  }, "control-plane.web.favicon must be an absolute HTTPS URL or ./ relative path"],
   ["non-mapping defaults", (value) => { value["control-plane"].defaults = []; }, "control-plane.defaults must be a mapping"],
   ["unknown default properties", (value) => {
     value["control-plane"].defaults.unexpected = true;

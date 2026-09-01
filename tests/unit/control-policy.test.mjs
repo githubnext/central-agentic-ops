@@ -92,6 +92,8 @@ test("control policy schema accepts config-defined package and worker catalogs",
 
   assert.equal(schema.$schema, "https://json-schema.org/draft/2020-12/schema");
   assert.equal(policy.$schema, schema.$id);
+  assert.equal(schema.$defs.controlPlane.properties.web.$ref, "#/$defs/web");
+  assert.equal(policy["control-plane"].web.favicon, "./favicon.svg");
   assert.equal(schema.$defs.controlPackages.additionalProperties.$ref, "#/$defs/packagePolicy");
   assert.equal(schema.$defs.targetPackages.additionalProperties.$ref, "#/$defs/targetPackage");
   for (const packagePolicy of Object.values(policy["control-plane"].packages)) {
@@ -166,6 +168,9 @@ test("control policy exposes scope and publishing defaults to deterministic add-
   assert.deepEqual(controlSettings(parsePolicy(minimalPolicy), "acme/control"), {
     allowed_owners: ["acme"],
     allowed_repositories: ["acme/payments-api", "acme/storefront"],
+    web: {
+      favicon: "./favicon.svg",
+    },
     packages: {
       dependabot: {
         enabled: true,
@@ -180,6 +185,30 @@ test("control policy exposes scope and publishing defaults to deterministic add-
     publishing_control_repositories: ["acme/control"],
     publishing_reviewers: [],
   });
+});
+
+test("control policy validates and exposes web presentation settings", () => {
+  const policy = JSON.parse(minimalPolicy);
+  policy["control-plane"].web = {
+    favicon: "https://example.com/operations.svg",
+  };
+
+  assert.equal(validate(JSON.stringify(policy)).status, 0);
+  assert.deepEqual(controlSettings(parsePolicy(JSON.stringify(policy)), "acme/control").web, {
+    favicon: "https://example.com/operations.svg",
+  });
+
+  for (const favicon of [
+    "http://example.com/favicon.svg",
+    "https://user@example.com/favicon.svg",
+    "https://example.com/favicon.svg?version=1",
+    "../favicon.svg",
+  ]) {
+    policy["control-plane"].web.favicon = favicon;
+    const result = validate(JSON.stringify(policy));
+    assert.notEqual(result.status, 0);
+    assert.match(result.stderr, /control-plane\.web\.favicon must be an absolute HTTPS URL or \.\/ relative path/);
+  }
 });
 
 test("control policy validates and exposes a package octicon", () => {
