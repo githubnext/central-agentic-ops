@@ -30,6 +30,10 @@ function context() {
             repository: 'central-agentic-ops',
             package: 'ambient-context',
             'package-name': 'Ambient Context',
+            'package-memberships': [
+              { id: 'central-agentic-ops', name: 'Central Agentic Ops' },
+              { id: 'ambient-context', name: 'Ambient Context' }
+            ],
             workflow: '.github/workflows/ambient-context.md',
             'workflow-name': 'Ambient Context',
             'workflow-role': 'orchestrator',
@@ -118,12 +122,20 @@ describe('renderWorkflowDetail', () => {
     expect(rendered.querySelector('.workflow-tabs a:first-child')?.getAttribute('href')).toBe(
       '#page-workflow-runtime?workflow=githubnext%2Fcentral-agentic-ops%3A.github%2Fworkflows%2Fambient-context.md'
     );
-    expect(rendered.querySelector('.workflow-identity')?.textContent).toContain('Orchestrator');
-    expect(rendered.querySelector('.workflow-badge-package')?.getAttribute('href')).toBe('#page-package-detail?package=ambient-context');
+    expect([...rendered.querySelectorAll('.workflow-badges .workflow-badge')].map((badge) => badge.textContent)).toEqual([
+      'Orchestrator',
+      'Package · Ambient Context',
+      'Package · Central Agentic Ops'
+    ]);
+    expect([...rendered.querySelectorAll('.workflow-badges a')].map((badge) => badge.getAttribute('href'))).toEqual([
+      '#page-package-detail?package=ambient-context',
+      '#page-package-detail?package=central-agentic-ops'
+    ]);
     expect(rendered.querySelector('.workflow-identity > a')?.getAttribute('href')).toBe(
-      '#page-workflow-detail?workflow=githubnext%2Fcentral-agentic-ops%3A.github%2Fworkflows%2Fambient-context.md'
+      'https://github.com/githubnext/central-agentic-ops/blob/HEAD/.github/workflows/ambient-context.md'
     );
-    expect(rendered.querySelector('.workflow-identity > a')?.getAttribute('target')).toBeNull();
+    expect(rendered.querySelector('.workflow-identity > a')?.textContent).toBe('View authored workflow');
+    expect(rendered.querySelector('.workflow-identity > a')?.getAttribute('target')).toBe('_blank');
     expect(rendered.querySelector('.workflow-reports-header')?.textContent).toContain('1 Open1 Resolved');
     expect([...rendered.querySelectorAll('.workflow-report-title')].map((heading) => heading.textContent)).toEqual([
       'Open report',
@@ -145,14 +157,7 @@ describe('renderWorkflowDetail', () => {
     expect(allocation.mock.calls[0][0].detail).toEqual({
       title: 'Ambient Context',
       description: 'Durable reports produced by .github/workflows/ambient-context.md in githubnext/central-agentic-ops.',
-      navigationPage: 'repositories',
-      breadcrumbs: [
-        { label: 'Repositories', href: '#page-repositories' },
-        {
-          label: 'githubnext/central-agentic-ops',
-          href: '#page-repository-detail?repository=githubnext%2Fcentral-agentic-ops'
-        }
-      ]
+      navigationPage: 'packages'
     });
   });
 

@@ -1543,6 +1543,12 @@ test('workflow runtime route renders JSON-declared workflow insights', async ({ 
             workflow,
             'workflow-name': 'Multi-Device Docs Tester',
             'workflow-role': 'standalone',
+            package: 'testing',
+            'package-name': 'Testing',
+            'package-memberships': [
+              { id: 'testing', name: 'Testing' },
+              { id: 'central-agentic-ops', name: 'Central Agentic Ops' }
+            ],
             'workflow-active': 'true',
             'rollout-mode': 'review'
           }]
@@ -1583,6 +1589,15 @@ test('workflow runtime route renders JSON-declared workflow insights', async ({ 
   await expect(page.getByRole('heading', { name: 'Multi-Device Docs Tester', level: 1 })).toBeVisible();
   await expect(page.getByRole('navigation', { name: 'Multi-Device Docs Tester views' })).toContainText('InsightsReports');
   await expect(page.getByRole('link', { name: 'Reports' })).toHaveAttribute('href', /#page-workflow-detail\?workflow=/);
+  await expect(page.locator('.workflow-badges .workflow-badge')).toHaveText([
+    'Standalone',
+    'Package · Central Agentic Ops',
+    'Package · Testing'
+  ]);
+  await expect(page.getByRole('link', { name: 'View authored workflow' })).toHaveAttribute(
+    'href',
+    'https://github.com/githubnext/central-agentic-ops/blob/HEAD/.github/workflows/multi-device-docs-tester.md'
+  );
   await expect(page.locator('.workflow-runtime-metrics')).toContainText('1');
   await expect(page.locator('.workflow-runtime-metrics')).toContainText('962.7 AIC');
   await expect(page.getByRole('heading', { name: 'No workflow observations yet' })).toBeVisible();

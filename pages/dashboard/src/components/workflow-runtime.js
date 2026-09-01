@@ -36,13 +36,14 @@ export function renderWorkflowRuntime(context) {
     if (workflow) {
       const repository = qualifiedRepository(workflow);
       const workflowName = text(workflow['workflow-name']) || text(workflow.workflow) || 'Unknown workflow';
+      const packageMemberships = workflowPackageMemberships(workflow);
       root.dispatchEvent(new CustomEvent('dashboard-route-allocation', {
         bubbles: true,
         detail: {
           title: workflowName,
           description: `Run health, AI Credit usage, and operational value for ${text(workflow.workflow)} in ${repository}.`,
           mode: ['review', 'live'].includes(text(workflow['rollout-mode'])) ? text(workflow['rollout-mode']) : '',
-          navigationPage: workflow.package ? 'packages' : 'repositories'
+          navigationPage: packageMemberships.length > 0 ? 'packages' : 'repositories'
         }
       }));
     }
@@ -110,6 +111,7 @@ function renderWorkflowTabs(pageId, repository, workflow, workflowName) {
 function renderWorkflowIdentity(workflow) {
   const link = findLink(workflow, 'workflow-link');
   const role = text(workflow['workflow-role']) || 'unknown';
+  const memberships = workflowPackageMemberships(workflow);
   return h(
     'section',
     { className: 'workflow-identity', 'aria-label': 'Workflow identity' },
@@ -118,16 +120,41 @@ function renderWorkflowIdentity(workflow) {
       null,
       h(
         'span',
-        { className: 'repository-workflow-badges' },
-        workflow.package
-          ? h('a', { href: `#page-package-detail?package=${encodeURIComponent(text(workflow.package))}` }, text(workflow['package-name']) || text(workflow.package))
-          : null,
-        h('span', null, titleCase(role))
+        { className: 'workflow-badges' },
+        h('span', { className: `workflow-badge workflow-badge-${role}` }, titleCase(role)),
+        ...memberships.map((membership) => h(
+          'a',
+          {
+            className: 'workflow-badge workflow-badge-operation',
+            href: `#page-package-detail?package=${encodeURIComponent(membership.id)}`
+          },
+          `Package · ${membership.name}`
+        ))
       ),
       h('p', null, h('code', null, text(workflow.workflow)))
     ),
-    link ? renderExternalLink(link) : null
+    link ? renderExternalLink({
+      href: link.externalHref ?? link.href,
+      label: 'View authored workflow'
+    }) : null
   );
+}
+
+/** @param {Record<string, unknown>} workflow */
+function workflowPackageMemberships(workflow) {
+  const memberships = Array.isArray(workflow['package-memberships'])
+    ? workflow['package-memberships']
+    : workflow.package
+      ? [{ id: workflow.package, name: workflow['package-name'] ?? workflow.package }]
+      : [];
+  const unique = new Map();
+  for (const membership of memberships) {
+    if (!membership || typeof membership !== 'object' || Array.isArray(membership)) continue;
+    const id = text(membership.id).trim();
+    const name = text(membership.name).trim();
+    if (id && name) unique.set(id, { id, name });
+  }
+  return [...unique.values()].sort((left, right) => left.name.localeCompare(right.name));
 }
 
 /**

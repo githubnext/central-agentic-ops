@@ -46,19 +46,24 @@ export function renderWorkflowDetail(context) {
 
     if (workflow && route) {
       const name = workflowName(workflow);
+      const packageMemberships = workflowPackageMemberships(workflow);
       root.dispatchEvent(new CustomEvent('dashboard-route-allocation', {
         bubbles: true,
         detail: {
           title: name,
           description: `Durable reports produced by ${route.workflow} in ${route.repository}.`,
-          navigationPage: 'repositories',
-          breadcrumbs: [
-            { label: 'Repositories', href: '#page-repositories' },
-            {
-              label: route.repository,
-              href: `#page-repository-detail?repository=${encodeURIComponent(route.repository)}`
-            }
-          ]
+          navigationPage: packageMemberships.length > 0 ? 'packages' : 'repositories',
+          ...(packageMemberships.length > 0
+            ? {}
+            : {
+                breadcrumbs: [
+                  { label: 'Repositories', href: '#page-repositories' },
+                  {
+                    label: route.repository,
+                    href: `#page-repository-detail?repository=${encodeURIComponent(route.repository)}`
+                  }
+                ]
+              })
         }
       }));
     }
@@ -107,9 +112,8 @@ function renderWorkflowTabs(pageId, route) {
 /** @param {Record<string, unknown>} workflow */
 function renderWorkflowIdentity(workflow) {
   const link = findLink(workflow, 'workflow-link');
-  const packageId = text(workflow.package);
-  const packageName = text(workflow['package-name']) || titleCase(packageId);
   const role = text(workflow['workflow-role']) || 'unknown';
+  const memberships = workflowPackageMemberships(workflow);
   return h(
     'section',
     { className: 'workflow-identity', 'aria-label': 'Workflow identity' },
@@ -120,21 +124,39 @@ function renderWorkflowIdentity(workflow) {
         'span',
         { className: 'workflow-badges' },
         h('span', { className: `workflow-badge workflow-badge-${role}` }, titleCase(role)),
-        packageId
-          ? h(
-            'a',
-            {
-              className: 'workflow-badge workflow-badge-package',
-              href: `#page-package-detail?package=${encodeURIComponent(packageId)}`
-            },
-            `Package · ${packageName}`
-          )
-          : null
+        ...memberships.map((membership) => h(
+          'a',
+          {
+            className: 'workflow-badge workflow-badge-operation',
+            href: `#page-package-detail?package=${encodeURIComponent(membership.id)}`
+          },
+          `Package · ${membership.name}`
+        ))
       ),
       h('p', null, h('code', null, text(workflow.workflow)))
     ),
-    link ? renderExternalLink(link) : null
+    link ? renderExternalLink({
+      href: link.externalHref ?? link.href,
+      label: 'View authored workflow'
+    }) : null
   );
+}
+
+/** @param {Record<string, unknown>} workflow */
+function workflowPackageMemberships(workflow) {
+  const memberships = Array.isArray(workflow['package-memberships'])
+    ? workflow['package-memberships']
+    : workflow.package
+      ? [{ id: workflow.package, name: workflow['package-name'] ?? workflow.package }]
+      : [];
+  const unique = new Map();
+  for (const membership of memberships) {
+    if (!membership || typeof membership !== 'object' || Array.isArray(membership)) continue;
+    const id = text(membership.id).trim();
+    const name = text(membership.name).trim();
+    if (id && name) unique.set(id, { id, name });
+  }
+  return [...unique.values()].sort((left, right) => left.name.localeCompare(right.name));
 }
 
 /** @param {Array<Record<string, unknown>>} reports */
