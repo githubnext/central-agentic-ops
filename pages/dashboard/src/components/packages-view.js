@@ -269,34 +269,6 @@ function matchesMode(row, mode) {
 
 /**
  * @param {Record<string, import('../presenter.js').LogicalSourceInput>} sources
- * @param {string} [pageId]
- * @returns {HTMLElement}
- */
-export function renderPackageRunTrend(sources, pageId = 'packages') {
-  let selectedMode = 'all';
-  const content = h('div', { className: 'packages-mode-content' });
-  const controller = new AbortController();
-  const renderMode = () => {
-    content.replaceChildren(renderRunTrend(sources, selectedMode, `${pageId}-trend-heading`));
-  };
-  content.ownerDocument.addEventListener('package-mode-change', (event) => {
-    if (!(event instanceof CustomEvent) || event.detail?.pageId !== pageId) return;
-    selectedMode = event.detail.mode;
-    renderMode();
-  }, { signal: controller.signal });
-  const observer = new MutationObserver(() => {
-    if (!content.isConnected) {
-      controller.abort();
-      observer.disconnect();
-    }
-  });
-  observer.observe(content.ownerDocument, { childList: true, subtree: true });
-  renderMode();
-  return content;
-}
-
-/**
- * @param {Record<string, import('../presenter.js').LogicalSourceInput>} sources
  * @param {string} mode
  * @param {string} headingId
  * @returns {HTMLElement}
