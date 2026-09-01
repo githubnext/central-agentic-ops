@@ -96,6 +96,9 @@ main.dashboard-prototype { width: 100%; flex: 1; padding: 0 24px 40px; }
 .overview-header h1 { margin: 0; font-size: 1.5rem; line-height: 1.25; }
 .overview-header .lede { margin: 3px 0 0; font-size: .875rem; }
 .title-area { display: flex; align-items: center; gap: 8px; }
+.title-link { flex: none; color: var(--muted); font-size: 1rem; font-weight: 400; text-decoration: none; white-space: nowrap; }
+.title-link:hover { color: var(--accent); text-decoration: underline; }
+.title-link[hidden] { display: none; }
 .toolbar { display: flex; align-items: center; gap: 8px; margin-bottom: 16px; }
 .filter-control { min-width: 240px; min-height: 30px; display: flex; flex: 1; align-items: stretch; position: relative; border: 1px solid var(--border); border-radius: 6px; background: var(--canvas); font-size: .75rem; }
 .scope-label, .scope-period, .export-control, .search-control { display: inline-flex; align-items: center; gap: 7px; padding: 4px 12px; }

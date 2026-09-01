@@ -680,6 +680,10 @@
                 "outcomes"
               ]
             },
+            "title-link": {
+              "href-field": "external-link",
+              "identifier-field": "outcome-number"
+            },
             "mark": "element",
             "element": "outcome-detail",
             "layout": "full"

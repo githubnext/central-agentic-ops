@@ -268,6 +268,7 @@ function outcomeRows(records) {
     "workflow-name": record.workflow || record.workflowPath?.replace(/\.lock\.yml$/, ".md") || "Unknown workflow",
     run: String(record.runUrl?.match(/\/runs\/(\d+)/)?.[1] || ""),
     "safe-output": record.id,
+    "outcome-number": record.number,
     "outcome-title": record.title || record.id,
     "outcome-summary": record.summary || "",
     "outcome-body-html": record.bodyHtml || "",
