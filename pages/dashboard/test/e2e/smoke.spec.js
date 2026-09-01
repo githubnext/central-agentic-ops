@@ -453,6 +453,7 @@ test('DLS-PAGE-002 DLS-PAGE-014 built-in overview page renders the report-style 
   `);
 
   await expect(page.getByRole('heading', { name: 'Overview', exact: true, level: 1 })).toBeVisible();
+  await expect(page.locator('[data-page-mode]')).toBeHidden();
   await expect(page.locator('.nav-section-label')).toHaveCount(1);
   await expect(page.locator('.nav-section-label')).toHaveText(['Attention']);
   await expect(page.locator('.overview-page')).toHaveAttribute('data-page-kind', 'custom');
