@@ -2089,7 +2089,8 @@ describe('presenter built-in and custom pages', () => {
     const secondLink = /** @type {HTMLAnchorElement} */ (rendered.querySelector('[data-nav-page-id="second"]'));
     expect(first.hidden).toBe(false);
     expect(second.hidden).toBe(true);
-    expect(rendered.querySelector('[data-breadcrumb-root]')?.getAttribute('href')).toBe('https://github.com/GitHub');
+    expect(/** @type {HTMLElement | null} */ (rendered.querySelector('[data-breadcrumb-root]'))?.hidden).toBe(true);
+    expect(rendered.querySelector('[data-breadcrumb-root]')?.hasAttribute('href')).toBe(false);
     expect(rendered.querySelector('[data-breadcrumb-dashboard]')?.getAttribute('href')).toBe('#page-first');
     expect(rendered.querySelector('#page-title')?.textContent).toBe('First');
     expect(rendered.querySelector('[data-breadcrumb-page]')?.textContent).toBe('First');

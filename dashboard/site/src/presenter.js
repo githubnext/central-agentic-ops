@@ -141,7 +141,7 @@ export function renderDashboard(input) {
   const skipLink = h('a', { href: '#main-content', className: 'skip-link' }, 'Skip to main content');
 
   const sidebar = renderSidebar(pages, sidebarTitle, document.dashboard.navigation);
-  const mainContent = renderMainContent(document, title, pages, sources, orgName, githubUrlBase, dashboardRepository);
+  const mainContent = renderMainContent(document, title, pages, sources, githubUrlBase, dashboardRepository);
 
   const appShell = h(
     'div',
@@ -313,12 +313,11 @@ function getPageIcon(page) {
  * @param {string} title
  * @param {Array<PresentableBuiltInPage | PresentableCustomPage>} pages
  * @param {Record<string, LogicalSourceInput>} sources
- * @param {string} orgName
  * @param {string} githubUrlBase
  * @param {string | null} dashboardRepository
  * @returns {HTMLElement}
  */
-function renderMainContent(document, title, pages, sources, orgName, githubUrlBase, dashboardRepository) {
+function renderMainContent(document, title, pages, sources, githubUrlBase, dashboardRepository) {
   const initialPage = pages[0];
   const initialPageTitle = initialPage ? getPageTitle(initialPage) : '';
   const initialPageDescription = initialPage?.description;
@@ -334,7 +333,7 @@ function renderMainContent(document, title, pages, sources, orgName, githubUrlBa
       h(
         'div',
         { className: 'shell' },
-        h('a', { href: `${githubUrlBase}/${orgName}`, 'data-breadcrumb-root': '' }, orgName),
+        h('a', { hidden: true, 'data-breadcrumb-root': '' }),
         h('a', { href: initialPageHref, 'data-breadcrumb-dashboard': '' }, title),
         h('span', { 'data-breadcrumb-page': '' }, initialPageTitle),
         h(
@@ -633,7 +632,8 @@ export function enableDashboardPageNavigation(root) {
   const pageMode = root.querySelector('[data-page-mode]');
   const defaultBreadcrumbs = [breadcrumbRoot, breadcrumbDashboard].map((link) => ({
     label: link?.textContent ?? '',
-    href: link instanceof HTMLAnchorElement ? link.getAttribute('href') ?? '' : ''
+    href: link instanceof HTMLAnchorElement ? link.getAttribute('href') ?? '' : '',
+    hidden: link instanceof HTMLElement ? link.hidden : false
   }));
   if (pages.length === 0 || links.length === 0) {
     return;
@@ -703,9 +703,13 @@ export function enableDashboardPageNavigation(root) {
   const activate = (pageId, parameters = new URLSearchParams()) => {
     for (const [index, link] of [breadcrumbRoot, breadcrumbDashboard].entries()) {
       if (!(link instanceof HTMLAnchorElement)) continue;
-      link.hidden = false;
+      link.hidden = defaultBreadcrumbs[index].hidden;
       link.textContent = defaultBreadcrumbs[index].label;
-      link.setAttribute('href', defaultBreadcrumbs[index].href);
+      if (defaultBreadcrumbs[index].href) {
+        link.setAttribute('href', defaultBreadcrumbs[index].href);
+      } else {
+        link.removeAttribute('href');
+      }
     }
     for (const page of pages) {
       const isActive = page.dataset.pageId === pageId;
