@@ -422,6 +422,24 @@ function validateDashboard(dashboard, dashboardNode, errors) {
   dashboard.pages.forEach((page, index) => {
     validatePage(page, getSequenceItemNode(getValueNodeByKey(dashboardNode, 'pages'), index), `$.dashboard.pages[${index}]`, pageIds, errors);
   });
+  dashboard.pages.forEach((page, index) => {
+    if (!isPlainObject(page) || !isPlainObject(page.route) || typeof page.route['navigation-page'] !== 'string') return;
+    const navigationPage = page.route['navigation-page'];
+    if (!IDENTIFIER_PATTERN.test(navigationPage)) return;
+    if (navigationPage === page.id) {
+      errors.push(createError(
+        ERROR_CODES.missingOrInvalidRequiredField,
+        'route navigation-page must reference a different dashboard page.',
+        `$.dashboard.pages[${index}].route.navigation-page`
+      ));
+    } else if (!pageIds.has(navigationPage)) {
+      errors.push(createError(
+        ERROR_CODES.missingOrInvalidRequiredField,
+        'route navigation-page must reference a declared dashboard page id.',
+        `$.dashboard.pages[${index}].route.navigation-page`
+      ));
+    }
+  });
   validateUnitReferences(dashboard.pages, unitIds, errors);
 
   if (dashboard.navigation !== undefined) {
@@ -1150,12 +1168,29 @@ function validateCustomPage(page, pageNode, path, errors) {
       ));
     } else {
       validateObjectKeys(getValueNodeByKey(pageNode, 'route'), PAGE_ROUTE_KEYS, routePath, errors);
-      validateRequiredIdentifier(
-        page.route['hash-query-parameter'],
-        `${routePath}.hash-query-parameter`,
-        'route hash query parameter',
-        errors
-      );
+      if (page.route['hash-query-parameter'] === undefined && page.route['navigation-page'] === undefined) {
+        errors.push(createError(
+          ERROR_CODES.missingOrInvalidRequiredField,
+          'route must declare hash-query-parameter or navigation-page.',
+          routePath
+        ));
+      }
+      if (page.route['hash-query-parameter'] !== undefined) {
+        validateRequiredIdentifier(
+          page.route['hash-query-parameter'],
+          `${routePath}.hash-query-parameter`,
+          'route hash query parameter',
+          errors
+        );
+      }
+      if (page.route['navigation-page'] !== undefined) {
+        validateRequiredIdentifier(
+          page.route['navigation-page'],
+          `${routePath}.navigation-page`,
+          'route navigation page',
+          errors
+        );
+      }
     }
   }
 

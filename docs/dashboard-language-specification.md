@@ -205,7 +205,7 @@ Language keys and enumerated values use canonical kebab-case. Human-readable tit
 | Custom page | `id`, `kind`, `title`, `navigation-label`, `description`, `icon`, `class-name`, `filter-bar`, `route`, `views`, `sections` |
 | Page `filter-bar` | `filters`, `time-range`, `export` |
 | Page section | `id`, `title`, `description`, `layout`, `views`, `count-source`, `count-label` |
-| Custom page `route` | `hash-query-parameter` |
+| Custom page `route` | `hash-query-parameter`, `navigation-page` |
 | View | `id`, `title`, `description`, `data`, `mark`, `element`, `chart`, `layout`, `disclosure`, `controls`, `empty-message`, `encoding` |
 | View `data` | `source` or `sources`, `scope`, `time`, `filters`, `limit`, `order-by` |
 | Field definition | `field`, `type`, `aggregate`, `time-unit`, `title`, `as` (only when `aggregate` is not `none`), `display`, `unit` |
@@ -510,7 +510,7 @@ A custom page may also contain a non-empty `sections` sequence that groups its v
 
 #### 11.1.1 Route-Bound Page Templates
 
-A custom page may declare one constrained route binding:
+A custom page may declare a constrained route binding, a navigation parent, or both:
 
 ```yaml
 - id: repository-detail
@@ -529,6 +529,8 @@ A custom page may declare one constrained route binding:
 The route selects the page through `#page-<page-id>?<parameter>=<value>`, with the page ID and query components percent-encoded as defined by URI syntax. For `#page-repository-detail?repository=github%2Fgh-aw`, the decoded, trimmed route value is `github/gh-aw`. A non-empty route value allocates that custom-page instance: the presenter uses it as the page title and final breadcrumb label and supplies it as an opaque route binding to route-aware named elements. A missing or empty value leaves the declared page title in place and supplies an empty binding.
 
 This binding is constrained templating, not general string interpolation. A presenter treats the value as text, never as markup or executable content, and does not substitute it into arbitrary document fields. A named element may apply stricter domain validation before using the value for filtering or links. A route-aware named element may replace the provisional route-value title and description with human-readable text from its selected declared-source row; the presenter must apply the same text-only treatment to that allocation.
+
+`navigation-page` identifies a different declared page whose navigation item remains current while the custom page is active. The presenter uses that page as the custom page's parent breadcrumb. This supports detail and diagnostic subpages without requiring presentation components to contain navigation policy.
 
 | Semantic view | `mark` values | Required encoding |
 |---|---|---|
@@ -601,8 +603,8 @@ Disclosure changes presentation only. It does not change data processing, data s
 - **DLS-VIEW-023:** A presenter **MUST** select a field's `status`, `mode`, or `active-state` treatment only from its `display` value and **MUST NOT** infer that treatment from the field name.
 - **DLS-VIEW-024:** A custom page `sections` sequence, when present, **MUST** be non-empty. Every section **MUST** have a unique canonical `id`, one `layout` value of `full`, `wide`, or `narrow`, and a non-empty `views` sequence. Sections **MUST** reference every page view exactly once and preserve view declaration order; an omitted section title **MUST** default from its section ID. `count-source` and non-empty `count-label`, when used, **MUST** appear together and expose that source's effective row count without changing view data.
 - **DLS-VIEW-025:** A presenter **MUST** apply a field's referenced unit consistently to metric values, table cells, chart value labels, chart data tables, and accessible chart labels.
-- **DLS-VIEW-026:** A custom page `route`, when present, **MUST** be a mapping containing exactly `hash-query-parameter`, whose value **MUST** be a canonical identifier. Built-in pages **MUST NOT** declare `route`.
-- **DLS-VIEW-027:** A presenter **MUST** resolve a custom page route from `#page-<page-id>?<parameter>=<value>`. It **MUST** use a non-empty decoded, trimmed route value as the provisional page title and final breadcrumb label and supply it as an opaque binding to route-aware named elements; a missing or empty value **MUST** preserve the declared title and supply an empty binding. A route-aware named element **MAY** replace that provisional title and description with human-readable text from its selected declared-source row. Route and allocated values **MUST** be treated only as text and **MUST NOT** be interpreted as markup, code, a URI, or a general-purpose content template.
+- **DLS-VIEW-026:** A custom page `route`, when present, **MUST** be a mapping containing `hash-query-parameter`, `navigation-page`, or both. Each present value **MUST** be a canonical identifier. `navigation-page` **MUST** reference a different declared dashboard page. Built-in pages **MUST NOT** declare `route`.
+- **DLS-VIEW-027:** A presenter **MUST** resolve a custom page route from `#page-<page-id>?<parameter>=<value>`. It **MUST** use a non-empty decoded, trimmed route value as the provisional page title and final breadcrumb label and supply it as an opaque binding to route-aware named elements; a missing or empty value **MUST** preserve the declared title and supply an empty binding. When `navigation-page` is present, the presenter **MUST** expose that page as the current navigation item and parent breadcrumb. A route-aware named element **MAY** replace that provisional title and description with human-readable text from its selected declared-source row. Route and allocated values **MUST** be treated only as text and **MUST NOT** be interpreted as markup, code, a URI, or a general-purpose content template.
 - **DLS-VIEW-028:** Table `controls`, when present, **MUST** be `interactive` or `static`; an omitted value **MUST** default to `interactive`. A static table **MUST** expose every effective row without filter, sort, summary, pagination, or nested-scroll controls. `empty-message`, when present, **MUST** be non-empty text and **MUST** appear only inside a zero-row table body.
 
 ---

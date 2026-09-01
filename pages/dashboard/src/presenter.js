@@ -42,7 +42,7 @@ import { deriveRuntimeSources } from './runtime-data.js';
  */
 
 /**
- * @typedef {{ id: string, kind: 'custom', title?: string, ['navigation-label']?: string, description?: string, icon?: string, ['class-name']?: string, ['filter-bar']?: PresentableFilterBar, route?: { ['hash-query-parameter']?: string }, views: unknown[], sections?: PresentablePageSection[] }} PresentableCustomPage
+ * @typedef {{ id: string, kind: 'custom', title?: string, ['navigation-label']?: string, description?: string, icon?: string, ['class-name']?: string, ['filter-bar']?: PresentableFilterBar, route?: { ['hash-query-parameter']?: string, ['navigation-page']?: string }, views: unknown[], sections?: PresentablePageSection[] }} PresentableCustomPage
  */
 
 /**
@@ -415,6 +415,9 @@ function renderCustomPage(page, title, sources, units) {
   const routeParameter = typeof page.route?.['hash-query-parameter'] === 'string'
     ? page.route['hash-query-parameter']
     : undefined;
+  const routeNavigationPage = typeof page.route?.['navigation-page'] === 'string'
+    ? page.route['navigation-page']
+    : undefined;
   /** @type {Map<string, LogicalSourceInput>} */
   const pageSources = new Map();
   for (const view of views) {
@@ -478,7 +481,8 @@ function renderCustomPage(page, title, sources, units) {
       'data-page-id': page.id,
       'data-page-title': title,
       'data-page-description': page.description ?? '',
-      'data-route-parameter': routeParameter
+      'data-route-parameter': routeParameter,
+      'data-route-navigation-page': routeNavigationPage
     },
     page['filter-bar'] ? renderFilterBar(page.id, page['filter-bar'], pageSources) : null,
     ...(renderedViews.length > 0
@@ -632,6 +636,17 @@ export function enableDashboardPageNavigation(root) {
     }
     updateNavigationLinks(links, pageId);
     const page = pages.find((candidate) => candidate.dataset.pageId === pageId);
+    const routeNavigationPage = page?.dataset.routeNavigationPage;
+    if (routeNavigationPage && availableIds.has(routeNavigationPage)) {
+      const navigationLink = links.find((link) => link.dataset.navPageId === routeNavigationPage);
+      updateNavigationLinks(links, routeNavigationPage);
+      if (breadcrumbRoot instanceof HTMLAnchorElement && navigationLink) {
+        breadcrumbRoot.hidden = false;
+        breadcrumbRoot.textContent = navigationLink.textContent ?? routeNavigationPage;
+        breadcrumbRoot.href = `#page-${routeNavigationPage}`;
+      }
+      if (breadcrumbDashboard instanceof HTMLAnchorElement) breadcrumbDashboard.hidden = true;
+    }
     const routeParameter = page?.dataset.routeParameter;
     const routeValue = routeParameter ? parameters.get(routeParameter)?.trim() ?? '' : '';
     const title = routeValue || page?.dataset.pageTitle || '';

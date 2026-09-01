@@ -15,24 +15,18 @@ export const UNIT_DEFINITION_KEYS = ['name', 'symbol', 'significant'];
 export const NAVIGATION_SECTION_KEYS = ['label', 'pages'];
 export const BUILT_IN_PAGE_KEYS = ['id', 'kind', 'page', 'title', 'navigation-label', 'description', 'icon', 'class-name', 'filter-bar', 'definition'];
 export const CUSTOM_PAGE_KEYS = ['id', 'kind', 'title', 'navigation-label', 'description', 'icon', 'class-name', 'filter-bar', 'route', 'views', 'sections'];
-export const PAGE_ROUTE_KEYS = ['hash-query-parameter'];
+export const PAGE_ROUTE_KEYS = ['hash-query-parameter', 'navigation-page'];
 export const PAGE_FILTER_BAR_KEYS = ['filters', 'time-range', 'export'];
 
 export const VIEW_KEYS = ['id', 'title', 'description', 'data', 'mark', 'element', 'chart', 'layout', 'disclosure', 'controls', 'empty-message', 'encoding'];
 export const VIEW_DATA_KEYS = ['source', 'sources', 'scope', 'time', 'filters', 'limit', 'order-by', 'source-metadata'];
 export const VIEW_MARK_VALUES = ['metric', 'table', 'chart', 'element'];
 export const VIEW_ELEMENT_VALUES = [
-  'status-summary',
-  'meter-list',
-  'attention-list',
   'domain-attention',
-  'record-cards',
   'summary-grid',
   'context-summary',
   'signal-list',
-  'coverage-diagnostics',
   'package-activity',
-  'package-run-trend',
   'package-detail',
   'package-reports',
   'repository-workflows',

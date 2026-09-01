@@ -2081,7 +2081,17 @@ describe('presenter built-in and custom pages', () => {
     expect(rendered.querySelector('[data-breadcrumb-page]')?.textContent).toBe('Coverage diagnostics');
     expect(rendered.querySelector('[data-nav-page-id="overview"]')?.getAttribute('aria-current')).toBe('page');
     expect(rendered.querySelectorAll('[data-nav-page-id="coverage"]')).toHaveLength(0);
-    expect(rendered.querySelectorAll('.coverage-diagnostics tbody tr')).toHaveLength(2);
+    const coveragePage = authoritativeDashboardDocument.dashboard.pages.find(
+      (/** @type {{ id: string }} */ page) => page.id === 'coverage'
+    );
+    expect(coveragePage.route).toEqual({ 'navigation-page': 'overview' });
+    expect(coveragePage.views[0]).toMatchObject({
+      mark: 'table',
+      controls: 'static',
+      data: { source: 'coverage-diagnostics' }
+    });
+    expect(coveragePage.views[0]).not.toHaveProperty('element');
+    expect(rendered.querySelectorAll('#page-coverage .custom-table tbody tr')).toHaveLength(2);
 
     window?.history.replaceState(null, '', '/');
   });
