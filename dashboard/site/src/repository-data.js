@@ -147,11 +147,11 @@ function buildRepositoryWorkflowUsageRows(usage) {
     .map((row) => ({
       repository: qualifiedRepository(row),
       workflow: String(row.workflow ?? ''),
+      invocation: String(row.invocation ?? ''),
       aic: Number(row.aic),
-      ...(row.invocation ? { invocation: row.invocation } : {}),
       ...(row['workflow-link'] ? { 'workflow-link': row['workflow-link'] } : {})
     }))
-    .filter((row) => row.repository && row.workflow && Number.isFinite(row.aic) && row.aic >= 0);
+    .filter((row) => row.repository && row.workflow && row.invocation && Number.isFinite(row.aic) && row.aic >= 0);
 }
 
 /**
