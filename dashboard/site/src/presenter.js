@@ -158,7 +158,7 @@ export function renderDashboard(input) {
     appShell
   );
   enableSidebarToggle(root);
-  enableDashboardPageNavigation(root);
+  enableDashboardPageNavigation(root, title);
   return root;
 }
 
@@ -614,8 +614,9 @@ function renderLayoutSection(pageId, section, renderedViews, sources) {
 /**
  * Shows a single dashboard page and keeps sidebar state synchronized with the URL hash.
  * @param {HTMLElement} root
+ * @param {string} dashboardTitle
  */
-export function enableDashboardPageNavigation(root) {
+export function enableDashboardPageNavigation(root, dashboardTitle = '') {
   const pages = [...root.querySelectorAll('.dashboard-page')]
     .filter((page) => page instanceof HTMLElement);
   const links = [...root.querySelectorAll('[data-nav-page-id]')]
@@ -645,6 +646,7 @@ export function enableDashboardPageNavigation(root) {
     if (title) {
       if (breadcrumbPage) breadcrumbPage.textContent = title;
       if (pageTitle) pageTitle.textContent = title;
+      updateDocumentTitle(root.ownerDocument, title, dashboardTitle);
     }
     renderPageTitleLink(pageTitleLink, event.detail?.titleLink);
     const hasAllocatedBreadcrumbs = Array.isArray(event.detail?.breadcrumbs);
@@ -731,6 +733,7 @@ export function enableDashboardPageNavigation(root) {
     const description = page?.dataset.pageDescription ?? '';
     if (breadcrumbPage) breadcrumbPage.textContent = title;
     if (pageTitle) pageTitle.textContent = title;
+    updateDocumentTitle(root.ownerDocument, title, dashboardTitle);
     renderPageTitleLink(pageTitleLink, null);
     if (pageDescription) {
       pageDescription.textContent = description;
@@ -779,6 +782,18 @@ export function enableDashboardPageNavigation(root) {
     }
   };
   defaultView?.addEventListener('hashchange', onHashChange);
+}
+
+/**
+ * @param {Document} ownerDocument
+ * @param {string} pageTitle
+ * @param {string} dashboardTitle
+ */
+function updateDocumentTitle(ownerDocument, pageTitle, dashboardTitle) {
+  ownerDocument.title = [pageTitle, dashboardTitle]
+    .map((part) => part.trim())
+    .filter(Boolean)
+    .join(' · ');
 }
 
 /**
