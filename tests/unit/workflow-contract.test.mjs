@@ -1281,6 +1281,22 @@ test("accessibility expert audits the served docs site with axe-core evidence", 
   assert.doesNotMatch(source, /^\s+(create-pull-request|add-comment|create-discussion|push-to-pull-request-branch):/m);
 });
 
+test("Primer branding audits the dashboard against retrieved guidance", () => {
+  const source = workflow("primer-branding.md");
+
+  assert.match(source, /^private: true$/m);
+  assert.match(source, /^name: "Primer Branding"$/m);
+  assert.match(source, /schedule: daily/);
+  assert.match(source, /skip-if-match: 'is:pr is:open in:title "Primer branding"'/);
+  assert.match(source, /@primer\/brand-mcp@0\.74\.0/);
+  assert.match(source, /cli-proxy: true/);
+  assert.match(source, /dashboard\/site\/src\/styles\.js/);
+  assert.match(source, /dashboard\/site\/src\/\*\*\/\*\.js/);
+  assert.match(source, /npm --prefix dashboard\/site run test:e2e/);
+  assert.match(source, /create-pull-request:\n\s+title-prefix: "Primer branding: "\n\s+draft: true/);
+  assert.match(source, /If the audit finds no meaningful deviations, call `noop` once/);
+});
+
 test("docs diagram generator creates one validated theme-aware SVG pair", () => {
   const source = workflow("docs-explanatory-diagrams.md");
 
@@ -1434,6 +1450,7 @@ test("clean-room compilation emits the expected GitHub Actions settings", { time
       "multi-device-docs-tester.lock.yml",
       "eu-cra-compliance-package-maintainer.lock.yml",
       "docs-explanatory-diagrams.lock.yml",
+      "primer-branding.lock.yml",
       "pr-reviewer.lock.yml",
       "svg-visual-audit.lock.yml",
     ].sort();
