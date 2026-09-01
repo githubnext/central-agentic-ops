@@ -48,7 +48,7 @@ export function deriveWorkflowSources(sources) {
       rows: outcomes.flatMap((row) => {
         const report = deriveWorkflowReport(row);
         return report ? [report] : [];
-      }).sort(compareWorkflowReports),
+      }).sort(compareReports),
       metadata: sources.outcomes?.metadata ?? unavailableMetadata()
     },
     'package-reports': {
@@ -56,7 +56,7 @@ export function deriveWorkflowSources(sources) {
       rows: outcomes.flatMap((row) => {
         const report = derivePackageReport(row, workflows);
         return report ? [report] : [];
-      }).sort(compareWorkflowReports),
+      }).sort(compareReports),
       metadata: sources.outcomes?.metadata ?? unavailableMetadata()
     }
   };
@@ -195,7 +195,7 @@ function compareStandaloneWorkflows(left, right) {
 }
 
 /** @param {Row} left @param {Row} right */
-function compareWorkflowReports(left, right) {
+function compareReports(left, right) {
   return derivedReportTime(right) - derivedReportTime(left)
     || text(left['outcome-title']).localeCompare(text(right['outcome-title']));
 }
