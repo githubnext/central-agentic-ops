@@ -561,7 +561,8 @@ test('built-in repositories page keeps repository scope above the run metadata',
   expect(boxes[1].y).toBeGreaterThan(boxes[0].y);
   expect(boxes[2].y).toBe(boxes[1].y);
   expect(boxes[2].x).toBeGreaterThan(boxes[1].x);
-  expect(boxes[0].width).toBeCloseTo(boxes[1].width + boxes[2].width, 0);
+  expect(boxes[0].x).toBeCloseTo(boxes[1].x, 0);
+  expect(boxes[0].x + boxes[0].width).toBeCloseTo(boxes[2].x + boxes[2].width, 0);
 });
 
 test('DLS-PAGE-014 DLS-PAGE-015 built-in packages page renders report-style mode filters, AIC utilization, and run trends in browser', async ({ page }) => {
