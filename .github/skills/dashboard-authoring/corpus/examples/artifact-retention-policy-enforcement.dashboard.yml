@@ -39,6 +39,7 @@ dashboard:
             source: findings
             filters:
               workflow: [artifact-retention-policy-enforcement]
+              finding-status: [open]
           mark: table
           controls: interactive
           empty-message: No supported artifact-retention policy findings require action.
