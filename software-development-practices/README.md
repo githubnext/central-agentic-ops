@@ -1,0 +1,59 @@
+<!-- Software Development Practices Advisor outputs are advisory and non-binding. They provide no guarantee of completeness, correctness, security, compliance, or alignment with current GitHub or NIST guidance. -->
+
+# Software Development Practices Advisor
+
+> [!WARNING]
+> Outputs are advisory and non-binding. They are not a security assessment, certification, or compliance determination and provide no guarantee of completeness, correctness, security, or alignment with current GitHub or NIST guidance. Human review against authoritative sources is required.
+
+The Software Development Practices Advisor helps a private Central Agentic Ops control repository identify active software repositories and produce evidence-backed improvement guidance based on the [GitHub Well-Architected framework](https://learn.github.com/well-architected/) and the [NIST Secure Software Development Framework](https://csrc.nist.gov/projects/ssdf).
+
+## Package Contents
+
+| Workflow | Responsibility |
+| --- | --- |
+| [`software-development-practices`](../.github/workflows/software-development-practices.md) | Discovers, ranks, selects, and dispatches repository-level work. |
+| [`software-development-practices-github-well-architected`](../.github/workflows/software-development-practices-github-well-architected.md) | Reviews repository evidence across the current GitHub Well-Architected pillars and creates one prioritized guidance issue. |
+| [`software-development-practices-nist-ssdf`](../.github/workflows/software-development-practices-nist-ssdf.md) | Reviews repository evidence against the current final NIST SSDF practices and creates one prioritized guidance issue. |
+
+The orchestrator dispatches at most 20 workers per run. Each worker reviews one repository, creates at most one consolidated issue through declared safe outputs, and defaults to review output.
+
+## Install and Configure
+
+```bash
+gh aw add-wizard githubnext/central-agentic-ops/software-development-practices@<catalog-release>
+```
+
+Configure the shared GitHub App or PAT described in the [authentication guide](../docs/authentication.md), then declare the package in the control repository's `.github/central-agentic-ops.json`:
+
+```json
+{
+	"version": 1,
+	"control-plane": {
+		"packages": {
+			"software-development-practices": {
+				"workers": {
+					"github-well-architected": {
+						"workflow": "software-development-practices-github-well-architected"
+					},
+					"nist-ssdf": {
+						"workflow": "software-development-practices-nist-ssdf"
+					}
+				}
+			}
+		}
+	}
+}
+```
+
+The omitted fields default to an enabled package and workers, `review` mode, one repository, and 100 percent rollout. Run the orchestrator manually with an explicit target and review output before considering a limited live rollout.
+
+## Safety Boundaries
+
+- The orchestrator selects repositories but performs no framework assessment.
+- Workers analyze only the dispatched target and cannot discover or dispatch to other repositories.
+- Repository content and metadata are untrusted evidence, never control-plane policy.
+- Workers fetch current official guidance on every run and report inaccessible required sources as incomplete.
+- Review mode routes guidance to the designated review repository; live mode creates it in the selected target only with target-owned authority.
+- Findings distinguish observed evidence, gaps, limitations, and human-review questions; they never claim certification, compliance, security, or framework endorsement.
+- Safe outputs contain no secrets, personal data, exploit details, private alerts, or confidential evidence.
+- Operational-value evaluators are pending post-adoption evidence and are intentionally not registered.
