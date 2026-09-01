@@ -82,6 +82,7 @@ function buildRepositoryWorkflowRows(workflows) {
       'workflow-name': String(workflow['workflow-name'] ?? workflow.workflow ?? ''),
       'workflow-role': titleCase(workflow['workflow-role'] ?? 'unknown'),
       'package-name': String(workflow['package-name'] ?? ''),
+      'rollout-mode': String(workflow['rollout-mode'] ?? 'unknown'),
       'workflow-active': String(workflow['workflow-active'] ?? 'unknown'),
       'observed-at': workflow['observed-at'],
       ...(workflow['workflow-link'] ? { 'workflow-link': workflow['workflow-link'] } : {})

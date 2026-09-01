@@ -44,13 +44,18 @@ describe('declarative dispatch view', () => {
       }
     });
 
-    expect(dispatchPage.views[0]).toMatchObject({
+    const dispatchTable = dispatchPage.views.find((/** @type {{ id: string }} */ view) => view.id === 'package-worker-dispatches');
+    const evidenceBoundary = dispatchPage.views.find((/** @type {{ id: string }} */ view) => view.id === 'dispatch-evidence-boundary');
+    expect(dispatchTable).toMatchObject({
       mark: 'table',
       data: { source: 'dispatches' },
       encoding: {
         href: { field: 'run-link' }
       }
     });
+    expect(evidenceBoundary).toMatchObject({ mark: 'callout', callout: { label: 'Execution boundary' } });
+    expect(rendered.querySelector('.filter-bar')?.textContent).toContain('event:workflow_dispatch');
+    expect(rendered.querySelector('.dashboard-callout')?.textContent).toContain('unavailable parent-child correlation is never inferred');
     expect([...rendered.querySelectorAll('thead tr:first-child th')].map((cell) => cell.textContent)).toEqual([
       'Started',
       'Type',

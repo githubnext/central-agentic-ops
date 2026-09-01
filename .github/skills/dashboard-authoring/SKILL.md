@@ -23,7 +23,7 @@ Create one dashboard that helps an operator decide whether a specific agentic wo
 7. From the repository root, run:
 
    ```text
-   npm --prefix pages/dashboard run validate:corpus
+   npm --prefix dashboard/site run validate:corpus
    ```
 
 8. Keep only candidates that pass both dashboard-document and logical-source validation. A duplicate intent, opportunity, metric, or view composition is a no-op.

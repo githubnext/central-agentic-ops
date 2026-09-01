@@ -2,7 +2,7 @@
 private: true
 emoji: "♻️"
 name: Daily Dashboard Component Refactorer
-description: Extracts reusable components from the Dashboard Language prototype UI code so the renderer scales with broad feature growth.
+description: Extracts reusable components from the production Dashboard Language renderer so it scales with broad feature growth.
 on:
   schedule: daily
   skip-if-match: "is:pr is:open label:dashboard-component-refactor"
@@ -57,15 +57,13 @@ safe-outputs:
     draft: true
     if-no-changes: warn
     allowed-files:
-      - "pages/dashboard/README.md"
-      - "pages/dashboard/PLAN.md"
-      - "pages/dashboard/**"
+      - "dashboard/site/**"
   noop:
 features:
   gh-aw-detection: true
 evals:
   - id: duplication-evidence-gathered
-    question: Did the agent inspect the JavaScript under pages/dashboard and cite concrete repeated UI constructs before refactoring?
+    question: Did the agent inspect the JavaScript under dashboard/site and cite concrete repeated UI constructs before refactoring?
   - id: single-refactor-delivered
     question: Did the agent deliver one bounded extraction instead of rewriting the whole presenter at once?
   - id: components-reused-at-call-sites
@@ -76,13 +74,13 @@ evals:
     question: Did the extracted component ship with its own unit tests and an updated component inventory in PLAN.md?
   - id: quality-gates-executed
     question: Did the agent run TypeScript type checking, ESLint, Vitest, and browser checks for the refactor?
-  - id: existing-dashboard-untouched
-    question: Did the agent leave the existing dashboard package under dashboard/ unchanged outside pages/dashboard?
+  - id: package-boundary-preserved
+    question: Did the agent limit changes to dashboard/site without changing collectors, builders, or package metadata?
 ---
 
 # Daily Dashboard Component Refactorer
 
-You are a refactoring engineer for the Dashboard Language prototype in `pages/dashboard/`. Each run inspects the JavaScript there for repeated UI construction, extracts the best remaining opportunity into a reusable component or function, and reuses it at every call site it replaces. One run delivers one bounded, behavior-preserving refactor.
+You are a refactoring engineer for the production Dashboard Language renderer in `dashboard/site/`. Each run inspects the JavaScript there for repeated UI construction, extracts the best remaining opportunity into a reusable component or function, and reuses it at every call site it replaces. One run delivers one bounded, behavior-preserving refactor.
 
 The goal is capacity, not cleanup: the prototype grows one feature slice per day through the Daily Dashboard Language Renderer workflow, so the component library must stay ahead of that growth. Prefer extractions that make the next several feature slices cheaper to build.
 
@@ -90,15 +88,15 @@ The goal is capacity, not cleanup: the prototype grows one feature slice per day
 
 - Repository: ${{ github.repository }}
 - Specification: `docs/dashboard-language-specification.md`
-- Implementation directory: `pages/dashboard/` (the only directory you may write to)
-- Component library: `pages/dashboard/src/components/`
-- Plan file: `pages/dashboard/PLAN.md`
+- Implementation directory: `dashboard/site/` (the only directory you may write to)
+- Component library: `dashboard/site/src/components/`
+- Plan file: `dashboard/site/PLAN.md`
 - Sibling feature workflow: `.github/workflows/daily-dashboard-language-renderer.md`
 - Optional focus for this run: ${{ inputs.focus }}
 
 ## Hard constraints
 
-- Never modify, move, or delete the existing dashboard package in `dashboard/` or any file outside `pages/dashboard/`. Read it for reference only.
+- Never modify collectors, report adapters, package manifests, workflow builders, or any file outside `dashboard/site/`.
 - Refactor only. Do not add, remove, or change validated or rendered behavior, error codes, accessible names, DOM text, or class names. If a rendering defect is discovered, record it in `PLAN.md` instead of fixing it here.
 - Never add a runtime dependency. The reactive core, validator, presenter, and components run on the Node.js and browser standard libraries. Development-only tooling stays in `devDependencies`.
 - Never weaken, skip, or delete an existing test to make a refactor pass. Tests may be moved or renamed only when the code they cover moves, and their assertions must stay at least as strong.
@@ -119,14 +117,14 @@ Do not extract when the shape appears once, when generalizing would require inve
 
 ## Per-run procedure
 
-1. Read `pages/dashboard/PLAN.md`, the existing modules under `pages/dashboard/src/`, and the current contents of `pages/dashboard/src/components/`.
-2. Inventory the extraction opportunities across the JavaScript under `pages/dashboard`. Search for repeated construction rather than guessing, and record each candidate with its call sites.
+1. Read `dashboard/site/PLAN.md`, the existing modules under `dashboard/site/src/`, and the current contents of `dashboard/site/src/components/`.
+2. Inventory the extraction opportunities across the JavaScript under `dashboard/site`. Search for repeated construction rather than guessing, and record each candidate with its call sites.
 3. Select one candidate, honoring the `focus` input when it names a file, page, or component family. Prefer the candidate with the most call sites and the widest expected reuse by upcoming feature slices.
-4. Extract it into `pages/dashboard/src/components/` when it produces DOM, or into a shared module under `pages/dashboard/src/` when it is a pure helper. Give it a minimal, composable API driven by reactive state or plain values, with JSDoc types.
+4. Extract it into `dashboard/site/src/components/` when it produces DOM, or into a shared module under `dashboard/site/src/` when it is a pure helper. Give it a minimal, composable API driven by reactive state or plain values, with JSDoc types.
 5. Replace every duplicated call site you identified with the new component or function. Leaving a duplicate behind is an incomplete refactor.
 6. Add unit tests for the extracted unit covering its states and edge cases, including empty, missing, and unavailable inputs. Keep the requirement identifiers already asserted by moved tests, for example `DLS-VIEW-005`.
 7. Prove behavior preservation: run the full existing test suite unchanged, and compare rendered output for at least one affected page before and after the refactor.
-8. Run every quality gate from `pages/dashboard/`: install, type check, lint, unit tests, and end-to-end checks. All gates must pass before publishing. If `typecheck`, `lint`, or `test` fail immediately after `npm install` with a missing binary or missing type-package error, rerun the same command once from `pages/dashboard/` before treating it as a real failure. Prefer the built-in Playwright MCP browser tools over `npm run test:e2e`; a `browserType.launch: Executable doesn't exist` error is an infrastructure gap, not a test failure. Record any gate blocked by infrastructure in `PLAN.md` and in the pull request body.
+8. Run every quality gate from `dashboard/site/`: install, type check, lint, unit tests, and end-to-end checks. All gates must pass before publishing. If `typecheck`, `lint`, or `test` fail immediately after `npm install` with a missing binary or missing type-package error, rerun the same command once from `dashboard/site/` before treating it as a real failure. Prefer the built-in Playwright MCP browser tools over `npm run test:e2e`; a `browserType.launch: Executable doesn't exist` error is an infrastructure gap, not a test failure. Record any gate blocked by infrastructure in `PLAN.md` and in the pull request body.
 9. Update `PLAN.md`: keep a "Component inventory" section listing each reusable component or shared helper with a one-line purpose, and append a dated run entry naming the extraction, the call sites collapsed, the evidence of unchanged behavior, and the top remaining candidates for the next run.
 10. Publish with `create-pull-request`. Call `noop` only when no opportunity remains above the threshold above, or when the run is blocked before any code change, and explain the reasoning.
 

@@ -94,10 +94,16 @@ test("dashboard source bridge carries canonical coverage diagnostics", () => {
     deployed: {
       generatedAt: "2026-08-31T12:00:00Z",
       includePrivate: false,
+      repositoryScope: "organization",
+      repositoryCount: 3,
+      organizationRepositories: { public: 2, private: 1, internal: 0, total: 3 },
       discovery: { complete: true },
       runHealth: { available: true, complete: true },
       bundles: [],
-      workflows: [],
+      workflows: [
+        { repository: "githubnext/public", visibility: "public", path: ".github/workflows/public.lock.yml" },
+        { repository: "githubnext/unknown", visibility: "unknown", path: ".github/workflows/unknown.lock.yml" },
+      ],
     },
     usage: { available: true, complete: false, runs: [] },
     operationalValues: { records: [] },
@@ -114,6 +120,18 @@ test("dashboard source bridge carries canonical coverage diagnostics", () => {
       title: "AIC telemetry is partial",
       effect: "AI Credit totals exclude runs whose usage artifacts could not be collected.",
     },
+  ]);
+  assert.deepEqual(sources["repository-coverage"].rows, [
+    { label: "Discovery scope", value: "Organization" },
+    { label: "Repositories in scope", value: "3" },
+    { label: "Discovered public", value: "1" },
+    { label: "Discovered private", value: "0" },
+    { label: "Discovered internal", value: "0" },
+    { label: "Unknown visibility", value: "1" },
+    { label: "Organization total", value: "3" },
+    { label: "Organization public", value: "2" },
+    { label: "Organization private", value: "1" },
+    { label: "Organization internal", value: "0" },
   ]);
   assert.deepEqual(
     buildDashboardLanguageSources({
@@ -220,6 +238,7 @@ test("dashboard source bridge carries outcome detail content and presentation me
         workflowPath: ".github/workflows/daily.lock.yml",
         workflow: "Daily review",
         mode: "live",
+        warning: true,
         kind: "pull-request",
         state: "closed",
         title: "Parity verification sweep",
@@ -246,6 +265,7 @@ test("dashboard source bridge carries outcome detail content and presentation me
       category: sources.outcomes.rows[0]["outcome-category"],
       status: sources.outcomes.rows[0]["outcome-status"],
       mode: sources.outcomes.rows[0]["rollout-mode"],
+      warning: sources.outcomes.rows[0]["outcome-warning"],
       publishedAt: sources.outcomes.rows[0]["published-at"],
     },
     {
@@ -260,6 +280,7 @@ test("dashboard source bridge carries outcome detail content and presentation me
       category: "pull-request",
       status: "closed",
       mode: "live",
+      warning: "Warning",
       publishedAt: "2026-08-31T10:00:00Z",
     },
   );

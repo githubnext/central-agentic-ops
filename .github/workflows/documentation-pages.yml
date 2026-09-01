@@ -7,7 +7,7 @@ on:
   push:
     branches: [main]
     paths:
-      - dashboard/report/**
+      - dashboard/**
       - .github/central-agentic-ops.json
       - .github/scripts/control-policy/resolve.mjs
       - .github/workflows/documentation-pages.yml
@@ -19,7 +19,6 @@ on:
       - docs/**
       - package.json
       - package-lock.json
-      - pages/dashboard/**
       - src/**
 
 permissions:
@@ -153,28 +152,32 @@ jobs:
           path: .cache/pages-operational-values
           key: ${{ runner.os }}-documentation-pages-operational-values-${{ github.repository }}-${{ github.run_id }}
 
-      - name: Build operations report
+      - name: Collect durable dashboard records
         env:
           GITHUB_TOKEN: ${{ github.token }}
           REPORT_ALLOWED_REPOS: ${{ github.repository }}
           REPORT_CONTROL_SETTINGS: ${{ runner.temp }}/control-settings.json
-          REPORT_AIC_USAGE: ${{ runner.temp }}/aic-usage.json
           REPORT_INVENTORY: ${{ runner.temp }}/control-plane-inventory.json
           REPORT_DEPLOYED_WORKFLOWS: ${{ runner.temp }}/deployed-workflows.json
-          REPORT_OPERATIONAL_VALUES: ${{ runner.temp }}/operational-values.json
-          REPORT_OUTPUT: dist/cao
-        run: node dashboard/report/report.mjs
+          REPORT_RECORDS: dist/cao/records.json
+        run: node dashboard/report/records.mjs
 
       - name: Build Dashboard Language report sources
         env:
           REPORT_AIC_USAGE: ${{ runner.temp }}/aic-usage.json
           REPORT_CONTROL_SETTINGS: ${{ runner.temp }}/control-settings.json
-          REPORT_DASHBOARD_SOURCES: dist/ymao/sources.json
+          REPORT_DASHBOARD_SOURCES: dist/cao/sources.json
           REPORT_DEPLOYED_WORKFLOWS: ${{ runner.temp }}/deployed-workflows.json
           REPORT_INVENTORY: ${{ runner.temp }}/control-plane-inventory.json
           REPORT_OPERATIONAL_VALUES: ${{ runner.temp }}/operational-values.json
           REPORT_RECORDS: dist/cao/records.json
         run: node dashboard/report/dashboard-language-sources.mjs
+
+      - name: Add legacy dashboard redirects
+        env:
+          REPORT_DASHBOARD_SOURCES: dist/cao/sources.json
+          REPORT_OUTPUT: dist/cao
+        run: node dashboard/report/redirects.mjs
 
       - name: Upload Pages artifact
         uses: actions/upload-pages-artifact@7b1f4a764d45c48632c6b24a0339c27f5614fb0b # v4

@@ -27,8 +27,7 @@ describe('DLS-CONF-004 scaffold gates', () => {
     expect(styles).toContain('.repository-link');
   });
 
-  it('keeps the JSON dashboard shell aligned with report HTML and CSS output', () => {
-    const report = readFileSync(resolve('../../dashboard/report/report.mjs'), 'utf8');
+  it('keeps the JSON dashboard shell aligned with its shared component styles', () => {
     const presenter = readFileSync(resolve('src/presenter.js'), 'utf8');
     const styles = readFileSync(resolve('src/styles.js'), 'utf8');
 
@@ -42,7 +41,6 @@ describe('DLS-CONF-004 scaffold gates', () => {
       'title-area',
       'report-body'
     ]) {
-      expect(report).toContain(`class="${shellClass}`);
       expect(presenter).toContain(`className: '${shellClass}`);
     }
 
@@ -53,7 +51,6 @@ describe('DLS-CONF-004 scaffold gates', () => {
       '.overview-header .lede { margin: 3px 0 0; font-size: .875rem; }',
       'footer { padding: 20px 24px; border-top: 1px solid var(--border);'
     ]) {
-      expect(report).toContain(sharedRule);
       expect(styles).toContain(sharedRule);
     }
   });

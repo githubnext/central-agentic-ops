@@ -2,7 +2,7 @@ import { cp, mkdir, rm } from "node:fs/promises";
 import { basename } from "node:path";
 
 const source = new URL("../", import.meta.url);
-const destination = new URL("../../../public/ymao/", import.meta.url);
+const destination = new URL("../../../public/cao/", import.meta.url);
 const yamlSource = new URL("./browser/", import.meta.resolve("yaml/package.json"));
 const excluded = new Set([".gitignore", "node_modules", "test", "test-results"]);
 

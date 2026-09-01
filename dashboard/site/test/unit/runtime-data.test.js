@@ -58,6 +58,7 @@ describe('runtime data', () => {
         run: '1',
         workflow: 'Root',
         status: 'action-required',
+        'control-transition': 'workflow_dispatch → root run',
         attribution: 'Root only'
       })
     ]);
@@ -66,6 +67,8 @@ describe('runtime data', () => {
         run: '2',
         workflow: 'Worker',
         status: 'failure',
+        'control-transition': 'worker dispatch → attribution unavailable',
+        'reason-code': 'missing-root-correlation',
         evidence: 'No retained root correlation ID'
       })
     ]);

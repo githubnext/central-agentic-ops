@@ -124,16 +124,38 @@ jobs:
           path: .cache/dashboard-operational-values
           key: ${{ runner.os }}-dashboard-operational-values-${{ github.repository }}-${{ github.run_id }}
 
-      - name: Build operations report
+      - name: Collect durable dashboard records
         env:
           GITHUB_TOKEN: ${{ github.token }}
           REPORT_CONTROL_SETTINGS: ${{ runner.temp }}/control-settings.json
-          REPORT_AIC_USAGE: ${{ runner.temp }}/aic-usage.json
           REPORT_INVENTORY: ${{ runner.temp }}/control-plane-inventory.json
           REPORT_DEPLOYED_WORKFLOWS: ${{ runner.temp }}/deployed-workflows.json
-          REPORT_OPERATIONAL_VALUES: ${{ runner.temp }}/operational-values.json
+          REPORT_RECORDS: ${{ runner.temp }}/dashboard-records.json
+        run: node .github/aw/dashboard/report/records.mjs
+
+      - name: Assemble Dashboard Language site
+        env:
           REPORT_OUTPUT: ${{ runner.temp }}/central-agentic-ops-dashboard/${{ inputs.site-path }}
-        run: node .github/aw/dashboard/report/report.mjs
+        run: |
+          mkdir -p "$REPORT_OUTPUT"
+          cp -R .github/aw/dashboard/site/. "$REPORT_OUTPUT/"
+
+      - name: Build Dashboard Language sources
+        env:
+          REPORT_AIC_USAGE: ${{ runner.temp }}/aic-usage.json
+          REPORT_CONTROL_SETTINGS: ${{ runner.temp }}/control-settings.json
+          REPORT_DASHBOARD_SOURCES: ${{ runner.temp }}/central-agentic-ops-dashboard/${{ inputs.site-path }}/sources.json
+          REPORT_DEPLOYED_WORKFLOWS: ${{ runner.temp }}/deployed-workflows.json
+          REPORT_INVENTORY: ${{ runner.temp }}/control-plane-inventory.json
+          REPORT_OPERATIONAL_VALUES: ${{ runner.temp }}/operational-values.json
+          REPORT_RECORDS: ${{ runner.temp }}/dashboard-records.json
+        run: node .github/aw/dashboard/report/dashboard-language-sources.mjs
+
+      - name: Add legacy dashboard redirects
+        env:
+          REPORT_DASHBOARD_SOURCES: ${{ runner.temp }}/central-agentic-ops-dashboard/${{ inputs.site-path }}/sources.json
+          REPORT_OUTPUT: ${{ runner.temp }}/central-agentic-ops-dashboard/${{ inputs.site-path }}
+        run: node .github/aw/dashboard/report/redirects.mjs
 
       - name: Upload dashboard artifact
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1

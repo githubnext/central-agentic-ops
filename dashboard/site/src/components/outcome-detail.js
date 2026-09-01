@@ -111,6 +111,10 @@ function renderOutcome(outcome) {
       'aside',
       { className: 'outcome-meta', 'aria-label': 'Outcome metadata' },
       renderMetadataSection('Status', renderStatusBadge(titleCase(text(outcome['outcome-status']) || text(outcome['outcome-state'])))),
+      renderMetadataSection('Disposition', renderStatusBadge(titleCase(text(outcome['outcome-state'])))),
+      ...(text(outcome['outcome-warning']) === 'Warning'
+        ? [renderMetadataSection('Warning', renderStatusBadge('Warning'))]
+        : []),
       renderMetadataSection('Mode', renderModeBadge(titleCase(text(outcome['rollout-mode'])))),
       renderMetadataSection('Category', h('p', null, titleCase(text(outcome['outcome-category'])))),
       renderMetadataSection(

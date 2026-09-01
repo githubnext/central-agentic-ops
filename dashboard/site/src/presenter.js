@@ -734,7 +734,10 @@ export function enableDashboardPageNavigation(root) {
       pageDescription.textContent = description;
       pageDescription.toggleAttribute('hidden', description.length === 0);
     }
-    renderPageMode(pageMode, '');
+    const requestedMode = pageId === 'packages'
+      ? new URLSearchParams(root.ownerDocument.defaultView?.location.search ?? '').get('mode')
+      : '';
+    renderPageMode(pageMode, requestedMode === 'review' || requestedMode === 'live' ? requestedMode : '');
     for (const routeView of page?.querySelectorAll('[data-route-view]') ?? []) {
       routeView.dispatchEvent(new CustomEvent('dashboard-route-change', {
         detail: { parameter: routeParameter, value: routeValue }

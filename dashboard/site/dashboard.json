@@ -199,6 +199,17 @@
               "security-summary",
               "security-signals"
             ]
+          },
+          {
+            "id": "security-output-evidence",
+            "title": "Retained output evidence",
+            "description": "Durable outputs remain inspectable with warning, severity, lifecycle, and source context.",
+            "layout": "full",
+            "count-source": "findings",
+            "count-label": "records",
+            "views": [
+              "security-output-ledger"
+            ]
           }
         ],
         "views": [
@@ -226,6 +237,49 @@
             "mark": "element",
             "element": "signal-list",
             "layout": "full"
+          },
+          {
+            "id": "security-output-ledger",
+            "title": "Output assurance records",
+            "data": {
+              "source": "findings"
+            },
+            "mark": "table",
+            "controls": "interactive",
+            "empty-message": "No retained output assurance records were observed.",
+            "layout": "full",
+            "encoding": {
+              "columns": [
+                {
+                  "field": "finding-summary",
+                  "type": "nominal",
+                  "title": "Output",
+                  "display": "outcome-link"
+                },
+                {
+                  "field": "finding-kind",
+                  "type": "nominal",
+                  "title": "Signal"
+                },
+                {
+                  "field": "finding-severity",
+                  "type": "nominal",
+                  "title": "Severity",
+                  "display": "status"
+                },
+                {
+                  "field": "finding-status",
+                  "type": "nominal",
+                  "title": "Lifecycle",
+                  "display": "status"
+                },
+                {
+                  "field": "observed-at",
+                  "type": "temporal",
+                  "title": "Updated"
+                }
+              ]
+            }
           }
         ]
       },
@@ -351,6 +405,18 @@
               },
               "mark": "element",
               "element": "context-summary"
+            },
+            {
+              "id": "repository-discovery-coverage",
+              "title": "Discovery coverage",
+              "description": "Visibility-aware discovery totals distinguish observed repositories from the wider organization scope.",
+              "data": {
+                "sources": [
+                  "repository-coverage"
+                ]
+              },
+              "mark": "element",
+              "element": "summary-grid"
             },
             {
               "id": "repositories-by-aic",
@@ -535,6 +601,12 @@
                   "field": "package-name",
                   "type": "nominal",
                   "title": "Package"
+                },
+                {
+                  "field": "rollout-mode",
+                  "type": "nominal",
+                  "title": "Mode",
+                  "display": "mode"
                 },
                 {
                   "field": "workflow-active",
@@ -1197,6 +1269,11 @@
                   "display": "status"
                 },
                 {
+                  "field": "control-transition",
+                  "type": "nominal",
+                  "title": "Control transition"
+                },
+                {
                   "field": "attribution",
                   "type": "nominal",
                   "title": "Evidence"
@@ -1235,6 +1312,16 @@
                   "type": "nominal",
                   "title": "Result",
                   "display": "status"
+                },
+                {
+                  "field": "control-transition",
+                  "type": "nominal",
+                  "title": "Control transition"
+                },
+                {
+                  "field": "reason-code",
+                  "type": "nominal",
+                  "title": "Reason code"
                 },
                 {
                   "field": "evidence",
@@ -1335,7 +1422,25 @@
         "icon": "workflow",
         "class-name": "dispatches-page",
         "description": "Workflow dispatch events retained from configured repositories.",
+        "filter-bar": {
+          "filters": [
+            "event:workflow_dispatch"
+          ],
+          "time-range": "Retained run window",
+          "export": true
+        },
         "views": [
+          {
+            "id": "dispatch-evidence-boundary",
+            "title": "Dispatch evidence boundary",
+            "description": "Rows are authoritative workflow_dispatch events. Package and role attribution comes from the matching workflow definition; unavailable parent-child correlation is never inferred.",
+            "mark": "callout",
+            "callout": {
+              "label": "Execution boundary",
+              "icon": "workflow"
+            },
+            "layout": "full"
+          },
           {
             "id": "package-worker-dispatches",
             "title": "Workflow dispatch events",
@@ -1864,6 +1969,17 @@
             ]
           },
           {
+            "id": "durable-output-evidence",
+            "title": "Durable outputs",
+            "description": "Retained issue, pull request, comment, review, and no-op records with navigable body and provenance details.",
+            "layout": "full",
+            "count-source": "outcomes",
+            "count-label": "outputs",
+            "views": [
+              "durable-output-ledger"
+            ]
+          },
+          {
             "id": "comparable-evidence",
             "title": "Operational value by workflow",
             "description": "Latest evaluator versions only; repeated runs for one opportunity are collapsed.",
@@ -1919,6 +2035,61 @@
             "mark": "element",
             "element": "signal-list",
             "layout": "full"
+          },
+          {
+            "id": "durable-output-ledger",
+            "title": "Retained outputs",
+            "data": {
+              "source": "outcomes"
+            },
+            "mark": "table",
+            "controls": "interactive",
+            "empty-message": "No durable outputs were retained.",
+            "layout": "full",
+            "encoding": {
+              "columns": [
+                {
+                  "field": "outcome-title",
+                  "type": "nominal",
+                  "title": "Output",
+                  "display": "outcome-link"
+                },
+                {
+                  "field": "outcome-category",
+                  "type": "nominal",
+                  "title": "Type"
+                },
+                {
+                  "field": "outcome-status",
+                  "type": "nominal",
+                  "title": "Status",
+                  "display": "status"
+                },
+                {
+                  "field": "outcome-state",
+                  "type": "nominal",
+                  "title": "Disposition",
+                  "display": "status"
+                },
+                {
+                  "field": "outcome-warning",
+                  "type": "nominal",
+                  "title": "Warning",
+                  "display": "status"
+                },
+                {
+                  "field": "rollout-mode",
+                  "type": "nominal",
+                  "title": "Mode",
+                  "display": "mode"
+                },
+                {
+                  "field": "observed-at",
+                  "type": "temporal",
+                  "title": "Updated"
+                }
+              ]
+            }
           },
           {
             "id": "operational-value-by-workflow",
@@ -2064,7 +2235,8 @@
                 "columns": [
                   {
                     "field": "finding-summary",
-                    "type": "nominal"
+                    "type": "nominal",
+                    "display": "outcome-link"
                   },
                   {
                     "field": "finding-severity",
@@ -2124,6 +2296,19 @@
           "navigation-page": "overview"
         },
         "views": [
+          {
+            "id": "coverage-summary",
+            "title": "Repository discovery",
+            "description": "Observed visibility buckets and organization totals make incomplete or allowlist-scoped discovery explicit.",
+            "data": {
+              "sources": [
+                "repository-coverage"
+              ]
+            },
+            "mark": "element",
+            "element": "summary-grid",
+            "layout": "full"
+          },
           {
             "id": "coverage-diagnostics",
             "title": "Coverage diagnostics",
