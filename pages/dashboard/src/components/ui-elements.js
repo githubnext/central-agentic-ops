@@ -4,7 +4,6 @@
 
 import { h } from '../dom.js';
 import { octicon } from '../octicons.js';
-import { formatNumber } from '../view-formatters.js';
 import { findLink } from './link-content.js';
 import { renderPackagesView } from './packages-view.js';
 import { renderPackageNavigation } from './package-detail.js';
@@ -164,7 +163,6 @@ function renderSignalListElement(context) {
   return h(
     'div',
     { className: 'signal-list-region' },
-    h('p', { className: 'signal-count' }, `${formatNumber(rows.length)} signal${rows.length === 1 ? '' : 's'}`),
     context.description ? h('p', { className: 'signal-boundary-note' }, context.description) : null,
     h(
       'ol',

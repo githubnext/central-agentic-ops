@@ -521,8 +521,6 @@ h3 { margin: 16px 0 8px; font-size: 1rem; font-weight: 600; }
 .summary-grid > div { min-width: 0; padding: 13px 15px; background: var(--canvas-subtle); }
 .summary-grid dt { color: var(--muted); font-size: .6875rem; font-weight: 600; text-transform: uppercase; }
 .summary-grid dd { margin: 2px 0 0; font-size: 1.25rem; font-weight: 600; font-variant-numeric: tabular-nums; }
-.signal-list-region { position: relative; }
-.signal-count { position: absolute; right: 0; bottom: calc(100% + 34px); margin: 0; color: var(--muted); font-size: .75rem; font-weight: 600; }
 .signal-boundary-note { margin: 0; padding: 8px 15px; border: 1px solid var(--border); border-top: 0; color: var(--muted); font-size: .6875rem; }
 .signal-list { margin: 0; padding: 0; overflow: hidden; border: 1px solid var(--border); border-top: 0; border-radius: 0 0 6px 6px; list-style: none; }
 .signal-list > li + li { border-top: 1px solid var(--border-muted); }
