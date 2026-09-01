@@ -45,6 +45,41 @@ describe('data view renderer', () => {
     expect(renderDataView('unsupported', /** @type {any} */ ({}))).toBeNull();
   });
 
+  it('omits a chart data table when disabled by the JSON view definition', () => {
+    const rendered = renderDataView('chart', {
+      pageId: 'repositories',
+      title: 'AI Credit usage by AW repository',
+      view: {
+        mark: 'chart',
+        chart: 'pie',
+        table: false,
+        encoding: {
+          x: { field: 'repository', type: 'nominal' },
+          y: { field: 'aic', type: 'quantitative', aggregate: 'sum' }
+        }
+      },
+      sourceName: 'usage',
+      rows: [{ repository: 'central-agentic-ops', aic: 3 }],
+      metadata,
+      contextDetails: [],
+      headingTag: 'h3',
+      prepareTableRows: () => [],
+      buildChartPoints: () => [{
+        key: 'central-agentic-ops',
+        x: 'central-agentic-ops',
+        y: 3,
+        color: null,
+        link: null
+      }],
+      prepareChartPoints: (points) => points,
+      toText: String
+    });
+
+    expect(rendered?.querySelector('.pie-chart-widget')).not.toBeNull();
+    expect(rendered?.querySelector('.chart-legend-pie')).not.toBeNull();
+    expect(rendered?.querySelector('.custom-chart-table')).toBeNull();
+  });
+
   it('renders workflow run IDs as links whenever a safe run link is available', () => {
     const context = {
       pageId: 'values',

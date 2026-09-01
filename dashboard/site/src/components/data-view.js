@@ -204,7 +204,7 @@ function renderChartView(context) {
     y ? fieldTitle(y) : 'Total',
     y ? fieldUnit(y, context.units ?? {}) : null
   );
-  const table = renderTableRegion({
+  const table = view.table === false ? null : renderTableRegion({
     tableClassName: 'custom-chart-table',
     emptyMessage: 'No points available.',
     colSpan: color ? 3 : 2,
@@ -230,7 +230,7 @@ function renderChartView(context) {
           y ? fieldUnit(y, context.units ?? {}) : null
         ))]
       : [chartWidget]),
-    table
+    ...(table ? [table] : [])
   ], headingTag);
   section.classList.add('chart-view', `chart-view-${chartType}`);
   return section;

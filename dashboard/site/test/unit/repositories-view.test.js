@@ -2,7 +2,6 @@ import { describe, expect, it } from 'vitest';
 import { readFileSync } from 'node:fs';
 import { renderUiElement } from '../../src/components/ui-elements.js';
 import { deriveRepositorySources, summarizeRepositories } from '../../src/repository-data.js';
-import { primerStylesheet } from '../../src/styles.js';
 
 const dashboard = JSON.parse(readFileSync(`${process.cwd()}/dashboard.json`, 'utf8'));
 
@@ -151,6 +150,7 @@ describe('repositories view', () => {
       data: { source: 'usage' },
       mark: 'chart',
       chart: 'pie',
+      table: false,
       encoding: {
         x: { field: 'repository' },
         y: { field: 'aic', aggregate: 'sum', as: 'total-aic', unit: 'aic' },
@@ -175,9 +175,6 @@ describe('repositories view', () => {
         href: { field: 'repository-link' }
       }
     });
-    expect(primerStylesheet()).toContain(
-      '.repositories-page .chart-view-pie > .table-region { display: none; }'
-    );
   });
 
   it('keeps unavailable run and usage evidence explicit', () => {
