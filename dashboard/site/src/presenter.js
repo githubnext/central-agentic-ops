@@ -120,7 +120,6 @@ function getBuiltInPagePayload(page) {
  */
 export function renderDashboard(input) {
   const { document, sources: rawSources } = input;
-  const title = document.dashboard.title;
   const pages = document.dashboard.pages;
   const githubUrlBase = typeof document.dashboard['github-url-base'] === 'string' && document.dashboard['github-url-base'].length > 0
     ? document.dashboard['github-url-base']
@@ -714,7 +713,7 @@ export function enableDashboardPageNavigation(root) {
       const isActive = page.dataset.pageId === pageId;
       page.hidden = !isActive;
     }
-    if (breadcrumbDashboard instanceof HTMLAnchorElement && pageId === overviewPage?.id) {
+    if (breadcrumbDashboard instanceof HTMLAnchorElement && pageId === overviewPage?.dataset.pageId) {
       breadcrumbDashboard.hidden = true;
     }
     updateNavigationLinks(links, pageId);
