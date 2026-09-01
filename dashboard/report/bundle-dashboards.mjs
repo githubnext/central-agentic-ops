@@ -54,10 +54,17 @@ export async function bundleDashboards(outputPath, dashboardsDirectory) {
   await writeFile(outputPath, `${JSON.stringify(composeDashboardDocuments(primary, additions), null, 2)}\n`);
 }
 
-if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
+async function main() {
   const [, , outputPath, dashboardsDirectory] = process.argv;
   if (!outputPath || !dashboardsDirectory) {
     throw new Error("usage: bundle-dashboards.mjs OUTPUT_DASHBOARD DASHBOARDS_DIRECTORY");
   }
   await bundleDashboards(path.resolve(outputPath), path.resolve(dashboardsDirectory));
+}
+
+if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
+  await main().catch((error) => {
+    process.stderr.write(`${error instanceof Error ? error.message : String(error)}\n`);
+    process.exitCode = 1;
+  });
 }
