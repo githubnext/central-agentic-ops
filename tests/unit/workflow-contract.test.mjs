@@ -1184,11 +1184,11 @@ test("SVG visual audit covers every tracked SVG in both color schemes", () => {
   assert.match(source, /upload-artifact:/);
   assert.match(source, /http:\/\/host\.docker\.internal:4321\//);
   assert.match(source, /- host\.docker\.internal/);
-  for (const proxyVariable of ["NO_PROXY", "no_proxy"]) {
-    const proxyBypass = new RegExp(`${proxyVariable}: ["']?host\\.docker\\.internal,localhost,127\\.0\\.0\\.1`);
-    assert.match(source, proxyBypass);
-    assert.match(compiled, proxyBypass);
-  }
+  const proxyBypass = /NO_PROXY: ["']?host\.docker\.internal,localhost,127\.0\.0\.1/;
+  assert.match(source, proxyBypass);
+  assert.match(compiled, proxyBypass);
+  assert.doesNotMatch(source, /^\s+no_proxy:/m);
+  assert.doesNotMatch(compiled, /^\s+no_proxy:/m);
   assert.match(source, /Never claim success if any manifest entry was skipped/);
 });
 

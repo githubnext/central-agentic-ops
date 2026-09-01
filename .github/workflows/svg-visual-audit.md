@@ -31,7 +31,6 @@ network:
     - host.docker.internal
 env:
   NO_PROXY: "host.docker.internal,localhost,127.0.0.1"
-  no_proxy: "host.docker.internal,localhost,127.0.0.1"
 safe-outputs:
   create-check-run:
     name: "SVG Visual Audit Result"
