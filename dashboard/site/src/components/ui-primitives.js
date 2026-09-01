@@ -52,6 +52,21 @@ export function renderVitalStat(label, value, detail) {
 }
 
 /**
+ * Computes the whole-hour span between a metadata object's `coverage-start`
+ * and `coverage-end` fields, or `null` when either bound is missing, invalid,
+ * or non-increasing.
+ * @param {{ 'coverage-start'?: unknown, 'coverage-end'?: unknown } | undefined} metadata
+ * @returns {number | null}
+ */
+export function coverageWindowHours(metadata) {
+  const start = Date.parse(String(metadata?.['coverage-start'] ?? ''));
+  const end = Date.parse(String(metadata?.['coverage-end'] ?? ''));
+  return Number.isFinite(start) && Number.isFinite(end) && end > start
+    ? Math.round((end - start) / 3_600_000)
+    : null;
+}
+
+/**
  * @param {unknown} value
  * @returns {string}
  */

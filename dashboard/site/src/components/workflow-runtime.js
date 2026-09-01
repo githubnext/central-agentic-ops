@@ -9,7 +9,7 @@ import { renderStatusBadge } from './badge.js';
 import { renderChartLegend, renderChartWidget, renderPieLegend } from './chart-elements.js';
 import { findLink, renderExternalLink } from './link-content.js';
 import { isApprovalConclusion, isFailureConclusion } from './run-classification.js';
-import { formatUtcDateTime, renderVitalStat } from './ui-primitives.js';
+import { coverageWindowHours, formatUtcDateTime, renderVitalStat } from './ui-primitives.js';
 import { renderTitledBodySection } from './view-chrome.js';
 import { renderWorkflowIdentity } from './workflow-identity.js';
 import { renderLinkTabs } from './tab-nav.js';
@@ -593,22 +593,14 @@ function summarizeRunHealth(runs) {
 /** @param {import('../presenter.js').SourceMetadata | undefined} metadata */
 function coverageLabel(metadata) {
   if (metadata?.availability !== 'available') return 'Actions run data unavailable';
-  const start = Date.parse(String(metadata['coverage-start'] ?? ''));
-  const end = Date.parse(String(metadata['coverage-end'] ?? ''));
-  const hours = Number.isFinite(start) && Number.isFinite(end) && end > start
-    ? Math.round((end - start) / 3_600_000)
-    : null;
+  const hours = coverageWindowHours(metadata);
   const completeness = metadata.completeness === 'complete' ? 'Complete' : metadata.completeness === 'partial' ? 'Partial' : 'Unknown';
   return `${completeness}${hours ? ` ${hours}-hour` : ''} Actions run window`;
 }
 
 /** @param {string} label @param {import('../presenter.js').SourceMetadata | undefined} metadata */
 function recentMetricLabel(label, metadata) {
-  const start = Date.parse(String(metadata?.['coverage-start'] ?? ''));
-  const end = Date.parse(String(metadata?.['coverage-end'] ?? ''));
-  const hours = Number.isFinite(start) && Number.isFinite(end) && end > start
-    ? Math.round((end - start) / 3_600_000)
-    : null;
+  const hours = coverageWindowHours(metadata);
   return hours ? `${label} (last ${hours}h)` : `Recent ${label}`;
 }
 
