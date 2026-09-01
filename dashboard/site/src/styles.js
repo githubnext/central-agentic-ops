@@ -135,6 +135,12 @@ main.dashboard-prototype { width: 100%; flex: 1; padding: 0 24px 40px; }
 .custom-view { min-width: 0; grid-column: span 12; }
 .custom-view[data-view-layout="half"] { grid-column: span 6; }
 .custom-view[data-view-layout="third"] { grid-column: span 4; }
+.view-metadata-summary { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 16px; margin: 0 0 12px; color: var(--fg); }
+.view-metadata-summary > div { display: inline-flex; align-items: center; gap: 7px; }
+.view-metadata-summary dt { display: inline-flex; align-items: center; gap: 5px; color: var(--muted); font-size: .75rem; font-weight: 500; }
+.view-metadata-summary dt .octicon { width: 14px; height: 14px; flex-basis: 14px; }
+.view-metadata-summary dd { margin: 0; font-size: .75rem; font-weight: 600; }
+.view-metadata-summary time { font-variant-numeric: tabular-nums; }
 .view-disclosure { overflow: hidden; border: 1px solid var(--border); border-radius: 6px; background: var(--canvas-subtle); }
 .view-disclosure > summary { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 12px 14px; color: var(--fg); font-weight: 600; cursor: pointer; transition: background-color 120ms ease; }
 .view-disclosure > summary:hover { background: var(--neutral-muted); }
