@@ -189,14 +189,6 @@ function buildPresenterModuleUrl() {
     .replace("'./components/dispatch-type-classification.json'", JSON.stringify(dispatchTypeClassificationUrl));
   const runtimeDataModuleUrl = `data:text/javascript;charset=utf-8,${encodeURIComponent(runtimeDataSource)}`;
 
-  const executionElementsSource = readFileSync(new URL('../../src/components/execution-elements.js', import.meta.url), 'utf8')
-    .replace("'../dom.js'", JSON.stringify(domModuleUrl))
-    .replace("'./badge.js'", JSON.stringify(badgeModuleUrl))
-    .replace("'./count-formatters.js'", JSON.stringify(countFormattersModuleUrl))
-    .replace("'./ui-primitives.js'", JSON.stringify(uiPrimitivesModuleUrl))
-    .replace("'../runtime-data.js'", JSON.stringify(runtimeDataModuleUrl));
-  const executionElementsModuleUrl = `data:text/javascript;charset=utf-8,${encodeURIComponent(executionElementsSource)}`;
-
   const uiElementsSource = readFileSync(new URL('../../src/components/ui-elements.js', import.meta.url), 'utf8')
     .replace("'../dom.js'", JSON.stringify(domModuleUrl))
     .replace("'../octicons.js'", JSON.stringify(octiconsModuleUrl))
@@ -209,7 +201,6 @@ function buildPresenterModuleUrl() {
     .replace("'./workflow-detail.js'", JSON.stringify(workflowDetailModuleUrl))
     .replace("'./workflow-runtime.js'", JSON.stringify(workflowRuntimeModuleUrl))
     .replace("'./outcome-detail.js'", JSON.stringify(outcomeDetailModuleUrl))
-    .replace("'./execution-elements.js'", JSON.stringify(executionElementsModuleUrl))
     .replace("'./ui-primitives.js'", JSON.stringify(uiPrimitivesModuleUrl))
     .replace("'./view-chrome.js'", JSON.stringify(viewChromeModuleUrl))
     .replace("'./workflow-topology.js'", JSON.stringify(workflowTopologyModuleUrl));
@@ -299,10 +290,15 @@ test('DLS-PAGE-002 DLS-PAGE-014 built-in overview page renders the report-style 
               views: [
                 {
                   id: 'runtime-execution-episodes',
-                  title: 'Execution episodes',
-                  data: { sources: ['workflows', 'runs', 'outcomes', 'usage'] },
-                  mark: 'element',
-                  element: 'execution-episodes'
+                  title: 'Observed root episodes',
+                  data: { source: 'runtime-episodes' },
+                  mark: 'table',
+                  encoding: {
+                    columns: [
+                      { field: 'run', title: 'Run' },
+                      { field: 'status', title: 'Result', display: 'status' }
+                    ]
+                  }
                 }
               ]
             }
@@ -486,7 +482,7 @@ test('DLS-PAGE-002 DLS-PAGE-014 built-in overview page renders the report-style 
   await expect(cards.nth(2)).toHaveClass(/attention-domain-investigate/);
   expect(await cards.evaluateAll((links) => links.map((link) => link.getAttribute('href')))).toEqual([
     '#page-runtime',
-    '#page-runtime?section=runtime-execution-episodes',
+    '#page-runtime?section=runtime-observed-root-episodes-heading',
     '#page-security',
     '#page-coverage',
     '#page-operational-value',
@@ -503,9 +499,9 @@ test('DLS-PAGE-002 DLS-PAGE-014 built-in overview page renders the report-style 
   expect(secondCardBox?.y).toBeGreaterThan(firstCardBox?.y ?? 0);
 
   await cards.nth(1).click();
-  await expect(page).toHaveURL(/#page-runtime\?section=runtime-execution-episodes$/);
+  await expect(page).toHaveURL(/#page-runtime\?section=runtime-observed-root-episodes-heading$/);
   await expect(page.locator('[data-page-id="runtime"]')).toBeVisible();
-  await expect(page.locator('#runtime-execution-episodes')).toBeInViewport();
+  await expect(page.locator('#runtime-observed-root-episodes-heading')).toBeInViewport();
 });
 
 test('DLS-PAGE-014 DLS-PAGE-015 built-in packages page renders report-style mode filters, AIC utilization, and run trends in browser', async ({ page }) => {

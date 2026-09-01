@@ -44,7 +44,7 @@ Pages may also declare a JSON-configured `filter-bar` with ordered filter tokens
 
 The Value & outcomes page composes the shared summary grid and signal list with generic tables for comparable operational-value observations and the retained grader ledger.
 
-Runtime triage is likewise declared as JSON: pure runtime data derivation emits ranked signal rows, while the shared signal-list element owns their presentation and safe in-dashboard navigation.
+Runtime triage is likewise declared as JSON: pure runtime data derivation emits ranked signals, episode summaries, root episodes, and attribution gaps, while shared signal-list, summary-grid, and table elements own their presentation and navigation.
 
 The workflow-dispatch catalog is also declarative: JSON-classified runtime rows feed a `dashboard.json` table view rendered through the shared table, status, link, search, facet, sort, and empty-state primitives.
 
