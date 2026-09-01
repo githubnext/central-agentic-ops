@@ -144,6 +144,49 @@ describe('deriveWorkflowSources', () => {
     }));
     expect(sources['workflow-reports'].metadata).toBe(metadata);
   });
+
+  it('emits package-keyed report rows using explicit and workflow-derived attribution', () => {
+    const sources = deriveWorkflowSources({
+      workflows: {
+        source: 'workflows',
+        metadata,
+        rows: [workflow({
+          workflow: '.github/workflows/dependabot.md',
+          'workflow-name': 'Dependabot'
+        })]
+      },
+      outcomes: {
+        source: 'outcomes',
+        metadata,
+        rows: [
+          {
+            package: 'ambient-context',
+            'safe-output': 'issue-2',
+            'outcome-title': 'Explicit package report',
+            'observed-at': '2026-09-01T00:00:00Z'
+          },
+          {
+            organization: 'githubnext',
+            repository: 'control',
+            workflow: '.github/workflows/dependabot.lock.yml',
+            'safe-output': 'issue-1',
+            'outcome-title': 'Derived package report',
+            'observed-at': '2026-08-31T00:00:00Z'
+          },
+          {
+            workflow: '.github/workflows/unknown.md',
+            'outcome-title': 'Unattributed report'
+          }
+        ]
+      }
+    });
+
+    expect(sources['package-reports'].rows).toEqual([
+      expect.objectContaining({ package: 'ambient-context', 'outcome-title': 'Explicit package report' }),
+      expect.objectContaining({ package: 'dependabot', 'outcome-title': 'Derived package report' })
+    ]);
+    expect(sources['package-reports'].metadata).toBe(metadata);
+  });
 });
 
 /** @param {Record<string, unknown>} overrides */
