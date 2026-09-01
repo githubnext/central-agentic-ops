@@ -973,6 +973,39 @@
             "completeness": true,
             "freshness": true
           },
+          "sections": [
+            {
+              "id": "workflow-inventory",
+              "title": "Workflow inventory",
+              "layout": "full",
+              "views": [
+                "workflow-topology-summary",
+                "packaged-workflows",
+                "standalone-workflows"
+              ]
+            },
+            {
+              "id": "workflow-aic",
+              "title": "AIC",
+              "description": "Observed AI Credit allocation highlights the workflows with the highest measured usage.",
+              "layout": "full",
+              "views": [
+                "workflow-aic-usage"
+              ]
+            },
+            {
+              "id": "workflow-evidence-sources",
+              "title": "Evidence sources",
+              "layout": "full",
+              "views": [
+                "workflows-runs-source",
+                "workflows-outcomes-source",
+                "workflows-usage-source",
+                "workflows-findings-source",
+                "workflows-operational-values-source"
+              ]
+            }
+          ],
           "views": [
             {
               "id": "workflow-topology-summary",
@@ -1040,6 +1073,12 @@
                     "type": "nominal",
                     "title": "Registration",
                     "display": "active-state"
+                  },
+                  {
+                    "field": "aic",
+                    "type": "quantitative",
+                    "title": "AIC",
+                    "unit": "aic"
                   }
                 ]
               }
@@ -1082,8 +1121,51 @@
                     "type": "nominal",
                     "title": "Registration",
                     "display": "active-state"
+                  },
+                  {
+                    "field": "aic",
+                    "type": "quantitative",
+                    "title": "AIC",
+                    "unit": "aic"
                   }
                 ]
+              }
+            },
+            {
+              "id": "workflow-aic-usage",
+              "title": "Highest AIC usage",
+              "description": "The ten workflows with the highest measured AI Credit totals. AIC is authoritative allocation evidence, not a raw token count.",
+              "data": {
+                "source": "usage",
+                "limit": 10,
+                "order-by": [
+                  {
+                    "field": "total-aic",
+                    "direction": "desc"
+                  }
+                ]
+              },
+              "mark": "chart",
+              "chart": "pie",
+              "layout": "full",
+              "encoding": {
+                "x": {
+                  "field": "workflow",
+                  "type": "nominal",
+                  "title": "Workflow"
+                },
+                "y": {
+                  "field": "aic",
+                  "type": "quantitative",
+                  "aggregate": "sum",
+                  "as": "total-aic",
+                  "title": "Total AIC",
+                  "unit": "aic"
+                },
+                "href": {
+                  "field": "workflow-link",
+                  "type": "nominal"
+                }
               }
             },
             {
@@ -1144,6 +1226,7 @@
             },
             {
               "id": "workflows-findings-source",
+              "disclosure": "supplemental",
               "data": {
                 "source": "findings"
               },
@@ -1158,6 +1241,7 @@
             },
             {
               "id": "workflows-operational-values-source",
+              "disclosure": "supplemental",
               "data": {
                 "source": "operational-values"
               },

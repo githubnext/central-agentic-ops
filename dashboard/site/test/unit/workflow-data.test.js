@@ -83,6 +83,56 @@ describe('deriveWorkflowSources', () => {
     expect(sources['packaged-workflows'].rows).toEqual([]);
   });
 
+  it('attributes measured AIC to exactly matched packaged and standalone workflows', () => {
+    const packaged = workflow({ workflow: 'root.md', 'workflow-role': 'orchestrator' });
+    const standalone = workflow({
+      package: undefined,
+      'package-name': undefined,
+      repository: 'target',
+      workflow: 'local.md',
+      'workflow-role': 'standalone'
+    });
+    const sources = deriveWorkflowSources({
+      workflows: {
+        source: 'workflows',
+        metadata,
+        rows: [packaged, standalone]
+      },
+      usage: {
+        source: 'usage',
+        metadata,
+        rows: [
+          { organization: 'githubnext', repository: 'control', workflow: 'root.md', aic: 4.5 },
+          { organization: 'githubnext', repository: 'control', workflow: 'root.md', aic: 5.5 },
+          { organization: 'githubnext', repository: 'target', workflow: 'local.md', aic: 3 }
+        ]
+      }
+    });
+
+    expect(sources['packaged-workflows'].rows[0].aic).toBe(10);
+    expect(sources['standalone-workflows'].rows[0].aic).toBe(3);
+  });
+
+  it('does not attribute unscoped usage when a workflow identity is ambiguous', () => {
+    const sources = deriveWorkflowSources({
+      workflows: {
+        source: 'workflows',
+        metadata,
+        rows: [
+          workflow({ repository: 'control', workflow: 'shared.md' }),
+          workflow({ repository: 'target', workflow: 'shared.md' })
+        ]
+      },
+      usage: {
+        source: 'usage',
+        metadata,
+        rows: [{ workflow: 'shared.md', aic: 10 }]
+      }
+    });
+
+    expect(sources['packaged-workflows'].rows.every((row) => row.aic === undefined)).toBe(true);
+  });
+
   it('does not present a bare organization as a qualified repository', () => {
     const sources = deriveWorkflowSources({
       workflows: {
