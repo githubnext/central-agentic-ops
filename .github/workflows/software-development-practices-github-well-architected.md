@@ -76,6 +76,7 @@ run-name: "GitHub Well-Architected guidance · ${{ inputs.target_repo }} · ${{ 
 
 concurrency:
   group: "${{ github.workflow }}-${{ inputs.target_repo }}"
+  job-discriminator: ${{ github.run_id }}
   cancel-in-progress: true
 
 tracker-id: software-development-practices-github-well-architected
@@ -114,7 +115,7 @@ Read `/tmp/gh-aw/agent/control-precompute.json` first. Analyze only its `target_
 
 Fetch `https://learn.github.com/well-architected/` on every run. Follow only pages under `https://learn.github.com/well-architected/` needed to verify the current framework layers, design principles, checklists, and pillar guidance. Record the exact official URLs and verification date used. If the authoritative source or required target evidence is inaccessible, call `report_incomplete` and do not create speculative guidance.
 
-GitHub Well-Architected is guidance, not a certification or universal checklist. Repository-level evidence cannot establish enterprise or organization practices. Mark those topics `HUMAN_REVIEW_REQUIRED` or `NOT_ASSESSED`; never infer them from absence.
+GitHub Well-Architected is guidance, not a certification or universal checklist. All conclusions require human review. Repository-level evidence cannot establish enterprise or organization practices. Mark those topics `HUMAN_REVIEW_REQUIRED` or `NOT_ASSESSED`; never infer them from absence.
 
 ## Assessment
 

@@ -11,6 +11,7 @@ timeout-minutes: 15
 
 concurrency:
   group: "${{ github.workflow }}"
+  job-discriminator: ${{ github.run_id }}
   cancel-in-progress: true
 
 on:
@@ -91,7 +92,7 @@ safe-outputs:
 
 # Software Development Practices Advisor
 
-Select and rank repositories for evidence-led improvement guidance based on GitHub Well-Architected and the NIST Secure Software Development Framework. The orchestrator must not assess a target, create findings, claim framework alignment, or perform worker responsibilities.
+Select and rank repositories for evidence-led improvement guidance based on GitHub Well-Architected and the NIST Secure Software Development Framework. All findings require human review. The orchestrator must not assess a target, create findings, claim framework alignment, or perform worker responsibilities.
 
 ## Discovery
 

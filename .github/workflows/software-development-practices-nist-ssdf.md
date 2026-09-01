@@ -79,6 +79,7 @@ run-name: "NIST SSDF guidance · ${{ inputs.target_repo }} · ${{ inputs.safe_ou
 
 concurrency:
   group: "${{ github.workflow }}-${{ inputs.target_repo }}"
+  job-discriminator: ${{ github.run_id }}
   cancel-in-progress: true
 
 tracker-id: software-development-practices-nist-ssdf
@@ -117,7 +118,7 @@ Read `/tmp/gh-aw/agent/control-precompute.json` first. Analyze only its `target_
 
 Fetch `https://csrc.nist.gov/projects/ssdf` on every run and resolve the current final SSDF publication from official NIST pages. For NIST SP 800-218 version 1.1, the final publication is `https://csrc.nist.gov/pubs/sp/800/218/final` and its DOI is `https://doi.org/10.6028/NIST.SP.800-218`. If NIST has published a newer final revision, assess that final revision and explain the baseline change. Identify drafts separately as non-final and do not score the repository against draft requirements. Record the exact official URLs, publication version, and verification date used.
 
-If the authoritative final publication or required target evidence is inaccessible, call `report_incomplete` and do not create speculative guidance. SSDF is a risk-based set of high-level practices that organizations integrate into an SDLC; a repository-only review cannot establish organization-wide implementation or conformance.
+If the authoritative final publication or required target evidence is inaccessible, call `report_incomplete` and do not create speculative guidance. SSDF is a risk-based set of high-level practices that organizations integrate into an SDLC; all conclusions require human review, and a repository-only review cannot establish organization-wide implementation or conformance.
 
 ## Assessment
 
