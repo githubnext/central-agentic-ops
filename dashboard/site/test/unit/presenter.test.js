@@ -396,6 +396,13 @@ describe('presenter built-in and custom pages', () => {
     expect(rendered.querySelector('[data-breadcrumb-dashboard]')?.textContent).toBe('Overview');
     expect(/** @type {HTMLElement | null} */ (rendered.querySelector('[data-breadcrumb-dashboard]'))?.hidden).toBe(true);
     expect(rendered.querySelector('[data-breadcrumb-page]')?.textContent).toBe('Overview');
+
+    /** @type {HTMLAnchorElement | null} */ (rendered.querySelector('[data-nav-page-id="cost"]'))?.click();
+
+    expect(/** @type {HTMLElement | null} */ (rendered.querySelector('[data-breadcrumb-dashboard]'))?.hidden).toBe(false);
+    expect(rendered.querySelector('[data-breadcrumb-dashboard]')?.textContent).toBe('Overview');
+    expect(rendered.querySelector('[data-breadcrumb-page]')?.textContent).toBe('Cost & efficiency');
+    window.history.replaceState(null, '', '/');
   });
 
   it('collapses the sidebar to icons and restores the persisted display mode', () => {
