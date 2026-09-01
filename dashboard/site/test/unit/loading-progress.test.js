@@ -30,15 +30,17 @@ describe('loading progress', () => {
   it('finishes once and removes the bar after its completion transition', () => {
     vi.useFakeTimers();
     const progress = startLoadingProgress(document);
+    const secondProgress = startLoadingProgress(document);
     const bar = /** @type {HTMLElement | null} */ (document.querySelector('.loading-progress'));
 
     progress.complete();
     progress.complete();
+    secondProgress.complete();
 
     expect(bar?.classList.contains('loading-progress-complete')).toBe(true);
     expect(bar?.style.transform).toBe('scaleX(1)');
     vi.advanceTimersByTime(240);
-    expect(document.querySelector('.loading-progress')).toBeNull();
+    expect(document.querySelectorAll('.loading-progress')).toHaveLength(0);
     expect(document.querySelectorAll('style[data-loading-progress-styles]')).toHaveLength(1);
   });
 });
