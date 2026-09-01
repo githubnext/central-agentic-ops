@@ -115,12 +115,6 @@ export function renderViewHeader(metadata) {
     h(
       'div',
       null,
-      h('dt', null, octicon('clock'), 'As of'),
-      h('dd', null, h('time', { dateTime: metadata['as-of'] }, metadata['as-of']))
-    ),
-    h(
-      'div',
-      null,
       h('dt', null, octicon('checklist'), 'Completeness'),
       h('dd', null, renderStatusBadge(metadata.completeness))
     ),
