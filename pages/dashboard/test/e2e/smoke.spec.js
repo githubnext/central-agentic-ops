@@ -85,10 +85,16 @@ function buildPresenterModuleUrl() {
   const dispatchTypeClassificationSource = readFileSync(new URL('../../src/components/dispatch-type-classification.json', import.meta.url), 'utf8');
   const dispatchTypeClassificationUrl = `data:application/json;charset=utf-8,${encodeURIComponent(dispatchTypeClassificationSource)}`;
 
+  const tabNavSource = readFileSync(new URL('../../src/components/tab-nav.js', import.meta.url), 'utf8')
+    .replace("'../dom.js'", JSON.stringify(domModuleUrl))
+    .replace("'../octicons.js'", JSON.stringify(octiconsModuleUrl));
+  const tabNavModuleUrl = `data:text/javascript;charset=utf-8,${encodeURIComponent(tabNavSource)}`;
+
   const packagesViewSource = readFileSync(new URL('../../src/components/packages-view.js', import.meta.url), 'utf8')
     .replace("'../dom.js'", JSON.stringify(domModuleUrl))
     .replace("'../view-formatters.js'", JSON.stringify(viewFormattersModuleUrl))
-    .replace("'./run-classification.js'", JSON.stringify(runClassificationModuleUrl));
+    .replace("'./run-classification.js'", JSON.stringify(runClassificationModuleUrl))
+    .replace("'./tab-nav.js'", JSON.stringify(tabNavModuleUrl));
   const packagesViewModuleUrl = `data:text/javascript;charset=utf-8,${encodeURIComponent(packagesViewSource)}`;
 
   const filterBarSource = readFileSync(new URL('../../src/components/filter-bar.js', import.meta.url), 'utf8')
@@ -118,7 +124,8 @@ function buildPresenterModuleUrl() {
     .replace("'../octicons.js'", JSON.stringify(octiconsModuleUrl))
     .replace("'./report-list.js'", JSON.stringify(reportListModuleUrl))
     .replace("'./link-content.js'", JSON.stringify(linkContentModuleUrl))
-    .replace("'./ui-primitives.js'", JSON.stringify(uiPrimitivesModuleUrl));
+    .replace("'./ui-primitives.js'", JSON.stringify(uiPrimitivesModuleUrl))
+    .replace("'./tab-nav.js'", JSON.stringify(tabNavModuleUrl));
   const packageDetailModuleUrl = `data:text/javascript;charset=utf-8,${encodeURIComponent(packageDetailSource)}`;
 
   const countFormattersSource = readFileSync(new URL('../../src/components/count-formatters.js', import.meta.url), 'utf8');
@@ -145,14 +152,16 @@ function buildPresenterModuleUrl() {
     .replace("'./count-formatters.js'", JSON.stringify(countFormattersModuleUrl))
     .replace("'./link-content.js'", JSON.stringify(linkContentModuleUrl))
     .replace("'./linked-text.js'", JSON.stringify(linkedTextModuleUrl))
-    .replace("'./ui-primitives.js'", JSON.stringify(uiPrimitivesModuleUrl));
+    .replace("'./ui-primitives.js'", JSON.stringify(uiPrimitivesModuleUrl))
+    .replace("'./tab-nav.js'", JSON.stringify(tabNavModuleUrl));
   const repositoryWorkflowsModuleUrl = `data:text/javascript;charset=utf-8,${encodeURIComponent(repositoryWorkflowsSource)}`;
 
   const workflowDetailSource = readFileSync(new URL('../../src/components/workflow-detail.js', import.meta.url), 'utf8')
     .replace("'../dom.js'", JSON.stringify(domModuleUrl))
     .replace("'../octicons.js'", JSON.stringify(octiconsModuleUrl))
     .replace("'./link-content.js'", JSON.stringify(linkContentModuleUrl))
-    .replace("'./report-list.js'", JSON.stringify(reportListModuleUrl));
+    .replace("'./report-list.js'", JSON.stringify(reportListModuleUrl))
+    .replace("'./tab-nav.js'", JSON.stringify(tabNavModuleUrl));
   const workflowDetailModuleUrl = `data:text/javascript;charset=utf-8,${encodeURIComponent(workflowDetailSource)}`;
   const workflowRuntimeSource = readFileSync(new URL('../../src/components/workflow-runtime.js', import.meta.url), 'utf8')
     .replace("'../dom.js'", JSON.stringify(domModuleUrl))
