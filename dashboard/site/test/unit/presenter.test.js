@@ -75,6 +75,7 @@ describe('presenter built-in and custom pages', () => {
     });
 
     const page = rendered.querySelector('[data-page-name="workflows"]');
+    expect(globalThis.document.title).toBe('Workflows · Workflow Topology');
     expect(page?.querySelector('.summary-grid')?.textContent).toBe('Packages1Package workflows2Standalone workflows1');
     expect(page?.getAttribute('data-page-description')).toContain('does not assert that a dispatch occurred');
     expect(page?.querySelector('#workflows-operation-package-workflows-heading + .view-metadata')).not.toBeNull();
