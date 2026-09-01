@@ -332,14 +332,14 @@ describe('presenter built-in and custom pages', () => {
     window.history.replaceState(null, '', '/');
   });
 
-  it('renders section-labeled Attention Investigate Explore navigation groups in the sidebar', () => {
+  it('renders section-labeled operational navigation groups in the sidebar', () => {
     const rendered = renderDashboard({
       document: authoritativeDashboardDocument,
       sources: {}
     });
 
     const labels = [...rendered.querySelectorAll('.nav-section-label')].map((node) => node.textContent?.trim());
-    expect(labels).toEqual(['Attention', 'Investigate', 'Explore']);
+    expect(labels).toEqual(['Attention', 'Investigate', 'Explore', 'Package operations']);
     expect(rendered.querySelector('[data-nav-page-id="overview"]')?.previousElementSibling?.textContent).toBe('Attention');
     expect(rendered.querySelector('[data-nav-page-id="runtime"]')?.previousElementSibling?.textContent).toBe('Investigate');
     expect([...rendered.querySelectorAll('.nav-label')].map((node) => node.textContent)).toEqual([
@@ -351,7 +351,13 @@ describe('presenter built-in and custom pages', () => {
       'Dispatches',
       'Workflows',
       'Repositories',
-      'Packages'
+      'Packages',
+      'Ambient context',
+      'AW Maintenance',
+      'Dependabot',
+      'UK AI advisory',
+      'EU CRA advisor',
+      'Optimization'
     ]);
     expect(rendered.querySelector('[data-nav-page-id="runs"]')).toBeNull();
     expect(rendered.querySelector('[data-nav-page-id="findings"]')).toBeNull();
