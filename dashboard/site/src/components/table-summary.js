@@ -12,7 +12,7 @@ const RUN_SUMMARY_LABELS = new Set(['run', 'run link', 'workflow run', 'workflow
 const SUMMARY_TYPES = new Set(['boolean', 'nominal', 'ordinal', 'quantitative', 'temporal']);
 
 /**
- * @typedef {{ field?: string, label: string, type?: string, values: unknown[] }} TableSummaryColumn
+ * @typedef {{ field?: string, label: string, type?: string, display?: string, values: unknown[] }} TableSummaryColumn
  */
 
 /**
@@ -36,6 +36,9 @@ export function renderTableSummaryRow(columns) {
  * @returns {HTMLElement | null}
  */
 function renderColumnSummary(column) {
+  if (column.display === 'outcome-link') {
+    return null;
+  }
   if (!SUMMARY_TYPES.has(String(column.type ?? ''))) {
     return null;
   }
