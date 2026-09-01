@@ -6,6 +6,7 @@ import { h } from '../dom.js';
 import { octicon } from '../octicons.js';
 import { findLink, renderExternalLink } from './link-content.js';
 import { renderReportList as renderSharedReportList } from './report-list.js';
+import { renderNavTabs } from './tab-nav.js';
 
 /**
  * @param {import('./ui-elements.js').ElementRenderContext} context
@@ -97,16 +98,17 @@ function renderWorkflowTabs(pageId, route) {
     ['Insights', 'graph', `#page-workflow-runtime${workflowQuery}`, false],
     ['Reports', 'issue', `#page-${pageId}${workflowQuery}`, true]
   ];
-  return h(
-    'nav',
-    { className: 'repository-tabs workflow-tabs', 'aria-label': `${route.workflow} views` },
-    ...tabs.map(([label, icon, href, current]) => h(
-      'a',
-      { href, 'aria-current': current ? 'page' : undefined },
-      octicon(String(icon)),
-      h('span', null, String(label))
-    ))
-  );
+  return renderNavTabs({
+    className: 'repository-tabs workflow-tabs',
+    ariaLabel: `${route.workflow} views`,
+    tabs: tabs.map(([label, icon, href, current]) => ({
+      view: String(label).toLowerCase(),
+      label: String(label),
+      icon: String(icon),
+      href: String(href),
+      current: Boolean(current)
+    }))
+  });
 }
 
 /** @param {Record<string, unknown>} workflow */

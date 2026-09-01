@@ -5,6 +5,7 @@
 import { h } from '../dom.js';
 import { octicon } from '../octicons.js';
 import { renderReportList as renderSharedReportList } from './report-list.js';
+import { createModeTabs, renderNavTabs } from './tab-nav.js';
 import { findLink } from './link-content.js';
 import { renderSectionHeading } from './ui-primitives.js';
 
@@ -103,16 +104,17 @@ function renderPackageTabs(packageId, packageName, selectedView) {
     ['workflows', 'Workflows', 'workflow', `#page-package-detail${packageQuery}`],
     ['reports', 'Reports', 'issue', `#page-package-reports${packageQuery}`]
   ];
-  return h(
-    'nav',
-    { className: 'package-tabs', 'aria-label': `${packageName} views` },
-    ...tabs.map(([view, label, icon, href]) => h(
-      'a',
-      { href, 'aria-current': selectedView === view ? 'page' : undefined },
-      octicon(String(icon)),
-      h('span', null, String(label))
-    ))
-  );
+  return renderNavTabs({
+    className: 'package-tabs',
+    ariaLabel: `${packageName} views`,
+    tabs: tabs.map(([view, label, icon, href]) => ({
+      view: String(view),
+      label: String(label),
+      icon: String(icon),
+      href: String(href),
+      current: selectedView === view
+    }))
+  });
 }
 
 /**
@@ -179,74 +181,34 @@ function renderPackageReportsContent(context, packageId, workflows, outcomes) {
     .sort((left, right) => reportTimestamp(right) - reportTimestamp(left));
   const panelId = `${context.pageId}-reports-panel`;
   const panel = h('div', { className: 'package-report-mode-content', id: panelId, role: 'tabpanel' });
-  const modeTabs = [
-    ['all', 'All'],
-    ['review', 'Review'],
-    ['live', 'Live']
-  ];
-  /** @type {HTMLButtonElement[]} */
-  const buttons = [];
-
-  /** @param {string} selectedMode */
-  const selectMode = (selectedMode) => {
-    for (const button of buttons) {
-      const selected = button.dataset.reportMode === selectedMode;
-      button.setAttribute('aria-selected', String(selected));
-      button.tabIndex = selected ? 0 : -1;
+  const tabs = createModeTabs({
+    className: 'package-report-mode-tabs',
+    ariaLabel: 'Filter reports by mode',
+    panelId,
+    tabs: [
+      { value: 'all', label: 'All' },
+      { value: 'review', label: 'Review' },
+      { value: 'live', label: 'Live' }
+    ],
+    selectedValue: 'all',
+    onSelect: (selectedMode) => {
+      panel.setAttribute('aria-labelledby', `${panelId}-${selectedMode}-tab`);
+      const visibleOutcomes = selectedMode === 'all'
+        ? packageOutcomes
+        : packageOutcomes.filter((outcome) => String(outcome['rollout-mode']).toLowerCase() === selectedMode);
+      panel.replaceChildren(
+        h('p', { className: 'package-report-mode-note' }, reportModeDescription(selectedMode, configuredMode)),
+        renderReportList(visibleOutcomes, selectedMode === 'all', context.sources.outcomes?.metadata?.availability)
+      );
     }
-    const visibleOutcomes = selectedMode === 'all'
-      ? packageOutcomes
-      : packageOutcomes.filter((outcome) => String(outcome['rollout-mode']).toLowerCase() === selectedMode);
-    panel.replaceChildren(
-      h('p', { className: 'package-report-mode-note' }, reportModeDescription(selectedMode, configuredMode)),
-      renderReportList(visibleOutcomes, selectedMode === 'all', context.sources.outcomes?.metadata?.availability)
-    );
-  };
+  });
 
-  const tabs = h(
-    'div',
-    {
-      className: 'package-report-mode-tabs',
-      role: 'tablist',
-      'aria-label': 'Filter reports by mode'
-    },
-    ...modeTabs.map(([mode, label], index) => {
-      const button = /** @type {HTMLButtonElement} */ (h(
-        'button',
-        {
-          type: 'button',
-          role: 'tab',
-          'aria-controls': panelId,
-          'aria-selected': index === 0 ? 'true' : 'false',
-          tabIndex: index === 0 ? 0 : -1,
-          dataset: { reportMode: mode },
-          onclick: () => selectMode(mode)
-        },
-        label
-      ));
-      button.addEventListener('keydown', (event) => {
-        if (!['ArrowLeft', 'ArrowRight', 'Home', 'End'].includes(event.key)) return;
-        event.preventDefault();
-        const currentIndex = buttons.indexOf(button);
-        const nextIndex = event.key === 'Home'
-          ? 0
-          : event.key === 'End'
-            ? buttons.length - 1
-            : (currentIndex + (event.key === 'ArrowRight' ? 1 : -1) + buttons.length) % buttons.length;
-        buttons[nextIndex]?.click();
-        buttons[nextIndex]?.focus();
-      });
-      buttons.push(button);
-      return button;
-    })
-  );
-
-  selectMode('all');
+  tabs.selectValue('all');
   return h(
     'div',
     { className: 'package-reports-content' },
     renderPackageTabs(packageId, packageName, 'reports'),
-    tabs,
+    tabs.element,
     panel
   );
 }

@@ -9,6 +9,7 @@ import { renderStatusBadge } from './badge.js';
 import { listChartSeries, renderChartWidget, renderPieLegend } from './chart-elements.js';
 import { findLink, renderExternalLink } from './link-content.js';
 import { isApprovalConclusion, isFailureConclusion } from './run-classification.js';
+import { renderNavTabs } from './tab-nav.js';
 import { formatUtcDateTime } from './ui-primitives.js';
 import { renderTitledBodySection } from './view-chrome.js';
 
@@ -88,22 +89,14 @@ function renderWorkflowRuntimeContent(context, workflow) {
  */
 function renderWorkflowTabs(pageId, repository, workflow, workflowName) {
   const route = workflowRouteValue(repository, workflow);
-  return h(
-    'nav',
-    { className: 'repository-tabs', 'aria-label': `${workflowName} views` },
-    h(
-      'a',
-      { href: `#page-${pageId}?workflow=${encodeURIComponent(route)}`, 'aria-current': 'page' },
-      octicon('graph'),
-      h('span', null, 'Insights')
-    ),
-    h(
-      'a',
-      { href: `#page-workflow-detail?workflow=${encodeURIComponent(route)}` },
-      octicon('issue'),
-      h('span', null, 'Reports')
-    )
-  );
+  return renderNavTabs({
+    className: 'repository-tabs',
+    ariaLabel: `${workflowName} views`,
+    tabs: [
+      { view: 'insights', label: 'Insights', icon: 'graph', href: `#page-${pageId}?workflow=${encodeURIComponent(route)}`, current: true },
+      { view: 'reports', label: 'Reports', icon: 'issue', href: `#page-workflow-detail?workflow=${encodeURIComponent(route)}`, current: false }
+    ]
+  });
 }
 
 /** @param {Record<string, unknown>} workflow */

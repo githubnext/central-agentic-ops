@@ -90,23 +90,24 @@ Evidence paths below are relative to:
 - This run did not complete a browser snapshot comparison because only shell tools were available in-session; unit assertions were used for affected-page output preservation instead.
 - The checked-out baseline has nine existing browser assertion failures involving page headings, skip-link visibility, route-driven repository views, keyboard section counts, and declarative table row visibility.
 
-## 2026-08-31 run entry
+## 2026-09-01 run entry
 
-- Extraction: `src/components/report-list.js` for durable-report rendering shared by package and workflow detail views.
+- Extraction: `src/components/tab-nav.js` for shared repository/package navigation tabs and keyboard-operable mode tablists.
 - Duplication evidence and call sites collapsed:
-  - `src/components/package-detail.js` duplicated report filtering, summary counting, row rendering, and empty-state handling for package reports.
-  - `src/components/workflow-detail.js` duplicated the same durable-report concerns for workflow reports with a table-shaped container.
+  - `src/components/packages-view.js` duplicated roving-tabindex mode-tab keyboard handling for package activity filtering.
+  - `src/components/package-detail.js` duplicated both package navigation-tab markup and report-mode tablist keyboard handling.
+  - `src/components/workflow-detail.js`, `src/components/workflow-runtime.js`, and `src/components/repository-workflows.js` duplicated repository-style navigation-tab markup.
 - Behavior-preservation evidence:
-  - Preserved package report card DOM text, class names, links, mode/status badges, and empty messages through the existing `package-detail` assertions.
-  - Preserved workflow report table DOM text, class names, links, summary counts, and empty messages through the existing `workflow-detail` assertions.
-  - Added focused unit coverage in `test/unit/report-list.test.js` for package-card and workflow-table shapes, filter no-match state, unavailable/empty fallbacks, and external-link fallback when no safe-output id exists.
+  - Preserved package, workflow, repository, and runtime tab text, current-page markers, and hrefs through the existing unit assertions in `package-detail`, `workflow-detail`, `repository-workflows`, and `workflow-runtime` tests.
+  - Preserved package-mode and package-report filtering behavior by wiring both existing tab surfaces through the shared tablist helper without page-name dispatch.
+  - Added focused unit coverage in `test/unit/tab-nav.test.js` for keyboard roving tabindex, arrow/home/end navigation, and generic nav-tab rendering.
 - Quality gates and proof:
-  - Rendered-output proof for affected pages is covered by unchanged package/workflow unit assertions before and after replacement of both call sites with the shared renderer.
-  - Ran `npm install`, `npm run typecheck`, `npm run lint`, `npm test`, and `node ./scripts/build.mjs` from `pages/dashboard/`; all passed.
+  - Rendered-output proof for affected pages is covered by the updated and unchanged component unit assertions plus the new shared-helper tests.
+  - Next verification step is to run `npm install`, `npm run typecheck`, `npm run lint`, `npm test`, and `node ./scripts/build.mjs` from `pages/dashboard/`.
   - Browser snapshot comparison remained blocked in-session because Playwright browser tools were not exposed here.
 - Next candidates:
-  - Shared tablist controller extracted from `src/components/packages-view.js` and `src/components/package-detail.js`.
-  - Shared report/repository navigation tabs across `src/components/package-detail.js`, `src/components/workflow-detail.js`, and `src/components/repository-workflows.js`.
   - Shared static table-section wrapper across `src/components/packages-view.js`, `src/components/repository-workflows.js`, and `src/components/ui-elements.js` coverage diagnostics.
+  - Shared route-view tab definitions expressed declaratively in `dashboard.json` where the specification permits reusable view chrome metadata.
+  - Continue parity backlog items under configured-mode navigation and runtime/dispatch triage chrome.
 
 Run-by-run history was removed during compaction; milestones, unresolved questions, current inventory, blockers, and actionable parity work remain above.

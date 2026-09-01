@@ -8,6 +8,7 @@ import { renderStatusBadge } from './badge.js';
 import { formatCountNoun } from './count-formatters.js';
 import { findLink } from './link-content.js';
 import { renderLinkedText } from './linked-text.js';
+import { renderNavTabs } from './tab-nav.js';
 import { formatUtcDateTime } from './ui-primitives.js';
 
 /**
@@ -147,16 +148,17 @@ function renderRepositoryTabs(pageId, repository) {
     ['Workflows', 'workflow', `#page-${pageId}${repositoryQuery}`, true],
     ['Reports', 'issue', `#page-findings${repositoryQuery}`, false]
   ];
-  return h(
-    'nav',
-    { className: 'repository-tabs', 'aria-label': `${repository || 'Repository'} views` },
-    ...tabs.map(([label, icon, href, current]) => h(
-      'a',
-      { href, 'aria-current': current ? 'page' : undefined },
-      octicon(String(icon)),
-      h('span', null, String(label))
-    ))
-  );
+  return renderNavTabs({
+    className: 'repository-tabs',
+    ariaLabel: `${repository || 'Repository'} views`,
+    tabs: tabs.map(([label, icon, href, current]) => ({
+      view: String(label).toLowerCase(),
+      label: String(label),
+      icon: String(icon),
+      href: String(href),
+      current: Boolean(current)
+    }))
+  });
 }
 
 /**
