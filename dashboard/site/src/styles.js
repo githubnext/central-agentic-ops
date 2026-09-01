@@ -311,7 +311,31 @@ h3 { margin: 16px 0 8px; font-size: 1rem; font-weight: 600; }
 .value-score strong { font-size: 1.5rem; font-variant-numeric: tabular-nums; }
 .value-score span { color: var(--muted); font-size: .6875rem; }
 .value-chart { min-height: 180px; padding: 18px 16px 24px; border-bottom: 1px solid var(--border); background: var(--canvas-subtle); }
-.value-chart > .chart-widget { min-height: 240px; margin-top: 0; background: var(--canvas); }
+.value-history { display: grid; gap: 16px; margin-bottom: 16px; }
+.value-history-panel { min-width: 0; padding: 16px; border: 1px solid var(--border); border-radius: 6px; background: var(--canvas); }
+.value-history-panel > header { display: flex; align-items: baseline; justify-content: space-between; gap: 16px; margin-bottom: 8px; }
+.value-history-panel > header h3 { margin: 0; font-size: .9375rem; }
+.value-history-panel > header p { margin: 0; color: var(--muted); font-size: .75rem; text-align: right; }
+.value-history-panel > .chart-widget { min-height: 220px; margin: 0; border: 0; background: transparent; }
+.value-history-panel > .chart-widget svg { width: 100%; max-width: none; }
+.diagnostic-chart svg { width: 100%; min-height: 220px; overflow: visible; }
+.diagnostic-gain-zone { fill: var(--success-muted); }
+.diagnostic-loss-zone { fill: var(--danger-muted); }
+.diagnostic-baseline { stroke: var(--fg); stroke-width: 1; stroke-dasharray: 3 2; vector-effect: non-scaling-stroke; }
+.diagnostic-axis-label { fill: var(--muted); font-size: 2.5px; }
+.diagnostic-series { stroke-width: 2.5; stroke-linecap: round; stroke-linejoin: round; vector-effect: non-scaling-stroke; }
+.diagnostic-point { fill: var(--canvas); stroke-width: 1.5; vector-effect: non-scaling-stroke; }
+.value-diagnostic-legend { margin-bottom: 0; }
+.value-diagnostic-legend li { flex: 1 1 220px; }
+.value-diagnostic-legend strong { margin-left: auto; color: var(--muted); font-variant-numeric: tabular-nums; }
+.value-diagnostic-legend .value-gain { color: var(--success); }
+.value-diagnostic-legend .value-loss { color: var(--danger); }
+.value-attainment .primary-weekly { stroke: var(--attention); opacity: .42; }
+.value-attainment .primary-rolling { stroke: var(--attention); stroke-width: 4; }
+.value-attainment .line-chart-point.primary-rolling { fill: var(--attention); opacity: 0; }
+.value-attainment .chart-legend { margin-bottom: 0; }
+.value-attainment .chart-legend .primary-weekly { border-color: var(--attention); opacity: .42; }
+.value-attainment .chart-legend .primary-rolling { border-color: var(--attention); border-top-width: 4px; }
 .value-chart > dl { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 1px; margin: 0; overflow: hidden; border: 1px solid var(--border); border-radius: 6px; background: var(--border); }
 .value-chart > dl > div { min-width: 0; padding: 18px; background: var(--canvas); }
 .value-chart dt { color: var(--muted); font-size: .75rem; font-weight: 600; text-transform: uppercase; }

@@ -19,6 +19,8 @@ resources:
     destination: .github/aw/dashboard/report/inventory.mjs
   - source: report/operational-values.mjs
     destination: .github/aw/dashboard/report/operational-values.mjs
+  - source: report/operational-value-history.mjs
+    destination: .github/aw/dashboard/report/operational-value-history.mjs
   - source: report/records.mjs
     destination: .github/aw/dashboard/report/records.mjs
   - source: report/dashboard-language-sources.mjs
