@@ -10,19 +10,21 @@
  */
 export function deriveWorkflowSources(sources) {
   const workflows = Array.isArray(sources.workflows?.rows) ? sources.workflows.rows : [];
+  const usage = Array.isArray(sources.usage?.rows) ? sources.usage.rows : [];
   const outcomes = Array.isArray(sources.outcomes?.rows) ? sources.outcomes.rows : [];
+  const workflowAic = summarizeWorkflowAic(workflows, usage);
   /** @param {Row} row */
   const isPackaged = (row) => row['workflow-role'] !== 'standalone' && Boolean(text(row.package));
   const packaged = workflows
     .filter(isPackaged)
-    .map(derivePackagedWorkflow)
+    .map((row) => derivePackagedWorkflow(row, workflowAic.get(row)))
     .sort(comparePackagedWorkflows);
   // Every row not captured above (including rows with an unrecognized or
   // missing workflow-role) is repository-owned; the two buckets must
   // together account for every row so no workflow is silently dropped.
   const standalone = workflows
     .filter((row) => !isPackaged(row))
-    .map(deriveStandaloneWorkflow)
+    .map((row) => deriveStandaloneWorkflow(row, workflowAic.get(row)))
     .sort(compareStandaloneWorkflows);
   const packages = new Set(packaged.map((row) => text(row.package)));
   const metadata = sources.workflows?.metadata ?? unavailableMetadata();
@@ -147,8 +149,8 @@ function normalizeWorkflowIdentity(value) {
   return text(value).toLowerCase().replace(/\.lock\.yml$/, '.md');
 }
 
-/** @param {Row} row */
-function derivePackagedWorkflow(row) {
+/** @param {Row} row @param {number | undefined} aic */
+function derivePackagedWorkflow(row, aic) {
   const packageId = text(row.package);
   const repositoryLink = isPlainObject(row['repository-link']) ? row['repository-link'] : null;
   return {
@@ -160,6 +162,7 @@ function derivePackagedWorkflow(row) {
     'workflow-role': text(row['workflow-role']) || 'unknown',
     'rollout-mode': text(row['rollout-mode']) || 'unknown',
     'workflow-active': text(row['workflow-active']) || 'unknown',
+    ...(aic === undefined ? {} : { aic }),
     ...(repositoryLink
       ? {
           'package-link': {
@@ -174,17 +177,40 @@ function derivePackagedWorkflow(row) {
   };
 }
 
-/** @param {Row} row */
-function deriveStandaloneWorkflow(row) {
+/** @param {Row} row @param {number | undefined} aic */
+function deriveStandaloneWorkflow(row, aic) {
   return {
     repository: qualifiedRepository(row),
     workflow: text(row.workflow),
     'workflow-name': text(row['workflow-name']) || text(row.workflow),
     'rollout-mode': text(row['rollout-mode']) || 'unknown',
     'workflow-active': text(row['workflow-active']) || 'unknown',
+    ...(aic === undefined ? {} : { aic }),
     ...(row['repository-link'] ? { 'repository-link': row['repository-link'] } : {}),
     ...(row['workflow-link'] ? { 'workflow-link': row['workflow-link'] } : {})
   };
+}
+
+/**
+ * Attribute each usage observation only when it identifies one workflow row.
+ * @param {Row[]} workflows
+ * @param {Row[]} usage
+ * @returns {Map<Row, number>}
+ */
+function summarizeWorkflowAic(workflows, usage) {
+  const totals = new Map();
+  for (const observation of usage) {
+    const aic = Number(observation.aic);
+    if (!Number.isFinite(aic) || aic < 0 || !text(observation.workflow)) continue;
+    const candidates = workflows.filter((workflow) => (
+      normalizeWorkflowIdentity(workflow.workflow) === normalizeWorkflowIdentity(observation.workflow)
+      && sameWorkflowScope(observation, workflow)
+    ));
+    if (candidates.length !== 1) continue;
+    const workflow = candidates[0];
+    totals.set(workflow, (totals.get(workflow) ?? 0) + aic);
+  }
+  return totals;
 }
 
 /** @param {Row} left @param {Row} right */

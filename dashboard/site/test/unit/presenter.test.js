@@ -53,6 +53,23 @@ describe('presenter built-in and custom pages', () => {
             freshness: 'fresh',
             availability: 'available'
           }
+        },
+        usage: {
+          source: 'usage',
+          rows: [
+            { organization: 'githubnext', repository: 'central-agentic-ops', workflow: '.github/workflows/dependabot.yml', aic: 12 },
+            { organization: 'githubnext', repository: 'central-agentic-ops', workflow: '.github/workflows/dependabot.yml', aic: 18 },
+            { organization: 'github', repository: 'target-service', workflow: '.github/workflows/ci.yml', aic: 5 }
+          ],
+          metadata: {
+            'source-id': 'workflow-usage-fixture',
+            'source-kind': 'fixture',
+            'as-of': '2026-08-30T08:00:00Z',
+            'retrieved-at': '2026-08-30T08:01:00Z',
+            completeness: 'complete',
+            freshness: 'fresh',
+            availability: 'available'
+          }
         }
       }
     });
@@ -64,6 +81,12 @@ describe('presenter built-in and custom pages', () => {
     expect(page?.querySelector('#workflows-operation-package-workflows-heading')?.parentElement?.parentElement?.textContent).toContain('dependabot.yml');
     expect(page?.querySelector('#workflows-operation-package-workflows-heading')?.parentElement?.parentElement?.textContent).toContain('release-train-updater.yml');
     expect(page?.querySelector('#workflows-repository-owned-workflows-heading')?.parentElement?.parentElement?.textContent).toContain('ci.yml');
+    expect(page?.querySelector('#workflows-workflow-aic-layout-heading')?.textContent).toBe('AIC');
+    expect(page?.querySelector('[data-chart-widget="pie"]')).not.toBeNull();
+    const packagedRows = [...(page?.querySelector('#workflows-operation-package-workflows-heading')?.parentElement?.parentElement?.querySelectorAll('tbody tr') ?? [])];
+    const standaloneRows = [...(page?.querySelector('#workflows-repository-owned-workflows-heading')?.parentElement?.parentElement?.querySelectorAll('tbody tr') ?? [])];
+    expect(packagedRows.find((row) => row.textContent?.includes('dependabot.yml'))?.lastElementChild?.textContent).toBe('30');
+    expect(standaloneRows.find((row) => row.textContent?.includes('ci.yml'))?.lastElementChild?.textContent).toBe('5');
     expect(page?.querySelector('.mode-review')).not.toBeNull();
     expect(page?.querySelector('.mode-live')).not.toBeNull();
     expect(page?.querySelector('.status-success')).not.toBeNull();
