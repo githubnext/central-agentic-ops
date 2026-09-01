@@ -139,7 +139,7 @@ function renderTableView(context) {
       emptyMessage: typeof view['empty-message'] === 'string' ? view['empty-message'] : 'No rows available.',
       colSpan: Math.max(columns.length, 1),
       headCells: columns.map(fieldTitle),
-      summaryColumns: interactive ? columns.map((column) => {
+      summaryColumns: interactive && view['column-summaries'] !== false ? columns.map((column) => {
         const outputField = typeof column.as === 'string' ? column.as : column.field;
         return {
           field: outputField,

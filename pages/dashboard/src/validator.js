@@ -1282,6 +1282,23 @@ function validateView(view, viewNode, path, viewIds, errors) {
     }
   }
 
+  if (view['column-summaries'] !== undefined) {
+    if (typeof view['column-summaries'] !== 'boolean') {
+      errors.push(createError(
+        ERROR_CODES.missingOrInvalidRequiredField,
+        'column-summaries must be a boolean.',
+        `${path}.column-summaries`
+      ));
+    }
+    if (view.mark !== 'table') {
+      errors.push(createError(
+        ERROR_CODES.missingOrInvalidRequiredField,
+        'column-summaries is allowed only when mark is "table".',
+        `${path}.column-summaries`
+      ));
+    }
+  }
+
   if (view['empty-message'] !== undefined && view.mark !== 'table') {
     errors.push(createError(
       ERROR_CODES.missingOrInvalidRequiredField,

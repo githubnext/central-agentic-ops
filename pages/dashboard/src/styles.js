@@ -591,10 +591,10 @@ thead th { background: var(--canvas-subtle); color: var(--muted); font-size: .75
 .table-summary-quantitative { display: grid; gap: 6px; }
 .table-summary-histogram { width: 100%; height: 32px; overflow: visible; }
 .table-summary-histogram rect { fill: var(--accent); opacity: .75; }
-.table-summary-quantitative dl { display: grid; gap: 2px; margin: 0; }
-.table-summary-quantitative dl div { display: flex; justify-content: space-between; gap: 8px; }
-.table-summary-quantitative dt { font-weight: 400; }
-.table-summary-quantitative dd { margin: 0; color: var(--fg); font-weight: 600; }
+:is(.table-summary-quantitative dl, .table-summary-temporal) { display: grid; gap: 2px; margin: 0; }
+:is(.table-summary-quantitative dl, .table-summary-temporal) div { display: flex; justify-content: space-between; gap: 8px; }
+:is(.table-summary-quantitative dl, .table-summary-temporal) dt { font-weight: 400; }
+:is(.table-summary-quantitative dl, .table-summary-temporal) dd { margin: 0; color: var(--fg); font-weight: 600; }
 .table-summary-empty { font-weight: 400; font-style: italic; }
 tbody tr:last-child > * { border-bottom: 0; }
 tbody tr:hover { background: var(--canvas-subtle); }
