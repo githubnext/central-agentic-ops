@@ -1,12 +1,10 @@
 ---
 name: code-improvement
-description: Diagnose and fix code or CI issues
-intent: Reduce duplicated dashboard UI construction by replacing one evidenced repetition with a reusable, tested component while preserving behavior.
+description: Grow the dashboard component library one reviewed improvement at a time
+intent: Grow the reusable dashboard component library by replacing evidenced UI duplication with tested components while preserving behavior.
 on:
-  schedule: weekly
-  skip-if-match:
-    query: 'is:pr is:open in:title "[dashboard-components] "'
-    max: 2
+  schedule: every 30 minutes
+  skip-if-match: 'is:pr is:open "gh-aw-workflow-id: code-improvement" in:body'
 permissions:
   contents: read
   copilot-requests: write
@@ -38,7 +36,7 @@ safe-outputs:
     labels: [dashboard-component-refactor, ai-generated]
     draft: true
     max: 1
-    expires: 14d
+    expires: 7d
     if-no-changes: ignore
     protected-files: fallback-to-issue
     max-patch-files: 20
@@ -69,15 +67,15 @@ evals:
     question: Does the agent output show that changes stayed within the configured dashboard paths?
 ---
 
-# Dashboard Component Improvement
+# Dashboard Component Feature Grower
 
-Review the JavaScript dashboard code and extract one common UI construct into the existing component library.
+Grow the JavaScript dashboard component library by extracting one common UI construct per run.
 
 ## Scope and evidence
 
 1. Read `AGENTS.md`, `.github/aw/instructions.md`, `dashboard/aw.yml`, `dashboard/site/package.json`, and the relevant source and tests before editing.
 2. Inspect `dashboard/site/src/` and select exactly one repeated UI construction with at least two concrete call sites. Prefer a small, high-confidence refactor that measurably reduces duplication.
-3. Review recent open and closed pull requests with the `[dashboard-components]` title prefix. Do not repeat an open proposal or a recently rejected refactor.
+3. Read the three most recently closed pull requests from this workflow, newest first. Treat merged PRs as positive signals for similar component boundaries. Treat `not planned`, rejecting comments, and requested changes as negative signals; do not repeat those proposals.
 4. Preserve rendered behavior, accessibility semantics, public module APIs, and Dashboard Language behavior. Add or update focused unit and end-to-end coverage when the import graph or rendered output changes.
 5. Prefer extracting into an existing module under `dashboard/site/src/components/`. If a correct extraction requires a new runtime module and therefore a `dashboard/aw.yml` manifest change, call `noop` because that manifest is outside the allowed change boundary.
 
