@@ -48,7 +48,9 @@ function sources() {
       { organization: 'octo', repository: 'quiet', 'safe-output': 'report-1' }
     ]),
     usage: source('usage', [
-      { organization: 'octo', repository: 'failing', run: '1', aic: 12 },
+      { organization: 'octo', repository: 'failing', workflow: 'one', invocation: 'usage-one', aic: 7 },
+      { organization: 'octo', repository: 'failing', workflow: 'one', invocation: 'usage-two', aic: 2 },
+      { organization: 'octo', repository: 'failing', workflow: 'two', invocation: 'usage-three', aic: 3 },
       { organization: 'octo', repository: 'active', run: '3', aic: 8 },
       { organization: 'octo', repository: 'usage-only', run: '4', aic: 100 }
     ], { completeness: 'partial' }),
@@ -131,7 +133,7 @@ describe('repositories view', () => {
 
     expect(scope.textContent).toContain('Repository scope · 3 configured');
     expect(scope.textContent).toContain('Complete 24-hour Actions run window');
-    expect(scope.textContent).toContain('3 artifacts · partial');
+    expect(scope.textContent).toContain('5 artifacts · partial');
     expect([...scope.querySelectorAll('a')].map((link) => link.getAttribute('href'))).toEqual([
       '#page-repository-detail?repository=octo%2Factive',
       '#page-repository-detail?repository=octo%2Ffailing',
@@ -195,10 +197,30 @@ describe('repositories view', () => {
     const workflowsView = repositoryPage.views.find(
       (/** @type {{ id: string }} */ view) => view.id === 'repository-authored-workflows'
     );
+    const workflowAicView = repositoryPage.views.find(
+      (/** @type {{ id: string }} */ view) => view.id === 'repository-workflow-aic'
+    );
     expect(workflowsView).toMatchObject({
       mark: 'table',
       controls: 'interactive',
       'column-summaries': true
+    });
+    expect(workflowAicView).toMatchObject({
+      title: 'Top workflows by AIC',
+      data: {
+        source: 'repository-workflow-usage',
+        'route-field': 'repository',
+        limit: 5,
+        'order-by': [{ field: 'total-aic', direction: 'desc' }]
+      },
+      mark: 'chart',
+      chart: 'pie',
+      encoding: {
+        x: { field: 'workflow' },
+        y: { field: 'aic', aggregate: 'sum', as: 'total-aic', unit: 'aic' },
+        href: { field: 'workflow-link' }
+      },
+      layout: 'third'
     });
 
     const sourceInputs = sources();
@@ -228,6 +250,11 @@ describe('repositories view', () => {
     expect(derived['repository-workflow-status'].rows).toEqual(expect.arrayContaining([
       { repository: 'octo/failing', status: 'Active', workflows: 2 },
       { repository: 'octo/quiet', status: 'Disabled', workflows: 1 }
+    ]));
+    expect(derived['repository-workflow-usage'].rows).toEqual(expect.arrayContaining([
+      { repository: 'octo/failing', workflow: 'one', invocation: 'usage-one', aic: 7 },
+      { repository: 'octo/failing', workflow: 'one', invocation: 'usage-two', aic: 2 },
+      { repository: 'octo/failing', workflow: 'two', invocation: 'usage-three', aic: 3 }
     ]));
     expect(derived['repository-workflows'].rows).toContainEqual(expect.objectContaining({
       repository: 'octo/failing',

@@ -67,6 +67,11 @@ export function deriveRepositorySources(sources) {
       rows: buildRepositoryWorkflowStatusRows(repositoryWorkflows),
       metadata: workflowMetadata
     },
+    'repository-workflow-usage': {
+      source: 'repository-workflow-usage',
+      rows: buildRepositoryWorkflowUsageRows(sources.usage?.rows ?? []),
+      metadata: sources.usage?.metadata ?? unavailableMetadata()
+    },
     'repository-workflows': {
       source: 'repository-workflows',
       rows: repositoryWorkflows,
@@ -134,6 +139,19 @@ function buildRepositoryWorkflowStatusRows(workflows) {
     counts.set(key, { repository, status, workflows: Number(counts.get(key)?.workflows ?? 0) + 1 });
   }
   return [...counts.values()];
+}
+
+/** @param {Array<Record<string, unknown>>} usage */
+function buildRepositoryWorkflowUsageRows(usage) {
+  return usage
+    .map((row) => ({
+      repository: qualifiedRepository(row),
+      workflow: String(row.workflow ?? ''),
+      invocation: String(row.invocation ?? ''),
+      aic: Number(row.aic),
+      ...(row['workflow-link'] ? { 'workflow-link': row['workflow-link'] } : {})
+    }))
+    .filter((row) => row.repository && row.workflow && row.invocation && Number.isFinite(row.aic) && row.aic >= 0);
 }
 
 /**
