@@ -47,7 +47,7 @@ function redirectDocument(pageId) {
   <head>
     <meta charset="utf-8" />
     <meta http-equiv="refresh" content="0; url=../${hash}" />
-    <link rel="canonical" href="../${hash}" />
+    <link rel="canonical" href="../" />
     <title>Central Agentic Ops Dashboard</title>
     <script>window.location.replace("../${hash}");</script>
   </head>
