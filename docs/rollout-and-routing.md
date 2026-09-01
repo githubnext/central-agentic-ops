@@ -35,10 +35,26 @@ Each package under `control-plane.packages` has its own mode and limits. Review 
 | Scheduled absolute cap | `max-repositories` | `1` |
 | Rollout percentage | `rollout-percent` | `100` |
 | Monthly AIC budget | `monthly-ai-credit-budget` | `0` (disabled) |
-| Worker kill switch | `workers.<worker>.enabled` | `true` for a declared worker |
-| Worker mode ceiling | `workers.<worker>.max-mode` | `review` |
+| Exact target mode | `targets.<owner/repository>.mode` | Package mode |
+| Worker kill switch | `workers.<worker>.enabled` | `true` for installed package workers |
+| Optional worker mode ceiling | `workers.<worker>.max-mode` | Inherit package or exact-target mode |
 
 Changing one operation does not change another. For example, Dependabot may be live while Optimization remains in review.
+
+An exact package target can advance independently while the package remains in review elsewhere:
+
+```json
+{
+	"dependabot": {
+		"mode": "review",
+		"targets": {
+			"acme/example-service": { "mode": "live" }
+		}
+	}
+}
+```
+
+Unmatched repositories retain the package mode. Exact targets must remain inside `control-plane.scope`, comparisons are case-insensitive, and duplicate spellings fail validation. The worker re-resolves its own target policy before execution, so a dispatched envelope cannot promote a review target. A manual mode may narrow all selected targets to review but cannot widen any target to live.
 
 Absolute caps default to `1`, so missing configuration cannot create broad fan-out. Rollout percentages accept integers from `1` through `100` and default to `100`. The control plane rounds the percentage-derived repository count up for a non-empty candidate set, then applies the smallest of that count, `max_repos`, and the target count supported by the declared dispatch budget and eligible worker count. For example, a `10` percent rollout over 25 discovered repositories permits at most 3 selections before stricter caps are applied. Invalid values fail closed.
 

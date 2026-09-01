@@ -894,6 +894,25 @@ test("safe-output modes are review and live with a separate package kill switch"
   assert.doesNotMatch(`${control}\n${precompute}`, /preview_only|\bstaged\b/);
 });
 
+test("exact package target modes flow through candidate dispatch and reporting", () => {
+  const control = workflow("shared/control.md");
+  const precompute = workflow("shared/control-precompute.md");
+
+  assert.match(precompute, /CAO_TARGET_REPOSITORY="\$TARGET_REPO"/);
+  assert.match(precompute, /\.target_policies\[\$normalized\]\.mode \/\/ \$safe_output_mode/);
+  assert.match(precompute, /\.worker_policies\[\$worker\] \/\/ null/);
+  assert.match(precompute, /worker disabled by control-plane policy/);
+  assert.match(precompute, /map\(\. \+ \{safe_output_mode: repository_mode\(\.full_name\)\}\)/);
+  assert.match(control, /treat each candidate's `safe_output_mode` as authoritative for that target/);
+  assert.match(control, /start `effective_safe_output_mode` at the selected candidate's `safe_output_mode`/);
+  assert.match(control, /when the worker's `max_mode` is `review`, set `effective_safe_output_mode` to `review`/);
+  assert.match(control, /never use a worker ceiling to widen a review candidate/);
+  assert.match(control, /when `effective_safe_output_mode` is `live`, set `effective_safe_output_repo` to the selected target repository/);
+  assert.match(control, /`safe_output_mode`: `effective_safe_output_mode`/);
+  assert.match(control, /Selected target modes: <target-to-mode list or none>/);
+  assert.match(control, /const effectiveMode = dispatchModes\.size === 0[\s\S]*?: 'mixed';/);
+});
+
 test("shared control keeps manual and scheduled routing event-scoped", () => {
   const control = workflow("shared/control.md");
   const precompute = workflow("shared/control-precompute.md");
@@ -1539,7 +1558,7 @@ test("README routes zero-to-CAO requests to the setup skill", () => {
   assert.match(setupSkill, /immutable root package installs its core catalog workflows as one unit/);
   assert.match(setupSkill, /Do you also want to create an operation package of your own/);
   assert.match(setupSkill, /plan an explicit handoff to `.github\/skills\/create-ops-package\/SKILL\.md` after step 13/);
-  assert.match(setupSkill, /never silently default them to Dependabot/);
+  assert.match(setupSkill, /Never silently default the package to Dependabot/);
   assert.match(createPackageSkill, /When invoked from `.github\/skills\/setup-central-agentic-ops\/SKILL\.md`/);
   assert.match(createPackageSkill, /accept the recorded desired outcome and target-repository description/);
   assert.match(createPackageSkill, /Do not repeat the custom-package yes\/no question or restart control-plane setup/);
@@ -1575,8 +1594,7 @@ test("README routes zero-to-CAO requests to the setup skill", () => {
   const initialPolicy = JSON.parse(policyTemplate
     .replaceAll("<target-owner>", "acme")
     .replaceAll("<target-repository>", "service")
-    .replaceAll("<package-slug>", "dependabot")
-    .replaceAll("<worker-slug>", "release-train-updater"));
+    .replaceAll("<package-slug>", "dependabot"));
   assert.deepEqual(initialPolicy, {
     version: 1,
     "control-plane": {
@@ -1585,17 +1603,14 @@ test("README routes zero-to-CAO requests to the setup skill", () => {
         "allowed-repositories": ["acme/service"],
       },
       packages: {
-        dependabot: {
-          workers: {
-            "release-train-updater": {},
-          },
-        },
+        dependabot: {},
       },
     },
   });
   assert.match(setupSkill, /"allowed-owners": \["<target-owner>"\]/);
   assert.match(setupSkill, /"allowed-repositories": \["<target-owner>\/<target-repository>"\]/);
-  assert.match(setupSkill, /"<package-slug>"[\s\S]*?"<worker-slug>"/);
+  assert.match(setupSkill, /"<package-slug>": \{\}/);
+  assert.match(setupSkill, /installed package manifest supplies worker membership/);
   assert.match(setupSkill, /gh aw run <orchestrator-workflow>/);
   assert.match(setupSkill, /Public and private control repositories are supported/);
   assert.match(setupSkill, /policy, workflow runs, operational metadata, and review safe outputs are public/);

@@ -11,7 +11,7 @@ The policy is plain JSON so Node.js can parse it with the built-in `JSON.parse` 
 
 ## Control Policy
 
-This minimal policy enables one Dependabot worker in `review` mode for repositories owned by `acme`:
+This minimal policy enables the installed Dependabot package and its workers in `review` mode for repositories owned by `acme`:
 
 ```json
 {
@@ -22,17 +22,13 @@ This minimal policy enables one Dependabot worker in `review` mode for repositor
       "allowed-owners": ["acme"]
     },
     "packages": {
-      "dependabot": {
-        "workers": {
-          "release-train-updater": {}
-        }
-      }
+      "dependabot": {}
     }
   }
 }
 ```
 
-Commit the file before running an installed operation. A missing or invalid document fails closed. An undeclared package or worker produces a native no-op before repository discovery or agent execution.
+Commit the file before running an installed operation. A missing or invalid document fails closed. An undeclared package produces a native no-op before repository discovery or agent execution.
 
 The schema defaults are:
 
@@ -49,10 +45,11 @@ The schema defaults are:
 | `control-plane.defaults.max-repositories` | `1` | `1` through `1000` |
 | `control-plane.defaults.rollout-percent` | `100` | `1` through `100` |
 | `control-plane.defaults.monthly-ai-credit-budget` | `0` | Non-negative integer AIC; `0` disables tuning |
+| `control-plane.packages.<package>.targets.<owner/repository>.mode` | Package mode | `review` or `live` |
 
-Each entry under `control-plane.packages` may override the defaults with `enabled`, `mode`, `max-repositories`, `rollout-percent`, and `monthly-ai-credit-budget`. Each declared worker may set `enabled` and `max-mode`. Package and worker names are closed to the catalog identifiers documented in the [Control Policy Specification](control-policy-specification.md).
+Each entry under `control-plane.packages` may override the defaults with `enabled`, `mode`, `max-repositories`, `rollout-percent`, and `monthly-ai-credit-budget`. Its optional `targets` map assigns a different mode to an exact repository while unmatched repositories retain the package mode. Every package target must remain inside the global allowed owners and, when present, the global repository allowlist. Declaring a package enables the workers shipped by that installed package. Add `workers` only for exceptions: `enabled: false` disables one worker and `max-mode` narrows one worker's mode. Package and worker names are closed to the catalog identifiers documented in the [Control Policy Specification](control-policy-specification.md).
 
-For example, this policy enables bounded live Dependabot operation while retaining a review-only worker ceiling until that worker is promoted:
+For example, this policy keeps Dependabot in review across its scope while promoting one exact target to live:
 
 ```json
 {
@@ -64,13 +61,13 @@ For example, this policy enables bounded live Dependabot operation while retaini
     },
     "packages": {
       "dependabot": {
-        "mode": "live",
+        "mode": "review",
         "max-repositories": 1,
-        "rollout-percent": 10,
+        "rollout-percent": 100,
         "monthly-ai-credit-budget": 10000,
-        "workers": {
-          "release-train-updater": {
-            "max-mode": "review"
+        "targets": {
+          "acme/example-service": {
+            "mode": "live"
           }
         }
       }
@@ -79,7 +76,7 @@ For example, this policy enables bounded live Dependabot operation while retaini
 }
 ```
 
-Shared control applies schema defaults, then `control-plane.defaults`, then package values, then the worker ceiling. A dispatch request may narrow the result. Any attempt to widen mode, repository count, or rollout percentage fails closed.
+Shared control applies schema defaults, then `control-plane.defaults`, package values, the exact target mode, and any explicit worker ceiling, in that order. A dispatch request may narrow the result. Workers independently resolve their exact target from the policy revision at `github.workflow_sha`; an envelope that requests a wider mode fails before agent execution. Package repository and percentage caps still apply across all candidates regardless of target mode.
 
 ### Monthly Package Budgets
 

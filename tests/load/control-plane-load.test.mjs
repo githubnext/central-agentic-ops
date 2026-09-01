@@ -15,7 +15,7 @@ const script = controlPrecomputeScript();
 const workflowSource = `---
 safe-outputs:
   dispatch-workflow:
-    workflows: [worker]
+    workflows: [dependabot-release-train-updater]
 ---
 `;
 
@@ -31,14 +31,14 @@ elif [[ "$arguments" == *"repos/acme/control/contents/.github/central-agentic-op
 elif [[ "$arguments" == *"contents/.github/workflows/dependabot.md"* ]]; then
   printf '%s\\n' "$CONTROL_SOURCE_B64"
 elif [[ "$arguments" == *"actions/workflows?per_page=100"* ]]; then
-  printf '%s\\n' '{"id":1,"name":"worker","path":".github/workflows/worker.lock.yml","state":"active"}'
-elif [[ "$arguments" == aw\\ logs\\ dependabot* ]]; then
+  printf '%s\\n' '{"id":1,"name":"Dependabot / Release Train Updater","path":".github/workflows/dependabot-release-train-updater.lock.yml","state":"active"}'
+elif [[ "$arguments" == aw\\ logs\\ dependabot\\ --start-date* ]]; then
   if [[ "\${MOCK_FAIL_BUDGET:-false}" == "true" ]]; then
     printf 'invalid budget data\n'
     exit 1
   fi
   printf '%s\\n' '{"runs":[{"run_id":1,"status":"completed","aic":100}]}'
-elif [[ "$arguments" == aw\\ logs\\ worker* ]]; then
+elif [[ "$arguments" == aw\\ logs\\ dependabot-release-train-updater* ]]; then
   if [[ "\${MOCK_FAIL_BUDGET:-false}" == "true" ]]; then
     printf 'invalid budget data\n'
     exit 1
@@ -169,6 +169,71 @@ test("control precompute assigns stable cells and bounded batches", () => {
     }
   } finally {
     rmSync(first.temporaryDirectory, { recursive: true, force: true });
+  }
+});
+
+test("control precompute attaches package target modes to candidates", () => {
+  const policy = controlPolicy({
+    inventory: { "max-scan-repositories": 100 },
+    packagePolicy: {
+      mode: "review",
+      "max-repositories": 10,
+      targets: {
+        "acme/repo-1": { mode: "live" },
+      },
+    },
+    workerPolicy: { "max-mode": "live" },
+  });
+  const run = runPrecompute({ REQUESTED_MODE: "" }, policy);
+
+  try {
+    assert.equal(run.result.status, 0, run.result.stderr);
+    const output = JSON.parse(readFileSync("/tmp/gh-aw/agent/control-precompute.json", "utf8"));
+    assert.equal(output.safe_output_mode, "review");
+    assert.deepEqual(output.worker_workflows[0], {
+      configured: "dependabot-release-train-updater",
+      matched: true,
+      worker: "release-train-updater",
+      policy_enabled: true,
+      max_mode: "live",
+      id: 1,
+      name: "Dependabot / Release Train Updater",
+      path: ".github/workflows/dependabot-release-train-updater.lock.yml",
+      state: "active",
+      eligible: true,
+      skip_reason: null,
+    });
+    assert.equal(output.candidate_repositories.find(({ full_name }) => full_name === "acme/repo-1").safe_output_mode, "live");
+    assert.equal(output.candidate_repositories.find(({ full_name }) => full_name === "acme/repo-2").safe_output_mode, "review");
+
+    const narrowedRun = runPrecompute({ REQUESTED_MODE: "review" }, policy);
+    try {
+      assert.equal(narrowedRun.result.status, 0, narrowedRun.result.stderr);
+      const narrowedOutput = JSON.parse(readFileSync("/tmp/gh-aw/agent/control-precompute.json", "utf8"));
+      assert.ok(narrowedOutput.candidate_repositories.every(({ safe_output_mode }) => safe_output_mode === "review"));
+    } finally {
+      rmSync(narrowedRun.temporaryDirectory, { recursive: true, force: true });
+    }
+  } finally {
+    rmSync(run.temporaryDirectory, { recursive: true, force: true });
+  }
+});
+
+test("control precompute excludes workers disabled by policy", () => {
+  const run = runPrecompute({}, controlPolicy({
+    packagePolicy: { "max-repositories": 10 },
+    workerPolicy: { enabled: false },
+  }));
+
+  try {
+    assert.equal(run.result.status, 0, run.result.stderr);
+    const output = JSON.parse(readFileSync("/tmp/gh-aw/agent/control-precompute.json", "utf8"));
+    assert.equal(output.worker_workflows[0].policy_enabled, false);
+    assert.equal(output.worker_workflows[0].eligible, false);
+    assert.equal(output.worker_workflows[0].skip_reason, "worker disabled by control-plane policy");
+    assert.equal(output.effective_max_repos, 0);
+  } finally {
+    rmSync(run.temporaryDirectory, { recursive: true, force: true });
   }
 });
 

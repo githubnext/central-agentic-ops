@@ -139,6 +139,17 @@ test("control precompute disables a worker before review repository access", () 
   assert.doesNotMatch(result.stderr, /GitHub must not be called/);
 });
 
+test("control precompute inherits installed workers when worker exceptions are omitted", () => {
+  const result = runPrecompute({}, undefined, controlPolicy());
+
+  assert.equal(result.status, 0, result.stderr);
+  const precompute = JSON.parse(readFileSync("/tmp/gh-aw/agent/control-precompute.json", "utf8"));
+  assert.equal(precompute.authorized, true);
+  assert.equal(precompute.worker, "release-train-updater");
+  assert.equal(precompute.worker_enabled, "true");
+  assert.equal(precompute.safe_output_mode, "review");
+});
+
 for (const safeOutputMode of ["preview", "preview_only", "Review", "LIVE", "review "]) {
   test(`control precompute rejects unsupported mode ${JSON.stringify(safeOutputMode)}`, () => {
     const result = runPrecompute({ REQUESTED_MODE: safeOutputMode });
@@ -218,7 +229,10 @@ test("control precompute rejects a public non-central review destination", () =>
   assert.match(result.stderr, /non-central review safe_output_repo must be private/);
 });
 
-function runLiveAuthority(authorityContent, overrides = {}) {
+function runLiveAuthority(authorityContent, overrides = {}, policy = controlPolicy({
+  packagePolicy: { mode: "live" },
+  workerPolicy: { "max-mode": "live" },
+})) {
   return runPrecompute({
     REQUESTED_MODE: "live",
     SAFE_OUTPUT_REPO: "acme/target",
@@ -234,7 +248,7 @@ case "$*" in
   *repos/acme/target*) printf 'main\\n' ;;
   *) printf 'true\\n' ;;
 esac
-`, controlPolicy({ packagePolicy: { mode: "live" }, workerPolicy: { "max-mode": "live" } }));
+`, policy);
 }
 
 test("control precompute accepts matching target-owned live authority", () => {
@@ -246,6 +260,40 @@ test("control precompute accepts matching target-owned live authority", () => {
   assert.equal(result.status, 0, result.stderr);
   const precompute = JSON.parse(readFileSync("/tmp/gh-aw/agent/control-precompute.json", "utf8"));
   assert.equal(precompute.bundle, "dependabot");
+});
+
+test("control precompute resolves live mode from an exact package target", () => {
+  const result = runLiveAuthority(JSON.stringify({
+    version: 1,
+    "target-authority": { packages: { dependabot: { authority: "acme/control" } } },
+  }), {}, controlPolicy({
+    packagePolicy: {
+      mode: "review",
+      targets: { "acme/target": { mode: "live" } },
+    },
+    workerPolicy: { "max-mode": "live" },
+  }));
+
+  assert.equal(result.status, 0, result.stderr);
+  const precompute = JSON.parse(readFileSync("/tmp/gh-aw/agent/control-precompute.json", "utf8"));
+  assert.equal(precompute.safe_output_mode, "live");
+  assert.equal(precompute.target_repo, "acme/target");
+});
+
+test("control precompute rejects live mode for an unmatched review target", () => {
+  const result = runPrecompute({
+    REQUESTED_MODE: "live",
+    SAFE_OUTPUT_REPO: "acme/target",
+  }, undefined, controlPolicy({
+    packagePolicy: {
+      mode: "review",
+      targets: { "acme/other": { mode: "live" } },
+    },
+    workerPolicy: { "max-mode": "live" },
+  }));
+
+  assert.notEqual(result.status, 0);
+  assert.match(result.stderr, /safe_output_mode exceeds checked-in policy/);
 });
 
 test("control precompute accepts live authority case-insensitively", () => {
