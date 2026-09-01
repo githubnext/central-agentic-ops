@@ -111,7 +111,7 @@ export function renderContextChrome(contextDetails) {
 export function renderViewHeader(metadata) {
   return [h(
     'dl',
-    { className: 'view-metadata view-metadata-summary', 'aria-label': 'Data status' },
+    { className: 'view-metadata view-metadata-summary', role: 'group', 'aria-label': 'Data status' },
     h(
       'div',
       null,
@@ -274,4 +274,3 @@ export function renderLayoutSectionChrome(pageId, section, count) {
 function slugifyText(value) {
   return value.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '') || 'section';
 }
-

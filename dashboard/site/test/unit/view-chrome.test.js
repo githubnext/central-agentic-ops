@@ -38,6 +38,7 @@ describe('view chrome component helpers', () => {
 
     expect(header).toHaveLength(1);
     expect(header[0]?.className).toBe('view-metadata view-metadata-summary');
+    expect(header[0]?.getAttribute('role')).toBe('group');
     expect(header[0]?.getAttribute('aria-label')).toBe('Data status');
     expect(header[0]?.querySelector('time')?.dateTime).toBe('2026-08-29T20:00:00Z');
     expect([...header[0]?.querySelectorAll('dt') ?? []].map((item) => item.textContent)).toEqual([
