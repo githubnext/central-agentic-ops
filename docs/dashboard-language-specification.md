@@ -380,6 +380,44 @@ A presenter **MUST** apply `limit` only after the canonical post-aggregation row
 - **DLS-AGG-010:** A view **MUST** reject duplicate aggregate-output identifiers within the same view and **MUST** reject ambiguous or invalid `data.order-by.field` references that do not resolve to exactly one source field at the output grain or one aggregate-output identifier; such failures **MUST** use `DLS-E010`.
 - **DLS-AGG-011:** If, after applying steps 1 and 2 of the canonical post-aggregation row order, one or more output rows remains tied and no canonical entity ID is available at the output grain to complete step 3, or if any remaining unaggregated output dimension used in step 2 has no canonical comparison defined by this specification for its declared or intrinsic type, a validator **MUST** reject the view with `DLS-E010` rather than leaving the presenter to invent an ordering.
 
+### 7.5 Presenter Data-Processing Language
+
+A presenter may compile the declarative view context and encoding into the following small row-processing language. This language is an implementation interface, not an additional dashboard-document vocabulary. Its operators are plain structured data so that a presenter can transfer source rows and an operator sequence to a Web Worker without transferring executable code.
+
+Every request contains `data`, a sequence of row mappings, and `operators`, an ordered sequence. Processing returns a new sequence and does not mutate `data`.
+
+| Operator | Shape | Result |
+|---|---|---|
+| `filter` | `predicates` and optional `search` | Retains rows matching every predicate and the optional case-insensitive search. A predicate has `field` and exactly one of `equals`, `in`, or `includes`. `search` has `fields` and `query`. |
+| `summarize` | optional `by` and required `values` | Produces one row per distinct `by` tuple, or one row for the full input when `by` is omitted. Each value has `field`, `as`, and a `reducer`. |
+| `arrange` | ordered `by` entries | Orders rows by each `field`; `direction` is `asc` or `desc`. |
+| `slice` | `limit` and optional `offset` | Retains the requested contiguous range. |
+
+The `summarize` reducers are `count`, `distinct-count`, `sum`, `mean`, `min`, and `max`, with the semantics in Section 7.3. An empty numeric input yields `null` for `mean`, `min`, and `max`, and zero for `sum`. Operators execute from first to last; therefore a conforming compilation places filtering before summarization, arrangement, and slicing.
+
+```json
+{
+  "data": [
+    { "repository": "example/api", "status": "open", "score": 0.8 }
+  ],
+  "operators": [
+    { "op": "filter", "predicates": [{ "field": "status", "equals": "open" }] },
+    {
+      "op": "summarize",
+      "by": ["repository"],
+      "values": [{ "field": "score", "as": "mean-score", "reducer": "mean" }]
+    },
+    { "op": "arrange", "by": [{ "field": "mean-score", "direction": "desc" }] },
+    { "op": "slice", "limit": 10 }
+  ]
+}
+```
+
+- **DLS-PROC-001:** A processing request **MUST** contain only structured-clone-compatible data and **MUST NOT** contain source text or executable callbacks.
+- **DLS-PROC-002:** A processor **MUST** apply operators in declaration order and **MUST NOT** mutate the supplied rows.
+- **DLS-PROC-003:** A processor **MUST** implement filter conjunction, alternative values, missing-value behavior, aggregation, and ordering consistently with Sections 6.3 and 7.3.
+- **DLS-PROC-004:** A presenter using a worker **MUST** correlate responses with requests and **MUST NOT** apply a superseded response over a newer user interaction.
+
 ---
 
 ## 8. Provenance, Freshness, and Data States
