@@ -41,6 +41,7 @@ safe-outputs:
     protected-files: fallback-to-issue
     max-patch-files: 20
     allowed-files:
+      - "dashboard/site/src/*.js"
       - "dashboard/site/src/**/*.js"
       - "dashboard/site/test/**/*.js"
   noop:
