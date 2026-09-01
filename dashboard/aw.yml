@@ -33,6 +33,8 @@ resources:
     destination: .github/aw/dashboard/site/package-dashboards.json
   - source: site/src/dom.js
     destination: .github/aw/dashboard/site/src/dom.js
+  - source: site/src/dashboard-documents.js
+    destination: .github/aw/dashboard/site/src/dashboard-documents.js
   - source: site/src/octicon-names.json
     destination: .github/aw/dashboard/site/src/octicon-names.json
   - source: site/src/octicons.js

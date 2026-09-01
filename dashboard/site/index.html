@@ -13,6 +13,7 @@
     <div id="root"></div>
     <script type="module">
       import { renderDashboard } from "./src/presenter.js";
+      import { composeDashboardDocuments } from "./src/dashboard-documents.js";
 
       const metadata = (id, overrides = {}) => ({
         "source-id": id,
@@ -40,13 +41,10 @@
           return response.json();
         }),
       ]);
+      const composedDashboardSchema = composeDashboardDocuments(dashboardSchema, packageDashboardSchema);
       const dashboardDocument = {
-        languageVersion: dashboardSchema["language-version"],
-        dashboard: {
-          ...dashboardSchema.dashboard,
-          pages: [...dashboardSchema.dashboard.pages, ...packageDashboardSchema.dashboard.pages],
-          navigation: [...dashboardSchema.dashboard.navigation, ...packageDashboardSchema.dashboard.navigation],
-        },
+        languageVersion: composedDashboardSchema["language-version"],
+        dashboard: composedDashboardSchema.dashboard,
       };
 
       const fixtureSources = {
