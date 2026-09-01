@@ -38,6 +38,10 @@ describe('dashboard document validation', () => {
     expect(accepted.ok).toBe(true);
   });
 
+  it('accepts the package dashboard document', () => {
+    expect(validateDashboardDocument(packageDashboardSource).ok).toBe(true);
+  });
+
   it('keeps one focused custom dashboard for every operation package', () => {
     const document = JSON.parse(packageDashboardSource);
     const packagePageIds = [
@@ -66,7 +70,6 @@ describe('dashboard document validation', () => {
         (/** @type {{ data: { source: string } }} */ view) => view.data.source
       )).toEqual(['runs', 'outcomes', 'operational-values', 'operational-values']);
     }
-    expect(validateDashboardDocument(packageDashboardSource).ok).toBe(true);
   });
 
   it('validates source-free JSON callouts with canonical icons', () => {
