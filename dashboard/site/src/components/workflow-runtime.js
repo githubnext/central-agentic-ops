@@ -6,7 +6,7 @@ import { h } from '../dom.js';
 import { octicon } from '../octicons.js';
 import { formatNumber } from '../view-formatters.js';
 import { renderStatusBadge } from './badge.js';
-import { listChartSeries, renderChartLegend, renderChartWidget, renderPieLegend } from './chart-elements.js';
+import { renderChartLegend, renderChartWidget, renderPieLegend } from './chart-elements.js';
 import { findLink, renderExternalLink } from './link-content.js';
 import { isApprovalConclusion, isFailureConclusion } from './run-classification.js';
 import { formatUtcDateTime } from './ui-primitives.js';
@@ -321,7 +321,9 @@ function renderDiagnosticChart(series) {
   const allWeeks = [...new Set(series.flatMap((item) => item.points.map((point) => point.weekStart)))].sort();
   const maximumChange = Math.max(0.1, ...series.flatMap((item) => item.points.map((point) => Math.abs(point.change))));
   const extent = Math.min(1, Math.ceil(maximumChange * 10) / 10);
+  /** @param {string} weekStart */
   const xFor = (weekStart) => allWeeks.length < 2 ? 54 : 10 + (allWeeks.indexOf(weekStart) / (allWeeks.length - 1)) * 88;
+  /** @param {number} change */
   const yFor = (change) => 21 - (change / extent) * 17;
   const grid = [-extent, 0, extent];
   return h(
@@ -363,8 +365,12 @@ function diagnosticSeries(observations) {
     for (const definition of Array.isArray(row['diagnostic-definitions']) ? row['diagnostic-definitions'] : []) {
       if (definition && text(definition.id)) definitions.set(text(definition.id), definition);
     }
-    for (const id of Object.keys(isRecord(row.diagnostics) ? row.diagnostics : {})) {
-      if (!definitions.has(id)) definitions.set(id, { id, name: humanizeIdentifier(id), direction: 'higher_is_better', aggregation: 'latest' });
+  }
+  if (definitions.size === 0) {
+    for (const row of observations) {
+      for (const id of Object.keys(isRecord(row.diagnostics) ? row.diagnostics : {})) {
+        definitions.set(id, { id, name: humanizeIdentifier(id), direction: 'higher_is_better', aggregation: 'latest' });
+      }
     }
   }
   return [...definitions.values()].flatMap((definition) => {
@@ -385,6 +391,7 @@ function diagnosticSeries(observations) {
 function weeklyDiagnostic(observations, metricId, aggregation) {
   const groups = groupObservationsByWeek(observations);
   return [...groups].sort(([left], [right]) => left.localeCompare(right)).flatMap(([weekStart, rows]) => {
+    /** @type {Array<{ value: number, observedAt: number }>} */
     const values = rows.flatMap((row) => {
       const value = isRecord(row.diagnostics) ? normalizedValue(row.diagnostics[metricId]) : null;
       return value === null ? [] : [{ value, observedAt: rowTime(row) }];
@@ -415,9 +422,10 @@ function weeklyAttainment(observations) {
 
 /** @param {Array<Record<string, unknown>>} observations */
 function groupObservationsByWeek(observations) {
+  /** @type {Map<string, Array<Record<string, unknown>>>} */
   const groups = new Map();
   for (const row of observations) {
-    const weekStart = utcWeekStart(row['observed-at']);
+    const weekStart = utcWeekStart(row['requested-evidence-at'] ?? row['observed-at']);
     if (!weekStart) continue;
     const rows = groups.get(weekStart) ?? [];
     rows.push(row);
@@ -448,7 +456,7 @@ function normalizedValue(value) {
   return Number.isFinite(numeric) && numeric >= 0 && numeric <= 1 ? numeric : null;
 }
 
-/** @param {unknown} value */
+/** @param {unknown} value @returns {value is Record<string, unknown>} */
 function isRecord(value) {
   return Boolean(value) && typeof value === 'object' && !Array.isArray(value);
 }

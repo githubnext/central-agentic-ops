@@ -18,7 +18,7 @@ const report = {
   diagnostics: [{ metric: { id: "repository-health", name: "Repository health", direction: "higher_is_better" } }],
   observations: [{
     id: "github/gh-aw:daily-file-diet:42:2:digest",
-    run: { id: "42", attempt: 2, url: "https://github.com/github/gh-aw/actions/runs/42" },
+    run: { id: "42", attempt: 2, url: "https://github.com/github/gh-aw/actions/runs/42", createdAt: "2026-08-30T10:00:00Z" },
     status: "pass",
     value: 0.8,
     opportunityKey: "github/gh-aw#42",
@@ -37,6 +37,7 @@ test("normalizes a gh-aw report into append-only CAO observation records", () =>
   const records = recordsFromOperationalValueReport(report);
   assert.equal(records.length, 1);
   assert.equal(operationalValueRecordIdentity(records[0]), "github/gh-aw:daily-file-diet:42:2:digest");
+  assert.equal(records[0].observation.subject.createdAt, "2026-08-30T10:00:00Z");
   assert.deepEqual(records[0].observation.provenance, [{ repository: "github/gh-aw", sha: "abc123" }]);
   assert.deepEqual(records[0].diagnostics, { "repository-health": 0.65 });
   assert.equal(records[0].observationSource, "report");

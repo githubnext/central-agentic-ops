@@ -46,6 +46,9 @@ export function recordsFromOperationalValueReport(report) {
       deltaFromBaseline: Number.isFinite(observation.deltaFromBaseline) ? observation.deltaFromBaseline : null,
       evaluatorDigest: observation.evaluatorDigest || report.evaluator?.sha256 || null,
       observation: {
+        subject: {
+          createdAt: observation.run?.createdAt,
+        },
         evidenceAt: observation.evidenceAt,
         evidenceCutoff: observation.evidenceCutoff,
         opportunityKey: observation.opportunityKey,
