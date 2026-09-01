@@ -16,7 +16,8 @@ const DAY_IN_MILLISECONDS = 86_400_000;
  * @returns {HTMLElement}
  */
 export function renderPackagesView(sources, pageId = 'packages') {
-  let selectedMode = 'all';
+  const requestedMode = new URLSearchParams(globalThis.window?.location.search ?? '').get('mode');
+  let selectedMode = requestedMode && MODES.includes(requestedMode) ? requestedMode : 'all';
   const panelId = `${pageId}-mode-panel`;
   const content = h('div', { className: 'packages-mode-content', id: panelId, role: 'tabpanel' });
   /**

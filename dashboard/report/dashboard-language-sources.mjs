@@ -15,6 +15,7 @@ const sourceNames = [
   "eval-observations",
   "usage",
   "coverage-diagnostics",
+  "repository-coverage",
   "outcomes",
   "findings",
   "operational-values",
@@ -95,6 +96,33 @@ function coverageDiagnosticRows(deployed, usage) {
     effect: "AI Credit totals exclude runs whose usage artifacts could not be collected.",
   });
   return diagnostics;
+}
+
+function repositoryCoverageRows(deployed) {
+  const discovered = new Map();
+  for (const item of [...(deployed.workflows || []), ...(deployed.bundles || [])]) {
+    const repository = String(item.repository || "");
+    if (!repository) continue;
+    discovered.set(repository, ["public", "private", "internal"].includes(item.visibility)
+      ? item.visibility
+      : "unknown");
+  }
+  const discoveredCounts = { public: 0, private: 0, internal: 0, unknown: 0 };
+  for (const visibility of discovered.values()) discoveredCounts[visibility] += 1;
+  const organization = deployed.organizationRepositories || {};
+  const count = (value) => Number.isFinite(value) ? String(value) : "Unknown";
+  return [
+    { label: "Discovery scope", value: deployed.repositoryScope === "allowlist" ? "Configured allowlist" : "Organization" },
+    { label: "Repositories in scope", value: count(deployed.repositoryCount) },
+    { label: "Discovered public", value: String(discoveredCounts.public) },
+    { label: "Discovered private", value: String(discoveredCounts.private) },
+    { label: "Discovered internal", value: String(discoveredCounts.internal) },
+    { label: "Unknown visibility", value: String(discoveredCounts.unknown) },
+    { label: "Organization total", value: count(organization.total) },
+    { label: "Organization public", value: count(organization.public) },
+    { label: "Organization private", value: count(organization.private) },
+    { label: "Organization internal", value: count(organization.internal) },
+  ];
 }
 
 function packageMemberships(deployed) {
@@ -253,6 +281,7 @@ function findingRows(records) {
     ...repositoryParts(record.repository),
     workflow: record.workflowPath?.replace(/\.lock\.yml$/, ".md") || record.workflow || "",
     run: String(record.runUrl?.match(/\/runs\/(\d+)/)?.[1] || ""),
+    "safe-output": record.id,
     finding: record.id,
     "finding-kind": record.warning ? "authored-warning" : "record",
     "finding-severity": record.warning ? "medium" : "informational",
@@ -262,7 +291,11 @@ function findingRows(records) {
     "issue-link": recordLink(record, "issue"),
     "pull-request-link": recordLink(record, "pull-request"),
     "run-link": link("run", record.runUrl, "View workflow run"),
-    "external-link": link("external", record.url, "View output"),
+    "external-link": {
+      ...link("external", record.url, "View output"),
+      "dashboard-href": `#page-outcome-detail?outcome=${encodeURIComponent(record.id)}`,
+      "dashboard-label": `View ${record.title || record.id}`,
+    },
   }));
 }
 
@@ -285,6 +318,7 @@ function outcomeRows(records) {
       ? "lifecycle-close"
       : record.kind === "noop" ? "ignored" : "pending",
     "evidence-strength": record.kind === "review-bundle" ? "proposal" : "durable",
+    "outcome-warning": record.warning ? "Warning" : "None",
     "run-conclusion": runConclusion(record.conclusion),
     "rollout-mode": rolloutMode(record.mode),
     "published-at": record.createdAt,
@@ -396,6 +430,13 @@ export function buildDashboardLanguageSources({ deployed, usage, operationalValu
     "coverage-diagnostics",
     coverageDiagnosticRows(deployed, usage),
     generatedAt,
+  );
+  sources["repository-coverage"] = source(
+    "repository-coverage",
+    repositoryCoverageRows(deployed),
+    generatedAt,
+    discoveryAvailable,
+    deployed.discovery?.complete === true,
   );
   sources.outcomes = source("outcomes", outcomeRows(records), generatedAt);
   sources.findings = source("findings", findingRows(records), generatedAt);

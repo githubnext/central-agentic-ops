@@ -52,16 +52,10 @@ const craExpectedFiles = [
   ".github/workflows/shared/control-precompute.md",
   ".github/workflows/shared/control.md",
 ];
-const dashboardExpectedFiles = [
-  ".github/aw/control-policy/resolve.mjs",
-  ".github/aw/dashboard/report/aic-usage.mjs",
-  ".github/aw/dashboard/report/deployed-workflows.mjs",
-  ".github/aw/dashboard/report/inventory.mjs",
-  ".github/aw/dashboard/report/operational-values.mjs",
-  ".github/aw/dashboard/report/report.mjs",
-  ".github/workflows/dashboard-build.yml",
-  ".github/workflows/dashboard.yml",
-];
+const dashboardExpectedFiles = [...readFileSync(
+  new URL("../../dashboard/aw.yml", import.meta.url),
+  "utf8",
+).matchAll(/^\s+destination: (.+)$/gm)].map((match) => match[1]);
 
 const repositoryOnlyFiles = [
   ".github/aw/e2e/run-canary.sh",
@@ -233,7 +227,7 @@ test("gh aw add installs the dashboard package contract", { timeout: 180_000 }, 
   }
 });
 
-test("gh aw add --force restores dashboard workflows and report modules", { timeout: 180_000 }, () => {
+test("gh aw add --force restores dashboard workflows, producers, and renderer assets", { timeout: 180_000 }, () => {
   const consumer = installPackage(dashboardPackageSource);
 
   try {
@@ -243,7 +237,8 @@ test("gh aw add --force restores dashboard workflows and report modules", { time
 
     const removedFiles = [
       ".github/aw/control-policy/resolve.mjs",
-      ".github/aw/dashboard/report/report.mjs",
+      ".github/aw/dashboard/report/records.mjs",
+      ".github/aw/dashboard/site/index.html",
       ".github/workflows/dashboard-build.yml",
     ];
     for (const relativePath of removedFiles) {

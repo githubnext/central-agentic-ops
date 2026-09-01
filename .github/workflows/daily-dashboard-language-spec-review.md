@@ -2,7 +2,7 @@
 private: true
 emoji: "📊"
 name: Daily Dashboard Language Specification Review
-description: Reviews the Dashboard Language Specification and incrementally replaces hard-coded prototype views with declarative JSON and reusable UI elements.
+description: Reviews the Dashboard Language Specification and incrementally replaces hard-coded production views with declarative JSON and reusable UI elements.
 intent: Reduce page-specific dashboard code by expressing user-visible views through the Dashboard Language and reusable, configuration-driven UI primitives.
 on:
   schedule: daily
@@ -59,7 +59,7 @@ safe-outputs:
     if-no-changes: warn
     allowed-files:
       - "docs/dashboard-language-specification.md"
-      - "pages/dashboard/**"
+      - "dashboard/site/**"
   create-issue:
     title-prefix: "[dashboard-language-spec] "
     labels: [cookie]
@@ -72,7 +72,7 @@ timeout-minutes: 60
 strict: true
 evals:
  - id: implementation-inspected
-   question: Did the agent inspect dashboard.json and the JavaScript under pages/dashboard to identify concrete page-specific view or UI construction?
+   question: Did the agent inspect dashboard.json and the JavaScript under dashboard/site to identify concrete page-specific view or UI construction?
  - id: declarative-refactor-delivered
    question: Did the agent move one bounded hard-coded view increment into Dashboard Language JSON and reusable custom-view UI primitives?
  - id: language-and-implementation-aligned
@@ -85,27 +85,27 @@ evals:
 
 # Daily Dashboard Language Specification Review
 
-You are a specification reviewer and refactoring engineer for the Dashboard Language Specification and its prototype. Each run delivers at most one bounded increment that replaces page-specific view code with declarative JSON and reusable custom-view UI elements.
+You are a specification reviewer and refactoring engineer for the Dashboard Language Specification and its production renderer. Each run delivers at most one bounded increment that replaces page-specific view code with declarative JSON and reusable custom-view UI elements.
 
 ## Context
 
 - Repository: ${{ github.repository }}
 - Specification: `docs/dashboard-language-specification.md`
-- Current report reference: `dashboard/report/report.mjs` and its sibling modules
-- Prototype implementation: `pages/dashboard/`
-- Declarative dashboard document: `pages/dashboard/dashboard.json`
-- Incremental plan: `pages/dashboard/PLAN.md`
+- Producer contracts: `dashboard/report/records.mjs`, `dashboard/report/dashboard-language-sources.mjs`, and their sibling collectors
+- Production implementation: `dashboard/site/`
+- Declarative dashboard document: `dashboard/site/dashboard.json`
+- Incremental plan: `dashboard/site/PLAN.md`
 - Optional focus for this run: ${{ inputs.focus }}
 
 ## Scope
 
-Review `docs/dashboard-language-specification.md` against both the current report implementation under `dashboard/report/` and the prototype under `pages/dashboard/`. Treat the report as evidence of current user-visible requirements, not as a normative implementation model. Treat the specification as the renderer contract and `pages/dashboard/dashboard.json` as the prototype's authoritative declarative document.
+Review `docs/dashboard-language-specification.md` against the producer contracts under `dashboard/report/` and the production renderer under `dashboard/site/`. Treat producer schemas as evidence of source semantics, not as a normative presentation model. Treat the specification as the renderer contract and `dashboard/site/dashboard.json` as the authoritative declarative document.
 
-Never modify, move, or delete the existing dashboard package under `dashboard/`. Write only to `docs/dashboard-language-specification.md` and `pages/dashboard/`. Never add a runtime dependency, weaken a test, invent unspecified semantics, or replace a specialized view with a less expressive generic rendering.
+Write only to `docs/dashboard-language-specification.md` and `dashboard/site/`. Never modify collectors, source adapters, package manifests, or workflow builders. Never add a runtime dependency, weaken a test, invent unspecified semantics, or replace a specialized view with a less expressive generic rendering.
 
 ## Inspect the implementation
 
-Read `pages/dashboard/PLAN.md`, `pages/dashboard/dashboard.json`, and all relevant modules under `pages/dashboard/src/` before selecting work. Also inspect the relevant modules under `dashboard/report/` to preserve user-visible semantics including metrics, tables, filters, rankings, links, utilization indicators, pie and donut charts, and multi-series temporal line charts.
+Read `dashboard/site/PLAN.md`, `dashboard/site/dashboard.json`, and all relevant modules under `dashboard/site/src/` before selecting work. Inspect relevant producer modules under `dashboard/report/` when source availability, completeness, coverage, provenance, topology, usage, or maturity semantics control the view.
 
 Use targeted searches and bounded line-range reads; do not load whole large files or reread the specification. Keep each edit call small and single-purpose.
 
@@ -114,7 +114,7 @@ Inventory concrete remaining hard-coded view construction, including:
 - branches or registries keyed by a built-in page or view identifier;
 - JavaScript that fixes a page's fields, labels, ordering, layout, filtering, or composition;
 - named element renderers used by only one page when the same result can be composed from common custom-view elements; and
-- repeated DOM or interaction patterns that should be a dashboard-agnostic component under `pages/dashboard/src/components/`.
+- repeated DOM or interaction patterns that should be a dashboard-agnostic component under `dashboard/site/src/components/`.
 
 Do not classify generic interpretation, validation, formatting, source derivation, or reusable presentation primitives as hard-coded merely because they are implemented in JavaScript.
 
@@ -132,7 +132,7 @@ For the selected view, verify that the declarative document defines source grain
 
 Add or update tests that prove the selected view is declared in JSON, is rendered by generic code, and no longer depends on page-specific JavaScript. Update `PLAN.md` with the completed migration and next candidates.
 
-Run every quality gate from `pages/dashboard/`: `npm run build`, `npm run typecheck`, `npm run lint`, `npm test`, and `npm run test:e2e`. Do not publish when a code-controlled gate fails. Record an infrastructure-only browser blocker in `PLAN.md` and the pull request body.
+Run every quality gate from `dashboard/site/`: `npm run build`, `npm run typecheck`, `npm run lint`, `npm test`, and `npm run test:e2e`. Do not publish when a code-controlled gate fails. Record an infrastructure-only browser blocker in `PLAN.md` and the pull request body.
 
 ## Decision
 

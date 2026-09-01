@@ -36,6 +36,9 @@ export function renderWorkflowDetail(context) {
         detail: {
           title: name,
           description: `Durable reports produced by ${route.workflow} in ${route.repository}.`,
+          ...(['review', 'live'].includes(text(workflow['rollout-mode']))
+            ? { mode: text(workflow['rollout-mode']) }
+            : {}),
           navigationPage: 'repositories',
           breadcrumbs: [
             { label: 'Repositories', href: '#page-repositories' },

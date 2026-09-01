@@ -38,6 +38,7 @@ function context() {
           'outcome-category': 'pull-request',
           'outcome-status': 'closed',
           'outcome-state': 'lifecycle-close',
+          'outcome-warning': 'Warning',
           'rollout-mode': 'live',
           'published-at': '2026-08-31T01:26:00Z',
           'observed-at': '2026-08-31T01:49:00Z',
@@ -72,6 +73,8 @@ describe('outcome detail', () => {
     expect(rendered.querySelector('.markdown-body a')?.hasAttribute('onclick')).toBe(false);
     expect(rendered.querySelector('.markdown-body th')?.getAttribute('scope')).toBe('colgroup');
     expect(rendered.querySelector('.status')?.textContent).toBe('Closed');
+    expect(rendered.querySelector('.outcome-meta')?.textContent).toContain('DispositionLifecycle Close');
+    expect(rendered.querySelector('.outcome-meta')?.textContent).toContain('WarningWarning');
     expect(rendered.querySelector('.mode-badge')?.textContent).toBe('Live');
     expect(rendered.querySelector('.outcome-meta')?.textContent).toContain('Pull Request');
     expect(rendered.querySelector('.outcome-meta')?.textContent).toContain('Daily review');

@@ -675,6 +675,7 @@ describe('presenter built-in and custom pages', () => {
     expect(page?.querySelector('.summary-grid')?.textContent).toContain('Open outputs1');
     expect([...(page?.querySelectorAll('.layout-section-header > strong') ?? [])].map((node) => node.textContent)).toEqual([
       '5 signals',
+      '2 outputs',
       '2 observations',
       '5 records'
     ]);
@@ -691,19 +692,20 @@ describe('presenter built-in and custom pages', () => {
     expect(signals[4]?.querySelector('a')?.getAttribute('href')).toBe('#page-experiments');
 
     const tables = page?.querySelectorAll('.custom-table') ?? [];
-    expect(tables).toHaveLength(2);
+    expect(tables).toHaveLength(3);
     expect(tables[0]?.querySelectorAll('tbody tr')).toHaveLength(2);
-    expect(tables[0]?.textContent).toContain('daily-value');
-    expect(tables[0]?.textContent).toContain('0.7');
-    expect(tables[1]?.querySelectorAll('tbody tr')).toHaveLength(5);
-    expect(tables[1]?.querySelector('.status-success')?.textContent).toBe('pass');
-    expect(tables[1]?.querySelector('.status-attention')?.textContent).toBe('unavailable');
-    expect(tables[1]?.textContent).toContain('Mature');
-    expect(tables[1]?.textContent).toContain('Interim');
-    expect(tables[1]?.textContent).toContain('—');
-    expect(tables[1]?.textContent).toContain('sha256:curre');
-    expect(tables[1]?.querySelector('a[aria-label="View run 103"]')?.getAttribute('href')).toContain('/actions/runs/103');
-    expect(page?.querySelectorAll('.table-filter')).toHaveLength(0);
+    expect(tables[0]?.querySelector('a')?.getAttribute('href')).toBe('#page-outcome-detail?outcome=outcome-1');
+    expect(tables[1]?.textContent).toContain('daily-value');
+    expect(tables[1]?.textContent).toContain('0.7');
+    expect(tables[2]?.querySelectorAll('tbody tr')).toHaveLength(5);
+    expect(tables[2]?.querySelector('.status-success')?.textContent).toBe('pass');
+    expect(tables[2]?.querySelector('.status-attention')?.textContent).toBe('unavailable');
+    expect(tables[2]?.textContent).toContain('Mature');
+    expect(tables[2]?.textContent).toContain('Interim');
+    expect(tables[2]?.textContent).toContain('—');
+    expect(tables[2]?.textContent).toContain('sha256:curre');
+    expect(tables[2]?.querySelector('a[aria-label="View run 103"]')?.getAttribute('href')).toContain('/actions/runs/103');
+    expect(page?.querySelectorAll('.table-filter')).toHaveLength(1);
     expect(page?.textContent).toContain('not proof that a workflow caused an outcome');
     const experimentBoundary = page?.querySelector('.dashboard-callout');
     expect(experimentBoundary?.querySelector('.scope-kicker')?.textContent).toBe('Evidence boundary');
@@ -1290,6 +1292,12 @@ describe('presenter built-in and custom pages', () => {
         data: { sources: ['repository-summary', 'repositories', 'runs', 'usage', 'operational-values'] },
         mark: 'element',
         element: 'context-summary'
+      },
+      {
+        id: 'repository-discovery-coverage',
+        data: { sources: ['repository-coverage'] },
+        mark: 'element',
+        element: 'summary-grid'
       },
       {
         id: 'repositories-by-aic',
@@ -2150,11 +2158,16 @@ describe('presenter built-in and custom pages', () => {
     );
     expect(coveragePage.route).toEqual({ 'navigation-page': 'overview' });
     expect(coveragePage.views[0]).toMatchObject({
+      mark: 'element',
+      element: 'summary-grid',
+      data: { sources: ['repository-coverage'] }
+    });
+    expect(coveragePage.views[1]).toMatchObject({
       mark: 'table',
       controls: 'static',
       data: { source: 'coverage-diagnostics' }
     });
-    expect(coveragePage.views[0]).not.toHaveProperty('element');
+    expect(coveragePage.views[1]).not.toHaveProperty('element');
     expect(rendered.querySelectorAll('#page-coverage .custom-table tbody tr')).toHaveLength(2);
 
     window?.history.replaceState(null, '', '/');

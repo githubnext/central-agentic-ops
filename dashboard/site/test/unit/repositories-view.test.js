@@ -196,6 +196,7 @@ describe('repositories view', () => {
       'workflow-name': 'One',
       'workflow-role': 'worker',
       'package-name': 'Maintenance',
+      'rollout-mode': 'review',
       'observed-at': '2026-08-31T17:00:00Z',
       'workflow-link': {
         relation: 'workflow',
@@ -221,7 +222,8 @@ describe('repositories view', () => {
       workflow: '.github/workflows/one.md',
       'workflow-name': 'One',
       'workflow-role': 'Worker',
-      'package-name': 'Maintenance'
+      'package-name': 'Maintenance',
+      'rollout-mode': 'review'
     }));
   });
 });

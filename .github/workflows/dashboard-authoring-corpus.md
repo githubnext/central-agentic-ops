@@ -57,7 +57,7 @@ features:
   gh-aw-detection: true
 pre-agent-steps:
   - name: Install dashboard validator dependencies
-    run: npm ci --prefix pages/dashboard --ignore-scripts
+    run: npm ci --prefix dashboard/site --ignore-scripts
 evals:
   - id: synthetic-task-bounded
     question: Did the agent create exactly one bounded, novel synthetic agentic-workflow task or report a duplicate no-op?
@@ -80,7 +80,7 @@ Grow the dashboard-authoring skill's corpus by one validated example. Use the in
 - Skill: `.github/skills/dashboard-authoring/SKILL.md`
 - Corpus index: `.github/skills/dashboard-authoring/corpus/index.json`
 - Specification: `docs/dashboard-language-specification.md`
-- Validator: `pages/dashboard/src/validator.js`
+- Validator: `dashboard/site/src/validator.js`
 
 ## Synthesize one task
 
@@ -107,7 +107,7 @@ Keep the dashboard compact and deterministic. Do not add implementation-specific
 Add one metadata/dashboard pair and update the sorted corpus index exactly as the skill requires. Run:
 
 ```text
-npm --prefix pages/dashboard run validate:corpus
+npm --prefix dashboard/site run validate:corpus
 ```
 
 If validation fails, repair the candidate and rerun it. Do not create a pull request unless validation passes. Use `create-pull-request` for exactly the new pair and index update. In the pull request body, summarize the synthetic task, value contract, selected views, duplicate check, and successful validation command.

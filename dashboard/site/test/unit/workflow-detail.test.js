@@ -37,6 +37,7 @@ function context() {
             workflow: '.github/workflows/ambient-context.md',
             'workflow-name': 'Ambient Context',
             'workflow-role': 'orchestrator',
+            'rollout-mode': 'review',
             'workflow-link': {
               relation: 'workflow',
               href: 'https://github.com/githubnext/central-agentic-ops/blob/HEAD/.github/workflows/ambient-context.md',
@@ -141,6 +142,7 @@ describe('renderWorkflowDetail', () => {
     expect(allocation.mock.calls[0][0].detail).toEqual({
       title: 'Ambient Context',
       description: 'Durable reports produced by .github/workflows/ambient-context.md in githubnext/central-agentic-ops.',
+      mode: 'review',
       navigationPage: 'repositories',
       breadcrumbs: [
         { label: 'Repositories', href: '#page-repositories' },

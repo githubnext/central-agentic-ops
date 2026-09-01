@@ -174,6 +174,7 @@ function deriveEpisodes(model) {
     'started-at': episode.run['started-at'],
     duration: formatDuration(episode.duration),
     status: text(episode.run['run-conclusion']) || text(episode.run['run-status']) || 'unknown',
+    'control-transition': 'workflow_dispatch → root run',
     attribution: 'Root only',
     'run-link': episode.run['run-link']
   }));
@@ -191,6 +192,8 @@ function deriveAttributionGaps(model) {
       'run-title': runTitle(run, workflow),
       workflow: workflowName(workflow, run),
       status: text(run['run-conclusion']) || text(run['run-status']) || 'unknown',
+      'control-transition': 'worker dispatch → attribution unavailable',
+      'reason-code': 'missing-root-correlation',
       evidence: 'No retained root correlation ID',
       'run-link': run['run-link']
     };

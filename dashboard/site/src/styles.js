@@ -439,12 +439,12 @@ h3 { margin: 16px 0 8px; font-size: 1rem; font-weight: 600; }
 .utilization-high .utilization-track span { background: var(--danger); }
 .utilization-empty .utilization-track span { background: var(--muted); }
 .utilization-item p { min-height: 18px; margin: 0; color: var(--muted); font-size: .75rem; }
-.packages-view { display: grid; gap: 28px; margin-top: 36px; }
+.packages-view { min-width: 0; display: grid; grid-template-columns: minmax(0, 1fr); gap: 28px; margin-top: 36px; }
 .package-mode-tabs { width: min(100%, 264px); display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); padding: 2px; border: 1px solid var(--border); border-radius: 6px; background: var(--canvas-subtle); }
 .package-mode-tabs button { min-height: 34px; padding: 5px 12px; border: 0; border-radius: 5px; background: transparent; color: var(--muted); font: inherit; font-size: .75rem; font-weight: 600; cursor: pointer; }
 .package-mode-tabs button:hover { color: var(--fg); background: var(--neutral-muted); }
 .package-mode-tabs button[aria-selected="true"] { color: var(--fg); background: var(--canvas); box-shadow: inset 0 0 0 1px var(--border); }
-.packages-mode-content { display: grid; gap: 28px; }
+.packages-mode-content { min-width: 0; display: grid; grid-template-columns: minmax(0, 1fr); gap: 28px; }
 .package-utilization-heading { margin-bottom: 10px; }
 .package-utilization-heading h3 { margin: 0 0 2px; font-size: 1.25rem; }
 .package-utilization-heading p { margin: 0; color: var(--muted); }
@@ -671,6 +671,9 @@ footer { padding: 20px 24px; border-top: 1px solid var(--border); color: var(--m
   .primary-nav { width: 100%; flex-direction: row; overflow-x: auto; }
   .nav-section-label { display: none; }
   .primary-nav a, .sidebar-collapsed .primary-nav a { min-height: 44px; flex: none; justify-content: flex-start; gap: 10px; padding-inline: 8px; }
+  .app-main > nav .shell { flex-wrap: wrap; padding-inline: 14px; }
+  .report-actions { width: 100%; margin-left: 0; }
+  .freshness { min-width: 0; flex: 1; white-space: normal; }
   .overview-header { min-height: 0; padding: 24px 0 20px; flex-direction: column; gap: 12px; }
   .toolbar { align-items: stretch; flex-wrap: wrap; }
   .filter-control { flex-basis: 100%; }
