@@ -73,7 +73,7 @@ pre-agent-steps:
       npm ci --prefix pages/dashboard --ignore-scripts
       npm --prefix pages/dashboard run build
       test -f "$EVIDENCE/legacy-site/index.html"
-      test -f public/ymao/index.html
+      test -f public/cao/index.html
 
   - name: Start dashboard servers outside the agent
     run: |
@@ -84,7 +84,7 @@ pre-agent-steps:
         > "$EVIDENCE/legacy-server.log" 2>&1 &
       echo "$!" > "$EVIDENCE/legacy-server.pid"
       RUNNER_TRACKING_ID="" nohup python3 -m http.server 4174 \
-        --bind 127.0.0.1 --directory public/ymao \
+        --bind 127.0.0.1 --directory public/cao \
         > "$EVIDENCE/next-server.log" 2>&1 &
       echo "$!" > "$EVIDENCE/next-server.pid"
 

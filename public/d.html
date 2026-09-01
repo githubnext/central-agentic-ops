@@ -99,16 +99,16 @@
     </header>
     <main>
       <section>
+        <h2>Legacy dashboard (/legacy)</h2>
+        <iframe id="legacy" title="Legacy dashboard"></iframe>
+      </section>
+      <section>
         <h2>Current dashboard (/cao)</h2>
         <iframe id="cao" title="Current dashboard"></iframe>
       </section>
-      <section>
-        <h2>Dashboard Language Renderer (/ymao)</h2>
-        <iframe id="ymao" title="Dashboard Language renderer"></iframe>
-      </section>
     </main>
     <script>
-      const caoPaths = {
+      const legacyPaths = {
         overview: "",
         runtime: "runtime/",
         dispatches: "dispatches/",
@@ -122,14 +122,14 @@
       };
 
       const pageSelect = document.querySelector("#page");
+      const legacyFrame = document.querySelector("#legacy");
       const caoFrame = document.querySelector("#cao");
-      const ymaoFrame = document.querySelector("#ymao");
 
       function showPage(page, updateUrl = false) {
-        const selectedPage = Object.hasOwn(caoPaths, page) ? page : "overview";
+        const selectedPage = Object.hasOwn(legacyPaths, page) ? page : "overview";
         pageSelect.value = selectedPage;
-        caoFrame.src = `./cao/${caoPaths[selectedPage]}`;
-        ymaoFrame.src = `./ymao/#page-${selectedPage}`;
+        legacyFrame.src = `./legacy/${legacyPaths[selectedPage]}`;
+        caoFrame.src = `./cao/#page-${selectedPage}`;
 
         if (updateUrl) {
           const url = new URL(window.location.href);

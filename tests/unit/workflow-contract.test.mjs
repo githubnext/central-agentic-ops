@@ -1738,7 +1738,9 @@ test("Documentation Pages embeds this repository's control-plane report", () => 
   assert.match(workflowSource, /REPORT_AIC_CACHE: \.cache\/documentation-pages-aic/);
   assert.match(workflowSource, /Save AI Credit usage cache/);
   assert.match(workflowSource, /REPORT_ALLOWED_REPOS: \$\{\{ github\.repository \}\}/);
-  assert.match(workflowSource, /REPORT_OUTPUT: dist\/cao/);
+  assert.match(workflowSource, /REPORT_OUTPUT: dist\/legacy/);
+  assert.match(workflowSource, /REPORT_DASHBOARD_SOURCES: dist\/cao\/sources\.json/);
+  assert.match(workflowSource, /REPORT_RECORDS: dist\/legacy\/records\.json/);
   assert.match(workflowSource, /path: dist/);
   assert.doesNotMatch(workflowSource, /REPORT_INCLUDE_PRIVATE:\s*true/);
   assert.equal((workflowSource.match(/actions\/deploy-pages@/g) || []).length, 1);

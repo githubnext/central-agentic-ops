@@ -52,6 +52,6 @@ The workflow-dispatch catalog is also declarative: JSON-classified runtime rows 
 
 Coverage diagnostics are declared as a static JSON table over the logical coverage source. Their Overview parent navigation is route metadata rather than component-owned behavior.
 
-The preview also mirrors the report's interactive transitions for navigation, linked records, and chart-point tooltips while respecting reduced-motion preferences. It loads generated `sources.json` data by default so deployed `/ymao` views stay aligned with `/cao`. Add `?fixtures` when opening the renderer to explicitly use illustrative data with multiple operational-value observations and linked runs, issues, pull requests, and evidence.
+The preview also mirrors the report's interactive transitions for navigation, linked records, and chart-point tooltips while respecting reduced-motion preferences. It loads generated `sources.json` data by default when deployed at `/cao`. Add `?fixtures` when opening the renderer to explicitly use illustrative data with multiple operational-value observations and linked runs, issues, pull requests, and evidence.
 
 The current compliance-suite slice adds machine-readable conformance result records, a passing Appendix A fixture, and failing Appendix C fixtures exercised through a small reusable compliance smoke harness.
