@@ -431,7 +431,8 @@
                   {
                     "field": "aic",
                     "type": "quantitative",
-                    "title": "Local AIC"
+                    "title": "Local AIC",
+                    "unit": "aic"
                   },
                   {
                     "field": "status",
