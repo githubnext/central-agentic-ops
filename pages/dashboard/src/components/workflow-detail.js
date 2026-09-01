@@ -6,6 +6,7 @@ import { h } from '../dom.js';
 import { renderLinkTabs } from './tab-nav.js';
 import { renderWorkflowIdentity } from './workflow-identity.js';
 import { createRouteView } from './route-empty-state.js';
+import { parseWorkflowRoute, workflowRouteValue } from './workflow-route.js';
 
 /**
  * @param {import('./ui-elements.js').ElementRenderContext} context
@@ -81,23 +82,9 @@ function renderWorkflowTabs(pageId, route) {
   });
 }
 
-/** @param {unknown} value */
-function parseWorkflowRoute(value) {
-  if (typeof value !== 'string' || value.length > 700) return null;
-  const separator = value.indexOf(':');
-  if (separator <= 0) return null;
-  const repository = value.slice(0, separator);
-  const workflow = value.slice(separator + 1);
-  if (!/^[A-Za-z0-9](?:[A-Za-z0-9.-]{0,98}[A-Za-z0-9])?\/[A-Za-z0-9_.-]{1,100}$/.test(repository)) return null;
-  if (!workflow.startsWith('.github/workflows/') || !workflow.endsWith('.md')) return null;
-  if ([...workflow].some((character) => character.charCodeAt(0) <= 31 || character.charCodeAt(0) === 127)) return null;
-  if (workflow.split('/').some((segment) => segment === '' || segment === '.' || segment === '..')) return null;
-  return { repository, workflow };
-}
-
 /** @param {{ repository: string, workflow: string } | null} route */
 function routeValueFor(route) {
-  return route ? `${route.repository}:${route.workflow}` : '';
+  return route ? workflowRouteValue(route.repository, route.workflow) : '';
 }
 
 /** @param {Record<string, unknown>} row */
