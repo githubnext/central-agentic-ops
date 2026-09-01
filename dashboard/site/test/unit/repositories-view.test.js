@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { readFileSync } from 'node:fs';
 import { renderUiElement } from '../../src/components/ui-elements.js';
 import { deriveRepositorySources, summarizeRepositories } from '../../src/repository-data.js';
+import { primerStylesheet } from '../../src/styles.js';
 
 const dashboard = JSON.parse(readFileSync(`${process.cwd()}/dashboard.json`, 'utf8'));
 
@@ -174,6 +175,9 @@ describe('repositories view', () => {
         href: { field: 'repository-link' }
       }
     });
+    expect(primerStylesheet()).toContain(
+      '.repositories-page .chart-view-pie > .table-region { display: none; }'
+    );
   });
 
   it('keeps unavailable run and usage evidence explicit', () => {

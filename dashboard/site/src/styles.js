@@ -363,6 +363,7 @@ h3 { margin: 16px 0 8px; font-size: 1rem; font-weight: 600; }
 .value-empty h3 { margin: 16px 0 5px; font-size: 1.125rem; }
 .value-empty p { max-width: 620px; margin: 0; color: var(--muted); }
 .repositories-page .custom-view-grid { display: block; }
+.repositories-page .chart-view-pie > .table-region { display: none; }
 .context-summary { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); margin: 0 0 24px; overflow: hidden; border: 1px solid var(--border); border-radius: 6px; background: var(--canvas-subtle); }
 .context-summary > div { min-width: 0; padding: 10px 14px; border-top: 1px solid var(--border); border-left: 1px solid var(--border); }
 .context-summary > div:first-child { grid-column: 1 / -1; border-top: 0; border-left: 0; }
