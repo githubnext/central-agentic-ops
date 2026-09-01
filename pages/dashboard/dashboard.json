@@ -1120,7 +1120,9 @@
             "id": "runtime-anomaly-readiness",
             "title": "Statistical anomaly readiness",
             "data": {
-              "source": "runtime-anomaly-readiness"
+              "sources": [
+                "runtime-anomaly-readiness"
+              ]
             },
             "mark": "element",
             "element": "anomaly-readiness",

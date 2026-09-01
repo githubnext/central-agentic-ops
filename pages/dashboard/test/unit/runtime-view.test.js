@@ -114,7 +114,7 @@ describe('Runtime dashboard view', () => {
             }
           ],
           views: [
-            { id: 'anomaly-readiness', title: 'Statistical anomaly readiness', data: { source: 'runtime-anomaly-readiness' }, mark: 'element', element: 'anomaly-readiness' },
+            { id: 'anomaly-readiness', title: 'Statistical anomaly readiness', data: { sources: ['runtime-anomaly-readiness'] }, mark: 'element', element: 'anomaly-readiness' },
             { id: 'attention', title: 'Needs attention', data: { sources: ['runtime-signals'] }, mark: 'element', element: 'signal-list' },
             { id: 'summary', title: 'Execution episodes', data: { source: 'runtime-episode-summary' }, mark: 'element', element: 'summary-grid' },
             {
