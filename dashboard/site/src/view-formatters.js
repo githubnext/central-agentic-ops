@@ -68,6 +68,15 @@ export function formatNumber(value, unit = null, includeUnit = true) {
 }
 
 /**
+ * Formats a 0-1 ratio as a locale percentage string with one fractional digit.
+ * @param {number} value
+ * @returns {string}
+ */
+export function formatPercent(value) {
+  return new Intl.NumberFormat('en', { style: 'percent', maximumFractionDigits: 1 }).format(value);
+}
+
+/**
  * @param {number} value
  * @returns {number}
  */

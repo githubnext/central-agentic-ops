@@ -3,6 +3,7 @@
  */
 
 import { formatCount, formatCountNoun } from './components/count-formatters.js';
+import { formatPercent } from './view-formatters.js';
 import dispatchTypeClassification from './components/dispatch-type-classification.json' with { type: 'json' };
 
 const FAILURE_CONCLUSIONS = new Set(['failure', 'startup-failure', 'timed-out']);
@@ -362,10 +363,6 @@ function rowsFor(sources, name) {
 }
 
 /** @param {number} value */
-function formatPercent(value) {
-  return new Intl.NumberFormat('en', { style: 'percent', maximumFractionDigits: 1 }).format(value);
-}
-
 /**
  * @param {Record<string, import('./presenter.js').LogicalSourceInput>} sources
  * @returns {import('./presenter.js').SourceMetadata}

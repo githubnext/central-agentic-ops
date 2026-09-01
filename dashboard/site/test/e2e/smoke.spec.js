@@ -192,6 +192,7 @@ function buildPresenterModuleUrl() {
 
   const runtimeDataSource = readFileSync(new URL('../../src/runtime-data.js', import.meta.url), 'utf8')
     .replace("'./components/count-formatters.js'", JSON.stringify(countFormattersModuleUrl))
+    .replace("'./view-formatters.js'", JSON.stringify(viewFormattersModuleUrl))
     .replace("'./components/dispatch-type-classification.json'", JSON.stringify(dispatchTypeClassificationUrl));
   const runtimeDataModuleUrl = `data:text/javascript;charset=utf-8,${encodeURIComponent(runtimeDataSource)}`;
 
@@ -234,7 +235,8 @@ function buildPresenterModuleUrl() {
     .replace("'./components/attention-rules.js'", JSON.stringify(attentionRulesModuleUrl));
   const overviewDataModuleUrl = `data:text/javascript;charset=utf-8,${encodeURIComponent(overviewDataSource)}`;
 
-  const repositoryDataSource = readFileSync(new URL('../../src/repository-data.js', import.meta.url), 'utf8');
+  const repositoryDataSource = readFileSync(new URL('../../src/repository-data.js', import.meta.url), 'utf8')
+    .replace("'./view-formatters.js'", JSON.stringify(viewFormattersModuleUrl));
   const repositoryDataModuleUrl = `data:text/javascript;charset=utf-8,${encodeURIComponent(repositoryDataSource)}`;
 
   const workflowDataSource = readFileSync(new URL('../../src/workflow-data.js', import.meta.url), 'utf8');
