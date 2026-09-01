@@ -130,7 +130,7 @@ function renderWorkflowIdentity(workflow) {
             'a',
             {
               className: 'workflow-badge workflow-badge-package',
-              href: `#page-package-detail?package=${encodeURIComponent(packageId)}`
+              href: `#page-operational-value?package=${encodeURIComponent(packageId)}`
             },
             `Package · ${packageName}`
           )

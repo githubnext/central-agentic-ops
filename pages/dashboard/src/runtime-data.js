@@ -223,7 +223,7 @@ export function workflowName(workflow, run) {
 /** @param {Row | undefined} workflow @param {Row} run */
 export function packageOrWorkflowHref(workflow, run) {
   const packageId = text(workflow?.package);
-  return packageId ? `#page-package-detail?package=${encodeURIComponent(packageId)}` : workflowHref(workflow, run);
+  return packageId ? `#page-operational-value?package=${encodeURIComponent(packageId)}` : workflowHref(workflow, run);
 }
 
 /** @param {Row | undefined} workflow @param {Row} run */
@@ -233,7 +233,7 @@ export function workflowHref(workflow, run) {
   const qualifiedRepository = repository.includes('/') ? repository : `${text(identity.organization)}/${repository}`.replace(/^\/|\/$/g, '');
   const workflowPath = text(identity.workflow);
   return qualifiedRepository && workflowPath
-    ? `#page-workflow-detail?workflow=${encodeURIComponent(`${qualifiedRepository}:${workflowPath}`)}`
+    ? `#page-workflow-runtime?workflow=${encodeURIComponent(`${qualifiedRepository}:${workflowPath}`)}`
     : null;
 }
 
