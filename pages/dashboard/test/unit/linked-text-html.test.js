@@ -53,8 +53,8 @@ describe('linked text refactor behavior preservation', () => {
 
     expect(rendered.outerHTML).toContain('id="workflows-operation-package-workflows-heading"');
     expect(rendered.outerHTML).toContain('id="workflows-repository-owned-workflows-heading"');
-    expect(rendered.outerHTML).toContain('href="#page-package-detail?package=dependabot"');
+    expect(rendered.outerHTML).toContain('href="#page-operational-value?package=dependabot"');
     expect(rendered.outerHTML).toContain('href="#page-repository-detail?repository=github%2Ftarget-service"');
-    expect(rendered.outerHTML).toContain('href="#page-workflow-detail?workflow=github%2Ftarget-service%3A.github%2Fworkflows%2Fci.yml"');
+    expect(rendered.outerHTML).toContain('href="#page-workflow-runtime?workflow=github%2Ftarget-service%3A.github%2Fworkflows%2Fci.yml"');
   });
 });

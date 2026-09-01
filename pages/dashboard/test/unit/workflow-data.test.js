@@ -44,7 +44,7 @@ describe('deriveWorkflowSources', () => {
       workflow: 'root.md'
     }));
     expect(sources['packaged-workflows'].rows[0]['package-link']).toEqual(expect.objectContaining({
-      'dashboard-href': '#page-package-detail?package=dependabot'
+      'dashboard-href': '#page-operational-value?package=dependabot'
     }));
     expect(sources['standalone-workflows'].rows).toEqual([
       expect.objectContaining({ repository: 'githubnext/target', workflow: 'local.md' })

@@ -1330,8 +1330,8 @@ function deriveRepositoryDashboardLinks(sources, pages) {
  * @returns {Record<string, LogicalSourceInput>}
  */
 function deriveWorkflowDashboardLinks(sources, pages) {
-  const detailPage = pages.find((page) => page.kind === 'custom' && page.id === 'workflow-detail');
-  if (!detailPage) return sources;
+  const insightsPage = pages.find((page) => page.kind === 'custom' && page.id === 'workflow-runtime');
+  if (!insightsPage) return sources;
   const knownWorkflows = new Set((sources.workflows?.rows ?? [])
     .map(workflowDashboardIdentity)
     .filter((identity) => identity !== null));
@@ -1341,7 +1341,7 @@ function deriveWorkflowDashboardLinks(sources, pages) {
     {
       ...source,
       rows: Array.isArray(source?.rows)
-        ? source.rows.map((row) => deriveWorkflowDashboardLink(row, detailPage.id, knownWorkflows))
+        ? source.rows.map((row) => deriveWorkflowDashboardLink(row, insightsPage.id, knownWorkflows))
         : source?.rows
     }
   ]));

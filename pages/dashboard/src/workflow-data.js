@@ -62,7 +62,7 @@ function derivePackagedWorkflow(row) {
       ? {
           'package-link': {
             ...repositoryLink,
-            'dashboard-href': `#page-package-detail?package=${encodeURIComponent(packageId)}`,
+            'dashboard-href': `#page-operational-value?package=${encodeURIComponent(packageId)}`,
             'dashboard-label': `View ${text(row['package-name']) || titleCase(packageId)} package dashboard`
           }
         }
