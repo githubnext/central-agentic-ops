@@ -201,10 +201,11 @@ main.dashboard-prototype { width: 100%; flex: 1; padding: 0 24px 40px; }
 .chart-legend i.chart-series-5 { border-color: var(--muted); color: var(--muted); }
 .chart-legend i.chart-series-6 { border-color: var(--purple); color: var(--purple); }
 .view-description { margin: 3px 0 0; color: var(--muted); }
-.chart-view-pie { display: grid; grid-template-columns: minmax(190px, .65fr) minmax(0, 1.35fr); align-items: center; gap: 4px 24px; padding: 20px 24px; border: 1px solid var(--border); border-radius: 6px; }
-.chart-view-pie > h3, .chart-view-pie > h4 { align-self: end; margin: 0; font-size: 1.25rem; }
-.chart-view-pie > .view-description { align-self: start; }
-.chart-view-pie > .view-source, .chart-view-pie > .view-metadata, .chart-view-pie > .view-context { grid-column: 1; margin: 0; font-size: .6875rem; }
+.chart-view-pie { display: grid; gap: 16px; }
+.pie-chart-card { display: grid; grid-template-columns: minmax(190px, .65fr) minmax(0, 1.35fr); align-items: center; gap: 4px 24px; padding: 20px 24px; border: 1px solid var(--border); border-radius: 6px; }
+.pie-chart-card > h3, .pie-chart-card > h4 { align-self: end; margin: 0; font-size: 1.25rem; }
+.pie-chart-card > .view-description { align-self: start; }
+.pie-chart-card > .view-source, .pie-chart-card > .view-metadata, .pie-chart-card > .view-context { grid-column: 1; margin: 0; font-size: .6875rem; }
 .pie-chart-layout { min-width: 0; display: grid; grid-column: 2; grid-row: 1 / span 6; grid-template-columns: 180px minmax(0, 1fr); align-items: center; gap: 20px; }
 .pie-chart-layout .chart-widget { min-height: 180px; margin: 0; border: 0; background: transparent; }
 .pie-chart-layout .chart-widget svg { width: 180px; height: 180px; max-height: none; }
@@ -213,7 +214,7 @@ main.dashboard-prototype { width: 100%; flex: 1; padding: 0 24px 40px; }
 .pie-chart-layout .chart-legend-pie li:last-child { border-bottom: 0; }
 .pie-chart-layout .chart-legend-pie i { width: 9px; height: 9px; border-radius: 2px; }
 .pie-chart-layout .chart-legend-pie strong, .pie-chart-layout .chart-legend-pie small { font-variant-numeric: tabular-nums; text-align: right; }
-.chart-view-pie > .table-region { grid-column: 1 / -1; margin-top: 12px; }
+.chart-view-pie > .table-region { margin: 0; }
 .chart-view-pie .pie-chart-widget .chart-series-1 { stroke: var(--accent); }
 .chart-view-pie .pie-chart-widget .chart-series-2 { stroke: var(--success); }
 .chart-view-pie .pie-chart-widget .chart-series-3 { stroke: var(--attention); }
@@ -699,9 +700,9 @@ footer { padding: 20px 24px; border-top: 1px solid var(--border); color: var(--m
   to { background-position: -200% 0; }
 }
 @media (min-width: 701px) and (max-width: 900px) {
-  .chart-view-pie { grid-template-columns: 1fr; }
+  .pie-chart-card { grid-template-columns: 1fr; }
   .pie-chart-layout { grid-column: 1; grid-row: auto; }
-  .chart-view-pie > .view-source, .chart-view-pie > .view-metadata, .chart-view-pie > .view-context { grid-column: 1; }
+  .pie-chart-card > .view-source, .pie-chart-card > .view-metadata, .pie-chart-card > .view-context { grid-column: 1; }
 }
 @media (max-width: 700px) {
   .app-shell { display: block; }
@@ -737,9 +738,9 @@ footer { padding: 20px 24px; border-top: 1px solid var(--border); color: var(--m
   .repository-health .section-heading { align-items: flex-start; flex-direction: column; }
   .outcome-view { grid-template-columns: 1fr; }
   .outcome-meta { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0 20px; }
-  .chart-view-pie { grid-template-columns: 1fr; }
+  .pie-chart-card { grid-template-columns: 1fr; }
   .pie-chart-layout { grid-column: 1; grid-row: auto; }
-  .chart-view-pie > .view-source, .chart-view-pie > .view-metadata, .chart-view-pie > .view-context { grid-column: 1; }
+  .pie-chart-card > .view-source, .pie-chart-card > .view-metadata, .pie-chart-card > .view-context { grid-column: 1; }
   .control-plane-status > header { min-height: 0; padding: 14px; }
   .control-plane-heading { align-items: flex-start; }
   .control-plane-heading .scope-kicker { display: none; }

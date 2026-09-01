@@ -657,12 +657,14 @@ test('pie charts match the report layout at medium viewport widths', async ({ pa
   `);
 
   const heading = page.getByRole('heading', { name: 'AI Credit usage by AW repository' });
-  const description = page.locator('.chart-view-pie > .view-description');
+  const card = page.locator('.pie-chart-card');
+  const description = card.locator('.view-description');
   const layout = page.locator('.pie-chart-layout');
   const chart = layout.locator('.pie-chart-widget');
   const legend = layout.locator('.chart-legend-pie');
-  const [headingBox, descriptionBox, layoutBox, chartBox, legendBox] = await Promise.all(
-    [heading, description, layout, chart, legend].map((locator) => locator.boundingBox())
+  const table = page.locator('.chart-view-pie > .table-region');
+  const [headingBox, descriptionBox, layoutBox, chartBox, legendBox, cardBox, tableBox] = await Promise.all(
+    [heading, description, layout, chart, legend, card, table].map((locator) => locator.boundingBox())
   );
 
   expect(headingBox).not.toBeNull();
@@ -670,11 +672,14 @@ test('pie charts match the report layout at medium viewport widths', async ({ pa
   expect(layoutBox).not.toBeNull();
   expect(chartBox).not.toBeNull();
   expect(legendBox).not.toBeNull();
+  expect(cardBox).not.toBeNull();
+  expect(tableBox).not.toBeNull();
   expect(layoutBox?.x).toBeCloseTo(headingBox?.x ?? 0, 0);
   expect(layoutBox?.y).toBeGreaterThan((descriptionBox?.y ?? 0) + (descriptionBox?.height ?? 0));
   expect(legendBox?.x).toBeGreaterThan((chartBox?.x ?? 0) + (chartBox?.width ?? 0));
   expect((legendBox?.y ?? 0) + (legendBox?.height ?? 0) / 2)
     .toBeCloseTo((chartBox?.y ?? 0) + (chartBox?.height ?? 0) / 2, 0);
+  expect(tableBox?.y).toBeGreaterThan((cardBox?.y ?? 0) + (cardBox?.height ?? 0));
 });
 
 test('DLS-PAGE-014 DLS-PAGE-015 built-in packages page renders report-style mode filters, AIC utilization, and run trends in browser', async ({ page }) => {

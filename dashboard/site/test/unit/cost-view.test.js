@@ -97,6 +97,12 @@ describe('Cost and efficiency dashboard view', () => {
 
     expect(page?.querySelectorAll('[data-chart-widget="pie"] [data-chart-category]')).toHaveLength(2);
     expect(page?.querySelector('.pie-chart-total-value')?.textContent).toBe('9');
+    const pieChartView = page?.querySelector('.chart-view-pie');
+    const pieChartCard = pieChartView?.querySelector('.pie-chart-card');
+    const repositoryTable = pieChartView?.querySelector('.custom-chart-table');
+    expect(pieChartCard).not.toBeNull();
+    expect(repositoryTable?.parentElement).toBe(pieChartView);
+    expect(pieChartCard?.contains(repositoryTable ?? null)).toBe(false);
     expect(page?.querySelectorAll('.signal-list-region')).toHaveLength(1);
     const boundary = page?.querySelector('.dashboard-callout');
     expect(boundary?.getAttribute('role')).toBe('note');
