@@ -34,7 +34,7 @@ imports:
       package: ${{ github.aw.import-inputs.package }}
       role: ${{ github.aw.import-inputs.role }}
       worker: ${{ github.aw.import-inputs.worker }}
-      target_repo: ${{ github.event.inputs.target_repo || (github.event_name == 'workflow_dispatch' && env.GH_AW_SAFE_OUTPUT_MODE == 'review' && github.repository) || '' }}
+      target_repo: ${{ github.event.inputs.target_repo || '' }}
       requested_mode: ${{ github.event.inputs.safe_output_mode || '' }}
       requested_max_repos: ${{ github.event.inputs.max_repos || '' }}
       requested_rollout_percent: ${{ github.event.inputs.rollout_percent || '' }}

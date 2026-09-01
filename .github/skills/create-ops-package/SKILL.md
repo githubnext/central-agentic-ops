@@ -64,7 +64,7 @@ Use the same package slug and steering file for the orchestrator and all of its 
 Create `.github/workflows/<package>.md` with:
 
 - `name` set to the exact package display name, with no `/` suffix
-- an event-aware `run-name`: scheduled runs use the literal `<Package Name> · scheduled` because target and mode are resolved after run creation; `workflow_dispatch` runs include the submitted target and requested safe-output mode, defaulting missing values to `github.repository` and `review`; never display unresolved placeholders such as `auto` or `mode`
+- an event-aware `run-name`: scheduled runs use the literal `<Package Name> · scheduled` because target and mode are resolved after run creation; `workflow_dispatch` runs include the submitted target and requested safe-output mode, using `discovery` when target is omitted and `review` when mode is omitted; never display unresolved placeholders such as `auto` or `mode`
 - a schedule when the operation is periodic, plus `workflow_dispatch`
 - the standard dispatch inputs: `target_repo`, `safe_output_repo`, `max_repos`, `rollout_percent`, and `safe_output_mode` with `review` and `live` choices, defaulting to `review`
 - `shared/control.md` imported with a static `package` slug, `role: orchestrator`, and request-only narrowing inputs

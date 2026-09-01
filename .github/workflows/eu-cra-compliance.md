@@ -1,7 +1,7 @@
 ---
 name: "EU CRA Advisor"
 
-run-name: "${{ github.event_name == 'schedule' && 'EU CRA Advisor · scheduled' || format('EU CRA Advisor · {0} · {1}', inputs.target_repo || github.repository, inputs.safe_output_mode || 'review') }}"
+run-name: "${{ github.event_name == 'schedule' && 'EU CRA Advisor · scheduled' || format('EU CRA Advisor · {0} · {1}', inputs.target_repo || 'discovery', inputs.safe_output_mode || 'review') }}"
 
 max-ai-credits: 200
 timeout-minutes: 15

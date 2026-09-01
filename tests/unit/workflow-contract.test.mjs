@@ -958,22 +958,26 @@ test("shared control keeps manual and scheduled routing event-scoped", () => {
   assert.doesNotMatch(precompute, /ROLLOUT_PERCENT.*(?:eval|curl|gh api)/);
 });
 
-test("blank manual reviews target the control repository before discovery", () => {
+test("blank manual runs preserve an empty target for allowlisted discovery", () => {
   const control = workflow("shared/control.md");
 
   assert.match(
     control,
-    /target_repo: \$\{\{ github\.event\.inputs\.target_repo \|\| \(github\.event_name == 'workflow_dispatch' && env\.GH_AW_SAFE_OUTPUT_MODE == 'review' && github\.repository\) \|\| '' \}\}/,
+    /target_repo: \$\{\{ github\.event\.inputs\.target_repo \|\| '' \}\}/,
   );
+  assert.doesNotMatch(control, /target_repo:.*github\.repository/);
 });
 
 test("orchestrators dispatch workers only through safe-output tools", () => {
   const control = workflow("shared/control.md");
+  const precompute = workflow("shared/control-precompute.md");
 
   assert.match(control, /call the configured `dispatch-workflow` tool from `<safe-output-tools>`/);
   assert.match(control, /do not use `gh workflow run` or the Actions workflow-dispatch API/);
   assert.match(control, /safeoutputs <tool_name> \./);
   assert.match(control, /never invoke `<tool_name>`, `noop`, or `report_incomplete` as a bare shell command/);
+  assert.ok(precompute.includes("in_workflows && /^    - /"));
+  assert.ok(precompute.includes("in_workflows && /^      - /"));
 });
 
 test("every worker uses the standard dispatch envelope and safe mode vocabulary", () => {
