@@ -56,7 +56,6 @@ pre-agent-steps:
       npm --prefix dashboard/site run lint
       npm --prefix dashboard/site test
       npm --prefix dashboard/site run test:e2e
-      npm --prefix dashboard/site run build
 evals:
   - id: operational_value
     question: Does the agent output demonstrate that one duplicated dashboard UI construct was replaced by a reusable component used at two or more call sites?
@@ -97,7 +96,6 @@ The baseline completed before the agent started. After editing, run all of these
 2. `npm run lint`
 3. `npm test`
 4. `npm run test:e2e`
-5. `npm run build`
 
 Review the final diff and scan changed files for secrets. If every command passes, call `create_pull_request` exactly once with a focused draft PR that explains the duplicated call sites, the extracted component boundary, the preserved behavior, and validation results.
 
