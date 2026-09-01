@@ -317,8 +317,8 @@ export const SOURCE_FIELDS = {
   'workflow-reports': ['workflow-route', 'safe-output', 'outcome-title', 'outcome-summary', 'outcome-status', 'rollout-mode', 'outcome-category', 'observed-at', 'external-link'],
   'package-reports': ['package', 'safe-output', 'outcome-title', 'outcome-summary', 'outcome-status', 'rollout-mode', 'outcome-category', 'observed-at', 'external-link'],
   'workflow-topology-summary': ['label', 'value'],
-  'packaged-workflows': ['package', 'package-name', 'repository', 'workflow', 'workflow-name', 'workflow-role', 'rollout-mode', 'workflow-active', 'aic', 'package-link', 'repository-link', 'workflow-link'],
-  'standalone-workflows': ['repository', 'workflow', 'workflow-name', 'rollout-mode', 'workflow-active', 'aic', 'repository-link', 'workflow-link']
+  'packaged-workflows': ['package', 'package-name', 'repository', 'workflow', 'workflow-name', 'workflow-role', 'rollout-mode', 'workflow-active', 'runs', 'aic', 'package-link', 'repository-link', 'workflow-link'],
+  'standalone-workflows': ['repository', 'workflow', 'workflow-name', 'rollout-mode', 'workflow-active', 'runs', 'aic', 'repository-link', 'workflow-link']
 };
 
 export const ROLLOUT_MODE_VALUES = ['review', 'live', 'unknown'];

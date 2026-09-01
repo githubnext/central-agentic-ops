@@ -923,6 +923,17 @@
                   "type": "nominal",
                   "title": "Registration",
                   "display": "active-state"
+                },
+                {
+                  "field": "runs",
+                  "type": "quantitative",
+                  "title": "Runs"
+                },
+                {
+                  "field": "aic",
+                  "type": "quantitative",
+                  "title": "Total AIC",
+                  "unit": "aic"
                 }
               ]
             },

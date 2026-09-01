@@ -10,21 +10,25 @@
  */
 export function deriveWorkflowSources(sources) {
   const workflows = Array.isArray(sources.workflows?.rows) ? sources.workflows.rows : [];
+  const runs = sources.runs?.metadata?.availability === 'unavailable' || !Array.isArray(sources.runs?.rows)
+    ? null
+    : sources.runs.rows;
   const usage = Array.isArray(sources.usage?.rows) ? sources.usage.rows : [];
   const outcomes = Array.isArray(sources.outcomes?.rows) ? sources.outcomes.rows : [];
+  const workflowRuns = summarizeWorkflowRuns(workflows, runs);
   const workflowAic = summarizeWorkflowAic(workflows, usage);
   /** @param {Row} row */
   const isPackaged = (row) => row['workflow-role'] !== 'standalone' && Boolean(text(row.package));
   const packaged = workflows
     .filter(isPackaged)
-    .map((row) => derivePackagedWorkflow(row, workflowAic.get(row)))
+    .map((row) => derivePackagedWorkflow(row, workflowRuns.get(row), workflowAic.get(row)))
     .sort(comparePackagedWorkflows);
   // Every row not captured above (including rows with an unrecognized or
   // missing workflow-role) is repository-owned; the two buckets must
   // together account for every row so no workflow is silently dropped.
   const standalone = workflows
     .filter((row) => !isPackaged(row))
-    .map((row) => deriveStandaloneWorkflow(row, workflowAic.get(row)))
+    .map((row) => deriveStandaloneWorkflow(row, workflowRuns.get(row), workflowAic.get(row)))
     .sort(compareStandaloneWorkflows);
   const packages = new Set(packaged.map((row) => text(row.package)));
   const metadata = sources.workflows?.metadata ?? unavailableMetadata();
@@ -149,8 +153,8 @@ function normalizeWorkflowIdentity(value) {
   return text(value).toLowerCase().replace(/\.lock\.yml$/, '.md');
 }
 
-/** @param {Row} row @param {number | undefined} aic */
-function derivePackagedWorkflow(row, aic) {
+/** @param {Row} row @param {number | undefined} runs @param {number | undefined} aic */
+function derivePackagedWorkflow(row, runs, aic) {
   const packageId = text(row.package);
   const repositoryLink = isPlainObject(row['repository-link']) ? row['repository-link'] : null;
   return {
@@ -162,6 +166,7 @@ function derivePackagedWorkflow(row, aic) {
     'workflow-role': text(row['workflow-role']) || 'unknown',
     'rollout-mode': text(row['rollout-mode']) || 'unknown',
     'workflow-active': text(row['workflow-active']) || 'unknown',
+    ...(runs === undefined ? {} : { runs }),
     ...(aic === undefined ? {} : { aic }),
     ...(repositoryLink
       ? {
@@ -177,18 +182,35 @@ function derivePackagedWorkflow(row, aic) {
   };
 }
 
-/** @param {Row} row @param {number | undefined} aic */
-function deriveStandaloneWorkflow(row, aic) {
+/** @param {Row} row @param {number | undefined} runs @param {number | undefined} aic */
+function deriveStandaloneWorkflow(row, runs, aic) {
   return {
     repository: qualifiedRepository(row),
     workflow: text(row.workflow),
     'workflow-name': text(row['workflow-name']) || text(row.workflow),
     'rollout-mode': text(row['rollout-mode']) || 'unknown',
     'workflow-active': text(row['workflow-active']) || 'unknown',
+    ...(runs === undefined ? {} : { runs }),
     ...(aic === undefined ? {} : { aic }),
     ...(row['repository-link'] ? { 'repository-link': row['repository-link'] } : {}),
     ...(row['workflow-link'] ? { 'workflow-link': row['workflow-link'] } : {})
   };
+}
+
+/**
+ * @param {Row[]} workflows
+ * @param {Row[] | null} runs
+ * @returns {Map<Row, number>}
+ */
+function summarizeWorkflowRuns(workflows, runs) {
+  const totals = new Map();
+  if (runs === null) return totals;
+  for (const workflow of workflows) totals.set(workflow, 0);
+  for (const run of runs) {
+    const workflow = matchedWorkflow(workflows, run);
+    if (workflow) totals.set(workflow, (totals.get(workflow) ?? 0) + 1);
+  }
+  return totals;
 }
 
 /**
@@ -202,15 +224,20 @@ function summarizeWorkflowAic(workflows, usage) {
   for (const observation of usage) {
     const aic = Number(observation.aic);
     if (!Number.isFinite(aic) || aic < 0 || !text(observation.workflow)) continue;
-    const candidates = workflows.filter((workflow) => (
-      normalizeWorkflowIdentity(workflow.workflow) === normalizeWorkflowIdentity(observation.workflow)
-      && sameWorkflowScope(observation, workflow)
-    ));
-    if (candidates.length !== 1) continue;
-    const workflow = candidates[0];
+    const workflow = matchedWorkflow(workflows, observation);
+    if (!workflow) continue;
     totals.set(workflow, (totals.get(workflow) ?? 0) + aic);
   }
   return totals;
+}
+
+/** @param {Row[]} workflows @param {Row} observation @returns {Row | undefined} */
+function matchedWorkflow(workflows, observation) {
+  const candidates = workflows.filter((workflow) => (
+    normalizeWorkflowIdentity(workflow.workflow) === normalizeWorkflowIdentity(observation.workflow)
+    && sameWorkflowScope(observation, workflow)
+  ));
+  return candidates.length === 1 ? candidates[0] : undefined;
 }
 
 /** @param {Row} left @param {Row} right */
