@@ -160,6 +160,7 @@ function enableTableSort(region) {
   if (!(body instanceof HTMLTableSectionElement)) return;
   const headers = [...region.querySelectorAll('th[aria-sort]')]
     .filter((header) => header instanceof HTMLTableCellElement);
+  let revision = 0;
 
   for (const header of headers) {
     const control = header.querySelector('[data-table-sort]');
@@ -167,6 +168,7 @@ function enableTableSort(region) {
     const columnIndex = Number(control.dataset.tableSort);
     control.addEventListener('click', () => {
       const direction = header.getAttribute('aria-sort') === 'ascending' ? 'descending' : 'ascending';
+      const requestRevision = ++revision;
       for (const other of headers) other.setAttribute('aria-sort', 'none');
       header.setAttribute('aria-sort', direction);
       const rows = [...body.rows];
@@ -175,6 +177,7 @@ function enableTableSort(region) {
         [{ op: 'arrange', by: [{ field: 'value', direction: direction === 'descending' ? 'desc' : 'asc' }] }]
       );
       applyProcessed(result, (processed) => {
+        if (requestRevision !== revision) return;
         for (const item of processed) body.append(rows[Number(item.index)]);
         region.dispatchEvent(new Event('table-sorted'));
       });

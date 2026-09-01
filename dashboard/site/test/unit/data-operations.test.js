@@ -53,5 +53,8 @@ describe('dashboard data operations', () => {
     expect(() => processDataRequest({ data: rows, operators: null })).toThrow(
       'Data worker requests require data and operators arrays.'
     );
+    expect(() => tidy(rows, [/** @type {any} */ ({ op: 'execute' })])).toThrow(
+      'Unsupported data operator: execute'
+    );
   });
 });

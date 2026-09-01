@@ -33,7 +33,7 @@ function applyOperator(rows, operator) {
     const offset = Number.isInteger(operator.offset) ? Math.max(0, Number(operator.offset)) : 0;
     return rows.slice(offset, offset + Math.max(0, operator.limit));
   }
-  return rows;
+  throw new TypeError(`Unsupported data operator: ${String(/** @type {{ op?: unknown }} */ (operator).op)}`);
 }
 
 /** @param {Row[]} rows @param {FilterOperator} operator */
@@ -75,11 +75,13 @@ function summarize(rows, operator) {
   }
   if (groups.size === 0 && groupFields.length === 0) groups.set('[]', []);
   return [...groups.values()].map((group) => {
-    const result = Object.fromEntries(groupFields.map((field) => [field, group[0]?.[field]]));
-    for (const summary of operator.values) {
-      result[summary.as] = reduceValues(group.map((row) => row[summary.field]), summary.reducer);
-    }
-    return result;
+    return Object.fromEntries([
+      ...groupFields.map((field) => [field, group[0]?.[field]]),
+      ...operator.values.map((summary) => [
+        summary.as,
+        reduceValues(group.map((row) => row[summary.field]), summary.reducer)
+      ])
+    ]);
   });
 }
 

@@ -19,7 +19,7 @@ export function processRows(data, operators) {
   return new Promise((resolve, reject) => {
     pending.set(id, { resolve, reject });
     processor.postMessage({ id, data, operators });
-  });
+  }).catch(() => tidy(data, operators));
 }
 
 /** @returns {Worker | null} */
