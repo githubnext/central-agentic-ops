@@ -305,6 +305,7 @@ function recordFromIssue(issue, outputRepository = repository) {
   if (issue.title === "[aw] No-Op Runs") return null;
   return {
     id: `${outputRepository}-${issue.pull_request ? "pr" : "issue"}-${issue.number}`,
+    number: issue.number,
     bundle: bundle?.id || "",
     kind: issue.pull_request ? "pull-request" : "issue",
     title: issue.title,

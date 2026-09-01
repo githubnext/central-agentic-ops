@@ -223,6 +223,40 @@ describe('dashboard document validation', () => {
     }
   });
 
+  it('DLS-VIEW-030 validates JSON-configured title links against one selected source', () => {
+    const document = JSON.parse(authoritativeDashboardSource);
+    const outcomePage = document.dashboard.pages.find((/** @type {{ id: string }} */ page) => page.id === 'outcome-detail');
+    const outcomeView = outcomePage.views[0];
+    expect(outcomeView['title-link']).toEqual({
+      'href-field': 'external-link',
+      'identifier-field': 'outcome-number'
+    });
+    expect(validateDashboardDocument(JSON.stringify(document)).ok).toBe(true);
+
+    outcomeView['title-link'] = {
+      'href-field': 'run-link',
+      'identifier-field': 'run'
+    };
+    expect(validateDashboardDocument(JSON.stringify(document)).ok).toBe(true);
+
+    outcomeView['title-link'] = {
+      'href-field': 'outcome-title',
+      'identifier-field': 'external-link'
+    };
+    const invalid = validateDashboardDocument(JSON.stringify(document));
+    expect(invalid.ok).toBe(false);
+    if (!invalid.ok) {
+      expect(invalid.errors).toContainEqual(expect.objectContaining({
+        code: 'DLS-E009',
+        path: expect.stringMatching(/\.title-link\.href-field$/)
+      }));
+      expect(invalid.errors).toContainEqual(expect.objectContaining({
+        code: 'DLS-E010',
+        path: expect.stringMatching(/\.title-link\.identifier-field$/)
+      }));
+    }
+  });
+
   it('validates dashboard.navigation references declared pages at most once', () => {
     const withUnknownPage = JSON.parse(authoritativeDashboardSource);
     withUnknownPage.dashboard.navigation[2].pages.push('does-not-exist');

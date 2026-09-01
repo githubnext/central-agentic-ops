@@ -1678,6 +1678,7 @@ test('outcome page template follows its JSON-declared hash query route in browse
               id: 'outcome-record',
               title: 'Outcome',
               data: { sources: ['outcomes'] },
+              'title-link': { 'href-field': 'external-link', 'identifier-field': 'outcome-number' },
               mark: 'element',
               element: 'outcome-detail'
             }]
@@ -1692,6 +1693,7 @@ test('outcome page template follows its JSON-declared hash query route in browse
             workflow: '.github/workflows/daily.md',
             'workflow-name': 'Daily review',
             'safe-output': 'outcome-1',
+            'outcome-number': 403,
             'outcome-title': 'Parity verification sweep',
             'outcome-body-html': '<h2>Summary</h2><p>All checks passed.</p>',
             'outcome-category': 'pull-request',
@@ -1699,7 +1701,12 @@ test('outcome page template follows its JSON-declared hash query route in browse
             'outcome-state': 'lifecycle-close',
             'rollout-mode': 'live',
             'published-at': '2026-08-31T01:26:00Z',
-            'observed-at': '2026-08-31T01:49:00Z'
+            'observed-at': '2026-08-31T01:49:00Z',
+            'external-link': {
+              relation: 'external',
+              href: 'https://github.com/githubnext/central-agentic-ops/issues/403',
+              label: 'View output'
+            }
           }]
         }
       };
@@ -1708,6 +1715,8 @@ test('outcome page template follows its JSON-declared hash query route in browse
   `);
 
   await expect(page.getByRole('heading', { level: 1 })).toHaveText('Parity verification sweep');
+  await expect(page.locator('[data-page-title-link]')).toHaveText('#403');
+  await expect(page.locator('[data-page-title-link]')).toHaveAttribute('href', 'https://github.com/githubnext/central-agentic-ops/issues/403');
   await expect(page.locator('.overview-header [data-page-description]')).toHaveText('Daily review · Pull Request · Closed');
   await expect(page.locator('.outcome-detail')).toHaveAttribute('data-outcome', 'outcome-1');
   await expect(page.locator('.discussion-post')).toContainText('All checks passed.');

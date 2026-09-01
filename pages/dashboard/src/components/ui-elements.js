@@ -24,6 +24,7 @@ import { renderWorkflowRuntime } from './workflow-runtime.js';
  *   contextDetails: string[],
  *   scope?: Record<string, unknown>,
  *   routeParameter?: string,
+ *   titleLink?: Record<string, unknown>,
  *   headingTag: 'h3'|'h4'
  * }} ElementRenderContext
  */

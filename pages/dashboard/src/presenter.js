@@ -336,6 +336,7 @@ function renderMainContent(document, title, pages, sources, orgName, githubUrlBa
             'div',
             { className: 'title-area' },
             h('h1', { id: 'page-title', tabIndex: -1 }, initialPageTitle),
+            h('a', { className: 'title-link', 'data-page-title-link': '', hidden: true }),
             h('span', { className: 'mode-indicator', 'data-page-mode': '', hidden: true })
           ),
           h(
@@ -554,6 +555,7 @@ export function enableDashboardPageNavigation(root) {
   const breadcrumbRoot = root.querySelector('[data-breadcrumb-root]');
   const breadcrumbDashboard = root.querySelector('[data-breadcrumb-dashboard]');
   const pageTitle = root.querySelector('#page-title');
+  const pageTitleLink = root.querySelector('[data-page-title-link]');
   const pageDescription = root.querySelector('.overview-header [data-page-description]');
   const pageMode = root.querySelector('[data-page-mode]');
   const defaultBreadcrumbs = [breadcrumbRoot, breadcrumbDashboard].map((link) => ({
@@ -574,6 +576,7 @@ export function enableDashboardPageNavigation(root) {
       if (breadcrumbPage) breadcrumbPage.textContent = title;
       if (pageTitle) pageTitle.textContent = title;
     }
+    renderPageTitleLink(pageTitleLink, event.detail?.titleLink);
     const hasAllocatedBreadcrumbs = Array.isArray(event.detail?.breadcrumbs);
     const breadcrumbs = hasAllocatedBreadcrumbs ? event.detail.breadcrumbs : [];
     for (const [index, link] of [breadcrumbRoot, breadcrumbDashboard].entries()) {
@@ -654,6 +657,7 @@ export function enableDashboardPageNavigation(root) {
     const description = page?.dataset.pageDescription ?? '';
     if (breadcrumbPage) breadcrumbPage.textContent = title;
     if (pageTitle) pageTitle.textContent = title;
+    renderPageTitleLink(pageTitleLink, null);
     if (pageDescription) {
       pageDescription.textContent = description;
       pageDescription.toggleAttribute('hidden', description.length === 0);
@@ -966,9 +970,34 @@ function renderElementView(pageId, title, view, sources, contextDetails, heading
     sources: selectedSources,
     contextDetails,
     scope: isPlainObject(viewData?.scope) ? viewData.scope : undefined,
+    titleLink: isPlainObject(view['title-link']) ? view['title-link'] : undefined,
     routeParameter,
     headingTag
   }) ?? renderCustomViewState(pageId, title, null, 'unavailable', [...contextDetails, 'Unsupported UI element.'], headingTag);
+}
+
+/**
+ * @param {Element | null} target
+ * @param {unknown} candidate
+ */
+function renderPageTitleLink(target, candidate) {
+  if (!(target instanceof HTMLAnchorElement)) return;
+  const link = findLink({ link: candidate }, 'link');
+  if (!link || link.href.startsWith('#')) {
+    target.hidden = true;
+    target.removeAttribute('href');
+    target.removeAttribute('target');
+    target.removeAttribute('rel');
+    target.removeAttribute('aria-label');
+    target.textContent = '';
+    return;
+  }
+  target.hidden = false;
+  target.href = link.href;
+  target.target = '_blank';
+  target.rel = 'noopener noreferrer';
+  target.setAttribute('aria-label', `View ${link.label} on GitHub`);
+  target.textContent = link.label;
 }
 
 /**
