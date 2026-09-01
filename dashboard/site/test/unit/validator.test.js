@@ -1,10 +1,9 @@
 import { describe, expect, it } from 'vitest';
 import { readFileSync } from 'node:fs';
 import { validateDashboardDocument, validateLogicalSources } from '../../src/validator.js';
+import { packageDashboardSources } from '../package-dashboard-documents.js';
 
 const authoritativeDashboardSource = readFileSync(`${process.cwd()}/dashboard.json`, 'utf8');
-const packageDashboardSources = ['advisory', 'ambient-context', 'aw-maintenance', 'dependabot', 'eu-cra-compliance', 'optimization']
-  .map((packageName) => readFileSync(`${process.cwd()}/../../${packageName}/dashboard.json`, 'utf8'));
 
 const validDocument = `language-version: "0.1.0"
 dashboard:

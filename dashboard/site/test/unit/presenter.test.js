@@ -5,15 +5,13 @@ import { fileURLToPath } from 'node:url';
 import { dirname, resolve } from 'node:path';
 import { renderDashboard, enableDashboardKeyboardNavigation } from '../../src/presenter.js';
 import { composeDashboardDocuments } from '../../../report/compose-dashboard-documents.mjs';
+import { packageDashboardSources } from '../package-dashboard-documents.js';
 
 const fixtureDirectory = dirname(fileURLToPath(import.meta.url));
 const builtInDashboardDocument = JSON.parse(
   readFileSync(resolve(fixtureDirectory, '../../dashboard.json'), 'utf8')
 );
-const packageDashboardDocuments = ['advisory', 'ambient-context', 'aw-maintenance', 'dependabot', 'eu-cra-compliance', 'optimization']
-  .map((packageName) => JSON.parse(
-    readFileSync(resolve(fixtureDirectory, `../../../../${packageName}/dashboard.json`), 'utf8')
-  ));
+const packageDashboardDocuments = packageDashboardSources.map((source) => JSON.parse(source));
 const authoritativeDashboardDocument = composeDashboardDocuments(
   builtInDashboardDocument,
   packageDashboardDocuments
