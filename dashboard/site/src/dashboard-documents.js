@@ -1,5 +1,5 @@
 /**
- * Compose dashboard documents by preserving the primary document and appending additional pages and navigation groups.
+ * Compose dashboard documents by preserving all primary top-level fields while appending only pages and navigation groups from additional documents.
  *
  * @template {object} T
  * @param {T} primary
