@@ -131,15 +131,6 @@ function buildPresenterModuleUrl() {
   const countFormattersSource = readFileSync(new URL('../../src/components/count-formatters.js', import.meta.url), 'utf8');
   const countFormattersModuleUrl = `data:text/javascript;charset=utf-8,${encodeURIComponent(countFormattersSource)}`;
 
-  const workflowTopologySource = readFileSync(new URL('../../src/components/workflow-topology.js', import.meta.url), 'utf8')
-    .replace("'../dom.js'", JSON.stringify(domModuleUrl))
-    .replace("'../octicons.js'", JSON.stringify(octiconsModuleUrl))
-    .replace("'./count-formatters.js'", JSON.stringify(countFormattersModuleUrl))
-    .replace("'./link-content.js'", JSON.stringify(linkContentModuleUrl))
-    .replace("'./linked-text.js'", JSON.stringify(linkedTextModuleUrl))
-    .replace("'./view-chrome.js'", JSON.stringify(viewChromeModuleUrl));
-  const workflowTopologyModuleUrl = `data:text/javascript;charset=utf-8,${encodeURIComponent(workflowTopologySource)}`;
-
   const chartElementsSource = readFileSync(new URL('../../src/components/chart-elements.js', import.meta.url), 'utf8')
     .replace("'../dom.js'", JSON.stringify(domModuleUrl))
     .replace("'../view-formatters.js'", JSON.stringify(viewFormattersModuleUrl));
@@ -156,12 +147,17 @@ function buildPresenterModuleUrl() {
     .replace("'./tab-nav.js'", JSON.stringify(tabNavModuleUrl));
   const repositoryWorkflowsModuleUrl = `data:text/javascript;charset=utf-8,${encodeURIComponent(repositoryWorkflowsSource)}`;
 
+  const workflowIdentitySource = readFileSync(new URL('../../src/components/workflow-identity.js', import.meta.url), 'utf8')
+    .replace("'../dom.js'", JSON.stringify(domModuleUrl))
+    .replace("'./link-content.js'", JSON.stringify(linkContentModuleUrl));
+  const workflowIdentityModuleUrl = `data:text/javascript;charset=utf-8,${encodeURIComponent(workflowIdentitySource)}`;
+
   const workflowDetailSource = readFileSync(new URL('../../src/components/workflow-detail.js', import.meta.url), 'utf8')
     .replace("'../dom.js'", JSON.stringify(domModuleUrl))
     .replace("'../octicons.js'", JSON.stringify(octiconsModuleUrl))
-    .replace("'./link-content.js'", JSON.stringify(linkContentModuleUrl))
     .replace("'./report-list.js'", JSON.stringify(reportListModuleUrl))
-    .replace("'./tab-nav.js'", JSON.stringify(tabNavModuleUrl));
+    .replace("'./tab-nav.js'", JSON.stringify(tabNavModuleUrl))
+    .replace("'./workflow-identity.js'", JSON.stringify(workflowIdentityModuleUrl));
   const workflowDetailModuleUrl = `data:text/javascript;charset=utf-8,${encodeURIComponent(workflowDetailSource)}`;
   const workflowRuntimeSource = readFileSync(new URL('../../src/components/workflow-runtime.js', import.meta.url), 'utf8')
     .replace("'../dom.js'", JSON.stringify(domModuleUrl))
@@ -172,7 +168,8 @@ function buildPresenterModuleUrl() {
     .replace("'./link-content.js'", JSON.stringify(linkContentModuleUrl))
     .replace("'./run-classification.js'", JSON.stringify(runClassificationModuleUrl))
     .replace("'./ui-primitives.js'", JSON.stringify(uiPrimitivesModuleUrl))
-    .replace("'./view-chrome.js'", JSON.stringify(viewChromeModuleUrl));
+    .replace("'./view-chrome.js'", JSON.stringify(viewChromeModuleUrl))
+    .replace("'./workflow-identity.js'", JSON.stringify(workflowIdentityModuleUrl));
   const workflowRuntimeModuleUrl = `data:text/javascript;charset=utf-8,${encodeURIComponent(workflowRuntimeSource)}`;
 
   const outcomeDetailSource = readFileSync(new URL('../../src/components/outcome-detail.js', import.meta.url), 'utf8')
@@ -213,8 +210,7 @@ function buildPresenterModuleUrl() {
     .replace("'./outcome-detail.js'", JSON.stringify(outcomeDetailModuleUrl))
     .replace("'./dispatch-catalog.js'", JSON.stringify(dispatchCatalogModuleUrl))
     .replace("'./ui-primitives.js'", JSON.stringify(uiPrimitivesModuleUrl))
-    .replace("'./view-chrome.js'", JSON.stringify(viewChromeModuleUrl))
-    .replace("'./workflow-topology.js'", JSON.stringify(workflowTopologyModuleUrl));
+    .replace("'./view-chrome.js'", JSON.stringify(viewChromeModuleUrl));
   const uiElementsModuleUrl = `data:text/javascript;charset=utf-8,${encodeURIComponent(uiElementsSource)}`;
 
   const dataViewSource = readFileSync(new URL('../../src/components/data-view.js', import.meta.url), 'utf8')
@@ -237,6 +233,9 @@ function buildPresenterModuleUrl() {
   const repositoryDataSource = readFileSync(new URL('../../src/repository-data.js', import.meta.url), 'utf8');
   const repositoryDataModuleUrl = `data:text/javascript;charset=utf-8,${encodeURIComponent(repositoryDataSource)}`;
 
+  const workflowDataSource = readFileSync(new URL('../../src/workflow-data.js', import.meta.url), 'utf8');
+  const workflowDataModuleUrl = `data:text/javascript;charset=utf-8,${encodeURIComponent(workflowDataSource)}`;
+
   const presenterSource = readFileSync(new URL('../../src/presenter.js', import.meta.url), 'utf8')
     .replace("'../dashboard.json'", JSON.stringify(dashboardModuleUrl))
     .replace("'./dom.js'", JSON.stringify(domModuleUrl))
@@ -255,6 +254,7 @@ function buildPresenterModuleUrl() {
     .replace("'./overview-data.js'", JSON.stringify(overviewDataModuleUrl))
     .replace("'./repository-data.js'", JSON.stringify(repositoryDataModuleUrl))
     .replace("'./runtime-data.js'", JSON.stringify(runtimeDataModuleUrl))
+    .replace("'./workflow-data.js'", JSON.stringify(workflowDataModuleUrl))
     .replace("'./view-formatters.js'", JSON.stringify(viewFormattersModuleUrl));
 
   return `data:text/javascript;charset=utf-8,${encodeURIComponent(presenterSource)}`;
@@ -554,6 +554,12 @@ test('DLS-PAGE-014 DLS-PAGE-015 built-in packages page renders report-style mode
               }
             },
             {
+              id: 'operational-value',
+              kind: 'custom',
+              title: 'Value & outcomes',
+              views: []
+            },
+            {
               id: 'package-detail',
               kind: 'custom',
               title: 'Package',
@@ -640,10 +646,15 @@ test('DLS-PAGE-014 DLS-PAGE-015 built-in packages page renders report-style mode
   await expect(awMaintenanceSummary.locator('td')).toHaveText(['2', '1', '1', '1', '1', '23.9', 'Aug 29, 2026, 10:05 AM']);
   await expect(page.getByRole('heading', { name: 'All runs over time', level: 3 })).toBeVisible();
   await expect(page.locator('.package-chart-point')).toHaveCount(30);
-  await expect(page.locator('[data-package-id="ambient-context"] a')).toHaveAttribute('href', '#page-package-detail?package=ambient-context');
+  await expect(page.locator('[data-package-id="ambient-context"] a')).toHaveAttribute('href', '#page-operational-value?package=ambient-context');
 
   await page.locator('[data-package-id="ambient-context"] a').click();
-  await expect(page).toHaveURL(/#page-package-detail\?package=ambient-context$/);
+  await expect(page).toHaveURL(/#page-operational-value\?package=ambient-context$/);
+  await expect(page.getByRole('heading', { name: 'Value & outcomes', level: 1 })).toBeVisible();
+
+  await page.evaluate(() => {
+    window.location.hash = '#page-package-detail?package=ambient-context';
+  });
   await expect(page.getByRole('heading', { name: 'Ambient Context', level: 1 })).toBeVisible();
   await expect(page.locator('[data-page-mode]')).toHaveText('Review');
   await expect(page.locator('[data-nav-page-id="packages"]')).toHaveAttribute('aria-current', 'page');
@@ -1423,6 +1434,13 @@ test('workflow page template follows its JSON-declared route and renders attribu
               views: []
             },
             {
+              id: 'workflow-runtime',
+              kind: 'custom',
+              title: 'Workflow runtime',
+              route: { 'hash-query-parameter': 'workflow' },
+              views: []
+            },
+            {
               id: 'workflow-detail',
               kind: 'custom',
               title: 'Workflow',
@@ -1501,7 +1519,7 @@ test('workflow page template follows its JSON-declared route and renders attribu
   await expect(page.getByRole('heading', { level: 1 })).toHaveText('Debug ambient context workflow failure');
   await expect(page.locator('.outcome-meta a', { hasText: 'Ambient Context' })).toHaveAttribute(
     'href',
-    '#page-workflow-detail?workflow=githubnext%2Fcentral-agentic-ops%3A.github%2Fworkflows%2Fambient-context.md'
+    '#page-workflow-runtime?workflow=githubnext%2Fcentral-agentic-ops%3A.github%2Fworkflows%2Fambient-context.md'
   );
 });
 

@@ -4,9 +4,9 @@
 
 import { h } from '../dom.js';
 import { octicon } from '../octicons.js';
-import { findLink, renderExternalLink } from './link-content.js';
 import { renderReportList as renderSharedReportList } from './report-list.js';
 import { renderLinkTabs } from './tab-nav.js';
+import { renderWorkflowIdentity } from './workflow-identity.js';
 
 /**
  * @param {import('./ui-elements.js').ElementRenderContext} context
@@ -102,39 +102,6 @@ function renderWorkflowTabs(pageId, route) {
       { label: 'Reports', icon: 'issue', href: `#page-${pageId}${workflowQuery}`, current: true }
     ]
   });
-}
-
-/** @param {Record<string, unknown>} workflow */
-function renderWorkflowIdentity(workflow) {
-  const link = findLink(workflow, 'workflow-link');
-  const packageId = text(workflow.package);
-  const packageName = text(workflow['package-name']) || titleCase(packageId);
-  const role = text(workflow['workflow-role']) || 'unknown';
-  return h(
-    'section',
-    { className: 'workflow-identity', 'aria-label': 'Workflow identity' },
-    h(
-      'div',
-      null,
-      h(
-        'span',
-        { className: 'workflow-badges' },
-        h('span', { className: `workflow-badge workflow-badge-${role}` }, titleCase(role)),
-        packageId
-          ? h(
-            'a',
-            {
-              className: 'workflow-badge workflow-badge-package',
-              href: `#page-package-detail?package=${encodeURIComponent(packageId)}`
-            },
-            `Package · ${packageName}`
-          )
-          : null
-      ),
-      h('p', null, h('code', null, text(workflow.workflow)))
-    ),
-    link ? renderExternalLink(link) : null
-  );
 }
 
 /** @param {Array<Record<string, unknown>>} reports */
@@ -243,9 +210,4 @@ function rowsFor(sources, source) {
 /** @param {unknown} value */
 function text(value) {
   return value == null ? '' : String(value);
-}
-
-/** @param {string} value */
-function titleCase(value) {
-  return value.replaceAll('-', ' ').replace(/\b\w/g, (letter) => letter.toUpperCase());
 }

@@ -3,13 +3,29 @@ import { describe, expect, it } from 'vitest';
 import { renderDashboard } from '../../src/presenter.js';
 
 describe('linked text refactor behavior preservation', () => {
-  it('preserves workflow-topology and derived-link rendering for affected call sites', () => {
+  it('preserves derived links in declarative workflow inventory tables', () => {
     const document = {
       languageVersion: '0.1.0',
       dashboard: {
         id: 'workflow-topology-links-dashboard',
         title: 'Workflow Topology Links',
-        pages: [{ id: 'workflows', kind: /** @type {'built-in'} */ ('built-in'), page: 'workflows', title: 'Workflows' }]
+        pages: [
+          { id: 'workflows', kind: /** @type {'built-in'} */ ('built-in'), page: 'workflows', title: 'Workflows' },
+          {
+            id: 'repository-detail',
+            kind: /** @type {'custom'} */ ('custom'),
+            title: 'Repository',
+            route: { 'hash-query-parameter': 'repository' },
+            views: []
+          },
+          {
+            id: 'workflow-runtime',
+            kind: /** @type {'custom'} */ ('custom'),
+            title: 'Workflow runtime',
+            route: { 'hash-query-parameter': 'workflow' },
+            views: []
+          }
+        ]
       }
     };
 
@@ -35,10 +51,10 @@ describe('linked text refactor behavior preservation', () => {
       }
     });
 
-    expect(rendered.outerHTML).toContain('class="workflow-topology"');
-    expect(rendered.outerHTML).toContain('safe outputs only');
-    expect(rendered.outerHTML).toContain('href="https://github.com/githubnext/central-agentic-ops/blob/HEAD/.github/workflows/dependabot.yml"');
-    expect(rendered.outerHTML).toContain('href="https://github.com/github/target-service"');
-    expect(rendered.outerHTML).toContain('href="https://github.com/github/target-service/blob/HEAD/.github/workflows/ci.yml"');
+    expect(rendered.outerHTML).toContain('id="workflows-operation-package-workflows-heading"');
+    expect(rendered.outerHTML).toContain('id="workflows-repository-owned-workflows-heading"');
+    expect(rendered.outerHTML).toContain('href="#page-operational-value?package=dependabot"');
+    expect(rendered.outerHTML).toContain('href="#page-repository-detail?repository=github%2Ftarget-service"');
+    expect(rendered.outerHTML).toContain('href="#page-workflow-runtime?workflow=github%2Ftarget-service%3A.github%2Fworkflows%2Fci.yml"');
   });
 });

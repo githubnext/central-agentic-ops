@@ -16,6 +16,7 @@ import { renderFilterBar } from './components/filter-bar.js';
 import { deriveOverviewSources } from './overview-data.js';
 import { deriveRepositorySources } from './repository-data.js';
 import { deriveRuntimeSources } from './runtime-data.js';
+import { deriveWorkflowSources } from './workflow-data.js';
 
 /**
  * @typedef {{ availability: 'available'|'empty'|'unavailable', completeness: 'complete'|'partial'|'unknown', freshness: 'fresh'|'stale'|'unknown' }} DataState
@@ -127,7 +128,7 @@ export function renderDashboard(input) {
     : null;
   const sources = deriveWorkflowDashboardLinks(
     deriveRepositoryDashboardLinks(
-      deriveRuntimeSources(deriveRepositorySources(deriveOverviewSources(deriveEntityLinkSources(rawSources, githubUrlBase)))),
+      deriveRuntimeSources(deriveRepositorySources(deriveOverviewSources(deriveWorkflowSources(deriveEntityLinkSources(rawSources, githubUrlBase))))),
       pages
     ),
     pages
@@ -1329,8 +1330,8 @@ function deriveRepositoryDashboardLinks(sources, pages) {
  * @returns {Record<string, LogicalSourceInput>}
  */
 function deriveWorkflowDashboardLinks(sources, pages) {
-  const detailPage = pages.find((page) => page.kind === 'custom' && page.id === 'workflow-detail');
-  if (!detailPage) return sources;
+  const insightsPage = pages.find((page) => page.kind === 'custom' && page.id === 'workflow-runtime');
+  if (!insightsPage) return sources;
   const knownWorkflows = new Set((sources.workflows?.rows ?? [])
     .map(workflowDashboardIdentity)
     .filter((identity) => identity !== null));
@@ -1340,7 +1341,7 @@ function deriveWorkflowDashboardLinks(sources, pages) {
     {
       ...source,
       rows: Array.isArray(source?.rows)
-        ? source.rows.map((row) => deriveWorkflowDashboardLink(row, detailPage.id, knownWorkflows))
+        ? source.rows.map((row) => deriveWorkflowDashboardLink(row, insightsPage.id, knownWorkflows))
         : source?.rows
     }
   ]));
