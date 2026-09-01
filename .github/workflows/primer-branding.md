@@ -59,7 +59,7 @@ This repository contains a static dashboard renderer under `dashboard/site/`.
 - `dashboard/site/src/presenter.js` and `dashboard/site/src/components/` — generated UI markup
 - `dashboard/site/test/` — unit and browser coverage
 
-Build with `npm --prefix dashboard/site run build` and test with `npm --prefix dashboard/site test`.
+Use the complete dashboard validation suite listed in Step 3 after making changes.
 
 ## Instructions
 
