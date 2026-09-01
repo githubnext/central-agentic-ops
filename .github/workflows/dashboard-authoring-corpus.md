@@ -42,6 +42,7 @@ tools:
     - "*"
 skills:
   - .github/skills/dashboard-authoring
+  - .github/skills/generate-dashboard-ir
 safe-outputs:
   create-pull-request:
     title-prefix: "[dashboard-corpus] "
@@ -49,9 +50,9 @@ safe-outputs:
     draft: true
     if-no-changes: warn
     allowed-files:
-      - ".github/skills/dashboard-authoring/corpus/index.json"
-      - ".github/skills/dashboard-authoring/corpus/examples/*.json"
-      - ".github/skills/dashboard-authoring/corpus/examples/*.dashboard.yml"
+      - ".github/skills/generate-dashboard-ir/corpus/index.json"
+      - ".github/skills/generate-dashboard-ir/corpus/examples/*.json"
+      - ".github/skills/generate-dashboard-ir/corpus/examples/*.dashboard.yml"
   noop:
 features:
   gh-aw-detection: true
@@ -73,14 +74,15 @@ evals:
 
 # Dashboard Authoring Corpus
 
-Grow the dashboard-authoring skill's corpus by one validated example. Use the installed `dashboard-authoring` skill as the procedure and treat the Dashboard Language specification and validator as authoritative.
+Grow the generate-dashboard-ir skill's corpus by one validated example. Use the installed `dashboard-authoring` skill to define the workflow intent and operational-value contract, then use the installed `generate-dashboard-ir` skill for corpus creation and Dashboard Language generation. Treat the Dashboard Language specification and validator as authoritative.
 
 ## Context
 
 - Repository: `${{ github.repository }}`
 - Optional focus: `${{ inputs.focus }}`
-- Skill: `.github/skills/dashboard-authoring/SKILL.md`
-- Corpus index: `.github/skills/dashboard-authoring/corpus/index.json`
+- Intent skill: `.github/skills/dashboard-authoring/SKILL.md`
+- Dashboard IR skill: `.github/skills/generate-dashboard-ir/SKILL.md`
+- Corpus index: `.github/skills/generate-dashboard-ir/corpus/index.json`
 - Specification: `docs/dashboard-language-specification.md`
 - Validator: `dashboard/site/src/validator.js`
 
@@ -100,9 +102,7 @@ Use an attainment-only baseline with null value and cutoff. Synthetic tasks have
 
 ## Infer the dashboard
 
-Create a YAML serialization of a Dashboard Language document for the synthetic workflow. Dashboard Language has one YAML 1.2 data model; production `dashboard.json` is a strict JSON serialization of that same grammar, not a separate schema. Use the same canonical kebab-case vocabulary, types, defaults, and semantics in both forms. Use only canonical sources and fields defined by the specification. Scope every view to the synthetic workflow with a `workflow` filter. Include only views that help an operator understand activation, execution, required effects, actionable exceptions, or operational-value attainment.
-
-Keep the dashboard compact and deterministic. Do not add implementation-specific scripts, invented sources, measured values, or prose that claims the workflow has run.
+Use the installed `generate-dashboard-ir` skill with the synthetic task and operational-value contract as the user intent, plus the specification and validator from Context. Scope every view to the synthetic workflow with a `workflow` filter. Include only views that help an operator understand activation, execution, required effects, actionable exceptions, or operational-value attainment.
 
 ## Validate and publish
 

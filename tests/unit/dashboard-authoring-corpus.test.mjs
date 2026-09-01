@@ -4,7 +4,7 @@ import test from "node:test";
 
 const root = resolve(import.meta.dirname, "../..");
 
-test("dashboard-authoring corpus is indexed and valid", () => {
+test("generate-dashboard-ir corpus is indexed and valid", () => {
   execFileSync("npm", ["--prefix", "dashboard/site", "run", "validate:corpus"], {
     cwd: root,
     encoding: "utf8",

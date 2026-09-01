@@ -1263,17 +1263,36 @@ test("CAO dashboard reviewer checks successful documentation deployments", () =>
 
 test("dashboard authoring corpus workflow generates only validated training examples", () => {
   const source = workflow("dashboard-authoring-corpus.md");
+  const dashboardIrSkill = readFileSync(
+    join(root, ".github", "skills", "generate-dashboard-ir", "SKILL.md"),
+    "utf8",
+  );
+  const dashboardAuthoringSkill = readFileSync(
+    join(root, ".github", "skills", "dashboard-authoring", "SKILL.md"),
+    "utf8",
+  );
 
   assert.match(source, /^intent: Improve model reliability/m);
-  assert.match(source, /^skills:\n\s+- \.github\/skills\/dashboard-authoring$/m);
+  assert.match(
+    source,
+    /^skills:\n\s+- \.github\/skills\/dashboard-authoring\n\s+- \.github\/skills\/generate-dashboard-ir$/m,
+  );
+  assert.match(source, /Use the installed `generate-dashboard-ir` skill/);
   assert.match(source, /npm ci --prefix dashboard\/site --ignore-scripts/);
   assert.match(source, /npm --prefix dashboard\/site run validate:corpus/);
-  assert.match(source, /one YAML 1\.2 data model/);
-  assert.match(source, /production `dashboard\.json` is a strict JSON serialization of that same grammar, not a separate schema/);
   assert.match(source, /Scope every view to the synthetic workflow with a `workflow` filter/);
   assert.match(source, /Use an attainment-only baseline with null value and cutoff/);
-  assert.match(source, /create-pull-request:[\s\S]*?allowed-files:\n\s+- "\.github\/skills\/dashboard-authoring\/corpus\/index\.json"\n\s+- "\.github\/skills\/dashboard-authoring\/corpus\/examples\/\*\.json"\n\s+- "\.github\/skills\/dashboard-authoring\/corpus\/examples\/\*\.dashboard\.yml"/);
-  assert.doesNotMatch(source, /allowed-files:\n(?:\s+- .*\n)*\s+- "(?!\.github\/skills\/dashboard-authoring\/corpus\/)/);
+  assert.match(source, /create-pull-request:[\s\S]*?allowed-files:\n\s+- "\.github\/skills\/generate-dashboard-ir\/corpus\/index\.json"\n\s+- "\.github\/skills\/generate-dashboard-ir\/corpus\/examples\/\*\.json"\n\s+- "\.github\/skills\/generate-dashboard-ir\/corpus\/examples\/\*\.dashboard\.yml"/);
+  assert.doesNotMatch(source, /allowed-files:\n(?:\s+- .*\n)*\s+- "(?!\.github\/skills\/generate-dashboard-ir\/corpus\/)/);
+  assert.match(dashboardIrSkill, /^---\nname: generate-dashboard-ir\n/);
+  assert.match(dashboardIrSkill, /specification as the semantic authority/);
+  assert.match(dashboardIrSkill, /validator entry point as the syntax and structural validation authority/);
+  assert.match(dashboardIrSkill, /Do not introduce a new intermediate language/);
+  assert.match(dashboardIrSkill, /Return only the validated complete Dashboard Language YAML document/);
+  assert.match(dashboardAuthoringSkill, /Pass the intent and operational-value contract to `generate-dashboard-ir`/);
+  assert.doesNotMatch(dashboardAuthoringSkill, /Select only the Dashboard Language sources and fields/);
+  assert.doesNotMatch(dashboardAuthoringSkill, /corpus\/index\.json/);
+  assert.match(dashboardIrSkill, /## Corpus procedure/);
 });
 
 test("dashboard CI runs the package quality gates", () => {
