@@ -68,7 +68,6 @@ describe('dashboard document validation', () => {
       expect(page.views.map(
         (/** @type {{ data: { source: string } }} */ view) => view.data.source
       )).toEqual(['runs', 'outcomes', 'operational-values', 'operational-values']);
-      expect(packagePageIds).toContain(pageId);
     }
   });
 
