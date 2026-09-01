@@ -88,7 +88,7 @@ function renderWorkflowTabs(pageId, route) {
         label: 'Reports',
         icon: 'issue',
         href: `#page-workflow-detail${workflowQuery}`,
-        current: !showingRuns
+        current: pageId === 'workflow-detail'
       },
       {
         label: 'Runs',
