@@ -4,7 +4,6 @@
 
 import { h } from '../dom.js';
 import { octicon } from '../octicons.js';
-import { formatNumber } from '../view-formatters.js';
 import { findLink } from './link-content.js';
 import { renderPackagesView } from './packages-view.js';
 import { renderPackageNavigation } from './package-detail.js';
@@ -13,6 +12,7 @@ import { renderOutcomeDetail } from './outcome-detail.js';
 import { renderSectionHeading } from './ui-primitives.js';
 import { renderDefinitionList } from './view-chrome.js';
 import { renderWorkflowRuntime } from './workflow-runtime.js';
+import { renderAnomalyReadiness } from './anomaly-readiness.js';
 
 /**
  * @typedef {{
@@ -34,6 +34,7 @@ const ELEMENT_RENDERERS = new Map([
   ['domain-attention', renderDomainAttentionElement],
   ['summary-grid', renderSummaryGridElement],
   ['context-summary', renderContextSummaryElement],
+  ['anomaly-readiness', renderAnomalyReadinessElement],
   ['signal-list', renderSignalListElement],
   ['package-activity', ({ sources, pageId }) => renderPackagesView(sources, pageId)],
   ['package-detail', (context) => renderPackageNavigation(context, 'workflows')],
@@ -136,6 +137,13 @@ function renderContextSummaryElement(context) {
   );
 }
 
+/** @param {ElementRenderContext} context */
+function renderAnomalyReadinessElement(context) {
+  const sourceName = context.sourceNames[0];
+  const row = sourceName ? rowsFor(context, sourceName)[0] : undefined;
+  return row ? renderAnomalyReadiness(row) : null;
+}
+
 /** @param {Record<string, unknown>} row */
 function isContextSummaryRow(row) {
   return typeof row.label === 'string'
@@ -164,7 +172,6 @@ function renderSignalListElement(context) {
   return h(
     'div',
     { className: 'signal-list-region' },
-    h('p', { className: 'signal-count' }, `${formatNumber(rows.length)} signal${rows.length === 1 ? '' : 's'}`),
     context.description ? h('p', { className: 'signal-boundary-note' }, context.description) : null,
     h(
       'ol',

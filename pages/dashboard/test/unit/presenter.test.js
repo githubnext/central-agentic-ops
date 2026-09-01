@@ -359,6 +359,40 @@ describe('presenter built-in and custom pages', () => {
     expect(rendered.querySelector('[data-page-id="organizations"]')?.classList.contains('organizations-page')).toBe(false);
   });
 
+  it('collapses the sidebar to icons and restores the persisted display mode', () => {
+    localStorage.clear();
+    try {
+      const rendered = renderDashboard({
+        document: authoritativeDashboardDocument,
+        sources: {}
+      });
+      const toggle = /** @type {HTMLButtonElement | null} */ (rendered.querySelector('.sidebar-toggle'));
+      const shell = rendered.querySelector('.app-shell');
+      const overviewLink = rendered.querySelector('[data-nav-page-id="overview"]');
+
+      expect(toggle?.getAttribute('aria-label')).toBe('Collapse navigation');
+      expect(toggle?.getAttribute('aria-expanded')).toBe('true');
+      expect(overviewLink?.getAttribute('title')).toBe('Overview');
+
+      toggle?.click();
+
+      expect(shell?.classList.contains('sidebar-collapsed')).toBe(true);
+      expect(toggle?.getAttribute('aria-label')).toBe('Expand navigation');
+      expect(toggle?.getAttribute('aria-expanded')).toBe('false');
+      expect(toggle?.querySelector('.octicon-sidebar-expand')).not.toBeNull();
+      expect(localStorage.getItem('central-agentic-ops.dashboard.sidebar-collapsed')).toBe('true');
+
+      const restored = renderDashboard({
+        document: authoritativeDashboardDocument,
+        sources: {}
+      });
+      expect(restored.querySelector('.app-shell')?.classList.contains('sidebar-collapsed')).toBe(true);
+      expect(restored.querySelector('.sidebar-toggle')?.getAttribute('aria-label')).toBe('Expand navigation');
+    } finally {
+      localStorage.clear();
+    }
+  });
+
   it('renders filter bars for the Runtime, Security, and Value pages', () => {
     const rendered = renderDashboard({
       document: authoritativeDashboardDocument,
@@ -430,7 +464,16 @@ describe('presenter built-in and custom pages', () => {
     const dashboardPage = authoritativeDashboardDocument.dashboard.pages.find((/** @type {{ id: string }} */ candidate) => candidate.id === 'security');
     expect(dashboardPage).toMatchObject({ kind: 'custom' });
     expect(dashboardPage).not.toHaveProperty('page');
+    expect(dashboardPage.sections).toEqual(expect.arrayContaining([
+      expect.objectContaining({
+        id: 'operational-assurance',
+        'count-source': 'security-signals',
+        'count-label': 'signals'
+      })
+    ]));
     expect(rendered.querySelector('[data-nav-page-id="security"] .octicon-shield')).not.toBeNull();
+    expect(page?.querySelector('.layout-section-header > strong')?.textContent).toBe('3 signals');
+    expect(page?.querySelector('.signal-count')).toBeNull();
     expect(page?.querySelector('.summary-grid')?.textContent).toContain('Approval gates2');
     expect(page?.querySelector('.summary-grid')?.textContent).toContain('Explicit warnings1');
     expect(page?.querySelector('.summary-grid')?.textContent).toContain('Package integrity gaps1');

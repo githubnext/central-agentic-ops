@@ -13,6 +13,40 @@ const metadata = {
 };
 
 describe('UI elements', () => {
+  it('renders anomaly readiness as a reusable note widget', () => {
+    const rendered = renderUiElement('anomaly-readiness', {
+      pageId: 'runtime',
+      title: 'Statistical anomaly readiness',
+      sourceNames: ['runtime-anomaly-readiness'],
+      sources: {
+        'runtime-anomaly-readiness': {
+          source: 'runtime-anomaly-readiness',
+          rows: [{
+            icon: 'pulse',
+            title: 'Statistical anomalies · not evaluated',
+            detail: 'A representative historical baseline is unavailable.'
+          }],
+          metadata
+        }
+      },
+      contextDetails: [],
+      headingTag: 'h3'
+    });
+
+    expect(rendered?.getAttribute('role')).toBe('note');
+    expect(rendered?.querySelector('.octicon-pulse')).not.toBeNull();
+    expect(rendered?.textContent).toContain('Statistical anomalies · not evaluated');
+    expect(rendered?.textContent).toContain('A representative historical baseline is unavailable.');
+    expect(renderUiElement('anomaly-readiness', {
+      pageId: 'runtime',
+      title: 'Statistical anomaly readiness',
+      sourceNames: [],
+      sources: {},
+      contextDetails: [],
+      headingTag: 'h3'
+    })).toBeNull();
+  });
+
   it('allows same-document signal navigation and rejects non-fragment URLs', () => {
     const rendered = renderUiElement('signal-list', {
       pageId: 'runtime',

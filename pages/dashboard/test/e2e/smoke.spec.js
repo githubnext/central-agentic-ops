@@ -112,13 +112,13 @@ function buildPresenterModuleUrl() {
     .replace("'../dom.js'", JSON.stringify(domModuleUrl));
   const linkedTextModuleUrl = `data:text/javascript;charset=utf-8,${encodeURIComponent(linkedTextSource)}`;
 
-  const routeStateSource = readFileSync(new URL('../../src/components/route-state.js', import.meta.url), 'utf8')
+  const routeStateSource = readFileSync(new URL('../../src/components/route-empty-state.js', import.meta.url), 'utf8')
     .replace("'../dom.js'", JSON.stringify(domModuleUrl));
   const routeStateModuleUrl = `data:text/javascript;charset=utf-8,${encodeURIComponent(routeStateSource)}`;
 
   const packageDetailSource = readFileSync(new URL('../../src/components/package-detail.js', import.meta.url), 'utf8')
     .replace("'./tab-nav.js'", JSON.stringify(tabNavModuleUrl))
-    .replace("'./route-state.js'", JSON.stringify(routeStateModuleUrl));
+    .replace("'./route-empty-state.js'", JSON.stringify(routeStateModuleUrl));
   const packageDetailModuleUrl = `data:text/javascript;charset=utf-8,${encodeURIComponent(packageDetailSource)}`;
 
   const countFormattersSource = readFileSync(new URL('../../src/components/count-formatters.js', import.meta.url), 'utf8');
@@ -144,7 +144,7 @@ function buildPresenterModuleUrl() {
     .replace("'../octicons.js'", JSON.stringify(octiconsModuleUrl))
     .replace("'./tab-nav.js'", JSON.stringify(tabNavModuleUrl))
     .replace("'./workflow-identity.js'", JSON.stringify(workflowIdentityModuleUrl))
-    .replace("'./route-state.js'", JSON.stringify(routeStateModuleUrl));
+    .replace("'./route-empty-state.js'", JSON.stringify(routeStateModuleUrl));
   const workflowDetailModuleUrl = `data:text/javascript;charset=utf-8,${encodeURIComponent(workflowDetailSource)}`;
   const workflowRuntimeSource = readFileSync(new URL('../../src/components/workflow-runtime.js', import.meta.url), 'utf8')
     .replace("'../dom.js'", JSON.stringify(domModuleUrl))
@@ -158,7 +158,7 @@ function buildPresenterModuleUrl() {
     .replace("'./view-chrome.js'", JSON.stringify(viewChromeModuleUrl))
     .replace("'./workflow-identity.js'", JSON.stringify(workflowIdentityModuleUrl))
     .replace("'./tab-nav.js'", JSON.stringify(tabNavModuleUrl))
-    .replace("'./route-state.js'", JSON.stringify(routeStateModuleUrl));
+    .replace("'./route-empty-state.js'", JSON.stringify(routeStateModuleUrl));
   const workflowRuntimeModuleUrl = `data:text/javascript;charset=utf-8,${encodeURIComponent(workflowRuntimeSource)}`;
 
   const outcomeDetailSource = readFileSync(new URL('../../src/components/outcome-detail.js', import.meta.url), 'utf8')
@@ -168,13 +168,18 @@ function buildPresenterModuleUrl() {
     .replace("'./link-content.js'", JSON.stringify(linkContentModuleUrl))
     .replace("'./ui-primitives.js'", JSON.stringify(uiPrimitivesModuleUrl))
     .replace("'./view-chrome.js'", JSON.stringify(viewChromeModuleUrl))
-    .replace("'./route-state.js'", JSON.stringify(routeStateModuleUrl));
+    .replace("'./route-empty-state.js'", JSON.stringify(routeStateModuleUrl));
   const outcomeDetailModuleUrl = `data:text/javascript;charset=utf-8,${encodeURIComponent(outcomeDetailSource)}`;
 
   const runtimeDataSource = readFileSync(new URL('../../src/runtime-data.js', import.meta.url), 'utf8')
     .replace("'./components/count-formatters.js'", JSON.stringify(countFormattersModuleUrl))
     .replace("'./components/dispatch-type-classification.json'", JSON.stringify(dispatchTypeClassificationUrl));
   const runtimeDataModuleUrl = `data:text/javascript;charset=utf-8,${encodeURIComponent(runtimeDataSource)}`;
+
+  const anomalyReadinessSource = readFileSync(new URL('../../src/components/anomaly-readiness.js', import.meta.url), 'utf8')
+    .replace("'../dom.js'", JSON.stringify(domModuleUrl))
+    .replace("'../octicons.js'", JSON.stringify(octiconsModuleUrl));
+  const anomalyReadinessModuleUrl = `data:text/javascript;charset=utf-8,${encodeURIComponent(anomalyReadinessSource)}`;
 
   const uiElementsSource = readFileSync(new URL('../../src/components/ui-elements.js', import.meta.url), 'utf8')
     .replace("'../dom.js'", JSON.stringify(domModuleUrl))
@@ -188,7 +193,8 @@ function buildPresenterModuleUrl() {
     .replace("'./workflow-runtime.js'", JSON.stringify(workflowRuntimeModuleUrl))
     .replace("'./outcome-detail.js'", JSON.stringify(outcomeDetailModuleUrl))
     .replace("'./ui-primitives.js'", JSON.stringify(uiPrimitivesModuleUrl))
-    .replace("'./view-chrome.js'", JSON.stringify(viewChromeModuleUrl));
+    .replace("'./view-chrome.js'", JSON.stringify(viewChromeModuleUrl))
+    .replace("'./anomaly-readiness.js'", JSON.stringify(anomalyReadinessModuleUrl));
   const uiElementsModuleUrl = `data:text/javascript;charset=utf-8,${encodeURIComponent(uiElementsSource)}`;
 
   const dataViewSource = readFileSync(new URL('../../src/components/data-view.js', import.meta.url), 'utf8')
@@ -560,6 +566,84 @@ test('built-in repositories page keeps repository scope above the run metadata',
   expect(boxes[2].x).toBeGreaterThan(boxes[1].x);
   expect(boxes[0].x).toBeCloseTo(boxes[1].x, 0);
   expect(boxes[0].x + boxes[0].width).toBeCloseTo(boxes[2].x + boxes[2].width, 0);
+});
+
+test('pie charts match the report layout at medium viewport widths', async ({ page }) => {
+  const presenterModuleUrl = buildPresenterModuleUrl();
+  await page.setViewportSize({ width: 800, height: 900 });
+
+  await page.setContent(`
+    <div id="root"></div>
+    <script type="module">
+      import { renderDashboard } from ${JSON.stringify(presenterModuleUrl)};
+
+      const dashboardDocument = {
+        languageVersion: '0.1.0',
+        dashboard: {
+          id: 'pie-layout',
+          title: 'Pie Layout',
+          pages: [{
+            id: 'cost',
+            kind: 'custom',
+            title: 'Cost',
+            views: [{
+              id: 'repository-allocation',
+              title: 'AI Credit usage by AW repository',
+              description: 'Read-only usage reported by AW runs.',
+              data: { source: 'usage' },
+              mark: 'chart',
+              chart: 'pie',
+              encoding: {
+                x: { field: 'repository', type: 'nominal', title: 'Repository' },
+                y: { field: 'aic', type: 'quantitative', aggregate: 'sum', title: 'Total AIC' }
+              }
+            }]
+          }],
+          navigation: [{ label: 'Investigate', pages: ['cost'] }]
+        }
+      };
+      const sources = {
+        usage: {
+          source: 'usage',
+          rows: [
+            { repository: 'central-agentic-ops', aic: 5 },
+            { repository: 'service', aic: 3 }
+          ],
+          metadata: {
+            'source-id': 'pie-layout-fixture',
+            'source-kind': 'fixture',
+            'as-of': '2026-09-01T03:00:00Z',
+            'retrieved-at': '2026-09-01T03:01:00Z',
+            completeness: 'complete',
+            freshness: 'fresh',
+            availability: 'available'
+          }
+        }
+      };
+
+      document.querySelector('#root').append(renderDashboard({ document: dashboardDocument, sources }));
+    </script>
+  `);
+
+  const heading = page.getByRole('heading', { name: 'AI Credit usage by AW repository' });
+  const description = page.locator('.chart-view-pie > .view-description');
+  const layout = page.locator('.pie-chart-layout');
+  const chart = layout.locator('.pie-chart-widget');
+  const legend = layout.locator('.chart-legend-pie');
+  const [headingBox, descriptionBox, layoutBox, chartBox, legendBox] = await Promise.all(
+    [heading, description, layout, chart, legend].map((locator) => locator.boundingBox())
+  );
+
+  expect(headingBox).not.toBeNull();
+  expect(descriptionBox).not.toBeNull();
+  expect(layoutBox).not.toBeNull();
+  expect(chartBox).not.toBeNull();
+  expect(legendBox).not.toBeNull();
+  expect(layoutBox?.x).toBeCloseTo(headingBox?.x ?? 0, 0);
+  expect(layoutBox?.y).toBeGreaterThan((descriptionBox?.y ?? 0) + (descriptionBox?.height ?? 0));
+  expect(legendBox?.x).toBeGreaterThan((chartBox?.x ?? 0) + (chartBox?.width ?? 0));
+  expect((legendBox?.y ?? 0) + (legendBox?.height ?? 0) / 2)
+    .toBeCloseTo((chartBox?.y ?? 0) + (chartBox?.height ?? 0) / 2, 0);
 });
 
 test('DLS-PAGE-014 DLS-PAGE-015 built-in packages page renders report-style mode filters, AIC utilization, and run trends in browser', async ({ page }) => {
@@ -1967,4 +2051,42 @@ test('DLS-SAFE-004 runtime links with embedded credentials, ftp schemes, and bla
   await expect(page.locator('a[href^="ftp:"]').first()).toHaveCount(0);
   await expect(page.locator('body')).not.toContainText('Credentialed Run');
   await expect(page.locator('body')).not.toContainText('FTP Run');
+});
+
+test('desktop navigation collapses to an icon rail and expands back to text', async ({ page }) => {
+  const presenterModuleUrl = buildPresenterModuleUrl();
+  await page.setViewportSize({ width: 1200, height: 800 });
+  await page.setContent(`
+    <div id="root"></div>
+    <script type="module">
+      import { renderDashboard } from ${JSON.stringify(presenterModuleUrl)};
+      document.querySelector('#root').append(renderDashboard({
+        document: {
+          languageVersion: '0.1.0',
+          dashboard: {
+            id: 'sidebar-toggle-dashboard',
+            title: 'Sidebar Toggle',
+            pages: [
+              { id: 'overview', kind: 'custom', title: 'Overview', icon: 'home', views: [] },
+              { id: 'runs', kind: 'custom', title: 'Runs', icon: 'play', views: [] }
+            ]
+          }
+        },
+        sources: {}
+      }));
+    </script>
+  `);
+
+  const toggle = page.getByRole('button', { name: 'Collapse navigation' });
+  await expect(page.locator('.org-sidebar')).toHaveCSS('width', '232px');
+  await toggle.click();
+
+  await expect(page.locator('.app-shell')).toHaveClass(/sidebar-collapsed/);
+  await expect(page.locator('.org-sidebar')).toHaveCSS('width', '64px');
+  await expect(page.getByRole('button', { name: 'Expand navigation' })).toHaveAttribute('aria-expanded', 'false');
+  await expect(page.locator('.nav-label').first()).toBeHidden();
+
+  await page.getByRole('button', { name: 'Expand navigation' }).click();
+  await expect(page.locator('.app-shell')).not.toHaveClass(/sidebar-collapsed/);
+  await expect(page.locator('.nav-label').first()).toBeVisible();
 });

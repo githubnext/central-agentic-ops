@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import { describe, expect, it, vi } from 'vitest';
-import { createRouteView } from '../../src/components/route-state.js';
+import { createRouteView } from '../../src/components/route-empty-state.js';
 
 describe('createRouteView', () => {
   it('renders select, not-found, and matched states while updating route dataset', () => {

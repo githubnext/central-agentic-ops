@@ -193,6 +193,8 @@
             "title": "Needs attention",
             "description": "Execution controls, package integrity, and explicit output warnings.",
             "layout": "full",
+            "count-source": "security-signals",
+            "count-label": "signals",
             "views": [
               "security-summary",
               "security-signals"
@@ -1098,6 +1100,7 @@
             "count-source": "runtime-signals",
             "count-label": "signals",
             "views": [
+              "runtime-anomaly-readiness",
               "runtime-needs-attention"
             ]
           },
@@ -1114,6 +1117,18 @@
           }
         ],
         "views": [
+          {
+            "id": "runtime-anomaly-readiness",
+            "title": "Statistical anomaly readiness",
+            "data": {
+              "sources": [
+                "runtime-anomaly-readiness"
+              ]
+            },
+            "mark": "element",
+            "element": "anomaly-readiness",
+            "layout": "full"
+          },
           {
             "id": "runtime-needs-attention",
             "title": "Needs attention",

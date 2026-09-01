@@ -73,6 +73,7 @@ import { deriveWorkflowSources } from './workflow-data.js';
 const DEFAULT_GITHUB_URL_BASE = 'https://github.com';
 const REFRESH_CONTROL_DESCRIPTION = 'Reload the dashboard to refresh cached data';
 const REFRESH_WORKFLOW_DESCRIPTION = 'Open the dashboard workflow on GitHub Actions';
+const SIDEBAR_COLLAPSED_STORAGE_KEY = 'central-agentic-ops.dashboard.sidebar-collapsed';
 
 /** @type {Record<string, PresentableCustomPage>} */
 const BUILT_IN_PAGE_PAYLOADS = /** @type {Record<string, PresentableCustomPage>} */ (Object.fromEntries(
@@ -142,18 +143,20 @@ export function renderDashboard(input) {
   const sidebar = renderSidebar(pages, sidebarTitle, document.dashboard.navigation);
   const mainContent = renderMainContent(document, title, pages, sources, orgName, githubUrlBase, dashboardRepository);
 
+  const appShell = h(
+    'div',
+    { className: 'app-shell' },
+    sidebar,
+    mainContent
+  );
   const root = h(
     'div',
     { className: 'dashboard-root' },
     styleEl,
     skipLink,
-    h(
-      'div',
-      { className: 'app-shell' },
-      sidebar,
-      mainContent
-    )
+    appShell
   );
+  enableSidebarToggle(root);
   enableDashboardPageNavigation(root);
   return root;
 }
@@ -198,10 +201,25 @@ function renderSidebar(pages, title, navigation) {
     'aside',
     { className: 'org-sidebar', 'aria-label': 'Central Agentic Ops navigation' },
     h(
-      'a',
-      { className: 'sidebar-brand', href: firstPageId ? `#page-${firstPageId}` : '#main-content' },
-      agenticWorkflowMark(),
-      h('span', null, title)
+      'div',
+      { className: 'sidebar-header' },
+      h(
+        'a',
+        { className: 'sidebar-brand', href: firstPageId ? `#page-${firstPageId}` : '#main-content', title },
+        agenticWorkflowMark(),
+        h('span', null, title)
+      ),
+      h(
+        'button',
+        {
+          className: 'sidebar-toggle',
+          type: 'button',
+          'aria-label': 'Collapse navigation',
+          'aria-expanded': 'true',
+          title: 'Collapse navigation'
+        },
+        octicon('sidebar-collapse')
+      )
     ),
     h(
       'nav',
@@ -235,11 +253,51 @@ function renderNavItem(page, isActive) {
       href: `#page-${page.id}`,
       className: `nav-item${isActive ? ' active' : ''}`,
       'aria-current': isActive ? 'page' : undefined,
+      'aria-label': title,
+      title,
       'data-nav-page-id': page.id
     },
     octicon(iconName),
     h('span', { className: 'nav-label' }, title)
   );
+}
+
+/**
+ * Restores and persists the desktop sidebar display mode.
+ * @param {HTMLElement} root
+ */
+function enableSidebarToggle(root) {
+  const appShell = root.querySelector('.app-shell');
+  const toggle = root.querySelector('.sidebar-toggle');
+  if (!(appShell instanceof HTMLElement) || !(toggle instanceof HTMLButtonElement)) return;
+
+  /** @param {boolean} collapsed */
+  const setCollapsed = (collapsed) => {
+    appShell.classList.toggle('sidebar-collapsed', collapsed);
+    const label = collapsed ? 'Expand navigation' : 'Collapse navigation';
+    toggle.setAttribute('aria-label', label);
+    toggle.setAttribute('aria-expanded', String(!collapsed));
+    toggle.setAttribute('title', label);
+    toggle.replaceChildren(octicon(collapsed ? 'sidebar-expand' : 'sidebar-collapse'));
+  };
+
+  let collapsed = false;
+  try {
+    collapsed = globalThis.localStorage?.getItem(SIDEBAR_COLLAPSED_STORAGE_KEY) === 'true';
+  } catch {
+    // Storage can be unavailable in embedded or privacy-restricted contexts.
+  }
+  setCollapsed(collapsed);
+
+  toggle.addEventListener('click', () => {
+    collapsed = !collapsed;
+    setCollapsed(collapsed);
+    try {
+      globalThis.localStorage?.setItem(SIDEBAR_COLLAPSED_STORAGE_KEY, String(collapsed));
+    } catch {
+      // The display mode still works for the current page when storage is unavailable.
+    }
+  });
 }
 
 /**

@@ -8,7 +8,7 @@ import { renderModeBadge, renderStatusBadge } from './badge.js';
 import { findLink, renderExternalLink, resolveTitleLink } from './link-content.js';
 import { formatUtcDateTime } from './ui-primitives.js';
 import { renderMetadataSection } from './view-chrome.js';
-import { createRouteView } from './route-state.js';
+import { createRouteView } from './route-empty-state.js';
 
 const ALLOWED_MARKDOWN_TAGS = new Set([
   'A', 'BLOCKQUOTE', 'BR', 'CODE', 'DEL', 'DETAILS', 'DIV', 'EM',

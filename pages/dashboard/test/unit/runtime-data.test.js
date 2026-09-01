@@ -36,9 +36,13 @@ describe('runtime data', () => {
       'Run failures',
       'Approval gate',
       'Evidence gap',
-      'Evidence gap',
-      'Evaluation boundary'
+      'Evidence gap'
     ]);
+    expect(sources['runtime-anomaly-readiness'].rows).toEqual([{
+      icon: 'pulse',
+      title: 'Statistical anomalies · not evaluated',
+      detail: 'The current window does not provide a representative historical baseline. Direct evidence remains visible without inferred anomaly labels.'
+    }]);
     expect(sources['runtime-signals'].rows[0]['navigation-href']).toBe(
       '#page-workflow-runtime?workflow=githubnext%2Fcentral-agentic-ops%3A.github%2Fworkflows%2Fworker.md'
     );
