@@ -189,6 +189,18 @@ describe('repositories view', () => {
   });
 
   it('derives route-scoped repository detail data for generic views', () => {
+    const repositoryPage = dashboard.dashboard.pages.find(
+      (/** @type {{ id: string }} */ page) => page.id === 'repository-detail'
+    );
+    const workflowsView = repositoryPage.views.find(
+      (/** @type {{ id: string }} */ view) => view.id === 'repository-authored-workflows'
+    );
+    expect(workflowsView).toMatchObject({
+      mark: 'table',
+      controls: 'interactive',
+      'column-summaries': true
+    });
+
     const sourceInputs = sources();
     sourceInputs.workflows.rows[0] = {
       ...sourceInputs.workflows.rows[0],
