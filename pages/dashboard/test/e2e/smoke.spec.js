@@ -1994,10 +1994,11 @@ test('desktop navigation collapses to an icon rail and expands back to text', as
   `);
 
   const toggle = page.getByRole('button', { name: 'Collapse navigation' });
-  await expect(page.locator('.app-shell')).toHaveCSS('grid-template-columns', '232px 968px');
+  await expect(page.locator('.org-sidebar')).toHaveCSS('width', '232px');
   await toggle.click();
 
   await expect(page.locator('.app-shell')).toHaveClass(/sidebar-collapsed/);
+  await expect(page.locator('.org-sidebar')).toHaveCSS('width', '64px');
   await expect(page.getByRole('button', { name: 'Expand navigation' })).toHaveAttribute('aria-expanded', 'false');
   await expect(page.locator('.nav-label').first()).toBeHidden();
 
