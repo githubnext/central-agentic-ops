@@ -1,5 +1,6 @@
 ---
 import StarlightPage from "@astrojs/starlight/components/StarlightPage.astro";
+import PackageReadmeContent from "../../components/PackageReadmeContent.astro";
 import { catalogEntries } from "../../lib/catalog";
 
 export function getStaticPaths() {
@@ -41,7 +42,9 @@ const ReadmeContent = entry.ReadmeContent;
       <section class="package-guide" aria-labelledby="package-guide">
         <h2 id="package-guide">Package guide</h2>
         <div class="package-readme">
-          <ReadmeContent />
+          <PackageReadmeContent>
+            <ReadmeContent />
+          </PackageReadmeContent>
         </div>
       </section>
     ) : (
@@ -93,11 +96,13 @@ const ReadmeContent = entry.ReadmeContent;
     margin-block-start: 2.5rem;
   }
 
-  .package-inventory ul {
-    padding-inline-start: 1.25rem;
+  .package-guide :global(pre),
+  .install-package pre {
+    max-width: 100%;
+    overflow-x: auto;
   }
 
-  .package-readme :global(h1) {
-    display: none;
+  .package-inventory ul {
+    padding-inline-start: 1.25rem;
   }
 </style>

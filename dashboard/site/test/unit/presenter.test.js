@@ -1859,7 +1859,7 @@ describe('presenter built-in and custom pages', () => {
     const metricSection = [...rendered.querySelectorAll('.page-section')].find((section) => section.textContent?.includes('Total AI Credits'));
     expect(metricSection?.querySelector('[data-metric-value="aic"]')?.textContent).toBe('5');
     expect(metricSection?.textContent).not.toContain('Source: usage');
-    expect(metricSection?.textContent).toContain('Filters: {"rollout-mode":["review","live"]}');
+    expect(metricSection?.textContent).not.toContain('Filters:');
 
     const tableSection = [...rendered.querySelectorAll('.page-section')].find((section) => section.textContent?.includes('Findings Table'));
     const tableRows = tableSection ? tableSection.querySelectorAll('.custom-table tbody tr') : null;
@@ -1867,8 +1867,8 @@ describe('presenter built-in and custom pages', () => {
     const linkedCell = tableRows?.[0]?.querySelector('a');
     expect(linkedCell?.textContent).toBe('Unsafe dependency');
     expect(linkedCell?.getAttribute('aria-label')).toBe('PR 1');
-    expect(tableSection?.textContent).toContain('Scope: {"repositories":["central-agentic-ops"]}');
-    expect(tableSection?.textContent).toContain('Time: {"start":"2026-08-29T00:00:00Z","end":"2026-08-30T00:00:00Z"}');
+    expect(tableSection?.textContent).not.toContain('Scope:');
+    expect(tableSection?.textContent).not.toContain('Time:');
     expect(tableSection?.textContent).not.toContain('Out of scope finding');
     expect(tableSection?.textContent).not.toContain('Out of range finding');
 

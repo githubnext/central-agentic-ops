@@ -1,0 +1,6 @@
+---
+const content = await Astro.slots.render("default");
+const contentWithoutTitle = content.replace(/<h1\b[^>]*>[\s\S]*?<\/h1>/, "");
+---
+
+<Fragment set:html={contentWithoutTitle} />

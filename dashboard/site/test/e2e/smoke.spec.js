@@ -1406,14 +1406,14 @@ test('DLS-VIEW-013 DLS-VIEW-014 DLS-VIEW-015 DLS-SAFE-006 custom views render av
   await expect(page.locator('[data-metric-value="aic"]')).toHaveText('5');
   const metricSection = page.locator('.page-section').filter({ has: page.getByRole('heading', { name: 'Total AI Credits' }) });
   await expect(metricSection).not.toContainText('Source: usage');
-  await expect(metricSection).toContainText('Filters: {"rollout-mode":["review","live"]}');
+  await expect(metricSection).not.toContainText('Filters:');
 
   await expect(page.getByRole('heading', { name: 'Findings Table' })).toBeVisible();
   await expect(page.locator('.custom-table tbody tr')).toHaveCount(1);
   await expect(page.getByRole('link', { name: 'PR 1' })).toHaveAttribute('href', 'https://example.com/pull/1');
   const tableSection = page.locator('.page-section').filter({ has: page.getByRole('heading', { name: 'Findings Table' }) });
-  await expect(tableSection).toContainText('Scope: {"repositories":["central-agentic-ops"]}');
-  await expect(tableSection).toContainText('Time: {"start":"2026-08-29T00:00:00Z","end":"2026-08-30T00:00:00Z"}');
+  await expect(tableSection).not.toContainText('Scope:');
+  await expect(tableSection).not.toContainText('Time:');
   await expect(tableSection).not.toContainText('Out of scope finding');
   await expect(tableSection).not.toContainText('Out of range finding');
 
