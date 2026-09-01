@@ -82,7 +82,6 @@ Evidence paths below are relative to:
 - `src/components/ui-primitives.js` — section headings, vital statistics, and UTC date-time presentation.
 - `src/components/view-chrome.js` — reusable section, metadata, summary, context, state, and provenance chrome.
 - `src/components/workflow-badges.js` — shared workflow role and package-membership badge strips for workflow identity and repository inventory views.
-- `src/components/route-state.js` — shared route-scoped select/not-found/unavailable state wrapper for detail views.
 - `src/workflow-data.js` — package and standalone workflow inventory sources for declarative topology views.
 - `src/view-formatters.js` — numeric and aggregate value formatting.
 
@@ -166,25 +165,12 @@ Evidence paths below are relative to:
 - Reusable presentation: generic metric, chart, table, link, badge, empty-state, and route-aware data-view behavior now own repository detail presentation.
 - Preserved evidence boundaries: authored workflow identity, registration state, package attribution, observation time, workflow links, and the repository Actions link remain explicit.
 
-## 2026-09-01 route-state entry
+## 2026-09-01 workflow reports entry
 
-- Extraction: `src/components/route-state.js` for shared route-scoped select, not-found, and unavailable state handling.
-- Duplication evidence and call sites collapsed:
-  - `src/components/package-detail.js` duplicated route listeners, dataset updates, and empty-state switching for package workflow and package report detail routes.
-  - `src/components/workflow-detail.js` duplicated the same route-scoped state wrapper for workflow report details.
-  - `src/components/workflow-runtime.js` duplicated the same route-scoped state wrapper for workflow runtime details.
-  - `src/components/outcome-detail.js` duplicated the same route-scoped state wrapper for outcome details.
-- Behavior-preservation evidence:
-  - Preserved workflow-detail select/not-found behavior and route dataset updates through unchanged assertions in `test/unit/workflow-detail.test.js`.
-  - Preserved route-view rendering contract by keeping `data-route-view`, `data-route-parameter`, and per-route dataset fields intact across all replaced call sites.
-  - Added focused coverage in `test/unit/route-state.test.js` for select, not-found, matched, unavailable, and ignored-event states.
-- Quality gates and proof:
-  - Rendered-output proof for affected pages is covered by unchanged route-detail assertions plus the new shared helper tests before and after replacing all identified wrappers.
-  - Ran `npm install`, `npm run typecheck`, `npm run lint`, `npm test`, and `node ./scripts/build.mjs` from `pages/dashboard/`; all passed.
-  - Browser snapshot comparison remained blocked in-session because Playwright browser tools were not exposed here.
-- Next candidates:
-  - Shared static table-section wrapper across `src/components/packages-view.js`, report list table containers, and custom table/chart table regions.
-  - Shared workflow/package/repository detail tab chrome across `src/components/package-detail.js`, `src/components/workflow-detail.js`, and `src/components/workflow-runtime.js`.
-  - Shared route-breadcrumb allocation helper across `src/components/package-detail.js`, `src/components/workflow-detail.js`, `src/components/workflow-runtime.js`, and `src/components/outcome-detail.js`.
+- Investigation: selected workflow reports as the smallest remaining route-scoped JavaScript-only catalog that could use generic Dashboard Language marks.
+- Declarative specification: split workflow identity chrome from a JSON-defined report table with route binding, columns, displays, links, sorting, filtering, and empty-state copy.
+- JSON-shaped data: `workflow-data.js` now emits route-keyed `workflow-reports` rows from retained durable-output evidence.
+- Reusable presentation: the shared table, status badge, mode badge, temporal cell, filter, sorting, summary, empty-state, and durable-output link components now own report presentation.
+- Preserved evidence boundaries: only reports attributed to the selected runtime repository and authored workflow are shown, and details remain linked through retained source evidence.
 
 Run-by-run history was removed during compaction; milestones, unresolved questions, current inventory, blockers, and actionable parity work remain above.

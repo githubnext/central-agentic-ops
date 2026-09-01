@@ -41,7 +41,7 @@ export const MAX_ESSENTIAL_VIEWS_PER_PAGE = 4;
 export const VIEW_ENCODING_KEYS = ['value', 'columns', 'x', 'y', 'color', 'href'];
 export const FIELD_DEFINITION_KEYS = ['field', 'type', 'aggregate', 'time-unit', 'title', 'as', 'display', 'unit'];
 export const FIELD_TYPE_VALUES = ['nominal', 'ordinal', 'quantitative', 'temporal'];
-export const FIELD_DISPLAY_VALUES = ['text', 'status', 'grader-status', 'mode', 'active-state', 'label', 'digest'];
+export const FIELD_DISPLAY_VALUES = ['text', 'status', 'grader-status', 'mode', 'active-state', 'label', 'digest', 'outcome-link'];
 export const AGGREGATE_VALUES = ['count', 'distinct-count', 'sum', 'mean', 'min', 'max', 'none'];
 export const TIME_UNIT_VALUES = ['hour', 'day', 'week', 'month'];
 export const LINK_RELATION_VALUES = [
@@ -267,7 +267,8 @@ export const SOURCE_VALUES = [
   'repository-activity',
   'repository-detail-summary',
   'repository-workflow-status',
-  'repository-workflows'
+  'repository-workflows',
+  'workflow-reports'
 ];
 
 export const SOURCE_FIELDS = {
@@ -306,6 +307,7 @@ export const SOURCE_FIELDS = {
   'repository-detail-summary': ['repository', 'workflows', 'latest-update', 'external-link'],
   'repository-workflow-status': ['repository', 'status', 'workflows'],
   'repository-workflows': ['repository', 'workflow', 'workflow-name', 'workflow-role', 'package-name', 'workflow-active', 'observed-at', 'workflow-link'],
+  'workflow-reports': ['workflow-route', 'safe-output', 'outcome-title', 'outcome-summary', 'outcome-status', 'rollout-mode', 'outcome-category', 'observed-at', 'external-link'],
   'workflow-topology-summary': ['label', 'value'],
   'packaged-workflows': ['package', 'package-name', 'repository', 'workflow', 'workflow-name', 'workflow-role', 'rollout-mode', 'workflow-active', 'package-link', 'repository-link', 'workflow-link'],
   'standalone-workflows': ['repository', 'workflow', 'workflow-name', 'rollout-mode', 'workflow-active', 'repository-link', 'workflow-link']
@@ -355,7 +357,8 @@ export const SOURCE_ENTITY_IDENTIFIER_FIELDS = {
   'repository-activity': ['repository'],
   'repository-detail-summary': ['repository'],
   'repository-workflow-status': ['repository', 'status'],
-  'repository-workflows': ['repository', 'workflow']
+  'repository-workflows': ['repository', 'workflow'],
+  'workflow-reports': ['workflow-route', 'safe-output']
 };
 
 export const TEMPORAL_FIELD_NAMES = [
