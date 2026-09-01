@@ -2,6 +2,8 @@
  * Derived repository sources for generic JSON-selected dashboard rendering.
  */
 
+import { formatPercent } from './view-formatters.js';
+
 const FAILURE_CONCLUSIONS = new Set(['failure', 'startup-failure', 'timed-out']);
 
 /**
@@ -273,10 +275,6 @@ function formatCount(value) {
 }
 
 /** @param {number} value */
-function formatPercent(value) {
-  return new Intl.NumberFormat('en', { style: 'percent', maximumFractionDigits: 1 }).format(value);
-}
-
 /** @param {import('./presenter.js').SourceMetadata | undefined} metadata */
 function coverageHours(metadata) {
   const start = Date.parse(metadata?.['coverage-start'] ?? '');

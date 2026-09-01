@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { formatAggregateValue, formatNumber, renderTemplate, resolveThresholdStatus, toNumber } from '../../src/view-formatters.js';
+import { formatAggregateValue, formatNumber, formatPercent, renderTemplate, resolveThresholdStatus, toNumber } from '../../src/view-formatters.js';
 
 /**
  * @param {unknown} value
@@ -48,6 +48,13 @@ describe('view formatter helpers', () => {
       symbol: 'AIC',
       significant: 1
     })).toBe('3 AIC');
+  });
+
+  it('formats a 0-1 ratio as a locale percentage string', () => {
+    expect(formatPercent(0.5)).toBe('50%');
+    expect(formatPercent(0.256)).toBe('25.6%');
+    expect(formatPercent(0)).toBe('0%');
+    expect(formatPercent(1)).toBe('100%');
   });
 
   it('renders JSON-configured copy templates with plain, suffix, and word substitutions', () => {

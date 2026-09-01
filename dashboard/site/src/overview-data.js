@@ -2,7 +2,7 @@
  * Derived overview sources for generic JSON-selected dashboard rendering.
  */
 
-import { formatNumber } from './view-formatters.js';
+import { formatNumber, formatPercent } from './view-formatters.js';
 import { classifyUtilizationRatio, isApprovalConclusion, isFailureConclusion } from './components/run-classification.js';
 import { buildAttentionItems } from './components/attention-rules.js';
 
@@ -1001,10 +1001,6 @@ function sourceWindowLabel(source) {
  * @param {number} value
  * @returns {string}
  */
-function formatPercent(value) {
-  return new Intl.NumberFormat('en', { style: 'percent', maximumFractionDigits: 1 }).format(value);
-}
-
 /**
  * @param {string} value
  * @returns {string}
