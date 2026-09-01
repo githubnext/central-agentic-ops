@@ -322,6 +322,7 @@ function renderMainContent(document, title, pages, sources, orgName, githubUrlBa
   const initialPage = pages[0];
   const initialPageTitle = initialPage ? getPageTitle(initialPage) : '';
   const initialPageDescription = initialPage?.description;
+  const initialPageHref = initialPage ? `#page-${encodeURIComponent(initialPage.id)}` : '#main-content';
   const latestRetrieval = latestRetrievedAt(sources);
   const units = isPlainObject(document.dashboard.units) ? document.dashboard.units : {};
   return h(
@@ -333,8 +334,8 @@ function renderMainContent(document, title, pages, sources, orgName, githubUrlBa
       h(
         'div',
         { className: 'shell' },
-        h('a', { href: '#/', 'data-breadcrumb-root': '' }, orgName),
-        h('a', { href: '#/dashboard', 'data-breadcrumb-dashboard': '' }, title),
+        h('a', { href: `${githubUrlBase}/${orgName}`, 'data-breadcrumb-root': '' }, orgName),
+        h('a', { href: initialPageHref, 'data-breadcrumb-dashboard': '' }, title),
         h('span', { 'data-breadcrumb-page': '' }, initialPageTitle),
         h(
           'div',
