@@ -806,47 +806,6 @@ function renderCustomView(pageId, view, index, sources, units, headingTag = 'h3'
     contextDetails.push(`Scope: ${JSON.stringify(view.data.scope)}`);
   }
 
-  /**
-   * @param {string} pageId
-   * @param {Record<string, any>} view
-   * @param {number} index
-   * @param {Record<string, LogicalSourceInput>} sources
-   * @param {Record<string, { name: string, symbol: string, significant: number }>} units
-   * @param {'h3'|'h4'} headingTag
-   * @param {string} routeParameter
-   */
-  function renderRouteScopedDataView(pageId, view, index, sources, units, headingTag, routeParameter) {
-    const sourceName = typeof view.data?.source === 'string' ? view.data.source : '';
-    const routeField = String(view.data?.['route-field'] ?? '');
-    const root = h('div', { 'data-route-view': '', 'data-route-parameter': routeParameter });
-    const data = { ...view.data };
-    delete data['route-field'];
-    const scopedView = { ...view, data };
-    /** @param {unknown} routeValue */
-    const render = (routeValue) => {
-      const selected = typeof routeValue === 'string' ? routeValue.trim() : '';
-      const source = sources[sourceName];
-      const scopedSources = source && Array.isArray(source.rows)
-        ? {
-            ...sources,
-            [sourceName]: {
-              ...source,
-              rows: source.rows.filter((row) => (
-                selected.length > 0
-                && String(row[routeField] ?? '').toLowerCase() === selected.toLowerCase()
-              ))
-            }
-          }
-        : sources;
-      root.replaceChildren(renderCustomView(pageId, scopedView, index, scopedSources, units, headingTag));
-    };
-    root.addEventListener('dashboard-route-change', (event) => {
-      if (!(event instanceof CustomEvent) || event.detail?.parameter !== routeParameter) return;
-      render(event.detail.value);
-    });
-    render('');
-    return root;
-  }
   if (isPlainObject(view.data?.time) && Object.keys(view.data.time).length > 0) {
     contextDetails.push(`Time: ${JSON.stringify(view.data.time)}`);
   }
@@ -898,6 +857,48 @@ function renderCustomView(pageId, view, index, sources, units, headingTag = 'h3'
   if (rendered) return rendered;
 
   return renderCustomViewState(pageId, title, sourceName, 'unavailable', [...contextDetails, 'Unsupported view mark.'], headingTag);
+}
+
+/**
+ * @param {string} pageId
+ * @param {Record<string, any>} view
+ * @param {number} index
+ * @param {Record<string, LogicalSourceInput>} sources
+ * @param {Record<string, { name: string, symbol: string, significant: number }>} units
+ * @param {'h3'|'h4'} headingTag
+ * @param {string} routeParameter
+ */
+function renderRouteScopedDataView(pageId, view, index, sources, units, headingTag, routeParameter) {
+  const sourceName = typeof view.data?.source === 'string' ? view.data.source : '';
+  const routeField = String(view.data?.['route-field'] ?? '');
+  const root = h('div', { 'data-route-view': '', 'data-route-parameter': routeParameter });
+  const data = { ...view.data };
+  delete data['route-field'];
+  const scopedView = { ...view, data };
+  /** @param {unknown} routeValue */
+  const render = (routeValue) => {
+    const selected = typeof routeValue === 'string' ? routeValue.trim() : '';
+    const source = sources[sourceName];
+    const scopedSources = source && Array.isArray(source.rows)
+      ? {
+          ...sources,
+          [sourceName]: {
+            ...source,
+            rows: source.rows.filter((row) => (
+              selected.length > 0
+              && String(row[routeField] ?? '').toLowerCase() === selected.toLowerCase()
+            ))
+          }
+        }
+      : sources;
+    root.replaceChildren(renderCustomView(pageId, scopedView, index, scopedSources, units, headingTag));
+  };
+  root.addEventListener('dashboard-route-change', (event) => {
+    if (!(event instanceof CustomEvent) || event.detail?.parameter !== routeParameter) return;
+    render(event.detail.value);
+  });
+  render('');
+  return root;
 }
 
 /**
