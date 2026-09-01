@@ -1,6 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
 import { readCachedSources, writeCachedSources } from '../../src/source-cache.js';
 
+/** @param {unknown} initialValue */
 function indexedDbWithValue(initialValue) {
   let value = initialValue;
   const close = vi.fn();
@@ -18,21 +19,22 @@ function indexedDbWithValue(initialValue) {
     objectStoreNames: { contains: () => true },
     transaction: vi.fn(() => ({ objectStore: () => objectStore }))
   };
-  const indexedDB = {
+  const indexedDB = /** @type {IDBFactory} */ (/** @type {unknown} */ ({
     open: vi.fn(() => requestFor(() => database))
-  };
+  }));
   return { indexedDB, database, objectStore, close, value: () => value };
 }
 
+/** @param {() => unknown} readValue */
 function requestFor(readValue) {
-  const request = {
+  const request = /** @type {any} */ ({
     error: null,
     result: undefined,
     onsuccess: null,
     onerror: null,
     onupgradeneeded: null,
     onblocked: null
-  };
+  });
   queueMicrotask(() => {
     request.result = readValue();
     request.onsuccess?.();
