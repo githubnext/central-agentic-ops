@@ -114,4 +114,31 @@ describe('data view renderer', () => {
     expect(rendered?.querySelector('input[type="search"]')).not.toBeNull();
     expect(rendered?.querySelector('.table-summary-row')).toBeNull();
   });
+
+  it('preserves complete output evidence while marking it for visual ellipsis', () => {
+    const evidence = 'Workflow failure evidence with complete diagnostic context';
+    const rendered = renderDataView('table', {
+      pageId: 'security',
+      title: 'Output assurance records',
+      view: {
+        mark: 'table',
+        encoding: {
+          columns: [{ field: 'finding-summary', type: 'nominal', display: 'outcome-link' }]
+        }
+      },
+      sourceName: 'findings',
+      rows: [{ 'finding-summary': evidence, 'safe-output': 'output-42' }],
+      metadata,
+      contextDetails: [],
+      headingTag: 'h3',
+      prepareTableRows: (rows) => rows,
+      buildChartPoints: () => [],
+      prepareChartPoints: () => [],
+      toText: String
+    });
+
+    const output = rendered?.querySelector('.table-output-evidence');
+    expect(output?.textContent).toBe(evidence);
+    expect(output?.querySelector('a')?.getAttribute('title')).toBe(evidence);
+  });
 });
