@@ -1419,21 +1419,13 @@ test('DLS-SAFE-007 DLS-SAFE-008 keyboard navigation moves across labeled page se
           title: 'Runs Dashboard',
           pages: [
             {
-              id: 'runs',
-              kind: 'built-in',
-              page: 'runs',
-              title: 'Runs',
-              definition: {
-                'data-state': {
-                  availability: true,
-                  completeness: true,
-                  freshness: true
-                },
-                views: [
-                  { id: 'runs-source', data: { source: 'runs' } },
-                  { id: 'outcomes-source', data: { source: 'outcomes' } }
-                ]
-              }
+              id: 'keyboard-navigation',
+              kind: 'custom',
+              title: 'Keyboard Navigation',
+              views: [
+                { id: 'runs-source', data: { source: 'runs' } },
+                { id: 'outcomes-source', data: { source: 'outcomes' } }
+              ]
             }
           ]
         }
@@ -1496,10 +1488,10 @@ test('DLS-SAFE-007 DLS-SAFE-008 keyboard navigation moves across labeled page se
     </script>
   `);
 
-  const sections = page.locator('[data-page-id="runs"] .page-section');
+  const sections = page.locator('[data-page-id="keyboard-navigation"] .page-section');
   await expect(sections).toHaveCount(2);
-  await expect(page.locator('#runs-runs-runs-source-heading')).toHaveText('Runs Runs Source');
-  await expect(page.locator('#runs-runs-outcomes-source-heading')).toHaveText('Runs Outcomes Source');
+  await expect(page.locator('#keyboard-navigation-runs-source-heading')).toHaveText('Runs Source');
+  await expect(page.locator('#keyboard-navigation-outcomes-source-heading')).toHaveText('Outcomes Source');
 
   await sections.nth(0).focus();
   await page.keyboard.press('ArrowDown');

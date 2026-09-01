@@ -1279,6 +1279,9 @@ describe('presenter built-in and custom pages', () => {
       ))).toBe(true);
     }
 
+    const runsPage = pages.find((/** @type {{ page: string }} */ page) => page.page === 'runs');
+    expect(runsPage?.definition.views.map((/** @type {{ data: { source: string } }} */ view) => view.data.source)).toEqual(['runs']);
+
     const repositoriesPage = pages.find((/** @type {{ page: string }} */ page) => page.page === 'repositories');
     expect(repositoriesPage?.definition.views).toMatchObject([
       {
@@ -1419,11 +1422,8 @@ describe('presenter built-in and custom pages', () => {
     });
 
     const headings = [...rendered.querySelectorAll('[data-page-id="runs"] .page-section h3')].map((element) => element.textContent);
-    expect(headings).toEqual([
-      'Runs Runs Source',
-      'Runs Outcomes Source'
-    ]);
-    expect(rendered.querySelectorAll('[data-page-id="runs"] .custom-table')).toHaveLength(2);
+    expect(headings).toEqual(['Runs Runs Source']);
+    expect(rendered.querySelectorAll('[data-page-id="runs"] .custom-table')).toHaveLength(1);
     expect(rendered.querySelector('[data-page-id="runs"]')?.getAttribute('data-page-kind')).toBe('custom');
   });
 
@@ -1883,21 +1883,13 @@ describe('presenter built-in and custom pages', () => {
         title: 'Runs Dashboard',
         pages: [
           {
-            id: 'runs',
-            kind: /** @type {'built-in'} */ ('built-in'),
-            page: 'runs',
-            title: 'Runs',
-            definition: {
-              'data-state': {
-                availability: true,
-                completeness: true,
-                freshness: true
-              },
-              views: [
-                { id: 'runs-source', data: { source: 'runs' } },
-                { id: 'outcomes-source', data: { source: 'outcomes' } }
-              ]
-            }
+            id: 'keyboard-navigation',
+            kind: /** @type {'custom'} */ ('custom'),
+            title: 'Keyboard Navigation',
+            views: [
+              { id: 'runs-source', data: { source: 'runs' } },
+              { id: 'outcomes-source', data: { source: 'outcomes' } }
+            ]
           }
         ]
       }
@@ -1962,12 +1954,12 @@ describe('presenter built-in and custom pages', () => {
     rendered.ownerDocument.body.append(rendered);
     enableDashboardKeyboardNavigation(rendered);
 
-    const sections = rendered.querySelectorAll('[data-page-id="runs"] .page-section');
+    const sections = rendered.querySelectorAll('[data-page-id="keyboard-navigation"] .page-section');
     expect(sections).toHaveLength(2);
-    expect(sections[0]?.getAttribute('aria-labelledby')).toContain('runs-runs-runs-source-heading');
+    expect(sections[0]?.getAttribute('aria-labelledby')).toContain('keyboard-navigation-runs-source-heading');
     expect([...sections].map((section) => section.getAttribute('aria-labelledby'))).toEqual([
-      'runs-runs-runs-source-heading',
-      'runs-runs-outcomes-source-heading'
+      'keyboard-navigation-runs-source-heading',
+      'keyboard-navigation-outcomes-source-heading'
     ]);
 
     const firstSection = /** @type {HTMLElement} */ (sections[0]);
