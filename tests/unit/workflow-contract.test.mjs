@@ -1292,7 +1292,7 @@ test("SelfCare runs every 20 minutes", () => {
   const compiled = workflow("self-care.lock.yml");
 
   assert.match(source, /schedule: every 20 minutes/);
-  assert.match(compiled, /cron: "\d+\/20 \* \* \* \*"  # Friendly format: every 20 minutes \(scattered\)/);
+  assert.match(compiled, /cron: "[0-5]?\d\/20 \* \* \* \*"  # Friendly format: every 20 minutes \(scattered\)/);
 });
 
 test("SelfCare accessibility checker audits the served docs site with axe-core evidence", () => {
