@@ -1,26 +1,26 @@
 language-version: "0.1.0"
 dashboard:
-  id: dependency-license-policy-enforcement
-  title: Dependency License Policy Enforcement
-  description: Run state, actionable license findings, accepted outcomes, and attainment for the dependency-license-policy-enforcement workflow.
+  id: code-scanning-regression-remediation
+  title: Code Scanning Regression Remediation
+  description: Activation, bounded regression findings, accepted outcomes, and attainment for code-scanning-regression-remediation.
   pages:
     - id: operations
       kind: custom
       title: Operations
       views:
         - id: execution
-          title: Dependency-license review execution
+          title: Code-scanning review execution
           disclosure: essential
           data:
             source: runs
             filters:
-              workflow: [dependency-license-policy-enforcement]
+              workflow: [code-scanning-regression-remediation]
           mark: table
           controls: interactive
           encoding:
             columns:
-              - field: repository
-                title: Repository
+              - field: run
+                title: Run
               - field: run-status
                 title: Status
                 display: status
@@ -33,20 +33,22 @@ dashboard:
             href:
               field: run-link
         - id: actionable-findings
-          title: Actionable license findings
+          title: Novel attributable code-scanning regressions
           disclosure: essential
           data:
             source: findings
             filters:
-              workflow: [dependency-license-policy-enforcement]
+              workflow: [code-scanning-regression-remediation]
               finding-status: [open]
           mark: table
           controls: interactive
-          empty-message: No open dependency-license findings in the selected context.
+          empty-message: No supported novel code-scanning regressions require action.
           encoding:
             columns:
+              - field: finding
+                title: Alert finding
               - field: finding-summary
-                title: Dependency, SPDX evidence, policy rule, and manifest
+                title: Rule, changed location, and comparison evidence
               - field: finding-status
                 title: Decision status
                 display: status
@@ -56,22 +58,22 @@ dashboard:
             href:
               field: issue-link
         - id: accepted-evidence
-          title: Accepted license remediation or exception evidence
+          title: Accepted remediation or dismissal evidence
           disclosure: essential
           data:
             source: outcomes
             filters:
-              workflow: [dependency-license-policy-enforcement]
+              workflow: [code-scanning-regression-remediation]
               outcome-state: [accepted]
           mark: table
           controls: interactive
-          empty-message: No accepted license remediation or exception evidence is available.
+          empty-message: No accepted remediation or dismissal evidence is available.
           encoding:
             columns:
               - field: outcome-title
-                title: Dependency
+                title: Regression
               - field: outcome-summary
-                title: Accepted remediation or exception
+                title: Accepted remediation or dismissal evidence
               - field: outcome-state
                 title: Acceptance
                 display: status
@@ -79,15 +81,15 @@ dashboard:
                 type: temporal
                 title: Accepted at
             href:
-              field: issue-link
+              field: external-link
         - id: value-evidence
-          title: License-policy remediation attainment evidence
+          title: Regression remediation attainment evidence
           disclosure: essential
           data:
             source: operational-values
             filters:
-              workflow: [dependency-license-policy-enforcement]
-              operational-value-definition: [resolved-supported-license-policy-findings]
+              workflow: [code-scanning-regression-remediation]
+              operational-value-definition: [resolved-supported-code-scanning-regression-findings]
           mark: table
           empty-message: No mature operational-value evidence is available.
           encoding:

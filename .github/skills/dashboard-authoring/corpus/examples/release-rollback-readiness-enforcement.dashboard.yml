@@ -1,20 +1,20 @@
 language-version: "0.1.0"
 dashboard:
-  id: dependency-license-policy-enforcement
-  title: Dependency License Policy Enforcement
-  description: Run state, actionable license findings, accepted outcomes, and attainment for the dependency-license-policy-enforcement workflow.
+  id: release-rollback-readiness-enforcement
+  title: Release Rollback Readiness Enforcement
+  description: Execution health, actionable rollback-readiness blockers, accepted outcomes, and attainment for production release candidates.
   pages:
     - id: operations
       kind: custom
-      title: Operations
+      title: Rollback readiness
       views:
         - id: execution
-          title: Dependency-license review execution
+          title: Release-readiness review execution
           disclosure: essential
           data:
             source: runs
             filters:
-              workflow: [dependency-license-policy-enforcement]
+              workflow: [release-rollback-readiness-enforcement]
           mark: table
           controls: interactive
           encoding:
@@ -29,24 +29,26 @@ dashboard:
                 display: status
               - field: started-at
                 type: temporal
-                title: Started
+                title: Approval-window review
             href:
               field: run-link
-        - id: actionable-findings
-          title: Actionable license findings
+        - id: open-readiness-blockers
+          title: Open rollback-readiness blockers
           disclosure: essential
+          controls: interactive
+          empty-message: No open rollback-readiness blockers.
           data:
             source: findings
             filters:
-              workflow: [dependency-license-policy-enforcement]
+              workflow: [release-rollback-readiness-enforcement]
               finding-status: [open]
+            limit: 25
           mark: table
-          controls: interactive
-          empty-message: No open dependency-license findings in the selected context.
           encoding:
             columns:
               - field: finding-summary
-                title: Dependency, SPDX evidence, policy rule, and manifest
+                type: nominal
+                title: Candidate, revision, environment, failed control, and cutoff
               - field: finding-status
                 title: Decision status
                 display: status
@@ -56,38 +58,38 @@ dashboard:
             href:
               field: issue-link
         - id: accepted-evidence
-          title: Accepted license remediation or exception evidence
+          title: Accepted readiness, withdrawal, or exception evidence
           disclosure: essential
           data:
             source: outcomes
             filters:
-              workflow: [dependency-license-policy-enforcement]
+              workflow: [release-rollback-readiness-enforcement]
               outcome-state: [accepted]
           mark: table
           controls: interactive
-          empty-message: No accepted license remediation or exception evidence is available.
+          empty-message: No accepted rollback-readiness evidence is available.
           encoding:
             columns:
               - field: outcome-title
-                title: Dependency
+                title: Release candidate
               - field: outcome-summary
-                title: Accepted remediation or exception
+                title: Accepted readiness, safe withdrawal, or bounded exception
               - field: outcome-state
                 title: Acceptance
                 display: status
               - field: observed-at
                 type: temporal
-                title: Accepted at
+                title: Accepted before promotion
             href:
-              field: issue-link
+              field: external-link
         - id: value-evidence
-          title: License-policy remediation attainment evidence
+          title: Rollback-readiness attainment evidence
           disclosure: essential
           data:
             source: operational-values
             filters:
-              workflow: [dependency-license-policy-enforcement]
-              operational-value-definition: [resolved-supported-license-policy-findings]
+              workflow: [release-rollback-readiness-enforcement]
+              operational-value-definition: [rollback-ready-or-safely-withdrawn-release-candidates]
           mark: table
           empty-message: No mature operational-value evidence is available.
           encoding:

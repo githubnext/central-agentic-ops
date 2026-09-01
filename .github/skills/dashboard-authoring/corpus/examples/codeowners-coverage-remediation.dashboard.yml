@@ -1,26 +1,26 @@
 language-version: "0.1.0"
 dashboard:
-  id: dependency-license-policy-enforcement
-  title: Dependency License Policy Enforcement
-  description: Run state, actionable license findings, accepted outcomes, and attainment for the dependency-license-policy-enforcement workflow.
+  id: codeowners-coverage-remediation
+  title: CODEOWNERS Coverage Remediation
+  description: Activation, actionable ownership gaps, accepted outcomes, and attainment for newly unowned sensitive paths.
   pages:
     - id: operations
       kind: custom
       title: Operations
       views:
         - id: execution
-          title: Dependency-license review execution
+          title: CODEOWNERS review execution
           disclosure: essential
           data:
             source: runs
             filters:
-              workflow: [dependency-license-policy-enforcement]
+              workflow: [codeowners-coverage-remediation]
           mark: table
           controls: interactive
           encoding:
             columns:
-              - field: repository
-                title: Repository
+              - field: run
+                title: Run
               - field: run-status
                 title: Status
                 display: status
@@ -33,45 +33,48 @@ dashboard:
             href:
               field: run-link
         - id: actionable-findings
-          title: Actionable license findings
+          title: Sensitive-path ownership gaps
           disclosure: essential
           data:
             source: findings
             filters:
-              workflow: [dependency-license-policy-enforcement]
+              workflow: [codeowners-coverage-remediation]
               finding-status: [open]
+            limit: 25
           mark: table
           controls: interactive
-          empty-message: No open dependency-license findings in the selected context.
+          empty-message: No supported newly unowned sensitive paths.
           encoding:
             columns:
               - field: finding-summary
-                title: Dependency, SPDX evidence, policy rule, and manifest
+                type: nominal
+                title: Path, change, CODEOWNERS resolution, and eligibility evidence
               - field: finding-status
+                type: nominal
                 title: Decision status
                 display: status
               - field: observed-at
                 type: temporal
                 title: Observed
             href:
-              field: issue-link
+              field: pull-request-link
         - id: accepted-evidence
-          title: Accepted license remediation or exception evidence
+          title: Accepted ownership-restoration evidence
           disclosure: essential
           data:
             source: outcomes
             filters:
-              workflow: [dependency-license-policy-enforcement]
+              workflow: [codeowners-coverage-remediation]
               outcome-state: [accepted]
           mark: table
           controls: interactive
-          empty-message: No accepted license remediation or exception evidence is available.
+          empty-message: No accepted ownership-restoration evidence is available.
           encoding:
             columns:
               - field: outcome-title
-                title: Dependency
+                title: Sensitive path
               - field: outcome-summary
-                title: Accepted remediation or exception
+                title: Accepted ownership restoration
               - field: outcome-state
                 title: Acceptance
                 display: status
@@ -79,15 +82,15 @@ dashboard:
                 type: temporal
                 title: Accepted at
             href:
-              field: issue-link
+              field: pull-request-link
         - id: value-evidence
-          title: License-policy remediation attainment evidence
+          title: Ownership remediation attainment evidence
           disclosure: essential
           data:
             source: operational-values
             filters:
-              workflow: [dependency-license-policy-enforcement]
-              operational-value-definition: [resolved-supported-license-policy-findings]
+              workflow: [codeowners-coverage-remediation]
+              operational-value-definition: [accepted-sensitive-path-ownership-remediations]
           mark: table
           empty-message: No mature operational-value evidence is available.
           encoding:

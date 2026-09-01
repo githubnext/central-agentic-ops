@@ -1,20 +1,20 @@
 language-version: "0.1.0"
 dashboard:
-  id: dependency-license-policy-enforcement
-  title: Dependency License Policy Enforcement
-  description: Run state, actionable license findings, accepted outcomes, and attainment for the dependency-license-policy-enforcement workflow.
+  id: artifact-retention-policy-enforcement
+  title: Artifact Retention Policy Enforcement
+  description: Activation, findings, accepted outcomes, and attainment for the artifact-retention-policy-enforcement workflow.
   pages:
     - id: operations
       kind: custom
       title: Operations
       views:
         - id: execution
-          title: Dependency-license review execution
+          title: Retention review execution
           disclosure: essential
           data:
             source: runs
             filters:
-              workflow: [dependency-license-policy-enforcement]
+              workflow: [artifact-retention-policy-enforcement]
           mark: table
           controls: interactive
           encoding:
@@ -33,20 +33,21 @@ dashboard:
             href:
               field: run-link
         - id: actionable-findings
-          title: Actionable license findings
+          title: Repositories outside the approved retention range
           disclosure: essential
           data:
             source: findings
             filters:
-              workflow: [dependency-license-policy-enforcement]
-              finding-status: [open]
+              workflow: [artifact-retention-policy-enforcement]
           mark: table
           controls: interactive
-          empty-message: No open dependency-license findings in the selected context.
+          empty-message: No supported artifact-retention policy findings require action.
           encoding:
             columns:
+              - field: repository
+                title: Repository
               - field: finding-summary
-                title: Dependency, SPDX evidence, policy rule, and manifest
+                title: Configured retention, approved range, and variance
               - field: finding-status
                 title: Decision status
                 display: status
@@ -56,22 +57,22 @@ dashboard:
             href:
               field: issue-link
         - id: accepted-evidence
-          title: Accepted license remediation or exception evidence
+          title: Accepted remediation or exception evidence
           disclosure: essential
           data:
             source: outcomes
             filters:
-              workflow: [dependency-license-policy-enforcement]
+              workflow: [artifact-retention-policy-enforcement]
               outcome-state: [accepted]
           mark: table
           controls: interactive
-          empty-message: No accepted license remediation or exception evidence is available.
+          empty-message: No accepted remediation or exception evidence is available.
           encoding:
             columns:
-              - field: outcome-title
-                title: Dependency
+              - field: repository
+                title: Repository
               - field: outcome-summary
-                title: Accepted remediation or exception
+                title: Accepted settings remediation or exception
               - field: outcome-state
                 title: Acceptance
                 display: status
@@ -79,15 +80,15 @@ dashboard:
                 type: temporal
                 title: Accepted at
             href:
-              field: issue-link
+              field: external-link
         - id: value-evidence
-          title: License-policy remediation attainment evidence
+          title: Retention remediation attainment evidence
           disclosure: essential
           data:
             source: operational-values
             filters:
-              workflow: [dependency-license-policy-enforcement]
-              operational-value-definition: [resolved-supported-license-policy-findings]
+              workflow: [artifact-retention-policy-enforcement]
+              operational-value-definition: [resolved-supported-artifact-retention-findings]
           mark: table
           empty-message: No mature operational-value evidence is available.
           encoding:

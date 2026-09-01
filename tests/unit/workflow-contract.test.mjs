@@ -1286,7 +1286,7 @@ test("dashboard authoring corpus workflow generates only validated training exam
   assert.doesNotMatch(source, /allowed-files:\n(?:\s+- .*\n)*\s+- "(?!\.github\/skills\/dashboard-authoring\/corpus\/)/);
   assert.match(dashboardIrSkill, /^---\nname: generate-dashboard-ir\n/);
   assert.match(dashboardIrSkill, /specification as the semantic authority/);
-  assert.match(dashboardIrSkill, /`validate\.js` as the syntax and structural validation authority/);
+  assert.match(dashboardIrSkill, /validator entry point as the syntax and structural validation authority/);
   assert.match(dashboardIrSkill, /Do not introduce a new intermediate language/);
   assert.match(dashboardIrSkill, /Return only the validated complete Dashboard Language YAML document/);
   assert.match(dashboardAuthoringSkill, /Use `generate-dashboard-ir` with that intent/);

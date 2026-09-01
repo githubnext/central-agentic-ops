@@ -62,6 +62,64 @@
           "max-ai-credits": 180
         }
       ]
+    },
+    "runs": {
+      "rows": [
+        {
+          "organization": "octo-org",
+          "repository": "license-demo",
+          "workflow": "dependency-license-policy-enforcement",
+          "run": "license-review-201",
+          "run-status": "completed",
+          "run-conclusion": "success",
+          "started-at": "2026-08-03T00:00:00Z",
+          "run-link": {
+            "relation": "run",
+            "href": "https://github.com/octo-org/license-demo/actions/runs/201",
+            "label": "License review run 201"
+          }
+        }
+      ]
+    },
+    "findings": {
+      "rows": [
+        {
+          "organization": "octo-org",
+          "repository": "license-demo",
+          "workflow": "dependency-license-policy-enforcement",
+          "finding": "license-policy-201",
+          "finding-summary": "Direct production dependency example-package@2.0.0 is GPL-3.0-only, disallowed by policy rule production-copyleft, in package-lock.json.",
+          "finding-status": "open",
+          "observed-at": "2026-08-03T00:05:00Z",
+          "issue-link": {
+            "relation": "issue",
+            "href": "https://github.com/octo-org/license-demo/issues/201",
+            "label": "Review license finding 201"
+          }
+        }
+      ]
+    },
+    "outcomes": {
+      "rows": [
+        {
+          "organization": "octo-org",
+          "repository": "license-demo",
+          "workflow": "dependency-license-policy-enforcement",
+          "safe-output": "license-remediation-201",
+          "outcome-title": "example-package@2.0.0",
+          "outcome-summary": "Maintainer-approved repository exception records the dependency, SPDX expression, policy rule, owner, and expiry.",
+          "outcome-state": "accepted",
+          "observed-at": "2026-08-04T00:00:00Z",
+          "issue-link": {
+            "relation": "issue",
+            "href": "https://github.com/octo-org/license-demo/issues/201",
+            "label": "Accepted license exception"
+          }
+        }
+      ]
+    },
+    "operational-values": {
+      "rows": []
     }
   },
   "dashboard": "dependency-license-policy-enforcement.dashboard.yml"
