@@ -48,14 +48,23 @@ describe('renderTableSummaryRow', () => {
     expect(rendered.textContent).toBe('66.7% true');
   });
 
-  it('summarizes unknown column types by item count', () => {
+  it('leaves the summary empty when the column type is unknown', () => {
     const rendered = renderTableSummaryRow([{
       label: 'Unknown',
       values: ['alpha', 'bravo', 'charlie', null]
     }]);
 
-    expect(rendered.querySelector('.table-summary-count')?.textContent).toBe('3 items');
-    expect(rendered.querySelector('.table-summary-categories')).toBeNull();
+    expect(rendered.querySelector('.table-summary-cell')?.textContent).toBe('');
+  });
+
+  it('leaves the summary empty when typed values have unknown meaning', () => {
+    const rendered = renderTableSummaryRow([{
+      label: 'Details',
+      type: 'nominal',
+      values: [{ label: 'alpha' }]
+    }]);
+
+    expect(rendered.querySelector('.table-summary-cell')?.textContent).toBe('');
   });
 
   it('summarizes run-like columns and object values by item count', () => {

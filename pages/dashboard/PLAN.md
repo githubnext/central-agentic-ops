@@ -81,6 +81,7 @@ Evidence paths below are relative to:
 - `src/components/tab-nav.js` — shared linked and interactive tab navigation with roving tabindex keyboard support.
 - `src/components/ui-primitives.js` — section headings, vital statistics, and UTC date-time presentation.
 - `src/components/view-chrome.js` — reusable section, metadata, summary, context, state, and provenance chrome.
+- `src/components/workflow-badges.js` — shared workflow role and package-membership badge strips for workflow identity and repository inventory views.
 - `src/workflow-data.js` — package and standalone workflow inventory sources for declarative topology views.
 - `src/view-formatters.js` — numeric and aggregate value formatting.
 
@@ -136,5 +137,24 @@ Evidence paths below are relative to:
 - JSON-shaped data: retained `runtime-data.js` dispatch rows and the reusable `dispatch-type-classification.json` rules without moving presentation decisions back into data derivation.
 - Reusable presentation: removed the specialized dispatch renderer; shared table, temporal cell, status, entity-link, filtering, faceting, sorting, summary, and empty-state components now own presentation.
 - Preserved evidence boundaries: only retained runs whose authoritative event is `workflow_dispatch` appear, in descending start-time order.
+
+## 2026-09-01 badge-strip entry
+
+- Extraction: `src/components/workflow-badges.js` for shared workflow role and package-membership badge strips.
+- Duplication evidence and call sites collapsed:
+  - `src/components/workflow-identity.js` inlined workflow role badge rendering plus sorted package-membership links for workflow detail identity strips.
+  - `src/components/repository-workflows.js` separately inlined the same role badge and package-membership link strip for repository inventory rows.
+- Behavior-preservation evidence:
+  - Preserved workflow-detail badge text, ordering, and package links through unchanged assertions in `test/unit/workflow-detail.test.js`.
+  - Preserved repository workflow badge text, ordering, and package links through unchanged assertions in `test/unit/repository-workflows.test.js`.
+  - Added focused coverage in `test/unit/workflow-badges.test.js` for role rendering, sorted memberships, fallback memberships, unknown/operation role derivation, and configurable destinations.
+- Quality gates and proof:
+  - Rendered-output proof for affected pages is covered by the unchanged workflow-detail and repository-workflows assertions before and after replacing both identified badge-strip call sites.
+  - Ran `npm install`, `npm run typecheck`, `npm run lint`, `npm test`, and `node ./scripts/build.mjs` from `pages/dashboard/`; all passed.
+  - Browser snapshot comparison remained blocked in-session because Playwright browser tools were not exposed here.
+- Next candidates:
+  - Shared route-scoped empty/unavailable state helper across `src/components/package-detail.js`, `src/components/workflow-detail.js`, and `src/components/repository-workflows.js`.
+  - Shared static table-section wrapper across `src/components/packages-view.js`, `src/components/repository-workflows.js`, and report/table custom views.
+  - Shared repository/package/workflow tab-and-identity chrome across `src/components/package-detail.js`, `src/components/workflow-detail.js`, and `src/components/repository-workflows.js`.
 
 Run-by-run history was removed during compaction; milestones, unresolved questions, current inventory, blockers, and actionable parity work remain above.

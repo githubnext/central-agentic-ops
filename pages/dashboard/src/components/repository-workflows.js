@@ -10,6 +10,7 @@ import { findLink } from './link-content.js';
 import { renderLinkedText } from './linked-text.js';
 import { formatUtcDateTime } from './ui-primitives.js';
 import { renderLinkTabs } from './tab-nav.js';
+import { renderWorkflowBadges } from './workflow-badges.js';
 
 /**
  * @param {import('./ui-elements.js').ElementRenderContext} context
@@ -210,8 +211,6 @@ function renderWorkflowStatusMetric(workflows) {
 function renderWorkflowRow(workflow) {
   const observedAt = String(workflow['observed-at'] ?? '');
   const link = findLink(workflow, 'workflow-link');
-  const role = workflowRole(workflow);
-  const memberships = workflowPackageMemberships(workflow);
   return /** @type {HTMLTableRowElement} */ (h(
     'tr',
     null,
@@ -222,19 +221,7 @@ function renderWorkflowRow(workflow) {
       link
         ? h('a', { className: 'repository-workflow-source', href: link.href }, h('code', null, String(workflow.workflow ?? '')))
         : h('code', { className: 'repository-workflow-source' }, String(workflow.workflow ?? '')),
-      h(
-        'span',
-        { className: 'repository-workflow-badges' },
-        h('span', { className: `workflow-badge workflow-badge-${role}` }, titleCase(role)),
-        ...memberships.map((membership) => h(
-          'a',
-          {
-            className: 'workflow-badge workflow-badge-operation',
-            href: `#page-operational-value?package=${encodeURIComponent(membership.id)}`
-          },
-          `Package · ${membership.name}`
-        ))
-      )
+      renderWorkflowBadges(workflow, { containerClassName: 'repository-workflow-badges' })
     ),
     h('td', null, renderStatusBadge(workflowState(workflow))),
     h(
@@ -288,30 +275,3 @@ function workflowState(workflow) {
   return 'Unknown';
 }
 
-/** @param {Record<string, unknown>} workflow @returns {'orchestrator'|'worker'|'standalone'|'unknown'} */
-function workflowRole(workflow) {
-  const role = String(workflow['workflow-role'] ?? 'unknown').toLowerCase();
-  return role === 'orchestrator' || role === 'worker' || role === 'standalone' ? role : 'unknown';
-}
-
-/** @param {Record<string, unknown>} workflow */
-function workflowPackageMemberships(workflow) {
-  const memberships = Array.isArray(workflow['package-memberships'])
-    ? workflow['package-memberships']
-    : workflow.package
-      ? [{ id: workflow.package, name: workflow['package-name'] ?? workflow.package }]
-      : [];
-  const unique = new Map();
-  for (const membership of memberships) {
-    if (!membership || typeof membership !== 'object' || Array.isArray(membership)) continue;
-    const id = String(membership.id ?? '').trim();
-    const name = String(membership.name ?? '').trim();
-    if (id && name) unique.set(id, { id, name });
-  }
-  return [...unique.values()].sort((left, right) => left.name.localeCompare(right.name));
-}
-
-/** @param {string} value */
-function titleCase(value) {
-  return value.replaceAll('-', ' ').replace(/\b\w/g, (letter) => letter.toUpperCase());
-}

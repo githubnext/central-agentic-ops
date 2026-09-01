@@ -137,6 +137,10 @@ function buildPresenterModuleUrl() {
     .replace("'../view-formatters.js'", JSON.stringify(viewFormattersModuleUrl));
   const chartElementsModuleUrl = `data:text/javascript;charset=utf-8,${encodeURIComponent(chartElementsSource)}`;
 
+  const workflowBadgesSource = readFileSync(new URL('../../src/components/workflow-badges.js', import.meta.url), 'utf8')
+    .replace("'../dom.js'", JSON.stringify(domModuleUrl));
+  const workflowBadgesModuleUrl = `data:text/javascript;charset=utf-8,${encodeURIComponent(workflowBadgesSource)}`;
+
   const repositoryWorkflowsSource = readFileSync(new URL('../../src/components/repository-workflows.js', import.meta.url), 'utf8')
     .replace("'../dom.js'", JSON.stringify(domModuleUrl))
     .replace("'../octicons.js'", JSON.stringify(octiconsModuleUrl))
@@ -145,12 +149,14 @@ function buildPresenterModuleUrl() {
     .replace("'./link-content.js'", JSON.stringify(linkContentModuleUrl))
     .replace("'./linked-text.js'", JSON.stringify(linkedTextModuleUrl))
     .replace("'./ui-primitives.js'", JSON.stringify(uiPrimitivesModuleUrl))
-    .replace("'./tab-nav.js'", JSON.stringify(tabNavModuleUrl));
+    .replace("'./tab-nav.js'", JSON.stringify(tabNavModuleUrl))
+    .replace("'./workflow-badges.js'", JSON.stringify(workflowBadgesModuleUrl));
   const repositoryWorkflowsModuleUrl = `data:text/javascript;charset=utf-8,${encodeURIComponent(repositoryWorkflowsSource)}`;
 
   const workflowIdentitySource = readFileSync(new URL('../../src/components/workflow-identity.js', import.meta.url), 'utf8')
     .replace("'../dom.js'", JSON.stringify(domModuleUrl))
-    .replace("'./link-content.js'", JSON.stringify(linkContentModuleUrl));
+    .replace("'./link-content.js'", JSON.stringify(linkContentModuleUrl))
+    .replace("'./workflow-badges.js'", JSON.stringify(workflowBadgesModuleUrl));
   const workflowIdentityModuleUrl = `data:text/javascript;charset=utf-8,${encodeURIComponent(workflowIdentitySource)}`;
 
   const workflowDetailSource = readFileSync(new URL('../../src/components/workflow-detail.js', import.meta.url), 'utf8')
