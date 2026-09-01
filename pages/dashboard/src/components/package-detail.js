@@ -3,11 +3,9 @@
  */
 
 import { h } from '../dom.js';
-import { octicon } from '../octicons.js';
-import { renderReportList as renderSharedReportList } from './report-list.js';
 import { findLink } from './link-content.js';
 import { renderSectionHeading } from './ui-primitives.js';
-import { renderInteractiveTabs, renderLinkTabs, updateInteractiveTabSelection } from './tab-nav.js';
+import { renderLinkTabs } from './tab-nav.js';
 
 /**
  * @param {import('./ui-elements.js').ElementRenderContext} context
@@ -117,7 +115,6 @@ function renderPackageTabs(packageId, packageName, selectedView) {
  */
 export function renderPackageReports(context) {
   const allWorkflows = rowsFor(context.sources, 'workflows');
-  const allOutcomes = rowsFor(context.sources, 'outcomes');
   const workflowsUnavailable = context.sources.workflows?.metadata?.availability === 'unavailable';
   const root = h('div', {
     className: 'package-reports',
@@ -135,7 +132,7 @@ export function renderPackageReports(context) {
     root.replaceChildren(workflowsUnavailable
       ? h('p', { className: 'empty' }, 'Package data is unavailable.')
       : packageId && workflows.length > 0
-      ? renderPackageReportsContent(context, packageId, workflows, allOutcomes)
+      ? renderPackageTabs(packageId, nameForPackage(packageId, workflows), 'reports')
       : h('p', { className: 'empty' }, packageId ? 'Package not found.' : 'Select a package to view its reports.'));
 
     if (workflows.length > 0) {
@@ -158,156 +155,6 @@ export function renderPackageReports(context) {
   });
   render('');
   return root;
-}
-
-/**
- * @param {import('./ui-elements.js').ElementRenderContext} context
- * @param {string} packageId
- * @param {Array<Record<string, unknown>>} workflows
- * @param {Array<Record<string, unknown>>} outcomes
- */
-function renderPackageReportsContent(context, packageId, workflows, outcomes) {
-  const packageName = nameForPackage(packageId, workflows);
-  const configuredMode = modeForPackage(workflows) || 'review';
-  const packageOutcomes = outcomes
-    .filter((outcome) => outcomeBelongsToPackage(outcome, packageId, workflows))
-    .sort((left, right) => reportTimestamp(right) - reportTimestamp(left));
-  const panelId = `${context.pageId}-reports-panel`;
-  const panel = h('div', { className: 'package-report-mode-content', id: panelId, role: 'tabpanel' });
-  const modeTabs = [
-    ['all', 'All'],
-    ['review', 'Review'],
-    ['live', 'Live']
-  ];
-
-  /** @param {string} selectedMode */
-  const selectMode = (selectedMode) => {
-    updateInteractiveTabSelection(tabs, selectedMode);
-    const visibleOutcomes = selectedMode === 'all'
-      ? packageOutcomes
-      : packageOutcomes.filter((outcome) => String(outcome['rollout-mode']).toLowerCase() === selectedMode);
-    panel.replaceChildren(
-      h('p', { className: 'package-report-mode-note' }, reportModeDescription(selectedMode, configuredMode)),
-      renderReportList(visibleOutcomes, selectedMode === 'all', context.sources.outcomes?.metadata?.availability)
-    );
-  };
-
-  const tabs = renderInteractiveTabs({
-    className: 'package-report-mode-tabs',
-    ariaLabel: 'Filter reports by mode',
-    panelId,
-    onSelect: selectMode,
-    tabs: modeTabs.map(([mode, label], index) => ({
-      label,
-      value: mode,
-      selected: index === 0,
-      dataset: { reportMode: mode }
-    }))
-  });
-
-  selectMode('all');
-  return h(
-    'div',
-    { className: 'package-reports-content' },
-    renderPackageTabs(packageId, packageName, 'reports'),
-    tabs,
-    panel
-  );
-}
-
-/**
- * @param {Array<Record<string, unknown>>} outcomes
- * @param {boolean} showMode
- * @param {unknown} availability
- */
-function renderReportList(outcomes, showMode, availability) {
-  return renderSharedReportList(outcomes, {
-    rowClassName: 'package-report-row',
-    showMode,
-    headingId: 'package-reports-heading',
-    headingText: 'Reports',
-    filterLabel: 'Filter reports',
-    emptyMessage: availability === 'unavailable'
-      ? 'Package report data is unavailable.'
-      : 'No reports have been recorded for this mode.',
-    noMatchMessage: 'No reports match this filter.',
-    countOpenStatuses: ['open', 'available', 'published', 'pending', 'unknown'],
-    countResolvedStatuses: ['closed', 'merged', 'resolved', 'complete', 'completed'],
-    renderContainer: ({ search, summary, content }) => h(
-      'section',
-      { className: `package-report-list${showMode ? ' package-report-list-with-mode' : ''}`, 'aria-labelledby': 'package-reports-heading' },
-      h('label', { className: 'package-report-search' }, octicon('issue'), search),
-      h(
-        'div',
-        { className: 'package-report-header' },
-        h('h2', { id: 'package-reports-heading' }, 'Reports'),
-        summary
-      ),
-      h(
-        'div',
-        { className: 'package-report-columns', 'aria-hidden': 'true' },
-        h('span', null, 'Report'),
-        h('span', null, 'Status'),
-        showMode ? h('span', null, 'Mode') : null,
-        h('span', null, 'Type'),
-        h('span', null, 'Updated')
-      ),
-      content
-    ),
-    renderContent: (rows, emptyMessage) => h(
-      'div',
-      { className: 'package-report-rows' },
-      ...(rows.length > 0 ? rows : [h('p', { className: 'empty' }, emptyMessage)])
-    )
-  });
-}
-
-/**
- * @param {Record<string, unknown>} outcome
- * @param {string} packageId
- * @param {Array<Record<string, unknown>>} workflows
- */
-function outcomeBelongsToPackage(outcome, packageId, workflows) {
-  const attributedPackage = String(outcome.package ?? '').trim();
-  if (attributedPackage) return attributedPackage.toLowerCase() === packageId.toLowerCase();
-  return workflows.some((workflow) => sameWorkflowScope(outcome, workflow)
-    && (
-      normalizeWorkflowIdentity(workflow.workflow) === normalizeWorkflowIdentity(outcome.workflow)
-      || normalizeWorkflowIdentity(workflow['workflow-name']) === normalizeWorkflowIdentity(outcome['workflow-name'])
-    ));
-}
-
-/** @param {Record<string, unknown>} outcome @param {Record<string, unknown>} workflow */
-function sameWorkflowScope(outcome, workflow) {
-  const outcomeRepository = String(outcome.repository ?? '').trim().toLowerCase();
-  const workflowRepository = String(workflow.repository ?? '').trim().toLowerCase();
-  const outcomeOrganization = String(outcome.organization ?? '').trim().toLowerCase();
-  const workflowOrganization = String(workflow.organization ?? '').trim().toLowerCase();
-  return (!outcomeRepository || !workflowRepository || outcomeRepository === workflowRepository)
-    && (!outcomeOrganization || !workflowOrganization || outcomeOrganization === workflowOrganization);
-}
-
-/** @param {unknown} value */
-function normalizeWorkflowIdentity(value) {
-  return String(value ?? '').trim().toLowerCase().replace(/\.lock\.yml$/, '.md');
-}
-
-/** @param {Record<string, unknown>} outcome */
-function reportTimestamp(outcome) {
-  const timestamp = Date.parse(String(outcome['observed-at'] ?? outcome['published-at'] ?? ''));
-  return Number.isFinite(timestamp) ? timestamp : 0;
-}
-
-/** @param {string} selectedMode @param {string} configuredMode */
-function reportModeDescription(selectedMode, configuredMode) {
-  const configuredModeLabel = titleCase(configuredMode);
-  if (selectedMode === 'all') {
-    return `All durable outputs across review and live modes; the package is currently configured for ${configuredModeLabel}.`;
-  }
-  const selectedModeLabel = selectedMode === 'review' ? 'Review proposals' : 'Live production outputs';
-  return selectedMode === configuredMode
-    ? `${selectedModeLabel}; this is the package's configured mode.`
-    : `${selectedModeLabel}; the package is currently configured for ${configuredModeLabel}.`;
 }
 
 /**

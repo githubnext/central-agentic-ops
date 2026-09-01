@@ -108,22 +108,12 @@ function buildPresenterModuleUrl() {
     .replace("'../octicons.js'", JSON.stringify(octiconsModuleUrl));
   const linkContentModuleUrl = `data:text/javascript;charset=utf-8,${encodeURIComponent(linkContentSource)}`;
 
-  const reportListSource = readFileSync(new URL('../../src/components/report-list.js', import.meta.url), 'utf8')
-    .replace("'../dom.js'", JSON.stringify(domModuleUrl))
-    .replace("'../octicons.js'", JSON.stringify(octiconsModuleUrl))
-    .replace("'./badge.js'", JSON.stringify(badgeModuleUrl))
-    .replace("'./link-content.js'", JSON.stringify(linkContentModuleUrl))
-    .replace("'./ui-primitives.js'", JSON.stringify(uiPrimitivesModuleUrl));
-  const reportListModuleUrl = `data:text/javascript;charset=utf-8,${encodeURIComponent(reportListSource)}`;
-
   const linkedTextSource = readFileSync(new URL('../../src/components/linked-text.js', import.meta.url), 'utf8')
     .replace("'../dom.js'", JSON.stringify(domModuleUrl));
   const linkedTextModuleUrl = `data:text/javascript;charset=utf-8,${encodeURIComponent(linkedTextSource)}`;
 
   const packageDetailSource = readFileSync(new URL('../../src/components/package-detail.js', import.meta.url), 'utf8')
     .replace("'../dom.js'", JSON.stringify(domModuleUrl))
-    .replace("'../octicons.js'", JSON.stringify(octiconsModuleUrl))
-    .replace("'./report-list.js'", JSON.stringify(reportListModuleUrl))
     .replace("'./link-content.js'", JSON.stringify(linkContentModuleUrl))
     .replace("'./ui-primitives.js'", JSON.stringify(uiPrimitivesModuleUrl))
     .replace("'./tab-nav.js'", JSON.stringify(tabNavModuleUrl));
@@ -150,7 +140,6 @@ function buildPresenterModuleUrl() {
   const workflowDetailSource = readFileSync(new URL('../../src/components/workflow-detail.js', import.meta.url), 'utf8')
     .replace("'../dom.js'", JSON.stringify(domModuleUrl))
     .replace("'../octicons.js'", JSON.stringify(octiconsModuleUrl))
-    .replace("'./report-list.js'", JSON.stringify(reportListModuleUrl))
     .replace("'./tab-nav.js'", JSON.stringify(tabNavModuleUrl))
     .replace("'./workflow-identity.js'", JSON.stringify(workflowIdentityModuleUrl));
   const workflowDetailModuleUrl = `data:text/javascript;charset=utf-8,${encodeURIComponent(workflowDetailSource)}`;
@@ -560,13 +549,31 @@ test('DLS-PAGE-014 DLS-PAGE-015 built-in packages page renders report-style mode
               kind: 'custom',
               title: 'Package',
               route: { 'hash-query-parameter': 'package' },
-              views: [{
-                id: 'package-reports',
-                title: 'Reports',
-                data: { sources: ['workflows', 'outcomes'] },
-                mark: 'element',
-                element: 'package-reports'
-              }]
+              views: [
+                {
+                  id: 'package-report-navigation',
+                  title: 'Package reports',
+                  data: { sources: ['workflows'] },
+                  mark: 'element',
+                  element: 'package-reports'
+                },
+                {
+                  id: 'package-report-table',
+                  title: 'Reports',
+                  data: { source: 'package-reports', 'route-field': 'package' },
+                  mark: 'table',
+                  controls: 'interactive',
+                  encoding: {
+                    columns: [
+                      { field: 'outcome-title', type: 'nominal', title: 'Report', display: 'outcome-link' },
+                      { field: 'outcome-status', type: 'nominal', title: 'Status', display: 'status' },
+                      { field: 'rollout-mode', type: 'nominal', title: 'Mode', display: 'mode' },
+                      { field: 'outcome-category', type: 'nominal', title: 'Type' },
+                      { field: 'observed-at', type: 'temporal', title: 'Updated' }
+                    ]
+                  }
+                }
+              ]
             }
           ]
         }
@@ -648,12 +655,11 @@ test('DLS-PAGE-014 DLS-PAGE-015 built-in packages page renders report-style mode
 
   await page.getByRole('navigation', { name: 'Ambient Context views' }).getByRole('link', { name: 'Reports' }).click();
   await expect(page).toHaveURL(/#page-package-reports\?package=ambient-context$/);
-  await expect(page.getByRole('heading', { name: 'Reports', level: 2 })).toBeVisible();
-  await expect(page.locator('.package-report-row')).toHaveCount(2);
-  await expect(page.locator('.package-report-header')).toContainText('1 Open1 Resolved');
-  await page.getByRole('tab', { name: 'Live' }).click();
-  await expect(page.locator('.package-report-row')).toHaveCount(1);
-  await expect(page.locator('.package-report-row')).toContainText('Reconcile ambient context');
+  await expect(page.getByRole('heading', { name: 'Reports', level: 3 })).toBeVisible();
+  await expect(page.locator('.custom-table tbody tr')).toHaveCount(2);
+  await page.getByRole('searchbox', { name: 'Filter Reports' }).fill('Reconcile');
+  await expect(page.locator('.custom-table tbody tr:visible')).toHaveCount(1);
+  await expect(page.locator('.custom-table tbody tr:visible')).toContainText('Reconcile ambient context');
 
   await page.locator('[data-nav-page-id="packages"]').click();
   await page.getByRole('tab', { name: 'All' }).focus();

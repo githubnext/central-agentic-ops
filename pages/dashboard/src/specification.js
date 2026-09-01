@@ -268,7 +268,8 @@ export const SOURCE_VALUES = [
   'repository-detail-summary',
   'repository-workflow-status',
   'repository-workflows',
-  'workflow-reports'
+  'workflow-reports',
+  'package-reports'
 ];
 
 export const SOURCE_FIELDS = {
@@ -308,6 +309,7 @@ export const SOURCE_FIELDS = {
   'repository-workflow-status': ['repository', 'status', 'workflows'],
   'repository-workflows': ['repository', 'workflow', 'workflow-name', 'workflow-role', 'package-name', 'workflow-active', 'observed-at', 'workflow-link'],
   'workflow-reports': ['workflow-route', 'safe-output', 'outcome-title', 'outcome-summary', 'outcome-status', 'rollout-mode', 'outcome-category', 'observed-at', 'external-link'],
+  'package-reports': ['package', 'safe-output', 'outcome-title', 'outcome-summary', 'outcome-status', 'rollout-mode', 'outcome-category', 'observed-at', 'external-link'],
   'workflow-topology-summary': ['label', 'value'],
   'packaged-workflows': ['package', 'package-name', 'repository', 'workflow', 'workflow-name', 'workflow-role', 'rollout-mode', 'workflow-active', 'package-link', 'repository-link', 'workflow-link'],
   'standalone-workflows': ['repository', 'workflow', 'workflow-name', 'rollout-mode', 'workflow-active', 'repository-link', 'workflow-link']
@@ -358,7 +360,8 @@ export const SOURCE_ENTITY_IDENTIFIER_FIELDS = {
   'repository-detail-summary': ['repository'],
   'repository-workflow-status': ['repository', 'status'],
   'repository-workflows': ['repository', 'workflow'],
-  'workflow-reports': ['workflow-route', 'safe-output']
+  'workflow-reports': ['workflow-route', 'safe-output'],
+  'package-reports': ['package', 'safe-output']
 };
 
 export const TEMPORAL_FIELD_NAMES = [
