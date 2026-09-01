@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import { describe, expect, it } from 'vitest';
-import { formatCount, formatCountNoun } from '../../src/components/count-formatters.js';
+import { formatCount, formatCountNoun, titleCase } from '../../src/components/count-formatters.js';
 
 describe('count formatters', () => {
   it('formats counts for UI text', () => {
@@ -16,5 +16,12 @@ describe('count formatters', () => {
     expect(formatCountNoun(1, 'worker dispatch lacks', 'worker dispatches lack')).toBe('1 worker dispatch lacks');
     expect(formatCountNoun(3, 'worker dispatch lacks', 'worker dispatches lack')).toBe('3 worker dispatches lack');
     expect(formatCountNoun(undefined, 'workflow', 'workflows')).toBe('0 workflows');
+  });
+
+  it('title-cases kebab-case identifiers for shared display text', () => {
+    expect(titleCase('not-planned')).toBe('Not Planned');
+    expect(titleCase('in-progress')).toBe('In Progress');
+    expect(titleCase('review')).toBe('Review');
+    expect(titleCase('')).toBe('');
   });
 });

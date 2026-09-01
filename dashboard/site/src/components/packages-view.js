@@ -4,6 +4,7 @@
 
 import { h } from '../dom.js';
 import { formatNumber } from '../view-formatters.js';
+import { titleCase } from './count-formatters.js';
 import { classifyUtilizationRatio, isFailureConclusion } from './run-classification.js';
 import { renderInteractiveTabs, updateInteractiveTabSelection } from './tab-nav.js';
 
@@ -828,6 +829,3 @@ function formatDate(value, dateOnly = false) {
  * @param {string} value
  * @returns {string}
  */
-function titleCase(value) {
-  return value.split('-').filter(Boolean).map((part) => `${part[0]?.toUpperCase() ?? ''}${part.slice(1)}`).join(' ');
-}

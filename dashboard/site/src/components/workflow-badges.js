@@ -3,6 +3,7 @@
  */
 
 import { h } from '../dom.js';
+import { titleCase } from './count-formatters.js';
 
 /**
  * @typedef {{
@@ -72,7 +73,3 @@ function text(value) {
   return value == null ? '' : String(value);
 }
 
-/** @param {string} value */
-function titleCase(value) {
-  return value.replaceAll('-', ' ').replace(/\b\w/g, (letter) => letter.toUpperCase());
-}

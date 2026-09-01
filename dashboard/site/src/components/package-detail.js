@@ -4,6 +4,7 @@
 
 import { h } from '../dom.js';
 import { renderLinkTabs } from './tab-nav.js';
+import { titleCase } from './count-formatters.js';
 import { createRouteView } from './route-empty-state.js';
 import { renderWorkflowValueReport } from './workflow-runtime.js';
 
@@ -109,7 +110,3 @@ function modeForPackage(workflows) {
   return mode === 'review' || mode === 'live' ? mode : '';
 }
 
-/** @param {string} value */
-function titleCase(value) {
-  return value.replaceAll('-', ' ').replace(/\b\w/g, (letter) => letter.toUpperCase());
-}

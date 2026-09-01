@@ -25,9 +25,13 @@ function buildPresenterModuleUrl() {
     .replace("'../dom.js'", JSON.stringify(domModuleUrl));
   const uiPrimitivesModuleUrl = `data:text/javascript;charset=utf-8,${encodeURIComponent(uiPrimitivesSource)}`;
 
+  const countFormattersSource = readFileSync(new URL('../../src/components/count-formatters.js', import.meta.url), 'utf8');
+  const countFormattersModuleUrl = `data:text/javascript;charset=utf-8,${encodeURIComponent(countFormattersSource)}`;
+
   const viewChromeSource = readFileSync(new URL('../../src/components/view-chrome.js', import.meta.url), 'utf8')
     .replace("'../dom.js'", JSON.stringify(domModuleUrl))
-    .replace("'./ui-primitives.js'", JSON.stringify(uiPrimitivesModuleUrl));
+    .replace("'./ui-primitives.js'", JSON.stringify(uiPrimitivesModuleUrl))
+    .replace("'./count-formatters.js'", JSON.stringify(countFormattersModuleUrl));
   const viewChromeModuleUrl = `data:text/javascript;charset=utf-8,${encodeURIComponent(viewChromeSource)}`;
 
   const dataStateSource = readFileSync(new URL('../../src/components/data-state.js', import.meta.url), 'utf8')
@@ -103,7 +107,8 @@ function buildPresenterModuleUrl() {
     .replace("'../dom.js'", JSON.stringify(domModuleUrl))
     .replace("'../view-formatters.js'", JSON.stringify(viewFormattersModuleUrl))
     .replace("'./run-classification.js'", JSON.stringify(runClassificationModuleUrl))
-    .replace("'./tab-nav.js'", JSON.stringify(tabNavModuleUrl));
+    .replace("'./tab-nav.js'", JSON.stringify(tabNavModuleUrl))
+    .replace("'./count-formatters.js'", JSON.stringify(countFormattersModuleUrl));
   const packagesViewModuleUrl = `data:text/javascript;charset=utf-8,${encodeURIComponent(packagesViewSource)}`;
 
   const filterBarSource = readFileSync(new URL('../../src/components/filter-bar.js', import.meta.url), 'utf8')
@@ -124,16 +129,14 @@ function buildPresenterModuleUrl() {
     .replace("'../dom.js'", JSON.stringify(domModuleUrl));
   const routeStateModuleUrl = `data:text/javascript;charset=utf-8,${encodeURIComponent(routeStateSource)}`;
 
-  const countFormattersSource = readFileSync(new URL('../../src/components/count-formatters.js', import.meta.url), 'utf8');
-  const countFormattersModuleUrl = `data:text/javascript;charset=utf-8,${encodeURIComponent(countFormattersSource)}`;
-
   const chartElementsSource = readFileSync(new URL('../../src/components/chart-elements.js', import.meta.url), 'utf8')
     .replace("'../dom.js'", JSON.stringify(domModuleUrl))
     .replace("'../view-formatters.js'", JSON.stringify(viewFormattersModuleUrl));
   const chartElementsModuleUrl = `data:text/javascript;charset=utf-8,${encodeURIComponent(chartElementsSource)}`;
 
   const workflowBadgesSource = readFileSync(new URL('../../src/components/workflow-badges.js', import.meta.url), 'utf8')
-    .replace("'../dom.js'", JSON.stringify(domModuleUrl));
+    .replace("'../dom.js'", JSON.stringify(domModuleUrl))
+    .replace("'./count-formatters.js'", JSON.stringify(countFormattersModuleUrl));
   const workflowBadgesModuleUrl = `data:text/javascript;charset=utf-8,${encodeURIComponent(workflowBadgesSource)}`;
 
   const workflowIdentitySource = readFileSync(new URL('../../src/components/workflow-identity.js', import.meta.url), 'utf8')
@@ -172,7 +175,8 @@ function buildPresenterModuleUrl() {
     .replace("'../dom.js'", JSON.stringify(domModuleUrl))
     .replace("'./tab-nav.js'", JSON.stringify(tabNavModuleUrl))
     .replace("'./route-empty-state.js'", JSON.stringify(routeStateModuleUrl))
-    .replace("'./workflow-runtime.js'", JSON.stringify(workflowRuntimeModuleUrl));
+    .replace("'./workflow-runtime.js'", JSON.stringify(workflowRuntimeModuleUrl))
+    .replace("'./count-formatters.js'", JSON.stringify(countFormattersModuleUrl));
   const packageDetailModuleUrl = `data:text/javascript;charset=utf-8,${encodeURIComponent(packageDetailSource)}`;
 
   const outcomeDetailSource = readFileSync(new URL('../../src/components/outcome-detail.js', import.meta.url), 'utf8')
@@ -182,7 +186,8 @@ function buildPresenterModuleUrl() {
     .replace("'./link-content.js'", JSON.stringify(linkContentModuleUrl))
     .replace("'./ui-primitives.js'", JSON.stringify(uiPrimitivesModuleUrl))
     .replace("'./view-chrome.js'", JSON.stringify(viewChromeModuleUrl))
-    .replace("'./route-empty-state.js'", JSON.stringify(routeStateModuleUrl));
+    .replace("'./route-empty-state.js'", JSON.stringify(routeStateModuleUrl))
+    .replace("'./count-formatters.js'", JSON.stringify(countFormattersModuleUrl));
   const outcomeDetailModuleUrl = `data:text/javascript;charset=utf-8,${encodeURIComponent(outcomeDetailSource)}`;
 
   const runtimeDataSource = readFileSync(new URL('../../src/runtime-data.js', import.meta.url), 'utf8')
@@ -219,7 +224,8 @@ function buildPresenterModuleUrl() {
     .replace("'./link-content.js'", JSON.stringify(linkContentModuleUrl))
     .replace("'./linked-text.js'", JSON.stringify(linkedTextModuleUrl))
     .replace("'./table-region.js'", JSON.stringify(tableRegionModuleUrl))
-    .replace("'./view-chrome.js'", JSON.stringify(viewChromeModuleUrl));
+    .replace("'./view-chrome.js'", JSON.stringify(viewChromeModuleUrl))
+    .replace("'./count-formatters.js'", JSON.stringify(countFormattersModuleUrl));
   const dataViewModuleUrl = `data:text/javascript;charset=utf-8,${encodeURIComponent(dataViewSource)}`;
 
   const overviewDataSource = readFileSync(new URL('../../src/overview-data.js', import.meta.url), 'utf8')

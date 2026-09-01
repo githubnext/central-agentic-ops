@@ -4,6 +4,7 @@
 
 import { h } from '../dom.js';
 import { formatAggregateValue, formatNumber } from '../view-formatters.js';
+import { titleCase } from './count-formatters.js';
 import { renderCellDisplay } from './cell-display.js';
 import { listChartSeries, pieChartEntries, renderChartLegend, renderPieLegend, renderChartWidget } from './chart-elements.js';
 import { findFirstLink, findLink, renderExternalLink, renderLinkedValueWithExternalLink, renderOutcomeLink, renderWorkflowRunLink } from './link-content.js';
@@ -259,14 +260,6 @@ function chartCategoryLinks(points) {
 }
 
 /** @param {string} value */
-function titleCase(value) {
-  return value
-    .split('-')
-    .filter(Boolean)
-    .map((part) => part[0] ? `${part[0].toUpperCase()}${part.slice(1)}` : part)
-    .join(' ');
-}
-
 /** @param {unknown} value @returns {value is Record<string, any>} */
 function isPlainObject(value) {
   return typeof value === 'object' && value !== null && !Array.isArray(value);
