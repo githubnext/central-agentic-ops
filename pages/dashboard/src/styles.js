@@ -624,8 +624,8 @@ thead th { background: var(--canvas-subtle); color: var(--muted); font-size: .75
 .table-summary-histogram rect { fill: var(--accent); opacity: .75; }
 :is(.table-summary-quantitative dl, .table-summary-temporal) { display: grid; gap: 2px; margin: 0; }
 :is(.table-summary-quantitative dl, .table-summary-temporal) div { display: flex; justify-content: space-between; gap: 8px; }
-:is(.table-summary-quantitative, .table-summary-temporal) dt { font-weight: 400; }
-:is(.table-summary-quantitative, .table-summary-temporal) dd { margin: 0; color: var(--fg); font-weight: 600; }
+:is(.table-summary-quantitative dl, .table-summary-temporal) dt { font-weight: 400; }
+:is(.table-summary-quantitative dl, .table-summary-temporal) dd { margin: 0; color: var(--fg); font-weight: 600; }
 .table-summary-empty { font-weight: 400; font-style: italic; }
 tbody tr:last-child > * { border-bottom: 0; }
 tbody tr:hover { background: var(--canvas-subtle); }
