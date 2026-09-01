@@ -9,7 +9,7 @@ The reusable dashboard builder copies this directory to its configured `site-pat
 1. Dashboard collectors write inventory, deployed-workflow, AI Credit, and operational-value JSON.
 2. `dashboard/report/records.mjs` normalizes durable issues, pull requests, comments, review artifacts, and run attribution into `records.json`.
 3. `dashboard/report/dashboard-language-sources.mjs` adapts collector and record data into `sources.json`.
-4. This renderer composes `dashboard.json` with the separately validated `package-dashboards.json`, validates `sources.json`, then renders all configured pages and route-scoped details.
+4. Quality gates validate `dashboard.json` and `package-dashboards.json` independently; the renderer composes them with validated `sources.json`, then renders all configured pages and route-scoped details.
 
 `sources.json` is the default deployed input. Add `?fixtures` locally to use the illustrative fixture data.
 
