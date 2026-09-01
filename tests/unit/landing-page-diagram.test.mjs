@@ -3,6 +3,7 @@ import { readFileSync } from "node:fs";
 import test from "node:test";
 
 import createAnimationData, { createMobileAnimationData } from "../../docs/assets/control-plane-dispatch.animation.mjs";
+import { selectConfiguredOperations } from "../../docs/lib/configured-operations.mjs";
 
 const hero = readFileSync("docs/components/HierarchyHero.astro", "utf8");
 const wizard = readFileSync("docs/components/OpsWizard.astro", "utf8");
@@ -64,8 +65,31 @@ test("landing wizard prompt references the raw setup skill", () => {
 
 test("landing wizard operations come from the checked-in control policy", () => {
   assert.match(catalog, /import controlPolicy from "\.\.\/\.\.\/\.github\/central-agentic-ops\.json"/);
-  assert.match(catalog, /Object\.keys\(configuredPackages\)/);
-  assert.match(catalog, /must define control-plane\.packages as an object/);
+  assert.match(catalog, /selectConfiguredOperations\(controlPolicy, catalogEntries\)/);
   assert.match(wizard, /configuredOperationEntries as operations/);
   assert.doesNotMatch(wizard, /operation\.slug === "dependabot"/);
+});
+
+test("configured wizard operations follow policy package order", () => {
+  const first = { slug: "first" };
+  const second = { slug: "second" };
+  const policy = { "control-plane": { packages: { second: {}, first: {} } } };
+
+  assert.deepEqual(selectConfiguredOperations(policy, [first, second]), [second, first]);
+});
+
+test("configured wizard operations require a package map", () => {
+  assert.throws(
+    () => selectConfiguredOperations({}, []),
+    /must define control-plane\.packages as an object/,
+  );
+});
+
+test("configured wizard operations require a matching catalog manifest", () => {
+  const policy = { "control-plane": { packages: { missing: {} } } };
+
+  assert.throws(
+    () => selectConfiguredOperations(policy, []),
+    /Configured package missing must have a catalog manifest/,
+  );
 });
