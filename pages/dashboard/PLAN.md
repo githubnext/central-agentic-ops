@@ -109,4 +109,12 @@ Evidence paths below are relative to:
   - Shared report/repository navigation tabs across `src/components/package-detail.js`, `src/components/workflow-detail.js`, and `src/components/repository-workflows.js`.
   - Shared static table-section wrapper across `src/components/packages-view.js`, `src/components/repository-workflows.js`, and `src/components/ui-elements.js` coverage diagnostics.
 
+## 2026-09-01 run entry
+
+- Investigation: audited the remaining JavaScript-only views and selected runtime execution episodes as the smallest complete view migration that could reuse existing Dashboard Language elements.
+- Declarative specification: replaced the `execution-episodes` element in `dashboard.json` with a `summary-grid` and two generic table views.
+- JSON-shaped data: `runtime-data.js` now emits `runtime-episode-summary`, `runtime-episodes`, and `runtime-attribution-gaps` logical sources from retained run evidence.
+- Reusable presentation: removed the specialized `execution-elements.js` renderer and its styles; runtime episodes now use shared summary, table, badge, filtering, sorting, empty-state, and link behavior.
+- Preserved evidence boundaries: root-only attribution, unavailable repeated coverage, exact-correlation gaps, run status, timing, duration, and run evidence remain explicit.
+
 Run-by-run history was removed during compaction; milestones, unresolved questions, current inventory, blockers, and actionable parity work remain above.

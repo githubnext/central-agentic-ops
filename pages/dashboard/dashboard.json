@@ -787,20 +787,112 @@
             "layout": "full"
           },
           {
-            "id": "runtime-execution-episodes",
+            "id": "runtime-episode-summary",
             "title": "Execution episodes",
             "description": "Root orchestrator runs joined to worker outcomes only through explicit control-plane correlation evidence.",
             "data": {
               "sources": [
-                "workflows",
-                "runs",
-                "outcomes",
-                "usage"
+                "runtime-episode-summary"
               ]
             },
             "mark": "element",
-            "element": "execution-episodes",
+            "element": "summary-grid",
             "layout": "full"
+          },
+          {
+            "id": "runtime-execution-episodes",
+            "title": "Observed root episodes",
+            "description": "Dispatch manifests are not retained, so attribution is partial by construction.",
+            "data": {
+              "source": "runtime-episodes"
+            },
+            "mark": "table",
+            "layout": "full",
+            "empty-message": "No orchestrator runs were observed in the current run window.",
+            "encoding": {
+              "columns": [
+                {
+                  "field": "run",
+                  "type": "nominal",
+                  "title": "Run"
+                },
+                {
+                  "field": "package",
+                  "type": "nominal",
+                  "title": "Package"
+                },
+                {
+                  "field": "workflow",
+                  "type": "nominal",
+                  "title": "Workflow"
+                },
+                {
+                  "field": "started-at",
+                  "type": "temporal",
+                  "title": "Started"
+                },
+                {
+                  "field": "duration",
+                  "type": "nominal",
+                  "title": "Duration"
+                },
+                {
+                  "field": "status",
+                  "type": "nominal",
+                  "title": "Result",
+                  "display": "status"
+                },
+                {
+                  "field": "attribution",
+                  "type": "nominal",
+                  "title": "Evidence"
+                }
+              ],
+              "href": {
+                "field": "run-link",
+                "type": "nominal"
+              }
+            }
+          },
+          {
+            "id": "runtime-episode-attribution-gap",
+            "title": "Worker attribution gaps",
+            "description": "Worker runs without a retained safe output carrying an exact root correlation ID remain unattributed.",
+            "data": {
+              "source": "runtime-attribution-gaps"
+            },
+            "mark": "table",
+            "layout": "full",
+            "empty-message": "All observed worker dispatches with retained evidence are attributed.",
+            "encoding": {
+              "columns": [
+                {
+                  "field": "run",
+                  "type": "nominal",
+                  "title": "Run"
+                },
+                {
+                  "field": "workflow",
+                  "type": "nominal",
+                  "title": "Workflow"
+                },
+                {
+                  "field": "status",
+                  "type": "nominal",
+                  "title": "Result",
+                  "display": "status"
+                },
+                {
+                  "field": "evidence",
+                  "type": "nominal",
+                  "title": "Evidence gap"
+                }
+              ],
+              "href": {
+                "field": "run-link",
+                "type": "nominal"
+              }
+            }
           }
         ]
       },

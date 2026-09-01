@@ -33,7 +33,6 @@ export const VIEW_ELEMENT_VALUES = [
   'workflow-detail',
   'workflow-runtime',
   'outcome-detail',
-  'execution-episodes',
   'workflow-topology'
 ];
 export const VIEW_CHART_VALUES = ['bar', 'line', 'pie'];
@@ -239,6 +238,9 @@ export const SOURCE_VALUES = [
   'eval-observations',
   'usage',
   'coverage-diagnostics',
+  'runtime-episode-summary',
+  'runtime-episodes',
+  'runtime-attribution-gaps',
   'outcomes',
   'findings',
   'operational-values',
@@ -277,6 +279,9 @@ export const SOURCE_FIELDS = {
   'eval-observations': ['organization', 'repository', 'workflow', 'run', 'experiment', 'eval', 'eval-result', 'requested-model', 'resolved-model', 'rollout-mode', 'observed-at'],
   usage: ['organization', 'repository', 'workflow', 'run', 'invocation', 'engine', 'requested-model', 'resolved-model', 'rollout-mode', 'input-tokens', 'output-tokens', 'cache-read-tokens', 'cache-write-tokens', 'reasoning-tokens', 'aic', 'observed-at', 'organization-link', 'repository-link', 'workflow-link', 'run-link'],
   'coverage-diagnostics': ['title', 'effect'],
+  'runtime-episode-summary': ['label', 'value'],
+  'runtime-episodes': ['run', 'run-title', 'package', 'workflow', 'started-at', 'duration', 'status', 'attribution', 'run-link'],
+  'runtime-attribution-gaps': ['run', 'run-title', 'workflow', 'status', 'evidence', 'run-link'],
   outcomes: ['organization', 'repository', 'package', 'runtime-repository', 'workflow', 'workflow-name', 'run', 'safe-output', 'outcome-title', 'outcome-summary', 'outcome-body-html', 'outcome-category', 'outcome-status', 'outcome-state', 'evidence-strength', 'rollout-mode', 'published-at', 'observed-at', 'issue-link', 'pull-request-link', 'run-link', 'external-link', 'organization-link', 'repository-link', 'workflow-link'],
   findings: ['organization', 'repository', 'workflow', 'run', 'finding', 'finding-kind', 'finding-severity', 'finding-status', 'finding-summary', 'observed-at', 'issue-link', 'pull-request-link', 'run-link', 'external-link', 'organization-link', 'repository-link', 'workflow-link'],
   'operational-values': ['organization', 'repository', 'workflow', 'run', 'experiment', 'operational-case', 'evaluator-digest', 'rollout-mode', 'operational-value', 'operational-value-definition', 'requested-evidence-at', 'evidence-cutoff', 'maturity-at', 'maturity-status', 'baseline-value', 'delta-from-baseline', 'observed-at', 'evidence-link', 'organization-link', 'repository-link', 'workflow-link', 'run-link'],
@@ -330,6 +335,9 @@ export const SOURCE_ENTITY_IDENTIFIER_FIELDS = {
   evals: ['eval'],
   'eval-observations': ['eval', 'run'],
   usage: ['invocation'],
+  'runtime-episode-summary': ['label'],
+  'runtime-episodes': ['run'],
+  'runtime-attribution-gaps': ['run'],
   outcomes: ['safe-output'],
   findings: ['finding'],
   'operational-values': ['operational-value-definition', 'operational-case', 'run'],
