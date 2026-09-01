@@ -43,7 +43,6 @@ safe-outputs:
     protected-files: fallback-to-issue
     max-patch-files: 20
     allowed-files:
-      - "dashboard/aw.yml"
       - "dashboard/site/src/**/*.js"
       - "dashboard/site/test/**/*.js"
   noop:
@@ -51,7 +50,7 @@ pre-agent-steps:
   - name: Install dashboard dependencies
     run: npm ci --prefix dashboard/site --ignore-scripts
   - name: Install Chromium
-    run: npx --prefix dashboard/site playwright install --with-deps chromium
+    run: npm exec --prefix dashboard/site -- playwright install --with-deps chromium
   - name: Validate dashboard baseline
     run: |
       npm --prefix dashboard/site run typecheck
@@ -80,11 +79,11 @@ Review the JavaScript dashboard code and extract one common UI construct into th
 2. Inspect `dashboard/site/src/` and select exactly one repeated UI construction with at least two concrete call sites. Prefer a small, high-confidence refactor that measurably reduces duplication.
 3. Review recent open and closed pull requests with the `[dashboard-components]` title prefix. Do not repeat an open proposal or a recently rejected refactor.
 4. Preserve rendered behavior, accessibility semantics, public module APIs, and Dashboard Language behavior. Add or update focused unit and end-to-end coverage when the import graph or rendered output changes.
-5. If a new runtime component module is added, update `dashboard/aw.yml` so the catalog package installs it. Treat that manifest change as protected and allow the configured safe output to fall back to an issue for maintainer review.
+5. Prefer extracting into an existing module under `dashboard/site/src/components/`. If a correct extraction requires a new runtime module and therefore a `dashboard/aw.yml` manifest change, call `noop` because that manifest is outside the allowed change boundary.
 
 ## Boundaries
 
-- DO NOT modify files outside `dashboard/aw.yml`, `dashboard/site/src/**/*.js`, and `dashboard/site/test/**/*.js`.
+- DO NOT modify files outside `dashboard/site/src/**/*.js` and `dashboard/site/test/**/*.js`.
 - DO NOT modify dependency manifests, lockfiles, CI configuration, generated workflow lock files, agent instructions, dashboard specifications, or report producers.
 - DO NOT add dependencies, change product behavior, redesign the interface, broaden the selected refactor, or combine unrelated cleanup.
 - DO NOT weaken, remove, or skip tests to make the change pass.
