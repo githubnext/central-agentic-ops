@@ -2373,6 +2373,13 @@ describe('presenter built-in and custom pages', () => {
               }]
             },
             {
+              id: 'workflow-runtime',
+              kind: /** @type {'custom'} */ ('custom'),
+              title: 'Workflow runtime',
+              route: { 'hash-query-parameter': 'workflow' },
+              views: []
+            },
+            {
               id: 'workflow-detail',
               kind: /** @type {'custom'} */ ('custom'),
               title: 'Workflow',

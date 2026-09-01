@@ -1418,6 +1418,13 @@ test('workflow page template follows its JSON-declared route and renders attribu
               views: []
             },
             {
+              id: 'workflow-runtime',
+              kind: 'custom',
+              title: 'Workflow runtime',
+              route: { 'hash-query-parameter': 'workflow' },
+              views: []
+            },
+            {
               id: 'workflow-detail',
               kind: 'custom',
               title: 'Workflow',
