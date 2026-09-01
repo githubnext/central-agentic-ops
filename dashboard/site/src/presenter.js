@@ -157,7 +157,7 @@ export function renderDashboard(input) {
     appShell
   );
   enableSidebarToggle(root);
-  enableDashboardPageNavigation(root, title);
+  enableDashboardPageNavigation(root, document.dashboard.title);
   return root;
 }
 
