@@ -41,15 +41,17 @@ function dashboard(value, source) {
  */
 export async function bundleDashboards(outputPath, dashboardsDirectory) {
   const primary = dashboard(JSON.parse(await readFile(outputPath, "utf8")), outputPath);
-  const filenames = await readdir(dashboardsDirectory).catch((error) => {
+  const entries = await readdir(dashboardsDirectory, { withFileTypes: true }).catch((error) => {
     if (error?.code === "ENOENT") return [];
     throw error;
   });
   const additions = await Promise.all(
-    filenames.filter((filename) => filename.endsWith(".json")).sort().map(async (filename) => {
-      const source = path.join(dashboardsDirectory, filename);
-      return dashboard(JSON.parse(await readFile(source, "utf8")), source);
-    }),
+    entries.filter((entry) => entry.isFile() && entry.name.endsWith(".json"))
+      .sort((left, right) => left.name.localeCompare(right.name))
+      .map(async ({ name: filename }) => {
+        const source = path.join(dashboardsDirectory, filename);
+        return dashboard(JSON.parse(await readFile(source, "utf8")), source);
+      }),
   );
   await writeFile(outputPath, `${JSON.stringify(composeDashboardDocuments(primary, additions), null, 2)}\n`);
 }
