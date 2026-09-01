@@ -9,7 +9,7 @@ import { renderStatusBadge } from './badge.js';
 import { renderChartLegend, renderChartWidget, renderPieLegend } from './chart-elements.js';
 import { findLink, renderExternalLink } from './link-content.js';
 import { isApprovalConclusion, isFailureConclusion } from './run-classification.js';
-import { formatUtcDateTime } from './ui-primitives.js';
+import { formatUtcDateTime, renderVitalStat } from './ui-primitives.js';
 import { renderTitledBodySection } from './view-chrome.js';
 import { renderWorkflowIdentity } from './workflow-identity.js';
 import { renderLinkTabs } from './tab-nav.js';
@@ -130,8 +130,8 @@ function renderRuntimeMetrics(context, workflow, runs, usage) {
       'dl',
       { className: 'workflow-runtime-metrics' },
       renderRunHealthMetric(health, healthAvailable, coverageLabel(runMetadata), recentMetricLabel('Run health', runMetadata)),
-      renderSimpleMetric('Registration', registration, 'Current GitHub Actions state'),
-      renderSimpleMetric(
+      renderVitalStat('Registration', registration, 'Current GitHub Actions state'),
+      renderVitalStat(
         recentMetricLabel('AI Credits', usageMetadata),
         usageAvailable && usageMeasured ? formatNumber(usageTotal, { name: 'AI Credits', symbol: 'AIC', significant: 0.1 }) : '—',
         usageAvailable
@@ -184,11 +184,6 @@ function renderRunHealthMetric(health, available, coverage, label) {
     renderPieLegend(/** @type {Array<[string, number]>} */ (entries), health.total),
     h('p', null, coverage)
   );
-}
-
-/** @param {string} label @param {string} value @param {string} detail */
-function renderSimpleMetric(label, value, detail) {
-  return h('div', null, h('dt', null, label), h('dd', null, value), h('p', null, detail));
 }
 
 /**
