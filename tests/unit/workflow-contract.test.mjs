@@ -472,6 +472,27 @@ test("root package provides default control-repository agent context", () => {
   assert.match(setupSkill, /preserve it unchanged unless the user explicitly approves a merge/);
 });
 
+test("catalog runtime policy resolver delegates to the canonical source", () => {
+  const rootManifest = readFileSync(join(root, "aw.yml"), "utf8");
+  const policy = JSON.parse(execFileSync(process.execPath, [
+    join(root, ".github", "aw", "control-policy", "resolve.mjs"),
+    "--effective",
+    join(root, ".github", "central-agentic-ops.json"),
+  ], {
+    encoding: "utf8",
+    env: {
+      ...process.env,
+      CAO_PACKAGE: "dependabot",
+      CAO_ROLE: "orchestrator",
+      GITHUB_REPOSITORY: "githubnext/central-agentic-ops",
+    },
+  }));
+
+  assert.equal(policy.authorized, true);
+  assert.equal(policy.package, "dependabot");
+  assert.match(rootManifest, /source: \.github\/scripts\/control-policy\/resolve\.mjs\n\s+destination: \.github\/aw\/control-policy\/resolve\.mjs/);
+});
+
 test("root package directly includes grader-backed workers for dependency packaging", () => {
   const rootManifest = readFileSync(join(root, "aw.yml"), "utf8");
   const importedWorkerIds = [
