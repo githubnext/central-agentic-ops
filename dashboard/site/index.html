@@ -14,6 +14,7 @@
     <div id="root"></div>
     <script type="module">
       import { renderDashboard } from "./src/presenter.js";
+      import { startLoadingProgress } from "./src/loading-progress.js";
       import { readCachedSources, writeCachedSources } from "./src/source-cache.js";
 
       const metadata = (id, overrides = {}) => ({
@@ -335,6 +336,7 @@
       if (new URLSearchParams(window.location.search).has("fixtures")) {
         renderSources(fixtureSources);
       } else {
+        const loadingProgress = startLoadingProgress(document);
         let dashboard = renderSources({}, "loading");
         const cacheKey = new URL("./sources.json", window.location.href).href;
         const liveSourcesPromise = fetch("./sources.json").then(async (response) => {
@@ -374,6 +376,8 @@
             root.textContent = failure.message;
             throw failure;
           }
+        } finally {
+          loadingProgress.complete();
         }
       }
     </script>

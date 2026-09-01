@@ -11,6 +11,8 @@ describe("live Dashboard Language sources", () => {
     expect(preview.indexOf('fetch("./dashboard.json")')).toBeLessThan(preview.indexOf('fetch("./sources.json")'));
     expect(preview).toContain('renderSources({}, "loading")');
     expect(preview).toContain("dashboard-loading-skeleton");
+    expect(preview).toContain("startLoadingProgress(document)");
+    expect(preview).toContain("loadingProgress.complete()");
     expect(preview).toContain('fetch("./sources.json")');
     expect(preview).toContain('readCachedSources(window.indexedDB, cacheKey)');
     expect(preview).toContain('renderSources(cachedSources, "cached")');
