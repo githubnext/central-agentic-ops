@@ -332,6 +332,7 @@ h3 { margin: 16px 0 8px; font-size: 1rem; font-weight: 600; }
 .value-diagnostic-legend .value-gain { color: var(--success); }
 .value-diagnostic-legend .value-loss { color: var(--danger); }
 .value-attainment .primary-weekly { stroke: var(--attention); opacity: .42; }
+.value-attainment .line-chart-point.primary-weekly { r: .55px; }
 .value-attainment .primary-rolling { stroke: var(--attention); stroke-width: 4; }
 .value-attainment .line-chart-point.primary-rolling { fill: var(--attention); opacity: 0; }
 .value-attainment .chart-legend { margin-bottom: 0; }

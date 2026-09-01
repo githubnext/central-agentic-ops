@@ -348,7 +348,7 @@ function renderDiagnosticChart(series) {
           h('polyline', { className: `diagnostic-series ${className}`, points: coordinates.map((point) => `${point.x},${point.y}`).join(' '), fill: 'none' }),
           ...coordinates.map((point) => h(
             'circle',
-            { className: `diagnostic-point ${className}`, cx: point.x, cy: point.y, r: 1.7, tabIndex: 0, role: 'img', 'aria-label': `${item.name}, ${formatWeek(point.weekStart)}: ${formatPointChange(point.change)}` },
+            { className: `diagnostic-point ${className}`, cx: point.x, cy: point.y, r: 0.55, tabIndex: 0, role: 'img', 'aria-label': `${item.name}, ${formatWeek(point.weekStart)}: ${formatPointChange(point.change)}` },
             h('title', null, `${item.name}, ${formatWeek(point.weekStart)}: ${formatPointChange(point.change)}`)
           ))
         ];
