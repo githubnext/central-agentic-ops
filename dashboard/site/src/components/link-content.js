@@ -124,20 +124,31 @@ export function renderOutcomeLink(row, label) {
 }
 
 /**
+ * Renders arbitrary content as a safe anchor when a link is available, otherwise returns the
+ * content unchanged. Shares the external-link detection and target/rel/aria-label wiring used
+ * by every safe-link renderer in the dashboard so anchor semantics stay consistent.
+ * @param {string | HTMLElement} content
+ * @param {SafeLink | null} link
+ * @returns {string | HTMLElement}
+ */
+export function renderSafeLink(content, link) {
+  if (!link) return content;
+  const external = !link.href.startsWith('#');
+  return h('a', {
+    href: link.href,
+    target: external ? '_blank' : undefined,
+    rel: external ? 'noopener noreferrer' : undefined,
+    'aria-label': link.label
+  }, content);
+}
+
+/**
  * @param {string | HTMLElement} value
  * @param {SafeLink | null} link
  * @returns {string | HTMLElement}
  */
 export function renderLinkedValue(value, link) {
-  const external = link ? !link.href.startsWith('#') : false;
-  return link
-    ? h('a', {
-        href: link.href,
-        target: external ? '_blank' : undefined,
-        rel: external ? 'noopener noreferrer' : undefined,
-        'aria-label': link.label
-      }, value)
-    : value;
+  return renderSafeLink(value, link);
 }
 
 /**

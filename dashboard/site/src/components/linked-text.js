@@ -2,7 +2,7 @@
  * Reusable presentation-only linked text helpers for dashboard views.
  */
 
-import { h } from '../dom.js';
+import { renderSafeLink } from './link-content.js';
 
 /**
  * Renders text as an external link when a safe link is available, otherwise as plain text.
@@ -11,15 +11,7 @@ import { h } from '../dom.js';
  * @returns {string | HTMLElement}
  */
 export function renderLinkedText(text, link) {
-  const external = link ? !link.href.startsWith('#') : false;
-  return link
-    ? h('a', {
-        href: link.href,
-        target: external ? '_blank' : undefined,
-        rel: external ? 'noopener noreferrer' : undefined,
-        'aria-label': link.label
-      }, text)
-    : text;
+  return renderSafeLink(text, link);
 }
 
 /**

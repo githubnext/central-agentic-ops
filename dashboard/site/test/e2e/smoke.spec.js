@@ -122,7 +122,7 @@ function buildPresenterModuleUrl() {
   const linkContentModuleUrl = `data:text/javascript;charset=utf-8,${encodeURIComponent(linkContentSource)}`;
 
   const linkedTextSource = readFileSync(new URL('../../src/components/linked-text.js', import.meta.url), 'utf8')
-    .replace("'../dom.js'", JSON.stringify(domModuleUrl));
+    .replace("'./link-content.js'", JSON.stringify(linkContentModuleUrl));
   const linkedTextModuleUrl = `data:text/javascript;charset=utf-8,${encodeURIComponent(linkedTextSource)}`;
 
   const routeStateSource = readFileSync(new URL('../../src/components/route-empty-state.js', import.meta.url), 'utf8')
@@ -131,7 +131,8 @@ function buildPresenterModuleUrl() {
 
   const chartElementsSource = readFileSync(new URL('../../src/components/chart-elements.js', import.meta.url), 'utf8')
     .replace("'../dom.js'", JSON.stringify(domModuleUrl))
-    .replace("'../view-formatters.js'", JSON.stringify(viewFormattersModuleUrl));
+    .replace("'../view-formatters.js'", JSON.stringify(viewFormattersModuleUrl))
+    .replace("'./link-content.js'", JSON.stringify(linkContentModuleUrl));
   const chartElementsModuleUrl = `data:text/javascript;charset=utf-8,${encodeURIComponent(chartElementsSource)}`;
 
   const workflowBadgesSource = readFileSync(new URL('../../src/components/workflow-badges.js', import.meta.url), 'utf8')
