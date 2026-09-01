@@ -1101,6 +1101,7 @@
             "count-source": "runtime-signals",
             "count-label": "signals",
             "views": [
+              "runtime-anomaly-readiness",
               "runtime-needs-attention"
             ]
           },
@@ -1117,6 +1118,18 @@
           }
         ],
         "views": [
+          {
+            "id": "runtime-anomaly-readiness",
+            "title": "Statistical anomaly readiness",
+            "data": {
+              "sources": [
+                "runtime-anomaly-readiness"
+              ]
+            },
+            "mark": "element",
+            "element": "anomaly-readiness",
+            "layout": "full"
+          },
           {
             "id": "runtime-needs-attention",
             "title": "Needs attention",
