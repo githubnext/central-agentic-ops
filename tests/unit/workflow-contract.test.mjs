@@ -302,7 +302,7 @@ test("enterprise defaults, budgets, timeouts, and concurrency are finite", () =>
     "eu-cra-compliance.md": { credits: 200, timeout: 15, dispatchMax: 48, workers: 6 },
     "eu-cra-compliance-package-maintainer.md": { credits: 200, timeout: 20 },
     "optimization.md": { credits: 250, timeout: 15, dispatchMax: 20, workers: 2 },
-    "self-care.md": { credits: 200, timeout: 15, dispatchMax: 2, workers: 2 },
+    "self-care.md": { credits: 200, timeout: 15, dispatchMax: 3, workers: 3 },
     "ambient-context-agents-md-curator.md": { credits: 400, timeout: 25 },
     "ambient-context-skills-curator.md": { credits: 400, timeout: 20 },
     "aw-failures-investigator.md": { credits: 500, timeout: 30 },
@@ -317,6 +317,7 @@ test("enterprise defaults, budgets, timeouts, and concurrency are finite", () =>
     "optimization-ai-credit-auditor.md": { credits: 350, timeout: 35 },
     "optimization-ai-credit-optimizer.md": { credits: 500, timeout: 30 },
     "self-care-accessibility-checker.md": { credits: 400, timeout: 30 },
+    "self-care-code-improvement.md": { credits: 400, timeout: 30 },
     "self-care-primer-brand-checker.md": { credits: 400, timeout: 25 },
   };
 
@@ -540,6 +541,7 @@ test("root CAO workflows defer exclusive Copilot auth selection to add-wizard", 
     "optimization-ai-credit-optimizer",
     "optimization",
     "self-care-accessibility-checker",
+    "self-care-code-improvement",
     "self-care-primer-brand-checker",
     "self-care",
   ];
@@ -840,6 +842,7 @@ test("live workers require target-owned package authority before agent execution
     ["optimization-ai-credit-optimizer.md", "optimization"],
     ["self-care.md", "self-care"],
     ["self-care-accessibility-checker.md", "self-care"],
+    ["self-care-code-improvement.md", "self-care"],
     ["self-care-primer-brand-checker.md", "self-care"],
   ]) {
     assert.match(workflow(name), new RegExp(`package: ${bundle}`));
@@ -897,6 +900,7 @@ test("operation workflows optionally load per-operation markdown steering", () =
     ["optimization-ai-credit-optimizer.md", "optimization"],
     ["self-care.md", "self-care"],
     ["self-care-accessibility-checker.md", "self-care"],
+    ["self-care-code-improvement.md", "self-care"],
     ["self-care-primer-brand-checker.md", "self-care"],
   ]) {
     assert.match(
@@ -1006,6 +1010,7 @@ test("every worker uses the standard dispatch envelope and safe mode vocabulary"
     ["optimization-ai-credit-auditor.md", "optimization", "ai-credit-auditor"],
     ["optimization-ai-credit-optimizer.md", "optimization", "ai-credit-optimizer"],
     ["self-care-accessibility-checker.md", "self-care", "accessibility-checker"],
+    ["self-care-code-improvement.md", "self-care", "code-improvement"],
     ["self-care-primer-brand-checker.md", "self-care", "primer-brand-checker"],
   ];
 
@@ -1353,10 +1358,16 @@ test("CAO dashboard reviewer checks successful documentation deployments", () =>
   assert.doesNotMatch(source, /^\s+(create-pull-request|add-comment|create-discussion|push-to-pull-request-branch):/m);
 });
 
-test("code improvement permits top-level and nested dashboard JavaScript sources", () => {
-  const source = workflow("code-improvement.md");
+test("SelfCare code improvement preserves its focused dashboard component mission", () => {
+  const source = workflow("self-care-code-improvement.md");
+  const liveGuard = "if: ${{ inputs.target_repo == 'githubnext/central-agentic-ops' && (inputs.safe_output_mode || 'review') == 'live' }}";
 
+  assert.match(source, /^name: "SelfCare \/ Code Improvement"$/m);
+  assert.match(source, /package: self-care/);
+  assert.match(source, /worker: code-improvement/);
+  assert.match(source, /safe_output_mode` is `live`/);
   assert.match(source, /allowed-files:\n\s+- "dashboard\/site\/src\/\*\.js"\n\s+- "dashboard\/site\/src\/\*\*\/\*\.js"\n\s+- "dashboard\/site\/test\/\*\*\/\*\.js"/);
+  assert.equal(source.split(liveGuard).length - 1, 3);
 });
 
 test("dashboard authoring corpus workflow generates only validated training examples", () => {
@@ -1464,6 +1475,7 @@ test("clean-room compilation emits the expected GitHub Actions settings", { time
       "optimization-ai-credit-optimizer.lock.yml",
       "optimization.lock.yml",
       "self-care-accessibility-checker.lock.yml",
+      "self-care-code-improvement.lock.yml",
       "self-care-primer-brand-checker.lock.yml",
       "self-care.lock.yml",
     ];
@@ -1471,7 +1483,6 @@ test("clean-room compilation emits the expected GitHub Actions settings", { time
       ...packageLockNames,
       "advisory-package-maintainer.lock.yml",
       "cao-dashboard-review.lock.yml",
-      "code-improvement.lock.yml",
       "dashboard-authoring-corpus.lock.yml",
       "multi-device-docs-tester.lock.yml",
       "eu-cra-compliance-package-maintainer.lock.yml",
@@ -1547,6 +1558,7 @@ test("clean-room compilation emits the expected GitHub Actions settings", { time
       ["optimization-ai-credit-auditor.lock.yml", ["optimization", "ai-credit-auditor"]],
       ["optimization-ai-credit-optimizer.lock.yml", ["optimization", "ai-credit-optimizer"]],
       ["self-care-accessibility-checker.lock.yml", ["self-care", "accessibility-checker"]],
+      ["self-care-code-improvement.lock.yml", ["self-care", "code-improvement"]],
       ["self-care-primer-brand-checker.lock.yml", ["self-care", "primer-brand-checker"]],
     ]);
     for (const [name, [packageName, workerName]] of workerGates) {
@@ -1838,7 +1850,7 @@ test("Dashboard inventory links multiline orchestrator worker lists", () => {
         ],
       },
       { id: "optimization", workers: ["optimization-ai-credit-auditor", "optimization-ai-credit-optimizer"] },
-      { id: "self-care", workers: ["self-care-accessibility-checker", "self-care-primer-brand-checker"] },
+      { id: "self-care", workers: ["self-care-accessibility-checker", "self-care-code-improvement", "self-care-primer-brand-checker"] },
       { id: "uk-ai-advisory", workers: ["advisory-uk-ai-operational-resilience"] },
     ]);
   } finally {

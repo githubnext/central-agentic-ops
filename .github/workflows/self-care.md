@@ -44,7 +44,7 @@ imports:
     with:
       package: self-care
       role: orchestrator
-      dispatch_max: "2"
+      dispatch_max: "3"
       orchestrator_credits: "200"
       worker_credits_per_target: "800"
 
@@ -67,8 +67,8 @@ network:
 
 safe-outputs:
   dispatch-workflow:
-    workflows: [self-care-accessibility-checker, self-care-primer-brand-checker]
-    max: 2
+    workflows: [self-care-accessibility-checker, self-care-code-improvement, self-care-primer-brand-checker]
+    max: 3
 
 source: githubnext/central-agentic-ops@a4b937e2ee4e540d3ccce1377f8943315670f33d
 ---
@@ -81,17 +81,18 @@ source: githubnext/central-agentic-ops@a4b937e2ee4e540d3ccce1377f8943315670f33d
 
 This operation is exclusively for `githubnext/central-agentic-ops`. Select that repository only when its precomputed candidate mode is `live`. Treat every other repository and every non-live candidate as ineligible, regardless of apparent need, and record the skip reason in the standard report.
 
-The single eligible repository contains the documentation site and dashboard maintained by the two workers. Do not discover, rank, or dispatch work to any other repository.
+The single eligible repository contains the documentation site and dashboard maintained by the three workers. Do not discover, rank, or dispatch work to any other repository.
 
 ## Workers
 
 - `self-care-accessibility-checker`: audits the rendered documentation site with axe-core, keyboard traversal, and browser evidence, then publishes one prioritized accessibility issue.
+- `self-care-code-improvement`: extracts one evidenced duplicated dashboard UI construct into a tested reusable component and opens one focused draft pull request.
 - `self-care-primer-brand-checker`: audits the dashboard against retrieved Primer brand guidance and opens one focused draft pull request when an evidenced presentational fix is available.
 
-Dispatch both enabled workers for the selected repository. Never dispatch either worker in review mode or for another repository.
+Dispatch all three enabled workers for the selected repository. Never dispatch a worker in review mode or for another repository.
 
 ## Completion
 
 Finish with the standard orchestrator report inherited from `shared/control.md`. Preserve `Scope`, `Repository Decisions`, `Workers`, `Dispatches`, and `Outcome`, including every standard field. Use exact precomputed totals for repositories scanned and distinguish eligible, selected, skipped, and deferred repositories. Use `0`, `none`, or `not applicable` for every empty field.
 
-In `Outcome`, additionally state whether the sole authorized live target was selected and whether both SelfCare workers were dispatched.
+In `Outcome`, additionally state whether the sole authorized live target was selected and whether all three SelfCare workers were dispatched.

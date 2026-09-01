@@ -126,6 +126,11 @@ test("checked-in SelfCare policy selects only the repository-local live target",
       enabled: true,
       max_mode: null,
     },
+    "self-care-code-improvement": {
+      worker: "code-improvement",
+      enabled: true,
+      max_mode: null,
+    },
     "self-care-primer-brand-checker": {
       worker: "primer-brand-checker",
       enabled: true,

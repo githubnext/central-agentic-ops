@@ -61,6 +61,7 @@ const dashboardExpectedFiles = [...readFileSync(
 ).matchAll(/^\s+destination: (.+)$/gm)].map((match) => match[1]);
 const selfCareExpectedFiles = [
   ".github/workflows/self-care-accessibility-checker.md",
+  ".github/workflows/self-care-code-improvement.md",
   ".github/workflows/self-care-primer-brand-checker.md",
   ".github/workflows/self-care.md",
   ".github/workflows/shared/control-precompute.md",

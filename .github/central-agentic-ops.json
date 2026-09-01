@@ -99,6 +99,9 @@
           "accessibility-checker": {
             "workflow": "self-care-accessibility-checker"
           },
+          "code-improvement": {
+            "workflow": "self-care-code-improvement"
+          },
           "primer-brand-checker": {
             "workflow": "self-care-primer-brand-checker"
           }
