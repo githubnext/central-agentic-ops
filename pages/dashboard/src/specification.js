@@ -32,8 +32,7 @@ export const VIEW_ELEMENT_VALUES = [
   'repository-workflows',
   'workflow-detail',
   'workflow-runtime',
-  'outcome-detail',
-  'dispatch-catalog'
+  'outcome-detail'
 ];
 export const VIEW_CHART_VALUES = ['bar', 'line', 'pie'];
 export const VIEW_LAYOUT_VALUES = ['full', 'half', 'third'];

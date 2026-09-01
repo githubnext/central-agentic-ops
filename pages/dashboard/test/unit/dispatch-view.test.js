@@ -16,7 +16,7 @@ const metadata = {
 };
 
 describe('declarative dispatch view', () => {
-  it('renders the report-style dispatch catalog with reusable table controls', () => {
+  it('renders dispatch JSON through the generic table and cell elements', () => {
     const rendered = renderDashboard({
       document: {
         languageVersion: '0.1.0',
@@ -45,9 +45,11 @@ describe('declarative dispatch view', () => {
     });
 
     expect(dispatchPage.views[0]).toMatchObject({
-      mark: 'element',
-      element: 'dispatch-catalog',
-      data: { sources: ['dispatches'] }
+      mark: 'table',
+      data: { source: 'dispatches' },
+      encoding: {
+        href: { field: 'run-link' }
+      }
     });
     expect([...rendered.querySelectorAll('thead tr:first-child th')].map((cell) => cell.textContent)).toEqual([
       'Started',
@@ -60,15 +62,14 @@ describe('declarative dispatch view', () => {
     ]);
     expect(rendered.textContent).toContain('Package worker');
     expect(rendered.textContent).toContain('Update dependencies');
-    expect(rendered.querySelector('table')?.className).toBe('dispatch-table');
+    expect(rendered.querySelector('table')?.className).toBe('custom-table');
     expect(rendered.querySelector('.status-attention')).not.toBeNull();
-    expect(rendered.querySelector('.table-summary-row')).toBeNull();
-    expect(rendered.querySelector('input[type="search"]')?.getAttribute('placeholder')).toBe('Run, package, worker, status, or repository');
-    expect([...rendered.querySelectorAll('[data-table-facet="package-name"] option')].map((option) => option.textContent)).toEqual(['All packages', 'Dependabot']);
-    const started = rendered.querySelector('tbody th[scope="row"] a[href="https://github.com/githubnext/control/actions/runs/3"] time');
+    expect(rendered.querySelector('.table-summary-row')).not.toBeNull();
+    expect(rendered.querySelector('input[type="search"]')?.getAttribute('placeholder')).toBe('Filter rows');
+    const started = rendered.querySelector('tbody td time');
     expect(started?.getAttribute('datetime')).toBe('2026-08-30T07:00:00Z');
     expect(started?.textContent).toBe('Aug 30, 2026, 7:00 AM');
-    expect(rendered.querySelector('tbody')?.textContent).not.toContain('Run 3');
+    expect(rendered.querySelector('tbody td a[href="https://github.com/githubnext/control/actions/runs/3"]')).not.toBeNull();
     expect(rendered.querySelector('a[href="https://github.com/githubnext/control/blob/HEAD/worker.yml"]')?.textContent).toBe('Dependency updater');
     expect(rendered.querySelector('a[href="https://github.com/githubnext/control"]')?.textContent).toBe('githubnext/control');
   });

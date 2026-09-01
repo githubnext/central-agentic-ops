@@ -130,6 +130,14 @@ Evidence paths below are relative to:
 - Reusable presentation: removed the specialized topology renderer and styles; shared summary, table, link, badge, filtering, sorting, and empty-state components now own presentation.
 - Preserved evidence boundaries: the views describe declared workflow relationships and explicitly avoid claiming that a dispatch occurred.
 
+## 2026-09-01 dispatch catalog entry
+
+- Investigation: audited the remaining JavaScript-only views and selected the dispatch catalog as the smallest complete migration to generic Dashboard Language marks.
+- Declarative specification: replaced the `dispatch-catalog` element in `dashboard.json` with one generic table view whose columns, links, displays, and empty state are JSON-defined.
+- JSON-shaped data: retained `runtime-data.js` dispatch rows and the reusable `dispatch-type-classification.json` rules without moving presentation decisions back into data derivation.
+- Reusable presentation: removed the specialized dispatch renderer; shared table, temporal cell, status, entity-link, filtering, faceting, sorting, summary, and empty-state components now own presentation.
+- Preserved evidence boundaries: only retained runs whose authoritative event is `workflow_dispatch` appear, in descending start-time order.
+
 ## 2026-09-01 badge-strip entry
 
 - Extraction: `src/components/workflow-badges.js` for shared workflow role and package-membership badge strips.
