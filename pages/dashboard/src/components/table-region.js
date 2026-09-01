@@ -6,7 +6,7 @@ import { h } from '../dom.js';
 import { renderTableSummaryRow } from './table-summary.js';
 
 /**
- * @typedef {{ key: string, label: string, columnIndex: number }} TableFilterField
+ * @typedef {{ key: string, label: string, allLabel?: string, columnIndex: number, always?: boolean }} TableFilterField
  */
 
 const DEFAULT_PAGE_SIZE = 25;
@@ -25,8 +25,11 @@ const DEFAULT_PAGE_SIZE = 25;
  *   bodyRows: unknown,
  *   filterLabel?: string,
  *   filterId?: string,
+ *   filterPlaceholder?: string,
  *   filterFields?: TableFilterField[],
  *   pageSize?: number,
+ *   resultNoun?: string,
+ *   resultNounPlural?: string,
  *   sortable?: boolean
  * }} options
  * @returns {HTMLElement}
@@ -42,8 +45,11 @@ export function renderTableRegion(options) {
     bodyRows,
     filterLabel,
     filterId,
+    filterPlaceholder = 'Filter rows',
     filterFields = [],
-    pageSize = DEFAULT_PAGE_SIZE
+    pageSize = DEFAULT_PAGE_SIZE,
+    resultNoun,
+    resultNounPlural
   } = options;
   const rowCount = getBodyRowCount(bodyRows);
   const hasRows = rowCount > 0;
@@ -64,7 +70,7 @@ export function renderTableRegion(options) {
           h('span', null, filterLabel),
           h('input', {
             type: 'search',
-            placeholder: 'Filter rows',
+            placeholder: filterPlaceholder,
             'data-table-filter': ''
           })
         ),
@@ -75,11 +81,11 @@ export function renderTableRegion(options) {
           h(
             'select',
             { 'data-table-facet': facet.key, 'data-table-column-index': String(facet.columnIndex) },
-            h('option', { value: '' }, `All ${facet.label.toLocaleLowerCase('en')}`),
+            h('option', { value: '' }, facet.allLabel ?? `All ${facet.label.toLocaleLowerCase('en')}`),
             ...facet.values.map((value) => h('option', { value }, value))
           )
         )),
-        h('output', { className: 'table-filter-result', 'aria-live': 'polite' }, formatResultCount(Math.min(rowCount, pageSize), rowCount))
+        h('output', { className: 'table-filter-result', 'aria-live': 'polite' }, formatResultCount(Math.min(rowCount, pageSize), rowCount, resultNoun, resultNounPlural))
       )
       : null,
     h(
@@ -138,7 +144,7 @@ export function renderTableRegion(options) {
     enableTableSort(region);
   }
   if (interactive) {
-    enableTableFilter(region, { filterId, pageSize });
+    enableTableFilter(region, { filterId, pageSize, resultNoun, resultNounPlural });
   }
   return region;
 }
@@ -202,7 +208,7 @@ function compareCells(left, right) {
 
 /**
  * @param {HTMLElement} region
- * @param {{ filterId?: string, pageSize: number }} options
+ * @param {{ filterId?: string, pageSize: number, resultNoun?: string, resultNounPlural?: string }} options
  */
 function enableTableFilter(region, options) {
   const input = region.querySelector('[data-table-filter]');
@@ -252,7 +258,7 @@ function enableTableFilter(region, options) {
      row.hidden = !visible;
      if (visible) shown += 1;
    }
-   output.textContent = formatResultCount(shown, matched);
+   output.textContent = formatResultCount(shown, matched, options.resultNoun, options.resultNounPlural);
    more.hidden = shown >= matched;
   };
 
@@ -291,9 +297,11 @@ function enableTableFilter(region, options) {
  * @param {number} shown
  * @param {number} matched
  * @returns {string}
+ * @param {string} [noun]
+ * @param {string} [pluralNoun]
  */
-function formatResultCount(shown, matched) {
-  return `Showing ${shown.toLocaleString('en')} of ${matched.toLocaleString('en')} ${matched === 1 ? 'result' : 'results'}`;
+function formatResultCount(shown, matched, noun = 'result', pluralNoun = `${noun}s`) {
+  return `Showing ${shown.toLocaleString('en')} of ${matched.toLocaleString('en')} ${matched === 1 ? noun : pluralNoun}`;
 }
 
 /**
@@ -311,7 +319,7 @@ function getTableFacets(bodyRows, filterFields, rowCount) {
        : '')
      .filter(Boolean))]
      .sort((left, right) => left.localeCompare(right));
-   return values.length > 1 && values.length < rowCount && values.length <= 10
+   return ((values.length > 1 && values.length < rowCount && values.length <= 10) || (field.always && values.length > 0))
      ? [{ ...field, values }]
      : [];
   });
