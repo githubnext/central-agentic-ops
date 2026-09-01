@@ -9,7 +9,7 @@ const pending = new Map();
 /**
  * Runs a serializable tidy pipeline in a Web Worker when the environment supports it.
  * @param {Array<Record<string, unknown>>} data
- * @param {Array<Record<string, any>>} operators
+ * @param {Parameters<typeof tidy>[1]} operators
  * @returns {Array<Record<string, unknown>>|Promise<Array<Record<string, unknown>>>}
  */
 export function processRows(data, operators) {

@@ -30,7 +30,7 @@ function applyOperator(rows, operator) {
   if (operator.op === 'summarize') return summarize(rows, operator);
   if (operator.op === 'arrange') return arrange(rows, operator);
   if (operator.op === 'slice') {
-    const offset = Number.isInteger(operator.offset) && operator.offset > 0 ? operator.offset : 0;
+    const offset = Number.isInteger(operator.offset) ? Math.max(0, Number(operator.offset)) : 0;
     return rows.slice(offset, offset + Math.max(0, operator.limit));
   }
   return rows;
