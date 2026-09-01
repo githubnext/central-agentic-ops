@@ -140,7 +140,9 @@ function renderContextSummaryElement(context) {
 
 /** @param {ElementRenderContext} context */
 function renderAnomalyReadinessElement(context) {
-  return renderAnomalyReadiness(rowsFor(context, context.sourceNames[0])[0] ?? {});
+  const sourceName = context.sourceNames[0];
+  const row = sourceName ? rowsFor(context, sourceName)[0] : undefined;
+  return row ? renderAnomalyReadiness(row) : null;
 }
 
 /** @param {Record<string, unknown>} row */

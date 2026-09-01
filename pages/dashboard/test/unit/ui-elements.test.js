@@ -37,6 +37,14 @@ describe('UI elements', () => {
     expect(rendered?.querySelector('.octicon-pulse')).not.toBeNull();
     expect(rendered?.textContent).toContain('Statistical anomalies · not evaluated');
     expect(rendered?.textContent).toContain('A representative historical baseline is unavailable.');
+    expect(renderUiElement('anomaly-readiness', {
+      pageId: 'runtime',
+      title: 'Statistical anomaly readiness',
+      sourceNames: [],
+      sources: {},
+      contextDetails: [],
+      headingTag: 'h3'
+    })).toBeNull();
   });
 
   it('allows same-document signal navigation and rejects non-fragment URLs', () => {
