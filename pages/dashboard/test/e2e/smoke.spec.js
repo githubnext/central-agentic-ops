@@ -156,12 +156,17 @@ function buildPresenterModuleUrl() {
     .replace("'./tab-nav.js'", JSON.stringify(tabNavModuleUrl));
   const repositoryWorkflowsModuleUrl = `data:text/javascript;charset=utf-8,${encodeURIComponent(repositoryWorkflowsSource)}`;
 
+  const workflowIdentitySource = readFileSync(new URL('../../src/components/workflow-identity.js', import.meta.url), 'utf8')
+    .replace("'../dom.js'", JSON.stringify(domModuleUrl))
+    .replace("'./link-content.js'", JSON.stringify(linkContentModuleUrl));
+  const workflowIdentityModuleUrl = `data:text/javascript;charset=utf-8,${encodeURIComponent(workflowIdentitySource)}`;
+
   const workflowDetailSource = readFileSync(new URL('../../src/components/workflow-detail.js', import.meta.url), 'utf8')
     .replace("'../dom.js'", JSON.stringify(domModuleUrl))
     .replace("'../octicons.js'", JSON.stringify(octiconsModuleUrl))
-    .replace("'./link-content.js'", JSON.stringify(linkContentModuleUrl))
     .replace("'./report-list.js'", JSON.stringify(reportListModuleUrl))
-    .replace("'./tab-nav.js'", JSON.stringify(tabNavModuleUrl));
+    .replace("'./tab-nav.js'", JSON.stringify(tabNavModuleUrl))
+    .replace("'./workflow-identity.js'", JSON.stringify(workflowIdentityModuleUrl));
   const workflowDetailModuleUrl = `data:text/javascript;charset=utf-8,${encodeURIComponent(workflowDetailSource)}`;
   const workflowRuntimeSource = readFileSync(new URL('../../src/components/workflow-runtime.js', import.meta.url), 'utf8')
     .replace("'../dom.js'", JSON.stringify(domModuleUrl))
@@ -172,7 +177,8 @@ function buildPresenterModuleUrl() {
     .replace("'./link-content.js'", JSON.stringify(linkContentModuleUrl))
     .replace("'./run-classification.js'", JSON.stringify(runClassificationModuleUrl))
     .replace("'./ui-primitives.js'", JSON.stringify(uiPrimitivesModuleUrl))
-    .replace("'./view-chrome.js'", JSON.stringify(viewChromeModuleUrl));
+    .replace("'./view-chrome.js'", JSON.stringify(viewChromeModuleUrl))
+    .replace("'./workflow-identity.js'", JSON.stringify(workflowIdentityModuleUrl));
   const workflowRuntimeModuleUrl = `data:text/javascript;charset=utf-8,${encodeURIComponent(workflowRuntimeSource)}`;
 
   const outcomeDetailSource = readFileSync(new URL('../../src/components/outcome-detail.js', import.meta.url), 'utf8')
