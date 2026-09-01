@@ -81,8 +81,13 @@ export const catalogEntries: CatalogEntry[] = Object.entries(manifests)
   });
 
 const catalogEntriesBySlug = new Map(catalogEntries.map((entry) => [entry.slug, entry]));
+const configuredPackages: unknown = controlPolicy["control-plane"]?.packages;
 
-export const configuredOperationEntries = Object.keys(controlPolicy["control-plane"].packages).map((slug) => {
+if (typeof configuredPackages !== "object" || configuredPackages === null || Array.isArray(configuredPackages)) {
+  throw new Error(".github/central-agentic-ops.json must define control-plane.packages as an object");
+}
+
+export const configuredOperationEntries = Object.keys(configuredPackages).map((slug) => {
   const entry = catalogEntriesBySlug.get(slug);
   if (!entry) throw new Error(`Configured package ${slug} must have a catalog manifest`);
   return entry;
