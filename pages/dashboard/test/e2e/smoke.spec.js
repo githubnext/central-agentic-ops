@@ -568,6 +568,84 @@ test('built-in repositories page keeps repository scope above the run metadata',
   expect(boxes[0].x + boxes[0].width).toBeCloseTo(boxes[2].x + boxes[2].width, 0);
 });
 
+test('pie charts match the report layout at medium viewport widths', async ({ page }) => {
+  const presenterModuleUrl = buildPresenterModuleUrl();
+  await page.setViewportSize({ width: 800, height: 900 });
+
+  await page.setContent(`
+    <div id="root"></div>
+    <script type="module">
+      import { renderDashboard } from ${JSON.stringify(presenterModuleUrl)};
+
+      const dashboardDocument = {
+        languageVersion: '0.1.0',
+        dashboard: {
+          id: 'pie-layout',
+          title: 'Pie Layout',
+          pages: [{
+            id: 'cost',
+            kind: 'custom',
+            title: 'Cost',
+            views: [{
+              id: 'repository-allocation',
+              title: 'AI Credit usage by AW repository',
+              description: 'Read-only usage reported by AW runs.',
+              data: { source: 'usage' },
+              mark: 'chart',
+              chart: 'pie',
+              encoding: {
+                x: { field: 'repository', type: 'nominal', title: 'Repository' },
+                y: { field: 'aic', type: 'quantitative', aggregate: 'sum', title: 'Total AIC' }
+              }
+            }]
+          }],
+          navigation: [{ label: 'Investigate', pages: ['cost'] }]
+        }
+      };
+      const sources = {
+        usage: {
+          source: 'usage',
+          rows: [
+            { repository: 'central-agentic-ops', aic: 5 },
+            { repository: 'service', aic: 3 }
+          ],
+          metadata: {
+            'source-id': 'pie-layout-fixture',
+            'source-kind': 'fixture',
+            'as-of': '2026-09-01T03:00:00Z',
+            'retrieved-at': '2026-09-01T03:01:00Z',
+            completeness: 'complete',
+            freshness: 'fresh',
+            availability: 'available'
+          }
+        }
+      };
+
+      document.querySelector('#root').append(renderDashboard({ document: dashboardDocument, sources }));
+    </script>
+  `);
+
+  const heading = page.getByRole('heading', { name: 'AI Credit usage by AW repository' });
+  const description = page.locator('.chart-view-pie > .view-description');
+  const layout = page.locator('.pie-chart-layout');
+  const chart = layout.locator('.pie-chart-widget');
+  const legend = layout.locator('.chart-legend-pie');
+  const [headingBox, descriptionBox, layoutBox, chartBox, legendBox] = await Promise.all(
+    [heading, description, layout, chart, legend].map((locator) => locator.boundingBox())
+  );
+
+  expect(headingBox).not.toBeNull();
+  expect(descriptionBox).not.toBeNull();
+  expect(layoutBox).not.toBeNull();
+  expect(chartBox).not.toBeNull();
+  expect(legendBox).not.toBeNull();
+  expect(layoutBox?.x).toBeCloseTo(headingBox?.x ?? 0, 0);
+  expect(layoutBox?.y).toBeGreaterThan((descriptionBox?.y ?? 0) + (descriptionBox?.height ?? 0));
+  expect(legendBox?.x).toBeGreaterThan((chartBox?.x ?? 0) + (chartBox?.width ?? 0));
+  expect((legendBox?.y ?? 0) + (legendBox?.height ?? 0) / 2)
+    .toBeCloseTo((chartBox?.y ?? 0) + (chartBox?.height ?? 0) / 2, 0);
+});
+
 test('DLS-PAGE-014 DLS-PAGE-015 built-in packages page renders report-style mode filters, AIC utilization, and run trends in browser', async ({ page }) => {
   const presenterModuleUrl = buildPresenterModuleUrl();
 
