@@ -425,7 +425,7 @@ describe('presenter built-in and custom pages', () => {
           source: 'workflows',
           rows: [
             { workflow: '.github/workflows/daily.md', 'workflow-name': 'Daily operations', package: 'daily', 'package-name': 'Daily', 'inventory-ready': true },
-            { workflow: '.github/workflows/release.md', 'workflow-name': 'Release updater', package: 'release', 'package-name': 'Release', 'inventory-ready': false }
+            { workflow: '.github/workflows/release.md', 'workflow-name': '<img src=x onerror=alert(1)>', package: 'release', 'package-name': 'Release', 'inventory-ready': false }
           ],
           metadata
         },
@@ -443,7 +443,7 @@ describe('presenter built-in and custom pages', () => {
             workflow: '.github/workflows/release.md',
             finding: 'warning-1',
             'finding-kind': 'authored-warning',
-            'finding-summary': 'Release warning',
+            'finding-summary': '<img src=x onerror=alert(1)>',
             'observed-at': '2026-08-31T05:00:00Z',
             'external-link': { relation: 'external', href: 'https://github.com/githubnext/central-agentic-ops/issues/1', label: 'View warning output' }
           }],
@@ -489,6 +489,8 @@ describe('presenter built-in and custom pages', () => {
     expect(signals[1]?.querySelector('a')?.getAttribute('href')).toBe('#page-packages');
     expect(signals[1]?.textContent).toContain('View package');
     expect(signals[2]?.querySelector('a')?.getAttribute('href')).toBe('#page-outcome-detail?outcome=warning-1');
+    expect(signals[2]?.querySelector('.signal-copy > strong')?.textContent).toBe('<img src=x onerror=alert(1)>');
+    expect(signals[2]?.querySelector('img')).toBeNull();
     expect(page?.textContent).toContain('No vulnerability feed is retained.');
   });
 

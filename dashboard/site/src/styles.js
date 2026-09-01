@@ -733,7 +733,6 @@ footer { padding: 20px 24px; border-top: 1px solid var(--border); color: var(--m
   .signal-item > :is(a, div) { grid-template-columns: 20px minmax(0, 1fr); }
   .signal-rank { display: none; }
   .signal-copy { grid-column: 2; }
-  .signal-copy > strong, .signal-copy > small { overflow: visible; white-space: normal; }
   .signal-evidence { grid-column: 2; justify-items: start; text-align: left; }
   .control-plane-vitals > div { padding: 10px 12px; }
   .control-plane-vitals p { min-height: 0; }
