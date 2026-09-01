@@ -642,8 +642,7 @@ describe('presenter built-in and custom pages', () => {
       'Maturity pending',
       'AIC coverage',
       'Open output',
-      'Experiment readiness',
-      'Evidence boundary'
+      'Experiment readiness'
     ]);
     expect(signals[3]?.querySelector('a')?.getAttribute('href')).toBe('https://github.com/githubnext/central-agentic-ops/issues/1');
     expect(signals[4]?.querySelector('a')?.getAttribute('href')).toBe('#page-experiments');
@@ -663,10 +662,10 @@ describe('presenter built-in and custom pages', () => {
     expect(tables[1]?.querySelector('a[aria-label="View run 103"]')?.getAttribute('href')).toContain('/actions/runs/103');
     expect(page?.querySelectorAll('.table-filter')).toHaveLength(0);
     expect(page?.textContent).toContain('not proof that a workflow caused an outcome');
-    const experimentBoundary = [...(page?.querySelectorAll('.signal-list-region') ?? [])]
-      .find((region) => region.textContent?.includes('Experiment comparisons unavailable'));
-    expect(experimentBoundary?.querySelector('.signal-copy > span')?.textContent).toBe('Evidence boundary');
+    const experimentBoundary = page?.querySelector('.dashboard-callout');
+    expect(experimentBoundary?.querySelector('.scope-kicker')?.textContent).toBe('Evidence boundary');
     expect(experimentBoundary?.querySelector('.octicon-beaker')).not.toBeNull();
+    expect(experimentBoundary?.querySelector('h3')?.textContent).toBe('Experiment comparisons unavailable');
     expect(experimentBoundary?.textContent).toContain('Experiment comparisons unavailable');
     expect(experimentBoundary?.textContent).toContain('does not infer control or treatment groups');
   });

@@ -37,6 +37,34 @@ describe('dashboard document validation', () => {
     expect(accepted.ok).toBe(true);
   });
 
+  it('validates source-free JSON callouts with canonical icons', () => {
+    const document = JSON.parse(authoritativeDashboardSource);
+    const costPage = document.dashboard.pages.find((/** @type {{ id: string }} */ page) => page.id === 'cost');
+    const callout = costPage.views.find((/** @type {{ id: string }} */ view) => view.id === 'cost-evaluation-boundary');
+    expect(callout).toMatchObject({
+      mark: 'callout',
+      callout: { label: 'Evaluation boundary', icon: 'meter' }
+    });
+    expect(callout.data).toBeUndefined();
+    expect(validateDashboardDocument(JSON.stringify(document)).ok).toBe(true);
+
+    callout.callout.icon = 'not-an-octicon';
+    callout.data = { source: 'usage' };
+    const rejected = validateDashboardDocument(JSON.stringify(document));
+    expect(rejected.ok).toBe(false);
+    if (!rejected.ok) {
+      expect(rejected.errors).toContainEqual(expect.objectContaining({
+        code: 'DLS-E005',
+        path: '$.dashboard.pages[1].views[3].callout.icon'
+      }));
+      expect(rejected.errors).toContainEqual(expect.objectContaining({
+        code: 'DLS-E003',
+        path: '$.dashboard.pages[1].views[3].data',
+        message: 'callout views must not declare data.'
+      }));
+    }
+  });
+
   it('DLS-PAGE-017 validates JSON-configured page filter bars', () => {
     const accepted = validateDashboardDocument(authoritativeDashboardSource);
     expect(accepted.ok).toBe(true);

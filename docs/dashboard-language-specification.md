@@ -541,10 +541,13 @@ An element view may declare a compact `title-link` beside an allocated page titl
 | Table | `table` | `columns` |
 | Chart | `chart` | `x`, `y` |
 | Named UI element | `element` | no encoding; one `element` name |
+| Callout | `callout` | no encoding or data; one `callout` mapping |
 
 Allowed encoding channels are `value`, `columns`, `x`, `y`, `color`, and `href`. `columns` is a non-empty sequence of field definitions; other channels contain one field definition. The `href` channel references a link-typed source field and does not select from multiple links.
 
 Field `type` values are `nominal`, `ordinal`, `quantitative`, and `temporal`. When omitted, type defaults to the intrinsic field type. A field title defaults to its kebab-case field name with words capitalized. A field may reference one dashboard unit through `unit`; the unit applies to metric, table, and chart value presentation. `published-at` is temporal.
+
+Callout views declare static explanatory content rather than logical-source observations. A callout requires non-empty view `title` and `description` fields plus a `callout` mapping with a non-empty `label` and canonical Octicon `icon`; it does not declare `data` or `encoding`.
 
 The optional table-column field `display` is `text`, `status`, `grader-status`, `mode`, `active-state`, `label`, or `digest` and defaults to `text`. It selects presentation independently from the field name. Named UI element values include `domain-attention`, `summary-grid`, `context-summary`, `signal-list`, `package-activity`, `package-detail`, `package-reports`, `repository-workflows`, `workflow-detail`, `workflow-runtime`, `outcome-detail`, and `dispatch-catalog`; renderers dispatch these values without inferring behavior from page IDs, view IDs, or source contents. The overview domain-attention element keeps its six operational domains distinct while the remaining elements can be independently assembled through `views`, `sections`, and `layout`.
 
@@ -556,7 +559,7 @@ A table view may set `controls` to `interactive` or `static`; an omitted value d
 
 ### 11.2 Data Narrowing
 
-View `data` contains `source` for `metric`, `table`, and `chart`, or a non-empty unique `sources` sequence for `element`. Every view may also contain:
+View `data` contains `source` for `metric`, `table`, and `chart`, or a non-empty unique `sources` sequence for `element`. Callout views do not contain `data`. Every data-bearing view may also contain:
 
 - `scope`, `time`, and `filters` as defined in Section 6;
 - for `metric`, `table`, and `chart`, `limit`, a positive integer; and
