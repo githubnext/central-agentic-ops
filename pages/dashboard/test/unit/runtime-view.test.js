@@ -109,7 +109,7 @@ describe('Runtime dashboard view', () => {
             }
           ],
           views: [
-            { id: 'attention', title: 'Needs attention', data: { sources: ['runtime-signals'] }, mark: 'element', element: 'signal-list' },
+            { id: 'attention', title: 'Needs attention', data: { sources: ['runtime-signals', 'runtime-evaluation-boundary'] }, mark: 'element', element: 'signal-list' },
             { id: 'summary', title: 'Execution episodes', data: { source: 'runtime-episode-summary' }, mark: 'element', element: 'summary-grid' },
             {
               id: 'episodes',
@@ -178,6 +178,10 @@ describe('Runtime dashboard view', () => {
     expect(attention).toContain('Run failures');
     expect(attention).toContain('1 worker dispatch lacks episode evidence');
     expect(attention).toContain('1 root episode has no correlated worker attempt or output');
+    expect(rendered.querySelector('.anomaly-readiness')?.getAttribute('role')).toBe('note');
+    expect(rendered.querySelector('.anomaly-readiness')?.textContent).toContain('Statistical anomalies · not evaluated');
+    expect(rendered.querySelector('.anomaly-readiness .octicon use')?.getAttribute('href')).toContain('#octicon-pulse');
+    expect(rendered.querySelectorAll('.signal-list > li')).toHaveLength(4);
     expect(rendered.querySelector('.signal-critical .signal-icon use')?.getAttribute('href')).toContain('#octicon-issue-opened');
     expect([...rendered.querySelectorAll('.signal-list > li > a')].map((link) => link.getAttribute('href'))).toEqual([
       '#page-workflow-runtime?workflow=githubnext%2Fcentral-agentic-ops%3A.github%2Fworkflows%2Fdependabot-worker.md',

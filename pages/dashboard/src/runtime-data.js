@@ -102,17 +102,11 @@ export function deriveRuntimeSources(sources) {
     });
   }
 
-  signals.push({
-    priority: 3,
-    count: 1,
-    tone: 'informational',
+  const evaluationBoundary = {
     icon: 'pulse',
-    kind: 'Evaluation boundary',
-    title: 'Statistical anomalies not evaluated',
-    detail: 'The current window does not provide a representative historical baseline. Direct evidence remains visible without inferred anomaly labels.',
-    evidence: 'Baseline unavailable',
-    action: 'Review evidence'
-  });
+    title: 'Statistical anomalies · not evaluated',
+    detail: 'The current window does not provide a representative historical baseline. Direct evidence remains visible without inferred anomaly labels.'
+  };
 
   signals.sort((left, right) => left.priority - right.priority || right.count - left.count || left.title.localeCompare(right.title));
   return {
@@ -120,6 +114,11 @@ export function deriveRuntimeSources(sources) {
     'runtime-signals': {
       source: 'runtime-signals',
       rows: signals.slice(0, 10),
+      metadata: combinedMetadata(sources)
+    },
+    'runtime-evaluation-boundary': {
+      source: 'runtime-evaluation-boundary',
+      rows: [evaluationBoundary],
       metadata: combinedMetadata(sources)
     },
     dispatches: {

@@ -10,7 +10,7 @@ import { renderPackagesView } from './packages-view.js';
 import { renderPackageNavigation } from './package-detail.js';
 import { renderWorkflowDetail } from './workflow-detail.js';
 import { renderOutcomeDetail } from './outcome-detail.js';
-import { renderSectionHeading } from './ui-primitives.js';
+import { renderInlineNotice, renderSectionHeading } from './ui-primitives.js';
 import { renderDefinitionList } from './view-chrome.js';
 import { renderWorkflowRuntime } from './workflow-runtime.js';
 
@@ -161,11 +161,20 @@ function renderContextSummaryValue(row) {
 /** @param {ElementRenderContext} context */
 function renderSignalListElement(context) {
   const rows = rowsFor(context, context.sourceNames[0]);
+  const notices = context.sourceNames
+    .slice(1)
+    .flatMap((sourceName) => rowsFor(context, sourceName))
+    .map((row) => renderInlineNotice(
+      octicon(stringValue(row.icon) || 'info'),
+      stringValue(row.title),
+      stringValue(row.detail)
+    ));
   return h(
     'div',
     { className: 'signal-list-region' },
     h('p', { className: 'signal-count' }, `${formatNumber(rows.length)} signal${rows.length === 1 ? '' : 's'}`),
     context.description ? h('p', { className: 'signal-boundary-note' }, context.description) : null,
+    ...notices,
     h(
       'ol',
       { className: 'signal-list' },
