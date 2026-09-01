@@ -139,6 +139,7 @@ describe('deriveWorkflowSources', () => {
     }));
     expect(sources['workflow-reports'].rows[0]['external-link']).toEqual(expect.objectContaining({
       href: 'https://github.com/githubnext/control/issues/2',
+      relation: 'external',
       'dashboard-href': '#page-outcome-detail?outcome=issue-2'
     }));
     expect(sources['workflow-reports'].metadata).toBe(metadata);

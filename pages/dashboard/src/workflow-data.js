@@ -76,6 +76,7 @@ function deriveWorkflowReport(row) {
       ? {
           'external-link': {
             ...sourceLink,
+            relation: 'external',
             ...(safeOutput
               ? {
                   'dashboard-href': `#page-outcome-detail?outcome=${encodeURIComponent(safeOutput)}`,
