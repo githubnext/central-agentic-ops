@@ -40,9 +40,8 @@ describe('view chrome component helpers', () => {
     expect(header[0]?.className).toBe('view-metadata view-metadata-summary');
     expect(header[0]?.getAttribute('role')).toBe('group');
     expect(header[0]?.getAttribute('aria-label')).toBe('Data status');
-    expect(header[0]?.querySelector('time')?.dateTime).toBe('2026-08-29T20:00:00Z');
+    expect(header[0]?.querySelector('time')).toBeNull();
     expect([...header[0]?.querySelectorAll('dt') ?? []].map((item) => item.textContent)).toEqual([
-      'As of',
       'Completeness',
       'Freshness'
     ]);
@@ -50,7 +49,7 @@ describe('view chrome component helpers', () => {
       'complete',
       'fresh'
     ]);
-    expect(header[0]?.querySelectorAll('.octicon')).toHaveLength(3);
+    expect(header[0]?.querySelectorAll('.octicon')).toHaveLength(2);
   });
 
   it('renders reusable view chrome paragraphs for populated and empty metadata lines', () => {
@@ -105,7 +104,7 @@ describe('view chrome component helpers', () => {
 
     expect(chrome).toHaveLength(2);
     expect(chrome[0]?.className).toBe('view-metadata view-metadata-summary');
-    expect(chrome[0]?.textContent).toBe('As of2026-08-29T20:00:00ZCompletenesscompleteFreshnessfresh');
+    expect(chrome[0]?.textContent).toBe('CompletenesscompleteFreshnessfresh');
     expect(chrome[1]?.className).toBe('view-context');
     expect(chrome[1]?.textContent).toContain('Scope: {"organization":"github"}');
   });
