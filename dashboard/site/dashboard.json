@@ -583,7 +583,8 @@
               "route-field": "repository"
             },
             "mark": "table",
-            "controls": "static",
+            "controls": "interactive",
+            "column-summaries": true,
             "empty-message": "No authored Agentic Workflows were observed for this repository.",
             "encoding": {
               "columns": [
