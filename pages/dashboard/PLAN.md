@@ -82,6 +82,7 @@ Evidence paths below are relative to:
 - `src/components/ui-primitives.js` — section headings, vital statistics, and UTC date-time presentation.
 - `src/components/view-chrome.js` — reusable section, metadata, summary, context, state, and provenance chrome.
 - `src/components/workflow-badges.js` — shared workflow role and package-membership badge strips for workflow identity and repository inventory views.
+- `src/components/workflow-route.js` — shared workflow route parsing and formatting for route-scoped workflow views.
 - `src/workflow-data.js` — package and standalone workflow inventory sources for declarative topology views.
 - `src/view-formatters.js` — numeric and aggregate value formatting.
 
@@ -188,5 +189,24 @@ Evidence paths below are relative to:
 - JSON-shaped data: reused the package-keyed `packaged-workflows` source derived from retained workflow inventory without duplicating a second package topology source.
 - Reusable presentation: consolidated package workflow and report tabs, route allocation, and unavailable states into one package-navigation component; shared table and cell components now own topology presentation.
 - Preserved evidence boundaries: the view reports authored orchestrator and worker relationships, registration, and rollout mode without asserting dispatch or execution.
+
+## 2026-09-01 workflow route helper entry
+
+- Extraction: `src/components/workflow-route.js` for shared workflow route parsing and formatting.
+- Duplication evidence and call sites collapsed:
+  - `src/components/workflow-detail.js` duplicated workflow route parsing plus route-value formatting for report navigation.
+  - `src/components/workflow-runtime.js` separately duplicated the same workflow route parsing and formatting for runtime navigation and route matching.
+- Behavior-preservation evidence:
+  - Preserved workflow-detail route validation, selected-workflow rendering, and empty/not-found states through unchanged assertions in `test/unit/workflow-detail.test.js`.
+  - Preserved workflow-runtime route validation, selected-workflow rendering, tab links, and invalid/not-found states through unchanged assertions in `test/unit/workflow-runtime.test.js`.
+  - Added focused coverage in `test/unit/workflow-route.test.js` for valid formatting plus invalid, missing, and unavailable workflow-route inputs.
+- Quality gates and proof:
+  - Rendered-output proof for affected pages is covered by the unchanged workflow-detail and workflow-runtime assertions before and after replacing both identified helper call sites.
+  - Planned quality gates for this extraction remain `npm install`, `npm run typecheck`, `npm run lint`, `npm test`, and `node ./scripts/build.mjs` from `pages/dashboard/`.
+  - Browser snapshot comparison remains blocked in-session unless Playwright browser tools are exposed.
+- Next candidates:
+  - Shared route-allocation helper across `src/components/package-detail.js`, `src/components/workflow-detail.js`, `src/components/workflow-runtime.js`, and `src/components/outcome-detail.js`.
+  - Shared linked route-tab builder across `src/components/package-detail.js`, `src/components/workflow-detail.js`, and `src/components/workflow-runtime.js`.
+  - Shared static table-section wrapper across `src/components/packages-view.js`, report/table custom views, and remaining table-heavy presentation helpers.
 
 Run-by-run history was removed during compaction; milestones, unresolved questions, current inventory, blockers, and actionable parity work remain above.

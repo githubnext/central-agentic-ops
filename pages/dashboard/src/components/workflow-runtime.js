@@ -14,6 +14,7 @@ import { renderTitledBodySection } from './view-chrome.js';
 import { renderWorkflowIdentity } from './workflow-identity.js';
 import { renderLinkTabs } from './tab-nav.js';
 import { createRouteView } from './route-empty-state.js';
+import { parseWorkflowRoute, workflowRouteValue } from './workflow-route.js';
 
 /**
  * @param {import('./ui-elements.js').ElementRenderContext} context
@@ -390,22 +391,6 @@ function qualifiedRepository(row) {
   return repository.includes('/') ? repository : `${text(row.organization)}/${repository}`.replace(/^\/|\/$/g, '');
 }
 
-/** @param {unknown} routeValue */
-function parseWorkflowRoute(routeValue) {
-  if (typeof routeValue !== 'string') return null;
-  const separator = routeValue.indexOf(':');
-  if (separator < 1) return null;
-  const repository = routeValue.slice(0, separator);
-  const workflow = routeValue.slice(separator + 1);
-  if (!/^[A-Za-z0-9](?:[A-Za-z0-9.-]{0,98}[A-Za-z0-9])?\/[A-Za-z0-9_.-]{1,100}$/.test(repository)) return null;
-  if (!/^\.github\/workflows\/[A-Za-z0-9_./-]+\.md$/.test(workflow) || workflow.includes('..')) return null;
-  return { repository, workflow };
-}
-
-/** @param {string} repository @param {string} workflow */
-export function workflowRouteValue(repository, workflow) {
-  return `${repository}:${workflow}`;
-}
 
 /** @param {Record<string, unknown>} row */
 function rowTime(row) {
