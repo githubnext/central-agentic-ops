@@ -15,7 +15,8 @@ function dashboard(value, source) {
     throw new Error(`${source} is not a dashboard document`);
   }
   const candidate = /** @type {Record<string, unknown>} */ (value);
-  if (!candidate.dashboard || typeof candidate.dashboard !== "object" || Array.isArray(candidate.dashboard)) {
+  if (typeof candidate["language-version"] !== "string" || candidate["language-version"].length === 0
+      || !candidate.dashboard || typeof candidate.dashboard !== "object" || Array.isArray(candidate.dashboard)) {
     throw new Error(`${source} is not a dashboard document`);
   }
   const dashboardCandidate = /** @type {Record<string, unknown>} */ (candidate.dashboard);
