@@ -89,12 +89,26 @@
           "workflow": "dependency-license-policy-enforcement",
           "finding": "license-policy-201",
           "finding-summary": "Direct production dependency example-package@2.0.0 is GPL-3.0-only, disallowed by policy rule production-copyleft, in package-lock.json.",
-          "finding-status": "open",
+          "finding-status": "resolved",
           "observed-at": "2026-08-03T00:05:00Z",
           "issue-link": {
             "relation": "issue",
             "href": "https://github.com/octo-org/license-demo/issues/201",
             "label": "Review license finding 201"
+          }
+        },
+        {
+          "organization": "octo-org",
+          "repository": "license-demo",
+          "workflow": "dependency-license-policy-enforcement",
+          "finding": "license-policy-202",
+          "finding-summary": "Direct production dependency sample-library@3.1.0 has no verified SPDX classification under policy rule classified-licenses-required in requirements.lock.",
+          "finding-status": "open",
+          "observed-at": "2026-08-05T00:05:00Z",
+          "issue-link": {
+            "relation": "issue",
+            "href": "https://github.com/octo-org/license-demo/issues/202",
+            "label": "Review unresolved license finding 202"
           }
         }
       ]

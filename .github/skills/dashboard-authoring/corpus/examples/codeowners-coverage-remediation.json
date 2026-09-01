@@ -125,24 +125,7 @@
       ]
     },
     "operational-values": {
-      "rows": [
-        {
-          "workflow": "codeowners-coverage-remediation",
-          "run": "synthetic-codeowners-review-201",
-          "operational-case": "synthetic-codeowners-review-201",
-          "operational-value-definition": "accepted-sensitive-path-ownership-remediations",
-          "operational-value": 0,
-          "observed-at": "2026-07-01T00:00:00Z"
-        },
-        {
-          "workflow": "codeowners-coverage-remediation",
-          "run": "synthetic-codeowners-review-202",
-          "operational-case": "synthetic-codeowners-review-202",
-          "operational-value-definition": "accepted-sensitive-path-ownership-remediations",
-          "operational-value": 1,
-          "observed-at": "2026-08-01T00:00:00Z"
-        }
-      ]
+      "rows": []
     }
   },
   "dashboard": "codeowners-coverage-remediation.dashboard.yml"

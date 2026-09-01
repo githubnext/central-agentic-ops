@@ -19,8 +19,6 @@ dashboard:
           controls: interactive
           encoding:
             columns:
-              - field: workflow
-                title: Affected workflow
               - field: run-status
                 title: Status
                 display: status

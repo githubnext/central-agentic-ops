@@ -91,12 +91,26 @@
           "workflow": "release-rollback-readiness-enforcement",
           "finding": "rollback-readiness-201",
           "finding-summary": "Candidate v2.0.0 at revision abc123 for production lacks a fresh restoration result before the approval cutoff.",
-          "finding-status": "open",
+          "finding-status": "resolved",
           "observed-at": "2026-08-09T00:05:00Z",
           "issue-link": {
             "relation": "issue",
             "href": "https://github.com/octo-org/release-demo/issues/201",
             "label": "Review rollback-readiness blocker 201"
+          }
+        },
+        {
+          "organization": "octo-org",
+          "repository": "release-demo",
+          "workflow": "release-rollback-readiness-enforcement",
+          "finding": "rollback-readiness-202",
+          "finding-summary": "Candidate v2.1.0 at revision def456 for production lacks an accountable rollback owner before the approval cutoff.",
+          "finding-status": "open",
+          "observed-at": "2026-08-11T00:05:00Z",
+          "issue-link": {
+            "relation": "issue",
+            "href": "https://github.com/octo-org/release-demo/issues/202",
+            "label": "Review unresolved rollback-readiness blocker 202"
           }
         }
       ]
