@@ -2090,3 +2090,32 @@ test('desktop navigation collapses to an icon rail and expands back to text', as
   await expect(page.locator('.app-shell')).not.toHaveClass(/sidebar-collapsed/);
   await expect(page.locator('.nav-label').first()).toBeVisible();
 });
+
+test('phone navigation omits the desktop active-item border', async ({ page }) => {
+  const presenterModuleUrl = buildPresenterModuleUrl();
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.setContent(`
+    <div id="root"></div>
+    <script type="module">
+      import { renderDashboard } from ${JSON.stringify(presenterModuleUrl)};
+      document.querySelector('#root').append(renderDashboard({
+        document: {
+          languageVersion: '0.1.0',
+          dashboard: {
+            id: 'phone-navigation-dashboard',
+            title: 'Phone Navigation',
+            pages: [
+              { id: 'overview', kind: 'custom', title: 'Overview', icon: 'home', views: [] },
+              { id: 'runs', kind: 'custom', title: 'Runs', icon: 'play', views: [] }
+            ]
+          }
+        },
+        sources: {}
+      }));
+    </script>
+  `);
+
+  const activeItem = page.locator('.primary-nav a[aria-current="page"]');
+  await expect(activeItem).toBeVisible();
+  expect(await activeItem.evaluate((item) => getComputedStyle(item, '::before').content)).toBe('none');
+});

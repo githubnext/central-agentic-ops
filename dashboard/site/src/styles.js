@@ -697,6 +697,7 @@ footer { padding: 20px 24px; border-top: 1px solid var(--border); color: var(--m
   .primary-nav { width: 100%; flex-direction: row; overflow-x: auto; }
   .nav-section-label { display: none; }
   .primary-nav a, .sidebar-collapsed .primary-nav a { min-height: 44px; flex: none; justify-content: flex-start; gap: 10px; padding-inline: 8px; }
+  .primary-nav a[aria-current="page"]::before { content: none; }
   .app-main > nav .shell { flex-wrap: wrap; padding-inline: 14px; }
   .breadcrumb .shell > :is([data-breadcrumb-root], [data-breadcrumb-dashboard]) { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .report-actions { width: 100%; margin-left: 0; }
