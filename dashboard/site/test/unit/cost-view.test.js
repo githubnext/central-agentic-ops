@@ -2,6 +2,7 @@
 import { describe, expect, it } from 'vitest';
 import { readFileSync } from 'node:fs';
 import { renderDashboard } from '../../src/presenter.js';
+import { primerStylesheet } from '../../src/styles.js';
 
 const authoritativeDashboardDocument = JSON.parse(
   readFileSync(`${process.cwd()}/dashboard.json`, 'utf8')
@@ -50,6 +51,9 @@ describe('Cost and efficiency dashboard view', () => {
       })
     ]));
     expect(dashboardPage.views).not.toContainEqual(expect.objectContaining({ element: 'metric-signal-summary' }));
+    expect(primerStylesheet()).toContain(
+      ':is(.runtime-page, .security-page, .value-page, .cost-page) .layout-section { padding: 0; border: 0; background: transparent; }'
+    );
     expect(rendered.querySelector('[data-nav-page-id="cost"] .octicon-meter')).not.toBeNull();
     const filterBar = page?.querySelector('.filter-bar');
     expect(filterBar?.querySelector('.filter-control code')?.textContent).toBe('mode:review mode:live');
