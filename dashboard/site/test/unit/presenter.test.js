@@ -2536,7 +2536,7 @@ describe('presenter built-in and custom pages', () => {
     expect(repositoryView?.textContent).toContain('Review');
     expect(repositoryView?.textContent).not.toContain('Other');
     expect(rendered.querySelector('#page-title')?.textContent).toBe('octo-org/octo-repo');
-    expect(document.title).toBe('octo-org/octo-repo · Repository detail');
+    expect(rendered.ownerDocument.title).toBe('octo-org/octo-repo · Repository detail');
     expect(rendered.querySelector('[data-breadcrumb-page]')?.textContent).toBe('octo-org/octo-repo');
     expect(repositoryView?.querySelector('tbody a')?.getAttribute('href')).toBe('#page-workflow-runtime?workflow=octo-org%2Focto-repo%3A.github%2Fworkflows%2Freview.md');
     expect(repositoryView?.querySelector('tbody a')?.getAttribute('target')).toBeNull();
@@ -2547,7 +2547,7 @@ describe('presenter built-in and custom pages', () => {
     expect(repositoryView?.textContent).toContain('Other');
     expect(repositoryView?.textContent).not.toContain('Review');
     expect(rendered.querySelector('#page-title')?.textContent).toBe('other-org/other-repo');
-    expect(document.title).toBe('other-org/other-repo · Repository detail');
+    expect(rendered.ownerDocument.title).toBe('other-org/other-repo · Repository detail');
     expect(document.activeElement).toBe(rendered.querySelector('#page-title'));
     rendered.remove();
     window.history.replaceState(null, '', '/');
