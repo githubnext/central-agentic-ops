@@ -59,6 +59,8 @@ resources:
     destination: .github/aw/dashboard/site/src/runtime-data.js
   - source: site/src/specification.js
     destination: .github/aw/dashboard/site/src/specification.js
+  - source: site/src/source-cache.js
+    destination: .github/aw/dashboard/site/src/source-cache.js
   - source: site/src/styles.js
     destination: .github/aw/dashboard/site/src/styles.js
   - source: site/src/view-formatters.js

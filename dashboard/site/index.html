@@ -13,6 +13,7 @@
     <div id="root"></div>
     <script type="module">
       import { renderDashboard } from "./src/presenter.js";
+      import { readCachedSources, writeCachedSources } from "./src/source-cache.js";
 
       const metadata = (id, overrides = {}) => ({
         "source-id": id,
@@ -37,6 +38,41 @@
       const dashboardDocument = {
         languageVersion: dashboardSchema["language-version"],
         dashboard: dashboardSchema.dashboard,
+      };
+      const root = document.querySelector("#root");
+
+      const renderSources = (sources, state = "ready") => {
+        const dashboard = renderDashboard({ document: dashboardDocument, sources });
+        if (state === "loading") {
+          dashboard.classList.add("dashboard-loading");
+          dashboard.setAttribute("aria-busy", "true");
+
+          const status = document.createElement("p");
+          status.className = "source-loading-status";
+          status.setAttribute("role", "status");
+          status.textContent = "Loading dashboard data…";
+
+          const skeleton = document.createElement("div");
+          skeleton.className = "dashboard-loading-skeleton";
+          skeleton.setAttribute("aria-hidden", "true");
+          for (const className of ["skeleton-card", "skeleton-card", "skeleton-card", "skeleton-panel"]) {
+            const block = document.createElement("div");
+            block.className = className;
+            skeleton.append(block);
+          }
+          dashboard.querySelector(".report-body")?.prepend(status, skeleton);
+        } else if (state === "cached") {
+          dashboard.classList.add("dashboard-refreshing");
+          dashboard.setAttribute("aria-busy", "true");
+
+          const status = document.createElement("p");
+          status.className = "source-loading-status";
+          status.setAttribute("role", "status");
+          status.textContent = "Showing cached data while loading the latest dashboard data…";
+          dashboard.querySelector(".report-body")?.prepend(status);
+        }
+        root.replaceChildren(dashboard);
+        return dashboard;
       };
 
       const fixtureSources = {
@@ -295,23 +331,50 @@
         },
       };
 
-      let sources = fixtureSources;
-      if (!new URLSearchParams(window.location.search).has("fixtures")) {
-        try {
-          const liveSourcesResponse = await fetch("./sources.json");
-          if (!liveSourcesResponse.ok) {
-            throw new Error(`Unable to load sources.json: ${liveSourcesResponse.status}`);
+      if (new URLSearchParams(window.location.search).has("fixtures")) {
+        renderSources(fixtureSources);
+      } else {
+        let dashboard = renderSources({}, "loading");
+        const cacheKey = new URL("./sources.json", window.location.href).href;
+        const liveSourcesPromise = fetch("./sources.json").then(async (response) => {
+          if (!response.ok) {
+            throw new Error(`Unable to load sources.json: ${response.status}`);
           }
-          sources = await liveSourcesResponse.json();
+          return response.json();
+        });
+        liveSourcesPromise.catch(() => {});
+
+        let cachedSources = null;
+        try {
+          cachedSources = await readCachedSources(window.indexedDB, cacheKey);
+        } catch {
+          // IndexedDB is an optional performance enhancement.
+        }
+        if (cachedSources) {
+          dashboard = renderSources(cachedSources, "cached");
+        }
+
+        try {
+          const sources = await liveSourcesPromise;
+          dashboard = renderSources(sources);
+          void writeCachedSources(window.indexedDB, cacheKey, sources).catch(() => {});
         } catch (error) {
           const message = error instanceof Error ? error.message : String(error);
           const failure = new Error(`Unable to load live dashboard data: ${message}`, { cause: error });
-          document.querySelector("#root").textContent = failure.message;
-          throw failure;
+          if (cachedSources) {
+            dashboard.classList.remove("dashboard-refreshing");
+            dashboard.removeAttribute("aria-busy");
+            const status = dashboard.querySelector(".source-loading-status");
+            if (status) {
+              status.classList.add("source-loading-warning");
+              status.textContent = `${failure.message} Showing cached data.`;
+            }
+          } else {
+            root.textContent = failure.message;
+            throw failure;
+          }
         }
       }
-
-      document.querySelector("#root").append(renderDashboard({ document: dashboardDocument, sources }));
     </script>
   </body>
 </html>

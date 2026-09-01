@@ -682,6 +682,17 @@ tbody tr:hover { background: var(--canvas-subtle); }
 code { padding: 2px 4px; border-radius: 4px; background: var(--neutral-muted); font: .75rem ui-monospace, SFMono-Regular, Consolas, monospace; }
 footer { padding: 20px 24px; border-top: 1px solid var(--border); color: var(--muted); font-size: .75rem; }
 .empty, .page-placeholder { margin: 0; padding: 28px 16px; color: var(--muted); text-align: center; }
+.source-loading-status { margin: 0 0 16px; color: var(--muted); font-size: .8125rem; }
+.source-loading-warning { color: var(--attention); }
+.dashboard-loading .dashboard-pages { display: none; }
+.dashboard-loading-skeleton { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; }
+.dashboard-loading-skeleton > div { border: 1px solid var(--border-muted); border-radius: 6px; background: linear-gradient(90deg, var(--canvas-subtle) 25%, var(--neutral-muted) 50%, var(--canvas-subtle) 75%); background-size: 200% 100%; animation: dashboard-skeleton-pulse 1.5s ease-in-out infinite; }
+.skeleton-card { min-height: 104px; }
+.skeleton-panel { min-height: 280px; grid-column: 1 / -1; }
+@keyframes dashboard-skeleton-pulse {
+  from { background-position: 200% 0; }
+  to { background-position: -200% 0; }
+}
 @media (min-width: 701px) and (max-width: 900px) {
   .chart-view-pie { grid-template-columns: 1fr; }
   .pie-chart-layout { grid-column: 1; grid-row: auto; }
@@ -744,6 +755,8 @@ footer { padding: 20px 24px; border-top: 1px solid var(--border); color: var(--m
   .package-trend-panel > header { align-items: flex-start; flex-direction: column; }
   .overview-observability > .section-heading { align-items: flex-start; flex-direction: column; }
   .attention-domain-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .dashboard-loading-skeleton { grid-template-columns: 1fr; }
+  .skeleton-panel { grid-column: auto; }
   .workflow-attention > .section-heading, .anomaly-readiness { align-items: flex-start; flex-direction: column; }
   .anomaly-readiness { gap: 4px; }
   .anomaly-readiness p { text-align: left; }
@@ -764,6 +777,7 @@ footer { padding: 20px 24px; border-top: 1px solid var(--border); color: var(--m
 @media (prefers-reduced-motion: reduce) {
   html { scroll-behavior: auto; }
   *, *::before, *::after { scroll-behavior: auto !important; transition-duration: 0.01ms !important; }
+  .dashboard-loading-skeleton > div { animation: none; }
 }
 @media (prefers-contrast: more) {
   :root {
