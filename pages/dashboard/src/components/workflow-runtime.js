@@ -11,6 +11,7 @@ import { findLink, renderExternalLink } from './link-content.js';
 import { isApprovalConclusion, isFailureConclusion } from './run-classification.js';
 import { formatUtcDateTime } from './ui-primitives.js';
 import { renderTitledBodySection } from './view-chrome.js';
+import { renderWorkflowIdentity } from './workflow-identity.js';
 
 /**
  * @param {import('./ui-elements.js').ElementRenderContext} context
@@ -103,30 +104,6 @@ function renderWorkflowTabs(pageId, repository, workflow, workflowName) {
       octicon('issue'),
       h('span', null, 'Reports')
     )
-  );
-}
-
-/** @param {Record<string, unknown>} workflow */
-function renderWorkflowIdentity(workflow) {
-  const link = findLink(workflow, 'workflow-link');
-  const role = text(workflow['workflow-role']) || 'unknown';
-  return h(
-    'section',
-    { className: 'workflow-identity', 'aria-label': 'Workflow identity' },
-    h(
-      'div',
-      null,
-      h(
-        'span',
-        { className: 'repository-workflow-badges' },
-        workflow.package
-          ? h('a', { href: `#page-operational-value?package=${encodeURIComponent(text(workflow.package))}` }, text(workflow['package-name']) || text(workflow.package))
-          : null,
-        h('span', null, titleCase(role))
-      ),
-      h('p', null, h('code', null, text(workflow.workflow)))
-    ),
-    link ? renderExternalLink(link) : null
   );
 }
 
@@ -481,6 +458,3 @@ function slugify(value) {
 }
 
 /** @param {string} value */
-function titleCase(value) {
-  return value.replaceAll('-', ' ').replace(/\b\w/g, (letter) => letter.toUpperCase());
-}
