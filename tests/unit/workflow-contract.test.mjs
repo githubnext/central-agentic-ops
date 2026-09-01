@@ -1287,6 +1287,14 @@ test("multi-device docs tester runs daily and covers browser and appearance comp
   assert.match(source, /multi-device-docs\/screenshots/);
 });
 
+test("SelfCare runs every 20 minutes", () => {
+  const source = workflow("self-care.md");
+  const compiled = workflow("self-care.lock.yml");
+
+  assert.match(source, /schedule: every 20 minutes/);
+  assert.match(compiled, /cron: "[0-5]?\d\/20 \* \* \* \*"  # Friendly format: every 20 minutes \(scattered\)/);
+});
+
 test("SelfCare accessibility checker audits the served docs site with axe-core evidence", () => {
   const source = workflow("self-care-accessibility-checker.md");
   const liveGuard = "if: ${{ inputs.target_repo == 'githubnext/central-agentic-ops' && (inputs.safe_output_mode || 'review') == 'live' }}";
