@@ -37,7 +37,8 @@ export function renderDispatchCatalog(context) {
       always: true
     }],
     pageSize: Math.max(rows.length, 1),
-    resultNoun: 'dispatch'
+    resultNoun: 'dispatch',
+    resultNounPlural: 'dispatches'
   });
 
   return h(

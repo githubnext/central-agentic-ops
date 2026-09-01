@@ -141,23 +141,6 @@ describe('renderTableRegion', () => {
       filterFields: [{ key: 'mode', label: 'Mode', columnIndex: 1 }]
     });
 
-    it('supports report-style filter labels, placeholders, and always-visible facets', () => {
-      const rendered = renderTableRegion({
-        tableClassName: 'dispatch-table',
-        emptyMessage: 'No dispatches.',
-        colSpan: 2,
-        headCells: ['Package', 'Status'],
-        bodyRows: [h('tr', null, h('td', null, 'Dependabot'), h('td', null, 'success'))],
-        filterLabel: 'Search dispatches',
-        filterPlaceholder: 'Run, package, worker, status, or repository',
-        filterFields: [{ key: 'package', label: 'Package', allLabel: 'All packages', columnIndex: 0, always: true }],
-        resultNoun: 'dispatch'
-      });
-
-      expect(rendered.querySelector('input')?.getAttribute('placeholder')).toBe('Run, package, worker, status, or repository');
-      expect([...rendered.querySelectorAll('select option')].map((option) => option.textContent)).toEqual(['All packages', 'Dependabot']);
-      expect(rendered.querySelector('output')?.textContent).toBe('Showing 1 of 1 dispatch');
-    });
     document.body.append(rendered);
 
     const mode = /** @type {HTMLSelectElement} */ (rendered.querySelector('[data-table-facet="mode"]'));
@@ -178,6 +161,28 @@ describe('renderTableRegion', () => {
     expect(window.location.search).toContain('workflow-catalog.mode=review');
 
     window.history.replaceState(null, '', '/');
+  });
+
+  it('supports report-style filter labels, placeholders, and always-visible facets', () => {
+    const rendered = renderTableRegion({
+      tableClassName: 'dispatch-table',
+      emptyMessage: 'No dispatches.',
+      colSpan: 2,
+      headCells: ['Package', 'Status'],
+      bodyRows: [
+        h('tr', null, h('td', null, 'Dependabot'), h('td', null, 'success')),
+        h('tr', null, h('td', null, 'Dependabot'), h('td', null, 'failure'))
+      ],
+      filterLabel: 'Search dispatches',
+      filterPlaceholder: 'Run, package, worker, status, or repository',
+      filterFields: [{ key: 'package', label: 'Package', allLabel: 'All packages', columnIndex: 0, always: true }],
+      resultNoun: 'dispatch',
+      resultNounPlural: 'dispatches'
+    });
+
+    expect(rendered.querySelector('input')?.getAttribute('placeholder')).toBe('Run, package, worker, status, or repository');
+    expect([...rendered.querySelectorAll('select option')].map((option) => option.textContent)).toEqual(['All packages', 'Dependabot']);
+    expect(rendered.querySelector('output')?.textContent).toBe('Showing 2 of 2 dispatches');
   });
 
   it('constrains height with an inner scroll container', () => {

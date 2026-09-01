@@ -29,6 +29,7 @@ const DEFAULT_PAGE_SIZE = 25;
  *   filterFields?: TableFilterField[],
  *   pageSize?: number,
  *   resultNoun?: string,
+ *   resultNounPlural?: string,
  *   sortable?: boolean
  * }} options
  * @returns {HTMLElement}
@@ -47,7 +48,8 @@ export function renderTableRegion(options) {
     filterPlaceholder = 'Filter rows',
     filterFields = [],
     pageSize = DEFAULT_PAGE_SIZE,
-    resultNoun
+    resultNoun,
+    resultNounPlural
   } = options;
   const rowCount = getBodyRowCount(bodyRows);
   const hasRows = rowCount > 0;
@@ -83,7 +85,7 @@ export function renderTableRegion(options) {
             ...facet.values.map((value) => h('option', { value }, value))
           )
         )),
-        h('output', { className: 'table-filter-result', 'aria-live': 'polite' }, formatResultCount(Math.min(rowCount, pageSize), rowCount, resultNoun))
+        h('output', { className: 'table-filter-result', 'aria-live': 'polite' }, formatResultCount(Math.min(rowCount, pageSize), rowCount, resultNoun, resultNounPlural))
       )
       : null,
     h(
@@ -142,7 +144,7 @@ export function renderTableRegion(options) {
     enableTableSort(region);
   }
   if (interactive) {
-    enableTableFilter(region, { filterId, pageSize, resultNoun });
+    enableTableFilter(region, { filterId, pageSize, resultNoun, resultNounPlural });
   }
   return region;
 }
@@ -206,7 +208,7 @@ function compareCells(left, right) {
 
 /**
  * @param {HTMLElement} region
- * @param {{ filterId?: string, pageSize: number, resultNoun?: string }} options
+ * @param {{ filterId?: string, pageSize: number, resultNoun?: string, resultNounPlural?: string }} options
  */
 function enableTableFilter(region, options) {
   const input = region.querySelector('[data-table-filter]');
@@ -256,7 +258,7 @@ function enableTableFilter(region, options) {
      row.hidden = !visible;
      if (visible) shown += 1;
    }
-   output.textContent = formatResultCount(shown, matched, options.resultNoun);
+   output.textContent = formatResultCount(shown, matched, options.resultNoun, options.resultNounPlural);
    more.hidden = shown >= matched;
   };
 
@@ -296,9 +298,10 @@ function enableTableFilter(region, options) {
  * @param {number} matched
  * @returns {string}
  * @param {string} [noun]
+ * @param {string} [pluralNoun]
  */
-function formatResultCount(shown, matched, noun = 'result') {
-  return `Showing ${shown.toLocaleString('en')} of ${matched.toLocaleString('en')} ${matched === 1 ? noun : `${noun}s`}`;
+function formatResultCount(shown, matched, noun = 'result', pluralNoun = `${noun}s`) {
+  return `Showing ${shown.toLocaleString('en')} of ${matched.toLocaleString('en')} ${matched === 1 ? noun : pluralNoun}`;
 }
 
 /**
