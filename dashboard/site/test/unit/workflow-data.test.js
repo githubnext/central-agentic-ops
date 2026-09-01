@@ -237,6 +237,52 @@ describe('deriveWorkflowSources', () => {
     expect(sources['workflow-reports'].metadata).toBe(metadata);
   });
 
+  it('emits route-keyed workflow runs ordered newest first', () => {
+    const sources = deriveWorkflowSources({
+      runs: {
+        source: 'runs',
+        metadata,
+        rows: [
+          {
+            organization: 'githubnext',
+            repository: 'control',
+            workflow: '.github/workflows/dependabot.md',
+            run: '41',
+            'run-title': 'Older run',
+            'started-at': '2026-08-31T00:00:00Z',
+            'run-link': {
+              relation: 'run',
+              href: 'https://github.com/githubnext/control/actions/runs/41',
+              label: 'View run 41'
+            }
+          },
+          {
+            organization: 'githubnext',
+            repository: 'control',
+            workflow: '.github/workflows/dependabot.md',
+            run: '42',
+            'run-title': 'Newer run',
+            'started-at': '2026-09-01T00:00:00Z'
+          },
+          {
+            repository: '',
+            workflow: '.github/workflows/dependabot.md',
+            run: '43'
+          }
+        ]
+      }
+    });
+
+    expect(sources['workflow-runs'].rows.map((row) => row.run)).toEqual(['42', '41']);
+    expect(sources['workflow-runs'].rows[0]['workflow-route']).toBe(
+      'githubnext/control:.github/workflows/dependabot.md'
+    );
+    expect(sources['workflow-runs'].rows[1]['run-link']).toEqual(expect.objectContaining({
+      href: 'https://github.com/githubnext/control/actions/runs/41'
+    }));
+    expect(sources['workflow-runs'].metadata).toBe(metadata);
+  });
+
   it('emits package-keyed report rows using explicit and workflow-derived attribution', () => {
     const sources = deriveWorkflowSources({
       workflows: {

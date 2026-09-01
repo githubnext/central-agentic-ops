@@ -657,12 +657,14 @@ test('pie charts match the report layout at medium viewport widths', async ({ pa
   `);
 
   const heading = page.getByRole('heading', { name: 'AI Credit usage by AW repository' });
-  const description = page.locator('.chart-view-pie > .view-description');
+  const card = page.locator('.pie-chart-card');
+  const description = card.locator('.view-description');
   const layout = page.locator('.pie-chart-layout');
   const chart = layout.locator('.pie-chart-widget');
   const legend = layout.locator('.chart-legend-pie');
-  const [headingBox, descriptionBox, layoutBox, chartBox, legendBox] = await Promise.all(
-    [heading, description, layout, chart, legend].map((locator) => locator.boundingBox())
+  const table = page.locator('.chart-view-pie > .table-region');
+  const [headingBox, descriptionBox, layoutBox, chartBox, legendBox, cardBox, tableBox] = await Promise.all(
+    [heading, description, layout, chart, legend, card, table].map((locator) => locator.boundingBox())
   );
 
   expect(headingBox).not.toBeNull();
@@ -670,11 +672,14 @@ test('pie charts match the report layout at medium viewport widths', async ({ pa
   expect(layoutBox).not.toBeNull();
   expect(chartBox).not.toBeNull();
   expect(legendBox).not.toBeNull();
+  expect(cardBox).not.toBeNull();
+  expect(tableBox).not.toBeNull();
   expect(layoutBox?.x).toBeCloseTo(headingBox?.x ?? 0, 0);
   expect(layoutBox?.y).toBeGreaterThan((descriptionBox?.y ?? 0) + (descriptionBox?.height ?? 0));
   expect(legendBox?.x).toBeGreaterThan((chartBox?.x ?? 0) + (chartBox?.width ?? 0));
   expect((legendBox?.y ?? 0) + (legendBox?.height ?? 0) / 2)
     .toBeCloseTo((chartBox?.y ?? 0) + (chartBox?.height ?? 0) / 2, 0);
+  expect(tableBox?.y).toBeGreaterThan((cardBox?.y ?? 0) + (cardBox?.height ?? 0));
 });
 
 test('DLS-PAGE-014 DLS-PAGE-015 built-in packages page renders report-style mode filters, AIC utilization, and run trends in browser', async ({ page }) => {
@@ -1674,6 +1679,39 @@ test('workflow page template follows its JSON-declared route and renders attribu
               views: []
             },
             {
+              id: 'workflow-runs',
+              kind: 'custom',
+              title: 'Workflow runs',
+              route: { 'hash-query-parameter': 'workflow' },
+              views: [
+                {
+                  id: 'workflow-runs-identity',
+                  title: 'Workflow runs',
+                  data: { sources: ['workflows'] },
+                  mark: 'element',
+                  element: 'workflow-detail'
+                },
+                {
+                  id: 'workflow-runs-table',
+                  title: 'Runs',
+                  data: { source: 'workflow-runs', 'route-field': 'workflow-route' },
+                  mark: 'table',
+                  controls: 'interactive',
+                  encoding: {
+                    columns: [
+                      { field: 'run', type: 'nominal', title: 'Run' },
+                      { field: 'run-title', type: 'nominal', title: 'Title' },
+                      { field: 'run-status', type: 'nominal', title: 'Status', display: 'status' },
+                      { field: 'run-conclusion', type: 'nominal', title: 'Conclusion', display: 'status' },
+                      { field: 'event', type: 'nominal', title: 'Trigger' },
+                      { field: 'started-at', type: 'temporal', title: 'Started' }
+                    ],
+                    href: { field: 'run-link', type: 'nominal' }
+                  }
+                }
+              ]
+            },
+            {
               id: 'workflow-detail',
               kind: 'custom',
               title: 'Workflow',
@@ -1752,6 +1790,39 @@ test('workflow page template follows its JSON-declared route and renders attribu
             'rollout-mode': 'review',
             'observed-at': '2026-08-31T19:00:00Z'
           }]
+        },
+        runs: {
+          source: 'runs',
+          metadata,
+          rows: [
+            {
+              organization: 'githubnext',
+              repository: 'central-agentic-ops',
+              workflow: '.github/workflows/ambient-context.md',
+              run: '102',
+              'run-title': 'Scheduled review',
+              event: 'schedule',
+              'run-status': 'completed',
+              'run-conclusion': 'success',
+              'started-at': '2026-08-31T20:00:00Z',
+              'run-link': {
+                relation: 'run',
+                href: 'https://github.com/githubnext/central-agentic-ops/actions/runs/102',
+                label: 'View run 102'
+              }
+            },
+            {
+              organization: 'githubnext',
+              repository: 'central-agentic-ops',
+              workflow: '.github/workflows/ambient-context.md',
+              run: '101',
+              'run-title': 'Manual review',
+              event: 'workflow_dispatch',
+              'run-status': 'completed',
+              'run-conclusion': 'failure',
+              'started-at': '2026-08-31T19:00:00Z'
+            }
+          ]
         }
       };
       document.querySelector('#root').append(renderDashboard({ document: dashboardDocument, sources }));
@@ -1762,10 +1833,21 @@ test('workflow page template follows its JSON-declared route and renders attribu
   await expect(page.locator('[data-breadcrumb-root]')).toHaveText('Repositories');
   await expect(page.locator('[data-breadcrumb-dashboard]')).toHaveText('githubnext/central-agentic-ops');
   await expect(page.locator('.workflow-identity')).toContainText('.github/workflows/ambient-context.md');
-  await expect(page.locator('.custom-table')).toContainText('Debug ambient context workflow failure');
-  await expect(page.locator('.custom-table .status-success')).toHaveText('closed');
-  await expect(page.locator('.custom-table .mode-review')).toHaveText('review');
-  await page.locator('.custom-table tbody a').first().click();
+  await expect(page.getByRole('navigation', { name: '.github/workflows/ambient-context.md views' })).toContainText('InsightsReportsRuns');
+  await expect(page.locator('#page-workflow-detail .custom-table')).toContainText('Debug ambient context workflow failure');
+  await expect(page.locator('#page-workflow-detail .custom-table .status-success')).toHaveText('closed');
+  await expect(page.locator('#page-workflow-detail .custom-table .mode-review')).toHaveText('review');
+  await page.getByRole('link', { name: 'Runs', exact: true }).click();
+  await expect(page.getByRole('link', { name: 'Runs', exact: true })).toHaveAttribute('aria-current', 'page');
+  await expect(page.locator('#page-workflow-runs').getByRole('group', { name: 'Data status' })).toContainText('CompletenesscompleteFreshnessfresh');
+  await expect(page.locator('#page-workflow-runs .custom-table tbody tr')).toHaveCount(2);
+  await page.locator('#page-workflow-runs').getByRole('button', { name: /^Started/ }).click();
+  await expect(page.locator('#page-workflow-runs').getByRole('columnheader', { name: /^Started/ })).toHaveAttribute('aria-sort', 'ascending');
+  await page.locator('#page-workflow-runs').getByRole('searchbox', { name: 'Filter Runs' }).fill('Manual review');
+  await expect(page.locator('#page-workflow-runs .custom-table tbody tr:visible')).toHaveCount(1);
+  await expect(page.locator('#page-workflow-runs .custom-table tbody')).toContainText('Manual review');
+  await page.getByRole('link', { name: 'Reports' }).click();
+  await page.locator('#page-workflow-detail .custom-table tbody a').first().click();
   await expect(page.getByRole('heading', { level: 1 })).toHaveText('Debug ambient context workflow failure');
   await expect(page.locator('.outcome-meta a', { hasText: 'Ambient Context' })).toHaveAttribute(
     'href',
@@ -1866,7 +1948,7 @@ test('workflow runtime route renders JSON-declared workflow insights', async ({ 
   `);
 
   await expect(page.getByRole('heading', { name: 'Multi-Device Docs Tester', level: 1 })).toBeVisible();
-  await expect(page.getByRole('navigation', { name: 'Multi-Device Docs Tester views' })).toContainText('InsightsReports');
+  await expect(page.getByRole('navigation', { name: 'Multi-Device Docs Tester views' })).toContainText('InsightsReportsRuns');
   await expect(page.getByRole('link', { name: 'Reports' })).toHaveAttribute('href', /#page-workflow-detail\?workflow=/);
   await expect(page.locator('.workflow-badges .workflow-badge')).toHaveText([
     'Standalone',

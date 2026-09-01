@@ -10,12 +10,11 @@
  */
 export function deriveWorkflowSources(sources) {
   const workflows = Array.isArray(sources.workflows?.rows) ? sources.workflows.rows : [];
-  const runs = sources.runs?.metadata?.availability === 'unavailable' || !Array.isArray(sources.runs?.rows)
-    ? null
-    : sources.runs.rows;
+  const runsAvailable = sources.runs?.metadata?.availability !== 'unavailable' && Array.isArray(sources.runs?.rows);
+  const runs = runsAvailable ? sources.runs.rows : [];
   const usage = Array.isArray(sources.usage?.rows) ? sources.usage.rows : [];
   const outcomes = Array.isArray(sources.outcomes?.rows) ? sources.outcomes.rows : [];
-  const workflowRuns = summarizeWorkflowRuns(workflows, runs);
+  const workflowRuns = summarizeWorkflowRuns(workflows, runsAvailable ? runs : null);
   const workflowAic = summarizeWorkflowAic(workflows, usage);
   /** @param {Row} row */
   const isPackaged = (row) => row['workflow-role'] !== 'standalone' && Boolean(text(row.package));
@@ -62,6 +61,14 @@ export function deriveWorkflowSources(sources) {
       }).sort(compareReports),
       metadata: sources.outcomes?.metadata ?? unavailableMetadata()
     },
+    'workflow-runs': {
+      source: 'workflow-runs',
+      rows: runs.flatMap((row) => {
+        const run = deriveWorkflowRun(row);
+        return run ? [run] : [];
+      }).sort(compareRuns),
+      metadata: sources.runs?.metadata ?? unavailableMetadata()
+    },
     'package-reports': {
       source: 'package-reports',
       rows: outcomes.flatMap((row) => {
@@ -70,6 +77,17 @@ export function deriveWorkflowSources(sources) {
       }).sort(compareReports),
       metadata: sources.outcomes?.metadata ?? unavailableMetadata()
     }
+  };
+}
+
+/** @param {Row} row @returns {Row | null} */
+function deriveWorkflowRun(row) {
+  const repository = qualifiedRepository(row);
+  const workflow = text(row.workflow);
+  if (!repository || repository.toLowerCase() === 'unknown' || !workflow || !text(row.run)) return null;
+  return {
+    'workflow-route': `${repository}:${workflow}`,
+    ...row
   };
 }
 
@@ -257,6 +275,18 @@ function compareStandaloneWorkflows(left, right) {
 function compareReports(left, right) {
   return derivedReportTime(right) - derivedReportTime(left)
     || text(left['outcome-title']).localeCompare(text(right['outcome-title']));
+}
+
+/** @param {Row} left @param {Row} right */
+function compareRuns(left, right) {
+  return derivedRunTime(right) - derivedRunTime(left)
+    || text(right.run).localeCompare(text(left.run), 'en', { numeric: true });
+}
+
+/** @param {Row} row */
+function derivedRunTime(row) {
+  const value = Date.parse(text(row['started-at']));
+  return Number.isFinite(value) ? value : 0;
 }
 
 /** @param {Row} row */

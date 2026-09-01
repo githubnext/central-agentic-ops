@@ -12,9 +12,10 @@ const metadata = {
   availability: /** @type {'available'} */ ('available')
 };
 
-function context() {
+/** @param {string} [pageId] */
+function context(pageId = 'workflow-detail') {
   return {
-    pageId: 'workflow-detail',
+    pageId,
     title: 'Workflow reports',
     sourceNames: ['workflows', 'outcomes'],
     contextDetails: [],
@@ -118,10 +119,13 @@ describe('renderWorkflowDetail', () => {
     }));
 
     expect(rendered.dataset.workflow).toBe('githubnext/central-agentic-ops:.github/workflows/ambient-context.md');
-    expect(rendered.querySelector('.workflow-tabs')?.textContent).toBe('InsightsReports');
+    expect(rendered.querySelector('.workflow-tabs')?.textContent).toBe('InsightsReportsRuns');
     expect(rendered.querySelector('.workflow-tabs [aria-current="page"]')?.textContent).toBe('Reports');
     expect(rendered.querySelector('.workflow-tabs a:first-child')?.getAttribute('href')).toBe(
       '#page-workflow-runtime?workflow=githubnext%2Fcentral-agentic-ops%3A.github%2Fworkflows%2Fambient-context.md'
+    );
+    expect(rendered.querySelector('.workflow-tabs a:last-child')?.getAttribute('href')).toBe(
+      '#page-workflow-runs?workflow=githubnext%2Fcentral-agentic-ops%3A.github%2Fworkflows%2Fambient-context.md'
     );
     expect([...rendered.querySelectorAll('.workflow-identity .workflow-badge')].map((badge) => badge.textContent)).toEqual([
       'Orchestrator',
@@ -152,6 +156,29 @@ describe('renderWorkflowDetail', () => {
         }
       ]
     });
+  });
+
+  it('renders Runs as the current workflow tab with run-specific route chrome', () => {
+    const host = document.createElement('div');
+    const allocation = vi.fn();
+    host.addEventListener('dashboard-route-allocation', allocation);
+    const rendered = renderWorkflowDetail(context('workflow-runs'));
+    host.append(rendered);
+
+    rendered.dispatchEvent(new CustomEvent('dashboard-route-change', {
+      detail: {
+        parameter: 'workflow',
+        value: 'githubnext/central-agentic-ops:.github/workflows/ambient-context.md'
+      }
+    }));
+
+    expect(rendered.querySelector('.workflow-tabs [aria-current="page"]')?.textContent).toBe('Runs');
+    expect(rendered.querySelector('.workflow-tabs a:nth-child(2)')?.getAttribute('href')).toBe(
+      '#page-workflow-detail?workflow=githubnext%2Fcentral-agentic-ops%3A.github%2Fworkflows%2Fambient-context.md'
+    );
+    expect(allocation.mock.calls[0][0].detail.description).toBe(
+      'Observed runs for .github/workflows/ambient-context.md in githubnext/central-agentic-ops.'
+    );
   });
 
   it('renders explicit empty states for missing and invalid workflow routes', () => {
