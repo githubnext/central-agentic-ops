@@ -11,6 +11,7 @@ import { findLink, renderExternalLink } from './link-content.js';
 import { isApprovalConclusion, isFailureConclusion } from './run-classification.js';
 import { formatUtcDateTime } from './ui-primitives.js';
 import { renderTitledBodySection } from './view-chrome.js';
+import { renderWorkflowIdentity } from './workflow-identity.js';
 
 /**
  * @param {import('./ui-elements.js').ElementRenderContext} context
@@ -105,56 +106,6 @@ function renderWorkflowTabs(pageId, repository, workflow, workflowName) {
       h('span', null, 'Reports')
     )
   );
-}
-
-/** @param {Record<string, unknown>} workflow */
-function renderWorkflowIdentity(workflow) {
-  const link = findLink(workflow, 'workflow-link');
-  const role = text(workflow['workflow-role']) || 'unknown';
-  const memberships = workflowPackageMemberships(workflow);
-  return h(
-    'section',
-    { className: 'workflow-identity', 'aria-label': 'Workflow identity' },
-    h(
-      'div',
-      null,
-      h(
-        'span',
-        { className: 'workflow-badges' },
-        h('span', { className: `workflow-badge workflow-badge-${role}` }, titleCase(role)),
-        ...memberships.map((membership) => h(
-          'a',
-          {
-            className: 'workflow-badge workflow-badge-operation',
-            href: `#page-package-detail?package=${encodeURIComponent(membership.id)}`
-          },
-          `Package · ${membership.name}`
-        ))
-      ),
-      h('p', null, h('code', null, text(workflow.workflow)))
-    ),
-    link ? renderExternalLink({
-      href: link.externalHref ?? link.href,
-      label: 'View authored workflow'
-    }) : null
-  );
-}
-
-/** @param {Record<string, unknown>} workflow */
-function workflowPackageMemberships(workflow) {
-  const memberships = Array.isArray(workflow['package-memberships'])
-    ? workflow['package-memberships']
-    : workflow.package
-      ? [{ id: workflow.package, name: workflow['package-name'] ?? workflow.package }]
-      : [];
-  const unique = new Map();
-  for (const membership of memberships) {
-    if (!membership || typeof membership !== 'object' || Array.isArray(membership)) continue;
-    const id = text(membership.id).trim();
-    const name = text(membership.name).trim();
-    if (id && name) unique.set(id, { id, name });
-  }
-  return [...unique.values()].sort((left, right) => left.name.localeCompare(right.name));
 }
 
 /**
@@ -505,9 +456,4 @@ function text(value) {
 /** @param {string} value */
 function slugify(value) {
   return value.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
-}
-
-/** @param {string} value */
-function titleCase(value) {
-  return value.replaceAll('-', ' ').replace(/\b\w/g, (letter) => letter.toUpperCase());
 }
