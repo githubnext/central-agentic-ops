@@ -76,6 +76,7 @@ Evidence paths below are relative to:
 - `src/components/linked-text.js` — linked text and entity-aware table-cell rendering.
 - `src/components/packages-view.js` — package mode tabs, utilization, coverage, allowances, and trends.
 - `src/components/report-list.js` — shared durable-report list/table rendering, filtering, counts, and empty states for package and workflow views.
+- `src/components/route-state.js` — shared route-scoped select, not-found, and unavailable state rendering.
 - `src/components/summary-copy.js` — shared summary-count copy.
 - `src/components/table-region.js` — reusable table regions, headers, bodies, and empty states.
 - `src/components/tab-nav.js` — shared linked and interactive tab navigation with roving tabindex keyboard support.

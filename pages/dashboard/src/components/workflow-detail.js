@@ -5,6 +5,7 @@
 import { h } from '../dom.js';
 import { renderLinkTabs } from './tab-nav.js';
 import { renderWorkflowIdentity } from './workflow-identity.js';
+import { createRouteView } from './route-state.js';
 
 /**
  * @param {import('./ui-elements.js').ElementRenderContext} context
@@ -12,27 +13,22 @@ import { renderWorkflowIdentity } from './workflow-identity.js';
  */
 export function renderWorkflowDetail(context) {
   const workflows = rowsFor(context.sources, 'workflows');
-  const root = h('div', {
-    className: 'workflow-detail',
-    'data-route-view': '',
-    'data-route-parameter': context.routeParameter
-  });
-
-  /** @param {unknown} routeValue */
-  const render = (routeValue) => {
-    const route = parseWorkflowRoute(routeValue);
-    const workflow = route
-      ? workflows.find((candidate) => (
-          qualifiedRepository(candidate).toLowerCase() === route.repository.toLowerCase()
-          && text(candidate.workflow) === route.workflow
-        ))
-      : null;
-    root.dataset.workflow = routeValueFor(route);
-    root.replaceChildren(workflow && route
-      ? renderWorkflowContent(context, route, workflow)
-      : h('p', { className: 'empty' }, route ? 'Workflow not found.' : 'Select a workflow to view its reports.'));
-
-    if (workflow && route) {
+  const root = createRouteView({
+    rootClassName: 'workflow-detail',
+    routeParameter: context.routeParameter,
+    datasetKey: 'workflow',
+    selectMessage: 'Select a workflow to view its reports.',
+    notFoundMessage: 'Workflow not found.',
+    hasSelection: (routeValue) => parseWorkflowRoute(routeValue) !== null,
+    renderMatched: (routeValue) => {
+      const route = parseWorkflowRoute(routeValue);
+      const workflow = route
+        ? workflows.find((candidate) => (
+            qualifiedRepository(candidate).toLowerCase() === route.repository.toLowerCase()
+            && text(candidate.workflow) === route.workflow
+          ))
+        : null;
+      if (!workflow || !route) return null;
       const name = workflowName(workflow);
       root.dispatchEvent(new CustomEvent('dashboard-route-allocation', {
         bubbles: true,
@@ -49,14 +45,9 @@ export function renderWorkflowDetail(context) {
           ]
         }
       }));
+      return renderWorkflowContent(context, route, workflow);
     }
-  };
-
-  root.addEventListener('dashboard-route-change', (event) => {
-    if (!(event instanceof CustomEvent) || event.detail?.parameter !== context.routeParameter) return;
-    render(event.detail.value);
   });
-  render('');
   return root;
 }
 
