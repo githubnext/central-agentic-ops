@@ -71,6 +71,18 @@ describe('deriveWorkflowSources', () => {
     expect(sources['standalone-workflows'].rows[0].repository).toBe('unknown');
   });
 
+  it('omits report rows without a known runtime repository', () => {
+    const sources = deriveWorkflowSources({
+      outcomes: {
+        source: 'outcomes',
+        metadata,
+        rows: [{ 'runtime-repository': 'unknown', workflow: '.github/workflows/dependabot.md' }]
+      }
+    });
+
+    expect(sources['workflow-reports'].rows).toEqual([]);
+  });
+
   it('emits route-keyed report rows with dashboard detail links', () => {
     const sources = deriveWorkflowSources({
       outcomes: {

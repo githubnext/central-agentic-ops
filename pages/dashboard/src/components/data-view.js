@@ -21,7 +21,6 @@ const ENTITY_LINK_FIELDS = {
 };
 const RUN_FIELD = 'run';
 const RUN_LINK_FIELD = 'run-link';
-const OUTCOME_TITLE_FIELD = 'outcome-title';
 
 /**
  * @typedef {{ field: string, aggregate?: string, as?: string, direction?: string, display?: string } & Record<string, unknown>} TableField
@@ -118,7 +117,7 @@ function renderTableView(context) {
         ? renderCellValue(column, row[outputField], row)
         : column.field === RUN_FIELD
           ? renderWorkflowRunLink(row, toText(row[outputField]))
-          : column.field === OUTCOME_TITLE_FIELD
+          : column.display === 'outcome-link'
             ? renderOutcomeLink(row, toText(row[outputField]))
             : renderCellValue(column, row[outputField], row);
       if (columnIndex === 0 && hrefField) {

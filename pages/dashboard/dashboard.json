@@ -593,7 +593,8 @@
                 {
                   "field": "outcome-title",
                   "type": "nominal",
-                  "title": "Report"
+                  "title": "Report",
+                  "display": "outcome-link"
                 },
                 {
                   "field": "outcome-status",

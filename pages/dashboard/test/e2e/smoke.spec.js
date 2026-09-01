@@ -1449,7 +1449,7 @@ test('workflow page template follows its JSON-declared route and renders attribu
                   mark: 'table',
                   encoding: {
                     columns: [
-                      { field: 'outcome-title', type: 'nominal', title: 'Report' },
+                      { field: 'outcome-title', type: 'nominal', title: 'Report', display: 'outcome-link' },
                       { field: 'outcome-status', type: 'nominal', title: 'Status', display: 'status' },
                       { field: 'rollout-mode', type: 'nominal', title: 'Mode', display: 'mode' },
                       { field: 'outcome-category', type: 'nominal', title: 'Type' },
