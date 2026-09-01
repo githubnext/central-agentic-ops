@@ -2119,6 +2119,54 @@ dashboard:
     expect(result.ok).toBe(true);
   });
 
+  it('DLS-VIEW-028 validates the table column-summaries option', () => {
+    const valid = validateDashboardDocument(`language-version: "0.1.0"
+dashboard:
+  id: valid-column-summaries
+  title: Valid Column Summaries
+  pages:
+    - id: custom-page
+      kind: custom
+      views:
+        - id: table-view
+          data:
+            source: runs
+          mark: table
+          column-summaries: false
+          encoding:
+            columns:
+              - field: run
+`);
+    const invalid = validateDashboardDocument(`language-version: "0.1.0"
+dashboard:
+  id: invalid-column-summaries
+  title: Invalid Column Summaries
+  pages:
+    - id: custom-page
+      kind: custom
+      views:
+        - id: metric-view
+          data:
+            source: runs
+          mark: metric
+          column-summaries: disabled
+          encoding:
+            value:
+              field: run
+              aggregate: count
+`);
+
+    expect(valid.ok).toBe(true);
+    expect(invalid.ok).toBe(false);
+    if (!invalid.ok) {
+      expect(invalid.errors).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({ code: 'DLS-E003', path: '$.dashboard.pages[0].views[0].column-summaries' })
+        ])
+      );
+    }
+  });
+
   it('DLS-SEM-004 DLS-SEM-005 DLS-SEM-006 DLS-SEM-008 DLS-SEM-009 DLS-SEM-015 reject non-canonical intrinsic enumerations in filters', () => {
     const result = validateDashboardDocument(`language-version: "0.1.0"
 dashboard:

@@ -1234,6 +1234,7 @@
               "source": "dispatches"
             },
             "mark": "table",
+            "column-summaries": false,
             "empty-message": "No workflow dispatch events were observed in the current run window.",
             "encoding": {
               "href": {

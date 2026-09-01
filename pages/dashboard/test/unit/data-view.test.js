@@ -90,4 +90,28 @@ describe('data view renderer', () => {
     expect(linkedFirstColumn?.querySelectorAll('tbody td:first-child a')).toHaveLength(1);
     expect(linkedFirstColumn?.querySelector('tbody td:first-child a')?.textContent).toBe('42');
   });
+
+  it('omits column summaries when disabled by the JSON view definition', () => {
+    const rendered = renderDataView('table', {
+      pageId: 'dispatches',
+      title: 'Workflow dispatch events',
+      view: {
+        mark: 'table',
+        'column-summaries': false,
+        encoding: { columns: [{ field: 'status', type: 'nominal' }] }
+      },
+      sourceName: 'dispatches',
+      rows: [{ status: 'success' }],
+      metadata,
+      contextDetails: [],
+      headingTag: 'h3',
+      prepareTableRows: (rows) => rows,
+      buildChartPoints: () => [],
+      prepareChartPoints: () => [],
+      toText: String
+    });
+
+    expect(rendered?.querySelector('input[type="search"]')).not.toBeNull();
+    expect(rendered?.querySelector('.table-summary-row')).toBeNull();
+  });
 });
