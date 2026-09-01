@@ -20,6 +20,12 @@ const workflow = {
   workflow: '.github/workflows/multi-device-docs-tester.md',
   'workflow-name': 'Multi-Device Docs Tester',
   'workflow-role': 'standalone',
+  package: 'testing',
+  'package-name': 'Testing',
+  'package-memberships': [
+    { id: 'testing', name: 'Testing' },
+    { id: 'central-agentic-ops', name: 'Central Agentic Ops' }
+  ],
   'workflow-active': 'true',
   'rollout-mode': 'review',
   'workflow-link': {
@@ -91,7 +97,15 @@ describe('renderWorkflowRuntime', () => {
     expect(rendered.querySelector('.repository-tabs a:last-child')?.getAttribute('href')).toBe(
       '#page-workflow-detail?workflow=githubnext%2Fcentral-agentic-ops%3A.github%2Fworkflows%2Fmulti-device-docs-tester.md'
     );
-    expect(rendered.querySelector('.workflow-identity')?.textContent).toContain('Standalone');
+    expect([...rendered.querySelectorAll('.workflow-badges .workflow-badge')].map((badge) => badge.textContent)).toEqual([
+      'Standalone',
+      'Package · Central Agentic Ops',
+      'Package · Testing'
+    ]);
+    expect([...rendered.querySelectorAll('.workflow-badges a')].map((badge) => badge.getAttribute('href'))).toEqual([
+      '#page-operational-value?package=central-agentic-ops',
+      '#page-operational-value?package=testing'
+    ]);
     expect(rendered.querySelector('.workflow-identity > a')?.getAttribute('href')).toBe(
       'https://github.com/githubnext/central-agentic-ops/blob/HEAD/.github/workflows/multi-device-docs-tester.md'
     );
@@ -196,7 +210,7 @@ describe('renderWorkflowRuntime', () => {
       title: 'Multi-Device Docs Tester',
       description: 'Run health, AI Credit usage, and operational value for .github/workflows/multi-device-docs-tester.md in githubnext/central-agentic-ops.',
       mode: 'review',
-      navigationPage: 'repositories'
+      navigationPage: 'packages'
     });
 
     selectWorkflow(rendered, '<invalid>');
