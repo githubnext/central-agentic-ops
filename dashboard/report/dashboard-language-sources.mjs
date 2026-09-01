@@ -460,6 +460,12 @@ export function buildDashboardLanguageSources({ deployed, usage, operationalValu
     ).toISOString();
   }
   sources.usage = source("usage", usageRows(usage), generatedAt, usageAvailable, usageComplete);
+  if (Number.isFinite(usage.windowHours) && usage.windowHours > 0) {
+    sources.usage.metadata["coverage-end"] = generatedAt;
+    sources.usage.metadata["coverage-start"] = new Date(
+      Date.parse(generatedAt) - usage.windowHours * 3_600_000,
+    ).toISOString();
+  }
   sources["coverage-diagnostics"] = source(
     "coverage-diagnostics",
     coverageDiagnosticRows(deployed, usage),

@@ -112,12 +112,29 @@ describe('renderWorkflowRuntime', () => {
     expect(rendered.querySelector('.workflow-identity > a')?.textContent).toBe('View authored workflow');
     expect(rendered.querySelector('.workflow-identity > a')?.getAttribute('target')).toBe('_blank');
     expect(rendered.querySelector('.workflow-health-chart svg')?.getAttribute('aria-label')).toContain('Successful 1, Failed 1');
+    expect(rendered.querySelector('.workflow-run-health dt')?.textContent).toBe('Run health (last 24h)');
     expect(rendered.querySelector('.workflow-runtime-metrics')?.textContent).toContain('Complete 24-hour Actions run window');
     expect(rendered.querySelector('.workflow-runtime-metrics')?.textContent).toContain('Registrationactive');
-    expect(rendered.querySelector('.workflow-runtime-metrics')?.textContent).toContain('AI Credits50.0 AIC');
-    expect(rendered.querySelector('.workflow-runtime-metrics')?.textContent).toContain('2 retained runs; partial coverage');
+    expect(rendered.querySelector('.workflow-runtime-metrics')?.textContent).toContain('AI Credits (last 24h)50.0 AIC');
+    expect(rendered.querySelector('.workflow-runtime-metrics')?.textContent).toContain('2 runs with AIC telemetry; Partial 24-hour Actions run window');
     expect(rendered.querySelector('.value-report-empty')?.textContent).toContain('No workflow observations yet');
     expect(rendered.querySelector('.value-report-empty code')?.textContent).toBe('grader_results.json');
+  });
+
+  it('does not present missing partial AI Credit coverage as measured zero usage', () => {
+    const sources = context().sources;
+    sources.usage = {
+      source: 'usage',
+      metadata: { ...completeMetadata, completeness: /** @type {'partial'} */ ('partial') },
+      rows: []
+    };
+    const rendered = renderWorkflowRuntime(context(sources));
+    selectWorkflow(rendered);
+
+    const usageMetric = [...rendered.querySelectorAll('.workflow-runtime-metrics > div')]
+      .find((metric) => metric.querySelector('dt')?.textContent?.startsWith('AI Credits'));
+    expect(usageMetric?.querySelector('dd')?.textContent).toBe('—');
+    expect(usageMetric?.querySelector('p')?.textContent).toBe('0 runs with AIC telemetry; Partial 24-hour Actions run window');
   });
 
   it('renders retained operational-value observations and evidence', () => {

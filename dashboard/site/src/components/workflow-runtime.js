@@ -107,6 +107,7 @@ function renderRuntimeMetrics(context, workflow, runs, usage) {
   const usageAvailable = usageMetadata?.availability === 'available';
   const health = summarizeRunHealth(runs);
   const usageTotal = usage.reduce((total, row) => total + finiteNumber(row.aic), 0);
+  const usageMeasured = usage.length > 0 || usageMetadata?.completeness === 'complete';
   const registration = text(workflow['workflow-active']) === 'true'
     ? 'active'
     : text(workflow['workflow-active']) === 'false' ? 'disabled' : 'unknown';
@@ -117,12 +118,14 @@ function renderRuntimeMetrics(context, workflow, runs, usage) {
     h(
       'dl',
       { className: 'workflow-runtime-metrics' },
-      renderRunHealthMetric(health, healthAvailable, coverageLabel(runMetadata)),
+      renderRunHealthMetric(health, healthAvailable, coverageLabel(runMetadata), recentMetricLabel('Run health', runMetadata)),
       renderSimpleMetric('Registration', registration, 'Current GitHub Actions state'),
       renderSimpleMetric(
-        'AI Credits',
-        usageAvailable ? formatNumber(usageTotal, { name: 'AI Credits', symbol: 'AIC', significant: 0.1 }) : '—',
-        `${usage.length.toLocaleString('en')} retained ${usage.length === 1 ? 'run' : 'runs'}${usageMetadata?.completeness === 'complete' ? '' : '; partial coverage'}`
+        recentMetricLabel('AI Credits', usageMetadata),
+        usageAvailable && usageMeasured ? formatNumber(usageTotal, { name: 'AI Credits', symbol: 'AIC', significant: 0.1 }) : '—',
+        usageAvailable
+          ? `${usage.length.toLocaleString('en')} ${usage.length === 1 ? 'run' : 'runs'} with AIC telemetry; ${coverageLabel(usageMetadata)}`
+          : 'AI Credit data unavailable'
       )
     )
   );
@@ -132,13 +135,14 @@ function renderRuntimeMetrics(context, workflow, runs, usage) {
  * @param {{ total: number, successful: number, failed: number, approval: number, pending: number, other: number }} health
  * @param {boolean} available
  * @param {string} coverage
+ * @param {string} label
  */
-function renderRunHealthMetric(health, available, coverage) {
+function renderRunHealthMetric(health, available, coverage, label) {
   if (!available) {
     return h(
       'div',
       { className: 'workflow-run-health' },
-      h('dt', null, 'Run health'),
+      h('dt', null, label),
       h('dd', null, '—'),
       h('p', null, coverage)
     );
@@ -153,7 +157,7 @@ function renderRunHealthMetric(health, available, coverage) {
   return h(
     'div',
     { className: 'workflow-run-health' },
-    h('dt', null, 'Run health'),
+    h('dt', null, label),
     h(
       'dd',
       { className: 'workflow-health-chart' },
@@ -575,6 +579,16 @@ function coverageLabel(metadata) {
     : null;
   const completeness = metadata.completeness === 'complete' ? 'Complete' : metadata.completeness === 'partial' ? 'Partial' : 'Unknown';
   return `${completeness}${hours ? ` ${hours}-hour` : ''} Actions run window`;
+}
+
+/** @param {string} label @param {import('../presenter.js').SourceMetadata | undefined} metadata */
+function recentMetricLabel(label, metadata) {
+  const start = Date.parse(String(metadata?.['coverage-start'] ?? ''));
+  const end = Date.parse(String(metadata?.['coverage-end'] ?? ''));
+  const hours = Number.isFinite(start) && Number.isFinite(end) && end > start
+    ? Math.round((end - start) / 3_600_000)
+    : null;
+  return hours ? `${label} (last ${hours}h)` : `Recent ${label}`;
 }
 
 /**

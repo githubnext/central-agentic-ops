@@ -98,19 +98,35 @@ test("dashboard source bridge carries canonical coverage diagnostics", () => {
       repositoryCount: 3,
       organizationRepositories: { public: 2, private: 1, internal: 0, total: 3 },
       discovery: { complete: true },
-      runHealth: { available: true, complete: true },
+      runHealth: { available: true, complete: true, windowHours: 24 },
       bundles: [],
       workflows: [
         { repository: "githubnext/public", visibility: "public", path: ".github/workflows/public.lock.yml" },
         { repository: "githubnext/unknown", visibility: "unknown", path: ".github/workflows/unknown.lock.yml" },
       ],
     },
-    usage: { available: true, complete: false, runs: [] },
+    usage: { available: true, complete: false, windowHours: 24, runs: [] },
     operationalValues: { records: [] },
     report: { generatedAt: "2026-08-31T12:00:00Z", records: [] },
   };
 
   const sources = buildDashboardLanguageSources(input);
+  assert.deepEqual(
+    {
+      runs: {
+        start: sources.runs.metadata["coverage-start"],
+        end: sources.runs.metadata["coverage-end"],
+      },
+      usage: {
+        start: sources.usage.metadata["coverage-start"],
+        end: sources.usage.metadata["coverage-end"],
+      },
+    },
+    {
+      runs: { start: "2026-08-30T12:00:00.000Z", end: "2026-08-31T12:00:00Z" },
+      usage: { start: "2026-08-30T12:00:00.000Z", end: "2026-08-31T12:00:00Z" },
+    },
+  );
   assert.deepEqual(sources["coverage-diagnostics"].rows, [
     {
       title: "Private repository discovery is off",
