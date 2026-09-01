@@ -1025,6 +1025,7 @@ describe('presenter built-in and custom pages', () => {
             views: [
               { id: 'package-workflows', data: { source: 'workflows' } },
               { id: 'package-runs', data: { source: 'runs' } },
+              { id: 'package-outcomes', data: { source: 'outcomes' } },
               { id: 'package-usage', data: { source: 'usage' } }
             ]
           }
@@ -1056,8 +1057,17 @@ describe('presenter built-in and custom pages', () => {
           source: 'runs',
           rows: [
             { workflow: '.github/workflows/daily.md', run: '1', 'started-at': '2026-08-28T10:00:00Z', 'run-conclusion': 'success', 'rollout-mode': 'review' },
-            { workflow: '.github/workflows/daily-worker.md', run: '2', 'started-at': '2026-08-29T10:00:00Z', 'run-conclusion': 'failure', 'rollout-mode': 'live' },
             { workflow: '.github/workflows/unmanaged.md', run: '3', 'started-at': '2026-08-29T11:00:00Z', 'run-conclusion': 'cancelled', 'rollout-mode': 'review' }
+          ],
+          metadata
+        },
+        outcomes: {
+          source: 'outcomes',
+          rows: [
+            { package: 'daily-ops', run: '1', 'run-conclusion': 'success', 'rollout-mode': 'review', 'published-at': '2026-08-28T10:00:00Z', 'observed-at': '2026-08-28T10:00:00Z' },
+            { package: 'daily-ops', run: '2', 'rollout-mode': 'live', 'published-at': '2026-08-29T10:00:00Z', 'observed-at': '2026-08-29T10:05:00Z' },
+            { package: 'daily-ops', run: '2', 'run-conclusion': 'failure', 'rollout-mode': 'live', 'published-at': '2026-08-29T10:00:00Z', 'observed-at': '2026-08-29T10:06:00Z' },
+            { package: 'daily-ops', run: 'old', 'run-conclusion': 'success', 'rollout-mode': 'review', 'published-at': '2026-07-01T10:00:00Z', 'observed-at': '2026-07-01T10:00:00Z' }
           ],
           metadata
         },

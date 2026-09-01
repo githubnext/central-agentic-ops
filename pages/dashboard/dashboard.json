@@ -713,7 +713,8 @@
                   "workflows",
                   "runs",
                   "usage",
-                  "findings"
+                  "findings",
+                  "outcomes"
                 ]
               },
               "mark": "element",

@@ -129,6 +129,9 @@ function inventoryWorkflowDetails(inventory = {}, controlSettings = {}) {
   }
   for (const bundle of inventory.bundles || []) {
     const configuredMode = rolloutMode(controlSettings.packages?.[bundle.controlPackage]?.mode);
+    const packageId = String(bundle.id || bundle.controlPackage || "").trim();
+    const packageName = String(bundle.name || packageId).trim();
+    const packageMembership = packageId ? { id: packageId, name: packageName || packageId } : undefined;
     const workers = bundle.workers || [];
     const ready = bundle.compiled === true
       && (bundle.missingWorkers || []).length === 0
@@ -150,6 +153,7 @@ function inventoryWorkflowDetails(inventory = {}, controlSettings = {}) {
           packageInventoryWarnings: inventoryWarnings,
           packageAllowance: packageAllowance > 0 ? packageAllowance : null,
           packageWorkerCount: workers.length,
+          ...(packageMembership ? { packageMembership } : {}),
           ...(configuredMode !== "unknown" ? { configuredMode } : {}),
         });
       }
@@ -163,9 +167,12 @@ function workflowRows(deployed, generatedAt, inventory, controlSettings) {
   const inventoryDetails = inventoryWorkflowDetails(inventory, controlSettings);
   return (deployed.workflows || []).map((workflow) => {
     const names = repositoryParts(workflow.repository);
-    const workflowMemberships = memberships.get(`${workflow.repository}:${workflow.path}`) || [];
-    const membership = workflowMemberships.at(-1);
     const details = inventoryDetails.get(workflow.path);
+    const discoveredMemberships = memberships.get(`${workflow.repository}:${workflow.path}`) || [];
+    const workflowMemberships = details?.packageMembership
+      ? [details.packageMembership]
+      : discoveredMemberships;
+    const membership = workflowMemberships.at(-1);
     const recentMode = rolloutMode(workflow.runHealth?.runRecords?.[0]?.displayTitle);
     return {
       ...names,
@@ -278,6 +285,7 @@ function outcomeRows(records) {
       ? "lifecycle-close"
       : record.kind === "noop" ? "ignored" : "pending",
     "evidence-strength": record.kind === "review-bundle" ? "proposal" : "durable",
+    "run-conclusion": runConclusion(record.conclusion),
     "rollout-mode": rolloutMode(record.mode),
     "published-at": record.createdAt,
     "observed-at": record.updatedAt || record.createdAt,

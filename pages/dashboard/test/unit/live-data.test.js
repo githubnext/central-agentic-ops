@@ -96,6 +96,7 @@ describe("live Dashboard Language sources", () => {
           url: "https://github.com/githubnext/central-agentic-ops/issues/1",
           updatedAt: "2026-08-30T10:06:00Z",
           warning: true,
+          conclusion: "failure",
         }],
       },
       inventory: {
@@ -162,6 +163,7 @@ describe("live Dashboard Language sources", () => {
         "finding-status": "open",
       });
       expect(sources.outcomes.rows[0]["outcome-state"]).toBe("pending");
+      expect(sources.outcomes.rows[0]["run-conclusion"]).toBe("failure");
       expect(sources["operational-values"].rows[0]).toMatchObject({
         "operational-value": 0.75,
         "operational-value-definition": "dependabot",

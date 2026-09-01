@@ -1,4 +1,4 @@
 {
-  "failure": ["failure", "startup-failure", "timed-out"],
+  "failure": ["failure", "startup-failure", "stale", "timed-out"],
   "approval": ["action-required"]
 }
