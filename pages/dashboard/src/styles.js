@@ -67,7 +67,7 @@ a:focus-visible, [tabindex]:focus-visible, button:focus-visible { outline: 2px s
 .app-shell { min-height: 100vh; display: grid; grid-template-columns: 232px minmax(0, 1fr); transition: grid-template-columns 120ms ease; }
 .org-sidebar { min-width: 0; display: flex; flex-direction: column; gap: 8px; padding: 24px 16px 16px; border-right: 1px solid var(--border); background: var(--canvas-subtle); }
 .sidebar-header { min-width: 0; display: flex; align-items: center; gap: 8px; margin: 0 0 10px 8px; }
-.sidebar-brand { min-width: 0; display: flex; flex: 1; align-items: center; gap: 6px; overflow: hidden; color: var(--fg); font-size: 1rem; font-weight: 600; text-decoration: none; white-space: nowrap; }
+.sidebar-brand { display: flex; align-items: center; gap: 6px; min-width: 0; flex: 1; overflow: hidden; color: var(--fg); font-size: 1rem; font-weight: 600; text-decoration: none; white-space: nowrap; }
 .sidebar-brand-mark { width: 24px; height: 24px; flex: 0 0 24px; overflow: visible; }
 .sidebar-brand > span { min-width: 0; overflow: hidden; text-overflow: ellipsis; }
 .sidebar-toggle { width: 28px; height: 28px; display: grid; flex: 0 0 28px; place-items: center; padding: 0; border: 0; border-radius: 6px; background: transparent; color: var(--muted); cursor: pointer; }

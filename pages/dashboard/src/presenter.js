@@ -271,6 +271,7 @@ function enableSidebarToggle(root) {
   const toggle = root.querySelector('.sidebar-toggle');
   if (!(appShell instanceof HTMLElement) || !(toggle instanceof HTMLButtonElement)) return;
 
+  /** @param {boolean} collapsed */
   const setCollapsed = (collapsed) => {
     appShell.classList.toggle('sidebar-collapsed', collapsed);
     const label = collapsed ? 'Expand navigation' : 'Collapse navigation';
