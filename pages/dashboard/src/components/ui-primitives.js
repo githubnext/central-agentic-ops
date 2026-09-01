@@ -42,21 +42,6 @@ export function renderSectionHeading({
 }
 
 /**
- * @param {Node | string | null} icon
- * @param {string} title
- * @param {string} detail
- * @returns {HTMLElement}
- */
-export function renderInlineNotice(icon, title, detail) {
-  return h(
-    'div',
-    { className: 'inline-notice', role: 'note' },
-    h('span', null, icon, h('strong', null, title)),
-    h('p', null, detail)
-  );
-}
-
-/**
  * @param {string} label
  * @param {unknown} value
  * @param {string} [detail]

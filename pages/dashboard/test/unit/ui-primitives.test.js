@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import { describe, expect, it } from 'vitest';
-import { formatUtcDateTime, renderInlineNotice, renderSectionHeading, renderVitalStat } from '../../src/components/ui-primitives.js';
+import { formatUtcDateTime, renderSectionHeading, renderVitalStat } from '../../src/components/ui-primitives.js';
 
 describe('ui primitives', () => {
   it('renders shared section-heading markup with configurable heading levels', () => {
@@ -42,17 +42,6 @@ describe('ui primitives', () => {
     expect(withDetail.querySelector('p')?.textContent).toBe('observed orchestrator runs');
     expect(withoutDetail.textContent).toBe('Measured AIC—');
     expect(withoutDetail.querySelector('p')).toBeNull();
-  });
-
-  it('renders an inline notice with note semantics', () => {
-    const icon = document.createElement('svg');
-    const rendered = renderInlineNotice(icon, 'Statistical anomalies · not evaluated', 'Baseline unavailable.');
-
-    expect(rendered.className).toBe('inline-notice');
-    expect(rendered.getAttribute('role')).toBe('note');
-    expect(rendered.querySelector('svg')).toBe(icon);
-    expect(rendered.querySelector('strong')?.textContent).toBe('Statistical anomalies · not evaluated');
-    expect(rendered.querySelector('p')?.textContent).toBe('Baseline unavailable.');
   });
 
   it('formats UTC date-time text and preserves the unavailable fallback', () => {

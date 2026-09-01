@@ -368,10 +368,11 @@ h3 { margin: 16px 0 8px; font-size: 1rem; font-weight: 600; }
 .workflow-attention { margin-bottom: 32px; }
 .workflow-attention > .section-heading { align-items: end; }
 .workflow-attention > .section-heading > strong { flex: none; font-variant-numeric: tabular-nums; }
-.inline-notice { display: flex; align-items: center; justify-content: space-between; gap: 20px; padding: 10px 14px; border: 1px solid var(--border); border-radius: 6px 6px 0 0; background: var(--canvas-subtle); }
-.inline-notice > span { display: inline-flex; flex: none; align-items: center; gap: 7px; font-size: .75rem; }
-.inline-notice .octicon { color: var(--muted); }
-.inline-notice p { margin: 0; color: var(--muted); font-size: .75rem; text-align: right; }
+.runtime-page [data-section-id="runtime-triage"] .custom-view-grid { gap: 0; }
+.anomaly-readiness { display: flex; align-items: center; justify-content: space-between; gap: 20px; padding: 10px 14px; border: 1px solid var(--border); border-radius: 6px 6px 0 0; background: var(--canvas-subtle); }
+.anomaly-readiness > span { display: inline-flex; flex: none; align-items: center; gap: 7px; font-size: .75rem; }
+.anomaly-readiness .octicon { color: var(--muted); }
+.anomaly-readiness p { margin: 0; color: var(--muted); font-size: .75rem; text-align: right; }
 .workflow-attention-list { margin: 0; padding: 0; border: 1px solid var(--border); border-top: 0; border-radius: 0 0 6px 6px; list-style: none; }
 .workflow-attention-list li { min-width: 0; border-top: 1px solid var(--border-muted); }
 .workflow-attention-list li:first-child { border-top: 0; }
@@ -521,8 +522,6 @@ h3 { margin: 16px 0 8px; font-size: 1rem; font-weight: 600; }
 .summary-grid > div { min-width: 0; padding: 13px 15px; background: var(--canvas-subtle); }
 .summary-grid dt { color: var(--muted); font-size: .6875rem; font-weight: 600; text-transform: uppercase; }
 .summary-grid dd { margin: 2px 0 0; font-size: 1.25rem; font-weight: 600; font-variant-numeric: tabular-nums; }
-.signal-list-region { position: relative; }
-.signal-count { position: absolute; right: 0; bottom: calc(100% + 34px); margin: 0; color: var(--muted); font-size: .75rem; font-weight: 600; }
 .signal-boundary-note { margin: 0; padding: 8px 15px; border: 1px solid var(--border); border-top: 0; color: var(--muted); font-size: .6875rem; }
 .signal-list { margin: 0; padding: 0; overflow: hidden; border: 1px solid var(--border); border-top: 0; border-radius: 0 0 6px 6px; list-style: none; }
 .signal-list > li + li { border-top: 1px solid var(--border-muted); }
@@ -691,9 +690,9 @@ footer { padding: 20px 24px; border-top: 1px solid var(--border); color: var(--m
   .package-trend-panel > header { align-items: flex-start; flex-direction: column; }
   .overview-observability > .section-heading { align-items: flex-start; flex-direction: column; }
   .attention-domain-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-  .workflow-attention > .section-heading, .inline-notice { align-items: flex-start; flex-direction: column; }
-  .inline-notice { gap: 4px; }
-  .inline-notice p { text-align: left; }
+  .workflow-attention > .section-heading, .anomaly-readiness { align-items: flex-start; flex-direction: column; }
+  .anomaly-readiness { gap: 4px; }
+  .anomaly-readiness p { text-align: left; }
   .workflow-attention-list a, .workflow-attention-static { grid-template-columns: 20px minmax(0, 1fr); }
   .signal-rank, .signal-evidence { display: none; }
   .workflow-identity { align-items: flex-start; flex-direction: column; }

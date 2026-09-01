@@ -38,7 +38,7 @@ describe('Runtime dashboard view', () => {
           title: 'Needs attention',
           'count-source': 'runtime-signals',
           'count-label': 'signals',
-          views: ['runtime-needs-attention']
+          views: ['runtime-anomaly-readiness', 'runtime-needs-attention']
         },
         {
           id: 'observed-behavior',
@@ -58,6 +58,11 @@ describe('Runtime dashboard view', () => {
         element: view.element
       })
     )).toEqual([
+      {
+        id: 'runtime-anomaly-readiness',
+        mark: 'element',
+        element: 'anomaly-readiness'
+      },
       {
         id: 'runtime-needs-attention',
         mark: 'element',
@@ -99,7 +104,7 @@ describe('Runtime dashboard view', () => {
               layout: /** @type {'full'} */ ('full'),
               'count-source': 'runtime-signals',
               'count-label': 'signals',
-              views: ['attention']
+              views: ['anomaly-readiness', 'attention']
             },
             {
               id: 'observed-behavior',
@@ -109,7 +114,8 @@ describe('Runtime dashboard view', () => {
             }
           ],
           views: [
-            { id: 'attention', title: 'Needs attention', data: { sources: ['runtime-signals', 'runtime-evaluation-boundary'] }, mark: 'element', element: 'signal-list' },
+            { id: 'anomaly-readiness', title: 'Statistical anomaly readiness', data: { sources: ['runtime-anomaly-readiness'] }, mark: 'element', element: 'anomaly-readiness' },
+            { id: 'attention', title: 'Needs attention', data: { sources: ['runtime-signals'] }, mark: 'element', element: 'signal-list' },
             { id: 'summary', title: 'Execution episodes', data: { source: 'runtime-episode-summary' }, mark: 'element', element: 'summary-grid' },
             {
               id: 'episodes',
@@ -173,15 +179,14 @@ describe('Runtime dashboard view', () => {
     const runtimePage = rendered.querySelector('[data-page-id="runtime"]');
     expect(runtimePage?.querySelector('[data-section-id="runtime-triage"] .scope-kicker')?.textContent).toBe('Runtime Triage');
     expect(runtimePage?.querySelector('[data-section-id="runtime-triage"] .layout-section-header h3')?.textContent).toBe('Needs attention');
+    expect(runtimePage?.querySelector('.anomaly-readiness')?.getAttribute('role')).toBe('note');
+    expect(runtimePage?.querySelector('.anomaly-readiness')?.textContent).toContain('Statistical anomalies · not evaluated');
+    expect(runtimePage?.querySelector('.anomaly-readiness .octicon-pulse')).not.toBeNull();
     const attention = rendered.querySelector('.signal-list-region')?.textContent;
     expect(attention).toContain('Approval gate');
     expect(attention).toContain('Run failures');
     expect(attention).toContain('1 worker dispatch lacks episode evidence');
     expect(attention).toContain('1 root episode has no correlated worker attempt or output');
-    expect(rendered.querySelector('.inline-notice')?.getAttribute('role')).toBe('note');
-    expect(rendered.querySelector('.inline-notice')?.textContent).toContain('Statistical anomalies · not evaluated');
-    expect(rendered.querySelector('.inline-notice .octicon use')?.getAttribute('href')).toContain('#octicon-pulse');
-    expect(rendered.querySelectorAll('.signal-list > li')).toHaveLength(4);
     expect(rendered.querySelector('.signal-critical .signal-icon use')?.getAttribute('href')).toContain('#octicon-issue-opened');
     expect([...rendered.querySelectorAll('.signal-list > li > a')].map((link) => link.getAttribute('href'))).toEqual([
       '#page-workflow-runtime?workflow=githubnext%2Fcentral-agentic-ops%3A.github%2Fworkflows%2Fdependabot-worker.md',
