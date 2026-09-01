@@ -33,6 +33,12 @@ resources:
     destination: .github/aw/dashboard/site/index.html
   - source: site/dashboard.json
     destination: .github/aw/dashboard/site/dashboard.json
+  - source: site/src/data-operations.js
+    destination: .github/aw/dashboard/site/src/data-operations.js
+  - source: site/src/data-processor.js
+    destination: .github/aw/dashboard/site/src/data-processor.js
+  - source: site/src/data-worker.js
+    destination: .github/aw/dashboard/site/src/data-worker.js
   - source: site/src/dom.js
     destination: .github/aw/dashboard/site/src/dom.js
   - source: site/src/octicon-names.json
