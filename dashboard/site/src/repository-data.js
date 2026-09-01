@@ -3,6 +3,7 @@
  */
 
 import { formatPercent } from './view-formatters.js';
+import { summarizeWorkflowAic } from './workflow-data.js';
 
 const FAILURE_CONCLUSIONS = new Set(['failure', 'startup-failure', 'timed-out']);
 
@@ -28,7 +29,10 @@ const FAILURE_CONCLUSIONS = new Set(['failure', 'startup-failure', 'timed-out'])
 export function deriveRepositorySources(sources) {
   const runsAvailable = sources.runs?.metadata?.availability !== 'unavailable';
   const summaries = summarizeRepositories(sources);
-  const repositoryWorkflows = buildRepositoryWorkflowRows(sources.workflows?.rows ?? []);
+  const repositoryWorkflows = buildRepositoryWorkflowRows(
+    sources.workflows?.rows ?? [],
+    sources.usage?.rows ?? []
+  );
   const workflowMetadata = sources.workflows?.metadata ?? unavailableMetadata();
 
   return {
@@ -80,8 +84,12 @@ export function deriveRepositorySources(sources) {
   };
 }
 
-/** @param {Array<Record<string, unknown>>} workflows */
-function buildRepositoryWorkflowRows(workflows) {
+/**
+ * @param {Array<Record<string, unknown>>} workflows
+ * @param {Array<Record<string, unknown>>} usage
+ */
+function buildRepositoryWorkflowRows(workflows, usage) {
+  const workflowAic = summarizeWorkflowAic(workflows, usage);
   return workflows
     .map((workflow) => ({
       repository: qualifiedRepository(workflow),
@@ -92,6 +100,7 @@ function buildRepositoryWorkflowRows(workflows) {
       'rollout-mode': String(workflow['rollout-mode'] ?? 'unknown'),
       'workflow-active': String(workflow['workflow-active'] ?? 'unknown'),
       'observed-at': workflow['observed-at'],
+      ...(workflowAic.has(workflow) ? { aic: workflowAic.get(workflow) } : {}),
       ...(workflow['workflow-link'] ? { 'workflow-link': workflow['workflow-link'] } : {})
     }))
     .filter((workflow) => workflow.repository && workflow.workflow)

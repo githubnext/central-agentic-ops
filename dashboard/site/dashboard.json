@@ -654,6 +654,12 @@
                   "display": "active-state"
                 },
                 {
+                  "field": "aic",
+                  "type": "quantitative",
+                  "title": "AIC",
+                  "unit": "aic"
+                },
+                {
                   "field": "observed-at",
                   "type": "temporal",
                   "title": "Updated"
