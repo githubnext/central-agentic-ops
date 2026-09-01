@@ -139,6 +139,14 @@
         "ai-credit-optimizer": { "$ref": "#/$defs/workerPolicy" }
       }
     },
+    "selfCareWorkers": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "accessibility-checker": { "$ref": "#/$defs/workerPolicy" },
+        "primer-brand-checker": { "$ref": "#/$defs/workerPolicy" }
+      }
+    },
     "advisoryPackage": {
       "allOf": [
         { "$ref": "#/$defs/packagePolicy" },
@@ -181,6 +189,13 @@
       ],
       "unevaluatedProperties": false
     },
+    "selfCarePackage": {
+      "allOf": [
+        { "$ref": "#/$defs/packagePolicy" },
+        { "properties": { "workers": { "$ref": "#/$defs/selfCareWorkers" } } }
+      ],
+      "unevaluatedProperties": false
+    },
     "controlPackages": {
       "type": "object",
       "additionalProperties": false,
@@ -190,7 +205,8 @@
         "aw-maintenance": { "$ref": "#/$defs/awMaintenancePackage" },
         "dependabot": { "$ref": "#/$defs/dependabotPackage" },
         "eu-cra-compliance": { "$ref": "#/$defs/euCraCompliancePackage" },
-        "optimization": { "$ref": "#/$defs/optimizationPackage" }
+        "optimization": { "$ref": "#/$defs/optimizationPackage" },
+        "self-care": { "$ref": "#/$defs/selfCarePackage" }
       }
     },
     "scope": {
@@ -284,7 +300,8 @@
         "aw-maintenance": { "$ref": "#/$defs/targetPackage" },
         "dependabot": { "$ref": "#/$defs/targetPackage" },
         "eu-cra-compliance": { "$ref": "#/$defs/targetPackage" },
-        "optimization": { "$ref": "#/$defs/targetPackage" }
+        "optimization": { "$ref": "#/$defs/targetPackage" },
+        "self-care": { "$ref": "#/$defs/targetPackage" }
       }
     },
     "targetAuthority": {

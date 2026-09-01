@@ -1,43 +1,86 @@
 ---
-private: true
 emoji: "♿"
-name: Accessibility Expert
-description: Audits the documentation web interface for accessibility barriers using axe-core, keyboard traversal, and rendered-page evidence
+name: "SelfCare / Accessibility Checker"
+description: Audits the Central Agentic Ops documentation web interface for accessibility barriers using axe-core, keyboard traversal, and rendered-page evidence
 on:
-  schedule: weekly
   workflow_dispatch:
     inputs:
+      target_repo:
+        required: true
+        type: string
+      safe_output_repo:
+        required: true
+        type: string
+      safe_output_mode:
+        type: string
+      correlation_id:
+        type: string
+      central_repo:
+        type: string
+      control_plane_run_url:
+        type: string
+      batch_label:
+        type: string
       pages:
         description: "Optional comma-separated site paths to audit (defaults to a representative sample discovered from the build output)"
         required: false
         type: string
+
+checkout:
+  repository: ${{ inputs.target_repo }}
+  github-token: ${{ secrets.GH_AW_GITHUB_TOKEN || secrets.GITHUB_TOKEN }}
+  fetch-depth: 0
+  current: true
+
+env:
+  GH_AW_SAFE_OUTPUT_MODE: ${{ inputs.safe_output_mode || 'review' }}
+  REVIEW_OUTPUT_REPO: ${{ inputs.safe_output_repo || github.repository }}
+  SAFE_OUTPUT_REPO: ${{ (inputs.safe_output_mode || 'review') == 'review' && (inputs.safe_output_repo || github.repository) || inputs.target_repo }}
+  TARGET_REPO: ${{ inputs.target_repo || '' }}
+
+environment: central-agentic-ops
+
+imports:
+  - uses: shared/control.md
+    with:
+      package: self-care
+      role: worker
+      worker: accessibility-checker
+
 permissions:
   contents: read
-  copilot-requests: write
+  actions: read
   issues: read
-tracker-id: accessibility-expert
+
+tracker-id: self-care-accessibility-checker
 max-ai-credits: 400
+max-daily-ai-credits: -1
 engine:
   id: pi
   model: copilot/gpt-5.4
 strict: true
 timeout-minutes: 30
 concurrency:
-  group: "${{ github.workflow }}"
-  cancel-in-progress: false
-  job-discriminator: "${{ github.run_id }}"
+  group: "${{ github.workflow }}-${{ inputs.target_repo }}"
+  cancel-in-progress: true
+run-name: "SelfCare accessibility · ${{ inputs.target_repo }} · ${{ inputs.safe_output_mode || 'review' }}"
 runtimes:
   node:
     version: "24"
 network:
   allowed:
     - defaults
+    - github
     - node
     - chrome
     - playwright
     - local
 tools:
   timeout: 120  # Accessibility sweeps include preview startup and per-page axe-core runs
+  github:
+    mode: remote
+    min-integrity: approved
+    toolsets: [repos, actions]
   playwright:
     mode: cli
     version: "0.1.18"
@@ -45,15 +88,17 @@ tools:
     - "*"
 safe-outputs:
   create-issue:
+    target-repo: ${{ (inputs.safe_output_mode || 'review') == 'review' && (inputs.safe_output_repo || github.repository) || inputs.target_repo }}
     title-prefix: "[accessibility] "
     close-older-issues: true
-    close-older-key: accessibility-expert
+    close-older-key: self-care-accessibility-checker
     max: 1
     expires: 14d
 
 pre-agent-steps:
   - name: Install documentation dependencies
     run: timeout 10m npm ci --ignore-scripts
+    working-directory: .
   - name: Build documentation
     run: timeout 10m npm run docs:build
   - name: Fetch the axe-core accessibility engine
@@ -106,13 +151,17 @@ evals:
     question: Did the agent report each accessibility barrier with the affected page, selector, WCAG criterion, and remediation?
 ---
 
-# Accessibility Expert
+{{#runtime-import? .github/cao/self-care.md}}
+
+# SelfCare Accessibility Checker
+
+Read `/tmp/gh-aw/agent/control-precompute.json` first. This worker is authorized only when `target_repo` is exactly `githubnext/central-agentic-ops` and `safe_output_mode` is `live`. If either condition is false, call `noop` once with the denied scope and stop without auditing or publishing findings.
 
 You are an accessibility specialist. Audit this repository's web interface — the Astro documentation site — for accessibility barriers, and publish one prioritized report issue.
 
 ## Context
 
-- Repository: ${{ github.repository }}
+- Repository: ${{ inputs.target_repo }}
 - Triggered by: @${{ github.actor }}
 - Workflow run: [§${{ github.run_id }}](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }})
 - Requested pages: ${{ inputs.pages || 'auto-discovered sample' }}
@@ -178,6 +227,9 @@ Use `###` (h3) or lower for all headings, never `#` or `##`. Structure the body 
 ```markdown
 ### Audit Summary
 - Workflow run: [§${{ github.run_id }}](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }})
+- Correlation ID: ${{ inputs.correlation_id }}
+- Control repository: ${{ inputs.central_repo }}
+- Control plane run: ${{ inputs.control_plane_run_url }}
 - Standard: WCAG 2.2 Level AA (axe-core 4.13.0 plus manual browser checks)
 - Pages audited: {count}
 - Color schemes audited: light, dark
