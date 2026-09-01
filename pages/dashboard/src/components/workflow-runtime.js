@@ -37,14 +37,13 @@ export function renderWorkflowRuntime(context) {
     if (workflow) {
       const repository = qualifiedRepository(workflow);
       const workflowName = text(workflow['workflow-name']) || text(workflow.workflow) || 'Unknown workflow';
-      const packageMemberships = workflowPackageMemberships(workflow);
       root.dispatchEvent(new CustomEvent('dashboard-route-allocation', {
         bubbles: true,
         detail: {
           title: workflowName,
           description: `Run health, AI Credit usage, and operational value for ${text(workflow.workflow)} in ${repository}.`,
           mode: ['review', 'live'].includes(text(workflow['rollout-mode'])) ? text(workflow['rollout-mode']) : '',
-          navigationPage: packageMemberships.length > 0 ? 'packages' : 'repositories'
+          navigationPage: workflow.package ? 'packages' : 'repositories'
         }
       }));
     }
