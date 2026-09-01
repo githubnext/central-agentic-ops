@@ -5,11 +5,17 @@ import { join, resolve } from "node:path";
 import { describe, expect, it } from "vitest";
 
 describe("live Dashboard Language sources", () => {
-  it("loads generated sources by default and requires an explicit fixture opt-in", () => {
+  it("loads generated sources progressively and requires an explicit fixture opt-in", () => {
     const preview = readFileSync(resolve("index.html"), "utf8");
 
+    expect(preview.indexOf('fetch("./dashboard.json")')).toBeLessThan(preview.indexOf('fetch("./sources.json")'));
+    expect(preview).toContain('renderSources({}, "loading")');
+    expect(preview).toContain("dashboard-loading-skeleton");
     expect(preview).toContain('fetch("./sources.json")');
-    expect(preview).toContain("sources = await liveSourcesResponse.json()");
+    expect(preview).toContain('readCachedSources(window.indexedDB, cacheKey)');
+    expect(preview).toContain('renderSources(cachedSources, "cached")');
+    expect(preview).toContain("writeCachedSources(window.indexedDB, cacheKey, sources)");
+    expect(preview).toContain("dashboard = renderSources(sources)");
     expect(preview).toContain('has("fixtures")');
     expect(preview).toContain("throw new Error(`Unable to load sources.json:");
     expect(preview).toContain("Unable to load live dashboard data:");
