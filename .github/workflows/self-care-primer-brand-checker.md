@@ -1,26 +1,70 @@
 ---
-private: true
 emoji: "🎨"
-name: "Primer Branding"
-description: Daily audit of the dashboard against Primer brand guidance, opening a draft PR with focused fixes
+name: "SelfCare / Primer Brand Checker"
+description: Audit of the Central Agentic Ops dashboard against Primer brand guidance, opening a draft PR with focused fixes
 intent: Keep the Central Agentic Ops dashboard aligned with current Primer brand guidance through small, evidenced presentational fixes.
-engine: copilot
 on:
-  schedule: daily
   workflow_dispatch:
+    inputs:
+      target_repo:
+        required: true
+        type: string
+      safe_output_repo:
+        required: true
+        type: string
+      safe_output_mode:
+        type: string
+      correlation_id:
+        type: string
+      central_repo:
+        type: string
+      control_plane_run_url:
+        type: string
+      batch_label:
+        type: string
   skip-if-match: 'is:pr is:open in:title "Primer branding"'
+
+checkout:
+  repository: ${{ inputs.target_repo }}
+  github-token: ${{ secrets.GH_AW_GITHUB_TOKEN || secrets.GITHUB_TOKEN }}
+  fetch-depth: 0
+  fetch: ["*"]
+  current: true
+
+env:
+  GH_AW_SAFE_OUTPUT_MODE: ${{ inputs.safe_output_mode || 'review' }}
+  REVIEW_OUTPUT_REPO: ${{ inputs.safe_output_repo || github.repository }}
+  SAFE_OUTPUT_REPO: ${{ (inputs.safe_output_mode || 'review') == 'review' && (inputs.safe_output_repo || github.repository) || inputs.target_repo }}
+  TARGET_REPO: ${{ inputs.target_repo || '' }}
+
+environment: central-agentic-ops
+
+imports:
+  - uses: shared/control.md
+    with:
+      package: self-care
+      role: worker
+      worker: primer-brand-checker
+
 permissions:
   contents: read
-  copilot-requests: write
+  actions: read
+  pull-requests: read
 network:
   allowed:
     - defaults
+    - github
     - node
     - primer.style
 tools:
+  github:
+    mode: remote
+    min-integrity: approved
+    toolsets: [repos, actions]
   cli-proxy: true
 safe-outputs:
   create-pull-request:
+    target-repo: ${{ (inputs.safe_output_mode || 'review') == 'review' && (inputs.safe_output_repo || github.repository) || inputs.target_repo }}
     title-prefix: "Primer branding: "
     draft: true
     max: 1
@@ -36,16 +80,28 @@ mcp-servers:
     args: ["-y", "@primer/brand-mcp@0.74.0"]
     allowed: ["*"]
 strict: true
+max-ai-credits: 400
+max-daily-ai-credits: -1
 timeout-minutes: 25
+tracker-id: self-care-primer-brand-checker
+run-name: "SelfCare Primer brand · ${{ inputs.target_repo }} · ${{ inputs.safe_output_mode || 'review' }}"
+concurrency:
+  group: "${{ github.workflow }}-${{ inputs.target_repo }}"
+  cancel-in-progress: true
 runtimes:
   node:
     version: "24"
 pre-agent-steps:
   - name: Install dashboard dependencies
+    if: ${{ inputs.target_repo == 'githubnext/central-agentic-ops' && (inputs.safe_output_mode || 'review') == 'live' }}
     run: npm ci --prefix dashboard/site --ignore-scripts
 ---
 
-# Primer Branding Agent
+{{#runtime-import? .github/cao/self-care.md}}
+
+# SelfCare Primer Brand Checker
+
+Read `/tmp/gh-aw/agent/control-precompute.json` first. This worker is authorized only when its precomputed `target_repo` is exactly `githubnext/central-agentic-ops` and its precomputed `safe_output_mode` is `live`. If either condition is false, call `noop` once with the denied scope and stop without auditing or changing files.
 
 You are a **front-end designer** responsible for keeping the Central Agentic Ops dashboard aligned with GitHub's Primer brand guidance.
 
@@ -104,6 +160,7 @@ Call `create_pull_request` exactly once with:
   - The specific brand guidance from the MCP server that motivated each change
   - Any deviations found but deliberately not fixed, and why
   - Confirmation that every validation command passed
+  - A `### Control Plane` section with correlation ID `${{ inputs.correlation_id }}`, central repository `${{ inputs.central_repo }}`, and control plane run `${{ inputs.control_plane_run_url }}`
 
 ### Step 5: Skip when the dashboard is already on-brand
 

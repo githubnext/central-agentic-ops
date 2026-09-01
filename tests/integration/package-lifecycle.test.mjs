@@ -23,6 +23,7 @@ const advisoryPackageSource = focusedPackageSource("advisory");
 const craPackageSource = focusedPackageSource("eu-cra-compliance");
 const dashboardPackageSource = focusedPackageSource("dashboard");
 const dependabotUpdateSource = focusedPackageSource("dependabot");
+const selfCarePackageSource = focusedPackageSource("self-care");
 const advisoryExpectedFiles = [
   ".github/aw/advisory/implementation-status.md",
   ".github/aw/dashboards/advisory.json",
@@ -58,6 +59,14 @@ const dashboardExpectedFiles = [...readFileSync(
   new URL("../../dashboard/aw.yml", import.meta.url),
   "utf8",
 ).matchAll(/^\s+destination: (.+)$/gm)].map((match) => match[1]);
+const selfCareExpectedFiles = [
+  ".github/workflows/self-care-accessibility-checker.md",
+  ".github/workflows/self-care-code-improvement.md",
+  ".github/workflows/self-care-primer-brand-checker.md",
+  ".github/workflows/self-care.md",
+  ".github/workflows/shared/control-precompute.md",
+  ".github/workflows/shared/control.md",
+];
 
 const repositoryOnlyFiles = [
   ".github/aw/e2e/run-canary.sh",
@@ -194,6 +203,18 @@ test("gh aw add installs the focused Advisory package contract", { timeout: 180_
       ],
       "focused Advisory package manifest must own its entry workflows and ledger",
     );
+  } finally {
+    rmSync(consumer, { recursive: true, force: true });
+  }
+});
+
+test("gh aw add installs the focused SelfCare package contract", { timeout: 180_000 }, () => {
+  const consumer = installPackage(selfCarePackageSource);
+
+  try {
+    for (const relativePath of selfCareExpectedFiles) {
+      assert.ok(existsSync(join(consumer, relativePath)), `focused SelfCare package omitted ${relativePath}`);
+    }
   } finally {
     rmSync(consumer, { recursive: true, force: true });
   }

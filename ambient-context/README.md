@@ -64,8 +64,12 @@ The package is runnable after its workers are declared in `.github/central-agent
 		"packages": {
 			"ambient-context": {
 				"workers": {
-					"agents-md-curator": {},
-					"skills-curator": {}
+					"agents-md-curator": {
+						"workflow": "ambient-context-agents-md-curator"
+					},
+					"skills-curator": {
+						"workflow": "ambient-context-skills-curator"
+					}
 				}
 			}
 		}

@@ -56,7 +56,7 @@ Do not leave angle-bracket placeholders in authored files or pass placeholders t
 1. Load `docs/getting-started.md`, `docs/configuration.md`, and `docs/authentication.md`. Treat them as authoritative for current CAO policy fields and credential selection. Inspect root `aw.yml` and the manifests and READMEs for the operations it includes so package choices reflect the immutable catalog being installed, not a stale list. The gh-aw workflow-authoring guide applies when creating custom workflows, not when installing this existing package.
 2. Determine the GitHub organization and control repository name. If the repository exists, detect and preserve its visibility. If it does not exist, ask whether to create it as `public` or `private`; do not assume either.
 3. Ask these two package questions separately before choosing the first target. Use a multi-select question followed by a yes/no question when an interactive question tool is available:
-  - **Catalog operations:** Ask, "What do you want CAO to do with the catalog operations installed by the root package?" Present the current package display names and outcome-focused descriptions from their manifests and READMEs, allow more than one answer, and include `Not sure yet`. Explain that the immutable root package installs its core catalog workflows as one unit; this answer controls initial enablement and onboarding, not partial rewriting of the package. If the user selects more than one operation, ask which one should prove setup first. Record the exact `initial-package` and `initial-orchestrator`; declaring that package enables its installed workers, so do not duplicate worker membership in policy. Never silently default the package to Dependabot.
+  - **Catalog operations:** Ask, "What do you want CAO to do with the catalog operations installed by the root package?" Present the current package display names and outcome-focused descriptions from their manifests and READMEs, allow more than one answer, and include `Not sure yet`. Explain that the immutable root package installs its core catalog workflows as one unit; this answer controls initial enablement and onboarding, not partial rewriting of the package. If the user selects more than one operation, ask which one should prove setup first. Record the exact `initial-package`, `initial-orchestrator`, and worker-to-workflow mapping from the selected package's catalog policy. Never silently default the package to Dependabot.
   - **Custom operation:** Ask, "Do you also want to create an operation package of your own?" If yes, ask for a short description of the desired outcome and target repositories, record it without expanding setup scope, and plan an explicit handoff to `.github/skills/create-ops-package/SKILL.md` after step 13. If no catalog operation is selected, explain that one installed operation is required for the bounded setup proof and ask the user to choose one; `Not sure yet` must not silently enable a package.
 4. Ask which repository the first review run should target unless the user already supplied one. Offer `<organization>/<control-repository>` as the default and accept an alternate exact `owner/repository`. For an alternate target:
   - verify that it exists, record its visibility and owner, and confirm the authenticated user can access it;
@@ -110,13 +110,19 @@ Do not leave angle-bracket placeholders in authored files or pass placeholders t
          "allowed-repositories": ["<target-owner>/<target-repository>"]
        },
        "packages": {
-         "<package-slug>": {}
+         "<package-slug>": {
+           "workers": {
+             "<worker-slug>": {
+               "workflow": "<worker-workflow-slug>"
+             }
+           }
+         }
        }
      }
    }
    ```
 
-    Replace both occurrences of `<target-owner>` with `target-owner`, the one occurrence of `<target-repository>` with `target-repository`, and `<package-slug>` with `initial-package`. Do not put `control-owner` or `control-repository` into this policy unless the selected target is the control repository. Keep the omitted defaults: `review`, one repository, and 100 percent rollout. The installed package manifest supplies worker membership; add a `workers` entry only for an explicit exception such as `enabled: false` or `max-mode: review`. Do not enable the user's other selected catalog operations yet; onboard each through a separate reviewed policy change after the first proof. Do not add broader owners, repositories, packages, worker exceptions, modes, rollout settings, or budgets during initial setup.
+    Replace both occurrences of `<target-owner>` with `target-owner`, the one occurrence of `<target-repository>` with `target-repository`, `<package-slug>` with `initial-package`, and repeat the worker entry for every worker in the recorded catalog mapping. Each worker entry must preserve its exact worker and workflow slugs; the resolver loads this mapping directly from policy. Do not put `control-owner` or `control-repository` into this policy unless the selected target is the control repository. Keep the omitted defaults: `review`, one repository, and 100 percent rollout. Do not enable the user's other selected catalog operations yet; onboard each through a separate reviewed policy change after the first proof. Do not add broader owners, repositories, packages, optional worker controls, modes, rollout settings, or budgets during initial setup.
 
     Parse the file and reject unresolved placeholders before continuing:
 

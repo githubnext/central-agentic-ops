@@ -36,7 +36,7 @@ export function controlPolicy({
   scope = {},
   inventory = {},
   packagePolicy = {},
-  workerPolicy = null,
+  workerPolicy = {},
 } = {}) {
   return JSON.stringify({
     version: 1,
@@ -50,7 +50,12 @@ export function controlPolicy({
           "rollout-percent": 100,
           ...packagePolicy,
           ...(workerPolicy === null ? {} : {
-            workers: { "release-train-updater": workerPolicy },
+            workers: {
+              "release-train-updater": {
+                workflow: "dependabot-release-train-updater",
+                ...workerPolicy,
+              },
+            },
           }),
         },
       },

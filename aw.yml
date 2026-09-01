@@ -19,6 +19,10 @@ includes:
   - .github/workflows/optimization-ai-credit-auditor.md
   - .github/workflows/optimization-ai-credit-optimizer.md
   - .github/workflows/optimization.md
+  - .github/workflows/self-care-accessibility-checker.md
+  - .github/workflows/self-care-code-improvement.md
+  - .github/workflows/self-care-primer-brand-checker.md
+  - .github/workflows/self-care.md
 resources:
   - source: AGENTS.md
     destination: .github/aw/default-AGENTS.md

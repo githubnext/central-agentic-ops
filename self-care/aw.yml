@@ -1,0 +1,5 @@
+name: SelfCare
+description: Repository-local live checks for accessibility and Primer brand alignment in Central Agentic Ops.
+min-version: v0.87.10
+includes:
+  - .github/workflows/self-care.md

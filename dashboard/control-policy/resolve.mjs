@@ -5,31 +5,6 @@ import { pathToFileURL } from "node:url";
 
 export class PolicyError extends Error {}
 
-export const PACKAGES = Object.freeze({
-  advisory: { "uk-ai-operational-resilience": "advisory-uk-ai-operational-resilience" },
-  "ambient-context": {
-    "agents-md-curator": "ambient-context-agents-md-curator",
-    "skills-curator": "ambient-context-skills-curator",
-  },
-  "aw-maintenance": {
-    "failures-investigator": "aw-failures-investigator",
-    upgrade: "aw-maintenance-upgrade",
-  },
-  dependabot: { "release-train-updater": "dependabot-release-train-updater" },
-  "eu-cra-compliance": {
-    "scope-classifier": "eu-cra-compliance-scope-classifier",
-    "security-requirements-auditor": "eu-cra-compliance-security-requirements-auditor",
-    "supply-chain-sbom-auditor": "eu-cra-compliance-supply-chain-sbom-auditor",
-    "vulnerability-handling-auditor": "eu-cra-compliance-vulnerability-handling-auditor",
-    "article-14-reporting-readiness": "eu-cra-compliance-article-14-reporting-readiness",
-    "conformity-release-evidence": "eu-cra-compliance-conformity-release-evidence",
-  },
-  optimization: {
-    "ai-credit-auditor": "optimization-ai-credit-auditor",
-    "ai-credit-optimizer": "optimization-ai-credit-optimizer",
-  },
-});
-
 const SCHEMA_URI = "https://raw.githubusercontent.com/githubnext/central-agentic-ops/main/.github/central-agentic-ops.schema.json";
 const ROOT_KEYS = ["$schema", "version", "control-plane", "target-authority"];
 const CONTROL_KEYS = ["scope", "inventory", "defaults", "packages", "publishing"];
@@ -43,13 +18,14 @@ const OCTICONS = [
 ];
 const PACKAGE_KEYS = ["enabled", ...DEFAULT_KEYS, "icon", "targets", "workers"];
 const TARGET_POLICY_KEYS = ["mode"];
-const WORKER_KEYS = ["enabled", "max-mode"];
+const WORKER_KEYS = ["workflow", "enabled", "max-mode"];
 const PUBLISHING_KEYS = ["enabled", "control-repositories", "reviewers"];
 const TARGET_AUTHORITY_KEYS = ["packages"];
 const TARGET_PACKAGE_KEYS = ["authority"];
 const REPOSITORY_PATTERN = /^[A-Za-z0-9][A-Za-z0-9-]*\/[A-Za-z0-9._-]+$/;
 const OWNER_PATTERN = /^[A-Za-z0-9][A-Za-z0-9-]*$/;
 const LOGIN_PATTERN = /^[A-Za-z0-9](?:[A-Za-z0-9-]{0,37}[A-Za-z0-9])?$/;
+const SLUG_PATTERN = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
 const MODES = ["review", "live"];
 
 function isRecord(value) {
@@ -219,9 +195,9 @@ function validateDefaults(defaults, path) {
 
 function validatePackages(packages) {
   assertMapping(packages, "control-plane.packages");
-  assertKeys(packages, Object.keys(PACKAGES), "control-plane.packages");
   for (const [packageName, packagePolicy] of Object.entries(packages)) {
     const path = `control-plane.packages.${packageName}`;
+    assertString(packageName, path, SLUG_PATTERN);
     assertMapping(packagePolicy, path);
     assertKeys(packagePolicy, PACKAGE_KEYS, path);
     if ("enabled" in packagePolicy) assertBoolean(packagePolicy.enabled, `${path}.enabled`);
@@ -244,11 +220,17 @@ function validatePackages(packages) {
 
     const workers = packagePolicy.workers;
     assertMapping(workers, `${path}.workers`);
-    assertKeys(workers, Object.keys(PACKAGES[packageName]), `${path}.workers`);
+    const workflows = new Set();
     for (const [workerName, worker] of Object.entries(workers)) {
       const workerPath = `${path}.workers.${workerName}`;
+      assertString(workerName, workerPath, SLUG_PATTERN);
       assertMapping(worker, workerPath);
       assertKeys(worker, WORKER_KEYS, workerPath);
+      assertString(worker.workflow, `${workerPath}.workflow`, SLUG_PATTERN);
+      if (workflows.has(worker.workflow)) {
+        throw new PolicyError(`${path}.workers must declare unique workflow identities`);
+      }
+      workflows.add(worker.workflow);
       if ("enabled" in worker) assertBoolean(worker.enabled, `${workerPath}.enabled`);
       if ("max-mode" in worker) assertMode(worker["max-mode"], `${workerPath}.max-mode`);
     }
@@ -294,9 +276,9 @@ function validateTargetAuthority(target) {
   assertKeys(target, TARGET_AUTHORITY_KEYS, path);
   const packages = target.packages;
   assertMapping(packages, `${path}.packages`);
-  assertKeys(packages, Object.keys(PACKAGES), `${path}.packages`);
   for (const [packageName, packagePolicy] of Object.entries(packages)) {
     const packagePath = `${path}.packages.${packageName}`;
+    assertString(packageName, packagePath, SLUG_PATTERN);
     assertMapping(packagePolicy, packagePath);
     assertKeys(packagePolicy, TARGET_PACKAGE_KEYS, packagePath);
     assertString(packagePolicy.authority, `${packagePath}.authority`, REPOSITORY_PATTERN);
@@ -326,14 +308,9 @@ export function effectivePolicy(
     targetRepository = "",
   },
 ) {
-  if (!(packageName in PACKAGES)) throw new PolicyError(`unknown package: ${packageName}`);
-  if (!['orchestrator', 'worker'].includes(role)) throw new PolicyError("role must be orchestrator or worker");
-  if (role === "worker") {
-    if (!workerName) throw new PolicyError("worker identity is required");
-    if (!(workerName in PACKAGES[packageName])) throw new PolicyError(`unknown worker: ${packageName}/${workerName}`);
-  } else if (workerName) {
-    throw new PolicyError("worker identity is forbidden for orchestrators");
-  }
+  if (!["orchestrator", "worker"].includes(role)) throw new PolicyError("role must be orchestrator or worker");
+  if (role === "worker" && !workerName) throw new PolicyError("worker identity is required");
+  if (role === "orchestrator" && workerName) throw new PolicyError("worker identity is forbidden for orchestrators");
 
   const control = document["control-plane"];
   if (!control) return denied("control-plane-absent", packageName, role, workerName);
@@ -341,6 +318,10 @@ export function effectivePolicy(
   const packagePolicy = (control.packages ?? {})[packageName];
   if (!packagePolicy) return denied("package-undeclared", packageName, role, workerName);
   if (!(packagePolicy.enabled ?? true)) return denied("package-disabled", packageName, role, workerName);
+  const workers = packagePolicy.workers ?? {};
+  if (role === "worker" && !(workerName in workers)) {
+    throw new PolicyError(`unknown worker: ${packageName}/${workerName}`);
+  }
 
   const defaults = {
     mode: "review",
@@ -357,12 +338,11 @@ export function effectivePolicy(
     ]),
   );
   const workerPolicies = Object.fromEntries(
-    Object.entries(PACKAGES[packageName]).map(([worker, workflow]) => {
-      const exception = (packagePolicy.workers ?? {})[worker] ?? {};
-      return [workflow, {
+    Object.entries(workers).map(([worker, policy]) => {
+      return [policy.workflow, {
         worker,
-        enabled: exception.enabled ?? true,
-        max_mode: exception["max-mode"] ?? null,
+        enabled: policy.enabled ?? true,
+        max_mode: policy["max-mode"] ?? null,
       }];
     }),
   );
@@ -375,7 +355,7 @@ export function effectivePolicy(
   }
 
   if (role === "worker") {
-    const worker = (packagePolicy.workers ?? {})[workerName] ?? {};
+    const worker = workers[workerName];
     if (!(worker.enabled ?? true)) return denied("worker-disabled", packageName, role, workerName);
     if ("max-mode" in worker) {
       effective.mode = lesserMode(effective.mode, worker["max-mode"]);

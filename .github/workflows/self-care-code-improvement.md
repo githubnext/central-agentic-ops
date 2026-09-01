@@ -1,37 +1,84 @@
 ---
-name: code-improvement
+name: "SelfCare / Code Improvement"
 description: Grow the dashboard component library one reviewed improvement at a time
 intent: Grow the reusable dashboard component library by replacing evidenced UI duplication with tested components while preserving behavior.
 on:
-  schedule: every 30 minutes
-  skip-if-match: 'is:pr is:open "gh-aw-workflow-id: code-improvement" in:body'
+  workflow_dispatch:
+    inputs:
+      target_repo:
+        required: true
+        type: string
+      safe_output_repo:
+        required: true
+        type: string
+      safe_output_mode:
+        type: string
+      correlation_id:
+        type: string
+      central_repo:
+        type: string
+      control_plane_run_url:
+        type: string
+      batch_label:
+        type: string
+  skip-if-match: 'is:pr is:open "gh-aw-workflow-id: self-care-code-improvement" in:body'
+
+checkout:
+  repository: ${{ inputs.target_repo }}
+  github-token: ${{ secrets.GH_AW_GITHUB_TOKEN || secrets.GITHUB_TOKEN }}
+  fetch-depth: 0
+  current: true
+
+env:
+  GH_AW_SAFE_OUTPUT_MODE: ${{ inputs.safe_output_mode || 'review' }}
+  REVIEW_OUTPUT_REPO: ${{ inputs.safe_output_repo || github.repository }}
+  SAFE_OUTPUT_REPO: ${{ (inputs.safe_output_mode || 'review') == 'review' && (inputs.safe_output_repo || github.repository) || inputs.target_repo }}
+  TARGET_REPO: ${{ inputs.target_repo || '' }}
+
+environment: central-agentic-ops
+
+imports:
+  - uses: shared/control.md
+    with:
+      package: self-care
+      role: worker
+      worker: code-improvement
+
 permissions:
   contents: read
-  copilot-requests: write
+  actions: read
   pull-requests: read
+
 engine: copilot
 strict: true
+max-ai-credits: 400
+max-daily-ai-credits: -1
 timeout-minutes: 30
 concurrency:
-  group: "${{ github.workflow }}"
-  cancel-in-progress: false
+  group: "${{ github.workflow }}-${{ inputs.target_repo }}"
+  cancel-in-progress: true
+tracker-id: self-care-code-improvement
+run-name: "SelfCare code improvement · ${{ inputs.target_repo }} · ${{ inputs.safe_output_mode || 'review' }}"
 runtimes:
   node:
     version: "24"
 network:
   allowed:
     - defaults
+    - github
     - node
     - chrome
     - playwright
 tools:
   github:
     mode: gh-proxy
-    toolsets: [pull_requests, repos]
+    min-integrity: approved
+    toolsets: [pull_requests, repos, actions]
   bash:
     - "*"
 safe-outputs:
   create-pull-request:
+    target-repo: ${{ (inputs.safe_output_mode || 'review') == 'review' && (inputs.safe_output_repo || github.repository) || inputs.target_repo }}
     title-prefix: "[dashboard-components] "
     labels: [dashboard-component-refactor, ai-generated]
     draft: true
@@ -47,10 +94,13 @@ safe-outputs:
   noop:
 pre-agent-steps:
   - name: Install dashboard dependencies
+    if: ${{ inputs.target_repo == 'githubnext/central-agentic-ops' && (inputs.safe_output_mode || 'review') == 'live' }}
     run: npm ci --prefix dashboard/site --ignore-scripts
   - name: Install Chromium
+    if: ${{ inputs.target_repo == 'githubnext/central-agentic-ops' && (inputs.safe_output_mode || 'review') == 'live' }}
     run: npm exec --prefix dashboard/site -- playwright install --with-deps chromium
   - name: Validate dashboard baseline
+    if: ${{ inputs.target_repo == 'githubnext/central-agentic-ops' && (inputs.safe_output_mode || 'review') == 'live' }}
     run: |
       npm --prefix dashboard/site run typecheck
       npm --prefix dashboard/site run lint
@@ -67,7 +117,11 @@ evals:
     question: Does the agent output show that changes stayed within the configured dashboard paths?
 ---
 
-# Dashboard Component Feature Grower
+{{#runtime-import? .github/cao/self-care.md}}
+
+# SelfCare Code Improvement
+
+Read `/tmp/gh-aw/agent/control-precompute.json` first. This worker is authorized only when its precomputed `target_repo` is exactly `githubnext/central-agentic-ops` and its precomputed `safe_output_mode` is `live`. If either condition is false, call `noop` once with the denied scope and stop without inspecting or changing dashboard files.
 
 Grow the JavaScript dashboard component library by extracting one common UI construct per run.
 
@@ -97,6 +151,6 @@ The baseline completed before the agent started. After editing, run all of these
 3. `npm test`
 4. `npm run test:e2e`
 
-Review the final diff and scan changed files for secrets. If every command passes, call `create_pull_request` exactly once with a focused draft PR that explains the duplicated call sites, the extracted component boundary, the preserved behavior, and validation results.
+Review the final diff and scan changed files for secrets. If every command passes, call `create_pull_request` exactly once with a focused draft PR that explains the duplicated call sites, the extracted component boundary, the preserved behavior, and validation results. Include a `### Control Plane` section with correlation ID `${{ inputs.correlation_id }}`, central repository `${{ inputs.central_repo }}`, and control plane run `${{ inputs.control_plane_run_url }}`.
 
 Call `noop` with a short reason and make no visible write when no non-duplicate candidate meets the evidence threshold, the baseline or post-change validation fails, evidence is insufficient, or the necessary change exceeds the allowed or protected-file boundary.

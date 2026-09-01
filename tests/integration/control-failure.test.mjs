@@ -139,7 +139,7 @@ test("control precompute disables a worker before review repository access", () 
   assert.doesNotMatch(result.stderr, /GitHub must not be called/);
 });
 
-test("control precompute inherits installed workers when worker exceptions are omitted", () => {
+test("control precompute loads declared worker workflows from policy", () => {
   const result = runPrecompute({}, undefined, controlPolicy());
 
   assert.equal(result.status, 0, result.stderr);

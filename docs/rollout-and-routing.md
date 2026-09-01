@@ -36,7 +36,8 @@ Each package under `control-plane.packages` has its own mode and limits. Review 
 | Rollout percentage | `rollout-percent` | `100` |
 | Monthly AIC budget | `monthly-ai-credit-budget` | `0` (disabled) |
 | Exact target mode | `targets.<owner/repository>.mode` | Package mode |
-| Worker kill switch | `workers.<worker>.enabled` | `true` for installed package workers |
+| Worker workflow identity | `workers.<worker>.workflow` | Required workflow slug |
+| Worker kill switch | `workers.<worker>.enabled` | `true` |
 | Optional worker mode ceiling | `workers.<worker>.max-mode` | Inherit package or exact-target mode |
 
 Changing one operation does not change another. For example, Dependabot may be live while Optimization remains in review.

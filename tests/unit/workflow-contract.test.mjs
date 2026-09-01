@@ -302,6 +302,7 @@ test("enterprise defaults, budgets, timeouts, and concurrency are finite", () =>
     "eu-cra-compliance.md": { credits: 200, timeout: 15, dispatchMax: 48, workers: 6 },
     "eu-cra-compliance-package-maintainer.md": { credits: 200, timeout: 20 },
     "optimization.md": { credits: 250, timeout: 15, dispatchMax: 20, workers: 2 },
+    "self-care.md": { credits: 200, timeout: 15, dispatchMax: 3, workers: 3 },
     "ambient-context-agents-md-curator.md": { credits: 400, timeout: 25 },
     "ambient-context-skills-curator.md": { credits: 400, timeout: 20 },
     "aw-failures-investigator.md": { credits: 500, timeout: 30 },
@@ -315,6 +316,9 @@ test("enterprise defaults, budgets, timeouts, and concurrency are finite", () =>
     "eu-cra-compliance-vulnerability-handling-auditor.md": { credits: 150, timeout: 30 },
     "optimization-ai-credit-auditor.md": { credits: 350, timeout: 35 },
     "optimization-ai-credit-optimizer.md": { credits: 500, timeout: 30 },
+    "self-care-accessibility-checker.md": { credits: 400, timeout: 30 },
+    "self-care-code-improvement.md": { credits: 400, timeout: 30 },
+    "self-care-primer-brand-checker.md": { credits: 400, timeout: 25 },
   };
 
   for (const [name, limits] of Object.entries(expected)) {
@@ -451,7 +455,7 @@ test("workflow contracts isolate authenticated package lifecycle checks", () => 
 });
 
 test("package manifests exclude repository-only tests", () => {
-  for (const relativePath of ["aw.yml", join("advisory", "aw.yml"), join("ambient-context", "aw.yml"), join("aw-maintenance", "aw.yml"), join("dashboard", "aw.yml"), join("dependabot", "aw.yml"), join("eu-cra-compliance", "aw.yml"), join("optimization", "aw.yml")]) {
+  for (const relativePath of ["aw.yml", join("advisory", "aw.yml"), join("ambient-context", "aw.yml"), join("aw-maintenance", "aw.yml"), join("dashboard", "aw.yml"), join("dependabot", "aw.yml"), join("eu-cra-compliance", "aw.yml"), join("optimization", "aw.yml"), join("self-care", "aw.yml")]) {
     const manifest = readFileSync(join(root, relativePath), "utf8");
     assert.doesNotMatch(manifest, /(?:review-smoke|enterprise-canary|enterprise-stress|tests\/e2e|\.github\/aw\/e2e)/, relativePath);
   }
@@ -536,6 +540,10 @@ test("root CAO workflows defer exclusive Copilot auth selection to add-wizard", 
     "optimization-ai-credit-auditor",
     "optimization-ai-credit-optimizer",
     "optimization",
+    "self-care-accessibility-checker",
+    "self-care-code-improvement",
+    "self-care-primer-brand-checker",
+    "self-care",
   ];
   const rootManifest = readFileSync(join(root, "aw.yml"), "utf8");
 
@@ -832,6 +840,10 @@ test("live workers require target-owned package authority before agent execution
     ["optimization.md", "optimization"],
     ["optimization-ai-credit-auditor.md", "optimization"],
     ["optimization-ai-credit-optimizer.md", "optimization"],
+    ["self-care.md", "self-care"],
+    ["self-care-accessibility-checker.md", "self-care"],
+    ["self-care-code-improvement.md", "self-care"],
+    ["self-care-primer-brand-checker.md", "self-care"],
   ]) {
     assert.match(workflow(name), new RegExp(`package: ${bundle}`));
   }
@@ -845,6 +857,7 @@ test("orchestrators use checked-in policy with independent manual narrowing", ()
     ["dependabot.md", "dependabot"],
     ["eu-cra-compliance.md", "eu-cra-compliance"],
     ["optimization.md", "optimization"],
+    ["self-care.md", "self-care"],
   ]) {
     const source = workflow(name);
 
@@ -885,6 +898,10 @@ test("operation workflows optionally load per-operation markdown steering", () =
     ["optimization.md", "optimization"],
     ["optimization-ai-credit-auditor.md", "optimization"],
     ["optimization-ai-credit-optimizer.md", "optimization"],
+    ["self-care.md", "self-care"],
+    ["self-care-accessibility-checker.md", "self-care"],
+    ["self-care-code-improvement.md", "self-care"],
+    ["self-care-primer-brand-checker.md", "self-care"],
   ]) {
     assert.match(
       workflow(name),
@@ -938,7 +955,7 @@ test("shared control keeps manual and scheduled routing event-scoped", () => {
   const control = workflow("shared/control.md");
   const precompute = workflow("shared/control-precompute.md");
 
-  for (const name of ["uk-ai-advisory.md", "ambient-context.md", "aw-maintenance.md", "dependabot.md", "eu-cra-compliance.md", "optimization.md"]) {
+  for (const name of ["uk-ai-advisory.md", "ambient-context.md", "aw-maintenance.md", "dependabot.md", "eu-cra-compliance.md", "optimization.md", "self-care.md"]) {
     const orchestrator = workflow(name);
     assert.match(orchestrator, /GH_AW_SAFE_OUTPUT_MODE:.*inputs\.safe_output_mode.*\|\| 'review'/);
     assert.match(orchestrator, /REVIEW_OUTPUT_REPO:.*inputs\.safe_output_repo \|\| github\.repository/);
@@ -992,6 +1009,9 @@ test("every worker uses the standard dispatch envelope and safe mode vocabulary"
     ["eu-cra-compliance-vulnerability-handling-auditor.md", "eu-cra-compliance", "vulnerability-handling-auditor"],
     ["optimization-ai-credit-auditor.md", "optimization", "ai-credit-auditor"],
     ["optimization-ai-credit-optimizer.md", "optimization", "ai-credit-optimizer"],
+    ["self-care-accessibility-checker.md", "self-care", "accessibility-checker"],
+    ["self-care-code-improvement.md", "self-care", "code-improvement"],
+    ["self-care-primer-brand-checker.md", "self-care", "primer-brand-checker"],
   ];
 
   for (const [name, packageName, workerName] of workerNames) {
@@ -1263,12 +1283,15 @@ test("multi-device docs tester runs daily and covers browser and appearance comp
   assert.match(source, /multi-device-docs\/screenshots/);
 });
 
-test("accessibility expert audits the served docs site with axe-core evidence", () => {
-  const source = workflow("accessibility-expert.md");
+test("SelfCare accessibility checker audits the served docs site with axe-core evidence", () => {
+  const source = workflow("self-care-accessibility-checker.md");
+  const liveGuard = "if: ${{ inputs.target_repo == 'githubnext/central-agentic-ops' && (inputs.safe_output_mode || 'review') == 'live' }}";
 
-  assert.match(source, /^name: Accessibility Expert$/m);
-  assert.match(source, /schedule: weekly/);
+  assert.match(source, /^name: "SelfCare \/ Accessibility Checker"$/m);
   assert.match(source, /workflow_dispatch:/);
+  assert.match(source, /package: self-care/);
+  assert.match(source, /worker: accessibility-checker/);
+  assert.match(source, /safe_output_mode` is `live`/);
   assert.match(source, /engine:\n\s+id: pi\n\s+model: copilot\/gpt-5\.4/);
   assert.match(source, /playwright:\n\s+mode: cli/);
   assert.match(source, /npm pack axe-core@4\.13\.0/);
@@ -1276,26 +1299,30 @@ test("accessibility expert audits the served docs site with axe-core evidence", 
   assert.match(source, /colorScheme: "light"/);
   assert.match(source, /colorScheme: "dark"/);
   assert.match(source, /prefers-reduced-motion/);
-  assert.match(source, /create-issue:\n\s+title-prefix: "\[accessibility\] "/);
-  assert.match(source, /close-older-key: accessibility-expert/);
+  assert.match(source, /create-issue:\n\s+target-repo:.*\n\s+title-prefix: "\[accessibility\] "/);
+  assert.match(source, /close-older-key: self-care-accessibility-checker/);
+  assert.equal(source.split(liveGuard).length - 1, 5);
   assert.doesNotMatch(source, /^\s+(create-pull-request|add-comment|create-discussion|push-to-pull-request-branch):/m);
 });
 
-test("Primer branding audits the dashboard against retrieved guidance", () => {
-  const source = workflow("primer-branding.md");
-  const compiled = workflow("primer-branding.lock.yml");
+test("SelfCare Primer brand checker audits the dashboard against retrieved guidance", () => {
+  const source = workflow("self-care-primer-brand-checker.md");
+  const compiled = workflow("self-care-primer-brand-checker.lock.yml");
+  const liveGuard = "if: ${{ inputs.target_repo == 'githubnext/central-agentic-ops' && (inputs.safe_output_mode || 'review') == 'live' }}";
 
-  assert.match(source, /^private: true$/m);
-  assert.match(source, /^name: "Primer Branding"$/m);
-  assert.match(source, /schedule: daily/);
+  assert.match(source, /^name: "SelfCare \/ Primer Brand Checker"$/m);
+  assert.match(source, /package: self-care/);
+  assert.match(source, /worker: primer-brand-checker/);
+  assert.match(source, /safe_output_mode` is `live`/);
   assert.match(source, /skip-if-match: 'is:pr is:open in:title "Primer branding"'/);
   assert.match(source, /@primer\/brand-mcp@0\.74\.0/);
   assert.match(source, /cli-proxy: true/);
   assert.match(source, /dashboard\/site\/src\/styles\.js/);
   assert.match(source, /dashboard\/site\/src\/\*\*\/\*\.js/);
   assert.match(source, /npm --prefix dashboard\/site run test:e2e/);
-  assert.match(source, /create-pull-request:\n\s+title-prefix: "Primer branding: "\n\s+draft: true/);
+  assert.match(source, /create-pull-request:\n\s+target-repo:.*\n\s+title-prefix: "Primer branding: "\n\s+draft: true/);
   assert.match(source, /If the audit finds no meaningful deviations, call `noop` once/);
+  assert.equal(source.split(liveGuard).length - 1, 1);
   assert.match(compiled, /\\"noop\\":\{\\"max\\":1,\\"report-as-issue\\":\\"false\\"\}/);
 });
 
@@ -1331,10 +1358,16 @@ test("CAO dashboard reviewer checks successful documentation deployments", () =>
   assert.doesNotMatch(source, /^\s+(create-pull-request|add-comment|create-discussion|push-to-pull-request-branch):/m);
 });
 
-test("code improvement permits top-level and nested dashboard JavaScript sources", () => {
-  const source = workflow("code-improvement.md");
+test("SelfCare code improvement preserves its focused dashboard component mission", () => {
+  const source = workflow("self-care-code-improvement.md");
+  const liveGuard = "if: ${{ inputs.target_repo == 'githubnext/central-agentic-ops' && (inputs.safe_output_mode || 'review') == 'live' }}";
 
+  assert.match(source, /^name: "SelfCare \/ Code Improvement"$/m);
+  assert.match(source, /package: self-care/);
+  assert.match(source, /worker: code-improvement/);
+  assert.match(source, /safe_output_mode` is `live`/);
   assert.match(source, /allowed-files:\n\s+- "dashboard\/site\/src\/\*\.js"\n\s+- "dashboard\/site\/src\/\*\*\/\*\.js"\n\s+- "dashboard\/site\/test\/\*\*\/\*\.js"/);
+  assert.equal(source.split(liveGuard).length - 1, 3);
 });
 
 test("dashboard authoring corpus workflow generates only validated training examples", () => {
@@ -1441,18 +1474,19 @@ test("clean-room compilation emits the expected GitHub Actions settings", { time
       "optimization-ai-credit-auditor.lock.yml",
       "optimization-ai-credit-optimizer.lock.yml",
       "optimization.lock.yml",
+      "self-care-accessibility-checker.lock.yml",
+      "self-care-code-improvement.lock.yml",
+      "self-care-primer-brand-checker.lock.yml",
+      "self-care.lock.yml",
     ];
     const expectedLockNames = [
       ...packageLockNames,
-      "accessibility-expert.lock.yml",
       "advisory-package-maintainer.lock.yml",
       "cao-dashboard-review.lock.yml",
-      "code-improvement.lock.yml",
       "dashboard-authoring-corpus.lock.yml",
       "multi-device-docs-tester.lock.yml",
       "eu-cra-compliance-package-maintainer.lock.yml",
       "docs-explanatory-diagrams.lock.yml",
-      "primer-branding.lock.yml",
       "pr-reviewer.lock.yml",
       "svg-visual-audit.lock.yml",
     ].sort();
@@ -1488,6 +1522,7 @@ test("clean-room compilation emits the expected GitHub Actions settings", { time
       ["dependabot.lock.yml", "dependabot"],
       ["eu-cra-compliance.lock.yml", "eu-cra-compliance"],
       ["optimization.lock.yml", "optimization"],
+      ["self-care.lock.yml", "self-care"],
     ]);
     for (const [name, packageName] of orchestratorGates) {
       const generated = workflow(name, generatedDirectory);
@@ -1522,6 +1557,9 @@ test("clean-room compilation emits the expected GitHub Actions settings", { time
       ["eu-cra-compliance-vulnerability-handling-auditor.lock.yml", ["eu-cra-compliance", "vulnerability-handling-auditor"]],
       ["optimization-ai-credit-auditor.lock.yml", ["optimization", "ai-credit-auditor"]],
       ["optimization-ai-credit-optimizer.lock.yml", ["optimization", "ai-credit-optimizer"]],
+      ["self-care-accessibility-checker.lock.yml", ["self-care", "accessibility-checker"]],
+      ["self-care-code-improvement.lock.yml", ["self-care", "code-improvement"]],
+      ["self-care-primer-brand-checker.lock.yml", ["self-care", "primer-brand-checker"]],
     ]);
     for (const [name, [packageName, workerName]] of workerGates) {
       const generated = workflow(name, generatedDirectory);
@@ -1643,7 +1681,9 @@ test("README routes zero-to-CAO requests to the setup skill", () => {
   const initialPolicy = JSON.parse(policyTemplate
     .replaceAll("<target-owner>", "acme")
     .replaceAll("<target-repository>", "service")
-    .replaceAll("<package-slug>", "dependabot"));
+    .replaceAll("<package-slug>", "dependabot")
+    .replaceAll("<worker-slug>", "release-train-updater")
+    .replaceAll("<worker-workflow-slug>", "dependabot-release-train-updater"));
   assert.deepEqual(initialPolicy, {
     version: 1,
     "control-plane": {
@@ -1652,14 +1692,20 @@ test("README routes zero-to-CAO requests to the setup skill", () => {
         "allowed-repositories": ["acme/service"],
       },
       packages: {
-        dependabot: {},
+        dependabot: {
+          workers: {
+            "release-train-updater": {
+              workflow: "dependabot-release-train-updater",
+            },
+          },
+        },
       },
     },
   });
   assert.match(setupSkill, /"allowed-owners": \["<target-owner>"\]/);
   assert.match(setupSkill, /"allowed-repositories": \["<target-owner>\/<target-repository>"\]/);
-  assert.match(setupSkill, /"<package-slug>": \{\}/);
-  assert.match(setupSkill, /installed package manifest supplies worker membership/);
+  assert.match(setupSkill, /"<package-slug>": \{\s+"workers": \{/);
+  assert.match(setupSkill, /resolver loads this mapping directly from policy/);
   assert.match(setupSkill, /gh aw run <orchestrator-workflow>/);
   assert.match(setupSkill, /Public and private control repositories are supported/);
   assert.match(setupSkill, /policy, workflow runs, operational metadata, and review safe outputs are public/);
@@ -1804,6 +1850,7 @@ test("Dashboard inventory links multiline orchestrator worker lists", () => {
         ],
       },
       { id: "optimization", workers: ["optimization-ai-credit-auditor", "optimization-ai-credit-optimizer"] },
+      { id: "self-care", workers: ["self-care-accessibility-checker", "self-care-code-improvement", "self-care-primer-brand-checker"] },
       { id: "uk-ai-advisory", workers: ["advisory-uk-ai-operational-resilience"] },
     ]);
   } finally {

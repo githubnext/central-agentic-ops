@@ -16,46 +16,103 @@
       "advisory": {
         "icon": "eye",
         "workers": {
-          "uk-ai-operational-resilience": {}
+          "uk-ai-operational-resilience": {
+            "workflow": "advisory-uk-ai-operational-resilience"
+          }
         }
       },
       "ambient-context": {
         "icon": "workflow",
         "workers": {
-          "agents-md-curator": {},
-          "skills-curator": {}
+          "agents-md-curator": {
+            "workflow": "ambient-context-agents-md-curator"
+          },
+          "skills-curator": {
+            "workflow": "ambient-context-skills-curator"
+          }
         }
       },
       "aw-maintenance": {
         "icon": "settings",
         "workers": {
-          "failures-investigator": {},
-          "upgrade": {}
+          "failures-investigator": {
+            "workflow": "aw-failures-investigator"
+          },
+          "upgrade": {
+            "workflow": "aw-maintenance-upgrade"
+          }
         }
       },
       "dependabot": {
         "icon": "dependabot",
         "workers": {
-          "release-train-updater": {}
+          "release-train-updater": {
+            "workflow": "dependabot-release-train-updater"
+          }
         }
       },
       "eu-cra-compliance": {
         "icon": "shield",
         "workers": {
-          "scope-classifier": {},
-          "security-requirements-auditor": {},
-          "supply-chain-sbom-auditor": {},
-          "vulnerability-handling-auditor": {},
-          "article-14-reporting-readiness": {},
-          "conformity-release-evidence": {}
+          "scope-classifier": {
+            "workflow": "eu-cra-compliance-scope-classifier"
+          },
+          "security-requirements-auditor": {
+            "workflow": "eu-cra-compliance-security-requirements-auditor"
+          },
+          "supply-chain-sbom-auditor": {
+            "workflow": "eu-cra-compliance-supply-chain-sbom-auditor"
+          },
+          "vulnerability-handling-auditor": {
+            "workflow": "eu-cra-compliance-vulnerability-handling-auditor"
+          },
+          "article-14-reporting-readiness": {
+            "workflow": "eu-cra-compliance-article-14-reporting-readiness"
+          },
+          "conformity-release-evidence": {
+            "workflow": "eu-cra-compliance-conformity-release-evidence"
+          }
         }
       },
       "optimization": {
         "icon": "meter",
         "workers": {
-          "ai-credit-auditor": {},
-          "ai-credit-optimizer": {}
+          "ai-credit-auditor": {
+            "workflow": "optimization-ai-credit-auditor"
+          },
+          "ai-credit-optimizer": {
+            "workflow": "optimization-ai-credit-optimizer"
+          }
         }
+      },
+      "self-care": {
+        "mode": "review",
+        "max-repositories": 1,
+        "rollout-percent": 100,
+        "icon": "check-circle",
+        "targets": {
+          "githubnext/central-agentic-ops": {
+            "mode": "live"
+          }
+        },
+        "workers": {
+          "accessibility-checker": {
+            "workflow": "self-care-accessibility-checker"
+          },
+          "code-improvement": {
+            "workflow": "self-care-code-improvement"
+          },
+          "primer-brand-checker": {
+            "workflow": "self-care-primer-brand-checker"
+          }
+        }
+      }
+    }
+  },
+  "target-authority": {
+    "packages": {
+      "self-care": {
+        "authority": "githubnext/central-agentic-ops"
       }
     }
   }
