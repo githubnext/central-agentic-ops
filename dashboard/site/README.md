@@ -17,11 +17,10 @@ The reusable dashboard builder copies this directory to its configured `site-pat
 
 ```bash
 npm install
-npm run build
 npm run typecheck
 npm run lint
 npm test
 npm run test:e2e
 ```
 
-The build copies production assets to `public/cao/` for the documentation site. Application source is browser-compatible JavaScript ESM with no runtime dependencies; build and test tooling remains development-only.
+Application source is browser-compatible JavaScript ESM with no runtime dependencies; test tooling remains development-only.
