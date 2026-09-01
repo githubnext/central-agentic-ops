@@ -123,7 +123,7 @@ function renderPackageSummaryRow(entry, summary) {
   return /** @type {HTMLTableRowElement} */ (h(
     'tr',
     { dataset: { packageSummaryKey: entry.key } },
-    h('th', { scope: 'row' }, h('a', { href: packageDetailHref(entry.id) }, entry.name)),
+    h('th', { scope: 'row' }, h('a', { href: packageInsightsHref(entry.id) }, entry.name)),
     h('td', null, formatNumber(summary?.runs ?? 0)),
     h('td', null, formatNumber(summary?.successful ?? 0)),
     h('td', null, formatNumber(summary?.failed ?? 0)),
@@ -328,7 +328,7 @@ function renderUtilizationCard(entry, utilization, available, completeness) {
       h(
         'span',
         { className: 'package-utilization-identity' },
-        h('a', { href: packageDetailHref(entry.id) }, h('strong', null, entry.name)),
+        h('a', { href: packageInsightsHref(entry.id) }, h('strong', null, entry.name)),
         scopeLabel ? h('small', null, scopeLabel) : null
       ),
       h('span', { className: 'package-utilization-value' }, ratio === null ? '—' : formatPercent(ratio))
@@ -566,8 +566,8 @@ function summarizePackages(workflows) {
 }
 
 /** @param {string} packageId */
-function packageDetailHref(packageId) {
-  return `#page-package-detail?package=${encodeURIComponent(packageId)}`;
+function packageInsightsHref(packageId) {
+  return `#page-operational-value?package=${encodeURIComponent(packageId)}`;
 }
 
 /**

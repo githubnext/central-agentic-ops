@@ -89,7 +89,7 @@ describe('Cost and efficiency dashboard view', () => {
       'Anomaly boundary'
     ]);
     expect(signals[0]?.textContent).toContain('AI Credit telemetry is partial');
-    expect(signals[0]?.querySelector('a')?.getAttribute('href')).toBe('#page-usage');
+    expect(signals[0]?.querySelector('a')?.getAttribute('href')).toBe('#page-coverage');
 
     expect(page?.querySelectorAll('[data-chart-widget="pie"] [data-chart-category]')).toHaveLength(2);
     expect(page?.querySelector('.pie-chart-total-value')?.textContent).toBe('9');

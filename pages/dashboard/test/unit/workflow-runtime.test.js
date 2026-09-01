@@ -26,7 +26,7 @@ const workflow = {
     relation: 'workflow',
     href: 'https://github.com/githubnext/central-agentic-ops/blob/HEAD/.github/workflows/multi-device-docs-tester.md',
     label: 'View Multi-Device Docs Tester',
-    'dashboard-href': '#page-workflow-detail?workflow=githubnext%2Fcentral-agentic-ops%3A.github%2Fworkflows%2Fmulti-device-docs-tester.md',
+    'dashboard-href': '#page-workflow-runtime?workflow=githubnext%2Fcentral-agentic-ops%3A.github%2Fworkflows%2Fmulti-device-docs-tester.md',
     'dashboard-label': 'View Multi-Device Docs Tester workflow dashboard'
   }
 };

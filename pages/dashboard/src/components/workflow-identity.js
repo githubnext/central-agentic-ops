@@ -27,7 +27,7 @@ export function renderWorkflowIdentity(workflow) {
           'a',
           {
             className: 'workflow-badge workflow-badge-operation',
-            href: `#page-package-detail?package=${encodeURIComponent(membership.id)}`
+            href: `#page-operational-value?package=${encodeURIComponent(membership.id)}`
           },
           `Package · ${membership.name}`
         ))
