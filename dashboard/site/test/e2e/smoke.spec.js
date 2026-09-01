@@ -51,7 +51,8 @@ function buildPresenterModuleUrl() {
     .replace("'../dom.js'", JSON.stringify(domModuleUrl))
     .replace("'./histogram.js'", JSON.stringify(histogramModuleUrl))
     .replace("'./summary-copy.js'", JSON.stringify(summaryCopyModuleUrl))
-    .replace("'./view-chrome.js'", JSON.stringify(viewChromeModuleUrl));
+    .replace("'./view-chrome.js'", JSON.stringify(viewChromeModuleUrl))
+    .replace("'./ui-primitives.js'", JSON.stringify(uiPrimitivesModuleUrl));
   const tableSummaryModuleUrl = `data:text/javascript;charset=utf-8,${encodeURIComponent(tableSummarySource)}`;
 
   const dataOperationsSource = readFileSync(new URL('../../src/data-operations.js', import.meta.url), 'utf8');
@@ -251,6 +252,7 @@ function buildPresenterModuleUrl() {
     .replace("'./octicons.js'", JSON.stringify(octiconsModuleUrl))
     .replace("'./components/cell-display.js'", JSON.stringify(cellDisplayModuleUrl))
     .replace("'./components/data-state.js'", JSON.stringify(dataStateModuleUrl))
+    .replace("'./components/ui-primitives.js'", JSON.stringify(uiPrimitivesModuleUrl))
     .replace("'./components/table-region.js'", JSON.stringify(tableRegionModuleUrl))
     .replace("'./components/view-chrome.js'", JSON.stringify(viewChromeModuleUrl))
     .replace("'./components/link-content.js'", JSON.stringify(linkContentModuleUrl))

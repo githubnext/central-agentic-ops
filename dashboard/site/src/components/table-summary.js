@@ -6,6 +6,7 @@ import { h } from '../dom.js';
 import { renderHistogram } from './histogram.js';
 import { formatSummaryCount } from './summary-copy.js';
 import { renderDefinitionListRows } from './view-chrome.js';
+import { formatMediumUtcDateTime } from './ui-primitives.js';
 
 const RUN_SUMMARY_FIELDS = new Set(['run', 'run-link']);
 const RUN_SUMMARY_LABELS = new Set(['run', 'run link', 'workflow run', 'workflow runs']);
@@ -193,11 +194,7 @@ function renderTemporalSummary(timestamps) {
  * @returns {string}
  */
 function formatTimestamp(timestamp) {
-  return new Intl.DateTimeFormat('en', {
-    dateStyle: 'medium',
-    timeStyle: 'short',
-    timeZone: 'UTC'
-  }).format(new Date(timestamp));
+  return formatMediumUtcDateTime(timestamp);
 }
 
 /**
