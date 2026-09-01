@@ -14,6 +14,7 @@
     <div id="root"></div>
     <script type="module">
       import { renderDashboard } from "./src/presenter.js";
+      import { startLoadingProgress } from "./src/loading-progress.js";
       import { readCachedSources, writeCachedSources } from "./src/source-cache.js";
 
       const metadata = (id, overrides = {}) => ({
@@ -32,10 +33,16 @@
         label: `Run ${run}`,
       });
 
-      const dashboardSchema = await fetch("./dashboard.json").then((response) => {
-        if (!response.ok) throw new Error(`Unable to load dashboard.json: ${response.status}`);
-        return response.json();
-      });
+      const loadingProgress = startLoadingProgress(document);
+      const dashboardSchema = await fetch("./dashboard.json")
+        .then((response) => {
+          if (!response.ok) throw new Error(`Unable to load dashboard.json: ${response.status}`);
+          return response.json();
+        })
+        .catch((error) => {
+          loadingProgress.complete();
+          throw error;
+        });
       const dashboardDocument = {
         languageVersion: dashboardSchema["language-version"],
         dashboard: dashboardSchema.dashboard,
@@ -334,6 +341,7 @@
 
       if (new URLSearchParams(window.location.search).has("fixtures")) {
         renderSources(fixtureSources);
+        loadingProgress.complete();
       } else {
         let dashboard = renderSources({}, "loading");
         const cacheKey = new URL("./sources.json", window.location.href).href;
@@ -374,6 +382,8 @@
             root.textContent = failure.message;
             throw failure;
           }
+        } finally {
+          loadingProgress.complete();
         }
       }
     </script>

@@ -739,6 +739,109 @@
         ]
       },
       {
+        "id": "workflow-runs",
+        "kind": "custom",
+        "title": "Workflow runs",
+        "description": "Observed GitHub Actions runs for this authored workflow.",
+        "icon": "play",
+        "class-name": "workflow-runs-page",
+        "route": {
+          "hash-query-parameter": "workflow"
+        },
+        "views": [
+          {
+            "id": "workflow-runs-identity",
+            "title": "Workflow runs",
+            "data": {
+              "sources": [
+                "workflows"
+              ]
+            },
+            "mark": "element",
+            "element": "workflow-detail",
+            "layout": "full"
+          },
+          {
+            "id": "workflow-runs-table",
+            "title": "Runs",
+            "data": {
+              "source": "workflow-runs",
+              "route-field": "workflow-route"
+            },
+            "mark": "table",
+            "controls": "interactive",
+            "empty-message": "No runs have been observed for this workflow.",
+            "encoding": {
+              "columns": [
+                {
+                  "field": "run",
+                  "type": "nominal",
+                  "title": "Run"
+                },
+                {
+                  "field": "run-title",
+                  "type": "nominal",
+                  "title": "Title"
+                },
+                {
+                  "field": "run-status",
+                  "type": "nominal",
+                  "title": "Status",
+                  "display": "status"
+                },
+                {
+                  "field": "run-conclusion",
+                  "type": "nominal",
+                  "title": "Conclusion",
+                  "display": "status"
+                },
+                {
+                  "field": "event",
+                  "type": "nominal",
+                  "title": "Trigger"
+                },
+                {
+                  "field": "rollout-mode",
+                  "type": "nominal",
+                  "title": "Mode",
+                  "display": "mode"
+                },
+                {
+                  "field": "engine",
+                  "type": "nominal",
+                  "title": "Engine"
+                },
+                {
+                  "field": "requested-model",
+                  "type": "nominal",
+                  "title": "Requested model"
+                },
+                {
+                  "field": "resolved-model",
+                  "type": "nominal",
+                  "title": "Resolved model"
+                },
+                {
+                  "field": "started-at",
+                  "type": "temporal",
+                  "title": "Started"
+                },
+                {
+                  "field": "ended-at",
+                  "type": "temporal",
+                  "title": "Ended"
+                }
+              ],
+              "href": {
+                "field": "run-link",
+                "type": "nominal"
+              }
+            },
+            "layout": "full"
+          }
+        ]
+      },
+      {
         "id": "workflow-runtime",
         "kind": "custom",
         "title": "Workflow runtime",

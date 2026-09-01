@@ -218,7 +218,7 @@ function renderChartView(context) {
     ))
   });
 
-  const section = renderPageSection(pageId, title, [
+  const chartContent = [
     ...(description ? [description] : []),
     ...renderViewSectionChrome(metadata, contextDetails),
     ...(color && chartType !== 'pie' ? [renderChartLegend(chartSeries, chartType)] : []),
@@ -229,9 +229,20 @@ function renderChartView(context) {
           chartCategoryLinks(points),
           y ? fieldUnit(y, context.units ?? {}) : null
         ))]
-      : [chartWidget]),
-    ...(table ? [table] : [])
-  ], headingTag);
+      : [chartWidget])
+  ];
+  const section = renderPageSection(
+    pageId,
+    title,
+    chartType === 'pie' ? chartContent : [...chartContent, ...(table ? [table] : [])],
+    headingTag
+  );
+  if (chartType === 'pie') {
+    section.append(
+      h('div', { className: 'pie-chart-card' }, ...Array.from(section.children)),
+      ...(table ? [table] : [])
+    );
+  }
   section.classList.add('chart-view', `chart-view-${chartType}`);
   return section;
 }
