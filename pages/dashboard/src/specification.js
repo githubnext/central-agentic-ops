@@ -32,8 +32,7 @@ export const VIEW_ELEMENT_VALUES = [
   'repository-workflows',
   'workflow-detail',
   'workflow-runtime',
-  'outcome-detail',
-  'workflow-topology'
+  'outcome-detail'
 ];
 export const VIEW_CHART_VALUES = ['bar', 'line', 'pie'];
 export const VIEW_LAYOUT_VALUES = ['full', 'half', 'third'];
@@ -298,7 +297,10 @@ export const SOURCE_FIELDS = {
   'runtime-signals': ['priority', 'count', 'tone', 'icon', 'kind', 'title', 'detail', 'evidence', 'action', 'navigation-href'],
   dispatches: ['started-at', 'dispatch-type', 'package-name', 'workflow-name', 'run-title', 'runtime-repository', 'status', 'run-link'],
   'repository-summary': ['label', 'value', 'items'],
-  'repository-activity': ['repository', 'workflows', 'reports', 'evaluated-workflows', 'runs', 'failure-summary', 'aic', 'status', 'repository-link']
+  'repository-activity': ['repository', 'workflows', 'reports', 'evaluated-workflows', 'runs', 'failure-summary', 'aic', 'status', 'repository-link'],
+  'workflow-topology-summary': ['label', 'value'],
+  'packaged-workflows': ['package', 'package-name', 'repository', 'workflow', 'workflow-name', 'workflow-role', 'rollout-mode', 'workflow-active', 'package-link', 'repository-link', 'workflow-link'],
+  'standalone-workflows': ['repository', 'workflow', 'workflow-name', 'rollout-mode', 'workflow-active', 'repository-link', 'workflow-link']
 };
 
 export const ROLLOUT_MODE_VALUES = ['review', 'live', 'unknown'];

@@ -16,6 +16,7 @@ import { renderFilterBar } from './components/filter-bar.js';
 import { deriveOverviewSources } from './overview-data.js';
 import { deriveRepositorySources } from './repository-data.js';
 import { deriveRuntimeSources } from './runtime-data.js';
+import { deriveWorkflowSources } from './workflow-data.js';
 
 /**
  * @typedef {{ availability: 'available'|'empty'|'unavailable', completeness: 'complete'|'partial'|'unknown', freshness: 'fresh'|'stale'|'unknown' }} DataState
@@ -127,7 +128,7 @@ export function renderDashboard(input) {
     : null;
   const sources = deriveWorkflowDashboardLinks(
     deriveRepositoryDashboardLinks(
-      deriveRuntimeSources(deriveRepositorySources(deriveOverviewSources(deriveEntityLinkSources(rawSources, githubUrlBase)))),
+      deriveRuntimeSources(deriveRepositorySources(deriveOverviewSources(deriveWorkflowSources(deriveEntityLinkSources(rawSources, githubUrlBase))))),
       pages
     ),
     pages
