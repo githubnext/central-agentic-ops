@@ -46,24 +46,19 @@ export function renderWorkflowDetail(context) {
 
     if (workflow && route) {
       const name = workflowName(workflow);
-      const packageMemberships = workflowPackageMemberships(workflow);
       root.dispatchEvent(new CustomEvent('dashboard-route-allocation', {
         bubbles: true,
         detail: {
           title: name,
           description: `Durable reports produced by ${route.workflow} in ${route.repository}.`,
-          navigationPage: packageMemberships.length > 0 ? 'packages' : 'repositories',
-          ...(packageMemberships.length > 0
-            ? {}
-            : {
-                breadcrumbs: [
-                  { label: 'Repositories', href: '#page-repositories' },
-                  {
-                    label: route.repository,
-                    href: `#page-repository-detail?repository=${encodeURIComponent(route.repository)}`
-                  }
-                ]
-              })
+          navigationPage: 'repositories',
+          breadcrumbs: [
+            { label: 'Repositories', href: '#page-repositories' },
+            {
+              label: route.repository,
+              href: `#page-repository-detail?repository=${encodeURIComponent(route.repository)}`
+            }
+          ]
         }
       }));
     }

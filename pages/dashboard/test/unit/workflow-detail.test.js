@@ -157,7 +157,14 @@ describe('renderWorkflowDetail', () => {
     expect(allocation.mock.calls[0][0].detail).toEqual({
       title: 'Ambient Context',
       description: 'Durable reports produced by .github/workflows/ambient-context.md in githubnext/central-agentic-ops.',
-      navigationPage: 'packages'
+      navigationPage: 'repositories',
+      breadcrumbs: [
+        { label: 'Repositories', href: '#page-repositories' },
+        {
+          label: 'githubnext/central-agentic-ops',
+          href: '#page-repository-detail?repository=githubnext%2Fcentral-agentic-ops'
+        }
+      ]
     });
   });
 
