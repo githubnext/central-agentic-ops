@@ -42,6 +42,7 @@ tools:
     - "*"
 skills:
   - .github/skills/dashboard-authoring
+  - .github/skills/generate-dashboard-ir
 safe-outputs:
   create-pull-request:
     title-prefix: "[dashboard-corpus] "
@@ -73,13 +74,14 @@ evals:
 
 # Dashboard Authoring Corpus
 
-Grow the dashboard-authoring skill's corpus by one validated example. Use the installed `dashboard-authoring` skill as the procedure and treat the Dashboard Language specification and validator as authoritative.
+Grow the dashboard-authoring skill's corpus by one validated example. Use the installed `dashboard-authoring` skill for the corpus procedure and the installed `generate-dashboard-ir` skill to generate the Dashboard Language document. Treat the Dashboard Language specification and validator as authoritative.
 
 ## Context
 
 - Repository: `${{ github.repository }}`
 - Optional focus: `${{ inputs.focus }}`
-- Skill: `.github/skills/dashboard-authoring/SKILL.md`
+- Corpus skill: `.github/skills/dashboard-authoring/SKILL.md`
+- Dashboard IR skill: `.github/skills/generate-dashboard-ir/SKILL.md`
 - Corpus index: `.github/skills/dashboard-authoring/corpus/index.json`
 - Specification: `docs/dashboard-language-specification.md`
 - Validator: `dashboard/site/src/validator.js`
@@ -100,7 +102,7 @@ Use an attainment-only baseline with null value and cutoff. Synthetic tasks have
 
 ## Infer the dashboard
 
-Create a YAML serialization of a Dashboard Language document for the synthetic workflow. Dashboard Language has one YAML 1.2 data model; production `dashboard.json` is a strict JSON serialization of that same grammar, not a separate schema. Use the same canonical kebab-case vocabulary, types, defaults, and semantics in both forms. Use only canonical sources and fields defined by the specification. Scope every view to the synthetic workflow with a `workflow` filter. Include only views that help an operator understand activation, execution, required effects, actionable exceptions, or operational-value attainment.
+Use the installed `generate-dashboard-ir` skill to create a YAML serialization of a Dashboard Language document from the synthetic task and operational-value contract. Dashboard Language has one YAML 1.2 data model; production `dashboard.json` is a strict JSON serialization of that same grammar, not a separate schema. Use the same canonical kebab-case vocabulary, types, defaults, and semantics in both forms. Use only canonical sources and fields defined by the specification. Scope every view to the synthetic workflow with a `workflow` filter. Include only views that help an operator understand activation, execution, required effects, actionable exceptions, or operational-value attainment.
 
 Keep the dashboard compact and deterministic. Do not add implementation-specific scripts, invented sources, measured values, or prose that claims the workflow has run.
 
