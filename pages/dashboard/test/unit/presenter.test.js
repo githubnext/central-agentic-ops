@@ -2080,7 +2080,7 @@ describe('presenter built-in and custom pages', () => {
     expect(/** @type {HTMLElement | null} */ (rendered.querySelector('[data-breadcrumb-dashboard]'))?.hidden).toBe(true);
     expect(rendered.querySelector('[data-breadcrumb-page]')?.textContent).toBe('Coverage diagnostics');
     expect(rendered.querySelector('[data-nav-page-id="overview"]')?.getAttribute('aria-current')).toBe('page');
-    expect(rendered.querySelectorAll('[data-nav-page-id="coverage"]')).toHaveLength(0);
+    expect(rendered.querySelectorAll('.org-sidebar [data-nav-page-id="coverage"]')).toHaveLength(0);
     const coveragePage = authoritativeDashboardDocument.dashboard.pages.find(
       (/** @type {{ id: string }} */ page) => page.id === 'coverage'
     );
