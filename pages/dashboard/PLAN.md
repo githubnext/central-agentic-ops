@@ -157,4 +157,12 @@ Evidence paths below are relative to:
   - Shared static table-section wrapper across `src/components/packages-view.js`, `src/components/repository-workflows.js`, and report/table custom views.
   - Shared repository/package/workflow tab-and-identity chrome across `src/components/package-detail.js`, `src/components/workflow-detail.js`, and `src/components/repository-workflows.js`.
 
+## 2026-09-01 repository detail entry
+
+- Investigation: selected the repository workflow inventory as the smallest remaining route-scoped JavaScript-only view that could be expressed with generic marks.
+- Declarative specification: replaced the `repository-workflows` element in `dashboard.json` with a metric, status chart, and workflow table bound by `data.route-field`.
+- JSON-shaped data: `repository-data.js` now emits repository detail summary, workflow status, and workflow inventory logical sources.
+- Reusable presentation: generic metric, chart, table, link, badge, empty-state, and route-aware data-view behavior now own repository detail presentation.
+- Preserved evidence boundaries: authored workflow identity, registration state, package attribution, observation time, workflow links, and the repository Actions link remain explicit.
+
 Run-by-run history was removed during compaction; milestones, unresolved questions, current inventory, blockers, and actionable parity work remain above.

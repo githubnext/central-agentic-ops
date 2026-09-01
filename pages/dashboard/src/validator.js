@@ -1371,7 +1371,7 @@ function validateView(view, viewNode, path, viewIds, errors) {
           `${path}.data.source`
         ));
       }
-      for (const key of ['limit', 'order-by', 'source-metadata']) {
+      for (const key of ['limit', 'order-by', 'source-metadata', 'route-field']) {
         if (view.data[key] !== undefined) {
           errors.push(createError(
             ERROR_CODES.missingOrInvalidRequiredField,
@@ -1391,6 +1391,20 @@ function validateView(view, viewNode, path, viewIds, errors) {
           'metric, table, and chart views must use data.source instead of data.sources.',
           `${path}.data.sources`
         ));
+      }
+      if (view.data['route-field'] !== undefined) {
+        validateStringField(view.data['route-field'], `${path}.data.route-field`, true, errors);
+        if (
+          sourceName
+          && typeof view.data['route-field'] === 'string'
+          && !SOURCE_FIELDS[/** @type {keyof typeof SOURCE_FIELDS} */ (sourceName)]?.includes(view.data['route-field'])
+        ) {
+          errors.push(createError(
+            ERROR_CODES.invalidScopeFilterTimeAggregationOrOrderReference,
+            'route-field must name a field declared by data.source.',
+            `${path}.data.route-field`
+          ));
+        }
       }
     }
     validateContext(dataNode, view.data, `${path}.data`, errors);

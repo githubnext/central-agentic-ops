@@ -127,7 +127,7 @@ describe('dashboard document validation', () => {
     const document = JSON.parse(authoritativeDashboardSource);
     const repositoryPageIndex = document.dashboard.pages.findIndex((/** @type {{ id: string }} */ page) => page.id === 'repository-detail');
     const repositoryPage = document.dashboard.pages[repositoryPageIndex];
-    expect(repositoryPage.route).toEqual({ 'hash-query-parameter': 'repository' });
+    expect(repositoryPage.route).toEqual({ 'hash-query-parameter': 'repository', 'navigation-page': 'repositories' });
     expect(validateDashboardDocument(JSON.stringify(document)).ok).toBe(true);
     repositoryPage.route = { 'navigation-page': 'repositories' };
     expect(validateDashboardDocument(JSON.stringify(document)).ok).toBe(true);
@@ -201,6 +201,24 @@ describe('dashboard document validation', () => {
       expect(builtInRoute.errors).toContainEqual(expect.objectContaining({
         code: 'DLS-E004',
         path: '$.dashboard.pages[0].route'
+      }));
+    }
+  });
+
+  it('DLS-VIEW-029 validates route fields against the selected logical source', () => {
+    const document = JSON.parse(authoritativeDashboardSource);
+    const repositoryPageIndex = document.dashboard.pages.findIndex((/** @type {{ id: string }} */ page) => page.id === 'repository-detail');
+    const repositoryPage = document.dashboard.pages[repositoryPageIndex];
+    expect(repositoryPage.views.every((/** @type {{ data: { 'route-field'?: string } }} */ view) => view.data['route-field'] === 'repository')).toBe(true);
+
+    repositoryPage.views[0].data['route-field'] = 'missing-field';
+    const invalid = validateDashboardDocument(JSON.stringify(document));
+
+    expect(invalid.ok).toBe(false);
+    if (!invalid.ok) {
+      expect(invalid.errors).toContainEqual(expect.objectContaining({
+        code: 'DLS-E010',
+        path: `$.dashboard.pages[${repositoryPageIndex}].views[0].data.route-field`
       }));
     }
   });
