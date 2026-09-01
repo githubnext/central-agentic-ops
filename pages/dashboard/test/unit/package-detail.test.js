@@ -24,7 +24,7 @@ const workflows = [
       relation: 'workflow',
       href: 'https://github.com/githubnext/central-agentic-ops/blob/HEAD/.github/workflows/ambient-context.md',
       label: 'View Ambient Context',
-      'dashboard-href': '#page-workflow-detail?workflow=githubnext%2Fcentral-agentic-ops%3A.github%2Fworkflows%2Fambient-context.md',
+      'dashboard-href': '#page-workflow-runtime?workflow=githubnext%2Fcentral-agentic-ops%3A.github%2Fworkflows%2Fambient-context.md',
       'dashboard-label': 'View Ambient Context workflow dashboard'
     }
   },
@@ -117,7 +117,7 @@ describe('renderPackageDetail', () => {
     expect(rendered.textContent).toContain('Ambient Context / AGENTS.md Curator');
     expect(rendered.textContent).not.toContain('Other');
     expect(rendered.querySelector('[data-workflow-role="orchestrator"] a')?.getAttribute('href')).toBe(
-      '#page-workflow-detail?workflow=githubnext%2Fcentral-agentic-ops%3A.github%2Fworkflows%2Fambient-context.md'
+      '#page-workflow-runtime?workflow=githubnext%2Fcentral-agentic-ops%3A.github%2Fworkflows%2Fambient-context.md'
     );
     expect(rendered.querySelector('[data-workflow-role="orchestrator"] a')?.getAttribute('target')).toBeNull();
   });

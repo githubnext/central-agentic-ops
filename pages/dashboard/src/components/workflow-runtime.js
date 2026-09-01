@@ -120,7 +120,7 @@ function renderWorkflowIdentity(workflow) {
         'span',
         { className: 'repository-workflow-badges' },
         workflow.package
-          ? h('a', { href: `#page-package-detail?package=${encodeURIComponent(text(workflow.package))}` }, text(workflow['package-name']) || text(workflow.package))
+          ? h('a', { href: `#page-operational-value?package=${encodeURIComponent(text(workflow.package))}` }, text(workflow['package-name']) || text(workflow.package))
           : null,
         h('span', null, titleCase(role))
       ),

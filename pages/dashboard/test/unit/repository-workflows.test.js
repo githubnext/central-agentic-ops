@@ -55,7 +55,7 @@ describe('renderRepositoryWorkflows', () => {
           relation: 'workflow',
           href: 'https://github.com/github/gh-aw/blob/HEAD/.github/workflows/upgrade.md',
           label: 'View Upgrade',
-          'dashboard-href': '#page-workflow-detail?workflow=github%2Fgh-aw%3A.github%2Fworkflows%2Fupgrade.md',
+          'dashboard-href': '#page-workflow-runtime?workflow=github%2Fgh-aw%3A.github%2Fworkflows%2Fupgrade.md',
           'dashboard-label': 'View Upgrade workflow dashboard'
         }
       },
@@ -78,7 +78,7 @@ describe('renderRepositoryWorkflows', () => {
           relation: 'workflow',
           href: 'https://github.com/github/gh-aw/blob/HEAD/.github/workflows/failure-investigator.md',
           label: 'View Failure Investigator',
-          'dashboard-href': '#page-workflow-detail?workflow=github%2Fgh-aw%3A.github%2Fworkflows%2Ffailure-investigator.md',
+          'dashboard-href': '#page-workflow-runtime?workflow=github%2Fgh-aw%3A.github%2Fworkflows%2Ffailure-investigator.md',
           'dashboard-label': 'View Failure Investigator workflow dashboard'
         }
       }
@@ -102,12 +102,12 @@ describe('renderRepositoryWorkflows', () => {
       'Package · Platform'
     ]);
     expect([...rendered.querySelectorAll('.repository-workflow-badges a')].map((badge) => badge.getAttribute('href'))).toEqual([
-      '#page-package-detail?package=maintenance',
-      '#page-package-detail?package=platform'
+      '#page-operational-value?package=maintenance',
+      '#page-operational-value?package=platform'
     ]);
     expect([...rendered.querySelectorAll('.repository-workflow-source')].map((link) => link.getAttribute('href'))).toEqual([
-      '#page-workflow-detail?workflow=github%2Fgh-aw%3A.github%2Fworkflows%2Ffailure-investigator.md',
-      '#page-workflow-detail?workflow=github%2Fgh-aw%3A.github%2Fworkflows%2Fupgrade.md'
+      '#page-workflow-runtime?workflow=github%2Fgh-aw%3A.github%2Fworkflows%2Ffailure-investigator.md',
+      '#page-workflow-runtime?workflow=github%2Fgh-aw%3A.github%2Fworkflows%2Fupgrade.md'
     ]);
     expect(rendered.textContent).toContain('Latest registration update: Aug 29, 2026, 10:00 AM. 1 disabled.');
   });
