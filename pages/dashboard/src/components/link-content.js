@@ -87,6 +87,22 @@ export function renderWorkflowRunLink(row, label, trailingContent) {
 }
 
 /**
+ * Renders a durable-output title as an internal detail link.
+ * @param {Record<string, unknown>} row
+ * @param {string} label
+ * @returns {string | HTMLElement}
+ */
+export function renderOutcomeLink(row, label) {
+  const outcomeId = typeof row['safe-output'] === 'string' ? row['safe-output'].trim() : '';
+  return outcomeId && outcomeId.length <= 700
+    ? h('a', {
+        href: `#page-outcome-detail?outcome=${encodeURIComponent(outcomeId)}`,
+        title: label
+      }, label)
+    : label;
+}
+
+/**
  * @param {string | HTMLElement} value
  * @param {SafeLink | null} link
  * @returns {string | HTMLElement | Array<string | HTMLElement | null>}

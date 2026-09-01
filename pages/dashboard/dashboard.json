@@ -617,11 +617,7 @@
                   "type": "temporal",
                   "title": "Updated"
                 }
-              ],
-              "href": {
-                "field": "external-link",
-                "type": "nominal"
-              }
+              ]
             },
             "layout": "full"
           }
