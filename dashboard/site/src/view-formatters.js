@@ -69,11 +69,14 @@ export function formatNumber(value, unit = null, includeUnit = true) {
 
 /**
  * Formats a 0-1 ratio as a locale percentage string with one fractional digit.
- * @param {number} value
+ * @param {unknown} value
  * @returns {string}
  */
 export function formatPercent(value) {
-  return new Intl.NumberFormat('en', { style: 'percent', maximumFractionDigits: 1 }).format(value);
+  const numeric = value == null || value === '' ? Number.NaN : Number(value);
+  return Number.isFinite(numeric)
+    ? new Intl.NumberFormat('en', { style: 'percent', maximumFractionDigits: 1 }).format(numeric)
+    : 'Not observed';
 }
 
 /**

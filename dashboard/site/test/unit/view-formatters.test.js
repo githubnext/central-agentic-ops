@@ -55,6 +55,10 @@ describe('view formatter helpers', () => {
     expect(formatPercent(0.256)).toBe('25.6%');
     expect(formatPercent(0)).toBe('0%');
     expect(formatPercent(1)).toBe('100%');
+    expect(formatPercent('0.5')).toBe('50%');
+    expect(formatPercent(null)).toBe('Not observed');
+    expect(formatPercent('')).toBe('Not observed');
+    expect(formatPercent('not a number')).toBe('Not observed');
   });
 
   it('renders JSON-configured copy templates with plain, suffix, and word substitutions', () => {
