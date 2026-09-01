@@ -8,7 +8,7 @@ export default defineConfig({
   fullyParallel: true,
   testMatch: ['**/*.spec.js'],
   testDir: './test/e2e',
-  timeout: 60000,
+  timeout: 30000,
   use: {
     headless: true,
     launchOptions: {
