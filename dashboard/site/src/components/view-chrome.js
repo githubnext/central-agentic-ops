@@ -4,6 +4,7 @@
 
 import { h } from '../dom.js';
 import { renderSectionHeading } from './ui-primitives.js';
+import { titleCase } from './count-formatters.js';
 
 /**
  * @param {string} pageId
@@ -253,10 +254,4 @@ function slugifyText(value) {
   return value.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '') || 'section';
 }
 
-/**
- * @param {string} value
- * @returns {string}
- */
-function titleCase(value) {
-  return value.replaceAll('-', ' ').replace(/\b\w/g, (letter) => letter.toUpperCase());
-}
+

@@ -3,6 +3,15 @@
  */
 
 /**
+ * Converts a kebab-case identifier into title-cased display text.
+ * @param {string} value
+ * @returns {string}
+ */
+export function titleCase(value) {
+  return value.replaceAll('-', ' ').replace(/\b\w/g, (letter) => letter.toUpperCase());
+}
+
+/**
  * Formats a count for UI text.
  * @param {unknown} value
  * @returns {string}

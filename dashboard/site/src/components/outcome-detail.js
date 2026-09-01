@@ -7,6 +7,7 @@ import { octicon } from '../octicons.js';
 import { renderModeBadge, renderStatusBadge } from './badge.js';
 import { findLink, renderExternalLink, resolveTitleLink } from './link-content.js';
 import { formatUtcDateTime } from './ui-primitives.js';
+import { titleCase } from './count-formatters.js';
 import { renderMetadataSection } from './view-chrome.js';
 import { createRouteView } from './route-empty-state.js';
 
@@ -250,7 +251,3 @@ function text(value) {
   return value == null ? '' : String(value);
 }
 
-/** @param {string} value */
-function titleCase(value) {
-  return value.replaceAll('-', ' ').replace(/\b\w/g, (letter) => letter.toUpperCase());
-}
