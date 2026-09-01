@@ -360,6 +360,7 @@ function renderDiagnosticChart(series) {
 
 /** @param {Array<Record<string, unknown>>} observations */
 function diagnosticSeries(observations) {
+  /** @type {Map<string, Record<string, unknown>>} */
   const definitions = new Map();
   for (const row of observations) {
     for (const definition of Array.isArray(row['diagnostic-definitions']) ? row['diagnostic-definitions'] : []) {

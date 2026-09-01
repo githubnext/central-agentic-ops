@@ -157,6 +157,7 @@ main.dashboard-prototype { width: 100%; flex: 1; padding: 0 24px 40px; }
 .chart-legend-pie strong { color: var(--fg); font-variant-numeric: tabular-nums; }
 .chart-legend-pie small { color: var(--muted); }
 .chart-axis { display: flex; justify-content: space-between; margin-top: 4px; color: var(--muted); font-size: .6875rem; }
+.line-chart-widget .chart-axis { width: 100%; }
 .chart-series-1 { stroke: var(--success); }
 .chart-series-2 { stroke: var(--attention); }
 .chart-series-3 { stroke: var(--danger); }
