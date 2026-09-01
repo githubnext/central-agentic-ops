@@ -766,7 +766,9 @@ test('DLS-PAGE-014 DLS-PAGE-015 built-in packages page renders report-style mode
                       { field: 'workflow-name', type: 'nominal', title: 'Workflow' },
                       { field: 'workflow', type: 'nominal', title: 'Definition' },
                       { field: 'rollout-mode', type: 'nominal', title: 'Mode', display: 'mode' },
-                      { field: 'workflow-active', type: 'nominal', title: 'Registration', display: 'active-state' }
+                      { field: 'workflow-active', type: 'nominal', title: 'Registration', display: 'active-state' },
+                      { field: 'runs', type: 'quantitative', title: 'Runs' },
+                      { field: 'aic', type: 'quantitative', title: 'Total AIC', unit: 'aic' }
                     ]
                   }
                 }
@@ -888,7 +890,18 @@ test('DLS-PAGE-014 DLS-PAGE-015 built-in packages page renders report-style mode
   await expect(page.getByRole('heading', { name: 'Orchestrator and workers', level: 3 })).toBeVisible();
   const packageWorkflowRows = page.locator('[data-page-id="package-detail"] .custom-table tbody tr');
   await expect(packageWorkflowRows).toHaveCount(2);
+  await expect(page.locator('[data-page-id="package-detail"] .custom-table thead tr').first().locator('th')).toHaveText([
+    'Role',
+    'Workflow',
+    'Definition',
+    'Mode',
+    'Registration',
+    'Runs',
+    'Total AIC'
+  ]);
   await expect(packageWorkflowRows.first()).toContainText('OrchestratorAmbient Context');
+  await expect(packageWorkflowRows.first().locator('td').nth(5)).toHaveText('0');
+  await expect(packageWorkflowRows.first().locator('td').nth(6)).toHaveText('—');
   await expect(packageWorkflowRows.nth(1)).toContainText('WorkerAmbient Context Worker');
 
   await page.getByRole('navigation', { name: 'Ambient Context views' }).getByRole('link', { name: 'Reports' }).click();

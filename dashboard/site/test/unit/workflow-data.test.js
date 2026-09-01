@@ -106,10 +106,21 @@ describe('deriveWorkflowSources', () => {
           { organization: 'githubnext', repository: 'control', workflow: 'root.md', aic: 5.5 },
           { organization: 'githubnext', repository: 'target', workflow: 'local.md', aic: 3 }
         ]
+      },
+      runs: {
+        source: 'runs',
+        metadata,
+        rows: [
+          { organization: 'githubnext', repository: 'control', workflow: 'root.md', run: '1' },
+          { organization: 'githubnext', repository: 'control', workflow: 'root.md', run: '2' },
+          { organization: 'githubnext', repository: 'target', workflow: 'local.md', run: '3' }
+        ]
       }
     });
 
+    expect(sources['packaged-workflows'].rows[0].runs).toBe(2);
     expect(sources['packaged-workflows'].rows[0].aic).toBe(10);
+    expect(sources['standalone-workflows'].rows[0].runs).toBe(1);
     expect(sources['standalone-workflows'].rows[0].aic).toBe(3);
   });
 
