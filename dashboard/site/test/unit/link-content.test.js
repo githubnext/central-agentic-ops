@@ -1,8 +1,27 @@
 // @vitest-environment jsdom
 import { describe, expect, it } from 'vitest';
-import { findFirstLink, findLink, renderExternalLink, renderLinkedValue, renderOutcomeLink, renderWorkflowRunLink, resolveTitleLink } from '../../src/components/link-content.js';
+import { findFirstLink, findLink, renderExternalLink, renderLinkedValue, renderOutcomeLink, renderSafeLink, renderWorkflowRunLink, resolveTitleLink } from '../../src/components/link-content.js';
 
 describe('link content helpers', () => {
+  it('renderSafeLink renders a plain-text fallback and an internal or external anchor', () => {
+    expect(renderSafeLink('Summary', null)).toBe('Summary');
+
+    const internal = /** @type {HTMLElement} */ (renderSafeLink('Detail', {
+      href: '#page-workflow-detail?workflow=demo',
+      label: 'Open workflow detail'
+    }));
+    expect(internal.getAttribute('target')).toBeNull();
+    expect(internal.getAttribute('rel')).toBeNull();
+    expect(internal.getAttribute('aria-label')).toBe('Open workflow detail');
+
+    const external = /** @type {HTMLElement} */ (renderSafeLink('Run 4', {
+      href: 'https://example.com/run/4',
+      label: 'Run 4'
+    }));
+    expect(external.getAttribute('target')).toBe('_blank');
+    expect(external.getAttribute('rel')).toBe('noopener noreferrer');
+  });
+
   it('DLS-SAFE-004 finds only safe https links with non-empty labels', () => {
     expect(findLink({ link: { href: 'https://example.com/run/4', label: 'Run 4' } }, 'link')).toEqual({
       href: 'https://example.com/run/4',

@@ -4,6 +4,7 @@
 
 import { h } from '../dom.js';
 import { formatNumber, toNumber } from '../view-formatters.js';
+import { renderSafeLink } from './link-content.js';
 
 /**
  * @typedef {{ name: string, className: string }} ChartSeriesDescriptor
@@ -84,24 +85,12 @@ export function renderPieLegend(entries, total, links = new Map(), unit = null) 
     'ul',
     { className: 'chart-legend chart-legend-pie', 'data-chart-legend': 'visual' },
     entries.map(([label, value], index) => {
-      const link = links.get(label);
-      const external = link ? !link.href.startsWith('#') : false;
+      const link = links.get(label) ?? null;
       return h(
         'li',
         null,
         h('i', { className: `chart-series-${(index % 6) + 1}`, 'aria-hidden': 'true' }),
-        h(
-          'span',
-          null,
-          link
-          ? h('a', {
-              href: link.href,
-            target: external ? '_blank' : undefined,
-            rel: external ? 'noopener noreferrer' : undefined,
-              'aria-label': link.label
-            }, label)
-            : label
-        ),
+        h('span', null, renderSafeLink(label, link)),
         h('strong', null, formatNumber(value, unit)),
         h('small', null, total > 0 ? `${((value / total) * 100).toFixed(1)}%` : '0%')
       );
