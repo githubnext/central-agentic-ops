@@ -331,12 +331,31 @@ function outcomeRows(records) {
 }
 
 function operationalValueRows(values) {
+  const definitions = new Map((values.definitions || []).map((definition) => [
+    `${definition.repository}:${definition.workflowId}:${definition.evaluatorDigest || ""}`,
+    definition,
+  ]));
   return (values.records || []).filter((record) => record.observation).map((record) => {
     const target = record.observation.case?.targetRepo || record.observation.subject?.repository || record.repository;
+    const repository = repositoryParts(target);
+    const runAttempt = Number(record.runAttempt || record.run?.attempt || 1);
+    const observationId = record.observationId || ([
+      record.repository,
+      record.workflowId,
+      record.runId,
+      runAttempt,
+      record.evaluatorDigest,
+    ].every((part) => part !== undefined && part !== null && String(part) !== "")
+      ? `${record.repository}:${record.workflowId}:${record.runId}:${runAttempt}:${record.evaluatorDigest}`
+      : undefined);
+    const definition = definitions.get(`${record.repository}:${record.workflowId}:${record.evaluatorDigest || ""}`);
     return {
-      ...repositoryParts(target),
+      ...repository,
+      "repository-name": repository.repository,
       workflow: record.workflowPath?.replace(/\.lock\.yml$/, ".md") || record.workflowId || "",
       run: String(record.runId),
+      "run-attempt": runAttempt,
+      "observation-id": observationId,
       experiment: record.observation.experiment || "",
       "operational-case": record.observation.opportunityKey || record.workflowId || "unknown",
       "evaluator-digest": record.evaluatorDigest || "",
@@ -344,16 +363,31 @@ function operationalValueRows(values) {
       "operational-value": record.value,
       "operational-value-definition": record.workflowId || "operational-value",
       "requested-evidence-at": record.observation.subject?.createdAt || record.observation.evidenceAt,
-      "evidence-cutoff": record.observation.evidenceAt,
+      "evidence-cutoff": record.observation.evidenceCutoff || record.observation.evidenceAt,
       "maturity-at": record.observation.maturesAt || record.observation.evidenceAt,
       "maturity-status": record.observation.mature ? "matured" : "interim",
       "baseline-value": record.baselineValue,
       "delta-from-baseline": record.deltaFromBaseline,
       "observed-at": record.observation.evidenceAt,
+      "accepted-evidence-provenance": record.observation.provenance || [],
+      diagnostics: record.diagnostics || {},
+      "diagnostic-definitions": definition?.diagnosticMetrics || [],
       "evidence-link": link("evidence", record.runUrl, `View run ${record.runId}`),
       "run-link": link("run", record.runUrl, `Run ${record.runId}`),
     };
   });
+}
+
+function operationalValueSource(name, rows, values, generatedAt, available) {
+  const complete = values.complete === true;
+  const retrievedAt = values.generatedAt || generatedAt;
+  const result = source(name, rows, retrievedAt, available, complete);
+  const coverageStart = values.window?.startAt || values.windowStart;
+  const coverageEnd = values.window?.endAt;
+  result.metadata["as-of"] = coverageEnd || retrievedAt;
+  if (coverageStart) result.metadata["coverage-start"] = coverageStart;
+  if (coverageEnd) result.metadata["coverage-end"] = coverageEnd;
+  return result;
 }
 
 function operationalValueGraderRows(values) {
@@ -440,8 +474,8 @@ export function buildDashboardLanguageSources({ deployed, usage, operationalValu
   );
   sources.outcomes = source("outcomes", outcomeRows(records), generatedAt);
   sources.findings = source("findings", findingRows(records), generatedAt);
-  sources["grader-observations"] = source("grader-observations", graderObservations, generatedAt, valueAvailable, true);
-  sources["operational-values"] = source("operational-values", values, generatedAt, valueAvailable, true);
+  sources["grader-observations"] = operationalValueSource("grader-observations", graderObservations, operationalValues, generatedAt, valueAvailable);
+  sources["operational-values"] = operationalValueSource("operational-values", values, operationalValues, generatedAt, valueAvailable);
   return sources;
 }
 

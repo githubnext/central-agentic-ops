@@ -65,7 +65,7 @@ Operational value is measured per worker, not per orchestrator or operation. Dis
 
 Each adopted worker registers a frozen schema-version 4 evaluator under `.github/graders/<worker-stem>-operational-value.sh`. gh-aw executes that evaluator for the workflow run, records its assigned opportunity and evidence provenance, and publishes the result in the unified `agent` artifact's `grader_results.json`.
 
-An evaluator exposes its contract with `--definition`, scores evidence with `--metric`, and observes one run with `--grade-run`. Pages reads these actual workflow artifacts; it does not recollect repository history or render committed synthetic timelines. It retains run observations through their maturity horizon, regrades due runs from a trusted checkout with the frozen evaluator, and aggregates only the latest evaluator digest. Repeated runs assigned to one opportunity are collapsed before aggregation.
+An evaluator exposes its contract with `--definition`, scores evidence with `--metric`, and observes one run with `--grade-run`. gh-aw owns canonical evaluation and adoption-to-current replay. Pages consumes its versioned report observations, falls back to actual workflow artifacts when full replay is unavailable for one workflow, and never renders committed live timelines. CAO preserves retries and evaluator generations by observation identity, presents only the latest comparable evaluator series, and collapses repeated opportunities independently for aggregation.
 
 ```bash
 EVALUATOR=".github/graders/<worker-stem>-operational-value.sh"
@@ -73,6 +73,7 @@ EVALUATOR=".github/graders/<worker-stem>-operational-value.sh"
 "$EVALUATOR" --definition
 "$EVALUATOR" --metric < evidence.json
 gh aw graders operational-value RUN_ID --evidence-at TIMESTAMP --json
+gh aw graders operational-value report WORKFLOW --json
 ```
 
 :::tip[Measure repository outcomes]

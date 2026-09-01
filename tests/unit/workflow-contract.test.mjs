@@ -1583,7 +1583,8 @@ test("Dashboard package supports embedded and explicit standalone deployment", (
   const aicUsage = readFileSync(join(root, "dashboard", "report", "aic-usage.mjs"), "utf8");
   const deployedWorkflows = readFileSync(join(root, "dashboard", "report", "deployed-workflows.mjs"), "utf8");
   const operationalValues = readFileSync(join(root, "dashboard", "report", "operational-values.mjs"), "utf8");
-  const reportAssets = ["aic-usage.mjs", "dashboard-language-sources.mjs", "deployed-workflows.mjs", "inventory.mjs", "operational-values.mjs", "records.mjs"];
+  const reportAssets = ["aic-usage.mjs", "dashboard-language-sources.mjs", "deployed-workflows.mjs", "inventory.mjs", "operational-value-history.mjs", "operational-values.mjs", "records.mjs"];
+  const reportEntrypoints = new Set(reportAssets.filter((assetName) => assetName !== "operational-value-history.mjs"));
 
   assert.doesNotMatch(rootManifest, /dashboard\/dashboard|dashboard-build/);
   assert.match(dashboardManifest, /name: Central Agentic Ops Dashboard/);
@@ -1614,6 +1615,7 @@ test("Dashboard package supports embedded and explicit standalone deployment", (
   assert.doesNotMatch(buildWorkflow, /pages-aic|REPORT_AIC_CACHE/);
   assert.match(aicUsage, /"--start-date", "-2d", "--cache-before", "-2d"/);
   assert.match(buildWorkflow, /REPORT_VALUE_CACHE: \.cache\/dashboard-operational-values\/observations\.json/);
+  assert.match(buildWorkflow, /REPORT_VALUE_REPLAY_CACHE: \.cache\/dashboard-operational-values\/replay/);
   assert.match(buildWorkflow, /actions\/cache\/restore@[0-9a-f]{40}/);
   assert.match(buildWorkflow, /Save operational-value observation cache/);
   assert.match(deployedWorkflows, /const capabilities = await workflowCapabilities\(item\.repository, item\.path\)/);
@@ -1623,7 +1625,9 @@ test("Dashboard package supports embedded and explicit standalone deployment", (
   assert.match(deployedWorkflows, /event: run\.event/);
   assert.doesNotMatch(deployedWorkflows, /\["failure", "timed_out", "startup_failure", "action_required"\]/);
   assert.match(operationalValues, /workflow\.operationalValue !== true/);
-  assert.match(operationalValues, /selectedRuns\.filter\(\(selected\) => !cachedRunKeys\.has\(recordKey\(selected\)\)\)/);
+  assert.match(operationalValues, /"graders", "operational-value", "report", workflow\.workflowId/);
+  assert.match(operationalValues, /fallbackRuns\.filter\(\(selected\) => !cachedRunKeys\.has\(operationalValueRunIdentity\(selected\)\)\)/);
+  assert.doesNotMatch(operationalValues, /90 \* 24 \* 60 \* 60 \* 1000/);
   assert.doesNotMatch(operationalValues, /const workerIds = new Set/);
   assert.match(dashboardManifest, /source: site\/index\.html\n\s+destination: \.github\/aw\/dashboard\/site\/index\.html/);
   assert.match(dashboardManifest, /source: site\/dashboard\.json\n\s+destination: \.github\/aw\/dashboard\/site\/dashboard\.json/);
@@ -1632,7 +1636,9 @@ test("Dashboard package supports embedded and explicit standalone deployment", (
     const assetPath = join(root, "dashboard", "report", assetName);
     assert.ok(existsSync(assetPath), `missing report script ${assetName}`);
     assert.match(dashboardManifest, new RegExp(`destination: \\.github/aw/dashboard/report/${assetName.replace(".", "\\.")}`));
-    assert.match(buildWorkflow, new RegExp(`\\.github/aw/dashboard/report/${assetName.replace(".", "\\.")}`));
+    if (reportEntrypoints.has(assetName)) {
+      assert.match(buildWorkflow, new RegExp(`\.github/aw/dashboard/report/${assetName.replace(".", "\\.")}`));
+    }
     execFileSync(process.execPath, ["--check", assetPath]);
   }
 });

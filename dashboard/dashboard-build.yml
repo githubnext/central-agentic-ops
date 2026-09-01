@@ -73,7 +73,7 @@ jobs:
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           repository: github/gh-aw
-          ref: 5cd744cc263a9d1ec5660fbf5604eaceb6f83430
+          ref: 220b08344d8a222d542d88bc11bf61ab7297d076
           path: .cache/gh-aw-operational-value-source
           persist-credentials: false
 
@@ -115,6 +115,7 @@ jobs:
           REPORT_OPERATIONAL_VALUES: ${{ runner.temp }}/operational-values.json
           REPORT_VALUE_CACHE: .cache/dashboard-operational-values/observations.json
           REPORT_VALUE_CONCURRENCY: "3"
+          REPORT_VALUE_REPLAY_CACHE: .cache/dashboard-operational-values/replay
         run: node .github/aw/dashboard/report/operational-values.mjs
 
       - name: Save operational-value observation cache

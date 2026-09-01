@@ -147,8 +147,13 @@ describe('renderWorkflowRuntime', () => {
           'operational-case': 'docs-run-1',
           'maturity-status': 'matured',
           'evaluator-digest': 'sha256:abcdefghijk',
-          'requested-evidence-at': '2026-08-31T18:00:00Z',
-          'observed-at': '2026-08-31T18:00:00Z'
+          'requested-evidence-at': '2026-08-24T18:00:00Z',
+          'observed-at': '2026-09-01T18:00:00Z',
+          diagnostics: { 'repository-health': 0.4, 'oversized-file-share': 0.8, currentLines: 1907 },
+          'diagnostic-definitions': [
+            { id: 'repository-health', name: 'Repository health', direction: 'higher_is_better', aggregation: 'latest' },
+            { id: 'oversized-file-share', name: 'Oversized file share', direction: 'lower_is_better', aggregation: 'latest' }
+          ]
         },
         {
           organization: 'githubnext',
@@ -160,7 +165,12 @@ describe('renderWorkflowRuntime', () => {
           'maturity-status': 'matured',
           'evaluator-digest': 'sha256:abcdefghijk',
           'requested-evidence-at': '2026-08-31T18:00:00Z',
-          'observed-at': '2026-08-31T19:00:00Z',
+          'observed-at': '2026-09-01T19:00:00Z',
+          diagnostics: { 'repository-health': 0.65, 'oversized-file-share': 0.5 },
+          'diagnostic-definitions': [
+            { id: 'repository-health', name: 'Repository health', direction: 'higher_is_better', aggregation: 'latest' },
+            { id: 'oversized-file-share', name: 'Oversized file share', direction: 'lower_is_better', aggregation: 'latest' }
+          ],
           'run-link': { relation: 'run', href: 'https://github.com/githubnext/central-agentic-ops/actions/runs/2', label: 'Run 2' },
           'evidence-link': { relation: 'evidence', href: 'https://github.com/githubnext/central-agentic-ops/issues/1', label: 'Evidence 1' }
         }
@@ -173,6 +183,15 @@ describe('renderWorkflowRuntime', () => {
     expect(rendered.querySelector('.value-score')?.textContent).toContain('80%');
     expect(rendered.querySelector('.value-chart')?.textContent).toContain('Mature average80%');
     expect(rendered.querySelector('.value-chart')?.textContent).toContain('Opportunities1');
+    expect(rendered.querySelector('.value-outcomes')?.textContent).toContain('Outcome change from first observation');
+    expect(rendered.querySelector('.value-outcomes')?.textContent).toContain('Repository health+25.0 pts');
+    expect(rendered.querySelector('.value-outcomes')?.textContent).toContain('Oversized file share+30.0 pts');
+    expect(rendered.querySelector('.value-outcomes')?.textContent).not.toContain('CurrentLines');
+    expect(rendered.querySelector('.value-attainment')?.textContent).toContain('Weekly operational attainment');
+    expect(rendered.querySelector('.value-attainment')?.textContent).toContain('4-week rolling mean');
+    expect(rendered.querySelector('.value-attainment .chart-axis')?.textContent).toBe('Aug 24Aug 31');
+    expect(rendered.querySelector('.value-attainment .primary-weekly')).not.toBeNull();
+    expect(rendered.querySelector('.value-attainment .primary-rolling')).not.toBeNull();
     expect(rendered.querySelector('.value-details tbody')?.textContent).toContain('docs-run-1');
     expect(rendered.querySelectorAll('.value-details tbody tr')).toHaveLength(1);
     expect([...rendered.querySelectorAll('.value-details tbody a')].map((link) => link.getAttribute('href'))).toEqual([

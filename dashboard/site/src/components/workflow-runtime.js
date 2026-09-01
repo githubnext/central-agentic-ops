@@ -6,7 +6,7 @@ import { h } from '../dom.js';
 import { octicon } from '../octicons.js';
 import { formatNumber } from '../view-formatters.js';
 import { renderStatusBadge } from './badge.js';
-import { listChartSeries, renderChartWidget, renderPieLegend } from './chart-elements.js';
+import { renderChartLegend, renderChartWidget, renderPieLegend } from './chart-elements.js';
 import { findLink, renderExternalLink } from './link-content.js';
 import { isApprovalConclusion, isFailureConclusion } from './run-classification.js';
 import { formatUtcDateTime } from './ui-primitives.js';
@@ -62,7 +62,7 @@ function renderWorkflowRuntimeContent(context, workflow) {
   const workflowName = text(workflow['workflow-name']) || workflowPath || 'Unknown workflow';
   const runs = matchingRows(context, 'runs', repository, workflowPath);
   const usage = matchingRows(context, 'usage', repository, workflowPath);
-  const observations = comparableObservations(
+  const observations = latestEvaluatorObservations(
     matchingRows(context, 'operational-values', repository, workflowPath)
   );
 
@@ -209,17 +209,12 @@ function renderValueReport(workflowName, repository, workflowPath, observations,
     );
   }
 
-  const latest = observations.at(-1) ?? {};
-  const matured = observations.filter((row) => text(row['maturity-status']) === 'matured');
+  const comparable = comparableObservations(observations);
+  const latest = comparable.at(-1) ?? observations.at(-1) ?? {};
+  const matured = comparable.filter((row) => text(row['maturity-status']) === 'matured');
   const matureAverage = matured.length > 0
     ? matured.reduce((total, row) => total + finiteNumber(row['operational-value']), 0) / matured.length
     : null;
-  const points = observations.map((row) => ({
-    x: formatObservationDate(row['observed-at']),
-    y: finiteNumber(row['operational-value']),
-    color: null
-  }));
-
   return h(
     'section',
     { className: 'value-report', 'aria-labelledby': headingId },
@@ -238,13 +233,13 @@ function renderValueReport(workflowName, repository, workflowPath, observations,
     h(
       'div',
       { className: 'value-chart', role: 'group', 'aria-label': 'Operational-value summary' },
-      renderChartWidget('line', points, listChartSeries(points)),
+      renderValueHistory(observations),
       h(
         'dl',
         null,
         valueMetric('Latest', formatPercent(latest['operational-value'])),
         valueMetric('Mature average', formatPercent(matureAverage)),
-        valueMetric('Opportunities', formatNumber(observations.length)),
+        valueMetric('Opportunities', formatNumber(comparable.length)),
         valueMetric('Evaluator', text(latest['evaluator-digest']) ? h('code', null, text(latest['evaluator-digest']).slice(0, 12)) : 'Unavailable')
       )
     ),
@@ -260,7 +255,7 @@ function renderValueReport(workflowName, repository, workflowPath, observations,
           'Workflow observations',
           [
             h('p', null, 'Missing, failed, and null grader results are excluded rather than scored as zero.'),
-            renderObservationTable(observations)
+            renderObservationTable(comparable)
           ],
           {
             headingTag: 'h3'
@@ -269,6 +264,221 @@ function renderValueReport(workflowName, repository, workflowPath, observations,
       )
     )
   );
+}
+
+/** @param {Array<Record<string, unknown>>} observations */
+function renderValueHistory(observations) {
+  const diagnostics = diagnosticSeries(observations);
+  const weekly = weeklyAttainment(observations);
+  const sections = [];
+  if (diagnostics.length > 0) {
+    sections.push(h(
+      'section',
+      { className: 'value-history-panel value-outcomes', 'aria-labelledby': 'value-outcomes-heading' },
+      h('header', null,
+        h('h3', { id: 'value-outcomes-heading' }, 'Outcome change from first observation'),
+        h('p', null, 'Positive values mean improvement according to each diagnostic direction.')
+      ),
+      renderDiagnosticChart(diagnostics),
+      h(
+        'ul',
+        { className: 'chart-legend value-diagnostic-legend' },
+        diagnostics.map((series, index) => h(
+          'li',
+          null,
+          h('i', { className: `chart-series-${(index % 6) + 1}`, 'aria-hidden': 'true' }),
+          h('span', null, series.name),
+          h('strong', { className: series.latestChange > 0 ? 'value-gain' : series.latestChange < 0 ? 'value-loss' : '' }, formatPointChange(series.latestChange))
+        ))
+      )
+    ));
+  }
+  if (weekly.length > 0) {
+    const primaryPoints = weekly.flatMap((week, index) => [
+      { x: formatWeek(week.weekStart), y: week.value, color: 'Weekly value' },
+      { x: formatWeek(week.weekStart), y: rollingMean(weekly, index), color: '4-week rolling mean' }
+    ]);
+    const primarySeries = [
+      { name: 'Weekly value', className: 'primary-weekly' },
+      { name: '4-week rolling mean', className: 'primary-rolling' }
+    ];
+    sections.push(h(
+      'section',
+      { className: 'value-history-panel value-attainment', 'aria-labelledby': 'value-attainment-heading' },
+      h('header', null,
+        h('h3', { id: 'value-attainment-heading' }, 'Weekly operational attainment'),
+        h('p', null, 'Weekly opportunity-adjusted values and their 4-week rolling mean; separate from outcome diagnostics.')
+      ),
+      renderChartWidget('line', primaryPoints, primarySeries),
+      renderChartLegend(primarySeries, 'line')
+    ));
+  }
+  return h('div', { className: 'value-history' }, sections);
+}
+
+/** @param {Array<{ name: string, points: Array<{ weekStart: string, change: number }>, latestChange: number }>} series */
+function renderDiagnosticChart(series) {
+  const allWeeks = [...new Set(series.flatMap((item) => item.points.map((point) => point.weekStart)))].sort();
+  const maximumChange = Math.max(0.1, ...series.flatMap((item) => item.points.map((point) => Math.abs(point.change))));
+  const extent = Math.min(1, Math.ceil(maximumChange * 10) / 10);
+  /** @param {string} weekStart */
+  const xFor = (weekStart) => allWeeks.length < 2 ? 54 : 10 + (allWeeks.indexOf(weekStart) / (allWeeks.length - 1)) * 88;
+  /** @param {number} change */
+  const yFor = (change) => 21 - (change / extent) * 17;
+  const grid = [-extent, 0, extent];
+  return h(
+    'div',
+    { className: 'diagnostic-chart', 'data-chart-widget': 'diagnostic-change' },
+    h(
+      'svg',
+      { viewBox: '0 0 100 46', role: 'img', 'aria-label': `Diagnostic outcome change: ${series.map((item) => `${item.name} ${formatPointChange(item.latestChange)}`).join(', ')}` },
+      h('rect', { className: 'diagnostic-gain-zone', x: 10, y: 4, width: 88, height: 17 }),
+      h('rect', { className: 'diagnostic-loss-zone', x: 10, y: 21, width: 88, height: 17 }),
+      ...grid.flatMap((change) => {
+        const y = yFor(change);
+        return [
+          h('line', { className: change === 0 ? 'diagnostic-baseline' : 'line-chart-grid', x1: 10, y1: y, x2: 98, y2: y }),
+          h('text', { className: 'diagnostic-axis-label', x: 8, y: y + 1.5, 'text-anchor': 'end' }, formatPointChange(change, false))
+        ];
+      }),
+      ...series.flatMap((item, index) => {
+        const className = `chart-series-${(index % 6) + 1}`;
+        const coordinates = item.points.map((point) => ({ ...point, x: xFor(point.weekStart), y: yFor(point.change) }));
+        return [
+          h('polyline', { className: `diagnostic-series ${className}`, points: coordinates.map((point) => `${point.x},${point.y}`).join(' '), fill: 'none' }),
+          ...coordinates.map((point) => h(
+            'circle',
+            { className: `diagnostic-point ${className}`, cx: point.x, cy: point.y, r: 0.55, tabIndex: 0, role: 'img', 'aria-label': `${item.name}, ${formatWeek(point.weekStart)}: ${formatPointChange(point.change)}` },
+            h('title', null, `${item.name}, ${formatWeek(point.weekStart)}: ${formatPointChange(point.change)}`)
+          ))
+        ];
+      })
+    ),
+    h('div', { className: 'chart-axis' }, h('span', null, formatWeek(allWeeks[0])), h('span', null, formatWeek(allWeeks.at(-1))))
+  );
+}
+
+/** @param {Array<Record<string, unknown>>} observations */
+function diagnosticSeries(observations) {
+  /** @type {Map<string, Record<string, unknown>>} */
+  const definitions = new Map();
+  for (const row of observations) {
+    for (const definition of Array.isArray(row['diagnostic-definitions']) ? row['diagnostic-definitions'] : []) {
+      if (definition && text(definition.id)) definitions.set(text(definition.id), definition);
+    }
+  }
+  if (definitions.size === 0) {
+    for (const row of observations) {
+      for (const id of Object.keys(isRecord(row.diagnostics) ? row.diagnostics : {})) {
+        definitions.set(id, { id, name: humanizeIdentifier(id), direction: 'higher_is_better', aggregation: 'latest' });
+      }
+    }
+  }
+  return [...definitions.values()].flatMap((definition) => {
+    const weekly = weeklyDiagnostic(observations, text(definition.id), text(definition.aggregation));
+    if (weekly.length === 0) return [];
+    const first = weekly[0].value;
+    const direction = text(definition.direction) === 'lower_is_better' ? -1 : 1;
+    const points = weekly.map((week) => ({ weekStart: week.weekStart, change: (week.value - first) * direction }));
+    return [{
+      name: text(definition.name) || humanizeIdentifier(text(definition.id)),
+      points,
+      latestChange: points.at(-1)?.change ?? 0
+    }];
+  });
+}
+
+/** @param {Array<Record<string, unknown>>} observations @param {string} metricId @param {string} aggregation */
+function weeklyDiagnostic(observations, metricId, aggregation) {
+  const groups = groupObservationsByWeek(observations);
+  return [...groups].sort(([left], [right]) => left.localeCompare(right)).flatMap(([weekStart, rows]) => {
+    /** @type {Array<{ value: number, observedAt: number }>} */
+    const values = rows.flatMap((row) => {
+      const value = isRecord(row.diagnostics) ? normalizedValue(row.diagnostics[metricId]) : null;
+      return value === null ? [] : [{ value, observedAt: rowTime(row) }];
+    });
+    if (values.length === 0) return [];
+    const value = aggregation === 'mean'
+      ? values.reduce((total, item) => total + item.value, 0) / values.length
+      : values.toSorted((left, right) => left.observedAt - right.observedAt).at(-1)?.value;
+    return value == null ? [] : [{ weekStart, value }];
+  });
+}
+
+/** @param {Array<Record<string, unknown>>} observations */
+function weeklyAttainment(observations) {
+  return [...groupObservationsByWeek(observations)].sort(([left], [right]) => left.localeCompare(right)).flatMap(([weekStart, rows]) => {
+    const opportunities = new Map();
+    for (const row of rows) {
+      const value = normalizedValue(row['operational-value']);
+      if (value === null) continue;
+      const key = text(row['operational-case']) || `run:${text(row.run)}`;
+      const existing = opportunities.get(key);
+      if (!existing || rowTime(row) >= rowTime(existing)) opportunities.set(key, row);
+    }
+    const values = [...opportunities.values()].map((row) => /** @type {number} */ (normalizedValue(row['operational-value'])));
+    return values.length === 0 ? [] : [{ weekStart, value: values.reduce((total, value) => total + value, 0) / values.length }];
+  });
+}
+
+/** @param {Array<Record<string, unknown>>} observations */
+function groupObservationsByWeek(observations) {
+  /** @type {Map<string, Array<Record<string, unknown>>>} */
+  const groups = new Map();
+  for (const row of observations) {
+    const weekStart = utcWeekStart(row['requested-evidence-at'] ?? row['observed-at']);
+    if (!weekStart) continue;
+    const rows = groups.get(weekStart) ?? [];
+    rows.push(row);
+    groups.set(weekStart, rows);
+  }
+  return groups;
+}
+
+/** @param {unknown} value */
+function utcWeekStart(value) {
+  const date = new Date(text(value));
+  if (!Number.isFinite(date.getTime())) return '';
+  date.setUTCHours(0, 0, 0, 0);
+  date.setUTCDate(date.getUTCDate() - ((date.getUTCDay() + 6) % 7));
+  return date.toISOString();
+}
+
+/** @param {Array<{ value: number }>} weekly @param {number} index */
+function rollingMean(weekly, index) {
+  const values = weekly.slice(Math.max(0, index - 3), index + 1).map((week) => week.value);
+  return values.reduce((total, value) => total + value, 0) / values.length;
+}
+
+/** @param {unknown} value */
+function normalizedValue(value) {
+  if (value === null || value === undefined || value === '') return null;
+  const numeric = Number(value);
+  return Number.isFinite(numeric) && numeric >= 0 && numeric <= 1 ? numeric : null;
+}
+
+/** @param {unknown} value @returns {value is Record<string, unknown>} */
+function isRecord(value) {
+  return Boolean(value) && typeof value === 'object' && !Array.isArray(value);
+}
+
+/** @param {string} value */
+function humanizeIdentifier(value) {
+  const words = value.replaceAll(/[-_]+/g, ' ').trim();
+  return words ? words[0].toUpperCase() + words.slice(1) : 'Diagnostic';
+}
+
+/** @param {number} value @param {boolean} [signed] */
+function formatPointChange(value, signed = true) {
+  const points = value * 100;
+  const prefix = signed && points > 0 ? '+' : '';
+  return `${prefix}${points.toFixed(1)} pts`;
+}
+
+/** @param {string | undefined} value */
+function formatWeek(value) {
+  if (!value || !Number.isFinite(Date.parse(value))) return 'Unknown';
+  return new Intl.DateTimeFormat('en', { month: 'short', day: 'numeric', timeZone: 'UTC' }).format(new Date(value));
 }
 
 /** @param {string} label @param {string | HTMLElement} value */
@@ -313,22 +523,25 @@ function renderObservationTable(observations) {
 
 /** @param {Array<Record<string, unknown>>} observations */
 function comparableObservations(observations) {
-  const valid = observations.filter((row) => (
-    Number.isFinite(Number(row['operational-value']))
-    && text(row['evaluator-digest'])
-    && text(row['operational-case'])
-  ));
-  const latestEvaluator = valid
-    .toSorted((left, right) => evidenceAssignmentTime(right) - evidenceAssignmentTime(left))[0]?.['evaluator-digest'];
-  if (!latestEvaluator) return [];
+  const valid = observations.filter((row) => normalizedValue(row['operational-value']) !== null && text(row['operational-case']));
 
   const opportunities = new Map();
-  for (const row of valid.filter((candidate) => candidate['evaluator-digest'] === latestEvaluator)) {
+  for (const row of valid) {
     const key = `${qualifiedRepository(row)}:${text(row['operational-case'])}`;
     const existing = opportunities.get(key);
     if (!existing || rowTime(row) >= rowTime(existing)) opportunities.set(key, row);
   }
   return [...opportunities.values()].sort((left, right) => rowTime(left) - rowTime(right));
+}
+
+/** @param {Array<Record<string, unknown>>} observations */
+function latestEvaluatorObservations(observations) {
+  const valid = observations.filter((row) => text(row['evaluator-digest']));
+  const latestEvaluator = valid
+    .toSorted((left, right) => evidenceAssignmentTime(right) - evidenceAssignmentTime(left))[0]?.['evaluator-digest'];
+  if (!latestEvaluator) return [];
+  return valid.filter((candidate) => candidate['evaluator-digest'] === latestEvaluator)
+    .sort((left, right) => rowTime(left) - rowTime(right));
 }
 
 /** @param {Record<string, unknown>} row */

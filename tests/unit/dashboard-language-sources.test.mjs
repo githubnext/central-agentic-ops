@@ -216,6 +216,110 @@ test("dashboard source bridge retains unavailable grader records separately from
   );
 });
 
+test("dashboard source bridge preserves report observation identity, diagnostics, and historical coverage", () => {
+  const sources = buildDashboardLanguageSources({
+    deployed: {
+      generatedAt: "2026-09-01T12:00:00Z",
+      discovery: { complete: true },
+      runHealth: { available: true, complete: true },
+      bundles: [],
+      workflows: [],
+    },
+    usage: { available: true, complete: true, runs: [] },
+    operationalValues: {
+      schemaVersion: 1,
+      generatedAt: "2026-09-01T11:30:00Z",
+      window: {
+        startAt: "2026-01-01T00:00:00Z",
+        endAt: "2026-09-01T11:00:00Z",
+      },
+      complete: true,
+      definitions: [{
+        repository: "github/gh-aw",
+        workflowId: "daily-file-diet",
+        evaluatorDigest: "1234567890abcdef",
+        diagnosticMetrics: [{ id: "repository-health", name: "Repository health", direction: "higher_is_better" }],
+      }],
+      records: [{
+        repository: "github/gh-aw",
+        workflowId: "daily-file-diet",
+        workflowPath: ".github/workflows/daily-file-diet.lock.yml",
+        runId: 42,
+        runAttempt: 2,
+        runUrl: "https://github.com/github/gh-aw/actions/runs/42",
+        status: "pass",
+        value: 0.8,
+        evaluatorDigest: "1234567890abcdef",
+        diagnostics: { "repository-health": 0.65 },
+        observation: {
+          evidenceAt: "2026-08-31T10:00:00Z",
+          evidenceCutoff: "2026-08-31T09:00:00Z",
+          opportunityKey: "github/gh-aw#42",
+          mature: true,
+          case: { targetRepo: "github/gh-aw" },
+          provenance: [{ repository: "github/gh-aw", sha: "abc123", path: "pkg/cli" }],
+        },
+      }],
+    },
+    report: { generatedAt: "2026-09-01T12:00:00Z", records: [] },
+  });
+
+  assert.deepEqual(
+    sources["operational-values"].rows[0],
+    {
+      organization: "github",
+      repository: "gh-aw",
+      "repository-name": "gh-aw",
+      workflow: ".github/workflows/daily-file-diet.md",
+      run: "42",
+      "run-attempt": 2,
+      "observation-id": "github/gh-aw:daily-file-diet:42:2:1234567890abcdef",
+      experiment: "",
+      "operational-case": "github/gh-aw#42",
+      "evaluator-digest": "1234567890abcdef",
+      "rollout-mode": "unknown",
+      "operational-value": 0.8,
+      "operational-value-definition": "daily-file-diet",
+      "requested-evidence-at": "2026-08-31T10:00:00Z",
+      "evidence-cutoff": "2026-08-31T09:00:00Z",
+      "maturity-at": "2026-08-31T10:00:00Z",
+      "maturity-status": "matured",
+      "baseline-value": undefined,
+      "delta-from-baseline": undefined,
+      "observed-at": "2026-08-31T10:00:00Z",
+      "accepted-evidence-provenance": [{ repository: "github/gh-aw", sha: "abc123", path: "pkg/cli" }],
+      diagnostics: { "repository-health": 0.65 },
+      "diagnostic-definitions": [{ id: "repository-health", name: "Repository health", direction: "higher_is_better" }],
+      "evidence-link": {
+        relation: "evidence",
+        href: "https://github.com/github/gh-aw/actions/runs/42",
+        label: "View run 42",
+      },
+      "run-link": {
+        relation: "run",
+        href: "https://github.com/github/gh-aw/actions/runs/42",
+        label: "Run 42",
+      },
+    },
+  );
+  assert.deepEqual(
+    {
+      asOf: sources["operational-values"].metadata["as-of"],
+      retrievedAt: sources["operational-values"].metadata["retrieved-at"],
+      coverageStart: sources["operational-values"].metadata["coverage-start"],
+      coverageEnd: sources["operational-values"].metadata["coverage-end"],
+      completeness: sources["operational-values"].metadata.completeness,
+    },
+    {
+      asOf: "2026-09-01T11:00:00Z",
+      retrievedAt: "2026-09-01T11:30:00Z",
+      coverageStart: "2026-01-01T00:00:00Z",
+      coverageEnd: "2026-09-01T11:00:00Z",
+      completeness: "complete",
+    },
+  );
+});
+
 test("dashboard source bridge carries outcome detail content and presentation metadata", () => {
   const sources = buildDashboardLanguageSources({
     deployed: {

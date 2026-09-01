@@ -2,6 +2,12 @@ import { spawn } from "node:child_process";
 import { mkdir, mkdtemp, readFile, readdir, rm, writeFile } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
+import {
+  definitionFromOperationalValueReport,
+  mergeOperationalValueRecords,
+  operationalValueRunIdentity,
+  recordsFromOperationalValueReport,
+} from "./operational-value-history.mjs";
 
 function downloadAgentArtifact(repository, runId, destination) {
   return runCommand("gh", ["run", "download", String(runId), "--repo", repository, "--name", "agent", "--dir", destination]);
@@ -58,6 +64,7 @@ function normalizeResult(selected, result, source = "run") {
     workflowId: selected.workflowId,
     workflowPath: selected.workflowPath || null,
     runId: selected.runId,
+    runAttempt: selected.run?.runAttempt || selected.runAttempt || 1,
     runUrl: `https://github.com/${selected.repository}/actions/runs/${selected.runId}`,
     status: result.status || "unavailable",
     value,
@@ -71,27 +78,8 @@ function normalizeResult(selected, result, source = "run") {
   };
 }
 
-function recordKey(record) {
-  return `${record.repository}:${record.runId}`;
-}
-
 function observationTime(record) {
   return Date.parse(record.observation?.evidenceAt || record.run?.createdAt || "");
-}
-
-function mergeRecords(cachedRecords, currentRecords, cutoff) {
-  const records = new Map();
-  for (const record of [...cachedRecords, ...currentRecords]) {
-    const key = recordKey(record);
-    const existing = records.get(key);
-    if (existing?.observationSource === "regrade" && record.observationSource !== "regrade") continue;
-    if (existing?.observation && !record.observation) continue;
-    records.set(key, record);
-  }
-  return [...records.values()].filter((record) => {
-    const observedAt = observationTime(record);
-    return !Number.isFinite(observedAt) || observedAt >= cutoff;
-  });
 }
 
 function regradeDue(record, evidenceAt) {
@@ -107,6 +95,15 @@ function regradeDue(record, evidenceAt) {
 async function regradeSupported() {
   try {
     await runGhAw(["graders", "operational-value", "--help"]);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+async function reportSupported() {
+  try {
+    await runGhAw(["graders", "operational-value", "report", "--help"]);
     return true;
   } catch {
     return false;
@@ -135,6 +132,29 @@ async function prepareTrustedCheckout(record, temporaryRoot) {
     await runCommand("git", ["-C", checkout, "fetch", "--depth=1", "origin", sha]);
   }
   return checkout;
+}
+
+async function prepareRuntimeCheckout(repository, temporaryRoot) {
+  if (repository === process.env.GITHUB_REPOSITORY) return process.cwd();
+  const checkout = path.join(temporaryRoot, "runtime-checkouts", repository.replace("/", "-"));
+  await mkdir(path.dirname(checkout), { recursive: true });
+  await runCommand("gh", ["repo", "clone", repository, checkout, "--", "--filter=blob:none", "--depth=1"]);
+  return checkout;
+}
+
+async function collectWorkflowReport(workflow, generatedAt, cacheRoot, temporaryRoot, checkout) {
+  const outputDirectory = path.join(temporaryRoot, "reports", `${workflow.repository.replace("/", "-")}-${workflow.workflowId}`);
+  const output = await runGhAw([
+    "graders", "operational-value", "report", workflow.workflowId,
+    "--repo", workflow.repository,
+    "--until", generatedAt,
+    "--cache-dir", cacheRoot,
+    "--output", outputDirectory,
+    "--json",
+  ], { cwd: checkout });
+  const parsed = JSON.parse(output);
+  if (parsed.report?.schemaVersion !== 1) throw new Error("unsupported gh-aw operational-value report output");
+  return parsed.report;
 }
 
 async function regradeRecord(record, evidenceAt, checkout) {
@@ -166,12 +186,14 @@ async function regradeRecord(record, evidenceAt, checkout) {
 
   const generatedAt = new Date().toISOString();
   const inventory = JSON.parse(await readFile(inventoryPath, "utf8"));
+  const operationalWorkflows = [];
   const selectedRuns = [];
   const seen = new Set();
   for (const workflow of inventory.workflows || []) {
     if (workflow.operationalValue !== true) continue;
     const workflowId = workflow.path?.split("/").at(-1)?.replace(/\.lock\.yml$/, "");
     if (!workflowId) continue;
+    operationalWorkflows.push({ repository: workflow.repository, workflowId, workflowPath: workflow.path });
     const runRecords = new Map((workflow.runHealth?.runRecords || []).map((run) => [Number(run.runId), run]));
     for (const runId of workflow.runHealth?.runIds || []) {
       const key = `${workflow.repository}:${runId}`;
@@ -190,18 +212,53 @@ async function regradeRecord(record, evidenceAt, checkout) {
   const temporaryRoot = await mkdtemp(path.join(os.tmpdir(), "pages-operational-values-"));
   try {
     let cachedRecords = [];
+    let cachedDefinitions = [];
     if (cachePath) {
       try {
         const cached = JSON.parse(await readFile(cachePath, "utf8"));
-        if (cached.schemaVersion === 1 && Array.isArray(cached.records)) cachedRecords = cached.records;
+        if (cached.schemaVersion === 1 && Array.isArray(cached.records)) {
+          cachedRecords = cached.records;
+          cachedDefinitions = Array.isArray(cached.definitions) ? cached.definitions : [];
+        }
       } catch (error) {
         if (error.code !== "ENOENT") console.warn(`Ignoring operational-value cache: ${error.message}`);
       }
     }
+
+    const canReport = await reportSupported();
+    const reportCacheRoot = path.resolve(process.env.REPORT_VALUE_REPLAY_CACHE || path.join(path.dirname(cachePath || outputPath), "replay"));
+    const checkoutPromises = new Map();
+    const reportResults = canReport
+      ? await mapWithConcurrency(operationalWorkflows, concurrency, async (workflow) => {
+        if (!checkoutPromises.has(workflow.repository)) {
+          checkoutPromises.set(workflow.repository, prepareRuntimeCheckout(workflow.repository, temporaryRoot));
+        }
+        try {
+          const report = await collectWorkflowReport(
+            workflow,
+            generatedAt,
+            reportCacheRoot,
+            temporaryRoot,
+            await checkoutPromises.get(workflow.repository),
+          );
+          return { workflow, report };
+        } catch (error) {
+          console.warn(`Operational-value history unavailable for ${workflow.repository} ${workflow.workflowId}: ${error.message}`);
+          return { workflow, error: error.message };
+        }
+      })
+      : operationalWorkflows.map((workflow) => ({ workflow, error: "gh-aw report is unavailable" }));
+    const reports = reportResults.filter((result) => result.report).map((result) => result.report);
+    const reportedWorkflowKeys = new Set(reportResults
+      .filter((result) => result.report)
+      .map((result) => `${result.workflow.repository}:${result.workflow.workflowId}`));
+    const fallbackRuns = selectedRuns.filter((selected) => !reportedWorkflowKeys.has(`${selected.repository}:${selected.workflowId}`));
+    const reportRecords = reports.flatMap(recordsFromOperationalValueReport);
+    const reportDefinitions = reports.map(definitionFromOperationalValueReport);
     const cachedRunKeys = new Set(cachedRecords
       .filter((record) => record.observation)
-      .map(recordKey));
-    const currentRecords = await mapWithConcurrency(selectedRuns.filter((selected) => !cachedRunKeys.has(recordKey(selected))), concurrency, async (selected) => {
+      .map(operationalValueRunIdentity));
+    const currentRecords = await mapWithConcurrency(fallbackRuns.filter((selected) => !cachedRunKeys.has(operationalValueRunIdentity(selected))), concurrency, async (selected) => {
       const destination = path.join(temporaryRoot, `${selected.repository.replace("/", "-")}-${selected.runId}`);
       await mkdir(destination, { recursive: true });
       try {
@@ -221,10 +278,9 @@ async function regradeRecord(record, evidenceAt, checkout) {
       }
     });
 
-    const retentionCutoff = Date.parse(generatedAt) - 90 * 24 * 60 * 60 * 1000;
-    let records = mergeRecords(cachedRecords, currentRecords, retentionCutoff);
+    let records = mergeOperationalValueRecords(cachedRecords, currentRecords, reportRecords);
     const replayAvailable = await regradeSupported();
-    const dueRecords = records.filter((record) => regradeDue(record, generatedAt));
+    const dueRecords = records.filter((record) => record.observationSource !== "report" && regradeDue(record, generatedAt));
     if (replayAvailable && dueRecords.length) {
       const checkouts = new Map();
       const replayed = await mapWithConcurrency(dueRecords, concurrency, async (record) => {
@@ -239,21 +295,32 @@ async function regradeRecord(record, evidenceAt, checkout) {
           return { ...record, regradeAttemptedAt: generatedAt, regradeError: error.message };
         }
       });
-      const replayedByRun = new Map(replayed.map((record) => [recordKey(record), record]));
-      records = records.map((record) => replayedByRun.get(recordKey(record)) || record);
+      records = mergeOperationalValueRecords(records, replayed);
     }
+
+    const definitions = mergeDefinitions(cachedDefinitions, reportDefinitions);
+    const windowStarts = reports.map((report) => report.window?.startAt).filter(Boolean).sort();
+    const windowEnds = reports.map((report) => report.window?.endAt).filter(Boolean).sort();
+    const complete = operationalWorkflows.length === reports.length;
 
     const output = {
       schemaVersion: 1,
       generatedAt,
-      windowStart: inventory.runHealth?.windowStart || null,
-      windowHours: inventory.runHealth?.windowHours || null,
-      selectedRuns: selectedRuns.length,
+      window: {
+        startAt: windowStarts[0] || inventory.runHealth?.windowStart || null,
+        endAt: windowEnds.at(-1) || generatedAt,
+      },
+      complete,
+      collectionMode: complete ? "full-history" : reports.length > 0 ? "mixed" : "recent-artifacts",
+      selectedRuns: reports.reduce((total, report) => total + (report.coverage?.runCount || 0), fallbackRuns.length),
       observedRuns: records.filter((record) => record.observation).length,
       matureRuns: records.filter((record) => record.observation?.mature).length,
       regradedRuns: records.filter((record) => record.observationSource === "regrade").length,
       pendingRegrades: records.filter((record) => regradeDue(record, generatedAt)).length,
       regradeAvailable: replayAvailable,
+      reportsCollected: reports.length,
+      reportsFailed: reportResults.length - reports.length,
+      definitions,
       records,
     };
     await mkdir(path.dirname(outputPath), { recursive: true });
@@ -270,3 +337,12 @@ async function regradeRecord(record, evidenceAt, checkout) {
   console.error(error);
   process.exitCode = 1;
 });
+
+function mergeDefinitions(...definitionSets) {
+  const definitions = new Map();
+  for (const definition of definitionSets.flat()) {
+    const key = `${definition.repository}:${definition.workflowId}:${definition.evaluatorDigest || "unknown-evaluator"}`;
+    definitions.set(key, definition);
+  }
+  return [...definitions.values()];
+}
