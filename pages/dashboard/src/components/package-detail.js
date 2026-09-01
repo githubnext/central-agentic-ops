@@ -4,6 +4,7 @@
 
 import { renderLinkTabs } from './tab-nav.js';
 import { createRouteView } from './route-empty-state.js';
+import { dispatchRouteAllocation } from './route-allocation.js';
 
 /**
  * @param {import('./ui-elements.js').ElementRenderContext} context
@@ -30,17 +31,14 @@ export function renderPackageNavigation(context, selectedView) {
         return null;
       }
       const packageName = nameForPackage(packageId, workflows);
-      root.dispatchEvent(new CustomEvent('dashboard-route-allocation', {
-        bubbles: true,
-        detail: {
-          title: packageName,
-          description: reports
-            ? `Durable reports produced by the ${packageName} package.`
-            : `Orchestrator and worker workflows in the ${packageName} package.`,
-          mode: modeForPackage(workflows),
-          navigationPage: 'packages'
-        }
-      }));
+      dispatchRouteAllocation(root, {
+        title: packageName,
+        description: reports
+          ? `Durable reports produced by the ${packageName} package.`
+          : `Orchestrator and worker workflows in the ${packageName} package.`,
+        mode: modeForPackage(workflows),
+        navigationPage: 'packages'
+      });
       return renderPackageTabs(packageId, packageName, selectedView);
     }
   });

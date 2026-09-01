@@ -209,4 +209,23 @@ Evidence paths below are relative to:
   - Shared linked route-tab builder across `src/components/package-detail.js`, `src/components/workflow-detail.js`, and `src/components/workflow-runtime.js`.
   - Shared static table-section wrapper across `src/components/packages-view.js`, report/table custom views, and remaining table-heavy presentation helpers.
 
+## 2026-09-01 route allocation entry
+
+- Extraction: `src/components/route-allocation.js` for shared bubbling `dashboard-route-allocation` dispatch.
+- Duplication evidence and call sites collapsed:
+  - `src/components/package-detail.js` duplicated package route allocation event creation for workflow and report route chrome.
+  - `src/components/workflow-detail.js` duplicated workflow report route allocation event creation with breadcrumbs.
+  - `src/components/workflow-runtime.js` duplicated workflow runtime route allocation event creation with mode-aware parent navigation.
+  - `src/components/outcome-detail.js` duplicated outcome route allocation event creation with resolved title links.
+- Behavior-preservation evidence:
+  - Preserved package, workflow-detail, workflow-runtime, and outcome-detail route-allocation payload assertions through unchanged call-site tests.
+  - Added focused coverage in `test/unit/route-allocation.test.js` for bubbling event dispatch and detail preservation.
+- Quality gates and proof:
+  - Ran `npm install`, `npm run typecheck`, `npm run lint`, `npm test`, and `node ./scripts/build.mjs` from `pages/dashboard/`; all passed.
+  - Browser snapshot comparison remains blocked in-session unless Playwright browser tools are exposed.
+- Next candidates:
+  - Shared linked route-tab builder across `src/components/package-detail.js`, `src/components/workflow-detail.js`, and `src/components/workflow-runtime.js`.
+  - Shared static table-section wrapper across `src/components/packages-view.js`, report/table custom views, and remaining table-heavy presentation helpers.
+  - Shared route-scoped data-source helpers where remaining route-aware views still inline source-row selection.
+
 Run-by-run history was removed during compaction; milestones, unresolved questions, current inventory, blockers, and actionable parity work remain above.

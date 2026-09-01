@@ -6,6 +6,7 @@ import { h } from '../dom.js';
 import { renderLinkTabs } from './tab-nav.js';
 import { renderWorkflowIdentity } from './workflow-identity.js';
 import { createRouteView } from './route-empty-state.js';
+import { dispatchRouteAllocation } from './route-allocation.js';
 import { parseWorkflowRoute, workflowRouteValue } from './workflow-route.js';
 
 /**
@@ -31,21 +32,18 @@ export function renderWorkflowDetail(context) {
         : null;
       if (!workflow || !route) return null;
       const name = workflowName(workflow);
-      root.dispatchEvent(new CustomEvent('dashboard-route-allocation', {
-        bubbles: true,
-        detail: {
-          title: name,
-          description: `Durable reports produced by ${route.workflow} in ${route.repository}.`,
-          navigationPage: 'repositories',
-          breadcrumbs: [
-            { label: 'Repositories', href: '#page-repositories' },
-            {
-              label: route.repository,
-              href: `#page-repository-detail?repository=${encodeURIComponent(route.repository)}`
-            }
-          ]
-        }
-      }));
+      dispatchRouteAllocation(root, {
+        title: name,
+        description: `Durable reports produced by ${route.workflow} in ${route.repository}.`,
+        navigationPage: 'repositories',
+        breadcrumbs: [
+          { label: 'Repositories', href: '#page-repositories' },
+          {
+            label: route.repository,
+            href: `#page-repository-detail?repository=${encodeURIComponent(route.repository)}`
+          }
+        ]
+      });
       return renderWorkflowContent(context, route, workflow);
     }
   });

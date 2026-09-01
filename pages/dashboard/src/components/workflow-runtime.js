@@ -14,6 +14,7 @@ import { renderTitledBodySection } from './view-chrome.js';
 import { renderWorkflowIdentity } from './workflow-identity.js';
 import { renderLinkTabs } from './tab-nav.js';
 import { createRouteView } from './route-empty-state.js';
+import { dispatchRouteAllocation } from './route-allocation.js';
 import { parseWorkflowRoute, workflowRouteValue } from './workflow-route.js';
 
 /**
@@ -37,15 +38,12 @@ export function renderWorkflowRuntime(context) {
       }
       const repository = qualifiedRepository(workflow);
       const workflowName = text(workflow['workflow-name']) || text(workflow.workflow) || 'Unknown workflow';
-      root.dispatchEvent(new CustomEvent('dashboard-route-allocation', {
-        bubbles: true,
-        detail: {
-          title: workflowName,
-          description: `Run health, AI Credit usage, and operational value for ${text(workflow.workflow)} in ${repository}.`,
-          mode: ['review', 'live'].includes(text(workflow['rollout-mode'])) ? text(workflow['rollout-mode']) : '',
-          navigationPage: workflow.package ? 'packages' : 'repositories'
-        }
-      }));
+      dispatchRouteAllocation(root, {
+        title: workflowName,
+        description: `Run health, AI Credit usage, and operational value for ${text(workflow.workflow)} in ${repository}.`,
+        mode: ['review', 'live'].includes(text(workflow['rollout-mode'])) ? text(workflow['rollout-mode']) : '',
+        navigationPage: workflow.package ? 'packages' : 'repositories'
+      });
       return renderWorkflowRuntimeContent(context, workflow);
     }
   });

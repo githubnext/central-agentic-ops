@@ -9,6 +9,7 @@ import { findLink, renderExternalLink, resolveTitleLink } from './link-content.j
 import { formatUtcDateTime } from './ui-primitives.js';
 import { renderMetadataSection } from './view-chrome.js';
 import { createRouteView } from './route-empty-state.js';
+import { dispatchRouteAllocation } from './route-allocation.js';
 
 const ALLOWED_MARKDOWN_TAGS = new Set([
   'A', 'BLOCKQUOTE', 'BR', 'CODE', 'DEL', 'DETAILS', 'DIV', 'EM',
@@ -50,14 +51,11 @@ export function renderOutcomeDetail(context) {
       if (!outcome) {
         return null;
       }
-      root.dispatchEvent(new CustomEvent('dashboard-route-allocation', {
-        bubbles: true,
-        detail: {
-          title: text(outcome['outcome-title']) || outcomeId,
-          description: outcomeDescription(outcome),
-          titleLink: resolveTitleLink(outcome, context.titleLink)
-        }
-      }));
+      dispatchRouteAllocation(root, {
+        title: text(outcome['outcome-title']) || outcomeId,
+        description: outcomeDescription(outcome),
+        titleLink: resolveTitleLink(outcome, context.titleLink)
+      });
       return renderOutcome(outcome);
     }
   });
