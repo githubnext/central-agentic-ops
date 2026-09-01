@@ -7,9 +7,10 @@ export class PolicyError extends Error {}
 
 const SCHEMA_URI = "https://raw.githubusercontent.com/githubnext/central-agentic-ops/main/.github/central-agentic-ops.schema.json";
 const ROOT_KEYS = ["$schema", "version", "control-plane", "target-authority"];
-const CONTROL_KEYS = ["scope", "inventory", "defaults", "packages", "publishing"];
+const CONTROL_KEYS = ["scope", "inventory", "web", "defaults", "packages", "publishing"];
 const SCOPE_KEYS = ["allowed-owners", "allowed-repositories"];
 const INVENTORY_KEYS = ["max-scan-repositories", "cell-count", "cell-index", "batch-size", "batch-index"];
+const WEB_KEYS = ["favicon"];
 const DEFAULT_KEYS = ["mode", "max-repositories", "rollout-percent", "monthly-ai-credit-budget"];
 const OCTICONS = [
   "mark-github", "code", "repo", "server", "issue", "pull-request", "play", "eye",
@@ -145,6 +146,7 @@ function validateControlPlane(control) {
   assertKeys(control, CONTROL_KEYS, "control-plane");
   if ("scope" in control) validateScope(control.scope);
   if ("inventory" in control) validateInventory(control.inventory);
+  if ("web" in control) validateWeb(control.web);
   if ("defaults" in control) validateDefaults(control.defaults, "control-plane.defaults");
   if ("packages" in control) {
     validatePackages(control.packages);
@@ -180,6 +182,13 @@ function validateInventory(inventory) {
   if (cellIndex >= cellCount) {
     throw new PolicyError("control-plane.inventory.cell-index must be smaller than cell-count");
   }
+}
+
+function validateWeb(web) {
+  const path = "control-plane.web";
+  assertMapping(web, path);
+  assertKeys(web, WEB_KEYS, path);
+  if ("favicon" in web) assertFavicon(web.favicon, `${path}.favicon`);
 }
 
 function validateDefaults(defaults, path) {
@@ -420,6 +429,7 @@ export function controlSettings(document, controlRepository) {
   if (!control) throw new PolicyError("control-plane is required");
 
   const scope = control.scope ?? {};
+  const web = control.web ?? {};
   const publishing = control.publishing ?? {};
   const defaults = {
     mode: "review",
@@ -442,6 +452,9 @@ export function controlSettings(document, controlRepository) {
   return {
     allowed_owners: scope["allowed-owners"] ?? [controlRepository.split("/", 1)[0]],
     allowed_repositories: scope["allowed-repositories"] ?? [],
+    web: {
+      favicon: web.favicon ?? "./favicon.svg",
+    },
     packages,
     publishing_enabled: publishing.enabled ?? false,
     publishing_control_repositories: publishing["control-repositories"] ?? [controlRepository],
@@ -483,6 +496,27 @@ function assertBoolean(value, path) {
 function assertOcticon(value, path) {
   if (typeof value !== "string" || !OCTICONS.includes(value)) {
     throw new PolicyError(`${path} must be one of: ${OCTICONS.join(", ")}`);
+  }
+}
+
+function assertFavicon(value, path) {
+  if (typeof value !== "string" || value.length > 2048 || /\s/.test(value)) {
+    throw new PolicyError(`${path} must be an absolute HTTPS URL or ./ relative path`);
+  }
+  if (value.startsWith("./")) {
+    if (!/^\.\/[A-Za-z0-9][A-Za-z0-9._/-]*$/.test(value) || value.split("/").includes("..")) {
+      throw new PolicyError(`${path} must be an absolute HTTPS URL or ./ relative path`);
+    }
+    return;
+  }
+  let url;
+  try {
+    url = new URL(value);
+  } catch {
+    throw new PolicyError(`${path} must be an absolute HTTPS URL or ./ relative path`);
+  }
+  if (url.protocol !== "https:" || url.username || url.password || url.search || url.hash) {
+    throw new PolicyError(`${path} must be an absolute HTTPS URL or ./ relative path`);
   }
 }
 

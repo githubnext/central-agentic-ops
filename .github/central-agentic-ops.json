@@ -12,6 +12,9 @@
         "github/gh-aw"
       ]
     },
+    "web": {
+      "favicon": "./favicon.svg"
+    },
     "packages": {
       "advisory": {
         "icon": "eye",

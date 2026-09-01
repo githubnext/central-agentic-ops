@@ -29,6 +29,8 @@ resources:
     destination: .github/aw/dashboard/report/bundle-dashboards.mjs
   - source: report/compose-dashboard-documents.mjs
     destination: .github/aw/dashboard/report/compose-dashboard-documents.mjs
+  - source: report/configure-site.mjs
+    destination: .github/aw/dashboard/report/configure-site.mjs
   - source: site/index.html
     destination: .github/aw/dashboard/site/index.html
   - source: site/favicon.svg

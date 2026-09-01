@@ -19,7 +19,7 @@ describe('DLS-CONF-004 scaffold gates', () => {
     const favicon = readFileSync(resolve('favicon.svg'), 'utf8');
     const agenticWorkflowsFavicon = readFileSync(resolve('../../public/favicon.svg'), 'utf8');
 
-    expect(preview).toContain('<link rel="icon" href="./favicon.svg" type="image/svg+xml">');
+    expect(preview).toContain('<link rel="icon" href="./favicon.svg">');
     expect(favicon).toBe(agenticWorkflowsFavicon);
   });
 

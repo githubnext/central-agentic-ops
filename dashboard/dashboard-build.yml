@@ -140,6 +140,9 @@ jobs:
         run: |
           mkdir -p "$REPORT_OUTPUT"
           cp -R .github/aw/dashboard/site/. "$REPORT_OUTPUT/"
+          node .github/aw/dashboard/report/configure-site.mjs \
+            "$REPORT_OUTPUT/index.html" \
+            "$RUNNER_TEMP/control-settings.json"
           node .github/aw/dashboard/report/bundle-dashboards.mjs \
             "$REPORT_OUTPUT/dashboard.json" \
             .github/aw/dashboards

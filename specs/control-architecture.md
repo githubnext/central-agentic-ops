@@ -216,6 +216,7 @@ A control repository uses `control-plane`. A target repository uses `target-auth
 | --- | --- | --- |
 | `scope` | Eligible owners and optional repository restriction | Resolver safe defaults |
 | `inventory` | Scan, cell, and batch ceilings | Schema defaults |
+| `web` | Presentation settings for deterministic web surfaces | Packaged defaults |
 | `defaults` | Mode, repository, rollout, and monthly admission defaults | Schema defaults |
 | `packages` | Explicit package and worker workflow declarations | Undeclared packages and workers are disabled |
 | `publishing` | Deterministic reviewed-output publication | Disabled |
@@ -231,6 +232,8 @@ A control repository uses `control-plane`. A target repository uses `target-auth
 | `batch-index` | Non-negative integer |
 
 Inventory partitioning MUST be deterministic for the same inventory and effective values.
+
+The optional `web.favicon` value MUST be an absolute HTTPS URL without credentials, query, or fragment, or a non-traversing `./` relative path. Web presentation settings MUST NOT grant or widen rollout authority.
 
 | Package property | Constraint | Authority type |
 | --- | --- | --- |

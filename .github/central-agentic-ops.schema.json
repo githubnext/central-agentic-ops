@@ -137,6 +137,20 @@
         "batch-index": { "type": "integer", "minimum": 0 }
       }
     },
+    "web": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "favicon": {
+          "type": "string",
+          "maxLength": 2048,
+          "anyOf": [
+            { "pattern": "^https://(?![^/?#]*@)[^\\s?#]+$" },
+            { "pattern": "^(?!.*(?:^|/)\\.\\.(?:/|$))\\./[A-Za-z0-9][A-Za-z0-9._/-]*$" }
+          ]
+        }
+      }
+    },
     "defaults": {
       "type": "object",
       "additionalProperties": false,
@@ -178,6 +192,7 @@
       "properties": {
         "scope": { "$ref": "#/$defs/scope" },
         "inventory": { "$ref": "#/$defs/inventory" },
+        "web": { "$ref": "#/$defs/web" },
         "defaults": { "$ref": "#/$defs/defaults" },
         "packages": { "$ref": "#/$defs/controlPackages" },
         "publishing": { "$ref": "#/$defs/publishing" }
