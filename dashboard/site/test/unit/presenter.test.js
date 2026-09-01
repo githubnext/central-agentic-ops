@@ -9,6 +9,11 @@ const fixtureDirectory = dirname(fileURLToPath(import.meta.url));
 const authoritativeDashboardDocument = JSON.parse(
   readFileSync(resolve(fixtureDirectory, '../../dashboard.json'), 'utf8')
 );
+const packageDashboardDocument = JSON.parse(
+  readFileSync(resolve(fixtureDirectory, '../../package-dashboards.json'), 'utf8')
+);
+authoritativeDashboardDocument.dashboard.pages.push(...packageDashboardDocument.dashboard.pages);
+authoritativeDashboardDocument.dashboard.navigation.push(...packageDashboardDocument.dashboard.navigation);
 
 describe('presenter built-in and custom pages', () => {
   it('renders JSON-declared package and standalone workflow inventory with a topology summary', () => {

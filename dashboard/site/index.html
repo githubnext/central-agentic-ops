@@ -30,13 +30,23 @@
         label: `Run ${run}`,
       });
 
-      const dashboardSchema = await fetch("./dashboard.json").then((response) => {
-        if (!response.ok) throw new Error(`Unable to load dashboard.json: ${response.status}`);
-        return response.json();
-      });
+      const [dashboardSchema, packageDashboardSchema] = await Promise.all([
+        fetch("./dashboard.json").then((response) => {
+          if (!response.ok) throw new Error(`Unable to load dashboard.json: ${response.status}`);
+          return response.json();
+        }),
+        fetch("./package-dashboards.json").then((response) => {
+          if (!response.ok) throw new Error(`Unable to load package-dashboards.json: ${response.status}`);
+          return response.json();
+        }),
+      ]);
       const dashboardDocument = {
         languageVersion: dashboardSchema["language-version"],
-        dashboard: dashboardSchema.dashboard,
+        dashboard: {
+          ...dashboardSchema.dashboard,
+          pages: [...dashboardSchema.dashboard.pages, ...packageDashboardSchema.dashboard.pages],
+          navigation: [...dashboardSchema.dashboard.navigation, ...packageDashboardSchema.dashboard.navigation],
+        },
       };
 
       const fixtureSources = {

@@ -3,6 +3,7 @@ import { readFileSync } from 'node:fs';
 import { validateDashboardDocument, validateLogicalSources } from '../../src/validator.js';
 
 const authoritativeDashboardSource = readFileSync(`${process.cwd()}/dashboard.json`, 'utf8');
+const packageDashboardSource = readFileSync(`${process.cwd()}/package-dashboards.json`, 'utf8');
 
 const validDocument = `language-version: "0.1.0"
 dashboard:
@@ -38,7 +39,7 @@ describe('dashboard document validation', () => {
   });
 
   it('keeps one focused custom dashboard for every operation package', () => {
-    const document = JSON.parse(authoritativeDashboardSource);
+    const document = JSON.parse(packageDashboardSource);
     const packagePageIds = [
       'ambient-context-dashboard',
       'aw-maintenance-dashboard',
@@ -65,6 +66,7 @@ describe('dashboard document validation', () => {
         (/** @type {{ data: { source: string } }} */ view) => view.data.source
       )).toEqual(['runs', 'outcomes', 'operational-values', 'operational-values']);
     }
+    expect(validateDashboardDocument(packageDashboardSource).ok).toBe(true);
   });
 
   it('validates source-free JSON callouts with canonical icons', () => {
