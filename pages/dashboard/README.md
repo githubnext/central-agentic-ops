@@ -38,7 +38,7 @@ The Packages page renders centrally managed package utilization cards with retai
 
 Repository and package workflow links open a JSON-declared runtime view with workflow-scoped run health, registration, AI Credit usage, and operational-value evidence.
 
-Named UI elements, navigation icons, and semantic table-cell treatments are declared in dashboard JSON. The presenter dispatches these declarations without inferring UI from page IDs, view IDs, source contents, or field names.
+Named UI elements, source-free callouts, navigation icons, and semantic table-cell treatments are declared in dashboard JSON. The presenter dispatches these declarations without inferring UI from page IDs, view IDs, source contents, or field names.
 
 Pages may also declare a JSON-configured `filter-bar` with ordered filter tokens, a time-range label, and a page-source JSON export.
 

@@ -160,14 +160,13 @@
           },
           {
             "id": "cost-evaluation-boundary",
-            "title": "Evaluation boundary",
-            "data": {
-              "sources": [
-                "cost-readiness"
-              ]
+            "title": "Budget and anomaly verdicts unavailable",
+            "description": "A budget verdict requires an applicable budget, matching time window, and complete measured usage. An anomaly verdict requires a qualified historical baseline and disclosed statistical rule.",
+            "mark": "callout",
+            "callout": {
+              "label": "Evaluation boundary",
+              "icon": "meter"
             },
-            "mark": "element",
-            "element": "signal-list",
             "layout": "full"
           }
         ]
@@ -1902,7 +1901,14 @@
             "count-source": "grader-observations",
             "count-label": "records",
             "views": [
-              "operational-value-ledger",
+              "operational-value-ledger"
+            ]
+          },
+          {
+            "id": "experiment-evidence-boundary",
+            "title": "Evidence boundary",
+            "layout": "full",
+            "views": [
               "experiment-evidence-boundary"
             ]
           }
@@ -2043,14 +2049,13 @@
           },
           {
             "id": "experiment-evidence-boundary",
-            "title": "Experiment evidence boundary",
-            "data": {
-              "sources": [
-                "experiment-readiness"
-              ]
+            "title": "Experiment comparisons unavailable",
+            "description": "The report does not retain authoritative experiment definitions, variant assignments, or assignment-to-run links. It therefore does not infer control or treatment groups from workflow names, timestamps, models, or outcomes.",
+            "mark": "callout",
+            "callout": {
+              "label": "Evidence boundary",
+              "icon": "beaker"
             },
-            "mark": "element",
-            "element": "signal-list",
             "layout": "full"
           }
         ]

@@ -93,11 +93,14 @@ describe('Cost and efficiency dashboard view', () => {
 
     expect(page?.querySelectorAll('[data-chart-widget="pie"] [data-chart-category]')).toHaveLength(2);
     expect(page?.querySelector('.pie-chart-total-value')?.textContent).toBe('9');
-    expect(page?.querySelectorAll('.signal-list-region')).toHaveLength(2);
-    const boundary = [...(page?.querySelectorAll('.signal-list-region') ?? [])]
-      .find((region) => region.textContent?.includes('Budget and anomaly verdicts unavailable'));
+    expect(page?.querySelectorAll('.signal-list-region')).toHaveLength(1);
+    const boundary = page?.querySelector('.dashboard-callout');
+    expect(boundary?.getAttribute('role')).toBe('note');
+    expect(boundary?.querySelector('.scope-kicker')?.textContent).toBe('Evaluation boundary');
+    expect(boundary?.querySelector('.octicon-meter')).not.toBeNull();
+    expect(boundary?.querySelector('h3')?.textContent).toBe('Budget and anomaly verdicts unavailable');
     expect(boundary?.textContent).toContain('qualified historical baseline');
-    expect(boundary?.textContent).toContain('Threshold unavailable');
+    expect(boundary?.getAttribute('data-section-id')).toBe('evaluation-boundary');
   });
 
   it('does not report a telemetry coverage boundary for a complete usage source', () => {

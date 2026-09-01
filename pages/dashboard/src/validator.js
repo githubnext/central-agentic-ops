@@ -13,6 +13,7 @@ import {
   BUILT_IN_PAGE_DATA_STATE_KEYS,
   BUILT_IN_PAGE_DEFINITION_KEYS,
   DEFAULTS_KEYS,
+  CALLOUT_KEYS,
   ERROR_CODES,
   LINK_FIELD_NAMES,
   LINK_OBJECT_KEYS,
@@ -1260,6 +1261,15 @@ function validateView(view, viewNode, path, viewIds, errors) {
 
   validateOptionalStringField(view.title, `${path}.title`, errors);
   validateOptionalStringField(view.description, `${path}.description`, errors);
+  validateCallout(
+    view.callout,
+    getValueNodeByKey(viewNode, 'callout'),
+    view.mark,
+    view.title,
+    view.description,
+    `${path}.callout`,
+    errors
+  );
   if (view['empty-message'] !== undefined) {
     validateStringField(view['empty-message'], `${path}.empty-message`, true, errors);
   }
@@ -1380,7 +1390,15 @@ function validateView(view, viewNode, path, viewIds, errors) {
 
   /** @type {string | null} */
   let sourceName = null;
-  if (!isPlainObject(view.data)) {
+  if (view.mark === 'callout') {
+    if (view.data !== undefined) {
+      errors.push(createError(
+        ERROR_CODES.missingOrInvalidRequiredField,
+        'callout views must not declare data.',
+        `${path}.data`
+      ));
+    }
+  } else if (!isPlainObject(view.data)) {
     errors.push(createError(
       ERROR_CODES.missingOrInvalidRequiredField,
       'data must be a mapping.',
@@ -1440,6 +1458,48 @@ function validateView(view, viewNode, path, viewIds, errors) {
   validateSemanticFieldLiterals(view.data, `${path}.data`, errors);
   validateDatasetMetadata(getValueNodeByKey(viewNode, 'data'), view.data, `${path}.data`, errors);
   validateEncoding(getValueNodeByKey(viewNode, 'encoding'), view.encoding, view.mark, view.chart, sourceName, view.data, path, errors);
+}
+
+/**
+ * @param {unknown} callout
+ * @param {unknown} calloutNode
+ * @param {unknown} mark
+ * @param {unknown} title
+ * @param {unknown} description
+ * @param {string} path
+ * @param {ValidationError[]} errors
+ */
+function validateCallout(callout, calloutNode, mark, title, description, path, errors) {
+  if (mark !== 'callout') {
+    if (callout !== undefined) {
+      errors.push(createError(
+        ERROR_CODES.missingOrInvalidRequiredField,
+        'callout is allowed only when mark is "callout".',
+        path
+      ));
+    }
+    return;
+  }
+  if (!isPlainObject(callout)) {
+    errors.push(createError(
+      ERROR_CODES.missingOrInvalidRequiredField,
+      'callout views must contain a callout mapping.',
+      path
+    ));
+    return;
+  }
+  validateObjectKeys(calloutNode, CALLOUT_KEYS, path, errors);
+  validateStringField(callout.label, `${path}.label`, true, errors);
+  validateStringField(callout.icon, `${path}.icon`, true, errors);
+  if (typeof callout.icon === 'string' && !PAGE_ICON_VALUES.includes(callout.icon)) {
+    errors.push(createError(
+      ERROR_CODES.nonCanonicalVocabularyOrIdentifier,
+      'callout icon must use one canonical icon value.',
+      `${path}.icon`
+    ));
+  }
+  validateStringField(title, path.replace(/\.callout$/, '.title'), true, errors);
+  validateStringField(description, path.replace(/\.callout$/, '.description'), true, errors);
 }
 
 /**
@@ -1977,11 +2037,11 @@ function validateDatasetMetadata(dataNode, data, path, errors) {
  * @param {ValidationError[]} errors
  */
 function validateEncoding(encodingNode, encoding, mark, chart, sourceName, data, viewPath, errors) {
-  if (mark === 'element') {
+  if (mark === 'element' || mark === 'callout') {
     if (encoding !== undefined) {
       errors.push(createError(
         ERROR_CODES.missingOrInvalidRequiredField,
-        'element views must not declare encoding.',
+        `${mark} views must not declare encoding.`,
         `${viewPath}.encoding`
       ));
     }
