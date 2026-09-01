@@ -596,12 +596,24 @@ test("operational-value graders expose deterministic run-scoped contracts", () =
   }
 
   const dependabotWorker = workflow("dependabot-release-train-updater.md");
+  const dependabotEvaluator = readFileSync(join(gradersDirectory, "dependabot-release-train-updater-operational-value.sh"), "utf8");
+  const dependabotDefinition = JSON.parse(execFileSync(
+    join(gradersDirectory, "dependabot-release-train-updater-operational-value.sh"),
+    ["--definition"],
+    { encoding: "utf8" },
+  ));
   const auditorWorker = workflow("optimization-ai-credit-auditor.md");
   const auditorEvaluator = readFileSync(join(gradersDirectory, "optimization-ai-credit-auditor-operational-value.sh"), "utf8");
   const optimizerWorker = workflow("optimization-ai-credit-optimizer.md");
   const optimizerEvaluator = readFileSync(join(gradersDirectory, "optimization-ai-credit-optimizer-operational-value.sh"), "utf8");
   assert.match(dependabotWorker, /checks: read/);
   assert.match(dependabotWorker, /statuses: read/);
+  assert.equal(dependabotDefinition.adoption.commit, "4615c8d8eaf51dab837238dff6fc8248a56194fe");
+  assert.equal(dependabotDefinition.primaryMetric.id, "validated-dependency-resolution");
+  assert.match(dependabotDefinition.evidence.assignment, /freeze the oldest eligible pull request/);
+  assert.match(dependabotEvaluator, /key="dependency-pr:\$\{target_repo\}:\$\{number\}"/);
+  assert.doesNotMatch(dependabotEvaluator, /key="dependency-set:.*runId/);
+  assert.match(dependabotEvaluator, /diagnostics:\{\}/);
   assert.match(auditorWorker, /window_start: \$windowStart/);
   assert.match(auditorWorker, /window_end: \$windowEnd/);
   assert.match(auditorEvaluator, /workflow_path \/\/ \.workflow_name/);

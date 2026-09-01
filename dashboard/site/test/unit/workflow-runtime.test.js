@@ -103,8 +103,8 @@ describe('renderWorkflowRuntime', () => {
       'Package · Testing'
     ]);
     expect([...rendered.querySelectorAll('.workflow-badges a')].map((badge) => badge.getAttribute('href'))).toEqual([
-      '#page-operational-value?package=central-agentic-ops',
-      '#page-operational-value?package=testing'
+      '#page-package-insights?package=central-agentic-ops',
+      '#page-package-insights?package=testing'
     ]);
     expect(rendered.querySelector('.workflow-identity > a')?.getAttribute('href')).toBe(
       'https://github.com/githubnext/central-agentic-ops/blob/HEAD/.github/workflows/multi-device-docs-tester.md'

@@ -2,22 +2,27 @@
  * Route-aware operation package navigation.
  */
 
+import { h } from '../dom.js';
 import { renderLinkTabs } from './tab-nav.js';
 import { createRouteView } from './route-empty-state.js';
+import { renderWorkflowValueReport } from './workflow-runtime.js';
 
 /**
  * @param {import('./ui-elements.js').ElementRenderContext} context
- * @param {'workflows'|'reports'} selectedView
+ * @param {'insights'|'workflows'|'reports'} selectedView
  * @returns {HTMLElement}
  */
 export function renderPackageNavigation(context, selectedView) {
   const allWorkflows = rowsFor(context.sources, 'workflows');
   const reports = selectedView === 'reports';
+  const insights = selectedView === 'insights';
   const root = createRouteView({
-    rootClassName: reports ? 'package-reports' : 'package-detail',
+    rootClassName: reports ? 'package-reports' : insights ? 'package-insights' : 'package-detail',
     routeParameter: context.routeParameter,
     datasetKey: 'package',
-    selectMessage: reports ? 'Select a package to view its reports.' : 'Select a package to view its workflows.',
+    selectMessage: reports
+      ? 'Select a package to view its reports.'
+      : insights ? 'Select a package to view its operational value.' : 'Select a package to view its workflows.',
     notFoundMessage: 'Package not found.',
     unavailableMessage: 'Package data is unavailable.',
     isUnavailable: () => context.sources.workflows?.metadata?.availability === 'unavailable',
@@ -36,12 +41,23 @@ export function renderPackageNavigation(context, selectedView) {
           title: packageName,
           description: reports
             ? `Durable reports produced by the ${packageName} package.`
-            : `Orchestrator and worker workflows in the ${packageName} package.`,
+            : insights
+              ? `Operational value attained by workers in the ${packageName} package.`
+              : `Orchestrator and worker workflows in the ${packageName} package.`,
           mode: modeForPackage(workflows),
           navigationPage: 'packages'
         }
       }));
-      return renderPackageTabs(packageId, packageName, selectedView);
+      const tabs = renderPackageTabs(packageId, packageName, selectedView);
+      if (!insights) return tabs;
+      const workers = workflows.filter((workflow) => workflow['workflow-role'] !== 'orchestrator');
+      return h(
+        'div',
+        { className: 'package-insights-content' },
+        tabs,
+        ...workers.map((workflow) => renderWorkflowValueReport(context, workflow)),
+        workers.length === 0 ? h('p', { className: 'value-details-unavailable' }, 'No worker workflows are configured for this package.') : null
+      );
     }
   });
   return root;
@@ -58,7 +74,7 @@ function renderPackageTabs(packageId, packageName, selectedView) {
     className: 'package-tabs',
     ariaLabel: `${packageName} views`,
     tabs: [
-      { label: 'Insights', icon: 'graph', href: `#page-operational-value${packageQuery}`, current: selectedView === 'insights' },
+      { label: 'Insights', icon: 'graph', href: `#page-package-insights${packageQuery}`, current: selectedView === 'insights' },
       { label: 'Workflows', icon: 'workflow', href: `#page-package-detail${packageQuery}`, current: selectedView === 'workflows' },
       { label: 'Reports', icon: 'issue', href: `#page-package-reports${packageQuery}`, current: selectedView === 'reports' }
     ]

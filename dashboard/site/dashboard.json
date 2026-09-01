@@ -797,6 +797,32 @@
         }
       },
       {
+        "id": "package-insights",
+        "kind": "custom",
+        "title": "Package",
+        "description": "Operational value attained by workers in this package.",
+        "icon": "graph",
+        "class-name": "package-insights-page",
+        "route": {
+          "hash-query-parameter": "package"
+        },
+        "views": [
+          {
+            "id": "package-operational-value",
+            "title": "Package operational value",
+            "data": {
+              "sources": [
+                "workflows",
+                "operational-values"
+              ]
+            },
+            "mark": "element",
+            "element": "package-insights",
+            "layout": "full"
+          }
+        ]
+      },
+      {
         "id": "package-detail",
         "kind": "custom",
         "title": "Package",

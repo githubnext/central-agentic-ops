@@ -16,34 +16,33 @@ definition() {
   "schemaVersion": 4, "grader": "operational-value",
   "repository": "githubnext/central-agentic-ops", "workflowName": "Dependabot / Release Train Updater",
   "sourcePath": ".github/workflows/dependabot-release-train-updater.md",
-  "adoption": {"commit": "35c7c3cbd319632f85784cce196e57c0f61db9a0", "adoptedAt": "2026-08-18T17:54:55Z"},
-  "operationalValue": "Resolve the dispatched target's matured dependency-update opportunities with validated merges.",
+  "adoption": {"commit": "4615c8d8eaf51dab837238dff6fc8248a56194fe", "adoptedAt": "2026-07-16T15:40:56Z"},
+  "operationalValue": "Resolve one dependency-update opportunity in the dispatched target with a validated merge.",
   "evidence": {
-    "opportunity": "Dependency pull requests open in the dispatched target during the 30 days before the run.",
-    "assignment": "Bind targetRepo from workflow_dispatch inputs and freeze eligible pull-request numbers at the run creation time; key dependency-set:<targetRepo>:<runId>.",
-    "accepted": "An assigned pull request is merged by the evidence cutoff, changes a dependency manifest or lockfile, and satisfies every configured required status check.",
+    "opportunity": "The oldest dependency pull request open in the dispatched target at run creation, among pull requests created during the preceding 30 days that are Dependabot-authored or change a dependency manifest or lockfile.",
+    "assignment": "Bind targetRepo from workflow_dispatch inputs, or recover it from the worker run title for historical reports; freeze the oldest eligible pull request and its required checks at run creation, breaking ties by pull-request number; key dependency-pr:<targetRepo>:<number>. Duplicate runs for the same pull request repeat the key.",
+    "accepted": "The assigned pull request is merged by the evidence cutoff and every required status check frozen at assignment has succeeded by that cutoff.",
     "repositories": ["githubnext/central-agentic-ops"],
-    "collection": "Query target pull requests and changed files once for assignment, then query immutable merge commits and required-check results through the capped cutoff.",
+    "collection": "Read the worker run metadata when target recovery is needed, query target pull requests and changed files once for assignment, then query the assigned pull request, immutable merge commit, and required-check results through the capped cutoff.",
     "maturation": "Fourteen days after the workflow run starts.",
-    "zeroRule": "Complete evidence for eligible assigned pull requests with no validated resolutions scores 0.",
-    "missingRule": "Missing target assignment, no eligible opportunity, inaccessible pull-request evidence, or unavailable required-check configuration scores null."
+    "zeroRule": "Complete evidence showing that the assigned pull request was not validly merged by the capped cutoff scores 0.",
+    "missingRule": "Missing target assignment, no eligible pull request, inaccessible pull-request evidence, or unavailable required-check configuration scores null."
   },
-  "primaryMetric": {"id": "validated-resolution-share", "formula": "validated assigned dependency pull requests / eligible assigned dependency pull requests", "direction": "higher_is_better"},
+  "primaryMetric": {"id": "validated-dependency-resolution", "formula": "1 when the assigned dependency pull request is merged and all required checks frozen at assignment succeeded by the capped cutoff; otherwise 0", "direction": "higher_is_better"},
   "baseline": {"mode": "attainment-only", "value": null, "evidenceCutoff": null, "provenance": []},
   "validationExamples": {
-    "targetAttained": {"valid": true, "eligible": 4, "validated": 4},
-    "targetMissed": {"valid": true, "eligible": 4, "validated": 0},
-    "missing": {"valid": false, "eligible": null, "validated": null},
-    "malformed": {"valid": true, "eligible": 1, "validated": 2}
+    "targetAttained": {"valid": true, "resolved": true},
+    "targetMissed": {"valid": true, "resolved": false},
+    "missing": {"valid": false, "resolved": null},
+    "malformed": {"valid": true, "resolved": "yes"}
   }
 }
 JSON
 }
 
 metric() {
-    jq 'if .valid != true or (.eligible|type)!="number" or (.validated|type)!="number"
-      or .eligible<=0 or .validated<0 or .validated>.eligible then null
-      else ((.validated/.eligible)*1000000|round)/1000000 end'
+    jq 'if .valid != true or (.resolved|type)!="boolean" then null
+      elif .resolved then 1 else 0 end'
 }
 
 normalize_timestamp() {
@@ -76,34 +75,53 @@ required_checks() {
     printf '%s\n' '[]' >"$output"
 }
 
-assign_case() {
+resolve_target_repo() {
     request_file=$1
     target_repo=$(jq -r '.event.inputs.target_repo // empty' "$request_file")
-    [[ $target_repo =~ ^[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+$ ]] || return 1
+    if [[ $target_repo =~ ^[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+$ ]]; then
+        printf '%s\n' "$target_repo"
+        return
+    fi
+    control_repo=$(jq -r .run.repository "$request_file")
+    run_id=$(jq -r .run.id "$request_file")
+    [[ $control_repo =~ ^[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+$ ]] || return 1
+    gh api "repos/$control_repo/actions/runs/$run_id" >"$tmp_dir/run.json" 2>/dev/null || return 1
+    jq -er '.display_title
+      | capture("^Dependabot release train \\u00b7 (?<repo>[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+) \\u00b7 ").repo' \
+      "$tmp_dir/run.json"
+}
+
+assign_case() {
+    request_file=$1
+    target_repo=$(resolve_target_repo "$request_file") || return 1
     created_at=$(jq -r .run.createdAt "$request_file")
     window_start=$(time_shift "$created_at" -2592000)
     gh api --paginate --method GET "repos/$target_repo/pulls" -f state=all -f sort=created -f direction=desc -f per_page=100 \
       | jq -s 'add // []' >"$tmp_dir/pulls.json" 2>/dev/null || return 1
-    : >"$tmp_dir/opportunities.ndjson"
+    : >"$tmp_dir/candidates.ndjson"
     while IFS=$'\t' read -r number author created closed branch; do
         [[ $created < $window_start || $created > $created_at ]] && continue
-      [[ -n $closed && $closed < $created_at ]] && continue
+        [[ -n $closed && $closed < $created_at ]] && continue
         files="$tmp_dir/files-$number.json"
         gh api --paginate "repos/$target_repo/pulls/$number/files?per_page=100" --jq '.[].filename' \
           | jq -Rsc 'split("\n")|map(select(length>0))' >"$files" 2>/dev/null || return 1
         is_dependency=$(jq --arg author "$author" --arg regex "$dependency_file_regex" \
           '($author|ascii_downcase|startswith("dependabot")) or any(.[];test($regex;"i"))' "$files")
         [[ $is_dependency == true ]] || continue
+        jq -cn --argjson number "$number" --arg createdAt "$created" --arg baseRef "$branch" \
+          '{number:$number,createdAt:$createdAt,baseRef:$baseRef}' >>"$tmp_dir/candidates.ndjson"
+    done < <(jq -r '.[]|[.number,(.user.login//""),.created_at,(.closed_at//""),.base.ref]|@tsv' "$tmp_dir/pulls.json")
+    opportunity=$(jq -cs 'sort_by(.createdAt,.number)|first//null' "$tmp_dir/candidates.ndjson")
+    if [[ $opportunity != null ]]; then
+        number=$(printf '%s\n' "$opportunity" | jq -r .number)
+        branch=$(printf '%s\n' "$opportunity" | jq -r .baseRef)
         required_file="$tmp_dir/required-$number.json"
         required_checks "$target_repo" "$branch" "$required_file" || return 1
-        jq -cn --argjson number "$number" --arg createdAt "$created" --arg baseRef "$branch" \
-          --slurpfile required "$required_file" \
-          '{number:$number,createdAt:$createdAt,baseRef:$baseRef,requiredChecks:$required[0]}' >>"$tmp_dir/opportunities.ndjson"
-    done < <(jq -r '.[]|[.number,(.user.login//""),.created_at,(.closed_at//""),.base.ref]|@tsv' "$tmp_dir/pulls.json")
-    opportunities=$(jq -s '.' "$tmp_dir/opportunities.ndjson")
+        opportunity=$(printf '%s\n' "$opportunity" | jq -c --slurpfile required "$required_file" '.requiredChecks=$required[0]')
+    fi
     jq -cn --arg targetRepo "$target_repo" --arg runId "$(jq -r .run.id "$request_file")" \
-      --arg assignedAt "$created_at" --argjson opportunities "$opportunities" \
-      '{targetRepo:$targetRepo,runId:$runId,assignedAt:$assignedAt,opportunities:$opportunities}'
+      --arg assignedAt "$created_at" --argjson opportunity "$opportunity" \
+      '{targetRepo:$targetRepo,runId:$runId,assignedAt:$assignedAt,opportunity:$opportunity}'
 }
 
 validated_pull() {
@@ -132,25 +150,38 @@ grade_run() {
     created_at=$(normalize_timestamp "$(jq -r .run.createdAt "$request_file")") || created_at=1970-01-01T00:00:00Z
     evidence_at=$(normalize_timestamp "$(jq -r .evidenceAt "$request_file")") || evidence_at=$created_at
     matures_at=$(time_shift "$created_at" "$MATURATION_SECONDS"); cutoff=$(earlier "$evidence_at" "$matures_at")
+    if [[ $(jq -r .run.repository "$request_file") != "$REPOSITORY" || $(jq -r .run.workflow "$request_file") != "$WORKFLOW_NAME" ]]; then
+        emit_missing "run:$(jq -r .run.id "$request_file")" '{"assignmentMissing":true}' "$cutoff" "$matures_at" contract-mismatch
+        return
+    fi
     case_json=$(jq -c '.case' "$request_file")
     if [[ $case_json == null ]]; then case_json=$(assign_case "$request_file") || case_json='{"assignmentMissing":true}'; fi
     key="run:$(jq -r .run.id "$request_file")"
     if [[ $(printf '%s\n' "$case_json"|jq -r '.assignmentMissing//false') == true ]]; then emit_missing "$key" "$case_json" "$cutoff" "$matures_at" assignment-unavailable; return; fi
-    target_repo=$(printf '%s\n' "$case_json"|jq -r .targetRepo); key="dependency-set:${target_repo}:$(printf '%s\n' "$case_json"|jq -r .runId)"
-    eligible=$(printf '%s\n' "$case_json"|jq '.opportunities|length')
-    [[ $eligible -gt 0 ]] || { emit_missing "$key" "$case_json" "$cutoff" "$matures_at" no-eligible-opportunities; return; }
-    validated=0; unavailable=false; : >"$tmp_dir/provenance.ndjson"
-    while IFS=$'\t' read -r number required; do
-      result=0; validated_pull "$target_repo" "$number" "$cutoff" "$required" || result=$?
-        [[ $result -eq 0 ]] && validated=$((validated+1))
-        [[ $result -eq 2 ]] && unavailable=true
-        printf '{"repository":"%s","kind":"pull-request","ref":"%s"}\n' "$target_repo" "$number" >>"$tmp_dir/provenance.ndjson"
-    done < <(printf '%s\n' "$case_json"|jq -r '.opportunities[]|[.number,(.requiredChecks|tojson)]|@tsv')
-    [[ $unavailable == false ]] || { emit_missing "$key" "$case_json" "$cutoff" "$matures_at" required-check-evidence-unavailable; return; }
-    evidence=$(jq -cn --argjson eligible "$eligible" --argjson validated "$validated" '{valid:true,eligible:$eligible,validated:$validated}')
-    value=$(printf '%s\n' "$evidence"|metric); provenance=$(jq -s '.' "$tmp_dir/provenance.ndjson")
-    jq -cn --argjson value "$value" --arg key "$key" --argjson case "$case_json" --arg cutoff "$cutoff" --arg matures "$matures_at" --argjson provenance "$provenance" \
-      '{value:$value,opportunityKey:$key,case:$case,evidenceCutoff:$cutoff,maturesAt:$matures,provenance:$provenance,diagnostics:{eligible:($case.opportunities|length),validated:($value*($case.opportunities|length))}}'
+    if ! printf '%s\n' "$case_json" | jq -e '
+      (.targetRepo|type)=="string" and (.targetRepo|test("^[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+$"))
+      and (.opportunity==null or ((.opportunity|type)=="object"
+        and (.opportunity.number|type)=="number" and .opportunity.number>0 and (.opportunity.number|floor)==.opportunity.number
+        and (.opportunity.requiredChecks|type)=="array"))' >/dev/null; then
+        emit_missing "$key" '{"assignmentMissing":true}' "$cutoff" "$matures_at" invalid-case
+        return
+    fi
+    target_repo=$(printf '%s\n' "$case_json"|jq -r .targetRepo)
+    opportunity=$(printf '%s\n' "$case_json"|jq -c '.opportunity//null')
+    [[ $opportunity != null ]] || { emit_missing "$key" "$case_json" "$cutoff" "$matures_at" no-eligible-opportunity; return; }
+    number=$(printf '%s\n' "$opportunity"|jq -r .number)
+    required=$(printf '%s\n' "$opportunity"|jq -c .requiredChecks)
+    key="dependency-pr:${target_repo}:${number}"
+    result=0
+    validated_pull "$target_repo" "$number" "$cutoff" "$required" || result=$?
+    [[ $result -ne 2 ]] || { emit_missing "$key" "$case_json" "$cutoff" "$matures_at" required-check-evidence-unavailable; return; }
+    resolved=false; [[ $result -eq 0 ]] && resolved=true
+    evidence=$(jq -cn --argjson resolved "$resolved" '{valid:true,resolved:$resolved}')
+    value=$(printf '%s\n' "$evidence"|metric)
+    jq -cn --argjson value "$value" --arg key "$key" --argjson case "$case_json" --arg cutoff "$cutoff" --arg matures "$matures_at" \
+      --arg target "$target_repo" --argjson number "$number" \
+      '{value:$value,opportunityKey:$key,case:$case,evidenceCutoff:$cutoff,maturesAt:$matures,
+       provenance:[{repository:$target,kind:"pull-request",ref:($number|tostring)}],diagnostics:{}}'
 }
 
 case ${1:-} in
