@@ -7,6 +7,7 @@ import { h } from './dom.js';
 import { getPrimerStyles } from './styles.js';
 import { octicon, agenticWorkflowMark } from './octicons.js';
 import { renderDataStateMetrics } from './components/data-state.js';
+import { formatMediumUtcDateTime } from './components/ui-primitives.js';
 import { customViewAvailabilityMessage, renderCustomViewStateDetails, renderLayoutSectionChrome, renderPageSection } from './components/view-chrome.js';
 import { toNumber } from './view-formatters.js';
 import { findLink } from './components/link-content.js';
@@ -438,11 +439,7 @@ function latestRetrievedAt(sources) {
  * @returns {string}
  */
 function formatReportDate(value) {
-  return new Intl.DateTimeFormat('en', {
-    dateStyle: 'medium',
-    timeStyle: 'short',
-    timeZone: 'UTC'
-  }).format(new Date(value));
+  return formatMediumUtcDateTime(new Date(value));
 }
 
 /**

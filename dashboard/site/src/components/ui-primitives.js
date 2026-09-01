@@ -67,15 +67,26 @@ export function coverageWindowHours(metadata) {
 }
 
 /**
+ * Formats a `Date` or millisecond timestamp as a medium-date, short-time,
+ * UTC string (e.g. `Aug 30, 2026, 10:00 AM`). Callers are responsible for
+ * validating their input; invalid input renders `Invalid Date`.
+ * @param {Date | number} input
+ * @returns {string}
+ */
+export function formatMediumUtcDateTime(input) {
+  return new Intl.DateTimeFormat('en', {
+    dateStyle: 'medium',
+    timeStyle: 'short',
+    timeZone: 'UTC'
+  }).format(input instanceof Date ? input : new Date(input));
+}
+
+/**
  * @param {unknown} value
  * @returns {string}
  */
 export function formatUtcDateTime(value) {
   const parsed = Date.parse(value == null ? '' : String(value));
   if (!Number.isFinite(parsed)) return 'Time unavailable';
-  return new Intl.DateTimeFormat('en', {
-    dateStyle: 'medium',
-    timeStyle: 'short',
-    timeZone: 'UTC'
-  }).format(new Date(parsed));
+  return formatMediumUtcDateTime(parsed);
 }
