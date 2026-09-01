@@ -47,7 +47,6 @@ describe('declarative dispatch view', () => {
     expect(dispatchPage.views[0]).toMatchObject({
       mark: 'table',
       data: { source: 'dispatches' },
-      'column-summaries': false,
       encoding: {
         href: { field: 'run-link' }
       }
@@ -65,7 +64,9 @@ describe('declarative dispatch view', () => {
     expect(rendered.textContent).toContain('Update dependencies');
     expect(rendered.querySelector('table')?.className).toBe('custom-table');
     expect(rendered.querySelector('.status-attention')).not.toBeNull();
-    expect(rendered.querySelector('.table-summary-row')).toBeNull();
+    expect(rendered.querySelector('.table-summary-temporal')?.textContent).toContain('StartAug 30, 2026, 7:00 AM');
+    expect(rendered.querySelector('.table-summary-temporal')?.textContent).toContain('StopAug 30, 2026, 7:00 AM');
+    expect(rendered.querySelector('.table-summary-temporal')?.textContent).toContain('Duration0s');
     expect(rendered.querySelector('input[type="search"]')?.getAttribute('placeholder')).toBe('Filter rows');
     const started = rendered.querySelector('tbody td time');
     expect(started?.getAttribute('datetime')).toBe('2026-08-30T07:00:00Z');
