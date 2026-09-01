@@ -885,6 +885,7 @@ function renderCustomView(pageId, view, index, sources, units, headingTag = 'h3'
     return renderRouteScopedDataView(pageId, view, index, sources, units, headingTag, routeParameter);
   }
 
+  /** @type {string[]} */
   const contextDetails = [];
 
   if (view.mark === 'element') {
