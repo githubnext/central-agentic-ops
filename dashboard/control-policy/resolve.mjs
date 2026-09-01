@@ -28,6 +28,10 @@ export const PACKAGES = Object.freeze({
     "ai-credit-auditor": "optimization-ai-credit-auditor",
     "ai-credit-optimizer": "optimization-ai-credit-optimizer",
   },
+  "self-care": {
+    "accessibility-checker": "self-care-accessibility-checker",
+    "primer-brand-checker": "self-care-primer-brand-checker",
+  },
 });
 
 const SCHEMA_URI = "https://raw.githubusercontent.com/githubnext/central-agentic-ops/main/.github/central-agentic-ops.schema.json";

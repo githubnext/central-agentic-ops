@@ -22,6 +22,7 @@ on:
         type: string
       batch_label:
         type: string
+  skip-if-match: 'is:pr is:open in:title "Primer branding"'
 
 checkout:
   repository: ${{ inputs.target_repo }}

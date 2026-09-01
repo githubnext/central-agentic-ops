@@ -100,6 +100,42 @@ test("control policy schema matches the JavaScript package catalog", () => {
   }
 });
 
+test("checked-in SelfCare policy selects only the repository-local live target", () => {
+  const policy = parsePolicy(readFileSync(join(root, ".github", "central-agentic-ops.json"), "utf8"));
+  const local = effectivePolicy(policy, {
+    packageName: "self-care",
+    role: "orchestrator",
+    controlRepository: "githubnext/central-agentic-ops",
+    targetRepository: "githubnext/central-agentic-ops",
+  });
+  const other = effectivePolicy(policy, {
+    packageName: "self-care",
+    role: "orchestrator",
+    controlRepository: "githubnext/central-agentic-ops",
+    targetRepository: "github/gh-aw",
+  });
+
+  assert.equal(local.safe_output_mode, "live");
+  assert.equal(local.max_repositories, 1);
+  assert.equal(other.safe_output_mode, "review");
+  assert.deepEqual(local.worker_policies, {
+    "self-care-accessibility-checker": {
+      worker: "accessibility-checker",
+      enabled: true,
+      max_mode: null,
+    },
+    "self-care-primer-brand-checker": {
+      worker: "primer-brand-checker",
+      enabled: true,
+      max_mode: null,
+    },
+  });
+  assert.equal(
+    policy["target-authority"].packages["self-care"].authority,
+    "githubnext/central-agentic-ops",
+  );
+});
+
 test("control policy applies schema defaults and package values", () => {
   const result = effective(minimalPolicy);
 

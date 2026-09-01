@@ -61,7 +61,7 @@
         "mode": "review",
         "max-repositories": 1,
         "rollout-percent": 100,
-        "icon": "heart",
+        "icon": "check-circle",
         "targets": {
           "githubnext/central-agentic-ops": {
             "mode": "live"

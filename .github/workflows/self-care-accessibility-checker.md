@@ -78,7 +78,7 @@ network:
 tools:
   timeout: 120  # Accessibility sweeps include preview startup and per-page axe-core runs
   github:
-    mode: remote
+    mode: gh-proxy
     min-integrity: approved
     toolsets: [repos, actions]
   playwright:
