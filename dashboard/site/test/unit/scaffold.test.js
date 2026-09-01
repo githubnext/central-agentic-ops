@@ -47,6 +47,7 @@ describe('DLS-CONF-004 scaffold gates', () => {
     for (const sharedRule of [
       '.sidebar-brand { display: flex; align-items: center; gap: 6px;',
       '.app-main > nav { border-bottom: 1px solid var(--border); }',
+      '.app-main > nav .shell > :not([hidden]) ~ :not([hidden], .report-actions)::before { content: "/";',
       '.breadcrumb .shell > :is([data-breadcrumb-root], [data-breadcrumb-dashboard]) { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }',
       '.overview-header { min-height: 88px;',
       '.overview-header .lede { margin: 3px 0 0; font-size: .875rem; }',
