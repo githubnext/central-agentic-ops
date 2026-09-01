@@ -276,7 +276,7 @@ h3 { margin: 16px 0 8px; font-size: 1rem; font-weight: 600; }
 .workflow-report-summary { margin-top: 3px; overflow: hidden; color: var(--muted); text-overflow: ellipsis; white-space: nowrap; }
 .workflow-report-table time, .workflow-report-time { color: var(--muted); }
 .workflow-runtime-content { max-width: 100%; }
-.workflow-runtime-summary { max-width: 920px; }
+.workflow-runtime-summary { max-width: 920px; margin-bottom: 24px; }
 .workflow-runtime-metrics { display: grid; grid-template-columns: minmax(360px, 1.7fr) repeat(2, minmax(180px, 1fr)); gap: 14px; margin: 0; }
 .workflow-runtime-metrics > div { min-width: 0; min-height: 184px; padding: 20px 22px; border: 1px solid var(--border); border-radius: 6px; }
 .workflow-runtime-metrics dt { font-size: 1rem; font-weight: 600; }

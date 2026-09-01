@@ -50,6 +50,7 @@ describe('DLS-CONF-004 scaffold gates', () => {
       '.breadcrumb .shell > :is([data-breadcrumb-root], [data-breadcrumb-dashboard]) { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }',
       '.overview-header { min-height: 88px;',
       '.overview-header .lede { margin: 3px 0 0; font-size: .875rem; }',
+      '.workflow-runtime-summary { max-width: 920px; margin-bottom: 24px; }',
       'footer { padding: 20px 24px; border-top: 1px solid var(--border);'
     ]) {
       expect(styles).toContain(sharedRule);
