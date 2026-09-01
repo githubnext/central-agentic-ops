@@ -4,10 +4,17 @@ import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { dirname, resolve } from 'node:path';
 import { renderDashboard, enableDashboardKeyboardNavigation } from '../../src/presenter.js';
+import { composeDashboardDocuments } from '../../../report/compose-dashboard-documents.mjs';
+import { packageDashboardSources } from '../package-dashboard-documents.js';
 
 const fixtureDirectory = dirname(fileURLToPath(import.meta.url));
-const authoritativeDashboardDocument = JSON.parse(
+const builtInDashboardDocument = JSON.parse(
   readFileSync(resolve(fixtureDirectory, '../../dashboard.json'), 'utf8')
+);
+const packageDashboardDocuments = packageDashboardSources.map((source) => JSON.parse(source));
+const authoritativeDashboardDocument = composeDashboardDocuments(
+  builtInDashboardDocument,
+  packageDashboardDocuments
 );
 
 describe('presenter built-in and custom pages', () => {
@@ -332,14 +339,14 @@ describe('presenter built-in and custom pages', () => {
     window.history.replaceState(null, '', '/');
   });
 
-  it('renders section-labeled Attention Investigate Explore navigation groups in the sidebar', () => {
+  it('renders section-labeled operational navigation groups in the sidebar', () => {
     const rendered = renderDashboard({
       document: authoritativeDashboardDocument,
       sources: {}
     });
 
     const labels = [...rendered.querySelectorAll('.nav-section-label')].map((node) => node.textContent?.trim());
-    expect(labels).toEqual(['Attention', 'Investigate', 'Explore']);
+    expect(labels).toEqual(['Attention', 'Investigate', 'Explore', 'Package operations']);
     expect(rendered.querySelector('[data-nav-page-id="overview"]')?.previousElementSibling?.textContent).toBe('Attention');
     expect(rendered.querySelector('[data-nav-page-id="runtime"]')?.previousElementSibling?.textContent).toBe('Investigate');
     expect([...rendered.querySelectorAll('.nav-label')].map((node) => node.textContent)).toEqual([
@@ -351,7 +358,13 @@ describe('presenter built-in and custom pages', () => {
       'Dispatches',
       'Workflows',
       'Repositories',
-      'Packages'
+      'Packages',
+      'UK AI advisory',
+      'Ambient context',
+      'AW Maintenance',
+      'Dependabot',
+      'EU CRA advisor',
+      'Optimization'
     ]);
     expect(rendered.querySelector('[data-nav-page-id="runs"]')).toBeNull();
     expect(rendered.querySelector('[data-nav-page-id="findings"]')).toBeNull();

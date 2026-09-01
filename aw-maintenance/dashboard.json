@@ -1,0 +1,194 @@
+{
+  "language-version": "0.1.0",
+  "dashboard": {
+    "id": "aw-maintenance-dashboard",
+    "title": "AW Maintenance",
+    "description": "Track upgrade and failure-triage activation, durable maintenance issues, and matured resolution evidence.",
+    "repository": "githubnext/central-agentic-ops",
+    "pages": [
+      {
+        "id": "aw-maintenance-dashboard",
+        "kind": "custom",
+        "title": "AW Maintenance",
+        "description": "Track upgrade and failure-triage activation, durable maintenance issues, and matured resolution evidence.",
+        "icon": "package",
+        "views": [
+          {
+            "id": "aw-maintenance-runs",
+            "title": "Maintenance runs by conclusion",
+            "disclosure": "essential",
+            "data": {
+              "source": "runs",
+              "time": {
+                "range": "30d"
+              },
+              "filters": {
+                "workflow": [
+                  ".github/workflows/aw-maintenance.md",
+                  ".github/workflows/aw-maintenance-upgrade.md",
+                  ".github/workflows/aw-failures-investigator.md"
+                ]
+              }
+            },
+            "mark": "chart",
+            "chart": "line",
+            "encoding": {
+              "x": {
+                "field": "started-at",
+                "type": "temporal",
+                "time-unit": "day"
+              },
+              "y": {
+                "field": "run",
+                "type": "quantitative",
+                "aggregate": "count"
+              },
+              "color": {
+                "field": "run-conclusion",
+                "type": "nominal"
+              }
+            }
+          },
+          {
+            "id": "aw-maintenance-outcomes",
+            "title": "Upgrade and failure-triage issues",
+            "description": "Retained maintenance outputs identify actionable upgrades or investigated failures; clean repositories may correctly produce no output.",
+            "disclosure": "essential",
+            "data": {
+              "source": "outcomes",
+              "filters": {
+                "package": [
+                  "aw-maintenance"
+                ]
+              },
+              "limit": 50
+            },
+            "mark": "table",
+            "empty-message": "No AW maintenance outputs were retained.",
+            "encoding": {
+              "href": {
+                "field": "external-link",
+                "type": "nominal"
+              },
+              "columns": [
+                {
+                  "field": "repository",
+                  "type": "nominal"
+                },
+                {
+                  "field": "outcome-title",
+                  "type": "nominal",
+                  "title": "Maintenance output"
+                },
+                {
+                  "field": "outcome-state",
+                  "type": "nominal",
+                  "title": "Disposition",
+                  "display": "status"
+                },
+                {
+                  "field": "published-at",
+                  "type": "temporal",
+                  "title": "Published"
+                }
+              ]
+            }
+          },
+          {
+            "id": "aw-maintenance-attainment",
+            "title": "Resolution evidence",
+            "description": "Failure-investigation observations preserve maturity and evidence cutoffs; unavailable repository evidence is not scored as zero.",
+            "disclosure": "essential",
+            "data": {
+              "source": "operational-values",
+              "filters": {
+                "workflow": [
+                  ".github/workflows/aw-failures-investigator.md"
+                ]
+              },
+              "limit": 50
+            },
+            "mark": "table",
+            "empty-message": "No AW maintenance attainment evidence is available.",
+            "encoding": {
+              "href": {
+                "field": "evidence-link",
+                "type": "nominal"
+              },
+              "columns": [
+                {
+                  "field": "repository",
+                  "type": "nominal"
+                },
+                {
+                  "field": "operational-case",
+                  "type": "nominal",
+                  "title": "Opportunity"
+                },
+                {
+                  "field": "operational-value",
+                  "type": "quantitative",
+                  "title": "Attainment"
+                },
+                {
+                  "field": "maturity-status",
+                  "type": "nominal",
+                  "title": "Maturity",
+                  "display": "status"
+                },
+                {
+                  "field": "evidence-cutoff",
+                  "type": "temporal",
+                  "title": "Evidence cutoff"
+                }
+              ]
+            }
+          },
+          {
+            "id": "aw-maintenance-value-trend",
+            "title": "Operational-value trend",
+            "description": "Mean failure-resolution attainment is diagnostic and does not infer causation from later workflow health.",
+            "disclosure": "essential",
+            "data": {
+              "source": "operational-values",
+              "time": {
+                "range": "90d"
+              },
+              "filters": {
+                "workflow": [
+                  ".github/workflows/aw-failures-investigator.md"
+                ]
+              }
+            },
+            "mark": "chart",
+            "chart": "line",
+            "encoding": {
+              "x": {
+                "field": "observed-at",
+                "type": "temporal",
+                "time-unit": "day"
+              },
+              "y": {
+                "field": "operational-value",
+                "type": "quantitative",
+                "aggregate": "mean"
+              },
+              "color": {
+                "field": "operational-value-definition",
+                "type": "nominal"
+              }
+            }
+          }
+        ]
+      }
+    ],
+    "navigation": [
+      {
+        "label": "Package operations",
+        "pages": [
+          "aw-maintenance-dashboard"
+        ]
+      }
+    ]
+  }
+}

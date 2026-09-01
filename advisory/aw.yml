@@ -5,5 +5,7 @@ includes:
   - .github/workflows/uk-ai-advisory.md
   - .github/workflows/advisory-package-maintainer.md
 resources:
+  - source: dashboard.json
+    destination: .github/aw/dashboards/advisory.json
   - source: implementation-status.md
     destination: .github/aw/advisory/implementation-status.md

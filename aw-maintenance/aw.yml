@@ -4,3 +4,6 @@ min-version: v0.87.6
 includes:
   - .github/workflows/aw-maintenance.md
   - .github/workflows/aw-failures-investigator.md
+resources:
+  - source: dashboard.json
+    destination: .github/aw/dashboards/aw-maintenance.json

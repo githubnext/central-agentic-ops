@@ -1,0 +1,201 @@
+{
+  "language-version": "0.1.0",
+  "dashboard": {
+    "id": "optimization-dashboard",
+    "title": "Optimization",
+    "description": "Track AI Credit audit and optimization runs, retained recommendations, and matured accuracy and efficiency evidence.",
+    "repository": "githubnext/central-agentic-ops",
+    "pages": [
+      {
+        "id": "optimization-dashboard",
+        "kind": "custom",
+        "title": "Optimization",
+        "description": "Track AI Credit audit and optimization runs, retained recommendations, and matured accuracy and efficiency evidence.",
+        "icon": "package",
+        "views": [
+          {
+            "id": "optimization-runs",
+            "title": "Optimization runs by conclusion",
+            "disclosure": "essential",
+            "data": {
+              "source": "runs",
+              "time": {
+                "range": "30d"
+              },
+              "filters": {
+                "workflow": [
+                  ".github/workflows/optimization.md",
+                  ".github/workflows/optimization-ai-credit-auditor.md",
+                  ".github/workflows/optimization-ai-credit-optimizer.md"
+                ]
+              }
+            },
+            "mark": "chart",
+            "chart": "line",
+            "encoding": {
+              "x": {
+                "field": "started-at",
+                "type": "temporal",
+                "time-unit": "day"
+              },
+              "y": {
+                "field": "run",
+                "type": "quantitative",
+                "aggregate": "count"
+              },
+              "color": {
+                "field": "run-conclusion",
+                "type": "nominal"
+              }
+            }
+          },
+          {
+            "id": "optimization-outcomes",
+            "title": "Audit and optimization outputs",
+            "description": "Retained snapshots and recommendations expose repository evidence without treating a recommendation as realized savings.",
+            "disclosure": "essential",
+            "data": {
+              "source": "outcomes",
+              "filters": {
+                "package": [
+                  "optimization"
+                ]
+              },
+              "limit": 50
+            },
+            "mark": "table",
+            "empty-message": "No optimization outputs were retained.",
+            "encoding": {
+              "href": {
+                "field": "external-link",
+                "type": "nominal"
+              },
+              "columns": [
+                {
+                  "field": "repository",
+                  "type": "nominal"
+                },
+                {
+                  "field": "outcome-title",
+                  "type": "nominal",
+                  "title": "Audit or recommendation"
+                },
+                {
+                  "field": "outcome-state",
+                  "type": "nominal",
+                  "title": "Disposition",
+                  "display": "status"
+                },
+                {
+                  "field": "published-at",
+                  "type": "temporal",
+                  "title": "Published"
+                }
+              ]
+            }
+          },
+          {
+            "id": "optimization-attainment",
+            "title": "Accuracy and efficiency evidence",
+            "description": "Audit accuracy matures after one day; optimizer efficiency and preserved reliability mature after seven days.",
+            "disclosure": "essential",
+            "data": {
+              "source": "operational-values",
+              "filters": {
+                "workflow": [
+                  ".github/workflows/optimization-ai-credit-auditor.md",
+                  ".github/workflows/optimization-ai-credit-optimizer.md"
+                ]
+              },
+              "limit": 50
+            },
+            "mark": "table",
+            "empty-message": "No optimization attainment evidence is available.",
+            "encoding": {
+              "href": {
+                "field": "evidence-link",
+                "type": "nominal"
+              },
+              "columns": [
+                {
+                  "field": "repository",
+                  "type": "nominal"
+                },
+                {
+                  "field": "operational-value-definition",
+                  "type": "nominal",
+                  "title": "Evaluator"
+                },
+                {
+                  "field": "operational-case",
+                  "type": "nominal",
+                  "title": "Opportunity"
+                },
+                {
+                  "field": "operational-value",
+                  "type": "quantitative",
+                  "title": "Attainment"
+                },
+                {
+                  "field": "maturity-status",
+                  "type": "nominal",
+                  "title": "Maturity",
+                  "display": "status"
+                },
+                {
+                  "field": "evidence-cutoff",
+                  "type": "temporal",
+                  "title": "Evidence cutoff"
+                }
+              ]
+            }
+          },
+          {
+            "id": "optimization-value-trend",
+            "title": "Operational-value trend",
+            "description": "Audit accuracy and optimizer efficiency remain separate evaluator series; neither is inferred from AIC totals alone.",
+            "disclosure": "essential",
+            "data": {
+              "source": "operational-values",
+              "time": {
+                "range": "90d"
+              },
+              "filters": {
+                "workflow": [
+                  ".github/workflows/optimization-ai-credit-auditor.md",
+                  ".github/workflows/optimization-ai-credit-optimizer.md"
+                ]
+              }
+            },
+            "mark": "chart",
+            "chart": "line",
+            "encoding": {
+              "x": {
+                "field": "observed-at",
+                "type": "temporal",
+                "time-unit": "day"
+              },
+              "y": {
+                "field": "operational-value",
+                "type": "quantitative",
+                "aggregate": "mean"
+              },
+              "color": {
+                "field": "operational-value-definition",
+                "type": "nominal"
+              }
+            }
+          }
+        ]
+      }
+    ],
+    "navigation": [
+      {
+        "label": "Package operations",
+        "pages": [
+          "optimization-dashboard"
+        ]
+      }
+    ]
+  }
+}

@@ -1,0 +1,217 @@
+{
+  "language-version": "0.1.0",
+  "dashboard": {
+    "id": "eu-cra-compliance-dashboard",
+    "title": "EU CRA Advisor",
+    "description": "Track evidence-gathering runs, non-binding CRA reports, and explicit human acceptance across each assessment domain.",
+    "repository": "githubnext/central-agentic-ops",
+    "pages": [
+      {
+        "id": "eu-cra-compliance-dashboard",
+        "kind": "custom",
+        "title": "EU CRA Advisor",
+        "navigation-label": "EU CRA advisor",
+        "description": "Track evidence-gathering runs, non-binding CRA reports, and explicit human acceptance across each assessment domain.",
+        "icon": "package",
+        "views": [
+          {
+            "id": "eu-cra-compliance-runs",
+            "title": "Assessment runs by conclusion",
+            "disclosure": "essential",
+            "data": {
+              "source": "runs",
+              "time": {
+                "range": "30d"
+              },
+              "filters": {
+                "workflow": [
+                  ".github/workflows/eu-cra-compliance.md",
+                  ".github/workflows/eu-cra-compliance-package-maintainer.md",
+                  ".github/workflows/eu-cra-compliance-scope-classifier.md",
+                  ".github/workflows/eu-cra-compliance-security-requirements-auditor.md",
+                  ".github/workflows/eu-cra-compliance-supply-chain-sbom-auditor.md",
+                  ".github/workflows/eu-cra-compliance-vulnerability-handling-auditor.md",
+                  ".github/workflows/eu-cra-compliance-article-14-reporting-readiness.md",
+                  ".github/workflows/eu-cra-compliance-conformity-release-evidence.md"
+                ]
+              }
+            },
+            "mark": "chart",
+            "chart": "line",
+            "encoding": {
+              "x": {
+                "field": "started-at",
+                "type": "temporal",
+                "time-unit": "day"
+              },
+              "y": {
+                "field": "run",
+                "type": "quantitative",
+                "aggregate": "count"
+              },
+              "color": {
+                "field": "run-conclusion",
+                "type": "nominal"
+              }
+            }
+          },
+          {
+            "id": "eu-cra-compliance-outcomes",
+            "title": "CRA evidence reports",
+            "description": "Reports retain scope and evidence gaps for human review; they are not legal determinations or certifications.",
+            "disclosure": "essential",
+            "data": {
+              "source": "outcomes",
+              "filters": {
+                "package": [
+                  "eu-cra-compliance"
+                ]
+              },
+              "limit": 50
+            },
+            "mark": "table",
+            "empty-message": "No EU CRA evidence reports were retained.",
+            "encoding": {
+              "href": {
+                "field": "external-link",
+                "type": "nominal"
+              },
+              "columns": [
+                {
+                  "field": "repository",
+                  "type": "nominal"
+                },
+                {
+                  "field": "outcome-title",
+                  "type": "nominal",
+                  "title": "Evidence report"
+                },
+                {
+                  "field": "outcome-state",
+                  "type": "nominal",
+                  "title": "Disposition",
+                  "display": "status"
+                },
+                {
+                  "field": "published-at",
+                  "type": "temporal",
+                  "title": "Published"
+                }
+              ]
+            }
+          },
+          {
+            "id": "eu-cra-compliance-attainment",
+            "title": "Human-reviewed attainment evidence",
+            "description": "Each domain preserves its stable target-commit opportunity, maturity state, and repository evidence link.",
+            "disclosure": "essential",
+            "data": {
+              "source": "operational-values",
+              "filters": {
+                "workflow": [
+                  ".github/workflows/eu-cra-compliance-package-maintainer.md",
+                  ".github/workflows/eu-cra-compliance-scope-classifier.md",
+                  ".github/workflows/eu-cra-compliance-security-requirements-auditor.md",
+                  ".github/workflows/eu-cra-compliance-supply-chain-sbom-auditor.md",
+                  ".github/workflows/eu-cra-compliance-vulnerability-handling-auditor.md",
+                  ".github/workflows/eu-cra-compliance-article-14-reporting-readiness.md",
+                  ".github/workflows/eu-cra-compliance-conformity-release-evidence.md"
+                ]
+              },
+              "limit": 50
+            },
+            "mark": "table",
+            "empty-message": "No EU CRA attainment evidence is available.",
+            "encoding": {
+              "href": {
+                "field": "evidence-link",
+                "type": "nominal"
+              },
+              "columns": [
+                {
+                  "field": "repository",
+                  "type": "nominal"
+                },
+                {
+                  "field": "operational-value-definition",
+                  "type": "nominal",
+                  "title": "Assessment domain"
+                },
+                {
+                  "field": "operational-case",
+                  "type": "nominal",
+                  "title": "Opportunity"
+                },
+                {
+                  "field": "operational-value",
+                  "type": "quantitative",
+                  "title": "Human acceptance"
+                },
+                {
+                  "field": "maturity-status",
+                  "type": "nominal",
+                  "title": "Maturity",
+                  "display": "status"
+                },
+                {
+                  "field": "evidence-cutoff",
+                  "type": "temporal",
+                  "title": "Evidence cutoff"
+                }
+              ]
+            }
+          },
+          {
+            "id": "eu-cra-compliance-value-trend",
+            "title": "Assessment-domain attainment trend",
+            "description": "Mean attainment remains separated by evaluator definition and does not imply legal compliance or causation.",
+            "disclosure": "essential",
+            "data": {
+              "source": "operational-values",
+              "time": {
+                "range": "90d"
+              },
+              "filters": {
+                "workflow": [
+                  ".github/workflows/eu-cra-compliance-package-maintainer.md",
+                  ".github/workflows/eu-cra-compliance-scope-classifier.md",
+                  ".github/workflows/eu-cra-compliance-security-requirements-auditor.md",
+                  ".github/workflows/eu-cra-compliance-supply-chain-sbom-auditor.md",
+                  ".github/workflows/eu-cra-compliance-vulnerability-handling-auditor.md",
+                  ".github/workflows/eu-cra-compliance-article-14-reporting-readiness.md",
+                  ".github/workflows/eu-cra-compliance-conformity-release-evidence.md"
+                ]
+              }
+            },
+            "mark": "chart",
+            "chart": "line",
+            "encoding": {
+              "x": {
+                "field": "observed-at",
+                "type": "temporal",
+                "time-unit": "day"
+              },
+              "y": {
+                "field": "operational-value",
+                "type": "quantitative",
+                "aggregate": "mean"
+              },
+              "color": {
+                "field": "operational-value-definition",
+                "type": "nominal"
+              }
+            }
+          }
+        ]
+      }
+    ],
+    "navigation": [
+      {
+        "label": "Package operations",
+        "pages": [
+          "eu-cra-compliance-dashboard"
+        ]
+      }
+    ]
+  }
+}

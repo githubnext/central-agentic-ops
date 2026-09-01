@@ -1,0 +1,195 @@
+{
+  "language-version": "0.1.0",
+  "dashboard": {
+    "id": "advisory-dashboard",
+    "title": "UK AI Advisory",
+    "description": "Track resilience-review activation, frozen advisory reports, and explicit human acceptance of non-binding findings.",
+    "repository": "githubnext/central-agentic-ops",
+    "pages": [
+      {
+        "id": "advisory-dashboard",
+        "kind": "custom",
+        "title": "UK AI Advisory",
+        "navigation-label": "UK AI advisory",
+        "description": "Track resilience-review activation, frozen advisory reports, and explicit human acceptance of non-binding findings.",
+        "icon": "package",
+        "views": [
+          {
+            "id": "advisory-runs",
+            "title": "Advisory runs by conclusion",
+            "disclosure": "essential",
+            "data": {
+              "source": "runs",
+              "time": {
+                "range": "30d"
+              },
+              "filters": {
+                "workflow": [
+                  ".github/workflows/uk-ai-advisory.md",
+                  ".github/workflows/advisory-package-maintainer.md",
+                  ".github/workflows/advisory-uk-ai-operational-resilience.md"
+                ]
+              }
+            },
+            "mark": "chart",
+            "chart": "line",
+            "encoding": {
+              "x": {
+                "field": "started-at",
+                "type": "temporal",
+                "time-unit": "day"
+              },
+              "y": {
+                "field": "run",
+                "type": "quantitative",
+                "aggregate": "count"
+              },
+              "color": {
+                "field": "run-conclusion",
+                "type": "nominal"
+              }
+            }
+          },
+          {
+            "id": "advisory-outcomes",
+            "title": "Operational resilience reports",
+            "description": "Reports are non-binding evidence frozen at a target commit and require human review.",
+            "disclosure": "essential",
+            "data": {
+              "source": "outcomes",
+              "filters": {
+                "package": [
+                  "advisory"
+                ]
+              },
+              "limit": 50
+            },
+            "mark": "table",
+            "empty-message": "No UK AI advisory reports were retained.",
+            "encoding": {
+              "href": {
+                "field": "external-link",
+                "type": "nominal"
+              },
+              "columns": [
+                {
+                  "field": "repository",
+                  "type": "nominal"
+                },
+                {
+                  "field": "outcome-title",
+                  "type": "nominal",
+                  "title": "Advisory report"
+                },
+                {
+                  "field": "outcome-state",
+                  "type": "nominal",
+                  "title": "Disposition",
+                  "display": "status"
+                },
+                {
+                  "field": "published-at",
+                  "type": "temporal",
+                  "title": "Published"
+                }
+              ]
+            }
+          },
+          {
+            "id": "advisory-attainment",
+            "title": "Human acceptance evidence",
+            "description": "Attainment records explicit non-bot acceptance of a frozen report after the 30-day maturation window.",
+            "disclosure": "essential",
+            "data": {
+              "source": "operational-values",
+              "filters": {
+                "workflow": [
+                  ".github/workflows/advisory-uk-ai-operational-resilience.md"
+                ]
+              },
+              "limit": 50
+            },
+            "mark": "table",
+            "empty-message": "No UK AI advisory acceptance evidence is available.",
+            "encoding": {
+              "href": {
+                "field": "evidence-link",
+                "type": "nominal"
+              },
+              "columns": [
+                {
+                  "field": "repository",
+                  "type": "nominal"
+                },
+                {
+                  "field": "operational-case",
+                  "type": "nominal",
+                  "title": "Opportunity"
+                },
+                {
+                  "field": "operational-value",
+                  "type": "quantitative",
+                  "title": "Human acceptance"
+                },
+                {
+                  "field": "maturity-status",
+                  "type": "nominal",
+                  "title": "Maturity",
+                  "display": "status"
+                },
+                {
+                  "field": "evidence-cutoff",
+                  "type": "temporal",
+                  "title": "Evidence cutoff"
+                }
+              ]
+            }
+          },
+          {
+            "id": "advisory-value-trend",
+            "title": "Human acceptance trend",
+            "description": "Mean acceptance attainment is diagnostic and does not convert advisory evidence into a legal or causal conclusion.",
+            "disclosure": "essential",
+            "data": {
+              "source": "operational-values",
+              "time": {
+                "range": "90d"
+              },
+              "filters": {
+                "workflow": [
+                  ".github/workflows/advisory-uk-ai-operational-resilience.md"
+                ]
+              }
+            },
+            "mark": "chart",
+            "chart": "line",
+            "encoding": {
+              "x": {
+                "field": "observed-at",
+                "type": "temporal",
+                "time-unit": "day"
+              },
+              "y": {
+                "field": "operational-value",
+                "type": "quantitative",
+                "aggregate": "mean"
+              },
+              "color": {
+                "field": "operational-value-definition",
+                "type": "nominal"
+              }
+            }
+          }
+        ]
+      }
+    ],
+    "navigation": [
+      {
+        "label": "Package operations",
+        "pages": [
+          "advisory-dashboard"
+        ]
+      }
+    ]
+  }
+}

@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { readFileSync } from 'node:fs';
 import { validateDashboardDocument, validateLogicalSources } from '../../src/validator.js';
+import { packageDashboardSources } from '../package-dashboard-documents.js';
 
 const authoritativeDashboardSource = readFileSync(`${process.cwd()}/dashboard.json`, 'utf8');
 
@@ -35,6 +36,39 @@ describe('dashboard document validation', () => {
   it('accepts the authoritative built-in overview view definition', () => {
     const accepted = validateDashboardDocument(authoritativeDashboardSource);
     expect(accepted.ok).toBe(true);
+  });
+
+  it('accepts every package dashboard document', () => {
+    for (const source of packageDashboardSources) {
+      expect(validateDashboardDocument(source).ok).toBe(true);
+    }
+  });
+
+  it('keeps one focused custom dashboard for every operation package', () => {
+    const documents = packageDashboardSources.map((source) => JSON.parse(source));
+    const packagePageIds = [
+      'ambient-context-dashboard',
+      'aw-maintenance-dashboard',
+      'dependabot-dashboard',
+      'advisory-dashboard',
+      'eu-cra-compliance-dashboard',
+      'optimization-dashboard'
+    ];
+    expect(documents).toHaveLength(packagePageIds.length);
+    for (const pageId of packagePageIds) {
+      const document = documents.find((candidate) => candidate.dashboard.pages[0].id === pageId);
+      if (!document) throw new Error(`Missing package dashboard page ${pageId}`);
+      const page = document.dashboard.pages[0];
+      expect(document.dashboard.navigation).toEqual([{ label: 'Package operations', pages: [pageId] }]);
+      expect(page).toMatchObject({ kind: 'custom' });
+      expect(page.views).toHaveLength(4);
+      expect(page.views.every(
+        (/** @type {{ disclosure?: string }} */ view) => view.disclosure === 'essential'
+      )).toBe(true);
+      expect(page.views.map(
+        (/** @type {{ data: { source: string } }} */ view) => view.data.source
+      )).toEqual(['runs', 'outcomes', 'operational-values', 'operational-values']);
+    }
   });
 
   it('validates source-free JSON callouts with canonical icons', () => {
