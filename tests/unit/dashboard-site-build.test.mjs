@@ -1,9 +1,10 @@
 import assert from "node:assert/strict";
-import { mkdtemp, readFile, rm } from "node:fs/promises";
+import { access, mkdtemp, readFile, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { pathToFileURL } from "node:url";
 import test from "node:test";
+import { parse } from "yaml";
 import { buildDashboardSite } from "../../dashboard/site/scripts/build.mjs";
 
 test("docs dashboard includes package-contributed pages and navigation", async () => {
@@ -33,6 +34,17 @@ test("docs dashboard includes package-contributed pages and navigation", async (
     for (const page of packagePages) {
       assert.match(await readFile(new URL(`${page}/index.html`, destination), "utf8"), new RegExp(`#page-${page}`));
     }
+
+    const manifest = parse(await readFile(new URL("../../dashboard/aw.yml", import.meta.url), "utf8"));
+    const installedSitePrefix = ".github/aw/dashboard/site/";
+    for (const resource of manifest.resources.filter(({ destination: path }) => path.startsWith(installedSitePrefix))) {
+      await access(new URL(resource.destination.slice(installedSitePrefix.length), destination));
+    }
+    await assert.rejects(
+      readFile(new URL("README.md", destination), "utf8"),
+      (error) => error?.code === "ENOENT",
+      "build copied a dashboard source that gh aw add would not install",
+    );
   } finally {
     await rm(root, { recursive: true, force: true });
   }
