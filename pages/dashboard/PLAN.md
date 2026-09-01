@@ -181,4 +181,12 @@ Evidence paths below are relative to:
 - Reusable presentation: removed the specialized report-list renderer and styles; shared table, status badge, mode badge, temporal cell, filter, facet, sorting, summary, empty-state, and durable-output link components now own report presentation.
 - Preserved evidence boundaries: unattributed outcomes remain excluded, explicit package attribution takes precedence, and matching fallback requires workflow identity within the retained repository and organization scope.
 
+## 2026-09-01 package workflow topology entry
+
+- Investigation: selected package workflow topology as a remaining route-scoped JavaScript view that could reuse an existing derived logical source and generic table mark.
+- Declarative specification: split package navigation chrome from a JSON-defined workflow table with route binding, columns, links, badges, filtering, sorting, and empty-state copy.
+- JSON-shaped data: reused the package-keyed `packaged-workflows` source derived from retained workflow inventory without duplicating a second package topology source.
+- Reusable presentation: consolidated package workflow and report tabs, route allocation, and unavailable states into one package-navigation component; shared table and cell components now own topology presentation.
+- Preserved evidence boundaries: the view reports authored orchestrator and worker relationships, registration, and rollout mode without asserting dispatch or execution.
+
 Run-by-run history was removed during compaction; milestones, unresolved questions, current inventory, blockers, and actionable parity work remain above.

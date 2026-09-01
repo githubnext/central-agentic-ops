@@ -7,7 +7,7 @@ import { octicon } from '../octicons.js';
 import { formatNumber } from '../view-formatters.js';
 import { findLink } from './link-content.js';
 import { renderPackagesView } from './packages-view.js';
-import { renderPackageDetail as renderPackageDetailElement, renderPackageReports } from './package-detail.js';
+import { renderPackageNavigation } from './package-detail.js';
 import { renderWorkflowDetail } from './workflow-detail.js';
 import { renderOutcomeDetail } from './outcome-detail.js';
 import { renderSectionHeading } from './ui-primitives.js';
@@ -24,6 +24,7 @@ import { renderWorkflowRuntime } from './workflow-runtime.js';
  *   contextDetails: string[],
  *   scope?: Record<string, unknown>,
  *   routeParameter?: string,
+ *   titleLink?: Record<string, unknown>,
  *   headingTag: 'h3'|'h4'
  * }} ElementRenderContext
  */
@@ -35,8 +36,8 @@ const ELEMENT_RENDERERS = new Map([
   ['context-summary', renderContextSummaryElement],
   ['signal-list', renderSignalListElement],
   ['package-activity', ({ sources, pageId }) => renderPackagesView(sources, pageId)],
-  ['package-detail', renderPackageDetailElement],
-  ['package-reports', renderPackageReports],
+  ['package-detail', (context) => renderPackageNavigation(context, 'workflows')],
+  ['package-reports', (context) => renderPackageNavigation(context, 'reports')],
   ['workflow-detail', renderWorkflowDetail],
   ['workflow-runtime', renderWorkflowRuntime],
   ['outcome-detail', renderOutcomeDetail]

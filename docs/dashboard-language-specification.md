@@ -206,8 +206,9 @@ Language keys and enumerated values use canonical kebab-case. Human-readable tit
 | Page `filter-bar` | `filters`, `time-range`, `export` |
 | Page section | `id`, `title`, `description`, `layout`, `views`, `count-source`, `count-label` |
 | Custom page `route` | `hash-query-parameter`, `navigation-page` |
-| View | `id`, `title`, `description`, `data`, `mark`, `element`, `chart`, `layout`, `disclosure`, `controls`, `empty-message`, `encoding` |
+| View | `id`, `title`, `description`, `data`, `mark`, `element`, `chart`, `layout`, `disclosure`, `controls`, `empty-message`, `title-link`, `encoding` |
 | View `data` | `source` or `sources`, `scope`, `time`, `filters`, `limit`, `order-by` |
+| View `title-link` | `href-field`, `identifier-field` |
 | Field definition | `field`, `type`, `aggregate`, `time-unit`, `title`, `as` (only when `aggregate` is not `none`), `display`, `unit` |
 
 ### 4.3 Normative Document Requirements
@@ -247,7 +248,7 @@ The `source` vocabulary is closed in version 0.1.0.
 | `evals` | eval definition | `eval`, `eval-name`, `eval-question`, `requested-model`, `observed-at` |
 | `eval-observations` | eval observation | scope IDs, `run`, `experiment`, `eval`, `eval-result`, `requested-model`, `resolved-model`, `rollout-mode`, `observed-at` |
 | `usage` | model invocation | scope IDs, `run`, `invocation`, `engine`, `requested-model`, `resolved-model`, `rollout-mode`, `input-tokens`, `output-tokens`, `cache-read-tokens`, `cache-write-tokens`, `reasoning-tokens`, `aic`, `observed-at`, `organization-link`, `repository-link`, `workflow-link`, `run-link` |
-| `outcomes` | safe-output outcome observation | scope IDs, `package`, `runtime-repository`, `workflow-name`, `run`, `run-conclusion`, `safe-output`, `outcome-title`, `outcome-summary`, `outcome-body-html`, `outcome-category`, `outcome-status`, `outcome-state`, `evidence-strength`, `rollout-mode`, `published-at`, `observed-at`, `issue-link`, `pull-request-link`, `run-link`, `external-link`, `organization-link`, `repository-link`, `workflow-link` |
+| `outcomes` | safe-output outcome observation | scope IDs, `package`, `runtime-repository`, `workflow-name`, `run`, `run-conclusion`, `safe-output`, `outcome-number`, `outcome-title`, `outcome-summary`, `outcome-body-html`, `outcome-category`, `outcome-status`, `outcome-state`, `evidence-strength`, `rollout-mode`, `published-at`, `observed-at`, `issue-link`, `pull-request-link`, `run-link`, `external-link`, `organization-link`, `repository-link`, `workflow-link` |
 | `findings` | finding | scope IDs, `run`, `finding`, `finding-severity`, `finding-status`, `finding-summary`, `observed-at`, `issue-link`, `pull-request-link`, `run-link`, `external-link`, `organization-link`, `repository-link`, `workflow-link` |
 | `operational-values` | value observation | scope IDs, `run`, `experiment`, `operational-case`, `evaluator-digest`, `rollout-mode`, `operational-value`, `operational-value-definition`, `requested-evidence-at`, `evidence-cutoff`, `maturity-at`, `maturity-status`, `baseline-value`, `delta-from-baseline`, `observed-at`, `evidence-link`, `organization-link`, `repository-link`, `workflow-link`, `run-link` |
 
@@ -530,6 +531,8 @@ The route selects the page through `#page-<page-id>?<parameter>=<value>`, with t
 
 This binding is constrained templating, not general string interpolation. A presenter treats the value as text, never as markup or executable content, and does not substitute it into arbitrary document fields. A named element may apply stricter domain validation before using the value for filtering or links. A route-aware named element may replace the provisional route-value title and description with human-readable text from its selected declared-source row; the presenter must apply the same text-only treatment to that allocation.
 
+An element view may declare a compact `title-link` beside an allocated page title. Its `href-field` names one relation-specific link field and its `identifier-field` names one scalar field declared by the same selected source. When both values are present, the presenter renders the identifier as `#<identifier>` and uses the link object's HTTPS `href` as the target. Missing or invalid runtime values leave the title unlinked. This supports issue and pull request numbers as well as workflow run IDs without parsing identifiers from URLs.
+
 `navigation-page` identifies a different declared page whose navigation item remains current while the custom page is active. The presenter uses that page as the custom page's parent breadcrumb. This supports detail and diagnostic subpages without requiring presentation components to contain navigation policy.
 
 | Semantic view | `mark` values | Required encoding |
@@ -607,6 +610,7 @@ Disclosure changes presentation only. It does not change data processing, data s
 - **DLS-VIEW-027:** A presenter **MUST** resolve a custom page route from `#page-<page-id>?<parameter>=<value>`. It **MUST** use a non-empty decoded, trimmed route value as the provisional page title and final breadcrumb label and supply it as an opaque binding to route-aware named elements; a missing or empty value **MUST** preserve the declared title and supply an empty binding. When `navigation-page` is present, the presenter **MUST** expose that page as the current navigation item and parent breadcrumb. A route-aware named element **MAY** replace that provisional title and description with human-readable text from its selected declared-source row. Route and allocated values **MUST** be treated only as text and **MUST NOT** be interpreted as markup, code, a URI, or a general-purpose content template.
 - **DLS-VIEW-028:** Table `controls`, when present, **MUST** be `interactive` or `static`; an omitted value **MUST** default to `interactive`. A static table **MUST** expose every effective row without filter, sort, summary, pagination, or nested-scroll controls. `empty-message`, when present, **MUST** be non-empty text and **MUST** appear only inside a zero-row table body.
 - **DLS-VIEW-029:** A `metric`, `table`, or `chart` on a routed custom page **MAY** declare `data.route-field`. The field **MUST** exist in `data.source`. The presenter **MUST** retain only rows whose field value exactly matches the decoded route value, using case-insensitive text comparison, before the processing order in Section 11.2. A missing route value **MUST** produce an empty effective row set. `element` views **MUST NOT** declare `data.route-field`.
+- **DLS-VIEW-030:** An `element` view **MAY** declare `title-link` with exactly one `href-field` and one `identifier-field` declared by the same selected source. `href-field` **MUST** name a relation-specific link field and `identifier-field` **MUST** name a scalar field. When a route-aware element allocates a title with both runtime values present, the presenter **MUST** render a sibling link labeled `#<identifier>` using the link object's safe HTTPS target; absent or invalid values **MUST** leave the title-link hidden. Other marks **MUST NOT** declare `title-link`.
 
 ---
 
@@ -694,7 +698,7 @@ In the table, “accept” means validation succeeds; “reject” means validat
 | DLS-VIEW-001–006 | T-VIEW-001 | 3 | Validate custom structure and every allowed mark/channel combination. |
 | DLS-VIEW-007–015, DLS-VIEW-025, DLS-UNIT-001–003 | T-VIEW-002 | 3 | Validate fields, types, link-compatible `href`, units, time units, ordering, exclusions, operation order, exposed context, and link labels. |
 | DLS-VIEW-016–021 | T-VIEW-003 | 3 | Validate disclosure vocabulary, one-to-four essential views, initial collapsed state, accessible controls, source order, and unchanged semantic output. |
-| DLS-VIEW-022–024 | T-VIEW-004 | 3 | Validate named element dispatch, explicit field display treatments, and complete ordered custom-page section layouts. |
+| DLS-VIEW-022–024, DLS-VIEW-026–030 | T-VIEW-004 | 3 | Validate named element dispatch, explicit field display treatments, complete ordered custom-page section layouts, route allocation, and title links. |
 | DLS-VAL-001–005 | T-VAL-001 | 1–3 | Verify rejection, coded path-specific errors, semantic checks, progressive-disclosure bounds, and secret redaction. |
 | DLS-SAFE-001–006, DLS-SAFE-012 | T-SAFE-001 | 3 | Exercise safe YAML, inert content, outcome-HTML allowlisting, HTTPS links, secrets, and authorization boundaries. |
 | DLS-SAFE-007–010 | T-SAFE-002 | 3 | Inspect names, textual alternatives, labels, and non-color semantics. |

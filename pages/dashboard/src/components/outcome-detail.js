@@ -5,7 +5,7 @@
 import { h } from '../dom.js';
 import { octicon } from '../octicons.js';
 import { renderModeBadge, renderStatusBadge } from './badge.js';
-import { findLink, renderExternalLink } from './link-content.js';
+import { findLink, renderExternalLink, resolveTitleLink } from './link-content.js';
 import { formatUtcDateTime } from './ui-primitives.js';
 import { renderMetadataSection } from './view-chrome.js';
 import { createRouteView } from './route-state.js';
@@ -54,7 +54,8 @@ export function renderOutcomeDetail(context) {
         bubbles: true,
         detail: {
           title: text(outcome['outcome-title']) || outcomeId,
-          description: outcomeDescription(outcome)
+          description: outcomeDescription(outcome),
+          titleLink: resolveTitleLink(outcome, context.titleLink)
         }
       }));
       return renderOutcome(outcome);
