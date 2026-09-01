@@ -24,7 +24,7 @@ export function composeDashboardDocuments(primary, additions) {
 
   for (const addition of additionalDocuments) {
     if (addition["language-version"] !== result["language-version"]) {
-      throw new Error(`dashboard language version mismatch: ${addition["language-version"]}`);
+      throw new Error(`dashboard language version mismatch: expected ${result["language-version"]}, got ${addition["language-version"]}`);
     }
     for (const page of addition.dashboard.pages) {
       if (pageIds.has(page.id)) throw new Error(`duplicate dashboard page id: ${page.id}`);
