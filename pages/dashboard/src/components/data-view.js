@@ -11,11 +11,13 @@ import { createEntityAwareCellRenderer, renderLinkedText } from './linked-text.j
 import { renderTableRegion } from './table-region.js';
 import { renderPageSection, renderViewSectionChrome } from './view-chrome.js';
 
-/** @type {{ organization: 'organization-link', repository: 'repository-link', workflow: 'workflow-link' }} */
+/** @type {Record<string, 'organization-link'|'repository-link'|'workflow-link'>} */
 const ENTITY_LINK_FIELDS = {
   organization: 'organization-link',
   repository: 'repository-link',
-  workflow: 'workflow-link'
+  workflow: 'workflow-link',
+  'runtime-repository': 'repository-link',
+  'workflow-name': 'workflow-link'
 };
 const RUN_FIELD = 'run';
 const RUN_LINK_FIELD = 'run-link';
