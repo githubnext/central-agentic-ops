@@ -1,6 +1,6 @@
 ---
 name: dashboard-authoring
-description: Create and validate a Dashboard Language dashboard for one agentic-workflow intent and its operational-value contract, then add the paired example to the training corpus.
+description: Define one agentic-workflow dashboard intent and operational-value contract, then add a generated dashboard and its metadata to the training corpus.
 ---
 
 # Dashboard Authoring
@@ -17,8 +17,8 @@ Create one dashboard that helps an operator decide whether a specific agentic wo
    - choose one direct attainment metric in `[0,1]`;
    - define maturation, zero, and missing-evidence rules;
    - use `attainment-only` unless immutable pre-adoption evidence supports a comparable baseline.
-4. Select only the Dashboard Language sources and fields needed to inspect the workflow, its outcomes, and its value. Never invent a source or field.
-5. Create a compact dashboard with no more than four essential views per page. Prefer an operational summary, actionable findings, outcomes, and an operational-value trend.
+4. Define a compact dashboard intent with no more than four essential views per page. Prefer an operational summary, actionable findings, outcomes, and an operational-value trend.
+5. Use `generate-dashboard-ir` with that intent, the provided Dashboard Language specification, and validator to generate the dashboard document.
 6. Add a metadata JSON file and its paired `.dashboard.yml` file under `corpus/examples/`, then add the entry to `corpus/index.json` in ascending `id` order.
 7. From the repository root, run:
 

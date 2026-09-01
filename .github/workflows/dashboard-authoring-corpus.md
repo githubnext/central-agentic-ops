@@ -102,9 +102,7 @@ Use an attainment-only baseline with null value and cutoff. Synthetic tasks have
 
 ## Infer the dashboard
 
-Use the installed `generate-dashboard-ir` skill to create a YAML serialization of a Dashboard Language document from the synthetic task and operational-value contract. Dashboard Language has one YAML 1.2 data model; production `dashboard.json` is a strict JSON serialization of that same grammar, not a separate schema. Use the same canonical kebab-case vocabulary, types, defaults, and semantics in both forms. Use only canonical sources and fields defined by the specification. Scope every view to the synthetic workflow with a `workflow` filter. Include only views that help an operator understand activation, execution, required effects, actionable exceptions, or operational-value attainment.
-
-Keep the dashboard compact and deterministic. Do not add implementation-specific scripts, invented sources, measured values, or prose that claims the workflow has run.
+Use the installed `generate-dashboard-ir` skill with the synthetic task and operational-value contract as the user intent, plus the specification and validator from Context. Scope every view to the synthetic workflow with a `workflow` filter. Include only views that help an operator understand activation, execution, required effects, actionable exceptions, or operational-value attainment.
 
 ## Validate and publish
 

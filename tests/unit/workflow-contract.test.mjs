@@ -1267,6 +1267,10 @@ test("dashboard authoring corpus workflow generates only validated training exam
     join(root, ".github", "skills", "generate-dashboard-ir", "SKILL.md"),
     "utf8",
   );
+  const dashboardAuthoringSkill = readFileSync(
+    join(root, ".github", "skills", "dashboard-authoring", "SKILL.md"),
+    "utf8",
+  );
 
   assert.match(source, /^intent: Improve model reliability/m);
   assert.match(
@@ -1276,8 +1280,6 @@ test("dashboard authoring corpus workflow generates only validated training exam
   assert.match(source, /Use the installed `generate-dashboard-ir` skill/);
   assert.match(source, /npm ci --prefix dashboard\/site --ignore-scripts/);
   assert.match(source, /npm --prefix dashboard\/site run validate:corpus/);
-  assert.match(source, /one YAML 1\.2 data model/);
-  assert.match(source, /production `dashboard\.json` is a strict JSON serialization of that same grammar, not a separate schema/);
   assert.match(source, /Scope every view to the synthetic workflow with a `workflow` filter/);
   assert.match(source, /Use an attainment-only baseline with null value and cutoff/);
   assert.match(source, /create-pull-request:[\s\S]*?allowed-files:\n\s+- "\.github\/skills\/dashboard-authoring\/corpus\/index\.json"\n\s+- "\.github\/skills\/dashboard-authoring\/corpus\/examples\/\*\.json"\n\s+- "\.github\/skills\/dashboard-authoring\/corpus\/examples\/\*\.dashboard\.yml"/);
@@ -1287,6 +1289,8 @@ test("dashboard authoring corpus workflow generates only validated training exam
   assert.match(dashboardIrSkill, /`validate\.js` as the syntax and structural validation authority/);
   assert.match(dashboardIrSkill, /Do not introduce a new intermediate language/);
   assert.match(dashboardIrSkill, /Return only the validated complete Dashboard Language YAML document/);
+  assert.match(dashboardAuthoringSkill, /Use `generate-dashboard-ir` with that intent/);
+  assert.doesNotMatch(dashboardAuthoringSkill, /Select only the Dashboard Language sources and fields/);
 });
 
 test("dashboard CI runs the package quality gates", () => {
