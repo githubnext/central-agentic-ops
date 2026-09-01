@@ -886,16 +886,6 @@ function renderCustomView(pageId, view, index, sources, units, headingTag = 'h3'
   }
 
   const contextDetails = [];
-  if (isPlainObject(view.data?.scope) && Object.keys(view.data.scope).length > 0) {
-    contextDetails.push(`Scope: ${JSON.stringify(view.data.scope)}`);
-  }
-
-  if (isPlainObject(view.data?.time) && Object.keys(view.data.time).length > 0) {
-    contextDetails.push(`Time: ${JSON.stringify(view.data.time)}`);
-  }
-  if (isPlainObject(view.data?.filters) && Object.keys(view.data.filters).length > 0) {
-    contextDetails.push(`Filters: ${JSON.stringify(view.data.filters)}`);
-  }
 
   if (view.mark === 'element') {
     return renderElementView(pageId, title, view, sources, contextDetails, headingTag, routeParameter);
