@@ -1573,6 +1573,15 @@ test("README routes zero-to-CAO requests to the setup skill", () => {
   assert.match(setupSkill, /Never configure it as the user's control plane/);
 });
 
+test("catalog runtime policy resolver matches its canonical source", () => {
+  const rootManifest = readFileSync(join(root, "aw.yml"), "utf8");
+  const canonicalPolicyResolver = readFileSync(join(root, ".github", "scripts", "control-policy", "resolve.mjs"), "utf8");
+  const runtimePolicyResolver = readFileSync(join(root, ".github", "aw", "control-policy", "resolve.mjs"), "utf8");
+
+  assert.match(rootManifest, /source: \.github\/scripts\/control-policy\/resolve\.mjs\n\s+destination: \.github\/aw\/control-policy\/resolve\.mjs/);
+  assert.equal(runtimePolicyResolver, canonicalPolicyResolver, "runtime policy resolver must match its canonical source");
+});
+
 test("Dashboard package supports embedded and explicit standalone deployment", () => {
   const rootManifest = readFileSync(join(root, "aw.yml"), "utf8");
   const dashboardManifest = readFileSync(join(root, "dashboard", "aw.yml"), "utf8");

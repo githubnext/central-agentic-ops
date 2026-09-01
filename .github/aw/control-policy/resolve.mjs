@@ -1,0 +1,517 @@
+#!/usr/bin/env node
+
+import { readFileSync } from "node:fs";
+import { pathToFileURL } from "node:url";
+
+export class PolicyError extends Error {}
+
+export const PACKAGES = Object.freeze({
+  advisory: { "uk-ai-operational-resilience": "advisory-uk-ai-operational-resilience" },
+  "ambient-context": {
+    "agents-md-curator": "ambient-context-agents-md-curator",
+    "skills-curator": "ambient-context-skills-curator",
+  },
+  "aw-maintenance": {
+    "failures-investigator": "aw-failures-investigator",
+    upgrade: "aw-maintenance-upgrade",
+  },
+  dependabot: { "release-train-updater": "dependabot-release-train-updater" },
+  "eu-cra-compliance": {
+    "scope-classifier": "eu-cra-compliance-scope-classifier",
+    "security-requirements-auditor": "eu-cra-compliance-security-requirements-auditor",
+    "supply-chain-sbom-auditor": "eu-cra-compliance-supply-chain-sbom-auditor",
+    "vulnerability-handling-auditor": "eu-cra-compliance-vulnerability-handling-auditor",
+    "article-14-reporting-readiness": "eu-cra-compliance-article-14-reporting-readiness",
+    "conformity-release-evidence": "eu-cra-compliance-conformity-release-evidence",
+  },
+  optimization: {
+    "ai-credit-auditor": "optimization-ai-credit-auditor",
+    "ai-credit-optimizer": "optimization-ai-credit-optimizer",
+  },
+});
+
+const SCHEMA_URI = "https://raw.githubusercontent.com/githubnext/central-agentic-ops/main/.github/central-agentic-ops.schema.json";
+const ROOT_KEYS = ["$schema", "version", "control-plane", "target-authority"];
+const CONTROL_KEYS = ["scope", "inventory", "defaults", "packages", "publishing"];
+const SCOPE_KEYS = ["allowed-owners", "allowed-repositories"];
+const INVENTORY_KEYS = ["max-scan-repositories", "cell-count", "cell-index", "batch-size", "batch-index"];
+const DEFAULT_KEYS = ["mode", "max-repositories", "rollout-percent", "monthly-ai-credit-budget"];
+const OCTICONS = [
+  "mark-github", "code", "repo", "server", "issue", "pull-request", "play", "eye",
+  "shield", "meter", "graph", "codescan", "dependabot", "key", "beaker", "rocket",
+  "workflow", "settings", "check-circle", "package", "external-link",
+];
+const PACKAGE_KEYS = ["enabled", ...DEFAULT_KEYS, "icon", "workers"];
+const WORKER_KEYS = ["enabled", "max-mode"];
+const PUBLISHING_KEYS = ["enabled", "control-repositories", "reviewers"];
+const TARGET_AUTHORITY_KEYS = ["packages"];
+const TARGET_PACKAGE_KEYS = ["authority"];
+const REPOSITORY_PATTERN = /^[A-Za-z0-9][A-Za-z0-9-]*\/[A-Za-z0-9._-]+$/;
+const OWNER_PATTERN = /^[A-Za-z0-9][A-Za-z0-9-]*$/;
+const LOGIN_PATTERN = /^[A-Za-z0-9](?:[A-Za-z0-9-]{0,37}[A-Za-z0-9])?$/;
+const MODES = ["review", "live"];
+
+function isRecord(value) {
+  return value !== null && typeof value === "object" && !Array.isArray(value);
+}
+
+export function parsePolicy(source) {
+  let document;
+  try {
+    document = JSON.parse(source);
+    assertNoDuplicateKeys(source);
+  } catch (error) {
+    if (error instanceof PolicyError) throw error;
+    throw new PolicyError(`invalid policy JSON: ${error.message}`);
+  }
+  if (!isRecord(document)) throw new PolicyError("policy root must be a mapping");
+
+  rejectExpressions(document);
+  validateDocument(document);
+  return document;
+}
+
+function assertNoDuplicateKeys(source) {
+  let offset = 0;
+
+  function skipWhitespace() {
+    while (/\s/.test(source[offset] ?? "")) offset += 1;
+  }
+
+  function scanString() {
+    const start = offset;
+    offset += 1;
+    while (source[offset] !== '"') {
+      offset += source[offset] === "\\" ? 2 : 1;
+    }
+    offset += 1;
+    return JSON.parse(source.slice(start, offset));
+  }
+
+  function scanValue() {
+    skipWhitespace();
+    if (source[offset] === "{") {
+      scanObject();
+    } else if (source[offset] === "[") {
+      scanArray();
+    } else if (source[offset] === '"') {
+      scanString();
+    } else {
+      while (offset < source.length && !/[\s,\]}]/.test(source[offset])) offset += 1;
+    }
+  }
+
+  function scanObject() {
+    const keys = new Set();
+    offset += 1;
+    skipWhitespace();
+    if (source[offset] === "}") {
+      offset += 1;
+      return;
+    }
+
+    while (offset < source.length) {
+      const key = scanString();
+      if (keys.has(key)) throw new PolicyError(`duplicate mapping key: ${key}`);
+      keys.add(key);
+      skipWhitespace();
+      offset += 1;
+      scanValue();
+      skipWhitespace();
+      if (source[offset] === "}") {
+        offset += 1;
+        return;
+      }
+      offset += 1;
+      skipWhitespace();
+    }
+  }
+
+  function scanArray() {
+    offset += 1;
+    skipWhitespace();
+    if (source[offset] === "]") {
+      offset += 1;
+      return;
+    }
+
+    while (offset < source.length) {
+      scanValue();
+      skipWhitespace();
+      if (source[offset] === "]") {
+        offset += 1;
+        return;
+      }
+      offset += 1;
+    }
+  }
+
+  scanValue();
+}
+
+function validateDocument(document) {
+  assertKeys(document, ROOT_KEYS, "policy");
+  if ("$schema" in document && document.$schema !== SCHEMA_URI) {
+    throw new PolicyError(`$schema must be ${SCHEMA_URI}`);
+  }
+  assertInteger(document.version, "version", 1, 1);
+  if (!("control-plane" in document) && !("target-authority" in document)) {
+    throw new PolicyError("policy requires control-plane or target-authority");
+  }
+
+  if ("control-plane" in document) validateControlPlane(document["control-plane"]);
+  if ("target-authority" in document) validateTargetAuthority(document["target-authority"]);
+}
+
+function validateControlPlane(control) {
+  assertMapping(control, "control-plane");
+  assertKeys(control, CONTROL_KEYS, "control-plane");
+  if ("scope" in control) validateScope(control.scope);
+  if ("inventory" in control) validateInventory(control.inventory);
+  if ("defaults" in control) validateDefaults(control.defaults, "control-plane.defaults");
+  if ("packages" in control) validatePackages(control.packages);
+  if ("publishing" in control) validatePublishing(control.publishing);
+}
+
+function validateScope(scope) {
+  assertMapping(scope, "control-plane.scope");
+  assertKeys(scope, SCOPE_KEYS, "control-plane.scope");
+  if ("allowed-owners" in scope) {
+    assertUniqueStrings(scope["allowed-owners"], "control-plane.scope.allowed-owners", OWNER_PATTERN);
+  }
+  if ("allowed-repositories" in scope) {
+    assertUniqueStrings(scope["allowed-repositories"], "control-plane.scope.allowed-repositories", REPOSITORY_PATTERN);
+  }
+}
+
+function validateInventory(inventory) {
+  assertMapping(inventory, "control-plane.inventory");
+  assertKeys(inventory, INVENTORY_KEYS, "control-plane.inventory");
+  if ("max-scan-repositories" in inventory) {
+    assertInteger(inventory["max-scan-repositories"], "control-plane.inventory.max-scan-repositories", 1, 100_000);
+  }
+  if ("cell-count" in inventory) assertInteger(inventory["cell-count"], "control-plane.inventory.cell-count", 1, 1000);
+  if ("cell-index" in inventory) assertInteger(inventory["cell-index"], "control-plane.inventory.cell-index", 0);
+  if ("batch-size" in inventory) assertInteger(inventory["batch-size"], "control-plane.inventory.batch-size", 1, 100_000);
+  if ("batch-index" in inventory) assertInteger(inventory["batch-index"], "control-plane.inventory.batch-index", 0);
+
+  const cellCount = inventory["cell-count"] ?? 1;
+  const cellIndex = inventory["cell-index"] ?? 0;
+  if (cellIndex >= cellCount) {
+    throw new PolicyError("control-plane.inventory.cell-index must be smaller than cell-count");
+  }
+}
+
+function validateDefaults(defaults, path) {
+  assertMapping(defaults, path);
+  assertKeys(defaults, DEFAULT_KEYS, path);
+  if ("mode" in defaults) assertMode(defaults.mode, `${path}.mode`);
+  if ("max-repositories" in defaults) assertInteger(defaults["max-repositories"], `${path}.max-repositories`, 1, 1000);
+  if ("rollout-percent" in defaults) assertInteger(defaults["rollout-percent"], `${path}.rollout-percent`, 1, 100);
+  if ("monthly-ai-credit-budget" in defaults) {
+    assertInteger(defaults["monthly-ai-credit-budget"], `${path}.monthly-ai-credit-budget`, 0);
+  }
+}
+
+function validatePackages(packages) {
+  assertMapping(packages, "control-plane.packages");
+  assertKeys(packages, Object.keys(PACKAGES), "control-plane.packages");
+  for (const [packageName, packagePolicy] of Object.entries(packages)) {
+    const path = `control-plane.packages.${packageName}`;
+    assertMapping(packagePolicy, path);
+    assertKeys(packagePolicy, PACKAGE_KEYS, path);
+    if ("enabled" in packagePolicy) assertBoolean(packagePolicy.enabled, `${path}.enabled`);
+    if ("icon" in packagePolicy) assertOcticon(packagePolicy.icon, `${path}.icon`);
+    validateDefaults(pick(packagePolicy, DEFAULT_KEYS), path);
+    if (!("workers" in packagePolicy)) continue;
+
+    const workers = packagePolicy.workers;
+    assertMapping(workers, `${path}.workers`);
+    assertKeys(workers, Object.keys(PACKAGES[packageName]), `${path}.workers`);
+    for (const [workerName, worker] of Object.entries(workers)) {
+      const workerPath = `${path}.workers.${workerName}`;
+      assertMapping(worker, workerPath);
+      assertKeys(worker, WORKER_KEYS, workerPath);
+      if ("enabled" in worker) assertBoolean(worker.enabled, `${workerPath}.enabled`);
+      if ("max-mode" in worker) assertMode(worker["max-mode"], `${workerPath}.max-mode`);
+    }
+  }
+}
+
+function validatePublishing(publishing) {
+  const path = "control-plane.publishing";
+  assertMapping(publishing, path);
+  assertKeys(publishing, PUBLISHING_KEYS, path);
+  if ("enabled" in publishing) assertBoolean(publishing.enabled, `${path}.enabled`);
+  if ("control-repositories" in publishing) {
+    assertUniqueStrings(publishing["control-repositories"], `${path}.control-repositories`, REPOSITORY_PATTERN);
+  }
+  if ("reviewers" in publishing) assertUniqueStrings(publishing.reviewers, `${path}.reviewers`, LOGIN_PATTERN);
+  if ((publishing.enabled ?? false) && (publishing.reviewers ?? []).length === 0) {
+    throw new PolicyError("control-plane.publishing.reviewers is required when publishing is enabled");
+  }
+}
+
+function validateTargetAuthority(target) {
+  const path = "target-authority";
+  assertMapping(target, path);
+  assertKeys(target, TARGET_AUTHORITY_KEYS, path);
+  const packages = target.packages;
+  assertMapping(packages, `${path}.packages`);
+  assertKeys(packages, Object.keys(PACKAGES), `${path}.packages`);
+  for (const [packageName, packagePolicy] of Object.entries(packages)) {
+    const packagePath = `${path}.packages.${packageName}`;
+    assertMapping(packagePolicy, packagePath);
+    assertKeys(packagePolicy, TARGET_PACKAGE_KEYS, packagePath);
+    assertString(packagePolicy.authority, `${packagePath}.authority`, REPOSITORY_PATTERN);
+  }
+}
+
+function rejectExpressions(value, path = "policy") {
+  if (Array.isArray(value)) {
+    value.forEach((child, index) => rejectExpressions(child, `${path}[${index}]`));
+  } else if (isRecord(value)) {
+    Object.entries(value).forEach(([key, child]) => rejectExpressions(child, `${path}.${key}`));
+  } else if (typeof value === "string" && value.includes("${{")) {
+    throw new PolicyError(`${path} must not contain a GitHub Actions expression`);
+  }
+}
+
+export function effectivePolicy(
+  document,
+  {
+    packageName,
+    role,
+    workerName = "",
+    controlRepository,
+    requestedMode = "",
+    requestedMaxRepositories = "",
+    requestedRolloutPercent = "",
+  },
+) {
+  if (!(packageName in PACKAGES)) throw new PolicyError(`unknown package: ${packageName}`);
+  if (!['orchestrator', 'worker'].includes(role)) throw new PolicyError("role must be orchestrator or worker");
+  if (role === "worker") {
+    if (!workerName) throw new PolicyError("worker identity is required");
+    if (!(workerName in PACKAGES[packageName])) throw new PolicyError(`unknown worker: ${packageName}/${workerName}`);
+  } else if (workerName) {
+    throw new PolicyError("worker identity is forbidden for orchestrators");
+  }
+
+  const control = document["control-plane"];
+  if (!control) return denied("control-plane-absent", packageName, role, workerName);
+
+  const packagePolicy = (control.packages ?? {})[packageName];
+  if (!packagePolicy) return denied("package-undeclared", packageName, role, workerName);
+  if (!(packagePolicy.enabled ?? true)) return denied("package-disabled", packageName, role, workerName);
+
+  const defaults = {
+    mode: "review",
+    "max-repositories": 1,
+    "rollout-percent": 100,
+    "monthly-ai-credit-budget": 0,
+    ...(control.defaults ?? {}),
+  };
+  const effective = { ...defaults, ...pick(packagePolicy, DEFAULT_KEYS) };
+
+  if (role === "worker") {
+    const worker = (packagePolicy.workers ?? {})[workerName];
+    if (!worker) return denied("worker-undeclared", packageName, role, workerName);
+    if (!(worker.enabled ?? true)) return denied("worker-disabled", packageName, role, workerName);
+    effective.mode = lesserMode(effective.mode, worker["max-mode"] ?? "review");
+  }
+
+  if (requestedMode) {
+    assertMode(requestedMode, "safe_output_mode");
+    if (modeRank(requestedMode) > modeRank(effective.mode)) {
+      throw new PolicyError("safe_output_mode exceeds checked-in policy");
+    }
+    effective.mode = requestedMode;
+  }
+  narrowInteger(effective, "max-repositories", requestedMaxRepositories, "max_repositories", 1000);
+  narrowInteger(effective, "rollout-percent", requestedRolloutPercent, "rollout_percent", 100);
+
+  const scope = control.scope ?? {};
+  const allowedOwners = scope["allowed-owners"] ?? [controlRepository.split("/", 1)[0]];
+  const inventory = {
+    "max-scan-repositories": 1000,
+    "cell-count": 1,
+    "cell-index": 0,
+    "batch-size": 100_000,
+    "batch-index": 0,
+    ...(control.inventory ?? {}),
+  };
+
+  return {
+    authorized: true,
+    reason: "authorized",
+    control_role: role,
+    package: packageName,
+    worker: workerName,
+    enabled: true,
+    safe_output_mode: effective.mode,
+    max_repositories: effective["max-repositories"],
+    rollout_percent: effective["rollout-percent"],
+    monthly_ai_credit_budget: effective["monthly-ai-credit-budget"],
+    allowed_owners: allowedOwners,
+    allowed_repositories: scope["allowed-repositories"] ?? [],
+    inventory,
+  };
+}
+
+export function controlSettings(document, controlRepository) {
+  assertString(controlRepository, "GITHUB_REPOSITORY", REPOSITORY_PATTERN);
+  const control = document["control-plane"];
+  if (!control) throw new PolicyError("control-plane is required");
+
+  const scope = control.scope ?? {};
+  const publishing = control.publishing ?? {};
+  const defaults = {
+    mode: "review",
+    "max-repositories": 1,
+    "rollout-percent": 100,
+    "monthly-ai-credit-budget": 0,
+    ...(control.defaults ?? {}),
+  };
+  const packages = Object.fromEntries(Object.entries(control.packages ?? {}).map(([name, policy]) => [name, {
+    enabled: policy.enabled ?? true,
+    ...defaults,
+    ...pick(policy, DEFAULT_KEYS),
+    icon: policy.icon ?? null,
+  }]));
+  return {
+    allowed_owners: scope["allowed-owners"] ?? [controlRepository.split("/", 1)[0]],
+    allowed_repositories: scope["allowed-repositories"] ?? [],
+    packages,
+    publishing_enabled: publishing.enabled ?? false,
+    publishing_control_repositories: publishing["control-repositories"] ?? [controlRepository],
+    publishing_reviewers: publishing.reviewers ?? [],
+  };
+}
+
+function denied(reason, packageName, role, workerName) {
+  return {
+    authorized: false,
+    reason,
+    control_role: role,
+    package: packageName,
+    worker: workerName,
+    enabled: false,
+    effective_max_repos: 0,
+    candidate_repositories: [],
+    worker_workflows: [],
+  };
+}
+
+function pick(object, keys) {
+  return Object.fromEntries(keys.filter((key) => key in object).map((key) => [key, object[key]]));
+}
+
+function assertKeys(mapping, allowed, path) {
+  const unknown = Object.keys(mapping).find((key) => !allowed.includes(key));
+  if (unknown) throw new PolicyError(`unknown key ${path}.${unknown}`);
+}
+
+function assertMapping(value, path) {
+  if (!isRecord(value)) throw new PolicyError(`${path} must be a mapping`);
+}
+
+function assertBoolean(value, path) {
+  if (value !== true && value !== false) throw new PolicyError(`${path} must be a Boolean`);
+}
+
+function assertOcticon(value, path) {
+  if (typeof value !== "string" || !OCTICONS.includes(value)) {
+    throw new PolicyError(`${path} must be one of: ${OCTICONS.join(", ")}`);
+  }
+}
+
+function assertInteger(value, path, minimum, maximum = undefined) {
+  const valid = Number.isSafeInteger(value) && value >= minimum && (maximum === undefined || value <= maximum);
+  const range = maximum === undefined ? `>= ${minimum}` : `${minimum}..${maximum}`;
+  if (!valid) throw new PolicyError(`${path} must be an integer in ${range}`);
+}
+
+function assertMode(value, path) {
+  if (!MODES.includes(value)) throw new PolicyError(`${path} must be review or live`);
+}
+
+function assertString(value, path, pattern) {
+  if (typeof value !== "string" || !pattern.test(value)) throw new PolicyError(`${path} has an invalid value`);
+}
+
+function assertUniqueStrings(value, path, pattern) {
+  if (!Array.isArray(value)) throw new PolicyError(`${path} must be an array`);
+  value.forEach((item) => assertString(item, path, pattern));
+  const normalized = value.map((item) => item.toLowerCase());
+  if (new Set(normalized).size !== normalized.length) throw new PolicyError(`${path} must contain unique values`);
+}
+
+function modeRank(mode) {
+  return MODES.indexOf(mode);
+}
+
+function lesserMode(left, right) {
+  return modeRank(left) <= modeRank(right) ? left : right;
+}
+
+function narrowInteger(effective, key, requested, path, maximum) {
+  if (requested === "" || requested === undefined || requested === null) return;
+  const value = typeof requested === "number" ? requested : Number(requested);
+  assertInteger(value, path, 1, maximum);
+  if (value > effective[key]) throw new PolicyError(`${path} exceeds checked-in policy`);
+  effective[key] = value;
+}
+
+function readSource(path) {
+  return path === "-" ? readFileSync(0, "utf8") : readFileSync(path, "utf8");
+}
+
+function effectiveFromEnvironment(document) {
+  return effectivePolicy(document, {
+    packageName: process.env.CAO_PACKAGE ?? "",
+    role: process.env.CAO_ROLE ?? "",
+    workerName: process.env.CAO_WORKER ?? "",
+    controlRepository: process.env.GITHUB_REPOSITORY ?? "",
+    requestedMode: process.env.CAO_REQUESTED_MODE ?? "",
+    requestedMaxRepositories: process.env.CAO_REQUESTED_MAX_REPOSITORIES ?? "",
+    requestedRolloutPercent: process.env.CAO_REQUESTED_ROLLOUT_PERCENT ?? "",
+  });
+}
+
+function main(argv) {
+  try {
+    if (argv.length === 2 && argv[0] === "--validate") {
+      process.stdout.write(`${JSON.stringify(parsePolicy(readSource(argv[1])), null, 2)}\n`);
+      return;
+    }
+    if (argv.length === 2 && argv[0] === "--effective") {
+      process.stdout.write(`${JSON.stringify(effectiveFromEnvironment(parsePolicy(readSource(argv[1]))), null, 2)}\n`);
+      return;
+    }
+    if (argv.length === 2 && argv[0] === "--control") {
+      const settings = controlSettings(parsePolicy(readSource(argv[1])), process.env.GITHUB_REPOSITORY ?? "");
+      process.stdout.write(`${JSON.stringify(settings, null, 2)}\n`);
+      return;
+    }
+    if (argv.length === 3 && argv[0] === "--authority") {
+      const document = parsePolicy(readSource(argv[1]));
+      const authority = document["target-authority"]?.packages?.[argv[2]]?.authority;
+      if (!authority) throw new PolicyError(`target authority does not declare package ${argv[2]}`);
+      process.stdout.write(`${authority}\n`);
+      return;
+    }
+    throw new PolicyError("usage: resolve.mjs --validate <file|-> | --control <file|-> | --effective <file|-> | --authority <file|-> <package>");
+  } catch (error) {
+    if (error instanceof PolicyError || error?.code === "ENOENT") {
+      process.stderr.write(`${error.message}\n`);
+      process.exitCode = 1;
+      return;
+    }
+    throw error;
+  }
+}
+
+if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
+  main(process.argv.slice(2));
+}
