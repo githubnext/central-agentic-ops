@@ -142,7 +142,7 @@ export function renderDashboard(input) {
   const skipLink = h('a', { href: '#main-content', className: 'skip-link' }, 'Skip to main content');
 
   const sidebar = renderSidebar(pages, sidebarTitle, document.dashboard.navigation);
-  const mainContent = renderMainContent(document, title, pages, sources, githubUrlBase, dashboardRepository);
+  const mainContent = renderMainContent(document, pages, sources, githubUrlBase, dashboardRepository);
 
   const appShell = h(
     'div',
@@ -311,18 +311,19 @@ function getPageIcon(page) {
 
 /**
  * @param {PresentationDocument} document
- * @param {string} title
  * @param {Array<PresentableBuiltInPage | PresentableCustomPage>} pages
  * @param {Record<string, LogicalSourceInput>} sources
  * @param {string} githubUrlBase
  * @param {string | null} dashboardRepository
  * @returns {HTMLElement}
  */
-function renderMainContent(document, title, pages, sources, githubUrlBase, dashboardRepository) {
+function renderMainContent(document, pages, sources, githubUrlBase, dashboardRepository) {
   const initialPage = pages[0];
+  const overviewPage = pages.find((page) => page.id === 'overview');
   const initialPageTitle = initialPage ? getPageTitle(initialPage) : '';
   const initialPageDescription = initialPage?.description;
   const initialPageHref = initialPage ? `#page-${encodeURIComponent(initialPage.id)}` : '#main-content';
+  const overviewPageHref = overviewPage ? `#page-${encodeURIComponent(overviewPage.id)}` : initialPageHref;
   const latestRetrieval = latestRetrievedAt(sources);
   const units = isPlainObject(document.dashboard.units) ? document.dashboard.units : {};
   return h(
@@ -335,7 +336,7 @@ function renderMainContent(document, title, pages, sources, githubUrlBase, dashb
         'div',
         { className: 'shell' },
         h('a', { hidden: true, 'data-breadcrumb-root': '' }),
-        h('a', { href: initialPageHref, 'data-breadcrumb-dashboard': '' }, title),
+        h('a', { href: overviewPageHref, 'data-breadcrumb-dashboard': '' }, 'Overview'),
         h('span', { 'data-breadcrumb-page': '' }, initialPageTitle),
         h(
           'div',
@@ -618,6 +619,7 @@ function renderLayoutSection(pageId, section, renderedViews, sources) {
 export function enableDashboardPageNavigation(root) {
   const pages = [...root.querySelectorAll('.dashboard-page')]
     .filter((page) => page instanceof HTMLElement);
+  const overviewPage = pages.find((page) => page.dataset.pageId === 'overview');
   const links = [...root.querySelectorAll('[data-nav-page-id]')]
     .filter((link) => link instanceof HTMLAnchorElement);
   const breadcrumbPage = root.querySelector('[data-breadcrumb-page]');
@@ -711,6 +713,9 @@ export function enableDashboardPageNavigation(root) {
     for (const page of pages) {
       const isActive = page.dataset.pageId === pageId;
       page.hidden = !isActive;
+    }
+    if (breadcrumbDashboard instanceof HTMLAnchorElement && pageId === overviewPage?.id) {
+      breadcrumbDashboard.hidden = true;
     }
     updateNavigationLinks(links, pageId);
     const page = pages.find((candidate) => candidate.dataset.pageId === pageId);
