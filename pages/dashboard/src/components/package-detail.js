@@ -7,6 +7,7 @@ import { octicon } from '../octicons.js';
 import { renderReportList as renderSharedReportList } from './report-list.js';
 import { findLink } from './link-content.js';
 import { renderSectionHeading } from './ui-primitives.js';
+import { renderInteractiveTabs, renderLinkTabs, updateInteractiveTabSelection } from './tab-nav.js';
 
 /**
  * @param {import('./ui-elements.js').ElementRenderContext} context
@@ -98,21 +99,15 @@ function renderPackageContent(context, packageId, workflows) {
  */
 function renderPackageTabs(packageId, packageName, selectedView) {
   const packageQuery = `?package=${encodeURIComponent(packageId)}`;
-  const tabs = [
-    ['insights', 'Insights', 'graph', `#page-operational-value${packageQuery}`],
-    ['workflows', 'Workflows', 'workflow', `#page-package-detail${packageQuery}`],
-    ['reports', 'Reports', 'issue', `#page-package-reports${packageQuery}`]
-  ];
-  return h(
-    'nav',
-    { className: 'package-tabs', 'aria-label': `${packageName} views` },
-    ...tabs.map(([view, label, icon, href]) => h(
-      'a',
-      { href, 'aria-current': selectedView === view ? 'page' : undefined },
-      octicon(String(icon)),
-      h('span', null, String(label))
-    ))
-  );
+  return renderLinkTabs({
+    className: 'package-tabs',
+    ariaLabel: `${packageName} views`,
+    tabs: [
+      { label: 'Insights', icon: 'graph', href: `#page-operational-value${packageQuery}`, current: selectedView === 'insights' },
+      { label: 'Workflows', icon: 'workflow', href: `#page-package-detail${packageQuery}`, current: selectedView === 'workflows' },
+      { label: 'Reports', icon: 'issue', href: `#page-package-reports${packageQuery}`, current: selectedView === 'reports' }
+    ]
+  });
 }
 
 /**
@@ -184,16 +179,10 @@ function renderPackageReportsContent(context, packageId, workflows, outcomes) {
     ['review', 'Review'],
     ['live', 'Live']
   ];
-  /** @type {HTMLButtonElement[]} */
-  const buttons = [];
 
   /** @param {string} selectedMode */
   const selectMode = (selectedMode) => {
-    for (const button of buttons) {
-      const selected = button.dataset.reportMode === selectedMode;
-      button.setAttribute('aria-selected', String(selected));
-      button.tabIndex = selected ? 0 : -1;
-    }
+    updateInteractiveTabSelection(tabs, selectedMode);
     const visibleOutcomes = selectedMode === 'all'
       ? packageOutcomes
       : packageOutcomes.filter((outcome) => String(outcome['rollout-mode']).toLowerCase() === selectedMode);
@@ -203,43 +192,18 @@ function renderPackageReportsContent(context, packageId, workflows, outcomes) {
     );
   };
 
-  const tabs = h(
-    'div',
-    {
-      className: 'package-report-mode-tabs',
-      role: 'tablist',
-      'aria-label': 'Filter reports by mode'
-    },
-    ...modeTabs.map(([mode, label], index) => {
-      const button = /** @type {HTMLButtonElement} */ (h(
-        'button',
-        {
-          type: 'button',
-          role: 'tab',
-          'aria-controls': panelId,
-          'aria-selected': index === 0 ? 'true' : 'false',
-          tabIndex: index === 0 ? 0 : -1,
-          dataset: { reportMode: mode },
-          onclick: () => selectMode(mode)
-        },
-        label
-      ));
-      button.addEventListener('keydown', (event) => {
-        if (!['ArrowLeft', 'ArrowRight', 'Home', 'End'].includes(event.key)) return;
-        event.preventDefault();
-        const currentIndex = buttons.indexOf(button);
-        const nextIndex = event.key === 'Home'
-          ? 0
-          : event.key === 'End'
-            ? buttons.length - 1
-            : (currentIndex + (event.key === 'ArrowRight' ? 1 : -1) + buttons.length) % buttons.length;
-        buttons[nextIndex]?.click();
-        buttons[nextIndex]?.focus();
-      });
-      buttons.push(button);
-      return button;
-    })
-  );
+  const tabs = renderInteractiveTabs({
+    className: 'package-report-mode-tabs',
+    ariaLabel: 'Filter reports by mode',
+    panelId,
+    onSelect: selectMode,
+    tabs: modeTabs.map(([mode, label], index) => ({
+      label,
+      value: mode,
+      selected: index === 0,
+      dataset: { reportMode: mode }
+    }))
+  });
 
   selectMode('all');
   return h(

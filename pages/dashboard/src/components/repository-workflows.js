@@ -9,6 +9,7 @@ import { formatCountNoun } from './count-formatters.js';
 import { findLink } from './link-content.js';
 import { renderLinkedText } from './linked-text.js';
 import { formatUtcDateTime } from './ui-primitives.js';
+import { renderLinkTabs } from './tab-nav.js';
 
 /**
  * @param {import('./ui-elements.js').ElementRenderContext} context
@@ -142,21 +143,15 @@ function renderRepositoryWorkflowContent(context, repository, workflows) {
  */
 function renderRepositoryTabs(pageId, repository) {
   const repositoryQuery = repository ? `?repository=${encodeURIComponent(repository)}` : '';
-  const tabs = [
-    ['Insights', 'graph', `#page-operational-value${repositoryQuery}`, false],
-    ['Workflows', 'workflow', `#page-${pageId}${repositoryQuery}`, true],
-    ['Reports', 'issue', `#page-findings${repositoryQuery}`, false]
-  ];
-  return h(
-    'nav',
-    { className: 'repository-tabs', 'aria-label': `${repository || 'Repository'} views` },
-    ...tabs.map(([label, icon, href, current]) => h(
-      'a',
-      { href, 'aria-current': current ? 'page' : undefined },
-      octicon(String(icon)),
-      h('span', null, String(label))
-    ))
-  );
+  return renderLinkTabs({
+    className: 'repository-tabs',
+    ariaLabel: `${repository || 'Repository'} views`,
+    tabs: [
+      { label: 'Insights', icon: 'graph', href: `#page-operational-value${repositoryQuery}` },
+      { label: 'Workflows', icon: 'workflow', href: `#page-${pageId}${repositoryQuery}`, current: true },
+      { label: 'Reports', icon: 'issue', href: `#page-findings${repositoryQuery}` }
+    ]
+  });
 }
 
 /**

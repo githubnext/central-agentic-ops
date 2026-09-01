@@ -78,6 +78,7 @@ Evidence paths below are relative to:
 - `src/components/report-list.js` — shared durable-report list/table rendering, filtering, counts, and empty states for package and workflow views.
 - `src/components/summary-copy.js` — shared summary-count copy.
 - `src/components/table-region.js` — reusable table regions, headers, bodies, and empty states.
+- `src/components/tab-nav.js` — shared linked and interactive tab navigation with roving tabindex keyboard support.
 - `src/components/ui-primitives.js` — section headings, vital statistics, and UTC date-time presentation.
 - `src/components/view-chrome.js` — reusable section, metadata, summary, context, state, and provenance chrome.
 - `src/components/workflow-topology.js` — package and standalone workflow topology.
@@ -92,21 +93,24 @@ Evidence paths below are relative to:
 
 ## 2026-08-31 run entry
 
-- Extraction: `src/components/report-list.js` for durable-report rendering shared by package and workflow detail views.
+- Extraction: `src/components/tab-nav.js` for shared linked and interactive tab navigation.
 - Duplication evidence and call sites collapsed:
-  - `src/components/package-detail.js` duplicated report filtering, summary counting, row rendering, and empty-state handling for package reports.
-  - `src/components/workflow-detail.js` duplicated the same durable-report concerns for workflow reports with a table-shaped container.
+  - `src/components/packages-view.js` duplicated roving-tabindex mode-tab construction and keyboard handling for package activity filters.
+  - `src/components/package-detail.js` duplicated near-identical interactive mode-tab behavior for package reports and separately duplicated linked package navigation tabs.
+  - `src/components/workflow-detail.js` duplicated linked workflow navigation tab rendering.
+  - `src/components/repository-workflows.js` duplicated linked repository navigation tab rendering.
 - Behavior-preservation evidence:
-  - Preserved package report card DOM text, class names, links, mode/status badges, and empty messages through the existing `package-detail` assertions.
-  - Preserved workflow report table DOM text, class names, links, summary counts, and empty messages through the existing `workflow-detail` assertions.
-  - Added focused unit coverage in `test/unit/report-list.test.js` for package-card and workflow-table shapes, filter no-match state, unavailable/empty fallbacks, and external-link fallback when no safe-output id exists.
+  - Preserved package-detail package-tab DOM text, links, current markers, report-mode keyboard behavior, and report filtering through unchanged `package-detail` assertions.
+  - Preserved workflow-detail tab DOM text, links, and current marker through unchanged `workflow-detail` assertions.
+  - Preserved repository workflow tab DOM text, links, and current marker through unchanged `repository-workflows` assertions.
+  - Added focused unit coverage in `test/unit/tab-nav.test.js` for linked tabs plus interactive roving-tabindex keyboard navigation and selection updates.
 - Quality gates and proof:
-  - Rendered-output proof for affected pages is covered by unchanged package/workflow unit assertions before and after replacement of both call sites with the shared renderer.
+  - Rendered-output proof for affected pages is covered by unchanged unit assertions for package detail, workflow detail, and repository workflows before and after replacing all identified tab call sites.
   - Ran `npm install`, `npm run typecheck`, `npm run lint`, `npm test`, and `node ./scripts/build.mjs` from `pages/dashboard/`; all passed.
   - Browser snapshot comparison remained blocked in-session because Playwright browser tools were not exposed here.
 - Next candidates:
-  - Shared tablist controller extracted from `src/components/packages-view.js` and `src/components/package-detail.js`.
-  - Shared report/repository navigation tabs across `src/components/package-detail.js`, `src/components/workflow-detail.js`, and `src/components/repository-workflows.js`.
   - Shared static table-section wrapper across `src/components/packages-view.js`, `src/components/repository-workflows.js`, and `src/components/ui-elements.js` coverage diagnostics.
+  - Shared repository/package/workflow identity badge strips across `src/components/repository-workflows.js`, `src/components/workflow-detail.js`, and `src/components/package-detail.js`.
+  - Shared route-scoped empty/unavailable state helper across `src/components/package-detail.js`, `src/components/workflow-detail.js`, and `src/components/repository-workflows.js`.
 
 Run-by-run history was removed during compaction; milestones, unresolved questions, current inventory, blockers, and actionable parity work remain above.
