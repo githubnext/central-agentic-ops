@@ -41,7 +41,8 @@ const OCTICONS = [
   "shield", "meter", "graph", "codescan", "dependabot", "key", "beaker", "rocket",
   "workflow", "settings", "check-circle", "package", "external-link",
 ];
-const PACKAGE_KEYS = ["enabled", ...DEFAULT_KEYS, "icon", "workers"];
+const PACKAGE_KEYS = ["enabled", ...DEFAULT_KEYS, "icon", "targets", "workers"];
+const TARGET_POLICY_KEYS = ["mode"];
 const WORKER_KEYS = ["enabled", "max-mode"];
 const PUBLISHING_KEYS = ["enabled", "control-repositories", "reviewers"];
 const TARGET_AUTHORITY_KEYS = ["packages"];
@@ -169,7 +170,10 @@ function validateControlPlane(control) {
   if ("scope" in control) validateScope(control.scope);
   if ("inventory" in control) validateInventory(control.inventory);
   if ("defaults" in control) validateDefaults(control.defaults, "control-plane.defaults");
-  if ("packages" in control) validatePackages(control.packages);
+  if ("packages" in control) {
+    validatePackages(control.packages);
+    validatePackageRepositoryScopes(control);
+  }
   if ("publishing" in control) validatePublishing(control.publishing);
 }
 
@@ -223,6 +227,19 @@ function validatePackages(packages) {
     if ("enabled" in packagePolicy) assertBoolean(packagePolicy.enabled, `${path}.enabled`);
     if ("icon" in packagePolicy) assertOcticon(packagePolicy.icon, `${path}.icon`);
     validateDefaults(pick(packagePolicy, DEFAULT_KEYS), path);
+    if ("targets" in packagePolicy) {
+      const targets = packagePolicy.targets;
+      assertMapping(targets, `${path}.targets`);
+      assertUniqueRepositoryKeys(targets, `${path}.targets`);
+      for (const [repository, targetPolicy] of Object.entries(targets)) {
+        const targetPath = `${path}.targets.${repository}`;
+        assertString(repository, targetPath, REPOSITORY_PATTERN);
+        assertMapping(targetPolicy, targetPath);
+        assertKeys(targetPolicy, TARGET_POLICY_KEYS, targetPath);
+        if (!("mode" in targetPolicy)) throw new PolicyError(`${targetPath}.mode is required`);
+        assertMode(targetPolicy.mode, `${targetPath}.mode`);
+      }
+    }
     if (!("workers" in packagePolicy)) continue;
 
     const workers = packagePolicy.workers;
@@ -234,6 +251,25 @@ function validatePackages(packages) {
       assertKeys(worker, WORKER_KEYS, workerPath);
       if ("enabled" in worker) assertBoolean(worker.enabled, `${workerPath}.enabled`);
       if ("max-mode" in worker) assertMode(worker["max-mode"], `${workerPath}.max-mode`);
+    }
+  }
+}
+
+function validatePackageRepositoryScopes(control) {
+  const allowedRepositories = control.scope?.["allowed-repositories"];
+  const allowedOwners = control.scope?.["allowed-owners"];
+  const repositorySet = allowedRepositories && new Set(allowedRepositories.map((repository) => repository.toLowerCase()));
+  const ownerSet = allowedOwners && new Set(allowedOwners.map((owner) => owner.toLowerCase()));
+
+  for (const packagePolicy of Object.values(control.packages ?? {})) {
+    for (const repository of Object.keys(packagePolicy.targets ?? {})) {
+      const normalized = repository.toLowerCase();
+      if (repositorySet && !repositorySet.has(normalized)) {
+        throw new PolicyError(`package target ${repository} is outside control-plane.scope.allowed-repositories`);
+      }
+      if (ownerSet && !ownerSet.has(normalized.split("/", 1)[0])) {
+        throw new PolicyError(`package target ${repository} is outside control-plane.scope.allowed-owners`);
+      }
     }
   }
 }
@@ -287,6 +323,7 @@ export function effectivePolicy(
     requestedMode = "",
     requestedMaxRepositories = "",
     requestedRolloutPercent = "",
+    targetRepository = "",
   },
 ) {
   if (!(packageName in PACKAGES)) throw new PolicyError(`unknown package: ${packageName}`);
@@ -313,12 +350,42 @@ export function effectivePolicy(
     ...(control.defaults ?? {}),
   };
   const effective = { ...defaults, ...pick(packagePolicy, DEFAULT_KEYS) };
+  let targetPolicies = Object.fromEntries(
+    Object.entries(packagePolicy.targets ?? {}).map(([repository, targetPolicy]) => [
+      repository.toLowerCase(),
+      { mode: targetPolicy.mode },
+    ]),
+  );
+  const workerPolicies = Object.fromEntries(
+    Object.entries(PACKAGES[packageName]).map(([worker, workflow]) => {
+      const exception = (packagePolicy.workers ?? {})[worker] ?? {};
+      return [workflow, {
+        worker,
+        enabled: exception.enabled ?? true,
+        max_mode: exception["max-mode"] ?? null,
+      }];
+    }),
+  );
+  if (targetRepository) {
+    if (typeof targetRepository !== "string" || !REPOSITORY_PATTERN.test(targetRepository)) {
+      throw new PolicyError("target_repo must use owner/repository form");
+    }
+    const targetPolicy = targetPolicies[targetRepository.toLowerCase()];
+    if (targetPolicy) effective.mode = targetPolicy.mode;
+  }
 
   if (role === "worker") {
-    const worker = (packagePolicy.workers ?? {})[workerName];
-    if (!worker) return denied("worker-undeclared", packageName, role, workerName);
+    const worker = (packagePolicy.workers ?? {})[workerName] ?? {};
     if (!(worker.enabled ?? true)) return denied("worker-disabled", packageName, role, workerName);
-    effective.mode = lesserMode(effective.mode, worker["max-mode"] ?? "review");
+    if ("max-mode" in worker) {
+      effective.mode = lesserMode(effective.mode, worker["max-mode"]);
+      targetPolicies = Object.fromEntries(
+        Object.entries(targetPolicies).map(([repository, targetPolicy]) => [
+          repository,
+          { mode: lesserMode(targetPolicy.mode, worker["max-mode"]) },
+        ]),
+      );
+    }
   }
 
   if (requestedMode) {
@@ -327,6 +394,12 @@ export function effectivePolicy(
       throw new PolicyError("safe_output_mode exceeds checked-in policy");
     }
     effective.mode = requestedMode;
+    targetPolicies = Object.fromEntries(
+      Object.entries(targetPolicies).map(([repository, targetPolicy]) => [
+        repository,
+        { mode: lesserMode(targetPolicy.mode, requestedMode) },
+      ]),
+    );
   }
   narrowInteger(effective, "max-repositories", requestedMaxRepositories, "max_repositories", 1000);
   narrowInteger(effective, "rollout-percent", requestedRolloutPercent, "rollout_percent", 100);
@@ -353,6 +426,8 @@ export function effectivePolicy(
     max_repositories: effective["max-repositories"],
     rollout_percent: effective["rollout-percent"],
     monthly_ai_credit_budget: effective["monthly-ai-credit-budget"],
+    target_policies: targetPolicies,
+    worker_policies: workerPolicies,
     allowed_owners: allowedOwners,
     allowed_repositories: scope["allowed-repositories"] ?? [],
     inventory,
@@ -378,6 +453,11 @@ export function controlSettings(document, controlRepository) {
     ...defaults,
     ...pick(policy, DEFAULT_KEYS),
     icon: policy.icon ?? null,
+    ...(policy.targets ? {
+      target_policies: Object.fromEntries(
+        Object.entries(policy.targets).map(([repository, targetPolicy]) => [repository.toLowerCase(), targetPolicy]),
+      ),
+    } : {}),
   }]));
   return {
     allowed_owners: scope["allowed-owners"] ?? [controlRepository.split("/", 1)[0]],
@@ -447,6 +527,11 @@ function assertUniqueStrings(value, path, pattern) {
   if (new Set(normalized).size !== normalized.length) throw new PolicyError(`${path} must contain unique values`);
 }
 
+function assertUniqueRepositoryKeys(value, path) {
+  const normalized = Object.keys(value).map((repository) => repository.toLowerCase());
+  if (new Set(normalized).size !== normalized.length) throw new PolicyError(`${path} must contain unique repository names`);
+}
+
 function modeRank(mode) {
   return MODES.indexOf(mode);
 }
@@ -476,6 +561,7 @@ function effectiveFromEnvironment(document) {
     requestedMode: process.env.CAO_REQUESTED_MODE ?? "",
     requestedMaxRepositories: process.env.CAO_REQUESTED_MAX_REPOSITORIES ?? "",
     requestedRolloutPercent: process.env.CAO_REQUESTED_ROLLOUT_PERCENT ?? "",
+    targetRepository: process.env.CAO_TARGET_REPOSITORY ?? "",
   });
 }
 

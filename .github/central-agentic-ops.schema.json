@@ -65,6 +65,14 @@
         "max-mode": { "$ref": "#/$defs/mode" }
       }
     },
+    "targetPolicy": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["mode"],
+      "properties": {
+        "mode": { "$ref": "#/$defs/mode" }
+      }
+    },
     "packagePolicy": {
       "type": "object",
       "properties": {
@@ -73,7 +81,12 @@
         "max-repositories": { "$ref": "#/$defs/maxRepositories" },
         "rollout-percent": { "$ref": "#/$defs/rolloutPercent" },
         "monthly-ai-credit-budget": { "$ref": "#/$defs/monthlyAiCreditBudget" },
-        "icon": { "$ref": "#/$defs/octicon" }
+        "icon": { "$ref": "#/$defs/octicon" },
+        "targets": {
+          "type": "object",
+          "propertyNames": { "$ref": "#/$defs/repository" },
+          "additionalProperties": { "$ref": "#/$defs/targetPolicy" }
+        }
       }
     },
     "advisoryWorkers": {

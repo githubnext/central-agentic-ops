@@ -18,7 +18,13 @@ function validate(policy) {
   });
 }
 
-function effective(policy, { packageName = "dependabot", role = "orchestrator", worker = "", requestedMode = "" } = {}) {
+function effective(policy, {
+  packageName = "dependabot",
+  role = "orchestrator",
+  worker = "",
+  requestedMode = "",
+  targetRepository = "",
+} = {}) {
   try {
     return {
       status: 0,
@@ -29,6 +35,7 @@ function effective(policy, { packageName = "dependabot", role = "orchestrator", 
         workerName: worker,
         controlRepository: "acme/control",
         requestedMode,
+        targetRepository,
       }),
     };
   } catch (error) {
@@ -102,6 +109,13 @@ test("control policy applies schema defaults and package values", () => {
   assert.equal(result.output.max_repositories, 8);
   assert.equal(result.output.rollout_percent, 100);
   assert.equal(result.output.monthly_ai_credit_budget, 0);
+  assert.deepEqual(result.output.worker_policies, {
+    "dependabot-release-train-updater": {
+      worker: "release-train-updater",
+      enabled: true,
+      max_mode: "live",
+    },
+  });
   assert.deepEqual(result.output.allowed_owners, ["acme"]);
 });
 
@@ -151,22 +165,35 @@ test("control policy validates and exposes a package octicon", () => {
   );
 });
 
-test("control policy disables packages and workers by absence", () => {
+test("control policy disables packages by absence and inherits package workers", () => {
   const absentPackage = effective(minimalPolicy, { packageName: "optimization" });
-  const absentWorker = effective(minimalPolicy, {
+  const declaredWorker = effective(minimalPolicy, {
     role: "worker",
     worker: "release-train-updater",
     packageName: "dependabot",
   });
   const policyWithoutWorker = minimalPolicy.replace(',"workers":{"release-train-updater":{"max-mode":"live"}}', "");
-  const undeclaredWorker = effective(policyWithoutWorker, {
+  const inheritedWorker = effective(policyWithoutWorker, {
     role: "worker",
     worker: "release-train-updater",
   });
+  const disabledWorker = effective(minimalPolicy.replace('{"max-mode":"live"}', '{"enabled":false}'), {
+    role: "worker",
+    worker: "release-train-updater",
+  });
+  const disabledWorkerOrchestrator = effective(
+    minimalPolicy.replace('{"max-mode":"live"}', '{"enabled":false}'),
+  );
 
   assert.equal(absentPackage.output.reason, "package-undeclared");
-  assert.equal(absentWorker.output.authorized, true);
-  assert.equal(undeclaredWorker.output.reason, "worker-undeclared");
+  assert.equal(declaredWorker.output.authorized, true);
+  assert.equal(inheritedWorker.output.authorized, true);
+  assert.equal(inheritedWorker.output.safe_output_mode, "live");
+  assert.equal(
+    disabledWorkerOrchestrator.output.worker_policies["dependabot-release-train-updater"].enabled,
+    false,
+  );
+  assert.equal(disabledWorker.output.reason, "worker-disabled");
 });
 
 test("control policy intersects package mode, dispatch request, and worker ceiling", () => {
@@ -190,6 +217,148 @@ test("control policy intersects package mode, dispatch request, and worker ceili
   assert.equal(reviewCeiling.output.safe_output_mode, "review");
   assert.notEqual(widening.status, 0);
   assert.match(widening.stderr, /safe_output_mode exceeds checked-in policy/);
+});
+
+test("workers inherit the resolved mode when max-mode is omitted", () => {
+  const policy = JSON.stringify({
+    version: 1,
+    "control-plane": {
+      scope: { "allowed-repositories": ["acme/payments-api", "acme/storefront"] },
+      packages: {
+        dependabot: {
+          mode: "review",
+          targets: { "acme/payments-api": { mode: "live" } },
+          workers: { "release-train-updater": {} },
+        },
+      },
+    },
+  });
+
+  const liveWorker = effective(policy, {
+    role: "worker",
+    worker: "release-train-updater",
+    targetRepository: "acme/payments-api",
+  });
+  const reviewWorker = effective(policy, {
+    role: "worker",
+    worker: "release-train-updater",
+    targetRepository: "acme/storefront",
+  });
+
+  assert.equal(liveWorker.status, 0, liveWorker.stderr);
+  assert.equal(liveWorker.output.safe_output_mode, "live");
+  assert.equal(reviewWorker.status, 0, reviewWorker.stderr);
+  assert.equal(reviewWorker.output.safe_output_mode, "review");
+});
+
+test("control policy resolves exact package target modes", () => {
+  const policy = JSON.stringify({
+    $schema: schema.$id,
+    version: 1,
+    "control-plane": {
+      scope: { "allowed-repositories": ["acme/payments-api", "acme/storefront"] },
+      packages: {
+        dependabot: {
+          mode: "review",
+          targets: {
+            "acme/payments-api": { mode: "live" },
+          },
+          workers: { "release-train-updater": { "max-mode": "live" } },
+        },
+      },
+    },
+  });
+
+  const defaultTarget = effective(policy, { targetRepository: "acme/storefront" });
+  const liveTarget = effective(policy, { targetRepository: "ACME/payments-api" });
+  const liveWorker = effective(policy, {
+    role: "worker",
+    worker: "release-train-updater",
+    targetRepository: "acme/payments-api",
+  });
+  const reviewCeilingWorker = effective(policy.replace('"max-mode":"live"', '"max-mode":"review"'), {
+    role: "worker",
+    worker: "release-train-updater",
+    targetRepository: "acme/payments-api",
+  });
+  const narrowedTarget = effective(policy, {
+    targetRepository: "acme/payments-api",
+    requestedMode: "review",
+  });
+
+  assert.equal(defaultTarget.status, 0, defaultTarget.stderr);
+  assert.equal(defaultTarget.output.safe_output_mode, "review");
+  assert.equal(liveTarget.status, 0, liveTarget.stderr);
+  assert.equal(liveTarget.output.safe_output_mode, "live");
+  assert.equal(liveWorker.status, 0, liveWorker.stderr);
+  assert.equal(liveWorker.output.safe_output_mode, "live");
+  assert.equal(reviewCeilingWorker.status, 0, reviewCeilingWorker.stderr);
+  assert.equal(reviewCeilingWorker.output.safe_output_mode, "review");
+  assert.deepEqual(liveTarget.output.target_policies, {
+    "acme/payments-api": { mode: "live" },
+  });
+  assert.equal(narrowedTarget.status, 0, narrowedTarget.stderr);
+  assert.equal(narrowedTarget.output.safe_output_mode, "review");
+  assert.deepEqual(narrowedTarget.output.target_policies, {
+    "acme/payments-api": { mode: "review" },
+  });
+});
+
+test("control policy requires package targets to stay inside explicit scope", () => {
+  const policy = JSON.stringify({
+    version: 1,
+    "control-plane": {
+      scope: { "allowed-repositories": ["acme/storefront"] },
+      packages: {
+        dependabot: {
+          targets: {
+            "acme/payments-api": { mode: "live" },
+          },
+        },
+      },
+    },
+  });
+
+  const result = validate(policy);
+
+  assert.notEqual(result.status, 0);
+  assert.match(result.stderr, /package target acme\/payments-api is outside control-plane\.scope\.allowed-repositories/);
+});
+
+for (const [name, targets, error] of [
+  ["an array", [], /control-plane\.packages\.dependabot\.targets must be a mapping/],
+  ["a missing mode", { "acme/payments-api": {} }, /control-plane\.packages\.dependabot\.targets\.acme\/payments-api\.mode is required/],
+  ["an unsupported field", { "acme/payments-api": { mode: "live", percentage: 10 } }, /unknown key control-plane\.packages\.dependabot\.targets\.acme\/payments-api\.percentage/],
+  ["an invalid mode", { "acme/payments-api": { mode: "preview" } }, /control-plane\.packages\.dependabot\.targets\.acme\/payments-api\.mode must be review or live/],
+  ["case-insensitive duplicates", { "acme/payments-api": { mode: "live" }, "ACME/PAYMENTS-API": { mode: "review" } }, /control-plane\.packages\.dependabot\.targets must contain unique repository names/],
+]) {
+  test(`control policy rejects package targets with ${name}`, () => {
+    const result = validate(JSON.stringify({
+      version: 1,
+      "control-plane": {
+        scope: { "allowed-owners": ["acme"] },
+        packages: { dependabot: { targets } },
+      },
+    }));
+
+    assert.notEqual(result.status, 0);
+    assert.match(result.stderr, error);
+  });
+}
+
+test("control policy requires package targets to stay inside allowed owners", () => {
+  const result = validate(JSON.stringify({
+    version: 1,
+    "control-plane": {
+      scope: { "allowed-owners": ["acme"] },
+      packages: {
+        dependabot: { targets: { "outside/payments-api": { mode: "live" } } },
+      },
+    },
+  }));
+
+  assert.notEqual(result.status, 0);
+  assert.match(result.stderr, /package target outside\/payments-api is outside control-plane\.scope\.allowed-owners/);
 });
 
 test("control policy permits dispatch limits to narrow but not widen policy", () => {

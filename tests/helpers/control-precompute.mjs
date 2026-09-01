@@ -36,7 +36,7 @@ export function controlPolicy({
   scope = {},
   inventory = {},
   packagePolicy = {},
-  workerPolicy = {},
+  workerPolicy = null,
 } = {}) {
   return JSON.stringify({
     version: 1,
@@ -49,12 +49,9 @@ export function controlPolicy({
           "max-repositories": 1,
           "rollout-percent": 100,
           ...packagePolicy,
-          workers: {
-            "release-train-updater": {
-              "max-mode": "review",
-              ...workerPolicy,
-            },
-          },
+          ...(workerPolicy === null ? {} : {
+            workers: { "release-train-updater": workerPolicy },
+          }),
         },
       },
     },

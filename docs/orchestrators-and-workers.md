@@ -100,21 +100,21 @@ This provides an immediate worker kill switch: disable the generated worker work
 
 ## Worker Ceilings
 
-Add worker-specific configuration only when a worker has a materially different blast radius, permission set, maturity timeline, or operational owner. The controls are:
+Installed package workers inherit package policy automatically. Add worker-specific configuration only when a worker has a materially different blast radius, permission set, maturity timeline, or operational owner. The controls are:
 
 | Control | Purpose | Default |
 | --- | --- | --- |
-| `enabled` | Explicitly includes or excludes a worker workflow from dispatch | `true` for installed worker workflows |
-| `max-mode` | Caps the most permissive mode a worker workflow can execute | `review` |
+| `enabled` | Explicitly excludes or re-enables a worker workflow for dispatch | `true` for installed package workers |
+| `max-mode` | Optionally caps the most permissive mode a worker workflow can execute | Inherits the resolved package or exact-target mode |
 | worker workflow limit | Caps worker workflow-specific volume or resource use | Existing Agentic Workflow limit |
 
 Mode ordering is:
 
 `review < live`
 
-The effective worker mode is the less permissive of the requested operation mode and the worker ceiling:
+Without `max-mode`, the worker inherits the resolved package or exact-target mode. When an explicit ceiling is present, the effective worker mode is the less permissive of that resolved mode and the worker ceiling:
 
-`effective_mode = min(operation_mode, worker_max_mode)`
+`effective_mode = worker_max_mode ? min(resolved_mode, worker_max_mode) : resolved_mode`
 
 For example:
 
@@ -144,7 +144,7 @@ Example: Optimization can be live while `optimization-ai-credit-optimizer` remai
 ```
 
 :::caution[Ceilings only narrow]
-Raising a worker ceiling does not promote the operation. Lowering it takes effect as an additional guard beneath scheduled and manual mode requests.
+Omitting a worker ceiling does not promote the operation; the worker follows the package or exact-target decision. Adding or lowering a ceiling takes effect as an additional guard beneath scheduled and manual mode requests.
 :::
 
 ## When to Split Control

@@ -60,6 +60,7 @@ steps:
       BUNDLE: ${{ github.aw.import-inputs.package }}
       ROLE: ${{ github.aw.import-inputs.role }}
       WORKER: ${{ github.aw.import-inputs.worker }}
+      TARGET_REPO: ${{ github.aw.import-inputs.target_repo }}
       REQUESTED_MODE: ${{ github.aw.import-inputs.requested_mode }}
       REQUESTED_MAX_REPOS: ${{ github.aw.import-inputs.requested_max_repos }}
       REQUESTED_ROLLOUT_PERCENT: ${{ github.aw.import-inputs.requested_rollout_percent }}
@@ -84,6 +85,7 @@ steps:
       if ! CAO_PACKAGE="$BUNDLE" \
         CAO_ROLE="$ROLE" \
         CAO_WORKER="$WORKER" \
+        CAO_TARGET_REPOSITORY="$TARGET_REPO" \
         CAO_REQUESTED_MODE="$REQUESTED_MODE" \
         CAO_REQUESTED_MAX_REPOSITORIES="$REQUESTED_MAX_REPOS" \
         CAO_REQUESTED_ROLLOUT_PERCENT="$REQUESTED_ROLLOUT_PERCENT" \
@@ -147,7 +149,8 @@ steps:
       [ "${CAO_POLICY_AUTHORIZED:-false}" = "true" ] || exit 0
       [ "$ROLE" != "orchestrator" ] || WORKER=""
       mkdir -p /tmp/gh-aw/agent
-      OUT=/tmp/gh-aw/agent/control-precompute.json
+      A=/tmp/gh-aw/agent
+      OUT=$A/control-precompute.json
       RESOLVER=.github/aw/control-policy/resolve.mjs
 
       write_worker_precompute() {
@@ -176,10 +179,9 @@ steps:
               } end)' > "$OUT"
       }
 
-      mode_rank() {
+      validate_mode() {
         case "$1" in
-          review) printf '0\n' ;;
-          live) printf '1\n' ;;
+          review|live) ;;
           *) echo "$2 must be review or live" >&2; exit 1 ;;
         esac
       }
@@ -189,8 +191,6 @@ steps:
       }
 
       validate_worker_dispatch() {
-        local requested_rank
-        local maximum_rank
         local control_run_id
 
           if [ -z "$TARGET_REPO" ]; then
@@ -203,9 +203,8 @@ steps:
           *) echo "worker_enabled must be true or false" >&2; exit 1 ;;
         esac
 
-        requested_rank=$(mode_rank "$SAFE_OUTPUT_MODE" "safe_output_mode")
-        maximum_rank=$(mode_rank "$WORKER_MAX_MODE" "worker_max_mode")
-        if [ "$requested_rank" -gt "$maximum_rank" ]; then
+        validate_mode "$WORKER_MAX_MODE" "worker_max_mode"
+        if [ "$SAFE_OUTPUT_MODE" = "live" ] && [ "$WORKER_MAX_MODE" != "live" ]; then
           echo "safe_output_mode exceeds the worker_max_mode ceiling" >&2
           exit 1
         fi
@@ -249,11 +248,11 @@ steps:
         fi
         if ! gh api --method GET "repos/$TARGET_REPO/contents/.github/central-agentic-ops.json" \
           -f ref="$target_sha" --jq '.content' | base64 -d \
-          > /tmp/gh-aw/agent/target-authority.json; then
+          > $A/target-authority.json; then
           echo "live mode requires .github/central-agentic-ops.json on the target default branch" >&2
           exit 1
         fi
-        if ! authority=$(node "$RESOLVER" --authority /tmp/gh-aw/agent/target-authority.json "$BUNDLE"); then
+        if ! authority=$(node "$RESOLVER" --authority $A/target-authority.json "$BUNDLE"); then
           echo "target authority file must declare version 1 and target-authority.packages.$BUNDLE.authority" >&2
           exit 1
         fi
@@ -324,23 +323,23 @@ steps:
       prepare_allowlist() {
         local allowed_repo
 
-        : > /tmp/gh-aw/agent/allowed-repos
+        : > $A/allowed-repos
         [ -z "$ALLOWED_REPOS" ] && return
 
         if ! printf '%s' "$ALLOWED_REPOS" | jq -Rr \
           'split(",") | map(gsub("\\s"; "") | ascii_downcase) | unique[]' \
-          > /tmp/gh-aw/agent/allowed-repos || grep -qx '' /tmp/gh-aw/agent/allowed-repos; then
+          > $A/allowed-repos || grep -qx '' $A/allowed-repos; then
           echo "control-plane.scope.allowed-repositories is invalid" >&2
           exit 1
         fi
         while read -r allowed_repo; do
           validate_repository_owner "allowed repository" "$allowed_repo"
-        done < /tmp/gh-aw/agent/allowed-repos
-        if [ "$(wc -l < /tmp/gh-aw/agent/allowed-repos)" -gt "$MAX_SCAN_REPOS" ]; then
+        done < $A/allowed-repos
+        if [ "$(wc -l < $A/allowed-repos)" -gt "$MAX_SCAN_REPOS" ]; then
           echo "allowed repos exceed max_scan_repos" >&2
           exit 1
         fi
-        if [ -n "$TARGET_REPO" ] && ! grep -Fqix "$TARGET_REPO" /tmp/gh-aw/agent/allowed-repos; then
+        if [ -n "$TARGET_REPO" ] && ! grep -Fqix "$TARGET_REPO" $A/allowed-repos; then
           echo "target_repo is not allowed" >&2
           exit 1
         fi
@@ -360,7 +359,7 @@ steps:
       load_control_source() {
         derive_control_source_path
         gh api --method GET "repos/${GITHUB_REPOSITORY}/contents/${source_path}" -f ref="$workflow_ref" --jq '.content' \
-          | base64 -d > /tmp/gh-aw/agent/control-source.md
+          | base64 -d > $A/control-source.md
       }
 
       extract_dispatch_workers() {
@@ -383,7 +382,7 @@ steps:
           in_dispatch && /^    workflows:[[:space:]]*$/ { in_workflows = 1; next }
           in_workflows && /^      - / { sub(/^      - /, ""); print; next }
           in_workflows && $0 !~ /^      - / { in_workflows = 0 }
-        ' /tmp/gh-aw/agent/control-source.md \
+        ' $A/control-source.md \
           | jq -R -s 'split("\n") | map(gsub("^\\s+|\\s+$"; "") | gsub("^\\\"|\\\"$"; "") | select(length > 0))'
       }
 
@@ -394,9 +393,9 @@ steps:
         if [ -n "$TARGET_REPO" ]; then
           repo_source="target_repo"
           if ! gh api "repos/$TARGET_REPO" --jq '[{id, full_name, archived, disabled, private, pushed_at, default_branch}]' \
-            > /tmp/gh-aw/agent/candidates.json 2>/tmp/gh-aw/agent/repo-error.txt; then
-            repo_error=$(cat /tmp/gh-aw/agent/repo-error.txt)
-            printf '[]\n' > /tmp/gh-aw/agent/candidates.json
+            > $A/candidates.json 2>$A/repo-error.txt; then
+            repo_error=$(cat $A/repo-error.txt)
+            printf '[]\n' > $A/candidates.json
           fi
           return
         fi
@@ -409,8 +408,8 @@ steps:
 
         if ! load_bounded_inventory "orgs/$ORGANIZATION/repos" "all"; then
           if ! load_bounded_inventory "users/$ORGANIZATION/repos" "owner"; then
-            repo_error=$(cat /tmp/gh-aw/agent/repo-error.txt)
-            printf '[]\n' > /tmp/gh-aw/agent/candidates.json
+            repo_error=$(cat $A/repo-error.txt)
+            printf '[]\n' > $A/candidates.json
           fi
         fi
       }
@@ -418,20 +417,19 @@ steps:
       load_allowed_inventory() {
         local allowed_repo
 
-        printf '[]\n' > /tmp/gh-aw/agent/candidates.json
-        : > /tmp/gh-aw/agent/candidate-pages.jsonl
+        printf '[]\n' > $A/candidates.json
+        : > $A/candidate-pages.jsonl
         while read -r allowed_repo; do
           if ! gh api "repos/$allowed_repo" \
             --jq '{id, full_name, archived, disabled, private, pushed_at, default_branch}' \
-            >> /tmp/gh-aw/agent/candidate-pages.jsonl 2>/tmp/gh-aw/agent/repo-error.txt; then
+            >> $A/candidate-pages.jsonl 2>$A/repo-error.txt; then
             repo_error="cannot read allowed repository $allowed_repo"
-            printf '[]\n' > /tmp/gh-aw/agent/candidates.json
+            printf '[]\n' > $A/candidates.json
             return
           fi
-        done < /tmp/gh-aw/agent/allowed-repos
+        done < $A/allowed-repos
 
-        jq -s '.' /tmp/gh-aw/agent/candidate-pages.jsonl \
-          > /tmp/gh-aw/agent/candidates.json
+        jq -s '.' $A/candidate-pages.jsonl > $A/candidates.json
       }
 
       load_bounded_inventory() {
@@ -441,21 +439,20 @@ steps:
         local pages=$(( (MAX_SCAN_REPOS + 99) / 100 ))
         local page_count
 
-        : > /tmp/gh-aw/agent/candidate-pages.jsonl
+        : > $A/candidate-pages.jsonl
         while [ "$page" -le "$pages" ]; do
           if ! gh api "$endpoint?per_page=100&type=$repository_type&page=$page" \
             --jq '.[] | {id, full_name, archived, disabled, private, pushed_at, default_branch}' \
-            > /tmp/gh-aw/agent/candidate-page.jsonl 2>/tmp/gh-aw/agent/repo-error.txt; then
+            > $A/candidate-page.jsonl 2>$A/repo-error.txt; then
             return 1
           fi
-          page_count=$(jq -s 'length' /tmp/gh-aw/agent/candidate-page.jsonl)
-          cat /tmp/gh-aw/agent/candidate-page.jsonl >> /tmp/gh-aw/agent/candidate-pages.jsonl
+          page_count=$(jq -s 'length' $A/candidate-page.jsonl)
+          cat $A/candidate-page.jsonl >> $A/candidate-pages.jsonl
           [ "$page_count" -lt 100 ] && break
           page=$((page + 1))
         done
 
-        jq -s ".[0:$MAX_SCAN_REPOS]" /tmp/gh-aw/agent/candidate-pages.jsonl \
-          > /tmp/gh-aw/agent/candidates.json
+        jq -s ".[0:$MAX_SCAN_REPOS]" $A/candidate-pages.jsonl > $A/candidates.json
       }
 
       prepare_inventory_batch() {
@@ -466,26 +463,25 @@ steps:
         local batch_offset
 
         if ! jq -e 'all(.[]; (.id | type) == "number" and (.full_name | type) == "string")' \
-          /tmp/gh-aw/agent/candidates.json >/dev/null; then
+          $A/candidates.json >/dev/null; then
           echo "repository inventory entries require numeric id and full_name" >&2
           exit 1
         fi
 
-        inventory_digest=$(jq -cS 'sort_by([.id, .full_name])[]' /tmp/gh-aw/agent/candidates.json \
+        inventory_digest=$(jq -cS 'sort_by([.id, .full_name])[]' $A/candidates.json \
           | openssl dgst -sha256 | awk '{print $NF}')
         inventory_version="sha256:$inventory_digest"
-        inventory_count=$(jq 'length' /tmp/gh-aw/agent/candidates.json)
+        inventory_count=$(jq 'length' $A/candidates.json)
 
         if [ -n "$TARGET_REPO" ]; then
-          jq 'sort_by([.id, .full_name])' /tmp/gh-aw/agent/candidates.json \
-            > /tmp/gh-aw/agent/cell-candidates.json
+          jq 'sort_by([.id, .full_name])' $A/candidates.json > $A/cell-candidates.json
         else
           jq --argjson cell_count "$CELL_COUNT" --argjson cell_index "$CELL_INDEX" \
             '[.[] | select((.id % $cell_count) == $cell_index)] | sort_by([.id, .full_name])' \
-            /tmp/gh-aw/agent/candidates.json > /tmp/gh-aw/agent/cell-candidates.json
+            $A/candidates.json > $A/cell-candidates.json
         fi
 
-        cell_repository_count=$(jq 'length' /tmp/gh-aw/agent/cell-candidates.json)
+        cell_repository_count=$(jq 'length' $A/cell-candidates.json)
         batch_count=$(( (cell_repository_count + BATCH_SIZE - 1) / BATCH_SIZE ))
         if [ "$batch_count" -gt 0 ] && [ "$BATCH_INDEX" -ge "$batch_count" ]; then
           echo "batch_index must be smaller than the selected cell batch count ($batch_count)" >&2
@@ -494,7 +490,7 @@ steps:
 
         batch_offset=$(( BATCH_INDEX * BATCH_SIZE ))
         jq ".[${batch_offset}:$((batch_offset + BATCH_SIZE))]" \
-          /tmp/gh-aw/agent/cell-candidates.json > /tmp/gh-aw/agent/current-batch.json
+          $A/cell-candidates.json > $A/current-batch.json
         batch_id="${inventory_version}:cell-${CELL_INDEX}-of-${CELL_COUNT}:batch-${BATCH_INDEX}-of-${batch_count}"
 
         jq -n \
@@ -517,40 +513,32 @@ steps:
             batch_index: $batch_index,
             batch_count: $batch_count,
             batch_id: $batch_id
-          }' > /tmp/gh-aw/agent/inventory-metadata.json
+          }' > $A/inventory-metadata.json
+      }
+
+      validate_positive_integer() {
+        if ! [[ "$1" =~ ^[1-9][0-9]*$ ]] || [ "$1" -gt "$2" ]; then
+          echo "$3" >&2
+          exit 1
+        fi
       }
 
       write_orchestrator_precompute() {
         local workers_json
 
-        if ! [[ "$MAX_REPOS" =~ ^[1-9][0-9]*$ ]] || [ "$MAX_REPOS" -gt 1000 ]; then
-          echo "max_repos must be an integer from 1 through 1000" >&2
-          exit 1
-        fi
-        if ! [[ "$MAX_SCAN_REPOS" =~ ^[1-9][0-9]*$ ]] || [ "$MAX_SCAN_REPOS" -gt 100000 ]; then
-          echo "max_scan_repos must be an integer from 1 through 100000" >&2
-          exit 1
-        fi
-        if ! [[ "$CELL_COUNT" =~ ^[1-9][0-9]*$ ]] || [ "$CELL_COUNT" -gt 1000 ]; then
-          echo "cell_count must be an integer from 1 through 1000" >&2
-          exit 1
-        fi
+        validate_positive_integer "$MAX_REPOS" 1000 "max_repos must be an integer from 1 through 1000"
+        validate_positive_integer "$MAX_SCAN_REPOS" 100000 "max_scan_repos must be an integer from 1 through 100000"
+        validate_positive_integer "$CELL_COUNT" 1000 "cell_count must be an integer from 1 through 1000"
         if ! [[ "$CELL_INDEX" =~ ^[0-9]+$ ]] || [ "$CELL_INDEX" -ge "$CELL_COUNT" ]; then
           echo "cell_index must be an integer from 0 through cell_count minus 1" >&2
           exit 1
         fi
-        if ! [[ "$BATCH_SIZE" =~ ^[1-9][0-9]*$ ]] || [ "$BATCH_SIZE" -gt 100000 ]; then
-          echo "batch_size must be an integer from 1 through 100000" >&2
-          exit 1
-        fi
+        validate_positive_integer "$BATCH_SIZE" 100000 "batch_size must be an integer from 1 through 100000"
         if ! [[ "$BATCH_INDEX" =~ ^[0-9]+$ ]]; then
           echo "batch_index must be a non-negative integer" >&2
           exit 1
         fi
-        if ! [[ "$DISPATCH_MAX" =~ ^[1-9][0-9]*$ ]] || [ "$DISPATCH_MAX" -gt 1000 ]; then
-          echo "dispatch_max must be an integer from 1 through 1000" >&2
-          exit 1
-        fi
+        validate_positive_integer "$DISPATCH_MAX" 1000 "dispatch_max must be an integer from 1 through 1000"
         if ! [[ "$ROLLOUT_PERCENT" =~ ^([1-9][0-9]?|100)$ ]]; then
           echo "rollout_percent must be an integer from 1 through 100" >&2
           exit 1
@@ -569,11 +557,11 @@ steps:
         fi
 
         gh api "repos/${GITHUB_REPOSITORY}/actions/workflows?per_page=100" --jq '.workflows[] | {id, name, path, state}' \
-          | jq -s '.' > /tmp/gh-aw/agent/workflows.json
+          | jq -s '.' > $A/workflows.json
         load_candidate_repositories
         prepare_inventory_batch
 
-        printf '%s\n' "$workers_json" > /tmp/gh-aw/agent/workers.json
+        printf '%s\n' "$workers_json" > $A/workers.json
 
         jq -n \
           --arg enabled "$ENABLED" \
@@ -593,14 +581,20 @@ steps:
           --arg package "$BUNDLE" \
           --arg repository "$GITHUB_REPOSITORY" \
           --arg workflow_sha "$WORKFLOW_SHA" \
-          --slurpfile inventory_metadata /tmp/gh-aw/agent/inventory-metadata.json \
-          --slurpfile workers /tmp/gh-aw/agent/workers.json \
-          --slurpfile workflows /tmp/gh-aw/agent/workflows.json \
-          --slurpfile candidates /tmp/gh-aw/agent/current-batch.json '
+          --slurpfile inventory_metadata $A/inventory-metadata.json \
+          --slurpfile effective_policy $A/effective-policy.json \
+          --slurpfile workers $A/workers.json \
+          --slurpfile workflows $A/workflows.json \
+          --slurpfile candidates $A/current-batch.json '
             def worker_match($worker):
               $workflows[0] | map(select(.path == (".github/workflows/" + $worker + ".lock.yml"))) | .[0];
+            def repository_mode($repository):
+              ($repository | ascii_downcase) as $normalized
+              | ($effective_policy[0].target_policies[$normalized].mode // $safe_output_mode);
 
-            $inventory_metadata[0] as $m | $candidates[0] as $c |
+            $inventory_metadata[0] as $m
+            | $candidates[0] as $c
+            | ($c | map(. + {safe_output_mode: repository_mode(.full_name)})) as $resolved_candidates |
             {
               authorized:true, reason:"authorized", control_role:"orchestrator", package:$package, bundle:$package,
               $enabled, $target_repo, $organization,
@@ -623,16 +617,20 @@ steps:
               batch_size:$m.batch_size, batch_index:$m.batch_index,
               batch_count:$m.batch_count, batch_id:$m.batch_id,
               total_repositories_scanned:$m.inventory_repository_count,
-              candidate_repositories:$c,
+              candidate_repositories:$resolved_candidates,
               worker_workflows: [
                 $workers[0][] as $worker
                 | (worker_match($worker)) as $match
+                | ($effective_policy[0].worker_policies[$worker] // null) as $policy
                 | {
                     configured:$worker, matched:($match != null),
+                    worker:$policy.worker, policy_enabled:($policy.enabled // false), max_mode:$policy.max_mode,
                     id:$match.id, name:$match.name, path:$match.path, state:($match.state // ""),
-                    eligible:(($match != null) and (($match.state // "") | startswith("disabled") | not)),
+                    eligible:(($policy.enabled // false) and ($match != null) and (($match.state // "") | startswith("disabled") | not)),
                     skip_reason: (
-                      if $match == null then "worker workflow unavailable"
+                      if $policy == null then "worker is not part of installed package"
+                      elif ($policy.enabled | not) then "worker disabled by control-plane policy"
+                      elif $match == null then "worker workflow unavailable"
                       elif (($match.state // "") | startswith("disabled")) then "worker workflow disabled"
                       else null
                       end
@@ -651,7 +649,7 @@ steps:
           ' > "$OUT"
       }
 
-      mode_rank "$SAFE_OUTPUT_MODE" "safe_output_mode" >/dev/null
+      validate_mode "$SAFE_OUTPUT_MODE" "safe_output_mode"
       if [ "$ROLE" = "orchestrator" ]; then
         CENTRAL_REPO="$GITHUB_REPOSITORY"
       fi
