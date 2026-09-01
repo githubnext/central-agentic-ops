@@ -1,6 +1,7 @@
 import { cp, mkdir, readFile, readdir, rm, writeFile } from "node:fs/promises";
 import { basename, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
+import { parse } from "yaml";
 import { composeDashboardDocuments } from "../../report/compose-dashboard-documents.mjs";
 
 const source = new URL("../", import.meta.url);
@@ -46,12 +47,17 @@ async function packageDashboardDocuments(repositoryRoot) {
   const documents = [];
   for (const entry of entries.filter((candidate) => candidate.isDirectory()).sort((left, right) => left.name.localeCompare(right.name))) {
     const packageRoot = new URL(`${entry.name}/`, repositoryRoot);
-    const manifest = await readFile(new URL("aw.yml", packageRoot), "utf8").catch((error) => {
+    const manifestSource = await readFile(new URL("aw.yml", packageRoot), "utf8").catch((error) => {
       if (error?.code === "ENOENT") return null;
       throw error;
     });
-    if (!manifest?.includes("source: dashboard.json")
-        || !manifest.includes("destination: .github/aw/dashboards/")) continue;
+    if (!manifestSource) continue;
+    const manifest = parse(manifestSource);
+    const contributesDashboard = Array.isArray(manifest?.resources) && manifest.resources.some(
+      (resource) => resource?.source === "dashboard.json"
+        && /^\.github\/aw\/dashboards\/[^/]+\.json$/.test(resource?.destination),
+    );
+    if (!contributesDashboard) continue;
     documents.push(JSON.parse(await readFile(new URL("dashboard.json", packageRoot), "utf8")));
   }
   return documents;
