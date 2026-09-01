@@ -48,7 +48,7 @@ describe('ui primitives', () => {
     const icon = document.createElement('svg');
     const rendered = renderInlineNotice(icon, 'Statistical anomalies · not evaluated', 'Baseline unavailable.');
 
-    expect(rendered.className).toBe('anomaly-readiness');
+    expect(rendered.className).toBe('inline-notice');
     expect(rendered.getAttribute('role')).toBe('note');
     expect(rendered.querySelector('svg')).toBe(icon);
     expect(rendered.querySelector('strong')?.textContent).toBe('Statistical anomalies · not evaluated');

@@ -178,9 +178,9 @@ describe('Runtime dashboard view', () => {
     expect(attention).toContain('Run failures');
     expect(attention).toContain('1 worker dispatch lacks episode evidence');
     expect(attention).toContain('1 root episode has no correlated worker attempt or output');
-    expect(rendered.querySelector('.anomaly-readiness')?.getAttribute('role')).toBe('note');
-    expect(rendered.querySelector('.anomaly-readiness')?.textContent).toContain('Statistical anomalies · not evaluated');
-    expect(rendered.querySelector('.anomaly-readiness .octicon use')?.getAttribute('href')).toContain('#octicon-pulse');
+    expect(rendered.querySelector('.inline-notice')?.getAttribute('role')).toBe('note');
+    expect(rendered.querySelector('.inline-notice')?.textContent).toContain('Statistical anomalies · not evaluated');
+    expect(rendered.querySelector('.inline-notice .octicon use')?.getAttribute('href')).toContain('#octicon-pulse');
     expect(rendered.querySelectorAll('.signal-list > li')).toHaveLength(4);
     expect(rendered.querySelector('.signal-critical .signal-icon use')?.getAttribute('href')).toContain('#octicon-issue-opened');
     expect([...rendered.querySelectorAll('.signal-list > li > a')].map((link) => link.getAttribute('href'))).toEqual([

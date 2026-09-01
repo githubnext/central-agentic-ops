@@ -50,7 +50,7 @@ export function renderSectionHeading({
 export function renderInlineNotice(icon, title, detail) {
   return h(
     'div',
-    { className: 'anomaly-readiness', role: 'note' },
+    { className: 'inline-notice', role: 'note' },
     h('span', null, icon, h('strong', null, title)),
     h('p', null, detail)
   );
