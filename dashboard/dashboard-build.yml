@@ -140,6 +140,9 @@ jobs:
         run: |
           mkdir -p "$REPORT_OUTPUT"
           cp -R .github/aw/dashboard/site/. "$REPORT_OUTPUT/"
+          node .github/aw/dashboard/report/bundle-dashboards.mjs \
+            "$REPORT_OUTPUT/dashboard.json" \
+            .github/aw/dashboards
 
       - name: Build Dashboard Language sources
         env:

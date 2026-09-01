@@ -2,14 +2,14 @@
 
 Production Dashboard Language validator and presenter for the Central Agentic Ops dashboard package.
 
-The reusable dashboard builder copies this directory to its configured `site-path`. The browser loads the built-in configuration from `dashboard.json`, package-specific custom dashboards from `package-dashboards.json`, and generated data from `sources.json`, then derives presentation-only data and renders the `/cao` experience without page-specific HTML generation.
+The reusable dashboard builder copies this directory to its configured `site-path`, bundles installed `.github/aw/dashboards/*.json` package documents into `dashboard.json`, and generates `sources.json`. The browser loads those two files, derives presentation-only data, and renders the `/cao` experience without page-specific HTML generation.
 
 ## Data pipeline
 
 1. Dashboard collectors write inventory, deployed-workflow, AI Credit, and operational-value JSON.
 2. `dashboard/report/records.mjs` normalizes durable issues, pull requests, comments, review artifacts, and run attribution into `records.json`.
 3. `dashboard/report/dashboard-language-sources.mjs` adapts collector and record data into `sources.json`.
-4. Quality gates validate `dashboard.json` and `package-dashboards.json` independently; the renderer composes them with validated `sources.json`, then renders all configured pages and route-scoped details.
+4. Quality gates validate package dashboard sources; the builder bundles installed package dashboards into `dashboard.json`, and the renderer loads it with validated `sources.json` before rendering all configured pages and route-scoped details.
 
 `sources.json` is the default deployed input. Add `?fixtures` locally to use the illustrative fixture data.
 

@@ -25,6 +25,7 @@ const dashboardPackageSource = focusedPackageSource("dashboard");
 const dependabotUpdateSource = focusedPackageSource("dependabot");
 const advisoryExpectedFiles = [
   ".github/aw/advisory/implementation-status.md",
+  ".github/aw/dashboards/advisory.json",
   ".github/workflows/advisory-package-maintainer.md",
   ".github/workflows/advisory-uk-ai-operational-resilience.md",
   ".github/workflows/uk-ai-advisory.md",
@@ -32,6 +33,7 @@ const advisoryExpectedFiles = [
   ".github/workflows/shared/control.md",
 ];
 const craExpectedFiles = [
+  ".github/aw/dashboards/eu-cra-compliance.json",
   ".github/aw/eu-cra-compliance/implementation-status.md",
   ".github/aw/eu-cra-compliance/eu-cra-report-operational-value-runtime.bash",
   ".github/graders/eu-cra-compliance-article-14-reporting-readiness-operational-value.sh",

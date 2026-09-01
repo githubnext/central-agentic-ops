@@ -3,3 +3,6 @@ description: Optional workflow for keeping repository ambient context — AGENTS
 min-version: v0.87.6
 includes:
   - .github/workflows/ambient-context.md
+resources:
+  - source: dashboard.json
+    destination: .github/aw/dashboards/ambient-context.json

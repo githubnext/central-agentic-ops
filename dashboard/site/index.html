@@ -13,7 +13,6 @@
     <div id="root"></div>
     <script type="module">
       import { renderDashboard } from "./src/presenter.js";
-      import { composeDashboardDocuments } from "./src/dashboard-documents.js";
 
       const metadata = (id, overrides = {}) => ({
         "source-id": id,
@@ -31,20 +30,13 @@
         label: `Run ${run}`,
       });
 
-      const [dashboardSchema, packageDashboardSchema] = await Promise.all([
-        fetch("./dashboard.json").then((response) => {
-          if (!response.ok) throw new Error(`Unable to load dashboard.json: ${response.status}`);
-          return response.json();
-        }),
-        fetch("./package-dashboards.json").then((response) => {
-          if (!response.ok) throw new Error(`Unable to load package-dashboards.json: ${response.status}`);
-          return response.json();
-        }),
-      ]);
-      const composedDashboardSchema = composeDashboardDocuments(dashboardSchema, packageDashboardSchema);
+      const dashboardSchema = await fetch("./dashboard.json").then((response) => {
+        if (!response.ok) throw new Error(`Unable to load dashboard.json: ${response.status}`);
+        return response.json();
+      });
       const dashboardDocument = {
-        languageVersion: composedDashboardSchema["language-version"],
-        dashboard: composedDashboardSchema.dashboard,
+        languageVersion: dashboardSchema["language-version"],
+        dashboard: dashboardSchema.dashboard,
       };
 
       const fixtureSources = {

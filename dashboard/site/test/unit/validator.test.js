@@ -3,7 +3,8 @@ import { readFileSync } from 'node:fs';
 import { validateDashboardDocument, validateLogicalSources } from '../../src/validator.js';
 
 const authoritativeDashboardSource = readFileSync(`${process.cwd()}/dashboard.json`, 'utf8');
-const packageDashboardSource = readFileSync(`${process.cwd()}/package-dashboards.json`, 'utf8');
+const packageDashboardSources = ['advisory', 'ambient-context', 'aw-maintenance', 'dependabot', 'eu-cra-compliance', 'optimization']
+  .map((packageName) => readFileSync(`${process.cwd()}/../../${packageName}/dashboard.json`, 'utf8'));
 
 const validDocument = `language-version: "0.1.0"
 dashboard:
@@ -38,12 +39,14 @@ describe('dashboard document validation', () => {
     expect(accepted.ok).toBe(true);
   });
 
-  it('accepts the package dashboard document', () => {
-    expect(validateDashboardDocument(packageDashboardSource).ok).toBe(true);
+  it('accepts every package dashboard document', () => {
+    for (const source of packageDashboardSources) {
+      expect(validateDashboardDocument(source).ok).toBe(true);
+    }
   });
 
   it('keeps one focused custom dashboard for every operation package', () => {
-    const document = JSON.parse(packageDashboardSource);
+    const documents = packageDashboardSources.map((source) => JSON.parse(source));
     const packagePageIds = [
       'ambient-context-dashboard',
       'aw-maintenance-dashboard',
@@ -52,15 +55,11 @@ describe('dashboard document validation', () => {
       'eu-cra-compliance-dashboard',
       'optimization-dashboard'
     ];
-    const packageNavigation = document.dashboard.navigation.find(
-      (/** @type {{ label: string }} */ group) => group.label === 'Package operations'
-    );
-
-    expect(packageNavigation.pages).toEqual(packagePageIds);
+    expect(documents).toHaveLength(packagePageIds.length);
     for (const pageId of packagePageIds) {
-      const page = document.dashboard.pages.find(
-        (/** @type {{ id: string }} */ candidate) => candidate.id === pageId
-      );
+      const document = documents.find((candidate) => candidate.dashboard.pages[0].id === pageId);
+      const page = document.dashboard.pages[0];
+      expect(document.dashboard.navigation).toEqual([{ label: 'Package operations', pages: [pageId] }]);
       expect(page).toMatchObject({ kind: 'custom' });
       expect(page.views).toHaveLength(4);
       expect(page.views.every(
@@ -69,6 +68,7 @@ describe('dashboard document validation', () => {
       expect(page.views.map(
         (/** @type {{ data: { source: string } }} */ view) => view.data.source
       )).toEqual(['runs', 'outcomes', 'operational-values', 'operational-values']);
+      expect(packagePageIds).toContain(pageId);
     }
   });
 

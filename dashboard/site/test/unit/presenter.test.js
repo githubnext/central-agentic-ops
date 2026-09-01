@@ -4,18 +4,19 @@ import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { dirname, resolve } from 'node:path';
 import { renderDashboard, enableDashboardKeyboardNavigation } from '../../src/presenter.js';
-import { composeDashboardDocuments } from '../../src/dashboard-documents.js';
+import { composeDashboardDocuments } from '../../../report/bundle-dashboards.mjs';
 
 const fixtureDirectory = dirname(fileURLToPath(import.meta.url));
 const builtInDashboardDocument = JSON.parse(
   readFileSync(resolve(fixtureDirectory, '../../dashboard.json'), 'utf8')
 );
-const packageDashboardDocument = JSON.parse(
-  readFileSync(resolve(fixtureDirectory, '../../package-dashboards.json'), 'utf8')
-);
+const packageDashboardDocuments = ['advisory', 'ambient-context', 'aw-maintenance', 'dependabot', 'eu-cra-compliance', 'optimization']
+  .map((packageName) => JSON.parse(
+    readFileSync(resolve(fixtureDirectory, `../../../../${packageName}/dashboard.json`), 'utf8')
+  ));
 const authoritativeDashboardDocument = composeDashboardDocuments(
   builtInDashboardDocument,
-  packageDashboardDocument
+  packageDashboardDocuments
 );
 
 describe('presenter built-in and custom pages', () => {
@@ -360,10 +361,10 @@ describe('presenter built-in and custom pages', () => {
       'Workflows',
       'Repositories',
       'Packages',
+      'UK AI advisory',
       'Ambient context',
       'AW Maintenance',
       'Dependabot',
-      'UK AI advisory',
       'EU CRA advisor',
       'Optimization'
     ]);

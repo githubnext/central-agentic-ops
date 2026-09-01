@@ -3,3 +3,6 @@ description: Immutable workflow for manifest-aware, risk-ranked dependency relea
 min-version: v0.87.6
 includes:
   - .github/workflows/dependabot.md
+resources:
+  - source: dashboard.json
+    destination: .github/aw/dashboards/dependabot.json

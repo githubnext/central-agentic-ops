@@ -3,3 +3,6 @@ description: Organization-wide workflow for auditing, forecasting, and optimizin
 min-version: v0.87.6
 includes:
   - .github/workflows/optimization.md
+resources:
+  - source: dashboard.json
+    destination: .github/aw/dashboards/optimization.json

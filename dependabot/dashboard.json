@@ -1,0 +1,193 @@
+{
+  "language-version": "0.1.0",
+  "dashboard": {
+    "id": "dependabot-dashboard",
+    "title": "Dependabot",
+    "description": "Track manifest-aware dependency update runs, proposed release trains, and validated merged resolutions.",
+    "repository": "githubnext/central-agentic-ops",
+    "pages": [
+      {
+        "id": "dependabot-dashboard",
+        "kind": "custom",
+        "title": "Dependabot",
+        "description": "Track manifest-aware dependency update runs, proposed release trains, and validated merged resolutions.",
+        "icon": "package",
+        "views": [
+          {
+            "id": "dependabot-runs",
+            "title": "Release-train runs by conclusion",
+            "disclosure": "essential",
+            "data": {
+              "source": "runs",
+              "time": {
+                "range": "30d"
+              },
+              "filters": {
+                "workflow": [
+                  ".github/workflows/dependabot.md",
+                  ".github/workflows/dependabot-release-train-updater.md"
+                ]
+              }
+            },
+            "mark": "chart",
+            "chart": "line",
+            "encoding": {
+              "x": {
+                "field": "started-at",
+                "type": "temporal",
+                "time-unit": "day"
+              },
+              "y": {
+                "field": "run",
+                "type": "quantitative",
+                "aggregate": "count"
+              },
+              "color": {
+                "field": "run-conclusion",
+                "type": "nominal"
+              }
+            }
+          },
+          {
+            "id": "dependabot-outcomes",
+            "title": "Dependency release trains",
+            "description": "Repository-linked proposals remain human-reviewed and are never treated as successful until accepted evidence matures.",
+            "disclosure": "essential",
+            "data": {
+              "source": "outcomes",
+              "filters": {
+                "package": [
+                  "dependabot"
+                ]
+              },
+              "limit": 50
+            },
+            "mark": "table",
+            "empty-message": "No dependency release-train outputs were retained.",
+            "encoding": {
+              "href": {
+                "field": "external-link",
+                "type": "nominal"
+              },
+              "columns": [
+                {
+                  "field": "repository",
+                  "type": "nominal"
+                },
+                {
+                  "field": "outcome-title",
+                  "type": "nominal",
+                  "title": "Release train"
+                },
+                {
+                  "field": "outcome-state",
+                  "type": "nominal",
+                  "title": "Disposition",
+                  "display": "status"
+                },
+                {
+                  "field": "published-at",
+                  "type": "temporal",
+                  "title": "Published"
+                }
+              ]
+            }
+          },
+          {
+            "id": "dependabot-attainment",
+            "title": "Validated resolution evidence",
+            "description": "Each opportunity is an assigned dependency pull request; validated merge evidence matures after 14 days.",
+            "disclosure": "essential",
+            "data": {
+              "source": "operational-values",
+              "filters": {
+                "workflow": [
+                  ".github/workflows/dependabot-release-train-updater.md"
+                ]
+              },
+              "limit": 50
+            },
+            "mark": "table",
+            "empty-message": "No Dependabot attainment evidence is available.",
+            "encoding": {
+              "href": {
+                "field": "evidence-link",
+                "type": "nominal"
+              },
+              "columns": [
+                {
+                  "field": "repository",
+                  "type": "nominal"
+                },
+                {
+                  "field": "operational-case",
+                  "type": "nominal",
+                  "title": "Opportunity"
+                },
+                {
+                  "field": "operational-value",
+                  "type": "quantitative",
+                  "title": "Validated resolution share"
+                },
+                {
+                  "field": "maturity-status",
+                  "type": "nominal",
+                  "title": "Maturity",
+                  "display": "status"
+                },
+                {
+                  "field": "evidence-cutoff",
+                  "type": "temporal",
+                  "title": "Evidence cutoff"
+                }
+              ]
+            }
+          },
+          {
+            "id": "dependabot-value-trend",
+            "title": "Validated resolution trend",
+            "description": "Mean attainment groups only the release-train evaluator definition and does not imply causal impact.",
+            "disclosure": "essential",
+            "data": {
+              "source": "operational-values",
+              "time": {
+                "range": "90d"
+              },
+              "filters": {
+                "workflow": [
+                  ".github/workflows/dependabot-release-train-updater.md"
+                ]
+              }
+            },
+            "mark": "chart",
+            "chart": "line",
+            "encoding": {
+              "x": {
+                "field": "observed-at",
+                "type": "temporal",
+                "time-unit": "day"
+              },
+              "y": {
+                "field": "operational-value",
+                "type": "quantitative",
+                "aggregate": "mean"
+              },
+              "color": {
+                "field": "operational-value-definition",
+                "type": "nominal"
+              }
+            }
+          }
+        ]
+      }
+    ],
+    "navigation": [
+      {
+        "label": "Package operations",
+        "pages": [
+          "dependabot-dashboard"
+        ]
+      }
+    ]
+  }
+}

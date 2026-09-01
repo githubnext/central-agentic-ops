@@ -25,16 +25,14 @@ resources:
     destination: .github/aw/dashboard/report/records.mjs
   - source: report/dashboard-language-sources.mjs
     destination: .github/aw/dashboard/report/dashboard-language-sources.mjs
+  - source: report/bundle-dashboards.mjs
+    destination: .github/aw/dashboard/report/bundle-dashboards.mjs
   - source: site/index.html
     destination: .github/aw/dashboard/site/index.html
   - source: site/dashboard.json
     destination: .github/aw/dashboard/site/dashboard.json
-  - source: site/package-dashboards.json
-    destination: .github/aw/dashboard/site/package-dashboards.json
   - source: site/src/dom.js
     destination: .github/aw/dashboard/site/src/dom.js
-  - source: site/src/dashboard-documents.js
-    destination: .github/aw/dashboard/site/src/dashboard-documents.js
   - source: site/src/octicon-names.json
     destination: .github/aw/dashboard/site/src/octicon-names.json
   - source: site/src/octicons.js
