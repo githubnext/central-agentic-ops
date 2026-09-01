@@ -1283,6 +1283,7 @@ test("accessibility expert audits the served docs site with axe-core evidence", 
 
 test("Primer branding audits the dashboard against retrieved guidance", () => {
   const source = workflow("primer-branding.md");
+  const compiled = workflow("primer-branding.lock.yml");
 
   assert.match(source, /^private: true$/m);
   assert.match(source, /^name: "Primer Branding"$/m);
@@ -1295,6 +1296,7 @@ test("Primer branding audits the dashboard against retrieved guidance", () => {
   assert.match(source, /npm --prefix dashboard\/site run test:e2e/);
   assert.match(source, /create-pull-request:\n\s+title-prefix: "Primer branding: "\n\s+draft: true/);
   assert.match(source, /If the audit finds no meaningful deviations, call `noop` once/);
+  assert.match(compiled, /\\"noop\\":\{\\"max\\":1,\\"report-as-issue\\":\\"false\\"\}/);
 });
 
 test("docs diagram generator creates one validated theme-aware SVG pair", () => {

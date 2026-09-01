@@ -30,7 +30,6 @@ safe-outputs:
       - "dashboard/site/src/*.js"
       - "dashboard/site/src/**/*.js"
       - "dashboard/site/test/**/*.js"
-  noop:
 mcp-servers:
   primer-brand:
     command: npx
