@@ -37,6 +37,36 @@ describe('dashboard document validation', () => {
     expect(accepted.ok).toBe(true);
   });
 
+  it('keeps one focused custom dashboard for every operation package', () => {
+    const document = JSON.parse(authoritativeDashboardSource);
+    const packagePageIds = [
+      'ambient-context-dashboard',
+      'aw-maintenance-dashboard',
+      'dependabot-dashboard',
+      'advisory-dashboard',
+      'eu-cra-compliance-dashboard',
+      'optimization-dashboard'
+    ];
+    const packageNavigation = document.dashboard.navigation.find(
+      (/** @type {{ label: string }} */ group) => group.label === 'Package operations'
+    );
+
+    expect(packageNavigation.pages).toEqual(packagePageIds);
+    for (const pageId of packagePageIds) {
+      const page = document.dashboard.pages.find(
+        (/** @type {{ id: string }} */ candidate) => candidate.id === pageId
+      );
+      expect(page).toMatchObject({ kind: 'custom' });
+      expect(page.views).toHaveLength(4);
+      expect(page.views.every(
+        (/** @type {{ disclosure?: string }} */ view) => view.disclosure === 'essential'
+      )).toBe(true);
+      expect(page.views.map(
+        (/** @type {{ data: { source: string } }} */ view) => view.data.source
+      )).toEqual(['runs', 'outcomes', 'operational-values', 'operational-values']);
+    }
+  });
+
   it('validates source-free JSON callouts with canonical icons', () => {
     const document = JSON.parse(authoritativeDashboardSource);
     const costPage = document.dashboard.pages.find((/** @type {{ id: string }} */ page) => page.id === 'cost');
