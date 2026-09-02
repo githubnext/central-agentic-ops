@@ -101,6 +101,71 @@ test("dashboard source bridge carries package memberships, allowance, and invent
   assert.equal(sources.outcomes.rows[0]["run-conclusion"], "failure");
 });
 
+test("dashboard source bridge maps a legacy manifest-derived package identity to the canonical inventory bundle id", () => {
+  const orchestratorPath = ".github/workflows/uk-ai-advisory.lock.yml";
+  const workerPath = ".github/workflows/advisory-uk-ai-operational-resilience.lock.yml";
+  const standalonePath = ".github/workflows/advisory-package-maintainer.lock.yml";
+  const sources = buildDashboardLanguageSources({
+    deployed: {
+      generatedAt: "2026-09-02T12:00:00Z",
+      discovery: { complete: true },
+      runHealth: { available: true, complete: true },
+      bundles: [{
+        repository: "githubnext/central-agentic-ops",
+        path: "advisory/aw.yml",
+        name: "UK AI Advisory",
+        workflows: [
+          { lockPath: orchestratorPath },
+          { lockPath: workerPath },
+          { lockPath: standalonePath },
+        ],
+      }],
+      workflows: [
+        { repository: "githubnext/central-agentic-ops", path: orchestratorPath, name: "UK AI Advisory", role: "orchestrator", state: "active" },
+        { repository: "githubnext/central-agentic-ops", path: workerPath, name: "Operational Resilience", role: "worker", state: "active" },
+        { repository: "githubnext/central-agentic-ops", path: standalonePath, name: "Package Maintainer", state: "active" },
+      ],
+    },
+    usage: { available: true, complete: true, runs: [] },
+    operationalValues: { records: [] },
+    report: { generatedAt: "2026-09-02T12:00:00Z", records: [] },
+    inventory: {
+      workflows: [
+        { sourcePath: ".github/workflows/uk-ai-advisory.md", lockPath: orchestratorPath, compiled: true },
+        { sourcePath: ".github/workflows/advisory-uk-ai-operational-resilience.md", lockPath: workerPath, compiled: true },
+      ],
+      bundles: [{
+        id: "uk-ai-advisory",
+        name: "UK AI Advisory",
+        workflow: ".github/workflows/uk-ai-advisory.md",
+        controlPackage: "advisory",
+        maxAiCredits: 250,
+        compiled: true,
+        missingWorkers: [],
+        workers: [{
+          id: "advisory-uk-ai-operational-resilience",
+          sourcePath: ".github/workflows/advisory-uk-ai-operational-resilience.md",
+          lockPath: workerPath,
+          maxAiCredits: 600,
+          compiled: true,
+        }],
+      }],
+    },
+    controlSettings: {
+      packages: { advisory: { mode: "review" } },
+    },
+  });
+
+  const packagesById = new Map(sources.workflows.rows.map((row) => [row.workflow, row.package]));
+  assert.equal(packagesById.get(".github/workflows/uk-ai-advisory.md"), "uk-ai-advisory");
+  assert.equal(packagesById.get(".github/workflows/advisory-uk-ai-operational-resilience.md"), "uk-ai-advisory");
+  assert.equal(packagesById.get(".github/workflows/advisory-package-maintainer.md"), "uk-ai-advisory");
+  assert.deepEqual(
+    new Set(sources.workflows.rows.map((row) => row.package)),
+    new Set(["uk-ai-advisory"]),
+  );
+});
+
 test("dashboard source bridge carries model and agent metadata into usage and report rows", () => {
   const sources = buildDashboardLanguageSources({
     deployed: {
