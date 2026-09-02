@@ -8,6 +8,7 @@ timeout-minutes: 15
 
 concurrency:
   group: "${{ github.workflow }}"
+  job-discriminator: ${{ github.run_id }}
   cancel-in-progress: true
 
 on:

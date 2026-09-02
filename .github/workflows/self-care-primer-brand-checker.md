@@ -100,6 +100,7 @@ tracker-id: self-care-primer-brand-checker
 run-name: "SelfCare Primer brand · ${{ inputs.target_repo }} · ${{ inputs.safe_output_mode || 'review' }}"
 concurrency:
   group: "${{ github.workflow }}-${{ inputs.target_repo }}"
+  job-discriminator: ${{ github.run_id }}
   cancel-in-progress: true
 runtimes:
   node:

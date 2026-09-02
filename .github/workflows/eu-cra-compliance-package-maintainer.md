@@ -48,6 +48,7 @@ run-name: "CRA package implementation-status maintenance · ${{ inputs.safe_outp
 
 concurrency:
   group: "${{ github.workflow }}"
+  job-discriminator: ${{ github.run_id }}
   cancel-in-progress: true
 
 tracker-id: eu-cra-compliance-package-maintainer

@@ -30,9 +30,6 @@ env:
   CAO_ROLE: ${{ github.aw.import-inputs.role }}
   CAO_WORKER: ${{ github.aw.import-inputs.worker }}
 
-concurrency:
-  job-discriminator: ${{ github.run_id }}
-
 tools:
   github:
     mode: remote

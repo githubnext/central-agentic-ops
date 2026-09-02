@@ -44,6 +44,7 @@ run-name: "UK AI Advisory package alignment maintenance · ${{ inputs.safe_outpu
 
 concurrency:
   group: "${{ github.workflow }}"
+  job-discriminator: ${{ github.run_id }}
   cancel-in-progress: true
 
 tracker-id: advisory-package-maintainer
