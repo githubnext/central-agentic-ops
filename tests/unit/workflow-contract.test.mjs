@@ -391,6 +391,14 @@ test("threat detection runs for workers but not orchestrators", () => {
   }
 });
 
+test("operations creation guidance scopes detection and omits worker evals", () => {
+  const packageSkill = readFileSync(join(root, ".github", "skills", "create-ops-package", "SKILL.md"), "utf8");
+
+  assert.match(packageSkill, /safe-outputs\.threat-detection: false/);
+  assert.match(packageSkill, /no `evals` configuration; use deterministic graders for worker measurement/);
+  assert.match(packageSkill, /Confirm the orchestrator disables threat detection and every worker omits `evals`/);
+});
+
 test("AI Credit auditor uses gh-aw forecast for cost projections", () => {
   const auditor = workflow("optimization-ai-credit-auditor.md");
 
