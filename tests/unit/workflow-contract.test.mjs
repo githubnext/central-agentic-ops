@@ -2114,6 +2114,7 @@ test("Dashboard package supports embedded and explicit standalone deployment", (
   assert.match(dashboardManifest, /source: dashboard\.yml\n\s+destination: \.github\/workflows\/dashboard\.yml\n\s+kind: action-workflow/);
   assert.match(dashboardManifest, /^\s+- \.github\/workflows\/dashboard-build\.yml$/m);
   assert.doesNotMatch(dashboardManifest, /destination: \.github\/cao\//);
+  assert.match(dashboardManifest, /source: local-server\.mjs\n\s+destination: \.github\/aw\/dashboard\/local-server\.mjs/);
   assert.match(canonicalPolicyResolver, /export function parsePolicy/);
   assert.match(deployedWorkflows, /dashboardHorizonHours\(resolveDashboardHorizon\(dashboardDocument\.dashboard\)\)/);
   assert.doesNotMatch(deployedWorkflows, /REPORT_RUN_WINDOW_HOURS/);

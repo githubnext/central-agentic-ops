@@ -19,6 +19,7 @@ The dashboard package publishes an access-controlled static view of Central Agen
 - `.github/cao/src/control.mjs`: deterministic policy command adapter used by the build workflow.
 - `.github/aw/dashboard/report`: deterministic collectors, durable-record production, and Dashboard Language source adaptation.
 - `.github/aw/dashboard/site`: the packaged Dashboard Language validator, presenter, configuration, and browser runtime.
+- `.github/aw/dashboard/local-server.mjs`: dependency-free local preview server with live reload.
 
 The publisher reads trusted workflow, issue, pull request, and value-artifact data from the installed repository. Collectors write bounded JSON, `records.mjs` normalizes durable outputs, `dashboard-language-sources.mjs` creates `sources.json`, and the packaged renderer serves it at the configured `site-path`. AI agents do not receive `pages: write`, `id-token: write`, or deployment authority.
 
@@ -41,6 +42,20 @@ gh aw add githubnext/central-agentic-ops/dashboard@<catalog-release> --force
 ```
 
 The package contains only deterministic action workflows and resources, so `gh aw update` has no source-tracked agentic workflow through which to discover it.
+
+## Local preview
+
+From the root of an installed control repository, start the dashboard with Node.js:
+
+```bash
+node .github/aw/dashboard/local-server.mjs
+```
+
+Open the printed `http://127.0.0.1:4173/?fixtures` URL. The server uses only Node.js built-ins, binds to the loopback interface by default, and serves the packaged site without a build step. Use `--port` or `--host` to override its address.
+
+The preview composes `.github/aw/dashboard/site/dashboard.json` with every installed `.github/aw/dashboards/*.json` package dashboard. It watches those files and reloads connected browsers after a valid update. Invalid JSON is reported in the terminal while the last valid preview remains available.
+
+Catalog contributors can run `node dashboard/local-server.mjs`; the same server discovers top-level package `dashboard.json` files automatically.
 
 ## Standalone Pages site
 
