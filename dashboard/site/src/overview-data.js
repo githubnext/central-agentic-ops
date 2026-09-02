@@ -47,7 +47,7 @@ export function deriveOverviewSources(sources) {
     },
     'overview-attention': {
       source: 'overview-attention',
-      rows: buildAttentionRows({ sources, runs, findings: rowsFor(sources, 'findings'), packages, disabledWorkflows, health }),
+      rows: buildAttentionRows({ sources, workflows, runs, findings: rowsFor(sources, 'findings'), packages, disabledWorkflows, health }),
       metadata: overviewMetadata
     },
     'overview-attention-domains': {
@@ -434,6 +434,11 @@ function isFiniteNumber(value) {
  */
 function buildDomainAttentionRows(input) {
       const runTelemetryAvailable = input.sources.runs?.metadata?.availability === 'available';
+  const controlPolicyDiagnostics = rowsFor(input.sources, 'coverage-diagnostics')
+    .filter((row) => String(row.title) === 'Control policy resolution unavailable');
+  const controlPolicyBlocks = controlPolicyDiagnostics.length;
+  const admissionBlocks = input.workflows.filter((row) => String(row['admission-status']) === 'blocked').length;
+  const controlBlocks = controlPolicyBlocks + admissionBlocks;
       const warningOutputs = input.findings.filter(isAuthoredWarning).length;
       const inventoryGaps = input.workflows.filter((row) => row['inventory-ready'] === false).length;
       const openOutputs = input.outcomes.filter((row) => String(row['outcome-state']) === 'pending').length;
@@ -464,7 +469,7 @@ function buildDomainAttentionRows(input) {
       }).length + inventoryGaps;
       const attributionGaps = rootRuns.length;
       const evidenceGaps = collectionGaps + attributionGaps;
-      const securitySignals = input.health.approval + warningOutputs + inventoryGaps;
+      const securitySignals = controlBlocks + input.health.approval + warningOutputs + inventoryGaps;
 
       return [
         domainRow({
@@ -481,13 +486,13 @@ function buildDomainAttentionRows(input) {
         }),
         domainRow({
           order: 1,
-          priority: input.health.approval > 0 || warningOutputs > 0 || inventoryGaps > 0 ? 1 : 3,
-          state: input.health.approval > 0 || warningOutputs > 0 || inventoryGaps > 0 ? 'Investigate' : 'Unavailable',
+          priority: controlBlocks > 0 ? 0 : input.health.approval > 0 || warningOutputs > 0 || inventoryGaps > 0 ? 1 : 3,
+          state: controlBlocks > 0 ? 'Act now' : input.health.approval > 0 || warningOutputs > 0 || inventoryGaps > 0 ? 'Investigate' : 'Unavailable',
           icon: 'shield',
           domain: 'Security & controls',
-          value: `${formatCount(securitySignals)} signals`,
-          detail: `No vulnerability feed · ${formatCount(input.health.approval)} approval gates · ${formatCount(warningOutputs)} explicit warnings · ${formatCount(inventoryGaps)} integrity gaps`,
-          href: '#page-security'
+          value: `${formatCount(securitySignals)} signal${securitySignals === 1 ? '' : 's'}`,
+          detail: `${formatCount(admissionBlocks)} admission gates · ${formatCount(controlPolicyBlocks)} policy resolution blocks · ${formatCount(input.health.approval)} approval gates · ${formatCount(inventoryGaps)} integrity gaps`,
+          href: controlPolicyBlocks > 0 ? '#page-coverage' : '#page-security'
         }),
         domainRow({
           order: 3,
@@ -574,6 +579,7 @@ function formatAic(value) {
  */
 function buildSecuritySummary(input) {
   return [
+    { label: 'Admission gates', value: input.workflows.filter((row) => String(row['admission-status']) === 'blocked').length },
     { label: 'Approval gates', value: input.runs.filter((row) => String(row['run-conclusion']) === 'action-required').length },
     { label: 'Explicit warnings', value: input.findings.filter(isAuthoredWarning).length },
     { label: 'Package integrity gaps', value: input.workflows.filter((row) => row['inventory-ready'] === false).length },
@@ -588,6 +594,19 @@ function buildSecuritySignals(input) {
   const workflowNames = new Map(input.workflows.map((row) => [String(row.workflow ?? ''), String(row['workflow-name'] ?? row.workflow ?? 'Unknown workflow')]));
   const outcomeIds = new Set(input.outcomes.map((row) => String(row['safe-output'] ?? '')).filter(Boolean));
   const signals = [
+    ...groupRows(input.workflows.filter((row) => String(row['admission-status']) === 'blocked'), (row) => String(row.package ?? row.workflow ?? ''))
+      .map(([key, rows]) => ({
+        priority: 0,
+        count: rows.length,
+        tone: 'danger',
+        icon: 'shield',
+        kind: 'Admission gate',
+        title: String(rows[0]?.['package-name'] ?? rows[0]?.['workflow-name'] ?? key),
+        detail: [...new Set(rows.map((row) => String(row['admission-reason'] || 'blocked')))].sort().join(', '),
+        evidence: 'Checked-in control policy',
+        action: 'View package',
+        'navigation-page': 'packages'
+      })),
     ...groupRows(input.runs.filter((row) => String(row['run-conclusion']) === 'action-required'), (row) => String(row.workflow ?? ''))
       .map(([workflow, rows]) => ({
         priority: 1,
@@ -770,17 +789,29 @@ function buildExecutionHealthRows(health) {
 }
 
 /**
- * @param {{ sources: Record<string, import('./presenter.js').LogicalSourceInput>, runs: Array<Record<string, unknown>>, findings: Array<Record<string, unknown>>, packages: ReturnType<typeof summarizePackages>, disabledWorkflows: number, health: ReturnType<typeof summarizeRunHealth> }} input
+ * @param {{ sources: Record<string, import('./presenter.js').LogicalSourceInput>, workflows: Array<Record<string, unknown>>, runs: Array<Record<string, unknown>>, findings: Array<Record<string, unknown>>, packages: ReturnType<typeof summarizePackages>, disabledWorkflows: number, health: ReturnType<typeof summarizeRunHealth> }} input
  */
 function buildAttentionRows(input) {
   const failedRepositories = new Set(input.health.failedRows.map(repositoryKey).filter(Boolean)).size;
   const packageGaps = input.packages.filter((entry) => !entry.ready).length;
   const openFindings = input.findings.filter((row) => String(row['finding-status']) === 'open').length;
+  const controlPolicyDiagnostics = rowsFor(input.sources, 'coverage-diagnostics')
+    .filter((row) => String(row.title) === 'Control policy resolution unavailable');
+  const admissionBlocks = input.workflows.filter((row) => String(row['admission-status']) === 'blocked');
+  const admissionReasons = [...new Set(admissionBlocks.map((row) => String(row['admission-reason'] || 'blocked')))].sort();
   const coverageGaps = ['workflows', 'runs', 'usage'].filter((name) => {
     const metadata = input.sources[name]?.metadata;
     return metadata?.availability !== 'available' || metadata.completeness !== 'complete' || metadata.freshness !== 'fresh';
   });
   return buildAttentionItems({
+    'control-policy-unavailable': {
+      count: controlPolicyDiagnostics.length,
+      reason: controlPolicyDiagnostics[0]?.effect || 'The authoritative control policy could not be resolved.'
+    },
+    'admission-blocked': {
+      count: admissionBlocks.length,
+      list: admissionReasons.join(', ')
+    },
     'runs-failed': { count: input.health.failed, repositories: failedRepositories },
     'runs-approval': { count: input.health.approval },
     'disabled-workflows': { count: input.disabledWorkflows },

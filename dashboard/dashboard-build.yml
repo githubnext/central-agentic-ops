@@ -50,7 +50,11 @@ jobs:
       - name: Resolve authoritative control policy
         env:
           GITHUB_REPOSITORY: ${{ github.repository }}
-        run: node .github/cao/control.mjs control-settings .github/central-agentic-ops.json > "$RUNNER_TEMP/control-settings.json"
+        run: |
+          node .github/aw/dashboard/report/control-settings.mjs \
+            .github/cao/control.mjs \
+            .github/central-agentic-ops.json \
+            "$RUNNER_TEMP/control-settings.json"
 
       - name: Extract control-plane inventory
         env:

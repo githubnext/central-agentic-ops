@@ -438,6 +438,13 @@ export function controlSettings(document, controlRepository) {
     ...defaults,
     ...pick(policy, DEFAULT_KEYS),
     icon: policy.icon ?? null,
+    worker_policies: Object.fromEntries(
+      Object.entries(policy.workers ?? {}).map(([worker, workerPolicy]) => [workerPolicy.workflow, {
+        worker,
+        enabled: workerPolicy.enabled ?? true,
+        max_mode: workerPolicy["max-mode"] ?? null,
+      }]),
+    ),
     ...(policy.targets ? {
       target_policies: Object.fromEntries(
         Object.entries(policy.targets).map(([repository, targetPolicy]) => [repository.toLowerCase(), targetPolicy]),

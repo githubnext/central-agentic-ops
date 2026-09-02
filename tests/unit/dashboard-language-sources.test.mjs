@@ -108,6 +108,12 @@ test("dashboard source bridge carries canonical coverage diagnostics", () => {
     usage: { available: true, complete: false, windowHours: 24, runs: [] },
     operationalValues: { records: [] },
     report: { generatedAt: "2026-08-31T12:00:00Z", records: [] },
+    controlSettings: {
+      policy_resolution: {
+        status: "unavailable",
+        reason: "control-plane is required",
+      },
+    },
   };
 
   const sources = buildDashboardLanguageSources(input);
@@ -128,6 +134,10 @@ test("dashboard source bridge carries canonical coverage diagnostics", () => {
     },
   );
   assert.deepEqual(sources["coverage-diagnostics"].rows, [
+    {
+      title: "Control policy resolution unavailable",
+      effect: "control-plane is required",
+    },
     {
       title: "Private repository discovery is off",
       effect: "Private repositories are excluded from workflow inventory and run-health totals.",
@@ -154,9 +164,92 @@ test("dashboard source bridge carries canonical coverage diagnostics", () => {
       ...input,
       deployed: { ...input.deployed, includePrivate: true },
       usage: { ...input.usage, complete: true },
+      controlSettings: { policy_resolution: { status: "available", reason: "" } },
     })["coverage-diagnostics"].rows,
     [],
   );
+});
+
+test("dashboard source bridge derives admission gates from resolved control policy", () => {
+  const sources = buildDashboardLanguageSources({
+    deployed: {
+      generatedAt: "2026-09-02T12:00:00Z",
+      discovery: { complete: true },
+      runHealth: { available: true, complete: true },
+      bundles: [],
+      workflows: [
+        { repository: "acme/control", path: ".github/workflows/operations.lock.yml", name: "Operations", role: "orchestrator", state: "active", runHealth: { runRecords: [] } },
+        { repository: "acme/control", path: ".github/workflows/enabled-worker.lock.yml", name: "Enabled worker", role: "worker", state: "active", runHealth: { runRecords: [] } },
+        { repository: "acme/control", path: ".github/workflows/disabled-worker.lock.yml", name: "Disabled worker", role: "worker", state: "active", runHealth: { runRecords: [] } },
+        { repository: "acme/control", path: ".github/workflows/undeclared-worker.lock.yml", name: "Undeclared worker", role: "worker", state: "active", runHealth: { runRecords: [] } },
+        { repository: "acme/control", path: ".github/workflows/disabled-package.lock.yml", name: "Disabled package", role: "orchestrator", state: "active", runHealth: { runRecords: [] } },
+        { repository: "acme/control", path: ".github/workflows/undeclared-package.lock.yml", name: "Undeclared package", role: "orchestrator", state: "active", runHealth: { runRecords: [] } },
+      ],
+    },
+    usage: { available: true, complete: true, runs: [] },
+    operationalValues: { records: [] },
+    report: { generatedAt: "2026-09-02T12:00:00Z", records: [] },
+    inventory: {
+      workflows: [],
+      bundles: [{
+        id: "operations",
+        name: "Operations",
+        workflow: ".github/workflows/operations.md",
+        controlPackage: "operations",
+        compiled: true,
+        missingWorkers: [],
+        workers: [
+          { id: "enabled-worker", sourcePath: ".github/workflows/enabled-worker.md", lockPath: ".github/workflows/enabled-worker.lock.yml", compiled: true },
+          { id: "disabled-worker", sourcePath: ".github/workflows/disabled-worker.md", lockPath: ".github/workflows/disabled-worker.lock.yml", compiled: true },
+          { id: "undeclared-worker", sourcePath: ".github/workflows/undeclared-worker.md", lockPath: ".github/workflows/undeclared-worker.lock.yml", compiled: true },
+        ],
+      }, {
+        id: "disabled-package",
+        name: "Disabled package",
+        workflow: ".github/workflows/disabled-package.md",
+        controlPackage: "disabled-package",
+        compiled: true,
+        missingWorkers: [],
+        workers: [],
+      }, {
+        id: "undeclared-package",
+        name: "Undeclared package",
+        workflow: ".github/workflows/undeclared-package.md",
+        controlPackage: "undeclared-package",
+        compiled: true,
+        missingWorkers: [],
+        workers: [],
+      }],
+    },
+    controlSettings: {
+      packages: {
+        operations: {
+          enabled: true,
+          worker_policies: {
+            "enabled-worker": { worker: "enabled", enabled: true, max_mode: null },
+            "disabled-worker": { worker: "disabled", enabled: false, max_mode: null },
+          },
+        },
+        "disabled-package": {
+          enabled: false,
+          worker_policies: {},
+        },
+      },
+    },
+  });
+
+  assert.deepEqual(sources.workflows.rows.map((row) => ({
+    workflow: row.workflow,
+    status: row["admission-status"],
+    reason: row["admission-reason"],
+  })), [
+    { workflow: ".github/workflows/operations.md", status: "authorized", reason: "authorized" },
+    { workflow: ".github/workflows/enabled-worker.md", status: "authorized", reason: "authorized" },
+    { workflow: ".github/workflows/disabled-worker.md", status: "blocked", reason: "worker-disabled" },
+    { workflow: ".github/workflows/undeclared-worker.md", status: "blocked", reason: "worker-undeclared" },
+    { workflow: ".github/workflows/disabled-package.md", status: "blocked", reason: "package-disabled" },
+    { workflow: ".github/workflows/undeclared-package.md", status: "blocked", reason: "package-undeclared" },
+  ]);
 });
 
 test("dashboard source bridge retains unavailable grader records separately from value observations", () => {
