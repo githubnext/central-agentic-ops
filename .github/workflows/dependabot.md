@@ -74,6 +74,7 @@ strict: true
 tools:
   github:
     mode: remote
+    min-integrity: approved
     toolsets: [repos, issues, pull_requests, actions, dependabot, code_security]
 
 network:
