@@ -58,7 +58,8 @@ describe('Cost and efficiency dashboard view', () => {
     const filterBar = page?.querySelector('.filter-bar');
     expect(filterBar?.querySelector('.filter-control code')?.textContent).toBe('mode:review mode:live');
     expect(filterBar?.querySelector('.count-badge')?.textContent).toBe('2');
-    expect(filterBar?.querySelector('.scope-period')?.textContent).toBe('All recorded');
+    expect(filterBar?.querySelector('.scope-period')).toBeNull();
+    expect(rendered.querySelector('.dashboard-horizon')?.textContent).toBe('Horizon 1 week');
     const exportLink = filterBar?.querySelector('.export-control');
     expect(exportLink?.getAttribute('download')).toBe('cost.json');
     const exportPayload = JSON.parse(decodeURIComponent(exportLink?.getAttribute('href')?.split(',')[1] ?? ''));
