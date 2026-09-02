@@ -93,3 +93,11 @@ test("configured wizard operations require a matching catalog manifest", () => {
     /Configured package missing must have a catalog manifest/,
   );
 });
+
+test("configured wizard operations exclude the repository-local self-care package", () => {
+  const first = { slug: "first" };
+  const selfCare = { slug: "self-care" };
+  const policy = { "control-plane": { packages: { "self-care": {}, first: {} } } };
+
+  assert.deepEqual(selectConfiguredOperations(policy, [first, selfCare]), [first]);
+});
