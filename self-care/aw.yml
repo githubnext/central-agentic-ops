@@ -2,8 +2,8 @@ name: SelfCare
 description: Repository-local live checks for dashboard quality, accessibility, build performance, component reuse, and Primer brand alignment in Central Agentic Ops.
 min-version: v0.88.0
 includes:
-  - .github/workflows/self-care.md
   - .github/workflows/self-care-docs-build-time-investigator.md
+  - .github/workflows/self-care.md
 resources:
   - source: dashboard.json
     destination: .github/aw/dashboards/self-care.json
