@@ -43,6 +43,8 @@ resources:
     destination: .github/aw/dashboard/site/src/data-processor.js
   - source: site/src/data-worker.js
     destination: .github/aw/dashboard/site/src/data-worker.js
+  - source: site/src/diagnostics.js
+    destination: .github/aw/dashboard/site/src/diagnostics.js
   - source: site/src/dom.js
     destination: .github/aw/dashboard/site/src/dom.js
   - source: site/src/horizon.js

@@ -68,8 +68,12 @@ function buildPresenterModuleUrl() {
   const dataOperationsSource = readFileSync(new URL('../../src/data-operations.js', import.meta.url), 'utf8');
   const dataOperationsModuleUrl = `data:text/javascript;charset=utf-8,${encodeURIComponent(dataOperationsSource)}`;
 
+  const diagnosticsSource = readFileSync(new URL('../../src/diagnostics.js', import.meta.url), 'utf8');
+  const diagnosticsModuleUrl = `data:text/javascript;charset=utf-8,${encodeURIComponent(diagnosticsSource)}`;
+
   const dataProcessorSource = readFileSync(new URL('../../src/data-processor.js', import.meta.url), 'utf8')
-    .replace("'./data-operations.js'", JSON.stringify(dataOperationsModuleUrl));
+    .replace("'./data-operations.js'", JSON.stringify(dataOperationsModuleUrl))
+    .replace("'./diagnostics.js'", JSON.stringify(diagnosticsModuleUrl));
   const dataProcessorModuleUrl = `data:text/javascript;charset=utf-8,${encodeURIComponent(dataProcessorSource)}`;
 
   const tableRegionSource = readFileSync(new URL('../../src/components/table-region.js', import.meta.url), 'utf8')

@@ -2166,7 +2166,7 @@ test("Dashboard package supports embedded and explicit standalone deployment", (
   assert.match(dashboardManifest, /source: site\/dashboard\.json\n\s+destination: \.github\/aw\/dashboard\/site\/dashboard\.json/);
   assert.match(dashboardManifest, /source: site\/src\/presenter\.js\n\s+destination: \.github\/aw\/dashboard\/site\/src\/presenter\.js/);
   assert.match(dashboardManifest, /source: site\/src\/loading-progress\.js\n\s+destination: \.github\/aw\/dashboard\/site\/src\/loading-progress\.js/);
-  for (const assetName of ["data-operations.js", "data-processor.js", "data-worker.js"]) {
+  for (const assetName of ["data-operations.js", "data-processor.js", "data-worker.js", "diagnostics.js"]) {
     assert.match(dashboardManifest, new RegExp(`source: site/src/${assetName.replace(".", "\\.")}\\n\\s+destination: \\.github/aw/dashboard/site/src/${assetName.replace(".", "\\.")}`));
   }
   for (const assetName of reportAssets) {

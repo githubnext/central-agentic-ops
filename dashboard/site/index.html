@@ -16,6 +16,7 @@
       import { renderDashboard } from "./src/presenter.js";
       import { startLoadingProgress } from "./src/loading-progress.js";
       import { readCachedSources, writeCachedSources } from "./src/source-cache.js";
+      import { logDashboardEvent, summarizeSources } from "./src/diagnostics.js";
 
       const metadata = (id, overrides = {}) => ({
         "source-id": id,
@@ -33,10 +34,16 @@
         label: `Run ${run}`,
       });
 
+      const fixtureMode = new URLSearchParams(window.location.search).has("fixtures");
+      logDashboardEvent("debug", "dashboard.start", { mode: fixtureMode ? "fixtures" : "live" });
       const loadingProgress = startLoadingProgress(document);
+      logDashboardEvent("debug", "schema.request");
       const dashboardSchema = await fetch("./dashboard.json")
         .then((response) => {
-          if (!response.ok) throw new Error(`Unable to load dashboard.json: ${response.status}`);
+          if (!response.ok) {
+            logDashboardEvent("error", "schema.failure", { status: response.status });
+            throw new Error(`Unable to load dashboard.json: ${response.status}`);
+          }
           return response.json();
         })
         .catch((error) => {
@@ -47,6 +54,9 @@
         languageVersion: dashboardSchema["language-version"],
         dashboard: dashboardSchema.dashboard,
       };
+      logDashboardEvent("info", "schema.ready", {
+        pageCount: Array.isArray(dashboardDocument.dashboard?.pages) ? dashboardDocument.dashboard.pages.length : 0,
+      });
       const root = document.querySelector("#root");
 
       const renderSources = (sources, state = "ready") => {
@@ -80,6 +90,7 @@
           dashboard.querySelector(".report-body")?.prepend(status);
         }
         root.replaceChildren(dashboard);
+        logDashboardEvent("debug", "render.complete", { state, ...summarizeSources(sources) });
         return dashboard;
       };
 
@@ -339,14 +350,17 @@
         },
       };
 
-      if (new URLSearchParams(window.location.search).has("fixtures")) {
+      if (fixtureMode) {
         renderSources(fixtureSources);
         loadingProgress.complete();
+        logDashboardEvent("info", "dashboard.ready", { mode: "fixtures", ...summarizeSources(fixtureSources) });
       } else {
         let dashboard = renderSources({}, "loading");
         const cacheKey = new URL("./sources.json", window.location.href).href;
+        logDashboardEvent("debug", "source.request", { mode: "live" });
         const liveSourcesPromise = fetch("./sources.json").then(async (response) => {
           if (!response.ok) {
+            logDashboardEvent("error", "source.failure", { status: response.status });
             throw new Error(`Unable to load sources.json: ${response.status}`);
           }
           return response.json();
@@ -358,19 +372,27 @@
           cachedSources = await readCachedSources(window.indexedDB, cacheKey);
         } catch {
           // IndexedDB is an optional performance enhancement.
+          logDashboardEvent("warning", "cache.read.failure", { cache: "unavailable" });
         }
         if (cachedSources) {
           dashboard = renderSources(cachedSources, "cached");
+          logDashboardEvent("debug", "cache.read.hit", { cache: "hit", ...summarizeSources(cachedSources) });
+        } else {
+          logDashboardEvent("debug", "cache.read.miss", { cache: "miss" });
         }
 
         try {
           const sources = await liveSourcesPromise;
+          logDashboardEvent("info", "source.ready", { ...summarizeSources(sources) });
           dashboard = renderSources(sources);
-          void writeCachedSources(window.indexedDB, cacheKey, sources).catch(() => {});
+          void writeCachedSources(window.indexedDB, cacheKey, sources)
+            .then(() => logDashboardEvent("debug", "cache.write.ready", { cache: "stored" }))
+            .catch(() => logDashboardEvent("warning", "cache.write.failure", { cache: "unavailable" }));
         } catch (error) {
           const message = error instanceof Error ? error.message : String(error);
           const failure = new Error(`Unable to load live dashboard data: ${message}`, { cause: error });
           if (cachedSources) {
+            logDashboardEvent("warning", "source.fallback", { cache: "hit", ...summarizeSources(cachedSources) });
             dashboard.classList.remove("dashboard-refreshing");
             dashboard.removeAttribute("aria-busy");
             const status = dashboard.querySelector(".source-loading-status");
@@ -379,11 +401,16 @@
               status.textContent = `${failure.message} Showing cached data.`;
             }
           } else {
+            logDashboardEvent("error", "source.failure");
             root.textContent = failure.message;
             throw failure;
           }
         } finally {
           loadingProgress.complete();
+          logDashboardEvent("info", "dashboard.ready", {
+            mode: "live",
+            state: cachedSources && dashboard.classList.contains("source-loading-warning") ? "cached" : "ready",
+          });
         }
       }
     </script>
