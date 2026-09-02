@@ -88,6 +88,17 @@
           }
         }
       },
+      "software-development-practices": {
+        "icon": "code",
+        "workers": {
+          "github-well-architected": {
+            "workflow": "software-development-practices-github-well-architected"
+          },
+          "nist-ssdf": {
+            "workflow": "software-development-practices-nist-ssdf"
+          }
+        }
+      },
       "self-care": {
         "mode": "review",
         "max-repositories": 1,

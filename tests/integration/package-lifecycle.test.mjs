@@ -24,6 +24,7 @@ const craPackageSource = focusedPackageSource("eu-cra-compliance");
 const dashboardPackageSource = focusedPackageSource("dashboard");
 const dependabotUpdateSource = focusedPackageSource("dependabot");
 const selfCarePackageSource = focusedPackageSource("self-care");
+const softwareDevelopmentPracticesPackageSource = focusedPackageSource("software-development-practices");
 const advisoryExpectedFiles = [
   ".github/aw/advisory/implementation-status.md",
   ".github/aw/dashboards/advisory.json",
@@ -66,6 +67,13 @@ const selfCareExpectedFiles = [
   ".github/workflows/self-care.md",
   ".github/workflows/shared/control-precompute.md",
   ".github/workflows/shared/control.md",
+];
+const softwareDevelopmentPracticesExpectedFiles = [
+  ".github/workflows/shared/control-precompute.md",
+  ".github/workflows/shared/control.md",
+  ".github/workflows/software-development-practices-github-well-architected.md",
+  ".github/workflows/software-development-practices-nist-ssdf.md",
+  ".github/workflows/software-development-practices.md",
 ];
 
 const repositoryOnlyFiles = [
@@ -215,6 +223,41 @@ test("gh aw add installs the focused SelfCare package contract", { timeout: 180_
     for (const relativePath of selfCareExpectedFiles) {
       assert.ok(existsSync(join(consumer, relativePath)), `focused SelfCare package omitted ${relativePath}`);
     }
+  } finally {
+    rmSync(consumer, { recursive: true, force: true });
+  }
+});
+
+test("gh aw add installs the focused Software Development Practices package contract", { timeout: 180_000 }, () => {
+  const consumer = installPackage(softwareDevelopmentPracticesPackageSource);
+
+  try {
+    for (const relativePath of softwareDevelopmentPracticesExpectedFiles) {
+      assert.ok(
+        existsSync(join(consumer, relativePath)),
+        `focused Software Development Practices package omitted ${relativePath}`,
+      );
+    }
+    assert.ok(
+      !existsSync(join(consumer, ".github", "workflows", "dependabot.md")),
+      "focused Software Development Practices package installed an unrelated orchestrator",
+    );
+
+    const packageManifests = readdirSync(join(consumer, ".github", "aw", "packages"));
+    assert.equal(packageManifests.length, 1, "expected one focused Software Development Practices package manifest");
+    const installedManifest = JSON.parse(readFileSync(
+      join(consumer, ".github", "aw", "packages", packageManifests[0]),
+      "utf8",
+    ));
+    assert.deepEqual(
+      installedManifest.files.map(({ destination }) => destination).sort(),
+      [
+        ".github/workflows/software-development-practices-github-well-architected.md",
+        ".github/workflows/software-development-practices-nist-ssdf.md",
+        ".github/workflows/software-development-practices.md",
+      ],
+      "focused Software Development Practices package manifest must own its entry workflows",
+    );
   } finally {
     rmSync(consumer, { recursive: true, force: true });
   }

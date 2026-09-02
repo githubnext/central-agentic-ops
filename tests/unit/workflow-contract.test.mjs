@@ -316,6 +316,9 @@ test("enterprise defaults, budgets, timeouts, and concurrency are finite", () =>
     "eu-cra-compliance-vulnerability-handling-auditor.md": { credits: 150, timeout: 30 },
     "optimization-ai-credit-auditor.md": { credits: 350, timeout: 35 },
     "optimization-ai-credit-optimizer.md": { credits: 500, timeout: 30 },
+    "software-development-practices.md": { credits: 250, timeout: 15, dispatchMax: 20, workers: 2 },
+    "software-development-practices-github-well-architected.md": { credits: 400, timeout: 30 },
+    "software-development-practices-nist-ssdf.md": { credits: 400, timeout: 30 },
     "self-care-accessibility-checker.md": { credits: 400, timeout: 30 },
     "self-care-code-improvement.md": { credits: 400, timeout: 30 },
     "self-care-primer-brand-checker.md": { credits: 400, timeout: 25 },
@@ -455,7 +458,7 @@ test("workflow contracts isolate authenticated package lifecycle checks", () => 
 });
 
 test("package manifests exclude repository-only tests", () => {
-  for (const relativePath of ["aw.yml", join("advisory", "aw.yml"), join("ambient-context", "aw.yml"), join("aw-maintenance", "aw.yml"), join("dashboard", "aw.yml"), join("dependabot", "aw.yml"), join("eu-cra-compliance", "aw.yml"), join("optimization", "aw.yml"), join("self-care", "aw.yml")]) {
+  for (const relativePath of ["aw.yml", join("advisory", "aw.yml"), join("ambient-context", "aw.yml"), join("aw-maintenance", "aw.yml"), join("dashboard", "aw.yml"), join("dependabot", "aw.yml"), join("eu-cra-compliance", "aw.yml"), join("optimization", "aw.yml"), join("self-care", "aw.yml"), join("software-development-practices", "aw.yml")]) {
     const manifest = readFileSync(join(root, relativePath), "utf8");
     assert.doesNotMatch(manifest, /(?:review-smoke|enterprise-canary|enterprise-stress|tests\/e2e|\.github\/aw\/e2e)/, relativePath);
   }
@@ -840,6 +843,9 @@ test("live workers require target-owned package authority before agent execution
     ["optimization.md", "optimization"],
     ["optimization-ai-credit-auditor.md", "optimization"],
     ["optimization-ai-credit-optimizer.md", "optimization"],
+    ["software-development-practices.md", "software-development-practices"],
+    ["software-development-practices-github-well-architected.md", "software-development-practices"],
+    ["software-development-practices-nist-ssdf.md", "software-development-practices"],
     ["self-care.md", "self-care"],
     ["self-care-accessibility-checker.md", "self-care"],
     ["self-care-code-improvement.md", "self-care"],
@@ -857,6 +863,7 @@ test("orchestrators use checked-in policy with independent manual narrowing", ()
     ["dependabot.md", "dependabot"],
     ["eu-cra-compliance.md", "eu-cra-compliance"],
     ["optimization.md", "optimization"],
+    ["software-development-practices.md", "software-development-practices"],
     ["self-care.md", "self-care"],
   ]) {
     const source = workflow(name);
@@ -898,6 +905,9 @@ test("operation workflows optionally load per-operation markdown steering", () =
     ["optimization.md", "optimization"],
     ["optimization-ai-credit-auditor.md", "optimization"],
     ["optimization-ai-credit-optimizer.md", "optimization"],
+    ["software-development-practices.md", "software-development-practices"],
+    ["software-development-practices-github-well-architected.md", "software-development-practices"],
+    ["software-development-practices-nist-ssdf.md", "software-development-practices"],
     ["self-care.md", "self-care"],
     ["self-care-accessibility-checker.md", "self-care"],
     ["self-care-code-improvement.md", "self-care"],
@@ -955,7 +965,7 @@ test("shared control keeps manual and scheduled routing event-scoped", () => {
   const control = workflow("shared/control.md");
   const precompute = workflow("shared/control-precompute.md");
 
-  for (const name of ["uk-ai-advisory.md", "ambient-context.md", "aw-maintenance.md", "dependabot.md", "eu-cra-compliance.md", "optimization.md", "self-care.md"]) {
+  for (const name of ["uk-ai-advisory.md", "ambient-context.md", "aw-maintenance.md", "dependabot.md", "eu-cra-compliance.md", "optimization.md", "self-care.md", "software-development-practices.md"]) {
     const orchestrator = workflow(name);
     assert.match(orchestrator, /GH_AW_SAFE_OUTPUT_MODE:.*inputs\.safe_output_mode.*\|\| 'review'/);
     assert.match(orchestrator, /REVIEW_OUTPUT_REPO:.*inputs\.safe_output_repo \|\| github\.repository/);
@@ -1013,6 +1023,8 @@ test("every worker uses the standard dispatch envelope and safe mode vocabulary"
     ["eu-cra-compliance-vulnerability-handling-auditor.md", "eu-cra-compliance", "vulnerability-handling-auditor"],
     ["optimization-ai-credit-auditor.md", "optimization", "ai-credit-auditor"],
     ["optimization-ai-credit-optimizer.md", "optimization", "ai-credit-optimizer"],
+    ["software-development-practices-github-well-architected.md", "software-development-practices", "github-well-architected"],
+    ["software-development-practices-nist-ssdf.md", "software-development-practices", "nist-ssdf"],
     ["self-care-accessibility-checker.md", "self-care", "accessibility-checker"],
     ["self-care-code-improvement.md", "self-care", "code-improvement"],
     ["self-care-primer-brand-checker.md", "self-care", "primer-brand-checker"],
@@ -1225,6 +1237,62 @@ test("EU CRA Advisor workflows preserve advisory and human-review boundaries", (
   assert.match(ledger, /CRA-ART-014.*reportability requires human review \| IMPLEMENTED \|/);
   assert.match(ledger, /CRA-ART-028-031.*final release require human review \| IMPLEMENTED \|/);
   assert.match(ledger, /CRA-ANNEX-VIII.*Route selection requires human review \| IMPLEMENTED \|/);
+});
+
+test("Software Development Practices Advisor preserves evidence and advisory boundaries", () => {
+  const orchestrator = workflow("software-development-practices.md");
+  const githubWorker = workflow("software-development-practices-github-well-architected.md");
+  const nistWorker = workflow("software-development-practices-nist-ssdf.md");
+  const readme = readFileSync(join(root, "software-development-practices", "README.md"), "utf8");
+
+  assert.match(orchestrator, /^name: "Software Development Practices Advisor"$/m);
+  assert.match(githubWorker, /^name: "Software Development Practices Advisor \/ GitHub Well-Architected"$/m);
+  assert.match(nistWorker, /^name: "Software Development Practices Advisor \/ NIST SSDF"$/m);
+  assert.match(orchestrator, /workflows:\n\s+- software-development-practices-github-well-architected\n\s+- software-development-practices-nist-ssdf/);
+  assert.match(orchestrator, /Use bounded two-stage discovery/);
+  assert.match(orchestrator, /Keep the total at or below 20/);
+  assert.match(orchestrator, /job-discriminator: \$\{\{ github\.run_id \}\}/);
+  assert.match(orchestrator, /toolsets: \[repos, issues, pull_requests, actions\]/);
+  assert.doesNotMatch(orchestrator, /security-events: read|vulnerability-alerts: read|web-fetch:/);
+  assert.doesNotMatch(orchestrator, /^\s+create-issue:/m);
+
+  for (const source of [orchestrator, githubWorker, nistWorker, readme]) {
+    assert.match(source, /advisory and non-binding/i);
+    assert.match(source, /human review/i);
+  }
+  for (const source of [orchestrator, readme]) {
+    assert.match(source, /no guarantee of completeness, correctness/i);
+  }
+
+  for (const worker of [githubWorker, nistWorker]) {
+    assert.match(worker, /OBSERVED.*PARTIAL.*GAP_FOUND.*HUMAN_REVIEW_REQUIRED.*NOT_ASSESSED.*INCOMPLETE/s);
+    assert.match(worker, /analyzed commit SHA/);
+    assert.match(worker, /create-issue:[\s\S]*?close-older-issues: true[\s\S]*?close-older-key:.*inputs\.target_repo[\s\S]*?max: 1/);
+    assert.match(worker, /^\s+web-fetch:$/m);
+    assert.doesNotMatch(worker, /^graders:/m);
+  }
+  assert.match(readme, /Operational-value evaluators are pending post-adoption evidence and are intentionally not registered/);
+
+  assert.match(githubWorker, /https:\/\/learn\.github\.com\/well-architected\//);
+  assert.match(githubWorker, /^\s+- wellarchitected\.github\.com$/m);
+  assert.match(githubWorker, /github\/github-well-architected/);
+  assert.match(githubWorker, /GitHub Docs, which the framework identifies as the implementation source of truth/);
+  assert.match(githubWorker, /Leave secure-development lifecycle practices.*to the NIST SSDF worker/);
+  for (const pillar of ["Productivity", "Collaboration", "Application Security", "Governance", "Architecture"]) {
+    assert.match(githubWorker, new RegExp(pillar));
+  }
+  assert.match(githubWorker, /does not prove security, compliance, certification, endorsement, or complete alignment/);
+
+  assert.match(nistWorker, /https:\/\/csrc\.nist\.gov\/projects\/ssdf/);
+  assert.match(nistWorker, /https:\/\/csrc\.nist\.gov\/pubs\/sp\/800\/218\/final/);
+  assert.match(nistWorker, /https:\/\/doi\.org\/10\.6028\/NIST\.SP\.800-218/);
+  assert.match(nistWorker, /Build a complete practice-level matrix/);
+  assert.match(nistWorker, /Leave developer experience.*to the GitHub Well-Architected worker/);
+  for (const group of ["Prepare the Organization", "Protect the Software", "Produce Well-Secured Software", "Respond to Vulnerabilities"]) {
+    assert.match(nistWorker, new RegExp(group));
+  }
+  assert.match(nistWorker, /Identify drafts separately as non-final and do not score the repository against draft requirements/);
+  assert.match(nistWorker, /does not prove security, compliance, certification, endorsement, or SSDF conformance/);
 });
 
 test("workers reject disabled, malformed, or over-ceiling dispatches before execution", () => {
@@ -1490,6 +1558,9 @@ test("clean-room compilation emits the expected GitHub Actions settings", { time
       "self-care-code-improvement.lock.yml",
       "self-care-primer-brand-checker.lock.yml",
       "self-care.lock.yml",
+      "software-development-practices-github-well-architected.lock.yml",
+      "software-development-practices-nist-ssdf.lock.yml",
+      "software-development-practices.lock.yml",
     ];
     const expectedLockNames = [
       ...packageLockNames,
@@ -1535,6 +1606,7 @@ test("clean-room compilation emits the expected GitHub Actions settings", { time
       ["eu-cra-compliance.lock.yml", "eu-cra-compliance"],
       ["optimization.lock.yml", "optimization"],
       ["self-care.lock.yml", "self-care"],
+      ["software-development-practices.lock.yml", "software-development-practices"],
     ]);
     for (const [name, packageName] of orchestratorGates) {
       const generated = workflow(name, generatedDirectory);
@@ -1572,6 +1644,8 @@ test("clean-room compilation emits the expected GitHub Actions settings", { time
       ["self-care-accessibility-checker.lock.yml", ["self-care", "accessibility-checker"]],
       ["self-care-code-improvement.lock.yml", ["self-care", "code-improvement"]],
       ["self-care-primer-brand-checker.lock.yml", ["self-care", "primer-brand-checker"]],
+      ["software-development-practices-github-well-architected.lock.yml", ["software-development-practices", "github-well-architected"]],
+      ["software-development-practices-nist-ssdf.lock.yml", ["software-development-practices", "nist-ssdf"]],
     ]);
     for (const [name, [packageName, workerName]] of workerGates) {
       const generated = workflow(name, generatedDirectory);
@@ -1865,6 +1939,13 @@ test("Dashboard inventory links multiline orchestrator worker lists", () => {
       },
       { id: "optimization", workers: ["optimization-ai-credit-auditor", "optimization-ai-credit-optimizer"] },
       { id: "self-care", workers: ["self-care-accessibility-checker", "self-care-code-improvement", "self-care-primer-brand-checker"] },
+      {
+        id: "software-development-practices",
+        workers: [
+          "software-development-practices-github-well-architected",
+          "software-development-practices-nist-ssdf",
+        ],
+      },
       { id: "uk-ai-advisory", workers: ["advisory-uk-ai-operational-resilience"] },
     ]);
   } finally {
