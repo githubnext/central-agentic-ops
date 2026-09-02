@@ -18,6 +18,7 @@ Create one dashboard that helps an operator decide whether a specific agentic wo
    - define maturation, zero, and missing-evidence rules;
    - use `attainment-only` unless immutable pre-adoption evidence supports a comparable baseline.
 4. Define a compact dashboard intent with no more than four essential views per page. Prefer an operational summary, actionable findings, outcomes, and an operational-value trend.
+   - Avoid nested chart boxes. Do not add a section solely to frame a chart; use sections only when their heading or grouping adds operator context.
 5. Pass the intent and operational-value contract to `generate-dashboard-ir` with the provided Dashboard Language specification and validator.
 
 ## Package file convention
