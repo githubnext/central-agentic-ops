@@ -8,7 +8,13 @@ import { controlPolicy, controlProgram } from "../helpers/control-precompute.mjs
 
 const program = controlProgram();
 
-function runAdmission({ policy = controlPolicy(), policyFailure = false } = {}) {
+function runAdmission({
+  policy = controlPolicy(),
+  policyFailure = false,
+  rateLimit = 5000,
+  rateRemaining = 5000,
+  rateReset = Math.floor(Date.now() / 1000) + 3600,
+} = {}) {
   const directory = mkdtempSync(join(tmpdir(), "central-ops-admission-"));
   const mockGh = join(directory, "gh");
   const policyFile = join(directory, "policy.json");
@@ -22,6 +28,10 @@ case "$*" in
   *contents/.github/workflows/cao.json*)
     [ "$MOCK_POLICY_FAILURE" != "true" ] || exit 1
     base64 < "$MOCK_POLICY_FILE"
+    ;;
+  *rate_limit*)
+    printf '{"resources":{"core":{"limit":%s,"remaining":%s,"reset":%s}}}\n' \
+      "$MOCK_RATE_LIMIT" "$MOCK_RATE_REMAINING" "$MOCK_RATE_RESET"
     ;;
   *)
     exit 2
@@ -43,6 +53,9 @@ esac
         GITHUB_STEP_SUMMARY: stepSummary,
         MOCK_POLICY_FILE: policyFile,
         MOCK_POLICY_FAILURE: String(policyFailure),
+        MOCK_RATE_LIMIT: String(rateLimit),
+        MOCK_RATE_REMAINING: String(rateRemaining),
+        MOCK_RATE_RESET: String(rateReset),
         RUNNER_TEMP: realpathSync(directory),
         GITHUB_WORKFLOW_SHA: "1111111111111111111111111111111111111111",
       },
@@ -73,7 +86,7 @@ test("CAO admission authorizes a declared package before activation", () => {
   assert.match(summary, /### Central Agentic Ops admission\n\nAuthorized package `dependabot` as `orchestrator`/);
   assert.match(summary, /<details>\n<summary>Runtime revision<\/summary>/);
   assert.match(summary, /<summary>Run limits<\/summary>/);
-  assert.equal((summary.match(/<details>/g) ?? []).length, 9);
+  assert.equal((summary.match(/<details>/g) ?? []).length, 10);
 });
 
 test("CAO admission exports the authorized package budget", () => {
@@ -117,4 +130,29 @@ test("CAO admission fails closed when the authoritative policy cannot be read", 
     reason: "cannot read .github/workflows/cao.json at github.workflow_sha",
     monthly_credit_budget: "0",
   });
+});
+
+test("CAO admission blocks exhausted GitHub API capacity with reset and remediation guidance", () => {
+  const rateReset = Math.floor(Date.now() / 1000) + 3600;
+  const { result, output, summary } = runAdmission({ rateRemaining: 0, rateReset });
+
+  assert.equal(result.status, 0, result.stderr);
+  assert.deepEqual(output, {
+    authorized: "false",
+    reason: "github-api-capacity-insufficient",
+    monthly_credit_budget: "0",
+    github_api_status: "limited",
+    github_api_limit: "5000",
+    github_api_remaining: "0",
+    github_api_required: "100",
+    github_api_reset_at: new Date(rateReset * 1000).toISOString(),
+  });
+  assert.match(summary, /Blocked package `dependabot` as `orchestrator` before activation/);
+  assert.match(summary, /approximately \*\*60 minutes \(1\.00 hours\)\*\*/);
+  assert.match(summary, /### What to do now/);
+  assert.match(summary, /Do not rerun before/);
+  assert.match(summary, /Making authenticated API requests with a GitHub App|GitHub's Actions authentication guide/);
+  assert.match(summary, /fine-grained PAT/);
+  assert.match(summary, /GH_AW_GITHUB_TOKEN/);
+  assert.match(summary, /docs\.github\.com\/en\/rest\/using-the-rest-api\/rate-limits-for-the-rest-api/);
 });

@@ -2,6 +2,53 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import { buildDashboardLanguageSources } from "../../dashboard/report/dashboard-language-sources.mjs";
 
+test("dashboard source bridge carries API capacity admission blocks into run rows", () => {
+  const workflowPath = ".github/workflows/self-care.lock.yml";
+  const sources = buildDashboardLanguageSources({
+    deployed: {
+      generatedAt: "2026-09-02T21:00:00Z",
+      discovery: { complete: true },
+      runHealth: { available: true, complete: true },
+      bundles: [],
+      workflows: [{
+        repository: "githubnext/central-agentic-ops",
+        path: workflowPath,
+        name: "SelfCare",
+        state: "active",
+        runHealth: { runRecords: [{
+          runId: 33682053183,
+          status: "completed",
+          conclusion: "failure",
+          event: "schedule",
+          startedAt: "2026-09-02T20:54:26Z",
+          updatedAt: "2026-09-02T20:54:39Z",
+          admissionStatus: "resource-limited",
+          admissionReason: "github-api-capacity-insufficient",
+          resource: "github-rest-api",
+          resourceResetAt: "2026-09-02T22:04:33.000Z",
+          resourceWaitHours: 1.08,
+        }] },
+      }],
+    },
+    usage: { available: true, complete: true, runs: [] },
+    operationalValues: { records: [] },
+    report: { generatedAt: "2026-09-02T21:00:00Z", records: [] },
+  });
+
+  assert.deepEqual(
+    Object.fromEntries(Object.entries(sources.runs.rows[0]).filter(([key]) => [
+      "admission-status", "admission-reason", "resource", "resource-reset-at", "resource-wait-hours",
+    ].includes(key))),
+    {
+      "admission-status": "resource-limited",
+      "admission-reason": "github-api-capacity-insufficient",
+      resource: "github-rest-api",
+      "resource-reset-at": "2026-09-02T22:04:33.000Z",
+      "resource-wait-hours": 1.08,
+    },
+  );
+});
+
 test("dashboard source bridge carries package memberships, allowance, and inventory readiness into workflow rows", () => {
   const workflowPath = ".github/workflows/package.lock.yml";
   const sources = buildDashboardLanguageSources({
