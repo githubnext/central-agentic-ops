@@ -62,7 +62,8 @@ describe('declarative dispatch view', () => {
     expect(evidenceBoundary).toMatchObject({ mark: 'callout', callout: { label: 'Execution boundary' } });
     expect(rendered.querySelector('.summary-grid')?.textContent).toContain('Activation rate');
     expect(rendered.querySelector('.summary-grid')?.textContent).toContain('100%');
-    expect(rendered.querySelector('.filter-bar')?.textContent).toContain('event:workflow_dispatch');
+    const pageFilter = /** @type {HTMLInputElement | null} */ (rendered.querySelector('.filter-bar input'));
+    expect(pageFilter?.value).toBe('event:workflow_dispatch');
     expect(rendered.querySelector('.dashboard-callout')?.textContent).toContain('unavailable parent-child correlation is never inferred');
     expect([...rendered.querySelectorAll('thead tr:first-child th')].map((cell) => cell.textContent)).toEqual([
       'Started',
@@ -80,7 +81,7 @@ describe('declarative dispatch view', () => {
     expect(rendered.querySelector('.table-summary-temporal')?.textContent).toContain('StartAug 30, 2026, 7:00 AM');
     expect(rendered.querySelector('.table-summary-temporal')?.textContent).toContain('StopAug 30, 2026, 7:00 AM');
     expect(rendered.querySelector('.table-summary-temporal')?.textContent).toContain('Duration0s');
-    expect(rendered.querySelector('input[type="search"]')?.getAttribute('placeholder')).toBe('Filter rows');
+    expect(rendered.querySelector('.table-filter input[type="search"]')?.getAttribute('placeholder')).toBe('Filter rows');
     const started = rendered.querySelector('tbody td time');
     expect(started?.getAttribute('datetime')).toBe('2026-08-30T07:00:00Z');
     expect(started?.textContent).toBe('Aug 30, 2026, 7:00 AM');

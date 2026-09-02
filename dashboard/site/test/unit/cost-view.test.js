@@ -56,26 +56,11 @@ describe('Cost and efficiency dashboard view', () => {
     );
     expect(rendered.querySelector('[data-nav-page-id="cost"] .octicon-meter')).not.toBeNull();
     const filterBar = page?.querySelector('.filter-bar');
-    expect(filterBar?.querySelector('.filter-control code')?.textContent).toBe('mode:review mode:live');
+    expect(filterBar?.querySelector('input')?.value).toBe('mode:review mode:live');
     expect(filterBar?.querySelector('.count-badge')?.textContent).toBe('2');
     expect(filterBar?.querySelector('.scope-period')).toBeNull();
     expect(rendered.querySelector('.dashboard-horizon')?.textContent).toBe('Horizon 1 week');
-    const exportLink = filterBar?.querySelector('.export-control');
-    expect(exportLink?.getAttribute('download')).toBe('cost.json');
-    const exportPayload = JSON.parse(decodeURIComponent(exportLink?.getAttribute('href')?.split(',')[1] ?? ''));
-    expect(exportPayload).toMatchObject({
-      page: 'cost',
-      filters: ['mode:review', 'mode:live'],
-      sources: {
-        usage: {
-          source: 'usage',
-          rows: expect.arrayContaining([
-            expect.objectContaining({ invocation: 'usage-1', aic: 3.5 })
-          ]),
-          metadata: expect.objectContaining({ 'source-id': 'cost-fixture' })
-        }
-      }
-    });
+    expect(filterBar?.querySelector('.export-control')).toBeNull();
 
     const summary = page?.querySelector('.summary-grid');
     expect(summary?.textContent).toContain('Measured AIC9');

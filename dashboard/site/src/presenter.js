@@ -14,6 +14,7 @@ import { findLink } from './components/link-content.js';
 import { elementHandlesEmptyRows, renderUiElement } from './components/ui-elements.js';
 import { renderDataView } from './components/data-view.js';
 import { renderFilterBar } from './components/filter-bar.js';
+import { processRows } from './data-processor.js';
 import { deriveOverviewSources } from './overview-data.js';
 import { deriveRepositorySources } from './repository-data.js';
 import { deriveRuntimeSources } from './runtime-data.js';
@@ -37,7 +38,7 @@ import { dashboardHorizonHours, formatDashboardHorizon, resolveDashboardHorizon 
  */
 
 /**
- * @typedef {{ filters: string[], ['time-range']?: string, export?: boolean }} PresentableFilterBar
+ * @typedef {{ filters: string[], ['time-range']?: string }} PresentableFilterBar
  */
 
 /**
@@ -552,7 +553,29 @@ function renderCustomPage(page, title, sources, units, dashboardDefaults) {
     ? ` ${page['class-name']}`
     : '';
 
-  return h(
+  /** @type {HTMLElement} */
+  let root;
+  let filterRevision = 0;
+  const filterBar = page['filter-bar']
+    ? renderFilterBar(page['filter-bar'], (filters) => {
+      const revision = ++filterRevision;
+      const result = filterDashboardSources(sources, filters);
+      /** @param {Record<string, LogicalSourceInput>} filteredSources */
+      const apply = (filteredSources) => {
+        if (revision !== filterRevision) return;
+        const replacement = renderCustomPage(
+          { ...page, 'filter-bar': undefined },
+          title,
+          filteredSources,
+          units,
+          dashboardDefaults
+        );
+        if (filterBar) root.replaceChildren(filterBar, ...replacement.children);
+      };
+      result.then(apply).catch(() => {});
+    })
+    : null;
+  root = h(
     'section',
     {
       className: `dashboard-page${pageClassName}`,
@@ -565,11 +588,33 @@ function renderCustomPage(page, title, sources, units, dashboardDefaults) {
       'data-route-parameter': routeParameter,
       'data-route-navigation-page': routeNavigationPage
     },
-    page['filter-bar'] ? renderFilterBar(page.id, page['filter-bar'], pageSources) : null,
+    filterBar,
     ...(renderedViews.length > 0
       ? [renderHiddenDataStateMetrics(summarizeDataState(pageSources)), renderedContent]
       : [h('p', null, 'No custom views available.')])
   );
+  return root;
+}
+
+/**
+ * @param {Record<string, LogicalSourceInput>} sources
+ * @param {Map<string, string[]>} filters
+ * @returns {Promise<Record<string, LogicalSourceInput>>}
+ */
+async function filterDashboardSources(sources, filters) {
+  const entries = await Promise.all(Object.entries(sources).map(async ([name, source]) => {
+    if (!Array.isArray(source?.rows) || source.rows.length === 0) return [name, source];
+    const predicates = [...filters].flatMap(([configuredField, values]) => {
+      const field = configuredField === 'mode' ? 'rollout-mode' : configuredField;
+      return source.rows.some((row) => Object.hasOwn(row, field))
+        ? [{ field, in: values }]
+        : [];
+    });
+    if (predicates.length === 0) return [name, source];
+    const rows = await processRows(source.rows, [{ op: 'filter', predicates }]);
+    return [name, { ...source, rows }];
+  }));
+  return Object.fromEntries(entries);
 }
 
 /**

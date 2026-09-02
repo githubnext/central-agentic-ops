@@ -166,7 +166,7 @@ describe('dashboard document validation', () => {
     const costPage = invalidTokens.dashboard.pages.find((/** @type {{ id: string }} */ page) => page.id === 'cost');
     costPage['filter-bar'].filters = ['mode:review', 'mode:review', 'invalid token'];
     costPage['filter-bar']['time-range'] = '';
-    costPage['filter-bar'].export = 'yes';
+    costPage['filter-bar'].export = true;
     costPage['filter-bar'].unknown = true;
 
     const rejected = validateDashboardDocument(JSON.stringify(invalidTokens));
@@ -186,7 +186,7 @@ describe('dashboard document validation', () => {
         path: '$.dashboard.pages[1].filter-bar.time-range'
       }));
       expect(rejected.errors).toContainEqual(expect.objectContaining({
-        code: 'DLS-E003',
+        code: 'DLS-E004',
         path: '$.dashboard.pages[1].filter-bar.export'
       }));
       expect(rejected.errors).toContainEqual(expect.objectContaining({

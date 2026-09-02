@@ -81,8 +81,7 @@
           "filters": [
             "mode:review",
             "mode:live"
-          ],
-          "export": true
+          ]
         },
         "sections": [
           {
@@ -200,8 +199,7 @@
           "filters": [
             "mode:review",
             "mode:live"
-          ],
-          "export": true
+          ]
         },
         "sections": [
           {
@@ -917,8 +915,7 @@
           "filters": [
             "mode:review",
             "mode:live"
-          ],
-          "export": true
+          ]
         },
         "views": [
           {
@@ -1533,8 +1530,7 @@
           "filters": [
             "mode:review",
             "mode:live"
-          ],
-          "export": true
+          ]
         },
         "sections": [
           {
@@ -1802,8 +1798,7 @@
         "filter-bar": {
           "filters": [
             "event:workflow_dispatch"
-          ],
-          "export": true
+          ]
         },
         "views": [
           {
@@ -2540,8 +2535,7 @@
           "filters": [
             "mode:review",
             "mode:live"
-          ],
-          "export": true
+          ]
         },
         "sections": [
           {
