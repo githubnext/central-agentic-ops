@@ -2033,7 +2033,7 @@ test("Dashboard package supports embedded and explicit standalone deployment", (
   assert.match(buildWorkflow, /cp -R \.github\/aw\/dashboard\/site\/\. "\$REPORT_OUTPUT\/"/);
   assert.match(buildWorkflow, /configure-site\.mjs[\s\S]*?"\$REPORT_OUTPUT\/index\.html"[\s\S]*?"\$RUNNER_TEMP\/control-settings\.json"/);
   assert.match(buildWorkflow, /bundle-dashboards\.mjs[\s\S]*?"\$REPORT_OUTPUT\/dashboard\.json"[\s\S]*?\.github\/aw\/dashboards/);
-  assert.match(buildWorkflow, /REPORT_RECORDS: \$\{\{ runner\.temp \}\}\/dashboard-records\.json/);
+  assert.match(buildWorkflow, /REPORT_RECORDS: \$\{\{ runner\.temp \}\}\/dashboard-data\/dashboard-records\.json/);
   assert.match(buildWorkflow, /REPORT_DASHBOARD_SOURCES: \$\{\{ runner\.temp \}\}\/central-agentic-ops-dashboard\/\$\{\{ inputs\.site-path \}\}\/sources\.json/);
   assert.doesNotMatch(dashboardManifest, /redirects\.mjs/);
   assert.doesNotMatch(buildWorkflow, /legacy dashboard redirects|redirects\.mjs/);
