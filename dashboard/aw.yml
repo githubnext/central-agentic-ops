@@ -5,7 +5,7 @@ includes:
   - source: dashboard.yml
     destination: .github/workflows/dashboard.yml
     kind: action-workflow
-  - source: dashboard-build.yml
+  - source: .github/workflows/dashboard-build.yml
     destination: .github/workflows/dashboard-build.yml
     kind: action-workflow
 resources:
@@ -49,6 +49,8 @@ resources:
     destination: .github/aw/dashboard/site/src/dom.js
   - source: site/src/horizon.js
     destination: .github/aw/dashboard/site/src/horizon.js
+  - source: site/src/loading-progress.js
+    destination: .github/aw/dashboard/site/src/loading-progress.js
   - source: site/src/octicon-names.json
     destination: .github/aw/dashboard/site/src/octicon-names.json
   - source: site/src/octicons.js

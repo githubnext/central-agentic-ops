@@ -2,17 +2,28 @@ name: Documentation Pages
 
 on:
   workflow_dispatch:
+  schedule:
+    - cron: "*/15 * * * *"
   push:
     branches: [main]
     paths:
+      - dashboard/**
+      - .github/cao/**
       - .github/workflows/docs.yml
+      - .github/workflows/dashboard-build.yml
+      - .github/workflows/cao.json
+      - .github/workflows/*.lock.yml
+      - .github/workflows/*.md
+      - "*/aw.yml"
       - astro.config.mjs
+      - aw.yml
       - docs/**
       - package.json
       - package-lock.json
       - public/**
 
 permissions:
+  actions: read
   contents: read
 
 concurrency:
@@ -20,9 +31,19 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
+  dashboard:
+    permissions:
+      actions: read
+      contents: read
+      issues: read
+      pull-requests: read
+    uses: ./.github/workflows/dashboard-build.yml
+
   build:
+    needs: dashboard
     runs-on: ubuntu-latest
     permissions:
+      actions: read
       contents: read
       pages: write
     steps:
@@ -40,30 +61,14 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Install gh-aw
-        uses: github/gh-aw-actions/setup-cli@afc709f45ed6a3f756eb4551856c6a9c42e15b2c # v0.88.0
-        with:
-          version: v0.88.0
-
-      - name: Install released dashboard
-        env:
-          DASHBOARD_PACKAGE: ${{ runner.temp }}/cao-dashboard-package
-          GH_TOKEN: ${{ github.token }}
-        run: |
-          git init --quiet "$DASHBOARD_PACKAGE"
-          cd "$DASHBOARD_PACKAGE"
-          gh aw add githubnext/central-agentic-ops/dashboard@v0.0.1 --no-security-scanner
-
       - name: Build documentation
         run: npm run docs:build
 
       - name: Mount dashboard at /cao
-        env:
-          DASHBOARD_PACKAGE: ${{ runner.temp }}/cao-dashboard-package
-        run: |
-          rm -rf dist/cao
-          mkdir -p dist/cao
-          cp -R "$DASHBOARD_PACKAGE/.github/aw/dashboard/site/." dist/cao/
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          name: central-agentic-ops-dashboard
+          path: dist
 
       - name: Configure Pages
         uses: actions/configure-pages@983d7736d9b0ae728b81ab479565c72886d7745b # v5

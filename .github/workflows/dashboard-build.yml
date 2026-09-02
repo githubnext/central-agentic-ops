@@ -47,11 +47,24 @@ jobs:
           ref: ${{ github.workflow_sha }}
           persist-credentials: false
 
+      - name: Resolve dashboard source layout
+        run: |
+          if [[ -f .github/aw/dashboard/report/records.mjs && -f .github/aw/dashboard/site/index.html ]]; then
+            echo "DASHBOARD_LAYOUT=installed" >> "$GITHUB_ENV"
+            echo "DASHBOARD_REPORT_ROOT=.github/aw/dashboard/report" >> "$GITHUB_ENV"
+          elif [[ -f dashboard/report/records.mjs && -f dashboard/site/scripts/build.mjs ]]; then
+            echo "DASHBOARD_LAYOUT=source" >> "$GITHUB_ENV"
+            echo "DASHBOARD_REPORT_ROOT=dashboard/report" >> "$GITHUB_ENV"
+          else
+            echo "Dashboard package sources are unavailable" >&2
+            exit 1
+          fi
+
       - name: Resolve authoritative control policy
         env:
           GITHUB_REPOSITORY: ${{ github.repository }}
         run: |
-          node .github/aw/dashboard/report/control-settings.mjs \
+          node "$DASHBOARD_REPORT_ROOT/control-settings.mjs" \
             .github/cao/src/control.mjs \
             .github/workflows/cao.json \
             "$RUNNER_TEMP/control-settings.json"
@@ -59,25 +72,25 @@ jobs:
       - name: Extract control-plane inventory
         env:
           REPORT_INVENTORY: ${{ runner.temp }}/control-plane-inventory.json
-        run: node .github/aw/dashboard/report/inventory.mjs
+        run: node "$DASHBOARD_REPORT_ROOT/inventory.mjs"
 
       - name: Discover deployed agentic workflows
         env:
           GITHUB_TOKEN: ${{ github.token }}
           REPORT_CONTROL_SETTINGS: ${{ runner.temp }}/control-settings.json
           REPORT_DEPLOYED_WORKFLOWS: ${{ runner.temp }}/deployed-workflows.json
-        run: node .github/aw/dashboard/report/deployed-workflows.mjs
+        run: node "$DASHBOARD_REPORT_ROOT/deployed-workflows.mjs"
 
       - name: Install gh-aw CLI
-        uses: github/gh-aw-actions/setup-cli@b304200a0ef4b3998673bfc7945acb08ab8c88b7 # v0.87.2
+        uses: github/gh-aw-actions/setup-cli@afc709f45ed6a3f756eb4551856c6a9c42e15b2c # v0.88.0
         with:
-          version: v0.87.2
+          version: v0.88.0
 
       - name: Checkout operational-value replay runtime
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           repository: github/gh-aw
-          ref: 220b08344d8a222d542d88bc11bf61ab7297d076
+          ref: a5297995b4bd76a2afcc39f10f2517a65aff172c # v0.88.0
           path: .cache/gh-aw-operational-value-source
           persist-credentials: false
 
@@ -91,7 +104,7 @@ jobs:
         working-directory: .cache/gh-aw-operational-value-source
         run: |
           mkdir -p "$RUNNER_TEMP/gh-aw-operational-value"
-          go build -ldflags "-s -w -X main.version=v0.87.6" \
+          go build -ldflags "-s -w -X main.version=v0.88.0" \
             -o "$RUNNER_TEMP/gh-aw-operational-value/gh-aw" ./cmd/gh-aw
           go clean -cache -modcache
 
@@ -109,7 +122,7 @@ jobs:
           REPORT_AIC_CONCURRENCY: "3"
           REPORT_AIC_USAGE: ${{ runner.temp }}/aic-usage.json
           REPORT_DEPLOYED_WORKFLOWS: ${{ runner.temp }}/deployed-workflows.json
-        run: node .github/aw/dashboard/report/aic-usage.mjs
+        run: node "$DASHBOARD_REPORT_ROOT/aic-usage.mjs"
 
       - name: Collect operational-value observations
         env:
@@ -120,7 +133,7 @@ jobs:
           REPORT_VALUE_CACHE: .cache/dashboard-operational-values/observations.json
           REPORT_VALUE_CONCURRENCY: "3"
           REPORT_VALUE_REPLAY_CACHE: .cache/dashboard-operational-values/replay
-        run: node .github/aw/dashboard/report/operational-values.mjs
+        run: node "$DASHBOARD_REPORT_ROOT/operational-values.mjs"
 
       - name: Save operational-value observation cache
         if: always()
@@ -136,20 +149,26 @@ jobs:
           REPORT_INVENTORY: ${{ runner.temp }}/control-plane-inventory.json
           REPORT_DEPLOYED_WORKFLOWS: ${{ runner.temp }}/deployed-workflows.json
           REPORT_RECORDS: ${{ runner.temp }}/dashboard-records.json
-        run: node .github/aw/dashboard/report/records.mjs
+        run: node "$DASHBOARD_REPORT_ROOT/records.mjs"
 
       - name: Assemble Dashboard Language site
         env:
           REPORT_OUTPUT: ${{ runner.temp }}/central-agentic-ops-dashboard/${{ inputs.site-path }}
         run: |
-          mkdir -p "$REPORT_OUTPUT"
-          cp -R .github/aw/dashboard/site/. "$REPORT_OUTPUT/"
-          node .github/aw/dashboard/report/configure-site.mjs \
-            "$REPORT_OUTPUT/index.html" \
-            "$RUNNER_TEMP/control-settings.json"
-          node .github/aw/dashboard/report/bundle-dashboards.mjs \
-            "$REPORT_OUTPUT/dashboard.json" \
-            .github/aw/dashboards
+          if [[ "$DASHBOARD_LAYOUT" == "source" ]]; then
+            node dashboard/site/scripts/build.mjs \
+              "$REPORT_OUTPUT" \
+              "$RUNNER_TEMP/control-settings.json"
+          else
+            mkdir -p "$REPORT_OUTPUT"
+            cp -R .github/aw/dashboard/site/. "$REPORT_OUTPUT/"
+            node "$DASHBOARD_REPORT_ROOT/configure-site.mjs" \
+              "$REPORT_OUTPUT/index.html" \
+              "$RUNNER_TEMP/control-settings.json"
+            node "$DASHBOARD_REPORT_ROOT/bundle-dashboards.mjs" \
+              "$REPORT_OUTPUT/dashboard.json" \
+              .github/aw/dashboards
+          fi
 
       - name: Build Dashboard Language sources
         env:
@@ -160,7 +179,7 @@ jobs:
           REPORT_INVENTORY: ${{ runner.temp }}/control-plane-inventory.json
           REPORT_OPERATIONAL_VALUES: ${{ runner.temp }}/operational-values.json
           REPORT_RECORDS: ${{ runner.temp }}/dashboard-records.json
-        run: node .github/aw/dashboard/report/dashboard-language-sources.mjs
+        run: node "$DASHBOARD_REPORT_ROOT/dashboard-language-sources.mjs"
 
       - name: Upload dashboard artifact
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
