@@ -347,6 +347,7 @@ test("enterprise defaults, budgets, timeouts, and concurrency are finite", () =>
   }
 
   const control = workflow("shared/control.md");
+  assert.match(control, /concurrency:\n\s+job-discriminator: \$\{\{ github\.run_id \}\}/);
   const precompute = controlPrecompute();
   assert.match(control, /package:\n\s+type: string\n\s+required: true/);
   assert.match(control, /role:\n\s+type: choice\n\s+options: \[orchestrator, worker\]/);
