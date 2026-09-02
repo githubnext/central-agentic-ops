@@ -34,7 +34,7 @@ function firstText(...values) {
     if (typeof value === "string" && value.trim()) return value.trim();
     if (value !== undefined && value !== null && String(value).trim()) return String(value).trim();
   }
-  return null;
+  return "";
 }
 
 async function mapWithConcurrency(values, concurrency, mapper) {
