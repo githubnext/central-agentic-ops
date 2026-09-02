@@ -70,15 +70,16 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           set +e
-          npm run test:package-lifecycle 2>&1 | tee "$RUNNER_TEMP/package-lifecycle.log"
-          status="${PIPESTATUS[0]}"
+          output="$(npm run test:package-lifecycle 2>&1)"
+          status=$?
           set -e
+          printf '%s\n' "$output"
           if (( status == 0 )); then
             exit 0
           fi
-          if grep -Fq "API rate limit exceeded for installation" "$RUNNER_TEMP/package-lifecycle.log"; then
-            echo "::warning title=Package lifecycle incomplete::The shared GitHub App installation exhausted its core API quota during the clean-room package tests."
-            echo "Package lifecycle tests became infrastructure-incomplete because the shared GitHub App installation API quota was exhausted during the suite." >> "$GITHUB_STEP_SUMMARY"
+          if grep -Fq "API rate limit exceeded for installation" <<< "$output"; then
+            echo "::warning title=Package lifecycle incomplete::The shared GitHub App installation API quota was exhausted during clean-room package tests."
+            echo "Package lifecycle tests became inconclusive because the shared GitHub App installation API quota was exhausted during the run." >> "$GITHUB_STEP_SUMMARY"
             exit 0
           fi
           exit "$status"

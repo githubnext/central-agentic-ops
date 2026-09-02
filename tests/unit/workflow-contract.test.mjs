@@ -475,6 +475,10 @@ test("operations creation guidance scopes detection and omits worker evals", () 
 
   assert.match(packageSkill, /safe-outputs\.threat-detection: false/);
   assert.match(packageSkill, /`labels: \[<package-slug>\]`[\s\S]*?preferably `title-prefix: "\[<package-slug>:<worker-slug>\] "`/);
+  assert.match(packageSkill, /evaluate the potential follow-up actions/);
+  assert.match(packageSkill, /single most important action with the highest expected return on investment/);
+  assert.match(packageSkill, /<details><summary><b>Agent prompt<\/b><\/summary> \.\.\. <\/details>/);
+  assert.match(packageSkill, /human can review the issue before using the prompt for an agentic run/);
   assert.match(packageSkill, /no `evals` configuration; use deterministic graders for worker measurement/);
   assert.match(packageSkill, /Confirm the orchestrator disables threat detection and every worker omits `evals`/);
   assert.match(packageSkill, /CAO operational packages require organization-billed Copilot inference/);
@@ -500,6 +504,31 @@ test("issue-creating workers use package and worker title prefixes", () => {
       `[${controlImport.with.package}:${controlImport.with.worker}] `,
       name,
     );
+  }
+});
+
+test("workers inherit human-first progressive report disclosure", () => {
+  const packageSkill = readFileSync(join(root, ".github", "skills", "create-ops-package", "SKILL.md"), "utf8");
+  const sharedControl = workflow("shared/control.md");
+  const workers = readdirSync(workflowsDirectory)
+    .filter((name) => name.endsWith(".md"))
+    .map((name) => [name, workflow(name)])
+    .filter(([, source]) => /^\s+role: worker$/m.test(source));
+
+  assert.match(packageSkill, /begin every durable output directly with a concise, unheaded executive summary/);
+  assert.doesNotMatch(packageSkill, /### Executive Summary/);
+  assert.match(packageSkill, /non-essential background, verbose evidence, logs, and per-item breakdowns in `<details>` sections/);
+  assert.match(sharedControl, /Begin directly with a concise executive summary/);
+  assert.match(sharedControl, /do not add a heading for this opening summary/);
+  assert.doesNotMatch(sharedControl, /### Executive Summary/);
+  assert.match(sharedControl, /non-essential background, verbose supporting evidence, logs, and per-item breakdowns inside `<details>/);
+  assert.ok(workers.length > 0, "expected at least one worker workflow");
+  for (const [name] of workers) {
+    const generated = workflow(name.replace(/\.md$/, ".lock.yml"));
+    assert.match(generated, /Begin directly with a concise executive summary/, name);
+    assert.match(generated, /do not add a heading for this opening summary/, name);
+    assert.doesNotMatch(generated, /### Executive Summary/, name);
+    assert.match(generated, /non-essential background, verbose supporting evidence, logs, and per-item breakdowns inside `<details>/, name);
   }
 });
 
@@ -594,9 +623,7 @@ test("workflow contracts isolate authenticated package lifecycle checks", () => 
   assert.match(packageLifecycle, /GH_TOKEN: \$\{\{ github\.token \}\}/);
   assert.match(packageLifecycle, /CENTRAL_AGENTIC_OPS_PACKAGE_SOURCE:/);
   assert.match(packageLifecycle, /npm run test:package-lifecycle/);
-  assert.match(packageLifecycle, /PIPESTATUS\[0\]/);
   assert.match(packageLifecycle, /grep -Fq "API rate limit exceeded for installation"/);
-  assert.match(packageLifecycle, /exhausted during the suite/);
   assert.match(packageLifecycle, /exit "\$status"/);
 });
 
