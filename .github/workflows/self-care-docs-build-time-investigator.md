@@ -66,6 +66,10 @@ timeout-minutes: 30
 tracker-id: self-care-docs-build-time-investigator
 run-name: "SelfCare docs build time · ${{ inputs.target_repo }} · ${{ inputs.safe_output_mode || 'review' }}"
 
+graders:
+  operational-value:
+    run: .github/graders/self-care-docs-build-time-investigator-operational-value.sh
+
 concurrency:
   group: "${{ github.workflow }}-${{ inputs.target_repo }}"
   job-discriminator: ${{ github.run_id }}
@@ -126,7 +130,7 @@ Use `/tmp/gh-aw/repo-memory/default/githubnext__central-agentic-ops__docs-build-
 4. artifact transfer and Pages packaging; and
 5. scheduling, concurrency, and avoidable rebuilds.
 
-Store `source_sha`, `next_category`, and at most 30 recent evaluations. Each evaluation must include its UTC date, this worker run ID, category, evidence run IDs, outcome, and normalized suggestion fingerprint when a suggestion was made. Advance `next_category` after every complete evaluation, including a no-op.
+Store `source_sha`, `next_category`, and at most 30 recent evaluations. Each evaluation must include `evaluated_at`, `worker_run_id`, `category`, `evidence_run_ids`, `outcome`, and `suggestion_fingerprint` when a suggestion was made. Advance `next_category` after every complete evaluation, including a no-op.
 
 Evaluate the next category that has sufficient evidence. Do not repeat a suggestion recorded in memory or represented by an open issue unless its source or timing evidence has materially changed. A recommendation is actionable only when repeated evidence identifies a concrete workflow change expected to save at least 60 seconds or 15 percent of median execution time without weakening correctness, freshness, or deployment safety.
 

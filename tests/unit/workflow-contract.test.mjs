@@ -760,6 +760,7 @@ test("operational-value graders expose deterministic run-scoped contracts", () =
     "eu-cra-compliance-vulnerability-handling-auditor-operational-value.sh",
     "optimization-ai-credit-auditor-operational-value.sh",
     "optimization-ai-credit-optimizer-operational-value.sh",
+    "self-care-docs-build-time-investigator-operational-value.sh",
     "software-development-practices-github-well-architected-operational-value.sh",
     "software-development-practices-nist-ssdf-operational-value.sh",
   ]);

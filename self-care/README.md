@@ -12,4 +12,4 @@ The checked-in control policy admits only `githubnext/central-agentic-ops` as a 
 
 The package uses `shared/control.md` for policy resolution, target authority, dispatch envelopes, safe-output routing, and correlation. It dispatches at most five workflows for its single target.
 
-The workers do not yet register operational-value evaluators. Design those evaluators after adoption evidence establishes measurable accessibility, build-performance, component-reuse, dashboard-review, and brand-maintenance outcomes.
+The Docs Build-Time Investigator registers an operational-value evaluator that measures material `docs.yml` execution-time reduction while requiring completed-run reliability to be preserved. The package dashboard keeps recommendations distinct from matured attainment. Design evaluators for the other workers after adoption evidence establishes measurable accessibility, component-reuse, dashboard-review, and brand-maintenance outcomes.

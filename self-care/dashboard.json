@@ -1,0 +1,188 @@
+{
+  "language-version": "0.1.0",
+  "dashboard": {
+    "id": "self-care-dashboard",
+    "title": "SelfCare",
+    "description": "Track dashboard build-time investigations, recommendations, and matured speed attainment.",
+    "repository": "githubnext/central-agentic-ops",
+    "pages": [
+      {
+        "id": "self-care-dashboard",
+        "kind": "custom",
+        "title": "SelfCare",
+        "description": "Track whether build-time investigations run, produce actionable recommendations, and attain faster reliable dashboard generation.",
+        "icon": "check-circle",
+        "views": [
+          {
+            "id": "self-care-build-runs",
+            "title": "Build-time investigations by conclusion",
+            "disclosure": "essential",
+            "data": {
+              "source": "runs",
+              "time": {
+                "range": "30d"
+              },
+              "filters": {
+                "workflow": [
+                  ".github/workflows/self-care-docs-build-time-investigator.md"
+                ]
+              }
+            },
+            "mark": "chart",
+            "chart": "line",
+            "encoding": {
+              "x": {
+                "field": "started-at",
+                "type": "temporal",
+                "time-unit": "day"
+              },
+              "y": {
+                "field": "run",
+                "type": "quantitative",
+                "aggregate": "count"
+              },
+              "color": {
+                "field": "run-conclusion",
+                "type": "nominal"
+              }
+            }
+          },
+          {
+            "id": "self-care-build-recommendations",
+            "title": "Build-speed recommendations",
+            "description": "Retained issues expose actionable timing evidence; creating an issue alone does not establish realized speed improvement.",
+            "disclosure": "essential",
+            "data": {
+              "source": "outcomes",
+              "filters": {
+                "workflow": [
+                  ".github/workflows/self-care-docs-build-time-investigator.md"
+                ]
+              },
+              "limit": 50
+            },
+            "mark": "table",
+            "empty-message": "No build-speed recommendations were retained.",
+            "encoding": {
+              "href": {
+                "field": "external-link",
+                "type": "nominal"
+              },
+              "columns": [
+                {
+                  "field": "repository",
+                  "type": "nominal"
+                },
+                {
+                  "field": "outcome-title",
+                  "type": "nominal",
+                  "title": "Recommendation"
+                },
+                {
+                  "field": "outcome-state",
+                  "type": "nominal",
+                  "title": "Disposition",
+                  "display": "status"
+                },
+                {
+                  "field": "published-at",
+                  "type": "temporal",
+                  "title": "Published"
+                }
+              ]
+            }
+          },
+          {
+            "id": "self-care-build-attainment",
+            "title": "Reliable build-speed attainment",
+            "description": "Attainment compares successful docs.yml execution times while requiring completed-run reliability to be preserved.",
+            "disclosure": "essential",
+            "data": {
+              "source": "operational-values",
+              "filters": {
+                "workflow": [
+                  ".github/workflows/self-care-docs-build-time-investigator.md"
+                ]
+              },
+              "limit": 50
+            },
+            "mark": "table",
+            "empty-message": "No matured build-speed attainment evidence is available.",
+            "encoding": {
+              "href": {
+                "field": "evidence-link",
+                "type": "nominal"
+              },
+              "columns": [
+                {
+                  "field": "operational-case",
+                  "type": "nominal",
+                  "title": "Performance opportunity"
+                },
+                {
+                  "field": "operational-value",
+                  "type": "quantitative",
+                  "title": "Attainment"
+                },
+                {
+                  "field": "maturity-status",
+                  "type": "nominal",
+                  "title": "Maturity",
+                  "display": "status"
+                },
+                {
+                  "field": "evidence-cutoff",
+                  "type": "temporal",
+                  "title": "Evidence cutoff"
+                }
+              ]
+            }
+          },
+          {
+            "id": "self-care-build-value-trend",
+            "title": "Build-speed operational-value trend",
+            "description": "Mean attainment summarizes repeated observations under the same frozen evaluator and does not establish causation.",
+            "disclosure": "essential",
+            "data": {
+              "source": "operational-values",
+              "time": {
+                "range": "90d"
+              },
+              "filters": {
+                "workflow": [
+                  ".github/workflows/self-care-docs-build-time-investigator.md"
+                ]
+              }
+            },
+            "mark": "chart",
+            "chart": "line",
+            "encoding": {
+              "x": {
+                "field": "observed-at",
+                "type": "temporal",
+                "time-unit": "day"
+              },
+              "y": {
+                "field": "operational-value",
+                "type": "quantitative",
+                "aggregate": "mean"
+              },
+              "color": {
+                "field": "operational-value-definition",
+                "type": "nominal"
+              }
+            }
+          }
+        ]
+      }
+    ],
+    "navigation": [
+      {
+        "label": "Package operations",
+        "pages": [
+          "self-care-dashboard"
+        ]
+      }
+    ]
+  }
+}
