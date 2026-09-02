@@ -425,11 +425,11 @@ const bundles = (await mapWithConcurrency(manifestFiles, 8, async (item) => {
   }
 })).filter(Boolean).sort((left, right) => left.repository.localeCompare(right.repository) || left.name.localeCompare(right.name));
 
-const [runHealth, organizationRepositories] = await Promise.all([
+const [runHealth, organizationRepositories, latestVersion] = await Promise.all([
   collectRunHealth(registryByRepository),
   organizationRepositorySummary(),
+  latestGhAwVersion(),
 ]);
-const latestVersion = await latestGhAwVersion();
 
 const discoveredWorkflows = await mapWithConcurrency([...discovered.values()], 8, async (item) => {
   const registered = registryByRepository.get(item.repository)?.get(item.path);
