@@ -67,7 +67,7 @@ Automatic discovery scans at most `control-plane.inventory.max-scan-repositories
 
 ### Live Authority Check
 
-Discovery, an allowed owner, and credential access do not prove target enrollment. Before promoting an operation to `live`, add the package and assigned control repository to `.github/central-agentic-ops.json` on the target's default branch. Protect that file with target-owner review. Also verify the approved inventory records the target, operation, approving repository owner, review date, and revocation path.
+Discovery, an allowed owner, and credential access do not prove target enrollment. Before promoting an operation to `live`, add the package and assigned control repository to `.github/workflows/cao.json` on the target's default branch. Protect that file with target-owner review. Also verify the approved inventory records the target, operation, approving repository owner, review date, and revocation path.
 
 Every live worker reads the target-owned file before agent execution. It fails closed when the file is missing or malformed, the operation is absent, or `authority` does not match the dispatched `central_repo`. Review runs do not require the file because they cannot mutate the target. This prevents a second runtime from beginning a new live run for the same operation, but it does not cancel an already-running workflow in another control repository.
 
@@ -84,7 +84,7 @@ Every live worker reads the target-owned file before agent execution. It fails c
 ```
 
 :::caution[Protect the authority file]
-Require target-owner review for changes to `.github/central-agentic-ops.json`. Credential access and an allowed owner are not substitutes for target consent.
+Require target-owner review for changes to `.github/workflows/cao.json`. Credential access and an allowed owner are not substitutes for target consent.
 :::
 
 If an enterprise and organization runtime both select the same pair, keep both in `review` until operators assign one live authority. Do not rely on run timing, workflow concurrency, or repository protections to resolve the conflict. Separate control repositories have independent queues and kill switches.
@@ -141,7 +141,7 @@ Promote each operation independently:
 
 1. **Installed in review**: credentials and repository access are configured; proposals route to the private review destination without target writes.
 2. **Review verified**: run against one representative repository; inspect selection, prompts, permissions, correlation data, and the actionable proposal. For a Pages report, also verify that the access-controlled review site updates and production Pages does not.
-3. **Enrolled**: record target-owner approval and commit the assigned control repository to the target's protected `.github/central-agentic-ops.json`.
+3. **Enrolled**: record target-owner approval and commit the assigned control repository to the target's protected `.github/workflows/cao.json`.
 4. **Limited live**: confirm no other control repository has live authority for the same operation, then manually target one low-risk repository and verify the resulting safe output and downstream CI. For a Pages report, verify the production site update independently of the review site.
 5. **Scheduled live**: enable scheduled operation with `max_repos` kept small, then increase limits only from observed evidence.
 
@@ -153,7 +153,7 @@ An operation does not become safer because it remained in a mode for several day
 
 ## Rollback
 
-The first rollback action is to set the affected package's `enabled` field to `false` in `.github/central-agentic-ops.json` and deploy that reviewed revision. For a narrower incident, set the worker's `enabled` field to `false`. Then:
+The first rollback action is to set the affected package's `enabled` field to `false` in `.github/workflows/cao.json` and deploy that reviewed revision. For a narrower incident, set the worker's `enabled` field to `false`. Then:
 
 1. stop new dispatches;
 2. inspect the orchestrator run and correlated worker runs;

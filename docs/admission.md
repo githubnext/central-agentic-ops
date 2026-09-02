@@ -13,7 +13,7 @@ trigger -> pre-activation admission -> authorized-run precompute -> activation -
 
 ## What Admission Gates
 
-The shared control component reads `.github/cao/control.mjs` and `.github/cao/policy.mjs` from the exact `github.workflow_sha`. Admission then reads `.github/central-agentic-ops.json` at that revision, and authorized runs execute the `precompute` command from the same modules. They do not use policy or CAO runtime from another branch or from the agent checkout.
+The shared control component reads `.github/cao/src/control.mjs` and `.github/cao/src/policy.mjs` from the exact `github.workflow_sha`. Admission then reads `.github/workflows/cao.json` at that revision, and authorized runs execute the `precompute` command from the same modules. They do not use policy or CAO runtime from another branch or from the agent checkout.
 
 | Check | Admitted when |
 | --- | --- |
@@ -48,8 +48,8 @@ Failure in either phase prevents agent execution. Admission denial skips activat
 Setup creates one atomic control-plane revision:
 
 1. Install the gh-aw package from an immutable CAO tag or commit.
-2. Materialize `.github/cao/control.mjs` and `.github/cao/policy.mjs` from that same CAO revision.
-3. Declare the installed package and its worker-to-workflow mapping in `.github/central-agentic-ops.json`.
+2. Materialize `.github/cao/src/control.mjs` and `.github/cao/src/policy.mjs` from that same CAO revision.
+3. Declare the installed package and its worker-to-workflow mapping in `.github/workflows/cao.json`.
 4. Commit the workflows, generated locks, CAO runtime, and policy together, then push before running the operation.
 
 The CAO runtime files are control-repository-owned and are not gh-aw package resources. Follow [Quickstart: add the operation](getting-started.md#step-3---add-the-dependabot-operation) to install them and [Quickstart: set the first-run boundary](getting-started.md#step-4---set-the-first-run-boundary) to create the policy.
@@ -73,7 +73,7 @@ Open the run summary and find **Central Agentic Ops admission**. An authorized r
 
 | Reason | Configuration or setup to check |
 | --- | --- |
-| `control-plane-absent` | Add `control-plane` to `.github/central-agentic-ops.json`. |
+| `control-plane-absent` | Add `control-plane` to `.github/workflows/cao.json`. |
 | `package-undeclared` | Add the installed package under `control-plane.packages`. |
 | `package-disabled` | Review the package, then remove `enabled: false` when it is safe to resume. |
 | `worker-disabled` | Review the worker, then remove `enabled: false` when it is safe to resume. |

@@ -19,8 +19,8 @@ function workflow(name, directory = workflowsDirectory) {
 function controlPrecompute() {
   return [
     workflow("shared/control.md"),
-    readFileSync(join(root, ".github", "cao", "control.mjs"), "utf8"),
-    readFileSync(join(root, ".github", "cao", "policy.mjs"), "utf8"),
+    readFileSync(join(root, ".github", "cao", "src", "control.mjs"), "utf8"),
+    readFileSync(join(root, ".github", "cao", "src", "policy.mjs"), "utf8"),
   ].join("\n");
 }
 
@@ -396,8 +396,8 @@ test("control workflows deny before activation through one shared admission cont
     1,
   );
   assert.match(sharedControl, /^\s+id: cao_admission$/m);
-  assert.match(sharedControl, /contents\/\.github\/cao\/control\.mjs/);
-  assert.match(sharedControl, /contents\/\.github\/cao\/policy\.mjs/);
+  assert.match(sharedControl, /contents\/\.github\/cao\/src\/control\.mjs/);
+  assert.match(sharedControl, /contents\/\.github\/cao\/src\/policy\.mjs/);
   assert.match(sharedControl, /reason="cannot read or execute the CAO control modules at github\.workflow_sha"/);
   for (const [name, source] of controlled) {
     assert.equal(
@@ -585,9 +585,9 @@ test("CAO runtime is control-repository-owned outside package resources", () => 
   const rootManifest = readFileSync(join(root, "aw.yml"), "utf8");
   const setupSkill = readFileSync(join(root, ".github", "skills", "setup-central-agentic-ops", "SKILL.md"), "utf8");
   const policy = JSON.parse(execFileSync(process.execPath, [
-    join(root, ".github", "cao", "control.mjs"),
+    join(root, ".github", "cao", "src", "control.mjs"),
     "resolve-policy",
-    join(root, ".github", "central-agentic-ops.json"),
+    join(root, ".github", "workflows", "cao.json"),
   ], {
     encoding: "utf8",
     env: {
@@ -601,7 +601,7 @@ test("CAO runtime is control-repository-owned outside package resources", () => 
   assert.equal(policy.authorized, true);
   assert.equal(policy.package, "dependabot");
   assert.doesNotMatch(rootManifest, /destination: \.github\/cao\//);
-  assert.match(setupSkill, /contents\/\.github\/cao\/\$\{cao_file\}/);
+  assert.match(setupSkill, /contents\/\.github\/cao\/src\/\$\{cao_file\}/);
   assert.match(setupSkill, /for cao_file in control\.mjs policy\.mjs/);
   assert.doesNotMatch(setupSkill, /chmod \+x \.github\/cao/);
 });
@@ -1726,15 +1726,15 @@ test("clean-room compilation emits the expected GitHub Actions settings", { time
 
       assert.match(preActivation, /actions: read/);
       assert.match(preActivation, /name: Evaluate Central Agentic Ops admission/);
-      assert.match(preActivation, /contents\/\.github\/cao\/control\.mjs/);
-      assert.match(preActivation, /contents\/\.github\/cao\/policy\.mjs/);
+      assert.match(preActivation, /contents\/\.github\/cao\/src\/control\.mjs/);
+      assert.match(preActivation, /contents\/\.github\/cao\/src\/policy\.mjs/);
       assert.match(preActivation, /github\/gh-aw-actions\/setup-cli@/);
       assert.match(preActivation, /steps\.cao_admission\.outputs\.monthly_credit_budget != '0'/);
       assert.match(preActivation, /name: Run CAO control precompute/);
       assert.match(preActivation, /GH_TOKEN: \$\{\{ secrets\.GH_AW_GITHUB_TOKEN \|\| github\.token \}\}/);
       assert.match(preActivation, /name: Validate CAO control precompute artifact/);
       assert.match(preActivation, /\.authorized == true/);
-      assert.match(preActivation, /\.policy_source == \{repository:\$repository,path:"\.github\/central-agentic-ops\.json",sha:\$sha\}/);
+      assert.match(preActivation, /\.policy_source == \{repository:\$repository,path:"\.github\/workflows\/cao\.json",sha:\$sha\}/);
       assert.match(preActivation, /name: Upload CAO control precompute artifact/);
       assert.match(preActivation, /retention-days: 1(?:\.0)?/);
 
@@ -1957,7 +1957,7 @@ test("Dashboard package supports embedded and explicit standalone deployment", (
   const dashboardManifest = readFileSync(join(root, "dashboard", "aw.yml"), "utf8");
   const rootPackage = parse(rootManifest);
   const dashboardPackage = parse(dashboardManifest);
-  const canonicalPolicyResolver = readFileSync(join(root, ".github", "cao", "policy.mjs"), "utf8");
+  const canonicalPolicyResolver = readFileSync(join(root, ".github", "cao", "src", "policy.mjs"), "utf8");
   const buildWorkflow = readFileSync(join(root, "dashboard", "dashboard-build.yml"), "utf8");
   const deployWorkflow = readFileSync(join(root, "dashboard", "dashboard.yml"), "utf8");
   const aicUsage = readFileSync(join(root, "dashboard", "report", "aic-usage.mjs"), "utf8");
@@ -1980,7 +1980,7 @@ test("Dashboard package supports embedded and explicit standalone deployment", (
   assert.doesNotMatch(dashboardManifest, /destination: \.github\/cao\//);
   assert.match(canonicalPolicyResolver, /export function parsePolicy/);
   assert.match(buildWorkflow, /workflow_call:[\s\S]*?site-path:[\s\S]*?default: cao/);
-  assert.match(buildWorkflow, /control-settings\.mjs[\s\S]*?\.github\/cao\/control\.mjs[\s\S]*?\.github\/central-agentic-ops\.json[\s\S]*?"\$RUNNER_TEMP\/control-settings\.json"/);
+  assert.match(buildWorkflow, /control-settings\.mjs[\s\S]*?\.github\/cao\/src\/control\.mjs[\s\S]*?\.github\/workflows\/cao\.json[\s\S]*?"\$RUNNER_TEMP\/control-settings\.json"/);
   assert.match(buildWorkflow, /cp -R \.github\/aw\/dashboard\/site\/\. "\$REPORT_OUTPUT\/"/);
   assert.match(buildWorkflow, /configure-site\.mjs[\s\S]*?"\$REPORT_OUTPUT\/index\.html"[\s\S]*?"\$RUNNER_TEMP\/control-settings\.json"/);
   assert.match(buildWorkflow, /bundle-dashboards\.mjs[\s\S]*?"\$REPORT_OUTPUT\/dashboard\.json"[\s\S]*?\.github\/aw\/dashboards/);

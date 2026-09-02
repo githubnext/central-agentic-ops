@@ -281,7 +281,7 @@ test("Ops Publish remains an explicit least-privilege add-on", () => {
   assert.match(workflow, /runs-on: ubuntu-latest\n\s+timeout-minutes: 10/);
   assert.match(workflow, /group: ops-publish-\$\{\{ github\.event\.issue\.number \}\}\n\s+cancel-in-progress: false/);
   assert.match(workflow, /ref: \$\{\{ github\.workflow_sha \}\}/);
-  assert.match(workflow, /control\.mjs control-settings \.github\/central-agentic-ops\.json/);
+  assert.match(workflow, /control\.mjs control-settings \.github\/workflows\/cao\.json/);
   assert.doesNotMatch(workflow, /vars\.CENTRAL_AGENTIC_OPS_/);
   assert.match(workflow, /permissions:\n\s+actions: read\n\s+contents: read\n\s+issues: write/);
   assert.match(workflow, /actions\/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1/);

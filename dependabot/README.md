@@ -40,7 +40,7 @@ Configure a GitHub App, a fine-grained PAT, or both in the control repository fo
 
 Store `GH_AW_GITHUB_APP_ID` and `GH_AW_GITHUB_APP_PRIVATE_KEY` as repository secrets for App authentication, or store a fine-grained PAT in `GH_AW_GITHUB_TOKEN`. The optional `GH_AW_CI_TOKEN` secret supports the updater path that requires an additional empty commit.
 
-Declare Dependabot in `.github/central-agentic-ops.json`:
+Declare Dependabot in `.github/workflows/cao.json`:
 
 ```json
 {

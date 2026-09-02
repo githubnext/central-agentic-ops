@@ -3,11 +3,11 @@ title: Configuration Reference
 description: Checked-in policy, credential secrets, and manual inputs for Central Agentic Ops.
 ---
 
-Persistent non-secret policy lives only in `.github/central-agentic-ops.json` in the private control repository. Workflows read that file at the exact `github.workflow_sha`, so workflow code and policy are one reviewed revision. Repository variables named `CENTRAL_AGENTIC_OPS_*` are not read as defaults, overrides, or compatibility fallbacks.
+Persistent non-secret policy lives only in `.github/workflows/cao.json` in the private control repository. Workflows read that file at the exact `github.workflow_sha`, so workflow code and policy are one reviewed revision. Repository variables named `CENTRAL_AGENTIC_OPS_*` are not read as defaults, overrides, or compatibility fallbacks.
 
 Keep credentials in Actions secrets. Manual inputs may select a target or narrow a checked-in limit for one run, but they never change policy or widen it.
 
-The policy is plain JSON so Node.js can parse it with the built-in `JSON.parse` API and no runtime dependencies. Its Draft 2020-12 schema is published at `.github/central-agentic-ops.schema.json`; the checked-in policy's `$schema` property enables editor completion and diagnostics. The dependency-free resolver remains the runtime validator for constraints JSON Schema cannot express, including duplicate keys, case-insensitive uniqueness, and `cell-index < cell-count`.
+The policy is plain JSON so Node.js can parse it with the built-in `JSON.parse` API and no runtime dependencies. Its Draft 2020-12 schema is published at `.github/cao/cao.schema.json`; the checked-in policy's `$schema` property enables editor completion and diagnostics. The dependency-free resolver remains the runtime validator for constraints JSON Schema cannot express, including duplicate keys, case-insensitive uniqueness, and `cell-index < cell-count`.
 
 ## Control Policy
 
@@ -15,7 +15,7 @@ This minimal policy enables the installed Dependabot package and its workers in 
 
 ```json
 {
-  "$schema": "https://raw.githubusercontent.com/githubnext/central-agentic-ops/main/.github/central-agentic-ops.schema.json",
+  "$schema": "https://raw.githubusercontent.com/githubnext/central-agentic-ops/main/.github/cao/cao.schema.json",
   "version": 1,
   "control-plane": {
     "scope": {
@@ -100,7 +100,7 @@ If usage logs are unavailable or invalid, the orchestration admits no workers in
 
 ## Target Authority
 
-`live` workers also require `.github/central-agentic-ops.json` on the target's protected default branch. The target assigns each package to one control repository:
+`live` workers also require `.github/workflows/cao.json` on the target's protected default branch. The target assigns each package to one control repository:
 
 ```json
 {
@@ -142,7 +142,7 @@ Operation orchestrators expose these `workflow_dispatch` inputs:
 | `rollout_percent` | Narrows the checked-in package rollout ceiling. |
 | `safe_output_mode` | Narrows `live` policy to `review`, or requests the already-authorized mode. |
 
-Manual inputs affect only one run. They do not update `.github/central-agentic-ops.json`. Use `gh aw run <workflow-name>` to trigger an installed workflow so gh-aw validates and records its inputs correctly.
+Manual inputs affect only one run. They do not update `.github/workflows/cao.json`. Use `gh aw run <workflow-name>` to trigger an installed workflow so gh-aw validates and records its inputs correctly.
 
 ## Ops Publish Add-on
 
@@ -182,10 +182,10 @@ Installed Central Agentic Ops packages do not include these optional provider fi
 
 ## Sources of Truth
 
-- Machine-readable policy schema: `.github/central-agentic-ops.schema.json`
-- Runtime policy resolution: `.github/cao/policy.mjs` and [Control Policy Specification](control-policy-specification.md)
-- Checked-in control policy: `.github/central-agentic-ops.json`
-- Deterministic control commands: `.github/cao/control.mjs`
+- Machine-readable policy schema: `.github/cao/cao.schema.json`
+- Runtime policy resolution: `.github/cao/src/policy.mjs` and [Control Policy Specification](control-policy-specification.md)
+- Checked-in control policy: `.github/workflows/cao.json`
+- Deterministic control commands: `.github/cao/src/control.mjs`
 - Shared runtime enforcement: `.github/workflows/shared/control.md`
 - Package inventory: the root and package `aw.yml` manifests
 - Credentials and permissions: [Configure Authentication](authentication.md)

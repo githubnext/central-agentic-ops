@@ -64,7 +64,7 @@ test("landing wizard prompt references the raw setup skill", () => {
 });
 
 test("landing wizard operations come from the checked-in control policy", () => {
-  assert.match(catalog, /import controlPolicy from "\.\.\/\.\.\/\.github\/central-agentic-ops\.json"/);
+  assert.match(catalog, /import controlPolicy from "\.\.\/\.\.\/\.github\/workflows\/cao\.json"/);
   assert.match(catalog, /selectConfiguredOperations\(controlPolicy, catalogEntries\)/);
   assert.match(wizard, /configuredOperationEntries as operations/);
   assert.doesNotMatch(wizard, /operation\.slug === "dependabot"/);

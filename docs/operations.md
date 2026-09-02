@@ -115,7 +115,7 @@ Every orchestrator emits a `central-agentic-ops.dispatcher.run` span after norma
 
 The optional Ops Publish add-on turns an explicit human label into a deterministic issue publication without rerunning AI. It remains outside the Agentic Workflow package catalog: copy `ops-publish/ops-publish.yml` and `.github/scripts/ops-publish/ops-publish.mjs` from a pinned catalog revision into the private repository that receives review issues.
 
-Enable `control-plane.publishing` in `.github/central-agentic-ops.json`, declare its `reviewers` and optional `control-repositories`, and create the `ops:publish-to-target` label. Applying the label to an eligible bot-authored review issue validates the originating worker run, derives its target and package from trusted run metadata, enforces checked-in scope and target-owned package authority, creates the target issue with provenance, and closes the review issue.
+Enable `control-plane.publishing` in `.github/workflows/cao.json`, declare its `reviewers` and optional `control-repositories`, and create the `ops:publish-to-target` label. Applying the label to an eligible bot-authored review issue validates the originating worker run, derives its target and package from trusted run metadata, enforces checked-in scope and target-owned package authority, creates the target issue with provenance, and closes the review issue.
 
 This path supports issue outputs only. It does not transfer issues, publish pull requests or comments, or apply artifact-backed review bundles. GitHub issue transfer is not used because it is limited to repositories under one owner and cannot transfer a private issue to a public repository. See the add-on's `README.md` for installation, credentials, and failure behavior.
 
@@ -285,7 +285,7 @@ Removing or retagging the catalog source does not revoke installed files. Revoca
 A new package should:
 
 1. Define an orchestrator with a schedule and manual inputs.
-2. Add the package and its workers to the closed JSON schema and declare them in `.github/central-agentic-ops.json`; review remains the default mode.
+2. Add the package and its workers to the closed JSON schema and declare them in `.github/workflows/cao.json`; review remains the default mode.
 3. Import `shared/control.md` as `role: orchestrator` with a static package identity and request-only narrowing inputs.
 4. Pass the stable lowercase slug through shared control's `package` input and document the matching target-authority entry.
 5. Keep GitHub tools read-only.

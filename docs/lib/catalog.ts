@@ -1,6 +1,6 @@
 import type { MarkdownInstance } from "astro";
 import { parse } from "yaml";
-import controlPolicy from "../../.github/central-agentic-ops.json";
+import controlPolicy from "../../.github/workflows/cao.json";
 import { selectConfiguredOperations } from "./configured-operations.mjs";
 
 type PackageReadme = MarkdownInstance<Record<string, unknown>>;

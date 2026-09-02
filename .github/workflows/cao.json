@@ -1,5 +1,5 @@
 {
-  "$schema": "https://raw.githubusercontent.com/githubnext/central-agentic-ops/main/.github/central-agentic-ops.schema.json",
+  "$schema": "https://raw.githubusercontent.com/githubnext/central-agentic-ops/main/.github/cao/cao.schema.json",
   "version": 1,
   "control-plane": {
     "scope": {
