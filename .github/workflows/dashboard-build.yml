@@ -8,6 +8,11 @@ on:
         required: false
         type: string
         default: cao
+      mode:
+        description: Use live data or only the most recently cached dashboard data.
+        required: false
+        type: string
+        default: live
   workflow_dispatch:
     inputs:
       site-path:
@@ -15,6 +20,14 @@ on:
         required: false
         type: string
         default: cao
+      mode:
+        description: Use live data or only the most recently cached dashboard data.
+        required: false
+        type: choice
+        options:
+          - live
+          - cache
+        default: live
 
 permissions:
   contents: read
@@ -31,7 +44,12 @@ jobs:
       - name: Validate dashboard site path
         env:
           DASHBOARD_SITE_PATH: ${{ inputs.site-path }}
+          DASHBOARD_MODE: ${{ inputs.mode }}
         run: |
+          if [[ "$DASHBOARD_MODE" != "live" && "$DASHBOARD_MODE" != "cache" ]]; then
+            echo "mode must be 'live' or 'cache'" >&2
+            exit 1
+          fi
           if [[ "$DASHBOARD_SITE_PATH" != "." && ! "$DASHBOARD_SITE_PATH" =~ ^[A-Za-z0-9][A-Za-z0-9._/-]*$ ]]; then
             echo "site-path must be '.' or a relative URL path" >&2
             exit 1
@@ -74,19 +92,43 @@ jobs:
           REPORT_INVENTORY: ${{ runner.temp }}/control-plane-inventory.json
         run: node "$DASHBOARD_REPORT_ROOT/inventory.mjs"
 
+      - name: Restore dashboard data cache
+        id: dashboard-data-cache
+        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ${{ runner.temp }}/dashboard-data
+          key: ${{ runner.os }}-dashboard-data-${{ github.repository }}-${{ github.run_id }}
+          restore-keys: |
+            ${{ runner.os }}-dashboard-data-${{ github.repository }}-
+
+      - name: Require cached dashboard data
+        if: inputs.mode == 'cache'
+        env:
+          DASHBOARD_DATA_ROOT: ${{ runner.temp }}/dashboard-data
+        run: |
+          for file in deployed-workflows.json aic-usage.json operational-values.json dashboard-records.json; do
+            if [[ ! -f "$DASHBOARD_DATA_ROOT/$file" ]]; then
+              echo "Cached dashboard data is unavailable: $file" >&2
+              exit 1
+            fi
+          done
+
       - name: Discover deployed agentic workflows
+        if: inputs.mode == 'live'
         env:
           GITHUB_TOKEN: ${{ github.token }}
           REPORT_CONTROL_SETTINGS: ${{ runner.temp }}/control-settings.json
-          REPORT_DEPLOYED_WORKFLOWS: ${{ runner.temp }}/deployed-workflows.json
+          REPORT_DEPLOYED_WORKFLOWS: ${{ runner.temp }}/dashboard-data/deployed-workflows.json
         run: node "$DASHBOARD_REPORT_ROOT/deployed-workflows.mjs"
 
       - name: Install gh-aw CLI
+        if: inputs.mode == 'live'
         uses: github/gh-aw-actions/setup-cli@afc709f45ed6a3f756eb4551856c6a9c42e15b2c # v0.88.0
         with:
           version: v0.88.0
 
       - name: Checkout operational-value replay runtime
+        if: inputs.mode == 'live'
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           repository: github/gh-aw
@@ -95,12 +137,14 @@ jobs:
           persist-credentials: false
 
       - name: Setup Go for operational-value replay
+        if: inputs.mode == 'live'
         uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
         with:
           go-version-file: .cache/gh-aw-operational-value-source/go.mod
           cache: false
 
       - name: Build operational-value replay runtime
+        if: inputs.mode == 'live'
         working-directory: .cache/gh-aw-operational-value-source
         run: |
           mkdir -p "$RUNNER_TEMP/gh-aw-operational-value"
@@ -109,6 +153,7 @@ jobs:
           go clean -cache -modcache
 
       - name: Restore operational-value observation cache
+        if: inputs.mode == 'live'
         uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: .cache/dashboard-operational-values
@@ -117,39 +162,49 @@ jobs:
             ${{ runner.os }}-dashboard-operational-values-${{ github.repository }}-
 
       - name: Collect AI Credit usage
+        if: inputs.mode == 'live'
         env:
           GH_TOKEN: ${{ github.token }}
           REPORT_AIC_CONCURRENCY: "3"
-          REPORT_AIC_USAGE: ${{ runner.temp }}/aic-usage.json
-          REPORT_DEPLOYED_WORKFLOWS: ${{ runner.temp }}/deployed-workflows.json
+          REPORT_AIC_USAGE: ${{ runner.temp }}/dashboard-data/aic-usage.json
+          REPORT_DEPLOYED_WORKFLOWS: ${{ runner.temp }}/dashboard-data/deployed-workflows.json
         run: node "$DASHBOARD_REPORT_ROOT/aic-usage.mjs"
 
       - name: Collect operational-value observations
+        if: inputs.mode == 'live'
         env:
           GH_TOKEN: ${{ github.token }}
-          REPORT_DEPLOYED_WORKFLOWS: ${{ runner.temp }}/deployed-workflows.json
+          REPORT_DEPLOYED_WORKFLOWS: ${{ runner.temp }}/dashboard-data/deployed-workflows.json
           REPORT_GH_AW_BIN: ${{ runner.temp }}/gh-aw-operational-value/gh-aw
-          REPORT_OPERATIONAL_VALUES: ${{ runner.temp }}/operational-values.json
+          REPORT_OPERATIONAL_VALUES: ${{ runner.temp }}/dashboard-data/operational-values.json
           REPORT_VALUE_CACHE: .cache/dashboard-operational-values/observations.json
           REPORT_VALUE_CONCURRENCY: "3"
           REPORT_VALUE_REPLAY_CACHE: .cache/dashboard-operational-values/replay
         run: node "$DASHBOARD_REPORT_ROOT/operational-values.mjs"
 
       - name: Save operational-value observation cache
-        if: always()
+        if: always() && inputs.mode == 'live'
         uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: .cache/dashboard-operational-values
           key: ${{ runner.os }}-dashboard-operational-values-${{ github.repository }}-${{ github.run_id }}
 
       - name: Collect durable dashboard records
+        if: inputs.mode == 'live'
         env:
           GITHUB_TOKEN: ${{ github.token }}
           REPORT_CONTROL_SETTINGS: ${{ runner.temp }}/control-settings.json
           REPORT_INVENTORY: ${{ runner.temp }}/control-plane-inventory.json
-          REPORT_DEPLOYED_WORKFLOWS: ${{ runner.temp }}/deployed-workflows.json
-          REPORT_RECORDS: ${{ runner.temp }}/dashboard-records.json
+          REPORT_DEPLOYED_WORKFLOWS: ${{ runner.temp }}/dashboard-data/deployed-workflows.json
+          REPORT_RECORDS: ${{ runner.temp }}/dashboard-data/dashboard-records.json
         run: node "$DASHBOARD_REPORT_ROOT/records.mjs"
+
+      - name: Save dashboard data cache
+        if: inputs.mode == 'live'
+        uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ${{ runner.temp }}/dashboard-data
+          key: ${{ runner.os }}-dashboard-data-${{ github.repository }}-${{ github.run_id }}
 
       - name: Assemble Dashboard Language site
         env:
@@ -172,13 +227,13 @@ jobs:
 
       - name: Build Dashboard Language sources
         env:
-          REPORT_AIC_USAGE: ${{ runner.temp }}/aic-usage.json
+          REPORT_AIC_USAGE: ${{ runner.temp }}/dashboard-data/aic-usage.json
           REPORT_CONTROL_SETTINGS: ${{ runner.temp }}/control-settings.json
           REPORT_DASHBOARD_SOURCES: ${{ runner.temp }}/central-agentic-ops-dashboard/${{ inputs.site-path }}/sources.json
-          REPORT_DEPLOYED_WORKFLOWS: ${{ runner.temp }}/deployed-workflows.json
+          REPORT_DEPLOYED_WORKFLOWS: ${{ runner.temp }}/dashboard-data/deployed-workflows.json
           REPORT_INVENTORY: ${{ runner.temp }}/control-plane-inventory.json
-          REPORT_OPERATIONAL_VALUES: ${{ runner.temp }}/operational-values.json
-          REPORT_RECORDS: ${{ runner.temp }}/dashboard-records.json
+          REPORT_OPERATIONAL_VALUES: ${{ runner.temp }}/dashboard-data/operational-values.json
+          REPORT_RECORDS: ${{ runner.temp }}/dashboard-data/dashboard-records.json
         run: node "$DASHBOARD_REPORT_ROOT/dashboard-language-sources.mjs"
 
       - name: Upload dashboard artifact
