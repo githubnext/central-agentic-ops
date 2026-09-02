@@ -7,6 +7,8 @@ import { selectConfiguredOperations } from "../../docs/lib/configured-operations
 
 const hero = readFileSync("docs/components/HierarchyHero.astro", "utf8");
 const wizard = readFileSync("docs/components/OpsWizard.astro", "utf8");
+const wizardPage = readFileSync("docs/pages/wizard.astro", "utf8");
+const landingPage = readFileSync("docs/README.md", "utf8");
 const catalog = readFileSync("docs/lib/catalog.ts", "utf8");
 
 function decodeAsset(asset) {
@@ -56,14 +58,21 @@ test("landing animations reinitialize after a color-scheme change", () => {
   assert.match(hero, /handleColorSchemeChange\(\) \{\s+destroyHierarchyAnimations\(\);\s+initializeHierarchyAnimations\(\);/);
 });
 
-test("landing wizard prompt references the raw setup skill", () => {
+test("package wizard has its own page linked from the landing page", () => {
+  assert.doesNotMatch(hero, /OpsWizard/);
+  assert.match(wizardPage, /import OpsWizard from "\.\.\/components\/OpsWizard\.astro"/);
+  assert.match(wizardPage, /<OpsWizard \/>/);
+  assert.match(landingPage, /link: \/central-agentic-ops\/wizard\//);
+});
+
+test("package wizard prompt references the raw setup skill", () => {
   assert.match(
     wizard,
     /https:\/\/raw\.githubusercontent\.com\/githubnext\/central-agentic-ops\/main\/\.github\/skills\/setup-central-agentic-ops\/SKILL\.md/,
   );
 });
 
-test("landing wizard operations come from the checked-in control policy", () => {
+test("package wizard operations come from the checked-in control policy", () => {
   assert.match(catalog, /import controlPolicy from "\.\.\/\.\.\/\.github\/workflows\/cao\.json"/);
   assert.match(catalog, /selectConfiguredOperations\(controlPolicy, catalogEntries\)/);
   assert.match(wizard, /configuredOperationEntries as operations/);
