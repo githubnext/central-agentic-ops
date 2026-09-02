@@ -1389,7 +1389,9 @@ test("SelfCare runs every 20 minutes", () => {
   const compiled = workflow("self-care.lock.yml");
 
   assert.match(source, /schedule: every 20 minutes/);
+  assert.match(source, /engine: copilot\nmodel: gpt-5\.4/);
   assert.match(compiled, /cron: "[0-5]?\d\/20 \* \* \* \*"  # Friendly format: every 20 minutes \(scattered\)/);
+  assert.match(compiled, /GH_AW_INFO_MODEL: "gpt-5\.4"/);
 });
 
 test("SelfCare accessibility checker audits the served docs site with axe-core evidence", () => {
