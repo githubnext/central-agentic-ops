@@ -61,17 +61,6 @@ const dashboardExpectedFiles = [
     "utf8",
   ).matchAll(/^\s+destination: (.+)$/gm)].map((match) => match[1]),
 ];
-const selfCareExpectedFiles = [
-  ".github/aw/dashboards/self-care.json",
-  ".github/graders/self-care-docs-build-time-investigator-operational-value.sh",
-  ".github/workflows/self-care-accessibility-checker.md",
-  ".github/workflows/self-care-code-improvement.md",
-  ".github/workflows/self-care-dashboard-review.md",
-  ".github/workflows/self-care-docs-build-time-investigator.md",
-  ".github/workflows/self-care-primer-brand-checker.md",
-  ".github/workflows/self-care.md",
-  ".github/workflows/shared/control.md",
-];
 const softwareDevelopmentPracticesExpectedFiles = [
   ".github/aw/dashboards/software-development-practices.json",
   ".github/aw/software-development-practices/software-development-guidance-operational-value-runtime.bash",
@@ -229,16 +218,11 @@ test("gh aw add installs the focused Advisory package contract", { timeout: 180_
   }
 });
 
-test("gh aw add installs the focused SelfCare package contract", { timeout: 180_000 }, () => {
-  const consumer = installPackage(selfCarePackageSource);
-
-  try {
-    for (const relativePath of selfCareExpectedFiles) {
-      assert.ok(existsSync(join(consumer, relativePath)), `focused SelfCare package omitted ${relativePath}`);
-    }
-  } finally {
-    rmSync(consumer, { recursive: true, force: true });
-  }
+test("gh aw add rejects the private SelfCare package", { timeout: 180_000 }, () => {
+  assert.throws(
+    () => installPackage(selfCarePackageSource),
+    /is private and cannot be added/,
+  );
 });
 
 test("gh aw add installs the focused Software Development Practices package contract", { timeout: 180_000 }, () => {

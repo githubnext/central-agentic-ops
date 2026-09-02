@@ -57,10 +57,16 @@ jobs:
       - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
         with:
           node-version: 24
-      - name: Install gh-aw
-        uses: github/gh-aw-actions/setup-cli@afc709f45ed6a3f756eb4551856c6a9c42e15b2c # v0.88.0
+      - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
         with:
-          version: v0.88.0
+          go-version: 1.26.7
+      - name: Install gh-aw
+        run: |
+          mkdir "${RUNNER_TEMP}/gh-aw-source"
+          curl --fail --location --silent --show-error https://github.com/github/gh-aw/archive/9587a1cb9f8e49b5c741815fb626508930f83537.tar.gz |
+            tar -xz -C "${RUNNER_TEMP}/gh-aw-source" --strip-components=1
+          mkdir -p "${HOME}/.local/share/gh/extensions/gh-aw"
+          go build -C "${RUNNER_TEMP}/gh-aw-source" -ldflags "-s -w -X main.version=v0.88.0" -o "${HOME}/.local/share/gh/extensions/gh-aw/gh-aw" ./cmd/gh-aw
       - name: Validate files installed from aw.yml
         env:
           CENTRAL_AGENTIC_OPS_PACKAGE_SOURCE: ${{ github.repository }}@${{ github.sha }}
