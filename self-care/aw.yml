@@ -3,8 +3,7 @@ description: Repository-local live checks for dashboard quality, accessibility, 
 min-version: v0.88.0
 includes:
   - .github/workflows/self-care.md
+  - .github/workflows/self-care-docs-build-time-investigator.md
 resources:
   - source: dashboard.json
     destination: .github/aw/dashboards/self-care.json
-  - source: ../.github/graders/self-care-docs-build-time-investigator-operational-value.sh
-    destination: .github/graders/self-care-docs-build-time-investigator-operational-value.sh
