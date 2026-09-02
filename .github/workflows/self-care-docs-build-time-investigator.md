@@ -22,9 +22,9 @@ on:
         type: string
       batch_label:
         type: string
-    permissions:
-      contents: read
-      actions: read
+  permissions:
+    contents: read
+    actions: read
 
 env:
   GH_AW_SAFE_OUTPUT_MODE: ${{ inputs.safe_output_mode || 'review' }}
@@ -78,7 +78,7 @@ network:
 
 tools:
   github:
-    mode: remote
+    mode: gh-proxy
     min-integrity: approved
     toolsets: [repos, actions, issues]
   repo-memory:
