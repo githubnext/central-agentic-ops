@@ -41,9 +41,9 @@
   <text x="338" y="385" class="label">Optimization</text><text x="338" y="404" class="small">orchestrator + worker</text>
 
   <line x1="580" y1="76" x2="580" y2="476" stroke="var(--border)" stroke-width="2" stroke-dasharray="5 7"/>
-  <text x="598" y="92" class="eyebrow" transform="rotate(90 598 92)">REPOSITORY BOUNDARY</text>
+  <text x="620" y="92" class="eyebrow" transform="rotate(90 620 92)">REPOSITORY BOUNDARY</text>
   <path d="M516 260h120" fill="none" stroke="var(--muted)" stroke-width="2" marker-end="url(#arrow)"/>
-  <text x="576" y="244" text-anchor="middle" class="small">inspect + declared safe outputs</text>
+  <text x="540" y="244" text-anchor="middle" class="small">inspect + declared safe outputs</text>
 
   <rect x="650" y="96" width="236" height="338" rx="8" class="surface"/>
   <circle cx="678" cy="126" r="7" fill="var(--success)"/>

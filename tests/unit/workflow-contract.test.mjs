@@ -1433,13 +1433,14 @@ test("SVG visual audit covers every tracked SVG in both color schemes", () => {
   assert.match(source, /overlap between a `<text>` element and its own descendant `<tspan>`/);
   assert.match(source, /create-check-run:/);
   assert.match(source, /upload-artifact:/);
-  assert.match(source, /http:\/\/host\.docker\.internal:4321\//);
-  assert.match(source, /- host\.docker\.internal/);
-  const proxyBypass = /NO_PROXY: ["']?host\.docker\.internal,localhost,127\.0\.0\.1/;
-  assert.match(source, proxyBypass);
-  assert.match(compiled, proxyBypass);
-  assert.doesNotMatch(source, /^\s+no_proxy:/m);
-  assert.doesNotMatch(compiled, /^\s+no_proxy:/m);
+  assert.match(source, /python3 -m http\.server 4321/);
+  assert.match(source, /--bind 127\.0\.0\.1/);
+  assert.match(source, /http:\/\/127\.0\.0\.1:4321\//);
+  assert.match(source, /--retry-connrefused/);
+  assert.doesNotMatch(source, /host\.docker\.internal/);
+  assert.doesNotMatch(source, /^\s+- local$/m);
+  assert.doesNotMatch(source, /^env:\n\s+NO_PROXY:/m);
+  assert.doesNotMatch(compiled, /^  NO_PROXY:/m);
   assert.match(source, /Never claim success if any manifest entry was skipped/);
 });
 
@@ -1819,7 +1820,8 @@ test("clean-room compilation emits the expected GitHub Actions settings", { time
     assert.match(svgVisualAudit, /name: "SVG Visual Audit"/);
     assert.match(svgVisualAudit, /create_check_run/);
     assert.match(svgVisualAudit, /upload_artifact/);
-    assert.match(svgVisualAudit, /http\.server 4321/);
+    assert.match(svgVisualAudit, /GH_AW_INFO_ALLOWED_DOMAINS: '\["defaults","playwright"\]'/);
+    assert.doesNotMatch(svgVisualAudit, /python3 -m http\.server 4321/);
 
     const docsDiagramGenerator = workflow("docs-explanatory-diagrams.lock.yml", generatedDirectory);
     assert.match(docsDiagramGenerator, /name: "Docs Explanatory Diagram Generator"/);
