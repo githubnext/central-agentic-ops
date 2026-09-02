@@ -344,18 +344,19 @@ Code remains open by default. A recommendation to keep code closed requires an e
 
 Create at most one consolidated issue containing:
 
+Start directly with a concise, unheaded executive summary that includes the seven-day window and explicit limitations. Follow it with:
+
 1. `### Advisory Status` — `ADVISORY_READY`, `HUMAN_REVIEW_REQUIRED`, `NO_MATERIAL_CHANGE`, or `INCOMPLETE`;
-2. `### Executive Summary`, including the seven-day window and explicit limitations;
-3. `### Scope and Evidence`, separating observed, inaccessible, and out-of-repository evidence;
-4. `### Asset Graph`;
-5. `### Proposed Tier Classification`;
-6. `### Control Verification Gaps`;
-7. `### Risk Scoring and Rationale`;
-8. `### Prioritized Remediation Queue`;
-9. `### Open-Code Exception Register`, containing every required closure-exception field above or `none`;
-10. `### Operational Metrics Baseline` for observed open-alert age against the stated patch SLA, inbound vulnerability reporting route, ownership coverage, unsupported dependency ratio, exception aging, and exposure without recovery capability;
-11. `### Human Review Required`;
-12. `### Control Plane` with correlation ID, central repository, and control-plane run URL when `correlation_id` is present.
+2. `### Scope and Evidence`, separating observed, inaccessible, and out-of-repository evidence;
+3. `### Asset Graph`;
+4. `### Proposed Tier Classification`;
+5. `### Control Verification Gaps`;
+6. `### Risk Scoring and Rationale`;
+7. `### Prioritized Remediation Queue`;
+8. `### Open-Code Exception Register`, containing every required closure-exception field above or `none`;
+9. `### Operational Metrics Baseline` for observed open-alert age against the stated patch SLA, inbound vulnerability reporting route, ownership coverage, unsupported dependency ratio, exception aging, and exposure without recovery capability;
+10. `### Human Review Required`;
+11. `### Control Plane` with correlation ID, central repository, and control-plane run URL when `correlation_id` is present.
 
 Use `###` or lower headings. Put long asset, tier, and risk tables inside `<details>` blocks. Do not mention users or teams, link to private target items from a review repository, or claim that absent evidence proves a control exists or is missing.
 

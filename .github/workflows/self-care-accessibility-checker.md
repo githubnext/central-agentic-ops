@@ -237,7 +237,6 @@ Call `create_issue` exactly once, titled `Accessibility Audit - [Date]`. Each ru
 Use `###` (h3) or lower for all headings, never `#` or `##`. Structure the body as overview → key findings → collapsible detail → next actions, and wrap long tables and per-page detail in `<details><summary><b>...</b></summary>...</details>` blocks.
 
 ```markdown
-### Audit Summary
 - Workflow run: [§${{ github.run_id }}](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }})
 - Correlation ID: ${{ inputs.correlation_id }}
 - Control repository: ${{ inputs.central_repo }}
