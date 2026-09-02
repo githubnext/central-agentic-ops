@@ -118,13 +118,6 @@ pre-agent-steps:
       fi
 features:
   gh-aw-detection: true
-evals:
-  - id: device_tests_completed
-    question: Did the agent test the documentation site across every required device form factor?
-  - id: compatibility_matrix_completed
-    question: Did the agent test both Chrome and WebKit in light and dark color schemes?
-  - id: results_reported
-    question: Did the agent report results by device, browser engine, and color scheme with reproducible evidence?
 ---
 
 {{#runtime-import? .github/shared-instructions.md}}

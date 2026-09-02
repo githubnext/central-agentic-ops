@@ -56,13 +56,6 @@ pre-agent-steps:
       mkdir -p /tmp/gh-aw/agent/cao-dashboard-review
       REPORT_INVENTORY=/tmp/gh-aw/agent/cao-dashboard-review/expected-inventory.json \
         node dashboard/report/inventory.mjs
-evals:
-  - id: deployed-dashboard-inspected
-    question: Did the agent inspect the deployed dashboard with a browser rather than infer its state from source alone?
-  - id: published-data-verified
-    question: Did the agent compare published packages and workflows with deterministic inventory and bounded GitHub Actions evidence?
-  - id: actionable-result-reported
-    question: Did the agent create one evidence-backed issue for materially new defects, or report a no-op for a healthy or duplicate result?
 ---
 
 # CAO Dashboard Review

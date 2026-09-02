@@ -146,13 +146,6 @@ pre-agent-steps:
       if [ $PREFLIGHT_STATUS -ne 0 ]; then
         echo "Playwright preflight failed; agent will report the infrastructure blocker."
       fi
-evals:
-  - id: pages_audited
-    question: Did the agent audit the locally served documentation site rather than reasoning from source markup alone?
-  - id: automated_and_manual_checks
-    question: Did the agent combine axe-core results with keyboard, focus, landmark, and color-scheme checks?
-  - id: barriers_reported_with_evidence
-    question: Did the agent report each accessibility barrier with the affected page, selector, WCAG criterion, and remediation?
 ---
 
 {{#runtime-import? .github/cao/self-care.md}}

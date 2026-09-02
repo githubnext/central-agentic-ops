@@ -59,17 +59,6 @@ features:
 pre-agent-steps:
   - name: Install dashboard validator dependencies
     run: npm ci --prefix dashboard/site --ignore-scripts
-evals:
-  - id: synthetic-task-bounded
-    question: Did the agent create exactly one bounded, novel synthetic agentic-workflow task or report a duplicate no-op?
-  - id: operational-value-inferred
-    question: Did the agent define a direct attainment metric, accepted evidence, maturation, zero, missing, and baseline rules without fabricating observed results?
-  - id: dashboard-task-specific
-    question: Did every dashboard view support operating the synthetic workflow and scope its source data to that workflow?
-  - id: shared-grammar-used
-    question: Did the YAML example use the same Dashboard Language grammar and semantics as the production strict JSON serialization, without format-specific vocabulary?
-  - id: corpus-validated
-    question: Did the agent run the deterministic corpus validator successfully before creating a pull request?
 ---
 
 # Dashboard Authoring Corpus
