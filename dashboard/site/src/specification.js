@@ -156,7 +156,7 @@ export const BUILT_IN_PAGE_REQUIRED_SOURCES = {
   graders: ['graders', 'grader-observations'],
   evals: ['evals', 'eval-observations'],
   usage: ['usage'],
-  'engines-models': ['runs', 'outcomes', 'usage'],
+  'engines-models': ['runs', 'model-usage-summary', 'engine-usage-summary'],
   'operational-value': ['operational-values'],
   findings: ['findings']
 };
@@ -198,7 +198,7 @@ export const BUILT_IN_PAGE_REQUIRED_FIELDS = {
     'operational-values': ['operational-value']
   },
   runs: {
-    runs: ['run', 'run-status', 'run-conclusion', 'organization', 'repository', 'workflow', 'rollout-mode', 'engine', 'requested-model', 'resolved-model', 'started-at']
+    runs: ['run', 'run-status', 'run-conclusion', 'organization', 'repository', 'workflow', 'rollout-mode', 'engine', 'engine-version', 'requested-model', 'resolved-model', 'started-at']
   },
   experiments: {
     experiments: ['experiment'],
@@ -218,12 +218,12 @@ export const BUILT_IN_PAGE_REQUIRED_FIELDS = {
     'eval-observations': ['eval', 'run', 'eval-result', 'requested-model', 'resolved-model', 'observed-at']
   },
   usage: {
-    usage: ['input-tokens', 'output-tokens', 'cache-read-tokens', 'cache-write-tokens', 'reasoning-tokens', 'aic', 'engine', 'requested-model', 'resolved-model', 'organization', 'repository', 'workflow', 'rollout-mode', 'observed-at']
+    usage: ['input-tokens', 'output-tokens', 'cache-read-tokens', 'cache-write-tokens', 'reasoning-tokens', 'aic', 'estimated-usd', 'engine', 'engine-version', 'requested-model', 'resolved-model', 'organization', 'repository', 'workflow', 'rollout-mode', 'observed-at']
   },
   'engines-models': {
-    runs: ['engine', 'requested-model', 'resolved-model', 'run', 'run-conclusion'],
-    outcomes: ['outcome-state'],
-    usage: ['input-tokens', 'output-tokens', 'cache-read-tokens', 'cache-write-tokens', 'reasoning-tokens', 'aic']
+    runs: ['engine', 'engine-version', 'requested-model', 'resolved-model', 'run', 'run-conclusion'],
+    'model-usage-summary': ['model', 'engine', 'requested-model', 'runs', 'invocations', 'total-aic', 'estimated-usd', 'pricing'],
+    'engine-usage-summary': ['engine', 'runs', 'invocations', 'total-aic', 'estimated-usd', 'min-engine-version', 'max-engine-version', 'models']
   },
   'operational-value': {
     'operational-values': ['observed-at', 'operational-value', 'operational-value-definition', 'operational-case', 'evaluator-digest', 'requested-evidence-at', 'evidence-cutoff', 'maturity-at', 'maturity-status', 'evidence-link', 'experiment', 'delta-from-baseline']
@@ -281,28 +281,30 @@ export const SOURCE_VALUES = [
   'repository-workflows',
   'workflow-runs',
   'workflow-reports',
-  'package-reports'
+  'package-reports',
+  'model-usage-summary',
+  'engine-usage-summary'
 ];
 
 export const SOURCE_FIELDS = {
   organizations: ['organization', 'organization-name', 'observed-at', 'organization-link'],
   repositories: ['organization', 'repository', 'repository-name', 'rollout-mode', 'observed-at', 'organization-link', 'repository-link'],
   workflows: ['organization', 'repository', 'package', 'package-name', 'workflow', 'workflow-name', 'workflow-role', 'workflow-active', 'admission-status', 'admission-reason', 'rollout-mode', 'max-ai-credits', 'package-aic-allowance', 'package-worker-count', 'package-inventory-warnings', 'inventory-ready', 'observed-at', 'organization-link', 'repository-link', 'workflow-link'],
-  runs: ['organization', 'repository', 'workflow', 'run', 'run-title', 'event', 'started-at', 'ended-at', 'run-status', 'run-conclusion', 'rollout-mode', 'engine', 'requested-model', 'resolved-model', 'organization-link', 'repository-link', 'workflow-link', 'run-link'],
+  runs: ['organization', 'repository', 'workflow', 'run', 'run-title', 'event', 'started-at', 'ended-at', 'run-status', 'run-conclusion', 'rollout-mode', 'engine', 'engine-version', 'requested-model', 'resolved-model', 'organization-link', 'repository-link', 'workflow-link', 'run-link'],
   experiments: ['experiment', 'experiment-name', 'observed-at'],
   'experiment-assignments': ['organization', 'repository', 'workflow', 'run', 'experiment', 'variant', 'observed-at'],
   graders: ['grader', 'grader-name', 'observed-at'],
   'grader-observations': ['organization', 'repository', 'workflow', 'run', 'experiment', 'grader', 'value', 'status', 'rollout-mode', 'maturity-status', 'baseline-value', 'delta-from-baseline', 'evaluator-digest', 'observed-at', 'run-link'],
   evals: ['eval', 'eval-name', 'eval-question', 'requested-model', 'observed-at'],
   'eval-observations': ['organization', 'repository', 'workflow', 'run', 'experiment', 'eval', 'eval-result', 'requested-model', 'resolved-model', 'rollout-mode', 'observed-at'],
-  usage: ['organization', 'repository', 'workflow', 'run', 'invocation', 'engine', 'requested-model', 'resolved-model', 'rollout-mode', 'input-tokens', 'output-tokens', 'cache-read-tokens', 'cache-write-tokens', 'reasoning-tokens', 'aic', 'observed-at', 'organization-link', 'repository-link', 'workflow-link', 'run-link'],
+  usage: ['organization', 'repository', 'workflow', 'run', 'invocation', 'engine', 'engine-version', 'requested-model', 'resolved-model', 'rollout-mode', 'input-tokens', 'output-tokens', 'cache-read-tokens', 'cache-write-tokens', 'reasoning-tokens', 'aic', 'estimated-usd', 'observed-at', 'organization-link', 'repository-link', 'workflow-link', 'run-link'],
   'coverage-diagnostics': ['title', 'effect'],
   'repository-coverage': ['label', 'value'],
   'runtime-episode-summary': ['label', 'value'],
   'runtime-episodes': ['run', 'run-title', 'package', 'workflow', 'started-at', 'duration', 'status', 'control-transition', 'attribution', 'run-link'],
   'runtime-attribution-gaps': ['run', 'run-title', 'workflow', 'status', 'control-transition', 'reason-code', 'evidence', 'run-link'],
-  outcomes: ['organization', 'repository', 'package', 'runtime-repository', 'workflow', 'workflow-name', 'run', 'run-conclusion', 'safe-output', 'outcome-number', 'outcome-title', 'outcome-summary', 'outcome-body-html', 'outcome-category', 'outcome-status', 'outcome-state', 'outcome-warning', 'evidence-strength', 'rollout-mode', 'published-at', 'observed-at', 'issue-link', 'pull-request-link', 'run-link', 'external-link', 'organization-link', 'repository-link', 'workflow-link'],
-  findings: ['organization', 'repository', 'workflow', 'run', 'safe-output', 'finding', 'finding-kind', 'finding-severity', 'finding-status', 'finding-summary', 'observed-at', 'issue-link', 'pull-request-link', 'run-link', 'external-link', 'organization-link', 'repository-link', 'workflow-link'],
+  outcomes: ['organization', 'repository', 'package', 'runtime-repository', 'workflow', 'workflow-name', 'run', 'run-conclusion', 'safe-output', 'outcome-number', 'outcome-title', 'outcome-summary', 'outcome-body-html', 'outcome-category', 'outcome-status', 'outcome-state', 'outcome-warning', 'evidence-strength', 'rollout-mode', 'engine', 'engine-version', 'requested-model', 'resolved-model', 'published-at', 'observed-at', 'issue-link', 'pull-request-link', 'run-link', 'external-link', 'organization-link', 'repository-link', 'workflow-link'],
+  findings: ['organization', 'repository', 'workflow', 'run', 'safe-output', 'finding', 'finding-kind', 'finding-severity', 'finding-status', 'finding-summary', 'observed-at', 'engine', 'engine-version', 'requested-model', 'resolved-model', 'issue-link', 'pull-request-link', 'run-link', 'external-link', 'organization-link', 'repository-link', 'workflow-link'],
   'operational-values': ['organization', 'repository', 'repository-name', 'workflow', 'run', 'run-attempt', 'observation-id', 'experiment', 'operational-case', 'evaluator-digest', 'rollout-mode', 'operational-value', 'operational-value-definition', 'requested-evidence-at', 'evidence-cutoff', 'maturity-at', 'maturity-status', 'baseline-value', 'delta-from-baseline', 'accepted-evidence-provenance', 'diagnostics', 'diagnostic-definitions', 'observed-at', 'evidence-link', 'organization-link', 'repository-link', 'workflow-link', 'run-link'],
   'overview-attention-domains': ['domain', 'state', 'tone', 'icon', 'value', 'detail', 'href', 'priority', 'order'],
   'security-summary': ['label', 'value'],
@@ -321,9 +323,11 @@ export const SOURCE_FIELDS = {
   'repository-workflow-status': ['repository', 'status', 'workflows'],
   'repository-workflow-usage': ['repository', 'workflow', 'invocation', 'aic', 'workflow-link'],
   'repository-workflows': ['repository', 'workflow', 'workflow-name', 'workflow-role', 'package-name', 'rollout-mode', 'workflow-active', 'observed-at', 'aic', 'workflow-link'],
-  'workflow-runs': ['workflow-route', 'organization', 'repository', 'workflow', 'run', 'run-title', 'event', 'started-at', 'ended-at', 'run-status', 'run-conclusion', 'rollout-mode', 'engine', 'requested-model', 'resolved-model', 'run-link'],
-  'workflow-reports': ['workflow-route', 'safe-output', 'outcome-title', 'outcome-summary', 'outcome-status', 'rollout-mode', 'outcome-category', 'observed-at', 'external-link'],
-  'package-reports': ['package', 'safe-output', 'outcome-title', 'outcome-summary', 'outcome-status', 'rollout-mode', 'outcome-category', 'observed-at', 'external-link'],
+  'workflow-runs': ['workflow-route', 'organization', 'repository', 'workflow', 'run', 'run-title', 'event', 'started-at', 'ended-at', 'run-status', 'run-conclusion', 'rollout-mode', 'engine', 'engine-version', 'requested-model', 'resolved-model', 'run-link'],
+  'workflow-reports': ['workflow-route', 'safe-output', 'outcome-title', 'outcome-summary', 'outcome-status', 'rollout-mode', 'engine', 'engine-version', 'requested-model', 'resolved-model', 'outcome-category', 'observed-at', 'external-link'],
+  'package-reports': ['package', 'safe-output', 'outcome-title', 'outcome-summary', 'outcome-status', 'rollout-mode', 'engine', 'engine-version', 'requested-model', 'resolved-model', 'outcome-category', 'observed-at', 'external-link'],
+  'model-usage-summary': ['model', 'resolved-model', 'engine', 'requested-model', 'runs', 'invocations', 'total-aic', 'estimated-usd', 'pricing'],
+  'engine-usage-summary': ['engine', 'runs', 'invocations', 'total-aic', 'estimated-usd', 'min-engine-version', 'max-engine-version', 'models'],
   'workflow-topology-summary': ['label', 'value'],
   'packaged-workflows': ['package', 'package-name', 'repository', 'workflow', 'workflow-name', 'workflow-role', 'rollout-mode', 'workflow-active', 'runs', 'aic', 'package-link', 'repository-link', 'workflow-link'],
   'standalone-workflows': ['repository', 'workflow', 'workflow-name', 'rollout-mode', 'workflow-active', 'runs', 'aic', 'repository-link', 'workflow-link']

@@ -802,7 +802,9 @@ dashboard:
                 - field: cache-write-tokens
                 - field: reasoning-tokens
                 - field: aic
+                - field: estimated-usd
                 - field: engine
+                - field: engine-version
                 - field: requested-model
                 - field: resolved-model
                 - field: organization
@@ -914,29 +916,39 @@ dashboard:
             encoding:
               columns:
                 - field: engine
+                - field: engine-version
                 - field: requested-model
                 - field: resolved-model
                 - field: run
                 - field: run-conclusion
-          - id: outcomes-view
+          - id: models-view
             data:
-              source: outcomes
+              source: model-usage-summary
             mark: table
             encoding:
               columns:
-                - field: outcome-state
-          - id: usage-view
+                - field: model
+                - field: engine
+                - field: requested-model
+                - field: runs
+                - field: invocations
+                - field: total-aic
+                - field: estimated-usd
+                - field: pricing
+          - id: engines-view
             data:
-              source: usage
+              source: engine-usage-summary
             mark: table
             encoding:
               columns:
-                - field: input-tokens
-                - field: output-tokens
-                - field: cache-read-tokens
-                - field: cache-write-tokens
-                - field: reasoning-tokens
-                - field: aic
+                - field: engine
+                - field: runs
+                - field: invocations
+                - field: total-aic
+                - field: estimated-usd
+                - field: min-engine-version
+                - field: max-engine-version
+                - field: models
 `);
     expect(result.ok).toBe(true);
   });
@@ -1439,6 +1451,7 @@ dashboard:
                 - field: workflow
                 - field: rollout-mode
                 - field: engine
+                - field: engine-version
                 - field: requested-model
                 - field: resolved-model
                 - field: started-at
@@ -1471,7 +1484,9 @@ dashboard:
                 - field: cache-write-tokens
                 - field: reasoning-tokens
                 - field: aic
+                - field: estimated-usd
                 - field: engine
+                - field: engine-version
                 - field: requested-model
                 - field: resolved-model
                 - field: organization

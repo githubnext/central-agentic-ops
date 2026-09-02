@@ -18,6 +18,65 @@ const authoritativeDashboardDocument = composeDashboardDocuments(
 );
 
 describe('presenter built-in and custom pages', () => {
+  it('renders built-in models and agents page with model and engine AIC summaries', () => {
+    const metadata = {
+      'source-id': 'usage-fixture',
+      'source-kind': 'fixture',
+      'as-of': '2026-09-02T12:00:00Z',
+      'retrieved-at': '2026-09-02T12:01:00Z',
+      completeness: /** @type {'complete'} */ ('complete'),
+      freshness: /** @type {'fresh'} */ ('fresh'),
+      availability: /** @type {'available'} */ ('available')
+    };
+    const rendered = renderDashboard({
+      document: {
+        languageVersion: '0.1.0',
+        dashboard: {
+          id: 'models-agents-dashboard',
+          title: 'Models Agents Dashboard',
+          pages: [{
+            id: 'engines-models',
+            kind: /** @type {'built-in'} */ ('built-in'),
+            page: 'engines-models',
+            title: 'Models & agents'
+          }]
+        }
+      },
+      sources: {
+        runs: {
+          source: 'runs',
+          rows: [
+            { organization: 'github', repository: 'central-agentic-ops', workflow: '.github/workflows/daily.yml', run: '1001', 'run-conclusion': 'success', engine: 'copilot', 'engine-version': '0.87.6', 'requested-model': 'gpt-5.6-sol', 'resolved-model': 'gpt-5.6-sol' },
+            { organization: 'github', repository: 'central-agentic-ops', workflow: '.github/workflows/review.yml', run: '1002', 'run-conclusion': 'failure', engine: 'copilot', 'engine-version': '0.87.9', 'requested-model': 'gpt-5.6-sol', 'resolved-model': 'gpt-5.6-sol' },
+            { organization: 'github', repository: 'central-agentic-ops', workflow: '.github/workflows/audit.yml', run: '1003', 'run-conclusion': 'success', engine: 'pi', 'engine-version': '1.2.0', 'requested-model': 'claude-sonnet-5', 'resolved-model': 'claude-sonnet-5' }
+          ],
+          metadata
+        },
+        usage: {
+          source: 'usage',
+          rows: [
+            { organization: 'github', repository: 'central-agentic-ops', workflow: '.github/workflows/daily.yml', run: '1001', invocation: 'a', engine: 'copilot', 'engine-version': '0.87.6', 'requested-model': 'gpt-5.6-sol', 'resolved-model': 'gpt-5.6-sol', aic: 10 },
+            { organization: 'github', repository: 'central-agentic-ops', workflow: '.github/workflows/review.yml', run: '1002', invocation: 'b', engine: 'copilot', 'engine-version': '0.87.9', 'requested-model': 'gpt-5.6-sol', 'resolved-model': 'gpt-5.6-sol', aic: 15 },
+            { organization: 'github', repository: 'central-agentic-ops', workflow: '.github/workflows/audit.yml', run: '1003', invocation: 'c', engine: 'pi', 'engine-version': '1.2.0', 'requested-model': 'claude-sonnet-5', 'resolved-model': 'claude-sonnet-5', aic: 5 }
+          ],
+          metadata
+        },
+        outcomes: { source: 'outcomes', rows: [], metadata }
+      }
+    });
+
+    const page = rendered.querySelector('[data-page-name="engines-models"]');
+    expect(page?.textContent).toContain('AI Credit usage by model');
+    expect(page?.textContent).toContain('Models, pricing, and totals');
+    expect(page?.textContent).toContain('1 AIC = $0.01 USD');
+    expect(page?.textContent).toContain('Total AIC');
+    expect(page?.textContent).toContain('25');
+    expect(page?.textContent).toContain('copilot');
+    expect(page?.textContent).toContain('0.87.6');
+    expect(page?.textContent).toContain('0.87.9');
+    expect(page?.querySelectorAll('.chart-view-pie')).toHaveLength(2);
+  });
+
   it('renders JSON-declared package and standalone workflow inventory with a topology summary', () => {
     const document = {
       languageVersion: '0.1.0',
@@ -383,6 +442,7 @@ describe('presenter built-in and custom pages', () => {
       'Workflows',
       'Repositories',
       'Packages',
+      'Models & agents',
       'UK AI advisory',
       'Ambient context',
       'AW Maintenance',
