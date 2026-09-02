@@ -9,6 +9,11 @@
       "repo": "github/gh-aw-actions/setup-cli",
       "version": "v0.88.0",
       "sha": "afc709f45ed6a3f756eb4551856c6a9c42e15b2c"
+    },
+    "github/gh-aw-actions/setup@v0.88.0": {
+      "repo": "github/gh-aw-actions/setup",
+      "version": "v0.88.0",
+      "sha": "afc709f45ed6a3f756eb4551856c6a9c42e15b2c"
     }
   },
   "containers": {
