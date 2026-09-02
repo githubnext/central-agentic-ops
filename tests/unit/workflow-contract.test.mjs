@@ -1674,7 +1674,7 @@ test("SelfCare docs build-time investigator rotates evidenced recommendations", 
   assert.match(source, /Advance `next_category` after every complete evaluation/);
   assert.match(source, /Call `create_issue` exactly once/);
   assert.match(source, /Otherwise call `noop` exactly once/);
-  assert.match(source, /title-prefix: "\[docs-build-time\] "/);
+  assert.match(source, /title-prefix: "\[self-care:docs-build-time-investigator\] "/);
   assert.doesNotMatch(source, /^\s+(create-pull-request|add-comment|create-discussion|push-to-pull-request-branch):/m);
 });
 
