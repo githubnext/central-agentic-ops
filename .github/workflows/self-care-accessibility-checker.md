@@ -184,7 +184,7 @@ Judge accessibility from rendered browser evidence — the accessibility tree, c
 
 Dependencies were installed from the lockfile and the site was built before the agent started. Do not reinstall dependencies and do not rebuild the site.
 
-Discover the repository's documented preview command and site base path from `package.json` and the Astro configuration, then start the prepared site on an available local port. Capture the server log and poll the derived site URL for up to 120 seconds before continuing. Do not assume a port, directory name, or base path.
+Discover the repository's documented preview command and site base path from `package.json` and the Astro configuration, then start the prepared site on an available local port. For this repository, use `npm run docs:preview -- --host 127.0.0.1 --port <port>` so Astro serves the configured base path. Do not use a generic flat static server rooted at `dist/` as the primary preview mechanism; it serves `dist/index.html` but returns 404 for `/central-agentic-ops/` because Astro preview performs the base-path routing. Capture the server log and poll the derived site URL for up to 120 seconds before continuing. Do not assume a port, directory name, or base path.
 
 Before browsing, inspect `${{ github.workspace }}/.playwright/preflight-chrome.log`. If the browser cannot start, or the preview server never responds, stop the audit and report the blocker as an infrastructure problem in Step 5 rather than as an accessibility finding.
 
