@@ -131,13 +131,24 @@ function repositoryCoverageRows(deployed) {
   ];
 }
 
-function packageMemberships(deployed) {
+function packageAliasMap(inventory = {}) {
+  const aliases = new Map();
+  for (const bundle of inventory.bundles || []) {
+    const canonicalId = String(bundle.id || "").trim();
+    const legacyId = String(bundle.controlPackage || "").trim();
+    if (canonicalId && legacyId && legacyId !== canonicalId) aliases.set(legacyId, canonicalId);
+  }
+  return aliases;
+}
+
+function packageMemberships(deployed, packageAliases = new Map()) {
   const memberships = new Map();
   for (const bundle of deployed.bundles || []) {
     for (const workflow of bundle.workflows || []) {
       const key = `${bundle.repository}:${workflow.lockPath}`;
+      const discoveredId = bundle.path?.replace(/\/aw\.yml$|^aw\.yml$/g, "") || bundle.name;
       const membership = {
-        id: bundle.path?.replace(/\/aw\.yml$|^aw\.yml$/g, "") || bundle.name,
+        id: packageAliases.get(discoveredId) || discoveredId,
         name: bundle.name,
       };
       const workflowMemberships = memberships.get(key) || [];
@@ -216,7 +227,7 @@ function inventoryWorkflowDetails(inventory = {}, controlSettings = {}) {
 }
 
 function workflowRows(deployed, generatedAt, inventory, controlSettings) {
-  const memberships = packageMemberships(deployed);
+  const memberships = packageMemberships(deployed, packageAliasMap(inventory));
   const inventoryDetails = inventoryWorkflowDetails(inventory, controlSettings);
   return (deployed.workflows || []).map((workflow) => {
     const names = repositoryParts(workflow.repository);
