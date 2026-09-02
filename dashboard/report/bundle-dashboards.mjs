@@ -31,18 +31,27 @@ function dashboard(value, source) {
  * @param {string} dashboardsDirectory
  */
 export async function bundleDashboards(outputPath, dashboardsDirectory) {
-  const primary = dashboard(JSON.parse(await readFile(outputPath, "utf8")), outputPath);
   const entries = await readdir(dashboardsDirectory, { withFileTypes: true }).catch((error) => {
     if (error?.code === "ENOENT") return [];
     throw error;
   });
-  const additions = await Promise.all(
+  await bundleDashboardFiles(
+    outputPath,
     entries.filter((entry) => entry.isFile() && entry.name.endsWith(".json"))
-      .sort((left, right) => left.name.localeCompare(right.name))
-      .map(async ({ name: filename }) => {
-        const source = path.join(dashboardsDirectory, filename);
-        return dashboard(JSON.parse(await readFile(source, "utf8")), source);
-      }),
+      .map((entry) => path.join(dashboardsDirectory, entry.name)),
+  );
+}
+
+/**
+ * @param {string} outputPath
+ * @param {string[]} dashboardPaths
+ */
+export async function bundleDashboardFiles(outputPath, dashboardPaths) {
+  const primary = dashboard(JSON.parse(await readFile(outputPath, "utf8")), outputPath);
+  const additions = await Promise.all(
+    dashboardPaths.toSorted().map(async (source) => (
+      dashboard(JSON.parse(await readFile(source, "utf8")), source)
+    )),
   );
   await writeFile(outputPath, `${JSON.stringify(composeDashboardDocuments(primary, additions), null, 2)}\n`);
 }

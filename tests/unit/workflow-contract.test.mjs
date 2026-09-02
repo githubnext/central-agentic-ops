@@ -2004,6 +2004,8 @@ test("Documentation Pages embeds this repository's control-plane report", () => 
   assert.match(workflowSource, /Restore AI Credit usage cache/);
   assert.match(workflowSource, /REPORT_AIC_CACHE: \.cache\/documentation-pages-aic/);
   assert.match(workflowSource, /Save AI Credit usage cache/);
+  assert.match(workflowSource, /name: Assemble configured Dashboard Language site/);
+  assert.match(workflowSource, /run: node dashboard\/site\/scripts\/build\.mjs dist\/cao "\$RUNNER_TEMP\/control-settings\.json"/);
   assert.doesNotMatch(workflowSource, /REPORT_ALLOWED_REPOS/);
   assert.match(workflowSource, /run: node dashboard\/report\/records\.mjs/);
   assert.match(workflowSource, /REPORT_RECORDS: dist\/cao\/records\.json/);
