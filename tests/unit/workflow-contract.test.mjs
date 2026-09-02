@@ -528,7 +528,7 @@ test("deterministic workflows pin third-party actions by commit SHA", () => {
     join(".github", "workflows", "enterprise-canary.yml"),
     join(".github", "workflows", "enterprise-stress.yml"),
     join(".github", "workflows", "review-smoke.yml"),
-    join("dashboard", "dashboard-build.yml"),
+    join(".github", "workflows", "dashboard-build.yml"),
     join("dashboard", "dashboard.yml"),
   ]) {
     const source = readFileSync(join(root, relativePath), "utf8");
@@ -1893,7 +1893,7 @@ test("Agent customizations preserve the deterministic dashboard exception", () =
   assert.match(agenticWorkflowsSkill, /\.github\/aw\/instructions\.md/);
   assert.match(packageSkill, /## Deterministic Add-on Exception/);
   assert.match(packageSkill, /site-path/);
-  assert.match(repositoryInstructions, /Keep `dashboard\/dashboard-build\.yml` reusable through `workflow_call`/);
+  assert.match(repositoryInstructions, /Keep `\.github\/workflows\/dashboard-build\.yml` reusable through `workflow_call` and package it through both dashboard manifests/);
   assert.match(repositoryInstructions, /existing Pages site, retain one Pages artifact uploader and deployer/);
   assert.match(repositoryInstructions, /must not add a schedule or another enable variable/);
 });
@@ -1989,7 +1989,7 @@ test("Dashboard package supports embedded and explicit standalone deployment", (
   const rootPackage = parse(rootManifest);
   const dashboardPackage = parse(dashboardManifest);
   const canonicalPolicyResolver = readFileSync(join(root, ".github", "cao", "src", "policy.mjs"), "utf8");
-  const buildWorkflow = readFileSync(join(root, "dashboard", "dashboard-build.yml"), "utf8");
+  const buildWorkflow = readFileSync(join(root, ".github", "workflows", "dashboard-build.yml"), "utf8");
   const deployWorkflow = readFileSync(join(root, "dashboard", "dashboard.yml"), "utf8");
   const aicUsage = readFileSync(join(root, "dashboard", "report", "aic-usage.mjs"), "utf8");
   const deployedWorkflows = readFileSync(join(root, "dashboard", "report", "deployed-workflows.mjs"), "utf8");
@@ -1998,8 +1998,11 @@ test("Dashboard package supports embedded and explicit standalone deployment", (
   const reportEntrypoints = new Set(reportAssets.filter((assetName) => !["compose-dashboard-documents.mjs", "operational-value-history.mjs", "text-utils.mjs"].includes(assetName)));
 
   assert.deepEqual(
-    rootPackage.includes.filter((entry) => typeof entry === "object" && entry.source.startsWith("dashboard/")),
-    dashboardPackage.includes.map((entry) => ({ ...entry, source: `dashboard/${entry.source}` })),
+    rootPackage.includes.filter((entry) => typeof entry === "object" && entry.destination?.startsWith(".github/workflows/dashboard")),
+    dashboardPackage.includes.map((entry) => ({
+      ...entry,
+      source: entry.source.startsWith(".github/") ? entry.source : `dashboard/${entry.source}`,
+    })),
   );
   assert.deepEqual(
     rootPackage.resources.filter((entry) => entry.source.startsWith("dashboard/")),
@@ -2007,7 +2010,7 @@ test("Dashboard package supports embedded and explicit standalone deployment", (
   );
   assert.match(dashboardManifest, /name: Central Agentic Ops Dashboard/);
   assert.match(dashboardManifest, /source: dashboard\.yml\n\s+destination: \.github\/workflows\/dashboard\.yml\n\s+kind: action-workflow/);
-  assert.match(dashboardManifest, /source: dashboard-build\.yml\n\s+destination: \.github\/workflows\/dashboard-build\.yml\n\s+kind: action-workflow/);
+  assert.match(dashboardManifest, /source: \.github\/workflows\/dashboard-build\.yml\n\s+destination: \.github\/workflows\/dashboard-build\.yml\n\s+kind: action-workflow/);
   assert.doesNotMatch(dashboardManifest, /destination: \.github\/cao\//);
   assert.match(canonicalPolicyResolver, /export function parsePolicy/);
   assert.match(deployedWorkflows, /dashboardHorizonHours\(resolveDashboardHorizon\(dashboardDocument\.dashboard\)\)/);
@@ -2056,6 +2059,7 @@ test("Dashboard package supports embedded and explicit standalone deployment", (
   assert.match(dashboardManifest, /source: site\/favicon\.svg\n\s+destination: \.github\/aw\/dashboard\/site\/favicon\.svg/);
   assert.match(dashboardManifest, /source: site\/dashboard\.json\n\s+destination: \.github\/aw\/dashboard\/site\/dashboard\.json/);
   assert.match(dashboardManifest, /source: site\/src\/presenter\.js\n\s+destination: \.github\/aw\/dashboard\/site\/src\/presenter\.js/);
+  assert.match(dashboardManifest, /source: site\/src\/loading-progress\.js\n\s+destination: \.github\/aw\/dashboard\/site\/src\/loading-progress\.js/);
   for (const assetName of ["data-operations.js", "data-processor.js", "data-worker.js"]) {
     assert.match(dashboardManifest, new RegExp(`source: site/src/${assetName.replace(".", "\\.")}\\n\\s+destination: \\.github/aw/dashboard/site/src/${assetName.replace(".", "\\.")}`));
   }
@@ -2064,31 +2068,35 @@ test("Dashboard package supports embedded and explicit standalone deployment", (
     assert.ok(existsSync(assetPath), `missing report script ${assetName}`);
     assert.match(dashboardManifest, new RegExp(`destination: \\.github/aw/dashboard/report/${assetName.replace(".", "\\.")}`));
     if (reportEntrypoints.has(assetName)) {
-      assert.match(buildWorkflow, new RegExp(`\.github/aw/dashboard/report/${assetName.replace(".", "\\.")}`));
+      assert.match(buildWorkflow, new RegExp(`DASHBOARD_REPORT_ROOT/${assetName.replace(".", "\\.")}`));
     }
     execFileSync(process.execPath, ["--check", assetPath]);
   }
 });
 
-test("Documentation Pages builds and deploys the complete site from one workflow", () => {
+test("Documentation Pages deploys docs with the packaged dashboard builder", () => {
   const workflow = readFileSync(join(root, ".github", "workflows", "docs.yml"), "utf8");
+  const dashboardBuild = readFileSync(join(root, ".github", "workflows", "dashboard-build.yml"), "utf8");
   const astroConfig = readFileSync(join(root, "astro.config.mjs"), "utf8");
 
   assert.equal(existsSync(join(root, ".github", "workflows", "cao-dashboard-build.yml")), false);
   assert.equal(existsSync(join(root, ".github", "workflows", "documentation-pages.yml")), false);
   assert.equal(existsSync(join(root, ".github", "workflows", "documentation-build.yml")), false);
 
-  assert.match(workflow, /github\/gh-aw-actions\/setup-cli@afc709f45ed6a3f756eb4551856c6a9c42e15b2c # v0\.88\.0/);
-  assert.match(workflow, /version: v0\.88\.0/);
-  assert.match(workflow, /DASHBOARD_PACKAGE: \$\{\{ runner\.temp \}\}\/cao-dashboard-package/);
-  assert.match(workflow, /git init --quiet "\$DASHBOARD_PACKAGE"/);
-  assert.match(workflow, /cd "\$DASHBOARD_PACKAGE"/);
-  assert.match(workflow, /gh aw add githubnext\/central-agentic-ops\/dashboard@v0\.0\.1 --no-security-scanner/);
+  assert.match(workflow, /uses: \.\/\.github\/workflows\/dashboard-build\.yml/);
+  assert.match(workflow, /needs: dashboard/);
   assert.match(workflow, /run: npm run docs:build/);
-  assert.match(workflow, /cp -R "\$DASHBOARD_PACKAGE\/\.github\/aw\/dashboard\/site\/\." dist\/cao\//);
-  assert.doesNotMatch(workflow, /schedule:|workflow_run|REPORT_|dashboard\/report\/|actions\/download-artifact@/);
+  assert.match(workflow, /name: central-agentic-ops-dashboard\n\s+path: dist/);
+  assert.match(workflow, /schedule:\n\s+- cron: "\*\/15 \* \* \* \*"/);
+  assert.doesNotMatch(workflow, /workflow_run|gh aw add|DASHBOARD_PACKAGE/);
   assert.equal((workflow.match(/actions\/upload-pages-artifact@/g) || []).length, 1);
   assert.equal((workflow.match(/actions\/deploy-pages@/g) || []).length, 1);
+  assert.match(dashboardBuild, /workflow_call:/);
+  assert.match(dashboardBuild, /central-agentic-ops-dashboard\/\$\{\{ inputs\.site-path \}\}\/sources\.json/);
+  assert.match(dashboardBuild, /name: central-agentic-ops-dashboard/);
+  assert.match(dashboardBuild, /DASHBOARD_LAYOUT=source/);
+  assert.match(dashboardBuild, /DASHBOARD_LAYOUT=installed/);
+  assert.doesNotMatch(dashboardBuild, /schedule:|push:|deploy-pages|upload-pages-artifact/);
   assert.match(astroConfig, /label: "Control plane status", link: "\/cao\/"/);
 });
 
