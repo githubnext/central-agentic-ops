@@ -6,7 +6,7 @@ import { h } from '../dom.js';
 import { formatNumber, formatPercent } from '../view-formatters.js';
 import { titleCase } from './count-formatters.js';
 import { classifyUtilizationRatio, isFailureConclusion } from './run-classification.js';
-import { coverageWindowHours } from './ui-primitives.js';
+import { coverageWindowHours, formatMediumUtcDate, formatMediumUtcDateTime } from './ui-primitives.js';
 import { renderInteractiveTabs, updateInteractiveTabSelection } from './tab-nav.js';
 
 const MODES = ['all', 'review', 'live'];
@@ -811,9 +811,7 @@ function formatAic(value) {
  */
 function formatDate(value, dateOnly = false) {
   if (!(value instanceof Date) || !Number.isFinite(value.getTime())) return 'Unavailable';
-  return new Intl.DateTimeFormat('en', dateOnly
-    ? { dateStyle: 'medium', timeZone: 'UTC' }
-    : { dateStyle: 'medium', timeStyle: 'short', timeZone: 'UTC' }).format(value);
+  return dateOnly ? formatMediumUtcDate(value) : formatMediumUtcDateTime(value);
 }
 
 /**

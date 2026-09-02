@@ -82,6 +82,21 @@ export function formatMediumUtcDateTime(input) {
 }
 
 /**
+ * Formats a `Date` or millisecond timestamp as a medium-date-only, UTC
+ * string (e.g. `Aug 30, 2026`), with no time-of-day component. Callers are
+ * responsible for validating their input; invalid input renders `Invalid
+ * Date`.
+ * @param {Date | number} input
+ * @returns {string}
+ */
+export function formatMediumUtcDate(input) {
+  return new Intl.DateTimeFormat('en', {
+    dateStyle: 'medium',
+    timeZone: 'UTC'
+  }).format(input instanceof Date ? input : new Date(input));
+}
+
+/**
  * @param {unknown} value
  * @returns {string}
  */
