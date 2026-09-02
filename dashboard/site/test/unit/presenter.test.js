@@ -76,6 +76,15 @@ describe('presenter built-in and custom pages', () => {
     expect(page?.textContent).toContain('0.87.9');
     expect(page?.querySelectorAll('.chart-view-pie')).toHaveLength(2);
     expect(page?.querySelectorAll('.layout-section .pie-chart-card')).toHaveLength(2);
+    const allocationSection = page?.querySelector('[data-section-id="model-agent-allocation"]');
+    expect([...page?.querySelectorAll('.layout-section') ?? []].map((section) => section.getAttribute('data-section-id'))).toEqual([
+      'model-agent-allocation',
+      'model-allocation',
+      'agentic-engine-allocation',
+      'model-agent-run-evidence'
+    ]);
+    expect(allocationSection?.querySelectorAll('.chart-view-pie')).toHaveLength(2);
+    expect(allocationSection?.querySelector('.custom-table')).toBeNull();
   });
 
   it('renders JSON-declared package and standalone workflow inventory with a topology summary', () => {
