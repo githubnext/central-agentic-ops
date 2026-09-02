@@ -178,7 +178,7 @@ function summarizeModelUsage(usage) {
       invocations: 0,
       'total-aic': 0,
       'estimated-usd': 0,
-      pricing: '1 AIC = $0.01 USD'
+      pricing: aicPricingText()
     };
     summary.engines.add(text(row.engine) || 'unknown');
     summary['requested-models'].add(text(row['requested-model']) || 'unknown');
@@ -402,6 +402,10 @@ function runIdentity(row) {
 function number(value) {
   const result = Number(value);
   return Number.isFinite(result) && result >= 0 ? result : 0;
+}
+
+function aicPricingText() {
+  return `1 AIC = $${AIC_TO_USD.toFixed(2)} USD`;
 }
 
 /** @param {string} left @param {string} right */
