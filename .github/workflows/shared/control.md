@@ -20,9 +20,6 @@ import-schema:
     type: string
     default: "0"
 
-on:
-  bots: ["github-actions[bot]"]
-
 github-app:
   client-id: ${{ secrets.GH_AW_GITHUB_APP_ID }}
   private-key: ${{ secrets.GH_AW_GITHUB_APP_PRIVATE_KEY }}
