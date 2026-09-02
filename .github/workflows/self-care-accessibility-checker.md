@@ -105,6 +105,7 @@ safe-outputs:
   create-issue:
     target-repo: ${{ (inputs.safe_output_mode || 'review') == 'review' && (inputs.safe_output_repo || github.repository) || inputs.target_repo }}
     title-prefix: "[self-care:accessibility-checker] "
+    labels: [self-care]
     close-older-issues: true
     close-older-key: self-care-accessibility-checker
     max: 1
@@ -234,42 +235,54 @@ Report only barriers you reproduced with browser evidence. Never report a page o
 
 Call `create_issue` exactly once, titled `Accessibility Audit - [Date]`. Each run supersedes the previous report, so make the issue self-contained. Publish the report even when no barriers were found, so the clean result and its coverage are recorded.
 
-Use `###` (h3) or lower for all headings, never `#` or `##`. Structure the body as overview → key findings → collapsible detail → next actions, and wrap long tables and per-page detail in `<details><summary><b>...</b></summary>...</details>` blocks.
+Apply the inherited worker report contract exactly:
+
+- Begin the issue body directly with a concise, unheaded executive summary. In one or two short paragraphs, state the decision-relevant result, the most important barrier or clean result, key counts, and the recommended next action. Do not put workflow metadata or the `### Control Plane` section before this summary.
+- Keep critical findings, a compact metrics line, and the recommended next action visible. Use a GitHub alert when a blocker, infrastructure failure, or clean result deserves emphasis; never use emoji severity markers.
+- Put non-essential background, verbose supporting evidence, logs, the complete finding inventory, and per-page coverage inside `<details><summary><b>...</b></summary>...</details>` sections.
+- Use `###` (h3) or lower for headings, never `#` or `##`.
+- End with context and no more than three relevant workflow references. Do not add generated-by attribution because the safe-output system appends it.
 
 ```markdown
-- Workflow run: [§${{ github.run_id }}](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }})
+{One or two short, unheaded paragraphs summarizing the result, user impact, key counts, and best next action.}
+
+> [!CAUTION]
+> {Blocker status and immediate user impact. Omit this alert when there is no blocker.}
+
+**Audit:** {pages} pages · light and dark · {blockers} blocker · {serious} serious · {advisory} advisory
+
+### Critical Findings
+{Keep each blocker and serious issue concise and visible: affected scope, WCAG criterion, one sentence of reproduced browser evidence, and remediation. State `None` when applicable.}
+
+### Recommended Next Action
+{Evaluate the possible remediations, select the single most important action with the highest expected return on investment, and explain why it should happen first.}
+
+<details><summary><b>Agent prompt</b></summary>
+
+{A clear, imperative prompt for an agentic run that performs only that selected action. Name the affected component, required accessibility outcome, relevant constraints, and evidence that will verify completion.}
+
+</details>
+
+<details><summary><b>All Findings and Evidence</b></summary>
+
+{Complete deduplicated blocker, serious, and advisory inventory. For each barrier include affected pages, selector, WCAG criterion, color scheme and viewport, reproduced evidence, and concrete remediation.}
+
+</details>
+
+<details><summary><b>Coverage and Audit Notes</b></summary>
+
+{Table of exact audited URLs by color scheme and viewport, skipped checks with reasons, preview or tooling limitations, and concise supporting logs. Never represent a skipped check as passing.}
+
+</details>
+
+### Control Plane
 - Correlation ID: ${{ inputs.correlation_id }}
-- Control repository: ${{ inputs.central_repo }}
+- Central repository: ${{ inputs.central_repo }}
 - Control plane run: ${{ inputs.control_plane_run_url }}
-- Standard: WCAG 2.2 Level AA (axe-core 4.13.0 plus manual browser checks)
-- Pages audited: {count}
-- Color schemes audited: light, dark
-- Blockers: {count} · Serious: {count} · Advisory: {count}
 
-### Blockers
-[Each barrier: affected pages, selector, WCAG criterion, observed evidence, and concrete remediation]
-
-### Serious Issues
-[Same structure]
-
-<details>
-<summary><b>Advisory Findings</b></summary>
-
-[Lower-priority improvements]
-
-</details>
-
-<details>
-<summary><b>Coverage</b></summary>
-
-[Table of audited URLs by color scheme and viewport, plus anything skipped and why]
-
-</details>
-
-### Recommended Next Steps
-[Ordered, actionable remediation steps scoped to specific files or components]
+**References:** [§${{ github.run_id }}](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }})
 ```
 
-If the browser or preview server never became available, publish the same issue with an `### Infrastructure Blocker` section describing the failure and the log evidence, report zero coverage, and make no accessibility claims.
+If no barriers were found, replace the caution alert with a `[!NOTE]` clean-result alert, keep the zero counts and recommended follow-up visible, and preserve the coverage detail. If the browser or preview server never became available, use the same progressive-disclosure structure with a visible `[!WARNING]` infrastructure summary, zero coverage, and the next recovery action; put the exact failing commands and logs in the audit-notes detail and make no accessibility claims.
 
-Keep the issue body substantive — never placeholder text — and finish with exactly one `create_issue` output.
+Keep the issue body substantive — never placeholder text — require the `self-care` label, and finish with exactly one `create_issue` output.
