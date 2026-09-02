@@ -443,6 +443,23 @@ test("threat detection runs for workers but not orchestrators", () => {
   }
 });
 
+test("worker workflows allow service-account dispatches", () => {
+  const sharedControl = readFileSync(join(root, ".github", "workflows", "shared", "control.md"), "utf8");
+  assert.doesNotMatch(sharedControl, /^on:\n  bots: \["github-actions\[bot\]"\]/m);
+  const workflows = readdirSync(workflowsDirectory)
+    .filter((name) => name.endsWith(".md"))
+    .map((name) => [name, workflow(name)]);
+  const workers = workflows.filter(([, source]) => /^\s+role: worker$/m.test(source));
+
+  assert.ok(workers.length > 0, "expected at least one worker workflow");
+  for (const [name, source] of workers) {
+    assert.match(source, /^on:\n  bots: \["github-actions\[bot\]"\]/m, name);
+    const generated = workflow(name.replace(/\.md$/, ".lock.yml"));
+    assert.match(generated, /GH_AW_REQUIRED_ROLES: "admin,maintainer,write"/, name);
+    assert.match(generated, /GH_AW_ALLOWED_BOTS: "github-actions\[bot\]"/, name);
+  }
+});
+
 test("operations creation guidance scopes detection and omits worker evals", () => {
   const packageSkill = readFileSync(join(root, ".github", "skills", "create-ops-package", "SKILL.md"), "utf8");
 
