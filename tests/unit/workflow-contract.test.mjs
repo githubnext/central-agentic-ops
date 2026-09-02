@@ -1458,7 +1458,7 @@ test("CAO dashboard reviewer checks deployments through stakeholder personas", (
   assert.match(source, /github\.event\.workflow_run\.conclusion == 'success'/);
   assert.match(source, /REPORT_INVENTORY=\/tmp\/gh-aw\/agent\/cao-dashboard-review\/expected-inventory\.json/);
   assert.match(source, /githubnext\.github\.io\/central-agentic-ops\/cao\//);
-  assert.match(source, /playwright:\n\s+mode: cli/);
+  assert.match(source, /playwright:\n\s+bash:/);
   assert.match(source, /toolsets: \[repos, issues, actions\]/);
   assert.match(source, /githubnext\.github\.io/);
   assert.match(source, /at most the latest 100 runs from the last 24 hours/);
