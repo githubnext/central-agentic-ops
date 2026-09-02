@@ -473,7 +473,7 @@ test("operations creation guidance scopes detection and omits worker evals", () 
   const packageSkill = readFileSync(join(root, ".github", "skills", "create-ops-package", "SKILL.md"), "utf8");
 
   assert.match(packageSkill, /safe-outputs\.threat-detection: false/);
-  assert.match(packageSkill, /`labels: \[<package-slug>\]` and prompt instructions requiring every created issue to carry that package label/);
+  assert.match(packageSkill, /`labels: \[<package-slug>\]`[\s\S]*?preferably `title-prefix: "\[<package-slug>:<worker-slug>\] "`/);
   assert.match(packageSkill, /no `evals` configuration; use deterministic graders for worker measurement/);
   assert.match(packageSkill, /Confirm the orchestrator disables threat detection and every worker omits `evals`/);
   assert.match(packageSkill, /CAO operational packages require organization-billed Copilot inference/);

@@ -113,7 +113,7 @@ Create at least one `.github/workflows/<package>-<worker>.md`. Every worker must
   ```
 
 - least-privilege permissions, explicit tools/network configuration, `strict: true`, bounded credits and timeout, and safe outputs limited to the worker's mission
-- when `safe-outputs.create-issue` is enabled, `labels: [<package-slug>]` and prompt instructions requiring every created issue to carry that package label
+- when `safe-outputs.create-issue` is enabled, `labels: [<package-slug>]`, prompt instructions requiring every created issue to carry that package label, and preferably `title-prefix: "[<package-slug>:<worker-slug>] "` to identify the owning operation and worker
 - no `evals` configuration; use deterministic graders for worker measurement
 - instructions that treat repository content as untrusted, consume `/tmp/gh-aw/agent/control-precompute.json`, define success/no-op behavior, and preserve control-plane correlation data in durable outputs
 
