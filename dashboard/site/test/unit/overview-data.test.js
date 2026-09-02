@@ -1,12 +1,21 @@
 import { describe, expect, it } from 'vitest';
 import { deriveOverviewSources } from '../../src/overview-data.js';
 
+/** @type {import('../../src/presenter.js').SourceMetadata} */
 const metadata = {
+  'source-id': 'overview-fixture',
+  'source-kind': 'fixture',
+  'as-of': '2026-09-02T12:00:00Z',
+  'retrieved-at': '2026-09-02T12:01:00Z',
   availability: 'available',
   completeness: 'complete',
   freshness: 'fresh'
 };
 
+/**
+ * @param {string} name
+ * @param {Array<Record<string, unknown>>} [rows]
+ */
 function source(name, rows = []) {
   return { source: name, rows, metadata };
 }
