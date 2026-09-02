@@ -11,6 +11,8 @@ includes:
 resources:
   - source: report/aic-usage.mjs
     destination: .github/aw/dashboard/report/aic-usage.mjs
+  - source: report/text-utils.mjs
+    destination: .github/aw/dashboard/report/text-utils.mjs
   - source: report/control-settings.mjs
     destination: .github/aw/dashboard/report/control-settings.mjs
   - source: report/deployed-workflows.mjs

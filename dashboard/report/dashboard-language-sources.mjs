@@ -1,6 +1,7 @@
 import { mkdir, readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { pathToFileURL } from "node:url";
+import { firstText } from "./text-utils.mjs";
 
 const sourceNames = [
   "organizations",
@@ -43,14 +44,6 @@ function link(relation, href, label) {
   return typeof href === "string" && href.startsWith("https://")
     ? { relation, href, label }
     : undefined;
-}
-
-function firstText(...values) {
-  for (const value of values) {
-    if (typeof value === "string" && value.trim()) return value.trim();
-    if (value !== undefined && value !== null && String(value).trim()) return String(value).trim();
-  }
-  return "";
 }
 
 function workflowRunUrl(repository, runId) {

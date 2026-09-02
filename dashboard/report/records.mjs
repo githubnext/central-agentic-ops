@@ -2,6 +2,7 @@ import { existsSync, readFileSync } from "node:fs";
 import { mkdir, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { pathToFileURL } from "node:url";
+import { firstText } from "./text-utils.mjs";
 
 const apiRoot = "https://api.github.com";
 
@@ -54,14 +55,6 @@ function repositoryFrom(body = "") {
 
 function markerFrom(body = "", marker) {
   return body.match(new RegExp(`<!--\\s*[\\w-]+:${marker}=([^>]+?)\\s*-->`, "i"))?.[1]?.trim() || "";
-}
-
-function firstText(...values) {
-  for (const value of values) {
-    if (typeof value === "string" && value.trim()) return value.trim();
-    if (value !== undefined && value !== null && String(value).trim()) return String(value).trim();
-  }
-  return "";
 }
 
 function generatedMetadataFrom(body = "") {

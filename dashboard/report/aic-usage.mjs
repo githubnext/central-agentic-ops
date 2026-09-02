@@ -2,6 +2,7 @@ import { spawn } from "node:child_process";
 import { mkdir, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
+import { firstText } from "./text-utils.mjs";
 
 function runGhAw(repository, runIds, outputDirectory) {
   return new Promise((resolve, reject) => {
@@ -27,14 +28,6 @@ function runGhAw(repository, runIds, outputDirectory) {
     });
     child.stdin.end(`${[...runIds].join("\n")}\n`);
   });
-}
-
-function firstText(...values) {
-  for (const value of values) {
-    if (typeof value === "string" && value.trim()) return value.trim();
-    if (value !== undefined && value !== null && String(value).trim()) return String(value).trim();
-  }
-  return "";
 }
 
 async function mapWithConcurrency(values, concurrency, mapper) {
