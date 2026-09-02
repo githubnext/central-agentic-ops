@@ -1,5 +1,6 @@
 name: Central Agentic Ops Dashboard
 description: Deploy an access-controlled, read-only Central Agentic Ops report with GitHub Pages.
+experimental: true
 min-version: v0.87.9
 includes:
   - source: dashboard.yml
