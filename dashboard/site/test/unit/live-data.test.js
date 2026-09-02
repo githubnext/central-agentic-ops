@@ -142,7 +142,7 @@ describe("live Dashboard Language sources", () => {
           REPORT_DASHBOARD_SOURCES: output,
         },
       });
-      const sources = JSON.parse(readFileSync(output, "utf8"));
+      let sources = JSON.parse(readFileSync(output, "utf8"));
 
       expect(sources.workflows.rows[0]).toMatchObject({
         organization: "githubnext",
@@ -177,6 +177,36 @@ describe("live Dashboard Language sources", () => {
         "operational-value": 0.75,
         "operational-value-definition": "dependabot",
         "maturity-status": "interim",
+      });
+
+      const rateLimitedReport = {
+        ...inputs.report,
+        records: [],
+        error: "GitHub API rate limit exceeded; collection stopped.",
+      };
+      writeFileSync(join(temporaryDirectory, "report.json"), JSON.stringify(rateLimitedReport));
+      execFileSync(process.execPath, [
+        resolve("../../dashboard/report/dashboard-language-sources.mjs"),
+      ], {
+        env: {
+          ...process.env,
+          REPORT_DEPLOYED_WORKFLOWS: join(temporaryDirectory, "deployed.json"),
+          REPORT_AIC_USAGE: join(temporaryDirectory, "usage.json"),
+          REPORT_OPERATIONAL_VALUES: join(temporaryDirectory, "operationalValues.json"),
+          REPORT_RECORDS: join(temporaryDirectory, "report.json"),
+          REPORT_INVENTORY: join(temporaryDirectory, "inventory.json"),
+          REPORT_CONTROL_SETTINGS: join(temporaryDirectory, "controlSettings.json"),
+          REPORT_DASHBOARD_SOURCES: output,
+        },
+      });
+      sources = JSON.parse(readFileSync(output, "utf8"));
+      expect(sources["coverage-diagnostics"].rows).toContainEqual({
+        title: "Durable output collection unavailable",
+        effect: rateLimitedReport.error,
+      });
+      expect(sources.findings.metadata).toMatchObject({
+        availability: "unavailable",
+        completeness: "partial",
       });
     } finally {
       rmSync(temporaryDirectory, { recursive: true, force: true });

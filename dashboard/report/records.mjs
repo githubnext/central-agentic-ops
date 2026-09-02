@@ -5,6 +5,50 @@ import { pathToFileURL } from "node:url";
 import { firstText } from "./text-utils.mjs";
 
 const apiRoot = "https://api.github.com";
+const rateLimitDocs = "https://docs.github.com/en/rest/using-the-rest-api/rate-limits-for-the-rest-api";
+
+function message(strings, values) {
+  return strings.reduce((text, part, index) => text + part + (index < values.length ? String(values[index]) : ""), "");
+}
+
+function actionMacro(command) {
+  return (strings, ...values) => {
+    const text = message(strings, values)
+      .replaceAll("%", "%25")
+      .replaceAll("\r", "%0D")
+      .replaceAll("\n", "%0A");
+    console.log(`::${command}::${text}`);
+  };
+}
+
+const log = {
+  info(strings, ...values) {
+    console.log(message(strings, values));
+  },
+  warning: actionMacro("warning"),
+  error: actionMacro("error"),
+  group: actionMacro("group"),
+  endGroup() {
+    console.log("::endgroup::");
+  },
+};
+
+class GitHubRateLimitError extends Error {
+  constructor(pathname, response, detail) {
+    const retryAfter = Number(response.headers.get("retry-after"));
+    const resetSeconds = Number(response.headers.get("x-ratelimit-reset"));
+    const resetAt = Number.isFinite(resetSeconds) && resetSeconds > 0
+      ? new Date(resetSeconds * 1000).toISOString()
+      : "";
+    const retry = resetAt
+      ? ` Retry after ${resetAt}.`
+      : Number.isFinite(retryAfter) && retryAfter > 0
+        ? ` Retry after ${Math.ceil(retryAfter)} seconds.`
+        : "";
+    super(`GitHub API rate limit exceeded for ${pathname}.${retry} ${detail || "Collection stopped before the dashboard data could be completed."} See ${rateLimitDocs}`);
+    this.name = "GitHubRateLimitError";
+  }
+}
 
 function readJson(filePath) {
   return JSON.parse(readFileSync(filePath, "utf8"));
@@ -193,7 +237,7 @@ async function mapWithConcurrency(values, concurrency, mapper) {
   return results;
 }
 
-export async function collectDashboardRecords({
+async function collectDashboardRecordsImpl({
   repository,
   token,
   pagesToken = token,
@@ -218,7 +262,10 @@ export async function collectDashboardRecords({
     ...(inventory.standalone || []).map((workflow) => ({ ...workflow, workers: [], missingWorkers: [] })),
   ];
 
+  let rateLimitError = null;
+
   async function github(pathname, authToken = token) {
+    if (rateLimitError) throw rateLimitError;
     const response = await fetchImpl(`${apiRoot}${pathname}`, {
       headers: {
         Accept: "application/vnd.github.full+json",
@@ -226,7 +273,23 @@ export async function collectDashboardRecords({
         "X-GitHub-Api-Version": "2022-11-28",
       },
     });
-    if (!response.ok) throw new Error(`GitHub API ${response.status} for ${pathname}`);
+    if (!response.ok) {
+      const responseText = await response.text();
+      let detail = "";
+      try {
+        detail = JSON.parse(responseText).message || "";
+      } catch {
+        detail = responseText.trim();
+      }
+      const rateLimited = response.status === 429
+        || (response.status === 403
+          && (response.headers.get("x-ratelimit-remaining") === "0" || /rate limit/i.test(detail)));
+      if (rateLimited) {
+        rateLimitError = new GitHubRateLimitError(pathname, response, detail);
+        throw rateLimitError;
+      }
+      throw new Error(`GitHub API ${response.status} for ${pathname}${detail ? `: ${detail}` : ""}`);
+    }
     return response.json();
   }
 
@@ -234,7 +297,8 @@ export async function collectDashboardRecords({
     try {
       return await github(pathname);
     } catch (error) {
-      console.warn(`${error.message}; continuing without optional repository metadata`);
+      if (error instanceof GitHubRateLimitError) throw error;
+      log.warning`${error.message}; continuing without optional repository metadata`;
       return fallback;
     }
   }
@@ -267,8 +331,9 @@ export async function collectDashboardRecords({
       try {
         return await loader();
       } catch (error) {
+        if (error instanceof GitHubRateLimitError) throw error;
         if (required) throw error;
-        console.warn(`${error.message}; durable reports will be incomplete for ${repositoryName}`);
+        log.warning`${error.message}; durable reports will be incomplete for ${repositoryName}`;
         return fallback;
       }
     };
@@ -385,6 +450,23 @@ export async function collectDashboardRecords({
   return { generatedAt, repository, inventory, records: scopedRecords };
 }
 
+export async function collectDashboardRecords(options) {
+  const generatedAt = options.generatedAt || new Date().toISOString();
+  try {
+    return await collectDashboardRecordsImpl({ ...options, generatedAt });
+  } catch (error) {
+    if (!(error instanceof GitHubRateLimitError)) throw error;
+    log.warning`${error.message}`;
+    return {
+      generatedAt,
+      repository: options.repository,
+      inventory: options.inventory,
+      records: [],
+      error: error.message,
+    };
+  }
+}
+
 async function main() {
   const repository = process.env.GITHUB_REPOSITORY;
   const token = process.env.GITHUB_TOKEN;
@@ -402,22 +484,28 @@ async function main() {
   const deployedInventory = existsSync(deployedWorkflowsPath)
     ? readJson(deployedWorkflowsPath)
     : { schemaVersion: 1, organization: repository.split("/")[0], repositoryCount: 0, bundles: [], workflows: [] };
-  const records = await collectDashboardRecords({
-    repository,
-    token,
-    pagesToken: process.env.REPORT_PAGES_TOKEN || token,
-    controlSettings: readJson(controlSettingsPath),
-    inventory,
-    deployedInventory,
-    requestedRepositories: (process.env.REPORT_ALLOWED_REPOS || "").split(","),
-  });
-  await mkdir(path.dirname(outputPath), { recursive: true });
-  await writeFile(outputPath, `${JSON.stringify(records, null, 2)}\n`);
+  log.group`Collect dashboard records`;
+  try {
+    const records = await collectDashboardRecords({
+      repository,
+      token,
+      pagesToken: process.env.REPORT_PAGES_TOKEN || token,
+      controlSettings: readJson(controlSettingsPath),
+      inventory,
+      deployedInventory,
+      requestedRepositories: (process.env.REPORT_ALLOWED_REPOS || "").split(","),
+    });
+    await mkdir(path.dirname(outputPath), { recursive: true });
+    await writeFile(outputPath, `${JSON.stringify(records, null, 2)}\n`);
+    log.info`Wrote ${records.records.length} dashboard records to ${outputPath}${records.error ? " with incomplete coverage" : ""}`;
+  } finally {
+    log.endGroup();
+  }
 }
 
 if (process.argv[1] && import.meta.url === pathToFileURL(path.resolve(process.argv[1])).href) {
   main().catch((error) => {
-    console.error(error);
+    log.error`${error.stack || error.message || error}`;
     process.exitCode = 1;
   });
 }
