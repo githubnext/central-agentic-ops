@@ -1451,7 +1451,7 @@ test("docs diagram generator creates one validated theme-aware SVG pair", () => 
   assert.match(source, /Call `noop`/);
 });
 
-test("CAO dashboard reviewer checks successful documentation deployments", () => {
+test("CAO dashboard reviewer checks deployments through stakeholder personas", () => {
   const source = workflow("cao-dashboard-review.md");
 
   assert.match(source, /workflow_run:\n\s+workflows: \["Documentation Pages"\]\n\s+types: \[completed\]\n\s+branches: \[main\]/);
@@ -1465,7 +1465,17 @@ test("CAO dashboard reviewer checks successful documentation deployments", () =>
   assert.match(source, /overview, dispatches, packages, repositories, workflows, runs, and coverage routes/);
   assert.match(source, /title-prefix: "\[cao-dashboard\] "/);
   assert.match(source, /close-older-key: cao-dashboard-review/);
-  assert.match(source, /If an open issue already describes the same fingerprint, call `noop`/);
+  assert.match(source, /Use `\$\{\{ github\.run_id \}\}` as the reproducible random seed/);
+  assert.match(source, /Launch the `cfo-dashboard-reviewer`, `cso-dashboard-reviewer`, and `cto-dashboard-reviewer` agents in parallel/);
+  assert.match(source, /unique Playwright session name/);
+  assert.match(source, /3–5 non-repeating routes and visible interactions per persona/);
+  assert.match(source, /representative question/);
+  assert.match(source, /grade task efficiency as `efficient`, `workable`, `inefficient`, or `blocked`/);
+  assert.match(source, /evidence-backed suggestions for dashboard structure or usability/);
+  for (const persona of ["cfo", "cso", "cto"]) {
+    assert.match(source, new RegExp(`## agent: \\\`${persona}-dashboard-reviewer\\\``));
+  }
+  assert.equal(source.match(/^model: small$/gm)?.length, 3);
   assert.doesNotMatch(source, /^\s+(create-pull-request|add-comment|create-discussion|push-to-pull-request-branch):/m);
 });
 
