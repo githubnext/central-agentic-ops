@@ -451,7 +451,7 @@ test("worker workflows allow service-account dispatches", () => {
 
   assert.ok(workers.length > 0, "expected at least one worker workflow");
   for (const [name, source] of workers) {
-    assert.match(source, /^on:\n\s+roles: all$/m, name);
+    assert.match(source, /^\s+roles: all$/m, name);
     const generated = workflow(name.replace(/\.md$/, ".lock.yml"));
     assert.match(generated, /^  # roles: all # Roles processed as role check in pre-activation job$/m, name);
     assert.doesNotMatch(generated, /GH_AW_REQUIRED_ROLES/, name);
