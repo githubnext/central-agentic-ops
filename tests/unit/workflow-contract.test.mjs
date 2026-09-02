@@ -2077,8 +2077,10 @@ test("Dashboard package supports embedded and explicit standalone deployment", (
 test("Documentation Pages deploys docs with the packaged dashboard builder", () => {
   const workflow = readFileSync(join(root, ".github", "workflows", "docs.yml"), "utf8");
   const dashboardBuild = readFileSync(join(root, ".github", "workflows", "dashboard-build.yml"), "utf8");
+  const packagedDashboardBuild = readFileSync(join(root, "dashboard", "dashboard-build.yml"), "utf8");
   const astroConfig = readFileSync(join(root, "astro.config.mjs"), "utf8");
 
+  assert.equal(packagedDashboardBuild.trimEnd(), dashboardBuild.trimEnd());
   assert.equal(existsSync(join(root, ".github", "workflows", "cao-dashboard-build.yml")), false);
   assert.equal(existsSync(join(root, ".github", "workflows", "documentation-pages.yml")), false);
   assert.equal(existsSync(join(root, ".github", "workflows", "documentation-build.yml")), false);
