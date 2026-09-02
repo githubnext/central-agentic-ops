@@ -141,7 +141,14 @@ jobs:
               repo: context.repo.repo,
               per_page: 100,
             });
-            const draft = releases.find((release) => release.draft && release.tag_name === releaseTag);
+            const matchingDrafts = releases.filter((release) => (
+              release.draft
+              && (release.tag_name === releaseTag || release.name === releaseTag)
+            ));
+            if (matchingDrafts.length > 1) {
+              throw new Error(`Multiple draft releases match ${releaseTag}`);
+            }
+            const [draft] = matchingDrafts;
             if (!draft) {
               throw new Error(`No draft release exists for ${releaseTag}`);
             }
@@ -150,6 +157,8 @@ jobs:
               owner: context.repo.owner,
               repo: context.repo.repo,
               release_id: draft.id,
+              tag_name: releaseTag,
+              name: releaseTag,
               draft: false,
               make_latest: 'true',
             });
