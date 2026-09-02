@@ -75,6 +75,7 @@ describe('presenter built-in and custom pages', () => {
     expect(page?.textContent).toContain('0.87.6');
     expect(page?.textContent).toContain('0.87.9');
     expect(page?.querySelectorAll('.chart-view-pie')).toHaveLength(2);
+    expect(page?.querySelectorAll('.layout-section .pie-chart-card')).toHaveLength(2);
   });
 
   it('renders JSON-declared package and standalone workflow inventory with a topology summary', () => {

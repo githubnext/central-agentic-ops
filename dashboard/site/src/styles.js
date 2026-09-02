@@ -203,6 +203,7 @@ main.dashboard-prototype { width: 100%; flex: 1; padding: 0 24px 40px; }
 .view-description { margin: 3px 0 0; color: var(--muted); }
 .chart-view-pie { display: grid; gap: 16px; }
 .pie-chart-card { display: grid; grid-template-columns: minmax(190px, .65fr) minmax(0, 1.35fr); align-items: center; gap: 4px 24px; padding: 20px 24px; border: 1px solid var(--border); border-radius: 6px; }
+.layout-section .pie-chart-card { padding: 0; border: 0; }
 .pie-chart-card > h3, .pie-chart-card > h4 { align-self: end; margin: 0; font-size: 1.25rem; }
 .pie-chart-card > .view-description { align-self: start; }
 .pie-chart-card > .view-source, .pie-chart-card > .view-metadata, .pie-chart-card > .view-context { grid-column: 1; margin: 0; font-size: .6875rem; }
