@@ -72,6 +72,8 @@ export function deriveOverviewSources(sources) {
         package: entry.id,
         title: entry.name,
         mode: entry.mode,
+        'rollout-percent': entry.rolloutPercent,
+        'repository-modes': entry.repositoryModes,
         workers: entry.workers,
         'aic-allowance': entry.allowance,
         inventory: entry.ready ? 'Ready' : 'Needs attention',
@@ -968,11 +970,21 @@ function summarizePackages(rows) {
       const packageAllowance = Number(packageRows.find((row) => Number.isFinite(Number(row['package-aic-allowance'])))?.['package-aic-allowance']);
       const packageWorkerCount = Number(packageRows.find((row) => Number.isFinite(Number(row['package-worker-count'])))?.['package-worker-count']);
       const explicitReady = packageRows.map((row) => row['inventory-ready']).filter((value) => typeof value === 'boolean');
+      const packageRolloutPercent = Number(packageRows.find((row) => Number.isFinite(Number(row['package-rollout-percent'])))?.['package-rollout-percent']);
+      const fallbackRolloutPercent = Number(packageRows.find((row) => Number.isFinite(Number(row['rollout-percent'])))?.['rollout-percent']);
+      const rolloutPercent = Number.isFinite(packageRolloutPercent)
+        ? packageRolloutPercent
+        : Number.isFinite(fallbackRolloutPercent)
+          ? fallbackRolloutPercent
+          : null;
+      const repositoryModes = summarizePackageRepositoryModes(packageRows);
       return {
         id,
         name: String(packageRows.find((row) => typeof row['package-name'] === 'string')?.['package-name'] ?? titleCase(id)),
         workers: Number.isFinite(packageWorkerCount) ? packageWorkerCount : workers.length,
         mode: String(orchestrators[0]?.['rollout-mode'] ?? packageRows[0]?.['rollout-mode'] ?? 'unknown'),
+        rolloutPercent: Number.isFinite(rolloutPercent) ? rolloutPercent : null,
+        repositoryModes,
         allowance: Number.isFinite(packageAllowance)
           ? packageAllowance
           : allowances.length > 0 ? allowances.reduce((total, value) => total + value, 0) : null,
@@ -984,6 +996,36 @@ function summarizePackages(rows) {
       };
     })
     .sort((left, right) => left.name.localeCompare(right.name));
+}
+
+/**
+ * @param {Array<Record<string, unknown>>} packageRows
+ * @returns {Array<{ repository: string, mode: string }>} 
+ */
+function summarizePackageRepositoryModes(packageRows) {
+  const repositoryModes = new Map();
+  for (const row of packageRows) {
+    const repository = repositoryKey(row);
+    const mode = normalizeRolloutMode(row['rollout-mode'] ?? row['package-target-mode']);
+    if (!repository || !mode || mode === 'unknown') continue;
+    repositoryModes.set(repository, mode);
+  }
+  for (const target of packageRows.flatMap((row) => Array.isArray(row['package-targets']) ? row['package-targets'] : [])) {
+    const repository = String(target?.repository ?? '').trim();
+    const mode = normalizeRolloutMode(target?.mode);
+    if (!repository || !mode || mode === 'unknown') continue;
+    repositoryModes.set(repository, mode);
+  }
+  return [...repositoryModes.entries()].map(([repository, mode]) => ({ repository, mode }));
+}
+
+/**
+ * @param {unknown} value
+ * @returns {string}
+ */
+function normalizeRolloutMode(value) {
+  const text = String(value ?? '').trim().toLowerCase();
+  return text === 'review' || text === 'live' ? text : 'unknown';
 }
 
 /**
