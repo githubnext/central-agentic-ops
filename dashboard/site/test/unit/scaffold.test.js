@@ -86,4 +86,10 @@ describe('DLS-CONF-004 scaffold gates', () => {
 
     expect(styles).toContain('.table-output-evidence { display: block; max-width: 80ch; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }');
   });
+
+  it('renders table sort affordances without textual arrow glyphs', () => {
+    const styles = readFileSync(resolve('src/styles.js'), 'utf8');
+
+    expect(styles).not.toMatch(/content:\s*"[↕↑↓]"/);
+  });
 });

@@ -7,6 +7,7 @@ import path from "node:path";
 const root = path.resolve(process.env.REPORT_ROOT || ".");
 const outputPath = path.resolve(process.env.REPORT_INVENTORY || "_inventory/control-plane.json");
 const workflowDirectory = path.join(root, ".github/workflows");
+const repository = process.env.GITHUB_REPOSITORY || "";
 
 function unquote(value = "") {
   const trimmed = value.trim();
@@ -120,7 +121,7 @@ function discoverInventory() {
     .filter((entry) => entry.isFile() && entry.name.endsWith(".lock.yml"))
     .map((entry) => entry.name.slice(0, -9))
     .filter((stem) => !workflowById.has(stem));
-  return { schemaVersion: 1, generatedAt: new Date().toISOString(), manifests, workflows, bundles, standalone, lockOnly };
+  return { schemaVersion: 1, generatedAt: new Date().toISOString(), repository, manifests, workflows, bundles, standalone, lockOnly };
 }
 
 const inventory = discoverInventory();

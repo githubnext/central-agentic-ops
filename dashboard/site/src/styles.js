@@ -631,10 +631,10 @@ h3 { margin: 16px 0 8px; font-size: 1rem; font-weight: 600; }
 .table-scroll:focus-visible { outline: 2px solid var(--focus); outline-offset: -2px; }
 .table-scroll thead th { position: sticky; top: 0; z-index: 1; }
 .table-sort { display: inline-flex; align-items: center; gap: 4px; width: 100%; padding: 0; border: 0; background: none; color: inherit; font: inherit; text-align: left; cursor: pointer; }
-.table-sort::after { content: "↕"; color: var(--muted); font-size: .6875rem; opacity: .5; }
+.table-sort::after { content: ""; width: 12px; height: 12px; flex: none; background: currentColor; opacity: .5; -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 12'%3E%3Cpath d='M3 1v10M1 3l2-2 2 2M9 11V1M7 9l2 2 2-2' fill='none' stroke='black' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") no-repeat center / contain; mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 12'%3E%3Cpath d='M3 1v10M1 3l2-2 2 2M9 11V1M7 9l2 2 2-2' fill='none' stroke='black' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") no-repeat center / contain; }
 .table-sort:hover { color: var(--fg); }
-th[aria-sort="ascending"] .table-sort::after { content: "↑"; opacity: 1; }
-th[aria-sort="descending"] .table-sort::after { content: "↓"; opacity: 1; }
+th[aria-sort="ascending"] .table-sort::after { opacity: 1; -webkit-mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 12'%3E%3Cpath d='M6 11V1M2 5l4-4 4 4' fill='none' stroke='black' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E"); mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 12'%3E%3Cpath d='M6 11V1M2 5l4-4 4 4' fill='none' stroke='black' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E"); }
+th[aria-sort="descending"] .table-sort::after { opacity: 1; -webkit-mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 12'%3E%3Cpath d='M6 1v10M2 7l4 4 4-4' fill='none' stroke='black' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E"); mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 12'%3E%3Cpath d='M6 1v10M2 7l4 4 4-4' fill='none' stroke='black' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E"); }
 .table-filter { min-width: 600px; display: flex; flex-wrap: wrap; align-items: end; gap: 10px 16px; padding: 10px 14px; border-bottom: 1px solid var(--border); background: var(--canvas-subtle); }
 .table-filter label { min-width: 160px; flex: 0 1 220px; }
 .table-filter label:first-child { min-width: 240px; flex-grow: 1; }

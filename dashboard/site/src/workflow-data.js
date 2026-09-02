@@ -32,6 +32,8 @@ export function deriveWorkflowSources(sources) {
     .map((row) => deriveStandaloneWorkflow(row, workflowRuns.get(row), workflowAic.get(row)))
     .sort(compareStandaloneWorkflows);
   const packages = new Set(packaged.map((row) => text(row.package)));
+  const registered = workflows.filter((row) => ['true', 'false'].includes(text(row['workflow-active']))).length;
+  const unconfirmed = workflows.length - registered;
   const metadata = sources.workflows?.metadata ?? unavailableMetadata();
 
   return {
@@ -41,7 +43,9 @@ export function deriveWorkflowSources(sources) {
       rows: [
         { label: 'Packages', value: String(packages.size) },
         { label: 'Package workflows', value: String(packaged.length) },
-        { label: 'Standalone workflows', value: String(standalone.length) }
+        { label: 'Standalone workflows', value: String(standalone.length) },
+        { label: 'Registered workflows', value: String(registered) },
+        { label: 'Unconfirmed registrations', value: String(unconfirmed) }
       ],
       metadata
     },

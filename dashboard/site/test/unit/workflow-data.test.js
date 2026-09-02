@@ -35,7 +35,9 @@ describe('deriveWorkflowSources', () => {
     expect(sources['workflow-topology-summary'].rows).toEqual([
       { label: 'Packages', value: '1' },
       { label: 'Package workflows', value: '2' },
-      { label: 'Standalone workflows', value: '1' }
+      { label: 'Standalone workflows', value: '1' },
+      { label: 'Registered workflows', value: '3' },
+      { label: 'Unconfirmed registrations', value: '0' }
     ]);
     expect(sources['packaged-workflows'].rows.map((row) => row['workflow-role'])).toEqual(['orchestrator', 'worker']);
     expect(sources['packaged-workflows'].rows[0]).toEqual(expect.objectContaining({

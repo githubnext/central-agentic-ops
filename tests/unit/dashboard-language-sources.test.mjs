@@ -166,6 +166,51 @@ test("dashboard source bridge maps a legacy manifest-derived package identity to
   );
 });
 
+test("dashboard source bridge retains expected standalone workflows missing from Actions discovery", () => {
+  const expectedPath = ".github/workflows/pr-reviewer.lock.yml";
+  const sources = buildDashboardLanguageSources({
+    deployed: {
+      generatedAt: "2026-09-02T12:00:00Z",
+      discovery: { complete: true },
+      runHealth: { available: true, complete: true },
+      bundles: [],
+      workflows: [],
+    },
+    usage: { available: true, complete: true, runs: [] },
+    operationalValues: { records: [] },
+    report: { generatedAt: "2026-09-02T12:00:00Z", records: [] },
+    inventory: {
+      repository: "githubnext/central-agentic-ops",
+      workflows: [{
+        id: "pr-reviewer",
+        name: "PR Reviewer / Agentic Workflow Validation",
+        role: "standalone",
+        sourcePath: ".github/workflows/pr-reviewer.md",
+        lockPath: expectedPath,
+        compiled: true,
+      }],
+      bundles: [],
+    },
+  });
+
+  assert.equal(sources.workflows.rows.length, 1);
+  assert.deepEqual(sources.workflows.rows[0], {
+    organization: "githubnext",
+    repository: "central-agentic-ops",
+    "inventory-ready": true,
+    "workflow-role": "standalone",
+    workflow: ".github/workflows/pr-reviewer.md",
+    "workflow-name": "PR Reviewer / Agentic Workflow Validation",
+    "workflow-active": "unknown",
+    "gh-aw-version": "unknown",
+    "gh-aw-update-state": "unknown",
+    "gh-aw-metadata": null,
+    "gh-aw-manifest": null,
+    "rollout-mode": "unknown",
+    "observed-at": "2026-09-02T12:00:00Z",
+  });
+});
+
 test("dashboard source bridge carries model and agent metadata into usage and report rows", () => {
   const sources = buildDashboardLanguageSources({
     deployed: {

@@ -51,7 +51,7 @@
             {
               "id": "overview-package-status",
               "title": "Packages",
-              "description": "Managed package readiness across rollout mode, worker workflows, and inventory state.",
+              "description": "Expected manifest package inventory across rollout mode, worker workflows, and inventory state. A package card does not assert that every authored workflow is registered in GitHub Actions.",
               "data": {
                 "sources": [
                   "overview-managed-packages"
@@ -944,7 +944,7 @@
         "title": "Packages",
         "icon": "package",
         "class-name": "packages-page",
-        "description": "Activity from centrally managed packages.",
+        "description": "Expected manifest inventory and observed activity from centrally managed packages. Workflow registration is reported separately and may be unconfirmed.",
         "definition": {
           "data-state": {
             "availability": true,
@@ -1228,7 +1228,7 @@
         "page": "workflows",
         "title": "Workflows",
         "icon": "codescan",
-        "description": "Inspect declared central package and repository-owned workflow relationships. This inventory does not assert that a dispatch occurred.",
+        "description": "Inspect expected manifest definitions and GitHub Actions registration separately. An unconfirmed registration means the authored workflow was not present in the bounded Actions registry evidence; this inventory does not assert that a dispatch occurred.",
         "definition": {
           "data-state": {
             "availability": true,
@@ -1272,7 +1272,7 @@
             {
               "id": "workflow-topology-summary",
               "title": "Definition summary",
-              "description": "Declared workflow relationships describe expected structure; they do not assert that a dispatch occurred.",
+              "description": "Expected manifest definitions describe structure; registered and unconfirmed counts report bounded GitHub Actions registry coverage separately.",
               "data": {
                 "sources": [
                   "workflow-topology-summary",

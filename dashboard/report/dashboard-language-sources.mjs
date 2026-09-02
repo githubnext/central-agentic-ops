@@ -229,7 +229,21 @@ function inventoryWorkflowDetails(inventory = {}, controlSettings = {}) {
 function workflowRows(deployed, generatedAt, inventory, controlSettings) {
   const memberships = packageMemberships(deployed, packageAliasMap(inventory));
   const inventoryDetails = inventoryWorkflowDetails(inventory, controlSettings);
-  return (deployed.workflows || []).map((workflow) => {
+  const deployedWorkflows = deployed.workflows || [];
+  const expectedRepository = String(inventory.repository || "").trim();
+  const discovered = new Set(deployedWorkflows.map((workflow) => `${workflow.repository}:${workflow.path}`));
+  const expectedWorkflows = expectedRepository
+    ? (inventory.workflows || []).filter((workflow) => (
+      workflow.lockPath && !discovered.has(`${expectedRepository}:${workflow.lockPath}`)
+    )).map((workflow) => ({
+      repository: expectedRepository,
+      path: workflow.lockPath,
+      name: workflow.name,
+      role: workflow.role,
+      state: "unknown",
+    }))
+    : [];
+  return [...deployedWorkflows, ...expectedWorkflows].map((workflow) => {
     const names = repositoryParts(workflow.repository);
     const details = inventoryDetails.get(workflow.path);
     const discoveredMemberships = memberships.get(`${workflow.repository}:${workflow.path}`) || [];
