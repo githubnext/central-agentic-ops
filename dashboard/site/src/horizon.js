@@ -10,7 +10,7 @@ export const DEFAULT_DASHBOARD_HORIZON = '1w';
  */
 export function resolveDashboardHorizon(dashboard) {
   const configured = dashboard && typeof dashboard === 'object'
-    ? dashboard.defaults?.time?.range
+    ? /** @type {{ defaults?: { time?: { range?: unknown } } }} */ (dashboard).defaults?.time?.range
     : undefined;
   return typeof configured === 'string' && HORIZON_PATTERN.test(configured)
     ? configured
@@ -24,7 +24,8 @@ export function resolveDashboardHorizon(dashboard) {
 export function dashboardHorizonHours(range) {
   const match = HORIZON_PATTERN.exec(range);
   if (!match) throw new Error(`Invalid dashboard horizon: ${range}`);
-  return Number(match[1]) * UNIT_HOURS[match[2]];
+  const unit = /** @type {'h'|'d'|'w'} */ (match[2]);
+  return Number(match[1]) * UNIT_HOURS[unit];
 }
 
 /**
@@ -35,6 +36,6 @@ export function formatDashboardHorizon(range) {
   const match = HORIZON_PATTERN.exec(range);
   if (!match) return formatDashboardHorizon(DEFAULT_DASHBOARD_HORIZON);
   const count = Number(match[1]);
-  const unit = UNIT_LABELS[match[2]];
+  const unit = UNIT_LABELS[/** @type {'h'|'d'|'w'} */ (match[2])];
   return `${count} ${unit}${count === 1 ? '' : 's'}`;
 }

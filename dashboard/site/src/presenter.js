@@ -458,6 +458,7 @@ function formatReportDate(value) {
  * @param {PresentableBuiltInPage | PresentableCustomPage} page
  * @param {Record<string, LogicalSourceInput>} sources
  * @param {Record<string, { name: string, symbol: string, significant: number }>} units
+ * @param {Record<string, unknown>} dashboardDefaults
  * @returns {HTMLElement}
  */
 function renderPage(page, sources, units, dashboardDefaults) {
@@ -476,6 +477,7 @@ function renderPage(page, sources, units, dashboardDefaults) {
  * @param {string} title
  * @param {Record<string, LogicalSourceInput>} sources
  * @param {Record<string, { name: string, symbol: string, significant: number }>} units
+ * @param {Record<string, unknown>} dashboardDefaults
  * @returns {HTMLElement}
  */
 function renderCustomPage(page, title, sources, units, dashboardDefaults) {
