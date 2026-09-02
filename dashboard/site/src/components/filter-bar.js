@@ -1,7 +1,9 @@
 import { h } from '../dom.js';
+import { debounce } from '../debounce.js';
 import { octicon } from '../octicons.js';
 
 /** @typedef {{ filters: string[], ['time-range']?: string }} FilterBarConfig */
+const FILTER_DEBOUNCE_MS = 500;
 
 /**
  * @param {FilterBarConfig} config
@@ -16,6 +18,7 @@ export function renderFilterBar(config, onChange) {
     spellcheck: 'false'
   }));
   const count = h('span', { className: 'count-badge' }, String(config.filters.length));
+  const applyFilters = debounce(onChange, FILTER_DEBOUNCE_MS);
   const root = h(
     'div',
     { className: 'toolbar filter-bar', 'aria-label': 'Dashboard filters' },
@@ -41,7 +44,7 @@ export function renderFilterBar(config, onChange) {
     const filterCount = [...parsed.values()].reduce((total, values) => total + values.length, 0);
     count.textContent = String(filterCount);
     count.setAttribute('aria-label', `${filterCount} filters`);
-    onChange(parsed);
+    applyFilters(parsed);
   });
   count.setAttribute('aria-label', `${config.filters.length} filters`);
   queueMicrotask(() => onChange(parseFilters(filters.value)));

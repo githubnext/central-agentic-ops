@@ -8,6 +8,8 @@ function buildPresenterModuleUrl() {
   const horizonModuleUrl = `data:text/javascript;charset=utf-8,${encodeURIComponent(horizonSource)}`;
   const domSource = readFileSync(new URL('../../src/dom.js', import.meta.url), 'utf8');
   const domModuleUrl = `data:text/javascript;charset=utf-8,${encodeURIComponent(domSource)}`;
+  const debounceSource = readFileSync(new URL('../../src/debounce.js', import.meta.url), 'utf8');
+  const debounceModuleUrl = `data:text/javascript;charset=utf-8,${encodeURIComponent(debounceSource)}`;
 
   const stylesSource = readFileSync(new URL('../../src/styles.js', import.meta.url), 'utf8');
   const stylesModuleUrl = `data:text/javascript;charset=utf-8,${encodeURIComponent(stylesSource)}`;
@@ -120,6 +122,7 @@ function buildPresenterModuleUrl() {
 
   const filterBarSource = readFileSync(new URL('../../src/components/filter-bar.js', import.meta.url), 'utf8')
     .replace("'../dom.js'", JSON.stringify(domModuleUrl))
+    .replace("'../debounce.js'", JSON.stringify(debounceModuleUrl))
     .replace("'../octicons.js'", JSON.stringify(octiconsModuleUrl));
   const filterBarModuleUrl = `data:text/javascript;charset=utf-8,${encodeURIComponent(filterBarSource)}`;
 
@@ -1053,6 +1056,8 @@ test('DLS-PAGE-017 renders an editable filter bar and applies changes automatica
 
   await filterInput.fill('mode:live');
   await expect(filterBar.locator('.count-badge')).toHaveText('1');
+  await page.waitForTimeout(200);
+  await expect(page.locator('[data-page-id="cost"] [data-metric-value="invocation"]')).toHaveText('2');
   await expect(page.locator('[data-page-id="cost"] [data-metric-value="invocation"]')).toHaveText('1');
 
   await page.setViewportSize({ width: 400, height: 900 });
