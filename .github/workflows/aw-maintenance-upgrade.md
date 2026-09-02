@@ -313,7 +313,7 @@ If the command fails or produces no diff despite `needs_upgrade` being `true`, r
 Create exactly one issue in `safe_output_repo` targeting `target_repo`:
 
 ```
-### Summary
+### Executive Summary
 
 - **Repository**: `<owner/repo>`
 - **Current pinned gh-aw version**: `<target_pinned_version>` (`<target_pinned_manifest>`)
@@ -327,9 +327,12 @@ Create exactly one issue in `safe_output_repo` targeting `target_repo`:
 
 Assign this issue to Copilot to run `gh aw upgrade --create-pull-request` (or an equivalent local run followed by a pull request) in this repository, review the generated diff, and merge once checks pass.
 
-### Scope
+<details>
+<summary>Scope and Background</summary>
 
 This issue covers agentic workflow (gh-aw) maintenance only. Traditional, hand-written GitHub Actions YAML files are not evaluated by this worker; those are maintained by Dependabot.
+
+</details>
 ```
 
 Keep the issue concise: the diff summary and next steps are the two things a maintainer needs to decide whether to assign it.

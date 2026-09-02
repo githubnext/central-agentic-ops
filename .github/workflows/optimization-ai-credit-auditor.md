@@ -443,7 +443,7 @@ Create an issue with these sections:
 ### Report Template
 
 ```
-### 📊 Executive Summary
+### Executive Summary
 
 - **Period**: last 24 hours (YYYY-MM-DD to YYYY-MM-DD)
 - **Total runs**: N

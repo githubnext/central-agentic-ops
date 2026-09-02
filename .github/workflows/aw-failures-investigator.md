@@ -423,7 +423,7 @@ Create one failure report issue. Then create at most two fix issues, highest sev
 ### Failure report issue
 
 ```
-### Summary
+### Executive Summary
 
 - **Target repository**: `<owner/repo>`
 - **Window**: last 24 hours (from <window_start>)
