@@ -2013,7 +2013,7 @@ test("Documentation Pages composes documentation with the independent dashboard 
 
   assert.equal(existsSync(join(root, ".github", "workflows", "documentation-build.yml")), false);
 
-  assert.match(dashboardBuild, /schedule:\n\s+- cron: "23 5 \* \* \*"/);
+  assert.match(dashboardBuild, /schedule:\n\s+- cron: "\*\/15 \* \* \* \*"/);
   assert.match(dashboardBuild, /- dashboard\/\*\*/);
   assert.match(dashboardBuild, /- \.github\/workflows\/\*\.md/);
   assert.match(dashboardBuild, /- "\*\/aw\.yml"/);
