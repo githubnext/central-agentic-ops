@@ -310,7 +310,7 @@ test("enterprise defaults, budgets, timeouts, and concurrency are finite", () =>
     "eu-cra-compliance.md": { credits: 200, timeout: 15, dispatchMax: 48, workers: 6 },
     "eu-cra-compliance-package-maintainer.md": { credits: 200, timeout: 20 },
     "optimization.md": { credits: 250, timeout: 15, dispatchMax: 20, workers: 2 },
-    "self-care.md": { credits: 200, timeout: 15, dispatchMax: 3, workers: 3 },
+    "self-care.md": { credits: 200, timeout: 15, dispatchMax: 4, workers: 4 },
     "ambient-context-agents-md-curator.md": { credits: 400, timeout: 25 },
     "ambient-context-skills-curator.md": { credits: 400, timeout: 20 },
     "aw-failures-investigator.md": { credits: 500, timeout: 30 },
@@ -329,6 +329,7 @@ test("enterprise defaults, budgets, timeouts, and concurrency are finite", () =>
     "software-development-practices-nist-ssdf.md": { credits: 400, timeout: 30 },
     "self-care-accessibility-checker.md": { credits: 400, timeout: 30 },
     "self-care-code-improvement.md": { credits: 400, timeout: 30 },
+    "self-care-dashboard-review.md": { credits: 400, timeout: 30 },
     "self-care-primer-brand-checker.md": { credits: 400, timeout: 25 },
   };
 
@@ -388,7 +389,7 @@ test("control workflows deny before activation through one shared admission cont
     .map((name) => [name, workflow(name)])
     .filter(([, source]) => /^\s+- uses: shared\/control\.md$/m.test(source));
 
-  assert.equal(controlled.length, 27, "unexpected shared control workflow count");
+  assert.equal(controlled.length, 28, "unexpected shared control workflow count");
   assert.equal(
     [...sharedControl.matchAll(/^\s+- name: Evaluate Central Agentic Ops admission$/gm)].length,
     1,
@@ -653,6 +654,7 @@ test("repository-local SelfCare uses organization-billed Copilot authentication"
   const workflowIds = [
     "self-care-accessibility-checker",
     "self-care-code-improvement",
+    "self-care-dashboard-review",
     "self-care-primer-brand-checker",
     "self-care",
   ];
@@ -953,6 +955,7 @@ test("live workers require target-owned package authority before agent execution
     ["self-care.md", "self-care"],
     ["self-care-accessibility-checker.md", "self-care"],
     ["self-care-code-improvement.md", "self-care"],
+    ["self-care-dashboard-review.md", "self-care"],
     ["self-care-primer-brand-checker.md", "self-care"],
   ]) {
     assert.match(workflow(name), new RegExp(`package: ${bundle}`));
@@ -1015,6 +1018,7 @@ test("operation workflows optionally load per-operation markdown steering", () =
     ["self-care.md", "self-care"],
     ["self-care-accessibility-checker.md", "self-care"],
     ["self-care-code-improvement.md", "self-care"],
+    ["self-care-dashboard-review.md", "self-care"],
     ["self-care-primer-brand-checker.md", "self-care"],
   ]) {
     assert.match(
@@ -1131,6 +1135,7 @@ test("every worker uses the standard dispatch envelope and safe mode vocabulary"
     ["software-development-practices-nist-ssdf.md", "software-development-practices", "nist-ssdf"],
     ["self-care-accessibility-checker.md", "self-care", "accessibility-checker"],
     ["self-care-code-improvement.md", "self-care", "code-improvement"],
+    ["self-care-dashboard-review.md", "self-care", "dashboard-review"],
     ["self-care-primer-brand-checker.md", "self-care", "primer-brand-checker"],
   ];
 
@@ -1524,12 +1529,13 @@ test("docs diagram generator creates one validated theme-aware SVG pair", () => 
   assert.match(source, /Call `noop`/);
 });
 
-test("CAO dashboard reviewer checks successful documentation deployments", () => {
-  const source = workflow("cao-dashboard-review.md");
+test("SelfCare dashboard reviewer checks deployments through stakeholder personas", () => {
+  const source = workflow("self-care-dashboard-review.md");
 
-  assert.match(source, /workflow_run:\n\s+workflows: \["Documentation Pages"\]\n\s+types: \[completed\]\n\s+branches: \[main\]/);
-  assert.match(source, /github\.event\.workflow_run\.conclusion == 'success'/);
-  assert.match(source, /REPORT_INVENTORY=\/tmp\/gh-aw\/agent\/cao-dashboard-review\/expected-inventory\.json/);
+  assert.match(source, /name: "SelfCare \/ Dashboard Review"/);
+  assert.match(source, /package: self-care\n\s+role: worker\n\s+worker: dashboard-review/);
+  assert.match(source, /safe_output_mode` is `live`/);
+  assert.match(source, /REPORT_INVENTORY=\/tmp\/gh-aw\/agent\/self-care-dashboard-review\/expected-inventory\.json/);
   assert.match(source, /githubnext\.github\.io\/central-agentic-ops\/cao\//);
   assert.match(source, /^  playwright:\s*$/m);
   assert.match(source, /toolsets: \[repos, issues, actions\]/);
@@ -1537,8 +1543,18 @@ test("CAO dashboard reviewer checks successful documentation deployments", () =>
   assert.match(source, /at most the latest 100 runs from the last 24 hours/);
   assert.match(source, /overview, dispatches, packages, repositories, workflows, runs, and coverage routes/);
   assert.match(source, /title-prefix: "\[cao-dashboard\] "/);
-  assert.match(source, /close-older-key: cao-dashboard-review/);
-  assert.match(source, /If an open issue already describes the same fingerprint, call `noop`/);
+  assert.match(source, /close-older-key: self-care-dashboard-review/);
+  assert.match(source, /Use `\$\{\{ github\.run_id \}\}` as the reproducible random seed/);
+  assert.match(source, /Launch the `cfo-dashboard-reviewer`, `cso-dashboard-reviewer`, and `cto-dashboard-reviewer` agents in parallel/);
+  assert.match(source, /unique Playwright session name/);
+  assert.match(source, /3–5 non-repeating routes and visible interactions per persona/);
+  assert.match(source, /representative question/);
+  assert.match(source, /grade task efficiency as `efficient`, `workable`, `inefficient`, or `blocked`/);
+  assert.match(source, /evidence-backed suggestions for dashboard structure or usability/);
+  for (const persona of ["cfo", "cso", "cto"]) {
+    assert.match(source, new RegExp(`## agent: \\\`${persona}-dashboard-reviewer\\\``));
+  }
+  assert.equal(source.match(/^model: small$/gm)?.length, 3);
   assert.doesNotMatch(source, /^\s+(create-pull-request|add-comment|create-discussion|push-to-pull-request-branch):/m);
 });
 
@@ -1660,6 +1676,7 @@ test("clean-room compilation emits the expected GitHub Actions settings", { time
       "optimization.lock.yml",
       "self-care-accessibility-checker.lock.yml",
       "self-care-code-improvement.lock.yml",
+      "self-care-dashboard-review.lock.yml",
       "self-care-primer-brand-checker.lock.yml",
       "self-care.lock.yml",
       "software-development-practices-github-well-architected.lock.yml",
@@ -1669,7 +1686,6 @@ test("clean-room compilation emits the expected GitHub Actions settings", { time
     const expectedLockNames = [
       ...packageLockNames,
       "advisory-package-maintainer.lock.yml",
-      "cao-dashboard-review.lock.yml",
       "dashboard-authoring-corpus.lock.yml",
       "multi-device-docs-tester.lock.yml",
       "eu-cra-compliance-package-maintainer.lock.yml",
@@ -1754,6 +1770,7 @@ test("clean-room compilation emits the expected GitHub Actions settings", { time
       ["optimization-ai-credit-optimizer.lock.yml", ["optimization", "ai-credit-optimizer"]],
       ["self-care-accessibility-checker.lock.yml", ["self-care", "accessibility-checker"]],
       ["self-care-code-improvement.lock.yml", ["self-care", "code-improvement"]],
+      ["self-care-dashboard-review.lock.yml", ["self-care", "dashboard-review"]],
       ["self-care-primer-brand-checker.lock.yml", ["self-care", "primer-brand-checker"]],
       ["software-development-practices-github-well-architected.lock.yml", ["software-development-practices", "github-well-architected"]],
       ["software-development-practices-nist-ssdf.lock.yml", ["software-development-practices", "nist-ssdf"]],
@@ -2045,7 +2062,15 @@ test("Dashboard inventory links multiline orchestrator worker lists", () => {
         ],
       },
       { id: "optimization", workers: ["optimization-ai-credit-auditor", "optimization-ai-credit-optimizer"] },
-      { id: "self-care", workers: ["self-care-accessibility-checker", "self-care-code-improvement", "self-care-primer-brand-checker"] },
+      {
+        id: "self-care",
+        workers: [
+          "self-care-accessibility-checker",
+          "self-care-code-improvement",
+          "self-care-dashboard-review",
+          "self-care-primer-brand-checker",
+        ],
+      },
       {
         id: "software-development-practices",
         workers: [

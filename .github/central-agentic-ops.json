@@ -124,6 +124,9 @@
           "code-improvement": {
             "workflow": "self-care-code-improvement"
           },
+          "dashboard-review": {
+            "workflow": "self-care-dashboard-review"
+          },
           "primer-brand-checker": {
             "workflow": "self-care-primer-brand-checker"
           }
