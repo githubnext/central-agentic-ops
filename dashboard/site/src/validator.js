@@ -6,6 +6,7 @@ import {
   BUILT_IN_PAGE_VALUES,
   CUSTOM_PAGE_KEYS,
   DASHBOARD_KEYS,
+  DASHBOARD_HORIZON_KEYS,
   DATASET_AVAILABILITY_VALUES,
   DATASET_COMPLETENESS_VALUES,
   DATASET_FRESHNESS_VALUES,
@@ -375,6 +376,25 @@ function validateDashboard(dashboard, dashboardNode, errors) {
   validateRequiredIdentifier(dashboard.id, '$.dashboard.id', 'dashboard id', errors);
   validateStringField(dashboard.title, '$.dashboard.title', true, errors);
   validateOptionalStringField(dashboard.description, '$.dashboard.description', errors);
+
+  if (dashboard.horizon !== undefined) {
+    if (!isPlainObject(dashboard.horizon)) {
+      errors.push(createError(
+        ERROR_CODES.missingOrInvalidRequiredField,
+        'horizon must be a mapping.',
+        '$.dashboard.horizon'
+      ));
+    } else {
+      validateObjectKeys(
+        getValueNodeByKey(dashboardNode, 'horizon'),
+        DASHBOARD_HORIZON_KEYS,
+        '$.dashboard.horizon',
+        errors
+      );
+      validateStringField(dashboard.horizon.label, '$.dashboard.horizon.label', true, errors);
+      validateStringField(dashboard.horizon.description, '$.dashboard.horizon.description', true, errors);
+    }
+  }
 
   if (dashboard['github-url-base'] !== undefined && !isSafeGithubUrlBase(dashboard['github-url-base'])) {
     errors.push(createError(

@@ -184,6 +184,9 @@ dashboard:
   id: example-dashboard
   title: Example Dashboard
   github-url-base: https://github.com
+  horizon:
+    label: Horizon
+    description: Dashboard data is included from the start time up to, but not including, the end time.
   defaults:
     scope: {}
     time: {}
@@ -198,7 +201,8 @@ Language keys and enumerated values use canonical kebab-case. Human-readable tit
 | Mapping | Allowed keys |
 |---|---|
 | Root | `language-version`, `dashboard` |
-| `dashboard` | `id`, `title`, `description`, `github-url-base`, `repository`, `defaults`, `units`, `pages`, `navigation` |
+| `dashboard` | `id`, `title`, `description`, `github-url-base`, `repository`, `horizon`, `defaults`, `units`, `pages`, `navigation` |
+| Dashboard `horizon` | `label`, `description` |
 | `defaults` | `scope`, `time`, `filters` |
 | Unit definition | `name`, `symbol`, `significant` |
 | Built-in page | `id`, `kind`, `page`, `title`, `navigation-label`, `description`, `icon`, `class-name`, `filter-bar`, `definition` |
@@ -226,6 +230,7 @@ Language keys and enumerated values use canonical kebab-case. Human-readable tit
 - **DLS-DOC-011:** `github-url-base`, when present, **MUST** be an absolute HTTPS URL without credentials, query, or fragment. It identifies the GitHub web URL base used to resolve GitHub-addressable entity links and defaults to `https://github.com`.
 - **DLS-DOC-012:** `repository`, when present, **MUST** be a non-empty `owner/repo` slug identifying the GitHub repository hosting the dashboard. A presenter **MUST NOT** fabricate a report action toolbar's GitHub repository link when `repository` is absent.
 - **DLS-DOC-013:** `units`, when present, **MUST** be a non-empty mapping keyed by unique canonical identifiers. Each value **MUST** contain exactly the non-empty string `name`, the non-empty string `symbol`, and the finite positive number `significant`.
+- **DLS-DOC-014:** `horizon`, when present, **MUST** contain exactly the non-empty human-readable strings `label` and `description`. A presenter **MUST** render the configured label beside the resolved duration and expose an adjacent, keyboard-focusable help control whose explanatory content includes the description and the precise resolved start, exclusive end, and duration. The explanatory content **MUST** be available on both pointer hover and keyboard focus and associated with the control's accessible name and description.
 
 ---
 

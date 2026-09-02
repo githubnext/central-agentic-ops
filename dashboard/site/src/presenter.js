@@ -58,7 +58,7 @@ import { dashboardHorizonHours, formatDashboardHorizon, resolveDashboardHorizon 
  */
 
 /**
- * @typedef {{ id: string, title: string, description?: string, defaults?: Record<string, unknown>, units?: Record<string, { name: string, symbol: string, significant: number }>, pages: Array<PresentableBuiltInPage | PresentableCustomPage>, ['github-url-base']?: string, repository?: string, navigation?: PresentableNavigationSection[] }} PresentableDashboard
+ * @typedef {{ id: string, title: string, description?: string, defaults?: Record<string, unknown>, units?: Record<string, { name: string, symbol: string, significant: number }>, pages: Array<PresentableBuiltInPage | PresentableCustomPage>, ['github-url-base']?: string, repository?: string, navigation?: PresentableNavigationSection[], horizon?: { label: string, description: string } }} PresentableDashboard
  */
 
 /**
@@ -348,11 +348,7 @@ function renderMainContent(document, pages, sources, githubUrlBase, dashboardRep
         h(
           'div',
           { className: 'report-actions' },
-          h(
-            'span',
-            { className: 'dashboard-horizon', 'data-dashboard-evaluated-at': evaluatedAt },
-            `Horizon ${formatDashboardHorizon(horizonRange)}`
-          ),
+          renderDashboardHorizon(document.dashboard, dashboardDefaults, horizonRange, evaluatedAt),
           latestRetrieval
             ? h('time', { className: 'freshness', dateTime: latestRetrieval }, `Last updated ${formatReportDate(latestRetrieval)}`)
             : null,
@@ -433,6 +429,60 @@ function renderMainContent(document, pages, sources, githubUrlBase, dashboardRep
       { className: 'report-footer' },
       'Generated deterministically from dashboard data.'
     )
+  );
+}
+
+/**
+ * @param {PresentableDashboard} dashboard
+ * @param {Record<string, unknown>} dashboardDefaults
+ * @param {string} horizonRange
+ * @param {string} evaluatedAt
+ * @returns {HTMLElement}
+ */
+function renderDashboardHorizon(dashboard, dashboardDefaults, horizonRange, evaluatedAt) {
+  const horizon = dashboard.horizon;
+  const label = horizon?.label || 'Horizon';
+  const duration = formatDashboardHorizon(horizonRange);
+  const start = isPlainObject(dashboardDefaults.time) && typeof dashboardDefaults.time.start === 'string'
+    ? dashboardDefaults.time.start
+    : new Date(new Date(evaluatedAt).getTime() - dashboardHorizonHours(horizonRange) * 3_600_000).toISOString();
+  const end = isPlainObject(dashboardDefaults.time) && typeof dashboardDefaults.time.end === 'string'
+    ? dashboardDefaults.time.end
+    : evaluatedAt;
+  const tooltipId = 'dashboard-horizon-details';
+
+  return h(
+    'span',
+    { className: 'dashboard-horizon', 'data-dashboard-evaluated-at': evaluatedAt },
+    h('span', null, `${label} ${duration}`),
+    horizon
+      ? h(
+        'span',
+        { className: 'horizon-help' },
+        h(
+          'button',
+          {
+            type: 'button',
+            className: 'horizon-help-trigger',
+            'aria-label': `${label} details`,
+            'aria-describedby': tooltipId
+          },
+          octicon('question')
+        ),
+        h(
+          'span',
+          { id: tooltipId, className: 'horizon-tooltip', role: 'tooltip' },
+          h('span', { className: 'horizon-tooltip-description' }, horizon.description),
+          h(
+            'span',
+            { className: 'horizon-tooltip-values' },
+            h('span', null, h('strong', null, 'Start'), h('time', { dateTime: start }, formatReportDate(start))),
+            h('span', null, h('strong', null, 'End'), h('time', { dateTime: end }, formatReportDate(end))),
+            h('span', null, h('strong', null, 'Duration'), duration)
+          )
+        )
+      )
+      : null
   );
 }
 

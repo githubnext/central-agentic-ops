@@ -282,6 +282,57 @@ function buildPresenterModuleUrl() {
   return `data:text/javascript;charset=utf-8,${encodeURIComponent(presenterSource)}`;
 }
 
+test('DLS-DOC-014 horizon help is available on hover and keyboard focus', async ({ page }) => {
+  const presenterModuleUrl = buildPresenterModuleUrl();
+  await page.setContent(`
+    <div id="root"></div>
+    <script type="module">
+      import { renderDashboard } from ${JSON.stringify(presenterModuleUrl)};
+      const documentModel = {
+        languageVersion: '0.1.0',
+        dashboard: {
+          id: 'horizon-dashboard',
+          title: 'Horizon dashboard',
+          horizon: {
+            label: 'Horizon',
+            description: 'Data is included from the start up to the exclusive end.'
+          },
+          defaults: { time: { range: '1w' } },
+          pages: [{ id: 'runs', kind: 'built-in', page: 'runs', title: 'Runs' }]
+        }
+      };
+      const sources = {
+        runs: {
+          source: 'runs',
+          rows: [],
+          metadata: {
+            'source-id': 'runs-fixture',
+            'source-kind': 'fixture',
+            'retrieved-at': '2026-09-01T12:00:00Z',
+            completeness: 'complete',
+            freshness: 'fresh',
+            availability: 'empty'
+          }
+        }
+      };
+      document.querySelector('#root').append(renderDashboard({ document: documentModel, sources }));
+    </script>
+  `);
+
+  const trigger = page.getByRole('button', { name: 'Horizon details' });
+  const tooltip = page.getByRole('tooltip');
+  await expect(trigger).toHaveAttribute('aria-describedby', 'dashboard-horizon-details');
+  await expect(tooltip).toBeHidden();
+  await trigger.hover();
+  await expect(tooltip).toBeVisible();
+  await expect(tooltip).toContainText('StartAug 25, 2026, 12:00 PM UTC');
+  await expect(tooltip).toContainText('EndSep 1, 2026, 12:00 PM UTC');
+  await expect(tooltip).toContainText('Duration1 week');
+  await page.mouse.move(0, 0);
+  await trigger.focus();
+  await expect(tooltip).toBeVisible();
+});
+
 test('DLS-PAGE-002 DLS-PAGE-014 built-in overview page renders the report-style six-domain operational overview in browser', async ({ page }) => {
   const presenterModuleUrl = buildPresenterModuleUrl();
 
