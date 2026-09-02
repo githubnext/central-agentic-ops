@@ -414,14 +414,19 @@ h3 { margin: 16px 0 8px; font-size: 1rem; font-weight: 600; }
 .overview-method-note strong { color: var(--fg); }
 .overview-package-status { margin-bottom: 24px; }
 .package-status-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); overflow: hidden; border: 1px solid var(--border); border-radius: 6px; background: var(--border); gap: 1px; }
-.package-status-card { min-width: 0; min-height: 140px; display: grid; grid-template-rows: auto auto 1fr auto; gap: 8px; padding: 16px; border-top: 3px solid var(--muted); background: var(--canvas); color: var(--fg); text-decoration: none; }
+.package-status-card { min-width: 0; min-height: 160px; display: grid; grid-template-rows: auto auto auto 1fr auto; gap: 6px; padding: 16px; border-top: 3px solid var(--muted); background: var(--canvas); color: var(--fg); text-decoration: none; }
 .package-status-card:hover { background: var(--canvas-subtle); text-decoration: none; }
 .package-status-card:focus-visible { z-index: 1; outline: 2px solid var(--focus); outline-offset: -2px; }
 .package-status-card > header { min-width: 0; display: flex; align-items: center; justify-content: space-between; gap: 8px; }
 .package-status-card > header > strong { overflow: hidden; font-size: .8125rem; text-overflow: ellipsis; white-space: nowrap; }
 .package-status-state { padding: 2px 6px; border: 1px solid currentColor; border-radius: 999px; color: var(--muted); font-size: .625rem; font-weight: 600; white-space: nowrap; }
+.package-status-card .mode-badge { flex: none; }
 .package-status-mode { color: var(--muted); font-size: .75rem; text-transform: capitalize; }
 .package-status-card > p { margin: 0; color: var(--muted); font-size: .75rem; line-height: 1.45; }
+.package-status-card > p.package-status-rollout { color: var(--fg); font-weight: 600; }
+.package-status-repositories { display: grid; gap: 4px; margin: 0; padding: 0; list-style: none; color: var(--muted); font-size: .6875rem; }
+.package-status-repositories li { display: flex; align-items: center; justify-content: space-between; gap: 8px; min-width: 0; }
+.package-status-repositories li > span:first-child { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .package-status-card > footer { display: flex; align-items: center; justify-content: space-between; padding: 10px 0 0; border-top: 1px solid var(--border); color: var(--accent); font-size: .6875rem; font-weight: 600; }
 .package-status-ready { border-top-color: var(--success); }
 .package-status-ready .package-status-state { color: var(--success); }
