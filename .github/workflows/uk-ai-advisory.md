@@ -78,6 +78,7 @@ safe-outputs:
   dispatch-workflow:
     workflows: [advisory-uk-ai-operational-resilience]
     max: 50
+  threat-detection: false
 ---
 
 {{#runtime-import? .github/cao/advisory.md}}

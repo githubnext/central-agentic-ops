@@ -69,6 +69,7 @@ safe-outputs:
   dispatch-workflow:
     workflows: [aw-maintenance-upgrade, aw-failures-investigator]
     max: 50
+  threat-detection: false
 ---
 
 {{#runtime-import? .github/cao/aw-maintenance.md}}

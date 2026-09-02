@@ -373,6 +373,24 @@ test("workers disable costly daily AIC burn checks", () => {
   }
 });
 
+test("threat detection runs for workers but not orchestrators", () => {
+  const workflows = readdirSync(workflowsDirectory)
+    .filter((name) => name.endsWith(".md"))
+    .map((name) => [name, workflow(name)]);
+  const orchestrators = workflows.filter(([, source]) => /^\s+role: orchestrator$/m.test(source));
+  const workers = workflows.filter(([, source]) => /^\s+role: worker$/m.test(source));
+
+  assert.ok(orchestrators.length > 0, "expected at least one orchestrator workflow");
+  assert.ok(workers.length > 0, "expected at least one worker workflow");
+
+  for (const [name, source] of orchestrators) {
+    assert.match(source, /^\s+threat-detection: false$/m, name);
+  }
+  for (const [name, source] of workers) {
+    assert.doesNotMatch(source, /^\s+threat-detection: false$/m, name);
+  }
+});
+
 test("AI Credit auditor uses gh-aw forecast for cost projections", () => {
   const auditor = workflow("optimization-ai-credit-auditor.md");
 

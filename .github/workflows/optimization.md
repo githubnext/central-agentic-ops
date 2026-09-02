@@ -68,6 +68,7 @@ safe-outputs:
   dispatch-workflow:
     workflows: [optimization-ai-credit-auditor, optimization-ai-credit-optimizer]
     max: 20
+  threat-detection: false
 
 source: githubnext/central-agentic-ops@2de9130ff1709fccdacbe5261fd5da71995e6721
 ---

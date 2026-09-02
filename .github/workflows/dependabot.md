@@ -72,6 +72,7 @@ safe-outputs:
   dispatch-workflow:
     workflows: [dependabot-release-train-updater]
     max: 50
+  threat-detection: false
 
 source: githubnext/central-agentic-ops@2de9130ff1709fccdacbe5261fd5da71995e6721
 ---

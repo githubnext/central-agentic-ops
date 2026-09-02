@@ -70,6 +70,7 @@ safe-outputs:
   dispatch-workflow:
     workflows: [ambient-context-agents-md-curator, ambient-context-skills-curator]
     max: 20
+  threat-detection: false
 ---
 
 {{#runtime-import? .github/cao/ambient-context.md}}

@@ -82,6 +82,7 @@ safe-outputs:
       - software-development-practices-github-well-architected
       - software-development-practices-nist-ssdf
     max: 20
+  threat-detection: false
 ---
 
 {{#runtime-import? .github/cao/software-development-practices.md}}
