@@ -1011,7 +1011,7 @@ describe('presenter built-in and custom pages', () => {
 
     const overviewPage = rendered.querySelector('[data-page-name="overview"]');
     expect(overviewPage?.getAttribute('data-page-kind')).toBe('custom');
-    expect(overviewPage?.querySelectorAll('.custom-view')).toHaveLength(1);
+    expect(overviewPage?.querySelectorAll('.custom-view')).toHaveLength(2);
     expect(overviewPage?.querySelectorAll('.layout-section')).toHaveLength(0);
     expect(overviewPage?.querySelector('.overview-observability h2')?.textContent).toBe('Attention by domain');
     const cards = [...(overviewPage?.querySelectorAll('.attention-domain-card') ?? [])];
@@ -1043,6 +1043,14 @@ describe('presenter built-in and custom pages', () => {
     ]);
     expect(cards.every((card) => card.textContent?.includes('Open evidence'))).toBe(true);
     expect(overviewPage?.querySelector('.overview-method-note')?.textContent).toContain('State key:');
+    expect(overviewPage?.querySelector('.overview-package-status h2')?.textContent).toBe('Packages');
+    const packageCards = [...(overviewPage?.querySelectorAll('.package-status-card') ?? [])];
+    expect(packageCards).toHaveLength(1);
+    expect(packageCards[0]?.querySelector('header strong')?.textContent).toBe('Daily Ops');
+    expect(packageCards[0]?.classList.contains('package-status-attention')).toBe(true);
+    expect(packageCards[0]?.querySelector('.package-status-state')?.textContent).toBe('Needs attention');
+    expect(packageCards[0]?.textContent).toContain('1 worker workflow');
+    expect(packageCards[0]?.getAttribute('href')).toBe('#page-package-insights?package=daily-ops');
     expect(/** @type {HTMLElement | null} */ (rendered.querySelector('.data-state-summary'))?.hidden).toBe(true);
   });
 
