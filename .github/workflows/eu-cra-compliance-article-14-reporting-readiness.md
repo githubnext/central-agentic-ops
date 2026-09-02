@@ -110,7 +110,7 @@ graders:
 safe-outputs:
   create-issue:
     expires: 30d
-    title-prefix: "[eu-cra:article-14-readiness] "
+    title-prefix: "[eu-cra-compliance:article-14-reporting-readiness] "
     close-older-issues: true
     max: 1
     target-repo: ${{ (inputs.safe_output_mode || 'review') == 'review' && (inputs.safe_output_repo || github.repository) || inputs.target_repo }}

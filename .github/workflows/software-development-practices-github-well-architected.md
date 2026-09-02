@@ -106,7 +106,7 @@ tools:
 safe-outputs:
   create-issue:
     expires: 30d
-    title-prefix: "[well-architected] "
+    title-prefix: "[software-development-practices:github-well-architected] "
     close-older-issues: true
     close-older-key: ${{ format('software-development-practices-github-well-architected-{0}', inputs.target_repo) }}
     max: 1
@@ -134,7 +134,7 @@ GitHub Well-Architected is guidance, not a certification or universal checklist.
 
 Verify the current pillar names and scope before assessing repository-observable checklist items. The current baseline is Productivity, Collaboration, Application Security, Governance, and Architecture; use the current official structure and record any baseline change.
 
-Focus Application Security and Governance on GitHub platform configuration and policy. Leave secure-development lifecycle practices, build provenance, artifact protection, vulnerability response, and root-cause analysis to the NIST SSDF worker. Review an open `[nist-ssdf]` issue for the same target when present and omit duplicate remediation while preserving framework-specific provenance.
+Focus Application Security and Governance on GitHub platform configuration and policy. Leave secure-development lifecycle practices, build provenance, artifact protection, vulnerability response, and root-cause analysis to the NIST SSDF worker. Review an open `[software-development-practices:nist-ssdf]` issue for the same target when present and omit duplicate remediation while preserving framework-specific provenance.
 
 For each applicable topic record:
 
@@ -146,7 +146,7 @@ For each applicable topic record:
 
 Inspect only evidence needed to support findings, using bounded `gh` queries and compact `jq` projections for GitHub data. `GAP_FOUND` requires an applicable official recommendation and verified absence or contradiction of expected repository-level evidence; otherwise use `HUMAN_REVIEW_REQUIRED` or `NOT_ASSESSED`. Do not expose private alerts, secret-scanning data, exploit details, personal data, or confidential evidence.
 
-Before assessment, search open issues in `SAFE_OUTPUT_REPO` for the exact title `[well-architected] TARGET_REPO repository guidance`. Fetch the current framework before deciding to skip. Call `noop` with the issue number only when it records both the current source revision and target commit. Otherwise treat its recommendations as tracked and omit them from the new backlog.
+Before assessment, search open issues in `SAFE_OUTPUT_REPO` for the exact title `[software-development-practices:github-well-architected] TARGET_REPO repository guidance`. Fetch the current framework before deciding to skip. Call `noop` with the issue number only when it records both the current source revision and target commit. Otherwise treat its recommendations as tracked and omit them from the new backlog.
 
 Prioritize at most ten untracked recommendations by impact, confidence, effort, and dependency. Separate repository-owned improvements from organization or enterprise changes. Do not recommend a paid or unavailable feature without naming the prerequisite and a viable alternative.
 

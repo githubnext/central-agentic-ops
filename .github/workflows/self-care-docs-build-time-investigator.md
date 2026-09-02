@@ -95,7 +95,7 @@ tools:
 safe-outputs:
   create-issue:
     target-repo: ${{ (inputs.safe_output_mode || 'review') == 'review' && (inputs.safe_output_repo || github.repository) || inputs.target_repo }}
-    title-prefix: "[docs-build-time] "
+    title-prefix: "[self-care:docs-build-time-investigator] "
     deduplicate-by-title: true
     max: 1
     expires: 14d
