@@ -73,8 +73,12 @@ function source(name, rows, generatedAt, available = true, complete = true) {
   };
 }
 
-function coverageDiagnosticRows(deployed, usage) {
+function coverageDiagnosticRows(deployed, usage, controlSettings) {
   const diagnostics = [];
+  if (controlSettings.policy_resolution?.status === "unavailable") diagnostics.push({
+    title: "Control policy resolution unavailable",
+    effect: controlSettings.policy_resolution.reason || "The dashboard is limited to fail-closed control-repository data.",
+  });
   if (!deployed.includePrivate) diagnostics.push({
     title: "Private repository discovery is off",
     effect: "Private repositories are excluded from workflow inventory and run-health totals.",
@@ -145,6 +149,22 @@ function packageMemberships(deployed) {
   return memberships;
 }
 
+function workflowAdmission(controlSettings, packageName, role, workflowId) {
+  if (!Object.hasOwn(controlSettings, "packages")) return null;
+  if (controlSettings.policy_resolution?.status === "unavailable") {
+    return { status: "unavailable", reason: controlSettings.policy_resolution.reason || "policy-resolution-unavailable" };
+  }
+  const packagePolicy = controlSettings.packages?.[packageName];
+  if (!packagePolicy) return { status: "blocked", reason: "package-undeclared" };
+  if (packagePolicy.enabled === false) return { status: "blocked", reason: "package-disabled" };
+  if (role === "worker") {
+    const workerPolicy = packagePolicy.worker_policies?.[workflowId];
+    if (!workerPolicy) return { status: "blocked", reason: "worker-undeclared" };
+    if (workerPolicy.enabled === false) return { status: "blocked", reason: "worker-disabled" };
+  }
+  return { status: "authorized", reason: "authorized" };
+}
+
 function inventoryWorkflowDetails(inventory = {}, controlSettings = {}) {
   const details = new Map();
   for (const workflow of inventory.workflows || []) {
@@ -156,7 +176,8 @@ function inventoryWorkflowDetails(inventory = {}, controlSettings = {}) {
     }
   }
   for (const bundle of inventory.bundles || []) {
-    const configuredMode = rolloutMode(controlSettings.packages?.[bundle.controlPackage]?.mode);
+    const packagePolicy = controlSettings.packages?.[bundle.controlPackage];
+    const configuredMode = rolloutMode(packagePolicy?.mode);
     const packageId = String(bundle.id || bundle.controlPackage || "").trim();
     const packageName = String(bundle.name || packageId).trim();
     const packageMembership = packageId ? { id: packageId, name: packageName || packageId } : undefined;
@@ -169,10 +190,11 @@ function inventoryWorkflowDetails(inventory = {}, controlSettings = {}) {
       .filter((value) => Number.isFinite(value) && value > 0)
       .reduce((total, value) => total + value, 0);
     const packageWorkflows = [
-      { sourcePath: bundle.workflow, lockPath: bundle.workflow?.replace(/\.md$/, ".lock.yml"), maxAiCredits: bundle.maxAiCredits },
-      ...workers,
+      { sourcePath: bundle.workflow, lockPath: bundle.workflow?.replace(/\.md$/, ".lock.yml"), maxAiCredits: bundle.maxAiCredits, role: "orchestrator", id: bundle.id },
+      ...workers.map((worker) => ({ ...worker, role: "worker" })),
     ];
     for (const workflow of packageWorkflows) {
+      const admission = workflowAdmission(controlSettings, bundle.controlPackage, workflow.role, workflow.id);
       for (const workflowPath of [workflow.sourcePath, workflow.lockPath].filter(Boolean)) {
         details.set(workflowPath, {
           ...details.get(workflowPath),
@@ -183,6 +205,7 @@ function inventoryWorkflowDetails(inventory = {}, controlSettings = {}) {
           packageWorkerCount: workers.length,
           ...(packageMembership ? { packageMembership } : {}),
           ...(configuredMode !== "unknown" ? { configuredMode } : {}),
+          ...(admission ? { admissionStatus: admission.status, admissionReason: admission.reason } : {}),
         });
       }
     }
@@ -211,6 +234,8 @@ function workflowRows(deployed, generatedAt, inventory, controlSettings) {
       ...(Number.isFinite(details?.packageWorkerCount) ? { "package-worker-count": details.packageWorkerCount } : {}),
       ...(Number.isFinite(details?.packageInventoryWarnings) ? { "package-inventory-warnings": details.packageInventoryWarnings } : {}),
       ...(typeof details?.inventoryReady === "boolean" ? { "inventory-ready": details.inventoryReady } : {}),
+      ...(details?.admissionStatus ? { "admission-status": details.admissionStatus } : {}),
+      ...(details?.admissionReason ? { "admission-reason": details.admissionReason } : {}),
       "workflow-role": workflow.role || (membership ? "worker" : "standalone"),
       workflow: workflow.path?.replace(/\.lock\.yml$/, ".md") || "",
       "workflow-name": workflow.name || workflow.path || "Unknown workflow",
@@ -468,7 +493,7 @@ export function buildDashboardLanguageSources({ deployed, usage, operationalValu
   }
   sources["coverage-diagnostics"] = source(
     "coverage-diagnostics",
-    coverageDiagnosticRows(deployed, usage),
+    coverageDiagnosticRows(deployed, usage, controlSettings),
     generatedAt,
   );
   sources["repository-coverage"] = source(

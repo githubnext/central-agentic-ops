@@ -22,6 +22,8 @@ The dashboard package publishes an access-controlled static view of Central Agen
 
 The publisher reads trusted workflow, issue, pull request, and value-artifact data from the installed repository. Collectors write bounded JSON, `records.mjs` normalizes durable outputs, `dashboard-language-sources.mjs` creates `sources.json`, and the packaged renderer serves it at the configured `site-path`. AI agents do not receive `pages: write`, `id-token: write`, or deployment authority.
 
+If authoritative control policy resolution fails, the build remains fail-closed to the control repository and publishes the resolver diagnostic on the dashboard's Coverage diagnostics page. Valid policy that omits or disables an installed package or worker is shown as an admission gate in Overview attention and Security & controls.
+
 ## Install
 
 Install a reviewed release tag or full commit SHA:

@@ -175,6 +175,13 @@ test("control policy exposes scope and publishing defaults to deterministic add-
         "rollout-percent": 100,
         "monthly-ai-credit-budget": 0,
         icon: null,
+        worker_policies: {
+          "dependabot-release-train-updater": {
+            worker: "release-train-updater",
+            enabled: true,
+            max_mode: "live",
+          },
+        },
       },
     },
     publishing_enabled: false,
