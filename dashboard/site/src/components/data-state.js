@@ -10,6 +10,28 @@ import { renderStatusBadge } from './badge.js';
  */
 
 /**
+ * Renders a single `metric-card` `<div>` with a labeled `<dt>`/`<dd>` pair
+ * and a status badge, tagged with a `data-state-axis` attribute for the
+ * given data-state axis (e.g. `availability`, `completeness`, `freshness`).
+ * @param {string} label
+ * @param {string} axis
+ * @param {unknown} status
+ * @returns {HTMLElement}
+ */
+function renderDataStateMetricCard(label, axis, status) {
+  return h(
+    'div',
+    { className: 'metric-card' },
+    h('dt', { className: 'metric-label' }, label),
+    h(
+      'dd',
+      { className: 'metric-value', 'data-state-axis': axis },
+      renderStatusBadge(status),
+    ),
+  );
+}
+
+/**
  * @param {EffectiveDataState | undefined} effectiveState
  * @returns {HTMLElement}
  */
@@ -21,35 +43,8 @@ export function renderDataStateMetrics(effectiveState) {
   return h(
     'dl',
     { className: 'data-state-summary metrics' },
-    h(
-      'div',
-      { className: 'metric-card' },
-      h('dt', { className: 'metric-label' }, 'Availability'),
-      h(
-        'dd',
-        { className: 'metric-value', 'data-state-axis': 'availability' },
-        renderStatusBadge(availability),
-      ),
-    ),
-    h(
-      'div',
-      { className: 'metric-card' },
-      h('dt', { className: 'metric-label' }, 'Completeness'),
-      h(
-        'dd',
-        { className: 'metric-value', 'data-state-axis': 'completeness' },
-        renderStatusBadge(completeness),
-      ),
-    ),
-    h(
-      'div',
-      { className: 'metric-card' },
-      h('dt', { className: 'metric-label' }, 'Freshness'),
-      h(
-        'dd',
-        { className: 'metric-value', 'data-state-axis': 'freshness' },
-        renderStatusBadge(freshness),
-      ),
-    ),
+    renderDataStateMetricCard('Availability', 'availability', availability),
+    renderDataStateMetricCard('Completeness', 'completeness', completeness),
+    renderDataStateMetricCard('Freshness', 'freshness', freshness),
   );
 }

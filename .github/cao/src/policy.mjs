@@ -1,6 +1,6 @@
 export class PolicyError extends Error {}
 
-const SCHEMA_URI = "https://raw.githubusercontent.com/githubnext/central-agentic-ops/main/.github/central-agentic-ops.schema.json";
+const SCHEMA_URI = "https://raw.githubusercontent.com/githubnext/central-agentic-ops/main/.github/cao/cao.schema.json";
 const ROOT_KEYS = ["$schema", "version", "control-plane", "target-authority"];
 const CONTROL_KEYS = ["scope", "inventory", "web", "defaults", "packages", "publishing"];
 const SCOPE_KEYS = ["allowed-owners", "allowed-repositories"];
@@ -522,8 +522,14 @@ function assertFavicon(value, path) {
   }
 }
 
+/**
+ * @param {unknown} value
+ * @param {string} path
+ * @param {number} minimum
+ * @param {number} [maximum]
+ */
 function assertInteger(value, path, minimum, maximum = undefined) {
-  const valid = Number.isSafeInteger(value) && value >= minimum && (maximum === undefined || value <= maximum);
+  const valid = typeof value === "number" && Number.isSafeInteger(value) && value >= minimum && (maximum === undefined || value <= maximum);
   const range = maximum === undefined ? `>= ${minimum}` : `${minimum}..${maximum}`;
   if (!valid) throw new PolicyError(`${path} must be an integer in ${range}`);
 }

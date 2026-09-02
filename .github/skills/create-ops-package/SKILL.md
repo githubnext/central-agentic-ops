@@ -38,8 +38,8 @@ Add `copilot-requests: write` directly to every Copilot-backed orchestrator and 
 
 The top-level `dashboard/` package is conventional GitHub Actions automation, not an agentic operation. Do not create an orchestrator, workers, runtime steering, rollout variables, or operational-value evaluators for it.
 
-- Keep the package separate from root `aw.yml` includes and from every operational package.
-- Install `dashboard/dashboard-build.yml` as `.github/workflows/dashboard-build.yml` and `dashboard/dashboard.yml` as `.github/workflows/dashboard.yml` with mapped `action-workflow` includes.
+- Install the dashboard from root `aw.yml` by default, keep `dashboard/aw.yml` available for focused dashboard-only installations, and keep both manifests' dashboard destinations in sync. Never fold the dashboard into an operational package.
+- Install `.github/workflows/dashboard-build.yml` in place and `dashboard/dashboard.yml` as `.github/workflows/dashboard.yml` with mapped `action-workflow` includes.
 - Keep the reusable builder path-aware through its `site-path` input and upload a normal artifact that an existing Pages workflow can merge before its single Pages upload and deployment.
 - Keep the standalone publisher manual-only, pass `enablement: false` to `actions/configure-pages`, and require Pages access control before use. Do not add a second enable variable.
 - Keep canonical report modules under `dashboard/report/` and install them under `.github/aw/dashboard/report/` as package resources.
@@ -74,7 +74,7 @@ Create `.github/workflows/<package>.md` with:
 - a schedule when the operation is periodic, plus `workflow_dispatch`
 - the standard dispatch inputs: `target_repo`, `safe_output_repo`, `max_repos`, `rollout_percent`, and `safe_output_mode` with `review` and `live` choices, defaulting to `review`
 - `shared/control.md` imported with a static `package` slug, `role: orchestrator`, and request-only narrowing inputs
-- the package and every worker declared in `.github/central-agentic-ops.json`, with each worker's exact `workflow` slug recorded there; the resolver must load this catalog from policy rather than hard-code package identities
+- the package and every worker declared in `.github/workflows/cao.json`, with each worker's exact `workflow` slug recorded there; the resolver must load this catalog from policy rather than hard-code package identities
 - least-privilege permissions, explicit tools/network configuration, `strict: true`, and a bounded `max-ai-credits`
 - `safe-outputs.dispatch-workflow.workflows` listing every worker slug and a `max` consistent with `max_repos` and worker count
 - `safe-outputs.threat-detection: false`; dispatchers select targets but do not process untrusted target content, so reserve detection for workers

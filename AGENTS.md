@@ -3,15 +3,15 @@
 ## Establish the repository role
 
 - **Catalog source:** A checkout with the root `aw.yml` and top-level package directories is the public CAO catalog. Change package sources and documentation here, but never configure this repository as a control plane.
-- **Control repository:** A repository with installed workflows under `.github/workflows/`, package records under `.github/aw/packages/`, and `.github/central-agentic-ops.json` runs the control plane. Its workflows operate on explicitly enrolled remote repositories; targets receive only declared safe outputs.
-- **Target repository:** A target may contain a `target-authority` declaration in `.github/central-agentic-ops.json`. That declaration grants one control repository authority for named live packages; it does not make the target a control repository.
+- **Control repository:** A repository with installed workflows and `cao.json` under `.github/workflows/` plus package records under `.github/aw/packages/` runs the control plane. Its workflows operate on explicitly enrolled remote repositories; targets receive only declared safe outputs.
+- **Target repository:** A target may contain a `target-authority` declaration in `.github/workflows/cao.json`. That declaration grants one control repository authority for named live packages; it does not make the target a control repository.
 
 Apply only the guidance for the role that is present. Do not infer a role from the repository name.
 
 ## Sources of truth
 
-- In the catalog, root and package `aw.yml` manifests define package contents. Editable gh-aw workflow sources are `.github/workflows/*.md`; shared control is `.github/workflows/shared/control.md` and its dependencies.
-- In a control repository, `.github/central-agentic-ops.json` is the only persistent non-secret rollout policy. Keep workflow and policy changes in one reviewed commit because runs resolve policy at the exact workflow SHA.
+- In the catalog, root and package `aw.yml` manifests define package contents. The root manifest installs the deterministic dashboard by default and must mirror the dashboard destinations declared by `dashboard/aw.yml`. Editable gh-aw workflow sources are `.github/workflows/*.md`; shared control is `.github/workflows/shared/control.md` and its dependencies.
+- In a control repository, `.github/workflows/cao.json` is the only persistent non-secret rollout policy. Keep workflow and policy changes in one reviewed commit because runs resolve policy at the exact workflow SHA.
 - `.github/workflows/*.lock.yml` files are generated artifacts. Never edit them directly; change their Markdown sources and run `gh aw compile`.
 - `.github/aw/packages/*.json` records package-owned files. Update those files with gh-aw package commands instead of editing ownership metadata.
 - `.github/cao/<operation>.md` is optional, control-repository-owned steering. It may refine evidence and priorities, but cannot grant tools, credentials, permissions, repository reach, or write capabilities.

@@ -4,6 +4,8 @@ import { test, expect } from '@playwright/test';
 function buildPresenterModuleUrl() {
   const dashboardSource = readFileSync(new URL('../../dashboard.json', import.meta.url), 'utf8');
   const dashboardModuleUrl = `data:application/json;charset=utf-8,${encodeURIComponent(dashboardSource)}`;
+  const horizonSource = readFileSync(new URL('../../src/horizon.js', import.meta.url), 'utf8');
+  const horizonModuleUrl = `data:text/javascript;charset=utf-8,${encodeURIComponent(horizonSource)}`;
   const domSource = readFileSync(new URL('../../src/dom.js', import.meta.url), 'utf8');
   const domModuleUrl = `data:text/javascript;charset=utf-8,${encodeURIComponent(domSource)}`;
 
@@ -251,6 +253,7 @@ function buildPresenterModuleUrl() {
 
   const presenterSource = readFileSync(new URL('../../src/presenter.js', import.meta.url), 'utf8')
     .replace("'../dashboard.json'", JSON.stringify(dashboardModuleUrl))
+    .replace("'./horizon.js'", JSON.stringify(horizonModuleUrl))
     .replace("'./dom.js'", JSON.stringify(domModuleUrl))
     .replace("'./styles.js'", JSON.stringify(stylesModuleUrl))
     .replace("'./octicons.js'", JSON.stringify(octiconsModuleUrl))

@@ -54,9 +54,9 @@ jobs:
           set -uo pipefail
           cao_dir="${RUNNER_TEMP:-/tmp}/cao"
           mkdir -p "$cao_dir"
-          if gh api --method GET "repos/${GITHUB_REPOSITORY}/contents/.github/cao/control.mjs" \
+          if gh api --method GET "repos/${GITHUB_REPOSITORY}/contents/.github/cao/src/control.mjs" \
               -f ref="$GITHUB_WORKFLOW_SHA" --jq '.content' | base64 -d > "$cao_dir/control.mjs" && \
-            gh api --method GET "repos/${GITHUB_REPOSITORY}/contents/.github/cao/policy.mjs" \
+            gh api --method GET "repos/${GITHUB_REPOSITORY}/contents/.github/cao/src/policy.mjs" \
               -f ref="$GITHUB_WORKFLOW_SHA" --jq '.content' | base64 -d > "$cao_dir/policy.mjs" && \
             node "$cao_dir/control.mjs" admit; then
             exit 0
@@ -65,7 +65,25 @@ jobs:
           echo "authorized=false" >> "$GITHUB_OUTPUT"
           echo "reason=$reason" >> "$GITHUB_OUTPUT"
           echo "monthly_credit_budget=0" >> "$GITHUB_OUTPUT"
-          printf '## Central Agentic Ops admission\n\nSkipped: %s\n' "$reason" >> "$GITHUB_STEP_SUMMARY"
+          cat >> "$GITHUB_STEP_SUMMARY" <<EOF
+          ### Central Agentic Ops admission
+
+          Skipped: $reason
+
+          <details>
+          <summary>Runtime revision</summary>
+
+          The control and policy modules could not be read or executed from the exact \`github.workflow_sha\` commit.
+
+          </details>
+
+          <details>
+          <summary>Policy and authorization checks</summary>
+
+          The remaining admission checks could not run because the authoritative control modules were unavailable.
+
+          </details>
+          EOF
 
       - name: Install gh-aw CLI when monthly budget is enabled
         if: ${{ steps.cao_admission.outputs.authorized == 'true' && steps.cao_admission.outputs.monthly_credit_budget != '0' }}
@@ -112,7 +130,7 @@ jobs:
           jq -e --arg role "$CAO_ROLE" '.control_role == $role' "$out" >/dev/null
           jq -e --arg worker "$expected_worker" '.worker == $worker' "$out" >/dev/null
           jq -e --arg repository "$CONTROL_REPOSITORY" --arg sha "$GITHUB_WORKFLOW_SHA" \
-            '.policy_source == {repository:$repository,path:".github/central-agentic-ops.json",sha:$sha}' \
+            '.policy_source == {repository:$repository,path:".github/workflows/cao.json",sha:$sha}' \
             "$out" >/dev/null
 
       - name: Upload CAO control precompute artifact

@@ -5,8 +5,8 @@ import { fileURLToPath } from "node:url";
 import test from "node:test";
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), "../..");
-const control = join(root, ".github", "cao", "control.mjs");
-const schemaUri = "https://raw.githubusercontent.com/githubnext/central-agentic-ops/main/.github/central-agentic-ops.schema.json";
+const control = join(root, ".github", "cao", "src", "control.mjs");
+const schemaUri = "https://raw.githubusercontent.com/githubnext/central-agentic-ops/main/.github/cao/cao.schema.json";
 
 function policy() {
   return {

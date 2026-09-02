@@ -189,7 +189,7 @@ test("control precompute writes a complete review worker envelope", () => {
     worker_workflows: [],
     policy_source: {
       repository: "acme/control",
-      path: ".github/central-agentic-ops.json",
+      path: ".github/workflows/cao.json",
       sha: "1111111111111111111111111111111111111111",
     },
   });
@@ -245,7 +245,7 @@ function runLiveAuthority(authorityContent, overrides = {}, policy = controlPoli
     ...overrides,
   }, `
 case "$*" in
-  *repos/acme/target/contents/.github/central-agentic-ops.json*)
+  *repos/acme/target/contents/.github/workflows/cao.json*)
     [ "$AUTHORITY_MODE" = "missing" ] && exit 1
     printf '%s' "$AUTHORITY_CONTENT" | base64
     ;;
@@ -382,5 +382,5 @@ test("control precompute rejects missing target-owned live authority", () => {
   const result = runLiveAuthority("", { AUTHORITY_MODE: "missing" });
 
   assert.notEqual(result.status, 0);
-  assert.match(result.stderr, /live mode requires \.github\/central-agentic-ops\.json on the target default branch/);
+  assert.match(result.stderr, /live mode requires \.github\/workflows\/cao\.json on the target default branch/);
 });

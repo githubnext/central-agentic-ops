@@ -81,7 +81,7 @@ An allowed owner and a reachable credential are security boundaries, not evidenc
 
 Store this evidence in an enterprise- or organization-approved inventory, such as governed custom properties or a reviewed registry. The current workflows do not query or reconcile that inventory automatically. Until they do, scope the GitHub App installation or fine-grained PAT to enrolled repositories and treat broad owner discovery as review-only. Owner allowlists remain mandatory but are not sufficient for live enrollment.
 
-The target repository enforces its live mutation authority in `.github/central-agentic-ops.json`:
+The target repository enforces its live mutation authority in `.github/workflows/cao.json`:
 
 ```json
 {

@@ -19,7 +19,7 @@ function runAdmission({ policy = controlPolicy(), policyFailure = false } = {}) 
   writeFileSync(stepSummary, "");
   writeFileSync(mockGh, `#!/bin/sh
 case "$*" in
-  *contents/.github/central-agentic-ops.json*)
+  *contents/.github/workflows/cao.json*)
     [ "$MOCK_POLICY_FAILURE" != "true" ] || exit 1
     base64 < "$MOCK_POLICY_FILE"
     ;;
@@ -70,7 +70,10 @@ test("CAO admission authorizes a declared package before activation", () => {
 
   assert.equal(result.status, 0, result.stderr);
   assert.deepEqual(output, { authorized: "true", reason: "authorized", monthly_credit_budget: "0" });
-  assert.match(summary, /Authorized package `dependabot` as `orchestrator`/);
+  assert.match(summary, /### Central Agentic Ops admission\n\nAuthorized package `dependabot` as `orchestrator`/);
+  assert.match(summary, /<details>\n<summary>Runtime revision<\/summary>/);
+  assert.match(summary, /<summary>Run limits<\/summary>/);
+  assert.equal((summary.match(/<details>/g) ?? []).length, 9);
 });
 
 test("CAO admission exports the authorized package budget", () => {
@@ -90,6 +93,8 @@ test("CAO admission denies a disabled package without failing the workflow", () 
   assert.equal(result.status, 0, result.stderr);
   assert.deepEqual(output, { authorized: "false", reason: "package-disabled", monthly_credit_budget: "0" });
   assert.match(summary, /Skipped package `dependabot` as `orchestrator`: package-disabled/);
+  assert.match(summary, /<summary>Package<\/summary>/);
+  assert.match(summary, /<summary>Worker<\/summary>/);
 });
 
 test("CAO admission fails closed when policy validation fails", () => {
@@ -109,7 +114,7 @@ test("CAO admission fails closed when the authoritative policy cannot be read", 
   assert.equal(result.status, 0);
   assert.deepEqual(output, {
     authorized: "false",
-    reason: "cannot read .github/central-agentic-ops.json at github.workflow_sha",
+    reason: "cannot read .github/workflows/cao.json at github.workflow_sha",
     monthly_credit_budget: "0",
   });
 });

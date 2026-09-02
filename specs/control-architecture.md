@@ -47,7 +47,7 @@ CAO installs and operates agentic workflow packages from a central control repos
 
 This specification covers:
 
-- `.github/central-agentic-ops.json` as the sole persistent non-secret CAO policy authority;
+- `.github/workflows/cao.json` as the sole persistent non-secret CAO policy authority;
 - package and worker enablement, repository scope, rollout, output-mode ceilings, and cross-run package admission;
 - target-owned consent for live work;
 - deterministic policy resolution, narrowing, provenance, and revocation; and
@@ -89,7 +89,7 @@ The key words "MUST", "MUST NOT", "REQUIRED", "SHALL", "SHALL NOT", "SHOULD", "S
 
 ### 2.2 Conformance Classes
 
-1. **Conforming Policy Document:** A `.github/central-agentic-ops.json` document satisfying Section 5 and the published JSON Schema.
+1. **Conforming Policy Document:** A `.github/workflows/cao.json` document satisfying Section 5 and the published JSON Schema.
 2. **Conforming CAO Resolver:** A deterministic implementation satisfying Sections 5 through 7 without granting gh-aw capabilities.
 3. **Conforming gh-aw Integration:** A compiled workflow integration preserving gh-aw ownership of the execution concerns in Section 4.2.
 4. **Conforming Control Repository:** A protected repository using a Conforming CAO Resolver and dispatching only within resolved authority.
@@ -194,17 +194,17 @@ The orchestrator is the rollout decision point. Each worker is an independent en
 
 ### 5.1 Location and Validation
 
-**CAO-CFG-001:** Persistent non-secret CAO policy MUST exist only at `.github/central-agentic-ops.json`.
+**CAO-CFG-001:** Persistent non-secret CAO policy MUST exist only at `.github/workflows/cao.json`.
 
 **CAO-CFG-002:** The file MUST be UTF-8 JSON with an object root and `version` equal to integer `1`.
 
-**CAO-CFG-003:** The document MUST contain at least one of `control-plane` or `target-authority` and MUST conform to `.github/central-agentic-ops.schema.json`, based on JSON Schema Draft 2020-12.
+**CAO-CFG-003:** The document MUST contain at least one of `control-plane` or `target-authority` and MUST conform to `.github/cao/cao.schema.json`, based on JSON Schema Draft 2020-12.
 
 **CAO-CFG-004:** Unknown properties, duplicate object keys, malformed package, worker, or workflow identifiers, and GitHub Actions expressions MUST be rejected.
 
 **CAO-CFG-005:** Implementations MUST NOT read `CENTRAL_AGENTIC_OPS_*` Actions variables as policy defaults, overrides, aliases, or compatibility fallbacks.
 
-The `$schema` property SHOULD identify `https://raw.githubusercontent.com/githubnext/central-agentic-ops/main/.github/central-agentic-ops.schema.json`.
+The `$schema` property SHOULD identify `https://raw.githubusercontent.com/githubnext/central-agentic-ops/main/.github/cao/cao.schema.json`.
 
 ### 5.2 Document Roles
 
@@ -391,7 +391,7 @@ The effective record SHOULD contain only identifiers and provenance required for
 
 ```json
 {
-  "$schema": "https://raw.githubusercontent.com/githubnext/central-agentic-ops/main/.github/central-agentic-ops.schema.json",
+  "$schema": "https://raw.githubusercontent.com/githubnext/central-agentic-ops/main/.github/cao/cao.schema.json",
   "version": 1,
   "control-plane": {
     "scope": {
@@ -416,7 +416,7 @@ The target repository records its own consent:
 
 ```json
 {
-  "$schema": "https://raw.githubusercontent.com/githubnext/central-agentic-ops/main/.github/central-agentic-ops.schema.json",
+  "$schema": "https://raw.githubusercontent.com/githubnext/central-agentic-ops/main/.github/cao/cao.schema.json",
   "version": 1,
   "target-authority": {
     "packages": {
@@ -467,7 +467,7 @@ Invalid JSON, schema violations, unknown static identities, widening requests, u
 - **[RFC 2119]** Bradner, S. [Key words for use in RFCs to Indicate Requirement Levels](https://www.ietf.org/rfc/rfc2119.txt). March 1997.
 - **[JSON]** Bray, T. [The JavaScript Object Notation Data Interchange Format](https://www.rfc-editor.org/rfc/rfc8259). RFC 8259, December 2017.
 - **[JSON Schema 2020-12]** [JSON Schema Core](https://json-schema.org/draft/2020-12/json-schema-core) and [Validation](https://json-schema.org/draft/2020-12/json-schema-validation).
-- **[CAO Schema]** [Central Agentic Ops Policy Schema](../.github/central-agentic-ops.schema.json).
+- **[CAO Schema]** [Central Agentic Ops Policy Schema](../.github/cao/cao.schema.json).
 
 ### 11.2 Informative References
 

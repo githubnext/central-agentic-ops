@@ -5,7 +5,7 @@ function isRecord(value) {
 // SelfCare runs repository-local live checks against this catalog repository
 // itself, so it isn't meant to be installed into a consumer's control plane.
 // Exclude it from the wizard's operations list even though it's configured
-// in central-agentic-ops.json for this repository's own control plane.
+// in cao.json for this repository's own control plane.
 const WIZARD_EXCLUDED_SLUGS = new Set(["self-care"]);
 
 export function selectConfiguredOperations(controlPolicy, catalogEntries) {
@@ -13,7 +13,7 @@ export function selectConfiguredOperations(controlPolicy, catalogEntries) {
   const configuredPackages = isRecord(controlPlane) ? controlPlane.packages : undefined;
 
   if (!isRecord(configuredPackages)) {
-    throw new Error(".github/central-agentic-ops.json must define control-plane.packages as an object");
+    throw new Error(".github/workflows/cao.json must define control-plane.packages as an object");
   }
 
   const catalogEntriesBySlug = new Map(catalogEntries.map((entry) => [entry.slug, entry]));

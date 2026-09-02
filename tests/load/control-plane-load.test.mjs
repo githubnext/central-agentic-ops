@@ -26,7 +26,7 @@ set -euo pipefail
 arguments="$*"
 if [[ "$arguments" == "api repos/acme/control --jq .private" ]]; then
   printf 'true\n'
-elif [[ "$arguments" == *"repos/acme/control/contents/.github/central-agentic-ops.json"* ]]; then
+elif [[ "$arguments" == *"repos/acme/control/contents/.github/workflows/cao.json"* ]]; then
   printf '%s' "$CONTROL_POLICY" | base64
 elif [[ "$arguments" == *"contents/.github/workflows/dependabot.md"* ]]; then
   printf '%s\\n' "$CONTROL_SOURCE_B64"

@@ -5,6 +5,11 @@
     "title": "Central Agentic Ops Dashboard",
     "description": "Authoritative declarative dashboard document for built-in and custom pages in the presenter prototype.",
     "repository": "githubnext/central-agentic-ops",
+    "defaults": {
+      "time": {
+        "range": "1w"
+      }
+    },
     "units": {
       "aic": {
         "name": "AI Credits",
@@ -77,7 +82,6 @@
             "mode:review",
             "mode:live"
           ],
-          "time-range": "All recorded",
           "export": true
         },
         "sections": [
@@ -197,7 +201,6 @@
             "mode:review",
             "mode:live"
           ],
-          "time-range": "All recorded",
           "export": true
         },
         "sections": [
@@ -915,7 +918,6 @@
             "mode:review",
             "mode:live"
           ],
-          "time-range": "All recorded",
           "export": true
         },
         "views": [
@@ -1532,7 +1534,6 @@
             "mode:review",
             "mode:live"
           ],
-          "time-range": "All recorded",
           "export": true
         },
         "sections": [
@@ -1802,7 +1803,6 @@
           "filters": [
             "event:workflow_dispatch"
           ],
-          "time-range": "Retained run window",
           "export": true
         },
         "views": [
@@ -2251,6 +2251,16 @@
           },
           "sections": [
             {
+              "id": "model-agent-allocation",
+              "title": "Models & agentic engines",
+              "description": "Compare normalized AI Credit allocation by model and agentic engine.",
+              "layout": "full",
+              "views": [
+                "models-by-aic",
+                "engines-by-aic"
+              ]
+            },
+            {
               "id": "model-allocation",
               "title": "Models",
               "description": "Observed model allocation and normalized AI Credit totals. Estimated USD uses the documented 1 AIC = $0.01 convention; billing dashboards remain authoritative.",
@@ -2258,7 +2268,6 @@
               "count-source": "model-usage-summary",
               "count-label": "models",
               "views": [
-                "models-by-aic",
                 "model-usage-table"
               ]
             },
@@ -2270,7 +2279,6 @@
               "count-source": "engine-usage-summary",
               "count-label": "engines",
               "views": [
-                "engines-by-aic",
                 "engine-usage-table"
               ]
             },
@@ -2306,6 +2314,36 @@
                   "field": "model",
                   "type": "nominal",
                   "title": "Model"
+                },
+                "y": {
+                  "field": "total-aic",
+                  "type": "quantitative",
+                  "title": "Total AIC",
+                  "unit": "aic"
+                }
+              }
+            },
+            {
+              "id": "engines-by-aic",
+              "title": "AI Credit usage by agentic engine",
+              "description": "Normalized AI Credit allocation by observed agentic engine.",
+              "data": {
+                "source": "engine-usage-summary",
+                "order-by": [
+                  {
+                    "field": "total-aic",
+                    "direction": "desc"
+                  }
+                ]
+              },
+              "mark": "chart",
+              "chart": "pie",
+              "layout": "half",
+              "encoding": {
+                "x": {
+                  "field": "engine",
+                  "type": "nominal",
+                  "title": "Agentic engine"
                 },
                 "y": {
                   "field": "total-aic",
@@ -2375,36 +2413,6 @@
                     "title": "Pricing"
                   }
                 ]
-              }
-            },
-            {
-              "id": "engines-by-aic",
-              "title": "AI Credit usage by agentic engine",
-              "description": "Normalized AI Credit allocation by observed agentic engine.",
-              "data": {
-                "source": "engine-usage-summary",
-                "order-by": [
-                  {
-                    "field": "total-aic",
-                    "direction": "desc"
-                  }
-                ]
-              },
-              "mark": "chart",
-              "chart": "pie",
-              "layout": "half",
-              "encoding": {
-                "x": {
-                  "field": "engine",
-                  "type": "nominal",
-                  "title": "Agentic engine"
-                },
-                "y": {
-                  "field": "total-aic",
-                  "type": "quantitative",
-                  "title": "Total AIC",
-                  "unit": "aic"
-                }
               }
             },
             {
@@ -2533,7 +2541,6 @@
             "mode:review",
             "mode:live"
           ],
-          "time-range": "All recorded",
           "export": true
         },
         "sections": [

@@ -18,9 +18,20 @@ import {
 
 const AGENT_DIRECTORY = "/tmp/gh-aw/agent";
 const OUTPUT_PATH = join(AGENT_DIRECTORY, "control-precompute.json");
-const POLICY_PATH = ".github/central-agentic-ops.json";
+const POLICY_PATH = ".github/workflows/cao.json";
 const REPOSITORY_PATTERN = /^[A-Za-z0-9][A-Za-z0-9-]*\/[A-Za-z0-9._-]+$/;
 const SHA_PATTERN = /^[0-9a-fA-F]{40,64}$/;
+const ADMISSION_CHECKS = [
+  ["Runtime revision", "The control and policy modules are read from the exact `github.workflow_sha` commit."],
+  ["Policy document", "The checked-in policy is parsed and validated for supported keys, types, ranges, unique names, and expressions."],
+  ["Control plane", "The `control-plane` declaration is present."],
+  ["Workflow identity", "The package, role, and (for workers) exact worker identity are authorized."],
+  ["Package", "The requested package is declared and enabled."],
+  ["Worker", "For worker runs, the requested worker is declared and enabled."],
+  ["Target input", "Any supplied `target_repo` uses the exact `owner/repository` form."],
+  ["Mode input", "Any supplied `safe_output_mode` does not exceed the checked-in mode ceiling."],
+  ["Run limits", "Any supplied `max_repos` and `rollout_percent` do not exceed checked-in limits."],
+];
 
 class ControlError extends Error {}
 
@@ -82,7 +93,14 @@ function writeAdmissionSummary({ authorized, packageName, role, reason }) {
   const status = authorized
     ? `Authorized package \`${packageName}\` as \`${role}\`.`
     : `Skipped package \`${packageName}\` as \`${role}\`: ${reason}`;
-  writeFileSync(summaryPath, `## Central Agentic Ops admission\n\n${status}\n`, { flag: "a" });
+  const disclosures = ADMISSION_CHECKS.map(([title, description]) => (
+    `<details>\n<summary>${title}</summary>\n\n${description}\n\n</details>`
+  )).join("\n\n");
+  writeFileSync(
+    summaryPath,
+    `### Central Agentic Ops admission\n\n${status}\n\n${disclosures}\n`,
+    { flag: "a" },
+  );
 }
 
 function policyOptions({ normalizeOrchestrator = false } = {}) {
@@ -331,7 +349,8 @@ function validateWorkerDispatch(context) {
 
 function validateLiveAuthority(context) {
   if (context.mode !== "live") return null;
-  if (!/^[a-z0-9][a-z0-9-]*$/.test(context.packageName)) {
+  const packageName = context.packageName;
+  if (typeof packageName !== "string" || !/^[a-z0-9][a-z0-9-]*$/.test(packageName)) {
     throw new ControlError("package slug must use lowercase characters for live authority validation");
   }
   let defaultBranch;
@@ -354,19 +373,19 @@ function validateLiveAuthority(context) {
     document = parsePolicy(authoritySource);
   } catch (error) {
     if (error instanceof PolicyError) {
-      if (error.message === `target-authority.packages.${context.packageName}.authority has an invalid value`) {
+      if (typeof authoritySource === "string" && error.message === `target-authority.packages.${packageName}.authority has an invalid value`) {
         try {
-          const rawAuthority = JSON.parse(authoritySource)["target-authority"].packages[context.packageName].authority;
+          const rawAuthority = JSON.parse(authoritySource)["target-authority"].packages[packageName].authority;
           if (typeof rawAuthority === "string") throw new ControlError(error.message);
         } catch (classificationError) {
           if (classificationError instanceof ControlError) throw classificationError;
         }
       }
-      throw new ControlError(`target authority file must declare version 1 and target-authority.packages.${context.packageName}.authority`);
+      throw new ControlError(`target authority file must declare version 1 and target-authority.packages.${packageName}.authority`);
     }
     throw new ControlError(`live mode requires ${POLICY_PATH} on the target default branch`);
   }
-  const authority = document["target-authority"]?.packages?.[context.packageName]?.authority;
+  const authority = document["target-authority"]?.packages?.[packageName]?.authority;
   if (!authority) {
     throw new ControlError(`target authority file must declare version 1 and target-authority.packages.${context.packageName}.authority`);
   }
@@ -735,7 +754,9 @@ function authority(args) {
   process.stdout.write(`${value}\n`);
 }
 
-function main([command, ...args]) {
+/** @param {string[]} arguments_ */
+function main(arguments_) {
+  const [command, ...args] = arguments_;
   try {
     if (command === "admit" && args.length === 0) return admit();
     if (command === "precompute" && args.length === 0) return precompute();

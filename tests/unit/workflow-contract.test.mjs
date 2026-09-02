@@ -5,6 +5,7 @@ import { tmpdir } from "node:os";
 import { dirname, join, resolve } from "node:path";
 import test from "node:test";
 import { fileURLToPath } from "node:url";
+import { parse } from "yaml";
 import { policyCases, userFacingScenarios } from "./workflow-contract.matrix.mjs";
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), "../..");
@@ -18,8 +19,8 @@ function workflow(name, directory = workflowsDirectory) {
 function controlPrecompute() {
   return [
     workflow("shared/control.md"),
-    readFileSync(join(root, ".github", "cao", "control.mjs"), "utf8"),
-    readFileSync(join(root, ".github", "cao", "policy.mjs"), "utf8"),
+    readFileSync(join(root, ".github", "cao", "src", "control.mjs"), "utf8"),
+    readFileSync(join(root, ".github", "cao", "src", "policy.mjs"), "utf8"),
   ].join("\n");
 }
 
@@ -395,8 +396,8 @@ test("control workflows deny before activation through one shared admission cont
     1,
   );
   assert.match(sharedControl, /^\s+id: cao_admission$/m);
-  assert.match(sharedControl, /contents\/\.github\/cao\/control\.mjs/);
-  assert.match(sharedControl, /contents\/\.github\/cao\/policy\.mjs/);
+  assert.match(sharedControl, /contents\/\.github\/cao\/src\/control\.mjs/);
+  assert.match(sharedControl, /contents\/\.github\/cao\/src\/policy\.mjs/);
   assert.match(sharedControl, /reason="cannot read or execute the CAO control modules at github\.workflow_sha"/);
   for (const [name, source] of controlled) {
     assert.equal(
@@ -527,7 +528,7 @@ test("deterministic workflows pin third-party actions by commit SHA", () => {
     join(".github", "workflows", "enterprise-canary.yml"),
     join(".github", "workflows", "enterprise-stress.yml"),
     join(".github", "workflows", "review-smoke.yml"),
-    join("dashboard", "dashboard-build.yml"),
+    join(".github", "workflows", "dashboard-build.yml"),
     join("dashboard", "dashboard.yml"),
   ]) {
     const source = readFileSync(join(root, relativePath), "utf8");
@@ -553,9 +554,40 @@ test("workflow contracts isolate authenticated package lifecycle checks", () => 
   assert.match(source, /push:\n    branches: \[main\]\n    paths-ignore:\n      - \.github\/workflows\/cid\.yml\n      - dashboard\/site\/\*\*/);
   assert.match(contracts, /npm run check/);
   assert.doesNotMatch(contracts, /GH_TOKEN|CENTRAL_AGENTIC_OPS_PACKAGE_SOURCE|test:package-lifecycle/);
+  assert.match(packageLifecycle, /gh api rate_limit --jq '\.resources\.core\.remaining'/);
+  assert.match(packageLifecycle, /remaining < 500/);
+  assert.match(packageLifecycle, /if: steps\.package-api\.outputs\.ready == 'true'/);
   assert.match(packageLifecycle, /GH_TOKEN: \$\{\{ github\.token \}\}/);
   assert.match(packageLifecycle, /CENTRAL_AGENTIC_OPS_PACKAGE_SOURCE:/);
   assert.match(packageLifecycle, /npm run test:package-lifecycle/);
+});
+
+test("release drafts reviewed notes for an explicit semantic version before publishing", () => {
+  const source = workflow("release.yml");
+  const config = parse(source);
+  const jobs = generatedJobs(source);
+  const version = jobs.get("validate-version")?.block ?? "";
+  const validation = jobs.get("validate-package")?.block ?? "";
+  const prepare = jobs.get("prepare-release")?.block ?? "";
+  const publish = jobs.get("publish-release")?.block ?? "";
+  const rootManifest = readFileSync(join(root, "aw.yml"), "utf8");
+
+  assert.equal(config.on.workflow_dispatch.inputs.operation.default, "prepare");
+  assert.deepEqual(config.on.workflow_dispatch.inputs.operation.options, ["prepare", "publish"]);
+  assert.equal(config.on.workflow_dispatch.inputs.version.default, "0.0.1");
+  assert.match(version, /RELEASE_VERSION: \$\{\{ inputs\.version \}\}/);
+  assert.match(version, /stable semantic version/);
+  assert.match(validation, /CENTRAL_AGENTIC_OPS_PACKAGE_SOURCE: \$\{\{ github\.repository \}\}@\$\{\{ github\.sha \}\}/);
+  assert.match(validation, /npm run test:package-lifecycle/);
+  assert.deepEqual(jobs.get("prepare-release")?.needs, ["validate-version", "validate-package"]);
+  assert.match(prepare, /draft: true/);
+  assert.match(prepare, /generate_release_notes: true/);
+  assert.match(publish, /release\.tag_name === releaseTag \|\| release\.name === releaseTag/);
+  assert.match(publish, /Multiple draft releases match/);
+  assert.match(publish, /tag_name: releaseTag/);
+  assert.match(publish, /draft: false/);
+  assert.doesNotMatch(source, /release-please|upload-artifact|CHANGELOG\.md/);
+  assert.doesNotMatch(rootManifest, /\.github\/workflows\/release\.yml/);
 });
 
 test("package manifests exclude repository-only tests", () => {
@@ -584,9 +616,9 @@ test("CAO runtime is control-repository-owned outside package resources", () => 
   const rootManifest = readFileSync(join(root, "aw.yml"), "utf8");
   const setupSkill = readFileSync(join(root, ".github", "skills", "setup-central-agentic-ops", "SKILL.md"), "utf8");
   const policy = JSON.parse(execFileSync(process.execPath, [
-    join(root, ".github", "cao", "control.mjs"),
+    join(root, ".github", "cao", "src", "control.mjs"),
     "resolve-policy",
-    join(root, ".github", "central-agentic-ops.json"),
+    join(root, ".github", "workflows", "cao.json"),
   ], {
     encoding: "utf8",
     env: {
@@ -600,7 +632,7 @@ test("CAO runtime is control-repository-owned outside package resources", () => 
   assert.equal(policy.authorized, true);
   assert.equal(policy.package, "dependabot");
   assert.doesNotMatch(rootManifest, /destination: \.github\/cao\//);
-  assert.match(setupSkill, /contents\/\.github\/cao\/\$\{cao_file\}/);
+  assert.match(setupSkill, /contents\/\.github\/cao\/src\/\$\{cao_file\}/);
   assert.match(setupSkill, /for cao_file in control\.mjs policy\.mjs/);
   assert.doesNotMatch(setupSkill, /chmod \+x \.github\/cao/);
 });
@@ -1725,15 +1757,15 @@ test("clean-room compilation emits the expected GitHub Actions settings", { time
 
       assert.match(preActivation, /actions: read/);
       assert.match(preActivation, /name: Evaluate Central Agentic Ops admission/);
-      assert.match(preActivation, /contents\/\.github\/cao\/control\.mjs/);
-      assert.match(preActivation, /contents\/\.github\/cao\/policy\.mjs/);
+      assert.match(preActivation, /contents\/\.github\/cao\/src\/control\.mjs/);
+      assert.match(preActivation, /contents\/\.github\/cao\/src\/policy\.mjs/);
       assert.match(preActivation, /github\/gh-aw-actions\/setup-cli@/);
       assert.match(preActivation, /steps\.cao_admission\.outputs\.monthly_credit_budget != '0'/);
       assert.match(preActivation, /name: Run CAO control precompute/);
       assert.match(preActivation, /GH_TOKEN: \$\{\{ secrets\.GH_AW_GITHUB_TOKEN \|\| github\.token \}\}/);
       assert.match(preActivation, /name: Validate CAO control precompute artifact/);
       assert.match(preActivation, /\.authorized == true/);
-      assert.match(preActivation, /\.policy_source == \{repository:\$repository,path:"\.github\/central-agentic-ops\.json",sha:\$sha\}/);
+      assert.match(preActivation, /\.policy_source == \{repository:\$repository,path:"\.github\/workflows\/cao\.json",sha:\$sha\}/);
       assert.match(preActivation, /name: Upload CAO control precompute artifact/);
       assert.match(preActivation, /retention-days: 1(?:\.0)?/);
 
@@ -1861,7 +1893,7 @@ test("Agent customizations preserve the deterministic dashboard exception", () =
   assert.match(agenticWorkflowsSkill, /\.github\/aw\/instructions\.md/);
   assert.match(packageSkill, /## Deterministic Add-on Exception/);
   assert.match(packageSkill, /site-path/);
-  assert.match(repositoryInstructions, /Keep `dashboard\/dashboard-build\.yml` reusable through `workflow_call`/);
+  assert.match(repositoryInstructions, /Keep `\.github\/workflows\/dashboard-build\.yml` reusable through `workflow_call` and package it through both dashboard manifests/);
   assert.match(repositoryInstructions, /existing Pages site, retain one Pages artifact uploader and deployer/);
   assert.match(repositoryInstructions, /must not add a schedule or another enable variable/);
 });
@@ -1954,8 +1986,10 @@ test("README routes zero-to-CAO requests to the setup skill", () => {
 test("Dashboard package supports embedded and explicit standalone deployment", () => {
   const rootManifest = readFileSync(join(root, "aw.yml"), "utf8");
   const dashboardManifest = readFileSync(join(root, "dashboard", "aw.yml"), "utf8");
-  const canonicalPolicyResolver = readFileSync(join(root, ".github", "cao", "policy.mjs"), "utf8");
-  const buildWorkflow = readFileSync(join(root, "dashboard", "dashboard-build.yml"), "utf8");
+  const rootPackage = parse(rootManifest);
+  const dashboardPackage = parse(dashboardManifest);
+  const canonicalPolicyResolver = readFileSync(join(root, ".github", "cao", "src", "policy.mjs"), "utf8");
+  const buildWorkflow = readFileSync(join(root, ".github", "workflows", "dashboard-build.yml"), "utf8");
   const deployWorkflow = readFileSync(join(root, "dashboard", "dashboard.yml"), "utf8");
   const aicUsage = readFileSync(join(root, "dashboard", "report", "aic-usage.mjs"), "utf8");
   const deployedWorkflows = readFileSync(join(root, "dashboard", "report", "deployed-workflows.mjs"), "utf8");
@@ -1963,14 +1997,26 @@ test("Dashboard package supports embedded and explicit standalone deployment", (
   const reportAssets = ["aic-usage.mjs", "bundle-dashboards.mjs", "compose-dashboard-documents.mjs", "configure-site.mjs", "control-settings.mjs", "dashboard-language-sources.mjs", "deployed-workflows.mjs", "inventory.mjs", "operational-value-history.mjs", "operational-values.mjs", "records.mjs", "text-utils.mjs"];
   const reportEntrypoints = new Set(reportAssets.filter((assetName) => !["compose-dashboard-documents.mjs", "operational-value-history.mjs", "text-utils.mjs"].includes(assetName)));
 
-  assert.doesNotMatch(rootManifest, /dashboard\/dashboard|dashboard-build/);
+  assert.deepEqual(
+    rootPackage.includes.filter((entry) => typeof entry === "object" && entry.destination?.startsWith(".github/workflows/dashboard")),
+    dashboardPackage.includes.map((entry) => ({
+      ...entry,
+      source: entry.source.startsWith(".github/") ? entry.source : `dashboard/${entry.source}`,
+    })),
+  );
+  assert.deepEqual(
+    rootPackage.resources.filter((entry) => entry.source.startsWith("dashboard/")),
+    dashboardPackage.resources.map((entry) => ({ ...entry, source: `dashboard/${entry.source}` })),
+  );
   assert.match(dashboardManifest, /name: Central Agentic Ops Dashboard/);
   assert.match(dashboardManifest, /source: dashboard\.yml\n\s+destination: \.github\/workflows\/dashboard\.yml\n\s+kind: action-workflow/);
-  assert.match(dashboardManifest, /source: dashboard-build\.yml\n\s+destination: \.github\/workflows\/dashboard-build\.yml\n\s+kind: action-workflow/);
+  assert.match(dashboardManifest, /source: \.github\/workflows\/dashboard-build\.yml\n\s+destination: \.github\/workflows\/dashboard-build\.yml\n\s+kind: action-workflow/);
   assert.doesNotMatch(dashboardManifest, /destination: \.github\/cao\//);
   assert.match(canonicalPolicyResolver, /export function parsePolicy/);
+  assert.match(deployedWorkflows, /dashboardHorizonHours\(resolveDashboardHorizon\(dashboardDocument\.dashboard\)\)/);
+  assert.doesNotMatch(deployedWorkflows, /REPORT_RUN_WINDOW_HOURS/);
   assert.match(buildWorkflow, /workflow_call:[\s\S]*?site-path:[\s\S]*?default: cao/);
-  assert.match(buildWorkflow, /control-settings\.mjs[\s\S]*?\.github\/cao\/control\.mjs[\s\S]*?\.github\/central-agentic-ops\.json[\s\S]*?"\$RUNNER_TEMP\/control-settings\.json"/);
+  assert.match(buildWorkflow, /control-settings\.mjs[\s\S]*?\.github\/cao\/src\/control\.mjs[\s\S]*?\.github\/workflows\/cao\.json[\s\S]*?"\$RUNNER_TEMP\/control-settings\.json"/);
   assert.match(buildWorkflow, /cp -R \.github\/aw\/dashboard\/site\/\. "\$REPORT_OUTPUT\/"/);
   assert.match(buildWorkflow, /configure-site\.mjs[\s\S]*?"\$REPORT_OUTPUT\/index\.html"[\s\S]*?"\$RUNNER_TEMP\/control-settings\.json"/);
   assert.match(buildWorkflow, /bundle-dashboards\.mjs[\s\S]*?"\$REPORT_OUTPUT\/dashboard\.json"[\s\S]*?\.github\/aw\/dashboards/);
@@ -2013,6 +2059,7 @@ test("Dashboard package supports embedded and explicit standalone deployment", (
   assert.match(dashboardManifest, /source: site\/favicon\.svg\n\s+destination: \.github\/aw\/dashboard\/site\/favicon\.svg/);
   assert.match(dashboardManifest, /source: site\/dashboard\.json\n\s+destination: \.github\/aw\/dashboard\/site\/dashboard\.json/);
   assert.match(dashboardManifest, /source: site\/src\/presenter\.js\n\s+destination: \.github\/aw\/dashboard\/site\/src\/presenter\.js/);
+  assert.match(dashboardManifest, /source: site\/src\/loading-progress\.js\n\s+destination: \.github\/aw\/dashboard\/site\/src\/loading-progress\.js/);
   for (const assetName of ["data-operations.js", "data-processor.js", "data-worker.js"]) {
     assert.match(dashboardManifest, new RegExp(`source: site/src/${assetName.replace(".", "\\.")}\\n\\s+destination: \\.github/aw/dashboard/site/src/${assetName.replace(".", "\\.")}`));
   }
@@ -2021,56 +2068,35 @@ test("Dashboard package supports embedded and explicit standalone deployment", (
     assert.ok(existsSync(assetPath), `missing report script ${assetName}`);
     assert.match(dashboardManifest, new RegExp(`destination: \\.github/aw/dashboard/report/${assetName.replace(".", "\\.")}`));
     if (reportEntrypoints.has(assetName)) {
-      assert.match(buildWorkflow, new RegExp(`\.github/aw/dashboard/report/${assetName.replace(".", "\\.")}`));
+      assert.match(buildWorkflow, new RegExp(`DASHBOARD_REPORT_ROOT/${assetName.replace(".", "\\.")}`));
     }
     execFileSync(process.execPath, ["--check", assetPath]);
   }
 });
 
-test("Documentation Pages composes documentation with the independent dashboard artifact", () => {
-  const dashboardBuild = readFileSync(join(root, ".github", "workflows", "cao-dashboard-build.yml"), "utf8");
-  const publisher = readFileSync(join(root, ".github", "workflows", "documentation-pages.yml"), "utf8");
+test("Documentation Pages deploys docs with the packaged dashboard builder", () => {
+  const workflow = readFileSync(join(root, ".github", "workflows", "docs.yml"), "utf8");
+  const dashboardBuild = readFileSync(join(root, ".github", "workflows", "dashboard-build.yml"), "utf8");
   const astroConfig = readFileSync(join(root, "astro.config.mjs"), "utf8");
 
+  assert.equal(existsSync(join(root, ".github", "workflows", "cao-dashboard-build.yml")), false);
+  assert.equal(existsSync(join(root, ".github", "workflows", "documentation-pages.yml")), false);
   assert.equal(existsSync(join(root, ".github", "workflows", "documentation-build.yml")), false);
 
-  assert.match(dashboardBuild, /schedule:\n\s+- cron: "\*\/15 \* \* \* \*"/);
-  assert.match(dashboardBuild, /- dashboard\/\*\*/);
-  assert.match(dashboardBuild, /- \.github\/workflows\/\*\.md/);
-  assert.match(dashboardBuild, /- "\*\/aw\.yml"/);
-  assert.match(dashboardBuild, /actions: read/);
-  assert.match(dashboardBuild, /issues: read/);
-  assert.match(dashboardBuild, /pull-requests: read/);
-  assert.match(dashboardBuild, /github\/gh-aw-actions\/setup-cli@afc709f45ed6a3f756eb4551856c6a9c42e15b2c # v0\.88\.0/);
-  assert.match(dashboardBuild, /version: v0\.88\.0/);
-  assert.match(dashboardBuild, /ref: a5297995b4bd76a2afcc39f10f2517a65aff172c # v0\.88\.0/);
-  assert.match(dashboardBuild, /main\.version=v0\.88\.0/);
-  assert.match(dashboardBuild, /Restore AI Credit usage cache/);
-  assert.match(dashboardBuild, /REPORT_AIC_CACHE: \.cache\/cao-dashboard-aic/);
-  assert.match(dashboardBuild, /Save AI Credit usage cache/);
-  assert.match(dashboardBuild, /name: Assemble configured Dashboard Language site/);
-  assert.match(dashboardBuild, /central-agentic-ops-dashboard\/cao/);
-  assert.doesNotMatch(dashboardBuild, /REPORT_ALLOWED_REPOS/);
-  assert.match(dashboardBuild, /run: node dashboard\/report\/records\.mjs/);
-  assert.match(dashboardBuild, /REPORT_RECORDS: .*central-agentic-ops-dashboard\/cao\/records\.json/);
-  assert.match(dashboardBuild, /REPORT_DASHBOARD_SOURCES: .*central-agentic-ops-dashboard\/cao\/sources\.json/);
-  assert.doesNotMatch(dashboardBuild, /legacy dashboard redirects|redirects\.mjs/);
-  assert.doesNotMatch(dashboardBuild, /report\/report\.mjs/);
-  assert.match(dashboardBuild, /name: cao-dashboard-site/);
-  assert.doesNotMatch(dashboardBuild, /REPORT_INCLUDE_PRIVATE:\s*true/);
-  assert.doesNotMatch(dashboardBuild, /deploy-pages|upload-pages-artifact|pages: write|id-token: write/);
-
-  assert.match(publisher, /workflow_run:\n\s+workflows: \["CAO Dashboard E2E Build"\]/);
-  assert.match(publisher, /actions\/workflows\/cao-dashboard-build\.yml\/runs/);
-  assert.match(publisher, /run: npm run docs:build/);
-  assert.match(publisher, /run: rm -rf dist\/cao/);
-  assert.match(publisher, /name: cao-dashboard-site/);
-  assert.match(publisher, /name: pages-deployment-state/);
-  assert.match(publisher, /changed=\$changed/);
-  assert.doesNotMatch(publisher, /issues: read|pull-requests: read|REPORT_/);
-  assert.match(publisher, /if: needs\.compose\.outputs\.changed == 'true'/);
-  assert.equal((publisher.match(/actions\/upload-pages-artifact@/g) || []).length, 1);
-  assert.equal((publisher.match(/actions\/deploy-pages@/g) || []).length, 1);
+  assert.match(workflow, /uses: \.\/\.github\/workflows\/dashboard-build\.yml/);
+  assert.match(workflow, /needs: dashboard/);
+  assert.match(workflow, /run: npm run docs:build/);
+  assert.match(workflow, /name: central-agentic-ops-dashboard\n\s+path: dist/);
+  assert.match(workflow, /schedule:\n\s+- cron: "\*\/15 \* \* \* \*"/);
+  assert.doesNotMatch(workflow, /workflow_run|gh aw add|DASHBOARD_PACKAGE/);
+  assert.equal((workflow.match(/actions\/upload-pages-artifact@/g) || []).length, 1);
+  assert.equal((workflow.match(/actions\/deploy-pages@/g) || []).length, 1);
+  assert.match(dashboardBuild, /workflow_call:/);
+  assert.match(dashboardBuild, /central-agentic-ops-dashboard\/\$\{\{ inputs\.site-path \}\}\/sources\.json/);
+  assert.match(dashboardBuild, /name: central-agentic-ops-dashboard/);
+  assert.match(dashboardBuild, /DASHBOARD_LAYOUT=source/);
+  assert.match(dashboardBuild, /DASHBOARD_LAYOUT=installed/);
+  assert.doesNotMatch(dashboardBuild, /schedule:|push:|deploy-pages|upload-pages-artifact/);
   assert.match(astroConfig, /label: "Control plane status", link: "\/cao\/"/);
 });
 

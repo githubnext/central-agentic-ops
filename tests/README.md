@@ -2,7 +2,7 @@
 
 Use this as a lookup from configuration to verified behavior. Examples assume 25 discovered repositories. `-` means unset or not applicable. Statuses are `🟢 Pass` and `🔴 Fail`.
 
-Run dependency-free contract tests with `npm run test:unit`. Run local failure-injection tests with `npm run test:integration`. Run the authenticated clean-room package tests with `npm run test:package-lifecycle`; they require gh-aw, `GH_TOKEN`, and public GitHub access. Run synthetic enterprise scale tests with `npm run test:load`. `npm test` runs unit and local integration tests, while `npm run check` adds load tests, visual checks, compilation, and documentation builds. Use `npm run compile:locks` when updating tracked lock files. CI runs package lifecycle tests in a separate job and sets `CENTRAL_AGENTIC_OPS_PACKAGE_SOURCE` to the exact commit under test so package installation validates pull-request contents rather than only the default branch.
+Run dependency-free contract tests with `npm run test:unit`. Run local failure-injection tests with `npm run test:integration`. Run the authenticated clean-room package tests with `npm run test:package-lifecycle`; they require gh-aw, `GH_TOKEN`, and public GitHub access. Run synthetic enterprise scale tests with `npm run test:load`. `npm test` runs unit and local integration tests, while `npm run check` adds load tests, visual checks, compilation, and documentation builds. Use `npm run compile:locks` when updating tracked lock files. CI runs package lifecycle tests in a separate job and sets `CENTRAL_AGENTIC_OPS_PACKAGE_SOURCE` to the exact commit under test so package installation validates pull-request contents rather than only the default branch. The CI job reports the lifecycle check as infrastructure-incomplete when the shared GitHub App installation lacks enough core API capacity to run the clean-room suite.
 
 The automated suite checks source `.md` contracts, ops-value interfaces, smoke-workflow safety, generated workflows, and `gh aw add`/`gh aw update` package behavior. It does not execute agentic workflows or spend AI Credits; the manual `Review smoke` Actions workflow performs that opt-in runtime check.
 
@@ -34,7 +34,7 @@ The integration suite creates disposable consumer repositories under the system 
 
 | Test result | Scenario | Checked behavior |
 | --- | --- | --- |
-| 🟢 Pass | Pre-activation admission | The actual `.github/cao/control.mjs` `admit` command authorizes declared packages and fails closed for disabled packages, malformed policy, and unavailable policy content. |
+| 🟢 Pass | Pre-activation admission | The actual `.github/cao/src/control.mjs` `admit` command authorizes declared packages and fails closed for disabled packages, malformed policy, and unavailable policy content. |
 | 🟢 Pass | Control validation and authorization | The actual control precompute shell passes 54 success, failure, disablement, review-isolation, live-authorization, and output-binding cases. |
 | 🟢 Pass | 100,000-repository inventory | Pagination stops at 1,000 pages, retains exactly 100,000 candidates, and applies the 10%/1,000 target cap within 120 seconds. |
 | 🟢 Pass | Deterministic cell and batch selection | Stable repository IDs assign every selected candidate to one cell; bounded batches share an inventory version and have distinct batch IDs. |
@@ -156,9 +156,9 @@ Compilation checks prove the source policy reaches the generated GitHub Actions 
 | 🟢 Pass | AI Credit Optimizer | Standard dispatch envelope and safe output settings compile. |
 | 🟢 Pass | All worker workflow safe outputs | Review/live routing vocabulary checked. |
 | 🟢 Pass | All generated package workflows | Emitted activation gates, transitive job dependencies, review isolation, live authority, output binding, and removed-mode settings checked in a clean-room compile. |
-| 🟢 Pass | Core catalog package | Installs no dashboard workflow, renderer, or Pages permission surface. |
+| 🟢 Pass | Core catalog package | Installs the complete dashboard package while keeping its standalone Pages publisher manual-only. |
 | 🟢 Pass | Operational value | Schema-v4 evaluators are registered by workers and the dashboard consumes actual `grader_results.json` observations. |
-| 🟢 Pass | Dashboard package | Reusable builds mount under a relative path; standalone deployment remains manual, access-controlled, and separate from the root package. |
+| 🟢 Pass | Dashboard package | Root and focused installations include the same dashboard destinations; reusable builds mount under a relative path and standalone deployment remains manual and access-controlled. |
 | 🟢 Pass | Grader package transport | gh-aw installs and restores referenced `.github/graders/*.sh` files in clean package consumers. |
 
 Exhaustive coverage: 24 scheduled plus 96 manual cases, for 120 unique policy configurations and 22 user-facing scenarios. The custom review-bundle job retains gh-aw's internal `GH_AW_SAFE_OUTPUTS_STAGED` dry-run signal; it is compiler plumbing, not a public package mode.

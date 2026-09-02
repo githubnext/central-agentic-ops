@@ -44,11 +44,27 @@ jobs:
       - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
         with:
           node-version: 24
+      - name: Check package API capacity
+        id: package-api
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          remaining="$(gh api rate_limit --jq '.resources.core.remaining')"
+          echo "remaining=$remaining" >> "$GITHUB_OUTPUT"
+          if (( remaining < 500 )); then
+            echo "ready=false" >> "$GITHUB_OUTPUT"
+            echo "::warning title=Package lifecycle incomplete::The shared GitHub App installation has $remaining core API requests remaining; 500 are required for clean-room package tests."
+            echo "Package lifecycle tests were skipped because the shared GitHub App installation API quota is exhausted." >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo "ready=true" >> "$GITHUB_OUTPUT"
+          fi
       - name: Install gh-aw
+        if: steps.package-api.outputs.ready == 'true'
         uses: github/gh-aw-actions/setup-cli@afc709f45ed6a3f756eb4551856c6a9c42e15b2c # v0.88.0
         with:
           version: v0.88.0
       - name: Run package lifecycle integration
+        if: steps.package-api.outputs.ready == 'true'
         env:
           CENTRAL_AGENTIC_OPS_PACKAGE_SOURCE: ${{ github.repository }}@${{ github.sha }}
           GH_TOKEN: ${{ github.token }}
