@@ -1,11 +1,10 @@
-import { readFileSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
 export const root = resolve(dirname(fileURLToPath(import.meta.url)), "../..");
 
-export function controlPrecomputeScript() {
-  return readFileSync(join(root, ".github", "cao", "precompute.sh"), "utf8");
+export function controlProgram() {
+  return join(root, ".github", "cao", "control.mjs");
 }
 
 export function controlPolicy({
@@ -40,7 +39,7 @@ export function controlPolicy({
 }
 
 export function controlEnvironment(overrides = {}) {
-  return {
+  const values = {
     ...process.env,
     BUNDLE: "dependabot",
     ROLE: "worker",
@@ -64,5 +63,23 @@ export function controlEnvironment(overrides = {}) {
     GITHUB_WORKFLOW_REF: "acme/control/.github/workflows/dependabot.lock.yml@main",
     CONTROL_POLICY: controlPolicy(),
     ...overrides,
+  };
+  return {
+    ...values,
+    CAO_PACKAGE: overrides.CAO_PACKAGE ?? values.BUNDLE,
+    CAO_ROLE: overrides.CAO_ROLE ?? values.ROLE,
+    CAO_WORKER: overrides.CAO_WORKER ?? (values.ROLE === "orchestrator" ? "" : values.WORKER),
+    CAO_TARGET_REPOSITORY: overrides.CAO_TARGET_REPOSITORY ?? values.TARGET_REPO,
+    CAO_REQUESTED_MODE: overrides.CAO_REQUESTED_MODE ?? values.REQUESTED_MODE,
+    CAO_REQUESTED_MAX_REPOSITORIES: overrides.CAO_REQUESTED_MAX_REPOSITORIES ?? values.REQUESTED_MAX_REPOS,
+    CAO_REQUESTED_ROLLOUT_PERCENT: overrides.CAO_REQUESTED_ROLLOUT_PERCENT ?? values.REQUESTED_ROLLOUT_PERCENT,
+    CAO_DISPATCH_MAX: overrides.CAO_DISPATCH_MAX ?? values.DISPATCH_MAX,
+    CAO_SAFE_OUTPUT_REPOSITORY: overrides.CAO_SAFE_OUTPUT_REPOSITORY ?? values.SAFE_OUTPUT_REPO,
+    CAO_CORRELATION_ID: overrides.CAO_CORRELATION_ID ?? values.CORRELATION_ID,
+    CAO_CENTRAL_REPOSITORY: overrides.CAO_CENTRAL_REPOSITORY ?? values.CENTRAL_REPO,
+    CAO_CONTROL_PLANE_RUN_URL: overrides.CAO_CONTROL_PLANE_RUN_URL ?? values.CONTROL_PLANE_RUN_URL,
+    CAO_ORCHESTRATOR_CREDITS: overrides.CAO_ORCHESTRATOR_CREDITS ?? values.ORCHESTRATOR_CREDITS,
+    CAO_WORKER_CREDITS_PER_TARGET: overrides.CAO_WORKER_CREDITS_PER_TARGET ?? values.WORKER_CREDITS_PER_TARGET,
+    GITHUB_WORKFLOW_SHA: overrides.GITHUB_WORKFLOW_SHA ?? values.WORKFLOW_SHA,
   };
 }

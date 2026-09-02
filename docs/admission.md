@@ -6,18 +6,18 @@ description: Understand what Central Agentic Ops checks before activation and wh
 Central Agentic Ops admits a run only when its checked-in control policy authorizes the workflow identity and requested limits. Admission happens in the gh-aw pre-activation job, before activation and before any agent executes.
 
 ```text
-trigger -> pre-activation admission -> activation -> authorized-run precompute -> agent
-                 | denied                         | blocked
-                 +-> skip with reason             +-> no agent execution
+trigger -> pre-activation admission -> authorized-run precompute -> activation -> agent
+                 | denied              | blocked
+                 +-> skip with reason  +-> no agent execution
 ```
 
 ## What Admission Gates
 
-Admission reads `.github/central-agentic-ops.json` and `.github/cao/resolve.mjs` from the exact `github.workflow_sha`. Authorized runs then execute `.github/cao/precompute.sh` from that same revision. They do not use policy or CAO runtime from another branch or from the agent checkout.
+The shared control component reads `.github/cao/control.mjs` and `.github/cao/policy.mjs` from the exact `github.workflow_sha`. Admission then reads `.github/central-agentic-ops.json` at that revision, and authorized runs execute the `precompute` command from the same modules. They do not use policy or CAO runtime from another branch or from the agent checkout.
 
 | Check | Admitted when |
 | --- | --- |
-| Runtime revision | `github.workflow_sha` is an exact commit and the policy, admission helper, and resolver are readable at that revision. |
+| Runtime revision | `github.workflow_sha` is an exact commit and the policy and both CAO modules are readable at that revision. |
 | Policy document | The JSON has supported keys, types, ranges, unique names, no duplicate keys, and no GitHub Actions expressions. |
 | Control plane | `control-plane` exists. |
 | Workflow identity | The workflow declares `orchestrator` or `worker`; workers also declare an exact worker identity. |
@@ -31,7 +31,7 @@ A manual dispatch can narrow a run, such as changing an authorized `live` run to
 
 ## What Precompute Gates
 
-Admission is deliberately lightweight and repository-local. Once admitted, `.github/workflows/shared/control-precompute.md` performs checks that need credentials, repository metadata, inventory, or usage evidence.
+Admission is deliberately lightweight and repository-local. Once admitted, `.github/workflows/shared/control.md` runs deterministic precompute checks that need credentials, repository metadata, inventory, or usage evidence.
 
 | Admission | Authorized-run precompute |
 | --- | --- |
@@ -48,7 +48,7 @@ Failure in either phase prevents agent execution. Admission denial skips activat
 Setup creates one atomic control-plane revision:
 
 1. Install the gh-aw package from an immutable CAO tag or commit.
-2. Materialize `.github/cao/admit.sh`, `.github/cao/precompute.sh`, and `.github/cao/resolve.mjs` from that same CAO revision.
+2. Materialize `.github/cao/control.mjs` and `.github/cao/policy.mjs` from that same CAO revision.
 3. Declare the installed package and its worker-to-workflow mapping in `.github/central-agentic-ops.json`.
 4. Commit the workflows, generated locks, CAO runtime, and policy together, then push before running the operation.
 
@@ -78,6 +78,6 @@ Open the run summary and find **Central Agentic Ops admission**. An authorized r
 | `package-disabled` | Review the package, then remove `enabled: false` when it is safe to resume. |
 | `worker-disabled` | Review the worker, then remove `enabled: false` when it is safe to resume. |
 | `control policy validation failed` | Validate policy keys, values, identities, and requested manual inputs. |
-| Cannot read or execute CAO runtime | Materialize all three `.github/cao` runtime files from the same immutable package revision and commit them with the workflows. |
+| Cannot read or execute CAO runtime | Materialize both `.github/cao` runtime files from the same immutable package revision and commit them with the workflows. |
 
 Fix the checked-in setup or policy, commit and push the new revision, then start a new run. Do not bypass admission by editing a generated `.lock.yml` file or by widening manual inputs.

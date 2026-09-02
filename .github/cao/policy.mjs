@@ -1,8 +1,3 @@
-#!/usr/bin/env node
-
-import { readFileSync } from "node:fs";
-import { pathToFileURL } from "node:url";
-
 export class PolicyError extends Error {}
 
 const SCHEMA_URI = "https://raw.githubusercontent.com/githubnext/central-agentic-ops/main/.github/central-agentic-ops.schema.json";
@@ -562,56 +557,3 @@ function narrowInteger(effective, key, requested, path, maximum) {
   effective[key] = value;
 }
 
-function readSource(path) {
-  return path === "-" ? readFileSync(0, "utf8") : readFileSync(path, "utf8");
-}
-
-function effectiveFromEnvironment(document) {
-  return effectivePolicy(document, {
-    packageName: process.env.CAO_PACKAGE ?? "",
-    role: process.env.CAO_ROLE ?? "",
-    workerName: process.env.CAO_WORKER ?? "",
-    controlRepository: process.env.GITHUB_REPOSITORY ?? "",
-    requestedMode: process.env.CAO_REQUESTED_MODE ?? "",
-    requestedMaxRepositories: process.env.CAO_REQUESTED_MAX_REPOSITORIES ?? "",
-    requestedRolloutPercent: process.env.CAO_REQUESTED_ROLLOUT_PERCENT ?? "",
-    targetRepository: process.env.CAO_TARGET_REPOSITORY ?? "",
-  });
-}
-
-function main(argv) {
-  try {
-    if (argv.length === 2 && argv[0] === "--validate") {
-      process.stdout.write(`${JSON.stringify(parsePolicy(readSource(argv[1])), null, 2)}\n`);
-      return;
-    }
-    if (argv.length === 2 && argv[0] === "--effective") {
-      process.stdout.write(`${JSON.stringify(effectiveFromEnvironment(parsePolicy(readSource(argv[1]))), null, 2)}\n`);
-      return;
-    }
-    if (argv.length === 2 && argv[0] === "--control") {
-      const settings = controlSettings(parsePolicy(readSource(argv[1])), process.env.GITHUB_REPOSITORY ?? "");
-      process.stdout.write(`${JSON.stringify(settings, null, 2)}\n`);
-      return;
-    }
-    if (argv.length === 3 && argv[0] === "--authority") {
-      const document = parsePolicy(readSource(argv[1]));
-      const authority = document["target-authority"]?.packages?.[argv[2]]?.authority;
-      if (!authority) throw new PolicyError(`target authority does not declare package ${argv[2]}`);
-      process.stdout.write(`${authority}\n`);
-      return;
-    }
-    throw new PolicyError("usage: resolve.mjs --validate <file|-> | --control <file|-> | --effective <file|-> | --authority <file|-> <package>");
-  } catch (error) {
-    if (error instanceof PolicyError || error?.code === "ENOENT") {
-      process.stderr.write(`${error.message}\n`);
-      process.exitCode = 1;
-      return;
-    }
-    throw error;
-  }
-}
-
-if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
-  main(process.argv.slice(2));
-}

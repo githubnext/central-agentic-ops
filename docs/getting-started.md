@@ -79,11 +79,10 @@ From the control repository, install the Dependabot operation package and CAO ru
 CAO_REF="<catalog-release>"
 gh aw add-wizard "githubnext/central-agentic-ops/dependabot@${CAO_REF}"
 mkdir -p .github/cao
-for cao_file in admit.sh precompute.sh resolve.mjs; do
+for cao_file in control.mjs policy.mjs; do
 	gh api --method GET "repos/githubnext/central-agentic-ops/contents/.github/cao/${cao_file}" \
 		-f ref="$CAO_REF" --jq '.content' | base64 -d > ".github/cao/${cao_file}"
 done
-chmod +x .github/cao/admit.sh .github/cao/precompute.sh
 ```
 
 The package installs:

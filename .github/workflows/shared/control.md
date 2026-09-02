@@ -30,26 +30,106 @@ env:
   CAO_ROLE: ${{ github.aw.import-inputs.role }}
   CAO_WORKER: ${{ github.aw.import-inputs.worker }}
 
-imports:
-  #- uses: sentry.md
-  #- uses: grafana.md
-  #- uses: datadog.md
-  - uses: control-precompute.md
-    with:
-      package: ${{ github.aw.import-inputs.package }}
-      role: ${{ github.aw.import-inputs.role }}
-      worker: ${{ github.aw.import-inputs.worker }}
-      target_repo: ${{ github.event.inputs.target_repo || '' }}
-      requested_mode: ${{ github.event.inputs.safe_output_mode || '' }}
-      requested_max_repos: ${{ github.event.inputs.max_repos || '' }}
-      requested_rollout_percent: ${{ github.event.inputs.rollout_percent || '' }}
-      dispatch_max: "${{ github.aw.import-inputs.dispatch_max }}"
-      safe_output_repo: ${{ github.event.inputs.safe_output_repo || (github.aw.import-inputs.role == 'orchestrator' && github.repository) || '' }}
-      correlation_id: ${{ github.event.inputs.correlation_id || '' }}
-      central_repo: ${{ github.event.inputs.central_repo || '' }}
-      control_plane_run_url: ${{ github.event.inputs.control_plane_run_url || '' }}
-      orchestrator_credits: "${{ github.aw.import-inputs.orchestrator_credits }}"
-      worker_credits_per_target: "${{ github.aw.import-inputs.worker_credits_per_target }}"
+tools:
+  github:
+    mode: remote
+    toolsets: [repos, actions]
+
+jobs:
+  pre-activation:
+    pre-steps:
+      - name: Evaluate Central Agentic Ops admission
+        id: cao_admission
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GITHUB_WORKFLOW_SHA: ${{ github.workflow_sha }}
+          CAO_PACKAGE: ${{ github.aw.import-inputs.package }}
+          CAO_ROLE: ${{ github.aw.import-inputs.role }}
+          CAO_WORKER: ${{ github.aw.import-inputs.worker }}
+          CAO_TARGET_REPOSITORY: ${{ github.event.inputs.target_repo || '' }}
+          CAO_REQUESTED_MODE: ${{ github.event.inputs.safe_output_mode || '' }}
+          CAO_REQUESTED_MAX_REPOSITORIES: ${{ github.event.inputs.max_repos || '' }}
+          CAO_REQUESTED_ROLLOUT_PERCENT: ${{ github.event.inputs.rollout_percent || '' }}
+        run: |
+          set -uo pipefail
+          cao_dir="${RUNNER_TEMP:-/tmp}/cao"
+          mkdir -p "$cao_dir"
+          if gh api --method GET "repos/${GITHUB_REPOSITORY}/contents/.github/cao/control.mjs" \
+              -f ref="$GITHUB_WORKFLOW_SHA" --jq '.content' | base64 -d > "$cao_dir/control.mjs" && \
+            gh api --method GET "repos/${GITHUB_REPOSITORY}/contents/.github/cao/policy.mjs" \
+              -f ref="$GITHUB_WORKFLOW_SHA" --jq '.content' | base64 -d > "$cao_dir/policy.mjs" && \
+            node "$cao_dir/control.mjs" admit; then
+            exit 0
+          fi
+          reason="cannot read or execute the CAO control modules at github.workflow_sha"
+          echo "authorized=false" >> "$GITHUB_OUTPUT"
+          echo "reason=$reason" >> "$GITHUB_OUTPUT"
+          echo "monthly_credit_budget=0" >> "$GITHUB_OUTPUT"
+          printf '## Central Agentic Ops admission\n\nSkipped: %s\n' "$reason" >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Install gh-aw CLI when monthly budget is enabled
+        if: ${{ steps.cao_admission.outputs.authorized == 'true' && steps.cao_admission.outputs.monthly_credit_budget != '0' }}
+        uses: github/gh-aw-actions/setup-cli@v0.88.0
+        with:
+          version: v0.88.0
+
+      - name: Run CAO control precompute
+        if: ${{ steps.cao_admission.outputs.authorized == 'true' }}
+        env:
+          GH_TOKEN: ${{ secrets.GH_AW_GITHUB_TOKEN || github.token }}
+          GITHUB_WORKFLOW_SHA: ${{ github.workflow_sha }}
+          CAO_PACKAGE: ${{ github.aw.import-inputs.package }}
+          CAO_ROLE: ${{ github.aw.import-inputs.role }}
+          CAO_WORKER: ${{ github.aw.import-inputs.worker }}
+          CAO_TARGET_REPOSITORY: ${{ github.event.inputs.target_repo || '' }}
+          CAO_DISPATCH_MAX: "${{ github.aw.import-inputs.dispatch_max }}"
+          CAO_SAFE_OUTPUT_REPOSITORY: ${{ (github.event.inputs.safe_output_mode || 'review') == 'review' && (github.event.inputs.safe_output_repo || github.repository) || github.event.inputs.target_repo || '' }}
+          CAO_CORRELATION_ID: ${{ github.event.inputs.correlation_id || '' }}
+          CAO_CENTRAL_REPOSITORY: ${{ github.event.inputs.central_repo || '' }}
+          CAO_CONTROL_PLANE_RUN_URL: ${{ github.event.inputs.control_plane_run_url || '' }}
+          CAO_ORCHESTRATOR_CREDITS: "${{ github.aw.import-inputs.orchestrator_credits }}"
+          CAO_WORKER_CREDITS_PER_TARGET: "${{ github.aw.import-inputs.worker_credits_per_target }}"
+        run: |
+          set -euo pipefail
+          node "${RUNNER_TEMP:-/tmp}/cao/control.mjs" precompute
+
+      - name: Upload CAO control precompute artifact
+        if: ${{ steps.cao_admission.outputs.authorized == 'true' }}
+        uses: actions/upload-artifact@v7.0.1
+        with:
+          name: cao-control-precompute
+          path: /tmp/gh-aw/agent/control-precompute.json
+          if-no-files-found: error
+          retention-days: 1
+
+  agent:
+    pre-steps:
+      - name: Download CAO control precompute artifact
+        uses: actions/download-artifact@v8.0.1
+        with:
+          name: cao-control-precompute
+          path: /tmp/gh-aw/agent
+
+      - name: Validate CAO control precompute artifact
+        env:
+          GITHUB_WORKFLOW_SHA: ${{ github.workflow_sha }}
+          CONTROL_REPOSITORY: ${{ github.repository }}
+          CAO_PACKAGE: ${{ github.aw.import-inputs.package }}
+          CAO_ROLE: ${{ github.aw.import-inputs.role }}
+          CAO_WORKER: ${{ github.aw.import-inputs.worker }}
+        run: |
+          set -euo pipefail
+          out=/tmp/gh-aw/agent/control-precompute.json
+          expected_worker="$CAO_WORKER"
+          [ "$CAO_ROLE" != "orchestrator" ] || expected_worker=""
+          [ -f "$out" ]
+          jq -e '.authorized == true' "$out" >/dev/null
+          jq -e --arg package "$CAO_PACKAGE" '.package == $package and .bundle == $package' "$out" >/dev/null
+          jq -e --arg role "$CAO_ROLE" '.control_role == $role' "$out" >/dev/null
+          jq -e --arg worker "$expected_worker" '.worker == $worker' "$out" >/dev/null
+          jq -e --arg repository "$CONTROL_REPOSITORY" --arg sha "$GITHUB_WORKFLOW_SHA" \
+            '.policy_source == {repository:$repository,path:".github/central-agentic-ops.json",sha:$sha}' \
+            "$out" >/dev/null
 
 post-steps:
   - name: Emit control-plane dispatcher telemetry
@@ -99,7 +179,7 @@ post-steps:
         await otlp.logSpan('central-agentic-ops.dispatcher', {
           'central_agentic_ops.dispatcher.package': String(precompute.package || precompute.bundle || 'unknown'),
           'central_agentic_ops.dispatcher.status': status,
-          'central_agentic_ops.dispatcher.enabled': precompute.enabled === 'true',
+          'central_agentic_ops.dispatcher.enabled': precompute.enabled === true,
           'central_agentic_ops.dispatcher.safe_output_mode': effectiveMode,
           'central_agentic_ops.dispatcher.candidate_count': Array.isArray(precompute.candidate_repositories) ? precompute.candidate_repositories.length : 0,
           'central_agentic_ops.dispatcher.target_limit': count(precompute.effective_max_repos),

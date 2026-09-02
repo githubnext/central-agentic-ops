@@ -1,17 +1,17 @@
 import assert from "node:assert/strict";
 import { spawnSync } from "node:child_process";
-import { chmodSync, copyFileSync, mkdirSync, mkdtempSync, readFileSync, realpathSync, rmSync, writeFileSync } from "node:fs";
+import { chmodSync, mkdirSync, mkdtempSync, readFileSync, realpathSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { delimiter, join } from "node:path";
 import test from "node:test";
 import {
   controlEnvironment,
   controlPolicy,
-  controlPrecomputeScript,
+  controlProgram,
   root,
 } from "../helpers/control-precompute.mjs";
 
-const script = controlPrecomputeScript();
+const program = controlProgram();
 const workflowSource = `---
 safe-outputs:
   dispatch-workflow:
@@ -73,12 +73,8 @@ function runPrecompute(overrides = {}, policy = controlPolicy({
   const safeOutputs = join(temporaryDirectory, "safe-outputs.jsonl");
   const runnerTemp = join(realpathSync(temporaryDirectory), "runner-temp");
   const admissionDirectory = join(runnerTemp, "cao");
-  const policyPath = join(admissionDirectory, "central-agentic-ops.json");
-  const resolverPath = join(admissionDirectory, "resolve.mjs");
   const effectivePolicyPath = join(admissionDirectory, "effective-policy.json");
   mkdirSync(admissionDirectory, { recursive: true });
-  writeFileSync(policyPath, policy);
-  copyFileSync(join(root, ".github", "cao", "resolve.mjs"), resolverPath);
   mockGh(temporaryDirectory);
   writeFileSync(githubEnvironment, "");
   writeFileSync(safeOutputs, "");
@@ -97,26 +93,18 @@ function runPrecompute(overrides = {}, policy = controlPolicy({
     RUNNER_TEMP: runnerTemp,
     ...overrides,
   });
-  const resolution = spawnSync("node", [resolverPath, "--effective", policyPath], {
+  const resolution = spawnSync("node", [program, "resolve-policy", "-"], {
     cwd: temporaryDirectory,
     encoding: "utf8",
-    env: {
-      ...env,
-      CAO_PACKAGE: env.BUNDLE,
-      CAO_ROLE: env.ROLE,
-      CAO_WORKER: "",
-      CAO_TARGET_REPOSITORY: env.TARGET_REPO,
-      CAO_REQUESTED_MODE: env.REQUESTED_MODE,
-      CAO_REQUESTED_MAX_REPOSITORIES: env.REQUESTED_MAX_REPOS,
-      CAO_REQUESTED_ROLLOUT_PERCENT: env.REQUESTED_ROLLOUT_PERCENT,
-    },
+    input: policy,
+    env,
   });
   if (resolution.status !== 0) {
     return { temporaryDirectory, logPath, result: resolution };
   }
   writeFileSync(effectivePolicyPath, resolution.stdout);
 
-  const result = spawnSync("bash", ["-c", script], {
+  const result = spawnSync("node", [program, "precompute"], {
     cwd: temporaryDirectory,
     encoding: "utf8",
     env,

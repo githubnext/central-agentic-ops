@@ -4,12 +4,11 @@ import { chmodSync, mkdtempSync, readFileSync, realpathSync, rmSync, writeFileSy
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import test from "node:test";
-import { controlPolicy, root } from "../helpers/control-precompute.mjs";
+import { controlPolicy, controlProgram } from "../helpers/control-precompute.mjs";
 
-const admissionScript = join(root, ".github", "cao", "admit.sh");
-const resolver = join(root, ".github", "cao", "resolve.mjs");
+const program = controlProgram();
 
-function runAdmission({ policy = controlPolicy(), resolverFailure = false } = {}) {
+function runAdmission({ policy = controlPolicy(), policyFailure = false } = {}) {
   const directory = mkdtempSync(join(tmpdir(), "central-ops-admission-"));
   const mockGh = join(directory, "gh");
   const policyFile = join(directory, "policy.json");
@@ -21,11 +20,8 @@ function runAdmission({ policy = controlPolicy(), resolverFailure = false } = {}
   writeFileSync(mockGh, `#!/bin/sh
 case "$*" in
   *contents/.github/central-agentic-ops.json*)
+    [ "$MOCK_POLICY_FAILURE" != "true" ] || exit 1
     base64 < "$MOCK_POLICY_FILE"
-    ;;
-  *contents/.github/cao/resolve.mjs*)
-    [ "$MOCK_RESOLVER_FAILURE" != "true" ] || exit 1
-    base64 < "$MOCK_RESOLVER_FILE"
     ;;
   *)
     exit 2
@@ -35,7 +31,7 @@ esac
   chmodSync(mockGh, 0o755);
 
   try {
-    const result = spawnSync("bash", [admissionScript], {
+    const result = spawnSync("node", [program, "admit"], {
       encoding: "utf8",
       env: {
         ...process.env,
@@ -46,10 +42,9 @@ esac
         GITHUB_REPOSITORY: "acme/control",
         GITHUB_STEP_SUMMARY: stepSummary,
         MOCK_POLICY_FILE: policyFile,
-        MOCK_RESOLVER_FAILURE: String(resolverFailure),
-        MOCK_RESOLVER_FILE: resolver,
+        MOCK_POLICY_FAILURE: String(policyFailure),
         RUNNER_TEMP: realpathSync(directory),
-        WORKFLOW_SHA: "1111111111111111111111111111111111111111",
+        GITHUB_WORKFLOW_SHA: "1111111111111111111111111111111111111111",
       },
     });
     return {
@@ -108,13 +103,13 @@ test("CAO admission fails closed when policy validation fails", () => {
   });
 });
 
-test("CAO admission fails closed when the resolver cannot be fetched", () => {
-  const { result, output } = runAdmission({ resolverFailure: true });
+test("CAO admission fails closed when the authoritative policy cannot be read", () => {
+  const { result, output } = runAdmission({ policyFailure: true });
 
   assert.equal(result.status, 0);
   assert.deepEqual(output, {
     authorized: "false",
-    reason: "cannot read the control policy resolver at github.workflow_sha",
+    reason: "cannot read .github/central-agentic-ops.json at github.workflow_sha",
     monthly_credit_budget: "0",
   });
 });

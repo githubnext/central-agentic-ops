@@ -5,7 +5,7 @@ import { fileURLToPath } from "node:url";
 import test from "node:test";
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), "../..");
-const resolver = join(root, ".github", "cao", "resolve.mjs");
+const control = join(root, ".github", "cao", "control.mjs");
 const schemaUri = "https://raw.githubusercontent.com/githubnext/central-agentic-ops/main/.github/central-agentic-ops.schema.json";
 
 function policy() {
@@ -68,7 +68,7 @@ function policy() {
 }
 
 function run(args, input = "", environment = {}) {
-  return spawnSync(process.execPath, [resolver, ...args], {
+  return spawnSync(process.execPath, [control, ...args], {
     cwd: root,
     encoding: "utf8",
     input,
@@ -88,7 +88,7 @@ function run(args, input = "", environment = {}) {
 }
 
 function validate(source) {
-  return run(["--validate", "-"], source);
+  return run(["validate-policy", "-"], source);
 }
 
 function expectFailure(result, expected) {
@@ -111,7 +111,7 @@ const rawPolicyViolations = [
 ];
 
 for (const [name, source, expected] of rawPolicyViolations) {
-  test(`resolve.mjs rejects ${name}`, () => {
+  test(`control.mjs validate-policy rejects ${name}`, () => {
     expectFailure(validate(source), expected);
   });
 }
@@ -356,7 +356,7 @@ const policyViolations = [
 ];
 
 for (const [name, mutate, expected] of policyViolations) {
-  test(`resolve.mjs rejects ${name}`, () => {
+  test(`control.mjs validate-policy rejects ${name}`, () => {
     const source = policy();
     mutate(source);
     expectFailure(validate(JSON.stringify(source)), expected);
@@ -378,35 +378,35 @@ const effectivePolicyViolations = [
 ];
 
 for (const [name, environment, expected] of effectivePolicyViolations) {
-  test(`resolve.mjs --effective rejects ${name}`, () => {
-    expectFailure(run(["--effective", "-"], JSON.stringify(policy()), environment), expected);
+  test(`control.mjs resolve-policy rejects ${name}`, () => {
+    expectFailure(run(["resolve-policy", "-"], JSON.stringify(policy()), environment), expected);
   });
 }
 
-test("resolve.mjs --control rejects malformed control repository identity", () => {
+test("control.mjs control-settings rejects malformed control repository identity", () => {
   expectFailure(
-    run(["--control", "-"], JSON.stringify(policy()), { GITHUB_REPOSITORY: "invalid" }),
+    run(["control-settings", "-"], JSON.stringify(policy()), { GITHUB_REPOSITORY: "invalid" }),
     "GITHUB_REPOSITORY has an invalid value",
   );
 });
 
-test("resolve.mjs --control requires a control-plane policy", () => {
+test("control.mjs control-settings requires a control-plane policy", () => {
   const source = policy();
   delete source["control-plane"];
-  expectFailure(run(["--control", "-"], JSON.stringify(source)), "control-plane is required");
+  expectFailure(run(["control-settings", "-"], JSON.stringify(source)), "control-plane is required");
 });
 
-test("resolve.mjs --authority requires a declared package", () => {
+test("control.mjs authority requires a declared package", () => {
   expectFailure(
-    run(["--authority", "-", "unknown"], JSON.stringify(policy())),
+    run(["authority", "-", "unknown"], JSON.stringify(policy())),
     "target authority does not declare package unknown",
   );
 });
 
-test("resolve.mjs rejects missing policy files", () => {
-  expectFailure(run(["--validate", join(root, "missing-policy.json")]), "ENOENT");
+test("control.mjs rejects missing policy files", () => {
+  expectFailure(run(["validate-policy", join(root, "missing-policy.json")]), "ENOENT");
 });
 
-test("resolve.mjs rejects unsupported command lines", () => {
-  expectFailure(run([]), "usage: resolve.mjs");
+test("control.mjs rejects unsupported command lines", () => {
+  expectFailure(run([]), "usage: control.mjs");
 });
