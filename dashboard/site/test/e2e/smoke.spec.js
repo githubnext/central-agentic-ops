@@ -776,6 +776,39 @@ test('DLS-PAGE-014 DLS-PAGE-015 built-in packages page renders report-style mode
               ]
             },
             {
+              id: 'package-dispatches',
+              kind: 'custom',
+              title: 'Package',
+              route: { 'hash-query-parameter': 'package' },
+              views: [
+                {
+                  id: 'package-dispatch-navigation',
+                  title: 'Package dispatches',
+                  data: { sources: ['workflows'] },
+                  mark: 'element',
+                  element: 'package-dispatches'
+                },
+                {
+                  id: 'package-dispatch-table',
+                  title: 'Dispatches',
+                  data: { source: 'dispatches', 'route-field': 'package' },
+                  mark: 'table',
+                  controls: 'interactive',
+                  encoding: {
+                    href: { field: 'run-link', type: 'nominal' },
+                    columns: [
+                      { field: 'started-at', type: 'temporal', title: 'Started' },
+                      { field: 'dispatch-type', type: 'nominal', title: 'Type' },
+                      { field: 'workflow-name', type: 'nominal', title: 'Workflow' },
+                      { field: 'run-title', type: 'nominal', title: 'Run title' },
+                      { field: 'runtime-repository', type: 'nominal', title: 'Runtime repository' },
+                      { field: 'status', type: 'nominal', title: 'Status', display: 'status' }
+                    ]
+                  }
+                }
+              ]
+            },
+            {
               id: 'package-reports',
               kind: 'custom',
               title: 'Package',
@@ -822,6 +855,7 @@ test('DLS-PAGE-014 DLS-PAGE-015 built-in packages page renders report-style mode
         runs: {
           source: 'runs',
           rows: [
+            { workflow: '.github/workflows/ambient-context-worker.md', run: '3', event: 'workflow_dispatch', 'run-title': 'Refresh ambient context', 'started-at': '2026-08-29T18:00:00Z', 'run-conclusion': 'success', 'rollout-mode': 'review', 'run-link': { relation: 'run', href: 'https://github.com/githubnext/central-agentic-ops/actions/runs/3', label: 'Run 3' } },
             { workflow: '.github/workflows/aw-maintenance.md', run: '1', 'started-at': '2026-08-28T10:00:00Z', 'run-conclusion': 'success', 'rollout-mode': 'review' },
             { workflow: '.github/workflows/aw-maintenance.md', run: '2', 'started-at': '2026-08-29T10:00:00Z', 'run-conclusion': 'failure', 'rollout-mode': 'live' }
           ],
@@ -887,7 +921,7 @@ test('DLS-PAGE-014 DLS-PAGE-015 built-in packages page renders report-style mode
   await expect(page.getByRole('heading', { name: 'Ambient Context', level: 1 })).toBeVisible();
   await expect(page.locator('[data-page-mode]')).toHaveText('Review');
   await expect(page.locator('[data-nav-page-id="packages"]')).toHaveAttribute('aria-current', 'page');
-  await expect(page.getByRole('navigation', { name: 'Ambient Context views' })).toContainText('InsightsWorkflowsReports');
+  await expect(page.getByRole('navigation', { name: 'Ambient Context views' })).toContainText('InsightsWorkflowsDispatchesReports');
   await expect(page.getByRole('heading', { name: 'Orchestrator and workers', level: 3 })).toBeVisible();
   const packageWorkflowRows = page.locator('[data-page-id="package-detail"] .custom-table tbody tr');
   await expect(packageWorkflowRows).toHaveCount(2);
@@ -904,6 +938,14 @@ test('DLS-PAGE-014 DLS-PAGE-015 built-in packages page renders report-style mode
   await expect(packageWorkflowRows.first().locator('td').nth(5)).toHaveText('0');
   await expect(packageWorkflowRows.first().locator('td').nth(6)).toHaveText('—');
   await expect(packageWorkflowRows.nth(1)).toContainText('WorkerAmbient Context Worker');
+
+  await page.getByRole('navigation', { name: 'Ambient Context views' }).getByRole('link', { name: 'Dispatches' }).click();
+  await expect(page).toHaveURL(/#page-package-dispatches\?package=ambient-context$/);
+  await expect(page.getByRole('heading', { name: 'Dispatches', level: 3 })).toBeVisible();
+  const packageDispatchRows = page.locator('[data-page-id="package-dispatches"] .custom-table tbody tr');
+  await expect(packageDispatchRows).toHaveCount(1);
+  await expect(packageDispatchRows).toContainText('Refresh ambient context');
+  await expect(packageDispatchRows.locator('a')).toHaveAttribute('href', 'https://github.com/githubnext/central-agentic-ops/actions/runs/3');
 
   await page.getByRole('navigation', { name: 'Ambient Context views' }).getByRole('link', { name: 'Reports' }).click();
   await expect(page).toHaveURL(/#page-package-reports\?package=ambient-context$/);

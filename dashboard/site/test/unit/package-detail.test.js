@@ -171,9 +171,33 @@ describe('renderPackageNavigation', () => {
     }));
 
     expect(rendered.dataset.package).toBe('ambient-context');
-    expect(rendered.querySelector('.package-tabs')?.textContent).toBe('InsightsWorkflowsReports');
+    expect(rendered.querySelector('.package-tabs')?.textContent).toBe('InsightsWorkflowsDispatchesReports');
     expect(rendered.querySelector('.package-tabs [aria-current="page"]')?.getAttribute('href')).toBe('#page-package-detail?package=ambient-context');
     expect(rendered.textContent).not.toContain('Other');
+  });
+
+  describe('dispatch navigation', () => {
+    it('renders package-scoped dispatch navigation and identity', () => {
+      const host = document.createElement('div');
+      const rendered = renderPackageNavigation({ ...context(), pageId: 'package-dispatches' }, 'dispatches');
+      host.append(rendered);
+      let detail;
+      host.addEventListener('dashboard-route-allocation', (event) => {
+        if (event instanceof CustomEvent) detail = event.detail;
+      });
+
+      rendered.dispatchEvent(new CustomEvent('dashboard-route-change', {
+        detail: { parameter: 'package', value: 'ambient-context' }
+      }));
+
+      expect(rendered.querySelector('.package-tabs [aria-current="page"]')?.getAttribute('href')).toBe('#page-package-dispatches?package=ambient-context');
+      expect(detail).toEqual({
+        title: 'Ambient Context',
+        description: 'Workflow dispatch runs for the Ambient Context package.',
+        mode: 'review',
+        navigationPage: 'packages'
+      });
+    });
   });
 
   it('reallocates package title, description, mode, and parent navigation', () => {
@@ -270,7 +294,7 @@ describe('renderPackageNavigation', () => {
   it('renders the same unavailable state for workflow and report navigation', () => {
     const unavailableContext = context();
 
-    for (const selectedView of /** @type {const} */ (['workflows', 'reports'])) {
+    for (const selectedView of /** @type {const} */ (['workflows', 'dispatches', 'reports'])) {
       const rendered = renderPackageNavigation({
         ...unavailableContext,
         sources: {
