@@ -295,7 +295,9 @@ function usageRows(usage) {
     "cache-write-tokens": null,
     "reasoning-tokens": null,
     aic: run.aic,
-    "estimated-usd": Number.isFinite(Number(run.aic)) ? Number(run.aic) * AIC_TO_USD : null,
+    "estimated-usd": run.aic !== null && run.aic !== undefined && run.aic !== "" && Number.isFinite(Number(run.aic))
+      ? Number(run.aic) * AIC_TO_USD
+      : null,
     "observed-at": run.createdAt || usage.generatedAt,
     "run-link": link("run", workflowRunUrl(run.repository, run.runId), `Run ${run.runId}`),
   }));
