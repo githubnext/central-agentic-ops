@@ -59,9 +59,8 @@ permissions:
 tracker-id: self-care-dashboard-review
 max-ai-credits: 400
 max-daily-ai-credits: -1
-engine:
-  id: pi
-  model: copilot/gpt-5.4
+engine: copilot
+model: copilot/gpt-5.4
 strict: true
 timeout-minutes: 30
 concurrency:

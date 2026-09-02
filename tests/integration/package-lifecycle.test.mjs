@@ -62,9 +62,12 @@ const dashboardExpectedFiles = [
   ).matchAll(/^\s+destination: (.+)$/gm)].map((match) => match[1]),
 ];
 const selfCareExpectedFiles = [
+  ".github/aw/dashboards/self-care.json",
+  ".github/graders/self-care-docs-build-time-investigator-operational-value.sh",
   ".github/workflows/self-care-accessibility-checker.md",
   ".github/workflows/self-care-code-improvement.md",
   ".github/workflows/self-care-dashboard-review.md",
+  ".github/workflows/self-care-docs-build-time-investigator.md",
   ".github/workflows/self-care-primer-brand-checker.md",
   ".github/workflows/self-care.md",
   ".github/workflows/shared/control.md",

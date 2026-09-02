@@ -133,6 +133,11 @@ function renderPackageStatusGridElement(context) {
       { className: 'package-status-grid' },
       ...rows.map((row) => {
         const workerCount = Number(row.workers);
+        const modeText = stringValue(row.mode);
+        const modeClass = modeText.toLowerCase() === 'live' ? 'mode-live' : modeText.toLowerCase() === 'review' ? 'mode-review' : 'mode-unknown';
+        const rolloutPercent = Number(row['rollout-percent']);
+        const repoModes = Array.isArray(row['repository-modes']) ? row['repository-modes'].filter(isPlainObject) : [];
+        const repoEntries = repoModes.length > 0 ? repoModes.filter((entry) => typeof entry.repository === 'string' && entry.repository) : [];
         return h(
           'a',
           {
@@ -141,12 +146,26 @@ function renderPackageStatusGridElement(context) {
           },
           h(
             'header',
-            null,
+            { className: 'package-status-header' },
             h('strong', null, stringValue(row.title)),
-            h('span', { className: 'package-status-state' }, stringValue(row.inventory))
+            h('span', { className: 'package-status-state' }, stringValue(row.inventory || 'Needs attention')),
+            h('span', { className: `mode-badge ${modeClass}`.trim() }, capitalize(modeText || 'unknown'))
           ),
-          h('span', { className: 'package-status-mode' }, capitalize(stringValue(row.mode))),
+          h('p', { className: 'package-status-rollout' }, Number.isFinite(rolloutPercent) ? `Rollout ${rolloutPercent}%` : 'Rollout unknown'),
           h('p', null, `${Number.isFinite(workerCount) ? workerCount : stringValue(row.workers)} worker workflow${workerCount === 1 ? '' : 's'}`),
+          repoEntries.length > 0 ? h(
+            'ul',
+            { className: 'package-status-repositories' },
+            ...repoEntries.map((entry) => {
+              const repoMode = stringValue(entry.mode || 'review');
+              return h(
+                'li',
+                null,
+                h('span', null, stringValue(entry.repository)),
+                h('span', { className: `mode-badge ${repoMode.toLowerCase() === 'live' ? 'mode-live' : 'mode-review'}`.trim() }, capitalize(repoMode))
+              );
+            })
+          ) : null,
           h('footer', null, 'Open package')
         );
       })

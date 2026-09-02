@@ -90,12 +90,14 @@ network:
     - playwright
     - local
 tools:
+  cli-proxy: true
   timeout: 120  # Accessibility sweeps include preview startup and per-page axe-core runs
   github:
     mode: gh-proxy
     min-integrity: approved
     toolsets: [repos, actions]
   playwright:
+    mode: cli
     version: "0.1.18"
   bash:
     - "*"
@@ -186,7 +188,7 @@ Dependencies were installed from the lockfile and the site was built before the 
 
 Discover the repository's documented preview command and site base path from `package.json` and the Astro configuration, then start the prepared site on an available local port. For this repository, use `npm run docs:preview -- --host 127.0.0.1 --port <port>` so Astro serves the configured base path. Do not use a generic flat static server rooted at `dist/` as the primary preview mechanism; it serves `dist/index.html` but returns 404 for `/central-agentic-ops/` because Astro preview performs the base-path routing. Capture the server log and poll the derived site URL for up to 120 seconds before continuing. Do not assume a port, directory name, or base path.
 
-Before browsing, inspect `${{ github.workspace }}/.playwright/preflight-chrome.log`. If the browser cannot start, or the preview server never responds, stop the audit and report the blocker as an infrastructure problem in Step 5 rather than as an accessibility finding.
+Before browsing, inspect `${{ github.workspace }}/.playwright/preflight-chrome.log`. `playwright-cli` is a pre-installed CLI binary already on `PATH` in this sandbox — the preflight log records a real launch of it before the agent started. A successful preflight log confirms `playwright-cli` is available; never call `missing_tool` for it based on assumption alone. Only report `playwright-cli` as unavailable if you actually invoke it (for example `playwright-cli -s=audit open about:blank --config "${{ github.workspace }}/.playwright/cli.config.json"`) and it fails with a command-not-found or launch error. If the browser truly cannot start, or the preview server never responds, stop the audit and report the blocker as an infrastructure problem in Step 5 with the exact failing command and error output, rather than as an accessibility finding.
 
 ## Step 2: Select pages
 
