@@ -31,7 +31,6 @@ const advisoryExpectedFiles = [
   ".github/workflows/advisory-package-maintainer.md",
   ".github/workflows/advisory-uk-ai-operational-resilience.md",
   ".github/workflows/uk-ai-advisory.md",
-  ".github/workflows/shared/control-precompute.md",
   ".github/workflows/shared/control.md",
 ];
 const craExpectedFiles = [
@@ -53,7 +52,6 @@ const craExpectedFiles = [
   ".github/workflows/eu-cra-compliance-vulnerability-handling-auditor.md",
   ".github/workflows/eu-cra-compliance.md",
   ".github/workflows/graders/eu-cra-compliance-package-maintainer-operational-value.sh",
-  ".github/workflows/shared/control-precompute.md",
   ".github/workflows/shared/control.md",
 ];
 const dashboardExpectedFiles = [...readFileSync(
@@ -65,7 +63,6 @@ const selfCareExpectedFiles = [
   ".github/workflows/self-care-code-improvement.md",
   ".github/workflows/self-care-primer-brand-checker.md",
   ".github/workflows/self-care.md",
-  ".github/workflows/shared/control-precompute.md",
   ".github/workflows/shared/control.md",
 ];
 const softwareDevelopmentPracticesExpectedFiles = [
@@ -73,7 +70,6 @@ const softwareDevelopmentPracticesExpectedFiles = [
   ".github/aw/software-development-practices/software-development-guidance-operational-value-runtime.bash",
   ".github/graders/software-development-practices-github-well-architected-operational-value.sh",
   ".github/graders/software-development-practices-nist-ssdf-operational-value.sh",
-  ".github/workflows/shared/control-precompute.md",
   ".github/workflows/shared/control.md",
   ".github/workflows/software-development-practices-github-well-architected.md",
   ".github/workflows/software-development-practices-nist-ssdf.md",
@@ -312,7 +308,6 @@ test("gh aw add --force restores dashboard workflows, producers, and renderer as
     writeFileSync(deployPath, `${deployWorkflow}\n# local integration-test change\n`);
 
     const removedFiles = [
-      ".github/aw/control-policy/resolve.mjs",
       ".github/aw/dashboard/report/records.mjs",
       ".github/aw/dashboard/site/index.html",
       ".github/workflows/dashboard-build.yml",
@@ -351,7 +346,6 @@ test("gh aw update replaces workflows and restores package-owned assets", { time
 
     const removedFiles = [
       ".github/workflows/dependabot-release-train-updater.md",
-      ".github/workflows/shared/control-precompute.md",
       ".github/workflows/shared/control.md",
     ];
     for (const relativePath of removedFiles) {

@@ -15,6 +15,14 @@ function workflow(name, directory = workflowsDirectory) {
   return readFileSync(join(directory, name), "utf8");
 }
 
+function controlPrecompute() {
+  return [
+    workflow("shared/control.md"),
+    readFileSync(join(root, ".github", "cao", "control.mjs"), "utf8"),
+    readFileSync(join(root, ".github", "cao", "policy.mjs"), "utf8"),
+  ].join("\n");
+}
+
 function generatedJobs(source) {
   const jobsStart = source.indexOf("\njobs:\n");
   assert.notEqual(jobsStart, -1, "generated workflow has no jobs section");
@@ -338,24 +346,24 @@ test("enterprise defaults, budgets, timeouts, and concurrency are finite", () =>
   }
 
   const control = workflow("shared/control.md");
-  const precompute = workflow("shared/control-precompute.md");
+  const precompute = controlPrecompute();
   assert.match(control, /package:\n\s+type: string\n\s+required: true/);
   assert.match(control, /role:\n\s+type: choice\n\s+options: \[orchestrator, worker\]/);
   assert.match(control, /worker:\n\s+type: string\n\s+default: "__none__"/);
-  assert.match(precompute, /node "\$resolver" --effective/);
-  assert.match(precompute, /contents\/\.github\/central-agentic-ops\.json/);
+  assert.match(precompute, /join\(admissionDirectory\(\), "effective-policy\.json"\)/);
+  assert.doesNotMatch(control, /^steps:/m);
   assert.match(precompute, /max_repos must be an integer from 1 through 1000/);
   assert.match(precompute, /max_scan_repos must be an integer from 1 through 100000/);
-  assert.match(precompute, /control-plane\.scope\.allowed-repositories is invalid/);
-  assert.match(precompute, /repo_source="allowed_repos"/);
+  assert.match(precompute, /assertUniqueStrings\(scope\["allowed-repositories"\], "control-plane\.scope\.allowed-repositories"/);
+  assert.match(precompute, /source: "allowed_repos"/);
   assert.match(precompute, /inventory_version/);
   assert.match(precompute, /batch_id/);
-  assert.match(precompute, /\.id % \$cell_count/);
+  assert.match(precompute, /id % cellCount/);
   assert.match(precompute, /dispatch_max must be an integer from 1 through 1000/);
-  assert.match(precompute, /\(\$dispatch_max \| tonumber\) \/ \$eligible_workers \| floor/);
-  assert.match(precompute, /\[\.effective_max_repos, \.monthly_budget_target_cap\] \| min/);
+  assert.match(precompute, /Math\.floor\(context\.dispatchMaximum \/ eligibleWorkers\)/);
+  assert.match(precompute, /Math\.min\(result\.effective_max_repos, targetCap\)/);
   assert.match(precompute, /monthly_credit_budget must be a non-negative integer/);
-  assert.match(precompute, /gh aw logs "\$workflow_id" --start-date "\$month_start" --json -c 1000/);
+  assert.match(precompute, /"aw", "logs", workflowId, "--start-date", monthStart, "--json", "-c", "1000"/);
   assert.doesNotMatch(precompute, /--paginate/);
   assert.doesNotMatch(`${control}\n${precompute}`, /vars\.CENTRAL_AGENTIC_OPS_|repositories: \["\*"\]/);
 });
@@ -370,6 +378,49 @@ test("workers disable costly daily AIC burn checks", () => {
 
   for (const [name, source] of workers) {
     assert.match(source, /^max-daily-ai-credits: -1$/m, name);
+  }
+});
+
+test("control workflows deny before activation through one shared admission contract", () => {
+  const sharedControl = workflow("shared/control.md");
+  const controlled = readdirSync(workflowsDirectory)
+    .filter((name) => name.endsWith(".md") && !name.endsWith(".lock.md"))
+    .map((name) => [name, workflow(name)])
+    .filter(([, source]) => /^\s+- uses: shared\/control\.md$/m.test(source));
+
+  assert.equal(controlled.length, 27, "unexpected shared control workflow count");
+  assert.equal(
+    [...sharedControl.matchAll(/^\s+- name: Evaluate Central Agentic Ops admission$/gm)].length,
+    1,
+  );
+  assert.match(sharedControl, /^\s+id: cao_admission$/m);
+  assert.match(sharedControl, /contents\/\.github\/cao\/control\.mjs/);
+  assert.match(sharedControl, /contents\/\.github\/cao\/policy\.mjs/);
+  assert.match(sharedControl, /reason="cannot read or execute the CAO control modules at github\.workflow_sha"/);
+  for (const [name, source] of controlled) {
+    assert.equal(
+      [...source.matchAll(/^\s+- name: Evaluate Central Agentic Ops admission$/gm)].length,
+      0,
+      name,
+    );
+    assert.match(
+      source,
+      /on:[\s\S]*?permissions:\n\s+(?:actions: read\n\s+contents: read|contents: read\n\s+actions: read)/,
+      name,
+    );
+    assert.match(source, /jobs:\n  pre-activation:\n    outputs:\n      cao_authorized: \$\{\{ steps\.cao_admission\.outputs\.authorized \}\}/, name);
+    assert.match(source, /^if: needs\.pre_activation\.outputs\.cao_authorized == 'true'$/m, name);
+
+    const generatedName = name.replace(/\.md$/, ".lock.yml");
+    const generated = workflow(generatedName);
+    const jobs = generatedJobs(generated);
+    const preActivation = jobs.get("pre_activation")?.block ?? "";
+    const activation = jobs.get("activation")?.block ?? "";
+
+    assert.match(preActivation, /cao_authorized: \$\{\{ steps\.cao_admission\.outputs\.authorized \}\}/, generatedName);
+    assert.match(preActivation, /Evaluate Central Agentic Ops admission/, generatedName);
+    assert.match(activation, /needs\.pre_activation\.outputs\.cao_authorized == 'true'/, generatedName);
+    assert.ok(transitivelyNeeds(jobs, "agent", "activation"), `${generatedName}: agent must depend on activation`);
   }
 });
 
@@ -505,11 +556,12 @@ test("root package provides default control-repository agent context", () => {
   assert.match(setupSkill, /preserve it unchanged unless the user explicitly approves a merge/);
 });
 
-test("catalog runtime policy resolver delegates to the canonical source", () => {
+test("CAO runtime is control-repository-owned outside package resources", () => {
   const rootManifest = readFileSync(join(root, "aw.yml"), "utf8");
+  const setupSkill = readFileSync(join(root, ".github", "skills", "setup-central-agentic-ops", "SKILL.md"), "utf8");
   const policy = JSON.parse(execFileSync(process.execPath, [
-    join(root, ".github", "aw", "control-policy", "resolve.mjs"),
-    "--effective",
+    join(root, ".github", "cao", "control.mjs"),
+    "resolve-policy",
     join(root, ".github", "central-agentic-ops.json"),
   ], {
     encoding: "utf8",
@@ -523,7 +575,10 @@ test("catalog runtime policy resolver delegates to the canonical source", () => 
 
   assert.equal(policy.authorized, true);
   assert.equal(policy.package, "dependabot");
-  assert.match(rootManifest, /source: \.github\/scripts\/control-policy\/resolve\.mjs\n\s+destination: \.github\/aw\/control-policy\/resolve\.mjs/);
+  assert.doesNotMatch(rootManifest, /destination: \.github\/cao\//);
+  assert.match(setupSkill, /contents\/\.github\/cao\/\$\{cao_file\}/);
+  assert.match(setupSkill, /for cao_file in control\.mjs policy\.mjs/);
+  assert.doesNotMatch(setupSkill, /chmod \+x \.github\/cao/);
 });
 
 test("root package directly includes grader-backed workers for dependency packaging", () => {
@@ -740,13 +795,13 @@ test("enterprise canaries are manual, protected, confirmed, and bounded", () => 
 
 test("ownership, provenance, and workflow identity fail closed", () => {
   const control = workflow("shared/control.md");
-  const precompute = workflow("shared/control-precompute.md");
+  const precompute = controlPrecompute();
   const operations = readFileSync(join(root, "docs", "operations.md"), "utf8");
 
-  assert.match(precompute, /validate_repository_owner "target_repo" "\$TARGET_REPO"/);
-  assert.match(precompute, /validate_repository_owner "safe_output_repo" "\$SAFE_OUTPUT_REPO"/);
+  assert.match(precompute, /validateRepositoryOwner\("target_repo", context\.targetRepository, policy\.allowed_owners\)/);
+  assert.match(precompute, /validateRepositoryOwner\("safe_output_repo", context\.safeOutputRepository, policy\.allowed_owners\)/);
   assert.match(precompute, /outside control-plane\.scope\.allowed-owners/);
-  assert.match(precompute, /\.path == \("\.github\/workflows\/" \+ \$worker \+ "\.lock\.yml"\)/);
+  assert.match(precompute, /path === `\.github\/workflows\/\$\{configured\}\.lock\.yml`/);
   assert.doesNotMatch(precompute, /\.name == \$worker|gsub\("-"; " "\)/);
   assert.match(control, /central_repo`: `\$\{\{ github\.repository \}\}`/);
   assert.match(control, /correlation_id/);
@@ -801,9 +856,9 @@ test("public read-only operation uses the built-in token without widening access
   const authentication = readFileSync(join(root, "docs", "authentication.md"), "utf8");
   const configuration = readFileSync(join(root, "docs", "configuration.md"), "utf8");
   const control = workflow("shared/control.md");
-  const precompute = workflow("shared/control-precompute.md");
+  const precompute = controlPrecompute();
 
-  assert.match(precompute, /GH_TOKEN:.*GH_AW_GITHUB_TOKEN.*secrets\.GITHUB_TOKEN/);
+  assert.match(control, /GH_TOKEN:.*secrets\.GH_AW_GITHUB_TOKEN.*github\.token/);
   assert.match(precompute, /\{id, full_name, archived, disabled, private, pushed_at, default_branch\}/);
   assert.match(authentication, /App or PAT is not required for a bounded `review` run when every target repository is public/);
   assert.match(authentication, /use `review` mode and keep safe outputs in the current control repository/);
@@ -818,13 +873,13 @@ test("authentication prefers an optional GitHub App and retains bounded fallback
   const authentication = readFileSync(join(root, "docs", "authentication.md"), "utf8");
   const bootstrap = readFileSync(join(root, "docs", "bootstrap-configuration.md"), "utf8");
   const control = workflow("shared/control.md");
-  const precompute = workflow("shared/control-precompute.md");
+  const precompute = controlPrecompute();
 
   assert.match(control, /github-app:\n\s+client-id: \$\{\{ secrets\.GH_AW_GITHUB_APP_ID \}\}/);
   assert.match(control, /private-key: \$\{\{ secrets\.GH_AW_GITHUB_APP_PRIVATE_KEY \}\}/);
   assert.match(control, /ignore-if-missing: true/);
   assert.doesNotMatch(control, /repositories: \["\*"\]/);
-  assert.match(precompute, /steps\.github-mcp-app-token\.outputs\.token \|\| secrets\.GH_AW_GITHUB_TOKEN \|\| secrets\.GITHUB_TOKEN/);
+  assert.match(control, /jobs:\n\s+pre-activation:[\s\S]*?secrets\.GH_AW_GITHUB_TOKEN \|\| github\.token/);
   assert.match(authentication, /runtime availability precedence, not permission to choose a PAT silently/);
   assert.match(authentication, /A PAT is not a substitute for repository or organization access/);
   assert.match(authentication, /A fine-grained PAT cannot access multiple organizations at once/);
@@ -839,16 +894,16 @@ test("authentication prefers an optional GitHub App and retains bounded fallback
 
 test("live workers require target-owned package authority before agent execution", () => {
   const control = workflow("shared/control.md");
-  const precompute = workflow("shared/control-precompute.md");
+  const precompute = controlPrecompute();
 
   assert.match(control, /package:\n\s+type: string\n\s+required: true/);
-  assert.match(precompute, /validate_live_authority/);
-  assert.match(precompute, /commits\/\$default_branch/);
-  assert.match(precompute, /contents\/\.github\/central-agentic-ops\.json/);
-  assert.match(precompute, /node "\$RESOLVER" --authority/);
+  assert.match(precompute, /validateLiveAuthority/);
+  assert.match(precompute, /commits\/\$\{defaultBranch\}/);
+  assert.match(precompute, /decodeRepositoryFile\(context\.targetRepository, POLICY_PATH, targetSha\)/);
+  assert.match(precompute, /parsePolicy\(authoritySource\)/);
   assert.doesNotMatch(precompute, /YAML|central-agentic-ops\.yml/);
-  assert.match(precompute, /target assigns live authority for \$BUNDLE to a different control repository/);
-  assert.match(precompute, /validate_worker_dispatch\n\s+validate_output_destination\n\s+validate_live_authority\n\s+write_worker_precompute/);
+  assert.match(precompute, /target assigns live authority for \$\{context\.packageName\} to a different control repository/);
+  assert.match(precompute, /validateWorkerDispatch\(context\)[\s\S]*validateLiveAuthority\(context\)[\s\S]*writeWorkerPrecompute\(context, targetAuthoritySha\)/);
 
   for (const [name, bundle] of [
     ["uk-ai-advisory.md", "advisory"],
@@ -949,36 +1004,37 @@ test("operation workflows optionally load per-operation markdown steering", () =
 });
 
 test("review destinations allow control self-review and isolate other targets", () => {
-  const precompute = workflow("shared/control-precompute.md");
+  const precompute = controlPrecompute();
 
-  assert.match(precompute, /validate_output_destination/);
-  assert.match(precompute, /repository_equal "\$SAFE_OUTPUT_REPO" "\$TARGET_REPO" && \\\n+          ! repository_equal "\$SAFE_OUTPUT_REPO" "\$CENTRAL_REPO"/);
+  assert.match(precompute, /validateOutputDestination/);
+  assert.match(precompute, /repositoryEqual\(safeOutputRepository, targetRepository\)[\s\S]*!repositoryEqual\(safeOutputRepository, controlRepository\)/);
   assert.match(precompute, /review safe_output_repo must differ from target_repo/);
   assert.match(precompute, /live worker safe_output_repo must equal target_repo/);
-  assert.match(precompute, /repository_equal "\$SAFE_OUTPUT_REPO" "\$CENTRAL_REPO"; then\n\s+return/);
-  assert.match(precompute, /gh api "repos\/\$SAFE_OUTPUT_REPO" --jq '\.private'/);
+  assert.match(precompute, /repositoryEqual\(safeOutputRepository, controlRepository\)\) return/);
+  assert.match(precompute, /ghApi\(`repos\/\$\{safeOutputRepository\}`\)/);
   assert.match(precompute, /review safe_output_repo must be accessible/);
   assert.match(precompute, /non-central review safe_output_repo must be private/);
 });
 
 test("safe-output modes are review and live with a separate package kill switch", () => {
   const control = workflow("shared/control.md");
-  const precompute = workflow("shared/control-precompute.md");
+  const precompute = controlPrecompute();
 
-  assert.match(precompute, /\.authorized.*!= "true"/);
-  assert.match(precompute, /\{type:"noop",message:\$message\}/);
+  assert.match(precompute, /typeof policy\.authorized !== "boolean"/);
+  assert.match(precompute, /if \(!policy\.authorized\)/);
+  assert.match(precompute, /type: "noop"/);
   assert.doesNotMatch(`${control}\n${precompute}`, /preview_only|\bstaged\b/);
 });
 
 test("exact package target modes flow through candidate dispatch and reporting", () => {
   const control = workflow("shared/control.md");
-  const precompute = workflow("shared/control-precompute.md");
+  const precompute = controlPrecompute();
 
-  assert.match(precompute, /CAO_TARGET_REPOSITORY="\$TARGET_REPO"/);
-  assert.match(precompute, /\.target_policies\[\$normalized\]\.mode \/\/ \$safe_output_mode/);
-  assert.match(precompute, /\.worker_policies\[\$worker\] \/\/ null/);
+  assert.match(precompute, /targetRepository: environment\("CAO_TARGET_REPOSITORY"\)/);
+  assert.match(precompute, /target_policies\?\.\[repository\.full_name\.toLowerCase\(\)\]\?\.mode \?\? context\.mode/);
+  assert.match(precompute, /worker_policies\?\.\[configured\]/);
   assert.match(precompute, /worker disabled by control-plane policy/);
-  assert.match(precompute, /map\(\. \+ \{safe_output_mode: repository_mode\(\.full_name\)\}\)/);
+  assert.match(precompute, /resolvedCandidates = candidates\.map/);
   assert.match(control, /treat each candidate's `safe_output_mode` as authoritative for that target/);
   assert.match(control, /start `effective_safe_output_mode` at the selected candidate's `safe_output_mode`/);
   assert.match(control, /when the worker's `max_mode` is `review`, set `effective_safe_output_mode` to `review`/);
@@ -991,7 +1047,7 @@ test("exact package target modes flow through candidate dispatch and reporting",
 
 test("shared control keeps manual and scheduled routing event-scoped", () => {
   const control = workflow("shared/control.md");
-  const precompute = workflow("shared/control-precompute.md");
+  const precompute = controlPrecompute();
 
   for (const name of ["uk-ai-advisory.md", "ambient-context.md", "aw-maintenance.md", "dependabot.md", "eu-cra-compliance.md", "optimization.md", "self-care.md", "software-development-practices.md"]) {
     const orchestrator = workflow(name);
@@ -1000,16 +1056,15 @@ test("shared control keeps manual and scheduled routing event-scoped", () => {
     assert.match(orchestrator, /SAFE_OUTPUT_REPO:.*== 'review'/);
     assert.doesNotMatch(orchestrator, /vars\.CENTRAL_AGENTIC_OPS_/);
   }
-  assert.match(control, /requested_mode: \$\{\{ github\.event\.inputs\.safe_output_mode \|\| '' \}\}/);
-  assert.match(control, /safe_output_repo: \$\{\{ github\.event\.inputs\.safe_output_repo/);
-  assert.doesNotMatch(precompute, /^      SAFE_OUTPUT_REPO:/m);
+  assert.match(control, /CAO_REQUESTED_MODE: \$\{\{ github\.event\.inputs\.safe_output_mode \|\| '' \}\}/);
+  assert.match(control, /CAO_SAFE_OUTPUT_REPOSITORY: \$\{\{ \(github\.event\.inputs\.safe_output_mode/);
   assert.doesNotMatch(control, /review_repo/);
-  assert.match(control, /requested_rollout_percent: \$\{\{ github\.event\.inputs\.rollout_percent \|\| '' \}\}/);
+  assert.match(control, /CAO_REQUESTED_ROLLOUT_PERCENT: \$\{\{ github\.event\.inputs\.rollout_percent \|\| '' \}\}/);
   assert.match(control, /select no more than `effective_max_repos` repositories/);
 
   assert.match(precompute, /rollout_percent must be an integer from 1 through 100/);
   assert.match(precompute, /effective_max_repos:/);
-  assert.match(precompute, /\(\$rollout_percent \| tonumber\) \/ 100 \| ceil/);
+  assert.match(precompute, /Math\.ceil\(resolvedCandidates\.length \* context\.policy\.rollout_percent \/ 100\)/);
   assert.doesNotMatch(precompute, /ROLLOUT_PERCENT.*(?:eval|curl|gh api)/);
 });
 
@@ -1018,21 +1073,21 @@ test("blank manual runs preserve an empty target for allowlisted discovery", () 
 
   assert.match(
     control,
-    /target_repo: \$\{\{ github\.event\.inputs\.target_repo \|\| '' \}\}/,
+    /CAO_TARGET_REPOSITORY: \$\{\{ github\.event\.inputs\.target_repo \|\| '' \}\}/,
   );
   assert.doesNotMatch(control, /target_repo:.*github\.repository/);
 });
 
 test("orchestrators dispatch workers only through safe-output tools", () => {
   const control = workflow("shared/control.md");
-  const precompute = workflow("shared/control-precompute.md");
+  const precompute = controlPrecompute();
 
   assert.match(control, /call the configured `dispatch-workflow` tool from `<safe-output-tools>`/);
   assert.match(control, /do not use `gh workflow run` or the Actions workflow-dispatch API/);
   assert.match(control, /safeoutputs <tool_name> \./);
   assert.match(control, /never invoke `<tool_name>`, `noop`, or `report_incomplete` as a bare shell command/);
-  assert.ok(precompute.includes("in_workflows && /^    - /"));
-  assert.ok(precompute.includes("in_workflows && /^      - /"));
+  assert.match(precompute, /const inline = inDispatch/);
+  assert.match(precompute, /const item = inWorkflows/);
 });
 
 test("every worker uses the standard dispatch envelope and safe mode vocabulary", () => {
@@ -1326,18 +1381,15 @@ test("Software Development Practices Advisor preserves evidence and advisory bou
 
 test("workers reject disabled, malformed, or over-ceiling dispatches before execution", () => {
   const control = workflow("shared/control.md");
-  const precompute = workflow("shared/control-precompute.md");
+  const precompute = controlPrecompute();
 
   for (const input of ["worker", "correlation_id", "central_repo", "control_plane_run_url"]) {
-    assert.match(control, new RegExp(`${input}:`));
+    assert.match(control, new RegExp(input));
     assert.match(precompute, new RegExp(`${input}:`));
   }
-  assert.match(precompute, /Resolve authoritative control policy/);
-  assert.match(precompute, /node "\$resolver" --effective/);
-  assert.match(precompute, /Central Agentic Ops policy denied this run/);
-  assert.match(precompute, /\{type:"noop",message:\$message\}/);
-  assert.match(precompute, /CAO_POLICY_AUTHORIZED=false/);
-  assert.match(precompute, /validate_worker_dispatch\n\s+validate_output_destination\n\s+validate_live_authority\n\s+write_worker_precompute/);
+  assert.match(precompute, /join\(admissionDirectory\(\), "effective-policy\.json"\)/);
+  assert.match(control, /Evaluate Central Agentic Ops admission/);
+  assert.match(precompute, /validateWorkerDispatch\(context\)[\s\S]*validateLiveAuthority\(context\)[\s\S]*writeWorkerPrecompute\(context, targetAuthoritySha\)/);
   assert.match(precompute, /must be review or live/);
   assert.match(precompute, /central_repo must identify the current control repository/);
   assert.match(precompute, /control_plane_run_url must match correlation_id and central_repo/);
@@ -1404,7 +1456,7 @@ test("SelfCare accessibility checker audits the served docs site with axe-core e
   assert.match(source, /worker: accessibility-checker/);
   assert.match(source, /safe_output_mode` is `live`/);
   assert.match(source, /engine:\n\s+id: pi\n\s+model: copilot\/gpt-5\.4/);
-  assert.match(source, /playwright:\n\s+mode: cli/);
+  assert.match(source, /playwright:\n\s+version: "0\.1\.18"/);
   assert.match(source, /npm pack axe-core@4\.13\.0/);
   assert.match(source, /WCAG 2\.2 Level AA/);
   assert.match(source, /colorScheme: "light"/);
@@ -1458,7 +1510,7 @@ test("CAO dashboard reviewer checks successful documentation deployments", () =>
   assert.match(source, /github\.event\.workflow_run\.conclusion == 'success'/);
   assert.match(source, /REPORT_INVENTORY=\/tmp\/gh-aw\/agent\/cao-dashboard-review\/expected-inventory\.json/);
   assert.match(source, /githubnext\.github\.io\/central-agentic-ops\/cao\//);
-  assert.match(source, /playwright:\n\s+mode: cli/);
+  assert.match(source, /^  playwright:\s*$/m);
   assert.match(source, /toolsets: \[repos, issues, actions\]/);
   assert.match(source, /githubnext\.github\.io/);
   assert.match(source, /at most the latest 100 runs from the last 24 hours/);
@@ -1608,21 +1660,27 @@ test("clean-room compilation emits the expected GitHub Actions settings", { time
     assert.deepEqual(lockNames, expectedLockNames);
     for (const name of packageLockNames) {
       const generated = workflow(name, generatedDirectory);
+      const jobs = generatedJobs(generated);
+      const preActivation = jobs.get("pre_activation").block;
+      const agent = jobs.get("agent").block;
 
-      assert.match(generated, /effective_max_repos/);
-      assert.match(generated, /rollout_percent must be an integer from 1 through 100/);
-      assert.match(generated, /max_repos must be an integer from 1 through 1000/);
-      assert.match(generated, /max_scan_repos must be an integer from 1 through 100000/);
-      assert.match(generated, /inventory_version/);
-      assert.match(generated, /batch_id/);
-      assert.match(generated, /outside control-plane\.scope\.allowed-owners/);
-      assert.match(generated, /review safe_output_repo must differ from target_repo/);
-      assert.match(generated, /review safe_output_repo must be accessible/);
-      assert.match(generated, /non-central review safe_output_repo must be private/);
-      assert.match(generated, /live worker safe_output_repo must equal target_repo/);
-      assert.match(generated, /target assigns live authority for .+ to a different control repository/);
-      assert.match(generated, /\.github\/central-agentic-ops\.json/);
-      assert.match(generated, /CAO_POLICY_AUTHORIZED/);
+      assert.match(preActivation, /actions: read/);
+      assert.match(preActivation, /name: Evaluate Central Agentic Ops admission/);
+      assert.match(preActivation, /contents\/\.github\/cao\/control\.mjs/);
+      assert.match(preActivation, /contents\/\.github\/cao\/policy\.mjs/);
+      assert.match(preActivation, /github\/gh-aw-actions\/setup-cli@/);
+      assert.match(preActivation, /steps\.cao_admission\.outputs\.monthly_credit_budget != '0'/);
+      assert.match(preActivation, /name: Run CAO control precompute/);
+      assert.match(preActivation, /GH_TOKEN: \$\{\{ secrets\.GH_AW_GITHUB_TOKEN \|\| github\.token \}\}/);
+      assert.match(preActivation, /name: Upload CAO control precompute artifact/);
+      assert.match(preActivation, /retention-days: 1(?:\.0)?/);
+
+      assert.match(agent, /name: Download CAO control precompute artifact/);
+      assert.match(agent, /name: Validate CAO control precompute artifact/);
+      assert.match(agent, /\.authorized == true/);
+      assert.match(agent, /\.policy_source == \{repository:\$repository,path:"\.github\/central-agentic-ops\.json",sha:\$sha\}/);
+      assert.doesNotMatch(agent, /contents\/\.github\/cao\/(?:control|policy)/);
+      assert.doesNotMatch(agent, /node .*cao\/control\.mjs.*precompute|target-authority\.json|candidate-pages\.jsonl/);
       assert.doesNotMatch(generated, /vars\.CENTRAL_AGENTIC_OPS_|central-agentic-ops\.yml/);
       assert.doesNotMatch(generated, /PREVIEW_ONLY|preview_only/);
       assert.doesNotMatch(generated, /== 'preview'/);
@@ -1641,11 +1699,11 @@ test("clean-room compilation emits the expected GitHub Actions settings", { time
     ]);
     for (const [name, packageName] of orchestratorGates) {
       const generated = workflow(name, generatedDirectory);
-      assert.match(generated, new RegExp(`BUNDLE: ${packageName}`));
-      assert.match(generated, /ROLE: orchestrator/);
-      assert.match(generated, /WORKER: __none__/);
+      assert.match(generated, new RegExp(`CAO_PACKAGE: ${packageName}`));
+      assert.match(generated, /CAO_ROLE: orchestrator/);
+      assert.match(generated, /CAO_WORKER: __none__/);
       assert.match(generated, /GH_AW_SAFE_OUTPUT_MODE:.*inputs\.safe_output_mode.*\|\| 'review'/);
-      assert.match(generated, /REQUESTED_ROLLOUT_PERCENT: \$\{\{ github\.event\.inputs\.rollout_percent \|\| '' \}\}/);
+      assert.match(generated, /CAO_REQUESTED_ROLLOUT_PERCENT: \$\{\{ github\.event\.inputs\.rollout_percent \|\| '' \}\}/);
       assert.match(generated, /rollout_percent:\n\s+default: 100\n\s+type: number/);
       assert.match(generated, /timeout-minutes: 15/);
       assert.match(generated, /cancel-in-progress: true/);
@@ -1680,12 +1738,12 @@ test("clean-room compilation emits the expected GitHub Actions settings", { time
     ]);
     for (const [name, [packageName, workerName]] of workerGates) {
       const generated = workflow(name, generatedDirectory);
-      assert.match(generated, new RegExp(`BUNDLE: ${packageName}`));
-      assert.match(generated, /ROLE: worker/);
-      assert.match(generated, new RegExp(`WORKER: ${workerName}`));
+      assert.match(generated, new RegExp(`CAO_PACKAGE: ${packageName}`));
+      assert.match(generated, /CAO_ROLE: worker/);
+      assert.match(generated, new RegExp(`CAO_WORKER: ${workerName}`));
       assert.match(generated, /GH_AW_SAFE_OUTPUT_MODE: \$\{\{ inputs\.safe_output_mode \|\| 'review' \}\}/);
       assert.match(generated, /SAFE_OUTPUT_REPO:.*safe_output_mode.*'review'.*safe_output_repo.*github\.repository.*inputs\.target_repo/);
-      assert.match(generated, /REQUESTED_ROLLOUT_PERCENT: \$\{\{ github\.event\.inputs\.rollout_percent \|\| '' \}\}/);
+      assert.match(generated, /CAO_REQUESTED_ROLLOUT_PERCENT: \$\{\{ github\.event\.inputs\.rollout_percent \|\| '' \}\}/);
       assert.match(generated, /GH_AW_SAFE_OUTPUTS_CONFIG:/);
     }
 
@@ -1839,8 +1897,7 @@ test("README routes zero-to-CAO requests to the setup skill", () => {
 test("Dashboard package supports embedded and explicit standalone deployment", () => {
   const rootManifest = readFileSync(join(root, "aw.yml"), "utf8");
   const dashboardManifest = readFileSync(join(root, "dashboard", "aw.yml"), "utf8");
-  const canonicalPolicyResolver = readFileSync(join(root, ".github", "scripts", "control-policy", "resolve.mjs"), "utf8");
-  const dashboardPolicyResolver = readFileSync(join(root, "dashboard", "control-policy", "resolve.mjs"), "utf8");
+  const canonicalPolicyResolver = readFileSync(join(root, ".github", "cao", "policy.mjs"), "utf8");
   const buildWorkflow = readFileSync(join(root, "dashboard", "dashboard-build.yml"), "utf8");
   const deployWorkflow = readFileSync(join(root, "dashboard", "dashboard.yml"), "utf8");
   const aicUsage = readFileSync(join(root, "dashboard", "report", "aic-usage.mjs"), "utf8");
@@ -1853,8 +1910,8 @@ test("Dashboard package supports embedded and explicit standalone deployment", (
   assert.match(dashboardManifest, /name: Central Agentic Ops Dashboard/);
   assert.match(dashboardManifest, /source: dashboard\.yml\n\s+destination: \.github\/workflows\/dashboard\.yml\n\s+kind: action-workflow/);
   assert.match(dashboardManifest, /source: dashboard-build\.yml\n\s+destination: \.github\/workflows\/dashboard-build\.yml\n\s+kind: action-workflow/);
-  assert.match(dashboardManifest, /source: control-policy\/resolve\.mjs\n\s+destination: \.github\/aw\/control-policy\/resolve\.mjs/);
-  assert.equal(dashboardPolicyResolver, canonicalPolicyResolver, "dashboard policy resolver must match its canonical source");
+  assert.doesNotMatch(dashboardManifest, /destination: \.github\/cao\//);
+  assert.match(canonicalPolicyResolver, /export function parsePolicy/);
   assert.match(buildWorkflow, /workflow_call:[\s\S]*?site-path:[\s\S]*?default: cao/);
   assert.match(buildWorkflow, /cp -R \.github\/aw\/dashboard\/site\/\. "\$REPORT_OUTPUT\/"/);
   assert.match(buildWorkflow, /configure-site\.mjs[\s\S]*?"\$REPORT_OUTPUT\/index\.html"[\s\S]*?"\$RUNNER_TEMP\/control-settings\.json"/);
@@ -1923,10 +1980,10 @@ test("Documentation Pages embeds this repository's control-plane report", () => 
   assert.match(workflowSource, /actions: read/);
   assert.match(workflowSource, /issues: read/);
   assert.match(workflowSource, /pull-requests: read/);
-  assert.match(workflowSource, /github\/gh-aw-actions\/setup-cli@bc8c008a419c5b7a29df6f5641edd35fd1c6ea85 # v0\.87\.10/);
-  assert.match(workflowSource, /version: v0\.87\.10/);
-  assert.match(workflowSource, /ref: ff62cdbec36230acbae869ddb28806e8eca01ea1 # v0\.87\.10/);
-  assert.match(workflowSource, /main\.version=v0\.87\.10/);
+  assert.match(workflowSource, /github\/gh-aw-actions\/setup-cli@afc709f45ed6a3f756eb4551856c6a9c42e15b2c # v0\.88\.0/);
+  assert.match(workflowSource, /version: v0\.88\.0/);
+  assert.match(workflowSource, /ref: a5297995b4bd76a2afcc39f10f2517a65aff172c # v0\.88\.0/);
+  assert.match(workflowSource, /main\.version=v0\.88\.0/);
   assert.match(workflowSource, /Restore AI Credit usage cache/);
   assert.match(workflowSource, /REPORT_AIC_CACHE: \.cache\/documentation-pages-aic/);
   assert.match(workflowSource, /Save AI Credit usage cache/);

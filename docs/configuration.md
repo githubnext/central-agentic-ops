@@ -34,7 +34,7 @@ This minimal policy enables the installed Dependabot package and its workers in 
 }
 ```
 
-Commit the file before running an installed operation. A missing or invalid document fails closed. An undeclared package produces a native no-op before repository discovery or agent execution.
+Commit the file before running an installed operation. A missing or invalid document fails closed. An undeclared package skips activation before repository discovery or agent execution. See [Admission Gates](admission.md) for the exact pre-activation checks and the checks deferred to authorized-run precompute.
 
 The schema defaults are:
 
@@ -183,8 +183,9 @@ Installed Central Agentic Ops packages do not include these optional provider fi
 ## Sources of Truth
 
 - Machine-readable policy schema: `.github/central-agentic-ops.schema.json`
-- Runtime policy resolution: `.github/scripts/control-policy/resolve.mjs` and [Control Policy Specification](control-policy-specification.md)
+- Runtime policy resolution: `.github/cao/policy.mjs` and [Control Policy Specification](control-policy-specification.md)
 - Checked-in control policy: `.github/central-agentic-ops.json`
-- Shared runtime enforcement: `.github/workflows/shared/control-precompute.md`
+- Deterministic control commands: `.github/cao/control.mjs`
+- Shared runtime enforcement: `.github/workflows/shared/control.md`
 - Package inventory: the root and package `aw.yml` manifests
 - Credentials and permissions: [Configure Authentication](authentication.md)

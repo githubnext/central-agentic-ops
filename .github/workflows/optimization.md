@@ -30,6 +30,15 @@ on:
         options:
           - review
           - live
+  permissions:
+    contents: read
+    actions: read
+
+jobs:
+  pre-activation:
+    outputs:
+      cao_authorized: ${{ steps.cao_admission.outputs.authorized }}
+      cao_reason: ${{ steps.cao_admission.outputs.reason }}
 
 env:
   GH_AW_SAFE_OUTPUT_MODE: ${{ inputs.safe_output_mode || 'review' }}
@@ -38,6 +47,8 @@ env:
   TARGET_REPO: ${{ inputs.target_repo || '' }}
 
 environment: central-agentic-ops
+
+if: needs.pre_activation.outputs.cao_authorized == 'true'
 
 imports:
   - uses: shared/control.md

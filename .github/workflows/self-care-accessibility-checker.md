@@ -25,6 +25,9 @@ on:
         description: "Optional comma-separated site paths to audit (defaults to a representative sample discovered from the build output)"
         required: false
         type: string
+  permissions:
+    contents: read
+    actions: read
 
 checkout:
   repository: ${{ inputs.target_repo }}
@@ -39,6 +42,14 @@ env:
   TARGET_REPO: ${{ inputs.target_repo || '' }}
 
 environment: central-agentic-ops
+
+jobs:
+  pre-activation:
+    outputs:
+      cao_authorized: ${{ steps.cao_admission.outputs.authorized }}
+      cao_reason: ${{ steps.cao_admission.outputs.reason }}
+
+if: needs.pre_activation.outputs.cao_authorized == 'true'
 
 imports:
   - uses: shared/control.md

@@ -35,6 +35,9 @@ on:
         type: string
       bundle_spec:
         type: string
+  permissions:
+    contents: read
+    actions: read
 
 checkout:
   - repository: ${{ (inputs.safe_output_mode || 'review') == 'review' && (inputs.safe_output_repo || github.repository) || inputs.target_repo }}
@@ -53,6 +56,14 @@ env:
   TARGET_REPO: ${{ inputs.target_repo || '' }}
 
 environment: central-agentic-ops
+
+jobs:
+  pre-activation:
+    outputs:
+      cao_authorized: ${{ steps.cao_admission.outputs.authorized }}
+      cao_reason: ${{ steps.cao_admission.outputs.reason }}
+
+if: needs.pre_activation.outputs.cao_authorized == 'true'
 
 imports:
   - uses: shared/control.md

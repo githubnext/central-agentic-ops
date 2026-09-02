@@ -11,7 +11,7 @@ The automated suite checks source `.md` contracts, ops-value interfaces, smoke-w
 | Layer | Location | Command | Coverage |
 | --- | --- | --- | --- |
 | Unit | `tests/unit/` | `npm run test:unit` | Policy matrices, workflow contracts, safety limits, generated settings, and package manifest structure. |
-| Integration | `tests/integration/control-failure.test.mjs` | `npm run test:integration` | Fail-closed execution of the actual control precompute shell. |
+| Integration | `tests/integration/control-*.test.mjs` | `npm run test:integration` | Pre-activation admission, policy resolution, and fail-closed execution of the actual control precompute shell. |
 | Package lifecycle | `tests/integration/package-lifecycle.test.mjs` | `npm run test:package-lifecycle` | Authenticated clean-room `gh aw add`/`update` behavior. |
 | Load | `tests/load/` | `npm run test:load` | Actual pagination, deterministic batching, and admission logic over 100,000 synthetic repositories, including bounded API failure. |
 | Compilation | Source workflows | `npm run compile` | All agentic workflow sources compile without emitting repository artifacts; unit contracts reject HTML-escaped operators in tracked expressions. |
@@ -34,6 +34,7 @@ The integration suite creates disposable consumer repositories under the system 
 
 | Test result | Scenario | Checked behavior |
 | --- | --- | --- |
+| 🟢 Pass | Pre-activation admission | The actual `.github/cao/control.mjs` `admit` command authorizes declared packages and fails closed for disabled packages, malformed policy, and unavailable policy content. |
 | 🟢 Pass | Control validation and authorization | The actual control precompute shell passes 54 success, failure, disablement, review-isolation, live-authorization, and output-binding cases. |
 | 🟢 Pass | 100,000-repository inventory | Pagination stops at 1,000 pages, retains exactly 100,000 candidates, and applies the 10%/1,000 target cap within 120 seconds. |
 | 🟢 Pass | Deterministic cell and batch selection | Stable repository IDs assign every selected candidate to one cell; bounded batches share an inventory version and have distinct batch IDs. |
