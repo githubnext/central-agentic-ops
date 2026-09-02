@@ -2,6 +2,12 @@ function isRecord(value) {
   return typeof value === "object" && value !== null && !Array.isArray(value);
 }
 
+// SelfCare runs repository-local live checks against this catalog repository
+// itself, so it isn't meant to be installed into a consumer's control plane.
+// Exclude it from the wizard's operations list even though it's configured
+// in central-agentic-ops.json for this repository's own control plane.
+const WIZARD_EXCLUDED_SLUGS = new Set(["self-care"]);
+
 export function selectConfiguredOperations(controlPolicy, catalogEntries) {
   const controlPlane = isRecord(controlPolicy) ? controlPolicy["control-plane"] : undefined;
   const configuredPackages = isRecord(controlPlane) ? controlPlane.packages : undefined;
@@ -11,9 +17,11 @@ export function selectConfiguredOperations(controlPolicy, catalogEntries) {
   }
 
   const catalogEntriesBySlug = new Map(catalogEntries.map((entry) => [entry.slug, entry]));
-  return Object.keys(configuredPackages).map((slug) => {
-    const entry = catalogEntriesBySlug.get(slug);
-    if (!entry) throw new Error(`Configured package ${slug} must have a catalog manifest`);
-    return entry;
-  });
+  return Object.keys(configuredPackages)
+    .filter((slug) => !WIZARD_EXCLUDED_SLUGS.has(slug))
+    .map((slug) => {
+      const entry = catalogEntriesBySlug.get(slug);
+      if (!entry) throw new Error(`Configured package ${slug} must have a catalog manifest`);
+      return entry;
+    });
 }
