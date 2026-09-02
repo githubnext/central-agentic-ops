@@ -10,7 +10,7 @@ Apply only the guidance for the role that is present. Do not infer a role from t
 
 ## Sources of truth
 
-- In the catalog, root and package `aw.yml` manifests define package contents. Editable gh-aw workflow sources are `.github/workflows/*.md`; shared control is `.github/workflows/shared/control.md` and its dependencies.
+- In the catalog, root and package `aw.yml` manifests define package contents. The root manifest installs the deterministic dashboard by default and must mirror the dashboard destinations declared by `dashboard/aw.yml`. Editable gh-aw workflow sources are `.github/workflows/*.md`; shared control is `.github/workflows/shared/control.md` and its dependencies.
 - In a control repository, `.github/central-agentic-ops.json` is the only persistent non-secret rollout policy. Keep workflow and policy changes in one reviewed commit because runs resolve policy at the exact workflow SHA.
 - `.github/workflows/*.lock.yml` files are generated artifacts. Never edit them directly; change their Markdown sources and run `gh aw compile`.
 - `.github/aw/packages/*.json` records package-owned files. Update those files with gh-aw package commands instead of editing ownership metadata.

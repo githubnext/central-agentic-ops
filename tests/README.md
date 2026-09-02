@@ -156,9 +156,9 @@ Compilation checks prove the source policy reaches the generated GitHub Actions 
 | 🟢 Pass | AI Credit Optimizer | Standard dispatch envelope and safe output settings compile. |
 | 🟢 Pass | All worker workflow safe outputs | Review/live routing vocabulary checked. |
 | 🟢 Pass | All generated package workflows | Emitted activation gates, transitive job dependencies, review isolation, live authority, output binding, and removed-mode settings checked in a clean-room compile. |
-| 🟢 Pass | Core catalog package | Installs no dashboard workflow, renderer, or Pages permission surface. |
+| 🟢 Pass | Core catalog package | Installs the complete dashboard package while keeping its standalone Pages publisher manual-only. |
 | 🟢 Pass | Operational value | Schema-v4 evaluators are registered by workers and the dashboard consumes actual `grader_results.json` observations. |
-| 🟢 Pass | Dashboard package | Reusable builds mount under a relative path; standalone deployment remains manual, access-controlled, and separate from the root package. |
+| 🟢 Pass | Dashboard package | Root and focused installations include the same dashboard destinations; reusable builds mount under a relative path and standalone deployment remains manual and access-controlled. |
 | 🟢 Pass | Grader package transport | gh-aw installs and restores referenced `.github/graders/*.sh` files in clean package consumers. |
 
 Exhaustive coverage: 24 scheduled plus 96 manual cases, for 120 unique policy configurations and 22 user-facing scenarios. The custom review-bundle job retains gh-aw's internal `GH_AW_SAFE_OUTPUTS_STAGED` dry-run signal; it is compiler plumbing, not a public package mode.

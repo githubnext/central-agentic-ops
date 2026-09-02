@@ -13,8 +13,144 @@ includes:
   - .github/workflows/optimization-ai-credit-auditor.md
   - .github/workflows/optimization-ai-credit-optimizer.md
   - .github/workflows/optimization.md
+  - source: dashboard/dashboard.yml
+    destination: .github/workflows/dashboard.yml
+    kind: action-workflow
+  - source: dashboard/dashboard-build.yml
+    destination: .github/workflows/dashboard-build.yml
+    kind: action-workflow
 resources:
   - source: AGENTS.md
     destination: .github/aw/default-AGENTS.md
   - source: .github/aw/instructions.md
     destination: .github/aw/instructions.md
+  - source: dashboard/report/aic-usage.mjs
+    destination: .github/aw/dashboard/report/aic-usage.mjs
+  - source: dashboard/report/text-utils.mjs
+    destination: .github/aw/dashboard/report/text-utils.mjs
+  - source: dashboard/report/control-settings.mjs
+    destination: .github/aw/dashboard/report/control-settings.mjs
+  - source: dashboard/report/deployed-workflows.mjs
+    destination: .github/aw/dashboard/report/deployed-workflows.mjs
+  - source: dashboard/report/inventory.mjs
+    destination: .github/aw/dashboard/report/inventory.mjs
+  - source: dashboard/report/operational-values.mjs
+    destination: .github/aw/dashboard/report/operational-values.mjs
+  - source: dashboard/report/operational-value-history.mjs
+    destination: .github/aw/dashboard/report/operational-value-history.mjs
+  - source: dashboard/report/records.mjs
+    destination: .github/aw/dashboard/report/records.mjs
+  - source: dashboard/report/dashboard-language-sources.mjs
+    destination: .github/aw/dashboard/report/dashboard-language-sources.mjs
+  - source: dashboard/report/bundle-dashboards.mjs
+    destination: .github/aw/dashboard/report/bundle-dashboards.mjs
+  - source: dashboard/report/compose-dashboard-documents.mjs
+    destination: .github/aw/dashboard/report/compose-dashboard-documents.mjs
+  - source: dashboard/report/configure-site.mjs
+    destination: .github/aw/dashboard/report/configure-site.mjs
+  - source: dashboard/site/index.html
+    destination: .github/aw/dashboard/site/index.html
+  - source: dashboard/site/favicon.svg
+    destination: .github/aw/dashboard/site/favicon.svg
+  - source: dashboard/site/dashboard.json
+    destination: .github/aw/dashboard/site/dashboard.json
+  - source: dashboard/site/src/data-operations.js
+    destination: .github/aw/dashboard/site/src/data-operations.js
+  - source: dashboard/site/src/data-processor.js
+    destination: .github/aw/dashboard/site/src/data-processor.js
+  - source: dashboard/site/src/data-worker.js
+    destination: .github/aw/dashboard/site/src/data-worker.js
+  - source: dashboard/site/src/dom.js
+    destination: .github/aw/dashboard/site/src/dom.js
+  - source: dashboard/site/src/octicon-names.json
+    destination: .github/aw/dashboard/site/src/octicon-names.json
+  - source: dashboard/site/src/octicons.js
+    destination: .github/aw/dashboard/site/src/octicons.js
+  - source: dashboard/site/src/octicons.svg
+    destination: .github/aw/dashboard/site/src/octicons.svg
+  - source: dashboard/site/src/overview-data.js
+    destination: .github/aw/dashboard/site/src/overview-data.js
+  - source: dashboard/site/src/presenter.js
+    destination: .github/aw/dashboard/site/src/presenter.js
+  - source: dashboard/site/src/reactive.js
+    destination: .github/aw/dashboard/site/src/reactive.js
+  - source: dashboard/site/src/repository-data.js
+    destination: .github/aw/dashboard/site/src/repository-data.js
+  - source: dashboard/site/src/runtime-data.js
+    destination: .github/aw/dashboard/site/src/runtime-data.js
+  - source: dashboard/site/src/specification.js
+    destination: .github/aw/dashboard/site/src/specification.js
+  - source: dashboard/site/src/source-cache.js
+    destination: .github/aw/dashboard/site/src/source-cache.js
+  - source: dashboard/site/src/styles.js
+    destination: .github/aw/dashboard/site/src/styles.js
+  - source: dashboard/site/src/view-formatters.js
+    destination: .github/aw/dashboard/site/src/view-formatters.js
+  - source: dashboard/site/src/workflow-data.js
+    destination: .github/aw/dashboard/site/src/workflow-data.js
+  - source: dashboard/site/src/components/anomaly-readiness.js
+    destination: .github/aw/dashboard/site/src/components/anomaly-readiness.js
+  - source: dashboard/site/src/components/attention-rules.js
+    destination: .github/aw/dashboard/site/src/components/attention-rules.js
+  - source: dashboard/site/src/components/attention-rules.json
+    destination: .github/aw/dashboard/site/src/components/attention-rules.json
+  - source: dashboard/site/src/components/badge.js
+    destination: .github/aw/dashboard/site/src/components/badge.js
+  - source: dashboard/site/src/components/cell-display.js
+    destination: .github/aw/dashboard/site/src/components/cell-display.js
+  - source: dashboard/site/src/components/chart-elements.js
+    destination: .github/aw/dashboard/site/src/components/chart-elements.js
+  - source: dashboard/site/src/components/count-formatters.js
+    destination: .github/aw/dashboard/site/src/components/count-formatters.js
+  - source: dashboard/site/src/components/data-state.js
+    destination: .github/aw/dashboard/site/src/components/data-state.js
+  - source: dashboard/site/src/components/data-view.js
+    destination: .github/aw/dashboard/site/src/components/data-view.js
+  - source: dashboard/site/src/components/dispatch-type-classification.json
+    destination: .github/aw/dashboard/site/src/components/dispatch-type-classification.json
+  - source: dashboard/site/src/components/filter-bar.js
+    destination: .github/aw/dashboard/site/src/components/filter-bar.js
+  - source: dashboard/site/src/components/histogram.js
+    destination: .github/aw/dashboard/site/src/components/histogram.js
+  - source: dashboard/site/src/components/link-content.js
+    destination: .github/aw/dashboard/site/src/components/link-content.js
+  - source: dashboard/site/src/components/linked-text.js
+    destination: .github/aw/dashboard/site/src/components/linked-text.js
+  - source: dashboard/site/src/components/outcome-detail.js
+    destination: .github/aw/dashboard/site/src/components/outcome-detail.js
+  - source: dashboard/site/src/components/package-aic-utilization-thresholds.json
+    destination: .github/aw/dashboard/site/src/components/package-aic-utilization-thresholds.json
+  - source: dashboard/site/src/components/package-detail.js
+    destination: .github/aw/dashboard/site/src/components/package-detail.js
+  - source: dashboard/site/src/components/packages-view.js
+    destination: .github/aw/dashboard/site/src/components/packages-view.js
+  - source: dashboard/site/src/components/route-empty-state.js
+    destination: .github/aw/dashboard/site/src/components/route-empty-state.js
+  - source: dashboard/site/src/components/run-classification.js
+    destination: .github/aw/dashboard/site/src/components/run-classification.js
+  - source: dashboard/site/src/components/run-conclusion-classification.json
+    destination: .github/aw/dashboard/site/src/components/run-conclusion-classification.json
+  - source: dashboard/site/src/components/summary-copy.js
+    destination: .github/aw/dashboard/site/src/components/summary-copy.js
+  - source: dashboard/site/src/components/tab-nav.js
+    destination: .github/aw/dashboard/site/src/components/tab-nav.js
+  - source: dashboard/site/src/components/table-region.js
+    destination: .github/aw/dashboard/site/src/components/table-region.js
+  - source: dashboard/site/src/components/table-summary.js
+    destination: .github/aw/dashboard/site/src/components/table-summary.js
+  - source: dashboard/site/src/components/ui-elements.js
+    destination: .github/aw/dashboard/site/src/components/ui-elements.js
+  - source: dashboard/site/src/components/ui-primitives.js
+    destination: .github/aw/dashboard/site/src/components/ui-primitives.js
+  - source: dashboard/site/src/components/view-chrome.js
+    destination: .github/aw/dashboard/site/src/components/view-chrome.js
+  - source: dashboard/site/src/components/workflow-badges.js
+    destination: .github/aw/dashboard/site/src/components/workflow-badges.js
+  - source: dashboard/site/src/components/workflow-detail.js
+    destination: .github/aw/dashboard/site/src/components/workflow-detail.js
+  - source: dashboard/site/src/components/workflow-identity.js
+    destination: .github/aw/dashboard/site/src/components/workflow-identity.js
+  - source: dashboard/site/src/components/workflow-route.js
+    destination: .github/aw/dashboard/site/src/components/workflow-route.js
+  - source: dashboard/site/src/components/workflow-runtime.js
+    destination: .github/aw/dashboard/site/src/components/workflow-runtime.js
