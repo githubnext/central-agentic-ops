@@ -74,6 +74,7 @@ run-name: "AI Credit Optimizer · ${{ inputs.target_repo }} · ${{ inputs.safe_o
 
 concurrency:
   group: "${{ github.workflow }}-${{ inputs.target_repo }}"
+  job-discriminator: ${{ github.run_id }}
   cancel-in-progress: true
 
 graders:

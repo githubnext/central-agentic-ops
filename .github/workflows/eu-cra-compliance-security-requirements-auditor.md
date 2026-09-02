@@ -91,6 +91,7 @@ run-name: "CRA security requirements audit · ${{ inputs.target_repo }} · ${{ i
 
 concurrency:
   group: "${{ github.workflow }}-${{ inputs.target_repo }}"
+  job-discriminator: ${{ github.run_id }}
   cancel-in-progress: true
 
 tracker-id: eu-cra-compliance-security-requirements-auditor

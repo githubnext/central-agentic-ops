@@ -82,6 +82,7 @@ run-name: "AW failure investigation · ${{ inputs.target_repo }} · ${{ inputs.s
 
 concurrency:
   group: "${{ github.workflow }}-${{ inputs.target_repo }}"
+  job-discriminator: ${{ github.run_id }}
   cancel-in-progress: true
 
 tracker-id: aw-failures-investigator

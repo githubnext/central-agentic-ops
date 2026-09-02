@@ -81,6 +81,7 @@ run-name: "Ambient context skills · ${{ inputs.target_repo }} · ${{ inputs.saf
 
 concurrency:
   group: "${{ github.workflow }}-${{ inputs.target_repo }}"
+  job-discriminator: ${{ github.run_id }}
   cancel-in-progress: true
 
 tracker-id: ambient-context-skills-curator

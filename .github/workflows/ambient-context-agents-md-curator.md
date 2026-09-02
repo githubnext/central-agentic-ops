@@ -82,6 +82,7 @@ run-name: "Ambient context AGENTS.md · ${{ inputs.target_repo }} · ${{ inputs.
 
 concurrency:
   group: "${{ github.workflow }}-${{ inputs.target_repo }}"
+  job-discriminator: ${{ github.run_id }}
   cancel-in-progress: true
 
 graders:

@@ -69,6 +69,7 @@ max-daily-ai-credits: -1
 timeout-minutes: 30
 concurrency:
   group: "${{ github.workflow }}-${{ inputs.target_repo }}"
+  job-discriminator: ${{ github.run_id }}
   cancel-in-progress: true
 tracker-id: self-care-code-improvement
 run-name: "SelfCare code improvement · ${{ inputs.target_repo }} · ${{ inputs.safe_output_mode || 'review' }}"

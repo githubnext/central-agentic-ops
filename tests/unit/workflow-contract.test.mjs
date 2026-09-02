@@ -337,7 +337,7 @@ test("enterprise defaults, budgets, timeouts, and concurrency are finite", () =>
     const source = workflow(name);
     assert.match(source, new RegExp(`max-ai-credits: ${limits.credits}`), name);
     assert.match(source, new RegExp(`timeout-minutes: ${limits.timeout}`), name);
-    assert.match(source, /concurrency:\n\s+group:.*\n(?:\s+job-discriminator:.*\n)?\s+cancel-in-progress: true/, name);
+    assert.match(source, /concurrency:\n\s+group:.*\n\s+job-discriminator: \$\{\{ github\.run_id \}\}\n\s+cancel-in-progress: true/, name);
     assert.doesNotMatch(source, /^\s+(contents|actions|issues|pull-requests): write$/m, name);
     if (limits.dispatchMax) {
       assert.match(source, new RegExp(`dispatch_max: "${limits.dispatchMax}"`), name);

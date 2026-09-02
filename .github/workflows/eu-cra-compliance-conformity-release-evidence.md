@@ -91,6 +91,7 @@ run-name: "CRA conformity and release evidence · ${{ inputs.target_repo }} · $
 
 concurrency:
   group: "${{ github.workflow }}-${{ inputs.target_repo }}"
+  job-discriminator: ${{ github.run_id }}
   cancel-in-progress: true
 
 tracker-id: eu-cra-compliance-conformity-release-evidence

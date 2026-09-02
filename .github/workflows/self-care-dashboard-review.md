@@ -66,6 +66,7 @@ strict: true
 timeout-minutes: 30
 concurrency:
   group: "${{ github.workflow }}-${{ inputs.target_repo }}"
+  job-discriminator: ${{ github.run_id }}
   cancel-in-progress: true
 run-name: "SelfCare dashboard review · ${{ inputs.target_repo }} · ${{ inputs.safe_output_mode || 'review' }}"
 runtimes:

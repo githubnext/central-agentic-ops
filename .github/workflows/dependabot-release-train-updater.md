@@ -122,6 +122,7 @@ run-name: "Dependabot release train · ${{ inputs.target_repo }} · ${{ inputs.s
 
 concurrency:
   group: "${{ github.workflow }}-${{ inputs.target_repo }}"
+  job-discriminator: ${{ github.run_id }}
   cancel-in-progress: true
 
 tracker-id: dependabot-release-train-updater
