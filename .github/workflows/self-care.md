@@ -53,7 +53,7 @@ permissions:
   actions: read
 
 engine: copilot
-model: gpt-5.4
+model: openai/gpt-5.4
 
 strict: true
 
