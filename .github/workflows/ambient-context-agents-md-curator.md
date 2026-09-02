@@ -113,7 +113,7 @@ tools:
 safe-outputs:
   create-issue:
     expires: 30d
-    title-prefix: "[ambient-context:agents-md] "
+    title-prefix: "[ambient-context:agents-md-curator] "
     close-older-issues: true
     max: 1
     target-repo: ${{ (inputs.safe_output_mode || 'review') == 'review' && (inputs.safe_output_repo || github.repository) || inputs.target_repo }}

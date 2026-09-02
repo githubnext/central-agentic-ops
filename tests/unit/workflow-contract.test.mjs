@@ -483,6 +483,25 @@ test("operations creation guidance scopes detection and omits worker evals", () 
   assert.match(packageSkill, /Do not use `aw\.yml` bootstrap `config`/);
 });
 
+test("issue-creating workers use package and worker title prefixes", () => {
+  for (const name of readdirSync(workflowsDirectory).filter((entry) => entry.endsWith(".md"))) {
+    const source = workflow(name);
+    if (!/role: worker/.test(source) || !/create-issue:/.test(source)) continue;
+
+    const frontmatter = /^---\n([\s\S]*?)\n---/.exec(source)?.[1];
+    assert.ok(frontmatter, `${name} must have frontmatter`);
+    const config = parse(frontmatter);
+    const controlImport = config.imports.find((entry) => entry.with?.role === "worker");
+    assert.ok(controlImport?.with?.package, `${name} must declare its package slug`);
+    assert.ok(controlImport?.with?.worker, `${name} must declare its worker slug`);
+    assert.equal(
+      config["safe-outputs"]["create-issue"]["title-prefix"],
+      `[${controlImport.with.package}:${controlImport.with.worker}] `,
+      name,
+    );
+  }
+});
+
 test("AI Credit auditor uses gh-aw forecast for cost projections", () => {
   const auditor = workflow("optimization-ai-credit-auditor.md");
 
@@ -1556,7 +1575,7 @@ test("SelfCare accessibility checker audits the served docs site with axe-core e
   assert.match(source, /colorScheme: "light"/);
   assert.match(source, /colorScheme: "dark"/);
   assert.match(source, /prefers-reduced-motion/);
-  assert.match(source, /create-issue:\n\s+target-repo:.*\n\s+title-prefix: "\[accessibility\] "/);
+  assert.match(source, /create-issue:\n\s+target-repo:.*\n\s+title-prefix: "\[self-care:accessibility-checker\] "/);
   assert.match(source, /close-older-key: self-care-accessibility-checker/);
   assert.equal(source.split(liveGuard).length - 1, 5);
   assert.doesNotMatch(source, /^\s+(create-pull-request|add-comment|create-discussion|push-to-pull-request-branch):/m);
@@ -1610,7 +1629,7 @@ test("SelfCare dashboard reviewer checks deployments through stakeholder persona
   assert.match(source, /githubnext\.github\.io/);
   assert.match(source, /at most the latest 100 runs from the last 24 hours/);
   assert.match(source, /overview, dispatches, packages, repositories, workflows, runs, and coverage routes/);
-  assert.match(source, /title-prefix: "\[cao-dashboard\] "/);
+  assert.match(source, /title-prefix: "\[self-care:dashboard-review\] "/);
   assert.match(source, /close-older-key: self-care-dashboard-review/);
   assert.match(source, /Use `\$\{\{ github\.run_id \}\}` as the reproducible random seed/);
   assert.match(source, /Launch the `cfo-dashboard-reviewer`, `cso-dashboard-reviewer`, and `cto-dashboard-reviewer` agents in parallel/);

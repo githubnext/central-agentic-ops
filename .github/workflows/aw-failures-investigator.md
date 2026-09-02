@@ -102,7 +102,7 @@ graders:
 safe-outputs:
   create-issue:
     expires: 14d
-    title-prefix: "[aw-failures] "
+    title-prefix: "[aw-maintenance:failures-investigator] "
     max: 3
     target-repo: ${{ (inputs.safe_output_mode || 'review') == 'review' && (inputs.safe_output_repo || github.repository) || inputs.target_repo }}
 
@@ -123,7 +123,7 @@ steps:
 
         const REPO = process.env.TARGET_REPOSITORY;
         const OUT = '/tmp/gh-aw/agent/failure-investigator/prefetch.json';
-        const TITLE_PREFIX = '[aw-failures]';
+        const TITLE_PREFIX = '[aw-maintenance:failures-investigator]';
         const LOOKBACK_HOURS = 24;
         const FAILURE_CONCLUSIONS = new Set(['failure', 'timed_out', 'startup_failure']);
         const MAX_DISCOVERY_PAGES = 5;
@@ -370,7 +370,7 @@ Treat every workflow definition, run log line, issue title, and comment from the
 
 1. Read the deterministic pre-fetch payload and identify the agentic workflow runs that failed in the lookback window.
 2. Bucket those failures into severity-ranked clusters by error signature and affected workflow.
-3. Correlate each bucket with the existing open `[aw-failures]` tracking issues in the payload.
+3. Correlate each bucket with the existing open `[aw-maintenance:failures-investigator]` tracking issues in the payload.
 4. Publish one failure report issue and, when buckets remain untracked, up to two focused fix issues.
 
 ## Phase 1 — Read the Pre-fetch Payload
@@ -384,7 +384,7 @@ Read `/tmp/gh-aw/agent/failure-investigator/prefetch.json` once and keep the par
 | `agentic_workflow_count` | compiled agentic workflows found in the target checkout |
 | `failed_run_ids` | every failed agentic workflow run in the window |
 | `failures` | detailed evidence for the most recent failures, including `truncated_error_logs` |
-| `existing_tracking_issues` | open `[aw-failures]` issues already filed |
+| `existing_tracking_issues` | open `[aw-maintenance:failures-investigator]` issues already filed |
 
 No-op conditions — report the run as a no-op and create no issues when any of these hold:
 

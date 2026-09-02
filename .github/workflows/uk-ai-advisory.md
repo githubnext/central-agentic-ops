@@ -111,7 +111,7 @@ Rank repositories by observed evidence that an operational-resilience advisory w
 2. Public repositories, documented public source locations, and code intended for reuse, transparency, external scrutiny, or avoidance of supplier lock-in.
 3. Security-sensitive commits, vulnerability alerts, exposed-secret alerts, dependency updates, material runtime and deployment changes, or AI-assisted attack surfaces that may shorten the discovery-to-exploit window.
 4. Missing or weak evidence of ownership, secure-by-design development, automated dependency and vulnerability hygiene, patch SLAs, inbound vulnerability reporting, observability, incident response, rollback, and recovery. For public repositories, prolonged inactivity without credible ownership or automated hygiene is a priority signal, not a reason to skip.
-5. Existing `[advisory:uk-ai-resilience]` reports whose evidence is stale after material repository changes.
+5. Existing `[advisory:uk-ai-operational-resilience]` reports whose evidence is stale after material repository changes.
 
 Exclude archived or disabled repositories and repositories that the configured credential cannot read. Deprioritize repositories with no observed UK public-sector or published-code relevance, or an equivalent current advisory with no material change. AI is a threat accelerator, not an eligibility requirement. Missing metadata is not evidence that a repository is in or out of scope.
 

@@ -98,7 +98,7 @@ tracker-id: aw-maintenance-upgrade
 safe-outputs:
   create-issue:
     expires: 30d
-    title-prefix: "[aw-maintenance] "
+    title-prefix: "[aw-maintenance:upgrade] "
     max: 1
     target-repo: ${{ (inputs.safe_output_mode || 'review') == 'review' && (inputs.safe_output_repo || github.repository) || inputs.target_repo }}
 
@@ -129,7 +129,7 @@ steps:
         const REPO = process.env.TARGET_REPOSITORY;
         const CACHE_FILE = '.cache/gh-aw/aw-maintenance/releases.json';
         const OUT = '/tmp/gh-aw/agent/aw-maintenance-upgrade/prefetch.json';
-        const TITLE_PREFIX = '[aw-maintenance]';
+        const TITLE_PREFIX = '[aw-maintenance:upgrade]';
         const CACHE_MAX_AGE_HOURS = 24;
 
         function isoformatZ(date) {
@@ -292,8 +292,8 @@ Read `/tmp/gh-aw/agent/aw-maintenance-upgrade/prefetch.json` once and keep the p
 | `gh_aw_release_cache_hit` | `true` when the release list came from the shared cache instead of a fresh API call |
 | `target_pinned_manifest`, `target_pinned_version` | the `aw.yml` manifest and `min-version` the target repository currently pins |
 | `needs_upgrade` | heuristic comparison of `target_pinned_version` against `gh_aw_latest_tag` |
-| `already_tracked` | whether an open `[aw-maintenance]` issue already names the latest release |
-| `existing_tracking_issues` | open `[aw-maintenance]` issues in the target repository |
+| `already_tracked` | whether an open `[aw-maintenance:upgrade]` issue already names the latest release |
+| `existing_tracking_issues` | open `[aw-maintenance:upgrade]` issues in the target repository |
 
 No-op conditions — report the run as a no-op and create no issue when any of these hold:
 

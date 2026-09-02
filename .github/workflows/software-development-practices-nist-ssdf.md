@@ -108,7 +108,7 @@ tools:
 safe-outputs:
   create-issue:
     expires: 30d
-    title-prefix: "[nist-ssdf] "
+    title-prefix: "[software-development-practices:nist-ssdf] "
     close-older-issues: true
     close-older-key: ${{ format('software-development-practices-nist-ssdf-{0}', inputs.target_repo) }}
     max: 1
@@ -143,7 +143,7 @@ Assess repository-observable evidence across the current final framework's pract
 
 Adapt to the official final publication if the groups or identifiers have changed. Build a complete practice-level matrix, cite task identifiers for evidence and findings, and group task-level gaps under their practice.
 
-Focus on secure-development lifecycle outcomes. Leave developer experience, general collaboration, GitHub adoption, and system-architecture recommendations to the GitHub Well-Architected worker. Review an open `[well-architected]` issue for the same target when present and omit duplicate remediation while preserving SSDF provenance.
+Focus on secure-development lifecycle outcomes. Leave developer experience, general collaboration, GitHub adoption, and system-architecture recommendations to the GitHub Well-Architected worker. Review an open `[software-development-practices:github-well-architected]` issue for the same target when present and omit duplicate remediation while preserving SSDF provenance.
 
 For each practice record:
 
@@ -155,7 +155,7 @@ For each practice record:
 
 Inspect only evidence needed to support findings, using bounded `gh` queries and compact `jq` projections for GitHub data. `GAP_FOUND` requires an applicable SSDF task and verified absence or contradiction of expected repository-level evidence; otherwise use `HUMAN_REVIEW_REQUIRED` or `NOT_ASSESSED`. Treat missing organization, personnel, training, infrastructure, and private operational evidence as `HUMAN_REVIEW_REQUIRED` or `NOT_ASSESSED`, not as a repository failure.
 
-Before assessment, search open issues in `SAFE_OUTPUT_REPO` for the exact title `[nist-ssdf] TARGET_REPO repository guidance`. Fetch the current final publication status before deciding to skip. If an issue records both the current target commit and the same final publication version, call `noop` with its number. Otherwise treat its recommendations as tracked and omit them from the new backlog.
+Before assessment, search open issues in `SAFE_OUTPUT_REPO` for the exact title `[software-development-practices:nist-ssdf] TARGET_REPO repository guidance`. Fetch the current final publication status before deciding to skip. If an issue records both the current target commit and the same final publication version, call `noop` with its number. Otherwise treat its recommendations as tracked and omit them from the new backlog.
 
 Prioritize at most ten untracked recommendations by risk reduction, confidence, effort, and dependencies. Do not prescribe one SDLC or implementation when the framework permits alternatives. Do not expose private alerts, secret-scanning data, exploit details, personal data, or confidential evidence.
 

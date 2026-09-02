@@ -383,7 +383,7 @@ safe-outputs:
     max: 3
   create-issue:
     target-repo: ${{ (inputs.safe_output_mode || 'review') == 'review' && (inputs.safe_output_repo || github.repository) || inputs.target_repo }}
-    title-prefix: "[dependabot-agent] "
+    title-prefix: "[dependabot:release-train-updater] "
     expires: 14d
     max: 2
   noop:
@@ -657,7 +657,7 @@ Create an issue only when:
 - The dependency update needs a human migration plan.
 - A repeated class of failures should be tracked.
 
-Do not create duplicate issues or PRs. Before creating one, search for existing open `[dependabot-agent]` issues and PRs and reuse the existing thread when it already covers the same dependency work.
+Do not create duplicate issues or PRs. Before creating one, search for existing open `[dependabot:release-train-updater]` issues or `[dependabot-agent]` PRs and reuse the existing thread when it already covers the same dependency work.
 
 ## Artifact output
 

@@ -106,11 +106,11 @@ Prefer repositories with clear evidence of installed, maintainable agentic workf
 
 1. An `aw.yml` package manifest or `.github/workflows/*.md` agentic workflow source files, which show the repository has adopted gh-aw and can be safely upgraded.
 2. A `min-version` in `aw.yml` or a compiled `.lock.yml` header that is older than the latest known gh-aw release, which is the strongest signal that maintenance work is due.
-3. No open `[aw-maintenance]` tracking issue for the currently available release, so repeat dispatches do not pile up duplicate work.
+3. No open `[aw-maintenance:upgrade]` tracking issue for the currently available release, so repeat dispatches do not pile up duplicate work.
 4. Recent commits under `.github/workflows/` or `.github/skills/`, showing the repository actively maintains its agentic workflows and a maintainer is likely to act on a filed issue.
 5. Recent failed, timed-out, or startup-failed runs of compiled agentic workflows in the last day.
 
-Deprioritize repositories with no `.github/workflows/*.md` files, no `aw.yml` manifest, archived or disabled repositories, and repositories that already have an open, unresolved `[aw-maintenance]` issue for the current release.
+Deprioritize repositories with no `.github/workflows/*.md` files, no `aw.yml` manifest, archived or disabled repositories, and repositories that already have an open, unresolved `[aw-maintenance:upgrade]` issue for the current release.
 
 ## Workers
 
