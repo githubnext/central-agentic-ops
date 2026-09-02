@@ -126,7 +126,7 @@ test("checked-in control policy selects seven repositories with local SelfCare a
       controlRepository: "githubnext/central-agentic-ops",
       targetRepository,
     });
-    assert.equal(effective.safe_output_mode, "review");
+    assert.equal(effective.safe_output_mode, targetRepository === "github/gh-aw" ? "live" : "review");
     assert.equal(effective.max_repositories, 7);
   }
 
