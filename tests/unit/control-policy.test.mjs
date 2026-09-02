@@ -104,45 +104,41 @@ test("control policy schema accepts config-defined package and worker catalogs",
   assert.equal(validate(JSON.stringify(policy)).status, 0);
 });
 
-test("checked-in SelfCare policy selects only the repository-local live target", () => {
+test("checked-in control policy selects seven repositories with local SelfCare authority", () => {
   const policy = parsePolicy(readFileSync(join(root, ".github", "central-agentic-ops.json"), "utf8"));
-  const local = effectivePolicy(policy, {
+  const repositories = [
+    "github/gh-aw",
+    "github/gh-aw-firewall",
+    "github/gh-aw-mcpg",
+    "github/gh-aw-actions",
+    "github/gh-aw-threat-detection",
+    "githubnext/central-agentic-ops",
+    "githubnext/gh-aw-workshop",
+  ];
+
+  assert.deepEqual(policy["control-plane"].scope["allowed-repositories"], repositories);
+  assert.equal(policy["control-plane"].defaults["max-repositories"], 7);
+
+  for (const targetRepository of repositories) {
+    const effective = effectivePolicy(policy, {
+      packageName: "dependabot",
+      role: "orchestrator",
+      controlRepository: "githubnext/central-agentic-ops",
+      targetRepository,
+    });
+    assert.equal(effective.safe_output_mode, "review");
+    assert.equal(effective.max_repositories, 7);
+  }
+
+  const selfCare = effectivePolicy(policy, {
     packageName: "self-care",
     role: "orchestrator",
     controlRepository: "githubnext/central-agentic-ops",
     targetRepository: "githubnext/central-agentic-ops",
   });
-  const other = effectivePolicy(policy, {
-    packageName: "self-care",
-    role: "orchestrator",
-    controlRepository: "githubnext/central-agentic-ops",
-    targetRepository: "github/gh-aw",
-  });
-
-  assert.equal(local.safe_output_mode, "live");
-  assert.equal(local.max_repositories, 1);
-  assert.equal(other.safe_output_mode, "review");
-  assert.deepEqual(local.worker_policies, {
-    "self-care-accessibility-checker": {
-      worker: "accessibility-checker",
-      enabled: true,
-      max_mode: null,
-    },
-    "self-care-code-improvement": {
-      worker: "code-improvement",
-      enabled: true,
-      max_mode: null,
-    },
-    "self-care-primer-brand-checker": {
-      worker: "primer-brand-checker",
-      enabled: true,
-      max_mode: null,
-    },
-  });
-  assert.equal(
-    policy["target-authority"].packages["self-care"].authority,
-    "githubnext/central-agentic-ops",
-  );
+  assert.equal(selfCare.safe_output_mode, "live");
+  assert.equal(selfCare.max_repositories, 1);
+  assert.equal(policy["target-authority"].packages["self-care"].authority, "githubnext/central-agentic-ops");
 });
 
 test("control policy applies schema defaults and package values", () => {
