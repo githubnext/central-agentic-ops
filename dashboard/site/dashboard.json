@@ -1807,6 +1807,19 @@
         },
         "views": [
           {
+            "id": "dispatch-activation-summary",
+            "title": "Activation rate",
+            "description": "Share of authoritative workflow_dispatch runs that were activated versus skipped by a control-plane guard (for example an unauthorized pre-activation admission or a rollout gate).",
+            "data": {
+              "sources": [
+                "dispatch-activation-summary"
+              ]
+            },
+            "mark": "element",
+            "element": "summary-grid",
+            "layout": "full"
+          },
+          {
             "id": "dispatch-evidence-boundary",
             "title": "Dispatch evidence boundary",
             "description": "Rows are authoritative workflow_dispatch events. Package and role attribution comes from the matching workflow definition; unavailable parent-child correlation is never inferred.",

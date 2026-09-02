@@ -20,6 +20,7 @@ export function deriveRuntimeSources(sources) {
   const model = buildExecutionModel(sources);
   const signals = [];
   const dispatches = deriveDispatches(model);
+  const dispatchActivationSummary = deriveDispatchActivationSummary(dispatches);
   const episodeSummary = deriveEpisodeSummary(model, sources.runs?.metadata);
   const episodes = deriveEpisodes(model);
   const attributionGaps = deriveAttributionGaps(model);
@@ -123,6 +124,11 @@ export function deriveRuntimeSources(sources) {
     dispatches: {
       source: 'dispatches',
       rows: dispatches,
+      metadata: combinedMetadata(sources)
+    },
+    'dispatch-activation-summary': {
+      source: 'dispatch-activation-summary',
+      rows: dispatchActivationSummary,
       metadata: combinedMetadata(sources)
     },
     'runtime-episode-summary': {
@@ -239,6 +245,25 @@ function deriveDispatches(model) {
       }];
     })
     .sort((left, right) => Date.parse(text(right['started-at'])) - Date.parse(text(left['started-at'])));
+}
+
+/**
+ * Summarizes what fraction of authoritative workflow_dispatch runs were actually
+ * activated rather than skipped by a control-plane guard (for example an
+ * unauthorized pre-activation admission or a rollout-percent gate).
+ * @param {Row[]} dispatches
+ * @returns {Row[]}
+ */
+function deriveDispatchActivationSummary(dispatches) {
+  const total = dispatches.length;
+  const skipped = dispatches.filter((dispatch) => text(dispatch.status) === 'skipped').length;
+  const activated = total - skipped;
+  return [
+    { label: 'Activation rate', value: total > 0 ? formatPercent(activated / total) : 'Not observed' },
+    { label: 'Activated', value: formatCount(activated) },
+    { label: 'Skipped by guards', value: formatCount(skipped) },
+    { label: 'Total dispatches', value: formatCount(total) }
+  ];
 }
 
 /**
