@@ -21,7 +21,6 @@ permissions:
 strict: true
 tools:
   playwright:
-    mode: cli
     version: "0.1.13"
 network:
   allowed:

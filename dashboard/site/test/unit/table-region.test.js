@@ -124,7 +124,7 @@ describe('renderTableRegion', () => {
   });
 
   it('ports report-style facets, URL state, and progressive disclosure generically', () => {
-    const rows = Array.from({ length: 30 }, (_, index) => h(
+    const rows = Array.from({ length: 60 }, (_, index) => h(
       'tr',
       null,
       h('td', null, `workflow-${index + 1}`),
@@ -146,18 +146,21 @@ describe('renderTableRegion', () => {
     const mode = /** @type {HTMLSelectElement} */ (rendered.querySelector('[data-table-facet="mode"]'));
     const more = /** @type {HTMLButtonElement} */ (rendered.querySelector('[data-table-more]'));
     expect([...mode.options].map((option) => option.value)).toEqual(['', 'live', 'review']);
+    expect(more.textContent).toBe('Show all rows');
     expect(rows.filter((row) => !row.hidden)).toHaveLength(25);
-    expect(rendered.querySelector('.table-filter-result')?.textContent).toBe('Showing 25 of 30 results');
+    expect(rendered.querySelector('.table-filter-result')?.textContent).toBe('Showing 25 of 60 results');
     expect(more.hidden).toBe(false);
 
     more.click();
-    expect(rows.filter((row) => !row.hidden)).toHaveLength(30);
+    expect(rows.filter((row) => !row.hidden)).toHaveLength(60);
     expect(more.hidden).toBe(true);
+    expect(rendered.classList.contains('table-region-expanded')).toBe(true);
 
     mode.value = 'review';
     mode.dispatchEvent(new Event('input'));
-    expect(rows.filter((row) => !row.hidden)).toHaveLength(15);
-    expect(rendered.querySelector('.table-filter-result')?.textContent).toBe('Showing 15 of 15 results');
+    expect(rows.filter((row) => !row.hidden)).toHaveLength(25);
+    expect(rendered.querySelector('.table-filter-result')?.textContent).toBe('Showing 25 of 30 results');
+    expect(rendered.classList.contains('table-region-expanded')).toBe(false);
     expect(window.location.search).toContain('workflow-catalog.mode=review');
 
     window.history.replaceState(null, '', '/');

@@ -24,7 +24,6 @@ tools:
   cli-proxy: true
   timeout: 120  # Multi-device runs include preview startup and Playwright tests
   playwright:
-    mode: cli
     version: "0.1.18"
   bash:
     - "*"
