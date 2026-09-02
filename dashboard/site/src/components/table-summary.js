@@ -6,7 +6,7 @@ import { h } from '../dom.js';
 import { renderHistogram } from './histogram.js';
 import { formatSummaryCount } from './summary-copy.js';
 import { renderDefinitionListRows } from './view-chrome.js';
-import { formatMediumUtcDateTime } from './ui-primitives.js';
+import { formatMediumUtcDateTime, renderTableSummaryEmpty } from './ui-primitives.js';
 import { formatPercent } from '../view-formatters.js';
 
 const RUN_SUMMARY_FIELDS = new Set(['run', 'run-link']);
@@ -46,7 +46,7 @@ function renderColumnSummary(column) {
   }
   const values = column.values.filter((value) => value != null && value !== '');
   if (values.length === 0) {
-    return h('span', { className: 'table-summary-empty' }, 'No values');
+    return renderTableSummaryEmpty('No values');
   }
   if (column.type === 'boolean' || values.every((value) => typeof value === 'boolean')) {
     const trueCount = values.filter((value) => value === true).length;
@@ -137,7 +137,7 @@ function renderCategoricalSummary(values) {
  */
 function renderQuantitativeSummary(label, values) {
   if (values.length === 0) {
-    return h('span', { className: 'table-summary-empty' }, 'No numeric values');
+    return renderTableSummaryEmpty('No numeric values');
   }
   const mean = values.reduce((total, value) => total + value, 0) / values.length;
   const sortedValues = [...values].sort((left, right) => left - right);
@@ -175,7 +175,7 @@ function renderQuantitativeSummary(label, values) {
  */
 function renderTemporalSummary(timestamps) {
   if (timestamps.length === 0) {
-    return h('span', { className: 'table-summary-empty' }, 'No timestamps');
+    return renderTableSummaryEmpty('No timestamps');
   }
   const start = Math.min(...timestamps);
   const stop = Math.max(...timestamps);
