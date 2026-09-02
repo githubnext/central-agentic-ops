@@ -82,7 +82,6 @@ tools:
     min-integrity: approved
     toolsets: [repos, actions]
   playwright:
-    mode: cli
     version: "0.1.18"
   bash:
     - "*"

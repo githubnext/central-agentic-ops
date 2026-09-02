@@ -39,7 +39,6 @@ tools:
     toolsets: [repos, issues, actions]
   timeout: 120
   playwright:
-    mode: cli
   bash:
     - "*"
 safe-outputs:
