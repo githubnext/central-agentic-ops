@@ -16,6 +16,8 @@ const dashboardDocument = JSON.parse(readFileSync(new URL("../site/dashboard.jso
 const runWindowHours = dashboardHorizonHours(resolveDashboardHorizon(dashboardDocument.dashboard));
 const auditMaxPages = Number(process.env.REPORT_AUDIT_MAX_PAGES || 100);
 const maxRetryDelayMs = Number(process.env.REPORT_MAX_RETRY_SECONDS || 30) * 1000;
+const API_LIMITED_STEP_PREFIX = "CAO admission blocked: GitHub API limited until ";
+const API_UNAVAILABLE_STEP = "CAO admission blocked: GitHub API capacity unavailable";
 if (!controlSettingsPath) throw new Error("REPORT_CONTROL_SETTINGS is required");
 const controlSettings = JSON.parse(readFileSync(controlSettingsPath, "utf8"));
 const policyRepositories = [...new Set((controlSettings.allowed_repositories || []).map((value) => value.toLowerCase()))];
@@ -311,6 +313,28 @@ function nextPagePath(headers) {
   return headers.get("link")?.match(/<https:\/\/api\.github\.com([^>]+)>; rel="next"/)?.[1] || "";
 }
 
+function capacityAdmissionBlock(jobs) {
+  for (const step of jobs.flatMap((job) => job.steps || [])) {
+    if (step.conclusion !== "failure") continue;
+    if (step.name === API_UNAVAILABLE_STEP) {
+      return { admissionStatus: "resource-limited", admissionReason: "github-api-capacity-unavailable", resource: "github-rest-api" };
+    }
+    if (!step.name.startsWith(API_LIMITED_STEP_PREFIX)) continue;
+    const resetAt = step.name.slice(API_LIMITED_STEP_PREFIX.length).trim();
+    const resetTime = Date.parse(resetAt);
+    return {
+      admissionStatus: "resource-limited",
+      admissionReason: "github-api-capacity-insufficient",
+      resource: "github-rest-api",
+      ...(Number.isFinite(resetTime) ? {
+        resourceResetAt: new Date(resetTime).toISOString(),
+        resourceWaitHours: Math.ceil(Math.max(0, resetTime - Date.now()) / 36_000) / 100,
+      } : {}),
+    };
+  }
+  return null;
+}
+
 async function collectRunHealth(registryByRepository) {
   const windowStart = new Date(Date.now() - runWindowHours * 60 * 60 * 1000);
   let page = 0;
@@ -329,6 +353,7 @@ async function collectRunHealth(registryByRepository) {
           const current = totals.get(run.workflow_id) || { runs: 0, successful: 0, failed: 0, actionRequired: 0, cancelled: 0, skipped: 0, pending: 0, other: 0, runIds: [], runRecords: [] };
           current.runIds.push(run.id);
           current.runRecords.push({
+            repository: repositoryName,
             runId: run.id,
             runNumber: run.run_number,
             runAttempt: run.run_attempt,
@@ -359,6 +384,18 @@ async function collectRunHealth(registryByRepository) {
       console.warn(`${error.message}; run health will be unavailable for ${repositoryName}`);
     }
   });
+  for (const current of totals.values()) {
+    const latest = current.runRecords[0];
+    if (!latest || !["failure", "timed_out", "startup_failure"].includes(latest.conclusion)) continue;
+    try {
+      const response = await github(`/repos/${latest.repository}/actions/runs/${latest.runId}/jobs?filter=latest&per_page=100`);
+      const block = capacityAdmissionBlock(response.body.jobs || []);
+      if (block) Object.assign(latest, block);
+    } catch (error) {
+      complete = false;
+      console.warn(`${error.message}; admission details will be unavailable for run ${latest.runId}`);
+    }
+  }
   return { available, complete, windowStart: windowStart.toISOString(), pages: page, totals };
 }
 

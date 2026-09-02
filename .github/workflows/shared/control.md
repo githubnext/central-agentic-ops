@@ -38,9 +38,25 @@ tools:
 jobs:
   pre-activation:
     pre-steps:
+      - name: Generate CAO pre-activation GitHub App token
+        id: cao_pre_activation_app_token
+        env:
+          CAO_GITHUB_APP_ID: ${{ secrets.GH_AW_GITHUB_APP_ID }}
+          CAO_GITHUB_APP_PRIVATE_KEY: ${{ secrets.GH_AW_GITHUB_APP_PRIVATE_KEY }}
+        if: ${{ env.CAO_GITHUB_APP_ID != '' && env.CAO_GITHUB_APP_PRIVATE_KEY != '' }}
+        uses: actions/create-github-app-token@v3.2.0
+        with:
+          client-id: ${{ secrets.GH_AW_GITHUB_APP_ID }}
+          private-key: ${{ secrets.GH_AW_GITHUB_APP_PRIVATE_KEY }}
+          owner: ${{ github.repository_owner }}
+          github-api-url: ${{ github.api_url }}
+          permission-actions: read
+          permission-contents: read
+
       - name: Evaluate Central Agentic Ops admission
         id: cao_admission
         env:
+          CAO_API_TOKEN: ${{ steps.cao_pre_activation_app_token.outputs.token || secrets.GH_AW_GITHUB_TOKEN || github.token }}
           GH_TOKEN: ${{ github.token }}
           GITHUB_WORKFLOW_SHA: ${{ github.workflow_sha }}
           CAO_PACKAGE: ${{ github.aw.import-inputs.package }}
@@ -85,6 +101,23 @@ jobs:
           </details>
           EOF
 
+      - name: "CAO admission blocked: GitHub API limited until ${{ steps.cao_admission.outputs.github_api_reset_at }}"
+        if: ${{ steps.cao_admission.outputs.reason == 'github-api-capacity-insufficient' }}
+        env:
+          CAO_API_LIMIT: ${{ steps.cao_admission.outputs.github_api_limit }}
+          CAO_API_REMAINING: ${{ steps.cao_admission.outputs.github_api_remaining }}
+          CAO_API_REQUIRED: ${{ steps.cao_admission.outputs.github_api_required }}
+          CAO_API_RESET_AT: ${{ steps.cao_admission.outputs.github_api_reset_at }}
+        run: |
+          echo "::error title=CAO admission blocked by GitHub API capacity::${CAO_API_REMAINING} of ${CAO_API_LIMIT} core requests remain; ${CAO_API_REQUIRED} required. Retry after ${CAO_API_RESET_AT}. See the admission summary for next steps."
+          exit 1
+
+      - name: "CAO admission blocked: GitHub API capacity unavailable"
+        if: ${{ steps.cao_admission.outputs.reason == 'github-api-capacity-unavailable' }}
+        run: |
+          echo "::error title=CAO admission could not verify GitHub API capacity::Check authentication and GitHub API status. See the admission summary for next steps."
+          exit 1
+
       - name: Install gh-aw CLI when monthly budget is enabled
         if: ${{ steps.cao_admission.outputs.authorized == 'true' && steps.cao_admission.outputs.monthly_credit_budget != '0' }}
         uses: github/gh-aw-actions/setup-cli@v0.88.0
@@ -94,7 +127,7 @@ jobs:
       - name: Run CAO control precompute
         if: ${{ steps.cao_admission.outputs.authorized == 'true' }}
         env:
-          GH_TOKEN: ${{ secrets.GH_AW_GITHUB_TOKEN || github.token }}
+          GH_TOKEN: ${{ steps.cao_pre_activation_app_token.outputs.token || secrets.GH_AW_GITHUB_TOKEN || github.token }}
           GITHUB_WORKFLOW_SHA: ${{ github.workflow_sha }}
           CAO_PACKAGE: ${{ github.aw.import-inputs.package }}
           CAO_ROLE: ${{ github.aw.import-inputs.role }}
