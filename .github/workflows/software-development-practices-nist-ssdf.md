@@ -82,6 +82,10 @@ concurrency:
 
 tracker-id: software-development-practices-nist-ssdf
 
+graders:
+  operational-value:
+    run: .github/graders/software-development-practices-nist-ssdf-operational-value.sh
+
 tools:
   cli-proxy: true
   github:
@@ -149,10 +153,11 @@ Create one issue containing:
 
 1. the exact title after the configured prefix: `TARGET_REPO repository guidance`;
 2. target repository, analyzed commit SHA from `git -C target rev-parse HEAD`, source verification date, final publication version, and official URLs;
-3. scope, assumptions, inaccessible evidence, non-final draft notices, and limitations;
-4. a PO/PS/PW/RV practice-to-evidence matrix with the bounded statuses above;
-5. the prioritized improvement backlog with evidence, risk rationale, owner surface, dependencies, and acceptance checks;
-6. strengths worth preserving and explicit human-review questions.
+3. the machine-readable marker `<!-- operational-value: framework=nist-ssdf target=OWNER/REPO target-sha=40_HEX_SHA -->`, using the exact assessed target and commit;
+4. scope, assumptions, inaccessible evidence, non-final draft notices, and limitations;
+5. a PO/PS/PW/RV practice-to-evidence matrix with the bounded statuses above;
+6. the prioritized improvement backlog with evidence, risk rationale, owner surface, dependencies, and acceptance checks;
+7. strengths worth preserving and explicit human-review questions.
 
 State prominently that the issue is advisory and non-binding and does not prove security, compliance, certification, endorsement, or SSDF conformance. If `correlation_id` is present, include `### Control Plane` with the correlation ID, central repository, and control-plane run URL.
 

@@ -1,0 +1,202 @@
+{
+  "language-version": "0.1.0",
+  "dashboard": {
+    "id": "software-development-practices-dashboard",
+    "title": "Software Development Practices Advisor",
+    "description": "Track framework review runs, evidence-backed guidance, and explicit human acceptance for frozen repository snapshots.",
+    "repository": "githubnext/central-agentic-ops",
+    "pages": [
+      {
+        "id": "software-development-practices-dashboard",
+        "kind": "custom",
+        "title": "Software Development Practices Advisor",
+        "navigation-label": "Development practices",
+        "description": "Track framework review runs, evidence-backed guidance, and explicit human acceptance for frozen repository snapshots.",
+        "icon": "code",
+        "views": [
+          {
+            "id": "software-development-practices-runs",
+            "title": "Framework reviews by conclusion",
+            "disclosure": "essential",
+            "data": {
+              "source": "runs",
+              "time": {
+                "range": "30d"
+              },
+              "filters": {
+                "workflow": [
+                  ".github/workflows/software-development-practices.md",
+                  ".github/workflows/software-development-practices-github-well-architected.md",
+                  ".github/workflows/software-development-practices-nist-ssdf.md"
+                ]
+              }
+            },
+            "mark": "chart",
+            "chart": "line",
+            "encoding": {
+              "x": {
+                "field": "started-at",
+                "type": "temporal",
+                "time-unit": "day"
+              },
+              "y": {
+                "field": "run",
+                "type": "quantitative",
+                "aggregate": "count"
+              },
+              "color": {
+                "field": "run-conclusion",
+                "type": "nominal"
+              }
+            }
+          },
+          {
+            "id": "software-development-practices-outcomes",
+            "title": "Repository guidance",
+            "description": "Guidance retains official source provenance, evidence limitations, and prioritized recommendations for human review.",
+            "disclosure": "essential",
+            "data": {
+              "source": "outcomes",
+              "filters": {
+                "package": [
+                  "software-development-practices"
+                ]
+              },
+              "limit": 50
+            },
+            "mark": "table",
+            "empty-message": "No Software Development Practices guidance was retained.",
+            "encoding": {
+              "href": {
+                "field": "external-link",
+                "type": "nominal"
+              },
+              "columns": [
+                {
+                  "field": "repository",
+                  "type": "nominal"
+                },
+                {
+                  "field": "outcome-title",
+                  "type": "nominal",
+                  "title": "Guidance"
+                },
+                {
+                  "field": "outcome-state",
+                  "type": "nominal",
+                  "title": "Disposition",
+                  "display": "status"
+                },
+                {
+                  "field": "published-at",
+                  "type": "temporal",
+                  "title": "Published"
+                }
+              ]
+            }
+          },
+          {
+            "id": "software-development-practices-attainment",
+            "title": "Human-accepted guidance evidence",
+            "description": "Each framework preserves its stable target-commit opportunity, acceptance evidence, maturity state, and repository link.",
+            "disclosure": "essential",
+            "data": {
+              "source": "operational-values",
+              "filters": {
+                "workflow": [
+                  ".github/workflows/software-development-practices-github-well-architected.md",
+                  ".github/workflows/software-development-practices-nist-ssdf.md"
+                ]
+              },
+              "limit": 50
+            },
+            "mark": "table",
+            "empty-message": "No Software Development Practices acceptance evidence is available.",
+            "encoding": {
+              "href": {
+                "field": "evidence-link",
+                "type": "nominal"
+              },
+              "columns": [
+                {
+                  "field": "repository",
+                  "type": "nominal"
+                },
+                {
+                  "field": "operational-value-definition",
+                  "type": "nominal",
+                  "title": "Framework"
+                },
+                {
+                  "field": "operational-case",
+                  "type": "nominal",
+                  "title": "Opportunity"
+                },
+                {
+                  "field": "operational-value",
+                  "type": "quantitative",
+                  "title": "Human acceptance"
+                },
+                {
+                  "field": "maturity-status",
+                  "type": "nominal",
+                  "title": "Maturity",
+                  "display": "status"
+                },
+                {
+                  "field": "evidence-cutoff",
+                  "type": "temporal",
+                  "title": "Evidence cutoff"
+                }
+              ]
+            }
+          },
+          {
+            "id": "software-development-practices-value-trend",
+            "title": "Framework guidance acceptance trend",
+            "description": "Mean attainment remains separated by evaluator definition and does not imply causation, certification, security, or framework conformance.",
+            "disclosure": "essential",
+            "data": {
+              "source": "operational-values",
+              "time": {
+                "range": "90d"
+              },
+              "filters": {
+                "workflow": [
+                  ".github/workflows/software-development-practices-github-well-architected.md",
+                  ".github/workflows/software-development-practices-nist-ssdf.md"
+                ]
+              }
+            },
+            "mark": "chart",
+            "chart": "line",
+            "encoding": {
+              "x": {
+                "field": "observed-at",
+                "type": "temporal",
+                "time-unit": "day"
+              },
+              "y": {
+                "field": "operational-value",
+                "type": "quantitative",
+                "aggregate": "mean"
+              },
+              "color": {
+                "field": "operational-value-definition",
+                "type": "nominal"
+              }
+            }
+          }
+        ]
+      }
+    ],
+    "navigation": [
+      {
+        "label": "Package operations",
+        "pages": [
+          "software-development-practices-dashboard"
+        ]
+      }
+    ]
+  }
+}

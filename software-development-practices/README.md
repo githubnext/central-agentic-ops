@@ -12,8 +12,8 @@ The Software Development Practices Advisor helps a private Central Agentic Ops c
 | Workflow | Responsibility |
 | --- | --- |
 | [`software-development-practices`](../.github/workflows/software-development-practices.md) | Discovers, ranks, selects, and dispatches repository-level work. |
-| [`software-development-practices-github-well-architected`](../.github/workflows/software-development-practices-github-well-architected.md) | Reviews repository evidence across the current GitHub Well-Architected pillars and creates one prioritized guidance issue. |
-| [`software-development-practices-nist-ssdf`](../.github/workflows/software-development-practices-nist-ssdf.md) | Reviews repository evidence against the current final NIST SSDF practices and creates one prioritized guidance issue. |
+| [`software-development-practices-github-well-architected`](../.github/workflows/software-development-practices-github-well-architected.md) | Reviews repository evidence across the current GitHub Well-Architected pillars, creates one prioritized guidance issue, and measures explicit human acceptance. |
+| [`software-development-practices-nist-ssdf`](../.github/workflows/software-development-practices-nist-ssdf.md) | Reviews repository evidence against the current final NIST SSDF practices, creates one prioritized guidance issue, and measures explicit human acceptance. |
 
 The orchestrator dispatches at most 20 workers per run. Each worker reviews one repository, creates at most one consolidated issue through declared safe outputs, and defaults to review output.
 
@@ -56,4 +56,4 @@ The omitted fields default to an enabled package and workers, `review` mode, one
 - Review mode routes guidance to the designated review repository; live mode creates it in the selected target only with target-owned authority.
 - Findings distinguish observed evidence, gaps, limitations, and human-review questions; they never claim certification, compliance, security, or framework endorsement.
 - Safe outputs contain no secrets, personal data, exploit details, private alerts, or confidential evidence.
-- Operational-value evaluators are pending post-adoption evidence and are intentionally not registered.
+- Operational value is attainment-only: each worker scores `1` when a non-bot human accepts its frozen target-commit guidance issue with a thumbs-up reaction within 30 days, `0` when complete evidence shows no acceptance, and `null` when assignment or evidence is unavailable. The package dashboard keeps this evidence distinct by framework and does not imply causation, certification, security, or conformance.

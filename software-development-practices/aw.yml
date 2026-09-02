@@ -5,3 +5,8 @@ includes:
   - .github/workflows/software-development-practices.md
   - .github/workflows/software-development-practices-github-well-architected.md
   - .github/workflows/software-development-practices-nist-ssdf.md
+resources:
+  - source: dashboard.json
+    destination: .github/aw/dashboards/software-development-practices.json
+  - source: software-development-guidance-operational-value-runtime.bash
+    destination: .github/aw/software-development-practices/software-development-guidance-operational-value-runtime.bash
