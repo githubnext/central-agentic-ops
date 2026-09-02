@@ -600,6 +600,8 @@ test("workflow contracts isolate authenticated package lifecycle checks", () => 
   assert.match(packageLifecycle, /GH_TOKEN: \$\{\{ github\.token \}\}/);
   assert.match(packageLifecycle, /CENTRAL_AGENTIC_OPS_PACKAGE_SOURCE:/);
   assert.match(packageLifecycle, /npm run test:package-lifecycle/);
+  assert.match(packageLifecycle, /grep -Fq "API rate limit exceeded for installation"/);
+  assert.match(packageLifecycle, /exit "\$status"/);
 });
 
 test("release drafts reviewed notes for an explicit semantic version before publishing", () => {
