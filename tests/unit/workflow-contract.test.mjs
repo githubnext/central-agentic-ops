@@ -1559,12 +1559,15 @@ test("SelfCare accessibility checker audits the served docs site with axe-core e
   assert.match(source, /worker: accessibility-checker/);
   assert.match(source, /safe_output_mode` is `live`/);
   assert.match(source, /engine:\n\s+id: pi\n\s+model: copilot\/gpt-5\.4/);
-  assert.match(source, /playwright:\n\s+version: "0\.1\.18"/);
+  assert.match(source, /cli-proxy: true/);
+  assert.match(source, /playwright:\n\s+mode: cli\n\s+version: "0\.1\.18"/);
   assert.match(source, /npm pack axe-core@4\.13\.0/);
   assert.match(source, /npm run docs:preview -- --host 127\.0\.0\.1 --port <port>/);
   assert.match(source, /Do not use a generic flat static server rooted at `dist\/` as the primary preview mechanism/);
   assert.match(source, /Astro preview performs the base-path routing/);
   assert.match(source, /WCAG 2\.2 Level AA/);
+  assert.match(source, /playwright-cli` is a pre-installed CLI binary already on `PATH`/);
+  assert.match(source, /never call `missing_tool` for it based on assumption alone/);
   assert.match(source, /colorScheme: "light"/);
   assert.match(source, /colorScheme: "dark"/);
   assert.match(source, /prefers-reduced-motion/);
