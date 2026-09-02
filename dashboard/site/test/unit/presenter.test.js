@@ -429,7 +429,7 @@ describe('presenter built-in and custom pages', () => {
     });
 
     const labels = [...rendered.querySelectorAll('.nav-section-label')].map((node) => node.textContent?.trim());
-    expect(labels).toEqual(['Attention', 'Investigate', 'Explore', 'Package operations']);
+    expect(labels).toEqual(['Attention', 'Investigate', 'Explore', 'Maintain', 'Package operations']);
     expect(rendered.querySelector('[data-nav-page-id="overview"]')?.previousElementSibling?.textContent).toBe('Attention');
     expect(rendered.querySelector('[data-nav-page-id="runtime"]')?.previousElementSibling?.textContent).toBe('Investigate');
     expect([...rendered.querySelectorAll('.nav-label')].map((node) => node.textContent)).toEqual([
@@ -443,6 +443,7 @@ describe('presenter built-in and custom pages', () => {
       'Repositories',
       'Packages',
       'Models & agents',
+      'Updates',
       'UK AI advisory',
       'Ambient context',
       'AW Maintenance',

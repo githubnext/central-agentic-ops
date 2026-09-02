@@ -38,6 +38,38 @@ describe('dashboard document validation', () => {
     expect(accepted.ok).toBe(true);
   });
 
+  it('defines workflow update inventory and version distribution views', () => {
+    const document = JSON.parse(authoritativeDashboardSource);
+    const updates = document.dashboard.pages.find((/** @type {{ id: string }} */ page) => page.id === 'updates');
+    expect(updates).toMatchObject({
+      kind: 'custom',
+      views: [
+        {
+          id: 'workflow-updates',
+          mark: 'table',
+          data: { source: 'workflows' }
+        },
+        {
+          id: 'workflow-versions',
+          mark: 'chart',
+          chart: 'pie',
+          data: { source: 'workflows' },
+          encoding: {
+            x: { field: 'gh-aw-version' },
+            y: { field: 'workflow', aggregate: 'count' }
+          }
+        }
+      ]
+    });
+    expect(updates.views[0].encoding.columns.map((/** @type {{ field: string }} */ column) => column.field)).toEqual([
+      'workflow',
+      'repository',
+      'gh-aw-version',
+      'gh-aw-update-state'
+    ]);
+    expect(validateDashboardDocument(JSON.stringify(document)).ok).toBe(true);
+  });
+
   it('validates declarative table intents without author-defined context templating', () => {
     const document = JSON.parse(authoritativeDashboardSource);
     const runsPage = document.dashboard.pages.find((/** @type {{ id: string }} */ page) => page.id === 'workflow-runs');

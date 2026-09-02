@@ -172,6 +172,61 @@ async function fileContent(repositoryName, filePath) {
   return Buffer.from(response.body.content || "", "base64").toString("utf8");
 }
 
+function ghAwPayloads(source) {
+  const prefixes = {
+    ghAwMetadata: "# gh-aw-metadata: ",
+    ghAwManifest: "# gh-aw-manifest: ",
+  };
+  const payloads = { ghAwMetadata: null, ghAwManifest: null };
+  for (const line of source.split("\n")) {
+    for (const [name, prefix] of Object.entries(prefixes)) {
+      if (!line.startsWith(prefix)) continue;
+      try {
+        const payload = JSON.parse(line.slice(prefix.length));
+        if (payload && typeof payload === "object" && !Array.isArray(payload)) payloads[name] = payload;
+      } catch {
+        // Malformed generated metadata is unavailable rather than partially parsed.
+      }
+    }
+  }
+  return payloads;
+}
+
+function isVersion(value) {
+  const text = String(value);
+  const parts = (text.startsWith("v") ? text.slice(1) : text).split(".");
+  return parts.length > 1 && parts.every((part) => part.length > 0 && [...part].every((character) => character >= "0" && character <= "9"));
+}
+
+function compareVersions(left, right) {
+  const parts = (value) => {
+    const text = String(value);
+    return (text.startsWith("v") ? text.slice(1) : text).split(".").map((part) => Number.parseInt(part, 10));
+  };
+  const [leftParts, rightParts] = [parts(left), parts(right)];
+  if ([...leftParts, ...rightParts].some((part) => !Number.isInteger(part))) return null;
+  for (let index = 0; index < Math.max(leftParts.length, rightParts.length); index += 1) {
+    const difference = (leftParts[index] || 0) - (rightParts[index] || 0);
+    if (difference !== 0) return difference;
+  }
+  return 0;
+}
+
+function updateState(version, latestVersion) {
+  const comparison = version && latestVersion ? compareVersions(version, latestVersion) : null;
+  return comparison === null ? "unknown" : comparison < 0 ? "update-available" : "up-to-date";
+}
+
+async function latestGhAwVersion() {
+  try {
+    const version = (await github("/repos/github/gh-aw/releases/latest")).body.tag_name;
+    return typeof version === "string" && isVersion(version) ? version : null;
+  } catch (error) {
+    console.warn(`${error.message}; gh-aw update state will be unknown`);
+    return null;
+  }
+}
+
 async function repositoryManifestFiles(repositoryName) {
   const metadata = await repositoryMetadata(repositoryName);
   if (!metadata.default_branch || (metadata.private && !includePrivate && repositoryName !== repository)) return [];
@@ -215,14 +270,27 @@ function workflowWorkerIds(source) {
 
 async function workflowCapabilities(repositoryName, lockPath) {
   const sourcePath = lockPath.replace(/\.lock\.yml$/, ".md");
+  const [source, lock] = await Promise.allSettled([
+    fileContent(repositoryName, sourcePath),
+    fileContent(repositoryName, lockPath),
+  ]);
+  const payloads = lock.status === "fulfilled"
+    ? ghAwPayloads(lock.value)
+    : { ghAwMetadata: null, ghAwManifest: null };
+  const ghAwVersion = typeof payloads.ghAwMetadata?.compiler_version === "string"
+    && isVersion(payloads.ghAwMetadata.compiler_version)
+    ? payloads.ghAwMetadata.compiler_version
+    : null;
   try {
-    const source = await fileContent(repositoryName, sourcePath);
-    const role = workflowRole(source);
+    if (source.status !== "fulfilled") throw source.reason;
+    const role = workflowRole(source.value);
     return {
-      operationalValue: declaresOperationalValue(source),
+      operationalValue: declaresOperationalValue(source.value),
       role,
-      workers: role === "orchestrator" ? workflowWorkerIds(source) : [],
+      workers: role === "orchestrator" ? workflowWorkerIds(source.value) : [],
       sourceAvailable: true,
+      ghAwVersion,
+      ...payloads,
     };
   } catch (error) {
     console.warn(`${error.message}; workflow capabilities are unknown for ${repositoryName}/${sourcePath}`);
@@ -231,6 +299,8 @@ async function workflowCapabilities(repositoryName, lockPath) {
       role: "unknown",
       workers: [],
       sourceAvailable: !/GitHub API 404\b/.test(error.message) ? null : false,
+      ghAwVersion,
+      ...payloads,
     };
   }
 }
@@ -382,9 +452,10 @@ const bundles = (await mapWithConcurrency(manifestFiles, 8, async (item) => {
   }
 })).filter(Boolean).sort((left, right) => left.repository.localeCompare(right.repository) || left.name.localeCompare(right.name));
 
-const [runHealth, organizationRepositories] = await Promise.all([
+const [runHealth, organizationRepositories, latestVersion] = await Promise.all([
   collectRunHealth(registryByRepository),
   organizationRepositorySummary(),
+  latestGhAwVersion(),
 ]);
 
 const discoveredWorkflows = await mapWithConcurrency([...discovered.values()], 8, async (item) => {
@@ -400,6 +471,7 @@ const discoveredWorkflows = await mapWithConcurrency([...discovered.values()], 8
     updatedAt: registered?.updated_at || null,
     runHealth: registered ? runHealth.totals.get(registered.id) || { runs: 0, successful: 0, failed: 0, actionRequired: 0, cancelled: 0, skipped: 0, pending: 0, other: 0, runIds: [], runRecords: [] } : null,
     ...capabilities,
+    updateState: updateState(capabilities.ghAwVersion, latestVersion),
   };
 });
 const missingSourceCount = discoveredWorkflows.filter((workflow) => workflow.sourceAvailable === false).length;

@@ -244,6 +244,10 @@ function workflowRows(deployed, generatedAt, inventory, controlSettings) {
       "workflow-active": workflow.state === "active"
         ? "true"
         : String(workflow.state).startsWith("disabled") ? "false" : "unknown",
+      "gh-aw-version": workflow.ghAwVersion || "unknown",
+      "gh-aw-update-state": workflow.updateState || "unknown",
+      "gh-aw-metadata": workflow.ghAwMetadata || null,
+      "gh-aw-manifest": workflow.ghAwManifest || null,
       "rollout-mode": details?.configuredMode || recentMode,
       "observed-at": workflow.updatedAt || generatedAt,
     };

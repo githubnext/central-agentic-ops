@@ -342,7 +342,6 @@ async function copyIntent(content) {
   }
 }
 
-/** @param {string} value */
 /** @param {unknown} value @returns {value is Record<string, any>} */
 function isPlainObject(value) {
   return typeof value === 'object' && value !== null && !Array.isArray(value);
