@@ -20,7 +20,6 @@
     "@astrojs/starlight": "0.41.7",
     "astro": "7.2.2",
     "lottie-web": "^5.13.0",
-    "starlight-theme-galaxy": "0.8.0",
     "yaml": "^2.9.0"
   }
 }

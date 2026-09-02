@@ -15,34 +15,3 @@
     height: 2rem;
   }
 }
-
-/*
- * starlight-theme-galaxy renders aside titles/links in a fixed accent color over a
- * near-transparent background, which fails WCAG 1.4.3 contrast (as low as 2.01:1) in both
- * color schemes. Override the accent per variant/scheme with tones that keep at least a
- * 4.5:1 contrast ratio against the light and dark page backgrounds.
- */
-:root[data-theme="light"] .starlight-aside--note {
-  --galaxy-aside-accent: #125ed9;
-}
-:root[data-theme="dark"] .starlight-aside--note {
-  --galaxy-aside-accent: #5591f1;
-}
-:root[data-theme="light"] .starlight-aside--tip {
-  --galaxy-aside-accent: #09714f;
-}
-:root[data-theme="dark"] .starlight-aside--tip {
-  --galaxy-aside-accent: #0fbd83;
-}
-:root[data-theme="light"] .starlight-aside--caution {
-  --galaxy-aside-accent: #895b0b;
-}
-:root[data-theme="dark"] .starlight-aside--caution {
-  --galaxy-aside-accent: #c68310;
-}
-:root[data-theme="light"] .starlight-aside--danger {
-  --galaxy-aside-accent: #c6101f;
-}
-:root[data-theme="dark"] .starlight-aside--danger {
-  --galaxy-aside-accent: #f25f6b;
-}
