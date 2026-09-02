@@ -179,9 +179,12 @@ describe("live Dashboard Language sources", () => {
         "maturity-status": "interim",
       });
 
-      inputs.report.records = [];
-      inputs.report.error = "GitHub API rate limit exceeded; collection stopped.";
-      writeFileSync(join(temporaryDirectory, "report.json"), JSON.stringify(inputs.report));
+      const rateLimitedReport = {
+        ...inputs.report,
+        records: [],
+        error: "GitHub API rate limit exceeded; collection stopped.",
+      };
+      writeFileSync(join(temporaryDirectory, "report.json"), JSON.stringify(rateLimitedReport));
       execFileSync(process.execPath, [
         resolve("../../dashboard/report/dashboard-language-sources.mjs"),
       ], {
@@ -199,7 +202,7 @@ describe("live Dashboard Language sources", () => {
       sources = JSON.parse(readFileSync(output, "utf8"));
       expect(sources["coverage-diagnostics"].rows).toContainEqual({
         title: "Durable output collection unavailable",
-        effect: inputs.report.error,
+        effect: rateLimitedReport.error,
       });
       expect(sources.findings.metadata).toMatchObject({
         availability: "unavailable",
