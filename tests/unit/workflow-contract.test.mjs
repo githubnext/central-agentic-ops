@@ -2035,6 +2035,15 @@ test("Documentation Pages embeds this repository's control-plane report", () => 
   assert.match(astroConfig, /label: "Control plane status", link: "\/cao\/"/);
 });
 
+test("Documentation site uses stock Starlight without external themes", () => {
+  const packageJson = JSON.parse(readFileSync(join(root, "package.json"), "utf8"));
+  const astroConfig = readFileSync(join(root, "astro.config.mjs"), "utf8");
+  const dependencies = { ...packageJson.dependencies, ...packageJson.devDependencies };
+
+  assert.deepEqual(Object.keys(dependencies).filter((name) => name.startsWith("starlight-theme-")), []);
+  assert.doesNotMatch(astroConfig, /starlight-theme-/);
+});
+
 test("Dashboard inventory links multiline orchestrator worker lists", () => {
   const temporaryRoot = mkdtempSync(join(tmpdir(), "central-agentic-ops-inventory-"));
   const outputPath = join(temporaryRoot, "control-plane.json");
