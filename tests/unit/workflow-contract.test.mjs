@@ -559,6 +559,32 @@ test("workflow contracts isolate authenticated package lifecycle checks", () => 
   assert.match(packageLifecycle, /npm run test:package-lifecycle/);
 });
 
+test("release drafts reviewed notes for an explicit semantic version before publishing", () => {
+  const source = workflow("release.yml");
+  const config = parse(source);
+  const jobs = generatedJobs(source);
+  const version = jobs.get("validate-version")?.block ?? "";
+  const validation = jobs.get("validate-package")?.block ?? "";
+  const prepare = jobs.get("prepare-release")?.block ?? "";
+  const publish = jobs.get("publish-release")?.block ?? "";
+  const rootManifest = readFileSync(join(root, "aw.yml"), "utf8");
+
+  assert.equal(config.on.workflow_dispatch.inputs.operation.default, "prepare");
+  assert.deepEqual(config.on.workflow_dispatch.inputs.operation.options, ["prepare", "publish"]);
+  assert.equal(config.on.workflow_dispatch.inputs.version.default, "0.0.1");
+  assert.match(version, /RELEASE_VERSION: \$\{\{ inputs\.version \}\}/);
+  assert.match(version, /stable semantic version/);
+  assert.match(validation, /CENTRAL_AGENTIC_OPS_PACKAGE_SOURCE: \$\{\{ github\.repository \}\}@\$\{\{ github\.sha \}\}/);
+  assert.match(validation, /npm run test:package-lifecycle/);
+  assert.deepEqual(jobs.get("prepare-release")?.needs, ["validate-version", "validate-package"]);
+  assert.match(prepare, /draft: true/);
+  assert.match(prepare, /generate_release_notes: true/);
+  assert.match(publish, /release\.draft && release\.tag_name === releaseTag/);
+  assert.match(publish, /draft: false/);
+  assert.doesNotMatch(source, /release-please|upload-artifact|CHANGELOG\.md/);
+  assert.doesNotMatch(rootManifest, /\.github\/workflows\/release\.yml/);
+});
+
 test("package manifests exclude repository-only tests", () => {
   for (const relativePath of ["aw.yml", join("advisory", "aw.yml"), join("ambient-context", "aw.yml"), join("aw-maintenance", "aw.yml"), join("dashboard", "aw.yml"), join("dependabot", "aw.yml"), join("eu-cra-compliance", "aw.yml"), join("optimization", "aw.yml"), join("self-care", "aw.yml"), join("software-development-practices", "aw.yml")]) {
     const manifest = readFileSync(join(root, relativePath), "utf8");
