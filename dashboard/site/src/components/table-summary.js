@@ -7,6 +7,7 @@ import { renderHistogram } from './histogram.js';
 import { formatSummaryCount } from './summary-copy.js';
 import { renderDefinitionListRows } from './view-chrome.js';
 import { formatMediumUtcDateTime } from './ui-primitives.js';
+import { formatPercent } from '../view-formatters.js';
 
 const RUN_SUMMARY_FIELDS = new Set(['run', 'run-link']);
 const RUN_SUMMARY_LABELS = new Set(['run', 'run link', 'workflow run', 'workflow runs']);
@@ -52,7 +53,7 @@ function renderColumnSummary(column) {
     return h(
       'div',
       { className: 'table-summary-boolean' },
-      h('strong', null, formatPercentage(trueCount / values.length)),
+      h('strong', null, formatPercent(trueCount / values.length)),
       h('span', null, ' true')
     );
   }
@@ -124,7 +125,7 @@ function renderCategoricalSummary(values) {
       'li',
       null,
       h('span', { title: value }, value),
-      h('strong', null, formatPercentage(count / values.length))
+      h('strong', null, formatPercent(count / values.length))
     ))
   );
 }
@@ -210,14 +211,6 @@ function formatDuration(duration) {
   if (hours < 24) return `${hours}h ${minutes % 60}m`;
   const days = Math.floor(hours / 24);
   return `${days}d ${hours % 24}h`;
-}
-
-/**
- * @param {number} value
- * @returns {string}
- */
-function formatPercentage(value) {
-  return value.toLocaleString('en', { style: 'percent', maximumFractionDigits: 1 });
 }
 
 /**
