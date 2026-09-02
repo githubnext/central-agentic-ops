@@ -356,6 +356,7 @@
         logDashboardEvent("info", "dashboard.ready", { mode: "fixtures", ...summarizeSources(fixtureSources) });
       } else {
         let dashboard = renderSources({}, "loading");
+        let readinessState = null;
         const cacheKey = new URL("./sources.json", window.location.href).href;
         logDashboardEvent("debug", "source.request", { mode: "live" });
         const liveSourcesPromise = fetch("./sources.json").then(async (response) => {
@@ -385,6 +386,7 @@
           const sources = await liveSourcesPromise;
           logDashboardEvent("info", "source.ready", { ...summarizeSources(sources) });
           dashboard = renderSources(sources);
+          readinessState = "ready";
           void writeCachedSources(window.indexedDB, cacheKey, sources)
             .then(() => logDashboardEvent("debug", "cache.write.ready", { cache: "stored" }))
             .catch(() => logDashboardEvent("warning", "cache.write.failure", { cache: "unavailable" }));
@@ -393,6 +395,7 @@
           const failure = new Error(`Unable to load live dashboard data: ${message}`, { cause: error });
           if (cachedSources) {
             logDashboardEvent("warning", "source.fallback", { cache: "hit", ...summarizeSources(cachedSources) });
+            readinessState = "cached";
             dashboard.classList.remove("dashboard-refreshing");
             dashboard.removeAttribute("aria-busy");
             const status = dashboard.querySelector(".source-loading-status");
@@ -407,10 +410,9 @@
           }
         } finally {
           loadingProgress.complete();
-          logDashboardEvent("info", "dashboard.ready", {
-            mode: "live",
-            state: cachedSources && dashboard.classList.contains("source-loading-warning") ? "cached" : "ready",
-          });
+          if (readinessState) {
+            logDashboardEvent("info", "dashboard.ready", { mode: "live", state: readinessState });
+          }
         }
       }
     </script>

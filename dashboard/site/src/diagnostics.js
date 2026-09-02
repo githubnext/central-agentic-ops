@@ -36,6 +36,7 @@ const SAFE_NUMBER_KEYS = new Set([
   'status',
 ]);
 
+/** @type {Record<string, Set<string>>} */
 const SAFE_STRING_VALUES = {
   cache: new Set(['hit', 'miss', 'stored', 'unavailable']),
   mode: new Set(['fixtures', 'live']),
@@ -43,10 +44,10 @@ const SAFE_STRING_VALUES = {
 };
 
 const LEVELS = {
-  debug: { method: 'debug', macro: '::debug::' },
-  error: { method: 'error', macro: `::error title=${LOG_TITLE}::` },
-  info: { method: 'info', macro: `::notice title=${LOG_TITLE}::` },
-  warning: { method: 'warn', macro: `::warning title=${LOG_TITLE}::` },
+  debug: '::debug::',
+  error: `::error title=${LOG_TITLE}::`,
+  info: `::notice title=${LOG_TITLE}::`,
+  warning: `::warning title=${LOG_TITLE}::`,
 };
 
 /**
@@ -58,11 +59,14 @@ const LEVELS = {
  * @param {Record<string, unknown>} [details]
  */
 export function logDashboardEvent(level, event, details = {}) {
-  const configuration = LEVELS[level];
   const safeEvent = KNOWN_EVENTS.has(event) ? event : 'dashboard.event';
   const safeDetails = selectSafeDetails(details);
   const suffix = Object.keys(safeDetails).length > 0 ? ` ${JSON.stringify(safeDetails)}` : '';
-  console[configuration.method](`${configuration.macro}${safeEvent}${suffix}`);
+  const message = `${LEVELS[level]}${safeEvent}${suffix}`;
+  if (level === 'debug') console.debug(message);
+  else if (level === 'info') console.info(message);
+  else if (level === 'warning') console.warn(message);
+  else console.error(message);
 }
 
 /**
