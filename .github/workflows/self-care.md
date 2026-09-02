@@ -65,7 +65,7 @@ permissions:
   copilot-requests: write
 
 engine: copilot
-model: copilot/mai-code-1.1-flash
+model: copilot/gpt-5.4
 
 strict: true
 
