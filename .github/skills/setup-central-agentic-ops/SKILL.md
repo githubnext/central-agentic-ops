@@ -14,6 +14,7 @@ Create a new Central Agentic Ops control plane and prove it safely with one revi
 - Public and private control repositories are supported. Preserve an existing repository's visibility; for a new repository, use the visibility the user chooses.
 - In a public control repository, policy, workflow runs, operational metadata, and review safe outputs are public. State that exposure before creation and never place confidential target information in those outputs.
 - Install the root CAO package from one full commit SHA. Resolve a reviewed release or the current default branch once before installation so every package dependency uses the same immutable source identity.
+- Materialize `.github/cao/admit.sh` and `.github/cao/resolve.mjs` from that same immutable CAO commit. These are control-repository-owned runtime files; gh-aw package resources cannot and must not install them under `.github/aw`.
 - The root package installs `.github/aw/default-AGENTS.md` as package-owned source for control-repository ambient context. If the control repository has no root `AGENTS.md`, materialize that source as `AGENTS.md`; never overwrite or merge into existing agent instructions without the user's approval.
 - Keep rollout policy only in `.github/central-agentic-ops.json`. Do not create `CENTRAL_AGENTIC_OPS_*` variables or another policy channel.
 - Keep credentials out of files, chat, command arguments, and workflow inputs. Have the user enter secrets directly through GitHub or an interactive terminal prompt.
@@ -85,6 +86,12 @@ Do not leave angle-bracket placeholders in authored files or pass placeholders t
     cao_ref=$(gh api repos/githubnext/central-agentic-ops/commits/main --jq '.sha')
     [[ "$cao_ref" =~ ^[0-9a-fA-F]{40,64}$ ]]
     gh aw add-wizard "githubnext/central-agentic-ops@${cao_ref}"
+    mkdir -p .github/cao
+    for cao_file in admit.sh resolve.mjs; do
+      gh api --method GET "repos/githubnext/central-agentic-ops/contents/.github/cao/${cao_file}" \
+        -f ref="$cao_ref" --jq '.content' | base64 -d > ".github/cao/${cao_file}"
+    done
+    chmod +x .github/cao/admit.sh
     ```
 
     A reviewed release tag may replace `main` when resolving `cao_ref`. Do not pass an unresolved branch or omit the ref: one immutable source identity keeps repeated package dependencies consistent and records a reproducible installation. The root manifest's `copilot-auth` action makes the authentication choice exclusive at installation:
@@ -95,7 +102,7 @@ Do not leave angle-bracket placeholders in authored files or pass placeholders t
 
     The immutable package ref must contain the root `copilot-auth` config action. Do not emulate that action by manually rewriting installed workflow permissions or by configuring `COPILOT_GITHUB_TOKEN` separately: the wizard owns the source transformation, secret setup, and compilation as one operation. If the selected ref predates that config, stop and select a newer reviewed immutable ref.
 
-    Verify the resulting installed profile before committing: organization mode must add `copilot-requests: write` to every installed Copilot orchestrator and worker; PAT mode must leave that permission absent and declare `COPILOT_GITHUB_TOKEN` in every corresponding generated lock. Stop if the installation mixes both profiles. Do not author replacement workflows or run `gh aw compile` after installation unless a Markdown workflow was subsequently edited. Never edit generated `.lock.yml` files directly.
+    Verify the resulting installed profile before committing: organization mode must add `copilot-requests: write` to every installed Copilot orchestrator and worker; PAT mode must leave that permission absent and declare `COPILOT_GITHUB_TOKEN` in every corresponding generated lock. Confirm both `.github/cao` files exist and came from `cao_ref`. Stop if the installation mixes both profiles. Do not author replacement workflows or run `gh aw compile` after installation unless a Markdown workflow was subsequently edited. Never edit generated `.lock.yml` files directly.
 
 8. Confirm `.github/aw/default-AGENTS.md` was installed. If the repository has no root `AGENTS.md`, read the installed template and create `AGENTS.md` with exactly that content using a file-editing tool. If root `AGENTS.md` already exists, preserve it unchanged unless the user explicitly approves a merge; the packaged file remains the reference default and package updates must not overwrite consumer-owned ambient context.
 
@@ -158,6 +165,7 @@ Stop before installation or execution and explain the blocker when:
 - neither organization-billed Copilot inference nor a consented, validated `COPILOT_GITHUB_TOKEN` is available;
 - the selected immutable CAO ref does not contain the root `copilot-auth` config action;
 - the installed root package does not contain `.github/aw/default-AGENTS.md`;
+- `.github/cao/admit.sh` or `.github/cao/resolve.mjs` cannot be materialized from the selected immutable CAO ref;
 - the selected target does not exist, cannot be accessed, requires credentials that were not configured, or would expose non-public evidence through a public control repository;
 - the existing repository contains conflicting files that the user has not approved replacing;
 - root package installation fails; or

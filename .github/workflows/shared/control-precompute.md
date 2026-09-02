@@ -44,9 +44,6 @@ import-schema:
     type: string
     default: "0"
 
-resources:
-  - ../../scripts/control-policy/resolve.mjs
-
 tools:
   github:
     mode: remote
@@ -71,7 +68,7 @@ steps:
       out=/tmp/gh-aw/agent/control-precompute.json
       policy_file=/tmp/gh-aw/agent/central-agentic-ops.json
       effective_file=/tmp/gh-aw/agent/effective-policy.json
-      resolver=.github/aw/control-policy/resolve.mjs
+      resolver=.github/cao/resolve.mjs
 
       if ! [[ "$WORKFLOW_SHA" =~ ^[0-9a-fA-F]{40,64}$ ]]; then
         echo "github.workflow_sha must be an exact commit SHA" >&2
@@ -151,7 +148,7 @@ steps:
       mkdir -p /tmp/gh-aw/agent
       A=/tmp/gh-aw/agent
       OUT=$A/control-precompute.json
-      RESOLVER=.github/aw/control-policy/resolve.mjs
+      RESOLVER=.github/cao/resolve.mjs
 
       write_worker_precompute() {
         jq -n \

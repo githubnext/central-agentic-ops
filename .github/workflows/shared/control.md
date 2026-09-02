@@ -25,6 +25,11 @@ github-app:
   private-key: ${{ secrets.GH_AW_GITHUB_APP_PRIVATE_KEY }}
   ignore-if-missing: true
 
+env:
+  CAO_PACKAGE: ${{ github.aw.import-inputs.package }}
+  CAO_ROLE: ${{ github.aw.import-inputs.role }}
+  CAO_WORKER: ${{ github.aw.import-inputs.worker }}
+
 imports:
   #- uses: sentry.md
   #- uses: grafana.md

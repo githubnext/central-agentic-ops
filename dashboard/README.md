@@ -15,7 +15,7 @@ The dashboard package publishes an access-controlled static view of Central Agen
 
 - `.github/workflows/dashboard-build.yml`: reusable, path-aware report build that uploads a mergeable Actions artifact.
 - `.github/workflows/dashboard.yml`: manual standalone GitHub Pages deployment.
-- `.github/aw/control-policy/resolve.mjs`: dependency-free checked-in policy resolver.
+- `.github/cao/resolve.mjs`: dependency-free checked-in policy resolver.
 - `.github/aw/dashboard/report`: deterministic collectors, durable-record production, and Dashboard Language source adaptation.
 - `.github/aw/dashboard/site`: the packaged Dashboard Language validator, presenter, configuration, and browser runtime.
 

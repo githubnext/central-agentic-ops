@@ -312,7 +312,6 @@ test("gh aw add --force restores dashboard workflows, producers, and renderer as
     writeFileSync(deployPath, `${deployWorkflow}\n# local integration-test change\n`);
 
     const removedFiles = [
-      ".github/aw/control-policy/resolve.mjs",
       ".github/aw/dashboard/report/records.mjs",
       ".github/aw/dashboard/site/index.html",
       ".github/workflows/dashboard-build.yml",

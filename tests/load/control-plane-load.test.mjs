@@ -71,10 +71,10 @@ function runPrecompute(overrides = {}, policy = controlPolicy({
   const logPath = join(temporaryDirectory, "gh.log");
   const githubEnvironment = join(temporaryDirectory, "github-env");
   const safeOutputs = join(temporaryDirectory, "safe-outputs.jsonl");
-  const resolverDirectory = join(temporaryDirectory, ".github", "aw", "control-policy");
+  const resolverDirectory = join(temporaryDirectory, ".github", "cao");
   mkdirSync(resolverDirectory, { recursive: true });
   copyFileSync(
-    join(root, ".github", "scripts", "control-policy", "resolve.mjs"),
+    join(root, ".github", "cao", "resolve.mjs"),
     join(resolverDirectory, "resolve.mjs"),
   );
   mockGh(temporaryDirectory);

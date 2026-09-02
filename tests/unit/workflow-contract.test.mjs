@@ -373,6 +373,38 @@ test("workers disable costly daily AIC burn checks", () => {
   }
 });
 
+test("control workflows deny before activation through one shared admission contract", () => {
+  const controlled = readdirSync(workflowsDirectory)
+    .filter((name) => name.endsWith(".md") && !name.endsWith(".lock.md"))
+    .map((name) => [name, workflow(name)])
+    .filter(([, source]) => /^\s+- uses: shared\/control\.md$/m.test(source));
+
+  assert.equal(controlled.length, 27, "unexpected shared control workflow count");
+  for (const [name, source] of controlled) {
+    assert.equal(
+      [...source.matchAll(/^\s+- name: Evaluate Central Agentic Ops admission$/gm)].length,
+      1,
+      name,
+    );
+    assert.match(source, /^\s+id: cao_admission$/m, name);
+    assert.match(source, /contents\/\.github\/cao\/admit\.sh/, name);
+    assert.match(source, /reason="cannot read or execute the control policy admission helper at github\.workflow_sha"/, name);
+    assert.match(source, /jobs:\n  pre-activation:\n    outputs:\n      cao_authorized: \$\{\{ steps\.cao_admission\.outputs\.authorized \}\}/, name);
+    assert.match(source, /^if: needs\.pre_activation\.outputs\.cao_authorized == 'true'$/m, name);
+
+    const generatedName = name.replace(/\.md$/, ".lock.yml");
+    const generated = workflow(generatedName);
+    const jobs = generatedJobs(generated);
+    const preActivation = jobs.get("pre_activation")?.block ?? "";
+    const activation = jobs.get("activation")?.block ?? "";
+
+    assert.match(preActivation, /cao_authorized: \$\{\{ steps\.cao_admission\.outputs\.authorized \}\}/, generatedName);
+    assert.match(preActivation, /Evaluate Central Agentic Ops admission/, generatedName);
+    assert.match(activation, /needs\.pre_activation\.outputs\.cao_authorized == 'true'/, generatedName);
+    assert.ok(transitivelyNeeds(jobs, "agent", "activation"), `${generatedName}: agent must depend on activation`);
+  }
+});
+
 test("threat detection runs for workers but not orchestrators", () => {
   const workflows = readdirSync(workflowsDirectory)
     .filter((name) => name.endsWith(".md"))
@@ -505,10 +537,11 @@ test("root package provides default control-repository agent context", () => {
   assert.match(setupSkill, /preserve it unchanged unless the user explicitly approves a merge/);
 });
 
-test("catalog runtime policy resolver delegates to the canonical source", () => {
+test("CAO runtime is control-repository-owned outside package resources", () => {
   const rootManifest = readFileSync(join(root, "aw.yml"), "utf8");
+  const setupSkill = readFileSync(join(root, ".github", "skills", "setup-central-agentic-ops", "SKILL.md"), "utf8");
   const policy = JSON.parse(execFileSync(process.execPath, [
-    join(root, ".github", "aw", "control-policy", "resolve.mjs"),
+    join(root, ".github", "cao", "resolve.mjs"),
     "--effective",
     join(root, ".github", "central-agentic-ops.json"),
   ], {
@@ -523,7 +556,9 @@ test("catalog runtime policy resolver delegates to the canonical source", () => 
 
   assert.equal(policy.authorized, true);
   assert.equal(policy.package, "dependabot");
-  assert.match(rootManifest, /source: \.github\/scripts\/control-policy\/resolve\.mjs\n\s+destination: \.github\/aw\/control-policy\/resolve\.mjs/);
+  assert.doesNotMatch(rootManifest, /destination: \.github\/cao\//);
+  assert.match(setupSkill, /contents\/\.github\/cao\/\$\{cao_file\}/);
+  assert.match(setupSkill, /chmod \+x \.github\/cao\/admit\.sh/);
 });
 
 test("root package directly includes grader-backed workers for dependency packaging", () => {
@@ -1404,7 +1439,7 @@ test("SelfCare accessibility checker audits the served docs site with axe-core e
   assert.match(source, /worker: accessibility-checker/);
   assert.match(source, /safe_output_mode` is `live`/);
   assert.match(source, /engine:\n\s+id: pi\n\s+model: copilot\/gpt-5\.4/);
-  assert.match(source, /playwright:\n\s+mode: cli/);
+  assert.match(source, /playwright:\n\s+version: "0\.1\.18"/);
   assert.match(source, /npm pack axe-core@4\.13\.0/);
   assert.match(source, /WCAG 2\.2 Level AA/);
   assert.match(source, /colorScheme: "light"/);
@@ -1458,7 +1493,7 @@ test("CAO dashboard reviewer checks successful documentation deployments", () =>
   assert.match(source, /github\.event\.workflow_run\.conclusion == 'success'/);
   assert.match(source, /REPORT_INVENTORY=\/tmp\/gh-aw\/agent\/cao-dashboard-review\/expected-inventory\.json/);
   assert.match(source, /githubnext\.github\.io\/central-agentic-ops\/cao\//);
-  assert.match(source, /playwright:\n\s+mode: cli/);
+  assert.match(source, /^  playwright:\s*$/m);
   assert.match(source, /toolsets: \[repos, issues, actions\]/);
   assert.match(source, /githubnext\.github\.io/);
   assert.match(source, /at most the latest 100 runs from the last 24 hours/);
@@ -1839,8 +1874,7 @@ test("README routes zero-to-CAO requests to the setup skill", () => {
 test("Dashboard package supports embedded and explicit standalone deployment", () => {
   const rootManifest = readFileSync(join(root, "aw.yml"), "utf8");
   const dashboardManifest = readFileSync(join(root, "dashboard", "aw.yml"), "utf8");
-  const canonicalPolicyResolver = readFileSync(join(root, ".github", "scripts", "control-policy", "resolve.mjs"), "utf8");
-  const dashboardPolicyResolver = readFileSync(join(root, "dashboard", "control-policy", "resolve.mjs"), "utf8");
+  const canonicalPolicyResolver = readFileSync(join(root, ".github", "cao", "resolve.mjs"), "utf8");
   const buildWorkflow = readFileSync(join(root, "dashboard", "dashboard-build.yml"), "utf8");
   const deployWorkflow = readFileSync(join(root, "dashboard", "dashboard.yml"), "utf8");
   const aicUsage = readFileSync(join(root, "dashboard", "report", "aic-usage.mjs"), "utf8");
@@ -1853,8 +1887,8 @@ test("Dashboard package supports embedded and explicit standalone deployment", (
   assert.match(dashboardManifest, /name: Central Agentic Ops Dashboard/);
   assert.match(dashboardManifest, /source: dashboard\.yml\n\s+destination: \.github\/workflows\/dashboard\.yml\n\s+kind: action-workflow/);
   assert.match(dashboardManifest, /source: dashboard-build\.yml\n\s+destination: \.github\/workflows\/dashboard-build\.yml\n\s+kind: action-workflow/);
-  assert.match(dashboardManifest, /source: control-policy\/resolve\.mjs\n\s+destination: \.github\/aw\/control-policy\/resolve\.mjs/);
-  assert.equal(dashboardPolicyResolver, canonicalPolicyResolver, "dashboard policy resolver must match its canonical source");
+  assert.doesNotMatch(dashboardManifest, /destination: \.github\/cao\//);
+  assert.match(canonicalPolicyResolver, /export function parsePolicy/);
   assert.match(buildWorkflow, /workflow_call:[\s\S]*?site-path:[\s\S]*?default: cao/);
   assert.match(buildWorkflow, /cp -R \.github\/aw\/dashboard\/site\/\. "\$REPORT_OUTPUT\/"/);
   assert.match(buildWorkflow, /configure-site\.mjs[\s\S]*?"\$REPORT_OUTPUT\/index\.html"[\s\S]*?"\$RUNNER_TEMP\/control-settings\.json"/);
@@ -1923,10 +1957,10 @@ test("Documentation Pages embeds this repository's control-plane report", () => 
   assert.match(workflowSource, /actions: read/);
   assert.match(workflowSource, /issues: read/);
   assert.match(workflowSource, /pull-requests: read/);
-  assert.match(workflowSource, /github\/gh-aw-actions\/setup-cli@bc8c008a419c5b7a29df6f5641edd35fd1c6ea85 # v0\.87\.10/);
-  assert.match(workflowSource, /version: v0\.87\.10/);
-  assert.match(workflowSource, /ref: ff62cdbec36230acbae869ddb28806e8eca01ea1 # v0\.87\.10/);
-  assert.match(workflowSource, /main\.version=v0\.87\.10/);
+  assert.match(workflowSource, /github\/gh-aw-actions\/setup-cli@afc709f45ed6a3f756eb4551856c6a9c42e15b2c # v0\.88\.0/);
+  assert.match(workflowSource, /version: v0\.88\.0/);
+  assert.match(workflowSource, /ref: a5297995b4bd76a2afcc39f10f2517a65aff172c # v0\.88\.0/);
+  assert.match(workflowSource, /main\.version=v0\.88\.0/);
   assert.match(workflowSource, /Restore AI Credit usage cache/);
   assert.match(workflowSource, /REPORT_AIC_CACHE: \.cache\/documentation-pages-aic/);
   assert.match(workflowSource, /Save AI Credit usage cache/);

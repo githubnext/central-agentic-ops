@@ -5,7 +5,7 @@ import { fileURLToPath } from "node:url";
 import test from "node:test";
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), "../..");
-const resolver = join(root, ".github", "scripts", "control-policy", "resolve.mjs");
+const resolver = join(root, ".github", "cao", "resolve.mjs");
 const schemaUri = "https://raw.githubusercontent.com/githubnext/central-agentic-ops/main/.github/central-agentic-ops.schema.json";
 
 function policy() {

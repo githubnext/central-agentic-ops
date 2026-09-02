@@ -30,6 +30,33 @@ on:
         options:
           - review
           - live
+  permissions:
+    contents: read
+  steps:
+    - name: Evaluate Central Agentic Ops admission
+      id: cao_admission
+      env:
+        GH_TOKEN: ${{ github.token }}
+        WORKFLOW_SHA: ${{ github.workflow_sha }}
+        TARGET_REPO: ${{ github.event.inputs.target_repo || '' }}
+        REQUESTED_MODE: ${{ github.event.inputs.safe_output_mode || '' }}
+        REQUESTED_MAX_REPOS: ${{ github.event.inputs.max_repos || '' }}
+        REQUESTED_ROLLOUT_PERCENT: ${{ github.event.inputs.rollout_percent || '' }}
+      run: |
+        set -uo pipefail
+        if ! gh api --method GET "repos/${GITHUB_REPOSITORY}/contents/.github/cao/admit.sh" \
+          -f ref="$WORKFLOW_SHA" --jq '.content' | base64 -d | bash; then
+          reason="cannot read or execute the control policy admission helper at github.workflow_sha"
+          echo "authorized=false" >> "$GITHUB_OUTPUT"
+          echo "reason=$reason" >> "$GITHUB_OUTPUT"
+          printf '## Central Agentic Ops admission\n\nSkipped: %s\n' "$reason" >> "$GITHUB_STEP_SUMMARY"
+        fi
+
+jobs:
+  pre-activation:
+    outputs:
+      cao_authorized: ${{ steps.cao_admission.outputs.authorized }}
+      cao_reason: ${{ steps.cao_admission.outputs.reason }}
 
 env:
   GH_AW_SAFE_OUTPUT_MODE: ${{ inputs.safe_output_mode || 'review' }}
@@ -38,6 +65,8 @@ env:
   TARGET_REPO: ${{ inputs.target_repo || '' }}
 
 environment: central-agentic-ops
+
+if: needs.pre_activation.outputs.cao_authorized == 'true'
 
 imports:
   - uses: shared/control.md

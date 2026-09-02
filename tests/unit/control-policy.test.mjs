@@ -4,10 +4,10 @@ import { readFileSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import test from "node:test";
-import { controlSettings, effectivePolicy, parsePolicy } from "../../.github/scripts/control-policy/resolve.mjs";
+import { controlSettings, effectivePolicy, parsePolicy } from "../../.github/cao/resolve.mjs";
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), "../..");
-const resolver = join(root, ".github", "scripts", "control-policy", "resolve.mjs");
+const resolver = join(root, ".github", "cao", "resolve.mjs");
 const schema = JSON.parse(readFileSync(join(root, ".github", "central-agentic-ops.schema.json"), "utf8"));
 
 function validate(policy) {

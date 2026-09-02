@@ -46,10 +46,10 @@ function runPrecompute(overrides = {}, ghScript = "printf 'true\\n'", policy = c
   const gh = join(directory, "gh");
   const githubEnvironment = join(directory, "github-env");
   const safeOutputs = join(directory, "safe-outputs.jsonl");
-  const resolverDirectory = join(directory, ".github", "aw", "control-policy");
+  const resolverDirectory = join(directory, ".github", "cao");
   mkdirSync(resolverDirectory, { recursive: true });
   copyFileSync(
-    join(root, ".github", "scripts", "control-policy", "resolve.mjs"),
+    join(root, ".github", "cao", "resolve.mjs"),
     join(resolverDirectory, "resolve.mjs"),
   );
   writeFileSync(gh, `#!/bin/sh

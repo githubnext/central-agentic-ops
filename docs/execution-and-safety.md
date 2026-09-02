@@ -9,7 +9,8 @@ Use this page when implementing or reviewing control-plane behavior. For the arc
 
 | Layer | Owns | Must not own |
 | --- | --- | --- |
-| Shared control | Authentication, common environment, mode interpretation, review requirements, precomputation, control envelope | Package ranking or worker workflow-specific mutation policy |
+| [CAO admission runtime](admission.md) | Pre-activation policy validation and package, role, and request authorization | Repository inventory, target access, live target authority, or routing computation |
+| Shared control | Authentication, common environment, mode interpretation, review requirements, authorized-run precomputation, control envelope | Package ranking or worker workflow-specific mutation policy |
 | orchestrator workflow | Package mode, review destination, target selection, ranking, dispatch limits, eligible worker workflow list | Direct target mutation or credential duplication |
 | worker workflow | Repository analysis, declared safe outputs, permissions, and execution limits | Repository discovery, downstream dispatch, or mode escalation |
 
@@ -22,12 +23,14 @@ The execution boundary is the key architectural fact: orchestrators and workers 
 ![The control plane contains rollout policy and operation packages. Central orchestrators and workers inspect remote targets, emit declared safe outputs across the repository boundary, and correlate results with the originating central run.](assets/central-execution-how-it-works.svg)
 
 1. A schedule trigger or `workflow_dispatch` starts a package orchestrator workflow.
-2. The orchestrator workflow imports shared control with its package mode and review repository.
-3. Shared precomputation resolves enablement, routing, candidate repositories, and worker workflow availability into `/tmp/gh-aw/agent/control-precompute.json`.
-4. The orchestrator workflow ranks eligible repositories using package-specific discovery rules and applies `max_repos` and dispatch limits.
-5. The orchestrator workflow dispatches each eligible worker workflow with the standard control envelope.
-6. The worker workflow imports shared control as `role: worker`, analyzes only `target_repo`, and emits only its declared safe outputs.
-7. safe outputs are routed to the review repository or processed against the target repository according to the effective mode.
+2. Before activation, the workflow runs `.github/cao/admit.sh`, which applies the [admission gates](admission.md) using the policy and `.github/cao/resolve.mjs` at the exact workflow commit.
+3. A denied or invalid request skips activation and records the reason in the workflow summary. Admission does not discover repositories, inspect targets, or establish live target authority.
+4. An admitted workflow imports shared control with its package mode and review repository.
+5. Shared precomputation performs the heavier authorized-run work: it resolves routing, repository inventory, target-owned live authority, budgets, and worker workflow availability into `/tmp/gh-aw/agent/control-precompute.json`.
+6. The orchestrator workflow ranks eligible repositories using package-specific discovery rules and applies `max_repos` and dispatch limits.
+7. The orchestrator workflow dispatches each eligible worker workflow with the standard control envelope.
+8. The worker workflow imports shared control as `role: worker`, analyzes only `target_repo`, and emits only its declared safe outputs.
+9. safe outputs are routed to the review repository or processed against the target repository according to the effective mode.
 
 Pages report routing participates in the control plane. Review routes report source data to the private `safe_output_repo` and publishes an access-controlled review Pages site owned by that repository. Live routes durable report source data to its normal destination and publishes the production Pages site. Conventional deterministic workflows perform both deployments and own `pages: write` and `id-token: write`; AI agent jobs do not.
 
