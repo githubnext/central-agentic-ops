@@ -2080,9 +2080,12 @@ test("Documentation Pages builds and deploys the complete site from one workflow
 
   assert.match(workflow, /github\/gh-aw-actions\/setup-cli@afc709f45ed6a3f756eb4551856c6a9c42e15b2c # v0\.88\.0/);
   assert.match(workflow, /version: v0\.88\.0/);
-  assert.match(workflow, /run: gh aw add githubnext\/central-agentic-ops\/dashboard@v0\.0\.1 --no-security-scanner/);
+  assert.match(workflow, /DASHBOARD_PACKAGE: \$\{\{ runner\.temp \}\}\/cao-dashboard-package/);
+  assert.match(workflow, /git init --quiet "\$DASHBOARD_PACKAGE"/);
+  assert.match(workflow, /cd "\$DASHBOARD_PACKAGE"/);
+  assert.match(workflow, /gh aw add githubnext\/central-agentic-ops\/dashboard@v0\.0\.1 --no-security-scanner/);
   assert.match(workflow, /run: npm run docs:build/);
-  assert.match(workflow, /cp -R \.github\/aw\/dashboard\/site\/\. dist\/cao\//);
+  assert.match(workflow, /cp -R "\$DASHBOARD_PACKAGE\/\.github\/aw\/dashboard\/site\/\." dist\/cao\//);
   assert.doesNotMatch(workflow, /schedule:|workflow_run|REPORT_|dashboard\/report\/|actions\/download-artifact@/);
   assert.equal((workflow.match(/actions\/upload-pages-artifact@/g) || []).length, 1);
   assert.equal((workflow.match(/actions\/deploy-pages@/g) || []).length, 1);

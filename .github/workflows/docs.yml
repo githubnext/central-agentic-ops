@@ -47,17 +47,23 @@ jobs:
 
       - name: Install released dashboard
         env:
+          DASHBOARD_PACKAGE: ${{ runner.temp }}/cao-dashboard-package
           GH_TOKEN: ${{ github.token }}
-        run: gh aw add githubnext/central-agentic-ops/dashboard@v0.0.1 --no-security-scanner
+        run: |
+          git init --quiet "$DASHBOARD_PACKAGE"
+          cd "$DASHBOARD_PACKAGE"
+          gh aw add githubnext/central-agentic-ops/dashboard@v0.0.1 --no-security-scanner
 
       - name: Build documentation
         run: npm run docs:build
 
       - name: Mount dashboard at /cao
+        env:
+          DASHBOARD_PACKAGE: ${{ runner.temp }}/cao-dashboard-package
         run: |
           rm -rf dist/cao
           mkdir -p dist/cao
-          cp -R .github/aw/dashboard/site/. dist/cao/
+          cp -R "$DASHBOARD_PACKAGE/.github/aw/dashboard/site/." dist/cao/
 
       - name: Configure Pages
         uses: actions/configure-pages@983d7736d9b0ae728b81ab479565c72886d7745b # v5
