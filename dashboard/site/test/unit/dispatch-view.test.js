@@ -46,6 +46,12 @@ describe('declarative dispatch view', () => {
 
     const dispatchTable = dispatchPage.views.find((/** @type {{ id: string }} */ view) => view.id === 'package-worker-dispatches');
     const evidenceBoundary = dispatchPage.views.find((/** @type {{ id: string }} */ view) => view.id === 'dispatch-evidence-boundary');
+    const activationSummary = dispatchPage.views.find((/** @type {{ id: string }} */ view) => view.id === 'dispatch-activation-summary');
+    expect(activationSummary).toMatchObject({
+      mark: 'element',
+      element: 'summary-grid',
+      data: { sources: ['dispatch-activation-summary'] }
+    });
     expect(dispatchTable).toMatchObject({
       mark: 'table',
       data: { source: 'dispatches' },
@@ -54,6 +60,8 @@ describe('declarative dispatch view', () => {
       }
     });
     expect(evidenceBoundary).toMatchObject({ mark: 'callout', callout: { label: 'Execution boundary' } });
+    expect(rendered.querySelector('.summary-grid')?.textContent).toContain('Activation rate');
+    expect(rendered.querySelector('.summary-grid')?.textContent).toContain('100%');
     expect(rendered.querySelector('.filter-bar')?.textContent).toContain('event:workflow_dispatch');
     expect(rendered.querySelector('.dashboard-callout')?.textContent).toContain('unavailable parent-child correlation is never inferred');
     expect([...rendered.querySelectorAll('thead tr:first-child th')].map((cell) => cell.textContent)).toEqual([

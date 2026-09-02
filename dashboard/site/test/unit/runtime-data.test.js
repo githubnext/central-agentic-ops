@@ -91,6 +91,7 @@ describe('runtime data', () => {
           { organization: 'githubnext', repository: 'control', workflow: 'worker.yml', run: '3', event: 'workflow_dispatch', 'run-title': 'Update dependencies', 'started-at': '2026-08-30T07:00:00Z', 'run-conclusion': 'action-required', 'run-link': { relation: 'run', href: 'https://github.com/githubnext/control/actions/runs/3', label: 'Run 3' } },
           { organization: 'githubnext', repository: 'control', workflow: 'root.yml', run: '2', event: 'workflow_dispatch', 'run-conclusion': 'success' },
           { organization: 'githubnext', repository: 'control', workflow: 'standalone.yml', run: '1', event: 'workflow_dispatch', 'run-status': 'in-progress' },
+          { organization: 'githubnext', repository: 'control', workflow: 'worker.yml', run: '4', event: 'workflow_dispatch', 'run-conclusion': 'skipped' },
           { organization: 'githubnext', repository: 'control', workflow: 'worker.yml', run: '0', event: 'schedule', 'run-conclusion': 'failure' }
         ],
         metadata
@@ -100,8 +101,30 @@ describe('runtime data', () => {
     expect(sources.dispatches.rows).toEqual([
       expect.objectContaining({ 'dispatch-type': 'Package worker', package: 'dependabot', 'package-name': 'Dependabot', 'run-title': 'Update dependencies', status: 'action-required' }),
       expect.objectContaining({ 'dispatch-type': 'Package orchestrator', package: 'dependabot', 'package-name': 'dependabot', 'run-title': 'Run 2', status: 'success' }),
-      expect.objectContaining({ 'dispatch-type': 'Standalone workflow', package: '', 'package-name': 'Not packaged', 'runtime-repository': 'githubnext/control', status: 'in-progress' })
+      expect.objectContaining({ 'dispatch-type': 'Standalone workflow', package: '', 'package-name': 'Not packaged', 'runtime-repository': 'githubnext/control', status: 'in-progress' }),
+      expect.objectContaining({ 'dispatch-type': 'Package worker', package: 'dependabot', 'package-name': 'Dependabot', 'run-title': 'Run 4', status: 'skipped' })
     ]);
     expect(sources.dispatches.metadata).toBe(metadata);
+    expect(sources['dispatch-activation-summary'].rows).toEqual([
+      { label: 'Activation rate', value: '75%' },
+      { label: 'Activated', value: '3' },
+      { label: 'Skipped by guards', value: '1' },
+      { label: 'Total dispatches', value: '4' }
+    ]);
+    expect(sources['dispatch-activation-summary'].metadata).toBe(metadata);
+  });
+
+  it('reports activation rate as not observed when no dispatches were retained', () => {
+    const sources = deriveRuntimeSources({
+      workflows: { source: 'workflows', rows: [], metadata },
+      runs: { source: 'runs', rows: [], metadata }
+    });
+
+    expect(sources['dispatch-activation-summary'].rows).toEqual([
+      { label: 'Activation rate', value: 'Not observed' },
+      { label: 'Activated', value: '0' },
+      { label: 'Skipped by guards', value: '0' },
+      { label: 'Total dispatches', value: '0' }
+    ]);
   });
 });
