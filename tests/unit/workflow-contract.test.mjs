@@ -554,6 +554,9 @@ test("workflow contracts isolate authenticated package lifecycle checks", () => 
   assert.match(source, /push:\n    branches: \[main\]\n    paths-ignore:\n      - \.github\/workflows\/cid\.yml\n      - dashboard\/site\/\*\*/);
   assert.match(contracts, /npm run check/);
   assert.doesNotMatch(contracts, /GH_TOKEN|CENTRAL_AGENTIC_OPS_PACKAGE_SOURCE|test:package-lifecycle/);
+  assert.match(packageLifecycle, /gh api rate_limit --jq '\.resources\.core\.remaining'/);
+  assert.match(packageLifecycle, /remaining < 500/);
+  assert.match(packageLifecycle, /if: steps\.package-api\.outputs\.ready == 'true'/);
   assert.match(packageLifecycle, /GH_TOKEN: \$\{\{ github\.token \}\}/);
   assert.match(packageLifecycle, /CENTRAL_AGENTIC_OPS_PACKAGE_SOURCE:/);
   assert.match(packageLifecycle, /npm run test:package-lifecycle/);
