@@ -29,13 +29,13 @@
   <g filter="url(#shadow)">
     <rect x="11" y="16" width="368" height="112" rx="8" fill="none" stroke="#afb8c1" stroke-width="2"/>
     <rect x="15" y="32" width="84" height="64" rx="6" fill="#0969da" fill-opacity=".12" stroke="#d0d7de"/>
-    <text x="57" y="60" fill="#1f2328" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,sans-serif" font-size="12" font-weight="600"><tspan x="57">Supply</tspan><tspan x="57" dy="15">chain</tspan></text>
+    <text x="57" y="60" fill="var(--foreground)" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,sans-serif" font-size="12" font-weight="600"><tspan x="57">Supply</tspan><tspan x="57" dy="15">chain</tspan></text>
     <rect x="105" y="32" width="84" height="64" rx="6" fill="#1f883d" fill-opacity=".12" stroke="#d0d7de"/>
-    <text x="147" y="68" fill="#1f2328" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,sans-serif" font-size="12" font-weight="600">Compliance</text>
+    <text x="147" y="68" fill="var(--foreground)" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,sans-serif" font-size="12" font-weight="600">Compliance</text>
     <rect x="195" y="32" width="84" height="64" rx="6" fill="#8250df" fill-opacity=".12" stroke="#d0d7de"/>
-    <text x="237" y="68" fill="#1f2328" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,sans-serif" font-size="12" font-weight="600">Security</text>
+    <text x="237" y="68" fill="var(--foreground)" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,sans-serif" font-size="12" font-weight="600">Security</text>
     <rect x="285" y="32" width="84" height="64" rx="6" fill="#bf8700" fill-opacity=".12" stroke="#d0d7de"/>
-    <text x="327" y="68" fill="#1f2328" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,sans-serif" font-size="12" font-weight="600">Governance</text>
+    <text x="327" y="68" fill="var(--foreground)" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,sans-serif" font-size="12" font-weight="600">Governance</text>
 
     <rect x="25" y="216" width="100" height="56" rx="6" fill="#ffffff" stroke="#d0d7de"/><text x="75" y="249" fill="#1f2328" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,sans-serif" font-size="15" font-weight="600">Org A</text>
     <rect x="145" y="216" width="100" height="56" rx="6" fill="#ffffff" stroke="#d0d7de"/><text x="195" y="249" fill="#1f2328" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,sans-serif" font-size="15" font-weight="600">Org B</text>
