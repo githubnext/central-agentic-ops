@@ -1,5 +1,5 @@
-# gh-aw-metadata: {"schema_version":"v4","frontmatter_hash":"9205f75f421740b90ae2291bbf0f92bd257cbd46af35335ae28aba504b67302c","body_hash":"21f76234b0b8e5f388747e7f84b722f49a3272adf132bcb1b5e77de9ca8621f1","compiler_version":"v0.88.0","strict":true,"agent_id":"copilot","engine_versions":{"copilot":"1.0.80"}}
-# gh-aw-manifest: {"version":1,"secrets":["COPILOT_GITHUB_TOKEN","GH_AW_CI_TRIGGER_TOKEN","GH_AW_DEFAULT_OTLP_HEADERS","GH_AW_GITHUB_APP_ID","GH_AW_GITHUB_APP_PRIVATE_KEY","GH_AW_GITHUB_MCP_SERVER_TOKEN","GH_AW_GITHUB_TOKEN","GITHUB_TOKEN"],"actions":[{"repo":"actions/checkout","sha":"3d3c42e5aac5ba805825da76410c181273ba90b1","version":"v7.0.1"},{"repo":"actions/create-github-app-token","sha":"bcd2ba49218906704ab6c1aa796996da409d3eb1","version":"v3.2.0"},{"repo":"actions/download-artifact","sha":"3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c","version":"v8.0.1"},{"repo":"actions/github-script","sha":"3a2844b7e9c422d3c10d287c895573f7108da1b3","version":"v9.0.0"},{"repo":"actions/setup-node","sha":"820762786026740c76f36085b0efc47a31fe5020","version":"v7.0.0"},{"repo":"actions/upload-artifact","sha":"043fb46d1a93c77aae656e7c1c64a875d1fc6a0a","version":"v7.0.1"},{"repo":"github/gh-aw-actions/setup","sha":"afc709f45ed6a3f756eb4551856c6a9c42e15b2c","version":"v0.88.0"},{"repo":"github/gh-aw-actions/setup-cli","sha":"afc709f45ed6a3f756eb4551856c6a9c42e15b2c","version":"v0.88.0"},{"repo":"ruby/setup-ruby","sha":"95ef2b042f9d7a56d8268cba8559e2842e2ad01b","version":"v1.321.0"}],"containers":[{"image":"ghcr.io/github/gh-aw-firewall/agent:0.28.12","digest":"sha256:390051be4ed1847f774fd8980b61d3a3523574c0175d00c3fc7cdf2002a88202","pinned_image":"ghcr.io/github/gh-aw-firewall/agent:0.28.12@sha256:390051be4ed1847f774fd8980b61d3a3523574c0175d00c3fc7cdf2002a88202"},{"image":"ghcr.io/github/gh-aw-firewall/api-proxy:0.28.12","digest":"sha256:d7d533d87c80d87ff91ac0e21e9299055c3beedff1536262b97ed700fb065a32","pinned_image":"ghcr.io/github/gh-aw-firewall/api-proxy:0.28.12@sha256:d7d533d87c80d87ff91ac0e21e9299055c3beedff1536262b97ed700fb065a32"},{"image":"ghcr.io/github/gh-aw-firewall/squid:0.28.12","digest":"sha256:52c34aca98d2a6833c329f1505912a6949c4fda16618c010c979bd59ea99254f","pinned_image":"ghcr.io/github/gh-aw-firewall/squid:0.28.12@sha256:52c34aca98d2a6833c329f1505912a6949c4fda16618c010c979bd59ea99254f"},{"image":"ghcr.io/github/gh-aw-mcpg:v0.4.14","digest":"sha256:b2f0c2b2f17b5fbe809e5bb99dc185b6ddd70df25295dc63a6d526350334eff5","pinned_image":"ghcr.io/github/gh-aw-mcpg:v0.4.14@sha256:b2f0c2b2f17b5fbe809e5bb99dc185b6ddd70df25295dc63a6d526350334eff5"},{"image":"ghcr.io/github/gh-aw-node","digest":"sha256:bac2192f6374d6262116399b34fc5e143d576f82719e90a18261cae7480f4d4e","pinned_image":"ghcr.io/github/gh-aw-node@sha256:bac2192f6374d6262116399b34fc5e143d576f82719e90a18261cae7480f4d4e"},{"image":"node:lts-alpine","digest":"sha256:e67514e5d0f6c46656005e1b693b2ec9d52e80b641307de684d4a015ba7a4eaf","pinned_image":"node:lts-alpine@sha256:e67514e5d0f6c46656005e1b693b2ec9d52e80b641307de684d4a015ba7a4eaf"}],"mcp_servers":[{"name":"github","tools":["actions_get","actions_list","get_commit","get_file_contents","get_job_logs","get_latest_release","get_release_by_tag","get_tag","list_branches","list_commits","list_releases","list_starred_repositories","list_tags","search_code","search_repositories"]},{"name":"primer-brand","tools":["*"]},{"name":"safeoutputs","tools":["create_pull_request","missing_data","missing_tool","noop"]}]}
+# gh-aw-metadata: {"schema_version":"v4","frontmatter_hash":"9281b2a44a6d47cee9ec16b5ed7a20cb88030e858664182e886046d7be92bd61","body_hash":"21f76234b0b8e5f388747e7f84b722f49a3272adf132bcb1b5e77de9ca8621f1","compiler_version":"v0.88.0","strict":true,"agent_id":"copilot","engine_versions":{"copilot":"1.0.80"}}
+# gh-aw-manifest: {"version":1,"secrets":["COPILOT_GITHUB_TOKEN","GH_AW_CI_TRIGGER_TOKEN","GH_AW_DEFAULT_OTLP_HEADERS","GH_AW_GITHUB_APP_ID","GH_AW_GITHUB_APP_PRIVATE_KEY","GH_AW_GITHUB_MCP_SERVER_TOKEN","GH_AW_GITHUB_TOKEN","GITHUB_TOKEN"],"actions":[{"repo":"actions/checkout","sha":"3d3c42e5aac5ba805825da76410c181273ba90b1","version":"v7.0.1"},{"repo":"actions/create-github-app-token","sha":"bcd2ba49218906704ab6c1aa796996da409d3eb1","version":"v3.2.0"},{"repo":"actions/download-artifact","sha":"3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c","version":"v8.0.1"},{"repo":"actions/github-script","sha":"3a2844b7e9c422d3c10d287c895573f7108da1b3","version":"v9.0.0"},{"repo":"actions/setup-node","sha":"820762786026740c76f36085b0efc47a31fe5020","version":"v7.0.0"},{"repo":"actions/upload-artifact","sha":"043fb46d1a93c77aae656e7c1c64a875d1fc6a0a","version":"v7.0.1"},{"repo":"github/gh-aw-actions/setup","sha":"afc709f45ed6a3f756eb4551856c6a9c42e15b2c","version":"v0.88.0"},{"repo":"github/gh-aw-actions/setup-cli","sha":"afc709f45ed6a3f756eb4551856c6a9c42e15b2c","version":"v0.88.0"}],"containers":[{"image":"ghcr.io/github/gh-aw-firewall/agent:0.28.12","digest":"sha256:390051be4ed1847f774fd8980b61d3a3523574c0175d00c3fc7cdf2002a88202","pinned_image":"ghcr.io/github/gh-aw-firewall/agent:0.28.12@sha256:390051be4ed1847f774fd8980b61d3a3523574c0175d00c3fc7cdf2002a88202"},{"image":"ghcr.io/github/gh-aw-firewall/api-proxy:0.28.12","digest":"sha256:d7d533d87c80d87ff91ac0e21e9299055c3beedff1536262b97ed700fb065a32","pinned_image":"ghcr.io/github/gh-aw-firewall/api-proxy:0.28.12@sha256:d7d533d87c80d87ff91ac0e21e9299055c3beedff1536262b97ed700fb065a32"},{"image":"ghcr.io/github/gh-aw-firewall/squid:0.28.12","digest":"sha256:52c34aca98d2a6833c329f1505912a6949c4fda16618c010c979bd59ea99254f","pinned_image":"ghcr.io/github/gh-aw-firewall/squid:0.28.12@sha256:52c34aca98d2a6833c329f1505912a6949c4fda16618c010c979bd59ea99254f"},{"image":"ghcr.io/github/gh-aw-mcpg:v0.4.14","digest":"sha256:b2f0c2b2f17b5fbe809e5bb99dc185b6ddd70df25295dc63a6d526350334eff5","pinned_image":"ghcr.io/github/gh-aw-mcpg:v0.4.14@sha256:b2f0c2b2f17b5fbe809e5bb99dc185b6ddd70df25295dc63a6d526350334eff5"},{"image":"ghcr.io/github/gh-aw-node","digest":"sha256:bac2192f6374d6262116399b34fc5e143d576f82719e90a18261cae7480f4d4e","pinned_image":"ghcr.io/github/gh-aw-node@sha256:bac2192f6374d6262116399b34fc5e143d576f82719e90a18261cae7480f4d4e"},{"image":"node:lts-alpine","digest":"sha256:e67514e5d0f6c46656005e1b693b2ec9d52e80b641307de684d4a015ba7a4eaf","pinned_image":"node:lts-alpine@sha256:e67514e5d0f6c46656005e1b693b2ec9d52e80b641307de684d4a015ba7a4eaf"}],"mcp_servers":[{"name":"github","tools":["actions_get","actions_list","get_commit","get_file_contents","get_job_logs","get_latest_release","get_release_by_tag","get_tag","list_branches","list_commits","list_releases","list_starred_repositories","list_tags","search_code","search_repositories"]},{"name":"primer-brand","tools":["*"]},{"name":"safeoutputs","tools":["create_pull_request","missing_data","missing_tool","noop"]}]}
 # This file was automatically generated by gh-aw (v0.88.0). DO NOT EDIT. To debug this workflow, load the skill at https://github.com/github/gh-aw/blob/main/debug.md
 #
 #    ___                   _   _
@@ -61,7 +61,6 @@
 #   - actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
 #   - github/gh-aw-actions/setup-cli@afc709f45ed6a3f756eb4551856c6a9c42e15b2c # v0.88.0
 #   - github/gh-aw-actions/setup@afc709f45ed6a3f756eb4551856c6a9c42e15b2c # v0.88.0
-#   - ruby/setup-ruby@95ef2b042f9d7a56d8268cba8559e2842e2ad01b # v1.321.0
 #
 # Container images used:
 #   - ghcr.io/github/gh-aw-firewall/agent:0.28.12@sha256:390051be4ed1847f774fd8980b61d3a3523574c0175d00c3fc7cdf2002a88202
@@ -74,27 +73,9 @@
 name: "SelfCare / Primer Brand Checker"
 on:
   # permissions: # Permissions applied to pre-activation job
+  # actions: read
   # contents: read
   # skip-if-match: is:pr is:open in:title "Primer branding" # Skip-if-match processed as search check in pre-activation job
-  # steps: # Steps injected into pre-activation job
-  # - env:
-  # GH_TOKEN: ${{ github.token }}
-  # REQUESTED_MAX_REPOS: ${{ github.event.inputs.max_repos || '' }}
-  # REQUESTED_MODE: ${{ github.event.inputs.safe_output_mode || '' }}
-  # REQUESTED_ROLLOUT_PERCENT: ${{ github.event.inputs.rollout_percent || '' }}
-  # TARGET_REPO: ${{ github.event.inputs.target_repo || '' }}
-  # WORKFLOW_SHA: ${{ github.workflow_sha }}
-  # id: cao_admission
-  # name: Evaluate Central Agentic Ops admission
-  # run: |
-  # set -uo pipefail
-  # if ! gh api --method GET "repos/${GITHUB_REPOSITORY}/contents/.github/cao/admit.sh" \
-  # -f ref="$WORKFLOW_SHA" --jq '.content' | base64 -d | bash; then
-  # reason="cannot read or execute the control policy admission helper at github.workflow_sha"
-  # echo "authorized=false" >> "$GITHUB_OUTPUT"
-  # echo "reason=$reason" >> "$GITHUB_OUTPUT"
-  # printf '## Central Agentic Ops admission\n\nSkipped: %s\n' "$reason" >> "$GITHUB_STEP_SUMMARY"
-  # fi
   workflow_dispatch:
     inputs:
       aw_context:
@@ -486,6 +467,31 @@ jobs:
           GH_AW_INFO_VERSION: "1.0.80"
           GH_AW_INFO_AWF_VERSION: "v0.28.12"
           GH_AW_INFO_ENGINE_ID: "copilot"
+      - name: Download CAO control precompute artifact
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          name: cao-control-precompute
+          path: /tmp/gh-aw/agent
+      - name: Validate CAO control precompute artifact
+        run: |
+          set -euo pipefail
+          out=/tmp/gh-aw/agent/control-precompute.json
+          expected_worker="$WORKER"
+          [ "$ROLE" != "orchestrator" ] || expected_worker=""
+          [ -f "$out" ]
+          jq -e '.authorized == true' "$out" >/dev/null
+          jq -e --arg package "$BUNDLE" '.package == $package and .bundle == $package' "$out" >/dev/null
+          jq -e --arg role "$ROLE" '.control_role == $role' "$out" >/dev/null
+          jq -e --arg worker "$expected_worker" '.worker == $worker' "$out" >/dev/null
+          jq -e --arg repository "$CONTROL_REPOSITORY" --arg sha "$WORKFLOW_SHA" \
+            '.policy_source == {repository:$repository,path:".github/central-agentic-ops.json",sha:$sha}' \
+            "$out" >/dev/null
+        env:
+          BUNDLE: self-care
+          CONTROL_REPOSITORY: ${{ github.repository }}
+          ROLE: worker
+          WORKER: primer-brand-checker
+          WORKFLOW_SHA: ${{ github.workflow_sha }}
       - name: Set runtime paths
         id: set-runtime-paths
         run: |
@@ -532,746 +538,22 @@ jobs:
             const actionsDir = path.join(process.env.RUNNER_TEMP, 'gh-aw', 'actions');
             const { main } = require(path.join(actionsDir, 'build_checkout_manifest.cjs'));
             await main();
-      - name: Install gh-aw extension
-        uses: github/gh-aw-actions/setup-cli@afc709f45ed6a3f756eb4551856c6a9c42e15b2c # v0.88.0
-        with:
-          version: 'v0.88.0'
       - name: Setup Node.js
         uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
         with:
           node-version: '24'
           package-manager-cache: false
-      - name: Setup Ruby
-        uses: ruby/setup-ruby@95ef2b042f9d7a56d8268cba8559e2842e2ad01b # v1.321.0
-        with:
-          ruby-version: '3.3'
       - name: Create gh-aw temp directory
         run: bash "${RUNNER_TEMP}/gh-aw/actions/create_gh_aw_tmp_dir.sh"
       - name: Configure gh CLI for GitHub Enterprise
         run: bash "${RUNNER_TEMP}/gh-aw/actions/configure_gh_for_ghe.sh"
         env:
           GH_TOKEN: ${{ github.token }}
-      - name: Start DIFC Proxy
-        env:
-          GH_TOKEN: ${{ secrets.GH_AW_GITHUB_MCP_SERVER_TOKEN || secrets.GH_AW_GITHUB_TOKEN || secrets.GITHUB_TOKEN }}
-          GITHUB_SERVER_URL: ${{ github.server_url }}
-          GITHUB_API_URL: ${{ github.api_url }}
-          GH_HOST: ${{ env.GH_HOST }}
-          GITHUB_HOST: ${{ env.GITHUB_HOST }}
-          GITHUB_ENTERPRISE_HOST: ${{ env.GITHUB_ENTERPRISE_HOST }}
-          GITHUB_GRAPHQL_URL: ${{ env.GITHUB_GRAPHQL_URL }}
-          GITHUB_COPILOT_BASE_URL: ${{ env.GITHUB_COPILOT_BASE_URL }}
-          GH_AW_NETWORK_ISOLATION: 'true'
-          DIFC_PROXY_POLICY: '{"allow-only":{"min-integrity":"approved","repos":"all"}}'
-          DIFC_PROXY_IMAGE: 'ghcr.io/github/gh-aw-mcpg:v0.4.14'
-        run: |
-          bash "${RUNNER_TEMP}/gh-aw/actions/start_difc_proxy.sh"
       - name: Download activation artifact
         uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
         with:
           name: activation
           path: /tmp/gh-aw
-      - name: Resolve authoritative control policy
-        run: |
-          set -euo pipefail
-          [ "$ROLE" != "orchestrator" ] || WORKER=""
-          mkdir -p /tmp/gh-aw/agent
-          out=/tmp/gh-aw/agent/control-precompute.json
-          policy_file=/tmp/gh-aw/agent/central-agentic-ops.json
-          effective_file=/tmp/gh-aw/agent/effective-policy.json
-          resolver=.github/cao/resolve.mjs
-
-          if ! [[ "$WORKFLOW_SHA" =~ ^[0-9a-fA-F]{40,64}$ ]]; then
-            echo "github.workflow_sha must be an exact commit SHA" >&2
-            exit 1
-          fi
-          if ! gh api --method GET "repos/${GITHUB_REPOSITORY}/contents/.github/central-agentic-ops.json" \
-            -f ref="$WORKFLOW_SHA" --jq '.content' | base64 -d > "$policy_file"; then
-            echo "cannot read .github/central-agentic-ops.json at github.workflow_sha" >&2
-            exit 1
-          fi
-          if ! CAO_PACKAGE="$BUNDLE" \
-            CAO_ROLE="$ROLE" \
-            CAO_WORKER="$WORKER" \
-            CAO_TARGET_REPOSITORY="$TARGET_REPO" \
-            CAO_REQUESTED_MODE="$REQUESTED_MODE" \
-            CAO_REQUESTED_MAX_REPOSITORIES="$REQUESTED_MAX_REPOS" \
-            CAO_REQUESTED_ROLLOUT_PERCENT="$REQUESTED_ROLLOUT_PERCENT" \
-            GITHUB_REPOSITORY="$GITHUB_REPOSITORY" \
-            node "$resolver" --effective "$policy_file" > "$effective_file"; then
-            echo "control policy validation failed" >&2
-            exit 1
-          fi
-
-          if [ "$(jq -r '.authorized' "$effective_file")" != "true" ]; then
-            reason=$(jq -r '.reason' "$effective_file")
-            jq -n \
-              --arg role "$ROLE" --arg package "$BUNDLE" --arg worker "$WORKER" \
-              --arg reason "$reason" --arg repository "$GITHUB_REPOSITORY" --arg sha "$WORKFLOW_SHA" \
-              '{authorized:false,$reason,control_role:$role,$package,$worker,enabled:"false",effective_max_repos:0,
-                repo_error:"",candidate_repositories:[],worker_workflows:[],
-                policy_source:{repository:$repository,path:".github/central-agentic-ops.json",sha:$sha}}' > "$out"
-            if [ -n "${GH_AW_SAFE_OUTPUTS:-}" ]; then
-              jq -cn --arg message "Central Agentic Ops policy denied this run: $reason" \
-                '{type:"noop",message:$message}' >> "$GH_AW_SAFE_OUTPUTS"
-            fi
-            echo "CAO_POLICY_AUTHORIZED=false" >> "$GITHUB_ENV"
-            exit 0
-          fi
-
-          {
-            echo "CAO_POLICY_AUTHORIZED=true"
-            echo "ENABLED=true"
-            echo "WORKER_ENABLED=true"
-            echo "WORKER_MAX_MODE=$(jq -r '.safe_output_mode' "$effective_file")"
-            echo "SAFE_OUTPUT_MODE=$(jq -r '.safe_output_mode' "$effective_file")"
-            echo "MAX_REPOS=$(jq -r '.max_repositories' "$effective_file")"
-            echo "ROLLOUT_PERCENT=$(jq -r '.rollout_percent' "$effective_file")"
-            echo "MONTHLY_CREDIT_BUDGET=$(jq -r '.monthly_ai_credit_budget' "$effective_file")"
-            echo "MAX_SCAN_REPOS=$(jq -r '.inventory["max-scan-repositories"]' "$effective_file")"
-            echo "CELL_COUNT=$(jq -r '.inventory["cell-count"]' "$effective_file")"
-            echo "CELL_INDEX=$(jq -r '.inventory["cell-index"]' "$effective_file")"
-            echo "BATCH_SIZE=$(jq -r '.inventory["batch-size"]' "$effective_file")"
-            echo "BATCH_INDEX=$(jq -r '.inventory["batch-index"]' "$effective_file")"
-            echo "ALLOWED_OWNERS=$(jq -r '.allowed_owners | join(",")' "$effective_file")"
-            echo "ALLOWED_REPOS=$(jq -r '.allowed_repositories | join(",")' "$effective_file")"
-            echo "ORGANIZATION=${GITHUB_REPOSITORY%%/*}"
-          } >> "$GITHUB_ENV"
-        env:
-          BUNDLE: self-care
-          GH_HOST: ${{ env.GH_HOST || 'github.com' }}
-          GH_REPO: ${{ github.repository }}
-          GH_TOKEN: ${{ steps.github-mcp-app-token.outputs.token || secrets.GH_AW_GITHUB_TOKEN || secrets.GITHUB_TOKEN }}
-          GITHUB_API_URL: https://localhost:18443/api/v3
-          GITHUB_GRAPHQL_URL: https://localhost:18443/api/graphql
-          NODE_EXTRA_CA_CERTS: /tmp/gh-aw/proxy-logs/proxy-tls/ca.crt
-          REQUESTED_MAX_REPOS: ${{ github.event.inputs.max_repos || '' }}
-          REQUESTED_MODE: ${{ github.event.inputs.safe_output_mode || '' }}
-          REQUESTED_ROLLOUT_PERCENT: ${{ github.event.inputs.rollout_percent || '' }}
-          ROLE: worker
-          TARGET_REPO: ${{ github.event.inputs.target_repo || '' }}
-          WORKER: primer-brand-checker
-          WORKFLOW_SHA: ${{ github.workflow_sha }}
-      - name: Precompute control facts
-        run: |
-          set -euo pipefail
-          [ "${CAO_POLICY_AUTHORIZED:-false}" = "true" ] || exit 0
-          [ "$ROLE" != "orchestrator" ] || WORKER=""
-          mkdir -p /tmp/gh-aw/agent
-          A=/tmp/gh-aw/agent
-          OUT=$A/control-precompute.json
-          RESOLVER=.github/cao/resolve.mjs
-
-          write_worker_precompute() {
-            jq -n \
-              --arg enabled "$ENABLED" \
-              --arg bundle "$BUNDLE" \
-              --arg worker_enabled "$WORKER_ENABLED" \
-              --arg worker_max_mode "$WORKER_MAX_MODE" \
-              --arg target_repo "$TARGET_REPO" \
-              --arg safe_output_mode "$SAFE_OUTPUT_MODE" \
-              --arg safe_output_repo "$SAFE_OUTPUT_REPO" \
-              --arg correlation_id "$CORRELATION_ID" \
-              --arg central_repo "$CENTRAL_REPO" \
-              --arg control_plane_run_url "$CONTROL_PLANE_RUN_URL" \
-              --arg worker "$WORKER" \
-              --arg repository "$GITHUB_REPOSITORY" \
-              --arg workflow_sha "$WORKFLOW_SHA" \
-              --arg target_authority_sha "${TARGET_AUTHORITY_SHA:-}" \
-              '{authorized:true,reason:"authorized",control_role:"worker",package:$bundle,$bundle,$worker,$enabled,$worker_enabled,$worker_max_mode,
-                $target_repo,$safe_output_mode,$safe_output_repo,
-                $correlation_id,$central_repo,$control_plane_run_url,
-                candidate_repositories:[],worker_workflows:[],
-                policy_source:{repository:$repository,path:".github/central-agentic-ops.json",sha:$workflow_sha}}
-                + (if $target_authority_sha == "" then {} else {
-                    target_authority_source:{repository:$target_repo,path:".github/central-agentic-ops.json",sha:$target_authority_sha}
-                  } end)' > "$OUT"
-          }
-
-          validate_mode() {
-            case "$1" in
-              review|live) ;;
-              *) echo "$2 must be review or live" >&2; exit 1 ;;
-            esac
-          }
-
-          repository_equal() {
-            awk 'BEGIN { exit(tolower(ARGV[1]) != tolower(ARGV[2])) }' "$1" "$2"
-          }
-
-          validate_worker_dispatch() {
-            local control_run_id
-
-              if [ -z "$TARGET_REPO" ]; then
-                echo "worker target_repo is required" >&2
-                exit 1
-              fi
-            case "$WORKER_ENABLED" in
-              true) ;;
-              false) echo "worker is disabled by its control-plane policy" >&2; exit 1 ;;
-              *) echo "worker_enabled must be true or false" >&2; exit 1 ;;
-            esac
-
-            validate_mode "$WORKER_MAX_MODE" "worker_max_mode"
-            if [ "$SAFE_OUTPUT_MODE" = "live" ] && [ "$WORKER_MAX_MODE" != "live" ]; then
-              echo "safe_output_mode exceeds the worker_max_mode ceiling" >&2
-              exit 1
-            fi
-
-            if [ "$CENTRAL_REPO" != "$GITHUB_REPOSITORY" ]; then
-              echo "central_repo must identify the current control repository" >&2
-              exit 1
-            fi
-            if ! [[ "$CORRELATION_ID" =~ ^[1-9][0-9]*-[1-9][0-9]*$ ]]; then
-              echo "correlation_id must identify an orchestrator run and attempt" >&2
-              exit 1
-            fi
-            control_run_id="${CORRELATION_ID%%-*}"
-            if [ "$CONTROL_PLANE_RUN_URL" != "${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${control_run_id}" ]; then
-              echo "control_plane_run_url must match correlation_id and central_repo" >&2
-              exit 1
-            fi
-          }
-
-          validate_live_authority() {
-            local authority
-            local default_branch
-            local target_sha
-
-            [ "$SAFE_OUTPUT_MODE" != "live" ] && return
-            if ! [[ "$BUNDLE" =~ ^[a-z0-9][a-z0-9-]*$ ]]; then
-              echo "package slug must use lowercase characters for live authority validation" >&2
-              exit 1
-            fi
-            if ! default_branch=$(gh api "repos/$TARGET_REPO" --jq '.default_branch'); then
-              echo "live authority validation could not read the target default branch" >&2
-              exit 1
-            fi
-            if ! target_sha=$(gh api "repos/$TARGET_REPO/commits/$default_branch" --jq '.sha'); then
-              echo "live authority validation could not resolve the target default branch commit" >&2
-              exit 1
-            fi
-            if ! [[ "$target_sha" =~ ^[0-9a-fA-F]{40,64}$ ]]; then
-              echo "target default branch did not resolve to an exact commit SHA" >&2
-              exit 1
-            fi
-            if ! gh api --method GET "repos/$TARGET_REPO/contents/.github/central-agentic-ops.json" \
-              -f ref="$target_sha" --jq '.content' | base64 -d \
-              > $A/target-authority.json; then
-              echo "live mode requires .github/central-agentic-ops.json on the target default branch" >&2
-              exit 1
-            fi
-            if ! authority=$(node "$RESOLVER" --authority $A/target-authority.json "$BUNDLE"); then
-              echo "target authority file must declare version 1 and target-authority.packages.$BUNDLE.authority" >&2
-              exit 1
-            fi
-            if ! [[ "$authority" =~ ^[A-Za-z0-9][A-Za-z0-9-]*/[A-Za-z0-9._-]+$ ]]; then
-              echo "target-authority.packages.$BUNDLE.authority must use owner/repository form" >&2
-              exit 1
-            fi
-            if ! repository_equal "$authority" "$CENTRAL_REPO"; then
-              echo "target assigns live authority for $BUNDLE to a different control repository" >&2
-              exit 1
-            fi
-
-            TARGET_AUTHORITY_SHA="$target_sha"
-          }
-
-          validate_output_destination() {
-            local is_private
-
-            if [ "$SAFE_OUTPUT_MODE" = "live" ]; then
-              [ "$ROLE" != "worker" ] || repository_equal "$SAFE_OUTPUT_REPO" "$TARGET_REPO" || {
-                echo "live worker safe_output_repo must equal target_repo" >&2; exit 1;
-              }
-              return
-            fi
-            if repository_equal "$SAFE_OUTPUT_REPO" "$TARGET_REPO" && \
-              ! repository_equal "$SAFE_OUTPUT_REPO" "$CENTRAL_REPO"; then
-              echo "review safe_output_repo must differ from target_repo" >&2; exit 1;
-            fi
-            if repository_equal "$SAFE_OUTPUT_REPO" "$CENTRAL_REPO"; then
-              return
-            fi
-            if ! is_private=$(gh api "repos/$SAFE_OUTPUT_REPO" --jq '.private'); then
-              echo "review safe_output_repo must be accessible" >&2
-              exit 1
-            fi
-            if [ "$is_private" != "true" ]; then
-              echo "non-central review safe_output_repo must be private" >&2
-              exit 1
-            fi
-          }
-
-          validate_repository_owner() {
-            local label="$1"
-            local repository="$2"
-            local repository_owner
-            local allowed_owner
-
-            [ -z "$repository" ] && return
-            if ! [[ "$repository" =~ ^[A-Za-z0-9][A-Za-z0-9-]*/[A-Za-z0-9._-]+$ ]]; then
-              echo "$label must use owner/repository form" >&2
-              exit 1
-            fi
-
-            repository_owner="${repository%%/*}"
-            repository_owner=$(printf '%s' "$repository_owner" | tr '[:upper:]' '[:lower:]')
-            IFS=',' read -ra configured_owners <<< "$ALLOWED_OWNERS"
-            for allowed_owner in "${configured_owners[@]}"; do
-              allowed_owner=$(printf '%s' "$allowed_owner" | tr -d '[:space:]' | tr '[:upper:]' '[:lower:]')
-              if [ -n "$allowed_owner" ] && [ "$repository_owner" = "$allowed_owner" ]; then
-                return
-              fi
-            done
-
-            echo "$label owner is outside control-plane.scope.allowed-owners" >&2
-            exit 1
-          }
-
-          prepare_allowlist() {
-            local allowed_repo
-
-            : > $A/allowed-repos
-            [ -z "$ALLOWED_REPOS" ] && return
-
-            if ! printf '%s' "$ALLOWED_REPOS" | jq -Rr \
-              'split(",") | map(gsub("\\s"; "") | ascii_downcase) | unique[]' \
-              > $A/allowed-repos || grep -qx '' $A/allowed-repos; then
-              echo "control-plane.scope.allowed-repositories is invalid" >&2
-              exit 1
-            fi
-            while read -r allowed_repo; do
-              validate_repository_owner "allowed repository" "$allowed_repo"
-            done < $A/allowed-repos
-            if [ "$(wc -l < $A/allowed-repos)" -gt "$MAX_SCAN_REPOS" ]; then
-              echo "allowed repos exceed max_scan_repos" >&2
-              exit 1
-            fi
-            if [ -n "$TARGET_REPO" ] && ! grep -Fqix "$TARGET_REPO" $A/allowed-repos; then
-              echo "target_repo is not allowed" >&2
-              exit 1
-            fi
-          }
-
-          derive_control_source_path() {
-            workflow_ref_path="${GITHUB_WORKFLOW_REF#${GITHUB_REPOSITORY}/}"
-            workflow_path="${workflow_ref_path%@*}"
-            workflow_ref="${GITHUB_WORKFLOW_REF##*@}"
-            source_path="${workflow_path%.lock.yml}.md"
-
-            if [ "$source_path" = "$workflow_path" ]; then
-              source_path="${workflow_path%.yml}.md"
-            fi
-          }
-
-          load_control_source() {
-            derive_control_source_path
-            gh api --method GET "repos/${GITHUB_REPOSITORY}/contents/${source_path}" -f ref="$workflow_ref" --jq '.content' \
-              | base64 -d > $A/control-source.md
-          }
-
-          extract_dispatch_workers() {
-            awk '
-              NR == 1 && /^---[[:space:]]*$/ { in_frontmatter = 1; next }
-              in_frontmatter && /^---[[:space:]]*$/ { exit }
-              !in_frontmatter { next }
-              /^safe-outputs:/ { in_safe = 1; next }
-              in_safe && /^[^[:space:]]/ { in_safe = 0 }
-              in_safe && /^  dispatch-workflow:/ { in_dispatch = 1; next }
-              in_dispatch && /^  [^[:space:]]/ { in_dispatch = 0; in_workflows = 0 }
-              in_dispatch && /^    workflows:[[:space:]]*\[/ {
-                line = $0
-                sub(/^    workflows:[[:space:]]*\[/, "", line)
-                sub(/\][[:space:]]*$/, "", line)
-                gsub(/,/, "\n", line)
-                print line
-                next
-              }
-              in_dispatch && /^    workflows:[[:space:]]*$/ { in_workflows = 1; next }
-              in_workflows && /^    - / { sub(/^    - /, ""); print; next }
-              in_workflows && /^      - / { sub(/^      - /, ""); print; next }
-              in_workflows { in_workflows = 0 }
-            ' $A/control-source.md \
-              | jq -R -s 'split("\n") | map(gsub("^\\s+|\\s+$"; "") | gsub("^\\\"|\\\"$"; "") | select(length > 0))'
-          }
-
-          load_candidate_repositories() {
-            repo_source="organization"
-            repo_error=""
-
-            if [ -n "$TARGET_REPO" ]; then
-              repo_source="target_repo"
-              if ! gh api "repos/$TARGET_REPO" --jq '[{id, full_name, archived, disabled, private, pushed_at, default_branch}]' \
-                > $A/candidates.json 2>$A/repo-error.txt; then
-                repo_error=$(cat $A/repo-error.txt)
-                printf '[]\n' > $A/candidates.json
-              fi
-              return
-            fi
-
-            if [ -n "$ALLOWED_REPOS" ]; then
-              repo_source="allowed_repos"
-              load_allowed_inventory
-              return
-            fi
-
-            if ! load_bounded_inventory "orgs/$ORGANIZATION/repos" "all"; then
-              if ! load_bounded_inventory "users/$ORGANIZATION/repos" "owner"; then
-                repo_error=$(cat $A/repo-error.txt)
-                printf '[]\n' > $A/candidates.json
-              fi
-            fi
-          }
-
-          load_allowed_inventory() {
-            local allowed_repo
-
-            printf '[]\n' > $A/candidates.json
-            : > $A/candidate-pages.jsonl
-            while read -r allowed_repo; do
-              if ! gh api "repos/$allowed_repo" \
-                --jq '{id, full_name, archived, disabled, private, pushed_at, default_branch}' \
-                >> $A/candidate-pages.jsonl 2>$A/repo-error.txt; then
-                repo_error="cannot read allowed repository $allowed_repo"
-                printf '[]\n' > $A/candidates.json
-                return
-              fi
-            done < $A/allowed-repos
-
-            jq -s '.' $A/candidate-pages.jsonl > $A/candidates.json
-          }
-
-          load_bounded_inventory() {
-            local endpoint="$1"
-            local repository_type="$2"
-            local page=1
-            local pages=$(( (MAX_SCAN_REPOS + 99) / 100 ))
-            local page_count
-
-            : > $A/candidate-pages.jsonl
-            while [ "$page" -le "$pages" ]; do
-              if ! gh api "$endpoint?per_page=100&type=$repository_type&page=$page" \
-                --jq '.[] | {id, full_name, archived, disabled, private, pushed_at, default_branch}' \
-                > $A/candidate-page.jsonl 2>$A/repo-error.txt; then
-                return 1
-              fi
-              page_count=$(jq -s 'length' $A/candidate-page.jsonl)
-              cat $A/candidate-page.jsonl >> $A/candidate-pages.jsonl
-              [ "$page_count" -lt 100 ] && break
-              page=$((page + 1))
-            done
-
-            jq -s ".[0:$MAX_SCAN_REPOS]" $A/candidate-pages.jsonl > $A/candidates.json
-          }
-
-          prepare_inventory_batch() {
-            local inventory_digest
-            local inventory_count
-            local cell_repository_count
-            local batch_count
-            local batch_offset
-
-            if ! jq -e 'all(.[]; (.id | type) == "number" and (.full_name | type) == "string")' \
-              $A/candidates.json >/dev/null; then
-              echo "repository inventory entries require numeric id and full_name" >&2
-              exit 1
-            fi
-
-            inventory_digest=$(jq -cS 'sort_by([.id, .full_name])[]' $A/candidates.json \
-              | openssl dgst -sha256 | awk '{print $NF}')
-            inventory_version="sha256:$inventory_digest"
-            inventory_count=$(jq 'length' $A/candidates.json)
-
-            if [ -n "$TARGET_REPO" ]; then
-              jq 'sort_by([.id, .full_name])' $A/candidates.json > $A/cell-candidates.json
-            else
-              jq --argjson cell_count "$CELL_COUNT" --argjson cell_index "$CELL_INDEX" \
-                '[.[] | select((.id % $cell_count) == $cell_index)] | sort_by([.id, .full_name])' \
-                $A/candidates.json > $A/cell-candidates.json
-            fi
-
-            cell_repository_count=$(jq 'length' $A/cell-candidates.json)
-            batch_count=$(( (cell_repository_count + BATCH_SIZE - 1) / BATCH_SIZE ))
-            if [ "$batch_count" -gt 0 ] && [ "$BATCH_INDEX" -ge "$batch_count" ]; then
-              echo "batch_index must be smaller than the selected cell batch count ($batch_count)" >&2
-              exit 1
-            fi
-
-            batch_offset=$(( BATCH_INDEX * BATCH_SIZE ))
-            jq ".[${batch_offset}:$((batch_offset + BATCH_SIZE))]" \
-              $A/cell-candidates.json > $A/current-batch.json
-            batch_id="${inventory_version}:cell-${CELL_INDEX}-of-${CELL_COUNT}:batch-${BATCH_INDEX}-of-${batch_count}"
-
-            jq -n \
-              --arg inventory_version "$inventory_version" \
-              --arg batch_id "$batch_id" \
-              --argjson inventory_repository_count "$inventory_count" \
-              --argjson cell_count "$CELL_COUNT" \
-              --argjson cell_index "$CELL_INDEX" \
-              --argjson cell_repository_count "$cell_repository_count" \
-              --argjson batch_size "$BATCH_SIZE" \
-              --argjson batch_index "$BATCH_INDEX" \
-              --argjson batch_count "$batch_count" \
-              '{
-                inventory_version: $inventory_version,
-                inventory_repository_count: $inventory_repository_count,
-                cell_count: $cell_count,
-                cell_index: $cell_index,
-                cell_repository_count: $cell_repository_count,
-                batch_size: $batch_size,
-                batch_index: $batch_index,
-                batch_count: $batch_count,
-                batch_id: $batch_id
-              }' > $A/inventory-metadata.json
-          }
-
-          validate_positive_integer() {
-            if ! [[ "$1" =~ ^[1-9][0-9]*$ ]] || [ "$1" -gt "$2" ]; then
-              echo "$3" >&2
-              exit 1
-            fi
-          }
-
-          write_orchestrator_precompute() {
-            local workers_json
-
-            validate_positive_integer "$MAX_REPOS" 1000 "max_repos must be an integer from 1 through 1000"
-            validate_positive_integer "$MAX_SCAN_REPOS" 100000 "max_scan_repos must be an integer from 1 through 100000"
-            validate_positive_integer "$CELL_COUNT" 1000 "cell_count must be an integer from 1 through 1000"
-            if ! [[ "$CELL_INDEX" =~ ^[0-9]+$ ]] || [ "$CELL_INDEX" -ge "$CELL_COUNT" ]; then
-              echo "cell_index must be an integer from 0 through cell_count minus 1" >&2
-              exit 1
-            fi
-            validate_positive_integer "$BATCH_SIZE" 100000 "batch_size must be an integer from 1 through 100000"
-            if ! [[ "$BATCH_INDEX" =~ ^[0-9]+$ ]]; then
-              echo "batch_index must be a non-negative integer" >&2
-              exit 1
-            fi
-            validate_positive_integer "$DISPATCH_MAX" 1000 "dispatch_max must be an integer from 1 through 1000"
-            if ! [[ "$ROLLOUT_PERCENT" =~ ^([1-9][0-9]?|100)$ ]]; then
-              echo "rollout_percent must be an integer from 1 through 100" >&2
-              exit 1
-            fi
-              if ! [[ "$ORCHESTRATOR_CREDITS" =~ ^[0-9]+$ ]] || \
-                ! [[ "$WORKER_CREDITS_PER_TARGET" =~ ^[0-9]+$ ]]; then
-               echo "AI Credit admission values must be non-negative integers" >&2
-              exit 1
-            fi
-            load_control_source
-            workers_json=$(extract_dispatch_workers)
-
-            if [ "$(printf '%s' "$workers_json" | jq 'length')" -eq 0 ]; then
-              echo "shared/control.md role orchestrator requires safe-outputs.dispatch-workflow.workflows" >&2
-              exit 1
-            fi
-
-            gh api "repos/${GITHUB_REPOSITORY}/actions/workflows?per_page=100" --jq '.workflows[] | {id, name, path, state}' \
-              | jq -s '.' > $A/workflows.json
-            load_candidate_repositories
-            prepare_inventory_batch
-
-            printf '%s\n' "$workers_json" > $A/workers.json
-
-            jq -n \
-              --arg enabled "$ENABLED" \
-              --arg target_repo "$TARGET_REPO" \
-              --arg organization "$ORGANIZATION" \
-              --arg max_repos "$MAX_REPOS" \
-              --arg max_scan_repos "$MAX_SCAN_REPOS" \
-              --arg dispatch_max "$DISPATCH_MAX" \
-              --arg rollout_percent "$ROLLOUT_PERCENT" \
-              --arg safe_output_mode "$SAFE_OUTPUT_MODE" \
-              --arg safe_output_repo "$SAFE_OUTPUT_REPO" \
-              --arg orchestrator_credits "$ORCHESTRATOR_CREDITS" \
-              --arg worker_credits_per_target "$WORKER_CREDITS_PER_TARGET" \
-              --arg monthly_credit_budget "$MONTHLY_CREDIT_BUDGET" \
-              --arg repo_source "$repo_source" \
-              --arg repo_error "$repo_error" \
-              --arg package "$BUNDLE" \
-              --arg repository "$GITHUB_REPOSITORY" \
-              --arg workflow_sha "$WORKFLOW_SHA" \
-              --slurpfile inventory_metadata $A/inventory-metadata.json \
-              --slurpfile effective_policy $A/effective-policy.json \
-              --slurpfile workers $A/workers.json \
-              --slurpfile workflows $A/workflows.json \
-              --slurpfile candidates $A/current-batch.json '
-                def worker_match($worker):
-                  $workflows[0] | map(select(.path == (".github/workflows/" + $worker + ".lock.yml"))) | .[0];
-                def repository_mode($repository):
-                  ($repository | ascii_downcase) as $normalized
-                  | ($effective_policy[0].target_policies[$normalized].mode // $safe_output_mode);
-
-                $inventory_metadata[0] as $m
-                | $candidates[0] as $c
-                | ($c | map(. + {safe_output_mode: repository_mode(.full_name)})) as $resolved_candidates |
-                {
-                  authorized:true, reason:"authorized", control_role:"orchestrator", package:$package, bundle:$package,
-                  $enabled, $target_repo, $organization,
-                  $max_repos, $max_scan_repos, $dispatch_max, $rollout_percent,
-                  effective_max_repos: (
-                    (if ($c | length) == 0 then 0
-                     else [1, (($c | length) * ($rollout_percent | tonumber) / 100 | ceil)] | max
-                      end) as $percent_cap
-                     | [($max_repos | tonumber), $percent_cap] | min
-                  ),
-                  orchestrator_credits:($orchestrator_credits | tonumber),
-                  worker_credits_per_target:($worker_credits_per_target | tonumber),
-                    monthly_credit_budget:($monthly_credit_budget | tonumber),
-                  $safe_output_mode, $safe_output_repo, $repo_source, $repo_error,
-                    policy_source:{repository:$repository,path:".github/central-agentic-ops.json",sha:$workflow_sha},
-                  inventory_version:$m.inventory_version,
-                  inventory_repository_count:$m.inventory_repository_count,
-                  cell_count:$m.cell_count, cell_index:$m.cell_index,
-                  cell_repository_count:$m.cell_repository_count,
-                  batch_size:$m.batch_size, batch_index:$m.batch_index,
-                  batch_count:$m.batch_count, batch_id:$m.batch_id,
-                  total_repositories_scanned:$m.inventory_repository_count,
-                  candidate_repositories:$resolved_candidates,
-                  worker_workflows: [
-                    $workers[0][] as $worker
-                    | (worker_match($worker)) as $match
-                    | ($effective_policy[0].worker_policies[$worker] // null) as $policy
-                    | {
-                        configured:$worker, matched:($match != null),
-                        worker:$policy.worker, policy_enabled:($policy.enabled // false), max_mode:$policy.max_mode,
-                        id:$match.id, name:$match.name, path:$match.path, state:($match.state // ""),
-                        eligible:(($policy.enabled // false) and ($match != null) and (($match.state // "") | startswith("disabled") | not)),
-                        skip_reason: (
-                          if $policy == null then "worker is not part of installed package"
-                          elif ($policy.enabled | not) then "worker disabled by control-plane policy"
-                          elif $match == null then "worker workflow unavailable"
-                          elif (($match.state // "") | startswith("disabled")) then "worker workflow disabled"
-                          else null
-                          end
-                        )
-                      }
-                  ]
-                }
-                | . as $result
-                | ($result.worker_workflows | map(select(.eligible)) | length) as $eligible_workers
-                | $result
-                | .effective_max_repos = (
-                    if $eligible_workers == 0 then 0 else
-                      [.effective_max_repos, (($dispatch_max | tonumber) / $eligible_workers | floor)] | min
-                    end
-                  )
-              ' > "$OUT"
-          }
-
-          validate_mode "$SAFE_OUTPUT_MODE" "safe_output_mode"
-          if [ "$ROLE" = "orchestrator" ]; then
-            CENTRAL_REPO="$GITHUB_REPOSITORY"
-          fi
-          validate_repository_owner "target_repo" "$TARGET_REPO"
-          validate_repository_owner "safe_output_repo" "$SAFE_OUTPUT_REPO"
-
-          if [ "$ROLE" = "worker" ]; then
-            validate_worker_dispatch
-            validate_output_destination
-            validate_live_authority
-            write_worker_precompute
-            exit 0
-          fi
-
-          validate_output_destination
-          prepare_allowlist
-          write_orchestrator_precompute
-        env:
-          BUNDLE: self-care
-          CENTRAL_REPO: ${{ github.event.inputs.central_repo || '' }}
-          CONTROL_PLANE_RUN_URL: ${{ github.event.inputs.control_plane_run_url || '' }}
-          CORRELATION_ID: ${{ github.event.inputs.correlation_id || '' }}
-          DISPATCH_MAX: "1"
-          GH_HOST: ${{ env.GH_HOST || 'github.com' }}
-          GH_REPO: ${{ github.repository }}
-          GH_TOKEN: ${{ steps.github-mcp-app-token.outputs.token || secrets.GH_AW_GITHUB_TOKEN || secrets.GITHUB_TOKEN }}
-          GITHUB_API_URL: https://localhost:18443/api/v3
-          GITHUB_GRAPHQL_URL: https://localhost:18443/api/graphql
-          NODE_EXTRA_CA_CERTS: /tmp/gh-aw/proxy-logs/proxy-tls/ca.crt
-          ORCHESTRATOR_CREDITS: "0"
-          ROLE: worker
-          TARGET_REPO: ${{ github.event.inputs.target_repo || '' }}
-          WORKER: primer-brand-checker
-          WORKER_CREDITS_PER_TARGET: "0"
-          WORKFLOW_SHA: ${{ github.workflow_sha }}
-      - name: Apply monthly package budget
-        run: |
-          set -euo pipefail
-          OUT=/tmp/gh-aw/agent/control-precompute.json
-          [ "$ROLE" = "orchestrator" ] || exit 0
-          [ "$(jq -r '.enabled' "$OUT")" = "true" ] || exit 0
-          MONTHLY_CREDIT_BUDGET=$(jq -r '.monthly_credit_budget' "$OUT")
-          if ! [[ "$MONTHLY_CREDIT_BUDGET" =~ ^[0-9]+$ ]]; then
-            echo "monthly_credit_budget must be a non-negative integer" >&2
-            exit 1
-          fi
-          if [ "$MONTHLY_CREDIT_BUDGET" -gt 0 ] && [ "$WORKER_CREDITS_PER_TARGET" -eq 0 ]; then
-            echo "monthly_credit_budget requires positive worker_credits_per_target" >&2
-            exit 1
-          fi
-
-          monthly_ai_credits_spent="0"
-          monthly_budget_error=""
-          if [ "$MONTHLY_CREDIT_BUDGET" -gt 0 ]; then
-            month_start=$(date -u +%Y-%m-01)
-            parts_dir=/tmp/gh-aw/agent/monthly-budget-parts
-            mkdir -p "$parts_dir"
-            rm -f "$parts_dir"/*.json
-            {
-              printf '%s\n' "$BUNDLE"
-              jq -r '.[]' /tmp/gh-aw/agent/workers.json
-            } | sort -u > /tmp/gh-aw/agent/monthly-budget-workflows
-
-            while IFS= read -r workflow_id; do
-              [ -n "$workflow_id" ] || continue
-              safe_workflow_id=$(printf '%s' "$workflow_id" | tr -cs 'A-Za-z0-9._-' '_')
-              part_file="$parts_dir/$safe_workflow_id.json"
-              part_exit=0
-              gh aw logs "$workflow_id" --start-date "$month_start" --json -c 1000 > "$part_file" || part_exit=$?
-              if ! jq -e '(.runs // []) | type == "array"' "$part_file" >/dev/null 2>&1; then
-                monthly_budget_error="could not read valid month-to-date AI Credit usage for $workflow_id (exit code $part_exit)"
-                break
-              fi
-            done < /tmp/gh-aw/agent/monthly-budget-workflows
-
-            if [ -z "$monthly_budget_error" ]; then
-              monthly_ai_credits_spent=$(jq -s '
-                map(.runs // []) | add // [] | unique_by(.run_id)
-                | map(.aic // 0) | add // 0
-              ' "$parts_dir"/*.json)
-            fi
-          fi
-
-          jq \
-            --arg budget "$MONTHLY_CREDIT_BUDGET" \
-            --arg spent "$monthly_ai_credits_spent" \
-            --arg budget_error "$monthly_budget_error" '
-              ($budget | tonumber) as $b
-              | ($spent | tonumber) as $s
-              | .monthly_credit_budget = $b
-              | .monthly_ai_credits_spent = $s
-              | .monthly_ai_credits_remaining = ([0, ($b - $s)] | max)
-              | .monthly_budget_error = $budget_error
-              | .monthly_budget_target_cap = (
-                  if $b == 0 then .max_repos | tonumber
-                  elif $budget_error != "" or $b <= ($s + .orchestrator_credits) then 0
-                  else (($b - $s - .orchestrator_credits) / .worker_credits_per_target | floor)
-                  end
-                )
-              | .effective_max_repos = ([.effective_max_repos, .monthly_budget_target_cap] | min)
-            ' "$OUT" > "$OUT.tmp"
-          mv "$OUT.tmp" "$OUT"
-        env:
-          BUNDLE: self-care
-          GH_HOST: ${{ env.GH_HOST || 'github.com' }}
-          GH_REPO: ${{ github.repository }}
-          GITHUB_API_URL: https://localhost:18443/api/v3
-          GITHUB_GRAPHQL_URL: https://localhost:18443/api/graphql
-          NODE_EXTRA_CA_CERTS: /tmp/gh-aw/proxy-logs/proxy-tls/ca.crt
-          ORCHESTRATOR_CREDITS: "0"
-          ROLE: worker
-          WORKER_CREDITS_PER_TARGET: "0"
       - name: Configure Git credentials
         env:
           GITHUB_REPOSITORY: ${{ github.repository }}
@@ -1354,10 +636,6 @@ jobs:
           GH_AW_TRUSTED_USERS_VAR: ${{ vars.GH_AW_GITHUB_TRUSTED_USERS || '' }}
           GH_AW_APPROVAL_LABELS_VAR: ${{ vars.GH_AW_GITHUB_APPROVAL_LABELS || '' }}
         run: bash "${RUNNER_TEMP}/gh-aw/actions/parse_guard_list.sh"
-      - name: Stop DIFC Proxy
-        if: always()
-        continue-on-error: true
-        run: bash "${RUNNER_TEMP}/gh-aw/actions/stop_difc_proxy.sh"
       - name: Restore agent config folders from base branch
         if: steps.checkout-pr.outcome == 'success'
         env:
@@ -2557,12 +1835,12 @@ jobs:
     runs-on: ubuntu-slim
     environment: central-agentic-ops
     permissions:
+      actions: read
       contents: read
     env:
       GH_AW_RUNTIME_FEATURES: ${{ vars.GH_AW_RUNTIME_FEATURES }}
     outputs:
       activated: ${{ steps.check_membership.outputs.is_team_member == 'true' && steps.check_skip_if_match.outputs.skip_check_ok == 'true' }}
-      cao_admission_result: ${{ steps.cao_admission.outcome }}
       cao_authorized: ${{ steps.cao_admission.outputs.authorized }}
       cao_reason: ${{ steps.cao_admission.outputs.reason }}
       matched_command: ''
@@ -2582,6 +1860,71 @@ jobs:
           GH_AW_INFO_VERSION: "1.0.80"
           GH_AW_INFO_AWF_VERSION: "v0.28.12"
           GH_AW_INFO_ENGINE_ID: "copilot"
+      - name: Evaluate Central Agentic Ops admission
+        id: cao_admission
+        run: |
+          set -uo pipefail
+          if ! gh api --method GET "repos/${GITHUB_REPOSITORY}/contents/.github/cao/admit.sh" \
+            -f ref="$WORKFLOW_SHA" --jq '.content' | base64 -d | bash; then
+            reason="cannot read or execute the control policy admission helper at github.workflow_sha"
+            echo "authorized=false" >> "$GITHUB_OUTPUT"
+            echo "reason=$reason" >> "$GITHUB_OUTPUT"
+            printf '## Central Agentic Ops admission\n\nSkipped: %s\n' "$reason" >> "$GITHUB_STEP_SUMMARY"
+          fi
+        env:
+          CAO_PACKAGE: self-care
+          CAO_ROLE: worker
+          CAO_WORKER: primer-brand-checker
+          GH_TOKEN: ${{ github.token }}
+          REQUESTED_MAX_REPOS: ${{ github.event.inputs.max_repos || '' }}
+          REQUESTED_MODE: ${{ github.event.inputs.safe_output_mode || '' }}
+          REQUESTED_ROLLOUT_PERCENT: ${{ github.event.inputs.rollout_percent || '' }}
+          TARGET_REPO: ${{ github.event.inputs.target_repo || '' }}
+          WORKFLOW_SHA: ${{ github.workflow_sha }}
+      - name: Fetch CAO precompute helper
+        if: ${{ steps.cao_admission.outputs.authorized == 'true' }}
+        run: |
+          set -euo pipefail
+          cao_dir="${RUNNER_TEMP:-/tmp}/cao"
+          mkdir -p "$cao_dir"
+          gh api --method GET "repos/${GITHUB_REPOSITORY}/contents/.github/cao/precompute.sh" \
+            -f ref="$WORKFLOW_SHA" --jq '.content' | base64 -d > "$cao_dir/precompute.sh"
+          chmod +x "$cao_dir/precompute.sh"
+        env:
+          GH_TOKEN: ${{ github.token }}
+          WORKFLOW_SHA: ${{ github.workflow_sha }}
+      - name: Install gh-aw CLI when monthly budget is enabled
+        if: ${{ steps.cao_admission.outputs.authorized == 'true' && steps.cao_admission.outputs.monthly_credit_budget != '0' }}
+        uses: github/gh-aw-actions/setup-cli@afc709f45ed6a3f756eb4551856c6a9c42e15b2c # v0.88.0
+        with:
+          version: v0.88.0
+      - name: Run CAO control precompute
+        if: ${{ steps.cao_admission.outputs.authorized == 'true' }}
+        run: |
+          set -euo pipefail
+          "${RUNNER_TEMP:-/tmp}/cao/precompute.sh"
+        env:
+          BUNDLE: self-care
+          CENTRAL_REPO: ${{ github.event.inputs.central_repo || '' }}
+          CONTROL_PLANE_RUN_URL: ${{ github.event.inputs.control_plane_run_url || '' }}
+          CORRELATION_ID: ${{ github.event.inputs.correlation_id || '' }}
+          DISPATCH_MAX: "1"
+          GH_TOKEN: ${{ secrets.GH_AW_GITHUB_TOKEN || github.token }}
+          ORCHESTRATOR_CREDITS: "0"
+          ROLE: worker
+          SAFE_OUTPUT_REPO: ${{ github.event.inputs.safe_output_repo || (github.aw.import-inputs.role == 'orchestrator' && github.repository) || '' }}
+          TARGET_REPO: ${{ github.event.inputs.target_repo || '' }}
+          WORKER: primer-brand-checker
+          WORKER_CREDITS_PER_TARGET: "0"
+          WORKFLOW_SHA: ${{ github.workflow_sha }}
+      - name: Upload CAO control precompute artifact
+        if: ${{ steps.cao_admission.outputs.authorized == 'true' }}
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          if-no-files-found: error
+          name: cao-control-precompute
+          path: /tmp/gh-aw/agent/control-precompute.json
+          retention-days: 1.0
       - name: Check team membership for workflow
         id: check_membership
         uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
@@ -2625,24 +1968,6 @@ jobs:
             setupGlobals(core, github, context, exec, io, getOctokit);
             const { main } = require(path.join(actionsDir, 'check_skip_if_match.cjs'));
             await main();
-      - name: Evaluate Central Agentic Ops admission
-        id: cao_admission
-        run: |
-          set -uo pipefail
-          if ! gh api --method GET "repos/${GITHUB_REPOSITORY}/contents/.github/cao/admit.sh" \
-            -f ref="$WORKFLOW_SHA" --jq '.content' | base64 -d | bash; then
-            reason="cannot read or execute the control policy admission helper at github.workflow_sha"
-            echo "authorized=false" >> "$GITHUB_OUTPUT"
-            echo "reason=$reason" >> "$GITHUB_OUTPUT"
-            printf '## Central Agentic Ops admission\n\nSkipped: %s\n' "$reason" >> "$GITHUB_STEP_SUMMARY"
-          fi
-        env:
-          GH_TOKEN: ${{ github.token }}
-          REQUESTED_MAX_REPOS: ${{ github.event.inputs.max_repos || '' }}
-          REQUESTED_MODE: ${{ github.event.inputs.safe_output_mode || '' }}
-          REQUESTED_ROLLOUT_PERCENT: ${{ github.event.inputs.rollout_percent || '' }}
-          TARGET_REPO: ${{ github.event.inputs.target_repo || '' }}
-          WORKFLOW_SHA: ${{ github.workflow_sha }}
 
   safe_outputs:
     needs:

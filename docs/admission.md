@@ -13,7 +13,7 @@ trigger -> pre-activation admission -> activation -> authorized-run precompute -
 
 ## What Admission Gates
 
-Admission reads `.github/central-agentic-ops.json` and `.github/cao/resolve.mjs` from the exact `github.workflow_sha`. It does not use policy from another branch or from the runner checkout.
+Admission reads `.github/central-agentic-ops.json` and `.github/cao/resolve.mjs` from the exact `github.workflow_sha`. Authorized runs then execute `.github/cao/precompute.sh` from that same revision. They do not use policy or CAO runtime from another branch or from the agent checkout.
 
 | Check | Admitted when |
 | --- | --- |
@@ -41,14 +41,14 @@ Admission is deliberately lightweight and repository-local. Once admitted, `.git
 | Computes policy ceilings | Applies repository, rollout, dispatch, and monthly AI Credit limits |
 | Uses only the control repository revision | Confirms installed worker workflow availability and binds output routing |
 
-Failure in either phase prevents agent execution. Admission denial skips activation; precompute fails closed before model invocation when an authorized run cannot establish a required remote fact.
+Failure in either phase prevents agent execution. Admission denial skips activation; precompute fails closed when an authorized run cannot establish a required remote fact. Successful precompute uploads only `control-precompute.json`; the agent job restores and validates that non-secret artifact before checkout or model invocation.
 
 ## Connect Setup and Policy
 
 Setup creates one atomic control-plane revision:
 
 1. Install the gh-aw package from an immutable CAO tag or commit.
-2. Materialize `.github/cao/admit.sh` and `.github/cao/resolve.mjs` from that same CAO revision.
+2. Materialize `.github/cao/admit.sh`, `.github/cao/precompute.sh`, and `.github/cao/resolve.mjs` from that same CAO revision.
 3. Declare the installed package and its worker-to-workflow mapping in `.github/central-agentic-ops.json`.
 4. Commit the workflows, generated locks, CAO runtime, and policy together, then push before running the operation.
 
@@ -78,6 +78,6 @@ Open the run summary and find **Central Agentic Ops admission**. An authorized r
 | `package-disabled` | Review the package, then remove `enabled: false` when it is safe to resume. |
 | `worker-disabled` | Review the worker, then remove `enabled: false` when it is safe to resume. |
 | `control policy validation failed` | Validate policy keys, values, identities, and requested manual inputs. |
-| Cannot read or execute CAO runtime | Materialize both `.github/cao` files from the same immutable package revision and commit them with the workflows. |
+| Cannot read or execute CAO runtime | Materialize all three `.github/cao` runtime files from the same immutable package revision and commit them with the workflows. |
 
 Fix the checked-in setup or policy, commit and push the new revision, then start a new run. Do not bypass admission by editing a generated `.lock.yml` file or by widening manual inputs.

@@ -74,8 +74,17 @@ test("CAO admission authorizes a declared package before activation", () => {
   const { result, output, summary } = runAdmission();
 
   assert.equal(result.status, 0, result.stderr);
-  assert.deepEqual(output, { authorized: "true", reason: "authorized" });
+  assert.deepEqual(output, { authorized: "true", reason: "authorized", monthly_credit_budget: "0" });
   assert.match(summary, /Authorized package `dependabot` as `orchestrator`/);
+});
+
+test("CAO admission exports the authorized package budget", () => {
+  const { result, output } = runAdmission({
+    policy: controlPolicy({ packagePolicy: { "monthly-ai-credit-budget": 1200 } }),
+  });
+
+  assert.equal(result.status, 0, result.stderr);
+  assert.deepEqual(output, { authorized: "true", reason: "authorized", monthly_credit_budget: "1200" });
 });
 
 test("CAO admission denies a disabled package without failing the workflow", () => {
@@ -84,7 +93,7 @@ test("CAO admission denies a disabled package without failing the workflow", () 
   });
 
   assert.equal(result.status, 0, result.stderr);
-  assert.deepEqual(output, { authorized: "false", reason: "package-disabled" });
+  assert.deepEqual(output, { authorized: "false", reason: "package-disabled", monthly_credit_budget: "0" });
   assert.match(summary, /Skipped package `dependabot` as `orchestrator`: package-disabled/);
 });
 
@@ -92,7 +101,11 @@ test("CAO admission fails closed when policy validation fails", () => {
   const { result, output } = runAdmission({ policy: "{" });
 
   assert.equal(result.status, 0);
-  assert.deepEqual(output, { authorized: "false", reason: "control policy validation failed" });
+  assert.deepEqual(output, {
+    authorized: "false",
+    reason: "control policy validation failed",
+    monthly_credit_budget: "0",
+  });
 });
 
 test("CAO admission fails closed when the resolver cannot be fetched", () => {
@@ -102,5 +115,6 @@ test("CAO admission fails closed when the resolver cannot be fetched", () => {
   assert.deepEqual(output, {
     authorized: "false",
     reason: "cannot read the control policy resolver at github.workflow_sha",
+    monthly_credit_budget: "0",
   });
 });

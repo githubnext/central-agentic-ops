@@ -1,4 +1,3 @@
-import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -6,30 +5,7 @@ import { fileURLToPath } from "node:url";
 export const root = resolve(dirname(fileURLToPath(import.meta.url)), "../..");
 
 export function controlPrecomputeScript() {
-  const source = readFileSync(
-    join(root, ".github", "workflows", "shared", "control-precompute.md"),
-    "utf8",
-  );
-  const lines = source.split("\n");
-  const scripts = [];
-  for (let index = 0; index < lines.length; index += 1) {
-    if (lines[index] !== "    run: |") continue;
-    const script = [];
-    for (index += 1; index < lines.length; index += 1) {
-      const line = lines[index];
-      if (line.startsWith("      ")) {
-        script.push(line.slice(6));
-      } else if (line.length === 0) {
-        script.push("");
-      } else {
-        index -= 1;
-        break;
-      }
-    }
-    scripts.push(script.join("\n"));
-  }
-  assert.ok(scripts.length > 0, "control precompute run block is missing");
-  return scripts.join('\nset -a\n. "$GITHUB_ENV"\nset +a\n');
+  return readFileSync(join(root, ".github", "cao", "precompute.sh"), "utf8");
 }
 
 export function controlPolicy({

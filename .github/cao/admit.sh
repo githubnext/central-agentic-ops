@@ -4,11 +4,12 @@ set -uo pipefail
 
 authorized=false
 reason="control policy admission did not complete"
-admission_dir=$(mktemp -d "${RUNNER_TEMP:-/tmp}/cao-admission.XXXXXX")
+monthly_credit_budget=0
+admission_dir="${RUNNER_TEMP:-/tmp}/cao"
+mkdir -p "$admission_dir"
 policy_file="$admission_dir/central-agentic-ops.json"
 resolver="$admission_dir/resolve.mjs"
 effective_file="$admission_dir/effective-policy.json"
-trap 'rm -rf "$admission_dir"' EXIT
 
 emit_admission() {
   reason=${reason//$'\r'/ }
@@ -16,6 +17,7 @@ emit_admission() {
   {
     echo "authorized=$authorized"
     echo "reason=$reason"
+    echo "monthly_credit_budget=$monthly_credit_budget"
   } >> "$GITHUB_OUTPUT"
   {
     echo "## Central Agentic Ops admission"
@@ -52,6 +54,7 @@ elif ! jq -e '.authorized | type == "boolean"' "$effective_file" >/dev/null; the
 elif [ "$(jq -r '.authorized' "$effective_file")" = "true" ]; then
   authorized=true
   reason="authorized"
+  monthly_credit_budget=$(jq -r '.monthly_ai_credit_budget' "$effective_file")
 else
   reason=$(jq -r '.reason // "control policy denied this run"' "$effective_file")
 fi

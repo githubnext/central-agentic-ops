@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { spawnSync } from "node:child_process";
-import { chmodSync, copyFileSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { chmodSync, copyFileSync, mkdirSync, mkdtempSync, readFileSync, realpathSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import test from "node:test";
@@ -46,19 +46,15 @@ function runPrecompute(overrides = {}, ghScript = "printf 'true\\n'", policy = c
   const gh = join(directory, "gh");
   const githubEnvironment = join(directory, "github-env");
   const safeOutputs = join(directory, "safe-outputs.jsonl");
-  const resolverDirectory = join(directory, ".github", "cao");
-  mkdirSync(resolverDirectory, { recursive: true });
-  copyFileSync(
-    join(root, ".github", "cao", "resolve.mjs"),
-    join(resolverDirectory, "resolve.mjs"),
-  );
+  const runnerTemp = join(realpathSync(directory), "runner-temp");
+  const admissionDirectory = join(runnerTemp, "cao");
+  const admissionPolicy = join(admissionDirectory, "central-agentic-ops.json");
+  const admissionResolver = join(admissionDirectory, "resolve.mjs");
+  const admissionEffective = join(admissionDirectory, "effective-policy.json");
+  mkdirSync(admissionDirectory, { recursive: true });
+  writeFileSync(admissionPolicy, policy);
+  copyFileSync(join(root, ".github", "cao", "resolve.mjs"), admissionResolver);
   writeFileSync(gh, `#!/bin/sh
-case "$*" in
-  *repos/acme/control/contents/.github/central-agentic-ops.json*)
-    printf '%s' "$CONTROL_POLICY" | base64
-    exit 0
-    ;;
-esac
 ${ghScript}
 `);
   writeFileSync(githubEnvironment, "");
@@ -66,16 +62,38 @@ ${ghScript}
   chmodSync(gh, 0o755);
 
   try {
+    const env = controlEnvironment({
+      PATH: `${directory}:${process.env.PATH}`,
+      GITHUB_ENV: githubEnvironment,
+      GH_AW_SAFE_OUTPUTS: safeOutputs,
+      RUNNER_TEMP: runnerTemp,
+      ...overrides,
+    });
+
+    const resolverWorker = env.ROLE === "orchestrator" ? "" : (env.WORKER ?? "");
+    const resolve = spawnSync("node", [admissionResolver, "--effective", admissionPolicy], {
+      cwd: directory,
+      encoding: "utf8",
+      env: {
+        ...env,
+        CAO_PACKAGE: env.BUNDLE,
+        CAO_ROLE: env.ROLE,
+        CAO_WORKER: resolverWorker,
+        CAO_TARGET_REPOSITORY: env.TARGET_REPO ?? "",
+        CAO_REQUESTED_MODE: env.REQUESTED_MODE ?? "",
+        CAO_REQUESTED_MAX_REPOSITORIES: env.REQUESTED_MAX_REPOS ?? "",
+        CAO_REQUESTED_ROLLOUT_PERCENT: env.REQUESTED_ROLLOUT_PERCENT ?? "",
+      },
+    });
+    if (resolve.status !== 0) {
+      return resolve;
+    }
+    writeFileSync(admissionEffective, resolve.stdout);
+
     return spawnSync("bash", ["-c", script], {
       cwd: directory,
       encoding: "utf8",
-      env: controlEnvironment({
-        PATH: `${directory}:${process.env.PATH}`,
-        CONTROL_POLICY: policy,
-        GITHUB_ENV: githubEnvironment,
-        GH_AW_SAFE_OUTPUTS: safeOutputs,
-        ...overrides,
-      }),
+      env,
     });
   } finally {
     rmSync(directory, { recursive: true, force: true });
