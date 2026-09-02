@@ -310,7 +310,7 @@ test("enterprise defaults, budgets, timeouts, and concurrency are finite", () =>
     "eu-cra-compliance.md": { credits: 200, timeout: 15, dispatchMax: 48, workers: 6 },
     "eu-cra-compliance-package-maintainer.md": { credits: 200, timeout: 20 },
     "optimization.md": { credits: 250, timeout: 15, dispatchMax: 20, workers: 2 },
-    "self-care.md": { credits: 200, timeout: 15, dispatchMax: 4, workers: 4 },
+    "self-care.md": { credits: 200, timeout: 15, dispatchMax: 5, workers: 5 },
     "ambient-context-agents-md-curator.md": { credits: 400, timeout: 25 },
     "ambient-context-skills-curator.md": { credits: 400, timeout: 20 },
     "aw-failures-investigator.md": { credits: 500, timeout: 30 },
@@ -331,6 +331,7 @@ test("enterprise defaults, budgets, timeouts, and concurrency are finite", () =>
     "self-care-code-improvement.md": { credits: 400, timeout: 30 },
     "self-care-dashboard-review.md": { credits: 400, timeout: 30 },
     "self-care-primer-brand-checker.md": { credits: 400, timeout: 25 },
+    "self-care-worker-failures.md": { credits: 500, timeout: 30 },
   };
 
   for (const [name, limits] of Object.entries(expected)) {
@@ -673,6 +674,7 @@ test("repository-local SelfCare uses organization-billed Copilot authentication"
     "self-care-code-improvement",
     "self-care-dashboard-review",
     "self-care-primer-brand-checker",
+    "self-care-worker-failures",
     "self-care",
   ];
 
@@ -974,6 +976,7 @@ test("live workers require target-owned package authority before agent execution
     ["self-care-code-improvement.md", "self-care"],
     ["self-care-dashboard-review.md", "self-care"],
     ["self-care-primer-brand-checker.md", "self-care"],
+    ["self-care-worker-failures.md", "self-care"],
   ]) {
     assert.match(workflow(name), new RegExp(`package: ${bundle}`));
   }
@@ -1037,6 +1040,7 @@ test("operation workflows optionally load per-operation markdown steering", () =
     ["self-care-code-improvement.md", "self-care"],
     ["self-care-dashboard-review.md", "self-care"],
     ["self-care-primer-brand-checker.md", "self-care"],
+    ["self-care-worker-failures.md", "self-care"],
   ]) {
     assert.match(
       workflow(name),
@@ -1154,6 +1158,7 @@ test("every worker uses the standard dispatch envelope and safe mode vocabulary"
     ["self-care-code-improvement.md", "self-care", "code-improvement"],
     ["self-care-dashboard-review.md", "self-care", "dashboard-review"],
     ["self-care-primer-brand-checker.md", "self-care", "primer-brand-checker"],
+    ["self-care-worker-failures.md", "self-care", "worker-failures"],
   ];
 
   for (const [name, packageName, workerName] of workerNames) {
@@ -1486,8 +1491,27 @@ test("SelfCare runs every 20 minutes", () => {
 
   assert.match(source, /schedule: every 20 minutes/);
   assert.match(source, /engine: copilot\nmodel: copilot\/gpt-5\.4/);
+  assert.match(source, /workflows: \[self-care-accessibility-checker, self-care-code-improvement, self-care-dashboard-review, self-care-primer-brand-checker, self-care-worker-failures\]/);
+  assert.match(source, /Dispatch all five enabled workers/);
   assert.match(compiled, /cron: "[0-5]?\d\/20 \* \* \* \*"  # Friendly format: every 20 minutes \(scattered\)/);
   assert.match(compiled, /GH_AW_INFO_MODEL: "copilot\/gpt-5\.4"/);
+});
+
+test("SelfCare worker failures maintains only current-repository workers through Copilot-assigned issues", () => {
+  const source = workflow("self-care-worker-failures.md");
+
+  assert.match(source, /^name: "SelfCare \/ Worker Failures"$/m);
+  assert.match(source, /package: self-care\n\s+role: worker\n\s+worker: worker-failures/);
+  assert.match(source, /precomputed `target_repo` is exactly `githubnext\/central-agentic-ops`/);
+  assert.match(source, /precomputed `safe_output_mode` is `live`/);
+  assert.match(source, /Exclude `self-care-worker-failures` itself/);
+  assert.match(source, /last 24 hours/);
+  assert.match(source, /Inspect at most the five most recent failed runs/);
+  assert.match(source, /assignees: \[copilot\]/);
+  assert.match(source, /deduplicate-by-title: true/);
+  assert.match(source, /generated `\.lock\.yml` files must be updated with `npm run compile:locks`, never edited directly/);
+  assert.match(source, /Do not ask Copilot to modify another repository/);
+  assert.doesNotMatch(source, /^\s+(create-pull-request|add-comment|create-discussion|push-to-pull-request-branch):/m);
 });
 
 test("SelfCare accessibility checker audits the served docs site with axe-core evidence", () => {
@@ -1696,6 +1720,7 @@ test("clean-room compilation emits the expected GitHub Actions settings", { time
       "self-care-code-improvement.lock.yml",
       "self-care-dashboard-review.lock.yml",
       "self-care-primer-brand-checker.lock.yml",
+      "self-care-worker-failures.lock.yml",
       "self-care.lock.yml",
       "software-development-practices-github-well-architected.lock.yml",
       "software-development-practices-nist-ssdf.lock.yml",
@@ -1790,6 +1815,7 @@ test("clean-room compilation emits the expected GitHub Actions settings", { time
       ["self-care-code-improvement.lock.yml", ["self-care", "code-improvement"]],
       ["self-care-dashboard-review.lock.yml", ["self-care", "dashboard-review"]],
       ["self-care-primer-brand-checker.lock.yml", ["self-care", "primer-brand-checker"]],
+      ["self-care-worker-failures.lock.yml", ["self-care", "worker-failures"]],
       ["software-development-practices-github-well-architected.lock.yml", ["software-development-practices", "github-well-architected"]],
       ["software-development-practices-nist-ssdf.lock.yml", ["software-development-practices", "nist-ssdf"]],
     ]);
@@ -2113,6 +2139,7 @@ test("Dashboard inventory links multiline orchestrator worker lists", () => {
           "self-care-code-improvement",
           "self-care-dashboard-review",
           "self-care-primer-brand-checker",
+          "self-care-worker-failures",
         ],
       },
       {

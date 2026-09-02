@@ -129,6 +129,9 @@
           },
           "primer-brand-checker": {
             "workflow": "self-care-primer-brand-checker"
+          },
+          "worker-failures": {
+            "workflow": "self-care-worker-failures"
           }
         }
       }
