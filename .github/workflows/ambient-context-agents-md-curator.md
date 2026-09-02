@@ -66,6 +66,7 @@ imports:
 permissions:
   contents: read
   actions: read
+  copilot-requests: write
   issues: read
   pull-requests: read
 

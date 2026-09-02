@@ -58,6 +58,7 @@ imports:
 permissions:
   contents: read
   actions: read
+  copilot-requests: write
   pull-requests: read
 
 engine: copilot

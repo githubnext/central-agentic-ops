@@ -118,19 +118,22 @@ function installPackage(source) {
   }
 }
 
-test("gh aw add requires guided setup for the root package", { timeout: 180_000 }, () => {
-  const consumer = mkdtempSync(join(tmpdir(), "central-agentic-ops-package-"));
+test("gh aw add installs the root package without rewriting Copilot authentication", { timeout: 180_000 }, () => {
+  const consumer = installPackage(packageSource);
   try {
-    run("git", ["init", "--quiet"], consumer);
-    assert.throws(
-      () => run("gh", ["aw", "add", packageSource, "--force", "--no-security-scanner"], consumer),
-      (error) => {
-        assert.match(error.stderr, /declares aw\.yml config/);
-        assert.ok(error.stderr.includes(`gh aw add-wizard ${packageSource}`));
-        return true;
-      },
-    );
-    assert.ok(!existsSync(join(consumer, ".github")), "rejected root install must not leave partial files");
+    assert.ok(existsSync(join(consumer, ".github", "aw", "default-AGENTS.md")));
+    for (const workflowId of [
+      "ambient-context",
+      "aw-maintenance",
+      "dependabot",
+      "optimization",
+    ]) {
+      const source = readFileSync(join(consumer, ".github", "workflows", `${workflowId}.md`), "utf8");
+      const lock = readFileSync(join(consumer, ".github", "workflows", `${workflowId}.lock.yml`), "utf8");
+      assert.match(source, /copilot-requests: write/);
+      assert.match(lock, /COPILOT_GITHUB_TOKEN: \$\{\{ github\.token \}\}/);
+      assert.doesNotMatch(lock, /secrets\.COPILOT_GITHUB_TOKEN/);
+    }
   } finally {
     rmSync(consumer, { recursive: true, force: true });
   }

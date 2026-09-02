@@ -62,6 +62,7 @@ imports:
 permissions:
   contents: read
   actions: read
+  copilot-requests: write
 
 strict: true
 

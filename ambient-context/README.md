@@ -44,7 +44,7 @@ The orchestrator workflow can dispatch no more than 20 worker workflows in one r
 The package is part of the core package, so installing Central Agentic Ops installs it:
 
 ```bash
-gh aw add-wizard githubnext/central-agentic-ops@<catalog-release>
+gh aw add githubnext/central-agentic-ops@<catalog-release>
 ```
 
 To install only this package into an existing private control repository:

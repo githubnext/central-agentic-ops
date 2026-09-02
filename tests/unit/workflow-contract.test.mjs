@@ -448,6 +448,11 @@ test("operations creation guidance scopes detection and omits worker evals", () 
   assert.match(packageSkill, /safe-outputs\.threat-detection: false/);
   assert.match(packageSkill, /no `evals` configuration; use deterministic graders for worker measurement/);
   assert.match(packageSkill, /Confirm the orchestrator disables threat detection and every worker omits `evals`/);
+  assert.match(packageSkill, /CAO operational packages require organization-billed Copilot inference/);
+  assert.match(packageSkill, /gh api orgs\/<organization>\/copilot\/billing/);
+  assert.match(packageSkill, /`total_seats: 0` with `seat_management_setting: unconfigured` as unavailable/);
+  assert.match(packageSkill, /Pi or Codex workflow using a `copilot\/\*` model is Copilot-backed/);
+  assert.match(packageSkill, /Do not use `aw\.yml` bootstrap `config`/);
 });
 
 test("AI Credit auditor uses gh-aw forecast for cost projections", () => {
@@ -547,7 +552,7 @@ test("root package provides default control-repository agent context", () => {
   const setupSkill = readFileSync(join(root, ".github", "skills", "setup-central-agentic-ops", "SKILL.md"), "utf8");
 
   assert.match(rootManifest, /source: AGENTS\.md\n\s+destination: \.github\/aw\/default-AGENTS\.md/);
-  assert.match(rootManifest, /type: handoff\n\s+message: If this repository has no root AGENTS\.md, copy \.github\/aw\/default-AGENTS\.md to AGENTS\.md/);
+  assert.doesNotMatch(rootManifest, /^config:/m);
   assert.match(agents, /Catalog source:[\s\S]*never configure this repository as a control plane/);
   assert.match(agents, /Control repository:[\s\S]*explicitly enrolled remote repositories/);
   assert.match(agents, /`review` is the default mode/);
@@ -611,7 +616,7 @@ test("compiled workflow locks are not ignored", () => {
   }
 });
 
-test("root CAO workflows defer exclusive Copilot auth selection to add-wizard", () => {
+test("root CAO workflows use organization-billed Copilot authentication", () => {
   const rootPackageWorkflowIds = [
     "ambient-context-agents-md-curator",
     "ambient-context-skills-curator",
@@ -624,27 +629,46 @@ test("root CAO workflows defer exclusive Copilot auth selection to add-wizard", 
     "optimization-ai-credit-auditor",
     "optimization-ai-credit-optimizer",
     "optimization",
-    "self-care-accessibility-checker",
-    "self-care-code-improvement",
-    "self-care-primer-brand-checker",
-    "self-care",
   ];
   const rootManifest = readFileSync(join(root, "aw.yml"), "utf8");
 
-  assert.match(rootManifest, /type: copilot-auth/);
-  assert.match(rootManifest, /secret: COPILOT_GITHUB_TOKEN/);
-  assert.match(rootManifest, /strategy: prompt-if-actions-auth-unavailable/);
+  assert.doesNotMatch(rootManifest, /^config:/m);
+  assert.doesNotMatch(rootManifest, /COPILOT_GITHUB_TOKEN/);
 
   for (const workflowId of rootPackageWorkflowIds) {
     const source = workflow(`${workflowId}.md`);
     const lock = workflow(`${workflowId}.lock.yml`);
 
-    assert.doesNotMatch(source, /COPILOT_GITHUB_TOKEN/, `${workflowId}.md must remain auth-neutral`);
-    assert.doesNotMatch(source, /copilot-requests: write/, `${workflowId}.md must let add-wizard inject organization billing`);
-    assert.match(lock, /COPILOT_GITHUB_TOKEN: \$\{\{ secrets\.COPILOT_GITHUB_TOKEN \}\}/, `${workflowId}.lock.yml must compile the neutral PAT path`);
-    assert.match(lock, /#   - COPILOT_GITHUB_TOKEN/, `${workflowId}.lock.yml must declare the Copilot PAT secret`);
-    assert.doesNotMatch(lock, /copilot-requests: write/, `${workflowId}.lock.yml must not mix auth profiles`);
-    assert.doesNotMatch(lock, /secrets\.COPILOT_GITHUB_TOKEN \|\| github\.token/, `${workflowId}.lock.yml must not use runtime auth precedence`);
+    assert.match(source, /copilot-requests: write/, `${workflowId}.md must use organization billing`);
+    assert.doesNotMatch(source, /COPILOT_GITHUB_TOKEN/, `${workflowId}.md must not use PAT inference`);
+    assert.match(lock, /copilot-requests: write/, `${workflowId}.lock.yml must grant Copilot requests`);
+    assert.match(lock, /COPILOT_GITHUB_TOKEN: \$\{\{ github\.token \}\}/, `${workflowId}.lock.yml must use the workflow token`);
+    assert.doesNotMatch(lock, /secrets\.COPILOT_GITHUB_TOKEN/, `${workflowId}.lock.yml must not declare the Copilot PAT secret`);
+  }
+});
+
+test("repository-local SelfCare uses organization-billed Copilot authentication", () => {
+  const rootManifest = readFileSync(join(root, "aw.yml"), "utf8");
+  const selfCareManifest = readFileSync(join(root, "self-care", "aw.yml"), "utf8");
+  const workflowIds = [
+    "self-care-accessibility-checker",
+    "self-care-code-improvement",
+    "self-care-primer-brand-checker",
+    "self-care",
+  ];
+
+  assert.doesNotMatch(rootManifest, /\.github\/workflows\/self-care(?:-[\w-]+)?\.md/);
+  assert.match(selfCareManifest, /description: Repository-local/);
+  assert.match(selfCareManifest, /\.github\/workflows\/self-care\.md/);
+
+  for (const workflowId of workflowIds) {
+    const source = workflow(`${workflowId}.md`);
+    const lock = workflow(`${workflowId}.lock.yml`);
+
+    assert.match(source, /copilot-requests: write/, `${workflowId}.md must use organization billing`);
+    assert.doesNotMatch(source, /COPILOT_GITHUB_TOKEN/, `${workflowId}.md must not mix auth profiles`);
+    assert.match(lock, /copilot-requests: write/, `${workflowId}.lock.yml must grant Copilot requests`);
+    assert.match(lock, /COPILOT_GITHUB_TOKEN: \$\{\{ github\.token \}\}/, `${workflowId}.lock.yml must use the workflow token`);
   }
 });
 
@@ -871,7 +895,6 @@ test("public read-only operation uses the built-in token without widening access
 
 test("authentication prefers an optional GitHub App and retains bounded fallbacks", () => {
   const authentication = readFileSync(join(root, "docs", "authentication.md"), "utf8");
-  const bootstrap = readFileSync(join(root, "docs", "bootstrap-configuration.md"), "utf8");
   const control = workflow("shared/control.md");
   const precompute = controlPrecompute();
 
@@ -886,10 +909,8 @@ test("authentication prefers an optional GitHub App and retains bounded fallback
   assert.match(authentication, /including the Checks API/);
   assert.match(authentication, /Obtain explicit confirmation to proceed/);
   assert.match(authentication, /presence of an existing PAT secret, is not consent/);
-  assert.match(bootstrap, /Choose Copilot inference authentication independently from target-repository authentication/);
-  assert.match(bootstrap, /organization billing first when available[\s\S]*?adds `copilot-requests: write`/);
-  assert.match(bootstrap, /root `copilot-auth` action handles only inference/);
-  assert.match(bootstrap, /PAT selection only after explicit consent/);
+  assert.match(authentication, /CAO requires organization billing/);
+  assert.match(authentication, /does not support `COPILOT_GITHUB_TOKEN` inference fallback/);
 });
 
 test("live workers require target-owned package authority before agent execution", () => {
@@ -1830,22 +1851,17 @@ test("README routes zero-to-CAO requests to the setup skill", () => {
   assert.doesNotMatch(setupSkill, /Always target the control repository itself for the first run/);
   assert.match(setupSkill, /cao_ref=\$\(gh api repos\/githubnext\/central-agentic-ops\/commits\/main/);
   assert.match(setupSkill, /\[\[ "\$cao_ref" =~ \^\[0-9a-fA-F\]\{40,64\}\$ \]\]/);
-  assert.match(setupSkill, /gh aw add-wizard "githubnext\/central-agentic-ops@\$\{cao_ref\}"/);
+  assert.match(setupSkill, /gh aw add "githubnext\/central-agentic-ops@\$\{cao_ref\}"/);
   assert.match(setupSkill, /gh aw doctor --repo <organization>\/<control-repository> --dir \./);
   assert.match(setupSkill, /Run `gh aw version`\. Compare it with `min-version` in the root CAO `aw\.yml`/);
   assert.match(setupSkill, /Do not require the catalog maintainer's current local version when the package supports an older release/);
   assert.match(setupSkill, /gh api orgs\/<organization>\/copilot\/billing/);
-  assert.match(setupSkill, /organization billing through `copilot-requests: write`[\s\S]*?fine-grained PAT as `COPILOT_GITHUB_TOKEN`/);
+  assert.match(setupSkill, /Require confirmed organization billing for Copilot inference/);
   assert.match(setupSkill, /`total_seats: 0`[\s\S]*?HTTP 403/);
-  assert.match(setupSkill, /resource owner is the user's personal account[\s\S]*?\*\*Copilot Requests\*\* is \*\*Read\*\*[\s\S]*?active Copilot license/);
-  assert.match(setupSkill, /never place it in chat or a command argument/);
   assert.match(setupSkill, /GitHub App or `GH_AW_GITHUB_TOKEN` for target access does not authenticate Copilot inference/);
-  assert.match(setupSkill, /wizard adds `copilot-requests: write`[\s\S]*?built-in workflow token[\s\S]*?no `COPILOT_GITHUB_TOKEN` secret is requested/);
-  assert.match(setupSkill, /wizard leaves `copilot-requests: write` absent[\s\S]*?only `\$\{\{ secrets\.COPILOT_GITHUB_TOKEN \}\}`/);
-  assert.match(setupSkill, /Do not emulate that action by manually rewriting installed workflow permissions or by configuring `COPILOT_GITHUB_TOKEN` separately/);
-  assert.match(setupSkill, /If the selected ref predates that config, stop and select a newer reviewed immutable ref/);
-  assert.match(setupSkill, /Stop if the installation mixes both profiles/);
-  assert.match(setupSkill, /Do not replace `auto` with an explicit model/);
+  assert.match(setupSkill, /every installed Copilot-backed source declares `copilot-requests: write`/);
+  assert.match(setupSkill, /no generated lock declares `\$\{\{ secrets\.COPILOT_GITHUB_TOKEN \}\}`/);
+  assert.match(setupSkill, /do not replace `auto` with an explicit model/);
   assert.match(setupSkill, /one immutable source identity keeps repeated package dependencies consistent/);
   assert.match(setupSkill, /package cannot install this file because it is consumer-owned rollout policy/);
   assert.match(setupSkill, /Replace both occurrences of `<target-owner>`[\s\S]*?one occurrence of `<target-repository>`/);

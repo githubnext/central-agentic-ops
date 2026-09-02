@@ -62,6 +62,7 @@ imports:
 permissions:
   contents: read
   actions: read
+  copilot-requests: write
 
 engine: copilot
 model: copilot/mai-code-1.1-flash

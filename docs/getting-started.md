@@ -77,7 +77,7 @@ From the control repository, install the Dependabot operation package and CAO ru
 
 ```bash
 CAO_REF="<catalog-release>"
-gh aw add-wizard "githubnext/central-agentic-ops/dependabot@${CAO_REF}"
+gh aw add "githubnext/central-agentic-ops/dependabot@${CAO_REF}"
 mkdir -p .github/cao
 for cao_file in control.mjs policy.mjs; do
 	gh api --method GET "repos/githubnext/central-agentic-ops/contents/.github/cao/${cao_file}" \

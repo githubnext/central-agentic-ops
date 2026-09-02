@@ -76,6 +76,7 @@ imports:
 permissions:
   contents: read
   actions: read
+  copilot-requests: write
   checks: read
   security-events: read
   statuses: read

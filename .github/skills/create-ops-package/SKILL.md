@@ -12,6 +12,12 @@ Turn an operational idea into a complete package of GitHub Agentic Workflows. An
 
 When invoked from `.github/skills/setup-central-agentic-ops/SKILL.md`, accept the recorded desired outcome and target-repository description as the starting package contract. Do not repeat the custom-package yes/no question or restart control-plane setup. Ask only for unresolved package decisions, work in a CAO package-authoring checkout, and keep package authoring separate from the already proven control-repository setup commit and run.
 
+## Copilot Authentication Profile
+
+CAO operational packages require organization-billed Copilot inference. Before creating Copilot-backed workflows, query the control repository owner's organization billing with `gh api orgs/<organization>/copilot/billing --jq '{seat_management_setting, total_seats: .seat_breakdown.total}'`. Use API evidence of an active entitlement or explicit organization-administrator confirmation when the endpoint is inaccessible or inconclusive. Treat `total_seats: 0` with `seat_management_setting: unconfigured` as unavailable and stop package creation until organization billing is enabled.
+
+Add `copilot-requests: write` directly to every Copilot-backed orchestrator and worker. A Pi or Codex workflow using a `copilot/*` model is Copilot-backed. Do not use `aw.yml` bootstrap `config`, authentication-neutral workflow sources, `COPILOT_GITHUB_TOKEN`, or runtime token precedence for Copilot inference. Target-repository credentials remain a separate authentication boundary. Validate every generated lock uses `${{ github.token }}` for `COPILOT_GITHUB_TOKEN` and does not declare the PAT secret.
+
 ## Procedure
 
 1. Load `.github/skills/agentic-workflows/SKILL.md` and follow its creation guidance alongside this repository-specific contract.

@@ -54,7 +54,7 @@ Setup creates one atomic control-plane revision:
 
 The CAO runtime files are control-repository-owned and are not gh-aw package resources. Follow [Quickstart: add the operation](getting-started.md#step-3---add-the-dependabot-operation) to install them and [Quickstart: set the first-run boundary](getting-started.md#step-4---set-the-first-run-boundary) to create the policy.
 
-The package's [`aw.yml` bootstrap configuration](bootstrap-configuration.md) may configure authentication during `gh aw add-wizard`. It does not install the CAO runtime, declare a package, or grant admission; the CAO setup procedure and checked-in control policy own those decisions.
+Package installation does not install the CAO runtime, declare a package, or grant admission. The CAO setup procedure and checked-in control policy own those decisions.
 
 The [Configuration Reference](configuration.md) defines every policy field. The phase that uses each group is:
 
