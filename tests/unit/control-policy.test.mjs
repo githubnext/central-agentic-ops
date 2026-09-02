@@ -4,11 +4,11 @@ import { readFileSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import test from "node:test";
-import { controlSettings, effectivePolicy, parsePolicy } from "../../.github/cao/policy.mjs";
+import { controlSettings, effectivePolicy, parsePolicy } from "../../.github/cao/src/policy.mjs";
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), "../..");
-const control = join(root, ".github", "cao", "control.mjs");
-const schema = JSON.parse(readFileSync(join(root, ".github", "central-agentic-ops.schema.json"), "utf8"));
+const control = join(root, ".github", "cao", "src", "control.mjs");
+const schema = JSON.parse(readFileSync(join(root, ".github", "cao", "cao.schema.json"), "utf8"));
 
 function validate(policy) {
   return spawnSync(process.execPath, [control, "validate-policy", "-"], {
@@ -88,7 +88,7 @@ test("control policy accepts the minimal version 1 control document", () => {
 });
 
 test("control policy schema accepts config-defined package and worker catalogs", () => {
-  const policy = JSON.parse(readFileSync(join(root, ".github", "central-agentic-ops.json"), "utf8"));
+  const policy = JSON.parse(readFileSync(join(root, ".github", "workflows", "cao.json"), "utf8"));
 
   assert.equal(schema.$schema, "https://json-schema.org/draft/2020-12/schema");
   assert.equal(policy.$schema, schema.$id);
@@ -105,7 +105,7 @@ test("control policy schema accepts config-defined package and worker catalogs",
 });
 
 test("checked-in control policy selects seven repositories with local SelfCare authority", () => {
-  const policy = parsePolicy(readFileSync(join(root, ".github", "central-agentic-ops.json"), "utf8"));
+  const policy = parsePolicy(readFileSync(join(root, ".github", "workflows", "cao.json"), "utf8"));
   const repositories = [
     "github/gh-aw",
     "github/gh-aw-firewall",

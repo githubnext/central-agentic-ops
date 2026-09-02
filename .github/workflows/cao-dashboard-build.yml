@@ -8,9 +8,9 @@ on:
     branches: [main]
     paths:
       - dashboard/**
-      - .github/central-agentic-ops.json
-      - .github/cao/control.mjs
-      - .github/cao/policy.mjs
+      - .github/workflows/cao.json
+      - .github/cao/src/control.mjs
+      - .github/cao/src/policy.mjs
       - .github/workflows/*.yml
       - .github/workflows/*.lock.yml
       - .github/workflows/*.md
@@ -57,7 +57,7 @@ jobs:
       - name: Resolve authoritative control policy
         env:
           GITHUB_REPOSITORY: ${{ github.repository }}
-        run: node .github/cao/control.mjs control-settings .github/central-agentic-ops.json > "$RUNNER_TEMP/control-settings.json"
+        run: node .github/cao/src/control.mjs control-settings .github/workflows/cao.json > "$RUNNER_TEMP/control-settings.json"
 
       - name: Assemble configured Dashboard Language site
         run: node dashboard/site/scripts/build.mjs "$RUNNER_TEMP/central-agentic-ops-dashboard/cao" "$RUNNER_TEMP/control-settings.json"

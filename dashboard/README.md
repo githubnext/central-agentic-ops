@@ -15,8 +15,8 @@ The dashboard package publishes an access-controlled static view of Central Agen
 
 - `.github/workflows/dashboard-build.yml`: reusable, path-aware report build that uploads a mergeable Actions artifact.
 - `.github/workflows/dashboard.yml`: manual standalone GitHub Pages deployment.
-- `.github/cao/policy.mjs`: dependency-free checked-in policy parser and resolver.
-- `.github/cao/control.mjs`: deterministic policy command adapter used by the build workflow.
+- `.github/cao/src/policy.mjs`: dependency-free checked-in policy parser and resolver.
+- `.github/cao/src/control.mjs`: deterministic policy command adapter used by the build workflow.
 - `.github/aw/dashboard/report`: deterministic collectors, durable-record production, and Dashboard Language source adaptation.
 - `.github/aw/dashboard/site`: the packaged Dashboard Language validator, presenter, configuration, and browser runtime.
 
@@ -95,7 +95,7 @@ This example publishes the dashboard at `/operations/dashboard/`. Replace `dist`
 
 ## Configure
 
-1. Set `control-plane.scope.allowed-repositories` in `.github/central-agentic-ops.json` when report discovery should be limited to an explicit repository allowlist.
+1. Set `control-plane.scope.allowed-repositories` in `.github/workflows/cao.json` when report discovery should be limited to an explicit repository allowlist.
 2. Use `site-path: .` only when the dashboard is the whole site; use a relative URL path when embedding it.
 
 Do not install this package when the report would be public or when the repository plan cannot enforce the required access boundary. See [Publishing Pages Reports](../docs/operations.md#publishing-pages-reports) for operating details.

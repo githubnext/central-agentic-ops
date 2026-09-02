@@ -100,9 +100,9 @@ Do not edit generated `.lock.yml` files directly. Update their Markdown sources 
 
 ### Step 4 - Set the first-run boundary
 
-Create `.github/central-agentic-ops.json` with the target owner and package. The omitted package settings default to `review`, one repository, and 100 percent rollout:
+Create `.github/workflows/cao.json` with the target owner and package. The omitted package settings default to `review`, one repository, and 100 percent rollout:
 
-```json title=".github/central-agentic-ops.json"
+```json title=".github/workflows/cao.json"
 {
 	"version": 1,
 	"control-plane": {

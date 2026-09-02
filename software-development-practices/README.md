@@ -23,7 +23,7 @@ The orchestrator dispatches at most 20 workers per run. Each worker reviews one 
 gh aw add githubnext/central-agentic-ops/software-development-practices@<catalog-release>
 ```
 
-Configure the shared GitHub App or PAT described in the [authentication guide](../docs/authentication.md), then declare the package in the control repository's `.github/central-agentic-ops.json`:
+Configure the shared GitHub App or PAT described in the [authentication guide](../docs/authentication.md), then declare the package in the control repository's `.github/workflows/cao.json`:
 
 ```json
 {

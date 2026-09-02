@@ -30,7 +30,7 @@ The review issue body is content, not routing authority. Before publishing, the 
 5. requires the review issue to have been created during that workflow run;
 6. derives the target repository and package from trusted run metadata;
 7. enforces `control-plane.scope.allowed-owners` and, when set, `control-plane.scope.allowed-repositories`;
-8. requires the target's exact default-branch commit to assign that package to the cited control repository in `.github/central-agentic-ops.json`;
+8. requires the target's exact default-branch commit to assign that package to the cited control repository in `.github/workflows/cao.json`;
 9. checks for an existing publication marker before creating an issue.
 
 The source issue may be edited during human review. Applying `ops:publish-to-target` binds approval to its title and body at that moment; a later edit fails publication until a reviewer removes and reapplies the label. Editing it cannot change the target, package, or control repository selected by the validated workflow run. The originating worker run must come from the control repository's default branch.
@@ -44,14 +44,15 @@ review_repository=/path/to/review-repository
 mkdir -p "$review_repository/.github/workflows" "$review_repository/.github/scripts/ops-publish" "$review_repository/.github/cao"
 cp ops-publish/ops-publish.yml "$review_repository/.github/workflows/ops-publish.yml"
 cp .github/scripts/ops-publish/ops-publish.mjs "$review_repository/.github/scripts/ops-publish/"
-cp .github/cao/control.mjs .github/cao/policy.mjs "$review_repository/.github/cao/"
+mkdir -p "$review_repository/.github/cao/src"
+cp .github/cao/src/control.mjs .github/cao/src/policy.mjs "$review_repository/.github/cao/src/"
 ```
 
 These files are conventional repository automation and are not part of an Agentic Workflow package. Pin the catalog checkout to a reviewed release or commit before copying them.
 
 ## Configure
 
-Enable publishing, scope its targets, and name its reviewers in the review repository's `.github/central-agentic-ops.json`:
+Enable publishing, scope its targets, and name its reviewers in the review repository's `.github/workflows/cao.json`:
 
 ```json
 {

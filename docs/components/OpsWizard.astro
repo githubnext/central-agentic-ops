@@ -246,13 +246,13 @@ const agents = [
           "",
           "6. Create the orchestrator and every worker under `.github/workflows/`, then compile them with `gh aw compile`.",
           `7. Set \`engine: ${engine}\` in each new workflow's frontmatter.`,
-          "8. Add the package and every worker to `.github/central-agentic-ops.json` in `review` mode with `max-repositories` set to `1`.",
+          "8. Add the package and every worker to `.github/workflows/cao.json` in `review` mode with `max-repositories` set to `1`.",
           "9. Commit and push the policy, sources, and generated `.lock.yml` files together.",
         ]
       : [
           `4. Install the operation package: \`gh aw add ${CATALOG}/${operation.value}@${CATALOG_REF}\`.`,
           `5. Set \`engine: ${engine}\` in the installed workflow frontmatter, then recompile with \`gh aw compile\`.`,
-          "6. Create `.github/central-agentic-ops.json` with this policy:",
+          "6. Create `.github/workflows/cao.json` with this policy:",
           "",
           "```json",
           policy,
@@ -265,7 +265,7 @@ const agents = [
       ? [
           "## First run",
           "",
-          "- Confirm `.github/central-agentic-ops.json` allows only the intended owners and keeps the package in `review` with a one-repository cap.",
+          "- Confirm `.github/workflows/cao.json` allows only the intended owners and keeps the package in `review` with a one-repository cap.",
           "- Trigger one manual run of the orchestrator against a single low-risk target repository with `safe_output_mode=review`.",
           "- Watch the run with `gh run watch` and summarize the orchestrator report.",
         ]

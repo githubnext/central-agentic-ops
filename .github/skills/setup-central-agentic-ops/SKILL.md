@@ -1,6 +1,6 @@
 ---
 name: setup-central-agentic-ops
-description: "Set up a Central Agentic Ops (CAO) control plane from scratch. Use when a user asks to create, bootstrap, initialize, install, or get started with CAO; asks which installed catalog operations they want and whether they want to author a custom package, creates or reuses a control repository, installs the root CAO package with gh aw add, writes .github/central-agentic-ops.json, and proves the boundary with one user-selected review target."
+description: "Set up a Central Agentic Ops (CAO) control plane from scratch. Use when a user asks to create, bootstrap, initialize, install, or get started with CAO; asks which installed catalog operations they want and whether they want to author a custom package, creates or reuses a control repository, installs the root CAO package with gh aw add, writes .github/workflows/cao.json, and proves the boundary with one user-selected review target."
 argument-hint: "Provide the control repository, desired catalog operations, custom-package interest, and optional first target repository"
 ---
 
@@ -14,9 +14,9 @@ Create a new Central Agentic Ops control plane and prove it safely with one revi
 - Public and private control repositories are supported. Preserve an existing repository's visibility; for a new repository, use the visibility the user chooses.
 - In a public control repository, policy, workflow runs, operational metadata, and review safe outputs are public. State that exposure before creation and never place confidential target information in those outputs.
 - Install the root CAO package from one full commit SHA. Resolve a reviewed release or the current default branch once before installation so every package dependency uses the same immutable source identity.
-- Materialize `.github/cao/control.mjs` and `.github/cao/policy.mjs` from that same immutable CAO commit. These are control-repository-owned runtime files; gh-aw package resources cannot and must not install them under `.github/aw`.
+- Materialize `.github/cao/src/control.mjs` and `.github/cao/src/policy.mjs` from that same immutable CAO commit. These are control-repository-owned runtime files; gh-aw package resources cannot and must not install them under `.github/aw`.
 - The root package installs `.github/aw/default-AGENTS.md` as package-owned source for control-repository ambient context. If the control repository has no root `AGENTS.md`, materialize that source as `AGENTS.md`; never overwrite or merge into existing agent instructions without the user's approval.
-- Keep rollout policy only in `.github/central-agentic-ops.json`. Do not create `CENTRAL_AGENTIC_OPS_*` variables or another policy channel.
+- Keep rollout policy only in `.github/workflows/cao.json`. Do not create `CENTRAL_AGENTIC_OPS_*` variables or another policy channel.
 - Keep credentials out of files, chat, command arguments, and workflow inputs. Have the user enter secrets directly through GitHub or an interactive terminal prompt.
 - Require confirmed organization billing for Copilot inference. Every Copilot-backed CAO workflow declares `copilot-requests: write` and uses the built-in workflow token; do not configure `COPILOT_GITHUB_TOKEN`. A GitHub App or `GH_AW_GITHUB_TOKEN` for target access does not authenticate Copilot inference.
 - Ask which outcomes the user wants from the catalog operations installed by the root package. Do not silently choose Dependabot or infer package intent from the target repository.
@@ -84,10 +84,10 @@ Do not leave angle-bracket placeholders in authored files or pass placeholders t
     cao_ref=$(gh api repos/githubnext/central-agentic-ops/commits/main --jq '.sha')
     [[ "$cao_ref" =~ ^[0-9a-fA-F]{40,64}$ ]]
     gh aw add "githubnext/central-agentic-ops@${cao_ref}"
-    mkdir -p .github/cao
+    mkdir -p .github/cao/src
     for cao_file in control.mjs policy.mjs; do
-      gh api --method GET "repos/githubnext/central-agentic-ops/contents/.github/cao/${cao_file}" \
-        -f ref="$cao_ref" --jq '.content' | base64 -d > ".github/cao/${cao_file}"
+      gh api --method GET "repos/githubnext/central-agentic-ops/contents/.github/cao/src/${cao_file}" \
+        -f ref="$cao_ref" --jq '.content' | base64 -d > ".github/cao/src/${cao_file}"
     done
     ```
 
@@ -97,7 +97,7 @@ Do not leave angle-bracket placeholders in authored files or pass placeholders t
 
 8. Confirm `.github/aw/default-AGENTS.md` was installed. If the repository has no root `AGENTS.md`, read the installed template and create `AGENTS.md` with exactly that content using a file-editing tool. If root `AGENTS.md` already exists, preserve it unchanged unless the user explicitly approves a merge; the packaged file remains the reference default and package updates must not overwrite consumer-owned ambient context.
 
-9. Write `.github/central-agentic-ops.json` with a file-editing tool. The package cannot install this file because it is consumer-owned rollout policy, and `gh aw add` does not create it. If the file already exists, parse and review it first; do not replace or broaden it without the user's approval. For a new control plane, write exactly this template and enable the selected first-proof package:
+9. Write `.github/workflows/cao.json` with a file-editing tool. The package cannot install this file because it is consumer-owned rollout policy, and `gh aw add` does not create it. If the file already exists, parse and review it first; do not replace or broaden it without the user's approval. For a new control plane, write exactly this template and enable the selected first-proof package:
 
    ```json
    {
@@ -127,7 +127,7 @@ Do not leave angle-bracket placeholders in authored files or pass placeholders t
     ```bash
     node - <<'NODE'
     const fs = require('node:fs');
-    const source = fs.readFileSync('.github/central-agentic-ops.json', 'utf8');
+    const source = fs.readFileSync('.github/workflows/cao.json', 'utf8');
     JSON.parse(source);
     if (/<[^>]+>/.test(source)) throw new Error('unresolved policy placeholder');
     NODE
@@ -156,7 +156,7 @@ Stop before installation or execution and explain the blocker when:
 - organization-billed Copilot inference is unavailable or unconfirmed;
 - any installed Copilot-backed source omits `copilot-requests: write` or any generated lock requires `secrets.COPILOT_GITHUB_TOKEN`;
 - the installed root package does not contain `.github/aw/default-AGENTS.md`;
-- `.github/cao/control.mjs` or `.github/cao/policy.mjs` cannot be materialized from the selected immutable CAO ref;
+- `.github/cao/src/control.mjs` or `.github/cao/src/policy.mjs` cannot be materialized from the selected immutable CAO ref;
 - the selected target does not exist, cannot be accessed, requires credentials that were not configured, or would expose non-public evidence through a public control repository;
 - the existing repository contains conflicting files that the user has not approved replacing;
 - root package installation fails; or

@@ -1,7 +1,7 @@
 import { createHash } from "node:crypto";
 import { appendFileSync, readFileSync } from "node:fs";
 import { pathToFileURL } from "node:url";
-import { parsePolicy } from "../../cao/policy.mjs";
+import { parsePolicy } from "../../cao/src/policy.mjs";
 
 export const PUBLISH_LABEL = "ops:publish-to-target";
 const API_TIMEOUT_MS = 30_000;
@@ -331,7 +331,7 @@ async function publishCommand() {
   const authorityFile = await apiRequest(
     process.env.TARGET_TOKEN,
     apiUrl,
-    `/repos/${targetRepository}/contents/.github/central-agentic-ops.json?ref=${encodeURIComponent(targetCommit.sha)}`,
+    `/repos/${targetRepository}/contents/.github/workflows/cao.json?ref=${encodeURIComponent(targetCommit.sha)}`,
   );
   const authoritySource = Buffer.from(authorityFile.content || "", "base64").toString("utf8");
   assertTargetAuthority(parseAuthorityJson(authoritySource), packageName, process.env.CONTROL_REPOSITORY);
