@@ -141,7 +141,7 @@ Call `create_issue` exactly once after the deterministic review and persona asse
 
 Use `###` headings only and structure the issue as:
 
-- `### Executive Summary`: completion status, verified defect count, persona efficiency grades, and prioritized next actions;
+- an unheaded opening summary with completion status, verified defect count, persona efficiency grades, and prioritized next actions;
 - `### Verified defects`: expected versus observed values, viewport when relevant, and trusted comparison evidence, or `None`;
 - `<details><summary>Persona assessments</summary>...</details>`: CFO, CSO, and CTO mood, question, answer or unanswered information, exploration path, evidence, and efficiency rationale;
 - `### Improvement suggestions`: prioritized structure and usability changes, attributed to the personas that encountered each problem;

@@ -313,8 +313,6 @@ If the command fails or produces no diff despite `needs_upgrade` being `true`, r
 Create exactly one issue in `safe_output_repo` targeting `target_repo`:
 
 ```
-### Executive Summary
-
 - **Repository**: `<owner/repo>`
 - **Current pinned gh-aw version**: `<target_pinned_version>` (`<target_pinned_manifest>`)
 - **Latest available gh-aw release**: `<gh_aw_latest_tag>` (published <gh_aw_latest_published_at>)

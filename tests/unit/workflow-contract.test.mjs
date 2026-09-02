@@ -491,14 +491,19 @@ test("workers inherit human-first progressive report disclosure", () => {
     .map((name) => [name, workflow(name)])
     .filter(([, source]) => /^\s+role: worker$/m.test(source));
 
-  assert.match(packageSkill, /start every durable output with a concise `### Executive Summary` as its first human-readable section/);
+  assert.match(packageSkill, /begin every durable output directly with a concise, unheaded executive summary/);
+  assert.doesNotMatch(packageSkill, /### Executive Summary/);
   assert.match(packageSkill, /non-essential background, verbose evidence, logs, and per-item breakdowns in `<details>` sections/);
-  assert.match(sharedControl, /first human-readable section must be `### Executive Summary`/);
+  assert.match(sharedControl, /Begin directly with a concise executive summary/);
+  assert.match(sharedControl, /do not add a heading for this opening summary/);
+  assert.doesNotMatch(sharedControl, /### Executive Summary/);
   assert.match(sharedControl, /non-essential background, verbose supporting evidence, logs, and per-item breakdowns inside `<details>/);
   assert.ok(workers.length > 0, "expected at least one worker workflow");
   for (const [name] of workers) {
     const generated = workflow(name.replace(/\.md$/, ".lock.yml"));
-    assert.match(generated, /first human-readable section must be `### Executive Summary`/, name);
+    assert.match(generated, /Begin directly with a concise executive summary/, name);
+    assert.match(generated, /do not add a heading for this opening summary/, name);
+    assert.doesNotMatch(generated, /### Executive Summary/, name);
     assert.match(generated, /non-essential background, verbose supporting evidence, logs, and per-item breakdowns inside `<details>/, name);
   }
 });
