@@ -311,7 +311,7 @@ test("enterprise defaults, budgets, timeouts, and concurrency are finite", () =>
     "eu-cra-compliance.md": { credits: 200, timeout: 15, dispatchMax: 48, workers: 6 },
     "eu-cra-compliance-package-maintainer.md": { credits: 200, timeout: 20 },
     "optimization.md": { credits: 250, timeout: 15, dispatchMax: 20, workers: 2 },
-    "self-care.md": { credits: 200, timeout: 15, dispatchMax: 4, workers: 4 },
+    "self-care.md": { credits: 200, timeout: 15, dispatchMax: 5, workers: 5 },
     "ambient-context-agents-md-curator.md": { credits: 400, timeout: 25 },
     "ambient-context-skills-curator.md": { credits: 400, timeout: 20 },
     "aw-failures-investigator.md": { credits: 500, timeout: 30 },
@@ -331,6 +331,7 @@ test("enterprise defaults, budgets, timeouts, and concurrency are finite", () =>
     "self-care-accessibility-checker.md": { credits: 400, timeout: 30 },
     "self-care-code-improvement.md": { credits: 400, timeout: 30 },
     "self-care-dashboard-review.md": { credits: 400, timeout: 30 },
+    "self-care-docs-build-time-investigator.md": { credits: 400, timeout: 30 },
     "self-care-primer-brand-checker.md": { credits: 400, timeout: 25 },
   };
 
@@ -390,7 +391,7 @@ test("control workflows deny before activation through one shared admission cont
     .map((name) => [name, workflow(name)])
     .filter(([, source]) => /^\s+- uses: shared\/control\.md$/m.test(source));
 
-  assert.equal(controlled.length, 28, "unexpected shared control workflow count");
+  assert.equal(controlled.length, 29, "unexpected shared control workflow count");
   assert.equal(
     [...sharedControl.matchAll(/^\s+- name: Evaluate Central Agentic Ops admission$/gm)].length,
     1,
@@ -719,6 +720,7 @@ test("repository-local SelfCare uses organization-billed Copilot authentication"
     "self-care-accessibility-checker",
     "self-care-code-improvement",
     "self-care-dashboard-review",
+    "self-care-docs-build-time-investigator",
     "self-care-primer-brand-checker",
     "self-care",
   ];
@@ -726,6 +728,12 @@ test("repository-local SelfCare uses organization-billed Copilot authentication"
   assert.doesNotMatch(rootManifest, /\.github\/workflows\/self-care(?:-[\w-]+)?\.md/);
   assert.match(selfCareManifest, /description: Repository-local/);
   assert.match(selfCareManifest, /\.github\/workflows\/self-care\.md/);
+  assert.match(selfCareManifest, /\.github\/workflows\/self-care-docs-build-time-investigator\.md/);
+  assert.equal(
+    readFileSync(join(root, "self-care", ".github", "graders", "self-care-docs-build-time-investigator-operational-value.sh"), "utf8"),
+    readFileSync(join(root, ".github", "graders", "self-care-docs-build-time-investigator-operational-value.sh"), "utf8"),
+    "focused SelfCare package must mirror its grader-backed worker evaluator",
+  );
 
   for (const workflowId of workflowIds) {
     const source = workflow(`${workflowId}.md`);
@@ -772,6 +780,7 @@ test("operational-value graders expose deterministic run-scoped contracts", () =
     "eu-cra-compliance-vulnerability-handling-auditor-operational-value.sh",
     "optimization-ai-credit-auditor-operational-value.sh",
     "optimization-ai-credit-optimizer-operational-value.sh",
+    "self-care-docs-build-time-investigator-operational-value.sh",
     "software-development-practices-github-well-architected-operational-value.sh",
     "software-development-practices-nist-ssdf-operational-value.sh",
   ]);
@@ -1020,6 +1029,7 @@ test("live workers require target-owned package authority before agent execution
     ["self-care-accessibility-checker.md", "self-care"],
     ["self-care-code-improvement.md", "self-care"],
     ["self-care-dashboard-review.md", "self-care"],
+    ["self-care-docs-build-time-investigator.md", "self-care"],
     ["self-care-primer-brand-checker.md", "self-care"],
   ]) {
     assert.match(workflow(name), new RegExp(`package: ${bundle}`));
@@ -1083,6 +1093,7 @@ test("operation workflows optionally load per-operation markdown steering", () =
     ["self-care-accessibility-checker.md", "self-care"],
     ["self-care-code-improvement.md", "self-care"],
     ["self-care-dashboard-review.md", "self-care"],
+    ["self-care-docs-build-time-investigator.md", "self-care"],
     ["self-care-primer-brand-checker.md", "self-care"],
   ]) {
     assert.match(
@@ -1200,6 +1211,7 @@ test("every worker uses the standard dispatch envelope and safe mode vocabulary"
     ["self-care-accessibility-checker.md", "self-care", "accessibility-checker"],
     ["self-care-code-improvement.md", "self-care", "code-improvement"],
     ["self-care-dashboard-review.md", "self-care", "dashboard-review"],
+    ["self-care-docs-build-time-investigator.md", "self-care", "docs-build-time-investigator"],
     ["self-care-primer-brand-checker.md", "self-care", "primer-brand-checker"],
   ];
 
@@ -1626,6 +1638,24 @@ test("SelfCare dashboard reviewer checks deployments through stakeholder persona
   assert.doesNotMatch(source, /^\s+(create-pull-request|add-comment|create-discussion|push-to-pull-request-branch):/m);
 });
 
+test("SelfCare docs build-time investigator rotates evidenced recommendations", () => {
+  const source = workflow("self-care-docs-build-time-investigator.md");
+
+  assert.match(source, /^name: "SelfCare \/ Docs Build-Time Investigator"$/m);
+  assert.match(source, /on:\n\s+bots: \["github-actions\[bot\]"\]/);
+  assert.match(source, /package: self-care\n\s+role: worker\n\s+worker: docs-build-time-investigator/);
+  assert.match(source, /safe_output_mode` is `live`/);
+  assert.match(source, /at most the latest 20 completed `docs\.yml` runs from the last 14 days/);
+  assert.match(source, /median and p90 durations/);
+  assert.match(source, /repo-memory:\n\s+branch-name: memory\/self-care-docs-build-time/);
+  assert.match(source, /githubnext__central-agentic-ops__docs-build-time-suggestions\.json/);
+  assert.match(source, /Advance `next_category` after every complete evaluation/);
+  assert.match(source, /Call `create_issue` exactly once/);
+  assert.match(source, /Otherwise call `noop` exactly once/);
+  assert.match(source, /title-prefix: "\[docs-build-time\] "/);
+  assert.doesNotMatch(source, /^\s+(create-pull-request|add-comment|create-discussion|push-to-pull-request-branch):/m);
+});
+
 test("SelfCare code improvement preserves its focused dashboard component mission", () => {
   const source = workflow("self-care-code-improvement.md");
   const liveGuard = "if: ${{ inputs.target_repo == 'githubnext/central-agentic-ops' && (inputs.safe_output_mode || 'review') == 'live' }}";
@@ -1745,6 +1775,7 @@ test("clean-room compilation emits the expected GitHub Actions settings", { time
       "self-care-accessibility-checker.lock.yml",
       "self-care-code-improvement.lock.yml",
       "self-care-dashboard-review.lock.yml",
+      "self-care-docs-build-time-investigator.lock.yml",
       "self-care-primer-brand-checker.lock.yml",
       "self-care.lock.yml",
       "software-development-practices-github-well-architected.lock.yml",
@@ -1839,6 +1870,7 @@ test("clean-room compilation emits the expected GitHub Actions settings", { time
       ["self-care-accessibility-checker.lock.yml", ["self-care", "accessibility-checker"]],
       ["self-care-code-improvement.lock.yml", ["self-care", "code-improvement"]],
       ["self-care-dashboard-review.lock.yml", ["self-care", "dashboard-review"]],
+      ["self-care-docs-build-time-investigator.lock.yml", ["self-care", "docs-build-time-investigator"]],
       ["self-care-primer-brand-checker.lock.yml", ["self-care", "primer-brand-checker"]],
       ["software-development-practices-github-well-architected.lock.yml", ["software-development-practices", "github-well-architected"]],
       ["software-development-practices-nist-ssdf.lock.yml", ["software-development-practices", "nist-ssdf"]],
@@ -2165,6 +2197,7 @@ test("Dashboard inventory links multiline orchestrator worker lists", () => {
           "self-care-accessibility-checker",
           "self-care-code-improvement",
           "self-care-dashboard-review",
+          "self-care-docs-build-time-investigator",
           "self-care-primer-brand-checker",
         ],
       },

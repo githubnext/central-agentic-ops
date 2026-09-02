@@ -132,6 +132,9 @@
           "dashboard-review": {
             "workflow": "self-care-dashboard-review"
           },
+          "docs-build-time-investigator": {
+            "workflow": "self-care-docs-build-time-investigator"
+          },
           "primer-brand-checker": {
             "workflow": "self-care-primer-brand-checker"
           }
