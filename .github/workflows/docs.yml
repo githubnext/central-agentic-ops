@@ -2,6 +2,15 @@ name: Documentation Pages
 
 on:
   workflow_dispatch:
+    inputs:
+      mode:
+        description: Use live data or only the most recently cached dashboard data.
+        required: false
+        type: choice
+        options:
+          - live
+          - cache
+        default: live
   schedule:
     - cron: "*/15 * * * *"
   push:
@@ -38,6 +47,8 @@ jobs:
       issues: read
       pull-requests: read
     uses: ./.github/workflows/dashboard-build.yml
+    with:
+      mode: ${{ inputs.mode || 'live' }}
 
   build:
     needs: dashboard
