@@ -15,6 +15,7 @@ const metadata = {
 /**
  * @param {string} name
  * @param {Array<Record<string, unknown>>} [rows]
+ * @returns {import('../../src/presenter.js').LogicalSourceInput}
  */
 function source(name, rows = []) {
   return { source: name, rows, metadata };
