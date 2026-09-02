@@ -62,6 +62,8 @@ resources:
     destination: .github/aw/dashboard/site/src/data-worker.js
   - source: dashboard/site/src/dom.js
     destination: .github/aw/dashboard/site/src/dom.js
+  - source: dashboard/site/src/horizon.js
+    destination: .github/aw/dashboard/site/src/horizon.js
   - source: dashboard/site/src/octicon-names.json
     destination: .github/aw/dashboard/site/src/octicon-names.json
   - source: dashboard/site/src/octicons.js

@@ -1,6 +1,7 @@
 import { mkdir, writeFile } from "node:fs/promises";
 import { readFileSync } from "node:fs";
 import path from "node:path";
+import { dashboardHorizonHours, resolveDashboardHorizon } from "../site/src/horizon.js";
 
 (async () => {
 
@@ -11,7 +12,8 @@ const pagesToken = process.env.REPORT_PAGES_TOKEN || token;
 const outputPath = path.resolve(process.env.REPORT_DEPLOYED_WORKFLOWS || "_inventory/deployed-workflows.json");
 const controlSettingsPath = process.env.REPORT_CONTROL_SETTINGS;
 const includePrivate = process.env.REPORT_INCLUDE_PRIVATE === "true";
-const runWindowHours = Number(process.env.REPORT_RUN_WINDOW_HOURS || 24);
+const dashboardDocument = JSON.parse(readFileSync(new URL("../site/dashboard.json", import.meta.url), "utf8"));
+const runWindowHours = dashboardHorizonHours(resolveDashboardHorizon(dashboardDocument.dashboard));
 const auditMaxPages = Number(process.env.REPORT_AUDIT_MAX_PAGES || 100);
 const maxRetryDelayMs = Number(process.env.REPORT_MAX_RETRY_SECONDS || 30) * 1000;
 if (!controlSettingsPath) throw new Error("REPORT_CONTROL_SETTINGS is required");

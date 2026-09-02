@@ -517,13 +517,67 @@ describe('presenter built-in and custom pages', () => {
       sources: {}
     });
 
+    expect(authoritativeDashboardDocument.dashboard.defaults?.time).toEqual({ range: '1w' });
+    expect(rendered.querySelector('.dashboard-horizon')?.textContent).toBe('Horizon 1 week');
+    expect(rendered.querySelectorAll('.dashboard-horizon')).toHaveLength(1);
+
     for (const pageId of ['runtime', 'security', 'operational-value']) {
       const filterBar = rendered.querySelector(`[data-page-id="${pageId}"] .filter-bar`);
       expect(filterBar?.querySelector('.filter-control code')?.textContent).toBe('mode:review mode:live');
       expect(filterBar?.querySelector('.count-badge')?.textContent).toBe('2');
-      expect(filterBar?.querySelector('.scope-period')?.textContent).toBe('All recorded');
+      expect(filterBar?.querySelector('.scope-period')).toBeNull();
       expect(filterBar?.querySelector('.export-control')?.getAttribute('download')).toBe(`${pageId}.json`);
     }
+  });
+
+  it('applies the JSON horizon against one evaluated time while retaining timeless rows', () => {
+    const rendered = renderDashboard({
+      document: {
+        languageVersion: '0.1.0',
+        dashboard: {
+          id: 'horizon-dashboard',
+          title: 'Horizon Dashboard',
+          defaults: { time: { range: '1w' } },
+          pages: [{
+            id: 'runs',
+            kind: /** @type {'custom'} */ ('custom'),
+            title: 'Runs',
+            views: [{
+              id: 'recent-runs',
+              title: 'Recent runs',
+              data: { source: 'runs' },
+              mark: 'table',
+              encoding: { columns: [{ field: 'run' }] }
+            }]
+          }]
+        }
+      },
+      sources: {
+        runs: {
+          source: 'runs',
+          rows: [
+            { run: 'recent', 'observed-at': '2026-08-30T12:00:00Z' },
+            { run: 'expired', 'observed-at': '2026-08-20T12:00:00Z' },
+            { run: 'timeless' }
+          ],
+          metadata: {
+            'source-id': 'runs-fixture',
+            'source-kind': 'fixture',
+            'as-of': '2026-09-01T12:00:00Z',
+            'retrieved-at': '2026-09-01T12:00:00Z',
+            completeness: 'complete',
+            freshness: 'fresh',
+            availability: 'available'
+          }
+        }
+      }
+    });
+
+    const table = rendered.querySelector('.custom-table');
+    expect(table?.textContent).toContain('recent');
+    expect(table?.textContent).toContain('timeless');
+    expect(table?.textContent).not.toContain('expired');
+    expect(rendered.querySelector('.dashboard-horizon')?.getAttribute('data-dashboard-evaluated-at')).toBe('2026-09-01T12:00:00Z');
   });
 
   it('renders the custom JSON-composed Security page from reusable summary and signal primitives', () => {

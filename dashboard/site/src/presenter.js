@@ -18,6 +18,7 @@ import { deriveOverviewSources } from './overview-data.js';
 import { deriveRepositorySources } from './repository-data.js';
 import { deriveRuntimeSources } from './runtime-data.js';
 import { deriveWorkflowSources } from './workflow-data.js';
+import { dashboardHorizonHours, formatDashboardHorizon, resolveDashboardHorizon } from './horizon.js';
 
 /**
  * @typedef {{ availability: 'available'|'empty'|'unavailable', completeness: 'complete'|'partial'|'unknown', freshness: 'fresh'|'stale'|'unknown' }} DataState
@@ -121,6 +122,7 @@ function getBuiltInPagePayload(page) {
 export function renderDashboard(input) {
   const { document, sources: rawSources } = input;
   const pages = document.dashboard.pages;
+  const horizonRange = resolveDashboardHorizon(document.dashboard);
   const githubUrlBase = typeof document.dashboard['github-url-base'] === 'string' && document.dashboard['github-url-base'].length > 0
     ? document.dashboard['github-url-base']
     : DEFAULT_GITHUB_URL_BASE;
@@ -136,12 +138,14 @@ export function renderDashboard(input) {
   );
   const orgName = inferOrganizationName(sources) || 'GitHub';
   const sidebarTitle = dashboardRepository?.split('/').at(-1) || orgName;
+  const evaluatedAt = latestRetrievedAt(sources) ?? new Date().toISOString();
+  const dashboardDefaults = resolveDashboardDefaults(document.dashboard.defaults, horizonRange, evaluatedAt);
 
   const styleEl = h('style', null, getPrimerStyles());
   const skipLink = h('a', { href: '#main-content', className: 'skip-link' }, 'Skip to main content');
 
   const sidebar = renderSidebar(pages, sidebarTitle, document.dashboard.navigation);
-  const mainContent = renderMainContent(document, pages, sources, githubUrlBase, dashboardRepository);
+  const mainContent = renderMainContent(document, pages, sources, githubUrlBase, dashboardRepository, dashboardDefaults, horizonRange, evaluatedAt);
 
   const appShell = h(
     'div',
@@ -314,9 +318,12 @@ function getPageIcon(page) {
  * @param {Record<string, LogicalSourceInput>} sources
  * @param {string} githubUrlBase
  * @param {string | null} dashboardRepository
+ * @param {Record<string, unknown>} dashboardDefaults
+ * @param {string} horizonRange
+ * @param {string} evaluatedAt
  * @returns {HTMLElement}
  */
-function renderMainContent(document, pages, sources, githubUrlBase, dashboardRepository) {
+function renderMainContent(document, pages, sources, githubUrlBase, dashboardRepository, dashboardDefaults, horizonRange, evaluatedAt) {
   const initialPage = pages[0];
   const overviewPage = pages.find((page) => page.id === 'overview');
   const initialPageTitle = initialPage ? getPageTitle(initialPage) : '';
@@ -340,6 +347,11 @@ function renderMainContent(document, pages, sources, githubUrlBase, dashboardRep
         h(
           'div',
           { className: 'report-actions' },
+          h(
+            'span',
+            { className: 'dashboard-horizon', 'data-dashboard-evaluated-at': evaluatedAt },
+            `Horizon ${formatDashboardHorizon(horizonRange)}`
+          ),
           latestRetrieval
             ? h('time', { className: 'freshness', dateTime: latestRetrieval }, `Last updated ${formatReportDate(latestRetrieval)}`)
             : null,
@@ -411,7 +423,7 @@ function renderMainContent(document, pages, sources, githubUrlBase, dashboardRep
         h(
           'div',
           { className: 'dashboard-pages' },
-          pages.map((page) => renderPage(page, sources, units))
+          pages.map((page) => renderPage(page, sources, units, dashboardDefaults))
         )
       )
     ),
@@ -448,15 +460,15 @@ function formatReportDate(value) {
  * @param {Record<string, { name: string, symbol: string, significant: number }>} units
  * @returns {HTMLElement}
  */
-function renderPage(page, sources, units) {
+function renderPage(page, sources, units, dashboardDefaults) {
   const title = getPageTitle(page);
 
   if (page.kind === 'built-in') {
     const payload = getBuiltInPagePayload(page);
-    return renderCustomPage(payload, title, sources, units);
+    return renderCustomPage(payload, title, sources, units, dashboardDefaults);
   }
 
-  return renderCustomPage(page, title, sources, units);
+  return renderCustomPage(page, title, sources, units, dashboardDefaults);
 }
 
 /**
@@ -466,8 +478,10 @@ function renderPage(page, sources, units) {
  * @param {Record<string, { name: string, symbol: string, significant: number }>} units
  * @returns {HTMLElement}
  */
-function renderCustomPage(page, title, sources, units) {
-  const views = Array.isArray(page.views) ? page.views : [];
+function renderCustomPage(page, title, sources, units, dashboardDefaults) {
+  const views = Array.isArray(page.views)
+    ? page.views.map((view) => applyDashboardDefaults(view, dashboardDefaults))
+    : [];
   const sections = Array.isArray(page.sections) ? page.sections : [];
   const standaloneCalloutViewIds = new Set(sections.flatMap((section) => {
     if (!Array.isArray(section.views) || section.views.length !== 1) return [];
@@ -1379,6 +1393,42 @@ function filterRowsForView(rows, dataConfig) {
 }
 
 /**
+ * @param {unknown} view
+ * @param {Record<string, unknown>} dashboardDefaults
+ * @returns {unknown}
+ */
+function applyDashboardDefaults(view, dashboardDefaults) {
+  if (!isPlainObject(view) || !isPlainObject(view.data)) return view;
+  const data = view.data;
+  return {
+    ...view,
+    data: {
+      ...dashboardDefaults,
+      ...data,
+      scope: data.scope ?? dashboardDefaults.scope,
+      time: data.time ?? dashboardDefaults.time,
+      filters: data.filters ?? dashboardDefaults.filters
+    }
+  };
+}
+
+/**
+ * @param {unknown} defaults
+ * @param {string} horizonRange
+ * @param {string} evaluatedAt
+ * @returns {Record<string, unknown>}
+ */
+function resolveDashboardDefaults(defaults, horizonRange, evaluatedAt) {
+  const configured = isPlainObject(defaults) ? defaults : {};
+  const evaluatedAtMs = Date.parse(evaluatedAt);
+  const start = new Date(evaluatedAtMs - dashboardHorizonHours(horizonRange) * 3_600_000).toISOString();
+  return {
+    ...configured,
+    time: { start, end: evaluatedAt }
+  };
+}
+
+/**
  * @param {Record<string, unknown>} row
  * @param {Record<string, unknown>} scope
  * @returns {boolean}
@@ -1411,7 +1461,7 @@ function rowMatchesScope(row, scope) {
 function rowMatchesTime(row, time) {
   const observedField = pickRowTimeField(row);
   if (!observedField) {
-    return false;
+    return true;
   }
 
   const rowInstant = Date.parse(String(row[observedField]));
