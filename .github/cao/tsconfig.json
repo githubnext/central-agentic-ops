@@ -8,6 +8,7 @@
     "strict": true,
     "noImplicitAny": false,
     "useUnknownInCatchVariables": false,
+    "forceConsistentCasingInFileNames": true,
     "noEmit": true,
     "types": ["node"]
   },
