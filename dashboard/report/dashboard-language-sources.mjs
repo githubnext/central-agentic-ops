@@ -45,6 +45,14 @@ function link(relation, href, label) {
     : undefined;
 }
 
+function firstText(...values) {
+  for (const value of values) {
+    if (typeof value === "string" && value.trim()) return value.trim();
+    if (value !== undefined && value !== null && String(value).trim()) return String(value).trim();
+  }
+  return "";
+}
+
 function workflowRunUrl(repository, runId) {
   const parts = String(repository || "").split("/");
   const id = String(runId ?? "");
@@ -265,9 +273,10 @@ function runRows(deployed) {
         "run-status": run.status === "in_progress" ? "in-progress" : run.status || "unknown",
         "run-conclusion": runConclusion(run.conclusion),
         "rollout-mode": rolloutMode(run.displayTitle),
-        engine: "unknown",
-        "requested-model": "unknown",
-        "resolved-model": "unknown",
+        engine: firstText(run.engine, run.agenticEngine, run.agentic_engine) || "unknown",
+        "engine-version": firstText(run.engineVersion, run.engine_version, run.agenticEngineVersion, run.agentic_engine_version) || "unknown",
+        "requested-model": firstText(run.requestedModel, run.requested_model, run.model) || "unknown",
+        "resolved-model": firstText(run.resolvedModel, run.resolved_model, run.model) || "unknown",
         "run-link": link("run", `https://github.com/${workflow.repository}/actions/runs/${run.runId}`, `View run ${run.runId}`),
       });
     }
@@ -281,9 +290,10 @@ function usageRows(usage) {
     workflow: run.workflowPath?.replace(/\.lock\.yml$/, ".md") || run.workflowName || "",
     run: String(run.runId),
     invocation: `${run.repository}:${run.runId}:${index}`,
-    engine: "unknown",
-    "requested-model": "unknown",
-    "resolved-model": "unknown",
+    engine: firstText(run.engine, run.agenticEngine, run.agentic_engine) || "unknown",
+    "engine-version": firstText(run.engineVersion, run.engine_version, run.agenticEngineVersion, run.agentic_engine_version) || "unknown",
+    "requested-model": firstText(run.requestedModel, run.requested_model, run.model) || "unknown",
+    "resolved-model": firstText(run.resolvedModel, run.resolved_model, run.model) || "unknown",
     "rollout-mode": run.mode || "unknown",
     "input-tokens": null,
     "output-tokens": null,
@@ -291,6 +301,7 @@ function usageRows(usage) {
     "cache-write-tokens": null,
     "reasoning-tokens": null,
     aic: run.aic,
+    "estimated-usd": Number.isFinite(Number(run.aic)) ? Number(run.aic) * 0.01 : null,
     "observed-at": run.createdAt || usage.generatedAt,
     "run-link": link("run", workflowRunUrl(run.repository, run.runId), `Run ${run.runId}`),
   }));
@@ -313,6 +324,10 @@ function findingRows(records) {
     "finding-status": record.state === "open" ? "open" : record.state === "closed" ? "resolved" : "unknown",
     "finding-summary": record.summary || record.title,
     "observed-at": record.updatedAt || record.createdAt,
+    engine: firstText(record.engine, record.agenticEngine) || "unknown",
+    "engine-version": firstText(record.engineVersion, record.agenticEngineVersion) || "unknown",
+    "requested-model": firstText(record.requestedModel, record.requested_model) || "unknown",
+    "resolved-model": firstText(record.resolvedModel, record.resolved_model, record.requestedModel, record.requested_model) || "unknown",
     "issue-link": recordLink(record, "issue"),
     "pull-request-link": recordLink(record, "pull-request"),
     "run-link": link("run", record.runUrl, "View workflow run"),
@@ -346,6 +361,10 @@ function outcomeRows(records) {
     "outcome-warning": record.warning ? "Warning" : "None",
     "run-conclusion": runConclusion(record.conclusion),
     "rollout-mode": rolloutMode(record.mode),
+    engine: firstText(record.engine, record.agenticEngine) || "unknown",
+    "engine-version": firstText(record.engineVersion, record.agenticEngineVersion) || "unknown",
+    "requested-model": firstText(record.requestedModel, record.requested_model) || "unknown",
+    "resolved-model": firstText(record.resolvedModel, record.resolved_model, record.requestedModel, record.requested_model) || "unknown",
     "published-at": record.createdAt,
     "observed-at": record.updatedAt || record.createdAt,
     "issue-link": recordLink(record, "issue"),

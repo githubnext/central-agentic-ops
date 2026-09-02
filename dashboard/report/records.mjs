@@ -56,6 +56,35 @@ function markerFrom(body = "", marker) {
   return body.match(new RegExp(`<!--\\s*[\\w-]+:${marker}=([^>]+?)\\s*-->`, "i"))?.[1]?.trim() || "";
 }
 
+function firstText(...values) {
+  for (const value of values) {
+    if (typeof value === "string" && value.trim()) return value.trim();
+  }
+  return "";
+}
+
+function generatedMetadataFrom(body = "") {
+  const text = plainText(body);
+  const generatedLine = text.match(/Generated (?:from|by|with)\b[^.]+/i)?.[0] || text;
+  const field = (name) => generatedLine.match(new RegExp(`${name}:\\s*([^·,;]+)`, "i"))?.[1]?.trim() || "";
+  return {
+    engine: field("engine") || field("agentic engine") || field("agent"),
+    engineVersion: field("engine version") || field("agent version"),
+    requestedModel: field("requested model") || field("model"),
+    resolvedModel: field("resolved model"),
+  };
+}
+
+function modelMetadataFrom(body = "") {
+  const generated = generatedMetadataFrom(body);
+  return {
+    engine: firstText(markerFrom(body, "engine"), markerFrom(body, "agentic-engine"), generated.engine),
+    engineVersion: firstText(markerFrom(body, "engine-version"), markerFrom(body, "agent-version"), generated.engineVersion),
+    requestedModel: firstText(markerFrom(body, "requested-model"), generated.requestedModel),
+    resolvedModel: firstText(markerFrom(body, "resolved-model"), generated.resolvedModel),
+  };
+}
+
 function aicFrom(body = "") {
   const provenance = plainText(body).match(/Generated (?:from|by)[^·]*·\s*(?:[a-z][\w.-]*\s+)?([\d,.]+)\s+AIC\b/i);
   return provenance ? Number(provenance[1].replaceAll(",", "")) : null;
@@ -88,6 +117,7 @@ function targetRepositoryFromRun(run, fallback, allowedRepositories, owner) {
 function recordFromIssue(issue, outputRepository, reportDefinitions) {
   const body = issue.body || "";
   const workflow = workflowFrom(body);
+  const modelMetadata = modelMetadataFrom(body);
   const generatedSafeOutput = /Generated (?:from|with) \[[^\]]+\]\([^)]*\/actions\/runs\/\d+\)/.test(body);
   const bundle = bundleFor(reportDefinitions, issue.title, workflow, body);
   const generatedSafeOutputTitle = /^\[[^\]]+\]\s/.test(issue.title) && bundle;
@@ -112,6 +142,10 @@ function recordFromIssue(issue, outputRepository, reportDefinitions) {
     bundleId: markerFrom(body, "bundle"),
     correlationId: markerFrom(body, "correlation"),
     aic: aicFrom(body),
+    engine: modelMetadata.engine,
+    engineVersion: modelMetadata.engineVersion,
+    requestedModel: modelMetadata.requestedModel,
+    resolvedModel: modelMetadata.resolvedModel,
     warning: hasReportWarning(issue.body_html),
   };
 }
@@ -120,6 +154,7 @@ function recordFromComment(comment, issueByUrl, outputRepository, reportDefiniti
   const issue = issueByUrl.get(comment.issue_url);
   const body = comment.body || "";
   const workflow = workflowFrom(body);
+  const modelMetadata = modelMetadataFrom(body);
   const bundle = bundleFor(reportDefinitions, workflow, issue?.title, body);
   const generatedSafeOutput = /Generated from \[[^\]]+\]\([^)]*\/actions\/runs\/\d+\)/.test(body);
   if (!generatedSafeOutput) return null;
@@ -142,6 +177,10 @@ function recordFromComment(comment, issueByUrl, outputRepository, reportDefiniti
     bundleId: markerFrom(body, "bundle"),
     correlationId: markerFrom(body, "correlation"),
     aic: aicFrom(body),
+    engine: modelMetadata.engine,
+    engineVersion: modelMetadata.engineVersion,
+    requestedModel: modelMetadata.requestedModel,
+    resolvedModel: modelMetadata.resolvedModel,
     warning: hasReportWarning(comment.body_html),
   };
 }

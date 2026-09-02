@@ -16,6 +16,7 @@ export function deriveWorkflowSources(sources) {
   const outcomes = Array.isArray(sources.outcomes?.rows) ? sources.outcomes.rows : [];
   const workflowRuns = summarizeWorkflowRuns(workflows, runsAvailable ? runs : null);
   const workflowAic = summarizeWorkflowAic(workflows, usage);
+  const usageMetadata = sources.usage?.metadata ?? unavailableMetadata();
   /** @param {Row} row */
   const isPackaged = (row) => row['workflow-role'] !== 'standalone' && Boolean(text(row.package));
   const packaged = workflows
@@ -76,6 +77,16 @@ export function deriveWorkflowSources(sources) {
         return report ? [report] : [];
       }).sort(compareReports),
       metadata: sources.outcomes?.metadata ?? unavailableMetadata()
+    },
+    'model-usage-summary': {
+      source: 'model-usage-summary',
+      rows: summarizeModelUsage(usage),
+      metadata: usageMetadata
+    },
+    'engine-usage-summary': {
+      source: 'engine-usage-summary',
+      rows: summarizeEngineUsage(usage),
+      metadata: usageMetadata
     }
   };
 }
@@ -125,6 +136,10 @@ function deriveReport(row) {
     'outcome-summary': text(row['outcome-summary']) || 'No report summary was provided.',
     'outcome-status': text(row['outcome-status']) || text(row['outcome-state']) || 'unknown',
     'rollout-mode': text(row['rollout-mode']) || 'unknown',
+    engine: text(row.engine) || 'unknown',
+    'engine-version': text(row['engine-version']) || 'unknown',
+    'requested-model': text(row['requested-model']) || 'unknown',
+    'resolved-model': text(row['resolved-model']) || 'unknown',
     'outcome-category': text(row['outcome-category']) || 'unknown',
     'observed-at': row['observed-at'] ?? row['published-at'],
     ...(sourceLink
@@ -142,6 +157,89 @@ function deriveReport(row) {
         }
       : {})
   };
+}
+
+/**
+ * @param {Row[]} usage
+ * @returns {Row[]}
+ */
+function summarizeModelUsage(usage) {
+  const summaries = new Map();
+  for (const row of usage) {
+    const aic = number(row.aic);
+    const model = text(row['resolved-model']) || text(row['requested-model']) || 'unknown';
+    const summary = summaries.get(model) ?? {
+      model,
+      'resolved-model': model,
+      engines: new Set(),
+      'requested-models': new Set(),
+      runs: new Set(),
+      invocations: 0,
+      'total-aic': 0,
+      'estimated-usd': 0,
+      pricing: '1 AIC = $0.01 USD'
+    };
+    summary.engines.add(text(row.engine) || 'unknown');
+    summary['requested-models'].add(text(row['requested-model']) || 'unknown');
+    summary.runs.add(runIdentity(row));
+    summary.invocations += 1;
+    summary['total-aic'] += aic;
+    summary['estimated-usd'] += aic * 0.01;
+    summaries.set(model, summary);
+  }
+  return [...summaries.values()].map((summary) => ({
+    model: summary.model,
+    'resolved-model': summary['resolved-model'],
+    engine: joinValues(summary.engines),
+    'requested-model': joinValues(summary['requested-models']),
+    runs: summary.runs.size,
+    invocations: summary.invocations,
+    'total-aic': summary['total-aic'],
+    'estimated-usd': summary['estimated-usd'],
+    pricing: summary.pricing
+  })).sort(compareUsageSummaries);
+}
+
+/**
+ * @param {Row[]} usage
+ * @returns {Row[]}
+ */
+function summarizeEngineUsage(usage) {
+  const summaries = new Map();
+  for (const row of usage) {
+    const aic = number(row.aic);
+    const engine = text(row.engine) || 'unknown';
+    const version = text(row['engine-version']);
+    const summary = summaries.get(engine) ?? {
+      engine,
+      versions: new Set(),
+      models: new Set(),
+      runs: new Set(),
+      invocations: 0,
+      'total-aic': 0,
+      'estimated-usd': 0
+    };
+    if (version && version !== 'unknown') summary.versions.add(version);
+    summary.models.add(text(row['resolved-model']) || text(row['requested-model']) || 'unknown');
+    summary.runs.add(runIdentity(row));
+    summary.invocations += 1;
+    summary['total-aic'] += aic;
+    summary['estimated-usd'] += aic * 0.01;
+    summaries.set(engine, summary);
+  }
+  return [...summaries.values()].map((summary) => {
+    const versions = [...summary.versions].sort(compareVersions);
+    return {
+      engine: summary.engine,
+      runs: summary.runs.size,
+      invocations: summary.invocations,
+      'total-aic': summary['total-aic'],
+      'estimated-usd': summary['estimated-usd'],
+      'min-engine-version': versions[0] ?? 'unknown',
+      'max-engine-version': versions.at(-1) ?? 'unknown',
+      models: joinValues(summary.models)
+    };
+  }).sort(compareUsageSummaries);
 }
 
 /** @param {Row} outcome @param {Row[]} workflows */
@@ -281,6 +379,50 @@ function compareReports(left, right) {
 function compareRuns(left, right) {
   return derivedRunTime(right) - derivedRunTime(left)
     || text(right.run).localeCompare(text(left.run), 'en', { numeric: true });
+}
+
+/** @param {Row} left @param {Row} right */
+function compareUsageSummaries(left, right) {
+  return Number(right['total-aic']) - Number(left['total-aic'])
+    || text(left.model ?? left.engine).localeCompare(text(right.model ?? right.engine));
+}
+
+/** @param {Set<string>} values */
+function joinValues(values) {
+  return [...values].filter(Boolean).sort().join(', ') || 'unknown';
+}
+
+/** @param {Row} row */
+function runIdentity(row) {
+  return [row.organization, row.repository, row.workflow, row.run].map(text).join(':');
+}
+
+/** @param {unknown} value */
+function number(value) {
+  const result = Number(value);
+  return Number.isFinite(result) && result >= 0 ? result : 0;
+}
+
+/** @param {string} left @param {string} right */
+function compareVersions(left, right) {
+  const leftParts = left.split(/[.-]/).map(versionPart);
+  const rightParts = right.split(/[.-]/).map(versionPart);
+  const count = Math.max(leftParts.length, rightParts.length);
+  for (let index = 0; index < count; index += 1) {
+    const leftPart = leftParts[index] ?? { number: 0, text: '' };
+    const rightPart = rightParts[index] ?? { number: 0, text: '' };
+    const numeric = leftPart.number - rightPart.number;
+    if (numeric !== 0) return numeric;
+    const lexical = leftPart.text.localeCompare(rightPart.text);
+    if (lexical !== 0) return lexical;
+  }
+  return left.localeCompare(right);
+}
+
+/** @param {string} part */
+function versionPart(part) {
+  const numeric = Number(part);
+  return Number.isFinite(numeric) ? { number: numeric, text: '' } : { number: 0, text: part };
 }
 
 /** @param {Row} row */

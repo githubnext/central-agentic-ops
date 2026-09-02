@@ -79,6 +79,77 @@ test("dashboard records retain durable-output target and run attribution", async
   }]);
 });
 
+test("dashboard records retain report model and agent metadata when available", async () => {
+  const issue = {
+    number: 8,
+    title: "[Maintenance] Model metadata",
+    body: [
+      "### Worker",
+      "",
+      "target repository: `acme/service`",
+      "<!-- aw:engine=copilot -->",
+      "<!-- aw:engine-version=0.87.9 -->",
+      "<!-- aw:requested-model=gpt-5.6-sol -->",
+      "<!-- aw:resolved-model=gpt-5.6-sol-fast -->",
+      "",
+      "Generated from [Worker](https://github.com/acme/control/actions/runs/43)",
+    ].join("\n"),
+    body_html: "<p>Model metadata</p>",
+    state: "open",
+    html_url: "https://github.com/acme/service/issues/8",
+    url: "https://api.github.com/repos/acme/service/issues/8",
+    created_at: "2026-09-02T10:00:00Z",
+    updated_at: "2026-09-02T11:00:00Z",
+  };
+  const fetchImpl = async (input) => {
+    const url = new URL(input);
+    let value;
+    if (url.pathname === "/repos/acme/control/issues") value = [issue];
+    else if (url.pathname.endsWith("/issues")) value = [];
+    else if (url.pathname.endsWith("/issues/comments")) value = [];
+    else if (url.pathname.endsWith("/actions/artifacts")) value = { artifacts: [] };
+    else if (url.pathname.endsWith("/actions/runs/43")) value = {
+      name: "Maintenance / Worker",
+      path: ".github/workflows/maintenance-worker.lock.yml",
+      display_title: "Maintenance / Worker · review",
+      conclusion: "success",
+    };
+    else throw new Error(`Unexpected request: ${url}`);
+    return new Response(JSON.stringify(value), { status: 200 });
+  };
+
+  const output = await collectDashboardRecords({
+    repository: "acme/control",
+    token: "test-token",
+    controlSettings: {
+      allowed_repositories: ["acme/service"],
+      packages: { maintenance: { mode: "review" } },
+    },
+    inventory,
+    deployedInventory: {
+      workflows: [{ repository: "acme/control" }],
+      allowedRepositories: ["acme/service"],
+    },
+    fetchImpl,
+    generatedAt: "2026-09-02T12:00:00Z",
+  });
+
+  assert.deepEqual(
+    {
+      engine: output.records[0].engine,
+      engineVersion: output.records[0].engineVersion,
+      requestedModel: output.records[0].requestedModel,
+      resolvedModel: output.records[0].resolvedModel,
+    },
+    {
+      engine: "copilot",
+      engineVersion: "0.87.9",
+      requestedModel: "gpt-5.6-sol",
+      resolvedModel: "gpt-5.6-sol-fast",
+    },
+  );
+});
+
 test("dashboard records cannot widen checked-in repository policy", async () => {
   await assert.rejects(() => collectDashboardRecords({
     repository: "acme/control",
