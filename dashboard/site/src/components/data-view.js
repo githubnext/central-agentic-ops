@@ -3,6 +3,7 @@
  */
 
 import { h } from '../dom.js';
+import { octicon } from '../octicons.js';
 import { formatAggregateValue, formatNumber } from '../view-formatters.js';
 import { titleCase } from './count-formatters.js';
 import { renderCellDisplay } from './cell-display.js';
@@ -140,7 +141,10 @@ function renderTableView(context) {
         return h('td', null, constrainOutputEvidence(linkedValue));
       }
       return h('td', null, constrainOutputEvidence(value));
-    })
+    }),
+    ...tableActions(view).flatMap((action) => actionMatches(action, row)
+      ? [h('td', { className: 'table-intent-action' }, renderIntentAction(action, row))]
+      : [h('td', { className: 'table-intent-action' })])
   ));
 
   const interactive = view.controls !== 'static';
@@ -150,8 +154,8 @@ function renderTableView(context) {
       tableClassName: 'custom-table',
       regionClassName: interactive ? undefined : 'table-region-static',
       emptyMessage: typeof view['empty-message'] === 'string' ? view['empty-message'] : 'No rows available.',
-      colSpan: Math.max(columns.length, 1),
-      headCells: columns.map(fieldTitle),
+      colSpan: Math.max(columns.length + tableActions(view).length, 1),
+      headCells: [...columns.map(fieldTitle), ...tableActions(view).map((action) => action.label)],
       summaryColumns: interactive && view['column-summaries'] !== false ? columns.map((column) => {
         const outputField = typeof column.as === 'string' ? column.as : column.field;
         return {
@@ -281,6 +285,60 @@ function chartCategoryLinks(points) {
     }
   }
   return links;
+}
+
+/**
+ * @param {Record<string, unknown>} view
+ * @returns {Array<{ intent: string, presentation: string, icon: string, label: string, when?: { field: string, equals: unknown } }>}
+ */
+function tableActions(view) {
+  return isPlainObject(view.encoding) && Array.isArray(view.encoding.actions)
+    ? /** @type {Array<{ intent: string, presentation: string, icon: string, label: string, when?: { field: string, equals: unknown } }>} */ (view.encoding.actions)
+    : [];
+}
+
+/** @param {{ when?: { field: string, equals: unknown } }} action @param {Record<string, unknown>} row */
+function actionMatches(action, row) {
+  return !action.when || String(row[action.when.field] ?? '') === String(action.when.equals);
+}
+
+/**
+ * @param {{ intent: string, presentation: string, icon: string, label: string }} action
+ * @param {Record<string, unknown>} row
+ */
+function renderIntentAction(action, row) {
+  const content = `${action.intent}\n\nContext:\n${Object.entries(row)
+    .map(([field, value]) => `${titleCase(field)}: ${intentValue(value)}`)
+    .filter((entry) => !entry.endsWith(': '))
+    .join('\n')}`;
+  return h(
+    'button',
+    {
+      className: 'table-intent-button',
+      type: 'button',
+      title: action.label,
+      'aria-label': action.label,
+      'data-intent-presentation': action.presentation,
+      onClick: () => { void copyIntent(content); }
+    },
+    octicon(action.icon)
+  );
+}
+
+/** @param {unknown} value */
+function intentValue(value) {
+  if (isPlainObject(value) && typeof value.href === 'string') return value.href;
+  return ['string', 'number', 'boolean'].includes(typeof value) ? String(value) : '';
+}
+
+/** @param {string} content */
+async function copyIntent(content) {
+  if (typeof navigator?.clipboard?.writeText !== 'function') return;
+  try {
+    await navigator.clipboard.writeText(content);
+  } catch {
+    // Clipboard access can be denied outside a user-authorized browser context.
+  }
 }
 
 /** @param {string} value */

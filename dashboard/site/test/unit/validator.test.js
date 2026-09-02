@@ -38,6 +38,33 @@ describe('dashboard document validation', () => {
     expect(accepted.ok).toBe(true);
   });
 
+  it('validates declarative table intents without author-defined context templating', () => {
+    const document = JSON.parse(authoritativeDashboardSource);
+    const runsPage = document.dashboard.pages.find((/** @type {{ id: string }} */ page) => page.id === 'workflow-runs');
+    const runsView = runsPage.views.find((/** @type {{ id: string }} */ view) => view.id === 'workflow-runs-table');
+    expect(runsView.encoding.actions).toEqual([{
+      intent: 'Investigate this failed workflow run.',
+      presentation: 'copy-prompt',
+      icon: 'search',
+      label: 'Investigate',
+      when: { field: 'run-conclusion', equals: 'failure' }
+    }]);
+    expect(validateDashboardDocument(JSON.stringify(document)).ok).toBe(true);
+
+    runsView.encoding.actions[0].presentation = 'copy-command';
+    expect(validateDashboardDocument(JSON.stringify(document)).ok).toBe(true);
+
+    runsView.encoding.actions[0].when.field = 'not-a-run-field';
+    const rejected = validateDashboardDocument(JSON.stringify(document));
+    expect(rejected.ok).toBe(false);
+    if (!rejected.ok) {
+      expect(rejected.errors).toContainEqual(expect.objectContaining({
+        code: 'DLS-E010',
+        path: '$.dashboard.pages[7].views[1].encoding.actions[0].when.field'
+      }));
+    }
+  });
+
   it('accepts every package dashboard document', () => {
     for (const source of packageDashboardSources) {
       expect(validateDashboardDocument(source).ok).toBe(true);

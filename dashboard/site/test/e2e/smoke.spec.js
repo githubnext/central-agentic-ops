@@ -224,6 +224,7 @@ function buildPresenterModuleUrl() {
 
   const dataViewSource = readFileSync(new URL('../../src/components/data-view.js', import.meta.url), 'utf8')
     .replace("'../dom.js'", JSON.stringify(domModuleUrl))
+    .replace("'../octicons.js'", JSON.stringify(octiconsModuleUrl))
     .replace("'../view-formatters.js'", JSON.stringify(viewFormattersModuleUrl))
     .replace("'./cell-display.js'", JSON.stringify(cellDisplayModuleUrl))
     .replace("'./chart-elements.js'", JSON.stringify(chartElementsModuleUrl))

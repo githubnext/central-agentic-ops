@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { renderDataView } from '../../src/components/data-view.js';
 
 const metadata = {
@@ -122,8 +122,53 @@ describe('data view renderer', () => {
         }
       }
     });
+
     expect(linkedFirstColumn?.querySelectorAll('tbody td:first-child a')).toHaveLength(1);
     expect(linkedFirstColumn?.querySelector('tbody td:first-child a')?.textContent).toBe('42');
+  });
+
+  it('copies a contextual investigation prompt only for failed workflow runs', async () => {
+    const writeText = vi.fn().mockResolvedValue(undefined);
+    Object.assign(navigator, { clipboard: { writeText } });
+    const rendered = renderDataView('table', {
+      pageId: 'workflow-runs',
+      title: 'Runs',
+      view: {
+        mark: 'table',
+        controls: 'static',
+        encoding: {
+          columns: [{ field: 'run' }, { field: 'run-conclusion' }],
+          actions: [{
+            intent: 'Investigate this failed workflow run.',
+            presentation: 'copy-prompt',
+            icon: 'search',
+            label: 'Investigate',
+            when: { field: 'run-conclusion', equals: 'failure' }
+          }]
+        }
+      },
+      sourceName: 'workflow-runs',
+      rows: [
+        { run: '42', 'run-conclusion': 'failure', repository: 'githubnext/central-agentic-ops' },
+        { run: '43', 'run-conclusion': 'success', repository: 'githubnext/central-agentic-ops' }
+      ],
+      metadata,
+      contextDetails: [],
+      headingTag: 'h3',
+      prepareTableRows: (rows) => rows,
+      buildChartPoints: () => [],
+      prepareChartPoints: () => [],
+      toText: String
+    });
+
+    const buttons = rendered?.querySelectorAll('.table-intent-button');
+    expect(buttons).toHaveLength(1);
+    expect(buttons?.[0]?.getAttribute('aria-label')).toBe('Investigate');
+    buttons?.[0]?.dispatchEvent(new MouseEvent('click'));
+    await Promise.resolve();
+    expect(writeText).toHaveBeenCalledWith(
+      'Investigate this failed workflow run.\n\nContext:\nRun: 42\nRun Conclusion: failure\nRepository: githubnext/central-agentic-ops'
+    );
   });
 
   it('omits column summaries when disabled by the JSON view definition', () => {
