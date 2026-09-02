@@ -237,7 +237,7 @@ function summarizeWorkflowRuns(workflows, runs) {
  * @param {Row[]} usage
  * @returns {Map<Row, number>}
  */
-function summarizeWorkflowAic(workflows, usage) {
+export function summarizeWorkflowAic(workflows, usage) {
   const totals = new Map();
   for (const observation of usage) {
     const aic = Number(observation.aic);

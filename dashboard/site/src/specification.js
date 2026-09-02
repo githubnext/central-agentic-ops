@@ -314,7 +314,7 @@ export const SOURCE_FIELDS = {
   'repository-detail-summary': ['repository', 'workflows', 'latest-update', 'external-link'],
   'repository-workflow-status': ['repository', 'status', 'workflows'],
   'repository-workflow-usage': ['repository', 'workflow', 'invocation', 'aic', 'workflow-link'],
-  'repository-workflows': ['repository', 'workflow', 'workflow-name', 'workflow-role', 'package-name', 'rollout-mode', 'workflow-active', 'observed-at', 'workflow-link'],
+  'repository-workflows': ['repository', 'workflow', 'workflow-name', 'workflow-role', 'package-name', 'rollout-mode', 'workflow-active', 'observed-at', 'aic', 'workflow-link'],
   'workflow-runs': ['workflow-route', 'organization', 'repository', 'workflow', 'run', 'run-title', 'event', 'started-at', 'ended-at', 'run-status', 'run-conclusion', 'rollout-mode', 'engine', 'requested-model', 'resolved-model', 'run-link'],
   'workflow-reports': ['workflow-route', 'safe-output', 'outcome-title', 'outcome-summary', 'outcome-status', 'rollout-mode', 'outcome-category', 'observed-at', 'external-link'],
   'package-reports': ['package', 'safe-output', 'outcome-title', 'outcome-summary', 'outcome-status', 'rollout-mode', 'outcome-category', 'observed-at', 'external-link'],

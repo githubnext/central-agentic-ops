@@ -240,12 +240,13 @@ function buildPresenterModuleUrl() {
     .replace("'./components/attention-rules.js'", JSON.stringify(attentionRulesModuleUrl));
   const overviewDataModuleUrl = `data:text/javascript;charset=utf-8,${encodeURIComponent(overviewDataSource)}`;
 
-  const repositoryDataSource = readFileSync(new URL('../../src/repository-data.js', import.meta.url), 'utf8')
-    .replace("'./view-formatters.js'", JSON.stringify(viewFormattersModuleUrl));
-  const repositoryDataModuleUrl = `data:text/javascript;charset=utf-8,${encodeURIComponent(repositoryDataSource)}`;
-
   const workflowDataSource = readFileSync(new URL('../../src/workflow-data.js', import.meta.url), 'utf8');
   const workflowDataModuleUrl = `data:text/javascript;charset=utf-8,${encodeURIComponent(workflowDataSource)}`;
+
+  const repositoryDataSource = readFileSync(new URL('../../src/repository-data.js', import.meta.url), 'utf8')
+    .replace("'./view-formatters.js'", JSON.stringify(viewFormattersModuleUrl))
+    .replace("'./workflow-data.js'", JSON.stringify(workflowDataModuleUrl));
+  const repositoryDataModuleUrl = `data:text/javascript;charset=utf-8,${encodeURIComponent(repositoryDataSource)}`;
 
   const presenterSource = readFileSync(new URL('../../src/presenter.js', import.meta.url), 'utf8')
     .replace("'../dashboard.json'", JSON.stringify(dashboardModuleUrl))

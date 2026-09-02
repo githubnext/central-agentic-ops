@@ -113,6 +113,10 @@ describe('repositories view', () => {
         status: 'Disabled workflows'
       })
     ]);
+    expect(deriveRepositorySources(sources())['repository-workflows'].rows).toEqual(expect.arrayContaining([
+      expect.objectContaining({ repository: 'octo/failing', workflow: 'one', aic: 9 }),
+      expect.objectContaining({ repository: 'octo/failing', workflow: 'two', aic: 3 })
+    ]));
   });
 
   it('derives the configured scope and renders it through the reusable context summary', () => {
@@ -204,7 +208,12 @@ describe('repositories view', () => {
     expect(workflowsView).toMatchObject({
       mark: 'table',
       controls: 'interactive',
-      'column-summaries': true
+      'column-summaries': true,
+      encoding: {
+        columns: expect.arrayContaining([
+          { field: 'aic', type: 'quantitative', title: 'AIC', unit: 'aic' }
+        ])
+      }
     });
     expect(workflowAicView).toMatchObject({
       title: 'Top workflows by AIC',
