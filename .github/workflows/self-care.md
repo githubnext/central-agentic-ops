@@ -64,7 +64,7 @@ permissions:
   actions: read
 
 engine: copilot
-model: gpt-5.4
+model: copilot/mai-code-1.1-flash
 
 strict: true
 

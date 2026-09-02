@@ -13,7 +13,7 @@ import { renderTableSummaryRow } from './table-summary.js';
 const DEFAULT_PAGE_SIZE = 25;
 
 /**
- * Renders a table inside a bounded-height scroll region. Column sorting is enabled
+ * Renders a table inside a scroll region. Column sorting is enabled
  * by default whenever `filterLabel` is provided, and can be forced with `sortable`.
  *
  * @param {{
@@ -137,7 +137,7 @@ export function renderTableRegion(options) {
       )
     ),
     interactive
-      ? h('button', { className: 'table-filter-more', type: 'button', 'data-table-more': '' }, `Show ${pageSize} more`)
+      ? h('button', { className: 'table-filter-more', type: 'button', 'data-table-more': '' }, 'Show all rows')
       : null
   );
 
@@ -235,6 +235,7 @@ function enableTableFilter(region, options) {
   let revision = 0;
   const apply = (reset = false) => {
    if (reset) limit = options.pageSize;
+   region.classList.toggle('table-region-expanded', !Number.isFinite(limit));
    const query = input.value.trim().toLocaleLowerCase('en');
    const rows = currentRows();
    const requestRevision = ++revision;
@@ -287,7 +288,7 @@ function enableTableFilter(region, options) {
    });
   }
   more.addEventListener('click', () => {
-   limit += options.pageSize;
+   limit = Number.POSITIVE_INFINITY;
    apply();
   });
   region.addEventListener('table-sorted', () => apply());
