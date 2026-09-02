@@ -294,7 +294,7 @@ describe('dashboard document validation', () => {
     }
   });
 
-  it('DLS-VIEW-029 validates route fields against the selected logical source', () => {
+  it('DLS-VIEW-030 validates route fields against the selected logical source', () => {
     const document = JSON.parse(authoritativeDashboardSource);
     const repositoryPageIndex = document.dashboard.pages.findIndex((/** @type {{ id: string }} */ page) => page.id === 'repository-detail');
     const repositoryPage = document.dashboard.pages[repositoryPageIndex];
@@ -312,7 +312,7 @@ describe('dashboard document validation', () => {
     }
   });
 
-  it('DLS-VIEW-030 validates JSON-configured title links against one selected source', () => {
+  it('DLS-VIEW-031 validates JSON-configured title links against one selected source', () => {
     const document = JSON.parse(authoritativeDashboardSource);
     const outcomePage = document.dashboard.pages.find((/** @type {{ id: string }} */ page) => page.id === 'outcome-detail');
     const outcomeView = outcomePage.views[0];
@@ -2280,7 +2280,7 @@ dashboard:
     }
   });
 
-  it('DLS-VIEW-031 validates the chart table option', () => {
+  it('DLS-VIEW-032 validates the chart table option', () => {
     const valid = validateDashboardDocument(`language-version: "0.1.0"
 dashboard:
   id: valid-chart-table

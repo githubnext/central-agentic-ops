@@ -98,6 +98,7 @@ function renderTableView(context) {
     : null;
   const hrefField = typeof hrefDefinition?.field === 'string' ? hrefDefinition.field : null;
   const tableRows = prepareTableRows(rows, columns, view.data);
+  const actions = tableActions(view);
   const renderCellValue = createEntityAwareCellRenderer(
     ENTITY_LINK_FIELDS,
     findLink,
@@ -142,7 +143,7 @@ function renderTableView(context) {
       }
       return h('td', null, constrainOutputEvidence(value));
     }),
-    ...tableActions(view).flatMap((action) => actionMatches(action, row)
+    ...actions.flatMap((action) => actionMatches(action, row)
       ? [h('td', { className: 'table-intent-action' }, renderIntentAction(action, row))]
       : [h('td', { className: 'table-intent-action' })])
   ));
@@ -154,8 +155,8 @@ function renderTableView(context) {
       tableClassName: 'custom-table',
       regionClassName: interactive ? undefined : 'table-region-static',
       emptyMessage: typeof view['empty-message'] === 'string' ? view['empty-message'] : 'No rows available.',
-      colSpan: Math.max(columns.length + tableActions(view).length, 1),
-      headCells: [...columns.map(fieldTitle), ...tableActions(view).map((action) => action.label)],
+      colSpan: Math.max(columns.length + actions.length, 1),
+      headCells: [...columns.map(fieldTitle), ...actions.map((action) => action.label)],
       summaryColumns: interactive && view['column-summaries'] !== false ? columns.map((column) => {
         const outputField = typeof column.as === 'string' ? column.as : column.field;
         return {
