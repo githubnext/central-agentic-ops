@@ -239,6 +239,7 @@ test("control precompute excludes workers disabled by policy", () => {
   try {
     assert.equal(run.result.status, 0, run.result.stderr);
     const output = JSON.parse(readFileSync("/tmp/gh-aw/agent/control-precompute.json", "utf8"));
+    assert.equal(output.worker, "");
     assert.equal(output.worker_workflows[0].policy_enabled, false);
     assert.equal(output.worker_workflows[0].eligible, false);
     assert.equal(output.worker_workflows[0].skip_reason, "worker disabled by control-plane policy");

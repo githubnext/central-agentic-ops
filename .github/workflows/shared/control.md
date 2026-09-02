@@ -93,24 +93,8 @@ jobs:
           set -euo pipefail
           node "${RUNNER_TEMP:-/tmp}/cao/control.mjs" precompute
 
-      - name: Upload CAO control precompute artifact
-        if: ${{ steps.cao_admission.outputs.authorized == 'true' }}
-        uses: actions/upload-artifact@v7.0.1
-        with:
-          name: cao-control-precompute
-          path: /tmp/gh-aw/agent/control-precompute.json
-          if-no-files-found: error
-          retention-days: 1
-
-  agent:
-    pre-steps:
-      - name: Download CAO control precompute artifact
-        uses: actions/download-artifact@v8.0.1
-        with:
-          name: cao-control-precompute
-          path: /tmp/gh-aw/agent
-
       - name: Validate CAO control precompute artifact
+        if: ${{ steps.cao_admission.outputs.authorized == 'true' }}
         env:
           GITHUB_WORKFLOW_SHA: ${{ github.workflow_sha }}
           CONTROL_REPOSITORY: ${{ github.repository }}
@@ -130,6 +114,23 @@ jobs:
           jq -e --arg repository "$CONTROL_REPOSITORY" --arg sha "$GITHUB_WORKFLOW_SHA" \
             '.policy_source == {repository:$repository,path:".github/central-agentic-ops.json",sha:$sha}' \
             "$out" >/dev/null
+
+      - name: Upload CAO control precompute artifact
+        if: ${{ steps.cao_admission.outputs.authorized == 'true' }}
+        uses: actions/upload-artifact@v7.0.1
+        with:
+          name: cao-control-precompute
+          path: /tmp/gh-aw/agent/control-precompute.json
+          if-no-files-found: error
+          retention-days: 1
+
+  agent:
+    pre-steps:
+      - name: Download CAO control precompute artifact
+        uses: actions/download-artifact@v8.0.1
+        with:
+          name: cao-control-precompute
+          path: /tmp/gh-aw/agent
 
 post-steps:
   - name: Emit control-plane dispatcher telemetry

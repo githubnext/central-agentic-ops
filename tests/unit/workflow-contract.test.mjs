@@ -1693,13 +1693,14 @@ test("clean-room compilation emits the expected GitHub Actions settings", { time
       assert.match(preActivation, /steps\.cao_admission\.outputs\.monthly_credit_budget != '0'/);
       assert.match(preActivation, /name: Run CAO control precompute/);
       assert.match(preActivation, /GH_TOKEN: \$\{\{ secrets\.GH_AW_GITHUB_TOKEN \|\| github\.token \}\}/);
+      assert.match(preActivation, /name: Validate CAO control precompute artifact/);
+      assert.match(preActivation, /\.authorized == true/);
+      assert.match(preActivation, /\.policy_source == \{repository:\$repository,path:"\.github\/central-agentic-ops\.json",sha:\$sha\}/);
       assert.match(preActivation, /name: Upload CAO control precompute artifact/);
       assert.match(preActivation, /retention-days: 1(?:\.0)?/);
 
       assert.match(agent, /name: Download CAO control precompute artifact/);
-      assert.match(agent, /name: Validate CAO control precompute artifact/);
-      assert.match(agent, /\.authorized == true/);
-      assert.match(agent, /\.policy_source == \{repository:\$repository,path:"\.github\/central-agentic-ops\.json",sha:\$sha\}/);
+      assert.doesNotMatch(agent, /name: Validate CAO control precompute artifact/);
       assert.doesNotMatch(agent, /contents\/\.github\/cao\/(?:control|policy)/);
       assert.doesNotMatch(agent, /node .*cao\/control\.mjs.*precompute|target-authority\.json|candidate-pages\.jsonl/);
       assert.doesNotMatch(generated, /vars\.CENTRAL_AGENTIC_OPS_|central-agentic-ops\.yml/);

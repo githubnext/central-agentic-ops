@@ -609,6 +609,7 @@ function writeOrchestratorPrecompute(context) {
     control_role: "orchestrator",
     package: context.packageName,
     bundle: context.packageName,
+    worker: context.worker,
     enabled: context.policy.enabled,
     target_repo: context.targetRepository,
     organization: context.controlRepository.split("/", 1)[0],
