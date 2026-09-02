@@ -518,8 +518,13 @@ describe('presenter built-in and custom pages', () => {
     });
 
     expect(authoritativeDashboardDocument.dashboard.defaults?.time).toEqual({ range: '1w' });
-    expect(rendered.querySelector('.dashboard-horizon')?.textContent).toBe('Horizon 1 week');
+    expect(rendered.querySelector('.dashboard-horizon > span:first-child')?.textContent).toBe('Horizon 1 week');
     expect(rendered.querySelectorAll('.dashboard-horizon')).toHaveLength(1);
+    const horizonHelp = rendered.querySelector('.dashboard-horizon .tooltip-trigger');
+    const horizonTooltip = rendered.querySelector('.dashboard-horizon .tooltip-content');
+    expect(horizonHelp?.getAttribute('aria-label')).toBe('Horizon details');
+    expect(horizonHelp?.getAttribute('aria-describedby')).toBe(horizonTooltip?.id);
+    expect(horizonTooltip?.getAttribute('role')).toBe('tooltip');
 
     for (const pageId of ['runtime', 'security', 'operational-value']) {
       const filterBar = rendered.querySelector(`[data-page-id="${pageId}"] .filter-bar`);
@@ -537,6 +542,14 @@ describe('presenter built-in and custom pages', () => {
         dashboard: {
           id: 'horizon-dashboard',
           title: 'Horizon Dashboard',
+          horizon: {
+            label: 'Data horizon',
+            tooltip: {
+              label: 'Data horizon details',
+              description: 'Data is included from the start up to the exclusive end.',
+              icon: 'question'
+            }
+          },
           defaults: { time: { range: '1w' } },
           pages: [{
             id: 'runs',
@@ -578,6 +591,12 @@ describe('presenter built-in and custom pages', () => {
     expect(table?.textContent).toContain('timeless');
     expect(table?.textContent).not.toContain('expired');
     expect(rendered.querySelector('.dashboard-horizon')?.getAttribute('data-dashboard-evaluated-at')).toBe('2026-09-01T12:00:00Z');
+    expect(rendered.querySelector('.dashboard-horizon > span:first-child')?.textContent).toBe('Data horizon 1 week');
+    expect(rendered.querySelector('.dashboard-horizon .tooltip-content')?.textContent).toBe(
+      'Data is included from the start up to the exclusive end.StartAug 25, 2026, 12:00 PM UTCEndSep 1, 2026, 12:00 PM UTCDuration1 week'
+    );
+    expect(rendered.querySelector('.dashboard-horizon .tooltip-content time:first-of-type')?.getAttribute('datetime')).toBe('2026-08-25T12:00:00.000Z');
+    expect(rendered.querySelectorAll('.dashboard-horizon .tooltip-content time')[1]?.getAttribute('datetime')).toBe('2026-09-01T12:00:00Z');
   });
 
   it('renders the custom JSON-composed Security page from reusable summary and signal primitives', () => {

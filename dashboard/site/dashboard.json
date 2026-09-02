@@ -5,6 +5,14 @@
     "title": "Central Agentic Ops Dashboard",
     "description": "Authoritative declarative dashboard document for built-in and custom pages in the presenter prototype.",
     "repository": "githubnext/central-agentic-ops",
+    "horizon": {
+      "label": "Horizon",
+      "tooltip": {
+        "label": "Horizon details",
+        "description": "Dashboard data is included from the start time up to, but not including, the end time.",
+        "icon": "question"
+      }
+    },
     "defaults": {
       "time": {
         "range": "1w"

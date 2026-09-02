@@ -561,6 +561,40 @@ dashboard:
     }
   });
 
+  it('DLS-DOC-014 accepts horizon help text and rejects incomplete or unknown horizon fields', () => {
+    const baseDocument = validDocument.replace(`
+    - id: usage
+      kind: built-in
+      page: usage
+      title: Usage`, '');
+    const withHorizon = baseDocument.replace(
+      '  title: Agentic Operations\n',
+      '  title: Agentic Operations\n  horizon:\n    label: Horizon\n    tooltip:\n      label: Horizon details\n      description: Explains the resolved data window.\n      icon: question\n'
+    );
+
+    expect(validateDashboardDocument(withHorizon).ok).toBe(true);
+
+    const missingDescription = validateDashboardDocument(
+      withHorizon.replace('      description: Explains the resolved data window.\n', '')
+    );
+    expect(missingDescription.ok).toBe(false);
+    if (!missingDescription.ok) {
+      expect(missingDescription.errors).toContainEqual(
+        expect.objectContaining({ code: 'DLS-E003', path: '$.dashboard.horizon.tooltip.description' })
+      );
+    }
+
+    const unknownField = validateDashboardDocument(
+      withHorizon.replace('      description:', '      placement: top\n      description:')
+    );
+    expect(unknownField.ok).toBe(false);
+    if (!unknownField.ok) {
+      expect(unknownField.errors).toContainEqual(
+        expect.objectContaining({ code: 'DLS-E004', path: '$.dashboard.horizon.tooltip.placement' })
+      );
+    }
+  });
+
   it('DLS-DOC-012 accepts a safe owner/repo repository slug and rejects malformed or blank-scoped values with DLS-E003', () => {
     const baseDocument = validDocument.replace(`
     - id: usage

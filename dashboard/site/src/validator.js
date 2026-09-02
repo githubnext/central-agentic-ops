@@ -6,6 +6,7 @@ import {
   BUILT_IN_PAGE_VALUES,
   CUSTOM_PAGE_KEYS,
   DASHBOARD_KEYS,
+  DASHBOARD_HORIZON_KEYS,
   DATASET_AVAILABILITY_VALUES,
   DATASET_COMPLETENESS_VALUES,
   DATASET_FRESHNESS_VALUES,
@@ -53,6 +54,7 @@ import {
   TABLE_ACTION_WHEN_KEYS,
   TEMPORAL_FIELD_NAMES,
   TIME_KEYS,
+  TOOLTIP_KEYS,
   UNIT_DEFINITION_KEYS,
   BUILT_IN_PAGE_REQUIRED_SOURCES,
   BUILT_IN_PAGE_REQUIRED_FIELDS,
@@ -376,6 +378,30 @@ function validateDashboard(dashboard, dashboardNode, errors) {
   validateStringField(dashboard.title, '$.dashboard.title', true, errors);
   validateOptionalStringField(dashboard.description, '$.dashboard.description', errors);
 
+  if (dashboard.horizon !== undefined) {
+    if (!isPlainObject(dashboard.horizon)) {
+      errors.push(createError(
+        ERROR_CODES.missingOrInvalidRequiredField,
+        'horizon must be a mapping.',
+        '$.dashboard.horizon'
+      ));
+    } else {
+      validateObjectKeys(
+        getValueNodeByKey(dashboardNode, 'horizon'),
+        DASHBOARD_HORIZON_KEYS,
+        '$.dashboard.horizon',
+        errors
+      );
+      validateStringField(dashboard.horizon.label, '$.dashboard.horizon.label', true, errors);
+      validateTooltip(
+        dashboard.horizon.tooltip,
+        getValueNodeByKey(getValueNodeByKey(dashboardNode, 'horizon'), 'tooltip'),
+        '$.dashboard.horizon.tooltip',
+        errors
+      );
+    }
+  }
+
   if (dashboard['github-url-base'] !== undefined && !isSafeGithubUrlBase(dashboard['github-url-base'])) {
     errors.push(createError(
       ERROR_CODES.missingOrInvalidRequiredField,
@@ -532,6 +558,30 @@ function validateDashboard(dashboard, dashboardNode, errors) {
         }
       });
     });
+  }
+}
+
+/**
+ * @param {unknown} tooltip
+ * @param {unknown} tooltipNode
+ * @param {string} path
+ * @param {ValidationError[]} errors
+ */
+function validateTooltip(tooltip, tooltipNode, path, errors) {
+  if (!isPlainObject(tooltip)) {
+    errors.push(createError(ERROR_CODES.missingOrInvalidRequiredField, 'tooltip must be a mapping.', path));
+    return;
+  }
+  validateObjectKeys(tooltipNode, TOOLTIP_KEYS, path, errors);
+  validateStringField(tooltip.label, `${path}.label`, true, errors);
+  validateStringField(tooltip.description, `${path}.description`, true, errors);
+  validateOptionalStringField(tooltip.icon, `${path}.icon`, errors);
+  if (typeof tooltip.icon === 'string' && !PAGE_ICON_VALUES.includes(tooltip.icon)) {
+    errors.push(createError(
+      ERROR_CODES.nonCanonicalVocabularyOrIdentifier,
+      'tooltip icon must use one canonical icon value.',
+      `${path}.icon`
+    ));
   }
 }
 

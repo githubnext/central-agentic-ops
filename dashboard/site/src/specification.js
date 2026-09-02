@@ -9,7 +9,9 @@ export const LANGUAGE_VERSION = '0.1.0';
 export const IDENTIFIER_PATTERN = /^[a-z][a-z0-9]*(?:-[a-z0-9]+)*$/;
 
 export const ROOT_KEYS = ['language-version', 'dashboard'];
-export const DASHBOARD_KEYS = ['id', 'title', 'description', 'defaults', 'units', 'pages', 'github-url-base', 'repository', 'navigation'];
+export const DASHBOARD_KEYS = ['id', 'title', 'description', 'defaults', 'units', 'pages', 'github-url-base', 'repository', 'navigation', 'horizon'];
+export const DASHBOARD_HORIZON_KEYS = ['label', 'tooltip'];
+export const TOOLTIP_KEYS = ['label', 'description', 'icon'];
 export const DEFAULTS_KEYS = ['scope', 'time', 'filters'];
 export const UNIT_DEFINITION_KEYS = ['name', 'symbol', 'significant'];
 export const NAVIGATION_SECTION_KEYS = ['label', 'pages'];

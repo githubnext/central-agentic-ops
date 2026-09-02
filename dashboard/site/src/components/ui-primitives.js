@@ -52,6 +52,33 @@ export function renderVitalStat(label, value, detail) {
 }
 
 /**
+ * @param {{ id: string, label: string, description: string, icon: Node, content?: Node }} options
+ * @returns {HTMLElement}
+ */
+export function renderTooltip({ id, label, description, icon, content }) {
+  return h(
+    'span',
+    { className: 'tooltip-help' },
+    h(
+      'button',
+      {
+        type: 'button',
+        className: 'tooltip-trigger',
+        'aria-label': label,
+        'aria-describedby': id
+      },
+      icon
+    ),
+    h(
+      'span',
+      { id, className: 'tooltip-content', role: 'tooltip' },
+      h('span', { className: 'tooltip-description' }, description),
+      content
+    )
+  );
+}
+
+/**
  * Computes the whole-hour span between a metadata object's `coverage-start`
  * and `coverage-end` fields, or `null` when either bound is missing, invalid,
  * or non-increasing.
