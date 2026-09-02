@@ -2103,8 +2103,11 @@ test('declarative tables expose report-style facets and progressive catalog disc
   await expect(visibleRows).toHaveCount(25);
   await expect(page.locator('.table-filter-result')).toHaveText('Showing 25 of 30 results');
 
-  await page.getByRole('button', { name: 'Show 25 more' }).click();
+  await page.getByRole('button', { name: 'Show all rows' }).click();
   await expect(visibleRows).toHaveCount(30);
+  await expect(page.locator('.table-region')).toHaveClass(/table-region-expanded/);
+  await expect(page.locator('.table-scroll')).toHaveCSS('max-height', 'none');
+  await expect(page.locator('.table-scroll')).toHaveCSS('overflow', 'visible');
 
   await page.locator('[data-table-facet="rollout-mode"]').selectOption('review');
   await expect(visibleRows).toHaveCount(15);
