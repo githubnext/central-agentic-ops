@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { spawnSync } from "node:child_process";
-import { chmodSync, copyFileSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { chmodSync, copyFileSync, mkdirSync, mkdtempSync, readFileSync, realpathSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { delimiter, join } from "node:path";
 import test from "node:test";
@@ -71,32 +71,55 @@ function runPrecompute(overrides = {}, policy = controlPolicy({
   const logPath = join(temporaryDirectory, "gh.log");
   const githubEnvironment = join(temporaryDirectory, "github-env");
   const safeOutputs = join(temporaryDirectory, "safe-outputs.jsonl");
-  const resolverDirectory = join(temporaryDirectory, ".github", "cao");
-  mkdirSync(resolverDirectory, { recursive: true });
-  copyFileSync(
-    join(root, ".github", "cao", "resolve.mjs"),
-    join(resolverDirectory, "resolve.mjs"),
-  );
+  const runnerTemp = join(realpathSync(temporaryDirectory), "runner-temp");
+  const admissionDirectory = join(runnerTemp, "cao");
+  const policyPath = join(admissionDirectory, "central-agentic-ops.json");
+  const resolverPath = join(admissionDirectory, "resolve.mjs");
+  const effectivePolicyPath = join(admissionDirectory, "effective-policy.json");
+  mkdirSync(admissionDirectory, { recursive: true });
+  writeFileSync(policyPath, policy);
+  copyFileSync(join(root, ".github", "cao", "resolve.mjs"), resolverPath);
   mockGh(temporaryDirectory);
   writeFileSync(githubEnvironment, "");
   writeFileSync(safeOutputs, "");
 
+  const env = controlEnvironment({
+    ROLE: "orchestrator",
+    TARGET_REPO: "",
+    DISPATCH_MAX: "1000",
+    WORKER_CREDITS_PER_TARGET: "0",
+    CONTROL_POLICY: policy,
+    CONTROL_SOURCE_B64: Buffer.from(workflowSource).toString("base64"),
+    GITHUB_ENV: githubEnvironment,
+    GH_AW_SAFE_OUTPUTS: safeOutputs,
+    MOCK_GH_LOG: logPath,
+    PATH: `${temporaryDirectory}${delimiter}${process.env.PATH}`,
+    RUNNER_TEMP: runnerTemp,
+    ...overrides,
+  });
+  const resolution = spawnSync("node", [resolverPath, "--effective", policyPath], {
+    cwd: temporaryDirectory,
+    encoding: "utf8",
+    env: {
+      ...env,
+      CAO_PACKAGE: env.BUNDLE,
+      CAO_ROLE: env.ROLE,
+      CAO_WORKER: "",
+      CAO_TARGET_REPOSITORY: env.TARGET_REPO,
+      CAO_REQUESTED_MODE: env.REQUESTED_MODE,
+      CAO_REQUESTED_MAX_REPOSITORIES: env.REQUESTED_MAX_REPOS,
+      CAO_REQUESTED_ROLLOUT_PERCENT: env.REQUESTED_ROLLOUT_PERCENT,
+    },
+  });
+  if (resolution.status !== 0) {
+    return { temporaryDirectory, logPath, result: resolution };
+  }
+  writeFileSync(effectivePolicyPath, resolution.stdout);
+
   const result = spawnSync("bash", ["-c", script], {
     cwd: temporaryDirectory,
     encoding: "utf8",
-    env: controlEnvironment({
-      ROLE: "orchestrator",
-      TARGET_REPO: "",
-      DISPATCH_MAX: "1000",
-      WORKER_CREDITS_PER_TARGET: "0",
-      CONTROL_POLICY: policy,
-      CONTROL_SOURCE_B64: Buffer.from(workflowSource).toString("base64"),
-      GITHUB_ENV: githubEnvironment,
-      GH_AW_SAFE_OUTPUTS: safeOutputs,
-      MOCK_GH_LOG: logPath,
-      PATH: `${temporaryDirectory}${delimiter}${process.env.PATH}`,
-      ...overrides,
-    }),
+    env,
   });
 
   return { temporaryDirectory, logPath, result };
