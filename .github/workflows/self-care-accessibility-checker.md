@@ -102,6 +102,8 @@ tools:
   bash:
     - "*"
 safe-outputs:
+  allowed-domains:
+    - githubnext.github.io
   create-issue:
     target-repo: ${{ (inputs.safe_output_mode || 'review') == 'review' && (inputs.safe_output_repo || github.repository) || inputs.target_repo }}
     title-prefix: "[self-care:accessibility-checker] "
@@ -199,7 +201,7 @@ If `${{ inputs.pages }}` is set, audit exactly those paths. Otherwise enumerate 
 - a long reference page containing tables, code blocks, or diagrams; and
 - a page containing images or SVG illustrations.
 
-List the exact URLs you audited in the report.
+List the exact pages you audited in the report using their canonical public Pages URLs. Replace the local preview origin with `https://githubnext.github.io` while preserving each `/central-agentic-ops/...` path. Use local preview URLs only for browser operations; never include them in the `create_issue` payload.
 
 ## Step 3: Run the audit
 

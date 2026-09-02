@@ -1621,6 +1621,9 @@ test("SelfCare accessibility checker audits the served docs site with axe-core e
   assert.match(source, /colorScheme: "light"/);
   assert.match(source, /colorScheme: "dark"/);
   assert.match(source, /prefers-reduced-motion/);
+  assert.match(source, /safe-outputs:\n\s+allowed-domains:\n\s+- githubnext\.github\.io\n\s+create-issue:/);
+  assert.match(source, /canonical public Pages URLs/);
+  assert.match(source, /never include them in the `create_issue` payload/);
   assert.match(source, /create-issue:\n\s+target-repo:.*\n\s+title-prefix: "\[self-care:accessibility-checker\] "/);
   assert.match(source, /close-older-key: self-care-accessibility-checker/);
   assert.equal(source.split(liveGuard).length - 1, 5);
