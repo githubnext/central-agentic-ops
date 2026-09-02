@@ -1776,7 +1776,7 @@ test("clean-room compilation emits the expected GitHub Actions settings", { time
       assert.match(preActivation, /github\/gh-aw-actions\/setup-cli@/);
       assert.match(preActivation, /steps\.cao_admission\.outputs\.monthly_credit_budget != '0'/);
       assert.match(preActivation, /name: Run CAO control precompute/);
-      assert.match(preActivation, /GH_TOKEN: \$\{\{ secrets\.GH_AW_GITHUB_TOKEN \|\| github\.token \}\}/);
+      assert.match(preActivation, /GH_TOKEN: \$\{\{ steps\.cao_pre_activation_app_token\.outputs\.token \|\| secrets\.GH_AW_GITHUB_TOKEN \|\| github\.token \}\}/);
       assert.match(preActivation, /name: Validate CAO control precompute artifact/);
       assert.match(preActivation, /\.authorized == true/);
       assert.match(preActivation, /\.policy_source == \{repository:\$repository,path:"\.github\/workflows\/cao\.json",sha:\$sha\}/);
