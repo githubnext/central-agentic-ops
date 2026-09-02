@@ -109,6 +109,7 @@ Create at least one `.github/workflows/<package>-<worker>.md`. Every worker must
   ```yaml
   concurrency:
     group: "${{ github.workflow }}-${{ inputs.target_repo }}"
+    job-discriminator: ${{ github.run_id }}
     cancel-in-progress: true
   ```
 
@@ -158,7 +159,7 @@ Before finishing:
 4. Confirm each worker accepts the complete standard envelope and imports `shared/control.md` as `worker`.
 5. Confirm the orchestrator imports `shared/control.md` with static package identity, reads policy only through the shared JSON resolver, and defaults safely to review mode.
 6. Confirm the orchestrator has a `Completion` section that preserves the exact standard report contract from `shared/control.md`; package-specific reporting must be additive.
-7. Confirm worker concurrency is keyed by `github.workflow` and `inputs.target_repo` with stale runs cancelled.
+7. Confirm worker concurrency is keyed by `github.workflow` and `inputs.target_repo`, uses `github.run_id` as its job discriminator, and cancels stale runs.
 8. Check permissions, tools, network hosts, safe-output limits, credits, timeouts, and dispatch maximums against actual need.
 9. Confirm the orchestrator disables threat detection and every worker omits `evals`.
 10. Confirm dispatcher telemetry is inherited only through `shared/control.md`; require an explicit backend-routing need before adding a provider-specific observability import.
