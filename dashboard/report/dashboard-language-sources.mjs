@@ -75,8 +75,12 @@ function source(name, rows, generatedAt, available = true, complete = true) {
   };
 }
 
-function coverageDiagnosticRows(deployed, usage, controlSettings) {
+function coverageDiagnosticRows(deployed, usage, controlSettings, report) {
   const diagnostics = [];
+  if (report.error) diagnostics.push({
+    title: "Durable output collection unavailable",
+    effect: report.error,
+  });
   if (controlSettings.policy_resolution?.status === "unavailable") diagnostics.push({
     title: "Control policy resolution unavailable",
     effect: controlSettings.policy_resolution.reason || "The dashboard is limited to fail-closed control-repository data.",
@@ -494,6 +498,7 @@ export function buildDashboardLanguageSources({ deployed, usage, operationalValu
   const workflows = workflowRows(deployed, generatedAt, inventory, controlSettings);
   const runs = runRows(deployed);
   const records = report.records || [];
+  const reportAvailable = !report.error;
   const values = operationalValueRows(operationalValues);
   const graderObservations = operationalValueGraderRows(operationalValues);
   const repositories = new Map();
@@ -539,7 +544,7 @@ export function buildDashboardLanguageSources({ deployed, usage, operationalValu
   }
   sources["coverage-diagnostics"] = source(
     "coverage-diagnostics",
-    coverageDiagnosticRows(deployed, usage, controlSettings),
+    coverageDiagnosticRows(deployed, usage, controlSettings, report),
     generatedAt,
   );
   sources["repository-coverage"] = source(
@@ -549,8 +554,8 @@ export function buildDashboardLanguageSources({ deployed, usage, operationalValu
     discoveryAvailable,
     deployed.discovery?.complete === true,
   );
-  sources.outcomes = source("outcomes", outcomeRows(records), generatedAt);
-  sources.findings = source("findings", findingRows(records), generatedAt);
+  sources.outcomes = source("outcomes", outcomeRows(records), generatedAt, reportAvailable, reportAvailable);
+  sources.findings = source("findings", findingRows(records), generatedAt, reportAvailable, reportAvailable);
   sources["grader-observations"] = operationalValueSource("grader-observations", graderObservations, operationalValues, generatedAt, valueAvailable);
   sources["operational-values"] = operationalValueSource("operational-values", values, operationalValues, generatedAt, valueAvailable);
   return sources;
