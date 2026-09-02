@@ -9,7 +9,8 @@ on:
     paths:
       - dashboard/**
       - .github/central-agentic-ops.json
-      - .github/scripts/control-policy/resolve.mjs
+      - .github/cao/control.mjs
+      - .github/cao/policy.mjs
       - .github/workflows/documentation-pages.yml
       - .github/workflows/*.lock.yml
       - .github/workflows/*.md
@@ -66,12 +67,14 @@ jobs:
       - name: Resolve authoritative control policy
         env:
           GITHUB_REPOSITORY: ${{ github.repository }}
-        run: node .github/scripts/control-policy/resolve.mjs --control .github/central-agentic-ops.json > "$RUNNER_TEMP/control-settings.json"
+        run: node .github/cao/control.mjs control-settings .github/central-agentic-ops.json > "$RUNNER_TEMP/control-settings.json"
+
+      - name: Assemble configured Dashboard Language site
+        run: node dashboard/site/scripts/build.mjs dist/cao "$RUNNER_TEMP/control-settings.json"
 
       - name: Discover deployed agentic workflows
         env:
           GITHUB_TOKEN: ${{ github.token }}
-          REPORT_ALLOWED_REPOS: ${{ github.repository }}
           REPORT_CONTROL_SETTINGS: ${{ runner.temp }}/control-settings.json
           REPORT_DEPLOYED_WORKFLOWS: ${{ runner.temp }}/deployed-workflows.json
         run: node dashboard/report/deployed-workflows.mjs
@@ -155,7 +158,6 @@ jobs:
       - name: Collect durable dashboard records
         env:
           GITHUB_TOKEN: ${{ github.token }}
-          REPORT_ALLOWED_REPOS: ${{ github.repository }}
           REPORT_CONTROL_SETTINGS: ${{ runner.temp }}/control-settings.json
           REPORT_INVENTORY: ${{ runner.temp }}/control-plane-inventory.json
           REPORT_DEPLOYED_WORKFLOWS: ${{ runner.temp }}/deployed-workflows.json

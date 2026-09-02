@@ -135,13 +135,13 @@ export default defineConfig({
             { label: "Quickstart", link: "/getting-started/" },
             { label: "Package catalog", link: "/catalog/" },
             { label: "Configure authentication", link: "/authentication/" },
-            { label: "Optional bootstrap setup", link: "/bootstrap-configuration/" },
           ],
         },
         {
           label: "Run safely",
           items: [
             { label: "Control plane status", link: "/cao/" },
+            { label: "Admission gates", link: "/admission/" },
             { label: "Roll out an operation", link: "/rollout-and-routing/" },
             { label: "Monitor and recover", link: "/operations/" },
             { label: "Emergency stop", link: "/operations/#emergency-stop" },

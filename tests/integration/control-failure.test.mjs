@@ -1,17 +1,17 @@
 import assert from "node:assert/strict";
 import { spawnSync } from "node:child_process";
-import { chmodSync, copyFileSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { chmodSync, mkdirSync, mkdtempSync, readFileSync, realpathSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import test from "node:test";
 import {
   controlEnvironment,
   controlPolicy,
-  controlPrecomputeScript,
+  controlProgram,
   root,
 } from "../helpers/control-precompute.mjs";
 
-const script = controlPrecomputeScript();
+const program = controlProgram();
 
 const failures = [
   ["malformed target repository", { TARGET_REPO: "not-a-repository" }, "target_repo must use owner/repository form"],
@@ -46,19 +46,11 @@ function runPrecompute(overrides = {}, ghScript = "printf 'true\\n'", policy = c
   const gh = join(directory, "gh");
   const githubEnvironment = join(directory, "github-env");
   const safeOutputs = join(directory, "safe-outputs.jsonl");
-  const resolverDirectory = join(directory, ".github", "aw", "control-policy");
-  mkdirSync(resolverDirectory, { recursive: true });
-  copyFileSync(
-    join(root, ".github", "scripts", "control-policy", "resolve.mjs"),
-    join(resolverDirectory, "resolve.mjs"),
-  );
+  const runnerTemp = join(realpathSync(directory), "runner-temp");
+  const admissionDirectory = join(runnerTemp, "cao");
+  const admissionEffective = join(admissionDirectory, "effective-policy.json");
+  mkdirSync(admissionDirectory, { recursive: true });
   writeFileSync(gh, `#!/bin/sh
-case "$*" in
-  *repos/acme/control/contents/.github/central-agentic-ops.json*)
-    printf '%s' "$CONTROL_POLICY" | base64
-    exit 0
-    ;;
-esac
 ${ghScript}
 `);
   writeFileSync(githubEnvironment, "");
@@ -66,16 +58,29 @@ ${ghScript}
   chmodSync(gh, 0o755);
 
   try {
-    return spawnSync("bash", ["-c", script], {
+    const env = controlEnvironment({
+      PATH: `${directory}:${process.env.PATH}`,
+      GITHUB_ENV: githubEnvironment,
+      GH_AW_SAFE_OUTPUTS: safeOutputs,
+      RUNNER_TEMP: runnerTemp,
+      ...overrides,
+    });
+
+    const resolve = spawnSync("node", [program, "resolve-policy", "-"], {
       cwd: directory,
       encoding: "utf8",
-      env: controlEnvironment({
-        PATH: `${directory}:${process.env.PATH}`,
-        CONTROL_POLICY: policy,
-        GITHUB_ENV: githubEnvironment,
-        GH_AW_SAFE_OUTPUTS: safeOutputs,
-        ...overrides,
-      }),
+      input: policy,
+      env,
+    });
+    if (resolve.status !== 0) {
+      return resolve;
+    }
+    writeFileSync(admissionEffective, resolve.stdout);
+
+    return spawnSync("node", [program, "precompute"], {
+      cwd: directory,
+      encoding: "utf8",
+      env,
     });
   } finally {
     rmSync(directory, { recursive: true, force: true });
@@ -117,7 +122,7 @@ for (const role of ["orchestrator", "worker"]) {
       assert.equal(result.status, 0, result.stderr);
       const precompute = JSON.parse(readFileSync("/tmp/gh-aw/agent/control-precompute.json", "utf8"));
       assert.equal(precompute.control_role, role);
-      assert.equal(precompute.enabled, "false");
+      assert.equal(precompute.enabled, false);
       assert.equal(precompute.reason, "package-disabled");
       assert.equal(precompute.effective_max_repos, 0);
       assert.deepEqual(precompute.candidate_repositories, []);
@@ -146,7 +151,7 @@ test("control precompute loads declared worker workflows from policy", () => {
   const precompute = JSON.parse(readFileSync("/tmp/gh-aw/agent/control-precompute.json", "utf8"));
   assert.equal(precompute.authorized, true);
   assert.equal(precompute.worker, "release-train-updater");
-  assert.equal(precompute.worker_enabled, "true");
+  assert.equal(precompute.worker_enabled, true);
   assert.equal(precompute.safe_output_mode, "review");
 });
 
@@ -171,8 +176,8 @@ test("control precompute writes a complete review worker envelope", () => {
     package: "dependabot",
     bundle: "dependabot",
     worker: "release-train-updater",
-    enabled: "true",
-    worker_enabled: "true",
+    enabled: true,
+    worker_enabled: true,
     worker_max_mode: "review",
     target_repo: "acme/target",
     safe_output_mode: "review",

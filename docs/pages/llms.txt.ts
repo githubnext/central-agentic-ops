@@ -7,7 +7,6 @@ const documentationOrder = [
   "architecture",
   "configuration",
   "authentication",
-  "bootstrap-configuration",
   "rollout-and-routing",
   "execution-and-safety",
   "orchestrators-and-workers",

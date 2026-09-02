@@ -73,10 +73,16 @@ gh aw --help
 
 ### Step 3 - Add the Dependabot operation
 
-From the control repository, install the Dependabot operation package from a pinned catalog release. Replace `<catalog-release>` with a release tag or full commit SHA:
+From the control repository, install the Dependabot operation package and CAO runtime from the same pinned catalog release. Replace `<catalog-release>` with a release tag or full commit SHA:
 
 ```bash
-gh aw add-wizard githubnext/central-agentic-ops/dependabot@<catalog-release>
+CAO_REF="<catalog-release>"
+gh aw add "githubnext/central-agentic-ops/dependabot@${CAO_REF}"
+mkdir -p .github/cao
+for cao_file in control.mjs policy.mjs; do
+	gh api --method GET "repos/githubnext/central-agentic-ops/contents/.github/cao/${cao_file}" \
+		-f ref="$CAO_REF" --jq '.content' | base64 -d > ".github/cao/${cao_file}"
+done
 ```
 
 The package installs:
@@ -86,7 +92,9 @@ The package installs:
 3. shared authentication, routing, and fail-closed controls;
 4. generated `.lock.yml` workflows that GitHub Actions executes.
 
-The installed operation is runnable after its package and worker workflow identities are declared in the control policy. Declared workers are enabled unless their policy sets `enabled: false`.
+The three `.github/cao` files are control-repository-owned policy runtime, not gh-aw package resources. Commit them with the workflows and policy so every run resolves one atomic revision. See [Admission Gates](admission.md) for the checks this runtime performs before activation.
+
+The installed operation is runnable after its package and worker workflow identities are declared in the control policy. Declared workers are enabled unless their policy sets `enabled: false`; undeclared or disabled identities are skipped by admission before agent execution.
 
 Do not edit generated `.lock.yml` files directly. Update their Markdown sources and regenerate them with `gh aw compile`.
 

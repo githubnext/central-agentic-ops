@@ -20,6 +20,10 @@ on:
         type: string
       batch_label:
         type: string
+  permissions:
+    contents: read
+    actions: read
+
 checkout:
   repository: ${{ inputs.target_repo }}
   github-token: ${{ secrets.GH_AW_GITHUB_TOKEN || secrets.GITHUB_TOKEN }}
@@ -31,6 +35,15 @@ env:
   SAFE_OUTPUT_REPO: ${{ (inputs.safe_output_mode || 'review') == 'review' && (inputs.safe_output_repo || github.repository) || inputs.target_repo }}
   TARGET_REPO: ${{ inputs.target_repo || '' }}
 environment: central-agentic-ops
+
+jobs:
+  pre-activation:
+    outputs:
+      cao_authorized: ${{ steps.cao_admission.outputs.authorized }}
+      cao_reason: ${{ steps.cao_admission.outputs.reason }}
+
+if: needs.pre_activation.outputs.cao_authorized == 'true'
+
 imports:
   - uses: shared/control.md
     with:
@@ -40,6 +53,7 @@ imports:
 permissions:
   actions: read
   contents: read
+  copilot-requests: write
   issues: read
 tracker-id: self-care-dashboard-review
 max-ai-credits: 400

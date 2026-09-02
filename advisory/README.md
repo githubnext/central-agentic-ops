@@ -22,7 +22,7 @@ The package maintainer runs independently of repository dispatch. It updates the
 ## Install and Configure
 
 ```bash
-gh aw add-wizard githubnext/central-agentic-ops/advisory@<catalog-release>
+gh aw add githubnext/central-agentic-ops/advisory@<catalog-release>
 ```
 
 Configure the shared GitHub App or PAT described in the [authentication guide](../docs/authentication.md), then declare the package in the control repository's `.github/central-agentic-ops.json`:

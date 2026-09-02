@@ -9,8 +9,6 @@ includes:
     destination: .github/workflows/dashboard-build.yml
     kind: action-workflow
 resources:
-  - source: control-policy/resolve.mjs
-    destination: .github/aw/control-policy/resolve.mjs
   - source: report/aic-usage.mjs
     destination: .github/aw/dashboard/report/aic-usage.mjs
   - source: report/deployed-workflows.mjs

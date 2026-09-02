@@ -17,7 +17,7 @@ const manifestUrl = `${repositoryBase}/blob/main/${entry.slug}/${entry.manifestF
 const editUrl = entry.readmePath
   ? `${repositoryBase}/edit/main/${entry.readmePath}`
   : `${repositoryBase}/edit/main/${entry.slug}/${entry.manifestFile}`;
-const installCommand = `gh aw add-wizard githubnext/central-agentic-ops/${entry.slug}@<catalog-release>`;
+const installCommand = `gh aw add githubnext/central-agentic-ops/${entry.slug}@<catalog-release>`;
 const ReadmeContent = entry.ReadmeContent;
 ---
 

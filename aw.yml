@@ -1,12 +1,6 @@
 name: Central Agentic Ops
 description: Central agentic workflow control plane for reusable packages at the organization level
 min-version: v0.88.0
-config:
-  - type: copilot-auth
-    secret: COPILOT_GITHUB_TOKEN
-    strategy: prompt-if-actions-auth-unavailable
-  - type: handoff
-    message: If this repository has no root AGENTS.md, copy .github/aw/default-AGENTS.md to AGENTS.md. Preserve existing root agent instructions for explicit review.
 includes:
   - .github/workflows/ambient-context-agents-md-curator.md
   - .github/workflows/ambient-context-skills-curator.md
@@ -19,15 +13,8 @@ includes:
   - .github/workflows/optimization-ai-credit-auditor.md
   - .github/workflows/optimization-ai-credit-optimizer.md
   - .github/workflows/optimization.md
-  - .github/workflows/self-care-accessibility-checker.md
-  - .github/workflows/self-care-code-improvement.md
-  - .github/workflows/self-care-dashboard-review.md
-  - .github/workflows/self-care-primer-brand-checker.md
-  - .github/workflows/self-care.md
 resources:
   - source: AGENTS.md
     destination: .github/aw/default-AGENTS.md
   - source: .github/aw/instructions.md
     destination: .github/aw/instructions.md
-  - source: .github/scripts/control-policy/resolve.mjs
-    destination: .github/aw/control-policy/resolve.mjs

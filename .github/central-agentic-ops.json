@@ -8,9 +8,17 @@
         "github"
       ],
       "allowed-repositories": [
+        "github/gh-aw",
+        "github/gh-aw-firewall",
+        "github/gh-aw-mcpg",
+        "github/gh-aw-actions",
+        "github/gh-aw-threat-detection",
         "githubnext/central-agentic-ops",
-        "github/gh-aw"
+        "githubnext/gh-aw-workshop"
       ]
+    },
+    "defaults": {
+      "max-repositories": 7
     },
     "web": {
       "favicon": "./favicon.svg"

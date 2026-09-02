@@ -30,6 +30,9 @@ on:
         options:
           - review
           - live
+  permissions:
+    contents: read
+    actions: read
 
 env:
   GH_AW_SAFE_OUTPUT_MODE: ${{ inputs.safe_output_mode || 'review' }}
@@ -38,6 +41,14 @@ env:
   TARGET_REPO: ${{ inputs.target_repo || '' }}
 
 environment: central-agentic-ops
+
+jobs:
+  pre-activation:
+    outputs:
+      cao_authorized: ${{ steps.cao_admission.outputs.authorized }}
+      cao_reason: ${{ steps.cao_admission.outputs.reason }}
+
+if: needs.pre_activation.outputs.cao_authorized == 'true'
 
 imports:
   - uses: shared/control.md
@@ -51,9 +62,10 @@ imports:
 permissions:
   contents: read
   actions: read
+  copilot-requests: write
 
 engine: copilot
-model: gpt-5.4
+model: copilot/gpt-5.4
 
 strict: true
 

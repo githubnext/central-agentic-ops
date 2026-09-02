@@ -31,7 +31,6 @@ const advisoryExpectedFiles = [
   ".github/workflows/advisory-package-maintainer.md",
   ".github/workflows/advisory-uk-ai-operational-resilience.md",
   ".github/workflows/uk-ai-advisory.md",
-  ".github/workflows/shared/control-precompute.md",
   ".github/workflows/shared/control.md",
 ];
 const craExpectedFiles = [
@@ -53,7 +52,6 @@ const craExpectedFiles = [
   ".github/workflows/eu-cra-compliance-vulnerability-handling-auditor.md",
   ".github/workflows/eu-cra-compliance.md",
   ".github/workflows/graders/eu-cra-compliance-package-maintainer-operational-value.sh",
-  ".github/workflows/shared/control-precompute.md",
   ".github/workflows/shared/control.md",
 ];
 const dashboardExpectedFiles = [...readFileSync(
@@ -66,7 +64,6 @@ const selfCareExpectedFiles = [
   ".github/workflows/self-care-dashboard-review.md",
   ".github/workflows/self-care-primer-brand-checker.md",
   ".github/workflows/self-care.md",
-  ".github/workflows/shared/control-precompute.md",
   ".github/workflows/shared/control.md",
 ];
 const softwareDevelopmentPracticesExpectedFiles = [
@@ -74,7 +71,6 @@ const softwareDevelopmentPracticesExpectedFiles = [
   ".github/aw/software-development-practices/software-development-guidance-operational-value-runtime.bash",
   ".github/graders/software-development-practices-github-well-architected-operational-value.sh",
   ".github/graders/software-development-practices-nist-ssdf-operational-value.sh",
-  ".github/workflows/shared/control-precompute.md",
   ".github/workflows/shared/control.md",
   ".github/workflows/software-development-practices-github-well-architected.md",
   ".github/workflows/software-development-practices-nist-ssdf.md",
@@ -123,19 +119,22 @@ function installPackage(source) {
   }
 }
 
-test("gh aw add requires guided setup for the root package", { timeout: 180_000 }, () => {
-  const consumer = mkdtempSync(join(tmpdir(), "central-agentic-ops-package-"));
+test("gh aw add installs the root package without rewriting Copilot authentication", { timeout: 180_000 }, () => {
+  const consumer = installPackage(packageSource);
   try {
-    run("git", ["init", "--quiet"], consumer);
-    assert.throws(
-      () => run("gh", ["aw", "add", packageSource, "--force", "--no-security-scanner"], consumer),
-      (error) => {
-        assert.match(error.stderr, /declares aw\.yml config/);
-        assert.ok(error.stderr.includes(`gh aw add-wizard ${packageSource}`));
-        return true;
-      },
-    );
-    assert.ok(!existsSync(join(consumer, ".github")), "rejected root install must not leave partial files");
+    assert.ok(existsSync(join(consumer, ".github", "aw", "default-AGENTS.md")));
+    for (const workflowId of [
+      "ambient-context",
+      "aw-maintenance",
+      "dependabot",
+      "optimization",
+    ]) {
+      const source = readFileSync(join(consumer, ".github", "workflows", `${workflowId}.md`), "utf8");
+      const lock = readFileSync(join(consumer, ".github", "workflows", `${workflowId}.lock.yml`), "utf8");
+      assert.match(source, /copilot-requests: write/);
+      assert.match(lock, /COPILOT_GITHUB_TOKEN: \$\{\{ github\.token \}\}/);
+      assert.doesNotMatch(lock, /secrets\.COPILOT_GITHUB_TOKEN/);
+    }
   } finally {
     rmSync(consumer, { recursive: true, force: true });
   }
@@ -313,7 +312,6 @@ test("gh aw add --force restores dashboard workflows, producers, and renderer as
     writeFileSync(deployPath, `${deployWorkflow}\n# local integration-test change\n`);
 
     const removedFiles = [
-      ".github/aw/control-policy/resolve.mjs",
       ".github/aw/dashboard/report/records.mjs",
       ".github/aw/dashboard/site/index.html",
       ".github/workflows/dashboard-build.yml",
@@ -352,7 +350,6 @@ test("gh aw update replaces workflows and restores package-owned assets", { time
 
     const removedFiles = [
       ".github/workflows/dependabot-release-train-updater.md",
-      ".github/workflows/shared/control-precompute.md",
       ".github/workflows/shared/control.md",
     ];
     for (const relativePath of removedFiles) {

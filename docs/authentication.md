@@ -5,8 +5,6 @@ description: Choose and configure least-privilege GitHub App, fine-grained PAT, 
 
 Choose the least-powerful authentication profile that can satisfy the effective target scope, package API requirements, mode, and review destination. Control-repository visibility does not determine target access. Use the built-in workflow token for the bounded cases below, prefer a GitHub App for long-lived cross-repository operation, and treat a fine-grained personal access token (PAT) as a consented fallback with additional eligibility limits.
 
-Package maintainers can optionally turn these settings into a guided `gh aw add-wizard` flow with [`aw.yml` bootstrap configuration](bootstrap-configuration.md).
-
 | Your use case | Credential |
 | --- | --- |
 | Self-review against the control repository | Built-in `GITHUB_TOKEN` |
@@ -36,24 +34,13 @@ Choose a GitHub App unless the built-in token fully covers the bounded run. GitH
 
 ## Copilot Engine Authentication
 
-Copilot inference authentication is separate from GitHub API and target-repository authentication. Prefer organization billing through the workflow's `copilot-requests: write` permission. When centralized organization billing is unavailable, use a user-owned fine-grained PAT stored as the control repository's `COPILOT_GITHUB_TOKEN` Actions secret.
+Copilot inference authentication is separate from GitHub API and target-repository authentication. CAO requires organization billing: every Copilot-backed workflow declares `copilot-requests: write`, and gh-aw compiles it to use the built-in `${{ github.token }}` for inference. This static workflow contract supports non-interactive `gh aw add` without install-time source rewriting.
 
-The Copilot PAT must use the user's personal account as its resource owner, grant the account permission **Copilot Requests: Read**, and belong to a user with an active Copilot license. Inference is attributed to and limited by that user's Copilot entitlement. Obtain explicit consent because the token is user-bound, longer-lived than the workflow token, and requires manual rotation and revocation.
-
-The root CAO manifest delegates one exclusive install-time choice to `gh aw add-wizard`:
-
-1. When organization billing is available, select the recommended organization profile. The wizard adds `copilot-requests: write` to every installed Copilot orchestrator and worker before compiling it. Generated jobs use the built-in workflow token, and the wizard does not request `COPILOT_GITHUB_TOKEN`.
-2. When organization billing is unavailable, select the PAT profile only after explaining the boundary and obtaining consent. The wizard leaves `copilot-requests: write` absent, collects `COPILOT_GITHUB_TOKEN` through a hidden prompt, and compiles the workflows to use that secret.
-
-If the billing check is inconclusive, do not report organization billing as available. Use it only after confirmation from an organization administrator; otherwise offer the PAT profile. Verify all installed Copilot workflows use the selected profile before committing them. A workflow must not combine `copilot-requests: write` with a PAT-first expression or use runtime token precedence.
-
-The catalog's root workflow sources remain authentication-neutral so the wizard can apply this choice consistently. Plain `gh aw add` does not run the guided configuration and is not the root CAO setup path.
-
-Do not use a classic PAT, OAuth token, GitHub App installation token, `GH_AW_GITHUB_TOKEN`, or a target-access PAT as `COPILOT_GITHUB_TOKEN`. Those credentials serve different authorization boundaries.
+Before installation, require API evidence of an active organization entitlement or explicit confirmation from an organization administrator when the billing endpoint is inaccessible or inconclusive. Stop when organization billing is unavailable. CAO does not support `COPILOT_GITHUB_TOKEN` inference fallback, runtime token precedence, or mixed authentication profiles. A GitHub App, `GH_AW_GITHUB_TOKEN`, OAuth token, or target-access PAT serves a different authorization boundary and cannot authenticate Copilot inference for CAO.
 
 ## Policy
 
-Authentication is defined once in `.github/workflows/shared/control.md` and inherited by Orchestrator and worker workflows. Workflow-local GitHub App blocks should not be added unless a future Agentic Workflow has a documented isolation requirement that shared control cannot satisfy.
+Target-repository authentication is defined once in `.github/workflows/shared/control.md` and inherited by Orchestrator and worker workflows. Copilot inference permission remains explicit in every Copilot-backed workflow. Workflow-local GitHub App blocks should not be added unless a future Agentic Workflow has a documented isolation requirement that shared control cannot satisfy.
 
 The supported control-plane credentials are:
 

@@ -29,7 +29,7 @@ The orchestrator workflow can dispatch no more than 50 worker workflows in one r
 Install the package into a new private control repository owned by an organization:
 
 ```bash
-gh aw add-wizard githubnext/central-agentic-ops/dependabot@<catalog-release>
+gh aw add githubnext/central-agentic-ops/dependabot@<catalog-release>
 ```
 
 The package is runnable after credentials, when needed, and checked-in policy are configured.
