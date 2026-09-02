@@ -295,7 +295,11 @@ test('DLS-DOC-014 horizon help is available on hover and keyboard focus', async 
           title: 'Horizon dashboard',
           horizon: {
             label: 'Horizon',
-            description: 'Data is included from the start up to the exclusive end.'
+            tooltip: {
+              label: 'Horizon details',
+              description: 'Data is included from the start up to the exclusive end.',
+              icon: 'question'
+            }
           },
           defaults: { time: { range: '1w' } },
           pages: [{ id: 'runs', kind: 'built-in', page: 'runs', title: 'Runs' }]

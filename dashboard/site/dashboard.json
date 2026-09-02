@@ -7,7 +7,11 @@
     "repository": "githubnext/central-agentic-ops",
     "horizon": {
       "label": "Horizon",
-      "description": "Dashboard data is included from the start time up to, but not including, the end time."
+      "tooltip": {
+        "label": "Horizon details",
+        "description": "Dashboard data is included from the start time up to, but not including, the end time.",
+        "icon": "question"
+      }
     },
     "defaults": {
       "time": {

@@ -7,7 +7,7 @@ import { h } from './dom.js';
 import { getPrimerStyles } from './styles.js';
 import { octicon, agenticWorkflowMark } from './octicons.js';
 import { renderDataStateMetrics } from './components/data-state.js';
-import { formatMediumUtcDateTime } from './components/ui-primitives.js';
+import { formatMediumUtcDateTime, renderTooltip } from './components/ui-primitives.js';
 import { customViewAvailabilityMessage, renderCustomViewStateDetails, renderLayoutSectionChrome, renderPageSection } from './components/view-chrome.js';
 import { toNumber } from './view-formatters.js';
 import { findLink } from './components/link-content.js';
@@ -58,7 +58,7 @@ import { dashboardHorizonHours, formatDashboardHorizon, resolveDashboardHorizon 
  */
 
 /**
- * @typedef {{ id: string, title: string, description?: string, defaults?: Record<string, unknown>, units?: Record<string, { name: string, symbol: string, significant: number }>, pages: Array<PresentableBuiltInPage | PresentableCustomPage>, ['github-url-base']?: string, repository?: string, navigation?: PresentableNavigationSection[], horizon?: { label: string, description: string } }} PresentableDashboard
+ * @typedef {{ id: string, title: string, description?: string, defaults?: Record<string, unknown>, units?: Record<string, { name: string, symbol: string, significant: number }>, pages: Array<PresentableBuiltInPage | PresentableCustomPage>, ['github-url-base']?: string, repository?: string, navigation?: PresentableNavigationSection[], horizon?: { label: string, tooltip: { label: string, description: string, icon?: string } } }} PresentableDashboard
  */
 
 /**
@@ -456,32 +456,19 @@ function renderDashboardHorizon(dashboard, dashboardDefaults, horizonRange, eval
     { className: 'dashboard-horizon', 'data-dashboard-evaluated-at': evaluatedAt },
     h('span', null, `${label} ${duration}`),
     horizon
-      ? h(
-        'span',
-        { className: 'horizon-help' },
-        h(
-          'button',
-          {
-            type: 'button',
-            className: 'horizon-help-trigger',
-            'aria-label': `${label} details`,
-            'aria-describedby': tooltipId
-          },
-          octicon('question')
-        ),
-        h(
+      ? renderTooltip({
+        id: tooltipId,
+        label: horizon.tooltip.label,
+        description: horizon.tooltip.description,
+        icon: octicon(horizon.tooltip.icon || 'question'),
+        content: h(
           'span',
-          { id: tooltipId, className: 'horizon-tooltip', role: 'tooltip' },
-          h('span', { className: 'horizon-tooltip-description' }, horizon.description),
-          h(
-            'span',
-            { className: 'horizon-tooltip-values' },
-            h('span', null, h('strong', null, 'Start'), h('time', { dateTime: start }, `${formatReportDate(start)} UTC`)),
-            h('span', null, h('strong', null, 'End'), h('time', { dateTime: end }, `${formatReportDate(end)} UTC`)),
-            h('span', null, h('strong', null, 'Duration'), duration)
-          )
+          { className: 'horizon-tooltip-values' },
+          h('span', null, h('strong', null, 'Start'), h('time', { dateTime: start }, `${formatReportDate(start)} UTC`)),
+          h('span', null, h('strong', null, 'End'), h('time', { dateTime: end }, `${formatReportDate(end)} UTC`)),
+          h('span', null, h('strong', null, 'Duration'), duration)
         )
-      )
+      })
       : null
   );
 }

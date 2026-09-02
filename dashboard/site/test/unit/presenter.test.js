@@ -520,8 +520,8 @@ describe('presenter built-in and custom pages', () => {
     expect(authoritativeDashboardDocument.dashboard.defaults?.time).toEqual({ range: '1w' });
     expect(rendered.querySelector('.dashboard-horizon > span:first-child')?.textContent).toBe('Horizon 1 week');
     expect(rendered.querySelectorAll('.dashboard-horizon')).toHaveLength(1);
-    const horizonHelp = rendered.querySelector('.horizon-help-trigger');
-    const horizonTooltip = rendered.querySelector('.horizon-tooltip');
+    const horizonHelp = rendered.querySelector('.dashboard-horizon .tooltip-trigger');
+    const horizonTooltip = rendered.querySelector('.dashboard-horizon .tooltip-content');
     expect(horizonHelp?.getAttribute('aria-label')).toBe('Horizon details');
     expect(horizonHelp?.getAttribute('aria-describedby')).toBe(horizonTooltip?.id);
     expect(horizonTooltip?.getAttribute('role')).toBe('tooltip');
@@ -544,7 +544,11 @@ describe('presenter built-in and custom pages', () => {
           title: 'Horizon Dashboard',
           horizon: {
             label: 'Data horizon',
-            description: 'Data is included from the start up to the exclusive end.'
+            tooltip: {
+              label: 'Data horizon details',
+              description: 'Data is included from the start up to the exclusive end.',
+              icon: 'question'
+            }
           },
           defaults: { time: { range: '1w' } },
           pages: [{
@@ -588,11 +592,11 @@ describe('presenter built-in and custom pages', () => {
     expect(table?.textContent).not.toContain('expired');
     expect(rendered.querySelector('.dashboard-horizon')?.getAttribute('data-dashboard-evaluated-at')).toBe('2026-09-01T12:00:00Z');
     expect(rendered.querySelector('.dashboard-horizon > span:first-child')?.textContent).toBe('Data horizon 1 week');
-    expect(rendered.querySelector('.horizon-tooltip')?.textContent).toBe(
+    expect(rendered.querySelector('.dashboard-horizon .tooltip-content')?.textContent).toBe(
       'Data is included from the start up to the exclusive end.StartAug 25, 2026, 12:00 PM UTCEndSep 1, 2026, 12:00 PM UTCDuration1 week'
     );
-    expect(rendered.querySelector('.horizon-tooltip time:first-of-type')?.getAttribute('datetime')).toBe('2026-08-25T12:00:00.000Z');
-    expect(rendered.querySelectorAll('.horizon-tooltip time')[1]?.getAttribute('datetime')).toBe('2026-09-01T12:00:00Z');
+    expect(rendered.querySelector('.dashboard-horizon .tooltip-content time:first-of-type')?.getAttribute('datetime')).toBe('2026-08-25T12:00:00.000Z');
+    expect(rendered.querySelectorAll('.dashboard-horizon .tooltip-content time')[1]?.getAttribute('datetime')).toBe('2026-09-01T12:00:00Z');
   });
 
   it('renders the custom JSON-composed Security page from reusable summary and signal primitives', () => {
