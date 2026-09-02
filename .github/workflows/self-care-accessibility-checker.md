@@ -3,6 +3,7 @@ emoji: "♿"
 name: "SelfCare / Accessibility Checker"
 description: Audits the Central Agentic Ops documentation web interface for accessibility barriers using axe-core, keyboard traversal, and rendered-page evidence
 on:
+  roles: all
   workflow_dispatch:
     inputs:
       target_repo:

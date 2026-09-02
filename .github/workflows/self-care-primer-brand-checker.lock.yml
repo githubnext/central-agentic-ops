@@ -73,6 +73,7 @@ on:
   # permissions: # Permissions applied to pre-activation job
   # actions: read
   # contents: read
+  # roles: all # Roles processed as role check in pre-activation job
   # skip-if-match: is:pr is:open in:title "Primer branding" # Skip-if-match processed as search check in pre-activation job
   workflow_dispatch:
     inputs:
@@ -1819,7 +1820,7 @@ jobs:
     env:
       GH_AW_RUNTIME_FEATURES: ${{ vars.GH_AW_RUNTIME_FEATURES }}
     outputs:
-      activated: ${{ steps.check_membership.outputs.is_team_member == 'true' && steps.check_skip_if_match.outputs.skip_check_ok == 'true' }}
+      activated: ${{ steps.check_skip_if_match.outputs.skip_check_ok == 'true' }}
       cao_authorized: ${{ steps.cao_admission.outputs.authorized }}
       cao_reason: ${{ steps.cao_admission.outputs.reason }}
       matched_command: ''
@@ -1920,20 +1921,6 @@ jobs:
           name: cao-control-precompute
           path: /tmp/gh-aw/agent/control-precompute.json
           retention-days: 1.0
-      - name: Check team membership for workflow
-        id: check_membership
-        uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
-        env:
-          GH_AW_REQUIRED_ROLES: "admin,maintainer,write"
-        with:
-          github-token: ${{ secrets.GITHUB_TOKEN }}
-          script: |
-            const path = require('path');
-            const actionsDir = path.join(process.env.RUNNER_TEMP, 'gh-aw', 'actions');
-            const { setupGlobals } = require(path.join(actionsDir, 'setup_globals.cjs'));
-            setupGlobals(core, github, context, exec, io, getOctokit);
-            const { main } = require(path.join(actionsDir, 'check_membership.cjs'));
-            await main();
       - name: Generate GitHub App token for skip-if checks
         id: pre-activation-app-token
         env:

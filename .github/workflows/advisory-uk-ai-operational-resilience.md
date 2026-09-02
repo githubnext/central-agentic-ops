@@ -6,6 +6,7 @@ max-ai-credits: 600
 max-daily-ai-credits: -1
 
 on:
+  roles: all
   workflow_dispatch:
     inputs:
       target_repo:

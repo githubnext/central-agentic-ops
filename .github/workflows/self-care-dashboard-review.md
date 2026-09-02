@@ -2,6 +2,7 @@
 name: "SelfCare / Dashboard Review"
 description: Reviews the deployed CAO dashboard through deterministic checks and executive persona journeys
 on:
+  roles: all
   workflow_dispatch:
     inputs:
       target_repo:
