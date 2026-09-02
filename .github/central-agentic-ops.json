@@ -89,7 +89,7 @@
         }
       },
       "software-development-practices": {
-        "icon": "check-circle",
+        "icon": "code",
         "workers": {
           "github-well-architected": {
             "workflow": "software-development-practices-github-well-architected"

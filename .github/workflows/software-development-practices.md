@@ -58,8 +58,6 @@ permissions:
   copilot-requests: write
   issues: read
   pull-requests: read
-  security-events: read
-  vulnerability-alerts: read
 
 engine:
   id: pi
@@ -71,7 +69,7 @@ tools:
   cli-proxy: true
   github:
     mode: gh-proxy
-    toolsets: [repos, issues, pull_requests, actions, dependabot, code_security, security_advisories]
+    toolsets: [repos, issues, pull_requests, actions]
 
 network:
   allowed:
@@ -116,7 +114,9 @@ Resolve enabled workers from precompute. Dispatch one repository-level responsib
 - `software-development-practices-github-well-architected` reviews observable evidence across the current GitHub Well-Architected pillars and produces one consolidated improvement issue.
 - `software-development-practices-nist-ssdf` reviews observable evidence against the current final NIST SSDF practices and produces one consolidated improvement issue.
 
-Both workers are useful for active software repositories. Skip a worker only when its authoritative source or required repository surface is clearly inapplicable or an equivalent current review already exists. Calculate the proposed dispatch count across selected repositories and enabled workers before dispatching. Keep the total at or below 20, reduce repository or worker selection if needed, and record every dispatch or skip rationale.
+Dispatch `github-well-architected` when a repository has meaningful collaboration, workflow, GitHub configuration, or architecture evidence. Dispatch `nist-ssdf` when it ships or supports software with a security-relevant surface such as releases, packages, dependencies, builds, or vulnerability handling. Dispatch both only when both conditions hold.
+
+Calculate the proposed dispatch count across selected repositories and enabled workers. Keep the total at or below 20, reduce repository or worker selection if needed, and record every dispatch or skip rationale. Workers own source-aware duplicate detection because the orchestrator must not assess framework currency.
 
 ## Completion
 

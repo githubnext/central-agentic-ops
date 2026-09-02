@@ -1251,22 +1251,33 @@ test("Software Development Practices Advisor preserves evidence and advisory bou
   assert.match(orchestrator, /workflows:\n\s+- software-development-practices-github-well-architected\n\s+- software-development-practices-nist-ssdf/);
   assert.match(orchestrator, /Use bounded two-stage discovery/);
   assert.match(orchestrator, /Keep the total at or below 20/);
+  assert.match(orchestrator, /job-discriminator: \$\{\{ github\.run_id \}\}/);
+  assert.match(orchestrator, /toolsets: \[repos, issues, pull_requests, actions\]/);
+  assert.doesNotMatch(orchestrator, /security-events: read|vulnerability-alerts: read|web-fetch:/);
+  assert.doesNotMatch(orchestrator, /^\s+create-issue:/m);
 
   for (const source of [orchestrator, githubWorker, nistWorker, readme]) {
     assert.match(source, /advisory and non-binding/i);
-    assert.match(source, /no guarantee of completeness, correctness/i);
     assert.match(source, /human review/i);
+  }
+  for (const source of [orchestrator, readme]) {
+    assert.match(source, /no guarantee of completeness, correctness/i);
   }
 
   for (const worker of [githubWorker, nistWorker]) {
     assert.match(worker, /OBSERVED.*PARTIAL.*GAP_FOUND.*HUMAN_REVIEW_REQUIRED.*NOT_ASSESSED.*INCOMPLETE/s);
     assert.match(worker, /analyzed commit SHA/);
-    assert.match(worker, /create-issue:[\s\S]*?close-older-issues: true[\s\S]*?max: 1/);
-    assert.match(worker, /Operational-value evaluation is pending post-adoption evidence and is intentionally not registered/);
+    assert.match(worker, /create-issue:[\s\S]*?close-older-issues: true[\s\S]*?close-older-key:.*inputs\.target_repo[\s\S]*?max: 1/);
+    assert.match(worker, /^\s+web-fetch:$/m);
     assert.doesNotMatch(worker, /^graders:/m);
   }
+  assert.match(readme, /Operational-value evaluators are pending post-adoption evidence and are intentionally not registered/);
 
   assert.match(githubWorker, /https:\/\/learn\.github\.com\/well-architected\//);
+  assert.match(githubWorker, /^\s+- wellarchitected\.github\.com$/m);
+  assert.match(githubWorker, /github\/github-well-architected/);
+  assert.match(githubWorker, /GitHub Docs, which the framework identifies as the implementation source of truth/);
+  assert.match(githubWorker, /Leave secure-development lifecycle practices.*to the NIST SSDF worker/);
   for (const pillar of ["Productivity", "Collaboration", "Application Security", "Governance", "Architecture"]) {
     assert.match(githubWorker, new RegExp(pillar));
   }
@@ -1275,6 +1286,8 @@ test("Software Development Practices Advisor preserves evidence and advisory bou
   assert.match(nistWorker, /https:\/\/csrc\.nist\.gov\/projects\/ssdf/);
   assert.match(nistWorker, /https:\/\/csrc\.nist\.gov\/pubs\/sp\/800\/218\/final/);
   assert.match(nistWorker, /https:\/\/doi\.org\/10\.6028\/NIST\.SP\.800-218/);
+  assert.match(nistWorker, /Build a complete practice-level matrix/);
+  assert.match(nistWorker, /Leave developer experience.*to the GitHub Well-Architected worker/);
   for (const group of ["Prepare the Organization", "Protect the Software", "Produce Well-Secured Software", "Respond to Vulnerabilities"]) {
     assert.match(nistWorker, new RegExp(group));
   }
