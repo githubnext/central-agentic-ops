@@ -445,8 +445,7 @@ test("threat detection runs for workers but not orchestrators", () => {
 
 test("worker workflows allow service-account dispatches", () => {
   const sharedControl = readFileSync(join(root, ".github", "workflows", "shared", "control.md"), "utf8");
-  assert.match(sharedControl, /^on:$/m);
-  assert.match(sharedControl, /^  bots: \["github-actions\[bot\]"\]$/m);
+  assert.match(sharedControl, /^on:\n  bots: \["github-actions\[bot\]"\]/m);
   const workflows = readdirSync(workflowsDirectory)
     .filter((name) => name.endsWith(".md"))
     .map((name) => [name, workflow(name)]);
