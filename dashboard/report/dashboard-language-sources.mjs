@@ -21,6 +21,7 @@ const sourceNames = [
   "findings",
   "operational-values",
 ];
+const AIC_TO_USD = 0.01;
 
 function repositoryParts(repository = "") {
   const [organization = "", name = ""] = repository.split("/");
@@ -294,7 +295,7 @@ function usageRows(usage) {
     "cache-write-tokens": null,
     "reasoning-tokens": null,
     aic: run.aic,
-    "estimated-usd": Number.isFinite(Number(run.aic)) ? Number(run.aic) * 0.01 : null,
+    "estimated-usd": Number.isFinite(Number(run.aic)) ? Number(run.aic) * AIC_TO_USD : null,
     "observed-at": run.createdAt || usage.generatedAt,
     "run-link": link("run", workflowRunUrl(run.repository, run.runId), `Run ${run.runId}`),
   }));

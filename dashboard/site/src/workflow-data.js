@@ -3,6 +3,7 @@
  */
 
 /** @typedef {Record<string, unknown>} Row */
+const AIC_TO_USD = 0.01;
 
 /**
  * @param {Record<string, import('./presenter.js').LogicalSourceInput>} sources
@@ -184,7 +185,7 @@ function summarizeModelUsage(usage) {
     summary.runs.add(runIdentity(row));
     summary.invocations += 1;
     summary['total-aic'] += aic;
-    summary['estimated-usd'] += aic * 0.01;
+    summary['estimated-usd'] += aic * AIC_TO_USD;
     summaries.set(model, summary);
   }
   return [...summaries.values()].map((summary) => ({
@@ -224,7 +225,7 @@ function summarizeEngineUsage(usage) {
     summary.runs.add(runIdentity(row));
     summary.invocations += 1;
     summary['total-aic'] += aic;
-    summary['estimated-usd'] += aic * 0.01;
+    summary['estimated-usd'] += aic * AIC_TO_USD;
     summaries.set(engine, summary);
   }
   return [...summaries.values()].map((summary) => {
