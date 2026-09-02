@@ -131,22 +131,25 @@ function renderPackageStatusGridElement(context) {
     h(
       'div',
       { className: 'package-status-grid' },
-      ...rows.map((row) => h(
-        'a',
-        {
-          className: `package-status-card package-status-${stringValue(row['inventory-state']) === 'inventory-ready' ? 'ready' : 'attention'}`,
-          href: stringValue(row.href)
-        },
-        h(
-          'header',
-          null,
-          h('strong', null, stringValue(row.title)),
-          h('span', { className: 'package-status-state' }, stringValue(row.inventory))
-        ),
-        h('span', { className: 'package-status-mode' }, capitalize(stringValue(row.mode))),
-        h('p', null, `${stringValue(row.workers)} worker workflow${Number(row.workers) === 1 ? '' : 's'}`),
-        h('footer', null, 'Open package')
-      ))
+      ...rows.map((row) => {
+        const workerCount = Number(row.workers);
+        return h(
+          'a',
+          {
+            className: `package-status-card package-status-${stringValue(row['inventory-state']) === 'inventory-ready' ? 'ready' : 'attention'}`,
+            href: stringValue(row.href)
+          },
+          h(
+            'header',
+            null,
+            h('strong', null, stringValue(row.title)),
+            h('span', { className: 'package-status-state' }, stringValue(row.inventory))
+          ),
+          h('span', { className: 'package-status-mode' }, capitalize(stringValue(row.mode))),
+          h('p', null, `${Number.isFinite(workerCount) ? workerCount : stringValue(row.workers)} worker workflow${workerCount === 1 ? '' : 's'}`),
+          h('footer', null, 'Open package')
+        );
+      })
     )
   );
 }
