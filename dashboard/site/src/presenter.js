@@ -560,6 +560,7 @@ function renderCustomPage(page, title, sources, units, dashboardDefaults) {
     ? renderFilterBar(page['filter-bar'], (filters) => {
       const revision = ++filterRevision;
       const result = filterDashboardSources(sources, filters);
+      /** @param {Record<string, LogicalSourceInput>} filteredSources */
       const apply = (filteredSources) => {
         if (revision !== filterRevision) return;
         const replacement = renderCustomPage(
@@ -569,10 +570,9 @@ function renderCustomPage(page, title, sources, units, dashboardDefaults) {
           units,
           dashboardDefaults
         );
-        root.replaceChildren(filterBar, ...replacement.children);
+        if (filterBar) root.replaceChildren(filterBar, ...replacement.children);
       };
-      if (result instanceof Promise) result.then(apply).catch(() => {});
-      else apply(result);
+      result.then(apply).catch(() => {});
     })
     : null;
   root = h(
@@ -599,10 +599,10 @@ function renderCustomPage(page, title, sources, units, dashboardDefaults) {
 /**
  * @param {Record<string, LogicalSourceInput>} sources
  * @param {Map<string, string[]>} filters
- * @returns {Record<string, LogicalSourceInput>|Promise<Record<string, LogicalSourceInput>>}
+ * @returns {Promise<Record<string, LogicalSourceInput>>}
  */
-function filterDashboardSources(sources, filters) {
-  const entries = Object.entries(sources).map(([name, source]) => {
+async function filterDashboardSources(sources, filters) {
+  const entries = await Promise.all(Object.entries(sources).map(async ([name, source]) => {
     if (!Array.isArray(source?.rows) || source.rows.length === 0) return [name, source];
     const predicates = [...filters].flatMap(([configuredField, values]) => {
       const field = configuredField === 'mode' ? 'rollout-mode' : configuredField;
@@ -611,15 +611,9 @@ function filterDashboardSources(sources, filters) {
         : [];
     });
     if (predicates.length === 0) return [name, source];
-    const result = processRows(source.rows, [{ op: 'filter', predicates }]);
-    if (result instanceof Promise) {
-      return result.then((rows) => [name, { ...source, rows }]);
-    }
-    return [name, { ...source, rows: result }];
-  });
-  if (entries.some((entry) => entry instanceof Promise)) {
-    return Promise.all(entries).then((resolved) => Object.fromEntries(resolved));
-  }
+    const rows = await processRows(source.rows, [{ op: 'filter', predicates }]);
+    return [name, { ...source, rows }];
+  }));
   return Object.fromEntries(entries);
 }
 

@@ -1049,11 +1049,11 @@ test('DLS-PAGE-017 renders an editable filter bar and applies changes automatica
   await expect(filterInput).toHaveValue('mode:review mode:live');
   await expect(filterBar.getByText('All recorded')).toBeVisible();
   await expect(filterBar.getByRole('link', { name: 'Export JSON' })).toHaveCount(0);
-  await expect(page.locator('[data-page-id="cost"] .metric-value')).toHaveText('2');
+  await expect(page.locator('[data-page-id="cost"] [data-metric-value="invocation"]')).toHaveText('2');
 
   await filterInput.fill('mode:live');
   await expect(filterBar.locator('.count-badge')).toHaveText('1');
-  await expect(page.locator('[data-page-id="cost"] .metric-value')).toHaveText('1');
+  await expect(page.locator('[data-page-id="cost"] [data-metric-value="invocation"]')).toHaveText('1');
 
   await page.setViewportSize({ width: 400, height: 900 });
   const filterControlBox = await filterBar.locator('.filter-control').boundingBox();

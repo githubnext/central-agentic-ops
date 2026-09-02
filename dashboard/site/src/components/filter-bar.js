@@ -9,12 +9,12 @@ import { octicon } from '../octicons.js';
  * @returns {HTMLElement}
  */
 export function renderFilterBar(config, onChange) {
-  const filters = h('input', {
+  const filters = /** @type {HTMLInputElement} */ (h('input', {
     type: 'search',
     value: config.filters.join(' '),
     'aria-label': 'Current filters',
     spellcheck: 'false'
-  });
+  }));
   const count = h('span', { className: 'count-badge' }, String(config.filters.length));
   const root = h(
     'div',
@@ -44,6 +44,7 @@ export function renderFilterBar(config, onChange) {
     onChange(parsed);
   });
   count.setAttribute('aria-label', `${config.filters.length} filters`);
+  queueMicrotask(() => onChange(parseFilters(filters.value)));
   return root;
 }
 
