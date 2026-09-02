@@ -19,7 +19,7 @@ function runAdmission({ policy = controlPolicy(), policyFailure = false } = {}) 
   writeFileSync(stepSummary, "");
   writeFileSync(mockGh, `#!/bin/sh
 case "$*" in
-  *contents/.github/central-agentic-ops.json*)
+  *contents/.github/workflows/cao.json*)
     [ "$MOCK_POLICY_FAILURE" != "true" ] || exit 1
     base64 < "$MOCK_POLICY_FILE"
     ;;
@@ -109,7 +109,7 @@ test("CAO admission fails closed when the authoritative policy cannot be read", 
   assert.equal(result.status, 0);
   assert.deepEqual(output, {
     authorized: "false",
-    reason: "cannot read .github/central-agentic-ops.json at github.workflow_sha",
+    reason: "cannot read .github/workflows/cao.json at github.workflow_sha",
     monthly_credit_budget: "0",
   });
 });

@@ -53,7 +53,7 @@ To install only this package into an existing private control repository:
 gh aw add githubnext/central-agentic-ops/ambient-context@<catalog-release>
 ```
 
-The package is runnable after its workers are declared in `.github/central-agentic-ops.json`. `review` is the default mode, so proposals are written to the control repository without changing the target.
+The package is runnable after its workers are declared in `.github/workflows/cao.json`. `review` is the default mode, so proposals are written to the control repository without changing the target.
 
 ## Configure
 

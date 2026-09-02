@@ -30,7 +30,7 @@ The package maintainer runs independently of repository dispatch. It updates the
 gh aw add githubnext/central-agentic-ops/eu-cra-compliance@<catalog-release>
 ```
 
-Configure the shared GitHub App or PAT described in the [authentication guide](../docs/authentication.md), then declare the package and workers in `.github/central-agentic-ops.json`:
+Configure the shared GitHub App or PAT described in the [authentication guide](../docs/authentication.md), then declare the package and workers in `.github/workflows/cao.json`:
 
 ```json
 {

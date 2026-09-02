@@ -66,7 +66,7 @@ globalThis.fetch = async (input, options = {}) => {
   if (method === "PATCH" && url.pathname === "/repos/acme/review/issues/42") return response({ ...config.sourceIssue, state: "closed" });
   if (method === "GET" && url.pathname === "/repos/acme/service") return response(config.targetRepository);
   if (method === "GET" && url.pathname === "/repos/acme/service/commits/main") return response(config.targetCommit);
-  if (method === "GET" && url.pathname === "/repos/acme/service/contents/.github/central-agentic-ops.json") {
+  if (method === "GET" && url.pathname === "/repos/acme/service/contents/.github/workflows/cao.json") {
     if (config.authorityMissing) return response({ message: "Not Found" }, 404);
     return response({ content: Buffer.from(config.authoritySource).toString("base64") });
   }

@@ -52,8 +52,8 @@ jobs:
           GITHUB_REPOSITORY: ${{ github.repository }}
         run: |
           node .github/aw/dashboard/report/control-settings.mjs \
-            .github/cao/control.mjs \
-            .github/central-agentic-ops.json \
+            .github/cao/src/control.mjs \
+            .github/workflows/cao.json \
             "$RUNNER_TEMP/control-settings.json"
 
       - name: Extract control-plane inventory

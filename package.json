@@ -5,6 +5,7 @@
     "docs:dev": "astro dev",
     "docs:build": "astro build",
     "docs:preview": "astro preview",
+    "typecheck:cao": "tsc -p .github/cao/tsconfig.json",
     "test": "npm run test:unit && npm run test:integration",
     "test:unit": "node --test tests/unit/*.test.mjs",
     "test:integration": "node --test --test-concurrency=1 tests/integration/control-admission.test.mjs tests/integration/control-failure.test.mjs tests/integration/control-policy-resolver.test.mjs",
@@ -21,5 +22,9 @@
     "astro": "7.2.2",
     "lottie-web": "^5.13.0",
     "yaml": "^2.9.0"
+  },
+  "devDependencies": {
+    "@types/node": "^24.3.0",
+    "typescript": "^5.9.2"
   }
 }

@@ -4,8 +4,8 @@ import { resolveDashboardControlSettings } from "../../dashboard/report/control-
 
 const options = {
   repository: "acme/control",
-  controlProgram: ".github/cao/control.mjs",
-  policyPath: ".github/central-agentic-ops.json",
+  controlProgram: ".github/cao/src/control.mjs",
+  policyPath: ".github/workflows/cao.json",
 };
 
 test("dashboard control settings retain successful policy resolution", () => {
