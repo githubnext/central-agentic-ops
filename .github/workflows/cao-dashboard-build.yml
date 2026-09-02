@@ -1,0 +1,174 @@
+name: CAO Dashboard E2E Build
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "23 5 * * *"
+  push:
+    branches: [main]
+    paths:
+      - dashboard/**
+      - .github/central-agentic-ops.json
+      - .github/cao/control.mjs
+      - .github/cao/policy.mjs
+      - .github/workflows/*.yml
+      - .github/workflows/*.lock.yml
+      - .github/workflows/*.md
+      - "*/aw.yml"
+      - aw.yml
+      - package.json
+      - package-lock.json
+
+permissions:
+  contents: read
+
+concurrency:
+  group: cao-dashboard-build
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    permissions:
+      actions: read
+      contents: read
+      issues: read
+      pull-requests: read
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Set up Node.js
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: 24
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Extract control-plane inventory
+        env:
+          REPORT_INVENTORY: ${{ runner.temp }}/control-plane-inventory.json
+        run: node dashboard/report/inventory.mjs
+
+      - name: Resolve authoritative control policy
+        env:
+          GITHUB_REPOSITORY: ${{ github.repository }}
+        run: node .github/cao/control.mjs control-settings .github/central-agentic-ops.json > "$RUNNER_TEMP/control-settings.json"
+
+      - name: Assemble configured Dashboard Language site
+        run: node dashboard/site/scripts/build.mjs "$RUNNER_TEMP/central-agentic-ops-dashboard/cao" "$RUNNER_TEMP/control-settings.json"
+
+      - name: Discover deployed agentic workflows
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          REPORT_CONTROL_SETTINGS: ${{ runner.temp }}/control-settings.json
+          REPORT_DEPLOYED_WORKFLOWS: ${{ runner.temp }}/deployed-workflows.json
+        run: node dashboard/report/deployed-workflows.mjs
+
+      - name: Install gh-aw CLI
+        uses: github/gh-aw-actions/setup-cli@afc709f45ed6a3f756eb4551856c6a9c42e15b2c # v0.88.0
+        with:
+          version: v0.88.0
+
+      - name: Checkout operational-value replay runtime
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          repository: github/gh-aw
+          ref: a5297995b4bd76a2afcc39f10f2517a65aff172c # v0.88.0
+          path: .cache/gh-aw-operational-value-source
+          persist-credentials: false
+
+      - name: Setup Go for operational-value replay
+        uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
+        with:
+          go-version-file: .cache/gh-aw-operational-value-source/go.mod
+          cache: false
+
+      - name: Build operational-value replay runtime
+        working-directory: .cache/gh-aw-operational-value-source
+        run: |
+          mkdir -p "$RUNNER_TEMP/gh-aw-operational-value"
+          go build -ldflags "-s -w -X main.version=v0.88.0" \
+            -o "$RUNNER_TEMP/gh-aw-operational-value/gh-aw" ./cmd/gh-aw
+          go clean -cache -modcache
+
+      - name: Restore operational-value observation cache
+        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: .cache/cao-dashboard-operational-values
+          key: ${{ runner.os }}-cao-dashboard-operational-values-${{ github.repository }}-${{ github.run_id }}
+          restore-keys: |
+            ${{ runner.os }}-cao-dashboard-operational-values-${{ github.repository }}-
+
+      - name: Restore AI Credit usage cache
+        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: .cache/cao-dashboard-aic
+          key: ${{ runner.os }}-cao-dashboard-aic-${{ github.repository }}-${{ github.run_id }}
+          restore-keys: |
+            ${{ runner.os }}-cao-dashboard-aic-${{ github.repository }}-
+
+      - name: Collect AI Credit usage
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPORT_AIC_CACHE: .cache/cao-dashboard-aic
+          REPORT_AIC_CONCURRENCY: "3"
+          REPORT_AIC_USAGE: ${{ runner.temp }}/aic-usage.json
+          REPORT_DEPLOYED_WORKFLOWS: ${{ runner.temp }}/deployed-workflows.json
+        run: node dashboard/report/aic-usage.mjs
+
+      - name: Save AI Credit usage cache
+        if: always()
+        uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: .cache/cao-dashboard-aic
+          key: ${{ runner.os }}-cao-dashboard-aic-${{ github.repository }}-${{ github.run_id }}
+
+      - name: Collect operational-value observations
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPORT_DEPLOYED_WORKFLOWS: ${{ runner.temp }}/deployed-workflows.json
+          REPORT_GH_AW_BIN: ${{ runner.temp }}/gh-aw-operational-value/gh-aw
+          REPORT_OPERATIONAL_VALUES: ${{ runner.temp }}/operational-values.json
+          REPORT_VALUE_CACHE: .cache/cao-dashboard-operational-values/observations.json
+          REPORT_VALUE_CONCURRENCY: "3"
+        run: node dashboard/report/operational-values.mjs
+
+      - name: Save operational-value observation cache
+        if: always()
+        uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: .cache/cao-dashboard-operational-values
+          key: ${{ runner.os }}-cao-dashboard-operational-values-${{ github.repository }}-${{ github.run_id }}
+
+      - name: Collect durable dashboard records
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          REPORT_CONTROL_SETTINGS: ${{ runner.temp }}/control-settings.json
+          REPORT_INVENTORY: ${{ runner.temp }}/control-plane-inventory.json
+          REPORT_DEPLOYED_WORKFLOWS: ${{ runner.temp }}/deployed-workflows.json
+          REPORT_RECORDS: ${{ runner.temp }}/central-agentic-ops-dashboard/cao/records.json
+        run: node dashboard/report/records.mjs
+
+      - name: Build Dashboard Language report sources
+        env:
+          REPORT_AIC_USAGE: ${{ runner.temp }}/aic-usage.json
+          REPORT_CONTROL_SETTINGS: ${{ runner.temp }}/control-settings.json
+          REPORT_DASHBOARD_SOURCES: ${{ runner.temp }}/central-agentic-ops-dashboard/cao/sources.json
+          REPORT_DEPLOYED_WORKFLOWS: ${{ runner.temp }}/deployed-workflows.json
+          REPORT_INVENTORY: ${{ runner.temp }}/control-plane-inventory.json
+          REPORT_OPERATIONAL_VALUES: ${{ runner.temp }}/operational-values.json
+          REPORT_RECORDS: ${{ runner.temp }}/central-agentic-ops-dashboard/cao/records.json
+        run: node dashboard/report/dashboard-language-sources.mjs
+
+      - name: Upload dashboard artifact
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: cao-dashboard-site
+          path: ${{ runner.temp }}/central-agentic-ops-dashboard
+          if-no-files-found: error
+          retention-days: 90

@@ -2004,35 +2004,50 @@ test("Dashboard package supports embedded and explicit standalone deployment", (
   }
 });
 
-test("Documentation Pages embeds this repository's control-plane report", () => {
-  const workflowSource = readFileSync(join(root, ".github", "workflows", "documentation-pages.yml"), "utf8");
+test("Documentation Pages composes documentation with the independent dashboard artifact", () => {
+  const dashboardBuild = readFileSync(join(root, ".github", "workflows", "cao-dashboard-build.yml"), "utf8");
+  const publisher = readFileSync(join(root, ".github", "workflows", "documentation-pages.yml"), "utf8");
   const astroConfig = readFileSync(join(root, "astro.config.mjs"), "utf8");
 
-  assert.match(workflowSource, /schedule:\n\s+- cron: "23 5 \* \* \*"/);
-  assert.match(workflowSource, /- dashboard\/\*\*/);
-  assert.match(workflowSource, /- \.github\/workflows\/\*\.md/);
-  assert.match(workflowSource, /- "\*\/aw\.yml"/);
-  assert.match(workflowSource, /actions: read/);
-  assert.match(workflowSource, /issues: read/);
-  assert.match(workflowSource, /pull-requests: read/);
-  assert.match(workflowSource, /github\/gh-aw-actions\/setup-cli@afc709f45ed6a3f756eb4551856c6a9c42e15b2c # v0\.88\.0/);
-  assert.match(workflowSource, /version: v0\.88\.0/);
-  assert.match(workflowSource, /ref: a5297995b4bd76a2afcc39f10f2517a65aff172c # v0\.88\.0/);
-  assert.match(workflowSource, /main\.version=v0\.88\.0/);
-  assert.match(workflowSource, /Restore AI Credit usage cache/);
-  assert.match(workflowSource, /REPORT_AIC_CACHE: \.cache\/documentation-pages-aic/);
-  assert.match(workflowSource, /Save AI Credit usage cache/);
-  assert.match(workflowSource, /name: Assemble configured Dashboard Language site/);
-  assert.match(workflowSource, /run: node dashboard\/site\/scripts\/build\.mjs dist\/cao "\$RUNNER_TEMP\/control-settings\.json"/);
-  assert.doesNotMatch(workflowSource, /REPORT_ALLOWED_REPOS/);
-  assert.match(workflowSource, /run: node dashboard\/report\/records\.mjs/);
-  assert.match(workflowSource, /REPORT_RECORDS: dist\/cao\/records\.json/);
-  assert.match(workflowSource, /REPORT_DASHBOARD_SOURCES: dist\/cao\/sources\.json/);
-  assert.doesNotMatch(workflowSource, /legacy dashboard redirects|redirects\.mjs/);
-  assert.doesNotMatch(workflowSource, /report\/report\.mjs/);
-  assert.match(workflowSource, /path: dist/);
-  assert.doesNotMatch(workflowSource, /REPORT_INCLUDE_PRIVATE:\s*true/);
-  assert.equal((workflowSource.match(/actions\/deploy-pages@/g) || []).length, 1);
+  assert.equal(existsSync(join(root, ".github", "workflows", "documentation-build.yml")), false);
+
+  assert.match(dashboardBuild, /schedule:\n\s+- cron: "23 5 \* \* \*"/);
+  assert.match(dashboardBuild, /- dashboard\/\*\*/);
+  assert.match(dashboardBuild, /- \.github\/workflows\/\*\.md/);
+  assert.match(dashboardBuild, /- "\*\/aw\.yml"/);
+  assert.match(dashboardBuild, /actions: read/);
+  assert.match(dashboardBuild, /issues: read/);
+  assert.match(dashboardBuild, /pull-requests: read/);
+  assert.match(dashboardBuild, /github\/gh-aw-actions\/setup-cli@afc709f45ed6a3f756eb4551856c6a9c42e15b2c # v0\.88\.0/);
+  assert.match(dashboardBuild, /version: v0\.88\.0/);
+  assert.match(dashboardBuild, /ref: a5297995b4bd76a2afcc39f10f2517a65aff172c # v0\.88\.0/);
+  assert.match(dashboardBuild, /main\.version=v0\.88\.0/);
+  assert.match(dashboardBuild, /Restore AI Credit usage cache/);
+  assert.match(dashboardBuild, /REPORT_AIC_CACHE: \.cache\/cao-dashboard-aic/);
+  assert.match(dashboardBuild, /Save AI Credit usage cache/);
+  assert.match(dashboardBuild, /name: Assemble configured Dashboard Language site/);
+  assert.match(dashboardBuild, /central-agentic-ops-dashboard\/cao/);
+  assert.doesNotMatch(dashboardBuild, /REPORT_ALLOWED_REPOS/);
+  assert.match(dashboardBuild, /run: node dashboard\/report\/records\.mjs/);
+  assert.match(dashboardBuild, /REPORT_RECORDS: .*central-agentic-ops-dashboard\/cao\/records\.json/);
+  assert.match(dashboardBuild, /REPORT_DASHBOARD_SOURCES: .*central-agentic-ops-dashboard\/cao\/sources\.json/);
+  assert.doesNotMatch(dashboardBuild, /legacy dashboard redirects|redirects\.mjs/);
+  assert.doesNotMatch(dashboardBuild, /report\/report\.mjs/);
+  assert.match(dashboardBuild, /name: cao-dashboard-site/);
+  assert.doesNotMatch(dashboardBuild, /REPORT_INCLUDE_PRIVATE:\s*true/);
+  assert.doesNotMatch(dashboardBuild, /deploy-pages|upload-pages-artifact|pages: write|id-token: write/);
+
+  assert.match(publisher, /workflow_run:\n\s+workflows: \["CAO Dashboard E2E Build"\]/);
+  assert.match(publisher, /actions\/workflows\/cao-dashboard-build\.yml\/runs/);
+  assert.match(publisher, /run: npm run docs:build/);
+  assert.match(publisher, /run: rm -rf dist\/cao/);
+  assert.match(publisher, /name: cao-dashboard-site/);
+  assert.match(publisher, /name: pages-deployment-state/);
+  assert.match(publisher, /changed=\$changed/);
+  assert.doesNotMatch(publisher, /issues: read|pull-requests: read|REPORT_/);
+  assert.match(publisher, /if: needs\.compose\.outputs\.changed == 'true'/);
+  assert.equal((publisher.match(/actions\/upload-pages-artifact@/g) || []).length, 1);
+  assert.equal((publisher.match(/actions\/deploy-pages@/g) || []).length, 1);
   assert.match(astroConfig, /label: "Control plane status", link: "\/cao\/"/);
 });
 

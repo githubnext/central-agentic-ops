@@ -2,15 +2,10 @@ name: Documentation Pages
 
 on:
   workflow_dispatch:
-  schedule:
-    - cron: "23 5 * * *"
   push:
     branches: [main]
     paths:
       - dashboard/**
-      - .github/central-agentic-ops.json
-      - .github/cao/control.mjs
-      - .github/cao/policy.mjs
       - .github/workflows/documentation-pages.yml
       - .github/workflows/*.lock.yml
       - .github/workflows/*.md
@@ -20,24 +15,35 @@ on:
       - docs/**
       - package.json
       - package-lock.json
+      - public/**
       - src/**
+  workflow_run:
+    workflows: ["CAO Dashboard E2E Build"]
+    types: [completed]
 
 permissions:
+  actions: read
   contents: read
 
 concurrency:
   group: documentation-pages
-  cancel-in-progress: true
+  cancel-in-progress: false
 
 jobs:
-  build:
+  compose:
+    if: >-
+      github.event_name != 'workflow_run' ||
+      (github.event.workflow_run.conclusion == 'success' &&
+      github.event.workflow_run.head_branch == github.event.repository.default_branch)
     runs-on: ubuntu-latest
+    outputs:
+      changed: ${{ steps.compose.outputs.changed }}
+      dashboard_hash: ${{ steps.compose.outputs.dashboard_hash }}
+      documentation_hash: ${{ steps.compose.outputs.documentation_hash }}
     permissions:
       actions: read
       contents: read
-      issues: read
       pages: write
-      pull-requests: read
     steps:
       - name: Checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -45,7 +51,7 @@ jobs:
           persist-credentials: false
 
       - name: Set up Node.js
-        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
         with:
           node-version: 24
           cache: npm
@@ -53,135 +59,110 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Configure Pages
-        uses: actions/configure-pages@983d7736d9b0ae728b81ab479565c72886d7745b # v5
-
       - name: Build documentation
         run: npm run docs:build
-        
-      - name: Extract control-plane inventory
+
+      - name: Leave the dashboard route to its producer
+        run: rm -rf dist/cao
+
+      - name: Resolve latest dashboard run
+        id: runs
         env:
-          REPORT_INVENTORY: ${{ runner.temp }}/control-plane-inventory.json
-        run: node dashboard/report/inventory.mjs
-
-      - name: Resolve authoritative control policy
-        env:
-          GITHUB_REPOSITORY: ${{ github.repository }}
-        run: node .github/cao/control.mjs control-settings .github/central-agentic-ops.json > "$RUNNER_TEMP/control-settings.json"
-
-      - name: Assemble configured Dashboard Language site
-        run: node dashboard/site/scripts/build.mjs dist/cao "$RUNNER_TEMP/control-settings.json"
-
-      - name: Discover deployed agentic workflows
-        env:
-          GITHUB_TOKEN: ${{ github.token }}
-          REPORT_CONTROL_SETTINGS: ${{ runner.temp }}/control-settings.json
-          REPORT_DEPLOYED_WORKFLOWS: ${{ runner.temp }}/deployed-workflows.json
-        run: node dashboard/report/deployed-workflows.mjs
-
-      - name: Install gh-aw CLI
-        uses: github/gh-aw-actions/setup-cli@afc709f45ed6a3f756eb4551856c6a9c42e15b2c # v0.88.0
-        with:
-          version: v0.88.0
-
-      - name: Checkout operational-value replay runtime
-        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          repository: github/gh-aw
-          ref: a5297995b4bd76a2afcc39f10f2517a65aff172c # v0.88.0
-          path: .cache/gh-aw-operational-value-source
-          persist-credentials: false
-
-      - name: Setup Go for operational-value replay
-        uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
-        with:
-          go-version-file: .cache/gh-aw-operational-value-source/go.mod
-          cache: false
-
-      - name: Build operational-value replay runtime
-        working-directory: .cache/gh-aw-operational-value-source
+          GH_TOKEN: ${{ github.token }}
+          DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
         run: |
-          mkdir -p "$RUNNER_TEMP/gh-aw-operational-value"
-          go build -ldflags "-s -w -X main.version=v0.88.0" \
-            -o "$RUNNER_TEMP/gh-aw-operational-value/gh-aw" ./cmd/gh-aw
-          go clean -cache -modcache
+          dashboard_run_id="$(gh api --method GET \
+            "repos/$GITHUB_REPOSITORY/actions/workflows/cao-dashboard-build.yml/runs" \
+            -f branch="$DEFAULT_BRANCH" -f status=success -f per_page=1 \
+            --jq '.workflow_runs[0].id // empty')"
+          if [[ -z "$dashboard_run_id" ]]; then
+            echo "ready=false" >> "$GITHUB_OUTPUT"
+            echo "A successful dashboard artifact is not yet available; leaving the current Pages deployment unchanged." >> "$GITHUB_STEP_SUMMARY"
+            exit 0
+          fi
+          echo "ready=true" >> "$GITHUB_OUTPUT"
+          echo "dashboard_run_id=$dashboard_run_id" >> "$GITHUB_OUTPUT"
 
-      - name: Restore operational-value observation cache
-        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+      - name: Download dashboard artifact
+        if: steps.runs.outputs.ready == 'true'
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
         with:
-          path: .cache/pages-operational-values
-          key: ${{ runner.os }}-documentation-pages-operational-values-${{ github.repository }}-${{ github.run_id }}
-          restore-keys: |
-            ${{ runner.os }}-documentation-pages-operational-values-${{ github.repository }}-
+          name: cao-dashboard-site
+          path: ${{ runner.temp }}/cao-dashboard-site
+          github-token: ${{ github.token }}
+          repository: ${{ github.repository }}
+          run-id: ${{ steps.runs.outputs.dashboard_run_id }}
 
-      - name: Restore AI Credit usage cache
-        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
-        with:
-          path: .cache/documentation-pages-aic
-          key: ${{ runner.os }}-documentation-pages-aic-${{ github.repository }}-${{ github.run_id }}
-          restore-keys: |
-            ${{ runner.os }}-documentation-pages-aic-${{ github.repository }}-
-
-      - name: Collect AI Credit usage
+      - name: Resolve last deployed state
+        if: steps.runs.outputs.ready == 'true'
+        id: state
         env:
           GH_TOKEN: ${{ github.token }}
-          REPORT_AIC_CACHE: .cache/documentation-pages-aic
-          REPORT_AIC_CONCURRENCY: "3"
-          REPORT_AIC_USAGE: ${{ runner.temp }}/aic-usage.json
-          REPORT_DEPLOYED_WORKFLOWS: ${{ runner.temp }}/deployed-workflows.json
-        run: node dashboard/report/aic-usage.mjs
+        run: |
+          state_run_id="$(gh api --method GET \
+            "repos/$GITHUB_REPOSITORY/actions/artifacts" \
+            -f name=pages-deployment-state -f per_page=100 \
+            --jq '[.artifacts[] | select(.expired == false)][0].workflow_run.id // empty')"
+          echo "run_id=$state_run_id" >> "$GITHUB_OUTPUT"
 
-      - name: Save AI Credit usage cache
-        if: always()
-        uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+      - name: Download last deployed state
+        if: steps.state.outputs.run_id != ''
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
         with:
-          path: .cache/documentation-pages-aic
-          key: ${{ runner.os }}-documentation-pages-aic-${{ github.repository }}-${{ github.run_id }}
+          name: pages-deployment-state
+          path: ${{ runner.temp }}/previous-pages-state
+          github-token: ${{ github.token }}
+          repository: ${{ github.repository }}
+          run-id: ${{ steps.state.outputs.run_id }}
 
-      - name: Collect operational-value observations
+      - name: Compose site and detect changes
+        if: steps.runs.outputs.ready == 'true'
+        id: compose
         env:
-          GH_TOKEN: ${{ github.token }}
-          REPORT_DEPLOYED_WORKFLOWS: ${{ runner.temp }}/deployed-workflows.json
-          REPORT_GH_AW_BIN: ${{ runner.temp }}/gh-aw-operational-value/gh-aw
-          REPORT_OPERATIONAL_VALUES: ${{ runner.temp }}/operational-values.json
-          REPORT_VALUE_CACHE: .cache/pages-operational-values/observations.json
-          REPORT_VALUE_CONCURRENCY: "3"
-        run: node dashboard/report/operational-values.mjs
+          DASHBOARD_COMPONENT: ${{ runner.temp }}/cao-dashboard-site
+          PREVIOUS_STATE: ${{ runner.temp }}/previous-pages-state/pages-deployment-state.json
+          SITE_OUTPUT: dist
+        run: |
+          hash_tree() {
+            local root="$1"
+            (cd "$root" && find . -type f -print0 | LC_ALL=C sort -z | xargs -0 sha256sum) \
+              | sha256sum | cut -d ' ' -f 1
+          }
 
-      - name: Save operational-value observation cache
-        if: always()
-        uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
-        with:
-          path: .cache/pages-operational-values
-          key: ${{ runner.os }}-documentation-pages-operational-values-${{ github.repository }}-${{ github.run_id }}
+          documentation_hash="$(hash_tree "$SITE_OUTPUT")"
+          dashboard_hash="$(hash_tree "$DASHBOARD_COMPONENT")"
+          changed=true
+          if [[ -f "$PREVIOUS_STATE" ]] && jq -e \
+            --arg documentation "$documentation_hash" \
+            --arg dashboard "$dashboard_hash" \
+            '.documentation == $documentation and .dashboard == $dashboard' \
+            "$PREVIOUS_STATE" >/dev/null; then
+            changed=false
+          fi
 
-      - name: Collect durable dashboard records
-        env:
-          GITHUB_TOKEN: ${{ github.token }}
-          REPORT_CONTROL_SETTINGS: ${{ runner.temp }}/control-settings.json
-          REPORT_INVENTORY: ${{ runner.temp }}/control-plane-inventory.json
-          REPORT_DEPLOYED_WORKFLOWS: ${{ runner.temp }}/deployed-workflows.json
-          REPORT_RECORDS: dist/cao/records.json
-        run: node dashboard/report/records.mjs
+          rm -rf "$SITE_OUTPUT/cao"
+          cp -R "$DASHBOARD_COMPONENT/cao" "$SITE_OUTPUT/cao"
 
-      - name: Build Dashboard Language report sources
-        env:
-          REPORT_AIC_USAGE: ${{ runner.temp }}/aic-usage.json
-          REPORT_CONTROL_SETTINGS: ${{ runner.temp }}/control-settings.json
-          REPORT_DASHBOARD_SOURCES: dist/cao/sources.json
-          REPORT_DEPLOYED_WORKFLOWS: ${{ runner.temp }}/deployed-workflows.json
-          REPORT_INVENTORY: ${{ runner.temp }}/control-plane-inventory.json
-          REPORT_OPERATIONAL_VALUES: ${{ runner.temp }}/operational-values.json
-          REPORT_RECORDS: dist/cao/records.json
-        run: node dashboard/report/dashboard-language-sources.mjs
+          echo "documentation_hash=$documentation_hash" >> "$GITHUB_OUTPUT"
+          echo "dashboard_hash=$dashboard_hash" >> "$GITHUB_OUTPUT"
+          echo "changed=$changed" >> "$GITHUB_OUTPUT"
+          if [[ "$changed" == "false" ]]; then
+            echo "Documentation and dashboard content match the last successful deployment; skipping Pages." >> "$GITHUB_STEP_SUMMARY"
+          fi
+
+      - name: Configure Pages
+        if: steps.compose.outputs.changed == 'true'
+        uses: actions/configure-pages@983d7736d9b0ae728b81ab479565c72886d7745b # v5
 
       - name: Upload Pages artifact
+        if: steps.compose.outputs.changed == 'true'
         uses: actions/upload-pages-artifact@7b1f4a764d45c48632c6b24a0339c27f5614fb0b # v4
         with:
           path: dist
 
   deploy:
-    needs: build
+    if: needs.compose.outputs.changed == 'true'
+    needs: compose
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -194,3 +175,29 @@ jobs:
       - name: Deploy Pages
         id: deployment
         uses: actions/deploy-pages@d6db90164ac5ed86f2b6aed7e0febac5b3c0c03e # v4
+
+  record-state:
+    if: needs.compose.outputs.changed == 'true' && needs.deploy.result == 'success'
+    needs: [compose, deploy]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - name: Record deployed component hashes
+        env:
+          DASHBOARD_HASH: ${{ needs.compose.outputs.dashboard_hash }}
+          DOCUMENTATION_HASH: ${{ needs.compose.outputs.documentation_hash }}
+        run: |
+          jq -n \
+            --arg documentation "$DOCUMENTATION_HASH" \
+            --arg dashboard "$DASHBOARD_HASH" \
+            '{schemaVersion: 1, documentation: $documentation, dashboard: $dashboard}' \
+            > "$RUNNER_TEMP/pages-deployment-state.json"
+
+      - name: Upload deployment state
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: pages-deployment-state
+          path: ${{ runner.temp }}/pages-deployment-state.json
+          if-no-files-found: error
+          retention-days: 90
