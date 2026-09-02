@@ -4,7 +4,7 @@ name: "SelfCare / Primer Brand Checker"
 description: Audit of the Central Agentic Ops dashboard against Primer brand guidance, opening a draft PR with focused fixes
 intent: Keep the Central Agentic Ops dashboard aligned with current Primer brand guidance through small, evidenced presentational fixes.
 on:
-  roles: all
+  bots: ["github-actions[bot]"]
   workflow_dispatch:
     inputs:
       target_repo:

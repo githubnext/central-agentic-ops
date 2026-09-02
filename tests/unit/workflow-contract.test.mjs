@@ -451,10 +451,11 @@ test("worker workflows allow service-account dispatches", () => {
 
   assert.ok(workers.length > 0, "expected at least one worker workflow");
   for (const [name, source] of workers) {
-    assert.match(source, /^\s+roles: all$/m, name);
+    assert.match(source, /^\s+bots: \["github-actions\[bot\]"\]$/m, name);
     const generated = workflow(name.replace(/\.md$/, ".lock.yml"));
-    assert.match(generated, /^  # roles: all # Roles processed as role check in pre-activation job$/m, name);
-    assert.doesNotMatch(generated, /GH_AW_REQUIRED_ROLES/, name);
+    assert.match(generated, /^  # bots: \["github-actions\[bot\]"\] # Bots processed as bot check in pre-activation job$/m, name);
+    assert.match(generated, /GH_AW_REQUIRED_ROLES: "admin,maintainer,write"/, name);
+    assert.match(generated, /GH_AW_ALLOWED_BOTS: "github-actions\[bot\]"/, name);
   }
 });
 

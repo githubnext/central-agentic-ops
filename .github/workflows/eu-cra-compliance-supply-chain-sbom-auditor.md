@@ -6,7 +6,7 @@ max-ai-credits: 150
 max-daily-ai-credits: -1
 
 on:
-  roles: all
+  bots: ["github-actions[bot]"]
   workflow_dispatch:
     inputs:
       target_repo:

@@ -74,7 +74,7 @@ on:
   # permissions: # Permissions applied to pre-activation job
   # actions: read
   # contents: read
-  # roles: all # Roles processed as role check in pre-activation job
+  # bots: ["github-actions[bot]"] # Bots processed as bot check in pre-activation job
   workflow_dispatch:
     inputs:
       aw_context:
@@ -2071,7 +2071,7 @@ jobs:
     env:
       GH_AW_RUNTIME_FEATURES: ${{ vars.GH_AW_RUNTIME_FEATURES }}
     outputs:
-      activated: 'true'
+      activated: ${{ steps.check_membership.outputs.is_team_member == 'true' }}
       cao_authorized: ${{ steps.cao_admission.outputs.authorized }}
       cao_reason: ${{ steps.cao_admission.outputs.reason }}
       matched_command: ''
@@ -2173,6 +2173,30 @@ jobs:
           name: cao-control-precompute
           path: /tmp/gh-aw/agent/control-precompute.json
           retention-days: 1.0
+      - name: Check team membership for workflow
+        id: check_membership
+        uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
+        env:
+          GH_AW_REQUIRED_ROLES: "admin,maintainer,write"
+          GH_AW_ALLOWED_BOTS: "github-actions[bot]"
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const path = require('path');
+            const actionsDir = path.join(process.env.RUNNER_TEMP, 'gh-aw', 'actions');
+            const { setupGlobals } = require(path.join(actionsDir, 'setup_globals.cjs'));
+            setupGlobals(core, github, context, exec, io, getOctokit);
+            const { main } = require(path.join(actionsDir, 'check_membership.cjs'));
+            await main();
+
+  publish_review_bundle:
+    needs:
+      - agent
+      - detection
+    if: (!cancelled()) && needs.agent.result != 'skipped' && contains(needs.agent.outputs.output_types, 'publish_review_bundle')
+    runs-on: ubuntu-latest
+    environment: central-agentic-ops
+    steps:
       - name: Download agent output artifact
         continue-on-error: true
         uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
