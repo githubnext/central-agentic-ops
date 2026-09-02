@@ -71,6 +71,7 @@ Create `.github/workflows/<package>.md` with:
 - the package and every worker declared in `.github/central-agentic-ops.json`, with each worker's exact `workflow` slug recorded there; the resolver must load this catalog from policy rather than hard-code package identities
 - least-privilege permissions, explicit tools/network configuration, `strict: true`, and a bounded `max-ai-credits`
 - `safe-outputs.dispatch-workflow.workflows` listing every worker slug and a `max` consistent with `max_repos` and worker count
+- `safe-outputs.threat-detection: false`; dispatchers select targets but do not process untrusted target content, so reserve detection for workers
 - a prompt headed with the package display name and containing `Discovery`, `Workers`, and `Completion` sections
 
 The orchestrator selects and ranks repositories only. It must not perform target-repository work or fan out work more finely than one dispatch per selected repository and eligible worker.
@@ -106,6 +107,7 @@ Create at least one `.github/workflows/<package>-<worker>.md`. Every worker must
   ```
 
 - least-privilege permissions, explicit tools/network configuration, `strict: true`, bounded credits and timeout, and safe outputs limited to the worker's mission
+- no `evals` configuration; use deterministic graders for worker measurement
 - instructions that treat repository content as untrusted, consume `/tmp/gh-aw/agent/control-precompute.json`, define success/no-op behavior, and preserve control-plane correlation data in durable outputs
 
 Use a dedicated `target/` checkout when the worker must inspect a target repository while safe outputs land elsewhere. Add package-specific inputs only after the standard envelope.
@@ -152,10 +154,11 @@ Before finishing:
 6. Confirm the orchestrator has a `Completion` section that preserves the exact standard report contract from `shared/control.md`; package-specific reporting must be additive.
 7. Confirm worker concurrency is keyed by `github.workflow` and `inputs.target_repo` with stale runs cancelled.
 8. Check permissions, tools, network hosts, safe-output limits, credits, timeouts, and dispatch maximums against actual need.
-9. Confirm dispatcher telemetry is inherited only through `shared/control.md`; require an explicit backend-routing need before adding a provider-specific observability import.
-10. Confirm every existing operational-value evaluator remains under `.github/graders/` and registered by its worker, or explicitly identify each new worker whose value design is pending adoption.
-11. Run `gh aw compile <workflow.md>` for every new orchestrator and worker. Then run the repository's narrowest relevant tests or validation command if one exists.
-12. Review the generated diff for accidental lockfile churn, secret exposure, unsafe live defaults, fabricated value evidence, and deviations from the nearest package that are not justified by the strategy.
-13. Confirm every orchestrator and worker uses the same optional `.github/cao/<package-slug>.md` runtime import and that no package-owned steering file was added.
+9. Confirm the orchestrator disables threat detection and every worker omits `evals`.
+10. Confirm dispatcher telemetry is inherited only through `shared/control.md`; require an explicit backend-routing need before adding a provider-specific observability import.
+11. Confirm every existing operational-value evaluator remains under `.github/graders/` and registered by its worker, or explicitly identify each new worker whose value design is pending adoption.
+12. Run `gh aw compile <workflow.md>` for every new orchestrator and worker. Then run the repository's narrowest relevant tests or validation command if one exists.
+13. Review the generated diff for accidental lockfile churn, secret exposure, unsafe live defaults, fabricated value evidence, and deviations from the nearest package that are not justified by the strategy.
+14. Confirm every orchestrator and worker uses the same optional `.github/cao/<package-slug>.md` runtime import and that no package-owned steering file was added.
 
 Report the created package, worker responsibilities, shared imports, checked-in policy fields, per-worker ops-value status, and validation results.

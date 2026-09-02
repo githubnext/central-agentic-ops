@@ -106,15 +106,6 @@ pre-agent-steps:
       npm --prefix dashboard/site run lint
       npm --prefix dashboard/site test
       npm --prefix dashboard/site run test:e2e
-evals:
-  - id: operational_value
-    question: Does the agent output demonstrate that one duplicated dashboard UI construct was replaced by a reusable component used at two or more call sites?
-  - id: duplication_evidenced
-    question: Does the agent output identify at least two original call sites for the extracted UI construct?
-  - id: behavior_validated
-    question: Does the agent output report that the complete dashboard validation suite passed after the change?
-  - id: scope_bounded
-    question: Does the agent output show that changes stayed within the configured dashboard paths?
 ---
 
 {{#runtime-import? .github/cao/self-care.md}}

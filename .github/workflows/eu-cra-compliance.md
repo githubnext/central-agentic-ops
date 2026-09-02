@@ -84,6 +84,7 @@ safe-outputs:
       - eu-cra-compliance-article-14-reporting-readiness
       - eu-cra-compliance-conformity-release-evidence
     max: 48
+  threat-detection: false
 ---
 
 {{#runtime-import? .github/cao/eu-cra-compliance.md}}

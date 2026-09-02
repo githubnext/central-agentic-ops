@@ -69,6 +69,7 @@ safe-outputs:
   dispatch-workflow:
     workflows: [self-care-accessibility-checker, self-care-code-improvement, self-care-primer-brand-checker]
     max: 3
+  threat-detection: false
 
 source: githubnext/central-agentic-ops@a4b937e2ee4e540d3ccce1377f8943315670f33d
 ---
