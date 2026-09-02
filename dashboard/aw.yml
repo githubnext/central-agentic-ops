@@ -7,6 +7,8 @@ includes:
     kind: action-workflow
   - .github/workflows/dashboard-build.yml
 resources:
+  - source: report/actions-log.mjs
+    destination: .github/aw/dashboard/report/actions-log.mjs
   - source: report/aic-usage.mjs
     destination: .github/aw/dashboard/report/aic-usage.mjs
   - source: report/text-utils.mjs

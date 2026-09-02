@@ -22,6 +22,8 @@ resources:
     destination: .github/aw/default-AGENTS.md
   - source: .github/aw/instructions.md
     destination: .github/aw/instructions.md
+  - source: dashboard/report/actions-log.mjs
+    destination: .github/aw/dashboard/report/actions-log.mjs
   - source: dashboard/report/aic-usage.mjs
     destination: .github/aw/dashboard/report/aic-usage.mjs
   - source: dashboard/report/text-utils.mjs

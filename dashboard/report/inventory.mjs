@@ -1,8 +1,11 @@
 import { mkdir, writeFile } from "node:fs/promises";
 import { existsSync, readFileSync, readdirSync } from "node:fs";
 import path from "node:path";
+import { actionsLog as log } from "./actions-log.mjs";
 
 (async () => {
+log.group`Extract control-plane inventory`;
+try {
 
 const root = path.resolve(process.env.REPORT_ROOT || ".");
 const outputPath = path.resolve(process.env.REPORT_INVENTORY || "_inventory/control-plane.json");
@@ -126,8 +129,11 @@ function discoverInventory() {
 const inventory = discoverInventory();
 await mkdir(path.dirname(outputPath), { recursive: true });
 await writeFile(outputPath, `${JSON.stringify(inventory, null, 2)}\n`);
-console.log(`Discovered ${inventory.bundles.length} packages and ${inventory.standalone.length} standalone workflows in ${outputPath}`);
+log.info`Discovered ${inventory.bundles.length} packages and ${inventory.standalone.length} standalone workflows in ${outputPath}`;
+} finally {
+  log.endGroup();
+}
 })().catch((error) => {
-  console.error(error);
+  log.error`${error.stack || error.message || error}`;
   process.exitCode = 1;
 });

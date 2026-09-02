@@ -2093,8 +2093,8 @@ test("Dashboard package supports embedded and explicit standalone deployment", (
   const aicUsage = readFileSync(join(root, "dashboard", "report", "aic-usage.mjs"), "utf8");
   const deployedWorkflows = readFileSync(join(root, "dashboard", "report", "deployed-workflows.mjs"), "utf8");
   const operationalValues = readFileSync(join(root, "dashboard", "report", "operational-values.mjs"), "utf8");
-  const reportAssets = ["aic-usage.mjs", "bundle-dashboards.mjs", "compose-dashboard-documents.mjs", "configure-site.mjs", "control-settings.mjs", "dashboard-language-sources.mjs", "deployed-workflows.mjs", "inventory.mjs", "operational-value-history.mjs", "operational-values.mjs", "records.mjs", "text-utils.mjs"];
-  const reportEntrypoints = new Set(reportAssets.filter((assetName) => !["compose-dashboard-documents.mjs", "operational-value-history.mjs", "text-utils.mjs"].includes(assetName)));
+  const reportAssets = ["actions-log.mjs", "aic-usage.mjs", "bundle-dashboards.mjs", "compose-dashboard-documents.mjs", "configure-site.mjs", "control-settings.mjs", "dashboard-language-sources.mjs", "deployed-workflows.mjs", "inventory.mjs", "operational-value-history.mjs", "operational-values.mjs", "records.mjs", "text-utils.mjs"];
+  const reportEntrypoints = new Set(reportAssets.filter((assetName) => !["actions-log.mjs", "compose-dashboard-documents.mjs", "operational-value-history.mjs", "text-utils.mjs"].includes(assetName)));
   const normalizeInclude = (entry, sourcePrefix = "") => typeof entry === "string"
     ? { source: entry, destination: entry, kind: "action-workflow" }
     : { ...entry, source: `${sourcePrefix}${entry.source}` };

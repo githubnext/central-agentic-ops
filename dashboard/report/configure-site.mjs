@@ -2,6 +2,7 @@
 
 import { readFile, writeFile } from "node:fs/promises";
 import { pathToFileURL } from "node:url";
+import { actionsLog as log } from "./actions-log.mjs";
 
 const DEFAULT_FAVICON_LINK = '<link rel="icon" href="./favicon.svg">';
 
@@ -24,16 +25,22 @@ async function main([htmlPath, settingsPath]) {
   if (!htmlPath || !settingsPath) {
     throw new Error("usage: configure-site.mjs <index.html> <control-settings.json>");
   }
-  const [html, settingsSource] = await Promise.all([
-    readFile(htmlPath, "utf8"),
-    readFile(settingsPath, "utf8"),
-  ]);
-  await writeFile(htmlPath, configureSite(html, JSON.parse(settingsSource)));
+  log.group`Configure dashboard site`;
+  try {
+    const [html, settingsSource] = await Promise.all([
+      readFile(htmlPath, "utf8"),
+      readFile(settingsPath, "utf8"),
+    ]);
+    await writeFile(htmlPath, configureSite(html, JSON.parse(settingsSource)));
+    log.info`Configured ${htmlPath}`;
+  } finally {
+    log.endGroup();
+  }
 }
 
 if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
   main(process.argv.slice(2)).catch((error) => {
-    process.stderr.write(`${error.message}\n`);
+    log.error`${error.stack || error.message || error}`;
     process.exitCode = 1;
   });
 }
