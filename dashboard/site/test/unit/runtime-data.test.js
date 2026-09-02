@@ -98,9 +98,9 @@ describe('runtime data', () => {
     });
 
     expect(sources.dispatches.rows).toEqual([
-      expect.objectContaining({ 'dispatch-type': 'Package worker', 'package-name': 'Dependabot', 'run-title': 'Update dependencies', status: 'action-required' }),
-      expect.objectContaining({ 'dispatch-type': 'Package orchestrator', 'package-name': 'dependabot', 'run-title': 'Run 2', status: 'success' }),
-      expect.objectContaining({ 'dispatch-type': 'Standalone workflow', 'package-name': 'Not packaged', 'runtime-repository': 'githubnext/control', status: 'in-progress' })
+      expect.objectContaining({ 'dispatch-type': 'Package worker', package: 'dependabot', 'package-name': 'Dependabot', 'run-title': 'Update dependencies', status: 'action-required' }),
+      expect.objectContaining({ 'dispatch-type': 'Package orchestrator', package: 'dependabot', 'package-name': 'dependabot', 'run-title': 'Run 2', status: 'success' }),
+      expect.objectContaining({ 'dispatch-type': 'Standalone workflow', package: '', 'package-name': 'Not packaged', 'runtime-repository': 'githubnext/control', status: 'in-progress' })
     ]);
     expect(sources.dispatches.metadata).toBe(metadata);
   });

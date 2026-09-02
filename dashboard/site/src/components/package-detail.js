@@ -10,19 +10,22 @@ import { renderWorkflowValueReport } from './workflow-runtime.js';
 
 /**
  * @param {import('./ui-elements.js').ElementRenderContext} context
- * @param {'insights'|'workflows'|'reports'} selectedView
+ * @param {'insights'|'workflows'|'dispatches'|'reports'} selectedView
  * @returns {HTMLElement}
  */
 export function renderPackageNavigation(context, selectedView) {
   const allWorkflows = rowsFor(context.sources, 'workflows');
   const reports = selectedView === 'reports';
+  const dispatches = selectedView === 'dispatches';
   const insights = selectedView === 'insights';
   const root = createRouteView({
-    rootClassName: reports ? 'package-reports' : insights ? 'package-insights' : 'package-detail',
+    rootClassName: reports ? 'package-reports' : dispatches ? 'package-dispatches' : insights ? 'package-insights' : 'package-detail',
     routeParameter: context.routeParameter,
     datasetKey: 'package',
     selectMessage: reports
       ? 'Select a package to view its reports.'
+      : dispatches
+        ? 'Select a package to view its dispatches.'
       : insights ? 'Select a package to view its operational value.' : 'Select a package to view its workflows.',
     notFoundMessage: 'Package not found.',
     unavailableMessage: 'Package data is unavailable.',
@@ -42,6 +45,8 @@ export function renderPackageNavigation(context, selectedView) {
           title: packageName,
           description: reports
             ? `Durable reports produced by the ${packageName} package.`
+            : dispatches
+              ? `Workflow dispatch runs for the ${packageName} package.`
             : insights
               ? `Operational value attained by workers in the ${packageName} package.`
               : `Orchestrator and worker workflows in the ${packageName} package.`,
@@ -67,7 +72,7 @@ export function renderPackageNavigation(context, selectedView) {
 /**
  * @param {string} packageId
  * @param {string} packageName
- * @param {'workflows'|'reports'|'insights'} selectedView
+ * @param {'workflows'|'dispatches'|'reports'|'insights'} selectedView
  */
 function renderPackageTabs(packageId, packageName, selectedView) {
   const packageQuery = `?package=${encodeURIComponent(packageId)}`;
@@ -77,6 +82,7 @@ function renderPackageTabs(packageId, packageName, selectedView) {
     tabs: [
       { label: 'Insights', icon: 'graph', href: `#page-package-insights${packageQuery}`, current: selectedView === 'insights' },
       { label: 'Workflows', icon: 'workflow', href: `#page-package-detail${packageQuery}`, current: selectedView === 'workflows' },
+      { label: 'Dispatches', icon: 'play', href: `#page-package-dispatches${packageQuery}`, current: selectedView === 'dispatches' },
       { label: 'Reports', icon: 'issue', href: `#page-package-reports${packageQuery}`, current: selectedView === 'reports' }
     ]
   });
@@ -109,4 +115,3 @@ function modeForPackage(workflows) {
   const mode = String(orchestrator?.['rollout-mode'] ?? workflows[0]?.['rollout-mode'] ?? '');
   return mode === 'review' || mode === 'live' ? mode : '';
 }
-

@@ -224,6 +224,7 @@ function deriveDispatches(model) {
       return [{
         'started-at': run['started-at'],
         'dispatch-type': classification?.label ?? 'Standalone workflow',
+        package: text(workflow.package),
         'package-name': text(workflow['package-name']) || text(workflow.package) || 'Not packaged',
         'workflow-name': workflowName(workflow, run),
         'run-title': runTitle(run, workflow),
