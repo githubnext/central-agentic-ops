@@ -97,6 +97,7 @@ export default defineConfig({
         {
           label: "Get started",
           items: [
+            { label: "Package wizard", link: "/wizard/" },
             { label: "Quickstart", link: "/getting-started/" },
             { label: "Package catalog", link: "/catalog/" },
             { label: "Configure authentication", link: "/authentication/" },
