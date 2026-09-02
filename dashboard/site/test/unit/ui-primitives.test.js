@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import { describe, expect, it } from 'vitest';
-import { coverageWindowHours, formatMediumUtcDateTime, formatUtcDateTime, renderSectionHeading, renderVitalStat } from '../../src/components/ui-primitives.js';
+import { coverageWindowHours, formatMediumUtcDate, formatMediumUtcDateTime, formatUtcDateTime, renderSectionHeading, renderVitalStat } from '../../src/components/ui-primitives.js';
 
 describe('ui primitives', () => {
   it('renders shared section-heading markup with configurable heading levels', () => {
@@ -52,6 +52,11 @@ describe('ui primitives', () => {
   it('formats a Date or millisecond timestamp as medium-date, short-time UTC text', () => {
     expect(formatMediumUtcDateTime(new Date('2026-08-30T10:00:00Z'))).toBe('Aug 30, 2026, 10:00 AM');
     expect(formatMediumUtcDateTime(Date.parse('2026-08-30T10:00:00Z'))).toBe('Aug 30, 2026, 10:00 AM');
+  });
+
+  it('formats a Date or millisecond timestamp as medium-date-only UTC text', () => {
+    expect(formatMediumUtcDate(new Date('2026-08-30T10:00:00Z'))).toBe('Aug 30, 2026');
+    expect(formatMediumUtcDate(Date.parse('2026-08-30T10:00:00Z'))).toBe('Aug 30, 2026');
   });
 
   it('computes whole-hour coverage windows and rejects invalid or non-increasing bounds', () => {
