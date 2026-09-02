@@ -2010,7 +2010,7 @@ test("Dashboard package supports embedded and explicit standalone deployment", (
   );
   assert.match(dashboardManifest, /name: Central Agentic Ops Dashboard/);
   assert.match(dashboardManifest, /source: dashboard\.yml\n\s+destination: \.github\/workflows\/dashboard\.yml\n\s+kind: action-workflow/);
-  assert.match(dashboardManifest, /source: \.github\/workflows\/dashboard-build\.yml\n\s+destination: \.github\/workflows\/dashboard-build\.yml\n\s+kind: action-workflow/);
+  assert.match(dashboardManifest, /source: dashboard-build\.yml\n\s+destination: \.github\/workflows\/dashboard-build\.yml\n\s+kind: action-workflow/);
   assert.doesNotMatch(dashboardManifest, /destination: \.github\/cao\//);
   assert.match(canonicalPolicyResolver, /export function parsePolicy/);
   assert.match(deployedWorkflows, /dashboardHorizonHours\(resolveDashboardHorizon\(dashboardDocument\.dashboard\)\)/);

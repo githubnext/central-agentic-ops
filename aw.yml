@@ -16,7 +16,7 @@ includes:
   - source: dashboard/dashboard.yml
     destination: .github/workflows/dashboard.yml
     kind: action-workflow
-  - source: .github/workflows/dashboard-build.yml
+  - source: dashboard/dashboard-build.yml
     destination: .github/workflows/dashboard-build.yml
     kind: action-workflow
 resources:
