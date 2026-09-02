@@ -72,7 +72,6 @@ jobs:
       - name: Discover deployed agentic workflows
         env:
           GITHUB_TOKEN: ${{ github.token }}
-          REPORT_ALLOWED_REPOS: ${{ github.repository }}
           REPORT_CONTROL_SETTINGS: ${{ runner.temp }}/control-settings.json
           REPORT_DEPLOYED_WORKFLOWS: ${{ runner.temp }}/deployed-workflows.json
         run: node dashboard/report/deployed-workflows.mjs
@@ -156,7 +155,6 @@ jobs:
       - name: Collect durable dashboard records
         env:
           GITHUB_TOKEN: ${{ github.token }}
-          REPORT_ALLOWED_REPOS: ${{ github.repository }}
           REPORT_CONTROL_SETTINGS: ${{ runner.temp }}/control-settings.json
           REPORT_INVENTORY: ${{ runner.temp }}/control-plane-inventory.json
           REPORT_DEPLOYED_WORKFLOWS: ${{ runner.temp }}/deployed-workflows.json
