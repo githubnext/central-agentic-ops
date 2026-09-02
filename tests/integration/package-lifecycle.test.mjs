@@ -54,10 +54,13 @@ const craExpectedFiles = [
   ".github/workflows/graders/eu-cra-compliance-package-maintainer-operational-value.sh",
   ".github/workflows/shared/control.md",
 ];
-const dashboardExpectedFiles = [...readFileSync(
-  new URL("../../dashboard/aw.yml", import.meta.url),
-  "utf8",
-).matchAll(/^\s+destination: (.+)$/gm)].map((match) => match[1]);
+const dashboardExpectedFiles = [
+  ".github/workflows/dashboard-build.yml",
+  ...[...readFileSync(
+    new URL("../../dashboard/aw.yml", import.meta.url),
+    "utf8",
+  ).matchAll(/^\s+destination: (.+)$/gm)].map((match) => match[1]),
+];
 const selfCareExpectedFiles = [
   ".github/workflows/self-care-accessibility-checker.md",
   ".github/workflows/self-care-code-improvement.md",

@@ -538,6 +538,12 @@ test("deterministic workflows pin third-party actions by commit SHA", () => {
   }
 });
 
+test("Copilot setup uses Node 24", () => {
+  const source = readFileSync(join(root, ".github", "workflows", "copilot-setup-steps.yml"), "utf8");
+
+  assert.match(source, /actions\/setup-node@[0-9a-f]{40}[\s\S]*?node-version: 24[\s\S]*?cache: npm[\s\S]*?run: npm ci/);
+});
+
 test("workflow contracts isolate authenticated package lifecycle checks", () => {
   const packageScripts = JSON.parse(readFileSync(join(root, "package.json"), "utf8")).scripts;
   assert.match(packageScripts["test:integration"], /control-failure\.test\.mjs/);
@@ -1996,21 +2002,24 @@ test("Dashboard package supports embedded and explicit standalone deployment", (
   const operationalValues = readFileSync(join(root, "dashboard", "report", "operational-values.mjs"), "utf8");
   const reportAssets = ["aic-usage.mjs", "bundle-dashboards.mjs", "compose-dashboard-documents.mjs", "configure-site.mjs", "control-settings.mjs", "dashboard-language-sources.mjs", "deployed-workflows.mjs", "inventory.mjs", "operational-value-history.mjs", "operational-values.mjs", "records.mjs", "text-utils.mjs"];
   const reportEntrypoints = new Set(reportAssets.filter((assetName) => !["compose-dashboard-documents.mjs", "operational-value-history.mjs", "text-utils.mjs"].includes(assetName)));
+  const normalizeInclude = (entry, sourcePrefix = "") => typeof entry === "string"
+    ? { source: entry, destination: entry, kind: "action-workflow" }
+    : { ...entry, source: `${sourcePrefix}${entry.source}` };
 
   assert.deepEqual(
-    rootPackage.includes.filter((entry) => typeof entry === "object" && entry.destination?.startsWith(".github/workflows/dashboard")),
-    dashboardPackage.includes.map((entry) => ({
-      ...entry,
-      source: entry.source.startsWith(".github/") ? entry.source : `dashboard/${entry.source}`,
-    })),
+    rootPackage.includes
+      .filter((entry) => (typeof entry === "string" ? entry : entry.destination)?.startsWith(".github/workflows/dashboard"))
+      .map((entry) => normalizeInclude(entry)),
+    dashboardPackage.includes.map((entry) => normalizeInclude(entry, typeof entry === "string" ? "" : "dashboard/")),
   );
   assert.deepEqual(
     rootPackage.resources.filter((entry) => entry.source.startsWith("dashboard/")),
     dashboardPackage.resources.map((entry) => ({ ...entry, source: `dashboard/${entry.source}` })),
   );
   assert.match(dashboardManifest, /name: Central Agentic Ops Dashboard/);
+  assert.match(rootManifest, /^\s+- \.github\/workflows\/dashboard-build\.yml$/m);
   assert.match(dashboardManifest, /source: dashboard\.yml\n\s+destination: \.github\/workflows\/dashboard\.yml\n\s+kind: action-workflow/);
-  assert.match(dashboardManifest, /source: \.github\/workflows\/dashboard-build\.yml\n\s+destination: \.github\/workflows\/dashboard-build\.yml\n\s+kind: action-workflow/);
+  assert.match(dashboardManifest, /^\s+- \.github\/workflows\/dashboard-build\.yml$/m);
   assert.doesNotMatch(dashboardManifest, /destination: \.github\/cao\//);
   assert.match(canonicalPolicyResolver, /export function parsePolicy/);
   assert.match(deployedWorkflows, /dashboardHorizonHours\(resolveDashboardHorizon\(dashboardDocument\.dashboard\)\)/);
