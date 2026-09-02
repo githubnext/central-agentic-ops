@@ -52,6 +52,9 @@ permissions:
   contents: read
   actions: read
 
+engine: copilot
+model: gpt-5.4
+
 strict: true
 
 tools:
