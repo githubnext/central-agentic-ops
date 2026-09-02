@@ -714,6 +714,12 @@ test("repository-local SelfCare uses organization-billed Copilot authentication"
   assert.doesNotMatch(rootManifest, /\.github\/workflows\/self-care(?:-[\w-]+)?\.md/);
   assert.match(selfCareManifest, /description: Repository-local/);
   assert.match(selfCareManifest, /\.github\/workflows\/self-care\.md/);
+  assert.match(selfCareManifest, /\.github\/workflows\/self-care-docs-build-time-investigator\.md/);
+  assert.equal(
+    readFileSync(join(root, "self-care", ".github", "graders", "self-care-docs-build-time-investigator-operational-value.sh"), "utf8"),
+    readFileSync(join(root, ".github", "graders", "self-care-docs-build-time-investigator-operational-value.sh"), "utf8"),
+    "focused SelfCare package must mirror its grader-backed worker evaluator",
+  );
 
   for (const workflowId of workflowIds) {
     const source = workflow(`${workflowId}.md`);
