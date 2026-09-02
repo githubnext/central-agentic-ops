@@ -2,6 +2,7 @@ import { spawn } from "node:child_process";
 import { mkdir, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
+import { firstText } from "./text-utils.mjs";
 
 function runGhAw(repository, runIds, outputDirectory) {
   return new Promise((resolve, reject) => {
@@ -92,6 +93,10 @@ async function mapWithConcurrency(values, concurrency, mapper) {
             mode,
             conclusion: metadata?.run?.conclusion || null,
             createdAt: run.created_at || run.started_at || metadata?.run?.createdAt || null,
+            engine: firstText(run.engine, run.agentic_engine, run.agent_engine),
+            engineVersion: firstText(run.engine_version, run.agentic_engine_version, run.agent_engine_version, run.agent_version),
+            requestedModel: firstText(run.requested_model, run.requestedModel, run.model, run.model_name),
+            resolvedModel: firstText(run.resolved_model, run.resolvedModel, run.model_resolved, run.model),
             aic,
           });
           reportedRuns += 1;

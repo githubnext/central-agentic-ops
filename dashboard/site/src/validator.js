@@ -48,6 +48,9 @@ import {
   SOURCE_ENTITY_IDENTIFIER_FIELDS,
   SOURCE_FIELDS,
   SOURCE_VALUES,
+  TABLE_ACTION_KEYS,
+  TABLE_ACTION_PRESENTATION_VALUES,
+  TABLE_ACTION_WHEN_KEYS,
   TEMPORAL_FIELD_NAMES,
   TIME_KEYS,
   UNIT_DEFINITION_KEYS,
@@ -1474,6 +1477,66 @@ function validateView(view, viewNode, path, viewIds, errors) {
   validateSemanticFieldLiterals(view.data, `${path}.data`, errors);
   validateDatasetMetadata(getValueNodeByKey(viewNode, 'data'), view.data, `${path}.data`, errors);
   validateEncoding(getValueNodeByKey(viewNode, 'encoding'), view.encoding, view.mark, view.chart, sourceName, view.data, path, errors);
+  validateTableActions(
+    view.encoding,
+    getValueNodeByKey(viewNode, 'encoding'),
+    view.mark,
+    sourceName,
+    `${path}.encoding.actions`,
+    errors
+  );
+}
+
+/**
+ * @param {unknown} encoding
+ * @param {unknown} encodingNode
+ * @param {unknown} mark
+ * @param {string | null} sourceName
+ * @param {string} path
+ * @param {ValidationError[]} errors
+ */
+function validateTableActions(encoding, encodingNode, mark, sourceName, path, errors) {
+  if (!isPlainObject(encoding) || encoding.actions === undefined) return;
+  if (mark !== 'table') {
+    errors.push(createError(ERROR_CODES.missingOrInvalidRequiredField, 'actions is allowed only when mark is "table".', path));
+    return;
+  }
+  if (!Array.isArray(encoding.actions) || encoding.actions.length === 0) {
+    errors.push(createError(ERROR_CODES.missingOrInvalidRequiredField, 'actions must be a non-empty sequence.', path));
+    return;
+  }
+  encoding.actions.forEach((action, index) => {
+    const actionPath = `${path}[${index}]`;
+    const actionNode = getSequenceItemNode(getValueNodeByKey(encodingNode, 'actions'), index);
+    if (!isPlainObject(action)) {
+      errors.push(createError(ERROR_CODES.missingOrInvalidRequiredField, 'action must be a mapping.', actionPath));
+      return;
+    }
+    validateObjectKeys(actionNode, TABLE_ACTION_KEYS, actionPath, errors);
+    validateStringField(action.intent, `${actionPath}.intent`, true, errors);
+    validateStringField(action.presentation, `${actionPath}.presentation`, true, errors);
+    if (typeof action.presentation === 'string' && !TABLE_ACTION_PRESENTATION_VALUES.includes(action.presentation)) {
+      errors.push(createError(ERROR_CODES.nonCanonicalVocabularyOrIdentifier, 'action presentation must be copy-prompt or copy-command.', `${actionPath}.presentation`));
+    }
+    validateStringField(action.icon, `${actionPath}.icon`, true, errors);
+    if (typeof action.icon === 'string' && !PAGE_ICON_VALUES.includes(action.icon)) {
+      errors.push(createError(ERROR_CODES.nonCanonicalVocabularyOrIdentifier, 'action icon must use one canonical icon value.', `${actionPath}.icon`));
+    }
+    validateStringField(action.label, `${actionPath}.label`, true, errors);
+    if (action.when === undefined) return;
+    if (!isPlainObject(action.when)) {
+      errors.push(createError(ERROR_CODES.missingOrInvalidRequiredField, 'action when must be a mapping.', `${actionPath}.when`));
+      return;
+    }
+    validateObjectKeys(getValueNodeByKey(actionNode, 'when'), TABLE_ACTION_WHEN_KEYS, `${actionPath}.when`, errors);
+    validateStringField(action.when.field, `${actionPath}.when.field`, true, errors);
+    if (typeof action.when.field === 'string' && sourceName && !SOURCE_FIELDS[/** @type {keyof typeof SOURCE_FIELDS} */ (sourceName)]?.includes(action.when.field)) {
+      errors.push(createError(ERROR_CODES.invalidScopeFilterTimeAggregationOrOrderReference, 'action when field must be declared by data.source.', `${actionPath}.when.field`));
+    }
+    if (!Object.hasOwn(action.when, 'equals') || ['object', 'function', 'symbol'].includes(typeof action.when.equals)) {
+      errors.push(createError(ERROR_CODES.missingOrInvalidRequiredField, 'action when equals must be a scalar.', `${actionPath}.when.equals`));
+    }
+  });
 }
 
 /**

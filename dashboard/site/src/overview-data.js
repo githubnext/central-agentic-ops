@@ -73,7 +73,8 @@ export function deriveOverviewSources(sources) {
         workers: entry.workers,
         'aic-allowance': entry.allowance,
         inventory: entry.ready ? 'Ready' : 'Needs attention',
-        'inventory-state': entry.ready ? 'inventory-ready' : 'inventory-attention'
+        'inventory-state': entry.ready ? 'inventory-ready' : 'inventory-attention',
+        href: `#page-package-insights?package=${encodeURIComponent(entry.id)}`
       })),
       metadata: overviewMetadata
     },

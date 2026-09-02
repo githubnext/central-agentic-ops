@@ -34,13 +34,13 @@
 
     <rect x="404" y="168" width="192" height="224" rx="8" fill="none" stroke="#afb8c1" stroke-width="2"/>
     <rect x="420" y="180" width="160" height="40" rx="6" fill="#0969da" fill-opacity=".12" stroke="#d0d7de"/>
-    <text x="436" y="205" fill="#1f2328" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,sans-serif" font-size="15" font-weight="600">Supply chain</text>
+    <text x="436" y="205" fill="var(--foreground)" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,sans-serif" font-size="15" font-weight="600">Supply chain</text>
     <rect x="420" y="232" width="160" height="40" rx="6" fill="#1f883d" fill-opacity=".12" stroke="#d0d7de"/>
-    <text x="436" y="257" fill="#1f2328" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,sans-serif" font-size="15" font-weight="600">Compliance</text>
+    <text x="436" y="257" fill="var(--foreground)" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,sans-serif" font-size="15" font-weight="600">Compliance</text>
     <rect x="420" y="284" width="160" height="40" rx="6" fill="#8250df" fill-opacity=".12" stroke="#d0d7de"/>
-    <text x="436" y="309" fill="#1f2328" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,sans-serif" font-size="15" font-weight="600">Security</text>
+    <text x="436" y="309" fill="var(--foreground)" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,sans-serif" font-size="15" font-weight="600">Security</text>
     <rect x="420" y="336" width="160" height="40" rx="6" fill="#bf8700" fill-opacity=".12" stroke="#d0d7de"/>
-    <text x="436" y="361" fill="#1f2328" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,sans-serif" font-size="15" font-weight="600">Governance</text>
+    <text x="436" y="361" fill="var(--foreground)" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,sans-serif" font-size="15" font-weight="600">Governance</text>
 
     <rect x="630" y="156" width="100" height="56" rx="6" fill="#ffffff" stroke="#d0d7de"/><text x="680" y="189" fill="#1f2328" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,sans-serif" font-size="15" font-weight="600">Org A</text>
     <rect x="630" y="252" width="100" height="56" rx="6" fill="#ffffff" stroke="#d0d7de"/><text x="680" y="285" fill="#1f2328" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,sans-serif" font-size="15" font-weight="600">Org B</text>

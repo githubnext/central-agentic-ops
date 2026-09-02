@@ -224,6 +224,7 @@ function buildPresenterModuleUrl() {
 
   const dataViewSource = readFileSync(new URL('../../src/components/data-view.js', import.meta.url), 'utf8')
     .replace("'../dom.js'", JSON.stringify(domModuleUrl))
+    .replace("'../octicons.js'", JSON.stringify(octiconsModuleUrl))
     .replace("'../view-formatters.js'", JSON.stringify(viewFormattersModuleUrl))
     .replace("'./cell-display.js'", JSON.stringify(cellDisplayModuleUrl))
     .replace("'./chart-elements.js'", JSON.stringify(chartElementsModuleUrl))
@@ -490,7 +491,7 @@ test('DLS-PAGE-002 DLS-PAGE-014 built-in overview page renders the report-style 
   await expect(page.locator('.nav-section-label')).toHaveCount(1);
   await expect(page.locator('.nav-section-label')).toHaveText(['Attention']);
   await expect(page.locator('.overview-page')).toHaveAttribute('data-page-kind', 'custom');
-  await expect(page.locator('.overview-page .custom-view')).toHaveCount(1);
+  await expect(page.locator('.overview-page .custom-view')).toHaveCount(2);
   await expect(page.locator('.overview-page .layout-section')).toHaveCount(0);
   await expect(page.getByRole('heading', { name: 'Attention by domain', level: 2 })).toBeVisible();
   const cards = page.locator('.attention-domain-card');
@@ -517,6 +518,14 @@ test('DLS-PAGE-002 DLS-PAGE-014 built-in overview page renders the report-style 
     '#page-cost'
   ]);
   await expect(page.locator('.overview-method-note')).toContainText('State key:');
+  await expect(page.getByRole('heading', { name: 'Packages', level: 2 })).toBeVisible();
+  const packageCards = page.locator('.package-status-card');
+  await expect(packageCards).toHaveCount(1);
+  await expect(packageCards.locator('header strong')).toHaveText(['Daily Ops']);
+  await expect(packageCards.first()).toHaveClass(/package-status-attention/);
+  await expect(packageCards.first()).toContainText('Needs attention');
+  await expect(packageCards.first()).toContainText('1 worker workflow');
+  await expect(packageCards.first()).toHaveAttribute('href', '#page-package-insights?package=daily-ops');
   await expect(page.locator('[data-page-id="overview"] .data-state-summary')).toBeHidden();
 
   await page.setViewportSize({ width: 400, height: 900 });

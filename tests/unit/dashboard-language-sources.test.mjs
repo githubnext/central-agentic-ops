@@ -101,6 +101,100 @@ test("dashboard source bridge carries package memberships, allowance, and invent
   assert.equal(sources.outcomes.rows[0]["run-conclusion"], "failure");
 });
 
+test("dashboard source bridge carries model and agent metadata into usage and report rows", () => {
+  const sources = buildDashboardLanguageSources({
+    deployed: {
+      generatedAt: "2026-09-02T12:00:00Z",
+      discovery: { complete: true },
+      runHealth: { available: true, complete: true },
+      bundles: [],
+      workflows: [{
+        repository: "githubnext/central-agentic-ops",
+        path: ".github/workflows/model-audit.lock.yml",
+        name: "Model Audit",
+        state: "active",
+        runHealth: {
+          runRecords: [{
+            runId: 42,
+            status: "completed",
+            conclusion: "success",
+            displayTitle: "Model Audit · review",
+            engine: "copilot",
+            engineVersion: "0.87.9",
+            requestedModel: "gpt-5.6-sol",
+            resolvedModel: "gpt-5.6-sol",
+          }],
+        },
+      }],
+    },
+    usage: {
+      available: true,
+      complete: true,
+      runs: [{
+        repository: "githubnext/central-agentic-ops",
+        runId: 42,
+        workflowPath: ".github/workflows/model-audit.lock.yml",
+        engine: "copilot",
+        engineVersion: "0.87.9",
+        requestedModel: "gpt-5.6-sol",
+        resolvedModel: "gpt-5.6-sol",
+        aic: 12.5,
+      }, {
+        repository: "githubnext/central-agentic-ops",
+        runId: 43,
+        workflowPath: ".github/workflows/model-audit.lock.yml",
+        engine: "copilot",
+        requestedModel: "gpt-5.6-sol",
+        resolvedModel: "gpt-5.6-sol",
+        aic: null,
+      }],
+    },
+    operationalValues: { records: [] },
+    report: {
+      generatedAt: "2026-09-02T12:00:00Z",
+      records: [{
+        id: "model-audit-output",
+        repository: "githubnext/central-agentic-ops",
+        runtimeRepository: "githubnext/central-agentic-ops",
+        workflowPath: ".github/workflows/model-audit.lock.yml",
+        runUrl: "https://github.com/githubnext/central-agentic-ops/actions/runs/42",
+        engine: "copilot",
+        engineVersion: "0.87.9",
+        requestedModel: "gpt-5.6-sol",
+        resolvedModel: "gpt-5.6-sol",
+        mode: "review",
+      }],
+    },
+  });
+
+  assert.deepEqual(
+    {
+      runEngine: sources.runs.rows[0].engine,
+      runVersion: sources.runs.rows[0]["engine-version"],
+      usageEngine: sources.usage.rows[0].engine,
+      usageVersion: sources.usage.rows[0]["engine-version"],
+      usageModel: sources.usage.rows[0]["resolved-model"],
+      estimatedUsd: sources.usage.rows[0]["estimated-usd"],
+      missingEstimatedUsd: sources.usage.rows[1]["estimated-usd"],
+      reportEngine: sources.outcomes.rows[0].engine,
+      reportVersion: sources.outcomes.rows[0]["engine-version"],
+      reportModel: sources.outcomes.rows[0]["resolved-model"],
+    },
+    {
+      runEngine: "copilot",
+      runVersion: "0.87.9",
+      usageEngine: "copilot",
+      usageVersion: "0.87.9",
+      usageModel: "gpt-5.6-sol",
+      estimatedUsd: 0.125,
+      missingEstimatedUsd: null,
+      reportEngine: "copilot",
+      reportVersion: "0.87.9",
+      reportModel: "gpt-5.6-sol",
+    },
+  );
+});
+
 test("dashboard source bridge carries canonical coverage diagnostics", () => {
   const input = {
     deployed: {

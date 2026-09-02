@@ -47,6 +47,19 @@
               "mark": "element",
               "element": "domain-attention",
               "layout": "full"
+            },
+            {
+              "id": "overview-package-status",
+              "title": "Packages",
+              "description": "Managed package readiness across rollout mode, worker workflows, and inventory state.",
+              "data": {
+                "sources": [
+                  "overview-managed-packages"
+                ]
+              },
+              "mark": "element",
+              "element": "package-status-grid",
+              "layout": "full"
             }
           ]
         }
@@ -836,6 +849,18 @@
                   "field": "ended-at",
                   "type": "temporal",
                   "title": "Ended"
+                }
+              ],
+              "actions": [
+                {
+                  "intent": "Investigate this failed workflow run.",
+                  "presentation": "copy-prompt",
+                  "icon": "search",
+                  "label": "Investigate",
+                  "when": {
+                    "field": "run-conclusion",
+                    "equals": "failure"
+                  }
                 }
               ],
               "href": {
@@ -1745,6 +1770,10 @@
                     "type": "nominal"
                   },
                   {
+                    "field": "engine-version",
+                    "type": "nominal"
+                  },
+                  {
                     "field": "requested-model",
                     "type": "nominal"
                   },
@@ -2149,7 +2178,15 @@
                     "unit": "aic"
                   },
                   {
+                    "field": "estimated-usd",
+                    "type": "quantitative"
+                  },
+                  {
                     "field": "engine",
+                    "type": "nominal"
+                  },
+                  {
+                    "field": "engine-version",
                     "type": "nominal"
                   },
                   {
@@ -2192,99 +2229,283 @@
         "kind": "built-in",
         "page": "engines-models",
         "title": "Engines Models",
-        "icon": "server",
+        "icon": "copilot",
         "definition": {
           "data-state": {
             "availability": true,
             "completeness": true,
             "freshness": true
           },
+          "sections": [
+            {
+              "id": "model-allocation",
+              "title": "Models",
+              "description": "Observed model allocation and normalized AI Credit totals. Estimated USD uses the documented 1 AIC = $0.01 convention; billing dashboards remain authoritative.",
+              "layout": "full",
+              "count-source": "model-usage-summary",
+              "count-label": "models",
+              "views": [
+                "models-by-aic",
+                "model-usage-table"
+              ]
+            },
+            {
+              "id": "agentic-engine-allocation",
+              "title": "Agentic engines",
+              "description": "Observed agentic engine allocation, version range, and model coverage from retained usage metadata.",
+              "layout": "full",
+              "count-source": "engine-usage-summary",
+              "count-label": "engines",
+              "views": [
+                "engines-by-aic",
+                "engine-usage-table"
+              ]
+            },
+            {
+              "id": "model-agent-run-evidence",
+              "title": "Run evidence",
+              "description": "Run-level engine and model metadata remains available for drill-down when retained by the source.",
+              "layout": "full",
+              "views": [
+                "engines-models-runs-source"
+              ]
+            }
+          ],
           "views": [
             {
-              "id": "engines-models-runs-source",
+              "id": "models-by-aic",
+              "title": "AI Credit usage by model",
+              "description": "Normalized AI Credit allocation by resolved model, falling back to the requested model when resolution is unavailable.",
               "data": {
-                "source": "runs"
+                "source": "model-usage-summary",
+                "order-by": [
+                  {
+                    "field": "total-aic",
+                    "direction": "desc"
+                  }
+                ]
+              },
+              "mark": "chart",
+              "chart": "pie",
+              "layout": "half",
+              "encoding": {
+                "x": {
+                  "field": "model",
+                  "type": "nominal",
+                  "title": "Model"
+                },
+                "y": {
+                  "field": "total-aic",
+                  "type": "quantitative",
+                  "title": "Total AIC",
+                  "unit": "aic"
+                }
+              }
+            },
+            {
+              "id": "model-usage-table",
+              "title": "Models, pricing, and totals",
+              "data": {
+                "source": "model-usage-summary",
+                "order-by": [
+                  {
+                    "field": "total-aic",
+                    "direction": "desc"
+                  }
+                ]
               },
               "mark": "table",
+              "controls": "interactive",
+              "empty-message": "No model usage metadata is available.",
+              "layout": "full",
               "encoding": {
                 "columns": [
                   {
+                    "field": "model",
+                    "type": "nominal",
+                    "title": "Model"
+                  },
+                  {
                     "field": "engine",
-                    "type": "nominal"
+                    "type": "nominal",
+                    "title": "Agentic engines"
                   },
                   {
                     "field": "requested-model",
-                    "type": "nominal"
-                  },
-                  {
-                    "field": "resolved-model",
-                    "type": "nominal"
-                  },
-                  {
-                    "field": "run",
-                    "type": "nominal"
-                  },
-                  {
-                    "field": "run-conclusion",
                     "type": "nominal",
-                    "display": "status"
+                    "title": "Requested models"
+                  },
+                  {
+                    "field": "invocations",
+                    "type": "quantitative",
+                    "title": "Invocations"
+                  },
+                  {
+                    "field": "runs",
+                    "type": "quantitative",
+                    "title": "Runs"
+                  },
+                  {
+                    "field": "total-aic",
+                    "type": "quantitative",
+                    "title": "Total AIC",
+                    "unit": "aic"
+                  },
+                  {
+                    "field": "estimated-usd",
+                    "type": "quantitative",
+                    "title": "Estimated USD"
+                  },
+                  {
+                    "field": "pricing",
+                    "type": "nominal",
+                    "title": "Pricing"
                   }
                 ]
               }
             },
             {
-              "id": "engines-models-outcomes-source",
+              "id": "engines-by-aic",
+              "title": "AI Credit usage by agentic engine",
+              "description": "Normalized AI Credit allocation by observed agentic engine.",
               "data": {
-                "source": "outcomes"
+                "source": "engine-usage-summary",
+                "order-by": [
+                  {
+                    "field": "total-aic",
+                    "direction": "desc"
+                  }
+                ]
               },
-              "mark": "metric",
+              "mark": "chart",
+              "chart": "pie",
+              "layout": "half",
               "encoding": {
-                "value": {
-                  "field": "outcome-state",
+                "x": {
+                  "field": "engine",
                   "type": "nominal",
-                  "aggregate": "count"
+                  "title": "Agentic engine"
+                },
+                "y": {
+                  "field": "total-aic",
+                  "type": "quantitative",
+                  "title": "Total AIC",
+                  "unit": "aic"
                 }
               }
             },
             {
-              "id": "engines-models-usage-source",
-              "disclosure": "supplemental",
+              "id": "engine-usage-table",
+              "title": "Agentic engines, versions, and totals",
               "data": {
-                "source": "usage"
+                "source": "engine-usage-summary",
+                "order-by": [
+                  {
+                    "field": "total-aic",
+                    "direction": "desc"
+                  }
+                ]
               },
               "mark": "table",
+              "controls": "interactive",
+              "empty-message": "No agentic engine metadata is available.",
+              "layout": "full",
               "encoding": {
                 "columns": [
                   {
-                    "field": "input-tokens",
-                    "type": "quantitative"
+                    "field": "engine",
+                    "type": "nominal",
+                    "title": "Agentic engine"
                   },
                   {
-                    "field": "output-tokens",
-                    "type": "quantitative"
+                    "field": "min-engine-version",
+                    "type": "nominal",
+                    "title": "Min version"
                   },
                   {
-                    "field": "cache-read-tokens",
-                    "type": "quantitative"
+                    "field": "max-engine-version",
+                    "type": "nominal",
+                    "title": "Max version"
                   },
                   {
-                    "field": "cache-write-tokens",
-                    "type": "quantitative"
+                    "field": "models",
+                    "type": "nominal",
+                    "title": "Models"
                   },
                   {
-                    "field": "reasoning-tokens",
-                    "type": "quantitative"
-                  },
-                  {
-                    "field": "aic",
+                    "field": "invocations",
                     "type": "quantitative",
+                    "title": "Invocations"
+                  },
+                  {
+                    "field": "runs",
+                    "type": "quantitative",
+                    "title": "Runs"
+                  },
+                  {
+                    "field": "total-aic",
+                    "type": "quantitative",
+                    "title": "Total AIC",
                     "unit": "aic"
+                  },
+                  {
+                    "field": "estimated-usd",
+                    "type": "quantitative",
+                    "title": "Estimated USD"
+                  }
+                ]
+              }
+            },
+            {
+              "id": "engines-models-runs-source",
+              "title": "Runs by agent and model",
+              "data": {
+                "source": "runs"
+              },
+              "mark": "table",
+              "controls": "interactive",
+              "empty-message": "No run-level model or agent metadata is available.",
+              "layout": "full",
+              "encoding": {
+                "columns": [
+                  {
+                    "field": "engine",
+                    "type": "nominal",
+                    "title": "Agentic engine"
+                  },
+                  {
+                    "field": "engine-version",
+                    "type": "nominal",
+                    "title": "Engine version"
+                  },
+                  {
+                    "field": "requested-model",
+                    "type": "nominal",
+                    "title": "Requested model"
+                  },
+                  {
+                    "field": "resolved-model",
+                    "type": "nominal",
+                    "title": "Resolved model"
+                  },
+                  {
+                    "field": "run",
+                    "type": "nominal",
+                    "title": "Run"
+                  },
+                  {
+                    "field": "run-conclusion",
+                    "type": "nominal",
+                    "title": "Conclusion",
+                    "display": "status"
                   }
                 ]
               }
             }
           ]
-        }
+        },
+        "navigation-label": "Models & agents",
+        "description": "Compare observed AI Credit allocation by model and agentic engine/version where usage telemetry provides that metadata."
       },
       {
         "id": "operational-value",
@@ -2781,7 +3002,8 @@
           "dispatches",
           "workflows",
           "repositories",
-          "packages"
+          "packages",
+          "engines-models"
         ]
       },
       {

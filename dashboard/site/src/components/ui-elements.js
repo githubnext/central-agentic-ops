@@ -32,6 +32,7 @@ import { renderAnomalyReadiness } from './anomaly-readiness.js';
 /** @type {Map<string, (context: ElementRenderContext) => HTMLElement | null>} */
 const ELEMENT_RENDERERS = new Map([
   ['domain-attention', renderDomainAttentionElement],
+  ['package-status-grid', renderPackageStatusGridElement],
   ['summary-grid', renderSummaryGridElement],
   ['context-summary', renderContextSummaryElement],
   ['anomaly-readiness', renderAnomalyReadinessElement],
@@ -107,6 +108,48 @@ function renderDomainAttentionElement(context) {
       { className: 'overview-method-note' },
       h('strong', null, 'State key:'),
       ' Act now is a direct failure; Investigate is a direct control, collection, or attribution signal; Monitor has observations without a direct signal; Unavailable means a required threshold or evidence feed is absent.'
+    )
+  );
+}
+
+/**
+ * @param {ElementRenderContext} context
+ */
+function renderPackageStatusGridElement(context) {
+  const rows = rowsFor(context, 'overview-managed-packages');
+  const headingId = `${context.pageId}-${slugify(context.title)}-heading`;
+  return h(
+    'section',
+    { className: 'overview-package-status', 'aria-labelledby': headingId },
+    renderSectionHeading({
+      kicker: 'Managed packages',
+      id: headingId,
+      title: context.title,
+      description: context.description,
+      headingTag: 'h2'
+    }),
+    h(
+      'div',
+      { className: 'package-status-grid' },
+      ...rows.map((row) => {
+        const workerCount = Number(row.workers);
+        return h(
+          'a',
+          {
+            className: `package-status-card package-status-${stringValue(row['inventory-state']) === 'inventory-ready' ? 'ready' : 'attention'}`,
+            href: stringValue(row.href)
+          },
+          h(
+            'header',
+            null,
+            h('strong', null, stringValue(row.title)),
+            h('span', { className: 'package-status-state' }, stringValue(row.inventory))
+          ),
+          h('span', { className: 'package-status-mode' }, capitalize(stringValue(row.mode))),
+          h('p', null, `${Number.isFinite(workerCount) ? workerCount : stringValue(row.workers)} worker workflow${workerCount === 1 ? '' : 's'}`),
+          h('footer', null, 'Open package')
+        );
+      })
     )
   );
 }
@@ -252,6 +295,13 @@ function rowsFor(context, sourceName) {
  */
 function stringValue(value) {
   return value == null ? '' : String(value);
+}
+
+/**
+ * @param {string} value
+ */
+function capitalize(value) {
+  return value.length === 0 ? value : `${value.charAt(0).toUpperCase()}${value.slice(1)}`;
 }
 
 /**
