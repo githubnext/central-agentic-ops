@@ -16,6 +16,14 @@
     "detail": "{{list}}"
   },
   {
+    "id": "api-capacity-blocked",
+    "metric": "api-capacity-blocked",
+    "icon": "meter",
+    "tone": "danger",
+    "title": "{{count}} run{{count:suffix::s}} blocked by GitHub API capacity",
+    "detail": "{{detail}}"
+  },
+  {
     "id": "failed-runs",
     "metric": "runs-failed",
     "icon": "issue",

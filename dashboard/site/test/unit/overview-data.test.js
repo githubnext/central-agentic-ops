@@ -97,4 +97,50 @@ describe('overview attention', () => {
       'navigation-page': 'packages'
     }));
   });
+
+  it('promotes GitHub API capacity admission blocks with retry guidance', () => {
+    const workflow = '.github/workflows/self-care.md';
+    const officialGuidance = 'https://docs.github.com/en/rest/using-the-rest-api/rate-limits-for-the-rest-api';
+    const sources = deriveOverviewSources({
+      workflows: source('workflows', [{ workflow, 'workflow-name': 'SelfCare', 'workflow-role': 'orchestrator' }]),
+      repositories: source('repositories'),
+      runs: source('runs', [{
+        workflow,
+        run: '33682053183',
+        'run-conclusion': 'failure',
+        'admission-status': 'resource-limited',
+        'admission-reason': 'github-api-capacity-insufficient',
+        resource: 'github-rest-api',
+        'resource-reset-at': '2026-09-02T22:04:33.000Z',
+        'resource-wait-hours': 1.08
+      }]),
+      usage: source('usage'),
+      outcomes: source('outcomes'),
+      findings: source('findings'),
+      'grader-observations': source('grader-observations'),
+      'operational-values': source('operational-values'),
+      'coverage-diagnostics': source('coverage-diagnostics')
+    });
+
+    expect(sources['overview-attention'].rows).toContainEqual(expect.objectContaining({
+      tone: 'danger',
+      title: '1 run blocked by GitHub API capacity',
+      detail: expect.stringContaining('approximately 1.08 hours')
+    }));
+    expect(sources['overview-attention'].rows).not.toContainEqual(expect.objectContaining({ title: '1 failed run' }));
+    expect(sources['overview-attention-domains'].rows).toContainEqual(expect.objectContaining({
+      state: 'Act now',
+      domain: 'Security & controls',
+      value: '1 signal',
+      detail: expect.stringContaining('1 API capacity gates')
+    }));
+    expect(sources['security-summary'].rows).toContainEqual({ label: 'API capacity gates', value: 1 });
+    expect(sources['security-signals'].rows).toContainEqual(expect.objectContaining({
+      kind: 'Resource admission gate',
+      title: 'SelfCare',
+      detail: expect.stringContaining('2026-09-02T22:04:33.000Z'),
+      action: 'Open official GitHub guidance',
+      'external-link': expect.objectContaining({ href: officialGuidance })
+    }));
+  });
 });

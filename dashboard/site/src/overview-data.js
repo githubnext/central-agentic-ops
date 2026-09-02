@@ -6,6 +6,8 @@ import { formatNumber, formatPercent } from './view-formatters.js';
 import { classifyUtilizationRatio, isApprovalConclusion, isFailureConclusion } from './components/run-classification.js';
 import { buildAttentionItems } from './components/attention-rules.js';
 
+const GITHUB_RATE_LIMIT_DOCS = 'https://docs.github.com/en/rest/using-the-rest-api/rate-limits-for-the-rest-api';
+
 /**
  * @param {Record<string, import('./presenter.js').LogicalSourceInput>} sources
  * @returns {Record<string, import('./presenter.js').LogicalSourceInput>}
@@ -439,7 +441,8 @@ function buildDomainAttentionRows(input) {
     .filter((row) => String(row.title) === 'Control policy resolution unavailable');
   const controlPolicyBlocks = controlPolicyDiagnostics.length;
   const admissionBlocks = input.workflows.filter((row) => String(row['admission-status']) === 'blocked').length;
-  const controlBlocks = controlPolicyBlocks + admissionBlocks;
+  const apiCapacityBlocks = input.runs.filter(isApiCapacityBlock).length;
+  const controlBlocks = controlPolicyBlocks + admissionBlocks + apiCapacityBlocks;
       const warningOutputs = input.findings.filter(isAuthoredWarning).length;
       const inventoryGaps = input.workflows.filter((row) => row['inventory-ready'] === false).length;
       const openOutputs = input.outcomes.filter((row) => String(row['outcome-state']) === 'pending').length;
@@ -492,7 +495,7 @@ function buildDomainAttentionRows(input) {
           icon: 'shield',
           domain: 'Security & controls',
           value: `${formatCount(securitySignals)} signal${securitySignals === 1 ? '' : 's'}`,
-          detail: `${formatCount(admissionBlocks)} admission gates · ${formatCount(controlPolicyBlocks)} policy resolution blocks · ${formatCount(input.health.approval)} approval gates · ${formatCount(inventoryGaps)} integrity gaps`,
+          detail: `${formatCount(admissionBlocks)} admission gates · ${formatCount(apiCapacityBlocks)} API capacity gates · ${formatCount(controlPolicyBlocks)} policy resolution blocks · ${formatCount(input.health.approval)} approval gates · ${formatCount(inventoryGaps)} integrity gaps`,
           href: controlPolicyBlocks > 0 ? '#page-coverage' : '#page-security'
         }),
         domainRow({
@@ -575,12 +578,27 @@ function formatAic(value) {
       return new Intl.NumberFormat('en-US', { maximumFractionDigits: 1 }).format(value);
 }
 
+/** @param {Record<string, unknown>} row */
+function isApiCapacityBlock(row) {
+  return String(row['admission-status']) === 'resource-limited' && String(row.resource) === 'github-rest-api';
+}
+
+/** @param {Record<string, unknown>} row */
+function apiCapacityDetail(row) {
+  const resetAt = String(row['resource-reset-at'] ?? '');
+  const waitHours = Number(row['resource-wait-hours']);
+  if (!resetAt) return 'GitHub REST API capacity could not be verified. Check authentication before retrying.';
+  if (!Number.isFinite(waitHours) || waitHours <= 0) return `The reported reset time ${resetAt} has passed; rerun now.`;
+  return `Retry after ${resetAt}, approximately ${formatNumber(waitHours)} hours from dashboard collection.`;
+}
+
 /**
  * @param {{ runs: Array<Record<string, unknown>>, workflows: Array<Record<string, unknown>>, findings: Array<Record<string, unknown>> }} input
  */
 function buildSecuritySummary(input) {
   return [
     { label: 'Admission gates', value: input.workflows.filter((row) => String(row['admission-status']) === 'blocked').length },
+    { label: 'API capacity gates', value: input.runs.filter(isApiCapacityBlock).length },
     { label: 'Approval gates', value: input.runs.filter((row) => String(row['run-conclusion']) === 'action-required').length },
     { label: 'Explicit warnings', value: input.findings.filter(isAuthoredWarning).length },
     { label: 'Package integrity gaps', value: input.workflows.filter((row) => row['inventory-ready'] === false).length },
@@ -608,6 +626,26 @@ function buildSecuritySignals(input) {
         action: 'View package',
         'navigation-page': 'packages'
       })),
+    ...groupRows(input.runs.filter(isApiCapacityBlock), (row) => String(row.workflow ?? ''))
+      .map(([workflow, rows]) => {
+        const latest = latestRow(rows);
+        return {
+          priority: 0,
+          count: rows.length,
+          tone: 'danger',
+          icon: 'meter',
+          kind: 'Resource admission gate',
+          title: workflowNames.get(workflow) ?? workflow,
+          detail: apiCapacityDetail(latest),
+          evidence: 'Pre-activation GitHub REST API check',
+          action: 'Open official GitHub guidance',
+          'external-link': {
+            relation: 'official-guidance',
+            href: GITHUB_RATE_LIMIT_DOCS,
+            label: 'GitHub REST API rate-limit guidance'
+          }
+        };
+      }),
     ...groupRows(input.runs.filter((row) => String(row['run-conclusion']) === 'action-required'), (row) => String(row.workflow ?? ''))
       .map(([workflow, rows]) => ({
         priority: 1,
@@ -793,7 +831,10 @@ function buildExecutionHealthRows(health) {
  * @param {{ sources: Record<string, import('./presenter.js').LogicalSourceInput>, workflows: Array<Record<string, unknown>>, runs: Array<Record<string, unknown>>, findings: Array<Record<string, unknown>>, packages: ReturnType<typeof summarizePackages>, disabledWorkflows: number, health: ReturnType<typeof summarizeRunHealth> }} input
  */
 function buildAttentionRows(input) {
-  const failedRepositories = new Set(input.health.failedRows.map(repositoryKey).filter(Boolean)).size;
+  const apiCapacityBlocks = input.runs.filter(isApiCapacityBlock);
+  const apiCapacityRunIds = new Set(apiCapacityBlocks.map((row) => String(row.run ?? '')).filter(Boolean));
+  const unclassifiedFailures = input.health.failedRows.filter((row) => !apiCapacityRunIds.has(String(row.run ?? '')));
+  const failedRepositories = new Set(unclassifiedFailures.map(repositoryKey).filter(Boolean)).size;
   const packageGaps = input.packages.filter((entry) => !entry.ready).length;
   const openFindings = input.findings.filter((row) => String(row['finding-status']) === 'open').length;
   const controlPolicyDiagnostics = rowsFor(input.sources, 'coverage-diagnostics')
@@ -804,6 +845,7 @@ function buildAttentionRows(input) {
     const metadata = input.sources[name]?.metadata;
     return metadata?.availability !== 'available' || metadata.completeness !== 'complete' || metadata.freshness !== 'fresh';
   });
+  const latestCapacityBlock = latestRow(apiCapacityBlocks);
   return buildAttentionItems({
     'control-policy-unavailable': {
       count: controlPolicyDiagnostics.length,
@@ -813,7 +855,11 @@ function buildAttentionRows(input) {
       count: admissionBlocks.length,
       list: admissionReasons.join(', ')
     },
-    'runs-failed': { count: input.health.failed, repositories: failedRepositories },
+    'api-capacity-blocked': {
+      count: apiCapacityBlocks.length,
+      detail: apiCapacityBlocks.length > 0 ? apiCapacityDetail(latestCapacityBlock) : ''
+    },
+    'runs-failed': { count: unclassifiedFailures.length, repositories: failedRepositories },
     'runs-approval': { count: input.health.approval },
     'disabled-workflows': { count: input.disabledWorkflows },
     'package-gaps': { count: packageGaps },
