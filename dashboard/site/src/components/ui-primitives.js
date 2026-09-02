@@ -105,3 +105,13 @@ export function formatUtcDateTime(value) {
   if (!Number.isFinite(parsed)) return 'Time unavailable';
   return formatMediumUtcDateTime(parsed);
 }
+
+/**
+ * Renders the shared "no data" placeholder used by table-summary cells when
+ * a column has no values eligible for summarization.
+ * @param {string} message
+ * @returns {HTMLElement}
+ */
+export function renderTableSummaryEmpty(message) {
+  return h('span', { className: 'table-summary-empty' }, message);
+}

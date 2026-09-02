@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import { describe, expect, it } from 'vitest';
-import { coverageWindowHours, formatMediumUtcDate, formatMediumUtcDateTime, formatUtcDateTime, renderSectionHeading, renderVitalStat } from '../../src/components/ui-primitives.js';
+import { coverageWindowHours, formatMediumUtcDate, formatMediumUtcDateTime, formatUtcDateTime, renderSectionHeading, renderTableSummaryEmpty, renderVitalStat } from '../../src/components/ui-primitives.js';
 
 describe('ui primitives', () => {
   it('renders shared section-heading markup with configurable heading levels', () => {
@@ -64,5 +64,12 @@ describe('ui primitives', () => {
     expect(coverageWindowHours({ 'coverage-start': '2026-08-30T05:00:00Z', 'coverage-end': '2026-08-30T00:00:00Z' })).toBeNull();
     expect(coverageWindowHours({ 'coverage-start': 'not-a-date', 'coverage-end': '2026-08-30T05:00:00Z' })).toBeNull();
     expect(coverageWindowHours(undefined)).toBeNull();
+  });
+
+  it('renders the shared table-summary empty-state placeholder with the given message', () => {
+    const rendered = renderTableSummaryEmpty('No timestamps');
+    expect(rendered.tagName).toBe('SPAN');
+    expect(rendered.className).toBe('table-summary-empty');
+    expect(rendered.textContent).toBe('No timestamps');
   });
 });
