@@ -78,6 +78,7 @@ function source(name, rows, generatedAt, available = true, complete = true) {
 function coverageDiagnosticRows(deployed, usage, controlSettings, report) {
   const diagnostics = [];
   if (report.error) diagnostics.push({
+    kind: report.errorStatus === 403 ? "github-api-rate-limit-403" : "durable-output-unavailable",
     title: "Durable output collection unavailable",
     effect: report.error,
   });

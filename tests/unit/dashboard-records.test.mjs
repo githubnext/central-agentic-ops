@@ -191,6 +191,7 @@ test("dashboard records stop on a GitHub rate limit and return a renderable erro
 
     assert.equal(output.generatedAt, "2026-09-02T23:00:00Z");
     assert.deepEqual(output.records, []);
+    assert.equal(output.errorStatus, 403);
     assert.match(output.error, /GitHub API rate limit exceeded/);
     assert.match(output.error, /Retry after 2026-09-03T00:00:00.000Z/);
     assert.match(output.error, /rate-limits-for-the-rest-api/);

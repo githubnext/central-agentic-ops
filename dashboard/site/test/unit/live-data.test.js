@@ -183,6 +183,7 @@ describe("live Dashboard Language sources", () => {
         ...inputs.report,
         records: [],
         error: "GitHub API rate limit exceeded; collection stopped.",
+        errorStatus: 403,
       };
       writeFileSync(join(temporaryDirectory, "report.json"), JSON.stringify(rateLimitedReport));
       execFileSync(process.execPath, [
@@ -201,6 +202,7 @@ describe("live Dashboard Language sources", () => {
       });
       sources = JSON.parse(readFileSync(output, "utf8"));
       expect(sources["coverage-diagnostics"].rows).toContainEqual({
+        kind: "github-api-rate-limit-403",
         title: "Durable output collection unavailable",
         effect: rateLimitedReport.error,
       });

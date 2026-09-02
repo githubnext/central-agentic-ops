@@ -228,6 +228,11 @@ function buildPresenterModuleUrl() {
     .replace("'./anomaly-readiness.js'", JSON.stringify(anomalyReadinessModuleUrl));
   const uiElementsModuleUrl = `data:text/javascript;charset=utf-8,${encodeURIComponent(uiElementsSource)}`;
 
+  const siteCalloutSource = readFileSync(new URL('../../src/components/site-callout.js', import.meta.url), 'utf8')
+    .replace("'../dom.js'", JSON.stringify(domModuleUrl))
+    .replace("'../octicons.js'", JSON.stringify(octiconsModuleUrl));
+  const siteCalloutModuleUrl = `data:text/javascript;charset=utf-8,${encodeURIComponent(siteCalloutSource)}`;
+
   const dataViewSource = readFileSync(new URL('../../src/components/data-view.js', import.meta.url), 'utf8')
     .replace("'../dom.js'", JSON.stringify(domModuleUrl))
     .replace("'../octicons.js'", JSON.stringify(octiconsModuleUrl))
@@ -272,6 +277,7 @@ function buildPresenterModuleUrl() {
     .replace("'./components/ui-elements.js'", JSON.stringify(uiElementsModuleUrl))
     .replace("'./components/data-view.js'", JSON.stringify(dataViewModuleUrl))
     .replace("'./components/filter-bar.js'", JSON.stringify(filterBarModuleUrl))
+    .replace("'./components/site-callout.js'", JSON.stringify(siteCalloutModuleUrl))
     .replace("'./data-processor.js'", JSON.stringify(dataProcessorModuleUrl))
     .replace("'./overview-data.js'", JSON.stringify(overviewDataModuleUrl))
     .replace("'./repository-data.js'", JSON.stringify(repositoryDataModuleUrl))

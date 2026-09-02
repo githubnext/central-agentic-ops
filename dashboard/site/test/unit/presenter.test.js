@@ -438,6 +438,68 @@ describe('presenter built-in and custom pages', () => {
       sources: {}
     });
 
+    it('renders conditional site-wide callouts and remembers dismissal only in memory', () => {
+      localStorage.clear();
+      sessionStorage.clear();
+      const document = {
+        languageVersion: '0.1.0',
+        dashboard: {
+          id: 'callout-dashboard',
+          title: 'Callout Dashboard',
+          callouts: [
+            {
+              id: 'operator-message',
+              title: 'Operator message',
+              description: 'A message for every dashboard user.',
+              icon: 'megaphone'
+            },
+            {
+              id: 'rate-limit-message',
+              title: 'Dashboard data is partial',
+              description: 'Some data could not be downloaded.',
+              icon: 'alert',
+              'visible-when': {
+                source: 'coverage-diagnostics',
+                field: 'kind',
+                equals: 'github-api-rate-limit-403'
+              }
+            }
+          ],
+          pages: [{
+            id: 'usage',
+            kind: /** @type {'built-in'} */ ('built-in'),
+            page: 'usage',
+            title: 'Usage'
+          }]
+        }
+      };
+      const sources = {
+        'coverage-diagnostics': {
+          source: 'coverage-diagnostics',
+          rows: [{ kind: 'github-api-rate-limit-403' }]
+        }
+      };
+
+      const rendered = renderDashboard({ document, sources });
+      expect(rendered.querySelectorAll('.site-callout')).toHaveLength(2);
+      expect(rendered.querySelector('[data-site-callout="rate-limit-message"]')?.textContent).toContain('Dashboard data is partial');
+      const dismiss = /** @type {HTMLButtonElement | null} */ (
+        rendered.querySelector('[data-site-callout="operator-message"] .site-callout-dismiss')
+      );
+      expect(dismiss?.getAttribute('aria-label')).toBe('Dismiss Operator message');
+      dismiss?.click();
+      expect(rendered.querySelector('[data-site-callout="operator-message"]')).toBeNull();
+      expect(localStorage).toHaveLength(0);
+      expect(sessionStorage).toHaveLength(0);
+
+      const rerendered = renderDashboard({ document, sources });
+      expect(rerendered.querySelector('[data-site-callout="operator-message"]')).toBeNull();
+      expect(rerendered.querySelector('[data-site-callout="rate-limit-message"]')).not.toBeNull();
+
+      const complete = renderDashboard({ document, sources: {} });
+      expect(complete.querySelector('[data-site-callout="rate-limit-message"]')).toBeNull();
+    });
+
     const labels = [...rendered.querySelectorAll('.nav-section-label')].map((node) => node.textContent?.trim());
     expect(labels).toEqual(['Attention', 'Investigate', 'Explore', 'Maintain', 'Package operations']);
     expect(rendered.querySelector('[data-nav-page-id="overview"]')?.previousElementSibling?.textContent).toBe('Attention');

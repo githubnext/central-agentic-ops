@@ -14,6 +14,7 @@ import { findLink } from './components/link-content.js';
 import { elementHandlesEmptyRows, renderUiElement } from './components/ui-elements.js';
 import { renderDataView } from './components/data-view.js';
 import { renderFilterBar } from './components/filter-bar.js';
+import { renderSiteCallouts } from './components/site-callout.js';
 import { processRows } from './data-processor.js';
 import { deriveOverviewSources } from './overview-data.js';
 import { deriveRepositorySources } from './repository-data.js';
@@ -58,7 +59,7 @@ import { dashboardHorizonHours, formatDashboardHorizon, resolveDashboardHorizon 
  */
 
 /**
- * @typedef {{ id: string, title: string, description?: string, defaults?: Record<string, unknown>, units?: Record<string, { name: string, symbol: string, significant: number }>, pages: Array<PresentableBuiltInPage | PresentableCustomPage>, ['github-url-base']?: string, repository?: string, navigation?: PresentableNavigationSection[], horizon?: { label: string, tooltip: { label: string, description: string, icon?: string } } }} PresentableDashboard
+ * @typedef {{ id: string, title: string, description?: string, defaults?: Record<string, unknown>, units?: Record<string, { name: string, symbol: string, significant: number }>, callouts?: Array<{ id: string, title: string, description: string, icon?: string, ['visible-when']?: { source: string, field: string, equals: unknown } }>, pages: Array<PresentableBuiltInPage | PresentableCustomPage>, ['github-url-base']?: string, repository?: string, navigation?: PresentableNavigationSection[], horizon?: { label: string, tooltip: { label: string, description: string, icon?: string } } }} PresentableDashboard
  */
 
 /**
@@ -391,6 +392,7 @@ function renderMainContent(document, pages, sources, githubUrlBase, dashboardRep
         )
       )
     ),
+    renderSiteCallouts(document.dashboard.callouts, sources),
     h(
       'main',
       { id: 'main-content', className: 'dashboard-prototype', tabIndex: -1 },

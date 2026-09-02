@@ -9,8 +9,10 @@ export const LANGUAGE_VERSION = '0.1.0';
 export const IDENTIFIER_PATTERN = /^[a-z][a-z0-9]*(?:-[a-z0-9]+)*$/;
 
 export const ROOT_KEYS = ['language-version', 'dashboard'];
-export const DASHBOARD_KEYS = ['id', 'title', 'description', 'defaults', 'units', 'pages', 'github-url-base', 'repository', 'navigation', 'horizon'];
+export const DASHBOARD_KEYS = ['id', 'title', 'description', 'defaults', 'units', 'pages', 'github-url-base', 'repository', 'navigation', 'horizon', 'callouts'];
 export const DASHBOARD_HORIZON_KEYS = ['label', 'tooltip'];
+export const SITE_CALLOUT_KEYS = ['id', 'title', 'description', 'icon', 'visible-when'];
+export const SITE_CALLOUT_VISIBILITY_KEYS = ['source', 'field', 'equals'];
 export const TOOLTIP_KEYS = ['label', 'description', 'icon'];
 export const DEFAULTS_KEYS = ['scope', 'time', 'filters'];
 export const UNIT_DEFINITION_KEYS = ['name', 'symbol', 'significant'];
@@ -302,7 +304,7 @@ export const SOURCE_FIELDS = {
   evals: ['eval', 'eval-name', 'eval-question', 'requested-model', 'observed-at'],
   'eval-observations': ['organization', 'repository', 'workflow', 'run', 'experiment', 'eval', 'eval-result', 'requested-model', 'resolved-model', 'rollout-mode', 'observed-at'],
   usage: ['organization', 'repository', 'workflow', 'run', 'invocation', 'engine', 'engine-version', 'requested-model', 'resolved-model', 'rollout-mode', 'input-tokens', 'output-tokens', 'cache-read-tokens', 'cache-write-tokens', 'reasoning-tokens', 'aic', 'estimated-usd', 'observed-at', 'organization-link', 'repository-link', 'workflow-link', 'run-link'],
-  'coverage-diagnostics': ['title', 'effect'],
+  'coverage-diagnostics': ['kind', 'title', 'effect'],
   'repository-coverage': ['label', 'value'],
   'runtime-episode-summary': ['label', 'value'],
   'runtime-episodes': ['run', 'run-title', 'package', 'workflow', 'started-at', 'duration', 'status', 'control-transition', 'attribution', 'run-link'],
