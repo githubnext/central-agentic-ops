@@ -398,6 +398,12 @@ test("control workflows deny before activation through one shared admission cont
   assert.match(sharedControl, /^\s+id: cao_admission$/m);
   assert.match(sharedControl, /contents\/\.github\/cao\/src\/control\.mjs/);
   assert.match(sharedControl, /contents\/\.github\/cao\/src\/policy\.mjs/);
+  assert.match(sharedControl, /Generate CAO pre-activation GitHub App token/);
+  assert.match(sharedControl, /actions\/create-github-app-token@v3\.2\.0/);
+  assert.match(sharedControl, /permission-actions: read[\s\S]*?permission-contents: read/);
+  assert.match(sharedControl, /CAO_API_TOKEN: \$\{\{ steps\.cao_pre_activation_app_token\.outputs\.token \|\| secrets\.GH_AW_GITHUB_TOKEN \|\| github\.token \}\}/);
+  assert.match(sharedControl, /CAO admission blocked: GitHub API limited until \$\{\{ steps\.cao_admission\.outputs\.github_api_reset_at \}\}/);
+  assert.match(sharedControl, /reason == 'github-api-capacity-insufficient'/);
   assert.match(sharedControl, /reason="cannot read or execute the CAO control modules at github\.workflow_sha"/);
   for (const [name, source] of controlled) {
     assert.equal(
@@ -421,6 +427,8 @@ test("control workflows deny before activation through one shared admission cont
 
     assert.match(preActivation, /cao_authorized: \$\{\{ steps\.cao_admission\.outputs\.authorized \}\}/, generatedName);
     assert.match(preActivation, /Evaluate Central Agentic Ops admission/, generatedName);
+    assert.match(preActivation, /Generate CAO pre-activation GitHub App token/, generatedName);
+    assert.match(preActivation, /CAO admission blocked: GitHub API limited until/, generatedName);
     assert.match(activation, /needs\.pre_activation\.outputs\.cao_authorized == 'true'/, generatedName);
     assert.ok(transitivelyNeeds(jobs, "agent", "activation"), `${generatedName}: agent must depend on activation`);
   }

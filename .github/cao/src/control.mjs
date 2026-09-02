@@ -21,6 +21,12 @@ const OUTPUT_PATH = join(AGENT_DIRECTORY, "control-precompute.json");
 const POLICY_PATH = ".github/workflows/cao.json";
 const REPOSITORY_PATTERN = /^[A-Za-z0-9][A-Za-z0-9-]*\/[A-Za-z0-9._-]+$/;
 const SHA_PATTERN = /^[0-9a-fA-F]{40,64}$/;
+const MINIMUM_GITHUB_API_REQUESTS = 100;
+const GITHUB_RATE_LIMIT_DOCS = "https://docs.github.com/en/rest/using-the-rest-api/rate-limits-for-the-rest-api";
+const GITHUB_REST_BEST_PRACTICES = "https://docs.github.com/en/rest/using-the-rest-api/best-practices-for-using-the-rest-api";
+const GITHUB_APP_ACTIONS_DOCS = "https://docs.github.com/en/apps/creating-github-apps/authenticating-with-a-github-app/making-authenticated-api-requests-with-a-github-app-in-a-github-actions-workflow";
+const GITHUB_PAT_DOCS = "https://docs.github.com/en/authentication/keeping-your-account-and-data-secure/managing-your-personal-access-tokens";
+const GITHUB_ACTIONS_SECRETS_DOCS = "https://docs.github.com/en/actions/security-for-github-actions/security-guides/using-secrets-in-github-actions";
 const ADMISSION_CHECKS = [
   ["Runtime revision", "The control and policy modules are read from the exact `github.workflow_sha` commit."],
   ["Policy document", "The checked-in policy is parsed and validated for supported keys, types, ranges, unique names, and expressions."],
@@ -31,6 +37,7 @@ const ADMISSION_CHECKS = [
   ["Target input", "Any supplied `target_repo` uses the exact `owner/repository` form."],
   ["Mode input", "Any supplied `safe_output_mode` does not exceed the checked-in mode ceiling."],
   ["Run limits", "Any supplied `max_repos` and `rollout_percent` do not exceed checked-in limits."],
+  ["GitHub API capacity", "The exact credential selected for control precompute has enough primary REST API capacity before activation."],
 ];
 
 class ControlError extends Error {}
@@ -87,10 +94,54 @@ function writeActionsOutputs(values) {
   writeFileSync(outputPath, `${lines.join("\n")}\n`, { flag: "a" });
 }
 
-function writeAdmissionSummary({ authorized, packageName, role, reason }) {
+function retryWait(resetEpochSeconds) {
+  const seconds = Math.max(0, resetEpochSeconds - Math.floor(Date.now() / 1000));
+  return {
+    seconds,
+    minutes: Math.ceil(seconds / 60),
+    hours: Math.ceil(seconds / 36) / 100,
+  };
+}
+
+function capacityGuidance(capacity) {
+  if (!capacity || capacity.status === "available") return "";
+  if (capacity.status === "unavailable") {
+    return `
+> [!CAUTION]
+> GitHub REST API capacity could not be verified. Activation stopped before repository discovery.
+
+### What to do now
+
+1. Check the credential and the [REST API rate-limit guidance](${GITHUB_RATE_LIMIT_DOCS}); do not repeatedly retry a 403 or 429 response.
+2. For durable cross-repository automation, configure a least-privilege GitHub App using [GitHub's Actions authentication guide](${GITHUB_APP_ACTIONS_DOCS}).
+3. If an App cannot be installed and the exact scope is eligible, use a fine-grained PAT with minimal repository access, permissions, and expiration. Follow [GitHub's PAT guidance](${GITHUB_PAT_DOCS}) and store it as an [Actions secret](${GITHUB_ACTIONS_SECRETS_DOCS}) named \`GH_AW_GITHUB_TOKEN\`.
+
+See also [GitHub REST API best practices](${GITHUB_REST_BEST_PRACTICES}).
+`;
+  }
+  const wait = retryWait(capacity.reset);
+  return `
+> [!CAUTION]
+> GitHub REST API capacity is too low for this run: ${capacity.remaining} of ${capacity.limit} core requests remain; at least ${capacity.required} are required.
+
+### What to do now
+
+1. Do not rerun before **${capacity.resetAt}**. That is approximately **${wait.minutes} minutes (${wait.hours.toFixed(2)} hours)** from this admission check. The next scheduled run after that time is a new attempt.
+2. For durable cross-repository automation, configure a least-privilege GitHub App using [GitHub's Actions authentication guide](${GITHUB_APP_ACTIONS_DOCS}). GitHub documents higher, installation-scoped limits for Apps in the [REST API rate-limit guide](${GITHUB_RATE_LIMIT_DOCS}).
+3. If an App cannot be installed and the exact scope is eligible, use a fine-grained PAT with minimal repository access, permissions, and expiration. Follow [GitHub's PAT guidance](${GITHUB_PAT_DOCS}) and store it as an [Actions secret](${GITHUB_ACTIONS_SECRETS_DOCS}) named \`GH_AW_GITHUB_TOKEN\`.
+
+GitHub says not to retry primary-limit failures until \`x-ratelimit-reset\`; continuing while limited can result in integration blocking. See [GitHub REST API best practices](${GITHUB_REST_BEST_PRACTICES}).
+`;
+}
+
+function writeAdmissionSummary({ authorized, packageName, role, reason, apiCapacity }) {
   const summaryPath = environment("GITHUB_STEP_SUMMARY");
   if (!summaryPath) return;
-  const status = authorized
+  const status = apiCapacity?.status === "limited"
+    ? `Blocked package \`${packageName}\` as \`${role}\` before activation: insufficient GitHub REST API capacity.`
+    : apiCapacity?.status === "unavailable"
+      ? `Blocked package \`${packageName}\` as \`${role}\` before activation: GitHub REST API capacity is unavailable.`
+      : authorized
     ? `Authorized package \`${packageName}\` as \`${role}\`.`
     : `Skipped package \`${packageName}\` as \`${role}\`: ${reason}`;
   const disclosures = ADMISSION_CHECKS.map(([title, description]) => (
@@ -98,9 +149,63 @@ function writeAdmissionSummary({ authorized, packageName, role, reason }) {
   )).join("\n\n");
   writeFileSync(
     summaryPath,
-    `### Central Agentic Ops admission\n\n${status}\n\n${disclosures}\n`,
+    `### Central Agentic Ops admission\n\n${status}\n${capacityGuidance(apiCapacity)}\n${disclosures}\n`,
     { flag: "a" },
   );
+}
+
+function githubApiRequestRequirement(policy, options) {
+  let estimated = options.role === "orchestrator" ? 2 : 0;
+  if (options.role === "orchestrator") {
+    estimated += options.targetRepository
+      ? 1
+      : policy.allowed_repositories.length > 0
+        ? policy.allowed_repositories.length
+        : Math.ceil(policy.inventory["max-scan-repositories"] / 100);
+    if (policy.monthly_ai_credit_budget > 0) {
+      estimated += (Object.keys(policy.worker_policies || {}).length + 1) * 10;
+    }
+  } else if (policy.safe_output_mode === "live") {
+    estimated += 3;
+  }
+  return Math.max(MINIMUM_GITHUB_API_REQUESTS, estimated);
+}
+
+function githubApiCapacity(required) {
+  const token = environment("CAO_API_TOKEN");
+  try {
+    const source = run("gh", ["api", "rate_limit"], {
+      env: token ? { ...process.env, GH_TOKEN: token } : process.env,
+    });
+    const core = JSON.parse(source)?.resources?.core;
+    if (![core?.limit, core?.remaining, core?.reset].every(Number.isSafeInteger)) {
+      throw new ControlError("GitHub rate-limit response did not contain integer core limits");
+    }
+    const resetAt = new Date(core.reset * 1000).toISOString();
+    return {
+      status: core.remaining >= required ? "available" : "limited",
+      limit: core.limit,
+      remaining: core.remaining,
+      required,
+      reset: core.reset,
+      resetAt,
+    };
+  } catch {
+    return { status: "unavailable", limit: 0, remaining: 0, required, reset: 0, resetAt: "unknown" };
+  }
+}
+
+function applyGithubApiAdmission(result, options) {
+  if (!result.authorized) return result;
+  const required = githubApiRequestRequirement(result, options);
+  const capacity = githubApiCapacity(required);
+  if (capacity.status === "available") return { ...result, github_api_capacity: capacity };
+  return {
+    ...result,
+    authorized: false,
+    reason: capacity.status === "limited" ? "github-api-capacity-insufficient" : "github-api-capacity-unavailable",
+    github_api_capacity: capacity,
+  };
 }
 
 function policyOptions({ normalizeOrchestrator = false } = {}) {
@@ -139,7 +244,7 @@ function admit() {
       throw new ControlError(`cannot read ${POLICY_PATH} at github.workflow_sha`);
     }
     const document = parsePolicy(source);
-    result = effectivePolicy(document, options);
+    result = applyGithubApiAdmission(effectivePolicy(document, options), options);
     writeFileSync(join(directory, "effective-policy.json"), `${JSON.stringify(result, null, 2)}\n`);
   } catch (error) {
     const message = error instanceof PolicyError
@@ -149,16 +254,27 @@ function admit() {
   }
 
   const monthlyCreditBudget = result.authorized ? result.monthly_ai_credit_budget : 0;
-  writeActionsOutputs({
+  const outputs = {
     authorized: result.authorized,
     reason: result.reason,
     monthly_credit_budget: monthlyCreditBudget,
-  });
+  };
+  if (result.github_api_capacity?.status !== "available" && result.github_api_capacity) {
+    Object.assign(outputs, {
+      github_api_status: result.github_api_capacity.status,
+      github_api_limit: result.github_api_capacity.limit,
+      github_api_remaining: result.github_api_capacity.remaining,
+      github_api_required: result.github_api_capacity.required,
+      github_api_reset_at: result.github_api_capacity.resetAt,
+    });
+  }
+  writeActionsOutputs(outputs);
   writeAdmissionSummary({
     authorized: result.authorized,
     packageName: options.packageName,
     role: options.role,
     reason: result.reason,
+    apiCapacity: result.github_api_capacity,
   });
 }
 
