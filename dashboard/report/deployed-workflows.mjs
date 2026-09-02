@@ -172,18 +172,37 @@ async function fileContent(repositoryName, filePath) {
   return Buffer.from(response.body.content || "", "base64").toString("utf8");
 }
 
-function ghAwCompilerVersion(source) {
-  const metadata = source.match(/^# gh-aw-metadata:\s*(.+)$/m)?.[1];
-  try {
-    const version = JSON.parse(metadata || "{}").compiler_version;
-    return typeof version === "string" && /^v?\d+(?:\.\d+)+$/.test(version) ? version : null;
-  } catch {
-    return null;
+function ghAwPayloads(source) {
+  const prefixes = {
+    ghAwMetadata: "# gh-aw-metadata: ",
+    ghAwManifest: "# gh-aw-manifest: ",
+  };
+  const payloads = { ghAwMetadata: null, ghAwManifest: null };
+  for (const line of source.split("\n")) {
+    for (const [name, prefix] of Object.entries(prefixes)) {
+      if (!line.startsWith(prefix)) continue;
+      try {
+        const payload = JSON.parse(line.slice(prefix.length));
+        if (payload && typeof payload === "object" && !Array.isArray(payload)) payloads[name] = payload;
+      } catch {
+        // Malformed generated metadata is unavailable rather than partially parsed.
+      }
+    }
   }
+  return payloads;
+}
+
+function isVersion(value) {
+  const text = String(value);
+  const parts = (text.startsWith("v") ? text.slice(1) : text).split(".");
+  return parts.length > 1 && parts.every((part) => part.length > 0 && [...part].every((character) => character >= "0" && character <= "9"));
 }
 
 function compareVersions(left, right) {
-  const parts = (value) => String(value).replace(/^v/, "").split(".").map((part) => Number.parseInt(part, 10));
+  const parts = (value) => {
+    const text = String(value);
+    return (text.startsWith("v") ? text.slice(1) : text).split(".").map((part) => Number.parseInt(part, 10));
+  };
   const [leftParts, rightParts] = [parts(left), parts(right)];
   if ([...leftParts, ...rightParts].some((part) => !Number.isInteger(part))) return null;
   for (let index = 0; index < Math.max(leftParts.length, rightParts.length); index += 1) {
@@ -201,7 +220,7 @@ function updateState(version, latestVersion) {
 async function latestGhAwVersion() {
   try {
     const version = (await github("/repos/github/gh-aw/releases/latest")).body.tag_name;
-    return typeof version === "string" && /^v?\d+(?:\.\d+)+$/.test(version) ? version : null;
+    return typeof version === "string" && isVersion(version) ? version : null;
   } catch (error) {
     console.warn(`${error.message}; gh-aw update state will be unknown`);
     return null;
@@ -255,7 +274,13 @@ async function workflowCapabilities(repositoryName, lockPath) {
     fileContent(repositoryName, sourcePath),
     fileContent(repositoryName, lockPath),
   ]);
-  const ghAwVersion = lock.status === "fulfilled" ? ghAwCompilerVersion(lock.value) : null;
+  const payloads = lock.status === "fulfilled"
+    ? ghAwPayloads(lock.value)
+    : { ghAwMetadata: null, ghAwManifest: null };
+  const ghAwVersion = typeof payloads.ghAwMetadata?.compiler_version === "string"
+    && isVersion(payloads.ghAwMetadata.compiler_version)
+    ? payloads.ghAwMetadata.compiler_version
+    : null;
   try {
     if (source.status !== "fulfilled") throw source.reason;
     const role = workflowRole(source.value);
@@ -265,6 +290,7 @@ async function workflowCapabilities(repositoryName, lockPath) {
       workers: role === "orchestrator" ? workflowWorkerIds(source.value) : [],
       sourceAvailable: true,
       ghAwVersion,
+      ...payloads,
     };
   } catch (error) {
     console.warn(`${error.message}; workflow capabilities are unknown for ${repositoryName}/${sourcePath}`);
@@ -274,6 +300,7 @@ async function workflowCapabilities(repositoryName, lockPath) {
       workers: [],
       sourceAvailable: !/GitHub API 404\b/.test(error.message) ? null : false,
       ghAwVersion,
+      ...payloads,
     };
   }
 }

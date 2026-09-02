@@ -28,6 +28,8 @@ test("dashboard source bridge carries package memberships, allowance, and invent
         state: "active",
         ghAwVersion: "v0.88.0",
         updateState: "up-to-date",
+        ghAwMetadata: { compiler_version: "v0.88.0", strict: true },
+        ghAwManifest: { version: 1, actions: [] },
         runHealth: { runRecords: [] },
       }],
     },
@@ -76,6 +78,8 @@ test("dashboard source bridge carries package memberships, allowance, and invent
       rolloutMode: sources.workflows.rows[0]["rollout-mode"],
       ghAwVersion: sources.workflows.rows[0]["gh-aw-version"],
       updateState: sources.workflows.rows[0]["gh-aw-update-state"],
+      metadata: sources.workflows.rows[0]["gh-aw-metadata"],
+      manifest: sources.workflows.rows[0]["gh-aw-manifest"],
     },
     {
       package: "ambient-context",
@@ -90,6 +94,8 @@ test("dashboard source bridge carries package memberships, allowance, and invent
       rolloutMode: "review",
       ghAwVersion: "v0.88.0",
       updateState: "up-to-date",
+      metadata: { compiler_version: "v0.88.0", strict: true },
+      manifest: { version: 1, actions: [] },
     },
   );
   assert.equal(sources.outcomes.rows[0]["run-conclusion"], "failure");
