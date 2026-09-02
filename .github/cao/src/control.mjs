@@ -21,6 +21,17 @@ const OUTPUT_PATH = join(AGENT_DIRECTORY, "control-precompute.json");
 const POLICY_PATH = ".github/workflows/cao.json";
 const REPOSITORY_PATTERN = /^[A-Za-z0-9][A-Za-z0-9-]*\/[A-Za-z0-9._-]+$/;
 const SHA_PATTERN = /^[0-9a-fA-F]{40,64}$/;
+const ADMISSION_CHECKS = [
+  ["Runtime revision", "The control and policy modules are read from the exact `github.workflow_sha` commit."],
+  ["Policy document", "The checked-in policy is parsed and validated for supported keys, types, ranges, unique names, and expressions."],
+  ["Control plane", "The `control-plane` declaration is present."],
+  ["Workflow identity", "The package, role, and (for workers) exact worker identity are authorized."],
+  ["Package", "The requested package is declared and enabled."],
+  ["Worker", "For worker runs, the requested worker is declared and enabled."],
+  ["Target input", "Any supplied `target_repo` uses the exact `owner/repository` form."],
+  ["Mode input", "Any supplied `safe_output_mode` does not exceed the checked-in mode ceiling."],
+  ["Run limits", "Any supplied `max_repos` and `rollout_percent` do not exceed checked-in limits."],
+];
 
 class ControlError extends Error {}
 
@@ -82,7 +93,14 @@ function writeAdmissionSummary({ authorized, packageName, role, reason }) {
   const status = authorized
     ? `Authorized package \`${packageName}\` as \`${role}\`.`
     : `Skipped package \`${packageName}\` as \`${role}\`: ${reason}`;
-  writeFileSync(summaryPath, `## Central Agentic Ops admission\n\n${status}\n`, { flag: "a" });
+  const disclosures = ADMISSION_CHECKS.map(([title, description]) => (
+    `<details>\n<summary>${title}</summary>\n\n${description}\n\n</details>`
+  )).join("\n\n");
+  writeFileSync(
+    summaryPath,
+    `### Central Agentic Ops admission\n\n${status}\n\n${disclosures}\n`,
+    { flag: "a" },
+  );
 }
 
 function policyOptions({ normalizeOrchestrator = false } = {}) {

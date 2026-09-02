@@ -65,7 +65,25 @@ jobs:
           echo "authorized=false" >> "$GITHUB_OUTPUT"
           echo "reason=$reason" >> "$GITHUB_OUTPUT"
           echo "monthly_credit_budget=0" >> "$GITHUB_OUTPUT"
-          printf '## Central Agentic Ops admission\n\nSkipped: %s\n' "$reason" >> "$GITHUB_STEP_SUMMARY"
+          cat >> "$GITHUB_STEP_SUMMARY" <<EOF
+          ### Central Agentic Ops admission
+
+          Skipped: $reason
+
+          <details>
+          <summary>Runtime revision</summary>
+
+          The control and policy modules could not be read or executed from the exact \`github.workflow_sha\` commit.
+
+          </details>
+
+          <details>
+          <summary>Policy and authorization checks</summary>
+
+          The remaining admission checks could not run because the authoritative control modules were unavailable.
+
+          </details>
+          EOF
 
       - name: Install gh-aw CLI when monthly budget is enabled
         if: ${{ steps.cao_admission.outputs.authorized == 'true' && steps.cao_admission.outputs.monthly_credit_budget != '0' }}
