@@ -475,6 +475,10 @@ test("operations creation guidance scopes detection and omits worker evals", () 
 
   assert.match(packageSkill, /safe-outputs\.threat-detection: false/);
   assert.match(packageSkill, /`labels: \[<package-slug>\]` and prompt instructions requiring every created issue to carry that package label/);
+  assert.match(packageSkill, /evaluate the potential follow-up actions/);
+  assert.match(packageSkill, /single most important action with the highest expected return on investment/);
+  assert.match(packageSkill, /<details><summary><b>Agent prompt<\/b><\/summary> \.\.\. <\/details>/);
+  assert.match(packageSkill, /human can review the issue before using the prompt for an agentic run/);
   assert.match(packageSkill, /no `evals` configuration; use deterministic graders for worker measurement/);
   assert.match(packageSkill, /Confirm the orchestrator disables threat detection and every worker omits `evals`/);
   assert.match(packageSkill, /CAO operational packages require organization-billed Copilot inference/);
