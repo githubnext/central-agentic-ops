@@ -113,6 +113,7 @@ Create at least one `.github/workflows/<package>-<worker>.md`. Every worker must
   ```
 
 - least-privilege permissions, explicit tools/network configuration, `strict: true`, bounded credits and timeout, and safe outputs limited to the worker's mission
+- when `safe-outputs.create-issue` is enabled, `labels: [<package-slug>]` and prompt instructions requiring every created issue to carry that package label
 - no `evals` configuration; use deterministic graders for worker measurement
 - instructions that treat repository content as untrusted, consume `/tmp/gh-aw/agent/control-precompute.json`, define success/no-op behavior, and preserve control-plane correlation data in durable outputs
 
@@ -159,7 +160,7 @@ Before finishing:
 5. Confirm the orchestrator imports `shared/control.md` with static package identity, reads policy only through the shared JSON resolver, and defaults safely to review mode.
 6. Confirm the orchestrator has a `Completion` section that preserves the exact standard report contract from `shared/control.md`; package-specific reporting must be additive.
 7. Confirm worker concurrency is keyed by `github.workflow` and `inputs.target_repo` with stale runs cancelled.
-8. Check permissions, tools, network hosts, safe-output limits, credits, timeouts, and dispatch maximums against actual need.
+8. Check permissions, tools, network hosts, safe-output limits, credits, timeouts, and dispatch maximums against actual need; confirm issue-creating workers configure and request their package label.
 9. Confirm the orchestrator disables threat detection and every worker omits `evals`.
 10. Confirm dispatcher telemetry is inherited only through `shared/control.md`; require an explicit backend-routing need before adding a provider-specific observability import.
 11. Confirm every existing operational-value evaluator remains under `.github/graders/` and registered by its worker, or explicitly identify each new worker whose value design is pending adoption.
