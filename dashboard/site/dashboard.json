@@ -851,6 +851,18 @@
                   "title": "Ended"
                 }
               ],
+              "actions": [
+                {
+                  "intent": "Investigate this failed workflow run.",
+                  "presentation": "copy-prompt",
+                  "icon": "search",
+                  "label": "Investigate",
+                  "when": {
+                    "field": "run-conclusion",
+                    "equals": "failure"
+                  }
+                }
+              ],
               "href": {
                 "field": "run-link",
                 "type": "nominal"

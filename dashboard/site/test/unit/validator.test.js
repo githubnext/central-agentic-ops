@@ -38,6 +38,33 @@ describe('dashboard document validation', () => {
     expect(accepted.ok).toBe(true);
   });
 
+  it('validates declarative table intents without author-defined context templating', () => {
+    const document = JSON.parse(authoritativeDashboardSource);
+    const runsPage = document.dashboard.pages.find((/** @type {{ id: string }} */ page) => page.id === 'workflow-runs');
+    const runsView = runsPage.views.find((/** @type {{ id: string }} */ view) => view.id === 'workflow-runs-table');
+    expect(runsView.encoding.actions).toEqual([{
+      intent: 'Investigate this failed workflow run.',
+      presentation: 'copy-prompt',
+      icon: 'search',
+      label: 'Investigate',
+      when: { field: 'run-conclusion', equals: 'failure' }
+    }]);
+    expect(validateDashboardDocument(JSON.stringify(document)).ok).toBe(true);
+
+    runsView.encoding.actions[0].presentation = 'copy-command';
+    expect(validateDashboardDocument(JSON.stringify(document)).ok).toBe(true);
+
+    runsView.encoding.actions[0].when.field = 'not-a-run-field';
+    const rejected = validateDashboardDocument(JSON.stringify(document));
+    expect(rejected.ok).toBe(false);
+    if (!rejected.ok) {
+      expect(rejected.errors).toContainEqual(expect.objectContaining({
+        code: 'DLS-E010',
+        path: '$.dashboard.pages[7].views[1].encoding.actions[0].when.field'
+      }));
+    }
+  });
+
   it('accepts every package dashboard document', () => {
     for (const source of packageDashboardSources) {
       expect(validateDashboardDocument(source).ok).toBe(true);
@@ -267,7 +294,7 @@ describe('dashboard document validation', () => {
     }
   });
 
-  it('DLS-VIEW-029 validates route fields against the selected logical source', () => {
+  it('DLS-VIEW-030 validates route fields against the selected logical source', () => {
     const document = JSON.parse(authoritativeDashboardSource);
     const repositoryPageIndex = document.dashboard.pages.findIndex((/** @type {{ id: string }} */ page) => page.id === 'repository-detail');
     const repositoryPage = document.dashboard.pages[repositoryPageIndex];
@@ -285,7 +312,7 @@ describe('dashboard document validation', () => {
     }
   });
 
-  it('DLS-VIEW-030 validates JSON-configured title links against one selected source', () => {
+  it('DLS-VIEW-031 validates JSON-configured title links against one selected source', () => {
     const document = JSON.parse(authoritativeDashboardSource);
     const outcomePage = document.dashboard.pages.find((/** @type {{ id: string }} */ page) => page.id === 'outcome-detail');
     const outcomeView = outcomePage.views[0];
@@ -2253,7 +2280,7 @@ dashboard:
     }
   });
 
-  it('DLS-VIEW-031 validates the chart table option', () => {
+  it('DLS-VIEW-032 validates the chart table option', () => {
     const valid = validateDashboardDocument(`language-version: "0.1.0"
 dashboard:
   id: valid-chart-table
