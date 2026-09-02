@@ -191,6 +191,13 @@ function inventoryWorkflowDetails(inventory = {}, controlSettings = {}) {
   for (const bundle of inventory.bundles || []) {
     const packagePolicy = controlSettings.packages?.[bundle.controlPackage];
     const configuredMode = rolloutMode(packagePolicy?.mode);
+    const rolloutPercent = Number(packagePolicy?.["rollout-percent"] ?? packagePolicy?.rollout_percent);
+    const packageTargets = Object.entries(packagePolicy?.targets ?? {})
+      .map(([repository, targetPolicy]) => ({
+        repository,
+        mode: rolloutMode(targetPolicy?.mode),
+      }))
+      .filter((target) => target.mode !== "unknown" && target.repository);
     const packageId = String(bundle.id || bundle.controlPackage || "").trim();
     const packageName = String(bundle.name || packageId).trim();
     const packageMembership = packageId ? { id: packageId, name: packageName || packageId } : undefined;
@@ -216,6 +223,8 @@ function inventoryWorkflowDetails(inventory = {}, controlSettings = {}) {
           packageInventoryWarnings: inventoryWarnings,
           packageAllowance: packageAllowance > 0 ? packageAllowance : null,
           packageWorkerCount: workers.length,
+          ...(Number.isFinite(rolloutPercent) ? { packageRolloutPercent: rolloutPercent } : {}),
+          ...(packageTargets.length > 0 ? { packageTargets } : {}),
           ...(packageMembership ? { packageMembership } : {}),
           ...(configuredMode !== "unknown" ? { configuredMode } : {}),
           ...(admission ? { admissionStatus: admission.status, admissionReason: admission.reason } : {}),
@@ -239,17 +248,19 @@ function workflowRows(deployed, generatedAt, inventory, controlSettings) {
     const membership = workflowMemberships.at(-1);
     const recentMode = rolloutMode(workflow.runHealth?.runRecords?.[0]?.displayTitle);
     return {
-      ...names,
-      ...(membership ? { package: membership.id, "package-name": membership.name } : {}),
-      ...(workflowMemberships.length > 0 ? { "package-memberships": workflowMemberships } : {}),
-      ...(Number.isFinite(details?.maxAiCredits) ? { "max-ai-credits": details.maxAiCredits } : {}),
-      ...(Number.isFinite(details?.packageAllowance) ? { "package-aic-allowance": details.packageAllowance } : {}),
-      ...(Number.isFinite(details?.packageWorkerCount) ? { "package-worker-count": details.packageWorkerCount } : {}),
-      ...(Number.isFinite(details?.packageInventoryWarnings) ? { "package-inventory-warnings": details.packageInventoryWarnings } : {}),
-      ...(typeof details?.inventoryReady === "boolean" ? { "inventory-ready": details.inventoryReady } : {}),
-      ...(details?.admissionStatus ? { "admission-status": details.admissionStatus } : {}),
-      ...(details?.admissionReason ? { "admission-reason": details.admissionReason } : {}),
-      "workflow-role": workflow.role || (membership ? "worker" : "standalone"),
+     ...names,
+     ...(membership ? { package: membership.id, "package-name": membership.name } : {}),
+     ...(workflowMemberships.length > 0 ? { "package-memberships": workflowMemberships } : {}),
+     ...(Number.isFinite(details?.maxAiCredits) ? { "max-ai-credits": details.maxAiCredits } : {}),
+     ...(Number.isFinite(details?.packageAllowance) ? { "package-aic-allowance": details.packageAllowance } : {}),
+     ...(Number.isFinite(details?.packageWorkerCount) ? { "package-worker-count": details.packageWorkerCount } : {}),
+     ...(Number.isFinite(details?.packageInventoryWarnings) ? { "package-inventory-warnings": details.packageInventoryWarnings } : {}),
+     ...(Number.isFinite(details?.packageRolloutPercent) ? { "package-rollout-percent": details.packageRolloutPercent } : {}),
+     ...(Array.isArray(details?.packageTargets) ? { "package-targets": details.packageTargets } : {}),
+     ...(typeof details?.inventoryReady === "boolean" ? { "inventory-ready": details.inventoryReady } : {}),
+     ...(details?.admissionStatus ? { "admission-status": details.admissionStatus } : {}),
+     ...(details?.admissionReason ? { "admission-reason": details.admissionReason } : {}),
+     "workflow-role": workflow.role || (membership ? "worker" : "standalone"),
       workflow: workflow.path?.replace(/\.lock\.yml$/, ".md") || "",
       "workflow-name": workflow.name || workflow.path || "Unknown workflow",
       "workflow-active": workflow.state === "active"
