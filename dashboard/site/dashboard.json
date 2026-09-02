@@ -2683,6 +2683,80 @@
             "layout": "full"
           }
         ]
+      },
+      {
+        "id": "updates",
+        "kind": "custom",
+        "title": "Updates",
+        "icon": "workflow",
+        "description": "Installed gh-aw compiler versions and whether a newer gh-aw release is available.",
+        "views": [
+          {
+            "id": "workflow-updates",
+            "title": "Workflow update inventory",
+            "description": "Every agentic workflow discovered in the configured scope. Unknown means the compiled workflow metadata or latest release could not be read.",
+            "data": {
+              "source": "workflows"
+            },
+            "mark": "table",
+            "empty-message": "No agentic workflows observed.",
+            "encoding": {
+              "href": {
+                "field": "workflow-link",
+                "type": "nominal"
+              },
+              "columns": [
+                {
+                  "field": "workflow",
+                  "type": "nominal",
+                  "title": "Workflow"
+                },
+                {
+                  "field": "repository",
+                  "type": "nominal",
+                  "title": "Repository"
+                },
+                {
+                  "field": "gh-aw-version",
+                  "type": "nominal",
+                  "title": "gh-aw version"
+                },
+                {
+                  "field": "gh-aw-update-state",
+                  "type": "nominal",
+                  "title": "Update state",
+                  "display": "status"
+                }
+              ]
+            },
+            "layout": "full"
+          },
+          {
+            "id": "workflow-versions",
+            "title": "Workflow versions",
+            "description": "Distribution of discovered workflows by their compiled gh-aw version.",
+            "data": {
+              "source": "workflows"
+            },
+            "mark": "chart",
+            "chart": "pie",
+            "table": false,
+            "encoding": {
+              "x": {
+                "field": "gh-aw-version",
+                "type": "nominal",
+                "title": "gh-aw version"
+              },
+              "y": {
+                "field": "workflow",
+                "type": "quantitative",
+                "aggregate": "count",
+                "title": "Workflows"
+              }
+            },
+            "layout": "full"
+          }
+        ]
       }
     ],
     "navigation": [
@@ -2708,6 +2782,12 @@
           "workflows",
           "repositories",
           "packages"
+        ]
+      },
+      {
+        "label": "Maintain",
+        "pages": [
+          "updates"
         ]
       }
     ]

@@ -26,6 +26,8 @@ test("dashboard source bridge carries package memberships, allowance, and invent
         name: "Package",
         role: "orchestrator",
         state: "active",
+        ghAwVersion: "v0.88.0",
+        updateState: "up-to-date",
         runHealth: { runRecords: [] },
       }],
     },
@@ -72,6 +74,8 @@ test("dashboard source bridge carries package memberships, allowance, and invent
       packageWorkerCount: sources.workflows.rows[0]["package-worker-count"],
       inventoryReady: sources.workflows.rows[0]["inventory-ready"],
       rolloutMode: sources.workflows.rows[0]["rollout-mode"],
+      ghAwVersion: sources.workflows.rows[0]["gh-aw-version"],
+      updateState: sources.workflows.rows[0]["gh-aw-update-state"],
     },
     {
       package: "ambient-context",
@@ -84,6 +88,8 @@ test("dashboard source bridge carries package memberships, allowance, and invent
       packageWorkerCount: 0,
       inventoryReady: true,
       rolloutMode: "review",
+      ghAwVersion: "v0.88.0",
+      updateState: "up-to-date",
     },
   );
   assert.equal(sources.outcomes.rows[0]["run-conclusion"], "failure");
