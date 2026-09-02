@@ -105,3 +105,13 @@ export function formatUtcDateTime(value) {
   if (!Number.isFinite(parsed)) return 'Time unavailable';
   return formatMediumUtcDateTime(parsed);
 }
+
+/**
+ * Coerces a JSON-selected value to a display string, treating `null`/`undefined`
+ * as an empty string rather than the literal `"null"`/`"undefined"`.
+ * @param {unknown} value
+ * @returns {string}
+ */
+export function stringValue(value) {
+  return value == null ? '' : String(value);
+}

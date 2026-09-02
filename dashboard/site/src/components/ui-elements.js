@@ -9,7 +9,7 @@ import { renderPackagesView } from './packages-view.js';
 import { renderPackageNavigation } from './package-detail.js';
 import { renderWorkflowDetail } from './workflow-detail.js';
 import { renderOutcomeDetail } from './outcome-detail.js';
-import { renderSectionHeading } from './ui-primitives.js';
+import { renderSectionHeading, stringValue } from './ui-primitives.js';
 import { renderDefinitionList } from './view-chrome.js';
 import { renderWorkflowRuntime } from './workflow-runtime.js';
 import { renderAnomalyReadiness } from './anomaly-readiness.js';
@@ -288,13 +288,6 @@ function safeNavigationHref(value) {
  */
 function rowsFor(context, sourceName) {
   return Array.isArray(context.sources[sourceName]?.rows) ? context.sources[sourceName].rows : [];
-}
-
-/**
- * @param {unknown} value
- */
-function stringValue(value) {
-  return value == null ? '' : String(value);
 }
 
 /**

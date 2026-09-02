@@ -206,7 +206,8 @@ function buildPresenterModuleUrl() {
 
   const anomalyReadinessSource = readFileSync(new URL('../../src/components/anomaly-readiness.js', import.meta.url), 'utf8')
     .replace("'../dom.js'", JSON.stringify(domModuleUrl))
-    .replace("'../octicons.js'", JSON.stringify(octiconsModuleUrl));
+    .replace("'../octicons.js'", JSON.stringify(octiconsModuleUrl))
+    .replace("'./ui-primitives.js'", JSON.stringify(uiPrimitivesModuleUrl));
   const anomalyReadinessModuleUrl = `data:text/javascript;charset=utf-8,${encodeURIComponent(anomalyReadinessSource)}`;
 
   const uiElementsSource = readFileSync(new URL('../../src/components/ui-elements.js', import.meta.url), 'utf8')
