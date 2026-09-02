@@ -38,7 +38,7 @@ Add `copilot-requests: write` directly to every Copilot-backed orchestrator and 
 
 The top-level `dashboard/` package is conventional GitHub Actions automation, not an agentic operation. Do not create an orchestrator, workers, runtime steering, rollout variables, or operational-value evaluators for it.
 
-- Keep the package separate from root `aw.yml` includes and from every operational package.
+- Install the dashboard from root `aw.yml` by default, keep `dashboard/aw.yml` available for focused dashboard-only installations, and keep both manifests' dashboard destinations in sync. Never fold the dashboard into an operational package.
 - Install `dashboard/dashboard-build.yml` as `.github/workflows/dashboard-build.yml` and `dashboard/dashboard.yml` as `.github/workflows/dashboard.yml` with mapped `action-workflow` includes.
 - Keep the reusable builder path-aware through its `site-path` input and upload a normal artifact that an existing Pages workflow can merge before its single Pages upload and deployment.
 - Keep the standalone publisher manual-only, pass `enablement: false` to `actions/configure-pages`, and require Pages access control before use. Do not add a second enable variable.

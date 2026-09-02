@@ -17,3 +17,13 @@ Central Agentic Ops packages reusable orchestrators and focused workers so platf
 ## Documentation
 
 Ready to explore? [See the docs](https://githubnext.github.io/central-agentic-ops/).
+
+## GitHub Pages setup
+
+The default Central Agentic Ops package installs the dashboard builder and manual Pages publisher. Before running **Central Agentic Ops Dashboard** for the first time:
+
+1. Open **Settings > Pages** in the control repository.
+2. Under **Build and deployment**, set **Source** to **GitHub Actions**.
+3. Restrict Pages access to the intended audience before publishing control-plane data.
+
+The dashboard workflow remains manual and does not enable Pages automatically.

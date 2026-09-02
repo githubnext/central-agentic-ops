@@ -123,6 +123,9 @@ test("gh aw add installs the root package without rewriting Copilot authenticati
   const consumer = installPackage(packageSource);
   try {
     assert.ok(existsSync(join(consumer, ".github", "aw", "default-AGENTS.md")));
+    for (const relativePath of dashboardExpectedFiles) {
+      assert.ok(existsSync(join(consumer, relativePath)), `root package omitted dashboard file ${relativePath}`);
+    }
     for (const workflowId of [
       "ambient-context",
       "aw-maintenance",
