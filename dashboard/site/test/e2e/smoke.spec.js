@@ -269,6 +269,7 @@ function buildPresenterModuleUrl() {
     .replace("'./components/ui-elements.js'", JSON.stringify(uiElementsModuleUrl))
     .replace("'./components/data-view.js'", JSON.stringify(dataViewModuleUrl))
     .replace("'./components/filter-bar.js'", JSON.stringify(filterBarModuleUrl))
+    .replace("'./data-processor.js'", JSON.stringify(dataProcessorModuleUrl))
     .replace("'./overview-data.js'", JSON.stringify(overviewDataModuleUrl))
     .replace("'./repository-data.js'", JSON.stringify(repositoryDataModuleUrl))
     .replace("'./runtime-data.js'", JSON.stringify(runtimeDataModuleUrl))
@@ -989,7 +990,7 @@ test('DLS-PAGE-014 DLS-PAGE-015 built-in packages page renders report-style mode
   expect(secondCard?.y).toBeGreaterThan(firstCard?.y ?? 0);
 });
 
-test('DLS-PAGE-017 renders a responsive JSON-configured filter bar and page-source export', async ({ page }) => {
+test('DLS-PAGE-017 renders an editable filter bar and applies changes automatically', async ({ page }) => {
   const presenterModuleUrl = buildPresenterModuleUrl();
 
   await page.setContent(`
@@ -1008,8 +1009,7 @@ test('DLS-PAGE-017 renders a responsive JSON-configured filter bar and page-sour
             title: 'Cost & efficiency',
             'filter-bar': {
               filters: ['mode:review', 'mode:live'],
-              'time-range': 'All recorded',
-              export: true
+              'time-range': 'All recorded'
             },
             views: [{
               id: 'usage-count',
@@ -1023,7 +1023,10 @@ test('DLS-PAGE-017 renders a responsive JSON-configured filter bar and page-sour
       const sources = {
         usage: {
           source: 'usage',
-          rows: [{ invocation: 'usage-1', aic: 2 }],
+          rows: [
+            { invocation: 'usage-1', aic: 2, 'rollout-mode': 'review' },
+            { invocation: 'usage-2', aic: 3, 'rollout-mode': 'live' }
+          ],
           metadata: {
             'source-id': 'usage-fixture',
             'source-kind': 'fixture',
@@ -1042,25 +1045,15 @@ test('DLS-PAGE-017 renders a responsive JSON-configured filter bar and page-sour
 
   const filterBar = page.getByLabel('Dashboard filters');
   await expect(filterBar).toBeVisible();
-  await expect(filterBar.getByLabel('Current filters')).toContainText('Filter2mode:review mode:live');
+  const filterInput = filterBar.getByRole('searchbox', { name: 'Current filters' });
+  await expect(filterInput).toHaveValue('mode:review mode:live');
   await expect(filterBar.getByText('All recorded')).toBeVisible();
-  const exportLink = filterBar.getByRole('link', { name: 'Export JSON' });
-  await expect(exportLink).toHaveAttribute('download', 'cost.json');
-  const exportPayload = await exportLink.evaluate((link) => {
-    const href = link.getAttribute('href') ?? '';
-    return JSON.parse(decodeURIComponent(href.slice(href.indexOf(',') + 1)));
-  });
-  expect(exportPayload).toMatchObject({
-    page: 'cost',
-    filters: ['mode:review', 'mode:live'],
-    sources: {
-      usage: {
-        source: 'usage',
-        rows: [{ invocation: 'usage-1', aic: 2 }],
-        metadata: { 'source-id': 'usage-fixture' }
-      }
-    }
-  });
+  await expect(filterBar.getByRole('link', { name: 'Export JSON' })).toHaveCount(0);
+  await expect(page.locator('[data-page-id="cost"] .metric-value')).toHaveText('2');
+
+  await filterInput.fill('mode:live');
+  await expect(filterBar.locator('.count-badge')).toHaveText('1');
+  await expect(page.locator('[data-page-id="cost"] .metric-value')).toHaveText('1');
 
   await page.setViewportSize({ width: 400, height: 900 });
   const filterControlBox = await filterBar.locator('.filter-control').boundingBox();

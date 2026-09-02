@@ -523,10 +523,10 @@ describe('presenter built-in and custom pages', () => {
 
     for (const pageId of ['runtime', 'security', 'operational-value']) {
       const filterBar = rendered.querySelector(`[data-page-id="${pageId}"] .filter-bar`);
-      expect(filterBar?.querySelector('.filter-control code')?.textContent).toBe('mode:review mode:live');
+      expect(filterBar?.querySelector('input')?.value).toBe('mode:review mode:live');
       expect(filterBar?.querySelector('.count-badge')?.textContent).toBe('2');
       expect(filterBar?.querySelector('.scope-period')).toBeNull();
-      expect(filterBar?.querySelector('.export-control')?.getAttribute('download')).toBe(`${pageId}.json`);
+      expect(filterBar?.querySelector('.export-control')).toBeNull();
     }
   });
 
