@@ -476,8 +476,8 @@ function renderDashboardHorizon(dashboard, dashboardDefaults, horizonRange, eval
           h(
             'span',
             { className: 'horizon-tooltip-values' },
-            h('span', null, h('strong', null, 'Start'), h('time', { dateTime: start }, formatReportDate(start))),
-            h('span', null, h('strong', null, 'End'), h('time', { dateTime: end }, formatReportDate(end))),
+            h('span', null, h('strong', null, 'Start'), h('time', { dateTime: start }, `${formatReportDate(start)} UTC`)),
+            h('span', null, h('strong', null, 'End'), h('time', { dateTime: end }, `${formatReportDate(end)} UTC`)),
             h('span', null, h('strong', null, 'Duration'), duration)
           )
         )
