@@ -25,6 +25,7 @@ export const CALLOUT_KEYS = ['label', 'icon'];
 export const VIEW_MARK_VALUES = ['metric', 'table', 'chart', 'element', 'callout'];
 export const VIEW_ELEMENT_VALUES = [
   'domain-attention',
+  'package-status-grid',
   'summary-grid',
   'context-summary',
   'anomaly-readiness',
