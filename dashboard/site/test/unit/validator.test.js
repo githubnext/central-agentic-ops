@@ -596,7 +596,12 @@ dashboard:
   });
 
   it('DLS-DOC-015 validates site-wide callouts and source-row visibility conditions', () => {
-    const withCallout = validDocument.replace(
+    const baseDocument = validDocument.replace(`
+    - id: usage
+      kind: built-in
+      page: usage
+      title: Usage`, '');
+    const withCallout = baseDocument.replace(
       '  title: Agentic Operations\n',
       [
         '  title: Agentic Operations',
