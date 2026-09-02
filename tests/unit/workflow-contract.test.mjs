@@ -579,7 +579,9 @@ test("release drafts reviewed notes for an explicit semantic version before publ
   assert.deepEqual(jobs.get("prepare-release")?.needs, ["validate-version", "validate-package"]);
   assert.match(prepare, /draft: true/);
   assert.match(prepare, /generate_release_notes: true/);
-  assert.match(publish, /release\.draft && release\.tag_name === releaseTag/);
+  assert.match(publish, /release\.tag_name === releaseTag \|\| release\.name === releaseTag/);
+  assert.match(publish, /Multiple draft releases match/);
+  assert.match(publish, /tag_name: releaseTag/);
   assert.match(publish, /draft: false/);
   assert.doesNotMatch(source, /release-please|upload-artifact|CHANGELOG\.md/);
   assert.doesNotMatch(rootManifest, /\.github\/workflows\/release\.yml/);
