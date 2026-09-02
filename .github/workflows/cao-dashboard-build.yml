@@ -3,7 +3,7 @@ name: CAO Dashboard E2E Build
 on:
   workflow_dispatch:
   schedule:
-    - cron: "23 5 * * *"
+    - cron: "*/15 * * * *"
   push:
     branches: [main]
     paths:
