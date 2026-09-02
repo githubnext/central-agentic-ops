@@ -1978,7 +1978,7 @@ test("Dashboard package supports embedded and explicit standalone deployment", (
   assert.match(buildWorkflow, /actions\/cache\/restore@[0-9a-f]{40}/);
   assert.match(buildWorkflow, /Save operational-value observation cache/);
   assert.match(deployedWorkflows, /const capabilities = await workflowCapabilities\(item\.repository, item\.path\)/);
-  assert.match(deployedWorkflows, /const role = workflowRole\(source\)/);
+  assert.match(deployedWorkflows, /const role = workflowRole\(source\.value\)/);
   assert.match(deployedWorkflows, /sourceAvailable: !\/GitHub API 404/);
   assert.match(deployedWorkflows, /run\.conclusion === "action_required"\) current\.actionRequired \+= 1/);
   assert.match(deployedWorkflows, /event: run\.event/);
