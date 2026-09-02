@@ -483,6 +483,26 @@ test("operations creation guidance scopes detection and omits worker evals", () 
   assert.match(packageSkill, /Do not use `aw\.yml` bootstrap `config`/);
 });
 
+test("workers inherit human-first progressive report disclosure", () => {
+  const packageSkill = readFileSync(join(root, ".github", "skills", "create-ops-package", "SKILL.md"), "utf8");
+  const sharedControl = workflow("shared/control.md");
+  const workers = readdirSync(workflowsDirectory)
+    .filter((name) => name.endsWith(".md"))
+    .map((name) => [name, workflow(name)])
+    .filter(([, source]) => /^\s+role: worker$/m.test(source));
+
+  assert.match(packageSkill, /start every durable output with a concise `### Executive Summary` as its first human-readable section/);
+  assert.match(packageSkill, /non-essential background, verbose evidence, logs, and per-item breakdowns in `<details>` sections/);
+  assert.match(sharedControl, /first human-readable section must be `### Executive Summary`/);
+  assert.match(sharedControl, /non-essential background, verbose supporting evidence, logs, and per-item breakdowns inside `<details>/);
+  assert.ok(workers.length > 0, "expected at least one worker workflow");
+  for (const [name] of workers) {
+    const generated = workflow(name.replace(/\.md$/, ".lock.yml"));
+    assert.match(generated, /first human-readable section must be `### Executive Summary`/, name);
+    assert.match(generated, /non-essential background, verbose supporting evidence, logs, and per-item breakdowns inside `<details>/, name);
+  }
+});
+
 test("AI Credit auditor uses gh-aw forecast for cost projections", () => {
   const auditor = workflow("optimization-ai-credit-auditor.md");
 

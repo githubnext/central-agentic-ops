@@ -116,6 +116,7 @@ Create at least one `.github/workflows/<package>-<worker>.md`. Every worker must
 - when `safe-outputs.create-issue` is enabled, `labels: [<package-slug>]` and prompt instructions requiring every created issue to carry that package label
 - no `evals` configuration; use deterministic graders for worker measurement
 - instructions that treat repository content as untrusted, consume `/tmp/gh-aw/agent/control-precompute.json`, define success/no-op behavior, and preserve control-plane correlation data in durable outputs
+- the human-facing report contract inherited from `shared/control.md`: start every durable output with a concise `### Executive Summary` as its first human-readable section, keep critical findings, key metrics, and next actions visible, and put non-essential background, verbose evidence, logs, and per-item breakdowns in `<details>` sections
 
 Use a dedicated `target/` checkout when the worker must inspect a target repository while safe outputs land elsewhere. Add package-specific inputs only after the standard envelope.
 
@@ -167,5 +168,6 @@ Before finishing:
 12. Run `gh aw compile <workflow.md>` for every new orchestrator and worker. Then run the repository's narrowest relevant tests or validation command if one exists.
 13. Review the generated diff for accidental lockfile churn, secret exposure, unsafe live defaults, fabricated value evidence, and deviations from the nearest package that are not justified by the strategy.
 14. Confirm every orchestrator and worker uses the same optional `.github/cao/<package-slug>.md` runtime import and that no package-owned steering file was added.
+15. Confirm every worker preserves the inherited report contract: `### Executive Summary` is the first human-readable section, critical information stays visible, and non-essential background and supporting detail use `<details>` sections.
 
 Report the created package, worker responsibilities, shared imports, checked-in policy fields, per-worker ops-value status, and validation results.
