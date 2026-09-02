@@ -627,6 +627,8 @@ test("operational-value graders expose deterministic run-scoped contracts", () =
     "eu-cra-compliance-vulnerability-handling-auditor-operational-value.sh",
     "optimization-ai-credit-auditor-operational-value.sh",
     "optimization-ai-credit-optimizer-operational-value.sh",
+    "software-development-practices-github-well-architected-operational-value.sh",
+    "software-development-practices-nist-ssdf-operational-value.sh",
   ]);
   assert.deepEqual(packageGraders, [packageMaintainerGrader]);
 
@@ -1295,9 +1297,10 @@ test("Software Development Practices Advisor preserves evidence and advisory bou
     assert.match(worker, /analyzed commit SHA/);
     assert.match(worker, /create-issue:[\s\S]*?close-older-issues: true[\s\S]*?close-older-key:.*inputs\.target_repo[\s\S]*?max: 1/);
     assert.match(worker, /^\s+web-fetch:$/m);
-    assert.doesNotMatch(worker, /^graders:/m);
+    assert.match(worker, /^graders:\n\s+operational-value:\n\s+run: \.github\/graders\/software-development-practices-.+-operational-value\.sh$/m);
+    assert.match(worker, /<!-- operational-value: framework=[a-z0-9-]+ target=OWNER\/REPO target-sha=40_HEX_SHA -->/);
   }
-  assert.match(readme, /Operational-value evaluators are pending post-adoption evidence and are intentionally not registered/);
+  assert.match(readme, /Operational value is attainment-only/);
 
   assert.match(githubWorker, /https:\/\/learn\.github\.com\/well-architected\//);
   assert.match(githubWorker, /^\s+- wellarchitected\.github\.com$/m);

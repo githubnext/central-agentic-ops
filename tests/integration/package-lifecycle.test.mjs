@@ -69,6 +69,10 @@ const selfCareExpectedFiles = [
   ".github/workflows/shared/control.md",
 ];
 const softwareDevelopmentPracticesExpectedFiles = [
+  ".github/aw/dashboards/software-development-practices.json",
+  ".github/aw/software-development-practices/software-development-guidance-operational-value-runtime.bash",
+  ".github/graders/software-development-practices-github-well-architected-operational-value.sh",
+  ".github/graders/software-development-practices-nist-ssdf-operational-value.sh",
   ".github/workflows/shared/control-precompute.md",
   ".github/workflows/shared/control.md",
   ".github/workflows/software-development-practices-github-well-architected.md",
@@ -252,11 +256,15 @@ test("gh aw add installs the focused Software Development Practices package cont
     assert.deepEqual(
       installedManifest.files.map(({ destination }) => destination).sort(),
       [
+        ".github/aw/dashboards/software-development-practices.json",
+        ".github/aw/software-development-practices/software-development-guidance-operational-value-runtime.bash",
+        ".github/graders/software-development-practices-github-well-architected-operational-value.sh",
+        ".github/graders/software-development-practices-nist-ssdf-operational-value.sh",
         ".github/workflows/software-development-practices-github-well-architected.md",
         ".github/workflows/software-development-practices-nist-ssdf.md",
         ".github/workflows/software-development-practices.md",
       ],
-      "focused Software Development Practices package manifest must own its entry workflows",
+      "focused Software Development Practices package manifest must own its entry workflows, evaluators, runtime, and dashboard",
     );
   } finally {
     rmSync(consumer, { recursive: true, force: true });
