@@ -270,7 +270,7 @@ test("gh aw add installs the focused UK AI Advisory package contract", { timeout
         ".github/workflows/uk-ai-advisory-package-maintainer.md",
         ".github/workflows/cao.md",
         ".github/workflows/uk-ai-advisory.md",
-      ],
+      ].toSorted(),
       "focused UK AI Advisory package manifest must own its entry workflows and ledger",
     );
   } finally {
