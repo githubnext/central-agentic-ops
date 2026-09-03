@@ -787,7 +787,7 @@ log.info`Discovered ${bundles.length} packages and ${standaloneWorkflows.length}
 
 if (process.argv[1] && pathToFileURL(path.resolve(process.argv[1])).href === import.meta.url) {
   main().catch((error) => {
-  log.error`${error.stack || error.message || error}`;
-  process.exitCode = 1;
+    log.error`${error.stack || error.message || error}`;
+    process.exitCode = 1;
   });
 }
