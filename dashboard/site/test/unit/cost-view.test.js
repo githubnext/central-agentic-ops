@@ -18,6 +18,14 @@ const metadata = {
   availability: /** @type {'available'} */ ('available')
 };
 
+/** @param {HTMLElement} rendered */
+function activateCostPage(rendered) {
+  const link = /** @type {HTMLAnchorElement | null} */ (rendered.querySelector('[data-nav-page-id="cost"]'));
+  link?.click();
+  rendered.ownerDocument.defaultView?.history.replaceState(null, '', '/');
+  return rendered.querySelector('[data-page-id="cost"]');
+}
+
 describe('Cost and efficiency dashboard view', () => {
   it('renders measured usage, evidence boundaries, repository allocation, and evaluation readiness from JSON', () => {
     const rendered = renderDashboard({
@@ -35,7 +43,7 @@ describe('Cost and efficiency dashboard view', () => {
       }
     });
 
-    const page = rendered.querySelector('[data-page-id="cost"]');
+    const page = activateCostPage(rendered);
     const dashboardPage = authoritativeDashboardDocument.dashboard.pages.find(
       (/** @type {{ id: string }} */ candidate) => candidate.id === 'cost'
     );
@@ -115,7 +123,7 @@ describe('Cost and efficiency dashboard view', () => {
       }
     });
 
-    const page = rendered.querySelector('[data-page-id="cost"]');
+    const page = activateCostPage(rendered);
     const evidenceBoundaries = [...(page?.querySelectorAll('.signal-list-region') ?? [])]
       .find((region) => region.textContent?.includes('Budget boundary'));
     const signals = [...(evidenceBoundaries?.querySelectorAll('.signal-item') ?? [])];

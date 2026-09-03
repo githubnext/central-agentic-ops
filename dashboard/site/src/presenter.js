@@ -165,7 +165,16 @@ export function renderDashboard(input) {
     appShell
   );
   enableSidebarToggle(root);
-  enableDashboardPageNavigation(root, document.dashboard.title);
+  enableDashboardPageNavigation(
+    root,
+    document.dashboard.title,
+    (pageId) => {
+      const page = pages.find((candidate) => candidate.id === pageId);
+      return page
+        ? renderPage(page, sources, isPlainObject(document.dashboard.units) ? document.dashboard.units : {}, dashboardDefaults)
+        : null;
+    }
+  );
   return root;
 }
 
@@ -337,7 +346,6 @@ function renderMainContent(document, pages, sources, githubUrlBase, dashboardRep
   const initialPageHref = initialPage ? `#page-${encodeURIComponent(initialPage.id)}` : '#main-content';
   const overviewPageHref = overviewPage ? `#page-${encodeURIComponent(overviewPage.id)}` : initialPageHref;
   const latestRetrieval = latestRetrievedAt(sources);
-  const units = isPlainObject(document.dashboard.units) ? document.dashboard.units : {};
   return h(
     'div',
     { className: 'app-main' },
@@ -426,7 +434,7 @@ function renderMainContent(document, pages, sources, githubUrlBase, dashboardRep
         h(
           'div',
           { className: 'dashboard-pages' },
-          pages.map((page) => renderPage(page, sources, units, dashboardDefaults))
+          pages.map((page) => renderPagePlaceholder(page))
         )
       )
     ),
@@ -532,6 +540,35 @@ function latestRetrievedAt(sources) {
  */
 function formatReportDate(value) {
   return formatMediumUtcDateTime(new Date(value));
+}
+
+/**
+ * @param {PresentableBuiltInPage | PresentableCustomPage} page
+ * @returns {HTMLElement}
+ */
+function renderPagePlaceholder(page) {
+  const payload = page.kind === 'built-in' ? getBuiltInPagePayload(page) : page;
+  const pageClassName = typeof payload['class-name'] === 'string' && payload['class-name'].length > 0
+    ? ` ${payload['class-name']}`
+    : '';
+  const routeParameter = typeof payload.route?.['hash-query-parameter'] === 'string'
+    ? payload.route['hash-query-parameter']
+    : undefined;
+  const routeNavigationPage = typeof payload.route?.['navigation-page'] === 'string'
+    ? payload.route['navigation-page']
+    : undefined;
+  return h('section', {
+    className: `dashboard-page${pageClassName}`,
+    id: `page-${page.id}`,
+    'data-page-kind': 'custom',
+    'data-page-name': page.id,
+    'data-page-id': page.id,
+    'data-page-title': getPageTitle(page),
+    'data-page-description': payload.description ?? '',
+    'data-route-parameter': routeParameter,
+    'data-route-navigation-page': routeNavigationPage,
+    'data-page-pending': ''
+  });
 }
 
 /**
@@ -755,8 +792,9 @@ function renderLayoutSection(pageId, section, renderedViews, sources) {
  * Shows a single dashboard page and keeps sidebar state synchronized with the URL hash.
  * @param {HTMLElement} root
  * @param {string} dashboardTitle
+ * @param {(pageId: string) => HTMLElement | null} [renderPageById]
  */
-export function enableDashboardPageNavigation(root, dashboardTitle = '') {
+export function enableDashboardPageNavigation(root, dashboardTitle = '', renderPageById) {
   const pages = [...root.querySelectorAll('.dashboard-page')]
     .filter((page) => page instanceof HTMLElement);
   const overviewPage = pages.find((page) => page.dataset.pageId === 'overview');
@@ -841,6 +879,15 @@ export function enableDashboardPageNavigation(root, dashboardTitle = '') {
    * @param {URLSearchParams} [parameters]
    */
   const activate = (pageId, parameters = new URLSearchParams()) => {
+    const pageIndex = pages.findIndex((candidate) => candidate.dataset.pageId === pageId);
+    const pendingPage = pages[pageIndex];
+    if (pendingPage?.hasAttribute('data-page-pending')) {
+      const renderedPage = renderPageById?.(pageId);
+      if (renderedPage) {
+        pendingPage.replaceWith(renderedPage);
+        pages[pageIndex] = renderedPage;
+      }
+    }
     for (const [index, link] of [breadcrumbRoot, breadcrumbDashboard].entries()) {
       if (!(link instanceof HTMLAnchorElement)) continue;
       link.hidden = defaultBreadcrumbs[index].hidden;

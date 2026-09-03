@@ -17,6 +17,14 @@ const authoritativeDashboardDocument = composeDashboardDocuments(
   packageDashboardDocuments
 );
 
+/** @param {HTMLElement} rendered @param {string} pageId */
+function activatePage(rendered, pageId) {
+  const link = /** @type {HTMLAnchorElement | null} */ (rendered.querySelector(`[data-nav-page-id="${pageId}"]`));
+  link?.click();
+  rendered.ownerDocument.defaultView?.history.replaceState(null, '', '/');
+  return rendered.querySelector(`[data-page-id="${pageId}"]`);
+}
+
 describe('presenter built-in and custom pages', () => {
   it('renders built-in models and agents page with model and engine AIC summaries', () => {
     const metadata = {
@@ -598,7 +606,7 @@ describe('presenter built-in and custom pages', () => {
     expect(horizonTooltip).toBeNull();
 
     for (const pageId of ['runtime', 'security', 'operational-value']) {
-      const filterBar = rendered.querySelector(`[data-page-id="${pageId}"] .filter-bar`);
+      const filterBar = activatePage(rendered, pageId)?.querySelector('.filter-bar');
       expect(filterBar?.querySelector('input')?.value).toBe('mode:review mode:live');
       expect(filterBar?.querySelector('.count-badge')?.textContent).toBe('2');
       expect(filterBar?.querySelector('.scope-period')).toBeNull();
@@ -724,7 +732,7 @@ describe('presenter built-in and custom pages', () => {
       }
     });
 
-    const page = rendered.querySelector('[data-page-id="security"]');
+    const page = activatePage(rendered, 'security');
     const dashboardPage = authoritativeDashboardDocument.dashboard.pages.find((/** @type {{ id: string }} */ candidate) => candidate.id === 'security');
     expect(dashboardPage).toMatchObject({ kind: 'custom' });
     expect(dashboardPage).not.toHaveProperty('page');
@@ -930,7 +938,7 @@ describe('presenter built-in and custom pages', () => {
       }
     });
 
-    const page = rendered.querySelector('[data-page-id="operational-value"]');
+    const page = activatePage(rendered, 'operational-value');
     const dashboardPage = authoritativeDashboardDocument.dashboard.pages.find((/** @type {{ id: string }} */ candidate) => candidate.id === 'operational-value');
     expect(dashboardPage).toMatchObject({ kind: 'custom', title: 'Value & outcomes' });
     expect(dashboardPage).not.toHaveProperty('page');
@@ -2391,6 +2399,8 @@ describe('presenter built-in and custom pages', () => {
     const secondLink = /** @type {HTMLAnchorElement} */ (rendered.querySelector('[data-nav-page-id="second"]'));
     expect(first.hidden).toBe(false);
     expect(second.hidden).toBe(true);
+    expect(first.hasAttribute('data-page-pending')).toBe(false);
+    expect(second.hasAttribute('data-page-pending')).toBe(true);
     expect(/** @type {HTMLElement | null} */ (rendered.querySelector('[data-breadcrumb-root]'))?.hidden).toBe(true);
     expect(rendered.querySelector('[data-breadcrumb-root]')?.hasAttribute('href')).toBe(false);
     expect(rendered.querySelector('[data-breadcrumb-dashboard]')?.getAttribute('href')).toBe('#page-first');
@@ -2420,7 +2430,10 @@ describe('presenter built-in and custom pages', () => {
     secondLink.click();
 
     expect(first.hidden).toBe(true);
-    expect(second.hidden).toBe(false);
+    const renderedSecond = /** @type {HTMLElement} */ (rendered.querySelector('#page-second'));
+    expect(renderedSecond).not.toBe(second);
+    expect(renderedSecond.hidden).toBe(false);
+    expect(renderedSecond.hasAttribute('data-page-pending')).toBe(false);
     expect(secondLink.getAttribute('aria-current')).toBe('page');
     expect(rendered.ownerDocument.defaultView?.location.hash).toBe('#page-second');
     expect(rendered.querySelector('#page-title')?.textContent).toBe('Second');
