@@ -711,7 +711,10 @@ test("CAO upgrade script refreshes gh-aw, packages, and Actions", () => {
 
   assert.match(upgrade, /^#!\/usr\/bin\/env bash\n/);
   assert.match(upgrade, /^set -euo pipefail$/m);
-  assert.match(upgrade, /^gh extension upgrade github\/gh-aw$/m);
+  assert.match(upgrade, /^if ! gh extension upgrade github\/gh-aw 2> >\(tee "\$extension_upgrade_error" >&2\); then$/m);
+  assert.match(upgrade, /^  if grep -qi "SAML" "\$extension_upgrade_error"; then$/m);
+  assert.match(upgrade, /^    curl -fsSL https:\/\/raw\.githubusercontent\.com\/github\/gh-aw\/main\/install-gh-aw\.sh \| bash$/m);
+  assert.match(upgrade, /^  else\n    exit 1\n  fi$/m);
   assert.match(upgrade, /^gh aw update --major --cool-down 0$/m);
   assert.match(upgrade, /^gh aw upgrade$/m);
 });
