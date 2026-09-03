@@ -65,8 +65,12 @@ test("catalog packages declare their current experimental maturity", () => {
 
 test("operational workflows use the transitive CAO package bundle", () => {
   const bundle = workflow("shared/cao.md");
+  const control = workflow("shared/control.md");
   assert.match(bundle, /imports:\n\s+- uses: control\.md/);
-  assert.match(bundle, /format\('\{0\}', github\.aw\.import-inputs\.dispatch_max\)/);
+  assert.match(bundle, /dispatch_max: \$\{\{ github\.aw\.import-inputs\.dispatch_max \}\}/);
+  assert.match(control, /dispatch_max:\n\s+type: number/);
+  assert.match(control, /orchestrator_credits:\n\s+type: number/);
+  assert.match(control, /worker_credits_per_target:\n\s+type: number/);
 
   const operationWorkflows = readdirSync(workflowsDirectory)
     .filter((name) => name.endsWith(".md") && workflow(name).includes("uses: shared/cao.md"));
@@ -2139,6 +2143,10 @@ test("clean-room compilation emits the expected GitHub Actions settings", { time
       assert.match(preActivation, /github\/gh-aw-actions\/setup-cli@/);
       assert.match(preActivation, /steps\.cao_admission\.outputs\.monthly_credit_budget != '0'/);
       assert.match(preActivation, /name: Run CAO control precompute/);
+      assert.match(preActivation, /CAO_DISPATCH_MAX: "\d+"/);
+      assert.match(preActivation, /CAO_ORCHESTRATOR_CREDITS: "\d+"/);
+      assert.match(preActivation, /CAO_WORKER_CREDITS_PER_TARGET: "\d+"/);
+      assert.doesNotMatch(preActivation, /github\.aw\.import-inputs/);
       assert.match(preActivation, /GH_TOKEN: \$\{\{ steps\.cao_pre_activation_app_token\.outputs\.token \|\| secrets\.GH_AW_GITHUB_TOKEN \|\| github\.token \}\}/);
       assert.match(preActivation, /name: Validate CAO control precompute artifact/);
       assert.match(preActivation, /\.authorized == true/);
