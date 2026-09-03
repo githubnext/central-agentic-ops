@@ -34,9 +34,9 @@ describe('Cost and efficiency dashboard view', () => {
         usage: {
           source: 'usage',
           rows: [
-            { organization: 'githubnext', repository: 'gh-aw-cao', workflow: '.github/workflows/daily.md', run: '101', invocation: 'usage-1', aic: 3.5 },
-            { organization: 'githubnext', repository: 'gh-aw-cao', workflow: '.github/workflows/daily.md', run: '101', invocation: 'usage-2', aic: 1.5 },
-            { organization: 'octo-org', repository: 'service', workflow: '.github/workflows/review.md', run: '202', invocation: 'usage-3', aic: 4 }
+            { organization: 'githubnext', repository: 'gh-aw-cao', workflow: '.github/workflows/daily.md', run: '101', invocation: 'usage-1', aic: 3.5, 'rollout-mode': 'review' },
+            { organization: 'githubnext', repository: 'gh-aw-cao', workflow: '.github/workflows/daily.md', run: '101', invocation: 'usage-2', aic: 1.5, 'rollout-mode': 'live' },
+            { organization: 'octo-org', repository: 'service', workflow: '.github/workflows/review.md', run: '202', invocation: 'usage-3', aic: 4, 'rollout-mode': 'unknown' }
           ],
           metadata
         }
@@ -64,8 +64,8 @@ describe('Cost and efficiency dashboard view', () => {
     );
     expect(rendered.querySelector('[data-nav-page-id="cost"] .octicon-meter')).not.toBeNull();
     const filterBar = page?.querySelector('.filter-bar');
-    expect(filterBar?.querySelector('input')?.value).toBe('mode:review mode:live');
-    expect(filterBar?.querySelector('.count-badge')?.textContent).toBe('2');
+    expect(filterBar?.querySelector('input')?.value).toBe('');
+    expect(filterBar?.querySelector('.count-badge')?.textContent).toBe('0');
     expect(filterBar?.querySelector('.scope-period')).toBeNull();
     expect(rendered.querySelector('.dashboard-horizon > span:first-child')?.textContent).toBe('Horizon 1 week');
     expect(filterBar?.querySelector('.export-control')).toBeNull();
