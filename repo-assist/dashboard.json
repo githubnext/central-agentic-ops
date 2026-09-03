@@ -1,0 +1,208 @@
+{
+  "language-version": "0.1.0",
+  "dashboard": {
+    "id": "repo-assist-dashboard",
+    "title": "Repo Assist",
+    "description": "Track enterprise Repo Assist activation, retained outcomes, and matured per-worker operational-value evidence.",
+    "repository": "githubnext/gh-aw-cao",
+    "pages": [
+      {
+        "id": "repo-assist-dashboard",
+        "kind": "custom",
+        "title": "Repo Assist",
+        "navigation-label": "Repo Assist",
+        "description": "Track enterprise Repo Assist activation, retained outcomes, and matured per-worker operational-value evidence.",
+        "icon": "repo",
+        "views": [
+          {
+            "id": "repo-assist-runs",
+            "title": "Runs by conclusion",
+            "description": "Thirty-day orchestrator and worker conclusions show whether the package is activating and completing.",
+            "disclosure": "essential",
+            "data": {
+              "source": "runs",
+              "time": {
+                "range": "30d"
+              },
+              "filters": {
+                "workflow": [
+                  ".github/workflows/repo-assist.md",
+                  ".github/workflows/repo-assist-contributor-care.md",
+                  ".github/workflows/repo-assist-improvements.md",
+                  ".github/workflows/repo-assist-pr-care.md",
+                  ".github/workflows/repo-assist-activity.md"
+                ]
+              }
+            },
+            "mark": "chart",
+            "chart": "pie",
+            "encoding": {
+              "x": {
+                "field": "run-conclusion",
+                "type": "nominal"
+              },
+              "y": {
+                "field": "run",
+                "type": "quantitative",
+                "aggregate": "count"
+              }
+            }
+          },
+          {
+            "id": "repo-assist-outcomes",
+            "title": "Retained outcomes",
+            "description": "Repository-linked contributor care, improvements, pull request repairs, and monthly reports retained for human review.",
+            "disclosure": "essential",
+            "data": {
+              "source": "outcomes",
+              "filters": {
+                "package": [
+                  "repo-assist"
+                ]
+              },
+              "limit": 50
+            },
+            "mark": "table",
+            "empty-message": "No Repo Assist outcomes were retained.",
+            "encoding": {
+              "href": {
+                "field": "external-link",
+                "type": "nominal"
+              },
+              "columns": [
+                {
+                  "field": "repository",
+                  "type": "nominal"
+                },
+                {
+                  "field": "workflow",
+                  "type": "nominal"
+                },
+                {
+                  "field": "outcome-title",
+                  "type": "nominal",
+                  "title": "Outcome"
+                },
+                {
+                  "field": "outcome-state",
+                  "type": "nominal",
+                  "title": "Disposition",
+                  "display": "status"
+                },
+                {
+                  "field": "published-at",
+                  "type": "temporal",
+                  "title": "Published"
+                }
+              ]
+            }
+          },
+          {
+            "id": "repo-assist-attainment",
+            "title": "Matured attainment evidence",
+            "description": "Future per-worker evaluators preserve opportunity maturity and evidence cutoffs; unavailable evidence remains null rather than zero.",
+            "disclosure": "essential",
+            "data": {
+              "source": "operational-values",
+              "filters": {
+                "workflow": [
+                  ".github/workflows/repo-assist-contributor-care.md",
+                  ".github/workflows/repo-assist-improvements.md",
+                  ".github/workflows/repo-assist-pr-care.md",
+                  ".github/workflows/repo-assist-activity.md"
+                ]
+              },
+              "limit": 50
+            },
+            "mark": "table",
+            "empty-message": "No matured Repo Assist attainment evidence is available.",
+            "encoding": {
+              "href": {
+                "field": "evidence-link",
+                "type": "nominal"
+              },
+              "columns": [
+                {
+                  "field": "repository",
+                  "type": "nominal"
+                },
+                {
+                  "field": "operational-case",
+                  "type": "nominal",
+                  "title": "Opportunity"
+                },
+                {
+                  "field": "operational-value-definition",
+                  "type": "nominal",
+                  "title": "Definition"
+                },
+                {
+                  "field": "operational-value",
+                  "type": "quantitative",
+                  "title": "Attainment"
+                },
+                {
+                  "field": "maturity-status",
+                  "type": "nominal",
+                  "title": "Maturity",
+                  "display": "status"
+                },
+                {
+                  "field": "evidence-cutoff",
+                  "type": "temporal",
+                  "title": "Evidence cutoff"
+                }
+              ]
+            }
+          },
+          {
+            "id": "repo-assist-value-trend",
+            "title": "Operational-value trend",
+            "description": "Mean matured attainment by worker definition is diagnostic and does not claim that Repo Assist caused repository outcomes.",
+            "disclosure": "essential",
+            "data": {
+              "source": "operational-values",
+              "time": {
+                "range": "90d"
+              },
+              "filters": {
+                "workflow": [
+                  ".github/workflows/repo-assist-contributor-care.md",
+                  ".github/workflows/repo-assist-improvements.md",
+                  ".github/workflows/repo-assist-pr-care.md",
+                  ".github/workflows/repo-assist-activity.md"
+                ]
+              }
+            },
+            "mark": "chart",
+            "chart": "line",
+            "encoding": {
+              "x": {
+                "field": "observed-at",
+                "type": "temporal",
+                "time-unit": "day"
+              },
+              "y": {
+                "field": "operational-value",
+                "type": "quantitative",
+                "aggregate": "mean"
+              },
+              "color": {
+                "field": "operational-value-definition",
+                "type": "nominal"
+              }
+            }
+          }
+        ]
+      }
+    ],
+    "navigation": [
+      {
+        "label": "Package operations",
+        "pages": [
+          "repo-assist-dashboard"
+        ]
+      }
+    ]
+  }
+}

@@ -1,0 +1,14 @@
+name: Repo Assist
+description: Enterprise-scale repository assistance for contributor care, focused improvements, owned pull request repair, and maintainer activity reporting.
+min-version: v0.88.2
+experimental: true
+includes:
+  - .github/workflows/shared/cao.md
+  - .github/workflows/repo-assist.md
+  - .github/workflows/repo-assist-contributor-care.md
+  - .github/workflows/repo-assist-improvements.md
+  - .github/workflows/repo-assist-pr-care.md
+  - .github/workflows/repo-assist-activity.md
+resources:
+  - source: dashboard.json
+    destination: .github/aw/dashboards/repo-assist.json

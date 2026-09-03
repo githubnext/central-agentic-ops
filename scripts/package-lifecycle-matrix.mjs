@@ -66,6 +66,15 @@ const suites = [
     ],
   },
   {
+    name: "Repo Assist",
+    manifest: "repo-assist/aw.yml",
+    testPattern: "focused Repo Assist package contract",
+    prefixes: [
+      ".github/workflows/repo-assist",
+      ".github/workflows/shared/",
+    ],
+  },
+  {
     name: "Software Development Practices",
     manifest: "software-development-practices/aw.yml",
     testPattern: "focused Software Development Practices package contract",

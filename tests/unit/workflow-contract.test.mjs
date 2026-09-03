@@ -28,6 +28,7 @@ test("packages and repository workflows pin the supported gh-aw version", () => 
     "dependabot/aw.yml",
     "eu-cra-compliance/aw.yml",
     "optimization/aw.yml",
+    "repo-assist/aw.yml",
     "self-care/aw.yml",
     "software-development-practices/aw.yml",
   ];
@@ -53,6 +54,7 @@ test("catalog packages declare their current experimental maturity", () => {
     "dependabot/aw.yml",
     "eu-cra-compliance/aw.yml",
     "optimization/aw.yml",
+    "repo-assist/aw.yml",
     "self-care/aw.yml",
     "software-development-practices/aw.yml",
   ];
@@ -73,7 +75,7 @@ test("operational workflows use the transitive CAO package bundle", () => {
 
   const operationWorkflows = readdirSync(workflowsDirectory)
     .filter((name) => name.endsWith(".md") && workflow(name).includes("uses: shared/cao.md"));
-  assert.equal(operationWorkflows.length, 31);
+  assert.equal(operationWorkflows.length, 36);
 });
 
 test("AI Credit workers collect all workflow logs with bounded resources", () => {
@@ -396,6 +398,11 @@ test("enterprise defaults, budgets, timeouts, and concurrency are finite", () =>
     "eu-cra-compliance.md": { credits: 200, timeout: 15, dispatchMax: 48, workers: 6 },
     "eu-cra-compliance-package-maintainer.md": { credits: 200, timeout: 20 },
     "optimization.md": { credits: 250, timeout: 15, dispatchMax: 20, workers: 2 },
+    "repo-assist.md": { credits: 250, timeout: 15, dispatchMax: 4, workers: 4 },
+    "repo-assist-contributor-care.md": { credits: 300, timeout: 25 },
+    "repo-assist-improvements.md": { credits: 600, timeout: 60 },
+    "repo-assist-pr-care.md": { credits: 500, timeout: 45 },
+    "repo-assist-activity.md": { credits: 250, timeout: 25 },
     "self-care.md": { credits: 200, timeout: 15, dispatchMax: 6, workers: 6 },
     "ambient-context-agents-md-curator.md": { credits: 400, timeout: 25 },
     "ambient-context-skills-curator.md": { credits: 400, timeout: 20 },
@@ -481,7 +488,7 @@ test("control workflows deny before activation through one shared admission cont
     .map((name) => [name, workflow(name)])
     .filter(([, source]) => /^\s+- uses: shared\/cao\.md$/m.test(source));
 
-  assert.equal(controlled.length, 31, "unexpected shared control workflow count");
+  assert.equal(controlled.length, 36, "unexpected shared control workflow count");
   assert.equal(
     [...sharedControl.matchAll(/^\s+- name: Evaluate Central Agentic Ops admission$/gm)].length,
     1,
@@ -771,7 +778,7 @@ test("release drafts reviewed notes for an explicit semantic version before publ
 });
 
 test("package manifests exclude repository-only tests", () => {
-  for (const relativePath of ["aw.yml", join("uk-ai-advisory", "aw.yml"), join("ambient-context", "aw.yml"), join("aw-maintenance", "aw.yml"), join("dashboard", "aw.yml"), join("dependabot", "aw.yml"), join("eu-cra-compliance", "aw.yml"), join("optimization", "aw.yml"), join("self-care", "aw.yml"), join("software-development-practices", "aw.yml")]) {
+  for (const relativePath of ["aw.yml", join("uk-ai-advisory", "aw.yml"), join("ambient-context", "aw.yml"), join("aw-maintenance", "aw.yml"), join("dashboard", "aw.yml"), join("dependabot", "aw.yml"), join("eu-cra-compliance", "aw.yml"), join("optimization", "aw.yml"), join("repo-assist", "aw.yml"), join("self-care", "aw.yml"), join("software-development-practices", "aw.yml")]) {
     const manifest = readFileSync(join(root, relativePath), "utf8");
     assert.doesNotMatch(manifest, /(?:review-smoke|enterprise-canary|enterprise-stress|tests\/e2e|\.github\/aw\/e2e)/, relativePath);
   }
@@ -928,6 +935,51 @@ test("repository-local SelfCare uses organization-billed Copilot authentication"
     assert.doesNotMatch(source, /COPILOT_GITHUB_TOKEN/, `${workflowId}.md must not mix auth profiles`);
     assert.match(lock, /copilot-requests: write/, `${workflowId}.lock.yml must grant Copilot requests`);
     assert.match(lock, /COPILOT_GITHUB_TOKEN: \$\{\{ github\.token \}\}/, `${workflowId}.lock.yml must use the workflow token`);
+  }
+});
+
+test("Repo Assist is a focused review-only package using organization-billed Copilot authentication", () => {
+  const rootManifest = readFileSync(join(root, "aw.yml"), "utf8");
+  const packageManifest = parse(readFileSync(join(root, "repo-assist", "aw.yml"), "utf8"));
+  const policy = JSON.parse(readFileSync(join(root, ".github", "workflows", "cao.json"), "utf8"))
+    ["control-plane"].packages["repo-assist"];
+  const workflowIds = [
+    "repo-assist",
+    "repo-assist-contributor-care",
+    "repo-assist-improvements",
+    "repo-assist-pr-care",
+    "repo-assist-activity",
+  ];
+
+  assert.doesNotMatch(rootManifest, /\.github\/workflows\/repo-assist(?:-[\w-]+)?\.md/);
+  assert.deepEqual(packageManifest.includes, [
+    ".github/workflows/shared/cao.md",
+    ...workflowIds.map((id) => `.github/workflows/${id}.md`),
+  ]);
+  assert.deepEqual(packageManifest.resources, [{
+    source: "dashboard.json",
+    destination: ".github/aw/dashboards/repo-assist.json",
+  }]);
+  assert.equal(policy.mode, "review");
+  assert.equal(policy["max-repositories"], 1);
+  assert.equal(policy["rollout-percent"], 100);
+  assert.equal(policy["monthly-ai-credit-budget"], 50000);
+  assert.deepEqual(
+    Object.keys(policy.workers).sort(),
+    ["activity", "contributor-care", "improvements", "pr-care"],
+  );
+  for (const worker of Object.values(policy.workers)) {
+    assert.equal(worker["max-mode"], "review");
+  }
+
+  for (const workflowId of workflowIds) {
+    const source = workflow(`${workflowId}.md`);
+    const lock = workflow(`${workflowId}.lock.yml`);
+    assert.match(source, /copilot-requests: write/, `${workflowId}.md must use organization billing`);
+    assert.doesNotMatch(source, /COPILOT_GITHUB_TOKEN/, `${workflowId}.md must not use PAT inference`);
+    assert.match(lock, /copilot-requests: write/, `${workflowId}.lock.yml must grant Copilot requests`);
+    assert.match(lock, /COPILOT_GITHUB_TOKEN: \$\{\{ github\.token \}\}/, `${workflowId}.lock.yml must use the workflow token`);
+    assert.doesNotMatch(lock, /secrets\.COPILOT_GITHUB_TOKEN/, `${workflowId}.lock.yml must not declare the Copilot PAT secret`);
   }
 });
 
@@ -1229,6 +1281,11 @@ test("live workers require target-owned package authority before agent execution
     ["optimization.md", "optimization"],
     ["optimization-ai-credit-auditor.md", "optimization"],
     ["optimization-ai-credit-optimizer.md", "optimization"],
+    ["repo-assist.md", "repo-assist"],
+    ["repo-assist-contributor-care.md", "repo-assist"],
+    ["repo-assist-improvements.md", "repo-assist"],
+    ["repo-assist-pr-care.md", "repo-assist"],
+    ["repo-assist-activity.md", "repo-assist"],
     ["software-development-practices.md", "software-development-practices"],
     ["software-development-practices-github-well-architected.md", "software-development-practices"],
     ["software-development-practices-nist-ssdf.md", "software-development-practices"],
@@ -1252,6 +1309,7 @@ test("orchestrators use checked-in policy with independent manual narrowing", ()
     ["dependabot.md", "dependabot"],
     ["eu-cra-compliance.md", "eu-cra-compliance"],
     ["optimization.md", "optimization"],
+    ["repo-assist.md", "repo-assist"],
     ["software-development-practices.md", "software-development-practices"],
     ["self-care.md", "self-care"],
   ]) {
@@ -1294,6 +1352,11 @@ test("operation workflows optionally load per-operation markdown steering", () =
     ["optimization.md", "optimization"],
     ["optimization-ai-credit-auditor.md", "optimization"],
     ["optimization-ai-credit-optimizer.md", "optimization"],
+    ["repo-assist.md", "repo-assist"],
+    ["repo-assist-contributor-care.md", "repo-assist"],
+    ["repo-assist-improvements.md", "repo-assist"],
+    ["repo-assist-pr-care.md", "repo-assist"],
+    ["repo-assist-activity.md", "repo-assist"],
     ["software-development-practices.md", "software-development-practices"],
     ["software-development-practices-github-well-architected.md", "software-development-practices"],
     ["software-development-practices-nist-ssdf.md", "software-development-practices"],
@@ -1358,7 +1421,7 @@ test("shared control keeps manual and scheduled routing event-scoped", () => {
   const control = workflow("shared/control.md");
   const precompute = controlPrecompute();
 
-  for (const name of ["uk-ai-advisory.md", "ambient-context.md", "aw-maintenance.md", "dependabot.md", "eu-cra-compliance.md", "optimization.md", "self-care.md", "software-development-practices.md"]) {
+  for (const name of ["uk-ai-advisory.md", "ambient-context.md", "aw-maintenance.md", "dependabot.md", "eu-cra-compliance.md", "optimization.md", "repo-assist.md", "self-care.md", "software-development-practices.md"]) {
     const orchestrator = workflow(name);
     assert.match(orchestrator, /GH_AW_SAFE_OUTPUT_MODE:.*inputs\.safe_output_mode.*\|\| 'review'/);
     assert.match(orchestrator, /REVIEW_OUTPUT_REPO:.*inputs\.safe_output_repo \|\| github\.repository/);
@@ -1425,6 +1488,10 @@ test("every worker uses the standard dispatch envelope and safe mode vocabulary"
     ["eu-cra-compliance-vulnerability-handling-auditor.md", "eu-cra-compliance", "vulnerability-handling-auditor"],
     ["optimization-ai-credit-auditor.md", "optimization", "ai-credit-auditor"],
     ["optimization-ai-credit-optimizer.md", "optimization", "ai-credit-optimizer"],
+    ["repo-assist-contributor-care.md", "repo-assist", "contributor-care"],
+    ["repo-assist-improvements.md", "repo-assist", "improvements"],
+    ["repo-assist-pr-care.md", "repo-assist", "pr-care"],
+    ["repo-assist-activity.md", "repo-assist", "activity"],
     ["software-development-practices-github-well-architected.md", "software-development-practices", "github-well-architected"],
     ["software-development-practices-nist-ssdf.md", "software-development-practices", "nist-ssdf"],
     ["self-care-accessibility-checker.md", "self-care", "accessibility-checker"],
@@ -2107,6 +2174,11 @@ test("clean-room compilation emits the expected GitHub Actions settings", { time
       "optimization-ai-credit-auditor.lock.yml",
       "optimization-ai-credit-optimizer.lock.yml",
       "optimization.lock.yml",
+      "repo-assist-activity.lock.yml",
+      "repo-assist-contributor-care.lock.yml",
+      "repo-assist-improvements.lock.yml",
+      "repo-assist-pr-care.lock.yml",
+      "repo-assist.lock.yml",
       "self-care-accessibility-checker.lock.yml",
       "self-care-code-improvement.lock.yml",
       "self-care-data-acquisition-audit.lock.yml",
@@ -2169,6 +2241,7 @@ test("clean-room compilation emits the expected GitHub Actions settings", { time
       ["dependabot.lock.yml", "dependabot"],
       ["eu-cra-compliance.lock.yml", "eu-cra-compliance"],
       ["optimization.lock.yml", "optimization"],
+      ["repo-assist.lock.yml", "repo-assist"],
       ["self-care.lock.yml", "self-care"],
       ["software-development-practices.lock.yml", "software-development-practices"],
     ]);
@@ -2206,6 +2279,10 @@ test("clean-room compilation emits the expected GitHub Actions settings", { time
       ["eu-cra-compliance-vulnerability-handling-auditor.lock.yml", ["eu-cra-compliance", "vulnerability-handling-auditor"]],
       ["optimization-ai-credit-auditor.lock.yml", ["optimization", "ai-credit-auditor"]],
       ["optimization-ai-credit-optimizer.lock.yml", ["optimization", "ai-credit-optimizer"]],
+      ["repo-assist-contributor-care.lock.yml", ["repo-assist", "contributor-care"]],
+      ["repo-assist-improvements.lock.yml", ["repo-assist", "improvements"]],
+      ["repo-assist-pr-care.lock.yml", ["repo-assist", "pr-care"]],
+      ["repo-assist-activity.lock.yml", ["repo-assist", "activity"]],
       ["self-care-accessibility-checker.lock.yml", ["self-care", "accessibility-checker"]],
       ["self-care-code-improvement.lock.yml", ["self-care", "code-improvement"]],
       ["self-care-data-acquisition-audit.lock.yml", ["self-care", "data-acquisition-audit"]],
@@ -2624,6 +2701,15 @@ test("Dashboard inventory links multiline orchestrator worker lists", () => {
         ],
       },
       { id: "optimization", workers: ["optimization-ai-credit-auditor", "optimization-ai-credit-optimizer"] },
+      {
+        id: "repo-assist",
+        workers: [
+          "repo-assist-contributor-care",
+          "repo-assist-improvements",
+          "repo-assist-pr-care",
+          "repo-assist-activity",
+        ],
+      },
       {
         id: "self-care",
         workers: [

@@ -115,6 +115,31 @@
           }
         }
       },
+      "repo-assist": {
+        "mode": "review",
+        "max-repositories": 1,
+        "rollout-percent": 100,
+        "monthly-ai-credit-budget": 50000,
+        "icon": "repo",
+        "workers": {
+          "contributor-care": {
+            "workflow": "repo-assist-contributor-care",
+            "max-mode": "review"
+          },
+          "improvements": {
+            "workflow": "repo-assist-improvements",
+            "max-mode": "review"
+          },
+          "pr-care": {
+            "workflow": "repo-assist-pr-care",
+            "max-mode": "review"
+          },
+          "activity": {
+            "workflow": "repo-assist-activity",
+            "max-mode": "review"
+          }
+        }
+      },
       "self-care": {
         "mode": "review",
         "max-repositories": 1,

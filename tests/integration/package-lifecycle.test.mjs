@@ -26,6 +26,7 @@ const craPackageSource = focusedPackageSource("eu-cra-compliance");
 const dashboardPackageSource = focusedPackageSource("dashboard");
 const dependabotUpdateSource = focusedPackageSource("dependabot");
 const selfCarePackageSource = focusedPackageSource("self-care");
+const repoAssistPackageSource = focusedPackageSource("repo-assist");
 const softwareDevelopmentPracticesPackageSource = focusedPackageSource("software-development-practices");
 const activityExpectedFiles = [
   ".github/aw/activity/actions-log.mjs",
@@ -91,6 +92,16 @@ const selfCareExpectedFiles = [
   ".github/workflows/self-care-docs-build-time-investigator.md",
   ".github/workflows/self-care-primer-brand-checker.md",
   ".github/workflows/self-care.md",
+  ".github/workflows/shared/control.md",
+];
+const repoAssistExpectedFiles = [
+  ".github/aw/dashboards/repo-assist.json",
+  ".github/workflows/cao.md",
+  ".github/workflows/repo-assist-activity.md",
+  ".github/workflows/repo-assist-contributor-care.md",
+  ".github/workflows/repo-assist-improvements.md",
+  ".github/workflows/repo-assist-pr-care.md",
+  ".github/workflows/repo-assist.md",
   ".github/workflows/shared/control.md",
 ];
 const softwareDevelopmentPracticesExpectedFiles = [
@@ -283,6 +294,54 @@ test("gh aw add installs the focused SelfCare package contract", { timeout: 180_
   try {
     for (const relativePath of selfCareExpectedFiles) {
       assert.ok(existsSync(join(consumer, relativePath)), `focused SelfCare package omitted ${relativePath}`);
+    }
+  } finally {
+    rmSync(consumer, { recursive: true, force: true });
+  }
+});
+
+test("gh aw add installs the focused Repo Assist package contract", { timeout: 180_000 }, () => {
+  const consumer = installPackage(repoAssistPackageSource);
+
+  try {
+    for (const relativePath of repoAssistExpectedFiles) {
+      assert.ok(existsSync(join(consumer, relativePath)), `focused Repo Assist package omitted ${relativePath}`);
+    }
+    assert.ok(
+      !existsSync(join(consumer, ".github", "workflows", "dependabot.md")),
+      "focused Repo Assist package installed an unrelated orchestrator",
+    );
+
+    const packageManifests = readdirSync(join(consumer, ".github", "aw", "packages"));
+    assert.equal(packageManifests.length, 1, "expected one focused Repo Assist package manifest");
+    const installedManifest = JSON.parse(readFileSync(
+      join(consumer, ".github", "aw", "packages", packageManifests[0]),
+      "utf8",
+    ));
+    assert.deepEqual(
+      installedManifest.files.map(({ destination }) => destination).sort(),
+      [
+        ".github/aw/dashboards/repo-assist.json",
+        ".github/workflows/cao.md",
+        ".github/workflows/repo-assist-activity.md",
+        ".github/workflows/repo-assist-contributor-care.md",
+        ".github/workflows/repo-assist-improvements.md",
+        ".github/workflows/repo-assist-pr-care.md",
+        ".github/workflows/repo-assist.md",
+      ],
+      "focused Repo Assist package manifest must own its entry workflows and dashboard",
+    );
+
+    for (const workflowId of [
+      "repo-assist",
+      "repo-assist-activity",
+      "repo-assist-contributor-care",
+      "repo-assist-improvements",
+      "repo-assist-pr-care",
+    ]) {
+      const lock = readFileSync(join(consumer, ".github", "workflows", `${workflowId}.lock.yml`), "utf8");
+      assert.match(lock, /COPILOT_GITHUB_TOKEN: \$\{\{ github\.token \}\}/, workflowId);
+      assert.doesNotMatch(lock, /secrets\.COPILOT_GITHUB_TOKEN/, workflowId);
     }
   } finally {
     rmSync(consumer, { recursive: true, force: true });

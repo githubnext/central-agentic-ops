@@ -9,7 +9,7 @@ test("package lifecycle matrix selects only packages owning changed files", () =
   assert.deepEqual(names(["uk-ai-advisory/dashboard.json"]), ["UK AI Advisory"]);
   assert.deepEqual(
     names([".github/workflows/shared/control.md"]),
-    ["root", "AW Maintenance", "EU CRA", "UK AI Advisory", "SelfCare", "Software Development Practices", "Dependabot"],
+    ["root", "AW Maintenance", "EU CRA", "UK AI Advisory", "SelfCare", "Repo Assist", "Software Development Practices", "Dependabot"],
   );
   assert.deepEqual(
     names(["dashboard/site/index.html"]),
@@ -28,6 +28,7 @@ test("package lifecycle matrix selects only packages owning changed files", () =
 test("package lifecycle matrix selects a package when its manifest changes", () => {
   assert.deepEqual(names(["activity/aw.yml"]), ["activity"]);
   assert.deepEqual(names(["software-development-practices/aw.yml"]), ["Software Development Practices"]);
+  assert.deepEqual(names(["repo-assist/aw.yml"]), ["Repo Assist"]);
 });
 
 test("package lifecycle matrix selects no packages for unrelated changes", () => {
@@ -36,8 +37,8 @@ test("package lifecycle matrix selects no packages for unrelated changes", () =>
 
 test("package lifecycle matrix selects all packages for manual runs", () => {
   const suites = selectPackageLifecycleSuites(null);
-  assert.equal(suites.length, 9);
-  assert.equal(names(["tests/integration/package-lifecycle.test.mjs"]).length, 9);
+  assert.equal(suites.length, 10);
+  assert.equal(names(["tests/integration/package-lifecycle.test.mjs"]).length, 10);
 
   const source = readFileSync(new URL("../integration/package-lifecycle.test.mjs", import.meta.url), "utf8");
   const testNames = [...source.matchAll(/^test\("([^"]+)"/gm)].map((match) => match[1]);
