@@ -27,6 +27,7 @@ const failures = [
   ["mismatched control run URL", { CONTROL_PLANE_RUN_URL: "https://github.com/acme/control/actions/runs/999" }, "control_plane_run_url must match correlation_id and central_repo"],
   ["oversized repository request", { ROLE: "orchestrator", TARGET_REPO: "", REQUESTED_MAX_REPOS: "1001" }, "max_repositories must be an integer in 1..1000"],
   ["invalid rollout request", { ROLE: "orchestrator", TARGET_REPO: "", REQUESTED_ROLLOUT_PERCENT: "0" }, "rollout_percent must be an integer in 1..100"],
+  ["invalid dispatch maximum", { ROLE: "orchestrator", TARGET_REPO: "", DISPATCH_MAX: "invalid" }, "dispatch_max must be an integer from 1 through 1000"],
   ["invalid credit declaration", { ROLE: "orchestrator", TARGET_REPO: "", ORCHESTRATOR_CREDITS: "invalid" }, "AI Credit admission values must be non-negative integers"],
 ];
 
@@ -230,6 +231,44 @@ test("orchestrator derives its public central review destination without a dispa
   assert.match(result.stderr, /max_repositories must be an integer in 1\.\.1000/);
   assert.doesNotMatch(result.stderr, /non-central review safe_output_repo must be private/);
 });
+
+for (const [label, dispatchMaximum, expected] of [
+  ["missing", "", 1],
+  ["string", "17", 17],
+]) {
+  test(`control precompute accepts a ${label} dispatch maximum`, () => {
+    const result = runPrecompute(
+      {
+        ROLE: "orchestrator",
+        TARGET_REPO: "",
+        DISPATCH_MAX: dispatchMaximum,
+      },
+      `
+case "$*" in
+  *contents/.github/workflows/dependabot.md*)
+    printf '%s\\n' '---
+safe-outputs:
+  dispatch-workflow:
+    workflows: [dependabot-release-train-updater]
+---' | base64 | tr -d '\\n'
+    ;;
+  *actions/workflows*)
+    printf '{"id":1,"name":"Dependabot worker","path":".github/workflows/dependabot-release-train-updater.lock.yml","state":"active"}\\n'
+    ;;
+  *repos/acme/target*)
+    printf '{"id":1,"full_name":"acme/target","archived":false,"disabled":false,"private":true,"pushed_at":"2026-09-03T00:00:00Z","default_branch":"main"}\\n'
+    ;;
+  *) printf 'true\\n' ;;
+esac
+`,
+      controlPolicy({ scope: { "allowed-repositories": ["acme/target"] } }),
+    );
+
+    assert.equal(result.status, 0, result.stderr);
+    const precompute = JSON.parse(readFileSync("/tmp/gh-aw/agent/control-precompute.json", "utf8"));
+    assert.equal(precompute.dispatch_max, expected);
+  });
+}
 
 test("control precompute rejects a public non-central review destination", () => {
   const result = runPrecompute(
