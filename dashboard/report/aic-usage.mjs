@@ -2,7 +2,7 @@ import { spawn } from "node:child_process";
 import { mkdir, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
-import { actionsLog as log } from "./actions-log.mjs";
+import { actionsLog as log } from "../../activity/actions-log.mjs";
 import { firstText } from "./text-utils.mjs";
 
 function runGhAw(repository, runIds, outputDirectory) {

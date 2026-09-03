@@ -1,7 +1,7 @@
 import { mkdir, writeFile } from "node:fs/promises";
 import { existsSync, readFileSync, readdirSync } from "node:fs";
 import path from "node:path";
-import { actionsLog as log } from "./actions-log.mjs";
+import { actionsLog as log } from "../../activity/actions-log.mjs";
 
 (async () => {
 log.group`Extract control-plane inventory`;

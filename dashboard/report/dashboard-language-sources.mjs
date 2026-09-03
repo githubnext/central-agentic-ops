@@ -1,7 +1,7 @@
 import { mkdir, readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { pathToFileURL } from "node:url";
-import { actionsLog as log } from "./actions-log.mjs";
+import { actionsLog as log } from "../../activity/actions-log.mjs";
 import { firstText } from "./text-utils.mjs";
 
 const sourceNames = [

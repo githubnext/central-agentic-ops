@@ -123,9 +123,10 @@ This path supports issue outputs only. It does not transfer issues, publish pull
 
 ### Install the dashboard package
 
-The root Central Agentic Ops package installs the deterministic dashboard by default. To install only the dashboard without the operational workflows, use its focused package with a reviewed release tag or full commit SHA:
+The root Central Agentic Ops package installs the deterministic activity index and dashboard by default. To install the dashboard without the operational workflows, install both focused deterministic packages from the same reviewed release tag or full commit SHA:
 
 ```bash
+gh aw add githubnext/central-agentic-ops/activity@<catalog-release>
 gh aw add githubnext/central-agentic-ops/dashboard@<catalog-release>
 ```
 
@@ -147,8 +148,9 @@ The package installs the following components in the control-plane repository:
 
 - `.github/workflows/dashboard-build.yml`, the reusable path-aware builder;
 - `.github/workflows/dashboard.yml`, the manual standalone publisher;
+- `.github/workflows/activity.yml`, the scheduled workflow-run index refresher;
+- `.github/aw/activity/index.mjs`, the bounded deployed-workflow and run-health indexer;
 - `.github/aw/dashboard/report/aic-usage.mjs`, the bounded AI Credit usage collector;
-- `.github/aw/dashboard/report/deployed-workflows.mjs`, the deployed workflow and run-health collector;
 - `.github/aw/dashboard/report/inventory.mjs`, the dependency-free control-plane inventory extractor;
 - `.github/aw/dashboard/report/operational-values.mjs`, the fleet collector that invokes gh-aw history replay and falls back to recent run artifacts per workflow;
 - `.github/aw/dashboard/report/operational-value-history.mjs`, the report-contract normalizer and append-only observation identity merger;
@@ -167,7 +169,7 @@ The standalone workflow passes `enablement: false` to `actions/configure-pages` 
 
 For a repository with an existing Pages site, keep its current workflow as the only Pages artifact uploader and deployer. Add a job that calls `./.github/workflows/dashboard-build.yml` with a relative `site-path`, then download the `central-agentic-ops-dashboard` artifact into the existing site's build directory before its `actions/upload-pages-artifact` step. For example, `site-path: cao` combined with download `path: dist` publishes the dashboard under `dist/cao/` while preserving the rest of the site. Do not run the standalone dashboard workflow for an embedded installation.
 
-The workflow first runs `inventory.mjs` against the checked-out control-plane repository. It discovers manifests, package relationships, standalone workflows, and source/lock status, then writes normalized schema-versioned JSON to the runner's temporary directory. `deployed-workflows.mjs` discovers compiled workflows in the configured repository scope, records which workflows declare an operational-value evaluator, and retains bounded Actions run trigger metadata. `operational-values.mjs` asks gh-aw to replay each registered workflow from adoption through the current evidence endpoint. A failed or unsupported report falls back only that workflow to recent grader artifacts and due-run regrading. `records.mjs` combines the inventory with accessible durable issues, pull requests, comments, and review artifacts without rendering HTML. `dashboard-language-sources.mjs` adapts those records and collector outputs into the canonical `sources.json` contract. The builder copies the packaged Dashboard Language site to `site-path`, uploads the mergeable artifact, and optionally deploys it through the standalone publisher. Workflow completions trigger dashboard rebuilds but are not published as report records themselves. Generated site files and source data are not committed to the repository.
+The activity action restores or refreshes the shared `deployed-workflows.json` index before consumers query run history. Its indexer discovers compiled workflows in the configured repository scope, records which workflows declare an operational-value evaluator, and retains bounded Actions run trigger metadata. The dashboard then runs `inventory.mjs` against the checked-out control-plane repository to discover manifests, package relationships, standalone workflows, and source/lock status. `operational-values.mjs` asks gh-aw to replay each registered workflow from adoption through the current evidence endpoint. A failed or unsupported report falls back only that workflow to recent grader artifacts and due-run regrading. `records.mjs` combines the inventory with accessible durable issues, pull requests, comments, and review artifacts without rendering HTML. `dashboard-language-sources.mjs` adapts those records and collector outputs into the canonical `sources.json` contract. The builder copies the packaged Dashboard Language site to `site-path`, uploads the mergeable artifact, and optionally deploys it through the standalone publisher. Workflow completions trigger dashboard rebuilds but are not published as report records themselves. Generated site files and source data are not committed to the repository.
 
 Target repository Git history, Actions run metadata, and accepted evidence are the reconstructable authority for operational value. gh-aw's local weekly shards and the installed control repository's Actions observation cache are accelerators, not archives; either may be deleted or evicted. The current Pages artifact is a presentation snapshot. No private organization-specific observation ledger belongs in the public catalog. Organizations that require an independently durable derived archive must persist the versioned observation records in an access-controlled control-plane data store and retain their source identity and evidence lineage.
 

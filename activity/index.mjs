@@ -1,7 +1,6 @@
 import { mkdir, writeFile } from "node:fs/promises";
 import { readFileSync } from "node:fs";
 import path from "node:path";
-import { dashboardHorizonHours, resolveDashboardHorizon } from "../site/src/horizon.js";
 import { actionsLog as log } from "./actions-log.mjs";
 
 (async () => {
@@ -12,18 +11,32 @@ const repository = process.env.GITHUB_REPOSITORY || "";
 const organization = process.env.REPORT_ORGANIZATION || repository.split("/")[0];
 const token = process.env.GITHUB_TOKEN || process.env.GH_TOKEN || "";
 const pagesToken = process.env.REPORT_PAGES_TOKEN || token;
-const outputPath = path.resolve(process.env.REPORT_DEPLOYED_WORKFLOWS || "_inventory/deployed-workflows.json");
+const outputPath = path.resolve(process.env.REPORT_DEPLOYED_WORKFLOWS || "_activity/deployed-workflows.json");
 const controlSettingsPath = process.env.REPORT_CONTROL_SETTINGS;
+const policyPath = process.env.REPORT_CONTROL_POLICY;
 const includePrivate = process.env.REPORT_INCLUDE_PRIVATE === "true";
-const dashboardDocument = JSON.parse(readFileSync(new URL("../site/dashboard.json", import.meta.url), "utf8"));
-const runWindowHours = dashboardHorizonHours(resolveDashboardHorizon(dashboardDocument.dashboard));
+const runWindowHours = Number(process.env.REPORT_RUN_WINDOW_HOURS || 7 * 24);
 const auditMaxPages = Number(process.env.REPORT_AUDIT_MAX_PAGES || 100);
 const maxRetryDelayMs = Number(process.env.REPORT_MAX_RETRY_SECONDS || 30) * 1000;
 const API_LIMITED_STEP_PREFIX = "CAO admission blocked: GitHub API limited until ";
 const API_UNAVAILABLE_STEP = "CAO admission blocked: GitHub API capacity unavailable";
-if (!controlSettingsPath) throw new Error("REPORT_CONTROL_SETTINGS is required");
-const controlSettings = JSON.parse(readFileSync(controlSettingsPath, "utf8"));
-const policyRepositories = [...new Set((controlSettings.allowed_repositories || []).map((value) => value.toLowerCase()))];
+if (!Number.isInteger(runWindowHours) || runWindowHours < 1 || runWindowHours > 24 * 31) {
+  throw new Error("REPORT_RUN_WINDOW_HOURS must be an integer from 1 through 744");
+}
+const controlSettings = controlSettingsPath
+  ? JSON.parse(readFileSync(controlSettingsPath, "utf8"))
+  : {};
+const controlPolicy = !controlSettingsPath && policyPath
+  ? JSON.parse(readFileSync(policyPath, "utf8"))
+  : {};
+const checkedInRepositories = controlPolicy["control-plane"]?.scope?.["allowed-repositories"] || [];
+if (!Array.isArray(checkedInRepositories)) {
+  throw new Error("control-plane.scope.allowed-repositories must be an array");
+}
+const policyRepositories = [...new Set([
+  ...(controlSettings.allowed_repositories || []),
+  ...checkedInRepositories,
+].map((value) => String(value).toLowerCase()))];
 const requestedRepositories = [...new Set((process.env.REPORT_ALLOWED_REPOS || "").split(",")
   .map((value) => value.trim().toLowerCase()).filter(Boolean))];
 if (policyRepositories.length > 0 && requestedRepositories.some((value) => !policyRepositories.includes(value))) {
@@ -338,24 +351,85 @@ function capacityAdmissionBlock(jobs) {
   return null;
 }
 
-async function collectRunHealth(registryByRepository) {
+function emptyRunHealth() {
+  return {
+    runs: 0,
+    successful: 0,
+    failed: 0,
+    actionRequired: 0,
+    cancelled: 0,
+    skipped: 0,
+    pending: 0,
+    other: 0,
+    runIds: [],
+    runRecords: [],
+  };
+}
+
+function previousRunRecords(previousIndex, registryByRepository, windowStart) {
+  const records = new Map();
+  for (const workflow of previousIndex?.workflows || []) {
+    const registry = registryByRepository.get(workflow.repository);
+    if (!registry || ![...registry.values()].some((entry) => entry.id === workflow.id)) continue;
+    for (const run of workflow.runHealth?.runRecords || []) {
+      if (Date.parse(run.createdAt) < windowStart.getTime()) continue;
+      records.set(`${workflow.id}:${run.runId}`, { workflowId: workflow.id, run });
+    }
+  }
+  return records;
+}
+
+function previousIndexIsReusable(previousIndex, windowStart) {
+  const generatedAt = Date.parse(previousIndex?.generatedAt);
+  const previousWindowStart = Date.parse(previousIndex?.runHealth?.windowStart);
+  if (previousIndex?.schemaVersion !== 1
+    || previousIndex.organization !== organization
+    || previousIndex.repositoryScope !== (repositoryScopeEnabled ? "allowlist" : "organization")
+    || previousIndex.includePrivate !== includePrivate
+    || previousIndex.runHealth?.available !== true
+    || previousIndex.runHealth?.complete !== true
+    || previousIndex.runHealth?.windowHours !== runWindowHours
+    || !Number.isFinite(generatedAt)
+    || !Number.isFinite(previousWindowStart)
+    || previousWindowStart > windowStart.getTime()) return false;
+  return JSON.stringify(previousIndex.allowedRepositories || []) === JSON.stringify(allowedRepositories);
+}
+
+async function collectRunHealth(registryByRepository, previousIndex) {
   const windowStart = new Date(Date.now() - runWindowHours * 60 * 60 * 1000);
+  const reusable = previousIndexIsReusable(previousIndex, windowStart);
+  const overlapStart = reusable
+    ? new Date(Math.max(windowStart.getTime(), Date.parse(previousIndex.generatedAt) - 60 * 60 * 1000))
+    : windowStart;
   let page = 0;
   let complete = true;
   let available = true;
-  const totals = new Map();
+  const records = previousRunRecords(reusable ? previousIndex : null, registryByRepository, windowStart);
+  const previousWorkflowIds = new Map();
+  const repositoriesWithPendingRuns = new Set();
+  for (const workflow of previousIndex?.workflows || []) {
+    if (!previousWorkflowIds.has(workflow.repository)) previousWorkflowIds.set(workflow.repository, new Set());
+    previousWorkflowIds.get(workflow.repository).add(workflow.id);
+    if ((workflow.runHealth?.runRecords || []).some((run) => run.conclusion === null || run.status !== "completed")) {
+      repositoriesWithPendingRuns.add(workflow.repository);
+    }
+  }
   await mapWithConcurrency([...registryByRepository], 4, async ([repositoryName, registry]) => {
     const workflowIds = new Set([...registry.values()].map((workflow) => workflow.id));
+    const knownWorkflowIds = previousWorkflowIds.get(repositoryName);
+    const refreshStart = reusable && knownWorkflowIds
+      && !repositoriesWithPendingRuns.has(repositoryName)
+      && [...workflowIds].every((id) => knownWorkflowIds.has(id))
+      ? overlapStart
+      : windowStart;
     try {
       for (let repositoryPage = 1; repositoryPage <= auditMaxPages; repositoryPage += 1) {
-        const response = await github(`/repos/${repositoryName}/actions/runs?created=${encodeURIComponent(`>=${windowStart.toISOString()}`)}&per_page=100&page=${repositoryPage}`);
+        const response = await github(`/repos/${repositoryName}/actions/runs?created=${encodeURIComponent(`>=${refreshStart.toISOString()}`)}&per_page=100&page=${repositoryPage}`);
         const runs = response.body.workflow_runs || [];
         page += 1;
         for (const run of runs) {
           if (!workflowIds.has(run.workflow_id)) continue;
-          const current = totals.get(run.workflow_id) || { runs: 0, successful: 0, failed: 0, actionRequired: 0, cancelled: 0, skipped: 0, pending: 0, other: 0, runIds: [], runRecords: [] };
-          current.runIds.push(run.id);
-          current.runRecords.push({
+          records.set(`${run.workflow_id}:${run.id}`, { workflowId: run.workflow_id, run: {
             repository: repositoryName,
             runId: run.id,
             runNumber: run.run_number,
@@ -367,16 +441,7 @@ async function collectRunHealth(registryByRepository) {
             startedAt: run.run_started_at,
             updatedAt: run.updated_at,
             displayTitle: run.display_title,
-          });
-          current.runs += 1;
-          if (run.conclusion === "success") current.successful += 1;
-          else if (run.conclusion === "action_required") current.actionRequired += 1;
-          else if (["failure", "timed_out", "startup_failure"].includes(run.conclusion)) current.failed += 1;
-          else if (run.conclusion === "cancelled") current.cancelled += 1;
-          else if (run.conclusion === "skipped") current.skipped += 1;
-          else if (run.conclusion === null) current.pending += 1;
-          else current.other += 1;
-          totals.set(run.workflow_id, current);
+          } });
         }
         if (runs.length < 100) break;
         if (repositoryPage === auditMaxPages) complete = false;
@@ -387,6 +452,28 @@ async function collectRunHealth(registryByRepository) {
       log.warning`${error.message}; run health will be unavailable for ${repositoryName}`;
     }
   });
+
+  const totals = new Map();
+  for (const { workflowId, run } of records.values()) {
+    const current = totals.get(workflowId) || emptyRunHealth();
+    current.runRecords.push(run);
+    totals.set(workflowId, current);
+  }
+  for (const current of totals.values()) {
+    current.runRecords.sort((left, right) => Date.parse(right.createdAt) - Date.parse(left.createdAt)
+      || right.runAttempt - left.runAttempt);
+    current.runIds = current.runRecords.map((run) => run.runId);
+    current.runs = current.runRecords.length;
+    for (const run of current.runRecords) {
+      if (run.conclusion === "success") current.successful += 1;
+      else if (run.conclusion === "action_required") current.actionRequired += 1;
+      else if (["failure", "timed_out", "startup_failure"].includes(run.conclusion)) current.failed += 1;
+      else if (run.conclusion === "cancelled") current.cancelled += 1;
+      else if (run.conclusion === "skipped") current.skipped += 1;
+      else if (run.conclusion === null) current.pending += 1;
+      else current.other += 1;
+    }
+  }
   for (const current of totals.values()) {
     const latest = current.runRecords[0];
     if (!latest || !["failure", "timed_out", "startup_failure"].includes(latest.conclusion)) continue;
@@ -399,7 +486,22 @@ async function collectRunHealth(registryByRepository) {
       log.warning`${error.message}; admission details will be unavailable for run ${latest.runId}`;
     }
   }
-  return { available, complete, windowStart: windowStart.toISOString(), pages: page, totals };
+  return {
+    available,
+    complete,
+    mode: reusable ? "incremental" : "full",
+    refreshStart: reusable ? overlapStart.toISOString() : windowStart.toISOString(),
+    windowStart: windowStart.toISOString(),
+    pages: page,
+    totals,
+  };
+}
+
+let previousIndex = null;
+try {
+  previousIndex = JSON.parse(readFileSync(outputPath, "utf8"));
+} catch {
+  // A missing or malformed cache entry triggers a complete bounded refresh.
 }
 
 let matches = [];
@@ -495,7 +597,7 @@ const bundles = (await mapWithConcurrency(manifestFiles, 8, async (item) => {
 })).filter(Boolean).sort((left, right) => left.repository.localeCompare(right.repository) || left.name.localeCompare(right.name));
 
 const [runHealth, organizationRepositories, latestVersion] = await Promise.all([
-  collectRunHealth(registryByRepository),
+  collectRunHealth(registryByRepository, previousIndex),
   organizationRepositorySummary(),
   latestGhAwVersion(),
 ]);
@@ -562,6 +664,8 @@ const inventory = {
   runHealth: {
     available: runHealth.available,
     complete: runHealth.complete,
+    mode: runHealth.mode,
+    refreshStart: runHealth.refreshStart,
     windowStart: runHealth.windowStart,
     windowHours: runWindowHours,
     pages: runHealth.pages,
