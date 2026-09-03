@@ -1323,6 +1323,15 @@ test("orchestrators dispatch workers only through safe-output tools", () => {
   assert.match(precompute, /const item = inWorkflows/);
 });
 
+test("ambient context emits a no-op safe output when no workers are dispatched", () => {
+  const ambientContext = workflow("ambient-context.md");
+
+  assert.match(
+    ambientContext,
+    /If no worker is dispatched and no incomplete condition applies, call `noop` exactly once with the complete orchestrator report as its message\./,
+  );
+});
+
 test("every worker uses the standard dispatch envelope and safe mode vocabulary", () => {
   const workerNames = [
     ["advisory-uk-ai-operational-resilience.md", "advisory", "uk-ai-operational-resilience"],
