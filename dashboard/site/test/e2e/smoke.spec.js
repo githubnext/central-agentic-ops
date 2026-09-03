@@ -977,7 +977,8 @@ test('DLS-PAGE-014 DLS-PAGE-015 built-in packages page renders report-style mode
                       intent: 'Debug this failed workflow dispatch.',
                       presentation: 'copy-prompt',
                       icon: 'search',
-                      label: 'Copy debug prompt'
+                      label: 'Copy debug prompt',
+                      context: ['package', 'status', 'status-detail', 'started-at', 'workflow-name', 'run-title', 'runtime-repository', 'run-link']
                     }]
                   }
                 },

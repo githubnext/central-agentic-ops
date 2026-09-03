@@ -265,9 +265,15 @@ main.dashboard-prototype { width: 100%; flex: 1; padding: 0 24px 40px; }
 .package-dispatches-page .chart-view-pie:first-of-type .pie-chart-card { border-top: 3px solid var(--danger); }
 .package-dispatches-page .chart-view-pie:first-of-type .pie-chart-total-value { fill: var(--danger); }
 .table-intent-action { width: 1%; text-align: center; }
+.table-intent-control { display: inline-grid; place-items: center; }
 .table-intent-button { display: inline-grid; width: 28px; height: 28px; place-items: center; padding: 0; border: 1px solid var(--border); border-radius: 6px; background: var(--canvas-subtle); color: var(--fg); cursor: pointer; }
 .table-intent-button:hover { background: var(--neutral-muted); }
+.table-intent-button:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
+.table-intent-button:disabled { cursor: progress; opacity: .65; }
+.table-intent-button[data-copy-state="success"] { border-color: var(--success); color: var(--success); }
+.table-intent-button[data-copy-state="error"] { border-color: var(--danger); color: var(--danger); }
 .table-intent-button .octicon { width: 14px; height: 14px; }
+.table-intent-status { width: 1px; height: 1px; position: absolute; overflow: hidden; margin: -1px; padding: 0; border: 0; clip: rect(0 0 0 0); white-space: nowrap; }
 h3 { margin: 16px 0 8px; font-size: 1rem; font-weight: 600; }
 .metrics { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; margin: 0 0 20px; overflow: visible; }
 .metrics div, .data-state-summary > div { min-width: 0; min-height: 90px; padding: 14px 16px; border: 1px solid var(--border); border-radius: 6px; background: var(--canvas-subtle); }
