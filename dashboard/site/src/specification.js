@@ -295,7 +295,9 @@ export const SOURCE_VALUES = [
   'workflow-reports',
   'package-reports',
   'model-usage-summary',
-  'engine-usage-summary'
+  'engine-usage-summary',
+  'data-health-summary',
+  'data-health-sources'
 ];
 
 export const SOURCE_FIELDS = {
@@ -315,6 +317,8 @@ export const SOURCE_FIELDS = {
   'security-observations': ['organization', 'repository', 'workflow', 'run', 'security-observation', 'security-feature', 'security-analysis', 'security-signal', 'security-status', 'security-subject', 'security-count', 'observed-at', 'run-link'],
   'coverage-diagnostics': ['kind', 'title', 'effect'],
   'repository-coverage': ['label', 'value'],
+  'data-health-summary': ['label', 'value'],
+  'data-health-sources': ['source', 'source-id', 'source-kind', 'as-of', 'retrieved-at', 'rows', 'fields', 'populated-fields', 'empty-fields', 'status', 'completeness', 'freshness'],
   'runtime-episode-summary': ['label', 'value'],
   'runtime-episodes': ['run', 'run-title', 'package', 'workflow', 'started-at', 'duration', 'status', 'control-transition', 'attribution', 'run-link'],
   'runtime-attribution-gaps': ['run', 'run-title', 'workflow', 'status', 'control-transition', 'reason-code', 'evidence', 'run-link'],

@@ -4183,7 +4183,9 @@
             "id": "data-health-summary",
             "title": "Data health summary",
             "data": {
-              "source": "data-health-summary"
+              "sources": [
+                "data-health-summary"
+              ]
             },
             "mark": "element",
             "element": "summary-grid",
