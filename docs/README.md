@@ -10,7 +10,7 @@ hero:
   tagline: Dispatch trusted workflows across organizations and more than 10,000 remote target repositories, with bounded review, authorized live execution, and traceable outcomes built in.
   actions:
     - text: Get started
-      link: /gh-aw-cao/wizard/
+      link: /gh-aw-cao/getting-started/
       icon: right-arrow
     - text: Learn more
       link: /gh-aw-cao/architecture/

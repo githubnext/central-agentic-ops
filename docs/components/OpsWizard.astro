@@ -28,11 +28,23 @@ const agents = [
 ---
 
 <section class="ops-wizard-shell" aria-labelledby="ops-wizard-title">
-  <div class="ops-wizard">
+  <details class="ops-wizard">
+    <summary class="wizard-toggle">
+      <span class="wizard-eyebrow">Setup wizard</span>
+      <span class="wizard-toggle-copy">
+        <span class="wizard-toggle-title" id="ops-wizard-title">Start an operation in three steps</span>
+        <span class="wizard-toggle-lede">
+          Generate a copy-ready prompt for creating a private control plane and running the first review-mode operation.
+        </span>
+      </span>
+      <span class="wizard-toggle-action" aria-hidden="true">
+        <span class="wizard-toggle-open">Open wizard</span>
+        <span class="wizard-toggle-close">Close wizard</span>
+      </span>
+    </summary>
+
     <div class="wizard-body">
       <div class="wizard-intro">
-        <span class="wizard-eyebrow">Setup wizard</span>
-        <h2 id="ops-wizard-title">Start an operation in three steps</h2>
         <p class="wizard-lede">
           Pick the operation you want to run and the coding agent you use, then copy the generated prompt. The agent
           creates your private control plane repository, installs the operation, and runs it once in <code>review</code>
@@ -180,7 +192,7 @@ const agents = [
     </fieldset>
       </form>
     </div>
-  </div>
+  </details>
 </section>
 
 <script>
@@ -396,6 +408,71 @@ const agents = [
       isolation: isolate;
     }
 
+    .wizard-toggle {
+      position: relative;
+      z-index: 1;
+      display: grid;
+      grid-template-columns: auto minmax(0, 1fr) auto;
+      gap: 0.75rem;
+      align-items: center;
+      padding: 0.85rem 1rem;
+      cursor: pointer;
+      list-style: none;
+    }
+
+    .wizard-toggle::-webkit-details-marker {
+      display: none;
+    }
+
+    .wizard-toggle:focus-visible {
+      outline: 2px solid var(--sl-color-text-accent);
+      outline-offset: -4px;
+    }
+
+    .wizard-toggle-copy {
+      display: flex;
+      min-width: 0;
+      flex-direction: column;
+      gap: 0.15rem;
+    }
+
+    .wizard-toggle-title {
+      color: var(--sl-color-white);
+      font-size: var(--sl-text-lg);
+      font-weight: 700;
+      line-height: 1.2;
+    }
+
+    .wizard-toggle-lede {
+      color: var(--sl-color-gray-2);
+      font-size: var(--sl-text-xs);
+      line-height: 1.45;
+    }
+
+    .wizard-toggle-action {
+      border: 1px solid color-mix(in srgb, var(--sl-color-text-accent) 42%, transparent);
+      border-radius: 999px;
+      background: color-mix(in srgb, var(--sl-color-text-accent) 10%, transparent);
+      padding: 0.32rem 0.7rem;
+      color: color-mix(in srgb, var(--sl-color-text-accent) 84%, var(--sl-color-white));
+      font-size: var(--sl-text-xs);
+      font-weight: 800;
+      white-space: nowrap;
+    }
+
+    .ops-wizard[open] .wizard-toggle-action {
+      background: color-mix(in srgb, var(--sl-color-white) 8%, transparent);
+    }
+
+    .wizard-toggle-close,
+    .ops-wizard[open] .wizard-toggle-open {
+      display: none;
+    }
+
+    .ops-wizard[open] .wizard-toggle-close {
+      display: inline;
+    }
+
     .wizard-body {
       position: relative;
       z-index: 1;
@@ -431,13 +508,12 @@ const agents = [
       background: var(--wizard-blue);
     }
 
-    .ops-wizard::before,
-    .ops-wizard::after {
+    .ops-wizard[open]::before,
+    .ops-wizard[open]::after {
       opacity: var(--wizard-glow-opacity);
     }
 
     .wizard-eyebrow {
-      align-self: center;
       margin: 0;
       border: 1px solid color-mix(in srgb, var(--sl-color-text-accent) 55%, transparent);
       border-radius: 999px;
@@ -457,13 +533,6 @@ const agents = [
       flex-direction: column;
       gap: 0.5rem;
       text-align: center;
-    }
-
-    .wizard-intro h2 {
-      margin: 0;
-      color: var(--sl-color-white);
-      font-size: var(--sl-text-2xl);
-      line-height: 1.2;
     }
 
     .wizard-lede {
