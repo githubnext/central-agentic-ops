@@ -5,11 +5,11 @@ import rewriteDocsLinks from "./docs/rewrite-docs-links.mjs";
 
 export default defineConfig({
   site: "https://githubnext.github.io",
-  base: "/central-agentic-ops",
+  base: "/gh-aw-cao",
   srcDir: "./docs",
   markdown: {
     processor: unified({
-      remarkPlugins: [[rewriteDocsLinks, { base: "/central-agentic-ops" }]],
+      remarkPlugins: [[rewriteDocsLinks, { base: "/gh-aw-cao" }]],
     }),
   },
   integrations: [
@@ -31,7 +31,7 @@ export default defineConfig({
         Hero: "./docs/components/HierarchyHero.astro",
       },
       editLink: {
-        baseUrl: "https://github.com/githubnext/central-agentic-ops/edit/main/",
+        baseUrl: "https://github.com/githubnext/gh-aw-cao/edit/main/",
       },
       head: [
         {
@@ -89,7 +89,7 @@ export default defineConfig({
         {
           icon: "github",
           label: "GitHub repository",
-          href: "https://github.com/githubnext/central-agentic-ops",
+          href: "https://github.com/githubnext/gh-aw-cao",
         },
       ],
       sidebar: [

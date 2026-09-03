@@ -11,10 +11,50 @@ import { policyCases, userFacingScenarios } from "./workflow-contract.matrix.mjs
 const root = resolve(dirname(fileURLToPath(import.meta.url)), "../..");
 const workflowsDirectory = join(root, ".github", "workflows");
 const modes = ["review", "live"];
+const ghAwVersion = "v0.88.2";
 
 function workflow(name, directory = workflowsDirectory) {
   return readFileSync(join(directory, name), "utf8");
 }
+
+test("packages and repository workflows pin the supported gh-aw version", () => {
+  const manifests = [
+    "aw.yml",
+    "activity/aw.yml",
+    "advisory/aw.yml",
+    "ambient-context/aw.yml",
+    "aw-maintenance/aw.yml",
+    "dashboard/aw.yml",
+    "dependabot/aw.yml",
+    "eu-cra-compliance/aw.yml",
+    "optimization/aw.yml",
+    "self-care/aw.yml",
+    "software-development-practices/aw.yml",
+  ];
+  for (const manifest of manifests) {
+    assert.equal(parse(readFileSync(join(root, manifest), "utf8"))["min-version"], ghAwVersion, manifest);
+  }
+
+  for (const name of ["copilot-setup-steps.yml", "dashboard-build.yml", "release.yml", "workflow-contracts.yml"]) {
+    const source = workflow(name);
+    assert.match(source, /github\/gh-aw-actions\/setup-cli@[0-9a-f]{40} # v0\.88\.2/);
+    assert.match(source, /version: v0\.88\.2/);
+  }
+});
+
+test("AI Credit workers collect all workflow logs with bounded resources", () => {
+  for (const name of ["optimization-ai-credit-auditor.md", "optimization-ai-credit-optimizer.md"]) {
+    const source = workflow(name);
+    const commands = source.match(/gh aw logs \\\n/g) || [];
+    assert.equal(commands.length, 1, name);
+    assert.match(source, /--repo "\$TARGET_REPO"/);
+    assert.match(source, /--output \/tmp\/gh-aw\/token-audit\/logs/);
+    assert.match(source, /--timeout \d+/);
+    assert.match(source, /--max-github-api-rate-limit -2000/);
+    assert.match(source, /--max-storage 1024/);
+    assert.doesNotMatch(source, /for workflow in target\/\.github\/workflows\/\*\.md/);
+  }
+});
 
 function controlPrecompute() {
   return [
@@ -588,7 +628,7 @@ test("deterministic workflows pin third-party actions by commit SHA", () => {
     join(".github", "workflows", "enterprise-canary.yml"),
     join(".github", "workflows", "enterprise-stress.yml"),
     join(".github", "workflows", "review-smoke.yml"),
-    join("activity", "activity.yml"),
+    join(".github", "workflows", "activity.yml"),
     join(".github", "workflows", "dashboard-build.yml"),
     join("dashboard", "dashboard.yml"),
   ]) {
@@ -903,7 +943,7 @@ test("operational-value graders expose deterministic run-scoped contracts", () =
   assert.match(auditorEvaluator, /workflow_path \/\/ \.workflow_name/);
   assert.match(auditorEvaluator, /evidenceRepo: \.run\.repository/);
   assert.match(optimizerWorker, /GH_REPO: \$\{\{ inputs\.target_repo \}\}/);
-  assert.match(optimizerWorker, /for workflow in target\/\.github\/workflows\/\*\.md/);
+  assert.match(optimizerWorker, /gh aw logs \\\n\s+--repo "\$TARGET_REPO"/);
   assert.match(optimizerWorker, /\$\{TARGET_PREFIX\}__optimization-log\.json/);
   assert.match(optimizerWorker, /"optimizer_run_id":"\$\{\{ github\.run_id \}\}"/);
   assert.match(optimizerEvaluator, /\.optimizer_run_id \| tostring/);
@@ -2219,6 +2259,11 @@ test("Dashboard package supports embedded and explicit standalone deployment", (
   assert.match(buildWorkflow, /go clean -cache -modcache/);
   assert.doesNotMatch(buildWorkflow, /pages-aic|REPORT_AIC_CACHE/);
   assert.match(aicUsage, /"--start-date", "-2d", "--cache-before", "-2d"/);
+  assert.match(aicUsage, /"--count", String\(maxRunsPerWorkflow\), "--timeout", "15"/);
+  assert.match(aicUsage, /"--max-github-api-rate-limit", "-2000", "--max-storage", "1024"/);
+  assert.match(aicUsage, /targets\.push\(`\$\{workflow\.repository\}\/\$\{workflow\.path\}`\)/);
+  assert.doesNotMatch(aicUsage, /--stdin|mapWithConcurrency|REPORT_AIC_CONCURRENCY/);
+  assert.doesNotMatch(buildWorkflow, /REPORT_AIC_CONCURRENCY/);
   assert.match(buildWorkflow, /REPORT_VALUE_CACHE: \.cache\/dashboard-operational-values\/observations\.json/);
   assert.match(buildWorkflow, /REPORT_VALUE_REPLAY_CACHE: \.cache\/dashboard-operational-values\/replay/);
   assert.match(buildWorkflow, /actions\/cache\/restore@[0-9a-f]{40}/);
@@ -2256,20 +2301,16 @@ test("Dashboard package supports embedded and explicit standalone deployment", (
 test("Activity package owns the shared workflow-run cache contract", () => {
   const rootManifest = parse(readFileSync(join(root, "aw.yml"), "utf8"));
   const activityManifest = parse(readFileSync(join(root, "activity", "aw.yml"), "utf8"));
-  const workflow = readFileSync(join(root, "activity", "activity.yml"), "utf8");
+  const workflow = readFileSync(join(root, ".github", "workflows", "activity.yml"), "utf8");
   const readme = readFileSync(join(root, "activity", "README.md"), "utf8");
 
   assert.equal(activityManifest.name, "Central Agentic Ops Activity");
-  assert.deepEqual(activityManifest.includes, [{
-    source: "activity.yml",
-    destination: ".github/workflows/activity.yml",
-    kind: "action-workflow",
-  }]);
+  assert.deepEqual(activityManifest.includes, [".github/workflows/activity.yml"]);
   assert.deepEqual(activityManifest.resources, [
     { source: "actions-log.mjs", destination: ".github/aw/activity/actions-log.mjs" },
     { source: "index.mjs", destination: ".github/aw/activity/index.mjs" },
   ]);
-  assert.ok(rootManifest.includes.some((entry) => entry.destination === ".github/workflows/activity.yml"));
+  assert.ok(rootManifest.includes.includes(".github/workflows/activity.yml"));
   assert.ok(rootManifest.resources.some((entry) => entry.destination === ".github/aw/activity/actions-log.mjs"));
   assert.ok(rootManifest.resources.some((entry) => entry.destination === ".github/aw/activity/index.mjs"));
   assert.match(workflow, /schedule:[\s\S]*?cron:/);
@@ -2308,6 +2349,10 @@ test("Documentation Pages deploys docs with the packaged dashboard builder", () 
   assert.match(dashboardBuild, /DASHBOARD_LAYOUT=source/);
   assert.match(dashboardBuild, /DASHBOARD_LAYOUT=installed/);
   assert.doesNotMatch(dashboardBuild, /schedule:|push:|deploy-pages|upload-pages-artifact/);
+  assert.match(astroConfig, /base: "\/gh-aw-cao"/);
+  assert.match(astroConfig, /rewriteDocsLinks, \{ base: "\/gh-aw-cao" \}/);
+  assert.match(astroConfig, /githubnext\/gh-aw-cao\/edit\/main/);
+  assert.match(astroConfig, /href: "https:\/\/github\.com\/githubnext\/gh-aw-cao"/);
   assert.match(astroConfig, /label: "Control plane status", link: "\/cao\/"/);
 });
 
