@@ -1447,6 +1447,17 @@ test("Advisory preserves UK AI guidance and human-review boundaries", () => {
   assert.match(ledger, /It does not prove that the package, an installed fleet, a repository, or an organization is secure/);
 });
 
+test("UK AI advisory worker uses actionable progressive-disclosure reports", () => {
+  const worker = workflow("advisory-uk-ai-operational-resilience.md");
+
+  assert.match(worker, /executive summary[\s\S]*decision-relevant result[\s\S]*key metrics[\s\S]*recommended next action/i);
+  assert.match(worker, /Keep critical findings[\s\S]*recommended next action visible/i);
+  assert.match(worker, /non-essential background[\s\S]*verbose supporting evidence[\s\S]*per-item breakdowns[\s\S]*`<details>`/i);
+  assert.match(worker, /single most important action with the highest expected return on investment/i);
+  assert.match(worker, /<details><summary><b>Agent prompt<\/b><\/summary>/);
+  assert.match(worker, /clear, imperative prompt for an agentic run that performs only that selected action/i);
+});
+
 test("EU CRA Advisor workflows preserve advisory and human-review boundaries", () => {
   const orchestrator = workflow("eu-cra-compliance.md");
   const maintainer = workflow("eu-cra-compliance-package-maintainer.md");
