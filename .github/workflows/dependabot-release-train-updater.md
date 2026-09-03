@@ -139,6 +139,14 @@ graders:
     run: .github/graders/dependabot-release-train-updater-operational-value.sh
 
 safe-outputs:
+  add-labels:
+    allowed: [dependabot, dependabot:release-train-updater]
+    create-if-missing: true
+    issues: true
+    pull-requests: false
+    max: 2
+    target: "*"
+    target-repo: ${{ (inputs.safe_output_mode || 'review') == 'review' && (inputs.safe_output_repo || github.repository) || inputs.target_repo }}
   create-pull-request:
     target-repo: ${{ (inputs.safe_output_mode || 'review') == 'review' && (inputs.safe_output_repo || github.repository) || inputs.target_repo }}
     title-prefix: "[dependabot-agent] "

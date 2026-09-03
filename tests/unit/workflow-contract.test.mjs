@@ -580,6 +580,7 @@ test("operations creation guidance scopes detection and omits worker evals", () 
   assert.match(packageSkill, /default new dispatchers to `hourly`/);
   assert.match(packageSkill, /`safe-outputs\.create-issue` or `safe-outputs\.create-pull-request`[\s\S]*?`labels: \[<package-slug>, <package-slug>:<worker-slug>\]`[\s\S]*?`title-prefix: "\[<package-slug>:<worker-slug>\] "`/);
   assert.match(packageSkill, /every created issue or pull request identifies both its owning operation and worker/);
+  assert.match(packageSkill, /`safe-outputs\.add-labels`[\s\S]*?`create-if-missing: true`[\s\S]*?`max: 2`[\s\S]*?`target: "\*"`/);
   assert.match(packageSkill, /evaluate the potential follow-up actions/);
   assert.match(packageSkill, /single most important action with the highest expected return on investment/);
   assert.match(packageSkill, /<details><summary><b>Agent prompt<\/b><\/summary> \.\.\. <\/details>/);
@@ -612,6 +613,19 @@ test("issue-creating workers use package and worker title prefixes and labels", 
     assert.deepEqual(
       config["safe-outputs"]["create-issue"].labels,
       [controlImport.with.package, `${controlImport.with.package}:${controlImport.with.worker}`],
+      name,
+    );
+    assert.deepEqual(
+      config["safe-outputs"]["add-labels"],
+      {
+        allowed: [controlImport.with.package, `${controlImport.with.package}:${controlImport.with.worker}`],
+        "create-if-missing": true,
+        issues: true,
+        "pull-requests": false,
+        max: 2,
+        target: "*",
+        "target-repo": config["safe-outputs"]["create-issue"]["target-repo"],
+      },
       name,
     );
   }

@@ -106,6 +106,14 @@ tools:
   web-fetch:
 
 safe-outputs:
+  add-labels:
+    allowed: [software-development-practices, software-development-practices:nist-ssdf]
+    create-if-missing: true
+    issues: true
+    pull-requests: false
+    max: 2
+    target: "*"
+    target-repo: ${{ (inputs.safe_output_mode || 'review') == 'review' && (inputs.safe_output_repo || github.repository) || inputs.target_repo }}
   create-issue:
     expires: 30d
     title-prefix: "[software-development-practices:nist-ssdf] "

@@ -97,6 +97,14 @@ tools:
     max-patch-size: 51200
 
 safe-outputs:
+  add-labels:
+    allowed: [optimization, optimization:ai-credit-optimizer]
+    create-if-missing: true
+    issues: true
+    pull-requests: false
+    max: 2
+    target: "*"
+    target-repo: ${{ (inputs.safe_output_mode || 'review') == 'review' && (inputs.safe_output_repo || github.repository) || inputs.target_repo }}
   create-issue:
     expires: 7d
     title-prefix: "[optimization:ai-credit-optimizer] "

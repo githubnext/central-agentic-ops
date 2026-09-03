@@ -92,6 +92,14 @@ concurrency:
 tracker-id: aw-maintenance-compiler-security
 
 safe-outputs:
+  add-labels:
+    allowed: [aw-maintenance, aw-maintenance:compiler-security]
+    create-if-missing: true
+    issues: true
+    pull-requests: false
+    max: 2
+    target: "*"
+    target-repo: ${{ (inputs.safe_output_mode || 'review') == 'review' && (inputs.safe_output_repo || github.repository) || inputs.target_repo }}
   create-issue:
     expires: 14d
     title-prefix: "[aw-maintenance:compiler-security] "
