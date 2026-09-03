@@ -63,6 +63,16 @@ test("catalog packages declare their current experimental maturity", () => {
   }
 });
 
+test("operational workflows use the transitive CAO package bundle", () => {
+  const bundle = workflow("shared/cao.md");
+  assert.match(bundle, /imports:\n\s+- uses: control\.md/);
+  assert.match(bundle, /format\('\{0\}', github\.aw\.import-inputs\.dispatch_max\)/);
+
+  const operationWorkflows = readdirSync(workflowsDirectory)
+    .filter((name) => name.endsWith(".md") && workflow(name).includes("uses: shared/cao.md"));
+  assert.equal(operationWorkflows.length, 29);
+});
+
 test("AI Credit workers collect all workflow logs with bounded resources", () => {
   for (const name of ["optimization-ai-credit-auditor.md", "optimization-ai-credit-optimizer.md"]) {
     const source = workflow(name);
@@ -461,7 +471,7 @@ test("control workflows deny before activation through one shared admission cont
   const controlled = readdirSync(workflowsDirectory)
     .filter((name) => name.endsWith(".md") && !name.endsWith(".lock.md"))
     .map((name) => [name, workflow(name)])
-    .filter(([, source]) => /^\s+- uses: shared\/control\.md$/m.test(source));
+    .filter(([, source]) => /^\s+- uses: shared\/cao\.md$/m.test(source));
 
   assert.equal(controlled.length, 29, "unexpected shared control workflow count");
   assert.equal(
