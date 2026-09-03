@@ -34,7 +34,7 @@ function inlineList(source, key) {
 }
 
 function controlPackage(source) {
-  return source.match(/uses:\s+shared\/cao-operation\.md[\s\S]*?package:\s+([a-z0-9][a-z0-9-]*)/)?.[1] || "";
+  return source.match(/uses:\s+shared\/cao\.md[\s\S]*?package:\s+([a-z0-9][a-z0-9-]*)/)?.[1] || "";
 }
 
 function manifestIncludes(source) {
@@ -87,7 +87,7 @@ function discoverInventory() {
       const sourcePath = `.github/workflows/${entry.name}`;
       const source = readFileSync(path.join(workflowDirectory, entry.name), "utf8");
       const stem = entry.name.slice(0, -3);
-      const role = source.match(/uses:\s+shared\/cao-operation\.md[\s\S]*?role:\s+(orchestrator|worker)/)?.[1] || "standalone";
+      const role = source.match(/uses:\s+shared\/cao\.md[\s\S]*?role:\s+(orchestrator|worker)/)?.[1] || "standalone";
       const maxAiCredits = Number(scalar(source, "max-ai-credits"));
       return {
         id: stem,

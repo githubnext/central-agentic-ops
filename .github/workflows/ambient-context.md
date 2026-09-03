@@ -52,7 +52,7 @@ jobs:
 if: needs.pre_activation.outputs.cao_authorized == 'true'
 
 imports:
-  - uses: shared/cao-operation.md
+  - uses: shared/cao.md
     with:
       package: ambient-context
       role: orchestrator
