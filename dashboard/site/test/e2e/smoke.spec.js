@@ -422,7 +422,7 @@ test('DLS-PAGE-002 DLS-PAGE-014 built-in overview page renders the report-style 
         workflows: {
           source: 'workflows',
           rows: [
-            { organization: 'github', repository: 'gh-aw-cao', package: 'daily-ops', 'package-name': 'Daily Ops', 'workflow-role': 'orchestrator', workflow: '.github/workflows/daily.yml', 'workflow-active': 'true', 'rollout-mode': 'live', 'max-ai-credits': 10, 'observed-at': '2026-08-29T09:00:00Z' },
+            { organization: 'github', repository: 'gh-aw-cao', package: 'daily-ops', 'package-name': 'Daily Ops', 'workflow-role': 'orchestrator', workflow: '.github/workflows/daily.yml', 'workflow-active': 'true', 'rollout-mode': 'review', 'package-rollout-percent': 100, 'package-targets': [{ repository: 'github/gh-aw', mode: 'live' }, { repository: 'github/gh-aw-firewall', mode: 'review' }, { repository: 'github/gh-aw-mcpg', mode: 'review' }, { repository: 'github/gh-aw-actions', mode: 'review' }, { repository: 'github/gh-aw-threat-detection', mode: 'review' }, { repository: 'githubnext/gh-aw-workshop', mode: 'review' }], 'max-ai-credits': 10, 'observed-at': '2026-08-29T09:00:00Z' },
             { organization: 'github', repository: 'gh-aw-cao', package: 'daily-ops', 'package-name': 'Daily Ops', 'workflow-role': 'worker', workflow: '.github/workflows/review.yml', 'workflow-active': 'false', 'rollout-mode': 'review', 'max-ai-credits': 20, 'observed-at': '2026-08-29T09:05:00Z' }
           ],
           metadata: {
@@ -438,12 +438,27 @@ test('DLS-PAGE-002 DLS-PAGE-014 built-in overview page renders the report-style 
         runs: {
           source: 'runs',
           rows: [
-            { organization: 'github', repository: 'gh-aw-cao', workflow: '.github/workflows/daily.yml', run: '1001', 'started-at': '2026-08-29T10:00:00Z', 'run-status': 'completed', 'run-conclusion': 'success', 'rollout-mode': 'live', engine: 'openai', 'requested-model': 'gpt-4o', 'resolved-model': 'gpt-4.1' },
-            { organization: 'github', repository: 'gh-aw-cao', workflow: '.github/workflows/daily.yml', run: '1002', 'started-at': '2026-08-29T11:00:00Z', 'run-status': 'completed', 'run-conclusion': 'failure', 'rollout-mode': 'live', engine: 'openai', 'requested-model': 'gpt-4o', 'resolved-model': 'gpt-4.1' },
+            { organization: 'github', repository: 'gh-aw-cao', workflow: '.github/workflows/daily.yml', run: '1001', event: 'workflow_dispatch', 'started-at': '2026-08-29T10:00:00Z', 'run-status': 'completed', 'run-conclusion': 'success', 'rollout-mode': 'live', engine: 'openai', 'requested-model': 'gpt-4o', 'resolved-model': 'gpt-4.1' },
+            { organization: 'github', repository: 'gh-aw-cao', workflow: '.github/workflows/daily.yml', run: '1002', event: 'workflow_dispatch', 'started-at': '2026-08-29T11:00:00Z', 'run-status': 'completed', 'run-conclusion': 'failure', 'rollout-mode': 'live', engine: 'openai', 'requested-model': 'gpt-4o', 'resolved-model': 'gpt-4.1' },
             { organization: 'github', repository: 'gh-aw-cao', workflow: '.github/workflows/review.yml', run: '1003', 'started-at': '2026-08-29T12:00:00Z', 'run-status': 'in-progress', 'run-conclusion': 'unknown', 'rollout-mode': 'review', engine: 'anthropic', 'requested-model': 'claude-3.5', 'resolved-model': 'claude-3.7' }
           ],
           metadata: {
             'source-id': 'runs-fixture',
+            'source-kind': 'fixture',
+            'as-of': '2026-08-29T20:00:00Z',
+            'retrieved-at': '2026-08-29T20:01:00Z',
+            completeness: 'complete',
+            freshness: 'fresh',
+            availability: 'available'
+          }
+        },
+        outcomes: {
+          source: 'outcomes',
+          rows: [
+            { package: 'daily-ops', 'runtime-repository': 'github/gh-aw-cao', run: '1001', 'safe-output': 'daily-output-1', 'outcome-state': 'accepted', 'rollout-mode': 'live', 'observed-at': '2026-08-29T10:10:00Z' }
+          ],
+          metadata: {
+            'source-id': 'outcomes-fixture',
             'source-kind': 'fixture',
             'as-of': '2026-08-29T20:00:00Z',
             'retrieved-at': '2026-08-29T20:01:00Z',
@@ -592,7 +607,12 @@ test('DLS-PAGE-002 DLS-PAGE-014 built-in overview page renders the report-style 
   await expect(packageCards.locator('header strong')).toHaveText(['Daily Ops']);
   await expect(packageCards.first()).toHaveClass(/package-status-attention/);
   await expect(packageCards.first()).toContainText('Needs attention');
-  await expect(packageCards.first()).toContainText('1 worker workflow');
+  await expect(packageCards.locator('.package-status-live-coverage')).toHaveText('Rollout1 live · 5 review17% live');
+  await expect(packageCards.locator('progress')).toHaveAttribute('value', '17');
+  await expect(packageCards.locator('.package-status-repository-heading')).toHaveText('Target repositoriesMode');
+  await expect(packageCards.locator('.package-status-repositories li')).toHaveCount(6);
+  await expect(packageCards.locator('.package-status-activity')).toContainText('2 dispatches');
+  await expect(packageCards.locator('.package-status-activity')).toContainText('1/2 produced output');
   await expect(packageCards.first()).toHaveAttribute('href', '#page-package-insights?package=daily-ops');
   await expect(page.locator('[data-page-id="overview"] .data-state-summary')).toBeHidden();
 

@@ -429,8 +429,8 @@ h3 { margin: 16px 0 8px; font-size: 1rem; font-weight: 600; }
 .overview-method-note { margin: 10px 0 0; color: var(--muted); font-size: .6875rem; }
 .overview-method-note strong { color: var(--fg); }
 .overview-package-status { margin-bottom: 24px; }
-.package-status-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); overflow: hidden; border: 1px solid var(--border); border-radius: 6px; background: var(--border); gap: 1px; }
-.package-status-card { min-width: 0; min-height: 160px; display: grid; grid-template-rows: auto auto auto 1fr auto; gap: 6px; padding: 16px; border-top: 3px solid var(--muted); background: var(--canvas); color: var(--fg); text-decoration: none; }
+.package-status-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); overflow: hidden; border: 1px solid var(--border); border-radius: 6px; background: var(--border); gap: 1px; }
+.package-status-card { min-width: 0; display: grid; grid-template-rows: auto auto 1fr auto; gap: 12px; padding: 16px; border-top: 3px solid var(--muted); background: var(--canvas); color: var(--fg); text-decoration: none; }
 .package-status-card:hover { background: var(--canvas-subtle); text-decoration: none; }
 .package-status-card:focus-visible { z-index: 1; outline: 2px solid var(--focus); outline-offset: -2px; }
 .package-status-card > header { min-width: 0; display: flex; align-items: center; justify-content: space-between; gap: 8px; }
@@ -438,15 +438,34 @@ h3 { margin: 16px 0 8px; font-size: 1rem; font-weight: 600; }
 .package-status-card > header > strong > span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .package-status-state { padding: 2px 6px; border: 1px solid currentColor; border-radius: 999px; color: var(--muted); font-size: .625rem; font-weight: 600; white-space: nowrap; }
 .package-status-card .mode-badge { flex: none; }
-.package-status-mode { color: var(--muted); font-size: .75rem; text-transform: capitalize; }
-.package-status-card > p { margin: 0; color: var(--muted); font-size: .75rem; line-height: 1.45; }
-.package-status-card > p.package-status-rollout { color: var(--fg); font-weight: 600; }
-.package-status-repositories { display: grid; gap: 4px; margin: 0; padding: 0; list-style: none; color: var(--muted); font-size: .6875rem; }
-.package-status-repositories li { display: flex; align-items: center; justify-content: space-between; gap: 8px; min-width: 0; }
-.package-status-repositories li > span:first-child { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.package-status-card > footer { display: flex; align-items: center; justify-content: space-between; padding: 10px 0 0; border-top: 1px solid var(--border); color: var(--accent); font-size: .6875rem; font-weight: 600; }
-.package-status-ready { border-top-color: var(--success); }
-.package-status-ready .package-status-state { color: var(--success); }
+.package-status-card .mode-badge .octicon { width: 8px; height: 8px; margin-right: 3px; }
+.package-status-live-coverage { display: grid; gap: 7px; }
+.package-status-live-coverage-heading { display: flex; align-items: end; justify-content: space-between; gap: 12px; }
+.package-status-live-coverage-heading > div { display: grid; gap: 2px; }
+.package-status-live-coverage-heading span { color: var(--muted); font-size: .625rem; font-weight: 600; }
+.package-status-live-coverage-heading strong { font-size: .75rem; }
+.package-status-live-coverage-heading > strong { flex: none; font-size: .875rem; font-variant-numeric: tabular-nums; }
+.package-status-live-coverage progress { width: 100%; height: 6px; overflow: hidden; appearance: none; border: 0; border-radius: 999px; background: var(--neutral-muted); }
+.package-status-live-coverage progress::-webkit-progress-bar { border-radius: 999px; background: var(--neutral-muted); }
+.package-status-live-coverage progress::-webkit-progress-value { border-radius: 999px; background: var(--success); }
+.package-status-live-coverage progress::-moz-progress-bar { border-radius: 999px; background: var(--success); }
+.package-status-runtime { min-width: 0; }
+.package-status-repository-heading { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 0 0 5px; border-bottom: 1px solid var(--border); color: var(--muted); font-size: .625rem; font-weight: 600; }
+.package-status-repositories { display: grid; margin: 0; padding: 0; list-style: none; font-size: .6875rem; }
+.package-status-repositories li { min-width: 0; display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 6px 0; border-bottom: 1px solid var(--border-muted); }
+.package-status-repositories li:last-child { border-bottom: 0; }
+.package-status-repository-name { min-width: 0; display: flex; align-items: center; gap: 6px; }
+.package-status-repository-name > .octicon { width: 12px; height: 12px; flex: 0 0 12px; color: var(--muted); }
+.package-status-repository-name > span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.package-status-repositories-empty { margin: 8px 0 0; color: var(--muted); font-size: .6875rem; }
+.package-status-activity { min-width: 0; display: grid; grid-template-columns: auto auto minmax(0, 1fr); align-items: center; gap: 8px 12px; padding-top: 10px; border-top: 1px solid var(--border); color: var(--muted); font-size: .625rem; }
+.package-status-activity > span { min-width: 0; display: flex; align-items: center; gap: 5px; }
+.package-status-activity > span:last-child { justify-self: end; }
+.package-status-activity .octicon { width: 11px; height: 11px; flex: 0 0 11px; }
+.package-status-activity .octicon-paper-airplane { color: var(--accent); }
+.package-status-activity .octicon-shield-check { color: var(--success); }
+.package-status-activity strong { overflow: hidden; color: var(--fg); font-size: .6875rem; font-weight: 600; text-overflow: ellipsis; white-space: nowrap; }
+.package-status-activity-label { font-weight: 600; }
 .package-status-attention { border-top-color: var(--attention); }
 .package-status-attention .package-status-state { color: var(--attention); }
 .section-heading h3 { margin: 1px 0 3px; font-size: 1.25rem; }

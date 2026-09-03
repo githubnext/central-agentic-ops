@@ -1106,7 +1106,7 @@ describe('presenter built-in and custom pages', () => {
         workflows: {
           source: 'workflows',
           rows: [
-            { organization: 'github', repository: 'gh-aw-cao', package: 'daily-ops', 'package-name': 'Daily Ops', 'package-icon': 'workflow', 'workflow-role': 'orchestrator', workflow: '.github/workflows/daily.yml', 'workflow-active': 'true', 'rollout-mode': 'live', 'max-ai-credits': 10, 'observed-at': '2026-08-29T09:00:00Z' },
+            { organization: 'github', repository: 'gh-aw-cao', package: 'daily-ops', 'package-name': 'Daily Ops', 'package-icon': 'workflow', 'workflow-role': 'orchestrator', workflow: '.github/workflows/daily.yml', 'workflow-active': 'true', 'rollout-mode': 'review', 'package-rollout-percent': 100, 'package-targets': [{ repository: 'github/gh-aw', mode: 'live' }, { repository: 'github/gh-aw-firewall', mode: 'review' }, { repository: 'github/gh-aw-mcpg', mode: 'review' }, { repository: 'github/gh-aw-actions', mode: 'review' }, { repository: 'github/gh-aw-threat-detection', mode: 'review' }, { repository: 'githubnext/gh-aw-workshop', mode: 'review' }], 'max-ai-credits': 10, 'observed-at': '2026-08-29T09:00:00Z' },
             { organization: 'github', repository: 'gh-aw-cao', package: 'daily-ops', 'package-name': 'Daily Ops', 'package-icon': 'workflow', 'workflow-role': 'worker', workflow: '.github/workflows/review.yml', 'workflow-active': 'false', 'rollout-mode': 'review', 'max-ai-credits': 20, 'observed-at': '2026-08-29T09:05:00Z' }
           ],
           metadata: {
@@ -1122,12 +1122,27 @@ describe('presenter built-in and custom pages', () => {
         runs: {
           source: 'runs',
           rows: [
-            { organization: 'github', repository: 'gh-aw-cao', workflow: '.github/workflows/daily.yml', run: '1001', 'started-at': '2026-08-29T10:00:00Z', 'run-status': 'completed', 'run-conclusion': 'success', 'rollout-mode': 'live', engine: 'openai', 'requested-model': 'gpt-4o', 'resolved-model': 'gpt-4.1' },
-            { organization: 'github', repository: 'gh-aw-cao', workflow: '.github/workflows/daily.yml', run: '1002', 'started-at': '2026-08-29T11:00:00Z', 'run-status': 'completed', 'run-conclusion': 'failure', 'rollout-mode': 'live', engine: 'openai', 'requested-model': 'gpt-4o', 'resolved-model': 'gpt-4.1' },
+            { organization: 'github', repository: 'gh-aw-cao', workflow: '.github/workflows/daily.yml', run: '1001', event: 'workflow_dispatch', 'started-at': '2026-08-29T10:00:00Z', 'run-status': 'completed', 'run-conclusion': 'success', 'rollout-mode': 'live', engine: 'openai', 'requested-model': 'gpt-4o', 'resolved-model': 'gpt-4.1' },
+            { organization: 'github', repository: 'gh-aw-cao', workflow: '.github/workflows/daily.yml', run: '1002', event: 'workflow_dispatch', 'started-at': '2026-08-29T11:00:00Z', 'run-status': 'completed', 'run-conclusion': 'failure', 'rollout-mode': 'live', engine: 'openai', 'requested-model': 'gpt-4o', 'resolved-model': 'gpt-4.1' },
             { organization: 'github', repository: 'gh-aw-cao', workflow: '.github/workflows/review.yml', run: '1003', 'started-at': '2026-08-29T12:00:00Z', 'run-status': 'in-progress', 'run-conclusion': 'unknown', 'rollout-mode': 'review', engine: 'anthropic', 'requested-model': 'claude-3.5', 'resolved-model': 'claude-3.7' }
           ],
           metadata: {
             'source-id': 'runs-fixture',
+            'source-kind': 'fixture',
+            'as-of': '2026-08-29T20:00:00Z',
+            'retrieved-at': '2026-08-29T20:01:00Z',
+            completeness: 'complete',
+            freshness: 'fresh',
+            availability: 'available'
+          }
+        },
+        outcomes: {
+          source: 'outcomes',
+          rows: [
+            { package: 'daily-ops', 'runtime-repository': 'github/gh-aw-cao', run: '1001', 'safe-output': 'daily-output-1', 'outcome-state': 'accepted', 'rollout-mode': 'live', 'observed-at': '2026-08-29T10:10:00Z' }
+          ],
+          metadata: {
+            'source-id': 'outcomes-fixture',
             'source-kind': 'fixture',
             'as-of': '2026-08-29T20:00:00Z',
             'retrieved-at': '2026-08-29T20:01:00Z',
@@ -1273,7 +1288,17 @@ describe('presenter built-in and custom pages', () => {
     expect(packageCards[0]?.querySelector('header .octicon-workflow')).not.toBeNull();
     expect(packageCards[0]?.classList.contains('package-status-attention')).toBe(true);
     expect(packageCards[0]?.querySelector('.package-status-state')?.textContent).toBe('Needs attention');
-    expect(packageCards[0]?.textContent).toContain('1 worker workflow');
+    expect(packageCards[0]?.querySelector('.package-status-live-coverage')?.textContent).toBe('Rollout1 live · 5 review17% live');
+    expect(packageCards[0]?.querySelector('progress')?.getAttribute('value')).toBe('17');
+    expect(packageCards[0]?.querySelector('.package-status-activity')?.textContent).toContain('2 dispatches');
+    expect(packageCards[0]?.querySelector('.package-status-activity')?.textContent).toContain('1/2 produced output');
+    expect(packageCards[0]?.querySelector('.package-status-repository-heading')?.textContent).toBe('Target repositoriesMode');
+    expect(packageCards[0]?.querySelectorAll('.package-status-repositories li')).toHaveLength(6);
+    expect(packageCards[0]?.querySelector('.package-status-repositories')?.textContent).toContain('github/gh-awLive');
+    expect(packageCards[0]?.querySelectorAll('.package-status-repositories .octicon-repo')).toHaveLength(6);
+    expect(packageCards[0]?.querySelector('.package-status-default-mode')).toBeNull();
+    expect(packageCards[0]?.querySelector('.package-status-worker-count')).toBeNull();
+    expect(packageCards[0]?.querySelector('footer')).toBeNull();
     expect(packageCards[0]?.getAttribute('href')).toBe('#page-package-insights?package=daily-ops');
     expect(/** @type {HTMLElement | null} */ (rendered.querySelector('.data-state-summary'))?.hidden).toBe(true);
   });

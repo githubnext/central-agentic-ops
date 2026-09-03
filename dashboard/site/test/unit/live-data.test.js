@@ -123,9 +123,19 @@ describe("live Dashboard Language sources", () => {
         }],
       },
       controlSettings: {
+        allowed_repositories: [
+          "github/gh-aw",
+          "github/gh-aw-firewall",
+          "github/gh-aw-mcpg",
+          "github/gh-aw-actions",
+          "github/gh-aw-threat-detection",
+          "githubnext/gh-aw-cao",
+          "githubnext/gh-aw-workshop",
+        ],
         packages: {
           dependabot: {
             mode: "review",
+            rollout_percent: 100,
             target_policies: { "github/gh-aw": { mode: "live" } },
           },
         },
@@ -157,7 +167,15 @@ describe("live Dashboard Language sources", () => {
         repository: "gh-aw-cao",
         package: "dependabot",
         "package-inventory-warnings": 2,
-        "package-targets": [{ repository: "github/gh-aw", mode: "live" }],
+        "package-rollout-percent": 100,
+        "package-targets": [
+          { repository: "github/gh-aw", mode: "live" },
+          { repository: "github/gh-aw-firewall", mode: "review" },
+          { repository: "github/gh-aw-mcpg", mode: "review" },
+          { repository: "github/gh-aw-actions", mode: "review" },
+          { repository: "github/gh-aw-threat-detection", mode: "review" },
+          { repository: "githubnext/gh-aw-workshop", mode: "review" },
+        ],
         "workflow-active": "true",
         "rollout-mode": "review",
       });
@@ -178,6 +196,10 @@ describe("live Dashboard Language sources", () => {
       expect(overview["overview-managed-packages"].rows).toContainEqual(expect.objectContaining({
         package: "dependabot",
         "repository-modes": expect.arrayContaining([{ repository: "github/gh-aw", mode: "live" }]),
+        "rollout-live-repositories": 1,
+        "rollout-repositories": 6,
+        "rollout-percent": 100,
+        "live-coverage-percent": 17,
       }));
       expect(sources.findings.rows[0]).toMatchObject({
         finding: "githubnext/gh-aw-cao-issue-1",

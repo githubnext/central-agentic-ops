@@ -21,7 +21,13 @@ export function deriveOverviewSources(sources) {
   const findings = rowsFor(sources, 'findings');
   const graderObservations = rowsFor(sources, 'grader-observations');
   const operationalValues = rowsFor(sources, 'operational-values');
-  const packages = summarizePackages(workflows);
+  const packageActivity = summarizePackageActivity(workflows, runs, outcomes);
+  const packages = summarizePackages(workflows).map((entry) => ({
+    ...entry,
+    dispatches: sourceIsAvailable(sources.runs) ? packageActivity.get(entry.id)?.dispatches ?? 0 : null,
+    dispatchesWithSafeOutputs: sourceIsAvailable(sources.outcomes) ? packageActivity.get(entry.id)?.dispatchesWithSafeOutputs ?? 0 : null,
+    activityWindow: sourceWindowLabel(sources.runs)
+  }));
   const health = summarizeRunHealth(runs);
   const disabledWorkflows = workflows.filter((row) => String(row['workflow-active']) === 'false').length;
   const overviewMetadata = createOverviewMetadata(sources);
@@ -74,7 +80,13 @@ export function deriveOverviewSources(sources) {
         icon: entry.icon,
         mode: entry.mode,
         'rollout-percent': entry.rolloutPercent,
+        'live-coverage-percent': entry.liveCoveragePercent,
         'repository-modes': entry.repositoryModes,
+        'rollout-live-repositories': entry.rolloutLiveRepositories,
+        'rollout-repositories': entry.rolloutRepositories,
+        'dispatch-count': entry.dispatches,
+        'dispatches-with-safe-output': entry.dispatchesWithSafeOutputs,
+        'activity-window': entry.activityWindow,
         workers: entry.workers,
         'aic-allowance': entry.allowance,
         inventory: entry.ready ? 'Ready' : 'Needs attention',
@@ -933,6 +945,47 @@ function summarizePackageAicUsage(workflows, usage) {
 }
 
 /**
+ * @param {Array<Record<string, unknown>>} workflows
+ * @param {Array<Record<string, unknown>>} runs
+ * @param {Array<Record<string, unknown>>} outcomes
+ */
+function summarizePackageActivity(workflows, runs, outcomes) {
+  const workflowPackages = new Map(workflows
+    .filter((row) => typeof row.package === 'string' && row.package && typeof row.workflow === 'string' && row.workflow)
+    .map((row) => [scopedWorkflowKey(row), String(row.package)]));
+  /** @type {Map<string, Set<string>>} */
+  const dispatchesByPackage = new Map();
+  const packageByDispatch = new Map();
+  for (const run of runs) {
+    if (String(run.event) !== 'workflow_dispatch') continue;
+    const packageId = workflowPackages.get(scopedWorkflowKey(run));
+    const dispatchKey = runtimeRunKey(run);
+    if (!packageId || !dispatchKey) continue;
+    const dispatches = dispatchesByPackage.get(packageId) ?? new Set();
+    dispatches.add(dispatchKey);
+    dispatchesByPackage.set(packageId, dispatches);
+    packageByDispatch.set(dispatchKey, packageId);
+  }
+
+  /** @type {Map<string, Set<string>>} */
+  const outputDispatchesByPackage = new Map();
+  for (const outcome of outcomes) {
+    if (!String(outcome['safe-output'] ?? '').trim()) continue;
+    const dispatchKey = runtimeRunKey(outcome);
+    const packageId = packageByDispatch.get(dispatchKey);
+    if (!packageId) continue;
+    const outputDispatches = outputDispatchesByPackage.get(packageId) ?? new Set();
+    outputDispatches.add(dispatchKey);
+    outputDispatchesByPackage.set(packageId, outputDispatches);
+  }
+
+  return new Map([...workflowPackages.values()].map((packageId) => [packageId, {
+    dispatches: dispatchesByPackage.get(packageId)?.size ?? 0,
+    dispatchesWithSafeOutputs: outputDispatchesByPackage.get(packageId)?.size ?? 0
+  }]));
+}
+
+/**
  * @param {Array<Record<string, unknown>>} rows
  */
 function summarizeRunHealth(rows) {
@@ -975,17 +1028,23 @@ function summarizePackages(rows) {
       const fallbackRolloutPercent = Number(packageRows.find((row) => Number.isFinite(Number(row['rollout-percent'])))?.['rollout-percent']);
       const rolloutPercent = Number.isFinite(packageRolloutPercent)
         ? packageRolloutPercent
-        : Number.isFinite(fallbackRolloutPercent)
-          ? fallbackRolloutPercent
-          : null;
+        : Number.isFinite(fallbackRolloutPercent) ? fallbackRolloutPercent : null;
       const repositoryModes = summarizePackageRepositoryModes(packageRows);
+      const rolloutRepositories = repositoryModes.length;
+      const rolloutLiveRepositories = repositoryModes.filter((entry) => entry.mode === 'live').length;
+      const liveCoveragePercent = rolloutRepositories > 0
+        ? Math.round((rolloutLiveRepositories / rolloutRepositories) * 100)
+        : null;
       return {
         id,
         name: String(packageRows.find((row) => typeof row['package-name'] === 'string')?.['package-name'] ?? titleCase(id)),
         icon: String(packageRows.find((row) => typeof row['package-icon'] === 'string')?.['package-icon'] ?? 'package'),
         workers: Number.isFinite(packageWorkerCount) ? packageWorkerCount : workers.length,
         mode: String(orchestrators[0]?.['rollout-mode'] ?? packageRows[0]?.['rollout-mode'] ?? 'unknown'),
-        rolloutPercent: Number.isFinite(rolloutPercent) ? rolloutPercent : null,
+        rolloutPercent,
+        liveCoveragePercent,
+        rolloutLiveRepositories,
+        rolloutRepositories,
         repositoryModes,
         allowance: Number.isFinite(packageAllowance)
           ? packageAllowance
@@ -1006,15 +1065,16 @@ function summarizePackages(rows) {
  */
 function summarizePackageRepositoryModes(packageRows) {
   const repositoryModes = new Map();
-  for (const row of packageRows) {
-    const repository = repositoryKey(row);
-    const mode = normalizeRolloutMode(row['rollout-mode'] ?? row['package-target-mode']);
-    if (!repository || !mode || mode === 'unknown') continue;
-    repositoryModes.set(repository, mode);
-  }
   for (const target of packageRows.flatMap((row) => Array.isArray(row['package-targets']) ? row['package-targets'] : [])) {
     const repository = String(target?.repository ?? '').trim();
     const mode = normalizeRolloutMode(target?.mode);
+    if (!repository || !mode || mode === 'unknown') continue;
+    repositoryModes.set(repository, mode);
+  }
+  if (repositoryModes.size > 0) return [...repositoryModes.entries()].map(([repository, mode]) => ({ repository, mode }));
+  for (const row of packageRows) {
+    const repository = repositoryKey(row);
+    const mode = normalizeRolloutMode(row['rollout-mode'] ?? row['package-target-mode']);
     if (!repository || !mode || mode === 'unknown') continue;
     repositoryModes.set(repository, mode);
   }
@@ -1081,6 +1141,18 @@ function repositoryKey(row) {
   if (!repository) return '';
   const organization = String(row.organization ?? '').trim();
   return organization ? `${organization}/${repository}` : repository;
+}
+
+/** @param {Record<string, unknown>} row */
+function scopedWorkflowKey(row) {
+  return `${repositoryKey(row).toLowerCase()}:${String(row.workflow ?? '')}`;
+}
+
+/** @param {Record<string, unknown>} row */
+function runtimeRunKey(row) {
+  const repository = String(row['runtime-repository'] ?? repositoryKey(row)).trim().toLowerCase();
+  const run = String(row.run ?? '').trim();
+  return repository && run ? `${repository}:${run}` : '';
 }
 
 /**
