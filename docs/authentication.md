@@ -13,21 +13,7 @@ Choose the least-powerful authentication profile that can satisfy the effective 
 | Cross-repository review or live safe outputs | Separate write-capable GitHub App |
 | GitHub App installation is unavailable and the exact scope is PAT-compatible | Fine-grained PAT, only after informed consent |
 
-```text
-Can GITHUB_TOKEN satisfy this bounded self-review or public-only review?
-	|
-	+-- yes --> built-in GITHUB_TOKEN
-	|
-	+-- no ---> Can a GitHub App be installed for every required organization?
-	             |
-	             +-- yes --> GitHub App
-	             |
-	             +-- no ---> Is one fine-grained PAT eligible for the exact scope and APIs?
-	                          |
-	                          +-- yes --> explain tradeoffs, obtain consent, then configure PAT
-	                          |
-	                          +-- no ---> stop, narrow or split the scope, or request owner help
-```
+![Authentication selection flow: use the built-in token for bounded operation, separate read and write GitHub Apps for broader operation, an eligible PAT only with consent, or stop when no credential qualifies.](assets/authentication-selection.svg)
 
 :::tip[Default to a GitHub App]
 Choose a GitHub App unless the built-in token fully covers the bounded run. GitHub Apps use short-lived, installation-scoped tokens, are independent of an individual user's continued access, and scale across approved repository and organization installations.
