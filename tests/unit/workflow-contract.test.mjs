@@ -2179,9 +2179,9 @@ test("README routes zero-to-CAO requests to the setup skill", () => {
   assert.match(setupSkill, /Control-repository visibility does not determine target access/);
   assert.match(setupSkill, /use `GITHUB_TOKEN` for control-repository self-review or an exact public target in `review`/);
   assert.match(setupSkill, /require separate least-privilege read-only and write-capable GitHub Apps/);
-  assert.match(setupSkill, /gh aw add-wizard \/path\/to\/temporary\/cao-checkout --no-config/);
-  assert.match(setupSkill, /wizard path replaces the regular `gh aw add` invocation/);
-  assert.match(setupSkill, /Do not commit, stage, copy, or push the temporary manifest change/);
+  assert.match(setupSkill, /\.github\/cao\/setup-github-apps\.mjs --repo <organization>\/<control-repository>/);
+  assert.match(setupSkill, /helper mirrors gh-aw's App manifest conversion flow without package delivery/);
+  assert.match(setupSkill, /sends private keys to repository secrets through standard input/);
   assert.match(setupSkill, /read App has no write permission/);
   assert.match(setupSkill, /Do not place private target evidence in a public control repository/);
   assert.match(setupSkill, /offer a fine-grained PAT only when an App cannot be obtained[\s\S]*?user explicitly consents/);

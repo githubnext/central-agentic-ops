@@ -58,42 +58,17 @@ gh secret set GH_AW_GITHUB_WRITE_APP_PRIVATE_KEY \
 
 The private key commands read keys from local files without placing them in shell history.
 
-### Optional setup wizard
+### Automated App setup
 
-To have gh-aw create and install both Apps, use a temporary local checkout of the exact CAO revision being installed. Add the following block to that checkout's root `aw.yml` only for the setup run. Replace both `app-name` placeholders with distinct, globally unique names:
+The CAO source repository includes a credential-only setup script that mirrors gh-aw's GitHub App manifest flow without installing or rewriting a package. Run it from a reviewed CAO checkout and target the control repository explicitly:
 
-```yaml
-config:
-	- type: require-owner-type
-		value: org
-	- type: github-app
-		app-name: <globally-unique-cao-read-app>
-		app-id-variable: GH_AW_GITHUB_READ_APP_ID
-		private-key-secret: GH_AW_GITHUB_READ_APP_PRIVATE_KEY
-		permissions:
-			actions: read
-			checks: read
-			contents: read
-			issues: read
-			packages: read
-			pull_requests: read
-			secret_scanning_alerts: read
-			security_events: read
-			statuses: read
-			vulnerability_alerts: read
-	- type: github-app
-		app-name: <globally-unique-cao-write-app>
-		app-id-variable: GH_AW_GITHUB_WRITE_APP_ID
-		private-key-secret: GH_AW_GITHUB_WRITE_APP_PRIVATE_KEY
-		permissions:
-			actions: write
-			administration: read
-			contents: write
-			issues: write
-			pull_requests: write
+```bash
+npm run setup:github-apps -- --repo acme/central-agentic-ops
 ```
 
-From the control-repository checkout, run `gh aw add-wizard /path/to/temporary/cao-checkout --no-config` instead of the regular root-package `gh aw add` command. `--no-config` disables additive package-wide permission inference, which would otherwise give both Apps the combined read/write permission set. Complete the wizard's remote delivery and App installation prompts, verify both Apps cover every enrolled repository, then delete the temporary checkout. Never commit this `config` block to the catalog or control repository.
+The script opens two browser flows in sequence. Review and create each private App, then install it on the control repository when GitHub redirects to the installation page. The script stores each returned client ID as its repository variable and sends each PEM private key to `gh secret set` through standard input; it does not write keys to disk or place them in command arguments. Existing complete credential pairs are left unchanged. Use `--dry-run` to inspect both manifests without changing GitHub, `--no-open` to print the local browser URLs, or explicit `--read-app-name` and `--write-app-name` values when the generated globally unique names are unavailable.
+
+The Apps are private by default and can be installed only on repositories owned by the App owner. After initial setup, expand each installation only to approved repositories in that organization. Multi-organization enrollment requires an explicitly reviewed cross-organization App publication and installation plan; do not make either App public merely to bypass owner approval. Confirm the read App has no write permission and install the write App only where approved safe outputs may write.
 
 When manual workflow steps need `GH_TOKEN`, they select the imported App token first when available, then `GH_AW_GITHUB_TOKEN`, then `GITHUB_TOKEN`. Missing, incomplete, or invalid credentials must not be copied into dispatch inputs or persisted in artifacts.
 
