@@ -4,9 +4,9 @@ import { renderLinkedText, createEntityAwareCellRenderer } from '../../src/compo
 
 describe('linked text helpers', () => {
   it('renders plain text when no safe link is available and an anchor when a safe link exists', () => {
-    expect(renderLinkedText('central-agentic-ops', null)).toBe('central-agentic-ops');
+    expect(renderLinkedText('gh-aw-cao', null)).toBe('gh-aw-cao');
 
-    const linked = /** @type {HTMLElement} */ (renderLinkedText('central-agentic-ops', {
+    const linked = /** @type {HTMLElement} */ (renderLinkedText('gh-aw-cao', {
       href: 'https://github.com/githubnext/gh-aw-cao',
       label: 'View githubnext/gh-aw-cao on GitHub'
     }));
@@ -16,7 +16,7 @@ describe('linked text helpers', () => {
     expect(linked.getAttribute('target')).toBe('_blank');
     expect(linked.getAttribute('rel')).toBe('noopener noreferrer');
     expect(linked.getAttribute('aria-label')).toBe('View githubnext/gh-aw-cao on GitHub');
-    expect(linked.textContent).toBe('central-agentic-ops');
+    expect(linked.textContent).toBe('gh-aw-cao');
   });
 
   it('renders entity-aware linked table values only for mapped entity fields with safe links', () => {
@@ -27,7 +27,7 @@ describe('linked text helpers', () => {
       (value) => value == null ? 'unknown' : String(value)
     );
 
-    const linkedRepository = /** @type {HTMLElement} */ (renderEntityAwareCellValue('repository', 'central-agentic-ops', {
+    const linkedRepository = /** @type {HTMLElement} */ (renderEntityAwareCellValue('repository', 'gh-aw-cao', {
       'repository-link': {
         href: 'https://github.com/githubnext/gh-aw-cao',
         label: 'View githubnext/gh-aw-cao on GitHub'
@@ -39,12 +39,12 @@ describe('linked text helpers', () => {
         label: 'View githubnext/gh-aw-cao on GitHub'
       }
     });
-    const plainRepository = renderEntityAwareCellValue('repository', 'central-agentic-ops', {});
+    const plainRepository = renderEntityAwareCellValue('repository', 'gh-aw-cao', {});
 
     expect(linkedRepository).toBeInstanceOf(HTMLElement);
-    expect(linkedRepository.textContent).toBe('central-agentic-ops');
+    expect(linkedRepository.textContent).toBe('gh-aw-cao');
     expect(linkedRepository.getAttribute('href')).toBe('https://github.com/githubnext/gh-aw-cao');
     expect(plainStatus).toBe('text:completed');
-    expect(plainRepository).toBe('text:central-agentic-ops');
+    expect(plainRepository).toBe('text:gh-aw-cao');
   });
 });
