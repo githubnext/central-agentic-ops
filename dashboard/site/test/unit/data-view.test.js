@@ -46,7 +46,7 @@ describe('data view renderer', () => {
   });
 
   it('defaults pie and line data tables to hidden while honoring explicit table visibility', () => {
-    const context = {
+    const context = /** @type {Parameters<typeof renderDataView>[1]} */ ({
       pageId: 'repositories',
       title: 'AI Credit usage by AW repository',
       view: {
@@ -72,7 +72,7 @@ describe('data view renderer', () => {
       }],
       prepareChartPoints: (points) => points,
       toText: String
-    };
+    });
     const rendered = renderDataView('chart', context);
 
     expect(rendered?.querySelector('.pie-chart-widget')).not.toBeNull();
