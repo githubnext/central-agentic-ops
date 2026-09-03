@@ -8,7 +8,7 @@ import { renderHistogramBins } from './histogram.js';
 import { formatCountNoun } from './count-formatters.js';
 import { renderDefinitionListRows } from './view-chrome.js';
 import { formatMediumUtcDateTime, renderTableSummaryEmpty } from './ui-primitives.js';
-import { formatPercent } from '../view-formatters.js';
+import { formatClockDuration, formatPercent } from '../view-formatters.js';
 
 /**
  * @typedef {import('../table-summary-data.js').TableColumnSummary & { label: string }} RenderableTableColumnSummary
@@ -192,14 +192,7 @@ function formatTimestamp(timestamp) {
  * @returns {string}
  */
 function formatDuration(duration) {
-  const seconds = Math.max(0, Math.round(duration / 1000));
-  if (seconds < 60) return `${seconds}s`;
-  const minutes = Math.floor(seconds / 60);
-  if (minutes < 60) return `${minutes}m ${seconds % 60}s`;
-  const hours = Math.floor(minutes / 60);
-  if (hours < 24) return `${hours}h ${minutes % 60}m`;
-  const days = Math.floor(hours / 24);
-  return `${days}d ${hours % 24}h`;
+  return formatClockDuration(duration);
 }
 
 /**

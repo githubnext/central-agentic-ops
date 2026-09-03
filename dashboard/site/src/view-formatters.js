@@ -58,6 +58,25 @@ export function stringOrFallback(value, fallback) {
 }
 
 /**
+ * Formats a millisecond duration using cascading clock units (seconds, then
+ * minutes, then hours, optionally rolling over into days). Shared by
+ * run-duration renderers that differ only in whether a days tier applies.
+ * @param {number} duration
+ * @param {{ includeDays?: boolean }} [options]
+ * @returns {string}
+ */
+export function formatClockDuration(duration, { includeDays = true } = {}) {
+  const seconds = Math.max(0, Math.round(duration / 1000));
+  if (seconds < 60) return `${seconds}s`;
+  const minutes = Math.floor(seconds / 60);
+  if (minutes < 60) return `${minutes}m ${seconds % 60}s`;
+  const hours = Math.floor(minutes / 60);
+  if (!includeDays || hours < 24) return `${hours}h ${minutes % 60}m`;
+  const days = Math.floor(hours / 24);
+  return `${days}d ${hours % 24}h`;
+}
+
+/**
  * @param {unknown} value
  * @returns {number}
  */
