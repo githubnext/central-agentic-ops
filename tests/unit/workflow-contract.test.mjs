@@ -2256,6 +2256,7 @@ test("Dashboard package supports embedded and explicit standalone deployment", (
   assert.match(buildWorkflow, /workflow_call:[\s\S]*?site-path:[\s\S]*?default: cao/);
   assert.match(buildWorkflow, /workflow_call:[\s\S]*?mode:[\s\S]*?default: live/);
   assert.match(buildWorkflow, /activity:[\s\S]*?issues: read[\s\S]*?pull-requests: read[\s\S]*?uses: \.\/\.github\/workflows\/activity\.yml/);
+  assert.match(buildWorkflow, /uses: \.\/\.github\/workflows\/activity\.yml\n\s+secrets: inherit/);
   assert.match(buildWorkflow, /Restore collected activity data[\s\S]*?actions\/cache\/restore@[0-9a-f]{40}/);
   assert.match(buildWorkflow, /Require collected activity data[\s\S]*?control-settings\.json control-plane-inventory\.json deployed-workflows\.json aic-usage\.json operational-values\.json dashboard-records\.json/);
   assert.doesNotMatch(buildWorkflow, /Discover deployed agentic workflows/);
@@ -2275,6 +2276,7 @@ test("Dashboard package supports embedded and explicit standalone deployment", (
   assert.doesNotMatch(buildWorkflow, /actions\/(?:configure-pages|upload-pages-artifact|deploy-pages)@/);
   assert.doesNotMatch(buildWorkflow, /pages: write|id-token: write/);
   assert.match(deployWorkflow, /uses: \.\/\.github\/workflows\/dashboard-build\.yml/);
+  assert.match(deployWorkflow, /uses: \.\/\.github\/workflows\/dashboard-build\.yml\n\s+secrets: inherit/);
   assert.match(deployWorkflow, /site-path: "\."/);
   assert.match(deployWorkflow, /enablement: false/);
   assert.match(deployWorkflow, /pages: write/);
@@ -2350,6 +2352,9 @@ test("Activity package owns the shared collected-data cache contract", () => {
   assert.match(workflow, /actions\/cache\/save@[0-9a-f]{40}/);
   assert.match(workflow, /issues: read/);
   assert.match(workflow, /pull-requests: read/);
+  assert.match(workflow, /Generate GitHub App token for activity[\s\S]*?GH_AW_GITHUB_READ_APP_ID[\s\S]*?GH_AW_GITHUB_READ_APP_PRIVATE_KEY/);
+  assert.match(workflow, /actions\/create-github-app-token@[0-9a-f]{40}/);
+  assert.equal((workflow.match(/steps\.activity-app-token\.outputs\.token \|\| github\.token/g) || []).length, 6);
   assert.match(workflow, /DASHBOARD_COLLECTION=false/);
   assert.match(workflow, /if: env\.DASHBOARD_COLLECTION == 'true'/);
   assert.match(workflow, /Collect AI Credit usage/);
@@ -2371,6 +2376,7 @@ test("Documentation Pages deploys docs with the packaged dashboard builder", () 
   assert.equal(existsSync(join(root, ".github", "workflows", "documentation-build.yml")), false);
 
   assert.match(workflow, /uses: \.\/\.github\/workflows\/dashboard-build\.yml/);
+  assert.match(workflow, /uses: \.\/\.github\/workflows\/dashboard-build\.yml\n\s+secrets: inherit/);
   assert.match(workflow, /needs: dashboard/);
   assert.match(workflow, /run: npm run docs:build/);
   assert.match(workflow, /name: central-agentic-ops-dashboard\n\s+path: dist/);
