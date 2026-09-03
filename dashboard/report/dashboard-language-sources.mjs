@@ -301,7 +301,9 @@ function workflowRows(deployed, generatedAt, inventory, controlSettings) {
       "gh-aw-update-state": workflow.updateState || "unknown",
       "gh-aw-metadata": workflow.ghAwMetadata || null,
       "gh-aw-manifest": workflow.ghAwManifest || null,
-      "rollout-mode": details?.configuredMode || recentMode,
+      "rollout-mode": details?.packageTargets?.find(
+        (target) => target.repository.toLowerCase() === workflowRepository,
+      )?.mode || details?.configuredMode || recentMode,
       "observed-at": workflow.updatedAt || generatedAt,
     };
   });

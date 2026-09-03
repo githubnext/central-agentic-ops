@@ -111,6 +111,14 @@ function nameForPackage(packageId, workflows) {
 
 /** @param {Array<Record<string, unknown>>} workflows */
 function modeForPackage(workflows) {
+  const targetModes = workflows.flatMap((workflow) => {
+    const repository = [workflow.organization, workflow.repository].filter(Boolean).join('/').toLowerCase();
+    return (Array.isArray(workflow['package-targets']) ? workflow['package-targets'] : [])
+      .filter((target) => String(target?.repository ?? '').toLowerCase() === repository)
+      .map((target) => String(target?.mode ?? '').toLowerCase());
+  });
+  if (targetModes.includes('live')) return 'live';
+  if (targetModes.includes('review')) return 'review';
   const orchestrator = workflows.find((workflow) => workflow['workflow-role'] === 'orchestrator');
   const mode = String(orchestrator?.['rollout-mode'] ?? workflows[0]?.['rollout-mode'] ?? '');
   return mode === 'review' || mode === 'live' ? mode : '';
