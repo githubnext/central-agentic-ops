@@ -64,7 +64,8 @@ test("package wizard has its own page linked from the landing page", () => {
   assert.doesNotMatch(hero, /OpsWizard/);
   assert.match(wizardPage, /import OpsWizard from "\.\.\/components\/OpsWizard\.astro"/);
   assert.match(wizardPage, /<OpsWizard \/>/);
-  assert.match(landingPage, /link: \/central-agentic-ops\/wizard\//);
+  assert.match(landingPage, /link: \/gh-aw-cao\/wizard\//);
+  assert.doesNotMatch(landingPage, /\/central-agentic-ops\//);
 });
 
 test("package wizard prompt references the raw setup skill", () => {

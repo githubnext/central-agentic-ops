@@ -24,11 +24,16 @@ const LOGIN_PATTERN = /^[A-Za-z0-9](?:[A-Za-z0-9-]{0,37}[A-Za-z0-9])?$/;
 const SLUG_PATTERN = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
 const MODES = ["review", "live"];
 
+function log(message) {
+  console.error(`[CAO policy] ${message}`);
+}
+
 function isRecord(value) {
   return value !== null && typeof value === "object" && !Array.isArray(value);
 }
 
 export function parsePolicy(source) {
+  log("Parsing control policy.");
   let document;
   try {
     document = JSON.parse(source);
@@ -41,6 +46,7 @@ export function parsePolicy(source) {
 
   rejectExpressions(document);
   validateDocument(document);
+  log("Validated control policy.");
   return document;
 }
 
@@ -312,6 +318,7 @@ export function effectivePolicy(
     targetRepository = "",
   },
 ) {
+  log("Resolving effective policy.");
   if (!["orchestrator", "worker"].includes(role)) throw new PolicyError("role must be orchestrator or worker");
   if (role === "worker" && !workerName) throw new PolicyError("worker identity is required");
   if (role === "orchestrator" && workerName) throw new PolicyError("worker identity is forbidden for orchestrators");
@@ -569,4 +576,3 @@ function narrowInteger(effective, key, requested, path, maximum) {
   if (value > effective[key]) throw new PolicyError(`${path} exceeds checked-in policy`);
   effective[key] = value;
 }
-

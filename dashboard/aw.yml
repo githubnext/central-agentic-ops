@@ -1,12 +1,14 @@
 name: Central Agentic Ops Dashboard
 description: Deploy an access-controlled, read-only Central Agentic Ops report with GitHub Pages. Requires the activity package.
-min-version: v0.87.9
+min-version: v0.88.2
 includes:
   - source: dashboard.yml
     destination: .github/workflows/dashboard.yml
     kind: action-workflow
   - .github/workflows/dashboard-build.yml
 resources:
+  - source: local-server.mjs
+    destination: .github/aw/dashboard/local-server.mjs
   - source: report/aic-usage.mjs
     destination: .github/aw/dashboard/report/aic-usage.mjs
   - source: report/text-utils.mjs

@@ -10,14 +10,14 @@ hero:
   tagline: Dispatch trusted workflows across organizations and more than 10,000 remote target repositories, with bounded review, authorized live execution, and traceable outcomes built in.
   actions:
     - text: Get started
-      link: /central-agentic-ops/wizard/
+      link: /gh-aw-cao/wizard/
       icon: right-arrow
     - text: Learn more
-      link: /central-agentic-ops/architecture/
+      link: /gh-aw-cao/architecture/
       variant: secondary
       icon: right-arrow
     - text: View our dashboard
-      link: https://githubnext.github.io/central-agentic-ops/cao
+      link: https://githubnext.github.io/gh-aw-cao/cao
       variant: secondary
       icon: right-arrow
       attrs:

@@ -1,6 +1,6 @@
 name: Dependabot
 description: Immutable workflow for manifest-aware, risk-ranked dependency release-train updates.
-min-version: v0.88.0
+min-version: v0.88.2
 includes:
   - .github/workflows/dependabot.md
 resources:

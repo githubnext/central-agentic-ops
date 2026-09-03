@@ -1,6 +1,6 @@
 name: Central Agentic Ops Activity
 description: Maintain a shared, bounded index of GitHub Agentic Workflow activity.
-min-version: v0.88.0
+min-version: v0.88.2
 includes:
   - .github/workflows/activity.yml
 resources:

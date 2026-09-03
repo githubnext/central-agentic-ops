@@ -43,13 +43,15 @@
           loadingProgress.complete();
           throw error;
         });
-      const dashboardDocument = {
+      let dashboardDocument = {
         languageVersion: dashboardSchema["language-version"],
         dashboard: dashboardSchema.dashboard,
       };
       const root = document.querySelector("#root");
+      let renderedSources = {};
 
       const renderSources = (sources, state = "ready") => {
+        renderedSources = sources;
         const dashboard = renderDashboard({ document: dashboardDocument, sources });
         if (state === "loading") {
           dashboard.classList.add("dashboard-loading");
@@ -82,6 +84,14 @@
         root.replaceChildren(dashboard);
         return dashboard;
       };
+      window.addEventListener("dashboard-preview-update", (event) => {
+        const schema = event.detail;
+        dashboardDocument = {
+          languageVersion: schema["language-version"],
+          dashboard: schema.dashboard,
+        };
+        renderSources(renderedSources);
+      });
 
       const fixtureSources = {
         organizations: {
