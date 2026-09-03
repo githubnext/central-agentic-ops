@@ -22,6 +22,53 @@ function source(name, rows = []) {
 }
 
 describe('overview attention', () => {
+  it('summarizes recent package dispatch states', () => {
+    const workflow = {
+      organization: 'githubnext',
+      repository: 'gh-aw-cao',
+      package: 'daily-ops',
+      'package-name': 'Daily Ops',
+      workflow: '.github/workflows/daily.yml',
+      'workflow-role': 'orchestrator'
+    };
+    /** @param {string} run @param {string} conclusion @param {string} [status] */
+    const dispatch = (run, conclusion, status = 'completed') => ({
+      organization: 'githubnext',
+      repository: 'gh-aw-cao',
+      workflow: workflow.workflow,
+      event: 'workflow_dispatch',
+      run,
+      'run-status': status,
+      'run-conclusion': conclusion
+    });
+    const sources = deriveOverviewSources({
+      workflows: source('workflows', [workflow]),
+      repositories: source('repositories'),
+      runs: source('runs', [
+        dispatch('1', 'success'),
+        dispatch('2', 'failure'),
+        dispatch('3', 'action-required'),
+        dispatch('4', 'unknown', 'in-progress'),
+        dispatch('5', 'cancelled')
+      ]),
+      usage: source('usage'),
+      outcomes: source('outcomes'),
+      findings: source('findings'),
+      'grader-observations': source('grader-observations'),
+      'operational-values': source('operational-values'),
+      'coverage-diagnostics': source('coverage-diagnostics')
+    });
+
+    expect(sources['overview-managed-packages'].rows).toContainEqual(expect.objectContaining({
+      package: 'daily-ops',
+      'dispatch-count': 5,
+      'dispatch-success-count': 1,
+      'dispatch-failure-count': 1,
+      'dispatch-approval-count': 1,
+      'dispatch-pending-count': 1
+    }));
+  });
+
   it('promotes unavailable control policy resolution to act-now attention', () => {
     const sources = deriveOverviewSources({
       workflows: source('workflows'),

@@ -72,7 +72,8 @@ describe('declarative dispatch view', () => {
       'Workflow',
       'Run title',
       'Runtime repository',
-      'Status'
+      'Status',
+      'Why'
     ]);
     expect(rendered.textContent).toContain('Package worker');
     expect(rendered.textContent).toContain('Update dependencies');

@@ -2,6 +2,11 @@ import { mkdir, writeFile } from "node:fs/promises";
 import { readFileSync } from "node:fs";
 import path from "node:path";
 import { actionsLog as log } from "./actions-log.mjs";
+import {
+  extractCaoFailureMessage,
+  isFailedConclusion,
+  runFailureEvidence,
+} from "./failure-evidence.mjs";
 
 (async () => {
 log.group`Discover deployed agentic workflows`;
@@ -18,8 +23,8 @@ const includePrivate = process.env.REPORT_INCLUDE_PRIVATE === "true";
 const runWindowHours = Number(process.env.REPORT_RUN_WINDOW_HOURS || 7 * 24);
 const auditMaxPages = Number(process.env.REPORT_AUDIT_MAX_PAGES || 100);
 const maxRetryDelayMs = Number(process.env.REPORT_MAX_RETRY_SECONDS || 30) * 1000;
-const API_LIMITED_STEP_PREFIX = "CAO admission blocked: GitHub API limited until ";
-const API_UNAVAILABLE_STEP = "CAO admission blocked: GitHub API capacity unavailable";
+const FAILURE_EVIDENCE_RUNS_PER_WORKFLOW = 5;
+const CAO_PRECOMPUTE_STEP = "Run CAO control precompute";
 if (!Number.isInteger(runWindowHours) || runWindowHours < 1 || runWindowHours > 24 * 31) {
   throw new Error("REPORT_RUN_WINDOW_HOURS must be an integer from 1 through 744");
 }
@@ -55,14 +60,17 @@ function markdownSourceUrl(lockUrl = "") {
   return `${lockUrl.slice(0, -".lock.yml".length)}.md?plain=1`;
 }
 
-async function github(url, attempt = 0, authToken = token) {
+async function github(url, attempt = 0, authToken = token, responseType = "json") {
   const response = await fetch(`https://api.github.com${url}`, { headers: {
     Accept: "application/vnd.github+json",
     Authorization: `Bearer ${authToken}`,
     "User-Agent": "central-agentic-pages",
     "X-GitHub-Api-Version": "2022-11-28",
   } });
-  if (response.ok) return { body: await response.json(), headers: response.headers };
+  if (response.ok) return {
+    body: responseType === "text" ? await response.text() : await response.json(),
+    headers: response.headers,
+  };
   if ((response.status === 403 || response.status === 429) && attempt < 3) {
     const retryAfter = Number(response.headers.get("retry-after"));
     const resetAt = Number(response.headers.get("x-ratelimit-reset")) * 1000;
@@ -74,7 +82,7 @@ async function github(url, attempt = 0, authToken = token) {
     }
     log.warning`GitHub API ${response.status}; retrying ${url} in ${Math.ceil(delay / 1000)} seconds`;
     await new Promise((resolve) => setTimeout(resolve, delay));
-    return github(url, attempt + 1, authToken);
+    return github(url, attempt + 1, authToken, responseType);
   }
   throw new Error(`GitHub API ${response.status} for ${url}`);
 }
@@ -334,26 +342,10 @@ function nextPagePath(headers) {
   return headers.get("link")?.match(/<https:\/\/api\.github\.com([^>]+)>; rel="next"/)?.[1] || "";
 }
 
-function capacityAdmissionBlock(jobs) {
-  for (const step of jobs.flatMap((job) => job.steps || [])) {
-    if (step.conclusion !== "failure") continue;
-    if (step.name === API_UNAVAILABLE_STEP) {
-      return { admissionStatus: "resource-limited", admissionReason: "github-api-capacity-unavailable", resource: "github-rest-api" };
-    }
-    if (!step.name.startsWith(API_LIMITED_STEP_PREFIX)) continue;
-    const resetAt = step.name.slice(API_LIMITED_STEP_PREFIX.length).trim();
-    const resetTime = Date.parse(resetAt);
-    return {
-      admissionStatus: "resource-limited",
-      admissionReason: "github-api-capacity-insufficient",
-      resource: "github-rest-api",
-      ...(Number.isFinite(resetTime) ? {
-        resourceResetAt: new Date(resetTime).toISOString(),
-        resourceWaitHours: Math.ceil(Math.max(0, resetTime - Date.now()) / 36_000) / 100,
-      } : {}),
-    };
-  }
-  return null;
+function needsFailureEvidence(run) {
+  if (run.admissionReason) return false;
+  if (!run.failureJob && !run.failureStep) return true;
+  return run.failureStep === CAO_PRECOMPUTE_STEP && !run.failureMessage && !run.failureLogChecked;
 }
 
 function emptyRunHealth() {
@@ -472,25 +464,49 @@ async function collectRunHealth(registryByRepository, previousIndex) {
     for (const run of current.runRecords) {
       if (run.conclusion === "success") current.successful += 1;
       else if (run.conclusion === "action_required") current.actionRequired += 1;
-      else if (["failure", "timed_out", "startup_failure"].includes(run.conclusion)) current.failed += 1;
+      else if (isFailedConclusion(run.conclusion)) current.failed += 1;
       else if (run.conclusion === "cancelled") current.cancelled += 1;
       else if (run.conclusion === "skipped") current.skipped += 1;
       else if (run.conclusion === null) current.pending += 1;
       else current.other += 1;
     }
   }
+  const runsNeedingFailureEvidence = new Map();
   for (const current of totals.values()) {
     const latest = current.runRecords[0];
-    if (!latest || !["failure", "timed_out", "startup_failure"].includes(latest.conclusion)) continue;
-    try {
-      const response = await github(`/repos/${latest.repository}/actions/runs/${latest.runId}/jobs?filter=latest&per_page=100`);
-      const block = capacityAdmissionBlock(response.body.jobs || []);
-      if (block) Object.assign(latest, block);
-    } catch (error) {
-      complete = false;
-      log.warning`${error.message}; admission details will be unavailable for run ${latest.runId}`;
+    if (isFailedConclusion(latest?.conclusion) && needsFailureEvidence(latest)) {
+      runsNeedingFailureEvidence.set(`${latest.repository}:${latest.runId}`, latest);
+    }
+    const unresolvedDispatches = current.runRecords.filter((run) => (
+      run.event === "workflow_dispatch"
+      && isFailedConclusion(run.conclusion)
+      && needsFailureEvidence(run)
+    )).slice(0, FAILURE_EVIDENCE_RUNS_PER_WORKFLOW);
+    for (const run of unresolvedDispatches) {
+      runsNeedingFailureEvidence.set(`${run.repository}:${run.runId}`, run);
     }
   }
+  await mapWithConcurrency([...runsNeedingFailureEvidence.values()], 4, async (run) => {
+    try {
+      const response = await github(`/repos/${run.repository}/actions/runs/${run.runId}/jobs?filter=latest&per_page=100`);
+      const { failureJobId, ...evidence } = runFailureEvidence(response.body.jobs || []);
+      Object.assign(run, evidence);
+      if (!run.admissionReason && failureJobId && run.failureStep === CAO_PRECOMPUTE_STEP) {
+        try {
+          const logs = await github(`/repos/${run.repository}/actions/jobs/${failureJobId}/logs`, 0, token, "text");
+          const failureMessage = extractCaoFailureMessage(logs.body);
+          run.failureLogChecked = true;
+          if (failureMessage) run.failureMessage = failureMessage;
+        } catch (error) {
+          complete = false;
+          log.warning`${error.message}; failure log details will be unavailable for run ${run.runId}`;
+        }
+      }
+    } catch (error) {
+      complete = false;
+      log.warning`${error.message}; failure details will be unavailable for run ${run.runId}`;
+    }
+  });
   return {
     available,
     complete,

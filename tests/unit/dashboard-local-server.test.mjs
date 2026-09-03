@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { spawnSync } from "node:child_process";
-import { chmod, mkdir, mkdtemp, readFile, rm, symlink, writeFile } from "node:fs/promises";
+import { chmod, mkdir, mkdtemp, readFile, realpath, rm, symlink, writeFile } from "node:fs/promises";
 import { request } from "node:http";
 import { tmpdir } from "node:os";
 import path from "node:path";
@@ -256,10 +256,11 @@ test("local dashboard server optionally prompts Copilot to update the active vie
     assert.equal(prompts.length, 1);
     assert.equal(prompts[0].view, "package-one");
     assert.equal(prompts[0].request, "Add a failure trend");
-    assert.equal(prompts[0].viewDashboardPath, path.join(packageDirectory, "dashboard.json"));
+    const expectedViewDashboardPath = await realpath(path.join(packageDirectory, "dashboard.json"));
+    assert.equal(prompts[0].viewDashboardPath, expectedViewDashboardPath);
     assert.deepEqual(prompts[0].editableDashboardPaths, [
-      path.join(root, "dashboard.json"),
-      path.join(packageDirectory, "dashboard.json"),
+      await realpath(path.join(root, "dashboard.json")),
+      expectedViewDashboardPath,
     ]);
     assert.match(prompts[0].bundledDashboardPath, /cao-dashboard-preview-.*dashboard\.json$/);
     assert.equal(
@@ -351,7 +352,7 @@ test("local dashboard CLI relaunches Node with workspace permissions", () => {
   assert.match(result.stdout, /usage: local-server\.mjs/);
 });
 
-test("local dashboard server downloads the latest data artifact with GitHub CLI", async () => {
+test("local dashboard server downloads dashboard-build data with GitHub CLI", async () => {
   const root = await mkdtemp(path.join(tmpdir(), "dashboard-local-server-"));
   const ghExecutable = path.join(root, "gh");
   await writeFile(path.join(root, "index.html"), "<!doctype html><body>preview</body>");
@@ -367,7 +368,7 @@ if [ "$1" = "api" ]; then
     exit
   fi
   if [ "$2" = "repos/acme/control/actions/runs/42" ]; then
-    printf 'success\\tmain\\t.github/workflows/dashboard.yml\\n'
+    printf 'success\\tmain\\t.github/workflows/dashboard-build.yml\\n'
     exit
   fi
   exit 2
