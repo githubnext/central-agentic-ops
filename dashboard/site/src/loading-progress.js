@@ -40,6 +40,9 @@ function installStyles(document) {
   opacity: 0;
 }
 @keyframes loading-progress-shimmer {
+  from {
+    transform: translateX(-100%);
+  }
   to {
     transform: translateX(100%);
   }

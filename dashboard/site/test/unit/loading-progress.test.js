@@ -36,6 +36,7 @@ describe('loading progress', () => {
     const styles = document.querySelector('style[data-loading-progress-styles]')?.textContent;
     expect(styles).toContain('animation: loading-progress-shimmer 1.2s ease-in-out infinite');
     expect(styles).toContain('@keyframes loading-progress-shimmer');
+    expect(styles).toContain('from {\n    transform: translateX(-100%);');
   });
 
   it('finishes once and removes the bar after its completion transition', () => {
