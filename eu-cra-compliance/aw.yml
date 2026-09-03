@@ -3,6 +3,7 @@ description: Advisory, non-binding evidence gathering and operational readiness 
 min-version: v0.88.2
 experimental: true
 includes:
+  - .github/workflows/shared/cao.md
   - .github/workflows/eu-cra-compliance.md
   - .github/workflows/eu-cra-compliance-package-maintainer.md
   - .github/workflows/eu-cra-compliance-scope-classifier.md
