@@ -61,6 +61,17 @@ test("landing wizard prompt references the raw setup skill", () => {
   );
 });
 
+test("landing wizard client imports its prompt generation dependencies", () => {
+  assert.equal(
+    wizard.match(/import controlPolicy from "\.\.\/\.\.\/\.github\/workflows\/cao\.json";/g)?.length,
+    2,
+  );
+  assert.equal(
+    wizard.match(/import \{ buildWizardPolicy \} from "\.\.\/lib\/configured-operations\.mjs";/g)?.length,
+    2,
+  );
+});
+
 test("landing wizard operations come from the checked-in control policy", () => {
   assert.match(catalog, /import controlPolicy from "\.\.\/\.\.\/\.github\/workflows\/cao\.json"/);
   assert.match(catalog, /selectConfiguredOperations\(controlPolicy, catalogEntries\)/);
