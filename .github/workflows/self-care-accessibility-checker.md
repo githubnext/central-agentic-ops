@@ -102,6 +102,8 @@ tools:
   bash:
     - "*"
 safe-outputs:
+  allowed-domains:
+    - githubnext.github.io
   create-issue:
     target-repo: ${{ (inputs.safe_output_mode || 'review') == 'review' && (inputs.safe_output_repo || github.repository) || inputs.target_repo }}
     title-prefix: "[self-care:accessibility-checker] "
