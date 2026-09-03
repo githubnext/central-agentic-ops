@@ -610,7 +610,7 @@ test("issue-creating workers use package and worker title prefixes and labels", 
     );
     assert.deepEqual(
       config["safe-outputs"]["create-issue"].labels,
-      [`${controlImport.with.package}:${controlImport.with.worker}`],
+      [controlImport.with.package, `${controlImport.with.package}:${controlImport.with.worker}`],
       name,
     );
   }
@@ -1895,7 +1895,7 @@ test("SelfCare accessibility checker audits the served docs site with axe-core e
   assert.match(source, /prefers-reduced-motion/);
   assert.match(source, /safe-outputs:\n\s+allowed-domains:\n\s+- githubnext\.github\.io\n\s+create-issue:/);
   assert.match(source, /create-issue:\n\s+target-repo:.*\n\s+title-prefix: "\[self-care:accessibility-checker\] "/);
-  assert.match(source, /labels: \[self-care:accessibility-checker\]/);
+  assert.match(source, /labels: \[self-care, self-care:accessibility-checker\]/);
   assert.match(source, /close-older-key: self-care-accessibility-checker/);
   assert.match(source, /Begin the issue body directly with a concise, unheaded executive summary/);
   assert.match(source, /select the single most important action with the highest expected return on investment/);
@@ -1955,7 +1955,7 @@ test("SelfCare dashboard reviewer checks deployments through stakeholder persona
   assert.match(source, /overview, dispatches, packages, repositories, workflows, runs, and coverage routes/);
   assert.match(source, /title-prefix: "\[self-care:dashboard-review\] "/);
   assert.match(source, /close-older-key: self-care-dashboard-review/);
-  assert.match(source, /labels: \[self-care:dashboard-review\]/);
+  assert.match(source, /labels: \[self-care, self-care:dashboard-review\]/);
   assert.match(source, /central-agentic-ops-dashboard/);
   assert.match(source, /view-grader\.mjs/);
   assert.match(source, /dashboard-artifact/);

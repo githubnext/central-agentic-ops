@@ -103,7 +103,7 @@ safe-outputs:
   create-issue:
     expires: 14d
     title-prefix: "[aw-maintenance:failures-investigator] "
-    labels: [aw-maintenance:failures-investigator]
+    labels: [aw-maintenance, aw-maintenance:failures-investigator]
     max: 3
     target-repo: ${{ (inputs.safe_output_mode || 'review') == 'review' && (inputs.safe_output_repo || github.repository) || inputs.target_repo }}
 

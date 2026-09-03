@@ -95,7 +95,7 @@ safe-outputs:
   create-issue:
     expires: 14d
     title-prefix: "[aw-maintenance:compiler-security] "
-    labels: [aw-maintenance:compiler-security]
+    labels: [aw-maintenance, aw-maintenance:compiler-security]
     max: 1
     target-repo: ${{ (inputs.safe_output_mode || 'review') == 'review' && (inputs.safe_output_repo || github.repository) || inputs.target_repo }}
 

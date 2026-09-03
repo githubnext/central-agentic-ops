@@ -100,7 +100,7 @@ safe-outputs:
   create-issue:
     expires: 7d
     title-prefix: "[optimization:ai-credit-optimizer] "
-    labels: [optimization:ai-credit-optimizer]
+    labels: [optimization, optimization:ai-credit-optimizer]
     close-older-issues: true
     max: 1
     target-repo: ${{ (inputs.safe_output_mode || 'review') == 'review' && (inputs.safe_output_repo || github.repository) || inputs.target_repo }}
