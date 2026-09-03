@@ -71,6 +71,7 @@ export function deriveOverviewSources(sources) {
       rows: packages.map((entry) => ({
         package: entry.id,
         title: entry.name,
+        icon: entry.icon,
         mode: entry.mode,
         'rollout-percent': entry.rolloutPercent,
         'repository-modes': entry.repositoryModes,
@@ -981,6 +982,7 @@ function summarizePackages(rows) {
       return {
         id,
         name: String(packageRows.find((row) => typeof row['package-name'] === 'string')?.['package-name'] ?? titleCase(id)),
+        icon: String(packageRows.find((row) => typeof row['package-icon'] === 'string')?.['package-icon'] ?? 'package'),
         workers: Number.isFinite(packageWorkerCount) ? packageWorkerCount : workers.length,
         mode: String(orchestrators[0]?.['rollout-mode'] ?? packageRows[0]?.['rollout-mode'] ?? 'unknown'),
         rolloutPercent: Number.isFinite(rolloutPercent) ? rolloutPercent : null,

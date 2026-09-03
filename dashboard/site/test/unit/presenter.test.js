@@ -969,7 +969,15 @@ describe('presenter built-in and custom pages', () => {
     expect(tables[2]?.textContent).toContain('—');
     expect(tables[2]?.textContent).toContain('sha256:curre');
     expect(tables[2]?.querySelector('a[aria-label="View run 103"]')?.getAttribute('href')).toContain('/actions/runs/103');
-    expect(page?.querySelectorAll('.table-filter')).toHaveLength(1);
+    expect(page?.querySelectorAll('.table-filter')).toHaveLength(2);
+    const graderRegion = /** @type {HTMLElement} */ (tables[2]?.closest('.table-region'));
+    const graderFilter = /** @type {HTMLInputElement} */ (graderRegion?.querySelector('[data-table-filter]'));
+    expect(graderFilter.closest('label')?.textContent).toContain('Filter Collected observations');
+    graderFilter.value = 'review-value';
+    graderFilter.dispatchEvent(new Event('input'));
+    expect([...graderRegion.querySelectorAll('tbody tr')]
+      .filter((row) => row instanceof HTMLTableRowElement && !row.hidden)).toHaveLength(1);
+    expect(graderRegion.querySelector('.table-filter-result')?.textContent).toBe('Showing 1 of 1 result');
     expect(page?.textContent).toContain('not proof that a workflow caused an outcome');
     const experimentBoundary = page?.querySelector('.dashboard-callout');
     expect(experimentBoundary?.querySelector('.scope-kicker')?.textContent).toBe('Evidence boundary');
@@ -1098,8 +1106,8 @@ describe('presenter built-in and custom pages', () => {
         workflows: {
           source: 'workflows',
           rows: [
-            { organization: 'github', repository: 'central-agentic-ops', package: 'daily-ops', 'package-name': 'Daily Ops', 'workflow-role': 'orchestrator', workflow: '.github/workflows/daily.yml', 'workflow-active': 'true', 'rollout-mode': 'live', 'max-ai-credits': 10, 'observed-at': '2026-08-29T09:00:00Z' },
-            { organization: 'github', repository: 'central-agentic-ops', package: 'daily-ops', 'package-name': 'Daily Ops', 'workflow-role': 'worker', workflow: '.github/workflows/review.yml', 'workflow-active': 'false', 'rollout-mode': 'review', 'max-ai-credits': 20, 'observed-at': '2026-08-29T09:05:00Z' }
+            { organization: 'github', repository: 'central-agentic-ops', package: 'daily-ops', 'package-name': 'Daily Ops', 'package-icon': 'workflow', 'workflow-role': 'orchestrator', workflow: '.github/workflows/daily.yml', 'workflow-active': 'true', 'rollout-mode': 'live', 'max-ai-credits': 10, 'observed-at': '2026-08-29T09:00:00Z' },
+            { organization: 'github', repository: 'central-agentic-ops', package: 'daily-ops', 'package-name': 'Daily Ops', 'package-icon': 'workflow', 'workflow-role': 'worker', workflow: '.github/workflows/review.yml', 'workflow-active': 'false', 'rollout-mode': 'review', 'max-ai-credits': 20, 'observed-at': '2026-08-29T09:05:00Z' }
           ],
           metadata: {
             'source-id': 'workflows-fixture',
@@ -1262,6 +1270,7 @@ describe('presenter built-in and custom pages', () => {
     const packageCards = [...(overviewPage?.querySelectorAll('.package-status-card') ?? [])];
     expect(packageCards).toHaveLength(1);
     expect(packageCards[0]?.querySelector('header strong')?.textContent).toBe('Daily Ops');
+    expect(packageCards[0]?.querySelector('header .octicon-workflow')).not.toBeNull();
     expect(packageCards[0]?.classList.contains('package-status-attention')).toBe(true);
     expect(packageCards[0]?.querySelector('.package-status-state')?.textContent).toBe('Needs attention');
     expect(packageCards[0]?.textContent).toContain('1 worker workflow');
@@ -1363,8 +1372,8 @@ describe('presenter built-in and custom pages', () => {
         workflows: {
           source: 'workflows',
           rows: [
-            { package: 'daily-ops', 'package-name': 'Daily Ops', workflow: '.github/workflows/daily.md', 'workflow-role': 'orchestrator', 'rollout-mode': 'review', 'max-ai-credits': 100, 'package-aic-allowance': 250, 'package-inventory-warnings': 2 },
-            { package: 'daily-ops', 'package-name': 'Daily Ops', workflow: '.github/workflows/daily-worker.md', 'workflow-role': 'worker', 'rollout-mode': 'review', 'max-ai-credits': 150, 'package-aic-allowance': 250, 'package-inventory-warnings': 2 },
+            { package: 'daily-ops', 'package-name': 'Daily Ops', 'package-icon': 'workflow', workflow: '.github/workflows/daily.md', 'workflow-role': 'orchestrator', 'rollout-mode': 'review', 'max-ai-credits': 100, 'package-aic-allowance': 250, 'package-inventory-warnings': 2 },
+            { package: 'daily-ops', 'package-name': 'Daily Ops', 'package-icon': 'workflow', workflow: '.github/workflows/daily-worker.md', 'workflow-role': 'worker', 'rollout-mode': 'review', 'max-ai-credits': 150, 'package-aic-allowance': 250, 'package-inventory-warnings': 2 },
             { package: 'empty-ops', 'package-name': 'Empty Ops', workflow: '.github/workflows/empty.md', 'workflow-role': 'orchestrator', 'rollout-mode': 'live', 'max-ai-credits': 80, 'inventory-ready': true }
           ],
           metadata
@@ -1413,11 +1422,14 @@ describe('presenter built-in and custom pages', () => {
     expect(packagesPage?.querySelector('[data-package-id="daily-ops"]')?.textContent).toContain('16%');
     expect(packagesPage?.querySelector('[data-package-id="empty-ops"]')?.textContent).toContain('No AIC usage was reported');
     expect(packagesPage?.querySelector('[data-package-id="daily-ops"] .package-utilization-identity a')?.getAttribute('href')).toBe('#page-package-insights?package=daily-ops');
+    expect(packagesPage?.querySelector('[data-package-id="daily-ops"] .octicon-workflow')).not.toBeNull();
     expect(packagesPage?.querySelector('.package-summary-heading')?.textContent).toContain('All output by package');
     expect(packagesPage?.querySelector('.package-trend-panel + .package-summary')).not.toBeNull();
     const packageSummaryRows = [...(packagesPage?.querySelectorAll('.package-summary-table tbody tr') ?? [])];
     expect(packageSummaryRows).toHaveLength(2);
     expect(packageSummaryRows[0]?.querySelector('th a')?.getAttribute('href')).toBe('#page-package-insights?package=daily-ops');
+    expect(packageSummaryRows[0]?.querySelector('.octicon-workflow')).not.toBeNull();
+    expect(packageSummaryRows[1]?.querySelector('.octicon-package')).not.toBeNull();
     expect([...packageSummaryRows[0]?.children ?? []].map((cell) => cell.textContent)).toEqual([
       'Daily Ops', '2', '1', '1', '1', '2', '40', 'Aug 29, 2026, 10:06 AM'
     ]);

@@ -11,7 +11,7 @@
         "kind": "custom",
         "title": "Optimization",
         "description": "Track AI Credit audit and optimization runs, retained recommendations, and matured accuracy and efficiency evidence.",
-        "icon": "package",
+        "icon": "meter",
         "views": [
           {
             "id": "optimization-runs",

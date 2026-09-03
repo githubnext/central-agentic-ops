@@ -2751,7 +2751,7 @@
               "source": "grader-observations"
             },
             "mark": "table",
-            "controls": "static",
+            "controls": "interactive",
             "empty-message": "No operational-value grader records were retained.",
             "layout": "full",
             "encoding": {

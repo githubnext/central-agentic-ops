@@ -344,6 +344,8 @@ Code remains open by default. A recommendation to keep code closed requires an e
 
 Create at most one consolidated issue containing:
 
+Provide only the unprefixed subject as the safe-output title. The configured `title-prefix` is added automatically; do not repeat it or add a semantically equivalent category prefix.
+
 Start directly with a concise, unheaded executive summary that includes the seven-day window and explicit limitations. Follow it with:
 
 1. `### Advisory Status` — `ADVISORY_READY`, `HUMAN_REVIEW_REQUIRED`, `NO_MATERIAL_CHANGE`, or `INCOMPLETE`;

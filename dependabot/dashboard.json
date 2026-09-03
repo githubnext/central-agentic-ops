@@ -11,7 +11,7 @@
         "kind": "custom",
         "title": "Dependabot",
         "description": "Track manifest-aware dependency update runs, proposed release trains, and validated merged resolutions.",
-        "icon": "package",
+        "icon": "dependabot",
         "views": [
           {
             "id": "dependabot-runs",

@@ -350,6 +350,8 @@ Recommend at most 3 inline sub-agents, and only when the combined opportunity is
 
 Create one issue with:
 
+Provide only the unprefixed subject as the safe-output title. The configured `title-prefix` is added automatically; do not repeat it or add a semantically equivalent category prefix.
+
 - **Target workflow + reason selected**
 - **Analysis period + runs analyzed**
 - **Spend profile table** (total AIC, avg AIC/run, total tokens, avg turns/run, cache efficiency)

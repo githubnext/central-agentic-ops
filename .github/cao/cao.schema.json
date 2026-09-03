@@ -54,7 +54,7 @@
       "enum": [
         "mark-github", "code", "repo", "server", "issue", "pull-request", "play", "eye",
         "shield", "meter", "graph", "codescan", "dependabot", "key", "beaker", "rocket",
-        "workflow", "settings", "check-circle", "package", "external-link"
+        "workflow", "gear", "check-circle", "package", "external-link"
       ]
     },
     "workerPolicy": {

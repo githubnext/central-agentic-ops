@@ -168,7 +168,7 @@ Prioritize the highest-impact, lowest-risk deviations. A focused change set is b
 
 Call `create_pull_request` exactly once with:
 
-- A short summary as the title; the configured safe output adds the `Primer branding: ` prefix.
+- A short, unprefixed summary as the title; the configured `title-prefix` is added automatically as `Primer branding: `. Do not repeat it or add a semantically equivalent category prefix.
 - A body containing:
   - What changed, grouped by category (color, typography, spacing, voice, accessibility)
   - The specific brand guidance from the MCP server that motivated each change

@@ -11,7 +11,7 @@
         "kind": "custom",
         "title": "AW Maintenance",
         "description": "Track upgrade and failure-triage activation, durable maintenance issues, and matured resolution evidence.",
-        "icon": "package",
+        "icon": "gear",
         "views": [
           {
             "id": "aw-maintenance-runs",

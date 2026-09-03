@@ -10,7 +10,7 @@ const DEFAULT_KEYS = ["mode", "max-repositories", "rollout-percent", "monthly-ai
 const OCTICONS = [
   "mark-github", "code", "repo", "server", "issue", "pull-request", "play", "eye",
   "shield", "meter", "graph", "codescan", "dependabot", "key", "beaker", "rocket",
-  "workflow", "settings", "check-circle", "package", "external-link",
+  "workflow", "gear", "check-circle", "package", "external-link",
 ];
 const PACKAGE_KEYS = ["enabled", ...DEFAULT_KEYS, "icon", "targets", "workers"];
 const TARGET_POLICY_KEYS = ["mode"];

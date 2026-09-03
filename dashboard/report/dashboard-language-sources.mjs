@@ -207,6 +207,7 @@ function inventoryWorkflowDetails(inventory = {}, controlSettings = {}) {
     const packageId = String(bundle.id || bundle.controlPackage || "").trim();
     const packageName = String(bundle.name || packageId).trim();
     const packageMembership = packageId ? { id: packageId, name: packageName || packageId } : undefined;
+    const packageIcon = packagePolicy?.icon || "package";
     const workers = bundle.workers || [];
     const ready = bundle.compiled === true
       && (bundle.missingWorkers || []).length === 0
@@ -232,6 +233,7 @@ function inventoryWorkflowDetails(inventory = {}, controlSettings = {}) {
           ...(Number.isFinite(rolloutPercent) ? { packageRolloutPercent: rolloutPercent } : {}),
           ...(packageTargets.length > 0 ? { packageTargets } : {}),
           ...(packageMembership ? { packageMembership } : {}),
+          packageIcon,
           ...(configuredMode !== "unknown" ? { configuredMode } : {}),
           ...(admission ? { admissionStatus: admission.status, admissionReason: admission.reason } : {}),
         });
@@ -252,10 +254,14 @@ function workflowRows(deployed, generatedAt, inventory, controlSettings) {
       ? [details.packageMembership]
       : discoveredMemberships;
     const membership = workflowMemberships.at(-1);
+    const packageIcon = details?.packageIcon
+      || controlSettings.packages?.[membership?.id]?.icon
+      || "package";
     const recentMode = rolloutMode(workflow.runHealth?.runRecords?.[0]?.displayTitle);
     return {
      ...names,
      ...(membership ? { package: membership.id, "package-name": membership.name } : {}),
+     ...(membership ? { "package-icon": packageIcon } : {}),
      ...(workflowMemberships.length > 0 ? { "package-memberships": workflowMemberships } : {}),
      ...(Number.isFinite(details?.maxAiCredits) ? { "max-ai-credits": details.maxAiCredits } : {}),
      ...(Number.isFinite(details?.packageAllowance) ? { "package-aic-allowance": details.packageAllowance } : {}),

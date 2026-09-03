@@ -231,6 +231,15 @@ export function validateLogicalSources(sources) {
       ));
     }
 
+    const packageIcon = candidate['package-icon'];
+    if (packageIcon !== undefined && (typeof packageIcon !== 'string' || !PAGE_ICON_VALUES.includes(packageIcon))) {
+      errors.push(createError(
+        ERROR_CODES.nonCanonicalVocabularyOrIdentifier,
+        'package-icon must name a canonical Octicon.',
+        `${path}.package-icon`
+      ));
+    }
+
     validateNonNegativeSourceMeasure(candidate['max-ai-credits'], `${path}.max-ai-credits`, errors);
     validateNonNegativeSourceMeasure(candidate['package-aic-allowance'], `${path}.package-aic-allowance`, errors);
 
