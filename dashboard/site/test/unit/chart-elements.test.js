@@ -86,7 +86,7 @@ describe('chart element helpers', () => {
       { x: 'only', y: 1, color: null },
       { x: 'only', y: 2, color: null }
     ], []);
-    expect(singleCategoryPie.querySelector('[role="status"]')).not.toBeNull();
+    expect(singleCategoryPie.querySelector('[role="status"]')?.textContent).toBe('Not enough data to show this visualization.');
   });
 
   it('DLS-VIEW-005 DLS-VIEW-006 DLS-VIEW-007 renders JSON-selected chart marks through one generic helper', () => {
