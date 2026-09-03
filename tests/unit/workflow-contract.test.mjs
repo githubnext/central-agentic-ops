@@ -2257,6 +2257,9 @@ test("Dashboard package supports embedded and explicit standalone deployment", (
   assert.match(buildWorkflow, /workflow_call:[\s\S]*?mode:[\s\S]*?default: live/);
   assert.match(buildWorkflow, /activity:[\s\S]*?issues: read[\s\S]*?pull-requests: read[\s\S]*?uses: \.\/\.github\/workflows\/activity\.yml/);
   assert.match(buildWorkflow, /Restore collected activity data[\s\S]*?actions\/cache\/restore@[0-9a-f]{40}/);
+  assert.match(activityWorkflow, /workflow_call:[\s\S]*?outputs:[\s\S]*?cache-key:[\s\S]*?value: \$\{\{ jobs\.index\.outputs\.cache-key \}\}/);
+  assert.match(activityWorkflow, /outputs:[\s\S]*?cache-key: \$\{\{ steps\.activity-cache-key\.outputs\.value \}\}/);
+  assert.match(buildWorkflow, /key: \$\{\{ needs\.activity\.outputs\.cache-key \|\| format\(/);
   assert.match(buildWorkflow, /Require collected activity data[\s\S]*?control-settings\.json control-plane-inventory\.json deployed-workflows\.json aic-usage\.json operational-values\.json dashboard-records\.json/);
   assert.doesNotMatch(buildWorkflow, /Discover deployed agentic workflows/);
   assert.doesNotMatch(buildWorkflow, /actions\/cache\/save@|Collect AI Credit usage|Collect operational-value observations|Collect durable dashboard records/);
