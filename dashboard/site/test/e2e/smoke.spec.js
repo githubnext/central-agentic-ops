@@ -342,6 +342,9 @@ test('DLS-DOC-014 horizon help is available on hover and keyboard focus', async 
   await expect(tooltip).toBeVisible();
 
   await page.setViewportSize({ width: 393, height: 852 });
+  await trigger.blur();
+  await trigger.focus();
+  await expect(tooltip).toBeVisible();
   const tooltipBox = await tooltip.boundingBox();
   expect(tooltipBox).not.toBeNull();
   expect(tooltipBox?.x).toBeGreaterThanOrEqual(0);
