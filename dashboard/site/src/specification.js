@@ -43,7 +43,7 @@ export const VIEW_ELEMENT_VALUES = [
   'workflow-runtime',
   'outcome-detail'
 ];
-export const VIEW_CHART_VALUES = ['bar', 'line', 'pie'];
+export const VIEW_CHART_VALUES = ['bar', 'histogram', 'line', 'pie'];
 export const VIEW_LAYOUT_VALUES = ['full', 'half', 'third'];
 export const VIEW_DISCLOSURE_VALUES = ['essential', 'supplemental'];
 export const VIEW_CONTROL_VALUES = ['interactive', 'static'];
@@ -243,6 +243,8 @@ export const SOURCE_VALUES = [
   'repositories',
   'workflows',
   'runs',
+  'run-performance',
+  'job-performance',
   'experiments',
   'experiment-assignments',
   'graders',
@@ -297,6 +299,8 @@ export const SOURCE_FIELDS = {
   repositories: ['organization', 'repository', 'repository-name', 'rollout-mode', 'observed-at', 'organization-link', 'repository-link'],
   workflows: ['organization', 'repository', 'package', 'package-name', 'package-icon', 'workflow', 'workflow-name', 'workflow-role', 'workflow-active', 'admission-status', 'admission-reason', 'gh-aw-version', 'gh-aw-update-state', 'gh-aw-metadata', 'gh-aw-manifest', 'rollout-mode', 'max-ai-credits', 'package-aic-allowance', 'package-worker-count', 'package-inventory-warnings', 'inventory-ready', 'observed-at', 'organization-link', 'repository-link', 'workflow-link'],
   runs: ['organization', 'repository', 'workflow', 'run', 'run-title', 'event', 'started-at', 'ended-at', 'run-status', 'run-conclusion', 'admission-status', 'admission-reason', 'failure-job', 'failure-message', 'failure-step', 'resource', 'resource-reset-at', 'resource-wait-hours', 'rollout-mode', 'engine', 'engine-version', 'requested-model', 'resolved-model', 'organization-link', 'repository-link', 'workflow-link', 'run-link'],
+  'run-performance': ['organization', 'repository', 'workflow', 'run', 'started-at', 'run-conclusion', 'rollout-mode', 'run-duration-seconds', 'sandbox-runtime', 'engine', 'model', 'run-link'],
+  'job-performance': ['organization', 'repository', 'workflow', 'run', 'started-at', 'run-conclusion', 'rollout-mode', 'job', 'job-duration-seconds', 'runner', 'runner-name', 'runner-group', 'sandbox-runtime', 'engine', 'model', 'run-link'],
   experiments: ['experiment', 'experiment-name', 'observed-at'],
   'experiment-assignments': ['organization', 'repository', 'workflow', 'run', 'experiment', 'variant', 'observed-at'],
   graders: ['grader', 'grader-name', 'observed-at'],
@@ -368,6 +372,8 @@ export const SOURCE_ENTITY_IDENTIFIER_FIELDS = {
   repositories: ['repository'],
   workflows: ['workflow'],
   runs: ['run'],
+  'run-performance': ['run'],
+  'job-performance': ['run', 'job'],
   experiments: ['experiment'],
   'experiment-assignments': ['run', 'experiment', 'variant'],
   graders: ['grader'],

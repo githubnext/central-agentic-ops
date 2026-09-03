@@ -141,6 +141,7 @@ function buildPresenterModuleUrl() {
   const chartElementsSource = readFileSync(new URL('../../src/components/chart-elements.js', import.meta.url), 'utf8')
     .replace("'../dom.js'", JSON.stringify(domModuleUrl))
     .replace("'../view-formatters.js'", JSON.stringify(viewFormattersModuleUrl))
+    .replace("'./histogram.js'", JSON.stringify(histogramModuleUrl))
     .replace("'./link-content.js'", JSON.stringify(linkContentModuleUrl));
   const chartElementsModuleUrl = `data:text/javascript;charset=utf-8,${encodeURIComponent(chartElementsSource)}`;
 
@@ -325,6 +326,52 @@ test('production pages expose their executive chart without scrolling on a phone
   expect(chartBox).not.toBeNull();
   expect(chartBox?.y).toBeGreaterThanOrEqual(0);
   expect((chartBox?.y ?? 0) + (chartBox?.height ?? 0)).toBeLessThanOrEqual(844);
+});
+
+test('performance page leads with a workflow duration histogram', async ({ page }) => {
+  const presenterModuleUrl = buildPresenterModuleUrl();
+  const documentModel = JSON.parse(readFileSync(new URL('../../dashboard.json', import.meta.url), 'utf8'));
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.setContent(`
+    <div id="root"></div>
+    <script type="module">
+      import { renderDashboard } from ${JSON.stringify(presenterModuleUrl)};
+      const documentModel = ${JSON.stringify(documentModel)};
+      const metadata = {
+        'source-id': 'performance-fixture',
+        'source-kind': 'fixture',
+        'as-of': '2026-09-03T12:00:00Z',
+        'retrieved-at': '2026-09-03T12:01:00Z',
+        completeness: 'complete',
+        freshness: 'fresh',
+        availability: 'available'
+      };
+      const sources = {
+        'run-performance': {
+          source: 'run-performance',
+          rows: [
+            { run: '1', 'started-at': '2026-09-03T10:00:00Z', 'run-duration-seconds': 60 },
+            { run: '2', 'started-at': '2026-09-03T11:00:00Z', 'run-duration-seconds': 180 }
+          ],
+          metadata
+        },
+        'job-performance': {
+          source: 'job-performance',
+          rows: [
+            { run: '1', 'started-at': '2026-09-03T10:00:00Z', job: 'agent', runner: 'ubuntu-latest', 'sandbox-runtime': 'gvisor', engine: 'copilot', model: 'gpt-5.4', 'job-duration-seconds': 45 }
+          ],
+          metadata
+        }
+      };
+      window.location.hash = '#page-performance';
+      document.querySelector('#root').append(renderDashboard({ document: documentModel, sources }));
+    </script>
+  `);
+
+  const pageRegion = page.locator('[data-page-id="performance"]');
+  await expect(pageRegion).toBeVisible();
+  await expect(pageRegion.locator('.custom-view').first().locator('[data-chart-widget="histogram"]')).toBeVisible();
+  await expect(pageRegion.locator('[data-chart-widget="bar"]')).toHaveCount(3);
 });
 
 test('DLS-DOC-014 horizon help is available on hover and keyboard focus', async ({ page }) => {

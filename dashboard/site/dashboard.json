@@ -41,6 +41,11 @@
         "name": "Grade",
         "symbol": "grade",
         "significant": 0.01
+      },
+      "seconds": {
+        "name": "Seconds",
+        "symbol": "s",
+        "significant": 1
       }
     },
     "pages": [
@@ -2323,6 +2328,137 @@
         ]
       },
       {
+        "id": "performance",
+        "kind": "custom",
+        "title": "Performance",
+        "navigation-label": "Performance",
+        "icon": "meter",
+        "class-name": "performance-page",
+        "description": "Workflow and job duration distributions across runners, sandbox runtimes, agent engines, and models.",
+        "filter-bar": {
+          "filters": [
+            "mode:review",
+            "mode:live"
+          ],
+          "time-range": "1w"
+        },
+        "views": [
+          {
+            "id": "workflow-run-duration-histogram",
+            "title": "Workflow run total time",
+            "description": "Distribution of elapsed workflow run time from execution start through completion.",
+            "data": {
+              "source": "run-performance"
+            },
+            "mark": "chart",
+            "chart": "histogram",
+            "table": false,
+            "layout": "full",
+            "encoding": {
+              "x": {
+                "field": "run-duration-seconds",
+                "type": "quantitative",
+                "title": "Workflow run total time",
+                "unit": "seconds"
+              },
+              "y": {
+                "field": "run-duration-seconds",
+                "type": "quantitative",
+                "title": "Runs"
+              }
+            }
+          },
+          {
+            "id": "job-duration-by-job-runner",
+            "title": "Job time by job and runner",
+            "description": "Mean elapsed job time, split by the runner labels reported by GitHub Actions.",
+            "data": {
+              "source": "job-performance"
+            },
+            "mark": "chart",
+            "chart": "bar",
+            "table": false,
+            "layout": "full",
+            "encoding": {
+              "x": {
+                "field": "job",
+                "type": "nominal",
+                "title": "Job"
+              },
+              "y": {
+                "field": "job-duration-seconds",
+                "type": "quantitative",
+                "aggregate": "mean",
+                "title": "Mean job time",
+                "unit": "seconds"
+              },
+              "color": {
+                "field": "runner",
+                "type": "nominal",
+                "title": "Runner"
+              }
+            }
+          },
+          {
+            "id": "job-duration-by-runtime-engine",
+            "title": "Job time by sandbox runtime and agent engine",
+            "description": "Mean elapsed job time grouped by the gh-aw sandbox runtime profile and agent engine.",
+            "data": {
+              "source": "job-performance"
+            },
+            "mark": "chart",
+            "chart": "bar",
+            "table": false,
+            "layout": "full",
+            "encoding": {
+              "x": {
+                "field": "sandbox-runtime",
+                "type": "nominal",
+                "title": "Sandbox runtime"
+              },
+              "y": {
+                "field": "job-duration-seconds",
+                "type": "quantitative",
+                "aggregate": "mean",
+                "title": "Mean job time",
+                "unit": "seconds"
+              },
+              "color": {
+                "field": "engine",
+                "type": "nominal",
+                "title": "Agent engine"
+              }
+            }
+          },
+          {
+            "id": "job-duration-by-model",
+            "title": "Job time by model",
+            "description": "Mean elapsed job time grouped by resolved model, falling back to the requested model.",
+            "data": {
+              "source": "job-performance"
+            },
+            "mark": "chart",
+            "chart": "bar",
+            "table": false,
+            "layout": "full",
+            "encoding": {
+              "x": {
+                "field": "model",
+                "type": "nominal",
+                "title": "Model"
+              },
+              "y": {
+                "field": "job-duration-seconds",
+                "type": "quantitative",
+                "aggregate": "mean",
+                "title": "Mean job time",
+                "unit": "seconds"
+              }
+            }
+          }
+        ]
+      },
+      {
         "id": "runs",
         "kind": "built-in",
         "page": "runs",
@@ -3897,6 +4033,7 @@
         "label": "Investigate",
         "pages": [
           "runtime",
+          "performance",
           "security",
           "operational-value",
           "cost"

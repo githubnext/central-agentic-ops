@@ -23,6 +23,7 @@ export function runFailureEvidence(jobs, now = Date.now()) {
       };
       break;
     }
+
     if (!step.name.startsWith(API_LIMITED_STEP_PREFIX)) continue;
     const resetTime = Date.parse(step.name.slice(API_LIMITED_STEP_PREFIX.length).trim());
     admission = {
@@ -41,6 +42,23 @@ export function runFailureEvidence(jobs, now = Date.now()) {
     failureJobId: failedJob?.id ?? null,
     ...(failedJob?.name ? { failureJob: String(failedJob.name) } : {}),
     ...(failedStep?.name ? { failureStep: String(failedStep.name) } : {}),
+  };
+}
+
+export function performanceJobRecord(job) {
+  const labels = Array.isArray(job?.labels)
+    ? job.labels.filter((label) => typeof label === "string" && label.trim()).map((label) => label.trim())
+    : [];
+  return {
+    jobId: job?.id ?? null,
+    name: String(job?.name || "Unknown job"),
+    status: String(job?.status || "unknown"),
+    conclusion: job?.conclusion == null ? null : String(job.conclusion),
+    startedAt: job?.started_at || null,
+    completedAt: job?.completed_at || null,
+    runnerName: job?.runner_name || null,
+    runnerGroupName: job?.runner_group_name || null,
+    labels,
   };
 }
 

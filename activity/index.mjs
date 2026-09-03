@@ -5,6 +5,7 @@ import { actionsLog as log } from "./actions-log.mjs";
 import {
   extractCaoFailureMessage,
   isFailedConclusion,
+  performanceJobRecord,
   runFailureEvidence,
 } from "./failure-evidence.mjs";
 
@@ -426,7 +427,9 @@ async function collectRunHealth(registryByRepository, previousIndex) {
         page += 1;
         for (const run of runs) {
           if (!workflowIds.has(run.workflow_id)) continue;
-          records.set(`${run.workflow_id}:${run.id}`, { workflowId: run.workflow_id, run: {
+          const recordKey = `${run.workflow_id}:${run.id}`;
+          const previousRun = records.get(recordKey)?.run;
+          records.set(recordKey, { workflowId: run.workflow_id, run: {
             repository: repositoryName,
             runId: run.id,
             runNumber: run.run_number,
@@ -438,6 +441,10 @@ async function collectRunHealth(registryByRepository, previousIndex) {
             startedAt: run.run_started_at,
             updatedAt: run.updated_at,
             displayTitle: run.display_title,
+            ...(previousRun?.jobsCollected ? {
+              jobsCollected: true,
+              jobs: previousRun.jobs,
+            } : {}),
           } });
         }
         if (runs.length < 100) break;
@@ -471,6 +478,28 @@ async function collectRunHealth(registryByRepository, previousIndex) {
       else current.other += 1;
     }
   }
+  const jobsByRun = new Map();
+  const runsNeedingJobs = [...totals.values()]
+    .flatMap((current) => current.runRecords)
+    .filter((run) => !run.jobsCollected || run.status !== "completed");
+  await mapWithConcurrency(runsNeedingJobs, 4, async (run) => {
+    try {
+      const jobs = [];
+      for (let jobsPage = 1; jobsPage <= auditMaxPages; jobsPage += 1) {
+        const response = await github(`/repos/${run.repository}/actions/runs/${run.runId}/jobs?filter=latest&per_page=100&page=${jobsPage}`);
+        const pageJobs = response.body.jobs || [];
+        jobs.push(...pageJobs);
+        if (pageJobs.length < 100) break;
+        if (jobsPage === auditMaxPages) complete = false;
+      }
+      jobsByRun.set(`${run.repository}:${run.runId}`, jobs);
+      run.jobs = jobs.map(performanceJobRecord);
+      run.jobsCollected = true;
+    } catch (error) {
+      complete = false;
+      log.warning`${error.message}; performance job details will be unavailable for run ${run.runId}`;
+    }
+  });
   const runsNeedingFailureEvidence = new Map();
   for (const current of totals.values()) {
     const latest = current.runRecords[0];
@@ -488,8 +517,12 @@ async function collectRunHealth(registryByRepository, previousIndex) {
   }
   await mapWithConcurrency([...runsNeedingFailureEvidence.values()], 4, async (run) => {
     try {
-      const response = await github(`/repos/${run.repository}/actions/runs/${run.runId}/jobs?filter=latest&per_page=100`);
-      const { failureJobId, ...evidence } = runFailureEvidence(response.body.jobs || []);
+      let jobs = jobsByRun.get(`${run.repository}:${run.runId}`);
+      if (!jobs) {
+        const response = await github(`/repos/${run.repository}/actions/runs/${run.runId}/jobs?filter=latest&per_page=100`);
+        jobs = response.body.jobs || [];
+      }
+      const { failureJobId, ...evidence } = runFailureEvidence(jobs);
       Object.assign(run, evidence);
       if (!run.admissionReason && failureJobId && run.failureStep === CAO_PRECOMPUTE_STEP) {
         try {

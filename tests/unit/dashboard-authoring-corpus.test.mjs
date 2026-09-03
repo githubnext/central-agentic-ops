@@ -15,6 +15,7 @@ test("generate-dashboard-ir corpus is indexed and valid", () => {
 });
 
 test("every production dashboard page starts with a visual executive summary", () => {
+  const executiveSummaryCharts = new Set(["pie", "line", "histogram"]);
   const dashboardFiles = [
     join(root, "dashboard/site/dashboard.json"),
     ...readdirSync(root, { withFileTypes: true })
@@ -30,8 +31,8 @@ test("every production dashboard page starts with a visual executive summary", (
       const summary = views?.[0];
       assert.ok(summary, `${path}: page "${page.id}" must contain a view`);
       assert.ok(
-        summary.mark === "chart" && (summary.chart === "pie" || summary.chart === "line"),
-        `${path}: page "${page.id}" must start with a pie or line chart`,
+        summary.mark === "chart" && executiveSummaryCharts.has(summary.chart),
+        `${path}: page "${page.id}" must start with a pie, line, or histogram chart`,
       );
     }
   }

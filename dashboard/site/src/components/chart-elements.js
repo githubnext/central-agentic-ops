@@ -4,6 +4,7 @@
 
 import { h } from '../dom.js';
 import { formatNumber, toNumber } from '../view-formatters.js';
+import { binHistogramValues } from './histogram.js';
 import { renderSafeLink } from './link-content.js';
 
 /**
@@ -141,6 +142,46 @@ export function renderChartWidget(chartType, points, series, pieSummary = null, 
         h('text', { className: 'pie-chart-total-value', x: 21, y: 20, 'text-anchor': 'middle', 'aria-hidden': 'true' }, formatNumber(total, unit, false)),
         h('text', { className: 'pie-chart-total-label', x: 21, y: 25.5, 'text-anchor': 'middle', 'aria-hidden': 'true' }, totalLabel)
       )
+    );
+  }
+
+  if (chartType === 'histogram') {
+    const values = points.map((point) => Number(point.x)).filter(Number.isFinite);
+    const bins = binHistogramValues(values);
+    const maximum = Math.max(1, ...bins.map((bin) => bin.count));
+    const barWidth = bins.length > 0 ? 88 / bins.length : 88;
+    /** @param {number} value */
+    const formatBoundary = (value) => formatNumber(value, unit);
+    return h(
+      'div',
+      { className: 'chart-widget histogram-chart-widget', 'data-chart-widget': 'histogram' },
+      h(
+        'svg',
+        { viewBox: '0 0 100 42', role: 'img', 'aria-label': `Histogram of ${values.length} values` },
+        h('line', { className: 'bar-chart-axis', x1: 6, y1: 38, x2: 94, y2: 38 }),
+        ...bins.map((bin, index) => {
+          const height = Math.max(1, (bin.count / maximum) * 34);
+          const label = `${formatBoundary(bin.lower)}–${formatBoundary(bin.upper)}: ${bin.count}`;
+          return h('rect', {
+            className: 'bar-chart-bar chart-series-1',
+            x: 6 + index * barWidth,
+            y: 38 - height,
+            width: Math.max(1, barWidth - 1),
+            height,
+            tabIndex: 0,
+            role: 'img',
+            'aria-label': label
+          }, h('title', null, label));
+        })
+      ),
+      bins.length > 0
+        ? h(
+          'div',
+          { className: 'chart-axis', 'data-chart-axis': 'histogram' },
+          h('span', null, formatBoundary(bins[0]?.lower ?? 0)),
+          h('span', null, formatBoundary(bins.at(-1)?.upper ?? 0))
+        )
+        : null
     );
   }
 

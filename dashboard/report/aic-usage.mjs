@@ -89,6 +89,7 @@ function runGhAw(targets, maxRunsPerWorkflow, outputDirectory) {
             engineVersion: firstText(run.engine_version, run.agentic_engine_version, run.agent_engine_version, run.agent_version),
             requestedModel: firstText(run.requested_model, run.requestedModel, run.model, run.model_name),
             resolvedModel: firstText(run.resolved_model, run.resolvedModel, run.model_resolved, run.model),
+            agentRuntime: firstText(run.agent_runtime, run.agentRuntime),
             aic,
           });
         }
