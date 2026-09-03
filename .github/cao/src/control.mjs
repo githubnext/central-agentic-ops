@@ -196,6 +196,24 @@ function githubApiCapacity(required) {
   }
 }
 
+function isRateLimitError(error) {
+  return typeof error?.message === "string" && /rate limit/i.test(error.message);
+}
+
+function writeCapacityBlockedPrecompute(packageName, role, capacity) {
+  const reason = capacity.status === "limited" ? "github-api-capacity-insufficient" : "github-api-capacity-unavailable";
+  writeActionsOutputs({
+    authorized: false,
+    reason,
+    github_api_status: capacity.status,
+    github_api_limit: capacity.limit,
+    github_api_remaining: capacity.remaining,
+    github_api_required: capacity.required,
+    github_api_reset_at: capacity.resetAt,
+  });
+  writeAdmissionSummary({ authorized: false, packageName, role, reason, apiCapacity: capacity });
+}
+
 function applyGithubApiAdmission(result, options) {
   if (!result.authorized) return result;
   const required = githubApiRequestRequirement(result, options);
@@ -438,7 +456,8 @@ function validateOutputDestination({ mode, role, safeOutputRepository, targetRep
   let repository;
   try {
     repository = JSON.parse(ghApi(`repos/${safeOutputRepository}`));
-  } catch {
+  } catch (error) {
+    if (isRateLimitError(error)) throw error;
     throw new ControlError("review safe_output_repo must be accessible");
   }
   if (repository.private !== true) throw new ControlError("non-central review safe_output_repo must be private");
@@ -474,12 +493,14 @@ function validateLiveAuthority(context) {
   let targetSha;
   try {
     defaultBranch = ghApi(`repos/${context.targetRepository}`, { jq: ".default_branch" }).trim();
-  } catch {
+  } catch (error) {
+    if (isRateLimitError(error)) throw error;
     throw new ControlError("live authority validation could not read the target default branch");
   }
   try {
     targetSha = ghApi(`repos/${context.targetRepository}/commits/${defaultBranch}`, { jq: ".sha" }).trim();
-  } catch {
+  } catch (error) {
+    if (isRateLimitError(error)) throw error;
     throw new ControlError("live authority validation could not resolve the target default branch commit");
   }
   if (!SHA_PATTERN.test(targetSha)) throw new ControlError("target default branch did not resolve to an exact commit SHA");
@@ -836,18 +857,24 @@ function precompute() {
     return;
   }
   const context = createContext(policy);
-  requireMode(context.mode, "safe_output_mode");
-  validateRepositoryOwner("target_repo", context.targetRepository, policy.allowed_owners);
-  validateRepositoryOwner("safe_output_repo", context.safeOutputRepository, policy.allowed_owners);
-  validateOutputDestination(context);
+  try {
+    requireMode(context.mode, "safe_output_mode");
+    validateRepositoryOwner("target_repo", context.targetRepository, policy.allowed_owners);
+    validateRepositoryOwner("safe_output_repo", context.safeOutputRepository, policy.allowed_owners);
+    validateOutputDestination(context);
 
-  if (context.role === "worker") {
-    validateWorkerDispatch(context);
-    const targetAuthoritySha = validateLiveAuthority(context);
-    writeWorkerPrecompute(context, targetAuthoritySha);
-    return;
+    if (context.role === "worker") {
+      validateWorkerDispatch(context);
+      const targetAuthoritySha = validateLiveAuthority(context);
+      writeWorkerPrecompute(context, targetAuthoritySha);
+      return;
+    }
+    writeOrchestratorPrecompute(context);
+  } catch (error) {
+    if (!isRateLimitError(error)) throw error;
+    const required = githubApiRequestRequirement(policy, { role: context.role, targetRepository: context.targetRepository });
+    writeCapacityBlockedPrecompute(context.packageName, context.role, githubApiCapacity(required));
   }
-  writeOrchestratorPrecompute(context);
 }
 
 function readSource(path) {
