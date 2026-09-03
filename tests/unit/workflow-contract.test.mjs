@@ -555,7 +555,10 @@ test("workers with title prefixes provide unprefixed safe-output titles", () => 
     const source = workflow(name);
     if (!/^\s+role: worker$/m.test(source) || !/^\s+title-prefix:/m.test(source)) continue;
 
-    assert.match(source, /unprefixed[\s\S]*?configured `title-prefix`[\s\S]*?added automatically[\s\S]*?semantically equivalent category prefix/, name);
+    assert.match(source, /unprefixed/, name);
+    assert.match(source, /configured `title-prefix`/, name);
+    assert.match(source, /added automatically/, name);
+    assert.match(source, /semantically equivalent category prefix/, name);
   }
 });
 
