@@ -58,6 +58,7 @@ pre-agent-steps:
   - name: Install WebKit browser
     env:
       EXPR_GITHUB_WORKSPACE: ${{ github.workspace }}
+      PLAYWRIGHT_BROWSERS_PATH: ${{ runner.temp }}/gh-aw/playwright-browsers
     run: |
       mkdir -p "$EXPR_GITHUB_WORKSPACE/.playwright"
       set +e
@@ -90,6 +91,7 @@ pre-agent-steps:
     id: playwright-preflight
     env:
       EXPR_GITHUB_WORKSPACE: ${{ github.workspace }}
+      PLAYWRIGHT_BROWSERS_PATH: ${{ runner.temp }}/gh-aw/playwright-browsers
     run: |
       UNAVAILABLE_BROWSERS=""
       set +e
