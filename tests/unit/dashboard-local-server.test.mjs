@@ -79,6 +79,7 @@ test("local dashboard server composes package dashboards and reloads after updat
     assert.match(index, /new WebSocket/);
     assert.match(index, /\/[a-f0-9]{48}\/__dashboard_socket/);
     assert.doesNotMatch(index, /location\.reload/);
+    assert.doesNotMatch(index, /dashboard-copilot-prompt/);
 
     const dashboardResponse = await fetch(`${preview.url}/dashboard.json`);
     assert.equal(dashboardResponse.headers.get("cache-control"), "no-store");

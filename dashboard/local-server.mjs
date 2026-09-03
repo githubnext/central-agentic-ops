@@ -169,7 +169,9 @@ function injectCopilotPrompt(html, endpoint) {
   const status = document.querySelector("#dashboard-copilot-status");
   form.addEventListener("submit", async (event) => {
     event.preventDefault();
-    const view = document.querySelector("[data-nav-page-id][aria-current=page]")?.dataset.navPageId
+    const activeView = document.querySelector("[data-nav-page-id][aria-current=page]");
+    const view = activeView?.getAttribute("aria-label")
+      || activeView?.dataset.navPageId
       || location.hash.match(/^#page-([^?]+)/)?.[1]
       || "overview";
     button.disabled = true;
@@ -219,7 +221,12 @@ async function startCopilotRuntime({ workingDirectory, copilotExecutable }) {
     workingDirectory,
     logLevel: "none",
   });
-  await client.start();
+  try {
+    await client.start();
+  } catch (error) {
+    await client.stop();
+    throw error;
+  }
   console.log("Copilot headless server started.");
 
   return {
@@ -278,7 +285,7 @@ function websocketCloseFrame() {
 }
 
 /**
- * Starts the dependency-free local dashboard server.
+ * Starts the local dashboard server.
  *
  * @param {{
  *   siteRoot?: string,
@@ -433,7 +440,7 @@ export async function startDashboardServer({
           return;
         }
         if (request.headers.origin !== `http://${expectedAuthority}`
-            || request.headers["content-type"] !== "application/json") {
+            || !request.headers["content-type"]?.startsWith("application/json")) {
           response.writeHead(400).end("Bad request\n");
           return;
         }
