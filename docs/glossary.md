@@ -7,10 +7,6 @@ description: Definitions for Central Agentic Ops terminology.
 
 The repository that hosts CAO workflows and policy. It coordinates work across explicitly enrolled target repositories.
 
-## Dispatcher
-
-A mechanism that starts a worker workflow. Dispatching is one responsibility of an orchestrator; it is not a synonym for the orchestrator itself.
-
 ## Operation
 
 A bounded repository-management capability, implemented by an orchestrator and one or more workers.
@@ -18,8 +14,6 @@ A bounded repository-management capability, implemented by an orchestrator and o
 ## Orchestrator
 
 The workflow that discovers, filters, ranks, selects, and dispatches work within resolved policy. An orchestrator does not mutate target repositories directly.
-
-Use **orchestrator** as the preferred term for this workflow.
 
 ## Package
 
