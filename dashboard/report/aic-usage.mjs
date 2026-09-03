@@ -232,6 +232,7 @@ async function main() {
             requestedModel: firstText(run.requested_model, run.requestedModel, run.model, run.model_name),
             resolvedModel: firstText(run.resolved_model, run.resolvedModel, run.model_resolved, run.model),
             agentRuntime: firstText(run.agent_runtime, run.agentRuntime),
+            data: run.data ?? null,
           };
           if (Number.isFinite(aic)) runs.set(`${repository}:${runId}`, {
             ...common,
@@ -261,7 +262,7 @@ async function main() {
     });
 
     const usage = {
-      schemaVersion: 2,
+      schemaVersion: 3,
       generatedAt: new Date().toISOString(),
       windowStart: inventory.runHealth?.windowStart || null,
       windowHours: inventory.runHealth?.windowHours || null,
