@@ -114,55 +114,25 @@ steps:
     run: |
       set -euo pipefail
       mkdir -p /tmp/gh-aw/token-audit
-      PARTS_DIR=/tmp/gh-aw/token-audit/log-parts
-      mkdir -p "$PARTS_DIR"
 
       echo "📥 Downloading agentic workflow logs (last 7 days)..."
 
-      FOUND_WORKFLOW=0
-      for workflow in target/.github/workflows/*.md; do
-        [ -f "$workflow" ] || continue
+      RAW_LOGS=/tmp/gh-aw/token-audit/all-runs.raw.json
+      LOG_EXIT=0
+      gh aw logs \
+        --repo "$TARGET_REPO" \
+        --output /tmp/gh-aw/token-audit/logs \
+        --start-date -7d \
+        --json \
+        -c 50 \
+        --timeout 15 \
+        --max-github-api-rate-limit -2000 \
+        --max-storage 1024 \
+        > "$RAW_LOGS" || LOG_EXIT=$?
 
-        WORKFLOW_ID=$(sed -n 's/^tracker-id:[[:space:]]*//p' "$workflow" | head -n 1 | tr -d '\r' | sed 's/[[:space:]]*$//')
-        [ -n "$WORKFLOW_ID" ] || continue
-
-        # Skip the AI credit monitoring family in downstream repositories.
-        # In the source repo (githubnext/central-agentic-ops) they remain valid targets;
-        # in any other repo, optimization suggestions for them belong upstream.
-          if [[ "$TARGET_REPO" != "githubnext/central-agentic-ops" && \
-            ("$WORKFLOW_ID" == "optimization-ai-credit-optimizer" || "$WORKFLOW_ID" == "optimization-ai-credit-auditor") ]]; then
-          echo "⏭️ Skipping $WORKFLOW_ID (AI credit monitoring family — optimize in githubnext/central-agentic-ops, not here)"
-          continue
-        fi
-
-        FOUND_WORKFLOW=1
-        SAFE_WORKFLOW_ID=$(printf '%s' "$WORKFLOW_ID" | tr -cs 'A-Za-z0-9._-' '_')
-        PART_FILE="$PARTS_DIR/$SAFE_WORKFLOW_ID.json"
-        PART_EXIT=0
-        gh aw logs "$WORKFLOW_ID" \
-          --start-date -7d \
-          --json \
-          -c 50 \
-          > "$PART_FILE" || PART_EXIT=$?
-
-        if ! jq -e . "$PART_FILE" >/dev/null 2>&1; then
-          echo "⚠️ $WORKFLOW_ID: invalid log JSON (exit code $PART_EXIT)"
-          rm -f "$PART_FILE"
-          continue
-        fi
-
-        COUNT=$(jq '(.runs // []) | length' "$PART_FILE")
-        if [ "$COUNT" -gt 0 ]; then
-          echo "✅ $WORKFLOW_ID: downloaded $COUNT runs (exit code $PART_EXIT)"
-        else
-          echo "⚠️ $WORKFLOW_ID: no log data (exit code $PART_EXIT)"
-          rm -f "$PART_FILE"
-        fi
-      done
-
-      if [ "$FOUND_WORKFLOW" -eq 1 ] && ls "$PARTS_DIR"/*.json >/dev/null 2>&1; then
-        jq -s '
-          (map(.runs // []) | add // [] | unique_by(.run_id)) as $runs |
+      if jq -e . "$RAW_LOGS" >/dev/null 2>&1; then
+        jq '
+          ((.runs // []) | unique_by(.run_id)) as $runs |
           {
             summary: {
               total_runs: ($runs | length),
@@ -171,15 +141,14 @@ steps:
             },
             runs: $runs
           }
-        ' "$PARTS_DIR"/*.json > /tmp/gh-aw/token-audit/all-runs.json
+        ' "$RAW_LOGS" > /tmp/gh-aw/token-audit/all-runs.json
         TOTAL=$(jq '.runs | length' /tmp/gh-aw/token-audit/all-runs.json)
-        echo "✅ Downloaded $TOTAL agentic workflow runs (last 7 days)"
+        echo "✅ Downloaded $TOTAL agentic workflow runs (last 7 days, exit code $LOG_EXIT)"
       else
-        if [ "$FOUND_WORKFLOW" -eq 0 ]; then
-          echo "⚠️ No agentic workflow sources found under .github/workflows"
-        fi
+        echo "⚠️ Agentic workflow logs were unavailable or invalid (exit code $LOG_EXIT)"
         echo '{"runs":[],"summary":{}}' > /tmp/gh-aw/token-audit/all-runs.json
       fi
+      rm -f "$RAW_LOGS"
 
       BEFORE_COUNT=$(jq '(.runs // []) | length' /tmp/gh-aw/token-audit/all-runs.json)
       if [[ "$TARGET_REPO" != "githubnext/central-agentic-ops" ]]; then

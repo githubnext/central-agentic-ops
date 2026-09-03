@@ -136,16 +136,16 @@ jobs:
 
       - name: Install gh-aw CLI
         if: inputs.mode == 'live'
-        uses: github/gh-aw-actions/setup-cli@afc709f45ed6a3f756eb4551856c6a9c42e15b2c # v0.88.0
+        uses: github/gh-aw-actions/setup-cli@9271a1804551c0dc4fb0085a97979950aa2f8489 # v0.88.2
         with:
-          version: v0.88.0
+          version: v0.88.2
 
       - name: Checkout operational-value replay runtime
         if: inputs.mode == 'live'
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           repository: github/gh-aw
-          ref: a5297995b4bd76a2afcc39f10f2517a65aff172c # v0.88.0
+          ref: 8e30bcd8897f5047051fa3971188e1dd4cdb23cf # v0.88.2
           path: .cache/gh-aw-operational-value-source
           persist-credentials: false
 
@@ -161,7 +161,7 @@ jobs:
         working-directory: .cache/gh-aw-operational-value-source
         run: |
           mkdir -p "$RUNNER_TEMP/gh-aw-operational-value"
-          go build -ldflags "-s -w -X main.version=v0.88.0" \
+          go build -ldflags "-s -w -X main.version=v0.88.2" \
             -o "$RUNNER_TEMP/gh-aw-operational-value/gh-aw" ./cmd/gh-aw
           go clean -cache -modcache
 
