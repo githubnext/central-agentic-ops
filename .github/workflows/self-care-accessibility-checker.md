@@ -237,6 +237,8 @@ Report only barriers you reproduced with browser evidence. Never report a page o
 
 Call `create_issue` exactly once, titled `Accessibility Audit - [Date]`. Each run supersedes the previous report, so make the issue self-contained. Publish the report even when no barriers were found, so the clean result and its coverage are recorded.
 
+Provide only the unprefixed subject as the safe-output title. The configured `title-prefix` is added automatically; do not repeat it or add a semantically equivalent category prefix.
+
 Apply the inherited worker report contract exactly:
 
 - Begin the issue body directly with a concise, unheaded executive summary. In one or two short paragraphs, state the decision-relevant result, the most important barrier or clean result, key counts, and the recommended next action. Do not put workflow metadata or the `### Control Plane` section before this summary.

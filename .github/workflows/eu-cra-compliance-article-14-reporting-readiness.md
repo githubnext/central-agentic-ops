@@ -176,6 +176,8 @@ Assess ownership, 24/7 escalation where applicable, awareness criteria and times
 
 Create one issue with:
 
+Provide only the unprefixed subject as the safe-output title. The configured `title-prefix` is added automatically; do not repeat it or add a semantically equivalent category prefix.
+
 - verified sources and baseline;
 - responsibility and escalation map;
 - separate vulnerability and severe-incident readiness matrices;

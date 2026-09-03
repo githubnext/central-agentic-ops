@@ -163,7 +163,7 @@ Prioritize at most ten untracked recommendations by risk reduction, confidence, 
 
 Create one issue containing:
 
-1. the exact title after the configured prefix: `TARGET_REPO repository guidance`;
+1. the exact unprefixed title: `TARGET_REPO repository guidance`; the configured `title-prefix` is added automatically, so do not repeat it or add a semantically equivalent category prefix;
 2. target repository, analyzed commit SHA from `git -C target rev-parse HEAD`, source verification date, final publication version, and official URLs;
 3. the machine-readable marker `<!-- operational-value: framework=nist-ssdf target=OWNER/REPO target-sha=40_HEX_SHA -->`, using the exact assessed target and commit;
 4. scope, assumptions, inaccessible evidence, non-final draft notices, and limitations;

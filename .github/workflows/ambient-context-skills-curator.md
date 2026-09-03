@@ -361,6 +361,8 @@ Then apply the gain gate. Always-loaded context here is `agents_md.estimated_tok
 
 Create exactly one issue in the safe-output repository with this structure.
 
+Provide only the unprefixed subject as the safe-output title. The configured `title-prefix` is added automatically; do not repeat it or add a semantically equivalent category prefix.
+
 ### Skill inventory
 
 A compact table of skills with description length, size, days since last change, and reference count, plus the `AGENTS.md` size and the sections that look procedure-shaped.
