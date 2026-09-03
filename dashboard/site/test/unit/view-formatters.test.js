@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { formatAggregateValue, formatCompactElapsedTime, formatNumber, formatPercent, formatRelativeTime, renderTemplate, resolveThresholdStatus, stringOrFallback, toNumber } from '../../src/view-formatters.js';
+import { formatAggregateValue, formatClockDuration, formatCompactElapsedTime, formatNumber, formatPercent, formatRelativeTime, renderTemplate, resolveThresholdStatus, stringOrFallback, toNumber } from '../../src/view-formatters.js';
 
 /**
  * @param {unknown} value
@@ -107,5 +107,18 @@ describe('view formatter helpers', () => {
     expect(stringOrFallback('', 'unknown')).toBe('unknown');
     expect(stringOrFallback('review', 'unknown')).toBe('review');
     expect(stringOrFallback(0, 'unknown')).toBe('0');
+  });
+
+  it('formats cascading clock durations across seconds, minutes, hours, and days tiers', () => {
+    expect(formatClockDuration(45_000)).toBe('45s');
+    expect(formatClockDuration(90_000)).toBe('1m 30s');
+    expect(formatClockDuration(7_260_000)).toBe('2h 1m');
+    expect(formatClockDuration(97_200_000)).toBe('1d 3h');
+    expect(formatClockDuration(-1_000)).toBe('0s');
+  });
+
+  it('omits the days tier when includeDays is false, rolling straight into hours', () => {
+    expect(formatClockDuration(97_200_000, { includeDays: false })).toBe('27h 0m');
+    expect(formatClockDuration(45_000, { includeDays: false })).toBe('45s');
   });
 });

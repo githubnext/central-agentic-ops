@@ -3,7 +3,7 @@
  */
 
 import { formatCount, formatCountNoun } from './components/count-formatters.js';
-import { formatPercent } from './view-formatters.js';
+import { formatClockDuration, formatPercent } from './view-formatters.js';
 import dispatchTypeClassification from './components/dispatch-type-classification.json' with { type: 'json' };
 
 const FAILURE_CONCLUSIONS = new Set(['failure', 'startup-failure', 'timed-out']);
@@ -495,11 +495,7 @@ export function durationBetween(start, end) {
 /** @param {number | null} duration */
 export function formatDuration(duration) {
   if (!Number.isFinite(duration)) return '—';
-  const seconds = Math.max(0, Math.round(Number(duration) / 1000));
-  if (seconds < 60) return `${seconds}s`;
-  const minutes = Math.floor(seconds / 60);
-  if (minutes < 60) return `${minutes}m ${seconds % 60}s`;
-  return `${Math.floor(minutes / 60)}h ${minutes % 60}m`;
+  return formatClockDuration(Number(duration), { includeDays: false });
 }
 
 /** @param {number} count */
