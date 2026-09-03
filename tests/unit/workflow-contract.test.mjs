@@ -405,6 +405,8 @@ test("control workflows deny before activation through one shared admission cont
   assert.match(sharedControl, /CAO_API_TOKEN: \$\{\{ steps\.cao_pre_activation_app_token\.outputs\.token \|\| secrets\.GH_AW_GITHUB_TOKEN \|\| github\.token \}\}/);
   assert.match(sharedControl, /CAO admission blocked: GitHub API limited until \$\{\{ steps\.cao_admission\.outputs\.github_api_reset_at \}\}/);
   assert.match(sharedControl, /reason == 'github-api-capacity-insufficient'/);
+  assert.match(sharedControl, /^\s+id: cao_precompute$/m);
+  assert.match(sharedControl, /CAO precompute blocked: GitHub API limited until \$\{\{ steps\.cao_precompute\.outputs\.github_api_reset_at \}\}/);
   assert.match(sharedControl, /reason="cannot read or execute the CAO control modules at github\.workflow_sha"/);
   for (const [name, source] of controlled) {
     assert.equal(
@@ -417,7 +419,7 @@ test("control workflows deny before activation through one shared admission cont
       /on:[\s\S]*?permissions:\n\s+(?:actions: read\n\s+contents: read|contents: read\n\s+actions: read)/,
       name,
     );
-    assert.match(source, /jobs:\n  pre-activation:\n    outputs:\n      cao_authorized: \$\{\{ steps\.cao_admission\.outputs\.authorized \}\}/, name);
+    assert.match(source, /jobs:\n  pre-activation:\n    outputs:\n      cao_authorized: \$\{\{ steps\.cao_admission\.outputs\.authorized == 'true' && steps\.cao_precompute\.outputs\.authorized != 'false' \}\}/, name);
     assert.match(source, /^if: needs\.pre_activation\.outputs\.cao_authorized == 'true'$/m, name);
 
     const generatedName = name.replace(/\.md$/, ".lock.yml");
@@ -426,10 +428,11 @@ test("control workflows deny before activation through one shared admission cont
     const preActivation = jobs.get("pre_activation")?.block ?? "";
     const activation = jobs.get("activation")?.block ?? "";
 
-    assert.match(preActivation, /cao_authorized: \$\{\{ steps\.cao_admission\.outputs\.authorized \}\}/, generatedName);
+    assert.match(preActivation, /cao_authorized: \$\{\{ steps\.cao_admission\.outputs\.authorized == 'true' && steps\.cao_precompute\.outputs\.authorized != 'false' \}\}/, generatedName);
     assert.match(preActivation, /Evaluate Central Agentic Ops admission/, generatedName);
     assert.match(preActivation, /Generate CAO pre-activation GitHub App token/, generatedName);
     assert.match(preActivation, /CAO admission blocked: GitHub API limited until/, generatedName);
+    assert.match(preActivation, /CAO precompute blocked: GitHub API limited until/, generatedName);
     assert.match(activation, /needs\.pre_activation\.outputs\.cao_authorized == 'true'/, generatedName);
     assert.ok(transitivelyNeeds(jobs, "agent", "activation"), `${generatedName}: agent must depend on activation`);
   }
@@ -1589,6 +1592,11 @@ test("multi-device docs tester runs daily and covers browser and appearance comp
   assert.match(compiled, /cron: "\d+ \d+ \* \* \*"  # Friendly format: daily \(scattered\)/);
   assert.doesNotMatch(compiled, /^  pull_request:/m);
   assert.match(source, /playwright@1\.63\.0-alpha-2026-08-05 install --with-deps webkit/);
+  assert.equal(
+    (source.match(/PLAYWRIGHT_BROWSERS_PATH: \$\{\{ runner\.temp \}\}\/gh-aw\/playwright-browsers/g) || []).length,
+    2,
+  );
+  assert.match(compiled, /PLAYWRIGHT_BROWSERS_PATH: \$\{\{ runner\.temp \}\}\/gh-aw\/playwright-browsers/);
   assert.match(source, /^      cat > "\$EXPR_GITHUB_WORKSPACE\/\.playwright\/webkit\.config\.json" <<'EOF'\n      \{\}\n      EOF$/m);
   assert.match(source, /for BROWSER in chrome webkit/);
   assert.match(source, /colorScheme: "light"/);

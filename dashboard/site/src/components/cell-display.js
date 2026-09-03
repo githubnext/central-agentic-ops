@@ -4,7 +4,7 @@
 
 import { h } from '../dom.js';
 import { renderActiveStateBadge, renderGraderStatusBadge, renderModeBadge, renderStatusBadge } from './badge.js';
-import { formatNumber } from '../view-formatters.js';
+import { formatNumber, stringOrFallback } from '../view-formatters.js';
 import { formatUtcDateTime } from './ui-primitives.js';
 
 /**
@@ -21,7 +21,7 @@ export function renderCellDisplay(display, value, toText, unit = null, type) {
   if (display === 'status') return renderStatusBadge(value);
   if (display === 'grader-status') return renderGraderStatusBadge(value);
   if (display === 'label') return formatLabel(value);
-  if (display === 'digest') return h('code', null, value == null || value === '' ? 'unavailable' : String(value).slice(0, 12));
+  if (display === 'digest') return h('code', null, stringOrFallback(value, 'unavailable').slice(0, 12));
   if (type === 'quantitative' && (value == null || value === '' || !Number.isFinite(Number(value)))) return '—';
   if (type === 'temporal' && typeof value === 'string' && Number.isFinite(Date.parse(value))) {
     return h('time', { dateTime: value }, formatUtcDateTime(value));
@@ -32,7 +32,7 @@ export function renderCellDisplay(display, value, toText, unit = null, type) {
 
 /** @param {unknown} value */
 function formatLabel(value) {
-  const text = value == null || value === '' ? 'unavailable' : String(value);
+  const text = stringOrFallback(value, 'unavailable');
   const normalized = text.toLowerCase();
   if (normalized === 'matured') return 'Mature';
   return `${normalized.charAt(0).toUpperCase()}${normalized.slice(1)}`;
