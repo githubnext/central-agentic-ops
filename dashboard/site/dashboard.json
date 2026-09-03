@@ -367,10 +367,6 @@
               "filters": {
                 "security-feature": "access-control",
                 "security-analysis": "detail"
-              },
-              "order-by": {
-                "field": "security-count",
-                "direction": "desc"
               }
             },
             "mark": "table",
@@ -453,10 +449,6 @@
               "filters": {
                 "security-feature": "firewall",
                 "security-analysis": "detail"
-              },
-              "order-by": {
-                "field": "security-count",
-                "direction": "desc"
               }
             },
             "mark": "table",
@@ -540,10 +532,6 @@
               "filters": {
                 "security-feature": "integrity-filtering",
                 "security-analysis": "detail"
-              },
-              "order-by": {
-                "field": "security-count",
-                "direction": "desc"
               }
             },
             "mark": "table",
@@ -626,10 +614,6 @@
               "filters": {
                 "security-feature": "threat-detection",
                 "security-analysis": "detail"
-              },
-              "order-by": {
-                "field": "security-status",
-                "direction": "asc"
               }
             },
             "mark": "table",

@@ -2,6 +2,7 @@ import { spawn } from "node:child_process";
 import { mkdir, mkdtemp, readFile, readdir, rm, stat, writeFile } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
+import { pathToFileURL } from "node:url";
 import { actionsLog as log } from "../../activity/actions-log.mjs";
 import { parseRolloutMode } from "./dashboard-language-sources.mjs";
 import { firstText } from "./text-utils.mjs";
@@ -174,7 +175,7 @@ function securityTelemetryComplete(telemetry) {
     && telemetry.threatDetection.available;
 }
 
-(async () => {
+async function main() {
   log.group`Collect AI Credit usage`;
   try {
   const inventoryPath = process.env.REPORT_DEPLOYED_WORKFLOWS;
@@ -281,7 +282,11 @@ function securityTelemetryComplete(telemetry) {
   } finally {
     log.endGroup();
   }
-})().catch((error) => {
-  log.error`${error.stack || error.message || error}`;
-  process.exitCode = 1;
-});
+}
+
+if (process.argv[1] && import.meta.url === pathToFileURL(path.resolve(process.argv[1])).href) {
+  main().catch((error) => {
+    log.error`${error.stack || error.message || error}`;
+    process.exitCode = 1;
+  });
+}

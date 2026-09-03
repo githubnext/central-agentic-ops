@@ -142,7 +142,6 @@ export const BUILT_IN_PAGE_VALUES = [
   'graders',
   'evals',
   'usage',
-  'security-observations',
   'engines-models',
   'operational-value',
   'findings'
@@ -254,6 +253,7 @@ export const SOURCE_VALUES = [
   'evals',
   'eval-observations',
   'usage',
+  'security-observations',
   'coverage-diagnostics',
   'repository-coverage',
   'runtime-episode-summary',
