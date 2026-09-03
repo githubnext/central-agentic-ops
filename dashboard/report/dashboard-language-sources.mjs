@@ -195,10 +195,16 @@ function inventoryWorkflowDetails(inventory = {}, controlSettings = {}) {
     }
   }
   for (const bundle of inventory.bundles || []) {
-    const packagePolicy = controlSettings.packages?.[bundle.controlPackage];
+    const policyId = String(
+      bundle.controlPackage
+      || bundle.id
+      || String(bundle.path || "").replace(/\/aw\.yml$|^aw\.yml$/g, "")
+    ).trim();
+    const packagePolicy = controlSettings.packages?.[policyId]
+      || controlSettings.packages?.[bundle.id];
     const configuredMode = rolloutMode(packagePolicy?.mode);
     const rolloutPercent = Number(packagePolicy?.["rollout-percent"] ?? packagePolicy?.rollout_percent);
-    const packageTargets = Object.entries(packagePolicy?.targets ?? {})
+    const packageTargets = Object.entries(packagePolicy?.targets ?? packagePolicy?.target_policies ?? {})
       .map(([repository, targetPolicy]) => ({
         repository,
         mode: rolloutMode(targetPolicy?.mode),

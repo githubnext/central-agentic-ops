@@ -3,6 +3,7 @@ import { mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import { describe, expect, it } from "vitest";
+import { deriveOverviewSources } from "../../src/overview-data.js";
 
 describe("live Dashboard Language sources", () => {
   it("loads generated sources progressively and requires an explicit fixture opt-in", () => {
@@ -38,6 +39,7 @@ describe("live Dashboard Language sources", () => {
           repository: "githubnext/gh-aw-cao",
           path: "dependabot/aw.yml",
           name: "Dependabot",
+          id: "dependabot",
           workflows: [{ lockPath: ".github/workflows/dependabot.lock.yml" }],
         }],
         workflows: [{
@@ -113,6 +115,7 @@ describe("live Dashboard Language sources", () => {
       inventory: {
         workflows: [],
         bundles: [{
+          id: "dependabot",
           workflow: ".github/workflows/dependabot.md",
           compiled: false,
           missingWorkers: ["dependabot-worker"],
@@ -121,7 +124,10 @@ describe("live Dashboard Language sources", () => {
       },
       controlSettings: {
         packages: {
-          dependabot: { mode: "review" },
+          dependabot: {
+            mode: "review",
+            target_policies: { "github/gh-aw": { mode: "live" } },
+          },
         },
       },
     };
@@ -151,6 +157,7 @@ describe("live Dashboard Language sources", () => {
         repository: "gh-aw-cao",
         package: "dependabot",
         "package-inventory-warnings": 2,
+        "package-targets": [{ repository: "github/gh-aw", mode: "live" }],
         "workflow-active": "true",
         "rollout-mode": "review",
       });
@@ -167,6 +174,11 @@ describe("live Dashboard Language sources", () => {
         "coverage-end": "2026-08-30T12:00:00Z",
       });
       expect(sources.usage.rows[0]).toMatchObject({ run: "42", aic: 2.5 });
+      const overview = deriveOverviewSources(sources);
+      expect(overview["overview-managed-packages"].rows).toContainEqual(expect.objectContaining({
+        package: "dependabot",
+        "repository-modes": expect.arrayContaining([{ repository: "github/gh-aw", mode: "live" }]),
+      }));
       expect(sources.findings.rows[0]).toMatchObject({
         finding: "githubnext/gh-aw-cao-issue-1",
         "finding-kind": "authored-warning",
