@@ -492,6 +492,8 @@ function renderDashboardHorizon(dashboard, dashboardDefaults, horizonRange, eval
 }
 
 /**
+ * Combines declared coverage windows from non-empty temporal sources. Sources
+ * without valid coverage bounds are treated as timeless and do not widen the window.
  * @param {Record<string, LogicalSourceInput>} sources
  * @returns {{ start: string, end: string, hours: number } | null}
  */
