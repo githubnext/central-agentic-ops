@@ -369,7 +369,6 @@ Built-in views come from the site's dashboard.json. Package views come from thei
             sessionId: session.sessionId,
             ...errorMetadata(error),
           });
-          throw error;
         });
       }
     },
