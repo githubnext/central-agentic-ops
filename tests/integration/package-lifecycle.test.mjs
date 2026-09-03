@@ -264,10 +264,10 @@ test("gh aw add installs the focused UK AI Advisory package contract", { timeout
     assert.deepEqual(
       installedManifest.files.map(({ destination }) => destination).sort(),
       [
-        ".github/aw/uk-ai-advisory/implementation-status.md",
         ".github/aw/dashboards/uk-ai-advisory.json",
-        ".github/workflows/uk-ai-advisory-package-maintainer.md",
+        ".github/aw/uk-ai-advisory/implementation-status.md",
         ".github/workflows/cao.md",
+        ".github/workflows/uk-ai-advisory-package-maintainer.md",
         ".github/workflows/uk-ai-advisory.md",
       ],
       "focused UK AI Advisory package manifest must own its entry workflows and ledger",
