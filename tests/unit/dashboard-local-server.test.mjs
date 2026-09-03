@@ -7,10 +7,23 @@ import test from "node:test";
 import { startDashboardServer } from "../../dashboard/local-server.mjs";
 
 const dashboard = (pageId) => JSON.stringify({
-  "language-version": "1.0",
+  "language-version": "0.1.0",
   dashboard: {
+    id: "preview",
+    title: "Preview",
     navigation: [{ label: "Preview", pages: [pageId] }],
-    pages: [{ id: pageId, title: pageId, route: pageId, views: [] }],
+    pages: [{
+      id: pageId,
+      title: pageId,
+      kind: "custom",
+      views: [{
+        id: "summary",
+        title: "Summary",
+        mark: "element",
+        element: "summary-grid",
+        data: { sources: ["repositories"] },
+      }],
+    }],
   },
 }, null, 2);
 
@@ -148,6 +161,7 @@ test("local dashboard server optionally prompts Copilot to update the active vie
   await writeFile(path.join(root, "dashboard.json"), dashboard("built-in"));
   await writeFile(path.join(packageDirectory, "dashboard.json"), dashboard("package-one"));
   const prompts = [];
+  const promptGate = Promise.withResolvers();
   let runtimeClosed = false;
 
   const preview = await startDashboardServer({
@@ -160,7 +174,10 @@ test("local dashboard server optionally prompts Copilot to update the active vie
     },
     copilot: true,
     createCopilotRuntime: async () => ({
-      prompt: async (payload) => prompts.push(payload),
+      prompt: async (payload) => {
+        prompts.push(payload);
+        await promptGate.promise;
+      },
       close: async () => {
         runtimeClosed = true;
       },
@@ -175,7 +192,7 @@ test("local dashboard server optionally prompts Copilot to update the active vie
     assert.doesNotMatch(index, /<script[^>]+src=.*copilot-prompt/);
     assert.doesNotMatch(index, /eval\(/);
 
-    const response = await fetch(`${preview.url}/__dashboard_copilot`, {
+    const responsePromise = fetch(`${preview.url}/__dashboard_copilot`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -183,6 +200,18 @@ test("local dashboard server optionally prompts Copilot to update the active vie
       },
       body: JSON.stringify({ view: "package-one", request: "Add a failure trend" }),
     });
+    while (prompts.length === 0) await new Promise((resolve) => setTimeout(resolve, 5));
+    const concurrentResponse = await fetch(`${preview.url}/__dashboard_copilot`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Origin: new URL(preview.url).origin,
+      },
+      body: JSON.stringify({ view: "package-one", request: "Change the summary" }),
+    });
+    assert.equal(concurrentResponse.status, 409);
+    promptGate.resolve();
+    const response = await responsePromise;
     assert.equal(response.status, 200);
     assert.equal(prompts.length, 1);
     assert.equal(prompts[0].view, "package-one");
@@ -208,6 +237,19 @@ test("local dashboard server optionally prompts Copilot to update the active vie
     await rm(root, { recursive: true, force: true });
   }
   assert.equal(runtimeClosed, true);
+});
+
+test("local dashboard server rejects non-loopback Copilot hosts", async () => {
+  await assert.rejects(
+    startDashboardServer({
+      copilot: true,
+      host: "0.0.0.0",
+      downloadData: async () => {
+        throw new Error("download should not start");
+      },
+    }),
+    /Copilot mode requires a loopback --host/,
+  );
 });
 
 test("local dashboard server downloads the latest data artifact with GitHub CLI", async () => {

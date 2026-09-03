@@ -66,11 +66,11 @@ Catalog contributors can run `node dashboard/local-server.mjs`; the same server 
 Install the Copilot SDK and start the preview with the optional editing mode:
 
 ```bash
-npm install @github/copilot-sdk
+npm install @github/copilot-sdk yaml
 node .github/aw/dashboard/local-server.mjs --copilot
 ```
 
-Catalog contributors can use `node dashboard/local-server.mjs --copilot`. The SDK launches Copilot CLI in headless server mode using the signed-in Copilot user. The preview adds a prompt above the dashboard; submitting it starts a session for the active view, instructs Copilot to use the `generate-dashboard-ir` skill, validates the edited dashboard until it passes, and saves it. The existing file watcher then reloads the view. Copilot mode approves local tool use without prompting and should only be used in a trusted checkout.
+Catalog contributors can use `node dashboard/local-server.mjs --copilot`. The SDK launches Copilot CLI in headless server mode using the signed-in Copilot user. The preview adds a prompt above the dashboard; submitting it starts a session for the active view, instructs Copilot to use the `generate-dashboard-ir` skill, validates the edited dashboard until it passes, and saves it. The existing file watcher then reloads the view. Copilot mode only binds to a loopback host and restricts sessions to purpose-built tools that read editable dashboard sources, validate candidate content, and save the selected source.
 
 ## Standalone Pages site
 

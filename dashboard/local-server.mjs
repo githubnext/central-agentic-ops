@@ -11,8 +11,10 @@ import {
   realpath,
   rm,
   stat,
+  writeFile,
 } from "node:fs/promises";
 import { watch } from "node:fs";
+import { isIP } from "node:net";
 import { tmpdir } from "node:os";
 import { promisify } from "node:util";
 import {
@@ -27,6 +29,7 @@ import {
 } from "node:path";
 import { fileURLToPath } from "node:url";
 import { bundleDashboardFiles } from "./report/bundle-dashboards.mjs";
+import { validateDashboardDocument } from "./site/src/validator.js";
 
 const scriptDirectory = dirname(fileURLToPath(import.meta.url));
 const executeFile = promisify(execFile);
@@ -171,9 +174,39 @@ async function readJsonRequest(request, limit = 16 * 1024) {
   return JSON.parse(Buffer.concat(chunks).toString("utf8"));
 }
 
+function isLoopbackHost(host) {
+  const unbracketed = host.startsWith("[") && host.endsWith("]") ? host.slice(1, -1) : host;
+  if (unbracketed === "localhost" || unbracketed === "::1") return true;
+  if (isIP(unbracketed) !== 4) return false;
+  return unbracketed.split(".")[0] === "127";
+}
+
+function dashboardValidation(source) {
+  const result = validateDashboardDocument(source);
+  return result.ok
+    ? { ok: true, errors: [] }
+    : { ok: false, errors: result.errors.map(({ code, message, path }) => ({ code, message, path })) };
+}
+
+function errorMetadata(error) {
+  return {
+    name: error instanceof Error ? error.name : typeof error,
+    code: error && typeof error === "object" && "code" in error
+      ? String(error.code)
+      : undefined,
+  };
+}
+
 async function startCopilotRuntime({ workingDirectory, copilotExecutable }) {
-  const { approveAll, CopilotClient, RuntimeConnection } = await import("@github/copilot-sdk");
   console.log("Loading Copilot SDK runtime.", { workingDirectory });
+  let sdk;
+  try {
+    sdk = await import("@github/copilot-sdk");
+  } catch {
+    console.log("Copilot SDK runtime is unavailable. Install @github/copilot-sdk and yaml.");
+    throw new Error("Copilot mode requires @github/copilot-sdk and yaml.");
+  }
+  const { CopilotClient, defineTool, RuntimeConnection } = sdk;
   const client = new CopilotClient({
     connection: RuntimeConnection.forTcp({
       ...(copilotExecutable ? { path: copilotExecutable } : {}),
@@ -185,7 +218,10 @@ async function startCopilotRuntime({ workingDirectory, copilotExecutable }) {
     console.log("Starting Copilot headless server.");
     await client.start();
   } catch (error) {
-    await client.stop();
+    console.log("Copilot headless server failed to start.", errorMetadata(error));
+    await client.stop().catch((stopError) => {
+      console.log("Copilot cleanup after startup failure failed.", errorMetadata(stopError));
+    });
     throw error;
   }
   console.log("Copilot headless server started.");
@@ -198,10 +234,101 @@ async function startCopilotRuntime({ workingDirectory, copilotExecutable }) {
         viewDashboardPath,
         editableDashboardPaths,
       });
-      const session = await client.createSession({
-        workingDirectory,
-        onPermissionRequest: approveAll,
+      const allowedPaths = new Set(editableDashboardPaths);
+      const stringParameter = (description) => ({
+        type: "string",
+        description,
       });
+      const tools = [
+        defineTool("read_dashboard_source", {
+          description: "Read one of the editable original dashboard source files.",
+          parameters: {
+            type: "object",
+            properties: { path: stringParameter("Exact dashboard source path from the request.") },
+            required: ["path"],
+            additionalProperties: false,
+          },
+          skipPermission: true,
+          defer: "never",
+          handler: async ({ path }) => {
+            if (!allowedPaths.has(path)) {
+              console.log("Denied dashboard source read outside the allowlist.", { path });
+              throw new Error("That path is not an editable dashboard source.");
+            }
+            const source = await readFile(path, "utf8");
+            console.log("Read dashboard source for Copilot.", { path, bytes: Buffer.byteLength(source) });
+            return source;
+          },
+        }),
+        defineTool("validate_dashboard_source", {
+          description: "Validate candidate Dashboard Language YAML or JSON before saving it.",
+          parameters: {
+            type: "object",
+            properties: { source: stringParameter("Complete candidate dashboard source.") },
+            required: ["source"],
+            additionalProperties: false,
+          },
+          skipPermission: true,
+          defer: "never",
+          handler: async ({ source }) => {
+            const result = dashboardValidation(source);
+            console.log("Validated Copilot dashboard candidate.", {
+              ok: result.ok,
+              errorCount: result.errors.length,
+              bytes: Buffer.byteLength(source),
+            });
+            return result;
+          },
+        }),
+        defineTool("save_dashboard_source", {
+          description: "Validate and save the complete source for the current view's original dashboard file.",
+          parameters: {
+            type: "object",
+            properties: { source: stringParameter("Complete validated dashboard source.") },
+            required: ["source"],
+            additionalProperties: false,
+          },
+          skipPermission: true,
+          defer: "never",
+          handler: async ({ source }) => {
+            const result = dashboardValidation(source);
+            if (!result.ok) {
+              console.log("Rejected invalid Copilot dashboard save.", {
+                path: viewDashboardPath,
+                errorCount: result.errors.length,
+              });
+              return result;
+            }
+            await writeFile(viewDashboardPath, source);
+            console.log("Saved validated Copilot dashboard source.", {
+              path: viewDashboardPath,
+              bytes: Buffer.byteLength(source),
+            });
+            return { ok: true };
+          },
+        }),
+      ];
+      let session;
+      try {
+        session = await client.createSession({
+          workingDirectory,
+          availableTools: [
+            "builtin:skill",
+            "builtin:task_complete",
+            "custom:read_dashboard_source",
+            "custom:validate_dashboard_source",
+            "custom:save_dashboard_source",
+          ],
+          tools,
+          onPermissionRequest: async (permission) => {
+            console.log("Denied unexpected Copilot permission request.", { kind: permission.kind });
+            return { kind: "reject", feedback: "This session only permits the dashboard editing tools." };
+          },
+        });
+      } catch (error) {
+        console.log("Copilot dashboard session creation failed.", errorMetadata(error));
+        throw error;
+      }
       console.log("Copilot dashboard session created.", { sessionId: session.sessionId, view });
       const unsubscribe = session.on((event) => {
         console.log("Copilot dashboard session event.", { sessionId: session.sessionId, type: event.type });
@@ -212,28 +339,43 @@ async function startCopilotRuntime({ workingDirectory, copilotExecutable }) {
           view,
           requestLength: request.length,
         });
-        await session.sendAndWait({
-          prompt: `Use the /generate-dashboard-ir skill to update the current dashboard view named ${JSON.stringify(view)}.
+        try {
+          await session.sendAndWait({
+            prompt: `Use the /generate-dashboard-ir skill to update the current dashboard view named ${JSON.stringify(view)}.
 
 Apply this request: ${request}
 
-The composed preview dashboard is ${JSON.stringify(bundledDashboardPath)}. It is a generated temporary file: inspect it if useful, but do not edit it.
+The composed preview dashboard is ${JSON.stringify(bundledDashboardPath)}. It is a generated temporary file and is provided only for context; do not read or edit it.
 The original dashboard source most likely defining this view is ${JSON.stringify(viewDashboardPath)}.
 The complete set of editable original dashboard sources is:
 ${editableDashboardPaths.map((path) => `- ${path}`).join("\n")}
 
-Built-in views come from the site's dashboard.json. Package views come from their package dashboard.json source (for an installed control repository, under .github/aw/dashboards; for this catalog, in the matching top-level package directory). Edit the original source that defines the named view, not the composed preview file. Follow the skill and the repository's dashboard specification, run the dashboard validator repeatedly until the edited document passes, and save the source file so the local preview reloads. Complete the edit rather than only describing it.`,
-        });
+Built-in views come from the site's dashboard.json. Package views come from their package dashboard.json source (for an installed control repository, under .github/aw/dashboards; for this catalog, in the matching top-level package directory). Use only read_dashboard_source, validate_dashboard_source, and save_dashboard_source to inspect, validate, and save the original source that defines the named view. Run validate_dashboard_source repeatedly until it passes, then use save_dashboard_source so the local preview reloads. Complete the edit rather than only describing it.`,
+          });
+        } catch (error) {
+          console.log("Copilot dashboard session request failed.", {
+            sessionId: session.sessionId,
+            view,
+            ...errorMetadata(error),
+          });
+          throw error;
+        }
         console.log("Copilot dashboard request completed.", { sessionId: session.sessionId, view });
       } finally {
         unsubscribe();
         console.log("Disconnecting Copilot dashboard session.", { sessionId: session.sessionId });
-        await session.disconnect();
+        await session.disconnect().catch((error) => {
+          console.log("Copilot dashboard session disconnect failed.", {
+            sessionId: session.sessionId,
+            ...errorMetadata(error),
+          });
+          throw error;
+        });
       }
     },
     async close() {
       const errors = await client.stop();
-      for (const error of errors) console.log("Copilot shutdown error:", error.message);
+      for (const error of errors) console.log("Copilot shutdown error.", errorMetadata(error));
     },
   };
 }
@@ -298,6 +440,13 @@ export async function startDashboardServer({
   host = "127.0.0.1",
   port = 4173,
 } = {}) {
+  if (copilot && !isLoopbackHost(host)) {
+    console.log("Copilot mode configuration rejected.", {
+      reason: "host is not loopback",
+      host,
+    });
+    throw new Error("Copilot mode requires a loopback --host such as 127.0.0.1 or ::1.");
+  }
   const resolvedSiteRoot = await realpath(siteRoot);
   const baseDashboardPath = join(resolvedSiteRoot, "dashboard.json");
   const temporaryDirectory = await mkdtemp(join(tmpdir(), "cao-dashboard-preview-"));
@@ -323,6 +472,7 @@ export async function startDashboardServer({
   let refreshPromise = Promise.resolve();
   let closed = false;
   let copilotRuntime;
+  let copilotRequestActive = false;
 
   const broadcastDashboard = () => {
     console.log("Broadcasting dashboard preview update.", { socketCount: sockets.size });
@@ -436,14 +586,31 @@ export async function startDashboardServer({
         }
         if (request.headers.origin !== `http://${expectedAuthority}`
             || !request.headers["content-type"]?.startsWith("application/json")) {
+          console.log("Rejected Copilot request with invalid headers.", {
+            hasOrigin: typeof request.headers.origin === "string",
+            contentType: request.headers["content-type"] || null,
+          });
           response.writeHead(400).end("Bad request\n");
           return;
         }
+        if (copilotRequestActive) {
+          console.log("Rejected concurrent Copilot dashboard request.");
+          response.writeHead(409, { "Content-Type": contentTypes.get(".json") });
+          response.end(JSON.stringify({ error: "A Copilot dashboard request is already running." }));
+          return;
+        }
+        copilotRequestActive = true;
         try {
           const payload = await readJsonRequest(request);
           if (typeof payload?.view !== "string" || payload.view.length < 1 || payload.view.length > 200
               || typeof payload?.request !== "string" || payload.request.trim().length < 1
               || payload.request.length > 10000) {
+            console.log("Rejected invalid Copilot dashboard request payload.", {
+              viewValid: typeof payload?.view === "string"
+                && payload.view.length >= 1
+                && payload.view.length <= 200,
+              requestLength: typeof payload?.request === "string" ? payload.request.length : null,
+            });
             response.writeHead(400, { "Content-Type": contentTypes.get(".json") });
             response.end(JSON.stringify({ error: "A valid view and request are required." }));
             return;
@@ -465,12 +632,28 @@ export async function startDashboardServer({
             editableDashboardPaths,
             viewDashboardPath,
           });
+          const savedSource = await readFile(viewDashboardPath, "utf8");
+          const validation = dashboardValidation(savedSource);
+          if (!validation.ok) {
+            console.log("Copilot dashboard request left an invalid source.", {
+              view: payload.view,
+              viewDashboardPath,
+              errorCount: validation.errors.length,
+            });
+            throw new Error("Copilot produced an invalid dashboard source.");
+          }
+          console.log("Verified saved Copilot dashboard source.", {
+            view: payload.view,
+            viewDashboardPath,
+          });
           response.writeHead(200, { "Content-Type": contentTypes.get(".json") });
           response.end(JSON.stringify({ ok: true }));
         } catch (error) {
-          console.log(`Copilot request failed: ${error instanceof Error ? error.message : String(error)}`);
+          console.log("Copilot request failed.", errorMetadata(error));
           response.writeHead(500, { "Content-Type": contentTypes.get(".json") });
           response.end(JSON.stringify({ error: "Copilot could not update the view." }));
+        } finally {
+          copilotRequestActive = false;
         }
         return;
       }

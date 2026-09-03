@@ -89,6 +89,8 @@ resources:
     destination: .github/aw/dashboard/site/src/runtime-data.js
   - source: dashboard/site/src/specification.js
     destination: .github/aw/dashboard/site/src/specification.js
+  - source: dashboard/site/src/validator.js
+    destination: .github/aw/dashboard/site/src/validator.js
   - source: dashboard/site/src/source-cache.js
     destination: .github/aw/dashboard/site/src/source-cache.js
   - source: dashboard/site/src/styles.js
