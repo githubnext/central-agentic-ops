@@ -289,6 +289,7 @@ function buildPresenterModuleUrl() {
 
 test('DLS-DOC-014 horizon help is available on hover and keyboard focus', async ({ page }) => {
   const presenterModuleUrl = buildPresenterModuleUrl();
+  await page.setViewportSize({ width: 393, height: 852 });
   await page.setContent(`
     <div id="root"></div>
     <script type="module">
@@ -334,6 +335,10 @@ test('DLS-DOC-014 horizon help is available on hover and keyboard focus', async 
   await expect(tooltip).toBeHidden();
   await trigger.hover();
   await expect(tooltip).toBeVisible();
+  const tooltipBox = await tooltip.boundingBox();
+  expect(tooltipBox).not.toBeNull();
+  expect(tooltipBox?.x).toBeGreaterThanOrEqual(0);
+  expect((tooltipBox?.x ?? 0) + (tooltipBox?.width ?? 0)).toBeLessThanOrEqual(393);
   await expect(tooltip).toContainText('StartAug 25, 2026, 12:00 PM UTC');
   await expect(tooltip).toContainText('EndSep 1, 2026, 12:00 PM UTC');
   await expect(tooltip).toContainText('Duration1 week');
