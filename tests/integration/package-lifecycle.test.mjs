@@ -38,8 +38,9 @@ const awMaintenanceExpectedFiles = [
   ".github/graders/aw-maintenance-compiler-security-operational-value.sh",
   ".github/workflows/aw-failures-investigator.md",
   ".github/workflows/aw-maintenance-compiler-security.md",
+  ".github/workflows/aw-maintenance-upgrade.md",
   ".github/workflows/aw-maintenance.md",
-  ".github/workflows/cao.md",
+  ".github/workflows/shared/cao.md",
   ".github/workflows/shared/control.md",
 ];
 const advisoryExpectedFiles = [
