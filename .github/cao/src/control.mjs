@@ -22,6 +22,7 @@ const POLICY_PATH = ".github/workflows/cao.json";
 const REPOSITORY_PATTERN = /^[A-Za-z0-9][A-Za-z0-9-]*\/[A-Za-z0-9._-]+$/;
 const SHA_PATTERN = /^[0-9a-fA-F]{40,64}$/;
 const MINIMUM_GITHUB_API_REQUESTS = 100;
+const GITHUB_API_CACHE_DURATION = "60s";
 const GITHUB_RATE_LIMIT_DOCS = "https://docs.github.com/en/rest/using-the-rest-api/rate-limits-for-the-rest-api";
 const GITHUB_REST_BEST_PRACTICES = "https://docs.github.com/en/rest/using-the-rest-api/best-practices-for-using-the-rest-api";
 const GITHUB_APP_ACTIONS_DOCS = "https://docs.github.com/en/apps/creating-github-apps/authenticating-with-a-github-app/making-authenticated-api-requests-with-a-github-app-in-a-github-actions-workflow";
@@ -61,7 +62,7 @@ function run(command, args, options = {}) {
 }
 
 function ghApi(endpoint, { fields = {}, jq = "" } = {}) {
-  const args = ["api"];
+  const args = ["api", "--cache", GITHUB_API_CACHE_DURATION];
   if (Object.keys(fields).length > 0) args.push("--method", "GET");
   args.push(endpoint);
   for (const [key, value] of Object.entries(fields)) args.push("-f", `${key}=${value}`);
