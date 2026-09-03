@@ -394,7 +394,7 @@ function securityObservation(run, feature, analysis, signal, status, count, subj
     ...repositoryParts(run.repository),
     workflow: run.workflowPath?.replace(/\.lock\.yml$/, ".md") || run.workflowName || "",
     run: String(run.runId),
-    "security-observation": `${run.repository}:${run.runId}:${feature}:${analysis}:${signal}:${subject}`,
+    "security-observation": JSON.stringify([run.repository, run.runId, feature, analysis, signal, subject]),
     "security-feature": feature,
     "security-analysis": analysis,
     "security-signal": signal,
