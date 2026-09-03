@@ -3,7 +3,7 @@ import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 export const packageDashboardNames = [
-  'advisory',
+  'uk-ai-advisory',
   'ambient-context',
   'aw-maintenance',
   'dependabot',

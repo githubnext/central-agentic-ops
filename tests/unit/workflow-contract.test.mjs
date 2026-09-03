@@ -21,7 +21,7 @@ test("packages and repository workflows pin the supported gh-aw version", () => 
   const manifests = [
     "aw.yml",
     "activity/aw.yml",
-    "advisory/aw.yml",
+    "uk-ai-advisory/aw.yml",
     "ambient-context/aw.yml",
     "aw-maintenance/aw.yml",
     "dashboard/aw.yml",
@@ -46,7 +46,7 @@ test("catalog packages declare their current experimental maturity", () => {
   const manifests = [
     "aw.yml",
     "activity/aw.yml",
-    "advisory/aw.yml",
+    "uk-ai-advisory/aw.yml",
     "ambient-context/aw.yml",
     "aw-maintenance/aw.yml",
     "dashboard/aw.yml",
@@ -385,8 +385,8 @@ test("enterprise-scale limits remain bounded across inventory sizes", () => {
 test("enterprise defaults, budgets, timeouts, and concurrency are finite", () => {
   const expected = {
     "uk-ai-advisory.md": { credits: 250, timeout: 15, dispatchMax: 50, workers: 1 },
-    "advisory-package-maintainer.md": { credits: 200, timeout: 20 },
-    "advisory-uk-ai-operational-resilience.md": { credits: 600, timeout: 30 },
+    "uk-ai-advisory-package-maintainer.md": { credits: 200, timeout: 20 },
+    "uk-ai-advisory-operational-resilience.md": { credits: 600, timeout: 30 },
     "ambient-context.md": { credits: 250, timeout: 15, dispatchMax: 20, workers: 2 },
     "aw-maintenance.md": { credits: 250, timeout: 15, dispatchMax: 50, workers: 3 },
     "dependabot.md": { credits: 250, timeout: 15, dispatchMax: 50, workers: 1 },
@@ -757,7 +757,7 @@ test("release drafts reviewed notes for an explicit semantic version before publ
 });
 
 test("package manifests exclude repository-only tests", () => {
-  for (const relativePath of ["aw.yml", join("advisory", "aw.yml"), join("ambient-context", "aw.yml"), join("aw-maintenance", "aw.yml"), join("dashboard", "aw.yml"), join("dependabot", "aw.yml"), join("eu-cra-compliance", "aw.yml"), join("optimization", "aw.yml"), join("self-care", "aw.yml"), join("software-development-practices", "aw.yml")]) {
+  for (const relativePath of ["aw.yml", join("uk-ai-advisory", "aw.yml"), join("ambient-context", "aw.yml"), join("aw-maintenance", "aw.yml"), join("dashboard", "aw.yml"), join("dependabot", "aw.yml"), join("eu-cra-compliance", "aw.yml"), join("optimization", "aw.yml"), join("self-care", "aw.yml"), join("software-development-practices", "aw.yml")]) {
     const manifest = readFileSync(join(root, relativePath), "utf8");
     assert.doesNotMatch(manifest, /(?:review-smoke|enterprise-canary|enterprise-stress|tests\/e2e|\.github\/aw\/e2e)/, relativePath);
   }
@@ -1194,8 +1194,8 @@ test("live workers require target-owned package authority before agent execution
   assert.match(precompute, /validateWorkerDispatch\(context\)[\s\S]*validateLiveAuthority\(context\)[\s\S]*writeWorkerPrecompute\(context, targetAuthoritySha\)/);
 
   for (const [name, bundle] of [
-    ["uk-ai-advisory.md", "advisory"],
-    ["advisory-uk-ai-operational-resilience.md", "advisory"],
+    ["uk-ai-advisory.md", "uk-ai-advisory"],
+    ["uk-ai-advisory-operational-resilience.md", "uk-ai-advisory"],
     ["ambient-context.md", "ambient-context"],
     ["ambient-context-agents-md-curator.md", "ambient-context"],
     ["ambient-context-skills-curator.md", "ambient-context"],
@@ -1231,7 +1231,7 @@ test("live workers require target-owned package authority before agent execution
 
 test("orchestrators use checked-in policy with independent manual narrowing", () => {
   for (const [name, packageName] of [
-    ["uk-ai-advisory.md", "advisory"],
+    ["uk-ai-advisory.md", "uk-ai-advisory"],
     ["ambient-context.md", "ambient-context"],
     ["aw-maintenance.md", "aw-maintenance"],
     ["dependabot.md", "dependabot"],
@@ -1259,8 +1259,8 @@ test("operation workflows optionally load per-operation markdown steering", () =
   assert.match(packageSkill, /\{\{#runtime-import\? \.github\/cao\/<package-slug>\.md\}\}/);
 
   for (const [name, operation] of [
-    ["uk-ai-advisory.md", "advisory"],
-    ["advisory-uk-ai-operational-resilience.md", "advisory"],
+    ["uk-ai-advisory.md", "uk-ai-advisory"],
+    ["uk-ai-advisory-operational-resilience.md", "uk-ai-advisory"],
     ["ambient-context.md", "ambient-context"],
     ["ambient-context-agents-md-curator.md", "ambient-context"],
     ["ambient-context-skills-curator.md", "ambient-context"],
@@ -1395,7 +1395,7 @@ test("ambient context emits a no-op safe output when no workers are dispatched",
 
 test("every worker uses the standard dispatch envelope and safe mode vocabulary", () => {
   const workerNames = [
-    ["advisory-uk-ai-operational-resilience.md", "advisory", "uk-ai-operational-resilience"],
+    ["uk-ai-advisory-operational-resilience.md", "uk-ai-advisory", "operational-resilience"],
     ["ambient-context-agents-md-curator.md", "ambient-context", "agents-md-curator"],
     ["ambient-context-skills-curator.md", "ambient-context", "skills-curator"],
     ["aw-failures-investigator.md", "aw-maintenance", "failures-investigator"],
@@ -1456,9 +1456,9 @@ test("every worker uses the standard dispatch envelope and safe mode vocabulary"
 
 test("Advisory preserves UK AI guidance and human-review boundaries", () => {
   const orchestrator = workflow("uk-ai-advisory.md");
-  const maintainer = workflow("advisory-package-maintainer.md");
-  const worker = workflow("advisory-uk-ai-operational-resilience.md");
-  const readme = readFileSync(join(root, "advisory", "README.md"), "utf8");
+  const maintainer = workflow("uk-ai-advisory-package-maintainer.md");
+  const worker = workflow("uk-ai-advisory-operational-resilience.md");
+  const readme = readFileSync(join(root, "uk-ai-advisory", "README.md"), "utf8");
 
   assert.match(orchestrator, /^name: "UK AI Advisory"$/m);
   assert.match(worker, /^name: "UK AI Advisory \/ Resilience"$/m);
@@ -1469,7 +1469,7 @@ test("Advisory preserves UK AI guidance and human-review boundaries", () => {
   }
 
   assert.match(orchestrator, /schedule: "hourly"/);
-  assert.match(orchestrator, /workflows: \[advisory-uk-ai-operational-resilience\]/);
+  assert.match(orchestrator, /workflows: \[uk-ai-advisory-operational-resilience\]/);
   assert.match(orchestrator, /Use bounded two-stage discovery/);
   assert.match(orchestrator, /AI is a threat accelerator, not an eligibility requirement/);
   assert.match(orchestrator, /prolonged inactivity without credible ownership or automated hygiene is a priority signal/);
@@ -1511,7 +1511,7 @@ test("Advisory preserves UK AI guidance and human-review boundaries", () => {
   assert.match(maintainer, /original specification and current authoritative GOV\.UK guidance/);
   assert.match(maintainer, /https:\/\/www\.gov\.uk\/guidance\/ai-open-code-and-vulnerability-risk-in-the-public-sector/);
   assert.match(maintainer, /update only the applicable ledger path/i);
-  assert.match(maintainer, /allowed-files:\n\s+- "advisory\/implementation-status\.md"\n\s+- "\.github\/aw\/advisory\/implementation-status\.md"/);
+  assert.match(maintainer, /allowed-files:\n\s+- "uk-ai-advisory\/implementation-status\.md"\n\s+- "\.github\/aw\/uk-ai-advisory\/implementation-status\.md"/);
   assert.match(maintainer, /draft: true/);
   assert.match(maintainer, /create-issue:[\s\S]*?deduplicate-by-title: true[\s\S]*?max: 1/);
   assert.match(maintainer, /If the authoritative source or a trusted package file cannot be accessed or reconciled, call `report_incomplete`/);
@@ -1519,7 +1519,7 @@ test("Advisory preserves UK AI guidance and human-review boundaries", () => {
   assert.doesNotMatch(maintainer, /shared\/control\.md/);
   assert.doesNotMatch(maintainer, /^graders:/m);
 
-  const ledger = readFileSync(join(root, "advisory", "implementation-status.md"), "utf8");
+  const ledger = readFileSync(join(root, "uk-ai-advisory", "implementation-status.md"), "utf8");
   assert.match(ledger, /UK-AI-001/);
   assert.match(ledger, /UK-AI-015/);
   assert.match(ledger, /AI is a threat accelerator, not an eligibility requirement/);
@@ -1528,7 +1528,7 @@ test("Advisory preserves UK AI guidance and human-review boundaries", () => {
 });
 
 test("UK AI advisory worker uses actionable progressive-disclosure reports", () => {
-  const worker = workflow("advisory-uk-ai-operational-resilience.md");
+  const worker = workflow("uk-ai-advisory-operational-resilience.md");
 
   assert.match(worker, /executive summary[\s\S]*decision-relevant result[\s\S]*key metrics[\s\S]*recommended next action/i);
   assert.match(worker, /Keep critical findings[\s\S]*recommended next action visible/i);
@@ -2063,7 +2063,7 @@ test("clean-room compilation emits the expected GitHub Actions settings", { time
       .filter((name) => name.endsWith(".lock.yml"))
       .sort();
     const packageLockNames = [
-      "advisory-uk-ai-operational-resilience.lock.yml",
+      "uk-ai-advisory-operational-resilience.lock.yml",
       "uk-ai-advisory.lock.yml",
       "ambient-context-agents-md-curator.lock.yml",
       "ambient-context-skills-curator.lock.yml",
@@ -2097,7 +2097,7 @@ test("clean-room compilation emits the expected GitHub Actions settings", { time
     ];
     const expectedLockNames = [
       ...packageLockNames,
-      "advisory-package-maintainer.lock.yml",
+      "uk-ai-advisory-package-maintainer.lock.yml",
       "dashboard-authoring-corpus.lock.yml",
       "multi-device-docs-tester.lock.yml",
       "eu-cra-compliance-package-maintainer.lock.yml",
@@ -2138,7 +2138,7 @@ test("clean-room compilation emits the expected GitHub Actions settings", { time
     }
 
     const orchestratorGates = new Map([
-      ["uk-ai-advisory.lock.yml", "advisory"],
+      ["uk-ai-advisory.lock.yml", "uk-ai-advisory"],
       ["ambient-context.lock.yml", "ambient-context"],
       ["aw-maintenance.lock.yml", "aw-maintenance"],
       ["dependabot.lock.yml", "dependabot"],
@@ -2166,7 +2166,7 @@ test("clean-room compilation emits the expected GitHub Actions settings", { time
     }
 
     const workerGates = new Map([
-      ["advisory-uk-ai-operational-resilience.lock.yml", ["advisory", "uk-ai-operational-resilience"]],
+      ["uk-ai-advisory-operational-resilience.lock.yml", ["uk-ai-advisory", "operational-resilience"]],
       ["ambient-context-agents-md-curator.lock.yml", ["ambient-context", "agents-md-curator"]],
       ["ambient-context-skills-curator.lock.yml", ["ambient-context", "skills-curator"]],
       ["aw-failures-investigator.lock.yml", ["aw-maintenance", "failures-investigator"]],
@@ -2205,9 +2205,9 @@ test("clean-room compilation emits the expected GitHub Actions settings", { time
     assert.match(generatedReviewBundle, /GH_AW_SAFE_OUTPUTS_STAGED/);
     assert.doesNotMatch(generatedReviewBundle, /GH_AW_SAFE_OUTPUTS_STAGED:.*preview_only/);
 
-    const advisoryMaintainer = workflow("advisory-package-maintainer.lock.yml", generatedDirectory);
+    const advisoryMaintainer = workflow("uk-ai-advisory-package-maintainer.lock.yml", generatedDirectory);
     assert.match(advisoryMaintainer, /schedule:/);
-    assert.match(advisoryMaintainer, /advisory\/implementation-status\.md/);
+    assert.match(advisoryMaintainer, /uk-ai-advisory\/implementation-status\.md/);
     assert.match(advisoryMaintainer, /copilot\/gpt-5\.4/);
 
     const craMaintainer = workflow("eu-cra-compliance-package-maintainer.lock.yml", generatedDirectory);
@@ -2613,7 +2613,7 @@ test("Dashboard inventory links multiline orchestrator worker lists", () => {
           "software-development-practices-nist-ssdf",
         ],
       },
-      { id: "uk-ai-advisory", workers: ["advisory-uk-ai-operational-resilience"] },
+      { id: "uk-ai-advisory", workers: ["uk-ai-advisory-operational-resilience"] },
     ]);
   } finally {
     rmSync(temporaryRoot, { recursive: true, force: true });

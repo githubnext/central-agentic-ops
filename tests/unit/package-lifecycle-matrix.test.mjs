@@ -6,10 +6,10 @@ import { selectPackageLifecycleSuites } from "../../scripts/package-lifecycle-ma
 const names = (files) => selectPackageLifecycleSuites(files).map(({ name }) => name);
 
 test("package lifecycle matrix selects only packages owning changed files", () => {
-  assert.deepEqual(names(["advisory/dashboard.json"]), ["Advisory"]);
+  assert.deepEqual(names(["uk-ai-advisory/dashboard.json"]), ["UK AI Advisory"]);
   assert.deepEqual(
     names([".github/workflows/shared/control.md"]),
-    ["root", "AW Maintenance", "EU CRA", "Advisory", "SelfCare", "Software Development Practices", "Dependabot"],
+    ["root", "AW Maintenance", "EU CRA", "UK AI Advisory", "SelfCare", "Software Development Practices", "Dependabot"],
   );
   assert.deepEqual(
     names(["dashboard/site/index.html"]),

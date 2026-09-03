@@ -12,21 +12,21 @@ test("docs dashboard installs renderer assets and configured package pages", asy
   const destination = pathToFileURL(`${root}/cao/`);
   const controlSettings = {
     web: { favicon: "https://example.com/dashboard.svg" },
-    packages: { advisory: {}, dependabot: {} },
+    packages: { "uk-ai-advisory": {}, dependabot: {} },
   };
 
   try {
     await buildDashboardSite({ destination, controlSettings });
     const dashboard = JSON.parse(await readFile(new URL("dashboard.json", destination), "utf8"));
     const pageIds = dashboard.dashboard.pages.map(({ id }) => id);
-    assert.ok(pageIds.includes("advisory-dashboard"));
+    assert.ok(pageIds.includes("uk-ai-advisory-dashboard"));
     assert.ok(pageIds.includes("dependabot-dashboard"));
     assert.ok(!pageIds.includes("ambient-context-dashboard"));
     assert.match(
       await readFile(new URL("index.html", destination), "utf8"),
       /<link rel="icon" href="https:\/\/example\.com\/dashboard\.svg">/,
     );
-    for (const pageId of ["advisory-dashboard", "dependabot-dashboard"]) {
+    for (const pageId of ["uk-ai-advisory-dashboard", "dependabot-dashboard"]) {
       assert.match(await readFile(new URL(`${pageId}/index.html`, destination), "utf8"), new RegExp(`#page-${pageId}`));
     }
 

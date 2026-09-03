@@ -1,13 +1,13 @@
 {
   "language-version": "0.1.0",
   "dashboard": {
-    "id": "advisory-dashboard",
+    "id": "uk-ai-advisory-dashboard",
     "title": "UK AI Advisory",
     "description": "Track resilience-review activation, frozen advisory reports, and explicit human acceptance of non-binding findings.",
     "repository": "githubnext/gh-aw-cao",
     "pages": [
       {
-        "id": "advisory-dashboard",
+        "id": "uk-ai-advisory-dashboard",
         "kind": "custom",
         "title": "UK AI Advisory",
         "navigation-label": "UK AI advisory",
@@ -26,8 +26,8 @@
               "filters": {
                 "workflow": [
                   ".github/workflows/uk-ai-advisory.md",
-                  ".github/workflows/advisory-package-maintainer.md",
-                  ".github/workflows/advisory-uk-ai-operational-resilience.md"
+                  ".github/workflows/uk-ai-advisory-package-maintainer.md",
+                  ".github/workflows/uk-ai-advisory-operational-resilience.md"
                 ]
               }
             },
@@ -54,7 +54,7 @@
               "source": "outcomes",
               "filters": {
                 "package": [
-                  "advisory"
+                  "uk-ai-advisory"
                 ]
               },
               "limit": 50
@@ -99,7 +99,7 @@
               "source": "operational-values",
               "filters": {
                 "workflow": [
-                  ".github/workflows/advisory-uk-ai-operational-resilience.md"
+                  ".github/workflows/uk-ai-advisory-operational-resilience.md"
                 ]
               },
               "limit": 50
@@ -152,7 +152,7 @@
               },
               "filters": {
                 "workflow": [
-                  ".github/workflows/advisory-uk-ai-operational-resilience.md"
+                  ".github/workflows/uk-ai-advisory-operational-resilience.md"
                 ]
               }
             },
@@ -182,7 +182,7 @@
       {
         "label": "Package operations",
         "pages": [
-          "advisory-dashboard"
+          "uk-ai-advisory-dashboard"
         ]
       }
     ]

@@ -159,7 +159,7 @@ describe('dashboard document validation', () => {
       'ambient-context-dashboard',
       'aw-maintenance-dashboard',
       'dependabot-dashboard',
-      'advisory-dashboard',
+      'uk-ai-advisory-dashboard',
       'eu-cra-compliance-dashboard',
       'optimization-dashboard'
     ];
