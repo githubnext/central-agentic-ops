@@ -46,8 +46,14 @@ describe('declarative dispatch view', () => {
 
     const dispatchTable = dispatchPage.views.find((/** @type {{ id: string }} */ view) => view.id === 'package-worker-dispatches');
     const packageStateTable = dispatchPage.views.find((/** @type {{ id: string }} */ view) => view.id === 'package-dispatch-state');
+    const activationDistribution = dispatchPage.views.find((/** @type {{ id: string }} */ view) => view.id === 'dispatch-status');
     const packageDistribution = dispatchPage.views.find((/** @type {{ id: string }} */ view) => view.id === 'dispatch-package-distribution');
     const activationSummary = dispatchPage.views.find((/** @type {{ id: string }} */ view) => view.id === 'dispatch-activation-summary');
+    expect(dispatchPage.views.slice(0, 2).map((/** @type {{ id: string }} */ view) => view.id)).toEqual([
+      'dispatch-status',
+      'dispatch-package-distribution'
+    ]);
+    expect(activationDistribution).toMatchObject({ mark: 'chart', chart: 'pie', layout: 'half' });
     expect(packageDistribution).toMatchObject({
       mark: 'chart',
       chart: 'pie',
