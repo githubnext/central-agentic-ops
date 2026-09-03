@@ -1647,13 +1647,30 @@ function validateTableActions(encoding, encodingNode, mark, sourceName, path, er
     validateStringField(action.intent, `${actionPath}.intent`, true, errors);
     validateStringField(action.presentation, `${actionPath}.presentation`, true, errors);
     if (typeof action.presentation === 'string' && !TABLE_ACTION_PRESENTATION_VALUES.includes(action.presentation)) {
-      errors.push(createError(ERROR_CODES.nonCanonicalVocabularyOrIdentifier, 'action presentation must be copy-prompt or copy-command.', `${actionPath}.presentation`));
+      errors.push(createError(ERROR_CODES.nonCanonicalVocabularyOrIdentifier, 'action presentation must be copy-prompt.', `${actionPath}.presentation`));
     }
     validateStringField(action.icon, `${actionPath}.icon`, true, errors);
     if (typeof action.icon === 'string' && !PAGE_ICON_VALUES.includes(action.icon)) {
       errors.push(createError(ERROR_CODES.nonCanonicalVocabularyOrIdentifier, 'action icon must use one canonical icon value.', `${actionPath}.icon`));
     }
     validateStringField(action.label, `${actionPath}.label`, true, errors);
+    if (!Array.isArray(action.context) || action.context.length === 0) {
+      errors.push(createError(ERROR_CODES.missingOrInvalidRequiredField, 'action context must be a non-empty sequence of source fields.', `${actionPath}.context`));
+    } else {
+      const contextFields = new Set();
+      action.context.forEach((field, fieldIndex) => {
+        const fieldPath = `${actionPath}.context[${fieldIndex}]`;
+        validateStringField(field, fieldPath, true, errors);
+        if (typeof field !== 'string') return;
+        if (contextFields.has(field)) {
+          errors.push(createError(ERROR_CODES.missingOrInvalidRequiredField, 'action context fields must be unique.', fieldPath));
+        }
+        contextFields.add(field);
+        if (sourceName && !SOURCE_FIELDS[/** @type {keyof typeof SOURCE_FIELDS} */ (sourceName)]?.includes(field)) {
+          errors.push(createError(ERROR_CODES.invalidScopeFilterTimeAggregationOrOrderReference, 'action context field must be declared by data.source.', fieldPath));
+        }
+      });
+    }
     if (action.when === undefined) return;
     if (!isPlainObject(action.when)) {
       errors.push(createError(ERROR_CODES.missingOrInvalidRequiredField, 'action when must be a mapping.', `${actionPath}.when`));

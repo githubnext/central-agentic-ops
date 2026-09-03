@@ -88,6 +88,11 @@ export function deriveWorkflowSources(sources) {
       source: 'engine-usage-summary',
       rows: summarizeEngineUsage(usage),
       metadata: usageMetadata
+    },
+    'run-aggregate-summary': {
+      source: 'run-aggregate-summary',
+      rows: summarizeRuns(runs),
+      metadata: sources.runs?.metadata ?? unavailableMetadata()
     }
   };
 }
@@ -241,6 +246,48 @@ function summarizeEngineUsage(usage) {
       models: joinValues(summary.models)
     };
   }).sort(compareUsageSummaries);
+}
+
+/**
+ * @param {Row[]} runs
+ * @returns {Row[]}
+ */
+function summarizeRuns(runs) {
+  const summaries = new Map();
+  for (const row of runs) {
+    const values = {
+      engine: text(row.engine) || 'unknown',
+      'engine-version': text(row['engine-version']) || 'unknown',
+      'requested-model': text(row['requested-model']) || 'unknown',
+      'resolved-model': text(row['resolved-model']) || 'unknown',
+      'run-conclusion': text(row['run-conclusion']) || 'unknown'
+    };
+    const key = JSON.stringify(Object.values(values));
+    const summary = summaries.get(key) ?? {
+      ...values,
+      runs: new Set(),
+      'run-link': isPlainObject(row['run-link'])
+        ? {
+            ...row['run-link'],
+            'dashboard-href': '#page-runs',
+            'dashboard-label': 'View runs table'
+          }
+        : undefined
+    };
+    summary.runs.add(runIdentity(row));
+    summaries.set(key, summary);
+  }
+  return [...summaries.values()]
+    .map((summary) => ({
+      engine: summary.engine,
+      'engine-version': summary['engine-version'],
+      'requested-model': summary['requested-model'],
+      'resolved-model': summary['resolved-model'],
+      'run-conclusion': summary['run-conclusion'],
+      runs: summary.runs.size,
+      ...(summary['run-link'] ? { 'run-link': summary['run-link'] } : {})
+    }))
+    .sort((left, right) => right.runs - left.runs || text(left.engine).localeCompare(text(right.engine)));
 }
 
 /** @param {Row} outcome @param {Row[]} workflows */

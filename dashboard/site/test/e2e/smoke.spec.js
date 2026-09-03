@@ -328,6 +328,52 @@ test('production pages expose their executive chart without scrolling on a phone
   expect((chartBox?.y ?? 0) + (chartBox?.height ?? 0)).toBeLessThanOrEqual(844);
 });
 
+test('performance page leads with a workflow duration histogram', async ({ page }) => {
+  const presenterModuleUrl = buildPresenterModuleUrl();
+  const documentModel = JSON.parse(readFileSync(new URL('../../dashboard.json', import.meta.url), 'utf8'));
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.setContent(`
+    <div id="root"></div>
+    <script type="module">
+      import { renderDashboard } from ${JSON.stringify(presenterModuleUrl)};
+      const documentModel = ${JSON.stringify(documentModel)};
+      const metadata = {
+        'source-id': 'performance-fixture',
+        'source-kind': 'fixture',
+        'as-of': '2026-09-03T12:00:00Z',
+        'retrieved-at': '2026-09-03T12:01:00Z',
+        completeness: 'complete',
+        freshness: 'fresh',
+        availability: 'available'
+      };
+      const sources = {
+        'run-performance': {
+          source: 'run-performance',
+          rows: [
+            { run: '1', 'started-at': '2026-09-03T10:00:00Z', 'run-duration-seconds': 60 },
+            { run: '2', 'started-at': '2026-09-03T11:00:00Z', 'run-duration-seconds': 180 }
+          ],
+          metadata
+        },
+        'job-performance': {
+          source: 'job-performance',
+          rows: [
+            { run: '1', 'started-at': '2026-09-03T10:00:00Z', job: 'agent', runner: 'ubuntu-latest', 'sandbox-runtime': 'gvisor', engine: 'copilot', model: 'gpt-5.4', 'job-duration-seconds': 45 }
+          ],
+          metadata
+        }
+      };
+      window.location.hash = '#page-performance';
+      document.querySelector('#root').append(renderDashboard({ document: documentModel, sources }));
+    </script>
+  `);
+
+  const pageRegion = page.locator('[data-page-id="performance"]');
+  await expect(pageRegion).toBeVisible();
+  await expect(pageRegion.locator('.custom-view').first().locator('[data-chart-widget="histogram"]')).toBeVisible();
+  await expect(pageRegion.locator('[data-chart-widget="bar"]')).toHaveCount(3);
+});
+
 test('DLS-DOC-014 horizon help is available on hover and keyboard focus', async ({ page }) => {
   const presenterModuleUrl = buildPresenterModuleUrl();
   await page.setContent(`
@@ -983,7 +1029,8 @@ test('DLS-PAGE-014 DLS-PAGE-015 built-in packages page renders report-style mode
                       intent: 'Debug this failed workflow dispatch.',
                       presentation: 'copy-prompt',
                       icon: 'search',
-                      label: 'Copy debug prompt'
+                      label: 'Review debug prompt',
+                      context: ['package', 'status', 'status-detail', 'started-at', 'workflow-name', 'run-title', 'runtime-repository', 'run-link']
                     }]
                   }
                 },
@@ -1157,18 +1204,28 @@ test('DLS-PAGE-014 DLS-PAGE-015 built-in packages page renders report-style mode
   const failedDispatchRows = failedDispatchSection.locator('tbody tr');
   await expect(failedDispatchRows).toHaveCount(5);
   await expect(failedDispatchSection.locator('thead tr').first().locator('th')).toHaveText([
+    'Action',
     'Why',
     'Started',
     'Workflow',
     'Run title',
-    'Runtime repository',
-    'Copy debug prompt'
+    'Runtime repository'
   ]);
   await expect(failedDispatchRows.first().locator('[data-field="status-detail"]')).toHaveText('GitHub API capacity insufficient; reset 1 hour ago');
   await expect(failedDispatchRows.last().locator('[data-field="status-detail"]')).toHaveText('Target authority missing: add .github/workflows/cao.json to the target default branch for live mode');
   await expect(failedDispatchRows.first().locator('[data-field="status-detail"]')).toHaveAttribute('data-status', 'failure');
   await expect(failedDispatchRows.locator('[data-field="status-detail"] a')).toHaveCount(5);
   await expect(failedDispatchRows.locator('.table-intent-button')).toHaveCount(5);
+  const intentButton = failedDispatchRows.first().getByRole('button', { name: 'Review debug prompt' });
+  await expect(intentButton).toContainText('Review debug prompt');
+  await intentButton.click();
+  const intentDialog = page.getByRole('dialog', { name: 'Review debug prompt prompt preview' });
+  await expect(intentDialog).toBeVisible();
+  await expect(intentDialog.locator('.table-intent-preview')).toContainText('Debug this failed workflow dispatch.');
+  await expect(intentDialog.getByRole('button', { name: 'Copy prompt' })).toBeVisible();
+  await intentDialog.getByRole('button', { name: 'Close prompt preview' }).click();
+  await expect(intentDialog).toBeHidden();
+  await expect(intentButton).toBeFocused();
   await expect(failedDispatchRows.first().locator('[data-field="status-detail"] a')).toHaveAttribute('href', 'https://github.com/githubnext/gh-aw-cao/actions/runs/3');
   const allDispatchRows = page.getByRole('heading', { name: 'All dispatches', level: 3 }).locator('..').locator('tbody tr');
   await expect(allDispatchRows).toHaveCount(5);
@@ -2533,7 +2590,9 @@ test('phone navigation uses icon shortcuts and a full-label view menu without ho
   await expect(activeItem.locator('.nav-label')).toBeHidden();
   expect(await activeItem.evaluate((item) => getComputedStyle(item, '::before').content)).toBe('none');
   await expect(page.locator('.primary-nav > .nav-item')).toHaveCount(6);
-  await expect(page.locator('.primary-nav > .nav-item').nth(4)).toBeHidden();
+  await expect(page.locator('.primary-nav > .nav-item').nth(4)).toBeVisible();
+  await expect(page.locator('.primary-nav > .nav-item').nth(4).locator('.octicon-meter')).toBeVisible();
+  await expect(page.locator('.primary-nav > .nav-item').nth(5)).toBeHidden();
   await expect(page.locator('.primary-nav')).not.toHaveCSS('overflow-x', 'auto');
 
   await page.getByRole('button', { name: 'Select view' }).click();

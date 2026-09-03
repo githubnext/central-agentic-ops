@@ -168,6 +168,80 @@ test("dashboard source bridge detects rollout mode from run titles with punctuat
   assert.equal(sources.runs.rows[0]["rollout-mode"], "review");
 });
 
+test("dashboard source bridge exposes run and job performance dimensions", () => {
+  const sources = buildDashboardLanguageSources({
+    deployed: {
+      generatedAt: "2026-09-03T06:00:00Z",
+      discovery: { complete: true },
+      runHealth: { available: true, complete: true, windowHours: 24 },
+      workflows: [{
+        repository: "acme/control",
+        path: ".github/workflows/review.lock.yml",
+        runHealth: { runRecords: [{
+          runId: 42,
+          status: "completed",
+          conclusion: "success",
+          displayTitle: "Review: live",
+          startedAt: "2026-09-03T05:00:00Z",
+          updatedAt: "2026-09-03T05:10:00Z",
+          jobs: [{
+            name: "agent",
+            startedAt: "2026-09-03T05:01:00Z",
+            completedAt: "2026-09-03T05:08:30Z",
+            runnerName: "GitHub Actions 2",
+            runnerGroupName: "GitHub Actions",
+            labels: ["ubuntu-latest"],
+          }],
+        }] },
+      }],
+    },
+    usage: {
+      available: true,
+      complete: true,
+      runs: [{
+        repository: "acme/control",
+        runId: 42,
+        engine: "copilot",
+        requestedModel: "gpt-5",
+        resolvedModel: "gpt-5.4",
+        agentRuntime: "gvisor",
+        aic: 12,
+      }],
+    },
+    operationalValues: { records: [] },
+    report: { generatedAt: "2026-09-03T06:00:00Z", records: [] },
+  });
+
+  assert.match(sources["run-performance"].metadata["coverage-start"], /^2026-09-02/);
+  assert.deepEqual(sources["run-performance"].rows[0], {
+    organization: "acme",
+    repository: "control",
+    workflow: ".github/workflows/review.md",
+    run: "42",
+    "started-at": "2026-09-03T05:00:00Z",
+    "run-conclusion": "success",
+    "rollout-mode": "live",
+    engine: "copilot",
+    "sandbox-runtime": "gvisor",
+    model: "gpt-5.4",
+    "run-link": {
+      relation: "run",
+      href: "https://github.com/acme/control/actions/runs/42",
+      label: "View run 42",
+    },
+    "run-duration-seconds": 600,
+  });
+  const { "run-duration-seconds": _runDuration, ...commonPerformance } = sources["run-performance"].rows[0];
+  assert.deepEqual(sources["job-performance"].rows[0], {
+    ...commonPerformance,
+    job: "agent",
+    runner: "ubuntu-latest",
+    "runner-name": "GitHub Actions 2",
+    "runner-group": "GitHub Actions",
+    "job-duration-seconds": 450,
+  });
+});
+
 test("dashboard source bridge keeps partial workflow inventory available when discovery is incomplete", () => {
   const input = {
     deployed: {
