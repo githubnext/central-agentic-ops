@@ -5,9 +5,10 @@ import { mkdtemp, readFile, rm } from "node:fs/promises";
 import { createServer } from "node:http";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
+import { fileURLToPath } from "node:url";
 import test from "node:test";
 
-const helper = new URL("../../dashboard/dispatch-workflow.mjs", import.meta.url);
+const helper = fileURLToPath(new URL("../../dashboard/dispatch-workflow.mjs", import.meta.url));
 
 test("dispatch helper waits for the correlated workflow run", async () => {
   const temporaryRoot = await mkdtemp(join(tmpdir(), "cao-dispatch-"));
