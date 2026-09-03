@@ -1013,8 +1013,14 @@ test("public read-only operation uses the built-in token without widening access
   assert.match(authentication, /use `review` mode and keep safe outputs in the current control repository/);
   assert.match(authentication, /configure an App or PAT for private or internal targets, an alternate review repository, or any `live` cross-repository write/);
   assert.match(authentication, /report incomplete and produce no speculative result/);
+  assert.match(authentication, /conditional requests/);
+  assert.match(authentication, /`ETag`/);
+  assert.match(authentication, /`If-None-Match`/);
+  assert.match(authentication, /GraphQL/);
   assert.match(configuration, /no App or PAT secret is required/);
   assert.match(control, /cannot read target evidence required by the importing workflow, stop that analysis and report it as incomplete/);
+  assert.match(control, /persist response `ETag` values and send them as `If-None-Match`/);
+  assert.match(control, /prefer one bounded GraphQL query/);
   assert.match(control, /do not silently reduce the requested analysis to the subset the token can read/);
 });
 
