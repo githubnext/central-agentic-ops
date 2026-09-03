@@ -324,6 +324,7 @@ test('production pages expose their executive chart without scrolling on a phone
   const chartBox = await chart.boundingBox();
   expect(chartBox).not.toBeNull();
   expect(chartBox?.y).toBeLessThan(844);
+  expect((chartBox?.y ?? 0) + (chartBox?.height ?? 0)).toBeLessThanOrEqual(844);
 });
 
 test('DLS-DOC-014 horizon help is available on hover and keyboard focus', async ({ page }) => {
