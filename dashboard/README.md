@@ -15,14 +15,14 @@ The dashboard package publishes an access-controlled static view of Central Agen
 
 - `.github/workflows/dashboard-build.yml`: reusable, path-aware report build that uploads a mergeable Actions artifact.
 - `.github/workflows/dashboard.yml`: manual standalone GitHub Pages deployment.
-- `.github/workflows/activity.yml`: shared activity-cache publisher installed by the core activity package.
+- `.github/workflows/activity.yml`: shared data collector and cache publisher installed by the core activity package.
 - `.github/cao/src/policy.mjs`: dependency-free checked-in policy parser and resolver.
 - `.github/cao/src/control.mjs`: deterministic policy command adapter used by the build workflow.
-- `.github/aw/dashboard/report`: deterministic collectors, durable-record production, and Dashboard Language source adaptation.
+- `.github/aw/dashboard/report`: deterministic collection modules executed by the activity action plus Dashboard Language source adaptation.
 - `.github/aw/dashboard/site`: the packaged Dashboard Language validator, presenter, configuration, and browser runtime.
 - `.github/aw/dashboard/local-server.mjs`: local preview server using Node.js built-ins and GitHub CLI, with live reload.
 
-The publisher reads trusted workflow, issue, pull request, and value-artifact data from the installed repository. Collectors write bounded JSON, `records.mjs` normalizes durable outputs, `dashboard-language-sources.mjs` creates `sources.json`, and the packaged renderer serves it at the configured `site-path`. AI agents do not receive `pages: write`, `id-token: write`, or deployment authority.
+The activity action reads trusted workflow, issue, pull request, and value-artifact data from the installed repository and writes a bounded cache snapshot. The dashboard publisher restores that snapshot, `dashboard-language-sources.mjs` creates `sources.json`, and the packaged renderer serves it at the configured `site-path`. AI agents do not receive `pages: write`, `id-token: write`, or deployment authority.
 
 If authoritative control policy resolution fails, the build remains fail-closed to the control repository and publishes the resolver diagnostic on the dashboard's Coverage diagnostics page. Valid policy that omits or disables an installed package or worker is shown as an admission gate in Overview attention and Security & controls. A latest failed run blocked by pre-activation GitHub REST API capacity is shown separately with its reset time, wait estimate, and official GitHub rate-limit guidance.
 
@@ -70,7 +70,7 @@ Before running the standalone deployment, configure the private control-plane or
 
 The workflow passes `enablement: false` to `actions/configure-pages`, so a run validates existing Pages configuration but never enables Pages for the repository.
 
-Use **Refresh** in the dashboard header to open **Central Agentic Ops Dashboard** on the repository's **Actions** page, then click **Run workflow**. The standalone workflow is deliberately not scheduled, so installing the package cannot replace an existing Pages deployment without an explicit run. Operational-value collection bootstraps adoption-to-current history through the gh-aw report contract and then reuses digest-scoped weekly replay shards. Workflow inventory and recent runs come from the core activity package's schema-versioned Actions cache. Actions caches accelerate refreshes but are evictable and are not historical authority.
+Use **Refresh** in the dashboard header to open **Central Agentic Ops Dashboard** on the repository's **Actions** page, then click **Run workflow**. Live mode invokes the activity action to refresh the complete schema-versioned snapshot before rendering; cache mode renders the latest available snapshot. The standalone workflow is deliberately not scheduled, so installing the package cannot replace an existing Pages deployment without an explicit run. Operational-value collection bootstraps adoption-to-current history through the gh-aw report contract and then reuses digest-scoped weekly replay shards. Actions caches accelerate refreshes but are evictable and are not historical authority.
 
 The catalog contains only collector, adapter, and presenter code. Installed control repositories hold runtime aggregation and the current access-controlled Pages view. Live organization-specific JSON, Markdown, and SVG snapshots are generated data and are not committed to this catalog.
 

@@ -28,7 +28,9 @@ The control plane is designed to:
 The catalog release proves what was installed. The control repository owns operating policy and credentials. The target authority file records consent for live mutation. None of these records replaces the others.
 :::
 
-The execution boundary is the key architectural fact: orchestrators and workers run from the private control repository. A worker checks out and analyzes one remote target at a time. Target repositories receive only declared safe outputs; they do not receive or run the control-plane workflow definitions.
+The execution boundary is the key architectural fact: orchestrators and workers run from the control repository. A worker checks out and analyzes one target at a time. Remote target repositories receive only declared safe outputs; they do not receive or run the control-plane workflow definitions.
+
+Any repository may explicitly operate as a source-managed control plane for workflows it maintains in-tree. The reviewed workflow sources and generated locks are the runtime payload, while `.github/workflows/cao.json` remains the separate rollout-policy authority. When a catalog uses this topology to run its own workflows, it is dogfooding: the repository applies both catalog and control-plane safety rules. In every source-managed topology, repository visibility governs run metadata, dashboards, and review outputs, and source files alone never activate the control role.
 
 ## How It Works
 

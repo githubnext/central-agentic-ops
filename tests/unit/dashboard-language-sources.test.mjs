@@ -49,6 +49,39 @@ test("dashboard source bridge carries API capacity admission blocks into run row
   );
 });
 
+test("dashboard source bridge keeps partial workflow inventory available when discovery is incomplete", () => {
+  const input = {
+    deployed: {
+      generatedAt: "2026-09-03T06:00:00Z",
+      discovery: { complete: false },
+      runHealth: { available: false, complete: false },
+      bundles: [],
+      workflows: [{
+        repository: "githubnext/central-agentic-ops",
+        path: ".github/workflows/self-care.lock.yml",
+        name: "SelfCare",
+        state: "active",
+      }],
+    },
+    usage: { available: false, complete: false, runs: [] },
+    operationalValues: { records: [] },
+    report: { generatedAt: "2026-09-03T06:00:00Z", records: [] },
+  };
+
+  const partial = buildDashboardLanguageSources(input);
+  assert.equal(partial.workflows.rows.length, 1);
+  assert.equal(partial.workflows.metadata.availability, "available");
+  assert.equal(partial.workflows.metadata.completeness, "partial");
+
+  const unavailable = buildDashboardLanguageSources({
+    ...input,
+    deployed: { ...input.deployed, workflows: [] },
+  });
+  assert.equal(unavailable.workflows.rows.length, 0);
+  assert.equal(unavailable.workflows.metadata.availability, "unavailable");
+  assert.equal(unavailable.workflows.metadata.completeness, "partial");
+});
+
 test("dashboard source bridge carries package memberships, allowance, and inventory readiness into workflow rows", () => {
   const workflowPath = ".github/workflows/package.lock.yml";
   const sources = buildDashboardLanguageSources({

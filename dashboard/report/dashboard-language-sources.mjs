@@ -547,6 +547,7 @@ export function buildDashboardLanguageSources({ deployed, usage, operationalValu
     "observed-at": generatedAt,
   }));
   const discoveryAvailable = deployed.discovery?.complete !== false;
+  const workflowsAvailable = discoveryAvailable || workflows.length > 0;
   const runAvailable = deployed.runHealth?.available === true;
   const runComplete = deployed.runHealth?.complete === true;
   const usageAvailable = usage.available === true;
@@ -556,7 +557,7 @@ export function buildDashboardLanguageSources({ deployed, usage, operationalValu
   const sources = Object.fromEntries(sourceNames.map((name) => [name, source(name, [], generatedAt, false, false)]));
   sources.organizations = source("organizations", organizations, generatedAt, discoveryAvailable, deployed.discovery?.complete === true);
   sources.repositories = source("repositories", [...repositories.values()], generatedAt, discoveryAvailable, deployed.discovery?.complete === true);
-  sources.workflows = source("workflows", workflows, generatedAt, discoveryAvailable, deployed.discovery?.complete === true);
+  sources.workflows = source("workflows", workflows, generatedAt, workflowsAvailable, deployed.discovery?.complete === true);
   sources.runs = source("runs", runs, generatedAt, runAvailable, runComplete);
   if (Number.isFinite(deployed.runHealth?.windowHours) && deployed.runHealth.windowHours > 0) {
     sources.runs.metadata["coverage-end"] = generatedAt;
