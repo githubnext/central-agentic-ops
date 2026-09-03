@@ -104,6 +104,7 @@ safe-outputs:
   create-issue:
     expires: 30d
     title-prefix: "[advisory:uk-ai-operational-resilience] "
+    labels: [advisory]
     close-older-issues: true
     max: 1
     target-repo: ${{ (inputs.safe_output_mode || 'review') == 'review' && (inputs.safe_output_repo || github.repository) || inputs.target_repo }}
@@ -345,6 +346,7 @@ Code remains open by default. A recommendation to keep code closed requires an e
 Create at most one consolidated issue containing:
 
 Provide only the unprefixed subject as the safe-output title. The configured `title-prefix` is added automatically; do not repeat it or add a semantically equivalent category prefix.
+Every created issue must carry the `advisory` label.
 
 Start directly with a concise, unheaded executive summary. In one or two short paragraphs, state the decision-relevant result, advisory status, highest proposed tier, seven-day window, most important control gap, key metrics, explicit limitations, and recommended next action. Follow it with:
 

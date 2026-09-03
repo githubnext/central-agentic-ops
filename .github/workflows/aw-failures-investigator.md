@@ -103,6 +103,7 @@ safe-outputs:
   create-issue:
     expires: 14d
     title-prefix: "[aw-maintenance:failures-investigator] "
+    labels: [aw-maintenance]
     max: 3
     target-repo: ${{ (inputs.safe_output_mode || 'review') == 'review' && (inputs.safe_output_repo || github.repository) || inputs.target_repo }}
 
@@ -421,6 +422,7 @@ For each bucket, decide whether an open issue in `existing_tracking_issues` alre
 Create one failure report issue. Then create at most two fix issues, highest severity first, and only for untracked P0 and P1 buckets. Never file a fix issue for a P2 bucket or for a bucket that is already tracked.
 
 Provide only the unprefixed subject as each safe-output title. The configured `title-prefix` is added automatically; do not repeat it or add a semantically equivalent category prefix.
+Every created issue must carry the `aw-maintenance` label.
 
 ### Failure report issue
 

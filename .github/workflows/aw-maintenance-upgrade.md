@@ -99,6 +99,7 @@ safe-outputs:
   create-issue:
     expires: 30d
     title-prefix: "[aw-maintenance:upgrade] "
+    labels: [aw-maintenance]
     max: 1
     target-repo: ${{ (inputs.safe_output_mode || 'review') == 'review' && (inputs.safe_output_repo || github.repository) || inputs.target_repo }}
 
@@ -313,6 +314,7 @@ If the command fails or produces no diff despite `needs_upgrade` being `true`, r
 Create exactly one issue in `safe_output_repo` targeting `target_repo`:
 
 Provide only the unprefixed subject as the safe-output title. The configured `title-prefix` is added automatically; do not repeat it or add a semantically equivalent category prefix.
+Every created issue must carry the `aw-maintenance` label.
 
 ```
 - **Repository**: `<owner/repo>`

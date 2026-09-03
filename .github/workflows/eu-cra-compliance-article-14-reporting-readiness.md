@@ -111,6 +111,7 @@ safe-outputs:
   create-issue:
     expires: 30d
     title-prefix: "[eu-cra-compliance:article-14-reporting-readiness] "
+    labels: [eu-cra-compliance]
     close-older-issues: true
     max: 1
     target-repo: ${{ (inputs.safe_output_mode || 'review') == 'review' && (inputs.safe_output_repo || github.repository) || inputs.target_repo }}
@@ -177,6 +178,7 @@ Assess ownership, 24/7 escalation where applicable, awareness criteria and times
 Create one issue with:
 
 Provide only the unprefixed subject as the safe-output title. The configured `title-prefix` is added automatically; do not repeat it or add a semantically equivalent category prefix.
+Every created issue must carry the `eu-cra-compliance` label.
 
 - verified sources and baseline;
 - responsibility and escalation map;

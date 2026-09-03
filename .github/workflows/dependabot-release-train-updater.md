@@ -384,6 +384,7 @@ safe-outputs:
   create-issue:
     target-repo: ${{ (inputs.safe_output_mode || 'review') == 'review' && (inputs.safe_output_repo || github.repository) || inputs.target_repo }}
     title-prefix: "[dependabot:release-train-updater] "
+    labels: [dependabot]
     expires: 14d
     max: 2
   noop:
@@ -674,6 +675,7 @@ Upload an artifact when the analysis is too large for a comment or PR body. Good
 At the end of every run, produce one primary safe-output outcome:
 
 When creating a pull request or issue, provide only the unprefixed subject as the safe-output title. The configured `title-prefix` is added automatically; do not repeat it or add a semantically equivalent category prefix.
+Every created issue must carry the `dependabot` label.
 
 - `create-pull-request` if you made a reviewable dependency update.
 - `add-comment` if you analyzed an existing PR/issue.

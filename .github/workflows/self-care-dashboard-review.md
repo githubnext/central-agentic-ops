@@ -89,6 +89,7 @@ safe-outputs:
   create-issue:
     target-repo: ${{ (inputs.safe_output_mode || 'review') == 'review' && (inputs.safe_output_repo || github.repository) || inputs.target_repo }}
     title-prefix: "[self-care:dashboard-review] "
+    labels: [self-care]
     close-older-issues: true
     close-older-key: self-care-dashboard-review
     max: 1
@@ -141,6 +142,7 @@ Treat temporary Pages propagation, API limits, missing optional telemetry, and e
 Call `create_issue` exactly once after the deterministic review and persona assessments complete. Consolidate verified defects, persona answers, efficiency grades, and improvement suggestions. If the dashboard or browser is unavailable, or fewer than two persona assessments complete after retry, call `noop` with the blocker instead.
 
 Provide only the unprefixed subject as the safe-output title. The configured `title-prefix` is added automatically; do not repeat it or add a semantically equivalent category prefix.
+Every created issue must carry the `self-care` label.
 
 Use `###` headings only and structure the issue as:
 

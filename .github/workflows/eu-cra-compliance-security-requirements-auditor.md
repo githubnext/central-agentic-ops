@@ -111,6 +111,7 @@ safe-outputs:
   create-issue:
     expires: 30d
     title-prefix: "[eu-cra-compliance:security-requirements-auditor] "
+    labels: [eu-cra-compliance]
     close-older-issues: true
     max: 1
     target-repo: ${{ (inputs.safe_output_mode || 'review') == 'review' && (inputs.safe_output_repo || github.repository) || inputs.target_repo }}
@@ -162,6 +163,7 @@ For each requirement record `EVIDENCE_SUFFICIENT`, `GAP_FOUND`, `HUMAN_REVIEW_RE
 Create one issue with the verified baseline, assessed product assumptions, requirement matrix, cross-cutting gaps, prioritized remediation backlog, inaccessible evidence, and explicit human-review questions.
 
 Provide only the unprefixed subject as the safe-output title. The configured `title-prefix` is added automatically; do not repeat it or add a semantically equivalent category prefix.
+Every created issue must carry the `eu-cra-compliance` label.
 
 Immediately after the issue heading, include exactly one marker in this form, replacing the target and SHA with the analyzed repository and `git -C target rev-parse HEAD` result:
 

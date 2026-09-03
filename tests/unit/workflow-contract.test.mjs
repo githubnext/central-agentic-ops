@@ -531,7 +531,7 @@ test("operations creation guidance scopes detection and omits worker evals", () 
   assert.match(packageSkill, /Do not use `aw\.yml` bootstrap `config`/);
 });
 
-test("issue-creating workers use package and worker title prefixes", () => {
+test("issue-creating workers use package labels and package and worker title prefixes", () => {
   for (const name of readdirSync(workflowsDirectory).filter((entry) => entry.endsWith(".md"))) {
     const source = workflow(name);
     if (!/role: worker/.test(source) || !/create-issue:/.test(source)) continue;
@@ -547,6 +547,8 @@ test("issue-creating workers use package and worker title prefixes", () => {
       `[${controlImport.with.package}:${controlImport.with.worker}] `,
       name,
     );
+    assert.deepEqual(config["safe-outputs"]["create-issue"].labels, [controlImport.with.package], name);
+    assert.match(source, new RegExp(`Every created issue must carry the \\\`${controlImport.with.package}\\\` label\\.`), name);
   }
 });
 

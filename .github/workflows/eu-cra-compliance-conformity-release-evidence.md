@@ -111,6 +111,7 @@ safe-outputs:
   create-issue:
     expires: 30d
     title-prefix: "[eu-cra-compliance:conformity-release-evidence] "
+    labels: [eu-cra-compliance]
     close-older-issues: true
     max: 1
     target-repo: ${{ (inputs.safe_output_mode || 'review') == 'review' && (inputs.safe_output_repo || github.repository) || inputs.target_repo }}
@@ -163,6 +164,7 @@ Material conclusions about CRA scope exclusion, economic-operator role, commerci
 Create one issue with the assessed release/version, verified regulatory sources, technical-documentation matrix, conformity evidence register, release-gate matrix, gaps, inaccessible evidence, and named human-review decisions. Use only `EVIDENCE_SUFFICIENT`, `GAP_FOUND`, `HUMAN_REVIEW_REQUIRED`, `NOT_ASSESSED`, or `INCOMPLETE`.
 
 Provide only the unprefixed subject as the safe-output title. The configured `title-prefix` is added automatically; do not repeat it or add a semantically equivalent category prefix.
+Every created issue must carry the `eu-cra-compliance` label.
 
 Immediately after the issue heading, include exactly one marker in this form, replacing the target and SHA with the analyzed repository and `git -C target rev-parse HEAD` result:
 

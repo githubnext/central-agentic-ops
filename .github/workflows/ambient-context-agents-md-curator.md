@@ -114,6 +114,7 @@ safe-outputs:
   create-issue:
     expires: 30d
     title-prefix: "[ambient-context:agents-md-curator] "
+    labels: [ambient-context]
     close-older-issues: true
     max: 1
     target-repo: ${{ (inputs.safe_output_mode || 'review') == 'review' && (inputs.safe_output_repo || github.repository) || inputs.target_repo }}
@@ -546,6 +547,7 @@ When the estimate reaches 10 percent, continue to Step 5 and carry the arithmeti
 Create exactly one issue in the safe-output repository with this structure.
 
 Provide only the unprefixed subject as the safe-output title. The configured `title-prefix` is added automatically; do not repeat it or add a semantically equivalent category prefix.
+Every created issue must carry the `ambient-context` label.
 
 ### Ambient context health
 

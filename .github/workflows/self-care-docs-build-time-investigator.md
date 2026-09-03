@@ -96,6 +96,7 @@ safe-outputs:
   create-issue:
     target-repo: ${{ (inputs.safe_output_mode || 'review') == 'review' && (inputs.safe_output_repo || github.repository) || inputs.target_repo }}
     title-prefix: "[self-care:docs-build-time-investigator] "
+    labels: [self-care]
     deduplicate-by-title: true
     max: 1
     expires: 14d
@@ -139,6 +140,7 @@ Evaluate the next category that has sufficient evidence. Do not repeat a suggest
 Do not modify repository content or create a pull request. After persisting the evaluation:
 
 - Provide only the unprefixed subject as the safe-output title. The configured `title-prefix` is added automatically; do not repeat it or add a semantically equivalent category prefix.
+- Every created issue must carry the `self-care` label.
 - Call `create_issue` exactly once when one non-duplicate actionable improvement meets the threshold.
 - Otherwise call `noop` exactly once with the evidence window, evaluated category, and concise reason nothing is actionable.
 

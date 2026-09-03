@@ -107,6 +107,7 @@ safe-outputs:
   create-issue:
     expires: 30d
     title-prefix: "[software-development-practices:github-well-architected] "
+    labels: [software-development-practices]
     close-older-issues: true
     close-older-key: ${{ format('software-development-practices-github-well-architected-{0}', inputs.target_repo) }}
     max: 1
@@ -162,6 +163,7 @@ Create one issue containing:
 6. the prioritized improvement backlog with evidence, rationale, owner surface, dependencies, and acceptance checks;
 7. strengths worth preserving and explicit human-review questions.
 
+Every created issue must carry the `software-development-practices` label.
 State prominently that the issue is advisory and non-binding and does not prove security, compliance, certification, endorsement, or complete alignment. If `correlation_id` is present, include `### Control Plane` with the correlation ID, central repository, and control-plane run URL.
 
 Call `noop` only when the authoritative and repository-observable review completed successfully and either no actionable evidence-backed improvement exists or current issues already track every recommendation.

@@ -110,6 +110,7 @@ safe-outputs:
   create-issue:
     expires: 3d
     title-prefix: "[optimization:ai-credit-auditor] "
+    labels: [optimization]
     max: 1
     close-older-issues: true
     target-repo: ${{ (inputs.safe_output_mode || 'review') == 'review' && (inputs.safe_output_repo || github.repository) || inputs.target_repo }}
@@ -410,6 +411,7 @@ Chart requirements:
 Create an issue with these sections:
 
 Provide only the unprefixed subject as the safe-output title. The configured `title-prefix` is added automatically; do not repeat it or add a semantically equivalent category prefix.
+Every created issue must carry the `optimization` label.
 
 ### Formatting Requirements
 

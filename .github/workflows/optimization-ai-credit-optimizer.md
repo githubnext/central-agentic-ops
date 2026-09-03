@@ -100,6 +100,7 @@ safe-outputs:
   create-issue:
     expires: 7d
     title-prefix: "[optimization:ai-credit-optimizer] "
+    labels: [optimization]
     close-older-issues: true
     max: 1
     target-repo: ${{ (inputs.safe_output_mode || 'review') == 'review' && (inputs.safe_output_repo || github.repository) || inputs.target_repo }}
@@ -351,6 +352,7 @@ Recommend at most 3 inline sub-agents, and only when the combined opportunity is
 Create one issue with:
 
 Provide only the unprefixed subject as the safe-output title. The configured `title-prefix` is added automatically; do not repeat it or add a semantically equivalent category prefix.
+Every created issue must carry the `optimization` label.
 
 - **Target workflow + reason selected**
 - **Analysis period + runs analyzed**
