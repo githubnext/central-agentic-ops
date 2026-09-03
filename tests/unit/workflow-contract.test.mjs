@@ -2233,6 +2233,11 @@ test("Dashboard package supports embedded and explicit standalone deployment", (
   assert.match(buildWorkflow, /go clean -cache -modcache/);
   assert.doesNotMatch(buildWorkflow, /pages-aic|REPORT_AIC_CACHE/);
   assert.match(aicUsage, /"--start-date", "-2d", "--cache-before", "-2d"/);
+  assert.match(aicUsage, /"--count", String\(maxRunsPerWorkflow\), "--timeout", "15"/);
+  assert.match(aicUsage, /"--max-github-api-rate-limit", "-2000", "--max-storage", "1024"/);
+  assert.match(aicUsage, /targets\.push\(`\$\{workflow\.repository\}\/\$\{workflow\.path\}`\)/);
+  assert.doesNotMatch(aicUsage, /--stdin|mapWithConcurrency|REPORT_AIC_CONCURRENCY/);
+  assert.doesNotMatch(buildWorkflow, /REPORT_AIC_CONCURRENCY/);
   assert.match(buildWorkflow, /REPORT_VALUE_CACHE: \.cache\/dashboard-operational-values\/observations\.json/);
   assert.match(buildWorkflow, /REPORT_VALUE_REPLAY_CACHE: \.cache\/dashboard-operational-values\/replay/);
   assert.match(buildWorkflow, /actions\/cache\/restore@[0-9a-f]{40}/);

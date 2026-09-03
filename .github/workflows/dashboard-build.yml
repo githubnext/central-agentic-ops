@@ -178,7 +178,6 @@ jobs:
         if: inputs.mode == 'live'
         env:
           GH_TOKEN: ${{ github.token }}
-          REPORT_AIC_CONCURRENCY: "3"
           REPORT_AIC_USAGE: ${{ runner.temp }}/dashboard-data/aic-usage.json
           REPORT_DEPLOYED_WORKFLOWS: ${{ runner.temp }}/cao-activity/deployed-workflows.json
         run: node "$DASHBOARD_REPORT_ROOT/aic-usage.mjs"
