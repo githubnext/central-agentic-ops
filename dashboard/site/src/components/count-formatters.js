@@ -31,3 +31,13 @@ export function formatCountNoun(value, singular, plural) {
   const count = Number(value) || 0;
   return `${formatCount(count)} ${count === 1 ? singular : plural}`;
 }
+
+/**
+ * Returns the regular English plural suffix ('' or 's') for a count, for
+ * inline pluralization of nouns that only need a trailing "s".
+ * @param {unknown} value
+ * @returns {string}
+ */
+export function pluralSuffix(value) {
+  return Number(value) === 1 ? '' : 's';
+}

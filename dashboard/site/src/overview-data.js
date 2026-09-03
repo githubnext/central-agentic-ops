@@ -3,6 +3,7 @@
  */
 
 import { formatNumber, formatPercent } from './view-formatters.js';
+import { pluralSuffix } from './components/count-formatters.js';
 import { classifyUtilizationRatio, isApprovalConclusion, isFailureConclusion } from './components/run-classification.js';
 import { buildAttentionItems } from './components/attention-rules.js';
 
@@ -264,9 +265,9 @@ function buildReadiness(input) {
       tone: 'danger',
       icon: 'issue',
       kind: 'Runtime regression',
-      title: `${formatNumber(rows.length)} ${role} run${rows.length === 1 ? '' : 's'} failed`,
+      title: `${formatNumber(rows.length)} ${role} run${pluralSuffix(rows.length)} failed`,
       detail: `Latest: ${latestDetail}`,
-      evidence: `${formatNumber(rows.length)} failed run${rows.length === 1 ? '' : 's'}`,
+      evidence: `${formatNumber(rows.length)} failed run${pluralSuffix(rows.length)}`,
       action: 'Open latest run',
       'run-link': latest?.['run-link']
     };
@@ -278,20 +279,20 @@ function buildReadiness(input) {
       : engineHealth.total === 0
         ? 'No control-plane runs were observed in the current window.'
         : engineHealth.failed > 0 || engineHealth.approval > 0 || pendingRuns.length > 0
-          ? `${formatNumber(engineHealth.total)} run${engineHealth.total === 1 ? '' : 's'} observed: ${formatNumber(engineHealth.failed)} failed, ${formatNumber(engineHealth.approval)} approval-gated, and ${formatNumber(pendingRuns.length)} pending.`
+          ? `${formatNumber(engineHealth.total)} run${pluralSuffix(engineHealth.total)} observed: ${formatNumber(engineHealth.failed)} failed, ${formatNumber(engineHealth.approval)} approval-gated, and ${formatNumber(pendingRuns.length)} pending.`
           : `${formatNumber(engineHealth.successful)} runs completed successfully.`),
     readinessCheck('Evidence', sourceGaps.length > 0 ? 'Unknown' : attributionGapCount > 0 ? 'Blocked' : 'Ready', sourceGaps.length > 0
-      ? `${formatNumber(sourceGaps.length)} required source${sourceGaps.length === 1 ? '' : 's'} incomplete, stale, or unavailable`
+      ? `${formatNumber(sourceGaps.length)} required source${pluralSuffix(sourceGaps.length)} incomplete, stale, or unavailable`
       : attributionGapCount > 0
-        ? `${formatNumber(attributionGapCount)} relevant record${attributionGapCount === 1 ? '' : 's'} could not be joined to workflow inventory.`
+        ? `${formatNumber(attributionGapCount)} relevant record${pluralSuffix(attributionGapCount)} could not be joined to workflow inventory.`
         : 'Required control-plane sources are complete, fresh, and attributed.'),
     readinessCheck('Inventory', inventoryGaps.length > 0 || input.packages.length === 0 ? 'Blocked' : 'Ready', input.packages.length === 0
       ? 'No managed package inventory was discovered.'
       : inventoryGaps.length > 0
-        ? `${formatNumber(inventoryGaps.length)} package${inventoryGaps.length === 1 ? '' : 's'} failed inventory checks.`
-        : `${formatNumber(input.packages.length)} managed package${input.packages.length === 1 ? '' : 's'} passed inventory checks.`),
+        ? `${formatNumber(inventoryGaps.length)} package${pluralSuffix(inventoryGaps.length)} failed inventory checks.`
+        : `${formatNumber(input.packages.length)} managed package${pluralSuffix(input.packages.length)} passed inventory checks.`),
     readinessCheck('Controls', policyBlocks.length > 0 || admissionBlocks.length > 0 ? 'Blocked' : 'Ready', policyBlocks.length > 0 || admissionBlocks.length > 0
-      ? `${formatNumber(policyBlocks.length)} policy and ${formatNumber(admissionBlocks.length)} admission block${admissionBlocks.length === 1 ? '' : 's'} detected.`
+      ? `${formatNumber(policyBlocks.length)} policy and ${formatNumber(admissionBlocks.length)} admission block${pluralSuffix(admissionBlocks.length)} detected.`
       : 'Policy resolution and workflow admission are clear.'),
     readinessCheck('Outputs', !sourceIsAvailable(input.sources.findings) ? 'Unknown' : warnings.length > 0 ? 'Blocked' : 'Ready', !sourceIsAvailable(input.sources.findings)
       ? 'Warning output evidence is unavailable.'
@@ -335,7 +336,7 @@ function buildReadiness(input) {
       tone: 'critical',
       icon: 'workflow',
       kind: 'Attribution regression',
-      title: `${formatNumber(attributionGapCount)} record${attributionGapCount === 1 ? '' : 's'} could not be attributed`,
+      title: `${formatNumber(attributionGapCount)} record${pluralSuffix(attributionGapCount)} could not be attributed`,
       detail: 'The runtime repository and Actions workflow path did not match authoritative workflow inventory.',
       evidence: 'Workflow inventory join',
       action: 'Review coverage',
@@ -404,7 +405,7 @@ function buildReadiness(input) {
       tone: 'warning',
       icon: 'issue',
       kind: 'Approval gate',
-      title: `${formatNumber(engineHealth.approval)} run${engineHealth.approval === 1 ? '' : 's'} require approval`,
+      title: `${formatNumber(engineHealth.approval)} run${pluralSuffix(engineHealth.approval)} require approval`,
       detail: 'Required maintainer approval prevents a release-ready verdict.',
       evidence: 'Run conclusion',
       action: 'Review runs',
@@ -417,7 +418,7 @@ function buildReadiness(input) {
       tone: 'informational',
       icon: 'clock',
       kind: 'Run pending',
-      title: `${formatNumber(pendingRuns.length)} run${pendingRuns.length === 1 ? '' : 's'} still in progress`,
+      title: `${formatNumber(pendingRuns.length)} run${pluralSuffix(pendingRuns.length)} still in progress`,
       detail: 'Readiness remains blocked until the current executions complete.',
       evidence: 'Run status',
       action: 'Review runs',
@@ -467,7 +468,7 @@ function readinessObservation(signal, rows, source, kind) {
     detail: !available
       ? sourceHealthDetail(source)
       : rows.length > 0
-        ? `${formatNumber(rows.length)} ${noun}${rows.length === 1 ? '' : 's'} observed${complete ? '.' : '; source coverage is partial or stale.'}`
+        ? `${formatNumber(rows.length)} ${noun}${pluralSuffix(rows.length)} observed${complete ? '.' : '; source coverage is partial or stale.'}`
         : complete ? `No ${noun}s observed.` : `No ${noun}s observed, but source coverage is partial or stale.`,
     'latest-at': latest?.['observed-at'] || latest?.['started-at'] || null,
     'evidence-link': latest?.['external-link'] || latest?.['run-link'] || null
@@ -862,7 +863,7 @@ function buildDomainAttentionRows(input) {
           state: controlBlocks > 0 ? 'Act now' : input.health.approval > 0 || warningOutputs > 0 || inventoryGaps > 0 ? 'Investigate' : 'Unavailable',
           icon: 'shield',
           domain: 'Security & controls',
-          value: `${formatCount(securitySignals)} signal${securitySignals === 1 ? '' : 's'}`,
+          value: `${formatCount(securitySignals)} signal${pluralSuffix(securitySignals)}`,
           detail: `${formatCount(admissionBlocks)} admission gates · ${formatCount(apiCapacityBlocks)} API capacity gates · ${formatCount(controlPolicyBlocks)} policy resolution blocks · ${formatCount(input.health.approval)} approval gates · ${formatCount(inventoryGaps)} integrity gaps`,
           href: controlPolicyBlocks > 0 ? '#page-coverage' : '#page-security'
         }),
@@ -873,7 +874,7 @@ function buildDomainAttentionRows(input) {
           icon: 'workflow',
           domain: 'Episodes & autonomy',
           value: `${formatCount(rootRuns.length)} observed`,
-          detail: `0 of 0 worker dispatches attributed · ${formatCount(rootFailures)} root failure${rootFailures === 1 ? '' : 's'}`,
+          detail: `0 of 0 worker dispatches attributed · ${formatCount(rootFailures)} root failure${pluralSuffix(rootFailures)}`,
           href: '#page-runtime?section=runtime-observed-root-episodes-heading'
         }),
         domainRow({
@@ -1035,7 +1036,7 @@ function buildSecuritySignals(input) {
         icon: 'package',
         kind: 'Package integrity',
         title: String(rows[0]?.['package-name'] ?? rows[0]?.['workflow-name'] ?? key),
-        detail: `${formatNumber(rows.length)} workflow definition${rows.length === 1 ? '' : 's'} failed inventory readiness checks`,
+        detail: `${formatNumber(rows.length)} workflow definition${pluralSuffix(rows.length)} failed inventory readiness checks`,
         evidence: 'Inventory gap',
         action: 'View package',
         'navigation-page': 'packages'
@@ -1171,7 +1172,7 @@ function buildOverviewVitals(input) {
     ? new Set(repositories.map(repositoryKey).filter(Boolean)).size
     : distinctRepositories(workflows, runs);
   return [
-    { label: 'Managed packages', value: packages.length, detail: `${managedWorkers} worker workflow${managedWorkers === 1 ? '' : 's'}` },
+    { label: 'Managed packages', value: packages.length, detail: `${managedWorkers} worker workflow${pluralSuffix(managedWorkers)}` },
     { label: 'Active workflows', value: workflows.filter(isActiveWorkflow).length, detail: `${disabledWorkflows} disabled · ${repositoryCount} repositories` },
     { label: 'Runs · 24h', value: hasRunTelemetry ? health.total : '—', detail: sourceWindowLabel(sources.runs) },
     {
@@ -1259,7 +1260,7 @@ function buildPackageUtilizationRow(entry, usageByPackage, usageSource) {
       ? 'AI Credit usage artifacts are unavailable.'
       : reportedRuns === 0
         ? 'No completed runs in the retained window.'
-        : `${formatNumber(used)} of ${formatNumber(allowance)} AIC across ${formatNumber(reportedRuns)} reported run${reportedRuns === 1 ? '' : 's'}.`,
+        : `${formatNumber(used)} of ${formatNumber(allowance)} AIC across ${formatNumber(reportedRuns)} reported run${pluralSuffix(reportedRuns)}.`,
     'aria-label': ratio === null
       ? `${entry.name}: no utilization available`
       : `${entry.name}: ${formatNumber(used)} of ${formatNumber(allowance)} AI Credits used, ${formatPercent(ratio)}`

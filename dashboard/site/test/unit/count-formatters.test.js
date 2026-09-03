@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import { describe, expect, it } from 'vitest';
-import { formatCount, formatCountNoun, titleCase } from '../../src/components/count-formatters.js';
+import { formatCount, formatCountNoun, pluralSuffix, titleCase } from '../../src/components/count-formatters.js';
 
 describe('count formatters', () => {
   it('formats counts for UI text', () => {
@@ -25,5 +25,13 @@ describe('count formatters', () => {
     expect(titleCase('in-progress')).toBe('In Progress');
     expect(titleCase('review')).toBe('Review');
     expect(titleCase('')).toBe('');
+  });
+
+  it('returns the regular plural suffix for a count', () => {
+    expect(pluralSuffix(1)).toBe('');
+    expect(pluralSuffix(0)).toBe('s');
+    expect(pluralSuffix(2)).toBe('s');
+    expect(pluralSuffix('1')).toBe('');
+    expect(pluralSuffix(undefined)).toBe('s');
   });
 });

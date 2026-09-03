@@ -5,7 +5,7 @@
 import { h } from '../dom.js';
 import { octicon } from '../octicons.js';
 import { formatNumber, formatPercent } from '../view-formatters.js';
-import { titleCase } from './count-formatters.js';
+import { pluralSuffix, titleCase } from './count-formatters.js';
 import { classifyUtilizationRatio, isFailureConclusion } from './run-classification.js';
 import { coverageWindowHours, formatMediumUtcDate, formatMediumUtcDateTime, renderEmptyMessage } from './ui-primitives.js';
 import { renderInteractiveTabs, updateInteractiveTabSelection } from './tab-nav.js';
@@ -402,7 +402,7 @@ function renderUtilizationCard(entry, utilization, available, completeness) {
     ? 'AI Credit usage artifacts are unavailable.'
     : reportedRuns === 0
       ? 'No AIC usage was reported in the retained window.'
-      : `${formatAic(used)} of ${formatAic(allowed)} AIC across ${formatNumber(reportedRuns)} reported run${reportedRuns === 1 ? '' : 's'}.`;
+      : `${formatAic(used)} of ${formatAic(allowed)} AIC across ${formatNumber(reportedRuns)} reported run${pluralSuffix(reportedRuns)}.`;
   const coverage = !available
     ? ''
     : completeness === 'partial'
@@ -753,7 +753,7 @@ function trendPoints(values, maximum) {
 function sourceWindowLabel(metadata) {
   const hours = coverageWindowHours(metadata);
   if (hours != null) {
-    return `the last ${formatNumber(hours)} hour${hours === 1 ? '' : 's'}`;
+    return `the last ${formatNumber(hours)} hour${pluralSuffix(hours)}`;
   }
   return 'the retained usage window';
 }
