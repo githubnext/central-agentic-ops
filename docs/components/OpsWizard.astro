@@ -196,6 +196,9 @@ const agents = [
 </section>
 
 <script>
+  import controlPolicy from "../../.github/workflows/cao.json";
+  import { buildWizardPolicy } from "../lib/configured-operations.mjs";
+
   const CATALOG = "githubnext/gh-aw-cao";
   const CATALOG_REF = "main";
   const SETUP_SKILL_URL =
