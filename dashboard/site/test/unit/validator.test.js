@@ -77,21 +77,20 @@ describe('dashboard document validation', () => {
     expect(validateDashboardDocument(JSON.stringify(document)).ok).toBe(true);
   });
 
-  it('defines four chart-led security analyses with supplemental evidence tables', () => {
+  it('defines the restored security assurance view with a findings summary table', () => {
     const document = JSON.parse(authoritativeDashboardSource);
     const security = document.dashboard.pages.find((/** @type {{ id: string }} */ page) => page.id === 'security');
     expect(security.sections.map((/** @type {{ views: string[] }} */ section) => section.views)).toEqual([
-      ['security-access-control-chart', 'security-access-control-table'],
-      ['security-firewall-chart', 'security-firewall-table'],
-      ['security-integrity-chart', 'security-integrity-table'],
-      ['security-threat-chart', 'security-threat-table']
+      ['security-findings-summary', 'security-summary', 'security-signals'],
+      ['security-output-ledger']
     ]);
-    for (const section of security.sections) {
-      const chart = security.views.find((/** @type {{ id: string }} */ view) => view.id === section.views[0]);
-      const table = security.views.find((/** @type {{ id: string }} */ view) => view.id === section.views[1]);
-      expect(chart).toMatchObject({ mark: 'chart', chart: 'pie' });
-      expect(table).toMatchObject({ mark: 'table', disclosure: 'supplemental' });
-    }
+    const summary = security.views.find((/** @type {{ id: string }} */ view) => view.id === 'security-findings-summary');
+    expect(summary).toMatchObject({ mark: 'table' });
+    expect(summary).not.toHaveProperty('chart');
+    expect(summary.encoding.columns).toEqual(expect.arrayContaining([
+      expect.objectContaining({ field: 'finding-severity' }),
+      expect.objectContaining({ field: 'finding', aggregate: 'count' })
+    ]));
     expect(validateDashboardDocument(JSON.stringify(document)).ok).toBe(true);
   });
 

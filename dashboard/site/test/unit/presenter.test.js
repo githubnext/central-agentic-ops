@@ -786,7 +786,7 @@ describe('presenter built-in and custom pages', () => {
     expect(rendered.querySelectorAll('.dashboard-horizon .tooltip-content time')[1]?.getAttribute('datetime')).toBe('2026-09-01T12:00:00.000Z');
   });
 
-  it('renders four chart-led security analyses with detailed evidence', () => {
+  it('renders the restored Security assurance view with a findings summary table', () => {
     const metadata = {
       'source-id': 'security-fixture',
       'source-kind': 'fixture',
@@ -799,18 +799,53 @@ describe('presenter built-in and custom pages', () => {
     const rendered = renderDashboard({
       document: authoritativeDashboardDocument,
       sources: {
-        'security-observations': {
-          source: 'security-observations',
+        workflows: {
+          source: 'workflows',
           rows: [
-            { 'security-observation': 'access-summary', 'security-feature': 'access-control', 'security-analysis': 'summary', 'security-signal': 'File access denied', 'security-status': 'denied', 'security-count': 2 },
-            { 'security-observation': 'access-detail', 'security-feature': 'access-control', 'security-analysis': 'detail', 'security-signal': 'read denied', 'security-status': 'denied', 'security-subject': 'Filesystem', 'security-count': 2, workflow: '.github/workflows/daily.md', run: '101', 'observed-at': '2026-08-31T04:00:00Z' },
-            { 'security-observation': 'firewall-summary', 'security-feature': 'firewall', 'security-analysis': 'summary', 'security-signal': 'Blocked requests', 'security-status': 'blocked', 'security-count': 3 },
-            { 'security-observation': 'firewall-detail', 'security-feature': 'firewall', 'security-analysis': 'detail', 'security-signal': 'Blocked request', 'security-status': 'blocked', 'security-subject': '<img src=x onerror=alert(1)>', 'security-count': 3, workflow: '.github/workflows/daily.md', run: '101', 'observed-at': '2026-08-31T04:00:00Z' },
-            { 'security-observation': 'integrity-summary', 'security-feature': 'integrity-filtering', 'security-analysis': 'summary', 'security-signal': 'Filtered interactions', 'security-status': 'filtered', 'security-count': 1 },
-            { 'security-observation': 'integrity-detail', 'security-feature': 'integrity-filtering', 'security-analysis': 'detail', 'security-signal': 'Filtered tool', 'security-status': 'filtered', 'security-subject': 'create_issue', 'security-count': 1, workflow: '.github/workflows/daily.md', run: '101', 'observed-at': '2026-08-31T04:00:00Z' },
-            { 'security-observation': 'threat-summary', 'security-feature': 'threat-detection', 'security-analysis': 'summary', 'security-signal': 'Prompt injection', 'security-status': 'detected', 'security-count': 1 },
-            { 'security-observation': 'threat-detail', 'security-feature': 'threat-detection', 'security-analysis': 'detail', 'security-signal': 'Prompt injection', 'security-status': 'detected', 'security-count': 1, workflow: '.github/workflows/daily.md', run: '101', 'observed-at': '2026-08-31T04:00:00Z' }
+            { workflow: '.github/workflows/daily.md', 'workflow-name': 'Daily operations', package: 'daily', 'package-name': 'Daily', 'inventory-ready': true },
+            { workflow: '.github/workflows/release.md', 'workflow-name': '<img src=x onerror=alert(1)>', package: 'release', 'package-name': 'Release', 'inventory-ready': false }
           ],
+          metadata
+        },
+        runs: {
+          source: 'runs',
+          rows: [
+            { workflow: '.github/workflows/daily.md', run: '101', 'run-conclusion': 'action-required', 'started-at': '2026-08-31T04:00:00Z', 'run-link': { relation: 'run', href: 'https://github.com/githubnext/gh-aw-cao/actions/runs/101', label: 'View run 101' } },
+            { workflow: '.github/workflows/daily.md', run: '102', 'run-conclusion': 'action-required', 'started-at': '2026-08-31T05:00:00Z', 'run-link': { relation: 'run', href: 'https://github.com/githubnext/gh-aw-cao/actions/runs/102', label: 'View run 102' } }
+          ],
+          metadata
+        },
+        findings: {
+          source: 'findings',
+          rows: [
+            {
+              workflow: '.github/workflows/release.md',
+              finding: 'warning-1',
+              'finding-kind': 'authored-warning',
+              'finding-summary': '<img src=x onerror=alert(1)>',
+              'finding-severity': 'high',
+              'finding-status': 'open',
+              'observed-at': '2026-08-31T05:00:00Z',
+              'external-link': { relation: 'external', href: 'https://github.com/githubnext/gh-aw-cao/issues/1', label: 'View warning output' }
+            },
+            {
+              workflow: '.github/workflows/daily.md',
+              finding: 'warning-2',
+              'finding-kind': 'authored-warning',
+              'finding-summary': 'Second warning',
+              'finding-severity': 'high',
+              'finding-status': 'open',
+              'observed-at': '2026-08-31T04:00:00Z'
+            }
+          ],
+          metadata
+        },
+        outcomes: {
+          source: 'outcomes',
+          rows: [{
+            'safe-output': 'warning-1',
+            'outcome-title': 'Release warning'
+          }],
           metadata
         }
       }
@@ -820,16 +855,25 @@ describe('presenter built-in and custom pages', () => {
     const dashboardPage = authoritativeDashboardDocument.dashboard.pages.find((/** @type {{ id: string }} */ candidate) => candidate.id === 'security');
     expect(dashboardPage).toMatchObject({ kind: 'custom' });
     expect(dashboardPage).not.toHaveProperty('page');
+    expect(dashboardPage.sections).toEqual(expect.arrayContaining([
+      expect.objectContaining({
+        id: 'operational-assurance',
+        'count-source': 'security-signals',
+        'count-label': 'signals'
+      })
+    ]));
     expect(rendered.querySelector('[data-nav-page-id="security"] .octicon-shield')).not.toBeNull();
-    const sections = [...(page?.querySelectorAll('.layout-section') ?? [])];
-    expect(sections).toHaveLength(4);
-    for (const section of sections) {
-      expect(section.querySelector('.section-views')?.firstElementChild?.querySelector('[data-chart-widget="pie"]')).not.toBeNull();
-      expect(section.querySelector('.custom-table')).not.toBeNull();
-    }
-    expect(page?.textContent).toContain('File access denied');
-    expect(page?.textContent).toContain('create_issue');
-    expect(page?.textContent).toContain('Prompt injection');
+    expect(page?.querySelector('.layout-section-header > strong')?.textContent).toBe('4 signals');
+    expect(page?.querySelector('[data-chart-widget="pie"]')).toBeNull();
+    const summaryRows = [...(page?.querySelector('.custom-table')?.querySelectorAll('tbody tr') ?? [])];
+    expect(summaryRows).toHaveLength(1);
+    expect(summaryRows[0]?.textContent).toContain('high');
+    expect(summaryRows[0]?.textContent).toContain('2');
+    expect(page?.querySelector('.summary-grid')?.textContent).toContain('Approval gates2');
+    expect(page?.querySelector('.summary-grid')?.textContent).toContain('Explicit warnings2');
+    expect(page?.querySelector('.summary-grid')?.textContent).toContain('Package integrity gaps1');
+    expect(page?.querySelector('.summary-grid')?.textContent).toContain('Vulnerability findings—');
+    expect(page?.textContent).toContain('No vulnerability feed is retained.');
     expect(page?.textContent).toContain('<img src=x onerror=alert(1)>');
     expect(page?.querySelector('img')).toBeNull();
   });
