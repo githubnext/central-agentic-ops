@@ -104,14 +104,6 @@ tools:
 safe-outputs:
   allowed-domains:
     - githubnext.github.io
-  add-labels:
-    allowed: [self-care, self-care:accessibility-checker]
-    create-if-missing: true
-    issues: true
-    pull-requests: false
-    max: 2
-    target: "*"
-    target-repo: ${{ (inputs.safe_output_mode || 'review') == 'review' && (inputs.safe_output_repo || github.repository) || inputs.target_repo }}
   create-issue:
     target-repo: ${{ (inputs.safe_output_mode || 'review') == 'review' && (inputs.safe_output_repo || github.repository) || inputs.target_repo }}
     title-prefix: "[self-care:accessibility-checker] "

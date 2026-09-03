@@ -86,14 +86,6 @@ tools:
   bash:
     - "*"
 safe-outputs:
-  add-labels:
-    allowed: [self-care, self-care:dashboard-review]
-    create-if-missing: true
-    issues: true
-    pull-requests: false
-    max: 2
-    target: "*"
-    target-repo: ${{ (inputs.safe_output_mode || 'review') == 'review' && (inputs.safe_output_repo || github.repository) || inputs.target_repo }}
   create-issue:
     target-repo: ${{ (inputs.safe_output_mode || 'review') == 'review' && (inputs.safe_output_repo || github.repository) || inputs.target_repo }}
     title-prefix: "[self-care:dashboard-review] "
