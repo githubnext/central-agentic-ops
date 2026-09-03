@@ -1942,6 +1942,14 @@ test("SelfCare dashboard reviewer checks deployments through stakeholder persona
   assert.match(source, /overview, dispatches, packages, repositories, workflows, runs, and coverage routes/);
   assert.match(source, /title-prefix: "\[self-care:dashboard-review\] "/);
   assert.match(source, /close-older-key: self-care-dashboard-review/);
+  assert.match(source, /labels: \[self-care\]/);
+  assert.match(source, /central-agentic-ops-dashboard/);
+  assert.match(source, /view-grader\.mjs/);
+  assert.match(source, /dashboard-artifact/);
+  assert.match(source, /successful trusted default-branch build/);
+  assert.match(source, /normalized Shannon entropy/);
+  assert.match(source, /Reject major page, navigation, information-architecture, or view redesigns/);
+  assert.match(source, /<details><summary><b>Agent prompt<\/b><\/summary>/);
   assert.match(source, /Use `\$\{\{ github\.run_id \}\}` as the reproducible random seed/);
   assert.match(source, /Launch the `cfo-dashboard-reviewer`, `cso-dashboard-reviewer`, and `cto-dashboard-reviewer` agents in parallel/);
   assert.match(source, /unique Playwright session name/);
