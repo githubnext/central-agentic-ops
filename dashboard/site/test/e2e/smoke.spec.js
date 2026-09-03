@@ -259,6 +259,8 @@ function buildPresenterModuleUrl() {
     .replace("'./view-formatters.js'", JSON.stringify(viewFormattersModuleUrl))
     .replace("'./workflow-data.js'", JSON.stringify(workflowDataModuleUrl));
   const repositoryDataModuleUrl = `data:text/javascript;charset=utf-8,${encodeURIComponent(repositoryDataSource)}`;
+  const dataHealthSource = readFileSync(new URL('../../src/data-health.js', import.meta.url), 'utf8');
+  const dataHealthModuleUrl = `data:text/javascript;charset=utf-8,${encodeURIComponent(dataHealthSource)}`;
 
   const presenterSource = readFileSync(new URL('../../src/presenter.js', import.meta.url), 'utf8')
     .replace("'../dashboard.json'", JSON.stringify(dashboardModuleUrl))
@@ -283,6 +285,7 @@ function buildPresenterModuleUrl() {
     .replace("'./repository-data.js'", JSON.stringify(repositoryDataModuleUrl))
     .replace("'./runtime-data.js'", JSON.stringify(runtimeDataModuleUrl))
     .replace("'./workflow-data.js'", JSON.stringify(workflowDataModuleUrl))
+    .replace("'./data-health.js'", JSON.stringify(dataHealthModuleUrl))
     .replace("'./view-formatters.js'", JSON.stringify(viewFormattersModuleUrl));
 
   return `data:text/javascript;charset=utf-8,${encodeURIComponent(presenterSource)}`;
