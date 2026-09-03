@@ -578,7 +578,8 @@ test("operations creation guidance scopes detection and omits worker evals", () 
 
   assert.match(packageSkill, /safe-outputs\.threat-detection: false/);
   assert.match(packageSkill, /default new dispatchers to `hourly`/);
-  assert.match(packageSkill, /`labels: \[<package-slug>\]`[\s\S]*?preferably `title-prefix: "\[<package-slug>:<worker-slug>\] "`/);
+  assert.match(packageSkill, /`safe-outputs\.create-issue` or `safe-outputs\.create-pull-request`[\s\S]*?`labels: \[<package-slug>, <package-slug>:<worker-slug>\]`[\s\S]*?`title-prefix: "\[<package-slug>:<worker-slug>\] "`/);
+  assert.match(packageSkill, /every created issue or pull request identifies both its owning operation and worker/);
   assert.match(packageSkill, /evaluate the potential follow-up actions/);
   assert.match(packageSkill, /single most important action with the highest expected return on investment/);
   assert.match(packageSkill, /<details><summary><b>Agent prompt<\/b><\/summary> \.\.\. <\/details>/);
