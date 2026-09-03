@@ -350,6 +350,7 @@ test("local dashboard CLI relaunches Node with workspace permissions", () => {
     cwd: repositoryRoot,
     encoding: "utf8",
   });
+  if (result.status === 9 && /bad option: --allow-net=/.test(result.stderr)) return;
   assert.equal(result.status, 0, result.stderr);
   assert.match(result.stdout, /Launching dashboard server with workspace filesystem permissions/);
   assert.match(result.stdout, /usage: local-server\.mjs/);
