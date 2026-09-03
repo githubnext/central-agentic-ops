@@ -73,6 +73,10 @@ test("local dashboard server composes package dashboards and reloads after updat
   await mkdir(siteRoot, { recursive: true });
   const syntheticToken = ["ghp", "abcdefghijklmnopqrstuvwxyz123456"].join("_");
   await writeFile(path.join(siteRoot, "index.html"), `<!doctype html><body>preview ${syntheticToken}</body>`);
+  await writeFile(path.join(siteRoot, "guide.md"), `# Guide\n\n${syntheticToken}\n`);
+  await writeFile(path.join(siteRoot, "image.png"), Buffer.from([0x89, 0x50, 0x4e, 0x47]));
+  await writeFile(path.join(siteRoot, "private.txt"), "must not be served");
+  await writeFile(path.join(siteRoot, "private"), "must not be served");
   const builtInDashboard = JSON.parse(dashboard("built-in"));
   builtInDashboard.dashboard.description = syntheticToken;
   await writeFile(path.join(siteRoot, "dashboard.json"), JSON.stringify(builtInDashboard));
@@ -106,6 +110,16 @@ test("local dashboard server composes package dashboards and reloads after updat
     assert.doesNotMatch(index, /<script[^>]+src=.*copilot-prompt/);
     assert.doesNotMatch(index, new RegExp(syntheticToken));
     assert.match(index, /\[REDACTED\]/);
+    const markdownResponse = await fetch(`${preview.url}/guide.md`);
+    assert.equal(markdownResponse.status, 200);
+    assert.equal(markdownResponse.headers.get("content-type"), "text/markdown; charset=utf-8");
+    assert.doesNotMatch(await markdownResponse.text(), new RegExp(syntheticToken));
+    const imageResponse = await fetch(`${preview.url}/image.png`);
+    assert.equal(imageResponse.status, 200);
+    assert.equal(imageResponse.headers.get("content-type"), "image/png");
+    assert.deepEqual(Buffer.from(await imageResponse.arrayBuffer()), Buffer.from([0x89, 0x50, 0x4e, 0x47]));
+    assert.equal((await fetch(`${preview.url}/private.txt`)).status, 404);
+    assert.equal((await fetch(`${preview.url}/private`)).status, 404);
 
     const dashboardResponse = await fetch(`${preview.url}/dashboard.json`);
     assert.equal(dashboardResponse.headers.get("cache-control"), "no-store");

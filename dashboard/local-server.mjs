@@ -39,13 +39,22 @@ const copilotEndpoint = "/__dashboard_copilot";
 const dataArtifactName = "central-agentic-ops-dashboard-data";
 const dashboardWorkflowPath = ".github/workflows/dashboard.yml";
 const contentTypes = new Map([
+  [".avif", "image/avif"],
   [".css", "text/css; charset=utf-8"],
+  [".gif", "image/gif"],
   [".html", "text/html; charset=utf-8"],
+  [".ico", "image/x-icon"],
+  [".jpeg", "image/jpeg"],
+  [".jpg", "image/jpeg"],
   [".js", "text/javascript; charset=utf-8"],
   [".json", "application/json; charset=utf-8"],
+  [".md", "text/markdown; charset=utf-8"],
   [".mjs", "text/javascript; charset=utf-8"],
+  [".png", "image/png"],
   [".svg", "image/svg+xml"],
+  [".webp", "image/webp"],
 ]);
+const redactedTextExtensions = new Set([".css", ".html", ".js", ".md", ".mjs", ".svg"]);
 
 async function existingDirectories(paths) {
   const directories = [];
@@ -222,9 +231,9 @@ function redactJsonSecrets(source) {
 }
 
 function browserSafeFileContent(path, content) {
-  const extension = extname(path);
+  const extension = extname(path).toLowerCase();
   if (extension === ".json") return redactJsonSecrets(content.toString("utf8"));
-  if ([".css", ".html", ".js", ".mjs"].includes(extension)) {
+  if (redactedTextExtensions.has(extension)) {
     return redactSecretValues(content.toString("utf8"));
   }
   return content;
@@ -763,6 +772,12 @@ export async function startDashboardServer({
         response.writeHead(404).end("Not found\n");
         return;
       }
+      const extension = extname(filePath).toLowerCase();
+      if (!contentTypes.has(extension)) {
+        console.log("Refused unsupported dashboard file type.", { extension: extension || null });
+        response.writeHead(404).end("Not found\n");
+        return;
+      }
       const canonicalFilePath = await realpath(filePath);
       if (!isWithin(resolvedSiteRoot, canonicalFilePath)) {
         response.writeHead(404).end("Not found\n");
@@ -774,7 +789,7 @@ export async function startDashboardServer({
       else content = browserSafeFileContent(canonicalFilePath, await readFile(canonicalFilePath));
       response.writeHead(200, {
         "Cache-Control": "no-store",
-        "Content-Type": contentTypes.get(extname(canonicalFilePath)) || "application/octet-stream",
+        "Content-Type": contentTypes.get(extension),
       });
       response.end(request.method === "HEAD" ? undefined : content);
     } catch (error) {
