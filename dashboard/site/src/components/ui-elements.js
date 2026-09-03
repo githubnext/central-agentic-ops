@@ -147,7 +147,7 @@ function renderPackageStatusGridElement(context) {
           h(
             'header',
             { className: 'package-status-header' },
-            h('strong', null, stringValue(row.title)),
+            h('strong', null, octicon(stringValue(row.icon) || 'package'), h('span', null, stringValue(row.title))),
             h('span', { className: 'package-status-state' }, stringValue(row.inventory || 'Needs attention')),
             h('span', { className: `mode-badge ${modeClass}`.trim() }, capitalize(modeText || 'unknown'))
           ),

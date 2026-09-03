@@ -44,7 +44,7 @@
         }
       },
       "aw-maintenance": {
-        "icon": "settings",
+        "icon": "gear",
         "workers": {
           "failures-investigator": {
             "workflow": "aw-failures-investigator"

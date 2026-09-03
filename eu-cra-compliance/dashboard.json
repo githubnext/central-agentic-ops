@@ -12,7 +12,7 @@
         "title": "EU CRA Advisor",
         "navigation-label": "EU CRA advisor",
         "description": "Track evidence-gathering runs, non-binding CRA reports, and explicit human acceptance across each assessment domain.",
-        "icon": "package",
+        "icon": "shield",
         "views": [
           {
             "id": "eu-cra-compliance-runs",

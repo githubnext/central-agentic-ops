@@ -2096,6 +2096,7 @@ dashboard:
             organization: 'octo-org',
             repository: 'platform',
             package: 'daily-ops',
+            'package-icon': 'workflow',
             workflow: 'orchestrator.yml',
             'workflow-role': 'orchestrator',
             'max-ai-credits': 100,
@@ -2135,6 +2136,7 @@ dashboard:
           },
           {
             package: 'mismatch',
+            'package-icon': 'not-an-octicon',
             workflow: 'mismatch.yml',
             'workflow-role': 'orchestrator',
             'max-ai-credits': 100,
@@ -2150,6 +2152,7 @@ dashboard:
         expect.objectContaining({ code: 'DLS-E011', path: '$.sources.workflows.rows[0].package' }),
         expect.objectContaining({ code: 'DLS-E011', path: '$.sources.workflows.rows[1].package' }),
         expect.objectContaining({ code: 'DLS-E011', path: '$.sources.workflows.rows[2].max-ai-credits' }),
+        expect.objectContaining({ code: 'DLS-E005', path: '$.sources.workflows.rows[3].package-icon' }),
         expect.objectContaining({ code: 'DLS-E011', path: '$.sources.workflows.rows[3].package-aic-allowance' })
       ]));
     }

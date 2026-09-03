@@ -3,6 +3,7 @@
  */
 
 import { h } from '../dom.js';
+import { octicon } from '../octicons.js';
 import { formatNumber, formatPercent } from '../view-formatters.js';
 import { titleCase } from './count-formatters.js';
 import { classifyUtilizationRatio, isFailureConclusion } from './run-classification.js';
@@ -126,7 +127,7 @@ function renderPackageSummaryRow(entry, summary) {
   return /** @type {HTMLTableRowElement} */ (h(
     'tr',
     { dataset: { packageSummaryKey: entry.key } },
-    h('th', { scope: 'row' }, h('a', { href: packageInsightsHref(entry.id) }, entry.name)),
+    h('th', { scope: 'row' }, h('a', { href: packageInsightsHref(entry.id) }, octicon(entry.icon), h('span', null, entry.name))),
     h('td', null, formatNumber(summary?.runs ?? 0)),
     h('td', null, formatNumber(summary?.successful ?? 0)),
     h('td', null, formatNumber(summary?.failed ?? 0)),
@@ -429,7 +430,7 @@ function renderUtilizationCard(entry, utilization, available, completeness) {
       h(
         'span',
         { className: 'package-utilization-identity' },
-        h('a', { href: packageInsightsHref(entry.id) }, h('strong', null, entry.name)),
+        h('a', { href: packageInsightsHref(entry.id) }, octicon(entry.icon), h('strong', null, entry.name)),
         scopeLabel ? h('small', null, scopeLabel) : null
       ),
       h('span', { className: 'package-utilization-value' }, ratio === null ? '—' : formatPercent(ratio))
@@ -654,6 +655,7 @@ function summarizePackages(workflows) {
       key,
       id,
       name: String(rows.find((row) => typeof row['package-name'] === 'string')?.['package-name'] ?? titleCase(id)),
+      icon: String(rows.find((row) => typeof row['package-icon'] === 'string')?.['package-icon'] ?? 'package'),
       organization: String(firstRow.organization ?? ''),
       repository: String(firstRow.repository ?? ''),
       completeAttemptAllowance: uniqueWorkflowAllowances.size > 0 ? summedAllowance : null,
