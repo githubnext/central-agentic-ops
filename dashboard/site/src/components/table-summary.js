@@ -140,11 +140,6 @@ function renderQuantitativeSummary(label, values) {
     return renderTableSummaryEmpty('No numeric values');
   }
   const mean = values.reduce((total, value) => total + value, 0) / values.length;
-  const sortedValues = [...values].sort((left, right) => left - right);
-  const middle = Math.floor(sortedValues.length / 2);
-  const median = sortedValues.length % 2 === 0
-    ? (sortedValues[middle - 1] + sortedValues[middle]) / 2
-    : sortedValues[middle];
   const deviation = values.length > 1
     ? Math.sqrt(
       values.reduce((total, value) => total + ((value - mean) ** 2), 0) / (values.length - 1)
@@ -162,8 +157,7 @@ function renderQuantitativeSummary(label, values) {
       null,
       ...renderDefinitionListRows([
         { label: 'Mean', value: formatStatistic(mean) },
-        { label: 'Median', value: formatStatistic(median) },
-        { label: 'Standard deviation', value: deviation === null ? 'N/A' : formatStatistic(deviation) }
+        { label: 'Stddev', value: deviation === null ? 'N/A' : formatStatistic(deviation) }
       ])
     )
   );

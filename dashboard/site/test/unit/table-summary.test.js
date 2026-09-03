@@ -23,8 +23,8 @@ describe('renderTableSummaryRow', () => {
     }]);
 
     expect(rendered.textContent).toContain('Mean2');
-    expect(rendered.textContent).toContain('Median2');
-    expect(rendered.textContent).toContain('Standard deviation1');
+    expect(rendered.textContent).toContain('Stddev1');
+    expect(rendered.textContent).not.toContain('Median');
     expect(rendered.querySelector('svg')?.getAttribute('aria-label')).toBe('Score distribution, 3 values');
   });
 
@@ -35,7 +35,7 @@ describe('renderTableSummaryRow', () => {
       values: [4]
     }]);
 
-    expect(rendered.textContent).toContain('Standard deviationN/A');
+    expect(rendered.textContent).toContain('StddevN/A');
   });
 
   it('summarizes temporal values by start, stop, and duration', () => {
