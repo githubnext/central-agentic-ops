@@ -16,6 +16,8 @@ describe('count formatters', () => {
     expect(formatCountNoun(1, 'worker dispatch lacks', 'worker dispatches lack')).toBe('1 worker dispatch lacks');
     expect(formatCountNoun(3, 'worker dispatch lacks', 'worker dispatches lack')).toBe('3 worker dispatches lack');
     expect(formatCountNoun(undefined, 'workflow', 'workflows')).toBe('0 workflows');
+    expect(formatCountNoun(1, 'item', 'items')).toBe('1 item');
+    expect(formatCountNoun(3, 'item', 'items')).toBe('3 items');
   });
 
   it('title-cases kebab-case identifiers for shared display text', () => {
