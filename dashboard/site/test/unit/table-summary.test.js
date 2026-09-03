@@ -1,10 +1,20 @@
 // @vitest-environment jsdom
 import { describe, expect, it } from 'vitest';
 import { renderTableSummaryRow } from '../../src/components/table-summary.js';
+import { summarizeTableColumns } from '../../src/table-summary-data.js';
+
+/** @param {import('../../src/table-summary-data.js').TableSummaryColumn[]} columns */
+function renderSummaries(columns) {
+  const summaries = summarizeTableColumns(columns);
+  return renderTableSummaryRow(summaries.map((summary, index) => ({
+    ...summary,
+    label: columns[index]?.label ?? ''
+  })));
+}
 
 describe('renderTableSummaryRow', () => {
   it('summarizes categorical values by frequency and percentage', () => {
-    const rendered = renderTableSummaryRow([{
+    const rendered = renderSummaries([{
       label: 'Status',
       type: 'nominal',
       values: ['open', 'closed', 'open', 'open']
@@ -16,7 +26,7 @@ describe('renderTableSummaryRow', () => {
   });
 
   it('summarizes quantitative values and includes a histogram', () => {
-    const rendered = renderTableSummaryRow([{
+    const rendered = renderSummaries([{
       label: 'Score',
       type: 'quantitative',
       values: [1, 2, 3]
@@ -29,7 +39,7 @@ describe('renderTableSummaryRow', () => {
   });
 
   it('reports an unavailable deviation for a single quantitative value', () => {
-    const rendered = renderTableSummaryRow([{
+    const rendered = renderSummaries([{
       label: 'Score',
       type: 'quantitative',
       values: [4]
@@ -39,7 +49,7 @@ describe('renderTableSummaryRow', () => {
   });
 
   it('summarizes temporal values by start, stop, and duration', () => {
-    const rendered = renderTableSummaryRow([{
+    const rendered = renderSummaries([{
       label: 'Started',
       type: 'temporal',
       values: [
@@ -57,7 +67,7 @@ describe('renderTableSummaryRow', () => {
   });
 
   it('reports unavailable temporal values without treating them as categories', () => {
-    const rendered = renderTableSummaryRow([{
+    const rendered = renderSummaries([{
       label: 'Started',
       type: 'temporal',
       values: ['invalid']
@@ -67,7 +77,7 @@ describe('renderTableSummaryRow', () => {
   });
 
   it('auto-detects boolean values and summarizes their true percentage', () => {
-    const rendered = renderTableSummaryRow([{
+    const rendered = renderSummaries([{
       label: 'Ready',
       type: 'nominal',
       values: [true, false, true, null]
@@ -77,7 +87,7 @@ describe('renderTableSummaryRow', () => {
   });
 
   it('leaves the summary empty when the column type is unknown', () => {
-    const rendered = renderTableSummaryRow([{
+    const rendered = renderSummaries([{
       label: 'Unknown',
       values: ['alpha', 'bravo', 'charlie', null]
     }]);
@@ -86,7 +96,7 @@ describe('renderTableSummaryRow', () => {
   });
 
   it('leaves the summary empty when typed values have unknown meaning', () => {
-    const rendered = renderTableSummaryRow([{
+    const rendered = renderSummaries([{
       label: 'Details',
       type: 'nominal',
       values: [{ label: 'alpha' }]
@@ -96,7 +106,7 @@ describe('renderTableSummaryRow', () => {
   });
 
   it('leaves the summary empty for report link columns', () => {
-    const rendered = renderTableSummaryRow([{
+    const rendered = renderSummaries([{
       label: 'Report',
       type: 'nominal',
       display: 'outcome-link',
@@ -107,7 +117,7 @@ describe('renderTableSummaryRow', () => {
   });
 
   it('summarizes run-like columns and object values by item count', () => {
-    const rendered = renderTableSummaryRow([
+    const rendered = renderSummaries([
       {
         field: 'run',
         label: 'Run',

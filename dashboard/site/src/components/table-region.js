@@ -3,7 +3,7 @@
  */
 
 import { h } from '../dom.js';
-import { processRows } from '../data-processor.js';
+import { processRows, processTableSummaries } from '../data-processor.js';
 import { renderTableSummaryRow } from './table-summary.js';
 
 /**
@@ -23,7 +23,7 @@ const DEFAULT_PAGE_SIZE = 25;
  *   colSpan: number,
  *   headCells: string[],
  *   unsortableColumns?: number[],
- *   summaryColumns?: import('./table-summary.js').TableSummaryColumn[],
+ *   summaryColumns?: import('../table-summary-data.js').TableSummaryColumn[],
  *   bodyRows: unknown,
  *   filterLabel?: string,
  *   filterId?: string,
@@ -127,7 +127,7 @@ export function renderTableRegion(options) {
               )
               : h('th', { scope: 'col' }, cell)))
           ),
-          summaryColumns.length > 0 ? renderTableSummaryRow(summaryColumns) : null
+          summaryColumns.length > 0 ? renderDeferredTableSummaryRow(summaryColumns) : null
         ),
         h(
           'tbody',
@@ -145,6 +145,32 @@ export function renderTableRegion(options) {
 
   if (hasRows && sortable) {
     enableTableSort(region);
+  }
+
+  /**
+   * @param {import('../table-summary-data.js').TableSummaryColumn[]} columns
+   * @returns {HTMLTableRowElement}
+   */
+  function renderDeferredTableSummaryRow(columns) {
+    const result = processTableSummaries(columns);
+    if (!(result instanceof Promise)) {
+      return renderTableSummaryRow(result.map((summary, index) => ({ ...summary, label: columns[index]?.label ?? '' })));
+    }
+    const row = /** @type {HTMLTableRowElement} */ (h(
+      'tr',
+      { className: 'table-summary-row', 'aria-busy': 'true' },
+      ...columns.map(() => h('th', { scope: 'col', className: 'table-summary-cell' }))
+    ));
+    result.then((summaries) => {
+      const rendered = renderTableSummaryRow(
+        summaries.map((summary, index) => ({ ...summary, label: columns[index]?.label ?? '' }))
+      );
+      row.replaceChildren(...rendered.children);
+      row.removeAttribute('aria-busy');
+    }).catch(() => {
+      row.removeAttribute('aria-busy');
+    });
+    return row;
   }
   if (interactive) {
     enableTableFilter(region, { filterId, pageSize, resultNoun, resultNounPlural });

@@ -57,4 +57,21 @@ describe('dashboard data operations', () => {
       'Unsupported data operator: execute'
     );
   });
+
+  it('computes table statistics and histogram bins through the worker request boundary', () => {
+    expect(processDataRequest({
+      operation: 'summarize-table-columns',
+      columns: [{ label: 'Score', type: 'quantitative', values: [1, 2, 3] }]
+    })).toEqual([{
+      kind: 'quantitative',
+      count: 3,
+      mean: 2,
+      deviation: 1,
+      bins: [
+        { lower: 1, upper: 1.6666666666666665, count: 1 },
+        { lower: 1.6666666666666665, upper: 2.333333333333333, count: 1 },
+        { lower: 2.333333333333333, upper: 3, count: 1 }
+      ]
+    }]);
+  });
 });
