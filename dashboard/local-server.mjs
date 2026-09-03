@@ -763,18 +763,18 @@ export async function startDashboardServer({
         response.writeHead(404).end("Not found\n");
         return;
       }
-      const canonicalPath = await realpath(filePath);
-      if (!isWithin(resolvedSiteRoot, canonicalPath)) {
+      const canonicalFilePath = await realpath(filePath);
+      if (!isWithin(resolvedSiteRoot, canonicalFilePath)) {
         response.writeHead(404).end("Not found\n");
         return;
       }
 
       let content;
       if (pathname === "/dashboard.json") content = dashboardContent;
-      else content = browserSafeFileContent(canonicalPath, await readFile(canonicalPath));
+      else content = browserSafeFileContent(canonicalFilePath, await readFile(canonicalFilePath));
       response.writeHead(200, {
         "Cache-Control": "no-store",
-        "Content-Type": contentTypes.get(extname(canonicalPath)) || "application/octet-stream",
+        "Content-Type": contentTypes.get(extname(canonicalFilePath)) || "application/octet-stream",
       });
       response.end(request.method === "HEAD" ? undefined : content);
     } catch (error) {
