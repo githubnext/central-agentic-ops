@@ -149,6 +149,7 @@ export function renderChartWidget(chartType, points, series, pieSummary = null, 
     const bins = binHistogramValues(points.map((point) => toNumber(point.y)));
     const maximum = Math.max(...bins.map((bin) => bin.count), 1);
     const barWidth = bins.length > 0 ? 100 / bins.length : 100;
+    /** @param {{ lower: number, upper: number }} bin */
     const binLabel = (bin) => {
       const lower = formatNumber(bin.lower, unit);
       const upper = formatNumber(bin.upper, unit);
