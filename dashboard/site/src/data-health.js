@@ -17,7 +17,7 @@ export function deriveDataHealthSources(sources) {
   const sourceRows = Object.entries(sources).map(([name, source]) => {
     const rows = Array.isArray(source?.rows) ? source.rows : [];
     const observedFields = new Set(rows.flatMap((row) => Object.keys(row ?? {})));
-    const fields = new Set(SOURCE_FIELDS[name] ?? observedFields);
+    const fields = new Set(/** @type {Record<string, string[]>} */ (SOURCE_FIELDS)[name] ?? observedFields);
     const populatedFields = [...fields].filter((field) => rows.some((row) => row?.[field] !== null && row?.[field] !== undefined && row?.[field] !== ''));
     const populatedCells = rows.reduce(
       (total, row) => total + [...fields].filter((field) => row?.[field] !== null && row?.[field] !== undefined && row?.[field] !== '').length,
@@ -75,14 +75,14 @@ export function deriveDataHealthSources(sources) {
       rows: sourceRows,
       metadata
     }
-
-    /**
-     * @param {number} value
-     */
-    function formatPercent(value) {
-      return `${Math.round(value * 100)}%`;
-    }
   };
+}
+
+/**
+ * @param {number} value
+ */
+function formatPercent(value) {
+  return `${Math.round(value * 100)}%`;
 }
 
 /**
