@@ -3,6 +3,7 @@ import test from "node:test";
 import {
   extractCaoFailureMessage,
   isFailedConclusion,
+  performanceJobRecord,
   runFailureEvidence,
 } from "../../activity/failure-evidence.mjs";
 
@@ -26,6 +27,31 @@ test("run failure evidence normalizes API capacity and retains the failed job an
     failureJobId: 42,
     failureJob: "pre_activation",
     failureStep: "CAO admission blocked: GitHub API limited until 2026-09-03T11:48:27.000Z",
+  });
+});
+
+test("performance job records retain bounded timing and runner dimensions", () => {
+  assert.deepEqual(performanceJobRecord({
+    id: 42,
+    name: "agent",
+    status: "completed",
+    conclusion: "success",
+    started_at: "2026-09-03T10:00:00Z",
+    completed_at: "2026-09-03T10:02:30Z",
+    runner_name: "GitHub Actions 7",
+    runner_group_name: "GitHub Actions",
+    labels: ["ubuntu-latest", "", 7],
+    steps: [{ name: "Execute agent", conclusion: "success" }],
+  }), {
+    jobId: 42,
+    name: "agent",
+    status: "completed",
+    conclusion: "success",
+    startedAt: "2026-09-03T10:00:00Z",
+    completedAt: "2026-09-03T10:02:30Z",
+    runnerName: "GitHub Actions 7",
+    runnerGroupName: "GitHub Actions",
+    labels: ["ubuntu-latest"],
   });
 });
 

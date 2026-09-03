@@ -9,6 +9,8 @@ const sourceNames = [
   "repositories",
   "workflows",
   "runs",
+  "run-performance",
+  "job-performance",
   "experiments",
   "experiment-assignments",
   "graders",
@@ -372,6 +374,7 @@ function usageRows(usage) {
     "engine-version": firstText(run.engineVersion, run.engine_version, run.agenticEngineVersion, run.agentic_engine_version) || "unknown",
     "requested-model": firstText(run.requestedModel, run.requested_model, run.model) || "unknown",
     "resolved-model": firstText(run.resolvedModel, run.resolved_model, run.model) || "unknown",
+    "sandbox-runtime": firstText(run.agentRuntime, run.agent_runtime) || "unknown",
     "rollout-mode": run.mode || "unknown",
     "input-tokens": null,
     "output-tokens": null,
@@ -385,6 +388,63 @@ function usageRows(usage) {
     "observed-at": run.createdAt || usage.generatedAt,
     "run-link": link("run", workflowRunUrl(run.repository, run.runId), `Run ${run.runId}`),
   }));
+}
+
+function durationSeconds(start, end) {
+  const duration = Date.parse(String(end || "")) - Date.parse(String(start || ""));
+  return Number.isFinite(duration) && duration >= 0 ? duration / 1000 : null;
+}
+
+function performanceRows(deployed, usage) {
+  const metadataByRun = new Map((usage.runs || []).map((run) => [
+    `${String(run.repository || "").toLowerCase()}:${run.runId}`,
+    {
+      engine: firstText(run.engine, run.agenticEngine, run.agentic_engine) || "unknown",
+      "sandbox-runtime": firstText(run.agentRuntime, run.agent_runtime) || "unknown",
+      model: firstText(run.resolvedModel, run.resolved_model, run.requestedModel, run.requested_model, run.model) || "unknown",
+    },
+  ]));
+  const runs = [];
+  const jobs = [];
+  for (const workflow of deployed.workflows || []) {
+    const repository = String(workflow.repository || "");
+    const names = repositoryParts(repository);
+    for (const run of workflow.runHealth?.runRecords || []) {
+      const runDuration = durationSeconds(run.startedAt || run.createdAt, run.status === "completed" ? run.updatedAt : null);
+      const metadata = metadataByRun.get(`${repository.toLowerCase()}:${run.runId}`) || {
+        engine: "unknown",
+        "sandbox-runtime": "unknown",
+        model: "unknown",
+      };
+      const common = {
+        ...names,
+        workflow: workflow.path?.replace(/\.lock\.yml$/, ".md") || "",
+        run: String(run.runId),
+        "started-at": run.startedAt || run.createdAt,
+        "run-conclusion": runConclusion(run.conclusion),
+        "rollout-mode": rolloutMode(run.displayTitle),
+        ...metadata,
+        "run-link": link("run", workflowRunUrl(repository, run.runId), `View run ${run.runId}`),
+      };
+      if (runDuration !== null) {
+        runs.push({ ...common, "run-duration-seconds": runDuration });
+      }
+      for (const job of run.jobs || []) {
+        const jobDuration = durationSeconds(job.startedAt, job.completedAt);
+        if (jobDuration === null) continue;
+        const labels = Array.isArray(job.labels) ? job.labels.filter(Boolean) : [];
+        jobs.push({
+          ...common,
+          job: job.name || "Unknown job",
+          runner: labels.join(", ") || job.runnerName || "unknown",
+          "runner-name": job.runnerName || "unknown",
+          "runner-group": job.runnerGroupName || "unknown",
+          "job-duration-seconds": jobDuration,
+        });
+      }
+    }
+  }
+  return { runs, jobs };
 }
 
 function positiveCount(value) {
@@ -687,6 +747,7 @@ export function buildDashboardLanguageSources({ deployed, usage, operationalValu
   const generatedAt = report.generatedAt || deployed.generatedAt || new Date().toISOString();
   const workflows = workflowRows(deployed, generatedAt, inventory, controlSettings);
   const runs = runRows(deployed);
+  const performance = performanceRows(deployed, usage);
   const records = report.records || [];
   const reportAvailable = Array.isArray(report.records) && (report.error ? report.records.length > 0 : true);
   const reportComplete = !report.error;
@@ -721,11 +782,29 @@ export function buildDashboardLanguageSources({ deployed, usage, operationalValu
   sources.repositories = source("repositories", [...repositories.values()], generatedAt, discoveryAvailable, deployed.discovery?.complete === true);
   sources.workflows = source("workflows", workflows, generatedAt, workflowsAvailable, deployed.discovery?.complete === true);
   sources.runs = source("runs", runs, generatedAt, runAvailable, runComplete);
+  sources["run-performance"] = source(
+    "run-performance",
+    performance.runs,
+    generatedAt,
+    runAvailable,
+    runComplete && usageComplete,
+  );
+  sources["job-performance"] = source(
+    "job-performance",
+    performance.jobs,
+    generatedAt,
+    runAvailable,
+    runComplete && usageComplete,
+  );
   if (Number.isFinite(deployed.runHealth?.windowHours) && deployed.runHealth.windowHours > 0) {
     sources.runs.metadata["coverage-end"] = generatedAt;
     sources.runs.metadata["coverage-start"] = new Date(
       Date.parse(generatedAt) - deployed.runHealth.windowHours * 3_600_000,
     ).toISOString();
+    for (const name of ["run-performance", "job-performance"]) {
+      sources[name].metadata["coverage-end"] = generatedAt;
+      sources[name].metadata["coverage-start"] = sources.runs.metadata["coverage-start"];
+    }
   }
   sources.usage = source("usage", usageRows(usage), generatedAt, usageAvailable, usageComplete);
   sources["security-observations"] = source(

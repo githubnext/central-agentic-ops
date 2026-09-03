@@ -468,6 +468,7 @@ describe('presenter built-in and custom pages', () => {
     expect([...rendered.querySelectorAll('.nav-label')].map((node) => node.textContent)).toEqual([
       'Overview',
       'Runtime',
+      'Performance',
       'Security',
       'Value',
       'Cost',
@@ -617,6 +618,7 @@ describe('presenter built-in and custom pages', () => {
     expect(menuLinks.map((link) => link.textContent?.trim())).toEqual([
       'Overview',
       'Runtime',
+      'Performance',
       'Security',
       'Value',
       'Cost',
@@ -669,6 +671,46 @@ describe('presenter built-in and custom pages', () => {
       expect(filterBar?.querySelector('.scope-period')).toBeNull();
       expect(filterBar?.querySelector('.export-control')).toBeNull();
     }
+  });
+
+  it('renders workflow and job performance charts from declarative sources', () => {
+    const metadata = {
+      'source-id': 'performance-fixture',
+      'source-kind': 'fixture',
+      'as-of': '2026-09-03T12:00:00Z',
+      'retrieved-at': '2026-09-03T12:01:00Z',
+      completeness: /** @type {'complete'} */ ('complete'),
+      freshness: /** @type {'fresh'} */ ('fresh'),
+      availability: /** @type {'available'} */ ('available')
+    };
+    const rendered = renderDashboard({
+      document: authoritativeDashboardDocument,
+      sources: {
+        'run-performance': {
+          source: 'run-performance',
+          metadata,
+          rows: [
+            { run: '1', 'started-at': '2026-09-03T10:00:00Z', 'run-duration-seconds': 60 },
+            { run: '2', 'started-at': '2026-09-03T11:00:00Z', 'run-duration-seconds': 180 }
+          ]
+        },
+        'job-performance': {
+          source: 'job-performance',
+          metadata,
+          rows: [
+            { run: '1', 'started-at': '2026-09-03T10:00:00Z', job: 'agent', runner: 'ubuntu-latest', 'sandbox-runtime': 'gvisor', engine: 'copilot', model: 'gpt-5.4', 'job-duration-seconds': 45 },
+            { run: '2', 'started-at': '2026-09-03T11:00:00Z', job: 'agent', runner: 'ubuntu-latest', 'sandbox-runtime': 'docker', engine: 'pi', model: 'claude-sonnet-5', 'job-duration-seconds': 150 }
+          ]
+        }
+      }
+    });
+
+    const page = activatePage(rendered, 'performance');
+    expect(page?.querySelector('[data-chart-widget="histogram"]')).not.toBeNull();
+    expect(page?.querySelectorAll('[data-chart-widget="histogram"] .histogram-chart-bar')).toHaveLength(1);
+    expect(page?.querySelectorAll('[data-chart-widget="bar"]')).toHaveLength(3);
+    expect(page?.textContent).toContain('gvisor');
+    expect(page?.textContent).toContain('gpt-5.4');
   });
 
   it('applies the JSON horizon against one evaluated time while retaining timeless rows', () => {
