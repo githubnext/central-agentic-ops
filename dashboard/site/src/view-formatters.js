@@ -119,6 +119,34 @@ export function formatRelativeTime(value, relativeTo) {
 }
 
 /**
+ * Formats an elapsed timestamp as compact dashboard chrome.
+ * @param {unknown} value
+ * @param {unknown} relativeTo
+ * @returns {string}
+ */
+export function formatCompactElapsedTime(value, relativeTo) {
+  const valueMs = Date.parse(String(value ?? ''));
+  const relativeToMs = relativeTo instanceof Date
+    ? relativeTo.getTime()
+    : typeof relativeTo === 'number'
+      ? relativeTo
+      : Date.parse(String(relativeTo ?? ''));
+  if (!Number.isFinite(valueMs) || !Number.isFinite(relativeToMs)) return '';
+
+  const elapsedSeconds = Math.max(0, Math.floor((relativeToMs - valueMs) / 1_000));
+  const [divisor, unit] = elapsedSeconds < 60
+    ? [1, 's']
+    : elapsedSeconds < 3_600
+      ? [60, 'm']
+      : elapsedSeconds < 86_400
+        ? [3_600, 'h']
+        : elapsedSeconds < 604_800
+          ? [86_400, 'd']
+          : [604_800, 'w'];
+  return `${Math.floor(elapsedSeconds / divisor)}${unit} ago`;
+}
+
+/**
  * @param {number} value
  * @returns {number}
  */

@@ -7,7 +7,7 @@ on:
         description: Package orchestrator to exercise
         required: true
         type: choice
-        options: [advisory, dependabot, optimization]
+        options: [uk-ai-advisory, dependabot, optimization]
       safe_output_mode:
         description: Canary mode
         required: true

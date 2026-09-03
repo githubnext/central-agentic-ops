@@ -5,9 +5,9 @@ experimental: true
 includes:
   - .github/workflows/shared/cao.md
   - .github/workflows/uk-ai-advisory.md
-  - .github/workflows/advisory-package-maintainer.md
+  - .github/workflows/uk-ai-advisory-package-maintainer.md
 resources:
   - source: dashboard.json
-    destination: .github/aw/dashboards/advisory.json
+    destination: .github/aw/dashboards/uk-ai-advisory.json
   - source: implementation-status.md
-    destination: .github/aw/advisory/implementation-status.md
+    destination: .github/aw/uk-ai-advisory/implementation-status.md

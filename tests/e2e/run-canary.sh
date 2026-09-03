@@ -17,9 +17,9 @@ repository_equal() {
 }
 
 case "$BUNDLE" in
-  advisory)
+  uk-ai-advisory)
     workflow_file=uk-ai-advisory.lock.yml
-    worker_files=(advisory-uk-ai-operational-resilience.lock.yml)
+    worker_files=(uk-ai-advisory-operational-resilience.lock.yml)
     ;;
   dependabot)
     workflow_file=dependabot.lock.yml

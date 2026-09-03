@@ -67,12 +67,31 @@ describe('dashboard document validation', () => {
         }
       ]
     });
+
     expect(updates.views[1].encoding.columns.map((/** @type {{ field: string }} */ column) => column.field)).toEqual([
       'workflow',
       'repository',
       'gh-aw-version',
       'gh-aw-update-state'
     ]);
+    expect(validateDashboardDocument(JSON.stringify(document)).ok).toBe(true);
+  });
+
+  it('defines four chart-led security analyses with supplemental evidence tables', () => {
+    const document = JSON.parse(authoritativeDashboardSource);
+    const security = document.dashboard.pages.find((/** @type {{ id: string }} */ page) => page.id === 'security');
+    expect(security.sections.map((/** @type {{ views: string[] }} */ section) => section.views)).toEqual([
+      ['security-access-control-chart', 'security-access-control-table'],
+      ['security-firewall-chart', 'security-firewall-table'],
+      ['security-integrity-chart', 'security-integrity-table'],
+      ['security-threat-chart', 'security-threat-table']
+    ]);
+    for (const section of security.sections) {
+      const chart = security.views.find((/** @type {{ id: string }} */ view) => view.id === section.views[0]);
+      const table = security.views.find((/** @type {{ id: string }} */ view) => view.id === section.views[1]);
+      expect(chart).toMatchObject({ mark: 'chart', chart: 'pie' });
+      expect(table).toMatchObject({ mark: 'table', disclosure: 'supplemental' });
+    }
     expect(validateDashboardDocument(JSON.stringify(document)).ok).toBe(true);
   });
 
@@ -140,7 +159,7 @@ describe('dashboard document validation', () => {
       'ambient-context-dashboard',
       'aw-maintenance-dashboard',
       'dependabot-dashboard',
-      'advisory-dashboard',
+      'uk-ai-advisory-dashboard',
       'eu-cra-compliance-dashboard',
       'optimization-dashboard'
     ];

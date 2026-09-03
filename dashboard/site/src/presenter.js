@@ -9,7 +9,7 @@ import { octicon, agenticWorkflowMark } from './octicons.js';
 import { renderDataStateMetrics } from './components/data-state.js';
 import { formatMediumUtcDateTime, renderTooltip, renderEmptyMessage } from './components/ui-primitives.js';
 import { customViewAvailabilityMessage, renderCustomViewStateDetails, renderLayoutSectionChrome, renderPageSection } from './components/view-chrome.js';
-import { toNumber, stringOrFallback } from './view-formatters.js';
+import { formatCompactElapsedTime, toNumber, stringOrFallback } from './view-formatters.js';
 import { findLink } from './components/link-content.js';
 import { elementHandlesEmptyRows, renderUiElement } from './components/ui-elements.js';
 import { renderDataView } from './components/data-view.js';
@@ -165,6 +165,7 @@ export function renderDashboard(input) {
     appShell
   );
   enableSidebarToggle(root);
+  enableMobileNavigationMenu(root);
   enableDashboardPageNavigation(
     root,
     document.dashboard.title,
@@ -246,7 +247,26 @@ function renderSidebar(pages, title, navigation) {
           ? [h('span', { className: 'nav-section-label' }, section.label)]
           : []),
         ...section.pages.map((page) => renderNavItem(page, page.id === firstPageId))
-      ])
+      ]),
+      h(
+        'details',
+        { className: 'mobile-nav-menu' },
+        h(
+          'summary',
+          { role: 'button', 'aria-label': 'Select view', title: 'Select view' },
+          octicon('three-bars')
+        ),
+        h(
+          'div',
+          { className: 'mobile-nav-menu-list' },
+          navigationSections.flatMap((section) => [
+            ...(typeof section.label === 'string' && section.label.length > 0
+              ? [h('span', { className: 'mobile-nav-section-label' }, section.label)]
+              : []),
+            ...section.pages.map((page) => renderMobileNavItem(page, page.id === firstPageId))
+          ])
+        )
+      )
     )
   );
 }
@@ -258,11 +278,7 @@ function renderSidebar(pages, title, navigation) {
  */
 function renderNavItem(page, isActive) {
   const iconName = getPageIcon(page);
-  const title = typeof page['navigation-label'] === 'string' && page['navigation-label'].length > 0
-    ? page['navigation-label']
-    : typeof page.title === 'string' && page.title.length > 0
-      ? page.title
-      : titleCase(page.id);
+  const title = getPageNavigationTitle(page);
 
   return h(
     'a',
@@ -277,6 +293,38 @@ function renderNavItem(page, isActive) {
     octicon(iconName),
     h('span', { className: 'nav-label' }, title)
   );
+}
+
+/**
+ * @param {PresentableBuiltInPage | PresentableCustomPage} page
+ * @param {boolean} isActive
+ * @returns {HTMLElement}
+ */
+function renderMobileNavItem(page, isActive) {
+  const title = getPageNavigationTitle(page);
+  return h(
+    'a',
+    {
+      href: `#page-${page.id}`,
+      className: `mobile-nav-item${isActive ? ' active' : ''}`,
+      'aria-current': isActive ? 'page' : undefined,
+      'data-mobile-nav-page-id': page.id
+    },
+    octicon(getPageIcon(page)),
+    h('span', { className: 'mobile-nav-label' }, title)
+  );
+}
+
+/**
+ * @param {PresentableBuiltInPage | PresentableCustomPage} page
+ * @returns {string}
+ */
+function getPageNavigationTitle(page) {
+  return typeof page['navigation-label'] === 'string' && page['navigation-label'].length > 0
+    ? page['navigation-label']
+    : typeof page.title === 'string' && page.title.length > 0
+      ? page.title
+      : titleCase(page.id);
 }
 
 /**
@@ -314,6 +362,28 @@ function enableSidebarToggle(root) {
     } catch {
       // The display mode still works for the current page when storage is unavailable.
     }
+  });
+}
+
+/**
+ * Closes the mobile view menu after selection or when focus moves elsewhere.
+ * @param {HTMLElement} root
+ */
+function enableMobileNavigationMenu(root) {
+  const menu = root.querySelector('.mobile-nav-menu');
+  if (!(menu instanceof HTMLDetailsElement)) return;
+
+  root.addEventListener('click', (event) => {
+    if (!(event.target instanceof Element)) return;
+    if (event.target.closest('[data-mobile-nav-page-id]') || !event.target.closest('.mobile-nav-menu')) {
+      menu.removeAttribute('open');
+    }
+  });
+  menu.addEventListener('keydown', (event) => {
+    if (event.key !== 'Escape') return;
+    menu.removeAttribute('open');
+    const summary = menu.querySelector('summary');
+    if (summary instanceof HTMLElement) summary.focus();
   });
 }
 
@@ -364,7 +434,15 @@ function renderMainContent(document, pages, sources, githubUrlBase, dashboardRep
           renderDashboardHorizon(document.dashboard, dashboardDefaults, horizonRange, evaluatedAt, hasData, dataHorizon),
           hasData
             ? latestRetrieval
-              ? h('time', { className: 'freshness', dateTime: latestRetrieval }, `Last updated ${formatReportDate(latestRetrieval)}`)
+              ? h(
+                  'time',
+                  {
+                    className: 'freshness',
+                    dateTime: latestRetrieval,
+                    title: `Last updated ${formatReportDate(latestRetrieval)} UTC`
+                  },
+                  formatCompactElapsedTime(latestRetrieval, Date.now())
+              )
               : null
             : h(
                 'span',
@@ -507,8 +585,8 @@ function renderDashboardHorizon(dashboard, dashboardDefaults, horizonRange, eval
 }
 
 /**
- * Combines declared coverage windows from non-empty temporal sources. Sources
- * without valid coverage bounds are treated as timeless and do not widen the window.
+ * Resolves the shared coverage window across non-empty temporal sources. Sources
+ * without valid coverage bounds are treated as timeless and do not constrain the window.
  * @param {Record<string, LogicalSourceInput>} sources
  * @returns {{ start: string, end: string, hours: number } | null}
  */
@@ -522,8 +600,8 @@ function resolveDataHorizon(sources) {
     .filter(({ start, end }) => Number.isFinite(start) && Number.isFinite(end) && end > start);
   if (windows.length === 0) return null;
 
-  const start = Math.min(...windows.map((window) => window.start));
-  const end = Math.max(...windows.map((window) => window.end));
+  const start = Math.max(...windows.map((window) => window.start));
+  const end = Math.min(...windows.map((window) => window.end));
   const hours = Math.ceil((end - start) / 3_600_000);
   return hours > 0
     ? { start: new Date(start).toISOString(), end: new Date(end).toISOString(), hours }
@@ -808,7 +886,7 @@ export function enableDashboardPageNavigation(root, dashboardTitle = '', renderP
   const pageState = new Map();
   let activePageId = '';
   const overviewPage = pages.find((page) => page.dataset.pageId === 'overview');
-  const links = [...root.querySelectorAll('[data-nav-page-id]')]
+  const links = [...root.querySelectorAll('[data-nav-page-id], [data-mobile-nav-page-id]')]
     .filter((link) => link instanceof HTMLAnchorElement);
   const breadcrumbPage = root.querySelector('[data-breadcrumb-page]');
   const breadcrumbRoot = root.querySelector('[data-breadcrumb-root]');
@@ -934,7 +1012,7 @@ export function enableDashboardPageNavigation(root, dashboardTitle = '', renderP
     const page = pages.find((candidate) => candidate.dataset.pageId === pageId);
     const routeNavigationPage = page?.dataset.routeNavigationPage;
     if (routeNavigationPage && availableIds.has(routeNavigationPage)) {
-      const navigationLink = links.find((link) => link.dataset.navPageId === routeNavigationPage);
+      const navigationLink = links.find((link) => getNavigationPageId(link) === routeNavigationPage);
       updateNavigationLinks(links, routeNavigationPage);
       if (breadcrumbRoot instanceof HTMLAnchorElement && navigationLink) {
         breadcrumbRoot.hidden = false;
@@ -980,10 +1058,10 @@ export function enableDashboardPageNavigation(root, dashboardTitle = '', renderP
   activate(initialRoute?.pageId ?? pages[0].dataset.pageId ?? '', initialRoute?.parameters);
   root.addEventListener('click', (event) => {
     if (!(event.target instanceof Element)) return;
-    const link = event.target.closest('[data-nav-page-id]');
+    const link = event.target.closest('[data-nav-page-id], [data-mobile-nav-page-id]');
     if (!(link instanceof HTMLAnchorElement)) return;
     event.preventDefault();
-    const pageId = link.dataset.navPageId;
+    const pageId = getNavigationPageId(link);
     if (!pageId || !availableIds.has(pageId)) return;
     root.ownerDocument.defaultView?.history.pushState(null, '', link.href);
     activate(pageId, routeFromHash()?.parameters);
@@ -1023,11 +1101,19 @@ function updateDocumentTitle(ownerDocument, pageTitle, dashboardTitle) {
  */
 function updateNavigationLinks(links, pageId) {
   for (const link of links) {
-    const isActive = link.dataset.navPageId === pageId;
+    const isActive = getNavigationPageId(link) === pageId;
     link.classList.toggle('active', isActive);
     if (isActive) link.setAttribute('aria-current', 'page');
     else link.removeAttribute('aria-current');
   }
+}
+
+/**
+ * @param {HTMLAnchorElement} link
+ * @returns {string}
+ */
+function getNavigationPageId(link) {
+  return link.dataset.navPageId ?? link.dataset.mobileNavPageId ?? '';
 }
 
 /**
