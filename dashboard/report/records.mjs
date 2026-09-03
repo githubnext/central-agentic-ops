@@ -23,6 +23,8 @@ class GitHubRateLimitError extends Error {
     super(`GitHub API rate limit exceeded for ${pathname}.${retry} ${detail || "Collection stopped before the dashboard data could be completed."} See ${rateLimitDocs}`);
     this.name = "GitHubRateLimitError";
     this.status = response.status;
+    this.pathname = pathname;
+    this.resetAt = resetAt;
   }
 }
 
@@ -325,7 +327,11 @@ async function collectDashboardRecordsImpl({
     if (artifact.expired || !artifact.name.startsWith("review-")) return null;
     const runId = artifact.workflow_run?.id;
     if (!runId) return null;
-    const run = await github(`/repos/${outputRepository}/actions/runs/${runId}`);
+    const cacheKey = `${outputRepository}/${runId}`;
+    if (!runCache.has(cacheKey)) {
+      runCache.set(cacheKey, github(`/repos/${outputRepository}/actions/runs/${runId}`));
+    }
+    const run = await runCache.get(cacheKey);
     const bundle = bundleFor(reportDefinitions, run.name, run.display_title, artifact.name);
     return {
       id: `${outputRepository}-artifact-${artifact.id}`,
@@ -433,13 +439,25 @@ export async function collectDashboardRecords(options) {
   } catch (error) {
     if (!(error instanceof GitHubRateLimitError)) throw error;
     log.warning`${error.message}`;
+    const retained = options.previousSnapshot?.records;
+    const snapshotGeneratedAt = options.previousSnapshot?.generatedAt || "";
+    const snapshotAge = snapshotGeneratedAt
+      ? Math.floor((Date.parse(generatedAt) - Date.parse(snapshotGeneratedAt)) / 1000)
+      : null;
+    const snapshotAgeSeconds = Number.isFinite(snapshotAge) ? Math.max(0, snapshotAge) : null;
     return {
       generatedAt,
       repository: options.repository,
       inventory: options.inventory,
-      records: [],
+      records: Array.isArray(retained) ? retained : [],
       error: error.message,
       errorStatus: error.status,
+      errorEndpoint: error.pathname,
+      rateLimitResetAt: error.resetAt,
+      snapshotGeneratedAt,
+      snapshotAgeSeconds,
+      stale: Array.isArray(retained) && retained.length > 0,
+      partial: true,
     };
   }
 }
@@ -463,6 +481,14 @@ async function main() {
     : { schemaVersion: 1, organization: repository.split("/")[0], repositoryCount: 0, bundles: [], workflows: [] };
   log.group`Collect dashboard records`;
   try {
+    let previousSnapshot = null;
+    if (existsSync(outputPath)) {
+      try {
+        previousSnapshot = readJson(outputPath);
+      } catch (error) {
+        log.warning`Unable to read prior dashboard record snapshot: ${error.message}`;
+      }
+    }
     const records = await collectDashboardRecords({
       repository,
       token,
@@ -471,6 +497,7 @@ async function main() {
       inventory,
       deployedInventory,
       requestedRepositories: (process.env.REPORT_ALLOWED_REPOS || "").split(","),
+      previousSnapshot,
     });
     await mkdir(path.dirname(outputPath), { recursive: true });
     await writeFile(outputPath, `${JSON.stringify(records, null, 2)}\n`);
