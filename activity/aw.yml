@@ -4,6 +4,7 @@ min-version: v0.88.2
 experimental: true
 includes:
   - .github/workflows/activity.yml
+  - .github/workflows/cao-maintenance.yml
 resources:
   - source: actions-log.mjs
     destination: .github/aw/activity/actions-log.mjs

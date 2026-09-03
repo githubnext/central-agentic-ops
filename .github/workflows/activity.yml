@@ -39,7 +39,7 @@ jobs:
 
       - name: Resolve activity cache key
         id: activity-cache-key
-        run: echo "value=${{ runner.os }}-cao-activity-v3-${{ github.repository }}-${{ github.run_id }}-${{ github.run_attempt }}" >> "$GITHUB_OUTPUT"
+        run: echo "value=cao-activity-${{ github.run_id }}-${{ github.run_attempt }}" >> "$GITHUB_OUTPUT"
 
       - name: Generate GitHub App token for activity
         id: activity-app-token
@@ -64,7 +64,7 @@ jobs:
           path: ${{ runner.temp }}/cao-activity
           key: ${{ steps.activity-cache-key.outputs.value }}
           restore-keys: |
-            ${{ runner.os }}-cao-activity-v3-${{ github.repository }}-
+            cao-activity-
 
       - name: Resolve activity indexer
         run: |

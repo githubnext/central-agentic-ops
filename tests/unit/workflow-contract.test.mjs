@@ -2365,6 +2365,7 @@ test("Dashboard package supports embedded and explicit standalone deployment", (
   const dashboardPackage = parse(dashboardManifest);
   const canonicalPolicyResolver = readFileSync(join(root, ".github", "cao", "src", "policy.mjs"), "utf8");
   const activityWorkflow = readFileSync(join(root, ".github", "workflows", "activity.yml"), "utf8");
+  const maintenanceWorkflow = readFileSync(join(root, ".github", "workflows", "cao-maintenance.yml"), "utf8");
   const buildWorkflow = readFileSync(join(root, ".github", "workflows", "dashboard-build.yml"), "utf8");
   const deployWorkflow = readFileSync(join(root, "dashboard", "dashboard.yml"), "utf8");
   const aicUsage = readFileSync(join(root, "dashboard", "report", "aic-usage.mjs"), "utf8");
@@ -2403,8 +2404,11 @@ test("Dashboard package supports embedded and explicit standalone deployment", (
   assert.doesNotMatch(activityWorkflow, /workflow_call:/);
   assert.match(activityWorkflow, /workflow_dispatch:[\s\S]*?request-id:/);
   assert.match(activityWorkflow, /run-name: CAO Activity \/ \$\{\{ inputs\.request-id \|\| github\.run_id \}\}/);
-  assert.match(activityWorkflow, /Resolve activity cache key[\s\S]*?cao-activity-v3-\$\{\{ github\.repository \}\}-\$\{\{ github\.run_id \}\}-\$\{\{ github\.run_attempt \}\}/);
-  assert.match(buildWorkflow, /key: \$\{\{ format\('[^']+', runner\.os, github\.repository, needs\.activity\.outputs\.run-id, needs\.activity\.outputs\.run-attempt\) \}\}/);
+  assert.match(activityWorkflow, /Resolve activity cache key[\s\S]*?cao-activity-\$\{\{ github\.run_id \}\}-\$\{\{ github\.run_attempt \}\}/);
+  assert.match(buildWorkflow, /key: \$\{\{ format\('cao-activity-\{0\}-\{1\}', needs\.activity\.outputs\.run-id, needs\.activity\.outputs\.run-attempt\) \}\}/);
+  assert.match(maintenanceWorkflow, /workflow_dispatch:[\s\S]*?command:[\s\S]*?clear-cache/);
+  assert.match(maintenanceWorkflow, /permissions:[\s\S]*?actions: write/);
+  assert.match(maintenanceWorkflow, /gh cache list[\s\S]*?gh cache delete/);
   assert.match(buildWorkflow, /Require collected activity data[\s\S]*?control-settings\.json control-plane-inventory\.json deployed-workflows\.json aic-usage\.json operational-values\.json dashboard-records\.json/);
   assert.doesNotMatch(buildWorkflow, /Discover deployed agentic workflows/);
   assert.doesNotMatch(buildWorkflow, /actions\/cache\/save@|Collect AI Credit usage|Collect operational-value observations|Collect durable dashboard records/);
@@ -2489,16 +2493,21 @@ test("Activity package owns the shared collected-data cache contract", () => {
   const rootManifest = parse(readFileSync(join(root, "aw.yml"), "utf8"));
   const activityManifest = parse(readFileSync(join(root, "activity", "aw.yml"), "utf8"));
   const workflow = readFileSync(join(root, ".github", "workflows", "activity.yml"), "utf8");
+  const maintenanceWorkflow = readFileSync(join(root, ".github", "workflows", "cao-maintenance.yml"), "utf8");
   const readme = readFileSync(join(root, "activity", "README.md"), "utf8");
 
   assert.equal(activityManifest.name, "CAO Activity");
-  assert.deepEqual(activityManifest.includes, [".github/workflows/activity.yml"]);
+  assert.deepEqual(activityManifest.includes, [
+    ".github/workflows/activity.yml",
+    ".github/workflows/cao-maintenance.yml",
+  ]);
   assert.deepEqual(activityManifest.resources, [
     { source: "actions-log.mjs", destination: ".github/aw/activity/actions-log.mjs" },
     { source: "failure-evidence.mjs", destination: ".github/aw/activity/failure-evidence.mjs" },
     { source: "index.mjs", destination: ".github/aw/activity/index.mjs" },
   ]);
   assert.ok(rootManifest.includes.includes(".github/workflows/activity.yml"));
+  assert.ok(rootManifest.includes.includes(".github/workflows/cao-maintenance.yml"));
   assert.ok(rootManifest.resources.some((entry) => entry.destination === ".github/aw/activity/actions-log.mjs"));
   assert.ok(rootManifest.resources.some((entry) => entry.destination === ".github/aw/activity/failure-evidence.mjs"));
   assert.ok(rootManifest.resources.some((entry) => entry.destination === ".github/aw/activity/index.mjs"));
@@ -2518,7 +2527,8 @@ test("Activity package owns the shared collected-data cache contract", () => {
   assert.match(workflow, /Collect AI Credit usage/);
   assert.match(workflow, /Collect operational-value observations/);
   assert.match(workflow, /Collect durable dashboard records/);
-  assert.match(workflow, /cao-activity-v3-\$\{\{ github\.repository \}\}-/);
+  assert.match(workflow, /cao-activity-\$\{\{ github\.run_id \}\}-/);
+  assert.match(maintenanceWorkflow, /name: CAO Maintenance/);
   assert.match(readme, /schemaVersion: 1/);
   assert.match(readme, /Consumers must use the top-level completeness fields/);
   assert.match(readme, /retained non-terminal runs receive a full-window refresh/);
