@@ -3993,12 +3993,42 @@
             "description": "A source-level view of retained rows, observed fields, and independent data-state signals.",
             "layout": "full",
             "views": [
+              "data-health-status",
               "data-health-summary",
               "data-health-sources"
             ]
           }
         ],
         "views": [
+          {
+            "id": "data-health-status",
+            "title": "Source health",
+            "description": "Current source availability, completeness, and freshness show where dashboard evidence can be trusted.",
+            "data": {
+              "source": "data-health-sources"
+            },
+            "mark": "chart",
+            "chart": "pie",
+            "table": false,
+            "layout": "full",
+            "encoding": {
+              "x": {
+                "field": "status",
+                "type": "nominal",
+                "title": "Health"
+              },
+              "y": {
+                "field": "source",
+                "type": "quantitative",
+                "aggregate": "count",
+                "title": "Sources"
+              },
+              "color": {
+                "field": "status",
+                "type": "nominal"
+              }
+            }
+          },
           {
             "id": "data-health-summary",
             "title": "Data health summary",
@@ -4039,14 +4069,14 @@
                   "title": "Fields"
                 },
                 {
-                  "field": "populated-fields",
-                  "type": "quantitative",
-                  "title": "Populated fields"
+                  "field": "field-coverage",
+                  "type": "nominal",
+                  "title": "Fields populated"
                 },
                 {
-                  "field": "empty-fields",
-                  "type": "quantitative",
-                  "title": "Empty fields"
+                  "field": "cell-coverage",
+                  "type": "nominal",
+                  "title": "Cells populated"
                 },
                 {
                   "field": "status",

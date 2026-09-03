@@ -26,6 +26,36 @@ function activatePage(rendered, pageId) {
 }
 
 describe('presenter built-in and custom pages', () => {
+  it('renders cached source health without mixing in presentation-only sources', () => {
+    const rendered = renderDashboard({
+      document: authoritativeDashboardDocument,
+      sources: {
+        runs: {
+          source: 'runs',
+          rows: [{ run: '1', 'run-conclusion': 'success' }],
+          metadata: {
+            'source-id': 'runs-fixture',
+            'source-kind': 'fixture',
+            'as-of': '2026-09-03T12:00:00Z',
+            'retrieved-at': '2026-09-03T12:01:00Z',
+            completeness: 'complete',
+            freshness: 'fresh',
+            availability: 'available'
+          }
+        }
+      }
+    });
+
+    const page = activatePage(rendered, 'data-health');
+    const sourceView = [...(page?.querySelectorAll('.custom-view') ?? [])]
+      .find((view) => view.querySelector('h4')?.textContent === 'Cached source shape');
+    expect(page?.querySelector('[data-chart-widget="pie"]')).not.toBeNull();
+    expect(sourceView?.querySelectorAll('tbody tr')).toHaveLength(1);
+    expect(sourceView?.querySelector('tbody')?.textContent).toContain('runs');
+    expect(sourceView?.querySelector('tbody')?.textContent).not.toContain('overview');
+    rendered.remove();
+  });
+
   it('renders built-in models and agents page with model and engine AIC summaries', () => {
     const metadata = {
       'source-id': 'usage-fixture',

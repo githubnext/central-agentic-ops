@@ -96,7 +96,8 @@ The three `.github/cao` files are control-repository-owned policy runtime, not g
 
 The installed operation is runnable after its package and worker workflow identities are declared in the control policy. Declared workers are enabled unless their policy sets `enabled: false`; undeclared or disabled identities are skipped by admission before agent execution.
 
-Do not edit generated `.lock.yml` files directly. Update their Markdown sources and regenerate them with `gh aw compile`.
+> [!WARNING]
+> Do not edit generated `.lock.yml` files directly. Update their Markdown sources and regenerate them with `gh aw compile`.
 
 ### Step 4 - Set the first-run boundary
 
