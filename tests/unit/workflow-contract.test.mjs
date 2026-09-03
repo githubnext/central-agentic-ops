@@ -562,10 +562,14 @@ test("worker workflows allow service-account dispatches", () => {
 
   assert.ok(workers.length > 0, "expected at least one worker workflow");
   for (const [name, source] of workers) {
-    assert.match(source, /^on:\n  bots: \["github-actions\[bot\]"\]/m, name);
+    assert.match(
+      source,
+      /^on:\n  bots: \["github-actions\[bot\]", "cao-githubnext-gh-aw-cao-write\[bot\]"\]/m,
+      name,
+    );
     const generated = workflow(name.replace(/\.md$/, ".lock.yml"));
     assert.match(generated, /GH_AW_REQUIRED_ROLES: "admin,maintainer,write"/, name);
-    assert.match(generated, /GH_AW_ALLOWED_BOTS: "github-actions\[bot\]"/, name);
+    assert.match(generated, /GH_AW_ALLOWED_BOTS: "github-actions\[bot\],cao-githubnext-gh-aw-cao-write\[bot\]"/, name);
   }
 });
 
@@ -1777,7 +1781,7 @@ test("SelfCare data acquisition audit refreshes its specification", () => {
   const source = workflow("self-care-data-acquisition-audit.md");
   const compiled = workflow("self-care-data-acquisition-audit.lock.yml");
 
-  assert.match(source, /on:\n\s+bots: \["github-actions\[bot\]"\]/);
+  assert.match(source, /on:\n\s+bots: \["github-actions\[bot\]", "cao-githubnext-gh-aw-cao-write\[bot\]"\]/);
   assert.match(source, /package: self-care\n\s+role: worker\n\s+worker: data-acquisition-audit/);
   assert.match(source, /safe_output_mode` is `live`/);
   assert.match(source, /draft: true/);
@@ -1972,7 +1976,7 @@ test("SelfCare docs build-time investigator rotates evidenced recommendations", 
   const source = workflow("self-care-docs-build-time-investigator.md");
 
   assert.match(source, /^name: "SelfCare \/ Docs Build Time"$/m);
-  assert.match(source, /on:\n\s+bots: \["github-actions\[bot\]"\]/);
+  assert.match(source, /on:\n\s+bots: \["github-actions\[bot\]", "cao-githubnext-gh-aw-cao-write\[bot\]"\]/);
   assert.match(source, /package: self-care\n\s+role: worker\n\s+worker: docs-build-time-investigator/);
   assert.match(source, /safe_output_mode` is `live`/);
   assert.match(source, /at most the latest 20 completed `docs\.yml` runs from the last 14 days/);

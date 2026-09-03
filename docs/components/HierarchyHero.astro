@@ -2,8 +2,10 @@
 import type { HTMLAttributes } from "astro/types";
 import dispatchFallback from "../assets/control-plane-dispatch-fallback.svg";
 import dispatchFallbackDark from "../assets/control-plane-dispatch-fallback-dark-mode.svg";
+import dispatchMotion from "../assets/control-plane-dispatch-motion.svg";
 import mobileDispatchFallback from "../assets/control-plane-dispatch-mobile.svg";
 import mobileDispatchFallbackDark from "../assets/control-plane-dispatch-mobile-dark-mode.svg";
+import mobileDispatchMotion from "../assets/control-plane-dispatch-mobile-motion.svg";
 
 const PAGE_TITLE_ID = "_top";
 
@@ -71,7 +73,15 @@ const { title = data.title, tagline, actions = [] } = data.hero || {};
           class="pipeline-image"
         />
       </picture>
-      <div class="dispatch-motion" aria-hidden="true"></div>
+      <img
+        src={dispatchMotion.src}
+        width={dispatchMotion.width}
+        height={dispatchMotion.height}
+        alt=""
+        loading="eager"
+        decoding="async"
+        class="dispatch-motion"
+      />
     </div>
 
     <div class="mobile-scene" aria-hidden="true">
@@ -88,70 +98,19 @@ const { title = data.title, tagline, actions = [] } = data.hero || {};
           class="mobile-pipeline-image"
         />
       </picture>
-      <div class="dispatch-motion mobile-dispatch-motion" data-layout="mobile"></div>
+      <img
+        src={mobileDispatchMotion.src}
+        width={mobileDispatchMotion.width}
+        height={mobileDispatchMotion.height}
+        alt=""
+        loading="eager"
+        decoding="async"
+        class="dispatch-motion mobile-dispatch-motion"
+      />
     </div>
   </figure>
 
 </div>
-
-<script>
-  import lottie from "lottie-web/build/player/lottie_light";
-  import createAnimationData, { createMobileAnimationData } from "../assets/control-plane-dispatch.animation.mjs";
-
-  const animations = new WeakMap<Element, ReturnType<typeof lottie.loadAnimation>>();
-  const observers = new WeakMap<Element, IntersectionObserver>();
-  const colorScheme = window.matchMedia("(prefers-color-scheme: dark)");
-
-  function initializeHierarchyAnimations() {
-    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
-
-    document.querySelectorAll(".dispatch-motion").forEach((container) => {
-      if (animations.has(container)) return;
-
-      const animation = lottie.loadAnimation({
-        container,
-        renderer: "svg",
-        loop: true,
-        autoplay: false,
-        animationData: container instanceof HTMLElement && container.dataset.layout === "mobile" ? createMobileAnimationData(colorScheme.matches) : createAnimationData(colorScheme.matches),
-        rendererSettings: {
-          preserveAspectRatio: "xMidYMid meet",
-          progressiveLoad: true,
-        },
-      });
-      const observer = new IntersectionObserver(
-        ([entry]) => (entry?.isIntersecting ? animation.play() : animation.pause()),
-        { threshold: 0.15 },
-      );
-
-      animation.addEventListener("DOMLoaded", () => container.classList.add("is-ready"));
-      observer.observe(container);
-      animations.set(container, animation);
-      observers.set(container, observer);
-    });
-  }
-
-  function destroyHierarchyAnimations() {
-    document.querySelectorAll(".dispatch-motion").forEach((container) => {
-      observers.get(container)?.disconnect();
-      animations.get(container)?.destroy();
-      container.classList.remove("is-ready");
-      observers.delete(container);
-      animations.delete(container);
-    });
-  }
-
-  function handleColorSchemeChange() {
-    destroyHierarchyAnimations();
-    initializeHierarchyAnimations();
-  }
-
-  initializeHierarchyAnimations();
-  if ("addEventListener" in colorScheme) colorScheme.addEventListener("change", handleColorSchemeChange);
-  else (colorScheme as MediaQueryList & { addListener(listener: () => void): void }).addListener(handleColorSchemeChange);
-  document.addEventListener("astro:page-load", initializeHierarchyAnimations);
-  document.addEventListener("astro:before-swap", destroyHierarchyAnimations);
-</script>
 
 <style>
   @layer starlight.core {
@@ -323,13 +282,7 @@ const { title = data.title, tagline, actions = [] } = data.hero || {};
 
     .dispatch-motion {
       z-index: 2;
-      opacity: 0;
-      transition: opacity 180ms ease-out;
       pointer-events: none;
-    }
-
-    .dispatch-motion.is-ready {
-      opacity: 1;
     }
 
     .mobile-scene {
@@ -339,6 +292,12 @@ const { title = data.title, tagline, actions = [] } = data.hero || {};
     @keyframes hero-enter {
       from { opacity: 0; transform: translateY(0.75rem); }
       to { opacity: 1; transform: translateY(0); }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      .dispatch-motion {
+        display: none;
+      }
     }
 
     @media (max-width: 42rem) {
