@@ -4,7 +4,7 @@
 
 import { h } from '../dom.js';
 import { processRows, processTableSummaries } from '../data-processor.js';
-import { renderTableSummaryRow } from './table-summary.js';
+import { renderReactiveTableSummaryRow, renderTableSummaryRow } from './table-summary.js';
 
 /**
  * @typedef {{ key: string, label: string, allLabel?: string, columnIndex: number, always?: boolean }} TableFilterField
@@ -162,22 +162,7 @@ function renderDeferredTableSummaryRow(columns) {
   if (!(result instanceof Promise)) {
     return renderTableSummaryRow(result.map((summary, index) => ({ ...summary, label: columns[index]?.label ?? '' })));
   }
-  const row = /** @type {HTMLTableRowElement} */ (h(
-    'tr',
-    { className: 'table-summary-row', 'aria-busy': 'true' },
-    ...columns.map(() => h('th', { scope: 'col', className: 'table-summary-cell' }))
-  ));
-  result.then((summaries) => {
-    const rendered = renderTableSummaryRow(
-      summaries.map((summary, index) => ({ ...summary, label: columns[index]?.label ?? '' }))
-    );
-    const cells = [...rendered.children];
-    row.replaceChildren(...cells);
-    row.removeAttribute('aria-busy');
-  }).catch(() => {
-    row.removeAttribute('aria-busy');
-  });
-  return row;
+  return renderReactiveTableSummaryRow(columns, result);
 }
 
 /**

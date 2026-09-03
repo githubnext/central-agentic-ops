@@ -289,10 +289,13 @@ describe('renderTableRegion', () => {
       bodyRows: [h('tr', null, h('td', null, '1'))]
     });
 
-    expect(rendered.querySelector('.table-summary-row')?.getAttribute('aria-busy')).toBe('true');
+    expect(rendered.querySelector('.table-summary-row')?.hasAttribute('aria-busy')).toBe(false);
+    expect(rendered.querySelector('.table-summary-cell')?.getAttribute('aria-busy')).toBe('true');
+    expect(rendered.querySelector('.table-summary-skeleton')).not.toBeNull();
     expect(rendered.querySelector('.table-summary-histogram')).toBeNull();
     await vi.waitFor(() => {
-      expect(rendered.querySelector('.table-summary-row')?.hasAttribute('aria-busy')).toBe(false);
+      expect(rendered.querySelector('.table-summary-cell')?.hasAttribute('aria-busy')).toBe(false);
+      expect(rendered.querySelector('.table-summary-skeleton')).toBeNull();
       expect(rendered.querySelector('.table-summary-histogram')).not.toBeNull();
     });
     vi.unstubAllGlobals();

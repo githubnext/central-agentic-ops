@@ -49,6 +49,9 @@ function buildPresenterModuleUrl() {
     .replace("'./badge.js'", JSON.stringify(badgeModuleUrl));
   const dataStateModuleUrl = `data:text/javascript;charset=utf-8,${encodeURIComponent(dataStateSource)}`;
 
+  const reactiveSource = readFileSync(new URL('../../src/reactive.js', import.meta.url), 'utf8');
+  const reactiveModuleUrl = `data:text/javascript;charset=utf-8,${encodeURIComponent(reactiveSource)}`;
+
   const tableSummaryDataSource = readFileSync(new URL('../../src/table-summary-data.js', import.meta.url), 'utf8');
   const tableSummaryDataModuleUrl = `data:text/javascript;charset=utf-8,${encodeURIComponent(tableSummaryDataSource)}`;
 
@@ -59,6 +62,7 @@ function buildPresenterModuleUrl() {
 
   const tableSummarySource = readFileSync(new URL('../../src/components/table-summary.js', import.meta.url), 'utf8')
     .replace("'../dom.js'", JSON.stringify(domModuleUrl))
+    .replace("'../reactive.js'", JSON.stringify(reactiveModuleUrl))
     .replace("'./histogram.js'", JSON.stringify(histogramModuleUrl))
     .replace("'./count-formatters.js'", JSON.stringify(countFormattersModuleUrl))
     .replace("'./view-chrome.js'", JSON.stringify(viewChromeModuleUrl))

@@ -3,6 +3,7 @@
  */
 
 import { h } from '../dom.js';
+import { effect, state } from '../reactive.js';
 import { renderHistogramBins } from './histogram.js';
 import { formatCountNoun } from './count-formatters.js';
 import { renderDefinitionListRows } from './view-chrome.js';
@@ -27,6 +28,59 @@ export function renderTableSummaryRow(columns) {
       renderColumnSummary(column)
     ))
   ));
+}
+
+/**
+ * @param {import('../table-summary-data.js').TableSummaryColumn[]} columns
+ * @param {Promise<import('../table-summary-data.js').TableColumnSummary[]>} pendingSummaries
+ * @returns {HTMLTableRowElement}
+ */
+export function renderReactiveTableSummaryRow(columns, pendingSummaries) {
+  const summaries = state(/** @type {import('../table-summary-data.js').TableColumnSummary[] | null} */ (null));
+  const row = /** @type {HTMLTableRowElement} */ (h(
+    'tr',
+    { className: 'table-summary-row' },
+    ...columns.map((column, index) => renderReactiveTableSummaryCell(column, index, summaries))
+  ));
+  pendingSummaries.then((value) => summaries.set(value)).catch(() => summaries.set([]));
+  return row;
+}
+
+/**
+ * @param {import('../table-summary-data.js').TableSummaryColumn} column
+ * @param {number} index
+ * @param {import('../reactive.js').State<import('../table-summary-data.js').TableColumnSummary[] | null>} summaries
+ * @returns {HTMLTableCellElement}
+ */
+function renderReactiveTableSummaryCell(column, index, summaries) {
+  const cell = /** @type {HTMLTableCellElement} */ (h(
+    'th',
+    { scope: 'col', className: 'table-summary-cell', 'aria-busy': 'true' },
+    renderTableSummarySkeleton()
+  ));
+  const handle = effect(() => {
+    const value = summaries.get();
+    if (value === null) return;
+    const summary = value[index] ?? { kind: 'none' };
+    const content = renderColumnSummary({ ...summary, label: column.label });
+    cell.replaceChildren(...(content ? [content] : []));
+    cell.removeAttribute('aria-busy');
+    handle.stop();
+  });
+  return cell;
+}
+
+/**
+ * @returns {HTMLElement}
+ */
+function renderTableSummarySkeleton() {
+  return h(
+    'div',
+    { className: 'table-summary-skeleton', 'aria-hidden': 'true' },
+    h('span'),
+    h('span'),
+    h('span')
+  );
 }
 
 /**
