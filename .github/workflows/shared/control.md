@@ -11,14 +11,14 @@ import-schema:
     type: string
     default: "__none__"
   dispatch_max:
-    type: string
-    default: "1"
+    type: number
+    default: 1
   orchestrator_credits:
-    type: string
-    default: "0"
+    type: number
+    default: 0
   worker_credits_per_target:
-    type: string
-    default: "0"
+    type: number
+    default: 0
 
 github-app:
   client-id: ${{ vars.GH_AW_GITHUB_READ_APP_ID }}

@@ -66,7 +66,10 @@ test("catalog packages declare their current experimental maturity", () => {
 test("operational workflows use the transitive CAO package bundle", () => {
   const bundle = workflow("shared/cao.md");
   assert.match(bundle, /imports:\n\s+- uses: control\.md/);
-  assert.match(bundle, /format\('\{0\}', github\.aw\.import-inputs\.dispatch_max\)/);
+  assert.doesNotMatch(bundle, /format\('\{0\}', github\.aw\.import-inputs\.(?:dispatch_max|orchestrator_credits|worker_credits_per_target)\)/);
+  assert.match(bundle, /dispatch_max: \$\{\{ github\.aw\.import-inputs\.dispatch_max \}\}/);
+  assert.match(bundle, /orchestrator_credits: \$\{\{ github\.aw\.import-inputs\.orchestrator_credits \}\}/);
+  assert.match(bundle, /worker_credits_per_target: \$\{\{ github\.aw\.import-inputs\.worker_credits_per_target \}\}/);
 
   const operationWorkflows = readdirSync(workflowsDirectory)
     .filter((name) => name.endsWith(".md") && workflow(name).includes("uses: shared/cao.md"));
@@ -437,6 +440,9 @@ test("enterprise defaults, budgets, timeouts, and concurrency are finite", () =>
   assert.match(control, /package:\n\s+type: string\n\s+required: true/);
   assert.match(control, /role:\n\s+type: choice\n\s+options: \[orchestrator, worker\]/);
   assert.match(control, /worker:\n\s+type: string\n\s+default: "__none__"/);
+  assert.match(control, /dispatch_max:\n\s+type: number\n\s+default: 1/);
+  assert.match(control, /orchestrator_credits:\n\s+type: number\n\s+default: 0/);
+  assert.match(control, /worker_credits_per_target:\n\s+type: number\n\s+default: 0/);
   assert.match(precompute, /join\(admissionDirectory\(\), "effective-policy\.json"\)/);
   assert.doesNotMatch(control, /^steps:/m);
   assert.match(precompute, /max_repos must be an integer from 1 through 1000/);
