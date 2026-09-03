@@ -17,5 +17,6 @@ describe('dashboard horizon', () => {
     expect(formatDashboardHorizonHours(168)).toBe('1 week');
     expect(formatDashboardHorizonHours(48)).toBe('2 days');
     expect(formatDashboardHorizonHours(36)).toBe('36 hours');
+    expect(() => formatDashboardHorizonHours(0)).toThrow('Invalid dashboard horizon hours: 0');
   });
 });

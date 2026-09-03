@@ -45,6 +45,9 @@ export function formatDashboardHorizon(range) {
  * @returns {string}
  */
 export function formatDashboardHorizonHours(hours) {
+  if (!Number.isInteger(hours) || hours <= 0) {
+    throw new Error(`Invalid dashboard horizon hours: ${hours}`);
+  }
   const unit = hours % UNIT_HOURS.w === 0
     ? /** @type {'w'} */ ('w')
     : hours % UNIT_HOURS.d === 0
