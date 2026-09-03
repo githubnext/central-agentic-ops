@@ -2124,7 +2124,7 @@ test("Agent customizations preserve deterministic core package boundaries", () =
   assert.match(packageSkill, /## Deterministic Add-on Exception/);
   assert.match(packageSkill, /core activity cache/);
   assert.match(packageSkill, /site-path/);
-  assert.match(repositoryInstructions, /Keep `\.github\/workflows\/dashboard-build\.yml` reusable through `workflow_call` and package it through both dashboard manifests/);
+  assert.match(repositoryInstructions, /Keep `\.github\/workflows\/dashboard-build\.yml` independently runnable through `workflow_dispatch` and package it through both dashboard manifests/);
   assert.match(repositoryInstructions, /existing Pages site, retain one Pages artifact uploader and deployer/);
   assert.match(repositoryInstructions, /must not add a schedule or another enable variable/);
   assert.match(repositoryInstructions, /Keep data collection and cache publication out of operational packages and dashboard build jobs/);
@@ -2362,7 +2362,8 @@ test("Activity package owns the shared collected-data cache contract", () => {
   assert.ok(rootManifest.resources.some((entry) => entry.destination === ".github/aw/activity/actions-log.mjs"));
   assert.ok(rootManifest.resources.some((entry) => entry.destination === ".github/aw/activity/index.mjs"));
   assert.match(workflow, /schedule:[\s\S]*?cron:/);
-  assert.match(workflow, /workflow_call:/);
+  assert.doesNotMatch(workflow, /workflow_call:/);
+  assert.match(workflow, /workflow_dispatch:[\s\S]*?request-id:/);
   assert.match(workflow, /concurrency:[\s\S]*?cancel-in-progress: false/);
   assert.match(workflow, /actions\/cache\/restore@[0-9a-f]{40}/);
   assert.match(workflow, /actions\/cache\/save@[0-9a-f]{40}/);
@@ -2391,18 +2392,20 @@ test("Documentation Pages deploys docs with the packaged dashboard builder", () 
   assert.equal(existsSync(join(root, ".github", "workflows", "documentation-pages.yml")), false);
   assert.equal(existsSync(join(root, ".github", "workflows", "documentation-build.yml")), false);
 
-  assert.match(workflow, /uses: \.\/\.github\/workflows\/dashboard-build\.yml/);
-  assert.match(workflow, /uses: \.\/\.github\/workflows\/dashboard-build\.yml\n\s+secrets: inherit/);
+  assert.doesNotMatch(workflow, /uses: \.\/\.github\/workflows\/dashboard-build\.yml/);
+  assert.match(workflow, /actions: write[\s\S]*?DISPATCH_WORKFLOW: dashboard-build\.yml[\s\S]*?node dashboard\/dispatch-workflow\.mjs/);
   assert.match(workflow, /needs: dashboard/);
   assert.match(workflow, /run: npm run docs:build/);
   assert.match(workflow, /name: central-agentic-ops-dashboard\n\s+path: dist/);
   assert.match(workflow, /schedule:\n\s+- cron: "\*\/15 \* \* \* \*"/);
   assert.match(workflow, /workflow_dispatch:\n\s+inputs:\n\s+mode:[\s\S]*?default: live/);
-  assert.match(workflow, /mode: \$\{\{ inputs\.mode \|\| 'live' \}\}/);
+  assert.match(workflow, /DISPATCH_INPUTS: [^\n]*"mode":"\$\{\{ inputs\.mode \|\| 'live' \}\}"/);
+  assert.match(workflow, /run-id: \$\{\{ needs\.dashboard\.outputs\.run-id \}\}/);
   assert.doesNotMatch(workflow, /workflow_run|gh aw add|DASHBOARD_PACKAGE/);
   assert.equal((workflow.match(/actions\/upload-pages-artifact@/g) || []).length, 1);
   assert.equal((workflow.match(/actions\/deploy-pages@/g) || []).length, 1);
-  assert.match(dashboardBuild, /workflow_call:/);
+  assert.doesNotMatch(dashboardBuild, /workflow_call:/);
+  assert.match(dashboardBuild, /workflow_dispatch:[\s\S]*?request-id:/);
   assert.match(dashboardBuild, /central-agentic-ops-dashboard\/\$\{\{ inputs\.site-path \}\}\/sources\.json/);
   assert.match(dashboardBuild, /name: central-agentic-ops-dashboard/);
   assert.match(dashboardBuild, /DASHBOARD_LAYOUT=source/);

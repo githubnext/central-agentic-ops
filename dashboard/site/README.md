@@ -2,7 +2,7 @@
 
 Production Dashboard Language validator and presenter for the Central Agentic Ops dashboard package.
 
-The reusable dashboard builder copies this directory to its configured `site-path`, bundles installed `.github/aw/dashboards/*.json` package documents into `dashboard.json`, and generates `sources.json`. The browser loads those two files, derives presentation-only data, and renders the `/cao` experience without page-specific HTML generation.
+The dashboard build workflow copies this directory to its configured `site-path`, bundles installed `.github/aw/dashboards/*.json` package documents into `dashboard.json`, and generates `sources.json`. The browser loads those two files, derives presentation-only data, and renders the `/cao` experience without page-specific HTML generation.
 
 ## Data pipeline
 
