@@ -346,7 +346,7 @@ Create at most one consolidated issue containing:
 
 Provide only the unprefixed subject as the safe-output title. The configured `title-prefix` is added automatically; do not repeat it or add a semantically equivalent category prefix.
 
-Start directly with a concise, unheaded executive summary that includes the seven-day window and explicit limitations. Follow it with:
+Start directly with a concise, unheaded executive summary. In one or two short paragraphs, state the decision-relevant result, advisory status, highest proposed tier, seven-day window, most important control gap, key metrics, explicit limitations, and recommended next action. Follow it with:
 
 1. `### Advisory Status` — `ADVISORY_READY`, `HUMAN_REVIEW_REQUIRED`, `NO_MATERIAL_CHANGE`, or `INCOMPLETE`;
 2. `### Scope and Evidence`, separating observed, inaccessible, and out-of-repository evidence;
@@ -360,7 +360,17 @@ Start directly with a concise, unheaded executive summary that includes the seve
 10. `### Human Review Required`;
 11. `### Control Plane` with correlation ID, central repository, and control-plane run URL when `correlation_id` is present.
 
-Use `###` or lower headings. Put long asset, tier, and risk tables inside `<details>` blocks. Do not mention users or teams, link to private target items from a review repository, or claim that absent evidence proves a control exists or is missing.
+Keep critical findings, key metrics, the highest-priority remediation, and the recommended next action visible. Put non-essential background, verbose supporting evidence, logs, long asset, tier, and risk tables, and per-item breakdowns inside `<details>` sections. Do not put the executive summary or other critical information inside `<details>`.
+
+After the remediation queue, include `### Recommended Next Action`. Evaluate the possible remediations, select the single most important action with the highest expected return on investment, and explain why it should happen first. After that human-readable finding and evidence, provide a clear, imperative prompt for an agentic run that performs only that selected action. Name the affected control or surface, required outcome, relevant constraints, and evidence that will verify completion, using exactly:
+
+<details><summary><b>Agent prompt</b></summary>
+
+{Agent prompt}
+
+</details>
+
+Use `###` or lower headings. Do not mention users or teams, link to private target items from a review repository, or claim that absent evidence proves a control exists or is missing.
 
 Use `noop` and create no issue only when an equivalent current advisory exists and there has been no material guidance, repository, control, visibility, or exception change. A public repository with no recent commits and no evidence of active ownership or automated hygiene requires a dormancy finding; silence is not evidence of safety. Otherwise preserve the bounded advisory in one issue. Operational-value evaluation is pending post-adoption evidence and is intentionally not registered.
 
