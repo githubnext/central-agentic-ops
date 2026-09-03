@@ -3,6 +3,7 @@ description: Immutable workflow for manifest-aware, risk-ranked dependency relea
 min-version: v0.88.2
 experimental: true
 includes:
+  - .github/workflows/shared/cao.md
   - .github/workflows/dependabot.md
 resources:
   - source: dashboard.json
