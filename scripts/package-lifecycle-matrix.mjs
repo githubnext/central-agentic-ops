@@ -35,13 +35,12 @@ const suites = [
     ],
   },
   {
-    name: "Advisory",
-    manifest: "advisory/aw.yml",
-    testPattern: "focused Advisory package contract",
+    name: "UK AI Advisory",
+    manifest: "uk-ai-advisory/aw.yml",
+    testPattern: "focused UK AI Advisory package contract",
     prefixes: [
-      ".github/workflows/advisory-",
       ".github/workflows/shared/",
-      ".github/workflows/uk-ai-advisory.",
+      ".github/workflows/uk-ai-advisory",
     ],
   },
   {

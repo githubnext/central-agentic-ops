@@ -215,8 +215,8 @@ test("dashboard source bridge carries package memberships, allowance, and invent
 
 test("dashboard source bridge maps a legacy manifest-derived package identity to the canonical inventory bundle id", () => {
   const orchestratorPath = ".github/workflows/uk-ai-advisory.lock.yml";
-  const workerPath = ".github/workflows/advisory-uk-ai-operational-resilience.lock.yml";
-  const standalonePath = ".github/workflows/advisory-package-maintainer.lock.yml";
+  const workerPath = ".github/workflows/uk-ai-advisory-operational-resilience.lock.yml";
+  const standalonePath = ".github/workflows/uk-ai-advisory-package-maintainer.lock.yml";
   const sources = buildDashboardLanguageSources({
     deployed: {
       generatedAt: "2026-09-02T12:00:00Z",
@@ -224,7 +224,7 @@ test("dashboard source bridge maps a legacy manifest-derived package identity to
       runHealth: { available: true, complete: true },
       bundles: [{
         repository: "githubnext/gh-aw-cao",
-        path: "advisory/aw.yml",
+        path: "uk-ai-advisory/aw.yml",
         name: "UK AI Advisory",
         workflows: [
           { lockPath: orchestratorPath },
@@ -244,19 +244,19 @@ test("dashboard source bridge maps a legacy manifest-derived package identity to
     inventory: {
       workflows: [
         { sourcePath: ".github/workflows/uk-ai-advisory.md", lockPath: orchestratorPath, compiled: true },
-        { sourcePath: ".github/workflows/advisory-uk-ai-operational-resilience.md", lockPath: workerPath, compiled: true },
+        { sourcePath: ".github/workflows/uk-ai-advisory-operational-resilience.md", lockPath: workerPath, compiled: true },
       ],
       bundles: [{
         id: "uk-ai-advisory",
         name: "UK AI Advisory",
         workflow: ".github/workflows/uk-ai-advisory.md",
-        controlPackage: "advisory",
+        controlPackage: "uk-ai-advisory",
         maxAiCredits: 250,
         compiled: true,
         missingWorkers: [],
         workers: [{
-          id: "advisory-uk-ai-operational-resilience",
-          sourcePath: ".github/workflows/advisory-uk-ai-operational-resilience.md",
+          id: "uk-ai-advisory-operational-resilience",
+          sourcePath: ".github/workflows/uk-ai-advisory-operational-resilience.md",
           lockPath: workerPath,
           maxAiCredits: 600,
           compiled: true,
@@ -264,14 +264,14 @@ test("dashboard source bridge maps a legacy manifest-derived package identity to
       }],
     },
     controlSettings: {
-      packages: { advisory: { mode: "review" } },
+      packages: { "uk-ai-advisory": { mode: "review" } },
     },
   });
 
   const packagesById = new Map(sources.workflows.rows.map((row) => [row.workflow, row.package]));
   assert.equal(packagesById.get(".github/workflows/uk-ai-advisory.md"), "uk-ai-advisory");
-  assert.equal(packagesById.get(".github/workflows/advisory-uk-ai-operational-resilience.md"), "uk-ai-advisory");
-  assert.equal(packagesById.get(".github/workflows/advisory-package-maintainer.md"), "uk-ai-advisory");
+  assert.equal(packagesById.get(".github/workflows/uk-ai-advisory-operational-resilience.md"), "uk-ai-advisory");
+  assert.equal(packagesById.get(".github/workflows/uk-ai-advisory-package-maintainer.md"), "uk-ai-advisory");
   assert.deepEqual(
     new Set(sources.workflows.rows.map((row) => row.package)),
     new Set(["uk-ai-advisory"]),

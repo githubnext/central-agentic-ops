@@ -54,7 +54,7 @@ if: needs.pre_activation.outputs.cao_authorized == 'true'
 imports:
   - uses: shared/cao.md
     with:
-      package: advisory
+      package: uk-ai-advisory
       role: orchestrator
       dispatch_max: "50"
       orchestrator_credits: "250"
@@ -88,12 +88,12 @@ network:
 
 safe-outputs:
   dispatch-workflow:
-    workflows: [advisory-uk-ai-operational-resilience]
+    workflows: [uk-ai-advisory-operational-resilience]
     max: 50
   threat-detection: false
 ---
 
-{{#runtime-import? .github/cao/advisory.md}}
+{{#runtime-import? .github/cao/uk-ai-advisory.md}}
 
 <!-- Advisory outputs are advisory and non-binding. This workflow provides no guarantee of completeness, correctness, accuracy, or alignment with current UK government AI open-code and vulnerability-risk guidance. -->
 
@@ -111,7 +111,7 @@ Rank repositories by observed evidence that an operational-resilience advisory w
 2. Public repositories, documented public source locations, and code intended for reuse, transparency, external scrutiny, or avoidance of supplier lock-in.
 3. Security-sensitive commits, vulnerability alerts, exposed-secret alerts, dependency updates, material runtime and deployment changes, or AI-assisted attack surfaces that may shorten the discovery-to-exploit window.
 4. Missing or weak evidence of ownership, secure-by-design development, automated dependency and vulnerability hygiene, patch SLAs, inbound vulnerability reporting, observability, incident response, rollback, and recovery. For public repositories, prolonged inactivity without credible ownership or automated hygiene is a priority signal, not a reason to skip.
-5. Existing `[advisory:uk-ai-operational-resilience]` reports whose evidence is stale after material repository changes.
+5. Existing `[uk-ai-advisory:operational-resilience]` reports whose evidence is stale after material repository changes.
 
 Exclude archived or disabled repositories and repositories that the configured credential cannot read. Deprioritize repositories with no observed UK public-sector or published-code relevance, or an equivalent current advisory with no material change. AI is a threat accelerator, not an eligibility requirement. Missing metadata is not evidence that a repository is in or out of scope.
 
@@ -119,7 +119,7 @@ Use bounded two-stage discovery. Rank the complete precomputed batch using trust
 
 ## Workers
 
-- `advisory-uk-ai-operational-resilience`: assesses one selected repository against current UK government AI open-code and vulnerability-risk guidance, focusing on recent changes, control evidence, operational resilience, proposed risk tiers, and prioritized remediation.
+- `uk-ai-advisory-operational-resilience`: assesses one selected repository against current UK government AI open-code and vulnerability-risk guidance, focusing on recent changes, control evidence, operational resilience, proposed risk tiers, and prioritized remediation.
 
 Dispatch once per selected repository. Do not analyze target repositories in the orchestrator and do not fan out by commit, alert, asset, control, or remediation item.
 

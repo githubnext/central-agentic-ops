@@ -24,11 +24,11 @@
       "favicon": "./favicon.svg"
     },
     "packages": {
-      "advisory": {
+      "uk-ai-advisory": {
         "icon": "eye",
         "workers": {
-          "uk-ai-operational-resilience": {
-            "workflow": "advisory-uk-ai-operational-resilience"
+          "operational-resilience": {
+            "workflow": "uk-ai-advisory-operational-resilience"
           }
         }
       },
