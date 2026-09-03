@@ -20,6 +20,7 @@ function installStyles(document) {
   z-index: 1000;
   inset: 0 0 auto;
   height: 2px;
+  overflow: hidden;
   background: var(--accent, #58a6ff);
   opacity: 1;
   pointer-events: none;
@@ -27,12 +28,31 @@ function installStyles(document) {
   transform-origin: left center;
   transition: transform 180ms ease-out, opacity 120ms ease 80ms;
 }
+.loading-progress::after {
+  position: absolute;
+  inset: 0;
+  content: "";
+  background: linear-gradient(90deg, transparent, rgb(255 255 255 / 65%), transparent);
+  transform: translateX(-100%);
+  animation: loading-progress-shimmer 1.2s ease-in-out infinite;
+}
 .loading-progress-complete {
   opacity: 0;
+}
+@keyframes loading-progress-shimmer {
+  from {
+    transform: translateX(-100%);
+  }
+  to {
+    transform: translateX(100%);
+  }
 }
 @media (prefers-reduced-motion: reduce) {
   .loading-progress {
     transition: none;
+  }
+  .loading-progress::after {
+    animation: none;
   }
 }`;
   document.head.append(style);
