@@ -852,7 +852,7 @@ footer { padding: 20px 24px; border-top: 1px solid var(--border); color: var(--m
 @media (prefers-reduced-motion: reduce) {
   html { scroll-behavior: auto; }
   *, *::before, *::after { scroll-behavior: auto !important; transition-duration: 0.01ms !important; }
-  .dashboard-loading-skeleton > div { animation: none; }
+  .dashboard-loading-skeleton > div, .dashboard-horizon-skeleton > span { animation: none; }
 }
 @media (prefers-contrast: more) {
   :root {

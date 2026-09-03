@@ -313,14 +313,14 @@ test('DLS-DOC-014 horizon help is available on hover and keyboard focus', async 
       const sources = {
         runs: {
           source: 'runs',
-          rows: [],
+          rows: [{ run: '1', 'observed-at': '2026-09-01T11:00:00Z' }],
           metadata: {
             'source-id': 'runs-fixture',
             'source-kind': 'fixture',
             'retrieved-at': '2026-09-01T12:00:00Z',
             completeness: 'complete',
             freshness: 'fresh',
-            availability: 'empty'
+            availability: 'available'
           }
         }
       };
