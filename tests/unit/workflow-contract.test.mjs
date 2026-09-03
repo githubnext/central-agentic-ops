@@ -2461,6 +2461,7 @@ test("Dashboard package supports embedded and explicit standalone deployment", (
   assert.match(activityWorkflow, /Install gh-aw CLI[\s\S]*?version: v0\.88\.2/);
   assert.match(deployedWorkflows, /const \{ staleRegistration, \.\.\.capabilities \} = await workflowCapabilities/);
   assert.match(deployedWorkflows, /const role = workflowRole\(source\.value\)/);
+  assert.match(deployedWorkflows, /shared\\\/\(\?:cao\|control\)\\\.md/);
   assert.match(deployedWorkflows, /const staleRegistration = sourceMissing && registryOnly/);
   assert.match(deployedWorkflows, /Activity discovery configuration: organization=\$\{organization\}, scope=/);
   assert.match(deployedWorkflows, /Discovery searches returned \$\{matches\.length\} workflow lock files/);
