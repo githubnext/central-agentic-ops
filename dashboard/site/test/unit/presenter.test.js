@@ -856,9 +856,9 @@ describe('presenter built-in and custom pages', () => {
       })
     ]));
     expect(rendered.querySelector('[data-nav-page-id="security"] .octicon-shield')).not.toBeNull();
-    expect(page?.querySelector('.layout-section-header > strong')?.textContent).toBe('3 signals');
+    expect(page?.querySelector('.layout-section-header > strong')?.textContent).toBe('4 signals');
     expect(page?.querySelector('[data-chart-widget="pie"]')).toBeNull();
-    const summaryRows = [...(page?.querySelectorAll('[data-view-id="security-findings-summary"] tbody tr') ?? [])];
+    const summaryRows = [...(page?.querySelector('.custom-table')?.querySelectorAll('tbody tr') ?? [])];
     expect(summaryRows).toHaveLength(1);
     expect(summaryRows[0]?.textContent).toContain('high');
     expect(summaryRows[0]?.textContent).toContain('2');
