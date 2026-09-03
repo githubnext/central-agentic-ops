@@ -384,6 +384,7 @@ safe-outputs:
   create-issue:
     target-repo: ${{ (inputs.safe_output_mode || 'review') == 'review' && (inputs.safe_output_repo || github.repository) || inputs.target_repo }}
     title-prefix: "[dependabot:release-train-updater] "
+    labels: [dependabot:release-train-updater]
     expires: 14d
     max: 2
   noop:

@@ -592,7 +592,7 @@ test("operations creation guidance scopes detection and omits worker evals", () 
   assert.match(packageSkill, /Do not use `aw\.yml` bootstrap `config`/);
 });
 
-test("issue-creating workers use package and worker title prefixes", () => {
+test("issue-creating workers use package and worker title prefixes and labels", () => {
   for (const name of readdirSync(workflowsDirectory).filter((entry) => entry.endsWith(".md"))) {
     const source = workflow(name);
     if (!/role: worker/.test(source) || !/create-issue:/.test(source)) continue;
@@ -606,6 +606,11 @@ test("issue-creating workers use package and worker title prefixes", () => {
     assert.equal(
       config["safe-outputs"]["create-issue"]["title-prefix"],
       `[${controlImport.with.package}:${controlImport.with.worker}] `,
+      name,
+    );
+    assert.deepEqual(
+      config["safe-outputs"]["create-issue"].labels,
+      [`${controlImport.with.package}:${controlImport.with.worker}`],
       name,
     );
   }
@@ -1890,7 +1895,7 @@ test("SelfCare accessibility checker audits the served docs site with axe-core e
   assert.match(source, /prefers-reduced-motion/);
   assert.match(source, /safe-outputs:\n\s+allowed-domains:\n\s+- githubnext\.github\.io\n\s+create-issue:/);
   assert.match(source, /create-issue:\n\s+target-repo:.*\n\s+title-prefix: "\[self-care:accessibility-checker\] "/);
-  assert.match(source, /labels: \[self-care\]/);
+  assert.match(source, /labels: \[self-care:accessibility-checker\]/);
   assert.match(source, /close-older-key: self-care-accessibility-checker/);
   assert.match(source, /Begin the issue body directly with a concise, unheaded executive summary/);
   assert.match(source, /select the single most important action with the highest expected return on investment/);
@@ -1950,7 +1955,7 @@ test("SelfCare dashboard reviewer checks deployments through stakeholder persona
   assert.match(source, /overview, dispatches, packages, repositories, workflows, runs, and coverage routes/);
   assert.match(source, /title-prefix: "\[self-care:dashboard-review\] "/);
   assert.match(source, /close-older-key: self-care-dashboard-review/);
-  assert.match(source, /labels: \[self-care\]/);
+  assert.match(source, /labels: \[self-care:dashboard-review\]/);
   assert.match(source, /central-agentic-ops-dashboard/);
   assert.match(source, /view-grader\.mjs/);
   assert.match(source, /dashboard-artifact/);

@@ -109,6 +109,7 @@ safe-outputs:
   create-issue:
     expires: 30d
     title-prefix: "[software-development-practices:nist-ssdf] "
+    labels: [software-development-practices:nist-ssdf]
     close-older-issues: true
     close-older-key: ${{ format('software-development-practices-nist-ssdf-{0}', inputs.target_repo) }}
     max: 1

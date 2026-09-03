@@ -110,6 +110,7 @@ safe-outputs:
   create-issue:
     expires: 3d
     title-prefix: "[optimization:ai-credit-auditor] "
+    labels: [optimization:ai-credit-auditor]
     max: 1
     close-older-issues: true
     target-repo: ${{ (inputs.safe_output_mode || 'review') == 'review' && (inputs.safe_output_repo || github.repository) || inputs.target_repo }}
