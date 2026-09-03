@@ -41,6 +41,13 @@ function requiredString(value: unknown, field: string, manifestPath: string): st
   return value.trim();
 }
 
+function optionalBoolean(value: unknown, field: string, manifestPath: string): boolean {
+  if (value !== undefined && typeof value !== "boolean") {
+    throw new Error(`${manifestPath} ${field} must be a boolean`);
+  }
+  return value === true;
+}
+
 function workflowList(value: unknown, manifestPath: string): string[] {
   if (!Array.isArray(value)) {
     throw new Error(`${manifestPath} must define includes as a list of workflow paths or mappings`);
@@ -74,8 +81,8 @@ export const catalogEntries: CatalogEntry[] = Object.entries(manifests)
       name: requiredString(manifest.name, "name", manifestPath),
       description: requiredString(manifest.description, "description", manifestPath),
       minVersion: requiredString(manifest["min-version"], "min-version", manifestPath),
-      private: manifest.private === true,
-      experimental: manifest.experimental === true,
+      private: optionalBoolean(manifest.private, "private", manifestPath),
+      experimental: optionalBoolean(manifest.experimental, "experimental", manifestPath),
       includes: workflowList(manifest.includes, manifestPath),
       manifestFile,
       readmePath: readme ? `${slug}/README.md` : undefined,
