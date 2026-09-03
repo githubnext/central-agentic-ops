@@ -27,6 +27,59 @@ Apply the guidance for every role that is present. Do not infer a role from the 
 - Keep credentials in Actions secrets. Never place tokens, private keys, or other secrets in policy, workflow inputs, steering files, dispatch envelopes, commits, or chat.
 - Preserve fail-closed behavior. Missing policy, authority, credentials, repository access, or required evidence must fail, skip, no-op, or report incomplete rather than infer broader authority.
 
+## Building and testing
+
+### Full validation
+
+Run `npm run check` for complete repository validation. It executes, in order: `typecheck:cao`, `test` (unit + integration), `test:load`, `check:svg`, `compile`, and `docs:build`.
+
+### Root package commands
+
+| Command | Purpose |
+|---------|---------|
+| `npm run typecheck:cao` | TypeScript type-check for `.github/cao/src/` (ES2022, NodeNext) |
+| `npm test` | Unit tests (`tests/unit/`) then integration tests (`tests/integration/control-*.test.mjs`) via the Node.js built-in test runner |
+| `npm run test:unit` | Unit tests only |
+| `npm run test:integration` | Integration tests only (serial) |
+| `npm run test:package-lifecycle` | Clean-room `gh aw add`/`update` tests; requires `GH_TOKEN` and a GitHub App |
+| `npm run test:load` | Synthetic enterprise-scale load tests (100 000 repos) |
+| `npm run check:svg` | SVG visual-language compliance via `scripts/check-svg-visual-language.mjs` |
+| `npm run compile` | Dry-run compile of workflow `.md` sources with `gh aw compile` (no lock-file writes) |
+| `npm run compile:locks` | Compile and update `.lock.yml` files |
+| `npm run docs:build` | Build the Astro/Starlight documentation site |
+
+Always pass `--schedule-seed githubnext/gh-aw-cao` when running `gh aw compile` manually (the `compile` script already includes it); omitting the seed causes non-deterministic cron scattering in lock files.
+
+### Dashboard site (`dashboard/site/`)
+
+Run these commands from the `dashboard/site/` directory:
+
+| Command | Purpose |
+|---------|---------|
+| `npm test` | Unit tests via Vitest with jsdom |
+| `npm run test:e2e` | Playwright end-to-end tests (use `--shard=N/M` for CI parallelism) |
+| `npm run lint` | ESLint |
+| `npm run typecheck` | TypeScript strict-mode check |
+| `npm run validate:corpus` | Dashboard authoring corpus validation |
+
+### CI workflows
+
+| Workflow file | Scope | Trigger |
+|---------------|-------|---------|
+| `workflow-contracts.yml` | `npm run check` + `test:package-lifecycle` | PR / push |
+| `cid.yml` | Dashboard site lint, typecheck, unit tests, sharded E2E | PR / push to `dashboard/site/**` |
+| `svg-contrast-check.yml` | Playwright SVG WCAG contrast validation | PR / push to SVG files |
+| `docs.yml` | Documentation build | Schedule / push to main |
+
+### Choosing which tests to run
+
+- Editing control-plane sources under `.github/cao/src/` → `npm run typecheck:cao && npm test`
+- Editing dashboard site under `dashboard/site/` → from that directory: `npm test && npm run test:e2e && npm run lint && npm run typecheck`
+- Editing workflow `.md` files → `npm run compile` (add `compile:locks` if lock files should update)
+- Editing SVGs → `npm run check:svg`
+- Editing documentation under `docs/` → `npm run docs:build`
+- Unsure what's affected → `npm run check`
+
 ## Working changes
 
 - Read the relevant workflow source, its imports, its package manifest, and the effective policy before changing behavior.
