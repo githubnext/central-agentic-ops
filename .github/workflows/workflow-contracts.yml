@@ -37,6 +37,17 @@ jobs:
         run: git diff --check
 
   package-lifecycle:
+    name: Package lifecycle (${{ matrix.name }})
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: root
+            test-pattern: root package
+          - name: focused packages
+            test-pattern: focused .* package contract|dashboard package contract
+          - name: package updates
+            test-pattern: --force|update replaces
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
@@ -68,9 +79,10 @@ jobs:
         env:
           CENTRAL_AGENTIC_OPS_PACKAGE_SOURCE: ${{ github.repository }}@${{ github.sha }}
           GH_TOKEN: ${{ github.token }}
+          TEST_NAME_PATTERN: ${{ matrix.test-pattern }}
         run: |
           set +e
-          output="$(npm run test:package-lifecycle 2>&1)"
+          output="$(node --test --test-concurrency=1 --test-name-pattern="$TEST_NAME_PATTERN" tests/integration/package-lifecycle.test.mjs 2>&1)"
           status=$?
           set -e
           printf '%s\n' "$output"
