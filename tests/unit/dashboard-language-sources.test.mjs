@@ -154,7 +154,13 @@ test("dashboard source bridge detects rollout mode from run titles with punctuat
     assert.ok(rows.some((row) => row["security-feature"] === "firewall"
       && row["security-analysis"] === "detail"
       && row["security-subject"] === "blocked.example:443"
+      && row["security-status"] === "blocked"
       && row["security-count"] === 2));
+    assert.ok(rows.some((row) => row["security-feature"] === "firewall"
+      && row["security-analysis"] === "detail"
+      && row["security-subject"] === "api.github.com:443"
+      && row["security-status"] === "allowed"
+      && row["security-count"] === 8));
     assert.ok(rows.some((row) => row["security-feature"] === "integrity-filtering"
       && row["security-subject"] === "create_issue"));
     assert.ok(rows.some((row) => row["security-feature"] === "integrity-filtering"
