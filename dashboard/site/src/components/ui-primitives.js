@@ -142,3 +142,14 @@ export function formatUtcDateTime(value) {
 export function renderTableSummaryEmpty(message) {
   return h('span', { className: 'table-summary-empty' }, message);
 }
+
+/**
+ * Renders the shared "empty" placeholder paragraph used across route views and
+ * panels when there is no data to display.
+ * @param {string} message
+ * @param {Record<string, unknown>} [extraAttrs]
+ * @returns {HTMLElement}
+ */
+export function renderEmptyMessage(message, extraAttrs) {
+  return h('p', { className: 'empty', ...extraAttrs }, message);
+}
