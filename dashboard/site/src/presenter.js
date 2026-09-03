@@ -364,7 +364,12 @@ function renderMainContent(document, pages, sources, githubUrlBase, dashboardRep
           renderDashboardHorizon(document.dashboard, dashboardDefaults, horizonRange, evaluatedAt, hasData, dataHorizon),
           latestRetrieval
             ? h('time', { className: 'freshness', dateTime: latestRetrieval }, `Last updated ${formatReportDate(latestRetrieval)}`)
-            : null,
+            : h(
+              'span',
+              { className: 'freshness freshness-skeleton', 'aria-label': 'Last updated date unavailable' },
+              h('span', { 'aria-hidden': 'true' }, 'Last updated'),
+              h('span', { 'aria-hidden': 'true' })
+            ),
           dashboardRepository
             ? h(
               'a',
