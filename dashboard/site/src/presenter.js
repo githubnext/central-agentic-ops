@@ -362,7 +362,7 @@ function renderMainContent(document, pages, sources, githubUrlBase, dashboardRep
           'div',
           { className: 'report-actions' },
           renderDashboardHorizon(document.dashboard, dashboardDefaults, horizonRange, evaluatedAt, hasData, dataHorizon),
-          latestRetrieval
+          hasData && latestRetrieval
             ? h('time', { className: 'freshness', dateTime: latestRetrieval }, `Last updated ${formatReportDate(latestRetrieval)}`)
             : h(
               'span',
