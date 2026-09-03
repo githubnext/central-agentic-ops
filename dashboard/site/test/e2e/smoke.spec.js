@@ -811,8 +811,8 @@ test('pie charts match the report layout at medium viewport widths', async ({ pa
   const chart = layout.locator('.pie-chart-widget');
   const legend = layout.locator('.chart-legend-pie');
   const table = page.locator('.chart-view-pie > .table-region');
-  const [headingBox, descriptionBox, layoutBox, chartBox, legendBox, cardBox, tableBox] = await Promise.all(
-    [heading, description, layout, chart, legend, card, table].map((locator) => locator.boundingBox())
+  const [headingBox, descriptionBox, layoutBox, chartBox, legendBox, cardBox] = await Promise.all(
+    [heading, description, layout, chart, legend, card].map((locator) => locator.boundingBox())
   );
 
   expect(headingBox).not.toBeNull();
@@ -821,13 +821,12 @@ test('pie charts match the report layout at medium viewport widths', async ({ pa
   expect(chartBox).not.toBeNull();
   expect(legendBox).not.toBeNull();
   expect(cardBox).not.toBeNull();
-  expect(tableBox).not.toBeNull();
+  await expect(table).toHaveCount(0);
   expect(layoutBox?.x).toBeCloseTo(headingBox?.x ?? 0, 0);
   expect(layoutBox?.y).toBeGreaterThan((descriptionBox?.y ?? 0) + (descriptionBox?.height ?? 0));
   expect(legendBox?.x).toBeGreaterThan((chartBox?.x ?? 0) + (chartBox?.width ?? 0));
   expect((legendBox?.y ?? 0) + (legendBox?.height ?? 0) / 2)
     .toBeCloseTo((chartBox?.y ?? 0) + (chartBox?.height ?? 0) / 2, 0);
-  expect(tableBox?.y).toBeGreaterThan((cardBox?.y ?? 0) + (cardBox?.height ?? 0));
 });
 
 test('DLS-PAGE-014 DLS-PAGE-015 built-in packages page renders report-style mode filters, AIC utilization, and run trends in browser', async ({ page }) => {
@@ -1449,6 +1448,7 @@ test('DLS-VIEW-013 DLS-VIEW-014 DLS-VIEW-015 DLS-SAFE-006 custom views render av
                     source: 'runs'
                   },
                   mark: 'chart',
+                  table: true,
                   encoding: {
                     x: {
                       field: 'started-at',

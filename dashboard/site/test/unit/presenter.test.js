@@ -1984,6 +1984,7 @@ describe('presenter built-in and custom pages', () => {
                   source: 'runs'
                 },
                 mark: 'chart',
+                table: true,
                 encoding: {
                   x: {
                     field: 'started-at',
