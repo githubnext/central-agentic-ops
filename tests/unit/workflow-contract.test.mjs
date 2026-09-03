@@ -550,6 +550,15 @@ test("issue-creating workers use package and worker title prefixes", () => {
   }
 });
 
+test("workers with title prefixes provide unprefixed safe-output titles", () => {
+  for (const name of readdirSync(workflowsDirectory).filter((entry) => entry.endsWith(".md"))) {
+    const source = workflow(name);
+    if (!/^\s+role: worker$/m.test(source) || !/^\s+title-prefix:/m.test(source)) continue;
+
+    assert.match(source, /unprefixed[\s\S]*?configured `title-prefix`[\s\S]*?added automatically[\s\S]*?semantically equivalent category prefix/, name);
+  }
+});
+
 test("workers inherit human-first progressive report disclosure", () => {
   const packageSkill = readFileSync(join(root, ".github", "skills", "create-ops-package", "SKILL.md"), "utf8");
   const sharedControl = workflow("shared/control.md");

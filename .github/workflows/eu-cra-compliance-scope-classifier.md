@@ -173,6 +173,8 @@ Material conclusions about CRA scope exclusion, economic-operator role, commerci
 
 Create one issue containing:
 
+Provide only the unprefixed subject as the safe-output title. The configured `title-prefix` is added automatically; do not repeat it or add a semantically equivalent category prefix.
+
 1. target and assessed repository snapshot;
 2. verified regulatory baseline and provenance;
 3. product and distribution evidence;

@@ -409,6 +409,8 @@ Chart requirements:
 
 Create an issue with these sections:
 
+Provide only the unprefixed subject as the safe-output title. The configured `title-prefix` is added automatically; do not repeat it or add a semantically equivalent category prefix.
+
 ### Formatting Requirements
 
 - Use `###` for main sections and `####` for subsections inside the issue body.

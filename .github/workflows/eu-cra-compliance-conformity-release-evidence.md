@@ -162,6 +162,8 @@ Material conclusions about CRA scope exclusion, economic-operator role, commerci
 
 Create one issue with the assessed release/version, verified regulatory sources, technical-documentation matrix, conformity evidence register, release-gate matrix, gaps, inaccessible evidence, and named human-review decisions. Use only `EVIDENCE_SUFFICIENT`, `GAP_FOUND`, `HUMAN_REVIEW_REQUIRED`, `NOT_ASSESSED`, or `INCOMPLETE`.
 
+Provide only the unprefixed subject as the safe-output title. The configured `title-prefix` is added automatically; do not repeat it or add a semantically equivalent category prefix.
+
 Immediately after the issue heading, include exactly one marker in this form, replacing the target and SHA with the analyzed repository and `git -C target rev-parse HEAD` result:
 
 `<!-- operational-value: domain=conformity-release target=OWNER/REPO target-sha=40_HEX_SHA -->`
