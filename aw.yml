@@ -1,5 +1,6 @@
 name: Central Agentic Ops
 description: Central agentic workflow control plane for reusable packages at the organization level
+experimental: true
 min-version: v0.88.2
 includes:
   - source: activity/activity.yml
