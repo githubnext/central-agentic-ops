@@ -142,14 +142,18 @@ test("local dashboard server fails when dashboard data cannot be downloaded", as
 
 test("local dashboard server optionally prompts Copilot to update the active view", async () => {
   const root = await mkdtemp(path.join(tmpdir(), "dashboard-local-server-"));
+  const packageRoot = path.join(root, "packages");
+  const packageDirectory = path.join(packageRoot, "example");
+  await mkdir(packageDirectory, { recursive: true });
   await writeFile(path.join(root, "index.html"), "<!doctype html><body><div id=\"root\"></div></body>");
   await writeFile(path.join(root, "dashboard.json"), dashboard("built-in"));
+  await writeFile(path.join(packageDirectory, "dashboard.json"), dashboard("package-one"));
   const prompts = [];
   let runtimeClosed = false;
 
   const preview = await startDashboardServer({
     siteRoot: root,
-    catalogRoot: null,
+    catalogRoot: packageRoot,
     installedDashboardsDirectory: path.join(root, "dashboards"),
     downloadData: async (destination) => {
       await mkdir(destination, { recursive: true });
@@ -166,8 +170,9 @@ test("local dashboard server optionally prompts Copilot to update the active vie
   });
   try {
     const index = await fetch(`${preview.url}/`).then((response) => response.text());
-    assert.match(index, /dashboard-copilot-prompt/);
-    assert.match(index, /Ask Copilot to update this view/);
+    assert.match(index, /src\/copilot-prompt\.js\?endpoint=/);
+    assert.doesNotMatch(index, /Ask Copilot to update this view/);
+    assert.doesNotMatch(index, /eval\(/);
 
     const response = await fetch(`${preview.url}/__dashboard_copilot`, {
       method: "POST",
@@ -178,7 +183,15 @@ test("local dashboard server optionally prompts Copilot to update the active vie
       body: JSON.stringify({ view: "package-one", request: "Add a failure trend" }),
     });
     assert.equal(response.status, 200);
-    assert.deepEqual(prompts, [{ view: "package-one", request: "Add a failure trend" }]);
+    assert.equal(prompts.length, 1);
+    assert.equal(prompts[0].view, "package-one");
+    assert.equal(prompts[0].request, "Add a failure trend");
+    assert.equal(prompts[0].viewDashboardPath, path.join(packageDirectory, "dashboard.json"));
+    assert.deepEqual(prompts[0].editableDashboardPaths, [
+      path.join(root, "dashboard.json"),
+      path.join(packageDirectory, "dashboard.json"),
+    ]);
+    assert.match(prompts[0].bundledDashboardPath, /cao-dashboard-preview-.*dashboard\.json$/);
 
     const invalidOrigin = await fetch(`${preview.url}/__dashboard_copilot`, {
       method: "POST",

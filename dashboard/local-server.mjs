@@ -55,6 +55,23 @@ async function existingDirectories(paths) {
   return directories;
 }
 
+async function dashboardSourceForView(view, dashboardPaths) {
+  for (const path of dashboardPaths) {
+    try {
+      const document = JSON.parse(await readFile(path, "utf8"));
+      const matches = document?.dashboard?.pages?.some((page) =>
+        [page?.id, page?.title, page?.["navigation-label"]].includes(view));
+      if (matches) return path;
+    } catch (error) {
+      console.log("Unable to inspect dashboard source for Copilot.", {
+        path,
+        error: error instanceof Error ? error.message : String(error),
+      });
+    }
+  }
+  return dashboardPaths[0];
+}
+
 async function packageDashboardPaths(catalogRoot, installedDashboardsDirectory) {
   const paths = [];
   const installed = await readdir(installedDashboardsDirectory, { withFileTypes: true }).catch((error) => {
@@ -155,50 +172,12 @@ function injectDashboardSocket(html, socketPath) {
     : `${html}\n${socketScript}\n`;
 }
 
-function injectCopilotPrompt(html, endpoint) {
-  const prompt = `<form id="dashboard-copilot-prompt" style="display:flex;gap:0.5rem;align-items:center;padding:0.75rem 1rem;border-bottom:1px solid #d0d7de;background:#f6f8fa;font:14px system-ui">
-  <label for="dashboard-copilot-request" style="font-weight:600">Ask Copilot to update this view</label>
-  <input id="dashboard-copilot-request" name="request" type="text" required maxlength="10000" style="flex:1;min-width:12rem;padding:0.4rem 0.6rem" placeholder="Describe the change">
-  <button type="submit">Send</button>
-  <output id="dashboard-copilot-status" aria-live="polite"></output>
-</form>
-<script type="module">
-  const form = document.querySelector("#dashboard-copilot-prompt");
-  const input = document.querySelector("#dashboard-copilot-request");
-  const button = form.querySelector("button");
-  const status = document.querySelector("#dashboard-copilot-status");
-  form.addEventListener("submit", async (event) => {
-    event.preventDefault();
-    const activeView = document.querySelector("[data-nav-page-id][aria-current=page]");
-    const view = activeView?.getAttribute("aria-label")
-      || activeView?.dataset.navPageId
-      || location.hash.match(/^#page-([^?]+)/)?.[1]
-      || "overview";
-    button.disabled = true;
-    status.textContent = "Working…";
-    console.log("Starting Copilot dashboard update", { view });
-    try {
-      const response = await fetch(${JSON.stringify(endpoint)}, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ view, request: input.value }),
-      });
-      const result = await response.json();
-      if (!response.ok) throw new Error(result.error || "Copilot could not update the view.");
-      status.textContent = "Saved. Waiting for the preview to reload…";
-      input.value = "";
-      console.log("Copilot dashboard update completed", { view });
-    } catch (error) {
-      status.textContent = error instanceof Error ? error.message : String(error);
-      console.log("Copilot dashboard update failed", error);
-    } finally {
-      button.disabled = false;
-    }
-  });
-</script>`;
-  return html.includes("<body>")
-    ? html.replace("<body>", `<body>\n${prompt}`)
-    : `${prompt}\n${html}`;
+function injectCopilotPromptModule(html, endpoint) {
+  const source = `./src/copilot-prompt.js?endpoint=${encodeURIComponent(endpoint)}`;
+  const script = `<script type="module" src=${JSON.stringify(source)}></script>`;
+  return html.includes("</body>")
+    ? html.replace("</body>", `${script}\n  </body>`)
+    : `${html}\n${script}\n`;
 }
 
 async function readJsonRequest(request, limit = 16 * 1024) {
@@ -214,14 +193,16 @@ async function readJsonRequest(request, limit = 16 * 1024) {
 
 async function startCopilotRuntime({ workingDirectory, copilotExecutable }) {
   const { approveAll, CopilotClient, RuntimeConnection } = await import("@github/copilot-sdk");
+  console.log("Loading Copilot SDK runtime.", { workingDirectory });
   const client = new CopilotClient({
     connection: RuntimeConnection.forTcp({
       ...(copilotExecutable ? { path: copilotExecutable } : {}),
     }),
     workingDirectory,
-    logLevel: "none",
+    logLevel: "debug",
   });
   try {
+    console.log("Starting Copilot headless server.");
     await client.start();
   } catch (error) {
     await client.stop();
@@ -230,22 +211,43 @@ async function startCopilotRuntime({ workingDirectory, copilotExecutable }) {
   console.log("Copilot headless server started.");
 
   return {
-    async prompt({ view, request }) {
+    async prompt({ view, request, bundledDashboardPath, editableDashboardPaths, viewDashboardPath }) {
+      console.log("Creating Copilot dashboard session.", {
+        view,
+        bundledDashboardPath,
+        viewDashboardPath,
+        editableDashboardPaths,
+      });
       const session = await client.createSession({
         workingDirectory,
         onPermissionRequest: approveAll,
       });
-      const unsubscribe = session.on((event) => console.log(`Copilot session event: ${event.type}`));
+      console.log("Copilot dashboard session created.", { sessionId: session.sessionId, view });
+      const unsubscribe = session.on((event) => {
+        console.log("Copilot dashboard session event.", { sessionId: session.sessionId, type: event.type });
+      });
       try {
+        console.log("Sending Copilot dashboard request.", {
+          sessionId: session.sessionId,
+          view,
+          requestLength: request.length,
+        });
         await session.sendAndWait({
           prompt: `Use the /generate-dashboard-ir skill to update the current dashboard view named ${JSON.stringify(view)}.
 
 Apply this request: ${request}
 
-Find the dashboard source file that defines this view. Follow the skill and the repository's dashboard specification, run the dashboard validator repeatedly until the edited document passes, and save the source file so the local preview reloads. Complete the edit rather than only describing it.`,
+The composed preview dashboard is ${JSON.stringify(bundledDashboardPath)}. It is a generated temporary file: inspect it if useful, but do not edit it.
+The original dashboard source most likely defining this view is ${JSON.stringify(viewDashboardPath)}.
+The complete set of editable original dashboard sources is:
+${editableDashboardPaths.map((path) => `- ${path}`).join("\n")}
+
+Built-in views come from the site's dashboard.json. Package views come from their package dashboard.json source (for an installed control repository, under .github/aw/dashboards; for this catalog, in the matching top-level package directory). Edit the original source that defines the named view, not the composed preview file. Follow the skill and the repository's dashboard specification, run the dashboard validator repeatedly until the edited document passes, and save the source file so the local preview reloads. Complete the edit rather than only describing it.`,
         });
+        console.log("Copilot dashboard request completed.", { sessionId: session.sessionId, view });
       } finally {
         unsubscribe();
+        console.log("Disconnecting Copilot dashboard session.", { sessionId: session.sessionId });
         await session.disconnect();
       }
     },
@@ -344,11 +346,13 @@ export async function startDashboardServer({
   let copilotRuntime;
 
   const broadcastDashboard = () => {
+    console.log("Broadcasting dashboard preview update.", { socketCount: sockets.size });
     const frame = websocketTextFrame(dashboardContent);
     for (const socket of sockets) socket.write(frame);
   };
 
   const rebuild = async (notify = true) => {
+    console.log("Checking dashboard sources for updates.");
     const packagePaths = await packageDashboardPaths(catalogRoot, installedDashboardsDirectory);
     const nextSignature = await sourceSignature([baseDashboardPath, ...packagePaths]);
     if (nextSignature === signature) return packagePaths;
@@ -357,6 +361,11 @@ export async function startDashboardServer({
     await bundleDashboardFiles(bundledDashboardPath, packagePaths);
     dashboardContent = await readFile(bundledDashboardPath, "utf8");
     signature = nextSignature;
+    console.log("Dashboard preview rebuilt.", {
+      bundledDashboardPath,
+      editableDashboardPaths: [baseDashboardPath, ...packagePaths],
+      notify,
+    });
     if (notify) broadcastDashboard();
     return packagePaths;
   };
@@ -378,6 +387,7 @@ export async function startDashboardServer({
         watchers.delete(directory);
       });
       watchers.set(directory, watcher);
+      console.log("Watching dashboard source directory.", { directory });
     }
   };
 
@@ -453,7 +463,23 @@ export async function startDashboardServer({
             response.end(JSON.stringify({ error: "A valid view and request are required." }));
             return;
           }
-          await copilotRuntime.prompt({ view: payload.view, request: payload.request.trim() });
+          const editableDashboardPaths = [baseDashboardPath, ...await packageDashboardPaths(
+            catalogRoot,
+            installedDashboardsDirectory,
+          )];
+          const viewDashboardPath = await dashboardSourceForView(payload.view, editableDashboardPaths);
+          console.log("Accepted Copilot dashboard request.", {
+            view: payload.view,
+            requestLength: payload.request.trim().length,
+            viewDashboardPath,
+          });
+          await copilotRuntime.prompt({
+            view: payload.view,
+            request: payload.request.trim(),
+            bundledDashboardPath,
+            editableDashboardPaths,
+            viewDashboardPath,
+          });
           response.writeHead(200, { "Content-Type": contentTypes.get(".json") });
           response.end(JSON.stringify({ ok: true }));
         } catch (error) {
@@ -503,7 +529,7 @@ export async function startDashboardServer({
       else content = await readFile(canonicalPath);
       if (extname(canonicalPath) === ".html") {
         content = injectDashboardSocket(content.toString("utf8"), socketPath);
-        if (copilotRuntime) content = injectCopilotPrompt(content, copilotPath);
+        if (copilotRuntime) content = injectCopilotPromptModule(content, copilotPath);
       }
       response.writeHead(200, {
         "Cache-Control": "no-store",
@@ -539,8 +565,15 @@ export async function startDashboardServer({
       "\r\n",
     ].join("\r\n"));
     sockets.add(socket);
+    console.log("Dashboard preview socket connected.", { socketCount: sockets.size });
     let receivedHeaderBytes = 0;
-    const remove = () => sockets.delete(socket);
+    let removed = false;
+    const remove = () => {
+      if (removed) return;
+      removed = true;
+      sockets.delete(socket);
+      console.log("Dashboard preview socket disconnected.", { socketCount: sockets.size });
+    };
     socket.on("data", (data) => {
       receivedHeaderBytes += Math.min(data.length, 2 - receivedHeaderBytes);
       if (receivedHeaderBytes === 2 && !socket.writableEnded) {
@@ -562,6 +595,7 @@ export async function startDashboardServer({
           return;
         }
         expectedAuthority = `${address.address.includes(":") ? `[${address.address}]` : address.address}:${address.port}`;
+        console.log("Dashboard server listening.", { authority: expectedAuthority, copilot });
         accept();
       });
     });
@@ -576,6 +610,7 @@ export async function startDashboardServer({
     async close() {
       if (closed) return;
       closed = true;
+      console.log("Stopping dashboard server.");
       clearTimeout(refreshTimer);
       for (const watcher of watchers.values()) watcher.close();
       for (const socket of sockets) socket.end(websocketCloseFrame());
@@ -583,6 +618,7 @@ export async function startDashboardServer({
       await copilotRuntime?.close();
       await refreshPromise;
       await rm(temporaryDirectory, { recursive: true, force: true });
+      console.log("Dashboard server stopped.");
     },
   };
 }
