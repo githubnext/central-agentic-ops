@@ -82,7 +82,7 @@ Integrations that repeatedly read GitHub data should minimize both request volum
 - Use [GraphQL](https://docs.github.com/en/graphql/guides/using-graphql-with-github-actions) when a workflow needs related data from many repositories or resources. A single query can select only the fields needed and batch relationships that would otherwise require many REST requests.
 - Keep discovery bounded and reuse data already fetched in the current run. Do not poll while waiting for rate-limit replenishment; stop and report incomplete work instead.
 
-For direct HTTP clients, send the conditional-request headers explicitly. For `gh api`, use its cache support where appropriate, and for GitHub MCP calls prefer one bounded query over repeated lookups. Conditional requests and GraphQL reduce avoidable traffic but do not replace the admission capacity check or the fail-closed limits described below.
+For direct HTTP clients, send the conditional-request headers explicitly. The CAO control precompute helper uses `gh api --cache 60s` for its bounded read requests; this lets the GitHub CLI reuse cached responses and negotiate conditional requests. For GitHub MCP calls, prefer one bounded query over repeated lookups. Conditional requests and GraphQL reduce avoidable traffic but do not replace the admission capacity check or the fail-closed limits described below.
 
 Follow this order:
 

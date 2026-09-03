@@ -1004,6 +1004,7 @@ test("orchestrators emit dedicated bounded dispatcher telemetry", () => {
 test("public read-only operation uses the built-in token without widening access", () => {
   const authentication = readFileSync(join(root, "docs", "authentication.md"), "utf8");
   const configuration = readFileSync(join(root, "docs", "configuration.md"), "utf8");
+  const controlSource = readFileSync(join(root, ".github", "cao", "src", "control.mjs"), "utf8");
   const control = workflow("shared/control.md");
   const precompute = controlPrecompute();
 
@@ -1017,6 +1018,8 @@ test("public read-only operation uses the built-in token without widening access
   assert.match(authentication, /`ETag`/);
   assert.match(authentication, /`If-None-Match`/);
   assert.match(authentication, /GraphQL/);
+  assert.match(controlSource, /const GITHUB_API_CACHE_DURATION = "60s";/);
+  assert.match(controlSource, /const args = \["api", "--cache", GITHUB_API_CACHE_DURATION\];/);
   assert.match(configuration, /no App or PAT secret is required/);
   assert.match(control, /cannot read target evidence required by the importing workflow, stop that analysis and report it as incomplete/);
   assert.match(control, /persist response `ETag` values and send them as `If-None-Match`/);
