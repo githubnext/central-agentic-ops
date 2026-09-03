@@ -71,7 +71,6 @@ const { title = data.title, tagline, actions = [] } = data.hero || {};
           class="pipeline-image"
         />
       </picture>
-      <div class="dispatch-motion" aria-hidden="true"></div>
     </div>
 
     <div class="mobile-scene" aria-hidden="true">
@@ -88,70 +87,10 @@ const { title = data.title, tagline, actions = [] } = data.hero || {};
           class="mobile-pipeline-image"
         />
       </picture>
-      <div class="dispatch-motion mobile-dispatch-motion" data-layout="mobile"></div>
     </div>
   </figure>
 
 </div>
-
-<script>
-  import lottie from "lottie-web/build/player/lottie_light";
-  import createAnimationData, { createMobileAnimationData } from "../assets/control-plane-dispatch.animation.mjs";
-
-  const animations = new WeakMap<Element, ReturnType<typeof lottie.loadAnimation>>();
-  const observers = new WeakMap<Element, IntersectionObserver>();
-  const colorScheme = window.matchMedia("(prefers-color-scheme: dark)");
-
-  function initializeHierarchyAnimations() {
-    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
-
-    document.querySelectorAll(".dispatch-motion").forEach((container) => {
-      if (animations.has(container)) return;
-
-      const animation = lottie.loadAnimation({
-        container,
-        renderer: "svg",
-        loop: true,
-        autoplay: false,
-        animationData: container instanceof HTMLElement && container.dataset.layout === "mobile" ? createMobileAnimationData(colorScheme.matches) : createAnimationData(colorScheme.matches),
-        rendererSettings: {
-          preserveAspectRatio: "xMidYMid meet",
-          progressiveLoad: true,
-        },
-      });
-      const observer = new IntersectionObserver(
-        ([entry]) => (entry?.isIntersecting ? animation.play() : animation.pause()),
-        { threshold: 0.15 },
-      );
-
-      animation.addEventListener("DOMLoaded", () => container.classList.add("is-ready"));
-      observer.observe(container);
-      animations.set(container, animation);
-      observers.set(container, observer);
-    });
-  }
-
-  function destroyHierarchyAnimations() {
-    document.querySelectorAll(".dispatch-motion").forEach((container) => {
-      observers.get(container)?.disconnect();
-      animations.get(container)?.destroy();
-      container.classList.remove("is-ready");
-      observers.delete(container);
-      animations.delete(container);
-    });
-  }
-
-  function handleColorSchemeChange() {
-    destroyHierarchyAnimations();
-    initializeHierarchyAnimations();
-  }
-
-  initializeHierarchyAnimations();
-  if ("addEventListener" in colorScheme) colorScheme.addEventListener("change", handleColorSchemeChange);
-  else (colorScheme as MediaQueryList & { addListener(listener: () => void): void }).addListener(handleColorSchemeChange);
-  document.addEventListener("astro:page-load", initializeHierarchyAnimations);
-  document.addEventListener("astro:before-swap", destroyHierarchyAnimations);
-</script>
 
 <style>
   @layer starlight.core {
@@ -308,8 +247,7 @@ const { title = data.title, tagline, actions = [] } = data.hero || {};
       isolation: isolate;
     }
 
-    .pipeline-image,
-    .dispatch-motion {
+    .pipeline-image {
       position: absolute;
       top: -26.053%;
       left: -44.706%;
@@ -319,17 +257,6 @@ const { title = data.title, tagline, actions = [] } = data.hero || {};
 
     .pipeline-image {
       object-fit: contain;
-    }
-
-    .dispatch-motion {
-      z-index: 2;
-      opacity: 0;
-      transition: opacity 180ms ease-out;
-      pointer-events: none;
-    }
-
-    .dispatch-motion.is-ready {
-      opacity: 1;
     }
 
     .mobile-scene {
@@ -371,8 +298,7 @@ const { title = data.title, tagline, actions = [] } = data.hero || {};
         isolation: isolate;
       }
 
-      .mobile-pipeline-image,
-      .mobile-dispatch-motion {
+      .mobile-pipeline-image {
         position: absolute;
         inset: 0;
         width: 100% !important;
@@ -388,10 +314,6 @@ const { title = data.title, tagline, actions = [] } = data.hero || {};
       .stack,
       .hierarchy {
         animation: none;
-      }
-
-      .dispatch-motion {
-        display: none;
       }
 
       .hero-action.dashboard-action,

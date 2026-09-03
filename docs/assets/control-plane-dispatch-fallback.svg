@@ -8,9 +8,20 @@
       [fill="#1f883d"]{fill:var(--success)} [fill="#cf222e"]{fill:var(--danger)} [fill="#bf8700"]{fill:var(--attention)} [fill="#8250df"]{fill:var(--accent)} [fill="#0969da"]{fill:var(--info)}
       [stroke="#ffffff"]{stroke:var(--surface)} [stroke="#d0d7de"]{stroke:var(--border)} [stroke="#afb8c1"]{stroke:var(--connector)} [stroke="#8250df"]{stroke:var(--accent)}
       [stroke="#1f883d"]{stroke:var(--success)} [stroke="#cf222e"]{stroke:var(--danger)} [stroke="#bf8700"]{stroke:var(--attention)} [stroke="#0969da"]{stroke:var(--info)}
+      .dispatch-flow{fill:none;stroke:var(--accent);stroke-width:6;stroke-linecap:round;stroke-dasharray:.012 .988;stroke-dashoffset:1;filter:url(#flow-glow);animation:dispatch-flow 3.6s linear infinite}
+      .dispatch-flow:nth-child(2){animation-delay:-1.2s}.dispatch-flow:nth-child(3){animation-delay:-2.4s}
+      .package-status{animation:package-status 5s ease-in-out infinite}.package-status:nth-child(2){animation-delay:-.35s}.package-status:nth-child(3){animation-delay:-.7s}.package-status:nth-child(4){animation-delay:-1.05s}
+      .report-update{animation:report-update 5s steps(1,end) infinite}
+      .report-chart{stroke-dasharray:1;stroke-dashoffset:1;animation:report-chart 5s ease-out infinite}
+      @keyframes dispatch-flow{0%{stroke-dashoffset:1;opacity:0}8%{opacity:1}82%{opacity:1}100%{stroke-dashoffset:0;opacity:0}}
+      @keyframes package-status{0%,12%,100%{fill:var(--surface);stroke:var(--muted)}20%,68%{fill:var(--attention);stroke:var(--surface)}76%,92%{fill:var(--success);stroke:var(--surface)}}
+      @keyframes report-update{0%,74%{opacity:0}75%,92%{opacity:1}93%,100%{opacity:0}}
+      @keyframes report-chart{0%,74%{stroke-dashoffset:1}88%,100%{stroke-dashoffset:0}}
+      @media(prefers-reduced-motion:reduce){.dispatch-flow{display:none}.package-status{animation:none}.report-update{display:none}.report-chart{animation:none}}
     </style>
     <pattern id="grid" width="24" height="24" patternUnits="userSpaceOnUse"><path d="M24 0H0V24" fill="none" stroke="#d0d7de" stroke-width=".6"/></pattern>
     <filter id="shadow" x="-10%" y="-20%" width="120%" height="150%"><feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="var(--shadow)" flood-opacity=".16"/></filter>
+    <filter id="flow-glow" x="-100%" y="-100%" width="300%" height="300%"><feGaussianBlur stdDeviation="2" result="blur"/><feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
   </defs>
 
   <rect width="1240" height="560" fill="url(#grid)" opacity=".14"/>
@@ -24,6 +35,11 @@
     <path d="M580 200H615M580 252H615M580 304H615M580 356H615M615 184V376M615 184H630M615 280H630M615 376H630"/>
     <path d="M730 184H755M730 280H755M730 376H755M755 172V388M755 172H780M755 244H780M755 316H780M755 388H780"/>
     <path d="M880 172H905M880 244H905M880 316H905M880 388H905M905 172V388M905 280H930"/>
+  </g>
+  <g aria-hidden="true">
+    <path class="dispatch-flow" pathLength="1" d="M580 200H615M580 252H615M580 304H615M580 356H615M615 184V376M615 184H630M615 280H630M615 376H630"/>
+    <path class="dispatch-flow" pathLength="1" d="M730 184H755M730 280H755M730 376H755M755 172V388M755 172H780M755 244H780M755 316H780M755 388H780"/>
+    <path class="dispatch-flow" pathLength="1" d="M880 172H905M880 244H905M880 316H905M880 388H905M905 172V388M905 280H930"/>
   </g>
   <g filter="url(#shadow)">
     <g transform="translate(150 50) scale(2.6)" display="none">
@@ -79,11 +95,23 @@
       <path d="M946 327L966 328L986 350L1006 355L1027 369L1047 384L1067 365L1087 344L1108 381L1128 360L1148 376L1168 354L1188 370" fill="none" stroke="#0969da" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
     </g>
 
-    <g fill="#ffffff" stroke="#656d76" stroke-width="2">
+    <g class="package-status" fill="#ffffff" stroke="#656d76" stroke-width="2">
       <circle cx="580" cy="200" r="7"/>
       <circle cx="580" cy="252" r="7"/>
       <circle cx="580" cy="304" r="7"/>
       <circle cx="580" cy="356" r="7"/>
+    </g>
+    <g class="report-update" transform="translate(930 144)" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,sans-serif">
+      <rect width="274" height="272" rx="6" fill="#ffffff" stroke="#d0d7de"/>
+      <text x="16" y="32" fill="#656d76" font-size="8" font-weight="700">REPORT EXCERPT</text><text x="258" y="32" fill="#656d76" text-anchor="end" font-size="8" font-weight="700">2026-08-27 07:07:56 UTC</text>
+      <text x="16" y="54" fill="#1f2328" font-size="13" font-weight="600">Execution health</text><path d="M16 63H258" fill="none" stroke="#d0d7de"/>
+      <text x="16" y="81" fill="#656d76" font-size="8" font-weight="700">RUNS · 24H</text><text x="16" y="100" fill="#1f2328" font-size="15" font-weight="700">748</text>
+      <text x="146" y="81" fill="#656d76" font-size="8" font-weight="700">FAILURE RATE</text><text x="146" y="100" fill="#cf222e" font-size="15" font-weight="700">0.0%</text>
+      <rect x="16" y="112" width="242" height="7" rx="3.5" fill="#d0d7de"/><path d="M19.5 115.5H246" fill="none" stroke="#1f883d" stroke-width="7" stroke-linecap="round"/><path d="M246 115.5H254.5" fill="none" stroke="#bf8700" stroke-width="7" stroke-linecap="round"/>
+      <text x="16" y="142" fill="#656d76" font-size="8" font-weight="700">VALUE OVER TIME</text><g fill="none" stroke="#d0d7de" stroke-width=".7" opacity=".7"><path d="M16 166H258M16 190H258M16 214H258M16 238H258"/><path d="M76 158V244M137 158V244M198 158V244"/></g>
+      <path d="M44 158V244" fill="none" stroke="#8250df" stroke-width="1.5" stroke-dasharray="3 2"/><text x="48" y="165" fill="#8250df" font-size="8" font-weight="700">ADOPTED</text>
+      <path class="report-chart" pathLength="1" d="M16 224L36 227L56 204L76 209L97 193L117 199L137 175L157 193L178 171L198 179L218 174L238 181L258 163" fill="none" stroke="#1f883d" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+      <path class="report-chart" pathLength="1" d="M16 184L36 206L56 211L76 225L97 240L117 221L137 200L157 237L178 216L198 232L218 210L238 226L258 204" fill="none" stroke="#0969da" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
     </g>
   </g>
 </svg>
