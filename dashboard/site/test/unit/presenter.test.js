@@ -147,6 +147,21 @@ describe('presenter built-in and custom pages', () => {
             freshness: 'fresh',
             availability: 'available'
           }
+        },
+        historical: {
+          source: 'historical',
+          rows: [{ record: 'older-window' }],
+          metadata: {
+            'source-id': 'historical-fixture',
+            'source-kind': 'fixture',
+            'as-of': '2026-09-01T12:00:00Z',
+            'retrieved-at': '2026-09-01T12:00:00Z',
+            'coverage-start': '2026-01-01T00:00:00Z',
+            'coverage-end': '2026-09-01T12:00:00Z',
+            completeness: 'complete',
+            freshness: 'fresh',
+            availability: 'available'
+          }
         }
       }
     });
@@ -2714,7 +2729,7 @@ describe('presenter built-in and custom pages', () => {
     filter.dispatchEvent(new Event('input'));
     expect(rows.map((row) => row.hasAttribute('hidden'))).toEqual([true, false]);
     expect(rendered.querySelector('.table-filter-result')?.textContent).toBe('Showing 1 of 1 result');
-    expect(rendered.querySelector('.freshness')?.textContent).toBe('Last updated Aug 30, 2026, 12:01 PM');
+    expect(rendered.querySelector('.freshness')?.textContent).toMatch(/^\d+[smhdw] ago$/);
     expect(rendered.querySelector('.freshness')?.getAttribute('datetime')).toBe('2026-08-30T12:01:00Z');
   });
 

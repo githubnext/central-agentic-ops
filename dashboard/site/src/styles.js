@@ -811,7 +811,8 @@ footer { padding: 20px 24px; border-top: 1px solid var(--border); color: var(--m
   .report-actions { width: 100%; position: relative; margin-left: 0; }
   .report-actions .tooltip-help { position: static; }
   .report-actions .tooltip-content { right: auto; left: 0; }
-  .freshness { min-width: 0; flex: 1; white-space: normal; }
+  .freshness { min-width: 0; flex: 1; }
+  .refresh-button > span { display: none; }
   .overview-header { min-height: 0; padding: 24px 0 20px; flex-direction: column; gap: 12px; }
   .toolbar { align-items: stretch; flex-wrap: wrap; }
   .filter-control { flex-basis: 100%; }
