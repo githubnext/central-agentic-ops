@@ -72,7 +72,7 @@ Create `.github/workflows/<package>.md` with:
 
 - `name` set to the exact package display name, with no `/` suffix
 - an event-aware `run-name`: scheduled runs use the literal `<Package Name> · scheduled` because target and mode are resolved after run creation; `workflow_dispatch` runs include the submitted target and requested safe-output mode, using `discovery` when target is omitted and `review` when mode is omitted; never display unresolved placeholders such as `auto` or `mode`
-- a schedule when the operation is periodic, plus `workflow_dispatch`
+- a schedule when the operation is periodic, plus `workflow_dispatch`; default new dispatchers to `hourly` unless their freshness requirements justify `every 30 minutes` or a slower cadence
 - the standard dispatch inputs: `target_repo`, `safe_output_repo`, `max_repos`, `rollout_percent`, and `safe_output_mode` with `review` and `live` choices, defaulting to `review`
 - `shared/control.md` imported with a static `package` slug, `role: orchestrator`, and request-only narrowing inputs
 - the package and every worker declared in `.github/workflows/cao.json`, with each worker's exact `workflow` slug recorded there; the resolver must load this catalog from policy rather than hard-code package identities

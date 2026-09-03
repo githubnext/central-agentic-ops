@@ -517,6 +517,7 @@ test("operations creation guidance scopes detection and omits worker evals", () 
   const packageSkill = readFileSync(join(root, ".github", "skills", "create-ops-package", "SKILL.md"), "utf8");
 
   assert.match(packageSkill, /safe-outputs\.threat-detection: false/);
+  assert.match(packageSkill, /default new dispatchers to `hourly`/);
   assert.match(packageSkill, /`labels: \[<package-slug>\]`[\s\S]*?preferably `title-prefix: "\[<package-slug>:<worker-slug>\] "`/);
   assert.match(packageSkill, /evaluate the potential follow-up actions/);
   assert.match(packageSkill, /single most important action with the highest expected return on investment/);
