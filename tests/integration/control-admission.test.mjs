@@ -15,10 +15,13 @@ function runAdmission({
   rateRemaining = 5000,
   rateReset = Math.floor(Date.now() / 1000) + 3600,
   githubActions = true,
+  diskAvailableKilobytes = 64 * 1024 * 1024,
+  diskFailure = false,
   env: extraEnv = {},
 } = {}) {
   const directory = mkdtempSync(join(tmpdir(), "central-ops-admission-"));
   const mockGh = join(directory, "gh");
+  const mockDf = join(directory, "df");
   const policyFile = join(directory, "policy.json");
   const githubOutput = join(directory, "github-output");
   const stepSummary = join(directory, "step-summary");
@@ -41,6 +44,12 @@ case "$*" in
 esac
 `);
   chmodSync(mockGh, 0o755);
+  writeFileSync(mockDf, `#!/bin/sh
+[ "$MOCK_DISK_FAILURE" != "true" ] || exit 1
+echo "Filesystem 1024-blocks Used Available Capacity Mounted on"
+echo "/dev/root 83886080 1048576 $MOCK_DISK_AVAILABLE_KB 12% /"
+`);
+  chmodSync(mockDf, 0o755);
 
   try {
     const result = spawnSync("node", [program, "admit"], {
@@ -59,6 +68,8 @@ esac
         MOCK_RATE_LIMIT: String(rateLimit),
         MOCK_RATE_REMAINING: String(rateRemaining),
         MOCK_RATE_RESET: String(rateReset),
+        MOCK_DISK_AVAILABLE_KB: String(diskAvailableKilobytes),
+        MOCK_DISK_FAILURE: String(diskFailure),
         RUNNER_TEMP: realpathSync(directory),
         GITHUB_WORKFLOW_SHA: "1111111111111111111111111111111111111111",
         ...extraEnv,
@@ -102,8 +113,8 @@ test("CAO admission authorizes a declared package before activation", () => {
   assert.match(summary, /### Central Agentic Ops admission\n\nAuthorized package `dependabot` as `orchestrator`/);
   assert.match(summary, /<details>\n<summary>✅ Runtime revision<\/summary>/);
   assert.match(summary, /<summary>✅ Run limits<\/summary>/);
-  assert.equal((summary.match(/<details>/g) ?? []).length, 10);
-  assert.equal((summary.match(/<summary>✅ /g) ?? []).length, 10);
+  assert.equal((summary.match(/<details>/g) ?? []).length, 11);
+  assert.equal((summary.match(/<summary>✅ /g) ?? []).length, 11);
 });
 
 test("CAO admission emits plain logs outside GitHub Actions", () => {
@@ -211,4 +222,39 @@ test("CAO admission blocks exhausted GitHub API capacity with reset and remediat
   assert.match(summary, /fine-grained PAT/);
   assert.match(summary, /GH_AW_GITHUB_TOKEN/);
   assert.match(summary, /docs\.github\.com\/en\/rest\/using-the-rest-api\/rate-limits-for-the-rest-api/);
+});
+test("CAO admission blocks a runner without enough free disk space", () => {
+  const { result, output, summary } = runAdmission({ diskAvailableKilobytes: 512 * 1024 });
+
+  assert.equal(result.status, 0, result.stderr);
+  assert.equal(output.authorized, "false");
+  assert.equal(output.reason, "runner-disk-capacity-insufficient");
+  assert.equal(output.runner_disk_status, "limited");
+  assert.equal(output.runner_disk_available_mb, "512");
+  assert.equal(output.runner_disk_required_mb, "2048");
+  assert.match(summary, /Blocked package `dependabot` as `orchestrator` before activation: insufficient runner disk space\./);
+  assert.match(summary, /Runner free disk space is too low for this run: 512 MB free/);
+  assert.match(summary, /<summary>✅ GitHub API capacity<\/summary>/);
+  assert.match(summary, /<summary>❌ Runner disk capacity<\/summary>/);
+});
+
+test("CAO admission requires more free disk space for worker runs", () => {
+  const { output } = runAdmission({
+    diskAvailableKilobytes: 4096 * 1024,
+    env: { CAO_ROLE: "worker", CAO_WORKER: "release-train-updater" },
+  });
+
+  assert.equal(output.reason, "runner-disk-capacity-insufficient");
+  assert.equal(output.runner_disk_required_mb, "6144");
+});
+
+test("CAO admission fails closed when runner free disk space cannot be determined", () => {
+  const { result, output, summary } = runAdmission({ diskFailure: true });
+
+  assert.equal(result.status, 0, result.stderr);
+  assert.equal(output.authorized, "false");
+  assert.equal(output.reason, "runner-disk-capacity-unavailable");
+  assert.equal(output.runner_disk_status, "unavailable");
+  assert.match(summary, /runner disk space is unavailable\./);
+  assert.match(summary, /Runner free disk space could not be determined/);
 });
