@@ -10,7 +10,7 @@
         "id": "eu-cra-compliance-dashboard",
         "kind": "custom",
         "title": "EU CRA",
-        "navigation-label": "EU CRA advisor",
+        "navigation-label": "EU CRA",
         "description": "Track evidence-gathering runs, non-binding CRA reports, and explicit human acceptance across each assessment domain.",
         "icon": "shield",
         "views": [

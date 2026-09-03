@@ -458,7 +458,7 @@ describe('presenter built-in and custom pages', () => {
       'Ambient context',
       'AW Maintenance',
       'Dependabot',
-      'EU CRA advisor',
+      'EU CRA',
       'Optimization'
     ]);
     expect(rendered.querySelector('[data-nav-page-id="runs"]')).toBeNull();
