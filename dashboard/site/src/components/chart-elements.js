@@ -4,6 +4,7 @@
 
 import { h } from '../dom.js';
 import { formatNumber, toNumber } from '../view-formatters.js';
+import { pluralSuffix } from './count-formatters.js';
 import { binHistogramValues } from './histogram.js';
 import { renderSafeLink } from './link-content.js';
 import { renderEmptyMessage } from './ui-primitives.js';
@@ -175,7 +176,7 @@ export function renderChartWidget(chartType, points, series, pieSummary = null, 
         h('line', { className: 'bar-chart-axis', x1: 0, y1: 38, x2: 100, y2: 38 }),
         ...bins.map((bin, index) => {
           const height = Math.max(1, (bin.count / maximum) * 34);
-          const label = `${binLabel(bin)}: ${bin.count} observation${bin.count === 1 ? '' : 's'}`;
+          const label = `${binLabel(bin)}: ${bin.count} observation${pluralSuffix(bin.count)}`;
           return h('rect', {
             className: 'histogram-chart-bar',
             x: index * barWidth,

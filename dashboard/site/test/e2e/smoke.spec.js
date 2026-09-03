@@ -4,7 +4,10 @@ import { test, expect } from '@playwright/test';
 function buildPresenterModuleUrl() {
   const dashboardSource = readFileSync(new URL('../../dashboard.json', import.meta.url), 'utf8');
   const dashboardModuleUrl = `data:application/json;charset=utf-8,${encodeURIComponent(dashboardSource)}`;
-  const horizonSource = readFileSync(new URL('../../src/horizon.js', import.meta.url), 'utf8');
+  const countFormattersSource = readFileSync(new URL('../../src/components/count-formatters.js', import.meta.url), 'utf8');
+  const countFormattersModuleUrl = `data:text/javascript;charset=utf-8,${encodeURIComponent(countFormattersSource)}`;
+  const horizonSource = readFileSync(new URL('../../src/horizon.js', import.meta.url), 'utf8')
+    .replace("'./components/count-formatters.js'", JSON.stringify(countFormattersModuleUrl));
   const horizonModuleUrl = `data:text/javascript;charset=utf-8,${encodeURIComponent(horizonSource)}`;
   const domSource = readFileSync(new URL('../../src/dom.js', import.meta.url), 'utf8');
   const domModuleUrl = `data:text/javascript;charset=utf-8,${encodeURIComponent(domSource)}`;
@@ -32,9 +35,6 @@ function buildPresenterModuleUrl() {
   const uiPrimitivesSource = readFileSync(new URL('../../src/components/ui-primitives.js', import.meta.url), 'utf8')
     .replace("'../dom.js'", JSON.stringify(domModuleUrl));
   const uiPrimitivesModuleUrl = `data:text/javascript;charset=utf-8,${encodeURIComponent(uiPrimitivesSource)}`;
-
-  const countFormattersSource = readFileSync(new URL('../../src/components/count-formatters.js', import.meta.url), 'utf8');
-  const countFormattersModuleUrl = `data:text/javascript;charset=utf-8,${encodeURIComponent(countFormattersSource)}`;
 
   const viewChromeSource = readFileSync(new URL('../../src/components/view-chrome.js', import.meta.url), 'utf8')
     .replace("'../dom.js'", JSON.stringify(domModuleUrl))
@@ -150,6 +150,7 @@ function buildPresenterModuleUrl() {
   const chartElementsSource = readFileSync(new URL('../../src/components/chart-elements.js', import.meta.url), 'utf8')
     .replace("'../dom.js'", JSON.stringify(domModuleUrl))
     .replace("'../view-formatters.js'", JSON.stringify(viewFormattersModuleUrl))
+    .replace("'./count-formatters.js'", JSON.stringify(countFormattersModuleUrl))
     .replace("'./histogram.js'", JSON.stringify(histogramModuleUrl))
     .replace("'./link-content.js'", JSON.stringify(linkContentModuleUrl))
     .replace("'./ui-primitives.js'", JSON.stringify(uiPrimitivesModuleUrl));
@@ -258,6 +259,7 @@ function buildPresenterModuleUrl() {
 
   const overviewDataSource = readFileSync(new URL('../../src/overview-data.js', import.meta.url), 'utf8')
     .replace("'./view-formatters.js'", JSON.stringify(viewFormattersModuleUrl))
+    .replace("'./components/count-formatters.js'", JSON.stringify(countFormattersModuleUrl))
     .replace("'./components/run-classification.js'", JSON.stringify(runClassificationModuleUrl))
     .replace("'./components/attention-rules.js'", JSON.stringify(attentionRulesModuleUrl));
   const overviewDataModuleUrl = `data:text/javascript;charset=utf-8,${encodeURIComponent(overviewDataSource)}`;
