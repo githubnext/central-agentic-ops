@@ -1589,6 +1589,11 @@ test("multi-device docs tester runs daily and covers browser and appearance comp
   assert.match(compiled, /cron: "\d+ \d+ \* \* \*"  # Friendly format: daily \(scattered\)/);
   assert.doesNotMatch(compiled, /^  pull_request:/m);
   assert.match(source, /playwright@1\.63\.0-alpha-2026-08-05 install --with-deps webkit/);
+  assert.equal(
+    (source.match(/PLAYWRIGHT_BROWSERS_PATH: \$\{\{ runner\.temp \}\}\/gh-aw\/playwright-browsers/g) || []).length,
+    2,
+  );
+  assert.match(compiled, /PLAYWRIGHT_BROWSERS_PATH: \$\{\{ runner\.temp \}\}\/gh-aw\/playwright-browsers/);
   assert.match(source, /^      cat > "\$EXPR_GITHUB_WORKSPACE\/\.playwright\/webkit\.config\.json" <<'EOF'\n      \{\}\n      EOF$/m);
   assert.match(source, /for BROWSER in chrome webkit/);
   assert.match(source, /colorScheme: "light"/);
