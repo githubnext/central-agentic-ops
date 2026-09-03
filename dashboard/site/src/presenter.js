@@ -9,7 +9,7 @@ import { octicon, agenticWorkflowMark } from './octicons.js';
 import { renderDataStateMetrics } from './components/data-state.js';
 import { formatMediumUtcDateTime, renderTooltip, renderEmptyMessage } from './components/ui-primitives.js';
 import { customViewAvailabilityMessage, renderCustomViewStateDetails, renderLayoutSectionChrome, renderPageSection } from './components/view-chrome.js';
-import { toNumber } from './view-formatters.js';
+import { toNumber, stringOrFallback } from './view-formatters.js';
 import { findLink } from './components/link-content.js';
 import { elementHandlesEmptyRows, renderUiElement } from './components/ui-elements.js';
 import { renderDataView } from './components/data-view.js';
@@ -1801,7 +1801,7 @@ function workflowDashboardIdentity(row) {
  * @returns {string}
  */
 function toText(value) {
-  return value == null || value === '' ? 'unknown' : String(value);
+  return stringOrFallback(value, 'unknown');
 }
 
 

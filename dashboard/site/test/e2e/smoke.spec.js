@@ -11,6 +11,9 @@ function buildPresenterModuleUrl() {
   const debounceSource = readFileSync(new URL('../../src/debounce.js', import.meta.url), 'utf8');
   const debounceModuleUrl = `data:text/javascript;charset=utf-8,${encodeURIComponent(debounceSource)}`;
 
+  const viewFormattersSource = readFileSync(new URL('../../src/view-formatters.js', import.meta.url), 'utf8');
+  const viewFormattersModuleUrl = `data:text/javascript;charset=utf-8,${encodeURIComponent(viewFormattersSource)}`;
+
   const stylesSource = readFileSync(new URL('../../src/styles.js', import.meta.url), 'utf8');
   const stylesModuleUrl = `data:text/javascript;charset=utf-8,${encodeURIComponent(stylesSource)}`;
 
@@ -22,7 +25,8 @@ function buildPresenterModuleUrl() {
   const octiconsModuleUrl = `data:text/javascript;charset=utf-8,${encodeURIComponent(octiconsSource)}`;
 
   const badgeSource = readFileSync(new URL('../../src/components/badge.js', import.meta.url), 'utf8')
-    .replace("'../dom.js'", JSON.stringify(domModuleUrl));
+    .replace("'../dom.js'", JSON.stringify(domModuleUrl))
+    .replace("'../view-formatters.js'", JSON.stringify(viewFormattersModuleUrl));
   const badgeModuleUrl = `data:text/javascript;charset=utf-8,${encodeURIComponent(badgeSource)}`;
 
   const uiPrimitivesSource = readFileSync(new URL('../../src/components/ui-primitives.js', import.meta.url), 'utf8')
@@ -48,9 +52,6 @@ function buildPresenterModuleUrl() {
   const histogramSource = readFileSync(new URL('../../src/components/histogram.js', import.meta.url), 'utf8')
     .replace("'../dom.js'", JSON.stringify(domModuleUrl));
   const histogramModuleUrl = `data:text/javascript;charset=utf-8,${encodeURIComponent(histogramSource)}`;
-
-  const viewFormattersSource = readFileSync(new URL('../../src/view-formatters.js', import.meta.url), 'utf8');
-  const viewFormattersModuleUrl = `data:text/javascript;charset=utf-8,${encodeURIComponent(viewFormattersSource)}`;
 
   const tableSummarySource = readFileSync(new URL('../../src/components/table-summary.js', import.meta.url), 'utf8')
     .replace("'../dom.js'", JSON.stringify(domModuleUrl))
