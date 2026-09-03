@@ -481,12 +481,19 @@ test("control workflows deny before activation through one shared admission cont
     1,
   );
   assert.match(sharedControl, /^\s+id: cao_admission$/m);
-  assert.match(sharedControl, /contents\/\.github\/cao\/src\/control\.mjs/);
-  assert.match(sharedControl, /contents\/\.github\/cao\/src\/policy\.mjs/);
   assert.match(sharedControl, /Generate CAO pre-activation GitHub App token/);
   assert.match(sharedControl, /actions\/create-github-app-token@v3\.2\.0/);
   assert.match(sharedControl, /permission-actions: read[\s\S]*?permission-contents: read/);
   assert.match(sharedControl, /CAO_API_TOKEN: \$\{\{ steps\.cao_pre_activation_app_token\.outputs\.token \|\| secrets\.GH_AW_GITHUB_TOKEN \|\| github\.token \}\}/);
+  assert.match(sharedControl, /name: Checkout CAO control modules/);
+  assert.match(sharedControl, /actions\/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7\.0\.1/);
+  assert.match(sharedControl, /ref: \$\{\{ github\.workflow_sha \}\}/);
+  assert.match(sharedControl, /path: \$\{\{ runner\.temp \}\}\/cao/);
+  assert.match(sharedControl, /sparse-checkout: \.github\/cao\/src/);
+  assert.match(sharedControl, /sparse-checkout-cone-mode: true/);
+  assert.match(sharedControl, /fetch-depth: 1/);
+  assert.doesNotMatch(sharedControl, /gh api --method GET "repos\/\$\{GITHUB_REPOSITORY\}\/contents\/\.github\/cao\/src/);
+  assert.match(sharedControl, /node "\$cao_dir\/control\.mjs" admit/);
   assert.match(sharedControl, /CAO admission blocked: GitHub API limited until \$\{\{ steps\.cao_admission\.outputs\.github_api_reset_at \}\}/);
   assert.match(sharedControl, /reason == 'github-api-capacity-insufficient'/);
   assert.match(sharedControl, /^\s+id: cao_precompute$/m);
@@ -805,8 +812,9 @@ test("CAO runtime is control-repository-owned outside package resources", () => 
   assert.equal(policy.authorized, true);
   assert.equal(policy.package, "dependabot");
   assert.doesNotMatch(rootManifest, /destination: \.github\/cao\//);
-  assert.match(setupSkill, /contents\/\.github\/cao\/src\/\$\{cao_file\}/);
-  assert.match(setupSkill, /for cao_file in control\.mjs policy\.mjs/);
+  assert.match(setupSkill, /fetch --depth=1 origin "\$cao_ref"/);
+  assert.match(setupSkill, /sparse-checkout set --cone \.github\/cao\/src/);
+  assert.match(setupSkill, /cp -R "\$cao_checkout\/\.github\/cao\/src" \.github\/cao\//);
   assert.doesNotMatch(setupSkill, /chmod \+x \.github\/cao/);
 });
 
@@ -2115,8 +2123,10 @@ test("clean-room compilation emits the expected GitHub Actions settings", { time
 
       assert.match(preActivation, /actions: read/);
       assert.match(preActivation, /name: Evaluate Central Agentic Ops admission/);
-      assert.match(preActivation, /contents\/\.github\/cao\/src\/control\.mjs/);
-      assert.match(preActivation, /contents\/\.github\/cao\/src\/policy\.mjs/);
+      assert.match(preActivation, /name: Checkout CAO control modules/);
+      assert.match(preActivation, /sparse-checkout: \.github\/cao\/src/);
+      assert.match(preActivation, /fetch-depth: 1/);
+      assert.doesNotMatch(preActivation, /contents\/\.github\/cao\/src\/(?:control|policy)\.mjs/);
       assert.match(preActivation, /github\/gh-aw-actions\/setup-cli@/);
       assert.match(preActivation, /steps\.cao_admission\.outputs\.monthly_credit_budget != '0'/);
       assert.match(preActivation, /name: Run CAO control precompute/);
@@ -2294,6 +2304,9 @@ test("README routes zero-to-CAO requests to the setup skill", () => {
   assert.match(setupSkill, /cao_ref=\$\(gh api repos\/githubnext\/gh-aw-cao\/commits\/main/);
   assert.match(setupSkill, /\[\[ "\$cao_ref" =~ \^\[0-9a-fA-F\]\{40,64\}\$ \]\]/);
   assert.match(setupSkill, /gh aw add "githubnext\/gh-aw-cao@\$\{cao_ref\}"/);
+  assert.match(setupSkill, /git -C "\$cao_checkout" fetch --depth=1 origin "\$cao_ref"/);
+  assert.match(setupSkill, /git -C "\$cao_checkout" sparse-checkout set --cone \.github\/cao\/src/);
+  assert.doesNotMatch(setupSkill, /contents\/\.github\/cao\/src\/\$\{cao_file\}/);
   assert.match(setupSkill, /gh aw doctor --repo <organization>\/<control-repository> --dir \./);
   assert.match(setupSkill, /Run `gh aw version`\. Compare it with `min-version` in the root CAO `aw\.yml`/);
   assert.match(setupSkill, /Do not require the catalog maintainer's current local version when the package supports an older release/);

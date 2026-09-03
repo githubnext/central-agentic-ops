@@ -59,6 +59,17 @@ jobs:
           permission-actions: read
           permission-contents: read
 
+      - name: Checkout CAO control modules
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.workflow_sha }}
+          path: ${{ runner.temp }}/cao
+          sparse-checkout: .github/cao/src
+          sparse-checkout-cone-mode: true
+          fetch-depth: 1
+          persist-credentials: false
+          token: ${{ steps.cao_pre_activation_app_token.outputs.token || secrets.GH_AW_GITHUB_TOKEN || github.token }}
+
       - name: Evaluate Central Agentic Ops admission
         id: cao_admission
         env:
@@ -74,13 +85,8 @@ jobs:
           CAO_REQUESTED_ROLLOUT_PERCENT: ${{ github.event.inputs.rollout_percent || '' }}
         run: |
           set -uo pipefail
-          cao_dir="${RUNNER_TEMP:-/tmp}/cao"
-          mkdir -p "$cao_dir"
-          if gh api --method GET "repos/${GITHUB_REPOSITORY}/contents/.github/cao/src/control.mjs" \
-              -f ref="$GITHUB_WORKFLOW_SHA" --jq '.content' | base64 -d > "$cao_dir/control.mjs" && \
-            gh api --method GET "repos/${GITHUB_REPOSITORY}/contents/.github/cao/src/policy.mjs" \
-              -f ref="$GITHUB_WORKFLOW_SHA" --jq '.content' | base64 -d > "$cao_dir/policy.mjs" && \
-            node "$cao_dir/control.mjs" admit; then
+          cao_dir="${RUNNER_TEMP:-/tmp}/cao/.github/cao/src"
+          if node "$cao_dir/control.mjs" admit; then
             exit 0
           fi
           reason="cannot read or execute the CAO control modules at github.workflow_sha"
@@ -149,7 +155,7 @@ jobs:
           CAO_WORKER_CREDITS_PER_TARGET: "${{ github.aw.import-inputs.worker_credits_per_target }}"
         run: |
           set -euo pipefail
-          node "${RUNNER_TEMP:-/tmp}/cao/control.mjs" precompute
+          node "${RUNNER_TEMP:-/tmp}/cao/.github/cao/src/control.mjs" precompute
 
       - name: "CAO precompute blocked: GitHub API limited until ${{ steps.cao_precompute.outputs.github_api_reset_at }}"
         if: ${{ steps.cao_precompute.outputs.reason == 'github-api-capacity-insufficient' }}
