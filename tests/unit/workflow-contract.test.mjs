@@ -399,6 +399,9 @@ test("control workflows deny before activation through one shared admission cont
   assert.match(sharedControl, /^\s+id: cao_admission$/m);
   assert.match(sharedControl, /contents\/\.github\/cao\/src\/control\.mjs/);
   assert.match(sharedControl, /contents\/\.github\/cao\/src\/policy\.mjs/);
+  assert.match(sharedControl, /contents\/\.github\/aw\/activity\/actions-log\.mjs/);
+  assert.match(sharedControl, /contents\/activity\/actions-log\.mjs/);
+  assert.match(sharedControl, /CAO_ACTIONS_LOG_PATH=\$cao_dir\/actions-log\.mjs/);
   assert.match(sharedControl, /Generate CAO pre-activation GitHub App token/);
   assert.match(sharedControl, /actions\/create-github-app-token@v3\.2\.0/);
   assert.match(sharedControl, /permission-actions: read[\s\S]*?permission-contents: read/);

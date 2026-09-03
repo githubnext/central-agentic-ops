@@ -325,6 +325,8 @@ test("control precompute fails inventory closed after bounded API errors", () =>
     assert.deepEqual(output.candidate_repositories, []);
     assert.match(output.repo_error, /simulated API rate limit/);
     assert.equal(inventoryCalls.length, 2, "inventory fallback retried beyond organization and user endpoints");
+    assert.match(run.result.stdout, /GitHub API request: orgs\/acme\/repos\?per_page=100&type=all&page=1/);
+    assert.match(run.result.stdout, /GitHub API request: users\/acme\/repos\?per_page=100&type=owner&page=1/);
   } finally {
     rmSync(run.temporaryDirectory, { recursive: true, force: true });
   }

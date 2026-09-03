@@ -3,6 +3,7 @@
 import { spawnSync } from "node:child_process";
 import { createHash } from "node:crypto";
 import {
+  existsSync,
   mkdirSync,
   readFileSync,
   writeFileSync,
@@ -16,6 +17,12 @@ import {
   parsePolicy,
 } from "./policy.mjs";
 
+const catalogActionsLogSource = new URL("../../../activity/actions-log.mjs", import.meta.url);
+const actionsLogSource = environment("CAO_ACTIONS_LOG_PATH")
+  || (existsSync(catalogActionsLogSource)
+    ? catalogActionsLogSource.href
+    : new URL("../../aw/activity/actions-log.mjs", import.meta.url).href);
+const { actionsLog: log } = await import(actionsLogSource);
 const AGENT_DIRECTORY = "/tmp/gh-aw/agent";
 const OUTPUT_PATH = join(AGENT_DIRECTORY, "control-precompute.json");
 const POLICY_PATH = ".github/workflows/cao.json";
@@ -67,6 +74,7 @@ function ghApi(endpoint, { fields = {}, jq = "" } = {}) {
   args.push(endpoint);
   for (const [key, value] of Object.entries(fields)) args.push("-f", `${key}=${value}`);
   if (jq) args.push("--jq", jq);
+  log.info`GitHub API request: ${endpoint}`;
   return run("gh", args);
 }
 
