@@ -3,7 +3,9 @@ import { readFileSync } from "node:fs";
 import test from "node:test";
 
 import createAnimationData, { createMobileAnimationData } from "../../docs/assets/control-plane-dispatch.animation.mjs";
-import { selectConfiguredOperations } from "../../docs/lib/configured-operations.mjs";
+import { buildWizardPolicy, selectConfiguredOperations } from "../../docs/lib/configured-operations.mjs";
+
+const controlPolicy = JSON.parse(readFileSync(".github/workflows/cao.json", "utf8"));
 
 const hero = readFileSync("docs/components/HierarchyHero.astro", "utf8");
 const wizard = readFileSync("docs/components/OpsWizard.astro", "utf8");
@@ -109,4 +111,16 @@ test("configured wizard operations exclude the repository-local self-care packag
   const policy = { "control-plane": { packages: { "self-care": {}, first: {} } } };
 
   assert.deepEqual(selectConfiguredOperations(policy, [first, selfCare]), [first]);
+});
+
+test("wizard policy keeps the checked-in package configuration", () => {
+  const policy = buildWizardPolicy(controlPolicy, "acme", "dependabot");
+
+  assert.deepEqual(policy["control-plane"].scope["allowed-owners"], ["acme"]);
+  assert.equal(policy["control-plane"].packages.dependabot.targets["github/gh-aw"].mode, "live");
+  assert.equal(
+    policy["control-plane"].packages.dependabot.workers["release-train-updater"].workflow,
+    "dependabot-release-train-updater",
+  );
+  assert.equal("icon" in policy["control-plane"].packages.dependabot, false);
 });
