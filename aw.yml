@@ -9,6 +9,7 @@ includes:
   - .github/workflows/ambient-context-skills-curator.md
   - .github/workflows/ambient-context.md
   - .github/workflows/aw-failures-investigator.md
+  - .github/workflows/aw-maintenance-compiler-security.md
   - .github/workflows/aw-maintenance-upgrade.md
   - .github/workflows/aw-maintenance.md
   - .github/workflows/dependabot-release-train-updater.md

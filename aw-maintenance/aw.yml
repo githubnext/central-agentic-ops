@@ -6,6 +6,7 @@ includes:
   - .github/workflows/shared/cao.md
   - .github/workflows/aw-maintenance.md
   - .github/workflows/aw-failures-investigator.md
+  - .github/workflows/aw-maintenance-compiler-security.md
 resources:
   - source: dashboard.json
     destination: .github/aw/dashboards/aw-maintenance.json
