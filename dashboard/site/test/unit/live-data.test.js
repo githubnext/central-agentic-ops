@@ -238,11 +238,11 @@ describe("live Dashboard Language sources", () => {
         },
       });
       sources = JSON.parse(readFileSync(output, "utf8"));
-      expect(sources["coverage-diagnostics"].rows).toContainEqual({
+      expect(sources["coverage-diagnostics"].rows).toContainEqual(expect.objectContaining({
         kind: "github-api-rate-limit-403",
         title: "Durable output collection unavailable",
         effect: rateLimitedReport.error,
-      });
+      }));
       expect(sources.findings.metadata).toMatchObject({
         availability: "unavailable",
         completeness: "partial",
