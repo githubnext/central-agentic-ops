@@ -92,10 +92,12 @@ function renderPackageTabs(packageId, packageName, selectedView, experimental) {
       { label: 'Reports', icon: 'issue', href: `#page-package-reports${packageQuery}`, current: selectedView === 'reports' }
     ]
   });
-  if (experimental) {
-    tabs.prepend(h('span', { className: 'status status-attention package-experimental-label' }, 'Experimental'));
-  }
-  return tabs;
+  return h(
+    'div',
+    { className: 'package-navigation' },
+    experimental ? h('span', { className: 'status status-attention package-experimental-label' }, 'Experimental') : null,
+    tabs
+  );
 }
 
 /**

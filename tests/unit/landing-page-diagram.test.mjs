@@ -77,7 +77,7 @@ test("package wizard prompt references the raw setup skill", () => {
 
 test("package wizard operations come from the checked-in control policy", () => {
   assert.match(catalog, /import controlPolicy from "\.\.\/\.\.\/\.github\/workflows\/cao\.json"/);
-  assert.match(catalog, /selectConfiguredOperations\(controlPolicy, catalogEntries\)/);
+  assert.match(catalog, /selectConfiguredOperations\(controlPolicy, allCatalogEntries\)/);
   assert.match(wizard, /configuredOperationEntries as operations/);
   assert.doesNotMatch(wizard, /operation\.slug === "dependabot"/);
 });
@@ -112,6 +112,14 @@ test("configured wizard operations exclude the repository-local self-care packag
   const policy = { "control-plane": { packages: { "self-care": {}, first: {} } } };
 
   assert.deepEqual(selectConfiguredOperations(policy, [first, selfCare]), [first]);
+});
+
+test("configured wizard operations exclude private packages", () => {
+  const privatePackage = { slug: "private", private: true };
+  const publicPackage = { slug: "public", private: false };
+  const policy = { "control-plane": { packages: { private: {}, public: {} } } };
+
+  assert.deepEqual(selectConfiguredOperations(policy, [privatePackage, publicPackage]), [publicPackage]);
 });
 
 test("wizard policy keeps the checked-in package configuration", () => {

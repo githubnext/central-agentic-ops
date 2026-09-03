@@ -31,6 +31,7 @@ const ReadmeContent = entry.ReadmeContent;
   <section class="package-overview" aria-label="What it does">
     <p>{entry.description}</p>
     <p class="package-meta">
+      {entry.experimental && <span class="package-experimental">Experimental</span>}
       {entry.includes.length} {entry.includes.length === 1 ? "workflow" : "workflows"}
       <span aria-hidden="true">·</span>
       Requires gh-aw {entry.minVersion}
@@ -88,6 +89,17 @@ const ReadmeContent = entry.ReadmeContent;
 
   .package-meta span {
     margin-inline: 0.35rem;
+  }
+
+  .package-meta .package-experimental {
+    display: inline-block;
+    margin-inline: 0 0.6rem;
+    padding: 0.1rem 0.4rem;
+    border: 1px solid var(--sl-color-orange);
+    border-radius: 2em;
+    color: var(--sl-color-orange-high);
+    font-size: 0.6875rem;
+    font-weight: 600;
   }
 
   .package-guide,

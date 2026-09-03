@@ -9,6 +9,8 @@ type PackageManifest = {
   name?: unknown;
   description?: unknown;
   "min-version"?: unknown;
+  private?: unknown;
+  experimental?: unknown;
   includes?: unknown;
 };
 
@@ -18,6 +20,8 @@ export type CatalogEntry = {
   description: string;
   minVersion: string;
   includes: string[];
+  private: boolean;
+  experimental: boolean;
   manifestFile: string;
   readmePath?: string;
   ReadmeContent?: PackageReadme["Content"];
@@ -54,7 +58,7 @@ function workflowList(value: unknown, manifestPath: string): string[] {
   });
 }
 
-export const catalogEntries: CatalogEntry[] = Object.entries(manifests)
+const allCatalogEntries: CatalogEntry[] = Object.entries(manifests)
   .map(([manifestPath, source]) => {
     const slug = manifestPath.split("/").at(-2);
     if (!slug) throw new Error(`Could not derive a package slug from ${manifestPath}`);
@@ -71,6 +75,8 @@ export const catalogEntries: CatalogEntry[] = Object.entries(manifests)
       description: requiredString(manifest.description, "description", manifestPath),
       minVersion: requiredString(manifest["min-version"], "min-version", manifestPath),
       includes: workflowList(manifest.includes, manifestPath),
+      private: manifest.private === true,
+      experimental: manifest.experimental === true,
       manifestFile,
       readmePath: readme ? `${slug}/README.md` : undefined,
       ReadmeContent: readme?.Content,
@@ -81,4 +87,5 @@ export const catalogEntries: CatalogEntry[] = Object.entries(manifests)
     return advisoryRank(left) - advisoryRank(right) || left.name.localeCompare(right.name);
   });
 
-export const configuredOperationEntries = selectConfiguredOperations(controlPolicy, catalogEntries);
+export const catalogEntries = allCatalogEntries.filter((entry) => !entry.private);
+export const configuredOperationEntries = selectConfiguredOperations(controlPolicy, allCatalogEntries);

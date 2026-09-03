@@ -6,6 +6,14 @@ const packageDetail = readFileSync(
   new URL("../../docs/pages/catalog/[slug].astro", import.meta.url),
   "utf8",
 );
+const catalogIndex = readFileSync(
+  new URL("../../docs/pages/catalog/index.astro", import.meta.url),
+  "utf8",
+);
+const catalogData = readFileSync(
+  new URL("../../docs/lib/catalog.ts", import.meta.url),
+  "utf8",
+);
 const packageReadmeContent = readFileSync(
   new URL("../../docs/components/PackageReadmeContent.astro", import.meta.url),
   "utf8",
@@ -22,4 +30,10 @@ test("package detail code examples scroll without widening the page", () => {
     packageDetail,
     /\.package-guide :global\(pre\),\s*\.install-package pre \{[\s\S]*?max-width: 100%;[\s\S]*?overflow-x: auto;/,
   );
+});
+
+test("catalog hides private packages and labels experimental packages", () => {
+  assert.match(catalogData, /catalogEntries = allCatalogEntries\.filter\(\(entry\) => !entry\.private\)/);
+  assert.match(catalogIndex, /entry\.experimental && <span class="catalog-experimental">Experimental<\/span>/);
+  assert.match(packageDetail, /entry\.experimental && <span class="package-experimental">Experimental<\/span>/);
 });

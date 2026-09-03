@@ -539,8 +539,9 @@ h3 { margin: 16px 0 8px; font-size: 1rem; font-weight: 600; }
 .package-summary .table-region { margin-bottom: 0; }
 .package-summary-table { min-width: 920px; }
 .package-summary-table tbody th { font-weight: 600; white-space: nowrap; }
+.package-summary-table .package-experimental-label { margin: 0 0 0 6px; vertical-align: middle; }
+.package-navigation > .package-experimental-label { margin: 0 0 8px; }
 .package-tabs { display: flex; gap: 4px; margin-bottom: 20px; border-bottom: 1px solid var(--border); }
-.package-tabs > .package-experimental-label { align-self: center; margin: 0 8px 0 0; }
 .package-tabs a { display: inline-flex; align-items: center; gap: 8px; position: relative; padding: 10px 14px 12px; color: var(--fg); font-weight: 600; text-decoration: none; }
 .package-tabs a > .octicon { color: var(--muted); }
 .package-tabs a:hover { background: var(--canvas-subtle); }

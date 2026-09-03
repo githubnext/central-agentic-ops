@@ -43,5 +43,6 @@ export function selectConfiguredOperations(controlPolicy, catalogEntries) {
       const entry = catalogEntriesBySlug.get(slug);
       if (!entry) throw new Error(`Configured package ${slug} must have a catalog manifest`);
       return entry;
-    });
+    })
+    .filter((entry) => entry.private !== true);
 }
