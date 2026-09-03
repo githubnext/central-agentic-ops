@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import { describe, expect, it } from 'vitest';
-import { binHistogramValues, renderHistogram } from '../../src/components/histogram.js';
+import { automaticHistogramBinCount, binHistogramValues, renderHistogram } from '../../src/components/histogram.js';
 
 describe('histogram', () => {
   it('bins finite values without losing the maximum boundary', () => {
@@ -8,6 +8,12 @@ describe('histogram', () => {
 
     expect(bins).toHaveLength(4);
     expect(bins.map((bin) => bin.count)).toEqual([1, 1, 1, 2]);
+  });
+
+  it('selects a deterministic automatic bin count from finite samples', () => {
+    expect(automaticHistogramBinCount([])).toBe(0);
+    expect(automaticHistogramBinCount([1, 2, 3, 4])).toBe(3);
+    expect(automaticHistogramBinCount([1, Number.NaN, 2])).toBe(2);
   });
 
   it('renders a compact accessible SVG', () => {
@@ -19,6 +25,6 @@ describe('histogram', () => {
     expect(rendered.tagName).toBe('svg');
     expect(rendered.getAttribute('role')).toBe('img');
     expect(rendered.getAttribute('aria-label')).toBe('Latency distribution');
-    expect(rendered.querySelectorAll('rect')).toHaveLength(4);
+    expect(rendered.querySelectorAll('rect')).toHaveLength(3);
   });
 });

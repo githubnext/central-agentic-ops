@@ -141,6 +141,7 @@ function buildPresenterModuleUrl() {
   const chartElementsSource = readFileSync(new URL('../../src/components/chart-elements.js', import.meta.url), 'utf8')
     .replace("'../dom.js'", JSON.stringify(domModuleUrl))
     .replace("'../view-formatters.js'", JSON.stringify(viewFormattersModuleUrl))
+    .replace("'./histogram.js'", JSON.stringify(histogramModuleUrl))
     .replace("'./link-content.js'", JSON.stringify(linkContentModuleUrl));
   const chartElementsModuleUrl = `data:text/javascript;charset=utf-8,${encodeURIComponent(chartElementsSource)}`;
 

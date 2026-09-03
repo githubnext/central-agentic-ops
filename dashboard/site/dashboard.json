@@ -150,6 +150,7 @@
             "count-label": "boundaries",
             "views": [
               "cost-usage-trend",
+              "cost-per-run-distribution",
               "cost-summary",
               "cost-signals"
             ]
@@ -196,6 +197,31 @@
                 "type": "quantitative",
                 "aggregate": "sum",
                 "title": "Total AIC",
+                "unit": "aic"
+              }
+            }
+          },
+          {
+            "id": "cost-per-run-distribution",
+            "title": "AI Credits per run",
+            "description": "Automatically binned distribution of measured AI Credit allocation per workflow run.",
+            "data": {
+              "source": "usage"
+            },
+            "mark": "chart",
+            "chart": "histogram",
+            "layout": "full",
+            "encoding": {
+              "x": {
+                "field": "run",
+                "type": "nominal",
+                "title": "Run"
+              },
+              "y": {
+                "field": "aic",
+                "type": "quantitative",
+                "aggregate": "sum",
+                "title": "AIC per run",
                 "unit": "aic"
               }
             }

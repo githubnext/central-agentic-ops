@@ -4,14 +4,22 @@
 
 import { h } from '../dom.js';
 
-const DEFAULT_BIN_COUNT = 10;
+/**
+ * Uses Sturges' rule to choose a deterministic bin count from the sample size.
+ * @param {number[]} values
+ * @returns {number}
+ */
+export function automaticHistogramBinCount(values) {
+  const sampleSize = values.filter(Number.isFinite).length;
+  return sampleSize > 0 ? Math.min(sampleSize, Math.ceil(Math.log2(sampleSize) + 1)) : 0;
+}
 
 /**
  * @param {number[]} values
  * @param {number} [binCount]
  * @returns {{ lower: number, upper: number, count: number }[]}
  */
-export function binHistogramValues(values, binCount = DEFAULT_BIN_COUNT) {
+export function binHistogramValues(values, binCount = automaticHistogramBinCount(values)) {
   const finiteValues = values.filter(Number.isFinite);
   if (finiteValues.length === 0) return [];
 
@@ -51,7 +59,7 @@ export function renderHistogram(options) {
     label,
     width = 120,
     height = 32,
-    binCount = DEFAULT_BIN_COUNT
+    binCount = automaticHistogramBinCount(values)
   } = options;
   const bins = binHistogramValues(values, binCount);
   const maximumCount = Math.max(0, ...bins.map((bin) => bin.count));

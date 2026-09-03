@@ -4,6 +4,7 @@
 
 import { h } from '../dom.js';
 import { formatNumber, toNumber } from '../view-formatters.js';
+import { binHistogramValues } from './histogram.js';
 import { renderSafeLink } from './link-content.js';
 
 /**
@@ -141,6 +142,48 @@ export function renderChartWidget(chartType, points, series, pieSummary = null, 
         h('text', { className: 'pie-chart-total-value', x: 21, y: 20, 'text-anchor': 'middle', 'aria-hidden': 'true' }, formatNumber(total, unit, false)),
         h('text', { className: 'pie-chart-total-label', x: 21, y: 25.5, 'text-anchor': 'middle', 'aria-hidden': 'true' }, totalLabel)
       )
+    );
+  }
+
+  if (chartType === 'histogram') {
+    const bins = binHistogramValues(points.map((point) => toNumber(point.y)));
+    const maximum = Math.max(...bins.map((bin) => bin.count), 1);
+    const barWidth = bins.length > 0 ? 100 / bins.length : 100;
+    const binLabel = (bin) => {
+      const lower = formatNumber(bin.lower, unit);
+      const upper = formatNumber(bin.upper, unit);
+      return bin.lower === bin.upper ? lower : `${lower}–${upper}`;
+    };
+    return h(
+      'div',
+      { className: 'chart-widget histogram-chart-widget', 'data-chart-widget': 'histogram' },
+      h(
+        'svg',
+        { viewBox: '0 0 100 42', role: 'img', 'aria-label': `Histogram with ${bins.length} automatically calculated bins` },
+        h('line', { className: 'bar-chart-axis', x1: 0, y1: 38, x2: 100, y2: 38 }),
+        ...bins.map((bin, index) => {
+          const height = Math.max(1, (bin.count / maximum) * 34);
+          const label = `${binLabel(bin)}: ${bin.count} observation${bin.count === 1 ? '' : 's'}`;
+          return h('rect', {
+            className: 'histogram-chart-bar',
+            x: index * barWidth,
+            y: 38 - height,
+            width: Math.max(0, barWidth - 1),
+            height,
+            tabIndex: 0,
+            role: 'img',
+            'aria-label': label
+          }, h('title', null, label));
+        })
+      ),
+      bins.length > 0
+        ? h(
+          'div',
+          { className: 'chart-axis', 'data-chart-axis': 'histogram' },
+          h('span', null, formatNumber(bins[0].lower, unit)),
+          h('span', null, formatNumber(bins[bins.length - 1].upper, unit))
+        )
+        : null
     );
   }
 
