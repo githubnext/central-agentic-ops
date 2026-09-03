@@ -147,35 +147,36 @@ export function renderTableRegion(options) {
     enableTableSort(region);
   }
 
-  /**
-   * @param {import('../table-summary-data.js').TableSummaryColumn[]} columns
-   * @returns {HTMLTableRowElement}
-   */
-  function renderDeferredTableSummaryRow(columns) {
-    const result = processTableSummaries(columns);
-    if (!(result instanceof Promise)) {
-      return renderTableSummaryRow(result.map((summary, index) => ({ ...summary, label: columns[index]?.label ?? '' })));
-    }
-    const row = /** @type {HTMLTableRowElement} */ (h(
-      'tr',
-      { className: 'table-summary-row', 'aria-busy': 'true' },
-      ...columns.map(() => h('th', { scope: 'col', className: 'table-summary-cell' }))
-    ));
-    result.then((summaries) => {
-      const rendered = renderTableSummaryRow(
-        summaries.map((summary, index) => ({ ...summary, label: columns[index]?.label ?? '' }))
-      );
-      row.replaceChildren(...rendered.children);
-      row.removeAttribute('aria-busy');
-    }).catch(() => {
-      row.removeAttribute('aria-busy');
-    });
-    return row;
-  }
   if (interactive) {
     enableTableFilter(region, { filterId, pageSize, resultNoun, resultNounPlural });
   }
   return region;
+}
+
+/**
+ * @param {import('../table-summary-data.js').TableSummaryColumn[]} columns
+ * @returns {HTMLTableRowElement}
+ */
+function renderDeferredTableSummaryRow(columns) {
+  const result = processTableSummaries(columns);
+  if (!(result instanceof Promise)) {
+    return renderTableSummaryRow(result.map((summary, index) => ({ ...summary, label: columns[index]?.label ?? '' })));
+  }
+  const row = /** @type {HTMLTableRowElement} */ (h(
+    'tr',
+    { className: 'table-summary-row', 'aria-busy': 'true' },
+    ...columns.map(() => h('th', { scope: 'col', className: 'table-summary-cell' }))
+  ));
+  result.then((summaries) => {
+    const rendered = renderTableSummaryRow(
+      summaries.map((summary, index) => ({ ...summary, label: columns[index]?.label ?? '' }))
+    );
+    row.replaceChildren(...rendered.children);
+    row.removeAttribute('aria-busy');
+  }).catch(() => {
+    row.removeAttribute('aria-busy');
+  });
+  return row;
 }
 
 /**
