@@ -139,6 +139,62 @@ test("local dashboard server fails when dashboard data cannot be downloaded", as
   }
 });
 
+test("local dashboard server optionally prompts Copilot to update the active view", async () => {
+  const root = await mkdtemp(path.join(tmpdir(), "dashboard-local-server-"));
+  await writeFile(path.join(root, "index.html"), "<!doctype html><body><div id=\"root\"></div></body>");
+  await writeFile(path.join(root, "dashboard.json"), dashboard("built-in"));
+  const prompts = [];
+  let runtimeClosed = false;
+
+  const preview = await startDashboardServer({
+    siteRoot: root,
+    catalogRoot: null,
+    installedDashboardsDirectory: path.join(root, "dashboards"),
+    downloadData: async (destination) => {
+      await mkdir(destination, { recursive: true });
+      await writeFile(path.join(destination, "sources.json"), "{}");
+    },
+    copilot: true,
+    createCopilotRuntime: async () => ({
+      prompt: async (payload) => prompts.push(payload),
+      close: async () => {
+        runtimeClosed = true;
+      },
+    }),
+    port: 0,
+  });
+  try {
+    const index = await fetch(`${preview.url}/`).then((response) => response.text());
+    assert.match(index, /dashboard-copilot-prompt/);
+    assert.match(index, /Ask Copilot to update this view/);
+
+    const response = await fetch(`${preview.url}/__dashboard_copilot`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Origin: new URL(preview.url).origin,
+      },
+      body: JSON.stringify({ view: "package-one", request: "Add a failure trend" }),
+    });
+    assert.equal(response.status, 200);
+    assert.deepEqual(prompts, [{ view: "package-one", request: "Add a failure trend" }]);
+
+    const invalidOrigin = await fetch(`${preview.url}/__dashboard_copilot`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Origin: "http://attacker.example",
+      },
+      body: JSON.stringify({ view: "package-one", request: "Change it" }),
+    });
+    assert.equal(invalidOrigin.status, 400);
+  } finally {
+    await preview.close();
+    await rm(root, { recursive: true, force: true });
+  }
+  assert.equal(runtimeClosed, true);
+});
+
 test("local dashboard server downloads the latest data artifact with GitHub CLI", async () => {
   const root = await mkdtemp(path.join(tmpdir(), "dashboard-local-server-"));
   const ghExecutable = path.join(root, "gh");

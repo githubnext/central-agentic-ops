@@ -34,6 +34,7 @@ const defaultCatalogRoot = basename(resolve(scriptDirectory, "..", "..")) === ".
   ? null
   : resolve(scriptDirectory, "..");
 const socketEndpoint = "/__dashboard_socket";
+const copilotEndpoint = "/__dashboard_copilot";
 const dataArtifactName = "central-agentic-ops-dashboard-data";
 const dashboardWorkflowPath = ".github/workflows/dashboard.yml";
 const contentTypes = new Map([
@@ -154,6 +155,100 @@ function injectDashboardSocket(html, socketPath) {
     : `${html}\n${socketScript}\n`;
 }
 
+function injectCopilotPrompt(html, endpoint) {
+  const prompt = `<form id="dashboard-copilot-prompt" style="display:flex;gap:0.5rem;align-items:center;padding:0.75rem 1rem;border-bottom:1px solid #d0d7de;background:#f6f8fa;font:14px system-ui">
+  <label for="dashboard-copilot-request" style="font-weight:600">Ask Copilot to update this view</label>
+  <input id="dashboard-copilot-request" name="request" type="text" required maxlength="10000" style="flex:1;min-width:12rem;padding:0.4rem 0.6rem" placeholder="Describe the change">
+  <button type="submit">Send</button>
+  <output id="dashboard-copilot-status" aria-live="polite"></output>
+</form>
+<script type="module">
+  const form = document.querySelector("#dashboard-copilot-prompt");
+  const input = document.querySelector("#dashboard-copilot-request");
+  const button = form.querySelector("button");
+  const status = document.querySelector("#dashboard-copilot-status");
+  form.addEventListener("submit", async (event) => {
+    event.preventDefault();
+    const view = document.querySelector("[data-nav-page-id][aria-current=page]")?.dataset.navPageId
+      || location.hash.match(/^#page-([^?]+)/)?.[1]
+      || "overview";
+    button.disabled = true;
+    status.textContent = "Working…";
+    console.log("Starting Copilot dashboard update", { view });
+    try {
+      const response = await fetch(${JSON.stringify(endpoint)}, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ view, request: input.value }),
+      });
+      const result = await response.json();
+      if (!response.ok) throw new Error(result.error || "Copilot could not update the view.");
+      status.textContent = "Saved. Waiting for the preview to reload…";
+      input.value = "";
+      console.log("Copilot dashboard update completed", { view });
+    } catch (error) {
+      status.textContent = error instanceof Error ? error.message : String(error);
+      console.log("Copilot dashboard update failed", error);
+    } finally {
+      button.disabled = false;
+    }
+  });
+</script>`;
+  return html.includes("<body>")
+    ? html.replace("<body>", `<body>\n${prompt}`)
+    : `${prompt}\n${html}`;
+}
+
+async function readJsonRequest(request, limit = 16 * 1024) {
+  const chunks = [];
+  let size = 0;
+  for await (const chunk of request) {
+    size += chunk.length;
+    if (size > limit) throw new Error("Request body is too large.");
+    chunks.push(chunk);
+  }
+  return JSON.parse(Buffer.concat(chunks).toString("utf8"));
+}
+
+async function startCopilotRuntime({ workingDirectory, copilotExecutable }) {
+  const { approveAll, CopilotClient, RuntimeConnection } = await import("@github/copilot-sdk");
+  const client = new CopilotClient({
+    connection: RuntimeConnection.forTcp({
+      ...(copilotExecutable ? { path: copilotExecutable } : {}),
+    }),
+    workingDirectory,
+    logLevel: "none",
+  });
+  await client.start();
+  console.log("Copilot headless server started.");
+
+  return {
+    async prompt({ view, request }) {
+      const session = await client.createSession({
+        workingDirectory,
+        onPermissionRequest: approveAll,
+      });
+      const unsubscribe = session.on((event) => console.log(`Copilot session event: ${event.type}`));
+      try {
+        await session.sendAndWait({
+          prompt: `Use the /generate-dashboard-ir skill to update the current dashboard view named ${JSON.stringify(view)}.
+
+Apply this request: ${request}
+
+Find the dashboard source file that defines this view. Follow the skill and the repository's dashboard specification, run the dashboard validator repeatedly until the edited document passes, and save the source file so the local preview reloads. Complete the edit rather than only describing it.`,
+        });
+      } finally {
+        unsubscribe();
+        await session.disconnect();
+      }
+    },
+    async close() {
+      const errors = await client.stop();
+      for (const error of errors) console.log("Copilot shutdown error:", error.message);
+    },
+  };
+}
+
 function isWithin(root, candidate) {
   const path = relative(root, candidate);
   return path === "" || (path !== ".." && !path.startsWith(`..${sep}`) && !isAbsolute(path));
@@ -192,6 +287,10 @@ function websocketCloseFrame() {
  *   repository?: string,
  *   ghExecutable?: string,
  *   downloadData?: (destination: string, repository?: string, ghExecutable?: string) => Promise<void>,
+ *   copilot?: boolean,
+ *   copilotExecutable?: string,
+ *   createCopilotRuntime?: typeof startCopilotRuntime,
+ *   workingDirectory?: string,
  *   host?: string,
  *   port?: number,
  * }} options
@@ -203,6 +302,10 @@ export async function startDashboardServer({
   repository,
   ghExecutable = "gh",
   downloadData = downloadDashboardData,
+  copilot = false,
+  copilotExecutable,
+  createCopilotRuntime = startCopilotRuntime,
+  workingDirectory = process.cwd(),
   host = "127.0.0.1",
   port = 4173,
 } = {}) {
@@ -224,12 +327,14 @@ export async function startDashboardServer({
   const capability = randomBytes(24).toString("hex");
   const routePrefix = `/${capability}`;
   const socketPath = `${routePrefix}${socketEndpoint}`;
+  const copilotPath = `${routePrefix}${copilotEndpoint}`;
   const watchers = new Map();
   let dashboardContent = "";
   let signature = "";
   let refreshTimer;
   let refreshPromise = Promise.resolve();
   let closed = false;
+  let copilotRuntime;
 
   const broadcastDashboard = () => {
     const frame = websocketTextFrame(dashboardContent);
@@ -261,7 +366,7 @@ export async function startDashboardServer({
       if (watchers.has(directory)) continue;
       const watcher = watch(directory, () => scheduleRefresh());
       watcher.on("error", (error) => {
-        process.stderr.write(`Dashboard watcher failed for ${directory}: ${error.message}\n`);
+        console.log(`Dashboard watcher failed for ${directory}: ${error.message}`);
         watcher.close();
         watchers.delete(directory);
       });
@@ -275,7 +380,7 @@ export async function startDashboardServer({
       const packagePaths = await rebuild();
       await refreshWatchers(packagePaths);
     } catch (error) {
-      process.stderr.write(`Dashboard update failed: ${error instanceof Error ? error.message : String(error)}\n`);
+      console.log(`Dashboard update failed: ${error instanceof Error ? error.message : String(error)}`);
     }
   };
 
@@ -289,6 +394,9 @@ export async function startDashboardServer({
   try {
     const initialPackagePaths = await rebuild(false);
     await refreshWatchers(initialPackagePaths);
+    if (copilot) {
+      copilotRuntime = await createCopilotRuntime({ workingDirectory, copilotExecutable });
+    }
   } catch (error) {
     for (const watcher of watchers.values()) watcher.close();
     await rm(temporaryDirectory, { recursive: true, force: true });
@@ -303,11 +411,6 @@ export async function startDashboardServer({
         response.writeHead(400).end("Bad request\n");
         return;
       }
-      if (request.method !== "GET" && request.method !== "HEAD") {
-        response.writeHead(405, { Allow: "GET, HEAD" }).end();
-        return;
-      }
-
       const url = new URL(request.url || "/", "http://localhost");
       if (url.pathname !== routePrefix && !url.pathname.startsWith(`${routePrefix}/`)) {
         response.writeHead(404).end("Not found\n");
@@ -318,6 +421,43 @@ export async function startDashboardServer({
         pathname = decodeURIComponent(url.pathname.slice(routePrefix.length) || "/");
       } catch {
         response.writeHead(400).end("Bad request\n");
+        return;
+      }
+      if (pathname === copilotEndpoint) {
+        if (!copilotRuntime) {
+          response.writeHead(404).end("Not found\n");
+          return;
+        }
+        if (request.method !== "POST") {
+          response.writeHead(405, { Allow: "POST" }).end();
+          return;
+        }
+        if (request.headers.origin !== `http://${expectedAuthority}`
+            || request.headers["content-type"] !== "application/json") {
+          response.writeHead(400).end("Bad request\n");
+          return;
+        }
+        try {
+          const payload = await readJsonRequest(request);
+          if (typeof payload?.view !== "string" || payload.view.length < 1 || payload.view.length > 200
+              || typeof payload?.request !== "string" || payload.request.trim().length < 1
+              || payload.request.length > 10000) {
+            response.writeHead(400, { "Content-Type": contentTypes.get(".json") });
+            response.end(JSON.stringify({ error: "A valid view and request are required." }));
+            return;
+          }
+          await copilotRuntime.prompt({ view: payload.view, request: payload.request.trim() });
+          response.writeHead(200, { "Content-Type": contentTypes.get(".json") });
+          response.end(JSON.stringify({ ok: true }));
+        } catch (error) {
+          console.log(`Copilot request failed: ${error instanceof Error ? error.message : String(error)}`);
+          response.writeHead(500, { "Content-Type": contentTypes.get(".json") });
+          response.end(JSON.stringify({ error: "Copilot could not update the view." }));
+        }
+        return;
+      }
+      if (request.method !== "GET" && request.method !== "HEAD") {
+        response.writeHead(405, { Allow: "GET, HEAD" }).end();
         return;
       }
       if (pathname === "/") pathname = "/index.html";
@@ -356,6 +496,7 @@ export async function startDashboardServer({
       else content = await readFile(canonicalPath);
       if (extname(canonicalPath) === ".html") {
         content = injectDashboardSocket(content.toString("utf8"), socketPath);
+        if (copilotRuntime) content = injectCopilotPrompt(content, copilotPath);
       }
       response.writeHead(200, {
         "Cache-Control": "no-store",
@@ -363,7 +504,7 @@ export async function startDashboardServer({
       });
       response.end(request.method === "HEAD" ? undefined : content);
     } catch (error) {
-      process.stderr.write(`Dashboard request failed: ${error instanceof Error ? error.message : String(error)}\n`);
+      console.log(`Dashboard request failed: ${error instanceof Error ? error.message : String(error)}`);
       if (!response.headersSent) response.writeHead(500);
       response.end("Internal server error\n");
     }
@@ -419,6 +560,7 @@ export async function startDashboardServer({
     });
   } catch (error) {
     for (const watcher of watchers.values()) watcher.close();
+    await copilotRuntime?.close();
     await rm(temporaryDirectory, { recursive: true, force: true });
     throw error;
   }
@@ -431,6 +573,7 @@ export async function startDashboardServer({
       for (const watcher of watchers.values()) watcher.close();
       for (const socket of sockets) socket.end(websocketCloseFrame());
       await new Promise((accept, reject) => server.close((error) => error ? reject(error) : accept()));
+      await copilotRuntime?.close();
       await refreshPromise;
       await rm(temporaryDirectory, { recursive: true, force: true });
     },
@@ -442,7 +585,8 @@ function parseArguments(arguments_) {
   for (let index = 0; index < arguments_.length; index += 1) {
     const argument = arguments_[index];
     if (argument === "--help") return { help: true };
-    if (argument === "--host") {
+    if (argument === "--copilot") options.copilot = true;
+    else if (argument === "--host") {
       options.host = arguments_[index += 1];
       if (!options.host) throw new Error("--host requires a value");
     }
@@ -465,11 +609,11 @@ function parseArguments(arguments_) {
 async function main() {
   const options = parseArguments(process.argv.slice(2));
   if (options.help) {
-    process.stdout.write("usage: local-server.mjs [--repo OWNER/REPOSITORY] [--host HOST] [--port PORT]\n");
+    console.log("usage: local-server.mjs [--copilot] [--repo OWNER/REPOSITORY] [--host HOST] [--port PORT]");
     return;
   }
   const preview = await startDashboardServer(options);
-  process.stdout.write(`Dashboard preview: ${preview.url}/\n`);
+  console.log(`Dashboard preview: ${preview.url}/`);
   const shutdown = () => void preview.close().then(() => process.exit());
   process.once("SIGINT", shutdown);
   process.once("SIGTERM", shutdown);
@@ -477,7 +621,7 @@ async function main() {
 
 if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
   await main().catch((error) => {
-    process.stderr.write(`${error instanceof Error ? error.message : String(error)}\n`);
+    console.log(error instanceof Error ? error.message : String(error));
     process.exitCode = 1;
   });
 }
