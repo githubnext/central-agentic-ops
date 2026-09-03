@@ -706,6 +706,16 @@ test("CAO runtime is control-repository-owned outside package resources", () => 
   assert.doesNotMatch(setupSkill, /chmod \+x \.github\/cao/);
 });
 
+test("CAO upgrade script refreshes gh-aw, packages, and Actions", () => {
+  const upgrade = readFileSync(join(root, ".github", "cao", "upgrade.sh"), "utf8");
+
+  assert.match(upgrade, /^#!\/usr\/bin\/env bash\n/);
+  assert.match(upgrade, /^set -euo pipefail$/m);
+  assert.match(upgrade, /^gh extension upgrade github\/gh-aw$/m);
+  assert.match(upgrade, /^gh aw update --major --cool-down 0$/m);
+  assert.match(upgrade, /^gh aw upgrade$/m);
+});
+
 test("root package directly includes grader-backed workers for dependency packaging", () => {
   const rootManifest = readFileSync(join(root, "aw.yml"), "utf8");
   const importedWorkerIds = [
