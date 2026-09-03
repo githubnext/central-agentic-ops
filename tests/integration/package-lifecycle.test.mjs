@@ -333,7 +333,8 @@ test("gh aw add installs the dashboard package contract", { timeout: 180_000 }, 
 
     const buildWorkflow = readFileSync(join(consumer, ".github", "workflows", "dashboard-build.yml"), "utf8");
     const deployWorkflow = readFileSync(join(consumer, ".github", "workflows", "dashboard.yml"), "utf8");
-    assert.match(buildWorkflow, /workflow_call:[\s\S]*?site-path:/);
+    assert.doesNotMatch(buildWorkflow, /workflow_call:/);
+    assert.match(buildWorkflow, /workflow_dispatch:[\s\S]*?site-path:[\s\S]*?request-id:/);
     assert.match(buildWorkflow, /actions\/upload-artifact@[0-9a-f]{40}/);
     assert.doesNotMatch(buildWorkflow, /actions\/(?:upload-pages-artifact|deploy-pages)@/);
     assert.match(deployWorkflow, /enablement: false/);

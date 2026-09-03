@@ -130,7 +130,7 @@ gh aw add githubnext/gh-aw-cao/activity@<catalog-release>
 gh aw add githubnext/gh-aw-cao/dashboard@<catalog-release>
 ```
 
-Both installation paths add a reusable dashboard builder, a manual standalone Pages publisher, and their deterministic report modules. There is no additional dashboard enable variable, and installation does not deploy or enable Pages.
+Both installation paths add an independently dispatchable dashboard builder, a manual standalone Pages publisher, and their deterministic report modules. There is no additional dashboard enable variable, and installation does not deploy or enable Pages.
 
 :::note[Do not create `REPORT_PAGES_TOKEN`]
 The dashboard does not use a `REPORT_PAGES_TOKEN` secret. Its build job reads report data with the automatic `github.token` and explicit job-scoped permissions. Its standalone deploy job uses GitHub Pages OIDC with `pages: write` and `id-token: write`. If an installed workflow requests `REPORT_PAGES_TOKEN`, it did not come from the current package and should be reviewed or updated rather than supplied with a PAT.
@@ -146,9 +146,10 @@ A deliberate custom extension should mint a short-lived GitHub App token install
 
 The package installs the following components in the control-plane repository:
 
-- `.github/workflows/dashboard-build.yml`, the reusable path-aware builder;
+- `.github/workflows/dashboard-build.yml`, the dispatchable path-aware builder;
 - `.github/workflows/dashboard.yml`, the manual standalone publisher;
-- `.github/workflows/activity.yml`, the scheduled and callable data collector and cache publisher;
+- `.github/workflows/activity.yml`, the scheduled and manually dispatchable data collector and cache publisher;
+- `.github/aw/dashboard/dispatch-workflow.mjs`, the same-repository dispatcher that waits for one correlated child run;
 - `.github/aw/activity/index.mjs`, the bounded deployed-workflow and run-health indexer;
 - `.github/aw/dashboard/report/aic-usage.mjs`, the bounded AI Credit usage collector;
 - `.github/aw/dashboard/report/inventory.mjs`, the dependency-free control-plane inventory extractor;
@@ -167,7 +168,7 @@ For a standalone Pages site:
 
 The standalone workflow passes `enablement: false` to `actions/configure-pages` and has no schedule. It cannot enable Pages or replace an existing site merely because the package was installed.
 
-For a repository with an existing Pages site, keep its current workflow as the only Pages artifact uploader and deployer. Add a job that calls `./.github/workflows/dashboard-build.yml` with a relative `site-path`, then download the `central-agentic-ops-dashboard` artifact into the existing site's build directory before its `actions/upload-pages-artifact` step. For example, `site-path: cao` combined with download `path: dist` publishes the dashboard under `dist/cao/` while preserving the rest of the site. Do not run the standalone dashboard workflow for an embedded installation.
+For a repository with an existing Pages site, keep its current workflow as the only Pages artifact uploader and deployer. Add a job with `actions: write` that dispatches `dashboard-build.yml` with a relative `site-path`, waits for that exact run, and exposes its run ID. Download the `central-agentic-ops-dashboard` artifact with `github-token` and that `run-id` into the existing site's build directory before its `actions/upload-pages-artifact` step. For example, `site-path: cao` combined with download `path: dist` publishes the dashboard under `dist/cao/` while preserving the rest of the site. Do not run the standalone dashboard workflow for an embedded installation.
 
 The activity action refreshes one coherent cache snapshot. Its indexer discovers compiled workflows in the configured repository scope, records which workflows declare an operational-value evaluator, and retains bounded Actions run trigger metadata. It runs `inventory.mjs` against the checked-out control-plane repository to discover manifests, package relationships, standalone workflows, and source/lock status. `operational-values.mjs` asks gh-aw to replay each registered workflow from adoption through the current evidence endpoint. A failed or unsupported report falls back only that workflow to recent grader artifacts and due-run regrading. `records.mjs` combines the inventory with accessible durable issues, pull requests, comments, and review artifacts without rendering HTML. The dashboard builder restores this snapshot without collecting or publishing cache data. `dashboard-language-sources.mjs` adapts the collected records into the canonical `sources.json` contract, and the builder copies the packaged Dashboard Language site to `site-path`, uploads the mergeable artifact, and optionally deploys it through the standalone publisher. Generated site files and source data are not committed to the repository.
 

@@ -12,15 +12,29 @@ concurrency:
 
 jobs:
   build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    outputs:
+      run-id: ${{ steps.dispatch.outputs.run-id }}
     permissions:
-      actions: read
+      actions: write
       contents: read
-      issues: read
-      pull-requests: read
-    uses: ./.github/workflows/dashboard-build.yml
-    secrets: inherit
-    with:
-      site-path: "."
+    steps:
+      - name: Checkout trusted dashboard source
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.workflow_sha }}
+          persist-credentials: false
+
+      - name: Dispatch dashboard build
+        id: dispatch
+        env:
+          GH_TOKEN: ${{ github.token }}
+          DISPATCH_WORKFLOW: dashboard-build.yml
+          DISPATCH_REF: ${{ github.ref_name }}
+          DISPATCH_RUN_NAME: Central Agentic Ops Dashboard Build / dashboard-${{ github.run_id }}-${{ github.run_attempt }}
+          DISPATCH_INPUTS: '{"site-path":".","request-id":"dashboard-${{ github.run_id }}-${{ github.run_attempt }}"}'
+        run: node .github/aw/dashboard/dispatch-workflow.mjs
 
   pages:
     needs: build
@@ -40,6 +54,8 @@ jobs:
         with:
           name: central-agentic-ops-dashboard
           path: _site
+          github-token: ${{ github.token }}
+          run-id: ${{ needs.build.outputs.run-id }}
 
       - name: Upload Pages artifact
         uses: actions/upload-pages-artifact@7b1f4a764d45c48632c6b24a0339c27f5614fb0b # v4

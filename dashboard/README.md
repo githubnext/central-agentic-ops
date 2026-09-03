@@ -13,7 +13,7 @@ The dashboard package publishes an access-controlled static view of Central Agen
 
 ## Contents
 
-- `.github/workflows/dashboard-build.yml`: reusable, path-aware report build that uploads a mergeable Actions artifact.
+- `.github/workflows/dashboard-build.yml`: independently dispatchable, path-aware report build that uploads a mergeable Actions artifact.
 - `.github/workflows/dashboard.yml`: manual standalone GitHub Pages deployment.
 - `.github/workflows/activity.yml`: shared data collector and cache publisher installed by the core activity package.
 - `.github/cao/src/policy.mjs`: dependency-free checked-in policy parser and resolver.
@@ -77,19 +77,34 @@ The catalog contains only collector, adapter, and presenter code. Installed cont
 
 ## Existing Pages site
 
-Keep the existing Pages workflow as the site's only uploader and deployer. Add the reusable dashboard build as a job, pass the desired mount path, and download its artifact into the existing site's output directory before `actions/upload-pages-artifact` runs:
+Keep the existing Pages workflow as the site's only uploader and deployer. Add a job that dispatches the dashboard build, waits for that exact run, and exposes its run ID. Download the artifact from that run into the existing site's output directory before `actions/upload-pages-artifact` runs:
 
 ```yaml
 jobs:
 	dashboard:
+		runs-on: ubuntu-latest
+		timeout-minutes: 120
+		outputs:
+			run-id: ${{ steps.dispatch.outputs.run-id }}
 		permissions:
-			actions: read
+			actions: write
 			contents: read
-			issues: read
-			pull-requests: read
-		uses: ./.github/workflows/dashboard-build.yml
-		with:
-			site-path: operations/dashboard
+		steps:
+			- name: Checkout trusted dashboard source
+				uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+				with:
+					ref: ${{ github.workflow_sha }}
+					persist-credentials: false
+
+			- name: Dispatch dashboard build
+				id: dispatch
+				env:
+					GH_TOKEN: ${{ github.token }}
+					DISPATCH_WORKFLOW: dashboard-build.yml
+					DISPATCH_REF: ${{ github.ref_name }}
+					DISPATCH_RUN_NAME: Central Agentic Ops Dashboard Build / pages-${{ github.run_id }}-${{ github.run_attempt }}
+					DISPATCH_INPUTS: '{"site-path":"operations/dashboard","request-id":"pages-${{ github.run_id }}-${{ github.run_attempt }}"}'
+				run: node .github/aw/dashboard/dispatch-workflow.mjs
 
 	pages:
 		needs: dashboard
@@ -103,6 +118,8 @@ jobs:
 				with:
 					name: central-agentic-ops-dashboard
 					path: dist
+					github-token: ${{ github.token }}
+					run-id: ${{ needs.dashboard.outputs.run-id }}
 
 			- name: Upload combined Pages artifact
 				uses: actions/upload-pages-artifact@7b1f4a764d45c48632c6b24a0339c27f5614fb0b # v4
