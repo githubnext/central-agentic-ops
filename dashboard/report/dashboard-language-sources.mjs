@@ -149,13 +149,14 @@ function packageAliasMap(inventory = {}) {
 
 function packageMemberships(deployed, packageAliases = new Map()) {
   const memberships = new Map();
-  for (const bundle of deployed.bundles || []) {
+  for (const bundle of (deployed.bundles || []).filter((candidate) => candidate.private !== true)) {
     for (const workflow of bundle.workflows || []) {
       const key = `${bundle.repository}:${workflow.lockPath}`;
       const discoveredId = bundle.path?.replace(/\/aw\.yml$|^aw\.yml$/g, "") || bundle.name;
       const membership = {
         id: packageAliases.get(discoveredId) || discoveredId,
         name: bundle.name,
+        ...(bundle.experimental === true ? { experimental: true } : {}),
       };
       const workflowMemberships = memberships.get(key) || [];
       if (!workflowMemberships.some((candidate) => candidate.id === membership.id)) {
@@ -166,6 +167,12 @@ function packageMemberships(deployed, packageAliases = new Map()) {
     }
   }
   return memberships;
+}
+
+function privatePackageWorkflowKeys(deployed) {
+  return new Set((deployed.bundles || [])
+    .filter((bundle) => bundle.private === true)
+    .flatMap((bundle) => (bundle.workflows || []).map((workflow) => `${bundle.repository}:${workflow.lockPath}`)));
 }
 
 function workflowAdmission(controlSettings, packageName, role, workflowId) {
@@ -195,6 +202,7 @@ function inventoryWorkflowDetails(inventory = {}, controlSettings = {}) {
     }
   }
   for (const bundle of inventory.bundles || []) {
+    if (bundle.private === true) continue;
     const packagePolicy = controlSettings.packages?.[bundle.controlPackage];
     const configuredMode = rolloutMode(packagePolicy?.mode);
     const rolloutPercent = Number(packagePolicy?.["rollout-percent"] ?? packagePolicy?.rollout_percent);
@@ -206,7 +214,13 @@ function inventoryWorkflowDetails(inventory = {}, controlSettings = {}) {
       .filter((target) => target.mode !== "unknown" && target.repository);
     const packageId = String(bundle.id || bundle.controlPackage || "").trim();
     const packageName = String(bundle.name || packageId).trim();
-    const packageMembership = packageId ? { id: packageId, name: packageName || packageId } : undefined;
+    const packageMembership = packageId
+      ? {
+          id: packageId,
+          name: packageName || packageId,
+          ...(bundle.experimental === true ? { experimental: true } : {}),
+        }
+      : undefined;
     const workers = bundle.workers || [];
     const ready = bundle.compiled === true
       && (bundle.missingWorkers || []).length === 0
@@ -243,8 +257,14 @@ function inventoryWorkflowDetails(inventory = {}, controlSettings = {}) {
 
 function workflowRows(deployed, generatedAt, inventory, controlSettings) {
   const memberships = packageMemberships(deployed, packageAliasMap(inventory));
+  const privateWorkflowKeys = privatePackageWorkflowKeys(deployed);
   const inventoryDetails = inventoryWorkflowDetails(inventory, controlSettings);
-  return (deployed.workflows || []).map((workflow) => {
+  return (deployed.workflows || [])
+    .filter((workflow) => {
+      const key = `${workflow.repository}:${workflow.path}`;
+      return memberships.has(key) || !privateWorkflowKeys.has(key);
+    })
+    .map((workflow) => {
     const names = repositoryParts(workflow.repository);
     const details = inventoryDetails.get(workflow.path);
     const discoveredMemberships = memberships.get(`${workflow.repository}:${workflow.path}`) || [];
@@ -256,6 +276,7 @@ function workflowRows(deployed, generatedAt, inventory, controlSettings) {
     return {
      ...names,
      ...(membership ? { package: membership.id, "package-name": membership.name } : {}),
+     ...(membership?.experimental === true ? { "package-experimental": true } : {}),
      ...(workflowMemberships.length > 0 ? { "package-memberships": workflowMemberships } : {}),
      ...(Number.isFinite(details?.maxAiCredits) ? { "max-ai-credits": details.maxAiCredits } : {}),
      ...(Number.isFinite(details?.packageAllowance) ? { "package-aic-allowance": details.packageAllowance } : {}),

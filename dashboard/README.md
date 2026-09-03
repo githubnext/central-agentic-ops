@@ -28,19 +28,18 @@ If authoritative control policy resolution fails, the build remains fail-closed 
 
 ## Install
 
-The root Central Agentic Ops package installs the dashboard by default. For a focused installation, install the core activity package and dashboard from the same reviewed release tag or full commit SHA:
+The root Central Agentic Ops package installs the activity index and dashboard together:
 
 ```bash
-gh aw add githubnext/central-agentic-ops/activity@<catalog-release>
-gh aw add githubnext/central-agentic-ops/dashboard@<catalog-release>
+gh aw add githubnext/central-agentic-ops@<catalog-release>
 ```
 
-Both installation paths add the deterministic dashboard automation without an additional enable variable. The standalone publisher remains manual-only and cannot enable Pages for the repository.
+The private `activity/aw.yml` and `dashboard/aw.yml` manifests record internal ownership and cannot be installed directly. Root installation adds the deterministic dashboard automation without an additional enable variable. The standalone publisher remains manual-only and cannot enable Pages for the repository.
 
 To refresh or restore package-owned files, reinstall a reviewed release with force:
 
 ```bash
-gh aw add githubnext/central-agentic-ops/dashboard@<catalog-release> --force
+gh aw add githubnext/central-agentic-ops@<catalog-release> --force
 ```
 
 The package contains only deterministic action workflows and resources, so `gh aw update` has no source-tracked agentic workflow through which to discover it.

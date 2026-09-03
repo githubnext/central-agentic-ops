@@ -262,6 +262,10 @@ function manifestScalar(source, key) {
   return value.replace(/^['"]|['"]$/g, "");
 }
 
+function manifestBoolean(source, key) {
+  return manifestScalar(source, key).toLowerCase() === "true";
+}
+
 function manifestWorkflowSources(source) {
   const includes = source.match(/^includes:\s*\n((?:^[ \t]+.*\n?)*)/m)?.[1] || "";
   return includes.split("\n").flatMap((line) => {
@@ -588,6 +592,8 @@ const bundles = (await mapWithConcurrency(manifestFiles, 8, async (item) => {
       path: item.path,
       name: manifestScalar(source, "name") || item.path.replace(/\/aw\.yml$|^aw\.yml$/g, "") || item.repository.name,
       description: manifestScalar(source, "description"),
+      private: manifestBoolean(source, "private"),
+      experimental: manifestBoolean(source, "experimental"),
       workflows: includedWorkflows,
     };
   } catch (error) {

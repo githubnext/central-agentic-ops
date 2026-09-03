@@ -147,7 +147,12 @@ function renderPackageStatusGridElement(context) {
           h(
             'header',
             { className: 'package-status-header' },
-            h('strong', null, stringValue(row.title)),
+            h(
+              'span',
+              { className: 'package-status-title' },
+              h('strong', null, stringValue(row.title)),
+              renderExperimentalLabel(row.experimental === true)
+            ),
             h('span', { className: 'package-status-state' }, stringValue(row.inventory || 'Needs attention')),
             h('span', { className: `mode-badge ${modeClass}`.trim() }, capitalize(modeText || 'unknown'))
           ),
@@ -171,6 +176,13 @@ function renderPackageStatusGridElement(context) {
       })
     )
   );
+}
+
+/** @param {boolean} experimental */
+function renderExperimentalLabel(experimental) {
+  return experimental
+    ? h('span', { className: 'status status-attention package-experimental-label' }, 'Experimental')
+    : null;
 }
 
 /** @param {ElementRenderContext} context */

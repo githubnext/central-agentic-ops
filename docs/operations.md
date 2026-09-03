@@ -123,14 +123,13 @@ This path supports issue outputs only. It does not transfer issues, publish pull
 
 ### Install the dashboard package
 
-The root Central Agentic Ops package installs the deterministic activity index and dashboard by default. To install the dashboard without the operational workflows, install both focused deterministic packages from the same reviewed release tag or full commit SHA:
+The root Central Agentic Ops package installs the deterministic activity index and dashboard:
 
 ```bash
-gh aw add githubnext/central-agentic-ops/activity@<catalog-release>
-gh aw add githubnext/central-agentic-ops/dashboard@<catalog-release>
+gh aw add githubnext/central-agentic-ops@<catalog-release>
 ```
 
-Both installation paths add a reusable dashboard builder, a manual standalone Pages publisher, and their deterministic report modules. There is no additional dashboard enable variable, and installation does not deploy or enable Pages.
+The private activity and dashboard manifests are internal ownership records and cannot be installed directly. Root installation adds a reusable dashboard builder, a manual standalone Pages publisher, and their deterministic report modules. There is no additional dashboard enable variable, and installation does not deploy or enable Pages.
 
 :::note[Do not create `REPORT_PAGES_TOKEN`]
 The dashboard does not use a `REPORT_PAGES_TOKEN` secret. Its build job reads report data with the automatic `github.token` and explicit job-scoped permissions. Its standalone deploy job uses GitHub Pages OIDC with `pages: write` and `id-token: write`. If an installed workflow requests `REPORT_PAGES_TOKEN`, it did not come from the current package and should be reviewed or updated rather than supplied with a PAT.

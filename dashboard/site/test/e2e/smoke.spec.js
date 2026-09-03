@@ -421,8 +421,8 @@ test('DLS-PAGE-002 DLS-PAGE-014 built-in overview page renders the report-style 
         workflows: {
           source: 'workflows',
           rows: [
-            { organization: 'github', repository: 'central-agentic-ops', package: 'daily-ops', 'package-name': 'Daily Ops', 'workflow-role': 'orchestrator', workflow: '.github/workflows/daily.yml', 'workflow-active': 'true', 'rollout-mode': 'live', 'max-ai-credits': 10, 'observed-at': '2026-08-29T09:00:00Z' },
-            { organization: 'github', repository: 'central-agentic-ops', package: 'daily-ops', 'package-name': 'Daily Ops', 'workflow-role': 'worker', workflow: '.github/workflows/review.yml', 'workflow-active': 'false', 'rollout-mode': 'review', 'max-ai-credits': 20, 'observed-at': '2026-08-29T09:05:00Z' }
+            { organization: 'github', repository: 'central-agentic-ops', package: 'daily-ops', 'package-name': 'Daily Ops', 'package-experimental': true, 'workflow-role': 'orchestrator', workflow: '.github/workflows/daily.yml', 'workflow-active': 'true', 'rollout-mode': 'live', 'max-ai-credits': 10, 'observed-at': '2026-08-29T09:00:00Z' },
+            { organization: 'github', repository: 'central-agentic-ops', package: 'daily-ops', 'package-name': 'Daily Ops', 'package-experimental': true, 'workflow-role': 'worker', workflow: '.github/workflows/review.yml', 'workflow-active': 'false', 'rollout-mode': 'review', 'max-ai-credits': 20, 'observed-at': '2026-08-29T09:05:00Z' }
           ],
           metadata: {
             'source-id': 'workflows-fixture',
@@ -591,6 +591,7 @@ test('DLS-PAGE-002 DLS-PAGE-014 built-in overview page renders the report-style 
   await expect(packageCards.locator('header strong')).toHaveText(['Daily Ops']);
   await expect(packageCards.first()).toHaveClass(/package-status-attention/);
   await expect(packageCards.first()).toContainText('Needs attention');
+  await expect(packageCards.first().locator('.package-experimental-label')).toHaveText('Experimental');
   await expect(packageCards.first()).toContainText('1 worker workflow');
   await expect(packageCards.first()).toHaveAttribute('href', '#page-package-insights?package=daily-ops');
   await expect(page.locator('[data-page-id="overview"] .data-state-summary')).toBeHidden();

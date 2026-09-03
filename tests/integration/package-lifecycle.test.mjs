@@ -158,25 +158,13 @@ test("gh aw add installs the root package without rewriting Copilot authenticati
   }
 });
 
-test("gh aw add installs the focused activity package contract", { timeout: 180_000 }, () => {
-  const consumer = installPackage(activityPackageSource);
-  try {
-    for (const relativePath of activityExpectedFiles) {
-      assert.ok(existsSync(join(consumer, relativePath)), `activity package omitted ${relativePath}`);
-    }
-    const packageManifests = readdirSync(join(consumer, ".github", "aw", "packages"));
-    assert.equal(packageManifests.length, 1, "expected one installed activity package manifest");
-    const installedManifest = JSON.parse(readFileSync(
-      join(consumer, ".github", "aw", "packages", packageManifests[0]),
-      "utf8",
-    ));
-    assert.deepEqual(
-      installedManifest.files.map(({ destination }) => destination).sort(),
-      activityExpectedFiles.toSorted(),
-      "activity package manifest must own its workflow and indexer",
+test("gh aw add refuses private internal packages", { timeout: 180_000 }, () => {
+  for (const source of [activityPackageSource, dashboardPackageSource]) {
+    assert.throws(
+      () => installPackage(source),
+      /is private and cannot be added/,
+      source,
     );
-  } finally {
-    rmSync(consumer, { recursive: true, force: true });
   }
 });
 
@@ -311,40 +299,8 @@ test("gh aw add installs the focused Software Development Practices package cont
   }
 });
 
-test("gh aw add installs the dashboard package contract", { timeout: 180_000 }, () => {
-  const consumer = installPackage(dashboardPackageSource);
-
-  try {
-    for (const relativePath of dashboardExpectedFiles) {
-      assert.ok(existsSync(join(consumer, relativePath)), `dashboard package omitted ${relativePath}`);
-    }
-
-    const packageManifests = readdirSync(join(consumer, ".github", "aw", "packages"));
-    assert.equal(packageManifests.length, 1, "expected one installed dashboard package manifest");
-    const installedManifest = JSON.parse(readFileSync(
-      join(consumer, ".github", "aw", "packages", packageManifests[0]),
-      "utf8",
-    ));
-    assert.deepEqual(
-      installedManifest.files.map(({ destination }) => destination).sort(),
-      dashboardExpectedFiles.toSorted(),
-      "dashboard package manifest must own both workflows and every report module",
-    );
-
-    const buildWorkflow = readFileSync(join(consumer, ".github", "workflows", "dashboard-build.yml"), "utf8");
-    const deployWorkflow = readFileSync(join(consumer, ".github", "workflows", "dashboard.yml"), "utf8");
-    assert.match(buildWorkflow, /workflow_call:[\s\S]*?site-path:/);
-    assert.match(buildWorkflow, /actions\/upload-artifact@[0-9a-f]{40}/);
-    assert.doesNotMatch(buildWorkflow, /actions\/(?:upload-pages-artifact|deploy-pages)@/);
-    assert.match(deployWorkflow, /enablement: false/);
-    assert.doesNotMatch(deployWorkflow, /schedule:/);
-  } finally {
-    rmSync(consumer, { recursive: true, force: true });
-  }
-});
-
-test("gh aw add --force restores dashboard workflows, producers, and renderer assets", { timeout: 180_000 }, () => {
-  const consumer = installPackage(dashboardPackageSource);
+test("gh aw add --force restores root-owned dashboard workflows, producers, and renderer assets", { timeout: 180_000 }, () => {
+  const consumer = installPackage(packageSource);
 
   try {
     const deployPath = join(consumer, ".github", "workflows", "dashboard.yml");
@@ -363,7 +319,7 @@ test("gh aw add --force restores dashboard workflows, producers, and renderer as
     run("gh", [
       "aw",
       "add",
-      dashboardPackageSource,
+      packageSource,
       "--force",
       "--no-security-scanner",
     ], consumer);

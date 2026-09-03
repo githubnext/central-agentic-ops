@@ -434,7 +434,8 @@ h3 { margin: 16px 0 8px; font-size: 1rem; font-weight: 600; }
 .package-status-card:hover { background: var(--canvas-subtle); text-decoration: none; }
 .package-status-card:focus-visible { z-index: 1; outline: 2px solid var(--focus); outline-offset: -2px; }
 .package-status-card > header { min-width: 0; display: flex; align-items: center; justify-content: space-between; gap: 8px; }
-.package-status-card > header > strong { overflow: hidden; font-size: .8125rem; text-overflow: ellipsis; white-space: nowrap; }
+.package-status-title { min-width: 0; display: grid; justify-items: start; }
+.package-status-title > strong { overflow: hidden; max-width: 100%; font-size: .8125rem; text-overflow: ellipsis; white-space: nowrap; }
 .package-status-state { padding: 2px 6px; border: 1px solid currentColor; border-radius: 999px; color: var(--muted); font-size: .625rem; font-weight: 600; white-space: nowrap; }
 .package-status-card .mode-badge { flex: none; }
 .package-status-mode { color: var(--muted); font-size: .75rem; text-transform: capitalize; }
@@ -527,6 +528,7 @@ h3 { margin: 16px 0 8px; font-size: 1rem; font-weight: 600; }
 .package-utilization-card > header { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; }
 .package-utilization-identity { min-width: 0; }
 .package-utilization-identity strong { display: block; }
+.package-experimental-label { width: max-content; margin-top: 4px; }
 .package-utilization-card > header strong { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .package-utilization-value { flex: none; font-size: 1.25rem; font-weight: 600; font-variant-numeric: tabular-nums; }
 .package-utilization-card p { min-height: 18px; margin: 0; color: var(--muted); font-size: .75rem; }
@@ -538,6 +540,7 @@ h3 { margin: 16px 0 8px; font-size: 1rem; font-weight: 600; }
 .package-summary-table { min-width: 920px; }
 .package-summary-table tbody th { font-weight: 600; white-space: nowrap; }
 .package-tabs { display: flex; gap: 4px; margin-bottom: 20px; border-bottom: 1px solid var(--border); }
+.package-tabs > .package-experimental-label { align-self: center; margin: 0 8px 0 0; }
 .package-tabs a { display: inline-flex; align-items: center; gap: 8px; position: relative; padding: 10px 14px 12px; color: var(--fg); font-weight: 600; text-decoration: none; }
 .package-tabs a > .octicon { color: var(--muted); }
 .package-tabs a:hover { background: var(--canvas-subtle); }

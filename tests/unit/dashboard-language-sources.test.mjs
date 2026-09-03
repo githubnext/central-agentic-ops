@@ -65,6 +65,7 @@ test("dashboard source bridge carries package memberships, allowance, and invent
         repository: "githubnext/central-agentic-ops",
         path: "ambient-context/aw.yml",
         name: "Ambient Context",
+        experimental: true,
         workflows: [{ lockPath: workflowPath }],
       }],
       workflows: [{
@@ -102,6 +103,7 @@ test("dashboard source bridge carries package memberships, allowance, and invent
         name: "Ambient Context",
         workflow: ".github/workflows/package.md",
         controlPackage: "ambient-context",
+        experimental: true,
         maxAiCredits: 500,
         compiled: true,
         missingWorkers: [],
@@ -118,6 +120,7 @@ test("dashboard source bridge carries package memberships, allowance, and invent
       package: sources.workflows.rows[0].package,
       packageName: sources.workflows.rows[0]["package-name"],
       packageMemberships: sources.workflows.rows[0]["package-memberships"],
+      packageExperimental: sources.workflows.rows[0]["package-experimental"],
       maxAiCredits: sources.workflows.rows[0]["max-ai-credits"],
       packageAllowance: sources.workflows.rows[0]["package-aic-allowance"],
       packageWorkerCount: sources.workflows.rows[0]["package-worker-count"],
@@ -132,8 +135,9 @@ test("dashboard source bridge carries package memberships, allowance, and invent
       package: "ambient-context",
       packageName: "Ambient Context",
       packageMemberships: [
-        { id: "ambient-context", name: "Ambient Context" },
+        { id: "ambient-context", name: "Ambient Context", experimental: true },
       ],
+      packageExperimental: true,
       maxAiCredits: 500,
       packageAllowance: 500,
       packageWorkerCount: 0,
@@ -146,6 +150,39 @@ test("dashboard source bridge carries package memberships, allowance, and invent
     },
   );
   assert.equal(sources.outcomes.rows[0]["run-conclusion"], "failure");
+});
+
+test("dashboard source bridge hides workflows owned only by private packages", () => {
+  const publicPath = ".github/workflows/public.lock.yml";
+  const privatePath = ".github/workflows/private.lock.yml";
+  const sources = buildDashboardLanguageSources({
+    deployed: {
+      generatedAt: "2026-09-03T06:00:00Z",
+      discovery: { complete: true },
+      runHealth: { available: true, complete: true },
+      bundles: [{
+        repository: "githubnext/central-agentic-ops",
+        path: "public/aw.yml",
+        name: "Public",
+        workflows: [{ lockPath: publicPath }],
+      }, {
+        repository: "githubnext/central-agentic-ops",
+        path: "private/aw.yml",
+        name: "Private",
+        private: true,
+        workflows: [{ lockPath: privatePath }],
+      }],
+      workflows: [
+        { repository: "githubnext/central-agentic-ops", path: publicPath, name: "Public", role: "orchestrator", state: "active" },
+        { repository: "githubnext/central-agentic-ops", path: privatePath, name: "Private", role: "orchestrator", state: "active" },
+      ],
+    },
+    usage: { available: true, complete: true, runs: [] },
+    operationalValues: { records: [] },
+    report: { generatedAt: "2026-09-03T06:00:00Z", records: [] },
+  });
+
+  assert.deepEqual(sources.workflows.rows.map((row) => row["workflow-name"]), ["Public"]);
 });
 
 test("dashboard source bridge maps a legacy manifest-derived package identity to the canonical inventory bundle id", () => {

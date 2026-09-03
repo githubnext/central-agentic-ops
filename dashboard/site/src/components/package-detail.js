@@ -54,7 +54,12 @@ export function renderPackageNavigation(context, selectedView) {
           navigationPage: 'packages'
         }
       }));
-      const tabs = renderPackageTabs(packageId, packageName, selectedView);
+      const tabs = renderPackageTabs(
+        packageId,
+        packageName,
+        selectedView,
+        workflows.some((workflow) => workflow['package-experimental'] === true)
+      );
       if (!insights) return tabs;
       const workers = workflows.filter((workflow) => workflow['workflow-role'] !== 'orchestrator');
       return h(
@@ -73,10 +78,11 @@ export function renderPackageNavigation(context, selectedView) {
  * @param {string} packageId
  * @param {string} packageName
  * @param {'workflows'|'dispatches'|'reports'|'insights'} selectedView
+ * @param {boolean} experimental
  */
-function renderPackageTabs(packageId, packageName, selectedView) {
+function renderPackageTabs(packageId, packageName, selectedView, experimental) {
   const packageQuery = `?package=${encodeURIComponent(packageId)}`;
-  return renderLinkTabs({
+  const tabs = renderLinkTabs({
     className: 'package-tabs',
     ariaLabel: `${packageName} views`,
     tabs: [
@@ -86,6 +92,10 @@ function renderPackageTabs(packageId, packageName, selectedView) {
       { label: 'Reports', icon: 'issue', href: `#page-package-reports${packageQuery}`, current: selectedView === 'reports' }
     ]
   });
+  if (experimental) {
+    tabs.prepend(h('span', { className: 'status status-attention package-experimental-label' }, 'Experimental'));
+  }
+  return tabs;
 }
 
 /**

@@ -32,7 +32,14 @@ test("packages and repository workflows pin the supported gh-aw version", () => 
     "software-development-practices/aw.yml",
   ];
   for (const manifest of manifests) {
-    assert.equal(parse(readFileSync(join(root, manifest), "utf8"))["min-version"], ghAwVersion, manifest);
+    const packageManifest = parse(readFileSync(join(root, manifest), "utf8"));
+    assert.equal(packageManifest["min-version"], ghAwVersion, manifest);
+    assert.equal(packageManifest.experimental, true, `${manifest} must be experimental`);
+    assert.equal(
+      packageManifest.private === true,
+      ["activity/aw.yml", "dashboard/aw.yml"].includes(manifest),
+      `${manifest} private visibility`,
+    );
   }
 
   for (const name of ["copilot-setup-steps.yml", "dashboard-build.yml", "release.yml", "workflow-contracts.yml"]) {
@@ -2291,6 +2298,8 @@ test("Activity package owns the shared workflow-run cache contract", () => {
   const readme = readFileSync(join(root, "activity", "README.md"), "utf8");
 
   assert.equal(activityManifest.name, "Central Agentic Ops Activity");
+  assert.equal(activityManifest.private, true);
+  assert.equal(activityManifest.experimental, true);
   assert.deepEqual(activityManifest.includes, [{
     source: "activity.yml",
     destination: ".github/workflows/activity.yml",
@@ -2363,6 +2372,8 @@ test("Dashboard inventory links multiline orchestrator worker lists", () => {
       env: { ...process.env, REPORT_ROOT: root, REPORT_INVENTORY: outputPath },
     });
     const inventory = JSON.parse(readFileSync(outputPath, "utf8"));
+    assert.ok(inventory.bundles.every((bundle) => bundle.experimental === true));
+    assert.ok(inventory.bundles.every((bundle) => bundle.private !== true));
     assert.deepEqual(inventory.bundles.map((bundle) => ({
       id: bundle.id,
       workers: bundle.workers.map((worker) => worker.id),

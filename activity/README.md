@@ -2,7 +2,7 @@
 
 The activity package maintains the shared, bounded index of deployed GitHub Agentic Workflows and their recent runs. It is deterministic GitHub Actions infrastructure: it has no agent, rollout mode, safe output, or target-writing authority.
 
-The root Central Agentic Ops package installs the activity action workflow and indexer. A focused installation is also available from `githubnext/central-agentic-ops/activity@<catalog-release>`.
+The root Central Agentic Ops package installs the activity action workflow and indexer. The private `activity/aw.yml` manifest records internal ownership and is not directly installable.
 
 ## Cache contract
 

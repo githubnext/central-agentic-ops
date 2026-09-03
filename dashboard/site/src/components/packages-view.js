@@ -126,7 +126,12 @@ function renderPackageSummaryRow(entry, summary) {
   return /** @type {HTMLTableRowElement} */ (h(
     'tr',
     { dataset: { packageSummaryKey: entry.key } },
-    h('th', { scope: 'row' }, h('a', { href: packageInsightsHref(entry.id) }, entry.name)),
+    h(
+      'th',
+      { scope: 'row' },
+      h('a', { href: packageInsightsHref(entry.id) }, entry.name),
+      renderExperimentalLabel(entry.experimental)
+    ),
     h('td', null, formatNumber(summary?.runs ?? 0)),
     h('td', null, formatNumber(summary?.successful ?? 0)),
     h('td', null, formatNumber(summary?.failed ?? 0)),
@@ -430,6 +435,7 @@ function renderUtilizationCard(entry, utilization, available, completeness) {
         'span',
         { className: 'package-utilization-identity' },
         h('a', { href: packageInsightsHref(entry.id) }, h('strong', null, entry.name)),
+        renderExperimentalLabel(entry.experimental),
         scopeLabel ? h('small', null, scopeLabel) : null
       ),
       h('span', { className: 'package-utilization-value' }, ratio === null ? '—' : formatPercent(ratio))
@@ -654,6 +660,7 @@ function summarizePackages(workflows) {
       key,
       id,
       name: String(rows.find((row) => typeof row['package-name'] === 'string')?.['package-name'] ?? titleCase(id)),
+      experimental: rows.some((row) => row['package-experimental'] === true),
       organization: String(firstRow.organization ?? ''),
       repository: String(firstRow.repository ?? ''),
       completeAttemptAllowance: uniqueWorkflowAllowances.size > 0 ? summedAllowance : null,
@@ -665,6 +672,13 @@ function summarizePackages(workflows) {
 /** @param {string} packageId */
 function packageInsightsHref(packageId) {
   return `#page-package-insights?package=${encodeURIComponent(packageId)}`;
+}
+
+/** @param {boolean} experimental */
+function renderExperimentalLabel(experimental) {
+  return experimental
+    ? h('span', { className: 'status status-attention package-experimental-label' }, 'Experimental')
+    : null;
 }
 
 /**

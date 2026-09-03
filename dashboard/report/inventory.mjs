@@ -23,6 +23,10 @@ function scalar(source, key) {
   return unquote(source.match(new RegExp(`^${key}:[ \\t]*(.+)$`, "m"))?.[1] || "");
 }
 
+function booleanScalar(source, key) {
+  return scalar(source, key).toLowerCase() === "true";
+}
+
 function inlineList(source, key) {
   const inline = source.match(new RegExp(`^[ \\t]+${key}:[ \\t]*\\[([^\\]]*)\\]`, "m"))?.[1];
   if (inline !== undefined) return inline.split(",").map((item) => unquote(item)).filter(Boolean);
@@ -71,6 +75,8 @@ function discoverInventory() {
       path: relative(manifestPath),
       name: scalar(source, "name"),
       description: scalar(source, "description"),
+      private: booleanScalar(source, "private"),
+      experimental: booleanScalar(source, "experimental"),
       includes: manifestIncludes(source),
     };
   });
@@ -107,17 +113,20 @@ function discoverInventory() {
     });
   const workflowById = new Map(workflows.map((workflow) => [workflow.id, workflow]));
   const assignedWorkers = new Set(workflows.flatMap((workflow) => workflow.workers));
-  const bundles = workflows.filter((workflow) => workflow.role === "orchestrator").map((orchestrator) => ({
+  const bundles = workflows
+    .filter((workflow) => workflow.role === "orchestrator" && workflow.package?.private !== true)
+    .map((orchestrator) => ({
     id: orchestrator.id,
     name: orchestrator.package?.name || orchestrator.name,
     description: orchestrator.package?.description || orchestrator.description,
+    experimental: orchestrator.package?.experimental === true,
     workflow: orchestrator.sourcePath,
     controlPackage: orchestrator.controlPackage,
     maxAiCredits: orchestrator.maxAiCredits,
     compiled: orchestrator.compiled,
     workers: orchestrator.workers.map((workerId) => workflowById.get(workerId)).filter(Boolean),
     missingWorkers: orchestrator.workers.filter((workerId) => !workflowById.has(workerId)),
-  }));
+    }));
   const standalone = workflows.filter((workflow) => workflow.role === "standalone" && !assignedWorkers.has(workflow.id));
   const lockOnly = readdirSync(workflowDirectory, { withFileTypes: true })
     .filter((entry) => entry.isFile() && entry.name.endsWith(".lock.yml"))

@@ -39,14 +39,14 @@ Add `copilot-requests: write` directly to every Copilot-backed orchestrator and 
 
 The top-level `dashboard/` package is conventional GitHub Actions automation, not an agentic operation. Do not create an orchestrator, workers, runtime steering, rollout variables, or operational-value evaluators for it.
 
-- Install the dashboard from root `aw.yml` by default, keep `dashboard/aw.yml` available for focused dashboard-only installations, and keep both manifests' dashboard destinations in sync. Never fold the dashboard into an operational package.
+- Install the dashboard only from root `aw.yml`, keep private `dashboard/aw.yml` as its internal ownership manifest, and keep both manifests' dashboard destinations in sync. Never fold the dashboard into an operational package.
 - Install `.github/workflows/dashboard-build.yml` in place and `dashboard/dashboard.yml` as `.github/workflows/dashboard.yml` with mapped `action-workflow` includes.
 - Keep the reusable builder path-aware through its `site-path` input and upload a normal artifact that an existing Pages workflow can merge before its single Pages upload and deployment.
 - Keep the standalone publisher manual-only, pass `enablement: false` to `actions/configure-pages`, and require Pages access control before use. Do not add a second enable variable.
 - Keep canonical report modules under `dashboard/report/` and install them under `.github/aw/dashboard/report/` as package resources.
 - Keep the Dashboard Language renderer under `dashboard/site/`; it is owned and installed by the deterministic `dashboard/` package.
 
-For this exception, validate manifest source/destination ownership, both action workflows, safe relative `site-path` handling, standalone Pages prerequisites, and clean-room `gh aw add` and `gh aw add --force` restoration. The remaining Package Contract and Validation sections apply to operational packages.
+For this exception, validate manifest source/destination ownership, both action workflows, safe relative `site-path` handling, standalone Pages prerequisites, rejection of direct private-package installation, and clean-room root-package `gh aw add` and `gh aw add --force` restoration. The remaining Package Contract and Validation sections apply to operational packages.
 
 ## Package Contract
 

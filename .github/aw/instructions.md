@@ -4,7 +4,7 @@
 
 Treat top-level Central Agentic Ops packages as operational packages by default. They contain an orchestrator and at least one independently dispatchable worker, use `shared/control.md`, and follow `.github/skills/create-ops-package/SKILL.md`.
 
-The `dashboard/` package is the deterministic exception. It contains conventional GitHub Actions workflows, data producers, and the Dashboard Language renderer under `dashboard/site/`, not an orchestrator or workers. Install it from root `aw.yml` by default while retaining `dashboard/aw.yml` for focused dashboard-only installations; never fold it into an operational package.
+The private `dashboard/` package is the deterministic exception. It contains conventional GitHub Actions workflows, data producers, and the Dashboard Language renderer under `dashboard/site/`, not an orchestrator or workers. Install it only through root `aw.yml`; retain `dashboard/aw.yml` as its internal ownership manifest and never fold it into an operational package.
 
 ## CAO and gh-aw authority
 
@@ -24,7 +24,7 @@ Orchestrators select and dispatch within the resolved rollout envelope; they do 
 
 ## Dashboard contract
 
-- Install with the root package by default. Use `gh aw add githubnext/central-agentic-ops/dashboard@<release>` only for a focused dashboard-only installation.
+- Install with the root package. The private `dashboard/aw.yml` manifest records internal ownership and is not directly installable.
 - Keep `.github/workflows/dashboard-build.yml` reusable through `workflow_call` and package it through both dashboard manifests. Its `site-path` input controls the relative directory included in the mergeable `central-agentic-ops-dashboard` artifact.
 - Keep `dashboard/dashboard.yml` as the manual-only standalone Pages publisher. It must pass `enablement: false` to `actions/configure-pages` and must not add a schedule or another enable variable.
 - For an existing Pages site, retain one Pages artifact uploader and deployer. Call the reusable builder, then download its artifact into the existing site's output directory before that workflow uploads the combined Pages artifact.

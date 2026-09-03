@@ -16,6 +16,7 @@ const workflows = [
   {
     package: 'ambient-context',
     'package-name': 'Ambient Context',
+    'package-experimental': true,
     workflow: '.github/workflows/ambient-context.md',
     'workflow-name': 'Ambient Context',
     'workflow-role': 'orchestrator',
@@ -172,6 +173,7 @@ describe('renderPackageNavigation', () => {
 
     expect(rendered.dataset.package).toBe('ambient-context');
     expect(rendered.querySelector('.package-tabs')?.textContent).toBe('InsightsWorkflowsDispatchesReports');
+    expect(rendered.querySelector('.package-experimental-label')?.textContent).toBe('Experimental');
     expect(rendered.querySelector('.package-tabs [aria-current="page"]')?.getAttribute('href')).toBe('#page-package-detail?package=ambient-context');
     expect(rendered.textContent).not.toContain('Other');
   });

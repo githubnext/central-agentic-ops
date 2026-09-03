@@ -1098,8 +1098,8 @@ describe('presenter built-in and custom pages', () => {
         workflows: {
           source: 'workflows',
           rows: [
-            { organization: 'github', repository: 'central-agentic-ops', package: 'daily-ops', 'package-name': 'Daily Ops', 'workflow-role': 'orchestrator', workflow: '.github/workflows/daily.yml', 'workflow-active': 'true', 'rollout-mode': 'live', 'max-ai-credits': 10, 'observed-at': '2026-08-29T09:00:00Z' },
-            { organization: 'github', repository: 'central-agentic-ops', package: 'daily-ops', 'package-name': 'Daily Ops', 'workflow-role': 'worker', workflow: '.github/workflows/review.yml', 'workflow-active': 'false', 'rollout-mode': 'review', 'max-ai-credits': 20, 'observed-at': '2026-08-29T09:05:00Z' }
+            { organization: 'github', repository: 'central-agentic-ops', package: 'daily-ops', 'package-name': 'Daily Ops', 'package-experimental': true, 'workflow-role': 'orchestrator', workflow: '.github/workflows/daily.yml', 'workflow-active': 'true', 'rollout-mode': 'live', 'max-ai-credits': 10, 'observed-at': '2026-08-29T09:00:00Z' },
+            { organization: 'github', repository: 'central-agentic-ops', package: 'daily-ops', 'package-name': 'Daily Ops', 'package-experimental': true, 'workflow-role': 'worker', workflow: '.github/workflows/review.yml', 'workflow-active': 'false', 'rollout-mode': 'review', 'max-ai-credits': 20, 'observed-at': '2026-08-29T09:05:00Z' }
           ],
           metadata: {
             'source-id': 'workflows-fixture',
@@ -1264,6 +1264,7 @@ describe('presenter built-in and custom pages', () => {
     expect(packageCards[0]?.querySelector('header strong')?.textContent).toBe('Daily Ops');
     expect(packageCards[0]?.classList.contains('package-status-attention')).toBe(true);
     expect(packageCards[0]?.querySelector('.package-status-state')?.textContent).toBe('Needs attention');
+    expect(packageCards[0]?.querySelector('.package-experimental-label')?.textContent).toBe('Experimental');
     expect(packageCards[0]?.textContent).toContain('1 worker workflow');
     expect(packageCards[0]?.getAttribute('href')).toBe('#page-package-insights?package=daily-ops');
     expect(/** @type {HTMLElement | null} */ (rendered.querySelector('.data-state-summary'))?.hidden).toBe(true);
@@ -1363,8 +1364,8 @@ describe('presenter built-in and custom pages', () => {
         workflows: {
           source: 'workflows',
           rows: [
-            { package: 'daily-ops', 'package-name': 'Daily Ops', workflow: '.github/workflows/daily.md', 'workflow-role': 'orchestrator', 'rollout-mode': 'review', 'max-ai-credits': 100, 'package-aic-allowance': 250, 'package-inventory-warnings': 2 },
-            { package: 'daily-ops', 'package-name': 'Daily Ops', workflow: '.github/workflows/daily-worker.md', 'workflow-role': 'worker', 'rollout-mode': 'review', 'max-ai-credits': 150, 'package-aic-allowance': 250, 'package-inventory-warnings': 2 },
+            { package: 'daily-ops', 'package-name': 'Daily Ops', 'package-experimental': true, workflow: '.github/workflows/daily.md', 'workflow-role': 'orchestrator', 'rollout-mode': 'review', 'max-ai-credits': 100, 'package-aic-allowance': 250, 'package-inventory-warnings': 2 },
+            { package: 'daily-ops', 'package-name': 'Daily Ops', 'package-experimental': true, workflow: '.github/workflows/daily-worker.md', 'workflow-role': 'worker', 'rollout-mode': 'review', 'max-ai-credits': 150, 'package-aic-allowance': 250, 'package-inventory-warnings': 2 },
             { package: 'empty-ops', 'package-name': 'Empty Ops', workflow: '.github/workflows/empty.md', 'workflow-role': 'orchestrator', 'rollout-mode': 'live', 'max-ai-credits': 80, 'inventory-ready': true }
           ],
           metadata
@@ -1411,6 +1412,7 @@ describe('presenter built-in and custom pages', () => {
     expect(packagesPage?.querySelectorAll('.package-utilization-card')).toHaveLength(2);
     expect(packagesPage?.querySelector('[data-package-id="daily-ops"]')?.textContent).toContain('40 of 250 AIC across 2 reported runs');
     expect(packagesPage?.querySelector('[data-package-id="daily-ops"]')?.textContent).toContain('16%');
+    expect(packagesPage?.querySelector('[data-package-id="daily-ops"] .package-experimental-label')?.textContent).toBe('Experimental');
     expect(packagesPage?.querySelector('[data-package-id="empty-ops"]')?.textContent).toContain('No AIC usage was reported');
     expect(packagesPage?.querySelector('[data-package-id="daily-ops"] .package-utilization-identity a')?.getAttribute('href')).toBe('#page-package-insights?package=daily-ops');
     expect(packagesPage?.querySelector('.package-summary-heading')?.textContent).toContain('All output by package');
