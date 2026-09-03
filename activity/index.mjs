@@ -441,7 +441,7 @@ async function collectRunHealth(registryByRepository, previousIndex) {
             startedAt: run.run_started_at,
             updatedAt: run.updated_at,
             displayTitle: run.display_title,
-            ...(previousRun?.jobsCollected ? {
+            ...(previousRun?.jobsCollected && previousRun.runAttempt === run.run_attempt ? {
               jobsCollected: true,
               jobs: previousRun.jobs,
             } : {}),
