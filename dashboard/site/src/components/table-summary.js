@@ -4,7 +4,7 @@
 
 import { h } from '../dom.js';
 import { renderHistogram } from './histogram.js';
-import { formatSummaryCount } from './summary-copy.js';
+import { formatCountNoun } from './count-formatters.js';
 import { renderDefinitionListRows } from './view-chrome.js';
 import { formatMediumUtcDateTime, renderTableSummaryEmpty } from './ui-primitives.js';
 import { formatPercent } from '../view-formatters.js';
@@ -100,7 +100,7 @@ function renderCountSummary(count) {
   return h(
     'div',
     { className: 'table-summary-count' },
-    formatSummaryCount(count)
+    formatCountNoun(count, 'item', 'items')
   );
 }
 
