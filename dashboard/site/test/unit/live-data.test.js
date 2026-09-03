@@ -136,7 +136,7 @@ describe("live Dashboard Language sources", () => {
           dependabot: {
             mode: "review",
             rollout_percent: 100,
-            target_policies: { "github/gh-aw": { mode: "live" } },
+            target_policies: { "githubnext/gh-aw-cao": { mode: "live" } },
           },
         },
       },
@@ -169,15 +169,16 @@ describe("live Dashboard Language sources", () => {
         "package-inventory-warnings": 2,
         "package-rollout-percent": 100,
         "package-targets": [
-          { repository: "github/gh-aw", mode: "live" },
+          { repository: "github/gh-aw", mode: "review" },
           { repository: "github/gh-aw-firewall", mode: "review" },
           { repository: "github/gh-aw-mcpg", mode: "review" },
           { repository: "github/gh-aw-actions", mode: "review" },
           { repository: "github/gh-aw-threat-detection", mode: "review" },
+          { repository: "githubnext/gh-aw-cao", mode: "live" },
           { repository: "githubnext/gh-aw-workshop", mode: "review" },
         ],
         "workflow-active": "true",
-        "rollout-mode": "review",
+        "rollout-mode": "live",
       });
       expect(sources.runs.rows[0]).toMatchObject({
         run: "42",
@@ -195,11 +196,11 @@ describe("live Dashboard Language sources", () => {
       const overview = deriveOverviewSources(sources);
       expect(overview["overview-managed-packages"].rows).toContainEqual(expect.objectContaining({
         package: "dependabot",
-        "repository-modes": expect.arrayContaining([{ repository: "github/gh-aw", mode: "live" }]),
+        "repository-modes": expect.arrayContaining([{ repository: "githubnext/gh-aw-cao", mode: "live" }]),
         "rollout-live-repositories": 1,
-        "rollout-repositories": 6,
+        "rollout-repositories": 7,
         "rollout-percent": 100,
-        "live-coverage-percent": 17,
+        "live-coverage-percent": 14,
       }));
       expect(sources.findings.rows[0]).toMatchObject({
         finding: "githubnext/gh-aw-cao-issue-1",

@@ -198,6 +198,28 @@ describe('renderPackageNavigation', () => {
         navigationPage: 'packages'
       });
     });
+
+    it('uses the trusted target mode for package navigation', () => {
+      const host = document.createElement('div');
+      const targetModeWorkflows = workflows.map((workflow) => workflow.package === 'ambient-context'
+        ? { ...workflow, 'package-targets': [{ repository: 'githubnext/gh-aw-cao', mode: 'live' }] }
+        : workflow);
+      const rendered = renderPackageNavigation({
+        ...context(),
+        sources: { ...context().sources, workflows: { source: 'workflows', metadata, rows: targetModeWorkflows } }
+      }, 'workflows');
+      host.append(rendered);
+      let detail;
+      host.addEventListener('dashboard-route-allocation', (event) => {
+        if (event instanceof CustomEvent) detail = event.detail;
+      });
+
+      rendered.dispatchEvent(new CustomEvent('dashboard-route-change', {
+        detail: { parameter: 'package', value: 'ambient-context' }
+      }));
+
+      expect(detail).toEqual(expect.objectContaining({ mode: 'live' }));
+    });
   });
 
   it('reallocates package title, description, mode, and parent navigation', () => {
