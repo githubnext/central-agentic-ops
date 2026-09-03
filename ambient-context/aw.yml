@@ -3,7 +3,6 @@ description: Optional workflow for keeping repository ambient context — AGENTS
 min-version: v0.88.2
 experimental: true
 includes:
-  - .github/workflows/shared/cao.md
   - .github/workflows/ambient-context.md
 resources:
   - source: dashboard.json
