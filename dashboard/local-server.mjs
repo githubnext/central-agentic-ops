@@ -29,7 +29,6 @@ import {
 } from "node:path";
 import { fileURLToPath } from "node:url";
 import { bundleDashboardFiles } from "./report/bundle-dashboards.mjs";
-import { validateDashboardDocument } from "./site/src/validator.js";
 
 const scriptDirectory = dirname(fileURLToPath(import.meta.url));
 const executeFile = promisify(execFile);
@@ -181,11 +180,8 @@ function isLoopbackHost(host) {
   return unbracketed.split(".")[0] === "127";
 }
 
-function dashboardValidation(source) {
-  const result = validateDashboardDocument(source);
-  return result.ok
-    ? { ok: true, errors: [] }
-    : { ok: false, errors: result.errors.map(({ code, message, path }) => ({ code, message, path })) };
+function normalizeDashboardJson(source) {
+  return JSON.stringify(JSON.parse(source), null, 2);
 }
 
 function errorMetadata(error) {
@@ -203,8 +199,8 @@ async function startCopilotRuntime({ workingDirectory, copilotExecutable }) {
   try {
     sdk = await import("@github/copilot-sdk");
   } catch {
-    console.log("Copilot SDK runtime is unavailable. Install @github/copilot-sdk and yaml.");
-    throw new Error("Copilot mode requires @github/copilot-sdk and yaml.");
+    console.log("Copilot SDK runtime is unavailable. Install @github/copilot-sdk.");
+    throw new Error("Copilot mode requires @github/copilot-sdk.");
   }
   const { CopilotClient, defineTool, RuntimeConnection } = sdk;
   const client = new CopilotClient({
@@ -255,13 +251,16 @@ async function startCopilotRuntime({ workingDirectory, copilotExecutable }) {
               console.log("Denied dashboard source read outside the allowlist.", { path });
               throw new Error("That path is not an editable dashboard source.");
             }
-            const source = await readFile(path, "utf8");
-            console.log("Read dashboard source for Copilot.", { path, bytes: Buffer.byteLength(source) });
+            const source = normalizeDashboardJson(await readFile(path, "utf8"));
+            console.log("Read normalized dashboard JSON for Copilot.", {
+              path,
+              bytes: Buffer.byteLength(source),
+            });
             return source;
           },
         }),
         defineTool("validate_dashboard_source", {
-          description: "Validate candidate Dashboard Language YAML or JSON before saving it.",
+          description: "Validate candidate Dashboard Language JSON before saving it.",
           parameters: {
             type: "object",
             properties: { source: stringParameter("Complete candidate dashboard source.") },
@@ -271,17 +270,20 @@ async function startCopilotRuntime({ workingDirectory, copilotExecutable }) {
           skipPermission: true,
           defer: "never",
           handler: async ({ source }) => {
-            const result = dashboardValidation(source);
-            console.log("Validated Copilot dashboard candidate.", {
-              ok: result.ok,
-              errorCount: result.errors.length,
-              bytes: Buffer.byteLength(source),
-            });
-            return result;
+            try {
+              normalizeDashboardJson(source);
+              console.log("Validated Copilot dashboard JSON candidate.", {
+                bytes: Buffer.byteLength(source),
+              });
+              return { ok: true };
+            } catch (error) {
+              console.log("Rejected invalid Copilot dashboard JSON candidate.", errorMetadata(error));
+              return { ok: false, error: "Dashboard source must be valid JSON." };
+            }
           },
         }),
         defineTool("save_dashboard_source", {
-          description: "Validate and save the complete source for the current view's original dashboard file.",
+          description: "Parse, normalize, and save the complete JSON for the current view's original dashboard file.",
           parameters: {
             type: "object",
             properties: { source: stringParameter("Complete validated dashboard source.") },
@@ -291,18 +293,20 @@ async function startCopilotRuntime({ workingDirectory, copilotExecutable }) {
           skipPermission: true,
           defer: "never",
           handler: async ({ source }) => {
-            const result = dashboardValidation(source);
-            if (!result.ok) {
-              console.log("Rejected invalid Copilot dashboard save.", {
+            let normalized;
+            try {
+              normalized = normalizeDashboardJson(source);
+            } catch (error) {
+              console.log("Rejected invalid Copilot dashboard JSON save.", {
                 path: viewDashboardPath,
-                errorCount: result.errors.length,
+                ...errorMetadata(error),
               });
-              return result;
+              return { ok: false, error: "Dashboard source must be valid JSON." };
             }
-            await writeFile(viewDashboardPath, source);
-            console.log("Saved validated Copilot dashboard source.", {
+            await writeFile(viewDashboardPath, normalized);
+            console.log("Saved normalized Copilot dashboard JSON source.", {
               path: viewDashboardPath,
-              bytes: Buffer.byteLength(source),
+              bytes: Buffer.byteLength(normalized),
             });
             return { ok: true };
           },
@@ -350,7 +354,7 @@ The original dashboard source most likely defining this view is ${JSON.stringify
 The complete set of editable original dashboard sources is:
 ${editableDashboardPaths.map((path) => `- ${path}`).join("\n")}
 
-Built-in views come from the site's dashboard.json. Package views come from their package dashboard.json source (for an installed control repository, under .github/aw/dashboards; for this catalog, in the matching top-level package directory). Use only read_dashboard_source, validate_dashboard_source, and save_dashboard_source to inspect, validate, and save the original source that defines the named view. Run validate_dashboard_source repeatedly until it passes, then use save_dashboard_source so the local preview reloads. Complete the edit rather than only describing it.`,
+Built-in views come from the site's dashboard.json. Package views come from their package dashboard.json source (for an installed control repository, under .github/aw/dashboards; for this catalog, in the matching top-level package directory). Only JSON is supported. Use only read_dashboard_source, validate_dashboard_source, and save_dashboard_source to inspect, validate, and save the original source that defines the named view. Run validate_dashboard_source repeatedly until it passes, then use save_dashboard_source so the JSON is normalized with two-space indentation and the local preview reloads. Complete the edit rather than only describing it.`,
           });
         } catch (error) {
           console.log("Copilot dashboard session request failed.", {
@@ -632,16 +636,26 @@ export async function startDashboardServer({
             viewDashboardPath,
           });
           const savedSource = await readFile(viewDashboardPath, "utf8");
-          const validation = dashboardValidation(savedSource);
-          if (!validation.ok) {
-            console.log("Copilot dashboard request left an invalid source.", {
+          let normalizedSource;
+          try {
+            normalizedSource = normalizeDashboardJson(savedSource);
+          } catch (error) {
+            console.log("Copilot dashboard request left invalid JSON.", {
               view: payload.view,
               viewDashboardPath,
-              errorCount: validation.errors.length,
+              ...errorMetadata(error),
             });
-            throw new Error("Copilot produced an invalid dashboard source.");
+            throw new Error("Copilot produced invalid dashboard JSON.");
           }
-          console.log("Verified saved Copilot dashboard source.", {
+          if (savedSource !== normalizedSource) {
+            await writeFile(viewDashboardPath, normalizedSource);
+            console.log("Normalized saved Copilot dashboard JSON.", {
+              view: payload.view,
+              viewDashboardPath,
+              bytes: Buffer.byteLength(normalizedSource),
+            });
+          }
+          console.log("Verified saved Copilot dashboard JSON.", {
             view: payload.view,
             viewDashboardPath,
           });

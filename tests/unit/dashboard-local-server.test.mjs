@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { chmod, mkdir, mkdtemp, rm, writeFile } from "node:fs/promises";
+import { chmod, mkdir, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import { request } from "node:http";
 import { tmpdir } from "node:os";
 import path from "node:path";
@@ -176,6 +176,10 @@ test("local dashboard server optionally prompts Copilot to update the active vie
     createCopilotRuntime: async () => ({
       prompt: async (payload) => {
         prompts.push(payload);
+        const source = payload.request === "Produce invalid JSON"
+          ? "{ invalid"
+          : JSON.stringify(JSON.parse(dashboard("package-one")));
+        await writeFile(payload.viewDashboardPath, source);
         await promptGate.promise;
       },
       close: async () => {
@@ -222,6 +226,20 @@ test("local dashboard server optionally prompts Copilot to update the active vie
       path.join(packageDirectory, "dashboard.json"),
     ]);
     assert.match(prompts[0].bundledDashboardPath, /cao-dashboard-preview-.*dashboard\.json$/);
+    assert.equal(
+      await readFile(path.join(packageDirectory, "dashboard.json"), "utf8"),
+      dashboard("package-one"),
+    );
+
+    const invalidJsonResponse = await fetch(`${preview.url}/__dashboard_copilot`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Origin: new URL(preview.url).origin,
+      },
+      body: JSON.stringify({ view: "package-one", request: "Produce invalid JSON" }),
+    });
+    assert.equal(invalidJsonResponse.status, 500);
 
     const invalidOrigin = await fetch(`${preview.url}/__dashboard_copilot`, {
       method: "POST",
