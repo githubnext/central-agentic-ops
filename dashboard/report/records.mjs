@@ -3,6 +3,7 @@ import { mkdir, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { pathToFileURL } from "node:url";
 import { actionsLog as log } from "../../activity/actions-log.mjs";
+import { parseRolloutMode } from "./dashboard-language-sources.mjs";
 import { firstText } from "./text-utils.mjs";
 
 const apiRoot = "https://api.github.com";
@@ -33,7 +34,7 @@ function readJson(filePath) {
 }
 
 function normalizeMode(mode) {
-  return ["review", "live"].includes(mode) ? mode : "unknown";
+  return parseRolloutMode(mode);
 }
 
 function safeUrl(value) {
@@ -378,7 +379,7 @@ async function collectDashboardRecordsImpl({
       runCache.set(cacheKey, githubOptional(`/repos/${runOwner}/${runRepository}/actions/runs/${runId}`, null));
     }
     const run = await runCache.get(cacheKey);
-    const mode = run?.display_title?.match(/(?:^|\s[·|:-]\s)(review|live)$/i)?.[1]?.toLowerCase();
+    const mode = parseRolloutMode(run?.display_title);
     const workflowPath = run?.path || "";
     return {
       mode: normalizeMode(mode),
