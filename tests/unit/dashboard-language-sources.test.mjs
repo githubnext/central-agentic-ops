@@ -49,6 +49,36 @@ test("dashboard source bridge carries API capacity admission blocks into run row
   );
 });
 
+test("dashboard source bridge detects rollout mode from run titles with punctuation separators", () => {
+  const sources = buildDashboardLanguageSources({
+    deployed: {
+      generatedAt: "2026-09-03T06:00:00Z",
+      discovery: { complete: true },
+      runHealth: { available: true, complete: true },
+      bundles: [],
+      workflows: [{
+        repository: "githubnext/gh-aw-cao",
+        path: ".github/workflows/review-live.lock.yml",
+        name: "Review Live",
+        state: "active",
+        runHealth: { runRecords: [{
+          runId: 99,
+          status: "completed",
+          conclusion: "success",
+          displayTitle: "Review Live: review",
+          startedAt: "2026-09-03T05:00:00Z",
+          updatedAt: "2026-09-03T05:10:00Z",
+        }] },
+      }],
+    },
+    usage: { available: true, complete: true, runs: [] },
+    operationalValues: { records: [] },
+    report: { generatedAt: "2026-09-03T06:00:00Z", records: [] },
+  });
+
+  assert.equal(sources.runs.rows[0]["rollout-mode"], "review");
+});
+
 test("dashboard source bridge keeps partial workflow inventory available when discovery is incomplete", () => {
   const input = {
     deployed: {

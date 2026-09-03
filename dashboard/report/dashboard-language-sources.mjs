@@ -29,9 +29,17 @@ function repositoryParts(repository = "") {
   return { organization, repository: name };
 }
 
+export function parseRolloutMode(value) {
+  const text = String(value ?? "").trim();
+  if (!text) return "unknown";
+  const normalized = text.toLowerCase();
+  if (normalized === "review" || normalized === "live") return normalized;
+  const match = normalized.match(/(?:^|[^a-z0-9])((review|live))\s*$/i);
+  return match?.[1]?.toLowerCase() || "unknown";
+}
+
 function rolloutMode(value) {
-  const match = String(value || "").match(/(?:^|\s[·|:\-]\s)(review|live)$/i);
-  return match?.[1]?.toLowerCase() || (["review", "live"].includes(value) ? value : "unknown");
+  return parseRolloutMode(value);
 }
 
 function runConclusion(value) {

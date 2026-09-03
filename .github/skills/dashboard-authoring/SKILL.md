@@ -17,7 +17,8 @@ Create one dashboard that helps an operator decide whether a specific agentic wo
    - choose one direct attainment metric in `[0,1]`;
    - define maturation, zero, and missing-evidence rules;
    - use `attainment-only` unless immutable pre-adoption evidence supports a comparable baseline.
-4. Define a compact dashboard intent with no more than four essential views per page. Prefer an operational summary, actionable findings, outcomes, and an operational-value trend.
+4. Define a compact dashboard intent with no more than four essential views per page. Every page must begin with a pie or line chart that serves as a visual executive summary of the most important signal, so an operator can understand it at a glance on a phone without scrolling. Prefer an operational summary, actionable findings, outcomes, and an operational-value trend.
+   - Choose a pie chart for a current distribution or a line chart for a temporal trend. Put supporting metrics, tables, and detail views after this chart.
    - Avoid nested chart boxes. Do not add a section solely to frame a chart; use sections only when their heading or grouping adds operator context.
 5. Pass the intent and operational-value contract to `generate-dashboard-ir` with the provided Dashboard Language specification and validator.
 
