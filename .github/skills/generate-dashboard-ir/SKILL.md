@@ -16,9 +16,10 @@ The working context provides:
 - user intent;
 - a Dashboard Language specification file;
 - a validator entry point;
+- the built-in dashboard configuration at `dashboard/site/dashboard.json`;
 - optionally, an existing dashboard YAML document.
 
-Read the specification before generating or modifying dashboard YAML. Do not rely on remembered Dashboard Language syntax when the provided specification defines it.
+Read the specification and built-in dashboard configuration before generating or modifying dashboard YAML. Use the built-in configuration as the reference for established rich views, including useful columns, links, status displays, and interactive controls. Do not rely on remembered Dashboard Language syntax when the provided specification defines it.
 
 ## Output
 
@@ -32,7 +33,7 @@ Produce one complete Dashboard Language YAML document that:
 
 ## Procedure
 
-1. Read the specification and identify the relevant root structure, logical sources and grains, fields, dimensions, measures, aggregates, marks, encodings, pages, filters, links, routing, data-state semantics, defaults, and validation constraints. When prior knowledge differs, follow the provided specification.
+1. Read the specification and `dashboard/site/dashboard.json`, then identify the relevant root structure, logical sources and grains, fields, dimensions, measures, aggregates, marks, encodings, pages, filters, links, routing, data-state semantics, defaults, and validation constraints. Reuse an established built-in view pattern when it satisfies the intent, adapting only its scope and labels. When prior knowledge differs, follow the provided specification.
 2. Interpret the minimum information necessary to satisfy the intent: purpose, questions, entities, measures, dimensions, time range, filters, comparisons, rankings, trends, and drilldown needs. Prefer a small set of views that directly answers the requested questions.
    Internally trace activation and execution, every required operator action, accepted-success evidence, and the direct operational-value metric to a view, source grain, canonical fields, scope, time, filters, and links. A generic run, finding, or outcome count does not cover task-specific evidence.
 3. Prefer a built-in page when it satisfies the intent. Use a custom page only when the requested analysis is not built in, requires a specific combination of measures or dimensions, or explicitly requests a custom presentation.
