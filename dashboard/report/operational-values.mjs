@@ -259,8 +259,8 @@ async function regradeRecord(record, evidenceAt, checkout) {
     const reportRecords = reports.flatMap(recordsFromOperationalValueReport);
     const reportDefinitions = reports.map(definitionFromOperationalValueReport);
     const cachedRunKeys = new Set(cachedRecords
-      .filter((record) => record.observation)
-      .map(operationalValueRunIdentity));
+      .map((record) => operationalValueRunIdentity(record))
+      .filter(Boolean));
     const currentRecords = await mapWithConcurrency(fallbackRuns.filter((selected) => !cachedRunKeys.has(operationalValueRunIdentity(selected))), concurrency, async (selected) => {
       const destination = path.join(temporaryRoot, `${selected.repository.replace("/", "-")}-${selected.runId}`);
       await mkdir(destination, { recursive: true });
