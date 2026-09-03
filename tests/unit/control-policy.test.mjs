@@ -112,7 +112,7 @@ test("checked-in control policy selects seven repositories with local SelfCare a
     "github/gh-aw-mcpg",
     "github/gh-aw-actions",
     "github/gh-aw-threat-detection",
-    "githubnext/central-agentic-ops",
+    "githubnext/gh-aw-cao",
     "githubnext/gh-aw-workshop",
   ];
 
@@ -123,7 +123,7 @@ test("checked-in control policy selects seven repositories with local SelfCare a
     const effective = effectivePolicy(policy, {
       packageName: "dependabot",
       role: "orchestrator",
-      controlRepository: "githubnext/central-agentic-ops",
+      controlRepository: "githubnext/gh-aw-cao",
       targetRepository,
     });
     assert.equal(effective.safe_output_mode, targetRepository === "github/gh-aw" ? "live" : "review");
@@ -133,12 +133,12 @@ test("checked-in control policy selects seven repositories with local SelfCare a
   const selfCare = effectivePolicy(policy, {
     packageName: "self-care",
     role: "orchestrator",
-    controlRepository: "githubnext/central-agentic-ops",
-    targetRepository: "githubnext/central-agentic-ops",
+    controlRepository: "githubnext/gh-aw-cao",
+    targetRepository: "githubnext/gh-aw-cao",
   });
   assert.equal(selfCare.safe_output_mode, "live");
   assert.equal(selfCare.max_repositories, 1);
-  assert.equal(policy["target-authority"].packages["self-care"].authority, "githubnext/central-agentic-ops");
+  assert.equal(policy["target-authority"].packages["self-care"].authority, "githubnext/gh-aw-cao");
 });
 
 test("control policy applies schema defaults and package values", () => {

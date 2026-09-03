@@ -15,7 +15,7 @@ This minimal policy enables the installed Dependabot package and its workers in 
 
 ```json
 {
-  "$schema": "https://raw.githubusercontent.com/githubnext/central-agentic-ops/main/.github/cao/cao.schema.json",
+  "$schema": "https://raw.githubusercontent.com/githubnext/gh-aw-cao/main/.github/cao/cao.schema.json",
   "version": 1,
   "control-plane": {
     "scope": {

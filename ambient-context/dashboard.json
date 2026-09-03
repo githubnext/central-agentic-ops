@@ -4,7 +4,7 @@
     "id": "ambient-context-dashboard",
     "title": "Ambient Context",
     "description": "Track context-curation runs, retained proposals, and matured evidence that accepted changes reduced prompt cost without increasing failures.",
-    "repository": "githubnext/central-agentic-ops",
+    "repository": "githubnext/gh-aw-cao",
     "pages": [
       {
         "id": "ambient-context-dashboard",

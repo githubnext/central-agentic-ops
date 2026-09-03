@@ -28,7 +28,7 @@ function context(pageId = 'workflow-detail') {
         rows: [
           {
             organization: 'githubnext',
-            repository: 'central-agentic-ops',
+            repository: 'gh-aw-cao',
             package: 'ambient-context',
             'package-name': 'Ambient Context',
             'package-memberships': [
@@ -41,9 +41,9 @@ function context(pageId = 'workflow-detail') {
             'rollout-mode': 'review',
             'workflow-link': {
               relation: 'workflow',
-              href: 'https://github.com/githubnext/central-agentic-ops/blob/HEAD/.github/workflows/ambient-context.md',
+              href: 'https://github.com/githubnext/gh-aw-cao/blob/HEAD/.github/workflows/ambient-context.md',
               label: 'View Ambient Context',
-              'dashboard-href': '#page-workflow-runtime?workflow=githubnext%2Fcentral-agentic-ops%3A.github%2Fworkflows%2Fambient-context.md',
+              'dashboard-href': '#page-workflow-runtime?workflow=githubnext%2Fgh-aw-cao%3A.github%2Fworkflows%2Fambient-context.md',
               'dashboard-label': 'View Ambient Context workflow dashboard'
             }
           },
@@ -55,7 +55,7 @@ function context(pageId = 'workflow-detail') {
           },
           {
             organization: 'githubnext',
-            repository: 'central-agentic-ops',
+            repository: 'gh-aw-cao',
             workflow: '.github/workflows/release@prod.md',
             'workflow-name': 'Release production'
           }
@@ -68,7 +68,7 @@ function context(pageId = 'workflow-detail') {
           {
             organization: 'customer',
             repository: 'target',
-            'runtime-repository': 'githubnext/central-agentic-ops',
+            'runtime-repository': 'githubnext/gh-aw-cao',
             workflow: '.github/workflows/ambient-context.md',
             'safe-output': 'report-closed',
             'outcome-title': 'Closed report',
@@ -80,7 +80,7 @@ function context(pageId = 'workflow-detail') {
           },
           {
             organization: 'githubnext',
-            repository: 'central-agentic-ops',
+            repository: 'gh-aw-cao',
             workflow: '.github/workflows/ambient-context.md',
             'safe-output': 'report-open',
             'outcome-title': 'Open report',
@@ -114,18 +114,18 @@ describe('renderWorkflowDetail', () => {
     rendered.dispatchEvent(new CustomEvent('dashboard-route-change', {
       detail: {
         parameter: 'workflow',
-        value: 'githubnext/central-agentic-ops:.github/workflows/ambient-context.md'
+        value: 'githubnext/gh-aw-cao:.github/workflows/ambient-context.md'
       }
     }));
 
-    expect(rendered.dataset.workflow).toBe('githubnext/central-agentic-ops:.github/workflows/ambient-context.md');
+    expect(rendered.dataset.workflow).toBe('githubnext/gh-aw-cao:.github/workflows/ambient-context.md');
     expect(rendered.querySelector('.workflow-tabs')?.textContent).toBe('InsightsReportsRuns');
     expect(rendered.querySelector('.workflow-tabs [aria-current="page"]')?.textContent).toBe('Reports');
     expect(rendered.querySelector('.workflow-tabs a:first-child')?.getAttribute('href')).toBe(
-      '#page-workflow-runtime?workflow=githubnext%2Fcentral-agentic-ops%3A.github%2Fworkflows%2Fambient-context.md'
+      '#page-workflow-runtime?workflow=githubnext%2Fgh-aw-cao%3A.github%2Fworkflows%2Fambient-context.md'
     );
     expect(rendered.querySelector('.workflow-tabs a:last-child')?.getAttribute('href')).toBe(
-      '#page-workflow-runs?workflow=githubnext%2Fcentral-agentic-ops%3A.github%2Fworkflows%2Fambient-context.md'
+      '#page-workflow-runs?workflow=githubnext%2Fgh-aw-cao%3A.github%2Fworkflows%2Fambient-context.md'
     );
     expect([...rendered.querySelectorAll('.workflow-identity .workflow-badge')].map((badge) => badge.textContent)).toEqual([
       'Orchestrator',
@@ -137,7 +137,7 @@ describe('renderWorkflowDetail', () => {
       '#page-package-insights?package=central-agentic-ops'
     ]);
     expect(rendered.querySelector('.workflow-identity > a')?.getAttribute('href')).toBe(
-      'https://github.com/githubnext/central-agentic-ops/blob/HEAD/.github/workflows/ambient-context.md'
+      'https://github.com/githubnext/gh-aw-cao/blob/HEAD/.github/workflows/ambient-context.md'
     );
     expect(rendered.querySelector('.workflow-identity > a')?.textContent).toBe('View authored workflow');
     expect(rendered.querySelector('.workflow-identity > a')?.getAttribute('target')).toBe('_blank');
@@ -145,14 +145,14 @@ describe('renderWorkflowDetail', () => {
     expect(allocation).toHaveBeenCalledOnce();
     expect(allocation.mock.calls[0][0].detail).toEqual({
       title: 'Ambient Context',
-      description: 'Durable reports produced by .github/workflows/ambient-context.md in githubnext/central-agentic-ops.',
+      description: 'Durable reports produced by .github/workflows/ambient-context.md in githubnext/gh-aw-cao.',
       mode: 'review',
       navigationPage: 'repositories',
       breadcrumbs: [
         { label: 'Repositories', href: '#page-repositories' },
         {
-          label: 'githubnext/central-agentic-ops',
-          href: '#page-repository-detail?repository=githubnext%2Fcentral-agentic-ops'
+          label: 'githubnext/gh-aw-cao',
+          href: '#page-repository-detail?repository=githubnext%2Fgh-aw-cao'
         }
       ]
     });
@@ -168,16 +168,16 @@ describe('renderWorkflowDetail', () => {
     rendered.dispatchEvent(new CustomEvent('dashboard-route-change', {
       detail: {
         parameter: 'workflow',
-        value: 'githubnext/central-agentic-ops:.github/workflows/ambient-context.md'
+        value: 'githubnext/gh-aw-cao:.github/workflows/ambient-context.md'
       }
     }));
 
     expect(rendered.querySelector('.workflow-tabs [aria-current="page"]')?.textContent).toBe('Runs');
     expect(rendered.querySelector('.workflow-tabs a:nth-child(2)')?.getAttribute('href')).toBe(
-      '#page-workflow-detail?workflow=githubnext%2Fcentral-agentic-ops%3A.github%2Fworkflows%2Fambient-context.md'
+      '#page-workflow-detail?workflow=githubnext%2Fgh-aw-cao%3A.github%2Fworkflows%2Fambient-context.md'
     );
     expect(allocation.mock.calls[0][0].detail.description).toBe(
-      'Observed runs for .github/workflows/ambient-context.md in githubnext/central-agentic-ops.'
+      'Observed runs for .github/workflows/ambient-context.md in githubnext/gh-aw-cao.'
     );
   });
 
@@ -193,7 +193,7 @@ describe('renderWorkflowDetail', () => {
     rendered.dispatchEvent(new CustomEvent('dashboard-route-change', {
       detail: {
         parameter: 'workflow',
-        value: 'githubnext/central-agentic-ops:.github/workflows/missing.md'
+        value: 'githubnext/gh-aw-cao:.github/workflows/missing.md'
       }
     }));
     expect(rendered.textContent).toBe('Workflow not found.');
@@ -201,7 +201,7 @@ describe('renderWorkflowDetail', () => {
     rendered.dispatchEvent(new CustomEvent('dashboard-route-change', {
       detail: {
         parameter: 'workflow',
-        value: 'githubnext/central-agentic-ops:.github/workflows/release@prod.md'
+        value: 'githubnext/gh-aw-cao:.github/workflows/release@prod.md'
       }
     }));
     expect(rendered.textContent).toContain('.github/workflows/release@prod.md');

@@ -85,12 +85,12 @@ describe('link content helpers', () => {
   it('renders workflow run labels as safe external links with a plain-text fallback', () => {
     const linked = /** @type {HTMLElement} */ (renderWorkflowRunLink({
       'run-link': {
-        href: 'https://github.com/githubnext/central-agentic-ops/actions/runs/42',
+        href: 'https://github.com/githubnext/gh-aw-cao/actions/runs/42',
         label: 'Run 42'
       }
     }, '42'));
 
-    expect(linked.getAttribute('href')).toBe('https://github.com/githubnext/central-agentic-ops/actions/runs/42');
+    expect(linked.getAttribute('href')).toBe('https://github.com/githubnext/gh-aw-cao/actions/runs/42');
     expect(linked.getAttribute('target')).toBe('_blank');
     expect(linked.getAttribute('rel')).toBe('noopener noreferrer');
     expect(linked.getAttribute('aria-label')).toBe('Run 42');
@@ -102,7 +102,7 @@ describe('link content helpers', () => {
     const row = {
       run: '42',
       'run-link': {
-        href: 'https://github.com/githubnext/central-agentic-ops/actions/runs/42',
+        href: 'https://github.com/githubnext/gh-aw-cao/actions/runs/42',
         label: 'Run 42'
       }
     };
@@ -110,7 +110,7 @@ describe('link content helpers', () => {
       'href-field': 'run-link',
       'identifier-field': 'run'
     })).toEqual({
-      href: 'https://github.com/githubnext/central-agentic-ops/actions/runs/42',
+      href: 'https://github.com/githubnext/gh-aw-cao/actions/runs/42',
       label: '#42'
     });
     expect(resolveTitleLink(row, {

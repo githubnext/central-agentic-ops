@@ -96,7 +96,7 @@ safe-outputs:
   noop:
 pre-agent-steps:
   - name: Build expected control-plane inventory
-    if: ${{ inputs.target_repo == 'githubnext/central-agentic-ops' && (inputs.safe_output_mode || 'review') == 'live' }}
+    if: ${{ inputs.target_repo == 'githubnext/gh-aw-cao' && (inputs.safe_output_mode || 'review') == 'live' }}
     run: |
       mkdir -p /tmp/gh-aw/agent/self-care-dashboard-review
       REPORT_INVENTORY=/tmp/gh-aw/agent/self-care-dashboard-review/expected-inventory.json \
@@ -109,7 +109,7 @@ pre-agent-steps:
 
 Review the control-plane dashboard deployed from this repository through deterministic checks and three stakeholder perspectives.
 
-Read `/tmp/gh-aw/agent/control-precompute.json` first. This worker is authorized only when its precomputed `target_repo` is exactly `githubnext/central-agentic-ops` and its precomputed `safe_output_mode` is `live`. If either condition is false, call `noop` once with the denied scope and stop without auditing or publishing findings.
+Read `/tmp/gh-aw/agent/control-precompute.json` first. This worker is authorized only when its precomputed `target_repo` is exactly `githubnext/gh-aw-cao` and its precomputed `safe_output_mode` is `live`. If either condition is false, call `noop` once with the denied scope and stop without auditing or publishing findings.
 
 ## Context
 

@@ -17,7 +17,7 @@
 #  \/  \/ \___/|_| |_|\_\|_| |_|\___/ \_/\_/ |___/
 #
 #
-# To update this file, edit githubnext/central-agentic-ops/.github/workflows/optimization-ai-credit-optimizer.md@main and run:
+# To update this file, edit githubnext/gh-aw-cao/.github/workflows/optimization-ai-credit-optimizer.md@main and run:
 #   gh aw compile
 # Not all edits will cause changes to this file.
 #
@@ -25,7 +25,7 @@
 #
 # Daily optimization that identifies the highest AI Credit (AIC) agentic workflows, audits its runs, and recommends efficiency improvements including inline sub-agent refactors when warranted
 #
-# Source: githubnext/central-agentic-ops/.github/workflows/optimization-ai-credit-optimizer.md@main
+# Source: githubnext/gh-aw-cao/.github/workflows/optimization-ai-credit-optimizer.md@main
 #
 # Resolved workflow manifest:
 #   Imports:
@@ -181,7 +181,7 @@ jobs:
           GH_AW_INFO_FIREWALL_TYPE: "squid"
           GH_AW_INFO_AGENT_RUNTIME: ""
           GH_AW_INFO_FETCH_RUN_CREATED_AT: "true"
-          GH_AW_INFO_FRONTMATTER_SOURCE: "githubnext/central-agentic-ops/.github/workflows/optimization-ai-credit-optimizer.md@main"
+          GH_AW_INFO_FRONTMATTER_SOURCE: "githubnext/gh-aw-cao/.github/workflows/optimization-ai-credit-optimizer.md@main"
           GH_AW_INFO_BODY_MODIFIED: "false"
           GH_AW_INFO_FRONTMATTER_EMOJI: ":bar_chart:"
           GH_AW_COMPILED_STRICT: "true"
@@ -544,7 +544,7 @@ jobs:
           GH_REPO: ${{ inputs.target_repo }}
           GH_TOKEN: ${{ steps.github-mcp-app-token.outputs.token || secrets.GH_AW_GITHUB_TOKEN || secrets.GITHUB_TOKEN }}
         name: Download recent agentic workflow logs
-        run: "set -euo pipefail\nmkdir -p /tmp/gh-aw/token-audit\n\necho \"📥 Downloading agentic workflow logs (last 7 days)...\"\n\nRAW_LOGS=/tmp/gh-aw/token-audit/all-runs.raw.json\nLOG_EXIT=0\ngh aw logs \\\n  --repo \"$TARGET_REPO\" \\\n  --output /tmp/gh-aw/token-audit/logs \\\n  --start-date -7d \\\n  --json \\\n  -c 50 \\\n  --timeout 15 \\\n  --max-github-api-rate-limit -2000 \\\n  --max-storage 1024 \\\n  > \"$RAW_LOGS\" || LOG_EXIT=$?\n\nif jq -e . \"$RAW_LOGS\" >/dev/null 2>&1; then\n  jq '\n    ((.runs // []) | unique_by(.run_id)) as $runs |\n    {\n      summary: {\n        total_runs: ($runs | length),\n        total_tokens: ($runs | map(.token_usage // 0) | add // 0),\n        total_aic: ($runs | map(.aic // 0) | add // 0)\n      },\n      runs: $runs\n    }\n  ' \"$RAW_LOGS\" > /tmp/gh-aw/token-audit/all-runs.json\n  TOTAL=$(jq '.runs | length' /tmp/gh-aw/token-audit/all-runs.json)\n  echo \"✅ Downloaded $TOTAL agentic workflow runs (last 7 days, exit code $LOG_EXIT)\"\nelse\n  echo \"⚠️ Agentic workflow logs were unavailable or invalid (exit code $LOG_EXIT)\"\n  echo '{\"runs\":[],\"summary\":{}}' > /tmp/gh-aw/token-audit/all-runs.json\nfi\nrm -f \"$RAW_LOGS\"\n\nBEFORE_COUNT=$(jq '(.runs // []) | length' /tmp/gh-aw/token-audit/all-runs.json)\nif [[ \"$TARGET_REPO\" != \"githubnext/central-agentic-ops\" ]]; then\n  jq '\n      (.runs // [])\n      | map(select(\n          (.workflow_path // \"\") != \".github/workflows/optimization-ai-credit-optimizer.lock.yml\"\n          and (.workflow_path // \"\") != \".github/workflows/optimization-ai-credit-auditor.lock.yml\"\n        )) as $runs\n      | {\n          summary: {\n            total_runs: ($runs | length),\n            total_tokens: ($runs | map(.token_usage // 0) | add // 0),\n            total_aic: ($runs | map(.aic // 0) | add // 0)\n          },\n          runs: $runs\n        }\n  ' /tmp/gh-aw/token-audit/all-runs.json > /tmp/gh-aw/token-audit/all-runs.filtered.json\n  mv /tmp/gh-aw/token-audit/all-runs.filtered.json /tmp/gh-aw/token-audit/all-runs.json\n  AFTER_COUNT=$(jq '(.runs // []) | length' /tmp/gh-aw/token-audit/all-runs.json)\n  echo \"🚫 Excluded AI credit monitoring family from candidate pool: $((BEFORE_COUNT - AFTER_COUNT)) run(s) removed\"\nelse\n  echo \"ℹ️ Running in source repo — AI credit monitoring family remains in candidate pool\"\n  AFTER_COUNT=$BEFORE_COUNT\nfi\n"
+        run: "set -euo pipefail\nmkdir -p /tmp/gh-aw/token-audit\n\necho \"📥 Downloading agentic workflow logs (last 7 days)...\"\n\nRAW_LOGS=/tmp/gh-aw/token-audit/all-runs.raw.json\nLOG_EXIT=0\ngh aw logs \\\n  --repo \"$TARGET_REPO\" \\\n  --output /tmp/gh-aw/token-audit/logs \\\n  --start-date -7d \\\n  --json \\\n  -c 50 \\\n  --timeout 15 \\\n  --max-github-api-rate-limit -2000 \\\n  --max-storage 1024 \\\n  > \"$RAW_LOGS\" || LOG_EXIT=$?\n\nif jq -e . \"$RAW_LOGS\" >/dev/null 2>&1; then\n  jq '\n    ((.runs // []) | unique_by(.run_id)) as $runs |\n    {\n      summary: {\n        total_runs: ($runs | length),\n        total_tokens: ($runs | map(.token_usage // 0) | add // 0),\n        total_aic: ($runs | map(.aic // 0) | add // 0)\n      },\n      runs: $runs\n    }\n  ' \"$RAW_LOGS\" > /tmp/gh-aw/token-audit/all-runs.json\n  TOTAL=$(jq '.runs | length' /tmp/gh-aw/token-audit/all-runs.json)\n  echo \"✅ Downloaded $TOTAL agentic workflow runs (last 7 days, exit code $LOG_EXIT)\"\nelse\n  echo \"⚠️ Agentic workflow logs were unavailable or invalid (exit code $LOG_EXIT)\"\n  echo '{\"runs\":[],\"summary\":{}}' > /tmp/gh-aw/token-audit/all-runs.json\nfi\nrm -f \"$RAW_LOGS\"\n\nBEFORE_COUNT=$(jq '(.runs // []) | length' /tmp/gh-aw/token-audit/all-runs.json)\nif [[ \"$TARGET_REPO\" != \"githubnext/gh-aw-cao\" ]]; then\n  jq '\n      (.runs // [])\n      | map(select(\n          (.workflow_path // \"\") != \".github/workflows/optimization-ai-credit-optimizer.lock.yml\"\n          and (.workflow_path // \"\") != \".github/workflows/optimization-ai-credit-auditor.lock.yml\"\n        )) as $runs\n      | {\n          summary: {\n            total_runs: ($runs | length),\n            total_tokens: ($runs | map(.token_usage // 0) | add // 0),\n            total_aic: ($runs | map(.aic // 0) | add // 0)\n          },\n          runs: $runs\n        }\n  ' /tmp/gh-aw/token-audit/all-runs.json > /tmp/gh-aw/token-audit/all-runs.filtered.json\n  mv /tmp/gh-aw/token-audit/all-runs.filtered.json /tmp/gh-aw/token-audit/all-runs.json\n  AFTER_COUNT=$(jq '(.runs // []) | length' /tmp/gh-aw/token-audit/all-runs.json)\n  echo \"🚫 Excluded AI credit monitoring family from candidate pool: $((BEFORE_COUNT - AFTER_COUNT)) run(s) removed\"\nelse\n  echo \"ℹ️ Running in source repo — AI credit monitoring family remains in candidate pool\"\n  AFTER_COUNT=$BEFORE_COUNT\nfi\n"
       - name: Aggregate top workflows by AI credit usage
         run: "set -euo pipefail\nmkdir -p /tmp/gh-aw/token-audit\n\njq '{\n  generated_at: (now | todateiso8601),\n  window_days: 7,\n  top_workflows: (\n    [.runs[]\n      | select(.status == \"completed\")\n        | select((.aic // 0) > 0)\n      | {\n          workflow_name: .workflow_name,\n        workflow_path: (.workflow_path // .workflow_name),\n          ai_credits: (.aic // 0),\n          tokens: (.token_usage // 0),\n          turns: (.turns // 0),\n          action_minutes: (.action_minutes // 0)\n        }\n    ]\n      | group_by(.workflow_path)\n    | map({\n        workflow_name: .[0].workflow_name,\n        workflow_path: .[0].workflow_path,\n        run_count: length,\n        total_ai_credits: (map(.ai_credits) | add),\n        avg_ai_credits: ((map(.ai_credits) | add) / length),\n        total_tokens: (map(.tokens) | add),\n        avg_tokens: ((map(.tokens) | add) / length),\n        total_turns: (map(.turns) | add),\n        total_action_minutes: (map(.action_minutes) | add)\n      })\n    | sort_by(.total_ai_credits)\n    | reverse\n    | .[:10]\n  )\n}' /tmp/gh-aw/token-audit/all-runs.json > /tmp/gh-aw/token-audit/top-workflows.json\n\necho \"✅ Generated top workflow summary at /tmp/gh-aw/token-audit/top-workflows.json\"\njq '.top_workflows' /tmp/gh-aw/token-audit/top-workflows.json\n"
       - name: Load optimization history
@@ -1416,8 +1416,8 @@ jobs:
           GH_AW_AGENT_OUTPUT: ${{ steps.setup-agent-output-env.outputs.GH_AW_AGENT_OUTPUT }}
           GH_AW_NOOP_MAX: "1"
           GH_AW_WORKFLOW_NAME: "Optimization / AI Credit Optimizer"
-          GH_AW_WORKFLOW_SOURCE: "githubnext/central-agentic-ops/.github/workflows/optimization-ai-credit-optimizer.md@main"
-          GH_AW_WORKFLOW_SOURCE_URL: "${{ github.server_url }}/githubnext/central-agentic-ops/blob/main/.github/workflows/optimization-ai-credit-optimizer.md"
+          GH_AW_WORKFLOW_SOURCE: "githubnext/gh-aw-cao/.github/workflows/optimization-ai-credit-optimizer.md@main"
+          GH_AW_WORKFLOW_SOURCE_URL: "${{ github.server_url }}/githubnext/gh-aw-cao/blob/main/.github/workflows/optimization-ai-credit-optimizer.md"
           GH_AW_TRACKER_ID: "optimization-ai-credit-optimizer"
           GH_AW_RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
           GH_AW_AGENT_CONCLUSION: ${{ needs.agent.result }}
@@ -1441,8 +1441,8 @@ jobs:
         env:
           GH_AW_AGENT_OUTPUT: ${{ steps.setup-agent-output-env.outputs.GH_AW_AGENT_OUTPUT }}
           GH_AW_WORKFLOW_NAME: "Optimization / AI Credit Optimizer"
-          GH_AW_WORKFLOW_SOURCE: "githubnext/central-agentic-ops/.github/workflows/optimization-ai-credit-optimizer.md@main"
-          GH_AW_WORKFLOW_SOURCE_URL: "${{ github.server_url }}/githubnext/central-agentic-ops/blob/main/.github/workflows/optimization-ai-credit-optimizer.md"
+          GH_AW_WORKFLOW_SOURCE: "githubnext/gh-aw-cao/.github/workflows/optimization-ai-credit-optimizer.md@main"
+          GH_AW_WORKFLOW_SOURCE_URL: "${{ github.server_url }}/githubnext/gh-aw-cao/blob/main/.github/workflows/optimization-ai-credit-optimizer.md"
           GH_AW_TRACKER_ID: "optimization-ai-credit-optimizer"
           GH_AW_RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
           GH_AW_DETECTION_CONCLUSION: ${{ needs.detection.outputs.detection_conclusion }}
@@ -1463,8 +1463,8 @@ jobs:
           GH_AW_AGENT_OUTPUT: ${{ steps.setup-agent-output-env.outputs.GH_AW_AGENT_OUTPUT }}
           GH_AW_MISSING_TOOL_CREATE_ISSUE: "true"
           GH_AW_WORKFLOW_NAME: "Optimization / AI Credit Optimizer"
-          GH_AW_WORKFLOW_SOURCE: "githubnext/central-agentic-ops/.github/workflows/optimization-ai-credit-optimizer.md@main"
-          GH_AW_WORKFLOW_SOURCE_URL: "${{ github.server_url }}/githubnext/central-agentic-ops/blob/main/.github/workflows/optimization-ai-credit-optimizer.md"
+          GH_AW_WORKFLOW_SOURCE: "githubnext/gh-aw-cao/.github/workflows/optimization-ai-credit-optimizer.md@main"
+          GH_AW_WORKFLOW_SOURCE_URL: "${{ github.server_url }}/githubnext/gh-aw-cao/blob/main/.github/workflows/optimization-ai-credit-optimizer.md"
           GH_AW_TRACKER_ID: "optimization-ai-credit-optimizer"
         with:
           github-token: ${{ steps.safe-outputs-app-token.outputs.token || secrets.GH_AW_GITHUB_TOKEN || secrets.GITHUB_TOKEN }}
@@ -1482,8 +1482,8 @@ jobs:
           GH_AW_AGENT_OUTPUT: ${{ steps.setup-agent-output-env.outputs.GH_AW_AGENT_OUTPUT }}
           GH_AW_REPORT_INCOMPLETE_CREATE_ISSUE: "true"
           GH_AW_WORKFLOW_NAME: "Optimization / AI Credit Optimizer"
-          GH_AW_WORKFLOW_SOURCE: "githubnext/central-agentic-ops/.github/workflows/optimization-ai-credit-optimizer.md@main"
-          GH_AW_WORKFLOW_SOURCE_URL: "${{ github.server_url }}/githubnext/central-agentic-ops/blob/main/.github/workflows/optimization-ai-credit-optimizer.md"
+          GH_AW_WORKFLOW_SOURCE: "githubnext/gh-aw-cao/.github/workflows/optimization-ai-credit-optimizer.md@main"
+          GH_AW_WORKFLOW_SOURCE_URL: "${{ github.server_url }}/githubnext/gh-aw-cao/blob/main/.github/workflows/optimization-ai-credit-optimizer.md"
           GH_AW_TRACKER_ID: "optimization-ai-credit-optimizer"
         with:
           github-token: ${{ steps.safe-outputs-app-token.outputs.token || secrets.GH_AW_GITHUB_TOKEN || secrets.GITHUB_TOKEN }}
@@ -1501,8 +1501,8 @@ jobs:
         env:
           GH_AW_AGENT_OUTPUT: ${{ steps.setup-agent-output-env.outputs.GH_AW_AGENT_OUTPUT }}
           GH_AW_WORKFLOW_NAME: "Optimization / AI Credit Optimizer"
-          GH_AW_WORKFLOW_SOURCE: "githubnext/central-agentic-ops/.github/workflows/optimization-ai-credit-optimizer.md@main"
-          GH_AW_WORKFLOW_SOURCE_URL: "${{ github.server_url }}/githubnext/central-agentic-ops/blob/main/.github/workflows/optimization-ai-credit-optimizer.md"
+          GH_AW_WORKFLOW_SOURCE: "githubnext/gh-aw-cao/.github/workflows/optimization-ai-credit-optimizer.md@main"
+          GH_AW_WORKFLOW_SOURCE_URL: "${{ github.server_url }}/githubnext/gh-aw-cao/blob/main/.github/workflows/optimization-ai-credit-optimizer.md"
           GH_AW_TRACKER_ID: "optimization-ai-credit-optimizer"
           GH_AW_RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
           GH_AW_AGENT_CONCLUSION: ${{ needs.agent.result }}
@@ -1557,8 +1557,8 @@ jobs:
         env:
           GH_AW_AGENT_OUTPUT: ${{ steps.setup-agent-output-env.outputs.GH_AW_AGENT_OUTPUT }}
           GH_AW_WORKFLOW_NAME: "Optimization / AI Credit Optimizer"
-          GH_AW_WORKFLOW_SOURCE: "githubnext/central-agentic-ops/.github/workflows/optimization-ai-credit-optimizer.md@main"
-          GH_AW_WORKFLOW_SOURCE_URL: "${{ github.server_url }}/githubnext/central-agentic-ops/blob/main/.github/workflows/optimization-ai-credit-optimizer.md"
+          GH_AW_WORKFLOW_SOURCE: "githubnext/gh-aw-cao/.github/workflows/optimization-ai-credit-optimizer.md@main"
+          GH_AW_WORKFLOW_SOURCE_URL: "${{ github.server_url }}/githubnext/gh-aw-cao/blob/main/.github/workflows/optimization-ai-credit-optimizer.md"
           GH_AW_TRACKER_ID: "optimization-ai-credit-optimizer"
           GH_AW_RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
           GH_AW_REPORT_FAILED_JOBS: "true"
@@ -2130,8 +2130,8 @@ jobs:
       GH_AW_WORKFLOW_EMOJI: ":bar_chart:"
       GH_AW_WORKFLOW_ID: "optimization-ai-credit-optimizer"
       GH_AW_WORKFLOW_NAME: "Optimization / AI Credit Optimizer"
-      GH_AW_WORKFLOW_SOURCE: "githubnext/central-agentic-ops/.github/workflows/optimization-ai-credit-optimizer.md@main"
-      GH_AW_WORKFLOW_SOURCE_URL: "${{ github.server_url }}/githubnext/central-agentic-ops/blob/main/.github/workflows/optimization-ai-credit-optimizer.md"
+      GH_AW_WORKFLOW_SOURCE: "githubnext/gh-aw-cao/.github/workflows/optimization-ai-credit-optimizer.md@main"
+      GH_AW_WORKFLOW_SOURCE_URL: "${{ github.server_url }}/githubnext/gh-aw-cao/blob/main/.github/workflows/optimization-ai-credit-optimizer.md"
     outputs:
       app_token_minting_failed: ${{ steps.safe-outputs-app-token.outcome == 'failure' }}
       code_push_failure_count: ${{ steps.process_safe_outputs.outputs.code_push_failure_count }}

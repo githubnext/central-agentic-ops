@@ -4,7 +4,7 @@
     "id": "software-development-practices-dashboard",
     "title": "Software Development Practices Advisor",
     "description": "Track framework review runs, evidence-backed guidance, and explicit human acceptance for frozen repository snapshots.",
-    "repository": "githubnext/central-agentic-ops",
+    "repository": "githubnext/gh-aw-cao",
     "pages": [
       {
         "id": "software-development-practices-dashboard",

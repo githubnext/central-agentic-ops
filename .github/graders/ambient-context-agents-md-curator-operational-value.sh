@@ -17,7 +17,7 @@ definition() {
     cat <<'JSON'
 {
   "schemaVersion": 4, "grader": "operational-value",
-  "repository": "githubnext/central-agentic-ops", "workflowName": "Ambient Context / AGENTS.md Curator",
+  "repository": "githubnext/gh-aw-cao", "workflowName": "Ambient Context / AGENTS.md Curator",
   "sourcePath": ".github/workflows/ambient-context-agents-md-curator.md",
   "adoption": {"commit": "ae39923baa7cb8bfa57dfcc158534adc24c2b793", "adoptedAt": "2026-08-26T23:22:08Z"},
   "operationalValue": "Make the dispatched target's agents at least ten percent cheaper to run for the same delivered outcome quality by leaning out its always-loaded AGENTS.md.",
@@ -25,7 +25,7 @@ definition() {
     "opportunity": "The dispatched target repository's root AGENTS.md at the time of the run, provided the run filed an ambient-context proposal issue for it.",
     "assignment": "Bind targetRepo from workflow_dispatch inputs and freeze the proposal issue this run created in the safe-output repository; key agents-md:<targetRepo>:<runId>.",
     "accepted": "Within thirty days of the proposal, a merged pull request changes the target's root AGENTS.md, and the target's completed agentic-workflow runs after that merge show a median successful-run token usage at least ten percent below the pre-merge median with no higher completed-run failure rate. Ten percent matches the minimum gain the curator is required to estimate before it is allowed to file a proposal at all.",
-    "repositories": ["githubnext/central-agentic-ops"],
+    "repositories": ["githubnext/gh-aw-cao"],
     "collection": "Read the frozen proposal issue from the safe-output repository, merged pull requests touching AGENTS.md in the target, and retained gh aw run logs for the target from thirty days before the merge through the capped evidence cutoff.",
     "maturation": "Thirty days after the curator run starts, matching the frozen thirty-day expiry of the proposal issue.",
     "zeroRule": "Complete comparable evidence with no merged AGENTS.md change, a token reduction below ten percent, or a higher failure rate scores 0.",

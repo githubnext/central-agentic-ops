@@ -83,12 +83,12 @@ Do not leave angle-bracket placeholders in authored files or pass placeholders t
 7. Install the root CAO package in a separate control repository. `gh aw add` reads root `aw.yml`, installs its orchestrators, workers, shared controls, skills, resources, and the deterministic core activity index, and compiles the workflow lock files without rewriting their authentication profile:
 
     ```bash
-    cao_ref=$(gh api repos/githubnext/central-agentic-ops/commits/main --jq '.sha')
+    cao_ref=$(gh api repos/githubnext/gh-aw-cao/commits/main --jq '.sha')
     [[ "$cao_ref" =~ ^[0-9a-fA-F]{40,64}$ ]]
-    gh aw add "githubnext/central-agentic-ops@${cao_ref}"
+    gh aw add "githubnext/gh-aw-cao@${cao_ref}"
     mkdir -p .github/cao/src
     for cao_file in control.mjs policy.mjs; do
-      gh api --method GET "repos/githubnext/central-agentic-ops/contents/.github/cao/src/${cao_file}" \
+      gh api --method GET "repos/githubnext/gh-aw-cao/contents/.github/cao/src/${cao_file}" \
         -f ref="$cao_ref" --jq '.content' | base64 -d > ".github/cao/src/${cao_file}"
     done
     ```

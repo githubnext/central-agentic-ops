@@ -126,8 +126,8 @@ This path supports issue outputs only. It does not transfer issues, publish pull
 The root Central Agentic Ops package installs the deterministic activity index and dashboard by default. To install the dashboard without the operational workflows, install both focused deterministic packages from the same reviewed release tag or full commit SHA:
 
 ```bash
-gh aw add githubnext/central-agentic-ops/activity@<catalog-release>
-gh aw add githubnext/central-agentic-ops/dashboard@<catalog-release>
+gh aw add githubnext/gh-aw-cao/activity@<catalog-release>
+gh aw add githubnext/gh-aw-cao/dashboard@<catalog-release>
 ```
 
 Both installation paths add a reusable dashboard builder, a manual standalone Pages publisher, and their deterministic report modules. There is no additional dashboard enable variable, and installation does not deploy or enable Pages.

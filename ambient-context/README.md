@@ -44,13 +44,13 @@ The orchestrator workflow can dispatch no more than 20 worker workflows in one r
 The package is part of the core package, so installing Central Agentic Ops installs it:
 
 ```bash
-gh aw add githubnext/central-agentic-ops@<catalog-release>
+gh aw add githubnext/gh-aw-cao@<catalog-release>
 ```
 
 To install only this package into an existing private control repository:
 
 ```bash
-gh aw add githubnext/central-agentic-ops/ambient-context@<catalog-release>
+gh aw add githubnext/gh-aw-cao/ambient-context@<catalog-release>
 ```
 
 The package is runnable after its workers are declared in `.github/workflows/cao.json`. `review` is the default mode, so proposals are written to the control repository without changing the target.
@@ -104,7 +104,7 @@ The orchestrator is scheduled weekly. Ambient context should not be rewritten mo
 
 ## Operational Value
 
-The `AGENTS.md` curator registers a frozen schema-version 4 operational-value evaluator at [`.github/graders/ambient-context-agents-md-curator-operational-value.sh`](https://github.com/githubnext/central-agentic-ops/blob/main/.github/graders/ambient-context-agents-md-curator-operational-value.sh).
+The `AGENTS.md` curator registers a frozen schema-version 4 operational-value evaluator at [`.github/graders/ambient-context-agents-md-curator-operational-value.sh`](https://github.com/githubnext/gh-aw-cao/blob/main/.github/graders/ambient-context-agents-md-curator-operational-value.sh).
 
 The package exists to make agents cheaper to run for the same delivered outcome, so the evaluator measures exactly that rather than counting issues. A run attains value (`1`) only when its proposal was applied and the target got cheaper without getting worse:
 

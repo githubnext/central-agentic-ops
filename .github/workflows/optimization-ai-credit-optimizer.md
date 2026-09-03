@@ -151,7 +151,7 @@ steps:
       rm -f "$RAW_LOGS"
 
       BEFORE_COUNT=$(jq '(.runs // []) | length' /tmp/gh-aw/token-audit/all-runs.json)
-      if [[ "$TARGET_REPO" != "githubnext/central-agentic-ops" ]]; then
+      if [[ "$TARGET_REPO" != "githubnext/gh-aw-cao" ]]; then
         jq '
             (.runs // [])
             | map(select(
@@ -230,7 +230,7 @@ steps:
         echo "ℹ️ No previous optimization history found."
       fi
 
-source: githubnext/central-agentic-ops/.github/workflows/optimization-ai-credit-optimizer.md@main
+source: githubnext/gh-aw-cao/.github/workflows/optimization-ai-credit-optimizer.md@main
 ---
 
 {{#runtime-import? .github/cao/optimization.md}}
@@ -263,7 +263,7 @@ Treat missing numeric fields (`aic`, `token_usage`, `turns`, `action_minutes`) a
 
 - Start from `top-workflows.json`.
 - Exclude workflows optimized in the last 14 days (use `optimization-log.json`).
-- Exclude the AI credit monitoring family — the `optimization-ai-credit-optimizer` and `optimization-ai-credit-auditor` workflows — **unless this workflow is running in `githubnext/central-agentic-ops`** (the source repository that ships them). In downstream repositories these workflows are not valid optimization targets; any optimization suggestions for them belong in `githubnext/central-agentic-ops`. In downstream repos they are pre-filtered from `all-runs.json` and `top-workflows.json`, but never select them even if a stale snapshot still lists them.
+- Exclude the AI credit monitoring family — the `optimization-ai-credit-optimizer` and `optimization-ai-credit-auditor` workflows — **unless this workflow is running in `githubnext/gh-aw-cao`** (the source repository that ships them). In downstream repositories these workflows are not valid optimization targets; any optimization suggestions for them belong in `githubnext/gh-aw-cao`. In downstream repos they are pre-filtered from `all-runs.json` and `top-workflows.json`, but never select them even if a stale snapshot still lists them.
 - Choose the highest AI-credit-spend workflow that remains.
 - If no snapshot/history exists, derive candidates directly from `all-runs.json`.
 - When `target_repo` is present, read and write only the target-specific snapshot and optimization log files using the `<owner>__<repo>__` prefix. Do not mix history between target repositories.
