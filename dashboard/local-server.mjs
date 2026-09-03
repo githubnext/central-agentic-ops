@@ -37,7 +37,10 @@ const defaultCatalogRoot = basename(resolve(scriptDirectory, "..", "..")) === ".
 const socketEndpoint = "/__dashboard_socket";
 const copilotEndpoint = "/__dashboard_copilot";
 const dataArtifactName = "central-agentic-ops-dashboard-data";
-const dashboardWorkflowPath = ".github/workflows/dashboard.yml";
+const trustedDashboardWorkflowPaths = new Set([
+  ".github/workflows/dashboard-build.yml",
+  ".github/workflows/dashboard.yml",
+]);
 const contentTypes = new Map([
   [".avif", "image/avif"],
   [".css", "text/css; charset=utf-8"],
@@ -162,7 +165,7 @@ async function downloadDashboardData(destination, repository, ghExecutable) {
   }
   if (provenance[0] !== "success"
       || provenance[1] !== defaultBranch
-      || provenance[2] !== dashboardWorkflowPath) {
+      || !trustedDashboardWorkflowPaths.has(provenance[2])) {
     throw new Error(`The latest ${dataArtifactName} artifact is not from a successful trusted dashboard workflow run.`);
   }
 

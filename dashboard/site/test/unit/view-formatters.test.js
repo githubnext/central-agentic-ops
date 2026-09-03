@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { formatAggregateValue, formatNumber, formatPercent, renderTemplate, resolveThresholdStatus, stringOrFallback, toNumber } from '../../src/view-formatters.js';
+import { formatAggregateValue, formatNumber, formatPercent, formatRelativeTime, renderTemplate, resolveThresholdStatus, stringOrFallback, toNumber } from '../../src/view-formatters.js';
 
 /**
  * @param {unknown} value
@@ -59,6 +59,12 @@ describe('view formatter helpers', () => {
     expect(formatPercent(null)).toBe('Not observed');
     expect(formatPercent('')).toBe('Not observed');
     expect(formatPercent('not a number')).toBe('Not observed');
+  });
+
+  it('formats timestamps relative to the dashboard evaluation time', () => {
+    expect(formatRelativeTime('2026-09-03T11:48:00Z', '2026-09-03T12:38:00Z')).toBe('50 minutes ago');
+    expect(formatRelativeTime('2026-09-03T13:08:00Z', '2026-09-03T12:38:00Z')).toBe('in 30 minutes');
+    expect(formatRelativeTime('invalid', '2026-09-03T12:38:00Z')).toBe('');
   });
 
   it('renders JSON-configured copy templates with plain, suffix, and word substitutions', () => {

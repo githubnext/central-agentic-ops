@@ -256,6 +256,13 @@ main.dashboard-prototype { width: 100%; flex: 1; padding: 0 24px 40px; }
 .metric-link a, .custom-table a { display: inline-flex; align-items: center; gap: 4px; border-radius: 4px; transition: background-color 120ms ease, color 120ms ease; }
 .metric-link a:hover, .custom-table a:hover { background: var(--neutral-muted); }
 .metric-link .octicon, .custom-table a .octicon { width: 12px; height: 12px; }
+.package-dispatches-page .table-status-detail, .dispatches-page .table-status-detail { min-width: 360px; max-width: 560px; padding: 14px 16px; font-size: .875rem; white-space: normal; line-height: 1.5; }
+.package-dispatches-page .table-status-detail[data-status="failure"], .package-dispatches-page .table-status-detail[data-status="startup-failure"], .package-dispatches-page .table-status-detail[data-status="timed-out"],
+.dispatches-page .table-status-detail[data-status="failure"], .dispatches-page .table-status-detail[data-status="startup-failure"], .dispatches-page .table-status-detail[data-status="timed-out"] { border-left: 3px solid var(--danger); background: var(--danger-muted, color-mix(in srgb, var(--danger) 10%, transparent)); color: var(--danger); font-weight: 600; }
+.package-dispatches-page .table-status-detail[data-status="action-required"], .dispatches-page .table-status-detail[data-status="action-required"] { border-left: 3px solid var(--attention); background: var(--attention-muted); color: var(--attention); font-weight: 600; }
+.package-dispatches-page .table-status-detail > a, .dispatches-page .table-status-detail > a { color: inherit; font-weight: inherit; text-decoration: underline; text-underline-offset: 2px; }
+.package-dispatches-page .chart-view-pie:first-of-type .pie-chart-card { border-top: 3px solid var(--danger); }
+.package-dispatches-page .chart-view-pie:first-of-type .pie-chart-total-value { fill: var(--danger); }
 .table-intent-action { width: 1%; text-align: center; }
 .table-intent-button { display: inline-grid; width: 28px; height: 28px; place-items: center; padding: 0; border: 1px solid var(--border); border-radius: 6px; background: var(--canvas-subtle); color: var(--fg); cursor: pointer; }
 .table-intent-button:hover { background: var(--neutral-muted); }
@@ -438,12 +445,12 @@ h3 { margin: 16px 0 8px; font-size: 1rem; font-weight: 600; }
 .overview-method-note strong { color: var(--fg); }
 .overview-package-status { margin-bottom: 24px; }
 .package-status-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); overflow: hidden; border: 1px solid var(--border); border-radius: 6px; background: var(--border); gap: 1px; }
-.package-status-card { min-width: 0; display: grid; grid-template-rows: auto auto 1fr auto; gap: 12px; padding: 16px; border-top: 3px solid var(--muted); background: var(--canvas); color: var(--fg); text-decoration: none; }
-.package-status-card:hover { background: var(--canvas-subtle); text-decoration: none; }
-.package-status-card:focus-visible { z-index: 1; outline: 2px solid var(--focus); outline-offset: -2px; }
+.package-status-card { min-width: 0; display: grid; grid-template-rows: auto auto 1fr auto; gap: 12px; padding: 16px; border-top: 3px solid var(--muted); background: var(--canvas); color: var(--fg); }
 .package-status-card > header { min-width: 0; display: flex; align-items: center; justify-content: space-between; gap: 8px; }
-.package-status-card > header > strong { min-width: 0; display: inline-flex; align-items: center; gap: 6px; font-size: .8125rem; }
-.package-status-card > header > strong > span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.package-status-card > header > strong { min-width: 0; font-size: .8125rem; }
+.package-status-identity { min-width: 0; display: inline-flex; align-items: center; gap: 6px; color: inherit; text-decoration: none; }
+.package-status-identity:hover { text-decoration: underline; }
+.package-status-identity > span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .package-status-state { padding: 2px 6px; border: 1px solid currentColor; border-radius: 999px; color: var(--muted); font-size: .625rem; font-weight: 600; white-space: nowrap; }
 .package-status-card .mode-badge { flex: none; }
 .package-status-card .mode-badge .octicon { width: 8px; height: 8px; margin-right: 3px; }
@@ -466,8 +473,16 @@ h3 { margin: 16px 0 8px; font-size: 1rem; font-weight: 600; }
 .package-status-repository-name > .octicon { width: 12px; height: 12px; flex: 0 0 12px; color: var(--muted); }
 .package-status-repository-name > span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .package-status-repositories-empty { margin: 8px 0 0; color: var(--muted); font-size: .6875rem; }
-.package-status-activity { min-width: 0; display: grid; grid-template-columns: auto auto minmax(0, 1fr); align-items: center; gap: 8px 12px; padding-top: 10px; border-top: 1px solid var(--border); color: var(--muted); font-size: .625rem; }
+.package-status-activity { min-width: 0; display: grid; grid-template-columns: auto auto minmax(0, 1fr); align-items: center; gap: 8px 12px; padding-top: 10px; border-top: 1px solid var(--border); color: var(--muted); font-size: .625rem; text-decoration: none; }
+.package-status-activity:hover strong { text-decoration: underline; }
+.package-status-identity:focus-visible, .package-status-activity:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
 .package-status-activity > span { min-width: 0; display: flex; align-items: center; gap: 5px; }
+.package-status-activity-heading { flex-wrap: wrap; }
+.package-status-activity-state { display: inline-flex; align-items: center; gap: 3px; padding: 1px 5px; border: 1px solid currentColor; border-radius: 999px; font-weight: 600; white-space: nowrap; }
+.package-status-activity-state-failed { color: var(--danger); }
+.package-status-activity-state-attention { color: var(--attention); }
+.package-status-activity-state-success { color: var(--success); }
+.package-status-activity-state-unknown { color: var(--muted); }
 .package-status-activity > span:last-child { justify-self: end; }
 .package-status-activity .octicon { width: 11px; height: 11px; flex: 0 0 11px; }
 .package-status-activity .octicon-paper-airplane { color: var(--accent); }

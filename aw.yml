@@ -30,6 +30,8 @@ resources:
     destination: .github/aw/dashboard/dispatch-workflow.mjs
   - source: activity/actions-log.mjs
     destination: .github/aw/activity/actions-log.mjs
+  - source: activity/failure-evidence.mjs
+    destination: .github/aw/activity/failure-evidence.mjs
   - source: activity/index.mjs
     destination: .github/aw/activity/index.mjs
   - source: dashboard/report/aic-usage.mjs

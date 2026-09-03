@@ -974,7 +974,7 @@ function main(arguments_) {
     throw new ControlError("usage: control.mjs admit | precompute | validate-policy <file|-> | resolve-policy <file|-> | control-settings <file|-> | authority <file|-> <package>");
   } catch (error) {
     if (error instanceof ControlError || error instanceof PolicyError || error?.code === "ENOENT") {
-      process.stderr.write(`${error.message}\n`);
+      process.stderr.write(`[CAO failure] ${error.message}\n`);
       process.exitCode = 1;
       return;
     }
