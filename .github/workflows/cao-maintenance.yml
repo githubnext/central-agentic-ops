@@ -17,7 +17,7 @@ permissions:
 
 jobs:
   clear-cache:
-    if: inputs.command == 'clear-cache'
+    if: ${{ inputs.command == 'clear-cache' }}
     runs-on: ubuntu-latest
     steps:
       - name: Clear CAO cache
