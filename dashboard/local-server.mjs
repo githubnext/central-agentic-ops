@@ -268,10 +268,10 @@ export async function startDashboardServer({
     throw error;
   }
 
-  let expectedAuthority = "";
+  let expectedAuthority = null;
   const server = createServer(async (request, response) => {
     try {
-      if (!request.headers.host || request.headers.host !== expectedAuthority
+      if (!expectedAuthority || !request.headers.host || request.headers.host !== expectedAuthority
           || /^[A-Za-z][A-Za-z0-9+.-]*:\/\//.test(request.url || "")) {
         response.writeHead(400).end("Bad request\n");
         return;
