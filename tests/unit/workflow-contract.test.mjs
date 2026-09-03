@@ -1740,6 +1740,18 @@ test("multi-device docs tester runs daily and covers browser and appearance comp
   assert.match(source, /multi-device-docs\/screenshots/);
 });
 
+test("data acquisition audit refreshes its specification daily", () => {
+  const source = workflow("data-acquisition-audit.md");
+  const compiled = workflow("data-acquisition-audit.lock.yml");
+
+  assert.match(source, /schedule: daily/);
+  assert.match(source, /draft: true/);
+  assert.match(source, /allowed-files:\n\s+- "specs\/data-acquisition-audit\.md"/);
+  assert.match(source, /Inspect JavaScript and embedded JavaScript/);
+  assert.match(compiled, /cron: "\d+ \d+ \* \* \*"/);
+  assert.match(compiled, /specs\/data-acquisition-audit\.md/);
+});
+
 test("SelfCare runs every 20 minutes", () => {
   const source = workflow("self-care.md");
   const compiled = workflow("self-care.lock.yml");
@@ -2025,6 +2037,7 @@ test("clean-room compilation emits the expected GitHub Actions settings", { time
     const expectedLockNames = [
       ...packageLockNames,
       "advisory-package-maintainer.lock.yml",
+      "data-acquisition-audit.lock.yml",
       "dashboard-authoring-corpus.lock.yml",
       "multi-device-docs-tester.lock.yml",
       "eu-cra-compliance-package-maintainer.lock.yml",
