@@ -322,7 +322,7 @@ export const SOURCE_FIELDS = {
   'cost-signals': ['priority', 'count', 'tone', 'icon', 'kind', 'title', 'detail', 'evidence', 'action', 'navigation-page'],
   'runtime-anomaly-readiness': ['icon', 'title', 'detail'],
   'runtime-signals': ['priority', 'count', 'tone', 'icon', 'kind', 'title', 'detail', 'evidence', 'action', 'navigation-href'],
-  dispatches: ['started-at', 'dispatch-type', 'package', 'package-name', 'workflow-name', 'run-title', 'runtime-repository', 'status', 'run-link'],
+  dispatches: ['started-at', 'dispatch-type', 'package', 'package-name', 'workflow-name', 'run-title', 'runtime-repository', 'status', 'status-detail', 'status-detail-at', 'run-link'],
   'dispatch-activation-summary': ['label', 'value'],
   'repository-summary': ['label', 'value', 'items'],
   'repository-activity': ['repository', 'workflows', 'reports', 'evaluated-workflows', 'runs', 'failure-summary', 'aic', 'status', 'repository-link'],

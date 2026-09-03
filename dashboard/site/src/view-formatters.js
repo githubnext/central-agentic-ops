@@ -93,6 +93,32 @@ export function formatPercent(value) {
 }
 
 /**
+ * Formats a timestamp relative to the dashboard's deterministic evaluation time.
+ * @param {unknown} value
+ * @param {unknown} relativeTo
+ * @returns {string}
+ */
+export function formatRelativeTime(value, relativeTo) {
+  const valueMs = Date.parse(String(value ?? ''));
+  const relativeToMs = Date.parse(String(relativeTo ?? ''));
+  if (!Number.isFinite(valueMs) || !Number.isFinite(relativeToMs)) return '';
+
+  const differenceSeconds = (valueMs - relativeToMs) / 1000;
+  const absoluteSeconds = Math.abs(differenceSeconds);
+  const [divisor, unit] = absoluteSeconds < 60
+    ? [1, 'second']
+    : absoluteSeconds < 3_600
+      ? [60, 'minute']
+      : absoluteSeconds < 86_400
+        ? [3_600, 'hour']
+        : absoluteSeconds < 604_800
+          ? [86_400, 'day']
+          : [604_800, 'week'];
+  const amount = Math.round(differenceSeconds / divisor);
+  return new Intl.RelativeTimeFormat('en', { numeric: 'always' }).format(amount, /** @type {Intl.RelativeTimeFormatUnit} */ (unit));
+}
+
+/**
  * @param {number} value
  * @returns {number}
  */

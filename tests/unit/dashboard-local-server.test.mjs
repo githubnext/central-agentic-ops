@@ -139,7 +139,7 @@ test("local dashboard server fails when dashboard data cannot be downloaded", as
   }
 });
 
-test("local dashboard server downloads the latest data artifact with GitHub CLI", async () => {
+test("local dashboard server downloads dashboard-build data with GitHub CLI", async () => {
   const root = await mkdtemp(path.join(tmpdir(), "dashboard-local-server-"));
   const ghExecutable = path.join(root, "gh");
   await writeFile(path.join(root, "index.html"), "<!doctype html><body>preview</body>");
@@ -155,7 +155,7 @@ if [ "$1" = "api" ]; then
     exit
   fi
   if [ "$2" = "repos/acme/control/actions/runs/42" ]; then
-    printf 'success\\tmain\\t.github/workflows/dashboard.yml\\n'
+    printf 'success\\tmain\\t.github/workflows/dashboard-build.yml\\n'
     exit
   fi
   exit 2

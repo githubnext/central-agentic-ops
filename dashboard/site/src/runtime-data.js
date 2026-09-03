@@ -226,6 +226,7 @@ function deriveDispatches(model) {
       const status = conclusion && conclusion !== 'unknown'
         ? conclusion
         : text(run['run-status']) || 'unknown';
+      const statusDetail = dispatchStatusDetail(run, status);
       const repository = text(run.repository) || 'Unknown';
       return [{
         'started-at': run['started-at'],
@@ -236,6 +237,8 @@ function deriveDispatches(model) {
         'run-title': runTitle(run, workflow),
         'runtime-repository': text(run.organization) ? `${text(run.organization)}/${repository}` : repository,
         status,
+        'status-detail': statusDetail,
+        ...(text(run['resource-reset-at']) ? { 'status-detail-at': run['resource-reset-at'] } : {}),
         organization: run.organization,
         repository: run.repository,
         workflow: run.workflow,
@@ -245,6 +248,27 @@ function deriveDispatches(model) {
       }];
     })
     .sort((left, right) => Date.parse(text(right['started-at'])) - Date.parse(text(left['started-at'])));
+}
+
+/**
+ * @param {Row} run
+ * @param {string} status
+ */
+function dispatchStatusDetail(run, status) {
+  const reason = text(run['admission-reason']);
+  if (reason === 'github-api-capacity-insufficient') {
+    return 'GitHub API capacity insufficient';
+  }
+  if (reason === 'github-api-capacity-unavailable') {
+    return 'GitHub API capacity unavailable; check authentication and GitHub API status';
+  }
+  if (reason && reason !== 'authorized') {
+    return `Admission blocked: ${reason.replaceAll('-', ' ')}`;
+  }
+  if (status === 'action-required') return 'Maintainer approval required';
+  if (status === 'skipped') return 'Skipped by a control-plane guard';
+  if (FAILURE_CONCLUSIONS.has(status)) return 'Failure reason unavailable in retained evidence';
+  return '—';
 }
 
 /**

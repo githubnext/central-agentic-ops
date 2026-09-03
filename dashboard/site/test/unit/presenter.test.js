@@ -1301,7 +1301,8 @@ describe('presenter built-in and custom pages', () => {
     expect(packageCards[0]?.querySelector('.package-status-default-mode')).toBeNull();
     expect(packageCards[0]?.querySelector('.package-status-worker-count')).toBeNull();
     expect(packageCards[0]?.querySelector('footer')).toBeNull();
-    expect(packageCards[0]?.getAttribute('href')).toBe('#page-package-insights?package=daily-ops');
+    expect(packageCards[0]?.querySelector('.package-status-identity')?.getAttribute('href')).toBe('#page-package-insights?package=daily-ops');
+    expect(packageCards[0]?.querySelector('.package-status-activity')?.getAttribute('href')).toBe('#page-package-dispatches?package=daily-ops');
     expect(/** @type {HTMLElement | null} */ (rendered.querySelector('.data-state-summary'))?.hidden).toBe(true);
   });
 

@@ -1125,8 +1125,110 @@
             "layout": "full"
           },
           {
+            "id": "package-failure-reason-distribution",
+            "title": "Why these dispatches failed",
+            "description": "Grouped by the strongest failure reason retained for each dispatch. Select a reason in the table below to open its GitHub Actions evidence.",
+            "data": {
+              "source": "dispatches",
+              "route-field": "package",
+              "filters": {
+                "status": [
+                  "failure",
+                  "startup-failure",
+                  "timed-out",
+                  "stale"
+                ]
+              },
+              "order-by": [
+                {
+                  "field": "count-status-detail",
+                  "direction": "desc"
+                }
+              ]
+            },
+            "mark": "chart",
+            "chart": "pie",
+            "table": false,
+            "encoding": {
+              "x": {
+                "field": "status-detail",
+                "type": "nominal",
+                "title": "Failure reason"
+              },
+              "y": {
+                "field": "status-detail",
+                "type": "quantitative",
+                "aggregate": "count",
+                "title": "Failed dispatches"
+              }
+            },
+            "layout": "full"
+          },
+          {
+            "id": "package-failed-dispatch-table",
+            "title": "Failed dispatches",
+            "description": "Failure reasons first. Open a reason for the GitHub Actions run, or copy a debug prompt with retained context.",
+            "data": {
+              "source": "dispatches",
+              "route-field": "package",
+              "filters": {
+                "status": [
+                  "failure",
+                  "startup-failure",
+                  "timed-out",
+                  "stale"
+                ]
+              }
+            },
+            "mark": "table",
+            "controls": "interactive",
+            "empty-message": "No failed workflow dispatch runs were observed for this package in the current run window.",
+            "encoding": {
+              "href": {
+                "field": "run-link",
+                "type": "nominal"
+              },
+              "columns": [
+                {
+                  "field": "status-detail",
+                  "type": "nominal",
+                  "title": "Why"
+                },
+                {
+                  "field": "started-at",
+                  "type": "temporal",
+                  "title": "Started"
+                },
+                {
+                  "field": "workflow-name",
+                  "type": "nominal",
+                  "title": "Workflow"
+                },
+                {
+                  "field": "run-title",
+                  "type": "nominal",
+                  "title": "Run title"
+                },
+                {
+                  "field": "runtime-repository",
+                  "type": "nominal",
+                  "title": "Runtime repository"
+                }
+              ],
+              "actions": [
+                {
+                  "intent": "Debug this failed workflow dispatch. Explain the retained failure reason, verify it against the linked GitHub Actions run, and propose the safest next action.",
+                  "presentation": "copy-prompt",
+                  "icon": "search",
+                  "label": "Copy debug prompt"
+                }
+              ]
+            },
+            "layout": "full"
+          },
+          {
             "id": "package-dispatch-table",
-            "title": "Dispatches",
+            "title": "All dispatches",
             "description": "Workflow dispatch runs attributed to this package, ordered newest first.",
             "data": {
               "source": "dispatches",
@@ -1171,6 +1273,11 @@
                   "type": "nominal",
                   "title": "Status",
                   "display": "status"
+                },
+                {
+                  "field": "status-detail",
+                  "type": "nominal",
+                  "title": "Why"
                 }
               ]
             },
@@ -1901,6 +2008,11 @@
                   "type": "nominal",
                   "title": "Status",
                   "display": "status"
+                },
+                {
+                  "field": "status-detail",
+                  "type": "nominal",
+                  "title": "Why"
                 }
               ]
             },

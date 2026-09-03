@@ -4,7 +4,7 @@
 
 import { h } from '../dom.js';
 import { octicon } from '../octicons.js';
-import { formatAggregateValue, formatNumber } from '../view-formatters.js';
+import { formatAggregateValue, formatNumber, formatRelativeTime } from '../view-formatters.js';
 import { titleCase } from './count-formatters.js';
 import { renderCellDisplay } from './cell-display.js';
 import { listChartSeries, pieChartEntries, renderChartLegend, renderPieLegend, renderChartWidget } from './chart-elements.js';
@@ -116,7 +116,15 @@ function renderTableView(context) {
     { 'data-custom-row-key': `${pageId}-${title}-${rowIndex}` },
     ...columns.map((column, columnIndex) => {
       const outputField = typeof column.as === 'string' ? column.as : column.field;
-      const value = column.aggregate
+      const cellAttributes = {
+        'data-field': outputField,
+        ...(outputField === 'status-detail'
+          ? { className: 'table-status-detail', 'data-status': toText(row.status).toLowerCase() }
+          : {})
+      };
+      const value = outputField === 'status-detail'
+        ? renderStatusDetail(row, view, toText)
+        : column.aggregate
         ? renderCellValue(column, row[outputField], row)
         : column.field === RUN_FIELD
           ? renderWorkflowRunLink(row, toText(row[outputField]))
@@ -129,7 +137,7 @@ function renderTableView(context) {
         : content;
       if (columnIndex === 0 && hrefField) {
         if (column.field === RUN_FIELD && hrefField === RUN_LINK_FIELD) {
-          return h('td', null, constrainOutputEvidence(value));
+          return h('td', cellAttributes, constrainOutputEvidence(value));
         }
         const outputEvidenceText = toText(row[outputField]);
         const linkedValue = renderLinkedValue(
@@ -139,9 +147,9 @@ function renderTableView(context) {
         if (column.display === 'outcome-link' && linkedValue instanceof HTMLElement) {
           linkedValue.title = outputEvidenceText;
         }
-        return h('td', null, constrainOutputEvidence(linkedValue));
+        return h('td', cellAttributes, constrainOutputEvidence(linkedValue));
       }
-      return h('td', null, constrainOutputEvidence(value));
+      return h('td', cellAttributes, constrainOutputEvidence(value));
     }),
     ...actions.flatMap((action) => actionMatches(action, row)
       ? [h('td', { className: 'table-intent-action' }, renderIntentAction(action, row))]
@@ -178,6 +186,21 @@ function renderTableView(context) {
       sortable: interactive
     })
   ], headingTag);
+}
+
+/**
+ * @param {Record<string, unknown>} row
+ * @param {Record<string, any>} view
+ * @param {(value: unknown) => string} toText
+ */
+function renderStatusDetail(row, view, toText) {
+  const detail = toText(row['status-detail']);
+  const resetAt = row['status-detail-at'];
+  const evaluatedAt = isPlainObject(view.data?.time) ? view.data.time.end : null;
+  const relativeTime = formatRelativeTime(resetAt, evaluatedAt);
+  if (!relativeTime) return detail;
+  const future = Date.parse(String(resetAt)) > Date.parse(String(evaluatedAt));
+  return `${detail}; ${future ? 'retry' : 'reset'} ${relativeTime}`;
 }
 
 /** @param {DataViewContext} context */

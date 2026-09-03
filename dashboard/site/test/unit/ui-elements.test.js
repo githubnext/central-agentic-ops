@@ -122,6 +122,10 @@ describe('UI elements', () => {
               title: 'Daily Ops',
               icon: 'workflow',
               'dispatch-count': 3,
+              'dispatch-success-count': 0,
+              'dispatch-failure-count': 2,
+              'dispatch-approval-count': 0,
+              'dispatch-pending-count': 1,
               'dispatches-with-safe-output': 0,
               'activity-window': 'Complete 24-hour window',
               inventory: 'Ready',
@@ -133,6 +137,10 @@ describe('UI elements', () => {
               title: 'Weekly Ops',
               icon: 'workflow',
               'dispatch-count': 2,
+              'dispatch-success-count': 1,
+              'dispatch-failure-count': 0,
+              'dispatch-approval-count': 1,
+              'dispatch-pending-count': 0,
               'dispatches-with-safe-output': 1,
               'activity-window': 'Complete 24-hour window',
               inventory: 'Ready',
@@ -149,10 +157,17 @@ describe('UI elements', () => {
 
     const cards = [...(rendered?.querySelectorAll('.package-status-card') ?? [])];
     expect(cards).toHaveLength(2);
+    expect(cards[0]?.querySelector('.package-status-identity')?.getAttribute('href')).toBe('#page-package-insights?package=daily-ops');
+    expect(cards[0]?.querySelector('.package-status-activity')?.getAttribute('href')).toBe('#page-package-dispatches?package=daily-ops');
     expect(cards[0]?.querySelector('.package-status-activity')?.classList.contains('package-status-activity-warning')).toBe(true);
+    expect(cards[0]?.querySelector('.package-status-activity-state')?.textContent).toContain('2 failed');
+    expect(cards[0]?.querySelector('.package-status-activity-state')?.classList.contains('package-status-activity-state-failed')).toBe(true);
     expect(cards[0]?.querySelector('.package-status-activity .octicon-alert')).not.toBeNull();
+    expect(cards[0]?.querySelector('.package-status-activity')?.getAttribute('aria-label')).toContain('2 failed, 1 in progress');
     expect(cards[0]?.querySelector('.package-status-activity')?.getAttribute('aria-label')).toContain('warning: dispatches produced no output');
     expect(cards[1]?.querySelector('.package-status-activity')?.classList.contains('package-status-activity-warning')).toBe(false);
+    expect(cards[1]?.querySelector('.package-status-activity-state')?.textContent).toContain('1 awaiting approval');
+    expect(cards[1]?.querySelector('.package-status-activity-state')?.classList.contains('package-status-activity-state-attention')).toBe(true);
     expect(cards[1]?.querySelector('.package-status-activity .octicon-shield-check')).not.toBeNull();
     expect(cards[1]?.querySelector('.package-status-activity')?.getAttribute('aria-label')).not.toContain('warning');
   });
