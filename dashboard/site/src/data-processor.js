@@ -4,7 +4,7 @@ import { summarizeTableColumns } from './table-summary-data.js';
 /** @type {Worker | null} */
 let worker = null;
 let nextRequestId = 0;
-/** @type {Map<number, { resolve: (value: any) => void, reject: (reason: Error) => void }>} */
+/** @type {Map<number, { resolve: (value: unknown) => void, reject: (reason: Error) => void }>} */
 const pending = new Map();
 
 /**
@@ -43,7 +43,10 @@ function processRequest(request, fallback) {
   if (!processor) return fallback();
   const id = ++nextRequestId;
   return new Promise((resolve, reject) => {
-    pending.set(id, { resolve, reject });
+    pending.set(id, {
+      resolve: (value) => resolve(/** @type {T} */ (value)),
+      reject
+    });
     processor.postMessage({ id, ...request });
   }).catch(fallback);
 }
