@@ -100,6 +100,10 @@ safe-outputs:
 
 timeout-minutes: 45
 
+graders:
+  operational-value:
+    run: .github/graders/aw-maintenance-compiler-security-operational-value.sh
+
 steps:
   - name: Compile workflows with full validation and security scanning
     env:
@@ -134,6 +138,23 @@ steps:
       printf '%s\n' "$status" >"$report_dir/exit-code.txt"
       git status --short >"$report_dir/git-status.txt"
       git diff --stat >"$report_dir/diff-stat.txt"
+      scan_complete=true
+      if [[ $status -eq 124 || $status -eq 126 || $status -eq 127 ]] \
+          || grep -Eiq 'timed out|command not found|not found in PATH|cannot connect to (the )?docker|docker daemon|failed to (pull|download)|network.*(unavailable|error)|rate limit' "$report_dir/report.txt"; then
+        scan_complete=false
+      fi
+      clean=false
+      [[ $status -eq 0 ]] && clean=true
+      jq -n \
+        --arg targetRepo "$EXPR_TARGET_REPOSITORY" \
+        --arg targetSha "$(git rev-parse HEAD)" \
+        --argjson exitCode "$status" \
+        --argjson scanComplete "$scan_complete" \
+        --argjson clean "$clean" \
+        --arg reportDigest "$(sha256sum "$report_dir/report.txt" | cut -d' ' -f1)" \
+        '{targetRepo: $targetRepo, targetSha: $targetSha, exitCode: $exitCode,
+          scanComplete: $scanComplete, clean: $clean, reportDigest: $reportDigest}' \
+        >"$report_dir/result.json"
       {
         printf 'Target: %s\n' "$EXPR_TARGET_REPOSITORY"
         printf 'Exit code: %s\n' "$status"

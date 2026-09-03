@@ -937,6 +937,7 @@ test("operational-value graders expose deterministic run-scoped contracts", () =
   assert.deepEqual([...graders, ...packageGraders].sort(), [
     "ambient-context-agents-md-curator-operational-value.sh",
     "aw-failures-investigator-operational-value.sh",
+    "aw-maintenance-compiler-security-operational-value.sh",
     "dependabot-release-train-updater-operational-value.sh",
     "eu-cra-compliance-article-14-reporting-readiness-operational-value.sh",
     "eu-cra-compliance-conformity-release-evidence-operational-value.sh",
@@ -1770,9 +1771,12 @@ test("AW Maintenance runs hourly with bounded deterministic discovery", () => {
 
 test("AW Maintenance compiler security worker runs the full validation suite", () => {
   const source = workflow("aw-maintenance-compiler-security.md");
+  const dashboard = JSON.parse(readFileSync(join(root, "aw-maintenance", "dashboard.json"), "utf8"));
 
   assert.match(source, /^name: "AW Maintenance \/ Compiler Security"$/m);
   assert.match(source, /worker: compiler-security/);
+  assert.match(source, /run: \.github\/graders\/aw-maintenance-compiler-security-operational-value\.sh/);
+  assert.match(source, />"\$report_dir\/result\.json"/);
   assert.match(source, /gh aw compile \\/);
   for (const flag of [
     "--strict",
@@ -1794,6 +1798,13 @@ test("AW Maintenance compiler security worker runs the full validation suite", (
   assert.match(source, /gh aw mcp-server/);
   assert.match(source, /<details><summary><b>Agent prompt<\/b><\/summary>/);
   assert.match(source, /never edit generated `\.lock\.yml` files/i);
+  for (const viewId of ["aw-maintenance-attainment", "aw-maintenance-value-trend"]) {
+    const view = dashboard.dashboard.pages[0].views.find(({ id }) => id === viewId);
+    assert.deepEqual(view.data.filters.workflow, [
+      ".github/workflows/aw-failures-investigator.md",
+      ".github/workflows/aw-maintenance-compiler-security.md",
+    ]);
+  }
 });
 
 test("slower package orchestrators run hourly", () => {

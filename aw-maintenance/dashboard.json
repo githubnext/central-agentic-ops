@@ -153,14 +153,15 @@
           },
           {
             "id": "aw-maintenance-attainment",
-            "title": "Resolution evidence",
-            "description": "Failure-investigation observations preserve maturity and evidence cutoffs; unavailable repository evidence is not scored as zero.",
+            "title": "Maintenance attainment evidence",
+            "description": "Failure-recovery and compiler-security observations preserve maturity and evidence cutoffs; unavailable or incomplete evidence is not scored as zero.",
             "disclosure": "essential",
             "data": {
               "source": "operational-values",
               "filters": {
                 "workflow": [
-                  ".github/workflows/aw-failures-investigator.md"
+                  ".github/workflows/aw-failures-investigator.md",
+                  ".github/workflows/aw-maintenance-compiler-security.md"
                 ]
               },
               "limit": 50
@@ -204,7 +205,7 @@
           {
             "id": "aw-maintenance-value-trend",
             "title": "Operational-value trend",
-            "description": "Mean failure-resolution attainment is diagnostic and does not infer causation from later workflow health.",
+            "description": "Mean failure-recovery and clean-scan attainment is diagnostic and does not infer that a worker caused the observed state.",
             "disclosure": "essential",
             "data": {
               "source": "operational-values",
@@ -213,7 +214,8 @@
               },
               "filters": {
                 "workflow": [
-                  ".github/workflows/aw-failures-investigator.md"
+                  ".github/workflows/aw-failures-investigator.md",
+                  ".github/workflows/aw-maintenance-compiler-security.md"
                 ]
               }
             },
