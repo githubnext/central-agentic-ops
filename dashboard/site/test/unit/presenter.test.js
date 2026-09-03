@@ -970,12 +970,13 @@ describe('presenter built-in and custom pages', () => {
     expect(tables[2]?.textContent).toContain('sha256:curre');
     expect(tables[2]?.querySelector('a[aria-label="View run 103"]')?.getAttribute('href')).toContain('/actions/runs/103');
     expect(page?.querySelectorAll('.table-filter')).toHaveLength(2);
-    const graderRegion = tables[2]?.closest('.table-region');
+    const graderRegion = /** @type {HTMLElement} */ (tables[2]?.closest('.table-region'));
     const graderFilter = /** @type {HTMLInputElement} */ (graderRegion?.querySelector('[data-table-filter]'));
     expect(graderFilter.closest('label')?.textContent).toContain('Filter Collected observations');
     graderFilter.value = 'review-value';
     graderFilter.dispatchEvent(new Event('input'));
-    expect([...graderRegion.querySelectorAll('tbody tr')].filter((row) => !row.hidden)).toHaveLength(1);
+    expect([...graderRegion.querySelectorAll('tbody tr')]
+      .filter((row) => row instanceof HTMLTableRowElement && !row.hidden)).toHaveLength(1);
     expect(graderRegion.querySelector('.table-filter-result')?.textContent).toBe('Showing 1 of 1 result');
     expect(page?.textContent).toContain('not proof that a workflow caused an outcome');
     const experimentBoundary = page?.querySelector('.dashboard-callout');
