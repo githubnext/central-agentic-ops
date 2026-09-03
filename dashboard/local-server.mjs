@@ -2,7 +2,7 @@
 
 import { createServer } from "node:http";
 import { execFile } from "node:child_process";
-import { randomBytes } from "node:crypto";
+import { createHash, randomBytes } from "node:crypto";
 import {
   copyFile,
   mkdtemp,
@@ -33,7 +33,7 @@ const executeFile = promisify(execFile);
 const defaultCatalogRoot = basename(resolve(scriptDirectory, "..", "..")) === ".github"
   ? null
   : resolve(scriptDirectory, "..");
-const reloadEndpoint = "/__dashboard_events";
+const socketEndpoint = "/__dashboard_socket";
 const dataArtifactName = "central-agentic-ops-dashboard-data";
 const dashboardWorkflowPath = ".github/workflows/dashboard.yml";
 const contentTypes = new Map([
@@ -142,18 +142,40 @@ async function sourceSignature(paths) {
   return entries.join("\n");
 }
 
-function injectReloadScript(html, reloadPath) {
-  const reloadScript = `<script>
-  new EventSource(${JSON.stringify(reloadPath)}).addEventListener("reload", () => location.reload());
+function injectDashboardSocket(html, socketPath) {
+  const socketScript = `<script>
+  const dashboardSocket = new WebSocket(new URL(${JSON.stringify(socketPath)}, location.href).href.replace(/^http/, "ws"));
+  dashboardSocket.addEventListener("message", (event) => {
+    window.dispatchEvent(new CustomEvent("dashboard-preview-update", { detail: JSON.parse(event.data) }));
+  });
 </script>`;
   return html.includes("</body>")
-    ? html.replace("</body>", `${reloadScript}\n  </body>`)
-    : `${html}\n${reloadScript}\n`;
+    ? html.replace("</body>", `${socketScript}\n  </body>`)
+    : `${html}\n${socketScript}\n`;
 }
 
 function isWithin(root, candidate) {
   const path = relative(root, candidate);
   return path === "" || (path !== ".." && !path.startsWith(`..${sep}`) && !isAbsolute(path));
+}
+
+function websocketTextFrame(content) {
+  const payload = Buffer.from(content);
+  let header;
+  if (payload.length < 126) {
+    header = Buffer.from([0x81, payload.length]);
+  } else if (payload.length <= 0xffff) {
+    header = Buffer.allocUnsafe(4);
+    header[0] = 0x81;
+    header[1] = 126;
+    header.writeUInt16BE(payload.length, 2);
+  } else {
+    header = Buffer.allocUnsafe(10);
+    header[0] = 0x81;
+    header[1] = 127;
+    header.writeBigUInt64BE(BigInt(payload.length), 2);
+  }
+  return Buffer.concat([header, payload]);
 }
 
 /**
@@ -194,10 +216,10 @@ export async function startDashboardServer({
     await rm(temporaryDirectory, { recursive: true, force: true });
     throw error;
   }
-  const clients = new Set();
+  const sockets = new Set();
   const capability = randomBytes(24).toString("hex");
   const routePrefix = `/${capability}`;
-  const reloadPath = `${routePrefix}${reloadEndpoint}`;
+  const socketPath = `${routePrefix}${socketEndpoint}`;
   const watchers = new Map();
   let dashboardContent = "";
   let signature = "";
@@ -205,8 +227,9 @@ export async function startDashboardServer({
   let refreshPromise = Promise.resolve();
   let closed = false;
 
-  const broadcastReload = () => {
-    for (const client of clients) client.write("event: reload\ndata: dashboard\n\n");
+  const broadcastDashboard = () => {
+    const frame = websocketTextFrame(dashboardContent);
+    for (const socket of sockets) socket.write(frame);
   };
 
   const rebuild = async (notify = true) => {
@@ -218,7 +241,7 @@ export async function startDashboardServer({
     await bundleDashboardFiles(bundledDashboardPath, packagePaths);
     dashboardContent = await readFile(bundledDashboardPath, "utf8");
     signature = nextSignature;
-    if (notify) broadcastReload();
+    if (notify) broadcastDashboard();
     return packagePaths;
   };
 
@@ -282,23 +305,6 @@ export async function startDashboardServer({
       }
 
       const url = new URL(request.url || "/", "http://localhost");
-      if (url.pathname === reloadPath) {
-        response.writeHead(200, {
-          "Cache-Control": "no-store",
-          "Content-Type": "text/event-stream",
-          Connection: "keep-alive",
-        });
-        response.flushHeaders();
-        if (request.method === "HEAD") {
-          response.end();
-          return;
-        }
-        response.write("event: connected\ndata: ready\n\n");
-        clients.add(response);
-        request.on("close", () => clients.delete(response));
-        return;
-      }
-
       if (url.pathname !== routePrefix && !url.pathname.startsWith(`${routePrefix}/`)) {
         response.writeHead(404).end("Not found\n");
         return;
@@ -345,7 +351,7 @@ export async function startDashboardServer({
       if (pathname === "/dashboard.json") content = dashboardContent;
       else content = await readFile(canonicalPath);
       if (extname(canonicalPath) === ".html") {
-        content = injectReloadScript(content.toString("utf8"), reloadPath);
+        content = injectDashboardSocket(content.toString("utf8"), socketPath);
       }
       response.writeHead(200, {
         "Cache-Control": "no-store",
@@ -357,6 +363,37 @@ export async function startDashboardServer({
       if (!response.headersSent) response.writeHead(500);
       response.end("Internal server error\n");
     }
+  });
+  server.on("upgrade", (request, socket) => {
+    const key = request.headers["sec-websocket-key"];
+    if (!expectedAuthority
+        || request.headers.host !== expectedAuthority
+        || request.url !== socketPath
+        || request.headers.upgrade?.toLowerCase() !== "websocket"
+        || request.headers["sec-websocket-version"] !== "13"
+        || typeof key !== "string"
+        || Buffer.from(key, "base64").length !== 16) {
+      socket.end("HTTP/1.1 400 Bad Request\r\nConnection: close\r\n\r\n");
+      return;
+    }
+    const accept = createHash("sha1")
+      .update(`${key}258EAFA5-E914-47DA-95CA-C5AB0DC85B11`)
+      .digest("base64");
+    socket.write([
+      "HTTP/1.1 101 Switching Protocols",
+      "Upgrade: websocket",
+      "Connection: Upgrade",
+      `Sec-WebSocket-Accept: ${accept}`,
+      "\r\n",
+    ].join("\r\n"));
+    sockets.add(socket);
+    const remove = () => sockets.delete(socket);
+    socket.on("data", (data) => {
+      if ((data[0] & 0x0f) === 0x08) socket.end(Buffer.from([0x88, 0x00]));
+    });
+    socket.on("close", remove);
+    socket.on("error", remove);
+    socket.resume();
   });
 
   try {
@@ -384,7 +421,7 @@ export async function startDashboardServer({
       closed = true;
       clearTimeout(refreshTimer);
       for (const watcher of watchers.values()) watcher.close();
-      for (const client of clients) client.end();
+      for (const socket of sockets) socket.end();
       await new Promise((accept, reject) => server.close((error) => error ? reject(error) : accept()));
       await refreshPromise;
       await rm(temporaryDirectory, { recursive: true, force: true });

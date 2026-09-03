@@ -14,16 +14,23 @@ const dashboard = (pageId) => JSON.stringify({
   },
 }, null, 2);
 
-async function waitForReload(response) {
-  const reader = response.body.getReader();
-  const decoder = new TextDecoder();
-  let content = "";
-  while (!content.includes("event: reload")) {
-    const { done, value } = await reader.read();
-    if (done) throw new Error("live reload stream ended before an update");
-    content += decoder.decode(value, { stream: true });
-  }
-  await reader.cancel();
+async function openDashboardSocket(previewUrl) {
+  const url = new URL(previewUrl);
+  url.protocol = "ws:";
+  url.pathname += "/__dashboard_socket";
+  const socket = new WebSocket(url);
+  await new Promise((resolve, reject) => {
+    socket.addEventListener("open", resolve, { once: true });
+    socket.addEventListener("error", reject, { once: true });
+  });
+  return socket;
+}
+
+async function nextDashboard(socket) {
+  return new Promise((resolve, reject) => {
+    socket.addEventListener("message", (event) => resolve(JSON.parse(event.data)), { once: true });
+    socket.addEventListener("error", reject, { once: true });
+  });
 }
 
 async function requestWithHost(url, host) {
@@ -68,7 +75,10 @@ test("local dashboard server composes package dashboards and reloads after updat
   try {
     const indexResponse = await fetch(`${preview.url}/`);
     assert.equal(indexResponse.status, 200);
-    assert.match(await indexResponse.text(), /new EventSource\("\/[a-f0-9]{48}\/__dashboard_events"\)/);
+    const index = await indexResponse.text();
+    assert.match(index, /new WebSocket/);
+    assert.match(index, /\/[a-f0-9]{48}\/__dashboard_socket/);
+    assert.doesNotMatch(index, /location\.reload/);
 
     const dashboardResponse = await fetch(`${preview.url}/dashboard.json`);
     assert.equal(dashboardResponse.headers.get("cache-control"), "no-store");
@@ -86,10 +96,14 @@ test("local dashboard server composes package dashboards and reloads after updat
     unprotectedUrl.pathname = "/sources.json";
     assert.equal((await fetch(unprotectedUrl)).status, 404);
 
-    const eventsResponse = await fetch(`${preview.url}/__dashboard_events`);
-    const reload = waitForReload(eventsResponse);
+    const socket = await openDashboardSocket(preview.url);
+    const update = nextDashboard(socket);
     await writeFile(path.join(packageDirectory, "dashboard.json"), dashboard("package-two"));
-    await reload;
+    assert.deepEqual(
+      (await update).dashboard.pages.map(({ id }) => id),
+      ["built-in", "package-two"],
+    );
+    socket.close();
 
     const updatedResponse = await fetch(`${preview.url}/dashboard.json`);
     assert.deepEqual(
