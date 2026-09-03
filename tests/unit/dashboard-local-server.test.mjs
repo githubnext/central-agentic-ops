@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
 import { chmod, mkdir, mkdtemp, rm, writeFile } from "node:fs/promises";
+import { request } from "node:http";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import test from "node:test";
@@ -23,6 +24,23 @@ async function waitForReload(response) {
     content += decoder.decode(value, { stream: true });
   }
   await reader.cancel();
+}
+
+async function requestWithHost(url, host) {
+  return new Promise((resolve, reject) => {
+    const target = new URL(url);
+    const outgoing = request({
+      hostname: target.hostname,
+      port: target.port,
+      path: target.pathname,
+      headers: { Host: host },
+    }, (response) => {
+      response.resume();
+      response.on("end", () => resolve(response.statusCode));
+    });
+    outgoing.on("error", reject);
+    outgoing.end();
+  });
 }
 
 test("local dashboard server composes package dashboards and reloads after updates", async () => {
@@ -50,7 +68,7 @@ test("local dashboard server composes package dashboards and reloads after updat
   try {
     const indexResponse = await fetch(`${preview.url}/`);
     assert.equal(indexResponse.status, 200);
-    assert.match(await indexResponse.text(), /new EventSource\("\/__dashboard_events"\)/);
+    assert.match(await indexResponse.text(), /new EventSource\("\/[a-f0-9]{48}\/__dashboard_events"\)/);
 
     const dashboardResponse = await fetch(`${preview.url}/dashboard.json`);
     assert.equal(dashboardResponse.headers.get("cache-control"), "no-store");
@@ -63,6 +81,10 @@ test("local dashboard server composes package dashboards and reloads after updat
 
     const traversalResponse = await fetch(`${preview.url}/..%2Foutside.txt`);
     assert.equal(traversalResponse.status, 404);
+    assert.equal(await requestWithHost(`${preview.url}/sources.json`, "attacker.example"), 400);
+    const unprotectedUrl = new URL(preview.url);
+    unprotectedUrl.pathname = "/sources.json";
+    assert.equal((await fetch(unprotectedUrl)).status, 404);
 
     const eventsResponse = await fetch(`${preview.url}/__dashboard_events`);
     const reload = waitForReload(eventsResponse);
@@ -110,9 +132,19 @@ test("local dashboard server downloads the latest data artifact with GitHub CLI"
   await writeFile(path.join(root, "dashboard.json"), dashboard("built-in"));
   await writeFile(ghExecutable, `#!/bin/sh
 if [ "$1" = "api" ]; then
-  [ "$2" = "repos/acme/control/actions/artifacts?name=central-agentic-ops-dashboard-data&per_page=100" ] || exit 2
-  printf '42\\n'
-  exit
+  if [ "$2" = "repos/acme/control" ]; then
+    printf 'main\\n'
+    exit
+  fi
+  if [ "$2" = "repos/acme/control/actions/artifacts?name=central-agentic-ops-dashboard-data&per_page=100" ]; then
+    printf '42\\n'
+    exit
+  fi
+  if [ "$2" = "repos/acme/control/actions/runs/42" ]; then
+    printf 'success\\tmain\\t.github/workflows/dashboard.yml\\n'
+    exit
+  fi
+  exit 2
 fi
 [ "$1" = "run" ] &&
   [ "$2" = "download" ] &&

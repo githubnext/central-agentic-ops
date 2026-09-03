@@ -2,6 +2,7 @@
 
 import { createServer } from "node:http";
 import { execFile } from "node:child_process";
+import { randomBytes } from "node:crypto";
 import {
   copyFile,
   mkdtemp,
@@ -34,9 +35,7 @@ const defaultCatalogRoot = basename(resolve(scriptDirectory, "..", "..")) === ".
   : resolve(scriptDirectory, "..");
 const reloadEndpoint = "/__dashboard_events";
 const dataArtifactName = "central-agentic-ops-dashboard-data";
-const reloadScript = `<script>
-  new EventSource("${reloadEndpoint}").addEventListener("reload", () => location.reload());
-</script>`;
+const dashboardWorkflowPath = ".github/workflows/dashboard.yml";
 const contentTypes = new Map([
   [".css", "text/css; charset=utf-8"],
   [".html", "text/html; charset=utf-8"],
@@ -83,8 +82,16 @@ async function packageDashboardPaths(catalogRoot, installedDashboardsDirectory) 
 
 async function downloadDashboardData(destination, repository, ghExecutable) {
   const repositoryPath = repository || "{owner}/{repo}";
+  let defaultBranch;
   let runId;
   try {
+    const repositoryResult = await executeFile(ghExecutable, [
+      "api",
+      `repos/${repositoryPath}`,
+      "--jq",
+      ".default_branch",
+    ]);
+    defaultBranch = repositoryResult.stdout.trim();
     const result = await executeFile(ghExecutable, [
       "api",
       `repos/${repositoryPath}/actions/artifacts?name=${dataArtifactName}&per_page=100`,
@@ -101,6 +108,25 @@ async function downloadDashboardData(destination, repository, ghExecutable) {
   if (!/^[1-9][0-9]*$/.test(runId)) {
     throw new Error(`No current ${dataArtifactName} artifact is available. Run the dashboard action first.`);
   }
+  if (!defaultBranch) throw new Error("Unable to determine the repository default branch.");
+
+  let provenance;
+  try {
+    const result = await executeFile(ghExecutable, [
+      "api",
+      `repos/${repositoryPath}/actions/runs/${runId}`,
+      "--jq",
+      "[.conclusion, .head_branch, .path] | @tsv",
+    ]);
+    provenance = result.stdout.trim().split("\t");
+  } catch {
+    throw new Error(`Unable to verify ${dataArtifactName} from workflow run ${runId}.`);
+  }
+  if (provenance[0] !== "success"
+      || provenance[1] !== defaultBranch
+      || provenance[2] !== dashboardWorkflowPath) {
+    throw new Error(`The latest ${dataArtifactName} artifact is not from a successful trusted dashboard workflow run.`);
+  }
 
   const arguments_ = ["run", "download", runId, "--name", dataArtifactName, "--dir", destination];
   if (repository) arguments_.push("--repo", repository);
@@ -116,7 +142,10 @@ async function sourceSignature(paths) {
   return entries.join("\n");
 }
 
-function injectReloadScript(html) {
+function injectReloadScript(html, reloadPath) {
+  const reloadScript = `<script>
+  new EventSource(${JSON.stringify(reloadPath)}).addEventListener("reload", () => location.reload());
+</script>`;
   return html.includes("</body>")
     ? html.replace("</body>", `${reloadScript}\n  </body>`)
     : `${html}\n${reloadScript}\n`;
@@ -166,6 +195,9 @@ export async function startDashboardServer({
     throw error;
   }
   const clients = new Set();
+  const capability = randomBytes(24).toString("hex");
+  const routePrefix = `/${capability}`;
+  const reloadPath = `${routePrefix}${reloadEndpoint}`;
   const watchers = new Map();
   let dashboardContent = "";
   let signature = "";
@@ -238,13 +270,18 @@ export async function startDashboardServer({
 
   const server = createServer(async (request, response) => {
     try {
+      if (!request.headers.host || request.headers.host !== expectedAuthority
+          || /^[A-Za-z][A-Za-z0-9+.-]*:\/\//.test(request.url || "")) {
+        response.writeHead(400).end("Bad request\n");
+        return;
+      }
       if (request.method !== "GET" && request.method !== "HEAD") {
         response.writeHead(405, { Allow: "GET, HEAD" }).end();
         return;
       }
 
-      const url = new URL(request.url || "/", `http://${request.headers.host || "localhost"}`);
-      if (url.pathname === reloadEndpoint) {
+      const url = new URL(request.url || "/", "http://localhost");
+      if (url.pathname === reloadPath) {
         response.writeHead(200, {
           "Cache-Control": "no-store",
           "Content-Type": "text/event-stream",
@@ -261,9 +298,13 @@ export async function startDashboardServer({
         return;
       }
 
+      if (url.pathname !== routePrefix && !url.pathname.startsWith(`${routePrefix}/`)) {
+        response.writeHead(404).end("Not found\n");
+        return;
+      }
       let pathname;
       try {
-        pathname = decodeURIComponent(url.pathname);
+        pathname = decodeURIComponent(url.pathname.slice(routePrefix.length) || "/");
       } catch {
         response.writeHead(400).end("Bad request\n");
         return;
@@ -303,7 +344,7 @@ export async function startDashboardServer({
       if (pathname === "/dashboard.json") content = dashboardContent;
       else content = await readFile(canonicalPath);
       if (extname(canonicalPath) === ".html") {
-        content = injectReloadScript(content.toString("utf8"));
+        content = injectReloadScript(content.toString("utf8"), reloadPath);
       }
       response.writeHead(200, {
         "Cache-Control": "no-store",
@@ -317,6 +358,7 @@ export async function startDashboardServer({
     }
   });
 
+  let expectedAuthority = "";
   try {
     await new Promise((accept, reject) => {
       server.once("error", reject);
@@ -329,9 +371,10 @@ export async function startDashboardServer({
   }
   const address = server.address();
   if (!address || typeof address === "string") throw new Error("dashboard server did not bind to a TCP port");
+  expectedAuthority = `${address.address.includes(":") ? `[${address.address}]` : address.address}:${address.port}`;
 
   return {
-    url: `http://${address.address.includes(":") ? `[${address.address}]` : address.address}:${address.port}`,
+    url: `http://${expectedAuthority}${routePrefix}`,
     async close() {
       if (closed) return;
       closed = true;
