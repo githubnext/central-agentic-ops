@@ -2321,6 +2321,24 @@ function validateChartWidget(encoding, chart, viewPath, errors) {
       `${viewPath}.encoding.x.type`
     ));
   }
+  if (chart === 'histogram' && isPlainObject(encoding.x) && encoding.x.type !== undefined && !['nominal', 'ordinal'].includes(String(encoding.x.type))) {
+    errors.push(createError(
+      ERROR_CODES.invalidScopeFilterTimeAggregationOrOrderReference,
+      'histogram chart x encoding must be nominal or ordinal when explicitly typed.',
+      `${viewPath}.encoding.x.type`
+    ));
+  }
+  if (chart === 'histogram') {
+    for (const channel of ['color', 'href']) {
+      if (encoding[channel] !== undefined) {
+        errors.push(createError(
+          ERROR_CODES.invalidScopeFilterTimeAggregationOrOrderReference,
+          `histogram charts must not encode ${channel}.`,
+          `${viewPath}.encoding.${channel}`
+        ));
+      }
+    }
+  }
 }
 
 /**

@@ -3,20 +3,20 @@
   "dashboard": {
     "id": "aw-maintenance-dashboard",
     "title": "AW Maintenance",
-    "description": "Track upgrade and failure-triage activation, durable maintenance issues, and matured resolution evidence.",
+    "description": "Track upgrade, compiler-security, and failure-triage activation, durable maintenance issues, and matured resolution evidence.",
     "repository": "githubnext/gh-aw-cao",
     "pages": [
       {
         "id": "aw-maintenance-dashboard",
         "kind": "custom",
         "title": "AW Maintenance",
-        "description": "Track upgrade and failure-triage activation, durable maintenance issues, and matured resolution evidence.",
+        "description": "Track upgrade, compiler-security, and failure-triage activation, durable maintenance issues, and matured resolution evidence.",
         "icon": "gear",
         "views": [
           {
             "id": "aw-maintenance-value-trend",
             "title": "Operational-value trend",
-            "description": "Mean failure-resolution attainment is diagnostic and does not infer causation from later workflow health.",
+            "description": "Mean failure-recovery and clean-scan attainment is diagnostic and does not infer that a worker caused the observed state.",
             "disclosure": "essential",
             "data": {
               "source": "operational-values",
@@ -25,7 +25,8 @@
               },
               "filters": {
                 "workflow": [
-                  ".github/workflows/aw-failures-investigator.md"
+                  ".github/workflows/aw-failures-investigator.md",
+                  ".github/workflows/aw-maintenance-compiler-security.md"
                 ]
               }
             },
@@ -60,6 +61,7 @@
               "filters": {
                 "workflow": [
                   ".github/workflows/aw-maintenance.md",
+                  ".github/workflows/aw-maintenance-compiler-security.md",
                   ".github/workflows/aw-maintenance-upgrade.md",
                   ".github/workflows/aw-failures-investigator.md"
                 ]
@@ -142,8 +144,8 @@
           },
           {
             "id": "aw-maintenance-outcomes",
-            "title": "Upgrade and failure-triage issues",
-            "description": "Retained maintenance outputs identify actionable upgrades or investigated failures; clean repositories may correctly produce no output.",
+            "title": "Upgrade, compiler-security, and failure-triage issues",
+            "description": "Retained maintenance outputs identify actionable upgrades, compiler-security findings, or investigated failures; clean repositories may correctly produce no output.",
             "disclosure": "essential",
             "data": {
               "source": "outcomes",
@@ -187,14 +189,15 @@
           },
           {
             "id": "aw-maintenance-attainment",
-            "title": "Resolution evidence",
-            "description": "Failure-investigation observations preserve maturity and evidence cutoffs; unavailable repository evidence is not scored as zero.",
+            "title": "Maintenance attainment evidence",
+            "description": "Failure-recovery and compiler-security observations preserve maturity and evidence cutoffs; unavailable or incomplete evidence is not scored as zero.",
             "disclosure": "essential",
             "data": {
               "source": "operational-values",
               "filters": {
                 "workflow": [
-                  ".github/workflows/aw-failures-investigator.md"
+                  ".github/workflows/aw-failures-investigator.md",
+                  ".github/workflows/aw-maintenance-compiler-security.md"
                 ]
               },
               "limit": 50

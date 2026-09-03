@@ -81,6 +81,15 @@ describe('chart element helpers', () => {
     const bar = renderChartWidget('bar', [...points, { x: 'invalid', y: Number.NaN, color: null }], series);
     const line = renderChartWidget('line', points, series);
     const pie = renderChartWidget('pie', points, series);
+    const histogram = renderChartWidget('histogram', [
+      { x: 'run-1', y: 3, color: null },
+      { x: 'run-2', y: 4, color: null },
+      { x: 'run-3', y: 4, color: null }
+    ], series, null, 'AIC per run', {
+      name: 'AI Credits',
+      symbol: 'AIC',
+      significant: 1
+    });
     const unitPie = renderChartWidget('pie', points, series, null, 'Total', {
       name: 'AI Credits',
       symbol: 'AIC',
@@ -96,6 +105,10 @@ describe('chart element helpers', () => {
     expect(line.querySelectorAll('.line-chart-series')).toHaveLength(2);
     expect(pie.getAttribute('data-chart-widget')).toBe('pie');
     expect(pie.querySelectorAll('.pie-chart-segment')).toHaveLength(2);
+    expect(histogram.getAttribute('data-chart-widget')).toBe('histogram');
+    expect(histogram.querySelectorAll('.histogram-chart-bar')).toHaveLength(3);
+    expect(histogram.querySelector('svg')?.getAttribute('aria-label')).toContain('automatically calculated bins');
+    expect(histogram.querySelector('.histogram-chart-bar')?.getAttribute('aria-label')).toContain('AIC');
     expect(unitPie.querySelector('.pie-chart-segment')?.getAttribute('aria-label')).toBe('2026-08-29: 3 AIC');
     expect(unitPie.querySelector('.pie-chart-total-value')?.textContent).toBe('4');
   });

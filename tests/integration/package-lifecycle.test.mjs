@@ -21,6 +21,7 @@ function focusedPackageSource(slug, source = packageSource) {
 }
 const ukAiAdvisoryPackageSource = focusedPackageSource("uk-ai-advisory");
 const activityPackageSource = focusedPackageSource("activity");
+const awMaintenancePackageSource = focusedPackageSource("aw-maintenance");
 const craPackageSource = focusedPackageSource("eu-cra-compliance");
 const dashboardPackageSource = focusedPackageSource("dashboard");
 const dependabotUpdateSource = focusedPackageSource("dependabot");
@@ -31,6 +32,17 @@ const activityExpectedFiles = [
   ".github/aw/activity/failure-evidence.mjs",
   ".github/aw/activity/index.mjs",
   ".github/workflows/activity.yml",
+];
+const awMaintenanceExpectedFiles = [
+  ".github/aw/dashboards/aw-maintenance.json",
+  ".github/graders/aw-failures-investigator-operational-value.sh",
+  ".github/graders/aw-maintenance-compiler-security-operational-value.sh",
+  ".github/workflows/aw-failures-investigator.md",
+  ".github/workflows/aw-maintenance-compiler-security.md",
+  ".github/workflows/aw-maintenance-upgrade.md",
+  ".github/workflows/aw-maintenance.md",
+  ".github/workflows/shared/cao.md",
+  ".github/workflows/shared/control.md",
 ];
 const ukAiAdvisoryExpectedFiles = [
   ".github/aw/uk-ai-advisory/implementation-status.md",
@@ -271,6 +283,18 @@ test("gh aw add installs the focused SelfCare package contract", { timeout: 180_
   try {
     for (const relativePath of selfCareExpectedFiles) {
       assert.ok(existsSync(join(consumer, relativePath)), `focused SelfCare package omitted ${relativePath}`);
+    }
+  } finally {
+    rmSync(consumer, { recursive: true, force: true });
+  }
+});
+
+test("gh aw add installs the focused AW Maintenance package contract", { timeout: 180_000 }, () => {
+  const consumer = installPackage(awMaintenancePackageSource);
+
+  try {
+    for (const relativePath of awMaintenanceExpectedFiles) {
+      assert.ok(existsSync(join(consumer, relativePath)), `focused AW Maintenance package omitted ${relativePath}`);
     }
   } finally {
     rmSync(consumer, { recursive: true, force: true });

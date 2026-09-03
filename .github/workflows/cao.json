@@ -46,6 +46,9 @@
       "aw-maintenance": {
         "icon": "gear",
         "workers": {
+          "compiler-security": {
+            "workflow": "aw-maintenance-compiler-security"
+          },
           "failures-investigator": {
             "workflow": "aw-failures-investigator"
           },

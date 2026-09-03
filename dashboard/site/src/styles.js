@@ -206,6 +206,7 @@ main.dashboard-prototype { width: 100%; flex: 1; padding: 0 24px 40px; }
 .chart-point:focus-visible .line-chart-point { stroke: var(--focus); stroke-width: 3; }
 .bar-chart-axis { stroke: var(--border); stroke-width: 1; }
 .bar-chart-bar { fill: var(--accent); stroke: var(--canvas); stroke-width: .5; }
+.histogram-chart-bar { fill: var(--accent); stroke: var(--canvas); stroke-width: .5; }
 .chart-widget [tabindex]:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; stroke: var(--focus); stroke-width: 3; }
 .chart-widget .chart-series-1 { stroke: var(--success); }
 .chart-widget .chart-series-2 { stroke: var(--attention); }
