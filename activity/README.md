@@ -1,6 +1,6 @@
 # Central Agentic Ops Activity
 
-The activity package maintains the shared, bounded index of deployed GitHub Agentic Workflows and their recent runs. It is deterministic GitHub Actions infrastructure: it has no agent, rollout mode, safe output, or target-writing authority.
+The activity package maintains the shared, bounded snapshot used by the Central Agentic Ops dashboard. It indexes deployed GitHub Agentic Workflows and recent runs, collects AI Credit and operational-value observations, and normalizes durable records. It is deterministic GitHub Actions infrastructure: it has no agent, rollout mode, safe output, or target-writing authority.
 
 The root Central Agentic Ops package installs the activity action workflow and indexer. A focused installation is also available from `githubnext/central-agentic-ops/activity@<catalog-release>`.
 
@@ -10,14 +10,19 @@ The action restores and saves this directory:
 
 ```text
 $RUNNER_TEMP/cao-activity/
-└── deployed-workflows.json
+├── aic-usage.json
+├── control-plane-inventory.json
+├── control-settings.json
+├── dashboard-records.json
+├── deployed-workflows.json
+└── operational-values.json
 ```
 
-Entries use the immutable key `${runner.os}-cao-activity-v1-${github.repository}-${github.run_id}-${github.run_attempt}` and the restore prefix `${runner.os}-cao-activity-v1-${github.repository}-`. Cache scope and eviction follow [GitHub Actions cache restrictions](https://docs.github.com/actions/using-workflows/caching-dependencies-to-speed-up-workflows#restrictions-for-accessing-a-cache). The cache is an optimization, not durable historical authority.
+Snapshots use the immutable key `${runner.os}-cao-activity-v2-${github.repository}-${github.run_id}-${github.run_attempt}` and the restore prefix `${runner.os}-cao-activity-v2-${github.repository}-`. Cache scope and eviction follow [GitHub Actions cache restrictions](https://docs.github.com/actions/using-workflows/caching-dependencies-to-speed-up-workflows#restrictions-for-accessing-a-cache). The cache is an optimization, not durable historical authority.
 
-Consumers should restore the prefix before downloading workflow-run history. If the cache is absent, stale for the consumer's evidence window, incomplete, or outside the required repository scope, they must fetch the missing evidence. The scheduled and callable `.github/workflows/activity.yml` workflow is the only cache publisher.
+Consumers should restore the prefix before downloading workflow-run history or collecting dashboard data. If the cache is absent, stale for the consumer's evidence window, incomplete, or outside the required repository scope, they must fetch the missing evidence. The scheduled and callable `.github/workflows/activity.yml` workflow is the only cache publisher. When dashboard report resources are not installed, a focused activity installation publishes only `deployed-workflows.json`.
 
-## Data schema
+## Activity index schema
 
 `deployed-workflows.json` is a UTF-8 JSON object with `schemaVersion: 1`.
 

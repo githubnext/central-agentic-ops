@@ -9,7 +9,7 @@ on:
         type: string
         default: cao
       mode:
-        description: Use live data or only the most recently cached dashboard data.
+        description: Refresh activity data or use only the most recently cached snapshot.
         required: false
         type: string
         default: live
@@ -21,7 +21,7 @@ on:
         type: string
         default: cao
       mode:
-        description: Use live data or only the most recently cached dashboard data.
+        description: Refresh activity data or use only the most recently cached snapshot.
         required: false
         type: choice
         options:
@@ -38,6 +38,8 @@ jobs:
     permissions:
       actions: read
       contents: read
+      issues: read
+      pull-requests: read
     uses: ./.github/workflows/activity.yml
 
   build:
@@ -47,8 +49,6 @@ jobs:
     permissions:
       actions: read
       contents: read
-      issues: read
-      pull-requests: read
     steps:
       - name: Validate dashboard site path
         env:
@@ -76,7 +76,7 @@ jobs:
 
       - name: Resolve dashboard source layout
         run: |
-          if [[ -f .github/aw/dashboard/report/records.mjs && -f .github/aw/dashboard/site/index.html ]]; then
+          if [[ -f .github/aw/dashboard/report/dashboard-language-sources.mjs && -f .github/aw/dashboard/site/index.html ]]; then
             echo "DASHBOARD_LAYOUT=installed" >> "$GITHUB_ENV"
             echo "DASHBOARD_REPORT_ROOT=.github/aw/dashboard/report" >> "$GITHUB_ENV"
           elif [[ -f dashboard/report/records.mjs && -f dashboard/site/scripts/build.mjs ]]; then
@@ -87,136 +87,24 @@ jobs:
             exit 1
           fi
 
-      - name: Resolve authoritative control policy
-        env:
-          GITHUB_REPOSITORY: ${{ github.repository }}
-        run: |
-          node "$DASHBOARD_REPORT_ROOT/control-settings.mjs" \
-            .github/cao/src/control.mjs \
-            .github/workflows/cao.json \
-            "$RUNNER_TEMP/control-settings.json"
-
-      - name: Extract control-plane inventory
-        env:
-          REPORT_INVENTORY: ${{ runner.temp }}/control-plane-inventory.json
-        run: node "$DASHBOARD_REPORT_ROOT/inventory.mjs"
-
-      - name: Restore workflow activity
+      - name: Restore collected activity data
         uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: ${{ runner.temp }}/cao-activity
-          key: ${{ runner.os }}-cao-activity-v1-${{ github.repository }}-${{ github.run_id }}-${{ github.run_attempt }}
+          key: ${{ runner.os }}-cao-activity-v2-${{ github.repository }}-${{ github.run_id }}-${{ github.run_attempt }}
           restore-keys: |
-            ${{ runner.os }}-cao-activity-v1-${{ github.repository }}-
+            ${{ runner.os }}-cao-activity-v2-${{ github.repository }}-
 
-      - name: Restore dashboard data cache
-        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
-        with:
-          path: ${{ runner.temp }}/dashboard-data
-          key: ${{ runner.os }}-dashboard-data-${{ github.repository }}-${{ github.run_id }}
-          restore-keys: |
-            ${{ runner.os }}-dashboard-data-${{ github.repository }}-
-
-      - name: Require cached dashboard data
-        if: inputs.mode == 'cache'
+      - name: Require collected activity data
         env:
           ACTIVITY_DATA_ROOT: ${{ runner.temp }}/cao-activity
-          DASHBOARD_DATA_ROOT: ${{ runner.temp }}/dashboard-data
         run: |
-          if [[ ! -f "$ACTIVITY_DATA_ROOT/deployed-workflows.json" ]]; then
-            echo "Cached activity data is unavailable: deployed-workflows.json" >&2
-            exit 1
-          fi
-          for file in aic-usage.json operational-values.json dashboard-records.json; do
-            if [[ ! -f "$DASHBOARD_DATA_ROOT/$file" ]]; then
-              echo "Cached dashboard data is unavailable: $file" >&2
+          for file in control-settings.json control-plane-inventory.json deployed-workflows.json aic-usage.json operational-values.json dashboard-records.json; do
+            if [[ ! -f "$ACTIVITY_DATA_ROOT/$file" ]]; then
+              echo "Collected activity data is unavailable: $file" >&2
               exit 1
             fi
           done
-
-      - name: Install gh-aw CLI
-        if: inputs.mode == 'live'
-        uses: github/gh-aw-actions/setup-cli@9271a1804551c0dc4fb0085a97979950aa2f8489 # v0.88.2
-        with:
-          version: v0.88.2
-
-      - name: Checkout operational-value replay runtime
-        if: inputs.mode == 'live'
-        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          repository: github/gh-aw
-          ref: 8e30bcd8897f5047051fa3971188e1dd4cdb23cf # v0.88.2
-          path: .cache/gh-aw-operational-value-source
-          persist-credentials: false
-
-      - name: Setup Go for operational-value replay
-        if: inputs.mode == 'live'
-        uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
-        with:
-          go-version-file: .cache/gh-aw-operational-value-source/go.mod
-          cache: false
-
-      - name: Build operational-value replay runtime
-        if: inputs.mode == 'live'
-        working-directory: .cache/gh-aw-operational-value-source
-        run: |
-          mkdir -p "$RUNNER_TEMP/gh-aw-operational-value"
-          go build -ldflags "-s -w -X main.version=v0.88.2" \
-            -o "$RUNNER_TEMP/gh-aw-operational-value/gh-aw" ./cmd/gh-aw
-          go clean -cache -modcache
-
-      - name: Restore operational-value observation cache
-        if: inputs.mode == 'live'
-        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
-        with:
-          path: .cache/dashboard-operational-values
-          key: ${{ runner.os }}-dashboard-operational-values-${{ github.repository }}-${{ github.run_id }}
-          restore-keys: |
-            ${{ runner.os }}-dashboard-operational-values-${{ github.repository }}-
-
-      - name: Collect AI Credit usage
-        if: inputs.mode == 'live'
-        env:
-          GH_TOKEN: ${{ github.token }}
-          REPORT_AIC_USAGE: ${{ runner.temp }}/dashboard-data/aic-usage.json
-          REPORT_DEPLOYED_WORKFLOWS: ${{ runner.temp }}/cao-activity/deployed-workflows.json
-        run: node "$DASHBOARD_REPORT_ROOT/aic-usage.mjs"
-
-      - name: Collect operational-value observations
-        if: inputs.mode == 'live'
-        env:
-          GH_TOKEN: ${{ github.token }}
-          REPORT_DEPLOYED_WORKFLOWS: ${{ runner.temp }}/cao-activity/deployed-workflows.json
-          REPORT_GH_AW_BIN: ${{ runner.temp }}/gh-aw-operational-value/gh-aw
-          REPORT_OPERATIONAL_VALUES: ${{ runner.temp }}/dashboard-data/operational-values.json
-          REPORT_VALUE_CACHE: .cache/dashboard-operational-values/observations.json
-          REPORT_VALUE_CONCURRENCY: "3"
-          REPORT_VALUE_REPLAY_CACHE: .cache/dashboard-operational-values/replay
-        run: node "$DASHBOARD_REPORT_ROOT/operational-values.mjs"
-
-      - name: Save operational-value observation cache
-        if: always() && inputs.mode == 'live'
-        uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
-        with:
-          path: .cache/dashboard-operational-values
-          key: ${{ runner.os }}-dashboard-operational-values-${{ github.repository }}-${{ github.run_id }}
-
-      - name: Collect durable dashboard records
-        if: inputs.mode == 'live'
-        env:
-          GITHUB_TOKEN: ${{ github.token }}
-          REPORT_CONTROL_SETTINGS: ${{ runner.temp }}/control-settings.json
-          REPORT_INVENTORY: ${{ runner.temp }}/control-plane-inventory.json
-          REPORT_DEPLOYED_WORKFLOWS: ${{ runner.temp }}/cao-activity/deployed-workflows.json
-          REPORT_RECORDS: ${{ runner.temp }}/dashboard-data/dashboard-records.json
-        run: node "$DASHBOARD_REPORT_ROOT/records.mjs"
-
-      - name: Save dashboard data cache
-        if: inputs.mode == 'live'
-        uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
-        with:
-          path: ${{ runner.temp }}/dashboard-data
-          key: ${{ runner.os }}-dashboard-data-${{ github.repository }}-${{ github.run_id }}
 
       - name: Assemble Dashboard Language site
         env:
@@ -225,13 +113,13 @@ jobs:
           if [[ "$DASHBOARD_LAYOUT" == "source" ]]; then
             node dashboard/site/scripts/build.mjs \
               "$REPORT_OUTPUT" \
-              "$RUNNER_TEMP/control-settings.json"
+              "$RUNNER_TEMP/cao-activity/control-settings.json"
           else
             mkdir -p "$REPORT_OUTPUT"
             cp -R .github/aw/dashboard/site/. "$REPORT_OUTPUT/"
             node "$DASHBOARD_REPORT_ROOT/configure-site.mjs" \
               "$REPORT_OUTPUT/index.html" \
-              "$RUNNER_TEMP/control-settings.json"
+              "$RUNNER_TEMP/cao-activity/control-settings.json"
             node "$DASHBOARD_REPORT_ROOT/bundle-dashboards.mjs" \
               "$REPORT_OUTPUT/dashboard.json" \
               .github/aw/dashboards
@@ -239,13 +127,13 @@ jobs:
 
       - name: Build Dashboard Language sources
         env:
-          REPORT_AIC_USAGE: ${{ runner.temp }}/dashboard-data/aic-usage.json
-          REPORT_CONTROL_SETTINGS: ${{ runner.temp }}/control-settings.json
+          REPORT_AIC_USAGE: ${{ runner.temp }}/cao-activity/aic-usage.json
+          REPORT_CONTROL_SETTINGS: ${{ runner.temp }}/cao-activity/control-settings.json
           REPORT_DASHBOARD_SOURCES: ${{ runner.temp }}/central-agentic-ops-dashboard/${{ inputs.site-path }}/sources.json
           REPORT_DEPLOYED_WORKFLOWS: ${{ runner.temp }}/cao-activity/deployed-workflows.json
-          REPORT_INVENTORY: ${{ runner.temp }}/control-plane-inventory.json
-          REPORT_OPERATIONAL_VALUES: ${{ runner.temp }}/dashboard-data/operational-values.json
-          REPORT_RECORDS: ${{ runner.temp }}/dashboard-data/dashboard-records.json
+          REPORT_INVENTORY: ${{ runner.temp }}/cao-activity/control-plane-inventory.json
+          REPORT_OPERATIONAL_VALUES: ${{ runner.temp }}/cao-activity/operational-values.json
+          REPORT_RECORDS: ${{ runner.temp }}/cao-activity/dashboard-records.json
         run: node "$DASHBOARD_REPORT_ROOT/dashboard-language-sources.mjs"
 
       - name: Upload dashboard data artifact
