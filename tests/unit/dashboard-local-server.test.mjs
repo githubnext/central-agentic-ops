@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { spawnSync } from "node:child_process";
-import { chmod, mkdir, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
+import { chmod, mkdir, mkdtemp, readFile, rm, symlink, writeFile } from "node:fs/promises";
 import { request } from "node:http";
 import { tmpdir } from "node:os";
 import path from "node:path";
@@ -295,12 +295,26 @@ test("local dashboard server rejects non-loopback Copilot hosts", async () => {
 test("local dashboard server rejects paths outside its workspace", async () => {
   const root = await mkdtemp(path.join(tmpdir(), "dashboard-local-server-"));
   const workspace = path.join(root, "workspace");
-  await mkdir(workspace);
+  const siteRoot = path.join(workspace, "site");
+  const outside = path.join(root, "outside");
+  await mkdir(siteRoot, { recursive: true });
+  await mkdir(outside);
   await writeFile(path.join(root, "dashboard.json"), dashboard("built-in"));
+  await writeFile(path.join(siteRoot, "dashboard.json"), dashboard("built-in"));
   try {
     await assert.rejects(
       startDashboardServer({
         siteRoot: root,
+        catalogRoot: null,
+        installedDashboardsDirectory: path.join(workspace, "dashboards"),
+        workingDirectory: workspace,
+      }),
+      /paths must remain within the workspace/,
+    );
+    await symlink(outside, path.join(workspace, "dashboards"));
+    await assert.rejects(
+      startDashboardServer({
+        siteRoot,
         catalogRoot: null,
         installedDashboardsDirectory: path.join(workspace, "dashboards"),
         workingDirectory: workspace,

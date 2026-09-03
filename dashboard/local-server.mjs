@@ -56,6 +56,16 @@ async function existingDirectories(paths) {
   return directories;
 }
 
+async function canonicalPath(path) {
+  const absolutePath = resolve(path);
+  try {
+    return await realpath(absolutePath);
+  } catch (error) {
+    if (error?.code !== "ENOENT" || dirname(absolutePath) === absolutePath) throw error;
+    return join(await canonicalPath(dirname(absolutePath)), basename(absolutePath));
+  }
+}
+
 async function dashboardSourceForView(view, dashboardPaths) {
   for (const path of dashboardPaths) {
     try {
@@ -488,9 +498,11 @@ export async function startDashboardServer({
   }
   const resolvedWorkingDirectory = await realpath(workingDirectory);
   const resolvedSiteRoot = await realpath(siteRoot);
+  const resolvedCatalogRoot = catalogRoot ? await canonicalPath(catalogRoot) : null;
+  const resolvedInstalledDashboardsDirectory = await canonicalPath(installedDashboardsDirectory);
   if (!isWithin(resolvedWorkingDirectory, resolvedSiteRoot)
-      || (catalogRoot && !isWithin(resolvedWorkingDirectory, resolve(catalogRoot)))
-      || !isWithin(resolvedWorkingDirectory, resolve(installedDashboardsDirectory))) {
+      || (resolvedCatalogRoot && !isWithin(resolvedWorkingDirectory, resolvedCatalogRoot))
+      || !isWithin(resolvedWorkingDirectory, resolvedInstalledDashboardsDirectory)) {
     console.log("Dashboard server configuration rejected.", {
       reason: "dashboard path is outside the workspace",
     });
@@ -531,7 +543,10 @@ export async function startDashboardServer({
 
   const rebuild = async (notify = true) => {
     console.log("Checking dashboard sources for updates.");
-    const packagePaths = await packageDashboardPaths(catalogRoot, installedDashboardsDirectory);
+    const packagePaths = await packageDashboardPaths(
+      resolvedCatalogRoot,
+      resolvedInstalledDashboardsDirectory,
+    );
     const nextSignature = await sourceSignature([baseDashboardPath, ...packagePaths]);
     if (nextSignature === signature) return packagePaths;
 
@@ -552,10 +567,10 @@ export async function startDashboardServer({
     if (closed) return;
     const candidates = new Set([
       resolvedSiteRoot,
-      installedDashboardsDirectory,
+      resolvedInstalledDashboardsDirectory,
       ...packagePaths.map(dirname),
     ]);
-    if (catalogRoot) candidates.add(catalogRoot);
+    if (resolvedCatalogRoot) candidates.add(resolvedCatalogRoot);
     for (const directory of await existingDirectories(candidates)) {
       if (watchers.has(directory)) continue;
       const watcher = watch(directory, () => scheduleRefresh());
@@ -668,8 +683,8 @@ export async function startDashboardServer({
             return;
           }
           const editableDashboardPaths = [baseDashboardPath, ...await packageDashboardPaths(
-            catalogRoot,
-            installedDashboardsDirectory,
+            resolvedCatalogRoot,
+            resolvedInstalledDashboardsDirectory,
           )];
           const viewDashboardPath = await dashboardSourceForView(payload.view, editableDashboardPaths);
           console.log("Accepted Copilot dashboard request.", {
@@ -902,8 +917,8 @@ async function runWithWorkspacePermissions() {
   console.log("Launching dashboard server with workspace filesystem permissions.", { workspace });
   const child = spawn(process.execPath, [
     "--permission",
-    `--allow-fs-read=${workspace}`,
-    `--allow-fs-write=${workspace}`,
+    `--allow-fs-read=${workspace}${sep}`,
+    `--allow-fs-write=${workspace}${sep}`,
     "--allow-child-process",
     fileURLToPath(import.meta.url),
     ...process.argv.slice(2),
