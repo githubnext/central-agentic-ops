@@ -8,8 +8,6 @@ const controlPolicy = JSON.parse(readFileSync(".github/workflows/cao.json", "utf
 
 const hero = readFileSync("docs/components/HierarchyHero.astro", "utf8");
 const wizard = readFileSync("docs/components/OpsWizard.astro", "utf8");
-const wizardPage = readFileSync("docs/pages/wizard.astro", "utf8");
-const landingPage = readFileSync("docs/README.md", "utf8");
 const catalog = readFileSync("docs/lib/catalog.ts", "utf8");
 const packageManifest = readFileSync("package.json", "utf8");
 const sparklePathData = "M7.53 1.282a.5.5 0 0 1 .94 0l.478 1.306a7.492 7.492 0 0 0 4.464 4.464l1.305.478a.5.5 0 0 1 0 .94l-1.305.478a7.492 7.492 0 0 0-4.464 4.464l-.478 1.305a.5.5 0 0 1-.94 0l-.478-1.305a7.492 7.492 0 0 0-4.464-4.464L1.282 8.47a.5.5 0 0 1 0-.94l1.306-.478a7.492 7.492 0 0 0 4.464-4.464Z";
@@ -56,22 +54,14 @@ test("landing animations use SVG and CSS without a JavaScript player", () => {
   }
 });
 
-test("package wizard has its own page linked from the landing page", () => {
-  assert.doesNotMatch(hero, /OpsWizard/);
-  assert.match(wizardPage, /import OpsWizard from "\.\.\/components\/OpsWizard\.astro"/);
-  assert.match(wizardPage, /<OpsWizard \/>/);
-  assert.match(landingPage, /link: \/gh-aw-cao\/wizard\//);
-  assert.doesNotMatch(landingPage, /\/central-agentic-ops\//);
-});
-
-test("package wizard prompt references the raw setup skill", () => {
+test("landing wizard prompt references the raw setup skill", () => {
   assert.match(
     wizard,
     /https:\/\/raw\.githubusercontent\.com\/githubnext\/gh-aw-cao\/main\/\.github\/skills\/setup-central-agentic-ops\/SKILL\.md/,
   );
 });
 
-test("package wizard operations come from the checked-in control policy", () => {
+test("landing wizard operations come from the checked-in control policy", () => {
   assert.match(catalog, /import controlPolicy from "\.\.\/\.\.\/\.github\/workflows\/cao\.json"/);
   assert.match(catalog, /selectConfiguredOperations\(controlPolicy, catalogEntries\)/);
   assert.match(wizard, /configuredOperationEntries as operations/);
