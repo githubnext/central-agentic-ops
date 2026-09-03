@@ -7,6 +7,7 @@ import {
   APP_PROFILES,
   buildGitHubAppManifest,
   deriveAppName,
+  installationInstruction,
   isManifestCode,
   setRepositoryCredentials,
   validateAppName,
@@ -112,4 +113,11 @@ test("App setup rejects all-repository installations", () => {
   assert.equal(error.name, "InstallationScopeError");
   assert.match(error.message, /installed for all octo repositories; select only approved repositories/);
   assert.match(error.message, /organizations\/octo\/settings\/installations\/123/);
+});
+
+test("App setup directs installation to only the control repository", () => {
+  assert.equal(
+    installationInstruction("octo/control"),
+    'Choose "Only select repositories", select only octo/control, and save.',
+  );
 });

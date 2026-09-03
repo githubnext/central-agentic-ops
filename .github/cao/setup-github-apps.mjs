@@ -376,6 +376,10 @@ export function validateInstallationScope(installation, owner) {
   }
 }
 
+export function installationInstruction(repo) {
+  return `Choose "Only select repositories", select only ${repo}, and save.`;
+}
+
 function hasSelectedInstallation(app, repo) {
   const [owner] = splitRepo(repo);
   const installation = matchingInstallation(app, owner);
@@ -393,7 +397,7 @@ function openInstallation(app, openBrowser) {
 }
 
 async function waitForInstallation(app, repo) {
-  console.error(`Install ${app.name || app.slug} on ${repo} in the browser.`);
+  console.error(`Install ${app.name || app.slug} in the browser. ${installationInstruction(repo)}`);
   const deadline = Date.now() + MANIFEST_TIMEOUT_MS;
   let lastError;
   while (Date.now() < deadline) {
