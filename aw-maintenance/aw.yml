@@ -1,6 +1,7 @@
 name: AW Maintenance
 description: Organization-wide workflow for maintaining installed GitHub Agentic Workflows (gh-aw), triaging failures, and filing actionable issues assignable to Copilot.
 min-version: v0.88.2
+experimental: true
 includes:
   - .github/workflows/aw-maintenance.md
   - .github/workflows/aw-failures-investigator.md

@@ -9,6 +9,8 @@ type PackageManifest = {
   name?: unknown;
   description?: unknown;
   "min-version"?: unknown;
+  private?: unknown;
+  experimental?: unknown;
   includes?: unknown;
 };
 
@@ -17,6 +19,8 @@ export type CatalogEntry = {
   name: string;
   description: string;
   minVersion: string;
+  private: boolean;
+  experimental: boolean;
   includes: string[];
   manifestFile: string;
   readmePath?: string;
@@ -70,12 +74,15 @@ export const catalogEntries: CatalogEntry[] = Object.entries(manifests)
       name: requiredString(manifest.name, "name", manifestPath),
       description: requiredString(manifest.description, "description", manifestPath),
       minVersion: requiredString(manifest["min-version"], "min-version", manifestPath),
+      private: manifest.private === true,
+      experimental: manifest.experimental === true,
       includes: workflowList(manifest.includes, manifestPath),
       manifestFile,
       readmePath: readme ? `${slug}/README.md` : undefined,
       ReadmeContent: readme?.Content,
     };
   })
+  .filter((entry) => !entry.private)
   .sort((left, right) => {
     const advisoryRank = (entry: CatalogEntry) => /advisor(y|ies)?/i.test(entry.name) ? 1 : 0;
     return advisoryRank(left) - advisoryRank(right) || left.name.localeCompare(right.name);

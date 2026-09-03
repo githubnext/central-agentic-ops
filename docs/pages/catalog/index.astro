@@ -40,7 +40,7 @@ const basePath = import.meta.env.BASE_URL.replace(/\/$/, "");
             <a href={`${basePath}/catalog/${entry.slug}/`}>
               <div class="catalog-heading">
                 <h2>{entry.name}</h2>
-                <span>Package</span>
+                <span>{entry.experimental ? "Experimental package" : "Package"}</span>
               </div>
               <p>{entry.description}</p>
               <div class="catalog-meta">

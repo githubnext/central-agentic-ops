@@ -31,6 +31,8 @@ const ReadmeContent = entry.ReadmeContent;
   <section class="package-overview" aria-label="What it does">
     <p>{entry.description}</p>
     <p class="package-meta">
+      {entry.experimental ? "Experimental package" : "Package"}
+      <span aria-hidden="true">·</span>
       {entry.includes.length} {entry.includes.length === 1 ? "workflow" : "workflows"}
       <span aria-hidden="true">·</span>
       Requires gh-aw {entry.minVersion}
