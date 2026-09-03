@@ -108,4 +108,53 @@ describe('UI elements', () => {
     expect(rendered?.querySelector('a')?.getAttribute('href')).toBe('#page-repository-detail?repository=octo%2Fone');
   });
 
+  it('flags managed packages that dispatch but produce no output', () => {
+    const rendered = renderUiElement('package-status-grid', {
+      pageId: 'overview',
+      title: 'Packages',
+      sourceNames: ['overview-managed-packages'],
+      sources: {
+        'overview-managed-packages': {
+          source: 'overview-managed-packages',
+          rows: [
+            {
+              package: 'daily-ops',
+              title: 'Daily Ops',
+              icon: 'workflow',
+              'dispatch-count': 3,
+              'dispatches-with-safe-output': 0,
+              'activity-window': 'Complete 24-hour window',
+              inventory: 'Ready',
+              'inventory-state': 'inventory-ready',
+              href: '#page-package-insights?package=daily-ops'
+            },
+            {
+              package: 'weekly-ops',
+              title: 'Weekly Ops',
+              icon: 'workflow',
+              'dispatch-count': 2,
+              'dispatches-with-safe-output': 1,
+              'activity-window': 'Complete 24-hour window',
+              inventory: 'Ready',
+              'inventory-state': 'inventory-ready',
+              href: '#page-package-insights?package=weekly-ops'
+            }
+          ],
+          metadata
+        }
+      },
+      contextDetails: [],
+      headingTag: 'h3'
+    });
+
+    const cards = [...(rendered?.querySelectorAll('.package-status-card') ?? [])];
+    expect(cards).toHaveLength(2);
+    expect(cards[0]?.querySelector('.package-status-activity')?.classList.contains('package-status-activity-warning')).toBe(true);
+    expect(cards[0]?.querySelector('.package-status-activity .octicon-alert')).not.toBeNull();
+    expect(cards[0]?.querySelector('.package-status-activity')?.getAttribute('aria-label')).toContain('warning: dispatches produced no output');
+    expect(cards[1]?.querySelector('.package-status-activity')?.classList.contains('package-status-activity-warning')).toBe(false);
+    expect(cards[1]?.querySelector('.package-status-activity .octicon-shield-check')).not.toBeNull();
+    expect(cards[1]?.querySelector('.package-status-activity')?.getAttribute('aria-label')).not.toContain('warning');
+  });
+
 });

@@ -141,9 +141,11 @@ function renderPackageStatusGridElement(context) {
         const dispatchCount = row['dispatch-count'] == null ? null : Number(row['dispatch-count']);
         const outputDispatchCount = row['dispatches-with-safe-output'] == null ? null : Number(row['dispatches-with-safe-output']);
         const dispatchText = Number.isFinite(dispatchCount) ? `${dispatchCount} dispatch${dispatchCount === 1 ? '' : 'es'}` : 'Dispatches unavailable';
-        const outputText = dispatchCount !== null && outputDispatchCount !== null && Number.isFinite(dispatchCount) && Number.isFinite(outputDispatchCount)
-          ? dispatchCount > 0 ? `${outputDispatchCount}/${dispatchCount} produced output` : 'No output opportunity'
+        const outputCountsKnown = dispatchCount !== null && outputDispatchCount !== null && Number.isFinite(dispatchCount) && Number.isFinite(outputDispatchCount);
+        const outputText = outputCountsKnown
+          ? (dispatchCount ?? 0) > 0 ? `${outputDispatchCount}/${dispatchCount} produced output` : 'No output opportunity'
           : 'Outputs unavailable';
+        const noOutputWarning = outputCountsKnown && (dispatchCount ?? 0) > 0 && outputDispatchCount === 0;
         const repoModes = Array.isArray(row['repository-modes']) ? row['repository-modes'].filter(isPlainObject) : [];
         const repoEntries = repoModes.length > 0 ? repoModes.filter((entry) => typeof entry.repository === 'string' && entry.repository) : [];
         const inventoryText = stringValue(row.inventory || 'Needs attention');
@@ -201,10 +203,19 @@ function renderPackageStatusGridElement(context) {
           ),
           h(
             'div',
-            { className: 'package-status-activity', title: stringValue(row['activity-window']), 'aria-label': `Recent activity: ${dispatchText}; ${outputText}` },
+            {
+              className: `package-status-activity${noOutputWarning ? ' package-status-activity-warning' : ''}`,
+              title: stringValue(row['activity-window']),
+              'aria-label': `Recent activity: ${dispatchText}; ${outputText}${noOutputWarning ? '; warning: dispatches produced no output' : ''}`
+            },
             h('span', { className: 'package-status-activity-label' }, 'Recent'),
             h('span', null, octicon('paper-airplane'), h('strong', null, dispatchText)),
-            h('span', null, octicon('shield-check'), h('strong', null, outputText))
+            h(
+              'span',
+              noOutputWarning ? { title: 'Dispatched but produced no output' } : null,
+              octicon(noOutputWarning ? 'alert' : 'shield-check'),
+              h('strong', null, outputText)
+            )
           )
         );
       })
