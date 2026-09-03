@@ -25,15 +25,15 @@ const SLUG_PATTERN = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
 const MODES = ["review", "live"];
 
 function log(message) {
-  console.log(`[CAO policy] ${message}`);
+  console.error(`[CAO policy] ${message}`);
 }
 
 function isRecord(value) {
   return value !== null && typeof value === "object" && !Array.isArray(value);
 }
 
-export function parsePolicy(source, { logging = false } = {}) {
-  if (logging) log("Parsing control policy.");
+export function parsePolicy(source) {
+  log("Parsing control policy.");
   let document;
   try {
     document = JSON.parse(source);
@@ -46,7 +46,7 @@ export function parsePolicy(source, { logging = false } = {}) {
 
   rejectExpressions(document);
   validateDocument(document);
-  if (logging) log("Validated control policy.");
+  log("Validated control policy.");
   return document;
 }
 
@@ -317,9 +317,8 @@ export function effectivePolicy(
     requestedRolloutPercent = "",
     targetRepository = "",
   },
-  { logging = false } = {},
 ) {
-  if (logging) log("Resolving effective policy.");
+  log("Resolving effective policy.");
   if (!["orchestrator", "worker"].includes(role)) throw new PolicyError("role must be orchestrator or worker");
   if (role === "worker" && !workerName) throw new PolicyError("worker identity is required");
   if (role === "orchestrator" && workerName) throw new PolicyError("worker identity is forbidden for orchestrators");

@@ -285,8 +285,8 @@ function admit() {
     } catch {
       throw new ControlError(`cannot read ${POLICY_PATH} at github.workflow_sha`);
     }
-    const document = parsePolicy(source, { logging: true });
-    result = applyGithubApiAdmission(effectivePolicy(document, options, { logging: true }), options);
+    const document = parsePolicy(source);
+    result = applyGithubApiAdmission(effectivePolicy(document, options), options);
     writeFileSync(join(directory, "effective-policy.json"), `${JSON.stringify(result, null, 2)}\n`);
   } catch (error) {
     const message = error instanceof PolicyError
