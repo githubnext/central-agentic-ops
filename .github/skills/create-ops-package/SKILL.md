@@ -32,7 +32,8 @@ Add `copilot-requests: write` directly to every Copilot-backed orchestrator and 
 4. Ask only for decisions that cannot be inferred safely. If the strategy is broad, split it into workers by independently dispatchable responsibility, not by implementation step.
 5. Create the orchestrator and every worker under `.github/workflows/` in the same change.
 6. Compile and validate all new source workflows. Repair failures before finishing.
-7. When an adopted worker already has an operational-value evaluator, preserve it under `.github/graders/` and keep its `graders.operational-value` registration. Evaluator design remains a separate post-adoption maintenance task.
+7. Before finalizing the package, compare the intended package state with the current `.github/workflows/cao.json` and the dashboard's live control-plane view. Confirm what is actually running, in which mode, and on which repositories. If the configuration drifts from reality, raise the mismatch to the user on the dashboard before proceeding.
+8. When an adopted worker already has an operational-value evaluator, preserve it under `.github/graders/` and keep its `graders.operational-value` registration. Evaluator design remains a separate post-adoption maintenance task.
 
 ## Deterministic Add-on Exception
 

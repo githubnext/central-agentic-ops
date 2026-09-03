@@ -2035,8 +2035,12 @@ test("README routes zero-to-CAO requests to the setup skill", () => {
   assert.match(setupSkill, /Do you also want to create an operation package of your own/);
   assert.match(setupSkill, /plan an explicit handoff to `.github\/skills\/create-ops-package\/SKILL\.md` after step 13/);
   assert.match(setupSkill, /Never silently default the package to Dependabot/);
+  assert.match(setupSkill, /read the control repository's `.github\/workflows\/cao\.json` and the current dashboard state/);
+  assert.match(setupSkill, /If the policy and the live dashboard disagree, raise the drift to the user on the dashboard/);
   assert.match(createPackageSkill, /When invoked from `.github\/skills\/setup-central-agentic-ops\/SKILL\.md`/);
   assert.match(createPackageSkill, /accept the recorded desired outcome and target-repository description/);
+  assert.match(createPackageSkill, /compare the intended package state with the current `.github\/workflows\/cao\.json` and the dashboard's live control-plane view/);
+  assert.match(createPackageSkill, /raise the mismatch to the user on the dashboard before proceeding/);
   assert.match(createPackageSkill, /Do not repeat the custom-package yes\/no question or restart control-plane setup/);
   assert.match(setupSkill, /Ask which repository the first review run should target/);
   assert.match(setupSkill, /Offer `<organization>\/<control-repository>` as the default/);
