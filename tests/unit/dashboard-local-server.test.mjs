@@ -344,15 +344,13 @@ test("local dashboard server rejects paths outside its workspace", async () => {
   }
 });
 
-test("local dashboard CLI relaunches Node with workspace permissions", () => {
+test("local dashboard CLI runs directly without a permission sandbox relaunch", () => {
   const repositoryRoot = path.resolve(import.meta.dirname, "../..");
   const result = spawnSync(process.execPath, ["dashboard/local-server.mjs", "--help"], {
     cwd: repositoryRoot,
     encoding: "utf8",
   });
-  if (result.status === 9 && /bad option: --allow-net=/.test(result.stderr)) return;
   assert.equal(result.status, 0, result.stderr);
-  assert.match(result.stdout, /Launching dashboard server with workspace filesystem permissions/);
   assert.match(result.stdout, /usage: local-server\.mjs/);
 });
 

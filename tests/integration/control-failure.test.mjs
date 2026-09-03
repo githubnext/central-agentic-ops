@@ -27,6 +27,7 @@ const failures = [
   ["mismatched control run URL", { CONTROL_PLANE_RUN_URL: "https://github.com/acme/control/actions/runs/999" }, "control_plane_run_url must match correlation_id and central_repo"],
   ["oversized repository request", { ROLE: "orchestrator", TARGET_REPO: "", REQUESTED_MAX_REPOS: "1001" }, "max_repositories must be an integer in 1..1000"],
   ["invalid rollout request", { ROLE: "orchestrator", TARGET_REPO: "", REQUESTED_ROLLOUT_PERCENT: "0" }, "rollout_percent must be an integer in 1..100"],
+  ["invalid dispatch maximum", { ROLE: "orchestrator", TARGET_REPO: "", DISPATCH_MAX: "invalid" }, "dispatch_max must be an integer from 1 through 1000"],
   ["invalid credit declaration", { ROLE: "orchestrator", TARGET_REPO: "", ORCHESTRATOR_CREDITS: "invalid" }, "AI Credit admission values must be non-negative integers"],
 ];
 
@@ -231,6 +232,44 @@ test("orchestrator derives its public central review destination without a dispa
   assert.doesNotMatch(result.stderr, /non-central review safe_output_repo must be private/);
 });
 
+for (const [label, dispatchMaximum, expected] of [
+  ["missing", "", 1],
+  ["string", "17", 17],
+]) {
+  test(`control precompute accepts a ${label} dispatch maximum`, () => {
+    const result = runPrecompute(
+      {
+        ROLE: "orchestrator",
+        TARGET_REPO: "",
+        DISPATCH_MAX: dispatchMaximum,
+      },
+      `
+case "$*" in
+  *contents/.github/workflows/dependabot.md*)
+    printf '%s\\n' '---
+safe-outputs:
+  dispatch-workflow:
+    workflows: [dependabot-release-train-updater]
+---' | base64 | tr -d '\\n'
+    ;;
+  *actions/workflows*)
+    printf '{"id":1,"name":"Dependabot worker","path":".github/workflows/dependabot-release-train-updater.lock.yml","state":"active"}\\n'
+    ;;
+  *repos/acme/target*)
+    printf '{"id":1,"full_name":"acme/target","archived":false,"disabled":false,"private":true,"pushed_at":"2026-09-03T00:00:00Z","default_branch":"main"}\\n'
+    ;;
+  *) printf 'true\\n' ;;
+esac
+`,
+      controlPolicy({ scope: { "allowed-repositories": ["acme/target"] } }),
+    );
+
+    assert.equal(result.status, 0, result.stderr);
+    const precompute = JSON.parse(readFileSync("/tmp/gh-aw/agent/control-precompute.json", "utf8"));
+    assert.equal(precompute.dispatch_max, expected);
+  });
+}
+
 test("control precompute rejects a public non-central review destination", () => {
   const result = runPrecompute(
     { SAFE_OUTPUT_REPO: "acme/review" },
@@ -288,6 +327,52 @@ esac
 
     const summary = readFileSync(stepSummary, "utf8");
     assert.match(summary, /GitHub REST API capacity is too low for this run/);
+  } finally {
+    rmSync(directory, { recursive: true, force: true });
+  }
+});
+
+test("control precompute retains a confirmed rate-limit diagnosis when its capacity recheck fails", () => {
+  const directory = mkdtempSync(join(tmpdir(), "central-ops-precompute-ratelimit-"));
+  const githubOutput = join(directory, "github-output");
+  const stepSummary = join(directory, "step-summary");
+  writeFileSync(githubOutput, "");
+  writeFileSync(stepSummary, "");
+
+  try {
+    const result = runPrecompute(
+      {
+        SAFE_OUTPUT_REPO: "acme/review",
+        GITHUB_OUTPUT: githubOutput,
+        GITHUB_STEP_SUMMARY: stepSummary,
+      },
+      `
+case "$*" in
+  *rate_limit*)
+    echo "gh: API rate limit exceeded for installation. (HTTP 403)" >&2
+    exit 1
+    ;;
+  *repos/acme/review*)
+    echo "gh: API rate limit exceeded for installation. (HTTP 403)" >&2
+    exit 1
+    ;;
+  *) printf 'true\\n' ;;
+esac
+`,
+    );
+
+    assert.equal(result.status, 0, result.stderr);
+    const output = Object.fromEntries(
+      readFileSync(githubOutput, "utf8")
+        .trim()
+        .split("\n")
+        .map((line) => {
+          const separator = line.indexOf("=");
+          return [line.slice(0, separator), line.slice(separator + 1)];
+        }),
+    );
+    assert.equal(output.reason, "github-api-capacity-insufficient");
+    assert.equal(output.github_api_status, "limited");
   } finally {
     rmSync(directory, { recursive: true, force: true });
   }

@@ -2682,7 +2682,8 @@ test('phone navigation uses icon shortcuts and a full-label view menu without ho
   await expect(page.locator('.primary-nav > .nav-item')).toHaveCount(6);
   await expect(page.locator('.primary-nav > .nav-item').nth(4)).toBeVisible();
   await expect(page.locator('.primary-nav > .nav-item').nth(4).locator('.octicon-meter')).toBeVisible();
-  await expect(page.locator('.primary-nav > .nav-item').nth(5)).toBeHidden();
+  await expect(page.locator('.primary-nav > .nav-item').nth(5)).toBeVisible();
+  await expect(page.locator('.primary-nav > .nav-item').nth(5).locator('.octicon-package')).toBeVisible();
   await expect(page.locator('.primary-nav')).not.toHaveCSS('overflow-x', 'auto');
 
   await page.getByRole('button', { name: 'Select view' }).click();

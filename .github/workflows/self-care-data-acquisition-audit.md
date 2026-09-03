@@ -3,7 +3,7 @@ name: "SelfCare / Data Acquisition Audit"
 description: Re-audits gh-aw logs, GitHub API access, downloads, indexing, and caching.
 intent: Keep the data acquisition audit accurate as repository collection paths and rate-limit risks change.
 on:
-  bots: ["github-actions[bot]"]
+  bots: ["github-actions[bot]", "cao-githubnext-gh-aw-cao-write[bot]"]
   workflow_dispatch:
     inputs:
       target_repo:

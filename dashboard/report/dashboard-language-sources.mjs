@@ -328,8 +328,12 @@ function workflowRows(deployed, generatedAt, inventory, controlSettings) {
   });
 }
 
-function runRows(deployed) {
+function runRows(deployed, usage) {
   const rows = new Map();
+  const dataByRun = new Map([...(usage.securityRuns || []), ...(usage.runs || [])].map((run) => [
+    `${String(run.repository || "").toLowerCase()}:${run.runId}`,
+    run.data ?? null,
+  ]));
   for (const workflow of deployed.workflows || []) {
     const names = repositoryParts(workflow.repository);
     for (const run of workflow.runHealth?.runRecords || []) {
@@ -357,6 +361,7 @@ function runRows(deployed) {
         "engine-version": firstText(run.engineVersion, run.engine_version, run.agenticEngineVersion, run.agentic_engine_version) || "unknown",
         "requested-model": firstText(run.requestedModel, run.requested_model, run.model) || "unknown",
         "resolved-model": firstText(run.resolvedModel, run.resolved_model, run.model) || "unknown",
+        data: dataByRun.get(key.toLowerCase()) ?? null,
         "run-link": link("run", `https://github.com/${workflow.repository}/actions/runs/${run.runId}`, `View run ${run.runId}`),
       });
     }
@@ -760,7 +765,7 @@ function operationalValueGraderRows(values) {
 export function buildDashboardLanguageSources({ deployed, usage, operationalValues, report, inventory = {}, controlSettings = {} }) {
   const generatedAt = report.generatedAt || deployed.generatedAt || new Date().toISOString();
   const workflows = workflowRows(deployed, generatedAt, inventory, controlSettings);
-  const runs = runRows(deployed);
+  const runs = runRows(deployed, usage);
   const performance = performanceRows(deployed, usage);
   const records = report.records || [];
   const workflowRoleForRecord = recordWorkflowRoleResolver(workflows);

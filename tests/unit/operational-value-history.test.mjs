@@ -4,6 +4,7 @@ import {
   definitionFromOperationalValueReport,
   mergeOperationalValueRecords,
   operationalValueRecordIdentity,
+  operationalValueRunIdentity,
   recordsFromOperationalValueReport,
 } from "../../dashboard/report/operational-value-history.mjs";
 
@@ -57,4 +58,29 @@ test("keeps retries and evaluator generations while preferring report observatio
   assert.equal(records.find((record) => record.observationId === normalized.observationId)?.value, 0.8);
   assert.ok(records.some((record) => record.observationId.endsWith(":3:digest")));
   assert.ok(records.some((record) => record.observationId.endsWith(":2:old-digest")));
+});
+
+test("run identities cover cached results even without nested observation payloads", () => {
+  const cached = {
+    schemaVersion: 1,
+    repository: "github/gh-aw",
+    workflowId: "daily-file-diet",
+    workflowPath: ".github/workflows/daily-file-diet.md",
+    runId: 42,
+    runAttempt: 2,
+    status: "pass",
+    value: 0.7,
+    observationSource: "run",
+    observation: null,
+  };
+  const selected = {
+    repository: "github/gh-aw",
+    workflowId: "daily-file-diet",
+    workflowPath: ".github/workflows/daily-file-diet.md",
+    runId: 42,
+    run: { attempt: 2 },
+  };
+
+  assert.equal(operationalValueRecordIdentity(cached), "github/gh-aw:daily-file-diet:42:2:unknown-evaluator");
+  assert.equal(operationalValueRunIdentity(cached), operationalValueRunIdentity(selected));
 });

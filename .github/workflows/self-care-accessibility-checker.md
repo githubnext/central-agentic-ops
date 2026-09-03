@@ -3,7 +3,7 @@ emoji: "♿"
 name: "SelfCare / Accessibility"
 description: Audits the Central Agentic Ops documentation web interface for accessibility barriers using axe-core, keyboard traversal, and rendered-page evidence
 on:
-  bots: ["github-actions[bot]"]
+  bots: ["github-actions[bot]", "cao-githubnext-gh-aw-cao-write[bot]"]
   workflow_dispatch:
     inputs:
       target_repo:

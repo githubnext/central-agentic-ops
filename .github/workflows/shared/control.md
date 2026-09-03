@@ -11,13 +11,13 @@ import-schema:
     type: string
     default: "__none__"
   dispatch_max:
-    type: string
+    type: number
     default: "1"
   orchestrator_credits:
-    type: string
+    type: number
     default: "0"
   worker_credits_per_target:
-    type: string
+    type: number
     default: "0"
 
 github-app:
@@ -128,6 +128,24 @@ jobs:
         if: ${{ steps.cao_admission.outputs.reason == 'github-api-capacity-unavailable' }}
         run: |
           echo "::error title=CAO admission could not verify GitHub API capacity::Check authentication and GitHub API status. See the admission summary for next steps."
+          exit 1
+
+      - name: "CAO admission blocked: runner disk space too low"
+        if: ${{ steps.cao_admission.outputs.reason == 'runner-disk-capacity-insufficient' }}
+        env:
+          CAO_DISK_AVAILABLE: ${{ steps.cao_admission.outputs.runner_disk_available_mb }}
+          CAO_DISK_REQUIRED: ${{ steps.cao_admission.outputs.runner_disk_required_mb }}
+          CAO_DISK_PATH: ${{ steps.cao_admission.outputs.runner_disk_path }}
+        run: |
+          echo "::error title=CAO admission blocked by runner disk capacity::${CAO_DISK_AVAILABLE} MB free on ${CAO_DISK_PATH}; ${CAO_DISK_REQUIRED} MB required. See the admission summary for next steps."
+          exit 1
+
+      - name: "CAO admission blocked: runner disk capacity unavailable"
+        if: ${{ steps.cao_admission.outputs.reason == 'runner-disk-capacity-unavailable' }}
+        env:
+          CAO_DISK_PATH: ${{ steps.cao_admission.outputs.runner_disk_path }}
+        run: |
+          echo "::error title=CAO admission could not verify runner disk capacity::Free disk space could not be read for ${CAO_DISK_PATH}. See the admission summary for next steps."
           exit 1
 
       - name: Install gh-aw CLI when monthly budget is enabled
