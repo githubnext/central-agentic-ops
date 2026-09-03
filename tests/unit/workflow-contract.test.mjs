@@ -2399,7 +2399,7 @@ test("Documentation Pages deploys docs with the packaged dashboard builder", () 
   assert.match(workflow, /name: central-agentic-ops-dashboard\n\s+path: dist/);
   assert.match(workflow, /schedule:\n\s+- cron: "\*\/15 \* \* \* \*"/);
   assert.match(workflow, /workflow_dispatch:\n\s+inputs:\n\s+mode:[\s\S]*?default: live/);
-  assert.match(workflow, /DISPATCH_INPUTS: [^\n]*"mode":"\$\{\{ inputs\.mode \|\| 'live' \}\}"/);
+  assert.match(workflow, /DISPATCH_INPUTS:[\s\S]*?"mode":"\$\{\{ inputs\.mode \|\| 'live' \}\}"/);
   assert.match(workflow, /run-id: \$\{\{ needs\.dashboard\.outputs\.run-id \}\}/);
   assert.doesNotMatch(workflow, /workflow_run|gh aw add|DASHBOARD_PACKAGE/);
   assert.equal((workflow.match(/actions\/upload-pages-artifact@/g) || []).length, 1);

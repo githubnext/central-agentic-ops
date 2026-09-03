@@ -41,7 +41,7 @@ The top-level `dashboard/` package is conventional GitHub Actions automation, no
 
 - Install the dashboard from root `aw.yml` by default, keep `dashboard/aw.yml` available for focused dashboard-only installations, and keep both manifests' dashboard destinations in sync. Never fold the dashboard into an operational package.
 - Install `.github/workflows/dashboard-build.yml` in place and `dashboard/dashboard.yml` as `.github/workflows/dashboard.yml` with mapped `action-workflow` includes.
-- Keep the reusable builder path-aware through its `site-path` input and upload a normal artifact that an existing Pages workflow can merge before its single Pages upload and deployment.
+- Keep the dispatchable builder path-aware through its `site-path` input and upload a normal artifact that an existing Pages workflow can merge by exact run ID before its single Pages upload and deployment.
 - Keep the standalone publisher manual-only, pass `enablement: false` to `actions/configure-pages`, and require Pages access control before use. Do not add a second enable variable.
 - Keep canonical report modules under `dashboard/report/` and install them under `.github/aw/dashboard/report/` as package resources.
 - Keep the Dashboard Language renderer under `dashboard/site/`; it is owned and installed by the deterministic `dashboard/` package.
