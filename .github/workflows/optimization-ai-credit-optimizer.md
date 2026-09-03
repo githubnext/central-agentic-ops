@@ -43,8 +43,8 @@ environment: central-agentic-ops
 jobs:
   pre-activation:
     outputs:
-      cao_authorized: ${{ steps.cao_admission.outputs.authorized }}
-      cao_reason: ${{ steps.cao_admission.outputs.reason }}
+      cao_authorized: ${{ steps.cao_admission.outputs.authorized == 'true' && steps.cao_precompute.outputs.authorized != 'false' }}
+      cao_reason: ${{ steps.cao_precompute.outputs.reason || steps.cao_admission.outputs.reason }}
 
 if: needs.pre_activation.outputs.cao_authorized == 'true'
 

@@ -38,8 +38,8 @@ on:
 jobs:
   pre-activation:
     outputs:
-      cao_authorized: ${{ steps.cao_admission.outputs.authorized }}
-      cao_reason: ${{ steps.cao_admission.outputs.reason }}
+      cao_authorized: ${{ steps.cao_admission.outputs.authorized == 'true' && steps.cao_precompute.outputs.authorized != 'false' }}
+      cao_reason: ${{ steps.cao_precompute.outputs.reason || steps.cao_admission.outputs.reason }}
 
 env:
   GH_AW_SAFE_OUTPUT_MODE: ${{ inputs.safe_output_mode || 'review' }}
