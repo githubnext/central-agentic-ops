@@ -39,3 +39,19 @@ export function formatDashboardHorizon(range) {
   const unit = UNIT_LABELS[/** @type {'h'|'d'|'w'} */ (match[2])];
   return `${count} ${unit}${count === 1 ? '' : 's'}`;
 }
+
+/**
+ * @param {number} hours
+ * @returns {string}
+ */
+export function formatDashboardHorizonHours(hours) {
+  if (!Number.isInteger(hours) || hours <= 0) {
+    throw new Error(`Invalid dashboard horizon hours: ${hours}`);
+  }
+  const unit = hours % UNIT_HOURS.w === 0
+    ? /** @type {'w'} */ ('w')
+    : hours % UNIT_HOURS.d === 0
+      ? /** @type {'d'} */ ('d')
+      : /** @type {'h'} */ ('h');
+  return formatDashboardHorizon(`${hours / UNIT_HOURS[unit]}${unit}`);
+}

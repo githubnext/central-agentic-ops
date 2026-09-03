@@ -20,7 +20,7 @@ import { deriveOverviewSources } from './overview-data.js';
 import { deriveRepositorySources } from './repository-data.js';
 import { deriveRuntimeSources } from './runtime-data.js';
 import { deriveWorkflowSources } from './workflow-data.js';
-import { dashboardHorizonHours, formatDashboardHorizon, resolveDashboardHorizon } from './horizon.js';
+import { dashboardHorizonHours, formatDashboardHorizon, formatDashboardHorizonHours, resolveDashboardHorizon } from './horizon.js';
 
 /**
  * @typedef {{ availability: 'available'|'empty'|'unavailable', completeness: 'complete'|'partial'|'unknown', freshness: 'fresh'|'stale'|'unknown' }} DataState
@@ -125,6 +125,8 @@ export function renderDashboard(input) {
   const { document, sources: rawSources } = input;
   const pages = document.dashboard.pages;
   const horizonRange = resolveDashboardHorizon(document.dashboard);
+  const hasData = Object.values(rawSources).some((source) => Array.isArray(source?.rows) && source.rows.length > 0);
+  const dataHorizon = resolveDataHorizon(rawSources);
   const githubUrlBase = typeof document.dashboard['github-url-base'] === 'string' && document.dashboard['github-url-base'].length > 0
     ? document.dashboard['github-url-base']
     : DEFAULT_GITHUB_URL_BASE;
@@ -140,14 +142,14 @@ export function renderDashboard(input) {
   );
   const orgName = inferOrganizationName(sources) || 'GitHub';
   const sidebarTitle = dashboardRepository?.split('/').at(-1) || orgName;
-  const evaluatedAt = latestRetrievedAt(sources) ?? new Date().toISOString();
+  const evaluatedAt = dataHorizon?.end ?? latestRetrievedAt(sources) ?? new Date().toISOString();
   const dashboardDefaults = resolveDashboardDefaults(document.dashboard.defaults, horizonRange, evaluatedAt);
 
   const styleEl = h('style', null, getPrimerStyles());
   const skipLink = h('a', { href: '#main-content', className: 'skip-link' }, 'Skip to main content');
 
   const sidebar = renderSidebar(pages, sidebarTitle, document.dashboard.navigation);
-  const mainContent = renderMainContent(document, pages, sources, githubUrlBase, dashboardRepository, dashboardDefaults, horizonRange, evaluatedAt);
+  const mainContent = renderMainContent(document, pages, sources, githubUrlBase, dashboardRepository, dashboardDefaults, horizonRange, evaluatedAt, hasData, dataHorizon);
 
   const appShell = h(
     'div',
@@ -323,9 +325,11 @@ function getPageIcon(page) {
  * @param {Record<string, unknown>} dashboardDefaults
  * @param {string} horizonRange
  * @param {string} evaluatedAt
+ * @param {boolean} hasData
+ * @param {{ start: string, end: string, hours: number } | null} dataHorizon
  * @returns {HTMLElement}
  */
-function renderMainContent(document, pages, sources, githubUrlBase, dashboardRepository, dashboardDefaults, horizonRange, evaluatedAt) {
+function renderMainContent(document, pages, sources, githubUrlBase, dashboardRepository, dashboardDefaults, horizonRange, evaluatedAt, hasData, dataHorizon) {
   const initialPage = pages[0];
   const overviewPage = pages.find((page) => page.id === 'overview');
   const initialPageTitle = initialPage ? getPageTitle(initialPage) : '';
@@ -349,7 +353,7 @@ function renderMainContent(document, pages, sources, githubUrlBase, dashboardRep
         h(
           'div',
           { className: 'report-actions' },
-          renderDashboardHorizon(document.dashboard, dashboardDefaults, horizonRange, evaluatedAt),
+          renderDashboardHorizon(document.dashboard, dashboardDefaults, horizonRange, evaluatedAt, hasData, dataHorizon),
           latestRetrieval
             ? h('time', { className: 'freshness', dateTime: latestRetrieval }, `Last updated ${formatReportDate(latestRetrieval)}`)
             : null,
@@ -439,18 +443,30 @@ function renderMainContent(document, pages, sources, githubUrlBase, dashboardRep
  * @param {Record<string, unknown>} dashboardDefaults
  * @param {string} horizonRange
  * @param {string} evaluatedAt
+ * @param {boolean} hasData
+ * @param {{ start: string, end: string, hours: number } | null} dataHorizon
  * @returns {HTMLElement}
  */
-function renderDashboardHorizon(dashboard, dashboardDefaults, horizonRange, evaluatedAt) {
+function renderDashboardHorizon(dashboard, dashboardDefaults, horizonRange, evaluatedAt, hasData, dataHorizon) {
+  if (!hasData) {
+    return h(
+      'span',
+      { className: 'dashboard-horizon dashboard-horizon-skeleton', 'aria-label': 'Horizon unavailable' },
+      h('span', { 'aria-hidden': 'true' })
+    );
+  }
+
   const horizon = dashboard.horizon;
   const label = horizon?.label || 'Horizon';
-  const duration = formatDashboardHorizon(horizonRange);
-  const start = isPlainObject(dashboardDefaults.time) && typeof dashboardDefaults.time.start === 'string'
+  const duration = dataHorizon
+    ? formatDashboardHorizonHours(dataHorizon.hours)
+    : formatDashboardHorizon(horizonRange);
+  const start = dataHorizon?.start ?? (isPlainObject(dashboardDefaults.time) && typeof dashboardDefaults.time.start === 'string'
     ? dashboardDefaults.time.start
-    : new Date(new Date(evaluatedAt).getTime() - dashboardHorizonHours(horizonRange) * 3_600_000).toISOString();
-  const end = isPlainObject(dashboardDefaults.time) && typeof dashboardDefaults.time.end === 'string'
+    : new Date(new Date(evaluatedAt).getTime() - dashboardHorizonHours(horizonRange) * 3_600_000).toISOString());
+  const end = dataHorizon?.end ?? (isPlainObject(dashboardDefaults.time) && typeof dashboardDefaults.time.end === 'string'
     ? dashboardDefaults.time.end
-    : evaluatedAt;
+    : evaluatedAt);
   const tooltipId = 'dashboard-horizon-details';
 
   return h(
@@ -473,6 +489,30 @@ function renderDashboardHorizon(dashboard, dashboardDefaults, horizonRange, eval
       })
       : null
   );
+}
+
+/**
+ * Combines declared coverage windows from non-empty temporal sources. Sources
+ * without valid coverage bounds are treated as timeless and do not widen the window.
+ * @param {Record<string, LogicalSourceInput>} sources
+ * @returns {{ start: string, end: string, hours: number } | null}
+ */
+function resolveDataHorizon(sources) {
+  const windows = Object.values(sources)
+    .filter((source) => Array.isArray(source?.rows) && source.rows.length > 0)
+    .map((source) => ({
+      start: Date.parse(source.metadata?.['coverage-start'] ?? ''),
+      end: Date.parse(source.metadata?.['coverage-end'] ?? '')
+    }))
+    .filter(({ start, end }) => Number.isFinite(start) && Number.isFinite(end) && end > start);
+  if (windows.length === 0) return null;
+
+  const start = Math.min(...windows.map((window) => window.start));
+  const end = Math.max(...windows.map((window) => window.end));
+  const hours = Math.ceil((end - start) / 3_600_000);
+  return hours > 0
+    ? { start: new Date(start).toISOString(), end: new Date(end).toISOString(), hours }
+    : null;
 }
 
 /**
