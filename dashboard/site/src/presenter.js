@@ -9,7 +9,7 @@ import { octicon, agenticWorkflowMark } from './octicons.js';
 import { renderDataStateMetrics } from './components/data-state.js';
 import { formatMediumUtcDateTime, renderTooltip, renderEmptyMessage } from './components/ui-primitives.js';
 import { customViewAvailabilityMessage, renderCustomViewStateDetails, renderLayoutSectionChrome, renderPageSection } from './components/view-chrome.js';
-import { toNumber, stringOrFallback } from './view-formatters.js';
+import { formatCompactElapsedTime, toNumber, stringOrFallback } from './view-formatters.js';
 import { findLink } from './components/link-content.js';
 import { elementHandlesEmptyRows, renderUiElement } from './components/ui-elements.js';
 import { renderDataView } from './components/data-view.js';
@@ -364,7 +364,15 @@ function renderMainContent(document, pages, sources, githubUrlBase, dashboardRep
           renderDashboardHorizon(document.dashboard, dashboardDefaults, horizonRange, evaluatedAt, hasData, dataHorizon),
           hasData
             ? latestRetrieval
-              ? h('time', { className: 'freshness', dateTime: latestRetrieval }, `Last updated ${formatReportDate(latestRetrieval)}`)
+              ? h(
+                  'time',
+                  {
+                    className: 'freshness',
+                    dateTime: latestRetrieval,
+                    title: `Last updated ${formatReportDate(latestRetrieval)} UTC`
+                  },
+                  formatCompactElapsedTime(latestRetrieval, Date.now())
+              )
               : null
             : h(
                 'span',
@@ -507,8 +515,8 @@ function renderDashboardHorizon(dashboard, dashboardDefaults, horizonRange, eval
 }
 
 /**
- * Combines declared coverage windows from non-empty temporal sources. Sources
- * without valid coverage bounds are treated as timeless and do not widen the window.
+ * Resolves the shared coverage window across non-empty temporal sources. Sources
+ * without valid coverage bounds are treated as timeless and do not constrain the window.
  * @param {Record<string, LogicalSourceInput>} sources
  * @returns {{ start: string, end: string, hours: number } | null}
  */
@@ -522,8 +530,8 @@ function resolveDataHorizon(sources) {
     .filter(({ start, end }) => Number.isFinite(start) && Number.isFinite(end) && end > start);
   if (windows.length === 0) return null;
 
-  const start = Math.min(...windows.map((window) => window.start));
-  const end = Math.max(...windows.map((window) => window.end));
+  const start = Math.max(...windows.map((window) => window.start));
+  const end = Math.min(...windows.map((window) => window.end));
   const hours = Math.ceil((end - start) / 3_600_000);
   return hours > 0
     ? { start: new Date(start).toISOString(), end: new Date(end).toISOString(), hours }

@@ -385,6 +385,9 @@ test('DLS-DOC-014 horizon help is available on hover and keyboard focus', async 
   await trigger.blur();
   await trigger.focus();
   await expect(tooltip).toBeVisible();
+  await expect(page.locator('.refresh-button > span')).toBeHidden();
+  const actionItems = await page.locator('.report-actions > *').evaluateAll((items) => items.map((item) => item.getBoundingClientRect().top));
+  expect(new Set(actionItems.map(Math.round))).toHaveLength(1);
   const tooltipBox = await tooltip.boundingBox();
   expect(tooltipBox).not.toBeNull();
   expect(tooltipBox?.x).toBeGreaterThanOrEqual(0);
