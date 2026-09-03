@@ -9,7 +9,8 @@ Choose the least-powerful authentication profile that can satisfy the effective 
 | --- | --- |
 | Self-review against the control repository | Built-in `GITHUB_TOKEN` |
 | Public targets in `review`, with outputs kept in the control repository | Built-in `GITHUB_TOKEN`, subject to cross-repository API limits |
-| Private or internal targets, alternate review repositories, or cross-repository live writes | GitHub App |
+| Private or internal targets or alternate review repositories | Read-only GitHub App |
+| Cross-repository review or live safe outputs | Separate write-capable GitHub App |
 | GitHub App installation is unavailable and the exact scope is PAT-compatible | Fine-grained PAT, only after informed consent |
 
 ```text
@@ -40,30 +41,73 @@ Before installation, require API evidence of an active organization entitlement 
 
 ## Policy
 
-Target-repository authentication is defined once in `.github/workflows/shared/control.md` and inherited by Orchestrator and worker workflows. Copilot inference permission remains explicit in every Copilot-backed workflow. Workflow-local GitHub App blocks should not be added unless a future Agentic Workflow has a documented isolation requirement that shared control cannot satisfy.
+Target-repository authentication is defined once in `.github/workflows/shared/control.md` and inherited by Orchestrator and worker workflows. The read-only App authenticates GitHub tools, admission, and control precompute. A separate write-capable App is available only to safe outputs, where gh-aw mints a token narrowed to the selected handler's permissions. Copilot inference permission remains explicit in every Copilot-backed workflow. Workflow-local GitHub App blocks should not be added unless a future Agentic Workflow has a documented isolation requirement that shared control cannot satisfy.
 
 The supported control-plane credentials are:
 
 | Priority | Credential | Configuration |
 | --- | --- | --- |
-| 1 | GitHub App | Repository variable `GH_AW_GITHUB_APP_ID` and repository secret `GH_AW_GITHUB_APP_PRIVATE_KEY` |
+| 1 | Read-only GitHub App | Repository variable `GH_AW_GITHUB_READ_APP_ID` and repository secret `GH_AW_GITHUB_READ_APP_PRIVATE_KEY` |
+| 1 | Write-capable GitHub App | Repository variable `GH_AW_GITHUB_WRITE_APP_ID` and repository secret `GH_AW_GITHUB_WRITE_APP_PRIVATE_KEY` |
 | 2 | Fine-grained PAT | Protected `central-agentic-ops` environment secret `GH_AW_GITHUB_TOKEN` |
 | 3 | Workflow token | Repository-provided `GITHUB_TOKEN` for operations it can authorize |
 
-This is runtime availability precedence, not permission to choose a PAT silently. `ignore-if-missing: true` makes the App optional: when an App token is unavailable, shared control falls through to `GH_AW_GITHUB_TOKEN`, then `GITHUB_TOKEN`. The runtime cannot determine why a PAT secret exists or record informed consent. Setup must choose and validate the authentication profile before a run; if App authentication is intended, verify the App ID variable and private key secret rather than relying on fallback behavior.
+This is runtime availability precedence, not permission to choose a PAT silently. `ignore-if-missing: true` makes each App optional: when an applicable App token is unavailable, shared control falls through to `GH_AW_GITHUB_TOKEN`, then `GITHUB_TOKEN`. The runtime cannot determine why a PAT secret exists or record informed consent. Setup must choose and validate the authentication profile before a run; if App authentication is intended, verify both App ID variables and private key secrets rather than relying on fallback behavior.
 
-The root package's interactive bootstrap creates or reuses a GitHub App, stores its client ID and private key, and waits for the App to be installed. For manual configuration, set the same repository variable and secret:
+The committed root `aw.yml` intentionally has no `config` block so normal installation remains compatible with non-interactive `gh aw add`. Create and install the two Apps manually, then configure both credential pairs:
 
 ```bash
 CONTROL_REPO="acme/central-agentic-ops"
 
-gh variable set GH_AW_GITHUB_APP_ID --repo "$CONTROL_REPO" --body '<github-app-client-id>'
-gh secret set GH_AW_GITHUB_APP_PRIVATE_KEY \
+gh variable set GH_AW_GITHUB_READ_APP_ID --repo "$CONTROL_REPO" --body '<read-app-client-id>'
+gh secret set GH_AW_GITHUB_READ_APP_PRIVATE_KEY \
 	--repo "$CONTROL_REPO" \
-	< github-app-private-key.pem
+	< read-app-private-key.pem
+
+gh variable set GH_AW_GITHUB_WRITE_APP_ID --repo "$CONTROL_REPO" --body '<write-app-client-id>'
+gh secret set GH_AW_GITHUB_WRITE_APP_PRIVATE_KEY \
+	--repo "$CONTROL_REPO" \
+	< write-app-private-key.pem
 ```
 
-The private key command reads the key from a local file without placing it in shell history.
+The private key commands read keys from local files without placing them in shell history.
+
+### Optional setup wizard
+
+To have gh-aw create and install both Apps, use a temporary local checkout of the exact CAO revision being installed. Add the following block to that checkout's root `aw.yml` only for the setup run. Replace both `app-name` placeholders with distinct, globally unique names:
+
+```yaml
+config:
+	- type: require-owner-type
+		value: org
+	- type: github-app
+		app-name: <globally-unique-cao-read-app>
+		app-id-variable: GH_AW_GITHUB_READ_APP_ID
+		private-key-secret: GH_AW_GITHUB_READ_APP_PRIVATE_KEY
+		permissions:
+			actions: read
+			checks: read
+			contents: read
+			issues: read
+			packages: read
+			pull_requests: read
+			secret_scanning_alerts: read
+			security_events: read
+			statuses: read
+			vulnerability_alerts: read
+	- type: github-app
+		app-name: <globally-unique-cao-write-app>
+		app-id-variable: GH_AW_GITHUB_WRITE_APP_ID
+		private-key-secret: GH_AW_GITHUB_WRITE_APP_PRIVATE_KEY
+		permissions:
+			actions: write
+			administration: read
+			contents: write
+			issues: write
+			pull_requests: write
+```
+
+From the control-repository checkout, run `gh aw add-wizard /path/to/temporary/cao-checkout --no-config` instead of the regular root-package `gh aw add` command. `--no-config` disables additive package-wide permission inference, which would otherwise give both Apps the combined read/write permission set. Complete the wizard's remote delivery and App installation prompts, verify both Apps cover every enrolled repository, then delete the temporary checkout. Never commit this `config` block to the catalog or control repository.
 
 When manual workflow steps need `GH_TOKEN`, they select the imported App token first when available, then `GH_AW_GITHUB_TOKEN`, then `GITHUB_TOKEN`. Missing, incomplete, or invalid credentials must not be copied into dispatch inputs or persisted in artifacts.
 
@@ -124,7 +168,7 @@ The workflow token is scoped to the repository containing the workflow. Public c
 
 ## Credential Boundary
 
-- The App client ID lives in the control repository's Actions variable, the App private key lives in its Actions secret, and PAT credentials live in the protected `central-agentic-ops` environment secret.
+- Each App client ID lives in its control-repository Actions variable, each private key lives in its corresponding Actions secret, and PAT credentials live in the protected `central-agentic-ops` environment secret.
 - worker workflows receive repository names and routing policy, never credentials.
 - Each Orchestrator and worker workflow run resolves its own token through imported shared control.
 - Tokens must not appear in prompts, logs, safe outputs, Repo Memory, review bundles, or correlation metadata.
@@ -132,18 +176,22 @@ The workflow token is scoped to the repository containing the workflow. Public c
 
 ## Permissions
 
-Grant only permissions required by installed operations. The current full catalog may require:
+Grant only permissions required by installed operations. The current full catalog separates these App-level ceilings; each minted token is narrower when its job or safe-output handler needs fewer permissions:
 
-| Permission | Access | Reason |
-| --- | --- | --- |
-| Actions | Read | Discover workflows and inspect runs |
-| Contents | Read and write | Read target repositories and create approved repository changes |
-| Issues | Read and write | Inspect issues and create issue or comment safe outputs |
-| Pull requests | Read and write | Inspect dependency work and create pull request safe outputs |
-| Workflows | Read and write | Dispatch installed worker workflows and update workflow files where explicitly allowed |
-| Security events | Read | Inspect code-security evidence |
-| Dependabot alerts | Read | Prioritize dependency security work |
-| Metadata | Read | Required repository metadata access |
+| Permission | Read App | Write App | Reason |
+| --- | --- | --- | --- |
+| Actions | Read | Write | Inspect runs and dispatch approved workers |
+| Administration | None | Read | Validate repository settings needed by approved maintenance outputs |
+| Checks | Read | None | Inspect checks |
+| Contents | Read | Write | Read repositories and create approved changes |
+| Issues | Read | Write | Inspect issues and emit issue or comment safe outputs |
+| Packages | Read | None | Inspect package evidence |
+| Pull requests | Read | Write | Inspect pull requests and emit approved pull-request outputs |
+| Secret scanning alerts | Read | None | Inspect code-security evidence |
+| Security events | Read | None | Inspect code-security evidence |
+| Commit statuses | Read | None | Inspect status evidence |
+| Vulnerability alerts | Read | None | Prioritize dependency security work |
+| Metadata | Read | Read | Required automatically for GitHub Apps |
 
 A package-only installation should narrow these permissions to that package's workflows. Fine-grained PATs should be limited to the same repositories and permissions.
 
@@ -157,12 +205,12 @@ The GitHub CLI prompts for the token without echoing it. Do not include the toke
 
 ## Rotation and Revocation
 
-For a GitHub App:
+For GitHub Apps:
 
-1. Add the replacement private key to the existing repository secret.
+1. Add each replacement private key to its corresponding repository secret.
 2. Validate review runs for each installed operation.
-3. Revoke the old private key.
-4. Recheck App installation repository access and permissions.
+3. Revoke each old private key.
+4. Recheck both App installations, repository access, and permissions.
 
 For a PAT:
 

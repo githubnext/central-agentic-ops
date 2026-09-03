@@ -663,17 +663,10 @@ test("package manifests exclude repository-only tests", () => {
   }
 });
 
-test("root package bootstraps GitHub App credentials for API capacity", () => {
+test("root package keeps GitHub App setup opt-in", () => {
   const rootManifest = parse(readFileSync(join(root, "aw.yml"), "utf8"));
 
-  assert.deepEqual(rootManifest.config, [
-    { type: "require-owner-type", value: "org" },
-    {
-      type: "github-app",
-      "app-id-variable": "GH_AW_GITHUB_APP_ID",
-      "private-key-secret": "GH_AW_GITHUB_APP_PRIVATE_KEY",
-    },
-  ]);
+  assert.equal(rootManifest.config, undefined);
 });
 
 test("root package provides default control-repository agent context", () => {
@@ -1044,8 +1037,10 @@ test("authentication prefers an optional GitHub App and retains bounded fallback
   const control = workflow("shared/control.md");
   const precompute = controlPrecompute();
 
-  assert.match(control, /github-app:\n\s+client-id: \$\{\{ vars\.GH_AW_GITHUB_APP_ID \}\}/);
-  assert.match(control, /private-key: \$\{\{ secrets\.GH_AW_GITHUB_APP_PRIVATE_KEY \}\}/);
+  assert.match(control, /github-app:\n\s+client-id: \$\{\{ vars\.GH_AW_GITHUB_READ_APP_ID \}\}/);
+  assert.match(control, /private-key: \$\{\{ secrets\.GH_AW_GITHUB_READ_APP_PRIVATE_KEY \}\}/);
+  assert.match(control, /safe-outputs:\n\s+github-app:\n\s+client-id: \$\{\{ vars\.GH_AW_GITHUB_WRITE_APP_ID \}\}/);
+  assert.match(control, /private-key: \$\{\{ secrets\.GH_AW_GITHUB_WRITE_APP_PRIVATE_KEY \}\}/);
   assert.match(control, /ignore-if-missing: true/);
   assert.doesNotMatch(control, /repositories: \["\*"\]/);
   assert.match(control, /jobs:\n\s+pre-activation:[\s\S]*?secrets\.GH_AW_GITHUB_TOKEN \|\| github\.token/);
@@ -2128,7 +2123,11 @@ test("README routes zero-to-CAO requests to the setup skill", () => {
   assert.doesNotMatch(setupSkill, /the control repository is public;/);
   assert.match(setupSkill, /Control-repository visibility does not determine target access/);
   assert.match(setupSkill, /use `GITHUB_TOKEN` for control-repository self-review or an exact public target in `review`/);
-  assert.match(setupSkill, /require a least-privilege GitHub App before running against a private or internal target/);
+  assert.match(setupSkill, /require separate least-privilege read-only and write-capable GitHub Apps/);
+  assert.match(setupSkill, /gh aw add-wizard \/path\/to\/temporary\/cao-checkout --no-config/);
+  assert.match(setupSkill, /wizard path replaces the regular `gh aw add` invocation/);
+  assert.match(setupSkill, /Do not commit, stage, copy, or push the temporary manifest change/);
+  assert.match(setupSkill, /read App has no write permission/);
   assert.match(setupSkill, /Do not place private target evidence in a public control repository/);
   assert.match(setupSkill, /offer a fine-grained PAT only when an App cannot be obtained[\s\S]*?user explicitly consents/);
   assert.match(setupSkill, /A PAT cannot grant access the user does not already have/);

@@ -285,7 +285,10 @@ test("Ops Publish remains an explicit least-privilege add-on", () => {
   assert.doesNotMatch(workflow, /vars\.CENTRAL_AGENTIC_OPS_/);
   assert.match(workflow, /permissions:\n\s+actions: read\n\s+contents: read\n\s+issues: write/);
   assert.match(workflow, /actions\/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1/);
-  assert.match(workflow, /APP_CLIENT_ID: \$\{\{ vars\.GH_AW_GITHUB_APP_ID \}\}/);
+  assert.match(workflow, /APP_CLIENT_ID: \$\{\{ vars\.GH_AW_GITHUB_READ_APP_ID \}\}/);
+  assert.match(workflow, /APP_CLIENT_ID: \$\{\{ vars\.GH_AW_GITHUB_WRITE_APP_ID \}\}/);
+  assert.match(workflow, /APP_PRIVATE_KEY: \$\{\{ secrets\.GH_AW_GITHUB_READ_APP_PRIVATE_KEY \}\}/);
+  assert.match(workflow, /APP_PRIVATE_KEY: \$\{\{ secrets\.GH_AW_GITHUB_WRITE_APP_PRIVATE_KEY \}\}/);
   assert.match(workflow, /permission-contents: read\n\s+permission-issues: write/);
   assert.match(workflow, /SOURCE_CONTENT_DIGEST: \$\{\{ steps\.inspect\.outputs\.source_content_digest \}\}/);
   assert.match(workflow, /SOURCE_ISSUE_CREATED_AT: \$\{\{ steps\.inspect\.outputs\.source_created_at \}\}/);

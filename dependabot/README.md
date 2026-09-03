@@ -38,7 +38,7 @@ The package is runnable after credentials, when needed, and checked-in policy ar
 
 Configure a GitHub App, a fine-grained PAT, or both in the control repository for private targets, alternate review repositories, or live operation. App authentication is preferred. A bounded review run against a public target can use the automatically provided `GITHUB_TOKEN` when outputs stay in the private control repository.
 
-Store `GH_AW_GITHUB_APP_ID` as a repository variable and `GH_AW_GITHUB_APP_PRIVATE_KEY` as a repository secret for App authentication, or store a fine-grained PAT in `GH_AW_GITHUB_TOKEN`. The optional `GH_AW_CI_TOKEN` secret supports the updater path that requires an additional empty commit.
+Store `GH_AW_GITHUB_READ_APP_ID` and `GH_AW_GITHUB_WRITE_APP_ID` as repository variables and their corresponding `GH_AW_GITHUB_READ_APP_PRIVATE_KEY` and `GH_AW_GITHUB_WRITE_APP_PRIVATE_KEY` values as repository secrets, or store a fine-grained PAT in `GH_AW_GITHUB_TOKEN`. The optional `GH_AW_CI_TOKEN` secret supports the updater path that requires an additional empty commit.
 
 Declare Dependabot in `.github/workflows/cao.json`:
 
