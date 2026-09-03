@@ -323,7 +323,7 @@ test('production pages expose their executive chart without scrolling on a phone
   await expect(chart).toBeVisible();
   const chartBox = await chart.boundingBox();
   expect(chartBox).not.toBeNull();
-  expect(chartBox?.y).toBeLessThan(844);
+  expect(chartBox?.y).toBeGreaterThanOrEqual(0);
   expect((chartBox?.y ?? 0) + (chartBox?.height ?? 0)).toBeLessThanOrEqual(844);
 });
 

@@ -1,5 +1,5 @@
 import { execFileSync } from "node:child_process";
-import { readFileSync, readdirSync } from "node:fs";
+import { existsSync, readFileSync, readdirSync } from "node:fs";
 import { join, resolve } from "node:path";
 import assert from "node:assert/strict";
 import test from "node:test";
@@ -20,14 +20,7 @@ test("every production dashboard page starts with a visual executive summary", (
     ...readdirSync(root, { withFileTypes: true })
       .filter((entry) => entry.isDirectory())
       .map((entry) => join(root, entry.name, "dashboard.json"))
-      .filter((path) => {
-        try {
-          readFileSync(path);
-          return true;
-        } catch {
-          return false;
-        }
-      }),
+      .filter((path) => existsSync(path)),
   ];
 
   for (const path of dashboardFiles) {
