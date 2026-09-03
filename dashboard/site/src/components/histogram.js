@@ -3,45 +3,9 @@
  */
 
 import { h } from '../dom.js';
+import { automaticHistogramBinCount, binHistogramValues } from '../table-summary-data.js';
 
-/**
- * Uses Sturges' rule to choose a deterministic bin count from the sample size.
- * @param {number[]} values
- * @returns {number}
- */
-export function automaticHistogramBinCount(values) {
-  const sampleSize = values.filter(Number.isFinite).length;
-  return sampleSize > 0 ? Math.min(sampleSize, Math.ceil(Math.log2(sampleSize) + 1)) : 0;
-}
-
-/**
- * @param {number[]} values
- * @param {number} [binCount]
- * @returns {{ lower: number, upper: number, count: number }[]}
- */
-export function binHistogramValues(values, binCount = automaticHistogramBinCount(values)) {
-  const finiteValues = values.filter(Number.isFinite);
-  if (finiteValues.length === 0) return [];
-
-  const minimum = Math.min(...finiteValues);
-  const maximum = Math.max(...finiteValues);
-  if (minimum === maximum) {
-    return [{ lower: minimum, upper: maximum, count: finiteValues.length }];
-  }
-
-  const count = Math.max(1, Math.min(Math.floor(binCount), finiteValues.length));
-  const step = (maximum - minimum) / count;
-  const bins = Array.from({ length: count }, (_, index) => ({
-    lower: minimum + (index * step),
-    upper: minimum + ((index + 1) * step),
-    count: 0
-  }));
-  for (const value of finiteValues) {
-    const index = Math.min(Math.floor((value - minimum) / step), count - 1);
-    bins[index].count += 1;
-  }
-  return bins;
-}
+export { automaticHistogramBinCount, binHistogramValues } from '../table-summary-data.js';
 
 /**
  * @param {{
@@ -62,6 +26,25 @@ export function renderHistogram(options) {
     binCount = automaticHistogramBinCount(values)
   } = options;
   const bins = binHistogramValues(values, binCount);
+  return renderHistogramBins({ bins, label, width, height });
+}
+
+/**
+ * @param {{
+ *   bins: Array<{ lower: number, upper: number, count: number }>,
+ *   label: string,
+ *   width?: number,
+ *   height?: number
+ * }} options
+ * @returns {SVGElement}
+ */
+export function renderHistogramBins(options) {
+  const {
+    bins,
+    label,
+    width = 120,
+    height = 32
+  } = options;
   const maximumCount = Math.max(0, ...bins.map((bin) => bin.count));
   const gap = 1;
   const barWidth = bins.length > 0 ? width / bins.length : width;

@@ -49,12 +49,20 @@ function buildPresenterModuleUrl() {
     .replace("'./badge.js'", JSON.stringify(badgeModuleUrl));
   const dataStateModuleUrl = `data:text/javascript;charset=utf-8,${encodeURIComponent(dataStateSource)}`;
 
+  const reactiveSource = readFileSync(new URL('../../src/reactive.js', import.meta.url), 'utf8');
+  const reactiveModuleUrl = `data:text/javascript;charset=utf-8,${encodeURIComponent(reactiveSource)}`;
+
+  const tableSummaryDataSource = readFileSync(new URL('../../src/table-summary-data.js', import.meta.url), 'utf8');
+  const tableSummaryDataModuleUrl = `data:text/javascript;charset=utf-8,${encodeURIComponent(tableSummaryDataSource)}`;
+
   const histogramSource = readFileSync(new URL('../../src/components/histogram.js', import.meta.url), 'utf8')
-    .replace("'../dom.js'", JSON.stringify(domModuleUrl));
+    .replace("'../dom.js'", JSON.stringify(domModuleUrl))
+    .replaceAll("'../table-summary-data.js'", JSON.stringify(tableSummaryDataModuleUrl));
   const histogramModuleUrl = `data:text/javascript;charset=utf-8,${encodeURIComponent(histogramSource)}`;
 
   const tableSummarySource = readFileSync(new URL('../../src/components/table-summary.js', import.meta.url), 'utf8')
     .replace("'../dom.js'", JSON.stringify(domModuleUrl))
+    .replace("'../reactive.js'", JSON.stringify(reactiveModuleUrl))
     .replace("'./histogram.js'", JSON.stringify(histogramModuleUrl))
     .replace("'./count-formatters.js'", JSON.stringify(countFormattersModuleUrl))
     .replace("'./view-chrome.js'", JSON.stringify(viewChromeModuleUrl))
@@ -66,7 +74,8 @@ function buildPresenterModuleUrl() {
   const dataOperationsModuleUrl = `data:text/javascript;charset=utf-8,${encodeURIComponent(dataOperationsSource)}`;
 
   const dataProcessorSource = readFileSync(new URL('../../src/data-processor.js', import.meta.url), 'utf8')
-    .replace("'./data-operations.js'", JSON.stringify(dataOperationsModuleUrl));
+    .replace("'./data-operations.js'", JSON.stringify(dataOperationsModuleUrl))
+    .replace("'./table-summary-data.js'", JSON.stringify(tableSummaryDataModuleUrl));
   const dataProcessorModuleUrl = `data:text/javascript;charset=utf-8,${encodeURIComponent(dataProcessorSource)}`;
 
   const tableRegionSource = readFileSync(new URL('../../src/components/table-region.js', import.meta.url), 'utf8')
