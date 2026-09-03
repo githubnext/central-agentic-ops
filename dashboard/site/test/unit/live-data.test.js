@@ -35,13 +35,13 @@ describe("live Dashboard Language sources", () => {
         discovery: { complete: true },
         runHealth: { available: true, complete: true, windowHours: 24 },
         bundles: [{
-          repository: "githubnext/central-agentic-ops",
+          repository: "githubnext/gh-aw-cao",
           path: "dependabot/aw.yml",
           name: "Dependabot",
           workflows: [{ lockPath: ".github/workflows/dependabot.lock.yml" }],
         }],
         workflows: [{
-          repository: "githubnext/central-agentic-ops",
+          repository: "githubnext/gh-aw-cao",
           path: ".github/workflows/dependabot.lock.yml",
           name: "Dependabot",
           role: "orchestrator",
@@ -65,7 +65,7 @@ describe("live Dashboard Language sources", () => {
         available: true,
         complete: true,
         runs: [{
-          repository: "githubnext/central-agentic-ops",
+          repository: "githubnext/gh-aw-cao",
           runId: 42,
           workflowPath: ".github/workflows/dependabot.lock.yml",
           mode: "review",
@@ -75,11 +75,11 @@ describe("live Dashboard Language sources", () => {
       },
       operationalValues: {
         records: [{
-          repository: "githubnext/central-agentic-ops",
+          repository: "githubnext/gh-aw-cao",
           workflowId: "dependabot",
           workflowPath: ".github/workflows/dependabot.lock.yml",
           runId: 42,
-          runUrl: "https://github.com/githubnext/central-agentic-ops/actions/runs/42",
+          runUrl: "https://github.com/githubnext/gh-aw-cao/actions/runs/42",
           status: "pass",
           value: 0.75,
           deltaFromBaseline: 0.1,
@@ -89,22 +89,22 @@ describe("live Dashboard Language sources", () => {
             evidenceAt: "2026-08-30T10:05:00Z",
             maturesAt: "2026-09-01T10:05:00Z",
             mature: false,
-            subject: { repository: "githubnext/central-agentic-ops" },
+            subject: { repository: "githubnext/gh-aw-cao" },
           },
         }],
       },
       report: {
         generatedAt: "2026-08-30T12:00:00Z",
         records: [{
-          id: "githubnext/central-agentic-ops-issue-1",
+          id: "githubnext/gh-aw-cao-issue-1",
           kind: "issue",
           state: "open",
           title: "Dependabot report",
           summary: "A release train needs attention.",
-          repository: "githubnext/central-agentic-ops",
+          repository: "githubnext/gh-aw-cao",
           workflowPath: ".github/workflows/dependabot.lock.yml",
-          runUrl: "https://github.com/githubnext/central-agentic-ops/actions/runs/42",
-          url: "https://github.com/githubnext/central-agentic-ops/issues/1",
+          runUrl: "https://github.com/githubnext/gh-aw-cao/actions/runs/42",
+          url: "https://github.com/githubnext/gh-aw-cao/issues/1",
           updatedAt: "2026-08-30T10:06:00Z",
           warning: true,
           conclusion: "failure",
@@ -148,7 +148,7 @@ describe("live Dashboard Language sources", () => {
 
       expect(sources.workflows.rows[0]).toMatchObject({
         organization: "githubnext",
-        repository: "central-agentic-ops",
+        repository: "gh-aw-cao",
         package: "dependabot",
         "package-inventory-warnings": 2,
         "workflow-active": "true",
@@ -168,7 +168,7 @@ describe("live Dashboard Language sources", () => {
       });
       expect(sources.usage.rows[0]).toMatchObject({ run: "42", aic: 2.5 });
       expect(sources.findings.rows[0]).toMatchObject({
-        finding: "githubnext/central-agentic-ops-issue-1",
+        finding: "githubnext/gh-aw-cao-issue-1",
         "finding-kind": "authored-warning",
         "finding-severity": "medium",
         "finding-status": "open",

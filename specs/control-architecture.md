@@ -11,7 +11,7 @@ editors:
 
 **Version:** 1.0.0  
 **Status:** Working Draft  
-**Latest Version:** https://github.com/githubnext/central-agentic-ops/blob/main/specs/control-architecture.md  
+**Latest Version:** https://github.com/githubnext/gh-aw-cao/blob/main/specs/control-architecture.md
 **Editors:** GitHub Next
 
 ## Abstract
@@ -204,7 +204,7 @@ The orchestrator is the rollout decision point. Each worker is an independent en
 
 **CAO-CFG-005:** Implementations MUST NOT read `CENTRAL_AGENTIC_OPS_*` Actions variables as policy defaults, overrides, aliases, or compatibility fallbacks.
 
-The `$schema` property SHOULD identify `https://raw.githubusercontent.com/githubnext/central-agentic-ops/main/.github/cao/cao.schema.json`.
+The `$schema` property SHOULD identify `https://raw.githubusercontent.com/githubnext/gh-aw-cao/main/.github/cao/cao.schema.json`.
 
 ### 5.2 Document Roles
 
@@ -391,7 +391,7 @@ The effective record SHOULD contain only identifiers and provenance required for
 
 ```json
 {
-  "$schema": "https://raw.githubusercontent.com/githubnext/central-agentic-ops/main/.github/cao/cao.schema.json",
+  "$schema": "https://raw.githubusercontent.com/githubnext/gh-aw-cao/main/.github/cao/cao.schema.json",
   "version": 1,
   "control-plane": {
     "scope": {
@@ -416,7 +416,7 @@ The target repository records its own consent:
 
 ```json
 {
-  "$schema": "https://raw.githubusercontent.com/githubnext/central-agentic-ops/main/.github/cao/cao.schema.json",
+  "$schema": "https://raw.githubusercontent.com/githubnext/gh-aw-cao/main/.github/cao/cao.schema.json",
   "version": 1,
   "target-authority": {
     "packages": {

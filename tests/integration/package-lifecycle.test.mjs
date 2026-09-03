@@ -13,7 +13,7 @@ import { join } from "node:path";
 import test from "node:test";
 
 const packageSource = process.env.CENTRAL_AGENTIC_OPS_PACKAGE_SOURCE
-  || "githubnext/central-agentic-ops@main";
+  || "githubnext/gh-aw-cao@main";
 function focusedPackageSource(slug, source = packageSource) {
   const separator = source.lastIndexOf("@");
   assert.notEqual(separator, -1, "package source must include a ref");

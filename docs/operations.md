@@ -126,7 +126,7 @@ This path supports issue outputs only. It does not transfer issues, publish pull
 The root Central Agentic Ops package installs the deterministic activity index and dashboard:
 
 ```bash
-gh aw add githubnext/central-agentic-ops@<catalog-release>
+gh aw add githubnext/gh-aw-cao@<catalog-release>
 ```
 
 The private activity and dashboard manifests are internal ownership records and cannot be installed directly. Root installation adds a reusable dashboard builder, a manual standalone Pages publisher, and their deterministic report modules. There is no additional dashboard enable variable, and installation does not deploy or enable Pages.

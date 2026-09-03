@@ -71,7 +71,7 @@ test("package wizard has its own page linked from the landing page", () => {
 test("package wizard prompt references the raw setup skill", () => {
   assert.match(
     wizard,
-    /https:\/\/raw\.githubusercontent\.com\/githubnext\/central-agentic-ops\/main\/\.github\/skills\/setup-central-agentic-ops\/SKILL\.md/,
+    /https:\/\/raw\.githubusercontent\.com\/githubnext\/gh-aw-cao\/main\/\.github\/skills\/setup-central-agentic-ops\/SKILL\.md/,
   );
 });
 

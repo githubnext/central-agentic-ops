@@ -1,5 +1,5 @@
 {
-  "$schema": "https://raw.githubusercontent.com/githubnext/central-agentic-ops/main/.github/cao/cao.schema.json",
+  "$schema": "https://raw.githubusercontent.com/githubnext/gh-aw-cao/main/.github/cao/cao.schema.json",
   "version": 1,
   "control-plane": {
     "scope": {
@@ -13,7 +13,7 @@
         "github/gh-aw-mcpg",
         "github/gh-aw-actions",
         "github/gh-aw-threat-detection",
-        "githubnext/central-agentic-ops",
+        "githubnext/gh-aw-cao",
         "githubnext/gh-aw-workshop"
       ]
     },
@@ -118,7 +118,7 @@
         "rollout-percent": 100,
         "icon": "check-circle",
         "targets": {
-          "githubnext/central-agentic-ops": {
+          "githubnext/gh-aw-cao": {
             "mode": "live"
           }
         },
@@ -145,7 +145,7 @@
   "target-authority": {
     "packages": {
       "self-care": {
-        "authority": "githubnext/central-agentic-ops"
+        "authority": "githubnext/gh-aw-cao"
       }
     }
   }

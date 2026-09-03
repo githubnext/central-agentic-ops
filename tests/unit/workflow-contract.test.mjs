@@ -760,7 +760,7 @@ test("CAO runtime is control-repository-owned outside package resources", () => 
       ...process.env,
       CAO_PACKAGE: "dependabot",
       CAO_ROLE: "orchestrator",
-      GITHUB_REPOSITORY: "githubnext/central-agentic-ops",
+      GITHUB_REPOSITORY: "githubnext/gh-aw-cao",
     },
   }));
 
@@ -1710,19 +1710,19 @@ test("AW Maintenance runs hourly with bounded deterministic discovery", () => {
   const compiled = workflow("aw-maintenance.lock.yml");
 
   assert.match(source, /schedule: "hourly"/);
-  assert.match(source, /engine:\n\s+id: pi\n\s+model: copilot\/mai-code-1\.1-flash/);
+  assert.match(source, /engine:\n\s+id: pi\n\s+model: copilot\/gpt-5\.4/);
   assert.match(source, /name: Deterministic pre-fetch of AW maintenance evidence/);
   assert.match(source, /const MAX_EVIDENCE_CANDIDATES = 50/);
   assert.match(source, /Use its bounded, pre-ranked `candidates` as the only source of GitHub discovery evidence/);
   assert.match(source, /do not repeat its GitHub API queries in the agent/);
   assert.match(compiled, /cron: "\d+ \*\/1 \* \* \*"  # Friendly format: hourly \(scattered\)/);
   assert.match(compiled, /GH_AW_INFO_ENGINE_ID: "pi"/);
-  assert.match(compiled, /GH_AW_INFO_MODEL: "copilot\/mai-code-1\.1-flash"/);
+  assert.match(compiled, /GH_AW_INFO_MODEL: "copilot\/gpt-5\.4"/);
 });
 
 test("SelfCare accessibility checker audits the served docs site with axe-core evidence", () => {
   const source = workflow("self-care-accessibility-checker.md");
-  const liveGuard = "if: ${{ inputs.target_repo == 'githubnext/central-agentic-ops' && (inputs.safe_output_mode || 'review') == 'live' }}";
+  const liveGuard = "if: ${{ inputs.target_repo == 'githubnext/gh-aw-cao' && (inputs.safe_output_mode || 'review') == 'live' }}";
 
   assert.match(source, /^name: "SelfCare \/ Accessibility Checker"$/m);
   assert.match(source, /workflow_dispatch:/);
@@ -1757,7 +1757,7 @@ test("SelfCare accessibility checker audits the served docs site with axe-core e
 test("SelfCare Primer brand checker audits the dashboard against retrieved guidance", () => {
   const source = workflow("self-care-primer-brand-checker.md");
   const compiled = workflow("self-care-primer-brand-checker.lock.yml");
-  const liveGuard = "if: ${{ inputs.target_repo == 'githubnext/central-agentic-ops' && (inputs.safe_output_mode || 'review') == 'live' }}";
+  const liveGuard = "if: ${{ inputs.target_repo == 'githubnext/gh-aw-cao' && (inputs.safe_output_mode || 'review') == 'live' }}";
 
   assert.match(source, /^name: "SelfCare \/ Primer Brand Checker"$/m);
   assert.match(source, /package: self-care/);
@@ -1838,7 +1838,7 @@ test("SelfCare docs build-time investigator rotates evidenced recommendations", 
 
 test("SelfCare code improvement preserves its focused dashboard component mission", () => {
   const source = workflow("self-care-code-improvement.md");
-  const liveGuard = "if: ${{ inputs.target_repo == 'githubnext/central-agentic-ops' && (inputs.safe_output_mode || 'review') == 'live' }}";
+  const liveGuard = "if: ${{ inputs.target_repo == 'githubnext/gh-aw-cao' && (inputs.safe_output_mode || 'review') == 'live' }}";
 
   assert.match(source, /^name: "SelfCare \/ Code Improvement"$/m);
   assert.match(source, /package: self-care/);
@@ -1926,7 +1926,7 @@ test("clean-room compilation emits the expected GitHub Actions settings", { time
       "compile",
       "--no-check-update",
       "--schedule-seed",
-      "githubnext/central-agentic-ops",
+      "githubnext/gh-aw-cao",
     ], { cwd: temporaryRoot, stdio: "pipe" });
 
     const generatedDirectory = join(temporaryRoot, ".github", "workflows");
@@ -2156,9 +2156,9 @@ test("README routes zero-to-CAO requests to the setup skill", () => {
   assert.match(setupSkill, /Offer `<organization>\/<control-repository>` as the default/);
   assert.match(setupSkill, /target_repo="<target-owner>\/<target-repository>"/);
   assert.doesNotMatch(setupSkill, /Always target the control repository itself for the first run/);
-  assert.match(setupSkill, /cao_ref=\$\(gh api repos\/githubnext\/central-agentic-ops\/commits\/main/);
+  assert.match(setupSkill, /cao_ref=\$\(gh api repos\/githubnext\/gh-aw-cao\/commits\/main/);
   assert.match(setupSkill, /\[\[ "\$cao_ref" =~ \^\[0-9a-fA-F\]\{40,64\}\$ \]\]/);
-  assert.match(setupSkill, /gh aw add "githubnext\/central-agentic-ops@\$\{cao_ref\}"/);
+  assert.match(setupSkill, /gh aw add "githubnext\/gh-aw-cao@\$\{cao_ref\}"/);
   assert.match(setupSkill, /gh aw doctor --repo <organization>\/<control-repository> --dir \./);
   assert.match(setupSkill, /Run `gh aw version`\. Compare it with `min-version` in the root CAO `aw\.yml`/);
   assert.match(setupSkill, /Do not require the catalog maintainer's current local version when the package supports an older release/);

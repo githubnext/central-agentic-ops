@@ -15,7 +15,7 @@ definition() {
 {
   "schemaVersion": 4,
   "grader": "operational-value",
-  "repository": "githubnext/central-agentic-ops",
+  "repository": "githubnext/gh-aw-cao",
   "workflowName": "Optimization / AI Credit Auditor",
   "sourcePath": ".github/workflows/optimization-ai-credit-auditor.md",
   "adoption": {
@@ -27,7 +27,7 @@ definition() {
     "opportunity": "One dispatched target repository and the 24-hour UTC period ending when its auditor run started, provided that period contains completed agentic-workflow runs.",
     "assignment": "Bind targetRepo from workflow_dispatch inputs and auditDay from the run creation time; key target-day:<targetRepo>:<auditDay>. Replays retain this case.",
     "accepted": "The durable repo-memory snapshot exactly matches retained completed-run totals and per-workflow aggregates for the assigned target and period.",
-    "repositories": ["githubnext/central-agentic-ops"],
+    "repositories": ["githubnext/gh-aw-cao"],
     "collection": "Read retained target workflow logs with gh aw and the assigned snapshot from the latest immutable repo-memory commit at the evidence cutoff.",
     "maturation": "One day after the auditor run starts, matching the frozen daily observation contract.",
     "zeroRule": "A readable snapshot that disagrees with complete retained run evidence scores 0.",

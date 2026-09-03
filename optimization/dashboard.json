@@ -4,7 +4,7 @@
     "id": "optimization-dashboard",
     "title": "Optimization",
     "description": "Track AI Credit audit and optimization runs, retained recommendations, and matured accuracy and efficiency evidence.",
-    "repository": "githubnext/central-agentic-ops",
+    "repository": "githubnext/gh-aw-cao",
     "pages": [
       {
         "id": "optimization-dashboard",

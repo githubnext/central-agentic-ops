@@ -4,7 +4,7 @@
     "id": "central-agentic-ops-dashboard",
     "title": "Central Agentic Ops Dashboard",
     "description": "Authoritative declarative dashboard document for built-in and custom pages in the presenter prototype.",
-    "repository": "githubnext/central-agentic-ops",
+    "repository": "githubnext/gh-aw-cao",
     "callouts": [
       {
         "id": "partial-data-rate-limit",
@@ -102,7 +102,7 @@
         "navigation-label": "Cost",
         "icon": "meter",
         "class-name": "cost-page",
-        "description": "Measured AI Credit allocation and efficiency evidence for the configured githubnext/central-agentic-ops repository.",
+        "description": "Measured AI Credit allocation and efficiency evidence for the configured githubnext/gh-aw-cao repository.",
         "filter-bar": {
           "filters": [
             "mode:review",
@@ -220,7 +220,7 @@
         "navigation-label": "Security",
         "icon": "shield",
         "class-name": "security-page",
-        "description": "Operational assurance, warning, and telemetry-integrity signals for the configured githubnext/central-agentic-ops repository.",
+        "description": "Operational assurance, warning, and telemetry-integrity signals for the configured githubnext/gh-aw-cao repository.",
         "filter-bar": {
           "filters": [
             "mode:review",
@@ -2902,7 +2902,7 @@
         "kind": "custom",
         "title": "Coverage diagnostics",
         "class-name": "coverage-page",
-        "description": "Reporting coverage gaps for the configured githubnext/central-agentic-ops repository.",
+        "description": "Reporting coverage gaps for the configured githubnext/gh-aw-cao repository.",
         "route": {
           "navigation-page": "overview"
         },

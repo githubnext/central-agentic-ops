@@ -4,7 +4,7 @@
     "id": "aw-maintenance-dashboard",
     "title": "AW Maintenance",
     "description": "Track upgrade and failure-triage activation, durable maintenance issues, and matured resolution evidence.",
-    "repository": "githubnext/central-agentic-ops",
+    "repository": "githubnext/gh-aw-cao",
     "pages": [
       {
         "id": "aw-maintenance-dashboard",

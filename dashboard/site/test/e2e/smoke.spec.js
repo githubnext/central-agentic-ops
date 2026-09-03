@@ -406,7 +406,7 @@ test('DLS-PAGE-002 DLS-PAGE-014 built-in overview page renders the report-style 
         repositories: {
           source: 'repositories',
           rows: [
-            { organization: 'github', repository: 'central-agentic-ops' },
+            { organization: 'github', repository: 'gh-aw-cao' },
             { organization: 'github', repository: 'dashboard-service' }
           ],
           metadata: {
@@ -422,8 +422,8 @@ test('DLS-PAGE-002 DLS-PAGE-014 built-in overview page renders the report-style 
         workflows: {
           source: 'workflows',
           rows: [
-            { organization: 'github', repository: 'central-agentic-ops', package: 'daily-ops', 'package-name': 'Daily Ops', 'package-experimental': true, 'workflow-role': 'orchestrator', workflow: '.github/workflows/daily.yml', 'workflow-active': 'true', 'rollout-mode': 'live', 'max-ai-credits': 10, 'observed-at': '2026-08-29T09:00:00Z' },
-            { organization: 'github', repository: 'central-agentic-ops', package: 'daily-ops', 'package-name': 'Daily Ops', 'package-experimental': true, 'workflow-role': 'worker', workflow: '.github/workflows/review.yml', 'workflow-active': 'false', 'rollout-mode': 'review', 'max-ai-credits': 20, 'observed-at': '2026-08-29T09:05:00Z' }
+            { organization: 'github', repository: 'gh-aw-cao', package: 'daily-ops', 'package-name': 'Daily Ops', 'package-experimental': true, 'workflow-role': 'orchestrator', workflow: '.github/workflows/daily.yml', 'workflow-active': 'true', 'rollout-mode': 'live', 'max-ai-credits': 10, 'observed-at': '2026-08-29T09:00:00Z' },
+            { organization: 'github', repository: 'gh-aw-cao', package: 'daily-ops', 'package-name': 'Daily Ops', 'package-experimental': true, 'workflow-role': 'worker', workflow: '.github/workflows/review.yml', 'workflow-active': 'false', 'rollout-mode': 'review', 'max-ai-credits': 20, 'observed-at': '2026-08-29T09:05:00Z' }
           ],
           metadata: {
             'source-id': 'workflows-fixture',
@@ -438,9 +438,9 @@ test('DLS-PAGE-002 DLS-PAGE-014 built-in overview page renders the report-style 
         runs: {
           source: 'runs',
           rows: [
-            { organization: 'github', repository: 'central-agentic-ops', workflow: '.github/workflows/daily.yml', run: '1001', 'started-at': '2026-08-29T10:00:00Z', 'run-status': 'completed', 'run-conclusion': 'success', 'rollout-mode': 'live', engine: 'openai', 'requested-model': 'gpt-4o', 'resolved-model': 'gpt-4.1' },
-            { organization: 'github', repository: 'central-agentic-ops', workflow: '.github/workflows/daily.yml', run: '1002', 'started-at': '2026-08-29T11:00:00Z', 'run-status': 'completed', 'run-conclusion': 'failure', 'rollout-mode': 'live', engine: 'openai', 'requested-model': 'gpt-4o', 'resolved-model': 'gpt-4.1' },
-            { organization: 'github', repository: 'central-agentic-ops', workflow: '.github/workflows/review.yml', run: '1003', 'started-at': '2026-08-29T12:00:00Z', 'run-status': 'in-progress', 'run-conclusion': 'unknown', 'rollout-mode': 'review', engine: 'anthropic', 'requested-model': 'claude-3.5', 'resolved-model': 'claude-3.7' }
+            { organization: 'github', repository: 'gh-aw-cao', workflow: '.github/workflows/daily.yml', run: '1001', 'started-at': '2026-08-29T10:00:00Z', 'run-status': 'completed', 'run-conclusion': 'success', 'rollout-mode': 'live', engine: 'openai', 'requested-model': 'gpt-4o', 'resolved-model': 'gpt-4.1' },
+            { organization: 'github', repository: 'gh-aw-cao', workflow: '.github/workflows/daily.yml', run: '1002', 'started-at': '2026-08-29T11:00:00Z', 'run-status': 'completed', 'run-conclusion': 'failure', 'rollout-mode': 'live', engine: 'openai', 'requested-model': 'gpt-4o', 'resolved-model': 'gpt-4.1' },
+            { organization: 'github', repository: 'gh-aw-cao', workflow: '.github/workflows/review.yml', run: '1003', 'started-at': '2026-08-29T12:00:00Z', 'run-status': 'in-progress', 'run-conclusion': 'unknown', 'rollout-mode': 'review', engine: 'anthropic', 'requested-model': 'claude-3.5', 'resolved-model': 'claude-3.7' }
           ],
           metadata: {
             'source-id': 'runs-fixture',
@@ -455,9 +455,9 @@ test('DLS-PAGE-002 DLS-PAGE-014 built-in overview page renders the report-style 
         usage: {
           source: 'usage',
           rows: [
-            { repository: 'central-agentic-ops', workflow: '.github/workflows/daily.yml', run: '1001', 'rollout-mode': 'live', aic: 12, engine: 'openai', 'requested-model': 'gpt-4o', 'resolved-model': 'gpt-4.1', 'observed-at': '2026-08-29T10:05:00Z' },
-            { repository: 'central-agentic-ops', workflow: '.github/workflows/daily.yml', run: '1002', 'rollout-mode': 'live', aic: 18, engine: 'openai', 'requested-model': 'gpt-4o', 'resolved-model': 'gpt-4.1', 'observed-at': '2026-08-29T11:05:00Z' },
-            { repository: 'central-agentic-ops', workflow: '.github/workflows/review.yml', run: '1003', 'rollout-mode': 'review', aic: 5, engine: 'anthropic', 'requested-model': 'claude-3.5', 'resolved-model': 'claude-3.7', 'observed-at': '2026-08-29T12:05:00Z' }
+            { repository: 'gh-aw-cao', workflow: '.github/workflows/daily.yml', run: '1001', 'rollout-mode': 'live', aic: 12, engine: 'openai', 'requested-model': 'gpt-4o', 'resolved-model': 'gpt-4.1', 'observed-at': '2026-08-29T10:05:00Z' },
+            { repository: 'gh-aw-cao', workflow: '.github/workflows/daily.yml', run: '1002', 'rollout-mode': 'live', aic: 18, engine: 'openai', 'requested-model': 'gpt-4o', 'resolved-model': 'gpt-4.1', 'observed-at': '2026-08-29T11:05:00Z' },
+            { repository: 'gh-aw-cao', workflow: '.github/workflows/review.yml', run: '1003', 'rollout-mode': 'review', aic: 5, engine: 'anthropic', 'requested-model': 'claude-3.5', 'resolved-model': 'claude-3.7', 'observed-at': '2026-08-29T12:05:00Z' }
           ],
           metadata: {
             'source-id': 'usage-fixture',
@@ -479,7 +479,7 @@ test('DLS-PAGE-002 DLS-PAGE-014 built-in overview page renders the report-style 
               'finding-severity': 'medium',
               'finding-status': 'unknown',
               organization: 'github',
-              repository: 'central-agentic-ops',
+              repository: 'gh-aw-cao',
               workflow: '.github/workflows/review.yml',
               'observed-at': '2026-08-29T12:30:00Z',
               'issue-link': { relation: 'issue', href: 'https://example.com/issues/2', label: 'Issue 2' },
@@ -493,7 +493,7 @@ test('DLS-PAGE-002 DLS-PAGE-014 built-in overview page renders the report-style 
               'finding-severity': 'high',
               'finding-status': 'unknown',
               organization: 'github',
-              repository: 'central-agentic-ops',
+              repository: 'gh-aw-cao',
               workflow: '.github/workflows/daily.yml',
               'observed-at': '2026-08-29T11:30:00Z',
               'issue-link': { relation: 'issue', href: 'https://example.com/issues/1', label: 'Issue 1' },
@@ -516,7 +516,7 @@ test('DLS-PAGE-002 DLS-PAGE-014 built-in overview page renders the report-style 
           rows: [
             {
               organization: 'github',
-              repository: 'central-agentic-ops',
+              repository: 'gh-aw-cao',
               workflow: '.github/workflows/daily.yml',
               run: '1001',
               'operational-value': 0.65,
@@ -526,7 +526,7 @@ test('DLS-PAGE-002 DLS-PAGE-014 built-in overview page renders the report-style 
             },
             {
               organization: 'github',
-              repository: 'central-agentic-ops',
+              repository: 'gh-aw-cao',
               workflow: '.github/workflows/review.yml',
               run: '1003',
               'operational-value': 0.8,
@@ -634,7 +634,7 @@ test('built-in repositories page keeps repository scope above the run metadata',
       const sources = {
         repositories: {
           source: 'repositories',
-          rows: [{ organization: 'githubnext', repository: 'central-agentic-ops' }],
+          rows: [{ organization: 'githubnext', repository: 'gh-aw-cao' }],
           metadata
         },
         runs: emptySource('runs'),
@@ -716,7 +716,7 @@ test('pie charts match the report layout at medium viewport widths', async ({ pa
         usage: {
           source: 'usage',
           rows: [
-            { repository: 'central-agentic-ops', aic: 5 },
+            { repository: 'gh-aw-cao', aic: 5 },
             { repository: 'service', aic: 3 }
           ],
           metadata: {
@@ -933,7 +933,7 @@ test('DLS-PAGE-014 DLS-PAGE-015 built-in packages page renders report-style mode
         runs: {
           source: 'runs',
           rows: [
-            { workflow: '.github/workflows/ambient-context-worker.md', run: '3', event: 'workflow_dispatch', 'run-title': 'Refresh ambient context', 'started-at': '2026-08-29T18:00:00Z', 'run-conclusion': 'success', 'rollout-mode': 'review', 'run-link': { relation: 'run', href: 'https://github.com/githubnext/central-agentic-ops/actions/runs/3', label: 'Run 3' } },
+            { workflow: '.github/workflows/ambient-context-worker.md', run: '3', event: 'workflow_dispatch', 'run-title': 'Refresh ambient context', 'started-at': '2026-08-29T18:00:00Z', 'run-conclusion': 'success', 'rollout-mode': 'review', 'run-link': { relation: 'run', href: 'https://github.com/githubnext/gh-aw-cao/actions/runs/3', label: 'Run 3' } },
             { workflow: '.github/workflows/aw-maintenance.md', run: '1', 'started-at': '2026-08-28T10:00:00Z', 'run-conclusion': 'success', 'rollout-mode': 'review' },
             { workflow: '.github/workflows/aw-maintenance.md', run: '2', 'started-at': '2026-08-29T10:00:00Z', 'run-conclusion': 'failure', 'rollout-mode': 'live' }
           ],
@@ -1025,7 +1025,7 @@ test('DLS-PAGE-014 DLS-PAGE-015 built-in packages page renders report-style mode
   const packageDispatchRows = page.locator('[data-page-id="package-dispatches"] .custom-table tbody tr');
   await expect(packageDispatchRows).toHaveCount(1);
   await expect(packageDispatchRows).toContainText('Refresh ambient context');
-  await expect(packageDispatchRows.locator('a')).toHaveAttribute('href', 'https://github.com/githubnext/central-agentic-ops/actions/runs/3');
+  await expect(packageDispatchRows.locator('a')).toHaveAttribute('href', 'https://github.com/githubnext/gh-aw-cao/actions/runs/3');
 
   await page.getByRole('navigation', { name: 'Ambient Context views' }).getByRole('link', { name: 'Reports' }).click();
   await expect(page).toHaveURL(/#page-package-reports\?package=ambient-context$/);
@@ -1185,8 +1185,8 @@ test('DLS-PAGE-009 DLS-PAGE-014 built-in evals page renders distinguishable defi
         'eval-observations': {
           source: 'eval-observations',
           rows: [
-            { organization: 'github', repository: 'central-agentic-ops', workflow: '.github/workflows/daily.yml', run: '1001', eval: 'release-risk', 'eval-result': 'YES', 'requested-model': 'gpt-4o', 'resolved-model': 'gpt-4.1', 'rollout-mode': 'live', 'observed-at': '2026-08-29T10:00:00Z' },
-            { organization: 'github', repository: 'central-agentic-ops', workflow: '.github/workflows/daily.yml', run: '1002', eval: 'release-risk', 'eval-result': 'UNKNOWN', 'requested-model': 'gpt-4o', 'resolved-model': '', 'rollout-mode': 'live', 'observed-at': '2026-08-29T10:10:00Z' },
+            { organization: 'github', repository: 'gh-aw-cao', workflow: '.github/workflows/daily.yml', run: '1001', eval: 'release-risk', 'eval-result': 'YES', 'requested-model': 'gpt-4o', 'resolved-model': 'gpt-4.1', 'rollout-mode': 'live', 'observed-at': '2026-08-29T10:00:00Z' },
+            { organization: 'github', repository: 'gh-aw-cao', workflow: '.github/workflows/daily.yml', run: '1002', eval: 'release-risk', 'eval-result': 'UNKNOWN', 'requested-model': 'gpt-4o', 'resolved-model': '', 'rollout-mode': 'live', 'observed-at': '2026-08-29T10:10:00Z' },
             { organization: 'octo-org', repository: 'octo-repo', workflow: '.github/workflows/nightly.yml', run: '2001', eval: 'doc-quality', 'eval-result': 'NO', 'requested-model': 'claude-3.5', 'resolved-model': 'claude-3.7', 'rollout-mode': 'review', 'observed-at': '2026-08-29T10:20:00Z' }
           ],
           metadata: {
@@ -1231,7 +1231,7 @@ test('DLS-SAFE-004 DLS-SAFE-007 DLS-SAFE-008 DLS-SAFE-010 built-in findings page
         dashboard: {
           id: 'security-dashboard',
           title: 'Security Dashboard',
-          repository: 'githubnext/central-agentic-ops',
+          repository: 'githubnext/gh-aw-cao',
           pages: [
             {
               id: 'findings',
@@ -1263,7 +1263,7 @@ test('DLS-SAFE-004 DLS-SAFE-007 DLS-SAFE-008 DLS-SAFE-010 built-in findings page
               'finding-severity': 'critical',
               'finding-status': 'open',
               organization: 'github',
-              repository: 'central-agentic-ops',
+              repository: 'gh-aw-cao',
               workflow: '.github/workflows/daily.yml',
               'observed-at': '2026-08-29T12:00:00Z',
               'issue-link': {
@@ -1354,7 +1354,7 @@ test('DLS-VIEW-013 DLS-VIEW-014 DLS-VIEW-015 DLS-SAFE-006 custom views render av
                   data: {
                     source: 'findings',
                     scope: {
-                      repositories: ['central-agentic-ops']
+                      repositories: ['gh-aw-cao']
                     },
                     time: {
                       start: '2026-08-29T00:00:00Z',
@@ -1438,8 +1438,8 @@ test('DLS-VIEW-013 DLS-VIEW-014 DLS-VIEW-015 DLS-SAFE-006 custom views render av
         usage: {
           source: 'usage',
           rows: [
-            { organization: 'github', repository: 'central-agentic-ops', workflow: '.github/workflows/daily.yml', run: '1001', engine: 'actions', 'requested-model': 'gpt-4o', 'resolved-model': 'gpt-4.1', 'rollout-mode': 'live', aic: 2, 'observed-at': '2026-08-29T10:00:00Z' },
-            { organization: 'github', repository: 'central-agentic-ops', workflow: '.github/workflows/daily.yml', run: '1002', engine: 'actions', 'requested-model': 'gpt-4o', 'resolved-model': 'gpt-4.1', 'rollout-mode': 'review', aic: 3, 'observed-at': '2026-08-29T11:00:00Z' }
+            { organization: 'github', repository: 'gh-aw-cao', workflow: '.github/workflows/daily.yml', run: '1001', engine: 'actions', 'requested-model': 'gpt-4o', 'resolved-model': 'gpt-4.1', 'rollout-mode': 'live', aic: 2, 'observed-at': '2026-08-29T10:00:00Z' },
+            { organization: 'github', repository: 'gh-aw-cao', workflow: '.github/workflows/daily.yml', run: '1002', engine: 'actions', 'requested-model': 'gpt-4o', 'resolved-model': 'gpt-4.1', 'rollout-mode': 'review', aic: 3, 'observed-at': '2026-08-29T11:00:00Z' }
           ],
           metadata: {
             'source-id': 'usage-fixture',
@@ -1457,7 +1457,7 @@ test('DLS-VIEW-013 DLS-VIEW-014 DLS-VIEW-015 DLS-SAFE-006 custom views render av
             {
               finding: 'finding-1',
               organization: 'github',
-              repository: 'central-agentic-ops',
+              repository: 'gh-aw-cao',
               'observed-at': '2026-08-29T12:00:00Z',
               'finding-summary': 'Unsafe dependency',
               'finding-severity': 'high',
@@ -1485,7 +1485,7 @@ test('DLS-VIEW-013 DLS-VIEW-014 DLS-VIEW-015 DLS-SAFE-006 custom views render av
             {
               finding: 'finding-3',
               organization: 'github',
-              repository: 'central-agentic-ops',
+              repository: 'gh-aw-cao',
               'observed-at': '2026-08-30T01:00:00Z',
               'finding-summary': 'Out of range finding',
               'finding-severity': 'low',
@@ -1619,7 +1619,7 @@ test('DLS-SAFE-007 DLS-SAFE-008 keyboard navigation moves across labeled page se
           rows: [
             {
               organization: 'github',
-              repository: 'central-agentic-ops',
+              repository: 'gh-aw-cao',
               workflow: '.github/workflows/daily.yml',
               run: '1001',
               'run-status': 'completed',
@@ -1754,7 +1754,7 @@ test('repository page template follows its JSON-declared hash query route in bro
 
 test('workflow page template follows its JSON-declared route and renders attributed reports', async ({ page }) => {
   const presenterModuleUrl = buildPresenterModuleUrl();
-  await page.goto('about:blank#page-workflow-detail?workflow=githubnext%2Fcentral-agentic-ops%3A.github%2Fworkflows%2Fambient-context.md');
+  await page.goto('about:blank#page-workflow-detail?workflow=githubnext%2Fgh-aw-cao%3A.github%2Fworkflows%2Fambient-context.md');
   await page.setContent(`
     <div id="root"></div>
     <script type="module">
@@ -1773,7 +1773,7 @@ test('workflow page template follows its JSON-declared route and renders attribu
         dashboard: {
           id: 'workflow-route',
           title: 'Central Agentic Ops',
-          repository: 'githubnext/central-agentic-ops',
+          repository: 'githubnext/gh-aw-cao',
           pages: [
             {
               id: 'repositories',
@@ -1881,7 +1881,7 @@ test('workflow page template follows its JSON-declared route and renders attribu
           metadata,
           rows: [{
             organization: 'githubnext',
-            repository: 'central-agentic-ops',
+            repository: 'gh-aw-cao',
             package: 'ambient-context',
             'package-name': 'Ambient Context',
             workflow: '.github/workflows/ambient-context.md',
@@ -1896,7 +1896,7 @@ test('workflow page template follows its JSON-declared route and renders attribu
           rows: [{
             organization: 'customer',
             repository: 'target',
-            'runtime-repository': 'githubnext/central-agentic-ops',
+            'runtime-repository': 'githubnext/gh-aw-cao',
             workflow: '.github/workflows/ambient-context.md',
             'workflow-name': 'Ambient Context',
             'safe-output': 'report-1',
@@ -1914,7 +1914,7 @@ test('workflow page template follows its JSON-declared route and renders attribu
           rows: [
             {
               organization: 'githubnext',
-              repository: 'central-agentic-ops',
+              repository: 'gh-aw-cao',
               workflow: '.github/workflows/ambient-context.md',
               run: '102',
               'run-title': 'Scheduled review',
@@ -1924,13 +1924,13 @@ test('workflow page template follows its JSON-declared route and renders attribu
               'started-at': '2026-08-31T20:00:00Z',
               'run-link': {
                 relation: 'run',
-                href: 'https://github.com/githubnext/central-agentic-ops/actions/runs/102',
+                href: 'https://github.com/githubnext/gh-aw-cao/actions/runs/102',
                 label: 'View run 102'
               }
             },
             {
               organization: 'githubnext',
-              repository: 'central-agentic-ops',
+              repository: 'gh-aw-cao',
               workflow: '.github/workflows/ambient-context.md',
               run: '101',
               'run-title': 'Manual review',
@@ -1948,7 +1948,7 @@ test('workflow page template follows its JSON-declared route and renders attribu
 
   await expect(page.getByRole('heading', { level: 1 })).toHaveText('Ambient Context');
   await expect(page.locator('[data-breadcrumb-root]')).toHaveText('Repositories');
-  await expect(page.locator('[data-breadcrumb-dashboard]')).toHaveText('githubnext/central-agentic-ops');
+  await expect(page.locator('[data-breadcrumb-dashboard]')).toHaveText('githubnext/gh-aw-cao');
   await expect(page.locator('.workflow-identity')).toContainText('.github/workflows/ambient-context.md');
   await expect(page.getByRole('navigation', { name: '.github/workflows/ambient-context.md views' })).toContainText('InsightsReportsRuns');
   await expect(page.locator('#page-workflow-detail .custom-table')).toContainText('Debug ambient context workflow failure');
@@ -1968,13 +1968,13 @@ test('workflow page template follows its JSON-declared route and renders attribu
   await expect(page.getByRole('heading', { level: 1 })).toHaveText('Debug ambient context workflow failure');
   await expect(page.locator('.outcome-meta a', { hasText: 'Ambient Context' })).toHaveAttribute(
     'href',
-    '#page-workflow-runtime?workflow=githubnext%2Fcentral-agentic-ops%3A.github%2Fworkflows%2Fambient-context.md'
+    '#page-workflow-runtime?workflow=githubnext%2Fgh-aw-cao%3A.github%2Fworkflows%2Fambient-context.md'
   );
 });
 
 test('workflow runtime route renders JSON-declared workflow insights', async ({ page }) => {
   const presenterModuleUrl = buildPresenterModuleUrl();
-  await page.goto('about:blank#page-workflow-runtime?workflow=githubnext%2Fcentral-agentic-ops%3A.github%2Fworkflows%2Fmulti-device-docs-tester.md');
+  await page.goto('about:blank#page-workflow-runtime?workflow=githubnext%2Fgh-aw-cao%3A.github%2Fworkflows%2Fmulti-device-docs-tester.md');
   await page.setContent(`
     <div id="root"></div>
     <script type="module">
@@ -2017,7 +2017,7 @@ test('workflow runtime route renders JSON-declared workflow insights', async ({ 
           metadata,
           rows: [{
             organization: 'githubnext',
-            repository: 'central-agentic-ops',
+            repository: 'gh-aw-cao',
             workflow,
             'workflow-name': 'Multi-Device Docs Tester',
             'workflow-role': 'standalone',
@@ -2036,7 +2036,7 @@ test('workflow runtime route renders JSON-declared workflow insights', async ({ 
           metadata,
           rows: [{
             organization: 'githubnext',
-            repository: 'central-agentic-ops',
+            repository: 'gh-aw-cao',
             workflow,
             run: '45',
             'run-status': 'completed',
@@ -2048,7 +2048,7 @@ test('workflow runtime route renders JSON-declared workflow insights', async ({ 
           metadata: { ...metadata, completeness: 'partial' },
           rows: [{
             organization: 'githubnext',
-            repository: 'central-agentic-ops',
+            repository: 'gh-aw-cao',
             workflow,
             run: '45',
             aic: 962.7
@@ -2074,7 +2074,7 @@ test('workflow runtime route renders JSON-declared workflow insights', async ({ 
   ]);
   await expect(page.getByRole('link', { name: 'View authored workflow' })).toHaveAttribute(
     'href',
-    'https://github.com/githubnext/central-agentic-ops/blob/HEAD/.github/workflows/multi-device-docs-tester.md'
+    'https://github.com/githubnext/gh-aw-cao/blob/HEAD/.github/workflows/multi-device-docs-tester.md'
   );
   await expect(page.locator('.workflow-runtime-metrics')).toContainText('1');
   await expect(page.locator('.workflow-runtime-metrics')).toContainText('962.7 AIC');
@@ -2138,7 +2138,7 @@ test('outcome page template follows its JSON-declared hash query route in browse
             'observed-at': '2026-08-31T01:49:00Z',
             'external-link': {
               relation: 'external',
-              href: 'https://github.com/githubnext/central-agentic-ops/issues/403',
+              href: 'https://github.com/githubnext/gh-aw-cao/issues/403',
               label: 'View output'
             }
           }]
@@ -2150,7 +2150,7 @@ test('outcome page template follows its JSON-declared hash query route in browse
 
   await expect(page.getByRole('heading', { level: 1 })).toHaveText('Parity verification sweep');
   await expect(page.locator('[data-page-title-link]')).toHaveText('#403');
-  await expect(page.locator('[data-page-title-link]')).toHaveAttribute('href', 'https://github.com/githubnext/central-agentic-ops/issues/403');
+  await expect(page.locator('[data-page-title-link]')).toHaveAttribute('href', 'https://github.com/githubnext/gh-aw-cao/issues/403');
   await expect(page.locator('.overview-header [data-page-description]')).toHaveText('Daily review · Pull Request · Closed');
   await expect(page.locator('.outcome-detail')).toHaveAttribute('data-outcome', 'outcome-1');
   await expect(page.locator('.discussion-post')).toContainText('All checks passed.');

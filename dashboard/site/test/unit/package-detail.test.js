@@ -23,9 +23,9 @@ const workflows = [
     'rollout-mode': 'review',
     'workflow-link': {
       relation: 'workflow',
-      href: 'https://github.com/githubnext/central-agentic-ops/blob/HEAD/.github/workflows/ambient-context.md',
+      href: 'https://github.com/githubnext/gh-aw-cao/blob/HEAD/.github/workflows/ambient-context.md',
       label: 'View Ambient Context',
-      'dashboard-href': '#page-workflow-runtime?workflow=githubnext%2Fcentral-agentic-ops%3A.github%2Fworkflows%2Fambient-context.md',
+      'dashboard-href': '#page-workflow-runtime?workflow=githubnext%2Fgh-aw-cao%3A.github%2Fworkflows%2Fambient-context.md',
       'dashboard-label': 'View Ambient Context workflow dashboard'
     }
   },
@@ -33,7 +33,7 @@ const workflows = [
     package: 'ambient-context',
     'package-name': 'Ambient Context',
     organization: 'githubnext',
-    repository: 'central-agentic-ops',
+    repository: 'gh-aw-cao',
     workflow: '.github/workflows/ambient-context-agents-md-curator.md',
     'workflow-name': 'Ambient Context / AGENTS.md Curator',
     'workflow-role': 'worker',
@@ -52,7 +52,7 @@ const workflows = [
 const operationalValues = [
   {
     organization: 'githubnext',
-    repository: 'central-agentic-ops',
+    repository: 'gh-aw-cao',
     workflow: '.github/workflows/ambient-context-agents-md-curator.md',
     run: '100',
     'operational-value': 0.5,
@@ -64,7 +64,7 @@ const operationalValues = [
   },
   {
     organization: 'githubnext',
-    repository: 'central-agentic-ops',
+    repository: 'gh-aw-cao',
     workflow: '.github/workflows/ambient-context-agents-md-curator.md',
     run: '101',
     'operational-value': 0.75,
@@ -76,7 +76,7 @@ const operationalValues = [
   },
   {
     organization: 'githubnext',
-    repository: 'central-agentic-ops',
+    repository: 'gh-aw-cao',
     workflow: '.github/workflows/other.md',
     run: '102',
     'operational-value': 1,

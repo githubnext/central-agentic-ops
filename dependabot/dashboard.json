@@ -4,7 +4,7 @@
     "id": "dependabot-dashboard",
     "title": "Dependabot",
     "description": "Track manifest-aware dependency update runs, proposed release trains, and validated merged resolutions.",
-    "repository": "githubnext/central-agentic-ops",
+    "repository": "githubnext/gh-aw-cao",
     "pages": [
       {
         "id": "dependabot-dashboard",

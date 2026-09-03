@@ -13,7 +13,7 @@ definition() {
     cat <<'JSON'
 {
   "schemaVersion": 4, "grader": "operational-value",
-  "repository": "githubnext/central-agentic-ops", "workflowName": "Optimization / AI Credit Optimizer",
+  "repository": "githubnext/gh-aw-cao", "workflowName": "Optimization / AI Credit Optimizer",
   "sourcePath": ".github/workflows/optimization-ai-credit-optimizer.md",
   "adoption": {"commit": "35c7c3cbd319632f85784cce196e57c0f61db9a0", "adoptedAt": "2026-08-18T17:54:55Z"},
   "operationalValue": "Lower the dispatched target's highest-AIC workflow cost without increasing its failure rate.",
@@ -21,7 +21,7 @@ definition() {
     "opportunity": "The high-AIC target workflow selected by the optimizer run after its frozen eligibility and recent-optimization exclusions.",
     "assignment": "Bind targetRepo from workflow_dispatch inputs and freeze the workflow_path recorded by this optimizer run; key target-workflow:<targetRepo>:<workflowPath>:<runId>.",
     "accepted": "During the seven days after assignment, the workflow's median successful-run AIC is lower than its pre-run median and its completed-run failure rate is no higher.",
-    "repositories": ["githubnext/central-agentic-ops"],
+    "repositories": ["githubnext/gh-aw-cao"],
     "collection": "Read retained gh aw run logs for the assigned target from seven days before the run through the capped evidence cutoff.",
     "maturation": "Seven days after the optimizer run starts.",
     "zeroRule": "Complete comparable evidence with no AIC reduction or a higher failure rate scores 0.",

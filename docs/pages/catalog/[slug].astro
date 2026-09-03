@@ -11,13 +11,13 @@ const entry = catalogEntries.find(({ slug }) => slug === Astro.params.slug);
 if (!entry) throw new Error(`Unknown package: ${Astro.params.slug}`);
 
 const basePath = import.meta.env.BASE_URL.replace(/\/$/, "");
-const repositoryBase = "https://github.com/githubnext/central-agentic-ops";
+const repositoryBase = "https://github.com/githubnext/gh-aw-cao";
 const packageUrl = `${repositoryBase}/tree/main/${entry.slug}`;
 const manifestUrl = `${repositoryBase}/blob/main/${entry.slug}/${entry.manifestFile}`;
 const editUrl = entry.readmePath
   ? `${repositoryBase}/edit/main/${entry.readmePath}`
   : `${repositoryBase}/edit/main/${entry.slug}/${entry.manifestFile}`;
-const installCommand = `gh aw add githubnext/central-agentic-ops/${entry.slug}@<catalog-release>`;
+const installCommand = `gh aw add githubnext/gh-aw-cao/${entry.slug}@<catalog-release>`;
 const ReadmeContent = entry.ReadmeContent;
 ---
 

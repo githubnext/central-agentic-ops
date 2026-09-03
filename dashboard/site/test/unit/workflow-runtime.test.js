@@ -16,7 +16,7 @@ const completeMetadata = {
 
 const workflow = {
   organization: 'githubnext',
-  repository: 'central-agentic-ops',
+  repository: 'gh-aw-cao',
   workflow: '.github/workflows/multi-device-docs-tester.md',
   'workflow-name': 'Multi-Device Docs Tester',
   'workflow-role': 'standalone',
@@ -30,9 +30,9 @@ const workflow = {
   'rollout-mode': 'review',
   'workflow-link': {
     relation: 'workflow',
-    href: 'https://github.com/githubnext/central-agentic-ops/blob/HEAD/.github/workflows/multi-device-docs-tester.md',
+    href: 'https://github.com/githubnext/gh-aw-cao/blob/HEAD/.github/workflows/multi-device-docs-tester.md',
     label: 'View Multi-Device Docs Tester',
-    'dashboard-href': '#page-workflow-runtime?workflow=githubnext%2Fcentral-agentic-ops%3A.github%2Fworkflows%2Fmulti-device-docs-tester.md',
+    'dashboard-href': '#page-workflow-runtime?workflow=githubnext%2Fgh-aw-cao%3A.github%2Fworkflows%2Fmulti-device-docs-tester.md',
     'dashboard-label': 'View Multi-Device Docs Tester workflow dashboard'
   }
 };
@@ -55,9 +55,9 @@ function context(overrides = {}) {
         source: 'runs',
         metadata: completeMetadata,
         rows: [
-          { organization: 'githubnext', repository: 'central-agentic-ops', workflow: workflow.workflow, run: '1', 'run-status': 'completed', 'run-conclusion': 'success' },
-          { organization: 'githubnext', repository: 'central-agentic-ops', workflow: workflow.workflow, run: '2', 'run-status': 'completed', 'run-conclusion': 'failure' },
-          { organization: 'githubnext', repository: 'central-agentic-ops', workflow: workflow.workflow, run: '3', 'run-status': 'queued', 'run-conclusion': 'unknown' },
+          { organization: 'githubnext', repository: 'gh-aw-cao', workflow: workflow.workflow, run: '1', 'run-status': 'completed', 'run-conclusion': 'success' },
+          { organization: 'githubnext', repository: 'gh-aw-cao', workflow: workflow.workflow, run: '2', 'run-status': 'completed', 'run-conclusion': 'failure' },
+          { organization: 'githubnext', repository: 'gh-aw-cao', workflow: workflow.workflow, run: '3', 'run-status': 'queued', 'run-conclusion': 'unknown' },
           { organization: 'other', repository: 'repo', workflow: workflow.workflow, run: '4', 'run-status': 'completed', 'run-conclusion': 'success' }
         ]
       },
@@ -65,8 +65,8 @@ function context(overrides = {}) {
         source: 'usage',
         metadata: { ...completeMetadata, completeness: /** @type {'partial'} */ ('partial') },
         rows: [
-          { organization: 'githubnext', repository: 'central-agentic-ops', workflow: workflow.workflow, run: '1', aic: 42.5 },
-          { organization: 'githubnext', repository: 'central-agentic-ops', workflow: workflow.workflow, run: '2', aic: 7.5 }
+          { organization: 'githubnext', repository: 'gh-aw-cao', workflow: workflow.workflow, run: '1', aic: 42.5 },
+          { organization: 'githubnext', repository: 'gh-aw-cao', workflow: workflow.workflow, run: '2', aic: 7.5 }
         ]
       },
       'operational-values': {
@@ -80,7 +80,7 @@ function context(overrides = {}) {
 }
 
 /** @param {HTMLElement} rendered @param {string} [value] */
-function selectWorkflow(rendered, value = 'githubnext/central-agentic-ops:.github/workflows/multi-device-docs-tester.md') {
+function selectWorkflow(rendered, value = 'githubnext/gh-aw-cao:.github/workflows/multi-device-docs-tester.md') {
   rendered.dispatchEvent(new CustomEvent('dashboard-route-change', {
     detail: { parameter: 'workflow', value }
   }));
@@ -91,14 +91,14 @@ describe('renderWorkflowRuntime', () => {
     const rendered = renderWorkflowRuntime(context());
     selectWorkflow(rendered);
 
-    expect(rendered.dataset.workflow).toBe('githubnext/central-agentic-ops:.github/workflows/multi-device-docs-tester.md');
+    expect(rendered.dataset.workflow).toBe('githubnext/gh-aw-cao:.github/workflows/multi-device-docs-tester.md');
     expect(rendered.querySelector('.repository-tabs')?.textContent).toBe('InsightsReportsRuns');
     expect(rendered.querySelector('.repository-tabs [aria-current="page"]')?.textContent).toBe('Insights');
     expect(rendered.querySelector('.repository-tabs a:last-child')?.getAttribute('href')).toBe(
-      '#page-workflow-runs?workflow=githubnext%2Fcentral-agentic-ops%3A.github%2Fworkflows%2Fmulti-device-docs-tester.md'
+      '#page-workflow-runs?workflow=githubnext%2Fgh-aw-cao%3A.github%2Fworkflows%2Fmulti-device-docs-tester.md'
     );
     expect(rendered.querySelector('.repository-tabs a:nth-child(2)')?.getAttribute('href')).toBe(
-      '#page-workflow-detail?workflow=githubnext%2Fcentral-agentic-ops%3A.github%2Fworkflows%2Fmulti-device-docs-tester.md'
+      '#page-workflow-detail?workflow=githubnext%2Fgh-aw-cao%3A.github%2Fworkflows%2Fmulti-device-docs-tester.md'
     );
     expect([...rendered.querySelectorAll('.workflow-badges .workflow-badge')].map((badge) => badge.textContent)).toEqual([
       'Standalone',
@@ -110,7 +110,7 @@ describe('renderWorkflowRuntime', () => {
       '#page-package-insights?package=testing'
     ]);
     expect(rendered.querySelector('.workflow-identity > a')?.getAttribute('href')).toBe(
-      'https://github.com/githubnext/central-agentic-ops/blob/HEAD/.github/workflows/multi-device-docs-tester.md'
+      'https://github.com/githubnext/gh-aw-cao/blob/HEAD/.github/workflows/multi-device-docs-tester.md'
     );
     expect(rendered.querySelector('.workflow-identity > a')?.textContent).toBe('View authored workflow');
     expect(rendered.querySelector('.workflow-identity > a')?.getAttribute('target')).toBe('_blank');
@@ -148,7 +148,7 @@ describe('renderWorkflowRuntime', () => {
       rows: [
         {
           organization: 'githubnext',
-          repository: 'central-agentic-ops',
+          repository: 'gh-aw-cao',
           workflow: workflow.workflow,
           run: '0',
           'operational-value': 0.4,
@@ -160,7 +160,7 @@ describe('renderWorkflowRuntime', () => {
         },
         {
           organization: 'githubnext',
-          repository: 'central-agentic-ops',
+          repository: 'gh-aw-cao',
           workflow: workflow.workflow,
           run: '1',
           'operational-value': 0.75,
@@ -177,7 +177,7 @@ describe('renderWorkflowRuntime', () => {
         },
         {
           organization: 'githubnext',
-          repository: 'central-agentic-ops',
+          repository: 'gh-aw-cao',
           workflow: workflow.workflow,
           run: '2',
           'operational-value': 0.8,
@@ -191,8 +191,8 @@ describe('renderWorkflowRuntime', () => {
             { id: 'repository-health', name: 'Repository health', direction: 'higher_is_better', aggregation: 'latest' },
             { id: 'oversized-file-share', name: 'Oversized file share', direction: 'lower_is_better', aggregation: 'latest' }
           ],
-          'run-link': { relation: 'run', href: 'https://github.com/githubnext/central-agentic-ops/actions/runs/2', label: 'Run 2' },
-          'evidence-link': { relation: 'evidence', href: 'https://github.com/githubnext/central-agentic-ops/issues/1', label: 'Evidence 1' }
+          'run-link': { relation: 'run', href: 'https://github.com/githubnext/gh-aw-cao/actions/runs/2', label: 'Run 2' },
+          'evidence-link': { relation: 'evidence', href: 'https://github.com/githubnext/gh-aw-cao/issues/1', label: 'Evidence 1' }
         }
       ]
     };
@@ -215,8 +215,8 @@ describe('renderWorkflowRuntime', () => {
     expect(rendered.querySelector('.value-details tbody')?.textContent).toContain('docs-run-1');
     expect(rendered.querySelectorAll('.value-details tbody tr')).toHaveLength(1);
     expect([...rendered.querySelectorAll('.value-details tbody a')].map((link) => link.getAttribute('href'))).toEqual([
-      'https://github.com/githubnext/central-agentic-ops/actions/runs/2',
-      'https://github.com/githubnext/central-agentic-ops/issues/1'
+      'https://github.com/githubnext/gh-aw-cao/actions/runs/2',
+      'https://github.com/githubnext/gh-aw-cao/issues/1'
     ]);
   });
 
@@ -247,14 +247,14 @@ describe('renderWorkflowRuntime', () => {
     selectWorkflow(rendered);
     expect(detail).toEqual({
       title: 'Multi-Device Docs Tester',
-      description: 'Run health, AI Credit usage, and operational value for .github/workflows/multi-device-docs-tester.md in githubnext/central-agentic-ops.',
+      description: 'Run health, AI Credit usage, and operational value for .github/workflows/multi-device-docs-tester.md in githubnext/gh-aw-cao.',
       mode: 'review',
       navigationPage: 'packages'
     });
 
     selectWorkflow(rendered, '<invalid>');
     expect(rendered.textContent).toBe('Select a workflow to inspect its runtime.');
-    selectWorkflow(rendered, 'githubnext/central-agentic-ops:.github/workflows/missing.md');
+    selectWorkflow(rendered, 'githubnext/gh-aw-cao:.github/workflows/missing.md');
     expect(rendered.textContent).toBe('Workflow not found.');
   });
 });
