@@ -94,6 +94,33 @@ describe('dashboard document validation', () => {
     expect(validateDashboardDocument(JSON.stringify(document)).ok).toBe(true);
   });
 
+  it('defines a filterable firewall domain table on the usage page', () => {
+    const document = JSON.parse(authoritativeDashboardSource);
+    const usage = document.dashboard.pages.find((/** @type {{ id: string }} */ page) => page.id === 'usage');
+    const domains = usage.definition.views.find(
+      (/** @type {{ id: string }} */ view) => view.id === 'usage-firewall-domains'
+    );
+
+    expect(domains).toMatchObject({
+      mark: 'table',
+      controls: 'interactive',
+      data: {
+        source: 'security-observations',
+        filters: {
+          'security-feature': ['firewall'],
+          'security-analysis': ['detail']
+        }
+      }
+    });
+    expect(domains.encoding.columns).toEqual(expect.arrayContaining([
+      expect.objectContaining({ field: 'security-subject', title: 'Domain' }),
+      expect.objectContaining({ field: 'security-status', title: 'Decision' }),
+      expect.objectContaining({ field: 'security-count', title: 'Requests' }),
+      expect.objectContaining({ field: 'run' })
+    ]));
+    expect(validateDashboardDocument(JSON.stringify(document)).ok).toBe(true);
+  });
+
   it('validates declarative table intents without author-defined context templating', () => {
     const document = JSON.parse(authoritativeDashboardSource);
     const runsPage = document.dashboard.pages.find((/** @type {{ id: string }} */ page) => page.id === 'workflow-runs');

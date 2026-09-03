@@ -3413,6 +3413,74 @@
                   }
                 ]
               }
+            },
+            {
+              "id": "usage-firewall-domains",
+              "title": "Firewall domains",
+              "description": "Allowed and blocked network requests by domain from retained workflow firewall telemetry.",
+              "data": {
+                "source": "security-observations",
+                "filters": {
+                  "security-feature": [
+                    "firewall"
+                  ],
+                  "security-analysis": [
+                    "detail"
+                  ]
+                },
+                "order-by": [
+                  {
+                    "field": "security-count",
+                    "direction": "desc"
+                  }
+                ]
+              },
+              "mark": "table",
+              "controls": "interactive",
+              "empty-message": "No firewall domain observations are available.",
+              "layout": "full",
+              "encoding": {
+                "columns": [
+                  {
+                    "field": "security-subject",
+                    "type": "nominal",
+                    "title": "Domain"
+                  },
+                  {
+                    "field": "security-status",
+                    "type": "ordinal",
+                    "title": "Decision",
+                    "display": "status"
+                  },
+                  {
+                    "field": "security-count",
+                    "type": "quantitative",
+                    "title": "Requests"
+                  },
+                  {
+                    "field": "organization",
+                    "type": "nominal"
+                  },
+                  {
+                    "field": "repository",
+                    "type": "nominal"
+                  },
+                  {
+                    "field": "workflow",
+                    "type": "nominal"
+                  },
+                  {
+                    "field": "run",
+                    "type": "nominal",
+                    "title": "Run"
+                  },
+                  {
+                    "field": "observed-at",
+                    "type": "temporal",
+                    "title": "Observed"
+                  }
+                ]
+              }
             }
           ]
         }
