@@ -284,7 +284,7 @@ function declaresOperationalValue(source) {
 }
 
 function workflowRole(source) {
-  return source.match(/uses:\s+shared\/control\.md[\s\S]*?role:\s+(orchestrator|worker)/)?.[1] || "standalone";
+  return source.match(/uses:\s+shared\/(?:cao|control)\.md[\s\S]*?role:\s+(orchestrator|worker)/)?.[1] || "standalone";
 }
 
 function workflowWorkerIds(source) {
