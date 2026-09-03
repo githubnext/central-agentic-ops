@@ -16,6 +16,7 @@ const sourceNames = [
   "evals",
   "eval-observations",
   "usage",
+  "security-observations",
   "coverage-diagnostics",
   "repository-coverage",
   "outcomes",
@@ -386,6 +387,147 @@ function usageRows(usage) {
   }));
 }
 
+function positiveCount(value) {
+  const count = Number(value);
+  return Number.isFinite(count) && count > 0 ? count : 0;
+}
+
+function securityObservation(run, feature, analysis, signal, status, count, subject = "") {
+  return {
+    ...repositoryParts(run.repository),
+    workflow: run.workflowPath?.replace(/\.lock\.yml$/, ".md") || run.workflowName || "",
+    run: String(run.runId),
+    "security-observation": JSON.stringify([run.repository, run.runId, feature, analysis, signal, subject]),
+    "security-feature": feature,
+    "security-analysis": analysis,
+    "security-signal": signal,
+    "security-status": status,
+    "security-subject": subject,
+    "security-count": count,
+    "observed-at": run.createdAt,
+    "run-link": link("run", workflowRunUrl(run.repository, run.runId), `Run ${run.runId}`),
+  };
+}
+
+function unavailableSecurityObservation(run, feature) {
+  return securityObservation(run, feature, "summary", "Telemetry unavailable", "unavailable", 1);
+}
+
+function accessControlRows(run) {
+  const access = run.security?.accessControl;
+  if (!access?.available) return [unavailableSecurityObservation(run, "access-control")];
+  const rows = [];
+  const fileDenials = Object.entries(access.fileDenials || {})
+    .map(([kind, count]) => [kind, positiveCount(count)])
+    .filter(([, count]) => count > 0);
+  const toolDenials = Object.entries(access.toolDenials || {})
+    .map(([kind, count]) => [kind, positiveCount(count)])
+    .filter(([, count]) => count > 0);
+  const guardPolicy = access.guardPolicy || {};
+  const guardDenials = {
+    "Repository scope": positiveCount(guardPolicy.repo_scope_blocked),
+    "General access": positiveCount(guardPolicy.access_denied),
+    "Blocked user": positiveCount(guardPolicy.blocked_user_denied),
+    "Insufficient permission": positiveCount(guardPolicy.permission_denied),
+    "Private repository": positiveCount(guardPolicy.private_repo_denied),
+  };
+  const fileTotal = fileDenials.reduce((total, [, count]) => total + count, 0);
+  const toolTotal = toolDenials.reduce((total, [, count]) => total + count, 0)
+    + Object.values(guardDenials).reduce((total, count) => total + count, 0);
+  rows.push(
+    securityObservation(run, "access-control", "summary", "File access denied", "denied", fileTotal),
+    securityObservation(run, "access-control", "summary", "Tool access denied", "denied", toolTotal),
+  );
+  for (const [kind, count] of fileDenials) {
+    rows.push(securityObservation(run, "access-control", "detail", `${kind} denied`, "denied", count, "Filesystem"));
+  }
+  for (const [kind, count] of toolDenials) {
+    rows.push(securityObservation(run, "access-control", "detail", `${kind} denied`, "denied", count, "Agent tool"));
+  }
+  for (const [signal, count] of Object.entries(guardDenials).filter(([, count]) => count > 0)) {
+    rows.push(securityObservation(run, "access-control", "detail", signal, "denied", count, "MCP guard"));
+  }
+  if (fileTotal + toolTotal === 0) {
+    rows.push(securityObservation(run, "access-control", "detail", "No denials observed", "clear", 0));
+  }
+  return rows;
+}
+
+function firewallRows(run) {
+  const firewall = run.security?.firewall;
+  if (!firewall?.available) return [unavailableSecurityObservation(run, "firewall")];
+  const analysis = firewall.analysis || {};
+  const rows = [
+    securityObservation(run, "firewall", "summary", "Allowed requests", "allowed", positiveCount(analysis.allowed_requests)),
+    securityObservation(run, "firewall", "summary", "Blocked requests", "blocked", positiveCount(analysis.blocked_requests)),
+  ];
+  for (const [domain, counts] of Object.entries(analysis.requests_by_domain || {})) {
+    const allowed = positiveCount(counts?.allowed);
+    const blocked = positiveCount(counts?.blocked);
+    if (allowed > 0) rows.push(securityObservation(run, "firewall", "detail", "Allowed request", "allowed", allowed, domain));
+    if (blocked > 0) rows.push(securityObservation(run, "firewall", "detail", "Blocked request", "blocked", blocked, domain));
+  }
+  return rows;
+}
+
+function integrityRows(run) {
+  const integrity = run.security?.integrity;
+  if (!integrity?.available) return [unavailableSecurityObservation(run, "integrity-filtering")];
+  const summary = integrity.summary || {};
+  const filtered = positiveCount(summary.total_filtered);
+  const passed = Math.max(0, positiveCount(integrity.totalToolCalls) - filtered);
+  const rows = [
+    securityObservation(run, "integrity-filtering", "summary", "Passed interactions", "passed", passed),
+    securityObservation(run, "integrity-filtering", "summary", "Filtered interactions", "filtered", filtered),
+  ];
+  for (const [tool, count] of Object.entries(summary.filtered_tool_counts || {})) {
+    rows.push(securityObservation(run, "integrity-filtering", "detail", "Filtered tool", "filtered", positiveCount(count), tool));
+  }
+  for (const [reason, count] of Object.entries(summary.filtered_reason_counts || {})) {
+    rows.push(securityObservation(run, "integrity-filtering", "detail", "Filter reason", "filtered", positiveCount(count), reason));
+  }
+  if (filtered === 0) {
+    rows.push(securityObservation(run, "integrity-filtering", "detail", "No interactions filtered", "clear", 0));
+  }
+  return rows;
+}
+
+function threatDetectionRows(run) {
+  const detection = run.security?.threatDetection;
+  if (!detection?.available) return [unavailableSecurityObservation(run, "threat-detection")];
+  const verdict = detection.verdict || {};
+  const categories = [
+    ["Prompt injection", verdict.promptInjection],
+    ["Secret leak", verdict.secretLeak],
+    ["Malicious patch", verdict.maliciousPatch],
+  ];
+  const rows = categories.flatMap(([signal, detected]) => [
+    securityObservation(run, "threat-detection", "summary", signal, detected ? "detected" : "clear", 1),
+    securityObservation(run, "threat-detection", "detail", signal, detected ? "detected" : "clear", 1),
+  ]);
+  for (const warning of verdict.warnings || []) {
+    rows.push(securityObservation(
+      run,
+      "threat-detection",
+      "detail",
+      "Inspection warning",
+      "warning",
+      1,
+      [warning.field, warning.code].filter(Boolean).join(": "),
+    ));
+  }
+  return rows;
+}
+
+function securityObservationRows(usage) {
+  return (usage.securityRuns || []).flatMap((run) => [
+    ...accessControlRows(run),
+    ...firewallRows(run),
+    ...integrityRows(run),
+    ...threatDetectionRows(run),
+  ]);
+}
+
 function recordLink(record, relation) {
   const expectedKind = relation === "issue" ? "issue" : "pull-request";
   return record.kind === expectedKind ? link(relation, record.url, `View ${relation.replaceAll("-", " ")}`) : undefined;
@@ -586,6 +728,13 @@ export function buildDashboardLanguageSources({ deployed, usage, operationalValu
     ).toISOString();
   }
   sources.usage = source("usage", usageRows(usage), generatedAt, usageAvailable, usageComplete);
+  sources["security-observations"] = source(
+    "security-observations",
+    securityObservationRows(usage),
+    generatedAt,
+    usage.securityAvailable === true,
+    usage.securityComplete === true,
+  );
   if (Number.isFinite(usage.windowHours) && usage.windowHours > 0) {
     sources.usage.metadata["coverage-end"] = generatedAt;
     sources.usage.metadata["coverage-start"] = new Date(

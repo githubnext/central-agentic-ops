@@ -122,7 +122,10 @@ export const FILTER_DIMENSION_VALUES = [
   'eval-result',
   'operational-value-definition',
   'finding-status',
-  'finding-severity'
+  'finding-severity',
+  'security-feature',
+  'security-analysis',
+  'security-status'
 ];
 
 export const PAGE_KIND_VALUES = ['built-in', 'custom'];
@@ -250,6 +253,7 @@ export const SOURCE_VALUES = [
   'evals',
   'eval-observations',
   'usage',
+  'security-observations',
   'coverage-diagnostics',
   'repository-coverage',
   'runtime-episode-summary',
@@ -304,6 +308,7 @@ export const SOURCE_FIELDS = {
   evals: ['eval', 'eval-name', 'eval-question', 'requested-model', 'observed-at'],
   'eval-observations': ['organization', 'repository', 'workflow', 'run', 'experiment', 'eval', 'eval-result', 'requested-model', 'resolved-model', 'rollout-mode', 'observed-at'],
   usage: ['organization', 'repository', 'workflow', 'run', 'invocation', 'engine', 'engine-version', 'requested-model', 'resolved-model', 'rollout-mode', 'input-tokens', 'output-tokens', 'cache-read-tokens', 'cache-write-tokens', 'reasoning-tokens', 'aic', 'estimated-usd', 'observed-at', 'organization-link', 'repository-link', 'workflow-link', 'run-link'],
+  'security-observations': ['organization', 'repository', 'workflow', 'run', 'security-observation', 'security-feature', 'security-analysis', 'security-signal', 'security-status', 'security-subject', 'security-count', 'observed-at', 'run-link'],
   'coverage-diagnostics': ['kind', 'title', 'effect'],
   'repository-coverage': ['label', 'value'],
   'runtime-episode-summary': ['label', 'value'],
@@ -375,6 +380,7 @@ export const SOURCE_ENTITY_IDENTIFIER_FIELDS = {
   evals: ['eval'],
   'eval-observations': ['eval', 'run'],
   usage: ['invocation'],
+  'security-observations': ['security-observation'],
   'repository-coverage': ['label'],
   'runtime-episode-summary': ['label'],
   'runtime-episodes': ['run'],
@@ -409,7 +415,8 @@ export const ADDITIVE_MEASURE_FIELDS = [
   'cache-read-tokens',
   'cache-write-tokens',
   'reasoning-tokens',
-  'aic'
+  'aic',
+  'security-count'
 ];
 
 export const NON_ADDITIVE_MEASURE_FIELDS = ['value', 'operational-value'];
