@@ -357,6 +357,7 @@ export const RUN_CONCLUSION_VALUES = [
   'unknown'
 ];
 export const GRADER_STATUS_VALUES = ['pass', 'fail', 'error', 'unavailable'];
+export const DISPATCH_STATUS_VALUES = [...RUN_CONCLUSION_VALUES, ...RUN_STATUS_VALUES];
 export const EVAL_RESULT_VALUES = ['YES', 'NO', 'UNKNOWN'];
 export const OUTCOME_STATE_VALUES = ['accepted', 'rejected', 'ignored', 'pending', 'lifecycle', 'lifecycle-close'];
 export const FINDING_STATUS_VALUES = ['open', 'resolved', 'dismissed', 'unknown'];
