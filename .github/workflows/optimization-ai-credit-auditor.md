@@ -3,7 +3,7 @@ emoji: ":mag:"
 
 description: "Daily audit and forecast of AI Credit (AIC) usage across all agentic workflows with historical trend tracking"
 
-name: "Optimization / AI Credit Auditor"
+name: "Optimization / AI Credit Audit"
 
 max-ai-credits: 350
 max-daily-ai-credits: -1

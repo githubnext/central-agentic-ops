@@ -3,7 +3,7 @@ emoji: ":toolbox:"
 
 description: "Weekly ambient-context curation for one repository's agent skills: audits SKILL.md files and oversized AGENTS.md sections and files one issue containing a ready-to-run agentic skills prompt"
 
-name: "Ambient Context / Skills Curator"
+name: "Ambient Context / Skills"
 
 max-ai-credits: 400
 max-daily-ai-credits: -1

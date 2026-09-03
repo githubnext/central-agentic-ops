@@ -1,7 +1,7 @@
 ---
-name: "EU CRA Advisor"
+name: "EU CRA"
 
-run-name: "${{ github.event_name == 'schedule' && 'EU CRA Advisor · scheduled' || format('EU CRA Advisor · {0} · {1}', inputs.target_repo || 'discovery', inputs.safe_output_mode || 'review') }}"
+run-name: "${{ github.event_name == 'schedule' && 'EU CRA · scheduled' || format('EU CRA · {0} · {1}', inputs.target_repo || 'discovery', inputs.safe_output_mode || 'review') }}"
 
 max-ai-credits: 200
 timeout-minutes: 15
@@ -101,9 +101,9 @@ safe-outputs:
 
 {{#runtime-import? .github/cao/eu-cra-compliance.md}}
 
-<!-- EU CRA Advisor is advisory and non-binding. This workflow provides no guarantee of completeness, correctness, accuracy, or alignment with the EU Cyber Resilience Act. -->
+<!-- EU CRA is advisory and non-binding. This workflow provides no guarantee of completeness, correctness, accuracy, or alignment with the EU Cyber Resilience Act. -->
 
-# EU CRA Advisor
+# EU CRA
 
 Advisory package orchestrator for evidence-led review against Regulation (EU) 2024/2847 across organization repositories. Its output is non-binding and is not legal advice, certification, or a compliance determination. Select and rank repositories only. The orchestrator must not analyze a target repository for CRA compliance, make legal determinations, or create target findings; workers own those responsibilities.
 

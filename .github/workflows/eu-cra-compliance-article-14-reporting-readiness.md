@@ -1,7 +1,7 @@
 ---
 emoji: ":alarm_clock:"
 description: "Audits Article 14 awareness, decision, notification-timeline, and evidence-preservation readiness."
-name: "EU CRA Advisor / Article 14 Reporting Readiness"
+name: "EU CRA / Article 14"
 max-ai-credits: 150
 max-daily-ai-credits: -1
 
@@ -121,7 +121,7 @@ timeout-minutes: 30
 
 {{#runtime-import? .github/cao/eu-cra-compliance.md}}
 
-# EU CRA Advisor / Article 14 Reporting Readiness
+# EU CRA / Article 14
 
 Audit operational readiness for Article 14 reporting. This worker never decides reportability without human review and never sends a notification.
 

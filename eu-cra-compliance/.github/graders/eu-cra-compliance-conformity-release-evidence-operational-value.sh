@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-WORKFLOW_NAME="EU CRA Advisor / Conformity Release Evidence"
+WORKFLOW_NAME="EU CRA / Conformity"
 SOURCE_PATH=".github/workflows/eu-cra-compliance-conformity-release-evidence.md"
 TITLE_PREFIX="[eu-cra:conformity-release] "
 DOMAIN="conformity-release"

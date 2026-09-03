@@ -49,6 +49,7 @@ const craExpectedFiles = [
   ".github/graders/eu-cra-compliance-security-requirements-auditor-operational-value.sh",
   ".github/graders/eu-cra-compliance-supply-chain-sbom-auditor-operational-value.sh",
   ".github/graders/eu-cra-compliance-vulnerability-handling-auditor-operational-value.sh",
+  ".github/workflows/cao.md",
   ".github/workflows/eu-cra-compliance-article-14-reporting-readiness.md",
   ".github/workflows/eu-cra-compliance-conformity-release-evidence.md",
   ".github/workflows/eu-cra-compliance-package-maintainer.md",

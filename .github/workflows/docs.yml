@@ -62,7 +62,7 @@ jobs:
           GH_TOKEN: ${{ github.token }}
           DISPATCH_WORKFLOW: dashboard-build.yml
           DISPATCH_REF: ${{ github.ref_name }}
-          DISPATCH_RUN_NAME: Central Agentic Ops Dashboard Build / docs-${{ github.run_id }}-${{ github.run_attempt }}
+          DISPATCH_RUN_NAME: CAO Dashboard Build / docs-${{ github.run_id }}-${{ github.run_attempt }}
           DISPATCH_INPUTS: >-
             {"mode":"${{ inputs.mode || 'cache' }}","request-id":"docs-${{ github.run_id }}-${{ github.run_attempt }}"}
         run: node dashboard/dispatch-workflow.mjs
