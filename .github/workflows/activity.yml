@@ -2,6 +2,10 @@ name: Central Agentic Ops Activity
 
 on:
   workflow_call:
+    outputs:
+      cache-key:
+        description: Immutable key of the activity snapshot published by this run.
+        value: ${{ jobs.index.outputs.cache-key }}
   workflow_dispatch:
   schedule:
     - cron: "7,22,37,52 * * * *"
@@ -19,6 +23,8 @@ concurrency:
 jobs:
   index:
     runs-on: ubuntu-latest
+    outputs:
+      cache-key: ${{ steps.activity-cache-key.outputs.value }}
     permissions:
       actions: read
       contents: read
@@ -30,6 +36,10 @@ jobs:
         with:
           ref: ${{ github.workflow_sha }}
           persist-credentials: false
+
+      - name: Resolve activity cache key
+        id: activity-cache-key
+        run: echo "value=${{ runner.os }}-cao-activity-v2-${{ github.repository }}-${{ github.run_id }}-${{ github.run_attempt }}" >> "$GITHUB_OUTPUT"
 
       - name: Generate GitHub App token for activity
         id: activity-app-token
@@ -52,7 +62,7 @@ jobs:
         uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: ${{ runner.temp }}/cao-activity
-          key: ${{ runner.os }}-cao-activity-v2-${{ github.repository }}-${{ github.run_id }}-${{ github.run_attempt }}
+          key: ${{ steps.activity-cache-key.outputs.value }}
           restore-keys: |
             ${{ runner.os }}-cao-activity-v2-${{ github.repository }}-
 
@@ -187,4 +197,4 @@ jobs:
         uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: ${{ runner.temp }}/cao-activity
-          key: ${{ runner.os }}-cao-activity-v2-${{ github.repository }}-${{ github.run_id }}-${{ github.run_attempt }}
+          key: ${{ steps.activity-cache-key.outputs.value }}
