@@ -1007,7 +1007,12 @@ function precompute() {
   } catch (error) {
     if (!isRateLimitError(error)) throw error;
     const required = githubApiRequestRequirement(policy, { role: context.role, targetRepository: context.targetRepository });
-    writeCapacityBlockedPrecompute(context.packageName, context.role, githubApiCapacity(required));
+    const capacity = githubApiCapacity(required);
+    writeCapacityBlockedPrecompute(
+      context.packageName,
+      context.role,
+      capacity.status === "unavailable" ? { ...capacity, status: "limited" } : capacity,
+    );
   }
 }
 
