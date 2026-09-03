@@ -805,7 +805,7 @@ footer { padding: 20px 24px; border-top: 1px solid var(--border); color: var(--m
   .primary-nav { width: 100%; flex-direction: row; gap: 4px; }
   .nav-section-label { display: none; }
   .primary-nav > .nav-item, .sidebar-collapsed .primary-nav > .nav-item { width: 44px; min-height: 44px; flex: 0 0 44px; justify-content: center; gap: 0; padding: 0; }
-  .primary-nav > .nav-item:nth-of-type(n + 5) { display: none; }
+  .primary-nav > .nav-item:nth-of-type(n + 6) { display: none; }
   .primary-nav > .nav-item .nav-label { display: none; }
   .primary-nav a[aria-current="page"]::before { content: none; }
   .mobile-nav-menu { display: block; position: relative; margin-left: auto; }
