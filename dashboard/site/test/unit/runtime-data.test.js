@@ -140,6 +140,7 @@ describe('runtime data', () => {
       runs: {
         source: 'runs',
         rows: [
+          { organization: 'githubnext', repository: 'control', workflow: 'worker.yml', run: '3', event: 'workflow_dispatch', 'run-conclusion': 'failure', 'failure-message': 'Target authority missing: add .github/workflows/cao.json to the target default branch for live mode', 'failure-job': 'pre_activation', 'failure-step': 'Run CAO control precompute' },
           { organization: 'githubnext', repository: 'control', workflow: 'worker.yml', run: '2', event: 'workflow_dispatch', 'run-conclusion': 'failure', 'failure-job': 'pre_activation', 'failure-step': 'Run CAO control precompute' },
           { organization: 'githubnext', repository: 'control', workflow: 'worker.yml', run: '1', event: 'workflow_dispatch', 'run-conclusion': 'startup-failure', 'failure-job': 'pre_activation' }
         ],
@@ -148,6 +149,7 @@ describe('runtime data', () => {
     });
 
     expect(sources.dispatches.rows.map((row) => row['status-detail'])).toEqual([
+      'Target authority missing: add .github/workflows/cao.json to the target default branch for live mode',
       'Run CAO control precompute failed',
       'Job failed: pre activation'
     ]);

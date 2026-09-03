@@ -25,6 +25,7 @@ test("dashboard source bridge carries API capacity admission blocks into run row
           admissionStatus: "resource-limited",
           admissionReason: "github-api-capacity-insufficient",
           failureJob: "pre_activation",
+          failureMessage: "Target authority missing",
           failureStep: "CAO admission blocked: GitHub API limited until 2026-09-02T22:04:33.000Z",
           resource: "github-rest-api",
           resourceResetAt: "2026-09-02T22:04:33.000Z",
@@ -39,12 +40,13 @@ test("dashboard source bridge carries API capacity admission blocks into run row
 
   assert.deepEqual(
     Object.fromEntries(Object.entries(sources.runs.rows[0]).filter(([key]) => [
-      "admission-status", "admission-reason", "failure-job", "failure-step", "resource", "resource-reset-at", "resource-wait-hours",
+      "admission-status", "admission-reason", "failure-job", "failure-message", "failure-step", "resource", "resource-reset-at", "resource-wait-hours",
     ].includes(key))),
     {
       "admission-status": "resource-limited",
       "admission-reason": "github-api-capacity-insufficient",
       "failure-job": "pre_activation",
+      "failure-message": "Target authority missing",
       "failure-step": "CAO admission blocked: GitHub API limited until 2026-09-02T22:04:33.000Z",
       resource: "github-rest-api",
       "resource-reset-at": "2026-09-02T22:04:33.000Z",

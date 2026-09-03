@@ -344,6 +344,7 @@ function runRows(deployed) {
         ...(run.admissionStatus ? { "admission-status": run.admissionStatus } : {}),
         ...(run.admissionReason ? { "admission-reason": run.admissionReason } : {}),
         ...(run.failureJob ? { "failure-job": run.failureJob } : {}),
+        ...(run.failureMessage ? { "failure-message": run.failureMessage } : {}),
         ...(run.failureStep ? { "failure-step": run.failureStep } : {}),
         ...(run.resource ? { resource: run.resource } : {}),
         ...(run.resourceResetAt ? { "resource-reset-at": run.resourceResetAt } : {}),

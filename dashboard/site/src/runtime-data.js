@@ -268,6 +268,8 @@ function dispatchStatusDetail(run, status) {
   if (status === 'action-required') return 'Maintainer approval required';
   if (status === 'skipped') return 'Skipped by a control-plane guard';
   if (FAILURE_CONCLUSIONS.has(status)) {
+    const failureMessage = text(run['failure-message']);
+    if (failureMessage) return failureMessage;
     const failedStep = text(run['failure-step']);
     if (failedStep) return `${failedStep} failed`;
     const failedJob = text(run['failure-job']).replaceAll('_', ' ');

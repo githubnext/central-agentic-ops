@@ -59,6 +59,6 @@ Each `workflows[]` record identifies its `repository`, source `path`, workflow `
 }
 ```
 
-The latest failed run and up to five newest unresolved failed `workflow_dispatch` runs per workflow are enriched from the GitHub Actions jobs API. Enriched records may include `failureJob` and `failureStep`; capacity-related failures also include `admissionStatus`, `admissionReason`, `resource`, `resourceResetAt`, and `resourceWaitHours`. Consumers must use the top-level completeness fields instead of inferring completeness from array length.
+The latest failed run and up to five newest unresolved failed `workflow_dispatch` runs per workflow are enriched from the GitHub Actions jobs API. Enriched records may include `failureJob` and `failureStep`. A generic CAO precompute failure is drilled into once through its job log; only a controlled `[CAO failure]` marker or an allowlisted legacy signature may populate `failureMessage`, and arbitrary log text is never retained. Capacity-related failures also include `admissionStatus`, `admissionReason`, `resource`, `resourceResetAt`, and `resourceWaitHours`. Consumers must use the top-level completeness fields instead of inferring completeness from array length.
 
 When a compatible complete cache entry exists, the indexer retains in-window records and overlaps the previous refresh by one hour. Repositories with newly discovered workflows or retained non-terminal runs receive a full-window refresh. A missing, malformed, incompatible, or incomplete entry causes a complete bounded refresh.
