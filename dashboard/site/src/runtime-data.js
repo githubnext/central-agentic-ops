@@ -267,7 +267,13 @@ function dispatchStatusDetail(run, status) {
   }
   if (status === 'action-required') return 'Maintainer approval required';
   if (status === 'skipped') return 'Skipped by a control-plane guard';
-  if (FAILURE_CONCLUSIONS.has(status)) return 'Failure reason unavailable in retained evidence';
+  if (FAILURE_CONCLUSIONS.has(status)) {
+    const failedStep = text(run['failure-step']);
+    if (failedStep) return `${failedStep} failed`;
+    const failedJob = text(run['failure-job']).replaceAll('_', ' ');
+    if (failedJob) return `Job failed: ${failedJob}`;
+    return 'Open GitHub Actions for failure details';
+  }
   return '—';
 }
 

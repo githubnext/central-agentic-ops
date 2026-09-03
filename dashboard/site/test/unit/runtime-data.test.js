@@ -127,4 +127,29 @@ describe('runtime data', () => {
       { label: 'Total dispatches', value: '0' }
     ]);
   });
+
+  it('uses retained Actions job and step evidence for failed dispatch details', () => {
+    const sources = deriveRuntimeSources({
+      workflows: {
+        source: 'workflows',
+        rows: [
+          { organization: 'githubnext', repository: 'control', workflow: 'worker.yml', 'workflow-name': 'Worker', 'workflow-role': 'worker', package: 'dependabot' }
+        ],
+        metadata
+      },
+      runs: {
+        source: 'runs',
+        rows: [
+          { organization: 'githubnext', repository: 'control', workflow: 'worker.yml', run: '2', event: 'workflow_dispatch', 'run-conclusion': 'failure', 'failure-job': 'pre_activation', 'failure-step': 'Run CAO control precompute' },
+          { organization: 'githubnext', repository: 'control', workflow: 'worker.yml', run: '1', event: 'workflow_dispatch', 'run-conclusion': 'startup-failure', 'failure-job': 'pre_activation' }
+        ],
+        metadata
+      }
+    });
+
+    expect(sources.dispatches.rows.map((row) => row['status-detail'])).toEqual([
+      'Run CAO control precompute failed',
+      'Job failed: pre activation'
+    ]);
+  });
 });

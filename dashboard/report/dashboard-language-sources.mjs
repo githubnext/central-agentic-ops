@@ -343,6 +343,8 @@ function runRows(deployed) {
         "run-conclusion": runConclusion(run.conclusion),
         ...(run.admissionStatus ? { "admission-status": run.admissionStatus } : {}),
         ...(run.admissionReason ? { "admission-reason": run.admissionReason } : {}),
+        ...(run.failureJob ? { "failure-job": run.failureJob } : {}),
+        ...(run.failureStep ? { "failure-step": run.failureStep } : {}),
         ...(run.resource ? { resource: run.resource } : {}),
         ...(run.resourceResetAt ? { "resource-reset-at": run.resourceResetAt } : {}),
         ...(Number.isFinite(run.resourceWaitHours) ? { "resource-wait-hours": run.resourceWaitHours } : {}),
