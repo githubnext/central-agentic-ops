@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-WORKFLOW_NAME="Software Development Practices Advisor / GitHub Well-Architected"
+WORKFLOW_NAME="Dev Practices / Well-Architected"
 SOURCE_PATH=".github/workflows/software-development-practices-github-well-architected.md"
 TITLE_PREFIX="[well-architected] "
 FRAMEWORK="github-well-architected"

@@ -4,7 +4,7 @@ set -euo pipefail
 export LC_ALL=C
 
 REPOSITORY=githubnext/gh-aw-cao
-WORKFLOW_NAME="Dependabot / Release Train Updater"
+WORKFLOW_NAME="Dependabot / Release Trains"
 MATURATION_SECONDS=1209600
 
 tmp_dir=$(mktemp -d "${TMPDIR:-/tmp}/dependabot-release-train-value.XXXXXX")
@@ -14,7 +14,7 @@ definition() {
     cat <<'JSON'
 {
   "schemaVersion": 4, "grader": "operational-value",
-  "repository": "githubnext/gh-aw-cao", "workflowName": "Dependabot / Release Train Updater",
+  "repository": "githubnext/gh-aw-cao", "workflowName": "Dependabot / Release Trains",
   "sourcePath": ".github/workflows/dependabot-release-train-updater.md",
   "adoption": {"commit": "4615c8d8eaf51dab837238dff6fc8248a56194fe", "adoptedAt": "2026-07-16T15:40:56Z"},
   "operationalValue": "Resolve one dependency-update opportunity in the dispatched target with a validated merge.",

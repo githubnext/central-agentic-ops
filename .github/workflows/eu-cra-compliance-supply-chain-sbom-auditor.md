@@ -1,7 +1,7 @@
 ---
 emoji: ":package:"
 description: "Audits CRA supply-chain, component inventory, SBOM, dependency, and provenance evidence."
-name: "EU CRA Advisor / Supply Chain SBOM Auditor"
+name: "EU CRA / Supply Chain"
 max-ai-credits: 150
 max-daily-ai-credits: -1
 
@@ -122,7 +122,7 @@ timeout-minutes: 30
 
 {{#runtime-import? .github/cao/eu-cra-compliance.md}}
 
-# EU CRA Advisor / Supply Chain SBOM Auditor
+# EU CRA / Supply Chain
 
 Audit repository-level software supply-chain and SBOM evidence relevant to the CRA. Do not make a legal conformity determination.
 

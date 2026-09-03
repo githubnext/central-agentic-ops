@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-WORKFLOW_NAME="Software Development Practices Advisor / NIST SSDF"
+WORKFLOW_NAME="Dev Practices / NIST SSDF"
 SOURCE_PATH=".github/workflows/software-development-practices-nist-ssdf.md"
 TITLE_PREFIX="[nist-ssdf] "
 FRAMEWORK="nist-ssdf"

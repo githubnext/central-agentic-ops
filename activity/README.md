@@ -1,4 +1,4 @@
-# Central Agentic Ops Activity
+# CAO Activity
 
 The activity package maintains the shared, bounded snapshot used by the Central Agentic Ops dashboard. It indexes deployed GitHub Agentic Workflows and recent runs, collects AI Credit and operational-value observations, and normalizes durable records. It is deterministic GitHub Actions infrastructure: it has no agent, rollout mode, safe output, or target-writing authority.
 

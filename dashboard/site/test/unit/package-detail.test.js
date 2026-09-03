@@ -34,7 +34,7 @@ const workflows = [
     organization: 'githubnext',
     repository: 'gh-aw-cao',
     workflow: '.github/workflows/ambient-context-agents-md-curator.md',
-    'workflow-name': 'Ambient Context / AGENTS.md Curator',
+    'workflow-name': 'Ambient Context / AGENTS.md',
     'workflow-role': 'worker',
     'rollout-mode': 'review'
   },
@@ -103,7 +103,7 @@ const outcomes = [
   {
     package: 'ambient-context',
     workflow: '.github/workflows/ambient-context-agents-md-curator.md',
-    'workflow-name': 'Ambient Context / AGENTS.md Curator',
+    'workflow-name': 'Ambient Context / AGENTS.md',
     'safe-output': 'ambient-pr-2',
     'outcome-title': 'Reconcile AGENTS.md guidance',
     'outcome-summary': 'Updated durable guidance.',
@@ -155,7 +155,7 @@ describe('renderPackageNavigation', () => {
     }));
 
     expect(rendered.querySelector('.package-tabs [aria-current="page"]')?.getAttribute('href')).toBe('#page-package-insights?package=ambient-context');
-    expect(rendered.querySelector('.value-report h2')?.textContent).toBe('Ambient Context / AGENTS.md Curator');
+    expect(rendered.querySelector('.value-report h2')?.textContent).toBe('Ambient Context / AGENTS.md');
     expect(rendered.querySelector('.value-score')?.textContent).toContain('75%');
     expect(rendered.querySelector('.value-outcomes')?.textContent).toContain('Outcome change from first observation');
     expect(rendered.querySelector('.value-outcomes')?.textContent).toContain('Primary operational value+25.0 pts');

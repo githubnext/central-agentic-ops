@@ -26,7 +26,7 @@ test("dispatch helper waits for the correlated workflow run", async () => {
       response.end(JSON.stringify({
         workflow_runs: [{
           id: 42,
-          display_title: "Central Agentic Ops Dashboard Build / request-1",
+          display_title: "CAO Dashboard Build / request-1",
           status: "queued",
           html_url: "https://github.example/acme/control/actions/runs/42",
         }],
@@ -55,7 +55,7 @@ test("dispatch helper waits for the correlated workflow run", async () => {
         DISPATCH_INPUTS: '{"request-id":"request-1"}',
         DISPATCH_POLL_INTERVAL_MS: "1",
         DISPATCH_REF: "main",
-        DISPATCH_RUN_NAME: "Central Agentic Ops Dashboard Build / request-1",
+        DISPATCH_RUN_NAME: "CAO Dashboard Build / request-1",
         DISPATCH_TIMEOUT_MINUTES: "1",
         DISPATCH_WORKFLOW: "dashboard-build.yml",
         GH_TOKEN: "test-token",

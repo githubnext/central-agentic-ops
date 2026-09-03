@@ -3,7 +3,7 @@ emoji: ":bar_chart:"
 
 description: "Daily optimization that identifies the highest AI Credit (AIC) agentic workflows, audits its runs, and recommends efficiency improvements including inline sub-agent refactors when warranted"
 
-name: "Optimization / AI Credit Optimizer"
+name: "Optimization / AI Credit Savings"
 
 max-ai-credits: 500
 max-daily-ai-credits: -1

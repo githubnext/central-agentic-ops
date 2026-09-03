@@ -3,7 +3,7 @@ emoji: ":compass:"
 
 description: "Weekly ambient-context curation for one repository: audits an existing AGENTS.md against git, pull request, and agent-session evidence and files one issue containing a ready-to-run agentic update prompt"
 
-name: "Ambient Context / AGENTS.md Curator"
+name: "Ambient Context / AGENTS.md"
 
 max-ai-credits: 400
 max-daily-ai-credits: -1

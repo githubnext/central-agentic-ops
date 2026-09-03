@@ -2,9 +2,9 @@
 emoji: ":compass:"
 description: "Selects repositories for evidence-led GitHub Well-Architected and NIST SSDF guidance."
 intent: Reduce the effort required to identify evidence-backed improvements to software development practices without creating duplicate or unsupported work.
-name: "Software Development Practices Advisor"
+name: "Dev Practices"
 
-run-name: "${{ github.event_name == 'schedule' && 'Software Development Practices Advisor · scheduled' || format('Software Development Practices Advisor · {0} · {1}', inputs.target_repo || 'discovery', inputs.safe_output_mode || 'review') }}"
+run-name: "${{ github.event_name == 'schedule' && 'Dev Practices · scheduled' || format('Dev Practices · {0} · {1}', inputs.target_repo || 'discovery', inputs.safe_output_mode || 'review') }}"
 
 max-ai-credits: 250
 timeout-minutes: 15
@@ -98,9 +98,9 @@ safe-outputs:
 
 {{#runtime-import? .github/cao/software-development-practices.md}}
 
-<!-- Software Development Practices Advisor outputs are advisory and non-binding. They provide no guarantee of completeness, correctness, security, compliance, or alignment with current GitHub or NIST guidance. -->
+<!-- Dev Practices outputs are advisory and non-binding. They provide no guarantee of completeness, correctness, security, compliance, or alignment with current GitHub or NIST guidance. -->
 
-# Software Development Practices Advisor
+# Dev Practices
 
 Select and rank repositories for evidence-led improvement guidance based on GitHub Well-Architected and the NIST Secure Software Development Framework. All findings require human review. The orchestrator must not assess a target, create findings, claim framework alignment, or perform worker responsibilities.
 

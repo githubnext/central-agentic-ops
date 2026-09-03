@@ -20,7 +20,7 @@ import {
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), "../..");
 const scriptPath = join(root, ".github", "scripts", "ops-publish", "ops-publish.mjs");
-const sourceBody = "Finding\n\nGenerated from [AW Failures / Investigator](https://github.com/acme/control/actions/runs/123)";
+const sourceBody = "Finding\n\nGenerated from [AW Maintenance / Failures](https://github.com/acme/control/actions/runs/123)";
 
 function sourceIssue(overrides = {}) {
   return {

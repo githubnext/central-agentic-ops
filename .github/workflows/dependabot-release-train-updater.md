@@ -3,7 +3,7 @@ emoji: ":dependabot:"
 
 description: "Manifest-aware dependency release-train updater that repairs or proposes one reviewable dependency bundle per run."
 
-name: "Dependabot / Release Train Updater"
+name: "Dependabot / Release Trains"
 
 max-ai-credits: 600
 max-daily-ai-credits: -1

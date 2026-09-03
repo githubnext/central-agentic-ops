@@ -4,7 +4,7 @@ set -euo pipefail
 
 export LC_ALL=C
 
-WORKFLOW_NAME="Optimization / AI Credit Auditor"
+WORKFLOW_NAME="Optimization / AI Credit Audit"
 MATURATION_SECONDS=86400
 
 tmp_dir=$(mktemp -d "${TMPDIR:-/tmp}/optimization-ai-credit-auditor-value.XXXXXX")
@@ -16,7 +16,7 @@ definition() {
   "schemaVersion": 4,
   "grader": "operational-value",
   "repository": "githubnext/gh-aw-cao",
-  "workflowName": "Optimization / AI Credit Auditor",
+  "workflowName": "Optimization / AI Credit Audit",
   "sourcePath": ".github/workflows/optimization-ai-credit-auditor.md",
   "adoption": {
     "commit": "35c7c3cbd319632f85784cce196e57c0f61db9a0",

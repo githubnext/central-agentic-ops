@@ -1,5 +1,5 @@
 ---
-name: Docs Explanatory Diagram Generator
+name: Docs Diagrams
 description: Finds one documentation concept or ASCII diagram, creates a polished light/dark SVG pair, and opens a draft PR with theme-aware markup.
 on:
   schedule: weekly

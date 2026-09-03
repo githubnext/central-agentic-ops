@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-WORKFLOW_NAME="EU CRA Advisor / Security Requirements Auditor"
+WORKFLOW_NAME="EU CRA / Security"
 SOURCE_PATH=".github/workflows/eu-cra-compliance-security-requirements-auditor.md"
 TITLE_PREFIX="[eu-cra:security-requirements] "
 DOMAIN="security-requirements"

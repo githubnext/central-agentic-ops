@@ -15,7 +15,7 @@ definition() {
   "schemaVersion": 4,
   "grader": "operational-value",
   "repository": "githubnext/gh-aw-cao",
-  "workflowName": "SelfCare / Docs Build-Time Investigator",
+  "workflowName": "SelfCare / Docs Build Time",
   "sourcePath": ".github/workflows/self-care-docs-build-time-investigator.md",
   "adoption": {
     "commit": "4193a3f3d0759b9897c364f94d2c72e505e1762b",

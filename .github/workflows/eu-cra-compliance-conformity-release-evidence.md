@@ -1,7 +1,7 @@
 ---
 emoji: ":clipboard:"
 description: "Audits CRA technical documentation, conformity-assessment, declaration, and release-gate evidence."
-name: "EU CRA Advisor / Conformity Release Evidence"
+name: "EU CRA / Conformity"
 max-ai-credits: 150
 max-daily-ai-credits: -1
 
@@ -121,7 +121,7 @@ timeout-minutes: 30
 
 {{#runtime-import? .github/cao/eu-cra-compliance.md}}
 
-# EU CRA Advisor / Conformity Release Evidence
+# EU CRA / Conformity
 
 Audit evidence used by human conformity and market-release gates. Do not select a conformity route, approve a declaration, authorize CE marking, or approve market release.
 

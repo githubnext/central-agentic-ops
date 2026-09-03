@@ -1441,7 +1441,7 @@ test("Advisory preserves UK AI guidance and human-review boundaries", () => {
   const readme = readFileSync(join(root, "advisory", "README.md"), "utf8");
 
   assert.match(orchestrator, /^name: "UK AI Advisory"$/m);
-  assert.match(worker, /^name: "UK AI Advisory \/ Operational Resilience"$/m);
+  assert.match(worker, /^name: "UK AI Advisory \/ Resilience"$/m);
   for (const source of [orchestrator, worker, readme]) {
     assert.match(source, /advisory and non-binding/i);
     assert.match(source, /no guarantee of completeness, correctness, accuracy/i);
@@ -1484,7 +1484,7 @@ test("Advisory preserves UK AI guidance and human-review boundaries", () => {
   assert.match(worker, /## agent: `ai-risk-scorer`/);
   assert.doesNotMatch(worker, /^graders:/m);
 
-  assert.match(maintainer, /^name: "UK AI Advisory \/ Package Maintainer"$/m);
+  assert.match(maintainer, /^name: "UK AI Advisory \/ Maintenance"$/m);
   assert.match(maintainer, /schedule: weekly/);
   assert.match(maintainer, /safe_output_mode:\n\s+default: review/);
   assert.doesNotMatch(maintainer, /^\s+staged:/m);
@@ -1518,19 +1518,19 @@ test("UK AI advisory worker uses actionable progressive-disclosure reports", () 
   assert.match(worker, /clear, imperative prompt for an agentic run that performs only that selected action/i);
 });
 
-test("EU CRA Advisor workflows preserve advisory and human-review boundaries", () => {
+test("EU CRA workflows preserve advisory and human-review boundaries", () => {
   const orchestrator = workflow("eu-cra-compliance.md");
   const maintainer = workflow("eu-cra-compliance-package-maintainer.md");
   const workers = [
-    ["eu-cra-compliance-scope-classifier.md", "Scope Classifier"],
-    ["eu-cra-compliance-security-requirements-auditor.md", "Security Requirements Auditor"],
-    ["eu-cra-compliance-supply-chain-sbom-auditor.md", "Supply Chain SBOM Auditor"],
-    ["eu-cra-compliance-vulnerability-handling-auditor.md", "Vulnerability Handling Auditor"],
-    ["eu-cra-compliance-article-14-reporting-readiness.md", "Article 14 Reporting Readiness"],
-    ["eu-cra-compliance-conformity-release-evidence.md", "Conformity Release Evidence"],
+    ["eu-cra-compliance-scope-classifier.md", "Scope"],
+    ["eu-cra-compliance-security-requirements-auditor.md", "Security"],
+    ["eu-cra-compliance-supply-chain-sbom-auditor.md", "Supply Chain"],
+    ["eu-cra-compliance-vulnerability-handling-auditor.md", "Vulnerabilities"],
+    ["eu-cra-compliance-article-14-reporting-readiness.md", "Article 14"],
+    ["eu-cra-compliance-conformity-release-evidence.md", "Conformity"],
   ];
 
-  assert.match(orchestrator, /^name: "EU CRA Advisor"$/m);
+  assert.match(orchestrator, /^name: "EU CRA"$/m);
   assert.match(orchestrator, /advisory and non-binding/i);
   assert.match(orchestrator, /no guarantee of completeness, correctness, accuracy, or alignment with the EU Cyber Resilience Act/i);
   assert.match(orchestrator, /must not analyze a target repository for CRA compliance/i);
@@ -1539,10 +1539,10 @@ test("EU CRA Advisor workflows preserve advisory and human-review boundaries", (
   assert.match(orchestrator, /sum of enabled, useful workers across selected repositories/);
   assert.match(orchestrator, /Keep that total at or below 48/);
 
-  for (const [name, displayName] of [["eu-cra-compliance.md", null], ...workers, ["eu-cra-compliance-package-maintainer.md", "Package Maintainer"]]) {
+  for (const [name, displayName] of [["eu-cra-compliance.md", null], ...workers, ["eu-cra-compliance-package-maintainer.md", "Maintenance"]]) {
     const source = workflow(name);
     if (displayName) {
-      assert.match(source, new RegExp(`^name: "EU CRA Advisor / ${displayName}"$`, "m"));
+      assert.match(source, new RegExp(`^name: "EU CRA / ${displayName}"$`, "m"));
     }
     assert.match(source, /engine:\n\s+id: pi\n\s+model: copilot\/gpt-5\.4/);
     assert.match(source, /copilot-requests: write/);
@@ -1620,15 +1620,15 @@ test("EU CRA Advisor workflows preserve advisory and human-review boundaries", (
   assert.match(ledger, /CRA-ANNEX-VIII.*Route selection requires human review \| IMPLEMENTED \|/);
 });
 
-test("Software Development Practices Advisor preserves evidence and advisory boundaries", () => {
+test("Dev Practices preserves evidence and advisory boundaries", () => {
   const orchestrator = workflow("software-development-practices.md");
   const githubWorker = workflow("software-development-practices-github-well-architected.md");
   const nistWorker = workflow("software-development-practices-nist-ssdf.md");
   const readme = readFileSync(join(root, "software-development-practices", "README.md"), "utf8");
 
-  assert.match(orchestrator, /^name: "Software Development Practices Advisor"$/m);
-  assert.match(githubWorker, /^name: "Software Development Practices Advisor \/ GitHub Well-Architected"$/m);
-  assert.match(nistWorker, /^name: "Software Development Practices Advisor \/ NIST SSDF"$/m);
+  assert.match(orchestrator, /^name: "Dev Practices"$/m);
+  assert.match(githubWorker, /^name: "Dev Practices \/ Well-Architected"$/m);
+  assert.match(nistWorker, /^name: "Dev Practices \/ NIST SSDF"$/m);
   assert.match(orchestrator, /workflows:\n\s+- software-development-practices-github-well-architected\n\s+- software-development-practices-nist-ssdf/);
   assert.match(orchestrator, /Use bounded two-stage discovery/);
   assert.match(orchestrator, /Keep the total at or below 20/);
@@ -1782,7 +1782,7 @@ test("SelfCare accessibility checker audits the served docs site with axe-core e
   const source = workflow("self-care-accessibility-checker.md");
   const liveGuard = "if: ${{ inputs.target_repo == 'githubnext/gh-aw-cao' && (inputs.safe_output_mode || 'review') == 'live' }}";
 
-  assert.match(source, /^name: "SelfCare \/ Accessibility Checker"$/m);
+  assert.match(source, /^name: "SelfCare \/ Accessibility"$/m);
   assert.match(source, /workflow_dispatch:/);
   assert.match(source, /package: self-care/);
   assert.match(source, /worker: accessibility-checker/);
@@ -1817,7 +1817,7 @@ test("SelfCare Primer brand checker audits the dashboard against retrieved guida
   const compiled = workflow("self-care-primer-brand-checker.lock.yml");
   const liveGuard = "if: ${{ inputs.target_repo == 'githubnext/gh-aw-cao' && (inputs.safe_output_mode || 'review') == 'live' }}";
 
-  assert.match(source, /^name: "SelfCare \/ Primer Brand Checker"$/m);
+  assert.match(source, /^name: "SelfCare \/ Primer"$/m);
   assert.match(source, /package: self-care/);
   assert.match(source, /worker: primer-brand-checker/);
   assert.match(source, /safe_output_mode` is `live`/);
@@ -1850,7 +1850,7 @@ test("docs diagram generator creates one validated theme-aware SVG pair", () => 
 test("SelfCare dashboard reviewer checks deployments through stakeholder personas", () => {
   const source = workflow("self-care-dashboard-review.md");
 
-  assert.match(source, /name: "SelfCare \/ Dashboard Review"/);
+  assert.match(source, /name: "SelfCare \/ Dashboard"/);
   assert.match(source, /package: self-care\n\s+role: worker\n\s+worker: dashboard-review/);
   assert.match(source, /safe_output_mode` is `live`/);
   assert.match(source, /REPORT_INVENTORY=\/tmp\/gh-aw\/agent\/self-care-dashboard-review\/expected-inventory\.json/);
@@ -1879,7 +1879,7 @@ test("SelfCare dashboard reviewer checks deployments through stakeholder persona
 test("SelfCare docs build-time investigator rotates evidenced recommendations", () => {
   const source = workflow("self-care-docs-build-time-investigator.md");
 
-  assert.match(source, /^name: "SelfCare \/ Docs Build-Time Investigator"$/m);
+  assert.match(source, /^name: "SelfCare \/ Docs Build Time"$/m);
   assert.match(source, /on:\n\s+bots: \["github-actions\[bot\]"\]/);
   assert.match(source, /package: self-care\n\s+role: worker\n\s+worker: docs-build-time-investigator/);
   assert.match(source, /safe_output_mode` is `live`/);
@@ -1898,7 +1898,7 @@ test("SelfCare code improvement preserves its focused dashboard component missio
   const source = workflow("self-care-code-improvement.md");
   const liveGuard = "if: ${{ inputs.target_repo == 'githubnext/gh-aw-cao' && (inputs.safe_output_mode || 'review') == 'live' }}";
 
-  assert.match(source, /^name: "SelfCare \/ Code Improvement"$/m);
+  assert.match(source, /^name: "SelfCare \/ Code Quality"$/m);
   assert.match(source, /package: self-care/);
   assert.match(source, /worker: code-improvement/);
   assert.match(source, /safe_output_mode` is `live`/);
@@ -2142,7 +2142,7 @@ test("clean-room compilation emits the expected GitHub Actions settings", { time
 
     const prReviewer = workflow("pr-reviewer.lock.yml", generatedDirectory);
     assert.match(prReviewer, /create_pull_request_review_comment/);
-    assert.match(prReviewer, /name: "PR Reviewer \/ Agentic Workflow Validation"/);
+    assert.match(prReviewer, /name: "Workflow PR Validator"/);
     assert.match(prReviewer, /submit_pull_request_review/);
     assert.match(prReviewer, /REQUEST_CHANGES/);
     assert.match(prReviewer, /agenticworkflows/);
@@ -2163,7 +2163,7 @@ test("clean-room compilation emits the expected GitHub Actions settings", { time
     assert.doesNotMatch(svgVisualAudit, /python3 -m http\.server 4321/);
 
     const docsDiagramGenerator = workflow("docs-explanatory-diagrams.lock.yml", generatedDirectory);
-    assert.match(docsDiagramGenerator, /name: "Docs Explanatory Diagram Generator"/);
+    assert.match(docsDiagramGenerator, /name: "Docs Diagrams"/);
     assert.match(docsDiagramGenerator, /create_pull_request/);
   } finally {
     rmSync(temporaryRoot, { recursive: true, force: true });
@@ -2180,6 +2180,8 @@ test("Agent customizations preserve deterministic core package boundaries", () =
   assert.match(packageSkill, /## Deterministic Add-on Exception/);
   assert.match(packageSkill, /core activity cache/);
   assert.match(packageSkill, /site-path/);
+  assert.match(packageSkill, /complete workflow `name` at 32 characters or fewer/);
+  assert.match(packageSkill, /omitting redundant role words/);
   assert.match(repositoryInstructions, /Keep `\.github\/workflows\/dashboard-build\.yml` independently runnable through `workflow_dispatch` and package it through both dashboard manifests/);
   assert.match(repositoryInstructions, /existing Pages site, retain one Pages artifact uploader and deployer/);
   assert.match(repositoryInstructions, /must not add a schedule or another enable variable/);
@@ -2310,7 +2312,7 @@ test("Dashboard package supports embedded and explicit standalone deployment", (
     rootPackage.resources.filter((entry) => entry.source.startsWith("dashboard/")),
     dashboardPackage.resources.map((entry) => ({ ...entry, source: `dashboard/${entry.source}` })),
   );
-  assert.match(dashboardManifest, /name: Central Agentic Ops Dashboard/);
+  assert.match(dashboardManifest, /name: CAO Dashboard/);
   assert.match(rootManifest, /^\s+- \.github\/workflows\/dashboard-build\.yml$/m);
   assert.match(dashboardManifest, /source: dashboard\.yml\n\s+destination: \.github\/workflows\/dashboard\.yml\n\s+kind: action-workflow/);
   assert.match(dashboardManifest, /^\s+- \.github\/workflows\/dashboard-build\.yml$/m);
@@ -2320,12 +2322,12 @@ test("Dashboard package supports embedded and explicit standalone deployment", (
   assert.match(deployedWorkflows, /REPORT_RUN_WINDOW_HOURS/);
   assert.doesNotMatch(buildWorkflow, /workflow_call:/);
   assert.match(buildWorkflow, /workflow_dispatch:[\s\S]*?site-path:[\s\S]*?default: cao[\s\S]*?mode:[\s\S]*?default: live[\s\S]*?request-id:/);
-  assert.match(buildWorkflow, /run-name: Central Agentic Ops Dashboard Build \/ \$\{\{ inputs\.request-id \|\| github\.run_id \}\}/);
+  assert.match(buildWorkflow, /run-name: CAO Dashboard Build \/ \$\{\{ inputs\.request-id \|\| github\.run_id \}\}/);
   assert.match(buildWorkflow, /activity:[\s\S]*?actions: write[\s\S]*?DISPATCH_WORKFLOW: activity\.yml[\s\S]*?node \.github\/aw\/dashboard\/dispatch-workflow\.mjs/);
   assert.match(buildWorkflow, /Restore collected activity data[\s\S]*?actions\/cache\/restore@[0-9a-f]{40}/);
   assert.doesNotMatch(activityWorkflow, /workflow_call:/);
   assert.match(activityWorkflow, /workflow_dispatch:[\s\S]*?request-id:/);
-  assert.match(activityWorkflow, /run-name: Central Agentic Ops Activity \/ \$\{\{ inputs\.request-id \|\| github\.run_id \}\}/);
+  assert.match(activityWorkflow, /run-name: CAO Activity \/ \$\{\{ inputs\.request-id \|\| github\.run_id \}\}/);
   assert.match(activityWorkflow, /Resolve activity cache key[\s\S]*?cao-activity-v2-\$\{\{ github\.repository \}\}-\$\{\{ github\.run_id \}\}-\$\{\{ github\.run_attempt \}\}/);
   assert.match(buildWorkflow, /key: \$\{\{ format\('[^']+', runner\.os, github\.repository, needs\.activity\.outputs\.run-id, needs\.activity\.outputs\.run-attempt\) \}\}/);
   assert.match(buildWorkflow, /Require collected activity data[\s\S]*?control-settings\.json control-plane-inventory\.json deployed-workflows\.json aic-usage\.json operational-values\.json dashboard-records\.json/);
@@ -2414,7 +2416,7 @@ test("Activity package owns the shared collected-data cache contract", () => {
   const workflow = readFileSync(join(root, ".github", "workflows", "activity.yml"), "utf8");
   const readme = readFileSync(join(root, "activity", "README.md"), "utf8");
 
-  assert.equal(activityManifest.name, "Central Agentic Ops Activity");
+  assert.equal(activityManifest.name, "CAO Activity");
   assert.deepEqual(activityManifest.includes, [".github/workflows/activity.yml"]);
   assert.deepEqual(activityManifest.resources, [
     { source: "actions-log.mjs", destination: ".github/aw/activity/actions-log.mjs" },

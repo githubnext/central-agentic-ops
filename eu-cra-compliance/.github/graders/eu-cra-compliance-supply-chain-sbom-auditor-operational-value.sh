@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-WORKFLOW_NAME="EU CRA Advisor / Supply Chain SBOM Auditor"
+WORKFLOW_NAME="EU CRA / Supply Chain"
 SOURCE_PATH=".github/workflows/eu-cra-compliance-supply-chain-sbom-auditor.md"
 TITLE_PREFIX="[eu-cra:supply-chain-sbom] "
 DOMAIN="supply-chain-sbom"

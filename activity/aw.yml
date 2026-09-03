@@ -1,4 +1,4 @@
-name: Central Agentic Ops Activity
+name: CAO Activity
 description: Maintain a shared, bounded snapshot of GitHub Agentic Workflow activity.
 min-version: v0.88.2
 experimental: true
