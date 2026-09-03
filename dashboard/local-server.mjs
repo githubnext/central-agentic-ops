@@ -114,6 +114,7 @@ async function packageDashboardPaths(catalogRoot, installedDashboardsDirectory) 
     });
     for (const entry of catalogEntries) {
       if (!entry.isDirectory()) continue;
+      if (entry.name.startsWith(".cao-dashboard-preview-")) continue;
       const path = join(catalogRoot, entry.name, "dashboard.json");
       if ((await stat(path).catch(() => null))?.isFile()) paths.push(path);
     }
@@ -924,6 +925,7 @@ async function main() {
 async function runWithWorkspacePermissions() {
   const workspace = await realpath(process.cwd());
   const outsideWorkspaceProbe = resolve(workspace, "..", ".cao-outside-workspace-probe");
+  const { host = "127.0.0.1" } = parseArguments(process.argv.slice(2));
   if (process.env.CAO_DASHBOARD_PERMISSION_CHILD === "1"
       && process.permission?.has("fs.read", workspace)
       && process.permission.has("fs.write", workspace)
@@ -938,6 +940,7 @@ async function runWithWorkspacePermissions() {
     `--allow-fs-read=${workspace}${sep}`,
     `--allow-fs-write=${workspace}${sep}`,
     "--allow-child-process",
+    `--allow-net=${host}`,
     fileURLToPath(import.meta.url),
     ...process.argv.slice(2),
   ], {

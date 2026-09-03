@@ -350,6 +350,73 @@ test('production pages expose a responsive executive chart', async ({ page }) =>
   expect(widePlotBox?.width).toBeGreaterThan((wideChartBox?.width ?? 0) * 0.95);
 });
 
+test('control-plane readiness surfaces blocking regressions', async ({ page }) => {
+  const presenterModuleUrl = buildPresenterModuleUrl();
+  const documentModel = JSON.parse(readFileSync(new URL('../../dashboard.json', import.meta.url), 'utf8'));
+  await page.setContent(`
+    <div id="root"></div>
+    <script type="module">
+      import { renderDashboard } from ${JSON.stringify(presenterModuleUrl)};
+      const documentModel = ${JSON.stringify(documentModel)};
+      const metadata = {
+        'source-id': 'readiness-fixture',
+        'source-kind': 'fixture',
+        'retrieved-at': '2026-09-03T12:00:00Z',
+        completeness: 'complete',
+        freshness: 'fresh',
+        availability: 'available'
+      };
+      const sources = {
+        workflows: {
+          source: 'workflows',
+          rows: [
+            { organization: 'githubnext', repository: 'gh-aw-cao', package: 'daily-ops', 'package-name': 'Daily Ops', workflow: '.github/workflows/daily.md', 'workflow-role': 'orchestrator', 'workflow-active': 'true', 'inventory-ready': true },
+            { organization: 'githubnext', repository: 'gh-aw-cao', package: 'daily-ops', 'package-name': 'Daily Ops', workflow: '.github/workflows/daily-worker.md', 'workflow-role': 'worker', 'workflow-active': 'true', 'inventory-ready': true }
+          ],
+          metadata
+        },
+        runs: {
+          source: 'runs',
+          rows: [
+            { organization: 'githubnext', repository: 'gh-aw-cao', run: '42', 'run-title': 'Readiness smoke', workflow: '.github/workflows/daily.md', 'started-at': '2026-09-03T10:00:00Z', 'run-status': 'completed', 'run-conclusion': 'failure', 'failure-message': 'Smoke regression', 'run-link': 'https://example.com/runs/42' },
+            { organization: 'githubnext', repository: 'gh-aw-cao', run: '43', 'run-title': 'Worker smoke', workflow: '.github/workflows/daily-worker.md', 'started-at': '2026-09-03T11:00:00Z', 'run-status': 'completed', 'run-conclusion': 'failure', 'failure-message': 'Worker regression', 'run-link': 'https://example.com/runs/43' }
+          ],
+          metadata
+        },
+        findings: {
+          source: 'findings',
+          rows: [{ finding: 'warning-1', workflow: '.github/workflows/daily-worker.md', 'workflow-role': 'worker', 'finding-kind': 'authored-warning', 'observed-at': '2026-09-03T11:15:00Z' }],
+          metadata
+        },
+        outcomes: {
+          source: 'outcomes',
+          rows: [{ 'safe-output': 'noop-1', workflow: '.github/workflows/daily-worker.md', 'workflow-role': 'worker', 'outcome-category': 'noop', 'observed-at': '2026-09-03T11:30:00Z' }],
+          metadata
+        },
+        'coverage-diagnostics': { source: 'coverage-diagnostics', rows: [], metadata }
+      };
+      window.location.hash = '#page-readiness';
+      document.querySelector('#root').append(renderDashboard({ document: documentModel, sources }));
+    </script>
+  `);
+
+  const readinessPage = page.locator('[data-page-id="readiness"]');
+  await expect(readinessPage).toBeVisible();
+  const readinessNavigation = page.locator('[data-nav-page-id="readiness"]');
+  await expect(readinessNavigation).toHaveAttribute('aria-current', 'page');
+  await expect(readinessNavigation.locator('svg')).toHaveCount(1);
+  await expect(page.locator('.nav-section-label').filter({ hasText: 'Control plane' })).toBeVisible();
+  await expect(readinessPage.locator('.custom-view').first().locator('[data-chart-widget="line"]')).toBeVisible();
+  await expect(readinessPage).toContainText('Not ready');
+  await expect(readinessPage).toContainText('2 runs observed');
+  await expect(readinessPage).toContainText('Worker failures');
+  await expect(readinessPage).toContainText('Worker warnings');
+  await expect(readinessPage).toContainText('No-op reports');
+  await expect(readinessPage).toContainText('Runtime regression');
+  await expect(readinessPage).toContainText('Output warning');
+  await expect(readinessPage).toContainText('Smoke regression');
+});
+
 test('performance page leads with a workflow duration histogram', async ({ page }) => {
   const presenterModuleUrl = buildPresenterModuleUrl();
   const documentModel = JSON.parse(readFileSync(new URL('../../dashboard.json', import.meta.url), 'utf8'));
@@ -1258,8 +1325,9 @@ test('DLS-PAGE-014 DLS-PAGE-015 built-in packages page renders report-style mode
   const packageReportRows = page.locator('[data-page-id="package-reports"] .custom-table tbody tr');
   await expect(packageReportRows).toHaveCount(2);
   await page.getByRole('searchbox', { name: 'Filter Reports' }).fill('Reconcile');
-  await expect(packageReportRows.filter({ visible: true })).toHaveCount(1);
-  await expect(packageReportRows.filter({ visible: true })).toContainText('Reconcile ambient context');
+  const visiblePackageReportRows = page.locator('[data-page-id="package-reports"] .custom-table tbody tr:visible');
+  await expect(visiblePackageReportRows).toHaveCount(1);
+  await expect(visiblePackageReportRows).toContainText('Reconcile ambient context');
 
   await page.locator('[data-nav-page-id="packages"]').click();
   await page.getByRole('tab', { name: 'All' }).focus();
