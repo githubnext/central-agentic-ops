@@ -20,6 +20,12 @@ includes:
     destination: .github/workflows/dashboard.yml
     kind: action-workflow
   - .github/workflows/dashboard-build.yml
+config:
+  - type: require-owner-type
+    value: org
+  - type: github-app
+    app-id-variable: GH_AW_GITHUB_APP_ID
+    private-key-secret: GH_AW_GITHUB_APP_PRIVATE_KEY
 resources:
   - source: AGENTS.md
     destination: .github/aw/default-AGENTS.md

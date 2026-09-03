@@ -663,13 +663,25 @@ test("package manifests exclude repository-only tests", () => {
   }
 });
 
+test("root package bootstraps GitHub App credentials for API capacity", () => {
+  const rootManifest = parse(readFileSync(join(root, "aw.yml"), "utf8"));
+
+  assert.deepEqual(rootManifest.config, [
+    { type: "require-owner-type", value: "org" },
+    {
+      type: "github-app",
+      "app-id-variable": "GH_AW_GITHUB_APP_ID",
+      "private-key-secret": "GH_AW_GITHUB_APP_PRIVATE_KEY",
+    },
+  ]);
+});
+
 test("root package provides default control-repository agent context", () => {
   const rootManifest = readFileSync(join(root, "aw.yml"), "utf8");
   const agents = readFileSync(join(root, "AGENTS.md"), "utf8");
   const setupSkill = readFileSync(join(root, ".github", "skills", "setup-central-agentic-ops", "SKILL.md"), "utf8");
 
   assert.match(rootManifest, /source: AGENTS\.md\n\s+destination: \.github\/aw\/default-AGENTS\.md/);
-  assert.doesNotMatch(rootManifest, /^config:/m);
   assert.match(agents, /Catalog source:[\s\S]*never configure this repository as a control plane/);
   assert.match(agents, /Control repository:[\s\S]*explicitly enrolled remote repositories/);
   assert.match(agents, /`review` is the default mode/);
@@ -749,7 +761,6 @@ test("root CAO workflows use organization-billed Copilot authentication", () => 
   ];
   const rootManifest = readFileSync(join(root, "aw.yml"), "utf8");
 
-  assert.doesNotMatch(rootManifest, /^config:/m);
   assert.doesNotMatch(rootManifest, /COPILOT_GITHUB_TOKEN/);
 
   for (const workflowId of rootPackageWorkflowIds) {
@@ -1033,7 +1044,7 @@ test("authentication prefers an optional GitHub App and retains bounded fallback
   const control = workflow("shared/control.md");
   const precompute = controlPrecompute();
 
-  assert.match(control, /github-app:\n\s+client-id: \$\{\{ secrets\.GH_AW_GITHUB_APP_ID \}\}/);
+  assert.match(control, /github-app:\n\s+client-id: \$\{\{ vars\.GH_AW_GITHUB_APP_ID \}\}/);
   assert.match(control, /private-key: \$\{\{ secrets\.GH_AW_GITHUB_APP_PRIVATE_KEY \}\}/);
   assert.match(control, /ignore-if-missing: true/);
   assert.doesNotMatch(control, /repositories: \["\*"\]/);

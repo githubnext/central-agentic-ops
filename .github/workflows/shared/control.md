@@ -21,7 +21,7 @@ import-schema:
     default: "0"
 
 github-app:
-  client-id: ${{ secrets.GH_AW_GITHUB_APP_ID }}
+  client-id: ${{ vars.GH_AW_GITHUB_APP_ID }}
   private-key: ${{ secrets.GH_AW_GITHUB_APP_PRIVATE_KEY }}
   ignore-if-missing: true
 
@@ -41,12 +41,12 @@ jobs:
       - name: Generate CAO pre-activation GitHub App token
         id: cao_pre_activation_app_token
         env:
-          CAO_GITHUB_APP_ID: ${{ secrets.GH_AW_GITHUB_APP_ID }}
+          CAO_GITHUB_APP_ID: ${{ vars.GH_AW_GITHUB_APP_ID }}
           CAO_GITHUB_APP_PRIVATE_KEY: ${{ secrets.GH_AW_GITHUB_APP_PRIVATE_KEY }}
         if: ${{ env.CAO_GITHUB_APP_ID != '' && env.CAO_GITHUB_APP_PRIVATE_KEY != '' }}
         uses: actions/create-github-app-token@v3.2.0
         with:
-          client-id: ${{ secrets.GH_AW_GITHUB_APP_ID }}
+          client-id: ${{ vars.GH_AW_GITHUB_APP_ID }}
           private-key: ${{ secrets.GH_AW_GITHUB_APP_PRIVATE_KEY }}
           owner: ${{ github.repository_owner }}
           github-api-url: ${{ github.api_url }}

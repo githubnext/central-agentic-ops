@@ -46,20 +46,19 @@ The supported control-plane credentials are:
 
 | Priority | Credential | Configuration |
 | --- | --- | --- |
-| 1 | GitHub App | Protected `central-agentic-ops` environment secrets `GH_AW_GITHUB_APP_ID` and `GH_AW_GITHUB_APP_PRIVATE_KEY` |
+| 1 | GitHub App | Repository variable `GH_AW_GITHUB_APP_ID` and repository secret `GH_AW_GITHUB_APP_PRIVATE_KEY` |
 | 2 | Fine-grained PAT | Protected `central-agentic-ops` environment secret `GH_AW_GITHUB_TOKEN` |
 | 3 | Workflow token | Repository-provided `GITHUB_TOKEN` for operations it can authorize |
 
-This is runtime availability precedence, not permission to choose a PAT silently. `ignore-if-missing: true` makes the App optional: when an App token is unavailable, shared control falls through to `GH_AW_GITHUB_TOKEN`, then `GITHUB_TOKEN`. The runtime cannot determine why a PAT secret exists or record informed consent. Setup must choose and validate the authentication profile before a run; if App authentication is intended, verify both App secrets rather than relying on fallback behavior.
+This is runtime availability precedence, not permission to choose a PAT silently. `ignore-if-missing: true` makes the App optional: when an App token is unavailable, shared control falls through to `GH_AW_GITHUB_TOKEN`, then `GITHUB_TOKEN`. The runtime cannot determine why a PAT secret exists or record informed consent. Setup must choose and validate the authentication profile before a run; if App authentication is intended, verify the App ID variable and private key secret rather than relying on fallback behavior.
 
-Configure the App ID and private key as protected environment secrets:
+The root package's interactive bootstrap creates or reuses a GitHub App, stores its client ID and private key, and waits for the App to be installed. For manual configuration, set the same repository variable and secret:
 
 ```bash
 CONTROL_REPO="acme/central-agentic-ops"
 
-printf '%s' '<github-app-id>' | gh secret set GH_AW_GITHUB_APP_ID --env central-agentic-ops --repo "$CONTROL_REPO"
+gh variable set GH_AW_GITHUB_APP_ID --repo "$CONTROL_REPO" --body '<github-app-client-id>'
 gh secret set GH_AW_GITHUB_APP_PRIVATE_KEY \
-	--env central-agentic-ops \
 	--repo "$CONTROL_REPO" \
 	< github-app-private-key.pem
 ```
@@ -125,7 +124,7 @@ The workflow token is scoped to the repository containing the workflow. Public c
 
 ## Credential Boundary
 
-- Credentials live only in the control-plane repository's protected `central-agentic-ops` environment secrets.
+- The App client ID lives in the control repository's Actions variable, the App private key lives in its Actions secret, and PAT credentials live in the protected `central-agentic-ops` environment secret.
 - worker workflows receive repository names and routing policy, never credentials.
 - Each Orchestrator and worker workflow run resolves its own token through imported shared control.
 - Tokens must not appear in prompts, logs, safe outputs, Repo Memory, review bundles, or correlation metadata.

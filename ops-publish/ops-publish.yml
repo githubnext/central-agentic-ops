@@ -40,7 +40,7 @@ jobs:
       - name: Generate control-repository token
         id: control-app-token
         env:
-          APP_CLIENT_ID: ${{ secrets.GH_AW_GITHUB_APP_ID }}
+          APP_CLIENT_ID: ${{ vars.GH_AW_GITHUB_APP_ID }}
           APP_PRIVATE_KEY: ${{ secrets.GH_AW_GITHUB_APP_PRIVATE_KEY }}
         if: env.APP_CLIENT_ID != '' && env.APP_PRIVATE_KEY != ''
         uses: actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1 # v3.2.0
@@ -66,7 +66,7 @@ jobs:
       - name: Generate target-repository token
         id: target-app-token
         env:
-          APP_CLIENT_ID: ${{ secrets.GH_AW_GITHUB_APP_ID }}
+          APP_CLIENT_ID: ${{ vars.GH_AW_GITHUB_APP_ID }}
           APP_PRIVATE_KEY: ${{ secrets.GH_AW_GITHUB_APP_PRIVATE_KEY }}
         if: env.APP_CLIENT_ID != '' && env.APP_PRIVATE_KEY != ''
         uses: actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1 # v3.2.0
