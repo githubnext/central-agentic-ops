@@ -35,7 +35,7 @@ test("packages and repository workflows pin the supported gh-aw version", () => 
     assert.equal(parse(readFileSync(join(root, manifest), "utf8"))["min-version"], ghAwVersion, manifest);
   }
 
-  for (const name of ["copilot-setup-steps.yml", "dashboard-build.yml", "release.yml", "workflow-contracts.yml"]) {
+  for (const name of ["activity.yml", "copilot-setup-steps.yml", "release.yml", "workflow-contracts.yml"]) {
     const source = workflow(name);
     assert.match(source, /github\/gh-aw-actions\/setup-cli@[0-9a-f]{40} # v0\.88\.2/);
     assert.match(source, /version: v0\.88\.2/);
@@ -2085,7 +2085,7 @@ test("Agent customizations preserve deterministic core package boundaries", () =
   assert.match(repositoryInstructions, /Keep `\.github\/workflows\/dashboard-build\.yml` reusable through `workflow_call` and package it through both dashboard manifests/);
   assert.match(repositoryInstructions, /existing Pages site, retain one Pages artifact uploader and deployer/);
   assert.match(repositoryInstructions, /must not add a schedule or another enable variable/);
-  assert.match(repositoryInstructions, /Keep workflow-run indexing out of operational packages and the dashboard/);
+  assert.match(repositoryInstructions, /Keep data collection and cache publication out of operational packages and dashboard build jobs/);
 });
 
 test("README routes zero-to-CAO requests to the setup skill", () => {
