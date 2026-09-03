@@ -784,7 +784,9 @@ footer { padding: 20px 24px; border-top: 1px solid var(--border); color: var(--m
   .app-main > nav .shell { flex-wrap: wrap; padding-inline: 14px; }
   .site-callouts { padding-inline: 14px; }
   .breadcrumb .shell > :is([data-breadcrumb-root], [data-breadcrumb-dashboard]) { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-  .report-actions { width: 100%; margin-left: 0; }
+  .report-actions { width: 100%; position: relative; margin-left: 0; }
+  .report-actions .tooltip-help { position: static; }
+  .report-actions .tooltip-content { right: auto; left: 0; }
   .freshness { min-width: 0; flex: 1; white-space: normal; }
   .overview-header { min-height: 0; padding: 24px 0 20px; flex-direction: column; gap: 12px; }
   .toolbar { align-items: stretch; flex-wrap: wrap; }

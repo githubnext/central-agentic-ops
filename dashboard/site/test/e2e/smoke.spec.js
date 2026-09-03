@@ -340,6 +340,15 @@ test('DLS-DOC-014 horizon help is available on hover and keyboard focus', async 
   await page.mouse.move(0, 0);
   await trigger.focus();
   await expect(tooltip).toBeVisible();
+
+  await page.setViewportSize({ width: 393, height: 852 });
+  await trigger.blur();
+  await trigger.focus();
+  await expect(tooltip).toBeVisible();
+  const tooltipBox = await tooltip.boundingBox();
+  expect(tooltipBox).not.toBeNull();
+  expect(tooltipBox?.x).toBeGreaterThanOrEqual(0);
+  expect((tooltipBox?.x ?? 0) + (tooltipBox?.width ?? 0)).toBeLessThanOrEqual(393);
 });
 
 test('DLS-PAGE-002 DLS-PAGE-014 built-in overview page renders the report-style six-domain operational overview in browser', async ({ page }) => {
