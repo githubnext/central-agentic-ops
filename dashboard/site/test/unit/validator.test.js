@@ -1099,9 +1099,9 @@ dashboard:
           completeness: true
           freshness: true
         views:
-          - id: runs-view
+          - id: run-aggregates-view
             data:
-              source: runs
+              source: run-aggregate-summary
             mark: table
             encoding:
               columns:
@@ -1109,8 +1109,10 @@ dashboard:
                 - field: engine-version
                 - field: requested-model
                 - field: resolved-model
-                - field: run
                 - field: run-conclusion
+                - field: runs
+              href:
+                field: run-link
           - id: models-view
             data:
               source: model-usage-summary
