@@ -488,12 +488,12 @@ test("control workflows deny before activation through one shared admission cont
   assert.match(sharedControl, /name: Checkout CAO control modules/);
   assert.match(sharedControl, /actions\/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7\.0\.1/);
   assert.match(sharedControl, /ref: \$\{\{ github\.workflow_sha \}\}/);
-  assert.match(sharedControl, /path: cao/);
+  assert.match(sharedControl, /path: \.cao/);
   assert.match(sharedControl, /sparse-checkout: \.github\/cao\/src/);
   assert.match(sharedControl, /sparse-checkout-cone-mode: true/);
   assert.match(sharedControl, /fetch-depth: 1/);
-  assert.match(sharedControl, /cao_dir="\$\{GITHUB_WORKSPACE\}\/cao\/\.github\/cao\/src"/);
-  assert.match(sharedControl, /node "\$\{GITHUB_WORKSPACE\}\/cao\/\.github\/cao\/src\/control\.mjs" precompute/);
+  assert.match(sharedControl, /cao_dir="\$\{GITHUB_WORKSPACE\}\/\.cao\/\.github\/cao\/src"/);
+  assert.match(sharedControl, /node "\$\{GITHUB_WORKSPACE\}\/\.cao\/\.github\/cao\/src\/control\.mjs" precompute/);
   assert.doesNotMatch(sharedControl, /path: \$\{\{ runner\.temp \}\}\/cao/);
   assert.doesNotMatch(sharedControl, /gh api --method GET "repos\/\$\{GITHUB_REPOSITORY\}\/contents\/\.github\/cao\/src/);
   assert.doesNotMatch(sharedControl, /base64\s+(?:-d|--decode)/);
@@ -526,8 +526,8 @@ test("control workflows deny before activation through one shared admission cont
     assert.match(preActivation, /cao_authorized: \$\{\{ steps\.cao_admission\.outputs\.authorized == 'true' && steps\.cao_precompute\.outputs\.authorized != 'false' \}\}/, generatedName);
     assert.match(preActivation, /Evaluate Central Agentic Ops admission/, generatedName);
     assert.match(preActivation, /Generate CAO pre-activation GitHub App token/, generatedName);
-    assert.match(preActivation, /path: cao/, generatedName);
-    assert.match(preActivation, /\$\{GITHUB_WORKSPACE\}\/cao\/\.github\/cao\/src/, generatedName);
+    assert.match(preActivation, /path: \.cao/, generatedName);
+    assert.match(preActivation, /\$\{GITHUB_WORKSPACE\}\/\.cao\/\.github\/cao\/src/, generatedName);
     assert.match(preActivation, /CAO admission blocked: GitHub API limited until/, generatedName);
     assert.match(preActivation, /CAO precompute blocked: GitHub API limited until/, generatedName);
     assert.match(activation, /needs\.pre_activation\.outputs\.cao_authorized == 'true'/, generatedName);
