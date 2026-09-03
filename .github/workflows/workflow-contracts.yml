@@ -79,10 +79,10 @@ jobs:
         env:
           CENTRAL_AGENTIC_OPS_PACKAGE_SOURCE: ${{ github.repository }}@${{ github.sha }}
           GH_TOKEN: ${{ github.token }}
-          TEST_NAME_PATTERN: ${{ matrix.test-pattern }}
+          NODE_OPTIONS: '--test-name-pattern="${{ matrix.test-pattern }}"'
         run: |
           set +e
-          output="$(node --test --test-concurrency=1 --test-name-pattern="$TEST_NAME_PATTERN" tests/integration/package-lifecycle.test.mjs 2>&1)"
+          output="$(npm run test:package-lifecycle 2>&1)"
           status=$?
           set -e
           printf '%s\n' "$output"
