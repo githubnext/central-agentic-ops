@@ -76,7 +76,7 @@ describe('Cost and efficiency dashboard view', () => {
     const histogram = page?.querySelector('[data-chart-widget="histogram"]');
     expect(histogram).not.toBeNull();
     expect(histogram?.querySelectorAll('.histogram-chart-bar')).toHaveLength(2);
-    expect(histogram?.querySelector('.histogram-chart-bar')?.getAttribute('aria-label')).toContain('AIC');
+    expect(histogram?.querySelector('.histogram-chart-mark')?.getAttribute('aria-label')).toContain('AIC');
 
     const evidenceBoundaries = [...(page?.querySelectorAll('.signal-list-region') ?? [])]
       .find((region) => region.textContent?.includes('Usage coverage'));

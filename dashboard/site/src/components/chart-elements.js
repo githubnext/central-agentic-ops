@@ -134,7 +134,19 @@ export function renderChartWidget(chartType, points, series, pieSummary = null, 
         h('circle', { className: 'pie-chart-track', cx: 21, cy: 21, r: 15.9155, fill: 'none', 'stroke-width': 8 }),
         ...entries.map(([label, value], index) => {
           const percent = total > 0 ? (value / total) * 100 : 0;
-          const segment = h('circle', {
+          const segmentLabel = `${label}: ${formatNumber(value, unit)}`;
+          const midpoint = ((offset + (percent / 2)) / 100) * Math.PI * 2 - (Math.PI / 2);
+          const tooltipWidth = Math.min(40, Math.max(18, (segmentLabel.length * 1.25) + 5));
+          const tooltipX = Math.min(Math.max(21 + (Math.cos(midpoint) * 14) - (tooltipWidth / 2), 1), 41 - tooltipWidth);
+          const tooltipY = Math.min(Math.max(21 + (Math.sin(midpoint) * 14) - 9, 1), 34);
+          const segment = h('g', {
+            className: 'chart-point pie-chart-mark',
+            tabIndex: 0,
+            role: 'img',
+            'aria-label': segmentLabel
+          },
+          h('title', null, segmentLabel),
+          h('circle', {
             className: `pie-chart-segment chart-series-${(index % 6) + 1}`,
             cx: 21,
             cy: 21,
@@ -143,11 +155,22 @@ export function renderChartWidget(chartType, points, series, pieSummary = null, 
             'stroke-width': 8,
             'stroke-dasharray': `${percent} ${100 - percent}`,
             'stroke-dashoffset': String(-offset),
-            'data-chart-category': label,
-            tabIndex: 0,
-            role: 'img',
-            'aria-label': `${label}: ${formatNumber(value, unit)}`
-          }, h('title', null, `${label}: ${formatNumber(value, unit)}`));
+            'data-chart-category': label
+          }),
+          h(
+            'g',
+            {
+              className: 'point-tooltip pie-chart-tooltip',
+              transform: `translate(${tooltipX} ${tooltipY})`,
+              'aria-hidden': 'true'
+            },
+            h('rect', { width: tooltipWidth, height: 7, rx: 2 }),
+            h('text', {
+              x: 2.5,
+              y: 4.75,
+              ...(tooltipWidth === 40 ? { textLength: 35, lengthAdjust: 'spacingAndGlyphs' } : {})
+            }, segmentLabel)
+          ));
           offset += percent;
           return segment;
         }),
@@ -177,16 +200,36 @@ export function renderChartWidget(chartType, points, series, pieSummary = null, 
         ...bins.map((bin, index) => {
           const height = Math.max(1, (bin.count / maximum) * 34);
           const label = `${binLabel(bin)}: ${bin.count} observation${pluralSuffix(bin.count)}`;
-          return h('rect', {
-            className: 'histogram-chart-bar',
-            x: index * barWidth,
-            y: 38 - height,
-            width: Math.max(0, barWidth - 1),
-            height,
+          const x = index * barWidth;
+          const tooltipX = Math.min(Math.max(x + ((barWidth - 1) / 2) - 21, 1), 57);
+          return h('g', {
+            className: 'chart-point histogram-chart-mark',
             tabIndex: 0,
             role: 'img',
             'aria-label': label
-          }, h('title', null, label));
+          },
+          h('title', null, label),
+          h('rect', {
+            className: 'histogram-chart-bar chart-series-1',
+            x,
+            y: 38 - height,
+            width: Math.max(0, barWidth - 1),
+            height
+          }),
+          h(
+            'g',
+            {
+              className: 'point-tooltip histogram-chart-tooltip',
+              transform: `translate(${tooltipX} ${Math.max(38 - height - 12, 1)})`,
+              'aria-hidden': 'true'
+            },
+            h('rect', { width: 42, height: 9, rx: 2 }),
+            h('text', {
+              x: 3,
+              y: 6,
+              ...(label.length > 22 ? { textLength: 36, lengthAdjust: 'spacingAndGlyphs' } : {})
+            }, label)
+          ));
         })
       ),
       bins.length > 0

@@ -179,7 +179,7 @@ main.dashboard-prototype { width: 100%; flex: 1; padding: 0 24px 40px; }
 .chart-widget svg { width: min(100%, 420px); max-height: 220px; overflow: visible; }
 .line-chart-widget svg { width: 100%; }
 .pie-chart-track { stroke: var(--border-muted); }
-.pie-chart-segment { transform: rotate(-90deg); transform-origin: center; stroke: var(--accent); }
+.pie-chart-segment { transform: rotate(-90deg); transform-origin: center; stroke: var(--accent); vector-effect: non-scaling-stroke; }
 .pie-chart-total-value { fill: var(--fg); font-size: 5px; font-weight: 700; }
 .pie-chart-total-label { fill: var(--muted); font-size: 2.75px; text-transform: uppercase; letter-spacing: .04em; }
 .chart-legend { display: flex; flex-wrap: wrap; gap: 12px; margin: 8px 0 12px; padding: 0; list-style: none; color: var(--muted); font-size: .75rem; }
@@ -201,9 +201,13 @@ main.dashboard-prototype { width: 100%; flex: 1; padding: 0 24px 40px; }
 .line-chart-series { stroke: var(--accent); stroke-width: 2; vector-effect: non-scaling-stroke; }
 .line-chart-point { fill: var(--canvas); stroke-width: 2; vector-effect: non-scaling-stroke; }
 .chart-point { cursor: crosshair; }
+.pie-chart-mark, .histogram-chart-mark { animation: chart-mark-enter 240ms ease-out both; }
+.pie-chart-segment, .histogram-chart-bar { transition: opacity 120ms ease, filter 120ms ease; }
+.pie-chart-mark:hover .pie-chart-segment, .pie-chart-mark:focus-visible .pie-chart-segment, .histogram-chart-mark:hover .histogram-chart-bar, .histogram-chart-mark:focus-visible .histogram-chart-bar { filter: brightness(1.08); opacity: .82; }
 .point-tooltip { opacity: 0; pointer-events: none; transition: opacity 80ms linear; }
 .point-tooltip rect { fill: var(--canvas-subtle); stroke: var(--border); vector-effect: non-scaling-stroke; }
 .point-tooltip text { fill: var(--fg); font-size: 3px; font-weight: 600; }
+.pie-chart-tooltip text { font-size: 2.25px; }
 .chart-point:hover .point-tooltip, .chart-point:focus-visible .point-tooltip { opacity: 1; }
 .chart-point:focus-visible .line-chart-point { stroke: var(--focus); stroke-width: 3; }
 .bar-chart-axis { stroke: var(--border); stroke-width: 1; }
@@ -222,12 +226,21 @@ main.dashboard-prototype { width: 100%; flex: 1; padding: 0 24px 40px; }
 .bar-chart-bar.chart-series-4 { fill: var(--accent); }
 .bar-chart-bar.chart-series-5 { fill: var(--muted); }
 .bar-chart-bar.chart-series-6 { fill: var(--purple); }
+.histogram-chart-bar.chart-series-1 { fill: var(--success); }
 .chart-legend i.chart-series-1 { border-color: var(--success); color: var(--success); }
 .chart-legend i.chart-series-2 { border-color: var(--attention); color: var(--attention); }
 .chart-legend i.chart-series-3 { border-color: var(--danger); color: var(--danger); }
 .chart-legend i.chart-series-4 { border-color: var(--accent); color: var(--accent); }
 .chart-legend i.chart-series-5 { border-color: var(--muted); color: var(--muted); }
 .chart-legend i.chart-series-6 { border-color: var(--purple); color: var(--purple); }
+@keyframes chart-mark-enter {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .pie-chart-mark, .histogram-chart-mark { animation: none; }
+  .pie-chart-segment, .histogram-chart-bar, .point-tooltip { transition: none; }
+}
 .view-description { margin: 3px 0 0; color: var(--muted); }
 .chart-view-pie { display: grid; gap: 16px; }
 .pie-chart-card { display: grid; grid-template-columns: minmax(190px, .65fr) minmax(0, 1.35fr); align-items: center; gap: 4px 24px; padding: 20px 24px; border: 1px solid var(--border); border-radius: 6px; }
@@ -244,18 +257,6 @@ main.dashboard-prototype { width: 100%; flex: 1; padding: 0 24px 40px; }
 .pie-chart-layout .chart-legend-pie i { width: 9px; height: 9px; border-radius: 2px; }
 .pie-chart-layout .chart-legend-pie strong, .pie-chart-layout .chart-legend-pie small { font-variant-numeric: tabular-nums; text-align: right; }
 .chart-view-pie > .table-region { margin: 0; }
-.chart-view-pie .pie-chart-widget .chart-series-1 { stroke: var(--accent); }
-.chart-view-pie .pie-chart-widget .chart-series-2 { stroke: var(--success); }
-.chart-view-pie .pie-chart-widget .chart-series-3 { stroke: var(--attention); }
-.chart-view-pie .pie-chart-widget .chart-series-4 { stroke: var(--danger); }
-.chart-view-pie .pie-chart-widget .chart-series-5 { stroke: var(--purple); }
-.chart-view-pie .pie-chart-widget .chart-series-6 { stroke: var(--muted); }
-.chart-view-pie .chart-legend i.chart-series-1 { background: var(--accent); }
-.chart-view-pie .chart-legend i.chart-series-2 { background: var(--success); }
-.chart-view-pie .chart-legend i.chart-series-3 { background: var(--attention); }
-.chart-view-pie .chart-legend i.chart-series-4 { background: var(--danger); }
-.chart-view-pie .chart-legend i.chart-series-5 { background: var(--purple); }
-.chart-view-pie .chart-legend i.chart-series-6 { background: var(--muted); }
 .metric-link a, .custom-table a { display: inline-flex; align-items: center; gap: 4px; border-radius: 4px; transition: background-color 120ms ease, color 120ms ease; }
 .metric-link a:hover, .custom-table a:hover { background: var(--neutral-muted); }
 .metric-link .octicon, .custom-table a .octicon { width: 12px; height: 12px; }
