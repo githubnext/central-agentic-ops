@@ -9,6 +9,8 @@ type PackageManifest = {
   name?: unknown;
   description?: unknown;
   "min-version"?: unknown;
+  private?: unknown;
+  experimental?: unknown;
   includes?: unknown;
 };
 
@@ -17,6 +19,8 @@ export type CatalogEntry = {
   name: string;
   description: string;
   minVersion: string;
+  private: boolean;
+  experimental: boolean;
   includes: string[];
   manifestFile: string;
   readmePath?: string;
@@ -35,6 +39,13 @@ function requiredString(value: unknown, field: string, manifestPath: string): st
     throw new Error(`${manifestPath} must define a non-empty ${field}`);
   }
   return value.trim();
+}
+
+function optionalBoolean(value: unknown, field: string, manifestPath: string): boolean {
+  if (value !== undefined && typeof value !== "boolean") {
+    throw new Error(`${manifestPath} ${field} must be a boolean`);
+  }
+  return value === true;
 }
 
 function workflowList(value: unknown, manifestPath: string): string[] {
@@ -70,12 +81,15 @@ export const catalogEntries: CatalogEntry[] = Object.entries(manifests)
       name: requiredString(manifest.name, "name", manifestPath),
       description: requiredString(manifest.description, "description", manifestPath),
       minVersion: requiredString(manifest["min-version"], "min-version", manifestPath),
+      private: optionalBoolean(manifest.private, "private", manifestPath),
+      experimental: optionalBoolean(manifest.experimental, "experimental", manifestPath),
       includes: workflowList(manifest.includes, manifestPath),
       manifestFile,
       readmePath: readme ? `${slug}/README.md` : undefined,
       ReadmeContent: readme?.Content,
     };
   })
+  .filter((entry) => !entry.private)
   .sort((left, right) => {
     const advisoryRank = (entry: CatalogEntry) => /advisor(y|ies)?/i.test(entry.name) ? 1 : 0;
     return advisoryRank(left) - advisoryRank(right) || left.name.localeCompare(right.name);

@@ -50,6 +50,15 @@ For this exception, validate manifest source/destination ownership, both action 
 
 ## Package Contract
 
+### Package metadata
+
+Every package manifest must declare whether it is installable and production-ready:
+
+- Set `private: true` only for packages that must not be installed. `gh aw add` rejects private packages, so never mark a public catalog package private.
+- Set `experimental: true` while a package is being evaluated or its contract may change. `gh aw add` warns before installing experimental packages; remove the flag only after the package is ready for general use.
+
+Keep these fields in `aw.yml` alongside `name`, `description`, and `min-version`, and review them whenever package maturity or distribution changes.
+
 ### Authority Boundary
 
 CAO controls whether and where the package may run; gh-aw controls how its workflows execute. CAO policy may deny or narrow a run, but it must not define or expand engines, models, per-run turns or AI Credit limits, tools, network access, permissions, generated jobs, authentication, or safe-output primitives. Keep those execution mechanics in each gh-aw source workflow, and never treat a declared gh-aw capability as rollout or target authority.

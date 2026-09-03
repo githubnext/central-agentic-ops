@@ -1,6 +1,7 @@
 name: Software Development Practices Advisor
 description: Evidence-led repository guidance based on GitHub Well-Architected and the NIST Secure Software Development Framework.
 min-version: v0.88.2
+experimental: true
 includes:
   - .github/workflows/software-development-practices.md
   - .github/workflows/software-development-practices-github-well-architected.md

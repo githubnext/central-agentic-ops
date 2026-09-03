@@ -42,6 +42,27 @@ test("packages and repository workflows pin the supported gh-aw version", () => 
   }
 });
 
+test("catalog packages declare their current experimental maturity", () => {
+  const manifests = [
+    "aw.yml",
+    "activity/aw.yml",
+    "advisory/aw.yml",
+    "ambient-context/aw.yml",
+    "aw-maintenance/aw.yml",
+    "dashboard/aw.yml",
+    "dependabot/aw.yml",
+    "eu-cra-compliance/aw.yml",
+    "optimization/aw.yml",
+    "self-care/aw.yml",
+    "software-development-practices/aw.yml",
+  ];
+  for (const manifest of manifests) {
+    const metadata = parse(readFileSync(join(root, manifest), "utf8"));
+    assert.equal(metadata.private ?? false, false, manifest);
+    assert.equal(metadata.experimental, true, manifest);
+  }
+});
+
 test("AI Credit workers collect all workflow logs with bounded resources", () => {
   for (const name of ["optimization-ai-credit-auditor.md", "optimization-ai-credit-optimizer.md"]) {
     const source = workflow(name);
