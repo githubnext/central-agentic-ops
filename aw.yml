@@ -25,6 +25,8 @@ resources:
     destination: .github/aw/instructions.md
   - source: dashboard/local-server.mjs
     destination: .github/aw/dashboard/local-server.mjs
+  - source: dashboard/dispatch-workflow.mjs
+    destination: .github/aw/dashboard/dispatch-workflow.mjs
   - source: activity/actions-log.mjs
     destination: .github/aw/activity/actions-log.mjs
   - source: activity/index.mjs

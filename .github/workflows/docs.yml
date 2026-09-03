@@ -42,15 +42,29 @@ concurrency:
 
 jobs:
   dashboard:
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    outputs:
+      run-id: ${{ steps.dispatch.outputs.run-id }}
     permissions:
-      actions: read
+      actions: write
       contents: read
-      issues: read
-      pull-requests: read
-    uses: ./.github/workflows/dashboard-build.yml
-    secrets: inherit
-    with:
-      mode: ${{ inputs.mode || 'live' }}
+    steps:
+      - name: Checkout trusted dashboard source
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.workflow_sha }}
+          persist-credentials: false
+
+      - name: Dispatch dashboard build
+        id: dispatch
+        env:
+          GH_TOKEN: ${{ github.token }}
+          DISPATCH_WORKFLOW: dashboard-build.yml
+          DISPATCH_REF: ${{ github.ref_name }}
+          DISPATCH_RUN_NAME: Central Agentic Ops Dashboard Build / docs-${{ github.run_id }}-${{ github.run_attempt }}
+          DISPATCH_INPUTS: '{"mode":"${{ inputs.mode || 'live' }}","request-id":"docs-${{ github.run_id }}-${{ github.run_attempt }}"}'
+        run: node dashboard/dispatch-workflow.mjs
 
   build:
     needs: dashboard
@@ -82,6 +96,8 @@ jobs:
         with:
           name: central-agentic-ops-dashboard
           path: dist
+          github-token: ${{ github.token }}
+          run-id: ${{ needs.dashboard.outputs.run-id }}
 
       - name: Configure Pages
         uses: actions/configure-pages@983d7736d9b0ae728b81ab479565c72886d7745b # v5

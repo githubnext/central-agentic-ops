@@ -1,12 +1,14 @@
 name: Central Agentic Ops Activity
 
+run-name: Central Agentic Ops Activity / ${{ inputs.request-id || github.run_id }}
+
 on:
-  workflow_call:
-    outputs:
-      cache-key:
-        description: Immutable key of the activity snapshot published by this run.
-        value: ${{ jobs.index.outputs.cache-key }}
   workflow_dispatch:
+    inputs:
+      request-id:
+        description: Correlation identifier supplied by a dispatching workflow.
+        required: false
+        type: string
   schedule:
     - cron: "7,22,37,52 * * * *"
 
@@ -23,8 +25,6 @@ concurrency:
 jobs:
   index:
     runs-on: ubuntu-latest
-    outputs:
-      cache-key: ${{ steps.activity-cache-key.outputs.value }}
     permissions:
       actions: read
       contents: read

@@ -1,18 +1,8 @@
 name: Central Agentic Ops Dashboard Build
 
+run-name: Central Agentic Ops Dashboard Build / ${{ inputs.request-id || github.run_id }}
+
 on:
-  workflow_call:
-    inputs:
-      site-path:
-        description: Relative path at which the dashboard will be mounted in the Pages artifact.
-        required: false
-        type: string
-        default: cao
-      mode:
-        description: Refresh activity data or use only the most recently cached snapshot.
-        required: false
-        type: string
-        default: live
   workflow_dispatch:
     inputs:
       site-path:
@@ -28,6 +18,10 @@ on:
           - live
           - cache
         default: live
+      request-id:
+        description: Correlation identifier supplied by a dispatching workflow.
+        required: false
+        type: string
 
 permissions:
   contents: read
@@ -35,13 +29,35 @@ permissions:
 jobs:
   activity:
     if: inputs.mode == 'live'
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    outputs:
+      run-id: ${{ steps.dispatch.outputs.run-id }}
+      run-attempt: ${{ steps.dispatch.outputs.run-attempt }}
     permissions:
-      actions: read
+      actions: write
       contents: read
-      issues: read
-      pull-requests: read
-    uses: ./.github/workflows/activity.yml
-    secrets: inherit
+    steps:
+      - name: Checkout trusted dashboard source
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.workflow_sha }}
+          persist-credentials: false
+
+      - name: Dispatch activity refresh
+        id: dispatch
+        env:
+          GH_TOKEN: ${{ github.token }}
+          DISPATCH_WORKFLOW: activity.yml
+          DISPATCH_REF: ${{ github.ref_name }}
+          DISPATCH_RUN_NAME: Central Agentic Ops Activity / dashboard-build-${{ github.run_id }}-${{ github.run_attempt }}
+          DISPATCH_INPUTS: '{"request-id":"dashboard-build-${{ github.run_id }}-${{ github.run_attempt }}"}'
+        run: |
+          if [[ -f .github/aw/dashboard/dispatch-workflow.mjs ]]; then
+            node .github/aw/dashboard/dispatch-workflow.mjs
+          else
+            node dashboard/dispatch-workflow.mjs
+          fi
 
   build:
     needs: activity
@@ -92,7 +108,7 @@ jobs:
         uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: ${{ runner.temp }}/cao-activity
-          key: ${{ needs.activity.outputs.cache-key || format('{0}-cao-activity-v2-{1}-{2}-{3}', runner.os, github.repository, github.run_id, github.run_attempt) }}
+          key: ${{ format('{0}-cao-activity-v2-{1}-{2}-{3}', runner.os, github.repository, needs.activity.outputs.run-id, needs.activity.outputs.run-attempt) }}
           restore-keys: |
             ${{ runner.os }}-cao-activity-v2-${{ github.repository }}-
 
