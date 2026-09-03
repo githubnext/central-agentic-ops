@@ -110,6 +110,7 @@ for (const role of ["orchestrator", "worker"]) {
     test(`control precompute disables a ${role} in ${safeOutputMode} before validation or repository access`, () => {
       const result = runPrecompute(
         {
+          GITHUB_ACTIONS: "true",
           ROLE: role,
           SAFE_OUTPUT_MODE: safeOutputMode,
           TARGET_REPO: "not-a-repository",
@@ -120,6 +121,12 @@ for (const role of ["orchestrator", "worker"]) {
       );
 
       assert.equal(result.status, 0, result.stderr);
+      assert.equal(result.stdout, [
+        "::group::Central Agentic Ops precompute",
+        "[CAO] Precompute skipped because admission was denied.",
+        "::endgroup::",
+        "",
+      ].join("\n"));
       const precompute = JSON.parse(readFileSync("/tmp/gh-aw/agent/control-precompute.json", "utf8"));
       assert.equal(precompute.control_role, role);
       assert.equal(precompute.enabled, false);

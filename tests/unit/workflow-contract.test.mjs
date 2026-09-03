@@ -746,6 +746,16 @@ test("CAO runtime is control-repository-owned outside package resources", () => 
   assert.doesNotMatch(setupSkill, /chmod \+x \.github\/cao/);
 });
 
+test("CAO upgrade script refreshes gh-aw, packages, and Actions", () => {
+  const upgrade = readFileSync(join(root, ".github", "cao", "upgrade.sh"), "utf8");
+
+  assert.match(upgrade, /^#!\/usr\/bin\/env bash\n/);
+  assert.match(upgrade, /^set -euo pipefail$/m);
+  assert.match(upgrade, /^gh extension upgrade github\/gh-aw$/m);
+  assert.match(upgrade, /^gh aw update --major --cool-down 0$/m);
+  assert.match(upgrade, /^gh aw upgrade$/m);
+});
+
 test("root package directly includes grader-backed workers for dependency packaging", () => {
   const rootManifest = readFileSync(join(root, "aw.yml"), "utf8");
   const importedWorkerIds = [
@@ -2199,6 +2209,7 @@ test("Dashboard package supports embedded and explicit standalone deployment", (
   assert.match(dashboardManifest, /source: dashboard\.yml\n\s+destination: \.github\/workflows\/dashboard\.yml\n\s+kind: action-workflow/);
   assert.match(dashboardManifest, /^\s+- \.github\/workflows\/dashboard-build\.yml$/m);
   assert.doesNotMatch(dashboardManifest, /destination: \.github\/cao\//);
+  assert.match(dashboardManifest, /source: local-server\.mjs\n\s+destination: \.github\/aw\/dashboard\/local-server\.mjs/);
   assert.match(canonicalPolicyResolver, /export function parsePolicy/);
   assert.match(deployedWorkflows, /REPORT_RUN_WINDOW_HOURS/);
   assert.match(buildWorkflow, /workflow_call:[\s\S]*?site-path:[\s\S]*?default: cao/);
@@ -2215,6 +2226,7 @@ test("Dashboard package supports embedded and explicit standalone deployment", (
   assert.match(buildWorkflow, /REPORT_RECORDS: \$\{\{ runner\.temp \}\}\/dashboard-data\/dashboard-records\.json/);
   assert.match(buildWorkflow, /REPORT_DEPLOYED_WORKFLOWS: \$\{\{ runner\.temp \}\}\/cao-activity\/deployed-workflows\.json/);
   assert.match(buildWorkflow, /REPORT_DASHBOARD_SOURCES: \$\{\{ runner\.temp \}\}\/central-agentic-ops-dashboard\/\$\{\{ inputs\.site-path \}\}\/sources\.json/);
+  assert.match(buildWorkflow, /name: central-agentic-ops-dashboard-data[\s\S]*?\/sources\.json/);
   assert.doesNotMatch(dashboardManifest, /redirects\.mjs/);
   assert.doesNotMatch(buildWorkflow, /legacy dashboard redirects|redirects\.mjs/);
   assert.match(buildWorkflow, /site-path must not be absolute, traverse directories, or end with '\/'/);
@@ -2327,6 +2339,10 @@ test("Documentation Pages deploys docs with the packaged dashboard builder", () 
   assert.match(dashboardBuild, /DASHBOARD_LAYOUT=source/);
   assert.match(dashboardBuild, /DASHBOARD_LAYOUT=installed/);
   assert.doesNotMatch(dashboardBuild, /schedule:|push:|deploy-pages|upload-pages-artifact/);
+  assert.match(astroConfig, /base: "\/gh-aw-cao"/);
+  assert.match(astroConfig, /rewriteDocsLinks, \{ base: "\/gh-aw-cao" \}/);
+  assert.match(astroConfig, /githubnext\/gh-aw-cao\/edit\/main/);
+  assert.match(astroConfig, /href: "https:\/\/github\.com\/githubnext\/gh-aw-cao"/);
   assert.match(astroConfig, /label: "Control plane status", link: "\/cao\/"/);
 });
 

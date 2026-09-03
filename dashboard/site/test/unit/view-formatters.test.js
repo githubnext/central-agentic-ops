@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { formatAggregateValue, formatNumber, formatPercent, renderTemplate, resolveThresholdStatus, toNumber } from '../../src/view-formatters.js';
+import { formatAggregateValue, formatNumber, formatPercent, renderTemplate, resolveThresholdStatus, stringOrFallback, toNumber } from '../../src/view-formatters.js';
 
 /**
  * @param {unknown} value
@@ -86,5 +86,13 @@ describe('view formatter helpers', () => {
     expect(resolveThresholdStatus(0.79, thresholds)).toBe('medium');
     expect(resolveThresholdStatus(0.8, thresholds)).toBe('high');
     expect(resolveThresholdStatus(5, thresholds)).toBe('high');
+  });
+
+  it('substitutes a fallback for nullish or empty values, otherwise stringifies the value', () => {
+    expect(stringOrFallback(null, 'unknown')).toBe('unknown');
+    expect(stringOrFallback(undefined, 'unavailable')).toBe('unavailable');
+    expect(stringOrFallback('', 'unknown')).toBe('unknown');
+    expect(stringOrFallback('review', 'unknown')).toBe('review');
+    expect(stringOrFallback(0, 'unknown')).toBe('0');
   });
 });
