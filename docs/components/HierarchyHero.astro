@@ -294,6 +294,12 @@ const { title = data.title, tagline, actions = [] } = data.hero || {};
       to { opacity: 1; transform: translateY(0); }
     }
 
+    @media (prefers-reduced-motion: reduce) {
+      .dispatch-motion {
+        display: none;
+      }
+    }
+
     @media (max-width: 42rem) {
       .hierarchy-hero {
         width: calc(100% + 2rem);

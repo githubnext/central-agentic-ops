@@ -40,6 +40,7 @@ test("landing animations use SVG and CSS without a JavaScript player", () => {
   assert.doesNotMatch(packageManifest, /lottie-web/);
   assert.match(hero, /control-plane-dispatch-motion\.svg/);
   assert.match(hero, /control-plane-dispatch-mobile-motion\.svg/);
+  assert.match(hero, /@media \(prefers-reduced-motion: reduce\) \{\s+\.dispatch-motion \{\s+display: none;/);
 
   for (const layout of ["", "-mobile"]) {
     const motion = readFileSync(`docs/assets/control-plane-dispatch${layout}-motion.svg`, "utf8");
