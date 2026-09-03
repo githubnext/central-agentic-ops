@@ -32,6 +32,7 @@ const activityExpectedFiles = [
   ".github/aw/activity/failure-evidence.mjs",
   ".github/aw/activity/index.mjs",
   ".github/workflows/activity.yml",
+  ".github/workflows/cao-maintenance.yml",
 ];
 const awMaintenanceExpectedFiles = [
   ".github/aw/dashboards/aw-maintenance.json",
