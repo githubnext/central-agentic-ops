@@ -1,0 +1,6 @@
+{
+  "auto_upgrade": true,
+  "maintenance": {
+    "action_failure_issue_expires": 168
+  }
+}
