@@ -32,6 +32,18 @@
         href: `https://github.com/githubnext/gh-aw-cao/actions/runs/${run}`,
         label: `Run ${run}`,
       });
+      const targetRepositories = [
+        "github/gh-aw",
+        "github/gh-aw-firewall",
+        "github/gh-aw-mcpg",
+        "github/gh-aw-actions",
+        "github/gh-aw-threat-detection",
+        "githubnext/gh-aw-workshop",
+      ];
+      const packageTargets = (liveRepository = "") => targetRepositories.map((repository) => ({
+        repository,
+        mode: repository === liveRepository ? "live" : "review",
+      }));
 
       const loadingProgress = startLoadingProgress(document);
       const dashboardSchema = await fetch("./dashboard.json")
@@ -114,15 +126,15 @@
         workflows: {
           source: "workflows",
           rows: [
-            { organization: "githubnext", repository: "gh-aw-cao", package: "dependabot", "package-name": "Dependabot", "workflow-role": "orchestrator", workflow: ".github/workflows/dependabot.md", "workflow-name": "Repository selector", "workflow-active": "true", "rollout-mode": "review", "max-ai-credits": 250, "package-aic-allowance": 850, "inventory-ready": true, "observed-at": "2026-08-29T10:00:00Z" },
+            { organization: "githubnext", repository: "gh-aw-cao", package: "dependabot", "package-name": "Dependabot", "workflow-role": "orchestrator", workflow: ".github/workflows/dependabot.md", "workflow-name": "Repository selector", "workflow-active": "true", "rollout-mode": "review", "package-targets": packageTargets("github/gh-aw"), "max-ai-credits": 250, "package-aic-allowance": 850, "inventory-ready": true, "observed-at": "2026-08-29T10:00:00Z" },
             { organization: "githubnext", repository: "gh-aw-cao", package: "dependabot", "package-name": "Dependabot", "workflow-role": "worker", workflow: ".github/workflows/dependabot-release-train-updater.md", "workflow-name": "Release train updater", "workflow-active": "true", "rollout-mode": "review", "max-ai-credits": 600, "package-aic-allowance": 850, "inventory-ready": true, "observed-at": "2026-08-29T10:00:00Z" },
-            { organization: "githubnext", repository: "gh-aw-cao", package: "ambient-context", "package-name": "Ambient Context", "workflow-role": "orchestrator", workflow: ".github/workflows/ambient-context.md", "workflow-name": "Repository selector", "workflow-active": "true", "rollout-mode": "review", "max-ai-credits": 250, "inventory-ready": true, "observed-at": "2026-08-29T10:00:00Z" },
+            { organization: "githubnext", repository: "gh-aw-cao", package: "ambient-context", "package-name": "Ambient Context", "workflow-role": "orchestrator", workflow: ".github/workflows/ambient-context.md", "workflow-name": "Repository selector", "workflow-active": "true", "rollout-mode": "review", "package-targets": packageTargets(), "max-ai-credits": 250, "inventory-ready": true, "observed-at": "2026-08-29T10:00:00Z" },
             { organization: "githubnext", repository: "gh-aw-cao", package: "ambient-context", "package-name": "Ambient Context", "workflow-role": "worker", workflow: ".github/workflows/ambient-context-agents-md-curator.md", "workflow-name": "AGENTS.md curator", "workflow-active": "true", "rollout-mode": "review", "max-ai-credits": 400, "inventory-ready": true, "observed-at": "2026-08-29T10:00:00Z" },
             { organization: "githubnext", repository: "gh-aw-cao", package: "ambient-context", "package-name": "Ambient Context", "workflow-role": "worker", workflow: ".github/workflows/ambient-context-skills-curator.md", "workflow-name": "Skills curator", "workflow-active": "true", "rollout-mode": "review", "max-ai-credits": 400, "inventory-ready": true, "observed-at": "2026-08-29T10:00:00Z" },
-            { organization: "githubnext", repository: "gh-aw-cao", package: "aw-maintenance", "package-name": "AW Maintenance", "workflow-role": "orchestrator", workflow: ".github/workflows/aw-maintenance.md", "workflow-name": "Repository selector", "workflow-active": "true", "rollout-mode": "review", "max-ai-credits": 250, "inventory-ready": true, "observed-at": "2026-08-29T10:00:00Z" },
+            { organization: "githubnext", repository: "gh-aw-cao", package: "aw-maintenance", "package-name": "AW Maintenance", "workflow-role": "orchestrator", workflow: ".github/workflows/aw-maintenance.md", "workflow-name": "Repository selector", "workflow-active": "true", "rollout-mode": "review", "package-targets": packageTargets(), "max-ai-credits": 250, "inventory-ready": true, "observed-at": "2026-08-29T10:00:00Z" },
             { organization: "githubnext", repository: "gh-aw-cao", package: "aw-maintenance", "package-name": "AW Maintenance", "workflow-role": "worker", workflow: ".github/workflows/aw-maintenance-upgrade.md", "workflow-name": "Upgrade", "workflow-active": "true", "rollout-mode": "review", "max-ai-credits": 500, "inventory-ready": true, "observed-at": "2026-08-29T10:00:00Z" },
             { organization: "githubnext", repository: "gh-aw-cao", package: "aw-maintenance", "package-name": "AW Maintenance", "workflow-role": "worker", workflow: ".github/workflows/aw-maintenance-failures.md", "workflow-name": "Failures investigator", "workflow-active": "true", "rollout-mode": "review", "max-ai-credits": 500, "inventory-ready": true, "observed-at": "2026-08-29T10:00:00Z" },
-            { organization: "githubnext", repository: "gh-aw-cao", package: "optimization", "package-name": "Optimization", "workflow-role": "orchestrator", workflow: ".github/workflows/optimization.md", "workflow-name": "Repository selector", "workflow-active": "true", "rollout-mode": "review", "max-ai-credits": 250, "package-aic-allowance": 1100, "inventory-ready": true, "observed-at": "2026-08-29T10:00:00Z" },
+            { organization: "githubnext", repository: "gh-aw-cao", package: "optimization", "package-name": "Optimization", "workflow-role": "orchestrator", workflow: ".github/workflows/optimization.md", "workflow-name": "Repository selector", "workflow-active": "true", "rollout-mode": "review", "package-targets": packageTargets(), "max-ai-credits": 250, "package-aic-allowance": 1100, "inventory-ready": true, "observed-at": "2026-08-29T10:00:00Z" },
             { organization: "githubnext", repository: "gh-aw-cao", package: "optimization", "package-name": "Optimization", "workflow-role": "worker", workflow: ".github/workflows/optimization-code.md", "workflow-name": "Code optimizer", "workflow-active": "true", "rollout-mode": "review", "max-ai-credits": 425, "package-aic-allowance": 1100, "inventory-ready": true, "observed-at": "2026-08-29T10:00:00Z" },
             { organization: "githubnext", repository: "gh-aw-cao", package: "optimization", "package-name": "Optimization", "workflow-role": "worker", workflow: ".github/workflows/optimization-workflows.md", "workflow-name": "Workflow optimizer", "workflow-active": "true", "rollout-mode": "review", "max-ai-credits": 425, "package-aic-allowance": 1100, "inventory-ready": true, "observed-at": "2026-08-29T10:00:00Z" },
             { organization: "github", repository: "mona-tools", "workflow-role": "standalone", workflow: ".github/workflows/ci.yml", "workflow-name": "Build and test", "workflow-active": "true", "rollout-mode": "live", "observed-at": "2026-08-29T10:00:00Z" },
@@ -147,6 +159,7 @@
         outcomes: {
           source: "outcomes",
           rows: [
+            { organization: "github", repository: "gh-aw", package: "dependabot", "runtime-repository": "githubnext/gh-aw-cao", workflow: ".github/workflows/dependabot.md", run: "2002", "safe-output": "dependabot-review", "outcome-state": "accepted", "rollout-mode": "review", "observed-at": "2026-08-29T08:40:00Z", "run-link": { relation: "run", href: "https://github.com/githubnext/gh-aw-cao/actions/runs/2002", label: "View run 2002" } },
             { organization: "github", repository: "gh-aw-cao", workflow: ".github/workflows/daily.yml", run: "1001", "outcome-state": "pending", "run-link": { relation: "run", href: "https://github.com/githubnext/gh-aw-cao/actions/runs/1001", label: "View run 1001" } },
             { organization: "github", repository: "mona-tools", workflow: ".github/workflows/review.yml", run: "1002", "outcome-state": "rejected", "run-link": { relation: "run", href: "https://github.com/githubnext/mona-tools/actions/runs/1002", label: "View run 1002" } },
           ],

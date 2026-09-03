@@ -132,12 +132,21 @@ function renderPackageStatusGridElement(context) {
       'div',
       { className: 'package-status-grid' },
       ...rows.map((row) => {
-        const workerCount = Number(row.workers);
-        const modeText = stringValue(row.mode);
-        const modeClass = modeText.toLowerCase() === 'live' ? 'mode-live' : modeText.toLowerCase() === 'review' ? 'mode-review' : 'mode-unknown';
-        const rolloutPercent = Number(row['rollout-percent']);
+        const liveCoveragePercent = Number(row['live-coverage-percent']);
+        const rolloutLiveRepositories = Number(row['rollout-live-repositories']);
+        const rolloutRepositories = Number(row['rollout-repositories']);
+        const coverageKnown = Number.isFinite(liveCoveragePercent) && Number.isFinite(rolloutLiveRepositories) && rolloutRepositories > 0;
+        const coveragePercent = coverageKnown ? Math.min(100, Math.max(0, liveCoveragePercent)) : null;
+        const reviewRepositories = coverageKnown ? rolloutRepositories - rolloutLiveRepositories : null;
+        const dispatchCount = row['dispatch-count'] == null ? null : Number(row['dispatch-count']);
+        const outputDispatchCount = row['dispatches-with-safe-output'] == null ? null : Number(row['dispatches-with-safe-output']);
+        const dispatchText = Number.isFinite(dispatchCount) ? `${dispatchCount} dispatch${dispatchCount === 1 ? '' : 'es'}` : 'Dispatches unavailable';
+        const outputText = dispatchCount !== null && outputDispatchCount !== null && Number.isFinite(dispatchCount) && Number.isFinite(outputDispatchCount)
+          ? dispatchCount > 0 ? `${outputDispatchCount}/${dispatchCount} produced output` : 'No output opportunity'
+          : 'Outputs unavailable';
         const repoModes = Array.isArray(row['repository-modes']) ? row['repository-modes'].filter(isPlainObject) : [];
         const repoEntries = repoModes.length > 0 ? repoModes.filter((entry) => typeof entry.repository === 'string' && entry.repository) : [];
+        const inventoryText = stringValue(row.inventory || 'Needs attention');
         return h(
           'a',
           {
@@ -148,25 +157,55 @@ function renderPackageStatusGridElement(context) {
             'header',
             { className: 'package-status-header' },
             h('strong', null, octicon(stringValue(row.icon) || 'package'), h('span', null, stringValue(row.title))),
-            h('span', { className: 'package-status-state' }, stringValue(row.inventory || 'Needs attention')),
-            h('span', { className: `mode-badge ${modeClass}`.trim() }, capitalize(modeText || 'unknown'))
+            inventoryText === 'Ready' ? null : h('span', { className: 'package-status-state' }, inventoryText)
           ),
-          h('p', { className: 'package-status-rollout' }, Number.isFinite(rolloutPercent) ? `Rollout ${rolloutPercent}%` : 'Rollout unknown'),
-          h('p', null, `${Number.isFinite(workerCount) ? workerCount : stringValue(row.workers)} worker workflow${workerCount === 1 ? '' : 's'}`),
-          repoEntries.length > 0 ? h(
-            'ul',
-            { className: 'package-status-repositories' },
-            ...repoEntries.map((entry) => {
-              const repoMode = stringValue(entry.mode || 'review');
-              return h(
-                'li',
-                null,
-                h('span', null, stringValue(entry.repository)),
-                h('span', { className: `mode-badge ${repoMode.toLowerCase() === 'live' ? 'mode-live' : 'mode-review'}`.trim() }, capitalize(repoMode))
-              );
-            })
-          ) : null,
-          h('footer', null, 'Open package')
+          h(
+            'div',
+            { className: 'package-status-live-coverage' },
+            h(
+              'div',
+              { className: 'package-status-live-coverage-heading' },
+              h('div', null, h('span', null, 'Rollout'), h('strong', null, coverageKnown ? `${rolloutLiveRepositories} live · ${reviewRepositories} review` : 'No target data')),
+              h('strong', null, coverageKnown ? `${coveragePercent}% live` : 'Unknown')
+            ),
+            coverageKnown ? h('progress', {
+              max: 100,
+              value: coveragePercent,
+              'aria-label': `${rolloutLiveRepositories} of ${rolloutRepositories} target repositories are live`
+            }) : null
+          ),
+          h(
+            'div',
+            { className: 'package-status-runtime' },
+            h(
+              'div',
+              { className: 'package-status-repository-heading' },
+              h('span', null, 'Target repositories'),
+              h('span', null, 'Mode')
+            ),
+            repoEntries.length > 0
+              ? h(
+                  'ul',
+                  { className: 'package-status-repositories' },
+                  ...repoEntries.map((entry) => {
+                    const repoMode = stringValue(entry.mode || 'review');
+                    return h(
+                      'li',
+                      null,
+                      h('span', { className: 'package-status-repository-name' }, octicon('repo'), h('span', null, stringValue(entry.repository))),
+                      h('span', { className: `mode-badge ${repoMode.toLowerCase() === 'live' ? 'mode-live' : 'mode-review'}`.trim() }, octicon('dot-fill'), capitalize(repoMode))
+                    );
+                  })
+                )
+              : h('p', { className: 'package-status-repositories-empty' }, 'No repositories reported')
+          ),
+          h(
+            'div',
+            { className: 'package-status-activity', title: stringValue(row['activity-window']), 'aria-label': `Recent activity: ${dispatchText}; ${outputText}` },
+            h('span', { className: 'package-status-activity-label' }, 'Recent'),
+            h('span', null, octicon('paper-airplane'), h('strong', null, dispatchText)),
+            h('span', null, octicon('shield-check'), h('strong', null, outputText))
+          )
         );
       })
     )

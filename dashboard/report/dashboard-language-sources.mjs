@@ -204,10 +204,19 @@ function inventoryWorkflowDetails(inventory = {}, controlSettings = {}) {
       || controlSettings.packages?.[bundle.id];
     const configuredMode = rolloutMode(packagePolicy?.mode);
     const rolloutPercent = Number(packagePolicy?.["rollout-percent"] ?? packagePolicy?.rollout_percent);
-    const packageTargets = Object.entries(packagePolicy?.targets ?? packagePolicy?.target_policies ?? {})
-      .map(([repository, targetPolicy]) => ({
+    const targetPolicies = new Map(Object.entries(packagePolicy?.targets ?? packagePolicy?.target_policies ?? {})
+      .map(([repository, targetPolicy]) => [repository.toLowerCase(), { repository, targetPolicy }]));
+    const targetRepositories = new Map();
+    for (const repository of controlSettings.allowed_repositories ?? []) {
+      const name = String(repository).trim();
+      if (name) targetRepositories.set(name.toLowerCase(), name);
+    }
+    for (const [repository, { repository: name }] of targetPolicies) targetRepositories.set(repository, name);
+    const packageTargets = [...targetRepositories.entries()]
+      .map(([key, repository]) => ({
         repository,
-        mode: rolloutMode(targetPolicy?.mode),
+        mode: rolloutMode(targetPolicies.get(key)?.targetPolicy?.mode ?? configuredMode),
+        explicit: targetPolicies.has(key),
       }))
       .filter((target) => target.mode !== "unknown" && target.repository);
     const packageId = String(bundle.id || bundle.controlPackage || "").trim();
@@ -264,6 +273,10 @@ function workflowRows(deployed, generatedAt, inventory, controlSettings) {
       || controlSettings.packages?.[membership?.id]?.icon
       || "package";
     const recentMode = rolloutMode(workflow.runHealth?.runRecords?.[0]?.displayTitle);
+    const workflowRepository = String(workflow.repository ?? "").toLowerCase();
+    const packageTargets = (details?.packageTargets ?? [])
+      .filter((target) => target.explicit || target.repository.toLowerCase() !== workflowRepository)
+      .map(({ repository, mode }) => ({ repository, mode }));
     return {
      ...names,
      ...(membership ? { package: membership.id, "package-name": membership.name } : {}),
@@ -273,8 +286,8 @@ function workflowRows(deployed, generatedAt, inventory, controlSettings) {
      ...(Number.isFinite(details?.packageAllowance) ? { "package-aic-allowance": details.packageAllowance } : {}),
      ...(Number.isFinite(details?.packageWorkerCount) ? { "package-worker-count": details.packageWorkerCount } : {}),
      ...(Number.isFinite(details?.packageInventoryWarnings) ? { "package-inventory-warnings": details.packageInventoryWarnings } : {}),
-     ...(Number.isFinite(details?.packageRolloutPercent) ? { "package-rollout-percent": details.packageRolloutPercent } : {}),
-     ...(Array.isArray(details?.packageTargets) ? { "package-targets": details.packageTargets } : {}),
+    ...(Number.isFinite(details?.packageRolloutPercent) ? { "package-rollout-percent": details.packageRolloutPercent } : {}),
+    ...(packageTargets.length > 0 ? { "package-targets": packageTargets } : {}),
      ...(typeof details?.inventoryReady === "boolean" ? { "inventory-ready": details.inventoryReady } : {}),
      ...(details?.admissionStatus ? { "admission-status": details.admissionStatus } : {}),
      ...(details?.admissionReason ? { "admission-reason": details.admissionReason } : {}),
