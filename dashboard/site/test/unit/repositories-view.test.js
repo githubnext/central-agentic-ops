@@ -205,6 +205,7 @@ describe('repositories view', () => {
     const workflowAicView = repositoryPage.views.find(
       (/** @type {{ id: string }} */ view) => view.id === 'repository-workflow-aic'
     );
+    expect(repositoryPage.views[0].id).toBe('repository-workflow-aic');
     expect(workflowsView).toMatchObject({
       mark: 'table',
       controls: 'interactive',
