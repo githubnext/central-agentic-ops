@@ -1,6 +1,6 @@
 import { appendFile } from "node:fs/promises";
 
-const pollIntervalMs = 5_000;
+const pollIntervalMs = Number(process.env.DISPATCH_POLL_INTERVAL_MS || "5000");
 
 function requiredEnvironment(name) {
   const value = process.env[name]?.trim();
@@ -76,6 +76,9 @@ async function main() {
   const ref = requiredEnvironment("DISPATCH_REF");
   const runName = requiredEnvironment("DISPATCH_RUN_NAME");
   const timeoutMinutes = Number(process.env.DISPATCH_TIMEOUT_MINUTES || "120");
+  if (!Number.isFinite(pollIntervalMs) || pollIntervalMs <= 0) {
+    throw new Error("DISPATCH_POLL_INTERVAL_MS must be a positive number");
+  }
   if (!Number.isFinite(timeoutMinutes) || timeoutMinutes <= 0) {
     throw new Error("DISPATCH_TIMEOUT_MINUTES must be a positive number");
   }
