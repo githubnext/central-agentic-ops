@@ -266,10 +266,12 @@ describe('dashboard document validation', () => {
 
     const invalidTokens = JSON.parse(authoritativeDashboardSource);
     const costPage = invalidTokens.dashboard.pages.find((/** @type {{ id: string }} */ page) => page.id === 'cost');
-    costPage['filter-bar'].filters = ['mode:review', 'mode:review', 'invalid token'];
-    costPage['filter-bar']['time-range'] = '';
-    costPage['filter-bar'].export = true;
-    costPage['filter-bar'].unknown = true;
+    costPage['filter-bar'] = {
+      filters: ['mode:review', 'mode:review', 'invalid token'],
+      'time-range': '',
+      export: true,
+      unknown: true
+    };
 
     const rejected = validateDashboardDocument(JSON.stringify(invalidTokens));
     expect(rejected.ok).toBe(false);
