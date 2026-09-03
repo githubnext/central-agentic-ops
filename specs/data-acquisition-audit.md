@@ -11,7 +11,7 @@ editors:
 
 **Version:** 1.0.0  
 **Status:** Working Draft  
-**Audit date:** 2026-09-03
+**Audit date:** 2026-09-03 (refreshed)
 
 ## Abstract
 
@@ -51,10 +51,10 @@ All bounded production log collectors except monthly budget admission reserve 2,
 
 | Source | Requests and behavior | Existing mitigation |
 | --- | --- | --- |
-| `.github/workflows/shared/control.md` | Downloads `control.mjs` and `policy.mjs` separately from the workflow SHA before activation. Every importing workflow execution therefore starts with two Contents API requests. | Exact-SHA reads and fail-closed behavior, but no shared artifact or checkout reuse in this job. |
-| `.github/cao/src/control.mjs` | Reads rate limits, policy and target-authority files, repository metadata, workflow inventory, repository inventory pages, safe-output metadata, and target commits. | `gh api --cache 60s` for helper reads, a capacity check before precompute, bounded repository pages, and clean rate-limit denial. The cache is job-local and short-lived. |
+| `.github/workflows/shared/control.md` | A sparse, shallow `actions/checkout` of `.github/cao/src` at `github.workflow_sha` replaced the earlier pair of Contents API reads for `control.mjs` and `policy.mjs`. Every importing workflow execution still performs one exact-SHA checkout before activation. | Exact-SHA provenance is preserved; the checkout uses `fetch-depth: 1` and cone-mode sparse paths, avoiding the two separate Contents API requests previously issued per run. No shared artifact or cross-run checkout reuse exists in this job. |
+| `.github/cao/src/control.mjs` | Reads rate limits, policy and target-authority files, repository metadata, workflow inventory, repository inventory pages, safe-output metadata, and target commits. Also checks runner free disk space before repository discovery (no API calls). | `gh api --cache 60s` for helper reads, a capacity check before precompute, bounded repository pages, and clean rate-limit denial. The cache is job-local and short-lived. |
 
-The two bootstrap requests in `shared/control.md` occur before the in-process 60-second CLI cache can help. Compiled lock files repeat this shared implementation but do not represent extra calls beyond the workflow executions themselves.
+The former two-request Contents API bootstrap in `shared/control.md` has been replaced by a single git checkout step; this is no longer a Contents API cost per run, though it still runs once per importing workflow execution before the in-process 60-second CLI cache can help. Compiled lock files repeat this shared implementation but do not represent extra calls beyond the workflow executions themselves.
 
 ### 3.2 Activity and dashboard path
 
@@ -103,7 +103,7 @@ The activity snapshot is the intended shared collection boundary. The main gap i
 1. **Run history is collected by multiple independent systems.** `activity/index.mjs` collects Actions run metadata, `aic-usage.mjs` downloads gh-aw logs, operational-value reports replay workflow history, worker predownloads collect overlapping target logs, and graders later collect overlapping evidence windows.
 2. **Monthly budget admission rescans package history per execution.** Each budgeted orchestrator run invokes `gh aw logs` once per package workflow even when another run recently computed the same month-to-date total.
 3. **Dashboard durable records rescan stable history every 15 minutes.** Issues and comments are fetched from the beginning, rather than incrementally from the previous snapshot's newest update.
-4. **Control bootstrap downloads two files per workflow run.** The same exact-SHA runtime files are fetched separately for each importing run before the helper's CLI cache exists.
+4. **Control bootstrap still runs once per workflow run.** The exact-SHA runtime files are now obtained via one sparse, shallow git checkout instead of two Contents API reads, but each importing run still repeats this checkout independently before the helper's CLI cache exists.
 5. **Repository metadata and source content are rediscovered.** The activity index persists normalized results but not reusable ETags or per-resource responses, so unchanged registries, trees, manifests, Markdown, and lock metadata consume requests again.
 6. **Per-candidate grader requests create N+1 traffic.** Dependabot and ambient-context evaluators enumerate broad candidate lists and then query files, checks, statuses, or comments one candidate at a time.
 7. **Separate maintenance caches overlap the activity cache.** `agentics-maintenance.yml` stores independent activity/forecast log trees that cannot satisfy CAO dashboard or grader collection.
@@ -118,7 +118,7 @@ The activity snapshot is the intended shared collection boundary. The main gap i
 | P1 | Repeated `gh aw logs` windows | Dashboard, budget, workers, reports, and graders independently download overlapping Actions/log/artifact data. The 2,000-request reserve causes partial data sooner when they share a credential. |
 | P1 | Per-workflow monthly budget scans | Request cost grows with enabled worker count and orchestrator frequency, while the result changes only when package runs finish. |
 | P1 | Grader N+1 queries | Pull-file, pull-detail, check-run, status, tree, and blob calls grow with candidates and with every regrade. |
-| P2 | Two-file control bootstrap | Small per run, but unavoidable and multiplied by every controlled workflow execution. |
+| P2 | Repeated control checkout | One sparse checkout per run is small but still multiplied by every controlled workflow execution; it no longer costs two Contents API requests. |
 | P2 | Cold artifact discovery | `records.mjs` and the local server list artifacts independently; operational-value fallback downloads one artifact per run. |
 
 The direct activity client retries 403 and 429 responses only when the advertised delay is at most 30 seconds. `records.mjs` instead stops on a confirmed rate limit and retains the prior snapshot. Dispatch polling and most GitHub Script or shell clients have no common rate-limit response policy.
@@ -131,7 +131,7 @@ The direct activity client retries 403 and 429 responses only when the advertise
 4. **Cache month-to-date package usage.** Key it by package workflow set, repository, month, and latest observed run ID; invalidate it when the activity index observes a newer relevant run.
 5. **Reduce activity discovery calls.** Persist ETags or immutable blob SHAs for registry, tree, manifest, Markdown, and lock data. Avoid repository metadata rereads within one process and prefer allowlist discovery over organization code search where policy already supplies the scope.
 6. **Batch or narrow grader evidence.** Record immutable evidence identifiers during the producer run, query candidates by time where supported, and reuse one evaluation-local repository snapshot across graders. Keep existing fail-closed completeness rules.
-7. **Bundle exact-SHA control runtime files.** Prefer one precompute artifact or checked-out trusted source over two Contents API calls, without weakening the workflow-SHA provenance boundary.
+7. **~~Bundle exact-SHA control runtime files.~~ (Implemented)** Control bootstrap now uses one sparse, shallow checkout instead of two Contents API calls, preserving the exact-SHA workflow provenance boundary. Remaining opportunity: avoid repeating this checkout across concurrently running importing workflows when feasible.
 8. **Instrument request budgets.** Emit request counts by endpoint family, cache hit/miss, pages read, downloaded bytes, remaining core/search quota, and incomplete reason. Use this evidence before changing concurrency or reserve thresholds.
 9. **Do not merge caches solely by repository.** Cache keys must retain token/installation scope, private-data policy, exact source SHA where relevant, requested time window, and completeness. A cache hit must never widen repository authority or publish private data.
 
@@ -142,6 +142,6 @@ The direct activity client retries 403 and 429 responses only when the advertise
 3. Persist and reuse bounded gh-aw logs through the activity cache.
 4. Cache month-to-date budget totals against observed run IDs.
 5. Narrow grader N+1 evidence lookups.
-6. Optimize control bootstrap only after preserving exact-SHA and fail-closed behavior in tests.
+6. Optimize control bootstrap only after preserving exact-SHA and fail-closed behavior in tests. **(Done: bootstrap now uses a sparse git checkout instead of Contents API reads.)**
 
 These changes should be delivered separately. This audit records current behavior and does not itself change collection, authority, credentials, or cache semantics.
