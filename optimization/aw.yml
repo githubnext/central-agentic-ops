@@ -3,7 +3,6 @@ description: Organization-wide workflow for auditing, forecasting, and optimizin
 min-version: v0.88.2
 experimental: true
 includes:
-  - .github/workflows/shared/cao.md
   - .github/workflows/optimization.md
 resources:
   - source: dashboard.json
