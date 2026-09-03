@@ -33,7 +33,16 @@ permissions:
   contents: read
 
 jobs:
+  activity:
+    if: inputs.mode == 'live'
+    permissions:
+      actions: read
+      contents: read
+    uses: ./.github/workflows/activity.yml
+
   build:
+    needs: activity
+    if: always() && (needs.activity.result == 'success' || needs.activity.result == 'skipped')
     runs-on: ubuntu-latest
     permissions:
       actions: read
@@ -92,11 +101,13 @@ jobs:
           REPORT_INVENTORY: ${{ runner.temp }}/control-plane-inventory.json
         run: node "$DASHBOARD_REPORT_ROOT/inventory.mjs"
 
-      - name: Restore or refresh workflow activity
-        uses: ./.github/actions/cao-activity
+      - name: Restore workflow activity
+        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
-          mode: ${{ inputs.mode == 'live' && 'refresh' || 'cache' }}
-          control-settings: ${{ runner.temp }}/control-settings.json
+          path: ${{ runner.temp }}/cao-activity
+          key: ${{ runner.os }}-cao-activity-v1-${{ github.repository }}-${{ github.run_id }}-${{ github.run_attempt }}
+          restore-keys: |
+            ${{ runner.os }}-cao-activity-v1-${{ github.repository }}-
 
       - name: Restore dashboard data cache
         uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0

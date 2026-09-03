@@ -27,7 +27,6 @@ const dependabotUpdateSource = focusedPackageSource("dependabot");
 const selfCarePackageSource = focusedPackageSource("self-care");
 const softwareDevelopmentPracticesPackageSource = focusedPackageSource("software-development-practices");
 const activityExpectedFiles = [
-  ".github/actions/cao-activity/action.yml",
   ".github/aw/activity/index.mjs",
   ".github/workflows/activity.yml",
 ];
@@ -173,7 +172,7 @@ test("gh aw add installs the focused activity package contract", { timeout: 180_
     assert.deepEqual(
       installedManifest.files.map(({ destination }) => destination).sort(),
       activityExpectedFiles.toSorted(),
-      "activity package manifest must own its workflow, action, and indexer",
+      "activity package manifest must own its workflow and indexer",
     );
   } finally {
     rmSync(consumer, { recursive: true, force: true });

@@ -586,7 +586,6 @@ test("deterministic workflows pin third-party actions by commit SHA", () => {
     join(".github", "workflows", "enterprise-stress.yml"),
     join(".github", "workflows", "review-smoke.yml"),
     join("activity", "activity.yml"),
-    join("activity", "action.yml"),
     join(".github", "workflows", "dashboard-build.yml"),
     join("dashboard", "dashboard.yml"),
   ]) {
@@ -2123,7 +2122,8 @@ test("Dashboard package supports embedded and explicit standalone deployment", (
   assert.match(buildWorkflow, /workflow_call:[\s\S]*?site-path:[\s\S]*?default: cao/);
   assert.match(buildWorkflow, /workflow_call:[\s\S]*?mode:[\s\S]*?default: live/);
   assert.match(buildWorkflow, /Require cached dashboard data[\s\S]*?if: inputs\.mode == 'cache'/);
-  assert.match(buildWorkflow, /Restore or refresh workflow activity[\s\S]*?uses: \.\/\.github\/actions\/cao-activity/);
+  assert.match(buildWorkflow, /activity:[\s\S]*?uses: \.\/\.github\/workflows\/activity\.yml/);
+  assert.match(buildWorkflow, /Restore workflow activity[\s\S]*?actions\/cache\/restore@[0-9a-f]{40}/);
   assert.doesNotMatch(buildWorkflow, /Discover deployed agentic workflows/);
   assert.match(buildWorkflow, /Save dashboard data cache[\s\S]*?actions\/cache\/save@[0-9a-f]{40}/);
   assert.match(buildWorkflow, /control-settings\.mjs[\s\S]*?\.github\/cao\/src\/control\.mjs[\s\S]*?\.github\/workflows\/cao\.json[\s\S]*?"\$RUNNER_TEMP\/control-settings\.json"/);
@@ -2189,7 +2189,6 @@ test("Activity package owns the shared workflow-run cache contract", () => {
   const rootManifest = parse(readFileSync(join(root, "aw.yml"), "utf8"));
   const activityManifest = parse(readFileSync(join(root, "activity", "aw.yml"), "utf8"));
   const workflow = readFileSync(join(root, "activity", "activity.yml"), "utf8");
-  const action = readFileSync(join(root, "activity", "action.yml"), "utf8");
   const readme = readFileSync(join(root, "activity", "README.md"), "utf8");
 
   assert.equal(activityManifest.name, "Central Agentic Ops Activity");
@@ -2199,17 +2198,15 @@ test("Activity package owns the shared workflow-run cache contract", () => {
     kind: "action-workflow",
   }]);
   assert.deepEqual(activityManifest.resources, [
-    { source: "action.yml", destination: ".github/actions/cao-activity/action.yml" },
     { source: "index.mjs", destination: ".github/aw/activity/index.mjs" },
   ]);
   assert.ok(rootManifest.includes.some((entry) => entry.destination === ".github/workflows/activity.yml"));
-  assert.ok(rootManifest.resources.some((entry) => entry.destination === ".github/actions/cao-activity/action.yml"));
   assert.ok(rootManifest.resources.some((entry) => entry.destination === ".github/aw/activity/index.mjs"));
   assert.match(workflow, /schedule:[\s\S]*?cron:/);
-  assert.match(workflow, /uses: \.\/\.github\/actions\/cao-activity/);
-  assert.match(action, /actions\/cache\/restore@[0-9a-f]{40}/);
-  assert.match(action, /actions\/cache\/save@[0-9a-f]{40}/);
-  assert.match(action, /cao-activity-v1-\$\{\{ github\.repository \}\}-/);
+  assert.match(workflow, /workflow_call:/);
+  assert.match(workflow, /actions\/cache\/restore@[0-9a-f]{40}/);
+  assert.match(workflow, /actions\/cache\/save@[0-9a-f]{40}/);
+  assert.match(workflow, /cao-activity-v1-\$\{\{ github\.repository \}\}-/);
   assert.match(readme, /schemaVersion: 1/);
   assert.match(readme, /Consumers must use the top-level completeness fields/);
 });

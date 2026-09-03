@@ -1,6 +1,7 @@
 name: Central Agentic Ops Activity
 
 on:
+  workflow_call:
   workflow_dispatch:
   schedule:
     - cron: "7,22,37,52 * * * *"
@@ -26,7 +27,35 @@ jobs:
           ref: ${{ github.workflow_sha }}
           persist-credentials: false
 
-      - name: Refresh shared activity cache
-        uses: ./.github/actions/cao-activity
+      - name: Restore activity cache
+        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
-          mode: refresh
+          path: ${{ runner.temp }}/cao-activity
+          key: ${{ runner.os }}-cao-activity-v1-${{ github.repository }}-${{ github.run_id }}-${{ github.run_attempt }}
+          restore-keys: |
+            ${{ runner.os }}-cao-activity-v1-${{ github.repository }}-
+
+      - name: Resolve activity indexer
+        run: |
+          if [[ -f .github/aw/activity/index.mjs ]]; then
+            echo "ACTIVITY_INDEXER=.github/aw/activity/index.mjs" >> "$GITHUB_ENV"
+          elif [[ -f activity/index.mjs ]]; then
+            echo "ACTIVITY_INDEXER=activity/index.mjs" >> "$GITHUB_ENV"
+          else
+            echo "Activity indexer is unavailable" >&2
+            exit 1
+          fi
+
+      - name: Refresh activity index
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          REPORT_CONTROL_POLICY: .github/workflows/cao.json
+          REPORT_DEPLOYED_WORKFLOWS: ${{ runner.temp }}/cao-activity/deployed-workflows.json
+          REPORT_RUN_WINDOW_HOURS: "168"
+        run: node "$ACTIVITY_INDEXER"
+
+      - name: Save activity cache
+        uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ${{ runner.temp }}/cao-activity
+          key: ${{ runner.os }}-cao-activity-v1-${{ github.repository }}-${{ github.run_id }}-${{ github.run_attempt }}

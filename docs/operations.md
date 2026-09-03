@@ -149,7 +149,6 @@ The package installs the following components in the control-plane repository:
 - `.github/workflows/dashboard-build.yml`, the reusable path-aware builder;
 - `.github/workflows/dashboard.yml`, the manual standalone publisher;
 - `.github/workflows/activity.yml`, the scheduled workflow-run index refresher;
-- `.github/actions/cao-activity/action.yml`, the shared Actions cache restore and refresh action;
 - `.github/aw/activity/index.mjs`, the bounded deployed-workflow and run-health indexer;
 - `.github/aw/dashboard/report/aic-usage.mjs`, the bounded AI Credit usage collector;
 - `.github/aw/dashboard/report/inventory.mjs`, the dependency-free control-plane inventory extractor;
