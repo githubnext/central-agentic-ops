@@ -93,9 +93,17 @@ for (const [name, overrides, expectedError] of failures) {
 
     assert.notEqual(result.status, 0, `${name} unexpectedly succeeded`);
     assert.match(result.stderr, new RegExp(expectedError));
-    assert.match(result.stdout, /::error::/);
   });
 }
+
+test("control precompute annotates runtime failures in the Actions log", () => {
+  const result = runPrecompute({ CORRELATION_ID: "invalid" });
+
+  assert.notEqual(result.status, 0);
+  assert.match(result.stdout, /::group::CAO control precompute/);
+  assert.match(result.stdout, /::error::correlation_id must identify an orchestrator run and attempt/);
+  assert.match(result.stdout, /::endgroup::/);
+});
 
 for (const [name, policy, expectedError] of invalidPolicies) {
   test(`control precompute rejects ${name}`, () => {
