@@ -1249,7 +1249,7 @@ describe('presenter built-in and custom pages', () => {
 
     const overviewPage = rendered.querySelector('[data-page-name="overview"]');
     expect(overviewPage?.getAttribute('data-page-kind')).toBe('custom');
-    expect(overviewPage?.querySelectorAll('.custom-view')).toHaveLength(2);
+    expect(overviewPage?.querySelectorAll('.custom-view')).toHaveLength(3);
     expect(overviewPage?.querySelectorAll('.layout-section')).toHaveLength(0);
     expect(overviewPage?.querySelector('.overview-observability h2')?.textContent).toBe('Attention by domain');
     const cards = [...(overviewPage?.querySelectorAll('.attention-domain-card') ?? [])];
@@ -1591,10 +1591,16 @@ describe('presenter built-in and custom pages', () => {
     }
 
     const runsPage = pages.find((/** @type {{ page: string }} */ page) => page.page === 'runs');
-    expect(runsPage?.definition.views.map((/** @type {{ data: { source: string } }} */ view) => view.data.source)).toEqual(['runs']);
+    expect(runsPage?.definition.views.map((/** @type {{ data: { source: string } }} */ view) => view.data.source)).toEqual(['runs', 'runs']);
 
     const repositoriesPage = pages.find((/** @type {{ page: string }} */ page) => page.page === 'repositories');
     expect(repositoriesPage?.definition.views).toMatchObject([
+      {
+        id: 'repositories-run-health',
+        mark: 'chart',
+        chart: 'line',
+        data: { source: 'runs' }
+      },
       {
         id: 'repository-scope',
         title: 'Repository scope',
@@ -1739,7 +1745,7 @@ describe('presenter built-in and custom pages', () => {
     });
 
     const headings = [...rendered.querySelectorAll('[data-page-id="runs"] .page-section h3')].map((element) => element.textContent);
-    expect(headings).toEqual(['Runs Runs Source']);
+    expect(headings).toEqual(['Run health trend', 'Runs Runs Source']);
     expect(rendered.querySelectorAll('[data-page-id="runs"] .custom-table')).toHaveLength(1);
     expect(rendered.querySelector('[data-page-id="runs"]')?.getAttribute('data-page-kind')).toBe('custom');
   });
@@ -2473,17 +2479,17 @@ describe('presenter built-in and custom pages', () => {
       (/** @type {{ id: string }} */ page) => page.id === 'coverage'
     );
     expect(coveragePage.route).toEqual({ 'navigation-page': 'overview' });
-    expect(coveragePage.views[0]).toMatchObject({
+    expect(coveragePage.views[1]).toMatchObject({
       mark: 'element',
       element: 'summary-grid',
       data: { sources: ['repository-coverage'] }
     });
-    expect(coveragePage.views[1]).toMatchObject({
+    expect(coveragePage.views[2]).toMatchObject({
       mark: 'table',
       controls: 'static',
       data: { source: 'coverage-diagnostics' }
     });
-    expect(coveragePage.views[1]).not.toHaveProperty('element');
+    expect(coveragePage.views[2]).not.toHaveProperty('element');
     expect(rendered.querySelectorAll('#page-coverage .custom-table tbody tr')).toHaveLength(2);
 
     window?.history.replaceState(null, '', '/');
