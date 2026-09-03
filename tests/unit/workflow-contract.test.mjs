@@ -746,7 +746,7 @@ test("CAO runtime is control-repository-owned outside package resources", () => 
       ...process.env,
       CAO_PACKAGE: "dependabot",
       CAO_ROLE: "orchestrator",
-      GITHUB_REPOSITORY: "githubnext/central-agentic-ops",
+      GITHUB_REPOSITORY: "githubnext/gh-aw-cao",
     },
   }));
 
@@ -1696,7 +1696,7 @@ test("AW Maintenance runs hourly with bounded deterministic discovery", () => {
 
 test("SelfCare accessibility checker audits the served docs site with axe-core evidence", () => {
   const source = workflow("self-care-accessibility-checker.md");
-  const liveGuard = "if: ${{ inputs.target_repo == 'githubnext/central-agentic-ops' && (inputs.safe_output_mode || 'review') == 'live' }}";
+  const liveGuard = "if: ${{ inputs.target_repo == 'githubnext/gh-aw-cao' && (inputs.safe_output_mode || 'review') == 'live' }}";
 
   assert.match(source, /^name: "SelfCare \/ Accessibility Checker"$/m);
   assert.match(source, /workflow_dispatch:/);
@@ -1731,7 +1731,7 @@ test("SelfCare accessibility checker audits the served docs site with axe-core e
 test("SelfCare Primer brand checker audits the dashboard against retrieved guidance", () => {
   const source = workflow("self-care-primer-brand-checker.md");
   const compiled = workflow("self-care-primer-brand-checker.lock.yml");
-  const liveGuard = "if: ${{ inputs.target_repo == 'githubnext/central-agentic-ops' && (inputs.safe_output_mode || 'review') == 'live' }}";
+  const liveGuard = "if: ${{ inputs.target_repo == 'githubnext/gh-aw-cao' && (inputs.safe_output_mode || 'review') == 'live' }}";
 
   assert.match(source, /^name: "SelfCare \/ Primer Brand Checker"$/m);
   assert.match(source, /package: self-care/);
@@ -1812,7 +1812,7 @@ test("SelfCare docs build-time investigator rotates evidenced recommendations", 
 
 test("SelfCare code improvement preserves its focused dashboard component mission", () => {
   const source = workflow("self-care-code-improvement.md");
-  const liveGuard = "if: ${{ inputs.target_repo == 'githubnext/central-agentic-ops' && (inputs.safe_output_mode || 'review') == 'live' }}";
+  const liveGuard = "if: ${{ inputs.target_repo == 'githubnext/gh-aw-cao' && (inputs.safe_output_mode || 'review') == 'live' }}";
 
   assert.match(source, /^name: "SelfCare \/ Code Improvement"$/m);
   assert.match(source, /package: self-care/);
@@ -1898,7 +1898,7 @@ test("clean-room compilation emits the expected GitHub Actions settings", { time
       "compile",
       "--no-check-update",
       "--schedule-seed",
-      "githubnext/central-agentic-ops",
+      "githubnext/gh-aw-cao",
     ], { cwd: temporaryRoot, stdio: "pipe" });
 
     const generatedDirectory = join(temporaryRoot, ".github", "workflows");

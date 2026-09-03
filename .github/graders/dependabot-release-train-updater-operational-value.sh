@@ -3,7 +3,7 @@
 set -euo pipefail
 export LC_ALL=C
 
-REPOSITORY=githubnext/central-agentic-ops
+REPOSITORY=githubnext/gh-aw-cao
 WORKFLOW_NAME="Dependabot / Release Train Updater"
 MATURATION_SECONDS=1209600
 
@@ -14,7 +14,7 @@ definition() {
     cat <<'JSON'
 {
   "schemaVersion": 4, "grader": "operational-value",
-  "repository": "githubnext/central-agentic-ops", "workflowName": "Dependabot / Release Train Updater",
+  "repository": "githubnext/gh-aw-cao", "workflowName": "Dependabot / Release Train Updater",
   "sourcePath": ".github/workflows/dependabot-release-train-updater.md",
   "adoption": {"commit": "4615c8d8eaf51dab837238dff6fc8248a56194fe", "adoptedAt": "2026-07-16T15:40:56Z"},
   "operationalValue": "Resolve one dependency-update opportunity in the dispatched target with a validated merge.",
@@ -22,7 +22,7 @@ definition() {
     "opportunity": "The oldest dependency pull request open in the dispatched target at run creation, among pull requests created during the preceding 30 days that are Dependabot-authored or change a dependency manifest or lockfile.",
     "assignment": "Bind targetRepo from workflow_dispatch inputs, or recover it from the worker run title for historical reports; freeze the oldest eligible pull request and its required checks at run creation, breaking ties by pull-request number; key dependency-pr:<targetRepo>:<number>. Duplicate runs for the same pull request repeat the key.",
     "accepted": "The assigned pull request is merged by the evidence cutoff and every required status check frozen at assignment has succeeded by that cutoff.",
-    "repositories": ["githubnext/central-agentic-ops"],
+    "repositories": ["githubnext/gh-aw-cao"],
     "collection": "Read the worker run metadata when target recovery is needed, query target pull requests and changed files once for assignment, then query the assigned pull request, immutable merge commit, and required-check results through the capped cutoff.",
     "maturation": "Fourteen days after the workflow run starts.",
     "zeroRule": "Complete evidence showing that the assigned pull request was not validly merged by the capped cutoff scores 0.",

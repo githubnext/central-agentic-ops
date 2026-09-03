@@ -3,7 +3,7 @@
 set -euo pipefail
 export LC_ALL=C
 
-REPOSITORY="githubnext/central-agentic-ops"
+REPOSITORY="githubnext/gh-aw-cao"
 WORKFLOW_NAME="EU CRA Advisor / Package Maintainer"
 LEDGER_PATH="eu-cra-compliance/implementation-status.md"
 MATURATION_SECONDS=2592000
@@ -16,7 +16,7 @@ definition() {
 {
   "schemaVersion": 4,
   "grader": "operational-value",
-  "repository": "githubnext/central-agentic-ops",
+  "repository": "githubnext/gh-aw-cao",
   "workflowName": "EU CRA Advisor / Package Maintainer",
   "sourcePath": ".github/workflows/eu-cra-compliance-package-maintainer.md",
   "adoption": {
@@ -28,7 +28,7 @@ definition() {
     "opportunity": "Each PARTIAL, MISSING, or INCOMPLETE requirement ID in the implementation ledger at the package-maintainer run's source commit.",
     "assignment": "Freeze the source ledger blob and its eligible requirement IDs; key cra-ledger:<repository>:<startingLedgerBlob>. Duplicate runs over the same ledger share the opportunity.",
     "accepted": "An assigned requirement ID no longer has a PARTIAL, MISSING, or INCOMPLETE status in the latest ledger at the evidence cutoff, and the ledger change arrived through a pull request approved by a non-bot human.",
-    "repositories": ["githubnext/central-agentic-ops"],
+    "repositories": ["githubnext/gh-aw-cao"],
     "collection": "Read the immutable source ledger blob, the latest ledger commit at the capped cutoff, its associated pull request, and submitted reviews.",
     "maturation": "Thirty days after the package-maintainer run starts.",
     "zeroRule": "Complete evidence with no human-reviewed resolution of any assigned requirement ID scores 0.",

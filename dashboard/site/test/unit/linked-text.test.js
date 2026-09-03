@@ -7,15 +7,15 @@ describe('linked text helpers', () => {
     expect(renderLinkedText('central-agentic-ops', null)).toBe('central-agentic-ops');
 
     const linked = /** @type {HTMLElement} */ (renderLinkedText('central-agentic-ops', {
-      href: 'https://github.com/githubnext/central-agentic-ops',
-      label: 'View githubnext/central-agentic-ops on GitHub'
+      href: 'https://github.com/githubnext/gh-aw-cao',
+      label: 'View githubnext/gh-aw-cao on GitHub'
     }));
 
     expect(linked).toBeInstanceOf(HTMLElement);
-    expect(linked.getAttribute('href')).toBe('https://github.com/githubnext/central-agentic-ops');
+    expect(linked.getAttribute('href')).toBe('https://github.com/githubnext/gh-aw-cao');
     expect(linked.getAttribute('target')).toBe('_blank');
     expect(linked.getAttribute('rel')).toBe('noopener noreferrer');
-    expect(linked.getAttribute('aria-label')).toBe('View githubnext/central-agentic-ops on GitHub');
+    expect(linked.getAttribute('aria-label')).toBe('View githubnext/gh-aw-cao on GitHub');
     expect(linked.textContent).toBe('central-agentic-ops');
   });
 
@@ -29,21 +29,21 @@ describe('linked text helpers', () => {
 
     const linkedRepository = /** @type {HTMLElement} */ (renderEntityAwareCellValue('repository', 'central-agentic-ops', {
       'repository-link': {
-        href: 'https://github.com/githubnext/central-agentic-ops',
-        label: 'View githubnext/central-agentic-ops on GitHub'
+        href: 'https://github.com/githubnext/gh-aw-cao',
+        label: 'View githubnext/gh-aw-cao on GitHub'
       }
     }));
     const plainStatus = renderEntityAwareCellValue('run-status', 'completed', {
       'repository-link': {
-        href: 'https://github.com/githubnext/central-agentic-ops',
-        label: 'View githubnext/central-agentic-ops on GitHub'
+        href: 'https://github.com/githubnext/gh-aw-cao',
+        label: 'View githubnext/gh-aw-cao on GitHub'
       }
     });
     const plainRepository = renderEntityAwareCellValue('repository', 'central-agentic-ops', {});
 
     expect(linkedRepository).toBeInstanceOf(HTMLElement);
     expect(linkedRepository.textContent).toBe('central-agentic-ops');
-    expect(linkedRepository.getAttribute('href')).toBe('https://github.com/githubnext/central-agentic-ops');
+    expect(linkedRepository.getAttribute('href')).toBe('https://github.com/githubnext/gh-aw-cao');
     expect(plainStatus).toBe('text:completed');
     expect(plainRepository).toBe('text:central-agentic-ops');
   });

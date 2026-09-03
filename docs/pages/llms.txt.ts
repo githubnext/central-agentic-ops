@@ -61,7 +61,7 @@ export const GET: APIRoute = async ({ url }) => {
     "",
     link(
       "GitHub repository",
-      new URL("https://github.com/githubnext/central-agentic-ops"),
+      new URL("https://github.com/githubnext/gh-aw-cao"),
       "Read the source, package manifests, workflow definitions, and contribution history.",
     ),
     "",

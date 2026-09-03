@@ -932,7 +932,7 @@ test('DLS-PAGE-014 DLS-PAGE-015 built-in packages page renders report-style mode
         runs: {
           source: 'runs',
           rows: [
-            { workflow: '.github/workflows/ambient-context-worker.md', run: '3', event: 'workflow_dispatch', 'run-title': 'Refresh ambient context', 'started-at': '2026-08-29T18:00:00Z', 'run-conclusion': 'success', 'rollout-mode': 'review', 'run-link': { relation: 'run', href: 'https://github.com/githubnext/central-agentic-ops/actions/runs/3', label: 'Run 3' } },
+            { workflow: '.github/workflows/ambient-context-worker.md', run: '3', event: 'workflow_dispatch', 'run-title': 'Refresh ambient context', 'started-at': '2026-08-29T18:00:00Z', 'run-conclusion': 'success', 'rollout-mode': 'review', 'run-link': { relation: 'run', href: 'https://github.com/githubnext/gh-aw-cao/actions/runs/3', label: 'Run 3' } },
             { workflow: '.github/workflows/aw-maintenance.md', run: '1', 'started-at': '2026-08-28T10:00:00Z', 'run-conclusion': 'success', 'rollout-mode': 'review' },
             { workflow: '.github/workflows/aw-maintenance.md', run: '2', 'started-at': '2026-08-29T10:00:00Z', 'run-conclusion': 'failure', 'rollout-mode': 'live' }
           ],
@@ -1024,7 +1024,7 @@ test('DLS-PAGE-014 DLS-PAGE-015 built-in packages page renders report-style mode
   const packageDispatchRows = page.locator('[data-page-id="package-dispatches"] .custom-table tbody tr');
   await expect(packageDispatchRows).toHaveCount(1);
   await expect(packageDispatchRows).toContainText('Refresh ambient context');
-  await expect(packageDispatchRows.locator('a')).toHaveAttribute('href', 'https://github.com/githubnext/central-agentic-ops/actions/runs/3');
+  await expect(packageDispatchRows.locator('a')).toHaveAttribute('href', 'https://github.com/githubnext/gh-aw-cao/actions/runs/3');
 
   await page.getByRole('navigation', { name: 'Ambient Context views' }).getByRole('link', { name: 'Reports' }).click();
   await expect(page).toHaveURL(/#page-package-reports\?package=ambient-context$/);
@@ -1230,7 +1230,7 @@ test('DLS-SAFE-004 DLS-SAFE-007 DLS-SAFE-008 DLS-SAFE-010 built-in findings page
         dashboard: {
           id: 'security-dashboard',
           title: 'Security Dashboard',
-          repository: 'githubnext/central-agentic-ops',
+          repository: 'githubnext/gh-aw-cao',
           pages: [
             {
               id: 'findings',
@@ -1772,7 +1772,7 @@ test('workflow page template follows its JSON-declared route and renders attribu
         dashboard: {
           id: 'workflow-route',
           title: 'Central Agentic Ops',
-          repository: 'githubnext/central-agentic-ops',
+          repository: 'githubnext/gh-aw-cao',
           pages: [
             {
               id: 'repositories',
@@ -1895,7 +1895,7 @@ test('workflow page template follows its JSON-declared route and renders attribu
           rows: [{
             organization: 'customer',
             repository: 'target',
-            'runtime-repository': 'githubnext/central-agentic-ops',
+            'runtime-repository': 'githubnext/gh-aw-cao',
             workflow: '.github/workflows/ambient-context.md',
             'workflow-name': 'Ambient Context',
             'safe-output': 'report-1',
@@ -1923,7 +1923,7 @@ test('workflow page template follows its JSON-declared route and renders attribu
               'started-at': '2026-08-31T20:00:00Z',
               'run-link': {
                 relation: 'run',
-                href: 'https://github.com/githubnext/central-agentic-ops/actions/runs/102',
+                href: 'https://github.com/githubnext/gh-aw-cao/actions/runs/102',
                 label: 'View run 102'
               }
             },
@@ -1947,7 +1947,7 @@ test('workflow page template follows its JSON-declared route and renders attribu
 
   await expect(page.getByRole('heading', { level: 1 })).toHaveText('Ambient Context');
   await expect(page.locator('[data-breadcrumb-root]')).toHaveText('Repositories');
-  await expect(page.locator('[data-breadcrumb-dashboard]')).toHaveText('githubnext/central-agentic-ops');
+  await expect(page.locator('[data-breadcrumb-dashboard]')).toHaveText('githubnext/gh-aw-cao');
   await expect(page.locator('.workflow-identity')).toContainText('.github/workflows/ambient-context.md');
   await expect(page.getByRole('navigation', { name: '.github/workflows/ambient-context.md views' })).toContainText('InsightsReportsRuns');
   await expect(page.locator('#page-workflow-detail .custom-table')).toContainText('Debug ambient context workflow failure');
@@ -2073,7 +2073,7 @@ test('workflow runtime route renders JSON-declared workflow insights', async ({ 
   ]);
   await expect(page.getByRole('link', { name: 'View authored workflow' })).toHaveAttribute(
     'href',
-    'https://github.com/githubnext/central-agentic-ops/blob/HEAD/.github/workflows/multi-device-docs-tester.md'
+    'https://github.com/githubnext/gh-aw-cao/blob/HEAD/.github/workflows/multi-device-docs-tester.md'
   );
   await expect(page.locator('.workflow-runtime-metrics')).toContainText('1');
   await expect(page.locator('.workflow-runtime-metrics')).toContainText('962.7 AIC');
@@ -2137,7 +2137,7 @@ test('outcome page template follows its JSON-declared hash query route in browse
             'observed-at': '2026-08-31T01:49:00Z',
             'external-link': {
               relation: 'external',
-              href: 'https://github.com/githubnext/central-agentic-ops/issues/403',
+              href: 'https://github.com/githubnext/gh-aw-cao/issues/403',
               label: 'View output'
             }
           }]
@@ -2149,7 +2149,7 @@ test('outcome page template follows its JSON-declared hash query route in browse
 
   await expect(page.getByRole('heading', { level: 1 })).toHaveText('Parity verification sweep');
   await expect(page.locator('[data-page-title-link]')).toHaveText('#403');
-  await expect(page.locator('[data-page-title-link]')).toHaveAttribute('href', 'https://github.com/githubnext/central-agentic-ops/issues/403');
+  await expect(page.locator('[data-page-title-link]')).toHaveAttribute('href', 'https://github.com/githubnext/gh-aw-cao/issues/403');
   await expect(page.locator('.overview-header [data-page-description]')).toHaveText('Daily review · Pull Request · Closed');
   await expect(page.locator('.outcome-detail')).toHaveAttribute('data-outcome', 'outcome-1');
   await expect(page.locator('.discussion-post')).toContainText('All checks passed.');

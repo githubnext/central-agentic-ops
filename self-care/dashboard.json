@@ -4,7 +4,7 @@
     "id": "self-care-dashboard",
     "title": "SelfCare",
     "description": "Track dashboard build-time investigations, recommendations, and matured speed attainment.",
-    "repository": "githubnext/central-agentic-ops",
+    "repository": "githubnext/gh-aw-cao",
     "pages": [
       {
         "id": "self-care-dashboard",

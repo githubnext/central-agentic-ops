@@ -163,8 +163,8 @@ describe('Runtime dashboard view', () => {
       runs: {
         source: 'runs',
         rows: [
-          { organization: 'githubnext', repository: 'central-agentic-ops', workflow: '.github/workflows/dependabot.md', run: '10', 'run-title': 'Dependabot review', 'started-at': '2026-08-30T10:00:00Z', 'ended-at': '2026-08-30T10:05:00Z', 'run-status': 'completed', 'run-conclusion': 'action-required', 'run-link': { relation: 'run', href: 'https://github.com/githubnext/central-agentic-ops/actions/runs/10', label: 'View run 10' } },
-          { organization: 'githubnext', repository: 'central-agentic-ops', workflow: '.github/workflows/dependabot-worker.md', run: '11', 'run-title': 'Update train', 'started-at': '2026-08-30T10:01:00Z', 'ended-at': '2026-08-30T10:04:00Z', 'run-status': 'completed', 'run-conclusion': 'failure', 'run-link': { relation: 'run', href: 'https://github.com/githubnext/central-agentic-ops/actions/runs/11', label: 'View run 11' } }
+          { organization: 'githubnext', repository: 'central-agentic-ops', workflow: '.github/workflows/dependabot.md', run: '10', 'run-title': 'Dependabot review', 'started-at': '2026-08-30T10:00:00Z', 'ended-at': '2026-08-30T10:05:00Z', 'run-status': 'completed', 'run-conclusion': 'action-required', 'run-link': { relation: 'run', href: 'https://github.com/githubnext/gh-aw-cao/actions/runs/10', label: 'View run 10' } },
+          { organization: 'githubnext', repository: 'central-agentic-ops', workflow: '.github/workflows/dependabot-worker.md', run: '11', 'run-title': 'Update train', 'started-at': '2026-08-30T10:01:00Z', 'ended-at': '2026-08-30T10:04:00Z', 'run-status': 'completed', 'run-conclusion': 'failure', 'run-link': { relation: 'run', href: 'https://github.com/githubnext/gh-aw-cao/actions/runs/11', label: 'View run 11' } }
         ],
         metadata
       },

@@ -694,8 +694,8 @@ describe('presenter built-in and custom pages', () => {
         runs: {
           source: 'runs',
           rows: [
-            { workflow: '.github/workflows/daily.md', run: '101', 'run-conclusion': 'action-required', 'started-at': '2026-08-31T04:00:00Z', 'run-link': { relation: 'run', href: 'https://github.com/githubnext/central-agentic-ops/actions/runs/101', label: 'View run 101' } },
-            { workflow: '.github/workflows/daily.md', run: '102', 'run-conclusion': 'action-required', 'started-at': '2026-08-31T05:00:00Z', 'run-link': { relation: 'run', href: 'https://github.com/githubnext/central-agentic-ops/actions/runs/102', label: 'View run 102' } }
+            { workflow: '.github/workflows/daily.md', run: '101', 'run-conclusion': 'action-required', 'started-at': '2026-08-31T04:00:00Z', 'run-link': { relation: 'run', href: 'https://github.com/githubnext/gh-aw-cao/actions/runs/101', label: 'View run 101' } },
+            { workflow: '.github/workflows/daily.md', run: '102', 'run-conclusion': 'action-required', 'started-at': '2026-08-31T05:00:00Z', 'run-link': { relation: 'run', href: 'https://github.com/githubnext/gh-aw-cao/actions/runs/102', label: 'View run 102' } }
           ],
           metadata
         },
@@ -707,7 +707,7 @@ describe('presenter built-in and custom pages', () => {
             'finding-kind': 'authored-warning',
             'finding-summary': '<img src=x onerror=alert(1)>',
             'observed-at': '2026-08-31T05:00:00Z',
-            'external-link': { relation: 'external', href: 'https://github.com/githubnext/central-agentic-ops/issues/1', label: 'View warning output' }
+            'external-link': { relation: 'external', href: 'https://github.com/githubnext/gh-aw-cao/issues/1', label: 'View warning output' }
           }],
           metadata
         },
@@ -769,13 +769,13 @@ describe('presenter built-in and custom pages', () => {
     /** @param {string} run */
     const evidenceLink = (run) => ({
       relation: 'evidence',
-      href: `https://github.com/githubnext/central-agentic-ops/actions/runs/${run}`,
+      href: `https://github.com/githubnext/gh-aw-cao/actions/runs/${run}`,
       label: `View run ${run}`
     });
     /** @param {string} run */
     const runLink = (run) => ({
       relation: 'run',
-      href: `https://github.com/githubnext/central-agentic-ops/actions/runs/${run}`,
+      href: `https://github.com/githubnext/gh-aw-cao/actions/runs/${run}`,
       label: `View run ${run}`
     });
     const rendered = renderDashboard({
@@ -914,7 +914,7 @@ describe('presenter built-in and custom pages', () => {
               'safe-output': 'outcome-1',
               'outcome-state': 'pending',
               'observed-at': '2026-08-31T04:15:00Z',
-              'external-link': { relation: 'external', href: 'https://github.com/githubnext/central-agentic-ops/issues/1', label: 'View pending output' }
+              'external-link': { relation: 'external', href: 'https://github.com/githubnext/gh-aw-cao/issues/1', label: 'View pending output' }
             },
             { 'safe-output': 'outcome-2', 'outcome-state': 'accepted', 'observed-at': '2026-08-30T04:15:00Z' }
           ],
@@ -952,7 +952,7 @@ describe('presenter built-in and custom pages', () => {
       'Open output',
       'Experiment readiness'
     ]);
-    expect(signals[3]?.querySelector('a')?.getAttribute('href')).toBe('https://github.com/githubnext/central-agentic-ops/issues/1');
+    expect(signals[3]?.querySelector('a')?.getAttribute('href')).toBe('https://github.com/githubnext/gh-aw-cao/issues/1');
     expect(signals[4]?.querySelector('a')?.getAttribute('href')).toBe('#page-experiments');
 
     const tables = page?.querySelectorAll('.custom-table') ?? [];
@@ -2437,7 +2437,7 @@ describe('presenter built-in and custom pages', () => {
     expect(/** @type {HTMLElement | null} */ (rendered.querySelector('#page-coverage'))?.hidden).toBe(false);
     expect(rendered.querySelector('#page-title')?.textContent).toBe('Coverage diagnostics');
     expect(rendered.querySelector('[data-page-description]')?.textContent).toBe(
-      'Reporting coverage gaps for the configured githubnext/central-agentic-ops repository.'
+      'Reporting coverage gaps for the configured githubnext/gh-aw-cao repository.'
     );
     expect(rendered.querySelector('[data-breadcrumb-root]')?.textContent).toBe('Overview');
     expect(/** @type {HTMLElement | null} */ (rendered.querySelector('[data-breadcrumb-dashboard]'))?.hidden).toBe(true);

@@ -94,7 +94,7 @@ describe('data view renderer', () => {
         grader: 'daily-value',
         run: '42',
         'run-link': {
-          href: 'https://github.com/githubnext/central-agentic-ops/actions/runs/42',
+          href: 'https://github.com/githubnext/gh-aw-cao/actions/runs/42',
           label: 'Run 42'
         }
       }],
@@ -110,7 +110,7 @@ describe('data view renderer', () => {
 
     const runLink = rendered?.querySelector('tbody td:nth-child(2) a');
     expect(runLink?.textContent).toBe('42');
-    expect(runLink?.getAttribute('href')).toBe('https://github.com/githubnext/central-agentic-ops/actions/runs/42');
+    expect(runLink?.getAttribute('href')).toBe('https://github.com/githubnext/gh-aw-cao/actions/runs/42');
 
     const linkedFirstColumn = renderDataView('table', {
       ...context,
@@ -149,8 +149,8 @@ describe('data view renderer', () => {
       },
       sourceName: 'workflow-runs',
       rows: [
-        { run: '42', 'run-conclusion': 'failure', repository: 'githubnext/central-agentic-ops' },
-        { run: '43', 'run-conclusion': 'success', repository: 'githubnext/central-agentic-ops' }
+        { run: '42', 'run-conclusion': 'failure', repository: 'githubnext/gh-aw-cao' },
+        { run: '43', 'run-conclusion': 'success', repository: 'githubnext/gh-aw-cao' }
       ],
       metadata,
       contextDetails: [],
@@ -167,7 +167,7 @@ describe('data view renderer', () => {
     buttons?.[0]?.dispatchEvent(new MouseEvent('click'));
     await Promise.resolve();
     expect(writeText).toHaveBeenCalledWith(
-      'Investigate this failed workflow run.\n\nContext:\nRun: 42\nRun Conclusion: failure\nRepository: githubnext/central-agentic-ops'
+      'Investigate this failed workflow run.\n\nContext:\nRun: 42\nRun Conclusion: failure\nRepository: githubnext/gh-aw-cao'
     );
   });
 

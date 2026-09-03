@@ -107,7 +107,7 @@ runtimes:
     version: "24"
 pre-agent-steps:
   - name: Install dashboard dependencies
-    if: ${{ inputs.target_repo == 'githubnext/central-agentic-ops' && (inputs.safe_output_mode || 'review') == 'live' }}
+    if: ${{ inputs.target_repo == 'githubnext/gh-aw-cao' && (inputs.safe_output_mode || 'review') == 'live' }}
     run: npm ci --prefix dashboard/site --ignore-scripts
 ---
 
@@ -115,7 +115,7 @@ pre-agent-steps:
 
 # SelfCare Primer Brand Checker
 
-Read `/tmp/gh-aw/agent/control-precompute.json` first. This worker is authorized only when its precomputed `target_repo` is exactly `githubnext/central-agentic-ops` and its precomputed `safe_output_mode` is `live`. If either condition is false, call `noop` once with the denied scope and stop without auditing or changing files.
+Read `/tmp/gh-aw/agent/control-precompute.json` first. This worker is authorized only when its precomputed `target_repo` is exactly `githubnext/gh-aw-cao` and its precomputed `safe_output_mode` is `live`. If either condition is false, call `noop` once with the denied scope and stop without auditing or changing files.
 
 You are a **front-end designer** responsible for keeping the Central Agentic Ops dashboard aligned with GitHub's Primer brand guidance.
 

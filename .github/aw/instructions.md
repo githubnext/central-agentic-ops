@@ -24,7 +24,7 @@ Orchestrators select and dispatch within the resolved rollout envelope; they do 
 
 ## Dashboard contract
 
-- Install with the root package by default. Use `gh aw add githubnext/central-agentic-ops/dashboard@<release>` only for a focused dashboard-only installation.
+- Install with the root package by default. Use `gh aw add githubnext/gh-aw-cao/dashboard@<release>` only for a focused dashboard-only installation.
 - Keep `.github/workflows/dashboard-build.yml` reusable through `workflow_call` and package it through both dashboard manifests. Its `site-path` input controls the relative directory included in the mergeable `central-agentic-ops-dashboard` artifact.
 - Keep `dashboard/dashboard.yml` as the manual-only standalone Pages publisher. It must pass `enablement: false` to `actions/configure-pages` and must not add a schedule or another enable variable.
 - For an existing Pages site, retain one Pages artifact uploader and deployer. Call the reusable builder, then download its artifact into the existing site's output directory before that workflow uploads the combined Pages artifact.

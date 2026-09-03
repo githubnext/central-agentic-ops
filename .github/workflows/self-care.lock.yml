@@ -17,14 +17,14 @@
 #  \/  \/ \___/|_| |_|\_\|_| |_|\___/ \_/\_/ |___/
 #
 #
-# To update this file, edit githubnext/central-agentic-ops@a4b937e2ee4e540d3ccce1377f8943315670f33d and run:
+# To update this file, edit githubnext/gh-aw-cao@a4b937e2ee4e540d3ccce1377f8943315670f33d and run:
 #   gh aw compile
 # Not all edits will cause changes to this file.
 #
 # For more information: https://github.github.com/gh-aw/introduction/overview/
 #
 #
-# Source: githubnext/central-agentic-ops@a4b937e2ee4e540d3ccce1377f8943315670f33d
+# Source: githubnext/gh-aw-cao@a4b937e2ee4e540d3ccce1377f8943315670f33d
 #
 # Resolved workflow manifest:
 #   Imports:
@@ -185,7 +185,7 @@ jobs:
           GH_AW_INFO_AWMG_VERSION: ""
           GH_AW_INFO_FIREWALL_TYPE: "squid"
           GH_AW_INFO_AGENT_RUNTIME: ""
-          GH_AW_INFO_FRONTMATTER_SOURCE: "githubnext/central-agentic-ops@a4b937e2ee4e540d3ccce1377f8943315670f33d"
+          GH_AW_INFO_FRONTMATTER_SOURCE: "githubnext/gh-aw-cao@a4b937e2ee4e540d3ccce1377f8943315670f33d"
           GH_AW_INFO_BODY_MODIFIED: "false"
           GH_AW_COMPILED_STRICT: "true"
         uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
@@ -1616,7 +1616,7 @@ jobs:
           GH_AW_AGENT_OUTPUT: ${{ steps.setup-agent-output-env.outputs.GH_AW_AGENT_OUTPUT }}
           GH_AW_NOOP_MAX: "1"
           GH_AW_WORKFLOW_NAME: "SelfCare"
-          GH_AW_WORKFLOW_SOURCE: "githubnext/central-agentic-ops@a4b937e2ee4e540d3ccce1377f8943315670f33d"
+          GH_AW_WORKFLOW_SOURCE: "githubnext/gh-aw-cao@a4b937e2ee4e540d3ccce1377f8943315670f33d"
           GH_AW_RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
           GH_AW_AGENT_CONCLUSION: ${{ needs.agent.result }}
           GH_AW_NOOP_REPORT_AS_ISSUE: "false"
@@ -1639,7 +1639,7 @@ jobs:
           GH_AW_AGENT_OUTPUT: ${{ steps.setup-agent-output-env.outputs.GH_AW_AGENT_OUTPUT }}
           GH_AW_MISSING_TOOL_CREATE_ISSUE: "true"
           GH_AW_WORKFLOW_NAME: "SelfCare"
-          GH_AW_WORKFLOW_SOURCE: "githubnext/central-agentic-ops@a4b937e2ee4e540d3ccce1377f8943315670f33d"
+          GH_AW_WORKFLOW_SOURCE: "githubnext/gh-aw-cao@a4b937e2ee4e540d3ccce1377f8943315670f33d"
         with:
           github-token: ${{ steps.safe-outputs-app-token.outputs.token || secrets.GH_AW_GITHUB_TOKEN || secrets.GITHUB_TOKEN }}
           script: |
@@ -1656,7 +1656,7 @@ jobs:
           GH_AW_AGENT_OUTPUT: ${{ steps.setup-agent-output-env.outputs.GH_AW_AGENT_OUTPUT }}
           GH_AW_REPORT_INCOMPLETE_CREATE_ISSUE: "true"
           GH_AW_WORKFLOW_NAME: "SelfCare"
-          GH_AW_WORKFLOW_SOURCE: "githubnext/central-agentic-ops@a4b937e2ee4e540d3ccce1377f8943315670f33d"
+          GH_AW_WORKFLOW_SOURCE: "githubnext/gh-aw-cao@a4b937e2ee4e540d3ccce1377f8943315670f33d"
         with:
           github-token: ${{ steps.safe-outputs-app-token.outputs.token || secrets.GH_AW_GITHUB_TOKEN || secrets.GITHUB_TOKEN }}
           script: |
@@ -1673,7 +1673,7 @@ jobs:
         env:
           GH_AW_AGENT_OUTPUT: ${{ steps.setup-agent-output-env.outputs.GH_AW_AGENT_OUTPUT }}
           GH_AW_WORKFLOW_NAME: "SelfCare"
-          GH_AW_WORKFLOW_SOURCE: "githubnext/central-agentic-ops@a4b937e2ee4e540d3ccce1377f8943315670f33d"
+          GH_AW_WORKFLOW_SOURCE: "githubnext/gh-aw-cao@a4b937e2ee4e540d3ccce1377f8943315670f33d"
           GH_AW_RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
           GH_AW_AGENT_CONCLUSION: ${{ needs.agent.result }}
           GH_AW_WORKFLOW_ID: "self-care"
@@ -1725,7 +1725,7 @@ jobs:
         env:
           GH_AW_AGENT_OUTPUT: ${{ steps.setup-agent-output-env.outputs.GH_AW_AGENT_OUTPUT }}
           GH_AW_WORKFLOW_NAME: "SelfCare"
-          GH_AW_WORKFLOW_SOURCE: "githubnext/central-agentic-ops@a4b937e2ee4e540d3ccce1377f8943315670f33d"
+          GH_AW_WORKFLOW_SOURCE: "githubnext/gh-aw-cao@a4b937e2ee4e540d3ccce1377f8943315670f33d"
           GH_AW_RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
           GH_AW_REPORT_FAILED_JOBS: "true"
         with:
@@ -1950,7 +1950,7 @@ jobs:
       GH_AW_RUNTIME_FEATURES: ${{ vars.GH_AW_RUNTIME_FEATURES }}
       GH_AW_WORKFLOW_ID: "self-care"
       GH_AW_WORKFLOW_NAME: "SelfCare"
-      GH_AW_WORKFLOW_SOURCE: "githubnext/central-agentic-ops@a4b937e2ee4e540d3ccce1377f8943315670f33d"
+      GH_AW_WORKFLOW_SOURCE: "githubnext/gh-aw-cao@a4b937e2ee4e540d3ccce1377f8943315670f33d"
     outputs:
       app_token_minting_failed: ${{ steps.safe-outputs-app-token.outcome == 'failure' }}
       code_push_failure_count: ${{ steps.process_safe_outputs.outputs.code_push_failure_count }}

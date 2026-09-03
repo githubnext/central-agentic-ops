@@ -87,7 +87,7 @@ safe-outputs:
     max: 5
   threat-detection: false
 
-source: githubnext/central-agentic-ops@a4b937e2ee4e540d3ccce1377f8943315670f33d
+source: githubnext/gh-aw-cao@a4b937e2ee4e540d3ccce1377f8943315670f33d
 ---
 
 {{#runtime-import? .github/cao/self-care.md}}
@@ -96,7 +96,7 @@ source: githubnext/central-agentic-ops@a4b937e2ee4e540d3ccce1377f8943315670f33d
 
 ## Discovery
 
-This operation is exclusively for `githubnext/central-agentic-ops`. Select that repository only when its precomputed candidate mode is `live`. Treat every other repository and every non-live candidate as ineligible, regardless of apparent need, and record the skip reason in the standard report.
+This operation is exclusively for `githubnext/gh-aw-cao`. Select that repository only when its precomputed candidate mode is `live`. Treat every other repository and every non-live candidate as ineligible, regardless of apparent need, and record the skip reason in the standard report.
 
 The single eligible repository contains the documentation site and dashboard maintained by the three workers. Do not discover, rank, or dispatch work to any other repository.
 

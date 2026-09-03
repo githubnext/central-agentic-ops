@@ -22,7 +22,7 @@ const workflows = [
     'rollout-mode': 'review',
     'workflow-link': {
       relation: 'workflow',
-      href: 'https://github.com/githubnext/central-agentic-ops/blob/HEAD/.github/workflows/ambient-context.md',
+      href: 'https://github.com/githubnext/gh-aw-cao/blob/HEAD/.github/workflows/ambient-context.md',
       label: 'View Ambient Context',
       'dashboard-href': '#page-workflow-runtime?workflow=githubnext%2Fcentral-agentic-ops%3A.github%2Fworkflows%2Fambient-context.md',
       'dashboard-label': 'View Ambient Context workflow dashboard'

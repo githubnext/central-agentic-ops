@@ -647,15 +647,15 @@ jobs:
         env:
           GH_AW_SKILL_DIR: ".pi/skills"
         run: bash "${RUNNER_TEMP}/gh-aw/actions/restore_inline_skills.sh"
-      - if: ${{ inputs.target_repo == 'githubnext/central-agentic-ops' && (inputs.safe_output_mode || 'review') == 'live' }}
+      - if: ${{ inputs.target_repo == 'githubnext/gh-aw-cao' && (inputs.safe_output_mode || 'review') == 'live' }}
         name: Install documentation dependencies
         run: timeout 10m npm ci --ignore-scripts
-      - if: ${{ inputs.target_repo == 'githubnext/central-agentic-ops' && (inputs.safe_output_mode || 'review') == 'live' }}
+      - if: ${{ inputs.target_repo == 'githubnext/gh-aw-cao' && (inputs.safe_output_mode || 'review') == 'live' }}
         name: Build documentation
         run: timeout 10m npm run docs:build
       - env:
           EXPR_GITHUB_WORKSPACE: ${{ github.workspace }}
-        if: ${{ inputs.target_repo == 'githubnext/central-agentic-ops' && (inputs.safe_output_mode || 'review') == 'live' }}
+        if: ${{ inputs.target_repo == 'githubnext/gh-aw-cao' && (inputs.safe_output_mode || 'review') == 'live' }}
         name: Fetch the axe-core accessibility engine
         run: |
           set -euo pipefail
@@ -667,12 +667,12 @@ jobs:
           rm -rf package axe-core-4.13.0.tgz
       - env:
           EXPR_GITHUB_WORKSPACE: ${{ github.workspace }}
-        if: ${{ inputs.target_repo == 'githubnext/central-agentic-ops' && (inputs.safe_output_mode || 'review') == 'live' }}
+        if: ${{ inputs.target_repo == 'githubnext/gh-aw-cao' && (inputs.safe_output_mode || 'review') == 'live' }}
         name: Configure Playwright CLI launch options
         run: "mkdir -p \"$EXPR_GITHUB_WORKSPACE/.playwright\"\ncat > \"$EXPR_GITHUB_WORKSPACE/.playwright/cli.config.json\" <<'EOF'\n{\n  \"browser\": {\n    \"launchOptions\": {\n      \"chromiumSandbox\": false,\n      \"args\": [\"--no-sandbox\", \"--disable-setuid-sandbox\"]\n    }\n  }\n}\nEOF\n"
       - env:
           EXPR_GITHUB_WORKSPACE: ${{ github.workspace }}
-        if: ${{ inputs.target_repo == 'githubnext/central-agentic-ops' && (inputs.safe_output_mode || 'review') == 'live' }}
+        if: ${{ inputs.target_repo == 'githubnext/gh-aw-cao' && (inputs.safe_output_mode || 'review') == 'live' }}
         name: Playwright browser launch preflight
         run: "set +e\nplaywright-cli -s=preflight-chrome open about:blank \\\n  --browser=chrome \\\n  --config=\"$EXPR_GITHUB_WORKSPACE/.playwright/cli.config.json\" \\\n  > \"$EXPR_GITHUB_WORKSPACE/.playwright/preflight-chrome.log\" 2>&1\nPREFLIGHT_STATUS=$?\nplaywright-cli -s=preflight-chrome close >> \"$EXPR_GITHUB_WORKSPACE/.playwright/preflight-chrome.log\" 2>&1\nset -e\nif [ $PREFLIGHT_STATUS -ne 0 ]; then\n  echo \"Playwright preflight failed; agent will report the infrastructure blocker.\"\nfi"
 
