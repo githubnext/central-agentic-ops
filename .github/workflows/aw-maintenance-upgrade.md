@@ -312,6 +312,8 @@ If the command fails or produces no diff despite `needs_upgrade` being `true`, r
 
 Create exactly one issue in `safe_output_repo` targeting `target_repo`:
 
+Provide only the unprefixed subject as the safe-output title. The configured `title-prefix` is added automatically; do not repeat it or add a semantically equivalent category prefix.
+
 ```
 - **Repository**: `<owner/repo>`
 - **Current pinned gh-aw version**: `<target_pinned_version>` (`<target_pinned_manifest>`)

@@ -161,6 +161,8 @@ For each requirement record `EVIDENCE_SUFFICIENT`, `GAP_FOUND`, `HUMAN_REVIEW_RE
 
 Create one issue with the verified baseline, assessed product assumptions, requirement matrix, cross-cutting gaps, prioritized remediation backlog, inaccessible evidence, and explicit human-review questions.
 
+Provide only the unprefixed subject as the safe-output title. The configured `title-prefix` is added automatically; do not repeat it or add a semantically equivalent category prefix.
+
 Immediately after the issue heading, include exactly one marker in this form, replacing the target and SHA with the analyzed repository and `git -C target rev-parse HEAD` result:
 
 `<!-- operational-value: domain=security-requirements target=OWNER/REPO target-sha=40_HEX_SHA -->`

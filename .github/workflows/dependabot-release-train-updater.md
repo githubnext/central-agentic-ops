@@ -673,6 +673,8 @@ Upload an artifact when the analysis is too large for a comment or PR body. Good
 
 At the end of every run, produce one primary safe-output outcome:
 
+When creating a pull request or issue, provide only the unprefixed subject as the safe-output title. The configured `title-prefix` is added automatically; do not repeat it or add a semantically equivalent category prefix.
+
 - `create-pull-request` if you made a reviewable dependency update.
 - `add-comment` if you analyzed an existing PR/issue.
 - `create-issue` if human follow-up is required and no PR/comment is sufficient.

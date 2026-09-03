@@ -140,6 +140,8 @@ Treat temporary Pages propagation, API limits, missing optional telemetry, and e
 
 Call `create_issue` exactly once after the deterministic review and persona assessments complete. Consolidate verified defects, persona answers, efficiency grades, and improvement suggestions. If the dashboard or browser is unavailable, or fewer than two persona assessments complete after retry, call `noop` with the blocker instead.
 
+Provide only the unprefixed subject as the safe-output title. The configured `title-prefix` is added automatically; do not repeat it or add a semantically equivalent category prefix.
+
 Use `###` headings only and structure the issue as:
 
 - an unheaded opening summary with completion status, verified defect count, persona efficiency grades, and prioritized next actions;

@@ -150,7 +150,7 @@ function renderPackageStatusGridElement(context) {
             h(
               'span',
               { className: 'package-status-title' },
-              h('strong', null, stringValue(row.title)),
+              h('strong', null, octicon(stringValue(row.icon) || 'package'), h('span', null, stringValue(row.title))),
               renderExperimentalLabel(row.experimental === true)
             ),
             h('span', { className: 'package-status-state' }, stringValue(row.inventory || 'Needs attention')),

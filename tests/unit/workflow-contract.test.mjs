@@ -557,6 +557,18 @@ test("issue-creating workers use package and worker title prefixes", () => {
   }
 });
 
+test("workers with title prefixes provide unprefixed safe-output titles", () => {
+  for (const name of readdirSync(workflowsDirectory).filter((entry) => entry.endsWith(".md"))) {
+    const source = workflow(name);
+    if (!/^\s+role: worker$/m.test(source) || !/^\s+title-prefix:/m.test(source)) continue;
+
+    assert.match(source, /unprefixed/, name);
+    assert.match(source, /configured `title-prefix`/, name);
+    assert.match(source, /added automatically/, name);
+    assert.match(source, /semantically equivalent category prefix/, name);
+  }
+});
+
 test("workers inherit human-first progressive report disclosure", () => {
   const packageSkill = readFileSync(join(root, ".github", "skills", "create-ops-package", "SKILL.md"), "utf8");
   const sharedControl = workflow("shared/control.md");
@@ -635,7 +647,7 @@ test("deterministic workflows pin third-party actions by commit SHA", () => {
     join(".github", "workflows", "enterprise-canary.yml"),
     join(".github", "workflows", "enterprise-stress.yml"),
     join(".github", "workflows", "review-smoke.yml"),
-    join("activity", "activity.yml"),
+    join(".github", "workflows", "activity.yml"),
     join(".github", "workflows", "dashboard-build.yml"),
     join("dashboard", "dashboard.yml"),
   ]) {
@@ -2294,22 +2306,18 @@ test("Dashboard package supports embedded and explicit standalone deployment", (
 test("Activity package owns the shared workflow-run cache contract", () => {
   const rootManifest = parse(readFileSync(join(root, "aw.yml"), "utf8"));
   const activityManifest = parse(readFileSync(join(root, "activity", "aw.yml"), "utf8"));
-  const workflow = readFileSync(join(root, "activity", "activity.yml"), "utf8");
+  const workflow = readFileSync(join(root, ".github", "workflows", "activity.yml"), "utf8");
   const readme = readFileSync(join(root, "activity", "README.md"), "utf8");
 
   assert.equal(activityManifest.name, "Central Agentic Ops Activity");
   assert.equal(activityManifest.private, true);
   assert.equal(activityManifest.experimental, true);
-  assert.deepEqual(activityManifest.includes, [{
-    source: "activity.yml",
-    destination: ".github/workflows/activity.yml",
-    kind: "action-workflow",
-  }]);
+  assert.deepEqual(activityManifest.includes, [".github/workflows/activity.yml"]);
   assert.deepEqual(activityManifest.resources, [
     { source: "actions-log.mjs", destination: ".github/aw/activity/actions-log.mjs" },
     { source: "index.mjs", destination: ".github/aw/activity/index.mjs" },
   ]);
-  assert.ok(rootManifest.includes.some((entry) => entry.destination === ".github/workflows/activity.yml"));
+  assert.ok(rootManifest.includes.includes(".github/workflows/activity.yml"));
   assert.ok(rootManifest.resources.some((entry) => entry.destination === ".github/aw/activity/actions-log.mjs"));
   assert.ok(rootManifest.resources.some((entry) => entry.destination === ".github/aw/activity/index.mjs"));
   assert.match(workflow, /schedule:[\s\S]*?cron:/);

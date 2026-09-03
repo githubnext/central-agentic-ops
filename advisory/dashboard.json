@@ -12,7 +12,7 @@
         "title": "UK AI Advisory",
         "navigation-label": "UK AI advisory",
         "description": "Track resilience-review activation, frozen advisory reports, and explicit human acceptance of non-binding findings.",
-        "icon": "package",
+        "icon": "eye",
         "views": [
           {
             "id": "advisory-runs",

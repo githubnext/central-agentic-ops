@@ -3,6 +3,7 @@
  */
 
 import { h } from '../dom.js';
+import { octicon } from '../octicons.js';
 import { formatNumber, formatPercent } from '../view-formatters.js';
 import { titleCase } from './count-formatters.js';
 import { classifyUtilizationRatio, isFailureConclusion } from './run-classification.js';
@@ -129,7 +130,7 @@ function renderPackageSummaryRow(entry, summary) {
     h(
       'th',
       { scope: 'row' },
-      h('a', { href: packageInsightsHref(entry.id) }, entry.name),
+      h('a', { href: packageInsightsHref(entry.id) }, octicon(entry.icon), h('span', null, entry.name)),
       renderExperimentalLabel(entry.experimental)
     ),
     h('td', null, formatNumber(summary?.runs ?? 0)),
@@ -434,7 +435,7 @@ function renderUtilizationCard(entry, utilization, available, completeness) {
       h(
         'span',
         { className: 'package-utilization-identity' },
-        h('a', { href: packageInsightsHref(entry.id) }, h('strong', null, entry.name)),
+        h('a', { href: packageInsightsHref(entry.id) }, octicon(entry.icon), h('strong', null, entry.name)),
         renderExperimentalLabel(entry.experimental),
         scopeLabel ? h('small', null, scopeLabel) : null
       ),
@@ -661,6 +662,7 @@ function summarizePackages(workflows) {
       id,
       name: String(rows.find((row) => typeof row['package-name'] === 'string')?.['package-name'] ?? titleCase(id)),
       experimental: rows.some((row) => row['package-experimental'] === true),
+      icon: String(rows.find((row) => typeof row['package-icon'] === 'string')?.['package-icon'] ?? 'package'),
       organization: String(firstRow.organization ?? ''),
       repository: String(firstRow.repository ?? ''),
       completeAttemptAllowance: uniqueWorkflowAllowances.size > 0 ? summedAllowance : null,

@@ -545,6 +545,8 @@ When the estimate reaches 10 percent, continue to Step 5 and carry the arithmeti
 
 Create exactly one issue in the safe-output repository with this structure.
 
+Provide only the unprefixed subject as the safe-output title. The configured `title-prefix` is added automatically; do not repeat it or add a semantically equivalent category prefix.
+
 ### Ambient context health
 
 A compact table with lines, bytes, estimated tokens, days since last change, commits since last change, broken path count, broken command count, and cross-file conflict count. State plainly whether the file is within the size and freshness targets.

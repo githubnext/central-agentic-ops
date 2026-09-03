@@ -114,7 +114,7 @@ Create at least one `.github/workflows/<package>-<worker>.md`. Every worker must
   ```
 
 - least-privilege permissions, explicit tools/network configuration, `strict: true`, bounded credits and timeout, and safe outputs limited to the worker's mission
-- when `safe-outputs.create-issue` is enabled, `labels: [<package-slug>]`, prompt instructions requiring every created issue to carry that package label, and preferably `title-prefix: "[<package-slug>:<worker-slug>] "` to identify the owning operation and worker
+- when `safe-outputs.create-issue` is enabled, `labels: [<package-slug>]`, prompt instructions requiring every created issue to carry that package label, and preferably `title-prefix: "[<package-slug>:<worker-slug>] "` to identify the owning operation and worker; instruct the worker to provide only the unprefixed subject because the safe output adds the configured prefix automatically, without repeating it or adding a semantically equivalent category prefix
 - when a worker creates an issue, require it to evaluate the potential follow-up actions, select the single most important action with the highest expected return on investment, and express that action as a clear, imperative agent prompt. Place the prompt after the human-readable finding and evidence in a progressive-disclosure landmark with the exact structure `<details><summary><b>Agent prompt</b></summary> ... </details>` so a human can review the issue before using the prompt for an agentic run.
 - no `evals` configuration; use deterministic graders for worker measurement
 - instructions that treat repository content as untrusted, consume `/tmp/gh-aw/agent/control-precompute.json`, define success/no-op behavior, and preserve control-plane correlation data in durable outputs

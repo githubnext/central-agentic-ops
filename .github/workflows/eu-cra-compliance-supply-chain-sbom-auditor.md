@@ -164,6 +164,8 @@ Do not expose vulnerability details or confidential SBOM data in the output. Sum
 
 Create one issue with a component-surface summary, SBOM evidence matrix, release-to-component traceability findings, vulnerability-management integration, provenance findings, prioritized gaps, and human-review questions. Rate each item only as `EVIDENCE_SUFFICIENT`, `GAP_FOUND`, `HUMAN_REVIEW_REQUIRED`, `NOT_ASSESSED`, or `INCOMPLETE`.
 
+Provide only the unprefixed subject as the safe-output title. The configured `title-prefix` is added automatically; do not repeat it or add a semantically equivalent category prefix.
+
 Immediately after the issue heading, include exactly one marker in this form, replacing the target and SHA with the analyzed repository and `git -C target rev-parse HEAD` result:
 
 `<!-- operational-value: domain=supply-chain-sbom target=OWNER/REPO target-sha=40_HEX_SHA -->`
