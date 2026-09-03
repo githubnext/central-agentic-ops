@@ -1,0 +1,138 @@
+import { execFileSync } from "node:child_process";
+import { readFileSync } from "node:fs";
+import { dirname, join, posix, resolve } from "node:path";
+import { fileURLToPath, pathToFileURL } from "node:url";
+import { parse } from "yaml";
+
+const suites = [
+  {
+    name: "root",
+    manifest: "aw.yml",
+    testPattern: "root package",
+    prefixes: [
+      ".github/graders/ambient-context-",
+      ".github/graders/aw-failures-",
+      ".github/graders/dependabot-",
+      ".github/graders/optimization-",
+      ".github/workflows/shared/",
+    ],
+  },
+  {
+    name: "activity",
+    manifest: "activity/aw.yml",
+    testPattern: "focused activity package contract",
+    prefixes: [".github/workflows/activity."],
+  },
+  {
+    name: "EU CRA",
+    manifest: "eu-cra-compliance/aw.yml",
+    testPattern: "focused EU CRA package contract",
+    prefixes: [
+      ".github/graders/eu-cra-compliance",
+      ".github/workflows/eu-cra-compliance",
+      ".github/workflows/graders/eu-cra-compliance",
+      ".github/workflows/shared/",
+    ],
+  },
+  {
+    name: "Advisory",
+    manifest: "advisory/aw.yml",
+    testPattern: "focused Advisory package contract",
+    prefixes: [
+      ".github/workflows/advisory-",
+      ".github/workflows/shared/",
+      ".github/workflows/uk-ai-advisory.",
+    ],
+  },
+  {
+    name: "SelfCare",
+    manifest: "self-care/aw.yml",
+    testPattern: "focused SelfCare package contract",
+    prefixes: [
+      ".github/graders/self-care-",
+      ".github/workflows/self-care",
+      ".github/workflows/shared/",
+    ],
+  },
+  {
+    name: "Software Development Practices",
+    manifest: "software-development-practices/aw.yml",
+    testPattern: "focused Software Development Practices package contract",
+    prefixes: [
+      ".github/graders/software-development-practices-",
+      ".github/workflows/shared/",
+      ".github/workflows/software-development-practices",
+    ],
+  },
+  {
+    name: "dashboard",
+    manifest: "dashboard/aw.yml",
+    testPattern: "dashboard package contract|--force restores dashboard",
+    prefixes: [".github/workflows/dashboard-"],
+  },
+  {
+    name: "Dependabot",
+    manifest: "dependabot/aw.yml",
+    testPattern: "update replaces",
+    prefixes: [
+      ".github/graders/dependabot-",
+      ".github/workflows/dependabot",
+      ".github/workflows/shared/",
+    ],
+  },
+];
+
+function sourcePath(manifest, source) {
+  if (source.startsWith(".github/")) return source;
+  return posix.normalize(posix.join(posix.dirname(manifest), source));
+}
+
+function packageSources(root, suite) {
+  const manifest = parse(readFileSync(join(root, suite.manifest), "utf8"));
+  const sources = [suite.manifest];
+  for (const entry of [...(manifest.includes ?? []), ...(manifest.resources ?? [])]) {
+    sources.push(sourcePath(suite.manifest, typeof entry === "string" ? entry : entry.source));
+  }
+  return sources;
+}
+
+export function selectPackageLifecycleSuites(changedFiles, root = process.cwd()) {
+  if (changedFiles === null) return suites.map(({ name, testPattern }) => ({ name, "test-pattern": testPattern }));
+
+  const normalized = changedFiles.map((file) => file.replaceAll("\\", "/"));
+  if (normalized.some((file) => [
+    "scripts/package-lifecycle-matrix.mjs",
+    "tests/integration/package-lifecycle.test.mjs",
+  ].includes(file))) {
+    return selectPackageLifecycleSuites(null, root);
+  }
+  return suites
+    .filter((suite) => {
+      const packageDirectory = posix.dirname(suite.manifest);
+      const prefixes = packageDirectory === "."
+        ? suite.prefixes
+        : [`${packageDirectory}/`, ...suite.prefixes];
+      if (normalized.some((file) => file === suite.manifest || prefixes.some((prefix) => file.startsWith(prefix)))) {
+        return true;
+      }
+      const sources = new Set(packageSources(root, suite));
+      return normalized.some((file) => sources.has(file));
+    })
+    .map(({ name, testPattern }) => ({ name, "test-pattern": testPattern }));
+}
+
+function changedFiles(base, head, root) {
+  return execFileSync("git", ["diff", "--name-only", "--diff-filter=ACMR", base, head], {
+    cwd: root,
+    encoding: "utf8",
+  }).trim().split("\n").filter(Boolean);
+}
+
+const invokedPath = process.argv[1] && pathToFileURL(resolve(process.argv[1])).href;
+if (invokedPath === import.meta.url) {
+  const root = resolve(dirname(fileURLToPath(import.meta.url)), "..");
+  const files = process.argv[2] === "--all"
+    ? null
+    : changedFiles(process.argv[2], process.argv[3], root);
+  process.stdout.write(JSON.stringify({ include: selectPackageLifecycleSuites(files, root) }));
+}
