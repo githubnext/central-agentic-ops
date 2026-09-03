@@ -1,5 +1,5 @@
 ---
-name: "SelfCare / Code Improvement"
+name: "SelfCare / Code Quality"
 description: Grow the dashboard component library one reviewed improvement at a time
 intent: Grow the reusable dashboard component library by replacing evidenced UI duplication with tested components while preserving behavior.
 on:

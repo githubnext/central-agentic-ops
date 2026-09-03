@@ -88,7 +88,7 @@ done
 The package installs:
 
 1. the **Dependabot** orchestrator, which selects repositories;
-2. the **Dependabot / Release Train Updater** worker, which analyzes one selected repository;
+2. the **Dependabot / Release Trains** worker, which analyzes one selected repository;
 3. shared authentication, routing, and fail-closed controls;
 4. generated `.lock.yml` workflows that GitHub Actions executes.
 

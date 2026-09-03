@@ -2,15 +2,15 @@
   "language-version": "0.1.0",
   "dashboard": {
     "id": "eu-cra-compliance-dashboard",
-    "title": "EU CRA Advisor",
+    "title": "EU CRA",
     "description": "Track evidence-gathering runs, non-binding CRA reports, and explicit human acceptance across each assessment domain.",
     "repository": "githubnext/gh-aw-cao",
     "pages": [
       {
         "id": "eu-cra-compliance-dashboard",
         "kind": "custom",
-        "title": "EU CRA Advisor",
-        "navigation-label": "EU CRA advisor",
+        "title": "EU CRA",
+        "navigation-label": "EU CRA",
         "description": "Track evidence-gathering runs, non-binding CRA reports, and explicit human acceptance across each assessment domain.",
         "icon": "shield",
         "views": [

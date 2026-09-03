@@ -2,7 +2,7 @@
 emoji: ":mark-github:"
 description: "Creates evidence-backed repository improvement guidance from the current GitHub Well-Architected framework."
 intent: Help repository maintainers prioritize observable improvements across GitHub Well-Architected guidance without making unsupported alignment claims.
-name: "Software Development Practices Advisor / GitHub Well-Architected"
+name: "Dev Practices / Well-Architected"
 max-ai-credits: 400
 max-daily-ai-credits: -1
 
@@ -118,7 +118,7 @@ timeout-minutes: 30
 
 {{#runtime-import? .github/cao/software-development-practices.md}}
 
-# Software Development Practices Advisor / GitHub Well-Architected
+# Dev Practices / Well-Architected
 
 Review one repository against current official GitHub Well-Architected guidance and create one prioritized, evidence-backed improvement issue when useful.
 

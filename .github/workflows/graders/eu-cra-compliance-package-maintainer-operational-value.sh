@@ -4,7 +4,7 @@ set -euo pipefail
 export LC_ALL=C
 
 REPOSITORY="githubnext/gh-aw-cao"
-WORKFLOW_NAME="EU CRA Advisor / Package Maintainer"
+WORKFLOW_NAME="EU CRA / Maintenance"
 LEDGER_PATH="eu-cra-compliance/implementation-status.md"
 MATURATION_SECONDS=2592000
 
@@ -17,7 +17,7 @@ definition() {
   "schemaVersion": 4,
   "grader": "operational-value",
   "repository": "githubnext/gh-aw-cao",
-  "workflowName": "EU CRA Advisor / Package Maintainer",
+  "workflowName": "EU CRA / Maintenance",
   "sourcePath": ".github/workflows/eu-cra-compliance-package-maintainer.md",
   "adoption": {
     "commit": "d7bea37d9ae5ea5af2282be06d19f72ab416493b",

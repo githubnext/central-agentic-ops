@@ -2,14 +2,14 @@
   "language-version": "0.1.0",
   "dashboard": {
     "id": "software-development-practices-dashboard",
-    "title": "Software Development Practices Advisor",
+    "title": "Dev Practices",
     "description": "Track framework review runs, evidence-backed guidance, and explicit human acceptance for frozen repository snapshots.",
     "repository": "githubnext/gh-aw-cao",
     "pages": [
       {
         "id": "software-development-practices-dashboard",
         "kind": "custom",
-        "title": "Software Development Practices Advisor",
+        "title": "Dev Practices",
         "navigation-label": "Development practices",
         "description": "Track framework review runs, evidence-backed guidance, and explicit human acceptance for frozen repository snapshots.",
         "icon": "code",

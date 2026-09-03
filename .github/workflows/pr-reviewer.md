@@ -1,6 +1,6 @@
 ---
 description: "Reviews pull requests that change workflow contracts by compiling and validating all agentic workflow validators."
-name: "PR Reviewer / Agentic Workflow Validation"
+name: "Workflow PR Validator"
 on:
   pull_request:
     types: [ready_for_review]
@@ -83,7 +83,7 @@ safe-outputs:
     allowed-events: [COMMENT, REQUEST_CHANGES]
 ---
 
-# PR Reviewer / Agentic Workflow Validation
+# Workflow PR Validator
 
 Review this pull request as a workflow-validator reviewer.
 

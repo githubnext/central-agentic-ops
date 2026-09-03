@@ -17,6 +17,14 @@ const authoritativeDashboardDocument = composeDashboardDocuments(
   packageDashboardDocuments
 );
 
+/** @param {HTMLElement} rendered @param {string} pageId */
+function activatePage(rendered, pageId) {
+  const link = /** @type {HTMLAnchorElement | null} */ (rendered.querySelector(`[data-nav-page-id="${pageId}"]`));
+  link?.click();
+  rendered.ownerDocument.defaultView?.history.replaceState(null, '', '/');
+  return rendered.querySelector(`[data-page-id="${pageId}"]`);
+}
+
 describe('presenter built-in and custom pages', () => {
   it('renders built-in models and agents page with model and engine AIC summaries', () => {
     const metadata = {
@@ -458,7 +466,7 @@ describe('presenter built-in and custom pages', () => {
       'Ambient context',
       'AW Maintenance',
       'Dependabot',
-      'EU CRA advisor',
+      'EU CRA',
       'Optimization'
     ]);
     expect(rendered.querySelector('[data-nav-page-id="runs"]')).toBeNull();
@@ -598,7 +606,7 @@ describe('presenter built-in and custom pages', () => {
     expect(horizonTooltip).toBeNull();
 
     for (const pageId of ['runtime', 'security', 'operational-value']) {
-      const filterBar = rendered.querySelector(`[data-page-id="${pageId}"] .filter-bar`);
+      const filterBar = activatePage(rendered, pageId)?.querySelector('.filter-bar');
       expect(filterBar?.querySelector('input')?.value).toBe('mode:review mode:live');
       expect(filterBar?.querySelector('.count-badge')?.textContent).toBe('2');
       expect(filterBar?.querySelector('.scope-period')).toBeNull();
@@ -724,7 +732,7 @@ describe('presenter built-in and custom pages', () => {
       }
     });
 
-    const page = rendered.querySelector('[data-page-id="security"]');
+    const page = activatePage(rendered, 'security');
     const dashboardPage = authoritativeDashboardDocument.dashboard.pages.find((/** @type {{ id: string }} */ candidate) => candidate.id === 'security');
     expect(dashboardPage).toMatchObject({ kind: 'custom' });
     expect(dashboardPage).not.toHaveProperty('page');
@@ -930,7 +938,7 @@ describe('presenter built-in and custom pages', () => {
       }
     });
 
-    const page = rendered.querySelector('[data-page-id="operational-value"]');
+    const page = activatePage(rendered, 'operational-value');
     const dashboardPage = authoritativeDashboardDocument.dashboard.pages.find((/** @type {{ id: string }} */ candidate) => candidate.id === 'operational-value');
     expect(dashboardPage).toMatchObject({ kind: 'custom', title: 'Value & outcomes' });
     expect(dashboardPage).not.toHaveProperty('page');
@@ -1984,6 +1992,7 @@ describe('presenter built-in and custom pages', () => {
                   source: 'runs'
                 },
                 mark: 'chart',
+                table: true,
                 encoding: {
                   x: {
                     field: 'started-at',
@@ -2377,20 +2386,53 @@ describe('presenter built-in and custom pages', () => {
           id: 'page-navigation',
           title: 'Page Navigation',
           pages: [
-            { id: 'first', kind: /** @type {'custom'} */ ('custom'), title: 'First', description: 'First page description', views: [] },
+            {
+              id: 'first',
+              kind: /** @type {'custom'} */ ('custom'),
+              title: 'First',
+              description: 'First page description',
+              views: [{
+                id: 'first-details',
+                title: 'First details',
+                disclosure: 'supplemental',
+                data: { source: 'runs' },
+                mark: 'metric',
+                encoding: { value: { field: 'run', aggregate: 'count' } }
+              }]
+            },
             { id: 'second', kind: /** @type {'custom'} */ ('custom'), title: 'Second', description: 'Second page description', views: [] }
           ]
         }
       },
-      sources: {}
+      sources: {
+        runs: {
+          source: 'runs',
+          rows: [{ run: '1' }],
+          metadata: {
+            'source-id': 'runs-fixture',
+            'source-kind': 'fixture',
+            'as-of': '2026-08-30T08:00:00Z',
+            'retrieved-at': '2026-08-30T08:01:00Z',
+            completeness: 'complete',
+            freshness: 'fresh',
+            availability: 'available'
+          }
+        }
+      }
     });
     rendered.ownerDocument.body.append(rendered);
 
     const first = /** @type {HTMLElement} */ (rendered.querySelector('#page-first'));
     const second = /** @type {HTMLElement} */ (rendered.querySelector('#page-second'));
+    const firstLink = /** @type {HTMLAnchorElement} */ (rendered.querySelector('[data-nav-page-id="first"]'));
     const secondLink = /** @type {HTMLAnchorElement} */ (rendered.querySelector('[data-nav-page-id="second"]'));
+    const firstDetails = /** @type {HTMLDetailsElement} */ (first.querySelector('details'));
     expect(first.hidden).toBe(false);
     expect(second.hidden).toBe(true);
+    expect(first.hasAttribute('data-page-pending')).toBe(false);
+    expect(second.hasAttribute('data-page-pending')).toBe(true);
+    firstDetails.open = true;
+    rendered.ownerDocument.documentElement.scrollTop = 320;
     expect(/** @type {HTMLElement | null} */ (rendered.querySelector('[data-breadcrumb-root]'))?.hidden).toBe(true);
     expect(rendered.querySelector('[data-breadcrumb-root]')?.hasAttribute('href')).toBe(false);
     expect(rendered.querySelector('[data-breadcrumb-dashboard]')?.getAttribute('href')).toBe('#page-first');
@@ -2420,7 +2462,12 @@ describe('presenter built-in and custom pages', () => {
     secondLink.click();
 
     expect(first.hidden).toBe(true);
-    expect(second.hidden).toBe(false);
+    expect(first.hasAttribute('data-page-pending')).toBe(true);
+    expect(first.childElementCount).toBe(0);
+    const renderedSecond = /** @type {HTMLElement} */ (rendered.querySelector('#page-second'));
+    expect(renderedSecond).not.toBe(second);
+    expect(renderedSecond.hidden).toBe(false);
+    expect(renderedSecond.hasAttribute('data-page-pending')).toBe(false);
     expect(secondLink.getAttribute('aria-current')).toBe('page');
     expect(rendered.ownerDocument.defaultView?.location.hash).toBe('#page-second');
     expect(rendered.querySelector('#page-title')?.textContent).toBe('Second');
@@ -2430,6 +2477,15 @@ describe('presenter built-in and custom pages', () => {
     expect(titleLink.hidden).toBe(true);
     expect(titleLink.hasAttribute('href')).toBe(false);
     expect(rendered.ownerDocument.activeElement).toBe(rendered.querySelector('#page-title'));
+
+    rendered.ownerDocument.documentElement.scrollTop = 80;
+    firstLink.click();
+
+    const rehydratedFirst = /** @type {HTMLElement} */ (rendered.querySelector('#page-first'));
+    expect(renderedSecond.hasAttribute('data-page-pending')).toBe(true);
+    expect(renderedSecond.childElementCount).toBe(0);
+    expect(/** @type {HTMLDetailsElement | null} */ (rehydratedFirst.querySelector('details'))?.open).toBe(true);
+    expect(rendered.ownerDocument.documentElement.scrollTop).toBe(320);
     rendered.ownerDocument.defaultView?.history.replaceState(null, '', '/');
   });
 

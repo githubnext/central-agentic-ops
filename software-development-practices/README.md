@@ -1,11 +1,11 @@
-<!-- Software Development Practices Advisor outputs are advisory and non-binding. They provide no guarantee of completeness, correctness, security, compliance, or alignment with current GitHub or NIST guidance. -->
+<!-- Dev Practices outputs are advisory and non-binding. They provide no guarantee of completeness, correctness, security, compliance, or alignment with current GitHub or NIST guidance. -->
 
-# Software Development Practices Advisor
+# Dev Practices
 
 > [!WARNING]
 > Outputs are advisory and non-binding. They are not a security assessment, certification, or compliance determination and provide no guarantee of completeness, correctness, security, or alignment with current GitHub or NIST guidance. Human review against authoritative sources is required.
 
-The Software Development Practices Advisor helps a private Central Agentic Ops control repository identify active software repositories and produce evidence-backed improvement guidance based on the [GitHub Well-Architected framework](https://learn.github.com/well-architected/) and the [NIST Secure Software Development Framework](https://csrc.nist.gov/projects/ssdf).
+Dev Practices helps a private Central Agentic Ops control repository identify active software repositories and produce evidence-backed improvement guidance based on the [GitHub Well-Architected framework](https://learn.github.com/well-architected/) and the [NIST Secure Software Development Framework](https://csrc.nist.gov/projects/ssdf).
 
 ## Package Contents
 

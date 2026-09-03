@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-WORKFLOW_NAME="EU CRA Advisor / Scope Classifier"
+WORKFLOW_NAME="EU CRA / Scope"
 SOURCE_PATH=".github/workflows/eu-cra-compliance-scope-classifier.md"
 TITLE_PREFIX="[eu-cra:scope] "
 DOMAIN="scope-classification"

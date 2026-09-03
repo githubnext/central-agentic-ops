@@ -1,6 +1,6 @@
-name: Central Agentic Ops Activity
+name: CAO Activity
 
-run-name: Central Agentic Ops Activity / ${{ inputs.request-id || github.run_id }}
+run-name: CAO Activity / ${{ inputs.request-id || github.run_id }}
 
 on:
   workflow_dispatch:

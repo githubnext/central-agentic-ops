@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-WORKFLOW_NAME="EU CRA Advisor / Article 14 Reporting Readiness"
+WORKFLOW_NAME="EU CRA / Article 14"
 SOURCE_PATH=".github/workflows/eu-cra-compliance-article-14-reporting-readiness.md"
 TITLE_PREFIX="[eu-cra:article-14-readiness] "
 DOMAIN="article-14-readiness"

@@ -23,7 +23,7 @@ Add `copilot-requests: write` directly to every Copilot-backed orchestrator and 
 1. Load `.github/skills/agentic-workflows/SKILL.md` and follow its creation guidance alongside this repository-specific contract.
 2. Inspect `.github/workflows/shared/cao.md`, its transitive `.github/workflows/shared/control.md` import, and the source `.md` files for the nearest existing package. Prefer a recently maintained package with behavior similar to the request. Do not copy generated `.lock.yml` files.
 3. Establish the package contract from the user's idea:
-  - package slug and display name
+  - package slug and short display name
    - repository discovery and ranking signals
    - worker responsibilities and boundaries
    - triggers and rollout expectations
@@ -154,6 +154,9 @@ Measure operational value per worker because workers have independently dispatch
 ## Naming and Structure
 
 - Use lowercase kebab-case for package, worker, and tracker slugs.
+- Choose short, descriptive display names that remain useful when GitHub Actions clips workflow tiles. Aim to keep the complete workflow `name` at 32 characters or fewer.
+- Limit package names to the fewest distinctive words. Limit worker names to the specific responsibility, omitting redundant role words such as `Advisor`, `Auditor`, `Checker`, `Curator`, `Investigator`, `Maintainer`, or `Updater` when the responsibility remains clear.
+- Prefer established, unambiguous abbreviations such as `AW`, `CRA`, or `SSDF`; do not shorten names into unfamiliar acronyms solely to meet the length target.
 - Name the orchestrator file `<package-slug>.md` and set its `name` to `<Package Name>`.
 - Name each worker file `<package-slug>-<worker-slug>.md` and set its `name` to `<Package Name> / <Worker Name>`.
 - Prefix every worker slug with the package slug. The display-name prefix before ` / ` must exactly equal the orchestrator display name.

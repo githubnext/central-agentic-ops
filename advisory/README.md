@@ -61,6 +61,6 @@ Run the **UK AI Advisory** workflow manually with an explicit `target_repo`, `ma
 
 ## Weekly Alignment Audit
 
-The **UK AI Advisory / Package Maintainer** runs weekly and fetches the authoritative GOV.UK guidance on every run. It reconciles the stable original requirement IDs, current guidance, and observed package workflows. It emits `noop` when coverage is materially current, proposes a one-file ledger update through a draft pull request when coverage changes, or creates one deduplicated improvement issue for the highest-priority untracked fleet gap.
+The **UK AI Advisory / Maintenance** workflow runs weekly and fetches the authoritative GOV.UK guidance on every run. It reconciles the stable original requirement IDs, current guidance, and observed package workflows. It emits `noop` when coverage is materially current, proposes a one-file ledger update through a draft pull request when coverage changes, or creates one deduplicated improvement issue for the highest-priority untracked fleet gap.
 
 An inaccessible source or package file produces an incomplete run rather than a speculative alignment claim. Verification dates change only with material source or coverage changes, so the weekly audit does not create date-only pull requests.

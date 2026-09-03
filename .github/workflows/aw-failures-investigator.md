@@ -3,7 +3,7 @@ emoji: ":rotating_light:"
 
 description: "Buckets recent agentic workflow failures in one target repository and files focused fix issues for uncovered failure clusters"
 
-name: "AW Failures / Investigator"
+name: "AW Maintenance / Failures"
 
 max-ai-credits: 500
 max-daily-ai-credits: -1

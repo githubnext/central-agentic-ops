@@ -3,7 +3,7 @@
 set -euo pipefail
 export LC_ALL=C
 
-WORKFLOW_NAME="Ambient Context / AGENTS.md Curator"
+WORKFLOW_NAME="Ambient Context / AGENTS.md"
 MATURATION_SECONDS=2592000
 MIN_TOKEN_REDUCTION=0.10
 PROPOSAL_WINDOW_SECONDS=21600
@@ -17,7 +17,7 @@ definition() {
     cat <<'JSON'
 {
   "schemaVersion": 4, "grader": "operational-value",
-  "repository": "githubnext/gh-aw-cao", "workflowName": "Ambient Context / AGENTS.md Curator",
+  "repository": "githubnext/gh-aw-cao", "workflowName": "Ambient Context / AGENTS.md",
   "sourcePath": ".github/workflows/ambient-context-agents-md-curator.md",
   "adoption": {"commit": "ae39923baa7cb8bfa57dfcc158534adc24c2b793", "adoptedAt": "2026-08-26T23:22:08Z"},
   "operationalValue": "Make the dispatched target's agents at least ten percent cheaper to run for the same delivered outcome quality by leaning out its always-loaded AGENTS.md.",

@@ -18,6 +18,14 @@ const metadata = {
   availability: /** @type {'available'} */ ('available')
 };
 
+/** @param {HTMLElement} rendered */
+function activateCostPage(rendered) {
+  const link = /** @type {HTMLAnchorElement | null} */ (rendered.querySelector('[data-nav-page-id="cost"]'));
+  link?.click();
+  rendered.ownerDocument.defaultView?.history.replaceState(null, '', '/');
+  return rendered.querySelector('[data-page-id="cost"]');
+}
+
 describe('Cost and efficiency dashboard view', () => {
   it('renders measured usage, evidence boundaries, repository allocation, and evaluation readiness from JSON', () => {
     const rendered = renderDashboard({
@@ -35,7 +43,7 @@ describe('Cost and efficiency dashboard view', () => {
       }
     });
 
-    const page = rendered.querySelector('[data-page-id="cost"]');
+    const page = activateCostPage(rendered);
     const dashboardPage = authoritativeDashboardDocument.dashboard.pages.find(
       (/** @type {{ id: string }} */ candidate) => candidate.id === 'cost'
     );
@@ -86,10 +94,8 @@ describe('Cost and efficiency dashboard view', () => {
     const pieChartView = page?.querySelector('.chart-view-pie');
     const pieChartCard = pieChartView?.querySelector('.pie-chart-card');
     const repositoryTable = pieChartView?.querySelector('.custom-chart-table');
-    const repositoryTableRegion = repositoryTable?.closest('.table-region');
     expect(pieChartCard).not.toBeNull();
-    expect(repositoryTableRegion?.parentElement).toBe(pieChartView);
-    expect(pieChartCard?.contains(repositoryTable ?? null)).toBe(false);
+    expect(repositoryTable).toBeNull();
     expect(page?.querySelectorAll('.signal-list-region')).toHaveLength(1);
     const boundary = page?.querySelector('.dashboard-callout');
     expect(boundary?.getAttribute('role')).toBe('note');
@@ -115,7 +121,7 @@ describe('Cost and efficiency dashboard view', () => {
       }
     });
 
-    const page = rendered.querySelector('[data-page-id="cost"]');
+    const page = activateCostPage(rendered);
     const evidenceBoundaries = [...(page?.querySelectorAll('.signal-list-region') ?? [])]
       .find((region) => region.textContent?.includes('Budget boundary'));
     const signals = [...(evidenceBoundaries?.querySelectorAll('.signal-item') ?? [])];

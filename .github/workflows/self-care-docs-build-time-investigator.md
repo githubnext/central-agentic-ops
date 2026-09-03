@@ -1,5 +1,5 @@
 ---
-name: "SelfCare / Docs Build-Time Investigator"
+name: "SelfCare / Docs Build Time"
 description: Investigates Documentation Pages run times and proposes evidenced caching or build-speed improvements
 intent: Reduce dashboard generation time using bounded Actions evidence and non-repeating recommendations.
 on:

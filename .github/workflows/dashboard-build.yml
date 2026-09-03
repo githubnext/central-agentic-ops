@@ -1,6 +1,6 @@
-name: Central Agentic Ops Dashboard Build
+name: CAO Dashboard Build
 
-run-name: Central Agentic Ops Dashboard Build / ${{ inputs.request-id || github.run_id }}
+run-name: CAO Dashboard Build / ${{ inputs.request-id || github.run_id }}
 
 on:
   workflow_dispatch:
@@ -50,7 +50,7 @@ jobs:
           GH_TOKEN: ${{ github.token }}
           DISPATCH_WORKFLOW: activity.yml
           DISPATCH_REF: ${{ github.ref_name }}
-          DISPATCH_RUN_NAME: Central Agentic Ops Activity / dashboard-build-${{ github.run_id }}-${{ github.run_attempt }}
+          DISPATCH_RUN_NAME: CAO Activity / dashboard-build-${{ github.run_id }}-${{ github.run_attempt }}
           DISPATCH_INPUTS: '{"request-id":"dashboard-build-${{ github.run_id }}-${{ github.run_attempt }}"}'
         run: |
           if [[ -f .github/aw/dashboard/dispatch-workflow.mjs ]]; then

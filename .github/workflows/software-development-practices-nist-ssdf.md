@@ -2,7 +2,7 @@
 emoji: ":shield:"
 description: "Creates evidence-backed repository improvement guidance from the current final NIST Secure Software Development Framework."
 intent: Help repository maintainers prioritize observable secure development improvements without making unsupported SSDF conformance claims.
-name: "Software Development Practices Advisor / NIST SSDF"
+name: "Dev Practices / NIST SSDF"
 max-ai-credits: 400
 max-daily-ai-credits: -1
 
@@ -120,7 +120,7 @@ timeout-minutes: 30
 
 {{#runtime-import? .github/cao/software-development-practices.md}}
 
-# Software Development Practices Advisor / NIST SSDF
+# Dev Practices / NIST SSDF
 
 Review one repository against the current final NIST Secure Software Development Framework and create one prioritized, evidence-backed improvement issue when useful.
 

@@ -31,7 +31,7 @@ elif [[ "$arguments" == *"repos/acme/control/contents/.github/workflows/cao.json
 elif [[ "$arguments" == *"contents/.github/workflows/dependabot.md"* ]]; then
   printf '%s\\n' "$CONTROL_SOURCE_B64"
 elif [[ "$arguments" == *"actions/workflows?per_page=100"* ]]; then
-  printf '%s\\n' '{"id":1,"name":"Dependabot / Release Train Updater","path":".github/workflows/dependabot-release-train-updater.lock.yml","state":"active"}'
+  printf '%s\\n' '{"id":1,"name":"Dependabot / Release Trains","path":".github/workflows/dependabot-release-train-updater.lock.yml","state":"active"}'
 elif [[ "$arguments" == aw\\ logs\\ dependabot\\ --start-date* ]]; then
   if [[ "\${MOCK_FAIL_BUDGET:-false}" == "true" ]]; then
     printf 'invalid budget data\n'
@@ -208,7 +208,7 @@ test("control precompute attaches package target modes to candidates", () => {
       policy_enabled: true,
       max_mode: "live",
       id: 1,
-      name: "Dependabot / Release Train Updater",
+      name: "Dependabot / Release Trains",
       path: ".github/workflows/dependabot-release-train-updater.lock.yml",
       state: "active",
       eligible: true,
