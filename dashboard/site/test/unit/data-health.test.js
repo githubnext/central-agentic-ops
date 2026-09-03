@@ -30,18 +30,18 @@ describe('data health sources', () => {
       expect.objectContaining({
         source: 'runs',
         rows: 1,
-        fields: 27,
+        fields: 3,
         'populated-fields': 2,
-        'empty-fields': 25,
-        'field-coverage': '7%',
-        'cell-coverage': '7%',
+        'empty-fields': 1,
+        'field-coverage': '67%',
+        'cell-coverage': '67%',
         status: 'healthy'
       }),
       expect.objectContaining({
         source: 'usage',
         rows: 0,
-        fields: 22,
-        'field-coverage': '0%',
+        fields: 0,
+        'field-coverage': '—',
         'cell-coverage': '—',
         status: 'unavailable'
       })

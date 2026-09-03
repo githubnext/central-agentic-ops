@@ -2,8 +2,6 @@
  * Derived data-shape and retention diagnostics for the dashboard cache.
  */
 
-import { SOURCE_FIELDS } from './specification.js';
-
 /**
  * @typedef {import('./presenter.js').LogicalSourceInput} LogicalSourceInput
  * @typedef {import('./presenter.js').SourceMetadata} SourceMetadata
@@ -16,8 +14,7 @@ import { SOURCE_FIELDS } from './specification.js';
 export function deriveDataHealthSources(sources) {
   const sourceRows = Object.entries(sources).map(([name, source]) => {
     const rows = Array.isArray(source?.rows) ? source.rows : [];
-    const observedFields = new Set(rows.flatMap((row) => Object.keys(row ?? {})));
-    const fields = new Set(/** @type {Record<string, string[]>} */ (SOURCE_FIELDS)[name] ?? observedFields);
+    const fields = new Set(rows.flatMap((row) => Object.keys(row ?? {})));
     const populatedFields = [...fields].filter((field) => rows.some((row) => row?.[field] !== null && row?.[field] !== undefined && row?.[field] !== ''));
     const populatedCells = rows.reduce(
       (total, row) => total + [...fields].filter((field) => row?.[field] !== null && row?.[field] !== undefined && row?.[field] !== '').length,

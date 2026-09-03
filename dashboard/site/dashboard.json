@@ -4071,7 +4071,7 @@
                 {
                   "field": "field-coverage",
                   "type": "nominal",
-                  "title": "Fields present"
+                  "title": "Fields populated"
                 },
                 {
                   "field": "cell-coverage",
