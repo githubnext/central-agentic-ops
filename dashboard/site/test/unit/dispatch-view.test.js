@@ -81,7 +81,8 @@ describe('declarative dispatch view', () => {
     const pageFilter = /** @type {HTMLInputElement | null} */ (rendered.querySelector('.filter-bar input'));
     expect(pageFilter?.value).toBe('event:workflow_dispatch');
     expect(rendered.textContent).toContain('Package dispatching state');
-    expect([...rendered.querySelectorAll('thead tr:first-child th')].map((cell) => cell.textContent)).toEqual([
+    const tables = rendered.querySelectorAll('table');
+    expect([...tables[1].querySelectorAll('thead tr:first-child th')].map((cell) => cell.textContent)).toEqual([
       'Started',
       'Type',
       'Package',
