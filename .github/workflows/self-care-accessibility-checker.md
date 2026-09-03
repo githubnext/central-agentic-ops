@@ -107,7 +107,7 @@ safe-outputs:
   create-issue:
     target-repo: ${{ (inputs.safe_output_mode || 'review') == 'review' && (inputs.safe_output_repo || github.repository) || inputs.target_repo }}
     title-prefix: "[self-care:accessibility-checker] "
-    labels: [self-care]
+    labels: [self-care, self-care:accessibility-checker]
     close-older-issues: true
     close-older-key: self-care-accessibility-checker
     max: 1

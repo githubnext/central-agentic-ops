@@ -107,6 +107,7 @@ safe-outputs:
   create-issue:
     expires: 30d
     title-prefix: "[software-development-practices:github-well-architected] "
+    labels: [software-development-practices, software-development-practices:github-well-architected]
     close-older-issues: true
     close-older-key: ${{ format('software-development-practices-github-well-architected-{0}', inputs.target_repo) }}
     max: 1

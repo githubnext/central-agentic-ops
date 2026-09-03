@@ -89,7 +89,7 @@ safe-outputs:
   create-issue:
     target-repo: ${{ (inputs.safe_output_mode || 'review') == 'review' && (inputs.safe_output_repo || github.repository) || inputs.target_repo }}
     title-prefix: "[self-care:dashboard-review] "
-    labels: [self-care]
+    labels: [self-care, self-care:dashboard-review]
     close-older-issues: true
     close-older-key: self-care-dashboard-review
     max: 1
