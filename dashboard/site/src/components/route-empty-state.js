@@ -3,6 +3,7 @@
  */
 
 import { h } from '../dom.js';
+import { renderEmptyMessage } from './ui-primitives.js';
 
 /**
  * @typedef {{
@@ -43,7 +44,7 @@ export function createRouteView(options) {
       : matched
         ? null
         : hasSelection ? options.notFoundMessage : options.selectMessage;
-    root.replaceChildren(matched ?? h('p', { className: 'empty' }, message ?? ''));
+    root.replaceChildren(matched ?? renderEmptyMessage(message ?? ''));
   };
 
   root.addEventListener('dashboard-route-change', (event) => {

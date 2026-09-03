@@ -7,7 +7,7 @@ import { h } from './dom.js';
 import { getPrimerStyles } from './styles.js';
 import { octicon, agenticWorkflowMark } from './octicons.js';
 import { renderDataStateMetrics } from './components/data-state.js';
-import { formatMediumUtcDateTime, renderTooltip } from './components/ui-primitives.js';
+import { formatMediumUtcDateTime, renderTooltip, renderEmptyMessage } from './components/ui-primitives.js';
 import { customViewAvailabilityMessage, renderCustomViewStateDetails, renderLayoutSectionChrome, renderPageSection } from './components/view-chrome.js';
 import { toNumber } from './view-formatters.js';
 import { findLink } from './components/link-content.js';
@@ -686,7 +686,7 @@ function renderLayoutSection(pageId, section, renderedViews, sources) {
   const countSource = section['count-source'] ? sources[section['count-source']] : null;
   const count = Array.isArray(countSource?.rows) ? countSource.rows.length : null;
   const sectionViews = section.views.map((viewId) => renderedViews.get(viewId)
-    ?? h('p', { className: 'empty', 'data-missing-view-id': viewId }, `View unavailable: ${viewId}`));
+    ?? renderEmptyMessage(`View unavailable: ${viewId}`, { 'data-missing-view-id': viewId }));
   if (sectionViews.length === 1 && sectionViews[0].classList.contains('dashboard-callout')) {
     sectionViews[0].setAttribute('data-section-id', section.id);
     sectionViews[0].setAttribute('data-section-layout', section.layout);
