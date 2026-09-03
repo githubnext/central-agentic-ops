@@ -663,7 +663,8 @@ test('DLS-PAGE-002 DLS-PAGE-014 built-in overview page renders the report-style 
   await expect(packageCards.locator('.package-status-repositories li')).toHaveCount(6);
   await expect(packageCards.locator('.package-status-activity')).toContainText('2 dispatches');
   await expect(packageCards.locator('.package-status-activity')).toContainText('1/2 produced output');
-  await expect(packageCards.first()).toHaveAttribute('href', '#page-package-insights?package=daily-ops');
+  await expect(packageCards.locator('.package-status-identity')).toHaveAttribute('href', '#page-package-insights?package=daily-ops');
+  await expect(packageCards.locator('.package-status-activity')).toHaveAttribute('href', '#page-package-dispatches?package=daily-ops');
   await expect(page.locator('[data-page-id="overview"] .data-state-summary')).toBeHidden();
 
   await page.setViewportSize({ width: 400, height: 900 });
@@ -677,6 +678,11 @@ test('DLS-PAGE-002 DLS-PAGE-014 built-in overview page renders the report-style 
   await expect(page).toHaveURL(/#page-runtime\?section=runtime-observed-root-episodes-heading$/);
   await expect(page.locator('[data-page-id="runtime"]')).toBeVisible();
   await expect(page.locator('#runtime-observed-root-episodes-heading')).toBeInViewport();
+
+  await page.evaluate(() => { window.location.hash = '#page-overview'; });
+  await expect(page.locator('[data-page-id="overview"]')).toBeVisible();
+  await packageCards.locator('.package-status-activity').click();
+  await expect(page).toHaveURL(/#page-package-dispatches\?package=daily-ops$/);
 });
 
 test('built-in repositories page keeps repository scope above the run metadata', async ({ page }) => {
@@ -935,8 +941,48 @@ test('DLS-PAGE-014 DLS-PAGE-015 built-in packages page renders report-style mode
                   element: 'package-dispatches'
                 },
                 {
+                  id: 'package-failure-reason-distribution',
+                  title: 'Why these dispatches failed',
+                  data: {
+                    source: 'dispatches',
+                    'route-field': 'package',
+                    filters: { status: ['failure', 'startup-failure', 'timed-out', 'stale'] },
+                    'order-by': [{ field: 'count-status-detail', direction: 'desc' }]
+                  },
+                  mark: 'chart',
+                  chart: 'pie',
+                  table: false,
+                  encoding: {
+                    x: { field: 'status-detail', type: 'nominal', title: 'Failure reason' },
+                    y: { field: 'status-detail', type: 'quantitative', aggregate: 'count', title: 'Failed dispatches' }
+                  }
+                },
+                {
+                  id: 'package-failed-dispatch-table',
+                  title: 'Failed dispatches',
+                  data: { source: 'dispatches', 'route-field': 'package', filters: { status: ['failure', 'startup-failure', 'timed-out', 'stale'] } },
+                  mark: 'table',
+                  controls: 'interactive',
+                  encoding: {
+                    href: { field: 'run-link', type: 'nominal' },
+                    columns: [
+                      { field: 'status-detail', type: 'nominal', title: 'Why' },
+                      { field: 'started-at', type: 'temporal', title: 'Started' },
+                      { field: 'workflow-name', type: 'nominal', title: 'Workflow' },
+                      { field: 'run-title', type: 'nominal', title: 'Run title' },
+                      { field: 'runtime-repository', type: 'nominal', title: 'Runtime repository' }
+                    ],
+                    actions: [{
+                      intent: 'Debug this failed workflow dispatch.',
+                      presentation: 'copy-prompt',
+                      icon: 'search',
+                      label: 'Copy debug prompt'
+                    }]
+                  }
+                },
+                {
                   id: 'package-dispatch-table',
-                  title: 'Dispatches',
+                  title: 'All dispatches',
                   data: { source: 'dispatches', 'route-field': 'package' },
                   mark: 'table',
                   controls: 'interactive',
@@ -948,7 +994,8 @@ test('DLS-PAGE-014 DLS-PAGE-015 built-in packages page renders report-style mode
                       { field: 'workflow-name', type: 'nominal', title: 'Workflow' },
                       { field: 'run-title', type: 'nominal', title: 'Run title' },
                       { field: 'runtime-repository', type: 'nominal', title: 'Runtime repository' },
-                      { field: 'status', type: 'nominal', title: 'Status', display: 'status' }
+                      { field: 'status', type: 'nominal', title: 'Status', display: 'status' },
+                      { field: 'status-detail', type: 'nominal', title: 'Why' }
                     ]
                   }
                 }
@@ -1001,7 +1048,11 @@ test('DLS-PAGE-014 DLS-PAGE-015 built-in packages page renders report-style mode
         runs: {
           source: 'runs',
           rows: [
-            { workflow: '.github/workflows/ambient-context-worker.md', run: '3', event: 'workflow_dispatch', 'run-title': 'Refresh ambient context', 'started-at': '2026-08-29T18:00:00Z', 'run-conclusion': 'success', 'rollout-mode': 'review', 'run-link': { relation: 'run', href: 'https://github.com/githubnext/gh-aw-cao/actions/runs/3', label: 'Run 3' } },
+            { workflow: '.github/workflows/ambient-context-worker.md', run: '3', event: 'workflow_dispatch', 'run-title': 'Refresh ambient context', 'started-at': '2026-08-29T18:00:00Z', 'run-conclusion': 'failure', 'admission-reason': 'github-api-capacity-insufficient', 'resource-reset-at': '2026-08-29T19:00:00Z', 'rollout-mode': 'review', 'run-link': { relation: 'run', href: 'https://github.com/githubnext/gh-aw-cao/actions/runs/3', label: 'Run 3' } },
+            { workflow: '.github/workflows/ambient-context-worker.md', run: '5', event: 'workflow_dispatch', 'run-title': 'Refresh ambient context', 'started-at': '2026-08-29T17:00:00Z', 'run-conclusion': 'failure', 'admission-reason': 'github-api-capacity-insufficient', 'resource-reset-at': '2026-08-29T19:00:00Z', 'rollout-mode': 'review', 'run-link': { relation: 'run', href: 'https://github.com/githubnext/gh-aw-cao/actions/runs/5', label: 'Run 5' } },
+            { workflow: '.github/workflows/ambient-context-worker.md', run: '6', event: 'workflow_dispatch', 'run-title': 'Refresh ambient context', 'started-at': '2026-08-29T16:00:00Z', 'run-conclusion': 'failure', 'admission-reason': 'github-api-capacity-insufficient', 'resource-reset-at': '2026-08-29T19:00:00Z', 'rollout-mode': 'review', 'run-link': { relation: 'run', href: 'https://github.com/githubnext/gh-aw-cao/actions/runs/6', label: 'Run 6' } },
+            { workflow: '.github/workflows/ambient-context-worker.md', run: '7', event: 'workflow_dispatch', 'run-title': 'Refresh ambient context', 'started-at': '2026-08-29T15:00:00Z', 'run-conclusion': 'failure', 'admission-reason': 'github-api-capacity-insufficient', 'resource-reset-at': '2026-08-29T19:00:00Z', 'rollout-mode': 'review', 'run-link': { relation: 'run', href: 'https://github.com/githubnext/gh-aw-cao/actions/runs/7', label: 'Run 7' } },
+            { workflow: '.github/workflows/ambient-context-worker.md', run: '8', event: 'workflow_dispatch', 'run-title': 'Refresh ambient context', 'started-at': '2026-08-29T14:00:00Z', 'run-conclusion': 'failure', 'failure-job': 'pre_activation', 'failure-message': 'Target authority missing: add .github/workflows/cao.json to the target default branch for live mode', 'failure-step': 'Run CAO control precompute', 'rollout-mode': 'review', 'run-link': { relation: 'run', href: 'https://github.com/githubnext/gh-aw-cao/actions/runs/8', label: 'Run 8' } },
             { workflow: '.github/workflows/aw-maintenance.md', run: '1', 'started-at': '2026-08-28T10:00:00Z', 'run-conclusion': 'success', 'rollout-mode': 'review' },
             { workflow: '.github/workflows/aw-maintenance.md', run: '2', 'started-at': '2026-08-29T10:00:00Z', 'run-conclusion': 'failure', 'rollout-mode': 'live' }
           ],
@@ -1089,11 +1140,31 @@ test('DLS-PAGE-014 DLS-PAGE-015 built-in packages page renders report-style mode
 
   await page.getByRole('navigation', { name: 'Ambient Context views' }).getByRole('link', { name: 'Dispatches' }).click();
   await expect(page).toHaveURL(/#page-package-dispatches\?package=ambient-context$/);
-  await expect(page.getByRole('heading', { name: 'Dispatches', level: 3 })).toBeVisible();
-  const packageDispatchRows = page.locator('[data-page-id="package-dispatches"] .custom-table tbody tr');
-  await expect(packageDispatchRows).toHaveCount(1);
-  await expect(packageDispatchRows).toContainText('Refresh ambient context');
-  await expect(packageDispatchRows.locator('a')).toHaveAttribute('href', 'https://github.com/githubnext/gh-aw-cao/actions/runs/3');
+  const failureReasonChart = page.getByRole('heading', { name: 'Why these dispatches failed', level: 3 }).locator('..');
+  await expect(failureReasonChart.locator('.pie-chart-widget')).toHaveAttribute('data-chart-widget', 'pie');
+  await expect(failureReasonChart.locator('.pie-chart-total-value')).toHaveText('5');
+  await expect(failureReasonChart.locator('.chart-legend-pie li')).toHaveCount(2);
+  await expect(failureReasonChart.locator('.chart-legend-pie')).toContainText('GitHub API capacity insufficient4');
+  await expect(failureReasonChart.locator('.chart-legend-pie')).toContainText('Target authority missing: add .github/workflows/cao.json to the target default branch for live mode1');
+  const failedDispatchSection = page.getByRole('heading', { name: 'Failed dispatches', level: 3 }).locator('..');
+  const failedDispatchRows = failedDispatchSection.locator('tbody tr');
+  await expect(failedDispatchRows).toHaveCount(5);
+  await expect(failedDispatchSection.locator('thead tr').first().locator('th')).toHaveText([
+    'Why',
+    'Started',
+    'Workflow',
+    'Run title',
+    'Runtime repository',
+    'Copy debug prompt'
+  ]);
+  await expect(failedDispatchRows.first().locator('[data-field="status-detail"]')).toHaveText('GitHub API capacity insufficient; reset 1 hour ago');
+  await expect(failedDispatchRows.last().locator('[data-field="status-detail"]')).toHaveText('Target authority missing: add .github/workflows/cao.json to the target default branch for live mode');
+  await expect(failedDispatchRows.first().locator('[data-field="status-detail"]')).toHaveAttribute('data-status', 'failure');
+  await expect(failedDispatchRows.locator('[data-field="status-detail"] a')).toHaveCount(5);
+  await expect(failedDispatchRows.locator('.table-intent-button')).toHaveCount(5);
+  await expect(failedDispatchRows.first().locator('[data-field="status-detail"] a')).toHaveAttribute('href', 'https://github.com/githubnext/gh-aw-cao/actions/runs/3');
+  const allDispatchRows = page.getByRole('heading', { name: 'All dispatches', level: 3 }).locator('..').locator('tbody tr');
+  await expect(allDispatchRows).toHaveCount(5);
 
   await page.getByRole('navigation', { name: 'Ambient Context views' }).getByRole('link', { name: 'Reports' }).click();
   await expect(page).toHaveURL(/#page-package-reports\?package=ambient-context$/);

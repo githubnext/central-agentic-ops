@@ -441,5 +441,6 @@ test("control precompute rejects missing target-owned live authority", () => {
   const result = runLiveAuthority("", { AUTHORITY_MODE: "missing" });
 
   assert.notEqual(result.status, 0);
+  assert.match(result.stderr, /\[CAO failure\]/);
   assert.match(result.stderr, /live mode requires \.github\/workflows\/cao\.json on the target default branch/);
 });

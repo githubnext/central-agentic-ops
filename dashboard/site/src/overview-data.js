@@ -22,12 +22,20 @@ export function deriveOverviewSources(sources) {
   const graderObservations = rowsFor(sources, 'grader-observations');
   const operationalValues = rowsFor(sources, 'operational-values');
   const packageActivity = summarizePackageActivity(workflows, runs, outcomes);
-  const packages = summarizePackages(workflows).map((entry) => ({
-    ...entry,
-    dispatches: sourceIsAvailable(sources.runs) ? packageActivity.get(entry.id)?.dispatches ?? 0 : null,
-    dispatchesWithSafeOutputs: sourceIsAvailable(sources.outcomes) ? packageActivity.get(entry.id)?.dispatchesWithSafeOutputs ?? 0 : null,
-    activityWindow: sourceWindowLabel(sources.runs)
-  }));
+  const packages = summarizePackages(workflows).map((entry) => {
+    const activity = packageActivity.get(entry.id);
+    const runActivityAvailable = sourceIsAvailable(sources.runs);
+    return {
+      ...entry,
+      dispatches: runActivityAvailable ? activity?.dispatches ?? 0 : null,
+      successfulDispatches: runActivityAvailable ? activity?.successfulDispatches ?? 0 : null,
+      failedDispatches: runActivityAvailable ? activity?.failedDispatches ?? 0 : null,
+      approvalDispatches: runActivityAvailable ? activity?.approvalDispatches ?? 0 : null,
+      pendingDispatches: runActivityAvailable ? activity?.pendingDispatches ?? 0 : null,
+      dispatchesWithSafeOutputs: sourceIsAvailable(sources.outcomes) ? activity?.dispatchesWithSafeOutputs ?? 0 : null,
+      activityWindow: sourceWindowLabel(sources.runs)
+    };
+  });
   const health = summarizeRunHealth(runs);
   const disabledWorkflows = workflows.filter((row) => String(row['workflow-active']) === 'false').length;
   const overviewMetadata = createOverviewMetadata(sources);
@@ -85,6 +93,10 @@ export function deriveOverviewSources(sources) {
         'rollout-live-repositories': entry.rolloutLiveRepositories,
         'rollout-repositories': entry.rolloutRepositories,
         'dispatch-count': entry.dispatches,
+        'dispatch-success-count': entry.successfulDispatches,
+        'dispatch-failure-count': entry.failedDispatches,
+        'dispatch-approval-count': entry.approvalDispatches,
+        'dispatch-pending-count': entry.pendingDispatches,
         'dispatches-with-safe-output': entry.dispatchesWithSafeOutputs,
         'activity-window': entry.activityWindow,
         workers: entry.workers,
@@ -953,17 +965,27 @@ function summarizePackageActivity(workflows, runs, outcomes) {
   const workflowPackages = new Map(workflows
     .filter((row) => typeof row.package === 'string' && row.package && typeof row.workflow === 'string' && row.workflow)
     .map((row) => [scopedWorkflowKey(row), String(row.package)]));
-  /** @type {Map<string, Set<string>>} */
-  const dispatchesByPackage = new Map();
+  /** @type {Map<string, { dispatches: Set<string>, successful: Set<string>, failed: Set<string>, approval: Set<string>, pending: Set<string> }>} */
+  const activityByPackage = new Map();
   const packageByDispatch = new Map();
   for (const run of runs) {
     if (String(run.event) !== 'workflow_dispatch') continue;
     const packageId = workflowPackages.get(scopedWorkflowKey(run));
     const dispatchKey = runtimeRunKey(run);
     if (!packageId || !dispatchKey) continue;
-    const dispatches = dispatchesByPackage.get(packageId) ?? new Set();
-    dispatches.add(dispatchKey);
-    dispatchesByPackage.set(packageId, dispatches);
+    const activity = activityByPackage.get(packageId) ?? {
+      dispatches: new Set(),
+      successful: new Set(),
+      failed: new Set(),
+      approval: new Set(),
+      pending: new Set()
+    };
+    activity.dispatches.add(dispatchKey);
+    if (isFailureConclusion(run['run-conclusion'])) activity.failed.add(dispatchKey);
+    else if (isApprovalConclusion(run['run-conclusion'])) activity.approval.add(dispatchKey);
+    else if (String(run['run-status'] ?? '') && String(run['run-status']) !== 'completed') activity.pending.add(dispatchKey);
+    else if (String(run['run-conclusion']) === 'success') activity.successful.add(dispatchKey);
+    activityByPackage.set(packageId, activity);
     packageByDispatch.set(dispatchKey, packageId);
   }
 
@@ -979,10 +1001,17 @@ function summarizePackageActivity(workflows, runs, outcomes) {
     outputDispatchesByPackage.set(packageId, outputDispatches);
   }
 
-  return new Map([...workflowPackages.values()].map((packageId) => [packageId, {
-    dispatches: dispatchesByPackage.get(packageId)?.size ?? 0,
-    dispatchesWithSafeOutputs: outputDispatchesByPackage.get(packageId)?.size ?? 0
-  }]));
+  return new Map([...new Set(workflowPackages.values())].map((packageId) => {
+    const activity = activityByPackage.get(packageId);
+    return [packageId, {
+      dispatches: activity?.dispatches.size ?? 0,
+      successfulDispatches: activity?.successful.size ?? 0,
+      failedDispatches: activity?.failed.size ?? 0,
+      approvalDispatches: activity?.approval.size ?? 0,
+      pendingDispatches: activity?.pending.size ?? 0,
+      dispatchesWithSafeOutputs: outputDispatchesByPackage.get(packageId)?.size ?? 0
+    }];
+  }));
 }
 
 /**

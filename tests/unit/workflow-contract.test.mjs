@@ -393,7 +393,7 @@ test("enterprise defaults, budgets, timeouts, and concurrency are finite", () =>
     "eu-cra-compliance.md": { credits: 200, timeout: 15, dispatchMax: 48, workers: 6 },
     "eu-cra-compliance-package-maintainer.md": { credits: 200, timeout: 20 },
     "optimization.md": { credits: 250, timeout: 15, dispatchMax: 20, workers: 2 },
-    "self-care.md": { credits: 200, timeout: 15, dispatchMax: 5, workers: 5 },
+    "self-care.md": { credits: 200, timeout: 15, dispatchMax: 6, workers: 6 },
     "ambient-context-agents-md-curator.md": { credits: 400, timeout: 25 },
     "ambient-context-skills-curator.md": { credits: 400, timeout: 20 },
     "aw-failures-investigator.md": { credits: 500, timeout: 30 },
@@ -413,6 +413,7 @@ test("enterprise defaults, budgets, timeouts, and concurrency are finite", () =>
     "software-development-practices-nist-ssdf.md": { credits: 400, timeout: 30 },
     "self-care-accessibility-checker.md": { credits: 400, timeout: 30 },
     "self-care-code-improvement.md": { credits: 400, timeout: 30 },
+    "self-care-data-acquisition-audit.md": { credits: 300, timeout: 20 },
     "self-care-dashboard-review.md": { credits: 400, timeout: 30 },
     "self-care-docs-build-time-investigator.md": { credits: 400, timeout: 30 },
     "self-care-primer-brand-checker.md": { credits: 400, timeout: 25 },
@@ -886,6 +887,7 @@ test("repository-local SelfCare uses organization-billed Copilot authentication"
   const workflowIds = [
     "self-care-accessibility-checker",
     "self-care-code-improvement",
+    "self-care-data-acquisition-audit",
     "self-care-dashboard-review",
     "self-care-docs-build-time-investigator",
     "self-care-primer-brand-checker",
@@ -895,6 +897,7 @@ test("repository-local SelfCare uses organization-billed Copilot authentication"
   assert.doesNotMatch(rootManifest, /\.github\/workflows\/self-care(?:-[\w-]+)?\.md/);
   assert.match(selfCareManifest, /description: Repository-local/);
   assert.match(selfCareManifest, /\.github\/workflows\/self-care\.md/);
+  assert.match(selfCareManifest, /\.github\/workflows\/self-care-data-acquisition-audit\.md/);
   assert.match(selfCareManifest, /\.github\/workflows\/self-care-docs-build-time-investigator\.md/);
   assert.equal(
     readFileSync(join(root, "self-care", ".github", "graders", "self-care-docs-build-time-investigator-operational-value.sh"), "utf8"),
@@ -1217,6 +1220,7 @@ test("live workers require target-owned package authority before agent execution
     ["self-care.md", "self-care"],
     ["self-care-accessibility-checker.md", "self-care"],
     ["self-care-code-improvement.md", "self-care"],
+    ["self-care-data-acquisition-audit.md", "self-care"],
     ["self-care-dashboard-review.md", "self-care"],
     ["self-care-docs-build-time-investigator.md", "self-care"],
     ["self-care-primer-brand-checker.md", "self-care"],
@@ -1281,6 +1285,7 @@ test("operation workflows optionally load per-operation markdown steering", () =
     ["self-care.md", "self-care"],
     ["self-care-accessibility-checker.md", "self-care"],
     ["self-care-code-improvement.md", "self-care"],
+    ["self-care-data-acquisition-audit.md", "self-care"],
     ["self-care-dashboard-review.md", "self-care"],
     ["self-care-docs-build-time-investigator.md", "self-care"],
     ["self-care-primer-brand-checker.md", "self-care"],
@@ -1409,6 +1414,7 @@ test("every worker uses the standard dispatch envelope and safe mode vocabulary"
     ["software-development-practices-nist-ssdf.md", "software-development-practices", "nist-ssdf"],
     ["self-care-accessibility-checker.md", "self-care", "accessibility-checker"],
     ["self-care-code-improvement.md", "self-care", "code-improvement"],
+    ["self-care-data-acquisition-audit.md", "self-care", "data-acquisition-audit"],
     ["self-care-dashboard-review.md", "self-care", "dashboard-review"],
     ["self-care-docs-build-time-investigator.md", "self-care", "docs-build-time-investigator"],
     ["self-care-primer-brand-checker.md", "self-care", "primer-brand-checker"],
@@ -1754,6 +1760,19 @@ test("multi-device docs tester runs daily and covers browser and appearance comp
   assert.match(source, /multi-device-docs\/screenshots/);
 });
 
+test("SelfCare data acquisition audit refreshes its specification", () => {
+  const source = workflow("self-care-data-acquisition-audit.md");
+  const compiled = workflow("self-care-data-acquisition-audit.lock.yml");
+
+  assert.match(source, /on:\n\s+bots: \["github-actions\[bot\]"\]/);
+  assert.match(source, /package: self-care\n\s+role: worker\n\s+worker: data-acquisition-audit/);
+  assert.match(source, /safe_output_mode` is `live`/);
+  assert.match(source, /draft: true/);
+  assert.match(source, /allowed-files:\n\s+- "specs\/data-acquisition-audit\.md"/);
+  assert.match(source, /Inspect JavaScript and embedded JavaScript/);
+  assert.match(compiled, /specs\/data-acquisition-audit\.md/);
+});
+
 test("SelfCare runs every 20 minutes", () => {
   const source = workflow("self-care.md");
   const compiled = workflow("self-care.lock.yml");
@@ -2067,6 +2086,7 @@ test("clean-room compilation emits the expected GitHub Actions settings", { time
       "optimization.lock.yml",
       "self-care-accessibility-checker.lock.yml",
       "self-care-code-improvement.lock.yml",
+      "self-care-data-acquisition-audit.lock.yml",
       "self-care-dashboard-review.lock.yml",
       "self-care-docs-build-time-investigator.lock.yml",
       "self-care-primer-brand-checker.lock.yml",
@@ -2163,6 +2183,7 @@ test("clean-room compilation emits the expected GitHub Actions settings", { time
       ["optimization-ai-credit-optimizer.lock.yml", ["optimization", "ai-credit-optimizer"]],
       ["self-care-accessibility-checker.lock.yml", ["self-care", "accessibility-checker"]],
       ["self-care-code-improvement.lock.yml", ["self-care", "code-improvement"]],
+      ["self-care-data-acquisition-audit.lock.yml", ["self-care", "data-acquisition-audit"]],
       ["self-care-dashboard-review.lock.yml", ["self-care", "dashboard-review"]],
       ["self-care-docs-build-time-investigator.lock.yml", ["self-care", "docs-build-time-investigator"]],
       ["self-care-primer-brand-checker.lock.yml", ["self-care", "primer-brand-checker"]],
@@ -2474,10 +2495,12 @@ test("Activity package owns the shared collected-data cache contract", () => {
   assert.deepEqual(activityManifest.includes, [".github/workflows/activity.yml"]);
   assert.deepEqual(activityManifest.resources, [
     { source: "actions-log.mjs", destination: ".github/aw/activity/actions-log.mjs" },
+    { source: "failure-evidence.mjs", destination: ".github/aw/activity/failure-evidence.mjs" },
     { source: "index.mjs", destination: ".github/aw/activity/index.mjs" },
   ]);
   assert.ok(rootManifest.includes.includes(".github/workflows/activity.yml"));
   assert.ok(rootManifest.resources.some((entry) => entry.destination === ".github/aw/activity/actions-log.mjs"));
+  assert.ok(rootManifest.resources.some((entry) => entry.destination === ".github/aw/activity/failure-evidence.mjs"));
   assert.ok(rootManifest.resources.some((entry) => entry.destination === ".github/aw/activity/index.mjs"));
   assert.match(workflow, /schedule:[\s\S]*?cron:/);
   assert.doesNotMatch(workflow, /workflow_call:/);
@@ -2577,6 +2600,7 @@ test("Dashboard inventory links multiline orchestrator worker lists", () => {
         workers: [
           "self-care-accessibility-checker",
           "self-care-code-improvement",
+          "self-care-data-acquisition-audit",
           "self-care-dashboard-review",
           "self-care-docs-build-time-investigator",
           "self-care-primer-brand-checker",

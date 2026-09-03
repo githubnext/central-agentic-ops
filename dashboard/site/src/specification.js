@@ -296,7 +296,7 @@ export const SOURCE_FIELDS = {
   organizations: ['organization', 'organization-name', 'observed-at', 'organization-link'],
   repositories: ['organization', 'repository', 'repository-name', 'rollout-mode', 'observed-at', 'organization-link', 'repository-link'],
   workflows: ['organization', 'repository', 'package', 'package-name', 'package-icon', 'workflow', 'workflow-name', 'workflow-role', 'workflow-active', 'admission-status', 'admission-reason', 'gh-aw-version', 'gh-aw-update-state', 'gh-aw-metadata', 'gh-aw-manifest', 'rollout-mode', 'max-ai-credits', 'package-aic-allowance', 'package-worker-count', 'package-inventory-warnings', 'inventory-ready', 'observed-at', 'organization-link', 'repository-link', 'workflow-link'],
-  runs: ['organization', 'repository', 'workflow', 'run', 'run-title', 'event', 'started-at', 'ended-at', 'run-status', 'run-conclusion', 'admission-status', 'admission-reason', 'resource', 'resource-reset-at', 'resource-wait-hours', 'rollout-mode', 'engine', 'engine-version', 'requested-model', 'resolved-model', 'organization-link', 'repository-link', 'workflow-link', 'run-link'],
+  runs: ['organization', 'repository', 'workflow', 'run', 'run-title', 'event', 'started-at', 'ended-at', 'run-status', 'run-conclusion', 'admission-status', 'admission-reason', 'failure-job', 'failure-message', 'failure-step', 'resource', 'resource-reset-at', 'resource-wait-hours', 'rollout-mode', 'engine', 'engine-version', 'requested-model', 'resolved-model', 'organization-link', 'repository-link', 'workflow-link', 'run-link'],
   experiments: ['experiment', 'experiment-name', 'observed-at'],
   'experiment-assignments': ['organization', 'repository', 'workflow', 'run', 'experiment', 'variant', 'observed-at'],
   graders: ['grader', 'grader-name', 'observed-at'],
@@ -322,7 +322,7 @@ export const SOURCE_FIELDS = {
   'cost-signals': ['priority', 'count', 'tone', 'icon', 'kind', 'title', 'detail', 'evidence', 'action', 'navigation-page'],
   'runtime-anomaly-readiness': ['icon', 'title', 'detail'],
   'runtime-signals': ['priority', 'count', 'tone', 'icon', 'kind', 'title', 'detail', 'evidence', 'action', 'navigation-href'],
-  dispatches: ['started-at', 'dispatch-type', 'package', 'package-name', 'workflow-name', 'run-title', 'runtime-repository', 'status', 'run-link'],
+  dispatches: ['started-at', 'dispatch-type', 'package', 'package-name', 'workflow-name', 'run-title', 'runtime-repository', 'status', 'status-detail', 'status-detail-at', 'run-link'],
   'dispatch-activation-summary': ['label', 'value'],
   'repository-summary': ['label', 'value', 'items'],
   'repository-activity': ['repository', 'workflows', 'reports', 'evaluated-workflows', 'runs', 'failure-summary', 'aic', 'status', 'repository-link'],
@@ -357,6 +357,7 @@ export const RUN_CONCLUSION_VALUES = [
   'unknown'
 ];
 export const GRADER_STATUS_VALUES = ['pass', 'fail', 'error', 'unavailable'];
+export const DISPATCH_STATUS_VALUES = [...RUN_CONCLUSION_VALUES, ...RUN_STATUS_VALUES];
 export const EVAL_RESULT_VALUES = ['YES', 'NO', 'UNKNOWN'];
 export const OUTCOME_STATE_VALUES = ['accepted', 'rejected', 'ignored', 'pending', 'lifecycle', 'lifecycle-close'];
 export const FINDING_STATUS_VALUES = ['open', 'resolved', 'dismissed', 'unknown'];

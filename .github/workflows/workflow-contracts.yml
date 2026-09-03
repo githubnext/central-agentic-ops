@@ -36,7 +36,47 @@ jobs:
       - name: Check patch formatting
         run: git diff --check
 
+  package-lifecycle-changes:
+    name: Select package lifecycle tests
+    runs-on: ubuntu-latest
+    outputs:
+      has-changes: ${{ steps.matrix.outputs.has-changes }}
+      matrix: ${{ steps.matrix.outputs.matrix }}
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: 24
+          cache: npm
+      - name: Install dependencies
+        run: npm ci
+      - name: Build package test matrix
+        id: matrix
+        env:
+          BASE_SHA: ${{ github.event_name == 'pull_request' && github.event.pull_request.base.sha || github.event.before }}
+          HEAD_SHA: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || github.sha }}
+        run: |
+          if [[ "${{ github.event_name }}" == "workflow_dispatch" || "$BASE_SHA" =~ ^0+$ ]]; then
+            matrix="$(node scripts/package-lifecycle-matrix.mjs --all)"
+          else
+            matrix="$(node scripts/package-lifecycle-matrix.mjs "$BASE_SHA" "$HEAD_SHA")"
+          fi
+          echo "matrix=$matrix" >> "$GITHUB_OUTPUT"
+          if [[ "$matrix" == '{"include":[]}' ]]; then
+            echo "has-changes=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "has-changes=true" >> "$GITHUB_OUTPUT"
+          fi
+
   package-lifecycle:
+    needs: package-lifecycle-changes
+    if: needs.package-lifecycle-changes.outputs.has-changes == 'true'
+    name: Package lifecycle (${{ matrix.name }})
+    strategy:
+      fail-fast: false
+      matrix: ${{ fromJSON(needs.package-lifecycle-changes.outputs.matrix) }}
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
@@ -68,6 +108,7 @@ jobs:
         env:
           CENTRAL_AGENTIC_OPS_PACKAGE_SOURCE: ${{ github.repository }}@${{ github.sha }}
           GH_TOKEN: ${{ github.token }}
+          NODE_OPTIONS: '--test-name-pattern="${{ matrix.test-pattern }}"'
         run: |
           set +e
           output="$(npm run test:package-lifecycle 2>&1)"

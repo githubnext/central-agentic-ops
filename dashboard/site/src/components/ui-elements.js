@@ -139,6 +139,7 @@ function renderPackageStatusGridElement(context) {
         const coveragePercent = coverageKnown ? Math.min(100, Math.max(0, liveCoveragePercent)) : null;
         const reviewRepositories = coverageKnown ? rolloutRepositories - rolloutLiveRepositories : null;
         const dispatchCount = row['dispatch-count'] == null ? null : Number(row['dispatch-count']);
+        const dispatchStatus = packageDispatchStatus(row, dispatchCount);
         const outputDispatchCount = row['dispatches-with-safe-output'] == null ? null : Number(row['dispatches-with-safe-output']);
         const dispatchText = Number.isFinite(dispatchCount) ? `${dispatchCount} dispatch${dispatchCount === 1 ? '' : 'es'}` : 'Dispatches unavailable';
         const outputCountsKnown = dispatchCount !== null && outputDispatchCount !== null && Number.isFinite(dispatchCount) && Number.isFinite(outputDispatchCount);
@@ -150,15 +151,14 @@ function renderPackageStatusGridElement(context) {
         const repoEntries = repoModes.length > 0 ? repoModes.filter((entry) => typeof entry.repository === 'string' && entry.repository) : [];
         const inventoryText = stringValue(row.inventory || 'Needs attention');
         return h(
-          'a',
+          'article',
           {
-            className: `package-status-card package-status-${stringValue(row['inventory-state']) === 'inventory-ready' ? 'ready' : 'attention'}`,
-            href: stringValue(row.href)
+            className: `package-status-card package-status-${stringValue(row['inventory-state']) === 'inventory-ready' ? 'ready' : 'attention'}`
           },
           h(
             'header',
             { className: 'package-status-header' },
-            h('strong', null, octicon(stringValue(row.icon) || 'package'), h('span', null, stringValue(row.title))),
+            h('strong', null, h('a', { className: 'package-status-identity', href: stringValue(row.href) }, octicon(stringValue(row.icon) || 'package'), h('span', null, stringValue(row.title)))),
             inventoryText === 'Ready' ? null : h('span', { className: 'package-status-state' }, inventoryText)
           ),
           h(
@@ -202,13 +202,27 @@ function renderPackageStatusGridElement(context) {
               : h('p', { className: 'package-status-repositories-empty' }, 'No repositories reported')
           ),
           h(
-            'div',
+            'a',
             {
               className: `package-status-activity${noOutputWarning ? ' package-status-activity-warning' : ''}`,
+              href: `#page-package-dispatches?package=${encodeURIComponent(stringValue(row.package))}`,
               title: stringValue(row['activity-window']),
-              'aria-label': `Recent activity: ${dispatchText}; ${outputText}${noOutputWarning ? '; warning: dispatches produced no output' : ''}`
+              'aria-label': `Recent activity: ${dispatchStatus.detail}; ${dispatchText}; ${outputText}${noOutputWarning ? '; warning: dispatches produced no output' : ''}`
             },
-            h('span', { className: 'package-status-activity-label' }, 'Recent'),
+            h(
+              'span',
+              { className: 'package-status-activity-heading' },
+              h('span', { className: 'package-status-activity-label' }, 'Recent'),
+              h(
+                'span',
+                {
+                  className: `package-status-activity-state package-status-activity-state-${dispatchStatus.tone}`,
+                  title: dispatchStatus.detail
+                },
+                octicon(dispatchStatus.icon),
+                dispatchStatus.label
+              )
+            ),
             h('span', null, octicon('paper-airplane'), h('strong', null, dispatchText)),
             h(
               'span',
@@ -221,6 +235,36 @@ function renderPackageStatusGridElement(context) {
       })
     )
   );
+}
+
+/**
+ * @param {Record<string, unknown>} row
+ * @param {number | null} dispatchCount
+ */
+function packageDispatchStatus(row, dispatchCount) {
+  const successful = row['dispatch-success-count'] == null ? null : Number(row['dispatch-success-count']);
+  const failed = row['dispatch-failure-count'] == null ? null : Number(row['dispatch-failure-count']);
+  const approval = row['dispatch-approval-count'] == null ? null : Number(row['dispatch-approval-count']);
+  const pending = row['dispatch-pending-count'] == null ? null : Number(row['dispatch-pending-count']);
+  if (![dispatchCount, successful, failed, approval, pending].every(Number.isFinite)) {
+    return { tone: 'unknown', icon: 'circle', label: 'Unknown', detail: 'Recent dispatch status unavailable' };
+  }
+
+  const other = Math.max(0, Number(dispatchCount) - Number(successful) - Number(failed) - Number(approval) - Number(pending));
+  const details = [
+    Number(successful) > 0 ? `${successful} succeeded` : '',
+    Number(failed) > 0 ? `${failed} failed` : '',
+    Number(approval) > 0 ? `${approval} awaiting approval` : '',
+    Number(pending) > 0 ? `${pending} in progress` : '',
+    other > 0 ? `${other} other` : ''
+  ].filter(Boolean);
+  const detail = details.join(', ') || 'No recent dispatches';
+  if (Number(failed) > 0) return { tone: 'failed', icon: 'x-circle', label: `${failed} failed`, detail };
+  if (Number(approval) > 0) return { tone: 'attention', icon: 'clock', label: `${approval} awaiting approval`, detail };
+  if (Number(pending) > 0) return { tone: 'attention', icon: 'sync', label: `${pending} in progress`, detail };
+  if (other > 0) return { tone: 'unknown', icon: 'alert', label: `${other} other`, detail };
+  if (Number(dispatchCount) > 0) return { tone: 'success', icon: 'check-circle', label: `${successful} succeeded`, detail };
+  return { tone: 'unknown', icon: 'dash', label: 'None', detail };
 }
 
 /** @param {ElementRenderContext} context */

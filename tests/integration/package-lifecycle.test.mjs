@@ -29,6 +29,7 @@ const selfCarePackageSource = focusedPackageSource("self-care");
 const softwareDevelopmentPracticesPackageSource = focusedPackageSource("software-development-practices");
 const activityExpectedFiles = [
   ".github/aw/activity/actions-log.mjs",
+  ".github/aw/activity/failure-evidence.mjs",
   ".github/aw/activity/index.mjs",
   ".github/workflows/activity.yml",
 ];
@@ -85,6 +86,7 @@ const selfCareExpectedFiles = [
   ".github/graders/self-care-docs-build-time-investigator-operational-value.sh",
   ".github/workflows/self-care-accessibility-checker.md",
   ".github/workflows/self-care-code-improvement.md",
+  ".github/workflows/self-care-data-acquisition-audit.md",
   ".github/workflows/self-care-dashboard-review.md",
   ".github/workflows/self-care-docs-build-time-investigator.md",
   ".github/workflows/self-care-primer-brand-checker.md",
