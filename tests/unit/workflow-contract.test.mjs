@@ -56,6 +56,17 @@ test("AI Credit workers collect all workflow logs with bounded resources", () =>
   }
 });
 
+test("operational-value graders cap GitHub API usage while collecting logs", () => {
+  for (const name of [
+    "ambient-context-agents-md-curator-operational-value.sh",
+    "optimization-ai-credit-auditor-operational-value.sh",
+    "optimization-ai-credit-optimizer-operational-value.sh",
+  ]) {
+    const source = readFileSync(join(root, ".github", "graders", name), "utf8");
+    assert.match(source, /gh aw logs[\s\S]*--max-github-api-rate-limit -2000/, name);
+  }
+});
+
 function controlPrecompute() {
   return [
     workflow("shared/control.md"),

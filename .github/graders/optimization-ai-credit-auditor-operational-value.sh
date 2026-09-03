@@ -118,7 +118,7 @@ collect_logs() {
     output=$4
     mkdir -p "$tmp_dir/logs"
     gh aw logs --repo "$target_repo" --start-date "$start_day" --end-date "$end_day" \
-      --count 10000 --json --output "$tmp_dir/logs" >"$output" 2>"$tmp_dir/logs.err"
+      --count 10000 --max-github-api-rate-limit -2000 --json --output "$tmp_dir/logs" >"$output" 2>"$tmp_dir/logs.err"
     jq -e '(.runs | type) == "array"' "$output" >/dev/null
 }
 
