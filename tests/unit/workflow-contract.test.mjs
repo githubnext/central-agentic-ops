@@ -2403,7 +2403,7 @@ test("Dashboard package supports embedded and explicit standalone deployment", (
   assert.doesNotMatch(activityWorkflow, /workflow_call:/);
   assert.match(activityWorkflow, /workflow_dispatch:[\s\S]*?request-id:/);
   assert.match(activityWorkflow, /run-name: CAO Activity \/ \$\{\{ inputs\.request-id \|\| github\.run_id \}\}/);
-  assert.match(activityWorkflow, /Resolve activity cache key[\s\S]*?cao-activity-v2-\$\{\{ github\.repository \}\}-\$\{\{ github\.run_id \}\}-\$\{\{ github\.run_attempt \}\}/);
+  assert.match(activityWorkflow, /Resolve activity cache key[\s\S]*?cao-activity-v3-\$\{\{ github\.repository \}\}-\$\{\{ github\.run_id \}\}-\$\{\{ github\.run_attempt \}\}/);
   assert.match(buildWorkflow, /key: \$\{\{ format\('[^']+', runner\.os, github\.repository, needs\.activity\.outputs\.run-id, needs\.activity\.outputs\.run-attempt\) \}\}/);
   assert.match(buildWorkflow, /Require collected activity data[\s\S]*?control-settings\.json control-plane-inventory\.json deployed-workflows\.json aic-usage\.json operational-values\.json dashboard-records\.json/);
   assert.doesNotMatch(buildWorkflow, /Discover deployed agentic workflows/);
@@ -2518,7 +2518,7 @@ test("Activity package owns the shared collected-data cache contract", () => {
   assert.match(workflow, /Collect AI Credit usage/);
   assert.match(workflow, /Collect operational-value observations/);
   assert.match(workflow, /Collect durable dashboard records/);
-  assert.match(workflow, /cao-activity-v2-\$\{\{ github\.repository \}\}-/);
+  assert.match(workflow, /cao-activity-v3-\$\{\{ github\.repository \}\}-/);
   assert.match(readme, /schemaVersion: 1/);
   assert.match(readme, /Consumers must use the top-level completeness fields/);
   assert.match(readme, /retained non-terminal runs receive a full-window refresh/);
