@@ -109,7 +109,7 @@ test("dashboard source bridge carries package memberships, allowance, and invent
       }],
     },
     controlSettings: {
-      packages: { "ambient-context": { mode: "review" } },
+      packages: { "ambient-context": { mode: "review", icon: "workflow" } },
     },
   });
 
@@ -117,6 +117,7 @@ test("dashboard source bridge carries package memberships, allowance, and invent
     {
       package: sources.workflows.rows[0].package,
       packageName: sources.workflows.rows[0]["package-name"],
+      packageIcon: sources.workflows.rows[0]["package-icon"],
       packageMemberships: sources.workflows.rows[0]["package-memberships"],
       maxAiCredits: sources.workflows.rows[0]["max-ai-credits"],
       packageAllowance: sources.workflows.rows[0]["package-aic-allowance"],
@@ -131,6 +132,7 @@ test("dashboard source bridge carries package memberships, allowance, and invent
     {
       package: "ambient-context",
       packageName: "Ambient Context",
+      packageIcon: "workflow",
       packageMemberships: [
         { id: "ambient-context", name: "Ambient Context" },
       ],

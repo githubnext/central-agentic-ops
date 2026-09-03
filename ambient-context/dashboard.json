@@ -12,7 +12,7 @@
         "title": "Ambient Context",
         "navigation-label": "Ambient context",
         "description": "Track context-curation runs, retained proposals, and matured evidence that accepted changes reduced prompt cost without increasing failures.",
-        "icon": "package",
+        "icon": "workflow",
         "views": [
           {
             "id": "ambient-context-runs",
