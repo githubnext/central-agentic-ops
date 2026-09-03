@@ -93,7 +93,7 @@ jobs:
           Skipped: $reason
 
           <details>
-          <summary>Runtime revision</summary>
+          <summary>❌ Runtime revision</summary>
 
           The control and policy modules could not be read or executed from the exact \`github.workflow_sha\` commit.
 

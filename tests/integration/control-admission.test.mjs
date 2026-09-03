@@ -15,6 +15,7 @@ function runAdmission({
   rateRemaining = 5000,
   rateReset = Math.floor(Date.now() / 1000) + 3600,
   githubActions = true,
+  env: extraEnv = {},
 } = {}) {
   const directory = mkdtempSync(join(tmpdir(), "central-ops-admission-"));
   const mockGh = join(directory, "gh");
@@ -60,6 +61,7 @@ esac
         MOCK_RATE_RESET: String(rateReset),
         RUNNER_TEMP: realpathSync(directory),
         GITHUB_WORKFLOW_SHA: "1111111111111111111111111111111111111111",
+        ...extraEnv,
       },
     });
     return {
@@ -98,9 +100,10 @@ test("CAO admission authorizes a declared package before activation", () => {
   ].join("\n"));
   assert.deepEqual(output, { authorized: "true", reason: "authorized", monthly_credit_budget: "0" });
   assert.match(summary, /### Central Agentic Ops admission\n\nAuthorized package `dependabot` as `orchestrator`/);
-  assert.match(summary, /<details>\n<summary>Runtime revision<\/summary>/);
-  assert.match(summary, /<summary>Run limits<\/summary>/);
+  assert.match(summary, /<details>\n<summary>✅ Runtime revision<\/summary>/);
+  assert.match(summary, /<summary>✅ Run limits<\/summary>/);
   assert.equal((summary.match(/<details>/g) ?? []).length, 10);
+  assert.equal((summary.match(/<summary>✅ /g) ?? []).length, 10);
 });
 
 test("CAO admission emits plain logs outside GitHub Actions", () => {
@@ -137,8 +140,30 @@ test("CAO admission denies a disabled package without failing the workflow", () 
   assert.equal(result.status, 0, result.stderr);
   assert.deepEqual(output, { authorized: "false", reason: "package-disabled", monthly_credit_budget: "0" });
   assert.match(summary, /Skipped package `dependabot` as `orchestrator`: package-disabled/);
-  assert.match(summary, /<summary>Package<\/summary>/);
+  assert.match(summary, /<summary>✅ Workflow identity<\/summary>/);
+  assert.match(summary, /<summary>❌ Package<\/summary>/);
   assert.match(summary, /<summary>Worker<\/summary>/);
+  assert.doesNotMatch(summary, /<summary>[✅❌] Worker<\/summary>/);
+});
+
+test("CAO admission denies a requested mode that exceeds checked-in policy and marks Mode input", () => {
+  const { result, output, summary } = runAdmission({
+    env: { CAO_REQUESTED_MODE: "live" },
+  });
+
+  assert.equal(result.status, 0, result.stderr);
+  assert.deepEqual(output, {
+    authorized: "false",
+    reason: "safe_output_mode exceeds checked-in policy",
+    monthly_credit_budget: "0",
+  });
+  assert.match(summary, /Skipped package `dependabot` as `orchestrator`: safe_output_mode exceeds checked-in policy/);
+  assert.match(summary, /<summary>✅ Package<\/summary>/);
+  assert.match(summary, /<summary>✅ Worker<\/summary>/);
+  assert.match(summary, /<summary>✅ Target input<\/summary>/);
+  assert.match(summary, /<summary>❌ Mode input<\/summary>/);
+  assert.match(summary, /<summary>Run limits<\/summary>/);
+  assert.doesNotMatch(summary, /<summary>[✅❌] Run limits<\/summary>/);
 });
 
 test("CAO admission fails closed when policy validation fails", () => {

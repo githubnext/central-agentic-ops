@@ -158,6 +158,33 @@ GitHub says not to retry primary-limit failures until \`x-ratelimit-reset\`; con
 `;
 }
 
+function failedAdmissionCheckIndex(reason) {
+  if (!reason) return -1;
+  if (reason.startsWith("cannot read")) return 0; // Runtime revision
+  if (reason === "control policy validation failed") return 1; // Policy document
+  if (reason === "control-plane-absent") return 2; // Control plane
+  if (
+    reason === "role must be orchestrator or worker"
+    || reason === "worker identity is required"
+    || reason === "worker identity is forbidden for orchestrators"
+  ) return 3; // Workflow identity
+  if (reason === "package-undeclared" || reason === "package-disabled") return 4; // Package
+  if (reason === "worker-disabled" || reason.startsWith("unknown worker:")) return 5; // Worker
+  if (reason === "target_repo must use owner/repository form") return 6; // Target input
+  if (reason === "safe_output_mode exceeds checked-in policy" || reason === "safe_output_mode must be review or live") return 7; // Mode input
+  if (reason.startsWith("max_repositories") || reason.startsWith("rollout_percent")) return 8; // Run limits
+  if (reason === "github-api-capacity-insufficient" || reason === "github-api-capacity-unavailable") return 9; // GitHub API capacity
+  return -1;
+}
+
+function admissionCheckHeading(title, index, authorized, failedIndex) {
+  if (authorized) return `✅ ${title}`;
+  if (failedIndex < 0) return title;
+  if (index < failedIndex) return `✅ ${title}`;
+  if (index === failedIndex) return `❌ ${title}`;
+  return title;
+}
+
 function writeAdmissionSummary({ authorized, packageName, role, reason, apiCapacity }) {
   const summaryPath = environment("GITHUB_STEP_SUMMARY");
   if (!summaryPath) return;
@@ -168,8 +195,9 @@ function writeAdmissionSummary({ authorized, packageName, role, reason, apiCapac
       : authorized
     ? `Authorized package \`${packageName}\` as \`${role}\`.`
     : `Skipped package \`${packageName}\` as \`${role}\`: ${reason}`;
-  const disclosures = ADMISSION_CHECKS.map(([title, description]) => (
-    `<details>\n<summary>${title}</summary>\n\n${description}\n\n</details>`
+  const failedIndex = authorized ? -1 : failedAdmissionCheckIndex(reason);
+  const disclosures = ADMISSION_CHECKS.map(([title, description], index) => (
+    `<details>\n<summary>${admissionCheckHeading(title, index, authorized, failedIndex)}</summary>\n\n${description}\n\n</details>`
   )).join("\n\n");
   writeFileSync(
     summaryPath,
@@ -285,14 +313,16 @@ function admit() {
     } catch {
       throw new ControlError(`cannot read ${POLICY_PATH} at github.workflow_sha`);
     }
-    const document = parsePolicy(source);
+    let document;
+    try {
+      document = parsePolicy(source);
+    } catch (error) {
+      throw new ControlError(error instanceof PolicyError ? "control policy validation failed" : error.message);
+    }
     result = applyGithubApiAdmission(effectivePolicy(document, options), options);
     writeFileSync(join(directory, "effective-policy.json"), `${JSON.stringify(result, null, 2)}\n`);
   } catch (error) {
-    const message = error instanceof PolicyError
-      ? "control policy validation failed"
-      : error.message;
-    result = { authorized: false, reason: message };
+    result = { authorized: false, reason: error.message };
   }
 
   const monthlyCreditBudget = result.authorized ? result.monthly_ai_credit_budget : 0;

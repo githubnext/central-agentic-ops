@@ -69,15 +69,20 @@ The [Configuration Reference](configuration.md) defines every policy field. The 
 
 ## Diagnose a Skipped Run
 
-Open the run summary and find **Central Agentic Ops admission**. An authorized run names its package and role. A denied run records a reason and leaves activation skipped.
+Open the run summary and find **Central Agentic Ops admission**. An authorized run names its package and role, and every collapsed check below it is marked ✅. A denied run records a reason, marks every check before the failing one ✅, marks the exact failing check ❌, and leaves activation skipped. The ❌ marker identifies which row of the table below to consult; later checks are left unmarked because admission stopped before reaching them.
 
-| Reason | Configuration or setup to check |
-| --- | --- |
-| `control-plane-absent` | Add `control-plane` to `.github/workflows/cao.json`. |
-| `package-undeclared` | Add the installed package under `control-plane.packages`. |
-| `package-disabled` | Review the package, then remove `enabled: false` when it is safe to resume. |
-| `worker-disabled` | Review the worker, then remove `enabled: false` when it is safe to resume. |
-| `control policy validation failed` | Validate policy keys, values, identities, and requested manual inputs. |
-| Cannot read or execute CAO runtime | Materialize both `.github/cao` runtime files from the same immutable package revision and commit them with the workflows. |
+| Reason | Check marked ❌ | Configuration or setup to check |
+| --- | --- | --- |
+| Cannot read or execute CAO runtime | Runtime revision | Materialize both `.github/cao` runtime files from the same immutable package revision and commit them with the workflows. |
+| `control policy validation failed` | Policy document | Validate policy keys, types, ranges, unique names, and expressions in `.github/workflows/cao.json`. |
+| `control-plane-absent` | Control plane | Add `control-plane` to `.github/workflows/cao.json`. |
+| `role must be orchestrator or worker`, `worker identity is required`, `worker identity is forbidden for orchestrators` | Workflow identity | Fix the dispatched role and worker identity for the workflow. |
+| `package-undeclared` | Package | Add the installed package under `control-plane.packages`. |
+| `package-disabled` | Package | Review the package, then remove `enabled: false` when it is safe to resume. |
+| `worker-disabled`, `unknown worker: <package>/<worker>` | Worker | Review the worker, then remove `enabled: false` or declare it under `control-plane.packages.<package>.workers` when it is safe to resume. |
+| `target_repo must use owner/repository form` | Target input | Fix the `target_repo` manual input to the exact `owner/repository` form. |
+| `safe_output_mode exceeds checked-in policy`, `safe_output_mode must be review or live` | Mode input | Narrow the requested `safe_output_mode`, or raise the checked-in package, target, or worker `mode`/`max-mode` ceiling. |
+| `max_repositories exceeds checked-in policy`, `rollout_percent exceeds checked-in policy`, or an integer-range message | Run limits | Narrow the requested `max_repos`/`rollout_percent`, or raise the checked-in `max-repositories`/`rollout-percent`. |
+| `github-api-capacity-insufficient`, `github-api-capacity-unavailable` | GitHub API capacity | Follow the remediation guidance in the run summary; do not retry before the reported reset time. |
 
 Fix the checked-in setup or policy, commit and push the new revision, then start a new run. Do not bypass admission by editing a generated `.lock.yml` file or by widening manual inputs.
