@@ -1556,7 +1556,7 @@ function compareTableValues(left, right) {
  */
 function buildChartPoints(pageId, title, rows, x, y, color, hrefField) {
   const aggregate = typeof y?.aggregate === 'string' ? y.aggregate : null;
-  if (!aggregate) {
+  if (!aggregate || aggregate === 'none') {
     return rows.map((row, rowIndex) => ({
       key: `${pageId}-${title}-${rowIndex}`,
       x: x ? toText(row[x.field]) : 'unknown',

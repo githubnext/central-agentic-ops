@@ -469,11 +469,13 @@ describe('presenter built-in and custom pages', () => {
     });
 
     const labels = [...rendered.querySelectorAll('.nav-section-label')].map((node) => node.textContent?.trim());
-    expect(labels).toEqual(['Attention', 'Investigate', 'Explore', 'Maintain', 'Package operations']);
+    expect(labels).toEqual(['Attention', 'Control plane', 'Investigate', 'Explore', 'Maintain', 'Package operations']);
     expect(rendered.querySelector('[data-nav-page-id="overview"]')?.previousElementSibling?.textContent).toBe('Attention');
+    expect(rendered.querySelector('[data-nav-page-id="readiness"]')?.previousElementSibling?.textContent).toBe('Control plane');
     expect(rendered.querySelector('[data-nav-page-id="runtime"]')?.previousElementSibling?.textContent).toBe('Investigate');
     expect([...rendered.querySelectorAll('.nav-label')].map((node) => node.textContent)).toEqual([
       'Overview',
+      'Readiness',
       'Runtime',
       'Performance',
       'Security',
@@ -625,6 +627,7 @@ describe('presenter built-in and custom pages', () => {
     expect(menu?.querySelector('summary')?.getAttribute('aria-label')).toBe('Select view');
     expect(menuLinks.map((link) => link.textContent?.trim())).toEqual([
       'Overview',
+      'Readiness',
       'Runtime',
       'Performance',
       'Security',
@@ -716,7 +719,7 @@ describe('presenter built-in and custom pages', () => {
 
     const page = activatePage(rendered, 'performance');
     expect(page?.querySelector('[data-chart-widget="histogram"]')).not.toBeNull();
-    expect(page?.querySelectorAll('[data-chart-widget="histogram"] .histogram-chart-bar')).toHaveLength(1);
+    expect(page?.querySelectorAll('[data-chart-widget="histogram"] .histogram-chart-bar')).toHaveLength(2);
     expect(page?.querySelectorAll('[data-chart-widget="bar"]')).toHaveLength(3);
     expect(page?.textContent).toContain('gvisor');
     expect(page?.textContent).toContain('gpt-5.4');
@@ -2442,7 +2445,7 @@ describe('presenter built-in and custom pages', () => {
                 layout: 'half',
                 encoding: {
                   x: { field: 'started-at', type: 'temporal' },
-                  y: { field: 'run', type: 'quantitative', aggregate: 'count' }
+                  y: { field: 'run-count', type: 'quantitative', aggregate: 'none' }
                 }
               },
               {
@@ -2466,8 +2469,8 @@ describe('presenter built-in and custom pages', () => {
         runs: {
           source: 'runs',
           rows: [
-            { organization: 'octo-org', repository: 'repo', run: '1', 'started-at': '2026-08-28T00:00:00Z', 'run-conclusion': 'success' },
-            { organization: 'octo-org', repository: 'repo', run: '2', 'started-at': '2026-08-29T00:00:00Z', 'run-conclusion': 'failure' }
+            { organization: 'octo-org', repository: 'repo', run: '1', 'run-count': 2, 'started-at': '2026-08-28T00:00:00Z', 'run-conclusion': 'success' },
+            { organization: 'octo-org', repository: 'repo', run: '2', 'run-count': 3, 'started-at': '2026-08-29T00:00:00Z', 'run-conclusion': 'failure' }
           ],
           metadata: {
             'source-id': 'runs-fixture',
@@ -2485,6 +2488,7 @@ describe('presenter built-in and custom pages', () => {
     expect(rendered.querySelectorAll('.custom-view-grid > [data-view-layout="half"]')).toHaveLength(2);
     expect(rendered.querySelector('[data-chart-widget="line"] polyline')?.getAttribute('points')).not.toBe('');
     expect(rendered.querySelectorAll('[data-chart-widget="line"] [role="img"][tabindex="0"]')).toHaveLength(2);
+    expect(rendered.querySelector('[data-chart-widget="line"] [role="img"][tabindex="0"]')?.getAttribute('aria-label')).toContain(': 2');
     expect(rendered.querySelectorAll('[data-chart-widget="line"] .point-tooltip')).toHaveLength(2);
     expect(rendered.querySelector('[data-chart-widget="line"] .point-tooltip')?.getAttribute('aria-hidden')).toBe('true');
     expect(rendered.querySelectorAll('[data-chart-widget="pie"] [data-chart-category]')).toHaveLength(2);

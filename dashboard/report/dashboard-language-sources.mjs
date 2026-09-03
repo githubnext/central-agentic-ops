@@ -593,10 +593,23 @@ function recordLink(record, relation) {
   return record.kind === expectedKind ? link(relation, record.url, `View ${relation.replaceAll("-", " ")}`) : undefined;
 }
 
-function findingRows(records) {
+function recordWorkflowRoleResolver(workflows) {
+  const roleByRuntimeWorkflow = new Map(workflows.map((row) => [
+    `${row.organization}/${row.repository}:${row.workflow}`.toLowerCase(),
+    row["workflow-role"],
+  ]));
+  return (record) => {
+    const workflow = record.workflowPath?.replace(/\.lock\.yml$/, ".md") || "";
+    const scoped = `${record.runtimeRepository || ""}:${workflow}`.toLowerCase();
+    return roleByRuntimeWorkflow.get(scoped) || "unknown";
+  };
+}
+
+function findingRows(records, workflowRoleFor = () => "unknown") {
   return records.map((record) => ({
     ...repositoryParts(record.repository),
     workflow: record.workflowPath?.replace(/\.lock\.yml$/, ".md") || record.workflow || "",
+    "workflow-role": workflowRoleFor(record),
     run: String(record.runUrl?.match(/\/runs\/(\d+)/)?.[1] || ""),
     "safe-output": record.id,
     finding: record.id,
@@ -620,12 +633,13 @@ function findingRows(records) {
   }));
 }
 
-function outcomeRows(records) {
+function outcomeRows(records, workflowRoleFor = () => "unknown") {
   return records.map((record) => ({
     ...repositoryParts(record.repository),
     "runtime-repository": record.runtimeRepository || record.repository,
     ...(record.bundle ? { package: record.bundle } : {}),
     workflow: record.workflowPath?.replace(/\.lock\.yml$/, ".md") || record.workflow || "",
+    "workflow-role": workflowRoleFor(record),
     "workflow-name": record.workflow || record.workflowPath?.replace(/\.lock\.yml$/, ".md") || "Unknown workflow",
     run: String(record.runUrl?.match(/\/runs\/(\d+)/)?.[1] || ""),
     "safe-output": record.id,
@@ -749,12 +763,15 @@ export function buildDashboardLanguageSources({ deployed, usage, operationalValu
   const runs = runRows(deployed);
   const performance = performanceRows(deployed, usage);
   const records = report.records || [];
+  const workflowRoleForRecord = recordWorkflowRoleResolver(workflows);
+  const findings = findingRows(records, workflowRoleForRecord);
+  const outcomes = outcomeRows(records, workflowRoleForRecord);
   const reportAvailable = Array.isArray(report.records) && (report.error ? report.records.length > 0 : true);
   const reportComplete = !report.error;
   const values = operationalValueRows(operationalValues);
   const graderObservations = operationalValueGraderRows(operationalValues);
   const repositories = new Map();
-  for (const row of [...workflows, ...runs, ...findingRows(records), ...values]) {
+  for (const row of [...workflows, ...runs, ...findings, ...values]) {
     if (!row.organization || !row.repository) continue;
     repositories.set(`${row.organization}/${row.repository}`, {
       organization: row.organization,
@@ -832,8 +849,8 @@ export function buildDashboardLanguageSources({ deployed, usage, operationalValu
     discoveryAvailable,
     deployed.discovery?.complete === true,
   );
-  sources.outcomes = source("outcomes", outcomeRows(records), generatedAt, reportAvailable, reportComplete);
-  sources.findings = source("findings", findingRows(records), generatedAt, reportAvailable, reportComplete);
+  sources.outcomes = source("outcomes", outcomes, generatedAt, reportAvailable, reportComplete);
+  sources.findings = source("findings", findings, generatedAt, reportAvailable, reportComplete);
   if (report.stale) {
     sources.outcomes.metadata.freshness = "stale";
     sources.findings.metadata.freshness = "stale";

@@ -60,7 +60,7 @@ describe('Cost and efficiency dashboard view', () => {
     ]));
     expect(dashboardPage.views).not.toContainEqual(expect.objectContaining({ element: 'metric-signal-summary' }));
     expect(primerStylesheet()).toContain(
-      ':is(.runtime-page, .security-page, .value-page, .cost-page) .layout-section { padding: 0; border: 0; background: transparent; }'
+      ':is(.readiness-page, .runtime-page, .security-page, .value-page, .cost-page) .layout-section { padding: 0; border: 0; background: transparent; }'
     );
     expect(rendered.querySelector('[data-nav-page-id="cost"] .octicon-meter')).not.toBeNull();
     const filterBar = page?.querySelector('.filter-bar');

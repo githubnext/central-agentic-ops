@@ -70,6 +70,32 @@ describe('UI elements', () => {
     expect(rendered?.querySelectorAll('a')).toHaveLength(1);
   });
 
+  it('renders a blocked readiness verdict with the next unblock action', () => {
+    const rendered = renderUiElement('readiness-verdict', {
+      pageId: 'readiness',
+      title: 'Readiness verdict',
+      sourceNames: ['readiness-summary'],
+      sources: {
+        'readiness-summary': {
+          source: 'readiness-summary',
+          rows: [
+            { label: 'Control plane', value: 'Not ready' },
+            { label: 'Unblock first', value: '4 worker runs failed' },
+            { label: 'Engine activity', value: '20 runs observed · 4 failed' },
+            { label: 'Readiness checks', value: '3 / 5 passing' }
+          ],
+          metadata
+        }
+      },
+      contextDetails: [],
+      headingTag: 'h3'
+    });
+
+    expect(rendered?.classList.contains('readiness-verdict-blocked')).toBe(true);
+    expect(rendered?.querySelector('.octicon-x-circle')).not.toBeNull();
+    expect(rendered?.textContent).toContain('Unblock first4 worker runs failed');
+  });
+
   it('renders JSON summary rows and allows only same-document item navigation', () => {
     const rendered = renderUiElement('context-summary', {
       pageId: 'repositories',

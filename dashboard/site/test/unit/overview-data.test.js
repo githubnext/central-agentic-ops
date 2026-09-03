@@ -22,6 +22,166 @@ function source(name, rows = []) {
 }
 
 describe('overview attention', () => {
+  it('blocks release readiness and surfaces runtime and evidence regressions', () => {
+    const workflows = [{
+      organization: 'githubnext',
+      repository: 'gh-aw-cao',
+      package: 'daily-ops',
+      'package-name': 'Daily Ops',
+      workflow: '.github/workflows/daily-ops.md',
+      'workflow-role': 'orchestrator',
+      'workflow-active': 'true',
+      'inventory-ready': true
+    }, {
+      organization: 'githubnext',
+      repository: 'gh-aw-cao',
+      package: 'daily-ops',
+      'package-name': 'Daily Ops',
+      workflow: '.github/workflows/daily-ops-worker.md',
+      'workflow-role': 'worker',
+      'workflow-active': 'true',
+      'inventory-ready': true
+    }];
+    const sources = deriveOverviewSources({
+      workflows: source('workflows', workflows),
+      repositories: source('repositories'),
+      runs: {
+        source: 'runs',
+        metadata: { ...metadata, freshness: 'stale' },
+        rows: [{
+          organization: 'githubnext',
+          repository: 'gh-aw-cao',
+          workflow: workflows[0].workflow,
+          run: '42',
+          'started-at': '2026-09-02T11:12:00Z',
+          'run-status': 'completed',
+          'run-conclusion': 'failure',
+          'failure-message': 'Readiness smoke test failed',
+          'run-link': 'https://github.com/githubnext/gh-aw-cao/actions/runs/42'
+        }]
+      },
+      usage: source('usage'),
+      outcomes: source('outcomes'),
+      findings: source('findings'),
+      'grader-observations': source('grader-observations'),
+      'operational-values': source('operational-values'),
+      'coverage-diagnostics': source('coverage-diagnostics')
+    });
+
+    expect(sources['readiness-summary'].rows).toContainEqual({ label: 'Control plane', value: 'Not ready' });
+    expect(sources['readiness-checks'].rows).toContainEqual(expect.objectContaining({
+      check: 'Evidence',
+      'readiness-state': 'Unknown'
+    }));
+    expect(sources['readiness-checks'].rows).toContainEqual(expect.objectContaining({
+      check: 'Engine activity',
+      'readiness-state': 'Blocked'
+    }));
+    expect(sources['readiness-signals'].rows).toEqual(expect.arrayContaining([
+      expect.objectContaining({ kind: 'Evidence regression', title: 'Runs evidence is not release-ready' }),
+      expect.objectContaining({ kind: 'Runtime regression', detail: expect.stringContaining('Readiness smoke test failed') })
+    ]));
+  });
+
+  it('attributes failures and warnings by control-plane role and retains no-op reports', () => {
+    const workflows = [
+      { organization: 'githubnext', repository: 'gh-aw-cao', workflow: '.github/workflows/control.md', 'workflow-role': 'orchestrator' },
+      { organization: 'githubnext', repository: 'gh-aw-cao', workflow: '.github/workflows/worker.md', 'workflow-role': 'worker' },
+      { organization: 'githubnext', repository: 'gh-aw-cao', workflow: '.github/workflows/standalone.md', 'workflow-role': 'standalone' }
+    ];
+    const sources = deriveOverviewSources({
+      workflows: source('workflows', workflows),
+      repositories: source('repositories'),
+      runs: source('runs', [
+        { organization: 'githubnext', repository: 'gh-aw-cao', workflow: workflows[0].workflow, run: '1', 'started-at': '2026-09-02T10:05:00Z', 'run-status': 'completed', 'run-conclusion': 'failure' },
+        { organization: 'githubnext', repository: 'gh-aw-cao', workflow: workflows[1].workflow, run: '2', 'started-at': '2026-09-02T10:35:00Z', 'run-status': 'completed', 'run-conclusion': 'failure' },
+        { organization: 'githubnext', repository: 'gh-aw-cao', workflow: workflows[2].workflow, run: '3', 'started-at': '2026-09-02T10:45:00Z', 'run-status': 'completed', 'run-conclusion': 'failure' }
+      ]),
+      usage: source('usage'),
+      outcomes: source('outcomes', [
+        { workflow: workflows[1].workflow, 'workflow-role': 'worker', run: '4', 'outcome-category': 'noop', 'observed-at': '2026-09-02T11:00:00Z' },
+        { workflow: workflows[2].workflow, 'workflow-role': 'standalone', run: '5', 'outcome-category': 'noop', 'observed-at': '2026-09-02T11:30:00Z' }
+      ]),
+      findings: source('findings', [
+        { workflow: workflows[0].workflow, 'workflow-role': 'orchestrator', finding: 'warning-1', 'finding-kind': 'authored-warning', 'observed-at': '2026-09-02T10:00:00Z' },
+        { workflow: workflows[1].workflow, 'workflow-role': 'worker', finding: 'warning-2', 'finding-kind': 'authored-warning', 'observed-at': '2026-09-02T10:30:00Z' },
+        { workflow: workflows[2].workflow, 'workflow-role': 'standalone', finding: 'warning-3', 'finding-kind': 'authored-warning', 'observed-at': '2026-09-02T10:45:00Z' }
+      ]),
+      'grader-observations': source('grader-observations'),
+      'operational-values': source('operational-values'),
+      'coverage-diagnostics': source('coverage-diagnostics')
+    });
+
+    expect(sources['readiness-activity'].rows).toEqual(expect.arrayContaining([
+      expect.objectContaining({ 'activity-hour': '2026-09-02T10:00:00.000Z', 'workflow-role': 'orchestrator', 'run-count': 1 }),
+      expect.objectContaining({ 'activity-hour': '2026-09-02T10:00:00.000Z', 'workflow-role': 'worker', 'run-count': 1 })
+    ]));
+    expect(sources['readiness-observations'].rows).toEqual(expect.arrayContaining([
+      expect.objectContaining({ signal: 'Orchestrator failures', count: 1, status: 'Attention' }),
+      expect.objectContaining({ signal: 'Orchestrator warnings', count: 1, status: 'Attention' }),
+      expect.objectContaining({ signal: 'Worker failures', count: 1, status: 'Attention' }),
+      expect.objectContaining({ signal: 'Worker warnings', count: 1, status: 'Attention' }),
+      expect.objectContaining({ signal: 'No-op reports', count: 1, status: 'Observed' })
+    ]));
+    expect(sources['readiness-observations'].rows).toHaveLength(5);
+    expect(sources['readiness-signals'].rows.filter((row) => row.kind === 'Runtime regression')).toHaveLength(2);
+    expect(sources['readiness-checks'].rows).toContainEqual(expect.objectContaining({
+      check: 'Outputs',
+      'readiness-state': 'Blocked'
+    }));
+  });
+
+  it('blocks readiness when the control-plane engine is not churning', () => {
+    const sources = deriveOverviewSources({
+      workflows: source('workflows', [
+        { package: 'daily-ops', workflow: '.github/workflows/control.md', 'workflow-role': 'orchestrator', 'workflow-active': 'true', 'inventory-ready': true },
+        { package: 'daily-ops', workflow: '.github/workflows/worker.md', 'workflow-role': 'worker', 'workflow-active': 'true', 'inventory-ready': true }
+      ]),
+      repositories: source('repositories'),
+      runs: source('runs'),
+      usage: source('usage'),
+      outcomes: source('outcomes'),
+      findings: source('findings'),
+      'grader-observations': source('grader-observations'),
+      'operational-values': source('operational-values'),
+      'coverage-diagnostics': source('coverage-diagnostics')
+    });
+
+    expect(sources['readiness-checks'].rows[0]).toEqual({
+      check: 'Engine activity',
+      'readiness-state': 'Blocked',
+      detail: 'No control-plane runs were observed in the current window.'
+    });
+    expect(sources['readiness-summary'].rows).toContainEqual({ label: 'Engine activity', value: '0 runs observed' });
+  });
+
+  it('blocks on unresolved role joins without rendering unattributed observations', () => {
+    const sources = deriveOverviewSources({
+      workflows: source('workflows', [
+        { organization: 'githubnext', repository: 'gh-aw-cao', package: 'daily-ops', workflow: '.github/workflows/control.md', 'workflow-role': 'orchestrator', 'workflow-active': 'true', 'inventory-ready': true }
+      ]),
+      repositories: source('repositories'),
+      runs: source('runs', [{ organization: 'githubnext', repository: 'gh-aw-cao', workflow: '.github/workflows/control.md', run: '1', 'run-status': 'completed', 'run-conclusion': 'success' }]),
+      usage: source('usage'),
+      outcomes: source('outcomes', [{ workflow: '.github/workflows/missing.md', 'workflow-role': 'unknown', 'outcome-category': 'noop' }]),
+      findings: source('findings', [{ workflow: '.github/workflows/missing.md', 'workflow-role': 'unknown', 'finding-kind': 'authored-warning' }]),
+      'grader-observations': source('grader-observations'),
+      'operational-values': source('operational-values'),
+      'coverage-diagnostics': source('coverage-diagnostics')
+    });
+
+    expect(sources['readiness-checks'].rows).toContainEqual(expect.objectContaining({
+      check: 'Evidence',
+      'readiness-state': 'Blocked',
+      detail: '2 relevant records could not be joined to workflow inventory.'
+    }));
+    expect(sources['readiness-signals'].rows).toContainEqual(expect.objectContaining({
+      kind: 'Attribution regression',
+      count: 2
+    }));
+    expect(sources['readiness-observations'].rows.map((row) => row.signal)).not.toContain(expect.stringContaining('Unattributed'));
+  });
+
   it('summarizes recent package dispatch states', () => {
     const workflow = {
       organization: 'githubnext',

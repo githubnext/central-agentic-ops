@@ -34,6 +34,7 @@ const ELEMENT_RENDERERS = new Map([
   ['domain-attention', renderDomainAttentionElement],
   ['package-status-grid', renderPackageStatusGridElement],
   ['summary-grid', renderSummaryGridElement],
+  ['readiness-verdict', renderReadinessVerdictElement],
   ['context-summary', renderContextSummaryElement],
   ['anomaly-readiness', renderAnomalyReadinessElement],
   ['signal-list', renderSignalListElement],
@@ -47,7 +48,7 @@ const ELEMENT_RENDERERS = new Map([
   ['outcome-detail', renderOutcomeDetail]
 ]);
 
-const EMPTY_AWARE_ELEMENTS = new Set(['summary-grid', 'context-summary', 'signal-list', 'package-insights', 'package-detail', 'package-dispatches', 'package-reports', 'workflow-detail', 'workflow-runtime', 'outcome-detail']);
+const EMPTY_AWARE_ELEMENTS = new Set(['summary-grid', 'readiness-verdict', 'context-summary', 'signal-list', 'package-insights', 'package-detail', 'package-dispatches', 'package-reports', 'workflow-detail', 'workflow-runtime', 'outcome-detail']);
 
 /**
  * @param {string} name
@@ -276,6 +277,30 @@ function renderSummaryGridElement(context) {
   return renderDefinitionList('summary-grid', rows);
 }
 
+/** @param {ElementRenderContext} context */
+function renderReadinessVerdictElement(context) {
+  const rows = rowsFor(context, context.sourceNames[0]);
+  const verdict = stringValue(rows.find((row) => row.label === 'Control plane')?.value) || 'Evidence incomplete';
+  const tone = verdict === 'Ready to ship' ? 'ready' : verdict === 'Not ready' ? 'blocked' : 'unknown';
+  const icon = tone === 'ready' ? 'check-circle' : tone === 'blocked' ? 'x-circle' : 'alert';
+  return h(
+    'section',
+    { className: `readiness-verdict readiness-verdict-${tone}`, role: 'status' },
+    h(
+      'div',
+      { className: 'readiness-verdict-primary' },
+      h('span', { className: 'readiness-verdict-icon', 'aria-hidden': 'true' }, octicon(icon)),
+      h('span', { className: 'readiness-verdict-copy' },
+        h('small', null, 'Release decision'),
+        h('strong', null, verdict))
+    ),
+    renderDefinitionList('readiness-verdict-details', rows.filter((row) => row.label !== 'Control plane').map((row) => ({
+      label: stringValue(row.label),
+      value: stringValue(row.value)
+    })))
+  );
+}
+
 /**
  * @param {ElementRenderContext} context
  */
@@ -354,13 +379,15 @@ function renderSignal(row, index) {
   const link = findLink(row, 'run-link') ?? findLink(row, 'external-link');
   const navigationHref = safeNavigationHref(row['navigation-href']);
   const navigationPage = stringValue(row['navigation-page']);
+  const urgency = stringValue(row.urgency);
+  const kind = stringValue(row.kind);
   const content = [
     h('span', { className: 'signal-rank', 'aria-hidden': 'true' }, String(index + 1)),
     h('span', { className: 'signal-icon' }, octicon(stringValue(row.icon) || 'issue')),
     h(
       'span',
       { className: 'signal-copy' },
-      h('span', null, stringValue(row.kind)),
+      h('span', null, [urgency, kind].filter(Boolean).join(' · ')),
       h('strong', null, stringValue(row.title)),
       h('small', null, stringValue(row.detail))
     ),
