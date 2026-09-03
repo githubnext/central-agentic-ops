@@ -139,9 +139,6 @@
         "icon": "meter",
         "class-name": "cost-page",
         "description": "Measured AI Credit allocation and efficiency evidence for the configured githubnext/gh-aw-cao repository.",
-        "filter-bar": {
-          "filters": []
-        },
         "sections": [
           {
             "id": "measured-usage",

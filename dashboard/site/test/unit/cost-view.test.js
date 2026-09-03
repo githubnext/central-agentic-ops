@@ -64,11 +64,8 @@ describe('Cost and efficiency dashboard view', () => {
     );
     expect(rendered.querySelector('[data-nav-page-id="cost"] .octicon-meter')).not.toBeNull();
     const filterBar = page?.querySelector('.filter-bar');
-    expect(filterBar?.querySelector('input')?.value).toBe('');
-    expect(filterBar?.querySelector('.count-badge')?.textContent).toBe('0');
-    expect(filterBar?.querySelector('.scope-period')).toBeNull();
+    expect(filterBar).toBeNull();
     expect(rendered.querySelector('.dashboard-horizon > span:first-child')?.textContent).toBe('Horizon 1 week');
-    expect(filterBar?.querySelector('.export-control')).toBeNull();
 
     const summary = page?.querySelector('.summary-grid');
     expect(summary?.textContent).toContain('Measured AIC9');
