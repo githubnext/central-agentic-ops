@@ -102,8 +102,14 @@ test("App setup validates callback codes and bounded generated names", () => {
 
 test("App setup rejects all-repository installations", () => {
   assert.doesNotThrow(() => validateInstallationScope({ id: "123", repositorySelection: "selected" }, "octo"));
-  assert.throws(
-    () => validateInstallationScope({ id: "123", repositorySelection: "all" }, "octo"),
-    /installed for all octo repositories; select only approved repositories/,
-  );
+  let error;
+  try {
+    validateInstallationScope({ id: "123", repositorySelection: "all" }, "octo");
+  } catch (caught) {
+    error = caught;
+  }
+  assert.ok(error);
+  assert.equal(error.name, "InstallationScopeError");
+  assert.match(error.message, /installed for all octo repositories; select only approved repositories/);
+  assert.match(error.message, /organizations\/octo\/settings\/installations\/123/);
 });

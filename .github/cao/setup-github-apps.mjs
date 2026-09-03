@@ -370,7 +370,9 @@ function matchingInstallation(app, owner) {
 export function validateInstallationScope(installation, owner) {
   if (installation.repositorySelection !== "selected") {
     const settingsUrl = `https://github.com/organizations/${owner}/settings/installations/${installation.id}`;
-    throw new Error(`GitHub App is installed for all ${owner} repositories; select only approved repositories at ${settingsUrl}`);
+    const error = new Error(`GitHub App is installed for all ${owner} repositories; select only approved repositories at ${settingsUrl}`);
+    error.name = "InstallationScopeError";
+    throw error;
   }
 }
 
@@ -402,6 +404,9 @@ async function waitForInstallation(app, repo) {
       }
       lastError = undefined;
     } catch (error) {
+      if (error.name === "InstallationScopeError") {
+        throw error;
+      }
       lastError = error;
     }
     await delay(INSTALL_POLL_MS);
