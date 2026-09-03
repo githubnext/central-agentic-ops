@@ -517,6 +517,7 @@ test("operations creation guidance scopes detection and omits worker evals", () 
   const packageSkill = readFileSync(join(root, ".github", "skills", "create-ops-package", "SKILL.md"), "utf8");
 
   assert.match(packageSkill, /safe-outputs\.threat-detection: false/);
+  assert.match(packageSkill, /default new dispatchers to `hourly`/);
   assert.match(packageSkill, /`labels: \[<package-slug>\]`[\s\S]*?preferably `title-prefix: "\[<package-slug>:<worker-slug>\] "`/);
   assert.match(packageSkill, /evaluate the potential follow-up actions/);
   assert.match(packageSkill, /single most important action with the highest expected return on investment/);
@@ -1405,7 +1406,7 @@ test("Advisory preserves UK AI guidance and human-review boundaries", () => {
     assert.match(source, /human review/i);
   }
 
-  assert.match(orchestrator, /schedule: "daily on weekdays"/);
+  assert.match(orchestrator, /schedule: "hourly"/);
   assert.match(orchestrator, /workflows: \[advisory-uk-ai-operational-resilience\]/);
   assert.match(orchestrator, /Use bounded two-stage discovery/);
   assert.match(orchestrator, /AI is a threat accelerator, not an eligibility requirement/);
@@ -1720,6 +1721,19 @@ test("AW Maintenance runs hourly with bounded deterministic discovery", () => {
   assert.match(compiled, /cron: "\d+ \*\/1 \* \* \*"  # Friendly format: hourly \(scattered\)/);
   assert.match(compiled, /GH_AW_INFO_ENGINE_ID: "pi"/);
   assert.match(compiled, /GH_AW_INFO_MODEL: "copilot\/gpt-5\.4"/);
+});
+
+test("slower package orchestrators run hourly", () => {
+  for (const name of [
+    "ambient-context.md",
+    "dependabot.md",
+    "eu-cra-compliance.md",
+    "optimization.md",
+    "software-development-practices.md",
+    "uk-ai-advisory.md",
+  ]) {
+    assert.match(workflow(name), /^\s+schedule: "?(hourly)"?$/m, name);
+  }
 });
 
 test("SelfCare accessibility checker audits the served docs site with axe-core evidence", () => {
