@@ -253,7 +253,7 @@ function renderSidebar(pages, title, navigation) {
         { className: 'mobile-nav-menu' },
         h(
           'summary',
-          { 'aria-label': 'Select view', title: 'Select view' },
+          { role: 'button', 'aria-label': 'Select view', title: 'Select view' },
           octicon('three-bars')
         ),
         h(
@@ -308,7 +308,7 @@ function renderMobileNavItem(page, isActive) {
       href: `#page-${page.id}`,
       className: `mobile-nav-item${isActive ? ' active' : ''}`,
       'aria-current': isActive ? 'page' : undefined,
-      'data-nav-page-id': page.id
+      'data-mobile-nav-page-id': page.id
     },
     octicon(getPageIcon(page)),
     h('span', { className: 'mobile-nav-label' }, title)
@@ -375,7 +375,7 @@ function enableMobileNavigationMenu(root) {
 
   root.addEventListener('click', (event) => {
     if (!(event.target instanceof Element)) return;
-    if (event.target.closest('[data-nav-page-id]') || !event.target.closest('.mobile-nav-menu')) {
+    if (event.target.closest('[data-mobile-nav-page-id]') || !event.target.closest('.mobile-nav-menu')) {
       menu.removeAttribute('open');
     }
   });
@@ -878,7 +878,7 @@ export function enableDashboardPageNavigation(root, dashboardTitle = '', renderP
   const pageState = new Map();
   let activePageId = '';
   const overviewPage = pages.find((page) => page.dataset.pageId === 'overview');
-  const links = [...root.querySelectorAll('[data-nav-page-id]')]
+  const links = [...root.querySelectorAll('[data-nav-page-id], [data-mobile-nav-page-id]')]
     .filter((link) => link instanceof HTMLAnchorElement);
   const breadcrumbPage = root.querySelector('[data-breadcrumb-page]');
   const breadcrumbRoot = root.querySelector('[data-breadcrumb-root]');
@@ -1004,7 +1004,7 @@ export function enableDashboardPageNavigation(root, dashboardTitle = '', renderP
     const page = pages.find((candidate) => candidate.dataset.pageId === pageId);
     const routeNavigationPage = page?.dataset.routeNavigationPage;
     if (routeNavigationPage && availableIds.has(routeNavigationPage)) {
-      const navigationLink = links.find((link) => link.dataset.navPageId === routeNavigationPage);
+      const navigationLink = links.find((link) => getNavigationPageId(link) === routeNavigationPage);
       updateNavigationLinks(links, routeNavigationPage);
       if (breadcrumbRoot instanceof HTMLAnchorElement && navigationLink) {
         breadcrumbRoot.hidden = false;
@@ -1050,10 +1050,10 @@ export function enableDashboardPageNavigation(root, dashboardTitle = '', renderP
   activate(initialRoute?.pageId ?? pages[0].dataset.pageId ?? '', initialRoute?.parameters);
   root.addEventListener('click', (event) => {
     if (!(event.target instanceof Element)) return;
-    const link = event.target.closest('[data-nav-page-id]');
+    const link = event.target.closest('[data-nav-page-id], [data-mobile-nav-page-id]');
     if (!(link instanceof HTMLAnchorElement)) return;
     event.preventDefault();
-    const pageId = link.dataset.navPageId;
+    const pageId = getNavigationPageId(link);
     if (!pageId || !availableIds.has(pageId)) return;
     root.ownerDocument.defaultView?.history.pushState(null, '', link.href);
     activate(pageId, routeFromHash()?.parameters);
@@ -1093,11 +1093,19 @@ function updateDocumentTitle(ownerDocument, pageTitle, dashboardTitle) {
  */
 function updateNavigationLinks(links, pageId) {
   for (const link of links) {
-    const isActive = link.dataset.navPageId === pageId;
+    const isActive = getNavigationPageId(link) === pageId;
     link.classList.toggle('active', isActive);
     if (isActive) link.setAttribute('aria-current', 'page');
     else link.removeAttribute('aria-current');
   }
+}
+
+/**
+ * @param {HTMLAnchorElement} link
+ * @returns {string}
+ */
+function getNavigationPageId(link) {
+  return link.dataset.navPageId ?? link.dataset.mobileNavPageId ?? '';
 }
 
 /**

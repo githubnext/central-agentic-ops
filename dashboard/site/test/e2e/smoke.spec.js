@@ -2529,7 +2529,7 @@ test('phone navigation uses icon shortcuts and a full-label view menu without ho
   await expect(page.locator('.primary-nav > .nav-item').nth(4)).toBeHidden();
   await expect(page.locator('.primary-nav')).not.toHaveCSS('overflow-x', 'auto');
 
-  await page.getByText('Select view', { exact: true }).click();
+  await page.getByRole('button', { name: 'Select view' }).click();
   const menu = page.locator('.mobile-nav-menu-list');
   await expect(menu).toBeVisible();
   await expect(menu.getByText('Cost & efficiency', { exact: true })).toBeVisible();

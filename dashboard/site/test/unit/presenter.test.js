@@ -596,7 +596,7 @@ describe('presenter built-in and custom pages', () => {
       sources: {}
     });
     const menu = /** @type {HTMLDetailsElement | null} */ (rendered.querySelector('.mobile-nav-menu'));
-    const menuLinks = [...rendered.querySelectorAll('.mobile-nav-menu-list [data-nav-page-id]')];
+    const menuLinks = [...rendered.querySelectorAll('.mobile-nav-menu-list [data-mobile-nav-page-id]')];
 
     expect(menu?.querySelector('summary')?.getAttribute('aria-label')).toBe('Select view');
     expect(menuLinks.map((link) => link.textContent?.trim())).toEqual([
