@@ -63,7 +63,7 @@ jobs:
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           ref: ${{ github.workflow_sha }}
-          path: ${{ runner.temp }}/cao
+          path: cao
           sparse-checkout: .github/cao/src
           sparse-checkout-cone-mode: true
           fetch-depth: 1
@@ -85,7 +85,7 @@ jobs:
           CAO_REQUESTED_ROLLOUT_PERCENT: ${{ github.event.inputs.rollout_percent || '' }}
         run: |
           set -uo pipefail
-          cao_dir="${RUNNER_TEMP:-/tmp}/cao/.github/cao/src"
+          cao_dir="${GITHUB_WORKSPACE}/cao/.github/cao/src"
           if node "$cao_dir/control.mjs" admit; then
             exit 0
           fi
@@ -155,7 +155,7 @@ jobs:
           CAO_WORKER_CREDITS_PER_TARGET: "${{ github.aw.import-inputs.worker_credits_per_target }}"
         run: |
           set -euo pipefail
-          node "${RUNNER_TEMP:-/tmp}/cao/.github/cao/src/control.mjs" precompute
+          node "${GITHUB_WORKSPACE}/cao/.github/cao/src/control.mjs" precompute
 
       - name: "CAO precompute blocked: GitHub API limited until ${{ steps.cao_precompute.outputs.github_api_reset_at }}"
         if: ${{ steps.cao_precompute.outputs.reason == 'github-api-capacity-insufficient' }}
