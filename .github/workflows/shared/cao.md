@@ -26,7 +26,7 @@ imports:
       package: ${{ github.aw.import-inputs.package }}
       role: ${{ github.aw.import-inputs.role }}
       worker: ${{ github.aw.import-inputs.worker }}
-      dispatch_max: ${{ format('{0}', github.aw.import-inputs.dispatch_max) }}
-      orchestrator_credits: ${{ format('{0}', github.aw.import-inputs.orchestrator_credits) }}
-      worker_credits_per_target: ${{ format('{0}', github.aw.import-inputs.worker_credits_per_target) }}
+      dispatch_max: ${{ github.aw.import-inputs.dispatch_max }}
+      orchestrator_credits: ${{ github.aw.import-inputs.orchestrator_credits }}
+      worker_credits_per_target: ${{ github.aw.import-inputs.worker_credits_per_target }}
 ---

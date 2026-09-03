@@ -65,8 +65,12 @@ test("catalog packages declare their current experimental maturity", () => {
 
 test("operational workflows use the transitive CAO package bundle", () => {
   const bundle = workflow("shared/cao.md");
+  const control = workflow("shared/control.md");
   assert.match(bundle, /imports:\n\s+- uses: control\.md/);
-  assert.match(bundle, /format\('\{0\}', github\.aw\.import-inputs\.dispatch_max\)/);
+  assert.match(bundle, /dispatch_max: \$\{\{ github\.aw\.import-inputs\.dispatch_max \}\}/);
+  assert.match(control, /dispatch_max:\n\s+type: number/);
+  assert.match(control, /orchestrator_credits:\n\s+type: number/);
+  assert.match(control, /worker_credits_per_target:\n\s+type: number/);
 
   const operationWorkflows = readdirSync(workflowsDirectory)
     .filter((name) => name.endsWith(".md") && workflow(name).includes("uses: shared/cao.md"));
@@ -558,10 +562,14 @@ test("worker workflows allow service-account dispatches", () => {
 
   assert.ok(workers.length > 0, "expected at least one worker workflow");
   for (const [name, source] of workers) {
-    assert.match(source, /^on:\n  bots: \["github-actions\[bot\]"\]/m, name);
+    assert.match(
+      source,
+      /^on:\n  bots: \["github-actions\[bot\]", "cao-githubnext-gh-aw-cao-write\[bot\]"\]/m,
+      name,
+    );
     const generated = workflow(name.replace(/\.md$/, ".lock.yml"));
     assert.match(generated, /GH_AW_REQUIRED_ROLES: "admin,maintainer,write"/, name);
-    assert.match(generated, /GH_AW_ALLOWED_BOTS: "github-actions\[bot\]"/, name);
+    assert.match(generated, /GH_AW_ALLOWED_BOTS: "github-actions\[bot\],cao-githubnext-gh-aw-cao-write\[bot\]"/, name);
   }
 });
 
@@ -1773,7 +1781,7 @@ test("SelfCare data acquisition audit refreshes its specification", () => {
   const source = workflow("self-care-data-acquisition-audit.md");
   const compiled = workflow("self-care-data-acquisition-audit.lock.yml");
 
-  assert.match(source, /on:\n\s+bots: \["github-actions\[bot\]"\]/);
+  assert.match(source, /on:\n\s+bots: \["github-actions\[bot\]", "cao-githubnext-gh-aw-cao-write\[bot\]"\]/);
   assert.match(source, /package: self-care\n\s+role: worker\n\s+worker: data-acquisition-audit/);
   assert.match(source, /safe_output_mode` is `live`/);
   assert.match(source, /draft: true/);
@@ -1968,7 +1976,7 @@ test("SelfCare docs build-time investigator rotates evidenced recommendations", 
   const source = workflow("self-care-docs-build-time-investigator.md");
 
   assert.match(source, /^name: "SelfCare \/ Docs Build Time"$/m);
-  assert.match(source, /on:\n\s+bots: \["github-actions\[bot\]"\]/);
+  assert.match(source, /on:\n\s+bots: \["github-actions\[bot\]", "cao-githubnext-gh-aw-cao-write\[bot\]"\]/);
   assert.match(source, /package: self-care\n\s+role: worker\n\s+worker: docs-build-time-investigator/);
   assert.match(source, /safe_output_mode` is `live`/);
   assert.match(source, /at most the latest 20 completed `docs\.yml` runs from the last 14 days/);
@@ -2139,6 +2147,10 @@ test("clean-room compilation emits the expected GitHub Actions settings", { time
       assert.match(preActivation, /github\/gh-aw-actions\/setup-cli@/);
       assert.match(preActivation, /steps\.cao_admission\.outputs\.monthly_credit_budget != '0'/);
       assert.match(preActivation, /name: Run CAO control precompute/);
+      assert.match(preActivation, /CAO_DISPATCH_MAX: "\d+"/);
+      assert.match(preActivation, /CAO_ORCHESTRATOR_CREDITS: "\d+"/);
+      assert.match(preActivation, /CAO_WORKER_CREDITS_PER_TARGET: "\d+"/);
+      assert.doesNotMatch(preActivation, /github\.aw\.import-inputs/);
       assert.match(preActivation, /GH_TOKEN: \$\{\{ steps\.cao_pre_activation_app_token\.outputs\.token \|\| secrets\.GH_AW_GITHUB_TOKEN \|\| github\.token \}\}/);
       assert.match(preActivation, /name: Validate CAO control precompute artifact/);
       assert.match(preActivation, /\.authorized == true/);

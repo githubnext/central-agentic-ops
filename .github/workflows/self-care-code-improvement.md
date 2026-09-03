@@ -3,7 +3,7 @@ name: "SelfCare / Code Quality"
 description: Grow the dashboard component library one reviewed improvement at a time
 intent: Grow the reusable dashboard component library by replacing evidenced UI duplication with tested components while preserving behavior.
 on:
-  bots: ["github-actions[bot]"]
+  bots: ["github-actions[bot]", "cao-githubnext-gh-aw-cao-write[bot]"]
   workflow_dispatch:
     inputs:
       target_repo:

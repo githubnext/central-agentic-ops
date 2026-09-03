@@ -2,7 +2,7 @@
 name: "SelfCare / Dashboard"
 description: Reviews the deployed CAO dashboard through deterministic checks and executive persona journeys
 on:
-  bots: ["github-actions[bot]"]
+  bots: ["github-actions[bot]", "cao-githubnext-gh-aw-cao-write[bot]"]
   workflow_dispatch:
     inputs:
       target_repo:

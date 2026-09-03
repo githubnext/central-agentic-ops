@@ -332,6 +332,52 @@ esac
   }
 });
 
+test("control precompute retains a confirmed rate-limit diagnosis when its capacity recheck fails", () => {
+  const directory = mkdtempSync(join(tmpdir(), "central-ops-precompute-ratelimit-"));
+  const githubOutput = join(directory, "github-output");
+  const stepSummary = join(directory, "step-summary");
+  writeFileSync(githubOutput, "");
+  writeFileSync(stepSummary, "");
+
+  try {
+    const result = runPrecompute(
+      {
+        SAFE_OUTPUT_REPO: "acme/review",
+        GITHUB_OUTPUT: githubOutput,
+        GITHUB_STEP_SUMMARY: stepSummary,
+      },
+      `
+case "$*" in
+  *rate_limit*)
+    echo "gh: API rate limit exceeded for installation. (HTTP 403)" >&2
+    exit 1
+    ;;
+  *repos/acme/review*)
+    echo "gh: API rate limit exceeded for installation. (HTTP 403)" >&2
+    exit 1
+    ;;
+  *) printf 'true\\n' ;;
+esac
+`,
+    );
+
+    assert.equal(result.status, 0, result.stderr);
+    const output = Object.fromEntries(
+      readFileSync(githubOutput, "utf8")
+        .trim()
+        .split("\n")
+        .map((line) => {
+          const separator = line.indexOf("=");
+          return [line.slice(0, separator), line.slice(separator + 1)];
+        }),
+    );
+    assert.equal(output.reason, "github-api-capacity-insufficient");
+    assert.equal(output.github_api_status, "limited");
+  } finally {
+    rmSync(directory, { recursive: true, force: true });
+  }
+});
+
 function runLiveAuthority(authorityContent, overrides = {}, policy = controlPolicy({
   packagePolicy: { mode: "live" },
   workerPolicy: { "max-mode": "live" },
