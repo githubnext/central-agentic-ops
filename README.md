@@ -16,7 +16,7 @@ Central Agentic Ops packages reusable orchestrators and focused workers so platf
 
 ## Documentation
 
-Ready to explore? [See the docs](https://githubnext.github.io/central-agentic-ops/).
+Ready to explore? [See the docs](https://githubnext.github.io/gh-aw-cao/).
 
 ## GitHub Pages setup
 
