@@ -142,7 +142,8 @@ function buildPresenterModuleUrl() {
     .replace("'../dom.js'", JSON.stringify(domModuleUrl))
     .replace("'../view-formatters.js'", JSON.stringify(viewFormattersModuleUrl))
     .replace("'./histogram.js'", JSON.stringify(histogramModuleUrl))
-    .replace("'./link-content.js'", JSON.stringify(linkContentModuleUrl));
+    .replace("'./link-content.js'", JSON.stringify(linkContentModuleUrl))
+    .replace("'./ui-primitives.js'", JSON.stringify(uiPrimitivesModuleUrl));
   const chartElementsModuleUrl = `data:text/javascript;charset=utf-8,${encodeURIComponent(chartElementsSource)}`;
 
   const workflowBadgesSource = readFileSync(new URL('../../src/components/workflow-badges.js', import.meta.url), 'utf8')
