@@ -45,6 +45,12 @@ describe('dashboard document validation', () => {
       kind: 'custom',
       views: [
         {
+          id: 'workflow-update-state',
+          mark: 'chart',
+          chart: 'pie',
+          data: { source: 'workflows' }
+        },
+        {
           id: 'workflow-updates',
           mark: 'table',
           data: { source: 'workflows' }
@@ -61,7 +67,7 @@ describe('dashboard document validation', () => {
         }
       ]
     });
-    expect(updates.views[0].encoding.columns.map((/** @type {{ field: string }} */ column) => column.field)).toEqual([
+    expect(updates.views[1].encoding.columns.map((/** @type {{ field: string }} */ column) => column.field)).toEqual([
       'workflow',
       'repository',
       'gh-aw-version',
@@ -92,7 +98,7 @@ describe('dashboard document validation', () => {
     if (!rejected.ok) {
       expect(rejected.errors).toContainEqual(expect.objectContaining({
         code: 'DLS-E010',
-        path: '$.dashboard.pages[7].views[1].encoding.actions[0].when.field'
+        path: '$.dashboard.pages[7].views[2].encoding.actions[0].when.field'
       }));
     }
   });
@@ -124,9 +130,10 @@ describe('dashboard document validation', () => {
       expect(page.views.every(
         (/** @type {{ disclosure?: string }} */ view) => view.disclosure === 'essential'
       )).toBe(true);
-      expect(page.views.map(
+      const sources = page.views.map(
         (/** @type {{ data: { source: string } }} */ view) => view.data.source
-      )).toEqual(['runs', 'outcomes', 'operational-values', 'operational-values']);
+      );
+      expect(sources.sort()).toEqual(['operational-values', 'operational-values', 'outcomes', 'runs'].sort());
     }
   });
 
@@ -134,7 +141,7 @@ describe('dashboard document validation', () => {
     const builtInDocument = JSON.parse(authoritativeDashboardSource);
     const builtInRunView = builtInDocument.dashboard.pages
       .find((/** @type {{ id: string }} */ page) => page.id === 'runs')
-      .definition.views[0];
+      .definition.views.find((/** @type {{ id: string }} */ view) => view.id === 'runs-runs-source');
     const awMaintenanceDocument = packageDashboardSources
       .map((source) => JSON.parse(source))
       .find((document) => document.dashboard.id === 'aw-maintenance-dashboard');
@@ -166,11 +173,11 @@ describe('dashboard document validation', () => {
     if (!rejected.ok) {
       expect(rejected.errors).toContainEqual(expect.objectContaining({
         code: 'DLS-E005',
-        path: '$.dashboard.pages[1].views[3].callout.icon'
+        path: '$.dashboard.pages[1].views[4].callout.icon'
       }));
       expect(rejected.errors).toContainEqual(expect.objectContaining({
         code: 'DLS-E003',
-        path: '$.dashboard.pages[1].views[3].data',
+        path: '$.dashboard.pages[1].views[4].data',
         message: 'callout views must not declare data.'
       }));
     }
@@ -365,7 +372,7 @@ describe('dashboard document validation', () => {
   it('DLS-VIEW-031 validates JSON-configured title links against one selected source', () => {
     const document = JSON.parse(authoritativeDashboardSource);
     const outcomePage = document.dashboard.pages.find((/** @type {{ id: string }} */ page) => page.id === 'outcome-detail');
-    const outcomeView = outcomePage.views[0];
+    const outcomeView = outcomePage.views.find((/** @type {{ id: string }} */ view) => view.id === 'outcome-record');
     expect(outcomeView['title-link']).toEqual({
       'href-field': 'external-link',
       'identifier-field': 'outcome-number'

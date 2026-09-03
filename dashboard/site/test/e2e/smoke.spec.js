@@ -287,6 +287,46 @@ function buildPresenterModuleUrl() {
   return `data:text/javascript;charset=utf-8,${encodeURIComponent(presenterSource)}`;
 }
 
+test('production pages expose their executive chart without scrolling on a phone', async ({ page }) => {
+  const presenterModuleUrl = buildPresenterModuleUrl();
+  const documentModel = JSON.parse(readFileSync(new URL('../../dashboard.json', import.meta.url), 'utf8'));
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.setContent(`
+    <div id="root"></div>
+    <script type="module">
+      import { renderDashboard } from ${JSON.stringify(presenterModuleUrl)};
+      const documentModel = ${JSON.stringify(documentModel)};
+      const metadata = {
+        'source-id': 'mobile-summary-fixture',
+        'source-kind': 'fixture',
+        'retrieved-at': '2026-09-03T12:00:00Z',
+        completeness: 'complete',
+        freshness: 'fresh',
+        availability: 'available'
+      };
+      const sources = {
+        runs: {
+          source: 'runs',
+          rows: [
+            { run: '1', 'started-at': '2026-09-02T12:00:00Z', 'run-conclusion': 'success' },
+            { run: '2', 'started-at': '2026-09-03T12:00:00Z', 'run-conclusion': 'failure' }
+          ],
+          metadata
+        }
+      };
+      document.querySelector('#root').append(renderDashboard({ document: documentModel, sources }));
+    </script>
+  `);
+
+  const firstView = page.locator('[data-page-id="overview"] .custom-view').first();
+  const chart = firstView.locator('[data-chart-widget="line"]');
+  await expect(chart).toBeVisible();
+  const chartBox = await chart.boundingBox();
+  expect(chartBox).not.toBeNull();
+  expect(chartBox?.y).toBeGreaterThanOrEqual(0);
+  expect((chartBox?.y ?? 0) + (chartBox?.height ?? 0)).toBeLessThanOrEqual(844);
+});
+
 test('DLS-DOC-014 horizon help is available on hover and keyboard focus', async ({ page }) => {
   const presenterModuleUrl = buildPresenterModuleUrl();
   await page.setContent(`
@@ -583,7 +623,8 @@ test('DLS-PAGE-002 DLS-PAGE-014 built-in overview page renders the report-style 
   await expect(page.locator('.nav-section-label')).toHaveCount(1);
   await expect(page.locator('.nav-section-label')).toHaveText(['Attention']);
   await expect(page.locator('.overview-page')).toHaveAttribute('data-page-kind', 'custom');
-  await expect(page.locator('.overview-page .custom-view')).toHaveCount(2);
+  await expect(page.locator('.overview-page .custom-view')).toHaveCount(3);
+  await expect(page.locator('.overview-page .custom-view').first().locator('[data-chart-widget="line"]')).toBeVisible();
   await expect(page.locator('.overview-page .layout-section')).toHaveCount(0);
   await expect(page.getByRole('heading', { name: 'Attention by domain', level: 2 })).toBeVisible();
   const cards = page.locator('.attention-domain-card');
