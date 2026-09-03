@@ -178,6 +178,10 @@ function websocketTextFrame(content) {
   return Buffer.concat([header, payload]);
 }
 
+function websocketCloseFrame() {
+  return Buffer.from([0x88, 0x00]);
+}
+
 /**
  * Starts the dependency-free local dashboard server.
  *
@@ -387,9 +391,13 @@ export async function startDashboardServer({
       "\r\n",
     ].join("\r\n"));
     sockets.add(socket);
+    let receivedHeaderBytes = 0;
     const remove = () => sockets.delete(socket);
     socket.on("data", (data) => {
-      if ((data[0] & 0x0f) === 0x08) socket.end(Buffer.from([0x88, 0x00]));
+      receivedHeaderBytes += Math.min(data.length, 2 - receivedHeaderBytes);
+      if (receivedHeaderBytes === 2 && !socket.writableEnded) {
+        socket.end(websocketCloseFrame());
+      }
     });
     socket.on("close", remove);
     socket.on("error", remove);
@@ -421,7 +429,7 @@ export async function startDashboardServer({
       closed = true;
       clearTimeout(refreshTimer);
       for (const watcher of watchers.values()) watcher.close();
-      for (const socket of sockets) socket.end();
+      for (const socket of sockets) socket.end(websocketCloseFrame());
       await new Promise((accept, reject) => server.close((error) => error ? reject(error) : accept()));
       await refreshPromise;
       await rm(temporaryDirectory, { recursive: true, force: true });
