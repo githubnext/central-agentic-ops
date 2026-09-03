@@ -464,7 +464,10 @@ h3 { margin: 16px 0 8px; font-size: 1rem; font-weight: 600; }
 .package-status-activity .octicon { width: 11px; height: 11px; flex: 0 0 11px; }
 .package-status-activity .octicon-paper-airplane { color: var(--accent); }
 .package-status-activity .octicon-shield-check { color: var(--success); }
+.package-status-activity.package-status-activity-warning { color: var(--attention); }
+.package-status-activity .octicon-alert { color: var(--attention); }
 .package-status-activity strong { overflow: hidden; color: var(--fg); font-size: .6875rem; font-weight: 600; text-overflow: ellipsis; white-space: nowrap; }
+.package-status-activity-warning strong { color: var(--attention); }
 .package-status-activity-label { font-weight: 600; }
 .package-status-attention { border-top-color: var(--attention); }
 .package-status-attention .package-status-state { color: var(--attention); }
