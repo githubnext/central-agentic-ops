@@ -26,8 +26,8 @@ jobs:
           GH_REPO: ${{ github.repository }}
         run: |
           cache_ids="$(
-            gh cache list --repo "$GH_REPO" --limit 10000 --json id,key \
-              --jq '.[] | select((.key | startswith("cao-")) or (.key | contains("-cao-activity-")) or (.key | contains("-dashboard-operational-values-"))) | .id'
+            gh api --paginate "/repos/$GH_REPO/actions/caches?per_page=100" \
+              --jq '.actions_caches[] | select((.key | startswith("cao-")) or (.key | contains("-cao-activity-")) or (.key | contains("-dashboard-operational-values-"))) | .id'
           )"
           count=0
           while IFS= read -r cache_id; do

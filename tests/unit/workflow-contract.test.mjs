@@ -2408,7 +2408,7 @@ test("Dashboard package supports embedded and explicit standalone deployment", (
   assert.match(buildWorkflow, /key: \$\{\{ format\('cao-activity-\{0\}-\{1\}', needs\.activity\.outputs\.run-id, needs\.activity\.outputs\.run-attempt\) \}\}/);
   assert.match(maintenanceWorkflow, /workflow_dispatch:[\s\S]*?command:[\s\S]*?clear-cache/);
   assert.match(maintenanceWorkflow, /permissions:[\s\S]*?actions: write/);
-  assert.match(maintenanceWorkflow, /gh cache list[\s\S]*?gh cache delete/);
+  assert.match(maintenanceWorkflow, /gh api --paginate[\s\S]*?gh cache delete/);
   assert.match(buildWorkflow, /Require collected activity data[\s\S]*?control-settings\.json control-plane-inventory\.json deployed-workflows\.json aic-usage\.json operational-values\.json dashboard-records\.json/);
   assert.doesNotMatch(buildWorkflow, /Discover deployed agentic workflows/);
   assert.doesNotMatch(buildWorkflow, /actions\/cache\/save@|Collect AI Credit usage|Collect operational-value observations|Collect durable dashboard records/);
