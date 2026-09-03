@@ -12,6 +12,7 @@ const wizardPage = readFileSync("docs/pages/wizard.astro", "utf8");
 const landingPage = readFileSync("docs/README.md", "utf8");
 const catalog = readFileSync("docs/lib/catalog.ts", "utf8");
 const packageManifest = readFileSync("package.json", "utf8");
+const sparklePathData = "M7.53 1.282a.5.5 0 0 1 .94 0l.478 1.306a7.492 7.492 0 0 0 4.464 4.464l1.305.478a.5.5 0 0 1 0 .94l-1.305.478a7.492 7.492 0 0 0-4.464 4.464l-.478 1.305a.5.5 0 0 1-.94 0l-.478-1.305a7.492 7.492 0 0 0-4.464-4.464L1.282 8.47a.5.5 0 0 1 0-.94l1.306-.478a7.492 7.492 0 0 0 4.464-4.464Z";
 
 function withoutRootPalette(svg) {
   return svg.replace(/:root \{[^}]+\}/, ":root {}");
@@ -48,6 +49,7 @@ test("landing animations use SVG and CSS without a JavaScript player", () => {
     assert.match(motion, /prefers-color-scheme: dark/);
     assert.match(motion, /prefers-reduced-motion: reduce/);
     assert.equal((motion.match(/class="sparkle"/g) ?? []).length, 28);
+    assert.equal(motion.split(`d="${sparklePathData}"`).length - 1, 28);
     assert.equal((motion.match(/class="package-status"/g) ?? []).length, 4);
     assert.match(motion, /class="report-update"/);
   }
