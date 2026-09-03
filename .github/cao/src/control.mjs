@@ -51,6 +51,13 @@ function environment(name, fallback = "") {
   return process.env[name] ?? fallback;
 }
 
+function parseInteger(value, fallback) {
+  const candidate = value === "" ? fallback : value;
+  if (typeof candidate !== "string") return candidate;
+  const parsed = Number(candidate);
+  return Number.isSafeInteger(parsed) ? parsed : candidate;
+}
+
 function log(message) {
   console.log(`[CAO] ${message}`);
 }
@@ -678,13 +685,13 @@ function createContext(policy) {
     role,
     worker,
     targetRepository: environment("CAO_TARGET_REPOSITORY"),
-    dispatchMaximum: Number(environment("CAO_DISPATCH_MAX", "1")),
+    dispatchMaximum: parseInteger(environment("CAO_DISPATCH_MAX"), 1),
     safeOutputRepository: environment("CAO_SAFE_OUTPUT_REPOSITORY"),
     correlationId: environment("CAO_CORRELATION_ID"),
     centralRepository: role === "orchestrator" ? environment("GITHUB_REPOSITORY") : environment("CAO_CENTRAL_REPOSITORY"),
     controlPlaneRunUrl: environment("CAO_CONTROL_PLANE_RUN_URL"),
-    orchestratorCredits: Number(environment("CAO_ORCHESTRATOR_CREDITS", "0")),
-    workerCreditsPerTarget: Number(environment("CAO_WORKER_CREDITS_PER_TARGET", "0")),
+    orchestratorCredits: parseInteger(environment("CAO_ORCHESTRATOR_CREDITS"), 0),
+    workerCreditsPerTarget: parseInteger(environment("CAO_WORKER_CREDITS_PER_TARGET"), 0),
     workflowSha: environment("GITHUB_WORKFLOW_SHA"),
     controlRepository: environment("GITHUB_REPOSITORY"),
     mode: policy.safe_output_mode,
