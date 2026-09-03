@@ -2500,7 +2500,7 @@ test('desktop navigation collapses to an icon rail and expands back to text', as
   await expect(page.locator('.nav-label').first()).toBeVisible();
 });
 
-test('phone navigation omits the desktop active-item border', async ({ page }) => {
+test('phone navigation uses icon shortcuts and a full-label view menu without horizontal scrolling', async ({ page }) => {
   const presenterModuleUrl = buildPresenterModuleUrl();
   await page.setViewportSize({ width: 390, height: 844 });
   await page.setContent(`
@@ -2515,7 +2515,11 @@ test('phone navigation omits the desktop active-item border', async ({ page }) =
             title: 'Phone Navigation',
             pages: [
               { id: 'overview', kind: 'custom', title: 'Overview', icon: 'home', views: [] },
-              { id: 'runs', kind: 'custom', title: 'Runs', icon: 'play', views: [] }
+              { id: 'runs', kind: 'custom', title: 'Runs', icon: 'play', views: [] },
+              { id: 'security', kind: 'custom', title: 'Security', icon: 'shield', views: [] },
+              { id: 'value', kind: 'custom', title: 'Value', icon: 'graph', views: [] },
+              { id: 'cost', kind: 'custom', title: 'Cost & efficiency', icon: 'meter', views: [] },
+              { id: 'packages', kind: 'custom', title: 'Packages', icon: 'package', views: [] }
             ]
           }
         },
@@ -2524,7 +2528,20 @@ test('phone navigation omits the desktop active-item border', async ({ page }) =
     </script>
   `);
 
-  const activeItem = page.locator('.primary-nav a[aria-current="page"]');
+  const activeItem = page.locator('.primary-nav > a[aria-current="page"]');
   await expect(activeItem).toBeVisible();
+  await expect(activeItem.locator('.nav-label')).toBeHidden();
   expect(await activeItem.evaluate((item) => getComputedStyle(item, '::before').content)).toBe('none');
+  await expect(page.locator('.primary-nav > .nav-item')).toHaveCount(6);
+  await expect(page.locator('.primary-nav > .nav-item').nth(4)).toBeHidden();
+  await expect(page.locator('.primary-nav')).not.toHaveCSS('overflow-x', 'auto');
+
+  await page.getByRole('button', { name: 'Select view' }).click();
+  const menu = page.locator('.mobile-nav-menu-list');
+  await expect(menu).toBeVisible();
+  await expect(menu.getByText('Cost & efficiency', { exact: true })).toBeVisible();
+  await menu.getByText('Cost & efficiency', { exact: true }).click();
+  await expect(menu).toBeHidden();
+  await expect(page.getByRole('heading', { name: 'Cost & efficiency', level: 1 })).toBeVisible();
+  expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(390);
 });

@@ -605,6 +605,43 @@ describe('presenter built-in and custom pages', () => {
     }
   });
 
+  it('renders a mobile view menu with full labels and closes it after selection', () => {
+    const rendered = renderDashboard({
+      document: authoritativeDashboardDocument,
+      sources: {}
+    });
+    const menu = /** @type {HTMLDetailsElement | null} */ (rendered.querySelector('.mobile-nav-menu'));
+    const menuLinks = [...rendered.querySelectorAll('.mobile-nav-menu-list [data-mobile-nav-page-id]')];
+
+    expect(menu?.querySelector('summary')?.getAttribute('aria-label')).toBe('Select view');
+    expect(menuLinks.map((link) => link.textContent?.trim())).toEqual([
+      'Overview',
+      'Runtime',
+      'Security',
+      'Value',
+      'Cost',
+      'Dispatches',
+      'Workflows',
+      'Repositories',
+      'Packages',
+      'Models & agents',
+      'Updates',
+      'UK AI advisory',
+      'Ambient context',
+      'AW Maintenance',
+      'Dependabot',
+      'EU CRA',
+      'Optimization'
+    ]);
+
+    menu?.setAttribute('open', '');
+    /** @type {HTMLAnchorElement | undefined} */ (menuLinks[4])?.click();
+
+    expect(menu?.hasAttribute('open')).toBe(false);
+    expect(menuLinks[4]?.getAttribute('aria-current')).toBe('page');
+    window.history.replaceState(null, '', '/');
+  });
+
   it('renders filter bars for the Runtime, Security, and Value pages', () => {
     const rendered = renderDashboard({
       document: authoritativeDashboardDocument,
