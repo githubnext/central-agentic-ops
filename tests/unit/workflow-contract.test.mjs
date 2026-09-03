@@ -405,6 +405,8 @@ test("control workflows deny before activation through one shared admission cont
   assert.match(sharedControl, /CAO_API_TOKEN: \$\{\{ steps\.cao_pre_activation_app_token\.outputs\.token \|\| secrets\.GH_AW_GITHUB_TOKEN \|\| github\.token \}\}/);
   assert.match(sharedControl, /CAO admission blocked: GitHub API limited until \$\{\{ steps\.cao_admission\.outputs\.github_api_reset_at \}\}/);
   assert.match(sharedControl, /reason == 'github-api-capacity-insufficient'/);
+  assert.match(sharedControl, /^\s+id: cao_precompute$/m);
+  assert.match(sharedControl, /CAO precompute blocked: GitHub API limited until \$\{\{ steps\.cao_precompute\.outputs\.github_api_reset_at \}\}/);
   assert.match(sharedControl, /reason="cannot read or execute the CAO control modules at github\.workflow_sha"/);
   for (const [name, source] of controlled) {
     assert.equal(
@@ -417,7 +419,7 @@ test("control workflows deny before activation through one shared admission cont
       /on:[\s\S]*?permissions:\n\s+(?:actions: read\n\s+contents: read|contents: read\n\s+actions: read)/,
       name,
     );
-    assert.match(source, /jobs:\n  pre-activation:\n    outputs:\n      cao_authorized: \$\{\{ steps\.cao_admission\.outputs\.authorized \}\}/, name);
+    assert.match(source, /jobs:\n  pre-activation:\n    outputs:\n      cao_authorized: \$\{\{ steps\.cao_admission\.outputs\.authorized == 'true' && steps\.cao_precompute\.outputs\.authorized != 'false' \}\}/, name);
     assert.match(source, /^if: needs\.pre_activation\.outputs\.cao_authorized == 'true'$/m, name);
 
     const generatedName = name.replace(/\.md$/, ".lock.yml");
@@ -426,10 +428,11 @@ test("control workflows deny before activation through one shared admission cont
     const preActivation = jobs.get("pre_activation")?.block ?? "";
     const activation = jobs.get("activation")?.block ?? "";
 
-    assert.match(preActivation, /cao_authorized: \$\{\{ steps\.cao_admission\.outputs\.authorized \}\}/, generatedName);
+    assert.match(preActivation, /cao_authorized: \$\{\{ steps\.cao_admission\.outputs\.authorized == 'true' && steps\.cao_precompute\.outputs\.authorized != 'false' \}\}/, generatedName);
     assert.match(preActivation, /Evaluate Central Agentic Ops admission/, generatedName);
     assert.match(preActivation, /Generate CAO pre-activation GitHub App token/, generatedName);
     assert.match(preActivation, /CAO admission blocked: GitHub API limited until/, generatedName);
+    assert.match(preActivation, /CAO precompute blocked: GitHub API limited until/, generatedName);
     assert.match(activation, /needs\.pre_activation\.outputs\.cao_authorized == 'true'/, generatedName);
     assert.ok(transitivelyNeeds(jobs, "agent", "activation"), `${generatedName}: agent must depend on activation`);
   }
@@ -706,6 +709,16 @@ test("CAO runtime is control-repository-owned outside package resources", () => 
   assert.match(setupSkill, /contents\/\.github\/cao\/src\/\$\{cao_file\}/);
   assert.match(setupSkill, /for cao_file in control\.mjs policy\.mjs/);
   assert.doesNotMatch(setupSkill, /chmod \+x \.github\/cao/);
+});
+
+test("CAO upgrade script refreshes gh-aw, packages, and Actions", () => {
+  const upgrade = readFileSync(join(root, ".github", "cao", "upgrade.sh"), "utf8");
+
+  assert.match(upgrade, /^#!\/usr\/bin\/env bash\n/);
+  assert.match(upgrade, /^set -euo pipefail$/m);
+  assert.match(upgrade, /^gh extension upgrade github\/gh-aw$/m);
+  assert.match(upgrade, /^gh aw update --major --cool-down 0$/m);
+  assert.match(upgrade, /^gh aw upgrade$/m);
 });
 
 test("root package directly includes grader-backed workers for dependency packaging", () => {
@@ -2166,6 +2179,7 @@ test("Dashboard package supports embedded and explicit standalone deployment", (
   assert.match(dashboardManifest, /source: dashboard\.yml\n\s+destination: \.github\/workflows\/dashboard\.yml\n\s+kind: action-workflow/);
   assert.match(dashboardManifest, /^\s+- \.github\/workflows\/dashboard-build\.yml$/m);
   assert.doesNotMatch(dashboardManifest, /destination: \.github\/cao\//);
+  assert.match(dashboardManifest, /source: local-server\.mjs\n\s+destination: \.github\/aw\/dashboard\/local-server\.mjs/);
   assert.match(canonicalPolicyResolver, /export function parsePolicy/);
   assert.match(deployedWorkflows, /REPORT_RUN_WINDOW_HOURS/);
   assert.match(buildWorkflow, /workflow_call:[\s\S]*?site-path:[\s\S]*?default: cao/);
@@ -2182,6 +2196,7 @@ test("Dashboard package supports embedded and explicit standalone deployment", (
   assert.match(buildWorkflow, /REPORT_RECORDS: \$\{\{ runner\.temp \}\}\/dashboard-data\/dashboard-records\.json/);
   assert.match(buildWorkflow, /REPORT_DEPLOYED_WORKFLOWS: \$\{\{ runner\.temp \}\}\/cao-activity\/deployed-workflows\.json/);
   assert.match(buildWorkflow, /REPORT_DASHBOARD_SOURCES: \$\{\{ runner\.temp \}\}\/central-agentic-ops-dashboard\/\$\{\{ inputs\.site-path \}\}\/sources\.json/);
+  assert.match(buildWorkflow, /name: central-agentic-ops-dashboard-data[\s\S]*?\/sources\.json/);
   assert.doesNotMatch(dashboardManifest, /redirects\.mjs/);
   assert.doesNotMatch(buildWorkflow, /legacy dashboard redirects|redirects\.mjs/);
   assert.match(buildWorkflow, /site-path must not be absolute, traverse directories, or end with '\/'/);

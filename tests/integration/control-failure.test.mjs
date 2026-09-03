@@ -110,6 +110,7 @@ for (const role of ["orchestrator", "worker"]) {
     test(`control precompute disables a ${role} in ${safeOutputMode} before validation or repository access`, () => {
       const result = runPrecompute(
         {
+          GITHUB_ACTIONS: "true",
           ROLE: role,
           SAFE_OUTPUT_MODE: safeOutputMode,
           TARGET_REPO: "not-a-repository",
@@ -120,6 +121,12 @@ for (const role of ["orchestrator", "worker"]) {
       );
 
       assert.equal(result.status, 0, result.stderr);
+      assert.equal(result.stdout, [
+        "::group::Central Agentic Ops precompute",
+        "[CAO] Precompute skipped because admission was denied.",
+        "::endgroup::",
+        "",
+      ].join("\n"));
       const precompute = JSON.parse(readFileSync("/tmp/gh-aw/agent/control-precompute.json", "utf8"));
       assert.equal(precompute.control_role, role);
       assert.equal(precompute.enabled, false);
@@ -232,6 +239,58 @@ test("control precompute rejects a public non-central review destination", () =>
 
   assert.notEqual(result.status, 0);
   assert.match(result.stderr, /non-central review safe_output_repo must be private/);
+});
+
+test("control precompute fails cleanly as an admission check when GitHub API rate limits are reached mid-run", () => {
+  const directory = mkdtempSync(join(tmpdir(), "central-ops-precompute-ratelimit-"));
+  const githubOutput = join(directory, "github-output");
+  const stepSummary = join(directory, "step-summary");
+  writeFileSync(githubOutput, "");
+  writeFileSync(stepSummary, "");
+
+  try {
+    const result = runPrecompute(
+      {
+        SAFE_OUTPUT_REPO: "acme/review",
+        GITHUB_OUTPUT: githubOutput,
+        GITHUB_STEP_SUMMARY: stepSummary,
+      },
+      `
+case "$*" in
+  *rate_limit*)
+    printf '{"resources":{"core":{"limit":5000,"remaining":3,"reset":9999999999}}}\\n'
+    ;;
+  *repos/acme/review*)
+    echo "gh: API rate limit exceeded for installation. (HTTP 403)" >&2
+    exit 1
+    ;;
+  *) printf 'true\\n' ;;
+esac
+`,
+    );
+
+    assert.equal(result.status, 0, result.stderr);
+    assert.doesNotMatch(result.stderr, /API rate limit exceeded/);
+
+    const output = Object.fromEntries(
+      readFileSync(githubOutput, "utf8")
+        .trim()
+        .split("\n")
+        .map((line) => {
+          const separator = line.indexOf("=");
+          return [line.slice(0, separator), line.slice(separator + 1)];
+        }),
+    );
+    assert.equal(output.authorized, "false");
+    assert.equal(output.reason, "github-api-capacity-insufficient");
+    assert.equal(output.github_api_status, "limited");
+    assert.equal(output.github_api_remaining, "3");
+
+    const summary = readFileSync(stepSummary, "utf8");
+    assert.match(summary, /GitHub REST API capacity is too low for this run/);
+  } finally {
+    rmSync(directory, { recursive: true, force: true });
+  }
 });
 
 function runLiveAuthority(authorityContent, overrides = {}, policy = controlPolicy({

@@ -47,6 +47,29 @@ function environment(name, fallback = "") {
   return process.env[name] ?? fallback;
 }
 
+function log(message) {
+  console.log(`[CAO] ${message}`);
+}
+
+function actionsCommand(command, message = "") {
+  const escaped = message
+    .replaceAll("%", "%25")
+    .replaceAll("\r", "%0D")
+    .replaceAll("\n", "%0A");
+  console.log(`::${command}::${escaped}`);
+}
+
+function withLogGroup(title, operation) {
+  const actions = environment("GITHUB_ACTIONS") === "true";
+  if (actions) actionsCommand("group", title);
+  else log(title);
+  try {
+    return operation();
+  } finally {
+    if (actions) actionsCommand("endgroup");
+  }
+}
+
 function run(command, args, options = {}) {
   const result = spawnSync(command, args, {
     encoding: "utf8",
@@ -196,6 +219,24 @@ function githubApiCapacity(required) {
   }
 }
 
+function isRateLimitError(error) {
+  return typeof error?.message === "string" && /rate limit/i.test(error.message);
+}
+
+function writeCapacityBlockedPrecompute(packageName, role, capacity) {
+  const reason = capacity.status === "limited" ? "github-api-capacity-insufficient" : "github-api-capacity-unavailable";
+  writeActionsOutputs({
+    authorized: false,
+    reason,
+    github_api_status: capacity.status,
+    github_api_limit: capacity.limit,
+    github_api_remaining: capacity.remaining,
+    github_api_required: capacity.required,
+    github_api_reset_at: capacity.resetAt,
+  });
+  writeAdmissionSummary({ authorized: false, packageName, role, reason, apiCapacity: capacity });
+}
+
 function applyGithubApiAdmission(result, options) {
   if (!result.authorized) return result;
   const required = githubApiRequestRequirement(result, options);
@@ -277,6 +318,7 @@ function admit() {
     reason: result.reason,
     apiCapacity: result.github_api_capacity,
   });
+  log(`Admission ${result.authorized ? "authorized" : "denied"}.`);
 }
 
 function readJson(path) {
@@ -438,7 +480,8 @@ function validateOutputDestination({ mode, role, safeOutputRepository, targetRep
   let repository;
   try {
     repository = JSON.parse(ghApi(`repos/${safeOutputRepository}`));
-  } catch {
+  } catch (error) {
+    if (isRateLimitError(error)) throw error;
     throw new ControlError("review safe_output_repo must be accessible");
   }
   if (repository.private !== true) throw new ControlError("non-central review safe_output_repo must be private");
@@ -474,12 +517,14 @@ function validateLiveAuthority(context) {
   let targetSha;
   try {
     defaultBranch = ghApi(`repos/${context.targetRepository}`, { jq: ".default_branch" }).trim();
-  } catch {
+  } catch (error) {
+    if (isRateLimitError(error)) throw error;
     throw new ControlError("live authority validation could not read the target default branch");
   }
   try {
     targetSha = ghApi(`repos/${context.targetRepository}/commits/${defaultBranch}`, { jq: ".sha" }).trim();
-  } catch {
+  } catch (error) {
+    if (isRateLimitError(error)) throw error;
     throw new ControlError("live authority validation could not resolve the target default branch commit");
   }
   if (!SHA_PATTERN.test(targetSha)) throw new ControlError("target default branch did not resolve to an exact commit SHA");
@@ -833,21 +878,31 @@ function precompute() {
   }
   if (!policy.authorized) {
     writeDeniedPrecompute(policy);
+    log("Precompute skipped because admission was denied.");
     return;
   }
+  log("Applying the admitted control policy.");
   const context = createContext(policy);
-  requireMode(context.mode, "safe_output_mode");
-  validateRepositoryOwner("target_repo", context.targetRepository, policy.allowed_owners);
-  validateRepositoryOwner("safe_output_repo", context.safeOutputRepository, policy.allowed_owners);
-  validateOutputDestination(context);
+  try {
+    requireMode(context.mode, "safe_output_mode");
+    validateRepositoryOwner("target_repo", context.targetRepository, policy.allowed_owners);
+    validateRepositoryOwner("safe_output_repo", context.safeOutputRepository, policy.allowed_owners);
+    validateOutputDestination(context);
 
-  if (context.role === "worker") {
-    validateWorkerDispatch(context);
-    const targetAuthoritySha = validateLiveAuthority(context);
-    writeWorkerPrecompute(context, targetAuthoritySha);
-    return;
+    if (context.role === "worker") {
+      validateWorkerDispatch(context);
+      const targetAuthoritySha = validateLiveAuthority(context);
+      writeWorkerPrecompute(context, targetAuthoritySha);
+      log("Prepared worker precompute data.");
+      return;
+    }
+    writeOrchestratorPrecompute(context);
+    log("Prepared orchestrator precompute data.");
+  } catch (error) {
+    if (!isRateLimitError(error)) throw error;
+    const required = githubApiRequestRequirement(policy, { role: context.role, targetRepository: context.targetRepository });
+    writeCapacityBlockedPrecompute(context.packageName, context.role, githubApiCapacity(required));
   }
-  writeOrchestratorPrecompute(context);
 }
 
 function readSource(path) {
@@ -875,8 +930,12 @@ function authority(args) {
 function main(arguments_) {
   const [command, ...args] = arguments_;
   try {
-    if (command === "admit" && args.length === 0) return admit();
-    if (command === "precompute" && args.length === 0) return precompute();
+    if (command === "admit" && args.length === 0) {
+      return withLogGroup("Central Agentic Ops admission", admit);
+    }
+    if (command === "precompute" && args.length === 0) {
+      return withLogGroup("Central Agentic Ops precompute", precompute);
+    }
     if (command === "authority") return authority(args);
     if (["validate-policy", "resolve-policy", "control-settings"].includes(command)) {
       process.stdout.write(`${JSON.stringify(policyCommand(command, args), null, 2)}\n`);

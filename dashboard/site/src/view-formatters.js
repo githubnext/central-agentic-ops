@@ -45,6 +45,19 @@ export function formatAggregateValue(rows, fieldName, aggregate, toText, unit = 
 }
 
 /**
+ * Coerces a value to its string form, substituting a fallback when the value
+ * is `null`, `undefined`, or an empty string. Shared by badge and cell
+ * display renderers that fall back to a placeholder label such as
+ * `'unknown'` or `'unavailable'`.
+ * @param {unknown} value
+ * @param {string} fallback
+ * @returns {string}
+ */
+export function stringOrFallback(value, fallback) {
+  return value == null || value === '' ? fallback : String(value);
+}
+
+/**
  * @param {unknown} value
  * @returns {number}
  */

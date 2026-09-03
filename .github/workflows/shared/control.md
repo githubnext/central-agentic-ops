@@ -131,6 +131,7 @@ jobs:
           version: v0.88.0
 
       - name: Run CAO control precompute
+        id: cao_precompute
         if: ${{ steps.cao_admission.outputs.authorized == 'true' }}
         env:
           GH_TOKEN: ${{ steps.cao_pre_activation_app_token.outputs.token || secrets.GH_AW_GITHUB_TOKEN || github.token }}
@@ -149,6 +150,23 @@ jobs:
         run: |
           set -euo pipefail
           node "${RUNNER_TEMP:-/tmp}/cao/control.mjs" precompute
+
+      - name: "CAO precompute blocked: GitHub API limited until ${{ steps.cao_precompute.outputs.github_api_reset_at }}"
+        if: ${{ steps.cao_precompute.outputs.reason == 'github-api-capacity-insufficient' }}
+        env:
+          CAO_API_LIMIT: ${{ steps.cao_precompute.outputs.github_api_limit }}
+          CAO_API_REMAINING: ${{ steps.cao_precompute.outputs.github_api_remaining }}
+          CAO_API_REQUIRED: ${{ steps.cao_precompute.outputs.github_api_required }}
+          CAO_API_RESET_AT: ${{ steps.cao_precompute.outputs.github_api_reset_at }}
+        run: |
+          echo "::error title=CAO precompute blocked by GitHub API capacity::${CAO_API_REMAINING} of ${CAO_API_LIMIT} core requests remain; ${CAO_API_REQUIRED} required. Retry after ${CAO_API_RESET_AT}. See the admission summary for next steps."
+          exit 1
+
+      - name: "CAO precompute blocked: GitHub API capacity unavailable"
+        if: ${{ steps.cao_precompute.outputs.reason == 'github-api-capacity-unavailable' }}
+        run: |
+          echo "::error title=CAO precompute could not verify GitHub API capacity::Check authentication and GitHub API status. See the admission summary for next steps."
+          exit 1
 
       - name: Validate CAO control precompute artifact
         if: ${{ steps.cao_admission.outputs.authorized == 'true' }}

@@ -99,6 +99,19 @@ function expectFailure(result, expected) {
   );
 }
 
+test("control.mjs always logs policy validation without changing JSON output", () => {
+  const source = policy();
+  const result = validate(JSON.stringify(source));
+
+  assert.equal(result.status, 0, result.stderr);
+  assert.deepEqual(JSON.parse(result.stdout), source);
+  assert.equal(result.stderr, [
+    "[CAO policy] Parsing control policy.",
+    "[CAO policy] Validated control policy.",
+    "",
+  ].join("\n"));
+});
+
 const rawPolicyViolations = [
   ["malformed JSON", '{"version":1,}', "invalid policy JSON"],
   ["non-mapping root", "[]", "policy root must be a mapping"],
