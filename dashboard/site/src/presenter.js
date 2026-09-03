@@ -165,6 +165,7 @@ export function renderDashboard(input) {
     appShell
   );
   enableSidebarToggle(root);
+  enableMobileNavigationMenu(root);
   enableDashboardPageNavigation(
     root,
     document.dashboard.title,
@@ -246,7 +247,26 @@ function renderSidebar(pages, title, navigation) {
           ? [h('span', { className: 'nav-section-label' }, section.label)]
           : []),
         ...section.pages.map((page) => renderNavItem(page, page.id === firstPageId))
-      ])
+      ]),
+      h(
+        'details',
+        { className: 'mobile-nav-menu' },
+        h(
+          'summary',
+          { 'aria-label': 'Select view', title: 'Select view' },
+          octicon('three-bars')
+        ),
+        h(
+          'div',
+          { className: 'mobile-nav-menu-list' },
+          navigationSections.flatMap((section) => [
+            ...(typeof section.label === 'string' && section.label.length > 0
+              ? [h('span', { className: 'mobile-nav-section-label' }, section.label)]
+              : []),
+            ...section.pages.map((page) => renderMobileNavItem(page, page.id === firstPageId))
+          ])
+        )
+      )
     )
   );
 }
@@ -258,11 +278,7 @@ function renderSidebar(pages, title, navigation) {
  */
 function renderNavItem(page, isActive) {
   const iconName = getPageIcon(page);
-  const title = typeof page['navigation-label'] === 'string' && page['navigation-label'].length > 0
-    ? page['navigation-label']
-    : typeof page.title === 'string' && page.title.length > 0
-      ? page.title
-      : titleCase(page.id);
+  const title = getPageNavigationTitle(page);
 
   return h(
     'a',
@@ -277,6 +293,38 @@ function renderNavItem(page, isActive) {
     octicon(iconName),
     h('span', { className: 'nav-label' }, title)
   );
+}
+
+/**
+ * @param {PresentableBuiltInPage | PresentableCustomPage} page
+ * @param {boolean} isActive
+ * @returns {HTMLElement}
+ */
+function renderMobileNavItem(page, isActive) {
+  const title = getPageNavigationTitle(page);
+  return h(
+    'a',
+    {
+      href: `#page-${page.id}`,
+      className: `mobile-nav-item${isActive ? ' active' : ''}`,
+      'aria-current': isActive ? 'page' : undefined,
+      'data-nav-page-id': page.id
+    },
+    octicon(getPageIcon(page)),
+    h('span', { className: 'mobile-nav-label' }, title)
+  );
+}
+
+/**
+ * @param {PresentableBuiltInPage | PresentableCustomPage} page
+ * @returns {string}
+ */
+function getPageNavigationTitle(page) {
+  return typeof page['navigation-label'] === 'string' && page['navigation-label'].length > 0
+    ? page['navigation-label']
+    : typeof page.title === 'string' && page.title.length > 0
+      ? page.title
+      : titleCase(page.id);
 }
 
 /**
@@ -314,6 +362,28 @@ function enableSidebarToggle(root) {
     } catch {
       // The display mode still works for the current page when storage is unavailable.
     }
+  });
+}
+
+/**
+ * Closes the mobile view menu after selection or when focus moves elsewhere.
+ * @param {HTMLElement} root
+ */
+function enableMobileNavigationMenu(root) {
+  const menu = root.querySelector('.mobile-nav-menu');
+  if (!(menu instanceof HTMLDetailsElement)) return;
+
+  root.addEventListener('click', (event) => {
+    if (!(event.target instanceof Element)) return;
+    if (event.target.closest('[data-nav-page-id]') || !event.target.closest('.mobile-nav-menu')) {
+      menu.removeAttribute('open');
+    }
+  });
+  menu.addEventListener('keydown', (event) => {
+    if (event.key !== 'Escape') return;
+    menu.removeAttribute('open');
+    const summary = menu.querySelector('summary');
+    if (summary instanceof HTMLElement) summary.focus();
   });
 }
 
