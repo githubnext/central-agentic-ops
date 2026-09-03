@@ -106,7 +106,7 @@ export async function readRunSecurityTelemetry(outputDirectory, runId) {
   const summaryFile = files.find((file) => path.basename(file) === "run_summary.json");
   if (summaryFile) {
     const content = await readBounded(summaryFile);
-    try {
+    if (content !== null) try {
       const summary = JSON.parse(content);
       const firewall = summary.firewall_analysis;
       if (firewall && typeof firewall === "object") {
@@ -143,7 +143,7 @@ export async function readRunSecurityTelemetry(outputDirectory, runId) {
   const detectionFile = files.find((file) => path.basename(file) === "detection_result.json");
   if (detectionFile) {
     const content = await readBounded(detectionFile);
-    try {
+    if (content !== null) try {
       const verdict = JSON.parse(content);
       if (validThreatVerdict(verdict)) {
         telemetry.threatDetection = {

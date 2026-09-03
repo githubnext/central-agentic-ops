@@ -151,6 +151,9 @@ test("dashboard source bridge detects rollout mode from run titles with punctuat
       && row["security-count"] === 2));
     assert.ok(rows.some((row) => row["security-feature"] === "integrity-filtering"
       && row["security-subject"] === "create_issue"));
+    assert.ok(rows.some((row) => row["security-feature"] === "integrity-filtering"
+      && row["security-signal"] === "Passed interactions"
+      && row["security-count"] === 4));
     assert.ok(rows.some((row) => row["security-feature"] === "threat-detection"
       && row["security-signal"] === "Prompt injection"
       && row["security-status"] === "detected"));

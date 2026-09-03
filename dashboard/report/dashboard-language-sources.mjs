@@ -472,7 +472,7 @@ function integrityRows(run) {
   if (!integrity?.available) return [unavailableSecurityObservation(run, "integrity-filtering")];
   const summary = integrity.summary || {};
   const filtered = positiveCount(summary.total_filtered);
-  const passed = positiveCount(integrity.totalToolCalls);
+  const passed = Math.max(0, positiveCount(integrity.totalToolCalls) - filtered);
   const rows = [
     securityObservation(run, "integrity-filtering", "summary", "Passed interactions", "passed", passed),
     securityObservation(run, "integrity-filtering", "summary", "Filtered interactions", "filtered", filtered),
