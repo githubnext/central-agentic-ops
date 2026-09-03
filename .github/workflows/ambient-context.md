@@ -128,6 +128,8 @@ Both workers apply a gain gate before publishing: a change set whose estimated r
 
 Finish with the standard `## Orchestrator Report` inherited from `shared/control.md`. Preserve every standard heading and field — `Scope`, `Repository Decisions`, `Workers`, `Dispatches`, and `Outcome` — and use `0`, `none`, or `not applicable` for empty fields. Use the exact precomputed repository totals and distinguish eligible, selected, skipped, and deferred repositories.
 
+If no worker is dispatched and no incomplete condition applies, call `noop` exactly once with the complete orchestrator report as its message.
+
 Add these package-specific details after the standard fields:
 
 - Repositories skipped because they have no `AGENTS.md`, counted separately from other skip reasons.
