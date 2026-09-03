@@ -268,6 +268,7 @@ export async function startDashboardServer({
     throw error;
   }
 
+  let expectedAuthority = "";
   const server = createServer(async (request, response) => {
     try {
       if (!request.headers.host || request.headers.host !== expectedAuthority
@@ -358,21 +359,24 @@ export async function startDashboardServer({
     }
   });
 
-  let expectedAuthority = "";
   try {
     await new Promise((accept, reject) => {
       server.once("error", reject);
-      server.listen(port, host, accept);
+      server.listen(port, host, () => {
+        const address = server.address();
+        if (!address || typeof address === "string") {
+          reject(new Error("dashboard server did not bind to a TCP port"));
+          return;
+        }
+        expectedAuthority = `${address.address.includes(":") ? `[${address.address}]` : address.address}:${address.port}`;
+        accept();
+      });
     });
   } catch (error) {
     for (const watcher of watchers.values()) watcher.close();
     await rm(temporaryDirectory, { recursive: true, force: true });
     throw error;
   }
-  const address = server.address();
-  if (!address || typeof address === "string") throw new Error("dashboard server did not bind to a TCP port");
-  expectedAuthority = `${address.address.includes(":") ? `[${address.address}]` : address.address}:${address.port}`;
-
   return {
     url: `http://${expectedAuthority}${routePrefix}`,
     async close() {
