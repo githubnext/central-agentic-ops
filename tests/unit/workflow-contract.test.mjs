@@ -2338,6 +2338,11 @@ test("Dashboard package supports embedded and explicit standalone deployment", (
   assert.match(activityWorkflow, /REPORT_VALUE_REPLAY_CACHE: \.cache\/dashboard-operational-values\/replay/);
   assert.match(buildWorkflow, /actions\/cache\/restore@[0-9a-f]{40}/);
   assert.match(activityWorkflow, /Save operational-value observation cache/);
+  assert.match(activityWorkflow, /Restore operational-value replay runtime cache[\s\S]*?path: \.cache\/gh-aw-operational-value\n\s+key: \$\{\{ steps\.replay-cache-key\.outputs\.value \}\}/);
+  assert.match(activityWorkflow, /Checkout operational-value replay runtime\n\s+if: env\.DASHBOARD_COLLECTION == 'true' && steps\.restore-replay-cache\.outputs\.cache-hit != 'true'/);
+  assert.match(activityWorkflow, /Build operational-value replay runtime\n\s+if: env\.DASHBOARD_COLLECTION == 'true' && steps\.restore-replay-cache\.outputs\.cache-hit != 'true'/);
+  assert.match(activityWorkflow, /Save operational-value replay runtime cache\n\s+if: env\.DASHBOARD_COLLECTION == 'true' && steps\.restore-replay-cache\.outputs\.cache-hit != 'true'/);
+  assert.match(activityWorkflow, /REPORT_GH_AW_BIN: \$\{\{ github\.workspace \}\}\/\.cache\/gh-aw-operational-value\/gh-aw/);
   assert.match(deployedWorkflows, /const capabilities = await workflowCapabilities\(item\.repository, item\.path\)/);
   assert.match(deployedWorkflows, /const role = workflowRole\(source\.value\)/);
   assert.match(deployedWorkflows, /sourceAvailable: !\/GitHub API 404/);
