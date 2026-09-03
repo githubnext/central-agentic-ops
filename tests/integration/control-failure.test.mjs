@@ -93,6 +93,7 @@ for (const [name, overrides, expectedError] of failures) {
 
     assert.notEqual(result.status, 0, `${name} unexpectedly succeeded`);
     assert.match(result.stderr, new RegExp(expectedError));
+    assert.match(result.stdout, /::error::/);
   });
 }
 

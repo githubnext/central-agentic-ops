@@ -82,6 +82,10 @@ test("CAO admission authorizes a declared package before activation", () => {
   const { result, output, summary } = runAdmission();
 
   assert.equal(result.status, 0, result.stderr);
+  assert.match(result.stdout, /::group::CAO control admit/);
+  assert.match(result.stdout, /Evaluating admission for dependabot as orchestrator/);
+  assert.match(result.stdout, /Admission authorized: authorized/);
+  assert.match(result.stdout, /::endgroup::/);
   assert.deepEqual(output, { authorized: "true", reason: "authorized", monthly_credit_budget: "0" });
   assert.match(summary, /### Central Agentic Ops admission\n\nAuthorized package `dependabot` as `orchestrator`/);
   assert.match(summary, /<details>\n<summary>Runtime revision<\/summary>/);

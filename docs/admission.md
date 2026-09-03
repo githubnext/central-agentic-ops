@@ -13,11 +13,11 @@ trigger -> pre-activation admission -> authorized-run precompute -> activation -
 
 ## What Admission Gates
 
-The shared control component reads `.github/cao/src/control.mjs` and `.github/cao/src/policy.mjs` from the exact `github.workflow_sha`. Admission then reads `.github/workflows/cao.json` at that revision, and authorized runs execute the `precompute` command from the same modules. They do not use policy or CAO runtime from another branch or from the agent checkout.
+The shared control component reads `.github/cao/src/actions-log.mjs`, `.github/cao/src/control.mjs`, and `.github/cao/src/policy.mjs` from the exact `github.workflow_sha`. Admission then reads `.github/workflows/cao.json` at that revision, and authorized runs execute the `precompute` command from the same modules. They do not use policy or CAO runtime from another branch or from the agent checkout.
 
 | Check | Admitted when |
 | --- | --- |
-| Runtime revision | `github.workflow_sha` is an exact commit and the policy and both CAO modules are readable at that revision. |
+| Runtime revision | `github.workflow_sha` is an exact commit and the policy and all CAO modules are readable at that revision. |
 | Policy document | The JSON has supported keys, types, ranges, unique names, no duplicate keys, and no GitHub Actions expressions. |
 | Control plane | `control-plane` exists. |
 | Workflow identity | The workflow declares `orchestrator` or `worker`; workers also declare an exact worker identity. |
@@ -48,7 +48,7 @@ Failure in either phase prevents agent execution. Admission denial skips activat
 Setup creates one atomic control-plane revision:
 
 1. Install the gh-aw package from an immutable CAO tag or commit.
-2. Materialize `.github/cao/src/control.mjs` and `.github/cao/src/policy.mjs` from that same CAO revision.
+2. Materialize `.github/cao/src/actions-log.mjs`, `.github/cao/src/control.mjs`, and `.github/cao/src/policy.mjs` from that same CAO revision.
 3. Declare the installed package and its worker-to-workflow mapping in `.github/workflows/cao.json`.
 4. Commit the workflows, generated locks, CAO runtime, and policy together, then push before running the operation.
 

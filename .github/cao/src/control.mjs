@@ -9,6 +9,7 @@ import {
 } from "node:fs";
 import { join } from "node:path";
 import { pathToFileURL } from "node:url";
+import { actionsLog as log } from "./actions-log.mjs";
 import {
   PolicyError,
   controlSettings,
@@ -62,6 +63,7 @@ function run(command, args, options = {}) {
 }
 
 function ghApi(endpoint, { fields = {}, jq = "" } = {}) {
+  log.debug`GitHub API GET ${endpoint}`;
   const args = ["api", "--cache", GITHUB_API_CACHE_DURATION];
   if (Object.keys(fields).length > 0) args.push("--method", "GET");
   args.push(endpoint);
@@ -232,6 +234,7 @@ function admit() {
   const workflowSha = environment("GITHUB_WORKFLOW_SHA");
   let result = { authorized: false, reason: "control policy admission did not complete" };
 
+  log.info`Evaluating admission for ${options.packageName || "unknown package"} as ${options.role || "unknown role"}`;
   try {
     if (!options.packageName || !options.role) throw new ControlError("admission requires a package and control role");
     if (!SHA_PATTERN.test(workflowSha)) throw new ControlError("github.workflow_sha must be an exact commit SHA");
@@ -277,6 +280,7 @@ function admit() {
     reason: result.reason,
     apiCapacity: result.github_api_capacity,
   });
+  log.info`Admission ${result.authorized ? "authorized" : "denied"}: ${result.reason}`;
 }
 
 function readJson(path) {
@@ -681,6 +685,7 @@ function writeOrchestratorPrecompute(context) {
   requireNonNegativeInteger(context.workerCreditsPerTarget, "AI Credit admission values must be non-negative integers");
 
   const { sourcePath, ref } = controlSourcePath();
+  log.info`Loading orchestrator configuration from ${sourcePath}`;
   const source = Buffer.from(ghApi(`repos/${context.controlRepository}/contents/${sourcePath}`, {
     fields: { ref }, jq: ".content",
   }).replace(/\s/g, ""), "base64").toString("utf8");
@@ -688,6 +693,8 @@ function writeOrchestratorPrecompute(context) {
   if (configuredWorkers.length === 0) {
     throw new ControlError("shared/control.md role orchestrator requires safe-outputs.dispatch-workflow.workflows");
   }
+  log.info`Resolved ${configuredWorkers.length} configured worker workflow${configuredWorkers.length === 1 ? "" : "s"}`;
+  log.info`Loading workflow inventory for ${context.controlRepository}`;
   const workflows = loadWorkflowInventory(context.controlRepository);
   const maximumScanRepositories = context.policy.inventory["max-scan-repositories"];
 
@@ -699,8 +706,10 @@ function writeOrchestratorPrecompute(context) {
     throw new ControlError("target_repo is not allowed");
   }
 
+  log.info`Loading bounded repository inventory`;
   const selected = selectInventory(context, maximumScanRepositories);
   const { candidates, metadata } = createInventory(context, selected.repositories);
+  log.info`Selected ${candidates.length} candidate repositor${candidates.length === 1 ? "y" : "ies"} from ${metadata.inventory_repository_count} inventoried via ${selected.source || "unavailable source"}`;
   const resolvedCandidates = candidates.map((repository) => ({
     ...repository,
     safe_output_mode: context.policy.target_policies?.[repository.full_name.toLowerCase()]?.mode ?? context.mode,
@@ -781,6 +790,7 @@ function applyMonthlyBudget(context, configuredWorkers, result) {
   let spent = 0;
   let budgetError = "";
   if (budget > 0) {
+    log.info`Loading month-to-date AI Credit usage`;
     const monthStart = new Date().toISOString().slice(0, 8) + "01";
     const runs = new Map();
     for (const workflowId of [...new Set([context.packageName, ...configuredWorkers])].sort()) {
@@ -820,6 +830,7 @@ function applyMonthlyBudget(context, configuredWorkers, result) {
 }
 
 function precompute() {
+  log.info`Precomputing control data for ${environment("CAO_PACKAGE") || "unknown package"} as ${environment("CAO_ROLE") || "unknown role"}`;
   mkdirSync(AGENT_DIRECTORY, { recursive: true });
   const effectivePath = join(admissionDirectory(), "effective-policy.json");
   let policy;
@@ -845,9 +856,11 @@ function precompute() {
     validateWorkerDispatch(context);
     const targetAuthoritySha = validateLiveAuthority(context);
     writeWorkerPrecompute(context, targetAuthoritySha);
+    log.info`Wrote worker control precompute artifact to ${OUTPUT_PATH}`;
     return;
   }
   writeOrchestratorPrecompute(context);
+  log.info`Wrote orchestrator control precompute artifact to ${OUTPUT_PATH}`;
 }
 
 function readSource(path) {
@@ -874,6 +887,8 @@ function authority(args) {
 /** @param {string[]} arguments_ */
 function main(arguments_) {
   const [command, ...args] = arguments_;
+  const workflowCommand = args.length === 0 && ["admit", "precompute"].includes(command);
+  if (workflowCommand) log.group`CAO control ${command}`;
   try {
     if (command === "admit" && args.length === 0) return admit();
     if (command === "precompute" && args.length === 0) return precompute();
@@ -885,11 +900,14 @@ function main(arguments_) {
     throw new ControlError("usage: control.mjs admit | precompute | validate-policy <file|-> | resolve-policy <file|-> | control-settings <file|-> | authority <file|-> <package>");
   } catch (error) {
     if (error instanceof ControlError || error instanceof PolicyError || error?.code === "ENOENT") {
+      if (workflowCommand) log.error`${error.message}`;
       process.stderr.write(`${error.message}\n`);
       process.exitCode = 1;
       return;
     }
     throw error;
+  } finally {
+    if (workflowCommand) log.endGroup();
   }
 }
 

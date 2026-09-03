@@ -45,7 +45,7 @@ mkdir -p "$review_repository/.github/workflows" "$review_repository/.github/scri
 cp ops-publish/ops-publish.yml "$review_repository/.github/workflows/ops-publish.yml"
 cp .github/scripts/ops-publish/ops-publish.mjs "$review_repository/.github/scripts/ops-publish/"
 mkdir -p "$review_repository/.github/cao/src"
-cp .github/cao/src/control.mjs .github/cao/src/policy.mjs "$review_repository/.github/cao/src/"
+cp .github/cao/src/actions-log.mjs .github/cao/src/control.mjs .github/cao/src/policy.mjs "$review_repository/.github/cao/src/"
 ```
 
 These files are conventional repository automation and are not part of an Agentic Workflow package. Pin the catalog checkout to a reviewed release or commit before copying them.

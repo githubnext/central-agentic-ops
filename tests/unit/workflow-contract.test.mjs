@@ -699,7 +699,7 @@ test("CAO runtime is control-repository-owned outside package resources", () => 
   assert.equal(policy.package, "dependabot");
   assert.doesNotMatch(rootManifest, /destination: \.github\/cao\//);
   assert.match(setupSkill, /contents\/\.github\/cao\/src\/\$\{cao_file\}/);
-  assert.match(setupSkill, /for cao_file in control\.mjs policy\.mjs/);
+  assert.match(setupSkill, /for cao_file in actions-log\.mjs control\.mjs policy\.mjs/);
   assert.doesNotMatch(setupSkill, /chmod \+x \.github\/cao/);
 });
 

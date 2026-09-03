@@ -74,6 +74,8 @@ jobs:
               -f ref="$GITHUB_WORKFLOW_SHA" --jq '.content' | base64 -d > "$cao_dir/control.mjs" && \
             gh api --method GET "repos/${GITHUB_REPOSITORY}/contents/.github/cao/src/policy.mjs" \
               -f ref="$GITHUB_WORKFLOW_SHA" --jq '.content' | base64 -d > "$cao_dir/policy.mjs" && \
+            gh api --method GET "repos/${GITHUB_REPOSITORY}/contents/.github/cao/src/actions-log.mjs" \
+              -f ref="$GITHUB_WORKFLOW_SHA" --jq '.content' | base64 -d > "$cao_dir/actions-log.mjs" && \
             node "$cao_dir/control.mjs" admit; then
             exit 0
           fi
