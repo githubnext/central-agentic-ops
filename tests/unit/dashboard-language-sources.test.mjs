@@ -55,6 +55,53 @@ test("dashboard source bridge carries API capacity admission blocks into run row
   );
 });
 
+test("dashboard source bridge attaches usage data payloads to every run row", () => {
+  const sources = buildDashboardLanguageSources({
+    deployed: {
+      generatedAt: "2026-09-03T06:00:00Z",
+      discovery: { complete: true },
+      runHealth: { available: true, complete: true },
+      bundles: [],
+      workflows: [{
+        repository: "githubnext/gh-aw-cao",
+        path: ".github/workflows/data.lock.yml",
+        name: "Data",
+        state: "active",
+        runHealth: {
+          runRecords: [
+            { runId: 42, status: "completed", conclusion: "success" },
+            { runId: 43, status: "completed", conclusion: "success" },
+            { runId: 44, status: "completed", conclusion: "success" },
+          ],
+        },
+      }],
+    },
+    usage: {
+      available: true,
+      complete: true,
+      runs: [{
+        repository: "githubnext/gh-aw-cao",
+        runId: 42,
+        aic: 1,
+        data: { findings: [{ severity: "high", total: 3 }] },
+      }],
+      securityRuns: [{
+        repository: "githubnext/gh-aw-cao",
+        runId: 43,
+        data: { summary: { total: 7 } },
+      }],
+    },
+    operationalValues: { records: [] },
+    report: { generatedAt: "2026-09-03T06:00:00Z", records: [] },
+  });
+
+  assert.deepEqual(sources.runs.rows.map((run) => run.data), [
+    { findings: [{ severity: "high", total: 3 }] },
+    { summary: { total: 7 } },
+    null,
+  ]);
+});
+
 test("dashboard source bridge detects rollout mode from run titles with punctuation separators", () => {
   const sources = buildDashboardLanguageSources({
     deployed: {
