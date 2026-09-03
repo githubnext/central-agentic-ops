@@ -649,7 +649,7 @@ describe('presenter built-in and custom pages', () => {
             'source-kind': 'fixture',
             'as-of': '2026-09-01T12:00:00Z',
             'retrieved-at': '2026-09-01T12:00:00Z',
-            'coverage-start': '2026-08-30T12:00:00Z',
+            'coverage-start': '2026-08-30T12:30:00Z',
             'coverage-end': '2026-09-01T12:00:00Z',
             completeness: 'complete',
             freshness: 'fresh',
@@ -666,9 +666,9 @@ describe('presenter built-in and custom pages', () => {
     expect(rendered.querySelector('.dashboard-horizon')?.getAttribute('data-dashboard-evaluated-at')).toBe('2026-09-01T12:00:00.000Z');
     expect(rendered.querySelector('.dashboard-horizon > span:first-child')?.textContent).toBe('Data horizon 2 days');
     expect(rendered.querySelector('.dashboard-horizon .tooltip-content')?.textContent).toBe(
-      'Data is included from the start up to the exclusive end.StartAug 30, 2026, 12:00 PM UTCEndSep 1, 2026, 12:00 PM UTCDuration2 days'
+      'Data is included from the start up to the exclusive end.StartAug 30, 2026, 12:30 PM UTCEndSep 1, 2026, 12:00 PM UTCDuration2 days'
     );
-    expect(rendered.querySelector('.dashboard-horizon .tooltip-content time:first-of-type')?.getAttribute('datetime')).toBe('2026-08-30T12:00:00.000Z');
+    expect(rendered.querySelector('.dashboard-horizon .tooltip-content time:first-of-type')?.getAttribute('datetime')).toBe('2026-08-30T12:30:00.000Z');
     expect(rendered.querySelectorAll('.dashboard-horizon .tooltip-content time')[1]?.getAttribute('datetime')).toBe('2026-09-01T12:00:00.000Z');
   });
 

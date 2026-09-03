@@ -507,7 +507,7 @@ function resolveDataHorizon(sources) {
 
   const start = Math.min(...windows.map((window) => window.start));
   const end = Math.max(...windows.map((window) => window.end));
-  const hours = Math.round((end - start) / 3_600_000);
+  const hours = Math.ceil((end - start) / 3_600_000);
   return hours > 0
     ? { start: new Date(start).toISOString(), end: new Date(end).toISOString(), hours }
     : null;
