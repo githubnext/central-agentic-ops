@@ -49,7 +49,7 @@ jobs:
 if: needs.pre_activation.outputs.cao_authorized == 'true'
 
 imports:
-  - uses: shared/control.md
+  - uses: shared/cao-operation.md
     with:
       package: optimization
       role: worker
