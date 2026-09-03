@@ -311,7 +311,7 @@
         "navigation-label": "Security",
         "icon": "shield",
         "class-name": "security-page",
-        "description": "Runtime enforcement evidence for access control, network firewalling, integrity filtering, and threat detection.",
+        "description": "Operational assurance, warning, and telemetry-integrity signals for the configured githubnext/gh-aw-cao repository.",
         "filter-bar": {
           "filters": [
             "mode:review",
@@ -320,374 +320,124 @@
         },
         "sections": [
           {
-            "id": "security-access-control",
-            "title": "Access control",
-            "description": "File-read, file-write, agent-tool, and MCP guard denials observed in retained run telemetry.",
+            "id": "operational-assurance",
+            "title": "Needs attention",
+            "description": "Execution controls, package integrity, and explicit output warnings.",
             "layout": "full",
+            "count-source": "security-signals",
+            "count-label": "signals",
             "views": [
-              "security-access-control-chart",
-              "security-access-control-table"
+              "security-findings-summary",
+              "security-summary",
+              "security-signals"
             ]
           },
           {
-            "id": "security-firewall",
-            "title": "Firewall",
-            "description": "Allowed and blocked outbound network requests, with domain-level evidence when retained.",
+            "id": "security-output-evidence",
+            "title": "Retained output evidence",
+            "description": "Durable outputs remain inspectable with warning, severity, lifecycle, and source context.",
             "layout": "full",
+            "count-source": "findings",
+            "count-label": "records",
             "views": [
-              "security-firewall-chart",
-              "security-firewall-table"
-            ]
-          },
-          {
-            "id": "security-integrity-filtering",
-            "title": "Integrity filtering",
-            "description": "MCP interactions passed through or rejected by data-integrity controls.",
-            "layout": "full",
-            "views": [
-              "security-integrity-chart",
-              "security-integrity-table"
-            ]
-          },
-          {
-            "id": "security-threat-detection",
-            "title": "Threat detection",
-            "description": "Prompt-injection, secret-leak, and malicious-patch verdicts from retained detector artifacts.",
-            "layout": "full",
-            "views": [
-              "security-threat-chart",
-              "security-threat-table"
+              "security-output-ledger"
             ]
           }
         ],
         "views": [
           {
-            "id": "security-access-control-chart",
-            "title": "Denied access distribution",
-            "description": "File and tool denial volume is the leading access-control signal.",
+            "id": "security-findings-summary",
+            "title": "Security findings summary",
+            "description": "Retained findings grouped by severity.",
             "data": {
-              "source": "security-observations",
-              "filters": {
-                "security-feature": "access-control",
-                "security-analysis": "summary"
-              }
-            },
-            "mark": "chart",
-            "chart": "pie",
-            "layout": "full",
-            "encoding": {
-              "x": {
-                "field": "security-signal",
-                "type": "nominal",
-                "title": "Control"
-              },
-              "y": {
-                "field": "security-count",
-                "type": "quantitative",
-                "aggregate": "sum",
-                "title": "Denials"
-              }
-            }
-          },
-          {
-            "id": "security-access-control-table",
-            "title": "Access-control evidence",
-            "description": "Denied request classes are aggregated without retaining command text or file paths.",
-            "data": {
-              "source": "security-observations",
-              "filters": {
-                "security-feature": "access-control",
-                "security-analysis": "detail"
-              }
+              "source": "findings"
             },
             "mark": "table",
-            "controls": "interactive",
-            "disclosure": "supplemental",
             "layout": "full",
-            "empty-message": "No access-control denials were retained.",
             "encoding": {
-              "href": {
-                "field": "run-link",
-                "type": "nominal"
-              },
               "columns": [
                 {
-                  "field": "security-signal",
+                  "field": "finding-severity",
                   "type": "nominal",
-                  "title": "Denied operation"
-                },
-                {
-                  "field": "security-subject",
-                  "type": "nominal",
-                  "title": "Boundary"
-                },
-                {
-                  "field": "security-count",
-                  "type": "quantitative",
-                  "title": "Denials"
-                },
-                {
-                  "field": "workflow",
-                  "type": "nominal",
-                  "title": "Workflow"
-                },
-                {
-                  "field": "run",
-                  "type": "nominal",
-                  "title": "Run"
-                },
-                {
-                  "field": "observed-at",
-                  "type": "temporal",
-                  "title": "Observed"
-                }
-              ]
-            }
-          },
-          {
-            "id": "security-firewall-chart",
-            "title": "Firewall decisions",
-            "description": "The allowed-versus-blocked request distribution is the leading network-control signal.",
-            "data": {
-              "source": "security-observations",
-              "filters": {
-                "security-feature": "firewall",
-                "security-analysis": "summary"
-              }
-            },
-            "mark": "chart",
-            "chart": "pie",
-            "layout": "full",
-            "encoding": {
-              "x": {
-                "field": "security-status",
-                "type": "nominal",
-                "title": "Decision"
-              },
-              "y": {
-                "field": "security-count",
-                "type": "quantitative",
-                "aggregate": "sum",
-                "title": "Requests"
-              }
-            }
-          },
-          {
-            "id": "security-firewall-table",
-            "title": "Firewall request analysis",
-            "data": {
-              "source": "security-observations",
-              "filters": {
-                "security-feature": "firewall",
-                "security-analysis": "detail"
-              }
-            },
-            "mark": "table",
-            "controls": "interactive",
-            "disclosure": "supplemental",
-            "empty-message": "No domain-level firewall evidence was retained.",
-            "layout": "full",
-            "encoding": {
-              "href": {
-                "field": "run-link",
-                "type": "nominal"
-              },
-              "columns": [
-                {
-                  "field": "security-subject",
-                  "type": "nominal",
-                  "title": "Domain"
-                },
-                {
-                  "field": "security-status",
-                  "type": "nominal",
-                  "title": "Decision",
+                  "title": "Severity",
                   "display": "status"
                 },
                 {
-                  "field": "security-count",
+                  "field": "finding",
+                  "as": "finding-count",
                   "type": "quantitative",
-                  "title": "Requests"
-                },
-                {
-                  "field": "workflow",
-                  "type": "nominal",
-                  "title": "Workflow"
-                },
-                {
-                  "field": "run",
-                  "type": "nominal",
-                  "title": "Run"
-                },
-                {
-                  "field": "observed-at",
-                  "type": "temporal",
-                  "title": "Observed"
+                  "aggregate": "count",
+                  "title": "Findings"
                 }
               ]
-            }
-          },
-          {
-            "id": "security-integrity-chart",
-            "title": "Integrity-filter decisions",
-            "description": "Passed and filtered MCP interactions show the direct integrity-control effect.",
-            "data": {
-              "source": "security-observations",
-              "filters": {
-                "security-feature": "integrity-filtering",
-                "security-analysis": "summary"
-              }
             },
-            "mark": "chart",
-            "chart": "pie",
-            "layout": "full",
-            "encoding": {
-              "x": {
-                "field": "security-status",
-                "type": "nominal",
-                "title": "Decision"
-              },
-              "y": {
-                "field": "security-count",
-                "type": "quantitative",
-                "aggregate": "sum",
-                "title": "Interactions"
-              }
-            }
+            "controls": "interactive",
+            "empty-message": "No retained security findings were observed."
           },
           {
-            "id": "security-integrity-table",
-            "title": "Integrity-filter analysis",
+            "id": "security-summary",
+            "title": "Assurance summary",
             "data": {
-              "source": "security-observations",
-              "filters": {
-                "security-feature": "integrity-filtering",
-                "security-analysis": "detail"
-              }
+              "sources": [
+                "security-summary"
+              ]
+            },
+            "mark": "element",
+            "element": "summary-grid",
+            "layout": "full"
+          },
+          {
+            "id": "security-signals",
+            "title": "Assurance signals",
+            "description": "No vulnerability feed is retained. These are operational assurance signals, not vulnerability findings; generic run failures and collection gaps remain in their owning domains.",
+            "data": {
+              "sources": [
+                "security-signals"
+              ]
+            },
+            "mark": "element",
+            "element": "signal-list",
+            "layout": "full"
+          },
+          {
+            "id": "security-output-ledger",
+            "title": "Output assurance records",
+            "data": {
+              "source": "findings"
             },
             "mark": "table",
             "controls": "interactive",
-            "disclosure": "supplemental",
-            "empty-message": "No integrity-filter detail was retained.",
+            "empty-message": "No retained output assurance records were observed.",
             "layout": "full",
             "encoding": {
-              "href": {
-                "field": "run-link",
-                "type": "nominal"
-              },
               "columns": [
                 {
-                  "field": "security-signal",
+                  "field": "finding-summary",
+                  "type": "nominal",
+                  "title": "Output",
+                  "display": "outcome-link"
+                },
+                {
+                  "field": "finding-kind",
                   "type": "nominal",
                   "title": "Signal"
                 },
                 {
-                  "field": "security-subject",
+                  "field": "finding-severity",
                   "type": "nominal",
-                  "title": "Tool or reason"
-                },
-                {
-                  "field": "security-count",
-                  "type": "quantitative",
-                  "title": "Interactions"
-                },
-                {
-                  "field": "workflow",
-                  "type": "nominal",
-                  "title": "Workflow"
-                },
-                {
-                  "field": "run",
-                  "type": "nominal",
-                  "title": "Run"
-                },
-                {
-                  "field": "observed-at",
-                  "type": "temporal",
-                  "title": "Observed"
-                }
-              ]
-            }
-          },
-          {
-            "id": "security-threat-chart",
-            "title": "Threat verdicts",
-            "description": "Clear and detected category checks are the leading threat-detection signal.",
-            "data": {
-              "source": "security-observations",
-              "filters": {
-                "security-feature": "threat-detection",
-                "security-analysis": "summary"
-              }
-            },
-            "mark": "chart",
-            "chart": "pie",
-            "layout": "full",
-            "encoding": {
-              "x": {
-                "field": "security-status",
-                "type": "nominal",
-                "title": "Verdict"
-              },
-              "y": {
-                "field": "security-count",
-                "type": "quantitative",
-                "aggregate": "sum",
-                "title": "Category checks"
-              }
-            }
-          },
-          {
-            "id": "security-threat-table",
-            "title": "Threat-detection analysis",
-            "data": {
-              "source": "security-observations",
-              "filters": {
-                "security-feature": "threat-detection",
-                "security-analysis": "detail"
-              }
-            },
-            "mark": "table",
-            "controls": "interactive",
-            "disclosure": "supplemental",
-            "empty-message": "No threat-detection verdicts were retained.",
-            "layout": "full",
-            "encoding": {
-              "href": {
-                "field": "run-link",
-                "type": "nominal"
-              },
-              "columns": [
-                {
-                  "field": "security-signal",
-                  "type": "nominal",
-                  "title": "Category"
-                },
-                {
-                  "field": "security-status",
-                  "type": "nominal",
-                  "title": "Verdict",
+                  "title": "Severity",
                   "display": "status"
                 },
                 {
-                  "field": "security-subject",
+                  "field": "finding-status",
                   "type": "nominal",
-                  "title": "Diagnostic"
-                },
-                {
-                  "field": "workflow",
-                  "type": "nominal",
-                  "title": "Workflow"
-                },
-                {
-                  "field": "run",
-                  "type": "nominal",
-                  "title": "Run"
+                  "title": "Lifecycle",
+                  "display": "status"
                 },
                 {
                   "field": "observed-at",
                   "type": "temporal",
-                  "title": "Observed"
+                  "title": "Updated"
                 }
               ]
             }
