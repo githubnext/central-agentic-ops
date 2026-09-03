@@ -120,8 +120,13 @@ jobs:
       - name: Require cached dashboard data
         if: inputs.mode == 'cache'
         env:
+          ACTIVITY_DATA_ROOT: ${{ runner.temp }}/cao-activity
           DASHBOARD_DATA_ROOT: ${{ runner.temp }}/dashboard-data
         run: |
+          if [[ ! -f "$ACTIVITY_DATA_ROOT/deployed-workflows.json" ]]; then
+            echo "Cached activity data is unavailable: deployed-workflows.json" >&2
+            exit 1
+          fi
           for file in aic-usage.json operational-values.json dashboard-records.json; do
             if [[ ! -f "$DASHBOARD_DATA_ROOT/$file" ]]; then
               echo "Cached dashboard data is unavailable: $file" >&2

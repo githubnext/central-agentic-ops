@@ -2204,11 +2204,13 @@ test("Activity package owns the shared workflow-run cache contract", () => {
   assert.ok(rootManifest.resources.some((entry) => entry.destination === ".github/aw/activity/index.mjs"));
   assert.match(workflow, /schedule:[\s\S]*?cron:/);
   assert.match(workflow, /workflow_call:/);
+  assert.match(workflow, /concurrency:[\s\S]*?cancel-in-progress: false/);
   assert.match(workflow, /actions\/cache\/restore@[0-9a-f]{40}/);
   assert.match(workflow, /actions\/cache\/save@[0-9a-f]{40}/);
   assert.match(workflow, /cao-activity-v1-\$\{\{ github\.repository \}\}-/);
   assert.match(readme, /schemaVersion: 1/);
   assert.match(readme, /Consumers must use the top-level completeness fields/);
+  assert.match(readme, /retained non-terminal runs receive a full-window refresh/);
 });
 
 test("Documentation Pages deploys docs with the packaged dashboard builder", () => {

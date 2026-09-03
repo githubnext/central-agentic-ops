@@ -403,14 +403,19 @@ async function collectRunHealth(registryByRepository, previousIndex) {
   let available = true;
   const records = previousRunRecords(reusable ? previousIndex : null, registryByRepository, windowStart);
   const previousWorkflowIds = new Map();
+  const repositoriesWithPendingRuns = new Set();
   for (const workflow of previousIndex?.workflows || []) {
     if (!previousWorkflowIds.has(workflow.repository)) previousWorkflowIds.set(workflow.repository, new Set());
     previousWorkflowIds.get(workflow.repository).add(workflow.id);
+    if ((workflow.runHealth?.runRecords || []).some((run) => run.conclusion === null || run.status !== "completed")) {
+      repositoriesWithPendingRuns.add(workflow.repository);
+    }
   }
   await mapWithConcurrency([...registryByRepository], 4, async ([repositoryName, registry]) => {
     const workflowIds = new Set([...registry.values()].map((workflow) => workflow.id));
     const knownWorkflowIds = previousWorkflowIds.get(repositoryName);
     const refreshStart = reusable && knownWorkflowIds
+      && !repositoriesWithPendingRuns.has(repositoryName)
       && [...workflowIds].every((id) => knownWorkflowIds.has(id))
       ? overlapStart
       : windowStart;

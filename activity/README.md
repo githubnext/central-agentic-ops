@@ -56,4 +56,4 @@ Each `workflows[]` record identifies its `repository`, source `path`, workflow `
 
 Failed latest runs may additionally include `admissionStatus`, `admissionReason`, `resource`, `resourceResetAt`, and `resourceWaitHours`. Consumers must use the top-level completeness fields instead of inferring completeness from array length.
 
-When a compatible complete cache entry exists, the indexer retains in-window records and overlaps the previous refresh by one hour. Repositories with newly discovered workflows receive a full-window refresh. A missing, malformed, incompatible, or incomplete entry causes a complete bounded refresh.
+When a compatible complete cache entry exists, the indexer retains in-window records and overlaps the previous refresh by one hour. Repositories with newly discovered workflows or retained non-terminal runs receive a full-window refresh. A missing, malformed, incompatible, or incomplete entry causes a complete bounded refresh.
