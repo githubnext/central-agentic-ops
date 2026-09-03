@@ -953,6 +953,16 @@ test("operational-value graders expose deterministic run-scoped contracts", () =
     "software-development-practices-nist-ssdf-operational-value.sh",
   ]);
   assert.deepEqual(packageGraders, [packageMaintainerGrader]);
+  for (const name of [
+    "aw-failures-investigator-operational-value.sh",
+    "aw-maintenance-compiler-security-operational-value.sh",
+  ]) {
+    assert.equal(
+      readFileSync(join(root, "aw-maintenance", ".github", "graders", name), "utf8"),
+      readFileSync(join(gradersDirectory, name), "utf8"),
+      `focused AW Maintenance package must mirror ${name}`,
+    );
+  }
 
   for (const name of [...graders, ...packageGraders]) {
     const isPackageMaintainer = name === packageMaintainerGrader;
