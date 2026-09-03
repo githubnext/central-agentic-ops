@@ -6,6 +6,7 @@ import dispatchMotion from "../assets/control-plane-dispatch-motion.svg";
 import mobileDispatchFallback from "../assets/control-plane-dispatch-mobile.svg";
 import mobileDispatchFallbackDark from "../assets/control-plane-dispatch-mobile-dark-mode.svg";
 import mobileDispatchMotion from "../assets/control-plane-dispatch-mobile-motion.svg";
+import OpsWizard from "./OpsWizard.astro";
 
 const PAGE_TITLE_ID = "_top";
 
@@ -110,6 +111,7 @@ const { title = data.title, tagline, actions = [] } = data.hero || {};
     </div>
   </figure>
 
+  <OpsWizard />
 </div>
 
 <style>
