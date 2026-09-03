@@ -171,7 +171,7 @@ function renderDeferredTableSummaryRow(columns) {
     const rendered = renderTableSummaryRow(
       summaries.map((summary, index) => ({ ...summary, label: columns[index]?.label ?? '' }))
     );
-    row.replaceChildren(...rendered.children);
+    row.replaceChildren(...[...rendered.children]);
     row.removeAttribute('aria-busy');
   }).catch(() => {
     row.removeAttribute('aria-busy');
