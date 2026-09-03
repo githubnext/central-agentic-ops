@@ -19,8 +19,9 @@ function focusedPackageSource(slug, source = packageSource) {
   assert.notEqual(separator, -1, "package source must include a ref");
   return `${source.slice(0, separator)}/${slug}${source.slice(separator)}`;
 }
-const advisoryPackageSource = focusedPackageSource("advisory");
+const ukAiAdvisoryPackageSource = focusedPackageSource("uk-ai-advisory");
 const activityPackageSource = focusedPackageSource("activity");
+const awMaintenancePackageSource = focusedPackageSource("aw-maintenance");
 const craPackageSource = focusedPackageSource("eu-cra-compliance");
 const dashboardPackageSource = focusedPackageSource("dashboard");
 const dependabotUpdateSource = focusedPackageSource("dependabot");
@@ -32,11 +33,22 @@ const activityExpectedFiles = [
   ".github/aw/activity/index.mjs",
   ".github/workflows/activity.yml",
 ];
-const advisoryExpectedFiles = [
-  ".github/aw/advisory/implementation-status.md",
-  ".github/aw/dashboards/advisory.json",
-  ".github/workflows/advisory-package-maintainer.md",
-  ".github/workflows/advisory-uk-ai-operational-resilience.md",
+const awMaintenanceExpectedFiles = [
+  ".github/aw/dashboards/aw-maintenance.json",
+  ".github/graders/aw-failures-investigator-operational-value.sh",
+  ".github/graders/aw-maintenance-compiler-security-operational-value.sh",
+  ".github/workflows/aw-failures-investigator.md",
+  ".github/workflows/aw-maintenance-compiler-security.md",
+  ".github/workflows/aw-maintenance-upgrade.md",
+  ".github/workflows/aw-maintenance.md",
+  ".github/workflows/shared/cao.md",
+  ".github/workflows/shared/control.md",
+];
+const ukAiAdvisoryExpectedFiles = [
+  ".github/aw/uk-ai-advisory/implementation-status.md",
+  ".github/aw/dashboards/uk-ai-advisory.json",
+  ".github/workflows/uk-ai-advisory-package-maintainer.md",
+  ".github/workflows/uk-ai-advisory-operational-resilience.md",
   ".github/workflows/uk-ai-advisory.md",
   ".github/workflows/shared/control.md",
 ];
@@ -231,20 +243,20 @@ test("gh aw add installs the focused EU CRA package contract", { timeout: 180_00
   }
 });
 
-test("gh aw add installs the focused Advisory package contract", { timeout: 180_000 }, () => {
-  const consumer = installPackage(advisoryPackageSource);
+test("gh aw add installs the focused UK AI Advisory package contract", { timeout: 180_000 }, () => {
+  const consumer = installPackage(ukAiAdvisoryPackageSource);
 
   try {
-    for (const relativePath of advisoryExpectedFiles) {
-      assert.ok(existsSync(join(consumer, relativePath)), `focused Advisory package omitted ${relativePath}`);
+    for (const relativePath of ukAiAdvisoryExpectedFiles) {
+      assert.ok(existsSync(join(consumer, relativePath)), `focused UK AI Advisory package omitted ${relativePath}`);
     }
     assert.ok(
       !existsSync(join(consumer, ".github", "workflows", "dependabot.md")),
-      "focused Advisory package installed an unrelated orchestrator",
+      "focused UK AI Advisory package installed an unrelated orchestrator",
     );
 
     const packageManifests = readdirSync(join(consumer, ".github", "aw", "packages"));
-    assert.equal(packageManifests.length, 1, "expected one focused Advisory package manifest");
+    assert.equal(packageManifests.length, 1, "expected one focused UK AI Advisory package manifest");
     const installedManifest = JSON.parse(readFileSync(
       join(consumer, ".github", "aw", "packages", packageManifests[0]),
       "utf8",
@@ -252,13 +264,13 @@ test("gh aw add installs the focused Advisory package contract", { timeout: 180_
     assert.deepEqual(
       installedManifest.files.map(({ destination }) => destination).sort(),
       [
-        ".github/aw/advisory/implementation-status.md",
-        ".github/aw/dashboards/advisory.json",
-        ".github/workflows/advisory-package-maintainer.md",
+        ".github/aw/uk-ai-advisory/implementation-status.md",
+        ".github/aw/dashboards/uk-ai-advisory.json",
+        ".github/workflows/uk-ai-advisory-package-maintainer.md",
         ".github/workflows/cao.md",
         ".github/workflows/uk-ai-advisory.md",
       ],
-      "focused Advisory package manifest must own its entry workflows and ledger",
+      "focused UK AI Advisory package manifest must own its entry workflows and ledger",
     );
   } finally {
     rmSync(consumer, { recursive: true, force: true });
@@ -271,6 +283,18 @@ test("gh aw add installs the focused SelfCare package contract", { timeout: 180_
   try {
     for (const relativePath of selfCareExpectedFiles) {
       assert.ok(existsSync(join(consumer, relativePath)), `focused SelfCare package omitted ${relativePath}`);
+    }
+  } finally {
+    rmSync(consumer, { recursive: true, force: true });
+  }
+});
+
+test("gh aw add installs the focused AW Maintenance package contract", { timeout: 180_000 }, () => {
+  const consumer = installPackage(awMaintenancePackageSource);
+
+  try {
+    for (const relativePath of awMaintenanceExpectedFiles) {
+      assert.ok(existsSync(join(consumer, relativePath)), `focused AW Maintenance package omitted ${relativePath}`);
     }
   } finally {
     rmSync(consumer, { recursive: true, force: true });

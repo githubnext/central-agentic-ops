@@ -12,6 +12,7 @@ const suites = [
     prefixes: [
       ".github/graders/ambient-context-",
       ".github/graders/aw-failures-",
+      ".github/graders/aw-maintenance-",
       ".github/graders/dependabot-",
       ".github/graders/optimization-",
       ".github/workflows/shared/",
@@ -22,6 +23,17 @@ const suites = [
     manifest: "activity/aw.yml",
     testPattern: "focused activity package contract",
     prefixes: [".github/workflows/activity."],
+  },
+  {
+    name: "AW Maintenance",
+    manifest: "aw-maintenance/aw.yml",
+    testPattern: "focused AW Maintenance package contract",
+    prefixes: [
+      ".github/graders/aw-failures-",
+      ".github/graders/aw-maintenance-",
+      ".github/workflows/aw-",
+      ".github/workflows/shared/",
+    ],
   },
   {
     name: "EU CRA",
@@ -35,13 +47,12 @@ const suites = [
     ],
   },
   {
-    name: "Advisory",
-    manifest: "advisory/aw.yml",
-    testPattern: "focused Advisory package contract",
+    name: "UK AI Advisory",
+    manifest: "uk-ai-advisory/aw.yml",
+    testPattern: "focused UK AI Advisory package contract",
     prefixes: [
-      ".github/workflows/advisory-",
       ".github/workflows/shared/",
-      ".github/workflows/uk-ai-advisory.",
+      ".github/workflows/uk-ai-advisory",
     ],
   },
   {

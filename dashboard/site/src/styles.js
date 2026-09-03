@@ -93,6 +93,7 @@ a:focus-visible, [tabindex]:focus-visible, button:focus-visible { outline: 2px s
 .primary-nav a:hover { background: var(--neutral-muted); }
 .primary-nav a[aria-current="page"] { background: var(--neutral-muted); font-weight: 600; }
 .primary-nav a[aria-current="page"]::before { content: ""; width: 3px; position: absolute; top: 5px; bottom: 5px; left: -16px; border-radius: 0 4px 4px 0; background: var(--accent); }
+.mobile-nav-menu { display: none; }
 .app-main { min-width: 0; display: flex; flex-direction: column; }
 .app-main > nav { border-bottom: 1px solid var(--border); }
 .app-main > nav .shell { display: flex; align-items: center; gap: 8px; width: 100%; padding: 10px 24px; }
@@ -206,6 +207,7 @@ main.dashboard-prototype { width: 100%; flex: 1; padding: 0 24px 40px; }
 .chart-point:focus-visible .line-chart-point { stroke: var(--focus); stroke-width: 3; }
 .bar-chart-axis { stroke: var(--border); stroke-width: 1; }
 .bar-chart-bar { fill: var(--accent); stroke: var(--canvas); stroke-width: .5; }
+.histogram-chart-bar { fill: var(--accent); stroke: var(--canvas); stroke-width: .5; }
 .chart-widget [tabindex]:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; stroke: var(--focus); stroke-width: 3; }
 .chart-widget .chart-series-1 { stroke: var(--success); }
 .chart-widget .chart-series-2 { stroke: var(--attention); }
@@ -800,17 +802,29 @@ footer { padding: 20px 24px; border-top: 1px solid var(--border); color: var(--m
   .sidebar-toggle { display: none; }
   .sidebar-collapsed .org-sidebar { padding: 14px 12px 10px; }
   .sidebar-collapsed .sidebar-brand > span, .sidebar-collapsed .nav-label { display: initial; }
-  .primary-nav { width: 100%; flex-direction: row; overflow-x: auto; }
+  .primary-nav { width: 100%; flex-direction: row; gap: 4px; }
   .nav-section-label { display: none; }
-  .primary-nav a, .sidebar-collapsed .primary-nav a { min-height: 44px; flex: none; justify-content: flex-start; gap: 10px; padding-inline: 8px; }
+  .primary-nav > .nav-item, .sidebar-collapsed .primary-nav > .nav-item { width: 44px; min-height: 44px; flex: 0 0 44px; justify-content: center; gap: 0; padding: 0; }
+  .primary-nav > .nav-item:nth-of-type(n + 5) { display: none; }
+  .primary-nav > .nav-item .nav-label { display: none; }
   .primary-nav a[aria-current="page"]::before { content: none; }
+  .mobile-nav-menu { display: block; position: relative; margin-left: auto; }
+  .mobile-nav-menu > summary { width: 44px; height: 44px; display: grid; place-items: center; border-radius: 6px; color: var(--fg); cursor: pointer; list-style: none; }
+  .mobile-nav-menu > summary::-webkit-details-marker { display: none; }
+  .mobile-nav-menu > summary:hover, .mobile-nav-menu[open] > summary { background: var(--neutral-muted); }
+  .mobile-nav-menu-list { width: min(280px, calc(100vw - 24px)); max-height: min(520px, calc(100vh - 140px)); display: flex; flex-direction: column; gap: 2px; overflow-y: auto; position: absolute; z-index: 30; top: calc(100% + 4px); right: 0; padding: 8px; border: 1px solid var(--border); border-radius: 6px; background: var(--canvas); box-shadow: 0 8px 24px color-mix(in srgb, var(--canvas-inset) 45%, transparent); }
+  .mobile-nav-menu-list a { width: 100%; min-height: 40px; flex: none; justify-content: flex-start; gap: 10px; padding: 8px; }
+  .mobile-nav-menu-list a[aria-current="page"] { background: var(--neutral-muted); }
+  .mobile-nav-section-label { margin: 8px 8px 2px; color: var(--muted); font-size: .6875rem; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; }
+  .mobile-nav-section-label:first-child { margin-top: 2px; }
   .app-main > nav .shell { flex-wrap: wrap; padding-inline: 14px; }
   .site-callouts { padding-inline: 14px; }
   .breadcrumb .shell > :is([data-breadcrumb-root], [data-breadcrumb-dashboard]) { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .report-actions { width: 100%; position: relative; margin-left: 0; }
   .report-actions .tooltip-help { position: static; }
   .report-actions .tooltip-content { right: auto; left: 0; }
-  .freshness { min-width: 0; flex: 1; white-space: normal; }
+  .freshness { min-width: 0; flex: 1; }
+  .refresh-button > span { display: none; }
   .overview-header { min-height: 0; padding: 24px 0 20px; flex-direction: column; gap: 12px; }
   .toolbar { align-items: stretch; flex-wrap: wrap; }
   .filter-control { flex-basis: 100%; }

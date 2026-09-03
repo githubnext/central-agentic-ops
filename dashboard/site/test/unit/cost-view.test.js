@@ -49,13 +49,13 @@ describe('Cost and efficiency dashboard view', () => {
     );
 
     expect(dashboardPage).toMatchObject({ kind: 'custom', icon: 'meter' });
-    expect(dashboardPage.views).toHaveLength(5);
+    expect(dashboardPage.views).toHaveLength(6);
     expect(dashboardPage.sections).toEqual(expect.arrayContaining([
       expect.objectContaining({
         id: 'measured-usage',
         'count-source': 'cost-signals',
         'count-label': 'boundaries',
-        views: ['cost-usage-trend', 'cost-summary', 'cost-signals']
+        views: ['cost-usage-trend', 'cost-per-run-distribution', 'cost-summary', 'cost-signals']
       })
     ]));
     expect(dashboardPage.views).not.toContainEqual(expect.objectContaining({ element: 'metric-signal-summary' }));
@@ -76,6 +76,10 @@ describe('Cost and efficiency dashboard view', () => {
     expect(summary?.textContent).toContain('Measured episode AIC—');
     expect(summary?.textContent).toContain('Episode output yield—');
     expect(page?.textContent).toContain('allocation evidence, not monetary cost');
+    const histogram = page?.querySelector('[data-chart-widget="histogram"]');
+    expect(histogram).not.toBeNull();
+    expect(histogram?.querySelectorAll('.histogram-chart-bar')).toHaveLength(2);
+    expect(histogram?.querySelector('.histogram-chart-bar')?.getAttribute('aria-label')).toContain('AIC');
 
     const evidenceBoundaries = [...(page?.querySelectorAll('.signal-list-region') ?? [])]
       .find((region) => region.textContent?.includes('Usage coverage'));

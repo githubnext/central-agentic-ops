@@ -2290,7 +2290,7 @@ function validateEncoding(encodingNode, encoding, mark, chart, sourceName, data,
   } else if (markValue === 'table') {
     validateTableEncoding(encodingNode, encoding, sourceName, `${viewPath}.encoding`, aggregateOutputIds, errors);
   } else if (markValue === 'chart') {
-    validateChartEncoding(encodingNode, encoding, sourceName, `${viewPath}.encoding`, aggregateOutputIds, errors, chart);
+    validateChartEncoding(encodingNode, encoding, sourceName, `${viewPath}.encoding`, aggregateOutputIds, errors);
     validateChartWidget(encoding, chart, viewPath, errors);
   }
 
@@ -2314,19 +2314,30 @@ function validateChartWidget(encoding, chart, viewPath, errors) {
       `${viewPath}.encoding.x.type`
     ));
   }
-  if (chart === 'histogram' && isPlainObject(encoding.x) && encoding.x.type !== undefined && encoding.x.type !== 'quantitative') {
-    errors.push(createError(
-      ERROR_CODES.invalidScopeFilterTimeAggregationOrOrderReference,
-      'histogram x encoding must be quantitative when explicitly typed.',
-      `${viewPath}.encoding.x.type`
-    ));
-  }
   if (chart === 'pie' && isPlainObject(encoding.x) && encoding.x.type !== undefined && !['nominal', 'ordinal'].includes(String(encoding.x.type))) {
     errors.push(createError(
       ERROR_CODES.invalidScopeFilterTimeAggregationOrOrderReference,
       'pie chart x encoding must be nominal or ordinal when explicitly typed.',
       `${viewPath}.encoding.x.type`
     ));
+  }
+  if (chart === 'histogram' && isPlainObject(encoding.x) && encoding.x.type !== undefined && !['nominal', 'ordinal'].includes(String(encoding.x.type))) {
+    errors.push(createError(
+      ERROR_CODES.invalidScopeFilterTimeAggregationOrOrderReference,
+      'histogram chart x encoding must be nominal or ordinal when explicitly typed.',
+      `${viewPath}.encoding.x.type`
+    ));
+  }
+  if (chart === 'histogram') {
+    for (const channel of ['color', 'href']) {
+      if (encoding[channel] !== undefined) {
+        errors.push(createError(
+          ERROR_CODES.invalidScopeFilterTimeAggregationOrOrderReference,
+          `histogram charts must not encode ${channel}.`,
+          `${viewPath}.encoding.${channel}`
+        ));
+      }
+    }
   }
 }
 
@@ -2424,21 +2435,15 @@ function validateTableEncoding(encodingNode, encoding, sourceName, path, aggrega
  * @param {string} path
  * @param {Map<string, string>} aggregateOutputIds
  * @param {ValidationError[]} errors
- * @param {unknown} chart
  */
-function validateChartEncoding(encodingNode, encoding, sourceName, path, aggregateOutputIds, errors, chart) {
+function validateChartEncoding(encodingNode, encoding, sourceName, path, aggregateOutputIds, errors) {
   validateRequiredFieldDefinition(getValueNodeByKey(encodingNode, 'x'), encoding.x, sourceName, `${path}.x`, aggregateOutputIds, errors);
   validateRequiredFieldDefinition(getValueNodeByKey(encodingNode, 'y'), encoding.y, sourceName, `${path}.y`, aggregateOutputIds, errors);
 
-  const xTypes = chart === 'histogram'
-    ? ['quantitative']
-    : ['nominal', 'ordinal', 'temporal'];
-  if (isPlainObject(encoding.x) && encoding.x.type !== undefined && !xTypes.includes(String(encoding.x.type))) {
+  if (isPlainObject(encoding.x) && encoding.x.type !== undefined && !['nominal', 'ordinal', 'temporal'].includes(String(encoding.x.type))) {
     errors.push(createError(
       ERROR_CODES.invalidScopeFilterTimeAggregationOrOrderReference,
-      chart === 'histogram'
-        ? 'histogram x encoding must be quantitative when explicitly typed.'
-        : 'chart x encoding must use a nominal, ordinal, or temporal type when explicitly typed.',
+      'chart x encoding must use a nominal, ordinal, or temporal type when explicitly typed.',
       `${path}.x.type`
     ));
   }

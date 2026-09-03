@@ -147,6 +147,21 @@ describe('presenter built-in and custom pages', () => {
             freshness: 'fresh',
             availability: 'available'
           }
+        },
+        historical: {
+          source: 'historical',
+          rows: [{ record: 'older-window' }],
+          metadata: {
+            'source-id': 'historical-fixture',
+            'source-kind': 'fixture',
+            'as-of': '2026-09-01T12:00:00Z',
+            'retrieved-at': '2026-09-01T12:00:00Z',
+            'coverage-start': '2026-01-01T00:00:00Z',
+            'coverage-end': '2026-09-01T12:00:00Z',
+            completeness: 'complete',
+            freshness: 'fresh',
+            availability: 'available'
+          }
         }
       }
     });
@@ -591,6 +606,44 @@ describe('presenter built-in and custom pages', () => {
     }
   });
 
+  it('renders a mobile view menu with full labels and closes it after selection', () => {
+    const rendered = renderDashboard({
+      document: authoritativeDashboardDocument,
+      sources: {}
+    });
+    const menu = /** @type {HTMLDetailsElement | null} */ (rendered.querySelector('.mobile-nav-menu'));
+    const menuLinks = [...rendered.querySelectorAll('.mobile-nav-menu-list [data-mobile-nav-page-id]')];
+
+    expect(menu?.querySelector('summary')?.getAttribute('aria-label')).toBe('Select view');
+    expect(menuLinks.map((link) => link.textContent?.trim())).toEqual([
+      'Overview',
+      'Runtime',
+      'Performance',
+      'Security',
+      'Value',
+      'Cost',
+      'Dispatches',
+      'Workflows',
+      'Repositories',
+      'Packages',
+      'Models & agents',
+      'Updates',
+      'UK AI advisory',
+      'Ambient context',
+      'AW Maintenance',
+      'Dependabot',
+      'EU CRA',
+      'Optimization'
+    ]);
+
+    menu?.setAttribute('open', '');
+    /** @type {HTMLAnchorElement | undefined} */ (menuLinks[4])?.click();
+
+    expect(menu?.hasAttribute('open')).toBe(false);
+    expect(menuLinks[4]?.getAttribute('aria-current')).toBe('page');
+    window.history.replaceState(null, '', '/');
+  });
+
   it('renders filter bars for the Runtime, Security, and Value pages', () => {
     const rendered = renderDashboard({
       document: authoritativeDashboardDocument,
@@ -654,7 +707,7 @@ describe('presenter built-in and custom pages', () => {
 
     const page = activatePage(rendered, 'performance');
     expect(page?.querySelector('[data-chart-widget="histogram"]')).not.toBeNull();
-    expect(page?.querySelectorAll('[data-chart-widget="histogram"] .bar-chart-bar')).toHaveLength(2);
+    expect(page?.querySelectorAll('[data-chart-widget="histogram"] .histogram-chart-bar')).toHaveLength(1);
     expect(page?.querySelectorAll('[data-chart-widget="bar"]')).toHaveLength(3);
     expect(page?.textContent).toContain('gvisor');
     expect(page?.textContent).toContain('gpt-5.4');
@@ -726,7 +779,7 @@ describe('presenter built-in and custom pages', () => {
     expect(rendered.querySelectorAll('.dashboard-horizon .tooltip-content time')[1]?.getAttribute('datetime')).toBe('2026-09-01T12:00:00.000Z');
   });
 
-  it('renders the custom JSON-composed Security page from reusable summary and signal primitives', () => {
+  it('renders four chart-led security analyses with detailed evidence', () => {
     const metadata = {
       'source-id': 'security-fixture',
       'source-kind': 'fixture',
@@ -739,40 +792,18 @@ describe('presenter built-in and custom pages', () => {
     const rendered = renderDashboard({
       document: authoritativeDashboardDocument,
       sources: {
-        workflows: {
-          source: 'workflows',
+        'security-observations': {
+          source: 'security-observations',
           rows: [
-            { workflow: '.github/workflows/daily.md', 'workflow-name': 'Daily operations', package: 'daily', 'package-name': 'Daily', 'inventory-ready': true },
-            { workflow: '.github/workflows/release.md', 'workflow-name': '<img src=x onerror=alert(1)>', package: 'release', 'package-name': 'Release', 'inventory-ready': false }
+            { 'security-observation': 'access-summary', 'security-feature': 'access-control', 'security-analysis': 'summary', 'security-signal': 'File access denied', 'security-status': 'denied', 'security-count': 2 },
+            { 'security-observation': 'access-detail', 'security-feature': 'access-control', 'security-analysis': 'detail', 'security-signal': 'read denied', 'security-status': 'denied', 'security-subject': 'Filesystem', 'security-count': 2, workflow: '.github/workflows/daily.md', run: '101', 'observed-at': '2026-08-31T04:00:00Z' },
+            { 'security-observation': 'firewall-summary', 'security-feature': 'firewall', 'security-analysis': 'summary', 'security-signal': 'Blocked requests', 'security-status': 'blocked', 'security-count': 3 },
+            { 'security-observation': 'firewall-detail', 'security-feature': 'firewall', 'security-analysis': 'detail', 'security-signal': 'Blocked request', 'security-status': 'blocked', 'security-subject': '<img src=x onerror=alert(1)>', 'security-count': 3, workflow: '.github/workflows/daily.md', run: '101', 'observed-at': '2026-08-31T04:00:00Z' },
+            { 'security-observation': 'integrity-summary', 'security-feature': 'integrity-filtering', 'security-analysis': 'summary', 'security-signal': 'Filtered interactions', 'security-status': 'filtered', 'security-count': 1 },
+            { 'security-observation': 'integrity-detail', 'security-feature': 'integrity-filtering', 'security-analysis': 'detail', 'security-signal': 'Filtered tool', 'security-status': 'filtered', 'security-subject': 'create_issue', 'security-count': 1, workflow: '.github/workflows/daily.md', run: '101', 'observed-at': '2026-08-31T04:00:00Z' },
+            { 'security-observation': 'threat-summary', 'security-feature': 'threat-detection', 'security-analysis': 'summary', 'security-signal': 'Prompt injection', 'security-status': 'detected', 'security-count': 1 },
+            { 'security-observation': 'threat-detail', 'security-feature': 'threat-detection', 'security-analysis': 'detail', 'security-signal': 'Prompt injection', 'security-status': 'detected', 'security-count': 1, workflow: '.github/workflows/daily.md', run: '101', 'observed-at': '2026-08-31T04:00:00Z' }
           ],
-          metadata
-        },
-        runs: {
-          source: 'runs',
-          rows: [
-            { workflow: '.github/workflows/daily.md', run: '101', 'run-conclusion': 'action-required', 'started-at': '2026-08-31T04:00:00Z', 'run-link': { relation: 'run', href: 'https://github.com/githubnext/gh-aw-cao/actions/runs/101', label: 'View run 101' } },
-            { workflow: '.github/workflows/daily.md', run: '102', 'run-conclusion': 'action-required', 'started-at': '2026-08-31T05:00:00Z', 'run-link': { relation: 'run', href: 'https://github.com/githubnext/gh-aw-cao/actions/runs/102', label: 'View run 102' } }
-          ],
-          metadata
-        },
-        findings: {
-          source: 'findings',
-          rows: [{
-            workflow: '.github/workflows/release.md',
-            finding: 'warning-1',
-            'finding-kind': 'authored-warning',
-            'finding-summary': '<img src=x onerror=alert(1)>',
-            'observed-at': '2026-08-31T05:00:00Z',
-            'external-link': { relation: 'external', href: 'https://github.com/githubnext/gh-aw-cao/issues/1', label: 'View warning output' }
-          }],
-          metadata
-        },
-        outcomes: {
-          source: 'outcomes',
-          rows: [{
-            'safe-output': 'warning-1',
-            'outcome-title': 'Release warning'
-          }],
           metadata
         }
       }
@@ -782,34 +813,18 @@ describe('presenter built-in and custom pages', () => {
     const dashboardPage = authoritativeDashboardDocument.dashboard.pages.find((/** @type {{ id: string }} */ candidate) => candidate.id === 'security');
     expect(dashboardPage).toMatchObject({ kind: 'custom' });
     expect(dashboardPage).not.toHaveProperty('page');
-    expect(dashboardPage.sections).toEqual(expect.arrayContaining([
-      expect.objectContaining({
-        id: 'operational-assurance',
-        'count-source': 'security-signals',
-        'count-label': 'signals'
-      })
-    ]));
     expect(rendered.querySelector('[data-nav-page-id="security"] .octicon-shield')).not.toBeNull();
-    expect(page?.querySelector('.layout-section-header > strong')?.textContent).toBe('3 signals');
-    expect(page?.querySelector('.signal-count')).toBeNull();
-    expect(page?.querySelector('.summary-grid')?.textContent).toContain('Approval gates2');
-    expect(page?.querySelector('.summary-grid')?.textContent).toContain('Explicit warnings1');
-    expect(page?.querySelector('.summary-grid')?.textContent).toContain('Package integrity gaps1');
-    expect(page?.querySelector('.summary-grid')?.textContent).toContain('Vulnerability findings—');
-    const signals = [...(page?.querySelectorAll('.signal-item') ?? [])];
-    expect(signals.map((signal) => signal.querySelector('.signal-copy > span')?.textContent)).toEqual([
-      'Approval gate',
-      'Package integrity',
-      'Authored warning'
-    ]);
-    expect(signals[0]?.textContent).toContain('2 runs require maintainer approval');
-    expect(signals[0]?.querySelector('a')?.getAttribute('href')).toContain('/actions/runs/102');
-    expect(signals[1]?.querySelector('a')?.getAttribute('href')).toBe('#page-packages');
-    expect(signals[1]?.textContent).toContain('View package');
-    expect(signals[2]?.querySelector('a')?.getAttribute('href')).toBe('#page-outcome-detail?outcome=warning-1');
-    expect(signals[2]?.querySelector('.signal-copy > strong')?.textContent).toBe('<img src=x onerror=alert(1)>');
-    expect(signals[2]?.querySelector('img')).toBeNull();
-    expect(page?.textContent).toContain('No vulnerability feed is retained.');
+    const sections = [...(page?.querySelectorAll('.layout-section') ?? [])];
+    expect(sections).toHaveLength(4);
+    for (const section of sections) {
+      expect(section.querySelector('.section-views')?.firstElementChild?.querySelector('[data-chart-widget="pie"]')).not.toBeNull();
+      expect(section.querySelector('.custom-table')).not.toBeNull();
+    }
+    expect(page?.textContent).toContain('File access denied');
+    expect(page?.textContent).toContain('create_issue');
+    expect(page?.textContent).toContain('Prompt injection');
+    expect(page?.textContent).toContain('<img src=x onerror=alert(1)>');
+    expect(page?.querySelector('img')).toBeNull();
   });
 
   it('renders the custom JSON-composed Value page from shared summary, signal, and table elements', () => {
@@ -2793,7 +2808,7 @@ describe('presenter built-in and custom pages', () => {
     filter.dispatchEvent(new Event('input'));
     expect(rows.map((row) => row.hasAttribute('hidden'))).toEqual([true, false]);
     expect(rendered.querySelector('.table-filter-result')?.textContent).toBe('Showing 1 of 1 result');
-    expect(rendered.querySelector('.freshness')?.textContent).toBe('Last updated Aug 30, 2026, 12:01 PM');
+    expect(rendered.querySelector('.freshness')?.textContent).toMatch(/^\d+[smhdw] ago$/);
     expect(rendered.querySelector('.freshness')?.getAttribute('datetime')).toBe('2026-08-30T12:01:00Z');
   });
 

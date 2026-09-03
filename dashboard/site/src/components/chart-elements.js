@@ -146,27 +146,30 @@ export function renderChartWidget(chartType, points, series, pieSummary = null, 
   }
 
   if (chartType === 'histogram') {
-    const values = points.map((point) => Number(point.x)).filter(Number.isFinite);
-    const bins = binHistogramValues(values);
-    const maximum = Math.max(1, ...bins.map((bin) => bin.count));
-    const barWidth = bins.length > 0 ? 88 / bins.length : 88;
-    /** @param {number} value */
-    const formatBoundary = (value) => formatNumber(value, unit);
+    const bins = binHistogramValues(points.map((point) => toNumber(point.y)));
+    const maximum = Math.max(...bins.map((bin) => bin.count), 1);
+    const barWidth = bins.length > 0 ? 100 / bins.length : 100;
+    /** @param {{ lower: number, upper: number }} bin */
+    const binLabel = (bin) => {
+      const lower = formatNumber(bin.lower, unit);
+      const upper = formatNumber(bin.upper, unit);
+      return bin.lower === bin.upper ? lower : `${lower}–${upper}`;
+    };
     return h(
       'div',
       { className: 'chart-widget histogram-chart-widget', 'data-chart-widget': 'histogram' },
       h(
         'svg',
-        { viewBox: '0 0 100 42', role: 'img', 'aria-label': `Histogram of ${values.length} values` },
-        h('line', { className: 'bar-chart-axis', x1: 6, y1: 38, x2: 94, y2: 38 }),
+        { viewBox: '0 0 100 42', role: 'img', 'aria-label': `Histogram with ${bins.length} automatically calculated bins` },
+        h('line', { className: 'bar-chart-axis', x1: 0, y1: 38, x2: 100, y2: 38 }),
         ...bins.map((bin, index) => {
           const height = Math.max(1, (bin.count / maximum) * 34);
-          const label = `${formatBoundary(bin.lower)}–${formatBoundary(bin.upper)}: ${bin.count}`;
+          const label = `${binLabel(bin)}: ${bin.count} observation${bin.count === 1 ? '' : 's'}`;
           return h('rect', {
-            className: 'bar-chart-bar chart-series-1',
-            x: 6 + index * barWidth,
+            className: 'histogram-chart-bar',
+            x: index * barWidth,
             y: 38 - height,
-            width: Math.max(1, barWidth - 1),
+            width: Math.max(0, barWidth - 1),
             height,
             tabIndex: 0,
             role: 'img',
@@ -178,8 +181,8 @@ export function renderChartWidget(chartType, points, series, pieSummary = null, 
         ? h(
           'div',
           { className: 'chart-axis', 'data-chart-axis': 'histogram' },
-          h('span', null, formatBoundary(bins[0]?.lower ?? 0)),
-          h('span', null, formatBoundary(bins.at(-1)?.upper ?? 0))
+          h('span', null, formatNumber(bins[0].lower, unit)),
+          h('span', null, formatNumber(bins[bins.length - 1].upper, unit))
         )
         : null
     );

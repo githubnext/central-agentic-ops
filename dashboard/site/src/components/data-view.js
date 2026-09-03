@@ -230,9 +230,7 @@ function renderChartView(context) {
     chartSeries,
     pieSummary,
     y ? fieldTitle(y) : 'Total',
-    chartType === 'histogram'
-      ? (x ? fieldUnit(x, context.units ?? {}) : null)
-      : (y ? fieldUnit(y, context.units ?? {}) : null)
+    y ? fieldUnit(y, context.units ?? {}) : null
   );
   const showTable = typeof view.table === 'boolean' ? view.table : chartType === 'bar';
   const table = showTable ? renderTableRegion({

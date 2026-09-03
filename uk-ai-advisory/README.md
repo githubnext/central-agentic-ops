@@ -11,18 +11,18 @@ The UK AI Advisory package applies the UK government [AI open-code and vulnerabi
 
 | Workflow | Responsibility |
 | --- | --- |
-| [`advisory`](../.github/workflows/uk-ai-advisory.md) | Discovers, ranks, selects, and dispatches repository-level work. |
-| [`advisory-uk-ai-operational-resilience`](../.github/workflows/advisory-uk-ai-operational-resilience.md) | Produces one evidence-backed, non-binding operational resilience advisory for a selected repository. |
-| [`advisory-package-maintainer`](../.github/workflows/advisory-package-maintainer.md) | Weekly audits package coverage against the original specification and current GOV.UK guidance. |
+| [`uk-ai-advisory`](../.github/workflows/uk-ai-advisory.md) | Discovers, ranks, selects, and dispatches repository-level work. |
+| [`uk-ai-advisory-operational-resilience`](../.github/workflows/uk-ai-advisory-operational-resilience.md) | Produces one evidence-backed, non-binding operational resilience advisory for a selected repository. |
+| [`uk-ai-advisory-package-maintainer`](../.github/workflows/uk-ai-advisory-package-maintainer.md) | Weekly audits package coverage against the original specification and current GOV.UK guidance. |
 
 The orchestrator dispatches at most 50 workers per run. Each worker uses a fixed seven-day lookback, treats proposed A/B/C/D tiers as human-review priorities rather than authorization, and creates at most one consolidated issue through declared safe outputs.
 
-The package maintainer runs independently of repository dispatch. It updates the [implementation-status ledger](implementation-status.md) only through a draft pull request and may open at most one deduplicated issue for the highest-priority concrete fleet gap. Installed packages keep the ledger at `.github/aw/advisory/implementation-status.md`. It does not inspect target repositories or edit operation workflows.
+The package maintainer runs independently of repository dispatch. It updates the [implementation-status ledger](implementation-status.md) only through a draft pull request and may open at most one deduplicated issue for the highest-priority concrete fleet gap. Installed packages keep the ledger at `.github/aw/uk-ai-advisory/implementation-status.md`. It does not inspect target repositories or edit operation workflows.
 
 ## Install and Configure
 
 ```bash
-gh aw add githubnext/gh-aw-cao/advisory@<catalog-release>
+gh aw add githubnext/gh-aw-cao/uk-ai-advisory@<catalog-release>
 ```
 
 Configure the shared GitHub App or PAT described in the [authentication guide](../docs/authentication.md), then declare the package in the control repository's `.github/workflows/cao.json`:
@@ -32,10 +32,10 @@ Configure the shared GitHub App or PAT described in the [authentication guide](.
 	"version": 1,
 	"control-plane": {
 		"packages": {
-			"advisory": {
+			"uk-ai-advisory": {
 				"workers": {
-					"uk-ai-operational-resilience": {
-						"workflow": "advisory-uk-ai-operational-resilience"
+					"operational-resilience": {
+						"workflow": "uk-ai-advisory-operational-resilience"
 					}
 				}
 			}

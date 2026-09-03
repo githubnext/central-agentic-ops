@@ -1,4 +1,4 @@
-# Advisory Specification Implementation Status
+# UK AI Advisory Specification Implementation Status
 
 This ledger records how the **Advisory operation workflow fleet** represents the UK government guidance on AI, open code, and vulnerability risk in the public sector. The authoritative source is the current [GOV.UK guidance](https://www.gov.uk/guidance/ai-open-code-and-vulnerability-risk-in-the-public-sector), not this ledger.
 
@@ -21,7 +21,7 @@ The source below is non-binding GOV.UK policy guidance. Stable requirement IDs p
 
 | Requirement ID | Requirement summary | Package-capability status | Workflow evidence | Missing capability | Recommended change | Authoritative source | Last materially verified |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| UK-AI-001 | Apply the guidance to published or publicly accessible UK public-sector code; AI is a threat accelerator, not an eligibility requirement | IMPLEMENTED | `advisory` — Discovery scope and ranking | None known | Preserve public-sector and published-code scope independently of AI functionality | GOV.UK AI open-code and vulnerability-risk guidance, non-binding, link above | 2026-08-27 |
+| UK-AI-001 | Apply the guidance to published or publicly accessible UK public-sector code; AI is a threat accelerator, not an eligibility requirement | IMPLEMENTED | `uk-ai-advisory` — Discovery scope and ranking | None known | Preserve public-sector and published-code scope independently of AI functionality | GOV.UK AI open-code and vulnerability-risk guidance, non-binding, link above | 2026-08-27 |
 | UK-AI-002 | Keep public-sector code open and reusable by default for transparency, scrutiny, reuse, and reduced supplier lock-in | IMPLEMENTED | Worker — Open by default method | None known | Preserve open-by-default burden of proof | GOV.UK guidance, non-binding, link above | 2026-08-27 |
 | UK-AI-003 | Treat system weaknesses and remediation capability, rather than visibility alone, as the primary risk drivers | IMPLEMENTED | Worker — resilience, control verification, and closure rules | None known | Continue to prohibit privacy as a substitute control | GOV.UK guidance, non-binding, link above | 2026-08-27 |
 | UK-AI-004 | Account for AI-shortened vulnerability discovery and discovery-to-exploit windows | IMPLEMENTED | Orchestrator ranking; worker risk scoring | None known | Preserve AI as an exposure accelerator rather than a scope gate | GOV.UK guidance, non-binding, link above | 2026-08-27 |

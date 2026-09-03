@@ -82,6 +82,89 @@ test("dashboard source bridge detects rollout mode from run titles with punctuat
     report: { generatedAt: "2026-09-03T06:00:00Z", records: [] },
   });
 
+  test("dashboard source bridge exposes chart summaries and in-depth security observations", () => {
+    const sources = buildDashboardLanguageSources({
+      deployed: {
+        generatedAt: "2026-09-03T06:00:00Z",
+        discovery: { complete: true },
+        runHealth: { available: true, complete: true },
+        bundles: [],
+        workflows: [],
+      },
+      usage: {
+        available: true,
+        complete: true,
+        securityAvailable: true,
+        securityComplete: true,
+        runs: [],
+        securityRuns: [{
+          repository: "githubnext/gh-aw-cao",
+          runId: 42,
+          workflowPath: ".github/workflows/security.lock.yml",
+          createdAt: "2026-09-03T05:00:00Z",
+          security: {
+            accessControl: {
+              available: true,
+              fileDenials: { read: 2 },
+              toolDenials: { shell: 1 },
+              guardPolicy: { repo_scope_blocked: 1 },
+            },
+            firewall: {
+              available: true,
+              analysis: {
+                allowed_requests: 8,
+                blocked_requests: 2,
+                requests_by_domain: {
+                  "api.github.com:443": { allowed: 8 },
+                  "blocked.example:443": { blocked: 2 },
+                },
+              },
+            },
+            integrity: {
+              available: true,
+              totalToolCalls: 6,
+              summary: {
+                total_filtered: 2,
+                filtered_tool_counts: { create_issue: 2 },
+                filtered_reason_counts: { integrity: 2 },
+              },
+            },
+            threatDetection: {
+              available: true,
+              verdict: {
+                promptInjection: true,
+                secretLeak: false,
+                maliciousPatch: false,
+                warnings: [{ field: "patch", code: "ERR_VALIDATION" }],
+              },
+            },
+          },
+        }],
+      },
+      operationalValues: { records: [] },
+      report: { generatedAt: "2026-09-03T06:00:00Z", records: [] },
+    });
+
+    const rows = sources["security-observations"].rows;
+    assert.equal(sources["security-observations"].metadata.completeness, "complete");
+    assert.ok(rows.some((row) => row["security-feature"] === "access-control"
+      && row["security-analysis"] === "summary"
+      && row["security-signal"] === "File access denied"
+      && row["security-count"] === 2));
+    assert.ok(rows.some((row) => row["security-feature"] === "firewall"
+      && row["security-analysis"] === "detail"
+      && row["security-subject"] === "blocked.example:443"
+      && row["security-count"] === 2));
+    assert.ok(rows.some((row) => row["security-feature"] === "integrity-filtering"
+      && row["security-subject"] === "create_issue"));
+    assert.ok(rows.some((row) => row["security-feature"] === "integrity-filtering"
+      && row["security-signal"] === "Passed interactions"
+      && row["security-count"] === 4));
+    assert.ok(rows.some((row) => row["security-feature"] === "threat-detection"
+      && row["security-signal"] === "Prompt injection"
+      && row["security-status"] === "detected"));
+  });
+
   assert.equal(sources.runs.rows[0]["rollout-mode"], "review");
 });
 
@@ -295,8 +378,8 @@ test("dashboard source bridge carries package memberships, allowance, and invent
 
 test("dashboard source bridge maps a legacy manifest-derived package identity to the canonical inventory bundle id", () => {
   const orchestratorPath = ".github/workflows/uk-ai-advisory.lock.yml";
-  const workerPath = ".github/workflows/advisory-uk-ai-operational-resilience.lock.yml";
-  const standalonePath = ".github/workflows/advisory-package-maintainer.lock.yml";
+  const workerPath = ".github/workflows/uk-ai-advisory-operational-resilience.lock.yml";
+  const standalonePath = ".github/workflows/uk-ai-advisory-package-maintainer.lock.yml";
   const sources = buildDashboardLanguageSources({
     deployed: {
       generatedAt: "2026-09-02T12:00:00Z",
@@ -304,7 +387,7 @@ test("dashboard source bridge maps a legacy manifest-derived package identity to
       runHealth: { available: true, complete: true },
       bundles: [{
         repository: "githubnext/gh-aw-cao",
-        path: "advisory/aw.yml",
+        path: "uk-ai-advisory/aw.yml",
         name: "UK AI Advisory",
         workflows: [
           { lockPath: orchestratorPath },
@@ -324,19 +407,19 @@ test("dashboard source bridge maps a legacy manifest-derived package identity to
     inventory: {
       workflows: [
         { sourcePath: ".github/workflows/uk-ai-advisory.md", lockPath: orchestratorPath, compiled: true },
-        { sourcePath: ".github/workflows/advisory-uk-ai-operational-resilience.md", lockPath: workerPath, compiled: true },
+        { sourcePath: ".github/workflows/uk-ai-advisory-operational-resilience.md", lockPath: workerPath, compiled: true },
       ],
       bundles: [{
         id: "uk-ai-advisory",
         name: "UK AI Advisory",
         workflow: ".github/workflows/uk-ai-advisory.md",
-        controlPackage: "advisory",
+        controlPackage: "uk-ai-advisory",
         maxAiCredits: 250,
         compiled: true,
         missingWorkers: [],
         workers: [{
-          id: "advisory-uk-ai-operational-resilience",
-          sourcePath: ".github/workflows/advisory-uk-ai-operational-resilience.md",
+          id: "uk-ai-advisory-operational-resilience",
+          sourcePath: ".github/workflows/uk-ai-advisory-operational-resilience.md",
           lockPath: workerPath,
           maxAiCredits: 600,
           compiled: true,
@@ -344,14 +427,14 @@ test("dashboard source bridge maps a legacy manifest-derived package identity to
       }],
     },
     controlSettings: {
-      packages: { advisory: { mode: "review" } },
+      packages: { "uk-ai-advisory": { mode: "review" } },
     },
   });
 
   const packagesById = new Map(sources.workflows.rows.map((row) => [row.workflow, row.package]));
   assert.equal(packagesById.get(".github/workflows/uk-ai-advisory.md"), "uk-ai-advisory");
-  assert.equal(packagesById.get(".github/workflows/advisory-uk-ai-operational-resilience.md"), "uk-ai-advisory");
-  assert.equal(packagesById.get(".github/workflows/advisory-package-maintainer.md"), "uk-ai-advisory");
+  assert.equal(packagesById.get(".github/workflows/uk-ai-advisory-operational-resilience.md"), "uk-ai-advisory");
+  assert.equal(packagesById.get(".github/workflows/uk-ai-advisory-package-maintainer.md"), "uk-ai-advisory");
   assert.deepEqual(
     new Set(sources.workflows.rows.map((row) => row.package)),
     new Set(["uk-ai-advisory"]),
