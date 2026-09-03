@@ -2069,7 +2069,11 @@ test("clean-room compilation emits the expected GitHub Actions settings", { time
   try {
     cpSync(join(root, ".github"), join(temporaryRoot, ".github"), { recursive: true });
     cpSync(join(root, "aw.yml"), join(temporaryRoot, "aw.yml"));
+    cpSync(join(root, "AGENTS.md"), join(temporaryRoot, "AGENTS.md"));
     cpSync(join(root, "README.md"), join(temporaryRoot, "README.md"));
+    for (const packageDirectory of ["activity", "ambient-context", "aw-maintenance", "dashboard", "dependabot", "optimization"]) {
+      cpSync(join(root, packageDirectory), join(temporaryRoot, packageDirectory), { recursive: true });
+    }
     execFileSync("git", ["init", "--quiet"], { cwd: temporaryRoot });
 
     execFileSync("gh", [
@@ -2405,22 +2409,8 @@ test("Dashboard package supports embedded and explicit standalone deployment", (
   const reportAssets = ["aic-usage.mjs", "bundle-dashboards.mjs", "compose-dashboard-documents.mjs", "configure-site.mjs", "control-settings.mjs", "dashboard-language-sources.mjs", "inventory.mjs", "operational-value-history.mjs", "operational-values.mjs", "records.mjs", "text-utils.mjs"];
   const activityEntrypoints = new Set(["aic-usage.mjs", "control-settings.mjs", "inventory.mjs", "operational-values.mjs", "records.mjs"]);
   const buildEntrypoints = new Set(["bundle-dashboards.mjs", "configure-site.mjs", "dashboard-language-sources.mjs"]);
-  const normalizeInclude = (entry, sourcePrefix = "") => typeof entry === "string"
-    ? { source: entry, destination: entry, kind: "action-workflow" }
-    : { ...entry, source: `${sourcePrefix}${entry.source}` };
-
-  assert.deepEqual(
-    rootPackage.includes
-      .filter((entry) => (typeof entry === "string" ? entry : entry.destination)?.startsWith(".github/workflows/dashboard"))
-      .map((entry) => normalizeInclude(entry)),
-    dashboardPackage.includes.map((entry) => normalizeInclude(entry, typeof entry === "string" ? "" : "dashboard/")),
-  );
-  assert.deepEqual(
-    rootPackage.resources.filter((entry) => entry.source.startsWith("dashboard/")),
-    dashboardPackage.resources.map((entry) => ({ ...entry, source: `dashboard/${entry.source}` })),
-  );
+  assert.ok(rootPackage.includes.includes("dashboard/aw.yml"));
   assert.match(dashboardManifest, /name: CAO Dashboard/);
-  assert.match(rootManifest, /^\s+- \.github\/workflows\/dashboard-build\.yml$/m);
   assert.match(dashboardManifest, /source: dashboard\.yml\n\s+destination: \.github\/workflows\/dashboard\.yml\n\s+kind: action-workflow/);
   assert.match(dashboardManifest, /^\s+- \.github\/workflows\/dashboard-build\.yml$/m);
   assert.doesNotMatch(dashboardManifest, /destination: \.github\/cao\//);
@@ -2480,7 +2470,7 @@ test("Dashboard package supports embedded and explicit standalone deployment", (
   assert.match(activityWorkflow, /REPORT_VALUE_REPLAY_CACHE: \.cache\/dashboard-operational-values\/replay/);
   assert.match(buildWorkflow, /actions\/cache\/restore@[0-9a-f]{40}/);
   assert.match(activityWorkflow, /Save operational-value observation cache/);
-  assert.match(activityWorkflow, /Install gh-aw CLI[\s\S]*?version: v0\.88\.2/);
+  assert.match(activityWorkflow, /Install gh-aw CLI[\s\S]*?version: v0\.88\.3/);
   assert.match(deployedWorkflows, /const \{ staleRegistration, \.\.\.capabilities \} = await workflowCapabilities/);
   assert.match(deployedWorkflows, /const role = workflowRole\(source\.value\)/);
   assert.match(deployedWorkflows, /shared\\\/\(\?:cao\|control\)\\\.md/);
@@ -2538,11 +2528,7 @@ test("Activity package owns the shared collected-data cache contract", () => {
     { source: "failure-evidence.mjs", destination: ".github/aw/activity/failure-evidence.mjs" },
     { source: "index.mjs", destination: ".github/aw/activity/index.mjs" },
   ]);
-  assert.ok(rootManifest.includes.includes(".github/workflows/activity.yml"));
-  assert.ok(rootManifest.includes.includes(".github/workflows/cao-maintenance.yml"));
-  assert.ok(rootManifest.resources.some((entry) => entry.destination === ".github/aw/activity/actions-log.mjs"));
-  assert.ok(rootManifest.resources.some((entry) => entry.destination === ".github/aw/activity/failure-evidence.mjs"));
-  assert.ok(rootManifest.resources.some((entry) => entry.destination === ".github/aw/activity/index.mjs"));
+  assert.ok(rootManifest.includes.includes("activity/aw.yml"));
   assert.match(workflow, /schedule:[\s\S]*?cron:/);
   assert.doesNotMatch(workflow, /workflow_call:/);
   assert.match(workflow, /workflow_dispatch:[\s\S]*?request-id:/);

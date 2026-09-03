@@ -99,11 +99,20 @@ function sourcePath(manifest, source) {
 }
 
 function packageSources(root, suite) {
-  const manifest = parse(readFileSync(join(root, suite.manifest), "utf8"));
-  const sources = [suite.manifest];
-  for (const entry of [...(manifest.includes ?? []), ...(manifest.resources ?? [])]) {
-    sources.push(sourcePath(suite.manifest, typeof entry === "string" ? entry : entry.source));
-  }
+  const sources = new Set();
+  const visitedManifests = new Set();
+  const visitManifest = (manifestPath) => {
+    if (visitedManifests.has(manifestPath)) return;
+    visitedManifests.add(manifestPath);
+    sources.add(manifestPath);
+    const manifest = parse(readFileSync(join(root, manifestPath), "utf8"));
+    for (const entry of [...(manifest.includes ?? []), ...(manifest.resources ?? [])]) {
+      const source = sourcePath(manifestPath, typeof entry === "string" ? entry : entry.source);
+      sources.add(source);
+      if (source.endsWith("/aw.yml")) visitManifest(source);
+    }
+  };
+  visitManifest(suite.manifest);
   return sources;
 }
 

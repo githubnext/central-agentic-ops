@@ -26,7 +26,7 @@ test("package lifecycle matrix selects only packages owning changed files", () =
 });
 
 test("package lifecycle matrix selects a package when its manifest changes", () => {
-  assert.deepEqual(names(["activity/aw.yml"]), ["activity"]);
+  assert.deepEqual(names(["activity/aw.yml"]), ["root", "activity"]);
   assert.deepEqual(names(["software-development-practices/aw.yml"]), ["Software Development Practices"]);
 });
 

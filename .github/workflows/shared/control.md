@@ -150,9 +150,9 @@ jobs:
 
       - name: Install gh-aw CLI when monthly budget is enabled
         if: ${{ steps.cao_admission.outputs.authorized == 'true' && steps.cao_admission.outputs.monthly_credit_budget != '0' }}
-        uses: github/gh-aw-actions/setup-cli@v0.88.2
+        uses: github/gh-aw-actions/setup-cli@v0.88.3
         with:
-          version: v0.88.2
+          version: v0.88.3
 
       - name: Run CAO control precompute
         id: cao_precompute
