@@ -55,7 +55,7 @@
 name: "UK AI Advisory / Package Maintainer"
 on:
   schedule:
-    - cron: "41 4 * * 1"  # Friendly format: weekly (scattered)
+    - cron: "7 4 * * 6"  # Friendly format: weekly (scattered)
   workflow_dispatch:
     inputs:
       aw_context:
