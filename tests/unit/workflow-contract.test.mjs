@@ -2410,7 +2410,7 @@ test("Activity package owns the shared collected-data cache contract", () => {
   assert.match(workflow, /schedule:[\s\S]*?cron:/);
   assert.doesNotMatch(workflow, /workflow_call:/);
   assert.match(workflow, /workflow_dispatch:[\s\S]*?request-id:/);
-  assert.match(workflow, /concurrency:[\s\S]*?cancel-in-progress: false/);
+  assert.match(workflow, /concurrency:[\s\S]*?cancel-in-progress: true/);
   assert.match(workflow, /actions\/cache\/restore@[0-9a-f]{40}/);
   assert.match(workflow, /actions\/cache\/save@[0-9a-f]{40}/);
   assert.match(workflow, /issues: read/);
@@ -2445,7 +2445,7 @@ test("Documentation Pages deploys docs with the packaged dashboard builder", () 
   assert.match(workflow, /name: central-agentic-ops-dashboard\n\s+path: dist/);
   assert.match(workflow, /schedule:\n\s+- cron: "\*\/15 \* \* \* \*"/);
   assert.match(workflow, /workflow_dispatch:\n\s+inputs:\n\s+mode:[\s\S]*?default: live/);
-  assert.match(workflow, /DISPATCH_INPUTS:[\s\S]*?"mode":"\$\{\{ inputs\.mode \|\| 'live' \}\}"/);
+  assert.match(workflow, /DISPATCH_INPUTS:[\s\S]*?"mode":"\$\{\{ inputs\.mode \|\| 'cache' \}\}"/);
   assert.match(workflow, /run-id: \$\{\{ needs\.dashboard\.outputs\.run-id \}\}/);
   assert.doesNotMatch(workflow, /workflow_run|gh aw add|DASHBOARD_PACKAGE/);
   assert.equal((workflow.match(/actions\/upload-pages-artifact@/g) || []).length, 1);
