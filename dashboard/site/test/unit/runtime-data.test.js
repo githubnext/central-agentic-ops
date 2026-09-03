@@ -88,11 +88,18 @@ describe('runtime data', () => {
       runs: {
         source: 'runs',
         rows: [
-          { organization: 'githubnext', repository: 'control', workflow: 'worker.yml', run: '3', event: 'workflow_dispatch', 'run-title': 'Update dependencies', 'started-at': '2026-08-30T07:00:00Z', 'run-conclusion': 'action-required', 'run-link': { relation: 'run', href: 'https://github.com/githubnext/control/actions/runs/3', label: 'Run 3' } },
-          { organization: 'githubnext', repository: 'control', workflow: 'root.yml', run: '2', event: 'workflow_dispatch', 'run-conclusion': 'failure', 'admission-reason': 'github-api-capacity-insufficient', 'resource-reset-at': '2026-09-03T13:00:00Z' },
+          { organization: 'githubnext', repository: 'control', workflow: 'worker.yml', run: '3', event: 'workflow_dispatch', 'run-title': 'Update dependencies', 'started-at': '2026-08-30T07:00:00Z', 'run-conclusion': 'success', engine: 'copilot', 'resolved-model': 'gpt-5', 'run-link': { relation: 'run', href: 'https://github.com/githubnext/control/actions/runs/3', label: 'Run 3' } },
+          { organization: 'githubnext', repository: 'control', workflow: 'root.yml', run: '2', event: 'workflow_dispatch', 'run-conclusion': 'failure', 'admission-reason': 'github-api-capacity-insufficient', 'resource-reset-at': '2026-09-03T13:00:00Z', engine: 'copilot', 'requested-model': 'gpt-5' },
           { organization: 'githubnext', repository: 'control', workflow: 'standalone.yml', run: '1', event: 'workflow_dispatch', 'run-status': 'in-progress' },
           { organization: 'githubnext', repository: 'control', workflow: 'worker.yml', run: '4', event: 'workflow_dispatch', 'run-conclusion': 'skipped' },
           { organization: 'githubnext', repository: 'control', workflow: 'worker.yml', run: '0', event: 'schedule', 'run-conclusion': 'failure' }
+        ],
+        metadata
+      },
+      usage: {
+        source: 'usage',
+        rows: [
+          { organization: 'githubnext', repository: 'control', workflow: 'worker.yml', run: '3', invocation: '1', aic: 12.5, engine: 'copilot', 'resolved-model': 'gpt-5' }
         ],
         metadata
       }
@@ -112,6 +119,20 @@ describe('runtime data', () => {
       { label: 'Total dispatches', value: '4' }
     ]);
     expect(sources['dispatch-activation-summary'].metadata).toBe(metadata);
+    expect(sources['package-dispatch-state'].rows).toEqual([
+      {
+        package: 'dependabot',
+        'package-name': 'Dependabot',
+        'dispatch-runs': 3,
+        skipped: 1,
+        failed: 1,
+        succeeded: 1,
+        'worker-dispatches': 'Dependency updater: 2',
+        aic: 12.5,
+        agent: 'copilot',
+        model: 'gpt-5'
+      }
+    ]);
   });
 
   it('reports activation rate as not observed when no dispatches were retained', () => {

@@ -2905,13 +2905,63 @@
             "layout": "full"
           },
           {
-            "id": "dispatch-evidence-boundary",
-            "title": "Dispatch evidence boundary",
-            "description": "Rows are authoritative workflow_dispatch events. Package and role attribution comes from the matching workflow definition; unavailable parent-child correlation is never inferred.",
-            "mark": "callout",
-            "callout": {
-              "label": "Execution boundary",
-              "icon": "workflow"
+            "id": "package-dispatch-state",
+            "title": "Package dispatching state",
+            "description": "Authoritative workflow_dispatch runs grouped by package. Worker counts, AI Credits, agents, and models reflect retained run and usage evidence; unavailable evidence is not inferred.",
+            "data": {
+              "source": "package-dispatch-state"
+            },
+            "mark": "table",
+            "empty-message": "No packages were observed in the current run window.",
+            "encoding": {
+              "columns": [
+                {
+                  "field": "package-name",
+                  "type": "nominal",
+                  "title": "Package"
+                },
+                {
+                  "field": "dispatch-runs",
+                  "type": "quantitative",
+                  "title": "Dispatch runs"
+                },
+                {
+                  "field": "skipped",
+                  "type": "quantitative",
+                  "title": "Skipped"
+                },
+                {
+                  "field": "failed",
+                  "type": "quantitative",
+                  "title": "Failed"
+                },
+                {
+                  "field": "succeeded",
+                  "type": "quantitative",
+                  "title": "Succeeded"
+                },
+                {
+                  "field": "worker-dispatches",
+                  "type": "nominal",
+                  "title": "Dispatches by worker"
+                },
+                {
+                  "field": "aic",
+                  "type": "quantitative",
+                  "title": "AIC",
+                  "unit": "aic"
+                },
+                {
+                  "field": "agent",
+                  "type": "nominal",
+                  "title": "Agent"
+                },
+                {
+                  "field": "model",
+                  "type": "nominal",
+                  "title": "Model"
+                }
+              ]
             },
             "layout": "full"
           },

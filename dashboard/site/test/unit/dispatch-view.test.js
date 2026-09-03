@@ -45,7 +45,7 @@ describe('declarative dispatch view', () => {
     });
 
     const dispatchTable = dispatchPage.views.find((/** @type {{ id: string }} */ view) => view.id === 'package-worker-dispatches');
-    const evidenceBoundary = dispatchPage.views.find((/** @type {{ id: string }} */ view) => view.id === 'dispatch-evidence-boundary');
+    const packageStateTable = dispatchPage.views.find((/** @type {{ id: string }} */ view) => view.id === 'package-dispatch-state');
     const activationSummary = dispatchPage.views.find((/** @type {{ id: string }} */ view) => view.id === 'dispatch-activation-summary');
     expect(activationSummary).toMatchObject({
       mark: 'element',
@@ -59,12 +59,28 @@ describe('declarative dispatch view', () => {
         href: { field: 'run-link' }
       }
     });
-    expect(evidenceBoundary).toMatchObject({ mark: 'callout', callout: { label: 'Execution boundary' } });
+    expect(packageStateTable).toMatchObject({
+      mark: 'table',
+      data: { source: 'package-dispatch-state' },
+      encoding: {
+        columns: [
+          { field: 'package-name', title: 'Package' },
+          { field: 'dispatch-runs', title: 'Dispatch runs' },
+          { field: 'skipped', title: 'Skipped' },
+          { field: 'failed', title: 'Failed' },
+          { field: 'succeeded', title: 'Succeeded' },
+          { field: 'worker-dispatches', title: 'Dispatches by worker' },
+          { field: 'aic', title: 'AIC' },
+          { field: 'agent', title: 'Agent' },
+          { field: 'model', title: 'Model' }
+        ]
+      }
+    });
     expect(rendered.querySelector('.summary-grid')?.textContent).toContain('Activation rate');
     expect(rendered.querySelector('.summary-grid')?.textContent).toContain('100%');
     const pageFilter = /** @type {HTMLInputElement | null} */ (rendered.querySelector('.filter-bar input'));
     expect(pageFilter?.value).toBe('event:workflow_dispatch');
-    expect(rendered.querySelector('.dashboard-callout')?.textContent).toContain('unavailable parent-child correlation is never inferred');
+    expect(rendered.textContent).toContain('Package dispatching state');
     expect([...rendered.querySelectorAll('thead tr:first-child th')].map((cell) => cell.textContent)).toEqual([
       'Started',
       'Type',
