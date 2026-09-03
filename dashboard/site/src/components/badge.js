@@ -3,13 +3,14 @@
  */
 
 import { h } from '../dom.js';
+import { stringOrFallback } from '../view-formatters.js';
 
 /**
  * @param {unknown} status
  * @returns {HTMLElement}
  */
 export function renderStatusBadge(status) {
-  const text = status == null || status === '' ? 'unknown' : String(status);
+  const text = stringOrFallback(status, 'unknown');
   const normalized = text.toLowerCase();
   let statusClass = 'status-muted';
 
@@ -29,7 +30,7 @@ export function renderStatusBadge(status) {
  * @returns {HTMLElement}
  */
 export function renderGraderStatusBadge(status) {
-  const text = status == null || status === '' ? 'unavailable' : String(status);
+  const text = stringOrFallback(status, 'unavailable');
   const normalized = text.toLowerCase();
   const statusClass = normalized === 'pass'
     ? 'status-success'
@@ -42,7 +43,7 @@ export function renderGraderStatusBadge(status) {
  * @returns {HTMLElement}
  */
 export function renderModeBadge(mode) {
-  const text = mode == null || mode === '' ? 'unknown' : String(mode);
+  const text = stringOrFallback(mode, 'unknown');
   const normalized = text.toLowerCase();
   const modeClass = normalized === 'live' ? 'mode-live' : normalized === 'review' ? 'mode-review' : '';
 
