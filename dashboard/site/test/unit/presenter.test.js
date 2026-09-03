@@ -2385,22 +2385,53 @@ describe('presenter built-in and custom pages', () => {
           id: 'page-navigation',
           title: 'Page Navigation',
           pages: [
-            { id: 'first', kind: /** @type {'custom'} */ ('custom'), title: 'First', description: 'First page description', views: [] },
+            {
+              id: 'first',
+              kind: /** @type {'custom'} */ ('custom'),
+              title: 'First',
+              description: 'First page description',
+              views: [{
+                id: 'first-details',
+                title: 'First details',
+                disclosure: 'supplemental',
+                data: { source: 'runs' },
+                mark: 'metric',
+                encoding: { value: { field: 'run', aggregate: 'count' } }
+              }]
+            },
             { id: 'second', kind: /** @type {'custom'} */ ('custom'), title: 'Second', description: 'Second page description', views: [] }
           ]
         }
       },
-      sources: {}
+      sources: {
+        runs: {
+          source: 'runs',
+          rows: [{ run: '1' }],
+          metadata: {
+            'source-id': 'runs-fixture',
+            'source-kind': 'fixture',
+            'as-of': '2026-08-30T08:00:00Z',
+            'retrieved-at': '2026-08-30T08:01:00Z',
+            completeness: 'complete',
+            freshness: 'fresh',
+            availability: 'available'
+          }
+        }
+      }
     });
     rendered.ownerDocument.body.append(rendered);
 
     const first = /** @type {HTMLElement} */ (rendered.querySelector('#page-first'));
     const second = /** @type {HTMLElement} */ (rendered.querySelector('#page-second'));
+    const firstLink = /** @type {HTMLAnchorElement} */ (rendered.querySelector('[data-nav-page-id="first"]'));
     const secondLink = /** @type {HTMLAnchorElement} */ (rendered.querySelector('[data-nav-page-id="second"]'));
+    const firstDetails = /** @type {HTMLDetailsElement} */ (first.querySelector('details'));
     expect(first.hidden).toBe(false);
     expect(second.hidden).toBe(true);
     expect(first.hasAttribute('data-page-pending')).toBe(false);
     expect(second.hasAttribute('data-page-pending')).toBe(true);
+    firstDetails.open = true;
+    rendered.ownerDocument.documentElement.scrollTop = 320;
     expect(/** @type {HTMLElement | null} */ (rendered.querySelector('[data-breadcrumb-root]'))?.hidden).toBe(true);
     expect(rendered.querySelector('[data-breadcrumb-root]')?.hasAttribute('href')).toBe(false);
     expect(rendered.querySelector('[data-breadcrumb-dashboard]')?.getAttribute('href')).toBe('#page-first');
@@ -2430,6 +2461,8 @@ describe('presenter built-in and custom pages', () => {
     secondLink.click();
 
     expect(first.hidden).toBe(true);
+    expect(first.hasAttribute('data-page-pending')).toBe(true);
+    expect(first.childElementCount).toBe(0);
     const renderedSecond = /** @type {HTMLElement} */ (rendered.querySelector('#page-second'));
     expect(renderedSecond).not.toBe(second);
     expect(renderedSecond.hidden).toBe(false);
@@ -2443,6 +2476,15 @@ describe('presenter built-in and custom pages', () => {
     expect(titleLink.hidden).toBe(true);
     expect(titleLink.hasAttribute('href')).toBe(false);
     expect(rendered.ownerDocument.activeElement).toBe(rendered.querySelector('#page-title'));
+
+    rendered.ownerDocument.documentElement.scrollTop = 80;
+    firstLink.click();
+
+    const rehydratedFirst = /** @type {HTMLElement} */ (rendered.querySelector('#page-first'));
+    expect(renderedSecond.hasAttribute('data-page-pending')).toBe(true);
+    expect(renderedSecond.childElementCount).toBe(0);
+    expect(/** @type {HTMLDetailsElement | null} */ (rehydratedFirst.querySelector('details'))?.open).toBe(true);
+    expect(rendered.ownerDocument.documentElement.scrollTop).toBe(320);
     rendered.ownerDocument.defaultView?.history.replaceState(null, '', '/');
   });
 

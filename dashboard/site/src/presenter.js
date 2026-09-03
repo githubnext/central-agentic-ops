@@ -797,6 +797,9 @@ function renderLayoutSection(pageId, section, renderedViews, sources) {
 export function enableDashboardPageNavigation(root, dashboardTitle = '', renderPageById) {
   const pages = [...root.querySelectorAll('.dashboard-page')]
     .filter((page) => page instanceof HTMLElement);
+  /** @type {Map<string, { details: boolean[], scrollTop: number }>} */
+  const pageState = new Map();
+  let activePageId = '';
   const overviewPage = pages.find((page) => page.dataset.pageId === 'overview');
   const links = [...root.querySelectorAll('[data-nav-page-id]')]
     .filter((link) => link instanceof HTMLAnchorElement);
@@ -879,11 +882,26 @@ export function enableDashboardPageNavigation(root, dashboardTitle = '', renderP
    * @param {URLSearchParams} [parameters]
    */
   const activate = (pageId, parameters = new URLSearchParams()) => {
+    if (activePageId && activePageId !== pageId) {
+      const activePage = pages.find((candidate) => candidate.dataset.pageId === activePageId);
+      if (activePage) {
+        pageState.set(activePageId, {
+          details: [...activePage.querySelectorAll('details')].map((details) => details.open),
+          scrollTop: root.ownerDocument.scrollingElement?.scrollTop ?? root.ownerDocument.documentElement.scrollTop
+        });
+        activePage.replaceChildren();
+        activePage.setAttribute('data-page-pending', '');
+      }
+    }
     const pageIndex = pages.findIndex((candidate) => candidate.dataset.pageId === pageId);
     const pendingPage = pages[pageIndex];
     if (pendingPage?.hasAttribute('data-page-pending')) {
       const renderedPage = renderPageById?.(pageId);
       if (renderedPage) {
+        const detailsState = pageState.get(pageId)?.details ?? [];
+        [...renderedPage.querySelectorAll('details')].forEach((details, index) => {
+          if (detailsState[index] !== undefined) details.open = detailsState[index];
+        });
         pendingPage.replaceWith(renderedPage);
         pages[pageIndex] = renderedPage;
       }
@@ -943,7 +961,12 @@ export function enableDashboardPageNavigation(root, dashboardTitle = '', renderP
     const section = sectionId ? root.ownerDocument.getElementById(sectionId) : null;
     if (section && page?.contains(section)) {
       section.scrollIntoView?.();
+    } else if (activePageId !== pageId) {
+      const scrollTop = pageState.get(pageId)?.scrollTop ?? 0;
+      const scrollingElement = root.ownerDocument.scrollingElement ?? root.ownerDocument.documentElement;
+      scrollingElement.scrollTop = scrollTop;
     }
+    activePageId = pageId;
   };
 
   const initialRoute = routeFromHash();
