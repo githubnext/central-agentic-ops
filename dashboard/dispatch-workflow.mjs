@@ -1,6 +1,7 @@
 import { appendFile } from "node:fs/promises";
 
 const pollIntervalMs = Number(process.env.DISPATCH_POLL_INTERVAL_MS || "5000");
+const dispatchDiscoveryLookbackMs = 60_000;
 
 function requiredEnvironment(name) {
   const value = process.env[name]?.trim();
@@ -22,6 +23,7 @@ async function api(path, options = {}) {
     headers: {
       Accept: "application/vnd.github+json",
       Authorization: `Bearer ${requiredEnvironment("GH_TOKEN")}`,
+      "Content-Type": "application/json",
       "X-GitHub-Api-Version": "2022-11-28",
       ...options.headers,
     },
@@ -83,7 +85,7 @@ async function main() {
     throw new Error("DISPATCH_TIMEOUT_MINUTES must be a positive number");
   }
 
-  const createdAfter = new Date(Date.now() - pollIntervalMs).toISOString();
+  const createdAfter = new Date(Date.now() - dispatchDiscoveryLookbackMs).toISOString();
   const dispatch = await api(
     `/repos/${owner}/${repository}/actions/workflows/${encodeURIComponent(workflow)}/dispatches`,
     {
