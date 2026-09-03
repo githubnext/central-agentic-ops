@@ -882,7 +882,7 @@ function precompute() {
     log("Precompute skipped because admission was denied.");
     return;
   }
-  log("Loaded the admitted control policy.");
+  log("Applying the admitted control policy.");
   const context = createContext(policy);
   try {
     requireMode(context.mode, "safe_output_mode");
