@@ -3,6 +3,7 @@ description: Repository-local live checks for dashboard quality, accessibility, 
 min-version: v0.88.2
 experimental: true
 includes:
+  - .github/workflows/shared/cao.md
   - .github/workflows/self-care-docs-build-time-investigator.md
   - .github/workflows/self-care.md
 resources:

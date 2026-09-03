@@ -3,6 +3,7 @@ description: Organization-wide workflow for maintaining installed GitHub Agentic
 min-version: v0.88.2
 experimental: true
 includes:
+  - .github/workflows/shared/cao.md
   - .github/workflows/aw-maintenance.md
   - .github/workflows/aw-failures-investigator.md
 resources:

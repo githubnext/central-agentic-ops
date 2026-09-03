@@ -3,6 +3,7 @@ description: Central agentic workflow control plane for reusable packages at the
 min-version: v0.88.2
 experimental: true
 includes:
+  - .github/workflows/shared/cao.md
   - .github/workflows/activity.yml
   - .github/workflows/ambient-context-agents-md-curator.md
   - .github/workflows/ambient-context-skills-curator.md
