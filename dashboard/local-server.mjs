@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 
 import { createServer } from "node:http";
+import { execFile } from "node:child_process";
 import {
   copyFile,
   mkdtemp,
@@ -12,6 +13,7 @@ import {
 } from "node:fs/promises";
 import { watch } from "node:fs";
 import { tmpdir } from "node:os";
+import { promisify } from "node:util";
 import {
   basename,
   dirname,
@@ -26,10 +28,12 @@ import { fileURLToPath } from "node:url";
 import { bundleDashboardFiles } from "./report/bundle-dashboards.mjs";
 
 const scriptDirectory = dirname(fileURLToPath(import.meta.url));
+const executeFile = promisify(execFile);
 const defaultCatalogRoot = basename(resolve(scriptDirectory, "..", "..")) === ".github"
   ? null
   : resolve(scriptDirectory, "..");
 const reloadEndpoint = "/__dashboard_events";
+const dataArtifactName = "central-agentic-ops-dashboard-data";
 const reloadScript = `<script>
   new EventSource("${reloadEndpoint}").addEventListener("reload", () => location.reload());
 </script>`;
@@ -77,6 +81,36 @@ async function packageDashboardPaths(catalogRoot, installedDashboardsDirectory) 
   return [...new Set(paths)].toSorted();
 }
 
+async function downloadDashboardData(destination, repository, ghExecutable) {
+  const repositoryPath = repository || "{owner}/{repo}";
+  let runId;
+  try {
+    const result = await executeFile(ghExecutable, [
+      "api",
+      `repos/${repositoryPath}/actions/artifacts?name=${dataArtifactName}&per_page=100`,
+      "--jq",
+      "[.artifacts[] | select(.expired == false)] | sort_by(.created_at) | last | .workflow_run.id // empty",
+    ]);
+    runId = result.stdout.trim();
+  } catch (error) {
+    if (error && typeof error === "object" && "code" in error && error.code === "ENOENT") {
+      throw new Error("GitHub CLI is required to download dashboard data.");
+    }
+    throw new Error("Unable to query the dashboard data artifact. Authenticate GitHub CLI with Actions read access.");
+  }
+  if (!/^[1-9][0-9]*$/.test(runId)) {
+    throw new Error(`No current ${dataArtifactName} artifact is available. Run the dashboard action first.`);
+  }
+
+  const arguments_ = ["run", "download", runId, "--name", dataArtifactName, "--dir", destination];
+  if (repository) arguments_.push("--repo", repository);
+  try {
+    await executeFile(ghExecutable, arguments_);
+  } catch {
+    throw new Error(`Unable to download ${dataArtifactName} from workflow run ${runId}.`);
+  }
+}
+
 async function sourceSignature(paths) {
   const entries = await Promise.all(paths.map(async (path) => `${path}\0${await readFile(path, "utf8")}`));
   return entries.join("\n");
@@ -100,6 +134,9 @@ function isWithin(root, candidate) {
  *   siteRoot?: string,
  *   catalogRoot?: string | null,
  *   installedDashboardsDirectory?: string,
+ *   repository?: string,
+ *   ghExecutable?: string,
+ *   downloadData?: (destination: string, repository?: string, ghExecutable?: string) => Promise<void>,
  *   host?: string,
  *   port?: number,
  * }} options
@@ -108,6 +145,9 @@ export async function startDashboardServer({
   siteRoot = join(scriptDirectory, "site"),
   catalogRoot = defaultCatalogRoot,
   installedDashboardsDirectory = resolve(scriptDirectory, "..", "dashboards"),
+  repository,
+  ghExecutable = "gh",
+  downloadData = downloadDashboardData,
   host = "127.0.0.1",
   port = 4173,
 } = {}) {
@@ -115,6 +155,16 @@ export async function startDashboardServer({
   const baseDashboardPath = join(resolvedSiteRoot, "dashboard.json");
   const temporaryDirectory = await mkdtemp(join(tmpdir(), "cao-dashboard-preview-"));
   const bundledDashboardPath = join(temporaryDirectory, "dashboard.json");
+  const dashboardDataDirectory = join(temporaryDirectory, "data");
+  let sourcesContent;
+  try {
+    await downloadData(dashboardDataDirectory, repository, ghExecutable);
+    sourcesContent = await readFile(join(dashboardDataDirectory, "sources.json"), "utf8");
+    JSON.parse(sourcesContent);
+  } catch (error) {
+    await rm(temporaryDirectory, { recursive: true, force: true });
+    throw error;
+  }
   const clients = new Set();
   const watchers = new Map();
   let dashboardContent = "";
@@ -219,6 +269,14 @@ export async function startDashboardServer({
         return;
       }
       if (pathname === "/") pathname = "/index.html";
+      if (pathname === "/sources.json") {
+        response.writeHead(200, {
+          "Cache-Control": "no-store",
+          "Content-Type": contentTypes.get(".json"),
+        });
+        response.end(request.method === "HEAD" ? undefined : sourcesContent);
+        return;
+      }
       const candidate = resolve(resolvedSiteRoot, `.${pathname}`);
       if (!isWithin(resolvedSiteRoot, candidate)) {
         response.writeHead(404).end("Not found\n");
@@ -241,9 +299,9 @@ export async function startDashboardServer({
         return;
       }
 
-      let content = pathname === "/dashboard.json"
-        ? dashboardContent
-        : await readFile(canonicalPath);
+      let content;
+      if (pathname === "/dashboard.json") content = dashboardContent;
+      else content = await readFile(canonicalPath);
       if (extname(canonicalPath) === ".html") {
         content = injectReloadScript(content.toString("utf8"));
       }
@@ -297,6 +355,12 @@ function parseArguments(arguments_) {
       if (!options.host) throw new Error("--host requires a value");
     }
     else if (argument === "--port") options.port = Number(arguments_[index += 1]);
+    else if (argument === "--repo") {
+      options.repository = arguments_[index += 1];
+      if (!/^[A-Za-z0-9_.-]+\/[A-Za-z0-9_.-]+$/.test(options.repository || "")) {
+        throw new Error("--repo must be an OWNER/REPOSITORY name");
+      }
+    }
     else throw new Error(`unknown argument: ${argument}`);
   }
   if (!options.host) options.host = "127.0.0.1";
@@ -309,11 +373,11 @@ function parseArguments(arguments_) {
 async function main() {
   const options = parseArguments(process.argv.slice(2));
   if (options.help) {
-    process.stdout.write("usage: local-server.mjs [--host HOST] [--port PORT]\n");
+    process.stdout.write("usage: local-server.mjs [--repo OWNER/REPOSITORY] [--host HOST] [--port PORT]\n");
     return;
   }
   const preview = await startDashboardServer(options);
-  process.stdout.write(`Dashboard preview: ${preview.url}/?fixtures\n`);
+  process.stdout.write(`Dashboard preview: ${preview.url}/\n`);
   const shutdown = () => void preview.close().then(() => process.exit());
   process.once("SIGINT", shutdown);
   process.once("SIGTERM", shutdown);

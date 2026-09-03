@@ -19,7 +19,7 @@ The dashboard package publishes an access-controlled static view of Central Agen
 - `.github/cao/src/control.mjs`: deterministic policy command adapter used by the build workflow.
 - `.github/aw/dashboard/report`: deterministic collectors, durable-record production, and Dashboard Language source adaptation.
 - `.github/aw/dashboard/site`: the packaged Dashboard Language validator, presenter, configuration, and browser runtime.
-- `.github/aw/dashboard/local-server.mjs`: dependency-free local preview server with live reload.
+- `.github/aw/dashboard/local-server.mjs`: local preview server using Node.js built-ins and GitHub CLI, with live reload.
 
 The publisher reads trusted workflow, issue, pull request, and value-artifact data from the installed repository. Collectors write bounded JSON, `records.mjs` normalizes durable outputs, `dashboard-language-sources.mjs` creates `sources.json`, and the packaged renderer serves it at the configured `site-path`. AI agents do not receive `pages: write`, `id-token: write`, or deployment authority.
 
@@ -51,9 +51,11 @@ From the root of an installed control repository, start the dashboard with Node.
 node .github/aw/dashboard/local-server.mjs
 ```
 
-Open the printed `http://127.0.0.1:4173/?fixtures` URL. The server uses only Node.js built-ins, binds to the loopback interface by default, and serves the packaged site without a build step. Use `--port` or `--host` to override its address.
+The server requires GitHub CLI authentication with Actions read access. It downloads the latest non-expired `central-agentic-ops-dashboard-data` artifact, which the dashboard action creates from the same `sources.json` rendered by the Pages site. Run the dashboard action first; the server fails rather than opening a dashboard without data when the artifact cannot be downloaded. Use `--repo OWNER/REPOSITORY` to download from another control repository.
 
-The preview composes `.github/aw/dashboard/site/dashboard.json` with every installed `.github/aw/dashboards/*.json` package dashboard. It watches those files and reloads connected browsers after a valid update. Invalid JSON is reported in the terminal while the last valid preview remains available.
+Open the printed `http://127.0.0.1:4173/` URL. The server uses only Node.js built-ins plus GitHub CLI, binds to the loopback interface by default, and serves the packaged site without a build step. Use `--port` or `--host` to override its address.
+
+The preview composes `.github/aw/dashboard/site/dashboard.json` with every installed `.github/aw/dashboards/*.json` package dashboard. It watches those files and reloads connected browsers after a valid update while continuing to use the downloaded report data. Invalid dashboard JSON is reported in the terminal while the last valid preview remains available.
 
 Catalog contributors can run `node dashboard/local-server.mjs`; the same server discovers top-level package `dashboard.json` files automatically.
 
