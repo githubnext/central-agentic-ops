@@ -151,7 +151,8 @@ function buildPresenterModuleUrl() {
     .replace("'../dom.js'", JSON.stringify(domModuleUrl))
     .replace("'../view-formatters.js'", JSON.stringify(viewFormattersModuleUrl))
     .replace("'./histogram.js'", JSON.stringify(histogramModuleUrl))
-    .replace("'./link-content.js'", JSON.stringify(linkContentModuleUrl));
+    .replace("'./link-content.js'", JSON.stringify(linkContentModuleUrl))
+    .replace("'./ui-primitives.js'", JSON.stringify(uiPrimitivesModuleUrl));
   const chartElementsModuleUrl = `data:text/javascript;charset=utf-8,${encodeURIComponent(chartElementsSource)}`;
 
   const workflowBadgesSource = readFileSync(new URL('../../src/components/workflow-badges.js', import.meta.url), 'utf8')
@@ -300,7 +301,7 @@ function buildPresenterModuleUrl() {
   return `data:text/javascript;charset=utf-8,${encodeURIComponent(presenterSource)}`;
 }
 
-test('production pages expose their executive chart without scrolling on a phone', async ({ page }) => {
+test('production pages expose a responsive executive chart', async ({ page }) => {
   const presenterModuleUrl = buildPresenterModuleUrl();
   const documentModel = JSON.parse(readFileSync(new URL('../../dashboard.json', import.meta.url), 'utf8'));
   await page.setViewportSize({ width: 390, height: 844 });
@@ -338,6 +339,15 @@ test('production pages expose their executive chart without scrolling on a phone
   expect(chartBox).not.toBeNull();
   expect(chartBox?.y).toBeGreaterThanOrEqual(0);
   expect((chartBox?.y ?? 0) + (chartBox?.height ?? 0)).toBeLessThanOrEqual(844);
+
+  await page.setViewportSize({ width: 1200, height: 844 });
+  const [wideChartBox, widePlotBox] = await Promise.all([
+    chart.boundingBox(),
+    chart.locator('svg').boundingBox()
+  ]);
+  expect(wideChartBox).not.toBeNull();
+  expect(widePlotBox).not.toBeNull();
+  expect(widePlotBox?.width).toBeGreaterThan((wideChartBox?.width ?? 0) * 0.95);
 });
 
 test('performance page leads with a workflow duration histogram', async ({ page }) => {

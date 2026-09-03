@@ -751,6 +751,44 @@
         },
         "views": [
           {
+            "id": "repository-workflow-aic",
+            "title": "Top workflows by AIC",
+            "description": "The five workflows with the highest measured AI Credit totals in this repository.",
+            "data": {
+              "source": "repository-workflow-usage",
+              "route-field": "repository",
+              "limit": 5,
+              "order-by": [
+                {
+                  "field": "total-aic",
+                  "direction": "desc"
+                }
+              ]
+            },
+            "mark": "chart",
+            "chart": "pie",
+            "encoding": {
+              "x": {
+                "field": "workflow",
+                "type": "nominal",
+                "title": "Workflow"
+              },
+              "y": {
+                "field": "aic",
+                "type": "quantitative",
+                "aggregate": "sum",
+                "as": "total-aic",
+                "title": "Total AIC",
+                "unit": "aic"
+              },
+              "href": {
+                "field": "workflow-link",
+                "type": "nominal"
+              }
+            },
+            "layout": "third"
+          },
+          {
             "id": "repository-run-health",
             "title": "Repository run health trend",
             "description": "Daily run conclusions are the leading execution-health signal for this repository.",
@@ -825,44 +863,6 @@
               }
             },
             "layout": "half"
-          },
-          {
-            "id": "repository-workflow-aic",
-            "title": "Top workflows by AIC",
-            "description": "The five workflows with the highest measured AI Credit totals in this repository.",
-            "data": {
-              "source": "repository-workflow-usage",
-              "route-field": "repository",
-              "limit": 5,
-              "order-by": [
-                {
-                  "field": "total-aic",
-                  "direction": "desc"
-                }
-              ]
-            },
-            "mark": "chart",
-            "chart": "pie",
-            "encoding": {
-              "x": {
-                "field": "workflow",
-                "type": "nominal",
-                "title": "Workflow"
-              },
-              "y": {
-                "field": "aic",
-                "type": "quantitative",
-                "aggregate": "sum",
-                "as": "total-aic",
-                "title": "Total AIC",
-                "unit": "aic"
-              },
-              "href": {
-                "field": "workflow-link",
-                "type": "nominal"
-              }
-            },
-            "layout": "third"
           },
           {
             "id": "repository-authored-workflows",
@@ -2647,12 +2647,37 @@
             "mark": "chart",
             "chart": "pie",
             "table": false,
-            "layout": "full",
+            "layout": "half",
             "encoding": {
               "x": {
                 "field": "status",
                 "type": "nominal",
                 "title": "Status"
+              },
+              "y": {
+                "field": "started-at",
+                "type": "quantitative",
+                "aggregate": "count",
+                "title": "Dispatches"
+              }
+            }
+          },
+          {
+            "id": "dispatch-package-distribution",
+            "title": "Dispatches by package",
+            "description": "Distribution of authoritative workflow_dispatch runs across packages.",
+            "data": {
+              "source": "dispatches"
+            },
+            "mark": "chart",
+            "chart": "pie",
+            "table": false,
+            "layout": "half",
+            "encoding": {
+              "x": {
+                "field": "package-name",
+                "type": "nominal",
+                "title": "Package"
               },
               "y": {
                 "field": "started-at",
@@ -2744,6 +2769,7 @@
               "source": "dispatches"
             },
             "mark": "table",
+            "disclosure": "supplemental",
             "empty-message": "No workflow dispatch events were observed in the current run window.",
             "encoding": {
               "href": {
