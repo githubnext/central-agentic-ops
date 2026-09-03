@@ -496,6 +496,23 @@ test("threat detection runs for workers but not orchestrators", () => {
   }
 });
 
+test("orchestrator dispatchers run hourly with fuzzy schedules", () => {
+  const workflows = readdirSync(workflowsDirectory)
+    .filter((name) => name.endsWith(".md"))
+    .map((name) => [name, workflow(name)]);
+  const orchestrators = workflows.filter(([, source]) => /^\s+role: orchestrator$/m.test(source));
+
+  assert.ok(orchestrators.length > 0, "expected at least one orchestrator workflow");
+  for (const [name, source] of orchestrators) {
+    assert.match(source, /^\s+schedule: ["']?hourly["']?$/m, name);
+    assert.match(
+      workflow(name.replace(/\.md$/, ".lock.yml")),
+      /cron: "\d+ \*\/1 \* \* \*"  # Friendly format: hourly \(scattered\)/,
+      name,
+    );
+  }
+});
+
 test("worker workflows allow service-account dispatches", () => {
   const sharedControl = readFileSync(join(root, ".github", "workflows", "shared", "control.md"), "utf8");
   assert.doesNotMatch(sharedControl, /^on:\n  bots: \["github-actions\[bot\]"\]/m);
@@ -1396,7 +1413,6 @@ test("Advisory preserves UK AI guidance and human-review boundaries", () => {
     assert.match(source, /human review/i);
   }
 
-  assert.match(orchestrator, /schedule: "daily on weekdays"/);
   assert.match(orchestrator, /workflows: \[advisory-uk-ai-operational-resilience\]/);
   assert.match(orchestrator, /Use bounded two-stage discovery/);
   assert.match(orchestrator, /AI is a threat accelerator, not an eligibility requirement/);
@@ -1688,13 +1704,11 @@ test("multi-device docs tester runs daily and covers browser and appearance comp
   assert.match(source, /multi-device-docs\/screenshots/);
 });
 
-test("SelfCare runs every 20 minutes", () => {
+test("SelfCare uses a pinned model", () => {
   const source = workflow("self-care.md");
   const compiled = workflow("self-care.lock.yml");
 
-  assert.match(source, /schedule: every 20 minutes/);
   assert.match(source, /engine: copilot\nmodel: copilot\/gpt-5\.4/);
-  assert.match(compiled, /cron: "[0-5]?\d\/20 \* \* \* \*"  # Friendly format: every 20 minutes \(scattered\)/);
   assert.match(compiled, /GH_AW_INFO_MODEL: "copilot\/gpt-5\.4"/);
 });
 
