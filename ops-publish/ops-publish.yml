@@ -40,13 +40,13 @@ jobs:
       - name: Generate control-repository token
         id: control-app-token
         env:
-          APP_CLIENT_ID: ${{ secrets.GH_AW_GITHUB_APP_ID }}
-          APP_PRIVATE_KEY: ${{ secrets.GH_AW_GITHUB_APP_PRIVATE_KEY }}
+          APP_CLIENT_ID: ${{ vars.GH_AW_GITHUB_READ_APP_ID }}
+          APP_PRIVATE_KEY: ${{ secrets.GH_AW_GITHUB_READ_APP_PRIVATE_KEY }}
         if: env.APP_CLIENT_ID != '' && env.APP_PRIVATE_KEY != ''
         uses: actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1 # v3.2.0
         with:
           client-id: ${{ env.APP_CLIENT_ID }}
-          private-key: ${{ secrets.GH_AW_GITHUB_APP_PRIVATE_KEY }}
+          private-key: ${{ secrets.GH_AW_GITHUB_READ_APP_PRIVATE_KEY }}
           owner: ${{ steps.inspect.outputs.control_owner }}
           repositories: ${{ steps.inspect.outputs.control_name }}
           github-api-url: ${{ github.api_url }}
@@ -66,13 +66,13 @@ jobs:
       - name: Generate target-repository token
         id: target-app-token
         env:
-          APP_CLIENT_ID: ${{ secrets.GH_AW_GITHUB_APP_ID }}
-          APP_PRIVATE_KEY: ${{ secrets.GH_AW_GITHUB_APP_PRIVATE_KEY }}
+          APP_CLIENT_ID: ${{ vars.GH_AW_GITHUB_WRITE_APP_ID }}
+          APP_PRIVATE_KEY: ${{ secrets.GH_AW_GITHUB_WRITE_APP_PRIVATE_KEY }}
         if: env.APP_CLIENT_ID != '' && env.APP_PRIVATE_KEY != ''
         uses: actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1 # v3.2.0
         with:
           client-id: ${{ env.APP_CLIENT_ID }}
-          private-key: ${{ secrets.GH_AW_GITHUB_APP_PRIVATE_KEY }}
+          private-key: ${{ secrets.GH_AW_GITHUB_WRITE_APP_PRIVATE_KEY }}
           owner: ${{ steps.validate.outputs.target_owner }}
           repositories: ${{ steps.validate.outputs.target_name }}
           github-api-url: ${{ github.api_url }}

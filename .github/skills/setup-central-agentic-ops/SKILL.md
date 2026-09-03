@@ -10,7 +10,8 @@ Create a new Central Agentic Ops control plane and prove it safely with one revi
 
 ## Safety Invariants
 
-- Treat this repository as the public package catalog and documentation source. Never configure it as the user's control plane.
+- Support a source-managed control topology for any repository that maintains the workflows it will execute in-tree. Require the user to select that topology explicitly and require `.github/workflows/cao.json` plus the CAO runtime sources to be present or committed. Never infer control-plane operation from workflow sources, catalog files, or the repository name alone.
+- When a source-managed control repository is also a catalog, treat it as a supported dogfood repository and apply both catalog and control-repository safety rules. Keep package manifests as package source, `.github/workflows/cao.json` as rollout policy, Actions variables and secrets as credentials, and target-owned authority as separate records. Do not require package records for workflows maintained directly in-tree.
 - Public and private control repositories are supported. Preserve an existing repository's visibility; for a new repository, use the visibility the user chooses.
 - In a public control repository, policy, workflow runs, operational metadata, and review safe outputs are public. State that exposure before creation and never place confidential target information in those outputs.
 - Install the root CAO package from one full commit SHA. Resolve a reviewed release or the current default branch once before installation so every package dependency uses the same immutable source identity.
@@ -18,6 +19,7 @@ Create a new Central Agentic Ops control plane and prove it safely with one revi
 - The root package installs `.github/aw/default-AGENTS.md` as package-owned source for control-repository ambient context. If the control repository has no root `AGENTS.md`, materialize that source as `AGENTS.md`; never overwrite or merge into existing agent instructions without the user's approval.
 - Keep rollout policy only in `.github/workflows/cao.json`. Do not create `CENTRAL_AGENTIC_OPS_*` variables or another policy channel.
 - Keep credentials out of files, chat, command arguments, and workflow inputs. Have the user enter secrets directly through GitHub or an interactive terminal prompt.
+- Keep the catalog's committed root `aw.yml` free of `config` so ordinary installation remains non-interactive. When the user chooses automated App setup, run the credential-only `.github/cao/setup-github-apps.mjs` helper from a reviewed CAO checkout and target the control repository explicitly.
 - Require confirmed organization billing for Copilot inference. Every Copilot-backed CAO workflow declares `copilot-requests: write` and uses the built-in workflow token; do not configure `COPILOT_GITHUB_TOKEN`. A GitHub App or `GH_AW_GITHUB_TOKEN` for target access does not authenticate Copilot inference.
 - Ask which outcomes the user wants from the catalog operations installed by the root package. Do not silently choose Dependabot or infer package intent from the target repository.
 - Separately ask whether the user wants to create an operation package of their own. When they do, record the operation idea and hand it to `.github/skills/create-ops-package/SKILL.md` after the base control-plane boundary is proven; setup must not improvise a standalone custom workflow.
@@ -30,7 +32,7 @@ Create a new Central Agentic Ops control plane and prove it safely with one revi
 Choose authentication after the user chooses the first target. Control-repository visibility does not determine target access.
 
 - use `GITHUB_TOKEN` for control-repository self-review or an exact public target in `review` when outputs remain in the control repository, and report inaccessible cross-repository evidence as incomplete;
-- require a least-privilege GitHub App before running against a private or internal target; and
+- require separate least-privilege read-only and write-capable GitHub Apps before running against a private or internal target or writing across repositories; and
 - offer a fine-grained PAT only when an App cannot be obtained, the PAT can reach the exact repositories and APIs, and the user explicitly consents after hearing that it is user-bound, longer-lived, and manually rotated. A PAT cannot grant access the user does not already have. Never use a classic PAT.
 
 Do not place private target evidence in a public control repository. If the selected target or required evidence is non-public, require a private control repository before configuring credentials or running the operation.
@@ -55,7 +57,7 @@ Do not leave angle-bracket placeholders in authored files or pass placeholders t
 ## Procedure
 
 1. Load `docs/getting-started.md`, `docs/configuration.md`, and `docs/authentication.md`. Treat them as authoritative for current CAO policy fields and credential selection. Inspect root `aw.yml` and the manifests and READMEs for the operations it includes so package choices reflect the immutable catalog being installed, not a stale list. The gh-aw workflow-authoring guide applies when creating custom workflows, not when installing this existing package. Before finalizing a configuration or declaring success, read the control repository's `.github/workflows/cao.json` and the current dashboard state to confirm what is actually running, in which mode, and on which repositories. If the policy and the live dashboard disagree, raise the drift to the user on the dashboard and pause before continuing.
-2. Determine the GitHub organization and control repository name. CAO requires an organization-owned control repository because its workflows use organization-billed Copilot inference. If the repository exists, detect and preserve its visibility. If it does not exist, ask whether to create it as `public` or `private`; do not assume either.
+2. Determine the GitHub organization and control repository name. CAO requires an organization-owned control repository because its workflows use organization-billed Copilot inference. Use a separate control repository by default. If the selected repository maintains the workflows it will execute in-tree, confirm that it is organization-owned, record it as a source-managed control repository, and preserve its visibility. If it is also the catalog for those workflows, record the dogfood topology and apply both roles. Explain that policy, workflow runs, operational metadata, dashboards, and review safe outputs inherit the control repository's visibility. If another repository exists, detect and preserve its visibility. If it does not exist, ask whether to create it as `public` or `private`; do not assume either.
 3. Ask these two package questions separately before choosing the first target. Use a multi-select question followed by a yes/no question when an interactive question tool is available:
   - **Catalog operations:** Ask, "What do you want CAO to do with the catalog operations installed by the root package?" Present the current package display names and outcome-focused descriptions from their manifests and READMEs, allow more than one answer, and include `Not sure yet`. Explain that the immutable root package installs its core catalog workflows as one unit; this answer controls initial enablement and onboarding, not partial rewriting of the package. If the user selects more than one operation, ask which one should prove setup first. Record the exact `initial-package`, `initial-orchestrator`, and worker-to-workflow mapping from the selected package's catalog policy. Never silently default the package to Dependabot.
   - **Custom operation:** Ask, "Do you also want to create an operation package of your own?" If yes, ask for a short description of the desired outcome and target repositories, record it without expanding setup scope, and plan an explicit handoff to `.github/skills/create-ops-package/SKILL.md` after step 13. If no catalog operation is selected, explain that one installed operation is required for the bounded setup proof and ask the user to choose one; `Not sure yet` must not silently enable a package.
@@ -63,7 +65,7 @@ Do not leave angle-bracket placeholders in authored files or pass placeholders t
   - verify that it exists, record its visibility and owner, and confirm the authenticated user can access it;
   - explain that review outputs, run metadata, and target identifiers will be stored with the control repository's visibility;
   - require a private control repository when the target or required evidence is non-public; and
-  - select and validate the authentication profile from `docs/authentication.md` before installation or execution. Configure an App or consented PAT only when the selected target requires it.
+  - select and validate the authentication profile from `docs/authentication.md` before installation or execution. Configure both Apps or a consented PAT only when the selected target requires additional authentication.
 5. Confirm prerequisites without changing repositories:
    - Run `gh auth status` and ensure the authenticated account can create repositories and workflows in the organization.
    - Run `gh aw version`. Compare it with `min-version` in the root CAO `aw.yml`; upgrade `github/gh-aw` only when the installed version is older. Do not require the catalog maintainer's current local version when the package supports an older release.
@@ -77,8 +79,8 @@ Do not leave angle-bracket placeholders in authored files or pass placeholders t
     Proceed only with API evidence of an active entitlement or explicit confirmation from an organization administrator when the billing endpoint is inaccessible or inconclusive. Treat `total_seats: 0` with `seat_management_setting: unconfigured` as unavailable: the workflow token can still receive `copilot-requests: write`, but Copilot model-catalog authorization fails with HTTP 403 before the agent starts. Stop until organization billing is enabled, and do not replace `auto` with an explicit model or configure `COPILOT_GITHUB_TOKEN` to hide that failure.
   - Run `gh aw doctor --repo <organization>/<control-repository> --dir .` only from an attached checkout of an existing repository. Run `gh aw --help` before creating a repository or clone. If the extension is unavailable, install `github/gh-aw`, then rerun the check.
    - Check whether the proposed control repository already exists. Reuse it only with the user's agreement; record its visibility and never delete, overwrite, empty, or change its visibility implicitly.
-6. Create and clone the control repository with the chosen `--public` or `--private` visibility when it does not exist. Perform every remaining file and Git operation inside that clone, not inside this catalog checkout. Confirm the active Git remote is the intended control repository, then run `gh aw doctor --repo <organization>/<control-repository> --dir .` before installing CAO.
-7. Install the root CAO package. `gh aw add` reads root `aw.yml`, installs its orchestrators, workers, shared controls, skills, resources, and the deterministic core activity index, and compiles the workflow lock files without rewriting their authentication profile:
+6. Create and clone the control repository with the chosen `--public` or `--private` visibility when it does not exist. Perform every remaining file and Git operation inside that clone. For an explicitly selected source-managed control repository, remain in its source checkout instead: confirm its active remote is the intended control repository and verify `.github/workflows/cao.json`, `.github/cao/src/control.mjs`, `.github/cao/src/policy.mjs`, and the in-tree workflow sources and locks. Run `gh aw doctor --repo <organization>/<control-repository> --dir .` before configuring credentials or executing CAO.
+7. Install the root CAO package in a separate control repository. `gh aw add` reads root `aw.yml`, installs its orchestrators, workers, shared controls, skills, resources, and the deterministic core activity index, and compiles the workflow lock files without rewriting their authentication profile:
 
     ```bash
     cao_ref=$(gh api repos/githubnext/central-agentic-ops/commits/main --jq '.sha')
@@ -91,7 +93,20 @@ Do not leave angle-bracket placeholders in authored files or pass placeholders t
     done
     ```
 
-    A reviewed release tag may replace `main` when resolving `cao_ref`. Do not pass an unresolved branch or omit the ref: one immutable source identity keeps repeated package dependencies consistent and records a reproducible installation.
+    A reviewed release tag may replace `main` when resolving `cao_ref`. Do not pass an unresolved branch or omit the ref: one immutable source identity keeps repeated package dependencies consistent and records a reproducible installation. In a source-managed control repository, do not install a package over workflows maintained directly in-tree. Its reviewed workflow sources, generated locks, runtime files, and policy form the runtime revision; verify them at the current commit instead.
+
+    When the selected authentication profile requires GitHub Apps and the user wants automated creation, run the credential-only helper from the immutable CAO checkout at `cao_ref`. Target the control repository explicitly and complete both browser creation and installation prompts:
+
+    ```bash
+    node /path/to/cao/.github/cao/setup-github-apps.mjs --repo <organization>/<control-repository>
+    ```
+
+    The helper mirrors gh-aw's App manifest conversion flow without package delivery, keeps the root package manifest config-free, stores client IDs as repository variables, and sends private keys to repository secrets through standard input. It is independent of `gh aw add`: run normal package installation separately for a package-managed control repository, and do not install over in-tree workflows in a source-managed control repository. After setup, verify these names exist in the control repository:
+
+    - variable `GH_AW_GITHUB_READ_APP_ID` and secret `GH_AW_GITHUB_READ_APP_PRIVATE_KEY`;
+    - variable `GH_AW_GITHUB_WRITE_APP_ID` and secret `GH_AW_GITHUB_WRITE_APP_PRIVATE_KEY`.
+
+    Existing complete credential pairs are left unchanged. Use `--dry-run` before creation when reviewing custom App names or permissions. The helper creates private Apps owned by the control repository organization; expand their installations only to approved repositories owned by that organization. Multi-organization enrollment requires an explicitly reviewed App publication and installation plan. Confirm the read App has no write permission and the write App is installed only on repositories approved for safe outputs.
 
     Verify every installed Copilot-backed source declares `copilot-requests: write`, every corresponding generated lock grants that permission and maps `COPILOT_GITHUB_TOKEN` to `${{ github.token }}`, and no generated lock declares `${{ secrets.COPILOT_GITHUB_TOKEN }}`. Confirm both `.github/cao` runtime files exist and came from `cao_ref`, and confirm `.github/workflows/activity.yml` and `.github/aw/activity/index.mjs` were installed. Installed operations that need recent workflow-run history should restore the schema-versioned activity cache first and download only evidence absent from its bounded, complete scope. Do not rewrite installed workflow authentication or edit generated `.lock.yml` files directly.
 

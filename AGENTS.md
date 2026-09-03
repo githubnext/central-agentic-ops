@@ -2,11 +2,12 @@
 
 ## Establish the repository role
 
-- **Catalog source:** A checkout with the root `aw.yml` and top-level package directories is the public CAO catalog. Change package sources and documentation here, but never configure this repository as a control plane.
+- **Catalog source:** A checkout with the root `aw.yml` and top-level package directories is the public CAO catalog. Change package sources and documentation here. Catalog markers alone do not make the repository a control plane.
 - **Control repository:** A repository with installed workflows and `cao.json` under `.github/workflows/` plus package records under `.github/aw/packages/` runs the control plane. Its workflows operate on explicitly enrolled remote repositories; targets receive only declared safe outputs.
+- **Source-managed control repository:** Any repository may run workflows it maintains directly in-tree as a control plane when maintainers explicitly choose that topology and commit `.github/workflows/cao.json` plus the CAO runtime sources. Package records are not required for those directly maintained workflows. When the same repository is also a catalog, this is the supported dogfood topology: apply both catalog and control-repository safety rules, and keep package source, rollout policy, credentials, and target authority as separate records.
 - **Target repository:** A target may contain a `target-authority` declaration in `.github/workflows/cao.json`. That declaration grants one control repository authority for named live packages; it does not make the target a control repository.
 
-Apply only the guidance for the role that is present. Do not infer a role from the repository name.
+Apply the guidance for every role that is present. Do not infer a role from the repository name or from catalog files alone.
 
 ## Sources of truth
 
