@@ -60,9 +60,3 @@ export function renderCopilotPrompt(endpoint) {
   });
   return form;
 }
-
-const endpoint = new URL(import.meta.url).searchParams.get('endpoint');
-if (endpoint) {
-  console.log('Loading Copilot dashboard prompt.');
-  document.body.prepend(renderCopilotPrompt(endpoint));
-}

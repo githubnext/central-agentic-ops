@@ -49,6 +49,22 @@
       };
       const root = document.querySelector("#root");
       let renderedSources = {};
+      const previewMode = new URLSearchParams(window.location.search).get("local-preview");
+      if (previewMode) {
+        const dashboardSocketUrl = new URL("./__dashboard_socket", window.location.href);
+        dashboardSocketUrl.protocol = dashboardSocketUrl.protocol.replace(/^http/, "ws");
+        const dashboardSocket = new WebSocket(dashboardSocketUrl);
+        dashboardSocket.addEventListener("message", (event) => {
+          window.dispatchEvent(new CustomEvent("dashboard-preview-update", { detail: JSON.parse(event.data) }));
+        });
+        console.log("Dashboard preview socket initialized.");
+      }
+      if (previewMode === "copilot") {
+        const { renderCopilotPrompt } = await import("./src/copilot-prompt.js");
+        const endpoint = new URL("./__dashboard_copilot", window.location.href);
+        document.body.prepend(renderCopilotPrompt(endpoint.href));
+        console.log("Copilot dashboard prompt initialized.");
+      }
 
       const renderSources = (sources, state = "ready") => {
         renderedSources = sources;

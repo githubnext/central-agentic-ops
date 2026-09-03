@@ -24,6 +24,11 @@ describe("live Dashboard Language sources", () => {
     expect(preview).toContain("Unable to load live dashboard data:");
     expect(preview).toContain('window.addEventListener("dashboard-preview-update"');
     expect(preview).toContain("renderSources(renderedSources)");
+    expect(preview).toContain('get("local-preview")');
+    expect(preview).toContain('new URL("./__dashboard_socket", window.location.href)');
+    expect(preview).toContain('previewMode === "copilot"');
+    expect(preview).toContain('await import("./src/copilot-prompt.js")');
+    expect(preview).toContain('document.body.prepend(renderCopilotPrompt(endpoint.href))');
     expect(preview).not.toContain("Retain the illustrative fixture data");
   });
 

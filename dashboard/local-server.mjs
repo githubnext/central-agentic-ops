@@ -160,26 +160,6 @@ async function sourceSignature(paths) {
   return entries.join("\n");
 }
 
-function injectDashboardSocket(html, socketPath) {
-  const socketScript = `<script>
-  const dashboardSocket = new WebSocket(new URL(${JSON.stringify(socketPath)}, location.href).href.replace(/^http/, "ws"));
-  dashboardSocket.addEventListener("message", (event) => {
-    window.dispatchEvent(new CustomEvent("dashboard-preview-update", { detail: JSON.parse(event.data) }));
-  });
-</script>`;
-  return html.includes("</body>")
-    ? html.replace("</body>", `${socketScript}\n  </body>`)
-    : `${html}\n${socketScript}\n`;
-}
-
-function injectCopilotPromptModule(html, endpoint) {
-  const source = `./src/copilot-prompt.js?endpoint=${encodeURIComponent(endpoint)}`;
-  const script = `<script type="module" src=${JSON.stringify(source)}></script>`;
-  return html.includes("</body>")
-    ? html.replace("</body>", `${script}\n  </body>`)
-    : `${html}\n${script}\n`;
-}
-
 async function readJsonRequest(request, limit = 16 * 1024) {
   const chunks = [];
   let size = 0;
@@ -336,7 +316,6 @@ export async function startDashboardServer({
   const capability = randomBytes(24).toString("hex");
   const routePrefix = `/${capability}`;
   const socketPath = `${routePrefix}${socketEndpoint}`;
-  const copilotPath = `${routePrefix}${copilotEndpoint}`;
   const watchers = new Map();
   let dashboardContent = "";
   let signature = "";
@@ -440,6 +419,12 @@ export async function startDashboardServer({
         response.writeHead(400).end("Bad request\n");
         return;
       }
+      if ((pathname === "/" || pathname === "/index.html")
+          && !url.searchParams.has("local-preview")) {
+        url.searchParams.set("local-preview", copilotRuntime ? "copilot" : "enabled");
+        response.writeHead(302, { Location: `${routePrefix}/${url.search}` }).end();
+        return;
+      }
       if (pathname === copilotEndpoint) {
         if (!copilotRuntime) {
           response.writeHead(404).end("Not found\n");
@@ -527,10 +512,6 @@ export async function startDashboardServer({
       let content;
       if (pathname === "/dashboard.json") content = dashboardContent;
       else content = await readFile(canonicalPath);
-      if (extname(canonicalPath) === ".html") {
-        content = injectDashboardSocket(content.toString("utf8"), socketPath);
-        if (copilotRuntime) content = injectCopilotPromptModule(content, copilotPath);
-      }
       response.writeHead(200, {
         "Cache-Control": "no-store",
         "Content-Type": contentTypes.get(extname(canonicalPath)) || "application/octet-stream",

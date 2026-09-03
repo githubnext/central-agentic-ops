@@ -75,11 +75,10 @@ test("local dashboard server composes package dashboards and reloads after updat
   try {
     const indexResponse = await fetch(`${preview.url}/`);
     assert.equal(indexResponse.status, 200);
+    assert.equal(new URL(indexResponse.url).searchParams.get("local-preview"), "enabled");
     const index = await indexResponse.text();
-    assert.match(index, /new WebSocket/);
-    assert.match(index, /\/[a-f0-9]{48}\/__dashboard_socket/);
     assert.doesNotMatch(index, /location\.reload/);
-    assert.doesNotMatch(index, /dashboard-copilot-prompt/);
+    assert.doesNotMatch(index, /<script[^>]+src=.*copilot-prompt/);
 
     const dashboardResponse = await fetch(`${preview.url}/dashboard.json`);
     assert.equal(dashboardResponse.headers.get("cache-control"), "no-store");
@@ -169,9 +168,11 @@ test("local dashboard server optionally prompts Copilot to update the active vie
     port: 0,
   });
   try {
-    const index = await fetch(`${preview.url}/`).then((response) => response.text());
-    assert.match(index, /src\/copilot-prompt\.js\?endpoint=/);
+    const indexResponse = await fetch(`${preview.url}/`);
+    assert.equal(new URL(indexResponse.url).searchParams.get("local-preview"), "copilot");
+    const index = await indexResponse.text();
     assert.doesNotMatch(index, /Ask Copilot to update this view/);
+    assert.doesNotMatch(index, /<script[^>]+src=.*copilot-prompt/);
     assert.doesNotMatch(index, /eval\(/);
 
     const response = await fetch(`${preview.url}/__dashboard_copilot`, {
