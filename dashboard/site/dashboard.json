@@ -36,6 +36,11 @@
         "name": "AI Credits",
         "symbol": "AIC",
         "significant": 1
+      },
+      "grade": {
+        "name": "Grade",
+        "symbol": "grade",
+        "significant": 0.01
       }
     },
     "pages": [
@@ -2776,16 +2781,19 @@
                 {
                   "field": "value",
                   "type": "quantitative",
+                  "unit": "grade",
                   "title": "Value"
                 },
                 {
                   "field": "baseline-value",
                   "type": "quantitative",
+                  "unit": "grade",
                   "title": "Baseline"
                 },
                 {
                   "field": "delta-from-baseline",
                   "type": "quantitative",
+                  "unit": "grade",
                   "title": "Delta"
                 },
                 {

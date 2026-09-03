@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
     inputs:
       mode:
-        description: Use live data or only the most recently cached dashboard data.
+        description: Refresh activity data or use only the most recently cached snapshot.
         required: false
         type: choice
         options:
@@ -20,6 +20,7 @@ on:
       - .github/cao/**
       - .github/workflows/docs.yml
       - .github/workflows/dashboard-build.yml
+      - .github/workflows/activity.yml
       - .github/workflows/cao.json
       - .github/workflows/*.lock.yml
       - .github/workflows/*.md

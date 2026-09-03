@@ -15,7 +15,7 @@
         "views": [
           {
             "id": "aw-maintenance-runs",
-            "title": "Maintenance runs by conclusion",
+            "title": "Maintenance workflow runs",
             "disclosure": "essential",
             "data": {
               "source": "runs",
@@ -30,23 +30,79 @@
                 ]
               }
             },
-            "mark": "chart",
-            "chart": "line",
+            "mark": "table",
+            "controls": "interactive",
+            "empty-message": "No AW maintenance workflow runs were observed in the last 30 days.",
             "encoding": {
-              "x": {
-                "field": "started-at",
-                "type": "temporal",
-                "time-unit": "day"
-              },
-              "y": {
-                "field": "run",
-                "type": "quantitative",
-                "aggregate": "count"
-              },
-              "color": {
-                "field": "run-conclusion",
+              "href": {
+                "field": "run-link",
                 "type": "nominal"
-              }
+              },
+              "columns": [
+                {
+                  "field": "run",
+                  "type": "nominal",
+                  "title": "Run"
+                },
+                {
+                  "field": "run-status",
+                  "type": "nominal",
+                  "title": "Status",
+                  "display": "status"
+                },
+                {
+                  "field": "run-conclusion",
+                  "type": "nominal",
+                  "title": "Conclusion",
+                  "display": "status"
+                },
+                {
+                  "field": "organization",
+                  "type": "nominal",
+                  "title": "Organization"
+                },
+                {
+                  "field": "repository",
+                  "type": "nominal",
+                  "title": "Repository"
+                },
+                {
+                  "field": "workflow",
+                  "type": "nominal",
+                  "title": "Workflow"
+                },
+                {
+                  "field": "rollout-mode",
+                  "type": "nominal",
+                  "title": "Mode",
+                  "display": "mode"
+                },
+                {
+                  "field": "engine",
+                  "type": "nominal",
+                  "title": "Engine"
+                },
+                {
+                  "field": "engine-version",
+                  "type": "nominal",
+                  "title": "Engine version"
+                },
+                {
+                  "field": "requested-model",
+                  "type": "nominal",
+                  "title": "Requested model"
+                },
+                {
+                  "field": "resolved-model",
+                  "type": "nominal",
+                  "title": "Resolved model"
+                },
+                {
+                  "field": "started-at",
+                  "type": "temporal",
+                  "title": "Started"
+                }
+              ]
             }
           },
           {

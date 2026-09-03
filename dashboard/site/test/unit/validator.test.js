@@ -130,6 +130,24 @@ describe('dashboard document validation', () => {
     }
   });
 
+  it('keeps the AW Maintenance run inventory aligned with the built-in run table', () => {
+    const builtInDocument = JSON.parse(authoritativeDashboardSource);
+    const builtInRunView = builtInDocument.dashboard.pages
+      .find((/** @type {{ id: string }} */ page) => page.id === 'runs')
+      .definition.views[0];
+    const awMaintenanceDocument = packageDashboardSources
+      .map((source) => JSON.parse(source))
+      .find((document) => document.dashboard.id === 'aw-maintenance-dashboard');
+    const runView = awMaintenanceDocument.dashboard.pages[0].views
+      .find((/** @type {{ id: string }} */ view) => view.id === 'aw-maintenance-runs');
+
+    expect(runView).toMatchObject({
+      mark: 'table',
+      controls: 'interactive',
+      encoding: builtInRunView.encoding
+    });
+  });
+
   it('validates source-free JSON callouts with canonical icons', () => {
     const document = JSON.parse(authoritativeDashboardSource);
     const costPage = document.dashboard.pages.find((/** @type {{ id: string }} */ page) => page.id === 'cost');

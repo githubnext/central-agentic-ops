@@ -87,11 +87,12 @@ describe('data view renderer', () => {
       view: {
         mark: 'table',
         controls: 'static',
-        encoding: { columns: [{ field: 'grader' }, { field: 'run' }] }
+        encoding: { columns: [{ field: 'grader' }, { field: 'value', type: 'quantitative', unit: 'grade' }, { field: 'run' }] }
       },
       sourceName: 'grader-observations',
       rows: [{
         grader: 'daily-value',
+        value: 0.827,
         run: '42',
         'run-link': {
           href: 'https://github.com/githubnext/gh-aw-cao/actions/runs/42',
@@ -101,6 +102,13 @@ describe('data view renderer', () => {
       metadata,
       contextDetails: [],
       headingTag: /** @type {'h3'} */ ('h3'),
+      units: {
+        grade: {
+          name: 'Grade',
+          symbol: 'grade',
+          significant: 0.01
+        }
+      },
       prepareTableRows: (/** @type {Array<Record<string, unknown>>} */ rows) => rows,
       buildChartPoints: () => [],
       prepareChartPoints: () => [],
@@ -108,7 +116,8 @@ describe('data view renderer', () => {
     };
     const rendered = renderDataView('table', context);
 
-    const runLink = rendered?.querySelector('tbody td:nth-child(2) a');
+    expect(rendered?.querySelector('tbody td:nth-child(2)')?.textContent).toBe('0.83 grade');
+    const runLink = rendered?.querySelector('tbody td:nth-child(3) a');
     expect(runLink?.textContent).toBe('42');
     expect(runLink?.getAttribute('href')).toBe('https://github.com/githubnext/gh-aw-cao/actions/runs/42');
 

@@ -2,6 +2,7 @@
   "name": "central-agentic-ops",
   "private": true,
   "scripts": {
+    "setup:github-apps": "node .github/cao/setup-github-apps.mjs",
     "docs:dev": "astro dev",
     "docs:build": "astro build",
     "docs:preview": "astro preview",

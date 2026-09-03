@@ -18,8 +18,8 @@ Orchestrators select and dispatch within the resolved rollout envelope; they do 
 
 ## Deterministic core packages
 
-- Install the `activity/` package from the root manifest. It owns the scheduled and callable activity index workflow, cache key contract, and index schema.
-- Keep workflow-run indexing out of operational packages and the dashboard. Consumers may restore the activity cache and must fall back narrowly when its scope, freshness, or completeness is insufficient.
+- Install the `activity/` package from the root manifest. It owns the scheduled and callable data-collection workflow, cache key contract, and activity index schema.
+- Keep data collection and cache publication out of operational packages and dashboard build jobs. Consumers may restore the activity cache and must fall back narrowly when its scope, freshness, or completeness is insufficient.
 - The activity cache is an evictable optimization, not historical authority. Do not use it to widen CAO policy or credential reach.
 
 ## Dashboard contract
@@ -29,6 +29,6 @@ Orchestrators select and dispatch within the resolved rollout envelope; they do 
 - Keep `dashboard/dashboard.yml` as the manual-only standalone Pages publisher. It must pass `enablement: false` to `actions/configure-pages` and must not add a schedule or another enable variable.
 - For an existing Pages site, retain one Pages artifact uploader and deployer. Call the reusable builder, then download its artifact into the existing site's output directory before that workflow uploads the combined Pages artifact.
 - Keep report source modules under `dashboard/report/` and install them under `.github/aw/dashboard/report/` through matching root and `dashboard/aw.yml` resources.
-- Restore workflow and run inventory from the activity cache; do not recreate activity indexing or cache publication in the dashboard builder.
+- Restore the complete collected-data snapshot from the activity cache; do not recreate collection or cache publication in the dashboard builder.
 - Keep the production renderer under `dashboard/site/` and install its runtime assets under `.github/aw/dashboard/site/` through matching root and `dashboard/aw.yml` resources.
 - Require Pages to be configured for GitHub Actions with appropriate access control before any standalone deployment.
