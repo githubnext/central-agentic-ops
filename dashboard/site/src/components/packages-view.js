@@ -6,7 +6,7 @@ import { h } from '../dom.js';
 import { formatNumber, formatPercent } from '../view-formatters.js';
 import { titleCase } from './count-formatters.js';
 import { classifyUtilizationRatio, isFailureConclusion } from './run-classification.js';
-import { coverageWindowHours, formatMediumUtcDate, formatMediumUtcDateTime } from './ui-primitives.js';
+import { coverageWindowHours, formatMediumUtcDate, formatMediumUtcDateTime, renderEmptyMessage } from './ui-primitives.js';
 import { renderInteractiveTabs, updateInteractiveTabSelection } from './tab-nav.js';
 
 const MODES = ['all', 'review', 'live'];
@@ -378,7 +378,7 @@ function renderPackageUtilization(sources, mode, headingId) {
       { className: 'package-utilization-grid' },
       ...(packages.length > 0
         ? packages.map((entry) => renderUtilizationCard(entry, utilization.get(entry.key), available, completeness))
-        : [h('p', { className: 'empty' }, 'No centrally managed packages were observed.')])
+        : [renderEmptyMessage('No centrally managed packages were observed.')])
     )
   );
 }
@@ -559,7 +559,7 @@ function renderUnavailableRunTrend(heading, headingId, message) {
     'section',
     { className: 'package-trend-panel', 'aria-labelledby': headingId },
     h('header', null, h('div', null, h('h3', { id: headingId }, heading))),
-    h('p', { className: 'empty' }, message)
+    renderEmptyMessage(message)
   );
 }
 

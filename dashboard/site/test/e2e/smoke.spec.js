@@ -49,17 +49,13 @@ function buildPresenterModuleUrl() {
     .replace("'../dom.js'", JSON.stringify(domModuleUrl));
   const histogramModuleUrl = `data:text/javascript;charset=utf-8,${encodeURIComponent(histogramSource)}`;
 
-  const summaryCopySource = readFileSync(new URL('../../src/components/summary-copy.js', import.meta.url), 'utf8')
-    .replace("'../dom.js'", JSON.stringify(domModuleUrl));
-  const summaryCopyModuleUrl = `data:text/javascript;charset=utf-8,${encodeURIComponent(summaryCopySource)}`;
-
   const viewFormattersSource = readFileSync(new URL('../../src/view-formatters.js', import.meta.url), 'utf8');
   const viewFormattersModuleUrl = `data:text/javascript;charset=utf-8,${encodeURIComponent(viewFormattersSource)}`;
 
   const tableSummarySource = readFileSync(new URL('../../src/components/table-summary.js', import.meta.url), 'utf8')
     .replace("'../dom.js'", JSON.stringify(domModuleUrl))
     .replace("'./histogram.js'", JSON.stringify(histogramModuleUrl))
-    .replace("'./summary-copy.js'", JSON.stringify(summaryCopyModuleUrl))
+    .replace("'./count-formatters.js'", JSON.stringify(countFormattersModuleUrl))
     .replace("'./view-chrome.js'", JSON.stringify(viewChromeModuleUrl))
     .replace("'./ui-primitives.js'", JSON.stringify(uiPrimitivesModuleUrl))
     .replace("'../view-formatters.js'", JSON.stringify(viewFormattersModuleUrl));
@@ -136,7 +132,8 @@ function buildPresenterModuleUrl() {
   const linkedTextModuleUrl = `data:text/javascript;charset=utf-8,${encodeURIComponent(linkedTextSource)}`;
 
   const routeStateSource = readFileSync(new URL('../../src/components/route-empty-state.js', import.meta.url), 'utf8')
-    .replace("'../dom.js'", JSON.stringify(domModuleUrl));
+    .replace("'../dom.js'", JSON.stringify(domModuleUrl))
+    .replace("'./ui-primitives.js'", JSON.stringify(uiPrimitivesModuleUrl));
   const routeStateModuleUrl = `data:text/javascript;charset=utf-8,${encodeURIComponent(routeStateSource)}`;
 
   const chartElementsSource = readFileSync(new URL('../../src/components/chart-elements.js', import.meta.url), 'utf8')
@@ -228,6 +225,11 @@ function buildPresenterModuleUrl() {
     .replace("'./anomaly-readiness.js'", JSON.stringify(anomalyReadinessModuleUrl));
   const uiElementsModuleUrl = `data:text/javascript;charset=utf-8,${encodeURIComponent(uiElementsSource)}`;
 
+  const siteCalloutSource = readFileSync(new URL('../../src/components/site-callout.js', import.meta.url), 'utf8')
+    .replace("'../dom.js'", JSON.stringify(domModuleUrl))
+    .replace("'../octicons.js'", JSON.stringify(octiconsModuleUrl));
+  const siteCalloutModuleUrl = `data:text/javascript;charset=utf-8,${encodeURIComponent(siteCalloutSource)}`;
+
   const dataViewSource = readFileSync(new URL('../../src/components/data-view.js', import.meta.url), 'utf8')
     .replace("'../dom.js'", JSON.stringify(domModuleUrl))
     .replace("'../octicons.js'", JSON.stringify(octiconsModuleUrl))
@@ -272,6 +274,7 @@ function buildPresenterModuleUrl() {
     .replace("'./components/ui-elements.js'", JSON.stringify(uiElementsModuleUrl))
     .replace("'./components/data-view.js'", JSON.stringify(dataViewModuleUrl))
     .replace("'./components/filter-bar.js'", JSON.stringify(filterBarModuleUrl))
+    .replace("'./components/site-callout.js'", JSON.stringify(siteCalloutModuleUrl))
     .replace("'./data-processor.js'", JSON.stringify(dataProcessorModuleUrl))
     .replace("'./overview-data.js'", JSON.stringify(overviewDataModuleUrl))
     .replace("'./repository-data.js'", JSON.stringify(repositoryDataModuleUrl))
@@ -281,6 +284,61 @@ function buildPresenterModuleUrl() {
 
   return `data:text/javascript;charset=utf-8,${encodeURIComponent(presenterSource)}`;
 }
+
+test('DLS-DOC-014 horizon help is available on hover and keyboard focus', async ({ page }) => {
+  const presenterModuleUrl = buildPresenterModuleUrl();
+  await page.setContent(`
+    <div id="root"></div>
+    <script type="module">
+      import { renderDashboard } from ${JSON.stringify(presenterModuleUrl)};
+      const documentModel = {
+        languageVersion: '0.1.0',
+        dashboard: {
+          id: 'horizon-dashboard',
+          title: 'Horizon dashboard',
+          horizon: {
+            label: 'Horizon',
+            tooltip: {
+              label: 'Horizon details',
+              description: 'Data is included from the start up to the exclusive end.',
+              icon: 'question'
+            }
+          },
+          defaults: { time: { range: '1w' } },
+          pages: [{ id: 'runs', kind: 'built-in', page: 'runs', title: 'Runs' }]
+        }
+      };
+      const sources = {
+        runs: {
+          source: 'runs',
+          rows: [],
+          metadata: {
+            'source-id': 'runs-fixture',
+            'source-kind': 'fixture',
+            'retrieved-at': '2026-09-01T12:00:00Z',
+            completeness: 'complete',
+            freshness: 'fresh',
+            availability: 'empty'
+          }
+        }
+      };
+      document.querySelector('#root').append(renderDashboard({ document: documentModel, sources }));
+    </script>
+  `);
+
+  const trigger = page.getByRole('button', { name: 'Horizon details' });
+  const tooltip = page.getByRole('tooltip');
+  await expect(trigger).toHaveAttribute('aria-describedby', 'dashboard-horizon-details');
+  await expect(tooltip).toBeHidden();
+  await trigger.hover();
+  await expect(tooltip).toBeVisible();
+  await expect(tooltip).toContainText('StartAug 25, 2026, 12:00 PM UTC');
+  await expect(tooltip).toContainText('EndSep 1, 2026, 12:00 PM UTC');
+  await expect(tooltip).toContainText('Duration1 week');
+  await page.mouse.move(0, 0);
+  await trigger.focus();
+  await expect(tooltip).toBeVisible();
+});
 
 test('DLS-PAGE-002 DLS-PAGE-014 built-in overview page renders the report-style six-domain operational overview in browser', async ({ page }) => {
   const presenterModuleUrl = buildPresenterModuleUrl();

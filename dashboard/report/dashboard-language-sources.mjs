@@ -1,6 +1,7 @@
 import { mkdir, readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { pathToFileURL } from "node:url";
+import { actionsLog as log } from "../../activity/actions-log.mjs";
 import { firstText } from "./text-utils.mjs";
 
 const sourceNames = [
@@ -75,8 +76,13 @@ function source(name, rows, generatedAt, available = true, complete = true) {
   };
 }
 
-function coverageDiagnosticRows(deployed, usage, controlSettings) {
+function coverageDiagnosticRows(deployed, usage, controlSettings, report) {
   const diagnostics = [];
+  if (report.error) diagnostics.push({
+    kind: report.errorStatus === 403 ? "github-api-rate-limit-403" : "durable-output-unavailable",
+    title: "Durable output collection unavailable",
+    effect: report.error,
+  });
   if (controlSettings.policy_resolution?.status === "unavailable") diagnostics.push({
     title: "Control policy resolution unavailable",
     effect: controlSettings.policy_resolution.reason || "The dashboard is limited to fail-closed control-repository data.",
@@ -494,6 +500,7 @@ export function buildDashboardLanguageSources({ deployed, usage, operationalValu
   const workflows = workflowRows(deployed, generatedAt, inventory, controlSettings);
   const runs = runRows(deployed);
   const records = report.records || [];
+  const reportAvailable = !report.error;
   const values = operationalValueRows(operationalValues);
   const graderObservations = operationalValueGraderRows(operationalValues);
   const repositories = new Map();
@@ -539,7 +546,7 @@ export function buildDashboardLanguageSources({ deployed, usage, operationalValu
   }
   sources["coverage-diagnostics"] = source(
     "coverage-diagnostics",
-    coverageDiagnosticRows(deployed, usage, controlSettings),
+    coverageDiagnosticRows(deployed, usage, controlSettings, report),
     generatedAt,
   );
   sources["repository-coverage"] = source(
@@ -549,8 +556,8 @@ export function buildDashboardLanguageSources({ deployed, usage, operationalValu
     discoveryAvailable,
     deployed.discovery?.complete === true,
   );
-  sources.outcomes = source("outcomes", outcomeRows(records), generatedAt);
-  sources.findings = source("findings", findingRows(records), generatedAt);
+  sources.outcomes = source("outcomes", outcomeRows(records), generatedAt, reportAvailable, reportAvailable);
+  sources.findings = source("findings", findingRows(records), generatedAt, reportAvailable, reportAvailable);
   sources["grader-observations"] = operationalValueSource("grader-observations", graderObservations, operationalValues, generatedAt, valueAvailable);
   sources["operational-values"] = operationalValueSource("operational-values", values, operationalValues, generatedAt, valueAvailable);
   return sources;
@@ -567,18 +574,24 @@ async function main() {
   if (!deployedPath || !usagePath || !operationalValuesPath || !reportPath || !inventoryPath || !controlSettingsPath || !outputPath) {
     throw new Error("REPORT_DEPLOYED_WORKFLOWS, REPORT_AIC_USAGE, REPORT_OPERATIONAL_VALUES, REPORT_RECORDS, REPORT_INVENTORY, REPORT_CONTROL_SETTINGS, and REPORT_DASHBOARD_SOURCES are required");
   }
-  const [deployed, usage, operationalValues, report, inventory, controlSettings] = await Promise.all(
-    [deployedPath, usagePath, operationalValuesPath, reportPath, inventoryPath, controlSettingsPath]
-      .map(async (file) => JSON.parse(await readFile(file, "utf8"))),
-  );
-  const sources = buildDashboardLanguageSources({ deployed, usage, operationalValues, report, inventory, controlSettings });
-  await mkdir(path.dirname(outputPath), { recursive: true });
-  await writeFile(outputPath, `${JSON.stringify(sources, null, 2)}\n`);
+  log.group`Build Dashboard Language sources`;
+  try {
+    const [deployed, usage, operationalValues, report, inventory, controlSettings] = await Promise.all(
+      [deployedPath, usagePath, operationalValuesPath, reportPath, inventoryPath, controlSettingsPath]
+        .map(async (file) => JSON.parse(await readFile(file, "utf8"))),
+    );
+    const sources = buildDashboardLanguageSources({ deployed, usage, operationalValues, report, inventory, controlSettings });
+    await mkdir(path.dirname(outputPath), { recursive: true });
+    await writeFile(outputPath, `${JSON.stringify(sources, null, 2)}\n`);
+    log.info`Wrote ${Object.keys(sources).length} dashboard sources to ${outputPath}`;
+  } finally {
+    log.endGroup();
+  }
 }
 
 if (process.argv[1] && import.meta.url === pathToFileURL(path.resolve(process.argv[1])).href) {
   main().catch((error) => {
-    console.error(error);
+    log.error`${error.stack || error.message || error}`;
     process.exitCode = 1;
   });
 }

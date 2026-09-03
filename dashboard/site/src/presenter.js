@@ -7,13 +7,14 @@ import { h } from './dom.js';
 import { getPrimerStyles } from './styles.js';
 import { octicon, agenticWorkflowMark } from './octicons.js';
 import { renderDataStateMetrics } from './components/data-state.js';
-import { formatMediumUtcDateTime } from './components/ui-primitives.js';
+import { formatMediumUtcDateTime, renderTooltip, renderEmptyMessage } from './components/ui-primitives.js';
 import { customViewAvailabilityMessage, renderCustomViewStateDetails, renderLayoutSectionChrome, renderPageSection } from './components/view-chrome.js';
 import { toNumber } from './view-formatters.js';
 import { findLink } from './components/link-content.js';
 import { elementHandlesEmptyRows, renderUiElement } from './components/ui-elements.js';
 import { renderDataView } from './components/data-view.js';
 import { renderFilterBar } from './components/filter-bar.js';
+import { renderSiteCallouts } from './components/site-callout.js';
 import { processRows } from './data-processor.js';
 import { deriveOverviewSources } from './overview-data.js';
 import { deriveRepositorySources } from './repository-data.js';
@@ -58,7 +59,7 @@ import { dashboardHorizonHours, formatDashboardHorizon, resolveDashboardHorizon 
  */
 
 /**
- * @typedef {{ id: string, title: string, description?: string, defaults?: Record<string, unknown>, units?: Record<string, { name: string, symbol: string, significant: number }>, pages: Array<PresentableBuiltInPage | PresentableCustomPage>, ['github-url-base']?: string, repository?: string, navigation?: PresentableNavigationSection[] }} PresentableDashboard
+ * @typedef {{ id: string, title: string, description?: string, defaults?: Record<string, unknown>, units?: Record<string, { name: string, symbol: string, significant: number }>, callouts?: Array<{ id: string, title: string, description: string, icon?: string, ['visible-when']?: { source: string, field: string, equals: unknown } }>, pages: Array<PresentableBuiltInPage | PresentableCustomPage>, ['github-url-base']?: string, repository?: string, navigation?: PresentableNavigationSection[], horizon?: { label: string, tooltip: { label: string, description: string, icon?: string } } }} PresentableDashboard
  */
 
 /**
@@ -348,11 +349,7 @@ function renderMainContent(document, pages, sources, githubUrlBase, dashboardRep
         h(
           'div',
           { className: 'report-actions' },
-          h(
-            'span',
-            { className: 'dashboard-horizon', 'data-dashboard-evaluated-at': evaluatedAt },
-            `Horizon ${formatDashboardHorizon(horizonRange)}`
-          ),
+          renderDashboardHorizon(document.dashboard, dashboardDefaults, horizonRange, evaluatedAt),
           latestRetrieval
             ? h('time', { className: 'freshness', dateTime: latestRetrieval }, `Last updated ${formatReportDate(latestRetrieval)}`)
             : null,
@@ -395,6 +392,7 @@ function renderMainContent(document, pages, sources, githubUrlBase, dashboardRep
         )
       )
     ),
+    renderSiteCallouts(document.dashboard.callouts, sources),
     h(
       'main',
       { id: 'main-content', className: 'dashboard-prototype', tabIndex: -1 },
@@ -433,6 +431,47 @@ function renderMainContent(document, pages, sources, githubUrlBase, dashboardRep
       { className: 'report-footer' },
       'Generated deterministically from dashboard data.'
     )
+  );
+}
+
+/**
+ * @param {PresentableDashboard} dashboard
+ * @param {Record<string, unknown>} dashboardDefaults
+ * @param {string} horizonRange
+ * @param {string} evaluatedAt
+ * @returns {HTMLElement}
+ */
+function renderDashboardHorizon(dashboard, dashboardDefaults, horizonRange, evaluatedAt) {
+  const horizon = dashboard.horizon;
+  const label = horizon?.label || 'Horizon';
+  const duration = formatDashboardHorizon(horizonRange);
+  const start = isPlainObject(dashboardDefaults.time) && typeof dashboardDefaults.time.start === 'string'
+    ? dashboardDefaults.time.start
+    : new Date(new Date(evaluatedAt).getTime() - dashboardHorizonHours(horizonRange) * 3_600_000).toISOString();
+  const end = isPlainObject(dashboardDefaults.time) && typeof dashboardDefaults.time.end === 'string'
+    ? dashboardDefaults.time.end
+    : evaluatedAt;
+  const tooltipId = 'dashboard-horizon-details';
+
+  return h(
+    'span',
+    { className: 'dashboard-horizon', 'data-dashboard-evaluated-at': evaluatedAt },
+    h('span', null, `${label} ${duration}`),
+    horizon
+      ? renderTooltip({
+        id: tooltipId,
+        label: horizon.tooltip.label,
+        description: horizon.tooltip.description,
+        icon: octicon(horizon.tooltip.icon || 'question'),
+        content: h(
+          'span',
+          { className: 'horizon-tooltip-values' },
+          h('span', null, h('strong', null, 'Start'), h('time', { dateTime: start }, `${formatReportDate(start)} UTC`)),
+          h('span', null, h('strong', null, 'End'), h('time', { dateTime: end }, `${formatReportDate(end)} UTC`)),
+          h('span', null, h('strong', null, 'Duration'), duration)
+        )
+      })
+      : null
   );
 }
 
@@ -649,7 +688,7 @@ function renderLayoutSection(pageId, section, renderedViews, sources) {
   const countSource = section['count-source'] ? sources[section['count-source']] : null;
   const count = Array.isArray(countSource?.rows) ? countSource.rows.length : null;
   const sectionViews = section.views.map((viewId) => renderedViews.get(viewId)
-    ?? h('p', { className: 'empty', 'data-missing-view-id': viewId }, `View unavailable: ${viewId}`));
+    ?? renderEmptyMessage(`View unavailable: ${viewId}`, { 'data-missing-view-id': viewId }));
   if (sectionViews.length === 1 && sectionViews[0].classList.contains('dashboard-callout')) {
     sectionViews[0].setAttribute('data-section-id', section.id);
     sectionViews[0].setAttribute('data-section-layout', section.layout);

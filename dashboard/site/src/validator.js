@@ -6,6 +6,7 @@ import {
   BUILT_IN_PAGE_VALUES,
   CUSTOM_PAGE_KEYS,
   DASHBOARD_KEYS,
+  DASHBOARD_HORIZON_KEYS,
   DATASET_AVAILABILITY_VALUES,
   DATASET_COMPLETENESS_VALUES,
   DATASET_FRESHNESS_VALUES,
@@ -45,6 +46,8 @@ import {
   RUN_CONCLUSION_VALUES,
   RUN_STATUS_VALUES,
   SCOPE_KEYS,
+  SITE_CALLOUT_KEYS,
+  SITE_CALLOUT_VISIBILITY_KEYS,
   SOURCE_ENTITY_IDENTIFIER_FIELDS,
   SOURCE_FIELDS,
   SOURCE_VALUES,
@@ -53,6 +56,7 @@ import {
   TABLE_ACTION_WHEN_KEYS,
   TEMPORAL_FIELD_NAMES,
   TIME_KEYS,
+  TOOLTIP_KEYS,
   UNIT_DEFINITION_KEYS,
   BUILT_IN_PAGE_REQUIRED_SOURCES,
   BUILT_IN_PAGE_REQUIRED_FIELDS,
@@ -84,7 +88,11 @@ import {
  */
 
 /**
- * @typedef {{ id: string, title: string, description?: string, defaults?: DashboardDefaults, units?: Record<string, UnitDefinition>, pages: Array<BuiltInPage | CustomPage> }} DashboardConfig
+ * @typedef {{ id: string, title: string, description?: string, defaults?: DashboardDefaults, units?: Record<string, UnitDefinition>, callouts?: SiteCallout[], pages: Array<BuiltInPage | CustomPage> }} DashboardConfig
+ */
+
+/**
+ * @typedef {{ id: string, title: string, description: string, icon?: string, ['visible-when']?: { source: string, field: string, equals: unknown } }} SiteCallout
  */
 
 /**
@@ -376,6 +384,30 @@ function validateDashboard(dashboard, dashboardNode, errors) {
   validateStringField(dashboard.title, '$.dashboard.title', true, errors);
   validateOptionalStringField(dashboard.description, '$.dashboard.description', errors);
 
+  if (dashboard.horizon !== undefined) {
+    if (!isPlainObject(dashboard.horizon)) {
+      errors.push(createError(
+        ERROR_CODES.missingOrInvalidRequiredField,
+        'horizon must be a mapping.',
+        '$.dashboard.horizon'
+      ));
+    } else {
+      validateObjectKeys(
+        getValueNodeByKey(dashboardNode, 'horizon'),
+        DASHBOARD_HORIZON_KEYS,
+        '$.dashboard.horizon',
+        errors
+      );
+      validateStringField(dashboard.horizon.label, '$.dashboard.horizon.label', true, errors);
+      validateTooltip(
+        dashboard.horizon.tooltip,
+        getValueNodeByKey(getValueNodeByKey(dashboardNode, 'horizon'), 'tooltip'),
+        '$.dashboard.horizon.tooltip',
+        errors
+      );
+    }
+  }
+
   if (dashboard['github-url-base'] !== undefined && !isSafeGithubUrlBase(dashboard['github-url-base'])) {
     errors.push(createError(
       ERROR_CODES.missingOrInvalidRequiredField,
@@ -412,6 +444,7 @@ function validateDashboard(dashboard, dashboardNode, errors) {
   }
 
   const unitIds = validateUnits(dashboard.units, getValueNodeByKey(dashboardNode, 'units'), errors);
+  validateSiteCallouts(dashboard.callouts, getValueNodeByKey(dashboardNode, 'callouts'), errors);
 
   if (!Array.isArray(dashboard.pages) || dashboard.pages.length === 0) {
     errors.push(createError(
@@ -449,6 +482,77 @@ function validateDashboard(dashboard, dashboardNode, errors) {
 
   if (dashboard.navigation !== undefined) {
     validateNavigation(dashboard.navigation, getValueNodeByKey(dashboardNode, 'navigation'), pageIds, errors);
+  }
+
+  /**
+   * @param {unknown} callouts
+   * @param {unknown} calloutsNode
+   * @param {ValidationError[]} errors
+   */
+  function validateSiteCallouts(callouts, calloutsNode, errors) {
+    if (callouts === undefined) return;
+    if (!Array.isArray(callouts) || callouts.length === 0) {
+      errors.push(createError(
+        ERROR_CODES.missingOrInvalidRequiredField,
+        'callouts must be a non-empty sequence.',
+        '$.dashboard.callouts'
+      ));
+      return;
+    }
+    const calloutIds = new Set();
+    callouts.forEach((callout, index) => {
+      const path = `$.dashboard.callouts[${index}]`;
+      const calloutNode = getSequenceItemNode(calloutsNode, index);
+      if (!isPlainObject(callout)) {
+        errors.push(createError(ERROR_CODES.missingOrInvalidRequiredField, 'callout must be a mapping.', path));
+        return;
+      }
+      validateObjectKeys(calloutNode, SITE_CALLOUT_KEYS, path, errors);
+      validateRequiredIdentifier(callout.id, `${path}.id`, 'callout id', errors);
+      if (typeof callout.id === 'string' && calloutIds.has(callout.id)) {
+        errors.push(createError(ERROR_CODES.missingOrInvalidRequiredField, 'callout id must be unique within dashboard.callouts.', `${path}.id`));
+      } else if (typeof callout.id === 'string') {
+        calloutIds.add(callout.id);
+      }
+      validateStringField(callout.title, `${path}.title`, true, errors);
+      validateStringField(callout.description, `${path}.description`, true, errors);
+      validateOptionalStringField(callout.icon, `${path}.icon`, errors);
+      if (typeof callout.icon === 'string' && !PAGE_ICON_VALUES.includes(callout.icon)) {
+        errors.push(createError(ERROR_CODES.nonCanonicalVocabularyOrIdentifier, 'callout icon must use one canonical icon value.', `${path}.icon`));
+      }
+      validateSiteCalloutVisibility(callout['visible-when'], getValueNodeByKey(calloutNode, 'visible-when'), `${path}.visible-when`, errors);
+    });
+  }
+
+  /**
+   * @param {unknown} visibility
+   * @param {unknown} visibilityNode
+   * @param {string} path
+   * @param {ValidationError[]} errors
+   */
+  function validateSiteCalloutVisibility(visibility, visibilityNode, path, errors) {
+    if (visibility === undefined) return;
+    if (!isPlainObject(visibility)) {
+      errors.push(createError(ERROR_CODES.missingOrInvalidRequiredField, 'visible-when must be a mapping.', path));
+      return;
+    }
+    validateObjectKeys(visibilityNode, SITE_CALLOUT_VISIBILITY_KEYS, path, errors);
+    validateStringField(visibility.source, `${path}.source`, true, errors);
+    if (typeof visibility.source === 'string' && !SOURCE_VALUES.includes(visibility.source)) {
+      errors.push(createError(ERROR_CODES.nonCanonicalVocabularyOrIdentifier, 'visible-when source must use one canonical source name.', `${path}.source`));
+    }
+    validateStringField(visibility.field, `${path}.field`, true, errors);
+    if (
+      typeof visibility.source === 'string'
+      && SOURCE_VALUES.includes(visibility.source)
+      && typeof visibility.field === 'string'
+      && !SOURCE_FIELDS[/** @type {keyof typeof SOURCE_FIELDS} */ (visibility.source)]?.includes(visibility.field)
+    ) {
+      errors.push(createError(ERROR_CODES.invalidScopeFilterTimeAggregationOrOrderReference, 'visible-when field must be declared by visible-when source.', `${path}.field`));
+    }
+    if (!Object.hasOwn(visibility, 'equals') || ['object', 'function', 'symbol'].includes(typeof visibility.equals)) {
+      errors.push(createError(ERROR_CODES.missingOrInvalidRequiredField, 'visible-when equals must be a scalar.', `${path}.equals`));
+    }
   }
 
   /**
@@ -532,6 +636,30 @@ function validateDashboard(dashboard, dashboardNode, errors) {
         }
       });
     });
+  }
+}
+
+/**
+ * @param {unknown} tooltip
+ * @param {unknown} tooltipNode
+ * @param {string} path
+ * @param {ValidationError[]} errors
+ */
+function validateTooltip(tooltip, tooltipNode, path, errors) {
+  if (!isPlainObject(tooltip)) {
+    errors.push(createError(ERROR_CODES.missingOrInvalidRequiredField, 'tooltip must be a mapping.', path));
+    return;
+  }
+  validateObjectKeys(tooltipNode, TOOLTIP_KEYS, path, errors);
+  validateStringField(tooltip.label, `${path}.label`, true, errors);
+  validateStringField(tooltip.description, `${path}.description`, true, errors);
+  validateOptionalStringField(tooltip.icon, `${path}.icon`, errors);
+  if (typeof tooltip.icon === 'string' && !PAGE_ICON_VALUES.includes(tooltip.icon)) {
+    errors.push(createError(
+      ERROR_CODES.nonCanonicalVocabularyOrIdentifier,
+      'tooltip icon must use one canonical icon value.',
+      `${path}.icon`
+    ));
   }
 }
 

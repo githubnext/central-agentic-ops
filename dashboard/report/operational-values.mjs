@@ -2,6 +2,7 @@ import { spawn } from "node:child_process";
 import { mkdir, mkdtemp, readFile, readdir, rm, writeFile } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
+import { actionsLog as log } from "../../activity/actions-log.mjs";
 import {
   definitionFromOperationalValueReport,
   mergeOperationalValueRecords,
@@ -175,6 +176,8 @@ async function regradeRecord(record, evidenceAt, checkout) {
 }
 
 (async () => {
+  log.group`Collect operational-value observations`;
+  try {
   const inventoryPath = process.env.REPORT_DEPLOYED_WORKFLOWS;
   const outputPath = path.resolve(process.env.REPORT_OPERATIONAL_VALUES || "_inventory/operational-values.json");
   const cachePath = process.env.REPORT_VALUE_CACHE ? path.resolve(process.env.REPORT_VALUE_CACHE) : null;
@@ -221,7 +224,7 @@ async function regradeRecord(record, evidenceAt, checkout) {
           cachedDefinitions = Array.isArray(cached.definitions) ? cached.definitions : [];
         }
       } catch (error) {
-        if (error.code !== "ENOENT") console.warn(`Ignoring operational-value cache: ${error.message}`);
+        if (error.code !== "ENOENT") log.warning`Ignoring operational-value cache: ${error.message}`;
       }
     }
 
@@ -243,7 +246,7 @@ async function regradeRecord(record, evidenceAt, checkout) {
           );
           return { workflow, report };
         } catch (error) {
-          console.warn(`Operational-value history unavailable for ${workflow.repository} ${workflow.workflowId}: ${error.message}`);
+          log.warning`Operational-value history unavailable for ${workflow.repository} ${workflow.workflowId}: ${error.message}`;
           return { workflow, error: error.message };
         }
       })
@@ -273,7 +276,7 @@ async function regradeRecord(record, evidenceAt, checkout) {
         if (matches.length !== 1) return { ...selected, status: "unavailable", reason: "operational-value result not found" };
         return normalizeResult(selected, matches[0]);
       } catch (error) {
-        console.warn(`Operational value unavailable for ${selected.repository} run ${selected.runId}: ${error.message}`);
+        log.warning`Operational value unavailable for ${selected.repository} run ${selected.runId}: ${error.message}`;
         return { ...selected, status: "unavailable", reason: error.message };
       }
     });
@@ -291,7 +294,7 @@ async function regradeRecord(record, evidenceAt, checkout) {
         try {
           return await regradeRecord(record, generatedAt, await checkouts.get(checkoutKey));
         } catch (error) {
-          console.warn(`Operational-value regrade unavailable for ${record.repository} run ${record.runId}: ${error.message}`);
+          log.warning`Operational-value regrade unavailable for ${record.repository} run ${record.runId}: ${error.message}`;
           return { ...record, regradeAttemptedAt: generatedAt, regradeError: error.message };
         }
       });
@@ -329,12 +332,15 @@ async function regradeRecord(record, evidenceAt, checkout) {
       await mkdir(path.dirname(cachePath), { recursive: true });
       await writeFile(cachePath, `${JSON.stringify(output, null, 2)}\n`);
     }
-    console.log(`Collected ${output.observedRuns} operational-value observations from ${output.selectedRuns} worker runs`);
+    log.info`Collected ${output.observedRuns} operational-value observations from ${output.selectedRuns} worker runs`;
   } finally {
     await rm(temporaryRoot, { recursive: true, force: true });
   }
+  } finally {
+    log.endGroup();
+  }
 })().catch((error) => {
-  console.error(error);
+  log.error`${error.stack || error.message || error}`;
   process.exitCode = 1;
 });
 

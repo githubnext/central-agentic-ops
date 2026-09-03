@@ -1,6 +1,7 @@
 import { readFile, readdir, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import { actionsLog as log } from "../../activity/actions-log.mjs";
 import { composeDashboardDocuments } from "./compose-dashboard-documents.mjs";
 
 /** @typedef {import("./compose-dashboard-documents.mjs").DashboardDocument} DashboardDocument */
@@ -61,12 +62,18 @@ async function main() {
   if (!outputPath || !dashboardsDirectory) {
     throw new Error("usage: bundle-dashboards.mjs OUTPUT_DASHBOARD DASHBOARDS_DIRECTORY");
   }
-  await bundleDashboards(path.resolve(outputPath), path.resolve(dashboardsDirectory));
+  log.group`Bundle dashboard documents`;
+  try {
+    await bundleDashboards(path.resolve(outputPath), path.resolve(dashboardsDirectory));
+    log.info`Bundled dashboard documents into ${outputPath}`;
+  } finally {
+    log.endGroup();
+  }
 }
 
 if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
   await main().catch((error) => {
-    process.stderr.write(`${error instanceof Error ? error.message : String(error)}\n`);
+    log.error`${error instanceof Error ? error.stack || error.message : String(error)}`;
     process.exitCode = 1;
   });
 }

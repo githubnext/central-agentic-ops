@@ -585,6 +585,7 @@ test("deterministic workflows pin third-party actions by commit SHA", () => {
     join(".github", "workflows", "enterprise-canary.yml"),
     join(".github", "workflows", "enterprise-stress.yml"),
     join(".github", "workflows", "review-smoke.yml"),
+    join("activity", "activity.yml"),
     join(".github", "workflows", "dashboard-build.yml"),
     join("dashboard", "dashboard.yml"),
   ]) {
@@ -1004,6 +1005,7 @@ test("orchestrators emit dedicated bounded dispatcher telemetry", () => {
 test("public read-only operation uses the built-in token without widening access", () => {
   const authentication = readFileSync(join(root, "docs", "authentication.md"), "utf8");
   const configuration = readFileSync(join(root, "docs", "configuration.md"), "utf8");
+  const controlSource = readFileSync(join(root, ".github", "cao", "src", "control.mjs"), "utf8");
   const control = workflow("shared/control.md");
   const precompute = controlPrecompute();
 
@@ -1013,8 +1015,16 @@ test("public read-only operation uses the built-in token without widening access
   assert.match(authentication, /use `review` mode and keep safe outputs in the current control repository/);
   assert.match(authentication, /configure an App or PAT for private or internal targets, an alternate review repository, or any `live` cross-repository write/);
   assert.match(authentication, /report incomplete and produce no speculative result/);
+  assert.match(authentication, /conditional requests/);
+  assert.match(authentication, /`ETag`/);
+  assert.match(authentication, /`If-None-Match`/);
+  assert.match(authentication, /GraphQL/);
+  assert.match(controlSource, /const GITHUB_API_CACHE_DURATION = "60s";/);
+  assert.match(controlSource, /const args = \["api", "--cache", GITHUB_API_CACHE_DURATION\];/);
   assert.match(configuration, /no App or PAT secret is required/);
   assert.match(control, /cannot read target evidence required by the importing workflow, stop that analysis and report it as incomplete/);
+  assert.match(control, /persist response `ETag` values and send them as `If-None-Match`/);
+  assert.match(control, /prefer one bounded GraphQL query/);
   assert.match(control, /do not silently reduce the requested analysis to the subset the token can read/);
 });
 
@@ -1599,6 +1609,21 @@ test("SelfCare runs every 20 minutes", () => {
   assert.match(compiled, /GH_AW_INFO_MODEL: "copilot\/gpt-5\.4"/);
 });
 
+test("AW Maintenance runs hourly with bounded deterministic discovery", () => {
+  const source = workflow("aw-maintenance.md");
+  const compiled = workflow("aw-maintenance.lock.yml");
+
+  assert.match(source, /schedule: "hourly"/);
+  assert.match(source, /engine:\n\s+id: pi\n\s+model: copilot\/mai-code-1\.1-flash/);
+  assert.match(source, /name: Deterministic pre-fetch of AW maintenance evidence/);
+  assert.match(source, /const MAX_EVIDENCE_CANDIDATES = 50/);
+  assert.match(source, /Use its bounded, pre-ranked `candidates` as the only source of GitHub discovery evidence/);
+  assert.match(source, /do not repeat its GitHub API queries in the agent/);
+  assert.match(compiled, /cron: "\d+ \*\/1 \* \* \*"  # Friendly format: hourly \(scattered\)/);
+  assert.match(compiled, /GH_AW_INFO_ENGINE_ID: "pi"/);
+  assert.match(compiled, /GH_AW_INFO_MODEL: "copilot\/mai-code-1\.1-flash"/);
+});
+
 test("SelfCare accessibility checker audits the served docs site with axe-core evidence", () => {
   const source = workflow("self-care-accessibility-checker.md");
   const liveGuard = "if: ${{ inputs.target_repo == 'githubnext/central-agentic-ops' && (inputs.safe_output_mode || 'review') == 'live' }}";
@@ -1621,8 +1646,14 @@ test("SelfCare accessibility checker audits the served docs site with axe-core e
   assert.match(source, /colorScheme: "light"/);
   assert.match(source, /colorScheme: "dark"/);
   assert.match(source, /prefers-reduced-motion/);
+  assert.match(source, /safe-outputs:\n\s+allowed-domains:\n\s+- githubnext\.github\.io\n\s+create-issue:/);
   assert.match(source, /create-issue:\n\s+target-repo:.*\n\s+title-prefix: "\[self-care:accessibility-checker\] "/);
+  assert.match(source, /labels: \[self-care\]/);
   assert.match(source, /close-older-key: self-care-accessibility-checker/);
+  assert.match(source, /Begin the issue body directly with a concise, unheaded executive summary/);
+  assert.match(source, /select the single most important action with the highest expected return on investment/);
+  assert.match(source, /<details><summary><b>Agent prompt<\/b><\/summary>/);
+  assert.match(source, /<details><summary><b>All Findings and Evidence<\/b><\/summary>/);
   assert.equal(source.split(liveGuard).length - 1, 5);
   assert.doesNotMatch(source, /^\s+(create-pull-request|add-comment|create-discussion|push-to-pull-request-branch):/m);
 });
@@ -1982,7 +2013,7 @@ test("clean-room compilation emits the expected GitHub Actions settings", { time
     rmSync(temporaryRoot, { recursive: true, force: true });
   }
 });
-test("Agent customizations preserve the deterministic dashboard exception", () => {
+test("Agent customizations preserve deterministic core package boundaries", () => {
   const agent = readFileSync(join(root, ".github", "agents", "agentic-workflows.md"), "utf8");
   const agenticWorkflowsSkill = readFileSync(join(root, ".github", "skills", "agentic-workflows", "SKILL.md"), "utf8");
   const packageSkill = readFileSync(join(root, ".github", "skills", "create-ops-package", "SKILL.md"), "utf8");
@@ -1991,10 +2022,12 @@ test("Agent customizations preserve the deterministic dashboard exception", () =
   assert.match(agent, /\.github\/aw\/instructions\.md/);
   assert.match(agenticWorkflowsSkill, /\.github\/aw\/instructions\.md/);
   assert.match(packageSkill, /## Deterministic Add-on Exception/);
+  assert.match(packageSkill, /core activity cache/);
   assert.match(packageSkill, /site-path/);
   assert.match(repositoryInstructions, /Keep `\.github\/workflows\/dashboard-build\.yml` reusable through `workflow_call` and package it through both dashboard manifests/);
   assert.match(repositoryInstructions, /existing Pages site, retain one Pages artifact uploader and deployer/);
   assert.match(repositoryInstructions, /must not add a schedule or another enable variable/);
+  assert.match(repositoryInstructions, /Keep workflow-run indexing out of operational packages and the dashboard/);
 });
 
 test("README routes zero-to-CAO requests to the setup skill", () => {
@@ -2014,8 +2047,12 @@ test("README routes zero-to-CAO requests to the setup skill", () => {
   assert.match(setupSkill, /Do you also want to create an operation package of your own/);
   assert.match(setupSkill, /plan an explicit handoff to `.github\/skills\/create-ops-package\/SKILL\.md` after step 13/);
   assert.match(setupSkill, /Never silently default the package to Dependabot/);
+  assert.match(setupSkill, /read the control repository's `.github\/workflows\/cao\.json` and the current dashboard state/);
+  assert.match(setupSkill, /If the policy and the live dashboard disagree, raise the drift to the user on the dashboard/);
   assert.match(createPackageSkill, /When invoked from `.github\/skills\/setup-central-agentic-ops\/SKILL\.md`/);
   assert.match(createPackageSkill, /accept the recorded desired outcome and target-repository description/);
+  assert.match(createPackageSkill, /compare the intended package state with the current `.github\/workflows\/cao\.json` and the dashboard's live control-plane view/);
+  assert.match(createPackageSkill, /raise the mismatch to the user on the dashboard before proceeding/);
   assert.match(createPackageSkill, /Do not repeat the custom-package yes\/no question or restart control-plane setup/);
   assert.match(setupSkill, /Ask which repository the first review run should target/);
   assert.match(setupSkill, /Offer `<organization>\/<control-repository>` as the default/);
@@ -2091,9 +2128,9 @@ test("Dashboard package supports embedded and explicit standalone deployment", (
   const buildWorkflow = readFileSync(join(root, ".github", "workflows", "dashboard-build.yml"), "utf8");
   const deployWorkflow = readFileSync(join(root, "dashboard", "dashboard.yml"), "utf8");
   const aicUsage = readFileSync(join(root, "dashboard", "report", "aic-usage.mjs"), "utf8");
-  const deployedWorkflows = readFileSync(join(root, "dashboard", "report", "deployed-workflows.mjs"), "utf8");
+  const deployedWorkflows = readFileSync(join(root, "activity", "index.mjs"), "utf8");
   const operationalValues = readFileSync(join(root, "dashboard", "report", "operational-values.mjs"), "utf8");
-  const reportAssets = ["aic-usage.mjs", "bundle-dashboards.mjs", "compose-dashboard-documents.mjs", "configure-site.mjs", "control-settings.mjs", "dashboard-language-sources.mjs", "deployed-workflows.mjs", "inventory.mjs", "operational-value-history.mjs", "operational-values.mjs", "records.mjs", "text-utils.mjs"];
+  const reportAssets = ["aic-usage.mjs", "bundle-dashboards.mjs", "compose-dashboard-documents.mjs", "configure-site.mjs", "control-settings.mjs", "dashboard-language-sources.mjs", "inventory.mjs", "operational-value-history.mjs", "operational-values.mjs", "records.mjs", "text-utils.mjs"];
   const reportEntrypoints = new Set(reportAssets.filter((assetName) => !["compose-dashboard-documents.mjs", "operational-value-history.mjs", "text-utils.mjs"].includes(assetName)));
   const normalizeInclude = (entry, sourcePrefix = "") => typeof entry === "string"
     ? { source: entry, destination: entry, kind: "action-workflow" }
@@ -2116,18 +2153,20 @@ test("Dashboard package supports embedded and explicit standalone deployment", (
   assert.doesNotMatch(dashboardManifest, /destination: \.github\/cao\//);
   assert.match(dashboardManifest, /source: local-server\.mjs\n\s+destination: \.github\/aw\/dashboard\/local-server\.mjs/);
   assert.match(canonicalPolicyResolver, /export function parsePolicy/);
-  assert.match(deployedWorkflows, /dashboardHorizonHours\(resolveDashboardHorizon\(dashboardDocument\.dashboard\)\)/);
-  assert.doesNotMatch(deployedWorkflows, /REPORT_RUN_WINDOW_HOURS/);
+  assert.match(deployedWorkflows, /REPORT_RUN_WINDOW_HOURS/);
   assert.match(buildWorkflow, /workflow_call:[\s\S]*?site-path:[\s\S]*?default: cao/);
   assert.match(buildWorkflow, /workflow_call:[\s\S]*?mode:[\s\S]*?default: live/);
   assert.match(buildWorkflow, /Require cached dashboard data[\s\S]*?if: inputs\.mode == 'cache'/);
-  assert.match(buildWorkflow, /Discover deployed agentic workflows\n\s+if: inputs\.mode == 'live'/);
+  assert.match(buildWorkflow, /activity:[\s\S]*?uses: \.\/\.github\/workflows\/activity\.yml/);
+  assert.match(buildWorkflow, /Restore workflow activity[\s\S]*?actions\/cache\/restore@[0-9a-f]{40}/);
+  assert.doesNotMatch(buildWorkflow, /Discover deployed agentic workflows/);
   assert.match(buildWorkflow, /Save dashboard data cache[\s\S]*?actions\/cache\/save@[0-9a-f]{40}/);
   assert.match(buildWorkflow, /control-settings\.mjs[\s\S]*?\.github\/cao\/src\/control\.mjs[\s\S]*?\.github\/workflows\/cao\.json[\s\S]*?"\$RUNNER_TEMP\/control-settings\.json"/);
   assert.match(buildWorkflow, /cp -R \.github\/aw\/dashboard\/site\/\. "\$REPORT_OUTPUT\/"/);
   assert.match(buildWorkflow, /configure-site\.mjs[\s\S]*?"\$REPORT_OUTPUT\/index\.html"[\s\S]*?"\$RUNNER_TEMP\/control-settings\.json"/);
   assert.match(buildWorkflow, /bundle-dashboards\.mjs[\s\S]*?"\$REPORT_OUTPUT\/dashboard\.json"[\s\S]*?\.github\/aw\/dashboards/);
   assert.match(buildWorkflow, /REPORT_RECORDS: \$\{\{ runner\.temp \}\}\/dashboard-data\/dashboard-records\.json/);
+  assert.match(buildWorkflow, /REPORT_DEPLOYED_WORKFLOWS: \$\{\{ runner\.temp \}\}\/cao-activity\/deployed-workflows\.json/);
   assert.match(buildWorkflow, /REPORT_DASHBOARD_SOURCES: \$\{\{ runner\.temp \}\}\/central-agentic-ops-dashboard\/\$\{\{ inputs\.site-path \}\}\/sources\.json/);
   assert.match(buildWorkflow, /name: central-agentic-ops-dashboard-data[\s\S]*?\/sources\.json/);
   assert.doesNotMatch(dashboardManifest, /redirects\.mjs/);
@@ -2180,6 +2219,36 @@ test("Dashboard package supports embedded and explicit standalone deployment", (
     }
     execFileSync(process.execPath, ["--check", assetPath]);
   }
+});
+
+test("Activity package owns the shared workflow-run cache contract", () => {
+  const rootManifest = parse(readFileSync(join(root, "aw.yml"), "utf8"));
+  const activityManifest = parse(readFileSync(join(root, "activity", "aw.yml"), "utf8"));
+  const workflow = readFileSync(join(root, "activity", "activity.yml"), "utf8");
+  const readme = readFileSync(join(root, "activity", "README.md"), "utf8");
+
+  assert.equal(activityManifest.name, "Central Agentic Ops Activity");
+  assert.deepEqual(activityManifest.includes, [{
+    source: "activity.yml",
+    destination: ".github/workflows/activity.yml",
+    kind: "action-workflow",
+  }]);
+  assert.deepEqual(activityManifest.resources, [
+    { source: "actions-log.mjs", destination: ".github/aw/activity/actions-log.mjs" },
+    { source: "index.mjs", destination: ".github/aw/activity/index.mjs" },
+  ]);
+  assert.ok(rootManifest.includes.some((entry) => entry.destination === ".github/workflows/activity.yml"));
+  assert.ok(rootManifest.resources.some((entry) => entry.destination === ".github/aw/activity/actions-log.mjs"));
+  assert.ok(rootManifest.resources.some((entry) => entry.destination === ".github/aw/activity/index.mjs"));
+  assert.match(workflow, /schedule:[\s\S]*?cron:/);
+  assert.match(workflow, /workflow_call:/);
+  assert.match(workflow, /concurrency:[\s\S]*?cancel-in-progress: false/);
+  assert.match(workflow, /actions\/cache\/restore@[0-9a-f]{40}/);
+  assert.match(workflow, /actions\/cache\/save@[0-9a-f]{40}/);
+  assert.match(workflow, /cao-activity-v1-\$\{\{ github\.repository \}\}-/);
+  assert.match(readme, /schemaVersion: 1/);
+  assert.match(readme, /Consumers must use the top-level completeness fields/);
+  assert.match(readme, /retained non-terminal runs receive a full-window refresh/);
 });
 
 test("Documentation Pages deploys docs with the packaged dashboard builder", () => {

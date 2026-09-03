@@ -4,6 +4,7 @@ import { spawnSync } from "node:child_process";
 import { mkdir, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { pathToFileURL } from "node:url";
+import { actionsLog as log } from "../../activity/actions-log.mjs";
 
 const REPOSITORY_PATTERN = /^[A-Za-z0-9][A-Za-z0-9-]*\/[A-Za-z0-9._-]+$/;
 
@@ -70,21 +71,27 @@ async function main([controlProgram, policyPath, outputPath]) {
   if (!controlProgram || !policyPath || !outputPath) {
     throw new Error("usage: control-settings.mjs <control.mjs> <policy.json> <output.json>");
   }
-  const settings = resolveDashboardControlSettings({
-    repository: process.env.GITHUB_REPOSITORY || "",
-    controlProgram,
-    policyPath,
-  });
-  await mkdir(path.dirname(outputPath), { recursive: true });
-  await writeFile(outputPath, `${JSON.stringify(settings, null, 2)}\n`);
-  if (settings.policy_resolution.status !== "available") {
-    console.warn(`Control policy resolution unavailable: ${settings.policy_resolution.reason}`);
+  log.group`Resolve dashboard control settings`;
+  try {
+    const settings = resolveDashboardControlSettings({
+      repository: process.env.GITHUB_REPOSITORY || "",
+      controlProgram,
+      policyPath,
+    });
+    await mkdir(path.dirname(outputPath), { recursive: true });
+    await writeFile(outputPath, `${JSON.stringify(settings, null, 2)}\n`);
+    if (settings.policy_resolution.status !== "available") {
+      log.warning`Control policy resolution unavailable: ${settings.policy_resolution.reason}`;
+    }
+    log.info`Wrote dashboard control settings to ${outputPath}`;
+  } finally {
+    log.endGroup();
   }
 }
 
 if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
   main(process.argv.slice(2)).catch((error) => {
-    process.stderr.write(`${error.message}\n`);
+    log.error`${error.stack || error.message || error}`;
     process.exitCode = 1;
   });
 }

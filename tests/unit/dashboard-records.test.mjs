@@ -160,3 +160,44 @@ test("dashboard records cannot widen checked-in repository policy", async () => 
     requestedRepositories: ["acme/other"],
   }), /cannot widen checked-in control policy/);
 });
+
+test("dashboard records stop on a GitHub rate limit and return a renderable error", async () => {
+  const requests = [];
+  const logs = [];
+  const originalLog = console.log;
+  console.log = (line) => logs.push(line);
+  try {
+    const output = await collectDashboardRecords({
+      repository: "acme/control",
+      token: "test-token",
+      controlSettings: { allowed_repositories: ["acme/service"] },
+      inventory,
+      deployedInventory: {
+        workflows: [{ repository: "acme/service" }],
+        allowedRepositories: ["acme/service"],
+      },
+      fetchImpl: async (input) => {
+        requests.push(input);
+        return new Response(JSON.stringify({ message: "API rate limit exceeded" }), {
+          status: 403,
+          headers: {
+            "x-ratelimit-remaining": "0",
+            "x-ratelimit-reset": "1788393600",
+          },
+        });
+      },
+      generatedAt: "2026-09-02T23:00:00Z",
+    });
+
+    assert.equal(output.generatedAt, "2026-09-02T23:00:00Z");
+    assert.deepEqual(output.records, []);
+    assert.equal(output.errorStatus, 403);
+    assert.match(output.error, /GitHub API rate limit exceeded/);
+    assert.match(output.error, /Retry after 2026-09-03T00:00:00.000Z/);
+    assert.match(output.error, /rate-limits-for-the-rest-api/);
+    assert.ok(logs.some((line) => line.startsWith("::warning::GitHub API rate limit exceeded")));
+    assert.ok(requests.every((request) => !request.includes("page=2")));
+  } finally {
+    console.log = originalLog;
+  }
+});

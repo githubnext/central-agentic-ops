@@ -74,6 +74,16 @@ Before activation, shared control checks the primary REST API capacity of the ex
 
 When capacity is insufficient, the run stops before repository discovery. The admission summary reports remaining and required requests, the UTC reset timestamp, and the approximate minutes and hours until reset. The dashboard exposes the latest failure as a GitHub API capacity admission gate rather than an undifferentiated workflow failure.
 
+### Fetch GitHub data efficiently
+
+Integrations that repeatedly read GitHub data should minimize both request volume and response size:
+
+- Use [conditional requests](https://docs.github.com/en/rest/using-the-rest-api/best-practices-for-using-the-rest-api#use-conditional-requests) for data that may be unchanged. Persist the last response's `ETag` and send it as `If-None-Match` on the next request; GitHub returns `304 Not Modified` without consuming the primary rate-limit quota when the representation is unchanged.
+- Use [GraphQL](https://docs.github.com/en/graphql/guides/using-graphql-with-github-actions) when a workflow needs related data from many repositories or resources. A single query can select only the fields needed and batch relationships that would otherwise require many REST requests.
+- Keep discovery bounded and reuse data already fetched in the current run. Do not poll while waiting for rate-limit replenishment; stop and report incomplete work instead.
+
+For direct HTTP clients, send the conditional-request headers explicitly. The CAO control precompute helper uses `gh api --cache 60s` for its bounded read requests; this lets the GitHub CLI reuse cached responses and negotiate conditional requests. For GitHub MCP calls, prefer one bounded query over repeated lookups. Conditional requests and GraphQL reduce avoidable traffic but do not replace the admission capacity check or the fail-closed limits described below.
+
 Follow this order:
 
 1. Do not rerun before the reported reset time. GitHub directs integrations with zero remaining capacity to wait until `x-ratelimit-reset`; repeated requests while limited can result in integration blocking. See [rate limits for the REST API](https://docs.github.com/en/rest/using-the-rest-api/rate-limits-for-the-rest-api#exceeding-the-rate-limit) and [REST API best practices](https://docs.github.com/en/rest/using-the-rest-api/best-practices-for-using-the-rest-api#handle-rate-limit-errors-appropriately).

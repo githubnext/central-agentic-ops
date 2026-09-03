@@ -32,7 +32,8 @@ Add `copilot-requests: write` directly to every Copilot-backed orchestrator and 
 4. Ask only for decisions that cannot be inferred safely. If the strategy is broad, split it into workers by independently dispatchable responsibility, not by implementation step.
 5. Create the orchestrator and every worker under `.github/workflows/` in the same change.
 6. Compile and validate all new source workflows. Repair failures before finishing.
-7. When an adopted worker already has an operational-value evaluator, preserve it under `.github/graders/` and keep its `graders.operational-value` registration. Evaluator design remains a separate post-adoption maintenance task.
+7. Before finalizing the package, compare the intended package state with the current `.github/workflows/cao.json` and the dashboard's live control-plane view. Confirm what is actually running, in which mode, and on which repositories. If the configuration drifts from reality, raise the mismatch to the user on the dashboard before proceeding.
+8. When an adopted worker already has an operational-value evaluator, preserve it under `.github/graders/` and keep its `graders.operational-value` registration. Evaluator design remains a separate post-adoption maintenance task.
 
 ## Deterministic Add-on Exception
 
@@ -134,6 +135,7 @@ Measure operational value per worker because workers have independently dispatch
 ## Shared Components
 
 - Always import `shared/control.md` with the correct role.
+- When an orchestrator or worker needs recent GitHub Agentic Workflow run history, restore the core activity cache before model execution and prefer `.github/aw/activity`'s schema-versioned `deployed-workflows.json` over downloading the same run pages again. Use the documented `${{ runner.os }}-cao-activity-v1-${{ github.repository }}-` restore prefix, validate `schemaVersion`, `generatedAt`, repository scope, evidence window, and completeness, and fetch only missing or stale evidence. Treat a cache miss as a fallback condition, never as authority to widen scope, and do not copy the activity indexer into an operational package.
 - Every orchestrator inherits the dedicated `central-agentic-ops.dispatcher.run` OTEL span from `shared/control.md`; do not duplicate dispatcher telemetry in package workflows.
 - `shared/sentry.md`, `shared/grafana.md`, and `shared/datadog.md` configure OTLP exporters only. Import them only when a package explicitly requires provider-specific routing; otherwise use the gh-aw organization defaults `GH_AW_DEFAULT_OTLP_ENDPOINT` and `GH_AW_DEFAULT_OTLP_HEADERS`.
 - Import `shared/review-bundle.md` when review mode must represent target-bound changes that cannot be emitted natively against the review repository.
@@ -170,5 +172,6 @@ Before finishing:
 13. Review the generated diff for accidental lockfile churn, secret exposure, unsafe live defaults, fabricated value evidence, and deviations from the nearest package that are not justified by the strategy.
 14. Confirm every orchestrator and worker uses the same optional `.github/cao/<package-slug>.md` runtime import and that no package-owned steering file was added.
 15. Confirm every worker preserves the inherited report contract: the output begins directly with a concise executive summary without a heading, critical information stays visible, and non-essential background and supporting detail use `<details>` sections.
+16. For workflows that consume recent run history, confirm they prefer a valid activity cache, preserve a bounded API fallback for cache misses or incomplete coverage, and do not publish or mutate the shared cache themselves.
 
 Report the created package, worker responsibilities, shared imports, checked-in policy fields, per-worker ops-value status, and validation results.

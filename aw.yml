@@ -2,6 +2,9 @@ name: Central Agentic Ops
 description: Central agentic workflow control plane for reusable packages at the organization level
 min-version: v0.88.0
 includes:
+  - source: activity/activity.yml
+    destination: .github/workflows/activity.yml
+    kind: action-workflow
   - .github/workflows/ambient-context-agents-md-curator.md
   - .github/workflows/ambient-context-skills-curator.md
   - .github/workflows/ambient-context.md
@@ -24,14 +27,16 @@ resources:
     destination: .github/aw/instructions.md
   - source: dashboard/local-server.mjs
     destination: .github/aw/dashboard/local-server.mjs
+  - source: activity/actions-log.mjs
+    destination: .github/aw/activity/actions-log.mjs
+  - source: activity/index.mjs
+    destination: .github/aw/activity/index.mjs
   - source: dashboard/report/aic-usage.mjs
     destination: .github/aw/dashboard/report/aic-usage.mjs
   - source: dashboard/report/text-utils.mjs
     destination: .github/aw/dashboard/report/text-utils.mjs
   - source: dashboard/report/control-settings.mjs
     destination: .github/aw/dashboard/report/control-settings.mjs
-  - source: dashboard/report/deployed-workflows.mjs
-    destination: .github/aw/dashboard/report/deployed-workflows.mjs
   - source: dashboard/report/inventory.mjs
     destination: .github/aw/dashboard/report/inventory.mjs
   - source: dashboard/report/operational-values.mjs
@@ -134,8 +139,8 @@ resources:
     destination: .github/aw/dashboard/site/src/components/run-classification.js
   - source: dashboard/site/src/components/run-conclusion-classification.json
     destination: .github/aw/dashboard/site/src/components/run-conclusion-classification.json
-  - source: dashboard/site/src/components/summary-copy.js
-    destination: .github/aw/dashboard/site/src/components/summary-copy.js
+  - source: dashboard/site/src/components/site-callout.js
+    destination: .github/aw/dashboard/site/src/components/site-callout.js
   - source: dashboard/site/src/components/tab-nav.js
     destination: .github/aw/dashboard/site/src/components/tab-nav.js
   - source: dashboard/site/src/components/table-region.js

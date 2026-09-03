@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import { describe, expect, it } from 'vitest';
-import { coverageWindowHours, formatMediumUtcDate, formatMediumUtcDateTime, formatUtcDateTime, renderSectionHeading, renderTableSummaryEmpty, renderVitalStat } from '../../src/components/ui-primitives.js';
+import { coverageWindowHours, formatMediumUtcDate, formatMediumUtcDateTime, formatUtcDateTime, renderSectionHeading, renderTableSummaryEmpty, renderTooltip, renderVitalStat } from '../../src/components/ui-primitives.js';
 
 describe('ui primitives', () => {
   it('renders shared section-heading markup with configurable heading levels', () => {
@@ -42,6 +42,22 @@ describe('ui primitives', () => {
     expect(withDetail.querySelector('p')?.textContent).toBe('observed orchestrator runs');
     expect(withoutDetail.textContent).toBe('Measured AIC—');
     expect(withoutDetail.querySelector('p')).toBeNull();
+  });
+
+  it('renders accessible tooltip semantics around arbitrary rich content', () => {
+    const tooltip = renderTooltip({
+      id: 'example-tooltip',
+      label: 'Example details',
+      description: 'Additional context.',
+      icon: document.createTextNode('?'),
+      content: document.createElement('strong')
+    });
+
+    expect(tooltip.querySelector('.tooltip-trigger')?.getAttribute('aria-label')).toBe('Example details');
+    expect(tooltip.querySelector('.tooltip-trigger')?.getAttribute('aria-describedby')).toBe('example-tooltip');
+    expect(tooltip.querySelector('.tooltip-content')?.getAttribute('role')).toBe('tooltip');
+    expect(tooltip.querySelector('.tooltip-description')?.textContent).toBe('Additional context.');
+    expect(tooltip.querySelector('.tooltip-content strong')).not.toBeNull();
   });
 
   it('formats UTC date-time text and preserves the unavailable fallback', () => {

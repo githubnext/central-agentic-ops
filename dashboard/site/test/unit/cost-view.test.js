@@ -59,7 +59,7 @@ describe('Cost and efficiency dashboard view', () => {
     expect(filterBar?.querySelector('input')?.value).toBe('mode:review mode:live');
     expect(filterBar?.querySelector('.count-badge')?.textContent).toBe('2');
     expect(filterBar?.querySelector('.scope-period')).toBeNull();
-    expect(rendered.querySelector('.dashboard-horizon')?.textContent).toBe('Horizon 1 week');
+    expect(rendered.querySelector('.dashboard-horizon > span:first-child')?.textContent).toBe('Horizon 1 week');
     expect(filterBar?.querySelector('.export-control')).toBeNull();
 
     const summary = page?.querySelector('.summary-grid');

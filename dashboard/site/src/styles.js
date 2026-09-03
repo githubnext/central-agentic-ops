@@ -93,8 +93,25 @@ a:focus-visible, [tabindex]:focus-visible, button:focus-visible { outline: 2px s
 .app-main > nav .shell > a:not([hidden]) { min-height: 24px; display: inline-flex; align-items: center; }
 .app-main > nav .shell > :not([hidden]) ~ :not([hidden], .report-actions)::before { content: "/"; margin-right: 8px; color: var(--muted); }
 .report-actions { margin-left: auto; display: flex; align-items: center; gap: 10px; }
+.site-callouts { display: grid; gap: 8px; padding: 16px 24px 0; }
+.site-callout { min-width: 0; display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: start; gap: 10px; padding: 12px 14px; border: 1px solid var(--attention); border-radius: 6px; background: var(--attention-muted); color: var(--fg); }
+.site-callout-icon { display: grid; place-items: center; padding-top: 2px; color: var(--attention); }
+.site-callout-content { min-width: 0; display: grid; gap: 2px; }
+.site-callout-content > span { color: var(--muted); }
+.site-callout-dismiss { width: 28px; height: 28px; display: grid; place-items: center; padding: 0; border: 0; border-radius: 6px; background: transparent; color: var(--muted); cursor: pointer; }
+.site-callout-dismiss:hover { background: var(--neutral-muted); color: var(--fg); }
 .dashboard-horizon, .freshness { max-width: none; flex: none; display: flex; align-items: center; gap: 8px; color: var(--muted); font-size: .75rem; white-space: nowrap; }
 .dashboard-horizon { padding-right: 10px; border-right: 1px solid var(--border); font-weight: 600; }
+.tooltip-help { position: relative; display: inline-flex; }
+.tooltip-trigger { width: 22px; height: 22px; display: grid; place-items: center; padding: 0; border: 0; border-radius: 50%; background: transparent; color: var(--muted); cursor: help; }
+.tooltip-trigger:hover { background: var(--neutral-muted); color: var(--fg); }
+.tooltip-trigger .octicon { width: 14px; height: 14px; }
+.tooltip-content { width: min(320px, calc(100vw - 28px)); position: absolute; z-index: 20; top: calc(100% + 8px); right: 0; display: grid; gap: 10px; padding: 12px; border: 1px solid var(--border); border-radius: 6px; background: var(--canvas); box-shadow: 0 8px 24px color-mix(in srgb, var(--canvas-inset) 45%, transparent); color: var(--fg); font-weight: 400; line-height: 1.4; white-space: normal; visibility: hidden; opacity: 0; pointer-events: none; transition: opacity 80ms linear, visibility 80ms linear; }
+.tooltip-help:hover .tooltip-content, .tooltip-help:focus-within .tooltip-content { visibility: visible; opacity: 1; }
+.tooltip-description { color: var(--muted); }
+.horizon-tooltip-values { display: grid; gap: 6px; }
+.horizon-tooltip-values > span { display: grid; grid-template-columns: 56px minmax(0, 1fr); gap: 8px; }
+.horizon-tooltip-values strong { font-weight: 600; }
 .refresh-button { display: inline-flex; align-items: center; gap: 6px; min-height: 28px; padding: 3px 12px; border: 1px solid var(--border); border-radius: 6px; background: var(--canvas-subtle); color: var(--fg); font: inherit; font-size: .75rem; font-weight: 500; text-decoration: none; cursor: pointer; transition: background-color 120ms ease; }
 .refresh-button:hover { background: var(--neutral-muted); }
 .refresh-button .octicon { width: 14px; height: 14px; }
@@ -742,6 +759,7 @@ footer { padding: 20px 24px; border-top: 1px solid var(--border); color: var(--m
   .primary-nav a, .sidebar-collapsed .primary-nav a { min-height: 44px; flex: none; justify-content: flex-start; gap: 10px; padding-inline: 8px; }
   .primary-nav a[aria-current="page"]::before { content: none; }
   .app-main > nav .shell { flex-wrap: wrap; padding-inline: 14px; }
+  .site-callouts { padding-inline: 14px; }
   .breadcrumb .shell > :is([data-breadcrumb-root], [data-breadcrumb-dashboard]) { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .report-actions { width: 100%; margin-left: 0; }
   .freshness { min-width: 0; flex: 1; white-space: normal; }
