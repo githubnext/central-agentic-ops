@@ -4433,12 +4433,6 @@
         ]
       },
       {
-        "label": "Control plane",
-        "pages": [
-          "readiness"
-        ]
-      },
-      {
         "label": "Investigate",
         "pages": [
           "runtime",
@@ -4449,6 +4443,14 @@
         ]
       },
       {
+        "label": "Control plane",
+        "pages": [
+          "readiness",
+          "data-health",
+          "updates"
+        ]
+      },
+      {
         "label": "Explore",
         "pages": [
           "dispatches",
@@ -4456,13 +4458,6 @@
           "repositories",
           "packages",
           "engines-models"
-        ]
-      },
-      {
-        "label": "Maintain",
-        "pages": [
-          "data-health",
-          "updates"
         ]
       }
     ]

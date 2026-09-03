@@ -499,25 +499,25 @@ describe('presenter built-in and custom pages', () => {
     });
 
     const labels = [...rendered.querySelectorAll('.nav-section-label')].map((node) => node.textContent?.trim());
-    expect(labels).toEqual(['Attention', 'Control plane', 'Investigate', 'Explore', 'Maintain', 'Package operations']);
+    expect(labels).toEqual(['Attention', 'Investigate', 'Control plane', 'Explore', 'Package operations']);
     expect(rendered.querySelector('[data-nav-page-id="overview"]')?.previousElementSibling?.textContent).toBe('Attention');
-    expect(rendered.querySelector('[data-nav-page-id="readiness"]')?.previousElementSibling?.textContent).toBe('Control plane');
     expect(rendered.querySelector('[data-nav-page-id="runtime"]')?.previousElementSibling?.textContent).toBe('Investigate');
+    expect(rendered.querySelector('[data-nav-page-id="readiness"]')?.previousElementSibling?.textContent).toBe('Control plane');
     expect([...rendered.querySelectorAll('.nav-label')].map((node) => node.textContent)).toEqual([
       'Overview',
-      'Readiness',
       'Runtime',
       'Performance',
       'Security',
       'Value',
       'Cost',
+      'Readiness',
+      'Data health',
+      'Updates',
       'Dispatches',
       'Workflows',
       'Repositories',
       'Packages',
       'Models & agents',
-      'Data health',
-      'Updates',
       'UK AI advisory',
       'Ambient context',
       'AW Maintenance',
@@ -657,19 +657,19 @@ describe('presenter built-in and custom pages', () => {
     expect(menu?.querySelector('summary')?.getAttribute('aria-label')).toBe('Select view');
     expect(menuLinks.map((link) => link.textContent?.trim())).toEqual([
       'Overview',
-      'Readiness',
       'Runtime',
       'Performance',
       'Security',
       'Value',
       'Cost',
+      'Readiness',
+      'Data health',
+      'Updates',
       'Dispatches',
       'Workflows',
       'Repositories',
       'Packages',
       'Models & agents',
-      'Data health',
-      'Updates',
       'UK AI advisory',
       'Ambient context',
       'AW Maintenance',
