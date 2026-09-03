@@ -21,6 +21,7 @@ export function deriveRuntimeSources(sources) {
   const signals = [];
   const dispatches = deriveDispatches(model);
   const dispatchActivationSummary = deriveDispatchActivationSummary(dispatches);
+  const packageDispatchState = derivePackageDispatchState(model, sources);
   const episodeSummary = deriveEpisodeSummary(model, sources.runs?.metadata);
   const episodes = deriveEpisodes(model);
   const attributionGaps = deriveAttributionGaps(model);
@@ -129,6 +130,11 @@ export function deriveRuntimeSources(sources) {
     'dispatch-activation-summary': {
       source: 'dispatch-activation-summary',
       rows: dispatchActivationSummary,
+      metadata: combinedMetadata(sources)
+    },
+    'package-dispatch-state': {
+      source: 'package-dispatch-state',
+      rows: packageDispatchState,
       metadata: combinedMetadata(sources)
     },
     'runtime-episode-summary': {
@@ -296,6 +302,112 @@ function deriveDispatchActivationSummary(dispatches) {
     { label: 'Skipped by guards', value: formatCount(skipped) },
     { label: 'Total dispatches', value: formatCount(total) }
   ];
+}
+
+/**
+ * @param {ExecutionModel} model
+ * @param {Record<string, import('./presenter.js').LogicalSourceInput>} sources
+ * @returns {Row[]}
+ */
+function derivePackageDispatchState(model, sources) {
+  const usageAvailable = Boolean(sources.usage) && sources.usage?.metadata?.availability !== 'unavailable';
+  const summaries = new Map();
+  const workflowPackages = new Map();
+  const dispatchRuns = new Set();
+
+  for (const workflow of model.workflows.values()) {
+    const packageId = text(workflow.package);
+    if (!packageId) continue;
+    const key = packageKey(workflow);
+    workflowPackages.set(runKey(workflow), key);
+    if (!summaries.has(key)) {
+      summaries.set(key, {
+        package: packageId,
+        'package-name': text(workflow['package-name']) || packageId,
+        'dispatch-runs': 0,
+        skipped: 0,
+        failed: 0,
+        succeeded: 0,
+        workers: new Map(),
+        aic: usageAvailable ? 0 : null,
+        agents: new Set(),
+        models: new Set()
+      });
+    }
+  }
+
+  for (const run of model.runs.filter((candidate) => text(candidate.event) === 'workflow_dispatch')) {
+    const workflow = model.workflows.get(runKey(run));
+    const summary = summaries.get(workflow ? workflowPackages.get(runKey(workflow)) : '');
+    if (!workflow || !summary) continue;
+    summary['dispatch-runs'] += 1;
+    dispatchRuns.add(runIdentity(run));
+    const conclusion = text(run['run-conclusion']);
+    if (conclusion === 'skipped') summary.skipped += 1;
+    if (FAILURE_CONCLUSIONS.has(conclusion)) summary.failed += 1;
+    if (conclusion === 'success') summary.succeeded += 1;
+    if (text(workflow['workflow-role']) === 'worker') {
+      const worker = workflowName(workflow, run);
+      summary.workers.set(worker, (summary.workers.get(worker) ?? 0) + 1);
+    }
+    addText(summary.agents, run.engine);
+    addText(summary.models, run['resolved-model'] || run['requested-model']);
+  }
+
+  if (usageAvailable) {
+    for (const observation of rowsFor(sources, 'usage')) {
+      if (!dispatchRuns.has(runIdentity(observation))) continue;
+      const summary = summaries.get(workflowPackages.get(runKey(observation)));
+      if (!summary) continue;
+      const aic = Number(observation.aic);
+      if (Number.isFinite(aic) && aic >= 0) summary.aic += aic;
+      addText(summary.agents, observation.engine);
+      addText(summary.models, observation['resolved-model'] || observation['requested-model']);
+    }
+  }
+
+  return [...summaries.values()]
+    .map((summary) => ({
+      package: summary.package,
+      'package-name': summary['package-name'],
+      'dispatch-runs': summary['dispatch-runs'],
+      skipped: summary.skipped,
+      failed: summary.failed,
+      succeeded: summary.succeeded,
+      'worker-dispatches': formatWorkerDispatches(summary.workers),
+      ...(summary.aic === null ? {} : { aic: summary.aic }),
+      agent: joinValues(summary.agents),
+      model: joinValues(summary.models)
+    }))
+    .sort((left, right) => text(left['package-name']).localeCompare(text(right['package-name'])));
+}
+
+/** @param {Row} row */
+function packageKey(row) {
+  return `${text(row.organization).toLowerCase()}/${text(row.repository).toLowerCase()}:${text(row.package).toLowerCase()}`;
+}
+
+/** @param {Row} row */
+function runIdentity(row) {
+  return `${runKey(row)}#${text(row.run)}`;
+}
+
+/** @param {Set<string>} values @param {unknown} value */
+function addText(values, value) {
+  const normalized = text(value);
+  if (normalized) values.add(normalized);
+}
+
+/** @param {Set<string>} values */
+function joinValues(values) {
+  return values.size > 0 ? [...values].sort().join(', ') : '—';
+}
+
+/** @param {Map<string, number>} workers */
+function formatWorkerDispatches(workers) {
+  return workers.size > 0
+    ? [...workers].sort(([left], [right]) => left.localeCompare(right)).map(([worker, count]) => `${worker}: ${formatCount(count)}`).join(', ')
+    : '—';
 }
 
 /**
