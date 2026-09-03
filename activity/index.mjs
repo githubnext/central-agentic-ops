@@ -288,7 +288,7 @@ function workflowWorkerIds(source) {
     .filter(Boolean);
 }
 
-async function workflowCapabilities(repositoryName, lockPath) {
+async function workflowCapabilities(repositoryName, lockPath, registryOnly) {
   const sourcePath = lockPath.replace(/\.lock\.yml$/, ".md");
   const [source, lock] = await Promise.allSettled([
     fileContent(repositoryName, sourcePath),
@@ -313,12 +313,17 @@ async function workflowCapabilities(repositoryName, lockPath) {
       ...payloads,
     };
   } catch (error) {
-    log.warning`${error.message}; workflow capabilities are unknown for ${repositoryName}/${sourcePath}`;
+    const sourceMissing = /GitHub API 404\b/.test(error.message);
+    const staleRegistration = sourceMissing && registryOnly;
+    if (!staleRegistration) {
+      log.warning`${error.message}; workflow capabilities are unknown for ${repositoryName}/${sourcePath}`;
+    }
     return {
       operationalValue: null,
       role: "unknown",
       workers: [],
-      sourceAvailable: !/GitHub API 404\b/.test(error.message) ? null : false,
+      sourceAvailable: sourceMissing ? false : null,
+      staleRegistration,
       ghAwVersion,
       ...payloads,
     };
@@ -533,10 +538,13 @@ if (!repositoryScopeEnabled) {
   })).flat();
 }
 const discovered = new Map();
+const codeSearchWorkflowKeys = new Set();
 for (const item of matches) {
   if (!item.path.startsWith(".github/workflows/") || !item.path.endsWith(".lock.yml")) continue;
   if (item.repository.private && !includePrivate) continue;
-  discovered.set(`${item.repository.full_name}:${item.path}`, {
+  const key = `${item.repository.full_name}:${item.path}`;
+  codeSearchWorkflowKeys.add(key);
+  discovered.set(key, {
     repository: item.repository.full_name,
     visibility: item.repository.visibility?.toLowerCase() || (item.repository.private ? "private" : "public"),
     path: item.path,
@@ -602,9 +610,20 @@ const [runHealth, organizationRepositories, latestVersion] = await Promise.all([
   latestGhAwVersion(),
 ]);
 
+const staleRegistrationsByRepository = new Map();
 const discoveredWorkflows = await mapWithConcurrency([...discovered.values()], 8, async (item) => {
   const registered = registryByRepository.get(item.repository)?.get(item.path);
-  const capabilities = await workflowCapabilities(item.repository, item.path);
+  const { staleRegistration, ...capabilities } = await workflowCapabilities(
+    item.repository,
+    item.path,
+    !codeSearchWorkflowKeys.has(`${item.repository}:${item.path}`),
+  );
+  if (staleRegistration) {
+    staleRegistrationsByRepository.set(
+      item.repository,
+      (staleRegistrationsByRepository.get(item.repository) || 0) + 1,
+    );
+  }
   return {
     ...item,
     id: registered?.id || null,
@@ -618,6 +637,15 @@ const discoveredWorkflows = await mapWithConcurrency([...discovered.values()], 8
     updateState: updateState(capabilities.ghAwVersion, latestVersion),
   };
 });
+const staleRegistrationCount = [...staleRegistrationsByRepository.values()]
+  .reduce((total, count) => total + count, 0);
+if (staleRegistrationCount > 0) {
+  const repositories = [...staleRegistrationsByRepository.entries()]
+    .sort(([left], [right]) => left.localeCompare(right))
+    .map(([name, count]) => `${name}: ${count}`)
+    .join(", ");
+  log.notice`Ignored ${staleRegistrationCount} stale Actions workflow registrations whose Markdown sources are absent from the default branch (${repositories})`;
+}
 const missingSourceCount = discoveredWorkflows.filter((workflow) => workflow.sourceAvailable === false).length;
 const workflows = discoveredWorkflows
   .filter((workflow) => workflow.sourceAvailable !== false)
