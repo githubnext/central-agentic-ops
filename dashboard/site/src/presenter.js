@@ -20,6 +20,7 @@ import { deriveOverviewSources } from './overview-data.js';
 import { deriveRepositorySources } from './repository-data.js';
 import { deriveRuntimeSources } from './runtime-data.js';
 import { deriveWorkflowSources } from './workflow-data.js';
+import { deriveDataHealthSources } from './data-health.js';
 import { dashboardHorizonHours, formatDashboardHorizon, formatDashboardHorizonHours, resolveDashboardHorizon } from './horizon.js';
 
 /**
@@ -133,13 +134,13 @@ export function renderDashboard(input) {
   const dashboardRepository = typeof document.dashboard.repository === 'string' && document.dashboard.repository.length > 0
     ? document.dashboard.repository
     : null;
-  const sources = deriveWorkflowDashboardLinks(
+  const sources = deriveDataHealthSources(deriveWorkflowDashboardLinks(
     deriveRepositoryDashboardLinks(
       deriveRuntimeSources(deriveRepositorySources(deriveOverviewSources(deriveWorkflowSources(deriveEntityLinkSources(rawSources, githubUrlBase))))),
       pages
     ),
     pages
-  );
+  ));
   const orgName = inferOrganizationName(sources) || 'GitHub';
   const sidebarTitle = dashboardRepository?.split('/').at(-1) || orgName;
   const evaluatedAt = dataHorizon?.end ?? latestRetrievedAt(sources) ?? new Date().toISOString();
@@ -175,6 +176,7 @@ export function renderDashboard(input) {
         ? renderPage(page, sources, isPlainObject(document.dashboard.units) ? document.dashboard.units : {}, dashboardDefaults)
         : null;
     }
+
   );
   return root;
 }
