@@ -488,7 +488,7 @@ test("control workflows deny before activation through one shared admission cont
   assert.match(sharedControl, /name: Checkout CAO control modules/);
   assert.match(sharedControl, /actions\/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7\.0\.1/);
   assert.match(sharedControl, /ref: \$\{\{ github\.workflow_sha \}\}/);
-  assert.match(sharedControl, /path: \$\{\{ runner\.temp \}\}\/cao/);
+  assert.match(sharedControl, /path: cao\n/);
   assert.match(sharedControl, /sparse-checkout: \.github\/cao\/src/);
   assert.match(sharedControl, /sparse-checkout-cone-mode: true/);
   assert.match(sharedControl, /fetch-depth: 1/);
