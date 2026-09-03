@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
 import { createServer } from "node:http";
-import { execFile, spawn } from "node:child_process";
+import { execFile } from "node:child_process";
 import { createHash, randomBytes } from "node:crypto";
 import {
   copyFile,
@@ -13,7 +13,8 @@ import {
   stat,
   writeFile,
 } from "node:fs/promises";
-import { watch } from "node:fs";
+import { existsSync, watch } from "node:fs";
+import { createRequire } from "node:module";
 import { isIP } from "node:net";
 import { promisify } from "node:util";
 import {
@@ -113,8 +114,7 @@ async function packageDashboardPaths(catalogRoot, installedDashboardsDirectory) 
       throw error;
     });
     for (const entry of catalogEntries) {
-      if (!entry.isDirectory()) continue;
-      if (entry.name.startsWith(".cao-dashboard-preview-")) continue;
+      if (!entry.isDirectory() || entry.name.startsWith(".")) continue;
       const path = join(catalogRoot, entry.name, "dashboard.json");
       if ((await stat(path).catch(() => null))?.isFile()) paths.push(path);
     }
@@ -252,6 +252,20 @@ function errorMetadata(error) {
   };
 }
 
+function resolveCopilotCliPath() {
+  const arch = process.arch;
+  const variants = process.platform === "linux" ? ["linux", "linuxmusl"] : [process.platform];
+  const req = createRequire(import.meta.url);
+  const searchPaths = req.resolve.paths("@github/copilot") ?? [];
+  for (const base of searchPaths) {
+    for (const variant of variants) {
+      const candidate = join(base, "@github", `copilot-${variant}-${arch}`, "index.js");
+      if (existsSync(candidate)) return candidate;
+    }
+  }
+  return undefined;
+}
+
 async function startCopilotRuntime({ workingDirectory, copilotExecutable }) {
   console.log("Loading Copilot SDK runtime.", { workingDirectory });
   let sdk;
@@ -261,10 +275,11 @@ async function startCopilotRuntime({ workingDirectory, copilotExecutable }) {
     console.log("Copilot SDK runtime is unavailable. Install @github/copilot-sdk.");
     throw new Error("Copilot mode requires @github/copilot-sdk.");
   }
+  const cliPath = copilotExecutable || resolveCopilotCliPath();
   const { CopilotClient, defineTool, RuntimeConnection } = sdk;
   const client = new CopilotClient({
     connection: RuntimeConnection.forTcp({
-      ...(copilotExecutable ? { path: copilotExecutable } : {}),
+      ...(cliPath ? { path: cliPath } : {}),
     }),
     workingDirectory,
     logLevel: "debug",
@@ -922,46 +937,8 @@ async function main() {
   process.once("SIGTERM", shutdown);
 }
 
-async function runWithWorkspacePermissions() {
-  const workspace = await realpath(process.cwd());
-  const outsideWorkspaceProbe = resolve(workspace, "..", ".cao-outside-workspace-probe");
-  const { host = "127.0.0.1" } = parseArguments(process.argv.slice(2));
-  if (process.env.CAO_DASHBOARD_PERMISSION_CHILD === "1"
-      && process.permission?.has("fs.read", workspace)
-      && process.permission.has("fs.write", workspace)
-      && !process.permission.has("fs.read", outsideWorkspaceProbe)
-      && !process.permission.has("fs.write", outsideWorkspaceProbe)) {
-    await main();
-    return;
-  }
-  console.log("Launching dashboard server with workspace filesystem permissions.", { workspace });
-  const child = spawn(process.execPath, [
-    "--permission",
-    `--allow-fs-read=${workspace}${sep}`,
-    `--allow-fs-write=${workspace}${sep}`,
-    "--allow-child-process",
-    `--allow-net=${host}`,
-    fileURLToPath(import.meta.url),
-    ...process.argv.slice(2),
-  ], {
-    cwd: workspace,
-    env: {
-      ...process.env,
-      NODE_OPTIONS: "",
-      CAO_DASHBOARD_PERMISSION_CHILD: "1",
-    },
-    stdio: "inherit",
-  });
-  const { code, signal } = await new Promise((accept, reject) => {
-    child.once("error", reject);
-    child.once("exit", (code, signal) => accept({ code, signal }));
-  });
-  if (signal) throw new Error(`Dashboard server exited from signal ${signal}.`);
-  process.exitCode = code ?? 1;
-}
-
 if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
-  await runWithWorkspacePermissions().catch((error) => {
+  await main().catch((error) => {
     console.log(error instanceof Error ? error.message : String(error));
     process.exitCode = 1;
   });
