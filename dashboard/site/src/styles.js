@@ -53,6 +53,12 @@ export function primerStylesheet() {
 * { box-sizing: border-box; }
 html { scroll-behavior: smooth; -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
 body { margin: 0; background: var(--canvas); color: var(--fg); font: .875rem/1.5 -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji"; letter-spacing: 0; }
+.dashboard-copilot-prompt { display: flex; gap: 8px; align-items: center; padding: 12px 16px; border-bottom: 1px solid var(--border); background: var(--canvas-subtle); color: var(--fg); }
+.dashboard-copilot-prompt label { font-weight: 600; }
+.dashboard-copilot-prompt input { min-width: 12rem; flex: 1; padding: 6px 10px; border: 1px solid var(--border); border-radius: 6px; background: var(--canvas); color: var(--fg); font: inherit; }
+.dashboard-copilot-prompt button { padding: 6px 12px; border: 1px solid var(--border); border-radius: 6px; background: var(--canvas); color: var(--fg); font: inherit; font-weight: 600; cursor: pointer; }
+.dashboard-copilot-prompt button:disabled { color: var(--muted); cursor: wait; }
+.dashboard-copilot-prompt output { color: var(--muted); }
 .dashboard-root { min-height: 100vh; background: var(--canvas); color: var(--fg); font: .875rem/1.5 -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji"; }
 .octicon-sprite { width: 0; height: 0; position: absolute; overflow: hidden; }
 .octicon { width: 16px; height: 16px; flex: 0 0 16px; fill: currentColor; vertical-align: text-bottom; }
