@@ -11,13 +11,13 @@ import-schema:
     type: string
     default: "__none__"
   dispatch_max:
-    type: string
+    type: number
     default: "1"
   orchestrator_credits:
-    type: string
+    type: number
     default: "0"
   worker_credits_per_target:
-    type: string
+    type: number
     default: "0"
 
 github-app:
