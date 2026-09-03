@@ -86,11 +86,15 @@ Do not leave angle-bracket placeholders in authored files or pass placeholders t
     cao_ref=$(gh api repos/githubnext/gh-aw-cao/commits/main --jq '.sha')
     [[ "$cao_ref" =~ ^[0-9a-fA-F]{40,64}$ ]]
     gh aw add "githubnext/gh-aw-cao@${cao_ref}"
-    mkdir -p .github/cao/src
-    for cao_file in control.mjs policy.mjs; do
-      gh api --method GET "repos/githubnext/gh-aw-cao/contents/.github/cao/src/${cao_file}" \
-        -f ref="$cao_ref" --jq '.content' | base64 -d > ".github/cao/src/${cao_file}"
-    done
+    cao_checkout="$(mktemp -d)"
+    git init "$cao_checkout"
+    git -C "$cao_checkout" remote add origin https://github.com/githubnext/gh-aw-cao.git
+    git -C "$cao_checkout" fetch --depth=1 origin "$cao_ref"
+    git -C "$cao_checkout" sparse-checkout set --cone .github/cao/src
+    git -C "$cao_checkout" checkout --detach "$cao_ref"
+    mkdir -p .github/cao
+    cp -R "$cao_checkout/.github/cao/src" .github/cao/
+    rm -rf "$cao_checkout"
     ```
 
     A reviewed release tag may replace `main` when resolving `cao_ref`. Do not pass an unresolved branch or omit the ref: one immutable source identity keeps repeated package dependencies consistent and records a reproducible installation. In a source-managed control repository, do not install a package over workflows maintained directly in-tree. Its reviewed workflow sources, generated locks, runtime files, and policy form the runtime revision; verify them at the current commit instead.
