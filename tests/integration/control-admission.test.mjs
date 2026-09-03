@@ -86,7 +86,9 @@ test("CAO admission authorizes a declared package before activation", () => {
   assert.equal(result.status, 0, result.stderr);
   assert.equal(result.stdout, [
     "::group::Central Agentic Ops admission",
-    "[CAO] Loaded and validated the control policy.",
+    "[CAO policy] Parsing control policy.",
+    "[CAO policy] Validated control policy.",
+    "[CAO policy] Resolving effective policy.",
     "[CAO] Admission authorized.",
     "::endgroup::",
     "",
@@ -104,7 +106,9 @@ test("CAO admission emits plain logs outside GitHub Actions", () => {
   assert.equal(result.status, 0, result.stderr);
   assert.equal(result.stdout, [
     "[CAO] Central Agentic Ops admission",
-    "[CAO] Loaded and validated the control policy.",
+    "[CAO policy] Parsing control policy.",
+    "[CAO policy] Validated control policy.",
+    "[CAO policy] Resolving effective policy.",
     "[CAO] Admission authorized.",
     "",
   ].join("\n"));

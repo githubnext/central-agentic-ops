@@ -285,9 +285,8 @@ function admit() {
     } catch {
       throw new ControlError(`cannot read ${POLICY_PATH} at github.workflow_sha`);
     }
-    const document = parsePolicy(source);
-    log("Loaded and validated the control policy.");
-    result = applyGithubApiAdmission(effectivePolicy(document, options), options);
+    const document = parsePolicy(source, { logging: true });
+    result = applyGithubApiAdmission(effectivePolicy(document, options, { logging: true }), options);
     writeFileSync(join(directory, "effective-policy.json"), `${JSON.stringify(result, null, 2)}\n`);
   } catch (error) {
     const message = error instanceof PolicyError
@@ -533,7 +532,7 @@ function validateLiveAuthority(context) {
   let document;
   try {
     authoritySource = decodeRepositoryFile(context.targetRepository, POLICY_PATH, targetSha);
-    document = parsePolicy(authoritySource);
+    document = parsePolicy(authoritySource, { logging: true });
   } catch (error) {
     if (error instanceof PolicyError) {
       if (typeof authoritySource === "string" && error.message === `target-authority.packages.${packageName}.authority has an invalid value`) {
