@@ -30,6 +30,7 @@ Apply the guidance for every role that is present. Do not infer a role from the 
 ## Working changes
 
 - Read the relevant workflow source, its imports, its package manifest, and the effective policy before changing behavior.
+- Always run `gh aw compile` if any `.md` file is modified.
 - In the catalog, follow the relevant skill under `.github/skills/` and run the narrowest tests plus `npm run compile`.
 - In a control repository, validate policy JSON after editing it, reject unresolved placeholders, run `gh aw compile` after workflow-source changes, and review generated lock-file diffs.
 - Do not modify unrelated packages, generated files, or consumer-owned steering while updating an installed package.
