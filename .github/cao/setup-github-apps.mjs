@@ -367,7 +367,7 @@ function matchingInstallation(app, owner) {
   ));
 }
 
-function validateInstallationScope(installation, owner) {
+export function validateInstallationScope(installation, owner) {
   if (installation.repositorySelection !== "selected") {
     const settingsUrl = `https://github.com/organizations/${owner}/settings/installations/${installation.id}`;
     throw new Error(`GitHub App is installed for all ${owner} repositories; select only approved repositories at ${settingsUrl}`);
@@ -388,26 +388,6 @@ function openInstallation(app, openBrowser) {
   if (!openBrowser || !openUrl(app.installUrl)) {
     console.error(`Open this URL to install the App: ${app.installUrl}`);
   }
-}
-
-function installationIncludesRepository(installation, app, repo) {
-  const matches = installation.clientId === app.clientId
-    || installation.slug === app.slug
-    || (installation.appId && installation.appId === app.id);
-  if (!matches) {
-    return false;
-  }
-  if (installation.repositorySelection !== "selected") {
-    return true;
-  }
-  const repositories = runGh([
-    "api",
-    `/user/installations/${installation.id}/repositories?per_page=100`,
-    "--paginate",
-    "--jq",
-    ".repositories[].full_name",
-  ]).split("\n").filter(Boolean);
-  return repositories.some((candidate) => candidate.toLowerCase() === repo.toLowerCase());
 }
 
 async function waitForInstallation(app, repo) {

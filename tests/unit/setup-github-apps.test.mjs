@@ -10,6 +10,7 @@ import {
   isManifestCode,
   setRepositoryCredentials,
   validateAppName,
+  validateInstallationScope,
 } from "../../.github/cao/setup-github-apps.mjs";
 
 const root = process.cwd();
@@ -97,4 +98,12 @@ test("App setup validates callback codes and bounded generated names", () => {
   assert.ok(deriveAppName("very-long-organization/example-control-repository", "write").length <= 34);
   assert.throws(() => validateAppName("GitHub-control-read", "--read-app-name"), /must not begin with GitHub or Gist/);
   assert.throws(() => validateAppName("gist-control-write", "--write-app-name"), /must not begin with GitHub or Gist/);
+});
+
+test("App setup rejects all-repository installations", () => {
+  assert.doesNotThrow(() => validateInstallationScope({ id: "123", repositorySelection: "selected" }, "octo"));
+  assert.throws(
+    () => validateInstallationScope({ id: "123", repositorySelection: "all" }, "octo"),
+    /installed for all octo repositories; select only approved repositories/,
+  );
 });
