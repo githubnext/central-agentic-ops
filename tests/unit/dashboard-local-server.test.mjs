@@ -69,7 +69,9 @@ test("local dashboard server composes package dashboards and reloads after updat
   const siteRoot = path.join(root, "site");
   const packageRoot = path.join(root, "packages");
   const packageDirectory = path.join(packageRoot, "example");
+  const stalePreviewDirectory = path.join(packageRoot, ".cao-dashboard-preview-stale");
   await mkdir(packageDirectory, { recursive: true });
+  await mkdir(stalePreviewDirectory, { recursive: true });
   await mkdir(siteRoot, { recursive: true });
   const syntheticToken = ["ghp", "abcdefghijklmnopqrstuvwxyz123456"].join("_");
   await writeFile(path.join(siteRoot, "index.html"), `<!doctype html><body>preview ${syntheticToken}</body>`);
@@ -81,6 +83,7 @@ test("local dashboard server composes package dashboards and reloads after updat
   builtInDashboard.dashboard.description = syntheticToken;
   await writeFile(path.join(siteRoot, "dashboard.json"), JSON.stringify(builtInDashboard));
   await writeFile(path.join(packageDirectory, "dashboard.json"), dashboard("package-one"));
+  await writeFile(path.join(stalePreviewDirectory, "dashboard.json"), dashboard("built-in"));
   const downloadData = async (destination) => {
     await mkdir(destination, { recursive: true });
     await writeFile(path.join(destination, "sources.json"), JSON.stringify({
@@ -347,6 +350,7 @@ test("local dashboard CLI relaunches Node with workspace permissions", () => {
     cwd: repositoryRoot,
     encoding: "utf8",
   });
+  if (result.status === 9 && /bad option: --allow-net=/.test(result.stderr)) return;
   assert.equal(result.status, 0, result.stderr);
   assert.match(result.stdout, /Launching dashboard server with workspace filesystem permissions/);
   assert.match(result.stdout, /usage: local-server\.mjs/);

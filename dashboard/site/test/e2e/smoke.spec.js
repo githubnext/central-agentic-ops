@@ -49,12 +49,20 @@ function buildPresenterModuleUrl() {
     .replace("'./badge.js'", JSON.stringify(badgeModuleUrl));
   const dataStateModuleUrl = `data:text/javascript;charset=utf-8,${encodeURIComponent(dataStateSource)}`;
 
+  const reactiveSource = readFileSync(new URL('../../src/reactive.js', import.meta.url), 'utf8');
+  const reactiveModuleUrl = `data:text/javascript;charset=utf-8,${encodeURIComponent(reactiveSource)}`;
+
+  const tableSummaryDataSource = readFileSync(new URL('../../src/table-summary-data.js', import.meta.url), 'utf8');
+  const tableSummaryDataModuleUrl = `data:text/javascript;charset=utf-8,${encodeURIComponent(tableSummaryDataSource)}`;
+
   const histogramSource = readFileSync(new URL('../../src/components/histogram.js', import.meta.url), 'utf8')
-    .replace("'../dom.js'", JSON.stringify(domModuleUrl));
+    .replace("'../dom.js'", JSON.stringify(domModuleUrl))
+    .replaceAll("'../table-summary-data.js'", JSON.stringify(tableSummaryDataModuleUrl));
   const histogramModuleUrl = `data:text/javascript;charset=utf-8,${encodeURIComponent(histogramSource)}`;
 
   const tableSummarySource = readFileSync(new URL('../../src/components/table-summary.js', import.meta.url), 'utf8')
     .replace("'../dom.js'", JSON.stringify(domModuleUrl))
+    .replace("'../reactive.js'", JSON.stringify(reactiveModuleUrl))
     .replace("'./histogram.js'", JSON.stringify(histogramModuleUrl))
     .replace("'./count-formatters.js'", JSON.stringify(countFormattersModuleUrl))
     .replace("'./view-chrome.js'", JSON.stringify(viewChromeModuleUrl))
@@ -66,7 +74,8 @@ function buildPresenterModuleUrl() {
   const dataOperationsModuleUrl = `data:text/javascript;charset=utf-8,${encodeURIComponent(dataOperationsSource)}`;
 
   const dataProcessorSource = readFileSync(new URL('../../src/data-processor.js', import.meta.url), 'utf8')
-    .replace("'./data-operations.js'", JSON.stringify(dataOperationsModuleUrl));
+    .replace("'./data-operations.js'", JSON.stringify(dataOperationsModuleUrl))
+    .replace("'./table-summary-data.js'", JSON.stringify(tableSummaryDataModuleUrl));
   const dataProcessorModuleUrl = `data:text/javascript;charset=utf-8,${encodeURIComponent(dataProcessorSource)}`;
 
   const tableRegionSource = readFileSync(new URL('../../src/components/table-region.js', import.meta.url), 'utf8')
@@ -142,7 +151,8 @@ function buildPresenterModuleUrl() {
     .replace("'../dom.js'", JSON.stringify(domModuleUrl))
     .replace("'../view-formatters.js'", JSON.stringify(viewFormattersModuleUrl))
     .replace("'./histogram.js'", JSON.stringify(histogramModuleUrl))
-    .replace("'./link-content.js'", JSON.stringify(linkContentModuleUrl));
+    .replace("'./link-content.js'", JSON.stringify(linkContentModuleUrl))
+    .replace("'./ui-primitives.js'", JSON.stringify(uiPrimitivesModuleUrl));
   const chartElementsModuleUrl = `data:text/javascript;charset=utf-8,${encodeURIComponent(chartElementsSource)}`;
 
   const workflowBadgesSource = readFileSync(new URL('../../src/components/workflow-badges.js', import.meta.url), 'utf8')
@@ -291,7 +301,7 @@ function buildPresenterModuleUrl() {
   return `data:text/javascript;charset=utf-8,${encodeURIComponent(presenterSource)}`;
 }
 
-test('production pages expose their executive chart without scrolling on a phone', async ({ page }) => {
+test('production pages expose a responsive executive chart', async ({ page }) => {
   const presenterModuleUrl = buildPresenterModuleUrl();
   const documentModel = JSON.parse(readFileSync(new URL('../../dashboard.json', import.meta.url), 'utf8'));
   await page.setViewportSize({ width: 390, height: 844 });
@@ -329,6 +339,82 @@ test('production pages expose their executive chart without scrolling on a phone
   expect(chartBox).not.toBeNull();
   expect(chartBox?.y).toBeGreaterThanOrEqual(0);
   expect((chartBox?.y ?? 0) + (chartBox?.height ?? 0)).toBeLessThanOrEqual(844);
+
+  await page.setViewportSize({ width: 1200, height: 844 });
+  const [wideChartBox, widePlotBox] = await Promise.all([
+    chart.boundingBox(),
+    chart.locator('svg').boundingBox()
+  ]);
+  expect(wideChartBox).not.toBeNull();
+  expect(widePlotBox).not.toBeNull();
+  expect(widePlotBox?.width).toBeGreaterThan((wideChartBox?.width ?? 0) * 0.95);
+});
+
+test('control-plane readiness surfaces blocking regressions', async ({ page }) => {
+  const presenterModuleUrl = buildPresenterModuleUrl();
+  const documentModel = JSON.parse(readFileSync(new URL('../../dashboard.json', import.meta.url), 'utf8'));
+  await page.setContent(`
+    <div id="root"></div>
+    <script type="module">
+      import { renderDashboard } from ${JSON.stringify(presenterModuleUrl)};
+      const documentModel = ${JSON.stringify(documentModel)};
+      const metadata = {
+        'source-id': 'readiness-fixture',
+        'source-kind': 'fixture',
+        'retrieved-at': '2026-09-03T12:00:00Z',
+        completeness: 'complete',
+        freshness: 'fresh',
+        availability: 'available'
+      };
+      const sources = {
+        workflows: {
+          source: 'workflows',
+          rows: [
+            { organization: 'githubnext', repository: 'gh-aw-cao', package: 'daily-ops', 'package-name': 'Daily Ops', workflow: '.github/workflows/daily.md', 'workflow-role': 'orchestrator', 'workflow-active': 'true', 'inventory-ready': true },
+            { organization: 'githubnext', repository: 'gh-aw-cao', package: 'daily-ops', 'package-name': 'Daily Ops', workflow: '.github/workflows/daily-worker.md', 'workflow-role': 'worker', 'workflow-active': 'true', 'inventory-ready': true }
+          ],
+          metadata
+        },
+        runs: {
+          source: 'runs',
+          rows: [
+            { organization: 'githubnext', repository: 'gh-aw-cao', run: '42', 'run-title': 'Readiness smoke', workflow: '.github/workflows/daily.md', 'started-at': '2026-09-03T10:00:00Z', 'run-status': 'completed', 'run-conclusion': 'failure', 'failure-message': 'Smoke regression', 'run-link': 'https://example.com/runs/42' },
+            { organization: 'githubnext', repository: 'gh-aw-cao', run: '43', 'run-title': 'Worker smoke', workflow: '.github/workflows/daily-worker.md', 'started-at': '2026-09-03T11:00:00Z', 'run-status': 'completed', 'run-conclusion': 'failure', 'failure-message': 'Worker regression', 'run-link': 'https://example.com/runs/43' }
+          ],
+          metadata
+        },
+        findings: {
+          source: 'findings',
+          rows: [{ finding: 'warning-1', workflow: '.github/workflows/daily-worker.md', 'workflow-role': 'worker', 'finding-kind': 'authored-warning', 'observed-at': '2026-09-03T11:15:00Z' }],
+          metadata
+        },
+        outcomes: {
+          source: 'outcomes',
+          rows: [{ 'safe-output': 'noop-1', workflow: '.github/workflows/daily-worker.md', 'workflow-role': 'worker', 'outcome-category': 'noop', 'observed-at': '2026-09-03T11:30:00Z' }],
+          metadata
+        },
+        'coverage-diagnostics': { source: 'coverage-diagnostics', rows: [], metadata }
+      };
+      window.location.hash = '#page-readiness';
+      document.querySelector('#root').append(renderDashboard({ document: documentModel, sources }));
+    </script>
+  `);
+
+  const readinessPage = page.locator('[data-page-id="readiness"]');
+  await expect(readinessPage).toBeVisible();
+  const readinessNavigation = page.locator('[data-nav-page-id="readiness"]');
+  await expect(readinessNavigation).toHaveAttribute('aria-current', 'page');
+  await expect(readinessNavigation.locator('svg')).toHaveCount(1);
+  await expect(page.locator('.nav-section-label').filter({ hasText: 'Control plane' })).toBeVisible();
+  await expect(readinessPage.locator('.custom-view').first().locator('[data-chart-widget="line"]')).toBeVisible();
+  await expect(readinessPage).toContainText('Not ready');
+  await expect(readinessPage).toContainText('2 runs observed');
+  await expect(readinessPage).toContainText('Worker failures');
+  await expect(readinessPage).toContainText('Worker warnings');
+  await expect(readinessPage).toContainText('No-op reports');
+  await expect(readinessPage).toContainText('Runtime regression');
+  await expect(readinessPage).toContainText('Output warning');
+  await expect(readinessPage).toContainText('Smoke regression');
 });
 
 test('performance page leads with a workflow duration histogram', async ({ page }) => {
@@ -1239,8 +1325,9 @@ test('DLS-PAGE-014 DLS-PAGE-015 built-in packages page renders report-style mode
   const packageReportRows = page.locator('[data-page-id="package-reports"] .custom-table tbody tr');
   await expect(packageReportRows).toHaveCount(2);
   await page.getByRole('searchbox', { name: 'Filter Reports' }).fill('Reconcile');
-  await expect(packageReportRows.filter({ visible: true })).toHaveCount(1);
-  await expect(packageReportRows.filter({ visible: true })).toContainText('Reconcile ambient context');
+  const visiblePackageReportRows = page.locator('[data-page-id="package-reports"] .custom-table tbody tr:visible');
+  await expect(visiblePackageReportRows).toHaveCount(1);
+  await expect(visiblePackageReportRows).toContainText('Reconcile ambient context');
 
   await page.locator('[data-nav-page-id="packages"]').click();
   await page.getByRole('tab', { name: 'All' }).focus();

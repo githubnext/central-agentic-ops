@@ -46,7 +46,24 @@ describe('declarative dispatch view', () => {
 
     const dispatchTable = dispatchPage.views.find((/** @type {{ id: string }} */ view) => view.id === 'package-worker-dispatches');
     const packageStateTable = dispatchPage.views.find((/** @type {{ id: string }} */ view) => view.id === 'package-dispatch-state');
+    const activationDistribution = dispatchPage.views.find((/** @type {{ id: string }} */ view) => view.id === 'dispatch-status');
+    const packageDistribution = dispatchPage.views.find((/** @type {{ id: string }} */ view) => view.id === 'dispatch-package-distribution');
     const activationSummary = dispatchPage.views.find((/** @type {{ id: string }} */ view) => view.id === 'dispatch-activation-summary');
+    expect(dispatchPage.views.slice(0, 2).map((/** @type {{ id: string }} */ view) => view.id)).toEqual([
+      'dispatch-status',
+      'dispatch-package-distribution'
+    ]);
+    expect(activationDistribution).toMatchObject({ mark: 'chart', chart: 'pie', layout: 'half' });
+    expect(packageDistribution).toMatchObject({
+      mark: 'chart',
+      chart: 'pie',
+      layout: 'half',
+      data: { source: 'dispatches' },
+      encoding: {
+        x: { field: 'package-name', type: 'nominal', title: 'Package' },
+        y: { field: 'started-at', type: 'quantitative', aggregate: 'count', title: 'Dispatches' }
+      }
+    });
     expect(activationSummary).toMatchObject({
       mark: 'element',
       element: 'summary-grid',
@@ -54,6 +71,7 @@ describe('declarative dispatch view', () => {
     });
     expect(dispatchTable).toMatchObject({
       mark: 'table',
+      disclosure: 'supplemental',
       data: { source: 'dispatches' },
       encoding: {
         href: { field: 'run-link' }
@@ -81,6 +99,7 @@ describe('declarative dispatch view', () => {
     const pageFilter = /** @type {HTMLInputElement | null} */ (rendered.querySelector('.filter-bar input'));
     expect(pageFilter?.value).toBe('event:workflow_dispatch');
     expect(rendered.textContent).toContain('Package dispatching state');
+    expect(rendered.textContent).toContain('Dispatches by package');
     const tables = rendered.querySelectorAll('table');
     expect([...tables[1].querySelectorAll('thead tr:first-child th')].map((cell) => cell.textContent)).toEqual([
       'Started',

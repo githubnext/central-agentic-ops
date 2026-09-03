@@ -86,7 +86,7 @@ Administrative setup (`.github/cao/setup-github-apps.mjs`), release workflows, C
 
 | Cache or index | Producer | Consumer | Reuse boundary |
 | --- | --- | --- | --- |
-| `cao-activity-v2` Actions cache | `.github/workflows/activity.yml` | Next activity run and dashboard builder | Complete collection snapshot; latest matching key across runs |
+| `cao-activity-*` Actions cache | `.github/workflows/activity.yml` | Next activity run and dashboard builder | Complete collection snapshot; latest matching key across runs |
 | `deployed-workflows.json` incremental run index | `activity/index.mjs` | Activity collectors | Reuses complete run records with a one-hour overlap; other discovery data is refreshed |
 | gh-aw AIC output directory | `dashboard/report/aic-usage.mjs` | The same process | Normally temporary in the activity workflow |
 | Operational-value observations and replay | `dashboard/report/operational-values.mjs` | Later activity runs and gh-aw grader reports | Persistent Actions cache |

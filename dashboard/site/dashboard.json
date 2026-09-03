@@ -132,6 +132,151 @@
         }
       },
       {
+        "id": "readiness",
+        "kind": "custom",
+        "title": "Control-plane readiness",
+        "navigation-label": "Readiness",
+        "icon": "check-circle",
+        "class-name": "readiness-page",
+        "description": "Fail-closed release readiness across evidence integrity, package inventory, policy controls, and recent runtime behavior.",
+        "sections": [
+          {
+            "id": "readiness-verdict",
+            "title": "Release decision",
+            "description": "A ready verdict requires every gate to pass. Missing, partial, or stale evidence cannot produce a ready state.",
+            "layout": "full",
+            "views": [
+              "readiness-engine-activity",
+              "readiness-verdict-summary"
+            ]
+          },
+          {
+            "id": "readiness-regressions",
+            "title": "Unblock first",
+            "description": "Work top to bottom. Runtime failures lead, followed by control and evidence gaps, then lower-priority warnings.",
+            "layout": "full",
+            "count-source": "readiness-signals",
+            "count-label": "blocker groups",
+            "views": [
+              "readiness-regression-signals"
+            ]
+          },
+          {
+            "id": "readiness-observability",
+            "title": "Supporting evidence",
+            "description": "Role-attributed failures, authored warnings, and no-op outcomes from the current collection window.",
+            "layout": "full",
+            "views": [
+              "readiness-operational-observations"
+            ]
+          }
+        ],
+        "views": [
+          {
+            "id": "readiness-engine-activity",
+            "title": "Engine activity",
+            "description": "Hourly orchestrator and worker runs show whether the control plane is actively churning.",
+            "data": {
+              "source": "readiness-activity",
+              "time": {
+                "range": "24h"
+              }
+            },
+            "mark": "chart",
+            "chart": "line",
+            "table": false,
+            "layout": "full",
+            "encoding": {
+              "x": {
+                "field": "activity-hour",
+                "type": "temporal",
+                "time-unit": "hour",
+                "title": "Started"
+              },
+              "y": {
+                "field": "run-count",
+                "type": "quantitative",
+                "aggregate": "none",
+                "title": "Runs per hour"
+              },
+              "color": {
+                "field": "workflow-role",
+                "type": "nominal",
+                "title": "Role"
+              }
+            }
+          },
+          {
+            "id": "readiness-verdict-summary",
+            "title": "Readiness verdict",
+            "data": {
+              "sources": [
+                "readiness-summary"
+              ]
+            },
+            "mark": "element",
+            "element": "readiness-verdict",
+            "layout": "full"
+          },
+          {
+            "id": "readiness-regression-signals",
+            "title": "Priority queue",
+            "data": {
+              "sources": [
+                "readiness-signals"
+              ]
+            },
+            "mark": "element",
+            "element": "signal-list",
+            "layout": "full"
+          },
+          {
+            "id": "readiness-operational-observations",
+            "title": "Worker, orchestrator, and no-op evidence",
+            "description": "Failures, authored warnings, and no-op reports are attributed to orchestrator and worker workflows from workflow inventory.",
+            "data": {
+              "source": "readiness-observations"
+            },
+            "mark": "table",
+            "layout": "full",
+            "encoding": {
+              "href": {
+                "field": "evidence-link",
+                "type": "nominal"
+              },
+              "columns": [
+                {
+                  "field": "signal",
+                  "type": "nominal",
+                  "title": "Signal"
+                },
+                {
+                  "field": "count",
+                  "type": "quantitative",
+                  "title": "Observed"
+                },
+                {
+                  "field": "status",
+                  "type": "nominal",
+                  "title": "State",
+                  "display": "status"
+                },
+                {
+                  "field": "detail",
+                  "type": "nominal",
+                  "title": "Evidence"
+                },
+                {
+                  "field": "latest-at",
+                  "type": "temporal",
+                  "title": "Latest"
+                }
+              ]
+            }
+          }
+        ]
+      },
+      {
         "id": "cost",
         "kind": "custom",
         "title": "Cost & efficiency",
@@ -139,12 +284,6 @@
         "icon": "meter",
         "class-name": "cost-page",
         "description": "Measured AI Credit allocation and efficiency evidence for the configured githubnext/gh-aw-cao repository.",
-        "filter-bar": {
-          "filters": [
-            "mode:review",
-            "mode:live"
-          ]
-        },
         "sections": [
           {
             "id": "measured-usage",
@@ -751,6 +890,44 @@
         },
         "views": [
           {
+            "id": "repository-workflow-aic",
+            "title": "Top workflows by AIC",
+            "description": "The five workflows with the highest measured AI Credit totals in this repository.",
+            "data": {
+              "source": "repository-workflow-usage",
+              "route-field": "repository",
+              "limit": 5,
+              "order-by": [
+                {
+                  "field": "total-aic",
+                  "direction": "desc"
+                }
+              ]
+            },
+            "mark": "chart",
+            "chart": "pie",
+            "encoding": {
+              "x": {
+                "field": "workflow",
+                "type": "nominal",
+                "title": "Workflow"
+              },
+              "y": {
+                "field": "aic",
+                "type": "quantitative",
+                "aggregate": "sum",
+                "as": "total-aic",
+                "title": "Total AIC",
+                "unit": "aic"
+              },
+              "href": {
+                "field": "workflow-link",
+                "type": "nominal"
+              }
+            },
+            "layout": "third"
+          },
+          {
             "id": "repository-run-health",
             "title": "Repository run health trend",
             "description": "Daily run conclusions are the leading execution-health signal for this repository.",
@@ -825,44 +1002,6 @@
               }
             },
             "layout": "half"
-          },
-          {
-            "id": "repository-workflow-aic",
-            "title": "Top workflows by AIC",
-            "description": "The five workflows with the highest measured AI Credit totals in this repository.",
-            "data": {
-              "source": "repository-workflow-usage",
-              "route-field": "repository",
-              "limit": 5,
-              "order-by": [
-                {
-                  "field": "total-aic",
-                  "direction": "desc"
-                }
-              ]
-            },
-            "mark": "chart",
-            "chart": "pie",
-            "encoding": {
-              "x": {
-                "field": "workflow",
-                "type": "nominal",
-                "title": "Workflow"
-              },
-              "y": {
-                "field": "aic",
-                "type": "quantitative",
-                "aggregate": "sum",
-                "as": "total-aic",
-                "title": "Total AIC",
-                "unit": "aic"
-              },
-              "href": {
-                "field": "workflow-link",
-                "type": "nominal"
-              }
-            },
-            "layout": "third"
           },
           {
             "id": "repository-authored-workflows",
@@ -2647,12 +2786,37 @@
             "mark": "chart",
             "chart": "pie",
             "table": false,
-            "layout": "full",
+            "layout": "half",
             "encoding": {
               "x": {
                 "field": "status",
                 "type": "nominal",
                 "title": "Status"
+              },
+              "y": {
+                "field": "started-at",
+                "type": "quantitative",
+                "aggregate": "count",
+                "title": "Dispatches"
+              }
+            }
+          },
+          {
+            "id": "dispatch-package-distribution",
+            "title": "Dispatches by package",
+            "description": "Distribution of authoritative workflow_dispatch runs across packages.",
+            "data": {
+              "source": "dispatches"
+            },
+            "mark": "chart",
+            "chart": "pie",
+            "table": false,
+            "layout": "half",
+            "encoding": {
+              "x": {
+                "field": "package-name",
+                "type": "nominal",
+                "title": "Package"
               },
               "y": {
                 "field": "started-at",
@@ -2744,6 +2908,7 @@
               "source": "dispatches"
             },
             "mark": "table",
+            "disclosure": "supplemental",
             "empty-message": "No workflow dispatch events were observed in the current run window.",
             "encoding": {
               "href": {
@@ -3973,12 +4138,42 @@
             "description": "A source-level view of retained rows, observed fields, and independent data-state signals.",
             "layout": "full",
             "views": [
+              "data-health-status",
               "data-health-summary",
               "data-health-sources"
             ]
           }
         ],
         "views": [
+          {
+            "id": "data-health-status",
+            "title": "Source health",
+            "description": "Current source availability, completeness, and freshness show where dashboard evidence can be trusted.",
+            "data": {
+              "source": "data-health-sources"
+            },
+            "mark": "chart",
+            "chart": "pie",
+            "table": false,
+            "layout": "full",
+            "encoding": {
+              "x": {
+                "field": "status",
+                "type": "nominal",
+                "title": "Health"
+              },
+              "y": {
+                "field": "source",
+                "type": "quantitative",
+                "aggregate": "count",
+                "title": "Sources"
+              },
+              "color": {
+                "field": "status",
+                "type": "nominal"
+              }
+            }
+          },
           {
             "id": "data-health-summary",
             "title": "Data health summary",
@@ -4019,14 +4214,14 @@
                   "title": "Fields"
                 },
                 {
-                  "field": "populated-fields",
-                  "type": "quantitative",
-                  "title": "Populated fields"
+                  "field": "field-coverage",
+                  "type": "nominal",
+                  "title": "Fields populated"
                 },
                 {
-                  "field": "empty-fields",
-                  "type": "quantitative",
-                  "title": "Empty fields"
+                  "field": "cell-coverage",
+                  "type": "nominal",
+                  "title": "Cells populated"
                 },
                 {
                   "field": "status",
@@ -4235,6 +4430,12 @@
         "label": "Attention",
         "pages": [
           "overview"
+        ]
+      },
+      {
+        "label": "Control plane",
+        "pages": [
+          "readiness"
         ]
       },
       {

@@ -43,6 +43,16 @@ export function deriveOverviewSources(sources) {
   const securitySignals = buildSecuritySignals({ workflows, runs, findings, outcomes });
   const valueSignals = buildValueSignals({ sources, graderObservations, operationalValues, outcomes });
   const costSignals = buildCostSignals(sources.usage);
+  const roleFor = buildWorkflowRoleResolver(workflows);
+  const readiness = buildReadiness({ sources, workflows, runs, findings, outcomes, packages, health, roleFor });
+  const readinessActivity = buildReadinessActivity(runs, roleFor);
+  const readinessMetadata = createOverviewMetadata({
+    workflows: sources.workflows,
+    runs: sources.runs,
+    findings: sources.findings,
+    outcomes: sources.outcomes,
+    'coverage-diagnostics': sources['coverage-diagnostics']
+  });
 
   return {
     ...sources,
@@ -114,6 +124,31 @@ export function deriveOverviewSources(sources) {
         .map((entry) => buildPackageUtilizationRow(entry, packageUsage, sources.usage)),
       metadata: overviewMetadata
     },
+    'readiness-checks': {
+      source: 'readiness-checks',
+      rows: readiness.checks,
+      metadata: readinessMetadata
+    },
+    'readiness-activity': {
+      source: 'readiness-activity',
+      rows: readinessActivity,
+      metadata: sources.runs?.metadata ?? overviewMetadata
+    },
+    'readiness-observations': {
+      source: 'readiness-observations',
+      rows: readiness.observations,
+      metadata: readinessMetadata
+    },
+    'readiness-summary': {
+      source: 'readiness-summary',
+      rows: readiness.summary,
+      metadata: readinessMetadata
+    },
+    'readiness-signals': {
+      source: 'readiness-signals',
+      rows: readiness.signals,
+      metadata: readinessMetadata
+    },
     'security-summary': {
       source: 'security-summary',
       rows: buildSecuritySummary({ runs, workflows, findings }),
@@ -150,6 +185,312 @@ export function deriveOverviewSources(sources) {
       metadata: overviewMetadata
     }
   };
+}
+
+/**
+ * @param {Array<Record<string, unknown>>} runs
+ * @param {(row: Record<string, unknown>) => string} roleFor
+ */
+function buildReadinessActivity(runs, roleFor) {
+  /** @type {Map<string, Record<string, unknown>>} */
+  const hourlyActivity = new Map();
+  for (const row of runs) {
+    const role = roleFor(row);
+    const startedAt = Date.parse(String(row['started-at'] || ''));
+    if (!['orchestrator', 'worker'].includes(role) || !Number.isFinite(startedAt)) continue;
+    const hour = new Date(startedAt);
+    hour.setUTCMinutes(0, 0, 0);
+    const activityHour = hour.toISOString();
+    const key = `${activityHour}:${role}`;
+    const existing = hourlyActivity.get(key);
+    hourlyActivity.set(key, {
+      'activity-hour': activityHour,
+      'workflow-role': role,
+      'run-count': Number(existing?.['run-count'] || 0) + 1
+    });
+  }
+  return [...hourlyActivity.values()].toSorted((left, right) =>
+    Date.parse(String(left['activity-hour'])) - Date.parse(String(right['activity-hour']))
+      || String(left['workflow-role']).localeCompare(String(right['workflow-role'])));
+}
+
+/**
+ * @param {{ sources: Record<string, import('./presenter.js').LogicalSourceInput>, workflows: Array<Record<string, unknown>>, runs: Array<Record<string, unknown>>, findings: Array<Record<string, unknown>>, outcomes: Array<Record<string, unknown>>, packages: ReturnType<typeof summarizePackages>, health: ReturnType<typeof summarizeRunHealth>, roleFor: (row: Record<string, unknown>) => string }} input
+ */
+function buildReadiness(input) {
+  const requiredSources = ['workflows', 'runs', 'findings', 'outcomes', 'coverage-diagnostics'];
+  const sourceGaps = requiredSources.filter((name) => {
+    const metadata = input.sources[name]?.metadata;
+    return metadata?.availability !== 'available'
+      || metadata.completeness !== 'complete'
+      || metadata.freshness !== 'fresh';
+  });
+  const policyBlocks = rowsFor(input.sources, 'coverage-diagnostics')
+    .filter((row) => String(row.title) === 'Control policy resolution unavailable');
+  const admissionBlocks = input.workflows.filter((row) => String(row['admission-status']) === 'blocked');
+  const inventoryGaps = input.packages.filter((entry) => !entry.ready);
+  const controlPlaneRuns = input.runs.filter((row) => ['orchestrator', 'worker'].includes(input.roleFor(row)));
+  const engineHealth = summarizeRunHealth(controlPlaneRuns);
+  const pendingRuns = controlPlaneRuns.filter((row) => String(row['run-status']) !== 'completed');
+  const runSourceAvailable = sourceIsAvailable(input.sources.runs);
+  const unresolvedRuns = input.runs.filter((row) => input.roleFor(row) === 'unknown');
+  const unresolvedWarnings = input.findings.filter((row) => isAuthoredWarning(row) && input.roleFor(row) === 'unknown');
+  const unresolvedNoops = input.outcomes.filter((row) => String(row['outcome-category']) === 'noop' && input.roleFor(row) === 'unknown');
+  const attributionGapCount = unresolvedRuns.length + unresolvedWarnings.length + unresolvedNoops.length;
+  const warnings = input.findings.filter((row) => isAuthoredWarning(row)
+    && ['orchestrator', 'worker'].includes(input.roleFor(row)));
+  const noops = input.outcomes.filter((row) => String(row['outcome-category']) === 'noop'
+    && ['orchestrator', 'worker'].includes(input.roleFor(row)));
+  const failuresByRole = groupRows(engineHealth.failedRows, input.roleFor);
+  const warningsByRole = groupRows(warnings, input.roleFor);
+  /** @type {(groups: Array<[string, Array<Record<string, unknown>>]>, role: string) => Array<Record<string, unknown>>} */
+  const rowsForRole = (groups, role) => groups.find(([candidate]) => candidate === role)?.[1] ?? [];
+  const orchestratorFailures = rowsForRole(failuresByRole, 'orchestrator');
+  const workerFailures = rowsForRole(failuresByRole, 'worker');
+  const orchestratorWarnings = rowsForRole(warningsByRole, 'orchestrator');
+  const workerWarnings = rowsForRole(warningsByRole, 'worker');
+  /** @type {Array<[string, Array<Record<string, unknown>>]>} */
+  const runtimeFailureGroups = [
+    ['orchestrator', orchestratorFailures],
+    ['worker', workerFailures]
+  ];
+  const runtimeFailureSignals = runtimeFailureGroups.filter(([, rows]) => rows.length > 0).map(([role, rows]) => {
+    const latest = latestRow(rows);
+    const latestDetail = String(latest?.['failure-message'] || latest?.['failure-step'] || 'Open the latest failed run for details.');
+    return {
+      priority: 0,
+      urgency: 'P0',
+      count: rows.length,
+      tone: 'danger',
+      icon: 'issue',
+      kind: 'Runtime regression',
+      title: `${formatNumber(rows.length)} ${role} run${rows.length === 1 ? '' : 's'} failed`,
+      detail: `Latest: ${latestDetail}`,
+      evidence: `${formatNumber(rows.length)} failed run${rows.length === 1 ? '' : 's'}`,
+      action: 'Open latest run',
+      'run-link': latest?.['run-link']
+    };
+  });
+
+  const checks = [
+    readinessCheck('Engine activity', !runSourceAvailable ? 'Unknown' : engineHealth.total === 0 || engineHealth.failed > 0 || engineHealth.approval > 0 || pendingRuns.length > 0 ? 'Blocked' : 'Ready', !runSourceAvailable
+      ? 'Run telemetry is unavailable, so engine activity cannot be established.'
+      : engineHealth.total === 0
+        ? 'No control-plane runs were observed in the current window.'
+        : engineHealth.failed > 0 || engineHealth.approval > 0 || pendingRuns.length > 0
+          ? `${formatNumber(engineHealth.total)} run${engineHealth.total === 1 ? '' : 's'} observed: ${formatNumber(engineHealth.failed)} failed, ${formatNumber(engineHealth.approval)} approval-gated, and ${formatNumber(pendingRuns.length)} pending.`
+          : `${formatNumber(engineHealth.successful)} runs completed successfully.`),
+    readinessCheck('Evidence', sourceGaps.length > 0 ? 'Unknown' : attributionGapCount > 0 ? 'Blocked' : 'Ready', sourceGaps.length > 0
+      ? `${formatNumber(sourceGaps.length)} required source${sourceGaps.length === 1 ? '' : 's'} incomplete, stale, or unavailable`
+      : attributionGapCount > 0
+        ? `${formatNumber(attributionGapCount)} relevant record${attributionGapCount === 1 ? '' : 's'} could not be joined to workflow inventory.`
+        : 'Required control-plane sources are complete, fresh, and attributed.'),
+    readinessCheck('Inventory', inventoryGaps.length > 0 || input.packages.length === 0 ? 'Blocked' : 'Ready', input.packages.length === 0
+      ? 'No managed package inventory was discovered.'
+      : inventoryGaps.length > 0
+        ? `${formatNumber(inventoryGaps.length)} package${inventoryGaps.length === 1 ? '' : 's'} failed inventory checks.`
+        : `${formatNumber(input.packages.length)} managed package${input.packages.length === 1 ? '' : 's'} passed inventory checks.`),
+    readinessCheck('Controls', policyBlocks.length > 0 || admissionBlocks.length > 0 ? 'Blocked' : 'Ready', policyBlocks.length > 0 || admissionBlocks.length > 0
+      ? `${formatNumber(policyBlocks.length)} policy and ${formatNumber(admissionBlocks.length)} admission block${admissionBlocks.length === 1 ? '' : 's'} detected.`
+      : 'Policy resolution and workflow admission are clear.'),
+    readinessCheck('Outputs', !sourceIsAvailable(input.sources.findings) ? 'Unknown' : warnings.length > 0 ? 'Blocked' : 'Ready', !sourceIsAvailable(input.sources.findings)
+      ? 'Warning output evidence is unavailable.'
+      : warnings.length > 0
+        ? `${formatNumber(warnings.length)} retained output${warnings.length === 1 ? ' contains' : 's contain'} an explicit warning.`
+        : 'No explicit output warnings were observed.')
+  ];
+
+  const signals = [
+    ...(runSourceAvailable && engineHealth.total === 0 ? [{
+      priority: 0,
+      urgency: 'P0',
+      count: 1,
+      tone: 'critical',
+      icon: 'stop',
+      kind: 'Engine stalled',
+      title: 'No control-plane runs observed',
+      detail: 'Confirm schedules, workflow registration, and dispatch credentials before investigating downstream output.',
+      evidence: 'Actions run history',
+      action: 'Review runtime',
+      'navigation-page': 'runtime'
+    }] : []),
+    ...runtimeFailureSignals,
+    ...sourceGaps.map((name) => ({
+      priority: 1,
+      urgency: 'P0',
+      count: 1,
+      tone: 'critical',
+      icon: 'database',
+      kind: 'Evidence regression',
+      title: `${titleCase(name)} evidence is not release-ready`,
+      detail: sourceHealthDetail(input.sources[name]),
+      evidence: 'Required source',
+      action: 'Review coverage',
+      'navigation-page': 'data-health'
+    })),
+    ...(attributionGapCount > 0 ? [{
+      priority: 1,
+      urgency: 'P0',
+      count: attributionGapCount,
+      tone: 'critical',
+      icon: 'workflow',
+      kind: 'Attribution regression',
+      title: `${formatNumber(attributionGapCount)} record${attributionGapCount === 1 ? '' : 's'} could not be attributed`,
+      detail: 'The runtime repository and Actions workflow path did not match authoritative workflow inventory.',
+      evidence: 'Workflow inventory join',
+      action: 'Review coverage',
+      'navigation-page': 'data-health'
+    }] : []),
+    ...policyBlocks.map((row) => ({
+      priority: 1,
+      urgency: 'P0',
+      count: 1,
+      tone: 'critical',
+      icon: 'shield',
+      kind: 'Control regression',
+      title: 'Control policy resolution unavailable',
+      detail: String(row.effect || 'The authoritative control policy could not be resolved.'),
+      evidence: 'Control policy',
+      action: 'Review coverage',
+      'navigation-page': 'data-health'
+    })),
+    ...admissionBlocks.map((row) => ({
+      priority: 1,
+      urgency: 'P0',
+      count: 1,
+      tone: 'critical',
+      icon: 'stop',
+      kind: 'Admission regression',
+      title: String(row['workflow-name'] || row.workflow || 'Workflow blocked'),
+      detail: String(row['admission-reason'] || 'Workflow admission is blocked.'),
+      evidence: 'Checked-in control policy',
+      action: 'Review workflow',
+      'navigation-page': 'workflows'
+    })),
+    ...inventoryGaps.map((entry) => ({
+      priority: 2,
+      urgency: 'P1',
+      count: 1,
+      tone: 'warning',
+      icon: 'package',
+      kind: 'Inventory regression',
+      title: entry.name,
+      detail: 'The package inventory is incomplete or does not contain an active orchestrator and worker.',
+      evidence: 'Package inventory',
+      action: 'Review package',
+      'navigation-page': 'packages'
+    })),
+    ...warningsByRole.map(([role, rows]) => {
+      const latest = latestRow(rows);
+      return {
+        priority: 2,
+        urgency: 'P1',
+        count: rows.length,
+        tone: 'warning',
+        icon: 'report',
+        kind: 'Output warning',
+        title: `${titleCase(role)} warnings`,
+        detail: `${formatNumber(rows.length)} retained output${rows.length === 1 ? ' contains' : 's contain'} an explicit warning block.`,
+        evidence: 'Output content',
+        action: 'View output',
+        'run-link': latest?.['run-link'],
+        'external-link': latest?.['external-link']
+      };
+    }),
+    ...(engineHealth.approval > 0 ? [{
+      priority: 2,
+      urgency: 'P1',
+      count: engineHealth.approval,
+      tone: 'warning',
+      icon: 'issue',
+      kind: 'Approval gate',
+      title: `${formatNumber(engineHealth.approval)} run${engineHealth.approval === 1 ? '' : 's'} require approval`,
+      detail: 'Required maintainer approval prevents a release-ready verdict.',
+      evidence: 'Run conclusion',
+      action: 'Review runs',
+      'navigation-page': 'runtime'
+    }] : []),
+    ...(pendingRuns.length > 0 ? [{
+      priority: 3,
+      urgency: 'P2',
+      count: pendingRuns.length,
+      tone: 'informational',
+      icon: 'clock',
+      kind: 'Run pending',
+      title: `${formatNumber(pendingRuns.length)} run${pendingRuns.length === 1 ? '' : 's'} still in progress`,
+      detail: 'Readiness remains blocked until the current executions complete.',
+      evidence: 'Run status',
+      action: 'Review runs',
+      'navigation-page': 'runtime'
+    }] : [])
+  ].sort((left, right) => left.priority - right.priority);
+
+  const readyChecks = checks.filter((row) => row['readiness-state'] === 'Ready').length;
+  const blockedChecks = checks.filter((row) => row['readiness-state'] === 'Blocked').length;
+  const verdict = blockedChecks > 0 ? 'Not ready' : readyChecks === checks.length ? 'Ready to ship' : 'Evidence incomplete';
+  return {
+    checks,
+    signals,
+    observations: [
+      readinessObservation('Orchestrator failures', orchestratorFailures, input.sources.runs, 'failure'),
+      readinessObservation('Orchestrator warnings', orchestratorWarnings, input.sources.findings, 'warning'),
+      readinessObservation('Worker failures', workerFailures, input.sources.runs, 'failure'),
+      readinessObservation('Worker warnings', workerWarnings, input.sources.findings, 'warning'),
+      readinessObservation('No-op reports', noops, input.sources.outcomes, 'noop')
+    ],
+    summary: [
+      { label: 'Control plane', value: verdict },
+      { label: 'Unblock first', value: signals[0]?.title || 'No blockers' },
+      { label: 'Engine activity', value: engineHealth.total === 0
+        ? '0 runs observed'
+        : `${formatNumber(engineHealth.total)} runs observed · ${formatNumber(engineHealth.failed)} failed` },
+      { label: 'Readiness checks', value: `${readyChecks} / ${checks.length} passing` },
+    ]
+  };
+}
+
+/**
+ * @param {string} signal
+ * @param {Array<Record<string, unknown>>} rows
+ * @param {import('./presenter.js').LogicalSourceInput | undefined} source
+ * @param {'failure'|'warning'|'noop'} kind
+ */
+function readinessObservation(signal, rows, source, kind) {
+  const available = sourceIsAvailable(source);
+  const complete = available && source?.metadata?.completeness === 'complete' && source.metadata.freshness === 'fresh';
+  const latest = latestRow(rows);
+  const noun = kind === 'noop' ? 'no-op report' : kind;
+  return {
+    signal,
+    count: available ? rows.length : null,
+    status: !available ? 'Unavailable' : rows.length > 0 ? kind === 'noop' ? 'Observed' : 'Attention' : complete ? 'Clear' : 'Partial',
+    detail: !available
+      ? sourceHealthDetail(source)
+      : rows.length > 0
+        ? `${formatNumber(rows.length)} ${noun}${rows.length === 1 ? '' : 's'} observed${complete ? '.' : '; source coverage is partial or stale.'}`
+        : complete ? `No ${noun}s observed.` : `No ${noun}s observed, but source coverage is partial or stale.`,
+    'latest-at': latest?.['observed-at'] || latest?.['started-at'] || null,
+    'evidence-link': latest?.['external-link'] || latest?.['run-link'] || null
+  };
+}
+
+/**
+ * @param {string} check
+ * @param {'Ready'|'Blocked'|'Unknown'} state
+ * @param {string} detail
+ */
+function readinessCheck(check, state, detail) {
+  return { check, 'readiness-state': state, detail };
+}
+
+/**
+ * @param {import('./presenter.js').LogicalSourceInput | undefined} source
+ */
+function sourceHealthDetail(source) {
+  if (!source || source.metadata?.availability !== 'available') return 'The source is unavailable.';
+  if (source.metadata?.completeness !== 'complete') return 'The source is incomplete.';
+  if (source.metadata?.freshness !== 'fresh') return 'The source is stale.';
+  return 'The source does not satisfy the readiness contract.';
 }
 
 /**
@@ -1120,11 +1461,13 @@ function normalizeRolloutMode(value) {
 }
 
 /**
- * @param {Record<string, import('./presenter.js').LogicalSourceInput>} sources
+ * @param {Record<string, import('./presenter.js').LogicalSourceInput | undefined>} sources
  * @returns {import('./presenter.js').SourceMetadata}
  */
 function createOverviewMetadata(sources) {
-  const sourceMetadata = Object.values(sources).map((source) => source?.metadata).filter(Boolean);
+  const sourceMetadata = Object.values(sources)
+    .map((source) => source?.metadata)
+    .filter((metadata) => metadata !== undefined);
   const latest = sourceMetadata
     .map((metadata) => metadata['retrieved-at'])
     .filter((value) => typeof value === 'string' && Number.isFinite(Date.parse(value)))
@@ -1174,7 +1517,22 @@ function repositoryKey(row) {
 
 /** @param {Record<string, unknown>} row */
 function scopedWorkflowKey(row) {
-  return `${repositoryKey(row).toLowerCase()}:${String(row.workflow ?? '')}`;
+  const repository = String(row['runtime-repository'] ?? repositoryKey(row)).trim().toLowerCase();
+  return `${repository}:${String(row.workflow ?? '')}`;
+}
+
+/**
+ * @param {Array<Record<string, unknown>>} workflows
+ * @returns {(row: Record<string, unknown>) => string}
+ */
+function buildWorkflowRoleResolver(workflows) {
+  const roleByScopedWorkflow = new Map(workflows.map((row) => [
+    scopedWorkflowKey(row),
+    String(row['workflow-role'] || 'unknown')
+  ]));
+  return (row) => String(row['workflow-role'] || '')
+    || roleByScopedWorkflow.get(scopedWorkflowKey(row))
+    || 'unknown';
 }
 
 /** @param {Record<string, unknown>} row */

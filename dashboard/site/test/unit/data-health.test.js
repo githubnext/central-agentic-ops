@@ -33,20 +33,45 @@ describe('data health sources', () => {
         fields: 3,
         'populated-fields': 2,
         'empty-fields': 1,
+        'field-coverage': '67%',
+        'cell-coverage': '67%',
         status: 'healthy'
       }),
       expect.objectContaining({
         source: 'usage',
         rows: 0,
         fields: 0,
+        'field-coverage': '—',
+        'cell-coverage': '—',
         status: 'unavailable'
       })
     ]);
     expect(sources['data-health-summary'].rows).toEqual(expect.arrayContaining([
       { label: 'Logical sources', value: '2' },
       { label: 'Healthy sources', value: '1' },
-      { label: 'Unavailable sources', value: '1' },
+      { label: 'Sources needing attention', value: '1' },
       { label: 'Retained rows', value: '1' }
     ]));
+  });
+
+  it('does not report empty or unknown-state sources as healthy', () => {
+    const sources = deriveDataHealthSources({
+      empty: {
+        source: 'empty',
+        rows: [],
+        metadata: { ...metadata, availability: 'empty' }
+      },
+      unknown: {
+        source: 'unknown',
+        rows: [{ value: 1 }],
+        metadata: { ...metadata, completeness: 'unknown' }
+      }
+    });
+
+    expect(sources['data-health-sources'].rows).toEqual([
+      expect.objectContaining({ source: 'empty', status: 'empty' }),
+      expect.objectContaining({ source: 'unknown', status: 'degraded' })
+    ]);
+    expect(sources['data-health-summary'].rows).toContainEqual({ label: 'Sources needing attention', value: '2' });
   });
 });

@@ -750,7 +750,14 @@ test("dashboard source bridge retains unavailable grader records separately from
       discovery: { complete: true },
       runHealth: { available: true, complete: true },
       bundles: [],
-      workflows: [],
+      workflows: [{
+        repository: "githubnext/control-plane",
+        path: ".github/workflows/daily.lock.yml",
+        name: "Daily review",
+        role: "worker",
+        state: "active",
+        runHealth: { runRecords: [] },
+      }],
     },
     usage: { available: true, complete: true, runs: [] },
     operationalValues: {
@@ -927,7 +934,19 @@ test("dashboard source bridge carries outcome detail content and presentation me
       discovery: { complete: true },
       runHealth: { available: true, complete: true },
       bundles: [],
-      workflows: [],
+      workflows: [{
+        repository: "githubnext/control-plane",
+        path: ".github/workflows/daily.lock.yml",
+        name: "Daily review",
+        role: "worker",
+        state: "active",
+      }, {
+        repository: "githubnext/gh-aw-cao",
+        path: ".github/workflows/daily.lock.yml",
+        name: "Standalone daily review",
+        role: "standalone",
+        state: "active",
+      }],
     },
     usage: { available: true, complete: true, runs: [] },
     operationalValues: { records: [] },
@@ -952,6 +971,22 @@ test("dashboard source bridge carries outcome detail content and presentation me
         updatedAt: "2026-08-31T11:00:00Z",
         url: "https://github.com/githubnext/gh-aw-cao/pull/1",
         runUrl: "https://github.com/githubnext/gh-aw-cao/actions/runs/1",
+      }, {
+        id: "noop-1",
+        bundle: "daily",
+        repository: "githubnext/gh-aw-cao",
+        runtimeRepository: "githubnext/control-plane",
+        workflowPath: ".github/workflows/daily.lock.yml",
+        workflow: "Daily review",
+        mode: "live",
+        warning: false,
+        kind: "noop",
+        state: "complete",
+        title: "Daily review completed with no action",
+        createdAt: "2026-08-31T11:30:00Z",
+        updatedAt: "2026-08-31T11:30:00Z",
+        url: "https://github.com/githubnext/gh-aw-cao/issues/2#issuecomment-1",
+        runUrl: "https://github.com/githubnext/control-plane/actions/runs/2",
       }],
     },
   });
@@ -959,6 +994,7 @@ test("dashboard source bridge carries outcome detail content and presentation me
   assert.deepEqual(
     {
       workflow: sources.outcomes.rows[0].workflow,
+      workflowRole: sources.outcomes.rows[0]["workflow-role"],
       runtimeRepository: sources.outcomes.rows[0]["runtime-repository"],
       package: sources.outcomes.rows[0].package,
       workflowName: sources.outcomes.rows[0]["workflow-name"],
@@ -974,6 +1010,7 @@ test("dashboard source bridge carries outcome detail content and presentation me
     },
     {
       workflow: ".github/workflows/daily.md",
+      workflowRole: "worker",
       runtimeRepository: "githubnext/control-plane",
       package: "daily",
       workflowName: "Daily review",
@@ -987,5 +1024,14 @@ test("dashboard source bridge carries outcome detail content and presentation me
       warning: "Warning",
       publishedAt: "2026-08-31T10:00:00Z",
     },
+  );
+  assert.equal(sources.findings.rows[0]["workflow-role"], "worker");
+  assert.deepEqual(
+    {
+      category: sources.outcomes.rows[1]["outcome-category"],
+      role: sources.outcomes.rows[1]["workflow-role"],
+      state: sources.outcomes.rows[1]["outcome-state"],
+    },
+    { category: "noop", role: "worker", state: "ignored" },
   );
 });
