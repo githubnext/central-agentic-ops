@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import { spawnSync } from "node:child_process";
 import { chmod, mkdir, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import { request } from "node:http";
 import { tmpdir } from "node:os";
@@ -70,12 +71,22 @@ test("local dashboard server composes package dashboards and reloads after updat
   const packageDirectory = path.join(packageRoot, "example");
   await mkdir(packageDirectory, { recursive: true });
   await mkdir(siteRoot, { recursive: true });
-  await writeFile(path.join(siteRoot, "index.html"), "<!doctype html><body>preview</body>");
-  await writeFile(path.join(siteRoot, "dashboard.json"), dashboard("built-in"));
+  const syntheticToken = ["ghp", "abcdefghijklmnopqrstuvwxyz123456"].join("_");
+  await writeFile(path.join(siteRoot, "index.html"), `<!doctype html><body>preview ${syntheticToken}</body>`);
+  const builtInDashboard = JSON.parse(dashboard("built-in"));
+  builtInDashboard.dashboard.description = syntheticToken;
+  await writeFile(path.join(siteRoot, "dashboard.json"), JSON.stringify(builtInDashboard));
   await writeFile(path.join(packageDirectory, "dashboard.json"), dashboard("package-one"));
   const downloadData = async (destination) => {
     await mkdir(destination, { recursive: true });
-    await writeFile(path.join(destination, "sources.json"), JSON.stringify({ repositories: { rows: [] } }));
+    await writeFile(path.join(destination, "sources.json"), JSON.stringify({
+      repositories: {
+        rows: [{
+          token: syntheticToken,
+          note: ["github", "pat", "abcdefghijklmnopqrstuvwxyz123456"].join("_"),
+        }],
+      },
+    }));
   };
 
   const preview = await startDashboardServer({
@@ -83,6 +94,7 @@ test("local dashboard server composes package dashboards and reloads after updat
     catalogRoot: packageRoot,
     installedDashboardsDirectory: path.join(root, "installed-dashboards"),
     downloadData,
+    workingDirectory: root,
     port: 0,
   });
   try {
@@ -92,15 +104,23 @@ test("local dashboard server composes package dashboards and reloads after updat
     const index = await indexResponse.text();
     assert.doesNotMatch(index, /location\.reload/);
     assert.doesNotMatch(index, /<script[^>]+src=.*copilot-prompt/);
+    assert.doesNotMatch(index, new RegExp(syntheticToken));
+    assert.match(index, /\[REDACTED\]/);
 
     const dashboardResponse = await fetch(`${preview.url}/dashboard.json`);
     assert.equal(dashboardResponse.headers.get("cache-control"), "no-store");
+    const browserDashboard = await dashboardResponse.json();
     assert.deepEqual(
-      (await dashboardResponse.json()).dashboard.pages.map(({ id }) => id),
+      browserDashboard.dashboard.pages.map(({ id }) => id),
       ["built-in", "package-one"],
     );
+    assert.equal(browserDashboard.dashboard.description, "[REDACTED]");
     const sourcesResponse = await fetch(`${preview.url}/sources.json`);
-    assert.deepEqual(await sourcesResponse.json(), { repositories: { rows: [] } });
+    assert.deepEqual(await sourcesResponse.json(), {
+      repositories: {
+        rows: [{ token: "[REDACTED]", note: "[REDACTED]" }],
+      },
+    });
 
     const traversalResponse = await fetch(`${preview.url}/..%2Foutside.txt`);
     assert.equal(traversalResponse.status, 404);
@@ -143,6 +163,7 @@ test("local dashboard server fails when dashboard data cannot be downloaded", as
         downloadData: async () => {
           throw new Error("artifact unavailable");
         },
+        workingDirectory: root,
         port: 0,
       }),
       /artifact unavailable/,
@@ -186,6 +207,7 @@ test("local dashboard server optionally prompts Copilot to update the active vie
         runtimeClosed = true;
       },
     }),
+    workingDirectory: root,
     port: 0,
   });
   try {
@@ -270,6 +292,37 @@ test("local dashboard server rejects non-loopback Copilot hosts", async () => {
   );
 });
 
+test("local dashboard server rejects paths outside its workspace", async () => {
+  const root = await mkdtemp(path.join(tmpdir(), "dashboard-local-server-"));
+  const workspace = path.join(root, "workspace");
+  await mkdir(workspace);
+  await writeFile(path.join(root, "dashboard.json"), dashboard("built-in"));
+  try {
+    await assert.rejects(
+      startDashboardServer({
+        siteRoot: root,
+        catalogRoot: null,
+        installedDashboardsDirectory: path.join(workspace, "dashboards"),
+        workingDirectory: workspace,
+      }),
+      /paths must remain within the workspace/,
+    );
+  } finally {
+    await rm(root, { recursive: true, force: true });
+  }
+});
+
+test("local dashboard CLI relaunches Node with workspace permissions", () => {
+  const repositoryRoot = path.resolve(import.meta.dirname, "../..");
+  const result = spawnSync(process.execPath, ["dashboard/local-server.mjs", "--help"], {
+    cwd: repositoryRoot,
+    encoding: "utf8",
+  });
+  assert.equal(result.status, 0, result.stderr);
+  assert.match(result.stdout, /Launching dashboard server with workspace filesystem permissions/);
+  assert.match(result.stdout, /usage: local-server\.mjs/);
+});
+
 test("local dashboard server downloads the latest data artifact with GitHub CLI", async () => {
   const root = await mkdtemp(path.join(tmpdir(), "dashboard-local-server-"));
   const ghExecutable = path.join(root, "gh");
@@ -310,6 +363,7 @@ printf '{"repositories":{"rows":[{"repository":"control"}]}}' > "$7/sources.json
     installedDashboardsDirectory: path.join(root, "dashboards"),
     repository: "acme/control",
     ghExecutable,
+    workingDirectory: root,
     port: 0,
   });
   try {

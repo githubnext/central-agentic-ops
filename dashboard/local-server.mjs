@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
 import { createServer } from "node:http";
-import { execFile } from "node:child_process";
+import { execFile, spawn } from "node:child_process";
 import { createHash, randomBytes } from "node:crypto";
 import {
   copyFile,
@@ -15,7 +15,6 @@ import {
 } from "node:fs/promises";
 import { watch } from "node:fs";
 import { isIP } from "node:net";
-import { tmpdir } from "node:os";
 import { promisify } from "node:util";
 import {
   basename,
@@ -182,6 +181,43 @@ function isLoopbackHost(host) {
 
 function normalizeDashboardJson(source) {
   return JSON.stringify(JSON.parse(source), null, 2);
+}
+
+const secretKeyPattern = /(?:^|[-_])(api[-_]?key|authorization|client[-_]?secret|password|private[-_]?key|secret|token)(?:$|[-_])/i;
+const secretValuePatterns = [
+  /\b(?:gh[pousr]_[A-Za-z0-9]{20,}|github_pat_[A-Za-z0-9_]{20,})\b/g,
+  /\bBearer\s+[A-Za-z0-9._~+/-]+=*/gi,
+  /\bAKIA[A-Z0-9]{16}\b/g,
+  /-----BEGIN [A-Z ]*PRIVATE KEY-----[\s\S]*?-----END [A-Z ]*PRIVATE KEY-----/g,
+];
+
+function redactSecretValues(value) {
+  return secretValuePatterns.reduce(
+    (redacted, pattern) => redacted.replace(pattern, "[REDACTED]"),
+    value,
+  );
+}
+
+function redactJsonSecrets(source) {
+  const redact = (value, key = "") => {
+    if (secretKeyPattern.test(key)) return "[REDACTED]";
+    if (Array.isArray(value)) return value.map((entry) => redact(entry));
+    if (value && typeof value === "object") {
+      return Object.fromEntries(Object.entries(value).map(([name, entry]) => [name, redact(entry, name)]));
+    }
+    if (typeof value !== "string") return value;
+    return redactSecretValues(value);
+  };
+  return JSON.stringify(redact(JSON.parse(source)), null, 2);
+}
+
+function browserSafeFileContent(path, content) {
+  const extension = extname(path);
+  if (extension === ".json") return redactJsonSecrets(content.toString("utf8"));
+  if ([".css", ".html", ".js", ".mjs"].includes(extension)) {
+    return redactSecretValues(content.toString("utf8"));
+  }
+  return content;
 }
 
 function errorMetadata(error) {
@@ -450,16 +486,26 @@ export async function startDashboardServer({
     });
     throw new Error("Copilot mode requires a loopback --host such as 127.0.0.1 or ::1.");
   }
+  const resolvedWorkingDirectory = await realpath(workingDirectory);
   const resolvedSiteRoot = await realpath(siteRoot);
+  if (!isWithin(resolvedWorkingDirectory, resolvedSiteRoot)
+      || (catalogRoot && !isWithin(resolvedWorkingDirectory, resolve(catalogRoot)))
+      || !isWithin(resolvedWorkingDirectory, resolve(installedDashboardsDirectory))) {
+    console.log("Dashboard server configuration rejected.", {
+      reason: "dashboard path is outside the workspace",
+    });
+    throw new Error("Dashboard server paths must remain within the workspace.");
+  }
   const baseDashboardPath = join(resolvedSiteRoot, "dashboard.json");
-  const temporaryDirectory = await mkdtemp(join(tmpdir(), "cao-dashboard-preview-"));
+  const temporaryDirectory = await mkdtemp(join(resolvedWorkingDirectory, ".cao-dashboard-preview-"));
   const bundledDashboardPath = join(temporaryDirectory, "dashboard.json");
   const dashboardDataDirectory = join(temporaryDirectory, "data");
   let sourcesContent;
   try {
     await downloadData(dashboardDataDirectory, repository, ghExecutable);
-    sourcesContent = await readFile(join(dashboardDataDirectory, "sources.json"), "utf8");
-    JSON.parse(sourcesContent);
+    sourcesContent = redactJsonSecrets(
+      await readFile(join(dashboardDataDirectory, "sources.json"), "utf8"),
+    );
   } catch (error) {
     await rm(temporaryDirectory, { recursive: true, force: true });
     throw error;
@@ -491,7 +537,7 @@ export async function startDashboardServer({
 
     await copyFile(baseDashboardPath, bundledDashboardPath);
     await bundleDashboardFiles(bundledDashboardPath, packagePaths);
-    dashboardContent = await readFile(bundledDashboardPath, "utf8");
+    dashboardContent = redactJsonSecrets(await readFile(bundledDashboardPath, "utf8"));
     signature = nextSignature;
     console.log("Dashboard preview rebuilt.", {
       bundledDashboardPath,
@@ -544,7 +590,10 @@ export async function startDashboardServer({
     const initialPackagePaths = await rebuild(false);
     await refreshWatchers(initialPackagePaths);
     if (copilot) {
-      copilotRuntime = await createCopilotRuntime({ workingDirectory, copilotExecutable });
+      copilotRuntime = await createCopilotRuntime({
+        workingDirectory: resolvedWorkingDirectory,
+        copilotExecutable,
+      });
     }
   } catch (error) {
     for (const watcher of watchers.values()) watcher.close();
@@ -707,7 +756,7 @@ export async function startDashboardServer({
 
       let content;
       if (pathname === "/dashboard.json") content = dashboardContent;
-      else content = await readFile(canonicalPath);
+      else content = browserSafeFileContent(canonicalPath, await readFile(canonicalPath));
       response.writeHead(200, {
         "Cache-Control": "no-store",
         "Content-Type": contentTypes.get(extname(canonicalPath)) || "application/octet-stream",
@@ -839,8 +888,44 @@ async function main() {
   process.once("SIGTERM", shutdown);
 }
 
+async function runWithWorkspacePermissions() {
+  const workspace = await realpath(process.cwd());
+  const outsideWorkspaceProbe = resolve(workspace, "..", ".cao-outside-workspace-probe");
+  if (process.env.CAO_DASHBOARD_PERMISSION_CHILD === "1"
+      && process.permission?.has("fs.read", workspace)
+      && process.permission.has("fs.write", workspace)
+      && !process.permission.has("fs.read", outsideWorkspaceProbe)
+      && !process.permission.has("fs.write", outsideWorkspaceProbe)) {
+    await main();
+    return;
+  }
+  console.log("Launching dashboard server with workspace filesystem permissions.", { workspace });
+  const child = spawn(process.execPath, [
+    "--permission",
+    `--allow-fs-read=${workspace}`,
+    `--allow-fs-write=${workspace}`,
+    "--allow-child-process",
+    fileURLToPath(import.meta.url),
+    ...process.argv.slice(2),
+  ], {
+    cwd: workspace,
+    env: {
+      ...process.env,
+      NODE_OPTIONS: "",
+      CAO_DASHBOARD_PERMISSION_CHILD: "1",
+    },
+    stdio: "inherit",
+  });
+  const { code, signal } = await new Promise((accept, reject) => {
+    child.once("error", reject);
+    child.once("exit", (code, signal) => accept({ code, signal }));
+  });
+  if (signal) throw new Error(`Dashboard server exited from signal ${signal}.`);
+  process.exitCode = code ?? 1;
+}
+
 if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
-  await main().catch((error) => {
+  await runWithWorkspacePermissions().catch((error) => {
     console.log(error instanceof Error ? error.message : String(error));
     process.exitCode = 1;
   });
