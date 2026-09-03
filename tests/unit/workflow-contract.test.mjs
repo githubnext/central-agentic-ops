@@ -401,6 +401,8 @@ test("control workflows deny before activation through one shared admission cont
   assert.match(sharedControl, /contents\/\.github\/cao\/src\/policy\.mjs/);
   assert.match(sharedControl, /contents\/\.github\/aw\/activity\/actions-log\.mjs/);
   assert.match(sharedControl, /contents\/activity\/actions-log\.mjs/);
+  assert.match(sharedControl, /if ! grep -q '\(HTTP 404\)' "\$error_path"/);
+  assert.doesNotMatch(sharedControl, /actions-log\.mjs"[\s\S]{0,100}2>\/dev\/null/);
   assert.match(sharedControl, /CAO_ACTIONS_LOG_PATH=\$cao_dir\/actions-log\.mjs/);
   assert.match(sharedControl, /Generate CAO pre-activation GitHub App token/);
   assert.match(sharedControl, /actions\/create-github-app-token@v3\.2\.0/);

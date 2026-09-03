@@ -70,14 +70,24 @@ jobs:
           set -uo pipefail
           cao_dir="${RUNNER_TEMP:-/tmp}/cao"
           mkdir -p "$cao_dir"
+          fetch_actions_log() {
+            local error_path="$cao_dir/actions-log.error"
+            if gh api --method GET "repos/${GITHUB_REPOSITORY}/contents/.github/aw/activity/actions-log.mjs" \
+                -f ref="$GITHUB_WORKFLOW_SHA" --jq '.content' 2>"$error_path"; then
+              return
+            fi
+            if ! grep -q '(HTTP 404)' "$error_path"; then
+              cat "$error_path" >&2
+              return 1
+            fi
+            gh api --method GET "repos/${GITHUB_REPOSITORY}/contents/activity/actions-log.mjs" \
+              -f ref="$GITHUB_WORKFLOW_SHA" --jq '.content'
+          }
           if gh api --method GET "repos/${GITHUB_REPOSITORY}/contents/.github/cao/src/control.mjs" \
               -f ref="$GITHUB_WORKFLOW_SHA" --jq '.content' | base64 -d > "$cao_dir/control.mjs" && \
             gh api --method GET "repos/${GITHUB_REPOSITORY}/contents/.github/cao/src/policy.mjs" \
               -f ref="$GITHUB_WORKFLOW_SHA" --jq '.content' | base64 -d > "$cao_dir/policy.mjs" && \
-            { gh api --method GET "repos/${GITHUB_REPOSITORY}/contents/.github/aw/activity/actions-log.mjs" \
-                -f ref="$GITHUB_WORKFLOW_SHA" --jq '.content' 2>/dev/null || \
-              gh api --method GET "repos/${GITHUB_REPOSITORY}/contents/activity/actions-log.mjs" \
-                -f ref="$GITHUB_WORKFLOW_SHA" --jq '.content'; } | base64 -d > "$cao_dir/actions-log.mjs" && \
+            fetch_actions_log | base64 -d > "$cao_dir/actions-log.mjs" && \
             export CAO_ACTIONS_LOG_PATH="$cao_dir/actions-log.mjs" && \
             echo "CAO_ACTIONS_LOG_PATH=$cao_dir/actions-log.mjs" >> "$GITHUB_ENV" && \
             node "$cao_dir/control.mjs" admit; then
