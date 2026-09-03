@@ -59,7 +59,7 @@ describe('data view renderer', () => {
         }
       },
       sourceName: 'usage',
-      rows: [{ repository: 'central-agentic-ops', aic: 3 }],
+      rows: [{ repository: 'gh-aw-cao', aic: 3 }],
       metadata,
       contextDetails: [],
       headingTag: 'h3',

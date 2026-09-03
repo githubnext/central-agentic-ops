@@ -26,8 +26,8 @@ describe('Cost and efficiency dashboard view', () => {
         usage: {
           source: 'usage',
           rows: [
-            { organization: 'githubnext', repository: 'central-agentic-ops', workflow: '.github/workflows/daily.md', run: '101', invocation: 'usage-1', aic: 3.5 },
-            { organization: 'githubnext', repository: 'central-agentic-ops', workflow: '.github/workflows/daily.md', run: '101', invocation: 'usage-2', aic: 1.5 },
+            { organization: 'githubnext', repository: 'gh-aw-cao', workflow: '.github/workflows/daily.md', run: '101', invocation: 'usage-1', aic: 3.5 },
+            { organization: 'githubnext', repository: 'gh-aw-cao', workflow: '.github/workflows/daily.md', run: '101', invocation: 'usage-2', aic: 1.5 },
             { organization: 'octo-org', repository: 'service', workflow: '.github/workflows/review.md', run: '202', invocation: 'usage-3', aic: 4 }
           ],
           metadata
@@ -107,7 +107,7 @@ describe('Cost and efficiency dashboard view', () => {
         usage: {
           source: 'usage',
           rows: [
-            { organization: 'githubnext', repository: 'central-agentic-ops', workflow: '.github/workflows/daily.md', invocation: 'shared-id', aic: 1 },
+            { organization: 'githubnext', repository: 'gh-aw-cao', workflow: '.github/workflows/daily.md', invocation: 'shared-id', aic: 1 },
             { organization: 'octo-org', repository: 'service', workflow: '.github/workflows/daily.md', invocation: 'shared-id', aic: 1 }
           ],
           metadata: { ...metadata, completeness: /** @type {'complete'} */ ('complete') }

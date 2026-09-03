@@ -17,16 +17,16 @@ describe('runtime data', () => {
       workflows: {
         source: 'workflows',
         rows: [
-          { organization: 'githubnext', repository: 'central-agentic-ops', workflow: '.github/workflows/root.md', 'workflow-name': 'Root', 'workflow-role': 'orchestrator', package: 'ops' },
-          { organization: 'githubnext', repository: 'central-agentic-ops', workflow: '.github/workflows/worker.md', 'workflow-name': 'Worker', 'workflow-role': 'worker' }
+          { organization: 'githubnext', repository: 'gh-aw-cao', workflow: '.github/workflows/root.md', 'workflow-name': 'Root', 'workflow-role': 'orchestrator', package: 'ops' },
+          { organization: 'githubnext', repository: 'gh-aw-cao', workflow: '.github/workflows/worker.md', 'workflow-name': 'Worker', 'workflow-role': 'worker' }
         ],
         metadata
       },
       runs: {
         source: 'runs',
         rows: [
-          { organization: 'githubnext', repository: 'central-agentic-ops', workflow: '.github/workflows/root.md', run: '1', 'run-conclusion': 'action-required' },
-          { organization: 'githubnext', repository: 'central-agentic-ops', workflow: '.github/workflows/worker.md', run: '2', 'run-conclusion': 'failure' }
+          { organization: 'githubnext', repository: 'gh-aw-cao', workflow: '.github/workflows/root.md', run: '1', 'run-conclusion': 'action-required' },
+          { organization: 'githubnext', repository: 'gh-aw-cao', workflow: '.github/workflows/worker.md', run: '2', 'run-conclusion': 'failure' }
         ],
         metadata
       }
@@ -44,7 +44,7 @@ describe('runtime data', () => {
       detail: 'The current window does not provide a representative historical baseline. Direct evidence remains visible without inferred anomaly labels.'
     }]);
     expect(sources['runtime-signals'].rows[0]['navigation-href']).toBe(
-      '#page-workflow-runtime?workflow=githubnext%2Fcentral-agentic-ops%3A.github%2Fworkflows%2Fworker.md'
+      '#page-workflow-runtime?workflow=githubnext%2Fgh-aw-cao%3A.github%2Fworkflows%2Fworker.md'
     );
     expect(sources['runtime-signals'].metadata).toBe(metadata);
     expect(sources['runtime-episode-summary'].rows).toEqual([

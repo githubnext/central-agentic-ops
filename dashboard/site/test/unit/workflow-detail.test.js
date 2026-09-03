@@ -28,7 +28,7 @@ function context(pageId = 'workflow-detail') {
         rows: [
           {
             organization: 'githubnext',
-            repository: 'central-agentic-ops',
+            repository: 'gh-aw-cao',
             package: 'ambient-context',
             'package-name': 'Ambient Context',
             'package-memberships': [
@@ -43,7 +43,7 @@ function context(pageId = 'workflow-detail') {
               relation: 'workflow',
               href: 'https://github.com/githubnext/gh-aw-cao/blob/HEAD/.github/workflows/ambient-context.md',
               label: 'View Ambient Context',
-              'dashboard-href': '#page-workflow-runtime?workflow=githubnext%2Fcentral-agentic-ops%3A.github%2Fworkflows%2Fambient-context.md',
+              'dashboard-href': '#page-workflow-runtime?workflow=githubnext%2Fgh-aw-cao%3A.github%2Fworkflows%2Fambient-context.md',
               'dashboard-label': 'View Ambient Context workflow dashboard'
             }
           },
@@ -55,7 +55,7 @@ function context(pageId = 'workflow-detail') {
           },
           {
             organization: 'githubnext',
-            repository: 'central-agentic-ops',
+            repository: 'gh-aw-cao',
             workflow: '.github/workflows/release@prod.md',
             'workflow-name': 'Release production'
           }
@@ -80,7 +80,7 @@ function context(pageId = 'workflow-detail') {
           },
           {
             organization: 'githubnext',
-            repository: 'central-agentic-ops',
+            repository: 'gh-aw-cao',
             workflow: '.github/workflows/ambient-context.md',
             'safe-output': 'report-open',
             'outcome-title': 'Open report',
@@ -122,10 +122,10 @@ describe('renderWorkflowDetail', () => {
     expect(rendered.querySelector('.workflow-tabs')?.textContent).toBe('InsightsReportsRuns');
     expect(rendered.querySelector('.workflow-tabs [aria-current="page"]')?.textContent).toBe('Reports');
     expect(rendered.querySelector('.workflow-tabs a:first-child')?.getAttribute('href')).toBe(
-      '#page-workflow-runtime?workflow=githubnext%2Fcentral-agentic-ops%3A.github%2Fworkflows%2Fambient-context.md'
+      '#page-workflow-runtime?workflow=githubnext%2Fgh-aw-cao%3A.github%2Fworkflows%2Fambient-context.md'
     );
     expect(rendered.querySelector('.workflow-tabs a:last-child')?.getAttribute('href')).toBe(
-      '#page-workflow-runs?workflow=githubnext%2Fcentral-agentic-ops%3A.github%2Fworkflows%2Fambient-context.md'
+      '#page-workflow-runs?workflow=githubnext%2Fgh-aw-cao%3A.github%2Fworkflows%2Fambient-context.md'
     );
     expect([...rendered.querySelectorAll('.workflow-identity .workflow-badge')].map((badge) => badge.textContent)).toEqual([
       'Orchestrator',
@@ -152,7 +152,7 @@ describe('renderWorkflowDetail', () => {
         { label: 'Repositories', href: '#page-repositories' },
         {
           label: 'githubnext/gh-aw-cao',
-          href: '#page-repository-detail?repository=githubnext%2Fcentral-agentic-ops'
+          href: '#page-repository-detail?repository=githubnext%2Fgh-aw-cao'
         }
       ]
     });
@@ -174,7 +174,7 @@ describe('renderWorkflowDetail', () => {
 
     expect(rendered.querySelector('.workflow-tabs [aria-current="page"]')?.textContent).toBe('Runs');
     expect(rendered.querySelector('.workflow-tabs a:nth-child(2)')?.getAttribute('href')).toBe(
-      '#page-workflow-detail?workflow=githubnext%2Fcentral-agentic-ops%3A.github%2Fworkflows%2Fambient-context.md'
+      '#page-workflow-detail?workflow=githubnext%2Fgh-aw-cao%3A.github%2Fworkflows%2Fambient-context.md'
     );
     expect(allocation.mock.calls[0][0].detail.description).toBe(
       'Observed runs for .github/workflows/ambient-context.md in githubnext/gh-aw-cao.'

@@ -16,7 +16,7 @@ const completeMetadata = {
 
 const workflow = {
   organization: 'githubnext',
-  repository: 'central-agentic-ops',
+  repository: 'gh-aw-cao',
   workflow: '.github/workflows/multi-device-docs-tester.md',
   'workflow-name': 'Multi-Device Docs Tester',
   'workflow-role': 'standalone',
@@ -32,7 +32,7 @@ const workflow = {
     relation: 'workflow',
     href: 'https://github.com/githubnext/gh-aw-cao/blob/HEAD/.github/workflows/multi-device-docs-tester.md',
     label: 'View Multi-Device Docs Tester',
-    'dashboard-href': '#page-workflow-runtime?workflow=githubnext%2Fcentral-agentic-ops%3A.github%2Fworkflows%2Fmulti-device-docs-tester.md',
+    'dashboard-href': '#page-workflow-runtime?workflow=githubnext%2Fgh-aw-cao%3A.github%2Fworkflows%2Fmulti-device-docs-tester.md',
     'dashboard-label': 'View Multi-Device Docs Tester workflow dashboard'
   }
 };
@@ -55,9 +55,9 @@ function context(overrides = {}) {
         source: 'runs',
         metadata: completeMetadata,
         rows: [
-          { organization: 'githubnext', repository: 'central-agentic-ops', workflow: workflow.workflow, run: '1', 'run-status': 'completed', 'run-conclusion': 'success' },
-          { organization: 'githubnext', repository: 'central-agentic-ops', workflow: workflow.workflow, run: '2', 'run-status': 'completed', 'run-conclusion': 'failure' },
-          { organization: 'githubnext', repository: 'central-agentic-ops', workflow: workflow.workflow, run: '3', 'run-status': 'queued', 'run-conclusion': 'unknown' },
+          { organization: 'githubnext', repository: 'gh-aw-cao', workflow: workflow.workflow, run: '1', 'run-status': 'completed', 'run-conclusion': 'success' },
+          { organization: 'githubnext', repository: 'gh-aw-cao', workflow: workflow.workflow, run: '2', 'run-status': 'completed', 'run-conclusion': 'failure' },
+          { organization: 'githubnext', repository: 'gh-aw-cao', workflow: workflow.workflow, run: '3', 'run-status': 'queued', 'run-conclusion': 'unknown' },
           { organization: 'other', repository: 'repo', workflow: workflow.workflow, run: '4', 'run-status': 'completed', 'run-conclusion': 'success' }
         ]
       },
@@ -65,8 +65,8 @@ function context(overrides = {}) {
         source: 'usage',
         metadata: { ...completeMetadata, completeness: /** @type {'partial'} */ ('partial') },
         rows: [
-          { organization: 'githubnext', repository: 'central-agentic-ops', workflow: workflow.workflow, run: '1', aic: 42.5 },
-          { organization: 'githubnext', repository: 'central-agentic-ops', workflow: workflow.workflow, run: '2', aic: 7.5 }
+          { organization: 'githubnext', repository: 'gh-aw-cao', workflow: workflow.workflow, run: '1', aic: 42.5 },
+          { organization: 'githubnext', repository: 'gh-aw-cao', workflow: workflow.workflow, run: '2', aic: 7.5 }
         ]
       },
       'operational-values': {
@@ -95,10 +95,10 @@ describe('renderWorkflowRuntime', () => {
     expect(rendered.querySelector('.repository-tabs')?.textContent).toBe('InsightsReportsRuns');
     expect(rendered.querySelector('.repository-tabs [aria-current="page"]')?.textContent).toBe('Insights');
     expect(rendered.querySelector('.repository-tabs a:last-child')?.getAttribute('href')).toBe(
-      '#page-workflow-runs?workflow=githubnext%2Fcentral-agentic-ops%3A.github%2Fworkflows%2Fmulti-device-docs-tester.md'
+      '#page-workflow-runs?workflow=githubnext%2Fgh-aw-cao%3A.github%2Fworkflows%2Fmulti-device-docs-tester.md'
     );
     expect(rendered.querySelector('.repository-tabs a:nth-child(2)')?.getAttribute('href')).toBe(
-      '#page-workflow-detail?workflow=githubnext%2Fcentral-agentic-ops%3A.github%2Fworkflows%2Fmulti-device-docs-tester.md'
+      '#page-workflow-detail?workflow=githubnext%2Fgh-aw-cao%3A.github%2Fworkflows%2Fmulti-device-docs-tester.md'
     );
     expect([...rendered.querySelectorAll('.workflow-badges .workflow-badge')].map((badge) => badge.textContent)).toEqual([
       'Standalone',
@@ -148,7 +148,7 @@ describe('renderWorkflowRuntime', () => {
       rows: [
         {
           organization: 'githubnext',
-          repository: 'central-agentic-ops',
+          repository: 'gh-aw-cao',
           workflow: workflow.workflow,
           run: '0',
           'operational-value': 0.4,
@@ -160,7 +160,7 @@ describe('renderWorkflowRuntime', () => {
         },
         {
           organization: 'githubnext',
-          repository: 'central-agentic-ops',
+          repository: 'gh-aw-cao',
           workflow: workflow.workflow,
           run: '1',
           'operational-value': 0.75,
@@ -177,7 +177,7 @@ describe('renderWorkflowRuntime', () => {
         },
         {
           organization: 'githubnext',
-          repository: 'central-agentic-ops',
+          repository: 'gh-aw-cao',
           workflow: workflow.workflow,
           run: '2',
           'operational-value': 0.8,

@@ -46,18 +46,18 @@ describe('presenter built-in and custom pages', () => {
         runs: {
           source: 'runs',
           rows: [
-            { organization: 'github', repository: 'central-agentic-ops', workflow: '.github/workflows/daily.yml', run: '1001', 'run-conclusion': 'success', engine: 'copilot', 'engine-version': '0.87.6', 'requested-model': 'gpt-5.6-sol', 'resolved-model': 'gpt-5.6-sol' },
-            { organization: 'github', repository: 'central-agentic-ops', workflow: '.github/workflows/review.yml', run: '1002', 'run-conclusion': 'failure', engine: 'copilot', 'engine-version': '0.87.9', 'requested-model': 'gpt-5.6-sol', 'resolved-model': 'gpt-5.6-sol' },
-            { organization: 'github', repository: 'central-agentic-ops', workflow: '.github/workflows/audit.yml', run: '1003', 'run-conclusion': 'success', engine: 'pi', 'engine-version': '1.2.0', 'requested-model': 'claude-sonnet-5', 'resolved-model': 'claude-sonnet-5' }
+            { organization: 'github', repository: 'gh-aw-cao', workflow: '.github/workflows/daily.yml', run: '1001', 'run-conclusion': 'success', engine: 'copilot', 'engine-version': '0.87.6', 'requested-model': 'gpt-5.6-sol', 'resolved-model': 'gpt-5.6-sol' },
+            { organization: 'github', repository: 'gh-aw-cao', workflow: '.github/workflows/review.yml', run: '1002', 'run-conclusion': 'failure', engine: 'copilot', 'engine-version': '0.87.9', 'requested-model': 'gpt-5.6-sol', 'resolved-model': 'gpt-5.6-sol' },
+            { organization: 'github', repository: 'gh-aw-cao', workflow: '.github/workflows/audit.yml', run: '1003', 'run-conclusion': 'success', engine: 'pi', 'engine-version': '1.2.0', 'requested-model': 'claude-sonnet-5', 'resolved-model': 'claude-sonnet-5' }
           ],
           metadata
         },
         usage: {
           source: 'usage',
           rows: [
-            { organization: 'github', repository: 'central-agentic-ops', workflow: '.github/workflows/daily.yml', run: '1001', invocation: 'a', engine: 'copilot', 'engine-version': '0.87.6', 'requested-model': 'gpt-5.6-sol', 'resolved-model': 'gpt-5.6-sol', aic: 10 },
-            { organization: 'github', repository: 'central-agentic-ops', workflow: '.github/workflows/review.yml', run: '1002', invocation: 'b', engine: 'copilot', 'engine-version': '0.87.9', 'requested-model': 'gpt-5.6-sol', 'resolved-model': 'gpt-5.6-sol', aic: 15 },
-            { organization: 'github', repository: 'central-agentic-ops', workflow: '.github/workflows/audit.yml', run: '1003', invocation: 'c', engine: 'pi', 'engine-version': '1.2.0', 'requested-model': 'claude-sonnet-5', 'resolved-model': 'claude-sonnet-5', aic: 5 }
+            { organization: 'github', repository: 'gh-aw-cao', workflow: '.github/workflows/daily.yml', run: '1001', invocation: 'a', engine: 'copilot', 'engine-version': '0.87.6', 'requested-model': 'gpt-5.6-sol', 'resolved-model': 'gpt-5.6-sol', aic: 10 },
+            { organization: 'github', repository: 'gh-aw-cao', workflow: '.github/workflows/review.yml', run: '1002', invocation: 'b', engine: 'copilot', 'engine-version': '0.87.9', 'requested-model': 'gpt-5.6-sol', 'resolved-model': 'gpt-5.6-sol', aic: 15 },
+            { organization: 'github', repository: 'gh-aw-cao', workflow: '.github/workflows/audit.yml', run: '1003', invocation: 'c', engine: 'pi', 'engine-version': '1.2.0', 'requested-model': 'claude-sonnet-5', 'resolved-model': 'claude-sonnet-5', aic: 5 }
           ],
           metadata
         },
@@ -109,8 +109,8 @@ describe('presenter built-in and custom pages', () => {
         workflows: {
           source: 'workflows',
           rows: [
-            { organization: 'githubnext', repository: 'central-agentic-ops', package: 'dependabot', 'package-name': 'Dependabot', workflow: '.github/workflows/dependabot.yml', 'workflow-name': 'Dependabot', 'workflow-role': 'orchestrator', 'workflow-active': 'true', 'rollout-mode': 'review' },
-            { organization: 'githubnext', repository: 'central-agentic-ops', package: 'dependabot', 'package-name': 'Dependabot', workflow: '.github/workflows/dependabot-release-train-updater.yml', 'workflow-name': 'Release Train Updater', 'workflow-role': 'worker', 'workflow-active': 'true', 'rollout-mode': 'review' },
+            { organization: 'githubnext', repository: 'gh-aw-cao', package: 'dependabot', 'package-name': 'Dependabot', workflow: '.github/workflows/dependabot.yml', 'workflow-name': 'Dependabot', 'workflow-role': 'orchestrator', 'workflow-active': 'true', 'rollout-mode': 'review' },
+            { organization: 'githubnext', repository: 'gh-aw-cao', package: 'dependabot', 'package-name': 'Dependabot', workflow: '.github/workflows/dependabot-release-train-updater.yml', 'workflow-name': 'Release Train Updater', 'workflow-role': 'worker', 'workflow-active': 'true', 'rollout-mode': 'review' },
             { organization: 'github', repository: 'target-service', workflow: '.github/workflows/ci.yml', 'workflow-name': 'CI', 'workflow-role': 'standalone', 'workflow-active': 'true', 'rollout-mode': 'live' }
           ],
           metadata: {
@@ -126,8 +126,8 @@ describe('presenter built-in and custom pages', () => {
         usage: {
           source: 'usage',
           rows: [
-            { organization: 'githubnext', repository: 'central-agentic-ops', workflow: '.github/workflows/dependabot.yml', aic: 12 },
-            { organization: 'githubnext', repository: 'central-agentic-ops', workflow: '.github/workflows/dependabot.yml', aic: 18 },
+            { organization: 'githubnext', repository: 'gh-aw-cao', workflow: '.github/workflows/dependabot.yml', aic: 12 },
+            { organization: 'githubnext', repository: 'gh-aw-cao', workflow: '.github/workflows/dependabot.yml', aic: 18 },
             { organization: 'github', repository: 'target-service', workflow: '.github/workflows/ci.yml', aic: 5 }
           ],
           metadata: {
@@ -201,7 +201,7 @@ describe('presenter built-in and custom pages', () => {
         workflows: {
           source: 'workflows',
           rows: [
-            { organization: 'githubnext', repository: 'central-agentic-ops', package: 'dependabot', 'package-name': 'Dependabot', workflow: '.github/workflows/dependabot.yml', 'workflow-name': 'Dependabot', 'workflow-role': 'orchestrator', 'workflow-active': 'true', 'rollout-mode': 'live' },
+            { organization: 'githubnext', repository: 'gh-aw-cao', package: 'dependabot', 'package-name': 'Dependabot', workflow: '.github/workflows/dependabot.yml', 'workflow-name': 'Dependabot', 'workflow-role': 'orchestrator', 'workflow-active': 'true', 'rollout-mode': 'live' },
             { organization: 'github', repository: 'target-service', workflow: '.github/workflows/ci.yml', 'workflow-name': 'CI', 'workflow-role': 'standalone', 'workflow-active': 'true', 'rollout-mode': 'unknown' }
           ],
           metadata: {
@@ -220,7 +220,7 @@ describe('presenter built-in and custom pages', () => {
     const links = [...rendered.querySelectorAll('[data-page-name="workflows"] table a')]
       .map((link) => link.getAttribute('href'));
     expect(links).toContain('#page-package-insights?package=dependabot');
-    expect(links).toContain('#page-workflow-runtime?workflow=githubnext%2Fcentral-agentic-ops%3A.github%2Fworkflows%2Fdependabot.yml');
+    expect(links).toContain('#page-workflow-runtime?workflow=githubnext%2Fgh-aw-cao%3A.github%2Fworkflows%2Fdependabot.yml');
     expect(links).toContain('#page-workflow-runtime?workflow=github%2Ftarget-service%3A.github%2Fworkflows%2Fci.yml');
     expect(links).toContain('#page-repository-detail?repository=github%2Ftarget-service');
   });
@@ -786,7 +786,7 @@ describe('presenter built-in and custom pages', () => {
           rows: [
             {
               organization: 'githubnext',
-              repository: 'central-agentic-ops',
+              repository: 'gh-aw-cao',
               workflow: '.github/workflows/daily.md',
               run: '100',
               'operational-value': 0.2,
@@ -801,7 +801,7 @@ describe('presenter built-in and custom pages', () => {
             },
             {
               organization: 'githubnext',
-              repository: 'central-agentic-ops',
+              repository: 'gh-aw-cao',
               workflow: '.github/workflows/daily.md',
               run: '101',
               'operational-value': 0.8,
@@ -816,7 +816,7 @@ describe('presenter built-in and custom pages', () => {
             },
             {
               organization: 'githubnext',
-              repository: 'central-agentic-ops',
+              repository: 'gh-aw-cao',
               workflow: '.github/workflows/daily.md',
               run: '102',
               'operational-value': 0.6,
@@ -831,7 +831,7 @@ describe('presenter built-in and custom pages', () => {
             },
             {
               organization: 'githubnext',
-              repository: 'central-agentic-ops',
+              repository: 'gh-aw-cao',
               workflow: '.github/workflows/review.md',
               run: '103',
               'operational-value': 0.4,
@@ -1090,7 +1090,7 @@ describe('presenter built-in and custom pages', () => {
         repositories: {
           source: 'repositories',
           rows: [
-            { organization: 'github', repository: 'central-agentic-ops' },
+            { organization: 'github', repository: 'gh-aw-cao' },
             { organization: 'github', repository: 'dashboard-service' }
           ],
           metadata: {
@@ -1106,8 +1106,8 @@ describe('presenter built-in and custom pages', () => {
         workflows: {
           source: 'workflows',
           rows: [
-            { organization: 'github', repository: 'central-agentic-ops', package: 'daily-ops', 'package-name': 'Daily Ops', 'package-icon': 'workflow', 'workflow-role': 'orchestrator', workflow: '.github/workflows/daily.yml', 'workflow-active': 'true', 'rollout-mode': 'live', 'max-ai-credits': 10, 'observed-at': '2026-08-29T09:00:00Z' },
-            { organization: 'github', repository: 'central-agentic-ops', package: 'daily-ops', 'package-name': 'Daily Ops', 'package-icon': 'workflow', 'workflow-role': 'worker', workflow: '.github/workflows/review.yml', 'workflow-active': 'false', 'rollout-mode': 'review', 'max-ai-credits': 20, 'observed-at': '2026-08-29T09:05:00Z' }
+            { organization: 'github', repository: 'gh-aw-cao', package: 'daily-ops', 'package-name': 'Daily Ops', 'package-icon': 'workflow', 'workflow-role': 'orchestrator', workflow: '.github/workflows/daily.yml', 'workflow-active': 'true', 'rollout-mode': 'live', 'max-ai-credits': 10, 'observed-at': '2026-08-29T09:00:00Z' },
+            { organization: 'github', repository: 'gh-aw-cao', package: 'daily-ops', 'package-name': 'Daily Ops', 'package-icon': 'workflow', 'workflow-role': 'worker', workflow: '.github/workflows/review.yml', 'workflow-active': 'false', 'rollout-mode': 'review', 'max-ai-credits': 20, 'observed-at': '2026-08-29T09:05:00Z' }
           ],
           metadata: {
             'source-id': 'workflows-fixture',
@@ -1122,9 +1122,9 @@ describe('presenter built-in and custom pages', () => {
         runs: {
           source: 'runs',
           rows: [
-            { organization: 'github', repository: 'central-agentic-ops', workflow: '.github/workflows/daily.yml', run: '1001', 'started-at': '2026-08-29T10:00:00Z', 'run-status': 'completed', 'run-conclusion': 'success', 'rollout-mode': 'live', engine: 'openai', 'requested-model': 'gpt-4o', 'resolved-model': 'gpt-4.1' },
-            { organization: 'github', repository: 'central-agentic-ops', workflow: '.github/workflows/daily.yml', run: '1002', 'started-at': '2026-08-29T11:00:00Z', 'run-status': 'completed', 'run-conclusion': 'failure', 'rollout-mode': 'live', engine: 'openai', 'requested-model': 'gpt-4o', 'resolved-model': 'gpt-4.1' },
-            { organization: 'github', repository: 'central-agentic-ops', workflow: '.github/workflows/review.yml', run: '1003', 'started-at': '2026-08-29T12:00:00Z', 'run-status': 'in-progress', 'run-conclusion': 'unknown', 'rollout-mode': 'review', engine: 'anthropic', 'requested-model': 'claude-3.5', 'resolved-model': 'claude-3.7' }
+            { organization: 'github', repository: 'gh-aw-cao', workflow: '.github/workflows/daily.yml', run: '1001', 'started-at': '2026-08-29T10:00:00Z', 'run-status': 'completed', 'run-conclusion': 'success', 'rollout-mode': 'live', engine: 'openai', 'requested-model': 'gpt-4o', 'resolved-model': 'gpt-4.1' },
+            { organization: 'github', repository: 'gh-aw-cao', workflow: '.github/workflows/daily.yml', run: '1002', 'started-at': '2026-08-29T11:00:00Z', 'run-status': 'completed', 'run-conclusion': 'failure', 'rollout-mode': 'live', engine: 'openai', 'requested-model': 'gpt-4o', 'resolved-model': 'gpt-4.1' },
+            { organization: 'github', repository: 'gh-aw-cao', workflow: '.github/workflows/review.yml', run: '1003', 'started-at': '2026-08-29T12:00:00Z', 'run-status': 'in-progress', 'run-conclusion': 'unknown', 'rollout-mode': 'review', engine: 'anthropic', 'requested-model': 'claude-3.5', 'resolved-model': 'claude-3.7' }
           ],
           metadata: {
             'source-id': 'runs-fixture',
@@ -1139,9 +1139,9 @@ describe('presenter built-in and custom pages', () => {
         usage: {
           source: 'usage',
           rows: [
-            { repository: 'central-agentic-ops', workflow: '.github/workflows/daily.yml', run: '1001', 'rollout-mode': 'live', aic: 12, engine: 'openai', 'requested-model': 'gpt-4o', 'resolved-model': 'gpt-4.1', 'observed-at': '2026-08-29T10:05:00Z' },
-            { repository: 'central-agentic-ops', workflow: '.github/workflows/daily.yml', run: '1002', 'rollout-mode': 'live', aic: 18, engine: 'openai', 'requested-model': 'gpt-4o', 'resolved-model': 'gpt-4.1', 'observed-at': '2026-08-29T11:05:00Z' },
-            { repository: 'central-agentic-ops', workflow: '.github/workflows/review.yml', run: '1003', 'rollout-mode': 'review', aic: 5, engine: 'anthropic', 'requested-model': 'claude-3.5', 'resolved-model': 'claude-3.7', 'observed-at': '2026-08-29T12:05:00Z' }
+            { repository: 'gh-aw-cao', workflow: '.github/workflows/daily.yml', run: '1001', 'rollout-mode': 'live', aic: 12, engine: 'openai', 'requested-model': 'gpt-4o', 'resolved-model': 'gpt-4.1', 'observed-at': '2026-08-29T10:05:00Z' },
+            { repository: 'gh-aw-cao', workflow: '.github/workflows/daily.yml', run: '1002', 'rollout-mode': 'live', aic: 18, engine: 'openai', 'requested-model': 'gpt-4o', 'resolved-model': 'gpt-4.1', 'observed-at': '2026-08-29T11:05:00Z' },
+            { repository: 'gh-aw-cao', workflow: '.github/workflows/review.yml', run: '1003', 'rollout-mode': 'review', aic: 5, engine: 'anthropic', 'requested-model': 'claude-3.5', 'resolved-model': 'claude-3.7', 'observed-at': '2026-08-29T12:05:00Z' }
           ],
           metadata: {
             'source-id': 'usage-fixture',
@@ -1163,7 +1163,7 @@ describe('presenter built-in and custom pages', () => {
               'finding-severity': 'medium',
               'finding-status': 'unknown',
               organization: 'github',
-              repository: 'central-agentic-ops',
+              repository: 'gh-aw-cao',
               workflow: '.github/workflows/review.yml',
               'observed-at': '2026-08-29T12:30:00Z',
               'issue-link': { relation: 'issue', href: 'https://example.com/issues/2', label: 'Issue 2' },
@@ -1177,7 +1177,7 @@ describe('presenter built-in and custom pages', () => {
               'finding-severity': 'high',
               'finding-status': 'unknown',
               organization: 'github',
-              repository: 'central-agentic-ops',
+              repository: 'gh-aw-cao',
               workflow: '.github/workflows/daily.yml',
               'observed-at': '2026-08-29T11:30:00Z',
               'issue-link': { relation: 'issue', href: 'https://example.com/issues/1', label: 'Issue 1' },
@@ -1200,7 +1200,7 @@ describe('presenter built-in and custom pages', () => {
           rows: [
             {
               organization: 'github',
-              repository: 'central-agentic-ops',
+              repository: 'gh-aw-cao',
               workflow: '.github/workflows/daily.yml',
               run: '1001',
               'operational-value': 0.65,
@@ -1210,7 +1210,7 @@ describe('presenter built-in and custom pages', () => {
             },
             {
               organization: 'github',
-              repository: 'central-agentic-ops',
+              repository: 'gh-aw-cao',
               workflow: '.github/workflows/review.yml',
               run: '1003',
               'operational-value': 0.8,
@@ -1306,7 +1306,7 @@ describe('presenter built-in and custom pages', () => {
         workflows: {
           source: 'workflows',
           rows: [
-            { organization: 'github', repository: 'central-agentic-ops', package: 'daily-ops', 'package-name': 'Daily Ops', 'workflow-role': 'orchestrator', workflow: '.github/workflows/daily.yml', 'workflow-active': 'true', 'rollout-mode': 'live' }
+            { organization: 'github', repository: 'gh-aw-cao', package: 'daily-ops', 'package-name': 'Daily Ops', 'workflow-role': 'orchestrator', workflow: '.github/workflows/daily.yml', 'workflow-active': 'true', 'rollout-mode': 'live' }
           ],
           metadata: {
             'source-id': 'workflows-fixture',
@@ -1670,7 +1670,7 @@ describe('presenter built-in and custom pages', () => {
           rows: [
             {
               organization: 'github',
-              repository: 'central-agentic-ops',
+              repository: 'gh-aw-cao',
               workflow: '.github/workflows/daily.yml',
               run: '1001',
               'run-status': 'completed',
@@ -1770,8 +1770,8 @@ describe('presenter built-in and custom pages', () => {
         'eval-observations': {
           source: 'eval-observations',
           rows: [
-            { organization: 'github', repository: 'central-agentic-ops', workflow: '.github/workflows/daily.yml', run: '1001', eval: 'release-risk', 'eval-result': 'YES', 'requested-model': 'gpt-4o', 'resolved-model': 'gpt-4.1', 'rollout-mode': 'live', 'observed-at': '2026-08-29T10:00:00Z' },
-            { organization: 'github', repository: 'central-agentic-ops', workflow: '.github/workflows/daily.yml', run: '1002', eval: 'release-risk', 'eval-result': 'UNKNOWN', 'requested-model': 'gpt-4o', 'resolved-model': '', 'rollout-mode': 'live', 'observed-at': '2026-08-29T10:10:00Z' },
+            { organization: 'github', repository: 'gh-aw-cao', workflow: '.github/workflows/daily.yml', run: '1001', eval: 'release-risk', 'eval-result': 'YES', 'requested-model': 'gpt-4o', 'resolved-model': 'gpt-4.1', 'rollout-mode': 'live', 'observed-at': '2026-08-29T10:00:00Z' },
+            { organization: 'github', repository: 'gh-aw-cao', workflow: '.github/workflows/daily.yml', run: '1002', eval: 'release-risk', 'eval-result': 'UNKNOWN', 'requested-model': 'gpt-4o', 'resolved-model': '', 'rollout-mode': 'live', 'observed-at': '2026-08-29T10:10:00Z' },
             { organization: 'octo-org', repository: 'octo-repo', workflow: '.github/workflows/nightly.yml', run: '2001', eval: 'doc-quality', 'eval-result': 'NO', 'requested-model': 'claude-3.5', 'resolved-model': 'claude-3.7', 'rollout-mode': 'review', 'observed-at': '2026-08-29T10:20:00Z' }
           ],
           metadata: {
@@ -1849,7 +1849,7 @@ describe('presenter built-in and custom pages', () => {
               'finding-severity': 'critical',
               'finding-status': 'open',
               organization: 'github',
-              repository: 'central-agentic-ops',
+              repository: 'gh-aw-cao',
               workflow: '.github/workflows/daily.yml',
               'observed-at': '2026-08-29T12:00:00Z',
               'issue-link': {
@@ -1925,7 +1925,7 @@ describe('presenter built-in and custom pages', () => {
                 data: {
                   source: 'findings',
                   scope: {
-                    repositories: ['central-agentic-ops']
+                    repositories: ['gh-aw-cao']
                   },
                   time: {
                     start: '2026-08-29T00:00:00Z',
@@ -2017,8 +2017,8 @@ describe('presenter built-in and custom pages', () => {
         usage: {
           source: 'usage',
           rows: [
-            { organization: 'github', repository: 'central-agentic-ops', workflow: '.github/workflows/daily.yml', run: '1001', engine: 'actions', 'requested-model': 'gpt-4o', 'resolved-model': 'gpt-4.1', 'rollout-mode': 'live', aic: 2, 'observed-at': '2026-08-29T10:00:00Z' },
-            { organization: 'github', repository: 'central-agentic-ops', workflow: '.github/workflows/daily.yml', run: '1002', engine: 'actions', 'requested-model': 'gpt-4o', 'resolved-model': 'gpt-4.1', 'rollout-mode': 'review', aic: 3, 'observed-at': '2026-08-29T11:00:00Z' }
+            { organization: 'github', repository: 'gh-aw-cao', workflow: '.github/workflows/daily.yml', run: '1001', engine: 'actions', 'requested-model': 'gpt-4o', 'resolved-model': 'gpt-4.1', 'rollout-mode': 'live', aic: 2, 'observed-at': '2026-08-29T10:00:00Z' },
+            { organization: 'github', repository: 'gh-aw-cao', workflow: '.github/workflows/daily.yml', run: '1002', engine: 'actions', 'requested-model': 'gpt-4o', 'resolved-model': 'gpt-4.1', 'rollout-mode': 'review', aic: 3, 'observed-at': '2026-08-29T11:00:00Z' }
           ],
           metadata: {
             'source-id': 'usage-fixture',
@@ -2036,7 +2036,7 @@ describe('presenter built-in and custom pages', () => {
             {
               finding: 'finding-1',
               organization: 'github',
-              repository: 'central-agentic-ops',
+              repository: 'gh-aw-cao',
               'observed-at': '2026-08-29T12:00:00Z',
               'finding-summary': 'Unsafe dependency',
               'finding-severity': 'high',
@@ -2064,7 +2064,7 @@ describe('presenter built-in and custom pages', () => {
             {
               finding: 'finding-3',
               organization: 'github',
-              repository: 'central-agentic-ops',
+              repository: 'gh-aw-cao',
               'observed-at': '2026-08-30T01:00:00Z',
               'finding-summary': 'Out of range finding',
               'finding-severity': 'low',
@@ -2195,7 +2195,7 @@ describe('presenter built-in and custom pages', () => {
           rows: [
             {
               organization: 'github',
-              repository: 'central-agentic-ops',
+              repository: 'gh-aw-cao',
               workflow: '.github/workflows/daily.yml',
               run: '1001',
               'run-status': 'completed',

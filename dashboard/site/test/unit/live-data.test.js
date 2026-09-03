@@ -148,7 +148,7 @@ describe("live Dashboard Language sources", () => {
 
       expect(sources.workflows.rows[0]).toMatchObject({
         organization: "githubnext",
-        repository: "central-agentic-ops",
+        repository: "gh-aw-cao",
         package: "dependabot",
         "package-inventory-warnings": 2,
         "workflow-active": "true",
