@@ -2,6 +2,7 @@ import { spawn } from "node:child_process";
 import { mkdir, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
+import { actionsLog as log } from "./actions-log.mjs";
 import { firstText } from "./text-utils.mjs";
 
 function runGhAw(repository, runIds, outputDirectory) {
@@ -45,6 +46,8 @@ async function mapWithConcurrency(values, concurrency, mapper) {
 }
 
 (async () => {
+  log.group`Collect AI Credit usage`;
+  try {
   const inventoryPath = process.env.REPORT_DEPLOYED_WORKFLOWS;
   const outputPath = path.resolve(process.env.REPORT_AIC_USAGE || "_inventory/aic-usage.json");
   const configuredCacheRoot = process.env.REPORT_AIC_CACHE ? path.resolve(process.env.REPORT_AIC_CACHE) : "";
@@ -109,7 +112,7 @@ async function mapWithConcurrency(values, concurrency, mapper) {
           complete: reportedRuns === runIds.size,
         };
       } catch (error) {
-        console.warn(`AI Credit usage unavailable for ${repository}: ${error.message}`);
+        log.warning`AI Credit usage unavailable for ${repository}: ${error.message}`;
         return { repository, selectedRuns: runIds.size, reportedRuns: 0, available: false, complete: false };
       }
     });
@@ -126,11 +129,14 @@ async function mapWithConcurrency(values, concurrency, mapper) {
     };
     await mkdir(path.dirname(outputPath), { recursive: true });
     await writeFile(outputPath, `${JSON.stringify(usage, null, 2)}\n`);
-    console.log(`Collected ${usage.runs.length} AIC-bearing runs with concurrency ${concurrency}; coverage ${usage.complete ? "complete" : "partial"}`);
+    log.info`Collected ${usage.runs.length} AIC-bearing runs with concurrency ${concurrency}; coverage ${usage.complete ? "complete" : "partial"}`;
   } finally {
     if (!configuredCacheRoot) await rm(temporaryRoot, { recursive: true, force: true });
   }
+  } finally {
+    log.endGroup();
+  }
 })().catch((error) => {
-  console.error(error);
+  log.error`${error.stack || error.message || error}`;
   process.exitCode = 1;
 });
