@@ -1638,7 +1638,12 @@ test("SelfCare accessibility checker audits the served docs site with axe-core e
   assert.match(source, /prefers-reduced-motion/);
   assert.match(source, /safe-outputs:\n\s+allowed-domains:\n\s+- githubnext\.github\.io\n\s+create-issue:/);
   assert.match(source, /create-issue:\n\s+target-repo:.*\n\s+title-prefix: "\[self-care:accessibility-checker\] "/);
+  assert.match(source, /labels: \[self-care\]/);
   assert.match(source, /close-older-key: self-care-accessibility-checker/);
+  assert.match(source, /Begin the issue body directly with a concise, unheaded executive summary/);
+  assert.match(source, /select the single most important action with the highest expected return on investment/);
+  assert.match(source, /<details><summary><b>Agent prompt<\/b><\/summary>/);
+  assert.match(source, /<details><summary><b>All Findings and Evidence<\/b><\/summary>/);
   assert.equal(source.split(liveGuard).length - 1, 5);
   assert.doesNotMatch(source, /^\s+(create-pull-request|add-comment|create-discussion|push-to-pull-request-branch):/m);
 });
@@ -2109,8 +2114,8 @@ test("Dashboard package supports embedded and explicit standalone deployment", (
   const aicUsage = readFileSync(join(root, "dashboard", "report", "aic-usage.mjs"), "utf8");
   const deployedWorkflows = readFileSync(join(root, "dashboard", "report", "deployed-workflows.mjs"), "utf8");
   const operationalValues = readFileSync(join(root, "dashboard", "report", "operational-values.mjs"), "utf8");
-  const reportAssets = ["aic-usage.mjs", "bundle-dashboards.mjs", "compose-dashboard-documents.mjs", "configure-site.mjs", "control-settings.mjs", "dashboard-language-sources.mjs", "deployed-workflows.mjs", "inventory.mjs", "operational-value-history.mjs", "operational-values.mjs", "records.mjs", "text-utils.mjs"];
-  const reportEntrypoints = new Set(reportAssets.filter((assetName) => !["compose-dashboard-documents.mjs", "operational-value-history.mjs", "text-utils.mjs"].includes(assetName)));
+  const reportAssets = ["actions-log.mjs", "aic-usage.mjs", "bundle-dashboards.mjs", "compose-dashboard-documents.mjs", "configure-site.mjs", "control-settings.mjs", "dashboard-language-sources.mjs", "deployed-workflows.mjs", "inventory.mjs", "operational-value-history.mjs", "operational-values.mjs", "records.mjs", "text-utils.mjs"];
+  const reportEntrypoints = new Set(reportAssets.filter((assetName) => !["actions-log.mjs", "compose-dashboard-documents.mjs", "operational-value-history.mjs", "text-utils.mjs"].includes(assetName)));
   const normalizeInclude = (entry, sourcePrefix = "") => typeof entry === "string"
     ? { source: entry, destination: entry, kind: "action-workflow" }
     : { ...entry, source: `${sourcePrefix}${entry.source}` };
