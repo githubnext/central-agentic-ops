@@ -4,3 +4,6 @@ dist/
 node_modules/
 public/cao/
 .cao/
+
+# Local dashboard preview
+/.cao-dashboard-preview-*/

@@ -49,8 +49,8 @@ export const VIEW_DISCLOSURE_VALUES = ['essential', 'supplemental'];
 export const VIEW_CONTROL_VALUES = ['interactive', 'static'];
 export const MAX_ESSENTIAL_VIEWS_PER_PAGE = 4;
 export const VIEW_ENCODING_KEYS = ['value', 'columns', 'x', 'y', 'color', 'href', 'actions'];
-export const TABLE_ACTION_KEYS = ['intent', 'presentation', 'icon', 'label', 'when'];
-export const TABLE_ACTION_PRESENTATION_VALUES = ['copy-prompt', 'copy-command'];
+export const TABLE_ACTION_KEYS = ['intent', 'presentation', 'icon', 'label', 'context', 'when'];
+export const TABLE_ACTION_PRESENTATION_VALUES = ['copy-prompt'];
 export const TABLE_ACTION_WHEN_KEYS = ['field', 'equals'];
 export const FIELD_DEFINITION_KEYS = ['field', 'type', 'aggregate', 'time-unit', 'title', 'as', 'display', 'unit'];
 export const FIELD_TYPE_VALUES = ['nominal', 'ordinal', 'quantitative', 'temporal'];
@@ -285,6 +285,7 @@ export const SOURCE_VALUES = [
   'runtime-signals',
   'dispatches',
   'dispatch-activation-summary',
+  'package-dispatch-state',
   'repository-summary',
   'repository-activity',
   'repository-detail-summary',
@@ -333,13 +334,14 @@ export const SOURCE_FIELDS = {
   'runtime-signals': ['priority', 'count', 'tone', 'icon', 'kind', 'title', 'detail', 'evidence', 'action', 'navigation-href'],
   dispatches: ['started-at', 'dispatch-type', 'package', 'package-name', 'workflow-name', 'run-title', 'runtime-repository', 'status', 'status-detail', 'status-detail-at', 'run-link'],
   'dispatch-activation-summary': ['label', 'value'],
+  'package-dispatch-state': ['package', 'package-name', 'dispatch-runs', 'skipped', 'failed', 'succeeded', 'worker-dispatches', 'aic', 'agent', 'model'],
   'repository-summary': ['label', 'value', 'items'],
   'repository-activity': ['repository', 'workflows', 'reports', 'evaluated-workflows', 'runs', 'failure-summary', 'aic', 'status', 'repository-link'],
   'repository-detail-summary': ['repository', 'workflows', 'latest-update', 'external-link'],
   'repository-workflow-status': ['repository', 'status', 'workflows'],
   'repository-workflow-usage': ['repository', 'workflow', 'invocation', 'aic', 'workflow-link'],
   'repository-workflows': ['repository', 'workflow', 'workflow-name', 'workflow-role', 'package-name', 'rollout-mode', 'workflow-active', 'observed-at', 'aic', 'workflow-link'],
-  'workflow-runs': ['workflow-route', 'organization', 'repository', 'workflow', 'run', 'run-title', 'event', 'started-at', 'ended-at', 'run-status', 'run-conclusion', 'rollout-mode', 'engine', 'engine-version', 'requested-model', 'resolved-model', 'run-link'],
+  'workflow-runs': ['workflow-route', 'organization', 'repository', 'workflow', 'run', 'run-title', 'event', 'started-at', 'ended-at', 'run-status', 'run-conclusion', 'failure-job', 'failure-message', 'failure-step', 'rollout-mode', 'engine', 'engine-version', 'requested-model', 'resolved-model', 'run-link'],
   'workflow-reports': ['workflow-route', 'safe-output', 'outcome-title', 'outcome-summary', 'outcome-status', 'rollout-mode', 'engine', 'engine-version', 'requested-model', 'resolved-model', 'outcome-category', 'observed-at', 'external-link'],
   'package-reports': ['package', 'safe-output', 'outcome-title', 'outcome-summary', 'outcome-status', 'rollout-mode', 'engine', 'engine-version', 'requested-model', 'resolved-model', 'outcome-category', 'observed-at', 'external-link'],
   'model-usage-summary': ['model', 'resolved-model', 'engine', 'requested-model', 'runs', 'invocations', 'total-aic', 'estimated-usd', 'pricing'],
