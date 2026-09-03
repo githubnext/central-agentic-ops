@@ -45,14 +45,13 @@ describe('data view renderer', () => {
     expect(renderDataView('unsupported', /** @type {any} */ ({}))).toBeNull();
   });
 
-  it('omits a chart data table when disabled by the JSON view definition', () => {
-    const rendered = renderDataView('chart', {
+  it('defaults pie and line data tables to hidden while honoring explicit table visibility', () => {
+    const context = {
       pageId: 'repositories',
       title: 'AI Credit usage by AW repository',
       view: {
         mark: 'chart',
         chart: 'pie',
-        table: false,
         encoding: {
           x: { field: 'repository', type: 'nominal' },
           y: { field: 'aic', type: 'quantitative', aggregate: 'sum' }
@@ -73,11 +72,37 @@ describe('data view renderer', () => {
       }],
       prepareChartPoints: (points) => points,
       toText: String
-    });
+    };
+    const rendered = renderDataView('chart', context);
 
     expect(rendered?.querySelector('.pie-chart-widget')).not.toBeNull();
     expect(rendered?.querySelector('.chart-legend-pie')).not.toBeNull();
     expect(rendered?.querySelector('.custom-chart-table')).toBeNull();
+
+    const line = renderDataView('chart', {
+      ...context,
+      view: {
+        ...context.view,
+        chart: 'line',
+        encoding: {
+          ...context.view.encoding,
+          x: { field: 'repository', type: 'temporal' }
+        }
+      }
+    });
+    expect(line?.querySelector('.custom-chart-table')).toBeNull();
+
+    const bar = renderDataView('chart', {
+      ...context,
+      view: { ...context.view, chart: 'bar' }
+    });
+    expect(bar?.querySelector('.custom-chart-table')).not.toBeNull();
+
+    const explicitTable = renderDataView('chart', {
+      ...context,
+      view: { ...context.view, table: true }
+    });
+    expect(explicitTable?.querySelector('.custom-chart-table')).not.toBeNull();
   });
 
   it('renders workflow run IDs as links whenever a safe run link is available', () => {
