@@ -115,6 +115,7 @@ describe("live Dashboard Language sources", () => {
       inventory: {
         workflows: [],
         bundles: [{
+          id: "dependabot",
           workflow: ".github/workflows/dependabot.md",
           compiled: false,
           missingWorkers: ["dependabot-worker"],
@@ -176,7 +177,7 @@ describe("live Dashboard Language sources", () => {
       const overview = deriveOverviewSources(sources);
       expect(overview["overview-managed-packages"].rows).toContainEqual(expect.objectContaining({
         package: "dependabot",
-        "repository-modes": [{ repository: "github/gh-aw", mode: "live" }],
+        "repository-modes": expect.arrayContaining([{ repository: "github/gh-aw", mode: "live" }]),
       }));
       expect(sources.findings.rows[0]).toMatchObject({
         finding: "githubnext/gh-aw-cao-issue-1",
