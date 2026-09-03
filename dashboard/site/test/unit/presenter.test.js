@@ -54,9 +54,9 @@ describe('presenter built-in and custom pages', () => {
         runs: {
           source: 'runs',
           rows: [
-            { organization: 'github', repository: 'gh-aw-cao', workflow: '.github/workflows/daily.yml', run: '1001', 'run-conclusion': 'success', engine: 'copilot', 'engine-version': '0.87.6', 'requested-model': 'gpt-5.6-sol', 'resolved-model': 'gpt-5.6-sol' },
-            { organization: 'github', repository: 'gh-aw-cao', workflow: '.github/workflows/review.yml', run: '1002', 'run-conclusion': 'failure', engine: 'copilot', 'engine-version': '0.87.9', 'requested-model': 'gpt-5.6-sol', 'resolved-model': 'gpt-5.6-sol' },
-            { organization: 'github', repository: 'gh-aw-cao', workflow: '.github/workflows/audit.yml', run: '1003', 'run-conclusion': 'success', engine: 'pi', 'engine-version': '1.2.0', 'requested-model': 'claude-sonnet-5', 'resolved-model': 'claude-sonnet-5' }
+            { organization: 'github', repository: 'gh-aw-cao', workflow: '.github/workflows/daily.yml', run: '1001', 'run-conclusion': 'success', engine: 'copilot', 'engine-version': '0.87.6', 'requested-model': 'gpt-5.6-sol', 'resolved-model': 'gpt-5.6-sol', 'run-link': { relation: 'run', href: 'https://github.com/github/gh-aw-cao/actions/runs/1001', label: 'View run 1001' } },
+            { organization: 'github', repository: 'gh-aw-cao', workflow: '.github/workflows/review.yml', run: '1002', 'run-conclusion': 'failure', engine: 'copilot', 'engine-version': '0.87.9', 'requested-model': 'gpt-5.6-sol', 'resolved-model': 'gpt-5.6-sol', 'run-link': { relation: 'run', href: 'https://github.com/github/gh-aw-cao/actions/runs/1002', label: 'View run 1002' } },
+            { organization: 'github', repository: 'gh-aw-cao', workflow: '.github/workflows/audit.yml', run: '1003', 'run-conclusion': 'success', engine: 'pi', 'engine-version': '1.2.0', 'requested-model': 'claude-sonnet-5', 'resolved-model': 'claude-sonnet-5', 'run-link': { relation: 'run', href: 'https://github.com/github/gh-aw-cao/actions/runs/1003', label: 'View run 1003' } }
           ],
           metadata
         },
@@ -89,10 +89,17 @@ describe('presenter built-in and custom pages', () => {
       'model-agent-allocation',
       'model-allocation',
       'agentic-engine-allocation',
-      'model-agent-run-evidence'
+      'model-agent-run-aggregates'
     ]);
     expect(allocationSection?.querySelectorAll('.chart-view-pie')).toHaveLength(2);
     expect(allocationSection?.querySelector('.custom-table')).toBeNull();
+    const runAggregates = page?.querySelector('[data-section-id="model-agent-run-aggregates"]');
+    const disclosure = runAggregates?.querySelector('.view-disclosure');
+    expect(disclosure?.hasAttribute('open')).toBe(false);
+    expect(disclosure?.querySelector('summary')?.textContent).toContain('Runs by agent and model');
+    disclosure?.setAttribute('open', '');
+    expect(disclosure?.querySelectorAll('tbody tr')).toHaveLength(3);
+    expect(disclosure?.querySelector('tbody a')?.getAttribute('href')).toBe('#page-runs');
   });
 
   it('renders JSON-declared package and standalone workflow inventory with a topology summary', () => {

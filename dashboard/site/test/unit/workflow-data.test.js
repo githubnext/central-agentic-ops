@@ -124,6 +124,39 @@ describe('deriveWorkflowSources', () => {
     expect(sources['standalone-workflows'].rows[0].aic).toBe(3);
   });
 
+  it('summarizes run metadata with a dashboard link to the Runs table', () => {
+    const runLink = {
+      relation: 'run',
+      href: 'https://github.com/githubnext/control/actions/runs/1',
+      label: 'View run 1'
+    };
+    const sources = deriveWorkflowSources({
+      runs: {
+        source: 'runs',
+        metadata,
+        rows: [
+          { run: '1', engine: 'copilot', 'engine-version': '0.87.6', 'requested-model': 'gpt-5', 'resolved-model': 'gpt-5', 'run-conclusion': 'success', 'run-link': runLink },
+          { run: '2', engine: 'copilot', 'engine-version': '0.87.6', 'requested-model': 'gpt-5', 'resolved-model': 'gpt-5', 'run-conclusion': 'success' },
+          { run: '3', engine: 'pi', 'engine-version': '1.2.0', 'requested-model': 'claude', 'resolved-model': 'claude', 'run-conclusion': 'failure' }
+        ]
+      }
+    });
+
+    expect(sources['run-aggregate-summary'].rows).toEqual([
+      expect.objectContaining({
+        engine: 'copilot',
+        'run-conclusion': 'success',
+        runs: 2,
+        'run-link': expect.objectContaining({
+          'dashboard-href': '#page-runs',
+          'dashboard-label': 'View runs table'
+        })
+      }),
+      expect.objectContaining({ engine: 'pi', 'run-conclusion': 'failure', runs: 1 })
+    ]);
+    expect(sources['run-aggregate-summary'].metadata).toBe(metadata);
+  });
+
   it('does not attribute unscoped usage when a workflow identity is ambiguous', () => {
     const sources = deriveWorkflowSources({
       workflows: {

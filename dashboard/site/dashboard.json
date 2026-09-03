@@ -3340,12 +3340,12 @@
               ]
             },
             {
-              "id": "model-agent-run-evidence",
-              "title": "Run evidence",
-              "description": "Run-level engine and model metadata remains available for drill-down when retained by the source.",
+              "id": "model-agent-run-aggregates",
+              "title": "Run aggregates",
+              "description": "Run counts summarize retained engine, model, and conclusion metadata. Open an aggregate to inspect the Runs table as evidence.",
               "layout": "full",
               "views": [
-                "engines-models-runs-source"
+                "engines-models-run-aggregates"
               ]
             }
           ],
@@ -3535,16 +3535,27 @@
               }
             },
             {
-              "id": "engines-models-runs-source",
+              "id": "engines-models-run-aggregates",
               "title": "Runs by agent and model",
+              "disclosure": "supplemental",
               "data": {
-                "source": "runs"
+                "source": "run-aggregate-summary",
+                "order-by": [
+                  {
+                    "field": "runs",
+                    "direction": "desc"
+                  }
+                ]
               },
               "mark": "table",
-              "controls": "interactive",
-              "empty-message": "No run-level model or agent metadata is available.",
+              "controls": "static",
+              "empty-message": "No run aggregate metadata is available.",
               "layout": "full",
               "encoding": {
+                "href": {
+                  "field": "run-link",
+                  "type": "nominal"
+                },
                 "columns": [
                   {
                     "field": "engine",
@@ -3567,15 +3578,15 @@
                     "title": "Resolved model"
                   },
                   {
-                    "field": "run",
-                    "type": "nominal",
-                    "title": "Run"
-                  },
-                  {
                     "field": "run-conclusion",
                     "type": "nominal",
                     "title": "Conclusion",
                     "display": "status"
+                  },
+                  {
+                    "field": "runs",
+                    "type": "quantitative",
+                    "title": "Runs"
                   }
                 ]
               }
