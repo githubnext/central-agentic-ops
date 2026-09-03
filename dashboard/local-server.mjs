@@ -667,7 +667,7 @@ export async function startDashboardServer({
       if ((pathname === "/" || pathname === "/index.html")
           && !url.searchParams.has("local-preview")) {
         url.searchParams.set("local-preview", copilotRuntime ? "copilot" : "enabled");
-        response.writeHead(302, { Location: `${routePrefix}/${url.search}` }).end();
+        response.writeHead(302, { Location: `${routePrefix}/${url.search}`, "Content-Type": "text/html; charset=utf-8" }).end();
         return;
       }
       if (pathname === copilotEndpoint) {
