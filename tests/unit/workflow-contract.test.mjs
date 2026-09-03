@@ -11,10 +11,50 @@ import { policyCases, userFacingScenarios } from "./workflow-contract.matrix.mjs
 const root = resolve(dirname(fileURLToPath(import.meta.url)), "../..");
 const workflowsDirectory = join(root, ".github", "workflows");
 const modes = ["review", "live"];
+const ghAwVersion = "v0.88.2";
 
 function workflow(name, directory = workflowsDirectory) {
   return readFileSync(join(directory, name), "utf8");
 }
+
+test("packages and repository workflows pin the supported gh-aw version", () => {
+  const manifests = [
+    "aw.yml",
+    "activity/aw.yml",
+    "advisory/aw.yml",
+    "ambient-context/aw.yml",
+    "aw-maintenance/aw.yml",
+    "dashboard/aw.yml",
+    "dependabot/aw.yml",
+    "eu-cra-compliance/aw.yml",
+    "optimization/aw.yml",
+    "self-care/aw.yml",
+    "software-development-practices/aw.yml",
+  ];
+  for (const manifest of manifests) {
+    assert.equal(parse(readFileSync(join(root, manifest), "utf8"))["min-version"], ghAwVersion, manifest);
+  }
+
+  for (const name of ["copilot-setup-steps.yml", "dashboard-build.yml", "release.yml", "workflow-contracts.yml"]) {
+    const source = workflow(name);
+    assert.match(source, /github\/gh-aw-actions\/setup-cli@[0-9a-f]{40} # v0\.88\.2/);
+    assert.match(source, /version: v0\.88\.2/);
+  }
+});
+
+test("AI Credit workers collect all workflow logs with bounded resources", () => {
+  for (const name of ["optimization-ai-credit-auditor.md", "optimization-ai-credit-optimizer.md"]) {
+    const source = workflow(name);
+    const commands = source.match(/gh aw logs \\\n/g) || [];
+    assert.equal(commands.length, 1, name);
+    assert.match(source, /--repo "\$TARGET_REPO"/);
+    assert.match(source, /--output \/tmp\/gh-aw\/token-audit\/logs/);
+    assert.match(source, /--timeout \d+/);
+    assert.match(source, /--max-github-api-rate-limit -2000/);
+    assert.match(source, /--max-storage 1024/);
+    assert.doesNotMatch(source, /for workflow in target\/\.github\/workflows\/\*\.md/);
+  }
+});
 
 function controlPrecompute() {
   return [
@@ -897,7 +937,7 @@ test("operational-value graders expose deterministic run-scoped contracts", () =
   assert.match(auditorEvaluator, /workflow_path \/\/ \.workflow_name/);
   assert.match(auditorEvaluator, /evidenceRepo: \.run\.repository/);
   assert.match(optimizerWorker, /GH_REPO: \$\{\{ inputs\.target_repo \}\}/);
-  assert.match(optimizerWorker, /for workflow in target\/\.github\/workflows\/\*\.md/);
+  assert.match(optimizerWorker, /gh aw logs \\\n\s+--repo "\$TARGET_REPO"/);
   assert.match(optimizerWorker, /\$\{TARGET_PREFIX\}__optimization-log\.json/);
   assert.match(optimizerWorker, /"optimizer_run_id":"\$\{\{ github\.run_id \}\}"/);
   assert.match(optimizerEvaluator, /\.optimizer_run_id \| tostring/);
@@ -2205,6 +2245,11 @@ test("Dashboard package supports embedded and explicit standalone deployment", (
   assert.match(buildWorkflow, /go clean -cache -modcache/);
   assert.doesNotMatch(buildWorkflow, /pages-aic|REPORT_AIC_CACHE/);
   assert.match(aicUsage, /"--start-date", "-2d", "--cache-before", "-2d"/);
+  assert.match(aicUsage, /"--count", String\(maxRunsPerWorkflow\), "--timeout", "15"/);
+  assert.match(aicUsage, /"--max-github-api-rate-limit", "-2000", "--max-storage", "1024"/);
+  assert.match(aicUsage, /targets\.push\(`\$\{workflow\.repository\}\/\$\{workflow\.path\}`\)/);
+  assert.doesNotMatch(aicUsage, /--stdin|mapWithConcurrency|REPORT_AIC_CONCURRENCY/);
+  assert.doesNotMatch(buildWorkflow, /REPORT_AIC_CONCURRENCY/);
   assert.match(buildWorkflow, /REPORT_VALUE_CACHE: \.cache\/dashboard-operational-values\/observations\.json/);
   assert.match(buildWorkflow, /REPORT_VALUE_REPLAY_CACHE: \.cache\/dashboard-operational-values\/replay/);
   assert.match(buildWorkflow, /actions\/cache\/restore@[0-9a-f]{40}/);

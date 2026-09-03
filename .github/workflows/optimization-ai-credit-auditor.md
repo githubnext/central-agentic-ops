@@ -144,48 +144,25 @@ steps:
     run: |
       set -euo pipefail
       mkdir -p /tmp/gh-aw/token-audit
-      PARTS_DIR=/tmp/gh-aw/token-audit/log-parts
-      mkdir -p "$PARTS_DIR"
       WINDOW_END=$(gh api "repos/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID" --jq .created_at)
       WINDOW_START=$(date -u -d "$WINDOW_END - 24 hours" +%Y-%m-%dT%H:%M:%SZ)
 
-      # Fetch logs per workflow to avoid repo-wide pagination truncation in
-      # high-CI-volume repositories.
-      FOUND_WORKFLOW=0
-      for workflow in target/.github/workflows/*.md; do
-        [ -f "$workflow" ] || continue
+      RAW_LOGS=/tmp/gh-aw/token-audit/workflow-logs.raw.json
+      LOG_EXIT=0
+      gh aw logs \
+        --repo "$TARGET_REPO" \
+        --output /tmp/gh-aw/token-audit/logs \
+        --start-date -2d \
+        --json \
+        -c 100 \
+        --timeout 10 \
+        --max-github-api-rate-limit -2000 \
+        --max-storage 1024 \
+        > "$RAW_LOGS" || LOG_EXIT=$?
 
-        WORKFLOW_ID=$(sed -n 's/^tracker-id:[[:space:]]*//p' "$workflow" | head -n 1 | tr -d '\r' | sed 's/[[:space:]]*$//')
-        [ -n "$WORKFLOW_ID" ] || continue
-
-        FOUND_WORKFLOW=1
-        SAFE_WORKFLOW_ID=$(printf '%s' "$WORKFLOW_ID" | tr -cs 'A-Za-z0-9._-' '_')
-        PART_FILE="$PARTS_DIR/$SAFE_WORKFLOW_ID.json"
-        PART_EXIT=0
-        gh aw logs "$WORKFLOW_ID" \
-          --start-date -2d \
-          --json \
-          -c 100 \
-          > "$PART_FILE" || PART_EXIT=$?
-
-        if ! jq -e . "$PART_FILE" >/dev/null 2>&1; then
-          echo "⚠️ $WORKFLOW_ID: invalid log JSON (exit code $PART_EXIT)"
-          rm -f "$PART_FILE"
-          continue
-        fi
-
-        COUNT=$(jq '(.runs // []) | length' "$PART_FILE")
-        if [ "$COUNT" -gt 0 ]; then
-          echo "✅ $WORKFLOW_ID: downloaded $COUNT runs (exit code $PART_EXIT)"
-        else
-          echo "⚠️ $WORKFLOW_ID: no log data (exit code $PART_EXIT)"
-          rm -f "$PART_FILE"
-        fi
-      done
-
-      if [ "$FOUND_WORKFLOW" -eq 1 ] && ls "$PARTS_DIR"/*.json >/dev/null 2>&1; then
-        jq -s --arg windowStart "$WINDOW_START" --arg windowEnd "$WINDOW_END" '
-          (map(.runs // []) | add // [] | unique_by(.run_id)
+      if jq -e . "$RAW_LOGS" >/dev/null 2>&1; then
+        jq --arg windowStart "$WINDOW_START" --arg windowEnd "$WINDOW_END" '
+          ((.runs // []) | unique_by(.run_id)
             | map(select(.created_at >= $windowStart and .created_at < $windowEnd))) as $runs |
           {
             window_start: $windowStart,
@@ -197,17 +174,16 @@ steps:
             },
             runs: $runs
           }
-        ' "$PARTS_DIR"/*.json > /tmp/gh-aw/token-audit/workflow-logs.json
+        ' "$RAW_LOGS" > /tmp/gh-aw/token-audit/workflow-logs.json
         TOTAL=$(jq '.runs | length' /tmp/gh-aw/token-audit/workflow-logs.json)
-        echo "✅ Downloaded $TOTAL agentic workflow runs (last 24 hours)"
+        echo "✅ Downloaded $TOTAL agentic workflow runs (last 24 hours, exit code $LOG_EXIT)"
       else
-        if [ "$FOUND_WORKFLOW" -eq 0 ]; then
-          echo "⚠️ No agentic workflow sources found under target/.github/workflows"
-        fi
+        echo "⚠️ Agentic workflow logs were unavailable or invalid (exit code $LOG_EXIT)"
         jq -cn --arg windowStart "$WINDOW_START" --arg windowEnd "$WINDOW_END" \
           '{window_start:$windowStart,window_end:$windowEnd,runs:[],summary:{}}' \
           > /tmp/gh-aw/token-audit/workflow-logs.json
       fi
+      rm -f "$RAW_LOGS"
   - name: Forecast AI Credit spend
     env:
       GH_TOKEN: ${{ steps.github-mcp-app-token.outputs.token || secrets.GH_AW_GITHUB_TOKEN || secrets.GITHUB_TOKEN }}
