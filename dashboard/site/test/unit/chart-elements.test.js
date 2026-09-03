@@ -125,10 +125,12 @@ describe('chart element helpers', () => {
     expect(pie.querySelectorAll('.pie-chart-segment')).toHaveLength(2);
     expect(pie.querySelectorAll('.pie-chart-mark .point-tooltip')).toHaveLength(2);
     expect(pie.querySelector('.pie-chart-mark')?.getAttribute('aria-label')).toBe('2026-08-29: 3');
+    expect(pie.querySelector('.pie-chart-tooltip rect')?.getAttribute('width')).not.toBe('34');
     expect(histogram.getAttribute('data-chart-widget')).toBe('histogram');
     expect(histogram.querySelectorAll('.histogram-chart-bar')).toHaveLength(3);
     expect(histogram.querySelectorAll('.histogram-chart-mark .point-tooltip')).toHaveLength(3);
     expect(histogram.querySelector('.histogram-chart-bar')?.classList.contains('chart-series-1')).toBe(true);
+    expect(histogram.querySelector('.histogram-chart-tooltip text')?.getAttribute('lengthAdjust')).toBe('spacingAndGlyphs');
     expect(histogram.querySelector('svg')?.getAttribute('aria-label')).toContain('automatically calculated bins');
     expect(histogram.querySelector('.histogram-chart-mark')?.getAttribute('aria-label')).toContain('AIC');
     expect(unitPie.querySelector('.pie-chart-mark')?.getAttribute('aria-label')).toBe('2026-08-29: 3 AIC');

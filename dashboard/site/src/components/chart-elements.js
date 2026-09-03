@@ -136,7 +136,8 @@ export function renderChartWidget(chartType, points, series, pieSummary = null, 
           const percent = total > 0 ? (value / total) * 100 : 0;
           const segmentLabel = `${label}: ${formatNumber(value, unit)}`;
           const midpoint = ((offset + (percent / 2)) / 100) * Math.PI * 2 - (Math.PI / 2);
-          const tooltipX = Math.min(Math.max(21 + (Math.cos(midpoint) * 14) - 17, 1), 7);
+          const tooltipWidth = Math.min(40, Math.max(18, (segmentLabel.length * 1.25) + 5));
+          const tooltipX = Math.min(Math.max(21 + (Math.cos(midpoint) * 14) - (tooltipWidth / 2), 1), 41 - tooltipWidth);
           const tooltipY = Math.min(Math.max(21 + (Math.sin(midpoint) * 14) - 9, 1), 34);
           const segment = h('g', {
             className: 'chart-point pie-chart-mark',
@@ -163,8 +164,12 @@ export function renderChartWidget(chartType, points, series, pieSummary = null, 
               transform: `translate(${tooltipX} ${tooltipY})`,
               'aria-hidden': 'true'
             },
-            h('rect', { width: 34, height: 7, rx: 2 }),
-            h('text', { x: 2.5, y: 4.75 }, segmentLabel)
+            h('rect', { width: tooltipWidth, height: 7, rx: 2 }),
+            h('text', {
+              x: 2.5,
+              y: 4.75,
+              ...(tooltipWidth === 40 ? { textLength: 35, lengthAdjust: 'spacingAndGlyphs' } : {})
+            }, segmentLabel)
           ));
           offset += percent;
           return segment;
@@ -219,7 +224,11 @@ export function renderChartWidget(chartType, points, series, pieSummary = null, 
               'aria-hidden': 'true'
             },
             h('rect', { width: 42, height: 9, rx: 2 }),
-            h('text', { x: 3, y: 6 }, label)
+            h('text', {
+              x: 3,
+              y: 6,
+              ...(label.length > 22 ? { textLength: 36, lengthAdjust: 'spacingAndGlyphs' } : {})
+            }, label)
           ));
         })
       ),
