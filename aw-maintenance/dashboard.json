@@ -14,6 +14,42 @@
         "icon": "gear",
         "views": [
           {
+            "id": "aw-maintenance-value-trend",
+            "title": "Operational-value trend",
+            "description": "Mean failure-recovery and clean-scan attainment is diagnostic and does not infer that a worker caused the observed state.",
+            "disclosure": "essential",
+            "data": {
+              "source": "operational-values",
+              "time": {
+                "range": "90d"
+              },
+              "filters": {
+                "workflow": [
+                  ".github/workflows/aw-failures-investigator.md",
+                  ".github/workflows/aw-maintenance-compiler-security.md"
+                ]
+              }
+            },
+            "mark": "chart",
+            "chart": "line",
+            "encoding": {
+              "x": {
+                "field": "observed-at",
+                "type": "temporal",
+                "time-unit": "day"
+              },
+              "y": {
+                "field": "operational-value",
+                "type": "quantitative",
+                "aggregate": "mean"
+              },
+              "color": {
+                "field": "operational-value-definition",
+                "type": "nominal"
+              }
+            }
+          },
+          {
             "id": "aw-maintenance-runs",
             "title": "Maintenance workflow runs",
             "disclosure": "essential",
@@ -200,42 +236,6 @@
                   "title": "Evidence cutoff"
                 }
               ]
-            }
-          },
-          {
-            "id": "aw-maintenance-value-trend",
-            "title": "Operational-value trend",
-            "description": "Mean failure-recovery and clean-scan attainment is diagnostic and does not infer that a worker caused the observed state.",
-            "disclosure": "essential",
-            "data": {
-              "source": "operational-values",
-              "time": {
-                "range": "90d"
-              },
-              "filters": {
-                "workflow": [
-                  ".github/workflows/aw-failures-investigator.md",
-                  ".github/workflows/aw-maintenance-compiler-security.md"
-                ]
-              }
-            },
-            "mark": "chart",
-            "chart": "line",
-            "encoding": {
-              "x": {
-                "field": "observed-at",
-                "type": "temporal",
-                "time-unit": "day"
-              },
-              "y": {
-                "field": "operational-value",
-                "type": "quantitative",
-                "aggregate": "mean"
-              },
-              "color": {
-                "field": "operational-value-definition",
-                "type": "nominal"
-              }
             }
           }
         ]
