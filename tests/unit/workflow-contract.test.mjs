@@ -1703,14 +1703,14 @@ test("AW Maintenance runs hourly with bounded deterministic discovery", () => {
   const compiled = workflow("aw-maintenance.lock.yml");
 
   assert.match(source, /schedule: "hourly"/);
-  assert.match(source, /engine:\n\s+id: pi\n\s+model: copilot\/mai-code-1\.1-flash/);
+  assert.match(source, /engine:\n\s+id: pi\n\s+model: copilot\/gpt-5\.4/);
   assert.match(source, /name: Deterministic pre-fetch of AW maintenance evidence/);
   assert.match(source, /const MAX_EVIDENCE_CANDIDATES = 50/);
   assert.match(source, /Use its bounded, pre-ranked `candidates` as the only source of GitHub discovery evidence/);
   assert.match(source, /do not repeat its GitHub API queries in the agent/);
   assert.match(compiled, /cron: "\d+ \*\/1 \* \* \*"  # Friendly format: hourly \(scattered\)/);
   assert.match(compiled, /GH_AW_INFO_ENGINE_ID: "pi"/);
-  assert.match(compiled, /GH_AW_INFO_MODEL: "copilot\/mai-code-1\.1-flash"/);
+  assert.match(compiled, /GH_AW_INFO_MODEL: "copilot\/gpt-5\.4"/);
 });
 
 test("SelfCare accessibility checker audits the served docs site with axe-core evidence", () => {
