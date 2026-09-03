@@ -8,6 +8,26 @@ function isRecord(value) {
 // in cao.json for this repository's own control plane.
 const WIZARD_EXCLUDED_SLUGS = new Set(["self-care"]);
 
+export function buildWizardPolicy(controlPolicy, owner, operationSlug) {
+  const controlPlane = isRecord(controlPolicy) ? controlPolicy["control-plane"] : undefined;
+  const configuredPackages = isRecord(controlPlane) ? controlPlane.packages : undefined;
+  const packageConfig = isRecord(configuredPackages) && isRecord(configuredPackages[operationSlug])
+    ? configuredPackages[operationSlug]
+    : {};
+
+  const { icon, ...runtimePackageConfig } = JSON.parse(JSON.stringify(packageConfig));
+
+  return {
+    version: 1,
+    "control-plane": {
+      scope: { "allowed-owners": [owner] },
+      packages: {
+        [operationSlug]: runtimePackageConfig,
+      },
+    },
+  };
+}
+
 export function selectConfiguredOperations(controlPolicy, catalogEntries) {
   const controlPlane = isRecord(controlPolicy) ? controlPolicy["control-plane"] : undefined;
   const configuredPackages = isRecord(controlPlane) ? controlPlane.packages : undefined;

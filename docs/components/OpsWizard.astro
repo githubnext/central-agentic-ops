@@ -1,4 +1,6 @@
 ---
+import controlPolicy from "../../.github/workflows/cao.json";
+import { buildWizardPolicy } from "../lib/configured-operations.mjs";
 import { configuredOperationEntries as operations } from "../lib/catalog";
 
 const defaultOperation = operations[0]?.slug;
@@ -206,15 +208,7 @@ const agents = [
     const operationName = operation.dataset.operationName || operation.value;
     const engine = agent.value;
     const policy = !isCustom
-      ? JSON.stringify({
-          version: 1,
-          "control-plane": {
-            scope: { "allowed-owners": [owner] },
-            packages: {
-              [operation.value]: {},
-            },
-          },
-        }, null, 2)
+      ? JSON.stringify(buildWizardPolicy(controlPolicy, owner, operation.value), null, 2)
       : "";
 
     const setup = [
