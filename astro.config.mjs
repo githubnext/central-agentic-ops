@@ -1,6 +1,7 @@
 import { defineConfig } from "astro/config";
 import { unified } from "@astrojs/markdown-remark";
 import starlight from "@astrojs/starlight";
+import starlightGitHubAlerts from "starlight-github-alerts";
 import rewriteDocsLinks from "./docs/rewrite-docs-links.mjs";
 
 export default defineConfig({
@@ -22,6 +23,7 @@ export default defineConfig({
       },
       favicon: "/favicon.svg",
       customCss: ["./docs/styles/branding.css"],
+      plugins: [starlightGitHubAlerts()],
       markdown: {
         processedDirs: ["."],
       },

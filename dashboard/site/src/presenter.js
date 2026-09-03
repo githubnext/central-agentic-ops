@@ -134,13 +134,19 @@ export function renderDashboard(input) {
   const dashboardRepository = typeof document.dashboard.repository === 'string' && document.dashboard.repository.length > 0
     ? document.dashboard.repository
     : null;
-  const sources = deriveDataHealthSources(deriveWorkflowDashboardLinks(
+  const derivedSources = deriveWorkflowDashboardLinks(
     deriveRepositoryDashboardLinks(
       deriveRuntimeSources(deriveRepositorySources(deriveOverviewSources(deriveWorkflowSources(deriveEntityLinkSources(rawSources, githubUrlBase))))),
       pages
     ),
     pages
-  ));
+  );
+  const dataHealthSources = deriveDataHealthSources(rawSources);
+  const sources = {
+    ...derivedSources,
+    'data-health-summary': dataHealthSources['data-health-summary'],
+    'data-health-sources': dataHealthSources['data-health-sources']
+  };
   const orgName = inferOrganizationName(sources) || 'GitHub';
   const sidebarTitle = dashboardRepository?.split('/').at(-1) || orgName;
   const evaluatedAt = dataHorizon?.end ?? latestRetrievedAt(sources) ?? new Date().toISOString();

@@ -16,10 +16,17 @@ export function deriveDataHealthSources(sources) {
     const rows = Array.isArray(source?.rows) ? source.rows : [];
     const fields = new Set(rows.flatMap((row) => Object.keys(row ?? {})));
     const populatedFields = [...fields].filter((field) => rows.some((row) => row?.[field] !== null && row?.[field] !== undefined && row?.[field] !== ''));
+    const populatedCells = rows.reduce(
+      (total, row) => total + [...fields].filter((field) => row?.[field] !== null && row?.[field] !== undefined && row?.[field] !== '').length,
+      0
+    );
+    const cells = rows.length * fields.size;
     const metadata = source?.metadata ?? {};
     const status = metadata.availability === 'unavailable'
       ? 'unavailable'
-      : metadata.completeness === 'partial' || metadata.freshness === 'stale'
+      : metadata.availability === 'empty'
+        ? 'empty'
+        : metadata.completeness !== 'complete' || metadata.freshness !== 'fresh'
         ? 'degraded'
         : 'healthy';
     return {
@@ -32,6 +39,10 @@ export function deriveDataHealthSources(sources) {
       fields: fields.size,
       'populated-fields': populatedFields.length,
       'empty-fields': fields.size - populatedFields.length,
+      'populated-cells': populatedCells,
+      'empty-cells': cells - populatedCells,
+      'field-coverage': fields.size === 0 ? '—' : formatPercent(populatedFields.length / fields.size),
+      'cell-coverage': cells === 0 ? '—' : formatPercent(populatedCells / cells),
       status,
       completeness: metadata.completeness ?? 'unknown',
       freshness: metadata.freshness ?? 'unknown'
@@ -39,8 +50,10 @@ export function deriveDataHealthSources(sources) {
   });
   const healthy = sourceRows.filter((row) => row.status === 'healthy').length;
   const degraded = sourceRows.filter((row) => row.status === 'degraded').length;
+  const empty = sourceRows.filter((row) => row.status === 'empty').length;
   const unavailable = sourceRows.filter((row) => row.status === 'unavailable').length;
   const totalRows = sourceRows.reduce((total, row) => total + row.rows, 0);
+  const attention = degraded + empty + unavailable;
   const metadata = combineSourceMetadata(Object.values(sources));
   return {
     ...sources,
@@ -49,8 +62,7 @@ export function deriveDataHealthSources(sources) {
       rows: [
         { label: 'Logical sources', value: String(sourceRows.length) },
         { label: 'Healthy sources', value: String(healthy) },
-        { label: 'Degraded sources', value: String(degraded) },
-        { label: 'Unavailable sources', value: String(unavailable) },
+        { label: 'Sources needing attention', value: String(attention) },
         { label: 'Retained rows', value: String(totalRows) }
       ],
       metadata
@@ -61,6 +73,13 @@ export function deriveDataHealthSources(sources) {
       metadata
     }
   };
+}
+
+/**
+ * @param {number} value
+ */
+function formatPercent(value) {
+  return `${Math.round(value * 100)}%`;
 }
 
 /**

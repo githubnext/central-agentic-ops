@@ -1,10 +1,17 @@
 import { tidy } from './data-operations.js';
+import { summarizeTableColumns } from './table-summary-data.js';
 
 /**
- * @param {{ data: unknown, operators: unknown }} request
- * @returns {Array<Record<string, unknown>>}
+ * @param {{ operation?: unknown, data?: unknown, operators?: unknown, columns?: unknown }} request
+ * @returns {unknown}
  */
 export function processDataRequest(request) {
+  if (request?.operation === 'summarize-table-columns') {
+    if (!Array.isArray(request.columns)) {
+      throw new TypeError('Table summary requests require a columns array.');
+    }
+    return summarizeTableColumns(request.columns);
+  }
   if (!Array.isArray(request?.data) || !Array.isArray(request?.operators)) {
     throw new TypeError('Data worker requests require data and operators arrays.');
   }

@@ -71,6 +71,24 @@ describe('chart element helpers', () => {
     expect(empty.querySelectorAll('li')).toHaveLength(0);
   });
 
+  it('shows an informative empty state when a chart has fewer than two entries', () => {
+    for (const chartType of ['bar', 'histogram', 'line', 'pie']) {
+      for (const points of [[], [{ x: 'only', y: 1, color: null }]]) {
+        const chart = renderChartWidget(chartType, points, listChartSeries(points));
+
+        expect(chart.getAttribute('data-chart-widget')).toBe(chartType);
+        expect(chart.querySelector('svg')).toBeNull();
+        expect(chart.querySelector('[role="status"]')?.textContent).toBe('Not enough data to show this visualization.');
+      }
+    }
+
+    const singleCategoryPie = renderChartWidget('pie', [
+      { x: 'only', y: 1, color: null },
+      { x: 'only', y: 2, color: null }
+    ], []);
+    expect(singleCategoryPie.querySelector('[role="status"]')?.textContent).toBe('Not enough data to show this visualization.');
+  });
+
   it('DLS-VIEW-005 DLS-VIEW-006 DLS-VIEW-007 renders JSON-selected chart marks through one generic helper', () => {
     const points = [
       { x: '2026-08-29', y: 3, color: 'success' },

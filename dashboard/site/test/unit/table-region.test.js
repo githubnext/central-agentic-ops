@@ -1,6 +1,7 @@
 // @vitest-environment jsdom
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { renderTableRegion } from '../../src/components/table-region.js';
+import { processDataRequest } from '../../src/data-worker.js';
 import { h } from '../../src/dom.js';
 
 describe('renderTableRegion', () => {
@@ -264,5 +265,39 @@ describe('renderTableRegion', () => {
     expect(visible).toHaveLength(25);
     expect(visible[0]?.textContent).toBe('30');
     expect(rendered.querySelector('.table-filter-result')?.textContent).toBe('Showing 25 of 30 results');
+  });
+
+  it('defers table summary computation to the data worker', async () => {
+    class SummaryWorker extends EventTarget {
+      /** @param {Record<string, unknown>} request */
+      postMessage(request) {
+        queueMicrotask(() => this.dispatchEvent(new MessageEvent('message', {
+          data: { id: request.id, data: processDataRequest(request) }
+        })));
+      }
+
+      terminate() {}
+    }
+    vi.stubGlobal('Worker', SummaryWorker);
+
+    const rendered = renderTableRegion({
+      tableClassName: 'custom-table',
+      emptyMessage: 'No rows available.',
+      colSpan: 1,
+      headCells: ['Score'],
+      summaryColumns: [{ label: 'Score', type: 'quantitative', values: [1, 2, 3] }],
+      bodyRows: [h('tr', null, h('td', null, '1'))]
+    });
+
+    expect(rendered.querySelector('.table-summary-row')?.hasAttribute('aria-busy')).toBe(false);
+    expect(rendered.querySelector('.table-summary-cell')?.getAttribute('aria-busy')).toBe('true');
+    expect(rendered.querySelector('.table-summary-skeleton')).not.toBeNull();
+    expect(rendered.querySelector('.table-summary-histogram')).toBeNull();
+    await vi.waitFor(() => {
+      expect(rendered.querySelector('.table-summary-cell')?.hasAttribute('aria-busy')).toBe(false);
+      expect(rendered.querySelector('.table-summary-skeleton')).toBeNull();
+      expect(rendered.querySelector('.table-summary-histogram')).not.toBeNull();
+    });
+    vi.unstubAllGlobals();
   });
 });

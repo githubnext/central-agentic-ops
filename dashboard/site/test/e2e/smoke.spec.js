@@ -49,12 +49,20 @@ function buildPresenterModuleUrl() {
     .replace("'./badge.js'", JSON.stringify(badgeModuleUrl));
   const dataStateModuleUrl = `data:text/javascript;charset=utf-8,${encodeURIComponent(dataStateSource)}`;
 
+  const reactiveSource = readFileSync(new URL('../../src/reactive.js', import.meta.url), 'utf8');
+  const reactiveModuleUrl = `data:text/javascript;charset=utf-8,${encodeURIComponent(reactiveSource)}`;
+
+  const tableSummaryDataSource = readFileSync(new URL('../../src/table-summary-data.js', import.meta.url), 'utf8');
+  const tableSummaryDataModuleUrl = `data:text/javascript;charset=utf-8,${encodeURIComponent(tableSummaryDataSource)}`;
+
   const histogramSource = readFileSync(new URL('../../src/components/histogram.js', import.meta.url), 'utf8')
-    .replace("'../dom.js'", JSON.stringify(domModuleUrl));
+    .replace("'../dom.js'", JSON.stringify(domModuleUrl))
+    .replaceAll("'../table-summary-data.js'", JSON.stringify(tableSummaryDataModuleUrl));
   const histogramModuleUrl = `data:text/javascript;charset=utf-8,${encodeURIComponent(histogramSource)}`;
 
   const tableSummarySource = readFileSync(new URL('../../src/components/table-summary.js', import.meta.url), 'utf8')
     .replace("'../dom.js'", JSON.stringify(domModuleUrl))
+    .replace("'../reactive.js'", JSON.stringify(reactiveModuleUrl))
     .replace("'./histogram.js'", JSON.stringify(histogramModuleUrl))
     .replace("'./count-formatters.js'", JSON.stringify(countFormattersModuleUrl))
     .replace("'./view-chrome.js'", JSON.stringify(viewChromeModuleUrl))
@@ -66,7 +74,8 @@ function buildPresenterModuleUrl() {
   const dataOperationsModuleUrl = `data:text/javascript;charset=utf-8,${encodeURIComponent(dataOperationsSource)}`;
 
   const dataProcessorSource = readFileSync(new URL('../../src/data-processor.js', import.meta.url), 'utf8')
-    .replace("'./data-operations.js'", JSON.stringify(dataOperationsModuleUrl));
+    .replace("'./data-operations.js'", JSON.stringify(dataOperationsModuleUrl))
+    .replace("'./table-summary-data.js'", JSON.stringify(tableSummaryDataModuleUrl));
   const dataProcessorModuleUrl = `data:text/javascript;charset=utf-8,${encodeURIComponent(dataProcessorSource)}`;
 
   const tableRegionSource = readFileSync(new URL('../../src/components/table-region.js', import.meta.url), 'utf8')
@@ -142,7 +151,8 @@ function buildPresenterModuleUrl() {
     .replace("'../dom.js'", JSON.stringify(domModuleUrl))
     .replace("'../view-formatters.js'", JSON.stringify(viewFormattersModuleUrl))
     .replace("'./histogram.js'", JSON.stringify(histogramModuleUrl))
-    .replace("'./link-content.js'", JSON.stringify(linkContentModuleUrl));
+    .replace("'./link-content.js'", JSON.stringify(linkContentModuleUrl))
+    .replace("'./ui-primitives.js'", JSON.stringify(uiPrimitivesModuleUrl));
   const chartElementsModuleUrl = `data:text/javascript;charset=utf-8,${encodeURIComponent(chartElementsSource)}`;
 
   const workflowBadgesSource = readFileSync(new URL('../../src/components/workflow-badges.js', import.meta.url), 'utf8')
@@ -291,7 +301,7 @@ function buildPresenterModuleUrl() {
   return `data:text/javascript;charset=utf-8,${encodeURIComponent(presenterSource)}`;
 }
 
-test('production pages expose their executive chart without scrolling on a phone', async ({ page }) => {
+test('production pages expose a responsive executive chart', async ({ page }) => {
   const presenterModuleUrl = buildPresenterModuleUrl();
   const documentModel = JSON.parse(readFileSync(new URL('../../dashboard.json', import.meta.url), 'utf8'));
   await page.setViewportSize({ width: 390, height: 844 });
@@ -329,6 +339,15 @@ test('production pages expose their executive chart without scrolling on a phone
   expect(chartBox).not.toBeNull();
   expect(chartBox?.y).toBeGreaterThanOrEqual(0);
   expect((chartBox?.y ?? 0) + (chartBox?.height ?? 0)).toBeLessThanOrEqual(844);
+
+  await page.setViewportSize({ width: 1200, height: 844 });
+  const [wideChartBox, widePlotBox] = await Promise.all([
+    chart.boundingBox(),
+    chart.locator('svg').boundingBox()
+  ]);
+  expect(wideChartBox).not.toBeNull();
+  expect(widePlotBox).not.toBeNull();
+  expect(widePlotBox?.width).toBeGreaterThan((wideChartBox?.width ?? 0) * 0.95);
 });
 
 test('control-plane readiness surfaces blocking regressions', async ({ page }) => {

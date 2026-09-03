@@ -6,6 +6,7 @@ import { h } from '../dom.js';
 import { formatNumber, toNumber } from '../view-formatters.js';
 import { binHistogramValues } from './histogram.js';
 import { renderSafeLink } from './link-content.js';
+import { renderEmptyMessage } from './ui-primitives.js';
 
 /**
  * @typedef {{ name: string, className: string }} ChartSeriesDescriptor
@@ -110,8 +111,18 @@ export function renderPieLegend(entries, total, links = new Map(), unit = null) 
  * @returns {HTMLElement}
  */
 export function renderChartWidget(chartType, points, series, pieSummary = null, totalLabel = 'Total', unit = null) {
+  const pieData = chartType === 'pie' ? pieSummary ?? pieChartEntries(points) : null;
+  const entryCount = pieData ? pieData.entries.length : points.length;
+  if (entryCount < 2) {
+    return h(
+      'div',
+      { className: `chart-widget ${chartType}-chart-widget`, 'data-chart-widget': chartType },
+      renderEmptyMessage('Not enough data to show this visualization.', { role: 'status' })
+    );
+  }
+
   if (chartType === 'pie') {
-    const { entries, total } = pieSummary ?? pieChartEntries(points);
+    const { entries, total } = /** @type {{ entries: Array<[string, number]>, total: number }} */ (pieData);
     let offset = 0;
     return h(
       'div',

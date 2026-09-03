@@ -177,6 +177,7 @@ main.dashboard-prototype { width: 100%; flex: 1; padding: 0 24px 40px; }
 .view-disclosure > .page-section { padding: 0 14px 14px; }
 .chart-widget { min-height: 180px; display: grid; place-items: center; margin: 12px 0; border: 1px solid var(--border); border-radius: 6px; background: var(--canvas-subtle); }
 .chart-widget svg { width: min(100%, 420px); max-height: 220px; overflow: visible; }
+.line-chart-widget svg { width: 100%; }
 .pie-chart-track { stroke: var(--border-muted); }
 .pie-chart-segment { transform: rotate(-90deg); transform-origin: center; stroke: var(--accent); }
 .pie-chart-total-value { fill: var(--fg); font-size: 5px; font-weight: 700; }
@@ -752,6 +753,10 @@ caption { padding: 10px 14px; border-bottom: 1px solid var(--border); background
 th, td { padding: 10px 14px; border-bottom: 1px solid var(--border-muted); text-align: left; font-variant-numeric: tabular-nums; }
 thead th { background: var(--canvas-subtle); color: var(--muted); font-size: .75rem; font-weight: 600; border-bottom: 1px solid var(--border); white-space: nowrap; }
 .table-summary-row th { min-width: 150px; padding-block: 8px; vertical-align: top; white-space: normal; }
+.table-summary-skeleton { display: grid; gap: 6px; padding-block: 2px; }
+.table-summary-skeleton span { height: 10px; border-radius: 4px; background: linear-gradient(90deg, var(--canvas-subtle) 25%, var(--neutral-muted) 50%, var(--canvas-subtle) 75%); background-size: 200% 100%; animation: dashboard-skeleton-pulse 1.5s ease-in-out infinite; }
+.table-summary-skeleton span:first-child { height: 32px; }
+.table-summary-skeleton span:last-child { width: 72%; }
 .table-summary-categories { display: grid; gap: 2px; margin: 0; padding: 0; list-style: none; font-weight: 400; }
 .table-summary-categories li { display: flex; min-width: 0; justify-content: space-between; gap: 8px; }
 .table-summary-categories li span { overflow: hidden; color: var(--fg); text-overflow: ellipsis; white-space: nowrap; }
@@ -927,7 +932,7 @@ footer { padding: 20px 24px; border-top: 1px solid var(--border); color: var(--m
 @media (prefers-reduced-motion: reduce) {
   html { scroll-behavior: auto; }
   *, *::before, *::after { scroll-behavior: auto !important; transition-duration: 0.01ms !important; }
-  .dashboard-loading-skeleton > div, .dashboard-horizon-skeleton > span, .freshness-skeleton > span:last-child { animation: none; }
+  .dashboard-loading-skeleton > div, .dashboard-horizon-skeleton > span, .freshness-skeleton > span:last-child, .table-summary-skeleton span { animation: none; }
 }
 @media (prefers-contrast: more) {
   :root {
