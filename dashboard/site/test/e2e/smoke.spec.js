@@ -110,6 +110,7 @@ function buildPresenterModuleUrl() {
 
   const packagesViewSource = readFileSync(new URL('../../src/components/packages-view.js', import.meta.url), 'utf8')
     .replace("'../dom.js'", JSON.stringify(domModuleUrl))
+    .replace("'../octicons.js'", JSON.stringify(octiconsModuleUrl))
     .replace("'../view-formatters.js'", JSON.stringify(viewFormattersModuleUrl))
     .replace("'./run-classification.js'", JSON.stringify(runClassificationModuleUrl))
     .replace("'./tab-nav.js'", JSON.stringify(tabNavModuleUrl))
@@ -922,9 +923,9 @@ test('DLS-PAGE-014 DLS-PAGE-015 built-in packages page renders report-style mode
         workflows: {
           source: 'workflows',
           rows: [
-            { package: 'ambient-context', 'package-name': 'Ambient Context', workflow: '.github/workflows/ambient-context.md', 'workflow-name': 'Ambient Context', 'workflow-role': 'orchestrator', 'rollout-mode': 'review', 'max-ai-credits': 250, 'package-aic-allowance': 1050, 'package-inventory-warnings': 0 },
-            { package: 'ambient-context', 'package-name': 'Ambient Context', workflow: '.github/workflows/ambient-context-worker.md', 'workflow-name': 'Ambient Context Worker', 'workflow-role': 'worker', 'rollout-mode': 'review', 'max-ai-credits': 800, 'package-aic-allowance': 1050, 'package-inventory-warnings': 0 },
-            { package: 'aw-maintenance', 'package-name': 'AW Maintenance', workflow: '.github/workflows/aw-maintenance.md', 'workflow-role': 'orchestrator', 'rollout-mode': 'review', 'max-ai-credits': 250, 'package-aic-allowance': 1250, 'package-inventory-warnings': 1 }
+            { package: 'ambient-context', 'package-name': 'Ambient Context', 'package-icon': 'workflow', workflow: '.github/workflows/ambient-context.md', 'workflow-name': 'Ambient Context', 'workflow-role': 'orchestrator', 'rollout-mode': 'review', 'max-ai-credits': 250, 'package-aic-allowance': 1050, 'package-inventory-warnings': 0 },
+            { package: 'ambient-context', 'package-name': 'Ambient Context', 'package-icon': 'workflow', workflow: '.github/workflows/ambient-context-worker.md', 'workflow-name': 'Ambient Context Worker', 'workflow-role': 'worker', 'rollout-mode': 'review', 'max-ai-credits': 800, 'package-aic-allowance': 1050, 'package-inventory-warnings': 0 },
+            { package: 'aw-maintenance', 'package-name': 'AW Maintenance', 'package-icon': 'gear', workflow: '.github/workflows/aw-maintenance.md', 'workflow-role': 'orchestrator', 'rollout-mode': 'review', 'max-ai-credits': 250, 'package-aic-allowance': 1250, 'package-inventory-warnings': 1 }
           ],
           metadata
         },
@@ -976,11 +977,13 @@ test('DLS-PAGE-014 DLS-PAGE-015 built-in packages page renders report-style mode
   await expect(page.getByRole('tab', { name: 'All' })).toHaveAttribute('aria-selected', 'true');
   await expect(page.locator('.package-utilization-card')).toHaveCount(2);
   await expect(page.locator('[data-package-id="aw-maintenance"]')).toContainText('9.6%');
+  await expect(page.locator('[data-package-id="aw-maintenance"] .octicon-gear')).toBeVisible();
   await expect(page.locator('[data-package-id="ambient-context"]')).toContainText('No AIC usage was reported');
   await expect(page.getByRole('heading', { name: 'All output by package', level: 3 })).toBeVisible();
   await expect(page.locator('.package-trend-panel + .package-summary')).toBeVisible();
   const awMaintenanceSummary = page.locator('.package-summary-table tbody tr').filter({ hasText: 'AW Maintenance' });
   await expect(awMaintenanceSummary).toContainText('AW Maintenance');
+  await expect(awMaintenanceSummary.locator('.octicon-gear')).toBeVisible();
   await expect(awMaintenanceSummary.locator('td')).toHaveText(['2', '1', '1', '1', '1', '23.9', 'Aug 29, 2026, 10:05 AM']);
   await expect(page.getByRole('heading', { name: 'All runs over time', level: 3 })).toBeVisible();
   await expect(page.locator('.package-chart-point')).toHaveCount(30);
