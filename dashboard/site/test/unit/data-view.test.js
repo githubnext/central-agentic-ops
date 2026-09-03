@@ -45,7 +45,7 @@ describe('data view renderer', () => {
     expect(renderDataView('unsupported', /** @type {any} */ ({}))).toBeNull();
   });
 
-  it('defaults pie and line data tables to hidden while honoring explicit table visibility', () => {
+  it('defaults pie, line, and histogram data tables to hidden while honoring explicit table visibility', () => {
     const context = /** @type {Parameters<typeof renderDataView>[1]} */ ({
       pageId: 'repositories',
       title: 'AI Credit usage by AW repository',
@@ -91,6 +91,13 @@ describe('data view renderer', () => {
       }
     });
     expect(line?.querySelector('.custom-chart-table')).toBeNull();
+
+    const histogram = renderDataView('chart', {
+      ...context,
+      view: { ...context.view, chart: 'histogram' }
+    });
+    expect(histogram?.querySelector('.histogram-chart-widget')).not.toBeNull();
+    expect(histogram?.querySelector('.custom-chart-table')).toBeNull();
 
     const bar = renderDataView('chart', {
       ...context,

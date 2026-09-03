@@ -109,6 +109,31 @@ describe('dashboard document validation', () => {
     }
   });
 
+  it('DLS-VIEW-005 accepts automatically binned histograms and rejects ambiguous histogram channels', () => {
+    const document = JSON.parse(authoritativeDashboardSource);
+    const costPage = document.dashboard.pages.find((/** @type {{ id: string }} */ page) => page.id === 'cost');
+    const histogram = costPage.views.find((/** @type {{ id: string }} */ view) => view.id === 'cost-per-run-distribution');
+
+    expect(histogram).toMatchObject({
+      chart: 'histogram',
+      encoding: {
+        x: { field: 'run', type: 'nominal' },
+        y: { field: 'aic', type: 'quantitative', aggregate: 'sum' }
+      }
+    });
+    expect(validateDashboardDocument(JSON.stringify(document)).ok).toBe(true);
+
+    histogram.encoding.color = { field: 'repository', type: 'nominal' };
+    const rejected = validateDashboardDocument(JSON.stringify(document));
+    expect(rejected.ok).toBe(false);
+    if (!rejected.ok) {
+      expect(rejected.errors).toContainEqual(expect.objectContaining({
+        code: 'DLS-E010',
+        path: '$.dashboard.pages[1].views[1].encoding.color'
+      }));
+    }
+  });
+
   it('keeps one focused custom dashboard for every operation package', () => {
     const documents = packageDashboardSources.map((source) => JSON.parse(source));
     const packagePageIds = [
@@ -173,11 +198,11 @@ describe('dashboard document validation', () => {
     if (!rejected.ok) {
       expect(rejected.errors).toContainEqual(expect.objectContaining({
         code: 'DLS-E005',
-        path: '$.dashboard.pages[1].views[4].callout.icon'
+        path: '$.dashboard.pages[1].views[5].callout.icon'
       }));
       expect(rejected.errors).toContainEqual(expect.objectContaining({
         code: 'DLS-E003',
-        path: '$.dashboard.pages[1].views[4].data',
+        path: '$.dashboard.pages[1].views[5].data',
         message: 'callout views must not declare data.'
       }));
     }
