@@ -112,6 +112,12 @@ safe-outputs:
     close-older-key: self-care-accessibility-checker
     max: 1
     expires: 14d
+  add-labels:
+    allowed: [self-care]
+    create-if-missing: true
+    pull-requests: false
+    max: 1
+    target-repo: ${{ (inputs.safe_output_mode || 'review') == 'review' && (inputs.safe_output_repo || github.repository) || inputs.target_repo }}
 
 pre-agent-steps:
   - name: Install documentation dependencies
@@ -239,6 +245,7 @@ Call `create_issue` exactly once, titled `Accessibility Audit - [Date]`. Each ru
 
 Provide only the unprefixed subject as the safe-output title. The configured `title-prefix` is added automatically; do not repeat it or add a semantically equivalent category prefix.
 Every created issue must carry the `self-care` label.
+Pair each `create_issue` call using a `temporary_id` with an `add_labels` call referencing that temporary ID.
 
 Apply the inherited worker report contract exactly:
 

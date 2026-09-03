@@ -94,6 +94,12 @@ safe-outputs:
     close-older-key: self-care-dashboard-review
     max: 1
     expires: 14d
+  add-labels:
+    allowed: [self-care]
+    create-if-missing: true
+    pull-requests: false
+    max: 1
+    target-repo: ${{ (inputs.safe_output_mode || 'review') == 'review' && (inputs.safe_output_repo || github.repository) || inputs.target_repo }}
   noop:
 pre-agent-steps:
   - name: Build expected control-plane inventory
@@ -143,6 +149,7 @@ Call `create_issue` exactly once after the deterministic review and persona asse
 
 Provide only the unprefixed subject as the safe-output title. The configured `title-prefix` is added automatically; do not repeat it or add a semantically equivalent category prefix.
 Every created issue must carry the `self-care` label.
+Pair each `create_issue` call using a `temporary_id` with an `add_labels` call referencing that temporary ID.
 
 Use `###` headings only and structure the issue as:
 

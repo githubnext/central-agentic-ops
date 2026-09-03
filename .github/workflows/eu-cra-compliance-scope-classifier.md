@@ -113,6 +113,12 @@ safe-outputs:
     close-older-issues: true
     max: 1
     target-repo: ${{ (inputs.safe_output_mode || 'review') == 'review' && (inputs.safe_output_repo || github.repository) || inputs.target_repo }}
+  add-labels:
+    allowed: [eu-cra-compliance]
+    create-if-missing: true
+    pull-requests: false
+    max: 1
+    target-repo: ${{ (inputs.safe_output_mode || 'review') == 'review' && (inputs.safe_output_repo || github.repository) || inputs.target_repo }}
   noop:
 
 timeout-minutes: 25
@@ -176,6 +182,7 @@ Create one issue containing:
 
 Provide only the unprefixed subject as the safe-output title. The configured `title-prefix` is added automatically; do not repeat it or add a semantically equivalent category prefix.
 Every created issue must carry the `eu-cra-compliance` label.
+Pair each `create_issue` call using a `temporary_id` with an `add_labels` call referencing that temporary ID.
 
 1. target and assessed repository snapshot;
 2. verified regulatory baseline and provenance;

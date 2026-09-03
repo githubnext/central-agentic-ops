@@ -100,6 +100,12 @@ safe-outputs:
     deduplicate-by-title: true
     max: 1
     expires: 14d
+  add-labels:
+    allowed: [self-care]
+    create-if-missing: true
+    pull-requests: false
+    max: 1
+    target-repo: ${{ (inputs.safe_output_mode || 'review') == 'review' && (inputs.safe_output_repo || github.repository) || inputs.target_repo }}
   noop:
 ---
 
@@ -141,6 +147,7 @@ Do not modify repository content or create a pull request. After persisting the 
 
 - Provide only the unprefixed subject as the safe-output title. The configured `title-prefix` is added automatically; do not repeat it or add a semantically equivalent category prefix.
 - Every created issue must carry the `self-care` label.
+- Pair each `create_issue` call using a `temporary_id` with an `add_labels` call referencing that temporary ID.
 - Call `create_issue` exactly once when one non-duplicate actionable improvement meets the threshold.
 - Otherwise call `noop` exactly once with the evidence window, evaluated category, and concise reason nothing is actionable.
 

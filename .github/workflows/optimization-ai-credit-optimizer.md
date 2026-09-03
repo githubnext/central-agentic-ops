@@ -104,6 +104,12 @@ safe-outputs:
     close-older-issues: true
     max: 1
     target-repo: ${{ (inputs.safe_output_mode || 'review') == 'review' && (inputs.safe_output_repo || github.repository) || inputs.target_repo }}
+  add-labels:
+    allowed: [optimization]
+    create-if-missing: true
+    pull-requests: false
+    max: 1
+    target-repo: ${{ (inputs.safe_output_mode || 'review') == 'review' && (inputs.safe_output_repo || github.repository) || inputs.target_repo }}
 
 timeout-minutes: 30
 
@@ -353,6 +359,7 @@ Create one issue with:
 
 Provide only the unprefixed subject as the safe-output title. The configured `title-prefix` is added automatically; do not repeat it or add a semantically equivalent category prefix.
 Every created issue must carry the `optimization` label.
+Pair each `create_issue` call using a `temporary_id` with an `add_labels` call referencing that temporary ID.
 
 - **Target workflow + reason selected**
 - **Analysis period + runs analyzed**

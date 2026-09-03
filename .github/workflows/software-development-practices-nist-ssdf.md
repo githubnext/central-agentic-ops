@@ -114,6 +114,12 @@ safe-outputs:
     close-older-key: ${{ format('software-development-practices-nist-ssdf-{0}', inputs.target_repo) }}
     max: 1
     target-repo: ${{ (inputs.safe_output_mode || 'review') == 'review' && (inputs.safe_output_repo || github.repository) || inputs.target_repo }}
+  add-labels:
+    allowed: [software-development-practices]
+    create-if-missing: true
+    pull-requests: false
+    max: 1
+    target-repo: ${{ (inputs.safe_output_mode || 'review') == 'review' && (inputs.safe_output_repo || github.repository) || inputs.target_repo }}
   noop:
 
 timeout-minutes: 30
@@ -173,6 +179,7 @@ Create one issue containing:
 7. strengths worth preserving and explicit human-review questions.
 
 Every created issue must carry the `software-development-practices` label.
+Pair each `create_issue` call using a `temporary_id` with an `add_labels` call referencing that temporary ID.
 State prominently that the issue is advisory and non-binding and does not prove security, compliance, certification, endorsement, or SSDF conformance. If `correlation_id` is present, include `### Control Plane` with the correlation ID, central repository, and control-plane run URL.
 
 Call `noop` only when the authoritative and repository-observable review completed successfully and either no actionable evidence-backed improvement exists or current issues already track every recommendation.

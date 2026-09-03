@@ -108,6 +108,12 @@ safe-outputs:
     close-older-issues: true
     max: 1
     target-repo: ${{ (inputs.safe_output_mode || 'review') == 'review' && (inputs.safe_output_repo || github.repository) || inputs.target_repo }}
+  add-labels:
+    allowed: [advisory]
+    create-if-missing: true
+    pull-requests: false
+    max: 1
+    target-repo: ${{ (inputs.safe_output_mode || 'review') == 'review' && (inputs.safe_output_repo || github.repository) || inputs.target_repo }}
   noop:
 
 timeout-minutes: 30
@@ -347,6 +353,7 @@ Create at most one consolidated issue containing:
 
 Provide only the unprefixed subject as the safe-output title. The configured `title-prefix` is added automatically; do not repeat it or add a semantically equivalent category prefix.
 Every created issue must carry the `advisory` label.
+Pair each `create_issue` call using a `temporary_id` with an `add_labels` call referencing that temporary ID.
 
 Start directly with a concise, unheaded executive summary. In one or two short paragraphs, state the decision-relevant result, advisory status, highest proposed tier, seven-day window, most important control gap, key metrics, explicit limitations, and recommended next action. Follow it with:
 

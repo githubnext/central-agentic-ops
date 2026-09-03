@@ -517,7 +517,7 @@ test("operations creation guidance scopes detection and omits worker evals", () 
   const packageSkill = readFileSync(join(root, ".github", "skills", "create-ops-package", "SKILL.md"), "utf8");
 
   assert.match(packageSkill, /safe-outputs\.threat-detection: false/);
-  assert.match(packageSkill, /`labels: \[<package-slug>\]`[\s\S]*?preferably `title-prefix: "\[<package-slug>:<worker-slug>\] "`/);
+  assert.match(packageSkill, /`labels: \[<package-slug>\]`; also enable `safe-outputs\.add-labels`[\s\S]*?`create-if-missing: true`[\s\S]*?preferably use `title-prefix: "\[<package-slug>:<worker-slug>\] "`/);
   assert.match(packageSkill, /evaluate the potential follow-up actions/);
   assert.match(packageSkill, /single most important action with the highest expected return on investment/);
   assert.match(packageSkill, /<details><summary><b>Agent prompt<\/b><\/summary> \.\.\. <\/details>/);
@@ -548,7 +548,13 @@ test("issue-creating workers use package labels and package and worker title pre
       name,
     );
     assert.deepEqual(config["safe-outputs"]["create-issue"].labels, [controlImport.with.package], name);
+    assert.deepEqual(config["safe-outputs"]["add-labels"].allowed, [controlImport.with.package], name);
+    assert.equal(config["safe-outputs"]["add-labels"]["create-if-missing"], true, name);
+    assert.equal(config["safe-outputs"]["add-labels"]["pull-requests"], false, name);
+    assert.equal(config["safe-outputs"]["add-labels"].max, config["safe-outputs"]["create-issue"].max, name);
+    assert.equal(config["safe-outputs"]["add-labels"]["target-repo"], config["safe-outputs"]["create-issue"]["target-repo"], name);
     assert.match(source, new RegExp(`Every created issue must carry the \\\`${controlImport.with.package}\\\` label\\.`), name);
+    assert.match(source, /Pair each `create_issue` call using a `temporary_id` with an `add_labels` call referencing that temporary ID\./, name);
   }
 });
 
