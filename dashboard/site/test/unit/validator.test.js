@@ -595,6 +595,61 @@ dashboard:
     }
   });
 
+  it('DLS-DOC-015 validates site-wide callouts and source-row visibility conditions', () => {
+    const baseDocument = validDocument.replace(`
+    - id: usage
+      kind: built-in
+      page: usage
+      title: Usage`, '');
+    const withCallout = baseDocument.replace(
+      '  title: Agentic Operations\n',
+      [
+        '  title: Agentic Operations',
+        '  callouts:',
+        '    - id: partial-data',
+        '      title: Dashboard data is partial',
+        '      description: Some data could not be downloaded.',
+        '      icon: alert',
+        '      visible-when:',
+        '        source: coverage-diagnostics',
+        '        field: kind',
+        '        equals: github-api-rate-limit-403',
+        ''
+      ].join('\n')
+    );
+    expect(validateDashboardDocument(withCallout).ok).toBe(true);
+
+    const invalidField = validateDashboardDocument(withCallout.replace('        field: kind', '        field: missing'));
+    expect(invalidField.ok).toBe(false);
+    if (!invalidField.ok) {
+      expect(invalidField.errors).toContainEqual(expect.objectContaining({
+        code: 'DLS-E010',
+        path: '$.dashboard.callouts[0].visible-when.field'
+      }));
+    }
+
+    const invalidIcon = validateDashboardDocument(withCallout.replace('      icon: alert', '      icon: not-an-octicon'));
+    expect(invalidIcon.ok).toBe(false);
+    if (!invalidIcon.ok) {
+      expect(invalidIcon.errors).toContainEqual(expect.objectContaining({
+        code: 'DLS-E005',
+        path: '$.dashboard.callouts[0].icon'
+      }));
+    }
+
+    const duplicateId = validateDashboardDocument(withCallout.replace(
+      '  callouts:\n',
+      '  callouts:\n    - id: partial-data\n      title: Another notice\n      description: Another description.\n'
+    ));
+    expect(duplicateId.ok).toBe(false);
+    if (!duplicateId.ok) {
+      expect(duplicateId.errors).toContainEqual(expect.objectContaining({
+        code: 'DLS-E003',
+        path: '$.dashboard.callouts[1].id'
+      }));
+    }
+  });
+
   it('DLS-DOC-012 accepts a safe owner/repo repository slug and rejects malformed or blank-scoped values with DLS-E003', () => {
     const baseDocument = validDocument.replace(`
     - id: usage

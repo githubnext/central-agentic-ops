@@ -5,6 +5,19 @@
     "title": "Central Agentic Ops Dashboard",
     "description": "Authoritative declarative dashboard document for built-in and custom pages in the presenter prototype.",
     "repository": "githubnext/central-agentic-ops",
+    "callouts": [
+      {
+        "id": "partial-data-rate-limit",
+        "title": "Dashboard data is partial",
+        "description": "The latest dashboard build could not download all data because GitHub returned a 403 rate-limit response.",
+        "icon": "alert",
+        "visible-when": {
+          "source": "coverage-diagnostics",
+          "field": "kind",
+          "equals": "github-api-rate-limit-403"
+        }
+      }
+    ],
     "horizon": {
       "label": "Horizon",
       "tooltip": {

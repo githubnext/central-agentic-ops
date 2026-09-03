@@ -22,6 +22,7 @@ class GitHubRateLimitError extends Error {
         : "";
     super(`GitHub API rate limit exceeded for ${pathname}.${retry} ${detail || "Collection stopped before the dashboard data could be completed."} See ${rateLimitDocs}`);
     this.name = "GitHubRateLimitError";
+    this.status = response.status;
   }
 }
 
@@ -438,6 +439,7 @@ export async function collectDashboardRecords(options) {
       inventory: options.inventory,
       records: [],
       error: error.message,
+      errorStatus: error.status,
     };
   }
 }

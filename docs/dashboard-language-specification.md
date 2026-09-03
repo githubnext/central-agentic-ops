@@ -116,6 +116,7 @@ This specification defines three conformance classes:
 | Term | Meaning |
 |---|---|
 | Dashboard | One named collection of ordered pages and shared defaults. |
+| Site-wide callout | One dashboard-level text notice shown independently of the active page and dismissible for the lifetime of the loaded document. |
 | Built-in page | A page whose semantic content is defined by Section 10. |
 | Custom page | A page containing one or more declarative views. |
 | Package | A repository-scoped group containing one centrally managed orchestrator workflow and one or more worker workflows. |
@@ -184,6 +185,11 @@ dashboard:
   id: example-dashboard
   title: Example Dashboard
   github-url-base: https://github.com
+  callouts:
+    - id: maintenance-notice
+      title: Scheduled maintenance
+      description: Dashboard data will not refresh between 02:00 and 03:00 UTC.
+      icon: alert
   horizon:
     label: Horizon
     tooltip:
@@ -204,7 +210,9 @@ Language keys and enumerated values use canonical kebab-case. Human-readable tit
 | Mapping | Allowed keys |
 |---|---|
 | Root | `language-version`, `dashboard` |
-| `dashboard` | `id`, `title`, `description`, `github-url-base`, `repository`, `horizon`, `defaults`, `units`, `pages`, `navigation` |
+| `dashboard` | `id`, `title`, `description`, `github-url-base`, `repository`, `callouts`, `horizon`, `defaults`, `units`, `pages`, `navigation` |
+| Site-wide callout | `id`, `title`, `description`, `icon`, `visible-when` |
+| Callout `visible-when` | `source`, `field`, `equals` |
 | Dashboard `horizon` | `label`, `tooltip` |
 | Tooltip | `label`, `description`, `icon` |
 | `defaults` | `scope`, `time`, `filters` |
@@ -235,6 +243,7 @@ Language keys and enumerated values use canonical kebab-case. Human-readable tit
 - **DLS-DOC-012:** `repository`, when present, **MUST** be a non-empty `owner/repo` slug identifying the GitHub repository hosting the dashboard. A presenter **MUST NOT** fabricate a report action toolbar's GitHub repository link when `repository` is absent.
 - **DLS-DOC-013:** `units`, when present, **MUST** be a non-empty mapping keyed by unique canonical identifiers. Each value **MUST** contain exactly the non-empty string `name`, the non-empty string `symbol`, and the finite positive number `significant`.
 - **DLS-DOC-014:** A tooltip **MUST** contain exactly the non-empty human-readable strings `label` and `description` and **MAY** contain one canonical Octicon `icon`. A presenter **MUST** expose a tooltip as a keyboard-focusable help control named by `label`, associate its explanatory content with the control, and make that content available on both pointer hover and keyboard focus. `horizon`, when present, **MUST** contain exactly a non-empty human-readable `label` and one `tooltip`; the presenter **MUST** render the horizon label beside the resolved duration and append the precise resolved start, exclusive end, and duration to the tooltip's configured description.
+- **DLS-DOC-015:** `callouts`, when present, **MUST** be a non-empty sequence of mappings with unique canonical `id` values and non-empty `title` and `description` strings. A callout **MAY** contain one canonical Octicon `icon`. `visible-when`, when present, **MUST** contain exactly one canonical `source`, one `field` declared by that source, and one scalar `equals` value; the callout is visible when at least one source row's field equals that value.
 
 ---
 
@@ -722,6 +731,7 @@ Research should compare one through four essential views, record disclosure use,
 - **DLS-SAFE-011:** A presenter's report action toolbar **MUST** expose a descriptive accessible name or description for its refresh control identifying what the control does, and **MUST** expose a non-empty accessible label for its GitHub repository link when `dashboard.repository` is present.
 - **DLS-SAFE-012:** A presenter that renders `outcome-body-html` **MUST** rebuild it through a context-appropriate element and attribute allowlist, discard executable or embedded content, and apply **DLS-SAFE-004** to retained links and images.
 - **DLS-SAFE-013:** A presenter **MUST** render user-controlled list content as sanitized, inert text and **MUST** systematically constrain list item titles with visual ellipsis at every supported viewport size while preserving the complete text for accessible technologies.
+- **DLS-SAFE-014:** A presenter **MUST** expose every visible site-wide callout independently of the active page with its title and description as text and a descriptively named dismiss control. Dismissal **MUST** last for the lifetime of the loaded document and **MUST NOT** be persisted across document loads.
 
 ---
 
@@ -742,7 +752,7 @@ In the table, “accept” means validation succeeds; “reject” means validat
 | Requirement | Test ID | Level | Procedure and expected outcome |
 |---|---|---:|---|
 | DLS-CONF-001–005 | T-CONF-001 | 1–3 | Inspect full and partial claims; verify labels, coverage, results, and enumerated gaps. |
-| DLS-DOC-001–011 | T-DOC-001 | 1 | Apply positive and negative syntax, root, version, identity, vocabulary, GitHub URL base, defaults, page-shape, and scalar-type fixtures. |
+| DLS-DOC-001–015 | T-DOC-001 | 1 | Apply positive and negative syntax, root, version, identity, vocabulary, GitHub URL base, callouts, defaults, page-shape, and scalar-type fixtures. |
 | DLS-SEM-001–007 | T-SEM-001 | 2 | Validate entity ancestry, active state, run status, run conclusion, and explicit experiment assignments. |
 | DLS-SEM-008–016 | T-SEM-002 | 2 | Distinguish grader, eval, tokens, AIC, run conclusions, outcomes, engine/models, and value; reject causal labeling. |
 | DLS-SEM-017–023 | T-SEM-003 | 2 | Validate source vocabulary, grain, token classes, rollout modes, package workflow roles and membership, per-run package allowances, and distinct measure names. |
@@ -759,6 +769,7 @@ In the table, “accept” means validation succeeds; “reject” means validat
 | DLS-SAFE-001–006, DLS-SAFE-012 | T-SAFE-001 | 3 | Exercise safe YAML, inert content, outcome-HTML allowlisting, HTTPS links, secrets, and authorization boundaries. |
 | DLS-SAFE-007–010 | T-SAFE-002 | 3 | Inspect names, textual alternatives, labels, and non-color semantics. |
 | DLS-SAFE-011 | T-SAFE-003 | 3 | Inspect the report action toolbar's refresh control description and GitHub repository link label. |
+| DLS-SAFE-014 | T-SAFE-004 | 3 | Inspect site-wide placement, text treatment, accessible dismissal, volatile dismissal state, and row-equality visibility. |
 | DLS-TEST-001–003 | T-TEST-001 | 1–3 | Inspect coverage, result metadata, time boundaries, and missing-data distinctions. |
 
 
@@ -927,6 +938,7 @@ dashboard:
 - Added `dashboard.repository` and **DLS-DOC-012** so a presenter's report action toolbar can expose a GitHub repository link, and added **DLS-SAFE-011** requiring a descriptive refresh control and a labeled repository link.
 - Added constrained custom-page hash-query routing and route-bound templating through **DLS-VIEW-026** and **DLS-VIEW-027**.
 - Added route-aware human-readable title allocation and allowlisted `outcome-body-html` presentation through **DLS-SAFE-012**.
+- Added dashboard-level site-wide callouts, optional source-row visibility conditions, and volatile accessible dismissal through **DLS-DOC-015** and **DLS-SAFE-014**.
 - Updated the complete example to declare repository AIC distribution as a linked, ordered pie chart.
 
 ---
