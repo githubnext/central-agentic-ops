@@ -2231,9 +2231,11 @@ test("Activity package owns the shared workflow-run cache contract", () => {
   const rootManifest = parse(readFileSync(join(root, "aw.yml"), "utf8"));
   const activityManifest = parse(readFileSync(join(root, "activity", "aw.yml"), "utf8"));
   const workflow = readFileSync(join(root, "activity", "activity.yml"), "utf8");
+  const installedWorkflow = readFileSync(join(root, ".github", "workflows", "activity.yml"), "utf8");
   const readme = readFileSync(join(root, "activity", "README.md"), "utf8");
 
   assert.equal(activityManifest.name, "Central Agentic Ops Activity");
+  assert.equal(installedWorkflow, workflow);
   assert.deepEqual(activityManifest.includes, [{
     source: "activity.yml",
     destination: ".github/workflows/activity.yml",
