@@ -45,6 +45,7 @@
       },
       "aw-maintenance": {
         "icon": "gear",
+        "mode": "live",
         "workers": {
           "compiler-security": {
             "workflow": "aw-maintenance-compiler-security"
