@@ -134,8 +134,6 @@ resources:
     destination: .github/aw/dashboard/site/src/components/run-classification.js
   - source: dashboard/site/src/components/run-conclusion-classification.json
     destination: .github/aw/dashboard/site/src/components/run-conclusion-classification.json
-  - source: dashboard/site/src/components/summary-copy.js
-    destination: .github/aw/dashboard/site/src/components/summary-copy.js
   - source: dashboard/site/src/components/tab-nav.js
     destination: .github/aw/dashboard/site/src/components/tab-nav.js
   - source: dashboard/site/src/components/table-region.js

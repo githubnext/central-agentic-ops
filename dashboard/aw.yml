@@ -119,8 +119,6 @@ resources:
     destination: .github/aw/dashboard/site/src/components/run-classification.js
   - source: site/src/components/run-conclusion-classification.json
     destination: .github/aw/dashboard/site/src/components/run-conclusion-classification.json
-  - source: site/src/components/summary-copy.js
-    destination: .github/aw/dashboard/site/src/components/summary-copy.js
   - source: site/src/components/tab-nav.js
     destination: .github/aw/dashboard/site/src/components/tab-nav.js
   - source: site/src/components/table-region.js
