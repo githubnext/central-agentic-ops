@@ -14,7 +14,8 @@ test("generate-dashboard-ir corpus is indexed and valid", () => {
   });
 });
 
-test("every production dashboard page starts with a visual executive summary", () => {
+test("every production dashboard page starts with an executive summary", () => {
+  const executiveSummaryCharts = new Set(["pie", "line", "histogram"]);
   const dashboardFiles = [
     join(root, "dashboard/site/dashboard.json"),
     ...readdirSync(root, { withFileTypes: true })
@@ -29,9 +30,12 @@ test("every production dashboard page starts with a visual executive summary", (
       const views = page.kind === "built-in" ? page.definition?.views : page.views;
       const summary = views?.[0];
       assert.ok(summary, `${path}: page "${page.id}" must contain a view`);
+      const isSummaryTable = summary.mark === "table"
+        && summary.encoding?.columns?.some((column) => typeof column.aggregate === "string");
+      const isSummaryGrid = summary.mark === "element" && summary.element === "summary-grid";
       assert.ok(
-        summary.mark === "chart" && (summary.chart === "pie" || summary.chart === "line"),
-        `${path}: page "${page.id}" must start with a pie or line chart`,
+        (summary.mark === "chart" && executiveSummaryCharts.has(summary.chart)) || isSummaryTable || isSummaryGrid,
+        `${path}: page "${page.id}" must start with an executive-summary chart, aggregated table, or summary grid`,
       );
     }
   }

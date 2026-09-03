@@ -3,8 +3,8 @@
  */
 
 import { h } from '../dom.js';
-import { processRows } from '../data-processor.js';
-import { renderTableSummaryRow } from './table-summary.js';
+import { processRows, processTableSummaries } from '../data-processor.js';
+import { renderReactiveTableSummaryRow, renderTableSummaryRow } from './table-summary.js';
 
 /**
  * @typedef {{ key: string, label: string, allLabel?: string, columnIndex: number, always?: boolean }} TableFilterField
@@ -22,7 +22,8 @@ const DEFAULT_PAGE_SIZE = 25;
  *   emptyMessage: string,
  *   colSpan: number,
  *   headCells: string[],
- *   summaryColumns?: import('./table-summary.js').TableSummaryColumn[],
+ *   unsortableColumns?: number[],
+ *   summaryColumns?: import('../table-summary-data.js').TableSummaryColumn[],
  *   bodyRows: unknown,
  *   filterLabel?: string,
  *   filterId?: string,
@@ -42,6 +43,7 @@ export function renderTableRegion(options) {
     emptyMessage,
     colSpan,
     headCells,
+    unsortableColumns = [],
     summaryColumns = [],
     bodyRows,
     filterLabel,
@@ -109,7 +111,7 @@ export function renderTableRegion(options) {
           h(
             'tr',
             null,
-            ...headCells.map((cell, columnIndex) => (hasRows && sortable
+            ...headCells.map((cell, columnIndex) => (hasRows && sortable && !unsortableColumns.includes(columnIndex)
               ? h(
                 'th',
                 { scope: 'col', 'aria-sort': 'none' },
@@ -125,7 +127,7 @@ export function renderTableRegion(options) {
               )
               : h('th', { scope: 'col' }, cell)))
           ),
-          summaryColumns.length > 0 ? renderTableSummaryRow(summaryColumns) : null
+          summaryColumns.length > 0 ? renderDeferredTableSummaryRow(summaryColumns) : null
         ),
         h(
           'tbody',
@@ -144,10 +146,23 @@ export function renderTableRegion(options) {
   if (hasRows && sortable) {
     enableTableSort(region);
   }
+
   if (interactive) {
     enableTableFilter(region, { filterId, pageSize, resultNoun, resultNounPlural });
   }
   return region;
+}
+
+/**
+ * @param {import('../table-summary-data.js').TableSummaryColumn[]} columns
+ * @returns {HTMLTableRowElement}
+ */
+function renderDeferredTableSummaryRow(columns) {
+  const result = processTableSummaries(columns);
+  if (!(result instanceof Promise)) {
+    return renderTableSummaryRow(result.map((summary, index) => ({ ...summary, label: columns[index]?.label ?? '' })));
+  }
+  return renderReactiveTableSummaryRow(columns, result);
 }
 
 /**

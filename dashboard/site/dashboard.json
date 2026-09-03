@@ -41,6 +41,11 @@
         "name": "Grade",
         "symbol": "grade",
         "significant": 0.01
+      },
+      "seconds": {
+        "name": "Seconds",
+        "symbol": "s",
+        "significant": 1
       }
     },
     "pages": [
@@ -134,12 +139,6 @@
         "icon": "meter",
         "class-name": "cost-page",
         "description": "Measured AI Credit allocation and efficiency evidence for the configured githubnext/gh-aw-cao repository.",
-        "filter-bar": {
-          "filters": [
-            "mode:review",
-            "mode:live"
-          ]
-        },
         "sections": [
           {
             "id": "measured-usage",
@@ -306,7 +305,7 @@
         "navigation-label": "Security",
         "icon": "shield",
         "class-name": "security-page",
-        "description": "Runtime enforcement evidence for access control, network firewalling, integrity filtering, and threat detection.",
+        "description": "Operational assurance, warning, and telemetry-integrity signals for the configured githubnext/gh-aw-cao repository.",
         "filter-bar": {
           "filters": [
             "mode:review",
@@ -315,374 +314,124 @@
         },
         "sections": [
           {
-            "id": "security-access-control",
-            "title": "Access control",
-            "description": "File-read, file-write, agent-tool, and MCP guard denials observed in retained run telemetry.",
+            "id": "operational-assurance",
+            "title": "Needs attention",
+            "description": "Execution controls, package integrity, and explicit output warnings.",
             "layout": "full",
+            "count-source": "security-signals",
+            "count-label": "signals",
             "views": [
-              "security-access-control-chart",
-              "security-access-control-table"
+              "security-findings-summary",
+              "security-summary",
+              "security-signals"
             ]
           },
           {
-            "id": "security-firewall",
-            "title": "Firewall",
-            "description": "Allowed and blocked outbound network requests, with domain-level evidence when retained.",
+            "id": "security-output-evidence",
+            "title": "Retained output evidence",
+            "description": "Durable outputs remain inspectable with warning, severity, lifecycle, and source context.",
             "layout": "full",
+            "count-source": "findings",
+            "count-label": "records",
             "views": [
-              "security-firewall-chart",
-              "security-firewall-table"
-            ]
-          },
-          {
-            "id": "security-integrity-filtering",
-            "title": "Integrity filtering",
-            "description": "MCP interactions passed through or rejected by data-integrity controls.",
-            "layout": "full",
-            "views": [
-              "security-integrity-chart",
-              "security-integrity-table"
-            ]
-          },
-          {
-            "id": "security-threat-detection",
-            "title": "Threat detection",
-            "description": "Prompt-injection, secret-leak, and malicious-patch verdicts from retained detector artifacts.",
-            "layout": "full",
-            "views": [
-              "security-threat-chart",
-              "security-threat-table"
+              "security-output-ledger"
             ]
           }
         ],
         "views": [
           {
-            "id": "security-access-control-chart",
-            "title": "Denied access distribution",
-            "description": "File and tool denial volume is the leading access-control signal.",
+            "id": "security-findings-summary",
+            "title": "Security findings summary",
+            "description": "Retained findings grouped by severity.",
             "data": {
-              "source": "security-observations",
-              "filters": {
-                "security-feature": "access-control",
-                "security-analysis": "summary"
-              }
-            },
-            "mark": "chart",
-            "chart": "pie",
-            "layout": "full",
-            "encoding": {
-              "x": {
-                "field": "security-signal",
-                "type": "nominal",
-                "title": "Control"
-              },
-              "y": {
-                "field": "security-count",
-                "type": "quantitative",
-                "aggregate": "sum",
-                "title": "Denials"
-              }
-            }
-          },
-          {
-            "id": "security-access-control-table",
-            "title": "Access-control evidence",
-            "description": "Denied request classes are aggregated without retaining command text or file paths.",
-            "data": {
-              "source": "security-observations",
-              "filters": {
-                "security-feature": "access-control",
-                "security-analysis": "detail"
-              }
+              "source": "findings"
             },
             "mark": "table",
-            "controls": "interactive",
-            "disclosure": "supplemental",
             "layout": "full",
-            "empty-message": "No access-control denials were retained.",
             "encoding": {
-              "href": {
-                "field": "run-link",
-                "type": "nominal"
-              },
               "columns": [
                 {
-                  "field": "security-signal",
+                  "field": "finding-severity",
                   "type": "nominal",
-                  "title": "Denied operation"
-                },
-                {
-                  "field": "security-subject",
-                  "type": "nominal",
-                  "title": "Boundary"
-                },
-                {
-                  "field": "security-count",
-                  "type": "quantitative",
-                  "title": "Denials"
-                },
-                {
-                  "field": "workflow",
-                  "type": "nominal",
-                  "title": "Workflow"
-                },
-                {
-                  "field": "run",
-                  "type": "nominal",
-                  "title": "Run"
-                },
-                {
-                  "field": "observed-at",
-                  "type": "temporal",
-                  "title": "Observed"
-                }
-              ]
-            }
-          },
-          {
-            "id": "security-firewall-chart",
-            "title": "Firewall decisions",
-            "description": "The allowed-versus-blocked request distribution is the leading network-control signal.",
-            "data": {
-              "source": "security-observations",
-              "filters": {
-                "security-feature": "firewall",
-                "security-analysis": "summary"
-              }
-            },
-            "mark": "chart",
-            "chart": "pie",
-            "layout": "full",
-            "encoding": {
-              "x": {
-                "field": "security-status",
-                "type": "nominal",
-                "title": "Decision"
-              },
-              "y": {
-                "field": "security-count",
-                "type": "quantitative",
-                "aggregate": "sum",
-                "title": "Requests"
-              }
-            }
-          },
-          {
-            "id": "security-firewall-table",
-            "title": "Firewall request analysis",
-            "data": {
-              "source": "security-observations",
-              "filters": {
-                "security-feature": "firewall",
-                "security-analysis": "detail"
-              }
-            },
-            "mark": "table",
-            "controls": "interactive",
-            "disclosure": "supplemental",
-            "empty-message": "No domain-level firewall evidence was retained.",
-            "layout": "full",
-            "encoding": {
-              "href": {
-                "field": "run-link",
-                "type": "nominal"
-              },
-              "columns": [
-                {
-                  "field": "security-subject",
-                  "type": "nominal",
-                  "title": "Domain"
-                },
-                {
-                  "field": "security-status",
-                  "type": "nominal",
-                  "title": "Decision",
+                  "title": "Severity",
                   "display": "status"
                 },
                 {
-                  "field": "security-count",
+                  "field": "finding",
+                  "as": "finding-count",
                   "type": "quantitative",
-                  "title": "Requests"
-                },
-                {
-                  "field": "workflow",
-                  "type": "nominal",
-                  "title": "Workflow"
-                },
-                {
-                  "field": "run",
-                  "type": "nominal",
-                  "title": "Run"
-                },
-                {
-                  "field": "observed-at",
-                  "type": "temporal",
-                  "title": "Observed"
+                  "aggregate": "count",
+                  "title": "Findings"
                 }
               ]
-            }
-          },
-          {
-            "id": "security-integrity-chart",
-            "title": "Integrity-filter decisions",
-            "description": "Passed and filtered MCP interactions show the direct integrity-control effect.",
-            "data": {
-              "source": "security-observations",
-              "filters": {
-                "security-feature": "integrity-filtering",
-                "security-analysis": "summary"
-              }
             },
-            "mark": "chart",
-            "chart": "pie",
-            "layout": "full",
-            "encoding": {
-              "x": {
-                "field": "security-status",
-                "type": "nominal",
-                "title": "Decision"
-              },
-              "y": {
-                "field": "security-count",
-                "type": "quantitative",
-                "aggregate": "sum",
-                "title": "Interactions"
-              }
-            }
+            "controls": "interactive",
+            "empty-message": "No retained security findings were observed."
           },
           {
-            "id": "security-integrity-table",
-            "title": "Integrity-filter analysis",
+            "id": "security-summary",
+            "title": "Assurance summary",
             "data": {
-              "source": "security-observations",
-              "filters": {
-                "security-feature": "integrity-filtering",
-                "security-analysis": "detail"
-              }
+              "sources": [
+                "security-summary"
+              ]
+            },
+            "mark": "element",
+            "element": "summary-grid",
+            "layout": "full"
+          },
+          {
+            "id": "security-signals",
+            "title": "Assurance signals",
+            "description": "No vulnerability feed is retained. These are operational assurance signals, not vulnerability findings; generic run failures and collection gaps remain in their owning domains.",
+            "data": {
+              "sources": [
+                "security-signals"
+              ]
+            },
+            "mark": "element",
+            "element": "signal-list",
+            "layout": "full"
+          },
+          {
+            "id": "security-output-ledger",
+            "title": "Output assurance records",
+            "data": {
+              "source": "findings"
             },
             "mark": "table",
             "controls": "interactive",
-            "disclosure": "supplemental",
-            "empty-message": "No integrity-filter detail was retained.",
+            "empty-message": "No retained output assurance records were observed.",
             "layout": "full",
             "encoding": {
-              "href": {
-                "field": "run-link",
-                "type": "nominal"
-              },
               "columns": [
                 {
-                  "field": "security-signal",
+                  "field": "finding-summary",
+                  "type": "nominal",
+                  "title": "Output",
+                  "display": "outcome-link"
+                },
+                {
+                  "field": "finding-kind",
                   "type": "nominal",
                   "title": "Signal"
                 },
                 {
-                  "field": "security-subject",
+                  "field": "finding-severity",
                   "type": "nominal",
-                  "title": "Tool or reason"
-                },
-                {
-                  "field": "security-count",
-                  "type": "quantitative",
-                  "title": "Interactions"
-                },
-                {
-                  "field": "workflow",
-                  "type": "nominal",
-                  "title": "Workflow"
-                },
-                {
-                  "field": "run",
-                  "type": "nominal",
-                  "title": "Run"
-                },
-                {
-                  "field": "observed-at",
-                  "type": "temporal",
-                  "title": "Observed"
-                }
-              ]
-            }
-          },
-          {
-            "id": "security-threat-chart",
-            "title": "Threat verdicts",
-            "description": "Clear and detected category checks are the leading threat-detection signal.",
-            "data": {
-              "source": "security-observations",
-              "filters": {
-                "security-feature": "threat-detection",
-                "security-analysis": "summary"
-              }
-            },
-            "mark": "chart",
-            "chart": "pie",
-            "layout": "full",
-            "encoding": {
-              "x": {
-                "field": "security-status",
-                "type": "nominal",
-                "title": "Verdict"
-              },
-              "y": {
-                "field": "security-count",
-                "type": "quantitative",
-                "aggregate": "sum",
-                "title": "Category checks"
-              }
-            }
-          },
-          {
-            "id": "security-threat-table",
-            "title": "Threat-detection analysis",
-            "data": {
-              "source": "security-observations",
-              "filters": {
-                "security-feature": "threat-detection",
-                "security-analysis": "detail"
-              }
-            },
-            "mark": "table",
-            "controls": "interactive",
-            "disclosure": "supplemental",
-            "empty-message": "No threat-detection verdicts were retained.",
-            "layout": "full",
-            "encoding": {
-              "href": {
-                "field": "run-link",
-                "type": "nominal"
-              },
-              "columns": [
-                {
-                  "field": "security-signal",
-                  "type": "nominal",
-                  "title": "Category"
-                },
-                {
-                  "field": "security-status",
-                  "type": "nominal",
-                  "title": "Verdict",
+                  "title": "Severity",
                   "display": "status"
                 },
                 {
-                  "field": "security-subject",
+                  "field": "finding-status",
                   "type": "nominal",
-                  "title": "Diagnostic"
-                },
-                {
-                  "field": "workflow",
-                  "type": "nominal",
-                  "title": "Workflow"
-                },
-                {
-                  "field": "run",
-                  "type": "nominal",
-                  "title": "Run"
+                  "title": "Lifecycle",
+                  "display": "status"
                 },
                 {
                   "field": "observed-at",
                   "type": "temporal",
-                  "title": "Observed"
+                  "title": "Updated"
                 }
               ]
             }
@@ -996,6 +745,44 @@
         },
         "views": [
           {
+            "id": "repository-workflow-aic",
+            "title": "Top workflows by AIC",
+            "description": "The five workflows with the highest measured AI Credit totals in this repository.",
+            "data": {
+              "source": "repository-workflow-usage",
+              "route-field": "repository",
+              "limit": 5,
+              "order-by": [
+                {
+                  "field": "total-aic",
+                  "direction": "desc"
+                }
+              ]
+            },
+            "mark": "chart",
+            "chart": "pie",
+            "encoding": {
+              "x": {
+                "field": "workflow",
+                "type": "nominal",
+                "title": "Workflow"
+              },
+              "y": {
+                "field": "aic",
+                "type": "quantitative",
+                "aggregate": "sum",
+                "as": "total-aic",
+                "title": "Total AIC",
+                "unit": "aic"
+              },
+              "href": {
+                "field": "workflow-link",
+                "type": "nominal"
+              }
+            },
+            "layout": "third"
+          },
+          {
             "id": "repository-run-health",
             "title": "Repository run health trend",
             "description": "Daily run conclusions are the leading execution-health signal for this repository.",
@@ -1070,44 +857,6 @@
               }
             },
             "layout": "half"
-          },
-          {
-            "id": "repository-workflow-aic",
-            "title": "Top workflows by AIC",
-            "description": "The five workflows with the highest measured AI Credit totals in this repository.",
-            "data": {
-              "source": "repository-workflow-usage",
-              "route-field": "repository",
-              "limit": 5,
-              "order-by": [
-                {
-                  "field": "total-aic",
-                  "direction": "desc"
-                }
-              ]
-            },
-            "mark": "chart",
-            "chart": "pie",
-            "encoding": {
-              "x": {
-                "field": "workflow",
-                "type": "nominal",
-                "title": "Workflow"
-              },
-              "y": {
-                "field": "aic",
-                "type": "quantitative",
-                "aggregate": "sum",
-                "as": "total-aic",
-                "title": "Total AIC",
-                "unit": "aic"
-              },
-              "href": {
-                "field": "workflow-link",
-                "type": "nominal"
-              }
-            },
-            "layout": "third"
           },
           {
             "id": "repository-authored-workflows",
@@ -1396,6 +1145,17 @@
                   "presentation": "copy-prompt",
                   "icon": "search",
                   "label": "Investigate",
+                  "context": [
+                    "run",
+                    "run-title",
+                    "repository",
+                    "workflow",
+                    "run-conclusion",
+                    "failure-job",
+                    "failure-message",
+                    "failure-step",
+                    "run-link"
+                  ],
                   "when": {
                     "field": "run-conclusion",
                     "equals": "failure"
@@ -1897,7 +1657,17 @@
                   "intent": "Debug this failed workflow dispatch. Explain the retained failure reason, verify it against the linked GitHub Actions run, and propose the safest next action.",
                   "presentation": "copy-prompt",
                   "icon": "search",
-                  "label": "Copy debug prompt"
+                  "label": "Review debug prompt",
+                  "context": [
+                    "package",
+                    "status",
+                    "status-detail",
+                    "started-at",
+                    "workflow-name",
+                    "run-title",
+                    "runtime-repository",
+                    "run-link"
+                  ]
                 }
               ]
             },
@@ -2604,6 +2374,138 @@
         ]
       },
       {
+        "id": "performance",
+        "kind": "custom",
+        "title": "Performance",
+        "navigation-label": "Performance",
+        "icon": "meter",
+        "class-name": "performance-page",
+        "description": "Workflow and job duration distributions across runners, sandbox runtimes, agent engines, and models.",
+        "filter-bar": {
+          "filters": [
+            "mode:review",
+            "mode:live"
+          ],
+          "time-range": "1w"
+        },
+        "views": [
+          {
+            "id": "workflow-run-duration-histogram",
+            "title": "Workflow run total time",
+            "description": "Distribution of elapsed workflow run time from execution start through completion.",
+            "data": {
+              "source": "run-performance"
+            },
+            "mark": "chart",
+            "chart": "histogram",
+            "table": false,
+            "layout": "full",
+            "encoding": {
+              "x": {
+                "field": "run",
+                "type": "nominal",
+                "title": "Run"
+              },
+              "y": {
+                "field": "run-duration-seconds",
+                "type": "quantitative",
+                "aggregate": "none",
+                "title": "Workflow run total time",
+                "unit": "seconds"
+              }
+            }
+          },
+          {
+            "id": "job-duration-by-job-runner",
+            "title": "Job time by job and runner",
+            "description": "Mean elapsed job time, split by the runner labels reported by GitHub Actions.",
+            "data": {
+              "source": "job-performance"
+            },
+            "mark": "chart",
+            "chart": "bar",
+            "table": false,
+            "layout": "full",
+            "encoding": {
+              "x": {
+                "field": "job",
+                "type": "nominal",
+                "title": "Job"
+              },
+              "y": {
+                "field": "job-duration-seconds",
+                "type": "quantitative",
+                "aggregate": "mean",
+                "title": "Mean job time",
+                "unit": "seconds"
+              },
+              "color": {
+                "field": "runner",
+                "type": "nominal",
+                "title": "Runner"
+              }
+            }
+          },
+          {
+            "id": "job-duration-by-runtime-engine",
+            "title": "Job time by sandbox runtime and agent engine",
+            "description": "Mean elapsed job time grouped by the gh-aw sandbox runtime profile and agent engine.",
+            "data": {
+              "source": "job-performance"
+            },
+            "mark": "chart",
+            "chart": "bar",
+            "table": false,
+            "layout": "full",
+            "encoding": {
+              "x": {
+                "field": "sandbox-runtime",
+                "type": "nominal",
+                "title": "Sandbox runtime"
+              },
+              "y": {
+                "field": "job-duration-seconds",
+                "type": "quantitative",
+                "aggregate": "mean",
+                "title": "Mean job time",
+                "unit": "seconds"
+              },
+              "color": {
+                "field": "engine",
+                "type": "nominal",
+                "title": "Agent engine"
+              }
+            }
+          },
+          {
+            "id": "job-duration-by-model",
+            "title": "Job time by model",
+            "description": "Mean elapsed job time grouped by resolved model, falling back to the requested model.",
+            "data": {
+              "source": "job-performance"
+            },
+            "mark": "chart",
+            "chart": "bar",
+            "table": false,
+            "layout": "full",
+            "encoding": {
+              "x": {
+                "field": "model",
+                "type": "nominal",
+                "title": "Model"
+              },
+              "y": {
+                "field": "job-duration-seconds",
+                "type": "quantitative",
+                "aggregate": "mean",
+                "title": "Mean job time",
+                "unit": "seconds"
+              }
+            }
+          }
+        ]
+      },
+      {
         "id": "runs",
         "kind": "built-in",
         "page": "runs",
@@ -2739,12 +2641,37 @@
             "mark": "chart",
             "chart": "pie",
             "table": false,
-            "layout": "full",
+            "layout": "half",
             "encoding": {
               "x": {
                 "field": "status",
                 "type": "nominal",
                 "title": "Status"
+              },
+              "y": {
+                "field": "started-at",
+                "type": "quantitative",
+                "aggregate": "count",
+                "title": "Dispatches"
+              }
+            }
+          },
+          {
+            "id": "dispatch-package-distribution",
+            "title": "Dispatches by package",
+            "description": "Distribution of authoritative workflow_dispatch runs across packages.",
+            "data": {
+              "source": "dispatches"
+            },
+            "mark": "chart",
+            "chart": "pie",
+            "table": false,
+            "layout": "half",
+            "encoding": {
+              "x": {
+                "field": "package-name",
+                "type": "nominal",
+                "title": "Package"
               },
               "y": {
                 "field": "started-at",
@@ -2768,13 +2695,63 @@
             "layout": "full"
           },
           {
-            "id": "dispatch-evidence-boundary",
-            "title": "Dispatch evidence boundary",
-            "description": "Rows are authoritative workflow_dispatch events. Package and role attribution comes from the matching workflow definition; unavailable parent-child correlation is never inferred.",
-            "mark": "callout",
-            "callout": {
-              "label": "Execution boundary",
-              "icon": "workflow"
+            "id": "package-dispatch-state",
+            "title": "Package dispatching state",
+            "description": "Authoritative workflow_dispatch runs grouped by package. Worker counts, AI Credits, agents, and models reflect retained run and usage evidence; unavailable evidence is not inferred.",
+            "data": {
+              "source": "package-dispatch-state"
+            },
+            "mark": "table",
+            "empty-message": "No packages were observed in the current run window.",
+            "encoding": {
+              "columns": [
+                {
+                  "field": "package-name",
+                  "type": "nominal",
+                  "title": "Package"
+                },
+                {
+                  "field": "dispatch-runs",
+                  "type": "quantitative",
+                  "title": "Dispatch runs"
+                },
+                {
+                  "field": "skipped",
+                  "type": "quantitative",
+                  "title": "Skipped"
+                },
+                {
+                  "field": "failed",
+                  "type": "quantitative",
+                  "title": "Failed"
+                },
+                {
+                  "field": "succeeded",
+                  "type": "quantitative",
+                  "title": "Succeeded"
+                },
+                {
+                  "field": "worker-dispatches",
+                  "type": "nominal",
+                  "title": "Dispatches by worker"
+                },
+                {
+                  "field": "aic",
+                  "type": "quantitative",
+                  "title": "AIC",
+                  "unit": "aic"
+                },
+                {
+                  "field": "agent",
+                  "type": "nominal",
+                  "title": "Agent"
+                },
+                {
+                  "field": "model",
+                  "type": "nominal",
+                  "title": "Model"
+                }
+              ]
             },
             "layout": "full"
           },
@@ -2786,6 +2763,7 @@
               "source": "dispatches"
             },
             "mark": "table",
+            "disclosure": "supplemental",
             "empty-message": "No workflow dispatch events were observed in the current run window.",
             "encoding": {
               "href": {
@@ -3340,12 +3318,12 @@
               ]
             },
             {
-              "id": "model-agent-run-evidence",
-              "title": "Run evidence",
-              "description": "Run-level engine and model metadata remains available for drill-down when retained by the source.",
+              "id": "model-agent-run-aggregates",
+              "title": "Run aggregates",
+              "description": "Run counts summarize retained engine, model, and conclusion metadata. Open an aggregate to inspect the Runs table as evidence.",
               "layout": "full",
               "views": [
-                "engines-models-runs-source"
+                "engines-models-run-aggregates"
               ]
             }
           ],
@@ -3535,16 +3513,27 @@
               }
             },
             {
-              "id": "engines-models-runs-source",
+              "id": "engines-models-run-aggregates",
               "title": "Runs by agent and model",
+              "disclosure": "supplemental",
               "data": {
-                "source": "runs"
+                "source": "run-aggregate-summary",
+                "order-by": [
+                  {
+                    "field": "runs",
+                    "direction": "desc"
+                  }
+                ]
               },
               "mark": "table",
-              "controls": "interactive",
-              "empty-message": "No run-level model or agent metadata is available.",
+              "controls": "static",
+              "empty-message": "No run aggregate metadata is available.",
               "layout": "full",
               "encoding": {
+                "href": {
+                  "field": "run-link",
+                  "type": "nominal"
+                },
                 "columns": [
                   {
                     "field": "engine",
@@ -3567,15 +3556,15 @@
                     "title": "Resolved model"
                   },
                   {
-                    "field": "run",
-                    "type": "nominal",
-                    "title": "Run"
-                  },
-                  {
                     "field": "run-conclusion",
                     "type": "nominal",
                     "title": "Conclusion",
                     "display": "status"
+                  },
+                  {
+                    "field": "runs",
+                    "type": "quantitative",
+                    "title": "Runs"
                   }
                 ]
               }
@@ -3990,6 +3979,100 @@
         }
       },
       {
+        "id": "data-health",
+        "kind": "custom",
+        "title": "Data health",
+        "navigation-label": "Data health",
+        "description": "Shape and retention diagnostics for the cached activity data used by this dashboard.",
+        "icon": "pulse",
+        "class-name": "data-health-page",
+        "sections": [
+          {
+            "id": "data-health-summary",
+            "title": "Data health summary",
+            "description": "A source-level view of retained rows, observed fields, and independent data-state signals.",
+            "layout": "full",
+            "views": [
+              "data-health-summary",
+              "data-health-sources"
+            ]
+          }
+        ],
+        "views": [
+          {
+            "id": "data-health-summary",
+            "title": "Data health summary",
+            "data": {
+              "sources": [
+                "data-health-summary"
+              ]
+            },
+            "mark": "element",
+            "element": "summary-grid",
+            "layout": "full"
+          },
+          {
+            "id": "data-health-sources",
+            "title": "Cached source shape",
+            "description": "Field population and source state help distinguish an empty dataset from a malformed or incomplete one.",
+            "data": {
+              "source": "data-health-sources"
+            },
+            "mark": "table",
+            "controls": "static",
+            "empty-message": "No cached data sources available.",
+            "encoding": {
+              "columns": [
+                {
+                  "field": "source",
+                  "type": "nominal",
+                  "title": "Source"
+                },
+                {
+                  "field": "rows",
+                  "type": "quantitative",
+                  "title": "Rows"
+                },
+                {
+                  "field": "fields",
+                  "type": "quantitative",
+                  "title": "Fields"
+                },
+                {
+                  "field": "populated-fields",
+                  "type": "quantitative",
+                  "title": "Populated fields"
+                },
+                {
+                  "field": "empty-fields",
+                  "type": "quantitative",
+                  "title": "Empty fields"
+                },
+                {
+                  "field": "status",
+                  "type": "nominal",
+                  "title": "Health",
+                  "display": "status"
+                },
+                {
+                  "field": "completeness",
+                  "type": "nominal",
+                  "title": "Completeness",
+                  "display": "status"
+                },
+                {
+                  "field": "freshness",
+                  "type": "nominal",
+                  "title": "Freshness",
+                  "display": "status"
+                }
+              ]
+            },
+            "layout": "full"
+          }
+        ]
+      },
+      {
         "id": "coverage",
         "kind": "custom",
         "title": "Coverage diagnostics",
@@ -4178,6 +4261,7 @@
         "label": "Investigate",
         "pages": [
           "runtime",
+          "performance",
           "security",
           "operational-value",
           "cost"
@@ -4196,6 +4280,7 @@
       {
         "label": "Maintain",
         "pages": [
+          "data-health",
           "updates"
         ]
       }

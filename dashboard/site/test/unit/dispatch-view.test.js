@@ -45,8 +45,25 @@ describe('declarative dispatch view', () => {
     });
 
     const dispatchTable = dispatchPage.views.find((/** @type {{ id: string }} */ view) => view.id === 'package-worker-dispatches');
-    const evidenceBoundary = dispatchPage.views.find((/** @type {{ id: string }} */ view) => view.id === 'dispatch-evidence-boundary');
+    const packageStateTable = dispatchPage.views.find((/** @type {{ id: string }} */ view) => view.id === 'package-dispatch-state');
+    const activationDistribution = dispatchPage.views.find((/** @type {{ id: string }} */ view) => view.id === 'dispatch-status');
+    const packageDistribution = dispatchPage.views.find((/** @type {{ id: string }} */ view) => view.id === 'dispatch-package-distribution');
     const activationSummary = dispatchPage.views.find((/** @type {{ id: string }} */ view) => view.id === 'dispatch-activation-summary');
+    expect(dispatchPage.views.slice(0, 2).map((/** @type {{ id: string }} */ view) => view.id)).toEqual([
+      'dispatch-status',
+      'dispatch-package-distribution'
+    ]);
+    expect(activationDistribution).toMatchObject({ mark: 'chart', chart: 'pie', layout: 'half' });
+    expect(packageDistribution).toMatchObject({
+      mark: 'chart',
+      chart: 'pie',
+      layout: 'half',
+      data: { source: 'dispatches' },
+      encoding: {
+        x: { field: 'package-name', type: 'nominal', title: 'Package' },
+        y: { field: 'started-at', type: 'quantitative', aggregate: 'count', title: 'Dispatches' }
+      }
+    });
     expect(activationSummary).toMatchObject({
       mark: 'element',
       element: 'summary-grid',
@@ -54,18 +71,37 @@ describe('declarative dispatch view', () => {
     });
     expect(dispatchTable).toMatchObject({
       mark: 'table',
+      disclosure: 'supplemental',
       data: { source: 'dispatches' },
       encoding: {
         href: { field: 'run-link' }
       }
     });
-    expect(evidenceBoundary).toMatchObject({ mark: 'callout', callout: { label: 'Execution boundary' } });
+    expect(packageStateTable).toMatchObject({
+      mark: 'table',
+      data: { source: 'package-dispatch-state' },
+      encoding: {
+        columns: [
+          { field: 'package-name', title: 'Package' },
+          { field: 'dispatch-runs', title: 'Dispatch runs' },
+          { field: 'skipped', title: 'Skipped' },
+          { field: 'failed', title: 'Failed' },
+          { field: 'succeeded', title: 'Succeeded' },
+          { field: 'worker-dispatches', title: 'Dispatches by worker' },
+          { field: 'aic', title: 'AIC' },
+          { field: 'agent', title: 'Agent' },
+          { field: 'model', title: 'Model' }
+        ]
+      }
+    });
     expect(rendered.querySelector('.summary-grid')?.textContent).toContain('Activation rate');
     expect(rendered.querySelector('.summary-grid')?.textContent).toContain('100%');
     const pageFilter = /** @type {HTMLInputElement | null} */ (rendered.querySelector('.filter-bar input'));
     expect(pageFilter?.value).toBe('event:workflow_dispatch');
-    expect(rendered.querySelector('.dashboard-callout')?.textContent).toContain('unavailable parent-child correlation is never inferred');
-    expect([...rendered.querySelectorAll('thead tr:first-child th')].map((cell) => cell.textContent)).toEqual([
+    expect(rendered.textContent).toContain('Package dispatching state');
+    expect(rendered.textContent).toContain('Dispatches by package');
+    const tables = rendered.querySelectorAll('table');
+    expect([...tables[1].querySelectorAll('thead tr:first-child th')].map((cell) => cell.textContent)).toEqual([
       'Started',
       'Type',
       'Package',

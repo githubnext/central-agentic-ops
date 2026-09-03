@@ -23,6 +23,12 @@ describe('DLS-CONF-004 scaffold gates', () => {
     expect(favicon).toBe(agenticWorkflowsFavicon);
   });
 
+  it('sets the dashboard title before the presenter loads', () => {
+    const preview = readFileSync(resolve('index.html'), 'utf8');
+
+    expect(preview).toContain('<title>Central Agentic Ops Dashboard</title>');
+  });
+
   it('parity motion audit keeps report-style transitions and reduced-motion overrides', () => {
     const styles = readFileSync(resolve('src/styles.js'), 'utf8');
 

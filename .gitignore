@@ -3,3 +3,9 @@
 dist/
 node_modules/
 public/cao/
+
+# Local dashboard preview
+/.cao-dashboard-preview-*/
+
+# CAO control modules checked out during pre-activation
+/.cao/

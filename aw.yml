@@ -4,6 +4,7 @@ min-version: v0.88.2
 experimental: true
 includes:
   - .github/workflows/activity.yml
+  - .github/workflows/agentic-auto-upgrade.yml
   - .github/workflows/cao-maintenance.yml
   - .github/workflows/ambient-context-agents-md-curator.md
   - .github/workflows/ambient-context-skills-curator.md
