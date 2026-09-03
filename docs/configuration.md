@@ -117,18 +117,20 @@ If usage logs are unavailable or invalid, the orchestration admits no workers in
 
 The worker resolves the target default branch to an exact SHA and validates this document before agent execution. Review runs do not require target authority because they cannot mutate the target.
 
-## Credential Secrets
+## Credentials
 
 For private or internal targets, alternate review repositories, or live writes, configure a GitHub App or fine-grained PAT. For bounded review runs against public targets, no App or PAT secret is required when outputs stay in the current control repository.
 
 | Name | Required | Purpose |
 | --- | --- | --- |
-| `GH_AW_GITHUB_APP_ID` | With App authentication | GitHub App client ID. |
-| `GH_AW_GITHUB_APP_PRIVATE_KEY` | With App authentication | Private key paired with the App ID. |
+| `GH_AW_GITHUB_READ_APP_ID` | With App authentication | Repository variable containing the read-only GitHub App client ID. |
+| `GH_AW_GITHUB_READ_APP_PRIVATE_KEY` | With App authentication | Repository secret containing the read-only App private key. |
+| `GH_AW_GITHUB_WRITE_APP_ID` | With write-capable App authentication | Repository variable containing the safe-output GitHub App client ID. |
+| `GH_AW_GITHUB_WRITE_APP_PRIVATE_KEY` | With write-capable App authentication | Repository secret containing the safe-output App private key. |
 | `GH_AW_GITHUB_TOKEN` | PAT fallback | Fine-grained token for cross-repository access. |
 | `GH_AW_CI_TOKEN` | Optional Dependabot path | Additional token used only when an empty CI commit is required. |
 
-Store all four as Actions secrets. The App ID is not policy, but keeping both App values secret avoids a second configuration channel. Shared control selects an App installation token first, then `GH_AW_GITHUB_TOKEN`, then the run-scoped `GITHUB_TOKEN` when its reach is sufficient.
+The root package manifest remains free of interactive setup so `gh aw add` works non-interactively. Follow [Configure Authentication](authentication.md#optional-setup-wizard) to create and install both Apps with an explicitly temporary `aw.yml` block, or configure the four values manually. Shared control uses the read-only App for GitHub tools and admission, and exposes the write-capable App only to safe outputs. Each path falls back to `GH_AW_GITHUB_TOKEN`, then the run-scoped `GITHUB_TOKEN`, when its reach is sufficient.
 
 ## Manual Inputs
 

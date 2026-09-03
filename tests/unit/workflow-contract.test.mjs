@@ -718,14 +718,21 @@ test("package manifests exclude repository-only tests", () => {
   }
 });
 
+test("root package keeps GitHub App setup opt-in", () => {
+  const rootManifest = parse(readFileSync(join(root, "aw.yml"), "utf8"));
+
+  assert.equal(rootManifest.config, undefined);
+});
+
 test("root package provides default control-repository agent context", () => {
   const rootManifest = readFileSync(join(root, "aw.yml"), "utf8");
   const agents = readFileSync(join(root, "AGENTS.md"), "utf8");
   const setupSkill = readFileSync(join(root, ".github", "skills", "setup-central-agentic-ops", "SKILL.md"), "utf8");
 
   assert.match(rootManifest, /source: AGENTS\.md\n\s+destination: \.github\/aw\/default-AGENTS\.md/);
-  assert.doesNotMatch(rootManifest, /^config:/m);
-  assert.match(agents, /Catalog source:[\s\S]*never configure this repository as a control plane/);
+  assert.match(agents, /Source-managed control repository:[\s\S]*Any repository may run workflows it maintains directly in-tree as a control plane/);
+  assert.match(agents, /same repository is also a catalog[\s\S]*supported dogfood topology/);
+  assert.match(agents, /Do not infer a role from the repository name or from catalog files alone/);
   assert.match(agents, /Control repository:[\s\S]*explicitly enrolled remote repositories/);
   assert.match(agents, /`review` is the default mode/);
   assert.match(agents, /Never edit them directly; change their Markdown sources and run `gh aw compile`/);
@@ -814,7 +821,6 @@ test("root CAO workflows use organization-billed Copilot authentication", () => 
   ];
   const rootManifest = readFileSync(join(root, "aw.yml"), "utf8");
 
-  assert.doesNotMatch(rootManifest, /^config:/m);
   assert.doesNotMatch(rootManifest, /COPILOT_GITHUB_TOKEN/);
 
   for (const workflowId of rootPackageWorkflowIds) {
@@ -1098,8 +1104,10 @@ test("authentication prefers an optional GitHub App and retains bounded fallback
   const control = workflow("shared/control.md");
   const precompute = controlPrecompute();
 
-  assert.match(control, /github-app:\n\s+client-id: \$\{\{ secrets\.GH_AW_GITHUB_APP_ID \}\}/);
-  assert.match(control, /private-key: \$\{\{ secrets\.GH_AW_GITHUB_APP_PRIVATE_KEY \}\}/);
+  assert.match(control, /github-app:\n\s+client-id: \$\{\{ vars\.GH_AW_GITHUB_READ_APP_ID \}\}/);
+  assert.match(control, /private-key: \$\{\{ secrets\.GH_AW_GITHUB_READ_APP_PRIVATE_KEY \}\}/);
+  assert.match(control, /safe-outputs:\n\s+github-app:\n\s+client-id: \$\{\{ vars\.GH_AW_GITHUB_WRITE_APP_ID \}\}/);
+  assert.match(control, /private-key: \$\{\{ secrets\.GH_AW_GITHUB_WRITE_APP_PRIVATE_KEY \}\}/);
   assert.match(control, /ignore-if-missing: true/);
   assert.doesNotMatch(control, /repositories: \["\*"\]/);
   assert.match(control, /jobs:\n\s+pre-activation:[\s\S]*?secrets\.GH_AW_GITHUB_TOKEN \|\| github\.token/);
@@ -1860,6 +1868,8 @@ test("dashboard authoring corpus workflow generates only validated training exam
   assert.match(dashboardIrSkill, /specification as the semantic authority/);
   assert.match(dashboardIrSkill, /validator entry point as the syntax and structural validation authority/);
   assert.match(dashboardIrSkill, /Do not introduce a new intermediate language/);
+  assert.match(dashboardIrSkill, /Read the specification and `dashboard\/site\/dashboard\.json`/);
+  assert.match(dashboardIrSkill, /Reuse an established built-in view pattern/);
   assert.match(dashboardIrSkill, /Return only the validated complete Dashboard Language YAML document/);
   assert.match(dashboardAuthoringSkill, /Pass the intent and operational-value contract to `generate-dashboard-ir`/);
   assert.match(dashboardAuthoringSkill, /Store an operation package's production Dashboard Language document at `<package>\/dashboard\.json`/);
@@ -2193,11 +2203,17 @@ test("README routes zero-to-CAO requests to the setup skill", () => {
   assert.doesNotMatch(setupSkill, /the control repository is public;/);
   assert.match(setupSkill, /Control-repository visibility does not determine target access/);
   assert.match(setupSkill, /use `GITHUB_TOKEN` for control-repository self-review or an exact public target in `review`/);
-  assert.match(setupSkill, /require a least-privilege GitHub App before running against a private or internal target/);
+  assert.match(setupSkill, /require separate least-privilege read-only and write-capable GitHub Apps/);
+  assert.match(setupSkill, /\.github\/cao\/setup-github-apps\.mjs --repo <organization>\/<control-repository>/);
+  assert.match(setupSkill, /helper mirrors gh-aw's App manifest conversion flow without package delivery/);
+  assert.match(setupSkill, /sends private keys to repository secrets through standard input/);
+  assert.match(setupSkill, /read App has no write permission/);
   assert.match(setupSkill, /Do not place private target evidence in a public control repository/);
   assert.match(setupSkill, /offer a fine-grained PAT only when an App cannot be obtained[\s\S]*?user explicitly consents/);
   assert.match(setupSkill, /A PAT cannot grant access the user does not already have/);
-  assert.match(setupSkill, /Never configure it as the user's control plane/);
+  assert.match(setupSkill, /source-managed control topology for any repository that maintains the workflows it will execute in-tree/);
+  assert.match(setupSkill, /Never infer control-plane operation from workflow sources, catalog files, or the repository name alone/);
+  assert.match(setupSkill, /also a catalog[\s\S]*supported dogfood repository/);
 });
 
 test("Dashboard package supports embedded and explicit standalone deployment", () => {
