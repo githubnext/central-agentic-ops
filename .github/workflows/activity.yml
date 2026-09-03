@@ -41,6 +41,23 @@ jobs:
         id: activity-cache-key
         run: echo "value=${{ runner.os }}-cao-activity-v2-${{ github.repository }}-${{ github.run_id }}-${{ github.run_attempt }}" >> "$GITHUB_OUTPUT"
 
+      - name: Generate GitHub App token for activity
+        id: activity-app-token
+        env:
+          GH_AW_IGNORE_IF_MISSING_PRIVATE_KEY: ${{ secrets.GH_AW_GITHUB_READ_APP_PRIVATE_KEY }}
+        if: ${{ vars.GH_AW_GITHUB_READ_APP_ID != '' && env.GH_AW_IGNORE_IF_MISSING_PRIVATE_KEY != '' }}
+        uses: actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1 # v3.2.0
+        with:
+          client-id: ${{ vars.GH_AW_GITHUB_READ_APP_ID }}
+          private-key: ${{ secrets.GH_AW_GITHUB_READ_APP_PRIVATE_KEY }}
+          owner: ${{ github.repository_owner }}
+          repositories: ${{ github.event.repository.name }}
+          github-api-url: ${{ github.api_url }}
+          permission-actions: read
+          permission-contents: read
+          permission-issues: read
+          permission-pull-requests: read
+
       - name: Restore activity cache
         uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
@@ -90,7 +107,7 @@ jobs:
 
       - name: Refresh activity index
         env:
-          GITHUB_TOKEN: ${{ github.token }}
+          GITHUB_TOKEN: ${{ steps.activity-app-token.outputs.token || github.token }}
           REPORT_CONTROL_POLICY: .github/workflows/cao.json
           REPORT_DEPLOYED_WORKFLOWS: ${{ runner.temp }}/cao-activity/deployed-workflows.json
           REPORT_RUN_WINDOW_HOURS: "168"
@@ -99,6 +116,8 @@ jobs:
       - name: Install gh-aw CLI
         if: env.DASHBOARD_COLLECTION == 'true'
         uses: github/gh-aw-actions/setup-cli@9271a1804551c0dc4fb0085a97979950aa2f8489 # v0.88.2
+        env:
+          GH_TOKEN: ${{ steps.activity-app-token.outputs.token || github.token }}
         with:
           version: v0.88.2
 
@@ -110,6 +129,7 @@ jobs:
           ref: 8e30bcd8897f5047051fa3971188e1dd4cdb23cf # v0.88.2
           path: .cache/gh-aw-operational-value-source
           persist-credentials: false
+          token: ${{ steps.activity-app-token.outputs.token || github.token }}
 
       - name: Setup Go for operational-value replay
         if: env.DASHBOARD_COLLECTION == 'true'
@@ -139,7 +159,7 @@ jobs:
       - name: Collect AI Credit usage
         if: env.DASHBOARD_COLLECTION == 'true'
         env:
-          GH_TOKEN: ${{ github.token }}
+          GH_TOKEN: ${{ steps.activity-app-token.outputs.token || github.token }}
           REPORT_AIC_USAGE: ${{ runner.temp }}/cao-activity/aic-usage.json
           REPORT_DEPLOYED_WORKFLOWS: ${{ runner.temp }}/cao-activity/deployed-workflows.json
         run: node "$DASHBOARD_REPORT_ROOT/aic-usage.mjs"
@@ -147,7 +167,7 @@ jobs:
       - name: Collect operational-value observations
         if: env.DASHBOARD_COLLECTION == 'true'
         env:
-          GH_TOKEN: ${{ github.token }}
+          GH_TOKEN: ${{ steps.activity-app-token.outputs.token || github.token }}
           REPORT_DEPLOYED_WORKFLOWS: ${{ runner.temp }}/cao-activity/deployed-workflows.json
           REPORT_GH_AW_BIN: ${{ runner.temp }}/gh-aw-operational-value/gh-aw
           REPORT_OPERATIONAL_VALUES: ${{ runner.temp }}/cao-activity/operational-values.json
@@ -166,7 +186,7 @@ jobs:
       - name: Collect durable dashboard records
         if: env.DASHBOARD_COLLECTION == 'true'
         env:
-          GITHUB_TOKEN: ${{ github.token }}
+          GITHUB_TOKEN: ${{ steps.activity-app-token.outputs.token || github.token }}
           REPORT_CONTROL_SETTINGS: ${{ runner.temp }}/cao-activity/control-settings.json
           REPORT_INVENTORY: ${{ runner.temp }}/cao-activity/control-plane-inventory.json
           REPORT_DEPLOYED_WORKFLOWS: ${{ runner.temp }}/cao-activity/deployed-workflows.json

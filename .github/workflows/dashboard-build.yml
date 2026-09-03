@@ -41,6 +41,7 @@ jobs:
       issues: read
       pull-requests: read
     uses: ./.github/workflows/activity.yml
+    secrets: inherit
 
   build:
     needs: activity

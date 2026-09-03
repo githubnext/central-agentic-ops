@@ -18,6 +18,7 @@ jobs:
       issues: read
       pull-requests: read
     uses: ./.github/workflows/dashboard-build.yml
+    secrets: inherit
     with:
       site-path: "."
 
