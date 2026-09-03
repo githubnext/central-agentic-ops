@@ -678,7 +678,9 @@ test("root package provides default control-repository agent context", () => {
   const setupSkill = readFileSync(join(root, ".github", "skills", "setup-central-agentic-ops", "SKILL.md"), "utf8");
 
   assert.match(rootManifest, /source: AGENTS\.md\n\s+destination: \.github\/aw\/default-AGENTS\.md/);
-  assert.match(agents, /Catalog source:[\s\S]*never configure this repository as a control plane/);
+  assert.match(agents, /Source-managed control repository:[\s\S]*Any repository may run workflows it maintains directly in-tree as a control plane/);
+  assert.match(agents, /same repository is also a catalog[\s\S]*supported dogfood topology/);
+  assert.match(agents, /Do not infer a role from the repository name or from catalog files alone/);
   assert.match(agents, /Control repository:[\s\S]*explicitly enrolled remote repositories/);
   assert.match(agents, /`review` is the default mode/);
   assert.match(agents, /Never edit them directly; change their Markdown sources and run `gh aw compile`/);
@@ -2144,7 +2146,9 @@ test("README routes zero-to-CAO requests to the setup skill", () => {
   assert.match(setupSkill, /Do not place private target evidence in a public control repository/);
   assert.match(setupSkill, /offer a fine-grained PAT only when an App cannot be obtained[\s\S]*?user explicitly consents/);
   assert.match(setupSkill, /A PAT cannot grant access the user does not already have/);
-  assert.match(setupSkill, /Never configure it as the user's control plane/);
+  assert.match(setupSkill, /source-managed control topology for any repository that maintains the workflows it will execute in-tree/);
+  assert.match(setupSkill, /Never infer control-plane operation from workflow sources, catalog files, or the repository name alone/);
+  assert.match(setupSkill, /also a catalog[\s\S]*supported dogfood repository/);
 });
 
 test("Dashboard package supports embedded and explicit standalone deployment", () => {
