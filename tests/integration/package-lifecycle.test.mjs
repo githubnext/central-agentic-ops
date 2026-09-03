@@ -27,6 +27,7 @@ const dependabotUpdateSource = focusedPackageSource("dependabot");
 const selfCarePackageSource = focusedPackageSource("self-care");
 const softwareDevelopmentPracticesPackageSource = focusedPackageSource("software-development-practices");
 const activityExpectedFiles = [
+  ".github/aw/activity/actions-log.mjs",
   ".github/aw/activity/index.mjs",
   ".github/workflows/activity.yml",
 ];

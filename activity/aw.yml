@@ -6,5 +6,7 @@ includes:
     destination: .github/workflows/activity.yml
     kind: action-workflow
 resources:
+  - source: actions-log.mjs
+    destination: .github/aw/activity/actions-log.mjs
   - source: index.mjs
     destination: .github/aw/activity/index.mjs

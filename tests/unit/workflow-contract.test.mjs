@@ -1600,6 +1600,21 @@ test("SelfCare runs every 20 minutes", () => {
   assert.match(compiled, /GH_AW_INFO_MODEL: "copilot\/gpt-5\.4"/);
 });
 
+test("AW Maintenance runs hourly with bounded deterministic discovery", () => {
+  const source = workflow("aw-maintenance.md");
+  const compiled = workflow("aw-maintenance.lock.yml");
+
+  assert.match(source, /schedule: "hourly"/);
+  assert.match(source, /engine:\n\s+id: pi\n\s+model: copilot\/mai-code-1\.1-flash/);
+  assert.match(source, /name: Deterministic pre-fetch of AW maintenance evidence/);
+  assert.match(source, /const MAX_EVIDENCE_CANDIDATES = 50/);
+  assert.match(source, /Use its bounded, pre-ranked `candidates` as the only source of GitHub discovery evidence/);
+  assert.match(source, /do not repeat its GitHub API queries in the agent/);
+  assert.match(compiled, /cron: "\d+ \*\/1 \* \* \*"  # Friendly format: hourly \(scattered\)/);
+  assert.match(compiled, /GH_AW_INFO_ENGINE_ID: "pi"/);
+  assert.match(compiled, /GH_AW_INFO_MODEL: "copilot\/mai-code-1\.1-flash"/);
+});
+
 test("SelfCare accessibility checker audits the served docs site with axe-core evidence", () => {
   const source = workflow("self-care-accessibility-checker.md");
   const liveGuard = "if: ${{ inputs.target_repo == 'githubnext/central-agentic-ops' && (inputs.safe_output_mode || 'review') == 'live' }}";
@@ -1622,8 +1637,14 @@ test("SelfCare accessibility checker audits the served docs site with axe-core e
   assert.match(source, /colorScheme: "light"/);
   assert.match(source, /colorScheme: "dark"/);
   assert.match(source, /prefers-reduced-motion/);
+  assert.match(source, /safe-outputs:\n\s+allowed-domains:\n\s+- githubnext\.github\.io\n\s+create-issue:/);
   assert.match(source, /create-issue:\n\s+target-repo:.*\n\s+title-prefix: "\[self-care:accessibility-checker\] "/);
+  assert.match(source, /labels: \[self-care\]/);
   assert.match(source, /close-older-key: self-care-accessibility-checker/);
+  assert.match(source, /Begin the issue body directly with a concise, unheaded executive summary/);
+  assert.match(source, /select the single most important action with the highest expected return on investment/);
+  assert.match(source, /<details><summary><b>Agent prompt<\/b><\/summary>/);
+  assert.match(source, /<details><summary><b>All Findings and Evidence<\/b><\/summary>/);
   assert.equal(source.split(liveGuard).length - 1, 5);
   assert.doesNotMatch(source, /^\s+(create-pull-request|add-comment|create-discussion|push-to-pull-request-branch):/m);
 });
@@ -2198,9 +2219,11 @@ test("Activity package owns the shared workflow-run cache contract", () => {
     kind: "action-workflow",
   }]);
   assert.deepEqual(activityManifest.resources, [
+    { source: "actions-log.mjs", destination: ".github/aw/activity/actions-log.mjs" },
     { source: "index.mjs", destination: ".github/aw/activity/index.mjs" },
   ]);
   assert.ok(rootManifest.includes.some((entry) => entry.destination === ".github/workflows/activity.yml"));
+  assert.ok(rootManifest.resources.some((entry) => entry.destination === ".github/aw/activity/actions-log.mjs"));
   assert.ok(rootManifest.resources.some((entry) => entry.destination === ".github/aw/activity/index.mjs"));
   assert.match(workflow, /schedule:[\s\S]*?cron:/);
   assert.match(workflow, /workflow_call:/);

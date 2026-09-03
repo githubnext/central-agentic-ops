@@ -25,6 +25,8 @@ resources:
     destination: .github/aw/default-AGENTS.md
   - source: .github/aw/instructions.md
     destination: .github/aw/instructions.md
+  - source: activity/actions-log.mjs
+    destination: .github/aw/activity/actions-log.mjs
   - source: activity/index.mjs
     destination: .github/aw/activity/index.mjs
   - source: dashboard/report/aic-usage.mjs
@@ -135,8 +137,6 @@ resources:
     destination: .github/aw/dashboard/site/src/components/run-classification.js
   - source: dashboard/site/src/components/run-conclusion-classification.json
     destination: .github/aw/dashboard/site/src/components/run-conclusion-classification.json
-  - source: dashboard/site/src/components/summary-copy.js
-    destination: .github/aw/dashboard/site/src/components/summary-copy.js
   - source: dashboard/site/src/components/tab-nav.js
     destination: .github/aw/dashboard/site/src/components/tab-nav.js
   - source: dashboard/site/src/components/table-region.js

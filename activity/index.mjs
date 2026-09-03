@@ -1,8 +1,11 @@
 import { mkdir, writeFile } from "node:fs/promises";
 import { readFileSync } from "node:fs";
 import path from "node:path";
+import { actionsLog as log } from "./actions-log.mjs";
 
 (async () => {
+log.group`Discover deployed agentic workflows`;
+try {
 
 const repository = process.env.GITHUB_REPOSITORY || "";
 const organization = process.env.REPORT_ORGANIZATION || repository.split("/")[0];
@@ -69,7 +72,7 @@ async function github(url, attempt = 0, authToken = token) {
     if (!Number.isFinite(delay) || delay > maxRetryDelayMs) {
       throw new Error(`GitHub API ${response.status} for ${url}; requested retry delay ${Math.ceil(delay / 1000)} seconds exceeds limit`);
     }
-    console.warn(`GitHub API ${response.status}; retrying ${url} in ${Math.ceil(delay / 1000)} seconds`);
+    log.warning`GitHub API ${response.status}; retrying ${url} in ${Math.ceil(delay / 1000)} seconds`;
     await new Promise((resolve) => setTimeout(resolve, delay));
     return github(url, attempt + 1, authToken);
   }
@@ -145,7 +148,7 @@ async function registeredWorkflows(repositoryName) {
       if ((response.body.workflows || []).length < 100) break;
     }
   } catch (error) {
-    console.warn(`${error.message}; retaining discovered files with unknown state`);
+    log.warning`${error.message}; retaining discovered files with unknown state`;
   }
   return new Map(workflows.map((workflow) => [workflow.path, workflow]));
 }
@@ -154,7 +157,7 @@ async function repositoryMetadata(repositoryName) {
   try {
     return (await github(`/repos/${repositoryName}`)).body;
   } catch (error) {
-    console.warn(`${error.message}; repository visibility will be unknown`);
+    log.warning`${error.message}; repository visibility will be unknown`;
     return {};
   }
 }
@@ -179,7 +182,7 @@ async function organizationRepositorySummary() {
       total,
     };
   } catch (error) {
-    console.warn(`${error.message}; organization repository totals will be unavailable`);
+    log.warning`${error.message}; organization repository totals will be unavailable`;
     return { public: null, private: null, internal: null, total: null };
   }
 }
@@ -239,7 +242,7 @@ async function latestGhAwVersion() {
     const version = (await github("/repos/github/gh-aw/releases/latest")).body.tag_name;
     return typeof version === "string" && isVersion(version) ? version : null;
   } catch (error) {
-    console.warn(`${error.message}; gh-aw update state will be unknown`);
+    log.warning`${error.message}; gh-aw update state will be unknown`;
     return null;
   }
 }
@@ -310,7 +313,7 @@ async function workflowCapabilities(repositoryName, lockPath) {
       ...payloads,
     };
   } catch (error) {
-    console.warn(`${error.message}; workflow capabilities are unknown for ${repositoryName}/${sourcePath}`);
+    log.warning`${error.message}; workflow capabilities are unknown for ${repositoryName}/${sourcePath}`;
     return {
       operationalValue: null,
       role: "unknown",
@@ -446,7 +449,7 @@ async function collectRunHealth(registryByRepository, previousIndex) {
     } catch (error) {
       available = false;
       complete = false;
-      console.warn(`${error.message}; run health will be unavailable for ${repositoryName}`);
+      log.warning`${error.message}; run health will be unavailable for ${repositoryName}`;
     }
   });
 
@@ -480,7 +483,7 @@ async function collectRunHealth(registryByRepository, previousIndex) {
       if (block) Object.assign(latest, block);
     } catch (error) {
       complete = false;
-      console.warn(`${error.message}; admission details will be unavailable for run ${latest.runId}`);
+      log.warning`${error.message}; admission details will be unavailable for run ${latest.runId}`;
     }
   }
   return {
@@ -510,13 +513,13 @@ if (!repositoryScopeEnabled) {
     matches = await searchPartition(0, 499999);
   } catch (error) {
     workflowSearchAvailable = false;
-    console.warn(`${error.message}; organization workflow search will be unavailable`);
+    log.warning`${error.message}; organization workflow search will be unavailable`;
   }
   try {
     manifestMatches = await searchCode(`org:${organization} filename:aw.yml`);
   } catch (error) {
     manifestSearchAvailable = false;
-    console.warn(`${error.message}; organization package search will be unavailable`);
+    log.warning`${error.message}; organization package search will be unavailable`;
   }
 } else {
   manifestMatches = (await mapWithConcurrency([repository, ...allowedRepositories], 8, async (repositoryName) => {
@@ -524,7 +527,7 @@ if (!repositoryScopeEnabled) {
       return await repositoryManifestFiles(repositoryName);
     } catch (error) {
       manifestSearchAvailable = false;
-      console.warn(`${error.message}; package manifest discovery will be unavailable for ${repositoryName}`);
+      log.warning`${error.message}; package manifest discovery will be unavailable for ${repositoryName}`;
       return [];
     }
   })).flat();
@@ -588,7 +591,7 @@ const bundles = (await mapWithConcurrency(manifestFiles, 8, async (item) => {
       workflows: includedWorkflows,
     };
   } catch (error) {
-    console.warn(`${error.message}; skipping package manifest ${item.repository.full_name}/${item.path}`);
+    log.warning`${error.message}; skipping package manifest ${item.repository.full_name}/${item.path}`;
     return null;
   }
 })).filter(Boolean).sort((left, right) => left.repository.localeCompare(right.repository) || left.name.localeCompare(right.name));
@@ -674,8 +677,11 @@ const inventory = {
 
 await mkdir(path.dirname(outputPath), { recursive: true });
 await writeFile(outputPath, `${JSON.stringify(inventory, null, 2)}\n`);
-console.log(`Discovered ${bundles.length} packages and ${standaloneWorkflows.length} standalone workflows across ${repositoryNames.length} repositories; excluded ${missingSourceCount} workflows without authored sources; run health ${runHealth.available ? runHealth.complete ? "complete" : "partial" : "unavailable"}`);
+log.info`Discovered ${bundles.length} packages and ${standaloneWorkflows.length} standalone workflows across ${repositoryNames.length} repositories; excluded ${missingSourceCount} workflows without authored sources; run health ${runHealth.available ? runHealth.complete ? "complete" : "partial" : "unavailable"}`;
+} finally {
+  log.endGroup();
+}
 })().catch((error) => {
-  console.error(error);
+  log.error`${error.stack || error.message || error}`;
   process.exitCode = 1;
 });

@@ -1,6 +1,7 @@
 import { mkdir, readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { pathToFileURL } from "node:url";
+import { actionsLog as log } from "../../activity/actions-log.mjs";
 import { firstText } from "./text-utils.mjs";
 
 const sourceNames = [
@@ -572,18 +573,24 @@ async function main() {
   if (!deployedPath || !usagePath || !operationalValuesPath || !reportPath || !inventoryPath || !controlSettingsPath || !outputPath) {
     throw new Error("REPORT_DEPLOYED_WORKFLOWS, REPORT_AIC_USAGE, REPORT_OPERATIONAL_VALUES, REPORT_RECORDS, REPORT_INVENTORY, REPORT_CONTROL_SETTINGS, and REPORT_DASHBOARD_SOURCES are required");
   }
-  const [deployed, usage, operationalValues, report, inventory, controlSettings] = await Promise.all(
-    [deployedPath, usagePath, operationalValuesPath, reportPath, inventoryPath, controlSettingsPath]
-      .map(async (file) => JSON.parse(await readFile(file, "utf8"))),
-  );
-  const sources = buildDashboardLanguageSources({ deployed, usage, operationalValues, report, inventory, controlSettings });
-  await mkdir(path.dirname(outputPath), { recursive: true });
-  await writeFile(outputPath, `${JSON.stringify(sources, null, 2)}\n`);
+  log.group`Build Dashboard Language sources`;
+  try {
+    const [deployed, usage, operationalValues, report, inventory, controlSettings] = await Promise.all(
+      [deployedPath, usagePath, operationalValuesPath, reportPath, inventoryPath, controlSettingsPath]
+        .map(async (file) => JSON.parse(await readFile(file, "utf8"))),
+    );
+    const sources = buildDashboardLanguageSources({ deployed, usage, operationalValues, report, inventory, controlSettings });
+    await mkdir(path.dirname(outputPath), { recursive: true });
+    await writeFile(outputPath, `${JSON.stringify(sources, null, 2)}\n`);
+    log.info`Wrote ${Object.keys(sources).length} dashboard sources to ${outputPath}`;
+  } finally {
+    log.endGroup();
+  }
 }
 
 if (process.argv[1] && import.meta.url === pathToFileURL(path.resolve(process.argv[1])).href) {
   main().catch((error) => {
-    console.error(error);
+    log.error`${error.stack || error.message || error}`;
     process.exitCode = 1;
   });
 }

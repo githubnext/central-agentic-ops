@@ -2,36 +2,11 @@ import { existsSync, readFileSync } from "node:fs";
 import { mkdir, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { pathToFileURL } from "node:url";
+import { actionsLog as log } from "../../activity/actions-log.mjs";
 import { firstText } from "./text-utils.mjs";
 
 const apiRoot = "https://api.github.com";
 const rateLimitDocs = "https://docs.github.com/en/rest/using-the-rest-api/rate-limits-for-the-rest-api";
-
-function message(strings, values) {
-  return strings.reduce((text, part, index) => text + part + (index < values.length ? String(values[index]) : ""), "");
-}
-
-function actionMacro(command) {
-  return (strings, ...values) => {
-    const text = message(strings, values)
-      .replaceAll("%", "%25")
-      .replaceAll("\r", "%0D")
-      .replaceAll("\n", "%0A");
-    console.log(`::${command}::${text}`);
-  };
-}
-
-const log = {
-  info(strings, ...values) {
-    console.log(message(strings, values));
-  },
-  warning: actionMacro("warning"),
-  error: actionMacro("error"),
-  group: actionMacro("group"),
-  endGroup() {
-    console.log("::endgroup::");
-  },
-};
 
 class GitHubRateLimitError extends Error {
   constructor(pathname, response, detail) {
