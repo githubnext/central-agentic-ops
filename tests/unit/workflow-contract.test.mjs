@@ -2294,6 +2294,10 @@ test("Documentation Pages deploys docs with the packaged dashboard builder", () 
   assert.match(dashboardBuild, /DASHBOARD_LAYOUT=source/);
   assert.match(dashboardBuild, /DASHBOARD_LAYOUT=installed/);
   assert.doesNotMatch(dashboardBuild, /schedule:|push:|deploy-pages|upload-pages-artifact/);
+  assert.match(astroConfig, /base: "\/gh-aw-cao"/);
+  assert.match(astroConfig, /rewriteDocsLinks, \{ base: "\/gh-aw-cao" \}/);
+  assert.match(astroConfig, /githubnext\/gh-aw-cao\/edit\/main/);
+  assert.match(astroConfig, /href: "https:\/\/github\.com\/githubnext\/gh-aw-cao"/);
   assert.match(astroConfig, /label: "Control plane status", link: "\/cao\/"/);
 });
 
