@@ -532,7 +532,7 @@ function validateLiveAuthority(context) {
   let document;
   try {
     authoritySource = decodeRepositoryFile(context.targetRepository, POLICY_PATH, targetSha);
-    document = parsePolicy(authoritySource, { logging: true });
+    document = parsePolicy(authoritySource);
   } catch (error) {
     if (error instanceof PolicyError) {
       if (typeof authoritySource === "string" && error.message === `target-authority.packages.${packageName}.authority has an invalid value`) {
