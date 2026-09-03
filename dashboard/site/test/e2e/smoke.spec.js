@@ -1029,7 +1029,8 @@ test('DLS-PAGE-014 DLS-PAGE-015 built-in packages page renders report-style mode
                       intent: 'Debug this failed workflow dispatch.',
                       presentation: 'copy-prompt',
                       icon: 'search',
-                      label: 'Copy debug prompt'
+                      label: 'Review debug prompt',
+                      context: ['package', 'status', 'status-detail', 'started-at', 'workflow-name', 'run-title', 'runtime-repository', 'run-link']
                     }]
                   }
                 },
@@ -1203,18 +1204,28 @@ test('DLS-PAGE-014 DLS-PAGE-015 built-in packages page renders report-style mode
   const failedDispatchRows = failedDispatchSection.locator('tbody tr');
   await expect(failedDispatchRows).toHaveCount(5);
   await expect(failedDispatchSection.locator('thead tr').first().locator('th')).toHaveText([
+    'Action',
     'Why',
     'Started',
     'Workflow',
     'Run title',
-    'Runtime repository',
-    'Copy debug prompt'
+    'Runtime repository'
   ]);
   await expect(failedDispatchRows.first().locator('[data-field="status-detail"]')).toHaveText('GitHub API capacity insufficient; reset 1 hour ago');
   await expect(failedDispatchRows.last().locator('[data-field="status-detail"]')).toHaveText('Target authority missing: add .github/workflows/cao.json to the target default branch for live mode');
   await expect(failedDispatchRows.first().locator('[data-field="status-detail"]')).toHaveAttribute('data-status', 'failure');
   await expect(failedDispatchRows.locator('[data-field="status-detail"] a')).toHaveCount(5);
   await expect(failedDispatchRows.locator('.table-intent-button')).toHaveCount(5);
+  const intentButton = failedDispatchRows.first().getByRole('button', { name: 'Review debug prompt' });
+  await expect(intentButton).toContainText('Review debug prompt');
+  await intentButton.click();
+  const intentDialog = page.getByRole('dialog', { name: 'Review debug prompt prompt preview' });
+  await expect(intentDialog).toBeVisible();
+  await expect(intentDialog.locator('.table-intent-preview')).toContainText('Debug this failed workflow dispatch.');
+  await expect(intentDialog.getByRole('button', { name: 'Copy prompt' })).toBeVisible();
+  await intentDialog.getByRole('button', { name: 'Close prompt preview' }).click();
+  await expect(intentDialog).toBeHidden();
+  await expect(intentButton).toBeFocused();
   await expect(failedDispatchRows.first().locator('[data-field="status-detail"] a')).toHaveAttribute('href', 'https://github.com/githubnext/gh-aw-cao/actions/runs/3');
   const allDispatchRows = page.getByRole('heading', { name: 'All dispatches', level: 3 }).locator('..').locator('tbody tr');
   await expect(allDispatchRows).toHaveCount(5);
