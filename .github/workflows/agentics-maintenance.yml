@@ -206,9 +206,9 @@ jobs:
             await main();
 
       - name: Install gh-aw
-        uses: github/gh-aw-actions/setup-cli@9271a1804551c0dc4fb0085a97979950aa2f8489 # v0.88.2
+        uses: github/gh-aw-actions/setup-cli@f760a0195ff9e427db7aa9e8c7b2d83a512e73cf # v0.88.3
         with:
-          version: v0.88.2
+          version: v0.88.3
 
       - name: Run operation
         uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
@@ -358,9 +358,9 @@ jobs:
             await main();
 
       - name: Install gh-aw
-        uses: github/gh-aw-actions/setup-cli@9271a1804551c0dc4fb0085a97979950aa2f8489 # v0.88.2
+        uses: github/gh-aw-actions/setup-cli@f760a0195ff9e427db7aa9e8c7b2d83a512e73cf # v0.88.3
         with:
-          version: v0.88.2
+          version: v0.88.3
 
       - name: Create missing labels
         uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
@@ -408,9 +408,9 @@ jobs:
             await main();
 
       - name: Install gh-aw
-        uses: github/gh-aw-actions/setup-cli@9271a1804551c0dc4fb0085a97979950aa2f8489 # v0.88.2
+        uses: github/gh-aw-actions/setup-cli@f760a0195ff9e427db7aa9e8c7b2d83a512e73cf # v0.88.3
         with:
-          version: v0.88.2
+          version: v0.88.3
 
       - name: Restore activity report logs cache
         id: activity_report_logs_cache
@@ -515,9 +515,9 @@ jobs:
             await main();
 
       - name: Install gh-aw
-        uses: github/gh-aw-actions/setup-cli@9271a1804551c0dc4fb0085a97979950aa2f8489 # v0.88.2
+        uses: github/gh-aw-actions/setup-cli@f760a0195ff9e427db7aa9e8c7b2d83a512e73cf # v0.88.3
         with:
-          version: v0.88.2
+          version: v0.88.3
 
       - name: Restore forecast report logs cache
         id: forecast_report_logs_cache
@@ -652,9 +652,9 @@ jobs:
             await main();
 
       - name: Install gh-aw
-        uses: github/gh-aw-actions/setup-cli@9271a1804551c0dc4fb0085a97979950aa2f8489 # v0.88.2
+        uses: github/gh-aw-actions/setup-cli@f760a0195ff9e427db7aa9e8c7b2d83a512e73cf # v0.88.3
         with:
-          version: v0.88.2
+          version: v0.88.3
 
       - name: Validate workflows and file issue on findings
         uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0

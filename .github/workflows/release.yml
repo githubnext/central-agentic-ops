@@ -58,9 +58,9 @@ jobs:
         with:
           node-version: 24
       - name: Install gh-aw
-        uses: github/gh-aw-actions/setup-cli@9271a1804551c0dc4fb0085a97979950aa2f8489 # v0.88.2
+        uses: github/gh-aw-actions/setup-cli@f760a0195ff9e427db7aa9e8c7b2d83a512e73cf # v0.88.3
         with:
-          version: v0.88.2
+          version: v0.88.3
       - name: Validate files installed from aw.yml
         env:
           CENTRAL_AGENTIC_OPS_PACKAGE_SOURCE: ${{ github.repository }}@${{ github.sha }}

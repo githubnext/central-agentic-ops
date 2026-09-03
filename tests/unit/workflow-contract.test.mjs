@@ -11,7 +11,7 @@ import { policyCases, userFacingScenarios } from "./workflow-contract.matrix.mjs
 const root = resolve(dirname(fileURLToPath(import.meta.url)), "../..");
 const workflowsDirectory = join(root, ".github", "workflows");
 const modes = ["review", "live"];
-const ghAwVersion = "v0.88.2";
+const ghAwVersion = "v0.88.3";
 
 function workflow(name, directory = workflowsDirectory) {
   return readFileSync(join(directory, name), "utf8");
@@ -37,8 +37,8 @@ test("packages and repository workflows pin the supported gh-aw version", () => 
 
   for (const name of ["activity.yml", "copilot-setup-steps.yml", "release.yml", "workflow-contracts.yml"]) {
     const source = workflow(name);
-    assert.match(source, /github\/gh-aw-actions\/setup-cli@[0-9a-f]{40} # v0\.88\.2/);
-    assert.match(source, /version: v0\.88\.2/);
+    assert.match(source, /github\/gh-aw-actions\/setup-cli@[0-9a-f]{40} # v0\.88\.3/);
+    assert.match(source, /version: v0\.88\.3/);
   }
 });
 
@@ -837,21 +837,18 @@ test("CAO upgrade script refreshes gh-aw, packages, and Actions", () => {
   assert.match(upgrade, /^gh aw upgrade$/m);
 });
 
-test("root package directly includes grader-backed workers for dependency packaging", () => {
-  const rootManifest = readFileSync(join(root, "aw.yml"), "utf8");
-  const importedWorkerIds = [
-    "ambient-context-agents-md-curator",
-    "dependabot-release-train-updater",
-    "optimization-ai-credit-auditor",
-    "optimization-ai-credit-optimizer",
-  ];
+test("root package composes its core packages through their manifests", () => {
+  const rootPackage = parse(readFileSync(join(root, "aw.yml"), "utf8"));
 
-  for (const workflowId of importedWorkerIds) {
-    const graderPath = `.github/graders/${workflowId}-operational-value.sh`;
-    assert.ok(existsSync(join(root, graderPath)), `${graderPath} must exist`);
-    assert.match(workflow(`${workflowId}.md`), new RegExp(`run: ${graderPath.replaceAll(".", "\\.")}`));
-    assert.match(rootManifest, new RegExp(`- \\.github/workflows/${workflowId.replaceAll("-", "\\-")}\\.md`));
-  }
+  assert.deepEqual(rootPackage.includes, [
+    "activity/aw.yml",
+    "ambient-context/aw.yml",
+    "aw-maintenance/aw.yml",
+    "dependabot/aw.yml",
+    "optimization/aw.yml",
+    "dashboard/aw.yml",
+    ".github/workflows/agentic-auto-upgrade.yml",
+  ]);
 });
 
 test("compiled workflow locks are not ignored", () => {
@@ -2288,7 +2285,7 @@ test("Agent customizations preserve deterministic core package boundaries", () =
   assert.match(packageSkill, /site-path/);
   assert.match(packageSkill, /complete workflow `name` at 32 characters or fewer/);
   assert.match(packageSkill, /omitting redundant role words/);
-  assert.match(repositoryInstructions, /Keep `\.github\/workflows\/dashboard-build\.yml` independently runnable through `workflow_dispatch` and package it through both dashboard manifests/);
+  assert.match(repositoryInstructions, /Keep `\.github\/workflows\/dashboard-build\.yml` independently runnable through `workflow_dispatch` and package it through `dashboard\/aw\.yml`, which the root manifest imports/);
   assert.match(repositoryInstructions, /existing Pages site, retain one Pages artifact uploader and deployer/);
   assert.match(repositoryInstructions, /must not add a schedule or another enable variable/);
   assert.match(repositoryInstructions, /Keep data collection and cache publication out of operational packages and dashboard build jobs/);
