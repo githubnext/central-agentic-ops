@@ -423,6 +423,51 @@ test("dashboard source bridge carries canonical coverage diagnostics", () => {
   );
 });
 
+test("dashboard source bridge exposes rate-limit details for retained records", () => {
+  const sources = buildDashboardLanguageSources({
+    deployed: {
+      includePrivate: true,
+      discovery: { complete: true },
+      runHealth: { available: true, complete: true },
+      workflows: [],
+      bundles: [],
+    },
+    usage: { available: true, complete: true, runs: [] },
+    operationalValues: { records: [] },
+    inventory: {},
+    controlSettings: {},
+    report: {
+      generatedAt: "2026-09-03T00:00:00Z",
+      records: [{ repository: "githubnext/service", updatedAt: "2026-09-02T23:00:00Z" }],
+      error: "GitHub API rate limit exceeded",
+      errorStatus: 403,
+      errorEndpoint: "/repos/githubnext/service/issues",
+      rateLimitResetAt: "2026-09-03T01:00:00.000Z",
+      snapshotGeneratedAt: "2026-09-02T23:00:00Z",
+      snapshotAgeSeconds: 3600,
+      stale: true,
+    },
+  });
+
+  assert.deepEqual(sources["coverage-diagnostics"].rows, [
+    {
+      kind: "github-api-rate-limit-403",
+      title: "Durable output collection unavailable",
+      effect: "GitHub API rate limit exceeded",
+      endpoint: "/repos/githubnext/service/issues",
+      "rate-limit-reset": "2026-09-03T01:00:00.000Z",
+      "snapshot-age-seconds": 3600,
+    },
+    {
+      title: "Durable output snapshot is stale",
+      effect: "Retained the last successful snapshot from 2026-09-02T23:00:00Z.",
+      "snapshot-age-seconds": 3600,
+    },
+  ]);
+  assert.equal(sources.outcomes.metadata.completeness, "partial");
+  assert.equal(sources.outcomes.metadata.freshness, "stale");
+});
+
 test("dashboard source bridge derives admission gates from resolved control policy", () => {
   const sources = buildDashboardLanguageSources({
     deployed: {

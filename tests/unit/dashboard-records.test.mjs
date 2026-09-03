@@ -185,6 +185,36 @@ test("dashboard records stop on a GitHub rate limit and return a renderable erro
             "x-ratelimit-reset": "1788393600",
           },
         });
+
+        test("dashboard records retain the prior snapshot when a refresh is rate limited", async () => {
+          const previousSnapshot = {
+            generatedAt: "2026-09-02T23:00:00Z",
+            records: [{ id: "retained-record" }],
+          };
+          const output = await collectDashboardRecords({
+            repository: "acme/control",
+            token: "test-token",
+            controlSettings: { allowed_repositories: ["acme/service"] },
+            inventory,
+            deployedInventory: { workflows: [{ repository: "acme/service" }] },
+            previousSnapshot,
+            generatedAt: "2026-09-03T00:00:00Z",
+            fetchImpl: async () => new Response(JSON.stringify({ message: "API rate limit exceeded" }), {
+              status: 403,
+              headers: {
+                "x-ratelimit-remaining": "0",
+                "x-ratelimit-reset": "1788397200",
+              },
+            }),
+          });
+
+          assert.deepEqual(output.records, previousSnapshot.records);
+          assert.equal(output.stale, true);
+          assert.equal(output.partial, true);
+          assert.equal(output.errorEndpoint, "/repos/acme/control/issues?state=all&sort=updated&direction=desc&per_page=100&page=1");
+          assert.equal(output.rateLimitResetAt, "2026-09-03T01:00:00.000Z");
+          assert.equal(output.snapshotAgeSeconds, 3600);
+        });
       },
       generatedAt: "2026-09-02T23:00:00Z",
     });

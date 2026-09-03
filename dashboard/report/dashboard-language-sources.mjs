@@ -82,6 +82,14 @@ function coverageDiagnosticRows(deployed, usage, controlSettings, report) {
     kind: report.errorStatus === 403 ? "github-api-rate-limit-403" : "durable-output-unavailable",
     title: "Durable output collection unavailable",
     effect: report.error,
+    endpoint: report.errorEndpoint || "",
+    "rate-limit-reset": report.rateLimitResetAt || "",
+    "snapshot-age-seconds": report.snapshotAgeSeconds ?? "",
+  });
+  if (report.stale) diagnostics.push({
+    title: "Durable output snapshot is stale",
+    effect: `Retained the last successful snapshot from ${report.snapshotGeneratedAt || "an unknown time"}.`,
+    "snapshot-age-seconds": report.snapshotAgeSeconds ?? "",
   });
   if (controlSettings.policy_resolution?.status === "unavailable") diagnostics.push({
     title: "Control policy resolution unavailable",
@@ -527,7 +535,8 @@ export function buildDashboardLanguageSources({ deployed, usage, operationalValu
   const workflows = workflowRows(deployed, generatedAt, inventory, controlSettings);
   const runs = runRows(deployed);
   const records = report.records || [];
-  const reportAvailable = !report.error;
+  const reportAvailable = Array.isArray(report.records) && (report.error ? report.records.length > 0 : true);
+  const reportComplete = !report.error;
   const values = operationalValueRows(operationalValues);
   const graderObservations = operationalValueGraderRows(operationalValues);
   const repositories = new Map();
@@ -584,8 +593,12 @@ export function buildDashboardLanguageSources({ deployed, usage, operationalValu
     discoveryAvailable,
     deployed.discovery?.complete === true,
   );
-  sources.outcomes = source("outcomes", outcomeRows(records), generatedAt, reportAvailable, reportAvailable);
-  sources.findings = source("findings", findingRows(records), generatedAt, reportAvailable, reportAvailable);
+  sources.outcomes = source("outcomes", outcomeRows(records), generatedAt, reportAvailable, reportComplete);
+  sources.findings = source("findings", findingRows(records), generatedAt, reportAvailable, reportComplete);
+  if (report.stale) {
+    sources.outcomes.metadata.freshness = "stale";
+    sources.findings.metadata.freshness = "stale";
+  }
   sources["grader-observations"] = operationalValueSource("grader-observations", graderObservations, operationalValues, generatedAt, valueAvailable);
   sources["operational-values"] = operationalValueSource("operational-values", values, operationalValues, generatedAt, valueAvailable);
   return sources;
