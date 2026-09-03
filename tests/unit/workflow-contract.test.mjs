@@ -2215,7 +2215,7 @@ test("Dashboard package supports embedded and explicit standalone deployment", (
   assert.match(buildWorkflow, /workflow_call:[\s\S]*?site-path:[\s\S]*?default: cao/);
   assert.match(buildWorkflow, /workflow_call:[\s\S]*?mode:[\s\S]*?default: live/);
   assert.match(buildWorkflow, /Require cached dashboard data[\s\S]*?if: inputs\.mode == 'cache'/);
-  assert.match(buildWorkflow, /activity:[\s\S]*?uses: \.\/\.github\/workflows\/activity\.yml/);
+  assert.doesNotMatch(buildWorkflow, /uses: \.\/\.github\/workflows\/activity\.yml/);
   assert.match(buildWorkflow, /Restore workflow activity[\s\S]*?actions\/cache\/restore@[0-9a-f]{40}/);
   assert.doesNotMatch(buildWorkflow, /Discover deployed agentic workflows/);
   assert.match(buildWorkflow, /Save dashboard data cache[\s\S]*?actions\/cache\/save@[0-9a-f]{40}/);

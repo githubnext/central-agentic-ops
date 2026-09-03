@@ -33,16 +33,7 @@ permissions:
   contents: read
 
 jobs:
-  activity:
-    if: inputs.mode == 'live'
-    permissions:
-      actions: read
-      contents: read
-    uses: ./.github/workflows/activity.yml
-
   build:
-    needs: activity
-    if: always() && (needs.activity.result == 'success' || needs.activity.result == 'skipped')
     runs-on: ubuntu-latest
     permissions:
       actions: read
