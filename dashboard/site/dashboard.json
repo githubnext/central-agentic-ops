@@ -2647,12 +2647,37 @@
             "mark": "chart",
             "chart": "pie",
             "table": false,
-            "layout": "full",
+            "layout": "half",
             "encoding": {
               "x": {
                 "field": "status",
                 "type": "nominal",
                 "title": "Status"
+              },
+              "y": {
+                "field": "started-at",
+                "type": "quantitative",
+                "aggregate": "count",
+                "title": "Dispatches"
+              }
+            }
+          },
+          {
+            "id": "dispatch-package-distribution",
+            "title": "Dispatches by package",
+            "description": "Distribution of authoritative workflow_dispatch runs across packages.",
+            "data": {
+              "source": "dispatches"
+            },
+            "mark": "chart",
+            "chart": "pie",
+            "table": false,
+            "layout": "half",
+            "encoding": {
+              "x": {
+                "field": "package-name",
+                "type": "nominal",
+                "title": "Package"
               },
               "y": {
                 "field": "started-at",
@@ -2744,6 +2769,7 @@
               "source": "dispatches"
             },
             "mark": "table",
+            "disclosure": "supplemental",
             "empty-message": "No workflow dispatch events were observed in the current run window.",
             "encoding": {
               "href": {
