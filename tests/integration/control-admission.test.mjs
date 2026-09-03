@@ -14,6 +14,7 @@ function runAdmission({
   rateLimit = 5000,
   rateRemaining = 5000,
   rateReset = Math.floor(Date.now() / 1000) + 3600,
+  githubActions = true,
 } = {}) {
   const directory = mkdtempSync(join(tmpdir(), "central-ops-admission-"));
   const mockGh = join(directory, "gh");
@@ -49,6 +50,7 @@ esac
         CAO_PACKAGE: "dependabot",
         CAO_ROLE: "orchestrator",
         GITHUB_OUTPUT: githubOutput,
+        GITHUB_ACTIONS: String(githubActions),
         GITHUB_REPOSITORY: "acme/control",
         GITHUB_STEP_SUMMARY: stepSummary,
         MOCK_POLICY_FILE: policyFile,
@@ -82,11 +84,30 @@ test("CAO admission authorizes a declared package before activation", () => {
   const { result, output, summary } = runAdmission();
 
   assert.equal(result.status, 0, result.stderr);
+  assert.equal(result.stdout, [
+    "::group::Central Agentic Ops admission",
+    "[CAO] Loaded and validated the control policy.",
+    "[CAO] Admission authorized.",
+    "::endgroup::",
+    "",
+  ].join("\n"));
   assert.deepEqual(output, { authorized: "true", reason: "authorized", monthly_credit_budget: "0" });
   assert.match(summary, /### Central Agentic Ops admission\n\nAuthorized package `dependabot` as `orchestrator`/);
   assert.match(summary, /<details>\n<summary>Runtime revision<\/summary>/);
   assert.match(summary, /<summary>Run limits<\/summary>/);
   assert.equal((summary.match(/<details>/g) ?? []).length, 10);
+});
+
+test("CAO admission emits plain logs outside GitHub Actions", () => {
+  const { result } = runAdmission({ githubActions: false });
+
+  assert.equal(result.status, 0, result.stderr);
+  assert.equal(result.stdout, [
+    "[CAO] Central Agentic Ops admission",
+    "[CAO] Loaded and validated the control policy.",
+    "[CAO] Admission authorized.",
+    "",
+  ].join("\n"));
 });
 
 test("CAO admission exports the authorized package budget", () => {

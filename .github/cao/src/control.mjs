@@ -47,6 +47,29 @@ function environment(name, fallback = "") {
   return process.env[name] ?? fallback;
 }
 
+function log(message) {
+  console.log(`[CAO] ${message}`);
+}
+
+function actionsCommand(command, message = "") {
+  const escaped = message
+    .replaceAll("%", "%25")
+    .replaceAll("\r", "%0D")
+    .replaceAll("\n", "%0A");
+  console.log(`::${command}::${escaped}`);
+}
+
+function withLogGroup(title, operation) {
+  const actions = environment("GITHUB_ACTIONS") === "true";
+  if (actions) actionsCommand("group", title);
+  else log(title);
+  try {
+    return operation();
+  } finally {
+    if (actions) actionsCommand("endgroup");
+  }
+}
+
 function run(command, args, options = {}) {
   const result = spawnSync(command, args, {
     encoding: "utf8",
@@ -263,6 +286,7 @@ function admit() {
       throw new ControlError(`cannot read ${POLICY_PATH} at github.workflow_sha`);
     }
     const document = parsePolicy(source);
+    log("Loaded and validated the control policy.");
     result = applyGithubApiAdmission(effectivePolicy(document, options), options);
     writeFileSync(join(directory, "effective-policy.json"), `${JSON.stringify(result, null, 2)}\n`);
   } catch (error) {
@@ -295,6 +319,7 @@ function admit() {
     reason: result.reason,
     apiCapacity: result.github_api_capacity,
   });
+  log(`Admission ${result.authorized ? "authorized" : "denied"}.`);
 }
 
 function readJson(path) {
@@ -854,8 +879,10 @@ function precompute() {
   }
   if (!policy.authorized) {
     writeDeniedPrecompute(policy);
+    log("Precompute skipped because admission was denied.");
     return;
   }
+  log("Loaded the admitted control policy.");
   const context = createContext(policy);
   try {
     requireMode(context.mode, "safe_output_mode");
@@ -867,9 +894,11 @@ function precompute() {
       validateWorkerDispatch(context);
       const targetAuthoritySha = validateLiveAuthority(context);
       writeWorkerPrecompute(context, targetAuthoritySha);
+      log("Prepared worker precompute data.");
       return;
     }
     writeOrchestratorPrecompute(context);
+    log("Prepared orchestrator precompute data.");
   } catch (error) {
     if (!isRateLimitError(error)) throw error;
     const required = githubApiRequestRequirement(policy, { role: context.role, targetRepository: context.targetRepository });
@@ -902,8 +931,12 @@ function authority(args) {
 function main(arguments_) {
   const [command, ...args] = arguments_;
   try {
-    if (command === "admit" && args.length === 0) return admit();
-    if (command === "precompute" && args.length === 0) return precompute();
+    if (command === "admit" && args.length === 0) {
+      return withLogGroup("Central Agentic Ops admission", admit);
+    }
+    if (command === "precompute" && args.length === 0) {
+      return withLogGroup("Central Agentic Ops precompute", precompute);
+    }
     if (command === "authority") return authority(args);
     if (["validate-policy", "resolve-policy", "control-settings"].includes(command)) {
       process.stdout.write(`${JSON.stringify(policyCommand(command, args), null, 2)}\n`);
