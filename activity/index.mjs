@@ -508,6 +508,7 @@ try {
 } catch {
   // A missing or malformed cache entry triggers a complete bounded refresh.
 }
+log.info`Activity discovery configuration: organization=${organization}, scope=${repositoryScopeEnabled ? "allowlist" : "organization"}, allowed repositories=${allowedRepositories.length}, include private=${includePrivate}, cached index=${previousIndex ? "available" : "unavailable"}`;
 
 let matches = [];
 let manifestMatches = [];
@@ -537,6 +538,7 @@ if (!repositoryScopeEnabled) {
     }
   })).flat();
 }
+log.info`Discovery searches returned ${matches.length} workflow lock files and ${manifestMatches.length} package manifests`;
 const discovered = new Map();
 const codeSearchWorkflowKeys = new Set();
 for (const item of matches) {
@@ -560,6 +562,9 @@ const registryByRepository = new Map((await mapWithConcurrency(repositoryNames, 
   repositoryName,
   await registeredWorkflows(repositoryName),
 ])).filter(Boolean));
+const registeredWorkflowCount = [...registryByRepository.values()]
+  .reduce((total, workflows) => total + workflows.size, 0);
+log.info`Actions registry returned ${registeredWorkflowCount} workflows across ${repositoryNames.length} repositories`;
 
 for (const repositoryName of repositoryNames) {
   const metadata = await repositoryMetadata(repositoryName);
@@ -574,6 +579,7 @@ for (const repositoryName of repositoryNames) {
     });
   }
 }
+log.info`Inspecting ${discovered.size} unique workflow candidates (${codeSearchWorkflowKeys.size} found by current code search, ${discovered.size - codeSearchWorkflowKeys.size} found only in the Actions registry)`;
 
 const bundles = (await mapWithConcurrency(manifestFiles, 8, async (item) => {
   try {
@@ -619,6 +625,7 @@ const discoveredWorkflows = await mapWithConcurrency([...discovered.values()], 8
     !codeSearchWorkflowKeys.has(`${item.repository}:${item.path}`),
   );
   if (staleRegistration) {
+    log.debug`Stale Actions workflow registration: ${item.repository}/${item.path}`;
     staleRegistrationsByRepository.set(
       item.repository,
       (staleRegistrationsByRepository.get(item.repository) || 0) + 1,

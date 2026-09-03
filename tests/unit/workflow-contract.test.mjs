@@ -2372,6 +2372,11 @@ test("Dashboard package supports embedded and explicit standalone deployment", (
   assert.match(deployedWorkflows, /const \{ staleRegistration, \.\.\.capabilities \} = await workflowCapabilities/);
   assert.match(deployedWorkflows, /const role = workflowRole\(source\.value\)/);
   assert.match(deployedWorkflows, /const staleRegistration = sourceMissing && registryOnly/);
+  assert.match(deployedWorkflows, /Activity discovery configuration: organization=\$\{organization\}, scope=/);
+  assert.match(deployedWorkflows, /Discovery searches returned \$\{matches\.length\} workflow lock files/);
+  assert.match(deployedWorkflows, /Actions registry returned \$\{registeredWorkflowCount\} workflows/);
+  assert.match(deployedWorkflows, /Inspecting \$\{discovered\.size\} unique workflow candidates/);
+  assert.match(deployedWorkflows, /Stale Actions workflow registration: \$\{item\.repository\}\/\$\{item\.path\}/);
   assert.match(deployedWorkflows, /Ignored \$\{staleRegistrationCount\} stale Actions workflow registrations whose Markdown sources are absent from the default branch/);
   assert.match(deployedWorkflows, /run\.conclusion === "action_required"\) current\.actionRequired \+= 1/);
   assert.match(deployedWorkflows, /event: run\.event/);
