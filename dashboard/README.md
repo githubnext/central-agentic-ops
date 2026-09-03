@@ -61,6 +61,17 @@ The preview composes `.github/aw/dashboard/site/dashboard.json` with every insta
 
 Catalog contributors can run `node dashboard/local-server.mjs`; the same server discovers top-level package `dashboard.json` files automatically.
 
+### Copilot-assisted editing
+
+Install the Copilot SDK and start the preview with the optional editing mode:
+
+```bash
+npm install @github/copilot-sdk
+node .github/aw/dashboard/local-server.mjs --copilot
+```
+
+Catalog contributors can use `node dashboard/local-server.mjs --copilot`. The CLI relaunches itself with Node's filesystem permission model, limiting reads and writes to the current workspace. It serves only Markdown, JSON, recognized web assets, and images, and redacts common secret patterns from textual files before returning them to the browser. The SDK launches Copilot CLI in headless server mode using the signed-in Copilot user. The preview adds a prompt above the dashboard; submitting it starts a session for the active view, instructs Copilot to use the `generate-dashboard-ir` skill, validates the edited JSON until it passes, and saves it with normalized two-space indentation. The existing file watcher then reloads the view. Copilot mode only binds to a loopback host and restricts sessions to purpose-built tools that read editable dashboard sources, validate candidate JSON, and save the selected source.
+
 ## Standalone Pages site
 
 Before running the standalone deployment, configure the private control-plane or review repository that will own the Pages site:

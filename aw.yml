@@ -3,7 +3,6 @@ description: Central agentic workflow control plane for reusable packages at the
 min-version: v0.88.2
 experimental: true
 includes:
-  - .github/workflows/shared/cao.md
   - .github/workflows/activity.yml
   - .github/workflows/ambient-context-agents-md-curator.md
   - .github/workflows/ambient-context-skills-curator.md
@@ -68,6 +67,8 @@ resources:
     destination: .github/aw/dashboard/site/src/data-processor.js
   - source: dashboard/site/src/data-worker.js
     destination: .github/aw/dashboard/site/src/data-worker.js
+  - source: dashboard/site/src/copilot-prompt.js
+    destination: .github/aw/dashboard/site/src/copilot-prompt.js
   - source: dashboard/site/src/dom.js
     destination: .github/aw/dashboard/site/src/dom.js
   - source: dashboard/site/src/horizon.js

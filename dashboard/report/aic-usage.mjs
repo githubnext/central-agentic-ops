@@ -3,6 +3,7 @@ import { mkdir, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 import { actionsLog as log } from "../../activity/actions-log.mjs";
+import { parseRolloutMode } from "./dashboard-language-sources.mjs";
 import { firstText } from "./text-utils.mjs";
 
 function runGhAw(targets, maxRunsPerWorkflow, outputDirectory) {
@@ -75,7 +76,7 @@ function runGhAw(targets, maxRunsPerWorkflow, outputDirectory) {
           const metadata = workflowByRunId.get(runId);
           if (!Number.isFinite(runId) || !Number.isFinite(aic) || !metadata) continue;
           const repository = metadata.workflow.repository;
-          const mode = metadata.run?.displayTitle?.match(/(?:^|\s[·|:-]\s)(review|live)$/i)?.[1]?.toLowerCase() || null;
+          const mode = parseRolloutMode(metadata.run?.displayTitle);
           runs.set(`${repository}:${runId}`, {
             repository,
             runId,

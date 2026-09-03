@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
 import { createServer } from "node:http";
-import { execFile } from "node:child_process";
+import { execFile, spawn } from "node:child_process";
 import { createHash, randomBytes } from "node:crypto";
 import {
   copyFile,
@@ -11,9 +11,10 @@ import {
   realpath,
   rm,
   stat,
+  writeFile,
 } from "node:fs/promises";
 import { watch } from "node:fs";
-import { tmpdir } from "node:os";
+import { isIP } from "node:net";
 import { promisify } from "node:util";
 import {
   basename,
@@ -34,16 +35,26 @@ const defaultCatalogRoot = basename(resolve(scriptDirectory, "..", "..")) === ".
   ? null
   : resolve(scriptDirectory, "..");
 const socketEndpoint = "/__dashboard_socket";
+const copilotEndpoint = "/__dashboard_copilot";
 const dataArtifactName = "central-agentic-ops-dashboard-data";
 const dashboardWorkflowPath = ".github/workflows/dashboard.yml";
 const contentTypes = new Map([
+  [".avif", "image/avif"],
   [".css", "text/css; charset=utf-8"],
+  [".gif", "image/gif"],
   [".html", "text/html; charset=utf-8"],
+  [".ico", "image/x-icon"],
+  [".jpeg", "image/jpeg"],
+  [".jpg", "image/jpeg"],
   [".js", "text/javascript; charset=utf-8"],
   [".json", "application/json; charset=utf-8"],
+  [".md", "text/markdown; charset=utf-8"],
   [".mjs", "text/javascript; charset=utf-8"],
+  [".png", "image/png"],
   [".svg", "image/svg+xml"],
+  [".webp", "image/webp"],
 ]);
+const redactedTextExtensions = new Set([".css", ".html", ".js", ".md", ".mjs", ".svg"]);
 
 async function existingDirectories(paths) {
   const directories = [];
@@ -52,6 +63,33 @@ async function existingDirectories(paths) {
     if (entry?.isDirectory()) directories.push(path);
   }
   return directories;
+}
+
+async function canonicalPath(path) {
+  const absolutePath = resolve(path);
+  try {
+    return await realpath(absolutePath);
+  } catch (error) {
+    if (error?.code !== "ENOENT" || dirname(absolutePath) === absolutePath) throw error;
+    return join(await canonicalPath(dirname(absolutePath)), basename(absolutePath));
+  }
+}
+
+async function dashboardSourceForView(view, dashboardPaths) {
+  for (const path of dashboardPaths) {
+    try {
+      const document = JSON.parse(await readFile(path, "utf8"));
+      const matches = document?.dashboard?.pages?.some((page) =>
+        [page?.id, page?.title, page?.["navigation-label"]].includes(view));
+      if (matches) return path;
+    } catch (error) {
+      console.log("Unable to inspect dashboard source for Copilot.", {
+        path,
+        error: error instanceof Error ? error.message : String(error),
+      });
+    }
+  }
+  return dashboardPaths[0];
 }
 
 async function packageDashboardPaths(catalogRoot, installedDashboardsDirectory) {
@@ -142,16 +180,262 @@ async function sourceSignature(paths) {
   return entries.join("\n");
 }
 
-function injectDashboardSocket(html, socketPath) {
-  const socketScript = `<script>
-  const dashboardSocket = new WebSocket(new URL(${JSON.stringify(socketPath)}, location.href).href.replace(/^http/, "ws"));
-  dashboardSocket.addEventListener("message", (event) => {
-    window.dispatchEvent(new CustomEvent("dashboard-preview-update", { detail: JSON.parse(event.data) }));
+async function readJsonRequest(request, limit = 16 * 1024) {
+  const chunks = [];
+  let size = 0;
+  for await (const chunk of request) {
+    size += chunk.length;
+    if (size > limit) throw new Error("Request body is too large.");
+    chunks.push(chunk);
+  }
+  return JSON.parse(Buffer.concat(chunks).toString("utf8"));
+}
+
+function isLoopbackHost(host) {
+  const unbracketed = host.startsWith("[") && host.endsWith("]") ? host.slice(1, -1) : host;
+  if (unbracketed === "localhost" || unbracketed === "::1") return true;
+  if (isIP(unbracketed) !== 4) return false;
+  return unbracketed.split(".")[0] === "127";
+}
+
+function normalizeDashboardJson(source) {
+  return JSON.stringify(JSON.parse(source), null, 2);
+}
+
+const secretKeyPattern = /(?:^|[-_])(api[-_]?key|authorization|client[-_]?secret|password|private[-_]?key|secret|token)(?:$|[-_])/i;
+const secretValuePatterns = [
+  /\b(?:gh[pousr]_[A-Za-z0-9]{20,}|github_pat_[A-Za-z0-9_]{20,})\b/g,
+  /\bBearer\s+[A-Za-z0-9._~+/-]+=*/gi,
+  /\bAKIA[A-Z0-9]{16}\b/g,
+  /-----BEGIN [A-Z ]*PRIVATE KEY-----[\s\S]*?-----END [A-Z ]*PRIVATE KEY-----/g,
+];
+
+function redactSecretValues(value) {
+  return secretValuePatterns.reduce(
+    (redacted, pattern) => redacted.replace(pattern, "[REDACTED]"),
+    value,
+  );
+}
+
+function redactJsonSecrets(source) {
+  const redact = (value, key = "") => {
+    if (secretKeyPattern.test(key)) return "[REDACTED]";
+    if (Array.isArray(value)) return value.map((entry) => redact(entry));
+    if (value && typeof value === "object") {
+      return Object.fromEntries(Object.entries(value).map(([name, entry]) => [name, redact(entry, name)]));
+    }
+    if (typeof value !== "string") return value;
+    return redactSecretValues(value);
+  };
+  return JSON.stringify(redact(JSON.parse(source)), null, 2);
+}
+
+function browserSafeFileContent(path, content) {
+  const extension = extname(path).toLowerCase();
+  if (extension === ".json") return redactJsonSecrets(content.toString("utf8"));
+  if (redactedTextExtensions.has(extension)) {
+    return redactSecretValues(content.toString("utf8"));
+  }
+  return content;
+}
+
+function errorMetadata(error) {
+  return {
+    name: error instanceof Error ? error.name : typeof error,
+    code: error && typeof error === "object" && "code" in error
+      ? String(error.code)
+      : undefined,
+  };
+}
+
+async function startCopilotRuntime({ workingDirectory, copilotExecutable }) {
+  console.log("Loading Copilot SDK runtime.", { workingDirectory });
+  let sdk;
+  try {
+    sdk = await import("@github/copilot-sdk");
+  } catch {
+    console.log("Copilot SDK runtime is unavailable. Install @github/copilot-sdk.");
+    throw new Error("Copilot mode requires @github/copilot-sdk.");
+  }
+  const { CopilotClient, defineTool, RuntimeConnection } = sdk;
+  const client = new CopilotClient({
+    connection: RuntimeConnection.forTcp({
+      ...(copilotExecutable ? { path: copilotExecutable } : {}),
+    }),
+    workingDirectory,
+    logLevel: "debug",
   });
-</script>`;
-  return html.includes("</body>")
-    ? html.replace("</body>", `${socketScript}\n  </body>`)
-    : `${html}\n${socketScript}\n`;
+  try {
+    console.log("Starting Copilot headless server.");
+    await client.start();
+  } catch (error) {
+    console.log("Copilot headless server failed to start.", errorMetadata(error));
+    await client.stop().catch((stopError) => {
+      console.log("Copilot cleanup after startup failure failed.", errorMetadata(stopError));
+    });
+    throw error;
+  }
+  console.log("Copilot headless server started.");
+
+  return {
+    async prompt({ view, request, bundledDashboardPath, editableDashboardPaths, viewDashboardPath }) {
+      console.log("Creating Copilot dashboard session.", {
+        view,
+        bundledDashboardPath,
+        viewDashboardPath,
+        editableDashboardPaths,
+      });
+      const allowedPaths = new Set(editableDashboardPaths);
+      const stringParameter = (description) => ({
+        type: "string",
+        description,
+      });
+      const tools = [
+        defineTool("read_dashboard_source", {
+          description: "Read one of the editable original dashboard source files.",
+          parameters: {
+            type: "object",
+            properties: { path: stringParameter("Exact dashboard source path from the request.") },
+            required: ["path"],
+            additionalProperties: false,
+          },
+          skipPermission: true,
+          defer: "never",
+          handler: async ({ path }) => {
+            if (!allowedPaths.has(path)) {
+              console.log("Denied dashboard source read outside the allowlist.", { path });
+              throw new Error("That path is not an editable dashboard source.");
+            }
+            const source = normalizeDashboardJson(await readFile(path, "utf8"));
+            console.log("Read normalized dashboard JSON for Copilot.", {
+              path,
+              bytes: Buffer.byteLength(source),
+            });
+            return source;
+          },
+        }),
+        defineTool("validate_dashboard_source", {
+          description: "Validate candidate Dashboard Language JSON before saving it.",
+          parameters: {
+            type: "object",
+            properties: { source: stringParameter("Complete candidate dashboard source.") },
+            required: ["source"],
+            additionalProperties: false,
+          },
+          skipPermission: true,
+          defer: "never",
+          handler: async ({ source }) => {
+            try {
+              normalizeDashboardJson(source);
+              console.log("Validated Copilot dashboard JSON candidate.", {
+                bytes: Buffer.byteLength(source),
+              });
+              return { ok: true };
+            } catch (error) {
+              console.log("Rejected invalid Copilot dashboard JSON candidate.", errorMetadata(error));
+              return { ok: false, error: "Dashboard source must be valid JSON." };
+            }
+          },
+        }),
+        defineTool("save_dashboard_source", {
+          description: "Parse, normalize, and save the complete JSON for the current view's original dashboard file.",
+          parameters: {
+            type: "object",
+            properties: { source: stringParameter("Complete validated dashboard source.") },
+            required: ["source"],
+            additionalProperties: false,
+          },
+          skipPermission: true,
+          defer: "never",
+          handler: async ({ source }) => {
+            let normalized;
+            try {
+              normalized = normalizeDashboardJson(source);
+            } catch (error) {
+              console.log("Rejected invalid Copilot dashboard JSON save.", {
+                path: viewDashboardPath,
+                ...errorMetadata(error),
+              });
+              return { ok: false, error: "Dashboard source must be valid JSON." };
+            }
+            await writeFile(viewDashboardPath, normalized);
+            console.log("Saved normalized Copilot dashboard JSON source.", {
+              path: viewDashboardPath,
+              bytes: Buffer.byteLength(normalized),
+            });
+            return { ok: true };
+          },
+        }),
+      ];
+      let session;
+      try {
+        session = await client.createSession({
+          workingDirectory,
+          availableTools: [
+            "builtin:skill",
+            "builtin:task_complete",
+            "custom:read_dashboard_source",
+            "custom:validate_dashboard_source",
+            "custom:save_dashboard_source",
+          ],
+          tools,
+          onPermissionRequest: async (permission) => {
+            console.log("Denied unexpected Copilot permission request.", { kind: permission.kind });
+            return { kind: "reject", feedback: "This session only permits the dashboard editing tools." };
+          },
+        });
+      } catch (error) {
+        console.log("Copilot dashboard session creation failed.", errorMetadata(error));
+        throw error;
+      }
+      console.log("Copilot dashboard session created.", { sessionId: session.sessionId, view });
+      const unsubscribe = session.on((event) => {
+        console.log("Copilot dashboard session event.", { sessionId: session.sessionId, type: event.type });
+      });
+      try {
+        console.log("Sending Copilot dashboard request.", {
+          sessionId: session.sessionId,
+          view,
+          requestLength: request.length,
+        });
+        try {
+          await session.sendAndWait({
+            prompt: `Use the /generate-dashboard-ir skill to update the current dashboard view named ${JSON.stringify(view)}.
+
+Apply this request: ${request}
+
+The composed preview dashboard is ${JSON.stringify(bundledDashboardPath)}. It is a generated temporary file and is provided only for context; do not read or edit it.
+The original dashboard source most likely defining this view is ${JSON.stringify(viewDashboardPath)}.
+The complete set of editable original dashboard sources is:
+${editableDashboardPaths.map((path) => `- ${path}`).join("\n")}
+
+Built-in views come from the site's dashboard.json. Package views come from their package dashboard.json source (for an installed control repository, under .github/aw/dashboards; for this catalog, in the matching top-level package directory). Only JSON is supported. Use only read_dashboard_source, validate_dashboard_source, and save_dashboard_source to inspect, validate, and save the original source that defines the named view. Run validate_dashboard_source repeatedly until it passes, then use save_dashboard_source so the JSON is normalized with two-space indentation and the local preview reloads. Complete the edit rather than only describing it.`,
+          });
+        } catch (error) {
+          console.log("Copilot dashboard session request failed.", {
+            sessionId: session.sessionId,
+            view,
+            ...errorMetadata(error),
+          });
+          throw error;
+        }
+        console.log("Copilot dashboard request completed.", { sessionId: session.sessionId, view });
+      } finally {
+        unsubscribe();
+        console.log("Disconnecting Copilot dashboard session.", { sessionId: session.sessionId });
+        await session.disconnect().catch((error) => {
+          console.log("Copilot dashboard session disconnect failed.", {
+            sessionId: session.sessionId,
+            ...errorMetadata(error),
+          });
+        });
+      }
+    },
+    async close() {
+      const errors = await client.stop();
+      for (const error of errors) console.log("Copilot shutdown error.", errorMetadata(error));
+    },
+  };
 }
 
 function isWithin(root, candidate) {
@@ -183,7 +467,7 @@ function websocketCloseFrame() {
 }
 
 /**
- * Starts the dependency-free local dashboard server.
+ * Starts the local dashboard server.
  *
  * @param {{
  *   siteRoot?: string,
@@ -192,6 +476,10 @@ function websocketCloseFrame() {
  *   repository?: string,
  *   ghExecutable?: string,
  *   downloadData?: (destination: string, repository?: string, ghExecutable?: string) => Promise<void>,
+ *   copilot?: boolean,
+ *   copilotExecutable?: string,
+ *   createCopilotRuntime?: typeof startCopilotRuntime,
+ *   workingDirectory?: string,
  *   host?: string,
  *   port?: number,
  * }} options
@@ -203,19 +491,42 @@ export async function startDashboardServer({
   repository,
   ghExecutable = "gh",
   downloadData = downloadDashboardData,
+  copilot = false,
+  copilotExecutable,
+  createCopilotRuntime = startCopilotRuntime,
+  workingDirectory = process.cwd(),
   host = "127.0.0.1",
   port = 4173,
 } = {}) {
+  if (copilot && !isLoopbackHost(host)) {
+    console.log("Copilot mode configuration rejected.", {
+      reason: "host is not loopback",
+      host,
+    });
+    throw new Error("Copilot mode requires a loopback --host such as 127.0.0.1 or ::1.");
+  }
+  const resolvedWorkingDirectory = await realpath(workingDirectory);
   const resolvedSiteRoot = await realpath(siteRoot);
+  const resolvedCatalogRoot = catalogRoot ? await canonicalPath(catalogRoot) : null;
+  const resolvedInstalledDashboardsDirectory = await canonicalPath(installedDashboardsDirectory);
+  if (!isWithin(resolvedWorkingDirectory, resolvedSiteRoot)
+      || (resolvedCatalogRoot && !isWithin(resolvedWorkingDirectory, resolvedCatalogRoot))
+      || !isWithin(resolvedWorkingDirectory, resolvedInstalledDashboardsDirectory)) {
+    console.log("Dashboard server configuration rejected.", {
+      reason: "dashboard path is outside the workspace",
+    });
+    throw new Error("Dashboard server paths must remain within the workspace.");
+  }
   const baseDashboardPath = join(resolvedSiteRoot, "dashboard.json");
-  const temporaryDirectory = await mkdtemp(join(tmpdir(), "cao-dashboard-preview-"));
+  const temporaryDirectory = await mkdtemp(join(resolvedWorkingDirectory, ".cao-dashboard-preview-"));
   const bundledDashboardPath = join(temporaryDirectory, "dashboard.json");
   const dashboardDataDirectory = join(temporaryDirectory, "data");
   let sourcesContent;
   try {
     await downloadData(dashboardDataDirectory, repository, ghExecutable);
-    sourcesContent = await readFile(join(dashboardDataDirectory, "sources.json"), "utf8");
-    JSON.parse(sourcesContent);
+    sourcesContent = redactJsonSecrets(
+      await readFile(join(dashboardDataDirectory, "sources.json"), "utf8"),
+    );
   } catch (error) {
     await rm(temporaryDirectory, { recursive: true, force: true });
     throw error;
@@ -230,21 +541,33 @@ export async function startDashboardServer({
   let refreshTimer;
   let refreshPromise = Promise.resolve();
   let closed = false;
+  let copilotRuntime;
+  let copilotRequestActive = false;
 
   const broadcastDashboard = () => {
+    console.log("Broadcasting dashboard preview update.", { socketCount: sockets.size });
     const frame = websocketTextFrame(dashboardContent);
     for (const socket of sockets) socket.write(frame);
   };
 
   const rebuild = async (notify = true) => {
-    const packagePaths = await packageDashboardPaths(catalogRoot, installedDashboardsDirectory);
+    console.log("Checking dashboard sources for updates.");
+    const packagePaths = await packageDashboardPaths(
+      resolvedCatalogRoot,
+      resolvedInstalledDashboardsDirectory,
+    );
     const nextSignature = await sourceSignature([baseDashboardPath, ...packagePaths]);
     if (nextSignature === signature) return packagePaths;
 
     await copyFile(baseDashboardPath, bundledDashboardPath);
     await bundleDashboardFiles(bundledDashboardPath, packagePaths);
-    dashboardContent = await readFile(bundledDashboardPath, "utf8");
+    dashboardContent = redactJsonSecrets(await readFile(bundledDashboardPath, "utf8"));
     signature = nextSignature;
+    console.log("Dashboard preview rebuilt.", {
+      bundledDashboardPath,
+      editableDashboardPaths: [baseDashboardPath, ...packagePaths],
+      notify,
+    });
     if (notify) broadcastDashboard();
     return packagePaths;
   };
@@ -253,19 +576,20 @@ export async function startDashboardServer({
     if (closed) return;
     const candidates = new Set([
       resolvedSiteRoot,
-      installedDashboardsDirectory,
+      resolvedInstalledDashboardsDirectory,
       ...packagePaths.map(dirname),
     ]);
-    if (catalogRoot) candidates.add(catalogRoot);
+    if (resolvedCatalogRoot) candidates.add(resolvedCatalogRoot);
     for (const directory of await existingDirectories(candidates)) {
       if (watchers.has(directory)) continue;
       const watcher = watch(directory, () => scheduleRefresh());
       watcher.on("error", (error) => {
-        process.stderr.write(`Dashboard watcher failed for ${directory}: ${error.message}\n`);
+        console.log(`Dashboard watcher failed for ${directory}: ${error.message}`);
         watcher.close();
         watchers.delete(directory);
       });
       watchers.set(directory, watcher);
+      console.log("Watching dashboard source directory.", { directory });
     }
   };
 
@@ -275,7 +599,7 @@ export async function startDashboardServer({
       const packagePaths = await rebuild();
       await refreshWatchers(packagePaths);
     } catch (error) {
-      process.stderr.write(`Dashboard update failed: ${error instanceof Error ? error.message : String(error)}\n`);
+      console.log(`Dashboard update failed: ${error instanceof Error ? error.message : String(error)}`);
     }
   };
 
@@ -289,6 +613,12 @@ export async function startDashboardServer({
   try {
     const initialPackagePaths = await rebuild(false);
     await refreshWatchers(initialPackagePaths);
+    if (copilot) {
+      copilotRuntime = await createCopilotRuntime({
+        workingDirectory: resolvedWorkingDirectory,
+        copilotExecutable,
+      });
+    }
   } catch (error) {
     for (const watcher of watchers.values()) watcher.close();
     await rm(temporaryDirectory, { recursive: true, force: true });
@@ -303,11 +633,6 @@ export async function startDashboardServer({
         response.writeHead(400).end("Bad request\n");
         return;
       }
-      if (request.method !== "GET" && request.method !== "HEAD") {
-        response.writeHead(405, { Allow: "GET, HEAD" }).end();
-        return;
-      }
-
       const url = new URL(request.url || "/", "http://localhost");
       if (url.pathname !== routePrefix && !url.pathname.startsWith(`${routePrefix}/`)) {
         response.writeHead(404).end("Not found\n");
@@ -318,6 +643,108 @@ export async function startDashboardServer({
         pathname = decodeURIComponent(url.pathname.slice(routePrefix.length) || "/");
       } catch {
         response.writeHead(400).end("Bad request\n");
+        return;
+      }
+      if ((pathname === "/" || pathname === "/index.html")
+          && !url.searchParams.has("local-preview")) {
+        url.searchParams.set("local-preview", copilotRuntime ? "copilot" : "enabled");
+        response.writeHead(302, { Location: `${routePrefix}/${url.search}` }).end();
+        return;
+      }
+      if (pathname === copilotEndpoint) {
+        if (!copilotRuntime) {
+          response.writeHead(404).end("Not found\n");
+          return;
+        }
+        if (request.method !== "POST") {
+          response.writeHead(405, { Allow: "POST" }).end();
+          return;
+        }
+        if (request.headers.origin !== `http://${expectedAuthority}`
+            || !request.headers["content-type"]?.startsWith("application/json")) {
+          console.log("Rejected Copilot request with invalid headers.", {
+            hasOrigin: typeof request.headers.origin === "string",
+            contentType: request.headers["content-type"] || null,
+          });
+          response.writeHead(400).end("Bad request\n");
+          return;
+        }
+        if (copilotRequestActive) {
+          console.log("Rejected concurrent Copilot dashboard request.");
+          response.writeHead(409, { "Content-Type": contentTypes.get(".json") });
+          response.end(JSON.stringify({ error: "A Copilot dashboard request is already running." }));
+          return;
+        }
+        copilotRequestActive = true;
+        try {
+          const payload = await readJsonRequest(request);
+          if (typeof payload?.view !== "string" || payload.view.length < 1 || payload.view.length > 200
+              || typeof payload?.request !== "string" || payload.request.trim().length < 1
+              || payload.request.length > 10000) {
+            console.log("Rejected invalid Copilot dashboard request payload.", {
+              viewValid: typeof payload?.view === "string"
+                && payload.view.length >= 1
+                && payload.view.length <= 200,
+              requestLength: typeof payload?.request === "string" ? payload.request.length : null,
+            });
+            response.writeHead(400, { "Content-Type": contentTypes.get(".json") });
+            response.end(JSON.stringify({ error: "A valid view and request are required." }));
+            return;
+          }
+          const editableDashboardPaths = [baseDashboardPath, ...await packageDashboardPaths(
+            resolvedCatalogRoot,
+            resolvedInstalledDashboardsDirectory,
+          )];
+          const viewDashboardPath = await dashboardSourceForView(payload.view, editableDashboardPaths);
+          console.log("Accepted Copilot dashboard request.", {
+            view: payload.view,
+            requestLength: payload.request.trim().length,
+            viewDashboardPath,
+          });
+          await copilotRuntime.prompt({
+            view: payload.view,
+            request: payload.request.trim(),
+            bundledDashboardPath,
+            editableDashboardPaths,
+            viewDashboardPath,
+          });
+          const savedSource = await readFile(viewDashboardPath, "utf8");
+          let normalizedSource;
+          try {
+            normalizedSource = normalizeDashboardJson(savedSource);
+          } catch (error) {
+            console.log("Copilot dashboard request left invalid JSON.", {
+              view: payload.view,
+              viewDashboardPath,
+              ...errorMetadata(error),
+            });
+            throw new Error("Copilot produced invalid dashboard JSON.");
+          }
+          if (savedSource !== normalizedSource) {
+            await writeFile(viewDashboardPath, normalizedSource);
+            console.log("Normalized saved Copilot dashboard JSON.", {
+              view: payload.view,
+              viewDashboardPath,
+              bytes: Buffer.byteLength(normalizedSource),
+            });
+          }
+          console.log("Verified saved Copilot dashboard JSON.", {
+            view: payload.view,
+            viewDashboardPath,
+          });
+          response.writeHead(200, { "Content-Type": contentTypes.get(".json") });
+          response.end(JSON.stringify({ ok: true }));
+        } catch (error) {
+          console.log("Copilot request failed.", errorMetadata(error));
+          response.writeHead(500, { "Content-Type": contentTypes.get(".json") });
+          response.end(JSON.stringify({ error: "Copilot could not update the view." }));
+        } finally {
+          copilotRequestActive = false;
+        }
+        return;
+      }
+      if (request.method !== "GET" && request.method !== "HEAD") {
+        response.writeHead(405, { Allow: "GET, HEAD" }).end();
         return;
       }
       if (pathname === "/") pathname = "/index.html";
@@ -345,25 +772,28 @@ export async function startDashboardServer({
         response.writeHead(404).end("Not found\n");
         return;
       }
-      const canonicalPath = await realpath(filePath);
-      if (!isWithin(resolvedSiteRoot, canonicalPath)) {
+      const extension = extname(filePath).toLowerCase();
+      if (!contentTypes.has(extension)) {
+        console.log("Refused unsupported dashboard file type.", { extension: extension || null });
+        response.writeHead(404).end("Not found\n");
+        return;
+      }
+      const canonicalFilePath = await realpath(filePath);
+      if (!isWithin(resolvedSiteRoot, canonicalFilePath)) {
         response.writeHead(404).end("Not found\n");
         return;
       }
 
       let content;
       if (pathname === "/dashboard.json") content = dashboardContent;
-      else content = await readFile(canonicalPath);
-      if (extname(canonicalPath) === ".html") {
-        content = injectDashboardSocket(content.toString("utf8"), socketPath);
-      }
+      else content = browserSafeFileContent(canonicalFilePath, await readFile(canonicalFilePath));
       response.writeHead(200, {
         "Cache-Control": "no-store",
-        "Content-Type": contentTypes.get(extname(canonicalPath)) || "application/octet-stream",
+        "Content-Type": contentTypes.get(extension),
       });
       response.end(request.method === "HEAD" ? undefined : content);
     } catch (error) {
-      process.stderr.write(`Dashboard request failed: ${error instanceof Error ? error.message : String(error)}\n`);
+      console.log(`Dashboard request failed: ${error instanceof Error ? error.message : String(error)}`);
       if (!response.headersSent) response.writeHead(500);
       response.end("Internal server error\n");
     }
@@ -391,8 +821,15 @@ export async function startDashboardServer({
       "\r\n",
     ].join("\r\n"));
     sockets.add(socket);
+    console.log("Dashboard preview socket connected.", { socketCount: sockets.size });
     let receivedHeaderBytes = 0;
-    const remove = () => sockets.delete(socket);
+    let removed = false;
+    const remove = () => {
+      if (removed) return;
+      removed = true;
+      sockets.delete(socket);
+      console.log("Dashboard preview socket disconnected.", { socketCount: sockets.size });
+    };
     socket.on("data", (data) => {
       receivedHeaderBytes += Math.min(data.length, 2 - receivedHeaderBytes);
       if (receivedHeaderBytes === 2 && !socket.writableEnded) {
@@ -414,11 +851,13 @@ export async function startDashboardServer({
           return;
         }
         expectedAuthority = `${address.address.includes(":") ? `[${address.address}]` : address.address}:${address.port}`;
+        console.log("Dashboard server listening.", { authority: expectedAuthority, copilot });
         accept();
       });
     });
   } catch (error) {
     for (const watcher of watchers.values()) watcher.close();
+    await copilotRuntime?.close();
     await rm(temporaryDirectory, { recursive: true, force: true });
     throw error;
   }
@@ -427,12 +866,15 @@ export async function startDashboardServer({
     async close() {
       if (closed) return;
       closed = true;
+      console.log("Stopping dashboard server.");
       clearTimeout(refreshTimer);
       for (const watcher of watchers.values()) watcher.close();
       for (const socket of sockets) socket.end(websocketCloseFrame());
       await new Promise((accept, reject) => server.close((error) => error ? reject(error) : accept()));
+      await copilotRuntime?.close();
       await refreshPromise;
       await rm(temporaryDirectory, { recursive: true, force: true });
+      console.log("Dashboard server stopped.");
     },
   };
 }
@@ -442,7 +884,8 @@ function parseArguments(arguments_) {
   for (let index = 0; index < arguments_.length; index += 1) {
     const argument = arguments_[index];
     if (argument === "--help") return { help: true };
-    if (argument === "--host") {
+    if (argument === "--copilot") options.copilot = true;
+    else if (argument === "--host") {
       options.host = arguments_[index += 1];
       if (!options.host) throw new Error("--host requires a value");
     }
@@ -465,19 +908,55 @@ function parseArguments(arguments_) {
 async function main() {
   const options = parseArguments(process.argv.slice(2));
   if (options.help) {
-    process.stdout.write("usage: local-server.mjs [--repo OWNER/REPOSITORY] [--host HOST] [--port PORT]\n");
+    console.log("usage: local-server.mjs [--copilot] [--repo OWNER/REPOSITORY] [--host HOST] [--port PORT]");
     return;
   }
   const preview = await startDashboardServer(options);
-  process.stdout.write(`Dashboard preview: ${preview.url}/\n`);
+  console.log(`Dashboard preview: ${preview.url}/`);
   const shutdown = () => void preview.close().then(() => process.exit());
   process.once("SIGINT", shutdown);
   process.once("SIGTERM", shutdown);
 }
 
+async function runWithWorkspacePermissions() {
+  const workspace = await realpath(process.cwd());
+  const outsideWorkspaceProbe = resolve(workspace, "..", ".cao-outside-workspace-probe");
+  if (process.env.CAO_DASHBOARD_PERMISSION_CHILD === "1"
+      && process.permission?.has("fs.read", workspace)
+      && process.permission.has("fs.write", workspace)
+      && !process.permission.has("fs.read", outsideWorkspaceProbe)
+      && !process.permission.has("fs.write", outsideWorkspaceProbe)) {
+    await main();
+    return;
+  }
+  console.log("Launching dashboard server with workspace filesystem permissions.", { workspace });
+  const child = spawn(process.execPath, [
+    "--permission",
+    `--allow-fs-read=${workspace}${sep}`,
+    `--allow-fs-write=${workspace}${sep}`,
+    "--allow-child-process",
+    fileURLToPath(import.meta.url),
+    ...process.argv.slice(2),
+  ], {
+    cwd: workspace,
+    env: {
+      ...process.env,
+      NODE_OPTIONS: "",
+      CAO_DASHBOARD_PERMISSION_CHILD: "1",
+    },
+    stdio: "inherit",
+  });
+  const { code, signal } = await new Promise((accept, reject) => {
+    child.once("error", reject);
+    child.once("exit", (code, signal) => accept({ code, signal }));
+  });
+  if (signal) throw new Error(`Dashboard server exited from signal ${signal}.`);
+  process.exitCode = code ?? 1;
+}
+
 if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
-  await main().catch((error) => {
-    process.stderr.write(`${error instanceof Error ? error.message : String(error)}\n`);
+  await runWithWorkspacePermissions().catch((error) => {
+    console.log(error instanceof Error ? error.message : String(error));
     process.exitCode = 1;
   });
 }
