@@ -604,6 +604,7 @@ describe('presenter built-in and custom pages', () => {
     expect(rendered.querySelector('.freshness')?.classList.contains('freshness-skeleton')).toBe(true);
     expect(rendered.querySelector('.freshness')?.textContent).toBe('Last updated');
     expect(rendered.querySelector('.freshness')?.hasAttribute('datetime')).toBe(false);
+    expect(rendered.querySelector('.freshness > span:last-child')?.textContent).toBe('');
     const horizonHelp = rendered.querySelector('.dashboard-horizon .tooltip-trigger');
     const horizonTooltip = rendered.querySelector('.dashboard-horizon .tooltip-content');
     expect(horizonHelp).toBeNull();
