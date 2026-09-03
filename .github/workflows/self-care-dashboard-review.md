@@ -114,7 +114,7 @@ Read `/tmp/gh-aw/agent/control-precompute.json` first. This worker is authorized
 ## Context
 
 - Repository: `${{ inputs.target_repo }}`
-- Dashboard: `https://githubnext.github.io/central-agentic-ops/cao/`
+- Dashboard: `https://githubnext.github.io/gh-aw-cao/cao/`
 - Expected inventory: `/tmp/gh-aw/agent/self-care-dashboard-review/expected-inventory.json`
 - Exploration seed: `${{ github.run_id }}`
 

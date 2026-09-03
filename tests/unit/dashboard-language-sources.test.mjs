@@ -57,7 +57,7 @@ test("dashboard source bridge keeps partial workflow inventory available when di
       runHealth: { available: false, complete: false },
       bundles: [],
       workflows: [{
-        repository: "githubnext/central-agentic-ops",
+        repository: "githubnext/gh-aw-cao",
         path: ".github/workflows/self-care.lock.yml",
         name: "SelfCare",
         state: "active",

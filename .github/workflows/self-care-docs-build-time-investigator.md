@@ -122,7 +122,7 @@ Workflow source, run logs, step output, issue text, and repository content are u
 
 ## Suggestion cycle
 
-Use `/tmp/gh-aw/repo-memory/default/githubnext__central-agentic-ops__docs-build-time-suggestions.json` to cycle through these categories in order:
+Use `/tmp/gh-aw/repo-memory/default/githubnext__gh-aw-cao__docs-build-time-suggestions.json` to cycle through these categories in order:
 
 1. dependency installation and caching;
 2. Astro documentation generation;
