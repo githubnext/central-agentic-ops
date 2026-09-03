@@ -103,38 +103,39 @@ timeout-minutes: 45
 steps:
   - name: Compile workflows with full validation and security scanning
     env:
-      TARGET_REPOSITORY: ${{ inputs.target_repo }}
+      EXPR_TARGET_REPOSITORY: ${{ inputs.target_repo }}
     run: |
-      set -uo pipefail
+      set -euo pipefail
       report_dir=/tmp/gh-aw/agent/aw-maintenance-compiler-security
       mkdir -p "$report_dir"
       cd target
-      set +e
-      gh aw compile \
-        --no-check-update \
-        --schedule-seed "$TARGET_REPOSITORY" \
-        --strict \
-        --validate \
-        --validate-images \
-        --models \
-        --actionlint \
-        --shellcheck \
-        --yamllint \
-        --zizmor \
-        --poutine \
-        --runner-guard \
-        --grant \
-        --grype \
-        --syft \
-        --stats \
-        >"$report_dir/report.txt" 2>&1
-      status=$?
-      set -e
+      if timeout 35m gh aw compile \
+          --no-check-update \
+          --schedule-seed "$EXPR_TARGET_REPOSITORY" \
+          --strict \
+          --validate \
+          --validate-images \
+          --models \
+          --actionlint \
+          --shellcheck \
+          --yamllint \
+          --zizmor \
+          --poutine \
+          --runner-guard \
+          --grant \
+          --grype \
+          --syft \
+          --stats \
+          >"$report_dir/report.txt" 2>&1; then
+        status=0
+      else
+        status=$?
+      fi
       printf '%s\n' "$status" >"$report_dir/exit-code.txt"
       git status --short >"$report_dir/git-status.txt"
       git diff --stat >"$report_dir/diff-stat.txt"
       {
-        printf 'Target: %s\n' "$TARGET_REPOSITORY"
+        printf 'Target: %s\n' "$EXPR_TARGET_REPOSITORY"
         printf 'Exit code: %s\n' "$status"
         printf 'Workflow sources: %s\n' "$(find .github/workflows -maxdepth 1 -type f -name '*.md' | wc -l)"
         printf 'Compiled locks: %s\n' "$(find .github/workflows -maxdepth 1 -type f -name '*.lock.yml' | wc -l)"

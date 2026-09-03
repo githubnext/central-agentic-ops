@@ -91,7 +91,37 @@ gh run list \
 	--json databaseId,displayTitle,event,status,conclusion,url
 ```
 
-With default one-repository caps, one Advisory orchestration is bounded by 850 AI Credits (250 for the orchestrator plus one 600-credit worker), one Dependabot orchestration is bounded by 850 AI Credits (250 plus one 600-credit worker), one Optimization orchestration is bounded by 1,100 AI Credits (250 plus one 350-credit auditor and one 500-credit optimizer), one EU CRA Advisor orchestration is bounded by 1,100 AI Credits (200 plus six 150-credit workers), one AW Maintenance orchestration is bounded by 1,250 AI Credits (250 plus one 500-credit upgrade worker and one 500-credit failure investigator), one Ambient Context orchestration is bounded by 1,050 AI Credits (250 plus one 400-credit `AGENTS.md` curator and one 400-credit skills curator), and one Software Development Practices Advisor orchestration is bounded by 1,050 AI Credits (250 plus two 400-credit workers). The independent weekly Advisory package maintainer and daily CRA package maintainer are each bounded by 200 AI Credits. Declared dispatch ceilings keep deliberately expanded runs finite: at most 30,250 AI Credits for Advisory, 30,250 for Dependabot, 10,250 for Optimization if only its highest-credit worker remains eligible, 7,400 for EU CRA Advisor, 50,250 for AW Maintenance, 8,250 for Ambient Context, and 8,250 for Software Development Practices Advisor. These are hard worst-case envelopes, not expected consumption. Every workflow also has a timeout and same-scope concurrency cancellation.
+With default one-repository caps, one Advisory orchestration is bounded by 850 AI Credits (250 for the orchestrator plus one 600-credit worker), one Dependabot orchestration is bounded by 850 AI Credits (250 plus one 600-credit worker), one Optimization orchestration is bounded by 1,100 AI Credits (250 plus one 350-credit auditor and one 500-credit optimizer), one EU CRA Advisor orchestration is bounded by 1,100 AI Credits (200 plus six 150-credit workers), one AW Maintenance orchestration is bounded by 1,750 AI Credits (250 plus one 500-credit upgrade worker, one 500-credit failure investigator, and one 500-credit compiler-security worker), one Ambient Context orchestration is bounded by 1,050 AI Credits (250 plus one 400-credit `AGENTS.md` curator and one 400-credit skills curator), and one Software Development Practices Advisor orchestration is bounded by 1,050 AI Credits (250 plus two 400-credit workers). The independent weekly Advisory package maintainer and daily CRA package maintainer are each bounded by 200 AI Credits. Declared dispatch ceilings keep deliberately expanded runs finite: at most 30,250 AI Credits for Advisory, 30,250 for Dependabot, 10,250 for Optimization if only its highest-credit worker remains eligible, 7,400 for EU CRA Advisor, 50,250 for AW Maintenance, 8,250 for Ambient Context, and 8,250 for Software Development Practices Advisor. These are hard worst-case envelopes, not expected consumption. Every workflow also has a timeout and same-scope concurrency cancellation.
+
+### Run a Local AW Fixing Loop
+
+The AW Maintenance compiler-security worker reports the exact compiler, validation, lint, image, and security-scanner findings that need remediation. To fix the same findings locally with a coding agent:
+
+1. Install or update the extension with `gh extension install github/gh-aw` or `gh extension upgrade gh-aw`.
+2. Configure the coding agent's MCP client to launch `gh aw mcp-server` over stdio with the target repository as its working directory.
+3. Ask the agent to use the server's `fix` and `compile` tools, change workflow Markdown sources rather than generated lock files, and repeat the full validation command until it passes.
+
+Use this command as the loop's acceptance check:
+
+```bash
+gh aw compile \
+	--no-check-update \
+	--strict \
+	--validate \
+	--validate-images \
+	--models \
+	--actionlint \
+	--shellcheck \
+	--yamllint \
+	--zizmor \
+	--poutine \
+	--runner-guard \
+	--grant \
+	--grype \
+	--syft
+```
+
+The container and image checks require a running Docker daemon. If a tool, image, or registry is unavailable, treat the result as incomplete rather than clean. Review the generated `.lock.yml` diffs after each successful compile, but make source changes only in `.github/workflows/*.md` and directly related files.
 
 ### Queuing and Resource Exhaustion
 
