@@ -32,21 +32,16 @@
               }
             },
             "mark": "chart",
-            "chart": "line",
+            "chart": "pie",
             "encoding": {
               "x": {
-                "field": "started-at",
-                "type": "temporal",
-                "time-unit": "day"
+                "field": "run-conclusion",
+                "type": "nominal"
               },
               "y": {
                 "field": "run",
                 "type": "quantitative",
                 "aggregate": "count"
-              },
-              "color": {
-                "field": "run-conclusion",
-                "type": "nominal"
               }
             }
           },
