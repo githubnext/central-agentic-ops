@@ -77,7 +77,9 @@ test("dashboard source bridge keeps partial workflow inventory available when di
     ...input,
     deployed: { ...input.deployed, workflows: [] },
   });
+  assert.equal(unavailable.workflows.rows.length, 0);
   assert.equal(unavailable.workflows.metadata.availability, "unavailable");
+  assert.equal(unavailable.workflows.metadata.completeness, "partial");
 });
 
 test("dashboard source bridge carries package memberships, allowance, and inventory readiness into workflow rows", () => {
