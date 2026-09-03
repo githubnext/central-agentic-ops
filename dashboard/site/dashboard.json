@@ -60,6 +60,37 @@
           },
           "views": [
             {
+              "id": "overview-run-health",
+              "title": "Run health trend",
+              "description": "Daily run conclusions surface the control plane's current operating signal.",
+              "data": {
+                "source": "runs",
+                "time": {
+                  "range": "30d"
+                }
+              },
+              "mark": "chart",
+              "chart": "line",
+              "table": false,
+              "layout": "full",
+              "encoding": {
+                "x": {
+                  "field": "started-at",
+                  "type": "temporal",
+                  "time-unit": "day"
+                },
+                "y": {
+                  "field": "run",
+                  "type": "quantitative",
+                  "aggregate": "count"
+                },
+                "color": {
+                  "field": "run-conclusion",
+                  "type": "nominal"
+                }
+              }
+            },
+            {
               "id": "overview-attention-domains",
               "title": "Attention by domain",
               "description": "Ordered by urgency. Each state names only what retained evidence and configured policy can support.",
@@ -118,6 +149,7 @@
             "count-source": "cost-signals",
             "count-label": "boundaries",
             "views": [
+              "cost-usage-trend",
               "cost-summary",
               "cost-signals"
             ]
@@ -140,6 +172,34 @@
           }
         ],
         "views": [
+          {
+            "id": "cost-usage-trend",
+            "title": "AI Credit usage trend",
+            "description": "Daily AI Credit allocation shows whether measured agent consumption is rising or falling.",
+            "data": {
+              "source": "usage",
+              "time": {
+                "range": "30d"
+              }
+            },
+            "mark": "chart",
+            "chart": "line",
+            "layout": "full",
+            "encoding": {
+              "x": {
+                "field": "observed-at",
+                "type": "temporal",
+                "time-unit": "day"
+              },
+              "y": {
+                "field": "aic",
+                "type": "quantitative",
+                "aggregate": "sum",
+                "title": "Total AIC",
+                "unit": "aic"
+              }
+            }
+          },
           {
             "id": "cost-summary",
             "title": "Usage summary",
@@ -236,6 +296,7 @@
             "count-source": "security-signals",
             "count-label": "signals",
             "views": [
+              "security-findings-by-severity",
               "security-summary",
               "security-signals"
             ]
@@ -253,6 +314,30 @@
           }
         ],
         "views": [
+          {
+            "id": "security-findings-by-severity",
+            "title": "Security findings by severity",
+            "description": "The retained severity distribution highlights the most urgent assurance signal.",
+            "data": {
+              "source": "findings"
+            },
+            "mark": "chart",
+            "chart": "pie",
+            "layout": "full",
+            "encoding": {
+              "x": {
+                "field": "finding-severity",
+                "type": "ordinal",
+                "title": "Severity"
+              },
+              "y": {
+                "field": "finding",
+                "type": "quantitative",
+                "aggregate": "count",
+                "title": "Findings"
+              }
+            }
+          },
           {
             "id": "security-summary",
             "title": "Assurance summary",
@@ -336,6 +421,35 @@
             "freshness": true
           },
           "views": [
+            {
+              "id": "organizations-by-aic",
+              "title": "AI Credit usage by organization",
+              "description": "Measured AI Credit allocation identifies where agent activity is concentrated.",
+              "data": {
+                "source": "usage"
+              },
+              "mark": "chart",
+              "chart": "pie",
+              "layout": "full",
+              "encoding": {
+                "x": {
+                  "field": "organization",
+                  "type": "nominal",
+                  "title": "Organization"
+                },
+                "y": {
+                  "field": "aic",
+                  "type": "quantitative",
+                  "aggregate": "sum",
+                  "title": "Total AIC",
+                  "unit": "aic"
+                },
+                "href": {
+                  "field": "organization-link",
+                  "type": "nominal"
+                }
+              }
+            },
             {
               "id": "organizations-organizations-source",
               "data": {
@@ -431,6 +545,36 @@
             "freshness": true
           },
           "views": [
+            {
+              "id": "repositories-run-health",
+              "title": "Repository run health trend",
+              "description": "Daily conclusions summarize execution health across the observed repository scope.",
+              "data": {
+                "source": "runs",
+                "time": {
+                  "range": "30d"
+                }
+              },
+              "mark": "chart",
+              "chart": "line",
+              "layout": "full",
+              "encoding": {
+                "x": {
+                  "field": "started-at",
+                  "type": "temporal",
+                  "time-unit": "day"
+                },
+                "y": {
+                  "field": "run",
+                  "type": "quantitative",
+                  "aggregate": "count"
+                },
+                "color": {
+                  "field": "run-conclusion",
+                  "type": "nominal"
+                }
+              }
+            },
             {
               "id": "repository-scope",
               "title": "Repository scope",
@@ -570,6 +714,37 @@
           "navigation-page": "repositories"
         },
         "views": [
+          {
+            "id": "repository-run-health",
+            "title": "Repository run health trend",
+            "description": "Daily run conclusions are the leading execution-health signal for this repository.",
+            "data": {
+              "source": "runs",
+              "route-field": "repository",
+              "time": {
+                "range": "30d"
+              }
+            },
+            "mark": "chart",
+            "chart": "line",
+            "layout": "full",
+            "encoding": {
+              "x": {
+                "field": "started-at",
+                "type": "temporal",
+                "time-unit": "day"
+              },
+              "y": {
+                "field": "run",
+                "type": "quantitative",
+                "aggregate": "count"
+              },
+              "color": {
+                "field": "run-conclusion",
+                "type": "nominal"
+              }
+            }
+          },
           {
             "id": "repository-workflow-count",
             "title": "Authored Agentic Workflows",
@@ -727,6 +902,31 @@
         },
         "views": [
           {
+            "id": "workflow-report-status",
+            "title": "Report status",
+            "description": "The disposition of durable outputs is the leading outcome signal for this workflow.",
+            "data": {
+              "source": "workflow-reports",
+              "route-field": "workflow-route"
+            },
+            "mark": "chart",
+            "chart": "pie",
+            "layout": "full",
+            "encoding": {
+              "x": {
+                "field": "outcome-status",
+                "type": "nominal",
+                "title": "Status"
+              },
+              "y": {
+                "field": "safe-output",
+                "type": "quantitative",
+                "aggregate": "count",
+                "title": "Reports"
+              }
+            }
+          },
+          {
             "id": "workflow-reports",
             "title": "Workflow reports",
             "data": {
@@ -795,6 +995,37 @@
           "hash-query-parameter": "workflow"
         },
         "views": [
+          {
+            "id": "workflow-run-health",
+            "title": "Run health trend",
+            "description": "Daily conclusions show this workflow's execution health at a glance.",
+            "data": {
+              "source": "workflow-runs",
+              "route-field": "workflow-route",
+              "time": {
+                "range": "30d"
+              }
+            },
+            "mark": "chart",
+            "chart": "line",
+            "layout": "full",
+            "encoding": {
+              "x": {
+                "field": "started-at",
+                "type": "temporal",
+                "time-unit": "day"
+              },
+              "y": {
+                "field": "run",
+                "type": "quantitative",
+                "aggregate": "count"
+              },
+              "color": {
+                "field": "run-conclusion",
+                "type": "nominal"
+              }
+            }
+          },
           {
             "id": "workflow-runs-identity",
             "title": "Workflow runs",
@@ -911,6 +1142,37 @@
         },
         "views": [
           {
+            "id": "workflow-runtime-health",
+            "title": "Runtime health trend",
+            "description": "Daily conclusions provide the leading runtime signal for this workflow.",
+            "data": {
+              "source": "workflow-runs",
+              "route-field": "workflow-route",
+              "time": {
+                "range": "30d"
+              }
+            },
+            "mark": "chart",
+            "chart": "line",
+            "layout": "full",
+            "encoding": {
+              "x": {
+                "field": "started-at",
+                "type": "temporal",
+                "time-unit": "day"
+              },
+              "y": {
+                "field": "run",
+                "type": "quantitative",
+                "aggregate": "count"
+              },
+              "color": {
+                "field": "run-conclusion",
+                "type": "nominal"
+              }
+            }
+          },
+          {
             "id": "workflow-runtime-insights",
             "title": "Workflow runtime",
             "data": {
@@ -945,6 +1207,31 @@
         },
         "views": [
           {
+            "id": "outcome-disposition",
+            "title": "Outcome disposition",
+            "description": "The current disposition is the leading signal for this retained outcome.",
+            "data": {
+              "source": "outcomes",
+              "route-field": "safe-output"
+            },
+            "mark": "chart",
+            "chart": "pie",
+            "layout": "full",
+            "encoding": {
+              "x": {
+                "field": "outcome-state",
+                "type": "nominal",
+                "title": "Disposition"
+              },
+              "y": {
+                "field": "safe-output",
+                "type": "quantitative",
+                "aggregate": "count",
+                "title": "Outcomes"
+              }
+            }
+          },
+          {
             "id": "outcome-record",
             "title": "Outcome",
             "data": {
@@ -978,6 +1265,35 @@
           },
           "views": [
             {
+              "id": "packages-by-aic",
+              "title": "AI Credit usage by package",
+              "description": "Measured AI Credit allocation highlights where managed-package activity is concentrated.",
+              "data": {
+                "source": "packaged-workflows"
+              },
+              "mark": "chart",
+              "chart": "pie",
+              "layout": "full",
+              "encoding": {
+                "x": {
+                  "field": "package-name",
+                  "type": "nominal",
+                  "title": "Package"
+                },
+                "y": {
+                  "field": "aic",
+                  "type": "quantitative",
+                  "aggregate": "sum",
+                  "title": "Total AIC",
+                  "unit": "aic"
+                },
+                "href": {
+                  "field": "package-link",
+                  "type": "nominal"
+                }
+              }
+            },
+            {
               "id": "packages-activity",
               "title": "Package activity",
               "data": {
@@ -1007,6 +1323,36 @@
         },
         "views": [
           {
+            "id": "package-insights-by-workflow",
+            "title": "AI Credit usage by workflow",
+            "description": "Measured workflow allocation highlights the package's dominant operating activity.",
+            "data": {
+              "source": "packaged-workflows",
+              "route-field": "package"
+            },
+            "mark": "chart",
+            "chart": "pie",
+            "layout": "full",
+            "encoding": {
+              "x": {
+                "field": "workflow-name",
+                "type": "nominal",
+                "title": "Workflow"
+              },
+              "y": {
+                "field": "aic",
+                "type": "quantitative",
+                "aggregate": "sum",
+                "title": "Total AIC",
+                "unit": "aic"
+              },
+              "href": {
+                "field": "workflow-link",
+                "type": "nominal"
+              }
+            }
+          },
+          {
             "id": "package-operational-value",
             "title": "Package operational value",
             "data": {
@@ -1032,6 +1378,31 @@
           "hash-query-parameter": "package"
         },
         "views": [
+          {
+            "id": "package-workflow-registration",
+            "title": "Workflow registration",
+            "description": "Active and inactive workflow definitions summarize whether this package can operate.",
+            "data": {
+              "source": "packaged-workflows",
+              "route-field": "package"
+            },
+            "mark": "chart",
+            "chart": "pie",
+            "layout": "full",
+            "encoding": {
+              "x": {
+                "field": "workflow-active",
+                "type": "nominal",
+                "title": "Registration"
+              },
+              "y": {
+                "field": "workflow",
+                "type": "quantitative",
+                "aggregate": "count",
+                "title": "Workflows"
+              }
+            }
+          },
           {
             "id": "package-workflow-navigation",
             "title": "Package workflows",
@@ -1112,6 +1483,31 @@
           "hash-query-parameter": "package"
         },
         "views": [
+          {
+            "id": "package-dispatch-status",
+            "title": "Dispatch status",
+            "description": "Activated and guarded dispatches provide the package's leading activation signal.",
+            "data": {
+              "source": "dispatches",
+              "route-field": "package"
+            },
+            "mark": "chart",
+            "chart": "pie",
+            "layout": "full",
+            "encoding": {
+              "x": {
+                "field": "status",
+                "type": "nominal",
+                "title": "Status"
+              },
+              "y": {
+                "field": "started-at",
+                "type": "quantitative",
+                "aggregate": "count",
+                "title": "Dispatches"
+              }
+            }
+          },
           {
             "id": "package-dispatch-navigation",
             "title": "Package dispatches",
@@ -1297,6 +1693,31 @@
         },
         "views": [
           {
+            "id": "package-report-status",
+            "title": "Report status",
+            "description": "The disposition of durable outputs is the leading outcome signal for this package.",
+            "data": {
+              "source": "package-reports",
+              "route-field": "package"
+            },
+            "mark": "chart",
+            "chart": "pie",
+            "layout": "full",
+            "encoding": {
+              "x": {
+                "field": "outcome-status",
+                "type": "nominal",
+                "title": "Status"
+              },
+              "y": {
+                "field": "safe-output",
+                "type": "quantitative",
+                "aggregate": "count",
+                "title": "Reports"
+              }
+            }
+          },
+          {
             "id": "package-report-navigation",
             "title": "Package reports",
             "data": {
@@ -1373,6 +1794,7 @@
               "title": "Workflow inventory",
               "layout": "full",
               "views": [
+                "workflows-run-health",
                 "workflow-topology-summary",
                 "packaged-workflows",
                 "standalone-workflows"
@@ -1401,6 +1823,36 @@
             }
           ],
           "views": [
+            {
+              "id": "workflows-run-health",
+              "title": "Workflow run health trend",
+              "description": "Daily conclusions show whether authored workflows are operating reliably.",
+              "data": {
+                "source": "runs",
+                "time": {
+                  "range": "30d"
+                }
+              },
+              "mark": "chart",
+              "chart": "line",
+              "layout": "full",
+              "encoding": {
+                "x": {
+                  "field": "started-at",
+                  "type": "temporal",
+                  "time-unit": "day"
+                },
+                "y": {
+                  "field": "run",
+                  "type": "quantitative",
+                  "aggregate": "count"
+                },
+                "color": {
+                  "field": "run-conclusion",
+                  "type": "nominal"
+                }
+              }
+            },
             {
               "id": "workflow-topology-summary",
               "title": "Definition summary",
@@ -1674,6 +2126,7 @@
             "count-source": "runtime-signals",
             "count-label": "signals",
             "views": [
+              "runtime-run-health",
               "runtime-anomaly-readiness",
               "runtime-needs-attention"
             ]
@@ -1691,6 +2144,36 @@
           }
         ],
         "views": [
+          {
+            "id": "runtime-run-health",
+            "title": "Runtime health trend",
+            "description": "Daily run conclusions provide the leading runtime reliability signal.",
+            "data": {
+              "source": "runs",
+              "time": {
+                "range": "30d"
+              }
+            },
+            "mark": "chart",
+            "chart": "line",
+            "layout": "full",
+            "encoding": {
+              "x": {
+                "field": "started-at",
+                "type": "temporal",
+                "time-unit": "day"
+              },
+              "y": {
+                "field": "run",
+                "type": "quantitative",
+                "aggregate": "count"
+              },
+              "color": {
+                "field": "run-conclusion",
+                "type": "nominal"
+              }
+            }
+          },
           {
             "id": "runtime-anomaly-readiness",
             "title": "Statistical anomaly readiness",
@@ -1853,6 +2336,37 @@
           },
           "views": [
             {
+              "id": "runs-health-trend",
+              "title": "Run health trend",
+              "description": "Daily conclusions reveal the leading execution-health signal before individual run details.",
+              "data": {
+                "source": "runs",
+                "time": {
+                  "range": "30d"
+                }
+              },
+              "mark": "chart",
+              "chart": "line",
+              "table": false,
+              "layout": "full",
+              "encoding": {
+                "x": {
+                  "field": "started-at",
+                  "type": "temporal",
+                  "time-unit": "day"
+                },
+                "y": {
+                  "field": "run",
+                  "type": "quantitative",
+                  "aggregate": "count"
+                },
+                "color": {
+                  "field": "run-conclusion",
+                  "type": "nominal"
+                }
+              }
+            },
+            {
               "id": "runs-runs-source",
               "data": {
                 "source": "runs"
@@ -1934,6 +2448,31 @@
           ]
         },
         "views": [
+          {
+            "id": "dispatch-status",
+            "title": "Dispatch activation",
+            "description": "Activated and guarded dispatches expose whether authorized work is reaching execution.",
+            "data": {
+              "source": "dispatches"
+            },
+            "mark": "chart",
+            "chart": "pie",
+            "table": false,
+            "layout": "full",
+            "encoding": {
+              "x": {
+                "field": "status",
+                "type": "nominal",
+                "title": "Status"
+              },
+              "y": {
+                "field": "started-at",
+                "type": "quantitative",
+                "aggregate": "count",
+                "title": "Dispatches"
+              }
+            }
+          },
           {
             "id": "dispatch-activation-summary",
             "title": "Activation rate",
@@ -2035,7 +2574,32 @@
           },
           "views": [
             {
+              "id": "experiment-outcomes",
+              "title": "Experiment outcomes",
+              "description": "Outcome disposition is the leading signal of whether experiments produce accepted effects.",
+              "data": {
+                "source": "outcomes"
+              },
+              "mark": "chart",
+              "chart": "pie",
+              "layout": "full",
+              "encoding": {
+                "x": {
+                  "field": "outcome-state",
+                  "type": "nominal",
+                  "title": "Disposition"
+                },
+                "y": {
+                  "field": "safe-output",
+                  "type": "quantitative",
+                  "aggregate": "count",
+                  "title": "Outcomes"
+                }
+              }
+            },
+            {
               "id": "experiments-experiments-source",
+              "disclosure": "supplemental",
               "data": {
                 "source": "experiments"
               },
@@ -2159,6 +2723,36 @@
           },
           "views": [
             {
+              "id": "grader-observation-trend",
+              "title": "Grader observation trend",
+              "description": "Mean grader values over time reveal whether assessed quality is improving.",
+              "data": {
+                "source": "grader-observations",
+                "time": {
+                  "range": "30d"
+                }
+              },
+              "mark": "chart",
+              "chart": "line",
+              "layout": "full",
+              "encoding": {
+                "x": {
+                  "field": "observed-at",
+                  "type": "temporal",
+                  "time-unit": "day"
+                },
+                "y": {
+                  "field": "value",
+                  "type": "quantitative",
+                  "aggregate": "mean"
+                },
+                "color": {
+                  "field": "grader",
+                  "type": "nominal"
+                }
+              }
+            },
+            {
               "id": "graders-graders-source",
               "disclosure": "supplemental",
               "data": {
@@ -2222,6 +2816,30 @@
             "freshness": true
           },
           "views": [
+            {
+              "id": "eval-results",
+              "title": "Evaluation results",
+              "description": "The result distribution surfaces the leading evaluation-quality signal.",
+              "data": {
+                "source": "eval-observations"
+              },
+              "mark": "chart",
+              "chart": "pie",
+              "layout": "full",
+              "encoding": {
+                "x": {
+                  "field": "eval-result",
+                  "type": "nominal",
+                  "title": "Result"
+                },
+                "y": {
+                  "field": "run",
+                  "type": "quantitative",
+                  "aggregate": "count",
+                  "title": "Evaluations"
+                }
+              }
+            },
             {
               "id": "evals-evals-source",
               "disclosure": "supplemental",
@@ -2290,6 +2908,31 @@
             "freshness": true
           },
           "views": [
+            {
+              "id": "usage-by-model",
+              "title": "AI Credit usage by model",
+              "description": "Measured AI Credit allocation identifies the models driving agent consumption.",
+              "data": {
+                "source": "usage"
+              },
+              "mark": "chart",
+              "chart": "pie",
+              "layout": "full",
+              "encoding": {
+                "x": {
+                  "field": "resolved-model",
+                  "type": "nominal",
+                  "title": "Resolved model"
+                },
+                "y": {
+                  "field": "aic",
+                  "type": "quantitative",
+                  "aggregate": "sum",
+                  "title": "Total AIC",
+                  "unit": "aic"
+                }
+              }
+            },
             {
               "id": "usage-usage-source",
               "data": {
@@ -2684,6 +3327,7 @@
             "count-source": "value-signals",
             "count-label": "signals",
             "views": [
+              "operational-value-trend",
               "value-summary",
               "value-signals"
             ]
@@ -2731,6 +3375,37 @@
           }
         ],
         "views": [
+          {
+            "id": "operational-value-trend",
+            "title": "Operational-value attainment trend",
+            "description": "Mean attained value over time is the leading signal of realized operational outcomes.",
+            "data": {
+              "source": "operational-values",
+              "time": {
+                "range": "90d"
+              }
+            },
+            "mark": "chart",
+            "chart": "line",
+            "layout": "full",
+            "encoding": {
+              "x": {
+                "field": "observed-at",
+                "type": "temporal",
+                "time-unit": "day"
+              },
+              "y": {
+                "field": "operational-value",
+                "type": "quantitative",
+                "aggregate": "mean",
+                "title": "Mean attainment"
+              },
+              "color": {
+                "field": "operational-value-definition",
+                "type": "nominal"
+              }
+            }
+          },
           {
             "id": "value-summary",
             "title": "Outcome summary",
@@ -2949,6 +3624,30 @@
           },
           "views": [
             {
+              "id": "findings-by-severity",
+              "title": "Findings by severity",
+              "description": "The severity distribution surfaces the most urgent retained findings.",
+              "data": {
+                "source": "findings"
+              },
+              "mark": "chart",
+              "chart": "pie",
+              "layout": "full",
+              "encoding": {
+                "x": {
+                  "field": "finding-severity",
+                  "type": "ordinal",
+                  "title": "Severity"
+                },
+                "y": {
+                  "field": "finding",
+                  "type": "quantitative",
+                  "aggregate": "count",
+                  "title": "Findings"
+                }
+              }
+            },
+            {
               "id": "findings-source",
               "data": {
                 "source": "findings"
@@ -3020,6 +3719,34 @@
         },
         "views": [
           {
+            "id": "coverage-by-organization",
+            "title": "Repository coverage by organization",
+            "description": "The discovered repository distribution makes scope concentration visible at a glance.",
+            "data": {
+              "source": "repositories"
+            },
+            "mark": "chart",
+            "chart": "pie",
+            "layout": "full",
+            "encoding": {
+              "x": {
+                "field": "organization",
+                "type": "nominal",
+                "title": "Organization"
+              },
+              "y": {
+                "field": "repository",
+                "type": "quantitative",
+                "aggregate": "count",
+                "title": "Repositories"
+              },
+              "href": {
+                "field": "organization-link",
+                "type": "nominal"
+              }
+            }
+          },
+          {
             "id": "coverage-summary",
             "title": "Repository discovery",
             "description": "Observed visibility buckets and organization totals make incomplete or allowlist-scoped discovery explicit.",
@@ -3067,6 +3794,30 @@
         "icon": "workflow",
         "description": "Installed gh-aw compiler versions and whether a newer gh-aw release is available.",
         "views": [
+          {
+            "id": "workflow-update-state",
+            "title": "Workflow update state",
+            "description": "The current update-state distribution highlights upgrade exposure across discovered workflows.",
+            "data": {
+              "source": "workflows"
+            },
+            "mark": "chart",
+            "chart": "pie",
+            "layout": "full",
+            "encoding": {
+              "x": {
+                "field": "gh-aw-update-state",
+                "type": "nominal",
+                "title": "Update state"
+              },
+              "y": {
+                "field": "workflow",
+                "type": "quantitative",
+                "aggregate": "count",
+                "title": "Workflows"
+              }
+            }
+          },
           {
             "id": "workflow-updates",
             "title": "Workflow update inventory",

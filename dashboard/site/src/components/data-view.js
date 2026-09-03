@@ -232,7 +232,8 @@ function renderChartView(context) {
     y ? fieldTitle(y) : 'Total',
     y ? fieldUnit(y, context.units ?? {}) : null
   );
-  const table = view.table === false ? null : renderTableRegion({
+  const showTable = typeof view.table === 'boolean' ? view.table : chartType === 'bar';
+  const table = showTable ? renderTableRegion({
     tableClassName: 'custom-chart-table',
     emptyMessage: 'No points available.',
     colSpan: color ? 3 : 2,
@@ -244,7 +245,7 @@ function renderChartView(context) {
       h('td', null, y ? formatNumber(point.y, fieldUnit(y, context.units ?? {})) : point.y),
       color ? h('td', null, point.color ?? 'unknown') : null
     ))
-  });
+  }) : null;
 
   const chartContent = [
     ...(description ? [description] : []),

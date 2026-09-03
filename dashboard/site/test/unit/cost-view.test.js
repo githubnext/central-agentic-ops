@@ -41,13 +41,13 @@ describe('Cost and efficiency dashboard view', () => {
     );
 
     expect(dashboardPage).toMatchObject({ kind: 'custom', icon: 'meter' });
-    expect(dashboardPage.views).toHaveLength(4);
+    expect(dashboardPage.views).toHaveLength(5);
     expect(dashboardPage.sections).toEqual(expect.arrayContaining([
       expect.objectContaining({
         id: 'measured-usage',
         'count-source': 'cost-signals',
         'count-label': 'boundaries',
-        views: ['cost-summary', 'cost-signals']
+        views: ['cost-usage-trend', 'cost-summary', 'cost-signals']
       })
     ]));
     expect(dashboardPage.views).not.toContainEqual(expect.objectContaining({ element: 'metric-signal-summary' }));
@@ -86,10 +86,8 @@ describe('Cost and efficiency dashboard view', () => {
     const pieChartView = page?.querySelector('.chart-view-pie');
     const pieChartCard = pieChartView?.querySelector('.pie-chart-card');
     const repositoryTable = pieChartView?.querySelector('.custom-chart-table');
-    const repositoryTableRegion = repositoryTable?.closest('.table-region');
     expect(pieChartCard).not.toBeNull();
-    expect(repositoryTableRegion?.parentElement).toBe(pieChartView);
-    expect(pieChartCard?.contains(repositoryTable ?? null)).toBe(false);
+    expect(repositoryTable).toBeNull();
     expect(page?.querySelectorAll('.signal-list-region')).toHaveLength(1);
     const boundary = page?.querySelector('.dashboard-callout');
     expect(boundary?.getAttribute('role')).toBe('note');

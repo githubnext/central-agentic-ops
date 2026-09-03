@@ -38,7 +38,7 @@ describe('Runtime dashboard view', () => {
           title: 'Needs attention',
           'count-source': 'runtime-signals',
           'count-label': 'signals',
-          views: ['runtime-anomaly-readiness', 'runtime-needs-attention']
+          views: ['runtime-run-health', 'runtime-anomaly-readiness', 'runtime-needs-attention']
         },
         {
           id: 'observed-behavior',
@@ -58,6 +58,11 @@ describe('Runtime dashboard view', () => {
         element: view.element
       })
     )).toEqual([
+      {
+        id: 'runtime-run-health',
+        mark: 'chart',
+        element: undefined
+      },
       {
         id: 'runtime-anomaly-readiness',
         mark: 'element',
