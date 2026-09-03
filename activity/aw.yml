@@ -4,7 +4,5 @@ min-version: v0.88.2
 includes:
   - .github/workflows/activity.yml
 resources:
-  - source: actions-log.mjs
-    destination: .github/aw/activity/actions-log.mjs
-  - source: index.mjs
-    destination: .github/aw/activity/index.mjs
+  - source: activity.mjs
+    destination: .github/aw/activity/activity.mjs

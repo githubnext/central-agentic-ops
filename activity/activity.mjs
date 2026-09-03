@@ -1,9 +1,41 @@
 import { mkdir, writeFile } from "node:fs/promises";
 import { readFileSync } from "node:fs";
 import path from "node:path";
-import { actionsLog as log } from "./actions-log.mjs";
+import { pathToFileURL } from "node:url";
 
-(async () => {
+function message(strings, values) {
+  return strings.reduce((text, part, index) => (
+    text + part + (index < values.length ? String(values[index]) : "")
+  ), "");
+}
+
+function commandMacro(command) {
+  return (strings, ...values) => {
+    const text = message(strings, values)
+      .replaceAll("%", "%25")
+      .replaceAll("\r", "%0D")
+      .replaceAll("\n", "%0A");
+    console.log(`::${command}::${text}`);
+  };
+}
+
+export const actionsLog = {
+  info(strings, ...values) {
+    console.log(message(strings, values));
+  },
+  debug: commandMacro("debug"),
+  notice: commandMacro("notice"),
+  warning: commandMacro("warning"),
+  error: commandMacro("error"),
+  group: commandMacro("group"),
+  endGroup() {
+    console.log("::endgroup::");
+  },
+};
+
+const log = actionsLog;
+
+export async function main() {
 log.group`Discover deployed agentic workflows`;
 try {
 
@@ -49,6 +81,9 @@ if (!organization || !token) throw new Error("GITHUB_REPOSITORY (or REPORT_ORGAN
 if (allowedRepositories.some((value) => !/^[a-z0-9][a-z0-9-]*\/[a-z0-9._-]+$/.test(value))) {
   throw new Error("REPORT_ALLOWED_REPOS must contain comma-separated owner/repository values");
 }
+log.info`Activity refresh configured for ${organization} with ${repositoryScopeEnabled ? `${allowedRepositories.length} allowed repositories` : "organization-wide discovery"}`;
+log.debug`Configuration: repository=${repository || "not set"}, includePrivate=${includePrivate}, runWindowHours=${runWindowHours}, auditMaxPages=${auditMaxPages}`;
+log.debug`Inputs: control=${controlSettingsPath ? "resolved settings" : policyPath ? "checked-in policy" : "none"}, output=${outputPath}`;
 
 function markdownSourceUrl(lockUrl = "") {
   if (!lockUrl.endsWith(".lock.yml")) return lockUrl;
@@ -56,13 +91,17 @@ function markdownSourceUrl(lockUrl = "") {
 }
 
 async function github(url, attempt = 0, authToken = token) {
+  log.debug`GitHub API request: ${url} (attempt ${attempt + 1})`;
   const response = await fetch(`https://api.github.com${url}`, { headers: {
     Accept: "application/vnd.github+json",
     Authorization: `Bearer ${authToken}`,
     "User-Agent": "central-agentic-pages",
     "X-GitHub-Api-Version": "2022-11-28",
   } });
-  if (response.ok) return { body: await response.json(), headers: response.headers };
+  if (response.ok) {
+    log.debug`GitHub API response: ${response.status} for ${url}`;
+    return { body: await response.json(), headers: response.headers };
+  }
   if ((response.status === 403 || response.status === 429) && attempt < 3) {
     const retryAfter = Number(response.headers.get("retry-after"));
     const resetAt = Number(response.headers.get("x-ratelimit-reset")) * 1000;
@@ -80,12 +119,17 @@ async function github(url, attempt = 0, authToken = token) {
 }
 
 async function requirePrivatePages() {
-  if (!includePrivate) return;
+  if (!includePrivate) {
+    log.debug`Private repository discovery is disabled; skipping Pages privacy verification`;
+    return;
+  }
+  log.info`Verifying private Pages access for ${repository}`;
   if (!repository) throw new Error("GITHUB_REPOSITORY is required to verify private Pages access");
   const pages = (await github(`/repos/${repository}/pages`, 0, pagesToken)).body;
   if (pages.public !== false) {
     throw new Error(`Refusing to discover private repository data because GitHub Pages for ${repository} is not private`);
   }
+  log.notice`Private Pages access verified for ${repository}`;
 }
 
 await requirePrivatePages();
@@ -95,22 +139,27 @@ function searchQuery(minimum, maximum) {
 }
 
 async function searchCode(query) {
+  log.debug`Searching code with query: ${query}`;
   const first = await github(`/search/code?q=${encodeURIComponent(query)}&per_page=100&page=1`);
   const total = Math.min(first.body.total_count || 0, 1000);
   const items = [...(first.body.items || [])];
+  log.debug`Code search page 1 returned ${items.length} of ${total} accessible results`;
   for (let page = 2; page <= Math.ceil(total / 100); page += 1) {
     const response = await github(`/search/code?q=${encodeURIComponent(query)}&per_page=100&page=${page}`);
     items.push(...(response.body.items || []));
+    log.debug`Code search page ${page} increased the result count to ${items.length}`;
   }
   return items;
 }
 
 async function searchPartition(minimum, maximum) {
+  log.debug`Searching workflow source size partition ${minimum}..${maximum}`;
   const query = searchQuery(minimum, maximum);
   const first = await github(`/search/code?q=${encodeURIComponent(query)}&per_page=100&page=1`);
   const total = first.body.total_count || 0;
   if (total > 1000 && minimum < maximum) {
     const midpoint = Math.floor((minimum + maximum) / 2);
+    log.debug`Partition ${minimum}..${maximum} has ${total} results; splitting at ${midpoint}`;
     return [
       ...await searchPartition(minimum, midpoint),
       ...await searchPartition(midpoint + 1, maximum),
@@ -122,10 +171,12 @@ async function searchPartition(minimum, maximum) {
     const response = await github(`/search/code?q=${encodeURIComponent(query)}&per_page=100&page=${page}`);
     items.push(...(response.body.items || []));
   }
+  log.debug`Partition ${minimum}..${maximum} returned ${items.length} results across ${pages} pages`;
   return items;
 }
 
 async function mapWithConcurrency(values, concurrency, mapper) {
+  log.debug`Processing ${values.length} items with concurrency ${Math.min(concurrency, values.length)}`;
   const results = new Array(values.length);
   let nextIndex = 0;
   async function worker() {
@@ -140,6 +191,7 @@ async function mapWithConcurrency(values, concurrency, mapper) {
 }
 
 async function registeredWorkflows(repositoryName) {
+  log.debug`Collecting registered workflows for ${repositoryName}`;
   const workflows = [];
   try {
     for (let page = 1; ; page += 1) {
@@ -150,6 +202,7 @@ async function registeredWorkflows(repositoryName) {
   } catch (error) {
     log.warning`${error.message}; retaining discovered files with unknown state`;
   }
+  log.debug`Collected ${workflows.length} registered workflows for ${repositoryName}`;
   return new Map(workflows.map((workflow) => [workflow.path, workflow]));
 }
 
@@ -163,7 +216,11 @@ async function repositoryMetadata(repositoryName) {
 }
 
 async function organizationRepositorySummary() {
-  if (repositoryScopeEnabled) return { public: null, private: null, internal: null, total: null };
+  if (repositoryScopeEnabled) {
+    log.debug`Repository scope is restricted; skipping organization repository totals`;
+    return { public: null, private: null, internal: null, total: null };
+  }
+  log.debug`Collecting repository totals for ${organization}`;
   try {
     async function count(type) {
       const response = await github(`/orgs/${organization}/repos?type=${type}&per_page=1&page=1`);
@@ -175,12 +232,14 @@ async function organizationRepositorySummary() {
       count("public"),
       count("private"),
     ]);
-    return {
+    const summary = {
       public: publicRepositories,
       private: privateRepositories,
       internal: total - publicRepositories - privateRepositories,
       total,
     };
+    log.debug`Repository totals: public=${summary.public}, private=${summary.private}, internal=${summary.internal}, total=${summary.total}`;
+    return summary;
   } catch (error) {
     log.warning`${error.message}; organization repository totals will be unavailable`;
     return { public: null, private: null, internal: null, total: null };
@@ -188,6 +247,7 @@ async function organizationRepositorySummary() {
 }
 
 async function fileContent(repositoryName, filePath) {
+  log.debug`Downloading ${repositoryName}/${filePath}`;
   const response = await github(`/repos/${repositoryName}/contents/${encodeURIComponent(filePath).replaceAll("%2F", "/")}`);
   return Buffer.from(response.body.content || "", "base64").toString("utf8");
 }
@@ -238,9 +298,12 @@ function updateState(version, latestVersion) {
 }
 
 async function latestGhAwVersion() {
+  log.debug`Resolving the latest gh-aw release`;
   try {
     const version = (await github("/repos/github/gh-aw/releases/latest")).body.tag_name;
-    return typeof version === "string" && isVersion(version) ? version : null;
+    const validatedVersion = typeof version === "string" && isVersion(version) ? version : null;
+    log.debug`Latest gh-aw version is ${validatedVersion || "unknown"}`;
+    return validatedVersion;
   } catch (error) {
     log.warning`${error.message}; gh-aw update state will be unknown`;
     return null;
@@ -248,13 +311,19 @@ async function latestGhAwVersion() {
 }
 
 async function repositoryManifestFiles(repositoryName) {
+  log.debug`Discovering package manifests in ${repositoryName}`;
   const metadata = await repositoryMetadata(repositoryName);
-  if (!metadata.default_branch || (metadata.private && !includePrivate && repositoryName !== repository)) return [];
+  if (!metadata.default_branch || (metadata.private && !includePrivate && repositoryName !== repository)) {
+    log.debug`Skipping package manifest discovery for ${repositoryName}`;
+    return [];
+  }
   const tree = (await github(`/repos/${repositoryName}/git/trees/${encodeURIComponent(metadata.default_branch)}?recursive=1`)).body.tree || [];
-  return tree.filter((item) => item.type === "blob" && item.path.split("/").at(-1) === "aw.yml").map((item) => ({
+  const manifests = tree.filter((item) => item.type === "blob" && item.path.split("/").at(-1) === "aw.yml").map((item) => ({
     path: item.path,
     repository: metadata,
   }));
+  log.debug`Discovered ${manifests.length} package manifests in ${repositoryName}`;
+  return manifests;
 }
 
 function manifestScalar(source, key) {
@@ -289,6 +358,7 @@ function workflowWorkerIds(source) {
 }
 
 async function workflowCapabilities(repositoryName, lockPath) {
+  log.debug`Inspecting workflow capabilities for ${repositoryName}/${lockPath}`;
   const sourcePath = lockPath.replace(/\.lock\.yml$/, ".md");
   const [source, lock] = await Promise.allSettled([
     fileContent(repositoryName, sourcePath),
@@ -304,6 +374,7 @@ async function workflowCapabilities(repositoryName, lockPath) {
   try {
     if (source.status !== "fulfilled") throw source.reason;
     const role = workflowRole(source.value);
+    log.debug`Workflow capabilities for ${repositoryName}/${lockPath}: role=${role}, operationalValue=${declaresOperationalValue(source.value)}, version=${ghAwVersion || "unknown"}`;
     return {
       operationalValue: declaresOperationalValue(source.value),
       role,
@@ -405,6 +476,8 @@ async function collectRunHealth(registryByRepository, previousIndex) {
   let complete = true;
   let available = true;
   const records = previousRunRecords(reusable ? previousIndex : null, registryByRepository, windowStart);
+  log.info`Collecting ${runWindowHours} hours of run health in ${reusable ? "incremental" : "full"} mode`;
+  log.debug`Run-health refresh starts at ${overlapStart.toISOString()} with ${records.size} reusable records`;
   const previousWorkflowIds = new Map();
   const repositoriesWithPendingRuns = new Set();
   for (const workflow of previousIndex?.workflows || []) {
@@ -422,11 +495,15 @@ async function collectRunHealth(registryByRepository, previousIndex) {
       && [...workflowIds].every((id) => knownWorkflowIds.has(id))
       ? overlapStart
       : windowStart;
+    log.debug`Collecting run health for ${repositoryName}: workflows=${workflowIds.size}, refreshStart=${refreshStart.toISOString()}`;
+    let repositoryRunCount = 0;
     try {
       for (let repositoryPage = 1; repositoryPage <= auditMaxPages; repositoryPage += 1) {
         const response = await github(`/repos/${repositoryName}/actions/runs?created=${encodeURIComponent(`>=${refreshStart.toISOString()}`)}&per_page=100&page=${repositoryPage}`);
         const runs = response.body.workflow_runs || [];
         page += 1;
+        repositoryRunCount += runs.length;
+        log.debug`Run-health page ${repositoryPage} for ${repositoryName} returned ${runs.length} runs`;
         for (const run of runs) {
           if (!workflowIds.has(run.workflow_id)) continue;
           records.set(`${run.workflow_id}:${run.id}`, { workflowId: run.workflow_id, run: {
@@ -446,6 +523,7 @@ async function collectRunHealth(registryByRepository, previousIndex) {
         if (runs.length < 100) break;
         if (repositoryPage === auditMaxPages) complete = false;
       }
+      log.debug`Collected ${repositoryRunCount} candidate runs for ${repositoryName}`;
     } catch (error) {
       available = false;
       complete = false;
@@ -474,18 +552,23 @@ async function collectRunHealth(registryByRepository, previousIndex) {
       else current.other += 1;
     }
   }
+  log.debug`Aggregated ${records.size} run records across ${totals.size} workflows`;
   for (const current of totals.values()) {
     const latest = current.runRecords[0];
     if (!latest || !["failure", "timed_out", "startup_failure"].includes(latest.conclusion)) continue;
     try {
       const response = await github(`/repos/${latest.repository}/actions/runs/${latest.runId}/jobs?filter=latest&per_page=100`);
       const block = capacityAdmissionBlock(response.body.jobs || []);
-      if (block) Object.assign(latest, block);
+      if (block) {
+        Object.assign(latest, block);
+        log.debug`Detected ${block.admissionReason} for run ${latest.runId} in ${latest.repository}`;
+      }
     } catch (error) {
       complete = false;
       log.warning`${error.message}; admission details will be unavailable for run ${latest.runId}`;
     }
   }
+  log.notice`Run-health collection finished: available=${available}, complete=${complete}, pages=${page}, records=${records.size}`;
   return {
     available,
     complete,
@@ -500,8 +583,10 @@ async function collectRunHealth(registryByRepository, previousIndex) {
 let previousIndex = null;
 try {
   previousIndex = JSON.parse(readFileSync(outputPath, "utf8"));
+  log.debug`Loaded previous activity index generated at ${previousIndex.generatedAt || "unknown"}`;
 } catch {
   // A missing or malformed cache entry triggers a complete bounded refresh.
+  log.debug`No reusable activity index was loaded from ${outputPath}`;
 }
 
 let matches = [];
@@ -509,6 +594,7 @@ let manifestMatches = [];
 let workflowSearchAvailable = true;
 let manifestSearchAvailable = true;
 if (!repositoryScopeEnabled) {
+  log.info`Discovering workflows and package manifests across ${organization}`;
   try {
     matches = await searchPartition(0, 499999);
   } catch (error) {
@@ -522,6 +608,7 @@ if (!repositoryScopeEnabled) {
     log.warning`${error.message}; organization package search will be unavailable`;
   }
 } else {
+  log.info`Discovering package manifests within the configured repository scope`;
   manifestMatches = (await mapWithConcurrency([repository, ...allowedRepositories], 8, async (repositoryName) => {
     try {
       return await repositoryManifestFiles(repositoryName);
@@ -532,6 +619,7 @@ if (!repositoryScopeEnabled) {
     }
   })).flat();
 }
+log.notice`Search completed: workflowMatches=${matches.length}, manifestMatches=${manifestMatches.length}, workflowSearchAvailable=${workflowSearchAvailable}, manifestSearchAvailable=${manifestSearchAvailable}`;
 const discovered = new Map();
 for (const item of matches) {
   if (!item.path.startsWith(".github/workflows/") || !item.path.endsWith(".lock.yml")) continue;
@@ -548,10 +636,12 @@ const manifestFiles = manifestMatches.filter((item) => item.path.split("/").at(-
 const repositoryNames = [...new Set(repositoryScopeEnabled ? [repository, ...allowedRepositories] : [
   repository, ...[...discovered.values()].map((item) => item.repository), ...manifestFiles.map((item) => item.repository.full_name),
 ])].sort();
+log.info`Building workflow registries for ${repositoryNames.length} repositories`;
 const registryByRepository = new Map((await mapWithConcurrency(repositoryNames, 8, async (repositoryName) => [
   repositoryName,
   await registeredWorkflows(repositoryName),
 ])).filter(Boolean));
+log.debug`Built ${registryByRepository.size} workflow registries`;
 
 for (const repositoryName of repositoryNames) {
   const metadata = await repositoryMetadata(repositoryName);
@@ -566,7 +656,9 @@ for (const repositoryName of repositoryNames) {
     });
   }
 }
+log.notice`Workflow discovery found ${discovered.size} deployed workflow candidates`;
 
+log.info`Inspecting ${manifestFiles.length} package manifests`;
 const bundles = (await mapWithConcurrency(manifestFiles, 8, async (item) => {
   try {
     const source = await fileContent(item.repository.full_name, item.path);
@@ -582,6 +674,7 @@ const bundles = (await mapWithConcurrency(manifestFiles, 8, async (item) => {
         state: registered?.state || "unknown",
       };
     });
+    log.debug`Package manifest ${item.repository.full_name}/${item.path} includes ${includedWorkflows.length} workflows`;
     return {
       repository: item.repository.full_name,
       visibility: item.repository.visibility?.toLowerCase() || (item.repository.private ? "private" : "public"),
@@ -595,13 +688,17 @@ const bundles = (await mapWithConcurrency(manifestFiles, 8, async (item) => {
     return null;
   }
 })).filter(Boolean).sort((left, right) => left.repository.localeCompare(right.repository) || left.name.localeCompare(right.name));
+log.notice`Package discovery produced ${bundles.length} bundles`;
 
+log.info`Collecting run health, organization totals, and gh-aw release state`;
 const [runHealth, organizationRepositories, latestVersion] = await Promise.all([
   collectRunHealth(registryByRepository, previousIndex),
   organizationRepositorySummary(),
   latestGhAwVersion(),
 ]);
+log.notice`Activity metadata collection completed with gh-aw version ${latestVersion || "unknown"}`;
 
+log.info`Inspecting capabilities for ${discovered.size} workflow candidates`;
 const discoveredWorkflows = await mapWithConcurrency([...discovered.values()], 8, async (item) => {
   const registered = registryByRepository.get(item.repository)?.get(item.path);
   const capabilities = await workflowCapabilities(item.repository, item.path);
@@ -622,6 +719,7 @@ const missingSourceCount = discoveredWorkflows.filter((workflow) => workflow.sou
 const workflows = discoveredWorkflows
   .filter((workflow) => workflow.sourceAvailable !== false)
   .sort((left, right) => left.repository.localeCompare(right.repository) || left.name.localeCompare(right.name));
+log.notice`Capability inspection retained ${workflows.length} workflows and excluded ${missingSourceCount} without authored sources`;
 const workflowByKey = new Map(workflows.map((workflow) => [`${workflow.repository}:${workflow.path}`, workflow]));
 for (const bundle of bundles) {
   const expanded = new Map(bundle.workflows.map((workflow) => [workflow.lockPath, workflow]));
@@ -643,6 +741,7 @@ for (const bundle of bundles) {
 }
 const operationWorkflowKeys = new Set(bundles.flatMap((bundle) => bundle.workflows.map((workflow) => `${bundle.repository}:${workflow.lockPath}`)));
 const standaloneWorkflows = workflows.filter((workflow) => !operationWorkflowKeys.has(`${workflow.repository}:${workflow.path}`));
+log.debug`Classified ${operationWorkflowKeys.size} package workflow references and ${standaloneWorkflows.length} standalone workflows`;
 
 const inventory = {
   schemaVersion: 1,
@@ -676,12 +775,19 @@ const inventory = {
 };
 
 await mkdir(path.dirname(outputPath), { recursive: true });
-await writeFile(outputPath, `${JSON.stringify(inventory, null, 2)}\n`);
+const serializedInventory = `${JSON.stringify(inventory, null, 2)}\n`;
+log.debug`Writing ${Buffer.byteLength(serializedInventory)} bytes to ${outputPath}`;
+await writeFile(outputPath, serializedInventory);
+log.notice`Activity index written to ${outputPath}`;
 log.info`Discovered ${bundles.length} packages and ${standaloneWorkflows.length} standalone workflows across ${repositoryNames.length} repositories; excluded ${missingSourceCount} workflows without authored sources; run health ${runHealth.available ? runHealth.complete ? "complete" : "partial" : "unavailable"}`;
 } finally {
   log.endGroup();
 }
-})().catch((error) => {
+}
+
+if (process.argv[1] && pathToFileURL(path.resolve(process.argv[1])).href === import.meta.url) {
+  main().catch((error) => {
   log.error`${error.stack || error.message || error}`;
   process.exitCode = 1;
-});
+  });
+}

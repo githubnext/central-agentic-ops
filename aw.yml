@@ -25,10 +25,8 @@ resources:
     destination: .github/aw/instructions.md
   - source: dashboard/local-server.mjs
     destination: .github/aw/dashboard/local-server.mjs
-  - source: activity/actions-log.mjs
-    destination: .github/aw/activity/actions-log.mjs
-  - source: activity/index.mjs
-    destination: .github/aw/activity/index.mjs
+  - source: activity/activity.mjs
+    destination: .github/aw/activity/activity.mjs
   - source: dashboard/report/aic-usage.mjs
     destination: .github/aw/dashboard/report/aic-usage.mjs
   - source: dashboard/report/text-utils.mjs

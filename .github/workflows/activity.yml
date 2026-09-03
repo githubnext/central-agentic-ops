@@ -37,10 +37,10 @@ jobs:
 
       - name: Resolve activity indexer
         run: |
-          if [[ -f .github/aw/activity/index.mjs ]]; then
-            echo "ACTIVITY_INDEXER=.github/aw/activity/index.mjs" >> "$GITHUB_ENV"
-          elif [[ -f activity/index.mjs ]]; then
-            echo "ACTIVITY_INDEXER=activity/index.mjs" >> "$GITHUB_ENV"
+          if [[ -f .github/aw/activity/activity.mjs ]]; then
+            echo "ACTIVITY_INDEXER=.github/aw/activity/activity.mjs" >> "$GITHUB_ENV"
+          elif [[ -f activity/activity.mjs ]]; then
+            echo "ACTIVITY_INDEXER=activity/activity.mjs" >> "$GITHUB_ENV"
           else
             echo "Activity indexer is unavailable" >&2
             exit 1

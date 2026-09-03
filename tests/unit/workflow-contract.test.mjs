@@ -2293,12 +2293,11 @@ test("Activity package owns the shared workflow-run cache contract", () => {
   assert.equal(activityManifest.name, "Central Agentic Ops Activity");
   assert.deepEqual(activityManifest.includes, [".github/workflows/activity.yml"]);
   assert.deepEqual(activityManifest.resources, [
-    { source: "actions-log.mjs", destination: ".github/aw/activity/actions-log.mjs" },
-    { source: "index.mjs", destination: ".github/aw/activity/index.mjs" },
+    { source: "activity.mjs", destination: ".github/aw/activity/activity.mjs" },
   ]);
   assert.ok(rootManifest.includes.includes(".github/workflows/activity.yml"));
-  assert.ok(rootManifest.resources.some((entry) => entry.destination === ".github/aw/activity/actions-log.mjs"));
-  assert.ok(rootManifest.resources.some((entry) => entry.destination === ".github/aw/activity/index.mjs"));
+  assert.ok(rootManifest.resources.some((entry) => entry.destination === ".github/aw/activity/activity.mjs"));
+  assert.match(workflow, /\.github\/aw\/activity\/activity\.mjs/);
   assert.match(workflow, /schedule:[\s\S]*?cron:/);
   assert.match(workflow, /workflow_call:/);
   assert.match(workflow, /concurrency:[\s\S]*?cancel-in-progress: false/);

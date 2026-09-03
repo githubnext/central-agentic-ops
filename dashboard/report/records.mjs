@@ -2,7 +2,7 @@ import { existsSync, readFileSync } from "node:fs";
 import { mkdir, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { pathToFileURL } from "node:url";
-import { actionsLog as log } from "../../activity/actions-log.mjs";
+import { actionsLog as log } from "../../activity/activity.mjs";
 import { firstText } from "./text-utils.mjs";
 
 const apiRoot = "https://api.github.com";
