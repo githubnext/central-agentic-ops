@@ -173,7 +173,7 @@ function writeAdmissionSummary({ authorized, packageName, role, reason, apiCapac
   )).join("\n\n");
   writeFileSync(
     summaryPath,
-    `### Central Agentic Ops admission\n\n${status}\n${capacityGuidance(apiCapacity)}\n${disclosures}\n`,
+    `<details>\n<summary>Central Agentic Ops admission</summary>\n\n${status}\n${capacityGuidance(apiCapacity)}\n${disclosures}\n\n</details>\n`,
     { flag: "a" },
   );
 }

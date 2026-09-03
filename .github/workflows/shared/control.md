@@ -88,7 +88,8 @@ jobs:
           echo "reason=$reason" >> "$GITHUB_OUTPUT"
           echo "monthly_credit_budget=0" >> "$GITHUB_OUTPUT"
           cat >> "$GITHUB_STEP_SUMMARY" <<EOF
-          ### Central Agentic Ops admission
+          <details>
+          <summary>Central Agentic Ops admission</summary>
 
           Skipped: $reason
 
@@ -103,6 +104,8 @@ jobs:
           <summary>Policy and authorization checks</summary>
 
           The remaining admission checks could not run because the authoritative control modules were unavailable.
+
+          </details>
 
           </details>
           EOF

@@ -448,6 +448,7 @@ test("control workflows deny before activation through one shared admission cont
   assert.match(sharedControl, /^\s+id: cao_precompute$/m);
   assert.match(sharedControl, /CAO precompute blocked: GitHub API limited until \$\{\{ steps\.cao_precompute\.outputs\.github_api_reset_at \}\}/);
   assert.match(sharedControl, /reason="cannot read or execute the CAO control modules at github\.workflow_sha"/);
+  assert.match(sharedControl, /<details>\n\s+<summary>Central Agentic Ops admission<\/summary>/);
   for (const [name, source] of controlled) {
     assert.equal(
       [...source.matchAll(/^\s+- name: Evaluate Central Agentic Ops admission$/gm)].length,

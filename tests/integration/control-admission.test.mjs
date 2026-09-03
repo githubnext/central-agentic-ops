@@ -97,10 +97,11 @@ test("CAO admission authorizes a declared package before activation", () => {
     "",
   ].join("\n"));
   assert.deepEqual(output, { authorized: "true", reason: "authorized", monthly_credit_budget: "0" });
-  assert.match(summary, /### Central Agentic Ops admission\n\nAuthorized package `dependabot` as `orchestrator`/);
+  assert.match(summary, /<details>\n<summary>Central Agentic Ops admission<\/summary>\n\nAuthorized package `dependabot` as `orchestrator`/);
   assert.match(summary, /<details>\n<summary>Runtime revision<\/summary>/);
   assert.match(summary, /<summary>Run limits<\/summary>/);
-  assert.equal((summary.match(/<details>/g) ?? []).length, 10);
+  assert.equal((summary.match(/<details>/g) ?? []).length, 11);
+  assert.match(summary, /<\/details>\n\n<\/details>\n$/);
 });
 
 test("CAO admission emits plain logs outside GitHub Actions", () => {
